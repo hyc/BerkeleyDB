@@ -1,0 +1,226 @@
+<! "@(#)java.html	10.8 (Sleepycat) 12/11/98">
+<html>
+<head>
+<title>Berkeley DB: Configuring and Building the Java API</title>
+</head>
+<body bgcolor=white>
+
+<center>
+<h2>Berkeley DB: Configuring and Building the Java API</h2>
+</center>
+
+<a href="#compatibility">Java Compatibility</a><br>
+<a href="#installation">Java Installation</a><br>
+<a href="#building">Building Java</a><br>
+<a href="#shared">Building a shared library version of Berkeley DB</a><br>
+<a href="#libdb_java">Building libdb_java</a><br>
+<a href="#usage_notes">General Usage Notes</a><br>
+
+<hr size=1 noshade>
+
+<a name="compatibility">
+<h3>Java Compatibility</h3></a>
+Java DB has been tested with the <a href="http://www.javasoft.com"> Sun
+Microsystems JDK 1.1</a> on Windows/NT and SunOS 5.5, and it should work
+with any JDK 1.1 compatible environment.  The most important thing to
+understand is whether the target Java environment supports the JNI (Java
+Native Interface) which we use, rather than some other way for DLLs to
+interface to java.  The JNI is new to JDK 1.1, but more likely to be
+implementable across many platforms.
+
+<hr size=1 noshade>
+
+<a name="installation">
+<h3>Java Installation</h3></a>
+We expect that you've already installed the Java JDK or equivalent on your
+system.  Since you are reading this, you also already have a copy of the
+Berkeley DB package.  For the sake of discussion, we'll assume it's in a
+directory called db-VERSION, e.g., you extracted Berkeley DB version 2.3.12
+and you did not change the top-level directory name.  The files related to
+Java are in two subdirectories of db-VERSION: java, the java source files,
+and libdb_java, the C++ files that provide the "glue" between java and
+Berkeley DB.  The directory tree looks like this:
+<p>
+<pre>
+                        db-VERSION
+                       /          \
+                    java        libdb_java
+                     |              |
+                    src            ...
+                     |
+                    com
+                     |
+                 sleepycat
+                /         \
+               db       examples
+               |           |
+              ...         ...
+</pre>
+<p>
+This naming conforms to the emerging standard for naming java packages.
+When the java code is built, it is placed into a <b>classes</b> subdirectory
+that is parallel to the <b>src</b> subdirectory.
+
+<hr size=1 noshade>
+
+<a name="building">
+<h3>Building Java</h3></a>
+Both db-VERSION/java and db-VERSION/libdb_java have Makefiles:
+<ul><pre>
+Makefile.win32
+Makefile.unix
+</pre></ul>
+<p>
+The java directory can be built using your make command and the
+appropriate Makefile.  If you've never built java code before, there
+are two things you will need to do before issuing the make command.
+
+<p>
+First, make sure the java compiler (usually <b>javac</b>) is in your path.
+If you installed the sun JDK distribution in /usr/java , then the java tools
+are in the directory /usr/java/bin.
+
+<p>
+Make sure your classpath is set correctly.  Set your environment variable
+CLASSPATH to contain at least the standard class library (perhaps in
+/usr/java/lib/classes.zip) and add the Berkeley DB classes in as well.
+Using the UNIX csh, this might be:
+
+<ul><pre>
+setenv CLASSPATH "/usr/java/lib/classes.zip:/db-VERSION/java/classes"
+</pre></ul>
+
+<p>
+On Windows/95, your autoexec.bat would need to have something like:
+
+<ul><pre>
+set CLASSPATH="c:/java/lib/classes.zip;c:/db-VERSION/java/classes"
+</pre></ul>
+
+<p>
+Note the use of semicolons on Windows.  On Windows/NT, you'll set this
+variable in the control panel.
+
+<p>
+Now you can run make to build the java directory, e.g.:
+<ul><pre>
+cd db-VERSION/java
+make -f Makefile.unix
+</pre></ul>
+
+<hr size=1 noshade>
+
+<a name="shared">
+<h3>Building a shared library version of Berkeley DB</h3></a>
+<p>
+See <a href="shared.html">
+Building a Shared Library Version of Berkeley DB</a> for more information.
+<p>
+You MUST build Berkeley DB as a shared library before you proceed beyond
+this step.
+
+<hr size=1 noshade>
+
+<a name="libdb_java">
+<h3>Building libdb_java</h3></a>
+Before building libdb_java, make sure you have a shared library version
+of Berkeley DB (see above).
+
+<p>
+On UNIX:
+
+<p>
+NB: The libdb_java/Makefile.unix Makefile is written to expect that the
+system compiler is named "gcc" and is the GNU C compiler.  In addition,
+it uses compiler-specific options when building.  If you are using a
+different compiler than gcc, you'll need to modify Makefile.unix to work
+with it.
+
+<p>
+First, edit the line at the beginning of libdb_java/Makefile.unix:
+<ul><pre>
+JAVAINSDIR=	/usr/java1.1/
+</pre></ul>
+
+<p>
+Change JAVAINSDIR to be the top level directory of your java JDK tree.
+This is the level above the bin and include directories.  Then issue a
+make command in the libdb_java directory:
+
+<ul><pre>
+% cd db-VERSION/libdb_java
+% make -f Makefile.unix
+</pre></ul>
+
+<p>
+On Win/:
+
+<p>
+Issue the nmake command in the libdb_java directory:
+
+<ul><pre>
+C:\db_distribution\libdb_java> nmake /f Makefile.win32
+</pre></ul>
+
+<hr size=1 noshade>
+
+<a name="usage_notes">
+<h3>General Usage Notes</h3></a>
+For your application to use Db successfully, you must set your CLASSPATH
+environment variable to include db-VERSION/java/classes as well as the
+classes in your java distribution.  See the section above on "BUILDING
+JAVA" for further information.
+
+<p>
+On Windows, you will want to set your PATH variable to include:
+<ul><pre>
+db-VERSION/libdb_java;db-VERSION/build_win32/debug
+</pre></ul>
+
+<p>
+On UNIX, you will want to set LD_LIBRARY_PATH to include:
+<ul><pre>
+db-VERSION/libdb_java;db-VERSION/build_unix
+</pre></ul>
+
+<p>
+These are the locations of your shared libraries.  If you get a:
+<ul><pre>
+java.lang.UnsatisfiedLinkError
+</pre></ul>
+exception when you run, chances are you do not have the PATH set up
+correctly.
+
+<p>
+Or, of course, you may copy the built dynamic libraries (libdb and
+java_db) to a directory already in your path.
+
+<p>
+To ensure that everything is running correctly, you may want to try a
+simple test from the example programs in:
+<ul><pre>
+db-VERSION/java/src/com/sleepycat/examples
+</pre></ul>
+
+<p>
+(which should have been built in the "BUILDING JAVA" section above):
+<ul><pre>
+% java com.sleepycat.examples.AccessExample
+</pre></ul>
+
+<p>
+This example program will prompt for text input lines which are then
+stored with their reversed text in a simple Btree named "db.access" in
+your current directly.  Try giving it two lines of text and then
+end-of-file.  Before it exits, you should see the reversed text.  If you
+run it again, lines will be there from your previous run.  This is an
+excellent check to make sure the fundamental things are working right.
+
+<p>
+NOTE: when you run some of the other examples on Solaris, you may get an
+"rmutex" libc error message.  This is a known bug in Solaris 2.5, and it
+is fixed by Sun patch 103187-25.  See the Sleepycat Software Release FAQ
+web page (www.sleepycat.com) for further information on this problem.
+
+</body>
+</html>

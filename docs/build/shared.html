@@ -1,0 +1,43 @@
+<! "@(#)shared.so	10.2 (Sleepycat) 12/11/98">
+<!Copyright 1997, 1998 by Sleepycat Software, Inc.  All rights reserved.>
+<html>
+<body bgcolor=white>
+<head>
+<title>Berkeley DB: Building a Shared Library Version of Berkeley DB</title>
+<meta name="description" content="Berkeley DB: An embedded database programmatic toolkit.">
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btr
+ee,hash,hashing,transaction,transactions,locking,logging,access method,access me
+thods,java,C,C++">
+</head>
+<h1 align=center>Building a Shared Library Version of Berkeley DB</h1>
+<p>
+If you are on Windows/NT or Windows, you can build a shared library version
+of Berkeley DB by opening the build_win32/Berkeley_DB.dsw workspace and
+selecting target DB_DLL.  Set the configuration to Win32 Debug, and build.
+Make sure there is a build_win32/Debug/libdb.dll as a result.
+<p>
+If you are using a UNIX platform, you will need to do a little extra work
+to build a shared library version of Berkeley DB DB.  By default, Berkeley DB builds
+as a static library.  If you've already built Berkeley DB, you can copy your
+build directory to use as a work space, e.g.:
+<p><ul><pre>
+% cd db-VERSION
+% cp -r build_unix build_shlib
+% cd build_shlib
+% make clean
+</pre></ul><p>
+<p>
+Now you'll need to consult your system documentation to understand how to
+build Berkeley DB as a shared library.  As UNIX architectures do not all build
+shared libraries the same way, Berkeley DB is not distributed with support for
+building shared libraries.
+<p>
+Examples for building shared library versions of Berkeley DB are available
+for <a href="../build/shared_hp.html">HP/UX</a> and
+<a href="../build/shared_gcc.html">the generic GCC compiler</a>.
+If you build a shared library version of Berkeley DB for a compiler and
+architecture combination for which we do not have an example, please
+email the procedure to us, and we'll add it to the collection.
+</tt>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<! "@(#)win32.so	10.13 (Sleepycat) 12/11/98">
+<!Copyright 1997, 1998 by Sleepycat Software, Inc.  All rights reserved.>
+<html>
+<body bgcolor=white>
+<head>
+<title>Berkeley DB: Building for Windows platforms</title>
+<meta name="description" content="Berkeley DB: An embedded database programmatic toolkit.">
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btr
+ee,hash,hashing,transaction,transactions,locking,logging,access method,access me
+thods,java,C,C++">
+</head>
+<h1 align=center>Building for Windows platforms</h1>
+<p>
+The build_win32 directory contains project files for both MSVC4.X and 5.0:
+<p>
+<table border=1 align=center>
+<tr><td>DB_VC4.mdp</td><td>Visual C++ 4.0 project file</td></tr>
+<tr><td>DB_VC4.mak</td><td>Makefile exported by Visual C++ 4.0.</td></tr>
+<tr><td>Berkeley_DB.dsw</td><td>Visual C++ 5.0 project file</td></tr>
+<tr><td>*.dsp</td><td>Visual C++ 5.0 subprojects</td></tr>
+</table>
+<p>
+In MSVC5.0, open the file <b>Berkeley_DB.dsw</b>  The 5.0 project files are
+fully developed, allowing you to build both DLL and static versions of
+libdb, the test harness and the command-line utilities.  To ensure that
+correct versions of include files are used, select the menu item Tools/Options
+under tab Directories, Platform Win32 and select Include files.  Put the
+build_win32 subdirectory on the list followed by the include subdirectory,
+and select OK.
+If you want to build absolutely everything,
+select the <b>db_buildall</b> subproject and build.
+<p>
+When building your application, you should normally use compile options
+"debug multithreaded dll" and link against <b>build_win32/Debug/libdb.lib</b>.
+If you want to link against a static (non-DLL) version of the library,
+use the "debug multithreaded" compile options and link against
+<b>build_win32/Debug/libdbs.lib</b>.
+<p>
+In MSVC4.X, first move your distribution directory to \db (so that the
+project file is \db\build_win32\DB_VC4.mdp for some drive letter).
+Then open the file <b>DB_VC4.mdp</b>.  The 4.X project files currently
+allow you to build only the DLL version of libdb.  To ensure that
+correct versions of include files are used, select the menu item Tools/Options
+under tab Directories, Platform Win32 and select Include files.  Put the
+/db/build_win32 directory on the list followed by the /db/include directory,
+and select OK.
+<p>
+C++ support is built automatically on Win32.
+<p>
+Java support is not built automatically.
+See <a href="java.html">Configuring and Building the Java API</a>
+for more information.
+</tt>
+</body>
+</html>

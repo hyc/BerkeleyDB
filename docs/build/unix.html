@@ -1,0 +1,336 @@
+<! "@(#)unix.html	10.12 (Sleepycat) 12/11/98">
+<html>
+<head>
+<title>Berkeley DB: Building for UNIX platforms</title>
+</head>
+<body bgcolor=white>
+
+<center>
+<h2>Berkeley DB: Building for UNIX platforms</h2>
+</center>
+
+<a href="#building">Building Berkeley DB on a UNIX platform</a><br>
+<a href="#configure">Berkeley DB's configuration options</a><br>
+<a href="#change">Changing compilers, libraries or compiler and loader options</a><br>
+<a href="#install">Installing Berkeley DB</a><br>
+
+<hr size=1 noshade>
+
+<a name="building">
+<h3>Building Berkeley DB on a UNIX platform:</h3></a>
+
+<p>
+To perform the default build of Berkeley DB, first change to the
+<b>build_unix</b> directory, and then enter the following two commands:
+<p><pre>
+	../dist/configure
+	make
+</pre>
+
+This will build the Berkeley DB library.
+To install the Berkeley DB library, enter:
+<p><pre>
+	make install
+</pre>
+
+<p>
+See below for specific information on what files are installed and in what
+directories, and how to configure installation on a per-system basis.
+
+<p>
+If you want to rebuild DB, enter:
+<p><pre>
+	make clean
+	make
+</pre>
+
+<p>
+If you change your mind about how Berkeley DB is configured, you must start
+from scratch by entering:
+<p><pre>
+	make distclean
+	../dist/configure
+	make
+</pre>
+
+<p>
+To build multiple UNIX versions of Berkeley DB in the same source tree, create a
+new directory at the same level as build_unix, and then configure and build.
+<p><pre>
+	mkdir build_bsdos3.0
+	cd build_bsdos3.0
+	../dist/configure
+	make
+</pre>
+
+<p>
+Java support cannot be built using the configuration options.  To configure
+and build the Java API, see the file db/java/README for more information.
+
+<p>
+If you have trouble with any of these commands, please send email to the
+addresses found in the Sleepycat Software contact information.  In that
+email, please provide a complete copy of the commands that you entered and
+their output.
+
+<hr size=1 noshade>
+
+<a name="configure">
+<h3>Berkeley DB's configuration options:</h3></a>
+<p>
+There are many options that you can enter to the configuration program,
+only a few of which are Berkeley DB specific.  To see a complete list of the
+options, enter <b>../dist/configure --help</b>.
+
+<p>
+The Berkeley DB specific options are as follows:
+
+<p>
+<b>--enable-cxx</b>:
+<ul>
+If you want to include C++ interfaces in the library, enter <b>--enable-cxx</b>
+as an argument to configure.
+</ul>
+
+<p>
+<b>--enable-debug</b>:
+<ul>
+If you want to build Berkeley DB with <b>-g</b> as a compiler flag and with
+<b>DEBUG</b> #defined during compilation, enter <b>--enable-debug</b> as an
+argument to configure.
+This will create Berkeley DB with debugging symbols, as well as load various
+routines that can be called from a debugger to display pages, cursor queues
+and so forth.
+This flag should probably not be defined when configuring to build production
+binaries, although there shouldn't be any significant performance degradation.
+</ul>
+
+<p>
+<b>--enable-diagnostic</b>:
+<ul>
+If you want to build Berkeley DB with debugging run-time sanity checks and
+with DIAGNOSTIC #defined during compilation, enter <b>--enable-diagnostic</b>
+as an argument to configure.  This will cause a number of special checks
+to be performed when Berkeley DB is running.  This flag should NOT be
+defined when configuring to build production binaries, as you will lose
+a significant amount of performance.
+</ul>
+
+<p>
+<b>--enable-compat185</b>:
+<ul>
+If you want to compile or load Berkeley DB 1.85 applications against the
+DB 2.0 library, enter <b>--enable-compat185</b> as an argument to configure.
+This will include Berkeley DB 1.85 API compatibility code in the library.
+</ul>
+
+<p>
+<b>--enable-dump185</b>:
+<ul>
+If you need to convert Berkeley DB 1.85 (or earlier) databases to Berkeley
+DB 2.0 databases, enter <b>--enable-dump185</b> as an argument to
+configure.
+This will build the
+<a href="../utility/db_dump.html">dump_185</a> utility.
+This utility will dump Berkeley DB 1.85 and 1.86 databases in a format
+readable by the
+<a href="../utility/db_load.html">db_load</a> utility.
+For more information, see
+<a href="../utility/db_dump.html">db_dump</a> and
+<a href="../utility/db_load.html">db_load</a>.
+<p>
+The system libraries with which you are loading the
+<a href="../utility/db_dump.html">dump_185</a>
+utility MUST already contain the Berkeley DB 1.85 library routines for this
+to work, as the Berkeley DB distribution does not include them.  If you
+are using a non-standard library for the Berkeley DB 1.85 library routines,
+you will have to change the Makefile that the configuration step creates to
+load the <a href="../utility/db_dump.html">dump_185</a> utility
+with that library.
+</ul>
+
+<p>
+<b>--enable-test</b>:
+<ul>
+If you want to build the Tcl test suite, enter <b>--enable-test</b> as an
+argument to configure.
+<b>The Tcl test suite will only build if the Tcl libraries and include
+files are already available on the system!</b>
+</ul>
+
+<p>
+<b>--disable-bigfile</b>:
+<ul>
+Some systems, notably versions of AIX, HP/UX and Solaris, require special
+compile-time options in order to create files larger than 2^32 bytes.
+These options are automatically enabled when Berkeley DB is compiled.
+For this reason, binaries built on current versions of these systems may
+not run on earlier versions of the system, as the library and system calls
+necessary for large files are not available.  To disable building with
+these compile-time options, enter <b>--disable-bigfile</b> as an argument
+to configure.
+</ul>
+
+<hr size=1 noshade>
+
+<a name="change">
+<h3>Changing compilers, libraries or compiler and loader options:</h3></a>
+<p>
+You can specify a compiler and/or compile and load time flags by using
+environment variables during configuration.  For example, if you want
+to use a specific compiler, specify the CC environment variable before
+running configure:
+<p>
+<ul>
+env CC=gcc ../dist/configure
+</ul>
+
+<p>
+Using anything other than the native compiler will almost certainly
+mean that you'll want to check the compile and load line flags, too.
+
+<p>
+To specify debugging and optimization options for the C compiler,
+use the CFLAGS environment variable:
+<p>
+<ul>
+env CFLAGS=-O2 ../dist/configure
+</ul>
+
+<p>
+To specify header file search directories and other miscellaneous options
+for the C preprocessor and compiler, use the CPPFLAGS environment variable:
+<p>
+<ul>
+env CPPFLAGS=-I/usr/contrib/include ../dist/configure
+</ul>
+
+<p>
+To specify debugging and optimization options for the C++ compiler,
+use the CXXFLAGS environment variable:
+<p>
+<ul>
+env CXXFLAGS=-Woverloaded-virtual ../dist/configure
+</ul>
+
+<p>
+To specify miscellaneous options for the linker, use the LDFLAGS
+environment variable:
+<p>
+<ul>
+env LDFLAGS="-N32" ../dist/configure
+</ul>
+
+<p>
+If the Tcl or any other include files or libraries are in non-standard
+places on your system, you will need to specify the directory path where
+they can be found.
+
+<p>
+If you want to specify additional libraries and library directories, set
+the LIBS environment variable before running configure.  For example:
+<p>
+<ul>
+env LIBS="-L/a/b -L/e/f -lposix" ../dist/configure
+</ul>
+<p>
+would specify two additional directories to search for libraries, /a/b
+and /e/f, and one additional library to load, "posix".
+
+<p>
+Make sure that you prepend -L to any library directory names and that you
+prepend -I to any include file directory names!  Also, make sure that you
+quote the arguments as shown above, i.e. with single or double quotes
+around the values you're specifying for LIBS, if they contain blank or
+tab characters.
+
+<p>
+The env command is available on most systems, and simply sets one or more
+environment variables before running a command.  If the env command is
+not available to you, you can set the environment variables in your shell
+before running configure.  For example, in sh or ksh, you could do:
+<p>
+<ul>
+LIBS="-L/a/b -L/e/f -ldb" ../dist/configure
+</ul>
+<p>
+and in csh or tcsh, you could do:
+<p>
+<ul>
+setenv LIBS "-L/a/b -L/e/f -ldb"
+../dist/configure
+</ul>
+
+<p>
+See your shell's manual page for further information.
+
+<hr size=1 noshade>
+
+<a name="install">
+<h3>Installing Berkeley DB:</h3></a>
+<p>
+Berkeley DB installs the following files into the following locations,
+with the following default values:
+
+<p>
+<table border=1>
+<tr>
+	<th>Variables</th>
+	<th>Default value</th>
+</tr><tr>
+	<td>prefix</td>
+	<td>/usr/local</td>
+</tr><tr>
+	<td>bindir</td>
+	<td>$(prefix)/BerkeleyDB/bin</td>
+</tr><tr>
+	<td>includedir</td>
+	<td>$(prefix)/BerkeleyDB/include</td>
+</tr><tr>
+	<td>libdir</td>
+	<td>$(prefix)/BerkeleyDB/lib</td>
+</tr><tr>
+	<td>mandir</td>
+	<td>$(prefix)/BerkeleyDB/docs</td>
+</tr><tr>
+	<th>File(s)</th>
+	<th>Default location</th>
+</tr><tr>
+	<td>db.h, db_cxx.h, db_185.h</td>
+	<td>$(includedir)</td>
+</tr><tr>
+	<td>libdb.a</td>
+	<td>$(libdir)</td>
+</tr><tr>
+	<td>utilities</td>
+	<td>$(bindir)</td>
+</tr><tr>
+	<td>documentation</td>
+	<td>$(mandir)</td>
+</tr>
+</table>
+
+<p>
+To move the entire installation tree to somewhere besides
+<b>/usr/local</b>, change the value of <b>prefix</b>.  To move the
+binaries to a different place, change the value of <b>bindir</b>.  The
+values of <b>includedir</b>, <b>libdir</b> and <b>mandir</b> may be
+similarly changed.  These values can be changed as part of configuration:
+
+<p>
+<ul>
+../dist/configure --prefix=/usr/contrib
+</ul>
+<p>
+or when doing the install itself:
+<p>
+<ul>
+make prefix=/usr/contrib install
+</ul>
+
+<p>
+Note, the installation process will attempt to create any directories that
+do not already exist on the system.
+
+</body>
+</html>

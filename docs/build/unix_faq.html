@@ -1,0 +1,67 @@
+<! "@(#)unix_faq.so	10.2 (Sleepycat) 12/11/98">
+<!Copyright 1997, 1998 by Sleepycat Software, Inc.  All rights reserved.>
+<html>
+<body bgcolor=white>
+<head>
+<title>Berkeley DB: Building for UNIX: FAQ</title>
+<meta name="description" content="Berkeley DB: An embedded database programmatic toolkit.">
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btr
+ee,hash,hashing,transaction,transactions,locking,logging,access method,access me
+thods,java,C,C++">
+</head>
+<h1 align=center>Building for UNIX: FAQ</h1>
+<ol>
+<p><li>
+<b>The <a href="../utility/db_dump.html">db_dump185</a> utility fails to build.</b>
+<p>
+If the errors look something like:
+<p><ul><pre>
+cc -o db_dump185 db_dump185.o
+ld:
+Unresolved:
+dbopen
+</pre></ul><p>
+it means that the Berkeley DB 1.85 code was not found in the standard libraries.
+To build <a href="../utility/db_dump.html">db_dump185</a> (the utility that converts Berkeley DB 1.85 and
+earlier databases to Berkeley DB version 2.X), you must have already built and
+installed the Berkeley DB version 1.85 code on the system.  If the Berkeley DB 1.85
+code is not part of the standard libraries used for loading, you will need
+to edit your Makefile, and change the lines:
+<p><ul><pre>
+DBE=	db_dump185.o $(CLOBJS)
+db_dump185: $(DBE)
+	$(CC) -o $@ $(DBE)
+</pre></ul><p>
+<p>
+So that the library where the Berkeley DB 1.85 code is found is loaded, e.g.,
+<p><ul><pre>
+DBE=	db_dump185.o $(CLOBJS)
+db_dump185: $(DBE)
+	$(CC) -o $@ $(DBE) -ldb185
+</pre></ul><p>
+<hr size=1 noshade>
+<p><li>
+<b>Berkeley DB programs fail when I use a NFS (or other remote-mount)
+filesystem.</b>
+<p>
+See <a href="../ref/env/region.html">Shared Memory Regions</a>
+for more information.
+<hr size=1 noshade>
+<p><li>
+<b>I get unexpected results and database corruption when running threaded
+programs.</b>
+<p>
+Make sure that you're using the right compile-time flags and libraries.
+See <a href="../ref/program/thread.html">Compiling Threaded Applications</a>
+for more information.
+<hr size=1 noshade>
+<p><li>
+<b>I get the error
+"libc internal error: _rmutex_unlock: rmutex not held", followed by a
+core dump, when running threaded or JAVA programs.</b>
+<p>
+This is a known bug in Solaris 2.5 and it is fixed by Sun patch 103187-25.
+</ol>
+</tt>
+</body>
+</html>

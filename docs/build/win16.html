@@ -1,0 +1,26 @@
+<! "@(#)win16.so	10.6 (Sleepycat) 12/11/98">
+<!Copyright 1997, 1998 by Sleepycat Software, Inc.  All rights reserved.>
+<html>
+<body bgcolor=white>
+<head>
+<title>Berkeley DB: Building for Windows 3.1 platforms</title>
+<meta name="description" content="Berkeley DB: An embedded database programmatic toolkit.">
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btr
+ee,hash,hashing,transaction,transactions,locking,logging,access method,access me
+thods,java,C,C++">
+</head>
+<h1 align=center>Building for Windows 3.1 platforms</h1>
+<p>
+Windows 3.1 support for Berkeley DB can be found in the build_win16
+directory.
+<p>
+This source has only been built using Watcom IDE 11.0 (under NT 4.0).
+Create a project, then add the .c files (not all of the clib or util
+files), and build a dll.  You'll need to find the -I configuration,
+to add search locations for header files.
+<p>
+The "shared memory" support relies on the fact that the code will be
+in a dll, so static libraries will not work properly.
+</tt>
+</body>
+</html>

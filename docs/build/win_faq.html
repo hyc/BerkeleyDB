@@ -1,0 +1,35 @@
+<! "@(#)win_faq.so	10.1 (Sleepycat) 12/11/98">
+<!Copyright 1997, 1998 by Sleepycat Software, Inc.  All rights reserved.>
+<html>
+<body bgcolor=white>
+<head>
+<title>Berkeley DB: Building for Windows: FAQ</title>
+<meta name="description" content="Berkeley DB: An embedded database programmatic toolkit.">
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btr
+ee,hash,hashing,transaction,transactions,locking,logging,access method,access me
+thods,java,C,C++">
+</head>
+<h1 align=center>Building for Windows: FAQ</h1>
+<ol>
+<p><li>
+<b>My Win* C/C++ application crashes in the Berkeley DB library when Berkeley DB calls
+fprintf (or some other standard C library function).</b>
+<p>
+You should be using the "Debug Multithreaded DLL" compiler option in your
+application when you link with the build_win32/Debug/libdb.lib library
+(this .lib file is actually a stub for libdb.DLL).  To check this setting
+in Visual C++, choose the "Project/Settings" menu item, and under the tab
+marked "C/C++", select "Code Generation" and see the box marked "Use
+runtime library".  This should be set to "Debug Multithreaded DLL".  If
+your application is linked against the static library,
+build_win32/Debug/libdbs.lib, then you will want to set "Use runtime
+library" to "Debug Multithreaded".
+<p>
+Setting this option incorrectly can cause multiple versions of the
+standard libraries to be linked into your application (one on behalf
+of your application, and one on behalf of the Berkeley DB library).  That
+violates assumptions made by these libraries, and traps can result.
+</ol>
+</tt>
+</body>
+</html>
