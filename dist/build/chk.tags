@@ -1,0 +1,34 @@
+#!/bin/sh -
+#
+# $Id: chk.tags,v 1.2 2000/06/01 17:03:33 bostic Exp $
+
+# Check to make sure we don't need any more symbolic links.
+(cd .. && ls -F | egrep / | sort |
+    sed -e 's/\///' \
+	-e '/^CVS$/d' \
+	-e '/^build_vms$/d' \
+	-e '/^build_vxworks$/d' \
+	-e '/^build_win32$/d' \
+	-e '/^docs$/d' \
+	-e '/^docs.text$/d' \
+	-e '/^docs_src$/d' \
+	-e '/^docs_text$/d' \
+	-e '/^java$/d' \
+	-e '/^libdb_java$/d' \
+	-e '/^perl.BerkeleyDB$/d' \
+	-e '/^perl.DB_File$/d' \
+	-e '/^test$/d' \
+	-e '/^test_purify$/d' \
+	-e '/^test_thread$/d' \
+	-e '/^test_vxworks$/d') > __1
+
+(cd .. && ls */tags | sed 's/\/tags$//' | sort) > __2
+if diff __1 __2 > /dev/null; then
+	:
+else
+	echo "<<< source tree"
+	echo ">>> tags files"
+	diff __1 __2
+fi
+
+#rm -f __1 __2
