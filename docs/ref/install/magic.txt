@@ -1,5 +1,5 @@
 # Berkeley DB
-#	$Id: magic.txt,v 10.9.2.1 2000/07/07 22:47:40 krinsky Exp $
+#	$Id: magic.txt,v 10.10 2000/07/07 21:02:22 krinsky Exp $
 #
 # Ian Darwin's file /etc/magic files: big/little-endian version.
 #
