@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.tags,v 1.5 2000/12/22 15:35:32 bostic Exp $
+# $Id: chk.tags,v 1.7 2001/06/15 17:03:50 bostic Exp $
 #
 # Check to make sure we don't need any more symbolic links to tags files.
 
@@ -16,13 +16,13 @@ t2=/tmp/__2
 	-e '/^build_vxworks$/d' \
 	-e '/^build_win32$/d' \
 	-e '/^docs$/d' \
-	-e '/^docs.text$/d' \
+	-e '/^docs_book$/d' \
 	-e '/^docs_src$/d' \
-	-e '/^docs_text$/d' \
 	-e '/^java$/d' \
 	-e '/^perl.BerkeleyDB$/d' \
 	-e '/^perl.DB_File$/d' \
 	-e '/^test$/d' \
+	-e '/^test_cxx$/d' \
 	-e '/^test_purify$/d' \
 	-e '/^test_thread$/d' \
 	-e '/^test_vxworks$/d') > ${t1}
@@ -31,8 +31,7 @@ t2=/tmp/__2
 if diff ${t1} ${t2} > /dev/null; then
 	:
 else
-	echo "<<< source tree"
-	echo ">>> tags files"
+	echo "<<< source tree >>> tags files"
 	diff ${t1} ${t2}
 fi
 

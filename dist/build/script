@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: script,v 1.21 2001/01/19 18:13:16 bostic Exp $
+#	$Id: script,v 1.29 2001/06/01 01:13:38 bostic Exp $
 #
 # Build the distribution archives.
 #
@@ -21,11 +21,6 @@ cd $D && cvs -q update
 cd $D/dist && sh s_all
 cd $D && cvs -q commit
 
-# Build the documentation.
-cd $D/docs_src && make clean
-cd $D/docs_src && make
-cd $D/docs_src && make && make check
-
 # Copy a development tree into a release tree.
 setenv R /a/db-$VERSION
 rm -rf $R && mkdir -p $R
@@ -37,7 +32,7 @@ cd $D && tar cf - \
 cd $R/dist && sh s_perm
 cd $R/dist && sh s_symlink
 
-# Build the documents.
+# Build the documentation.
 cd $R/docs_src && make
 
 # Build a version.
@@ -50,17 +45,11 @@ cd $R/build_run && ~bostic/bin/dbconf && make >& mklog
 # Check the install
 make prefix=`pwd`/BDB install
 
-# Run distribution check scripts
-$R/dist/build/chk.def
-$R/dist/build/chk.define
-$R/dist/build/chk.offt
-$R/dist/build/chk.srcfiles
-$R/dist/build/chk.tags
-
 # Clean up the tree.
-cd $R && rm -rf build_run docs_src
-cd $R && rm -rf test_thread test_purify test_server test_vxworks test/TODO
-cd $R && rm -rf test/upgrade/databases && mkdir test/upgrade/databases
+cd $R && rm -rf build_run docs_src java/src/com/sleepycat/test
+cd $R && rm -rf test/TODO test/upgrade
+cd $R && rm -rf test_cxx test_perf test_purify test_server test_thread
+cd $R && rm -rf test_vxworks
 
 # ACQUIRE ROOT PRIVILEGES
 cd $R && find . -type d | xargs chmod 775
