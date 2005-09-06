@@ -343,7 +343,7 @@ public class DbEnv {
     return db_javaJNI.DbEnv_log_file(swigCPtr, lsn);
   }
 
-  public void log_flush(com.sleepycat.db.LogSequenceNumber lsn) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_log_flush(swigCPtr, lsn); }
+  public void log_flush(com.sleepycat.db.LogSequenceNumber lsn_or_null) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_log_flush(swigCPtr, lsn_or_null); }
 
   public void log_put(com.sleepycat.db.LogSequenceNumber lsn, com.sleepycat.db.DatabaseEntry data, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_log_put(swigCPtr, lsn, data, flags); }
 

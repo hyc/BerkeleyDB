@@ -70,6 +70,12 @@ static void SWIG_JavaThrowException(JNIEnv *jenv, SWIG_JavaExceptionCodes code, 
 #include "db_int.h"
 #include "dbinc/txn.h"
 
+#ifdef HAVE_CRYPTO
+#define	CRYPTO_ONLY(x) (x);
+#else
+#define	CRYPTO_ONLY(x)
+#endif
+
 
 /* don't use SWIG's array handling - save code space */
 #define	SWIG_NOINCLUDE 1
@@ -100,6 +106,7 @@ static jclass filenotfoundex_class, illegalargex_class, outofmemerr_class;
 static jclass bytearray_class, string_class, outputstream_class;
 
 static jfieldID dbc_cptr_fid;
+static jfieldID dblsn_file_fid, dblsn_offset_fid;
 static jfieldID dbt_data_fid, dbt_size_fid, dbt_ulen_fid, dbt_dlen_fid;
 static jfieldID dbt_doff_fid, dbt_flags_fid, dbt_offset_fid;
 static jfieldID kr_less_fid, kr_equal_fid, kr_greater_fid;
@@ -392,6 +399,9 @@ const struct {
 	const char *sig;
 } all_fields[] = {
 	{ &dbc_cptr_fid, &dbc_class, "swigCPtr", "J" },
+
+	{ &dblsn_file_fid, &dblsn_class, "file", "I" },
+	{ &dblsn_offset_fid, &dblsn_class, "offset", "I" },
 	
 	{ &dbt_data_fid, &dbt_class, "data", "[B" },
 	{ &dbt_size_fid, &dbt_class, "size", "I" },
@@ -1806,8 +1816,8 @@ char const *Db_get_dbname(struct Db *self){
 		return ret;
 	}
 u_int32_t Db_get_encrypt_flags(struct Db *self){
-		u_int32_t ret;
-		errno = self->get_encrypt_flags(self, &ret);
+		u_int32_t ret = 0;
+		CRYPTO_ONLY(errno = self->get_encrypt_flags(self, &ret))
 		return ret;
 	}
 u_int32_t Db_get_flags(struct Db *self){
@@ -2048,8 +2058,8 @@ char const **DbEnv_get_data_dirs(struct DbEnv *self){
 		return ret;
 	}
 u_int32_t DbEnv_get_encrypt_flags(struct DbEnv *self){
-		u_int32_t ret;
-		errno = self->get_encrypt_flags(self, &ret);
+		u_int32_t ret = 0;
+		CRYPTO_ONLY(errno = self->get_encrypt_flags(self, &ret))
 		return ret;
 	}
 u_int32_t DbEnv_get_flags(struct DbEnv *self){
@@ -2258,8 +2268,8 @@ char *DbEnv_log_file(struct DbEnv *self,DB_LSN *lsn){
 		errno = self->log_file(self, lsn, namebuf, sizeof namebuf);
 		return (errno == 0) ? strdup(namebuf) : NULL;
 	}
-db_ret_t DbEnv_log_flush(struct DbEnv *self,DB_LSN const *lsn){
-		return self->log_flush(self, lsn);
+db_ret_t DbEnv_log_flush(struct DbEnv *self,DB_LSN const *lsn_or_null){
+		return self->log_flush(self, lsn_or_null);
 	}
 db_ret_t DbEnv_log_put(struct DbEnv *self,DB_LSN *lsn,DBT const *data,u_int32_t flags){
 		return self->log_put(self, lsn, data, flags);
@@ -4873,7 +4883,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_
     
     {
         if(result != NULL) {
-            /*@../libdb_java/java_typemaps.i,291,STRING_ARRAY_OUT@*/	int i, len;
+            /*@../libdb_java/java_typemaps.i,300,STRING_ARRAY_OUT@*/	int i, len;
             
             len = 0;
             while (result[len] != NULL)
@@ -6267,7 +6277,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_
     
     {
         if(result != NULL) {
-            /*@../libdb_java/java_typemaps.i,291,STRING_ARRAY_OUT@*/	int i, len;
+            /*@../libdb_java/java_typemaps.i,300,STRING_ARRAY_OUT@*/	int i, len;
             
             len = 0;
             while (result[len] != NULL)
@@ -6298,22 +6308,32 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1co
     (void)jenv;
     (void)jcls;
     
-    /* XXX: TODO */
-    arg1 = &lsn1;
-    
-    
-    /* XXX: TODO */
-    arg2 = &lsn2;
-    
-    
     if (jarg1 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
-        return 0;
+        arg1 = NULL;
+    } else {
+        arg1 = &lsn1;
+        arg1->file = (*jenv)->GetIntField(jenv, jarg1, dblsn_file_fid);
+        arg1->offset = (*jenv)->GetIntField(jenv, jarg1, dblsn_offset_fid);
     }
     
     
     if (jarg2 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
+        arg2 = NULL;
+    } else {
+        arg2 = &lsn2;
+        arg2->file = (*jenv)->GetIntField(jenv, jarg2, dblsn_file_fid);
+        arg2->offset = (*jenv)->GetIntField(jenv, jarg2, dblsn_offset_fid);
+    }
+    
+    
+    if (arg1 == NULL) {
+        __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
+        return 0;
+    }
+    
+    
+    if (arg2 == NULL) {
+        __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
         return 0;
     }
     
@@ -6321,12 +6341,16 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1co
     
     jresult = (jint)result; 
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg1, arg1, &lsn1); */
+    if (jarg1 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg1, dblsn_file_fid, arg1->file);
+        (*jenv)->SetIntField(jenv, jarg1, dblsn_offset_fid, arg1->offset);
+    }
     
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg2, arg2, &lsn2); */
+    if (jarg2 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_file_fid, arg2->file);
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_offset_fid, arg2->offset);
+    }
     
     return jresult;
 }
@@ -6371,8 +6395,13 @@ JNIEXPORT jstring JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_
     (void)jcls;
     arg1 = *(struct DbEnv **)&jarg1; 
     
-    /* XXX: TODO */
-    arg2 = &lsn2;
+    if (jarg2 == NULL) {
+        arg2 = NULL;
+    } else {
+        arg2 = &lsn2;
+        arg2->file = (*jenv)->GetIntField(jenv, jarg2, dblsn_file_fid);
+        arg2->offset = (*jenv)->GetIntField(jenv, jarg2, dblsn_offset_fid);
+    }
     
     
     if (jarg1 == 0) {
@@ -6380,8 +6409,8 @@ JNIEXPORT jstring JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_
         return 0;
     }
     
-    if (jarg2 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
+    if (arg2 == NULL) {
+        __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
         return 0;
     }
     
@@ -6397,8 +6426,10 @@ JNIEXPORT jstring JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_
         if(result) jresult = (*jenv)->NewStringUTF(jenv, result); 
     }
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg2, arg2, &lsn2); */
+    if (jarg2 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_file_fid, arg2->file);
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_offset_fid, arg2->offset);
+    }
     
     return jresult;
 }
@@ -6414,17 +6445,17 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1fl
     (void)jcls;
     arg1 = *(struct DbEnv **)&jarg1; 
     
-    /* XXX: TODO */
-    arg2 = &lsn2;
+    if (jarg2 == NULL) {
+        arg2 = NULL;
+    } else {
+        arg2 = &lsn2;
+        arg2->file = (*jenv)->GetIntField(jenv, jarg2, dblsn_file_fid);
+        arg2->offset = (*jenv)->GetIntField(jenv, jarg2, dblsn_offset_fid);
+    }
     
     
     if (jarg1 == 0) {
         __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
-        return ;
-    }
-    
-    if (jarg2 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
         return ;
     }
     
@@ -6436,8 +6467,10 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1fl
     }
     
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg2, arg2, &lsn2); */
+    if (jarg2 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_file_fid, arg2->file);
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_offset_fid, arg2->offset);
+    }
     
 }
 
@@ -6455,8 +6488,13 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1pu
     (void)jcls;
     arg1 = *(struct DbEnv **)&jarg1; 
     
-    /* XXX: TODO */
-    arg2 = &lsn2;
+    if (jarg2 == NULL) {
+        arg2 = NULL;
+    } else {
+        arg2 = &lsn2;
+        arg2->file = (*jenv)->GetIntField(jenv, jarg2, dblsn_file_fid);
+        arg2->offset = (*jenv)->GetIntField(jenv, jarg2, dblsn_offset_fid);
+    }
     
     
     if (__dbj_dbt_copyin(jenv, &ldbt3, &arg3, jarg3, 0) != 0) {
@@ -6469,8 +6507,8 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1pu
         return ;
     }
     
-    if (jarg2 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
+    if (arg2 == NULL) {
+        __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
         return ;
     }
     
@@ -6482,8 +6520,10 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1log_1pu
     }
     
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg2, arg2, &lsn2); */
+    if (jarg2 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_file_fid, arg2->file);
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_offset_fid, arg2->offset);
+    }
     
     __dbj_dbt_release(jenv, jarg3, arg3, &ldbt3); 
 }
@@ -7154,8 +7194,13 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1rep_1pr
     arg4 = &id4;
     
     
-    /* XXX: TODO */
-    arg5 = &lsn5;
+    if (jarg5 == NULL) {
+        arg5 = NULL;
+    } else {
+        arg5 = &lsn5;
+        arg5->file = (*jenv)->GetIntField(jenv, jarg5, dblsn_file_fid);
+        arg5->offset = (*jenv)->GetIntField(jenv, jarg5, dblsn_offset_fid);
+    }
     
     
     if (jarg1 == 0) {
@@ -7163,8 +7208,8 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1rep_1pr
         return 0;
     }
     
-    if (jarg5 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
+    if (arg5 == NULL) {
+        __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
         return 0;
     }
     
@@ -7182,8 +7227,10 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1rep_1pr
     __dbj_dbt_release(jenv, jarg2, arg2, &ldbt2); 
     __dbj_dbt_release(jenv, jarg3, arg3, &ldbt3); 
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg5, arg5, &lsn5); */
+    if (jarg5 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg5, dblsn_file_fid, arg5->file);
+        (*jenv)->SetIntField(jenv, jarg5, dblsn_offset_fid, arg5->offset);
+    }
     
     return jresult;
 }
@@ -7430,8 +7477,13 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbLogc_1get(JN
     (void)jcls;
     arg1 = *(struct DbLogc **)&jarg1; 
     
-    /* XXX: TODO */
-    arg2 = &lsn2;
+    if (jarg2 == NULL) {
+        arg2 = NULL;
+    } else {
+        arg2 = &lsn2;
+        arg2->file = (*jenv)->GetIntField(jenv, jarg2, dblsn_file_fid);
+        arg2->offset = (*jenv)->GetIntField(jenv, jarg2, dblsn_offset_fid);
+    }
     
     
     if (__dbj_dbt_copyin(jenv, &ldbt3, &arg3, jarg3, 0) != 0) {
@@ -7444,8 +7496,8 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbLogc_1get(JN
         return 0;
     }
     
-    if (jarg2 == NULL) {
-        __dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
+    if (arg2 == NULL) {
+        __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
         return 0;
     }
     
@@ -7458,8 +7510,10 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbLogc_1get(JN
     
     jresult = (jint)result; 
     
-    /* XXX: TODO */
-    /* -- __dbj_dbt_release(jenv, jarg2, arg2, &lsn2); */
+    if (jarg2 != NULL) {
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_file_fid, arg2->file);
+        (*jenv)->SetIntField(jenv, jarg2, dblsn_offset_fid, arg2->offset);
+    }
     
     __dbj_dbt_release(jenv, jarg3, arg3, &ldbt3); 
     return jresult;

@@ -341,13 +341,13 @@ typedef unsigned int tsl_t;
  *********************************************************************/
 #if defined(HAVE_MUTEX_WIN32) || defined(HAVE_MUTEX_WIN32_GCC)
 #define	MUTEX_FIELDS							\
-	LONG tas;							\
+	LONG volatile tas;						\
 	LONG nwaiters;							\
 	u_int32_t id;	/* ID used for creating events */		\
 
 #if defined(LOAD_ACTUAL_MUTEX_CODE)
-#define	MUTEX_SET(tsl)		(!InterlockedExchange((PLONG)tsl, 1))
-#define	MUTEX_UNSET(tsl)	(*(tsl) = 0)
+#define	MUTEX_SET(tsl)		(InterlockedExchange((PLONG)(tsl), 1) == 0)
+#define	MUTEX_UNSET(tsl)	(InterlockedExchange((PLONG)(tsl), 0))
 #define	MUTEX_INIT(tsl)		MUTEX_UNSET(tsl)
 
 /*

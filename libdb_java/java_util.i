@@ -80,6 +80,7 @@ static jclass filenotfoundex_class, illegalargex_class, outofmemerr_class;
 static jclass bytearray_class, string_class, outputstream_class;
 
 static jfieldID dbc_cptr_fid;
+static jfieldID dblsn_file_fid, dblsn_offset_fid;
 static jfieldID dbt_data_fid, dbt_size_fid, dbt_ulen_fid, dbt_dlen_fid;
 static jfieldID dbt_doff_fid, dbt_flags_fid, dbt_offset_fid;
 static jfieldID kr_less_fid, kr_equal_fid, kr_greater_fid;
@@ -372,6 +373,9 @@ const struct {
 	const char *sig;
 } all_fields[] = {
 	{ &dbc_cptr_fid, &dbc_class, "swigCPtr", "J" },
+
+	{ &dblsn_file_fid, &dblsn_class, "file", "I" },
+	{ &dblsn_offset_fid, &dblsn_class, "offset", "I" },
 	
 	{ &dbt_data_fid, &dbt_class, "data", "[B" },
 	{ &dbt_size_fid, &dbt_class, "size", "I" },

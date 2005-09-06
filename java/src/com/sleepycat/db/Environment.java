@@ -294,11 +294,11 @@ public class Environment {
     public java.io.File[] getArchiveLogFiles(boolean includeInUse)
         throws DatabaseException {
 
-        final String[] logNames =
-            dbenv.log_archive(DbConstants.DB_ARCH_ABS |
+        final String[] logNames = dbenv.log_archive(DbConstants.DB_ARCH_ABS |
                 (includeInUse ? DbConstants.DB_ARCH_LOG : 0));
-        final java.io.File[] logFiles = new java.io.File[logNames.length];
-        for (int i = 0; i < logNames.length; i++)
+        final int len = (logNames == null) ? 0 : logNames.length;
+        final java.io.File[] logFiles = new java.io.File[len];
+        for (int i = 0; i < len; i++)
             logFiles[i] = new java.io.File(logNames[i]);
         return logFiles;
     }
@@ -308,8 +308,9 @@ public class Environment {
 
         final String home = dbenv.get_home();
         final String[] dbNames = dbenv.log_archive(DbConstants.DB_ARCH_DATA);
-        final java.io.File[] dbFiles = new java.io.File[dbNames.length];
-        for (int i = 0; i < dbNames.length; i++)
+        final int len = (dbNames == null) ? 0 : dbNames.length;
+        final java.io.File[] dbFiles = new java.io.File[len];
+        for (int i = 0; i < len; i++)
             dbFiles[i] = new java.io.File(home, dbNames[i]);
         return dbFiles;
     }

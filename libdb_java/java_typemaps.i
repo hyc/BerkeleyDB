@@ -209,21 +209,30 @@ static void __dbj_dbt_release(
 /* DbLsn handling */
 JAVA_TYPEMAP(DB_LSN *, com.sleepycat.db.LogSequenceNumber, jobject)
 
+%typemap(check) DB_LSN *lsn_or_null ""
+
 %typemap(check) DB_LSN * %{
-	if ($input == NULL) {
-		__dbj_throw(jenv, EINVAL, "LogSequenceNumber must not be null", NULL, NULL);
+	if ($1 == NULL) {
+		__dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
 		return $null;
 	}
 %}
 
 %typemap(in) DB_LSN * (DB_LSN lsn) %{
-	/* XXX: TODO */
-	$1 = &lsn;
+	if ($input == NULL) {
+		$1 = NULL;
+	} else {
+		$1 = &lsn;
+		$1->file = (*jenv)->GetIntField(jenv, $input, dblsn_file_fid);
+		$1->offset = (*jenv)->GetIntField(jenv, $input, dblsn_offset_fid);
+	}
 %}
 
 %typemap(freearg) DB_LSN * %{
-	/* XXX: TODO */
-	/* -- __dbj_dbt_release(jenv, $input, $1, &lsn$argnum); */
+	if ($input != NULL) {
+		(*jenv)->SetIntField(jenv, $input, dblsn_file_fid, $1->file);
+		(*jenv)->SetIntField(jenv, $input, dblsn_offset_fid, $1->offset);
+	}
 %}
 
 

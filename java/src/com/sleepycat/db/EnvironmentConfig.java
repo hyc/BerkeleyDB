@@ -846,33 +846,25 @@ public class EnvironmentConfig implements Cloneable {
             dbenv.set_flags(offFlags, false);
 
         /* Verbose flags */
-        onFlags = 0;
-        offFlags = 0;
-
         if (verboseDeadlock && !oldConfig.verboseDeadlock)
-            onFlags |= DbConstants.DB_VERB_DEADLOCK;
+            dbenv.set_verbose(DbConstants.DB_VERB_DEADLOCK, true);
         if (!verboseDeadlock && oldConfig.verboseDeadlock)
-            offFlags |= DbConstants.DB_VERB_DEADLOCK;
+            dbenv.set_verbose(DbConstants.DB_VERB_DEADLOCK, false);
 
         if (verboseRecovery && !oldConfig.verboseRecovery)
-            onFlags |= DbConstants.DB_VERB_RECOVERY;
+            dbenv.set_verbose(DbConstants.DB_VERB_RECOVERY, true);
         if (!verboseRecovery && oldConfig.verboseRecovery)
-            offFlags |= DbConstants.DB_VERB_RECOVERY;
+            dbenv.set_verbose(DbConstants.DB_VERB_RECOVERY, false);
 
         if (verboseReplication && !oldConfig.verboseReplication)
-            onFlags |= DbConstants.DB_VERB_REPLICATION;
+            dbenv.set_verbose(DbConstants.DB_VERB_REPLICATION, true);
         if (!verboseReplication && oldConfig.verboseReplication)
-            offFlags |= DbConstants.DB_VERB_REPLICATION;
+            dbenv.set_verbose(DbConstants.DB_VERB_REPLICATION, false);
 
         if (verboseWaitsFor && !oldConfig.verboseWaitsFor)
-            onFlags |= DbConstants.DB_VERB_WAITSFOR;
+            dbenv.set_verbose(DbConstants.DB_VERB_WAITSFOR, true);
         if (!verboseWaitsFor && oldConfig.verboseWaitsFor)
-            offFlags |= DbConstants.DB_VERB_WAITSFOR;
-
-        if (onFlags != 0)
-            dbenv.set_verbose(onFlags, true);
-        if (offFlags != 0)
-            dbenv.set_verbose(offFlags, false);
+            dbenv.set_verbose(DbConstants.DB_VERB_WAITSFOR, false);
 
         /* Callbacks */
         if (feedbackHandler != oldConfig.feedbackHandler)

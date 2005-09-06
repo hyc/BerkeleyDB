@@ -310,7 +310,6 @@ __txn_begin_int(txn, internal)
 	DB_TXNMGR *mgr;
 	DB_TXNREGION *region;
 	TXN_DETAIL *td;
-	size_t off;
 	u_int32_t id, *ids;
 	int nids, ret;
 
@@ -389,12 +388,11 @@ __txn_begin_int(txn, internal)
 	td->flags = 0;
 	td->xa_status = 0;
 
-	off = R_OFFSET(&mgr->reginfo, td);
 	R_UNLOCK(dbenv, &mgr->reginfo);
 
 	ZERO_LSN(txn->last_lsn);
 	txn->txnid = id;
-	txn->off = (u_int32_t)off;
+	txn->off = R_OFFSET(&mgr->reginfo, td);
 
 	txn->abort = __txn_abort_pp;
 	txn->commit = __txn_commit_pp;

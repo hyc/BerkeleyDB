@@ -45,8 +45,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	3
-#define	DB_VERSION_PATCH	28
-#define	DB_VERSION_STRING	"Sleepycat Software: Berkeley DB 4.3.28: (April 22, 2005)"
+#define	DB_VERSION_PATCH	29
+#define	DB_VERSION_STRING	"Sleepycat Software: Berkeley DB 4.3.29: (September  6, 2005)"
 
 /*
  * !!!

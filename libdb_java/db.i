@@ -2,6 +2,12 @@
 #include "db_config.h"
 #include "db_int.h"
 #include "dbinc/txn.h"
+
+#ifdef HAVE_CRYPTO
+#define	CRYPTO_ONLY(x) (x);
+#else
+#define	CRYPTO_ONLY(x)
+#endif
 %}
 
 #if defined(SWIGJAVA)
@@ -171,8 +177,8 @@ struct Db
 	}
 
 	u_int32_t get_encrypt_flags() {
-		u_int32_t ret;
-		errno = self->get_encrypt_flags(self, &ret);
+		u_int32_t ret = 0;
+		CRYPTO_ONLY(errno = self->get_encrypt_flags(self, &ret))
 		return ret;
 	}
 
@@ -563,8 +569,8 @@ struct DbEnv
 	}
 	
 	u_int32_t get_encrypt_flags() {
-		u_int32_t ret;
-		errno = self->get_encrypt_flags(self, &ret);
+		u_int32_t ret = 0;
+		CRYPTO_ONLY(errno = self->get_encrypt_flags(self, &ret))
 		return ret;
 	}
 
@@ -877,8 +883,8 @@ struct DbEnv
 	}
 
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
-	db_ret_t log_flush(const DB_LSN *lsn) {
-		return self->log_flush(self, lsn);
+	db_ret_t log_flush(const DB_LSN *lsn_or_null) {
+		return self->log_flush(self, lsn_or_null);
 	}
 
 	db_ret_t log_put(DB_LSN *lsn, const DBT *data, u_int32_t flags) {

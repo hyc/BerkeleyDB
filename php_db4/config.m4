@@ -5,7 +5,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0.txt
 #
 
-dnl $Id: config.m4,v 12.3 2005/02/08 15:23:59 george Exp $
+dnl $Id: config.m4,v 12.2 2004/12/21 16:59:21 george Exp $
 dnl config.m4 for extension db4
 
 dnl Comments in this file start with the string 'dnl'.
@@ -71,7 +71,6 @@ if test "$PHP_DB4" != "no"; then
   fi
   EXTRA_CXXFLAGS="-g -DHAVE_CONFIG_H -O2 -Wall"
   PHP_REQUIRE_CXX()
-  PHP_ADD_LIBRARY(stdc++, 1, DB4_SHARED_LIBADD)
   PHP_NEW_EXTENSION(db4, db4.cpp, $ext_shared)
   PHP_ADD_MAKEFILE_FRAGMENT
   PHP_SUBST(DB4_SHARED_LIBADD)

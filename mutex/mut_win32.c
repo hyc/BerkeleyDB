@@ -107,7 +107,11 @@ __db_win32_mutex_lock(dbenv, mutexp)
 
 loop:	/* Attempt to acquire the resource for N spins. */
 	for (nspins = dbenv->tas_spins; nspins > 0; --nspins) {
-		if (!MUTEX_SET(&mutexp->tas)) {
+		/*
+		 * We can avoid the (expensive) interlocked instructions if
+		 * the mutex is already "set".
+		 */
+		if (mutexp->tas || !MUTEX_SET(&mutexp->tas)) {
 			/*
 			 * Some systems (notably those with newer Intel CPUs)
 			 * need a small pause here. [#6975]
@@ -119,9 +123,10 @@ loop:	/* Attempt to acquire the resource for N spins. */
 		}
 
 #ifdef DIAGNOSTIC
-		if (mutexp->locked)
+		if (mutexp->locked != 0)
 			__db_err(dbenv,
-			    "__db_win32_mutex_lock: mutex double-locked!");
+			    "Win32 lock failed: mutex already locked by %lu",
+			    (u_long)mutexp->locked);
 
 		__os_id(&mutexp->locked);
 #endif

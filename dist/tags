@@ -83,6 +83,7 @@ B_MINKEY_TO_OVFLSIZE	../dbinc/btree.h	/^#define	B_MINKEY_TO_OVFLSIZE(dbp, minkey
 B_OVERFLOW	../dbinc/db_page.h	/^#define	B_OVERFLOW	3	\/* Overflow key\/data item. /
 B_TSET	../dbinc/db_page.h	/^#define	B_TSET(t, type, deleted) {					\\$/
 B_TYPE	../dbinc/db_page.h	/^#define	B_TYPE(t)	((t) & ~B_DELETE)$/
+C	../dbinc/db_cxx.in	/^\/\/ we allow you to declare the callbacks in C++ /
 CAD_UPDATEROOT	../dbinc/btree.h	/^#define	CAD_UPDATEROOT	0x01		\/* Root page count w/
 CALC_QAM_RECNO_PER_PAGE	../dbinc/qam.h	/^#define	CALC_QAM_RECNO_PER_PAGE(dbp)					\\$/
 CDB_LOCKING	../dbinc/db_int.in	/^#define	CDB_LOCKING(dbenv)	F_ISSET(dbenv, DB_ENV_C/
@@ -108,6 +109,7 @@ CONFLICTS	../dbinc/lock.h	/^#define	CONFLICTS(T, R, HELD, WANTED) \\$/
 COPY_OBJ	../lock/lock_list.c	/^#define	COPY_OBJ(dp, obj)	do {					\\$/
 COPY_RET_MEM	../dbinc/db_int.in	/^#define	COPY_RET_MEM(src, dest)				\\$/
 CRYPTO_ON	../dbinc/db_int.in	/^#define	CRYPTO_ON(dbenv)	((dbenv)->crypto_handle !/
+CRYPTO_ONLY	../libdb_java/db_java_wrap.c	/^#define	CRYPTO_ONLY(x) (x);$/
 CT_CURSOR	../dbinc/db_server_int.h	/^#define	CT_CURSOR	0x001		\/* Cursor *\/$/
 CT_DB	../dbinc/db_server_int.h	/^#define	CT_DB		0x002		\/* Database *\/$/
 CT_ENV	../dbinc/db_server_int.h	/^#define	CT_ENV		0x004		\/* Env *\/$/
@@ -131,7 +133,6 @@ DBC_DEGREE_2	../dbinc/db.in	/^#define	DBC_DEGREE_2	 0x0004		\/* Cursor has degre
 DBC_DIRTY_READ	../dbinc/db.in	/^#define	DBC_DIRTY_READ	 0x0008		\/* Cursor support/
 DBC_INTERNAL	../dbinc/db.in	/^struct __dbc_internal;	typedef struct __dbc_intern/
 DBC_LOGGING	../dbinc/db_int.in	/^#define	DBC_LOGGING(dbc)						\\$/
-DBC_METHOD	../cxx/cxx_dbc.cpp	/^\/\/ Helper macro for simple methods that pass thr/
 DBC_MULTIPLE	../dbinc/db.in	/^#define	DBC_MULTIPLE	 0x0400		\/* Return Multiple /
 DBC_MULTIPLE_KEY	../dbinc/db.in	/^#define	DBC_MULTIPLE_KEY 0x0800		\/* Return Multip/
 DBC_OPD	../dbinc/db.in	/^#define	DBC_OPD		 0x0010		\/* Cursor references of/
@@ -143,7 +144,6 @@ DBC_WRITECURSOR	../dbinc/db.in	/^#define	DBC_WRITECURSOR	 0x0100		\/* Cursor may
 DBC_WRITER	../dbinc/db.in	/^#define	DBC_WRITER	 0x0200		\/* Cursor immediately/
 DBENV_LOGGING	../dbinc/db_int.in	/^#define	DBENV_LOGGING(dbenv)						\\$/
 DBENV_METHOD	../cxx/cxx_env.cpp	/^#define	DBENV_METHOD(_name, _argspec, _arglist)			/
-DBENV_METHOD_ERR	../cxx/cxx_env.cpp	/^\/\/ Helper macros for simple methods that pass th/
 DBENV_METHOD_QUIET	../cxx/cxx_env.cpp	/^#define	DBENV_METHOD_QUIET(_name, _argspec, _argli/
 DBENV_METHOD_VOID	../cxx/cxx_env.cpp	/^#define	DBENV_METHOD_VOID(_name, _argspec, _arglis/
 DBLOG_FORCE_OPEN	../dbinc/log.h	/^#define	DBLOG_FORCE_OPEN	0x02	\/* Force the DB ope/
@@ -162,7 +162,6 @@ DBREG_CLOSE	../dbinc/log.h	/^#define	DBREG_CLOSE	2		\/* File close. *\/$/
 DBREG_OPEN	../dbinc/log.h	/^#define	DBREG_OPEN	3		\/* File open. *\/$/
 DBREG_RCLOSE	../dbinc/log.h	/^#define	DBREG_RCLOSE	4		\/* File close after recov/
 DBREP_OPENFILES	../dbinc/rep.h	/^#define	DBREP_OPENFILES		0x0001	\/* This handle ha/
-DBSEQ_METHOD	../cxx/cxx_seq.cpp	/^\/\/ Helper macro for simple methods that pass thr/
 DBT	../dbinc/db.in	/^struct __db_dbt;	typedef struct __db_dbt DBT;$/
 DBTBUFLEN	../db/db_pr.c	/^#define	DBTBUFLEN	100$/
 DBTCL_DBM	../dbinc/tcl_db.h	/^#define	DBTCL_DBM	1$/
@@ -170,7 +169,6 @@ DBTCL_GLOBAL	../dbinc/tcl_db.h	/^} DBTCL_GLOBAL;$/
 DBTCL_INFO	../dbinc/tcl_db.h	/^} DBTCL_INFO;$/
 DBTCL_NDBM	../dbinc/tcl_db.h	/^#define	DBTCL_NDBM	2$/
 DBTCL_PREP	../dbinc/tcl_db.h	/^#define	DBTCL_PREP	64	\/* Size of txn_recover prep/
-DBTXN_METHOD	../cxx/cxx_txn.cpp	/^\/\/ Helper macro for simple methods that pass thr/
 DBTYPE	../dbinc/db.in	/^} DBTYPE;$/
 DBT_LOCKED	../libdb_java/db_java_wrap.c	/^} DBT_LOCKED;$/
 DB_ADDSTR	../env/env_open.c	/^#define	DB_ADDSTR(add) {						\\$/
@@ -240,6 +238,7 @@ DB_CONSUME_WAIT	../dbinc/db.in	/^#define	DB_CONSUME_WAIT		 6	\/* get() *\/$/
 DB_CREATE	../dbinc/db.in	/^#define	DB_CREATE	      0x0000001	\/* Create file /
 DB_CURRENT	../dbinc/db.in	/^#define	DB_CURRENT		 7	\/* c_get(), c_put(), DB_LO/
 DB_CXX_NO_EXCEPTIONS	../dbinc/db.in	/^#define	DB_CXX_NO_EXCEPTIONS  0x0000002	\/* C++: r/
+DB_CXX_PRIVATE_ENV	../dbinc/cxx_int.h	/^#define	DB_CXX_PRIVATE_ENV      0x00000001$/
 DB_DBM_HSEARCH	../dbinc/db.in	/^#define	DB_DBM_HSEARCH	0		\/* No historic interfac/
 DB_DBT_APPMALLOC	../dbinc/db.in	/^#define	DB_DBT_APPMALLOC	0x001	\/* Callback alloca/
 DB_DBT_DUPOK	../dbinc/db.in	/^#define	DB_DBT_DUPOK		0x040	\/* Insert if duplicat/
@@ -298,6 +297,8 @@ DB_ENV_TIME_NOTGRANTED	../dbinc/db.in	/^#define	DB_ENV_TIME_NOTGRANTED	0x0800000
 DB_ENV_TXN_NOSYNC	../dbinc/db.in	/^#define	DB_ENV_TXN_NOSYNC	0x1000000 \/* DB_TXN_NOS/
 DB_ENV_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_ENV_TXN_WRITE_NOSYNC	0x2000000 \/* DB_T/
 DB_ENV_YIELDCPU	../dbinc/db.in	/^#define	DB_ENV_YIELDCPU		0x4000000 \/* DB_YIELDCPU/
+DB_ERROR	../dbinc/cxx_int.h	/^#define	DB_ERROR(env, caller, ecode, policy) \\$/
+DB_ERROR_DBT	../dbinc/cxx_int.h	/^#define	DB_ERROR_DBT(env, caller, dbt, policy) \\$/
 DB_EXCL	../dbinc/db.in	/^#define	DB_EXCL		      0x0001000	\/* Exclusive ope/
 DB_EXTENT	../dbinc/db.in	/^#define	DB_EXTENT	      0x0004000	\/* internal: de/
 DB_FAST_STAT	../dbinc/db.in	/^#define	DB_FAST_STAT		 8	\/* stat() *\/$/
@@ -439,14 +440,12 @@ DB_MAX_HANDLES	../dbinc/mutex.h	/^#define	DB_MAX_HANDLES	100			\/* Mutex slots f
 DB_MAX_PAGES	../dbinc/db.in	/^#define	DB_MAX_PAGES	0xffffffff	\/* >= # of pages /
 DB_MAX_PGSIZE	../dbinc/db_int.in	/^#define	DB_MAX_PGSIZE	0x010000	\/* Maximum page si/
 DB_MAX_RECORDS	../dbinc/db.in	/^#define	DB_MAX_RECORDS	0xffffffff	\/* >= # of reco/
-DB_METHOD	../cxx/cxx_db.cpp	/^\/\/ Helper macros for simple methods that pass th/
 DB_METHOD_QUIET	../cxx/cxx_db.cpp	/^#define	DB_METHOD_QUIET(_name, _argspec, _arglist)/
 DB_METHOD_VOID	../cxx/cxx_db.cpp	/^#define	DB_METHOD_VOID(_name, _argspec, _arglist)	/
 DB_MINPAGECACHE	../dbinc/db_int.in	/^#define	DB_MINPAGECACHE	16$/
 DB_MIN_PGSIZE	../dbinc/db_int.in	/^#define	DB_MIN_PGSIZE	0x000200	\/* Minimum page si/
 DB_MPOOL	../dbinc/db.in	/^struct __db_mpool;	typedef struct __db_mpool DB_MP/
 DB_MPOOLFILE	../dbinc/db.in	/^struct __db_mpoolfile;	typedef struct __db_mpoolfi/
-DB_MPOOLFILE_METHOD	../cxx/cxx_mpool.cpp	/^\/\/ Helper macros for simple methods that pass th/
 DB_MPOOLFILE_METHOD_VOID	../cxx/cxx_mpool.cpp	/^#define	DB_MPOOLFILE_METHOD_VOID(_name, _argspec, /
 DB_MPOOL_CLEAN	../dbinc/db.in	/^#define	DB_MPOOL_CLEAN		0x001	\/* Page is not modi/
 DB_MPOOL_CREATE	../dbinc/db.in	/^#define	DB_MPOOL_CREATE		0x001	\/* Create a page. /
@@ -509,6 +508,7 @@ DB_OSO_SEQ	../dbinc/os.h	/^#define	DB_OSO_SEQ	0x0080		\/* Expected sequential/
 DB_OSO_TEMP	../dbinc/os.h	/^#define	DB_OSO_TEMP	0x0100		\/* Remove after last /
 DB_OSO_TRUNC	../dbinc/os.h	/^#define	DB_OSO_TRUNC	0x0200		\/* POSIX: O_TRUNC */
 DB_OS_SEEK	../dbinc/os.h	/^} DB_OS_SEEK;$/
+DB_OVERFLOWED_DBT	../dbinc/cxx_int.h	/^#define	DB_OVERFLOWED_DBT(dbt) \\$/
 DB_OVERWRITE	../dbinc/db.in	/^#define	DB_OVERWRITE	      0x00100000\/* Overwrite/
 DB_PAGE_DB_LEN	../dbinc/db_page.h	/^#define	DB_PAGE_DB_LEN		32$/
 DB_PAGE_LOCK	../dbinc/db.in	/^#define	DB_PAGE_LOCK	3$/
@@ -620,7 +620,6 @@ DB_SERVER_MAXTIMEOUT	../dbinc/db_server_int.h	/^#define	DB_SERVER_MAXTIMEOUT	120
 DB_SERVER_TIMEOUT	../dbinc/db_server_int.h	/^#define	DB_SERVER_TIMEOUT	300	\/* 5 minutes *\/$/
 DB_SET	../dbinc/db.in	/^#define	DB_SET			28	\/* c_get(), DB_LOGC->get() */
 DB_SET_BEGIN_LSNP	../dbinc/log.h	/^#define	DB_SET_BEGIN_LSNP(txn, rlsnp) do {				\\$/
-DB_SET_CALLBACK	../cxx/cxx_db.cpp	/^#define	DB_SET_CALLBACK(_cxxname, _name, _cxxargsp/
 DB_SET_LOCK_TIMEOUT	../dbinc/db.in	/^#define	DB_SET_LOCK_TIMEOUT	29	\/* set_timout() */
 DB_SET_RANGE	../dbinc/db.in	/^#define	DB_SET_RANGE		30	\/* c_get() *\/$/
 DB_SET_RECNO	../dbinc/db.in	/^#define	DB_SET_RECNO		31	\/* get(), c_get() *\/$/
@@ -703,7 +702,6 @@ DB_YIELDCPU	../dbinc/db.in	/^#define	DB_YIELDCPU	      0x20000000\/* Yield the /
 DB_debug_FLAG	../dbinc/db.in	/^#define	DB_debug_FLAG		0x80000000$/
 DB_user_BEGIN	../dbinc/db.in	/^#define	DB_user_BEGIN		10000$/
 DCHARHASH	../hash/hash_func.c	/^#define	DCHARHASH(h, c)	((h) = 0x63c63cd9*(h) + 0x/
-DD_INVALID_ID	../lock/lock_deadlock.c	/^# define DD_INVALID_ID	((u_int32_t) -1)$/
 DEBUG_LREAD	../dbinc/debug.h	/^#define	DEBUG_LREAD(C, T, O, K, A, F)	LOG_OP(C, T,/
 DEBUG_LWRITE	../dbinc/debug.h	/^#define	DEBUG_LWRITE(C, T, O, K, A, F)	LOG_OP(C, T/
 DEFMINKEYPAGE	../dbinc/btree.h	/^#define	DEFMINKEYPAGE	 (2)$/
@@ -716,9 +714,9 @@ DISCARD_CUR	../btree/bt_cursor.c	/^#define	DISCARD_CUR(dbc, ret) do {					\\$/
 DO_PREPLIST	../tcl/tcl_txn.c	/^#define	DO_PREPLIST(count)						\\$/
 DO_TRADE	../txn/txn_util.c	/^#define	DO_TRADE do {							\\$/
 DUP_SIZE	../dbinc/hash.h	/^#define	DUP_SIZE(len)	((len) + 2 * sizeof(db_indx_/
-Db	../cxx/cxx_db.cpp	/^\/\/ If the DB handle is still open, we close it. /
+Db	../libdb_java/db_java_wrap.c	/^#define Db __db$/
 DbDeadlockException	../cxx/cxx_except.cpp	/^DbDeadlockException::~DbDeadlockException() throw(/
-DbEnv	../cxx/cxx_env.cpp	/^\/\/ If the DB_ENV handle is still open, we close /
+DbEnv	../libdb_java/db_java_wrap.c	/^#define DbEnv __db_env$/
 DbEnv_close	../libdb_java/db_java_wrap.c	/^db_ret_t DbEnv_close(struct DbEnv *self,u_int32_t /
 DbEnv_dbremove	../libdb_java/db_java_wrap.c	/^db_ret_t DbEnv_dbremove(struct DbEnv *self,DB_TXN /
 DbEnv_dbrename	../libdb_java/db_java_wrap.c	/^db_ret_t DbEnv_dbrename(struct DbEnv *self,DB_TXN /
@@ -812,12 +810,12 @@ DbEnv_txn_stat	../libdb_java/db_java_wrap.c	/^DB_TXN_STAT *DbEnv_txn_stat(struct
 DbException	../cxx/cxx_except.cpp	/^DbException::~DbException() throw()$/
 DbLock	../cxx/cxx_lock.cpp	/^DbLock::DbLock()$/
 DbLockNotGrantedException	../cxx/cxx_except.cpp	/^DbLockNotGrantedException::~DbLockNotGrantedExcept/
-DbLogc	../cxx/cxx_logc.cpp	/^\/\/ It's private, and should never be called,$/
+DbLogc	../libdb_java/db_java_wrap.c	/^#define DbLogc __db_log_cursor$/
 DbLogc_close	../libdb_java/db_java_wrap.c	/^db_ret_t DbLogc_close(struct DbLogc *self,u_int32_/
 DbLogc_get	../libdb_java/db_java_wrap.c	/^int DbLogc_get(struct DbLogc *self,DB_LSN *lsn,DBT/
 DbLsn	../libdb_java/db_java_wrap.c	/^#define DbLsn __db_lsn$/
 DbMemoryException	../cxx/cxx_except.cpp	/^DbMemoryException::~DbMemoryException() throw()$/
-DbMpoolFile	../cxx/cxx_mpool.cpp	/^DbMpoolFile::~DbMpoolFile()$/
+DbMpoolFile	../libdb_java/db_java_wrap.c	/^#define DbMpoolFile __db_mpoolfile$/
 DbMpoolFile_get_flags	../libdb_java/db_java_wrap.c	/^u_int32_t DbMpoolFile_get_flags(struct DbMpoolFile/
 DbMpoolFile_get_maxsize	../libdb_java/db_java_wrap.c	/^jlong DbMpoolFile_get_maxsize(struct DbMpoolFile */
 DbMpoolFile_get_priority	../libdb_java/db_java_wrap.c	/^DB_CACHE_PRIORITY DbMpoolFile_get_priority(struct /
@@ -825,7 +823,7 @@ DbMpoolFile_set_flags	../libdb_java/db_java_wrap.c	/^db_ret_t DbMpoolFile_set_fl
 DbMpoolFile_set_maxsize	../libdb_java/db_java_wrap.c	/^db_ret_t DbMpoolFile_set_maxsize(struct DbMpoolFil/
 DbMpoolFile_set_priority	../libdb_java/db_java_wrap.c	/^db_ret_t DbMpoolFile_set_priority(struct DbMpoolFi/
 DbRunRecoveryException	../cxx/cxx_except.cpp	/^DbRunRecoveryException::~DbRunRecoveryException() /
-DbSequence	../cxx/cxx_seq.cpp	/^DbSequence::~DbSequence()$/
+DbSequence	../libdb_java/db_java_wrap.c	/^#define DbSequence __db_sequence$/
 DbSequence_close	../libdb_java/db_java_wrap.c	/^db_ret_t DbSequence_close(struct DbSequence *self,/
 DbSequence_get	../libdb_java/db_java_wrap.c	/^db_seq_t DbSequence_get(struct DbSequence *self,DB/
 DbSequence_get_cachesize	../libdb_java/db_java_wrap.c	/^int32_t DbSequence_get_cachesize(struct DbSequence/
@@ -841,7 +839,7 @@ DbSequence_set_cachesize	../libdb_java/db_java_wrap.c	/^db_ret_t DbSequence_set_
 DbSequence_set_flags	../libdb_java/db_java_wrap.c	/^db_ret_t DbSequence_set_flags(struct DbSequence *s/
 DbSequence_set_range	../libdb_java/db_java_wrap.c	/^db_ret_t DbSequence_set_range(struct DbSequence *s/
 DbSequence_stat	../libdb_java/db_java_wrap.c	/^DB_SEQUENCE_STAT *DbSequence_stat(struct DbSequenc/
-DbTxn	../cxx/cxx_txn.cpp	/^DbTxn::~DbTxn()$/
+DbTxn	../libdb_java/db_java_wrap.c	/^#define DbTxn __db_txn$/
 DbTxn_abort	../libdb_java/db_java_wrap.c	/^db_ret_t DbTxn_abort(struct DbTxn *self){$/
 DbTxn_commit	../libdb_java/db_java_wrap.c	/^db_ret_t DbTxn_commit(struct DbTxn *self,u_int32_t/
 DbTxn_discard	../libdb_java/db_java_wrap.c	/^db_ret_t DbTxn_discard(struct DbTxn *self,u_int32_/
@@ -909,7 +907,7 @@ Db_tcl_Init	../tcl/tcl_db_pkg.c	/^Db_tcl_Init(interp)$/
 Db_truncate	../libdb_java/db_java_wrap.c	/^int Db_truncate(struct Db *self,DB_TXN *txnid,u_in/
 Db_upgrade	../libdb_java/db_java_wrap.c	/^db_ret_t Db_upgrade(struct Db *self,char const *fi/
 Db_verify	../libdb_java/db_java_wrap.c	/^int_bool Db_verify(struct Db *self,char const *fil/
-Dbc	../cxx/cxx_dbc.cpp	/^\/\/ It's private, and should never be called, but/
+Dbc	../libdb_java/db_java_wrap.c	/^#define Dbc __dbc$/
 Dbc_close	../libdb_java/db_java_wrap.c	/^db_ret_t Dbc_close(struct Dbc *self){$/
 Dbc_count	../libdb_java/db_java_wrap.c	/^db_recno_t Dbc_count(struct Dbc *self,u_int32_t fl/
 Dbc_del	../libdb_java/db_java_wrap.c	/^int Dbc_del(struct Dbc *self,u_int32_t flags){$/
@@ -1235,7 +1233,6 @@ NAME_TO_LOCK	../dbinc/tcl_db.h	/^#define	NAME_TO_LOCK(name)	(DB_LOCK *)_NameToPt
 NAME_TO_MP	../dbinc/tcl_db.h	/^#define	NAME_TO_MP(name)	(DB_MPOOLFILE *)_NameToPt/
 NAME_TO_SEQUENCE	../dbinc/tcl_db.h	/^#define	NAME_TO_SEQUENCE(name)	(DB_SEQUENCE *)_Nam/
 NAME_TO_TXN	../dbinc/tcl_db.h	/^#define	NAME_TO_TXN(name)	(DB_TXN *)_NameToPtr((na/
-NAMLEN	../clib/getcwd.c	/^# define NAMLEN(dirent) strlen((dirent)->d_name)$/
 NBUCKET	../dbinc/mp.h	/^#define	NBUCKET(mc, mf_offset, pgno)					\\$/
 NCACHE	../dbinc/mp.h	/^#define	NCACHE(mp, mf_offset, pgno)					\\$/
 NCACHED	../dbinc/db_page.h	/^#define	NCACHED	32		\/* number of spare points *\//
@@ -1253,6 +1250,9 @@ OKFLAGS	../db/db_iface.c	/^#define	OKFLAGS								\\$/
 OKFLAGS_CDB	../env/env_open.c	/^#define	OKFLAGS_CDB							\\$/
 OK_CRYPTO_FLAGS	../env/env_method.c	/^#define	OK_CRYPTO_FLAGS	(DB_ENCRYPT_AES)$/
 OK_FLAGS	../env/env_method.c	/^#define	OK_FLAGS							\\$/
+ON_ERROR_RETURN	../dbinc/cxx_int.h	/^#define	ON_ERROR_RETURN    0$/
+ON_ERROR_THROW	../dbinc/cxx_int.h	/^#define	ON_ERROR_THROW     1$/
+ON_ERROR_UNKNOWN	../dbinc/cxx_int.h	/^#define	ON_ERROR_UNKNOWN   (-1)$/
 OPCODE_OF	../dbinc/hash.h	/^#define	OPCODE_OF(N)	(N & ~PAIR_MASK)$/
 OR_MAP	../lock/lock_deadlock.c	/^#define	OR_MAP(D, S, N)	{						\\$/
 OS_VMPAGESIZE	../dbinc/region.h	/^#define	OS_VMPAGESIZE		(8 * 1024)$/
@@ -1753,7 +1753,6 @@ VRFY_QMETA_SET	../dbinc/db_verify.h	/^#define	VRFY_QMETA_SET		0x10    \/* We've 
 V_DUPLICATE	../dbinc/db_verify.h	/^#define	V_DUPLICATE	1		\/* off-page dup metadata */
 V_OVERFLOW	../dbinc/db_verify.h	/^#define	V_OVERFLOW	2		\/* overflow page *\/$/
 V_RECNO	../dbinc/db_verify.h	/^#define	V_RECNO		3		\/* btree internal or leaf pag/
-WRAPPED_CLASS	../dbinc/cxx_int.h	/^\/\/$/
 XAER_ASYNC	../dbinc/xa.h	/^#define	XAER_ASYNC	-2		\/* asynchronous operation /
 XAER_DUPID	../dbinc/xa.h	/^#define	XAER_DUPID	-8		\/* the XID already exists /
 XAER_INVAL	../dbinc/xa.h	/^#define	XAER_INVAL	-5		\/* invalid arguments were /
@@ -3856,20 +3855,19 @@ __xa_txn	../dbinc/db.in	/^	struct __xa_txn {	\/* XA Active Transactions. *\//
 _app_dispatch_intercept	../cxx/cxx_env.cpp	/^int DbEnv::_app_dispatch_intercept(DB_ENV *env, DB/
 _app_dispatch_intercept_c	../cxx/cxx_env.cpp	/^int _app_dispatch_intercept_c(DB_ENV *env, DBT *db/
 _debug_check	../tcl/tcl_internal.c	/^_debug_check()$/
-_exported	../dbinc/db_cxx.in	/^#    define _exported __declspec(dllexport)      /
 _feedback_intercept	../cxx/cxx_env.cpp	/^void DbEnv::_feedback_intercept(DB_ENV *env, int o/
 _feedback_intercept_c	../cxx/cxx_env.cpp	/^void _feedback_intercept_c(DB_ENV *env, int opcode/
 _paniccall_intercept	../cxx/cxx_env.cpp	/^void DbEnv::_paniccall_intercept(DB_ENV *env, int /
 _paniccall_intercept_c	../cxx/cxx_env.cpp	/^void _paniccall_intercept_c(DB_ENV *env, int errva/
 _rep_send_intercept	../cxx/cxx_env.cpp	/^int DbEnv::_rep_send_intercept(DB_ENV *env, const /
 _rep_send_intercept_c	../cxx/cxx_env.cpp	/^int _rep_send_intercept_c(DB_ENV *env, const DBT */
-_stream_error_function	../cxx/cxx_env.cpp	/^void DbEnv::_stream_error_function($/
 _stream_error_function_c	../cxx/cxx_env.cpp	/^void _stream_error_function_c(const DB_ENV *env,$/
 _stream_message_function	../cxx/cxx_env.cpp	/^void DbEnv::_stream_message_function(const DB_ENV /
 _stream_message_function_c	../cxx/cxx_env.cpp	/^void _stream_message_function_c(const DB_ENV *env,/
 _tsl_set	../dbinc/mutex.h	/^_tsl_set(void *tsl)$/
 add_home	../rpc_server/c/db_server_util.c	/^add_home(home)$/
 add_passwd	../rpc_server/c/db_server_util.c	/^add_passwd(passwd)$/
+appinit	../dbinc/db_cxx.in	/^\/\/ call appinit() before any other db activity (/
 archopts	../tcl/tcl_log.c	/^	enum archopts {$/
 bdb_DbOpen	../tcl/tcl_db_pkg.c	/^bdb_DbOpen(interp, objc, objv, ip, dbp)$/
 bdb_DbRemove	../tcl/tcl_db_pkg.c	/^bdb_DbRemove(interp, objc, objv)$/
@@ -3898,7 +3896,7 @@ blk	../hmac/sha1.c	/^#define blk(i) (block->l[i&15] = rol(block->l[(i+1/
 blk0	../hmac/sha1.c	/^#define blk0(i) is_bigendian ? block->l[i] : \\$/
 ca_recno_arg	../dbinc/btree.h	/^} ca_recno_arg;$/
 cipherInstance	../crypto/rijndael/rijndael-api-fst.h	/^} cipherInstance;$/
-cleanup	../cxx/cxx_db.cpp	/^\/\/ private method to cleanup after destructor or/
+cleanup	../cxx/cxx_env.cpp	/^void DbEnv::cleanup()$/
 close	../cxx/cxx_env.cpp	/^int DbEnv::close(u_int32_t flags)$/
 commitopt	../tcl/tcl_txn.c	/^	enum commitopt {$/
 const	../dbinc/db_185.in	/^#define	const$/
@@ -4006,9 +4004,9 @@ dbt_	../cxx/cxx_except.cpp	/^,	dbt_(dbt)$/
 delete	../dbinc/db.in	/^#define	delete(a)	__db_dbm_delete@DB_VERSION_UNIQU/
 delete_DbLock	../libdb_java/db_java_wrap.c	/^void delete_DbLock(struct DbLock *self){$/
 describe	../cxx/cxx_except.cpp	/^void DbException::describe(const char *prefix, con/
-dirent	../clib/getcwd.c	/^# define dirent direct$/
 dirfd	../clib/getcwd.c	/^#define   dirfd(dirp)     ((dirp)->dd_fd)$/
-dupString	../cxx/cxx_except.cpp	/^\/\/ Note: would not be needed if we can inherit f/
+dupString	../cxx/cxx_except.cpp	/^static char *dupString(const char *s)$/
+element	../cxx/cxx_db.cpp	/^\/\/ list element (e.g., "char *arg") and that _ar/
 env_	../cxx/cxx_except.cpp	/^,	env_(0)$/
 env_Cmd	../tcl/tcl_env.c	/^env_Cmd(clientData, interp, objc, objv)$/
 env_DbRemove	../tcl/tcl_env.c	/^env_DbRemove(interp, objc, objv, dbenv)$/
@@ -4026,32 +4024,22 @@ envopen	../tcl/tcl_db_pkg.c	/^	enum envopen {$/
 envremopts	../tcl/tcl_env.c	/^	enum envremopts {$/
 envtestat	../tcl/tcl_env.c	/^	enum envtestat {$/
 envtestcmd	../tcl/tcl_env.c	/^	enum envtestcmd {$/
-error_policy	../cxx/cxx_db.cpp	/^\/\/ Return a tristate value corresponding to whet/
-errx	../cxx/cxx_db.cpp	/^void Db::errx(const char *format, ...)$/
 exec_proc	../mutex/tm.c	/^exec_proc(id, tmpath, typearg)$/
 fetch	../dbinc/db.in	/^#define	fetch(a)	__db_dbm_fetch@DB_VERSION_UNIQUE_/
 firstkey	../dbinc/db.in	/^#define	firstkey	__db_dbm_firstkey@DB_VERSION_UNIQ/
 fsync	../os/os_fsync.c	/^#define	fsync(fd)	__vx_fsync(fd)$/
-get	../cxx/cxx_dbc.cpp	/^int Dbc::get(Dbt* key, Dbt *data, u_int32_t _flags/
-get_app_private	../cxx/cxx_env.cpp	/^void *DbEnv::get_app_private() const$/
-get_byteswapped	../cxx/cxx_db.cpp	/^int Db::get_byteswapped(int *isswapped)$/
 get_dbt	../cxx/cxx_except.cpp	/^Dbt *DbMemoryException::get_dbt() const$/
-get_env	../cxx/cxx_db.cpp	/^DbEnv *Db::get_env()$/
+get_env	../cxx/cxx_except.cpp	/^DbEnv *DbException::get_env() const$/
 get_errno	../cxx/cxx_except.cpp	/^int DbException::get_errno() const$/
-get_error_stream	../cxx/cxx_env.cpp	/^__DB_STD(ostream) *DbEnv::get_error_stream()$/
 get_fullhome	../rpc_server/c/db_server_util.c	/^get_fullhome(name)$/
 get_index	../cxx/cxx_except.cpp	/^int DbLockNotGrantedException::get_index() const$/
-get_key	../cxx/cxx_seq.cpp	/^Dbt *DbSequence::get_key()$/
 get_lock	../cxx/cxx_except.cpp	/^DbLock* DbLockNotGrantedException::get_lock() cons/
-get_message_stream	../cxx/cxx_env.cpp	/^__DB_STD(ostream) *DbEnv::get_message_stream()$/
 get_mode	../cxx/cxx_except.cpp	/^db_lockmode_t DbLockNotGrantedException::get_mode(/
-get_mpf	../cxx/cxx_db.cpp	/^DbMpoolFile *Db::get_mpf()$/
 get_obj	../cxx/cxx_except.cpp	/^const Dbt* DbLockNotGrantedException::get_obj() co/
 get_op	../cxx/cxx_except.cpp	/^db_lockop_t DbLockNotGrantedException::get_op() co/
 get_tableent	../rpc_server/c/db_server_util.c	/^get_tableent(id)$/
 getcwd	../clib/getcwd.c	/^getcwd(pt, size)$/
 getopt	../clib/getopt.c	/^getopt(nargc, nargv, ostr)$/
-h_hash_callback_	../cxx/cxx_db.cpp	/^,	h_hash_callback_(0)$/
 hcmds	../tcl/tcl_compat.c	/^	enum hcmds {$/
 hcreate	../dbinc/db.in	/^#define	hcreate(a)	__db_hcreate@DB_VERSION_UNIQUE_/
 hdestroy	../dbinc/db.in	/^#define	hdestroy	__db_hdestroy@DB_VERSION_UNIQUE_N/
@@ -4079,11 +4067,9 @@ i_pagep	../dbinc/tcl_db.h	/^#define	i_pagep un.anyp$/
 i_pgno	../dbinc/tcl_db.h	/^#define	i_pgno und.pgno$/
 i_pgsz	../dbinc/tcl_db.h	/^#define	i_pgsz und2.pagesz$/
 i_txnp	../dbinc/tcl_db.h	/^#define	i_txnp un.txnp$/
-imp_	../cxx/cxx_mpool.cpp	/^:	imp_(0)$/
 index_	../cxx/cxx_except.cpp	/^,	index_(index)$/
 indx_t	../dbinc/db_185.in	/^typedef u_int16_t	indx_t;$/
 infop	../dbinc/tcl_db.h	/^	union infop {$/
-initialize	../cxx/cxx_db.cpp	/^\/\/ private method to initialize during construct/
 int	../db/db_upg.c	/^static int (* const func_31_list[P_PAGETYPE_MAX])$/
 int_bool	../libdb_java/db_java_wrap.c	/^typedef int int_bool;$/
 keyInstance	../crypto/rijndael/rijndael-api-fst.h	/^} keyInstance;$/
@@ -4122,12 +4108,12 @@ new_DbSequence	../libdb_java/db_java_wrap.c	/^struct DbSequence *new_DbSequence(
 new_ct_ent	../rpc_server/c/db_server_util.c	/^new_ct_ent(errp)$/
 next	../cxx/cxx_multi.cpp	/^bool DbMultipleDataIterator::next(Dbt &data)$/
 nextkey	../dbinc/db.in	/^#define	nextkey(a)	__db_dbm_nextkey@DB_VERSION_UNI/
+normal	../cxx/cxx_env.cpp	/^\/\/ close explicitly in normal (non-exceptional) /
 onint	../common/util_sig.c	/^onint(signo)$/
 p_	../cxx/cxx_multi.cpp	/^   p_((u_int32_t*)(data_ + dbt.get_size() - sizeof/
 pg_Cmd	../tcl/tcl_mp.c	/^pg_Cmd(clientData, interp, objc, objv)$/
 pgcmds	../tcl/tcl_mp.c	/^	enum pgcmds {$/
 pgcookie	../dbinc/db_cxx.in	/^		(DB_ENV *dbenv, db_pgno_t pgno, void *pgaddr, DB/
-pget	../cxx/cxx_db.cpp	/^int Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Db/
 pgno_t	../dbinc/db_185.in	/^#define	pgno_t	db_pgno_t$/
 pgopt	../tcl/tcl_mp.c	/^	enum pgopt {$/
 pthread_cond_destroy	../mutex/mut_pthread.c	/^#define	pthread_cond_destroy(x)		0$/
@@ -4146,7 +4132,6 @@ raise	../clib/raise.c	/^raise(s)$/
 rcmds	../tcl/tcl_util.c	/^	enum rcmds {$/
 recno_t	../dbinc/db_185.in	/^typedef u_int32_t	recno_t;$/
 reg_type_t	../dbinc/region.h	/^	REGION_TYPE_TXN } reg_type_t;$/
-remove	../cxx/cxx_env.cpp	/^int DbEnv::remove(const char *db_home, u_int32_t f/
 rep_send_callback_	../cxx/cxx_env.cpp	/^,	rep_send_callback_(0)$/
 repdb_t	../dbinc/rep.h	/^} repdb_t;$/
 roff_t	../dbinc/db.in	/^typedef	uintptr_t	roff_t;$/
@@ -4155,18 +4140,11 @@ run_locker	../mutex/tm.c	/^run_locker(id)$/
 run_lthread	../mutex/tm.c	/^run_lthread(arg)$/
 run_wakeup	../mutex/tm.c	/^run_wakeup(id)$/
 run_wthread	../mutex/tm.c	/^run_wthread(arg)$/
-runtime_error	../cxx/cxx_env.cpp	/^\/\/ Report an error associated with the DbEnv.$/
-runtime_error_dbt	../cxx/cxx_env.cpp	/^\/\/ Like DbEnv::runtime_error, but issue a DbMemo/
-runtime_error_lock_get	../cxx/cxx_env.cpp	/^\/\/ Like DbEnv::runtime_error, but issue a DbLock/
 seq_Cmd	../tcl/tcl_seq.c	/^seq_Cmd(clientData, interp, objc, objv)$/
 seqcmds	../tcl/tcl_seq.c	/^	enum seqcmds {$/
 seqgetopts	../tcl/tcl_seq.c	/^	enum seqgetopts {$/
 seqopen	../tcl/tcl_db_pkg.c	/^	enum seqopen {$/
 set_env	../cxx/cxx_except.cpp	/^void DbException::set_env(DbEnv *env)$/
-set_error_stream	../cxx/cxx_env.cpp	/^void DbEnv::set_error_stream(__DB_STD(ostream) *st/
-set_feedback	../cxx/cxx_env.cpp	/^int DbEnv::set_feedback(void (*arg)(DbEnv *, int, /
-set_message_stream	../cxx/cxx_env.cpp	/^void DbEnv::set_message_stream(__DB_STD(ostream) */
-set_paniccall	../cxx/cxx_env.cpp	/^int DbEnv::set_paniccall(void (*arg)(DbEnv *, int)/
 sfonoff	../tcl/tcl_env.c	/^	enum sfonoff {$/
 sfwhich	../tcl/tcl_env.c	/^	enum sfwhich {$/
 shm_open	../mutex/tm.c	/^#define	shm_open	open$/
@@ -4257,6 +4235,7 @@ tm_mutex_init	../mutex/tm.c	/^tm_mutex_init()$/
 tm_mutex_stats	../mutex/tm.c	/^tm_mutex_stats()$/
 tsl_t	../dbinc/mutex.h	/^typedef int tsl_t;$/
 txn_Cmd	../tcl/tcl_txn.c	/^txn_Cmd(clientData, interp, objc, objv)$/
+txn_recover	../dbinc/db_cxx.in	/^\/\/ This is filled in and returned by the DbEnv::/
 txnckpopts	../tcl/tcl_txn.c	/^	enum txnckpopts {$/
 txncmds	../tcl/tcl_txn.c	/^	enum txncmds {$/
 txnop_t	../txn/txn.c	/^} txnop_t;$/
@@ -4266,6 +4245,7 @@ u32	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int32_t	u32;$/
 u8	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int8_t	u8;	$/
 u_int32_t	../dbinc/db_cxx.in	/^		(DB *, const void *, u_int32_t);$/
 unmap_file	../mutex/tm.c	/^unmap_file(addr, fd)$/
+unwrap	../dbinc/cxx_int.h	/^\/\/ back and forth using the various overloaded w/
 usage	../mutex/tm.c	/^usage()$/
 val	../dbinc/tcl_db.h	/^#define	val	u.r.real_val$/
 verbonoff	../tcl/tcl_env.c	/^	enum verbonoff {$/
@@ -4276,8 +4256,6 @@ vsnprintf	../clib/snprintf.c	/^vsnprintf(str, n, fmt, ap)$/
 what	../cxx/cxx_except.cpp	/^const char *DbException::what() const throw()$/
 wmask	../clib/memmove.c	/^#define	wmask	(wsize - 1)$/
 word	../clib/memmove.c	/^typedef	int word;		\/* "word" used for optimal cop/
-wrap_DB_ENV	../cxx/cxx_env.cpp	/^\/\/ static method$/
-wrap_DB_SEQUENCE	../cxx/cxx_seq.cpp	/^\/\/ static method$/
 wsize	../clib/memmove.c	/^#define	wsize	sizeof(word)$/
 xa_switch_t	../dbinc/xa.h	/^struct xa_switch_t {$/
 xid_t	../dbinc/xa.h	/^struct xid_t {$/

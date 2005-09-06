@@ -687,8 +687,7 @@ __seq_close(seq, flags)
 	}
 	if (seq->seq_key.data != NULL)
 		__os_free(dbenv, seq->seq_key.data);
-	if (seq->seq_data.data != NULL &&
-	    seq->seq_data.data != &seq->seq_record)
+	if (seq->seq_data.data != &seq->seq_record)
 		__os_ufree(dbenv, seq->seq_data.data);
 	seq->seq_key.data = NULL;
 	memset(seq, CLEAR_BYTE, sizeof(*seq));
