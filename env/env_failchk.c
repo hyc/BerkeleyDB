@@ -331,7 +331,7 @@ __env_thread_id_string(dbenv, pid, tid, buf)
 {
 #ifdef HAVE_INTEGRAL_THREAD_TYPE
 #ifdef UINT64_FMT
-	char fmt[10];
+	char fmt[20];
 
 	snprintf(fmt, sizeof(fmt), "%s/%s", UINT64_FMT, UINT64_FMT);
 	snprintf(buf,
@@ -341,7 +341,7 @@ __env_thread_id_string(dbenv, pid, tid, buf)
 #endif
 #else
 #ifdef UINT64_FMT
-	char fmt[10];
+	char fmt[20];
 
 	snprintf(fmt, sizeof(fmt), "%s/TID", UINT64_FMT);
 	snprintf(buf, DB_THREADID_STRLEN, fmt, (u_int64_t)pid);

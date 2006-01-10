@@ -184,7 +184,7 @@ public interface DbConstants
     int DB_VERIFY = 0x0000002;
     int DB_VERSION_MAJOR = 4;
     int DB_VERSION_MINOR = 4;
-    int DB_VERSION_PATCH = 16;
+    int DB_VERSION_PATCH = 20;
     int DB_WRITECURSOR = 35;
     int DB_XA_CREATE = 0x0000002;
     int DB_XIDDATASIZE = 128;

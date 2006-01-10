@@ -245,6 +245,14 @@ __log_put(dbenv, lsnp, udbt, flags)
 		 */
 		if (ret != 0 && LF_ISSET(DB_LOG_PERM))
 			LF_SET(DB_FLUSH);
+		/*
+		 * We ignore send failures so reset 'ret' to 0 here.
+		 * We needed to check special return values from
+		 * bulk transfer and errors from either bulk or normal
+		 * message sending need flushing on perm records.  But
+		 * otherwise we need to ignore it and reset it now.
+		 */
+		ret = 0;
 	}
 
 	/*
@@ -416,12 +424,6 @@ __log_put_next(dbenv, lsn, dbt, hdr, old_lsnp)
 		 */
 		newfile = 1;
 	}
-
-	/*
-	 * The offset into the log file at this point is the LSN where
-	 * we're about to put this record, and is the LSN the caller wants.
-	 */
-	*lsn = lp->lsn;
 
 	/* If we switched log files, let our caller know where. */
 	if (newfile)
@@ -602,7 +604,7 @@ __log_newfile(dblp, lsnp, logfile)
 		goto err;
 	__db_chksum(t.data, t.size,
 	    (CRYPTO_ON(dbenv)) ? db_cipher->mac_key : NULL, hdr.chksum);
-	lsn = lp->lsn;
+
 	if ((ret = __log_putr(dblp, &lsn,
 	    &t, lastoff == 0 ? 0 : lastoff - lp->len, &hdr)) != 0)
 		goto err;
@@ -683,6 +685,12 @@ __log_putr(dblp, lsn, dbt, prev, h)
 	if (lp->db_log_inmemory && (ret = __log_inmem_chkspace(dblp,
 	    (u_int32_t)hdr->size + dbt->size)) != 0)
 		goto err;
+
+	/*
+	 * The offset into the log file at this point is the LSN where
+	 * we're about to put this record, and is the LSN the caller wants.
+	 */
+	*lsn = lp->lsn;
 
 	if ((ret = __log_fill(dblp, lsn, hdr, (u_int32_t)hdr->size)) != 0)
 		goto err;

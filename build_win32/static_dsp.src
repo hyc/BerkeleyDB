@@ -21,10 +21,10 @@ CFG=@project_name@ - Win32 Debug
 !MESSAGE "@project_name@ - Win32 Debug" (based on "Win32 (x86) Static Library")
 !MESSAGE "@project_name@ - Win32 ASCII Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "@project_name@ - Win32 ASCII Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "@project_name@ - Win64 Debug AMD64" (based on "Win32 (x86) Static Library")
-!MESSAGE "@project_name@ - Win64 Release AMD64" (based on "Win32 (x86) Static Library")
-!MESSAGE "@project_name@ - Win64 Debug IA64" (based on "Win32 (x86) Static Library")
-!MESSAGE "@project_name@ - Win64 Release IA64" (based on "Win32 (x86) Static Library")
+!MESSAGE "@project_name@ - x64 Debug AMD64" (based on "Win32 (x86) Static Library")
+!MESSAGE "@project_name@ - x64 Release AMD64" (based on "Win32 (x86) Static Library")
+!MESSAGE "@project_name@ - x64 Debug IA64" (based on "Win32 (x86) Static Library")
+!MESSAGE "@project_name@ - x64 Release IA64" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -126,7 +126,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"@lib_debug_dest@_ASCII/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd.lib"
 # ADD LIB32 /nologo /out:"@lib_debug_dest@_ASCII/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd.lib"
 
-!ELSEIF  "$(CFG)" == "@project_name@ - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "@project_name@ - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -149,7 +149,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"@lib_debug_dest@_AMD64/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd.lib"
 # ADD LIB32 /nologo /out:"@lib_debug_dest@_AMD64/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd.lib"
 
-!ELSEIF  "$(CFG)" == "@project_name@ - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "@project_name@ - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -172,7 +172,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"@lib_rel_dest@_AMD64/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s.lib"
 # ADD LIB32 /nologo /out:"@lib_rel_dest@_AMD64/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s.lib"
 
-!ELSEIF  "$(CFG)" == "@project_name@ - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "@project_name@ - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -195,7 +195,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"@lib_debug_dest@_IA64/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd.lib"
 # ADD LIB32 /nologo /out:"@lib_debug_dest@_IA64/libdb@lib_suffix@@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd.lib"
 
-!ELSEIF  "$(CFG)" == "@project_name@ - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "@project_name@ - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -226,10 +226,10 @@ LIB32=link.exe -lib
 # Name "@project_name@ - Win32 Debug"
 # Name "@project_name@ - Win32 ASCII Release"
 # Name "@project_name@ - Win32 ASCII Debug"
-# Name "@project_name@ - Win64 Debug AMD64"
-# Name "@project_name@ - Win64 Release AMD64"
-# Name "@project_name@ - Win64 Debug IA64"
-# Name "@project_name@ - Win64 Release IA64"
+# Name "@project_name@ - x64 Debug AMD64"
+# Name "@project_name@ - x64 Release AMD64"
+# Name "@project_name@ - x64 Debug IA64"
+# Name "@project_name@ - x64 Release IA64"
 @SOURCE_FILES@
 # End Target
 # End Project

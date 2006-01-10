@@ -52,17 +52,6 @@ interoperation issues, and guarantees that the right runtime libraries
 are selected.  Note that because we do not use MFC facilities, the MFC
 library DLL is not marked as a dependency for libdb.dll, but the
 appropriate Microsoft C runtime is.</p>
-<p><li><b>How do I enable diagnostic mode on Windows?</b>
-<p>You will need to edit the <b>build_win32\db_config.h</b> file and
-change the following line:</p>
-<blockquote><pre>/* #undef HAVE_DIAGNOSTIC */</pre></blockquote>
-<p>to this:</p>
-<blockquote><pre>#define HAVE_DIAGNOSTIC 1</pre></blockquote>
-<p>Then, append this line to the end of <b>build_win32\libdb.def</b>:</p>
-<blockquote><pre>__db_assert	@XXX</pre></blockquote>
-<p>Change the 'XXX' to be changed to the last numeric entry in the exports
-list, plus one.</p>
-<p>Then, rebuild the library.</p>
 <a name="4"><!--meow--></a>
 <p><li><b>How can I build Berkeley DB for <a href="http://www.mingw.org">MinGW</a>?</b>
 <p>Follow the instructions in <a href="../../ref/build_unix/intro.html">Building for UNIX/POSIX</a>, and specify the --enable-mingw option to the

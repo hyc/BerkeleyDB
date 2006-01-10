@@ -21,10 +21,10 @@ CFG=ex_csvcode - Win32 Debug
 !MESSAGE "ex_csvcode - Win32 Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "ex_csvcode - Win32 ASCII Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "ex_csvcode - Win32 ASCII Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_csvcode - Win64 Debug AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_csvcode - Win64 Release AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_csvcode - Win64 Debug IA64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_csvcode - Win64 Release IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_csvcode - x64 Debug AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_csvcode - x64 Release AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_csvcode - x64 Debug IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_csvcode - x64 Release IA64" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -152,7 +152,7 @@ PostBuild_Desc=Generate csv_local.c
 PostBuild_Cmds=$(OUTDIR)\ex_csvcode.exe -c ../examples_c/csv/csv_local.c -h ../examples_c/csv/csv_local.h -f ../examples_c/csv/sample.desc
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "ex_csvcode - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "ex_csvcode - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -182,7 +182,7 @@ PostBuild_Desc=Generate csv_local.c
 PostBuild_Cmds=$(OUTDIR)\ex_csvcode.exe -c ../examples_c/csv/csv_local.c -h ../examples_c/csv/csv_local.h -f ../examples_c/csv/sample.desc
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "ex_csvcode - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "ex_csvcode - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -212,7 +212,7 @@ PostBuild_Desc=Generate csv_local.c
 PostBuild_Cmds=$(OUTDIR)\ex_csvcode.exe -c ../examples_c/csv/csv_local.c -h ../examples_c/csv/csv_local.h -f ../examples_c/csv/sample.desc
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "ex_csvcode - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "ex_csvcode - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -242,7 +242,7 @@ PostBuild_Desc=Generate csv_local.c
 PostBuild_Cmds=$(OUTDIR)\ex_csvcode.exe -c ../examples_c/csv/csv_local.c -h ../examples_c/csv/csv_local.h -f ../examples_c/csv/sample.desc
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "ex_csvcode - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "ex_csvcode - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -280,10 +280,10 @@ PostBuild_Cmds=$(OUTDIR)\ex_csvcode.exe -c ../examples_c/csv/csv_local.c -h ../e
 # Name "ex_csvcode - Win32 Debug"
 # Name "ex_csvcode - Win32 ASCII Debug"
 # Name "ex_csvcode - Win32 ASCII Release"
-# Name "ex_csvcode - Win64 Debug AMD64"
-# Name "ex_csvcode - Win64 Release AMD64"
-# Name "ex_csvcode - Win64 Debug IA64"
-# Name "ex_csvcode - Win64 Release IA64"
+# Name "ex_csvcode - x64 Debug AMD64"
+# Name "ex_csvcode - x64 Release AMD64"
+# Name "ex_csvcode - x64 Debug IA64"
+# Name "ex_csvcode - x64 Release IA64"
 # Begin Source File
 
 SOURCE=..\examples_c\csv\code.c

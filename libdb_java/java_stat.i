@@ -47,6 +47,15 @@ JAVA_TYPEMAP(_ctype, _jtype, jobject)
 
 JAVA_STAT_CLASS(DB_COMPACT *, com.sleepycat.db.CompactStats, compact)
 %typemap(freearg) DB_COMPACT * %{ __dbj_fill_compact(jenv, $input, $1); %}
+%typemap(in) DB_COMPACT * (DB_COMPACT compact) %{
+        $1 = &compact;
+        $1->compact_fillpercent = (*jenv)->GetIntField(jenv, $input,
+            compact_compact_fillpercent_fid);
+        $1->compact_timeout = (*jenv)->GetIntField(jenv, $input,
+            compact_compact_timeout_fid);
+        $1->compact_pages = (*jenv)->GetIntField(jenv, $input,
+            compact_compact_pages_fid);
+%}
 
 JAVA_STAT_CLASS(DB_LOCK_STAT *, com.sleepycat.db.LockStats, lock_stat)
 JAVA_STAT_CLASS(DB_LOG_STAT *, com.sleepycat.db.LogStats, log_stat)

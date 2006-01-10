@@ -1224,7 +1224,7 @@ __db_pg_sort_recover(dbenv, dbtp, lsnp, op, info)
 			goto out;
 		if (log_compare(&LSN(meta), lsnp) == 0) {
 			meta->last_pgno = argp->last_pgno;
-			if (argp->last_pgno == PGNO_INVALID)
+			if (argp->last_free == PGNO_INVALID)
 				meta->free = pglist->pgno;
 			LSN(meta) = argp->meta_lsn;
 			modified = 1;

@@ -6,7 +6,7 @@
     <title>The Locking Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="previous" href="blocking_deadlocks.html" title="Locks, Blocks, and Deadlocks" />
     <link rel="next" href="isolation.html" title="Isolation" />
@@ -35,17 +35,17 @@
         <div></div>
       </div>
       <p>
-            In order to allow concurrent operations, DB provides the locking
+            In order to allow concurrent operations, JE provides the locking
             subsystem. This subsystem provides inter- and intra- process
-            concurrency mechanisms. It is extensively used by DB concurrent
-            applications, but it can also be generally used for non-DB
+            concurrency mechanisms. It is extensively used by JE concurrent
+            applications, but it can also be generally used for non-JE
             resources.
         </p>
       <p>
             This section describes the locking subsystem as it is used to
-            protect DB resources. In particular, issues on configuration are
+            protect JE resources. In particular, issues on configuration are
             examined here. For information on using the locking subsystem to
-            manage non-DB resources, see the <i class="citetitle">Berkeley DB Programmer's
+            manage non-JE resources, see the <i class="citetitle">Berkeley DB Programmer's
             Reference Guide.</i>
         </p>
       <div class="sect2" lang="en" xml:lang="en">
@@ -192,7 +192,7 @@ try {
           <div></div>
         </div>
         <p>
-                In order for DB to know that a deadlock has occurred,
+                In order for JE to know that a deadlock has occurred,
                 some mechanism must be used to perform deadlock
                 detection. There are three ways that deadlock detection can
                 occur:
@@ -201,7 +201,7 @@ try {
           <ol type="1">
             <li>
               <p>
-                        Allow DB to internally detect deadlocks as they
+                        Allow JE to internally detect deadlocks as they
                         occur.
                     </p>
               <p>
@@ -209,11 +209,11 @@ try {
                             
                             
                             <span><tt class="methodname">EnvironmentConfig.setLockDetectMode()</tt>.</span>
-                            This method causes DB to walk its internal lock table 
+                            This method causes JE to walk its internal lock table 
                             looking for a deadlock whenever a lock request
-                            is blocked. This method also identifies how DB decides which lock
+                            is blocked. This method also identifies how JE decides which lock
                             requests are rejected when deadlocks are detected. For example,
-                            DB can decide to reject the lock request for the transaction
+                            JE can decide to reject the lock request for the transaction
                             that has the most number of locks, the least number of locks,
                             holds the oldest lock, holds the most number of write locks, and
                             so forth (see the API reference documentation for a complete
@@ -224,7 +224,7 @@ try {
                         lifetime, but typically it is used before you open your environment.
                     </p>
               <p>
-                        Note that how you want DB to decide which thread of control should break a deadlock is
+                        Note that how you want JE to decide which thread of control should break a deadlock is
                         extremely dependent on the nature of your application. It is not unusual for some performance
                         testing to be required in order to make this determination. That said, a transaction that is
                         holding the maximum number of locks is usually indicative of the transaction that has performed
@@ -257,7 +257,7 @@ try {
                             <tt class="methodname">Environment.detectDeadlocks()</tt>
                            method, or use the
                            <span><b class="command">db_deadlock</b></span> command line
-                           utility. This method (or command) causes DB to walk the
+                           utility. This method (or command) causes JE to walk the
                            lock table looking for deadlocks. 
                     </p>
               <p>
@@ -293,14 +293,14 @@ try {
                             Note that lock timeouts are only checked when a
                             lock request is blocked or when deadlock
                             detection is otherwise performed. Therefore, a lock can have timed out and still be held for
-                            some length of time until DB has a reason to examine its locking tables.
+                            some length of time until JE has a reason to examine its locking tables.
                     </p>
               <p>
                         Be aware that extremely long-lived transactions, or
                         operations that hold locks for a long time, may be
                         inappropriately timed out before the transaction or
                         operation has a chance to complete. You should
-                        therefore use this mechanism only if you know you
+                        therefore use this mechanism only if you know your
                         application will hold locks for very short periods
                         of time.
                     </p>
@@ -308,7 +308,7 @@ try {
           </ol>
         </div>
         <p>
-                For example, to configure your application such that DB
+                For example, to configure your application such that JE
                 checks the lock table for deadlocks every time a lock
                 request is blocked:
             </p>
@@ -369,7 +369,7 @@ try {
           <div></div>
         </div>
         <p>
-                When DB determines that a deadlock has occurred, it will
+                When JE determines that a deadlock has occurred, it will
                 select a thread of control to resolve the deadlock and then 
                     
                     
@@ -377,7 +377,8 @@ try {
                         throws <tt class="literal">DeadlockException</tt> in that
                         thread.
                     </span>
-                 When this happens, the thread must:
+                    
+                 If a deadlock is detected, the thread must:
             </p>
         <div class="orderedlist">
           <ol type="1">

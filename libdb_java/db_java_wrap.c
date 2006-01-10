@@ -2938,6 +2938,7 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1compact(JN
     db_ret_t result;
     DBT_LOCKED ldbt3 ;
     DBT_LOCKED ldbt4 ;
+    DB_COMPACT compact5 ;
     DBT_LOCKED ldbt7 ;
     
     (void)jenv;
@@ -2952,7 +2953,15 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1compact(JN
     if (__dbj_dbt_copyin(jenv, &ldbt4, &arg4, jarg4, 1) != 0) {
         return ; /* An exception will be pending. */
     }
-    arg5 = *(DB_COMPACT **)(void *)&jarg5; 
+    
+    arg5 = &compact5;
+    arg5->compact_fillpercent = (*jenv)->GetIntField(jenv, jarg5,
+    compact_compact_fillpercent_fid);
+    arg5->compact_timeout = (*jenv)->GetIntField(jenv, jarg5,
+    compact_compact_timeout_fid);
+    arg5->compact_pages = (*jenv)->GetIntField(jenv, jarg5,
+    compact_compact_pages_fid);
+    
     arg6 = (u_int32_t)jarg6; 
     
     if (__dbj_dbt_copyin(jenv, &ldbt7, &arg7, jarg7, 1) != 0) {

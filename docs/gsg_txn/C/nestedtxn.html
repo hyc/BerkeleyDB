@@ -6,7 +6,7 @@
     <title>Nested Transactions</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="usingtxns.html" title="Chapter 3. Transaction Basics" />
     <link rel="previous" href="autocommit.html" title="Auto Commit" />
     <link rel="next" href="txncursor.html" title="Transactional Cursors" />
@@ -67,7 +67,7 @@
             <p>
                     Likewise, aborting the nested transaction has no effect on
                     the state of the parent transaction. The only result of the
-                    abort is that, of course, neither the parent nor any
+                    abort is that neither the parent nor any
                     other transactions will see any of the
                     database modifications performed under the protection of the
                     nested transaction.
@@ -78,7 +78,7 @@
                     If the parent transaction commits or aborts while it has
                     active children, the child transactions are resolved in the
                     same way as the parent. That is, if the parent aborts, then
-                    the child transactions do as well. If the parent commits,
+                    the child transactions abort as well. If the parent commits,
                     then whatever modifications have been performed by the child
                     transactions are also committed. 
                 </p>
@@ -114,7 +114,7 @@
       <pre class="programlisting">    /* parent transaction */
     DB_TXN *parent_txn, *child_txn;
     ret = envp-&gt;txn_begin(envp, NULL, &amp;parent_txn, 0);
-    /* Child transaction */
+    /* child transaction */
     ret = envp-&gt;txn_begin(envp, parent_txn, &amp;child_txn, 0); </pre>
     </div>
     <div class="navfooter">

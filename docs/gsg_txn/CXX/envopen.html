@@ -9,7 +9,7 @@
         </title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="enabletxn.html" title="Chapter 2. Enabling Transactions" />
     <link rel="previous" href="enabletxn.html" title="Chapter 2. Enabling Transactions" />
     <link rel="next" href="usingtxns.html" title="Chapter 3. Transaction Basics" />
@@ -131,8 +131,7 @@ int main(void)
 
         myEnv.open(envHome.c_str(), env_flags, 0);
         <b class="userinput"><tt>dbp = new Db(&amp;myEnv, 0);
-        dbp-&gt;open(dbp,        // Pointer to the database
-                  NULL,       // Txn pointer 
+        dbp-&gt;open(NULL,       // Txn pointer 
                   file_name,  // File name 
                   NULL,       // Logical db name 
                   DB_BTREE,   // Database type (using btree) 
@@ -147,7 +146,7 @@ int main(void)
     }
 
     try {
-        <b class="userinput"><tt>dbp-&gt;close(dbp, 0);</tt></b>
+        <b class="userinput"><tt>dbp-&gt;close(0);</tt></b>
         myEnv.close(0);
     } catch(DbException &amp;e) {
         std::cerr &lt;&lt; &quot;Error closing database and environment: &quot;

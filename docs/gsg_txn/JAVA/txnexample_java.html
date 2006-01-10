@@ -6,7 +6,7 @@
     <title>Transaction Example</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="wrapup.html" title="Chapter 6. Summary and Examples" />
     <link rel="previous" href="wrapup.html" title="Chapter 6. Summary and Examples" />
     <link rel="next" href="inmem_txnexample_java.html" title="In-Memory Transaction Example" />
@@ -36,7 +36,7 @@
       </div>
       <p>
         The following Java code provides a fully functional example of a
-        multi-threaded transactional DB application. 
+        multi-threaded transactional JE application. 
         The example opens an environment and database, and then creates 5
         threads, each of which writes 500 records to the database. The keys
         used for these writes are pre-determined strings, while the data is
@@ -111,7 +111,7 @@
         <p>
             The main class in our example application is used to open and
             close our environment and database. It also spawns all the
-            threads that we need. To begin, we start with the normal series
+            threads that we need. We start with the normal series
             of Java package and import statements, followed by our class
             declaration:
         </p>
@@ -204,7 +204,7 @@ public class TxnGuide { </pre>
     the way, we make sure that every handle is free-threaded, and that the
     transactional subsystem is correctly initialized. Because this is a
     concurrent application, we also declare how we want deadlock detection
-    to be performed. In this case, we use DB's internal block detector
+    to be performed. In this case, we use JE's internal block detector
     to determine whether a deadlock has occurred when a thread attempts to
     acquire a lock. We also indicate that we want the deadlocked thread
     with the <span class="emphasis"><em>youngest</em></span> lock to receive deadlock
@@ -423,7 +423,7 @@ public class PayloadData implements Serializable {
         </div>
         <p>
                 In order to show off some of the ACID properties provided
-                by DB's transactional support,
+                by JE's transactional support,
                 <tt class="literal">DBWriter.java</tt> does some things in a less
                 efficient way than you would probably decide to use in a
                 true production application. First, it groups 10 database
@@ -776,7 +776,7 @@ public class DBWriter extends Thread
       <p>
     This completes our transactional example. If you would like to
     experiment with this code, you can find the example in the following
-    location in your DB distribution:
+    location in your JE distribution:
 </p>
       <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_java/src/db/txn</pre>
     </div>

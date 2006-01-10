@@ -25,6 +25,14 @@
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
+/*
+ * LSNs in queue data pages are advisory.  They do not have to be accurate
+ * as all operations are idempotent on records.  They should not be rolled
+ * forward during recovery as committed transaction may obscure updates from
+ * an incomplete transaction that updates the same page.  The incomplete
+ * transaction may be completed during a later hot backup cycle.
+ */
+
 /* Determine if we are restoring prepared transactions from __txn_recover. */
 #define	IS_IN_RESTORE(dbenv)						 \
 	(((DB_TXNREGION *)((DB_TXNMGR *)				 \
@@ -237,26 +245,36 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 		cp = (QUEUE_CURSOR *)dbc->internal;
 		if ((argp->opcode & QAM_SETFIRST) &&
 		    meta->first_recno == argp->old_first) {
-			if ((ret = __qam_position(dbc,
-			    &meta->first_recno, QAM_READ, &exact)) != 0)
-				goto err;
-			if (!exact)
+			if (argp->old_first > argp->new_first)
 				meta->first_recno = argp->new_first;
-			if (cp->page != NULL && (ret =
-			    __qam_fput(file_dbp, cp->pgno, cp->page, 0)) != 0)
-				goto err;
+			else {
+				if ((ret = __qam_position(dbc,
+				    &meta->first_recno, QAM_READ, &exact)) != 0)
+					goto err;
+				if (!exact)
+					meta->first_recno = argp->new_first;
+				if (cp->page != NULL &&
+				    (ret = __qam_fput(file_dbp,
+				    cp->pgno, cp->page, 0)) != 0)
+					goto err;
+			}
 		}
 
 		if ((argp->opcode & QAM_SETCUR) &&
 		    meta->cur_recno == argp->old_cur) {
-			if ((ret = __qam_position(dbc,
-			    &meta->cur_recno, QAM_READ, &exact)) != 0)
-				goto err;
-			if (!exact)
+			if (argp->old_cur < argp->new_cur)
 				meta->cur_recno = argp->new_cur;
-			if (cp->page != NULL && (ret =
-			    __qam_fput(file_dbp, cp->pgno, cp->page, 0)) != 0)
-				goto err;
+			else {
+				if ((ret = __qam_position(dbc,
+				    &meta->cur_recno, QAM_READ, &exact)) != 0)
+					goto err;
+				if (!exact)
+					meta->cur_recno = argp->new_cur;
+				if (cp->page != NULL
+				    && (ret = __qam_fput(file_dbp,
+				    cp->pgno, cp->page, 0)) != 0)
+					goto err;
+			}
 		}
 
 		modified = 1;
@@ -372,7 +390,14 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 		/* Need to redo delete - clear the valid bit */
 		qp = QAM_GET_RECORD(file_dbp, pagep, argp->indx);
 		F_CLR(qp, QAM_VALID);
-		LSN(pagep) = *lsnp;
+		/*
+		 * We only move the LSN forward during replication.
+		 * During recovery we could obsucre an update from
+		 * a partially completed transaction while processing
+		 * a hot backup.  [#13823]
+		 */
+		if (op == DB_TXN_APPLY)
+			LSN(pagep) = *lsnp;
 		modified = 1;
 	}
 	if ((ret = __qam_fput(file_dbp,
@@ -486,7 +511,14 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 		/* Need to redo delete - clear the valid bit */
 		qp = QAM_GET_RECORD(file_dbp, pagep, argp->indx);
 		F_CLR(qp, QAM_VALID);
-		LSN(pagep) = *lsnp;
+		/*
+		 * We only move the LSN forward during replication.
+		 * During recovery we could obsucre an update from
+		 * a partially completed transaction while processing
+		 * a hot backup.  [#13823]
+		 */
+		if (op == DB_TXN_APPLY)
+			LSN(pagep) = *lsnp;
 		modified = 1;
 	}
 	if ((ret = __qam_fput(file_dbp,
@@ -580,7 +612,14 @@ __qam_add_recover(dbenv, dbtp, lsnp, op, info)
 			if ((ret = __qam_pitem(dbc,
 			    pagep, argp->indx, argp->recno, &argp->data)) != 0)
 				goto err;
-			LSN(pagep) = *lsnp;
+			/*
+			 * We only move the LSN forward during replication.
+			 * During recovery we could obsucre an update from
+			 * a partially completed transaction while processing
+			 * a hot backup.  [#13823]
+			 */
+			if (op == DB_TXN_APPLY)
+				LSN(pagep) = *lsnp;
 			modified = 1;
 		}
 	} else if (DB_UNDO(op)) {

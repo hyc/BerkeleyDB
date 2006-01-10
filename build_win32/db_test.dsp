@@ -21,10 +21,10 @@ CFG=db_test - Win32 Debug
 !MESSAGE "db_test - Win32 Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "db_test - Win32 ASCII Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "db_test - Win32 ASCII Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "db_test - Win64 Debug AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "db_test - Win64 Release AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "db_test - Win64 Debug IA64" (based on "Win32 (x86) Console Application")
-!MESSAGE "db_test - Win64 Release IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "db_test - x64 Debug AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "db_test - x64 Release AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "db_test - x64 Debug IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "db_test - x64 Release IA64" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -55,8 +55,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release"
+# ADD BASE LINK32 /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 libdb44.lib /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
@@ -84,8 +84,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug"
+# ADD BASE LINK32 /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 libdb44d.lib /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
@@ -114,8 +114,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no
-# ADD LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_ASCII"
+# ADD BASE LINK32 libdb44d.lib /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no
+# ADD LINK32 libdb44d.lib /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_ASCII"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
@@ -144,15 +144,15 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt"
-# ADD LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release_ASCII"
+# ADD BASE LINK32 libdb44.lib /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt"
+# ADD LINK32 libdb44.lib /out:"dbkill.exe" kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release_ASCII"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
 PostBuild_Cmds=copy $(OUTDIR)\*.exe .
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "db_test - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "db_test - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -174,15 +174,15 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no
-# ADD LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_AMD64"
+# ADD BASE LINK32 libdb44d.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no
+# ADD LINK32 libdb44d.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_AMD64"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
 PostBuild_Cmds=copy $(OUTDIR)\*.exe .
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "db_test - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "db_test - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -204,15 +204,15 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt"
-# ADD LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt" /libpath:"Release_AMD64"
+# ADD BASE LINK32 libdb44.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt"
+# ADD LINK32 libdb44.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt" /libpath:"Release_AMD64"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
 PostBuild_Cmds=copy $(OUTDIR)\*.exe .
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "db_test - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "db_test - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -234,15 +234,15 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no
-# ADD LINK32 libdb44d.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_IA64"
+# ADD BASE LINK32 libdb44d.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no
+# ADD LINK32 libdb44d.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_IA64"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
 PostBuild_Cmds=copy $(OUTDIR)\*.exe .
 # End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "db_test - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "db_test - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -264,8 +264,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt"
-# ADD LINK32 libdb44.lib /out:"$(OUTDIR)/dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt" /libpath:"Release_IA64"
+# ADD BASE LINK32 libdb44.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt"
+# ADD LINK32 libdb44.lib /out:"dbkill.exe" bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt" /libpath:"Release_IA64"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy built executable files.
@@ -280,10 +280,10 @@ PostBuild_Cmds=copy $(OUTDIR)\*.exe .
 # Name "db_test - Win32 Debug"
 # Name "db_test - Win32 ASCII Debug"
 # Name "db_test - Win32 ASCII Release"
-# Name "db_test - Win64 Debug AMD64"
-# Name "db_test - Win64 Release AMD64"
-# Name "db_test - Win64 Debug IA64"
-# Name "db_test - Win64 Release IA64"
+# Name "db_test - x64 Debug AMD64"
+# Name "db_test - x64 Release AMD64"
+# Name "db_test - x64 Debug IA64"
+# Name "db_test - x64 Release IA64"
 # Begin Source File
 
 SOURCE=.\dbkill.cpp

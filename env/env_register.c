@@ -167,7 +167,8 @@ err:		*need_recoveryp = 0;
 		 * !!!
 		 * Closing the file handle must release all of our locks.
 		 */
-		(void)__os_closehandle(dbenv, dbenv->registry);
+		if (dbenv->registry != NULL)
+			(void)__os_closehandle(dbenv, dbenv->registry);
 		dbenv->registry = NULL;
 	}
 
@@ -217,9 +218,9 @@ __envreg_add(dbenv, need_recoveryp)
 		if (nr != PID_LEN)
 			goto corrupt;
 
-		if (FLD_ISSET(
-		    dbenv->verbose, DB_VERB_REGISTER) && PID_ISEMPTY(buf)) {
-			__db_msg(dbenv, "%02u: EMPTY", lcnt);
+		if (PID_ISEMPTY(buf)) {
+			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
+				__db_msg(dbenv, "%02u: EMPTY", lcnt);
 			continue;
 		}
 

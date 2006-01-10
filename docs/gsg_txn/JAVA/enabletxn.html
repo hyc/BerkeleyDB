@@ -6,8 +6,8 @@
     <title>Chapter 2. Enabling Transactions</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
+    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="previous" href="perftune-intro.html" title="Performance Tuning" />
     <link rel="next" href="envopen.html" title="Opening a Transactional Environment and&#10;            Database&#10;            &#10;        " />
   </head>
@@ -107,7 +107,7 @@
                 the logging subsystem is also initialized. Also, note that
                 if you do not initialize transactions when you first create
                 your environment, then you cannot use transactions for that
-                environment after that. This is because DB
+                environment after that. This is because JE
                 allocates certain structures needed for transactional
                 locking that are not available if the environment is
                 created without transactional support.
@@ -153,9 +153,13 @@
             </span>
 
             
+            
+            
 
+             <span>
              Note that the common practice is for auto commit to be used to transaction-protect the
              database open.
+             </span>
         </p>
           </li>
         </ul>
@@ -170,7 +174,7 @@
           <div></div>
         </div>
         <p>
-        For simple DB applications, environments are optional. However, in
+        For simple JE applications, environments are optional. However, in
         order to transaction protect your database operations, you must use an
         environment.
     </p>
@@ -185,17 +189,18 @@
         of control had to manage these resources on its own.
     </p>
         <p>
-        By default all DB databases are backed by files on disk.  In
-        addition to these files, transactional DB applications create
+        By default all JE databases are backed by files on disk.  In
+        addition to these files, transactional JE applications create
         logs that are also by default stored on disk (they can optionally
         be backed using shared memory). Finally, transactional
-        DB applications also create and use shared-memory regions that
+        JE applications also create and use shared-memory regions that
         are also typically backed by the filesystem. But like databases and
         logs, the regions can be maintained strictly in-memory if your
         application requires it. For an example of an application that
         manages all environment files in-memory, see
             
             <span><a href="inmem_txnexample_java.html">In-Memory Transaction Example</a>.</span>
+            
     </p>
         <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
@@ -207,9 +212,9 @@
             <div></div>
           </div>
           <p>
-            In order to operate, your DB application must be able to
+            In order to operate, your JE application must be able to
             locate its database files, log files, and region files. If these
-            are stored in the filesystem, then you must tell DB where
+            are stored in the filesystem, then you must tell JE where
             they are located (a number of mechanisms exist that allow you to
             identify the location of these files &#8211; see below). Otherwise, 
             by default they are located in the current working directory.
@@ -225,7 +230,7 @@
             </div>
             <p>
                 The environment home directory is used to determine where
-                DB files are located.  Its location
+                JE files are located.  Its location
                 is identified using one of the following mechanisms, in the
                 following order of priority:
             </p>
@@ -286,7 +291,7 @@
               <div></div>
             </div>
             <p>
-                By default, all DB files are created relative to the environment
+                By default, all JE files are created relative to the environment
                 home directory. For example, suppose your environment home is in 
                     <tt class="literal">/export/myAppHome</tt>. Also suppose you name your database 
                     <span><tt class="literal">data/myDatabase.db</tt>.</span>
@@ -296,7 +301,7 @@
                     
             </p>
             <p>
-            That said, DB always defers to absolute pathnames.
+            That said, JE always defers to absolute pathnames.
             This means that if you provide an absolute filename when you 
             name your database, then that file is <span class="emphasis"><em>not</em></span>
             placed relative to the environment home directory. Instead, it
@@ -343,7 +348,7 @@
               <div></div>
             </div>
             <p>
-                As described in the previous sections, DB will place all its
+                As described in the previous sections, JE will place all its
                 files in or relative to the environment home directory.
                 You can also cause a
                 specific database file to be placed in a particular location by
@@ -361,7 +366,7 @@
                 chance of surviving a disk failure.
             </p>
             <p>
-                You can cause DB's files to be placed in specific
+                You can cause JE's files to be placed in specific
                 locations using the following mechanisms:
             </p>
             <div class="informaltable">
@@ -508,7 +513,7 @@
                 Sets the
                     
                     <span>Java <tt class="classname">OutputStream</tt></span>
-                to be used for displaying error messages issued by the DB library.
+                to be used for displaying error messages issued by the JE library.
             </p>
               </li>
               <li>
@@ -518,7 +523,7 @@
             </p>
                 <p>
                 Defines the message handler that is called when an error message is
-                issued by DB. The error prefix and message are passed to
+                issued by JE. The error prefix and message are passed to
                 this callback. It is up to the application to display this
                 information correctly.
             </p>
@@ -535,7 +540,7 @@
             </p>
                 <p>
                 Sets the prefix used to for any error messages issued by the
-                DB library.
+                JE library.
             </p>
               </li>
             </ul>
@@ -564,10 +569,10 @@
           <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
             <h3 class="title">Note</h3>
             <p>
-                When DB dynamically obtains memory, it uses memory outside of the JVM. Normally the amount of memory
-                that DB obtains is trivial, a few bytes here and there, so you might not notice it. However, if 
+                When JE dynamically obtains memory, it uses memory outside of the JVM. Normally the amount of memory
+                that JE obtains is trivial, a few bytes here and there, so you might not notice it. However, if 
                 heap or system memory is used to back your region files, then this can represent a significant amount of
-                memory being used by DB above and beyond the memory required by the JCM process. As a result, the
+                memory being used by JE above and beyond the memory required by the JCM process. As a result, the
                 JVM process may appear to be using more memory than you told the process it could use.
             </p>
           </div>
@@ -630,7 +635,6 @@
                 <a href="inmem_txnexample_java.html">In-Memory Transaction Example</a>.)
                 </span>
                 
-                
         </p>
           </div>
           <div class="sect3" lang="en" xml:lang="en">
@@ -654,10 +658,10 @@
                 </span>
         </p>
             <p>
-            When region files are backed by system memory, DB creates a
+            When region files are backed by system memory, JE creates a
             single  file in the environment's home directory. This file
             contains information necessary to identify the system shared
-            memory in use by the environment. By creating this file, DB
+            memory in use by the environment. By creating this file, JE
             enables multiple processes to share the environment.
         </p>
             <p>
@@ -738,7 +742,7 @@
                     </span>
 
                     so that environment variables can be used during file naming
-                    can be dangerous. Setting those flags in DB
+                    can be dangerous. Setting those flags in JE
                     applications with additional permissions (for example, UNIX
                     <tt class="literal">setuid</tt> or <tt class="literal">setgid</tt> 
                     applications) could potentially allow users
@@ -746,7 +750,7 @@
                     have access.
                 </p>
                 <p>
-                    For example, suppose you write a DB application
+                    For example, suppose you write a JE application
                     that runs <tt class="literal">setuid</tt>. This means that
                     when the application runs, it does so under a
                     userid different than that of the application's caller.
@@ -803,14 +807,14 @@
                     File permissions
                 </p>
                 <p>
-                    By default, DB always creates database and log files readable and
+                    By default, JE always creates database and log files readable and
                     writable by the owner and the group (that is,
                     <tt class="literal">S_IRUSR</tt>,
                     <tt class="literal">S_IWUSR</tt>, <tt class="literal">S_IRGRP</tt> and
                     <tt class="literal">S_IWGRP</tt>; or octal mode 0660 on historic
                     UNIX systems). The group ownership of created files is based
                     on the system and directory defaults, and is not further
-                    specified by DB.
+                    specified by JE.
                 </p>
               </li>
               <li>

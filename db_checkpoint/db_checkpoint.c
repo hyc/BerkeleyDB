@@ -157,9 +157,16 @@ main(argc, argv)
 		dbenv->err(dbenv, ret, "set_passwd");
 		goto shutdown;
 	}
-	/* Initialize the environment. */
-	if ((ret = dbenv->open(dbenv, home, DB_USE_ENVIRON, 0)) != 0) {
-		dbenv->err(dbenv, ret, "open");
+
+	/*
+	 * If attaching to a pre-existing environment fails, create a
+	 * private one and try again.
+	 */
+	if ((ret = dbenv->open(dbenv, home, DB_USE_ENVIRON, 0)) != 0 &&
+	    (!once || ret == DB_VERSION_MISMATCH ||
+	    (ret = dbenv->open(dbenv, home,
+	    DB_CREATE | DB_INIT_TXN | DB_PRIVATE | DB_USE_ENVIRON, 0)) != 0)) {
+		dbenv->err(dbenv, ret, "DB_ENV->open");
 		goto shutdown;
 	}
 

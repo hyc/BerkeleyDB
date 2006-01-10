@@ -550,11 +550,11 @@ next:	/*
 	}
 
 	/* Release the page so we don't deadlock getting its parent. */
-	BT_STK_CLR(cp);
 	if ((ret = __LPUT(dbc, cp->csp->lock)) != 0)
 		goto err;
 	if ((ret = __memp_fput(dbmp, pg, 0)) != 0)
 		goto err;
+	BT_STK_CLR(cp);
 	pg = NULL;
 
 	/*

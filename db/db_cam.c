@@ -798,8 +798,13 @@ done:	/*
 		ret = dbc_n->c_am_bulk(dbc_n, data, flags | multi);
 	} else if (!F_ISSET(data, DB_DBT_ISSET)) {
 		dbc = opd != NULL ? opd : cp_n->opd != NULL ? cp_n->opd : dbc_n;
-		type = TYPE(dbc->internal->page);
-		ret = __db_ret(dbp, dbc->internal->page, dbc->internal->indx +
+		cp = dbc->internal;
+		if (cp->page == NULL && (ret =
+		    __memp_fget(mpf, &cp->pgno, 0, &cp->page)) != 0)
+			goto err;
+
+		type = TYPE(cp->page);
+		ret = __db_ret(dbp, cp->page, cp->indx +
 		    (type == P_LBTREE || type == P_HASH ? O_INDX : 0),
 		    data, &dbc_arg->rdata->data, &dbc_arg->rdata->ulen);
 	}
@@ -829,14 +834,15 @@ err:	/* Don't pass DB_DBT_ISSET back to application level, error or no. */
 
 	}
 
-	if ((t_ret = __db_c_cleanup(dbc_arg, dbc_n, ret)) != 0 && ret == 0)
-		ret = t_ret;
-
 	if (key_small) {
 		data->ulen = orig_ulen;
 		if (ret == 0)
 			ret = DB_BUFFER_SMALL;
 	}
+
+	if ((t_ret = __db_c_cleanup(dbc_arg, dbc_n, ret)) != 0 &&
+	    (ret == 0 || ret == DB_BUFFER_SMALL))
+		ret = t_ret;
 
 	if (flags == DB_CONSUME || flags == DB_CONSUME_WAIT)
 		CDB_LOCKING_DONE(dbp, dbc_arg);

@@ -6,7 +6,7 @@
     <title>Isolation</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="previous" href="lockingsubsystem.html" title="The Locking Subsystem" />
     <link rel="next" href="txn_ccursor.html" title="Transactional Cursors and Concurrent Applications" />
@@ -61,8 +61,7 @@
           <div></div>
         </div>
         <p>
-                Sleepycat supports the 4 ANSI levels of
-                isolation. They are:
+                Sleepycat supports the following levels of isolation:
             </p>
         <div class="informaltable">
           <table border="1" width="80%">
@@ -80,7 +79,7 @@
             </thead>
             <tbody>
               <tr>
-                <td>(Undefined)</td>
+                <td>1</td>
                 <td>READ UNCOMMITTED</td>
                 <td>
                     Uncommitted reads means that one transaction will never
@@ -134,7 +133,7 @@
                         search criteria was previously used.
                     </p>
                   <p>
-                        This is DB's default isolation guarantee.
+                        This is JE's default isolation guarantee.
                     </p>
                 </td>
               </tr>
@@ -143,18 +142,18 @@
         </div>
         <p>
 
-    By default, DB transactions and transactional cursors offer 
+    By default, JE transactions and transactional cursors offer 
     <span>
         serializable isolation. 
     </span>
     
     
-    You can optionally reduce your isolation level by configuring DB to use
+    You can optionally reduce your isolation level by configuring JE to use
     uncommitted read isolation. See 
         <a href="isolation.html#dirtyreads">Reading Uncommitted Data</a> 
      for more information.
 
-        You can also configure DB to use committed read isolation. See
+        You can also configure JE to use committed read isolation. See
             <a href="isolation.html#readcommitted">Committed Reads</a>
         for more information.
         
@@ -316,7 +315,8 @@ int main(void)
                 throughput because there are fewer read locks being held by your transactions. 
                 Read committed isolation is most useful when you have a cursor that is reading and/or writing records in
                 a single direction, and that does not ever have to go back to re-read those same records. In this case,
-                you can allow DB to release read locks as it goes, rather than hold them for the life of the cursor.
+                you can allow JE to release read locks as it goes, rather than hold them for the life of the
+                transaction.
              </p>
         <p>
                 To configure your application to use committed reads, do one of the following:

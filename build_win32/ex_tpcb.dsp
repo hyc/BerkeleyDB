@@ -21,10 +21,10 @@ CFG=ex_tpcb - Win32 Debug
 !MESSAGE "ex_tpcb - Win32 Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "ex_tpcb - Win32 ASCII Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "ex_tpcb - Win32 ASCII Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_tpcb - Win64 Debug AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_tpcb - Win64 Release AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_tpcb - Win64 Debug IA64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_tpcb - Win64 Release IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_tpcb - x64 Debug AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_tpcb - x64 Release AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_tpcb - x64 Debug IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_tpcb - x64 Release IA64" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -132,7 +132,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt"
 # ADD LINK32 libdb44.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release_ASCII"
 
-!ELSEIF  "$(CFG)" == "ex_tpcb - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "ex_tpcb - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -157,7 +157,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no
 # ADD LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_AMD64"
 
-!ELSEIF  "$(CFG)" == "ex_tpcb - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "ex_tpcb - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -182,7 +182,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt"
 # ADD LINK32 libdb44.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt" /libpath:"Release_AMD64"
 
-!ELSEIF  "$(CFG)" == "ex_tpcb - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "ex_tpcb - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -207,7 +207,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no
 # ADD LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_IA64"
 
-!ELSEIF  "$(CFG)" == "ex_tpcb - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "ex_tpcb - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -240,10 +240,10 @@ LINK32=link.exe
 # Name "ex_tpcb - Win32 Debug"
 # Name "ex_tpcb - Win32 ASCII Debug"
 # Name "ex_tpcb - Win32 ASCII Release"
-# Name "ex_tpcb - Win64 Debug AMD64"
-# Name "ex_tpcb - Win64 Release AMD64"
-# Name "ex_tpcb - Win64 Debug IA64"
-# Name "ex_tpcb - Win64 Release IA64"
+# Name "ex_tpcb - x64 Debug AMD64"
+# Name "ex_tpcb - x64 Release AMD64"
+# Name "ex_tpcb - x64 Debug IA64"
+# Name "ex_tpcb - x64 Release IA64"
 # Begin Source File
 
 SOURCE=..\examples_c\ex_tpcb.c

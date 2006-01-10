@@ -115,7 +115,7 @@ do
             ;;
         testutil )
             create_dsp db_test " $module " $TMPA $BUILDDIR/app_dsp.src \
-	        '' '/out:"$(OUTDIR)/dbkill.exe"' '/out:"$(OUTDIR)/dbkill.exe"'
+	        '' '/out:"dbkill.exe"' '/out:"dbkill.exe"'
             ;;
         app=ex_repquote )
             create_dsp ex_repquote " $module " $TMPA \

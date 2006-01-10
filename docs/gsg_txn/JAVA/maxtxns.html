@@ -6,7 +6,7 @@
     <title>Configuring the Transaction Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="usingtxns.html" title="Chapter 3. Transaction Basics" />
     <link rel="previous" href="txnindices.html" title="Secondary Indices with Transaction Applications" />
     <link rel="next" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
@@ -36,11 +36,11 @@
       </div>
       <p>
             Most of the configuration activities that you need to perform
-            for your transactional DB application will involve the
+            for your transactional JE application will involve the
             locking and logging subsystems. See 
             <a href="txnconcurrency.html">Concurrency</a>
             and
-            <a href="filemanagement.html">Managing DB Files</a>
+            <a href="filemanagement.html">Managing JE Files</a>
             for details.
         </p>
       <p>
@@ -92,11 +92,11 @@
                     
                     This value represents the longest period of time a
                     transaction can be active. Note, however, that
-                    transaction timeouts are checked only when DB
+                    transaction timeouts are checked only when JE
                     examines its lock tables for blocked locks
                     (see <a href="blocking_deadlocks.html">Locks, Blocks, and Deadlocks</a>
                     for more information). Therefore, a transaction's timeout can
-                    have expired, but the application will not be notified until DB 
+                    have expired, but the application will not be notified until JE 
                     has a reason to examine its lock tables.
                 </p>
                 <p>

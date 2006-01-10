@@ -21,10 +21,10 @@ CFG=excxx_txnguide - Win32 Debug
 !MESSAGE "excxx_txnguide - Win32 Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "excxx_txnguide - Win32 ASCII Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "excxx_txnguide - Win32 ASCII Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "excxx_txnguide - Win64 Debug AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "excxx_txnguide - Win64 Release AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "excxx_txnguide - Win64 Debug IA64" (based on "Win32 (x86) Console Application")
-!MESSAGE "excxx_txnguide - Win64 Release IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "excxx_txnguide - x64 Debug AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "excxx_txnguide - x64 Release AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "excxx_txnguide - x64 Debug IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "excxx_txnguide - x64 Release IA64" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -132,7 +132,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt"
 # ADD LINK32 libdb44.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release_ASCII"
 
-!ELSEIF  "$(CFG)" == "excxx_txnguide - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "excxx_txnguide - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -157,7 +157,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no
 # ADD LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_AMD64"
 
-!ELSEIF  "$(CFG)" == "excxx_txnguide - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "excxx_txnguide - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -182,7 +182,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt"
 # ADD LINK32 libdb44.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt" /libpath:"Release_AMD64"
 
-!ELSEIF  "$(CFG)" == "excxx_txnguide - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "excxx_txnguide - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -207,7 +207,7 @@ LINK32=link.exe
 # ADD BASE LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no
 # ADD LINK32 libdb44d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_IA64"
 
-!ELSEIF  "$(CFG)" == "excxx_txnguide - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "excxx_txnguide - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -240,10 +240,10 @@ LINK32=link.exe
 # Name "excxx_txnguide - Win32 Debug"
 # Name "excxx_txnguide - Win32 ASCII Debug"
 # Name "excxx_txnguide - Win32 ASCII Release"
-# Name "excxx_txnguide - Win64 Debug AMD64"
-# Name "excxx_txnguide - Win64 Release AMD64"
-# Name "excxx_txnguide - Win64 Debug IA64"
-# Name "excxx_txnguide - Win64 Release IA64"
+# Name "excxx_txnguide - x64 Debug AMD64"
+# Name "excxx_txnguide - x64 Release AMD64"
+# Name "excxx_txnguide - x64 Debug IA64"
+# Name "excxx_txnguide - x64 Release IA64"
 # Begin Source File
 
 SOURCE=..\examples_cxx\txn_guide\TxnGuide.cpp

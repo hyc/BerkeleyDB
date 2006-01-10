@@ -21,10 +21,10 @@ CFG=db_java - Win32 Debug
 !MESSAGE "db_java - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "db_java - Win32 ASCII Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "db_java - Win32 ASCII Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_java - Win64 Debug AMD64" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_java - Win64 Release AMD64" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_java - Win64 Debug IA64" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_java - Win64 Release IA64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_java - x64 Debug AMD64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_java - x64 Release AMD64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_java - x64 Debug IA64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_java - x64 Release IA64" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -212,7 +212,7 @@ SOURCE="$(InputPath)"
 	echo Java build finished
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "db_java - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "db_java - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -257,7 +257,7 @@ SOURCE="$(InputPath)"
 	echo Java build finished
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "db_java - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "db_java - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -301,7 +301,7 @@ SOURCE="$(InputPath)"
 	echo Java build finished
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "db_java - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "db_java - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -347,7 +347,7 @@ SOURCE="$(InputPath)"
 	echo Java build finished
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "db_java - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "db_java - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -399,10 +399,10 @@ SOURCE="$(InputPath)"
 # Name "db_java - Win32 Debug"
 # Name "db_java - Win32 ASCII Debug"
 # Name "db_java - Win32 ASCII Release"
-# Name "db_java - Win64 Debug AMD64"
-# Name "db_java - Win64 Release AMD64"
-# Name "db_java - Win64 Debug IA64"
-# Name "db_java - Win64 Release IA64"
+# Name "db_java - x64 Debug AMD64"
+# Name "db_java - x64 Release AMD64"
+# Name "db_java - x64 Debug IA64"
+# Name "db_java - x64 Release IA64"
 # Begin Source File
 
 SOURCE=..\libdb_java\db_java_wrap.c

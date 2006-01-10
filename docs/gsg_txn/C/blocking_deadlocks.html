@@ -6,7 +6,7 @@
     <title>Locks, Blocks, and Deadlocks</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="previous" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="next" href="lockingsubsystem.html" title="The Locking Subsystem" />
@@ -37,12 +37,11 @@
       <p>
             It is important to understand how locking works in a
             concurrent application before continuing with a description of
-            the concurrency mechanisms DB makes available to you.
-            In particular, understanding
-            blocking and deadlocking has important performance implications
+            the concurrency mechanisms JE makes available to you.
+            Blocking and deadlocking have important performance implications
             for your application. Consequently, this section provides a
             fundamental description of these concepts, and how they affect
-            DB operations.
+            JE operations.
         </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -56,7 +55,7 @@
         <p>
                 When one thread of control wants to obtain access to an
                 object, it requests a <span class="emphasis"><em>lock</em></span> for that
-                object. This lock is what allows DB to provide your
+                object. This lock is what allows JE to provide your
                 application with its transactional isolation guarantees by
                 ensuring that:
             </p>
@@ -114,7 +113,7 @@
                         </p>
                 <p>
                             This is the actual data structure that locks
-                            the object. In DB, a locked
+                            the object. In JE, a locked
                             object structure in the lock manager
                             is representative of the object that
                             is locked.
@@ -125,9 +124,9 @@
                             The locked object.
                         </p>
                 <p>
-                            Finally, the thing that your application
-                            actually wants to lock is referred to as the
-                            <span class="emphasis"><em>locked object</em></span>. In a DB
+                            The thing that your application
+                            actually wants to lock.
+                            In a JE
                             application, the locked object is usually a 
                             <span>
                                 database page, which in turn contains
@@ -152,7 +151,7 @@
                 </p>
           <p>
                     The following figure shows a transaction handle,
-                    <tt class="literal">Txn A</tt> that is holding a lock on 
+                    <tt class="literal">Txn A</tt>, that is holding a lock on 
                     database
                     <span>page</span>
                      
@@ -177,7 +176,7 @@
             <div></div>
           </div>
           <p>
-                    DB applications support both exclusive and
+                    JE applications support both exclusive and
                     non-exclusive locks. <span class="emphasis"><em>Exclusive
                     locks</em></span> are granted when a
                     locker wants to write to an object. For this reason,
@@ -274,7 +273,7 @@
                 other thread of control holds a conflicting lock.
                 Once blocked, the thread of control is temporarily unable
                 to make any forward progress until the requested lock is
-                obtained, or the operation requesting the lock is
+                obtained or the operation requesting the lock is
                 abandoned.
             </p>
         <p>
@@ -319,9 +318,9 @@
         <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
           <h3 class="title">Note</h3>
           <p>
-                        The previous description describes DB's default
+                        The previous description describes JE's default
                         behavior when it cannot obtain a lock. It is
-                        possible to configure DB transactions so that
+                        possible to configure JE transactions so that
                         they will not block. Instead, if a lock is
                         unavailable, the application is immediately notified of a
                         deadlock situation. See <a href="txnnowait.html">No Wait on Blocks</a>
@@ -404,7 +403,7 @@
           </div>
           <p>
                         Reducing lock contention is an important part of
-                        performance tuning your concurrent DB
+                        performance tuning your concurrent JE
                         application. Applications that have multiple
                         threads of control obtaining exclusive (write)
                         locks are prone to contention issues. Moreover, as
@@ -507,7 +506,7 @@
           <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
             <h3 class="title">Note</h3>
             <p>
-                        It is possible to configure DB's transactions
+                        It is possible to configure JE's transactions
                         so that they never wait on blocked lock requests.
                         Instead, if they are blocked on a lock request,
                         they will notify the application of a deadlock (see
@@ -561,7 +560,7 @@
                 resolve the deadlock.
 
                 <span>
-                DB's locking subsystem offers a deadlock notification
+                JE's locking subsystem offers a deadlock notification
                 mechanism.  See 
                 <a href="lockingsubsystem.html#configdeadlkdetect">Configuring Deadlock Detection</a>
                 for more information.
@@ -621,7 +620,7 @@
                             Declare a read/modify/write lock for those
                             situations where you are reading a record in
                             preparation of modifying and then writing the
-                            record. Doing this causes DB to give your
+                            record. Doing this causes JE to give your
                             read operation a write lock. This means that no
                             other thread of control can share a read lock
                             (which might cause contention), but it also

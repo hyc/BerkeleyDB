@@ -6,8 +6,8 @@
     <title>Chapter 3. Transaction Basics</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
+    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="previous" href="envopen.html" title="Opening a Transactional Environment and&#10;            Database&#10;            &#10;        " />
     <link rel="next" href="abortresults.html" title="Aborting a Transaction" />
   </head>
@@ -212,7 +212,7 @@ try {
         <p>
             In order to fully understand what is happening when you commit
             a transaction, you must first understand a little about what
-            DB is doing with 
+            JE is doing with 
             
             <span>
             the logging subsystem. 
@@ -223,19 +223,16 @@ try {
             Logging causes all database write operations to be identified in
 
             <span>logs, and by default these
-            logs are</span> backed by files on disk. 
-
-            <span>
-                logs. These logs are used to restore your databases 
+            logs are backed by files on disk.  These logs are used to restore your databases 
             </span>
 
             
                     
             in the event of a system or application failure, so by performing
-            logging, DB ensures the integrity of your data. 
+            logging, JE ensures the integrity of your data. 
         </p>
         <p>
-            Moreover, DB performs <span class="emphasis"><em>write-ahead</em></span>
+            Moreover, JE performs <span class="emphasis"><em>write-ahead</em></span>
             logging. This means that information is written to the logs
             <span class="emphasis"><em>before</em></span> the actual database is changed.
             This means that all write activity performed under the
@@ -389,7 +386,7 @@ try {
                                 
                                 method.
                             </span>
-                         This causes DB to not synchronously force any
+                         This causes JE to not synchronously force any
                             <span>
                                 log 
                             </span>
@@ -407,7 +404,7 @@ try {
                                 logging 
                             </span>
                          data will eventually make it to the filesystem (assuming no
-                         application or OS crashes) as a part of DB's
+                         application or OS crashes) as a part of JE's
                          management of its logging buffers and/or cache.
                          </p>
                 <p>

@@ -21,10 +21,10 @@ CFG=db_dll - Win32 Debug
 !MESSAGE "db_dll - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "db_dll - Win32 ASCII Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "db_dll - Win32 ASCII Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_dll - Win64 Debug AMD64" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_dll - Win64 Release AMD64" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_dll - Win64 Debug IA64" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "db_dll - Win64 Release IA64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_dll - x64 Debug AMD64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_dll - x64 Release AMD64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_dll - x64 Debug IA64" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "db_dll - x64 Release IA64" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -144,7 +144,7 @@ LINK32=link.exe
 # ADD BASE LINK32  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release_ASCII/libdb44.dll"
 # ADD LINK32  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release_ASCII/libdb44.dll" /libpath:"$(OUTDIR)"
 
-!ELSEIF  "$(CFG)" == "db_dll - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "db_dll - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -172,7 +172,7 @@ LINK32=link.exe
 # ADD BASE LINK32  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /debug /machine:AMD64 /out:"Debug_AMD64/libdb44d.dll" /fixed:no
 # ADD LINK32  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /debug /machine:AMD64 /out:"Debug_AMD64/libdb44d.dll" /fixed:no /libpath:"$(OUTDIR)"
 
-!ELSEIF  "$(CFG)" == "db_dll - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "db_dll - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -199,7 +199,7 @@ LINK32=link.exe
 # ADD BASE LINK32  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:AMD64 /out:"Release_AMD64/libdb44.dll"
 # ADD LINK32  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:AMD64 /out:"Release_AMD64/libdb44.dll" /libpath:"$(OUTDIR)"
 
-!ELSEIF  "$(CFG)" == "db_dll - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "db_dll - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -228,7 +228,7 @@ LINK32=link.exe
 # ADD BASE LINK32  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /debug /machine:IA64 /out:"Debug_IA64/libdb44d.dll" /fixed:no
 # ADD LINK32  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /debug /machine:IA64 /out:"Debug_IA64/libdb44d.dll" /fixed:no /libpath:"$(OUTDIR)"
 
-!ELSEIF  "$(CFG)" == "db_dll - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "db_dll - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -263,10 +263,10 @@ LINK32=link.exe
 # Name "db_dll - Win32 Debug"
 # Name "db_dll - Win32 ASCII Debug"
 # Name "db_dll - Win32 ASCII Release"
-# Name "db_dll - Win64 Debug AMD64"
-# Name "db_dll - Win64 Release AMD64"
-# Name "db_dll - Win64 Debug IA64"
-# Name "db_dll - Win64 Release IA64"
+# Name "db_dll - x64 Debug AMD64"
+# Name "db_dll - x64 Release AMD64"
+# Name "db_dll - x64 Debug IA64"
+# Name "db_dll - x64 Release IA64"
 # Begin Source File
 
 SOURCE=..\btree\bt_compact.c

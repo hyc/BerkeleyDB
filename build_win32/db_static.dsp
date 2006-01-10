@@ -21,10 +21,10 @@ CFG=db_static - Win32 Debug
 !MESSAGE "db_static - Win32 Debug" (based on "Win32 (x86) Static Library")
 !MESSAGE "db_static - Win32 ASCII Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "db_static - Win32 ASCII Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_static - Win64 Debug AMD64" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_static - Win64 Release AMD64" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_static - Win64 Debug IA64" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_static - Win64 Release IA64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_static - x64 Debug AMD64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_static - x64 Release AMD64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_static - x64 Debug IA64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_static - x64 Release IA64" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -126,7 +126,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Debug_ASCII/libdb44sd.lib"
 # ADD LIB32 /nologo /out:"Debug_ASCII/libdb44sd.lib"
 
-!ELSEIF  "$(CFG)" == "db_static - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "db_static - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -149,7 +149,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Debug_AMD64/libdb44sd.lib"
 # ADD LIB32 /nologo /out:"Debug_AMD64/libdb44sd.lib"
 
-!ELSEIF  "$(CFG)" == "db_static - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "db_static - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -172,7 +172,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Release_AMD64/libdb44s.lib"
 # ADD LIB32 /nologo /out:"Release_AMD64/libdb44s.lib"
 
-!ELSEIF  "$(CFG)" == "db_static - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "db_static - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -195,7 +195,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Debug_IA64/libdb44sd.lib"
 # ADD LIB32 /nologo /out:"Debug_IA64/libdb44sd.lib"
 
-!ELSEIF  "$(CFG)" == "db_static - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "db_static - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -226,10 +226,10 @@ LIB32=link.exe -lib
 # Name "db_static - Win32 Debug"
 # Name "db_static - Win32 ASCII Release"
 # Name "db_static - Win32 ASCII Debug"
-# Name "db_static - Win64 Debug AMD64"
-# Name "db_static - Win64 Release AMD64"
-# Name "db_static - Win64 Debug IA64"
-# Name "db_static - Win64 Release IA64"
+# Name "db_static - x64 Debug AMD64"
+# Name "db_static - x64 Release AMD64"
+# Name "db_static - x64 Debug IA64"
+# Name "db_static - x64 Release IA64"
 # Begin Source File
 
 SOURCE=..\btree\bt_compact.c

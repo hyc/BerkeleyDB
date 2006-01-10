@@ -214,8 +214,11 @@ __rep_preclose(dbenv)
 		bulk.type = REP_BULK_LOG;
 		bulk.eid = DB_EID_BROADCAST;
 		bulk.flagsp = &lp->bulk_flags;
-		if ((t_ret = __rep_send_bulk(dbenv, &bulk, 0)) != 0 && ret == 0)
-			ret = t_ret;
+		/*
+		 * Ignore send errors here.  This can be called on the
+		 * env->close path - make a best attempt to send.
+		 */
+		(void)__rep_send_bulk(dbenv, &bulk, 0);
 	}
 	MUTEX_UNLOCK(dbenv, db_rep->region->mtx_clientdb);
 	return (ret);

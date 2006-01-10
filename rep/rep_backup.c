@@ -1180,11 +1180,13 @@ __rep_write_page(dbenv, rep, msgfp)
 {
 	__rep_fileinfo_args *rfp;
 	DB_FH *rfh;
+	DB_REP *db_rep;
 	int ret;
 	void *dst;
 	char *real_name;
 
 	real_name = NULL;
+	db_rep = dbenv->rep_handle;
 	rfp = NULL;
 
 	/*
@@ -1198,6 +1200,9 @@ __rep_write_page(dbenv, rep, msgfp)
 	 */
 	rfp = rep->curinfo;
 	if (rep->file_mpf == NULL) {
+		if ((ret = __dbreg_close_files(dbenv)) != 0)
+			goto err;
+		F_CLR(db_rep, DBREP_OPENFILES);
 		if (!F_ISSET(rfp, DB_AM_INMEM)) {
 			if ((ret = __db_appname(dbenv, DB_APP_DATA,
 			    rfp->info.data, 0, NULL, &real_name)) != 0)

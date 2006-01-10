@@ -188,7 +188,7 @@ POSIX systems generally disallow sending signals to unrelated processes.
 The trick to monitoring unrelated processes is to find a system resource
 held by the process that will be modified if the process dies.  On POSIX
 systems, flock- or fcntl-style locking will work, as will LockFile on
-Win32 systems.  Other systems may have to use other process-related
+Windows systems.  Other systems may have to use other process-related
 information such as file reference counts or modification times.  In the
 worst case, threads of control can be required to periodically
 re-register with the watcher process: if the watcher has not heard from

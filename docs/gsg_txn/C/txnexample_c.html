@@ -6,7 +6,7 @@
     <title>Transaction Example</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="wrapup.html" title="Chapter 6. Summary and Examples" />
     <link rel="previous" href="wrapup.html" title="Chapter 6. Summary and Examples" />
     <link rel="next" href="inmem_txnexample_c.html" title="In-Memory Transaction Example" />
@@ -35,8 +35,8 @@
         <div></div>
       </div>
       <p>
-        The following C code provides a fully functional example of a
-        multi-threaded transactional DB application. For improved
+        The following code provides a fully functional example of a
+        multi-threaded transactional JE application. For improved
         portability across platforms, this examples uses pthreads to
         provide threading support.
     </p>
@@ -63,8 +63,7 @@
         when the environment is opened.
     </p>
       <p>
-        To begin, we start with our normal <tt class="literal">include</tt>
-        directives:
+        We start with our normal <tt class="literal">include</tt> directives:
     </p>
       <pre class="programlisting">/* File: txn_guide.c */
 
@@ -118,7 +117,7 @@ usage()
     With that, we have finished up our program's housekeeping, and we can
     now move on to the main part of our program. As usual, we begin with
     <tt class="function">main()</tt>. First we declare all our variables, and
-    then we initialize our DB handles.
+    then we initialize our JE handles.
 </p>
       <pre class="programlisting">int
 main(int argc, char *argv[])
@@ -198,7 +197,7 @@ main(int argc, char *argv[])
       DB_INIT_MPOOL |  /* Initialize the memory pool (in-memory cache) */
       DB_THREAD;       /* Cause the environment to be free-threaded */  </pre>
       <p>
-    Now we configure how we want deadlock detection performed. In our case, we will cause DB to perform deadlock
+    Now we configure how we want deadlock detection performed. In our case, we will cause JE to perform deadlock
     detection by walking its internal lock tables looking for a block every time a lock is requested.  Further, in the
     event of a deadlock, the thread that holds the youngest lock will receive the deadlock notification.
  </p>
@@ -215,7 +214,7 @@ main(int argc, char *argv[])
             example.
         </p>
       </div>
-      <pre class="programlisting">     /*
+      <pre class="programlisting">    /*
      * Indicate that we want db to perform lock detection internally.
      * Also indicate that the transaction with the fewest number of
      * write locks will receive the deadlock notification in 
@@ -264,7 +263,7 @@ main(int argc, char *argv[])
       <p>
         Now we create our threads. In this example we are using pthreads
         for our threading package. A description of threading (beyond how
-        it impacts DB usage) is beyond the scope of this manual. 
+        it impacts JE usage) is beyond the scope of this manual. 
         However, the things that we are doing here should be familiar to
         anyone who has prior experience with any threading package. We are
         simply initializing a mutex, creating our threads, and then joining
@@ -285,7 +284,7 @@ main(int argc, char *argv[])
         (void)pthread_join(writer_threads[i], NULL);  </pre>
       <p>
         Finally, to wrap up <tt class="function">main()</tt>, we close out our
-        database and environment handle, as is normal for any DB
+        database and environment handle, as is normal for any JE
         application. Notice that this is where our <tt class="literal">err</tt>
         label is placed in our application. If any database operation prior
         to this point in the program returns an error status, the program
@@ -678,7 +677,7 @@ cursor_err:
         function would cause our
         thread to self-deadlock because the cursor could not be opened to
         support uncommitted reads (that flag on the cursor open would, in fact, 
-        be silently ignored by DB).
+        be silently ignored by JE).
     </p>
       <pre class="programlisting">/* Open a Berkeley DB database */
 int
@@ -731,7 +730,7 @@ open_db(DB **dbpp, const char *progname, const char *file_name,
       <p>
     This completes our transactional example. If you would like to
     experiment with this code, you can find the example in the following
-    location in your DB distribution:
+    location in your JE distribution:
 </p>
       <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/txn_guide</pre>
     </div>

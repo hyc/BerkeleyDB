@@ -6,7 +6,7 @@
     <title>Auto Commit</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB, Java Edition" />
     <link rel="up" href="usingtxns.html" title="Chapter 3. Transaction Basics" />
     <link rel="previous" href="abortresults.html" title="Aborting a Transaction" />
     <link rel="next" href="nestedtxn.html" title="Nested Transactions" />
@@ -35,8 +35,8 @@
         <div></div>
       </div>
       <p>
-            While transactions are frequently used to perform atomicity for
-            multiple database operations, it is frequently necessary to perform
+            While transactions are frequently used to provide atomicity to
+            multiple database operations, it is sometimes necessary to perform
             a single database operation under the control of a transaction.
             Rather than force you to obtain a transaction, perform the single 
             write operation, and then either commit or abort the transaction,
@@ -51,19 +51,23 @@
           <li>
             <p>
                     Open your environment and your databases so that they support
-                    transactions. (Note that frequently  auto commit is used for
-                    the database open). See 
-                    <a href="enabletxn.html">Enabling Transactions</a> 
+                    transactions.  See <a href="enabletxn.html">Enabling Transactions</a> 
                     for details.
                 </p>
-          </li>
-          <li>
             <p>
-                    To use auto commit for your database open, specify 
+                    Note that frequently auto commit is used for the environment
+                    or database open.  To use auto commit for either your
+                    environment or database open, specify 
                     <tt class="literal">DB_AUTO_COMMIT</tt> to the 
-                    <span>DB-&gt;open()</span>
+
+                    <tt class="methodname">DB_ENV-&gt;set_flags()</tt>
                     
-                    method performing the database modification.
+                    or
+                    <tt class="methodname">DB-&gt;open()</tt>
+                    
+                    method. If you specify auto commit for the environment
+                    open, then you do not need to also specify auto commit
+                    for the database open.
                 </p>
           </li>
           <li>
