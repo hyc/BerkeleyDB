@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998-2005
+ * Copyright (c) 1998-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_join.h,v 12.2 2005/06/16 20:21:47 bostic Exp $
+ * $Id: db_join.h,v 12.3 2006/01/02 22:01:49 bostic Exp $
  */
 
 #ifndef _DB_JOIN_H_

@@ -1,21 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_fput.c,v 12.7 2005/10/07 20:21:33 ubell Exp $
+ * $Id: mp_fput.c,v 12.14 2006/05/05 14:53:40 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#endif
-
 #include "db_int.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/log.h"
 #include "dbinc/mp.h"
 
@@ -63,18 +57,20 @@ __memp_fput(dbmfp, pgaddr, flags)
 	void *pgaddr;
 	u_int32_t flags;
 {
-	BH *fbhp, *bhp, *prev;
 	DB_ENV *dbenv;
 	DB_MPOOL *dbmp;
 	DB_MPOOL_HASH *hp;
 	MPOOL *c_mp;
 	MPOOLFILE *mfp;
+	BH *bhp;
 	u_int32_t n_cache;
 	int adjust, ret, t_ret;
 
 	dbenv = dbmfp->dbenv;
 	MPF_ILLEGAL_BEFORE_OPEN(dbmfp, "DB_MPOOLFILE->put");
 	dbmp = dbenv->mp_handle;
+	mfp = dbmfp->mfp;
+	bhp = (BH *)((u_int8_t *)pgaddr - SSZA(BH, buf));
 	ret = 0;
 
 	/*
@@ -86,21 +82,10 @@ __memp_fput(dbmfp, pgaddr, flags)
 	 */
 	if (flags) {
 		if (__db_fchk(dbenv, "memp_fput", flags,
-		    DB_MPOOL_CLEAN | DB_MPOOL_DIRTY | DB_MPOOL_DISCARD) != 0 ||
-		    __db_fcchk(dbenv, "memp_fput", flags,
-		    DB_MPOOL_CLEAN, DB_MPOOL_DIRTY) != 0) {
-			flags = DB_MPOOL_DIRTY;
-			ret = EINVAL;
-			DB_ASSERT(0);
-		}
-
-		if (LF_ISSET(DB_MPOOL_DIRTY) && F_ISSET(dbmfp, MP_READONLY)) {
-			__db_err(dbenv,
-			    "%s: dirty flag set for readonly file page",
-			    __memp_fn(dbmfp));
+		    DB_MPOOL_CLEAN | DB_MPOOL_DISCARD) != 0) {
 			flags = 0;
 			ret = EINVAL;
-			DB_ASSERT(0);
+			DB_ASSERT(dbenv, 0);
 		}
 	}
 
@@ -122,8 +107,9 @@ __memp_fput(dbmfp, pgaddr, flags)
 	MPOOL_SYSTEM_LOCK(dbenv);
 	if (dbmfp->pinref == 0) {
 		MPOOL_SYSTEM_UNLOCK(dbenv);
-		__db_err(dbenv,
+		__db_errx(dbenv,
 		    "%s: more pages returned than retrieved", __memp_fn(dbmfp));
+		DB_ASSERT(dbenv, 0);
 		return (__db_panic(dbenv, EACCES));
 	}
 	--dbmfp->pinref;
@@ -131,7 +117,6 @@ __memp_fput(dbmfp, pgaddr, flags)
 #endif
 
 	/* Convert a page address to a buffer header and hash bucket. */
-	bhp = (BH *)((u_int8_t *)pgaddr - SSZA(BH, buf));
 	n_cache = NCACHE(dbmp->reginfo[0].primary, bhp->mf_offset, bhp->pgno);
 	c_mp = dbmp->reginfo[n_cache].primary;
 	hp = R_ADDR(&dbmp->reginfo[n_cache], c_mp->htab);
@@ -142,13 +127,9 @@ __memp_fput(dbmfp, pgaddr, flags)
 	/* Set/clear the page bits. */
 	if (LF_ISSET(DB_MPOOL_CLEAN) &&
 	    F_ISSET(bhp, BH_DIRTY) && !F_ISSET(bhp, BH_DIRTY_CREATE)) {
-		DB_ASSERT(hp->hash_page_dirty != 0);
+		DB_ASSERT(dbenv, hp->hash_page_dirty != 0);
 		--hp->hash_page_dirty;
 		F_CLR(bhp, BH_DIRTY);
-	}
-	if (LF_ISSET(DB_MPOOL_DIRTY) && !F_ISSET(bhp, BH_DIRTY)) {
-		++hp->hash_page_dirty;
-		F_SET(bhp, BH_DIRTY);
 	}
 	if (LF_ISSET(DB_MPOOL_DISCARD))
 		F_SET(bhp, BH_DISCARD);
@@ -159,7 +140,7 @@ __memp_fput(dbmfp, pgaddr, flags)
 	 */
 	if (bhp->ref == 0) {
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
-		__db_err(dbenv, "%s: page %lu: unpinned page returned",
+		__db_errx(dbenv, "%s: page %lu: unpinned page returned",
 		    __memp_fn(dbmfp), (u_long)bhp->pgno);
 		return (__db_panic(dbenv, EACCES));
 	}
@@ -172,8 +153,7 @@ __memp_fput(dbmfp, pgaddr, flags)
 	 * as the dirty flag because the buffer might have been marked dirty
 	 * in the DB_MPOOLFILE->set method.
 	 */
-	mfp = dbmfp->mfp;
-	if (LF_ISSET(DB_MPOOL_DIRTY) || F_ISSET(bhp, BH_DIRTY))
+	if (F_ISSET(bhp, BH_DIRTY))
 		mfp->file_written = 1;
 
 	/*
@@ -186,10 +166,13 @@ __memp_fput(dbmfp, pgaddr, flags)
 		return (0);
 	}
 
+	/* The buffer should not be accessed again. */
+	MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, 0);
+
 	/* Update priority values. */
-	if (F_ISSET(bhp, BH_DISCARD) || mfp->priority == MPOOL_PRI_VERY_LOW)
+	if (F_ISSET(bhp, BH_DISCARD) || mfp->priority == MPOOL_PRI_VERY_LOW) {
 		bhp->priority = 0;
-	else {
+	} else {
 		/*
 		 * We don't lock the LRU counter or the stat.st_pages field, if
 		 * we get garbage (which won't happen on a 32-bit machine), it
@@ -199,8 +182,8 @@ __memp_fput(dbmfp, pgaddr, flags)
 
 		adjust = 0;
 		if (mfp->priority != 0)
-			adjust =
-			    (int)c_mp->stat.st_pages / mfp->priority;
+			adjust = (int)c_mp->stat.st_pages / mfp->priority;
+
 		if (F_ISSET(bhp, BH_DIRTY))
 			adjust += c_mp->stat.st_pages / MPOOL_PRI_DIRTY;
 
@@ -212,34 +195,9 @@ __memp_fput(dbmfp, pgaddr, flags)
 				bhp->priority += adjust;
 	}
 
-	/*
-	 * Buffers on hash buckets are sorted by priority -- move the buffer
-	 * to the correct position in the list.
-	 */
-	if ((fbhp =
-	     SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) ==
-	     SH_TAILQ_LAST(&hp->hash_bucket, hq, __bh))
-		goto done;
-
-	if (fbhp == bhp)
-		fbhp = SH_TAILQ_NEXT(fbhp, hq, __bh);
-	SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
-
-	for (prev = NULL; fbhp != NULL;
-	    prev = fbhp, fbhp = SH_TAILQ_NEXT(fbhp, hq, __bh))
-		if (fbhp->priority > bhp->priority)
-			break;
-	if (prev == NULL)
-		SH_TAILQ_INSERT_HEAD(&hp->hash_bucket, bhp, hq, __bh);
-	else
-		SH_TAILQ_INSERT_AFTER(&hp->hash_bucket, prev, bhp, hq, __bh);
-
-done:
-	/* Reset the hash bucket's priority. */
-	hp->hash_priority = SH_TAILQ_FIRSTP(&hp->hash_bucket, __bh)->priority;
-
+	__memp_bucket_reorder(hp, bhp);
 #ifdef DIAGNOSTIC
-	__memp_check_order(hp);
+	__memp_check_order(dbenv, hp);
 #endif
 
 	/*
@@ -302,11 +260,12 @@ __memp_reset_lru(dbenv, infop)
 			continue;
 
 		MUTEX_LOCK(dbenv, hp->mtx_hash);
-		for (bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh);
-		    bhp != NULL; bhp = SH_TAILQ_NEXT(bhp, hq, __bh))
-			if (bhp->priority != UINT32_MAX &&
-			    bhp->priority > MPOOL_BASE_DECREMENT)
-				bhp->priority -= MPOOL_BASE_DECREMENT;
+		SH_TAILQ_FOREACH(bhp, &hp->hash_bucket, hq, __bh)
+			do {
+				if (bhp->priority != UINT32_MAX &&
+				    bhp->priority > MPOOL_BASE_DECREMENT)
+					bhp->priority -= MPOOL_BASE_DECREMENT;
+			} while ((bhp = SH_CHAIN_PREV(bhp, vc, __bh)) != NULL);
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 	}
 

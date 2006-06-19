@@ -1,29 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004-2005
+ * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_log.c,v 12.26 2005/10/12 17:58:39 bostic Exp $
+ * $Id: rep_log.c,v 12.37 2006/06/03 13:51:10 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#if TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#endif
 
 #include "db_int.h"
 #include "dbinc/db_page.h"
@@ -92,9 +76,22 @@ __rep_allreq(dbenv, rp, eid)
 	 * sent all that we have.
 	 */
 	ret = __log_c_get(logc, &repth.lsn, &data_dbt, flags);
+	/*
+	 * If the client is asking for all records
+	 * because it doesn't have any, and our first
+	 * record is not in the first log file, then
+	 * the client is outdated and needs to get a
+	 * VERIFY_FAIL.
+	 */
+	if (ret == 0 && repth.lsn.file != 1 && flags == DB_FIRST) {
+		(void)__rep_send_message(dbenv, eid,
+		    REP_VERIFY_FAIL, &repth.lsn, NULL, 0, 0);
+		goto err;
+	}
 	if (ret == DB_NOTFOUND) {
-		if (F_ISSET(rep, REP_F_MASTER))
+		if (F_ISSET(rep, REP_F_MASTER)) {
 			ret = 0;
+		}
 		goto err;
 	}
 	/*
@@ -105,17 +102,6 @@ __rep_allreq(dbenv, rp, eid)
 	for (;
 	    ret == 0 && repth.type != REP_LOG_MORE;
 	    ret = __log_c_get(logc, &repth.lsn, &data_dbt, DB_NEXT)) {
-		/*
-		 * If the client is asking for all records because it doesn't
-		 * have any, and our first record is not in the first log
-		 * file, then the client is outdated and needs to get a
-		 * VERIFY_FAIL.
-		 */
-		if (repth.lsn.file != 1 && flags == DB_FIRST) {
-			(void)__rep_send_message(dbenv, eid,
-			    REP_VERIFY_FAIL, &repth.lsn, NULL, 0, 0);
-			break;
-		}
 		if (repth.lsn.file != oldfilelsn.file)
 			(void)__rep_send_message(dbenv,
 			    eid, REP_NEWFILE, &oldfilelsn, NULL, 0, 0);
@@ -126,7 +112,7 @@ __rep_allreq(dbenv, rp, eid)
 		 */
 		if (use_bulk)
 			ret = __rep_bulk_message(dbenv, &bulk, &repth,
-			    &repth.lsn, &data_dbt, DB_LOG_RESEND);
+			    &repth.lsn, &data_dbt, REPCTL_RESEND);
 		if (!use_bulk || ret == DB_REP_BULKOVF)
 			ret = __rep_send_throttle(dbenv, eid, &repth, 0);
 		if (ret != 0)
@@ -146,7 +132,7 @@ __rep_allreq(dbenv, rp, eid)
 	 * free it.
 	 */
 	if (use_bulk && (t_ret = __rep_bulk_free(dbenv, &bulk,
-	    DB_LOG_RESEND)) != 0 && ret == 0)
+	    REPCTL_RESEND)) != 0 && ret == 0)
 		ret = t_ret;
 err:
 	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
@@ -189,16 +175,8 @@ __rep_log(dbenv, rp, rec, savetime, ret_lsnp)
 	 * all the log we need to run recovery.  Do so now.
 	 */
 	case DB_REP_LOGREADY:
-		if ((ret = __log_flush(dbenv, NULL)) != 0)
+		if ((ret = __rep_logready(dbenv, rep, savetime)) != 0)
 			goto out;
-		if ((ret = __rep_verify_match(dbenv, &rep->last_lsn,
-		    savetime)) == 0) {
-			REP_SYSTEM_LOCK(dbenv);
-			ZERO_LSN(rep->first_lsn);
-			ZERO_LSN(rep->last_lsn);
-			F_CLR(rep, REP_F_RECOVER_LOG);
-			REP_SYSTEM_UNLOCK(dbenv);
-		}
 		break;
 	/*
 	 * If we get any of the "normal" returns, we only process
@@ -302,16 +280,7 @@ __rep_bulk_log(dbenv, rp, rec, savetime, ret_lsnp)
 	 * all the log we need to run recovery.  Do so now.
 	 */
 	case DB_REP_LOGREADY:
-		if ((ret = __log_flush(dbenv, NULL)) != 0)
-			goto out;
-		if ((ret = __rep_verify_match(dbenv, &rep->last_lsn,
-		    savetime)) == 0) {
-			REP_SYSTEM_LOCK(dbenv);
-			ZERO_LSN(rep->first_lsn);
-			ZERO_LSN(rep->last_lsn);
-			F_CLR(rep, REP_F_RECOVER_LOG);
-			REP_SYSTEM_UNLOCK(dbenv);
-		}
+		ret = __rep_logready(dbenv, rep, savetime);
 		break;
 	/*
 	 * Any other return (errors), we're done.
@@ -319,7 +288,6 @@ __rep_bulk_log(dbenv, rp, rec, savetime, ret_lsnp)
 	default:
 		break;
 	}
-out:
 	return (ret);
 }
 
@@ -359,7 +327,7 @@ __rep_logreq(dbenv, rp, rec, eid)
 	lp = dblp->reginfo.primary;
 
 	if (rec != NULL && rec->size != 0) {
-		RPRINT(dbenv, rep, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv, &mb,
 		    "[%lu][%lu]: LOG_REQ max lsn: [%lu][%lu]",
 		    (u_long) rp->lsn.file, (u_long)rp->lsn.offset,
 		    (u_long)((DB_LSN *)rec->data)->file,
@@ -387,7 +355,7 @@ __rep_logreq(dbenv, rp, rec, eid)
 
 	if (ret == 0) /* Case 1 */
 		(void)__rep_send_message(dbenv,
-		   eid, REP_LOG, &lsn, &data_dbt, DB_LOG_RESEND, 0);
+		   eid, REP_LOG, &lsn, &data_dbt, REPCTL_RESEND, 0);
 	else if (ret == DB_NOTFOUND) {
 		LOG_SYSTEM_LOCK(dbenv);
 		endlsn = lp->lsn;
@@ -407,7 +375,7 @@ __rep_logreq(dbenv, rp, rec, eid)
 			    &endlsn, &data_dbt, DB_SET)) != 0 ||
 			    (ret = __log_c_get(logc,
 				&endlsn, &data_dbt, DB_PREV)) != 0) {
-				RPRINT(dbenv, rep, (dbenv, &mb,
+				RPRINT(dbenv, (dbenv, &mb,
 				    "Unable to get prev of [%lu][%lu]",
 				    (u_long)lsn.file,
 				    (u_long)lsn.offset));
@@ -448,10 +416,10 @@ __rep_logreq(dbenv, rp, rec, eid)
 			 * just return the DB_NOTFOUND.
 			 */
 			if (F_ISSET(rep, REP_F_MASTER)) {
-				__db_err(dbenv,
+				__db_errx(dbenv,
 				    "Request for LSN [%lu][%lu] fails",
 				    (u_long)lsn.file, (u_long)lsn.offset);
-				DB_ASSERT(0);
+				DB_ASSERT(dbenv, 0);
 				ret = EINVAL;
 			}
 		}
@@ -460,10 +428,9 @@ __rep_logreq(dbenv, rp, rec, eid)
 		goto err;
 
 	/*
-	 * If the user requested a gap, send the whole thing,
-	 * while observing the limits from set_rep_limit.
-	 */
-	/*
+	 * If the user requested a gap, send the whole thing, while observing
+	 * the limits from rep_set_limit.
+	 *
 	 * If we're doing bulk transfer, allocate a bulk buffer to put our
 	 * log records in.  We still need to initialize the throttle info
 	 * because if we encounter a log record larger than our entire bulk
@@ -508,7 +475,7 @@ __rep_logreq(dbenv, rp, rec, eid)
 		 */
 		if (use_bulk)
 			ret = __rep_bulk_message(dbenv, &bulk, &repth,
-			    &repth.lsn, &data_dbt, DB_LOG_RESEND);
+			    &repth.lsn, &data_dbt, REPCTL_RESEND);
 		if (!use_bulk || ret == DB_REP_BULKOVF)
 			ret = __rep_send_throttle(dbenv, eid, &repth, 0);
 		if (ret != 0)
@@ -526,7 +493,7 @@ __rep_logreq(dbenv, rp, rec, eid)
 	 * free it.
 	 */
 	if (use_bulk && (t_ret = __rep_bulk_free(dbenv, &bulk,
-	    DB_LOG_RESEND)) != 0 && ret == 0)
+	    REPCTL_RESEND)) != 0 && ret == 0)
 		ret = t_ret;
 err:
 	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
@@ -613,4 +580,37 @@ __rep_loggap_req(dbenv, rep, lsnp, gapflags)
 		    REP_MASTER_REQ, NULL, NULL, 0, 0);
 
 	return (0);
+}
+
+/*
+ * __rep_logready -
+ *	Handle getting back REP_LOGREADY.  Any call to __rep_apply
+ * can return it.
+ *
+ * PUBLIC: int __rep_logready __P((DB_ENV *, REP *, time_t));
+ */
+int
+__rep_logready(dbenv, rep, savetime)
+	DB_ENV *dbenv;
+	REP *rep;
+	time_t savetime;
+{
+	int ret;
+
+	if ((ret = __log_flush(dbenv, NULL)) != 0)
+		goto out;
+	if ((ret = __rep_verify_match(dbenv, &rep->last_lsn,
+	    savetime)) == 0) {
+		REP_SYSTEM_LOCK(dbenv);
+		ZERO_LSN(rep->first_lsn);
+		ZERO_LSN(rep->last_lsn);
+		F_CLR(rep, REP_F_RECOVER_LOG);
+		REP_SYSTEM_UNLOCK(dbenv);
+	} else {
+out:		__db_errx(dbenv,
+	"Client initialization failed.  Need to manually restore client");
+		return (__db_panic(dbenv, ret));
+	}
+	return (ret);
+
 }

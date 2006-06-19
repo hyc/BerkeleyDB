@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: SampleViews.java,v 12.2 2005/06/16 20:22:23 bostic Exp $
+ * $Id: SampleViews.java,v 12.3 2006/01/02 22:02:08 bostic Exp $
  */
 
 package collections.ship.basic;

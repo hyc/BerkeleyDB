@@ -1,5 +1,5 @@
 <!--$Id: elect.so,v 1.22 2005/10/16 00:54:32 bostic Exp $-->
-<!--Copyright 1997-2005 by Sleepycat Software, Inc.-->
+<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -57,7 +57,7 @@ if they are the only possible master, or if they have won an election.
 An application can only know it has won an election if the
 <a href="../../api_c/rep_elect.html">DB_ENV-&gt;rep_elect</a> method returns success and the local database environment's
 ID as the new master environment ID, or if the <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> method
-returns <a href="../../api_c/rep_message.html#DB_REP_NEWMASTER">DB_REP_NEWMASTER</a> and the local database environment's
+returns UNREF==DB_REP_NEWMASTER and the local database environment's
 ID as the new master environment ID.</p>
 <p>To add a database environment to the replication group with the intent
 of it becoming the master, first add it as a client.  Since it may be
@@ -109,6 +109,6 @@ the <a href="../../api_c/rep_elect.html">DB_ENV-&gt;rep_elect</a> method.
 </ol>
 <table width="100%"><tr><td><br></td><td align=right><a href="../rep/newsite.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/mastersync.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
-<p><font size=1><a href="../../sleepycat/legal.html">Copyright (c) 1996-2005</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1><a href="../../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
 </body>
 </html>

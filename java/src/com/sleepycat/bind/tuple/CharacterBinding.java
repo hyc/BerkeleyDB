@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: CharacterBinding.java,v 12.2 2005/08/01 20:25:12 mark Exp $
+ * $Id: CharacterBinding.java,v 12.3 2006/01/02 22:02:28 bostic Exp $
  */
 
 package com.sleepycat.bind.tuple;

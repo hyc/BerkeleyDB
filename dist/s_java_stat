@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_java_stat,v 12.9 2005/11/04 00:09:21 mjc Exp $
+#	$Id: s_java_stat,v 12.11 2006/04/27 13:40:36 mjc Exp $
 #
 # Build the Java files.
 
@@ -8,7 +8,7 @@ msgjava="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  */"
 
@@ -140,7 +140,7 @@ jclass_jni()
 	s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_INT(jnienv, jobj, $1_\1_fid, statp, \1);/p
 }
 EOF
-	echo "static int $fill(JNIEnv *jnienv, " >> $c
+	echo "static int $fill(JNIEnv *jnienv," >> $c
 	echo "    jobject jobj, struct __db_$1 *statp) {" >> $c
 	sed -n -f $s < ../dbinc/db.in >> $c
         echo '	return (0);' >> $c

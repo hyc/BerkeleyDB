@@ -1,31 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: txn_stat.c,v 12.8 2005/10/07 20:21:43 ubell Exp $
+ * $Id: txn_stat.c,v 12.15 2006/05/19 19:25:36 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#if TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#endif
 
 #include "db_int.h"
 #include "dbinc/db_page.h"
@@ -127,6 +109,8 @@ __txn_stat(dbenv, statp, flags)
 		stats->st_txnarray[ndx].pid = td->pid;
 		stats->st_txnarray[ndx].tid = td->tid;
 		stats->st_txnarray[ndx].lsn = td->begin_lsn;
+		stats->st_txnarray[ndx].read_lsn = td->read_lsn;
+		stats->st_txnarray[ndx].mvcc_ref = td->mvcc_ref;
 		if ((stats->st_txnarray[ndx].xa_status = td->xa_status) != 0)
 			memcpy(stats->st_txnarray[ndx].xid,
 			    td->xid, DB_XIDDATASIZE);
@@ -149,6 +133,8 @@ __txn_stat(dbenv, statp, flags)
 		region->stat.st_maxtxns = region->maxtxns;
 		region->stat.st_maxnactive =
 		    region->stat.st_nactive = stats->st_nactive;
+		region->stat.st_maxnsnapshot =
+		    region->stat.st_nsnapshot = stats->st_nsnapshot;
 	}
 
 	TXN_SYSTEM_UNLOCK(dbenv);
@@ -227,7 +213,7 @@ __txn_print_stats(dbenv, flags)
 	DB_TXN_STAT *sp;
 	u_int32_t i;
 	int ret;
-	char buf[DB_THREADID_STRLEN];
+	char buf[DB_THREADID_STRLEN], time_buf[CTIME_BUFLEN];
 
 	if ((ret = __txn_stat(dbenv, &sp, flags)) != 0)
 		return (ret);
@@ -242,7 +228,7 @@ __txn_print_stats(dbenv, flags)
 		__db_msg(dbenv, "0\tNo checkpoint timestamp");
 	else
 		__db_msg(dbenv, "%.24s\tCheckpoint timestamp",
-		    ctime(&sp->st_time_ckp));
+		    __db_ctime(&sp->st_time_ckp, time_buf));
 	__db_msg(dbenv, "%#lx\tLast transaction ID allocated",
 	    (u_long)sp->st_last_txnid);
 	__db_dl(dbenv, "Maximum number of active transactions configured",
@@ -256,6 +242,9 @@ __txn_print_stats(dbenv, flags)
 	    "Number of transactions aborted", (u_long)sp->st_naborts);
 	__db_dl(dbenv,
 	    "Number of transactions committed", (u_long)sp->st_ncommits);
+	__db_dl(dbenv, "Snapshot transactions", (u_long)sp->st_nsnapshot);
+	__db_dl(dbenv, "Maximum snapshot transactions",
+	    (u_long)sp->st_maxnsnapshot);
 	__db_dl(dbenv,
 	    "Number of transactions restored", (u_long)sp->st_nrestores);
 
@@ -281,6 +270,13 @@ __txn_print_stats(dbenv, flags)
 		if (sp->st_txnarray[i].parentid != 0)
 			__db_msgadd(dbenv, &mb, "; parent: %lx",
 			    (u_long)sp->st_txnarray[i].parentid);
+		if (!IS_MAX_LSN(sp->st_txnarray[i].read_lsn))
+			__db_msgadd(dbenv, &mb, "; read LSN: %lu/%lu",
+			    (u_long)sp->st_txnarray[i].read_lsn.file,
+			    (u_long)sp->st_txnarray[i].read_lsn.offset);
+		if (sp->st_txnarray[i].mvcc_ref != 0)
+			__db_msgadd(dbenv, &mb, "; mvcc refcount: %lu",
+			    (u_long)sp->st_txnarray[i].mvcc_ref);
 		if (sp->st_txnarray[i].xa_status != 0)
 			__txn_xid_stats(dbenv, &mb, &sp->st_txnarray[i]);
 		if (sp->st_txnarray[i].name[0] != '\0')
@@ -309,6 +305,7 @@ __txn_print_all(dbenv, flags)
 	};
 	DB_TXNMGR *mgr;
 	DB_TXNREGION *region;
+	char time_buf[CTIME_BUFLEN];
 
 	mgr = dbenv->tx_handle;
 	region = mgr->reginfo.primary;
@@ -336,7 +333,8 @@ __txn_print_all(dbenv, flags)
 	STAT_LSN("Last checkpoint LSN", &region->last_ckp);
 	__db_msg(dbenv,
 	    "%.24s\tLast checkpoint timestamp",
-	    region->time_ckp == 0 ? "0" : ctime(&region->time_ckp));
+	    region->time_ckp == 0 ? "0" :
+	    __db_ctime(&region->time_ckp, time_buf));
 
 	__db_prflags(dbenv, NULL, region->flags, fn, NULL, "\tFlags");
 
@@ -385,7 +383,7 @@ __txn_xid_stats(dbenv, mbp, txn_active)
 		break;
 	default:
 		s = "UNKNOWN STATE";
-		__db_err(dbenv,
+		__db_errx(dbenv,
 		    "XA: unknown state: %lu", (u_long)txn_active->xa_status);
 		break;
 	}

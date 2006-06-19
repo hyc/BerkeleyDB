@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: foputils.tcl,v 12.2 2005/09/28 18:17:03 carol Exp $
+# $Id: foputils.tcl,v 12.3 2006/01/02 22:03:14 bostic Exp $
 #
 proc do_op {omethod op names txn env {largs ""}} {
 	switch -exact $op {

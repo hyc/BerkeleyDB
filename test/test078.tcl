@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2000-2005
+# Copyright (c) 2000-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test078.tcl,v 12.1 2005/06/16 20:24:07 bostic Exp $
+# $Id: test078.tcl,v 12.2 2006/01/02 22:03:28 bostic Exp $
 #
 # TEST	test078
 # TEST	Test of DBC->c_count(). [#303]

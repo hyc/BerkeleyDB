@@ -1,17 +1,11 @@
 /* Do not edit: automatically built by gen_rpc.awk. */
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <rpc/rpc.h>
-
-#include <string.h>
-#endif
-
-#include "db_server.h"
-
 #include "db_int.h"
+#ifndef NO_SYSTEM_INCLUDES
+#include <rpc/rpc.h>
+#endif
+#include "db_server.h"
 #include "dbinc/txn.h"
 #include "dbinc_auto/rpc_client_ext.h"
 
@@ -23,7 +17,7 @@ static int
 __dbcl_noserver(dbenv)
 	DB_ENV *dbenv;
 {
-	__db_err(dbenv, "No Berkeley DB RPC server environment");
+	__db_errx(dbenv, "No Berkeley DB RPC server environment");
 	return (DB_NOSERVER);
 }
 
@@ -37,7 +31,7 @@ int
 __dbcl_dbenv_illegal(dbenv)
 	DB_ENV *dbenv;
 {
-	__db_err(dbenv,
+	__db_errx(dbenv,
 	    "Interface not supported by Berkeley DB RPC client environments");
 	return (DB_OPNOTSUP);
 }
@@ -85,9 +79,9 @@ __dbcl_env_create(dbenv, timeout)
 
 	msg.timeout = timeout;
 
-	replyp = __db_env_create_4004(&msg, cl);
+	replyp = __db_env_create_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -120,9 +114,9 @@ __dbcl_env_close(dbenv, flags)
 	msg.dbenvcl_id = dbenv->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_env_close_4004(&msg, cl);
+	replyp = __db_env_close_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -171,9 +165,9 @@ __dbcl_env_dbremove(dbenv, txnp, name, subdb, flags)
 		msg.subdb = (char *)subdb;
 	msg.flags = flags;
 
-	replyp = __db_env_dbremove_4004(&msg, cl);
+	replyp = __db_env_dbremove_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -227,9 +221,9 @@ __dbcl_env_dbrename(dbenv, txnp, name, subdb, newname, flags)
 		msg.newname = (char *)newname;
 	msg.flags = flags;
 
-	replyp = __db_env_dbrename_4004(&msg, cl);
+	replyp = __db_env_dbrename_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -264,9 +258,9 @@ __dbcl_env_get_cachesize(dbenv, gbytesp, bytesp, ncachep)
 
 	msg.dbenvcl_id = dbenv->cl_id;
 
-	replyp = __db_env_get_cachesize_4004(&msg, cl);
+	replyp = __db_env_get_cachesize_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -304,9 +298,9 @@ __dbcl_env_get_encrypt_flags(dbenv, flagsp)
 
 	msg.dbenvcl_id = dbenv->cl_id;
 
-	replyp = __db_env_get_encrypt_flags_4004(&msg, cl);
+	replyp = __db_env_get_encrypt_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -340,9 +334,9 @@ __dbcl_env_get_flags(dbenv, flagsp)
 
 	msg.dbenvcl_id = dbenv->cl_id;
 
-	replyp = __db_env_get_flags_4004(&msg, cl);
+	replyp = __db_env_get_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -376,9 +370,9 @@ __dbcl_env_get_home(dbenv, homep)
 
 	msg.dbenvcl_id = dbenv->cl_id;
 
-	replyp = __db_env_get_home_4004(&msg, cl);
+	replyp = __db_env_get_home_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -412,9 +406,9 @@ __dbcl_env_get_open_flags(dbenv, flagsp)
 
 	msg.dbenvcl_id = dbenv->cl_id;
 
-	replyp = __db_env_get_open_flags_4004(&msg, cl);
+	replyp = __db_env_get_open_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -456,9 +450,9 @@ __dbcl_env_open(dbenv, home, flags, mode)
 	msg.flags = flags;
 	msg.mode = mode;
 
-	replyp = __db_env_open_4004(&msg, cl);
+	replyp = __db_env_open_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -496,9 +490,9 @@ __dbcl_env_remove(dbenv, home, flags)
 		msg.home = (char *)home;
 	msg.flags = flags;
 
-	replyp = __db_env_remove_4004(&msg, cl);
+	replyp = __db_env_remove_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -536,9 +530,9 @@ __dbcl_env_set_cachesize(dbenv, gbytes, bytes, ncache)
 	msg.bytes = bytes;
 	msg.ncache = ncache;
 
-	replyp = __db_env_set_cachesize_4004(&msg, cl);
+	replyp = __db_env_set_cachesize_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -576,9 +570,9 @@ __dbcl_env_set_encrypt(dbenv, passwd, flags)
 		msg.passwd = (char *)passwd;
 	msg.flags = flags;
 
-	replyp = __db_env_set_encrypt_4004(&msg, cl);
+	replyp = __db_env_set_encrypt_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -613,9 +607,9 @@ __dbcl_env_set_flags(dbenv, flags, onoff)
 	msg.flags = flags;
 	msg.onoff = onoff;
 
-	replyp = __db_env_set_flags_4004(&msg, cl);
+	replyp = __db_env_set_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -655,9 +649,9 @@ __dbcl_env_txn_begin(dbenv, parent, txnpp, flags)
 		msg.parentcl_id = parent->txnid;
 	msg.flags = flags;
 
-	replyp = __db_env_txn_begin_4004(&msg, cl);
+	replyp = __db_env_txn_begin_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -695,9 +689,9 @@ __dbcl_env_txn_recover(dbenv, preplist, count, retp, flags)
 	msg.count = count;
 	msg.flags = flags;
 
-	replyp = __db_env_txn_recover_4004(&msg, cl);
+	replyp = __db_env_txn_recover_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -731,9 +725,9 @@ __dbcl_db_create(dbp, dbenv, flags)
 	msg.dbenvcl_id = dbenv->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_db_create_4004(&msg, cl);
+	replyp = __db_db_create_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -770,7 +764,7 @@ __dbcl_db_associate(dbp, txnp, sdbp, func0, flags)
 	cl = (CLIENT *)dbenv->cl_handle;
 
 	if (func0 != NULL) {
-		__db_err(dbenv, "User functions not supported in RPC");
+		__db_errx(dbenv, "User functions not supported in RPC");
 		return (EINVAL);
 	}
 	if (dbp == NULL)
@@ -787,9 +781,9 @@ __dbcl_db_associate(dbp, txnp, sdbp, func0, flags)
 		msg.sdbpcl_id = sdbp->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_db_associate_4004(&msg, cl);
+	replyp = __db_db_associate_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -827,9 +821,9 @@ __dbcl_db_close(dbp, flags)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_db_close_4004(&msg, cl);
+	replyp = __db_db_close_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -873,9 +867,9 @@ __dbcl_db_cursor(dbp, txnp, dbcpp, flags)
 		msg.txnpcl_id = txnp->txnid;
 	msg.flags = flags;
 
-	replyp = __db_db_cursor_4004(&msg, cl);
+	replyp = __db_db_cursor_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -925,9 +919,9 @@ __dbcl_db_del(dbp, txnp, key, flags)
 	msg.keydata.keydata_len = key->size;
 	msg.flags = flags;
 
-	replyp = __db_db_del_4004(&msg, cl);
+	replyp = __db_db_del_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -984,9 +978,9 @@ __dbcl_db_get(dbp, txnp, key, data, flags)
 	msg.datadata.datadata_len = data->size;
 	msg.flags = flags;
 
-	replyp = __db_db_get_4004(&msg, cl);
+	replyp = __db_db_get_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1023,9 +1017,9 @@ __dbcl_db_get_bt_minkey(dbp, minkeyp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_bt_minkey_4004(&msg, cl);
+	replyp = __db_db_get_bt_minkey_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1066,9 +1060,9 @@ __dbcl_db_get_dbname(dbp, filenamep, dbnamep)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_dbname_4004(&msg, cl);
+	replyp = __db_db_get_dbname_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1109,9 +1103,9 @@ __dbcl_db_get_encrypt_flags(dbp, flagsp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_encrypt_flags_4004(&msg, cl);
+	replyp = __db_db_get_encrypt_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1150,9 +1144,9 @@ __dbcl_db_get_flags(dbp, flagsp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_flags_4004(&msg, cl);
+	replyp = __db_db_get_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1191,9 +1185,9 @@ __dbcl_db_get_h_ffactor(dbp, ffactorp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_h_ffactor_4004(&msg, cl);
+	replyp = __db_db_get_h_ffactor_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1232,9 +1226,9 @@ __dbcl_db_get_h_nelem(dbp, nelemp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_h_nelem_4004(&msg, cl);
+	replyp = __db_db_get_h_nelem_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1273,9 +1267,9 @@ __dbcl_db_get_lorder(dbp, lorderp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_lorder_4004(&msg, cl);
+	replyp = __db_db_get_lorder_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1314,9 +1308,9 @@ __dbcl_db_get_open_flags(dbp, flagsp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_open_flags_4004(&msg, cl);
+	replyp = __db_db_get_open_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1355,9 +1349,9 @@ __dbcl_db_get_pagesize(dbp, pagesizep)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_pagesize_4004(&msg, cl);
+	replyp = __db_db_get_pagesize_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1396,9 +1390,9 @@ __dbcl_db_get_q_extentsize(dbp, extentsizep)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_q_extentsize_4004(&msg, cl);
+	replyp = __db_db_get_q_extentsize_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1437,9 +1431,9 @@ __dbcl_db_get_re_delim(dbp, delimp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_re_delim_4004(&msg, cl);
+	replyp = __db_db_get_re_delim_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1478,9 +1472,9 @@ __dbcl_db_get_re_len(dbp, lenp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_re_len_4004(&msg, cl);
+	replyp = __db_db_get_re_len_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1519,9 +1513,9 @@ __dbcl_db_get_re_pad(dbp, padp)
 	else
 		msg.dbpcl_id = dbp->cl_id;
 
-	replyp = __db_db_get_re_pad_4004(&msg, cl);
+	replyp = __db_db_get_re_pad_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1574,10 +1568,10 @@ __dbcl_db_join(dbp, curs, dbcp, flags)
 		*cursq = (*cursp)->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_db_join_4004(&msg, cl);
+	replyp = __db_db_join_4005(&msg, cl);
 	__os_free(dbenv, msg.curs.curs_val);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1629,9 +1623,9 @@ __dbcl_db_key_range(dbp, txnp, key, range, flags)
 	msg.keydata.keydata_len = key->size;
 	msg.flags = flags;
 
-	replyp = __db_db_key_range_4004(&msg, cl);
+	replyp = __db_db_key_range_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1689,9 +1683,9 @@ __dbcl_db_open(dbp, txnp, name, subdb, type, flags, mode)
 	msg.flags = flags;
 	msg.mode = mode;
 
-	replyp = __db_db_open_4004(&msg, cl);
+	replyp = __db_db_open_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1756,9 +1750,9 @@ __dbcl_db_pget(dbp, txnp, skey, pkey, data, flags)
 	msg.datadata.datadata_len = data->size;
 	msg.flags = flags;
 
-	replyp = __db_db_pget_4004(&msg, cl);
+	replyp = __db_db_pget_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1815,9 +1809,9 @@ __dbcl_db_put(dbp, txnp, key, data, flags)
 	msg.datadata.datadata_len = data->size;
 	msg.flags = flags;
 
-	replyp = __db_db_put_4004(&msg, cl);
+	replyp = __db_db_put_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1866,9 +1860,9 @@ __dbcl_db_remove(dbp, name, subdb, flags)
 		msg.subdb = (char *)subdb;
 	msg.flags = flags;
 
-	replyp = __db_db_remove_4004(&msg, cl);
+	replyp = __db_db_remove_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1922,9 +1916,9 @@ __dbcl_db_rename(dbp, name, subdb, newname, flags)
 		msg.newname = (char *)newname;
 	msg.flags = flags;
 
-	replyp = __db_db_rename_4004(&msg, cl);
+	replyp = __db_db_rename_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -1962,9 +1956,9 @@ __dbcl_db_set_bt_minkey(dbp, minkey)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.minkey = minkey;
 
-	replyp = __db_db_set_bt_minkey_4004(&msg, cl);
+	replyp = __db_db_set_bt_minkey_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2007,9 +2001,9 @@ __dbcl_db_set_encrypt(dbp, passwd, flags)
 		msg.passwd = (char *)passwd;
 	msg.flags = flags;
 
-	replyp = __db_db_set_encrypt_4004(&msg, cl);
+	replyp = __db_db_set_encrypt_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2047,9 +2041,9 @@ __dbcl_db_set_flags(dbp, flags)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_db_set_flags_4004(&msg, cl);
+	replyp = __db_db_set_flags_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2087,9 +2081,9 @@ __dbcl_db_set_h_ffactor(dbp, ffactor)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.ffactor = ffactor;
 
-	replyp = __db_db_set_h_ffactor_4004(&msg, cl);
+	replyp = __db_db_set_h_ffactor_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2127,9 +2121,9 @@ __dbcl_db_set_h_nelem(dbp, nelem)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.nelem = nelem;
 
-	replyp = __db_db_set_h_nelem_4004(&msg, cl);
+	replyp = __db_db_set_h_nelem_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2167,9 +2161,9 @@ __dbcl_db_set_lorder(dbp, lorder)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.lorder = lorder;
 
-	replyp = __db_db_set_lorder_4004(&msg, cl);
+	replyp = __db_db_set_lorder_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2207,9 +2201,9 @@ __dbcl_db_set_pagesize(dbp, pagesize)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.pagesize = pagesize;
 
-	replyp = __db_db_set_pagesize_4004(&msg, cl);
+	replyp = __db_db_set_pagesize_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2247,9 +2241,9 @@ __dbcl_db_set_q_extentsize(dbp, extentsize)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.extentsize = extentsize;
 
-	replyp = __db_db_set_q_extentsize_4004(&msg, cl);
+	replyp = __db_db_set_q_extentsize_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2287,9 +2281,9 @@ __dbcl_db_set_re_delim(dbp, delim)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.delim = delim;
 
-	replyp = __db_db_set_re_delim_4004(&msg, cl);
+	replyp = __db_db_set_re_delim_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2327,9 +2321,9 @@ __dbcl_db_set_re_len(dbp, len)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.len = len;
 
-	replyp = __db_db_set_re_len_4004(&msg, cl);
+	replyp = __db_db_set_re_len_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2367,9 +2361,9 @@ __dbcl_db_set_re_pad(dbp, pad)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.pad = pad;
 
-	replyp = __db_db_set_re_pad_4004(&msg, cl);
+	replyp = __db_db_set_re_pad_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2413,9 +2407,9 @@ __dbcl_db_stat(dbp, txnp, sp, flags)
 		msg.txnpcl_id = txnp->txnid;
 	msg.flags = flags;
 
-	replyp = __db_db_stat_4004(&msg, cl);
+	replyp = __db_db_stat_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2453,9 +2447,9 @@ __dbcl_db_sync(dbp, flags)
 		msg.dbpcl_id = dbp->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_db_sync_4004(&msg, cl);
+	replyp = __db_db_sync_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2500,9 +2494,9 @@ __dbcl_db_truncate(dbp, txnp, countp, flags)
 		msg.txnpcl_id = txnp->txnid;
 	msg.flags = flags;
 
-	replyp = __db_db_truncate_4004(&msg, cl);
+	replyp = __db_db_truncate_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2538,9 +2532,9 @@ __dbcl_dbc_c_close(dbc)
 	else
 		msg.dbccl_id = dbc->cl_id;
 
-	replyp = __db_dbc_c_close_4004(&msg, cl);
+	replyp = __db_dbc_c_close_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2579,9 +2573,9 @@ __dbcl_dbc_c_count(dbc, countp, flags)
 		msg.dbccl_id = dbc->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_dbc_c_count_4004(&msg, cl);
+	replyp = __db_dbc_c_count_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2619,9 +2613,9 @@ __dbcl_dbc_c_del(dbc, flags)
 		msg.dbccl_id = dbc->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_dbc_c_del_4004(&msg, cl);
+	replyp = __db_dbc_c_del_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2660,9 +2654,9 @@ __dbcl_dbc_c_dup(dbc, dbcp, flags)
 		msg.dbccl_id = dbc->cl_id;
 	msg.flags = flags;
 
-	replyp = __db_dbc_c_dup_4004(&msg, cl);
+	replyp = __db_dbc_c_dup_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2714,9 +2708,9 @@ __dbcl_dbc_c_get(dbc, key, data, flags)
 	msg.datadata.datadata_len = data->size;
 	msg.flags = flags;
 
-	replyp = __db_dbc_c_get_4004(&msg, cl);
+	replyp = __db_dbc_c_get_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2775,9 +2769,9 @@ __dbcl_dbc_c_pget(dbc, skey, pkey, data, flags)
 	msg.datadata.datadata_len = data->size;
 	msg.flags = flags;
 
-	replyp = __db_dbc_c_pget_4004(&msg, cl);
+	replyp = __db_dbc_c_pget_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2829,9 +2823,9 @@ __dbcl_dbc_c_put(dbc, key, data, flags)
 	msg.datadata.datadata_len = data->size;
 	msg.flags = flags;
 
-	replyp = __db_dbc_c_put_4004(&msg, cl);
+	replyp = __db_dbc_c_put_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2867,9 +2861,9 @@ __dbcl_txn_abort(txnp)
 	else
 		msg.txnpcl_id = txnp->txnid;
 
-	replyp = __db_txn_abort_4004(&msg, cl);
+	replyp = __db_txn_abort_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2907,9 +2901,9 @@ __dbcl_txn_commit(txnp, flags)
 		msg.txnpcl_id = txnp->txnid;
 	msg.flags = flags;
 
-	replyp = __db_txn_commit_4004(&msg, cl);
+	replyp = __db_txn_commit_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2947,9 +2941,9 @@ __dbcl_txn_discard(txnp, flags)
 		msg.txnpcl_id = txnp->txnid;
 	msg.flags = flags;
 
-	replyp = __db_txn_discard_4004(&msg, cl);
+	replyp = __db_txn_discard_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -2987,9 +2981,9 @@ __dbcl_txn_prepare(txnp, gid)
 		msg.txnpcl_id = txnp->txnid;
 	memcpy(msg.gid, gid, 128);
 
-	replyp = __db_txn_prepare_4004(&msg, cl);
+	replyp = __db_txn_prepare_4005(&msg, cl);
 	if (replyp == NULL) {
-		__db_err(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
 		ret = DB_NOSERVER;
 		goto out;
 	}
@@ -3192,9 +3186,6 @@ __dbcl_dbenv_init(dbenv)
 	    (int (*)(DB_ENV *, size_t *))
 	    __dbcl_dbenv_illegal;
 	dbenv->get_open_flags = __dbcl_env_get_open_flags;
-	dbenv->get_rep_limit =
-	    (int (*)(DB_ENV *, u_int32_t *, u_int32_t *))
-	    __dbcl_dbenv_illegal;
 	dbenv->get_shm_key =
 	    (int (*)(DB_ENV *, long *))
 	    __dbcl_dbenv_illegal;
@@ -3327,7 +3318,7 @@ __dbcl_dbenv_init(dbenv)
 	dbenv->open = __dbcl_env_open;
 	dbenv->remove = __dbcl_env_remove;
 	dbenv->rep_elect =
-	    (int (*)(DB_ENV *, int, int, int, u_int32_t, int *, u_int32_t))
+	    (int (*)(DB_ENV *, int, int, int *, u_int32_t))
 	    __dbcl_dbenv_illegal;
 	dbenv->rep_flush =
 	    (int (*)(DB_ENV *))
@@ -3335,11 +3326,20 @@ __dbcl_dbenv_init(dbenv)
 	dbenv->rep_get_config =
 	    (int (*)(DB_ENV *, u_int32_t, int *))
 	    __dbcl_dbenv_illegal;
+	dbenv->rep_get_limit =
+	    (int (*)(DB_ENV *, u_int32_t *, u_int32_t *))
+	    __dbcl_dbenv_illegal;
 	dbenv->rep_process_message =
 	    (int (*)(DB_ENV *, DBT *, DBT *, int *, DB_LSN *))
 	    __dbcl_dbenv_illegal;
 	dbenv->rep_set_config =
 	    (int (*)(DB_ENV *, u_int32_t, int))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_set_limit =
+	    (int (*)(DB_ENV *, u_int32_t, u_int32_t))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_set_transport =
+	    (int (*)(DB_ENV *, int, int (*)(DB_ENV *, const DBT *, const DBT *, const DB_LSN *, int, u_int32_t)))
 	    __dbcl_dbenv_illegal;
 	dbenv->rep_start =
 	    (int (*)(DB_ENV *, DBT *, u_int32_t))
@@ -3372,7 +3372,7 @@ __dbcl_dbenv_init(dbenv)
 	    (int (*)(DB_ENV *, int, u_int32_t))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_isalive =
-	    (int (*)(DB_ENV *, int (*)(DB_ENV *, pid_t, db_threadid_t)))
+	    (int (*)(DB_ENV *, int (*)(DB_ENV *, pid_t, db_threadid_t, u_int32_t)))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_lg_bsize =
 	    (int (*)(DB_ENV *, u_int32_t))
@@ -3393,9 +3393,6 @@ __dbcl_dbenv_init(dbenv)
 	    (int (*)(DB_ENV *, u_int8_t *, int))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_lk_detect =
-	    (int (*)(DB_ENV *, u_int32_t))
-	    __dbcl_dbenv_illegal;
-	dbenv->set_lk_max =
 	    (int (*)(DB_ENV *, u_int32_t))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_lk_max_lockers =
@@ -3419,14 +3416,8 @@ __dbcl_dbenv_init(dbenv)
 	dbenv->set_paniccall =
 	    (int (*)(DB_ENV *, void (*)(DB_ENV *, int)))
 	    __dbcl_dbenv_illegal;
-	dbenv->set_rep_limit =
-	    (int (*)(DB_ENV *, u_int32_t, u_int32_t))
-	    __dbcl_dbenv_illegal;
 	dbenv->set_rep_request =
 	    (int (*)(DB_ENV *, u_int32_t, u_int32_t))
-	    __dbcl_dbenv_illegal;
-	dbenv->set_rep_transport =
-	    (int (*)(DB_ENV *, int, int (*)(DB_ENV *, const DBT *, const DBT *, const DB_LSN *, int, u_int32_t)))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_rpc_server = __dbcl_env_set_rpc_server;
 	dbenv->set_shm_key =

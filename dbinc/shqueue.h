@@ -1,18 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: shqueue.h,v 12.2 2005/08/12 13:17:21 bostic Exp $
+ * $Id: shqueue.h,v 12.5 2006/06/19 14:55:30 mjc Exp $
  */
 
 #ifndef	_SYS_SHQUEUE_H_
 #define	_SYS_SHQUEUE_H_
 
 /*
- * This file defines two types of data structures: lists and tail queues
- * similarly to the include file <sys/queue.h>.
+ * This file defines three types of data structures: chains, lists and
+ * tail queues similarly to the include file <sys/queue.h>.
  *
  * The difference is that this set of macros can be used for structures that
  * reside in shared memory that may be mapped at different addresses in each
@@ -35,6 +35,64 @@
 extern "C" {
 #endif
 
+#define	SH_PTR_TO_OFF(src, dest)					\
+	((ssize_t)(((u_int8_t *)(dest)) - ((u_int8_t *)(src))))
+
+/*
+ * Shared memory chain definitions.
+ */
+#define	SH_CHAIN_ENTRY							\
+struct {								\
+	ssize_t sce_next;	/* relative offset to next element */	\
+	ssize_t sce_prev;	/* relative offset of prev element */	\
+}
+
+#define	CHAIN_PTR_TO_OFF(src, dest)					\
+	((dest == NULL) ? -1 : SH_PTR_TO_OFF(src, dest))
+
+#define	SH_CHAIN_INIT(elm, field)					\
+	(elm)->field.sce_next = (elm)->field.sce_prev =		\
+	    CHAIN_PTR_TO_OFF(elm, NULL)
+
+#define	SH_CHAIN_NEXT(elm, field, type)					\
+	((struct type *)((elm)->field.sce_next == -1 ? NULL :		\
+	(u_int8_t *)(elm) + (elm)->field.sce_next))
+
+#define	SH_CHAIN_PREV(elm, field, type)					\
+	((struct type *)((elm)->field.sce_prev == -1 ? NULL :		\
+	(u_int8_t *)(elm) + (elm)->field.sce_prev))
+
+#define	SH_CHAIN_SINGLETON(elm, field)					\
+	((elm)->field.sce_next == -1 && (elm)->field.sce_prev == -1)
+
+#define	SH_CHAIN_INSERT_AFTER(listelm, elm, field, type) do {		\
+	struct type *__next = SH_CHAIN_NEXT(listelm, field, type);	\
+	(elm)->field.sce_next =	CHAIN_PTR_TO_OFF(elm, __next);		\
+	(elm)->field.sce_prev = CHAIN_PTR_TO_OFF(elm, listelm);		\
+	if (__next != NULL)						\
+		__next->field.sce_prev = CHAIN_PTR_TO_OFF(__next, elm);	\
+	(listelm)->field.sce_next = CHAIN_PTR_TO_OFF(listelm, elm);	\
+} while (0)
+
+#define	SH_CHAIN_INSERT_BEFORE(listelm, elm, field, type) do {		\
+	struct type *__prev = SH_CHAIN_PREV(listelm, field, type);	\
+	(elm)->field.sce_next = CHAIN_PTR_TO_OFF(elm, listelm);		\
+	(elm)->field.sce_prev = CHAIN_PTR_TO_OFF(elm, __prev);		\
+	if (__prev != NULL)						\
+		__prev->field.sce_next = CHAIN_PTR_TO_OFF(__prev, elm);	\
+	(listelm)->field.sce_prev = CHAIN_PTR_TO_OFF(listelm, elm);	\
+} while (0)
+
+#define	SH_CHAIN_REMOVE(elm, field, type) do {				\
+	struct type *__prev = SH_CHAIN_PREV(elm, field, type);		\
+	struct type *__next = SH_CHAIN_NEXT(elm, field, type);		\
+	if (__next != NULL)						\
+		__next->field.sce_prev = CHAIN_PTR_TO_OFF(__next, __prev);\
+	if (__prev != NULL)						\
+		__prev->field.sce_next = CHAIN_PTR_TO_OFF(__prev, __next);\
+	SH_CHAIN_INIT(elm, field);					\
+} while (0)
+
 /*
  * Shared memory list definitions.
  */
@@ -55,7 +113,6 @@ struct {								\
 /*
  * Shared memory list functions.
  */
-
 #define	SH_LIST_EMPTY(head)						\
 	((head)->slh_first == -1)
 
@@ -82,15 +139,12 @@ struct {								\
 	((ssize_t *)(((u_int8_t *)(elm)) + (elm)->field.sle_prev))
 
 #define	SH_LIST_PREV(elm, field, type)					\
-	(struct type *)((ssize_t)elm - (*__SH_LIST_PREV_OFF(elm, field)))
+	(struct type *)((ssize_t)(elm) - (*__SH_LIST_PREV_OFF(elm, field)))
 
 #define	SH_LIST_FOREACH(var, head, field, type)				\
 	for ((var) = SH_LIST_FIRST((head), type);			\
 	    (var);							\
 	    (var) = SH_LIST_NEXT((var), field, type))
-
-#define	SH_PTR_TO_OFF(src, dest)					\
-	((ssize_t)(((u_int8_t *)(dest)) - ((u_int8_t *)(src))))
 
 /*
  * Given correct A.next: B.prev = SH_LIST_NEXT_TO_PREV(A)

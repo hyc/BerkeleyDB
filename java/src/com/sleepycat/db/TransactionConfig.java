@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TransactionConfig.java,v 12.2 2005/06/16 20:23:04 bostic Exp $
+ * $Id: TransactionConfig.java,v 12.4 2006/04/27 13:40:54 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -29,6 +29,7 @@ public class TransactionConfig implements Cloneable {
     private boolean readCommitted = false;
     private boolean noSync = false;
     private boolean noWait = false;
+    private boolean snapshot = false;
     private boolean sync = false;
 
     public TransactionConfig() {
@@ -86,6 +87,14 @@ public class TransactionConfig implements Cloneable {
         return noWait;
     }
 
+    public void setSnapshot(final boolean snapshot) {
+        this.snapshot = snapshot;
+    }
+
+    public boolean getSnapshot() {
+        return snapshot;
+    }
+
     public void setSync(final boolean sync) {
         this.sync = sync;
     }
@@ -102,6 +111,7 @@ public class TransactionConfig implements Cloneable {
         flags |= readUncommitted ? DbConstants.DB_READ_UNCOMMITTED : 0;
         flags |= noSync ? DbConstants.DB_TXN_NOSYNC : 0;
         flags |= noWait ? DbConstants.DB_TXN_NOWAIT : 0;
+        flags |= snapshot ? DbConstants.DB_TXN_SNAPSHOT : 0;
         flags |= sync ? DbConstants.DB_TXN_SYNC : 0;
 
         return dbenv.txn_begin(parent, flags);

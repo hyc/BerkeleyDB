@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: lock006.tcl,v 12.1 2005/06/16 20:23:55 bostic Exp $
+# $Id: lock006.tcl,v 12.2 2006/01/02 22:03:15 bostic Exp $
 #
 # TEST	lock006
 # TEST	Test lock_vec interface.  We do all the same things that

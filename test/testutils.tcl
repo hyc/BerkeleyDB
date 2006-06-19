@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2005
+# Copyright (c) 1996-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: testutils.tcl,v 12.12 2005/11/07 16:04:41 carol Exp $
+# $Id: testutils.tcl,v 12.16 2006/02/24 21:06:55 carol Exp $
 #
 # Test system utilities
 #
@@ -3579,7 +3579,7 @@ proc is_debug { } {
 
 proc adjust_logargs { logtype } {
 	if { $logtype == "in-memory" } {
-		set lbuf [expr 8 * [expr 1024 * 1024]]
+		set lbuf [expr 1 * [expr 1024 * 1024]]
 		set logargs " -log_inmemory -log_buffer $lbuf "
 	} elseif { $logtype == "on-disk" } {
 		set logargs ""
@@ -3600,3 +3600,55 @@ proc adjust_txnargs { logtype } {
 	return $txnargs
 }
 
+proc get_logfile { env where } {
+	# Open a log cursor.
+	set m_logc [$env log_cursor]
+	error_check_good m_logc [is_valid_logc $m_logc $env] TRUE
+
+	# Check that we're in the expected virtual log file.
+	if { $where == "first" } {
+		set rec [$m_logc get -first]
+	} else {
+		set rec [$m_logc get -last]
+	}
+	error_check_good cursor_close [$m_logc close] 0
+	set lsn [lindex $rec 0]
+	set log [lindex $lsn 0]
+	return $log
+}
+
+# Determine whether logs are in-mem or on-disk.
+# This requires the existence of logs to work correctly. 
+proc check_log_location { env } {
+	if { [catch {get_logfile $env first} res] } {
+		puts "FAIL: env $env not configured for logging"
+	}
+	set inmemory 0
+	set flags [$env get_flags]
+	if { [is_substr $flags -log_inmemory] == 1 } {
+		set inmemory 1
+	}
+
+	set env_home [get_home $env]
+	set logfiles [glob -nocomplain $env_home/log.*]
+	if { $inmemory == 1 } {
+		error_check_good no_logs_on_disk [llength $logfiles] 0
+	} else {
+		error_check_bad logs_on_disk [llength $logfiles] 0
+	}
+}
+
+proc find_valid_methods { test } {
+	global checking_valid_methods
+	global valid_methods
+	set checking_valid_methods 1
+	set valid_methods \
+	    { btree rbtree queue queueext hash recno frecno rrecno }
+
+	# To find valid methods, call the test with checking_valid_methods
+	# on.  It doesn't matter what method we use for this call, so we
+	# arbitrarily pick btree.
+	set valid_methods [$test btree]
+	set checking_valid_methods 0
+	return $valid_methods
+}

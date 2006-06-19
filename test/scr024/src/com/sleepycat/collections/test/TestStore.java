@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TestStore.java,v 12.1 2005/01/31 19:27:35 mark Exp $
+ * $Id: TestStore.java,v 12.2 2006/01/02 22:03:39 bostic Exp $
  */
 
 package com.sleepycat.collections.test;

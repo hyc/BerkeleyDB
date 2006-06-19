@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2005
+# Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: si005.tcl,v 12.5 2005/10/26 18:44:03 carol Exp $
+# $Id: si005.tcl,v 12.6 2006/01/02 22:03:24 bostic Exp $
 #
 # TEST	si005
 # TEST	Basic secondary index put/delete test with transactions

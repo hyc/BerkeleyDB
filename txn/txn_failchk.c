@@ -1,17 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005
+ * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: txn_failchk.c,v 12.2 2005/10/13 00:51:51 bostic Exp $
+ * $Id: txn_failchk.c,v 12.5 2006/05/05 14:54:11 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-#endif
 
 #include "db_int.h"
 #include "dbinc/txn.h"
@@ -55,7 +51,7 @@ retry:	TXN_SYSTEM_LOCK(dbenv);
 			continue;
 
 		/* If the thread is still alive, it's not a problem. */
-		if (dbenv->is_alive(dbenv, td->pid, td->tid))
+		if (dbenv->is_alive(dbenv, td->pid, td->tid, 0))
 			continue;
 
 		if (F_ISSET(td, TXN_DTL_INMEMORY))

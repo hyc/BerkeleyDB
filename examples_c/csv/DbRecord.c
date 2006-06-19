@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005
+ * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: DbRecord.c,v 1.10 2005/10/14 12:50:37 bostic Exp $
+ * $Id: DbRecord.c,v 1.11 2006/01/02 22:01:59 bostic Exp $
  */
 
 #include "csv.h"

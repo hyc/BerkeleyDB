@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TestClassCatalog.java,v 12.1 2005/01/31 19:27:35 mark Exp $
+ * $Id: TestClassCatalog.java,v 12.2 2006/01/02 22:03:31 bostic Exp $
  */
 
 package com.sleepycat.bind.serial.test;

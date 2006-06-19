@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep.h,v 12.22 2005/10/27 13:27:01 bostic Exp $
+ * $Id: rep.h,v 12.40 2006/06/19 06:41:24 mjc Exp $
  */
 
 #ifndef _REP_H_
@@ -13,8 +13,15 @@
 #include "dbinc_auto/rep_auto.h"
 
 /*
+ * Names of client temp databases.
+ */
+#define	REPDBNAME	"__db.rep.db"
+#define	REPPAGENAME     "__db.reppg.db"
+
+/*
  * Message types
  */
+#define	REP_INVALID	0	/* Invalid message type. */
 #define	REP_ALIVE	1	/* I am alive message. */
 #define	REP_ALIVE_REQ	2	/* Request for alive messages. */
 #define	REP_ALL_REQ	3	/* Request all log records greater than LSN. */
@@ -50,6 +57,53 @@
 #define	REP_VOTE1	28	/* Send out your information for an election. */
 #define	REP_VOTE2	29	/* Send a "you are master" vote. */
 
+
+#ifdef HAVE_REPLICATION_THREADS
+/*
+ * Replication Framework message types.  Normal replication messages (above) are
+ * encapsulated in repmgr messages of type REP_MESSAGE.
+ */
+#define REPMGR_ACK		1	/* Acknowledgement. */
+#define REPMGR_HANDSHAKE	2	/* Connection establishment sequence. */
+#define REPMGR_REP_MESSAGE	3	/* Normal replication message. */
+#endif  /* HAVE_REPLICATION_THREADS */
+
+
+/*
+ * Maximum message number for conversion tables.  Update this
+ * value as the largest message number above increases.
+ *
+ * !!!
+ * NOTE: When changing messages above, the two tables for upgrade support
+ * need adjusting.  They are in rep_record.c.
+ */
+#define REP_MAX_MSG	29	
+
+/*
+ * Note that the version information should be at the beginning of the
+ * structure, so that we can rearrange the rest of it while letting the
+ * version checks continue to work.  DB_REPVERSION should be revved any time
+ * the rest of the structure changes or when the message numbers change.
+ *
+ * Define also, the corresponding log versions that are tied to the
+ * replication/release versions.  These are only used in replication
+ * and that is why they're defined here.
+ */
+#define	DB_LOGVERSION_INVALID	0
+#define	DB_LOGVERSION_42	8
+#define	DB_LOGVERSION_43	10
+#define	DB_LOGVERSION_44	11
+#define	DB_LOGVERSION_45	12
+#define	DB_REPVERSION_INVALID	0
+#define	DB_REPVERSION_42	1
+#define	DB_REPVERSION_43	2
+#define	DB_REPVERSION_44	3
+#define	DB_REPVERSION_45	3
+#define	DB_REPVERSION	3
+
+extern u_int32_t __repmsg_to_old[DB_REPVERSION][REP_MAX_MSG+1];
+extern u_int32_t __repmsg_from_old[DB_REPVERSION][REP_MAX_MSG+1];
+
 /*
  * REP_PRINT_MESSAGE
  *	A function to print a debugging message.
@@ -62,25 +116,26 @@
 #ifdef DIAGNOSTIC
 #define	REP_PRINT_MESSAGE(dbenv, eid, rp, str)				\
 	__rep_print_message(dbenv, eid, rp, str)
-#define	RPRINT(e, r, x) do {						\
+#define	RPRINT(e, x) do {						\
 	if (FLD_ISSET((e)->verbose, DB_VERB_REPLICATION)) {		\
 		DB_MSGBUF_INIT(&mb);					\
 		if ((e)->db_errpfx == NULL) {				\
-			if (F_ISSET((r), REP_F_CLIENT))			\
+			REP *_r = (e)->rep_handle->region;		\
+			if (F_ISSET(_r, REP_F_CLIENT))			\
 				__db_msgadd((e), &mb, "CLIENT: ");	\
-			else if (F_ISSET((r), REP_F_MASTER))		\
+			else if (F_ISSET((_r), REP_F_MASTER))		\
 				__db_msgadd((e), &mb, "MASTER: ");	\
 			else						\
 				__db_msgadd((e), &mb, "REP_UNDEF: ");	\
 		} else							\
-			__db_msgadd((e), &mb, "%s: ",(e)->db_errpfx);	\
+			__db_msgadd((e), &mb, "%s: ", (e)->db_errpfx);	\
 		__db_msgadd x;						\
 		DB_MSGBUF_FLUSH((e), &mb);				\
 	}								\
 } while (0)
 #else
 #define	REP_PRINT_MESSAGE(dbenv, eid, rp, str)
-#define	RPRINT(e, r, x)
+#define	RPRINT(e, x)
 #endif
 
 /*
@@ -106,11 +161,9 @@ typedef enum {
 
 /* Macros to lock/unlock the replication region as a whole. */
 #define	REP_SYSTEM_LOCK(dbenv)						\
-	MUTEX_LOCK(dbenv, ((DB_REP *)					\
-	    (dbenv)->rep_handle)->region->mtx_region)
+	MUTEX_LOCK(dbenv, (dbenv)->rep_handle->region->mtx_region)
 #define	REP_SYSTEM_UNLOCK(dbenv)					\
-	MUTEX_UNLOCK(dbenv, ((DB_REP *)					\
-	    (dbenv)->rep_handle)->region->mtx_region)
+	MUTEX_UNLOCK(dbenv, (dbenv)->rep_handle->region->mtx_region)
 
 /*
  * REP --
@@ -123,6 +176,7 @@ typedef struct __rep {
 	roff_t		v2tally_off;	/* Offset of the vote2 tally region. */
 	int		eid;		/* Environment id. */
 	int		master_id;	/* ID of the master site. */
+	u_int32_t	version;	/* Current replication version. */
 	u_int32_t	egen;		/* Replication election generation. */
 	u_int32_t	gen;		/* Replication generation number. */
 	u_int32_t	recover_gen;	/* Last generation number in log. */
@@ -130,6 +184,8 @@ typedef struct __rep {
 	int		nsites;		/* Number of sites in group. */
 	int		nvotes;		/* Number of votes needed. */
 	int		priority;	/* My priority in an election. */
+	u_int		config_nsites;
+	db_timeout_t	elect_timeout;
 	u_int32_t	gbytes;		/* Limit on data sent in single... */
 	u_int32_t	bytes;		/* __rep_process_message call. */
 #define	DB_REP_REQUEST_GAP	4
@@ -209,23 +265,22 @@ typedef struct __rep {
     (REP_F_READY | REP_F_RECOVER_LOG | REP_F_RECOVER_PAGE |		\
      REP_F_RECOVER_UPDATE | REP_F_RECOVER_VERIFY)
 
-#define	IN_ELECTION(R)		F_ISSET((R), REP_F_EPHASE1 | REP_F_EPHASE2)
+#define	IN_ELECTION(R)							\
+	F_ISSET((R), REP_F_EPHASE1 | REP_F_EPHASE2)
 #define	IN_ELECTION_TALLY(R) \
 	F_ISSET((R), REP_F_EPHASE1 | REP_F_EPHASE2 | REP_F_TALLY)
+
 #define	IS_REP_MASTER(dbenv)						\
-	(REP_ON(dbenv) && ((DB_REP *)(dbenv)->rep_handle)->region &&	\
-	    F_ISSET(((REP *)((DB_REP *)(dbenv)->rep_handle)->region),	\
-	    REP_F_MASTER))
+	(REP_ON(dbenv) &&						\
+	    F_ISSET(((REP *)(dbenv)->rep_handle->region), REP_F_MASTER))
 
 #define	IS_REP_CLIENT(dbenv)						\
-	(REP_ON(dbenv) && ((DB_REP *)(dbenv)->rep_handle)->region &&	\
-	    F_ISSET(((REP *)((DB_REP *)(dbenv)->rep_handle)->region),	\
-	    REP_F_CLIENT))
+	(REP_ON(dbenv) &&						\
+	    F_ISSET(((REP *)(dbenv)->rep_handle->region), REP_F_CLIENT))
 
 #define	IS_CLIENT_PGRECOVER(dbenv)					\
 	(IS_REP_CLIENT(dbenv) &&					\
-	    F_ISSET(((REP *)((DB_REP *)(dbenv)->rep_handle)->region),   \
-	    REP_F_RECOVER_PAGE))
+	    F_ISSET(((REP *)(dbenv)->rep_handle->region), REP_F_RECOVER_PAGE))
 
 /*
  * Macros to figure out if we need to do replication pre/post-amble processing.
@@ -233,9 +288,8 @@ typedef struct __rep {
  * replication is running recovery or because it's a handle entirely owned by
  * the replication code (replication opens its own databases to track state).
  */
-#define	IS_ENV_REPLICATED(E) (REP_ON(E) &&				\
-	((DB_REP *)((E)->rep_handle))->region != NULL &&		\
-	((DB_REP *)((E)->rep_handle))->region->flags != 0)
+#define	IS_ENV_REPLICATED(dbenv)					\
+	(REP_ON(dbenv) && (dbenv)->rep_handle->region->flags != 0)
 
 /*
  * Gap processing flags.  These provide control over the basic
@@ -286,23 +340,96 @@ typedef struct __rep {
  * necessary.
  */
 struct __db_rep {
+	/*
+	 * Shared configuration information -- copied to and maintained in the
+	 * shared region as soon as the shared region is created.
+	 */
+	int		eid;		/* Environment ID. */
+
+	u_int32_t	gbytes;		/* Limit on data sent in single... */
+	u_int32_t	bytes;		/* __rep_process_message call. */
+
+	u_int32_t	request_gap;	/* # of records to receive before we
+					 * request a missing log record. */
+	u_int32_t	max_gap;	/* Maximum number of records before
+					 * requesting a missing log record. */
+
+	u_int32_t	config;		/* Configuration flags. */
+	u_int		config_nsites;
+	db_timeout_t	elect_timeout;
+	int		my_priority;
+	/*
+	 * End of shared configuration information.
+	 */
+
+	int		(*send)		/* Send function. */
+			    __P((DB_ENV *, const DBT *, const DBT *,
+			    const DB_LSN *, int, u_int32_t));
+
 	DB		*rep_db;	/* Bookkeeping database. */
 
 	REP		*region;	/* In memory structure. */
 	u_int8_t	*bulk;		/* Shared memory bulk area. */
+
 #define	DBREP_OPENFILES		0x0001	/* This handle has opened files. */
 	u_int32_t	flags;		/* per-process flags. */
+
+#ifdef HAVE_REPLICATION_THREADS
+	/*
+	 * Replication Framework (repmgr) information.
+	 */
+	int		nthreads;
+	u_int32_t	init_policy;
+	int		perm_policy;
+	int		peer;	/* Site to use for C2C sync. */
+	db_timeout_t	ack_timeout;
+	db_timeout_t	election_retry_wait;
+	db_timeout_t	connection_retry_wait;
+
+	/* Repmgr's copies of rep stuff. */
+	int		master_eid;
+	u_int32_t	generation;
+
+	/* Thread synchronization. */
+	REPMGR_RUNNABLE *selector, **messengers, *elect_thread;
+	mgr_mutex_t	mutex;
+	cond_var_t	queue_nonempty, check_election;
+#ifdef DB_WIN32
+	ACK_WAITERS_TABLE *waiters;
+	HANDLE		signaler;
+	int		wsa_inited;
+#else
+	pthread_cond_t	ack_condition;
+	int		read_pipe, write_pipe;
+	int		chg_sig_handler;
+#endif
+
+	/* Operational stuff. */
+	REPMGR_SITE	*sites;		/* Array of known sites. */
+	u_int		site_cnt;	/* Array slots in use. */
+	u_int		site_max;	/* Total array slots allocated. */
+
+	CONNECTION_LIST	connections;
+	RETRY_Q_HEADER	retries;	/* Sites needing connection retry. */
+	REPMGR_QUEUE	*input_queue;
+
+	socket_t	listen_fd;
+	repmgr_netaddr_t my_addr;
+
+	int		finished;
+	int		done_one; /* TODO: rename */
+	int		found_master;
+
+#define ELECT_ELECTION 1
+#define ELECT_REPSTART 2
+	int		operation_needed; /* Next op for election thread. */
+#endif  /* HAVE_REPLICATION_THREADS */
 };
 
 /*
  * Control structure for replication communication infrastructure.
- *
- * Note that the version information should be at the beginning of the
- * structure, so that we can rearrange the rest of it while letting the
- * version checks continue to work.  DB_REPVERSION should be revved any time
- * the rest of the structure changes or when the message numbers change.
  */
-typedef struct __rep_control {
+typedef struct {
 #define	DB_REPVERSION	3
 	u_int32_t	rep_version;	/* Replication version number. */
 	u_int32_t	log_version;	/* Log version number. */
@@ -310,11 +437,29 @@ typedef struct __rep_control {
 	DB_LSN		lsn;		/* Log sequence number. */
 	u_int32_t	rectype;	/* Message type. */
 	u_int32_t	gen;		/* Generation number. */
+/*
+ * Define old DB_LOG_ values that we must support here.
+ */
+#define	DB_LOG_PERM_42_44	0x20
+#define	DB_LOG_RESEND_42_44	0x40
+
+#define	REPCTL_ELECTABLE	0x01	/* Upgraded client is electable. */
+#define	REPCTL_PERM		DB_LOG_PERM_42_44
+#define	REPCTL_RESEND		DB_LOG_RESEND_42_44
 	u_int32_t	flags;		/* log_put flag value. */
 } REP_CONTROL;
 
+/* Election vote information, 4.2 version.  Does not have nvotes. */
+typedef struct __rep_old_vote {
+	u_int32_t	egen;		/* Election generation. */
+	int		nsites;		/* Number of sites I've been in
+					 * communication with. */
+	int		priority;	/* My site's priority. */
+	u_int32_t	tiebreaker;	/* Tie-breaking quasi-random value. */
+} REP_OLD_VOTE_INFO;
+
 /* Election vote information. */
-typedef struct __rep_vote {
+typedef struct {
 	u_int32_t	egen;		/* Election generation. */
 	int		nsites;		/* Number of sites I've been in
 					 * communication with. */
@@ -323,7 +468,7 @@ typedef struct __rep_vote {
 	u_int32_t	tiebreaker;	/* Tie-breaking quasi-random value. */
 } REP_VOTE_INFO;
 
-typedef struct __rep_vtally {
+typedef struct {
 	u_int32_t	egen;		/* Voter's election generation. */
 	int		eid;		/* Voter's ID. */
 } REP_VTALLY;
@@ -338,7 +483,7 @@ typedef struct __rep_vtally {
 #define	REP_THROTTLE_ONLY	0x0001	/* Send _MORE message only. */
 
 /* Throttled message processing information. */
-typedef struct __rep_throttle {
+typedef struct {
 	DB_LSN		lsn;		/* LSN of this record. */
 	DBT		*data_dbt;	/* DBT of this record. */
 	u_int32_t	gbytes;		/* This call's max gbytes sent. */
@@ -353,7 +498,7 @@ typedef struct __rep_throttle {
  * since that really is what it is.  But ptrdiff_t is not portable and
  * doesn't exist everywhere.
  */
-typedef struct __rep_bulk {
+typedef struct {
 	u_int8_t	*addr;		/* Address of bulk buffer. */
 	uintptr_t	*offp;		/* Ptr to current offset into buffer. */
 	u_int32_t	len;		/* Bulk buffer length. */
@@ -371,7 +516,7 @@ typedef struct __rep_bulk {
  * we can obtain locks and apply updates in a deadlock free
  * order.
  */
-typedef struct __lsn_collection {
+typedef struct {
 	u_int nlsns;
 	u_int nalloc;
 	DB_LSN *array;
@@ -382,11 +527,293 @@ typedef struct __lsn_collection {
  * apply the updates for a single transaction or a collection of
  * transactions.
  */
-typedef struct _linfo {
+typedef struct {
 	int		n;
 	DB_LOCKREQ	*reqs;
 	DBT		*objs;
 } linfo_t;
 
+
+
+#ifdef HAVE_REPLICATION_THREADS
+/* Information about threads managed by Replication Framework. */
+struct __repmgr_runnable {
+	DB_ENV *dbenv;
+	thread_id_t thread_id;
+	void *(*run) __P((void *));
+	int finished;
+};
+
+typedef struct {
+	u_int32_t tv_sec;
+	u_int32_t tv_usec;
+} repmgr_timeval_t;
+
+/*
+ * Information about pending connection establishment retry operations.
+ *
+ * We keep these in order by time.  This works, under the assumption that the
+ * DB_REP_CONNECTION_RETRY never changes once we get going (though that
+ * assumption is of course wrong, so this needs to be fixed).
+ *
+ * Usually, we put things onto the tail end of the list.  But when we add a new
+ * site while threads are running, we trigger its first connection attempt by
+ * scheduling a retry for "0" microseconds from now, putting its retry element
+ * at the head of the list instead.
+ *
+ * TODO: I think this can be fixed by defining "time" to be the time the element
+ * was added (with some convention like "0" meaning immediate), rather than the
+ * deadline time.
+ */
+struct __repmgr_retry {
+	TAILQ_ENTRY(__repmgr_retry) entries;
+	u_int eid;
+	repmgr_timeval_t time;
+};
+
+/*
+ * We use scatter/gather I/O for both reading and writing.  The largest number
+ * of buffers we ever try to use at once is 5, corresponding to the 5 segments
+ * of a message described in the "wire protocol" (repmgr_net.c).
+ */
+typedef struct {
+	db_iovec_t vectors[5];
+
+	/*
+	 * Index of the first iovec to be used.  Initially of course this is
+	 * zero.  But as we progress through partial I/O transfers, it ends up
+	 * pointing to the first iovec to be used on the next operation.
+	 */
+	int offset;
+
+	/*
+	 * Total number of pieces defined for this message; equal to the number
+	 * of times add_buffer and/or add_dbt were called to populate it.  We do
+	 * *NOT* revise this as we go along.  So subsequent I/O operations must
+	 * use count-offset to get the number of active vector pieces still
+	 * remaining.
+	 */
+	int count;
+
+	/*
+	 * Total number of bytes accounted for in all the pieces of this
+	 * message.  We do *NOT* revise this as we go along (though it's not
+	 * clear we shouldn't).
+	 */
+	size_t total_bytes;
+} REPMGR_IOVECS;
+
+typedef struct {
+	size_t length;		/* number of bytes in data */
+	int ref_count;		/* # of sites' send queues pointing to us */
+	u_int8_t data[1];	/* variable size data area */
+} REPMGR_FLAT;
+
+struct __queued_output {
+	STAILQ_ENTRY(__queued_output) entries;
+	REPMGR_FLAT *msg;
+	size_t offset;
+};
+
+/*
+ * The following is for input.  Once we know the sizes of the pieces of an
+ * incoming message, we can create this struct (and also the data areas for the
+ * pieces themselves, in the same memory allocation).  This is also the struct
+ * in which the message lives while it's waiting to be processed by message
+ * threads.
+ */
+typedef struct __repmgr_message {
+	STAILQ_ENTRY(__repmgr_message) entries;
+	int originating_eid;
+	DBT control, rec;
+} REPMGR_MESSAGE;
+
+
+
+typedef enum {
+	SIZES_PHASE,
+	DATA_PHASE
+} phase_t;
+
+
+/*
+ * If another site initiates a connection to us, when we receive it the
+ * connection state is immediately "connected".  But when we initiate the
+ * connection to another site, it first has to go through a "connecting" state,
+ * until the non-blocking connect() I/O operation completes successfully.
+ *     With an outgoing connection, we always know the associated site (and so
+ * we have a valid eid).  But with an incoming connection, we don't know the
+ * site until we get a handshake message, so until that time the eid is
+ * invalid.
+ */
+struct __repmgr_connection {
+	TAILQ_ENTRY(__repmgr_connection) entries;
+
+	int eid;		/* index into sites array in machtab */
+	socket_t fd;
+#ifdef DB_WIN32
+	WSAEVENT event_object;
+#endif
+#define CONN_CONNECTING 0x01	/* nonblocking connect in progress */
+	u_int32_t flags;
+	
+
+	/*
+	 * Output: usually we just simply write messages right in line, in the
+	 * send() function's thread.  But if TCP doesn't have enough network
+	 * buffer space for us when we first try it, we instead allocate some
+	 * memory, and copy the message, and then send it as space becomes
+	 * available in our main select() thread.
+	 */
+	OUT_Q_HEADER outbound_queue;
+	int out_queue_length;
+
+
+	/*
+	 * Input: while we're reading a message, we keep track of what phase
+	 * we're in.  In both phases, we use a REPMGR_IOVECS to keep track of
+	 * our progress within the phase.  Depending upon the message type, we
+	 * end up with either a rep_message (which is a wrapper for the control
+	 * and rec DBTs), or a single generic DBT.
+	 *     Any time we're in DATA_PHASE, it means we have already received
+	 * the message header (consisting of msg_type and 2 sizes), and
+	 * therefore we have allocated buffer space to read the data.  (This is
+	 * important for resource clean-up.)
+	 */
+	phase_t		reading_phase;
+	REPMGR_IOVECS iovecs;
+	
+	u_int8_t	msg_type;
+	u_int32_t	control_size_buf, rec_size_buf;
+
+	union {
+		REPMGR_MESSAGE *rep_message;
+		struct {
+			DBT cntrl, rec;
+		} repmgr_msg;
+	} input;
+};
+
+
+/*
+ * Each site that we know about is either idle or connected.  If it's connected,
+ * we have a reference to a connection object; if it's idle, we have a reference
+ * to a retry object.
+ *     We store site objects in a simple array in the machtab, indexed by EID.
+ * (We allocate EID numbers for other sites simply according to their index
+ * within this array; we use the special value INT_MAX to represent our own
+ * EID.)
+ */
+struct __repmgr_site {
+	repmgr_netaddr_t net_addr;
+	DB_LSN max_ack;		/* Best ack we've heard from this site. */
+	int priority;
+
+#define SITE_IDLE 1		/* Waiting til time to retry connecting. */
+#define SITE_CONNECTED 2
+	int state;
+
+	union {
+		REPMGR_CONNECTION *conn; /* when CONNECTED */
+		REPMGR_RETRY *retry; /* when IDLE */
+	} ref;
+};
+
+
+/*
+ * Repmgr message formats.  We pass these in the "control" portion of a message.
+ * For an ack, we just let the "rec" part go unused.  But for a handshake, the
+ * "rec" part contains the variable-length host name (including terminating NUL
+ * character).
+ */
+typedef struct {
+	u_int32_t generation;
+	DB_LSN lsn;
+} DB_REPMGR_ACK;
+
+/*
+ * The hand-shake message is exchanged upon establishment of a connection.  The
+ * message protocol version number here refers to the connection as a whole.  In
+ * other words, it's an assertion that every message sent or received on this
+ * connection shall be of the specified version.  Since repmgr uses TCP, a
+ * reliable stream-oriented protocol, this assertion is meaningful.
+ */
+typedef struct {
+#define	DB_REPMGR_VERSION	1
+	u_int32_t version;
+	u_int16_t port;
+	u_int32_t priority;
+} DB_REPMGR_HANDSHAKE;
+
+
+/*
+ * We store site structs in a dynamically allocated, growable array, indexed by
+ * EID.  We allocate EID numbers for remote sites simply according to their
+ * index within this array.  We don't need (the same kind of) info for ourself
+ * (the local site), so we use an EID value that won't conflict with any valid
+ * array index.
+ */
+#define SITE_FROM_EID(eid) (&db_rep->sites[eid])
+#define EID_FROM_SITE(s) ((s) - (&db_rep->sites[0]))
+#define IS_VALID_EID(e) ((e)>=0)
+#define	SELF_EID	INT_MAX
+
+
+#define IS_PEER_POLICY(p) ((p) == DB_REPMGR_ACKS_ALL_PEERS || \
+    (p) == DB_REPMGR_ACKS_QUORUM ||                           \
+    (p) == DB_REPMGR_ACKS_ONE_PEER)
+
+#define LOCK_MUTEX(m) do {				   \
+        int __ret;					   \
+	if ((__ret = __repmgr_lock_mutex(&(m))) != 0)	   \
+		return (__ret);				   \
+} while (0)
+
+#define UNLOCK_MUTEX(m) do {				   \
+        int __ret;					   \
+	if ((__ret = __repmgr_unlock_mutex(&(m))) != 0)	   \
+		return (__ret);				   \
+} while (0)
+
+
+/* POSIX/Win32 socket (and other) portability. */
+#ifdef DB_WIN32
+#define WOULDBLOCK		WSAEWOULDBLOCK
+#define INPROGRESS		WSAEWOULDBLOCK
+
+#define	net_errno		WSAGetLastError()
+typedef int socklen_t;
+typedef char * sockopt_t;
+
+#define iov_len len
+#define iov_base buf
+
+typedef DWORD select_timeout_t;
+typedef DWORD threadsync_timeout_t;
+
+#define REPMGR_SYNC_INITED(db_rep) (db_rep->waiters != NULL)
+#else
+
+#define INVALID_SOCKET		-1
+#define SOCKET_ERROR		-1
+#define WOULDBLOCK		EWOULDBLOCK
+#define INPROGRESS		EINPROGRESS
+
+#define	net_errno		errno
+typedef void * sockopt_t;
+
+#define	closesocket(fd)		close(fd)
+
+typedef struct timeval select_timeout_t;
+typedef struct timespec threadsync_timeout_t;
+
+#define REPMGR_SYNC_INITED(db_rep) (db_rep->read_pipe >= 0)
+#endif
+#endif  /* HAVE_REPLICATION_THREADS */
+
+
 #include "dbinc_auto/rep_ext.h"
+#ifdef HAVE_REPLICATION_THREADS
+#include "dbinc_auto/repmgr_ext.h"
+#endif  /* HAVE_REPLICATION_THREADS */
 #endif	/* !_REP_H_ */

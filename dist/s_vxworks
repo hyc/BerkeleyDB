@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_vxworks,v 12.6 2005/11/03 17:46:13 bostic Exp $
+#	$Id: s_vxworks,v 12.9 2006/06/04 20:12:36 bostic Exp $
 #
 # Build the VxWorks files.
 
@@ -58,6 +58,8 @@ s/@DB_VERSION_UNIQUE_NAME@//
 s/@DB_CONST@//
 s/@DB_PROTO1@/#undef __P/
 s/@DB_PROTO2@/#define	__P(protos)	protos/
+/@platform_header@/d
+/@platform_footer@/d
 ENDOFSEDTEXT
 (echo "$msgc" &&
     sed -f $s ../dbinc/db.in &&
@@ -104,6 +106,10 @@ f=../build_vxworks/db_config_small.h
     vx_config.in) > $t
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+
+f=../build_vxworks/clib_port.h
+cmp clib_port.h $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp clib_port.h $f && chmod 444 $f)
 
 # Build a sed script that will change a "standard" DB utility into
 # VxWorks-compatible code.
@@ -299,4 +305,3 @@ for v in 0 2 ; do
 	cmp $u $f > /dev/null 2>&1 ||
 	    (echo "Building $f" && rm -f $f && cp $u $f && chmod 444 $f)
 done
-

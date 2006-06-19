@@ -1,22 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: snprintf.c,v 12.1 2005/06/16 20:20:50 bostic Exp $
+ * $Id: snprintf.c,v 12.3 2006/05/05 14:53:08 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>				/* Declare STDERR_FILENO. */
-#endif
 
 #include "db_int.h"
 

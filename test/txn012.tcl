@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
-# Sleepycat Software. All rights reserved.
+# Copyright (c) 2005-2006
+#	Sleepycat Software.  All rights reserved.
 #
-# $Id: txn012.tcl,v 12.1 2005/05/23 17:16:42 carol Exp $
+# $Id: txn012.tcl,v 12.2 2006/01/02 22:03:30 bostic Exp $
 #
 # TEST	txn012
 # TEST	Test txn->getname and txn->setname. 

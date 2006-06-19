@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep036script.tcl,v 12.1 2005/06/16 20:24:03 bostic Exp $
+# $Id: rep036script.tcl,v 12.3 2006/04/12 03:24:06 sue Exp $
 #
 # Rep036 script - create additional writers in master env.
 #
@@ -30,10 +30,7 @@ set writerid [ lindex $argv 1 ]
 set nentries [ lindex $argv 2 ]
 set method [ lindex $argv 3 ]
 
-# Join the queue env.  We assume the rep test convention of
-# placing the messages in $testdir/MSGQUEUEDIR.
-set queueenv [eval berkdb_env -home $testdir/MSGQUEUEDIR]
-error_check_good script_qenv_open [is_valid_env $queueenv] TRUE
+set is_repchild 1
 # We need to set up our own machid.
 repladd 1
 repladd 2

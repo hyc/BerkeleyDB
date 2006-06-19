@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep045script.tcl,v 12.2 2005/08/11 18:19:48 carol Exp $
+# $Id: rep045script.tcl,v 12.4 2006/04/12 03:24:07 sue Exp $
 #
 # Rep045 script - replication with version dbs.
 #
@@ -29,10 +29,7 @@ set clientdir [ lindex $argv 0 ]
 set vfile [ lindex $argv 1 ]
 set niter 50
 
-# Join the queue env.  We assume the rep test convention of
-# placing the messages in $testdir/MSGQUEUEDIR.
-set queueenv [eval berkdb_env -home $testdir/MSGQUEUEDIR]
-error_check_good script_qenv_open [is_valid_env $queueenv] TRUE
+set is_repchild 1
 
 # We need to set up our own machids.
 repladd 3

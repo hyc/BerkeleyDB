@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: TupleSerialBinding.java,v 12.2 2005/08/01 20:25:08 mark Exp $
+ * $Id: TupleSerialBinding.java,v 12.3 2006/01/02 22:02:24 bostic Exp $
  */
 
 package com.sleepycat.bind.serial;

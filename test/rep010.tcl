@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep010.tcl,v 12.2 2005/06/23 15:25:21 carol Exp $
+# $Id: rep010.tcl,v 12.5 2006/03/10 21:42:11 carol Exp $
 #
 # TEST  rep010
 # TEST	Replication and ISPERM
@@ -21,12 +21,17 @@ proc rep010 { method { niter 100 } { tnum "010" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Run for all access methods. 
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 2]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
@@ -72,7 +77,7 @@ proc rep010_sub { method niter tnum logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(M) "berkdb_env_noerr -create \
 	    -log_max 1000000 $m_logargs \
 	    -home $masterdir $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"

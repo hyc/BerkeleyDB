@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TupleOrderingTest.java,v 12.2 2005/08/01 20:25:27 mark Exp $
+ * $Id: TupleOrderingTest.java,v 12.4 2006/06/09 14:32:31 mark Exp $
  */
 
 package com.sleepycat.bind.tuple.test;
@@ -321,13 +321,16 @@ public class TupleOrderingTest extends TestCase {
         // Only positive floats and doubles are ordered deterministically
 
         final float[] DATA = {
-            0, (float) 0.01, (float) 0.02, (float) 0.99,
+            0, Float.MIN_VALUE, 2 * Float.MIN_VALUE,
+            (float) 0.01, (float) 0.02, (float) 0.99,
             1, (float) 1.01, (float) 1.02, (float) 1.99,
             Byte.MAX_VALUE - 1, Byte.MAX_VALUE,
             Short.MAX_VALUE - 1, Short.MAX_VALUE,
             Integer.MAX_VALUE,
             Long.MAX_VALUE / 2, Long.MAX_VALUE,
             Float.MAX_VALUE,
+            Float.POSITIVE_INFINITY,
+            Float.NaN,
         };
         for (int i = 0; i < DATA.length; i += 1) {
             out.writeFloat(DATA[i]);
@@ -340,16 +343,118 @@ public class TupleOrderingTest extends TestCase {
         // Only positive floats and doubles are ordered deterministically
 
         final double[] DATA = {
-            0, 0.001, 0.002, 0.999,
+            0, Double.MIN_VALUE, 2 * Double.MIN_VALUE,
+            0.001, 0.002, 0.999,
             1, 1.001, 1.002, 1.999,
             Byte.MAX_VALUE - 1, Byte.MAX_VALUE,
             Short.MAX_VALUE - 1, Short.MAX_VALUE,
             Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
             Long.MAX_VALUE / 2, Long.MAX_VALUE,
             Float.MAX_VALUE, Double.MAX_VALUE,
+            Double.POSITIVE_INFINITY,
+            Double.NaN,
         };
         for (int i = 0; i < DATA.length; i += 1) {
             out.writeDouble(DATA[i]);
+            check(i);
+        }
+    }
+
+    public void testSortedFloat() {
+
+        final float[] DATA = {
+            Float.NEGATIVE_INFINITY,
+            (- Float.MAX_VALUE),
+            Long.MIN_VALUE,
+            Long.MIN_VALUE / 2,
+            Integer.MIN_VALUE,
+            Short.MIN_VALUE,
+            Short.MIN_VALUE + 1,
+            Byte.MIN_VALUE,
+            Byte.MIN_VALUE + 1,
+            (float) -1.99,
+            (float) -1.02,
+            (float) -1.01,
+            -1,
+            (float) -0.99,
+            (float) -0.02,
+            (float) -0.01,
+            2 * (- Float.MIN_VALUE),
+            (- Float.MIN_VALUE),
+            0,
+            Float.MIN_VALUE,
+            2 * Float.MIN_VALUE,
+            (float) 0.01,
+            (float) 0.02,
+            (float) 0.99,
+            1,
+            (float) 1.01,
+            (float) 1.02,
+            (float) 1.99,
+            Byte.MAX_VALUE - 1,
+            Byte.MAX_VALUE,
+            Short.MAX_VALUE - 1,
+            Short.MAX_VALUE,
+            Integer.MAX_VALUE,
+            Long.MAX_VALUE / 2,
+            Long.MAX_VALUE,
+            Float.MAX_VALUE,
+            Float.POSITIVE_INFINITY,
+            Float.NaN,
+        };
+        for (int i = 0; i < DATA.length; i += 1) {
+            out.writeSortedFloat(DATA[i]);
+            check(i);
+        }
+    }
+
+    public void testSortedDouble() {
+
+        final double[] DATA = {
+            Double.NEGATIVE_INFINITY,
+            (- Double.MAX_VALUE),
+            (- Float.MAX_VALUE),
+            Long.MIN_VALUE,
+            Long.MIN_VALUE / 2,
+            Integer.MIN_VALUE,
+            Short.MIN_VALUE,
+            Short.MIN_VALUE + 1,
+            Byte.MIN_VALUE,
+            Byte.MIN_VALUE + 1,
+            -1.999,
+            -1.002,
+            -1.001,
+            -1,
+            -0.999,
+            -0.002,
+            -0.001,
+            2 * (- Double.MIN_VALUE),
+            (- Double.MIN_VALUE),
+            0,
+            Double.MIN_VALUE,
+            2 * Double.MIN_VALUE,
+            0.001,
+            0.002,
+            0.999,
+            1,
+            1.001,
+            1.002,
+            1.999,
+            Byte.MAX_VALUE - 1,
+            Byte.MAX_VALUE,
+            Short.MAX_VALUE - 1,
+            Short.MAX_VALUE,
+            Integer.MAX_VALUE - 1,
+            Integer.MAX_VALUE,
+            Long.MAX_VALUE / 2,
+            Long.MAX_VALUE,
+            Float.MAX_VALUE,
+            Double.MAX_VALUE,
+            Double.POSITIVE_INFINITY,
+            Double.NaN,
+        };
+        for (int i = 0; i < DATA.length; i += 1) {
+            out.writeSortedDouble(DATA[i]);
             check(i);
         }
     }

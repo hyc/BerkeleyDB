@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2003
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: SecondaryDeadlockTest.java,v 12.3 2005/08/01 20:25:30 mark Exp $
+ * $Id: SecondaryDeadlockTest.java,v 12.4 2006/01/02 22:03:39 bostic Exp $
  */
 
 package com.sleepycat.collections.test;

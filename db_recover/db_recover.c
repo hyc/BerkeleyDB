@@ -1,39 +1,20 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_recover.c,v 12.5 2005/06/16 20:21:29 bostic Exp $
+ * $Id: db_recover.c,v 12.7 2006/05/05 14:53:19 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
+
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2005\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
 #endif
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#if TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#endif
-
-#include "db_int.h"
 
 int main __P((int, char *[]));
 int read_timestamp __P((char *, time_t *));

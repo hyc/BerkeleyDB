@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep036.tcl,v 12.2 2005/06/23 15:25:22 carol Exp $
+# $Id: rep036.tcl,v 12.5 2006/03/10 21:44:32 carol Exp $
 #
 # TEST  	rep036
 # TEST	Multiple master processes writing to the database.
@@ -16,6 +16,12 @@ proc rep036 { method { niter 200 } { tnum "036" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Valid for btree only.
+	if { $checking_valid_methods } { 
+		set valid_methods { btree } 
+		return $valid_methods
+	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."
 		return
@@ -59,11 +65,11 @@ proc rep036_sub { method niter tnum envargs logset args } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(M) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
 	    -errpfx MASTER -errfile /dev/stderr -txn -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(M) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
 #	    -errpfx MASTER -errfile /dev/stderr -txn -rep_master \
 #	    -verbose {rep on} \
@@ -73,11 +79,11 @@ proc rep036_sub { method niter tnum envargs logset args } {
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(C) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs -home $clientdir $c_logargs \
 	    -errfile /dev/stderr -errpfx CLIENT -txn -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(C) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs -home $clientdir $c_logargs \
 #	    -errfile /dev/stderr -errpfx CLIENT -txn -rep_client \
 #	    -verbose {rep on} \

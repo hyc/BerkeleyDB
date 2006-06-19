@@ -80,6 +80,7 @@ int tcl_RepTransport  __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *, DBTCL
 int tcl_RepStart __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *));
 int tcl_RepProcessMessage __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *));
 int tcl_RepStat __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *));
+int tcl_RepMgr __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *));
 int seq_Cmd __P((ClientData, Tcl_Interp *, int, Tcl_Obj * CONST*));
 void _TxnInfoDelete __P((Tcl_Interp *, DBTCL_INFO *));
 int tcl_TxnCheckpoint __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DB_ENV *));

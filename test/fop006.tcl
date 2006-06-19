@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: fop006.tcl,v 12.5 2005/10/19 15:54:35 margo Exp $
+# $Id: fop006.tcl,v 12.7 2006/05/26 19:50:01 carol Exp $
 #
 # TEST	fop006
 # TEST	Test file system operations in multiple simultaneous
@@ -166,8 +166,7 @@ proc fop006 { method { inmem 0 } args } {
 
 			# Clean up for next case
 			error_check_good env_close [$env close] 0
-			error_check_good \
-			    envremove [berkdb envremove -home $testdir] 0
+			catch { [berkdb envremove -home $testdir] } res
 
 			# Check for errors in log file.
 			set errstrings [eval findfail $testdir/fop$tnum.log]

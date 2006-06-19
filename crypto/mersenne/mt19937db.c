@@ -1,5 +1,5 @@
 /*
- * $Id: mt19937db.c,v 12.1 2005/07/20 16:50:57 bostic Exp $
+ * $Id: mt19937db.c,v 12.3 2006/04/18 18:39:31 ubell Exp $
  */
 #include "db_config.h"
 
@@ -99,7 +99,7 @@ __db_sgenrand(seed, mt, mtip)
 {
     int i;
 
-    DB_ASSERT(seed != 0);
+    DB_ASSERT(NULL, seed != 0);
     for (i=0;i<N;i++) {
          mt[i] = seed & 0xffff0000;
          seed = 69069 * seed + 1;
@@ -156,7 +156,7 @@ __db_genrand(dbenv)
 		 */
 		do {
 			__os_clock(dbenv, &secs, &usecs);
-			__db_chksum((u_int8_t *)&secs, sizeof(secs), NULL,
+			__db_chksum(NULL, (u_int8_t *)&secs, sizeof(secs), NULL,
 			    (u_int8_t *)&seed);
 		} while (seed == 0);
         	__db_sgenrand((long)seed, dbenv->mt, &dbenv->mti); 

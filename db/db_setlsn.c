@@ -1,21 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_setlsn.c,v 12.8 2005/10/21 19:17:40 bostic Exp $
+ * $Id: db_setlsn.c,v 12.12 2006/05/05 14:53:14 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/db_page.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/db_am.h"
 #include "dbinc/mp.h"
 
@@ -101,9 +96,10 @@ __env_lsn_reset(dbenv, name, encrypted)
 	/* Reset the LSN on every page of the database file. */
 	mpf = dbp->mpf;
 	for (pgno = 0;
-	    (ret = __memp_fget(mpf, &pgno, 0, &pagep)) == 0; ++pgno) {
+	    (ret = __memp_fget(mpf, &pgno, NULL, DB_MPOOL_DIRTY, &pagep)) == 0;
+	    ++pgno) {
 		LSN_NOT_LOGGED(pagep->lsn);
-		if ((ret = __memp_fput(mpf, pagep, DB_MPOOL_DIRTY)) != 0)
+		if ((ret = __memp_fput(mpf, pagep, 0)) != 0)
 			goto err;
 	}
 

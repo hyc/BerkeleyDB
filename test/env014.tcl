@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: env014.tcl,v 12.1 2005/09/16 14:08:57 carol Exp $
+# $Id: env014.tcl,v 12.2 2006/01/02 22:03:14 bostic Exp $
 #
 # TEST	env014
 # TEST	

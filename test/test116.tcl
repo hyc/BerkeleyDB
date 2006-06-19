@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #       Sleepycat Software.  All rights reserved.
 #
-# $Id: test116.tcl,v 12.2 2005/10/12 18:30:38 sue Exp $
+# $Id: test116.tcl,v 12.4 2006/04/13 15:34:44 carol Exp $
 #
 # TEST	test116
 # TEST	Test of basic functionality of lsn_reset.
@@ -15,6 +15,7 @@ proc test116 { method {tnum "116"} args } {
 	global util_path
 	global passwd
 
+	set orig_tdir $testdir
 	puts "Test$tnum ($method): Test lsn_reset."
 
 	set args [convert_args $method $args]
@@ -230,6 +231,7 @@ proc test116 { method {tnum "116"} args } {
 		error_check_good newenv_close [$newenv close] 0 
 	}
 
+	set testdir $orig_tdir
 	# Close the parent env if this test created it. 
 	if { $eindex == -1 } {
 		error_check_good env_close [$env close] 0

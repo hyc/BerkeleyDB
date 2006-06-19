@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: TupleTupleKeyCreator.java,v 12.2 2005/08/01 20:25:17 mark Exp $
+ * $Id: TupleTupleKeyCreator.java,v 12.4 2006/06/09 14:32:04 mark Exp $
  */
 
 package com.sleepycat.bind.tuple;
@@ -18,6 +18,11 @@ import com.sleepycat.db.SecondaryKeyCreator;
  * An abstract key creator that uses a tuple key and a tuple data entry. This
  * class takes care of converting the key and data entry to/from {@link
  * TupleInput} and {@link TupleOutput} objects.
+ * The following abstract method must be implemented by a concrete subclass
+ * to create the index key using these objects
+ * <ul>
+ * <li> {@link #createSecondaryKey(TupleInput,TupleInput,TupleOutput)} </li>
+ * </ul>
  *
  * @author Mark Hayes
  */

@@ -2,13 +2,6 @@
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <ctype.h>
-#include <string.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
@@ -40,12 +33,12 @@ __crdel_metasub_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __crdel_metasub_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__crdel_metasub%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__crdel_metasub%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
@@ -86,12 +79,12 @@ __crdel_inmem_create_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __crdel_inmem_create_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__crdel_inmem_create%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__crdel_inmem_create%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
@@ -136,12 +129,12 @@ __crdel_inmem_rename_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __crdel_inmem_rename_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__crdel_inmem_rename%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__crdel_inmem_rename%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\toldname: ");
@@ -190,12 +183,12 @@ __crdel_inmem_remove_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __crdel_inmem_remove_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__crdel_inmem_remove%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__crdel_inmem_remove%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tname: ");

@@ -1,26 +1,17 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: db_server_cxxproc.cpp,v 12.6 2005/07/21 18:21:34 bostic Exp $
+ * $Id: db_server_cxxproc.cpp,v 12.10 2006/05/05 14:54:00 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <rpc/rpc.h>
-
-#include <string.h>
-#endif
-
-#include "db_server.h"
-
 #include "db_int.h"
 #include "db_cxx.h"
+#include "db_server.h"
 
 extern "C" {
 #include "dbinc/db_server_int.h"
@@ -678,7 +669,7 @@ __db_create_proc(
 	 * We actually require env's for databases.  The client should
 	 * have caught it, but just in case.
 	 */
-	DB_ASSERT(dbenv != NULL);
+	DB_ASSERT(NULL, dbenv != NULL);
 	dbp = new Db(dbenv, flags);
 	dbp_ctp->ct_dbp = dbp;
 	dbp_ctp->ct_type = CT_DB;
@@ -1808,7 +1799,7 @@ __db_join_proc(
 	 * the same transaction, so just check the first.
 	 */
 	ctp = get_tableent(*curs);
-	DB_ASSERT(ctp->ct_type == CT_CURSOR);
+	DB_ASSERT(dbp->get_DB()->dbenv, ctp->ct_type == CT_CURSOR);
 	/*
 	 * If we are using a transaction, set the join activity timer
 	 * to point to the parent transaction.
@@ -1831,7 +1822,7 @@ __db_join_proc(
 		 * we know they are part of a join list and we can distinguish
 		 * them and later restore them when the join cursor is closed.
 		 */
-		DB_ASSERT(ctp->ct_type == CT_CURSOR);
+		DB_ASSERT(dbp->get_DB()->dbenv, ctp->ct_type == CT_CURSOR);
 		ctp->ct_type |= CT_JOIN;
 		ctp->ct_origp = ctp->ct_activep;
 		/*

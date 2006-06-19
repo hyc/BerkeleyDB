@@ -42,7 +42,7 @@
 		}
 
 		initialize();
-    
+
 		if (DbEnv_get_version_major() != DbConstants.DB_VERSION_MAJOR ||
 		    DbEnv_get_version_minor() != DbConstants.DB_VERSION_MINOR ||
 		    DbEnv_get_version_patch() != DbConstants.DB_VERSION_PATCH)
@@ -88,8 +88,8 @@ static jclass bytearray_class, string_class, outputstream_class;
 
 static jfieldID dbc_cptr_fid;
 static jfieldID dblsn_file_fid, dblsn_offset_fid;
-static jfieldID dbt_data_fid, dbt_size_fid, dbt_ulen_fid, dbt_dlen_fid;
-static jfieldID dbt_doff_fid, dbt_flags_fid, dbt_offset_fid;
+static jfieldID dbt_data_fid, dbt_data_nio_fid, dbt_size_fid, dbt_ulen_fid;
+static jfieldID dbt_dlen_fid, dbt_doff_fid, dbt_flags_fid, dbt_offset_fid;
 static jfieldID kr_less_fid, kr_equal_fid, kr_greater_fid;
 static jfieldID lock_cptr_fid;
 static jfieldID lockreq_op_fid, lockreq_modeflag_fid, lockreq_timeout_fid;
@@ -233,6 +233,7 @@ static jfieldID mpool_stat_st_alloc_buckets_fid;
 static jfieldID mpool_stat_st_alloc_max_buckets_fid;
 static jfieldID mpool_stat_st_alloc_pages_fid;
 static jfieldID mpool_stat_st_alloc_max_pages_fid;
+static jfieldID mpool_stat_st_io_wait_fid;
 static jfieldID mutex_stat_st_mutex_align_fid;
 static jfieldID mutex_stat_st_mutex_tas_spins_fid;
 static jfieldID mutex_stat_st_mutex_cnt_fid;
@@ -324,8 +325,10 @@ static jfieldID txn_stat_st_naborts_fid;
 static jfieldID txn_stat_st_nbegins_fid;
 static jfieldID txn_stat_st_ncommits_fid;
 static jfieldID txn_stat_st_nactive_fid;
+static jfieldID txn_stat_st_nsnapshot_fid;
 static jfieldID txn_stat_st_nrestores_fid;
 static jfieldID txn_stat_st_maxnactive_fid;
+static jfieldID txn_stat_st_maxnsnapshot_fid;
 static jfieldID txn_stat_st_txnarray_fid;
 static jfieldID txn_stat_st_region_wait_fid;
 static jfieldID txn_stat_st_region_nowait_fid;
@@ -334,6 +337,8 @@ static jfieldID txn_active_txnid_fid;
 static jfieldID txn_active_parentid_fid;
 static jfieldID txn_active_pid_fid;
 static jfieldID txn_active_lsn_fid;
+static jfieldID txn_active_read_lsn_fid;
+static jfieldID txn_active_mvcc_ref_fid;
 static jfieldID txn_active_xa_status_fid;
 static jfieldID txn_active_xid_fid;
 static jfieldID txn_active_name_fid;
@@ -359,6 +364,7 @@ static jmethodID lock_construct;
 
 static jmethodID app_dispatch_method, errcall_method, env_feedback_method;
 static jmethodID msgcall_method, paniccall_method, rep_transport_method;
+static jmethodID event_notify_method;
 
 static jmethodID append_recno_method, bt_compare_method, bt_prefix_method;
 static jmethodID db_feedback_method, dup_compare_method, h_hash_method;
@@ -429,8 +435,9 @@ const struct {
 
 	{ &dblsn_file_fid, &dblsn_class, "file", "I" },
 	{ &dblsn_offset_fid, &dblsn_class, "offset", "I" },
-	
+
 	{ &dbt_data_fid, &dbt_class, "data", "[B" },
+	{ &dbt_data_nio_fid, &dbt_class, "data_nio", "Ljava/nio/ByteBuffer;" },
 	{ &dbt_size_fid, &dbt_class, "size", "I" },
 	{ &dbt_ulen_fid, &dbt_class, "ulen", "I" },
 	{ &dbt_dlen_fid, &dbt_class, "dlen", "I" },
@@ -589,6 +596,7 @@ const struct {
 	{ &mpool_stat_st_alloc_max_buckets_fid, &mpool_stat_class, "st_alloc_max_buckets", "I" },
 	{ &mpool_stat_st_alloc_pages_fid, &mpool_stat_class, "st_alloc_pages", "I" },
 	{ &mpool_stat_st_alloc_max_pages_fid, &mpool_stat_class, "st_alloc_max_pages", "I" },
+	{ &mpool_stat_st_io_wait_fid, &mpool_stat_class, "st_io_wait", "I" },
 	{ &mutex_stat_st_mutex_align_fid, &mutex_stat_class, "st_mutex_align", "I" },
 	{ &mutex_stat_st_mutex_tas_spins_fid, &mutex_stat_class, "st_mutex_tas_spins", "I" },
 	{ &mutex_stat_st_mutex_cnt_fid, &mutex_stat_class, "st_mutex_cnt", "I" },
@@ -680,8 +688,10 @@ const struct {
 	{ &txn_stat_st_nbegins_fid, &txn_stat_class, "st_nbegins", "I" },
 	{ &txn_stat_st_ncommits_fid, &txn_stat_class, "st_ncommits", "I" },
 	{ &txn_stat_st_nactive_fid, &txn_stat_class, "st_nactive", "I" },
+	{ &txn_stat_st_nsnapshot_fid, &txn_stat_class, "st_nsnapshot", "I" },
 	{ &txn_stat_st_nrestores_fid, &txn_stat_class, "st_nrestores", "I" },
 	{ &txn_stat_st_maxnactive_fid, &txn_stat_class, "st_maxnactive", "I" },
+	{ &txn_stat_st_maxnsnapshot_fid, &txn_stat_class, "st_maxnsnapshot", "I" },
 	{ &txn_stat_st_txnarray_fid, &txn_stat_class, "st_txnarray", "[L" DB_PKG "TransactionStats$Active;" },
 	{ &txn_stat_st_region_wait_fid, &txn_stat_class, "st_region_wait", "I" },
 	{ &txn_stat_st_region_nowait_fid, &txn_stat_class, "st_region_nowait", "I" },
@@ -690,6 +700,8 @@ const struct {
 	{ &txn_active_parentid_fid, &txn_active_class, "parentid", "I" },
 	{ &txn_active_pid_fid, &txn_active_class, "pid", "I" },
 	{ &txn_active_lsn_fid, &txn_active_class, "lsn", "L" DB_PKG "LogSequenceNumber;" },
+	{ &txn_active_read_lsn_fid, &txn_active_class, "read_lsn", "L" DB_PKG "LogSequenceNumber;" },
+	{ &txn_active_mvcc_ref_fid, &txn_active_class, "mvcc_ref", "I" },
 	{ &txn_active_xa_status_fid, &txn_active_class, "xa_status", "I" },
 	{ &txn_active_xid_fid, &txn_active_class, "xid", "[B" },
 	{ &txn_active_name_fid, &txn_active_class, "name", "Ljava/lang/String;" },
@@ -763,6 +775,8 @@ const struct {
 
 	{ &app_dispatch_method, &dbenv_class, "handle_app_dispatch",
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "LogSequenceNumber;I)I" },
+	{ &event_notify_method, &dbenv_class, "handle_event_notify",
+	    "(I)I" },
 	{ &env_feedback_method, &dbenv_class, "handle_env_feedback", "(II)V" },
 	{ &errcall_method, &dbenv_class, "handle_error",
 	    "(Ljava/lang/String;)V" },
@@ -791,21 +805,21 @@ const struct {
 	{ &outputstream_write_method, &outputstream_class, "write", "([BII)V" }
 };
 
-#define NELEM(x) (sizeof (x) / sizeof (x[0]))
+#define	NELEM(x) (sizeof (x) / sizeof (x[0]))
 
 JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_initialize(
     JNIEnv *jenv, jclass clazz)
 {
 	jclass cl;
 	unsigned int i, j;
-	
+
 	COMPQUIET(clazz, NULL);
-	
+
 	if ((*jenv)->GetJavaVM(jenv, &javavm) != 0) {
-		__db_err(NULL, "Cannot get Java VM");
+		__db_errx(NULL, "Cannot get Java VM");
 		return;
 	}
-	
+
 	for (i = 0; i < NELEM(all_classes); i++) {
 		cl = (*jenv)->FindClass(jenv, all_classes[i].name);
 		if (cl == NULL) {
@@ -829,12 +843,11 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_initialize(
 		}
 	}
 
-
 	/* Get field IDs */
 	for (i = 0; i < NELEM(all_fields); i++) {
 		*all_fields[i].fid = (*jenv)->GetFieldID(jenv,
 		    *all_fields[i].cl, all_fields[i].name, all_fields[i].sig);
-		
+
 		if (*all_fields[i].fid == NULL) {
 			fprintf(stderr,
 			    "Failed to look up field %s with sig %s\n",
@@ -842,13 +855,13 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_initialize(
 			return;
 		}
 	}
-	
+
 	/* Get method IDs */
 	for (i = 0; i < NELEM(all_methods); i++) {
 		*all_methods[i].mid = (*jenv)->GetMethodID(jenv,
 		    *all_methods[i].cl, all_methods[i].name,
 		    all_methods[i].sig);
-		
+
 		if (*all_methods[i].mid == NULL) {
 			for (j = 0; j < NELEM(all_classes); j++)
 				if (all_methods[i].cl == all_classes[j].cl)

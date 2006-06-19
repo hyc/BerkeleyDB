@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mutex.h,v 12.14 2005/10/13 00:56:52 bostic Exp $
+ * $Id: mutex.h,v 12.18 2006/06/05 16:35:46 bostic Exp $
  */
 
 #ifndef _DB_MUTEX_H_
@@ -31,22 +31,24 @@
 #define	MTX_LOG_HANDLE		 9
 #define	MTX_LOG_REGION		10
 #define	MTX_MPOOLFILE_HANDLE	11
-#define	MTX_MPOOL_BUFFER	12
-#define	MTX_MPOOL_FH		13
+#define	MTX_MPOOL_FH		12
+#define	MTX_MPOOL_FILE_BUCKET	13
 #define	MTX_MPOOL_HANDLE	14
 #define	MTX_MPOOL_HASH_BUCKET	15
-#define	MTX_MPOOL_REGION	16
-#define	MTX_MUTEX_REGION	17
-#define	MTX_MUTEX_TEST		18
-#define	MTX_REP_DATABASE	19
-#define	MTX_REP_REGION		20
-#define	MTX_SEQUENCE		21
-#define	MTX_TWISTER		22
-#define	MTX_TXN_ACTIVE		23
-#define	MTX_TXN_CHKPT		24
-#define	MTX_TXN_COMMIT		25
-#define	MTX_TXN_REGION		26
-#define	MTX_MAX_ENTRY		26
+#define	MTX_MPOOL_IO		16
+#define	MTX_MPOOL_REGION	17
+#define	MTX_MUTEX_REGION	18
+#define	MTX_MUTEX_TEST		19
+#define	MTX_REP_DATABASE	20
+#define	MTX_REP_REGION		21
+#define	MTX_SEQUENCE		22
+#define	MTX_TWISTER		23
+#define	MTX_TXN_ACTIVE		24
+#define	MTX_TXN_CHKPT		25
+#define	MTX_TXN_COMMIT		26
+#define	MTX_TXN_MVCC		27
+#define	MTX_TXN_REGION		28
+#define	MTX_MAX_ENTRY		28
 
 /* Redirect mutex calls to the correct functions. */
 #if defined(HAVE_MUTEX_PTHREADS) ||					\

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep035.tcl,v 12.4 2005/11/02 13:42:26 sue Exp $
+# $Id: rep035.tcl,v 12.7 2006/03/10 21:44:32 carol Exp $
 #
 # TEST  	rep035
 # TEST	Test sync-up recovery in replication.
@@ -25,6 +25,11 @@ proc rep035 { method { niter 100 } { tnum "035" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Valid for all access methods. 
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
 
 	set saved_args $args
 	set logsets [create_logsets 3]
@@ -71,11 +76,11 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(M) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
 	    -errpfx MASTER -errfile /dev/stderr $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(M) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
 #	    -errpfx MASTER -errfile /dev/stderr $m_txnargs -rep_master \
 #	    -verbose {rep on} \
@@ -85,11 +90,11 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 
 	# Open two clients
 	repladd 2
-	set env_cmd(C1) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(C1) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs -home $clientdir1 $c_logargs \
 	    -errfile /dev/stderr -errpfx CLIENT $c_txnargs -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C1) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(C1) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs -home $clientdir1 $c_logargs \
 #	    -errfile /dev/stderr -errpfx CLIENT $c_txnargs -rep_client \
 #	    -verbose {rep on} \
@@ -99,11 +104,11 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 
 	# Second client needs lock_detect flag.
 	repladd 3
-	set env_cmd(C2) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(C2) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs -home $clientdir2 $c2_logargs \
 	    -errpfx CLIENT2 -errfile /dev/stderr $c2_txnargs -rep_client \
 	    -lock_detect default -rep_transport \[list 3 replsend\]"
-#	set env_cmd(C2) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(C2) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs -home $clientdir2 $c2_logargs \
 #	    -errpfx CLIENT2 -errfile /dev/stderr $c2_txnargs -rep_client \
 #	    -verbose {rep on} \

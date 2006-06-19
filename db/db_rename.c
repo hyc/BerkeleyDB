@@ -1,22 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_rename.c,v 12.11 2005/10/07 20:21:22 ubell Exp $
+ * $Id: db_rename.c,v 12.17 2006/05/05 14:53:13 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-#include <string.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/db_page.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/db_am.h"
 #include "dbinc/fop.h"
 #include "dbinc/lock.h"
@@ -237,7 +231,7 @@ __db_rename_int(dbp, txn, name, subdb, newname)
 	DB_TEST_RECOVERY(dbp, DB_TEST_PREDESTROY, ret, name);
 
 	if (name == NULL && subdb == NULL) {
-		__db_err(dbenv, "Rename on temporary files invalid");
+		__db_errx(dbenv, "Rename on temporary files invalid");
 		ret = EINVAL;
 		goto err;
 	}
@@ -291,7 +285,7 @@ __db_rename_int(dbp, txn, name, subdb, newname)
 	 * I am pretty sure that we haven't gotten a dbreg id, so calling
 	 * dbreg_filelist_update is not necessary.
 	 */
-	DB_ASSERT(dbp->log_filename == NULL ||
+	DB_ASSERT(dbenv, dbp->log_filename == NULL ||
 	    dbp->log_filename->id == DB_LOGFILEID_INVALID);
 
 	DB_TEST_RECOVERY(dbp, DB_TEST_POSTDESTROY, ret, newname);
@@ -341,7 +335,8 @@ __db_subdb_rename(dbp, txn, name, subdb, newname)
 	    MU_OPEN, NULL, 0)) != 0)
 		goto err;
 
-	if ((ret = __memp_fget(mdbp->mpf, &dbp->meta_pgno, 0, &meta)) != 0)
+	if ((ret = __memp_fget(mdbp->mpf, &dbp->meta_pgno,
+	    txn, 0, &meta)) != 0)
 		goto err;
 	memcpy(dbp->fileid, ((DBMETA *)meta)->uid, DB_FILE_ID_LEN);
 	if ((ret = __fop_lock_handle(dbenv,

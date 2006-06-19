@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: TupleBinding.java,v 12.2 2005/08/01 20:25:16 mark Exp $
+ * $Id: TupleBinding.java,v 12.4 2006/06/09 14:32:04 mark Exp $
  */
 
 package com.sleepycat.bind.tuple;
@@ -30,7 +30,14 @@ import com.sleepycat.db.DatabaseEntry;
  *
  * <p>For key or data entries which are Java primitive classes (String,
  * Integer, etc) {@link #getPrimitiveBinding} may be used to return a builtin
- * tuple binding.  A custom tuple binding for these types is not needed.</p>
+ * tuple binding.  A custom tuple binding for these types is not needed.
+ * <em>Note:</em> {@link #getPrimitiveBinding} returns bindings that do not
+ * sort negative floating point numbers correctly by default.  See {@link
+ * SortedFloatBinding} and {@link SortedDoubleBinding} for details.</p>
+ *
+ * <p>When a tuple binding is used as a key binding, it produces key values
+ * with a reasonable default sort order.  For more information on the default
+ * sort order, see {@link com.sleepycat.bind.tuple.TupleOutput}.</p>
  *
  * @author Mark Hayes
  */
@@ -108,6 +115,11 @@ public abstract class TupleBinding extends TupleBase implements EntryBinding {
      * <li><code>Float</code></li>
      * <li><code>Double</code></li>
      * </ul>
+     *
+     * <p><em>Note:</em> {@link #getPrimitiveBinding} returns bindings that do
+     * not sort negative floating point numbers correctly by default.  See
+     * {@link SortedFloatBinding} and {@link SortedDoubleBinding} for
+     * details.</p>
      *
      * @param cls is the primitive Java class.
      *

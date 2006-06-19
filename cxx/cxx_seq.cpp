@@ -1,21 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: cxx_seq.cpp,v 12.2 2005/10/13 20:49:47 bostic Exp $
+ * $Id: cxx_seq.cpp,v 12.4 2006/05/05 14:53:12 bostic Exp $
  */
 
 #include "db_config.h"
 
-#include <errno.h>
-#include <string.h>
+#include "db_int.h"
 
 #include "db_cxx.h"
 #include "dbinc/cxx_int.h"
-
-#include "db_int.h"
 
 // Helper macro for simple methods that pass through to the
 // underlying C method. It may return an error or raise an exception.

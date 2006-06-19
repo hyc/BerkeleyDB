@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep020.tcl,v 12.5 2005/10/18 19:04:17 carol Exp $
+# $Id: rep020.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
 #
 # TEST  rep020
 # TEST	Replication elections - test election generation numbers.
@@ -18,6 +18,12 @@ proc rep020 { method args } {
 		return
 	} 
 	set tnum "020"
+
+	# Run for btree only.
+	if { $checking_valid_methods } { 
+		set valid_methods { btree } 
+		return $valid_methods
+	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."
 		return

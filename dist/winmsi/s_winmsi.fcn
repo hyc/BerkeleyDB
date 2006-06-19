@@ -1,4 +1,4 @@
-#	$Id: s_winmsi.fcn,v 1.9 2005/10/26 13:29:34 dda Exp $
+#	$Id: s_winmsi.fcn,v 1.10 2005/12/01 03:04:20 bostic Exp $
 #
 # The common functions used by the s_winmsi scripts (both
 # for core DB and DB/XML).
@@ -1206,10 +1206,10 @@ CreateWindowsSystem() {
     local here=`pwd`
     Progress "Copy Window system files..."
     cd "${PRODUCT_SUB_BLDDIR}"
-    cp -f $SYSTEMROOT/system32/msvcr71.dll  build_win32/Release/ || exit 1
-    cp -f $SYSTEMROOT/system32/msvcp71.dll  build_win32/Release/ || exit 1
-    cp -f $SYSTEMROOT/system32/msvcr71d.dll build_win32/Debug/ || exit 1
-    cp -f $SYSTEMROOT/system32/msvcp71d.dll build_win32/Debug/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcr71.dll  build_windows/Release/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcp71.dll  build_windows/Release/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcr71d.dll build_windows/Debug/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcp71d.dll build_windows/Debug/ || exit 1
     cd $here
 }
 
@@ -1247,7 +1247,7 @@ CreateWindowsBuild() {
     #
     sed -e 's/$//' < ${PRODUCT_STAGE}/../winbuild.bat | tr '\001' '\015'  > wbuild.bat
     # TODO: Needed?
-    rm -f build_win32/Berkeley_DB.sln
+    rm -f build_windows/Berkeley_DB.sln
     rm -f winbld.out winbld.err
     touch winbld.out winbld.err
     echo "Build output and errors are collected in" >> $ERRORLOG

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  */
 /*
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: btree.h,v 12.8 2005/08/08 14:52:30 bostic Exp $
+ * $Id: btree.h,v 12.10 2006/05/05 17:30:00 bostic Exp $
  */
 #ifndef	_DB_BTREE_H_
 #define	_DB_BTREE_H_
@@ -98,35 +98,36 @@ typedef enum {
  * to return deleted entries.  To simplify both the mnemonic representation
  * and the code that checks for various cases, we construct a set of bitmasks.
  */
-#define	S_READ		0x00001		/* Read locks. */
-#define	S_WRITE		0x00002		/* Write locks. */
+#define	SR_READ		0x00001		/* Read locks. */
+#define	SR_WRITE	0x00002		/* Write locks. */
 
-#define	S_APPEND	0x00040		/* Append to the tree. */
-#define	S_DELNO		0x00080		/* Don't return deleted items. */
-#define	S_DUPFIRST	0x00100		/* Return first duplicate. */
-#define	S_DUPLAST	0x00200		/* Return last duplicate. */
-#define	S_EXACT		0x00400		/* Exact items only. */
-#define	S_PARENT	0x00800		/* Lock page pair. */
-#define	S_STACK		0x01000		/* Need a complete stack. */
-#define	S_PAST_EOF	0x02000		/* If doing insert search (or keyfirst
+#define	SR_APPEND	0x00040		/* Append to the tree. */
+#define	SR_DELNO	0x00080		/* Don't return deleted items. */
+#define	SR_DUPFIRST	0x00100		/* Return first duplicate. */
+#define	SR_DUPLAST	0x00200		/* Return last duplicate. */
+#define	SR_EXACT	0x00400		/* Exact items only. */
+#define	SR_PARENT	0x00800		/* Lock page pair. */
+#define	SR_STACK	0x01000		/* Need a complete stack. */
+#define	SR_PAST_EOF	0x02000		/* If doing insert search (or keyfirst
 					 * or keylast operations), or a split
 					 * on behalf of an insert, it's okay to
 					 * return an entry one past end-of-page.
 					 */
-#define	S_STK_ONLY	0x04000		/* Just return info in the stack */
-#define	S_MAX		0x08000		/* Get the right most key */
-#define	S_MIN		0x10000		/* Get the left most key */
-#define	S_NEXT		0x20000		/* Get the page after this key */
-#define	S_DEL		0x40000		/* Get the tree to delete this key. */
-#define	S_START		0x80000		/* Level to start stack. */
+#define	SR_STK_ONLY	0x04000		/* Just return info in the stack */
+#define	SR_MAX		0x08000		/* Get the right most key */
+#define	SR_MIN		0x10000		/* Get the left most key */
+#define	SR_NEXT		0x20000		/* Get the page after this key */
+#define	SR_DEL		0x40000		/* Get the tree to delete this key. */
+#define	SR_START	0x80000		/* Level to start stack. */
 
-#define	S_DELETE	(S_WRITE | S_DUPFIRST | S_DELNO | S_EXACT | S_STACK)
-#define	S_FIND		(S_READ | S_DUPFIRST | S_DELNO)
-#define	S_FIND_WR	(S_WRITE | S_DUPFIRST | S_DELNO)
-#define	S_INSERT	(S_WRITE | S_DUPLAST | S_PAST_EOF | S_STACK)
-#define	S_KEYFIRST	(S_WRITE | S_DUPFIRST | S_PAST_EOF | S_STACK)
-#define	S_KEYLAST	(S_WRITE | S_DUPLAST | S_PAST_EOF | S_STACK)
-#define	S_WRPAIR	(S_WRITE | S_DUPLAST | S_PAST_EOF | S_PARENT)
+#define	SR_DELETE							\
+	(SR_WRITE | SR_DUPFIRST | SR_DELNO | SR_EXACT | SR_STACK)
+#define	SR_FIND		(SR_READ | SR_DUPFIRST | SR_DELNO)
+#define	SR_FIND_WR	(SR_WRITE | SR_DUPFIRST | SR_DELNO)
+#define	SR_INSERT	(SR_WRITE | SR_DUPLAST | SR_PAST_EOF | SR_STACK)
+#define	SR_KEYFIRST	(SR_WRITE | SR_DUPFIRST | SR_PAST_EOF | SR_STACK)
+#define	SR_KEYLAST	(SR_WRITE | SR_DUPLAST | SR_PAST_EOF | SR_STACK)
+#define	SR_WRPAIR	(SR_WRITE | SR_DUPLAST | SR_PAST_EOF | SR_PARENT)
 
 /*
  * Various routines pass around page references.  A page reference is

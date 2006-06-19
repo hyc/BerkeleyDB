@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mutex_int.h,v 12.17 2005/11/08 22:26:49 mjc Exp $
+ * $Id: mutex_int.h,v 12.20 2006/05/04 14:45:37 bostic Exp $
  */
 
 #ifndef _DB_MUTEX_INT_H_
@@ -206,7 +206,7 @@ typedef lock_t tsl_t;
  * VMS.
  *********************************************************************/
 #ifdef HAVE_MUTEX_VMS
-#include <sys/mman.h>;
+#include <sys/mman.h>
 #include <builtins.h>
 typedef volatile unsigned char tsl_t;
 
@@ -773,21 +773,21 @@ typedef unsigned char tsl_t;
  * DB_MUTEXMGR --
  *	The mutex manager encapsulates the mutex system.
  */
-typedef struct __db_mutexmgr {
+struct __db_mutexmgr {
 	/* These fields are never updated after creation, so not protected. */
 	DB_ENV	*dbenv;			/* Environment */
 	REGINFO	 reginfo;		/* Region information */
 
 	void	*mutex_array;		/* Base of the mutex array */
-} DB_MUTEXMGR;
+};
 
 /* Macros to lock/unlock the mutex region as a whole. */
 #define	MUTEX_SYSTEM_LOCK(dbenv)					\
-	MUTEX_LOCK(dbenv, ((DB_MUTEXREGION *)((DB_MUTEXMGR *)		\
-	    (dbenv)->mutex_handle)->reginfo.primary)->mtx_region)
+	MUTEX_LOCK(dbenv, ((DB_MUTEXREGION *)				\
+	    (dbenv)->mutex_handle->reginfo.primary)->mtx_region)
 #define	MUTEX_SYSTEM_UNLOCK(dbenv)					\
-	MUTEX_UNLOCK(dbenv, ((DB_MUTEXREGION *)((DB_MUTEXMGR *)		\
-	    (dbenv)->mutex_handle)->reginfo.primary)->mtx_region)
+	MUTEX_UNLOCK(dbenv, ((DB_MUTEXREGION *)				\
+	    (dbenv)->mutex_handle->reginfo.primary)->mtx_region)
 
 /*
  * DB_MUTEXREGION --
@@ -807,7 +807,7 @@ typedef struct __db_mutexregion {
 	DB_MUTEX_STAT	stat;		/* Mutex statistics */
 } DB_MUTEXREGION;
 
-typedef struct __mutex_t {		/* Mutex. */
+struct __db_mutex_t {			/* Mutex. */
 #ifdef MUTEX_FIELDS
 	MUTEX_FIELDS
 #endif
@@ -834,7 +834,7 @@ typedef struct __mutex_t {		/* Mutex. */
 	 * is expensive, and the mutex structure is a MP hot spot.
 	 */
 	u_int32_t flags;		/* MUTEX_XXX */
-} DB_MUTEX;
+};
 
 /* Macro to get a reference to a specific mutex. */
 #define	MUTEXP_SET(indx)						\

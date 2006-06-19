@@ -1,23 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_txn.c,v 12.8 2005/11/02 20:22:25 bostic Exp $
+ * $Id: tcl_txn.c,v 12.12 2006/05/05 14:54:02 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
 #ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
 #include <tcl.h>
 #endif
-
-#include "db_int.h"
 #include "dbinc/tcl_db.h"
 
 static int tcl_TxnCommit __P((Tcl_Interp *,
@@ -150,6 +145,7 @@ tcl_Txn(interp, objc, objv, envp, envip)
 		"-nosync",
 		"-nowait",
 		"-parent",
+		"-snapshot",
 		"-sync",
 		"-wrnosync",
 		NULL
@@ -164,6 +160,7 @@ tcl_Txn(interp, objc, objv, envp, envip)
 		TXNNOSYNC,
 		TXNNOWAIT,
 		TXNPARENT,
+		TXNSNAPSHOT,
 		TXNSYNC,
 		TXNWRNOSYNC
 	};
@@ -243,6 +240,9 @@ get_timeout:		if (i >= objc) {
 				Tcl_SetResult(interp, msg, TCL_VOLATILE);
 				return (TCL_ERROR);
 			}
+			break;
+		case TXNSNAPSHOT:
+			flag |= DB_TXN_SNAPSHOT;
 			break;
 		case TXNSYNC:
 			flag |= DB_TXN_SYNC;
@@ -362,8 +362,7 @@ tcl_TxnStat(interp, objc, objv, envp)
 	MAKE_STAT_LIST("Number of region lock waits", sp->st_region_wait);
 	MAKE_STAT_LIST("Number of region lock nowaits", sp->st_region_nowait);
 	for (i = 0, p = sp->st_txnarray; i < sp->st_nactive; i++, p++)
-		for (ip = LIST_FIRST(&__db_infohead); ip != NULL;
-		    ip = LIST_NEXT(ip, entries)) {
+		LIST_FOREACH(ip, &__db_infohead, entries) {
 			if (ip->i_type != I_TXN)
 				continue;
 			if (ip->i_type == I_TXN &&

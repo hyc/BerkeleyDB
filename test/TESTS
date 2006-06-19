@@ -2,6 +2,16 @@
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Test basic functionality: a snapshot transaction started
+	before a regular transaction's put can't see the modification.  
+	A snapshot transaction started after the put can see it. 
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Test what happens if a txn_ckp record falls into a	
+	different log file than the DBREG_CKP records generated
+	by the same checkpoint.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 bigfile001
 	Create a database greater than 4 GB in size.  Close, verify.
 	Grow the database somewhat.  Close, reverify.  Lather, rinse,
@@ -132,23 +142,24 @@ env012
 	fails, make sure we got the expected DB_OPNOTSUP return.
 
 	Then, the real tests:
-	1. 	Process 1 enters with -register -recover.
-	Process 2 enters successfully with just -register. 
+	For each test, we start a process that opens an env with -register.
 
-	2. 	Process 1 enters with -register -recover.
-	Process 1 is killed.
-	Process 2 enters successfully with -register -recover.
+	1. Verify that a 2nd process can enter the existing env with -register.
 
-	3. 	Process 1 enters with -register -recover.
-	Process 1 is killed.
-	Process 2 fails to enter with -register.
+	2. Kill the 1st process, and verify that the 2nd process can enter
+	with "-register -recover".
 
-	4.  	Process 1 enters with -register -recover.
-	Process 2 enters with -register.
-	Process 1 is killed.
-	Process 3 enters with -register -recover.
-	Process 2 fails with DB_RUNRECOVERY.
+	3. Kill the 1st process, and verify that the 2nd process cannot 
+	enter with just "-register".
 
+	4. While the 1st process is still running, a 2nd process enters 
+	with "-register".  Kill the 1st process.  Verify that a 3rd process
+	can enter with "-register -recover".  Verify that the 3rd process, 
+	entering, causes process 2 to fail with the message DB_RUNRECOVERY.
+
+	5. We had a bug where recovery was always run with -register
+	if there were empty slots in the process registry file.  Verify 
+	that recovery doesn't automatically run if there is an empty slot. 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 env013
@@ -168,6 +179,12 @@ env014
 	initializes the same subsystems as the original env.
 	Make sure that the attempt to change subsystems when
 	joining an env fails with the appropriate messages.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+env015
+	Rename the underlying directory of an env, make sure everything
+	still works.  Test runs with regular named databases and with
+	in-memory named databases. 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 fop001.tcl
@@ -308,6 +325,13 @@ log007
 	Test of in-memory logging bugs. [#11505]
 
 	Test db_printlog with in-memory logs. 	
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+log009
+	Test of logging and getting log file version information.
+	Each time we cross a log file boundary verify we can
+	get the version via the log cursorlag.
+	Do this both forward and backward.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 memp001
@@ -740,7 +764,7 @@ rep030
 	Test of internal initialization multiple files and pagesizes.
 	Hold some databases open on master.
 
-	One master, one client.
+	One master, one client using a data_dir for internal init.
 	Generate several log files.
 	Remove old master log files.
 	Delete client files and restart client.
@@ -761,7 +785,7 @@ rep031
 rep032
 	Test of log gap processing.
 
-	One master, one clients.
+	One master, one client.
 	Run rep_test.
 	Run rep_test without sending messages to client.
 	Make sure client missing the messages catches up properly.
@@ -1050,6 +1074,72 @@ rep058
 	before it is a client.  Verify we cannot join repl group.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep059
+
+	Replication with multiple recycle records.
+
+	Mimic an application where a client has multiple recycle records
+	only in its log and then tries to synchronize.  This has been
+	a problem because there is real log, but no perm records to
+	match on.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep060
+	Test of normally running clients and internal initialization.
+	Have a client running normally, but slow/far behind the master.
+	Then the master checkpoints and archives, causing the client
+	to suddenly be thrown into internal init.  This test tests
+	that we clean up the old files/pages in mpool and dbreg.
+	Also test same thing but the app holding an open dbp as well.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep061
+	Test of internal initialization multiple files and pagesizes
+	with page gaps.
+
+	One master, one client.
+	Generate several log files.
+	Remove old master log files.
+	Delete client files and restart client.
+	Put one more record to the master.
+	Force some page messages to get dropped.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep062
+	Test of internal initialization where client has a different
+	kind of database than the master.
+
+	Create a master of one type, and let the client catch up.
+	Close the client.
+	Remove the database on the master, and create a new 
+	database of the same name but a different type. 
+	Run the master ahead far enough that internal initialization
+	will be required on the reopen of the client. 
+	Reopen the client and verify.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep063
+	Replication election test with simulated different versions
+	for each site.  This tests that old sites with real priority
+	trump ELECTABLE sites with zero priority even with greater LSNs.
+	There is a special case in the code for testing that if the
+	priority is <= 10, we simulate mixed versions for elections.
+
+	Run a rep_test in a replicated master environment and close;
+	hold an election among a group of clients to make sure they select
+	the master with varying LSNs and priorities.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep064
+	Replication rename and forced-upgrade test.
+
+	The test verifies that the client correctly 
+	(internally) closes files when upgrading to master.
+	It does this by having the master have a database 
+	open, then crashing.  The client upgrades to master,
+	and attempts to remove the open database.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rpc001
 	Test RPC server timeouts for cursor, txn and env handles.
 
@@ -1177,14 +1267,17 @@ sdb006
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 sdb007
 	Tests page size difference errors between subdbs.
-	Test 3 different scenarios for page sizes.
-	1.  Create/open with a default page size, 2nd subdb create with
-	specified different one, should error.
-	2.  Create/open with specific page size, 2nd subdb create with
-	different one, should error.
-	3.  Create/open with specified page size, 2nd subdb create with
-	same specified size, should succeed.
-	(4th combo of using all defaults is a basic test, done elsewhere)
+	If the physical file already exists, we ignore pagesize specifications
+	on any subsequent -creates.
+
+	1.  Create/open a subdb with system default page size. 
+	Create/open a second subdb specifying a different page size. 
+	The create should succeed, but the pagesize of the new db
+	will be the system default page size. 
+	2.  Create/open a subdb with a specified, non-default page size. 
+	Create/open a second subdb specifying a different page size. 
+	The create should succeed, but the pagesize of the new db
+	will be the specified page size from the first create.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 sdb008
@@ -1266,11 +1359,11 @@ sdb018
 	All of these are within a single database.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-sdb019	
+sdb019
 	Tests in-memory subdatabases.
 	Create an in-memory subdb.  Test for persistence after
 	overflowing the cache.  Test for conflicts when we have
-	two in-memory files. 
+	two in-memory files.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 sdb020	
@@ -1544,7 +1637,7 @@ test012
 test013
 	Partial put test
 	Overwrite entire records using partial puts.
-	Make surethat NOOVERWRITE flag works.
+	Make sure that NOOVERWRITE flag works.
 
 	1. Insert 10000 keys and retrieve them (equal key/data pairs).
 	2. Attempt to overwrite keys with NO_OVERWRITE set (expect error).
@@ -2299,11 +2392,11 @@ test113
 test114
 	Test database compaction with overflows.
 
-	Populate a database.  Remove a high proportion of entries. 
+	Populate a database.  Remove a high proportion of entries.
 	Dump and save contents.  Compact the database, dump again,
 	and make sure we still have the same contents.
 	Add back some entries, delete more entries (this time by
-	cursor), dump, compact, and do the before/after check again. 
+	cursor), dump, compact, and do the before/after check again.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test115
@@ -2334,6 +2427,19 @@ test117
 
 	Unlike the other compaction tests, this one does not 
 	use -freespace.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test119
+	Test behavior when Berkeley DB returns DB_BUFFER_SMALL on a cursor.
+
+	If the user-supplied buffer is not large enough to contain 
+	the returned value, DB returns BUFFER_SMALL.  If it does, 
+	check that the cursor does not move -- if it moves, it will
+	skip items. [#13815]
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test120
+	Test of multi-version concurrency control.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 txn001
@@ -2381,3 +2487,9 @@ txn011
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 txn012
 	Test txn->getname and txn->setname. 
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+txn013
+	Test of txns used in the wrong environment. 
+	Set up two envs.  Start a txn in one env, and attempt to use it
+	in the other env.  Verify we get the appropriate error message.

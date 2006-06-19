@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep006.tcl,v 12.2 2005/06/23 15:25:21 carol Exp $
+# $Id: rep006.tcl,v 12.5 2006/03/10 21:42:11 carol Exp $
 #
 # TEST  rep006
 # TEST	Replication and non-rep env handles.
@@ -22,9 +22,13 @@ proc rep006 { method { niter 1000 } { tnum "006" } args } {
 	} 
 	set logsets [create_logsets 2]
 
+	# All access methods are allowed.
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
+
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
@@ -74,17 +78,20 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env -create -lock_max 2500 -log_max 1000000 \
-	    -home $masterdir $m_txnargs $m_logargs \
-	    -rep_master -rep_transport \
+	set max_locks 2500
+	set env_cmd(M) "berkdb_env -create -log_max 1000000 \
+	    -lock_max_objects $max_locks -lock_max_locks $max_locks \
+	    -home $masterdir \
+	    $m_txnargs $m_logargs -rep_master -rep_transport \
 	    \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env -create $c_txnargs \
-	    $c_logargs -lock_max 2500 -home $clientdir \
+	set env_cmd(C) "berkdb_env -create $c_txnargs $c_logargs \
+	    -lock_max_objects $max_locks -lock_max_locks $max_locks \
+	    -home $clientdir \
 	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
 	error_check_good client_env [is_valid_env $clientenv] TRUE

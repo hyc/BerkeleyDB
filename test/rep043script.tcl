@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep043script.tcl,v 1.4 2005/05/12 18:19:14 sue Exp $
+# $Id: rep043script.tcl,v 1.6 2006/04/12 03:24:06 sue Exp $
 #
 # Rep043 script - constant writes to an env which may be
 # either a master or a client, or changing between the
@@ -26,10 +26,7 @@ set dir [ lindex $argv 0 ]
 set writerid [ lindex $argv 1 ]
 set nentries 50
 
-# Join the queue env.  We assume the rep test convention of
-# placing the messages in $testdir/MSGQUEUEDIR.
-set queueenv [eval berkdb_env -home $testdir/MSGQUEUEDIR]
-error_check_good script_qenv_open [is_valid_env $queueenv] TRUE
+set is_repchild 1
 
 # We need to set up our own machids.
 set envid [expr $writerid + 1]

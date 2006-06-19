@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: AccessExample.cpp,v 12.1 2005/06/16 20:22:14 bostic Exp $
+ * $Id: AccessExample.cpp,v 12.2 2006/01/02 22:02:06 bostic Exp $
  */
 
 #include <sys/types.h>

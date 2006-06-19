@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_page.h,v 12.6 2005/08/08 14:52:30 bostic Exp $
+ * $Id: db_page.h,v 12.8 2006/02/28 17:54:35 ubell Exp $
  */
 
 #ifndef _DB_PAGE_H_
@@ -533,12 +533,9 @@ typedef struct _hoffdup {
 #define	B_DSET(t)	(t) |= B_DELETE
 #define	B_DISSET(t)	((t) & B_DELETE)
 
-#define	B_TYPE(t)	((t) & ~B_DELETE)
-#define	B_TSET(t, type, deleted) {					\
-	(t) = (type);							\
-	if (deleted)							\
-		B_DSET(t);						\
-}
+#define	B_TYPE(t)		((t) & ~B_DELETE)
+#define	B_TSET(t, type) 	((t) = B_TYPE(type))
+#define	B_TSET_DELETED(t, type) ((t) = (type) | B_DELETE)
 
 /*
  * The first type is B_KEYDATA, represented by the BKEYDATA structure:

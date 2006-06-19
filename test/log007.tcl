@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: log007.tcl,v 12.2 2005/06/14 20:53:51 carol Exp $
+# $Id: log007.tcl,v 12.3 2006/01/02 22:03:16 bostic Exp $
 #
 # TEST	log007
 # TEST	Test of in-memory logging bugs. [#11505]

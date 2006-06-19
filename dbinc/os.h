@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os.h,v 12.10 2005/10/31 02:22:24 bostic Exp $
+ * $Id: os.h,v 12.14 2006/06/12 13:51:19 bostic Exp $
  */
 
 #ifndef _DB_OS_H_
@@ -23,31 +23,44 @@ extern "C" {
  * which has no symbolic name in OSS.  HP says to retry the fsync. [#12957]
  */
 #define	RETRY_CHK(op, ret) do {						\
-	int __retries = DB_RETRY;					\
-	do {								\
-		(ret) = (op);						\
-	} while ((ret) != 0 && (((ret) = __os_get_errno()) == EAGAIN ||	\
-	    (ret) == EBUSY || (ret) == EINTR || (ret) == EIO ||		\
-	    (ret) == 70) &&						\
-	    --__retries > 0);						\
+	int __retries, __t_ret;						\
+	for ((ret) = 0, __retries = DB_RETRY;;) {			\
+		if ((op) == 0)						\
+			break;						\
+		(ret) = __os_get_syserr();				\
+		if (((__t_ret = __os_posix_err(ret)) == EAGAIN ||	\
+	    	    __t_ret == EBUSY || __t_ret == EINTR ||		\
+		    __t_ret == EIO || __t_ret == 70) && --__retries > 0)\
+			continue;					\
+		break;							\
+	}								\
 } while (0)
 #else
 #define	RETRY_CHK(op, ret) do {						\
-	int __retries = DB_RETRY;					\
-	do {								\
-		(ret) = (op);						\
-	} while ((ret) != 0 && (((ret) = __os_get_errno()) == EAGAIN ||	\
-	    (ret) == EBUSY || (ret) == EINTR || (ret) == EIO) &&	\
-	    --__retries > 0);						\
+	int __retries, __t_ret;						\
+	for ((ret) = 0, __retries = DB_RETRY;;) {			\
+		if ((op) == 0)						\
+			break;						\
+		(ret) = __os_get_syserr();				\
+		if (((__t_ret = __os_posix_err(ret)) == EAGAIN ||	\
+	    	    __t_ret == EBUSY || __t_ret == EINTR ||		\
+		    __t_ret == EIO) && --__retries > 0)			\
+			continue;					\
+		break;							\
+	}								\
 } while (0)
 #endif
 
 #define	RETRY_CHK_EINTR_ONLY(op, ret) do {				\
-	int __retries = DB_RETRY;					\
-	do {								\
-		(ret) = (op);						\
-	} while ((ret) != 0 &&						\
-	    (((ret) = __os_get_errno()) == EINTR) && --__retries > 0);	\
+	int __retries;							\
+	for ((ret) = 0, __retries = DB_RETRY;;) {			\
+		if ((op) == 0)						\
+			break;						\
+		(ret) = __os_get_syserr();				\
+		if (__os_posix_err(ret) == EINTR && --__retries > 0)	\
+			continue;					\
+		break;							\
+	}								\
 } while (0)
 
 /*
@@ -114,6 +127,9 @@ struct __fh_t {
 
 /* Standard 600 mode for __db_omode. */
 #define	OWNER_RW	"rw-------"
+
+/* Standard buffer size for ctime/ctime_r function calls. */
+#define	CTIME_BUFLEN	26
 
 #if defined(__cplusplus)
 }

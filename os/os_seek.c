@@ -1,20 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_seek.c,v 12.2 2005/08/10 15:47:27 bostic Exp $
+ * $Id: os_seek.c,v 12.8 2006/06/08 13:33:59 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
-#endif
 
 #include "db_int.h"
 
@@ -23,14 +16,14 @@
  *	Seek to a page/byte offset in the file.
  *
  * PUBLIC: int __os_seek __P((DB_ENV *,
- * PUBLIC:      DB_FH *, u_int32_t, db_pgno_t, u_int32_t, int, DB_OS_SEEK));
+ * PUBLIC:      DB_FH *, db_pgno_t, u_int32_t, u_int32_t, int, DB_OS_SEEK));
  */
 int
-__os_seek(dbenv, fhp, pgsize, pageno, relative, isrewind, db_whence)
+__os_seek(dbenv, fhp, pgno, pgsize, relative, isrewind, db_whence)
 	DB_ENV *dbenv;
 	DB_FH *fhp;
+	db_pgno_t pgno;
 	u_int32_t pgsize;
-	db_pgno_t pageno;
 	u_int32_t relative;
 	int isrewind;
 	DB_OS_SEEK db_whence;
@@ -39,7 +32,7 @@ __os_seek(dbenv, fhp, pgsize, pageno, relative, isrewind, db_whence)
 	int ret, whence;
 
 	/* Check for illegal usage. */
-	DB_ASSERT(F_ISSET(fhp, DB_FH_OPENED) && fhp->fd != -1);
+	DB_ASSERT(dbenv, F_ISSET(fhp, DB_FH_OPENED) && fhp->fd != -1);
 
 	switch (db_whence) {
 	case DB_OS_SEEK_CUR:
@@ -55,7 +48,7 @@ __os_seek(dbenv, fhp, pgsize, pageno, relative, isrewind, db_whence)
 		return (EINVAL);
 	}
 
-	offset = (off_t)pgsize * pageno + relative;
+	offset = (off_t)pgsize * pgno + relative;
 	if (isrewind)
 		offset = -offset;
 
@@ -66,12 +59,13 @@ __os_seek(dbenv, fhp, pgsize, pageno, relative, isrewind, db_whence)
 
 	if (ret == 0) {
 		fhp->pgsize = pgsize;
-		fhp->pgno = pageno;
+		fhp->pgno = pgno;
 		fhp->offset = relative;
-	} else
-		__db_err(dbenv, "seek: %lu %d %d: %s",
-		    (u_long)pgsize * pageno + relative,
-		    isrewind, db_whence, strerror(ret));
+	} else {
+		__db_syserr(dbenv, ret, "seek: %lu %d %d",
+		    (u_long)pgsize * pgno + relative, isrewind, db_whence);
+		ret = __os_posix_err(ret);
+	}
 
 	return (ret);
 }

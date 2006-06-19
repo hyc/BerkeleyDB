@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep042.tcl,v 12.5 2005/10/04 20:34:34 sue Exp $
+# $Id: rep042.tcl,v 12.8 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep042
 # TEST	Concurrency with updates.
@@ -23,12 +23,17 @@ proc rep042 { method { niter 10 } { tnum "042" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Valid for all access methods.
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 2]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
@@ -72,11 +77,11 @@ proc rep042_sub { method niter tnum logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_cmd "berkdb_env_noerr -create -lock_max 2500 \
+	set ma_cmd "berkdb_env_noerr -create \
 	    -log_max 1000000 $m_txnargs $m_logargs \
 	    -home $masterdir -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set ma_cmd "berkdb_env_noerr -create -lock_max 2500 \
+#	set ma_cmd "berkdb_env_noerr -create \
 #	    -log_max 1000000 $m_txnargs $m_logargs \
 #	    -verbose {rep on} -errfile /dev/stderr \
 #	    -home $masterdir -rep_master -rep_transport \

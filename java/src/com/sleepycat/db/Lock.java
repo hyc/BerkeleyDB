@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: Lock.java,v 12.1 2005/06/16 20:23:01 bostic Exp $
+ * $Id: Lock.java,v 12.3 2006/03/30 02:53:20 alexg Exp $
  */
 
 package com.sleepycat.db;
@@ -14,9 +14,9 @@ import com.sleepycat.db.internal.DbLock;
 public final class Lock {
     private DbLock dbLock;
 
-    private Lock(final DbLock dblock) {
-        this.dbLock = dbLock;
-        dbLock.wrapper = this;
+    private Lock(final DbLock inLock) {
+        this.dbLock = inLock;
+        inLock.wrapper = this;
     }
 
     /* package */

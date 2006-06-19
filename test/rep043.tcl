@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep043.tcl,v 1.4 2005/06/23 15:25:22 carol Exp $
+# $Id: rep043.tcl,v 1.7 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep043
 # TEST	
@@ -21,16 +21,30 @@ proc rep043 { method { rotations 25 } { tnum "043" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
-	set args [convert_args $method $args]
-	set logsets [create_logsets 3]
 
+	# Valid for non-record-based methods only.
+	if { $checking_valid_methods } { 
+		foreach method $valid_methods {
+			if { [is_record_based $method] == 1 } {
+				set idx [lsearch -exact $valid_methods $method]
+				if { $idx >= 0 } { 
+					set valid_methods \
+					    [lreplace $valid_methods $idx $idx]
+				}
+			}
+		}
+		return $valid_methods
+	}
 	if { [is_record_based $method] == 1 } {
 		puts "Skipping rep$tnum for record-based methods."
 		return
 	}
+
+	set args [convert_args $method $args]
+	set logsets [create_logsets 3]
+
 	# Run the body of the test with and without recovery.
-	set recopts { "" " -recover " }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
@@ -87,11 +101,11 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -lock_max 2500 -errpfx ENV0 -errfile /dev/stderr \
+	    $m_logargs -errpfx ENV0 -errfile /dev/stderr \
 	    -cachesize {0 4194304 3} -lock_detect default \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 #	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -lock_max 2500 -lock_detect default \
+#	    $m_logargs -lock_detect default \
 #	    -cachesize {0 4194304 3} \
 #	    -errpfx ENV0 -verbose {rep on} -errfile /dev/stderr \
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
@@ -101,11 +115,11 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -lock_max 2500 -errpfx ENV1 -errfile /dev/stderr \
+	    $c_logargs -errpfx ENV1 -errfile /dev/stderr \
 	    -cachesize {0 2097152 2} -lock_detect default \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 #	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -lock_max 2500 -lock_detect default \
+#	    $c_logargs -lock_detect default \
 #	    -cachesize {0 2097152 2} \
 #	    -errpfx ENV1 -verbose {rep on} -errfile /dev/stderr \
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
@@ -114,11 +128,11 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -lock_max 2500 -errpfx ENV2 -errfile /dev/stderr \
+	    $c2_logargs -errpfx ENV2 -errfile /dev/stderr \
 	    -cachesize {0 1048576 1} -lock_detect default \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 #	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-#	    $c2_logargs -lock_max 2500 -lock_detect default \
+#	    $c2_logargs -lock_detect default \
 #	    -cachesize {0 1048576 1} \
 #	    -errpfx ENV2 -verbose {rep on} -errfile /dev/stderr \
 #	    -home $clientdir2 -rep_transport \[list 3 replsend\]"

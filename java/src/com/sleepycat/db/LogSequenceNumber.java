@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: LogSequenceNumber.java,v 12.1 2005/06/16 20:23:02 bostic Exp $
+ * $Id: LogSequenceNumber.java,v 12.2 2006/01/02 22:02:36 bostic Exp $
  */
 
 package com.sleepycat.db;

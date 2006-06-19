@@ -1,5 +1,5 @@
-<!--$Id: rep_elect.so,v 1.22 2005/06/10 14:50:18 bostic Exp $-->
-<!--Copyright 1997-2005 by Sleepycat Software, Inc.-->
+<!--$Id: rep_elect.so,v 1.23 2006/03/15 19:39:22 bostic Exp $-->
+<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -23,13 +23,18 @@
 #include &lt;db.h&gt;
 <p>
 int
-DB_ENV-&gt;rep_elect(DB_ENV *env, int nsites, int nvotes,
-    int priority, u_int32_t timeout, int *envid, u_int32_t flags);
+DB_ENV-&gt;rep_elect(DB_ENV *env,
+    int nsites, int nvotes, int *envid, u_int32_t flags);
 </pre></h3>
 <hr size=1 noshade>
 <h3>Description: DB_ENV-&gt;rep_elect</h3>
 <p>The DB_ENV-&gt;rep_elect method holds an election for the master of a replication
 group.</p>
+<p>The DB_ENV-&gt;rep_elect method is not called by most replication
+applications.  It should only be called by applications implementing
+their own network transport layer, explicitly holding replication group
+elections and handling replication messages outside of the replication
+manager framework.</p>
 <p>If the election is successful, the new master's ID may be the ID of the
 previous master, or the ID of the current replication site.  The
 application is responsible for adjusting its relationship to the other
@@ -48,19 +53,22 @@ expected to participate in the election.  Once the current site has
 election information from that many sites, it will short-circuit the
 election and immediately cast its vote for a new master. The
 <b>nsites</b> parameter must be a positive integer, no less than
-<b>nvotes</b>.
+<b>nvotes</b>, or 0 if the election should use the value previously set
+using the <a href="../api_c/rep_nsites.html">DB_ENV-&gt;rep_set_nsites</a> method.
 <dt><b>nvotes</b><dd>The <b>nvotes</b> parameter specifies the minimum number of replication
 sites from which the current site must have election information, before
 the current site will cast a vote for a new master.  The <b>nvotes</b>
 parameter must be a positive integer and no greater than <b>nsites</b>,
 or 0 if the election should use the value ((<b>nsites</b> / 2) + 1) as
 the <b>nvotes</b> argument.
-<dt><b>priority</b><dd>The <b>priority</b> parameter is the priority of this environment.  It
-must be a positive integer, or 0 if this environment is not permitted
-to become a master (see <a href="../ref/rep/pri.html">Replication
-environment priorities</a> for more information).
-<dt><b>timeout</b><dd>The <b>timeout</b> parameter specifies a timeout period for an election.
-<dt><b>flags</b><dd>The <b>flags</b> parameter is currently unused, and must be set to 0.
+<dt><b>flags</b><dd>The <b>flags</b> parameter must be set to 0 or
+the following value:
+<dl compact>
+<dt><a name="DB_REP_FULL_ELECTION">DB_REP_FULL_ELECTION</a><dd>Elect a master only if all members of the replication group vote.   When
+used in conjunction with election timeouts, this flag allows sites to
+avoid configuring a poor choice for master when multiple systems are
+restarting at the same time.
+</dl>
 </dl>
 <p>Elections are done in two parts: first, replication sites collect
 information from the other replication sites they know about, and
@@ -95,7 +103,8 @@ failure, and is usually not recommended.</p>
 may fail and return one of the following non-zero errors:</p>
 <dl compact>
 <dt>DB_REP_UNAVAIL<dd>The replication group was unable to elect a master, or was unable to
-complete the election in the specified <b>timeout</b> period.
+complete the election in the election timeout period (see
+<a href="../api_c/rep_timeout.html">DB_ENV-&gt;rep_set_timeout</a> method for more information).
 </dl>
 <hr size=1 noshade>
 <h3>Class</h3>
@@ -106,6 +115,6 @@ complete the election in the specified <b>timeout</b> period.
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_c/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2005</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
 </body>
 </html>

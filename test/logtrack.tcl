@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information
 #
-# Copyright (c) 2000-2005
+# Copyright (c) 2000-2006
 #       Sleepycat Software.  All rights reserved.
 #
-# $Id: logtrack.tcl,v 12.2 2005/06/16 20:23:56 bostic Exp $
+# $Id: logtrack.tcl,v 12.3 2006/01/02 22:03:16 bostic Exp $
 #
 # logtrack.tcl:  A collection of routines, formerly implemented in Perl
 # as log.pl, to track which log record types the test suite hits.

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep027.tcl,v 12.3 2005/06/23 15:25:22 carol Exp $
+# $Id: rep027.tcl,v 12.6 2006/03/10 21:42:11 carol Exp $
 #
 # TEST	rep027
 # TEST	Replication and secondary indexes.
@@ -18,8 +18,20 @@ proc rep027 { method { niter 1000 } { tnum "027" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
-	# Renumbering recno is not permitted on a primary
-	# database.
+
+	# Renumbering recno is not permitted on a primary database.
+	if { $checking_valid_methods } { 
+		foreach method $valid_methods {
+			if { [is_rrecno $method] == 1 } {
+				set idx [lsearch -exact $valid_methods $method]
+				if { $idx >= 0 } { 
+					set valid_methods \
+					    [lreplace $valid_methods $idx $idx]
+				}
+			}
+		}
+		return $valid_methods
+	}
 	if { [is_rrecno $method] == 1 } {
 		puts "Skipping rep027 for -rrecno."
 		return
@@ -29,8 +41,7 @@ proc rep027 { method { niter 1000 } { tnum "027" } args } {
 	set logsets [create_logsets 2]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
@@ -75,7 +86,7 @@ proc rep027_sub { method niter tnum logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env -create -lock_max 2500 \
+	set env_cmd(M) "berkdb_env -create \
 	    -log_max 1000000 -home $masterdir \
 	    $m_txnargs $m_logargs -rep_master -rep_transport \
 	    \[list 1 replsend\]"
@@ -84,7 +95,7 @@ proc rep027_sub { method niter tnum logset recargs largs } {
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env -create -lock_max 2500 \
+	set env_cmd(C) "berkdb_env -create \
 	    $c_txnargs $c_logargs -home $clientdir \
 	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]

@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_vx_config.c,v 12.2 2005/07/19 18:51:13 sue Exp $
+ * $Id: os_vx_config.c,v 12.4 2006/06/10 20:59:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,8 +14,6 @@
 /*
  * __os_fs_notzero --
  *	Return 1 if allocated filesystem blocks are not zeroed.
- *
- * PUBLIC: int __os_fs_notzero __P((void));
  */
 int
 __os_fs_notzero()
@@ -31,8 +29,6 @@ __os_fs_notzero()
 /*
  * __os_support_db_register --
  *	Return 1 if the system supports DB_REGISTER.
- *
- * PUBLIC: int __os_support_db_register __P((void));
  */
 int
 __os_support_db_register()
@@ -43,8 +39,6 @@ __os_support_db_register()
 /*
  * __os_support_replication --
  *	Return 1 if the system supports replication.
- *
- * PUBLIC: int __os_support_replication __P((void));
  */
 int
 __os_support_replication()

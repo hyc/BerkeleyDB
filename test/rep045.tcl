@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep045.tcl,v 12.6 2005/10/18 19:05:54 carol Exp $
+# $Id: rep045.tcl,v 12.9 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep045
 # TEST	
@@ -30,6 +30,12 @@ proc rep045 { method { tnum "045" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Valid for all access methods. 
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 3]
 
@@ -77,11 +83,11 @@ proc rep045_sub { method tnum logset largs } {
 	# Open a master.
 	repladd 1
 	set envcmd(M0) "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -lock_max 2500 -errpfx ENV.M0 \
+	    $m_logargs -errpfx ENV.M0 \
 	    -errfile /dev/stderr -lock_detect default \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 #	set envcmd(M0) "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -lock_max 2500 -lock_detect default \
+#	    $m_logargs -lock_detect default \
 #	    -errpfx ENV.M0 -verbose {rep on} -errfile /dev/stderr \
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set menv [eval $envcmd(M0) -rep_master]
@@ -90,11 +96,11 @@ proc rep045_sub { method tnum logset largs } {
 	# Open a client
 	repladd 2
 	set envcmd(C0) "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -lock_max 2500 -errpfx ENV.C0 \
+	    $c_logargs -errpfx ENV.C0 \
 	    -errfile /dev/stderr -lock_detect default \
 	    -home $clientdir0 -rep_transport \[list 2 replsend\]"
 #	set envcmd(C0) "berkdb_env_noerr -create $c_txnargs \
-#  	  $c_logargs -lock_max 2500 -lock_detect default \
+#  	  $c_logargs -lock_detect default \
 #	    -errpfx ENV.C0 -verbose {rep on} -errfile /dev/stderr \
 #	    -home $clientdir0 -rep_transport \[list 2 replsend\]"
 	set cenv0 [eval $envcmd(C0) -rep_client]
@@ -103,11 +109,11 @@ proc rep045_sub { method tnum logset largs } {
 	# Open second client. 
 	repladd 3
 	set envcmd(C1) "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -lock_max 2500 -errpfx ENV.C1 \
+	    $c2_logargs -errpfx ENV.C1 \
 	    -errfile /dev/stderr -lock_detect default \
 	    -home $clientdir1 -rep_transport \[list 3 replsend\]"
 #	set envcmd(C1) "berkdb_env_noerr -create $c2_txnargs \
-#  	  $c2_logargs -lock_max 2500 -lock_detect default \
+#  	  $c2_logargs -lock_detect default \
 #	    -errpfx ENV.C -verbose {rep on} -errfile /dev/stderr \
 #	    -home $clientdir1 -rep_transport \[list 3 replsend\]"
 	set cenv1 [eval $envcmd(C1) -rep_client]

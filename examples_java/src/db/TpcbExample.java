@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TpcbExample.java,v 12.4 2005/09/22 03:53:49 mjc Exp $
+ * $Id: TpcbExample.java,v 12.5 2006/01/02 22:02:18 bostic Exp $
  */
 
 package db;

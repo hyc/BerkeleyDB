@@ -1,11 +1,12 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2003
+ * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: JoinTest.java,v 12.2 2005/08/01 20:25:30 mark Exp $
+ * $Id: JoinTest.java,v 12.4 2006/06/09 14:32:42 mark Exp $
  */
+
 package com.sleepycat.collections.test;
 
 import java.util.Map;

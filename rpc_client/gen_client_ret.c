@@ -1,28 +1,23 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: gen_client_ret.c,v 12.2 2005/07/21 18:21:30 bostic Exp $
+ * $Id: gen_client_ret.c,v 12.4 2006/05/05 14:53:55 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <rpc/rpc.h>
-
-#include <string.h>
-#endif
-
-#include "db_server.h"
 
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
 #include "dbinc/txn.h"
+
+#ifndef NO_SYSTEM_INCLUDES
+#include <rpc/rpc.h>
+#endif
+#include "db_server.h"
 #include "dbinc_auto/rpc_client_ext.h"
 
 #define	FREE_IF_CHANGED(dbtp, orig)	do {				\

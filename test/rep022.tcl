@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep022.tcl,v 12.3 2005/10/18 19:04:17 carol Exp $
+# $Id: rep022.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
 #
 # TEST  rep022
 # TEST	Replication elections - test election generation numbers
@@ -20,12 +20,18 @@ proc rep022 { method args } {
 	global mixed_mode_logging
 	set tnum "022"
 
-	if { $mixed_mode_logging == 1 } {
-		puts "Rep$tnum: Skipping for mixed-mode logging."
-		return
+	# Run for btree only.
+	if { $checking_valid_methods } { 
+		set valid_methods { btree }
+		return $valid_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."
+		return
+	}
+
+	if { $mixed_mode_logging > 0 } {
+		puts "Rep$tnum: Skipping for mixed-mode logging."
 		return
 	}
 
@@ -165,6 +171,7 @@ proc rep022_sub { method nclients tnum logset largs } {
 	while { $lastlsn4 < $lastlsn2 } {
         	error_check_good clientenv_close(4) [$clientenv(4) close] 0
 		set clientenv(4) [eval $env_cmd(4) -recover]
+		error_check_good flush [$clientenv(4) log_flush] 0
 		set origlist [lreplace $origlist 4 4 "$clientenv(4) 6"]
 		set logc [$clientenv(4) log_cursor]
 		error_check_good logc \

@@ -1,27 +1,22 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.21 2005/11/07 14:49:26 bostic Exp $
+ * $Id: tcl_db_pkg.c,v 12.31 2006/05/05 14:54:02 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
-#include <tcl.h>
-#endif
-
 #ifdef CONFIG_TEST
-#define	DB_DBM_HSEARCH 1
+#define	DB_DBM_HSEARCH	1
 #endif
 
 #include "db_int.h"
+#ifndef NO_SYSTEM_INCLUDES
+#include <tcl.h>
+#endif
 #include "dbinc/db_page.h"
 #include "dbinc/hash.h"
 #include "dbinc/tcl_db.h"
@@ -42,7 +37,7 @@ static int	bdb_DbRemove __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int	bdb_DbRename __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int	bdb_Version __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 static int	bdb_SeqOpen __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
     DBTCL_INFO *, DB_SEQUENCE **));
 #endif
@@ -134,7 +129,7 @@ berkdb_Cmd(notused, interp, objc, objv)
 		"env",
 		"envremove",
 		"open",
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 		"sequence",
 #endif
 		"version",
@@ -165,7 +160,7 @@ berkdb_Cmd(notused, interp, objc, objv)
 		BDB_ENV,
 		BDB_ENVREMOVE,
 		BDB_OPEN,
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 		BDB_SEQUENCE,
 #endif
 		BDB_VERSION,
@@ -180,12 +175,12 @@ berkdb_Cmd(notused, interp, objc, objv)
 	};
 	static int env_id = 0;
 	static int db_id = 0;
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 	static int seq_id = 0;
 #endif
 
 	DB *dbp;
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 	DB_SEQUENCE *seq;
 #endif
 #ifdef CONFIG_TEST
@@ -286,7 +281,7 @@ berkdb_Cmd(notused, interp, objc, objv)
 			result = TCL_ERROR;
 		}
 		break;
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 	case BDB_SEQUENCE:
 		snprintf(newname, sizeof(newname), "seq%d", seq_id);
 		ip = _NewInfo(interp, NULL, newname, I_SEQ);
@@ -395,7 +390,6 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-lock",
 		"-lock_conflict",
 		"-lock_detect",
-		"-lock_max",
 		"-lock_max_locks",
 		"-lock_max_lockers",
 		"-lock_max_objects",
@@ -411,6 +405,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-mpool_max_write",
 		"-mpool_mmap_size",
 		"-mpool_nommap",
+		"-multiversion",
 		"-overwrite",
 		"-region_init",
 		"-rep",
@@ -420,6 +415,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-server",
 		"-server_timeout",
 		"-set_intermediate_dir",
+		"-snapshot",
 		"-thread",
 		"-time_notgranted",
 		"-txn_timeout",
@@ -465,7 +461,6 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_LOCK,
 		ENV_CONFLICT,
 		ENV_DETECT,
-		ENV_LOCK_MAX,
 		ENV_LOCK_MAX_LOCKS,
 		ENV_LOCK_MAX_LOCKERS,
 		ENV_LOCK_MAX_OBJECTS,
@@ -481,6 +476,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_MPOOL_MAX_WRITE,
 		ENV_MPOOL_MMAP_SIZE,
 		ENV_MPOOL_NOMMAP,
+		ENV_MULTIVERSION,
 		ENV_OVERWRITE,
 		ENV_REGION_INIT,
 		ENV_REP,
@@ -490,6 +486,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_SERVER,
 		ENV_SERVER_TO,
 		ENV_SET_INTERMEDIATE_DIR,
+		ENV_SNAPSHOT,
 		ENV_THREAD,
 		ENV_TIME_NOTGRANTED,
 		ENV_TXN_TIMEOUT,
@@ -776,7 +773,6 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "lock_detect");
 			break;
-		case ENV_LOCK_MAX:
 		case ENV_LOCK_MAX_LOCKS:
 		case ENV_LOCK_MAX_LOCKERS:
 		case ENV_LOCK_MAX_OBJECTS:
@@ -790,10 +786,6 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			if (result == TCL_OK) {
 				_debug_check();
 				switch ((enum envopen)optindex) {
-				case ENV_LOCK_MAX:
-					ret = (*env)->set_lk_max(*env,
-					    uintarg);
-					break;
 				case ENV_LOCK_MAX_LOCKS:
 					ret = (*env)->set_lk_max_locks(*env,
 					    uintarg);
@@ -981,6 +973,9 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		case ENV_MPOOL_NOMMAP:
 			FLD_SET(set_flags, DB_NOMMAP);
 			break;
+		case ENV_MULTIVERSION:
+			FLD_SET(set_flags, DB_MULTIVERSION);
+			break;
 		case ENV_OVERWRITE:
 			FLD_SET(set_flags, DB_OVERWRITE);
 			break;
@@ -1035,6 +1030,9 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			if (result == TCL_OK)
 				FLD_SET(open_flags, DB_INIT_REP);
 			break;
+		case ENV_SNAPSHOT:
+			FLD_SET(set_flags, DB_TXN_SNAPSHOT);
+			break;
 		case ENV_THREAD:
 			/* Enable DB_THREAD when specified in testing. */
 			FLD_SET(open_flags, DB_THREAD);
@@ -1066,12 +1064,16 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			FLD_SET(open_flags, DB_INIT_LOCK |
 			    DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_TXN);
 			/* Make sure we have an arg to check against! */
-			if (i < objc) {
+			while (i < objc) {
 				arg = Tcl_GetStringFromObj(objv[i], NULL);
 				if (strcmp(arg, "nosync") == 0) {
 					FLD_SET(set_flags, DB_TXN_NOSYNC);
 					i++;
-				}
+				} else if (strcmp(arg, "snapshot") == 0) {
+					FLD_SET(set_flags, DB_TXN_SNAPSHOT);
+					i++;
+				} else
+					break;
 			}
 			break;
 		case ENV_CREATE:
@@ -1400,6 +1402,7 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 		"-len",
 		"-maxsize",
 		"-mode",
+		"-multiversion",
 		"-nelem",
 		"-pad",
 		"-pagesize",
@@ -1452,6 +1455,7 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 		TCL_DB_LEN,
 		TCL_DB_MAXSIZE,
 		TCL_DB_MODE,
+		TCL_DB_MULTIVERSION,
 		TCL_DB_NELEM,
 		TCL_DB_PAD,
 		TCL_DB_PAGESIZE,
@@ -1865,6 +1869,9 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 				    DB_RETOK_STD(ret), "set_h_ffactor");
 			}
 			break;
+		case TCL_DB_MULTIVERSION:
+			open_flags |= DB_MULTIVERSION;
+			break;
 		case TCL_DB_NELEM:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
@@ -2160,7 +2167,7 @@ error:
 	return (result);
 }
 
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 /*
  * bdb_SeqOpen --
  *	Implements the "Seq_create/Seq_open" command.
@@ -2352,17 +2359,13 @@ bdb_SeqOpen(interp, objc, objv, ip, seqp)
 	}
 	(void)dbp->get_type(dbp, &type);
 
-	memset(&key, 0, sizeof(key));
 	if (type == DB_QUEUE || type == DB_RECNO) {
 		result = _GetUInt32(interp, objv[i++], &recno);
 		if (result != TCL_OK)
 			return (result);
-		key.data = &recno;
-		key.size = sizeof(recno);
-	} else {
-		key.data = Tcl_GetByteArrayFromObj(objv[i++], &v);
-		key.size = (u_int32_t)v;
-	}
+		DB_INIT_DBT(key, &recno, sizeof(recno));
+	} else
+		DB_INIT_DBT(key, Tcl_GetByteArrayFromObj(objv[i++], &v), v);
 	ret = db_sequence_create(seqp, dbp, 0);
 	if ((result = _ReturnSetup(interp,
 	    ret, DB_RETOK_STD(ret), "sequence create")) != TCL_OK) {
@@ -3148,8 +3151,7 @@ bdb_Handles(interp, objc, objv)
 	}
 	res = Tcl_NewListObj(0, NULL);
 
-	for (p = LIST_FIRST(&__db_infohead); p != NULL;
-	    p = LIST_NEXT(p, entries)) {
+	LIST_FOREACH(p, &__db_infohead, entries) {
 		handle = NewStringObj(p->i_name, strlen(p->i_name));
 		if (Tcl_ListObjAppendElement(interp, res, handle) != TCL_OK)
 			return (TCL_ERROR);
@@ -3389,7 +3391,7 @@ tcl_compare_callback(dbp, dbta, dbtb, procobj, errname)
 		 * So, drop core.  If we're not running with diagnostic
 		 * mode, panic--and always return a negative number. :-)
 		 */
-panic:		__db_err(dbp->dbenv, "Tcl %s callback failed", errname);
+panic:		__db_errx(dbp->dbenv, "Tcl %s callback failed", errname);
 		return (__db_panic(dbp->dbenv, DB_RUNRECOVERY));
 	}
 
@@ -3440,16 +3442,9 @@ tcl_h_hash(dbp, buf, len)
 	Tcl_DecrRefCount(objv[1]);
 	return ((u_int32_t)hval);
 
-panic:	/*
-	 * We drop core on error, in diagnostic mode.  See the comment in
-	 * tcl_compare_callback.
-	 */
-	__db_err(dbp->dbenv, "Tcl h_hash callback failed");
+panic:	__db_errx(dbp->dbenv, "Tcl h_hash callback failed");
+
 	(void)__db_panic(dbp->dbenv, DB_RUNRECOVERY);
-
-	DB_ASSERT(0);
-
-	/* NOTREACHED */
 	return (0);
 }
 
@@ -3542,7 +3537,7 @@ tcl_rep_send(dbenv, control, rec, lsnp, eid, flags)
 		 * this error should only happen if the Tcl callback is
 		 * somehow invalid, which is a fatal scripting bug.
 		 */
-err:		__db_err(dbenv, "Tcl rep_send failure");
+err:		__db_errx(dbenv, "Tcl rep_send failure");
 		return (EINVAL);
 	}
 

@@ -62,6 +62,7 @@ import java.util.Comparator;
 	public Environment wrapper;
 
 	private LogRecordHandler app_dispatch_handler;
+	private EventHandler event_notify_handler;
 	private FeedbackHandler env_feedback_handler;
 	private ErrorHandler error_handler;
 	private String errpfx;
@@ -109,6 +110,14 @@ import java.util.Comparator;
 
 	public LogRecordHandler get_app_dispatch() {
 		return app_dispatch_handler;
+	}
+
+	private final int handle_event_notify(int event) {
+		return event_notify_handler.handleEvent(EventType.fromInt(event));
+	} 
+
+	public EventHandler get_event_notify() {
+		return event_notify_handler;
 	}
 
 	private final void handle_env_feedback(int opcode, int percent) {

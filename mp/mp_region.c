@@ -1,22 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_region.c,v 12.7 2005/08/08 14:30:03 bostic Exp $
+ * $Id: mp_region.c,v 12.16 2006/06/19 14:55:37 mjc Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <string.h>
-#endif
-
 #include "db_int.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/mp.h"
 
 static int	__memp_init __P((DB_ENV *, DB_MPOOL *, u_int, u_int32_t));
@@ -140,8 +133,8 @@ __memp_open(dbenv)
 		    R_ADDR(&dbmp->reginfo[i], dbmp->reginfo[i].rp->primary);
 
 	/* If the region is threaded, allocate a mutex to lock the handles. */
-	if ((ret = __mutex_alloc(
-	    dbenv, MTX_MPOOL_HANDLE, DB_MUTEX_THREAD, &dbmp->mutex)) != 0)
+	if ((ret = __mutex_alloc(dbenv,
+	    MTX_MPOOL_HANDLE, DB_MUTEX_PROCESS_ONLY, &dbmp->mutex)) != 0)
 		goto err;
 
 	dbenv->mp_handle = dbmp;
@@ -177,7 +170,7 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 	u_int reginfo_off;
 	u_int32_t htab_buckets;
 {
-	DB_MPOOL_HASH *htab;
+	DB_MPOOL_HASH *htab, *hp;
 	MPOOL *mp;
 	REGINFO *reginfo;
 	u_int32_t i;
@@ -197,8 +190,6 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 		return (ret);
 
 	if (reginfo_off == 0) {
-		SH_TAILQ_INIT(&mp->mpfq);
-
 		ZERO_LSN(mp->lsn);
 
 		mp->nreg = dbmp->nreg;
@@ -206,6 +197,20 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 		    dbmp->nreg * sizeof(u_int32_t), 0, &p)) != 0)
 			goto mem_err;
 		mp->regids = R_OFFSET(dbmp->reginfo, p);
+
+		/* Allocate file table space and initialize it. */
+		if ((ret = __db_shalloc(reginfo,
+		    MPOOL_FILE_BUCKETS * sizeof(DB_MPOOL_HASH), 0, &htab)) != 0)
+			goto mem_err;
+		mp->ftab = R_OFFSET(reginfo, htab);
+		for (i = 0; i < MPOOL_FILE_BUCKETS; i++) {
+			if ((ret = __mutex_alloc(dbenv,
+			     MTX_MPOOL_FILE_BUCKET, 0, &htab[i].mtx_hash)) != 0)
+				return (ret);
+			SH_TAILQ_INIT(&htab[i].hash_bucket);
+			htab[i].hash_page_dirty = htab[i].hash_priority = 0;
+		}
+
 	}
 
 	/* Allocate hash table space and initialize it. */
@@ -214,13 +219,21 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 		goto mem_err;
 	mp->htab = R_OFFSET(reginfo, htab);
 	for (i = 0; i < htab_buckets; i++) {
-		if ((ret = __mutex_alloc(
-		    dbenv, MTX_MPOOL_HASH_BUCKET, 0, &htab[i].mtx_hash)) != 0)
+		hp = &htab[i];
+		if ((ret = __mutex_alloc(dbenv,
+		    MTX_MPOOL_HASH_BUCKET, 0, &hp->mtx_hash)) != 0)
 			return (ret);
-		SH_TAILQ_INIT(&htab[i].hash_bucket);
-		htab[i].hash_page_dirty = htab[i].hash_priority = 0;
+		if ((ret = __mutex_alloc(dbenv,
+		    MTX_MPOOL_IO, DB_MUTEX_SELF_BLOCK, &hp->mtx_io)) != 0)
+			return (ret);
+		SH_TAILQ_INIT(&hp->hash_bucket);
+		hp->hash_page_dirty = hp->hash_priority = hp->hash_io_wait = 0;
+		hp->flags = 0;
 	}
 	mp->htab_buckets = mp->stat.st_hash_buckets = htab_buckets;
+
+	SH_TAILQ_INIT(&mp->free_frozen);
+	SH_TAILQ_INIT(&mp->alloc_frozen);
 
 	/*
 	 * Only the environment creator knows the total cache size, fill in
@@ -230,7 +243,7 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 	mp->stat.st_bytes = dbenv->mp_bytes;
 	return (0);
 
-mem_err:__db_err(dbenv, "Unable to allocate memory for mpool region");
+mem_err:__db_errx(dbenv, "Unable to allocate memory for mpool region");
 	return (ret);
 }
 
@@ -285,14 +298,12 @@ __memp_region_mutex_count(dbenv)
 	__memp_region_size(dbenv, &reg_size, &htab_buckets);
 
 	/*
-	 * We need a couple of mutexes for the region itself, and one for each
-	 * file handle (MPOOLFILE).  More importantly, each configured cache
-	 * has one mutex per hash bucket and buffer header.  Hash buckets are
-	 * configured to have 10 pages or fewer on each chain, but we don't
-	 * want to fail if we have a large number of 512 byte pages, so double
-	 * the guess.
+	 * We need a couple of mutexes for the region itself, one for each
+	 * file handle (MPOOLFILE) the application allocates, one for each
+	 * of the MPOOL_FILE_BUCKETS, and each cache has two mutexes per
+	 * hash bucket.
 	 */
-	return (dbenv->mp_ncache * htab_buckets * 21 + 50);
+	return (dbenv->mp_ncache * htab_buckets * 2 + 50 + MPOOL_FILE_BUCKETS);
 }
 
 /*
@@ -337,6 +348,7 @@ __memp_dbenv_refresh(dbenv)
 	DB_MPREG *mpreg;
 	MPOOL *mp;
 	REGINFO *reginfo;
+	void *p;
 	u_int32_t bucket, i;
 	int ret, t_ret;
 
@@ -355,14 +367,25 @@ __memp_dbenv_refresh(dbenv)
 			reginfo = &dbmp->reginfo[i];
 			mp = reginfo->primary;
 			for (hp = R_ADDR(reginfo, mp->htab), bucket = 0;
-			    bucket < mp->htab_buckets; ++hp, ++bucket)
+			    bucket < mp->htab_buckets; ++hp, ++bucket) {
 				while ((bhp = SH_TAILQ_FIRST(
 				    &hp->hash_bucket, __bh)) != NULL)
-					if ((t_ret = __memp_bhfree(
+					if (!F_ISSET(bhp, BH_FROZEN) &&
+					    (t_ret = __memp_bhfree(
 					    dbmp, hp, bhp,
 					    BH_FREE_FREEMEM |
 					    BH_FREE_UNLOCKED)) != 0 && ret == 0)
 						ret = t_ret;
+				if ((t_ret = __mutex_free(
+				    dbenv, &hp->mtx_hash)) != 0 && ret == 0)
+					ret = t_ret;
+				if ((t_ret = __mutex_free(
+				    dbenv, &hp->mtx_io)) != 0 && ret == 0)
+					ret = t_ret;
+			}
+			while ((p = (void *)SH_TAILQ_FIRST(
+			    &mp->alloc_frozen, __bh_frozen_a)) != NULL)
+				__db_shalloc_free(reginfo, p);
 		}
 
 	/* Discard DB_MPOOLFILEs. */
@@ -386,13 +409,13 @@ __memp_dbenv_refresh(dbenv)
 		/* Discard REGION IDs. */
 		reginfo = &dbmp->reginfo[0];
 		mp = dbmp->reginfo[0].primary;
-		__db_shalloc_free(reginfo, R_ADDR(reginfo, mp->regids));
+		__memp_free(reginfo, NULL, R_ADDR(reginfo, mp->regids));
 
 		/* Discard Hash tables. */
 		for (i = 0; i < dbmp->nreg; ++i) {
 			reginfo = &dbmp->reginfo[i];
 			mp = reginfo->primary;
-			__db_shalloc_free(reginfo, R_ADDR(reginfo, mp->htab));
+			__memp_free(reginfo, NULL, R_ADDR(reginfo, mp->htab));
 		}
 	}
 

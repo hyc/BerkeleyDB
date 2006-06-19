@@ -158,15 +158,12 @@ public class TxnGuide {
     private TxnGuide() {}
 
     private static void parseArgs(String args[]) {
-        int nArgs = args.length;
         for(int i = 0; i < args.length; ++i) {
             if (args[i].startsWith("-")) {
                 switch(args[i].charAt(1)) {
                     case 'h':
-                        if (i < nArgs - 1) {
-                            myEnvPath = new String(args[++i]);
-                        }
-                    break;
+                        myEnvPath = new String(args[++i]);
+                        break;
                     default:
                         usage();
                 }

@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: DatabaseConfig.java,v 12.2 2005/06/16 20:22:59 bostic Exp $
+ * $Id: DatabaseConfig.java,v 12.4 2006/04/27 13:40:53 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -54,6 +54,7 @@ public class DatabaseConfig implements Cloneable {
     private boolean readUncommitted = false;
     private boolean encrypted = false;
     private boolean exclusiveCreate = false;
+    private boolean multiversion = false;
     private boolean noMMap = false;
     private boolean queueInOrder = false;
     private boolean readOnly = false;
@@ -167,7 +168,8 @@ public class DatabaseConfig implements Cloneable {
         return getReadUncommitted();
     }
 
-    public void setDuplicateComparator(final java.util.Comparator duplicateComparator) {
+    public void setDuplicateComparator(
+            final java.util.Comparator duplicateComparator) {
         this.duplicateComparator = duplicateComparator;
     }
 
@@ -271,6 +273,14 @@ public class DatabaseConfig implements Cloneable {
         return mode;
     }
 
+    public void setMultiversion(final boolean Multiversion) {
+        this.multiversion = multiversion;
+    }
+
+    public boolean getMultiversion() {
+        return multiversion;
+    }
+
     public void setNoMMap(final boolean noMMap) {
         this.noMMap = noMMap;
     }
@@ -319,7 +329,8 @@ public class DatabaseConfig implements Cloneable {
         return readOnly;
     }
 
-    public void setRecordNumberAppender(final RecordNumberAppender recnoAppender) {
+    public void setRecordNumberAppender(
+            final RecordNumberAppender recnoAppender) {
         this.recnoAppender = recnoAppender;
     }
 
@@ -474,6 +485,7 @@ public class DatabaseConfig implements Cloneable {
         openFlags |= allowCreate ? DbConstants.DB_CREATE : 0;
         openFlags |= readUncommitted ? DbConstants.DB_READ_UNCOMMITTED : 0;
         openFlags |= exclusiveCreate ? DbConstants.DB_EXCL : 0;
+        openFlags |= multiversion ? DbConstants.DB_MULTIVERSION : 0;
         openFlags |= noMMap ? DbConstants.DB_NOMMAP : 0;
         openFlags |= readOnly ? DbConstants.DB_RDONLY : 0;
         openFlags |= threaded ? DbConstants.DB_THREAD : 0;
@@ -580,6 +592,7 @@ public class DatabaseConfig implements Cloneable {
         allowCreate = (openFlags & DbConstants.DB_CREATE) != 0;
         readUncommitted = (openFlags & DbConstants.DB_READ_UNCOMMITTED) != 0;
         exclusiveCreate = (openFlags & DbConstants.DB_EXCL) != 0;
+        multiversion = (openFlags & DbConstants.DB_MULTIVERSION) != 0;
         noMMap = (openFlags & DbConstants.DB_NOMMAP) != 0;
         readOnly = (openFlags & DbConstants.DB_RDONLY) != 0;
         truncate = (openFlags & DbConstants.DB_TRUNCATE) != 0;

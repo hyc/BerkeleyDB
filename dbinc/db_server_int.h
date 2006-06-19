@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_server_int.h,v 12.4 2005/08/08 14:52:30 bostic Exp $
+ * $Id: db_server_int.h,v 12.7 2006/01/02 22:01:50 bostic Exp $
  */
 
 #ifndef _DB_SERVER_INT_H_
@@ -135,19 +135,20 @@ extern int __dbsrv_verbose;
  * Assumes local variable 'replyp'.
  * NOTE: May 'return' from macro.
  */
-#define	ACTIVATE_CTP(ctp, id, type) {		\
-	(ctp) = get_tableent(id);		\
-	if ((ctp) == NULL) {			\
-		replyp->status = DB_NOSERVER_ID;\
-		return;				\
-	}					\
-	DB_ASSERT((ctp)->ct_type & (type));	\
-	__dbsrv_active(ctp);			\
+#define	ACTIVATE_CTP(ctp, id, type) {					\
+	(ctp) = get_tableent(id);					\
+	if ((ctp) == NULL) {						\
+		replyp->status = DB_NOSERVER_ID;			\
+		return;							\
+	}								\
+	/* We don't have a dbenv handle at this point. */		\
+	DB_ASSERT(NULL, (ctp)->ct_type & (type));			\
+	__dbsrv_active(ctp);						\
 }
 
-#define	FREE_IF_CHANGED(dbenv, p, orig) do {	\
-	if ((p) != NULL && (p) != (orig))	\
-		__os_ufree((dbenv), (p));	\
+#define	FREE_IF_CHANGED(dbenv, p, orig) do {				\
+	if ((p) != NULL && (p) != (orig))				\
+		__os_ufree((dbenv), (p));				\
 } while (0)
 
 #endif	/* !_DB_SERVER_INT_H_ */

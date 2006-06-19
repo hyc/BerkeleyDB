@@ -1,18 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004-2005
+ * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_register.c,v 1.15 2005/10/07 20:21:27 ubell Exp $
+ * $Id: env_register.c,v 1.26 2006/05/31 01:38:34 bostic Exp $
  */
+
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <string.h>
-#endif
 
 #include "db_int.h"
 
@@ -96,29 +91,30 @@ static  int __envreg_add __P((DB_ENV *, int *));
  * __envreg_register --
  *	Register a DB_ENV handle.
  *
- * PUBLIC: int __envreg_register __P((DB_ENV *, const char *, int *));
+ * PUBLIC: int __envreg_register __P((DB_ENV *, int *));
  */
 int
-__envreg_register(dbenv, db_home, need_recoveryp)
+__envreg_register(dbenv, need_recoveryp)
 	DB_ENV *dbenv;
-	const char *db_home;
 	int *need_recoveryp;
 {
 	pid_t pid;
-	db_threadid_t tid;
 	u_int32_t bytes, mbytes;
 	int ret;
-	char path[MAXPATHLEN];
+	char *pp;
 
 	*need_recoveryp = 0;
-	dbenv->thread_id(dbenv, &pid, &tid);
+	dbenv->thread_id(dbenv, &pid, NULL);
+	pp = NULL;
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
 		__db_msg(dbenv, "%lu: register environment", (u_long)pid);
 
 	/* Build the path name and open the registry file. */
-	(void)snprintf(path, sizeof(path), "%s/%s", db_home, REGISTER_FILE);
-	if ((ret = __os_open(dbenv, path,
+	if ((ret =
+	    __db_appname(dbenv, DB_APP_NONE, REGISTER_FILE, 0, NULL, &pp)) != 0)
+		goto err;
+	if ((ret = __os_open(dbenv, pp,
 	    DB_OSO_CREATE, __db_omode("rw-rw----"), &dbenv->registry)) != 0)
 		goto err;
 
@@ -139,12 +135,11 @@ __envreg_register(dbenv, db_home, need_recoveryp)
 	 * system by removing the registry file and restarting the application.
 	 */
 	if ((ret = __os_ioinfo(
-	    dbenv, path, dbenv->registry, &mbytes, &bytes, NULL)) != 0)
+	    dbenv, pp, dbenv->registry, &mbytes, &bytes, NULL)) != 0)
 		goto err;
 	if (mbytes == 0 && bytes == 0) {
 		if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-			__db_msg(dbenv,
-			    "%lu: creating %s", (u_long)pid, path);
+			__db_msg(dbenv, "%lu: creating %s", (u_long)pid, pp);
 		*need_recoveryp = 1;
 	}
 
@@ -172,6 +167,9 @@ err:		*need_recoveryp = 0;
 		dbenv->registry = NULL;
 	}
 
+	if (pp != NULL)
+		__os_free(dbenv, pp);
+
 	return (ret);
 }
 
@@ -185,19 +183,18 @@ __envreg_add(dbenv, need_recoveryp)
 	int *need_recoveryp;
 {
 	pid_t pid;
-	db_threadid_t tid;
 	off_t end, pos;
 	size_t nr, nw;
 	u_int lcnt;
 	u_int32_t bytes, mbytes;
 	int need_recovery, ret;
-	char *p, buf[256], pid_buf[256];
+	char *p, buf[PID_LEN + 10], pid_buf[PID_LEN + 10];
 
 	need_recovery = 0;
 	COMPQUIET(p, NULL);
 
 	/* Get a copy of our process ID. */
-	dbenv->thread_id(dbenv, &pid, &tid);
+	dbenv->thread_id(dbenv, &pid, NULL);
 	snprintf(pid_buf, sizeof(pid_buf), PID_FMT, (u_long)pid);
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
@@ -231,8 +228,8 @@ __envreg_add(dbenv, need_recoveryp)
 		 * that restriction.
 		 */
 		if (memcmp(buf, pid_buf, PID_LEN) == 0) {
-			__db_err(dbenv,
-	"DB_REGISTER limits each process to a single open DB_ENV handle");
+			__db_errx(dbenv,
+    "DB_REGISTER limits processes to one open DB_ENV handle per environment");
 			return (EINVAL);
 		}
 
@@ -272,7 +269,7 @@ __envreg_add(dbenv, need_recoveryp)
 		end = (off_t)mbytes * MEGABYTE + bytes;
 
 		/* Confirm the file is of a reasonable size. */
-		DB_ASSERT(end % PID_LEN == 0);
+		DB_ASSERT(dbenv, end % PID_LEN == 0);
 
 		/*
 		 * Seek to the beginning of the file and overwrite slots to
@@ -324,7 +321,7 @@ __envreg_add(dbenv, need_recoveryp)
 		*need_recoveryp = 1;
 
 	if (0) {
-corrupt:	__db_err(dbenv, "%s: file contents corrupted", REGISTER_FILE);
+corrupt:	__db_errx(dbenv, "%s: file contents corrupted", REGISTER_FILE);
 		return (ret == 0 ? EACCES : ret);
 	}
 
@@ -344,7 +341,7 @@ __envreg_unregister(dbenv, recovery_failed)
 {
 	size_t nw;
 	int ret, t_ret;
-	char buf[256];
+	char buf[PID_LEN + 10];
 
 	ret = 0;
 
@@ -404,10 +401,9 @@ __envreg_xunlock(dbenv)
 	DB_ENV *dbenv;
 {
 	pid_t pid;
-	db_threadid_t tid;
 	int ret;
 
-	dbenv->thread_id(dbenv, &pid, &tid);
+	dbenv->thread_id(dbenv, &pid, NULL);
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
 		__db_msg(dbenv,
@@ -416,7 +412,6 @@ __envreg_xunlock(dbenv)
 	if ((ret = REGISTRY_EXCL_UNLOCK(dbenv)) == 0)
 		return (ret);
 
-	__db_err(dbenv,
-	    "%s: exclusive file unlock: %s", REGISTER_FILE, db_strerror(ret));
+	__db_err(dbenv, ret, "%s: exclusive file unlock", REGISTER_FILE);
 	return (__db_panic(dbenv, ret));
 }

@@ -1,23 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_dbcursor.c,v 12.2 2005/06/16 20:23:46 bostic Exp $
+ * $Id: tcl_dbcursor.c,v 12.7 2006/05/05 14:54:02 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
 #ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
 #include <tcl.h>
 #endif
-
-#include "db_int.h"
 #include "dbinc/tcl_db.h"
 
 /*
@@ -383,7 +378,9 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 {
 	static const char *dbcgetopts[] = {
 #ifdef CONFIG_TEST
+		"-data_buf_size",
 		"-get_both_range",
+		"-key_buf_size",
 		"-multi",
 		"-multi_key",
 		"-read_committed",
@@ -409,7 +406,9 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 	};
 	enum dbcgetopts {
 #ifdef CONFIG_TEST
+		DBCGET_DATA_BUF_SIZE,
 		DBCGET_BOTH_RANGE,
+		DBCGET_KEY_BUF_SIZE,
 		DBCGET_MULTI,
 		DBCGET_MULTI_KEY,
 		DBCGET_READ_COMMITTED,
@@ -442,9 +441,9 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 	u_int32_t flag, op;
 	int elemc, freekey, freedata, i, optindex, result, ret;
 #ifdef CONFIG_TEST
-	int bufsize;
+	int data_buf_size, key_buf_size;
 
-	bufsize = 0;
+	data_buf_size = key_buf_size = 0;
 #endif
 	COMPQUIET(dtmp, NULL);
 	COMPQUIET(ktmp, NULL);
@@ -486,20 +485,36 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 
 		switch ((enum dbcgetopts)optindex) {
 #ifdef CONFIG_TEST
+		case DBCGET_DATA_BUF_SIZE:
+			result =
+			    Tcl_GetIntFromObj(interp, objv[i], &data_buf_size);
+			if (result != TCL_OK)
+				goto out;
+			i++;
+			break;
 		case DBCGET_BOTH_RANGE:
 			FLAG_CHECK2(flag, FLAG_CHECK2_STDARG);
 			flag |= DB_GET_BOTH_RANGE;
 			break;
+		case DBCGET_KEY_BUF_SIZE:
+			result =
+			    Tcl_GetIntFromObj(interp, objv[i], &key_buf_size);
+			if (result != TCL_OK)
+				goto out;
+			i++;
+			break;
 		case DBCGET_MULTI:
 			flag |= DB_MULTIPLE;
-			result = Tcl_GetIntFromObj(interp, objv[i], &bufsize);
+			result =
+			    Tcl_GetIntFromObj(interp, objv[i], &data_buf_size);
 			if (result != TCL_OK)
 				goto out;
 			i++;
 			break;
 		case DBCGET_MULTI_KEY:
 			flag |= DB_MULTIPLE_KEY;
-			result = Tcl_GetIntFromObj(interp, objv[i], &bufsize);
+			result =
+			    Tcl_GetIntFromObj(interp, objv[i], &data_buf_size);
 			if (result != TCL_OK)
 				goto out;
 			i++;
@@ -703,9 +718,10 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 			goto out;
 		}
 #ifdef CONFIG_TEST
-		if (flag & (DB_MULTIPLE|DB_MULTIPLE_KEY)) {
-			(void)__os_malloc(NULL, (size_t)bufsize, &data.data);
-			data.ulen = (u_int32_t)bufsize;
+		if (data_buf_size != 0) {
+			(void)__os_malloc(
+			    NULL, (size_t)data_buf_size, &data.data);
+			data.ulen = (u_int32_t)data_buf_size;
 			data.flags |= DB_DBT_USERMEM;
 		} else
 #endif
@@ -737,11 +753,20 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 			result = TCL_ERROR;
 			goto out;
 		}
-		key.flags |= DB_DBT_MALLOC;
 #ifdef CONFIG_TEST
-		if (flag & (DB_MULTIPLE|DB_MULTIPLE_KEY)) {
-			(void)__os_malloc(NULL, (size_t)bufsize, &data.data);
-			data.ulen = (u_int32_t)bufsize;
+		if (key_buf_size != 0) {
+			(void)__os_malloc(
+			    NULL, (size_t)key_buf_size, &key.data);
+			key.ulen = (u_int32_t)key_buf_size;
+			key.flags |= DB_DBT_USERMEM;
+		} else
+#endif
+			key.flags |= DB_DBT_MALLOC;
+#ifdef CONFIG_TEST
+		if (data_buf_size != 0) {
+			(void)__os_malloc(
+			    NULL, (size_t)data_buf_size, &data.data);
+			data.ulen = (u_int32_t)data_buf_size;
 			data.flags |= DB_DBT_USERMEM;
 		} else
 #endif

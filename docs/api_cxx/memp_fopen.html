@@ -1,5 +1,5 @@
-<!--$Id: memp_fopen.so,v 10.51 2004/08/13 03:38:58 bostic Exp $-->
-<!--Copyright 1997-2005 by Sleepycat Software, Inc.-->
+<!--$Id: memp_fopen.so,v 10.52 2006/04/28 15:27:36 mjc Exp $-->
+<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -50,6 +50,7 @@ fail.
 <a name="2"><!--meow--></a>
 <dt><a name="DB_DIRECT">DB_DIRECT</a><dd>If set and supported by the system, turn off system buffering of the
 file to avoid double caching.
+<dt><a name="DB_MULTIVERSION">DB_MULTIVERSION</a><dd>Open the file with support for multiversion concurrency control.
 <dt><a name="DB_NOMMAP">DB_NOMMAP</a><dd>Always copy this file into the local cache instead of potentially mapping
 it into process memory (see the description of the
 <a href="../api_cxx/env_set_mp_mmapsize.html">DbEnv::set_mp_mmapsize</a> method for further information).
@@ -101,6 +102,6 @@ throw a DbMemoryException.</p>
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_cxx/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2005</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
 </body>
 </html>

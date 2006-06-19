@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2005
+# Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: bigfile002.tcl,v 12.2 2005/06/16 20:23:51 bostic Exp $
+# $Id: bigfile002.tcl,v 12.4 2006/05/03 13:38:23 carol Exp $
 #
 # TEST	bigfile002
 # TEST	This one should be faster and not require so much disk space,
@@ -31,7 +31,7 @@ proc bigfile002 { args } {
 	error_check_good pg_set [$pg is_setto A] 1
 
 	# Put page back.
-	error_check_good pg_put [$pg put -dirty] 0
+	error_check_good pg_put [$pg put] 0
 
 	# Fsync.
 	error_check_good fsync [$file fsync] 0

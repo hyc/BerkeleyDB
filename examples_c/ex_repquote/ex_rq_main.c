@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: ex_rq_main.c,v 12.5 2005/11/02 22:14:24 alanb Exp $
+ * $Id: ex_rq_main.c,v 12.9 2006/06/02 18:36:34 alanb Exp $
  */
 
 #include <sys/types.h>
@@ -12,21 +12,61 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #include <db.h>
 
-#include "ex_repquote.h"
+#define	CACHESIZE	(10 * 1024 * 1024)
+#define	DATABASE	"quote.db"
+#define	SLEEPTIME	3
+
+const char *progname = "ex_repquote";
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+extern int getopt(int, char * const *, const char *);
+#define	sleep(s)		Sleep(1000 * (s))
+#endif
+
+typedef struct {
+	int is_master;
+} APP_DATA;
+
+int doloop __P((DB_ENV *, APP_DATA *));
+static void event_callback __P((DB_ENV *, u_int32_t, void *));
 
 /*
- * Process globals (we could put these in the machtab I suppose).
+ * In this application, we specify all communication via the command line.  In
+ * a real application, we would expect that information about the other sites
+ * in the system would be maintained in some sort of configuration file.  The
+ * critical part of this interface is that we assume at startup that we can
+ * find out
+ * 	1) what host/port we wish to listen on for connections,
+ * 	2) a (possibly empty) list of other sites we should attempt to connect
+ * 	to; and
+ * 	3) what our Berkeley DB home environment is.
+ *
+ * These pieces of information are expressed by the following flags.
+ * -m host:port (required; m stands for me)
+ * -o host:port (optional; o stands for other; any number of these may be
+ *	specified)
+ * -h home directory
+ * -n nsites (optional; number of sites in replication group; defaults to 0
+ *	in which case we try to dynamically compute the number of sites in
+ *	the replication group)
+ * -p priority (optional: defaults to 100)
  */
-int master_eid;
-char *myaddr;
-unsigned short myport;
-
-static int env_init
-    __P((const char *, const char *, DB_ENV **, machtab_t *, u_int32_t));
-static void usage __P((const char *));
+static void
+usage()
+{
+	fprintf(stderr, "usage: %s ", progname);
+	fprintf(stderr, "[-h home][-o host:port][-m host:port]%s",
+	    "[-n nsites][-p priority]\n");
+	exit(EXIT_FAILURE);
+}
 
 int
 main(argc, argv)
@@ -35,82 +75,84 @@ main(argc, argv)
 {
 	extern char *optarg;
 	DB_ENV *dbenv;
-	DBT local;
-	enum { MASTER, CLIENT, UNKNOWN } whoami;
-	all_args aa;
-	connect_args ca;
-	machtab_t *machtab;
-	thread_t all_thr, conn_thr;
-	void *astatus, *cstatus;
-#ifdef _WIN32
-	WSADATA wsaData;
-#else
-	struct sigaction sigact;
-#endif
-	repsite_t site, *sitep, self, *selfp;
-	int maxsites, nsites, ret, priority, totalsites, verbose;
-	char *c, ch;
-	const char *home, *progname;
+	const char *home;
+	char ch, *host, *portstr;
+	int ret, totalsites, t_ret, verbose, got_listen_address, friend;
+	u_int16_t port;
+	APP_DATA my_app_data;
+	u_int32_t start_policy;
+	int priority;
 
-	master_eid = DB_EID_INVALID;
-
+	my_app_data.is_master = 0; /* assume I start out as client */
 	dbenv = NULL;
-	whoami = UNKNOWN;
-	machtab = NULL;
-	selfp = sitep = NULL;
-	maxsites = nsites = ret = totalsites = verbose = 0;
-	priority = 100;
+	ret = verbose = got_listen_address = 0;
 	home = "TESTDIR";
-	progname = "ex_repquote";
 
-	while ((ch = getopt(argc, argv, "Ch:Mm:n:o:p:v")) != EOF)
+	if ((ret = db_env_create(&dbenv, 0)) != 0) {
+		fprintf(stderr, "Error creating env handle: %s\n",
+		    db_strerror(ret));
+		goto err;
+	}
+	dbenv->app_private = &my_app_data;
+
+	dbenv->set_errfile(dbenv, stderr);
+	dbenv->set_errpfx(dbenv, progname);
+	dbenv->set_event_notify(dbenv, event_callback);
+
+	start_policy = DB_REP_ELECTION;	/* default */
+	priority = 100;		/* default */
+
+	while ((ch = getopt(argc, argv, "CFf:h:Mm:n:o:p:v")) != EOF) {
+		friend = 0;
 		switch (ch) {
-		case 'M':
-			whoami = MASTER;
-			master_eid = SELF_EID;
-			break;
 		case 'C':
-			whoami = CLIENT;
+			start_policy = DB_REP_CLIENT;
+			break;
+		case 'F':
+			start_policy = DB_REP_FULL_ELECTION;
 			break;
 		case 'h':
 			home = optarg;
 			break;
+		case 'M':
+			start_policy = DB_REP_MASTER;
+			break;
 		case 'm':
-			if ((myaddr = strdup(optarg)) == NULL) {
-				fprintf(stderr,
-				    "System error %s\n", strerror(errno));
-				goto err;
-			}
-			self.host = optarg;
-			self.host = strtok(self.host, ":");
-			if ((c = strtok(NULL, ":")) == NULL) {
+			host = strtok(optarg, ":");
+			if ((portstr = strtok(NULL, ":")) == NULL) {
 				fprintf(stderr, "Bad host specification.\n");
 				goto err;
 			}
-			myport = self.port = (unsigned short)atoi(c);
-			selfp = &self;
+			port = (unsigned short)atoi(portstr);
+			if ((ret = dbenv->repmgr_set_local_site(dbenv, host, port, 0))
+			    != 0) {
+				fprintf(stderr,
+				    "Could not set listen address (%d).\n", ret);
+				goto err;
+			}
+			got_listen_address = 1;
 			break;
 		case 'n':
 			totalsites = atoi(optarg);
+			if ((ret = dbenv->rep_set_nsites(dbenv, totalsites)) != 0)
+				dbenv->err(dbenv, ret, "set_nsites");
 			break;
+		case 'f':
+			friend = 1; /* FALLTHROUGH */
 		case 'o':
-			site.host = optarg;
-			site.host = strtok(site.host, ":");
-			if ((c = strtok(NULL, ":")) == NULL) {
+			host = strtok(optarg, ":");
+			if ((portstr = strtok(NULL, ":")) == NULL) {
 				fprintf(stderr, "Bad host specification.\n");
 				goto err;
 			}
-			site.port = atoi(c);
-			if (sitep == NULL || nsites >= maxsites) {
-				maxsites = maxsites == 0 ? 10 : 2 * maxsites;
-				if ((sitep = realloc(sitep,
-				    maxsites * sizeof(repsite_t))) == NULL) {
-					fprintf(stderr, "System error %s\n",
-					    strerror(errno));
-					goto err;
-				}
+			port = (unsigned short)atoi(portstr);
+			if ((ret = dbenv->repmgr_add_remote_site(dbenv, host,
+			    port, friend ? DB_REPMGR_PEER : 0)) != 0) {
+				dbenv->err(dbenv, ret,
+				    "Could not add site %s:%d", host,
+				    (int)port);
+				goto err;
 			}
-			sitep[nsites++] = site;
 			break;
 		case 'p':
 			priority = atoi(optarg);
@@ -120,211 +162,238 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			usage(progname);
+			usage();
 		}
-
+	}
+	
 	/* Error check command line. */
-	if (whoami == UNKNOWN) {
-		fprintf(stderr, "Must specify -M or -C.\n");
-		goto err;
-	}
+	if ((!got_listen_address) || home == NULL)
+		usage();
 
-	if (selfp == NULL)
-		usage(progname);
-
-	if (home == NULL)
-		usage(progname);
-
-#ifdef _WIN32
-	/* Initialize the Windows sockets DLL. */
-	if ((ret = WSAStartup(MAKEWORD(2, 2), &wsaData)) != 0) {
-		fprintf(stderr,
-		    "Unable to initialize Windows sockets: %d\n", ret);
-		goto err;
-	}
-#else
-	/*
-	 * Turn off SIGPIPE so that we don't kill processes when they
-	 * happen to lose a connection at the wrong time.
-	 */
-	memset(&sigact, 0, sizeof(sigact));
-	sigact.sa_handler = SIG_IGN;
-	if ((ret = sigaction(SIGPIPE, &sigact, NULL)) != 0) {
-		fprintf(stderr,
-		    "Unable to turn off SIGPIPE: %s\n", strerror(ret));
-		goto err;
-	}
-#endif
-
-	/*
-	 * We are hardcoding priorities here that all clients have the
-	 * same priority except for a designated master who gets a higher
-	 * priority.
-	 */
-	if ((ret =
-	    machtab_init(&machtab, priority, totalsites)) != 0)
-		goto err;
+	dbenv->rep_set_priority(dbenv, priority);
 
 	/*
 	 * We can now open our environment, although we're not ready to
 	 * begin replicating.  However, we want to have a dbenv around
 	 * so that we can send it into any of our message handlers.
 	 */
-	if ((ret = env_init(progname, home, &dbenv, machtab, DB_RECOVER)) != 0)
+	(void)dbenv->set_cachesize(dbenv, 0, CACHESIZE, 0);
+	(void)dbenv->set_flags(dbenv, DB_TXN_NOSYNC, 1);
+
+	if ((ret = dbenv->open(dbenv, home, DB_CREATE | DB_RECOVER | DB_THREAD |
+	    DB_INIT_REP | DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL |
+	    DB_INIT_TXN, 0)) != 0)
 		goto err;
+
 	if (verbose &&
 	    (ret = dbenv->set_verbose(dbenv, DB_VERB_REPLICATION, 1)) != 0)
 		goto err;
+	
+	if ((ret = dbenv->repmgr_start(dbenv, 3, start_policy)) != 0)
+		goto err;
 
-	/*
-	 * Now sets up comm infrastructure.  There are two phases.  First,
-	 * we open our port for listening for incoming connections.  Then
-	 * we attempt to connect to every host we know about.
-	 */
+	/* Sleep to give ourselves time to find a master. */
+	sleep(5);
 
-	ca.dbenv = dbenv;
-	ca.home = home;
-	ca.progname = progname;
-	ca.machtab = machtab;
-	ca.port = selfp->port;
-	if ((ret = thread_create(&conn_thr, NULL, connect_thread, &ca)) != 0) {
-		dbenv->errx(dbenv, "can't create connect thread");
+	if ((ret = doloop(dbenv, &my_app_data)) != 0) {
+		dbenv->err(dbenv, ret, "Client failed");
 		goto err;
 	}
 
-	aa.dbenv = dbenv;
-	aa.progname = progname;
-	aa.home = home;
-	aa.machtab = machtab;
-	aa.sites = sitep;
-	aa.nsites = nsites;
-	if ((ret = thread_create(&all_thr, NULL, connect_all, &aa)) != 0) {
-		dbenv->errx(dbenv, "can't create connect-all thread");
-		goto err;
+err:	
+	if (dbenv != NULL &&
+	    (t_ret = dbenv->close(dbenv, 0)) != 0) {
+		fprintf(stderr, "failure closing env: %s (%d)\n",
+		    db_strerror(t_ret), t_ret);
+		if (ret == 0)
+			ret = t_ret;
 	}
 
-	/*
-	 * We have now got the entire communication infrastructure set up.
-	 * It's time to declare ourselves to be a client or master.
-	 */
-	if (whoami == MASTER) {
-		if ((ret = dbenv->rep_start(dbenv, NULL, DB_REP_MASTER)) != 0) {
-			dbenv->err(dbenv, ret, "dbenv->rep_start failed");
-			goto err;
-		}
-		if ((ret = domaster(dbenv, progname)) != 0) {
-			dbenv->err(dbenv, ret, "Master failed");
-			goto err;
-		}
-	} else {
-		memset(&local, 0, sizeof(local));
-		local.data = myaddr;
-		local.size = (u_int32_t)strlen(myaddr) + 1;
-		if ((ret =
-		    dbenv->rep_start(dbenv, &local, DB_REP_CLIENT)) != 0) {
-			dbenv->err(dbenv, ret, "dbenv->rep_start failed");
-			goto err;
-		}
-		/* Sleep to give ourselves time to find a master. */
-		sleep(5);
-		if ((ret = doclient(dbenv, progname, machtab)) != 0) {
-			dbenv->err(dbenv, ret, "Client failed");
-			goto err;
-		}
-
-	}
-
-	/* Wait on the connection threads. */
-	if (thread_join(all_thr, &astatus) || thread_join(conn_thr, &cstatus))
-		ret = -1;
-	if (ret == 0 &&
-	    ((uintptr_t)astatus != EXIT_SUCCESS ||
-	    (uintptr_t)cstatus != EXIT_SUCCESS))
-		ret = -1;
-
-err:	if (machtab != NULL)
-		free(machtab);
-	if (dbenv != NULL)
-		(void)dbenv->close(dbenv, 0);
-#ifdef _WIN32
-	/* Shut down the Windows sockets DLL. */
-	(void)WSACleanup();
-#endif
 	return (ret);
 }
 
-/*
- * In this application, we specify all communication via the command line.
- * In a real application, we would expect that information about the other
- * sites in the system would be maintained in some sort of configuration
- * file.  The critical part of this interface is that we assume at startup
- * that we can find out 1) what host/port we wish to listen on for connections,
- * 2) a (possibly empty) list of other sites we should attempt to connect to.
- * 3) whether we are a master or client (if we don't know, we should come up
- * as a client and see if there is a master out there) and 4) what our
- * Berkeley DB home environment is.
- *
- * These pieces of information are expressed by the following flags.
- * -m host:port (required; m stands for me)
- * -o host:port (optional; o stands for other; any number of these may be
- *	specified)
- * -[MC] M for master/C for client
- * -h home directory
- * -n nsites (optional; number of sites in replication group; defaults to 0
- *	in which case we try to dynamically compute the number of sites in
- *	the replication group.)
- * -p priority (optional: defaults to 100)
- */
 static void
-usage(progname)
-	const char *progname;
+event_callback(dbenv, which, info)
+	DB_ENV *dbenv;
+	u_int32_t which;
+	void *info;
 {
-	fprintf(stderr, "usage: %s ", progname);
-	fprintf(stderr, "[-CM][-h home][-o host:port][-m host:port]%s",
-	    "[-n nsites][-p priority]\n");
-	exit(EXIT_FAILURE);
+	APP_DATA *app = dbenv->app_private;
+
+	info = NULL;				/* Currently unused. */
+
+	switch (which) {
+	case DB_EVENT_REP_MASTER:
+		app->is_master = 1;
+		break;
+
+	case DB_EVENT_REP_CLIENT:
+		app->is_master = 0;
+		break;
+
+	case DB_EVENT_REP_NEWMASTER:
+		/* I don't care about this one, for now. */
+		break;
+
+	default:
+		dbenv->errx(dbenv, "ignoring event %d", which);
+	}
 }
 
-/* Open and configure an environment.  */
 static int
-env_init(progname, home, dbenvp, machtab, flags)
-	const char *progname, *home;
-	DB_ENV **dbenvp;
-	machtab_t *machtab;
-	u_int32_t flags;
+print_stocks(dbc)
+	DBC *dbc;
 {
-	DB_ENV *dbenv;
+	DBT key, data;
+#define	MAXKEYSIZE	10
+#define	MAXDATASIZE	20
+	char keybuf[MAXKEYSIZE + 1], databuf[MAXDATASIZE + 1];
 	int ret;
-	char *prefix;
+	u_int32_t keysize, datasize;
 
-	if ((prefix = malloc(strlen(progname) + 2)) == NULL) {
-		fprintf(stderr,
-		    "%s: System error: %s\n", progname, strerror(errno));
-		return (errno);
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
+
+	printf("\tSymbol\tPrice\n");
+	printf("\t======\t=====\n");
+
+	for (ret = dbc->c_get(dbc, &key, &data, DB_FIRST);
+	    ret == 0;
+	    ret = dbc->c_get(dbc, &key, &data, DB_NEXT)) {
+		keysize = key.size > MAXKEYSIZE ? MAXKEYSIZE : key.size;
+		memcpy(keybuf, key.data, keysize);
+		keybuf[keysize] = '\0';
+
+		datasize = data.size >= MAXDATASIZE ? MAXDATASIZE : data.size;
+		memcpy(databuf, data.data, datasize);
+		databuf[datasize] = '\0';
+
+		printf("\t%s\t%s\n", keybuf, databuf);
 	}
-	sprintf(prefix, "%s:", progname);
+	printf("\n");
+	fflush(stdout);
+	return (ret == DB_NOTFOUND ? 0 : ret);
+}
 
-	if ((ret = db_env_create(&dbenv, 0)) != 0) {
-		fprintf(stderr, "%s: env create failed: %s\n",
-		    progname, db_strerror(ret));
-		return (ret);
+#define	BUFSIZE 1024
+
+int
+doloop(dbenv, app_data)
+	DB_ENV *dbenv;
+	APP_DATA *app_data;
+{
+	DB *dbp;
+	DBC *dbc;
+	DBT key, data;
+	char buf[BUFSIZE], *rbuf;
+	int ret, t_ret, was_master;
+
+	dbp = NULL;
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
+	ret = was_master = 0;
+
+	for (;;) {
+		/*
+		 * Check whether I've changed from client to master or the
+		 * other way around.
+		 */
+		if (app_data->is_master != was_master) {
+			if (dbp != NULL)
+				(void)dbp->close(dbp, DB_NOSYNC);
+			dbp = NULL;
+			was_master = app_data->is_master;
+		}
+		
+		if (dbp == NULL) {
+			if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+				return (ret);
+
+			/* Set page size small so page allocation is cheap. */
+			if ((ret = dbp->set_pagesize(dbp, 512)) != 0)
+				goto err;
+		
+			if ((ret = dbp->open(dbp, NULL, DATABASE,
+			    NULL, DB_BTREE,
+			    app_data->is_master ? DB_CREATE | DB_AUTO_COMMIT :
+			    DB_RDONLY, 0)) != 0) {
+				if (ret == ENOENT) {
+					printf(
+					  "No stock database yet available.\n");
+					if ((ret = dbp->close(dbp, 0)) != 0) {
+						dbenv->err(dbenv, ret,
+						    "DB->close");
+						goto err;
+					}
+					dbp = NULL;
+					sleep(SLEEPTIME);
+					continue;
+				}
+				dbenv->err(dbenv, ret, "DB->open");
+				goto err;
+			}
+		}
+
+		if (app_data->is_master) {
+			printf("QUOTESERVER> ");
+			fflush(stdout);
+		
+			if (fgets(buf, sizeof(buf), stdin) == NULL)
+				break;
+			(void)strtok(&buf[0], " \t\n");
+			rbuf = strtok(NULL, " \t\n");
+			if (rbuf == NULL || rbuf[0] == '\0') {
+				if (strncmp(buf, "exit", 4) == 0 ||
+				    strncmp(buf, "quit", 4) == 0)
+					break;
+				dbenv->errx(dbenv, "Format: TICKER VALUE");
+				continue;
+			}
+		
+			key.data = buf;
+			key.size = (u_int32_t)strlen(buf);
+		
+			data.data = rbuf;
+			data.size = (u_int32_t)strlen(rbuf);
+
+			if ((ret = dbp->put(dbp, NULL, &key, &data,
+			    DB_AUTO_COMMIT)) != 0)
+			{
+				dbp->err(dbp, ret, "DB->put");
+				if (ret != DB_KEYEXIST)
+					goto err;
+			}
+		} else {
+			sleep(SLEEPTIME);
+
+			dbc = NULL;
+			if ((ret = dbp->cursor(dbp, NULL, &dbc, 0)) != 0 ||
+			    (ret = print_stocks(dbc)) != 0) {
+				dbenv->err(dbenv, ret, "Error traversing data");
+				goto err;
+			}
+			if (dbc != NULL &&
+			    (t_ret = dbc->c_close(dbc)) != 0 && ret == 0)
+				ret = t_ret;
+
+			switch (ret) {
+			case 0:
+			case DB_LOCK_DEADLOCK:
+				continue;
+			case DB_REP_HANDLE_DEAD:
+				if (dbp != NULL) {
+					(void)dbp->close(dbp, DB_NOSYNC);
+					dbp = NULL;
+				}
+				continue;
+			default:
+				goto err;
+			}
+		}
 	}
-	dbenv->set_errfile(dbenv, stderr);
-	dbenv->set_errpfx(dbenv, prefix);
-	(void)dbenv->set_cachesize(dbenv, 0, CACHESIZE, 0);
-	/* (void)dbenv->set_flags(dbenv, DB_TXN_NOSYNC, 1); */
 
-	dbenv->app_private = machtab;
-	(void)dbenv->set_rep_transport(dbenv, SELF_EID, quote_send);
-
-	flags |= DB_CREATE | DB_THREAD | DB_INIT_REP |
-	    DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_TXN;
-
-	if ((ret = dbenv->open(dbenv, home, flags, 0)) == 0)
-		*dbenvp = dbenv;
-	else
-		fprintf(stderr, "can't open DB environment: %s\n",
-		    db_strerror(ret));
+err:	if (dbp != NULL)
+		(void)dbp->close(dbp, DB_NOSYNC);
 
 	return (ret);
 }

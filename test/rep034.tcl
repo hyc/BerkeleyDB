@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep034.tcl,v 12.5 2005/10/18 19:04:17 carol Exp $
+# $Id: rep034.tcl,v 12.7 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep034
 # TEST	Test of client startup synchronization.
@@ -22,11 +22,16 @@ proc rep034 { method { niter 2 } { tnum "034" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Valid for all access methods. 
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 3]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
 	#
 	# Test a couple sets of options.  Getting 'startup' from the stat
 	# or return value is unrelated to servicing requests from anywhere
@@ -34,7 +39,7 @@ proc rep034 { method { niter 2 } { tnum "034" } args } {
 	# We don't need to test every combination.
 	#
 	set opts { {stat anywhere} {ret from_master} }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {

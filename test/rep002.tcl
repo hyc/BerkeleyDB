@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002-2005
+# Copyright (c) 2002-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep002.tcl,v 12.4 2005/06/23 15:25:21 carol Exp $
+# $Id: rep002.tcl,v 12.6 2006/03/10 21:42:11 carol Exp $
 #
 # TEST  	rep002
 # TEST	Basic replication election test.
@@ -20,6 +20,20 @@ proc rep002 { method { niter 10 } { nclients 3 } { tnum "002" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Skip for record-based methods. 
+	if { $checking_valid_methods } { 
+		foreach method $valid_methods {
+			if { [is_record_based $method] == 1 } {
+				set idx [lsearch -exact $valid_methods $method]
+				if { $idx >= 0 } { 
+					set valid_methods \
+					    [lreplace $valid_methods $idx $idx]
+				}
+			}
+		}
+		return $valid_methods
+	}
 	if { [is_record_based $method] == 1 } {
 		puts "Rep002: Skipping for method $method."
 		return
@@ -28,8 +42,7 @@ proc rep002 { method { niter 10 } { nclients 3 } { tnum "002" } args } {
 	set logsets [create_logsets [expr $nclients + 1]]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {

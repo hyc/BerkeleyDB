@@ -1,19 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_rpath.c,v 12.1 2005/06/16 20:23:26 bostic Exp $
+ * $Id: os_rpath.c,v 12.3 2006/05/05 14:53:44 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <string.h>
-#endif
-
 #include "db_int.h"
+
 #ifdef HAVE_VXWORKS
 #include "iosLib.h"
 #endif

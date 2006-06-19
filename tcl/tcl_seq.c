@@ -1,23 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004-2005
+ * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_seq.c,v 12.2 2005/06/16 20:23:49 bostic Exp $
+ * $Id: tcl_seq.c,v 12.5 2006/05/05 14:54:02 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifdef HAVE_SEQUENCE
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <string.h>
-#include <tcl.h>
-#endif
+#ifdef HAVE_64BIT_TYPES
 
 #include "db_int.h"
+#ifndef NO_SYSTEM_INCLUDES
+#include <tcl.h>
+#endif
 #include "dbinc/tcl_db.h"
 #include "dbinc_auto/sequence_ext.h"
 
@@ -513,4 +509,4 @@ tcl_SeqGetFlags(interp, objc, objv, seq)
 
 	return (result);
 }
-#endif /* HAVE_SEQUENCE */
+#endif /* HAVE_64BIT_TYPES */

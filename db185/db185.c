@@ -1,27 +1,21 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db185.c,v 12.2 2005/10/06 14:36:51 bostic Exp $
+ * $Id: db185.c,v 12.5 2006/06/11 12:27:25 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
+
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2005\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
 #endif
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <fcntl.h>
-#include <string.h>
-#endif
-
-#include "db_int.h"
 #include "db185_int.h"
 
 static int	db185_close __P((DB185 *));
@@ -150,7 +144,8 @@ __db185_open(file, oflags, mode, type, openinfo)
 		 * that in DB 2.0, so do that cast.
 		 */
 		if (file != NULL) {
-			if (oflags & O_CREAT && __os_exists(file, NULL) != 0)
+			if (oflags & O_CREAT &&
+			    __os_exists(NULL, file, NULL) != 0)
 				if (__os_openhandle(NULL, file,
 				    oflags, mode, &fhp) == 0)
 					(void)__os_closehandle(NULL, fhp);

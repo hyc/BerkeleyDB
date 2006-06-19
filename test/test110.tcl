@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test110.tcl,v 1.5 2005/09/28 15:56:38 carol Exp $
+# $Id: test110.tcl,v 1.6 2006/01/02 22:03:29 bostic Exp $
 #
 # TEST	test110
 # TEST	Partial get test with duplicates.

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2004
+# Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep046.tcl,v 12.7 2005/10/19 18:32:43 sue Exp $
+# $Id: rep046.tcl,v 12.11 2006/03/10 21:44:32 carol Exp $
 #
 # TEST  rep046
 # TEST	Replication and basic bulk transfer.
@@ -21,12 +21,15 @@ proc rep046 { method { nentries 200 } { tnum "046" } args } {
 		return
 	}
 
+	if { $checking_valid_methods } {
+		return $valid_methods 
+	}
+
 	set args [convert_args $method $args]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "-recover" "" }
 	set throttle { "throttle" "" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach t $throttle {
 			puts "Rep$tnum ($method $r $t):\
 			    Replication and bulk transfer."
@@ -56,9 +59,11 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env -create -txn nosync -lock_max $lkmax \
+	set ma_envcmd "berkdb_env -create -txn nosync \
+	    -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
-	set ma_envcmd "berkdb_env -create -txn nosync -lock_max $lkmax \
+	set ma_envcmd "berkdb_env -create -txn nosync \
+	    -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -errpfx MASTER -verbose {rep off} -errfile /dev/stderr \
 	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs]
@@ -66,10 +71,12 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 
 	repladd 2
 	set cl_envcmd "berkdb_env -create -txn nosync \
-	    -lock_max $lkmax -home $clientdir \
+	    -home $clientdir \
+	    -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -rep_client -rep_transport \[list 2 replsend\]"
 #	set cl_envcmd "berkdb_env -create -txn nosync \
-#	    -lock_max $lkmax -home $clientdir \
+#	    -home $clientdir \
+#	    -lock_max_locks 10000 -lock_max_objects 10000 \
 #	    -errpfx CLIENT -verbose {rep on} -errfile /dev/stderr \
 #	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs]
@@ -80,10 +87,12 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 		file mkdir $clientdir2
 		repladd 3
 		set cl2_envcmd "berkdb_env -create -txn nosync \
-		    -lock_max $lkmax -home $clientdir2 \
+		    -home $clientdir2 \
+	    	    -lock_max_locks 10000 -lock_max_objects 10000 \
 		    -rep_client -rep_transport \[list 3 replsend\]"
 #		set cl2_envcmd "berkdb_env -create -txn nosync \
-#		    -lock_max $lkmax -home $clientdir2 \
+#		    -home $clientdir2 \
+#	    	    -lock_max_locks 10000 -lock_max_objects 10000 \
 #		    -errpfx CLIENT2 -verbose {rep on} -errfile /dev/stderr \
 #		    -rep_client -rep_transport \[list 3 replsend\]"
 		set cl2env [eval $cl2_envcmd $recargs]

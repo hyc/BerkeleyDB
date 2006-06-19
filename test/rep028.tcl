@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep028.tcl,v 12.4 2005/10/18 19:04:17 carol Exp $
+# $Id: rep028.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
 #
 # TEST  	rep028
 # TEST	Replication and non-rep env handles. (Also see rep006.)
@@ -26,6 +26,12 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 		puts "\tRep$tnum: Skipping for HP-UX."
 		return
 	}
+
+	# Run for btree only.
+	if { $checking_valid_methods } { 
+		set valid_methods { btree } 
+		return $valid_methods
+	}
 	if { [is_btree $method] == 0 } {
 		puts "\tRep$tnum: Skipping for method $method."
 		return
@@ -35,9 +41,8 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 	set logsets [create_logsets 2]
 
 	# Run the body of the test with and without recovery.
-	set recopts { "" "-recover" }
 	set clopts { "create" "open" }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
@@ -85,11 +90,11 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	# Open a master.
 	puts "\tRep$tnum.a: Open replicated envs and non-replicated client env."
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(M) "berkdb_env_noerr -create \
 	    -log_max 1000000 -home $masterdir \
 	    $m_txnargs $m_logargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(M) "berkdb_env_noerr -create \
 #	    -log_max 1000000 -home $masterdir \
 #	    $m_txnargs $m_logargs -rep_master \
 #	     -verbose {rep on} -errpfx MASTER \
@@ -100,10 +105,10 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	# Open a client
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -lock_max 2500 -home $clientdir \
+	    $c_logargs -home $clientdir \
 	    -rep_transport \[list 2 replsend\]"
 #	set env_cmd(C) "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -lock_max 2500 -home $clientdir \
+#	    $c_logargs -home $clientdir \
 #	     -verbose {rep on} -errpfx CLIENT \
 #	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep055.tcl,v 1.2 2005/10/18 19:05:54 carol Exp $
+# $Id: rep055.tcl,v 1.5 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep055
 # TEST	Test of internal initialization and log archiving.
@@ -18,10 +18,17 @@
 proc rep055 { method { niter 200 } { tnum "055" } args } {
 
 	source ./include.tcl
+	global mixed_mode_logging
+
 	if { $is_windows9x_test == 1 } { 
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Valid for all access methods. 
+	if { $checking_valid_methods } { 
+		return $valid_methods
+	}
 
 	# This test needs to set its own pagesize.
 	set pgindex [lsearch -exact $args "-pagesize"]
@@ -30,12 +37,17 @@ proc rep055 { method { niter 200 } { tnum "055" } args } {
 		return
 	}
 
+	# This test is all about log archive issues, so don't run with
+	# in-memory logging.
+	if { $mixed_mode_logging > 0 } {
+		puts "Rep$tnum: Skipping for mixed-mode logging."
+		return
+	}
+
 	# Run the body of the test with and without recovery,
-	# and with and without cleaning.  Skip recovery with in-memory
-	# logging - it doesn't make sense.
-	set recopts { "" "-recover" }
+	# and with and without cleaning. 
 	set opts { clean noclean }
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach c $opts {
 			puts "Rep$tnum ($method $r $c $args):\
 			    Test of internal initialization."

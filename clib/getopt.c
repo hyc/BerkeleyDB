@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  */
 /*
@@ -32,16 +32,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: getopt.c,v 12.1 2005/06/16 20:20:48 bostic Exp $
+ * $Id: getopt.c,v 12.3 2006/05/05 14:53:08 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#endif
 
 #include "db_int.h"
 

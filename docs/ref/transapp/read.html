@@ -1,5 +1,5 @@
-<!--$Id: read.so,v 1.10 2005/10/15 18:15:01 bostic Exp $-->
-<!--Copyright 1997-2005 by Sleepycat Software, Inc.-->
+<!--$Id: read.so,v 1.11 2006/04/28 15:27:39 mjc Exp $-->
+<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -17,30 +17,53 @@
 <h3 align=center>Degrees of isolation</h3>
 <a name="2"><!--meow--></a>
 <p>Transactions can be isolated from each other to different degrees.
-<i>Repeatable reads</i> provide the most isolation, and mean that,
-for the life of the transaction, every time a thread of control reads
-a data item, it will be unchanged from its previous value (assuming, of
-course, the thread of control does not itself modify the item).  Berkeley DB
-enforces repeatable reads whenever database reads are wrapped in
+<i>Serializable</i> provides the most isolation, and means that, for
+the life of the transaction, every time a thread of control reads a data
+item, it will be unchanged from its previous value (assuming, of course,
+the thread of control does not itself modify the item).  By default,
+Berkeley DB enforces serialiability whenever database reads are wrapped in
 transactions.  This is also known as <i>degree 3 isolation</i>.</p>
 <p>Most applications do not need to enclose reads in transactions, and when
-possible, transactionally protected reads should be avoided as they can
-cause performance problems.  For example, a transactionally protected
-cursor sequentially reading each key/data pair in a database, will
-acquire a read lock on most of the pages in the database and so will
-gradually block all write operations on the databases until the
-transaction commits or aborts.  Note, however, that if there are update
-transactions present in the application, the read operations must still
-use locking, and must be prepared to repeat any operation (possibly
-closing and reopening a cursor) that fails with a return value of
-<a href="../../ref/program/errorret.html#DB_LOCK_DEADLOCK">DB_LOCK_DEADLOCK</a>.  Applications that need repeatable reads are
-ones that require the ability to repeatedly access a data item knowing
-that it will not have changed (for example, an operation modifying a
-data item based on its existing value).</p>
+possible, transactionally protected reads at serializable isolation
+should be avoided as they can cause performance problems.  For example,
+a serializable cursor sequentially reading each key/data pair in a
+database, will acquire a read lock on most of the pages in the database
+and so will gradually block all write operations on the databases until
+the transaction commits or aborts.  Note, however, that if there are
+update transactions present in the application, the read operations must
+still use locking, and must be prepared to repeat any operation
+(possibly closing and reopening a cursor) that fails with a return value
+of <a href="../../ref/program/errorret.html#DB_LOCK_DEADLOCK">DB_LOCK_DEADLOCK</a>.  Applications that need repeatable reads
+are ones that require the ability to repeatedly access a data item
+knowing that it will not have changed (for example, an operation
+modifying a data item based on its existing value).</p>
 <a name="3"><!--meow--></a>
 <a name="4"><!--meow--></a>
 <a name="5"><!--meow--></a>
+<p><i>Snapshot isolation</i> also guarantees repeatable reads, but
+avoids read locks by using multiple versions of pages.  It is a kind of
+multiversion concurrency control (MVCC).  This makes update operations
+more expensive, because they have to allocate space for new versions of
+pages in cache and make copies, but avoiding read locks can
+significantly increase throughput for many applications.  To make use of
+snapshot isolation, databases must first be configured for multiversion
+access by calling <a href="../../api_c/db_open.html">DB-&gt;open</a> with the <a href="../../api_c/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a>
+flag.  The transactions or cursors must be configured with the
+<a href="../../api_c/txn_begin.html#DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a> flag.</p>
+<p>When configuring an environment for MVCC, it is important to realize
+that having multiple versions of pages in cache means that working set
+will take up more of the cache.  As a result, MVCC is best suited for
+use with larger cache sizes.  The environment should also be configured
+for sufficient transactions using <a href="../../api_c/env_set_tx_max.html">DB_ENV-&gt;set_tx_max</a>.  The maximum
+number of transactions needs to include all transactions executed
+concurrently by the application plus all cursors configured for snapshot
+isolation.  Further, the transactions are retained until the last page
+they created is evicted from cache, so in the extreme case, you may need
+an additional transaction for each page in the cache.</p>
 <a name="6"><!--meow--></a>
+<a name="7"><!--meow--></a>
+<a name="8"><!--meow--></a>
+<a name="9"><!--meow--></a>
 <p>A transaction may only require <i>cursor stability</i>, that is only
 be guaranteed that cursors see committed data that does not change so
 long as it is addressed by the cursor, but may change before the reading
@@ -49,10 +72,10 @@ isolation</i>.  Berkeley DB provides this level of isolation when a transaction
 is started with the <a href="../../api_c/db_cursor.html#DB_READ_COMMITTED">DB_READ_COMMITTED</a> flag.  This flag may also
 be specified when opening a cursor within a fully isolated
 transaction.</p>
-<a name="7"><!--meow--></a>
-<a name="8"><!--meow--></a>
-<a name="9"><!--meow--></a>
 <a name="10"><!--meow--></a>
+<a name="11"><!--meow--></a>
+<a name="12"><!--meow--></a>
+<a name="13"><!--meow--></a>
 <p>Berkeley DB optionally supports reading uncommitted data; that is, read
 operations may request data which has been modified but not yet
 committed by another transaction.  This is also called <i>degree
@@ -67,6 +90,6 @@ that will disappear should the transaction holding the write lock
 abort.</p>
 <table width="100%"><tr><td><br></td><td align=right><a href="../transapp/inc.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../transapp/cursor.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
-<p><font size=1><a href="../../sleepycat/legal.html">Copyright (c) 1996-2005</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1><a href="../../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
 </body>
 </html>

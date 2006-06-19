@@ -1,23 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: fop_rec.c,v 12.6 2005/10/12 17:52:16 bostic Exp $
+ * $Id: fop_rec.c,v 12.11 2006/05/10 17:28:10 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <string.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/db_page.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/fop.h"
 #include "dbinc/db_am.h"
 #include "dbinc/mp.h"
@@ -163,10 +156,10 @@ __fop_write_recover(dbenv, dbtp, lsnp, op, info)
 
 	ret = 0;
 	if (DB_UNDO(op))
-		DB_ASSERT(argp->flag != 0);
+		DB_ASSERT(dbenv, argp->flag != 0);
 	else if (DB_REDO(op))
 		ret = __fop_write(dbenv,
-		    argp->txnid, argp->name.data, (APPNAME)argp->appname,
+		    argp->txnp, argp->name.data, (APPNAME)argp->appname,
 		    NULL, argp->pgsize, argp->pageno, argp->offset,
 		    argp->page.data, argp->page.size, argp->flag, 0);
 

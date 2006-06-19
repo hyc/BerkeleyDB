@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: txn.h,v 12.7 2005/10/13 00:53:00 bostic Exp $
+ * $Id: txn.h,v 12.10 2006/04/27 13:40:15 mjc Exp $
  */
 
 #ifndef	_TXN_H_
@@ -31,7 +31,7 @@ struct __txn_logrec;	typedef struct __txn_logrec DB_TXNLOGREC;
 #define	TXN_MAXIMUM	0xffffffff	/* Maximum number of txn ids. */
 #define	TXN_INVALID	0		/* Invalid transaction ID. */
 
-#define	DEF_MAX_TXNS	20		/* Default max transactions. */
+#define	DEF_MAX_TXNS	100		/* Default max transactions. */
 
 /*
  * Internal data maintained in shared memory for each transaction.
@@ -40,12 +40,19 @@ typedef struct __txn_detail {
 	u_int32_t txnid;		/* current transaction id
 					   used to link free list also */
 	pid_t pid;			/* Process owning txn */
-	db_threadid_t tid;	/* Thread owning txn */
+	db_threadid_t tid;		/* Thread owning txn */
 
-	DB_LSN	last_lsn;		/* last lsn written for this txn */
-	DB_LSN	begin_lsn;		/* lsn of begin record */
+	DB_LSN	last_lsn;		/* Last LSN written for this txn. */
+	DB_LSN	begin_lsn;		/* LSN of begin record. */
 	roff_t	parent;			/* Offset of transaction's parent. */
 	roff_t	name;			/* Offset of txn name. */
+
+	DB_LSN	read_lsn;		/* Read LSN for MVCC. */
+	DB_LSN	visible_lsn;		/* LSN at which this transaction's
+					   changes are visible. */
+	db_mutex_t	mvcc_mtx;	/* Version mutex. */
+	u_int32_t	mvcc_ref;	/* Number of buffers created by this
+					   transaction still in cache.  */
 
 	SH_TAILQ_HEAD(__tdkids)	kids;	/* Linked list of child txn detail. */
 	SH_TAILQ_ENTRY		klinks;
@@ -60,7 +67,7 @@ typedef struct __txn_detail {
 #define	TXN_DTL_INMEMORY	0x4	/* uses in memory logs */
 	u_int32_t flags;
 
-	SH_TAILQ_ENTRY	links;		/* free/active list */
+	SH_TAILQ_ENTRY	links;		/* active/free/snapshot list */
 
 #define	TXN_XA_ABORTED		1
 #define	TXN_XA_DEADLOCKED	2
@@ -104,11 +111,11 @@ struct __db_txnmgr {
 
 /* Macros to lock/unlock the transaction region as a whole. */
 #define	TXN_SYSTEM_LOCK(dbenv)						\
-	MUTEX_LOCK(dbenv, ((DB_TXNREGION *)((DB_TXNMGR *)		\
-	    (dbenv)->tx_handle)->reginfo.primary)->mtx_region)
+	MUTEX_LOCK(dbenv, ((DB_TXNREGION *)				\
+	    (dbenv)->tx_handle->reginfo.primary)->mtx_region)
 #define	TXN_SYSTEM_UNLOCK(dbenv)					\
-	MUTEX_UNLOCK(dbenv, ((DB_TXNREGION *)((DB_TXNMGR *)		\
-	    (dbenv)->tx_handle)->reginfo.primary)->mtx_region)
+	MUTEX_UNLOCK(dbenv, ((DB_TXNREGION *)				\
+	    (dbenv)->tx_handle->reginfo.primary)->mtx_region)
 
 /*
  * DB_TXNREGION --
@@ -131,6 +138,7 @@ struct __db_txnregion {
 	u_int32_t	flags;
 					/* active TXN list */
 	SH_TAILQ_HEAD(__active) active_txn;
+	SH_TAILQ_HEAD(__mvcc) mvcc_txn;
 };
 
 /*

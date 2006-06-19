@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: fop007.tcl,v 12.2 2005/10/05 18:03:27 carol Exp $
+# $Id: fop007.tcl,v 12.3 2006/01/02 22:03:14 bostic Exp $
 #
 # TEST	fop007
 # TEST	Test file system operations on named in-memory databases.

@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: cxx_int.h,v 12.1 2005/06/16 20:21:43 bostic Exp $
+ * $Id: cxx_int.h,v 12.2 2006/01/02 22:01:48 bostic Exp $
  */
 
 #ifndef _CXX_INT_H_

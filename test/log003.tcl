@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2005
+# Copyright (c) 1996-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: log003.tcl,v 12.1 2005/06/16 20:23:56 bostic Exp $
+# $Id: log003.tcl,v 12.2 2006/01/02 22:03:15 bostic Exp $
 #
 # TEST	log003
 # TEST	Verify that log_flush is flushing records correctly.

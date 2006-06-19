@@ -3,7 +3,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  */
 
@@ -183,6 +183,11 @@ public class CacheStats {
         return st_alloc_max_pages;
     }
 
+    private int st_io_wait;
+    public int getIoWait() {
+        return st_io_wait;
+    }
+
     public String toString() {
         return "CacheStats:"
             + "\n  st_gbytes=" + st_gbytes
@@ -219,6 +224,7 @@ public class CacheStats {
             + "\n  st_alloc_max_buckets=" + st_alloc_max_buckets
             + "\n  st_alloc_pages=" + st_alloc_pages
             + "\n  st_alloc_max_pages=" + st_alloc_max_pages
+            + "\n  st_io_wait=" + st_io_wait
             ;
     }
 }

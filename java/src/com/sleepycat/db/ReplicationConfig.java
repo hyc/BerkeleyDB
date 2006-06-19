@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: ReplicationConfig.java,v 12.3 2005/11/02 03:14:12 mjc Exp $
+ * $Id: ReplicationConfig.java,v 12.4 2006/01/02 22:02:37 bostic Exp $
  */
 
 package com.sleepycat.db;

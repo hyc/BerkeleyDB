@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb017.tcl,v 12.3 2005/10/18 15:00:02 carol Exp $
+# $Id: sdb017.tcl,v 12.4 2006/01/02 22:03:23 bostic Exp $
 #
 # TEST	sdb017
 # TEST	Test DB->rename() for in-memory named databases.

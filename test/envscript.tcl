@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: envscript.tcl,v 12.2 2005/06/16 20:23:53 bostic Exp $
+# $Id: envscript.tcl,v 12.3 2006/01/02 22:03:14 bostic Exp $
 #
 # Envscript -- for use with env012, DB_REGISTER test.
 # Usage: envscript testdir testfile putget key data recover envclose wait

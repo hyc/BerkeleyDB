@@ -1,8 +1,11 @@
 /*
- * $Id: sha1.c,v 12.0 2004/11/17 03:43:56 bostic Exp $
+ * $Id: sha1.c,v 12.1 2006/05/05 14:53:34 bostic Exp $
  */
 
 #include "db_config.h"
+
+#include "db_int.h"
+#include "dbinc/hmac.h"
 
 /*
 SHA-1 in C
@@ -75,13 +78,6 @@ A million repetitions of "a"
 */
 
 #define SHA1HANDSOFF
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <string.h>
-#endif
-
-#include "db_int.h"
-#include "dbinc/hmac.h"
 
 /* #include <process.h> */	/* prototype for exit() - JHB */
 /* Using return() instead of exit() - SWR */

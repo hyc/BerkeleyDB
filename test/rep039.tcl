@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep039.tcl,v 1.9 2005/10/18 19:04:17 carol Exp $
+# $Id: rep039.tcl,v 1.12 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep039
 # TEST	Test of internal initialization and master changes.
@@ -19,7 +19,35 @@
 # TEST	Run for btree only because of the number of permutations.
 # TEST
 proc rep039 { method { niter 200 } { tnum "039" } args } {
-	set args [convert_args $method $args]
+
+	source ./include.tcl
+
+	# Run for btree and queue methods only.
+	if { $checking_valid_methods } { 
+		foreach method $valid_methods {
+			if { [is_btree $method] == 0 && \
+			    [is_queue $method] == 0 } {
+				set idx [lsearch -exact $valid_methods $method]
+				if { $idx >= 0 } { 
+					set valid_methods \
+					    [lreplace $valid_methods $idx $idx]
+				}
+			}
+		}
+		return $valid_methods
+	}
+	if { [is_btree $method] == 0 && [is_queue $method] == 0 } {
+		puts "Rep$tnum: skipping for non-btree, non-queue method."
+		return 
+	}
+
+	# Skip for mixed-mode logging -- this test has a very large
+	# set of iterations already. 
+	global mixed_mode_logging
+	if { $mixed_mode_logging > 0 } {
+		puts "Rep$tnum: Skipping for mixed mode logging."
+		return
+	}
 
 	# This test needs to set its own pagesize.
 	set pgindex [lsearch -exact $args "-pagesize"]
@@ -28,19 +56,14 @@ proc rep039 { method { niter 200 } { tnum "039" } args } {
 		return
 	}
 
-	# Run for btree and queue methods only.
-	if { [is_btree $method] == 0 && [is_queue $method] == 0 } {
-		puts "Rep$tnum: skipping for non-btree, non-queue method."
-		return 
-	}
+	set args [convert_args $method $args]
 
 	# Run the body of the test with and without recovery,
 	# and with and without cleaning.
-	set recopts { "" " -recover " }
 	set cleanopts { noclean clean }
 	set archopts { archive noarchive }
 	set nummsgs 5
-	foreach r $recopts {
+	foreach r $test_recopts {
 		foreach c $cleanopts {
 			foreach a $archopts {
 				for { set i 1 } { $i < $nummsgs } { incr i } {

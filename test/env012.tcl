@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #       Sleepycat Software.  All rights reserved.
 #
-# $Id: env012.tcl,v 12.6 2005/11/02 15:11:04 carol Exp $
+# $Id: env012.tcl,v 12.8 2006/01/02 22:03:14 bostic Exp $
 #
 # TEST	env012
 # TEST	Test DB_REGISTER.
@@ -12,23 +12,24 @@
 # TEST	fails, make sure we got the expected DB_OPNOTSUP return.
 # TEST
 # TEST	Then, the real tests:
-# TEST	1. 	Process 1 enters with -register -recover.
-# TEST		Process 2 enters successfully with just -register. 
+# TEST	For each test, we start a process that opens an env with -register.
 # TEST	
-# TEST  2. 	Process 1 enters with -register -recover.
-# TEST		Process 1 is killed.
-# TEST		Process 2 enters successfully with -register -recover.
-# TEST
-# TEST	3. 	Process 1 enters with -register -recover.
-# TEST		Process 1 is killed.
-# TEST		Process 2 fails to enter with -register.
+# TEST	1. Verify that a 2nd process can enter the existing env with -register.
 # TEST	
-# TEST	4.  	Process 1 enters with -register -recover.
-# TEST		Process 2 enters with -register.
-# TEST		Process 1 is killed.
-# TEST		Process 3 enters with -register -recover.
-# TEST		Process 2 fails with DB_RUNRECOVERY.
+# TEST	2. Kill the 1st process, and verify that the 2nd process can enter
+# TEST	with "-register -recover".
 # TEST
+# TEST	3. Kill the 1st process, and verify that the 2nd process cannot 
+# TEST	enter with just "-register".
+# TEST	
+# TEST	4. While the 1st process is still running, a 2nd process enters 
+# TEST	with "-register".  Kill the 1st process.  Verify that a 3rd process
+# TEST	can enter with "-register -recover".  Verify that the 3rd process, 
+# TEST	entering, causes process 2 to fail with the message DB_RUNRECOVERY.
+# TEST
+# TEST	5. We had a bug where recovery was always run with -register
+# TEST	if there were empty slots in the process registry file.  Verify 
+# TEST	that recovery doesn't automatically run if there is an empty slot. 
 proc env012 { } {
 	source ./include.tcl
 	set tnum "012"
@@ -168,6 +169,45 @@ proc env012 { } {
 	logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
 	logcheck $testdir/env$tnum.log.p3
 
+	puts "\tEnv$tnum.f: Empty slot shouldn't cause automatic recovery."
+
+	# Create 2 empty slots in the registry by letting two processes
+	# run to completion.
+	puts "\t\tEnv$tnum.f1: Start process 1."
+	set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+	    $testdir/env$tnum.log.p1 \
+	    $testdir $testfile PUT $key $data RECOVER 1 &]
+
+	puts "\t\tEnv$tnum.f2: Start process 2."
+	set p2 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+	    $testdir/env$tnum.log.p2 \
+	    $testdir $testfile GET $key $data 0 1 &]
+
+	watch_procs $p1 1 60
+	watch_procs $p2 1 60
+
+	logcheck $testdir/env$tnum.log.p1
+	logcheck $testdir/env$tnum.log.p2
+    
+	# Start two more process.  Neither should signal a need for recovery.
+	puts "\t\tEnv$tnum.f3: Start process 3."
+	set p3 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+	    $testdir/env$tnum.log.p3 \
+	    $testdir $testfile GET $key $data RECOVER 10 &]
+
+	tclsleep 2
+    
+	puts "\t\tEnv$tnum.f4: Start process 4."
+	set p4 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+	    $testdir/env$tnum.log.p4 \
+	    $testdir $testfile PUT $key $data 0 10 &]
+
+	watch_procs $p3 1 120
+	watch_procs $p4 1 120
+
+	# Check log files to verify that neither process returned DB_RUNRECOVERY.
+	logcheck $testdir/env$tnum.log.p3
+	logcheck $testdir/env$tnum.log.p4
 }
 
 # Check log file and report failures with FAIL.  Use this when

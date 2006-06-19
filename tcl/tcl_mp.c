@@ -1,23 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_mp.c,v 12.1 2005/06/16 20:23:48 bostic Exp $
+ * $Id: tcl_mp.c,v 12.4 2006/05/05 14:54:02 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
 #ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
 #include <tcl.h>
 #endif
-
-#include "db_int.h"
 #include "dbinc/tcl_db.h"
 
 /*
@@ -587,12 +582,14 @@ tcl_MpGet(interp, objc, objv, mp, mpip)
 {
 	static const char *mpget[] = {
 		"-create",
+		"-dirty",
 		"-last",
 		"-new",
 		NULL
 	};
 	enum mpget {
 		MPGET_CREATE,
+		MPGET_DIRTY,
 		MPGET_LAST,
 		MPGET_NEW
 	};
@@ -626,6 +623,9 @@ tcl_MpGet(interp, objc, objv, mp, mpip)
 		switch ((enum mpget)optindex) {
 		case MPGET_CREATE:
 			flag |= DB_MPOOL_CREATE;
+			break;
+		case MPGET_DIRTY:
+			flag |= DB_MPOOL_DIRTY;
 			break;
 		case MPGET_LAST:
 			flag |= DB_MPOOL_LAST;
@@ -662,7 +662,8 @@ tcl_MpGet(interp, objc, objv, mp, mpip)
 	}
 	_debug_check();
 	pgno = (db_pgno_t)ipgno;
-	ret = mp->get(mp, &pgno, flag, &page);
+	/* XXX: need a transaction handle. */
+	ret = mp->get(mp, &pgno, NULL, flag, &page);
 	result = _ReturnSetup(interp, ret, DB_RETOK_MPGET(ret), "mpool get");
 	if (result == TCL_ERROR)
 		_DeleteInfo(ip);
@@ -790,13 +791,11 @@ tcl_Pg(interp, objc, objv, page, mp, pgip, putop)
 {
 	static const char *pgopt[] = {
 		"-clean",
-		"-dirty",
 		"-discard",
 		NULL
 	};
 	enum pgopt {
 		PGCLEAN,
-		PGDIRTY,
 		PGDISCARD
 	};
 	u_int32_t flag;
@@ -813,9 +812,6 @@ tcl_Pg(interp, objc, objv, page, mp, pgip, putop)
 		switch ((enum pgopt)optindex) {
 		case PGCLEAN:
 			flag |= DB_MPOOL_CLEAN;
-			break;
-		case PGDIRTY:
-			flag |= DB_MPOOL_DIRTY;
 			break;
 		case PGDISCARD:
 			flag |= DB_MPOOL_DISCARD;

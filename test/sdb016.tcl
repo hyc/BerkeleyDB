@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb016.tcl,v 12.6 2005/10/18 15:00:02 carol Exp $
+# $Id: sdb016.tcl,v 12.7 2006/01/02 22:03:23 bostic Exp $
 #
 # TEST	sdb016
 # TEST	Creates many in-memory named dbs and puts a small amount of

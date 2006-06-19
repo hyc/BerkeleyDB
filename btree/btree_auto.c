@@ -2,13 +2,6 @@
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <ctype.h>
-#include <string.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
@@ -24,10 +17,10 @@
  * PUBLIC:     db_pgno_t, DB_LSN *, db_pgno_t, const DBT *, u_int32_t));
  */
 int
-__bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
+__bam_split_log(dbp, txnp, ret_lsnp, flags, left, llsn, right, rlsn, indx,
     npgno, nlsn, root_pgno, pg, opflags)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t left;
@@ -61,17 +54,19 @@ __bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -79,11 +74,11 @@ __bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -106,7 +101,7 @@ __bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -195,11 +190,12 @@ __bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -219,8 +215,8 @@ __bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -233,7 +229,7 @@ __bam_split_log(dbp, txnid, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -257,13 +253,14 @@ __bam_split_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_split_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -321,10 +318,10 @@ __bam_split_read(dbenv, recbuf, argpp)
  * PUBLIC:     const DBT *, DB_LSN *));
  */
 int
-__bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, rootent,
+__bam_rsplit_log(dbp, txnp, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, rootent,
     rootlsn)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -354,17 +351,19 @@ __bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, root
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -372,11 +371,11 @@ __bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, root
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -395,7 +394,7 @@ __bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, root
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -471,11 +470,12 @@ __bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, root
 		memset(bp, 0, sizeof(*rootlsn));
 	bp += sizeof(*rootlsn);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -495,8 +495,8 @@ __bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, root
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -509,7 +509,7 @@ __bam_rsplit_log(dbp, txnid, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, root
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -533,13 +533,14 @@ __bam_rsplit_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_rsplit_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -585,9 +586,9 @@ __bam_rsplit_read(dbenv, recbuf, argpp)
  * PUBLIC:     u_int32_t));
  */
 int
-__bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert)
+__bam_adj_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -616,17 +617,19 @@ __bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -634,11 +637,11 @@ __bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -656,7 +659,7 @@ __bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -714,11 +717,12 @@ __bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -738,8 +742,8 @@ __bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -752,7 +756,7 @@ __bam_adj_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -776,13 +780,14 @@ __bam_adj_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_adj_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -819,9 +824,9 @@ __bam_adj_read(dbenv, recbuf, argpp)
  * PUBLIC:     u_int32_t, db_pgno_t, DB_LSN *, u_int32_t, int32_t, u_int32_t));
  */
 int
-__bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
+__bam_cadjust_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -850,17 +855,19 @@ __bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -868,11 +875,11 @@ __bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -890,7 +897,7 @@ __bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -948,11 +955,12 @@ __bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -972,8 +980,8 @@ __bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -986,7 +994,7 @@ __bam_cadjust_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -1011,13 +1019,14 @@ __bam_cadjust_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_cadjust_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -1054,9 +1063,9 @@ __bam_cadjust_read(dbenv, recbuf, argpp)
  * PUBLIC:     u_int32_t, db_pgno_t, DB_LSN *, u_int32_t));
  */
 int
-__bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
+__bam_cdel_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -1083,17 +1092,19 @@ __bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -1101,11 +1112,11 @@ __bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -1121,7 +1132,7 @@ __bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -1171,11 +1182,12 @@ __bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -1195,8 +1207,8 @@ __bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -1209,7 +1221,7 @@ __bam_cdel_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx)
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -1233,13 +1245,14 @@ __bam_cdel_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_cdel_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -1269,10 +1282,10 @@ __bam_cdel_read(dbenv, recbuf, argpp)
  * PUBLIC:     const DBT *, const DBT *, u_int32_t, u_int32_t));
  */
 int
-__bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
+__bam_repl_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
     repl, prefix, suffix)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -1304,17 +1317,19 @@ __bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -1322,11 +1337,11 @@ __bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -1347,7 +1362,7 @@ __bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -1431,11 +1446,12 @@ __bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -1455,8 +1471,8 @@ __bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -1469,7 +1485,7 @@ __bam_repl_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -1493,13 +1509,14 @@ __bam_repl_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_repl_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -1552,9 +1569,9 @@ __bam_repl_read(dbenv, recbuf, argpp)
  * PUBLIC:     u_int32_t, db_pgno_t, db_pgno_t, DB_LSN *));
  */
 int
-__bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
+__bam_root_log(dbp, txnp, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t meta_pgno;
@@ -1581,17 +1598,19 @@ __bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -1599,11 +1618,11 @@ __bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -1619,7 +1638,7 @@ __bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -1669,11 +1688,12 @@ __bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 		memset(bp, 0, sizeof(*meta_lsn));
 	bp += sizeof(*meta_lsn);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -1693,8 +1713,8 @@ __bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -1707,7 +1727,7 @@ __bam_root_log(dbp, txnid, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -1731,13 +1751,14 @@ __bam_root_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_root_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -1767,10 +1788,10 @@ __bam_root_read(dbenv, recbuf, argpp)
  * PUBLIC:     u_int32_t, u_int32_t, u_int32_t));
  */
 int
-__bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgno, first_indx,
+__bam_curadj_log(dbp, txnp, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgno, first_indx,
     from_indx, to_indx)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_ca_mode mode;
@@ -1801,17 +1822,19 @@ __bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgn
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -1819,11 +1842,11 @@ __bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgn
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -1843,7 +1866,7 @@ __bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgn
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -1907,11 +1930,12 @@ __bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgn
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -1931,8 +1955,8 @@ __bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgn
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -1945,7 +1969,7 @@ __bam_curadj_log(dbp, txnid, ret_lsnp, flags, mode, from_pgno, to_pgno, left_pgn
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -1969,13 +1993,14 @@ __bam_curadj_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_curadj_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -2021,9 +2046,9 @@ __bam_curadj_read(dbenv, recbuf, argpp)
  * PUBLIC:     u_int32_t, ca_recno_arg, db_pgno_t, db_recno_t, u_int32_t));
  */
 int
-__bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
+__bam_rcuradj_log(dbp, txnp, ret_lsnp, flags, mode, root, recno, order)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	ca_recno_arg mode;
@@ -2051,17 +2076,19 @@ __bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -2069,11 +2096,11 @@ __bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -2090,7 +2117,7 @@ __bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -2142,11 +2169,12 @@ __bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -2166,8 +2194,8 @@ __bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -2180,7 +2208,7 @@ __bam_rcuradj_log(dbp, txnid, ret_lsnp, flags, mode, root, recno, order)
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -2205,13 +2233,14 @@ __bam_rcuradj_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_rcuradj_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -2241,15 +2270,75 @@ __bam_rcuradj_read(dbenv, recbuf, argpp)
 }
 
 /*
+ * PUBLIC: int __bam_relink_43_read __P((DB_ENV *, void *,
+ * PUBLIC:     __bam_relink_43_args **));
+ */
+int
+__bam_relink_43_read(dbenv, recbuf, argpp)
+	DB_ENV *dbenv;
+	void *recbuf;
+	__bam_relink_43_args **argpp;
+{
+	__bam_relink_43_args *argp;
+	u_int32_t uinttmp;
+	u_int8_t *bp;
+	int ret;
+
+	if ((ret = __os_malloc(dbenv,
+	    sizeof(__bam_relink_43_args) + sizeof(DB_TXN), &argp)) != 0)
+		return (ret);
+	bp = recbuf;
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
+
+	memcpy(&argp->type, bp, sizeof(argp->type));
+	bp += sizeof(argp->type);
+
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
+
+	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
+	bp += sizeof(DB_LSN);
+
+	memcpy(&uinttmp, bp, sizeof(uinttmp));
+	argp->fileid = (int32_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	memcpy(&uinttmp, bp, sizeof(uinttmp));
+	argp->pgno = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	memcpy(&argp->lsn, bp,  sizeof(argp->lsn));
+	bp += sizeof(argp->lsn);
+
+	memcpy(&uinttmp, bp, sizeof(uinttmp));
+	argp->prev = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	memcpy(&argp->lsn_prev, bp,  sizeof(argp->lsn_prev));
+	bp += sizeof(argp->lsn_prev);
+
+	memcpy(&uinttmp, bp, sizeof(uinttmp));
+	argp->next = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	memcpy(&argp->lsn_next, bp,  sizeof(argp->lsn_next));
+	bp += sizeof(argp->lsn_next);
+
+	*argpp = argp;
+	return (0);
+}
+
+/*
  * PUBLIC: int __bam_relink_log __P((DB *, DB_TXN *, DB_LSN *,
  * PUBLIC:     u_int32_t, db_pgno_t, db_pgno_t, db_pgno_t, DB_LSN *, db_pgno_t,
  * PUBLIC:     DB_LSN *));
  */
 int
-__bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, next,
+__bam_relink_log(dbp, txnp, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, next,
     lsn_next)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -2279,17 +2368,19 @@ __bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, ne
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -2297,11 +2388,11 @@ __bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, ne
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -2320,7 +2411,7 @@ __bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, ne
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -2384,11 +2475,12 @@ __bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, ne
 		memset(bp, 0, sizeof(*lsn_next));
 	bp += sizeof(*lsn_next);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -2408,8 +2500,8 @@ __bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, ne
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -2422,7 +2514,7 @@ __bam_relink_log(dbp, txnid, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, ne
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -2446,13 +2538,14 @@ __bam_relink_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_relink_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -2493,10 +2586,10 @@ __bam_relink_read(dbenv, recbuf, argpp)
  * PUBLIC:     const DBT *, const DBT *));
  */
 int
-__bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
+__bam_merge_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
     data, ind)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -2527,17 +2620,19 @@ __bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -2545,11 +2640,11 @@ __bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -2569,7 +2664,7 @@ __bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -2658,11 +2753,12 @@ __bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 		bp += ind->size;
 	}
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -2682,8 +2778,8 @@ __bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -2696,7 +2792,7 @@ __bam_merge_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -2720,13 +2816,14 @@ __bam_merge_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_merge_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);
@@ -2777,9 +2874,9 @@ __bam_merge_read(dbenv, recbuf, argpp)
  * PUBLIC:     db_pgno_t));
  */
 int
-__bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
+__bam_pgno_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 	DB *dbp;
-	DB_TXN *txnid;
+	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
 	u_int32_t flags;
 	db_pgno_t pgno;
@@ -2808,17 +2905,19 @@ __bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE) ||
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
+		if (txnp == NULL)
+			return (0);
 		is_durable = 0;
 	} else
 		is_durable = 1;
 
-	if (txnid == NULL) {
+	if (txnp == NULL) {
 		txn_num = 0;
 		lsnp = &null_lsn;
 		null_lsn.file = null_lsn.offset = 0;
 	} else {
-		if (TAILQ_FIRST(&txnid->kids) != NULL &&
-		    (ret = __txn_activekids(dbenv, rectype, txnid)) != 0)
+		if (TAILQ_FIRST(&txnp->kids) != NULL &&
+		    (ret = __txn_activekids(dbenv, rectype, txnp)) != 0)
 			return (ret);
 		/*
 		 * We need to assign begin_lsn while holding region mutex.
@@ -2826,11 +2925,11 @@ __bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 		 * so pass in the appropriate memory location to be filled
 		 * in by the log_put code.
 		 */
-		DB_SET_TXN_LSNP(txnid, &rlsnp, &lsnp);
-		txn_num = txnid->txnid;
+		DB_SET_TXN_LSNP(txnp, &rlsnp, &lsnp);
+		txn_num = txnp->txnid;
 	}
 
-	DB_ASSERT(dbp->log_filename != NULL);
+	DB_ASSERT(dbenv, dbp->log_filename != NULL);
 	if (dbp->log_filename->id == DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_lazy_id(dbp)) != 0)
 		return (ret);
@@ -2848,7 +2947,7 @@ __bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 		logrec.size += npad;
 	}
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret =
 		    __os_malloc(dbenv, logrec.size, &logrec.data)) != 0)
 			return (ret);
@@ -2906,11 +3005,12 @@ __bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	DB_ASSERT((u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
+	DB_ASSERT(dbenv,
+	    (u_int32_t)(bp - (u_int8_t *)logrec.data) <= logrec.size);
 
-	if (is_durable || txnid == NULL) {
+	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(dbenv, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnid != NULL) {
+		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
 			*lsnp = *rlsnp;
 			if (rlsnp != ret_lsnp)
 				 *ret_lsnp = *rlsnp;
@@ -2930,8 +3030,8 @@ __bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 #else
 		ret = 0;
 #endif
-		STAILQ_INSERT_HEAD(&txnid->logs, lr, links);
-		F_SET((TXN_DETAIL *)txnid->td, TXN_DTL_INMEMORY);
+		STAILQ_INSERT_HEAD(&txnp->logs, lr, links);
+		F_SET((TXN_DETAIL *)txnp->td, TXN_DTL_INMEMORY);
 		LSN_NOT_LOGGED(*ret_lsnp);
 	}
 
@@ -2944,7 +3044,7 @@ __bam_pgno_log(dbp, txnid, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 #ifdef DIAGNOSTIC
 	__os_free(dbenv, logrec.data);
 #else
-	if (is_durable || txnid == NULL)
+	if (is_durable || txnp == NULL)
 		__os_free(dbenv, logrec.data);
 #endif
 	return (ret);
@@ -2968,13 +3068,14 @@ __bam_pgno_read(dbenv, recbuf, argpp)
 	    sizeof(__bam_pgno_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
-	argp->txnid = (DB_TXN *)&argp[1];
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
 
 	memcpy(&argp->type, bp, sizeof(argp->type));
 	bp += sizeof(argp->type);
 
-	memcpy(&argp->txnid->txnid,  bp, sizeof(argp->txnid->txnid));
-	bp += sizeof(argp->txnid->txnid);
+	memcpy(&argp->txnp->txnid, bp, sizeof(argp->txnp->txnid));
+	bp += sizeof(argp->txnp->txnid);
 
 	memcpy(&argp->prev_lsn, bp, sizeof(DB_LSN));
 	bp += sizeof(DB_LSN);

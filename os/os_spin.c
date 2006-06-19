@@ -1,24 +1,21 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_spin.c,v 12.3 2005/08/10 15:47:27 bostic Exp $
+ * $Id: os_spin.c,v 12.9 2006/05/19 19:25:18 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
+
 #ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
 #if defined(HAVE_PSTAT_GETDYNAMIC)
 #include <sys/pstat.h>
 #endif
-
-#include <limits.h>			/* Needed for sysconf on Solaris. */
 #endif
-
-#include "db_int.h"
 
 #if defined(HAVE_PSTAT_GETDYNAMIC)
 static int __os_pstat_getdynamic __P((void));
@@ -84,23 +81,4 @@ __os_spin(dbenv)
 		tas_spins *= 50;
 
 	return (tas_spins);
-}
-
-/*
- * __os_yield --
- *	Yield the processor.
- *
- * PUBLIC: void __os_yield __P((DB_ENV*, u_long));
- */
-void
-__os_yield(dbenv, usecs)
-	DB_ENV *dbenv;
-	u_long usecs;
-{
-	if (DB_GLOBAL(j_yield) != NULL && DB_GLOBAL(j_yield)() == 0)
-		return;
-#ifdef HAVE_VXWORKS
-	taskDelay(1);
-#endif
-	__os_sleep(dbenv, 0, usecs);
 }

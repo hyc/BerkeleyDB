@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2005
+# Copyright (c) 1996-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: txn004.tcl,v 12.1 2005/06/16 20:24:11 bostic Exp $
+# $Id: txn004.tcl,v 12.2 2006/01/02 22:03:30 bostic Exp $
 #
 # TEST	txn004
 # TEST	Test of wraparound txnids (txn001)

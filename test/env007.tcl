@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2005
+# Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: env007.tcl,v 12.7 2005/10/11 18:27:45 carol Exp $
+# $Id: env007.tcl,v 12.10 2006/06/08 00:46:21 bostic Exp $
 #
 # TEST	env007
 # TEST	Test DB_CONFIG config file options for berkdb env.
@@ -434,7 +434,6 @@ proc env007 { } {
 	{ "set_lk_detect" "db_xxx" }
 	{ "set_lk_detect" "1" }
 	{ "set_lk_detect" "db_lock_youngest x" }
-	{ "set_lk_max" "db_xxx" }
 	{ "set_lk_max_locks" "db_xxx" }
 	{ "set_lk_max_lockers" "db_xxx" }
 	{ "set_lk_max_objects" "db_xxx" }
@@ -461,8 +460,7 @@ proc env007 { } {
 		#  verify using just config file
 		set stat [catch {eval $e} ret]
 		error_check_good envopen $stat 1
-		error_check_good error [is_substr $errorInfo \
-		    "incorrect arguments for name-value pair"] 1
+		error_check_good error [is_substr $errorCode EINVAL] 1
 	}
 
 	puts "\tEnv007.g: Config name error set_xxx"

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2005
+# Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep042script.tcl,v 12.3 2005/08/26 20:53:21 sue Exp $
+# $Id: rep042script.tcl,v 12.5 2006/04/12 03:24:06 sue Exp $
 #
 # Rep042 script - concurrency with updates.
 
@@ -30,10 +30,7 @@ set sleepval [ lindex $argv 1 ]
 set dbname [lindex $argv 2]
 set op [lindex $argv 3]
 
-# Join the queue env.  We assume the rep test convention of
-# placing the messages in $testdir/MSGQUEUEDIR.
-set queueenv [eval berkdb_env -home $testdir/MSGQUEUEDIR]
-error_check_good script_qenv_open [is_valid_env $queueenv] TRUE
+set is_repchild 1
 
 #
 # We need to set up our own machids.

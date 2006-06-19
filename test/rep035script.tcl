@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep035script.tcl,v 12.1 2005/06/16 20:24:03 bostic Exp $
+# $Id: rep035script.tcl,v 12.3 2006/04/12 03:24:06 sue Exp $
 #
 # Rep035 script - continually calls lock_detect, txn_checkpoint,
 # or mpool_trickle.
@@ -28,6 +28,7 @@ if { $argc != 2 } {
 set clientdir [ lindex $argv 0 ]
 set apicall [ lindex $argv 1 ]
 
+set is_repchild 1
 # Join the client env.
 set envid 3
 set cl2_cmd "berkdb_env_noerr -home $clientdir \

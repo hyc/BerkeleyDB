@@ -1,22 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: fop_basic.c,v 12.8 2005/10/12 17:52:16 bostic Exp $
+ * $Id: fop_basic.c,v 12.15 2006/05/05 14:53:31 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <string.h>
-#include <sys/types.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/db_page.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/fop.h"
 #include "dbinc/log.h"
 #include "dbinc/mp.h"
@@ -89,9 +83,7 @@ __fop_create(dbenv, txn, fhpp, name, appname, mode, flags)
 		mode = __db_omode(OWNER_RW);
 
 	if (DBENV_LOGGING(dbenv)) {
-		memset(&data, 0, sizeof(data));
-		data.data = (void *)name;
-		data.size = (u_int32_t)strlen(name) + 1;
+		DB_INIT_DBT(data, name, strlen(name) + 1);
 		if ((ret = __fop_create_log(dbenv, txn, &lsn,
 		    flags | DB_FLUSH,
 		    &data, (u_int32_t)appname, (u_int32_t)mode)) != 0)
@@ -150,9 +142,7 @@ __fop_remove(dbenv, txn, fileid, name, appname, flags)
 			memset(&fdbt, 0, sizeof(ndbt));
 			fdbt.data = fileid;
 			fdbt.size = fileid == NULL ? 0 : DB_FILE_ID_LEN;
-			memset(&ndbt, 0, sizeof(ndbt));
-			ndbt.data = (void *)name;
-			ndbt.size = (u_int32_t)strlen(name) + 1;
+			DB_INIT_DBT(ndbt, name, strlen(name) + 1);
 			if ((ret = __fop_remove_log(dbenv, txn, &lsn,
 			    flags, &ndbt, &fdbt, (u_int32_t)appname)) != 0)
 				goto err;
@@ -202,7 +192,7 @@ __fop_write(dbenv,
 	int local_open, ret, t_ret;
 	char *real_name;
 
-	DB_ASSERT(istmp != 0);
+	DB_ASSERT(dbenv, istmp != 0);
 
 	ret = local_open = 0;
 	real_name = NULL;
@@ -215,9 +205,7 @@ __fop_write(dbenv,
 		memset(&data, 0, sizeof(data));
 		data.data = buf;
 		data.size = size;
-		memset(&namedbt, 0, sizeof(namedbt));
-		namedbt.data = (void *)name;
-		namedbt.size = (u_int32_t)strlen(name) + 1;
+		DB_INIT_DBT(namedbt, name, strlen(name) + 1);
 		if ((ret = __fop_write_log(dbenv, txn,
 		    &lsn, flags, &namedbt, (u_int32_t)appname,
 		    pgsize, pageno, off, &data, istmp)) != 0)
@@ -233,7 +221,7 @@ __fop_write(dbenv,
 
 	/* Seek to offset. */
 	if ((ret = __os_seek(dbenv,
-	    fhp, pgsize, pageno, off, 0, DB_OS_SEEK_SET)) != 0)
+	    fhp, pageno, pgsize, off, 0, DB_OS_SEEK_SET)) != 0)
 		goto err;
 
 	/* Now do the write. */
@@ -278,13 +266,9 @@ __fop_rename(dbenv, txn, oldname, newname, fid, appname, flags)
 		goto err;
 
 	if (DBENV_LOGGING(dbenv)) {
-		memset(&old, 0, sizeof(old));
-		memset(&new, 0, sizeof(new));
+		DB_INIT_DBT(old, oldname, strlen(oldname) + 1);
+		DB_INIT_DBT(new, newname, strlen(newname) + 1);
 		memset(&fiddbt, 0, sizeof(fiddbt));
-		old.data = (void *)oldname;
-		old.size = (u_int32_t)strlen(oldname) + 1;
-		new.data = (void *)newname;
-		new.size = (u_int32_t)strlen(newname) + 1;
 		fiddbt.data = fid;
 		fiddbt.size = DB_FILE_ID_LEN;
 		if ((ret = __fop_rename_log(dbenv, txn, &lsn, flags | DB_FLUSH,

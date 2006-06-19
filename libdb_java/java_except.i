@@ -148,12 +148,12 @@ static int __dbj_throw(JNIEnv *jenv,
 			 * exception.  We have to assume there is an exception
 			 * created by the JVM that is pending as a result
 			 * (e.g., OutOfMemoryError), but we don't want to lose
-			 * this error, so we just call __db_err here.
+			 * this error, so we just call __db_errx here.
 			 */
 			if (msg == NULL)
 				msg = db_strerror(err);
 	
-			 __db_err(NULL, "Couldn't create exception for: '%s'",
+			 __db_errx(NULL, "Couldn't create exception for: '%s'",
 			     msg);
 		} else
 			(*jenv)->Throw(jenv, t);

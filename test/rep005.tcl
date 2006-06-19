@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002-2005
+# Copyright (c) 2002-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep005.tcl,v 12.5 2005/10/18 19:04:17 carol Exp $
+# $Id: rep005.tcl,v 12.8 2006/04/19 17:04:45 sue Exp $
 #
 # TEST  rep005
 # TEST	Replication election test with error handling.
@@ -20,6 +20,12 @@ proc rep005 { method args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	} 
+
+	# Skip for all methods except btree.
+	if { $checking_valid_methods } { 
+		set valid_methods { btree }
+		return $valid_methods
+	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep005: Skipping for method $method."
 		return
@@ -109,6 +115,8 @@ proc rep005_sub { method tnum niter nclients logset recargs largs } {
 		lappend envlist "$clientenv($i) $envid"
 	}
 
+	# Process startup messages
+	process_msgs $envlist
 	# Run a modified test001 in the master.
 	puts "\tRep$tnum.a: Running test001 in replicated env."
 	eval rep_test $method $masterenv NULL $niter 0 0 0 0 $largs

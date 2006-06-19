@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2005
+# Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdbutils.tcl,v 12.2 2005/09/28 18:17:04 carol Exp $
+# $Id: sdbutils.tcl,v 12.3 2006/01/02 22:03:23 bostic Exp $
 #
 proc build_all_subdb { dbname methods psize dups {nentries 100} {dbargs ""}} {
 	set nsubdbs [llength $dups]

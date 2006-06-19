@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2004
+# Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb014.tcl,v 12.5 2005/10/21 14:29:14 carol Exp $
+# $Id: sdb014.tcl,v 12.7 2006/04/13 15:34:44 carol Exp $
 #
 # TEST	sdb014
 # TEST	Tests mixing in-memory named and in-memory unnamed dbs.
@@ -16,6 +16,7 @@ proc sdb014 { method args } {
 	source ./include.tcl
 
 	set tnum "014"
+	set orig_tdir $testdir
 	if { [is_queueext $method] == 1 } {
 		puts "Subdb$tnum: skipping for method $method"
 		return
@@ -105,6 +106,8 @@ proc sdb014 { method args } {
 	if { $eindex == -1 } {
 		error_check_good env_close [$env close] 0
 	}
+
+	set testdir $orig_tdir
 	return
 }
 

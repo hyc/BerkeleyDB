@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TransactionTest.java,v 12.3 2005/02/11 23:17:00 mark Exp $
+ * $Id: TransactionTest.java,v 12.5 2006/06/09 14:32:42 mark Exp $
  */
 
 package com.sleepycat.collections.test;
@@ -621,7 +621,6 @@ public class TransactionTest extends TestCase {
 
     private static class ReadUncommittedThreadOne extends Thread {
 
-        private Environment env;
         private CurrentTransaction currentTxn;
         private TransactionTest parent;
         private StoredSortedMap map;
@@ -629,7 +628,6 @@ public class TransactionTest extends TestCase {
         private ReadUncommittedThreadOne(Environment env,
                                          TransactionTest parent) {
 
-            this.env = env;
             this.currentTxn = CurrentTransaction.getInstance(env);
             this.parent = parent;
             this.map = parent.map;

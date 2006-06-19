@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2005
+# Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: t106script.tcl,v 12.1 2005/06/16 20:24:05 bostic Exp $
+# $Id: t106script.tcl,v 12.2 2006/01/02 22:03:24 bostic Exp $
 #
 
 proc t106_initial { nitems nprod id tnum dbenv order args } {

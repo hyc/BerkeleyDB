@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2005
+ * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: AccessExample.java,v 12.2 2005/06/16 20:22:16 bostic Exp $
+ * $Id: AccessExample.java,v 12.3 2006/01/02 22:02:08 bostic Exp $
  */
 
 package collections.access;

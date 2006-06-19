@@ -3,13 +3,6 @@
 #include "db_config.h"
 
 #ifdef HAVE_QUEUE
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <ctype.h>
-#include <string.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
@@ -40,12 +33,12 @@ __qam_incfirst_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __qam_incfirst_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__qam_incfirst%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__qam_incfirst%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
@@ -77,12 +70,12 @@ __qam_mvptr_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __qam_mvptr_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__qam_mvptr%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__qam_mvptr%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\topcode: %lu\n", (u_long)argp->opcode);
@@ -120,12 +113,12 @@ __qam_del_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __qam_del_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__qam_del%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__qam_del%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
@@ -162,12 +155,12 @@ __qam_add_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __qam_add_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__qam_add%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__qam_add%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
@@ -217,12 +210,12 @@ __qam_delext_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __qam_delext_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__qam_delext%s: rec: %lu txnid %lx prevlsn [%lu][%lu]\n",
+	    "[%lu][%lu]__qam_delext%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file,
 	    (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
-	    (u_long)argp->txnid->txnid,
+	    (u_long)argp->txnp->txnid,
 	    (u_long)argp->prev_lsn.file,
 	    (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);

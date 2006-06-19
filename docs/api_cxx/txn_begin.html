@@ -1,5 +1,5 @@
-<!--$Id: txn_begin.so,v 10.73 2005/02/10 20:02:45 bostic Exp $-->
-<!--Copyright 1997-2005 by Sleepycat Software, Inc.-->
+<!--$Id: txn_begin.so,v 10.75 2006/04/28 15:27:41 mjc Exp $-->
+<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -35,7 +35,7 @@ handle.</p>
 <p><b>Note: Transactions may only span threads if they do so serially;
 that is, each transaction must be active in only a single thread
 of control at a time.  This restriction holds for parents of nested
-transactions as well; not two children may be concurrently active in
+transactions as well; no two children may be concurrently active in
 more than one thread of control at any one time.</b></p>
 <p><b>Note: Cursors may not span transactions; that is, each cursor must be
 opened and closed within a single transaction.</b></p>
@@ -73,6 +73,12 @@ overrides that setting.</p>
 of this transaction, cause the operation to
 return DB_LOCK_DEADLOCK or throw a <a href="../api_cxx/deadlock_class.html">DbDeadlockException</a>
 immediately instead of blocking on the lock.
+<dt><a name="DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a><dd>This transaction will have snapshot isolation.  For databases with the
+<a href="../api_cxx/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a> flag set, data values will be read as they are when
+the transaction begins, without taking read locks.  Updates operations
+performed in the transaction will cause the error
+<a href="../api_cxx/memp_fget.html#DB_UPDATE_CONFLICT">DB_UPDATE_CONFLICT</a> if data is modified between reading and
+writing it.
 <dt><a name="DB_TXN_SYNC">DB_TXN_SYNC</a><dd>Synchronously flush the log when this transaction commits or prepares.
 This means the transaction will exhibit all of the ACID (atomicity,
 consistency, isolation, and durability) properties.
@@ -101,6 +107,6 @@ throw a DbMemoryException.</p>
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_cxx/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2005</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
 </body>
 </html>

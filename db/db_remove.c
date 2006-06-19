@@ -1,26 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_remove.c,v 12.16 2005/10/27 01:25:53 mjc Exp $
+ * $Id: db_remove.c,v 12.23 2006/05/05 14:53:13 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <string.h>
-#endif
 
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/fop.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
@@ -239,7 +232,7 @@ __db_remove_int(dbp, txn, name, subdb, flags)
 	real_name = tmpname = NULL;
 
 	if (name == NULL && subdb == NULL) {
-		__db_err(dbenv, "Remove on temporary files invalid");
+		__db_errx(dbenv, "Remove on temporary files invalid");
 		ret = EINVAL;
 		goto err;
 	}
@@ -316,7 +309,7 @@ __db_inmem_remove(dbp, txn, name)
 	dbenv = dbp->dbenv;
 	locker = DB_LOCK_INVALIDID;
 
-	DB_ASSERT(name != NULL);
+	DB_ASSERT(dbenv, name != NULL);
 
 	/* This had better exist if we are trying to do a remove. */
 	(void)__memp_set_flags(dbp->mpf, DB_MPOOL_NOFILE, 1);
@@ -349,9 +342,7 @@ __db_inmem_remove(dbp, txn, name)
 		memset(&fid_dbt, 0, sizeof(fid_dbt));
 		fid_dbt.data = dbp->fileid;
 		fid_dbt.size = DB_FILE_ID_LEN;
-		memset(&name_dbt, 0, sizeof(name_dbt));
-		name_dbt.data = (void *)name;
-		name_dbt.size = (u_int32_t)strlen(name) + 1;
+		DB_INIT_DBT(name_dbt, name, strlen(name) + 1);
 
 		if (txn != NULL && (ret =
 		    __txn_remevent(dbenv, txn, name, dbp->fileid, 1)) != 0)

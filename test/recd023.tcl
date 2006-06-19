@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2005
+# Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: recd023.tcl,v 12.2 2005/06/16 20:24:00 bostic Exp $
+# $Id: recd023.tcl,v 12.3 2006/01/02 22:03:18 bostic Exp $
 #
 # TEST	recd023
 # TEST	Test recover of reverse split.

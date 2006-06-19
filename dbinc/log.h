@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: log.h,v 12.12 2005/10/20 18:57:05 bostic Exp $
+ * $Id: log.h,v 12.20 2006/06/14 17:09:16 bostic Exp $
  */
 
 #ifndef _LOG_H_
@@ -32,6 +32,7 @@ struct __fname {
 	SH_TAILQ_ENTRY q;		/* File name queue. */
 
 	int32_t   id;			/* Logging file id. */
+	int32_t   old_id;		/* Saved logging file id. */
 	DBTYPE	  s_type;		/* Saved DB type. */
 
 	roff_t	  name_off;		/* Name offset. */
@@ -59,7 +60,6 @@ struct __fname {
  * LOG:
  *	The log subsystem information.
  *******************************************************/
-struct __db_log;	typedef struct __db_log DB_LOG;
 struct __hdr;		typedef struct __hdr HDR;
 struct __log;		typedef struct __log LOG;
 struct __log_persist;	typedef struct __log_persist LOGP;
@@ -70,9 +70,16 @@ struct __log_persist;	typedef struct __log_persist LOGP;
 
 #define	LG_MAX_DEFAULT		(10 * MEGABYTE)	/* 10 MB. */
 #define	LG_MAX_INMEM		(256 * 1024)	/* 256 KB. */
-#define	LG_BSIZE_DEFAULT	(32 * 1024)	/* 32 KB. */
 #define	LG_BSIZE_INMEM		(1 * MEGABYTE)	/* 1 MB. */
-#define	LG_BASE_REGION_SIZE	(60 * 1024)	/* 60 KB. */
+
+/*
+ * Allocate a few bytes under a power-of-two value.  BDB doesn't care if it's
+ * a power-of-two or not, and requesting slightly under a power-of-two allows
+ * stupid allocators to avoid wasting space.
+ */
+#define	LG_BASE_REGION_SIZE	(65000)		/* 64KB - 536B */
+#define	LG_BSIZE_DEFAULT	(32000)		/* 32 KB - 768B */
+#define	LG_CURSOR_BUF_SIZE	(32000)		/* 32KB - 768B */
 
 /*
  * DB_LOG
@@ -122,6 +129,21 @@ struct __hdr {
 };
 
 /*
+ * LOG_HDR_SUM -- XOR in prev and len
+ *	This helps avoids the race misreading the log while it
+ * it is being updated.
+ */
+#define LOG_HDR_SUM(crypto, hdr, sum) do {				\
+	if (crypto) {							\
+		((u_int32_t *)sum)[0] ^= ((HDR *)hdr)->prev;		\
+		((u_int32_t *)sum)[1] ^= ((HDR *)hdr)->len;		\
+	} else {							\
+		((u_int32_t *)sum)[0] ^=				\
+		     ((HDR *)hdr)->prev ^ ((HDR *)hdr)->len;		\
+	}								\
+} while (0)
+
+/*
  * We use HDR internally, and then when we write out, we write out
  * prev, len, and then a 4-byte checksum if normal operation or
  * a crypto-checksum and IV and original size if running in crypto
@@ -142,11 +164,11 @@ struct __log_persist {
 
 /* Macros to lock/unlock the log region as a whole. */
 #define	LOG_SYSTEM_LOCK(dbenv)						\
-	MUTEX_LOCK(dbenv, ((LOG *)((DB_LOG *)				\
-	    (dbenv)->lg_handle)->reginfo.primary)->mtx_region)
+	MUTEX_LOCK(dbenv, ((LOG *)					\
+	    (dbenv)->lg_handle->reginfo.primary)->mtx_region)
 #define	LOG_SYSTEM_UNLOCK(dbenv)					\
-	MUTEX_UNLOCK(dbenv, ((LOG *)((DB_LOG *)				\
-	    (dbenv)->lg_handle)->reginfo.primary)->mtx_region)
+	MUTEX_UNLOCK(dbenv, ((LOG *)					\
+	    (dbenv)->lg_handle->reginfo.primary)->mtx_region)
 
 /*
  * LOG --
@@ -317,14 +339,14 @@ struct __db_commit {
 	if (DB_REDO(redo) && (cmp) < 0 &&				\
 	    ((!IS_NOT_LOGGED_LSN(*(lsn)) && !IS_ZERO_LSN(*(lsn))) ||	\
 	    IS_REP_CLIENT(e))) {					\
-		ret = __db_check_lsn(dbenv, lsn, prev);			\
+		ret = __db_check_lsn(e, lsn, prev);			\
 		goto out;						\
 	}
 #else
 #define	CHECK_LSN(e, redo, cmp, lsn, prev)				\
 	if (DB_REDO(redo) && (cmp) < 0 &&				\
 	    (!IS_NOT_LOGGED_LSN(*(lsn)) || IS_REP_CLIENT(e))) {		\
-		ret = __db_check_lsn(dbenv, lsn, prev);			\
+		ret = __db_check_lsn(e, lsn, prev);			\
 		goto out;						\
 	}
 #endif

@@ -74,7 +74,6 @@ void __dbc_c_get_proc __P((u_int, u_int32_t, u_int32_t, u_int32_t, u_int32_t, vo
 void __dbc_c_pget_proc __P((u_int, u_int32_t, u_int32_t, u_int32_t, u_int32_t, void *, u_int32_t, u_int32_t, u_int32_t, u_int32_t, u_int32_t, void *, u_int32_t, u_int32_t, u_int32_t, u_int32_t, u_int32_t, void *, u_int32_t, u_int32_t, __dbc_c_pget_reply *, int *));
 void __dbc_c_put_proc __P((u_int, u_int32_t, u_int32_t, u_int32_t, u_int32_t, void *, u_int32_t, u_int32_t, u_int32_t, u_int32_t, u_int32_t, void *, u_int32_t, u_int32_t, __dbc_c_put_reply *, int *));
 void __dbsrv_settimeout __P((ct_entry *, u_int32_t));
-void __dbsrv_timeout __P((int));
 void __dbclear_ctp __P((ct_entry *));
 void __dbdel_ctp __P((ct_entry *));
 ct_entry *new_ct_ent __P((int *));

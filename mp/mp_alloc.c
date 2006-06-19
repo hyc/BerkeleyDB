@@ -1,24 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_alloc.c,v 12.6 2005/08/12 13:17:22 bostic Exp $
+ * $Id: mp_alloc.c,v 12.14 2006/06/19 14:55:35 mjc Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-#include <string.h>
-#endif
-
 #include "db_int.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/mp.h"
+#include "dbinc/txn.h"
 
-static void __memp_bad_buffer __P((DB_MPOOL_HASH *));
+static void __memp_bad_buffer __P((DB_ENV *, DB_MPOOL_HASH *));
 
 /*
  * __memp_alloc --
@@ -36,16 +31,19 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	roff_t *offsetp;
 	void *retp;
 {
-	BH *bhp;
+	BH *bhp, *current_bhp, *tbhp;
+	BH_FROZEN_PAGE *frozen_bhp;
 	DB_ENV *dbenv;
 	DB_MPOOL_HASH *dbht, *hp, *hp_end, *hp_tmp;
+	DB_LSN old_lsn;
 	MPOOL *c_mp;
 	MPOOLFILE *bh_mfp;
 	size_t freed_space;
 	db_mutex_t mutex;
 	u_int32_t buckets, buffers, high_priority, priority;
 	u_int32_t put_counter, total_buckets;
-	int aggressive, giveup, ret;
+	int aggressive, alloc_freeze, giveup, ret;
+	u_int8_t *endp;
 	void *p;
 
 	dbenv = dbmp->dbenv;
@@ -54,8 +52,9 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	hp_end = &dbht[c_mp->htab_buckets];
 
 	buckets = buffers = put_counter = total_buckets = 0;
-	aggressive = giveup = 0;
+	aggressive = alloc_freeze = giveup = 0;
 	hp_tmp = NULL;
+	ZERO_LSN(old_lsn);
 
 	c_mp->stat.st_alloc++;
 
@@ -66,8 +65,11 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	 * NULL, we'll compare the underlying page sizes of the two buffers
 	 * before free-ing and re-allocating buffers.
 	 */
-	if (mfp != NULL)
-		len = (sizeof(BH) - sizeof(u_int8_t)) + mfp->stat.st_pagesize;
+	if (mfp != NULL) {
+		len = SSZ(BH, buf) + mfp->stat.st_pagesize;
+		/* Add space for alignment padding for MVCC diagnostics. */
+		MVCC_BHSIZE(mfp, len);
+	}
 
 	MPOOL_REGION_LOCK(dbenv, infop);
 
@@ -90,6 +92,11 @@ alloc:	if ((ret = __db_shalloc(infop, len, 0, &p)) == 0) {
 		if (mfp != NULL)
 			c_mp->stat.st_pages++;
 		MPOOL_REGION_UNLOCK(dbenv, infop);
+		/*
+		 * For MVCC diagnostics, align the pointer so that the buffer
+		 * starts on a page boundary.
+		 */
+		MVCC_BHALIGN(mfp, p);
 
 found:		if (offsetp != NULL)
 			*offsetp = R_OFFSET(infop, p);
@@ -116,7 +123,7 @@ found:		if (offsetp != NULL)
 	} else if (giveup || c_mp->stat.st_pages == 0) {
 		MPOOL_REGION_UNLOCK(dbenv, infop);
 
-		__db_err(dbenv,
+		__db_errx(dbenv,
 		    "unable to allocate space from the buffer cache");
 		return (ret);
 	}
@@ -193,6 +200,14 @@ found:		if (offsetp != NULL)
 
 			switch (++aggressive) {
 			case 1:
+				/*
+				 * Get the oldest reader LSN.  There is a
+				 * tradeoff here, because if we had the LSN
+				 * earlier, we might have found pages to evict,
+				 * but to get it, we need to lock the
+				 * transaction region.
+				 */
+				(void)__txn_oldest_reader(dbenv, &old_lsn);
 				break;
 			case 2:
 				put_counter = c_mp->put_counter;
@@ -246,7 +261,7 @@ found:		if (offsetp != NULL)
 		MUTEX_LOCK(dbenv, mutex);
 
 #ifdef DIAGNOSTIC
-		__memp_check_order(hp);
+		__memp_check_order(dbenv, hp);
 #endif
 		/*
 		 * The lowest priority page is first in the bucket, as they are
@@ -257,14 +272,22 @@ found:		if (offsetp != NULL)
 		 * we have to restart.  We will still take the first buffer on
 		 * the bucket's list, though, if it has a low enough priority.
 		 */
-		if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL ||
-		    bhp->ref != 0 || bhp->priority > priority)
+		if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			goto next_hb;
 
-		buffers++;
+		for (tbhp = current_bhp = bhp;
+		    tbhp != NULL;
+		    tbhp = SH_CHAIN_PREV(tbhp, vc, __bh))
+			if (tbhp->ref == 0 && tbhp->priority <= bhp->priority)
+				bhp = tbhp;
+
+		if (bhp->ref != 0 || bhp->priority > priority)
+			goto next_hb;
 
 		/* Find the associated MPOOLFILE. */
 		bh_mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
+
+		buffers++;
 
 		/* If the page is dirty, pin it and write it. */
 		ret = 0;
@@ -276,6 +299,23 @@ found:		if (offsetp != NULL)
 				++c_mp->stat.st_rw_evict;
 		} else
 			++c_mp->stat.st_ro_evict;
+
+		/*
+		 * Freeze this buffer, if necessary.  That is, if the buffer
+		 * itself or the next version created could be read by the
+		 * oldest reader in the system.
+		 */
+		if (ret == 0 && bh_mfp->multiversion &&
+		    !SH_CHAIN_SINGLETON(bhp, vc) && !F_ISSET(bhp, BH_FROZEN)) {
+			if (!aggressive)
+				goto next_hb;
+			if (((bhp == current_bhp) ?
+			    log_compare(&old_lsn, VISIBLE_LSN(dbenv, bhp)) :
+			    log_compare(&old_lsn, VISIBLE_LSN(dbenv,
+			    SH_CHAIN_NEXT(bhp, vc, __bh))) <= 0))
+				ret = __memp_bh_freeze(dbmp,
+				    infop, hp, bhp, &alloc_freeze);
+		}
 
 		/*
 		 * If a write fails for any reason, we can't proceed.
@@ -290,16 +330,51 @@ found:		if (offsetp != NULL)
 		 */
 		if (ret != 0 || bhp->ref != 0) {
 			if (ret != 0 && aggressive)
-				__memp_bad_buffer(hp);
+				__memp_bad_buffer(dbenv, hp);
 			goto next_hb;
 		}
 
 		/*
+		 * If we need some empty buffer headers for freezing, turn the
+		 * buffer we've found into frozen headers and put them on the
+		 * free list.  Only reset alloc_freeze if we've actually
+		 * allocated some frozen buffer headers.
+		 *
 		 * Check to see if the buffer is the size we're looking for.
-		 * If so, we can simply reuse it.  Else, free the buffer and
-		 * its space and keep looking.
+		 * If so, we can simply reuse it.  Otherwise, free the buffer
+		 * and its space and keep looking.
 		 */
-		if (mfp != NULL &&
+		if (F_ISSET(bhp, BH_FROZEN)) {
+			++bhp->ref;
+			if ((ret = __memp_bh_freezefree(dbmp, infop, hp,
+			    bhp, NULL)) != 0) {
+				MUTEX_UNLOCK(dbenv, mutex);
+				return (ret);
+			}
+			alloc_freeze = 0;
+			goto next_hb;
+		} else if (alloc_freeze) {
+			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0) {
+				MUTEX_UNLOCK(dbenv, mutex);
+				return (ret);
+			}
+			MVCC_MPROTECT(bhp->buf, bh_mfp->stat.st_pagesize,
+			    PROT_READ | PROT_WRITE | PROT_EXEC);
+
+			MPOOL_REGION_LOCK(dbenv, infop);
+			SH_TAILQ_INSERT_TAIL(&c_mp->alloc_frozen,
+			    (BH_FROZEN_ALLOC *)bhp, links);
+			frozen_bhp = (BH_FROZEN_PAGE *)
+			    ((BH_FROZEN_ALLOC *)bhp + 1);
+			endp = (u_int8_t *)bhp->buf + bh_mfp->stat.st_pagesize;
+			while ((u_int8_t *)(frozen_bhp + 1) < endp) {
+				SH_TAILQ_INSERT_TAIL(&c_mp->free_frozen,
+				    (BH *)frozen_bhp, hq);
+				frozen_bhp++;
+			}
+			alloc_freeze = 0;
+			continue;
+		} else if (mfp != NULL &&
 		    mfp->stat.st_pagesize == bh_mfp->stat.st_pagesize) {
 			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0) {
 				MUTEX_UNLOCK(dbenv, mutex);
@@ -307,14 +382,15 @@ found:		if (offsetp != NULL)
 			}
 			p = bhp;
 			goto found;
+		} else {
+			freed_space += __db_shalloc_sizeof(bhp);
+			if ((ret = __memp_bhfree(dbmp,
+			    hp, bhp, BH_FREE_FREEMEM)) != 0) {
+				MUTEX_UNLOCK(dbenv, mutex);
+				return (ret);
+			}
 		}
 
-		freed_space += __db_shalloc_sizeof(bhp);
-		if ((ret =
-		    __memp_bhfree(dbmp, hp, bhp, BH_FREE_FREEMEM)) != 0) {
-			MUTEX_UNLOCK(dbenv, mutex);
-			return (ret);
-		}
 		if (aggressive > 1)
 			aggressive = 1;
 
@@ -341,38 +417,68 @@ next_hb:		MUTEX_UNLOCK(dbenv, mutex);
 }
 
 /*
+ * __memp_free --
+ *	Free some space from a cache region.
+ *
+ * PUBLIC: void __memp_free __P((REGINFO *, MPOOLFILE *, void *));
+ */
+void
+__memp_free(infop, mfp, buf)
+	REGINFO *infop;
+	MPOOLFILE *mfp;
+	void *buf;
+{
+	MVCC_BHUNALIGN(mfp, buf);
+	COMPQUIET(mfp, NULL);
+	__db_shalloc_free(infop, buf);
+}
+
+/*
  * __memp_bad_buffer --
  *	Make the first buffer in a hash bucket the least desirable buffer.
  */
 static void
-__memp_bad_buffer(hp)
+__memp_bad_buffer(dbenv, hp)
+	DB_ENV *dbenv;
 	DB_MPOOL_HASH *hp;
 {
-	BH *bhp;
+	BH *bhp, *last_bhp;
 	u_int32_t priority;
 
-	/* Remove the first buffer from the bucket. */
+	/*
+	 * Get the first buffer from the bucket.  If it is also the last buffer
+	 * (in other words, it is the only buffer in the bucket), we're done.
+	 */
 	bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh);
+	last_bhp = SH_TAILQ_LASTP(&hp->hash_bucket, hq, __bh);
+	if (bhp == last_bhp)
+		return;
+
+	/* There are multiple buffers in the bucket, remove the first one. */
 	SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
 
 	/*
 	 * Find the highest priority buffer in the bucket.  Buffers are
 	 * sorted by priority, so it's the last one in the bucket.
 	 */
-	priority = SH_TAILQ_EMPTY(&hp->hash_bucket) ? bhp->priority :
-	    SH_TAILQ_LASTP(&hp->hash_bucket, hq, __bh)->priority;
+	priority = __memp_bh_priority(last_bhp);
 
 	/*
-	 * Set our buffer's priority to be just as bad, and append it to
-	 * the bucket.
+	 * Append our buffer to the bucket and set its priority to be just as
+	 * bad.
 	 */
-	bhp->priority = priority;
 	SH_TAILQ_INSERT_TAIL(&hp->hash_bucket, bhp, hq);
+	for (; bhp != NULL ; bhp = SH_CHAIN_PREV(bhp, vc, __bh))
+		bhp->priority = priority;
 
 	/* Reset the hash bucket's priority. */
-	hp->hash_priority = SH_TAILQ_FIRSTP(&hp->hash_bucket, __bh)->priority;
+	hp->hash_priority = __memp_bh_priority(
+	    SH_TAILQ_FIRSTP(&hp->hash_bucket, __bh));
+
 #ifdef DIAGNOSTIC
-	__memp_check_order(hp);
+	__memp_check_order(dbenv, hp);
+#else
+	COMPQUIET(dbenv, NULL);
 #endif
 }
 
@@ -382,27 +488,32 @@ __memp_bad_buffer(hp)
  *	Verify the priority ordering of a hash bucket chain.
  *
  * PUBLIC: #ifdef DIAGNOSTIC
- * PUBLIC: void __memp_check_order __P((DB_MPOOL_HASH *));
+ * PUBLIC: void __memp_check_order __P((DB_ENV *, DB_MPOOL_HASH *));
  * PUBLIC: #endif
  */
 void
-__memp_check_order(hp)
+__memp_check_order(dbenv, hp)
+	DB_ENV *dbenv;
 	DB_MPOOL_HASH *hp;
 {
-	BH *bhp;
-	u_int32_t priority;
+	BH *bhp, *prev_bhp;
+	u_int32_t min_priority;
 
 	/*
 	 * Assumes the hash bucket is locked.
 	 */
 	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 		return;
+	DB_ASSERT(dbenv, SH_CHAIN_NEXT(bhp, vc, __bh) == NULL);
+	for (prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh); prev_bhp != NULL;
+	    prev_bhp = SH_CHAIN_PREV(prev_bhp, vc, __bh))
+		DB_ASSERT(dbenv, prev_bhp ==
+		    SH_CHAIN_PREV(SH_CHAIN_NEXT(prev_bhp, vc, __bh), vc, __bh));
 
-	DB_ASSERT(bhp->priority == hp->hash_priority);
+	min_priority = __memp_bh_priority(bhp);
+	DB_ASSERT(dbenv, min_priority == hp->hash_priority);
 
-	for (priority = bhp->priority;
-	    (bhp = SH_TAILQ_NEXT(bhp, hq, __bh)) != NULL;
-	    priority = bhp->priority)
-		DB_ASSERT(priority <= bhp->priority);
+	while ((bhp = SH_TAILQ_NEXT(bhp, hq, __bh)) != NULL)
+		DB_ASSERT(dbenv, min_priority <= __memp_bh_priority(bhp));
 }
 #endif

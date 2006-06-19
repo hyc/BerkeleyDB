@@ -48,6 +48,7 @@ JAVA_TYPEMAP(_ctype, _jtype, jobject)
 JAVA_STAT_CLASS(DB_COMPACT *, com.sleepycat.db.CompactStats, compact)
 %typemap(freearg) DB_COMPACT * %{ __dbj_fill_compact(jenv, $input, $1); %}
 %typemap(in) DB_COMPACT * (DB_COMPACT compact) %{
+        memset(&compact, 0, sizeof (DB_COMPACT));
         $1 = &compact;
         $1->compact_fillpercent = (*jenv)->GetIntField(jenv, $input,
             compact_compact_fillpercent_fid);

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: txn012script.tcl,v 12.1 2005/05/23 17:16:42 carol Exp $
+# $Id: txn012script.tcl,v 12.2 2006/01/02 22:03:30 bostic Exp $
 #
 # Script to check that txn names can be seen across processes.
 # Names over 50 characters will be truncated. 

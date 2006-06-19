@@ -1,24 +1,20 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998-2005
+ * Copyright (c) 1998-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_tmpdir.c,v 12.1 2005/06/16 20:23:26 bostic Exp $
+ * $Id: os_tmpdir.c,v 12.8 2006/06/11 12:27:40 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#endif
-
 #include "db_int.h"
 
+#ifndef NO_SYSTEM_INCLUDES
 #ifdef macintosh
 #include <TFileSpec.h>
+#endif
 #endif
 
 /*
@@ -60,23 +56,23 @@ __os_tmpdir(dbenv, flags)
 	if (LF_ISSET(DB_USE_ENVIRON) ||
 	    (LF_ISSET(DB_USE_ENVIRON_ROOT) && __os_isroot())) {
 		if ((p = getenv("TMPDIR")) != NULL && p[0] == '\0') {
-			__db_err(dbenv, "illegal TMPDIR environment variable");
+			__db_errx(dbenv, "illegal TMPDIR environment variable");
 			return (EINVAL);
 		}
 		/* Windows */
 		if (p == NULL && (p = getenv("TEMP")) != NULL && p[0] == '\0') {
-			__db_err(dbenv, "illegal TEMP environment variable");
+			__db_errx(dbenv, "illegal TEMP environment variable");
 			return (EINVAL);
 		}
 		/* Windows */
 		if (p == NULL && (p = getenv("TMP")) != NULL && p[0] == '\0') {
-			__db_err(dbenv, "illegal TMP environment variable");
+			__db_errx(dbenv, "illegal TMP environment variable");
 			return (EINVAL);
 		}
 		/* Macintosh */
 		if (p == NULL &&
 		    (p = getenv("TempFolder")) != NULL && p[0] == '\0') {
-			__db_err(dbenv,
+			__db_errx(dbenv,
 			    "illegal TempFolder environment variable");
 			return (EINVAL);
 		}
@@ -98,17 +94,18 @@ __os_tmpdir(dbenv, flags)
 	/* Get the path to the temporary directory. */
 	{
 		int ret;
-		_TCHAR tpath[MAXPATHLEN + 1];
+		_TCHAR tpath[DB_MAXPATHLEN + 1];
 		char *path, *eos;
 
-		if (GetTempPath(MAXPATHLEN, tpath) > 2) {
+		if (GetTempPath(DB_MAXPATHLEN, tpath) > 2) {
 			FROM_TSTRING(dbenv, tpath, path, ret);
 			if (ret != 0)
 				return (ret);
+
 			eos = path + strlen(path) - 1;
 			if (*eos == '\\' || *eos == '/')
 				*eos = '\0';
-			if (__os_exists(path, &isdir) == 0 && isdir) {
+			if (__os_exists(dbenv, path, &isdir) == 0 && isdir) {
 				ret = __os_strdup(dbenv,
 				    path, &dbenv->db_tmp_dir);
 				FREE_STRING(dbenv, path);
@@ -121,7 +118,7 @@ __os_tmpdir(dbenv, flags)
 
 	/* Step through the static list looking for a possibility. */
 	for (lp = list; *lp != NULL; ++lp)
-		if (__os_exists(*lp, &isdir) == 0 && isdir != 0)
+		if (__os_exists(dbenv, *lp, &isdir) == 0 && isdir != 0)
 			return (__os_strdup(dbenv, *lp, &dbenv->db_tmp_dir));
 	return (0);
 }

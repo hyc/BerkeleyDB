@@ -1,22 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_sync.c,v 12.11 2005/10/07 20:21:33 ubell Exp $
+ * $Id: mp_sync.c,v 12.21 2006/06/12 23:17:59 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#endif
-
 #include "db_int.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/log.h"
 #include "dbinc/mp.h"
 
@@ -30,6 +23,48 @@ typedef struct {
 static int __bhcmp __P((const void *, const void *));
 static int __memp_close_flush_files __P((DB_ENV *, DB_MPOOL *, int));
 static int __memp_sync_files __P((DB_ENV *, DB_MPOOL *));
+static int __memp_sync_file __P((DB_ENV *,
+		MPOOLFILE *, void *, u_int32_t *, u_int32_t));
+
+/*
+ * __memp_walk_files --
+ * PUBLIC: int __memp_walk_files __P((DB_ENV *, MPOOL *,
+ * PUBLIC:	int (*) __P((DB_ENV *, MPOOLFILE *, void *,
+ * PUBLIC:	u_int32_t *, u_int32_t)), void *, u_int32_t *, u_int32_t));
+ */
+int
+__memp_walk_files(dbenv, mp, func, arg, countp, flags)
+	DB_ENV *dbenv;
+	MPOOL *mp;
+	int (*func)__P((DB_ENV *, MPOOLFILE *, void *, u_int32_t *, u_int32_t));
+	void *arg;
+	u_int32_t *countp;
+	u_int32_t flags;
+{
+	DB_MPOOL *dbmp;
+	DB_MPOOL_HASH *hp;
+	MPOOLFILE *mfp;
+	int i, ret, t_ret;
+
+	dbmp = dbenv->mp_handle;
+	ret = 0;
+
+	hp = R_ADDR(dbmp->reginfo, mp->ftab);
+	for (i = 0; i < MPOOL_FILE_BUCKETS; i++, hp++) {
+		MUTEX_LOCK(dbenv, hp->mtx_hash);
+		SH_TAILQ_FOREACH(mfp, &hp->hash_bucket, q, __mpoolfile) {
+			if ((t_ret = func(dbenv,
+			    mfp, arg, countp, flags)) != 0 && ret == 0)
+				ret = t_ret;
+			if (ret != 0 && !LF_ISSET(DB_STAT_NOERROR))
+				break;
+		}
+		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
+		if (ret != 0 && !LF_ISSET(DB_STAT_NOERROR))
+			break;
+	}
+	return (ret);
+}
 
 /*
  * __memp_sync_pp --
@@ -258,8 +293,7 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 				continue;
 
 			MUTEX_LOCK(dbenv, hp->mtx_hash);
-			for (bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh);
-			    bhp != NULL; bhp = SH_TAILQ_NEXT(bhp, hq, __bh)) {
+			SH_TAILQ_FOREACH(bhp, &hp->hash_bucket, hq, __bh) {
 				/* Always ignore unreferenced, clean pages. */
 				if (bhp->ref == 0 && !F_ISSET(bhp, BH_DIRTY))
 					continue;
@@ -378,8 +412,7 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		/* Lock the hash bucket and find the buffer. */
 		mutex = hp->mtx_hash;
 		MUTEX_LOCK(dbenv, mutex);
-		for (bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh);
-		    bhp != NULL; bhp = SH_TAILQ_NEXT(bhp, hq, __bh))
+		SH_TAILQ_FOREACH(bhp, &hp->hash_bucket, hq, __bh)
 			if (bhp->pgno == bharray[i].track_pgno &&
 			    bhp->mf_offset == bharray[i].track_off)
 				break;
@@ -429,7 +462,6 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		/* Pin the buffer into memory and lock it. */
 		++bhp->ref;
 		F_SET(bhp, BH_LOCKED);
-		MUTEX_LOCK(dbenv, bhp->mtx_bh);
 
 		/*
 		 * Unlock the hash bucket and wait for the wait-for count to
@@ -486,7 +518,8 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 			if ((ret = __memp_bhwrite(dbmp, hp, mfp, bhp, 1)) == 0)
 				++wrote;
 			else
-				__db_err(dbenv, "%s: unable to flush page: %lu",
+				__db_errx
+				    (dbenv, "%s: unable to flush page: %lu",
 				    __memp_fns(dbmp, mfp), (u_long)bhp->pgno);
 
 			/*
@@ -506,21 +539,14 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		 *
 		 * We may or may not currently hold the hash bucket mutex.  If
 		 * the __memp_bhwrite -> __memp_pgwrite call was successful,
-		 * then __memp_pgwrite will have swapped the buffer lock for
-		 * the hash lock.  All other call paths will leave us without
-		 * the hash bucket lock.
-		 *
-		 * The order of mutexes above was to acquire the buffer lock
-		 * while holding the hash bucket lock.  Don't deadlock here,
-		 * release the buffer lock and then acquire the hash bucket
-		 * lock.
+		 * __memp_pgwrite will have acquired the hash bucket lock; all
+		 * other call paths will leave us without the hash bucket lock.
 		 */
 		if (F_ISSET(bhp, BH_LOCKED)) {
-			F_CLR(bhp, BH_LOCKED);
-			MUTEX_UNLOCK(dbenv, bhp->mtx_bh);
-
 			if (!hb_lock)
 				MUTEX_LOCK(dbenv, mutex);
+
+			F_CLR(bhp, BH_LOCKED);
 		}
 
 		/*
@@ -529,8 +555,18 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		 */
 		bhp->ref_sync = 0;
 
-		/* Discard our reference and unlock the bucket. */
+		/* Discard our buffer reference. */
 		--bhp->ref;
+
+		/*
+		 * If a thread of control is waiting on this buffer, wake it up.
+		 */
+		if (F_ISSET(hp, IO_WAITER)) {
+			F_CLR(hp, IO_WAITER);
+			MUTEX_UNLOCK(dbenv, hp->mtx_io);
+		}
+
+		/* Release the hash bucket mutex. */
 		MUTEX_UNLOCK(dbenv, mutex);
 
 		if (ret != 0)
@@ -562,6 +598,127 @@ err:	__os_free(dbenv, bharray);
 	return (ret);
 }
 
+static int
+__memp_sync_file(dbenv, mfp, argp, countp, flags)
+	DB_ENV *dbenv;
+	MPOOLFILE *mfp;
+	void *argp;
+	u_int32_t *countp;
+	u_int32_t flags;
+{
+	DB_MPOOL *dbmp;
+	DB_MPOOLFILE *dbmfp;
+	int ret, t_ret;
+
+	COMPQUIET(countp, NULL);
+	COMPQUIET(flags, 0);
+
+	if (!mfp->file_written || mfp->no_backing_file ||
+	    mfp->deadfile || F_ISSET(mfp, MP_TEMP))
+		return (0);
+	/*
+	 * Pin the MPOOLFILE structure into memory, and release the
+	 * region mutex allowing us to walk the linked list.  We'll
+	 * re-acquire that mutex to move to the next entry in the list.
+	 *
+	 * This works because we only need to flush current entries,
+	 * we don't care about new entries being added, and the linked
+	 * list is never re-ordered, a single pass is sufficient.  It
+	 * requires MPOOLFILE structures removed before we get to them
+	 * be flushed to disk, but that's nothing new, they could have
+	 * been removed while checkpoint was running, too.
+	 *
+	 * Once we have the MPOOLFILE lock, re-check the MPOOLFILE is
+	 * not being discarded.  (A thread removing the MPOOLFILE
+	 * will: hold the MPOOLFILE mutex, set deadfile, drop the
+	 * MPOOLFILE mutex and then acquire the region MUTEX to walk
+	 * the linked list and remove the MPOOLFILE structure.  Make
+	 * sure the MPOOLFILE wasn't marked dead while we waited for
+	 * the mutex.
+	 */
+	MUTEX_LOCK(dbenv, mfp->mutex);
+	if (!mfp->file_written || mfp->deadfile) {
+		MUTEX_UNLOCK(dbenv, mfp->mutex);
+		return (0);
+	}
+	++mfp->mpf_cnt;
+	MUTEX_UNLOCK(dbenv, mfp->mutex);
+
+	/*
+	 * Look for an already open, writeable handle (fsync doesn't
+	 * work on read-only Windows handles).
+	 */
+	dbmp = dbenv->mp_handle;
+	MUTEX_LOCK(dbenv, dbmp->mutex);
+	TAILQ_FOREACH(dbmfp, &dbmp->dbmfq, q) {
+		if (dbmfp->mfp != mfp || F_ISSET(dbmfp, MP_READONLY))
+			continue;
+		/*
+		 * We don't want to hold the mutex while calling sync.
+		 * Increment the DB_MPOOLFILE handle ref count to pin
+		 * it into memory.
+		 */
+		++dbmfp->ref;
+		break;
+	}
+	MUTEX_UNLOCK(dbenv, dbmp->mutex);
+
+	/* If we don't find a handle we can use, open one. */
+	if (dbmfp == NULL) {
+		if ((ret = __memp_mf_sync(dbmp, mfp, 0)) != 0) {
+			__db_err(dbenv, ret,
+			    "%s: unable to flush", (char *)
+			    R_ADDR(dbmp->reginfo, mfp->path_off));
+		}
+	} else {
+		ret = __os_fsync(dbenv, dbmfp->fhp);
+
+		if ((t_ret = __memp_fclose(dbmfp, 0)) != 0 && ret == 0)
+			ret = t_ret;
+	}
+
+	/*
+	 * Re-acquire the MPOOLFILE mutex, we need it to modify the
+	 * reference count.
+	 */
+	MUTEX_LOCK(dbenv, mfp->mutex);
+	--mfp->mpf_cnt;
+
+	/*
+	 * If we wrote the file and there are no open handles (or there
+	 * is a single open handle, and it's the one we opened to write
+	 * buffers during checkpoint), clear the file_written flag.  We
+	 * do this so that applications opening thousands of files don't
+	 * loop here opening and flushing those files during checkpoint.
+	 *
+	 * The danger here is if a buffer were to be written as part of
+	 * a checkpoint, and then not be flushed to disk.  This cannot
+	 * happen because we only clear file_written when there are no
+	 * other users of the MPOOLFILE in the system, and, as we hold
+	 * the region lock, no possibility of another thread of control
+	 * racing with us to open a MPOOLFILE.
+	 */
+	if (mfp->mpf_cnt == 0 || (mfp->mpf_cnt == 1 &&
+	    dbmfp != NULL && F_ISSET(dbmfp, MP_FLUSH))) {
+		mfp->file_written = 0;
+
+		/*
+		 * We may be the last reference for a MPOOLFILE, as we
+		 * weren't holding the MPOOLFILE mutex when flushing
+		 * it's buffers to disk.  If we can discard it, set
+		 * a flag to schedule a clean-out pass.   (Not likely,
+		 * I mean, what are the chances that there aren't any
+		 * buffers in the pool?  Regardless, it might happen.)
+		 */
+		if (mfp->mpf_cnt == 0 && mfp->block_cnt == 0)
+			*(int *)argp = 1;
+	}
+
+	/* Unlock the MPOOLFILE, and move to the next entry. */
+	MUTEX_UNLOCK(dbenv, mfp->mutex);
+	return (0);
+}
+
 /*
  * __memp_sync_files --
  *	Sync all the files in the environment, open or not.
@@ -571,143 +728,30 @@ int __memp_sync_files(dbenv, dbmp)
 	DB_ENV *dbenv;
 	DB_MPOOL *dbmp;
 {
-	DB_MPOOLFILE *dbmfp;
+	DB_MPOOL_HASH *hp;
 	MPOOL *mp;
 	MPOOLFILE *mfp, *next_mfp;
-	int need_discard_pass, ret, t_ret;
+	int i, need_discard_pass, ret;
 
 	need_discard_pass = ret = 0;
 	mp = dbmp->reginfo[0].primary;
 
-	MPOOL_SYSTEM_LOCK(dbenv);
-	for (mfp = SH_TAILQ_FIRST(&mp->mpfq, __mpoolfile);
-	    mfp != NULL; mfp = SH_TAILQ_NEXT(mfp, q, __mpoolfile)) {
-		if (!mfp->file_written || mfp->no_backing_file ||
-		    mfp->deadfile || F_ISSET(mfp, MP_TEMP))
-			continue;
-		/*
-		 * Pin the MPOOLFILE structure into memory, and release the
-		 * region mutex allowing us to walk the linked list.  We'll
-		 * re-acquire that mutex to move to the next entry in the list.
-		 *
-		 * This works because we only need to flush current entries,
-		 * we don't care about new entries being added, and the linked
-		 * list is never re-ordered, a single pass is sufficient.  It
-		 * requires MPOOLFILE structures removed before we get to them
-		 * be flushed to disk, but that's nothing new, they could have
-		 * been removed while checkpoint was running, too.
-		 *
-		 * Once we have the MPOOLFILE lock, re-check the MPOOLFILE is
-		 * not being discarded.  (A thread removing the MPOOLFILE
-		 * will: hold the MPOOLFILE mutex, set deadfile, drop the
-		 * MPOOLFILE mutex and then acquire the region MUTEX to walk
-		 * the linked list and remove the MPOOLFILE structure.  Make
-		 * sure the MPOOLFILE wasn't marked dead while we waited for
-		 * the mutex.
-		 */
-		MUTEX_LOCK(dbenv, mfp->mutex);
-		if (!mfp->file_written || mfp->deadfile) {
-			MUTEX_UNLOCK(dbenv, mfp->mutex);
-			continue;
-		}
-		MPOOL_SYSTEM_UNLOCK(dbenv);
-		++mfp->mpf_cnt;
-		MUTEX_UNLOCK(dbenv, mfp->mutex);
-
-		/*
-		 * Look for an already open, writeable handle (fsync doesn't
-		 * work on read-only Windows handles).
-		 */
-		MUTEX_LOCK(dbenv, dbmp->mutex);
-		for (dbmfp = TAILQ_FIRST(&dbmp->dbmfq);
-		    dbmfp != NULL; dbmfp = TAILQ_NEXT(dbmfp, q)) {
-			if (dbmfp->mfp != mfp || F_ISSET(dbmfp, MP_READONLY))
-				continue;
-			/*
-			 * We don't want to hold the mutex while calling sync.
-			 * Increment the DB_MPOOLFILE handle ref count to pin
-			 * it into memory.
-			 */
-			++dbmfp->ref;
-			break;
-		}
-		MUTEX_UNLOCK(dbenv, dbmp->mutex);
-
-		/* If we don't find a handle we can use, open one. */
-		if (dbmfp == NULL) {
-			if ((t_ret = __memp_mf_sync(dbmp, mfp, 0)) != 0) {
-				__db_err(dbenv,
-				    "%s: unable to flush: %s", (char *)
-				    R_ADDR(dbmp->reginfo, mfp->path_off),
-				    db_strerror(t_ret));
-				if (ret == 0)
-					ret = t_ret;
-			}
-		} else {
-			if ((t_ret =
-			    __os_fsync(dbenv, dbmfp->fhp)) != 0 && ret == 0)
-				ret = t_ret;
-
-			if ((t_ret = __memp_fclose(dbmfp, 0)) != 0 && ret == 0)
-				ret = t_ret;
-		}
-
-		/*
-		 * Re-acquire the region lock, we need it to move to the next
-		 * MPOOLFILE.
-		 *
-		 * Re-acquire the MPOOLFILE mutex, we need it to modify the
-		 * reference count.
-		 */
-		MPOOL_SYSTEM_LOCK(dbenv);
-		MUTEX_LOCK(dbenv, mfp->mutex);
-		--mfp->mpf_cnt;
-
-		/*
-		 * If we wrote the file and there are no open handles (or there
-		 * is a single open handle, and it's the one we opened to write
-		 * buffers during checkpoint), clear the file_written flag.  We
-		 * do this so that applications opening thousands of files don't
-		 * loop here opening and flushing those files during checkpoint.
-		 *
-		 * The danger here is if a buffer were to be written as part of
-		 * a checkpoint, and then not be flushed to disk.  This cannot
-		 * happen because we only clear file_written when there are no
-		 * other users of the MPOOLFILE in the system, and, as we hold
-		 * the region lock, no possibility of another thread of control
-		 * racing with us to open a MPOOLFILE.
-		 */
-		if (mfp->mpf_cnt == 0 || (mfp->mpf_cnt == 1 &&
-		    dbmfp != NULL && F_ISSET(dbmfp, MP_FLUSH))) {
-			mfp->file_written = 0;
-
-			/*
-			 * We may be the last reference for a MPOOLFILE, as we
-			 * weren't holding the MPOOLFILE mutex when flushing
-			 * it's buffers to disk.  If we can discard it, set
-			 * a flag to schedule a clean-out pass.   (Not likely,
-			 * I mean, what are the chances that there aren't any
-			 * buffers in the pool?  Regardless, it might happen.)
-			 */
-			if (mfp->mpf_cnt == 0 && mfp->block_cnt == 0)
-				need_discard_pass = 1;
-		}
-
-		/* Unlock the MPOOLFILE, and move to the next entry. */
-		MUTEX_UNLOCK(dbenv, mfp->mutex);
-	}
+	ret = __memp_walk_files(dbenv,
+	    mp, __memp_sync_file, &need_discard_pass, 0, DB_STAT_NOERROR);
 
 	/*
-	 * We exit the loop holding the region lock.
-	 *
 	 * We may need to do a last pass through the MPOOLFILE list -- if we
 	 * were the last reference to an MPOOLFILE, we need to clean it out.
 	 */
-	if (need_discard_pass)
-		for (mfp = SH_TAILQ_FIRST(
-		    &mp->mpfq, __mpoolfile); mfp != NULL; mfp = next_mfp) {
-			next_mfp = SH_TAILQ_NEXT(mfp, q, __mpoolfile);
+	if (!need_discard_pass)
+		return (ret);
 
+	hp = R_ADDR(dbmp->reginfo, mp->ftab);
+	for (i = 0; i < MPOOL_FILE_BUCKETS; i++, hp++) {
+		MUTEX_LOCK(dbenv, hp->mtx_hash);
+		for (mfp = SH_TAILQ_FIRST(&hp->hash_bucket,
+		    __mpoolfile); mfp != NULL; mfp = next_mfp) {
+			next_mfp = SH_TAILQ_NEXT(mfp, q, __mpoolfile);
 			/*
 			 * Do a fast check -- we can check for zero/non-zero
 			 * without a mutex on the MPOOLFILE.  If likely to
@@ -722,8 +766,8 @@ int __memp_sync_files(dbenv, dbmp)
 			else
 				MUTEX_UNLOCK(dbenv, mfp->mutex);
 		}
-	MPOOL_SYSTEM_UNLOCK(dbenv);
-
+		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
+	}
 	return (ret);
 }
 
@@ -798,8 +842,7 @@ __memp_close_flush_files(dbenv, dbmp, dosync)
 	 * and, if a file was opened by __memp_bhwrite(), we close it.
 	 */
 retry:	MUTEX_LOCK(dbenv, dbmp->mutex);
-	for (dbmfp = TAILQ_FIRST(&dbmp->dbmfq);
-	    dbmfp != NULL; dbmfp = TAILQ_NEXT(dbmfp, q))
+	TAILQ_FOREACH(dbmfp, &dbmp->dbmfq, q)
 		if (F_ISSET(dbmfp, MP_FLUSH)) {
 			F_CLR(dbmfp, MP_FLUSH);
 			MUTEX_UNLOCK(dbenv, dbmp->mutex);

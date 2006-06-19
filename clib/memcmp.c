@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2005
+ * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  */
 /*
@@ -32,14 +32,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: memcmp.c,v 12.1 2005/06/16 20:20:48 bostic Exp $
+ * $Id: memcmp.c,v 12.3 2006/05/05 14:53:08 bostic Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-#endif
+#include "db_int.h"
 
 /*
  * memcmp --
@@ -50,7 +48,7 @@
  */
 int
 memcmp(s1, s2, n)
-	char *s1, *s2;
+	const void *s1, *s2;
 	size_t n;
 {
 	if (n != 0) {

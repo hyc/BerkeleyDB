@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2005
+ * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: TupleBase.java,v 12.1 2005/08/01 20:25:15 mark Exp $
+ * $Id: TupleBase.java,v 12.2 2006/01/02 22:02:28 bostic Exp $
  */
 
 package com.sleepycat.bind.tuple;

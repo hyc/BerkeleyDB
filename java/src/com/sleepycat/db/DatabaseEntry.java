@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2005
+ * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: DatabaseEntry.java,v 12.2 2005/10/11 17:54:23 mark Exp $
+ * $Id: DatabaseEntry.java,v 12.5 2006/03/13 01:53:40 alexg Exp $
  */
 
 package com.sleepycat.db;
@@ -12,10 +12,14 @@ package com.sleepycat.db;
 import com.sleepycat.db.internal.DbConstants;
 import com.sleepycat.db.internal.DbUtil;
 
+import java.nio.ByteBuffer;
+import java.lang.IllegalArgumentException;
+
 public class DatabaseEntry {
 
     /* Currently, JE stores all data records as byte array */
     protected byte[] data;
+    protected ByteBuffer data_nio;
     protected int dlen = 0;
     protected int doff = 0;
     protected int flags = 0;
@@ -52,12 +56,22 @@ public class DatabaseEntry {
         if (data != null) {
             this.size = data.length;
         }
+        this.data_nio = null;
     }
 
     public DatabaseEntry(final byte[] data, final int offset, final int size) {
         this.data = data;
         this.offset = offset;
         this.size = size;
+        this.data_nio = null;
+    }
+
+    public DatabaseEntry(ByteBuffer data) {
+      this.data_nio = data;
+      if (data != null) {
+        this.size = this.ulen = data.limit();
+        setUserBuffer(data.limit(), true);
+      }
     }
 
     /*
@@ -68,14 +82,34 @@ public class DatabaseEntry {
         return data;
     }
 
+    public ByteBuffer getDataNIO() {
+        return data_nio;
+    }
+
     public void setData(final byte[] data, final int offset, final int size) {
         this.data = data;
         this.offset = offset;
         this.size = size;
+
+        this.data_nio = null;
     }
 
     public void setData(final byte[] data) {
         setData(data, 0, (data == null) ? 0 : data.length);
+    }
+
+    public void setDataNIO(final ByteBuffer data, final int offset, final int size) {
+        this.data_nio = data;
+        this.offset = offset;
+        this.size = this.ulen = size;
+
+        this.data = null;
+        flags = 0;
+        setUserBuffer(size, true);
+    }
+
+    public void setDataNIO(final ByteBuffer data) {
+        setDataNIO(data, 0, (data == null) ? 0 : data.capacity());
     }
 
     /**
@@ -152,6 +186,10 @@ public class DatabaseEntry {
     }
 
     public void setReuseBuffer(boolean reuse) {
+        if (data_nio != null)
+            throw new IllegalArgumentException("Can only set the reuse flag on" +
+                   " DatabaseEntry classes with a underlying byte[] data");
+
         if (reuse)
             flags &= ~(DbConstants.DB_DBT_MALLOC | DbConstants.DB_DBT_USERMEM);
         else {
@@ -177,11 +215,51 @@ public class DatabaseEntry {
     }
 
     public void setUserBuffer(final int length, final boolean usermem) {
+
         this.ulen = length;
         if (usermem) {
             flags &= ~DbConstants.DB_DBT_MALLOC;
             flags |= DbConstants.DB_DBT_USERMEM;
         } else
             flags &= ~DbConstants.DB_DBT_USERMEM;
+    }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof DatabaseEntry)) {
+            return false;
+        }
+        DatabaseEntry e = (DatabaseEntry) o;
+        if (getPartial() || e.getPartial()) {
+            if (getPartial() != e.getPartial() ||
+                dlen != e.dlen ||
+                doff != e.doff) {
+                return false;
+            }
+        }
+        if (data == null && e.data == null) {
+            return true;
+        }
+        if (data == null || e.data == null) {
+            return false;
+        }
+        if (size != e.size) {
+            return false;
+        }
+        for (int i = 0; i < size; i += 1) {
+            if (data[offset + i] != e.data[e.offset + i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public int hashCode() {
+        int hash = 0;
+        if (data != null) {
+            for (int i = 0; i < size; i += 1) {
+                hash += data[offset + i];
+            }
+        }
+        return hash;
     }
 }

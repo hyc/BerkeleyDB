@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2005
+# Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep051.tcl,v 12.3 2005/10/18 19:05:54 carol Exp $
+# $Id: rep051.tcl,v 12.6 2006/03/10 21:44:32 carol Exp $
 #
 # TEST	rep051
 # TEST	Test of compaction with replication.
@@ -21,6 +21,19 @@ proc rep051 { method { niter 5000 } { tnum "051" } args } {
 	}
 
 	# Compaction is an option for btree and recno databases only.
+	if { $checking_valid_methods } { 
+		foreach method $valid_methods {
+			if { [is_hash $method] == 1 || \
+			    [is_queue $method] == 1 } {
+				set idx [lsearch -exact $valid_methods $method]
+				if { $idx >= 0 } { 
+					set valid_methods \
+					    [lreplace $valid_methods $idx $idx]
+				}
+			}
+		}
+		return $valid_methods
+	}
 	if { [is_hash $method] == 1 || [is_queue $method] == 1 } {
 		puts "Skipping test$tnum for method $method."
 		return
@@ -32,7 +45,7 @@ proc rep051 { method { niter 5000 } { tnum "051" } args } {
 	set logsets [create_logsets 2]
 	set saved_args $args
 
-	foreach recopt { "" "-recover" } {
+	foreach recopt $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $recopt == "-recover" && $logindex != -1 } {
@@ -77,11 +90,11 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(M) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs $m_logargs $recargs \
 	    -home $masterdir -errpfx MASTER $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(M) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs $m_logargs $recargs \
 #	    -home $masterdir \
 #	    -verbose {rep on} -errfile /dev/stderr \
@@ -92,11 +105,11 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env_noerr -create -lock_max 2500 \
+	set env_cmd(C) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs $c_logargs $recargs \
 	    -home $clientdir -errpfx CLIENT $c_txnargs -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C) "berkdb_env_noerr -create -lock_max 2500 \
+#	set env_cmd(C) "berkdb_env_noerr -create \
 #	    -log_max 1000000 $envargs $c_logargs $recargs \
 #	    -home $clientdir \
 #	    -verbose {rep on} -errfile /dev/stderr \

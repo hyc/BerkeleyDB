@@ -1,19 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998-2005
+ * Copyright (c) 1998-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: bt_reclaim.c,v 12.2 2005/06/16 20:20:19 bostic Exp $
+ * $Id: bt_reclaim.c,v 12.4 2006/05/05 14:53:02 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <string.h>
-#endif
 
 #include "db_int.h"
 #include "dbinc/db_page.h"

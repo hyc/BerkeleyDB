@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test111.tcl,v 1.11 2005/11/01 16:42:51 carol Exp $
+# $Id: test111.tcl,v 1.12 2006/01/02 22:03:29 bostic Exp $
 #
 # TEST	test111
 # TEST	Test database compaction.

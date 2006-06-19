@@ -1,10 +1,10 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_verify.h,v 12.4 2005/06/16 20:21:47 bostic Exp $
+ * $Id: db_verify.h,v 12.6 2006/04/28 01:12:25 bostic Exp $
  */
 
 #ifndef _DB_VERIFY_H_
@@ -21,7 +21,7 @@
  */
 #define	EPRINT(x) do {							\
 	if (!LF_ISSET(DB_SALVAGE))					\
-		__db_err x;						\
+		__db_errx x;						\
 } while (0)
 
 /* For fatal type errors--i.e., verifier bugs. */

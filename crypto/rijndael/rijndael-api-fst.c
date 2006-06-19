@@ -34,12 +34,7 @@
  * Markus Friedl <markus.friedl@informatik.uni-erlangen.de>
  * John Skodon <skodonj@webquill.com>
  */
-
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <string.h>
-#endif
 
 #include "db_int.h"
 #include "dbinc/crypto.h"
@@ -235,7 +230,7 @@ __db_padEncrypt(cipher, key, input, inputOctets, outBuffer)
 			outBuffer += 16;
 		}
 		padLen = 16 - (inputOctets - 16*numBlocks);
-		DB_ASSERT(padLen > 0 && padLen <= 16);
+		DB_ASSERT(NULL, padLen > 0 && padLen <= 16);
 		memcpy(block, input, 16 - padLen);
 		memset(block + 16 - padLen, padLen, padLen);
 		__db_rijndaelEncrypt(key->rk, key->Nr, block, outBuffer);
@@ -255,7 +250,7 @@ __db_padEncrypt(cipher, key, input, inputOctets, outBuffer)
 			outBuffer += 16;
 		}
 		padLen = 16 - (inputOctets - 16*numBlocks);
-		DB_ASSERT(padLen > 0 && padLen <= 16);
+		DB_ASSERT(NULL, padLen > 0 && padLen <= 16);
 		for (i = 0; i < 16 - padLen; i++) {
 			block[i] = input[i] ^ iv[i];
 		}

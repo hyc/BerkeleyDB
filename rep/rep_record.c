@@ -1,33 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_record.c,v 12.25 2005/10/20 18:57:13 bostic Exp $
+ * $Id: rep_record.c,v 12.39 2006/06/14 21:46:33 alanb Exp $
  */
 
 #include "db_config.h"
 
-#ifndef NO_SYSTEM_INCLUDES
-#if TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-#endif
-
 #include "db_int.h"
 #include "dbinc/db_page.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/db_am.h"
 #include "dbinc/lock.h"
 #include "dbinc/log.h"
@@ -49,8 +32,8 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 
 #define	MASTER_ONLY(rep, rp) do {					\
 	if (!F_ISSET(rep, REP_F_MASTER)) {				\
-		RPRINT(dbenv, rep,					\
-		(dbenv, &mb, "Master record received on client"));	\
+		RPRINT(dbenv,						\
+		    (dbenv, &mb, "Master record received on client"));	\
 		REP_PRINT_MESSAGE(dbenv,				\
 		    *eidp, rp, "rep_process_message");			\
 		ret = EINVAL;						\
@@ -60,7 +43,7 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 
 #define	CLIENT_ONLY(rep, rp) do {					\
 	if (!F_ISSET(rep, REP_F_CLIENT)) {				\
-		RPRINT(dbenv, rep,					\
+		RPRINT(dbenv,						\
 		    (dbenv, &mb, "Client record received on master"));	\
 		REP_PRINT_MESSAGE(dbenv,				\
 		    *eidp, rp, "rep_process_message");			\
@@ -124,6 +107,56 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 #define	ANYSITE(rep)
 
 /*
+ * We need to convert from current message numbers to old numbers and
+ * we need to convert from old numbers to current numbers.  Offset
+ * by one for more readable code.
+ */
+/*
+ * Everything for version 0 is invalid, there is no version 0.
+ */
+/*
+ * This table converts from the current version to the old version.
+ */
+u_int32_t __repmsg_to_old[DB_REPVERSION][REP_MAX_MSG+1] = {
+	{   REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID },
+	{   REP_INVALID, 1, 2, 3, REP_INVALID, REP_INVALID,
+	    4, 5, REP_INVALID, 6, 7, 8, 9, 10, 11, 12, 13,
+	    14, 15, REP_INVALID, REP_INVALID, 16, REP_INVALID,
+	    REP_INVALID, REP_INVALID, 19, 20, 21, 22, 23 },
+	{   REP_INVALID, 1, 2, 3, REP_INVALID, REP_INVALID,
+	    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	    17, 18, 19, REP_INVALID, 20, 21, 22, 23, 24, 25, 26 }
+};
+/*
+ * This table converts from the old version to the current version.
+ */
+u_int32_t __repmsg_from_old[DB_REPVERSION][REP_MAX_MSG+1] = {
+	{   REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID },
+	{   REP_INVALID, 1, 2, 3, 6, 7, 9, 10, 11, 12, 13,
+	    14, 15, 16, 17, 18, 21, REP_INVALID, REP_INVALID,
+	    25, 26, 27, 28, 29,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID },
+	{   REP_INVALID, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13,
+	    14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
+	    27, 28, 29, REP_INVALID, REP_INVALID, REP_INVALID }
+};
+
+/*
  * __rep_process_message --
  *
  * This routine takes an incoming message and processes it.
@@ -164,18 +197,18 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 #endif
 
 	PANIC_CHECK(dbenv);
-	ENV_REQUIRES_CONFIG(dbenv, dbenv->rep_handle, "rep_process_message",
-	    DB_INIT_REP);
+	ENV_REQUIRES_CONFIG_XX(
+	    dbenv, rep_handle, "DB_ENV->rep_process_message", DB_INIT_REP);
 
 	/* Control argument must be non-Null. */
 	if (control == NULL || control->size == 0) {
-		__db_err(dbenv,
+		__db_errx(dbenv,
 	"DB_ENV->rep_process_message: control argument must be specified");
 		return (EINVAL);
 	}
 
 	if (!IS_REP_MASTER(dbenv) && !IS_REP_CLIENT(dbenv)) {
-		__db_err(dbenv,
+		__db_errx(dbenv,
 	"Environment not configured as replication master or client");
 		return (EINVAL);
 	}
@@ -200,9 +233,9 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		 * If we're racing with a thread in rep_start, then
 		 * just ignore the message and return.
 		 */
-		RPRINT(dbenv, rep, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv, &mb,
 		    "Racing rep_start, ignore message."));
-		if (F_ISSET(rp, DB_LOG_PERM))
+		if (F_ISSET(rp, REPCTL_PERM))
 			ret = DB_REP_IGNORE;
 		REP_SYSTEM_UNLOCK(dbenv);
 		goto out;
@@ -215,18 +248,38 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	rep->stat.st_msgs_processed++;
 	REP_SYSTEM_UNLOCK(dbenv);
 
+	/*
+	 * Check the version number for both rep and log.  If it is
+	 * an old version we support, convert it.  Otherwise complain.
+	 */
 	REP_PRINT_MESSAGE(dbenv, *eidp, rp, "rep_process_message");
-
-	/* Complain if we see an improper version number. */
-	if (rp->rep_version != DB_REPVERSION) {
-		__db_err(dbenv,
+	if (rp->rep_version < DB_REPVERSION) {
+		RPRINT(dbenv, (dbenv, &mb,
+		    "Received record %lu with old rep version %lu",
+		    (u_long)rp->rectype, (u_long)rp->rep_version));
+		rp->rectype = __repmsg_from_old[rp->rep_version][rp->rectype];
+		/*
+		 * We should have a valid new record type for all the old
+		 * versions.
+		 */
+		DB_ASSERT(dbenv, rp->rectype != REP_INVALID);
+		RPRINT(dbenv, (dbenv, &mb,
+		    "Converted to record %lu with old rep version %lu",
+		    (u_long)rp->rectype, (u_long)rp->rep_version));
+	} else if (rp->rep_version > DB_REPVERSION) {
+		__db_errx(dbenv,
 		    "unexpected replication message version %lu, expected %d",
 		    (u_long)rp->rep_version, DB_REPVERSION);
 		ret = EINVAL;
 		goto errlock;
 	}
-	if (rp->log_version != DB_LOGVERSION) {
-		__db_err(dbenv,
+
+	if (rp->log_version < DB_LOGVERSION) {
+		RPRINT(dbenv, (dbenv, &mb,
+		    "Received record %lu with old log version %lu",
+		    (u_long)rp->rectype, (u_long)rp->log_version));
+	} else if (rp->log_version > DB_LOGVERSION) {
+		__db_errx(dbenv,
 		    "unexpected log record version %lu, expected %d",
 		    (u_long)rp->log_version, DB_LOGVERSION);
 		ret = EINVAL;
@@ -245,7 +298,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		 * We don't hold the rep mutex, and could miscount if we race.
 		 */
 		rep->stat.st_msgs_badgen++;
-		if (F_ISSET(rp, DB_LOG_PERM))
+		if (F_ISSET(rp, REPCTL_PERM))
 			ret = DB_REP_IGNORE;
 		goto errlock;
 	}
@@ -275,7 +328,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		if (rp->rectype == REP_ALIVE ||
 		    rp->rectype == REP_VOTE1 || rp->rectype == REP_VOTE2) {
 			REP_SYSTEM_LOCK(dbenv);
-			RPRINT(dbenv, rep, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv, &mb,
 			    "Updating gen from %lu to %lu",
 			    (u_long)gen, (u_long)rp->gen));
 			rep->master_id = DB_EID_INVALID;
@@ -321,7 +374,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		ANYSITE(rep);
 		egen = *(u_int32_t *)rec->data;
 		REP_SYSTEM_LOCK(dbenv);
-		RPRINT(dbenv, rep, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv, &mb,
 		    "Received ALIVE egen of %lu, mine %lu",
 		    (u_long)egen, (u_long)rep->egen));
 		if (egen > rep->egen) {
@@ -484,6 +537,8 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		RECOVERING_LOG_SKIP;
 		CLIENT_ONLY(rep, rp);
 		ret = __rep_apply(dbenv, rp, rec, ret_lsnp, NULL);
+		if (ret == DB_REP_LOGREADY)
+			ret = __rep_logready(dbenv, rep, savetime);
 		break;
 	case REP_NEWMASTER:
 		/*
@@ -491,7 +546,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		 */
 		ANYSITE(rep);
 		if (F_ISSET(rep, REP_F_MASTER) &&
-		    *eidp != dbenv->rep_eid) {
+		    *eidp != rep->eid) {
 			/* We don't hold the rep mutex, and may miscount. */
 			rep->stat.st_dupmasters++;
 			ret = DB_REP_DUPMASTER;
@@ -595,7 +650,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		ret = __rep_vote2(dbenv, rec, eidp);
 		break;
 	default:
-		__db_err(dbenv,
+		__db_errx(dbenv,
 	"DB_ENV->rep_process_message: unknown replication message: type %lu",
 		   (u_long)rp->rectype);
 		ret = EINVAL;
@@ -607,7 +662,7 @@ errlock:
 	rep->msg_th--;
 	REP_SYSTEM_UNLOCK(dbenv);
 out:
-	if (ret == 0 && F_ISSET(rp, DB_LOG_PERM)) {
+	if (ret == 0 && F_ISSET(rp, REPCTL_PERM)) {
 		if (ret_lsnp != NULL)
 			*ret_lsnp = rp->lsn;
 		ret = DB_REP_NOTPERM;
@@ -792,7 +847,7 @@ gap_check:
 		 * If this is permanent; let the caller know that we have
 		 * not yet written it to disk, but we've accepted it.
 		 */
-		if (ret == 0 && F_ISSET(rp, DB_LOG_PERM)) {
+		if (ret == 0 && F_ISSET(rp, REPCTL_PERM)) {
 			max_lsn = rp->lsn;
 			ret = DB_REP_NOTPERM;
 		}
@@ -805,7 +860,7 @@ gap_check:
 		rep->stat.st_log_duplicated++;
 		if (is_dupp != NULL)
 			*is_dupp = 1;
-		if (F_ISSET(rp, DB_LOG_PERM))
+		if (F_ISSET(rp, REPCTL_PERM))
 			max_lsn = lp->max_perm_lsn;
 		goto done;
 	}
@@ -831,21 +886,24 @@ err:	/* Check if we need to go back into the table. */
 		if (ret_lsnp != NULL)
 			*ret_lsnp = max_lsn;
 		ret = DB_REP_ISPERM;
-		DB_ASSERT(log_compare(&max_lsn, &lp->max_perm_lsn) >= 0);
+		DB_ASSERT(dbenv, log_compare(&max_lsn, &lp->max_perm_lsn) >= 0);
 		lp->max_perm_lsn = max_lsn;
 	}
 	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
 
 	/*
-	 * Startup is complete when we process our first live record.  However,
-	 * we want to return DB_REP_STARTUPDONE on the first record we can --
-	 * but other return values trump this one.  We know we've processed at
-	 * least one record when rectype is non-zero.
+	 * Startup is complete when we process our first live record.  We know
+	 * we've processed at least one record when rectype is non-zero.
 	 */
-	if (ret == 0 && !F_ISSET(rp, DB_LOG_RESEND) &&
+	if ((ret == 0 || ret == DB_REP_ISPERM) && !F_ISSET(rp, REPCTL_RESEND) &&
 	    rectype != 0 && rep->stat.st_startup_complete == 0) {
 		rep->stat.st_startup_complete = 1;
-		ret = DB_REP_STARTUPDONE;
+#ifdef DIAGNOSTIC
+		RPRINT(dbenv, (dbenv, &mb,
+		    "Firing STARTUPDONE event [%lu][%lu]",
+		    (u_long)rp->lsn.file, (u_long)rp->lsn.offset));
+#endif
+		DB_EVENT(dbenv, DB_EVENT_REP_STARTUPDONE, NULL);
 	}
 	if (ret == 0 && rp->rectype == REP_NEWFILE && lp->db_log_autoremove)
 		__log_autoremove(dbenv);
@@ -860,22 +918,18 @@ err:	/* Check if we need to go back into the table. */
 
 #ifdef DIAGNOSTIC
 	if (ret == DB_REP_ISPERM)
-		RPRINT(dbenv, rep, (dbenv, &mb, "Returning ISPERM [%lu][%lu]",
+		RPRINT(dbenv, (dbenv, &mb, "Returning ISPERM [%lu][%lu]",
 		    (u_long)max_lsn.file, (u_long)max_lsn.offset));
 	else if (ret == DB_REP_LOGREADY)
-		RPRINT(dbenv, rep, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv, &mb,
 		    "Returning LOGREADY up to [%lu][%lu]",
 		    (u_long)rep->last_lsn.file,
 		    (u_long)rep->last_lsn.offset));
 	else if (ret == DB_REP_NOTPERM)
-		RPRINT(dbenv, rep, (dbenv, &mb, "Returning NOTPERM [%lu][%lu]",
+		RPRINT(dbenv, (dbenv, &mb, "Returning NOTPERM [%lu][%lu]",
 		    (u_long)max_lsn.file, (u_long)max_lsn.offset));
-	else if (ret == DB_REP_STARTUPDONE)
-		RPRINT(dbenv, rep, (dbenv, &mb,
-		    "Returning STARTUPDONE [%lu][%lu]",
-		    (u_long)rp->lsn.file, (u_long)rp->lsn.offset));
 	else if (ret != 0)
-		RPRINT(dbenv, rep, (dbenv, &mb, "Returning %d [%lu][%lu]", ret,
+		RPRINT(dbenv, (dbenv, &mb, "Returning %d [%lu][%lu]", ret,
 		    (u_long)max_lsn.file, (u_long)max_lsn.offset));
 #endif
 	return (ret);
@@ -903,6 +957,7 @@ __rep_process_txn(dbenv, rec)
 	LSN_COLLECTION lc;
 	REP *rep;
 	__txn_regop_args *txn_args;
+	__txn_regop_42_args *txn42_args;
 	__txn_xa_regop_args *prep_args;
 	u_int32_t lockid, rectype;
 	u_int i;
@@ -912,6 +967,7 @@ __rep_process_txn(dbenv, rec)
 	rep = db_rep->region;
 	logc = NULL;
 	txn_args = NULL;
+	txn42_args = NULL;
 	prep_args = NULL;
 	txninfo = NULL;
 
@@ -935,17 +991,30 @@ __rep_process_txn(dbenv, rec)
 		 * We're the end of a transaction.  Make sure this is
 		 * really a commit and not an abort!
 		 */
-		if ((ret = __txn_regop_read(dbenv, rec->data, &txn_args)) != 0)
-			return (ret);
-		if (txn_args->opcode != TXN_COMMIT) {
-			__os_free(dbenv, txn_args);
-			return (0);
+		if (rep->version >= DB_REPVERSION_44) {
+			if ((ret = __txn_regop_read(dbenv, rec->data,
+			    &txn_args)) != 0)
+				return (ret);
+			if (txn_args->opcode != TXN_COMMIT) {
+				__os_free(dbenv, txn_args);
+				return (0);
+			}
+			prev_lsn = txn_args->prev_lsn;
+			lock_dbt = &txn_args->locks;
+		} else {
+			if ((ret = __txn_regop_42_read(dbenv, rec->data,
+			    &txn42_args)) != 0)
+				return (ret);
+			if (txn42_args->opcode != TXN_COMMIT) {
+				__os_free(dbenv, txn42_args);
+				return (0);
+			}
+			prev_lsn = txn42_args->prev_lsn;
+			lock_dbt = &txn42_args->locks;
 		}
-		prev_lsn = txn_args->prev_lsn;
-		lock_dbt = &txn_args->locks;
 	} else {
 		/* We're a prepare. */
-		DB_ASSERT(rectype == DB___txn_xa_regop);
+		DB_ASSERT(dbenv, rectype == DB___txn_xa_regop);
 
 		if ((ret =
 		    __txn_xa_regop_read(dbenv, rec->data, &prep_args)) != 0)
@@ -980,14 +1049,14 @@ __rep_process_txn(dbenv, rec)
 		goto err;
 	for (lsnp = &lc.array[0], i = 0; i < lc.nlsns; i++, lsnp++) {
 		if ((ret = __log_c_get(logc, lsnp, &data_dbt, DB_SET)) != 0) {
-			__db_err(dbenv, "failed to read the log at [%lu][%lu]",
+			__db_errx(dbenv, "failed to read the log at [%lu][%lu]",
 			    (u_long)lsnp->file, (u_long)lsnp->offset);
 			goto err;
 		}
 		if ((ret = __db_dispatch(dbenv, dbenv->recover_dtab,
 		    dbenv->recover_dtab_size, &data_dbt, lsnp,
 		    DB_TXN_APPLY, txninfo)) != 0) {
-			__db_err(dbenv, "transaction failed at [%lu][%lu]",
+			__db_errx(dbenv, "transaction failed at [%lu][%lu]",
 			    (u_long)lsnp->file, (u_long)lsnp->offset);
 			goto err;
 		}
@@ -1004,6 +1073,8 @@ err:	memset(&req, 0, sizeof(req));
 
 err1:	if (txn_args != NULL)
 		__os_free(dbenv, txn_args);
+	if (txn42_args != NULL)
+		__os_free(dbenv, txn42_args);
 	if (prep_args != NULL)
 		__os_free(dbenv, prep_args);
 	if (lc.array != NULL)
@@ -1090,7 +1161,7 @@ __rep_collect_txn(dbenv, lsnp, lc)
 			goto err;
 	}
 	if (ret != 0)
-		__db_err(dbenv, "collect failed at: [%lu][%lu]",
+		__db_errx(dbenv, "collect failed at: [%lu][%lu]",
 		    (u_long)lsnp->file, (u_long)lsnp->offset);
 
 err:	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
@@ -1170,7 +1241,7 @@ __rep_do_ckp(dbenv, rec, rp)
 	if (ret == 0)
 		ret = __txn_updateckp(dbenv, &rp->lsn);
 	else {
-		__db_err(dbenv, "Error syncing ckp [%lu][%lu]",
+		__db_errx(dbenv, "Error syncing ckp [%lu][%lu]",
 		    (u_long)ckp_lsn.file, (u_long)ckp_lsn.offset);
 		ret = __db_panic(dbenv, ret);
 	}
@@ -1351,15 +1422,22 @@ __rep_process_rec(dbenv, rp, rec, typep, ret_lsnp)
 		/*
 		 * DB opens occur in the context of a transaction, so we can
 		 * simply handle them when we process the transaction.  Closes,
-		 * however, are not transaction-protected, so we have to
-		 * handle them here.
+		 * however, are not transaction-protected, so we have to handle
+		 * them here.
 		 *
-		 * Note that it should be unsafe for the master to do a close
-		 * of a file that was opened in an active transaction, so we
-		 * should be guaranteed to get the ordering right.
+		 * It should be unsafe for the master to do a close of a file
+		 * that was opened in an active transaction, so we should be
+		 * guaranteed to get the ordering right.
+		 *
+		 * !!!
+		 * The txn ID is the second 4-byte field of the log record.
+		 * We should really be calling __dbreg_register_read() and
+		 * working from the __dbreg_register_args structure, but this
+		 * is considerably faster and the order of the fields won't
+		 * change.
 		 */
-		memcpy(&txnid, (u_int8_t *)rec->data +
-		    SSZ(__dbreg_register_args, txnid), sizeof(u_int32_t));
+		memcpy(&txnid, (u_int8_t *)
+		    rec->data + sizeof(u_int32_t), sizeof(u_int32_t));
 		if (txnid == TXN_INVALID)
 			ret = __db_dispatch(dbenv, dbenv->recover_dtab,
 			    dbenv->recover_dtab_size, rec, &rp->lsn,
@@ -1388,7 +1466,7 @@ __rep_process_rec(dbenv, rp, rec, typep, ret_lsnp)
 		if (ret == 0 && !F_ISSET(dbenv, DB_ENV_TXN_NOSYNC))
 			ret = __log_flush(dbenv, NULL);
 		if (ret != 0) {
-			__db_err(dbenv, "Error processing txn [%lu][%lu]",
+			__db_errx(dbenv, "Error processing txn [%lu][%lu]",
 			    (u_long)rp->lsn.file, (u_long)rp->lsn.offset);
 			ret = __db_panic(dbenv, ret);
 		}
@@ -1437,13 +1515,19 @@ __rep_process_rec(dbenv, rp, rec, typep, ret_lsnp)
 		if ((t_ret = __rep_remfirst(dbenv,
 		    &control_dbt, &rec_dbt)) != 0 && ret == 0)
 			ret = t_ret;
+		/*
+		 * If we're successful putting the log record in the
+		 * log, flush it for a checkpoint.
+		 */
+		if (ret == 0)
+			ret = __log_flush(dbenv, NULL);
 		break;
 	default:
 		break;
 	}
 
 out:
-	if (ret == 0 && F_ISSET(rp, DB_LOG_PERM))
+	if (ret == 0 && F_ISSET(rp, REPCTL_PERM))
 		*ret_lsnp = rp->lsn;
 	if (control_dbt.data != NULL)
 		__os_ufree(dbenv, control_dbt.data);

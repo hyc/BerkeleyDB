@@ -1,24 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_env.c,v 12.15 2005/11/02 20:21:37 bostic Exp $
+ * $Id: tcl_env.c,v 12.26 2006/06/12 19:13:56 sue Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
 #ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
 #include <tcl.h>
 #endif
-
-#include "db_int.h"
-#include "dbinc/db_shash.h"
 #include "dbinc/lock.h"
 #include "dbinc/txn.h"
 #include "dbinc/tcl_db.h"
@@ -88,6 +82,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"rep_stat",
 		"rep_sync",
 		"rep_transport",
+		"repmgr",
 		"rpcid",
 		"set_flags",
 		"test",
@@ -127,6 +122,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"get_tx_max",
 		"get_tx_timestamp",
 		"get_verbose",
+		"set_data_dir",
 		"txn",
 		"txn_checkpoint",
 		NULL
@@ -169,6 +165,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVREPSTAT,
 		ENVREPSYNC,
 		ENVREPTRANSPORT,
+		ENVREPMGR,
 		ENVRPCID,
 		ENVSETFLAGS,
 		ENVTEST,
@@ -208,6 +205,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVGETTXMAX,
 		ENVGETTXTIMESTAMP,
 		ENVGETVERBOSE,
+		ENVSETDATADIR,
 		ENVTXN,
 		ENVTXNCKP
 	};
@@ -221,6 +219,7 @@ env_Cmd(clientData, interp, objc, objv)
 	long shm_key;
 	time_t timeval;
 	const char *strval, **dirs;
+	char *strarg;
 #ifdef CONFIG_TEST
 	DBTCL_INFO *logcip;
 	DB_LOGC *logc;
@@ -228,7 +227,6 @@ env_Cmd(clientData, interp, objc, objv)
 	u_int32_t lockid;
 	long newval, otherval;
 	int repobjc;
-	char *strarg;
 #endif
 
 	Tcl_ResetResult(interp);
@@ -441,6 +439,9 @@ env_Cmd(clientData, interp, objc, objv)
 		if (result == TCL_OK)
 			result = tcl_RepTransport(interp,
 			    repobjc, repobjv, dbenv, envip);
+		break;
+	case ENVREPMGR:
+		result = tcl_RepMgr(interp, objc, objv, dbenv);
 		break;
 	case ENVRPCID:
 		/*
@@ -736,9 +737,9 @@ env_Cmd(clientData, interp, objc, objv)
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
 			return (TCL_ERROR);
 		}
-		ret = dbenv->get_rep_limit(dbenv, &gbytes, &bytes);
+		ret = dbenv->rep_get_limit(dbenv, &gbytes, &bytes);
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-		    "env get_rep_limit")) == TCL_OK) {
+		    "env rep_get_limit")) == TCL_OK) {
 			myobjv[0] = Tcl_NewLongObj((long)gbytes);
 			myobjv[1] = Tcl_NewLongObj((long)bytes);
 			res = Tcl_NewListObj(2, myobjv);
@@ -800,6 +801,18 @@ env_Cmd(clientData, interp, objc, objv)
 	case ENVGETVERBOSE:
 		result = env_GetVerbose(interp, objc, objv, dbenv);
 		break;
+	case ENVSETDATADIR:
+		/*
+		 * One args for this.  Error if different.
+		 */
+		if (objc != 3) {
+			Tcl_WrongNumArgs(interp, 2, objv, "pfx");
+			return (TCL_ERROR);
+		}
+		strarg = Tcl_GetStringFromObj(objv[2], NULL);
+		ret = dbenv->set_data_dir(dbenv, strarg);
+		return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "env set data dir"));
 	case ENVTXN:
 		result = tcl_Txn(interp, objc, objv, dbenv, envip);
 		break;
@@ -1418,6 +1431,7 @@ tcl_EnvSetFlags(interp, dbenv, which, onoff)
 		"-dsync_log",
 		"-log_inmemory",
 		"-log_remove",
+		"-multiversion",
 		"-nolock",
 		"-nommap",
 		"-nopanic",
@@ -1434,6 +1448,7 @@ tcl_EnvSetFlags(interp, dbenv, which, onoff)
 		ENVSF_DSYNCLOG,
 		ENVSF_LOG_INMEMORY,
 		ENVSF_LOG_REMOVE,
+		ENVSF_MULTIVERSION,
 		ENVSF_NOLOCK,
 		ENVSF_NOMMAP,
 		ENVSF_NOPANIC,
@@ -1477,6 +1492,9 @@ tcl_EnvSetFlags(interp, dbenv, which, onoff)
 	case ENVSF_LOG_REMOVE:
 		wh = DB_LOG_AUTOREMOVE;
 		break;
+	case ENVSF_MULTIVERSION:
+		wh = DB_MULTIVERSION;
+		break;
 	case ENVSF_NOLOCK:
 		wh = DB_NOLOCKING;
 		break;
@@ -1516,7 +1534,7 @@ tcl_EnvSetFlags(interp, dbenv, which, onoff)
 	}
 	ret = dbenv->set_flags(dbenv, wh, on);
 	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-	    "env set verbose"));
+	    "env set flags"));
 }
 
 /*
@@ -1553,6 +1571,7 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 		"postlogmeta",
 		"postopen",
 		"postsync",
+		"recycle",
 		"subdb_lock",
 		NULL
 	};
@@ -1567,6 +1586,7 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 		ENVTEST_POSTLOGMETA,
 		ENVTEST_POSTOPEN,
 		ENVTEST_POSTSYNC,
+		ENVTEST_RECYCLE,
 		ENVTEST_SUBDB_LOCKS
 	};
 	int *loc, optindex, result, testval;
@@ -1616,11 +1636,11 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 	}
 	switch ((enum envtestat)optindex) {
 	case ENVTEST_ELECTINIT:
-		DB_ASSERT(loc == &dbenv->test_abort);
+		DB_ASSERT(dbenv, loc == &dbenv->test_abort);
 		testval = DB_TEST_ELECTINIT;
 		break;
 	case ENVTEST_ELECTVOTE1:
-		DB_ASSERT(loc == &dbenv->test_abort);
+		DB_ASSERT(dbenv, loc == &dbenv->test_abort);
 		testval = DB_TEST_ELECTVOTE1;
 		break;
 	case ENVTEST_NONE:
@@ -1647,8 +1667,12 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 	case ENVTEST_POSTSYNC:
 		testval = DB_TEST_POSTSYNC;
 		break;
+	case ENVTEST_RECYCLE:
+		DB_ASSERT(dbenv, loc == &dbenv->test_copy);
+		testval = DB_TEST_RECYCLE;
+		break;
 	case ENVTEST_SUBDB_LOCKS:
-		DB_ASSERT(loc == &dbenv->test_abort);
+		DB_ASSERT(dbenv, loc == &dbenv->test_abort);
 		testval = DB_TEST_SUBDB_LOCKS;
 		break;
 	default:
@@ -1962,6 +1986,7 @@ env_GetFlags(interp, objc, objv, dbenv)
 		{ DB_DSYNC_LOG, "-dsync_log" },
 		{ DB_LOG_AUTOREMOVE, "-log_remove" },
 		{ DB_LOG_INMEMORY, "-log_inmemory" },
+		{ DB_MULTIVERSION, "-multiversion" },
 		{ DB_NOLOCKING, "-nolock" },
 		{ DB_NOMMAP, "-nommap" },
 		{ DB_NOPANIC, "-nopanic" },

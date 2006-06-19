@@ -1,23 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2005
+ * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_internal.c,v 12.3 2005/06/16 20:23:47 bostic Exp $
+ * $Id: tcl_internal.c,v 12.8 2006/05/05 14:54:02 bostic Exp $
  */
 
 #include "db_config.h"
 
+#include "db_int.h"
 #ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#include <string.h>
 #include <tcl.h>
 #endif
-
-#include "db_int.h"
 #include "dbinc/tcl_db.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
@@ -88,8 +83,7 @@ _NameToPtr(name)
 {
 	DBTCL_INFO *p;
 
-	for (p = LIST_FIRST(&__db_infohead); p != NULL;
-	    p = LIST_NEXT(p, entries))
+	LIST_FOREACH(p, &__db_infohead, entries)
 		if (strcmp(name, p->i_name) == 0)
 			return (p->i_anyp);
 	return (NULL);
@@ -104,8 +98,7 @@ _PtrToInfo(ptr)
 {
 	DBTCL_INFO *p;
 
-	for (p = LIST_FIRST(&__db_infohead); p != NULL;
-	    p = LIST_NEXT(p, entries))
+	LIST_FOREACH(p, &__db_infohead, entries)
 		if (p->i_anyp == ptr)
 			return (p);
 	return (NULL);
@@ -120,8 +113,7 @@ _NameToInfo(name)
 {
 	DBTCL_INFO *p;
 
-	for (p = LIST_FIRST(&__db_infohead); p != NULL;
-	    p = LIST_NEXT(p, entries))
+	LIST_FOREACH(p, &__db_infohead, entries)
 		if (strcmp(name, p->i_name) == 0)
 			return (p);
 	return (NULL);
@@ -229,7 +221,7 @@ _SetListElemInt(interp, list, elem1, elem2)
  * library, it's likely because we don't have a 64-bit type, and trying to
  * use int64_t is going to result in syntax errors.
  */
-#ifdef HAVE_SEQUENCE
+#ifdef HAVE_64BIT_TYPES
 /*
  * PUBLIC: int _SetListElemWideInt __P((Tcl_Interp *,
  * PUBLIC:     Tcl_Obj *, void *, int64_t));
@@ -253,7 +245,7 @@ _SetListElemWideInt(interp, list, elem1, elem2)
 		return (TCL_ERROR);
 	return (Tcl_ListObjAppendElement(interp, list, thislist));
 }
-#endif /* HAVE_SEQUENCE */
+#endif /* HAVE_64BIT_TYPES */
 
 /*
  * PUBLIC: int _SetListRecnoElem __P((Tcl_Interp *, Tcl_Obj *,
@@ -617,7 +609,7 @@ _GetFlagsList(interp, flags, fnp)
 			 * into one).  If this is the case, we screwed up badly
 			 * somehow.
 			 */
-			DB_ASSERT(result == TCL_OK);
+			DB_ASSERT(NULL, result == TCL_OK);
 		}
 
 	return (newlist);

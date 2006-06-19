@@ -1,13 +1,14 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005
+ * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_clock.c,v 1.2 2005/08/08 14:39:52 bostic Exp $
+ * $Id: db_clock.c,v 1.4 2006/05/05 14:53:09 bostic Exp $
  */
 
 #include "db_config.h"
+
 #include "db_int.h"
 
 /*

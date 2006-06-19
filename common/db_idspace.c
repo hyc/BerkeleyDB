@@ -1,19 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
+ * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_idspace.c,v 12.1 2005/06/16 20:20:53 bostic Exp $
+ * $Id: db_idspace.c,v 12.3 2006/05/05 14:53:09 bostic Exp $
  */
 
 #include "db_config.h"
-
-#ifndef NO_SYSTEM_INCLUDES
-#include <sys/types.h>
-
-#include <stdlib.h>
-#endif
 
 #include "db_int.h"
 

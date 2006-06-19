@@ -1,5 +1,5 @@
 #!/bin/sh -
-#       $Id: s_java_swig,v 12.2 2005/10/17 19:20:12 bostic Exp $
+#       $Id: s_java_swig,v 12.3 2006/03/24 04:57:06 mjc Exp $
 #
 # Run SWIG to generate the Java APIs
 
@@ -25,7 +25,7 @@ for api in java ; do
 	swig_args=""
 	case $api in
 	java)
-		swig_args="-nodefault -package $PACKAGE $args"
+		swig_args="-nodefaultctor -nodefaultdtor -package $PACKAGE $args"
 		;;
 	esac
 

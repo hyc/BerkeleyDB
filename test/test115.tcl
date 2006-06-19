@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005
+# Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test115.tcl,v 12.10 2005/11/01 14:58:18 carol Exp $
+# $Id: test115.tcl,v 12.11 2006/01/02 22:03:29 bostic Exp $
 #
 # TEST	test115
 # TEST	Test database compaction with user-specified btree sort.
