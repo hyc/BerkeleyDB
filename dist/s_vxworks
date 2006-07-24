@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_vxworks,v 12.9 2006/06/04 20:12:36 bostic Exp $
+#	$Id: s_vxworks,v 12.12 2006/06/26 17:34:19 bostic Exp $
 #
 # Build the VxWorks files.
 
@@ -89,6 +89,21 @@ f=../build_vxworks/db_int.h
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 
+# Build the VxWorks db_config.h file.
+# We don't fail, but we complain if the vx_config.in file isn't up-to-date.
+check_config()
+{
+	egrep '^#undef' config.hin |
+	    awk '{print $2}' | sed '/^SIZEOF_/d' | sort > $s
+	(egrep '#undef' $1 | awk '{print $3}'
+	 egrep '^#define' $1 | awk '{print $2}') | sort > $t
+	cmp $s $t || {
+		echo "config.hin and $1 differ"
+		echo "<<< config.hin >>> $1"
+		diff $s $t
+	}
+}
+check_config vx_config.in
 f=../build_vxworks/db_config.h
 (echo "$msgc" && sed "s/__EDIT_DB_VERSION__/$DB_VERSION/" vx_config.in) > $t
 cmp $t $f > /dev/null 2>&1 ||

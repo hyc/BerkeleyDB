@@ -5,7 +5,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db.in,v 12.98 2006/06/14 21:46:36 alanb Exp $
+ * $Id: db.in,v 12.100 2006/07/17 13:08:09 mjc Exp $
  *
  * db.h include file layout:
  *	General.
@@ -45,8 +45,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	5
-#define	DB_VERSION_PATCH	8
-#define	DB_VERSION_STRING	"Sleepycat Software: Berkeley DB 4.5.8: (June 19, 2006)"
+#define	DB_VERSION_PATCH	14
+#define	DB_VERSION_STRING	"Sleepycat Software: Berkeley DB 4.5.14: (July 24, 2006)"
 
 /*
  * !!!
@@ -705,8 +705,7 @@ struct __db_log_stat {
 #define	DB_MPOOL_NEW		0x020	/* Create a new page. */
 
 /* Flag values for DB_MPOOLFILE->put, DB_MPOOLFILE->set. */
-#define	DB_MPOOL_CLEAN		0x001	/* Page is not modified. */
-#define	DB_MPOOL_DISCARD	0x002	/* Don't cache the page. */
+#define	DB_MPOOL_DISCARD	0x001	/* Don't cache the page. */
 
 /* Flags values for DB_MPOOLFILE->set_flags. */
 #define	DB_MPOOL_NOFILE		0x001	/* Never open a backing file. */
@@ -843,6 +842,9 @@ struct __db_mpool_stat {
 	u_int32_t st_hash_max_wait;	/* Max hash lock granted after wait. */
 	u_int32_t st_region_nowait;	/* Region lock granted with nowait. */
 	u_int32_t st_region_wait;	/* Region lock granted after wait. */
+	u_int32_t st_mvcc_frozen;		/* Buffers frozen. */
+	u_int32_t st_mvcc_thawed;		/* Buffers thawed. */
+	u_int32_t st_mvcc_freed;		/* Frozen buffers freed. */
 	u_int32_t st_alloc;		/* Number of page allocations. */
 	u_int32_t st_alloc_buckets;	/* Buckets checked during allocation. */
 	u_int32_t st_alloc_max_buckets;	/* Max checked during allocation. */
@@ -978,19 +980,20 @@ struct __db_txn {
 	/* DB_TXN PRIVATE HANDLE LIST END */
 
 #define	TXN_CHILDCOMMIT		0x0001	/* Txn has committed. */
-#define	TXN_COMPENSATE		0x0002	/* Compensating transaction. */
-#define	TXN_DEADLOCK		0x0004	/* Txn has deadlocked. */
-#define	TXN_LOCKTIMEOUT		0x0008	/* Txn has a lock timeout. */
-#define	TXN_MALLOC		0x0010	/* Structure allocated by TXN system. */
-#define	TXN_NOSYNC		0x0020	/* Do not sync on prepare and commit. */
-#define	TXN_NOWAIT		0x0040	/* Do not wait on locks. */
-#define	TXN_PRIVATE		0x0080	/* Txn owned by cursor.. */
-#define	TXN_READ_COMMITTED	0x0100	/* Txn has degree 2 isolation. */
-#define	TXN_READ_UNCOMMITTED	0x0200	/* Txn has degree 1 isolation. */
-#define	TXN_RESTORED		0x0400	/* Txn has been restored. */
-#define	TXN_SNAPSHOT		0x0800	/* Snapshot Isolation. */
-#define	TXN_SYNC		0x1000	/* Write and sync on prepare/commit. */
-#define	TXN_WRITE_NOSYNC	0x2000	/* Write only on prepare/commit. */
+#define	TXN_CDSGROUP		0x0002	/* CDS group handle. */
+#define	TXN_COMPENSATE		0x0004	/* Compensating transaction. */
+#define	TXN_DEADLOCK		0x0008	/* Txn has deadlocked. */
+#define	TXN_LOCKTIMEOUT		0x0010	/* Txn has a lock timeout. */
+#define	TXN_MALLOC		0x0020	/* Structure allocated by TXN system. */
+#define	TXN_NOSYNC		0x0040	/* Do not sync on prepare and commit. */
+#define	TXN_NOWAIT		0x0080	/* Do not wait on locks. */
+#define	TXN_PRIVATE		0x0100	/* Txn owned by cursor.. */
+#define	TXN_READ_COMMITTED	0x0200	/* Txn has degree 2 isolation. */
+#define	TXN_READ_UNCOMMITTED	0x0400	/* Txn has degree 1 isolation. */
+#define	TXN_RESTORED		0x0800	/* Txn has been restored. */
+#define	TXN_SNAPSHOT		0x1000	/* Snapshot Isolation. */
+#define	TXN_SYNC		0x2000	/* Write and sync on prepare/commit. */
+#define	TXN_WRITE_NOSYNC	0x4000	/* Write only on prepare/commit. */
 	u_int32_t	flags;
 };
 
@@ -2121,6 +2124,7 @@ struct __db_env {
 	DB_TXNMGR	*tx_handle;	/* Txn handle. */
 
 	/* DB_ENV PUBLIC HANDLE LIST BEGIN */
+	int  (*cdsgroup_begin) __P((DB_ENV *, DB_TXN **));
 	int  (*close) __P((DB_ENV *, u_int32_t));
 	int  (*dbremove) __P((DB_ENV *,
 		DB_TXN *, const char *, const char *, u_int32_t));

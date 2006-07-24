@@ -39,10 +39,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: btree.h,v 12.10 2006/05/05 17:30:00 bostic Exp $
+ * $Id: btree.h,v 12.11 2006/07/05 05:37:07 mjc Exp $
  */
 #ifndef	_DB_BTREE_H_
 #define	_DB_BTREE_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /* Forward structure declarations. */
 struct __btree;		typedef struct __btree BTREE;
@@ -327,6 +331,10 @@ typedef enum {
  */
 #define	BPI_SPACEONLY	0x01		/* Only check for space to update. */
 #define	BPI_NORECNUM	0x02		/* Not update the recnum on the left. */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #include "dbinc_auto/btree_auto.h"
 #include "dbinc_auto/btree_ext.h"

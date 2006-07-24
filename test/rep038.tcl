@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep038.tcl,v 12.9 2006/03/10 21:44:32 carol Exp $
+# $Id: rep038.tcl,v 12.11 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep038
 # TEST	Test of internal initialization and ongoing master updates.
@@ -17,14 +17,14 @@
 proc rep038 { method { niter 200 } { tnum "038" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Valid for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -46,7 +46,7 @@ proc rep038 { method { niter 200 } { tnum "038" } args } {
 		foreach c $cleanopts {
 			foreach l $logsets {
 				set logindex [lsearch -exact $l "in-memory"]
-				if { $r == "-recover" && $logindex != -1 } { 
+				if { $r == "-recover" && $logindex != -1 } {
 					puts "Skipping rep$tnum for -recover\
 					    with in-memory logs."
 					continue
@@ -88,7 +88,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -130,7 +130,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 	process_msgs $envlist
 
 	puts "\tRep$tnum.b: Close client."
-	if { $c_logtype != "in-memory" } { 
+	if { $c_logtype != "in-memory" } {
 		set res [eval exec $util_path/db_archive -l -h $clientdir]
 	}
 	set last_client_log [get_logfile $clientenv last]
@@ -200,7 +200,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 	# Check again that master and client logs and dbs are identical.
 	rep_verify $masterdir $masterenv $clientdir $clientenv 1
 
-	# Make sure log file are on-disk or not as expected. 
+	# Make sure log file are on-disk or not as expected.
 	check_log_location $masterenv
 	check_log_location $clientenv
 

@@ -4,10 +4,14 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_am.h,v 12.15 2006/05/24 16:24:11 sue Exp $
+ * $Id: db_am.h,v 12.16 2006/07/05 05:37:08 mjc Exp $
  */
 #ifndef _DB_AM_H_
 #define	_DB_AM_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * IS_ENV_AUTO_COMMIT --
@@ -209,6 +213,10 @@ typedef struct {
 	    (tdbp) = TAILQ_PREV((tdbp), __dblist, dblistlinks))	\
 		;							\
 } while (0)
+
+#if defined(__cplusplus)
+}
+#endif
 
 #include "dbinc/db_dispatch.h"
 #include "dbinc_auto/db_auto.h"

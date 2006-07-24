@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_region.c,v 12.26 2006/06/14 22:18:09 bostic Exp $
+ * $Id: rep_region.c,v 12.27 2006/07/05 16:26:15 alanb Exp $
  */
 
 #include "db_config.h"
@@ -76,6 +76,7 @@ __rep_open(dbenv)
 		rep->request_gap = db_rep->request_gap;
 		rep->max_gap = db_rep->max_gap;
 		rep->config_nsites = db_rep->config_nsites;
+		rep->config = db_rep->config;
 		rep->elect_timeout = db_rep->elect_timeout;
 		rep->priority = db_rep->my_priority;
 

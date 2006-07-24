@@ -4,13 +4,17 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: txn.h,v 12.10 2006/04/27 13:40:15 mjc Exp $
+ * $Id: txn.h,v 12.11 2006/07/05 05:37:10 mjc Exp $
  */
 
-#ifndef	_TXN_H_
-#define	_TXN_H_
+#ifndef	_DB_TXN_H_
+#define	_DB_TXN_H_
 
 #include "dbinc/xa.h"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /* Operation parameters to the delayed commit processing code. */
 typedef enum {
@@ -227,7 +231,11 @@ struct __txn_logrec {
 #define	TXN_EXPECTED	5
 #define	TXN_UNEXPECTED	6
 
+#if defined(__cplusplus)
+}
+#endif
+
 #include "dbinc_auto/txn_auto.h"
 #include "dbinc_auto/txn_ext.h"
 #include "dbinc_auto/xa_ext.h"
-#endif /* !_TXN_H_ */
+#endif /* !_DB_TXN_H_ */

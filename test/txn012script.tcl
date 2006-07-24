@@ -3,10 +3,10 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: txn012script.tcl,v 12.2 2006/01/02 22:03:30 bostic Exp $
+# $Id: txn012script.tcl,v 12.3 2006/06/27 22:31:09 bostic Exp $
 #
 # Script to check that txn names can be seen across processes.
-# Names over 50 characters will be truncated. 
+# Names over 50 characters will be truncated.
 #
 # Usage: txn012script dir txnname longtxnname
 

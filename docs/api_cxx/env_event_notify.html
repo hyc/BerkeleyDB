@@ -1,4 +1,4 @@
-<!--$Id: env_event_notify.so,v 10.7 2006/06/09 00:59:54 alanb Exp $-->
+<!--$Id: env_event_notify.so,v 10.9 2006/06/27 22:49:29 bostic Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -64,6 +64,8 @@ the application's responsibility to begin acting as the master environment.
 new master; the local site is not the new master.  The
 <b>event_info</b> parameter points to an integer containing the
 environment ID of the new master.
+<p>The DB_EVENT_REP_NEWMASTER event is provided only to applications using
+the replication manager support.</p>
 <dt><a name="DB_EVENT_REP_STARTUPDONE">DB_EVENT_REP_STARTUPDONE</a><dd>The client has completed startup synchronization and is now processing
 live log records received from the master.
 <dt><a name="DB_EVENT_WRITE_FAILED">DB_EVENT_WRITE_FAILED</a><dd>A Berkeley DB write to stable storage failed.

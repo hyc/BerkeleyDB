@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_rep.c,v 12.21 2006/06/14 21:46:33 alanb Exp $
+ * $Id: tcl_rep.c,v 12.23 2006/07/20 18:53:01 bostic Exp $
  */
 
 #include "db_config.h"
@@ -776,14 +776,14 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 	};
 	Tcl_Obj **myobjv;
 	long to;
-	int ack, i, myobjc, optindex, result, ret, start, totype;
-	u_int32_t msgth, remote_flag, uintarg;
+	int ack, i, myobjc, optindex, result, ret, totype;
+	u_int32_t msgth, remote_flag, start_flag, uintarg;
 	char *arg;
 
 	result = TCL_OK;
-	ack = ret = start = totype = 0;
+	ack = ret = totype = 0;
 	msgth = 1;
-	remote_flag = 0;
+	remote_flag = start_flag = 0;
 
 	if (objc <= 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?args?");
@@ -862,8 +862,8 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 			break;
 		case RMGR_MSGTH:
 			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-msgth nth?");
+				Tcl_WrongNumArgs(
+				    interp, 2, objv, "?-msgth nth?");
 				result = TCL_ERROR;
 				break;
 			}
@@ -892,7 +892,8 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 			result = _GetUInt32(interp, objv[i++], &uintarg);
 			if (result == TCL_OK) {
 				_debug_check();
-				ret = dbenv->rep_set_priority(dbenv, uintarg);
+				ret = dbenv->
+				    rep_set_priority(dbenv, (int)uintarg);
 			}
 			break;
 		case RMGR_REMOTE:
@@ -904,7 +905,7 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				break;
 			if (myobjc != 2 && myobjc != 3) {
 				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-local {host port [peer]}?");
+				    "?-remote {host port [peer]}?");
 				result = TCL_ERROR;
 				break;
 			}
@@ -934,23 +935,23 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 			break;
 		case RMGR_START:
 			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-start state?");
+				Tcl_WrongNumArgs(
+				    interp, 2, objv, "?-start state?");
 				result = TCL_ERROR;
 				break;
 			}
 			arg = Tcl_GetStringFromObj(objv[i++], NULL);
 			if (strcmp(arg, "master") == 0)
-				start = DB_REP_MASTER;
+				start_flag = DB_REP_MASTER;
 			else if (strcmp(arg, "client") == 0)
-				start = DB_REP_CLIENT;
+				start_flag = DB_REP_CLIENT;
 			else if (strcmp(arg, "elect") == 0)
-				start = DB_REP_ELECTION;
+				start_flag = DB_REP_ELECTION;
 			else if (strcmp(arg, "full_elect") == 0)
-				start = DB_REP_FULL_ELECTION;
+				start_flag = DB_REP_FULL_ELECTION;
 			else {
-				Tcl_AddErrorInfo(interp,
-				    "start: illegal state");
+				Tcl_AddErrorInfo(
+				    interp, "start: illegal state");
 				result = TCL_ERROR;
 				break;
 			}
@@ -1009,11 +1010,11 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 	 * Only call repmgr_start if needed.  The user may use this
 	 * call just to reconfigure, change policy, etc.
 	 */
-	if (start != 0 && result == TCL_OK) {
+	if (start_flag != 0 && result == TCL_OK) {
 		_debug_check();
-		ret = dbenv->repmgr_start(dbenv, msgth, start);
-		result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-		    "repmgr_start");
+		ret = dbenv->repmgr_start(dbenv, (int)msgth, start_flag);
+		result = _ReturnSetup(
+		    interp, ret, DB_RETOK_STD(ret), "repmgr_start");
 	}
 error:
 	return (result);

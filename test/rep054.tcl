@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep054.tcl,v 1.6 2006/03/10 21:44:32 carol Exp $
+# $Id: rep054.tcl,v 1.8 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep054
 # TEST	Test of internal initialization where a far-behind
@@ -12,19 +12,19 @@
 # TEST	One master, two clients.
 # TEST	Run rep_test and process.
 # TEST	Close client 1.
-# TEST	Run rep_test, opening new databases, and processing 
+# TEST	Run rep_test, opening new databases, and processing
 # TEST	messages.  Archive as we go so that log files get removed.
 # TEST	Close master and reopen client 1 as master.  Process messages.
 # TEST	Verify that new master and client are in sync.
-# TEST	Run rep_test again, adding data to one of the new 
+# TEST	Run rep_test again, adding data to one of the new
 # TEST	named databases.
 
 proc rep054 { method { nentries 200 } { tnum "054" } args } {
 	source ./include.tcl
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	# This test needs to set its own pagesize.
@@ -93,7 +93,7 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 	set c_logtype [lindex $logset 1]
 	set c2_logtype [lindex $logset 2]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set c2_logargs [adjust_logargs $c2_logtype]
@@ -154,7 +154,7 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 	process_msgs $envlist
 	rep_verify $masterdir $masterenv $clientdir2 $clientenv2
 
-	# Identify last log on client, then close.  Loop until the first 
+	# Identify last log on client, then close.  Loop until the first
 	# master log file is greater than the last client log file.
 	set last_client_log [get_logfile $clientenv last]
 
@@ -175,10 +175,10 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 		if { $m_logtype != "in-memory" } {
 			set res [eval exec $util_path/db_archive -d -h $masterdir]
 		}
-		# Make sure we have a gap between the last client log and 
-		# the first master log.  
+		# Make sure we have a gap between the last client log and
+		# the first master log.
 		set first_master_log [get_logfile $masterenv first]
-		if { $first_master_log > $last_client_log } { 
+		if { $first_master_log > $last_client_log } {
 			set stop 1
 		}
 	}
@@ -232,7 +232,7 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 	error_check_good newdb_close [$newdb close] 0
 	error_check_good close_master [$masterenv close] 0
 
-	# The new database is still there. 
+	# The new database is still there.
 	error_check_good newfile_exists [file exists $masterdir/$newfile] 1
 
 	puts "\tRep$tnum.h: Reopen client1 as master."

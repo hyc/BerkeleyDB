@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: log_get.c,v 12.30 2006/06/14 21:46:35 alanb Exp $
+ * $Id: log_get.c,v 12.31 2006/07/03 14:18:43 sue Exp $
  */
 
 #include "db_config.h"
@@ -32,7 +32,6 @@ static int __log_c_ondisk __P((DB_LOGC *,
 static int __log_c_set_maxrec __P((DB_LOGC *, char *));
 static int __log_c_shortread __P((DB_LOGC *, DB_LSN *, int));
 static int __log_c_version_pp __P((DB_LOGC *, u_int32_t *, u_int32_t));
-static int __log_c_version __P((DB_LOGC *, u_int32_t *));
 
 /*
  * __log_cursor_pp --
@@ -184,8 +183,10 @@ __log_c_version_pp(logc, versionp, flags)
 /*
  * __log_c_version --
  *	DB_LOGC->version.
+ *
+ * PUBLIC: int __log_c_version __P((DB_LOGC *, u_int32_t *));
  */
-static int
+int
 __log_c_version(logc, versionp)
 	DB_LOGC *logc;
 	u_int32_t *versionp;

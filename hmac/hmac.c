@@ -7,7 +7,7 @@
  * Some parts of this code originally written by Adam Stubblefield,
  * -- astubble@rice.edu.
  *
- * $Id: hmac.c,v 12.6 2006/05/12 14:49:47 sue Exp $
+ * $Id: hmac.c,v 12.7 2006/06/27 22:22:06 bostic Exp $
  */
 
 #include "db_config.h"
@@ -206,7 +206,7 @@ retry:
 		memcpy(old, chksum, sum_len);
 		memset(chksum, 0, sum_len);
 		chksum = old;
-	} 
+	}
 
 	if (mac_key == NULL) {
 		/* Just a hash, no MAC */
@@ -216,7 +216,7 @@ retry:
 		ret = memcmp((u_int32_t *)chksum, &hash4, sum_len) ? -1 : 0;
 	} else {
 		__db_hmac(mac_key, data, data_len, new);
-		if (hdr != NULL) 
+		if (hdr != NULL)
 			LOG_HDR_SUM(1, hdr, new);
 		ret = memcmp(chksum, new, sum_len) ? -1 : 0;
 	}

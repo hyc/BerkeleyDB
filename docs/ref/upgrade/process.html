@@ -1,4 +1,4 @@
-<!--$Id: process.so,v 1.13 2006/04/06 17:16:33 sarette Exp $-->
+<!--$Id: process.so,v 1.14 2006/06/27 22:49:29 bostic Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -92,10 +92,10 @@ files need upgrading but the databases do not, the application may be
 installed in the field using the following steps:</p>
 <ol>
 <p><li>Shut down the old version of the application.
-<li>Still using the old version of Berkeley DB, run recovery on the database 
-environment using the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method or the <a href="../../utility/db_recover.html">db_recover</a> 
+<li>Still using the old version of Berkeley DB, run recovery on the database
+environment using the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method or the <a href="../../utility/db_recover.html">db_recover</a>
 utility.
-<li>If you used the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method to run recovery, make sure that the 
+<li>If you used the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method to run recovery, make sure that the
 Berkeley DB environment is removed using the <a href="../../api_c/env_remove.html">DB_ENV-&gt;remove</a> method or an
 appropriate system utility. 
 <li>Archive the database environment for catastrophic recovery.  See
@@ -113,10 +113,10 @@ the databases need upgrading, the application may be installed in the
 field using the following steps:</p>
 <ol>
 <p><li>Shut down the old version of the application.
-<li>Still using the old version of Berkeley DB, run recovery on the database 
-environment using the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method or the <a href="../../utility/db_recover.html">db_recover</a> 
+<li>Still using the old version of Berkeley DB, run recovery on the database
+environment using the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method or the <a href="../../utility/db_recover.html">db_recover</a>
 utility.
-<li>If you used the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method to run recovery, make sure that the 
+<li>If you used the <a href="../../api_c/env_open.html">DB_ENV-&gt;open</a> method to run recovery, make sure that the
 Berkeley DB environment is removed using the <a href="../../api_c/env_remove.html">DB_ENV-&gt;remove</a> method or an
 appropriate system utility. 
 <li>Archive the database environment for catastrophic recovery.  See

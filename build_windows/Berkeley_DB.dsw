@@ -108,7 +108,10 @@ Package=<4>
     Project_Dep_Name excxx_example_database_read
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name ex_repquote
+    Project_Dep_Name ex_rep_base
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name ex_rep_mgr
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name ex_txnguide
@@ -501,7 +504,22 @@ Package=<4>
 
 ###############################################################################
 
-Project: "ex_repquote"=.\ex_repquote.dsp - Package Owner=<4>
+Project: "ex_rep_base"=.\ex_rep_base.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name db_dll
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "ex_rep_mgr"=.\ex_rep_mgr.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

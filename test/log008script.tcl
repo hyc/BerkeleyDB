@@ -3,7 +3,7 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: log008script.tcl,v 12.2 2006/01/02 22:03:16 bostic Exp $
+# $Id: log008script.tcl,v 12.3 2006/06/27 22:31:08 bostic Exp $
 #
 # Log008 script - dbreg_ckp and txn_ckp records spanning log files.
 #
@@ -13,16 +13,16 @@ source ./include.tcl
 set tnum "008"
 set usage "log008script nhandles"
 
-# Verify usage 
-if { $argc != 1 } { 
+# Verify usage
+if { $argc != 1 } {
 	puts stderr "FAIL:[timestamp] Usage: $usage"
 	exit
 }
 
 # Initialize arguments
-set nhandles [ lindex $argv 0 ] 
+set nhandles [ lindex $argv 0 ]
 
-# We make the log files small so it's likely that the 
+# We make the log files small so it's likely that the
 # records will end up in different files.
 set maxbsize [expr 8 * 1024]
 set maxfile [expr 32 * 1024]
@@ -33,7 +33,7 @@ set envcmd "berkdb_env -create -txn -home $testdir \
 set dbenv [eval $envcmd]
 error_check_good dbenv [is_valid_env $dbenv] TRUE
 
-# Open a lot of database handles. 
+# Open a lot of database handles.
 set filename TESTFILE
 set handlelist {}
 for { set i 0 } { $i < $nhandles } { incr i } {
@@ -43,7 +43,7 @@ for { set i 0 } { $i < $nhandles } { incr i } {
 }
 
 # Fill log files, checking LSNs before and after a checkpoint,
-# until we generate a case where the records span two log files. 
+# until we generate a case where the records span two log files.
 set i 0
 while { 1 } {
 	set txn [$dbenv txn]
@@ -67,7 +67,7 @@ while { 1 } {
 	}
 }
 
-# Do one more transactional operation per fileid. 
+# Do one more transactional operation per fileid.
 set txn [$dbenv txn]
 foreach handle $handlelist {
 	error_check_good \
@@ -76,8 +76,8 @@ foreach handle $handlelist {
 }
 error_check_good txn_commit [$txn commit] 0
 
-# Archive, deleting the log files we think we no longer need.  
-set stat [eval exec $util_path/db_archive -d -h $testdir] 
+# Archive, deleting the log files we think we no longer need.
+set stat [eval exec $util_path/db_archive -d -h $testdir]
 
-# Child is done.  Exit, abandoning the env instead of closing it. 
+# Child is done.  Exit, abandoning the env instead of closing it.
 exit

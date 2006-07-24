@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_stat.c,v 12.23 2006/06/19 14:55:38 mjc Exp $
+ * $Id: mp_stat.c,v 12.24 2006/06/29 00:02:39 mjc Exp $
  */
 
 #include "db_config.h"
@@ -199,7 +199,8 @@ __memp_stat(dbenv, gspp, fspp, flags)
 		*fspp = NULL;
 
 		/* Count the MPOOLFILE structures. */
-		i = len = 0;
+		i = 0;
+		len = 0;
 		if ((ret = __memp_walk_files(dbenv,
 		     mp, __memp_count_files, &len, &i, flags)) != 0)
 			return (ret);
@@ -465,6 +466,12 @@ __memp_print_stats(dbenv, flags)
 	    "The number of region locks that required waiting",
 	    (u_long)gsp->st_region_wait, DB_PCT(gsp->st_region_wait,
 	    gsp->st_region_wait + gsp->st_region_nowait), NULL);
+	__db_dl(dbenv, "The number of buffers frozen",
+	    (u_long)gsp->st_mvcc_frozen);
+	__db_dl(dbenv, "The number of buffers thawed",
+	    (u_long)gsp->st_mvcc_thawed);
+	__db_dl(dbenv, "The number of frozen buffers freed",
+	    (u_long)gsp->st_mvcc_freed);
 	__db_dl(dbenv, "The number of page allocations", (u_long)gsp->st_alloc);
 	__db_dl(dbenv,
 	    "The number of hash buckets examined during allocations",
@@ -692,6 +699,11 @@ __memp_print_hash(dbenv, dbmp, reginfo, fmap, flags)
 			__db_msgadd(dbenv, &mb, "bucket %lu: %lu, %lu ",
 			    (u_long)bucket, (u_long)hp->hash_io_wait,
 			    (u_long)hp->hash_priority);
+			if (hp->hash_frozen != 0)
+				__db_msgadd(dbenv, &mb, "(MVCC %lu/%lu/%lu) ",
+				    (u_long)hp->hash_frozen,
+				    (u_long)hp->hash_thawed,
+				    (u_long)hp->hash_frozen_freed);
 			__mutex_print_debug_stats(
 			    dbenv, &mb, hp->mtx_hash, flags);
 			DB_MSGBUF_FLUSH(dbenv, &mb);
@@ -730,6 +742,7 @@ __memp_print_bh(dbenv, dbmp, prefix, bhp, fmap)
 		{ BH_DIRTY,		"dirty" },
 		{ BH_DIRTY_CREATE,	"created" },
 		{ BH_DISCARD,		"discard" },
+		{ BH_FREED,		"freed" },
 		{ BH_FROZEN,		"frozen" },
 		{ BH_LOCKED,		"locked" },
 		{ BH_TRASH,		"trash" },
@@ -756,7 +769,8 @@ __memp_print_bh(dbenv, dbmp, prefix, bhp, fmap)
 		__db_msgadd(
 		    dbenv, &mb, "%5lu, #%d, ", (u_long)bhp->pgno, i + 1);
 
-	__db_msgadd(dbenv, &mb, "%2lu, %lu/%lu", (u_long)bhp->ref,
+	__db_msgadd(dbenv, &mb, "%2lu%s, %lu/%lu", (u_long)bhp->ref,
+	    bhp->ref_sync == 0 ? "" : " (sync-lock)",
 	    F_ISSET(bhp, BH_FROZEN) ? 0 : (u_long)LSN(bhp->buf).file,
 	    F_ISSET(bhp, BH_FROZEN) ? 0 : (u_long)LSN(bhp->buf).offset);
 	if (bhp->td_off != INVALID_ROFF)
@@ -797,8 +811,15 @@ __memp_stat_wait(dbenv, reginfo, mp, mstat, flags)
 			__mutex_clear(dbenv, hp->mtx_hash);
 
 		mstat->st_io_wait += hp->hash_io_wait;
-		if (LF_ISSET(DB_STAT_CLEAR))
+		mstat->st_mvcc_frozen += hp->hash_frozen;
+		mstat->st_mvcc_thawed += hp->hash_thawed;
+		mstat->st_mvcc_freed += hp->hash_frozen_freed;
+		if (LF_ISSET(DB_STAT_CLEAR)) {
 			hp->hash_io_wait = 0;
+			hp->hash_frozen = 0;
+			hp->hash_thawed = 0;
+			hp->hash_frozen_freed = 0;
+		}
 	}
 }
 

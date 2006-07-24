@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_reclaim.c,v 12.6 2006/05/05 14:53:13 bostic Exp $
+ * $Id: db_reclaim.c,v 12.7 2006/06/29 00:02:30 mjc Exp $
  */
 
 #include "db_config.h"
@@ -198,8 +198,8 @@ __db_truncate_callback(dbp, p, cookie, putp)
 		if (PREV_PGNO(p) == PGNO_INVALID) {
 			type = P_HASH;
 
-reinit:			if ((ret = __memp_dirty(mpf, &p,
-		    param->dbc->txn, 0)) != 0)
+reinit:			if ((ret =
+			    __memp_dirty(mpf, &p, param->dbc->txn, 0)) != 0)
 				return (ret);
 			*putp = 0;
 			if (DBC_LOGGING(param->dbc)) {

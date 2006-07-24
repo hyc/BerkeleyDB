@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn.c,v 12.49 2006/06/13 06:21:59 mjc Exp $
+ * $Id: txn.c,v 12.52 2006/07/07 13:54:01 bostic Exp $
  */
 
 #include "db_config.h"
@@ -534,9 +534,6 @@ __txn_commit(txn, flags)
 	DB_ENV *dbenv;
 	DB_LOCKREQ request;
 	DB_TXN *kid;
-#ifdef DIAGNOSTIC
-	DB_LSN s_lsn;
-#endif
 	REGENV *renv;
 	REGINFO *infop;
 	TXN_DETAIL *td;
@@ -648,10 +645,13 @@ __txn_commit(txn, flags)
 					td->last_lsn = td->visible_lsn;
 #ifdef DIAGNOSTIC
 				if (ret == 0) {
-					DB_ASSERT(dbenv, __log_stable_lsn(
-					    dbenv, &s_lsn) == 0);
+					DB_LSN s_lsn;
+
+					DB_ASSERT(dbenv, __log_current_lsn(
+					    dbenv, &s_lsn, NULL, NULL) == 0);
 					DB_ASSERT(dbenv, log_compare(
 					    &td->visible_lsn, &s_lsn) <= 0);
+					COMPQUIET(s_lsn.file, 0);
 				}
 #endif
 			}
@@ -1306,7 +1306,8 @@ __txn_end(txn, is_commit)
 	if (txn->parent != NULL) {
 		ptd = txn->parent->td;
 		SH_TAILQ_REMOVE(&ptd->kids, td, klinks, __txn_detail);
-	} else if ((mvcc_mtx = td->mvcc_mtx) != MUTEX_INVALID) {
+	} else if ((mvcc_mtx = td->mvcc_mtx) != MUTEX_INVALID ||
+	    td->mvcc_ref != 0) {
 		if (IS_MAX_LSN(td->visible_lsn))
 			td->visible_lsn = td->last_lsn;
 		MUTEX_LOCK(dbenv, mvcc_mtx);

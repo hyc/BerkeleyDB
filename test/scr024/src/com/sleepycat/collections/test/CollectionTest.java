@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: CollectionTest.java,v 12.4 2006/06/09 14:32:41 mark Exp $
+ * $Id: CollectionTest.java,v 12.5 2006/06/27 22:48:28 bostic Exp $
  */
 
 package com.sleepycat.collections.test;
@@ -253,7 +253,7 @@ public class CollectionTest extends TestCase {
                     (testStoredIterator ? "-storedIter" : "") +
                     ((maxKey != DEFAULT_MAX_KEY) ? ("-maxKey-" + maxKey) : "");
     }
-    
+
     public void tearDown()
         throws Exception {
 
@@ -415,7 +415,7 @@ public class CollectionTest extends TestCase {
         // create primary list
         if (testStore.hasRecNumAccess()) {
             if (isEntityBinding) {
-                ilist = new StoredList(store, entityBinding, 
+                ilist = new StoredList(store, entityBinding,
                                        testStore.getKeyAssigner());
             } else {
                 ilist = new StoredList(store, valueBinding,

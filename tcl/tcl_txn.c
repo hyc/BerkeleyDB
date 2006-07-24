@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_txn.c,v 12.12 2006/05/05 14:54:02 bostic Exp $
+ * $Id: tcl_txn.c,v 12.13 2006/07/17 13:08:44 mjc Exp $
  */
 
 #include "db_config.h"
@@ -301,6 +301,63 @@ get_timeout:		if (i >= objc) {
 			}
 		}
 #endif
+	}
+	return (result);
+}
+
+/*
+ * tcl_CDSGroup --
+ *
+ * PUBLIC: int tcl_CDSGroup __P((Tcl_Interp *, int,
+ * PUBLIC:    Tcl_Obj * CONST*, DB_ENV *, DBTCL_INFO *));
+ */
+int
+tcl_CDSGroup(interp, objc, objv, envp, envip)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *envp;			/* Environment pointer */
+	DBTCL_INFO *envip;		/* Info pointer */
+{
+	DBTCL_INFO *ip;
+	DB_TXN *txn;
+	Tcl_Obj *res;
+	int result, ret;
+	char newname[MSG_SIZE];
+
+	if (objc != 0) {
+		Tcl_WrongNumArgs(interp, 1, objv, "env cdsgroup");
+		return (TCL_ERROR);
+	}
+
+	result = TCL_OK;
+	memset(newname, 0, MSG_SIZE);
+
+	snprintf(newname, sizeof(newname), "%s.txn%d",
+	    envip->i_name, envip->i_envtxnid);
+	ip = _NewInfo(interp, NULL, newname, I_TXN);
+	if (ip == NULL) {
+		Tcl_SetResult(interp, "Could not set up info",
+		    TCL_STATIC);
+		return (TCL_ERROR);
+	}
+	_debug_check();
+	ret = envp->cdsgroup_begin(envp, &txn);
+	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "cdsgroup");
+	if (result == TCL_ERROR)
+		_DeleteInfo(ip);
+	else {
+		/*
+		 * Success.  Set up return.  Set up new info
+		 * and command widget for this txn.
+		 */
+		envip->i_envtxnid++;
+		ip->i_parent = envip;
+		_SetInfoData(ip, txn);
+		(void)Tcl_CreateObjCommand(interp, newname,
+		    (Tcl_ObjCmdProc *)txn_Cmd, (ClientData)txn, NULL);
+		res = NewStringObj(newname, strlen(newname));
+		Tcl_SetObjResult(interp, res);
 	}
 	return (result);
 }

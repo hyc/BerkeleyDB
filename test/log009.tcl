@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: log009.tcl,v 12.4 2006/06/14 18:42:18 carol Exp $
+# $Id: log009.tcl,v 12.5 2006/06/27 22:31:08 bostic Exp $
 #
 # TEST	log009
 # TEST	Test of logging and getting log file version information.
@@ -52,7 +52,7 @@ proc log009 { } {
 		}
 	}
 
-	# We now have at least 3 log files.  Walk a cursor both ways 
+	# We now have at least 3 log files.  Walk a cursor both ways
 	# through the log and make sure we can get the version when we
 	# cross a log file boundary.
 	set curfile 0
@@ -94,7 +94,7 @@ proc log009 { } {
 		set lsn [lindex $logrec 0]
 		set lsnfile [lindex $lsn 0]
 		if { $curfile != $lsnfile } {
-			log009_check $logc $logrec 
+			log009_check $logc $logrec
 			set curfile $lsnfile
 		}
 	}

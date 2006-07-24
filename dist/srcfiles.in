@@ -1,4 +1,4 @@
-#	$Id: srcfiles.in,v 12.45 2006/06/19 14:48:44 mjc Exp $
+#	$Id: srcfiles.in,v 12.49 2006/07/23 13:49:02 bostic Exp $
 #
 # This is an input file for the s_windows_dsp and s_vxworks scripts.  It lists
 # the source files in the Berkeley DB tree and notes which are used to build
@@ -117,6 +117,7 @@ db/db_am.c					dynamic small static vx vxsmall
 db/db_auto.c					dynamic small static vx vxsmall
 db/db_autop.c					app=db_printlog
 db/db_cam.c					dynamic small static vx vxsmall
+db/db_cds.c					dynamic small static vx vxsmall
 db/db_conv.c					dynamic small static vx vxsmall
 db/db_dispatch.c				dynamic small static vx vxsmall
 db/db_dup.c					dynamic small static vx vxsmall
@@ -196,7 +197,11 @@ examples_c/ex_dbclient.c
 examples_c/ex_env.c				app=ex_env
 examples_c/ex_lock.c				app=ex_lock
 examples_c/ex_mpool.c				app=ex_mpool
-examples_c/ex_repquote/ex_rq_main.c		app=ex_repquote
+examples_c/ex_rep/base/rep_base.c		app=ex_rep_base
+examples_c/ex_rep/base/rep_msg.c		app=ex_rep_base
+examples_c/ex_rep/base/rep_net.c		app=ex_rep_base
+examples_c/ex_rep/common/rep_common.c		app=ex_rep_base app=ex_rep_mgr
+examples_c/ex_rep/mgr/rep_mgr.c			app=ex_rep_mgr
 examples_c/ex_sequence.c			app=ex_sequence
 examples_c/ex_thread.c
 examples_c/ex_tpcb.c				app=ex_tpcb
@@ -307,7 +312,7 @@ os/os_pid.c					dynamic small static vx vxsmall
 os/os_region.c					dynamic small static vx vxsmall
 os/os_rename.c					vx vxsmall
 os/os_root.c					dynamic small static vx vxsmall
-os/os_rpath.c					dynamic small static vx vxsmall
+os/os_rpath.c					dynamic small static
 os/os_rw.c					vx vxsmall
 os/os_seek.c					vx vxsmall
 os/os_sleep.c					vx vxsmall
@@ -318,6 +323,7 @@ os/os_truncate.c				vx vxsmall
 os/os_uid.c					dynamic small static vx vxsmall
 os/os_unlink.c					vx vxsmall
 os/os_yield.c					vx vxsmall
+os_vxworks/os_vx_rpath.c			vx vxsmall
 os_vxworks/os_vx_abs.c				vx vxsmall
 os_vxworks/os_vx_config.c			vx vxsmall
 os_vxworks/os_vx_map.c				vx vxsmall

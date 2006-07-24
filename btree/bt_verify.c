@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: bt_verify.c,v 12.23 2006/05/05 14:53:02 bostic Exp $
+ * $Id: bt_verify.c,v 12.25 2006/07/05 05:44:22 mjc Exp $
  */
 
 #include "db_config.h"
@@ -1278,7 +1278,7 @@ __bam_vrfy_subtree(dbp, vdp, pgno, l, r, flags, levelp, nrecsp, relenp)
 	void *l, *r;
 	u_int32_t flags, *levelp, *nrecsp, *relenp;
 {
-	BINTERNAL *li, *ri, *lp, *rp;
+	BINTERNAL *li, *ri;
 	DB *pgset;
 	DBC *cc;
 	DB_ENV *dbenv;
@@ -1299,8 +1299,6 @@ __bam_vrfy_subtree(dbp, vdp, pgno, l, r, flags, levelp, nrecsp, relenp)
 	if (nrecsp != NULL)
 		*nrecsp = 0;
 
-	rp = (BINTERNAL *)r;
-	lp = (BINTERNAL *)l;
 	dbenv = dbp->dbenv;
 	mpf = dbp->mpf;
 	h = NULL;
@@ -1705,7 +1703,7 @@ bad_prev:				isbad = 1;
 	for (i = 0; i < pip->entries; i += O_INDX) {
 		li = GET_BINTERNAL(dbp, h, i);
 		ri = (i + O_INDX < pip->entries) ?
-		    GET_BINTERNAL(dbp, h, i + O_INDX) : rp;
+		    GET_BINTERNAL(dbp, h, i + O_INDX) : r;
 
 		/*
 		 * The leftmost key is forcibly sorted less than all entries,
@@ -1811,7 +1809,8 @@ done:	if (F_ISSET(pip, VRFY_INCOMPLETE) && isbad == 0 && ret == 0) {
 	 * so that we can verify our place with respect to them.  If it's
 	 * appropriate--we have a default sort function--verify this.
 	 */
-	if (isbad == 0 && ret == 0 && !LF_ISSET(DB_NOORDERCHK) && lp != NULL) {
+	if (isbad == 0 && ret == 0 && !LF_ISSET(DB_NOORDERCHK) &&
+	    pip->type != P_IRECNO && pip->type != P_LRECNO) {
 		if (h == NULL &&
 		    (ret = __memp_fget(mpf, &pgno, NULL, 0, &h)) != 0)
 			goto err;
@@ -1828,7 +1827,7 @@ done:	if (F_ISSET(pip, VRFY_INCOMPLETE) && isbad == 0 && ret == 0) {
 			func = __bam_defcmp;
 
 		if ((ret = __bam_vrfy_treeorder(
-		    dbp, pgno, h, lp, rp, func, flags)) != 0) {
+		    dbp, pgno, h, l, r, func, flags)) != 0) {
 			if (ret == DB_VERIFY_BAD)
 				isbad = 1;
 			else

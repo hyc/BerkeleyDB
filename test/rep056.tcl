@@ -3,7 +3,7 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep056.tcl,v 1.3 2006/03/10 21:44:32 carol Exp $
+# $Id: rep056.tcl,v 1.5 2006/07/19 17:45:35 carol Exp $
 #
 # TEST  rep056
 # TEST	Replication test with in-memory named databases.
@@ -15,9 +15,9 @@ proc rep056 { method args } {
 	source ./include.tcl
 
 	# Valid for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	eval { rep001 $method 1000 "056" } $args
-} 
+}

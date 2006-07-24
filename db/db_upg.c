@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_upg.c,v 12.6 2006/05/05 14:53:14 bostic Exp $
+ * $Id: db_upg.c,v 12.7 2006/07/17 15:16:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -121,8 +121,7 @@ __db_upgrade(dbp, fname, flags)
 			if ((ret =
 			    __bam_30_btreemeta(dbp, real_name, mbuf)) != 0)
 				goto err;
-			if ((ret = __os_seek(dbenv,
-			    fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+			if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 				goto err;
 			if ((ret = __os_write(dbenv, fhp, mbuf, 256, &n)) != 0)
 				goto err;
@@ -163,8 +162,7 @@ __db_upgrade(dbp, fname, flags)
 			if ((ret =
 			    __ham_30_hashmeta(dbp, real_name, mbuf)) != 0)
 				goto err;
-			if ((ret = __os_seek(dbenv,
-			    fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+			if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 				goto err;
 			if ((ret = __os_write(dbenv, fhp, mbuf, 256, &n)) != 0)
 				goto err;
@@ -227,8 +225,7 @@ __db_upgrade(dbp, fname, flags)
 		case 2:
 			if ((ret = __qam_32_qammeta(dbp, real_name, mbuf)) != 0)
 				return (ret);
-			if ((ret = __os_seek(dbenv,
-			    fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+			if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 				goto err;
 			if ((ret = __os_write(dbenv, fhp, mbuf, 256, &n)) != 0)
 				goto err;
@@ -310,8 +307,7 @@ __db_page_pass(dbp, real_name, flags, fl, fhp)
 		if (dbp->db_feedback != NULL)
 			dbp->db_feedback(
 			    dbp, DB_UPGRADE, (int)((i * 100)/pgno_last));
-		if ((ret = __os_seek(dbenv,
-		    fhp, i, dbp->pgsize, 0, 0, DB_OS_SEEK_SET)) != 0)
+		if ((ret = __os_seek(dbenv, fhp, i, dbp->pgsize, 0)) != 0)
 			break;
 		if ((ret = __os_read(dbenv, fhp, page, dbp->pgsize, &n)) != 0)
 			break;
@@ -320,8 +316,8 @@ __db_page_pass(dbp, real_name, flags, fl, fhp)
 		    (dbp, real_name, flags, fhp, page, &dirty)) != 0)
 			break;
 		if (dirty) {
-			if ((ret = __os_seek(dbenv,
-			    fhp, i, dbp->pgsize, 0, 0, DB_OS_SEEK_SET)) != 0)
+			if ((ret =
+			    __os_seek(dbenv, fhp, i, dbp->pgsize, 0)) != 0)
 				break;
 			if ((ret = __os_write(dbenv,
 			    fhp, page, dbp->pgsize, &n)) != 0)
@@ -390,14 +386,14 @@ __db_set_lastpgno(dbp, real_name, fhp)
 	size_t n;
 
 	dbenv = dbp->dbenv;
-	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 		return (ret);
 	if ((ret = __os_read(dbenv, fhp, &meta, sizeof(meta), &n)) != 0)
 		return (ret);
 	dbp->pgsize = meta.pagesize;
 	if ((ret = __db_lastpgno(dbp, real_name, fhp, &meta.last_pgno)) != 0)
 		return (ret);
-	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 		return (ret);
 	if ((ret = __os_write(dbenv, fhp, &meta, sizeof(meta), &n)) != 0)
 		return (ret);

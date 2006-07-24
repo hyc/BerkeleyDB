@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep055.tcl,v 1.5 2006/03/10 21:44:32 carol Exp $
+# $Id: rep055.tcl,v 1.7 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep055
 # TEST	Test of internal initialization and log archiving.
@@ -12,7 +12,7 @@
 # TEST	Generate several log files.
 # TEST	Remove old master log files and generate several more.
 # TEST  Get list of archivable files from db_archive and restart client.
-# TEST  As client is in the middle of internal init, remove 
+# TEST  As client is in the middle of internal init, remove
 # TEST	the log files returned earlier by db_archive.
 #
 proc rep055 { method { niter 200 } { tnum "055" } args } {
@@ -20,14 +20,14 @@ proc rep055 { method { niter 200 } { tnum "055" } args } {
 	source ./include.tcl
 	global mixed_mode_logging
 
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	# This test needs to set its own pagesize.
@@ -45,13 +45,13 @@ proc rep055 { method { niter 200 } { tnum "055" } args } {
 	}
 
 	# Run the body of the test with and without recovery,
-	# and with and without cleaning. 
+	# and with and without cleaning.
 	set opts { clean noclean }
 	foreach r $test_recopts {
 		foreach c $opts {
 			puts "Rep$tnum ($method $r $c $args):\
 			    Test of internal initialization."
-			rep055_sub $method $niter $tnum $r $c $args	
+			rep055_sub $method $niter $tnum $r $c $args
 
 		}
 	}

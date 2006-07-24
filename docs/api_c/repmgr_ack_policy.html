@@ -1,4 +1,4 @@
-<!--$Id: repmgr_ack_policy.so,v 1.3 2006/05/25 14:04:33 bostic Exp $-->
+<!--$Id: repmgr_ack_policy.so,v 1.4 2006/06/27 22:49:29 bostic Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -32,7 +32,7 @@ DB_ENV-&gt;repmgr_get_ack_policy(DB_ENV *env, int *ack_policyp);
 <h3>Description: DB_ENV-&gt;repmgr_set_ack_policy</h3>
 <p>The DB_ENV-&gt;repmgr_set_ack_policy method specifies how master and client sites
 will handle acknowledgment of replication messages which are necessary
-for "permanent" records.  Note that it is essential for all sites in a 
+for "permanent" records.  Note that it is essential for all sites in a
 replication group to configure the same acknowledgement policy.</p>
 <p>The DB_ENV-&gt;repmgr_set_ack_policy method configures a database environment, not only operations
 performed using the specified <a href="../api_c/env_class.html">DB_ENV</a> handle.</p>

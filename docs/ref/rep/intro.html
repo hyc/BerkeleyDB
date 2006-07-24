@@ -1,4 +1,4 @@
-<!--$Id: intro.so,v 1.8 2003/04/16 20:28:05 margo Exp $-->
+<!--$Id: intro.so,v 1.9 2006/07/14 23:04:42 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -40,14 +40,25 @@ such that replicas are guaranteed to be up-to-date with all committed
 transactions, but doing so may incur a significant performance penalty.
 Higher performance solutions sacrifice total consistency, allowing the
 clients to be out of date for an application-controlled amount of time.</p>
-<p>While Berkeley DB includes the database infrastructure necessary to construct
-highly available database environments, applications must still provide
-some critical components:</p>
+<p>There are two ways to build replicated applications.  The simpler way
+is to use the Berkeley DB Replication Manager.  Replication Manager
+provides a standard communications infrastructure, and it creates and
+manages the background threads needed for processing replication
+messages.  (Note that in Replication Manager applications, all updates
+to databases at the master environment must be done through a single
+DB_ENV environment handle, though they may occur in multiple threads.
+This of course means that only a single process may update data.)</p>
+<p>The Replication Manager implementation is based on TCP/IP sockets, and
+uses POSIX 1003.1 style networking and thread support.  (On Windows
+systems, it uses standard Windows thread support.)  As a result, it is
+not as portable as the rest of the Berkeley DB library itself.</p>
+<p>The alternative is to use the lower-level "Base" replication API.
+This approach affords more flexibility, but requires the application
+to provide some critical components:</p>
 <ol>
-<p><li>The application is responsible for providing the communication
-infrastructure.  Applications may use whatever wire protocol is
-appropriate for their application (for example, RPC, TCP/IP, UDP, VI or
-message-passing over the backplane).
+<p><li>A communication infrastructure.  Applications may use whatever wire
+protocol is appropriate for their application (for example, RPC,
+TCP/IP, UDP, VI or message-passing over the backplane).
 <p><li>The application is responsible for naming.  Berkeley DB refers to the members
 of a replication group using an application-provided ID, and
 applications must map that ID to a particular database environment or
@@ -59,20 +70,26 @@ For example, the application may choose to encrypt data, use a secure
 socket layer, or do nothing at all.  The level of security is left to
 the sole discretion of the application.
 </ol>
+<p>(Note that Replication Manager does not provide wire security for
+replication messages.)</p>
+<p>The following pages present various programming considerations, many
+of which are directly relevant only for applications which use the
+Base replication API.  However, even when using Replication Manager it
+is important to understand the concepts.</p>
 <p>Finally, the Berkeley DB replication implementation has one other additional
 feature to increase application reliability.  Replication in Berkeley DB is
 implemented to perform database updates using a different code path than
 the standard ones.  This means operations that manage to crash the
 replication master due to a software bug will not necessarily also crash
 replication clients.</p>
-<!--$Id: m4.methods,v 1.6 2006/03/15 19:39:21 bostic Exp $-->
+<!--$Id: m4.methods,v 1.7 2006/07/14 23:09:36 alanb Exp $-->
 <table border=1 align=center>
 <tr><th>Replication Manager Methods</th><th>Description</th></tr>
 <!--DbEnv::repmgr_add_remote_site--><tr><td><a href="../../api_c/repmgr_remote_site.html">DB_ENV-&gt;repmgr_add_remote_site</a></td><td>Specify the replication manager's remote sites</td></tr>
 <!--DbEnv::repmgr_set_ack_policy--><tr><td><a href="../../api_c/repmgr_ack_policy.html">DB_ENV-&gt;repmgr_set_ack_policy</a></td><td>Specify the replication manager's client acknowledgement policy</td></tr>
 <!--DbEnv::repmgr_set_local_site--><tr><td><a href="../../api_c/repmgr_local_site.html">DB_ENV-&gt;repmgr_set_local_site</a></td><td>Specify the replication manager's local site</td></tr>
 <!--DbEnv::repmgr_start--><tr><td><a href="../../api_c/repmgr_start.html">DB_ENV-&gt;repmgr_start</a></td><td>Start the replication manager</td></tr>
-<tr><th>Advanced Replication Methods</th><th><br></th></tr>
+<tr><th>Base Replication API</th><th><br></th></tr>
 <!--DbEnv::rep_elect--><tr><td><a href="../../api_c/rep_elect.html">DB_ENV-&gt;rep_elect</a></td><td>Hold a replication election</td></tr>
 <!--DbEnv::rep_process_message--><tr><td><a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a></td><td>Process a replication message</td></tr>
 <!--DbEnv::rep_start--><tr><td><a href="../../api_c/rep_start.html">DB_ENV-&gt;rep_start</a></td><td>Configure an environment for replication</td></tr>

@@ -4,8 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: globals.h,v 12.2 2006/01/02 22:01:50 bostic Exp $
+ * $Id: globals.h,v 12.3 2006/07/05 05:37:09 mjc Exp $
  */
+
+#ifndef _DB_GLOBALS_H_
+#define	_DB_GLOBALS_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*******************************************************
  * Global variables.
@@ -90,3 +97,8 @@ extern	DB_GLOBALS	__db_global_values;
 #endif
 
 #define	DB_GLOBAL(v)	__db_global_values.v
+
+#if defined(__cplusplus)
+}
+#endif
+#endif /* !_DB_GLOBALS_H_ */

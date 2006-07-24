@@ -1,4 +1,4 @@
-<!--$Id: read.so,v 1.11 2006/04/28 15:27:39 mjc Exp $-->
+<!--$Id: read.so,v 1.12 2006/07/18 01:02:10 bostic Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -21,7 +21,7 @@
 the life of the transaction, every time a thread of control reads a data
 item, it will be unchanged from its previous value (assuming, of course,
 the thread of control does not itself modify the item).  By default,
-Berkeley DB enforces serialiability whenever database reads are wrapped in
+Berkeley DB enforces serializability whenever database reads are wrapped in
 transactions.  This is also known as <i>degree 3 isolation</i>.</p>
 <p>Most applications do not need to enclose reads in transactions, and when
 possible, transactionally protected reads at serializable isolation

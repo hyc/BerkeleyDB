@@ -1,4 +1,4 @@
-<!--$Id: txn_stat.so,v 10.64 2005/09/23 16:26:41 bostic Exp $-->
+<!--$Id: txn_stat.so,v 10.65 2006/07/14 07:49:16 mjc Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -49,7 +49,12 @@ since the Epoch, returned by the IEEE/ANSI Std 1003.1 (POSIX) <b>time</b> functi
 <dt>u_int32_t st_last_txnid;<dd>The last transaction ID allocated.
 <dt>u_int32_t st_maxtxns;<dd>The maximum number of active transactions configured.
 <dt>u_int32_t st_nactive;<dd>The number of transactions that are currently active.
+<dt>u_int32_t st_nsnapshot;<dd>The number of transactions on the snapshot list.  These are transactions
+which modified a database opened with <a href="../api_c/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a>,
+and which have committed or aborted, but the copies of pages they
+created are still in the cache.
 <dt>u_int32_t st_maxnactive;<dd>The maximum number of active transactions at any one time.
+<dt>u_int32_t st_maxnsnapshot;<dd>The maximum number of transactions on the snapshot list at any one time.
 <dt>u_int32_t st_nbegins;<dd>The number of transactions that have begun.
 <dt>u_int32_t st_naborts;<dd>The number of transactions that have aborted.
 <dt>u_int32_t st_ncommits;<dd>The number of transactions that have committed.
@@ -65,8 +70,11 @@ the DB_TXN_ACTIVE structure will be filled in:
 <dl compact>
 <dt>u_int32_t txnid;<dd>The transaction ID of the transaction.
 <dt>u_int32_t parentid;<dd>The transaction ID of the parent transaction (or 0, if no parent).
-<dt>uintmax_t thread_id;<dd>The thread of control ID of the originator of the transaction.
+<dt>pid_t pid;<dd>The process ID of the originator of the transaction.
+<dt>uintmax_t tid;<dd>The thread of control ID of the originator of the transaction.
 <dt>DbLsn lsn;<dd>The current log sequence number when the transaction was begun.
+<dt>DbLsn read_lsn;<dd>The log sequence number of reads for snapshot transactions.
+<dt>u_int32_t mvcc_ref;<dd>The number of buffer copies created by this transaction that remain in cache.
 <dt>u_int32_t xa_status;<dd>If the transaction is an XA transaction, the status of the transaction,
 otherwise 0.
 <dt>u_int8_t xid[DB_XIDDATASIZE];<dd>If the transaction is an XA transaction, the transaction's XA ID.

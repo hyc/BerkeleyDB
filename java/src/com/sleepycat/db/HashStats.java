@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class HashStats extends DatabaseStats {
     // no public constructor
-    protected HashStats() {}
+    /* package */ HashStats() {}
 
     private int hash_magic;
     public int getMagic() {

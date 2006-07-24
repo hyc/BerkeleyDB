@@ -4,7 +4,7 @@
  * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_truncate.c,v 12.7 2006/06/08 13:34:03 bostic Exp $
+ * $Id: os_truncate.c,v 12.9 2006/07/05 07:45:25 mjc Exp $
  */
 
 #include "db_config.h"
@@ -71,11 +71,26 @@ __os_truncate(dbenv, fhp, pgno, pgsize)
 		goto err;
 	}
 
-	off.bigint = (__int64)pgsize * pgno;
-	RETRY_CHK((SetFilePointer(dup_handle,
-	    off.low, &off.high, FILE_BEGIN) == INVALID_SET_FILE_POINTER &&
-	    GetLastError() != NO_ERROR) ||
-	    !SetEndOfFile(dup_handle), ret);
+	/*
+	 * We want to retry the truncate call, which involves a SetFilePointer
+	 * and a SetEndOfFile, but there are several complications:
+	 *
+	 * 1) since the Windows API deals in 32-bit values, it's possible that
+	 *    the return from SetFilePointer (the low 32-bits) is
+	 *    INVALID_SET_FILE_POINTER even when the call has succeeded.  So we
+	 *    have to also check whether GetLastError() returns NO_ERROR.
+	 *
+	 * 2) when it returns, SetFilePointer overwrites the high bits of the
+	 *    offset, so if we need to retry, we have to reset the offset each
+	 *    time.
+	 *
+	 * We can't switch to SetFilePointerEx, which knows about 64-bit
+	 * offsets, because it isn't supported on Win9x/ME.
+	 */
+	RETRY_CHK((off.bigint = (__int64)pgsize * pgno,
+	    (SetFilePointer(dup_handle, off.low, &off.high, FILE_BEGIN) ==
+	    INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) ||
+	    !SetEndOfFile(dup_handle)), ret);
 
 	if (!CloseHandle(dup_handle) && ret == 0)
 		ret = __os_get_syserr();

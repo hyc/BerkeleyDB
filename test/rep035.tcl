@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep035.tcl,v 12.7 2006/03/10 21:44:32 carol Exp $
+# $Id: rep035.tcl,v 12.9 2006/07/19 17:45:35 carol Exp $
 #
 # TEST  	rep035
 # TEST	Test sync-up recovery in replication.
@@ -21,14 +21,14 @@
 proc rep035 { method { niter 100 } { tnum "035" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set saved_args $args

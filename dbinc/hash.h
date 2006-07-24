@@ -39,11 +39,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash.h,v 12.3 2006/04/27 13:40:11 mjc Exp $
+ * $Id: hash.h,v 12.4 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef	_DB_HASH_H_
 #define	_DB_HASH_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /* Hash internal structure. */
 typedef struct hash_t {
@@ -139,6 +143,10 @@ typedef enum {
 	DB_HAM_DUP   = 5,
 	DB_HAM_SPLIT = 6
 } db_ham_mode;
+
+#if defined(__cplusplus)
+}
+#endif
 
 #include "dbinc_auto/hash_auto.h"
 #include "dbinc_auto/hash_ext.h"

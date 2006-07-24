@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_db.c,v 12.21 2006/05/05 14:54:02 bostic Exp $
+ * $Id: tcl_db.c,v 12.22 2006/07/06 00:06:45 ubell Exp $
  */
 
 #include "db_config.h"
@@ -3105,6 +3105,8 @@ out:
 		__os_free(NULL, start.data);
 	if (stop.data != NULL && stop.data != &srecno)
 		__os_free(NULL, stop.data);
+	if (end.data != NULL)
+		__os_free(NULL, end.data);
 
 	return (result);
 }

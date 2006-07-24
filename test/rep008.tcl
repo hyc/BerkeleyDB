@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep008.tcl,v 12.6 2006/03/10 21:42:11 carol Exp $
+# $Id: rep008.tcl,v 12.8 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep008
 # TEST	Replication, back up and synchronizing
@@ -17,15 +17,15 @@
 proc rep008 { method { niter 10 } { tnum "008" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for btree only.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree }
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."

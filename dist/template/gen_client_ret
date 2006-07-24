@@ -29,6 +29,30 @@ __dbcl_env_create_ret(dbenv, timeout, replyp)
 }
 
 /*
+ * PUBLIC: int __dbcl_env_cdsgroup_begin_ret __P((DB_ENV *, DB_TXN **,
+ * PUBLIC:      __env_cdsgroup_begin_reply *));
+ */
+int
+__dbcl_env_cdsgroup_begin_ret(dbenv, txnpp, replyp)
+	DB_ENV * dbenv;
+	DB_TXN ** txnpp;
+	__env_cdsgroup_begin_reply *replyp;
+{
+	int ret;
+	long txnid;
+
+	if (replyp->status != 0)
+		return (replyp->status);
+	txnid = replyp->txnidcl_id;
+
+	/*
+	 * XXX Code goes here
+	 */
+
+	return (replyp->status);
+}
+
+/*
  * PUBLIC: int __dbcl_env_open_ret __P((DB_ENV *, const char *, u_int32_t, int,
  * PUBLIC:      __env_open_reply *));
  */

@@ -3,19 +3,19 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb007.tcl,v 12.3 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdb007.tcl,v 12.4 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sdb007
 # TEST	Tests page size difference errors between subdbs.
 # TEST	If the physical file already exists, we ignore pagesize specifications
 # TEST	on any subsequent -creates.
-# TEST 
-# TEST 	1.  Create/open a subdb with system default page size. 
-# TEST	    Create/open a second subdb specifying a different page size. 
+# TEST
+# TEST 	1.  Create/open a subdb with system default page size.
+# TEST	    Create/open a second subdb specifying a different page size.
 # TEST	    The create should succeed, but the pagesize of the new db
-# TEST	    will be the system default page size. 
-# TEST 	2.  Create/open a subdb with a specified, non-default page size. 
-# TEST	    Create/open a second subdb specifying a different page size. 
+# TEST	    will be the system default page size.
+# TEST 	2.  Create/open a subdb with a specified, non-default page size.
+# TEST	    Create/open a second subdb specifying a different page size.
 # TEST	    The create should succeed, but the pagesize of the new db
 # TEST	    will be the specified page size from the first create.
 
@@ -71,7 +71,7 @@ proc sdb007 { method args } {
 	error_check_good subdb [is_valid_db $db] TRUE
 
 	# Figure out what the default page size is so that we can send
-	# a different value to the next -create call. 
+	# a different value to the next -create call.
 	set default_psize [stat_field $db stat "Page size"]
 	error_check_good dbclose [$db close] 0
 
@@ -83,7 +83,7 @@ proc sdb007 { method args } {
 
 	puts "\tSubdb007.a.1: Create 2nd subdb with different specified page size"
 	set db2 [eval {berkdb_open -create -btree} \
-	    $db2args $envargs {-pagesize $psize $testfile $sub2}] 
+	    $db2args $envargs {-pagesize $psize $testfile $sub2}]
 	error_check_good db2_create [is_valid_db $db2] TRUE
 
 	set actual_psize [stat_field $db2 stat "Page size"]

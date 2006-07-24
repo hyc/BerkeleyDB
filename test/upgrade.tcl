@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: upgrade.tcl,v 12.4 2006/01/02 22:03:30 bostic Exp $
+# $Id: upgrade.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
 
 source ./include.tcl
 
@@ -178,9 +178,9 @@ proc upgrade { { archived_test_loc "DEFAULT" } } {
 						}
 					}
 
-					# Then we test any .dmp files.  Move 
-					# the saved file to the current working 
-					# directory.  Run the test locally. 
+					# Then we test any .dmp files.  Move
+					# the saved file to the current working
+					# directory.  Run the test locally.
 					# Compare the dumps; they should match.
 					if { [file exists $testdir/$name.dmp] } {
 						file rename -force \
@@ -237,8 +237,8 @@ proc _upgrade_test { temp_dir version method file endianness } {
 		set encrypt 1
 	}
 
-	# Open the database prior to upgrading.  If it fails, 
-	# it should fail with the DB_OLDVERSION message. 
+	# Open the database prior to upgrading.  If it fails,
+	# it should fail with the DB_OLDVERSION message.
 	set encargs ""
 	if { $encrypt == 1 } {
 		set encargs " -encryptany $passwd "
@@ -251,7 +251,7 @@ proc _upgrade_test { temp_dir version method file endianness } {
 		error_check_good db_close [$db close] 0
 	}
 
-	# Now upgrade the database. 
+	# Now upgrade the database.
 	set ret [berkdb upgrade "$temp_dir/$file-$endianness.db"]
 	error_check_good dbupgrade $ret 0
 
@@ -320,7 +320,7 @@ proc _log_test { temp_dir release method file } {
 			# log version, that's okay.
 			if { $current_logvers <= $saved_logvers } {
 				puts "db_printlog failed: $message"
-		 	}	
+		 	}
 		}
 	}
 
@@ -391,8 +391,8 @@ proc gen_upgrade { dir { save_crypto 1 } { save_non_crypto 1 } } {
 
 		# We piggyback testing of dumped sequence files on upgrade
 		# testing because this is the only place that we ship files
-		# from one machine to another.  Create files for both 
-		# endiannesses, because who knows what platform we'll 
+		# from one machine to another.  Create files for both
+		# endiannesses, because who knows what platform we'll
 		# be testing on.
 
 		set gen_dump 1
@@ -403,7 +403,7 @@ proc gen_upgrade { dir { save_crypto 1 } { save_non_crypto 1 } } {
 				cleanup $testdir NULL
 			}
 		}
-		set gen_dump 0 
+		set gen_dump 0
 
 #set test_names(test) ""
 		set gen_upgrade 1
@@ -678,7 +678,7 @@ proc save_upgrade_files { dir } {
 	}
 
 	if { $gen_dump == 1 } {
-		# Save dump files.  We require that the files have 
+		# Save dump files.  We require that the files have
 		# been created with the extension .dmp.
 		set dumpfiles [glob -nocomplain $dir/*.dmp]
 

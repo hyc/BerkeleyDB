@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_open.c,v 12.65 2006/06/13 18:44:00 bostic Exp $
+ * $Id: env_open.c,v 12.66 2006/06/21 20:13:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -182,12 +182,20 @@ __env_open(dbenv, db_home, flags, mode)
 	int need_recovery, rep_check, ret, t_ret;
 
 	ip = NULL;
-	orig_flags = dbenv->flags;
 	need_recovery = rep_check = 0;
 
 	/* Initial configuration. */
 	if ((ret = __env_config(dbenv, db_home, flags, mode)) != 0)
 		return (ret);
+
+	/*
+	 * Save the DB_ENV handle's configuration flags as set by user-called
+	 * configuration methods and the environment directory's DB_CONFIG
+	 * file.  If we use this DB_ENV structure to recover the existing
+	 * environment or to remove an environment we created after failure,
+	 * we'll restore the DB_ENV flags to these values.
+	 */
+	orig_flags = dbenv->flags;
 
 	/*
 	 * If we're going to register with the environment, that's the first

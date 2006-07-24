@@ -987,6 +987,24 @@ db_cam.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../db/db_cds.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../db/db_cds.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../db/db_cds.c_objects
+db_cds.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../db/db_cds.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../db/db_conv.c_dependDone
 TRUE
 <END>
@@ -2787,24 +2805,6 @@ os_root.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../os/os_rpath.c_dependDone
-TRUE
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os/os_rpath.c_dependencies
-$(PRJ_DIR)/db_config.h \
-	$(PRJ_DIR)/db_int.h \
-	$(PRJ_DIR)/db.h
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os/os_rpath.c_objects
-os_rpath.o
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os/os_rpath.c_tool
-C/C++ compiler
-<END>
-
 <BEGIN> FILE_$(PRJ_DIR)/../os/os_rw.c_dependDone
 TRUE
 <END>
@@ -2982,6 +2982,24 @@ os_yield.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../os/os_yield.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_objects
+os_vx_rpath.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_tool
 C/C++ compiler
 <END>
 
@@ -3351,6 +3369,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../db/db_am.c \
 	$(PRJ_DIR)/../db/db_auto.c \
 	$(PRJ_DIR)/../db/db_cam.c \
+	$(PRJ_DIR)/../db/db_cds.c \
 	$(PRJ_DIR)/../db/db_conv.c \
 	$(PRJ_DIR)/../db/db_dispatch.c \
 	$(PRJ_DIR)/../db/db_dup.c \
@@ -3451,7 +3470,6 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../os/os_region.c \
 	$(PRJ_DIR)/../os/os_rename.c \
 	$(PRJ_DIR)/../os/os_root.c \
-	$(PRJ_DIR)/../os/os_rpath.c \
 	$(PRJ_DIR)/../os/os_rw.c \
 	$(PRJ_DIR)/../os/os_seek.c \
 	$(PRJ_DIR)/../os/os_sleep.c \
@@ -3462,6 +3480,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../os/os_uid.c \
 	$(PRJ_DIR)/../os/os_unlink.c \
 	$(PRJ_DIR)/../os/os_yield.c \
+	$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_abs.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_config.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_map.c \

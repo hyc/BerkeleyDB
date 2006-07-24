@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_dir.c,v 12.6 2006/06/08 14:40:30 bostic Exp $
+ * $Id: os_dir.c,v 12.7 2006/07/05 03:14:30 mjc Exp $
  */
 
 #include "db_config.h"
@@ -42,25 +42,28 @@ __os_dirlist(dbenv, dir, namesp, cntp)
 	names = NULL;
 	arraysz = cnt = ret = 0;
 	for (;;) {
-		if (cnt >= arraysz) {
-			arraysz += 100;
-			if ((ret = __os_realloc(dbenv,
-			    arraysz * sizeof(names[0]), &names)) != 0)
+		if ((fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+			if (cnt >= arraysz) {
+				arraysz += 100;
+				if ((ret = __os_realloc(dbenv,
+				    arraysz * sizeof(names[0]), &names)) != 0)
+					goto err;
+			}
+			/*
+			 * FROM_TSTRING doesn't necessarily allocate new
+			 * memory, so we must do that explicitly.
+			 * Unfortunately, when compiled with UNICODE, we'll
+			 * copy twice.
+			 */
+			FROM_TSTRING(dbenv, fdata.cFileName, onename, ret);
+			if (ret != 0)
 				goto err;
+			ret = __os_strdup(dbenv, onename, &names[cnt]);
+			FREE_STRING(dbenv, onename);
+			if (ret != 0)
+				goto err;
+			cnt++;
 		}
-		/*
-		 * FROM_TSTRING doesn't necessarily allocate new memory, so we
-		 * must do that explicitly.  Unfortunately, when compiled with
-		 * UNICODE, we'll copy twice.
-		 */
-		FROM_TSTRING(dbenv, fdata.cFileName, onename, ret);
-		if (ret != 0)
-			goto err;
-		ret = __os_strdup(dbenv, onename, &names[cnt]);
-		FREE_STRING(dbenv, onename);
-		if (ret != 0)
-			goto err;
-		cnt++;
 		if (!FindNextFile(dirhandle, &fdata)) {
 			if (GetLastError() == ERROR_NO_MORE_FILES)
 				break;

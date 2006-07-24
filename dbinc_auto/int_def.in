@@ -103,6 +103,7 @@
 #define	__db_s_next __db_s_next@DB_VERSION_UNIQUE_NAME@
 #define	__db_s_done __db_s_done@DB_VERSION_UNIQUE_NAME@
 #define	__db_partsize __db_partsize@DB_VERSION_UNIQUE_NAME@
+#define	__cdsgroup_begin __cdsgroup_begin@DB_VERSION_UNIQUE_NAME@
 #define	__db_pgin __db_pgin@DB_VERSION_UNIQUE_NAME@
 #define	__db_pgout __db_pgout@DB_VERSION_UNIQUE_NAME@
 #define	__db_metaswap __db_metaswap@DB_VERSION_UNIQUE_NAME@
@@ -417,6 +418,9 @@
 #define	__bam_merge_print __bam_merge_print@DB_VERSION_UNIQUE_NAME@
 #define	__bam_pgno_print __bam_pgno_print@DB_VERSION_UNIQUE_NAME@
 #define	__bam_init_print __bam_init_print@DB_VERSION_UNIQUE_NAME@
+#ifndef HAVE_ABORT
+#define	abort abort@DB_VERSION_UNIQUE_NAME@
+#endif
 #ifndef HAVE_ATOI
 #define	atoi atoi@DB_VERSION_UNIQUE_NAME@
 #endif
@@ -901,7 +905,6 @@
 #define	__log_vtruncate __log_vtruncate@DB_VERSION_UNIQUE_NAME@
 #define	__log_is_outdated __log_is_outdated@DB_VERSION_UNIQUE_NAME@
 #define	__log_zero __log_zero@DB_VERSION_UNIQUE_NAME@
-#define	__log_stable_lsn __log_stable_lsn@DB_VERSION_UNIQUE_NAME@
 #define	__log_inmem_lsnoff __log_inmem_lsnoff@DB_VERSION_UNIQUE_NAME@
 #define	__log_inmem_newfile __log_inmem_newfile@DB_VERSION_UNIQUE_NAME@
 #define	__log_inmem_chkspace __log_inmem_chkspace@DB_VERSION_UNIQUE_NAME@
@@ -918,6 +921,7 @@
 #define	__log_cursor_pp __log_cursor_pp@DB_VERSION_UNIQUE_NAME@
 #define	__log_cursor __log_cursor@DB_VERSION_UNIQUE_NAME@
 #define	__log_c_close __log_c_close@DB_VERSION_UNIQUE_NAME@
+#define	__log_c_version __log_c_version@DB_VERSION_UNIQUE_NAME@
 #define	__log_c_get __log_c_get@DB_VERSION_UNIQUE_NAME@
 #define	__log_rep_split __log_rep_split@DB_VERSION_UNIQUE_NAME@
 #define	__log_dbenv_create __log_dbenv_create@DB_VERSION_UNIQUE_NAME@
@@ -1269,6 +1273,8 @@
 #define	__rep_get_gen __rep_get_gen@DB_VERSION_UNIQUE_NAME@
 #define	__rep_lockout __rep_lockout@DB_VERSION_UNIQUE_NAME@
 #define	__rep_send_throttle __rep_send_throttle@DB_VERSION_UNIQUE_NAME@
+#define	__rep_msg_to_old __rep_msg_to_old@DB_VERSION_UNIQUE_NAME@
+#define	__rep_msg_from_old __rep_msg_from_old@DB_VERSION_UNIQUE_NAME@
 #define	__rep_print_message __rep_print_message@DB_VERSION_UNIQUE_NAME@
 #define	__rep_verify __rep_verify@DB_VERSION_UNIQUE_NAME@
 #define	__rep_verify_fail __rep_verify_fail@DB_VERSION_UNIQUE_NAME@
@@ -1344,6 +1350,8 @@
 #define	__repmgr_timeval_cmp __repmgr_timeval_cmp@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_get_nsites __repmgr_get_nsites@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_thread_failure __repmgr_thread_failure@DB_VERSION_UNIQUE_NAME@
+#define	__repmgr_format_eid_loc __repmgr_format_eid_loc@DB_VERSION_UNIQUE_NAME@
+#define	__repmgr_format_site_loc __repmgr_format_site_loc@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_wsa_init __repmgr_wsa_init@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_set_rpc_server __dbcl_env_set_rpc_server@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_close_wrap __dbcl_env_close_wrap@DB_VERSION_UNIQUE_NAME@
@@ -1358,6 +1366,7 @@
 #define	__dbcl_dbclose_common __dbcl_dbclose_common@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_dbenv_illegal __dbcl_dbenv_illegal@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_create __dbcl_env_create@DB_VERSION_UNIQUE_NAME@
+#define	__dbcl_env_cdsgroup_begin __dbcl_env_cdsgroup_begin@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_close __dbcl_env_close@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_dbremove __dbcl_env_dbremove@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_dbrename __dbcl_env_dbrename@DB_VERSION_UNIQUE_NAME@
@@ -1433,6 +1442,7 @@
 #define	__dbcl_env_remove_ret __dbcl_env_remove_ret@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_txn_abort_ret __dbcl_txn_abort_ret@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_txn_begin_ret __dbcl_env_txn_begin_ret@DB_VERSION_UNIQUE_NAME@
+#define	__dbcl_env_cdsgroup_begin_ret __dbcl_env_cdsgroup_begin_ret@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_txn_commit_ret __dbcl_txn_commit_ret@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_txn_discard_ret __dbcl_txn_discard_ret@DB_VERSION_UNIQUE_NAME@
 #define	__dbcl_env_txn_recover_ret __dbcl_env_txn_recover_ret@DB_VERSION_UNIQUE_NAME@
@@ -1457,6 +1467,7 @@
 #define	__dbcl_dbc_c_put_ret __dbcl_dbc_c_put_ret@DB_VERSION_UNIQUE_NAME@
 #define	__env_get_cachesize_proc __env_get_cachesize_proc@DB_VERSION_UNIQUE_NAME@
 #define	__env_set_cachesize_proc __env_set_cachesize_proc@DB_VERSION_UNIQUE_NAME@
+#define	__env_cdsgroup_begin_proc __env_cdsgroup_begin_proc@DB_VERSION_UNIQUE_NAME@
 #define	__env_close_proc __env_close_proc@DB_VERSION_UNIQUE_NAME@
 #define	__env_create_proc __env_create_proc@DB_VERSION_UNIQUE_NAME@
 #define	__env_dbremove_proc __env_dbremove_proc@DB_VERSION_UNIQUE_NAME@
@@ -1557,6 +1568,7 @@
 #define	tcl_EnvLsnReset tcl_EnvLsnReset@DB_VERSION_UNIQUE_NAME@
 #define	tcl_EnvVerbose tcl_EnvVerbose@DB_VERSION_UNIQUE_NAME@
 #define	tcl_EnvAttr tcl_EnvAttr@DB_VERSION_UNIQUE_NAME@
+#define	tcl_EventNotify tcl_EventNotify@DB_VERSION_UNIQUE_NAME@
 #define	tcl_EnvSetFlags tcl_EnvSetFlags@DB_VERSION_UNIQUE_NAME@
 #define	tcl_EnvTest tcl_EnvTest@DB_VERSION_UNIQUE_NAME@
 #define	tcl_EnvGetEncryptFlags tcl_EnvGetEncryptFlags@DB_VERSION_UNIQUE_NAME@
@@ -1578,6 +1590,7 @@
 #define	_ReturnSetup _ReturnSetup@DB_VERSION_UNIQUE_NAME@
 #define	_ErrorSetup _ErrorSetup@DB_VERSION_UNIQUE_NAME@
 #define	_ErrorFunc _ErrorFunc@DB_VERSION_UNIQUE_NAME@
+#define	_EventFunc _EventFunc@DB_VERSION_UNIQUE_NAME@
 #define	_GetLsn _GetLsn@DB_VERSION_UNIQUE_NAME@
 #define	_GetUInt32 _GetUInt32@DB_VERSION_UNIQUE_NAME@
 #define	_GetFlagsList _GetFlagsList@DB_VERSION_UNIQUE_NAME@
@@ -1617,6 +1630,7 @@
 #define	_TxnInfoDelete _TxnInfoDelete@DB_VERSION_UNIQUE_NAME@
 #define	tcl_TxnCheckpoint tcl_TxnCheckpoint@DB_VERSION_UNIQUE_NAME@
 #define	tcl_Txn tcl_Txn@DB_VERSION_UNIQUE_NAME@
+#define	tcl_CDSGroup tcl_CDSGroup@DB_VERSION_UNIQUE_NAME@
 #define	tcl_TxnStat tcl_TxnStat@DB_VERSION_UNIQUE_NAME@
 #define	tcl_TxnTimeout tcl_TxnTimeout@DB_VERSION_UNIQUE_NAME@
 #define	tcl_TxnRecover tcl_TxnRecover@DB_VERSION_UNIQUE_NAME@

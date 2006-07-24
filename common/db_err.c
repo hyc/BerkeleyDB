@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_err.c,v 12.36 2006/06/14 21:46:43 alanb Exp $
+ * $Id: db_err.c,v 12.37 2006/07/17 13:07:58 mjc Exp $
  */
 
 #include "db_config.h"
@@ -667,6 +667,17 @@ __db_check_txn(dbp, txn, assoc_lid, read_op)
 		    "Transaction not specified for a transactional database");
 			return (EINVAL);
 		}
+	} else if (F_ISSET(txn, TXN_CDSGROUP)) {
+		if (!CDB_LOCKING(dbenv)) {
+			__db_errx(dbenv,
+			    "CDS groups can only be used in a CDS environment");
+			return (EINVAL);
+		}
+		/*
+		 * CDS group handles can be passed to any method, since they
+		 * only determine locker IDs.
+		 */
+		return (0);
 	} else {
 		if (!TXN_ON(dbenv))
 			 return (__db_not_txn_env(dbenv));

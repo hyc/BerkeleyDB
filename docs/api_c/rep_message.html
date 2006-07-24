@@ -1,4 +1,4 @@
-<!--$Id: rep_message.so,v 1.37 2006/06/09 01:00:22 alanb Exp $-->
+<!--$Id: rep_message.so,v 1.38 2006/06/24 00:33:22 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -69,6 +69,13 @@ The maximum LSN of the permanent records stored is returned.
 with the new master (possibly because the client has been configured
 with the <a href="../api_c/rep_config.html#DB_REP_CONF_NOAUTOINIT">DB_REP_CONF_NOAUTOINIT</a> flag to turn-off automatic
 internal initialization).
+</p>
+<dt><a name="DB_REP_NEWMASTER">DB_REP_NEWMASTER</a><dd>
+<p>The DB_ENV-&gt;rep_process_message method will return DB_REP_NEWMASTER if a new master has been chosen.
+The <b>envid</b> parameter contains the environment ID of the new
+master.  If the recipient of this error return has been made master, it
+is the application's responsibility to begin acting as the master
+environment.
 </p>
 <dt><a name="DB_REP_NEWSITE">DB_REP_NEWSITE</a><dd>
 <p>The DB_ENV-&gt;rep_process_message method will return DB_REP_NEWSITE if the system received contact information from a new environment.

@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_file.c,v 12.9 2006/05/05 14:53:30 bostic Exp $
+ * $Id: env_file.c,v 12.11 2006/07/17 15:16:34 bostic Exp $
  */
 
 #include "db_config.h"
@@ -43,8 +43,7 @@ __db_file_extend(dbenv, fhp, size)
 
 	pages = (db_pgno_t)((size - FILE_EXTEND_IO_SIZE) / MEGABYTE);
 	relative = (u_int32_t)((size - FILE_EXTEND_IO_SIZE) % MEGABYTE);
-	if ((ret = __os_seek(dbenv,
-	    fhp, pages, MEGABYTE, relative, 0, DB_OS_SEEK_CUR)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, pages, MEGABYTE, relative)) != 0)
 		goto err;
 	if ((ret = __os_write(dbenv, fhp, buf, FILE_EXTEND_IO_SIZE, &nw)) != 0)
 		goto err;
@@ -118,7 +117,7 @@ __db_file_write(dbenv, fhp, mbytes, bytes, pattern)
 		return (ret);
 	memset(buf, pattern, FILE_WRITE_IO_SIZE);
 
-	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 		goto err;
 	for (; mbytes > 0; --mbytes)
 		for (i = MEGABYTE / FILE_WRITE_IO_SIZE; i > 0; --i)

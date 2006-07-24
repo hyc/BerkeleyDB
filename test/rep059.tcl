@@ -3,10 +3,10 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep059.tcl,v 1.3 2006/01/02 22:03:21 bostic Exp $
+# $Id: rep059.tcl,v 1.5 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep059
-# TEST	
+# TEST
 # TEST	Replication with multiple recycle records.
 # TEST
 # TEST	Mimic an application where a client has multiple recycle records
@@ -19,13 +19,16 @@ proc rep059 { method { tnum "059" } args } {
 	source ./include.tcl
 	set orig_tdir $testdir
 
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
-	#
+	}
 	# There should be no difference with methods.  Just use btree.
 	#
+	if { $checking_valid_methods } 
+		set test_methods { btree } 
+		return $test_methods
+	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep059: Skipping for method $method."
 		return
@@ -42,7 +45,7 @@ proc rep059 { method { tnum "059" } args } {
 	file mkdir $masterdir
 	file mkdir $clientdir
 	file mkdir $clientdir2
-	
+
 	set omethod [convert_method $method]
 
 	# Open a master.

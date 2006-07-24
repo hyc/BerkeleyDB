@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep014.tcl,v 12.6 2006/03/10 21:42:11 carol Exp $
+# $Id: rep014.tcl,v 12.9 2006/07/20 19:42:30 carol Exp $
 #
 # TEST	rep014
 # TEST	Replication and multiple replication handles.
@@ -13,21 +13,21 @@
 proc rep014 { method { niter 10 } { tnum "014" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
+
+	# Run for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
+	}
 
 	# We can't open two envs on HP-UX, so just skip the
 	# whole test since that is at the core of it.
 	if { $is_hp_test == 1 } {
 		puts "Rep$tnum: Skipping for HP-UX."
 		return
-	}
-
-	# Run for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
 	}
 
 	set args [convert_args $method $args]

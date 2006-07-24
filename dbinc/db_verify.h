@@ -4,11 +4,15 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_verify.h,v 12.6 2006/04/28 01:12:25 bostic Exp $
+ * $Id: db_verify.h,v 12.7 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef _DB_VERIFY_H_
 #define	_DB_VERIFY_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * Structures and macros for the storage and retrieval of all information
@@ -215,4 +219,7 @@ struct __vrfy_childinfo {
 	LIST_ENTRY(__vrfy_childinfo) links;
 }; /* VRFY_CHILDINFO */
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_DB_VERIFY_H_ */

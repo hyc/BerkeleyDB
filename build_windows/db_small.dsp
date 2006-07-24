@@ -424,6 +424,10 @@ SOURCE=..\db\db_cam.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\db\db_cds.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\db\db_conv.c
 # End Source File
 # Begin Source File

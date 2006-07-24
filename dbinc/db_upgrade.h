@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_upgrade.h,v 12.2 2006/01/02 22:01:50 bostic Exp $
+ * $Id: db_upgrade.h,v 12.3 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef _DB_UPGRADE_H_
 #define	_DB_UPGRADE_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * This file defines the metadata pages from the previous release.
@@ -239,4 +243,7 @@ typedef struct hashhdr {	/* Disk resident portion */
 	 */
 } HASHHDR;
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_DB_UPGRADE_H_ */

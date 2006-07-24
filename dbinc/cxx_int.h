@@ -4,11 +4,11 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: cxx_int.h,v 12.2 2006/01/02 22:01:48 bostic Exp $
+ * $Id: cxx_int.h,v 12.3 2006/07/05 05:37:07 mjc Exp $
  */
 
-#ifndef _CXX_INT_H_
-#define	_CXX_INT_H_
+#ifndef _DB_CXX_INT_H_
+#define	_DB_CXX_INT_H_
 
 // private data structures known to the implementation only
 
@@ -27,7 +27,6 @@
 // for a wrapper class that has an underlying pointer representation.
 //
 #define	WRAPPED_CLASS(_WRAPPER_CLASS, _IMP_CLASS, _WRAPPED_TYPE)           \
-									   \
 	class _IMP_CLASS {};                                               \
 									   \
 	inline _WRAPPED_TYPE *unwrap(_WRAPPER_CLASS *val)                  \
@@ -74,4 +73,4 @@ WRAPPED_CLASS(DbTxn, DbTxnImp, DB_TXN)
 /* values for Db::flags_ */
 #define	DB_CXX_PRIVATE_ENV      0x00000001
 
-#endif /* !_CXX_INT_H_ */
+#endif /* !_DB_CXX_INT_H_ */

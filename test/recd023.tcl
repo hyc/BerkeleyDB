@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: recd023.tcl,v 12.3 2006/01/02 22:03:18 bostic Exp $
+# $Id: recd023.tcl,v 12.4 2006/06/27 22:31:08 bostic Exp $
 #
 # TEST	recd023
 # TEST	Test recover of reverse split.
@@ -14,7 +14,7 @@ proc recd023 { method args } {
 	set tnum "023"
 
 	if { [is_btree $method] != 1 && [is_rbtree $method] != 1 } {
-		puts "Skipping recd$tnum for method $method" 
+		puts "Skipping recd$tnum for method $method"
 		return
 	}
 
@@ -51,10 +51,10 @@ proc recd023 { method args } {
 	set levels [stat_field $db stat "Levels"]
 	error_check_good 3_levels [expr $levels >= 3] 1
 
-	# Save the original database. 
+	# Save the original database.
 	file copy -force $testdir/$testfile $testdir/$testfile.save
 
-	# Delete enough pieces to collapse the tree. 
+	# Delete enough pieces to collapse the tree.
 	puts "\tRecd$tnum.c: Do deletes to collapse database."
 	for { set count 2 } { $count < 10 } { incr count } {
 		error_check_good db_del [$db del a$count] 0
@@ -71,12 +71,12 @@ proc recd023 { method args } {
 
 	# Overwrite the current database with the saved database.
 	file copy -force $testdir/$testfile.save $testdir/$testfile
-	error_check_good env_close [$env close] 0 
+	error_check_good env_close [$env close] 0
 
 	# Recover the saved database to roll forward and apply the deletes.
 	set env [berkdb_env -create -txn -home $testdir -recover]
 	error_check_good env_open [is_valid_env $env] TRUE
-	error_check_good env_close [$env close] 0 
+	error_check_good env_close [$env close] 0
 
 	error_check_good verify_dir [verify_dir $testdir "\tRecd$tnum.e: "] 0
 }

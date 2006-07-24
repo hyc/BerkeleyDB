@@ -3,33 +3,33 @@
 # Copyright (c) 2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep062.tcl,v 1.1 2006/03/21 16:08:16 carol Exp $
+# $Id: rep062.tcl,v 1.3 2006/07/19 17:45:36 carol Exp $
 #
 # TEST	rep062
 # TEST	Test of internal initialization where client has a different
 # TEST  kind of database than the master.
-# TEST	
+# TEST
 # TEST	Create a master of one type, and let the client catch up.
 # TEST	Close the client.
-# TEST	Remove the database on the master, and create a new 
-# TEST	database of the same name but a different type. 
+# TEST	Remove the database on the master, and create a new
+# TEST	database of the same name but a different type.
 # TEST	Run the master ahead far enough that internal initialization
-# TEST	will be required on the reopen of the client. 
+# TEST	will be required on the reopen of the client.
 # TEST	Reopen the client and verify.
 
 proc rep062 { method {tnum "062"} args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# This test uses different access methods internally. 
+	# This test uses different access methods internally.
 	# Called from outside, accept only btree.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree }
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] != 1 } {
 		puts "Skipping rep$tnum for method $method."
@@ -61,7 +61,7 @@ proc rep062 { method {tnum "062"} args } {
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep062_sub $method $tnum $l $r $args
-		}	
+		}
 	}
 }
 
@@ -88,7 +88,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -136,7 +136,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 		puts -nonewline "Rep$tnum: Replace [lindex $p 1] "
 		puts "database with [lindex $p 2] database."
 
-		# Set up flags for encryption if necessary. 
+		# Set up flags for encryption if necessary.
 		set envflags ""
 		set enc ""
 		if { $encryptenv == 1 } {
@@ -161,7 +161,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 #		    -home $masterdir -rep_transport \[list 1 replsend\]"
 		set masterenv [eval $ma_envcmd $recargs -rep_master]
 		error_check_good master_env [is_valid_env $masterenv] TRUE
-	
+
 		# Open a client.
 		repladd 2
 		set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
@@ -175,13 +175,13 @@ proc rep062_sub { method tnum logset recargs largs } {
 #		    -home $clientdir -rep_transport \[list 2 replsend\]"
 		set clientenv [eval $cl_envcmd $recargs -rep_client]
 		error_check_good client_env [is_valid_env $clientenv] TRUE
-	
+
 		# Bring the client online by processing the startup messages.
 		set envlist "{$masterenv 1} {$clientenv 2}"
 		process_msgs $envlist
-	
-		# Open two databases on the master - one to test different 
-		# methods, one to advance the log, forcing internal 
+
+		# Open two databases on the master - one to test different
+		# methods, one to advance the log, forcing internal
 		# initialization.
 
 		puts "\tRep$tnum.a: Open test database (it will change methods)."
@@ -196,9 +196,9 @@ proc rep062_sub { method tnum logset recargs largs } {
 		set db2 [eval {berkdb_open} -env $masterenv -auto_commit \
 		    -create $omethod $args1 -mode 0644 $flags1 $testfile2]
 		error_check_good db2open [is_valid_db $db2] TRUE
-		
+
 		puts "\tRep$tnum.c: Add a few records to test db."
-		set nentries 10	
+		set nentries 10
 		set start 0
 		eval rep_test $method1 \
 		    $masterenv $db1 $nentries $start $start 0 0 $args1
@@ -224,7 +224,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 		    -create $omethod $args2 -mode 0644 $flags2 $testfile]
 		error_check_good db1open [is_valid_db $db1] TRUE
 
-		# Run rep_test in the master enough to require internal 
+		# Run rep_test in the master enough to require internal
 		# initialization upon client reopen.  Use the extra db.
 		set stop 0
 		set niter 100
@@ -236,7 +236,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 			    $db2 $niter $start $start 0 0 $largs
 			incr start $niter
 			replclear 2
-	
+
 			puts "\tRep$tnum.h: Run db_archive on master."
 			if { $m_logtype != "in-memory"} {
 				set res [eval exec \
@@ -249,13 +249,13 @@ proc rep062_sub { method tnum logset recargs largs } {
 				set stop 1
 			}
 		}
-	
+
 		puts "\tRep$tnum.i: Reopen client."
 		set clientenv [eval $cl_envcmd $recargs -rep_client]
 		error_check_good client_env [is_valid_env $clientenv] TRUE
 
 		set envlist "{$masterenv 1} {$clientenv 2}"
-		process_msgs $envlist 0 NONE err 
+		process_msgs $envlist 0 NONE err
 
 		puts "\tRep$tnum.j: Add a few records to cause initialization."
 		set entries 20

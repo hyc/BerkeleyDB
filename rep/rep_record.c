@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_record.c,v 12.39 2006/06/14 21:46:33 alanb Exp $
+ * $Id: rep_record.c,v 12.41 2006/07/03 14:18:45 sue Exp $
  */
 
 #include "db_config.h"
@@ -21,7 +21,7 @@ static int __rep_collect_txn __P((DB_ENV *, DB_LSN *, LSN_COLLECTION *));
 static int __rep_do_ckp __P((DB_ENV *, DBT *, REP_CONTROL *));
 static int __rep_getnext __P((DB_ENV *));
 static int __rep_lsn_cmp __P((const void *, const void *));
-static int __rep_newfile __P((DB_ENV *, REP_CONTROL *, DB_LSN *));
+static int __rep_newfile __P((DB_ENV *, REP_CONTROL *, DBT *, DB_LSN *));
 static int __rep_process_rec __P((DB_ENV *,
     REP_CONTROL *, DBT *, u_int32_t *, DB_LSN *));
 static int __rep_remfirst __P((DB_ENV *, DBT *, DBT *));
@@ -105,56 +105,6 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 } while (0)
 
 #define	ANYSITE(rep)
-
-/*
- * We need to convert from current message numbers to old numbers and
- * we need to convert from old numbers to current numbers.  Offset
- * by one for more readable code.
- */
-/*
- * Everything for version 0 is invalid, there is no version 0.
- */
-/*
- * This table converts from the current version to the old version.
- */
-u_int32_t __repmsg_to_old[DB_REPVERSION][REP_MAX_MSG+1] = {
-	{   REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID },
-	{   REP_INVALID, 1, 2, 3, REP_INVALID, REP_INVALID,
-	    4, 5, REP_INVALID, 6, 7, 8, 9, 10, 11, 12, 13,
-	    14, 15, REP_INVALID, REP_INVALID, 16, REP_INVALID,
-	    REP_INVALID, REP_INVALID, 19, 20, 21, 22, 23 },
-	{   REP_INVALID, 1, 2, 3, REP_INVALID, REP_INVALID,
-	    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-	    17, 18, 19, REP_INVALID, 20, 21, 22, 23, 24, 25, 26 }
-};
-/*
- * This table converts from the old version to the current version.
- */
-u_int32_t __repmsg_from_old[DB_REPVERSION][REP_MAX_MSG+1] = {
-	{   REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID },
-	{   REP_INVALID, 1, 2, 3, 6, 7, 9, 10, 11, 12, 13,
-	    14, 15, 16, 17, 18, 21, REP_INVALID, REP_INVALID,
-	    25, 26, 27, 28, 29,
-	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
-	    REP_INVALID, REP_INVALID },
-	{   REP_INVALID, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13,
-	    14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
-	    27, 28, 29, REP_INVALID, REP_INVALID, REP_INVALID }
-};
 
 /*
  * __rep_process_message --
@@ -257,7 +207,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		RPRINT(dbenv, (dbenv, &mb,
 		    "Received record %lu with old rep version %lu",
 		    (u_long)rp->rectype, (u_long)rp->rep_version));
-		rp->rectype = __repmsg_from_old[rp->rep_version][rp->rectype];
+		rp->rectype = __rep_msg_from_old(rp->rep_version, rp->rectype);
 		/*
 		 * We should have a valid new record type for all the old
 		 * versions.
@@ -1190,20 +1140,28 @@ __rep_lsn_cmp(lsn1, lsn2)
  * swapped files.
  */
 static int
-__rep_newfile(dbenv, rc, lsnp)
+__rep_newfile(dbenv, rc, rec, lsnp)
 	DB_ENV *dbenv;
 	REP_CONTROL *rc;
+	DBT *rec;
 	DB_LSN *lsnp;
 {
 	DB_LOG *dblp;
 	LOG *lp;
+	u_int32_t version;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	dblp = dbenv->lg_handle;
 	lp = dblp->reginfo.primary;
 
-	if (rc->lsn.file + 1 > lp->lsn.file)
-		return (__log_newfile(dblp, lsnp, 0));
-	else {
+	if (rc->lsn.file + 1 > lp->lsn.file) {
+		version = *(u_int32_t *)rec->data;
+		RPRINT(dbenv, (dbenv, &mb, "Rep_newfile: File %d vers %d",
+		    rc->lsn.file + 1, version));
+		return (__log_newfile(dblp, lsnp, 0, version));
+	} else {
 		/* We've already applied this NEWFILE.  Just ignore it. */
 		*lsnp = lp->lsn;
 		return (0);
@@ -1378,7 +1336,7 @@ __rep_process_rec(dbenv, rp, rec, typep, ret_lsnp)
 	ret = 0;
 
 	if (rp->rectype == REP_NEWFILE) {
-		ret = __rep_newfile(dbenv, rp, &lp->ready_lsn);
+		ret = __rep_newfile(dbenv, rp, rec, &lp->ready_lsn);
 
 		/* Make this evaluate to a simple rectype. */
 		*typep = 0;

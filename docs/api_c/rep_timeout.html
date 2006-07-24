@@ -1,4 +1,4 @@
-<!--$Id: rep_timeout.so,v 1.2 2006/04/10 18:36:56 alanb Exp $-->
+<!--$Id: rep_timeout.so,v 1.3 2006/06/30 23:05:16 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -47,13 +47,13 @@ and 0 on success.
 <dt><a name="DB_REP_ACK_TIMEOUT">DB_REP_ACK_TIMEOUT</a><dd>Configure the amount of time the replication manager's transport
 function waits to collect enough acknowledgments from replication group
 clients, before giving up and returning a failure indication.  The
-default wait time is XXX seconds.
-<dt><a name="DB_REP_ELECTION_TIMEOUT">DB_REP_ELECTION_TIMEOUT</a><dd>The timeout period for an election.  The default timeout is XXX seconds.
+default wait time is 1 second.
+<dt><a name="DB_REP_ELECTION_TIMEOUT">DB_REP_ELECTION_TIMEOUT</a><dd>The timeout period for an election.  The default timeout is 2 seconds.
 <dt><a name="DB_REP_ELECTION_RETRY">DB_REP_ELECTION_RETRY</a><dd>Configure the amount of time the replication manager will wait before
-retrying a failed election.  The default wait time is XXX seconds.
+retrying a failed election.  The default wait time is 10 seconds.
 <dt><a name="DB_REP_CONNECTION_RETRY">DB_REP_CONNECTION_RETRY</a><dd>Configure the amount of time the replication manager will wait before
 trying to re-establish a connection to another site after a communication
-failure.  The default wait time is XXX seconds.
+failure.  The default wait time is 30 seconds.
 </dl>
 <dt><b>timeout</b><dd>The <b>timeout</b> parameter is the timeout value.  It must be specified
 as an unsigned 32-bit number of microseconds, limiting the maximum timeout

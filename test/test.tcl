@@ -3,7 +3,7 @@
 # Copyright (c) 1996-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test.tcl,v 12.27 2006/05/16 15:25:20 carol Exp $
+# $Id: test.tcl,v 12.28 2006/06/27 22:31:09 bostic Exp $
 
 source ./include.tcl
 
@@ -81,17 +81,17 @@ if { [info exists one_test] != 1 } {
 	set one_test "ALL"
 }
 
-# If you call a test with the proc find_valid_methods, it will 
-# return the list of methods for which it will run, instead of 
-# actually running. 
+# If you call a test with the proc find_valid_methods, it will
+# return the list of methods for which it will run, instead of
+# actually running.
 global checking_valid_methods
 set checking_valid_methods 0
-global valid_methods 
-set valid_methods { btree rbtree queue queueext recno frecno rrecno hash } 
+global valid_methods
+set valid_methods { btree rbtree queue queueext recno frecno rrecno hash }
 global test_recopts
 set test_recopts { "-recover" "" }
 
-# Set up any OS-specific values. 
+# Set up any OS-specific values.
 source $test_path/testutils.tcl
 
 global tcl_platform
@@ -473,10 +473,10 @@ proc r { args } {
 
 	source ./include.tcl
 
-	# The variable test_recopts controls whether we open envs in 
-	# replication tests with the -recover flag.   The default is 
-	# to test with and without the flag, but to run a meaningful 
-	# subset of rep tests more quickly, rep_subset will randomly 
+	# The variable test_recopts controls whether we open envs in
+	# replication tests with the -recover flag.   The default is
+	# to test with and without the flag, but to run a meaningful
+	# subset of rep tests more quickly, rep_subset will randomly
 	# pick one or the other.
 	set test_recopts { " -recover" "" }
 
@@ -610,8 +610,8 @@ proc r { args } {
 				r rep_subset $starttest
 			}
 			# To run a subset of the complete rep tests, use
-			# rep_subset, which randomly picks an access type to 
-			# use, and randomly picks whether to open envs with 
+			# rep_subset, which randomly picks an access type to
+			# use, and randomly picks whether to open envs with
 			# the -recover flag.
 			rep_subset {
 				berkdb srand $rand_init
@@ -623,7 +623,7 @@ proc r { args } {
 				foreach test $rlist {
 					set random_recopt \
 					    [berkdb random_int 0 1]
-					if { $random_recopt == 1 } { 
+					if { $random_recopt == 1 } {
 						set test_recopts "-recover"
 					} else {
 						set test_recopts {""}
@@ -660,7 +660,7 @@ proc r { args } {
 					run_test $test $display $run
 				}
 			}
-			repmethod {		
+			repmethod {
 				# We seed the random number generator here
 				# instead of in run_repmethod so that we
 				# aren't always reusing the first few
@@ -727,12 +727,12 @@ proc r { args } {
 				if { $run } {
 					run_subsystem $sub 0 1
 				}
-			}	
+			}
 			secmethod {
 				# Skip secure mode tests if release
 				# does not support encryption.
 				if { $has_crypto == 0 } {
-					return 
+					return
 				}
 				foreach test $test_names(test) {
 					eval run_test run_secmethod \
@@ -1164,10 +1164,10 @@ proc run_secenv { method test {largs ""} } {
 proc run_reptest { method test {droppct 0} {nclients 1} {do_del 0} \
     {do_sec 0} {do_oob 0} {largs "" } } {
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	global __debug_on
 	global __debug_print
@@ -1262,10 +1262,10 @@ proc run_reptest { method test {droppct 0} {nclients 1} {do_del 0} \
 proc run_repmethod { method test {numcl 0} {display 0} {run 1} \
     {outfile stdout} {largs ""} } {
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	global __debug_on
 	global __debug_print
@@ -1364,7 +1364,7 @@ proc run_envmethod { method test {display 0} {run 1} {outfile stdout} \
 	}
 
 	# We raise the number of locks and objects - there are a few
-	# compaction tests that require a large number. 
+	# compaction tests that require a large number.
 	set lockargs " -lock_max_locks 40000 -lock_max_objects 20000 "
 
 	if { $run == 1 } {
@@ -1752,13 +1752,13 @@ proc run_all { { testname ALL } args } {
 	#
 	set test_list [list {"testNNN under replication"	"repmethod"}]
 
-	# If we're on Windows, Linux, FreeBSD, or Solaris, run the 
+	# If we're on Windows, Linux, FreeBSD, or Solaris, run the
 	# bigfile tests.  These create files larger than 4 GB.
 	if { $is_freebsd_test == 1 || $is_linux_test == 1 || \
 	    $is_sunos_test == 1 || $is_windows_test == 1 } {
-		lappend test_list {"big files"	"bigfile"}	
+		lappend test_list {"big files"	"bigfile"}
 	}
-	
+
 	# If release supports encryption, run security tests.
 	#
 	if { $has_crypto == 1 } {

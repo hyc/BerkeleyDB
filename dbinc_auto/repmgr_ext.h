@@ -75,6 +75,8 @@ int __repmgr_prepare_my_addr __P((DB_ENV *, DBT *));
 int __repmgr_timeval_cmp __P((repmgr_timeval_t *, repmgr_timeval_t *));
 u_int __repmgr_get_nsites __P((DB_REP *));
 void __repmgr_thread_failure __P((DB_ENV *, int));
+char *__repmgr_format_eid_loc __P((DB_REP *, int, char *));
+char *__repmgr_format_site_loc __P((REPMGR_SITE *, char *));
 int __repmgr_wsa_init __P((DB_ENV *));
 
 #if defined(__cplusplus)

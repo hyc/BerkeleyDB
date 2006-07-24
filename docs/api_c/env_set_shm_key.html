@@ -85,17 +85,17 @@ may fail and return one of the following non-zero errors:</p>
 invalid flag value or parameter was specified.
 </dl>
 <hr size=1 noshade>
-<h3>Description: UNREF==dbenv_get_shm_key</h3>
-<p>The UNREF==dbenv_get_shm_key method returns the base segment ID.</p>
-<p>The UNREF==dbenv_get_shm_key method may be called at any time during the life of the
+<h3>Description: DB_ENV-&gt;get_shm_key</h3>
+<p>The DB_ENV-&gt;get_shm_key method returns the base segment ID.</p>
+<p>The DB_ENV-&gt;get_shm_key method may be called at any time during the life of the
 application.</p>
-<p>The UNREF==dbenv_get_shm_key method
+<p>The DB_ENV-&gt;get_shm_key method
 returns a non-zero error value on failure
 and 0 on success.
 </p>
 <h3>Parameters</h3>
 <dl compact>
-<dt><b>shm_keyp</b><dd>The UNREF==dbenv_get_shm_key method returns  the
+<dt><b>shm_keyp</b><dd>The DB_ENV-&gt;get_shm_key method returns  the
 base segment ID in <b>shm_keyp</b>.
 </dl>
 <hr size=1 noshade>

@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_method.c,v 12.41 2006/06/10 13:34:15 bostic Exp $
+ * $Id: env_method.c,v 12.43 2006/07/17 13:08:15 mjc Exp $
  */
 
 #include "db_config.h"
@@ -169,6 +169,7 @@ __env_init(dbenv)
 	 * Initialize the method handles.
 	 */
 	/* DB_ENV PUBLIC HANDLE LIST BEGIN */
+	dbenv->cdsgroup_begin = __cdsgroup_begin;
 	dbenv->close = __env_close_pp;
 	dbenv->dbremove = __env_dbremove_pp;
 	dbenv->dbrename = __env_dbrename_pp;
@@ -269,11 +270,11 @@ __env_init(dbenv)
 	dbenv->repmgr_set_local_site = __repmgr_set_local_site;
 	dbenv->repmgr_start = __repmgr_start;
 #else
-	dbenv->repmgr_add_remote_site = 
+	dbenv->repmgr_add_remote_site =
 	    (int (*)(DB_ENV *, const char *, u_int, u_int32_t))__db_norepmgr;
 	dbenv->repmgr_get_ack_policy = (int (*)(DB_ENV *, int *))__db_norepmgr;
 	dbenv->repmgr_set_ack_policy = (int (*)(DB_ENV *, int))__db_norepmgr;
-	dbenv->repmgr_set_local_site = 
+	dbenv->repmgr_set_local_site =
 	    (int (*)(DB_ENV *, const char *, u_int, u_int32_t))__db_norepmgr;
 	dbenv->repmgr_start = (int (*)(DB_ENV *, int, u_int32_t))__db_norepmgr;
 #endif

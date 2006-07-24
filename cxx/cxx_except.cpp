@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: cxx_except.cpp,v 12.7 2006/06/19 14:25:35 mjc Exp $
+ * $Id: cxx_except.cpp,v 12.8 2006/06/27 17:49:37 gmf Exp $
  */
 
 #include "db_config.h"
@@ -119,7 +119,7 @@ void DbException::describe(const char *prefix, const char *description)
 		*end = '\0';
 
 	what_ = dupString(msgbuf);
-	delete msgbuf;
+	delete [] msgbuf;
 }
 
 int DbException::get_errno() const

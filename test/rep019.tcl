@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep019.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
+# $Id: rep019.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  rep019
 # TEST	Replication and multiple clients at same LSN.
@@ -14,14 +14,14 @@
 proc rep019 { method { nclients 3 } { tnum "019" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	# This test needs to use recovery, so mixed-mode testing

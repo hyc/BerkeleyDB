@@ -3,22 +3,22 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: si006.tcl,v 12.4 2006/01/02 22:03:24 bostic Exp $
+# $Id: si006.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	si006
 # TEST
-# TEST	Test -immutable_key interface.  
-# TEST  
-# TEST  DB_IMMUTABLE_KEY is an optimization to be used when a 
+# TEST	Test -immutable_key interface.
+# TEST
+# TEST  DB_IMMUTABLE_KEY is an optimization to be used when a
 # TEST	secondary key will not be changed.  It does not prevent
-# TEST 	a deliberate change to the secondary key, it just does not 
-# TEST  propagate that change when it is made to the primary. 
+# TEST 	a deliberate change to the secondary key, it just does not
+# TEST  propagate that change when it is made to the primary.
 # TEST	This test verifies that a change to the primary is propagated
-# TEST	to the secondary or not as specified by -immutable_key. 
+# TEST	to the secondary or not as specified by -immutable_key.
 
 proc si006 { methods {nentries 200} {tnum "006"} args } {
 	source ./include.tcl
-	global dict 
+	global dict
 
 	# Primary method/args.
 	set pmethod [lindex $methods 0]
@@ -26,13 +26,13 @@ proc si006 { methods {nentries 200} {tnum "006"} args } {
 	set pomethod [convert_method $pmethod]
 
 	# Renumbering recno databases can't be used as primaries.
-	if { [is_rrecno $pmethod] == 1 } { 
+	if { [is_rrecno $pmethod] == 1 } {
 		puts "Skipping si$tnum for method $pmethod"
-		return 
+		return
 	}
 
 	# Method/args for all the secondaries.  If only one method
-	# was specified, assume the same method (for btree or hash) 
+	# was specified, assume the same method (for btree or hash)
 	# and a standard number of secondaries.  If primary is not
 	# btree or hash, force secondaries to be one btree, one hash.
 	set methods [lrange $methods 1 end]
@@ -67,12 +67,12 @@ proc si006 { methods {nentries 200} {tnum "006"} args } {
 		if { [lsearch -exact $envflags "-thread"] != -1 &&\
 			[is_queue $pmethod] == 1 } {
 			puts "Skipping si$tnum for threaded env"
-			return 
+			return
 		}
 		set testdir [get_home $env]
 	}
 
-	puts "si$tnum \{\[ list $pmethod $methods \]\} $nentries" 
+	puts "si$tnum \{\[ list $pmethod $methods \]\} $nentries"
 	cleanup $testdir $env
 
 	set pname "primary$tnum.db"
@@ -132,7 +132,7 @@ proc si006 { methods {nentries 200} {tnum "006"} args } {
 	set pdb [eval {berkdb_open -env} $env $pname]
 	error_check_good primary_reopen [is_valid_db $pdb] TRUE
 
-	# Reopen and associate secondary without -immutable_key. 
+	# Reopen and associate secondary without -immutable_key.
 	set mutable {}
 	set sdb1 [eval {berkdb_open -create -env} $env \
 	    [lindex $omethods 0] [lindex $argses 0] $snamebase.1.db]
@@ -179,7 +179,7 @@ proc si006 { methods {nentries 200} {tnum "006"} args } {
 	error_check_good secondary1_close [$sdb1 close] 0
 	error_check_good secondary2_close [$sdb2 close] 0
 
-	# Don't close the env if this test was given one. 
+	# Don't close the env if this test was given one.
 	if { $eindex == -1 } {
 		error_check_good env_close [$env close] 0
 	}

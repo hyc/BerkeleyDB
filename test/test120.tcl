@@ -3,14 +3,14 @@
 # Copyright (c) 2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test120.tcl,v 12.1 2006/06/15 15:15:44 carol Exp $
+# $Id: test120.tcl,v 12.2 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	test120
 # TEST	Test of multi-version concurrency control.
 #
 # TEST	Test basic functionality: a snapshot transaction started
-# TEST	before a regular transaction's put can't see the modification.  
-# TEST	A snapshot transaction started after the put can see it. 
+# TEST	before a regular transaction's put can't see the modification.
+# TEST	A snapshot transaction started after the put can see it.
 
 proc test120 { method {tnum "120"} args } {
 	source ./include.tcl
@@ -24,7 +24,7 @@ proc test120 { method {tnum "120"} args } {
 		return
 	}
 
-	# MVCC is not allowed with queue methods. 
+	# MVCC is not allowed with queue methods.
 	if { [is_queue $method] == 1 } {
 		puts "Test$tnum skipping for method $method"
 		return
@@ -38,7 +38,7 @@ proc test120 { method {tnum "120"} args } {
 	set args [split_encargs $args encargs]
 	set filename "test.db"
 
-	# Create transactional env.  Specifying -multiversion makes 
+	# Create transactional env.  Specifying -multiversion makes
 	# all databases opened within the env -multiversion.
 	env_cleanup $testdir
 	puts "\tTest$tnum.a: Creating txn env."
@@ -60,7 +60,7 @@ proc test120 { method {tnum "120"} args } {
 	set t2 [$env txn -snapshot]
 	set txn2 "-txn $t2"
 
-	# Enter some data using txn1.  
+	# Enter some data using txn1.
 	set key 1
 	set data DATA
 	error_check_good \
@@ -81,9 +81,9 @@ proc test120 { method {tnum "120"} args } {
 
 	# Start a new txn with -snapshot.  It can see the put.
 	puts "\tTest$tnum.e: A new txn can see txn1's put."
-	set t3 [$env txn -snapshot] 
+	set t3 [$env txn -snapshot]
 	set txn3 "-txn $t3"
-	set ret [eval {$db get} $txn3 $key] 
+	set ret [eval {$db get} $txn3 $key]
 	error_check_good \
 	    t3_get $ret [list [list $key [pad_data $method $data]]]
 
@@ -91,7 +91,7 @@ proc test120 { method {tnum "120"} args } {
 	error_check_good t2_commit [$t2 commit] 0
 	error_check_good t3_commit [$t3 commit] 0
 
-	# Clean up. 
+	# Clean up.
 	error_check_good db_close [$db close] 0
 	error_check_good env_close [$env close] 0
 }

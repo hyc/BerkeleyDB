@@ -4,7 +4,7 @@
  * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_register.c,v 1.26 2006/05/31 01:38:34 bostic Exp $
+ * $Id: env_register.c,v 1.27 2006/07/17 15:16:34 bostic Exp $
  */
 
 #include "db_config.h"
@@ -275,8 +275,7 @@ __envreg_add(dbenv, need_recoveryp)
 		 * Seek to the beginning of the file and overwrite slots to
 		 * the end of the file.
 		 */
-		if ((ret = __os_seek(
-		    dbenv, dbenv->registry, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+		if ((ret = __os_seek(dbenv, dbenv->registry, 0, 0, 0)) != 0)
 			return (ret);
 		snprintf(buf, sizeof(buf), PID_EMPTY, (u_long)0);
 		for (lcnt = (u_int)end / PID_LEN; lcnt > 0; --lcnt)
@@ -290,8 +289,7 @@ __envreg_add(dbenv, need_recoveryp)
 	 * Seek to the first process slot and add ourselves to the first empty
 	 * slot we can lock.
 	 */
-	if ((ret = __os_seek(
-	    dbenv, dbenv->registry, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, dbenv->registry, 0, 0, 0)) != 0)
 		return (ret);
 	for (lcnt = 0;; ++lcnt) {
 		if ((ret = __os_read(
@@ -306,8 +304,8 @@ __envreg_add(dbenv, need_recoveryp)
 				    "%lu: locking slot %02u at offset %lu",
 				    (u_long)pid, lcnt, (u_long)pos);
 
-			if ((ret = __os_seek(dbenv, dbenv->registry,
-			    0, 0, (u_int32_t)pos, 0, DB_OS_SEEK_SET)) != 0 ||
+			if ((ret = __os_seek(dbenv,
+			    dbenv->registry, 0, 0, (u_int32_t)pos)) != 0 ||
 			    (ret = __os_write(dbenv,
 			    dbenv->registry, pid_buf, PID_LEN, &nw)) != 0 ||
 			    nw != PID_LEN)
@@ -362,8 +360,8 @@ __envreg_unregister(dbenv, recovery_failed)
 	 * slots which they can't lock.
 	 */
 	snprintf(buf, sizeof(buf), PID_EMPTY, (u_long)0);
-	if ((ret = __os_seek(dbenv, dbenv->registry,
-	    0, 0, dbenv->registry_off, 0, DB_OS_SEEK_SET)) != 0 ||
+	if ((ret = __os_seek(dbenv,
+	    dbenv->registry, 0, 0, dbenv->registry_off)) != 0 ||
 	    (ret = __os_write(
 	    dbenv, dbenv->registry, buf, PID_LEN, &nw)) != 0 ||
 	    nw != PID_LEN)

@@ -3,10 +3,10 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: env014.tcl,v 12.2 2006/01/02 22:03:14 bostic Exp $
+# $Id: env014.tcl,v 12.3 2006/06/27 22:31:08 bostic Exp $
 #
 # TEST	env014
-# TEST	
+# TEST
 # TEST	Make sure that attempts to open an environment with
 # TEST	incompatible flags (e.g. replication without transactions)
 # TEST	fail with the appropriate messages.
@@ -106,7 +106,7 @@ proc env014 { } {
 	error_check_good env_close [$env close] 0
 	error_check_good env_remove [berkdb envremove -force -home $testdir] 0
 
-  	# Join plain vanilla env with -txn; should fail. 
+  	# Join plain vanilla env with -txn; should fail.
 	puts "\tEnv$tnum.i: Join plain vanilla env with -txn."
 	set env [berkdb_env_noerr -create -home $testdir]
 	error_check_good env_open [is_valid_env $env] TRUE

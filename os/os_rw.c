@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_rw.c,v 12.15 2006/06/08 13:33:59 bostic Exp $
+ * $Id: os_rw.c,v 12.16 2006/07/17 15:16:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -80,8 +80,7 @@ slow:
 #endif
 	MUTEX_LOCK(dbenv, fhp->mtx_fh);
 
-	if ((ret = __os_seek(dbenv, fhp,
-	    pgno, pgsize, relative, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, pgno, pgsize, relative)) != 0)
 		goto err;
 	switch (op) {
 	case DB_IO_READ:

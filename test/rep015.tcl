@@ -3,7 +3,7 @@
 # Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep015.tcl,v 12.5 2006/03/10 21:42:11 carol Exp $
+# $Id: rep015.tcl,v 12.7 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep015
 # TEST	Locking across multiple pages with replication.
@@ -26,15 +26,15 @@ proc rep015 { method { nentries 100 } { tnum "015" } { ndb 3 } args } {
 	berkdb srand $rand_init
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for btree only.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree } 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Skipping rep$tnum for method $method."

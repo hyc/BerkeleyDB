@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_method.c,v 12.37 2006/06/14 21:46:34 alanb Exp $
+ * $Id: rep_method.c,v 12.38 2006/07/19 19:19:19 alanb Exp $
  */
 
 #include "db_config.h"
@@ -42,8 +42,10 @@ __rep_dbenv_create(dbenv)
 	db_rep->max_gap = DB_REP_MAX_GAP;
 
 #ifdef HAVE_REPLICATION_THREADS
-	if ((ret = __repmgr_dbenv_create(dbenv, db_rep)) != 0)
+	if ((ret = __repmgr_dbenv_create(dbenv, db_rep)) != 0) {
+		__os_free(dbenv, db_rep);
 		return (ret);
+	}
 #endif
 
 	dbenv->rep_handle = db_rep;

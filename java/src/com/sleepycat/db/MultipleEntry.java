@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: MultipleEntry.java,v 12.4 2006/03/13 01:53:41 alexg Exp $
+ * $Id: MultipleEntry.java,v 12.5 2006/07/14 07:45:58 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -14,14 +14,14 @@ import com.sleepycat.db.internal.DbConstants;
 import java.nio.ByteBuffer;
 
 public abstract class MultipleEntry extends DatabaseEntry {
-    protected int pos;
+    /* package */ int pos;
 
-    protected MultipleEntry(final byte[] data, final int offset, final int size) {
+    /* package */ MultipleEntry(final byte[] data, final int offset, final int size) {
         super(data, offset, size);
         setUserBuffer((data != null) ? (data.length - offset) : 0, true);
     }
 
-    protected MultipleEntry(final ByteBuffer data) {
+    /* package */ MultipleEntry(final ByteBuffer data) {
         super(data);
     }
 

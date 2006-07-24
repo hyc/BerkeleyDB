@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os_fzero.c,v 12.14 2006/06/08 21:03:24 bostic Exp $
+ * $Id: os_fzero.c,v 12.15 2006/07/17 15:16:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -66,8 +66,7 @@ __os_zerofill(dbenv, fhp)
 	}
 
 	/* Seek to the current end of the file. */
-	if ((ret = __os_seek(
-	    dbenv, fhp, mbytes, MEGABYTE, bytes, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, mbytes, MEGABYTE, bytes)) != 0)
 		goto err;
 
 	/*
@@ -92,7 +91,7 @@ __os_zerofill(dbenv, fhp)
 	/* Seek back to where we started. */
 	mbytes = (u_int32_t)(write_offset / MEGABYTE);
 	bytes = (u_int32_t)(write_offset % MEGABYTE);
-	ret = __os_seek(dbenv, fhp, mbytes, MEGABYTE, bytes, 0, DB_OS_SEEK_SET);
+	ret = __os_seek(dbenv, fhp, mbytes, MEGABYTE, bytes);
 
 err:	if (need_free)
 		__os_free(dbenv, bp);

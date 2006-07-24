@@ -3,7 +3,7 @@
 # Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: foputils.tcl,v 12.3 2006/01/02 22:03:14 bostic Exp $
+# $Id: foputils.tcl,v 12.4 2006/06/27 22:31:08 bostic Exp $
 #
 proc do_op {omethod op names txn env {largs ""}} {
 	switch -exact $op {
@@ -35,9 +35,9 @@ proc do_subdb_op {omethod op names txn env {largs ""}} {
 
 proc do_inmem_op {omethod op names txn env {largs ""}} {
 	#
-	# The in-memory versions of do_op are different in 
+	# The in-memory versions of do_op are different in
 	# that we don't need to pass in the filename, just
-	# the subdb names. 
+	# the subdb names.
 	#
 	switch -exact $op {
 		delete { do_delete $names }
@@ -56,8 +56,8 @@ proc do_delete {names} {
 	#
 	# This is the odd man out among the ops -- it's not a Berkeley
 	# DB file operation, but mimics an operation done externally,
-	# as if a user deleted a file with "rm" or "erase". 
-	# 
+	# as if a user deleted a file with "rm" or "erase".
+	#
 	# We assume the file is found in $testdir.
 	#
 	global testdir

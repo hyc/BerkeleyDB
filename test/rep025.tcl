@@ -3,25 +3,25 @@
 # Copyright (c) 2004-2006
 #       Sleepycat Software.  All rights reserved.
 #
-# $Id: rep025.tcl,v 12.9 2006/03/10 21:42:11 carol Exp $
+# $Id: rep025.tcl,v 12.11 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  rep025
 # TEST  Test of DB_REP_JOIN_FAILURE.
 # TEST
-# TEST  One master, one client.  
-# TEST  Generate several log files. 
-# TEST  Remove old master log files. 
-# TEST  Delete client files and restart client. 
-# TEST  Put one more record to the master.  At the next 
+# TEST  One master, one client.
+# TEST  Generate several log files.
+# TEST  Remove old master log files.
+# TEST  Delete client files and restart client.
+# TEST  Put one more record to the master.  At the next
 # TEST  processing of messages, the client should get JOIN_FAILURE.
-# TEST  Recover with a hot failover. 
+# TEST  Recover with a hot failover.
 #
 proc rep025 { method { niter 200 } { tnum "025" } args } {
 	source ./include.tcl
 
-	# Run for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Run for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -70,7 +70,7 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 	file mkdir $clientdir
 
 	# Log size is small so we quickly create more than one.
-	# The documentation says that the log file must be at least 
+	# The documentation says that the log file must be at least
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
@@ -83,13 +83,13 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
 	set c_txnargs [adjust_txnargs $c_logtype]
 
-	# Open a master.  
+	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
 	    $m_logargs -log_max $log_max \
@@ -151,7 +151,7 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 			set stop 1
 		}
 	}
-	
+
 	puts "\tRep$tnum.e: Clean client and reopen."
 	env_cleanup $clientdir
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
@@ -164,7 +164,7 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 	error_check_good error_on_right_env [lindex $err 0] $clientenv
 	error_check_good right_error [is_substr $err DB_REP_JOIN_FAILURE] 1
 
-	# Add records to the master and update client. 
+	# Add records to the master and update client.
 	puts "\tRep$tnum.f: Update master; client should return error."
 	set entries 100
 	eval rep_test $method $masterenv NULL $entries $start $start 0 0 $largs
@@ -178,7 +178,7 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 	# internal initialization and restart the client.
 	if { $m_logtype == "on-disk" } {
 		puts "\tRep$tnum.g: Hot failover and catastrophic recovery."
-		error_check_good client_close [$clientenv close] 0  
+		error_check_good client_close [$clientenv close] 0
 		env_cleanup $clientdir
 		set files [glob $masterdir/log.* $masterdir/*.db]
 		foreach f $files {
@@ -186,7 +186,7 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 			file copy -force $f $clientdir/$filename
 		}
 		set clientenv [eval $cl_envcmd -recover_fatal -rep_client]
-	} else { 
+	} else {
 		puts "\tRep$tnum.g: Restart client forcing internal init."
 		set clientenv [eval $cl_envcmd -rep_client]
 		$clientenv rep_config {noautoinit off}
@@ -196,7 +196,7 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 	process_msgs $envlist 0 NONE err
 	error_check_good no_errors1 $err 0
 
-	# Adding another entry should not flush out an error. 
+	# Adding another entry should not flush out an error.
 	eval rep_test $method $masterenv NULL $entries $start $start 0 0 $largs
 	process_msgs $envlist 0 NONE err
 	error_check_good no_errors2 $err 0

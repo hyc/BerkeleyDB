@@ -3,7 +3,7 @@
 # Copyright (c) 2000-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb010.tcl,v 12.2 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdb010.tcl,v 12.3 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sdb010
 # TEST	Test DB->remove() method and DB->truncate() for subdbs
@@ -27,7 +27,7 @@ proc sdb010 { method args } {
 	#
 	# If we are not given an env, create one.
 	if { $eindex == -1 } {
-		set env [berkdb_env -create -home $testdir -mode 0644] 
+		set env [berkdb_env -create -home $testdir -mode 0644]
 		error_check_good env_open [is_valid_env $env] TRUE
 	} else {
 		incr eindex

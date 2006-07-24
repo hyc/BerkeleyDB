@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: DatabaseEntry.java,v 12.5 2006/03/13 01:53:40 alexg Exp $
+ * $Id: DatabaseEntry.java,v 12.6 2006/07/14 07:45:57 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -18,14 +18,14 @@ import java.lang.IllegalArgumentException;
 public class DatabaseEntry {
 
     /* Currently, JE stores all data records as byte array */
-    protected byte[] data;
-    protected ByteBuffer data_nio;
-    protected int dlen = 0;
-    protected int doff = 0;
-    protected int flags = 0;
-    protected int offset = 0;
-    protected int size = 0;
-    protected int ulen = 0;
+    /* package */ byte[] data;
+    /* package */ ByteBuffer data_nio;
+    /* package */ int dlen = 0;
+    /* package */ int doff = 0;
+    /* package */ int flags = 0;
+    /* package */ int offset = 0;
+    /* package */ int size = 0;
+    /* package */ int ulen = 0;
 
     /*
      * IGNORE is used to avoid returning data that is not needed.  It may not
@@ -42,7 +42,7 @@ public class DatabaseEntry {
     /* package */
     static final DatabaseEntry UNUSED = new DatabaseEntry();
 
-    protected static final int INT32SZ = 4;
+    /* package */ static final int INT32SZ = 4;
 
     /*
      * Constructors

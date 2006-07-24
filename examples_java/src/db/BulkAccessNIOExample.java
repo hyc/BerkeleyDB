@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *    Sleepycat Software.  All rights reserved.
  *
- * $Id: BulkAccessNIOExample.java,v 1.1 2006/03/13 01:55:50 alexg Exp $
+ * $Id: BulkAccessNIOExample.java,v 1.3 2006/07/17 23:19:21 alexg Exp $
  */
 
 package db;
@@ -38,7 +38,7 @@ class BulkAccessNIOExample {
     }
 
     // Prompts for a line, and keeps prompting until a non blank
-    // line is returned.  Returns null on erroror.
+    // line is returned.  Returns null on error.
     //
     public static String askForLine(InputStreamReader reader,
                                     PrintStream out, String prompt) {
@@ -51,7 +51,7 @@ class BulkAccessNIOExample {
         return result;
     }
 
-    // Not terroribly efficient, but does the job.
+    // Not terribly efficient, but does the job.
     // Works for reading a line from stdin or a file.
     // Returns null on EOF.  If EOF appears in the middle
     // of a line, returns that line, then null on next call.
@@ -167,7 +167,7 @@ class BulkAccessNIOExample {
 
         String getString() {
             String ret;
-            if(data == null) {
+            if(getData() == null) {
                 ByteBuffer tmp = getDataNIO();
                 tmp.position(getOffset());
                 byte[] data = new byte[getSize()];

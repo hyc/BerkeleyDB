@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_recover.c,v 12.29 2006/06/10 10:28:38 bostic Exp $
+ * $Id: env_recover.c,v 12.30 2006/06/27 22:22:02 bostic Exp $
  */
 
 #include "db_config.h"
@@ -25,8 +25,8 @@ static const char copyright[] =
 #endif
 
 static int	__db_log_corrupt __P((DB_ENV *, DB_LSN *));
-static int	__env_init_rec_42 __P((DB_ENV *));	 
-static int	__env_init_rec_43 __P((DB_ENV *));	 
+static int	__env_init_rec_42 __P((DB_ENV *));
+static int	__env_init_rec_43 __P((DB_ENV *));
 static int	__env_init_rec_45 __P((DB_ENV *));
 static int	__log_earliest __P((DB_ENV *, DB_LOGC *, int32_t *, DB_LSN *));
 static double	__lsn_diff __P((DB_LSN *, DB_LSN *, DB_LSN *, u_int32_t, int));

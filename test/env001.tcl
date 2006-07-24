@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: env001.tcl,v 12.3 2006/01/02 22:03:13 bostic Exp $
+# $Id: env001.tcl,v 12.4 2006/06/27 22:31:08 bostic Exp $
 #
 # TEST	env001
 # TEST	Test of env remove interface (formerly env_remove).
@@ -34,13 +34,13 @@ proc env001 { } {
 	puts "\tEnv001.c: Verify close."
 	error_check_good env:close:$env [$env close] 0
 
-	# Make sure we can reopen. 
+	# Make sure we can reopen.
 	puts "\tEnv001.d: Remove on closed environments."
 	puts "\t\tEnv001.d.1: Verify re-open."
 	set env [berkdb_env -home $testdir]
 	error_check_bad env:$testdir $env NULL
 	error_check_good env:$testdir [is_substr $env "env"] 1
-	
+
 	# remove environment
 	puts "\t\tEnv001.d.2: Close environment."
 	error_check_good env:close [$env close] 0
@@ -48,7 +48,7 @@ proc env001 { } {
 	error_check_good \
 	    envremove [berkdb envremove -force -home $testdir] 0
 
-	# HP-UX doesn't allow a second handle on an open env. 
+	# HP-UX doesn't allow a second handle on an open env.
 	if { $is_hp_test != 1 } {
 		puts "\tEnv001.e: Remove on open environments."
 		puts "\t\tEnv001.e.1: Env is open by single proc,\

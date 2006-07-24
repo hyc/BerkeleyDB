@@ -1,4 +1,4 @@
-<!--$Id: rep_event.so,v 1.1 2006/06/12 18:02:01 bostic Exp $-->
+<!--$Id: rep_event.so,v 1.2 2006/06/21 22:24:38 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -15,15 +15,12 @@
 </td></tr></table>
 <p>
 <h3 align=center>Release 4.5: Replication events</h3>
-<p>Two informational returns from the <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> method found in
-previous releases of Berkeley DB have been changed to events.  The
-DB_REP_NEWMASTER return from <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> is now the
-<a href="../../api_c/env_event_notify.html#DB_EVENT_REP_NEWMASTER">DB_EVENT_REP_NEWMASTER</a> value to the
-<a href="../../api_c/env_event_notify.html">DB_ENV-&gt;set_event_notify</a> method callback, and the DB_REP_STARTUPDONE
-return from <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> is now the
+<p>One of the informational returns from the <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> method found
+in previous releases of Berkeley DB has been changed to an event.  The
+DB_REP_STARTUPDONE return from <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> is now the
 <a href="../../api_c/env_event_notify.html#DB_EVENT_REP_STARTUPDONE">DB_EVENT_REP_STARTUPDONE</a> value to the
 <a href="../../api_c/env_event_notify.html">DB_ENV-&gt;set_event_notify</a> callback.</p>
-<p>Applications should update their handling of these events as
+<p>Applications should update their handling of this event as
 necessary.</p>
 <table width="100%"><tr><td><br></td><td align=right><a href="../upgrade.4.5/rep_set.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../upgrade.4.5/paniccall.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>

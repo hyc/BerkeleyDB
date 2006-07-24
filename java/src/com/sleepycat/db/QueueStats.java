@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class QueueStats extends DatabaseStats {
     // no public constructor
-    protected QueueStats() {}
+    /* package */ QueueStats() {}
 
     private int qs_magic;
     public int getMagic() {

@@ -1,4 +1,4 @@
-<!--$Id: env_set_tx_max.so,v 10.46 2006/04/28 15:27:40 mjc Exp $-->
+<!--$Id: env_set_tx_max.so,v 10.47 2006/06/19 22:25:31 bostic Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -36,8 +36,8 @@ for transactions.  Child transactions are counted as active until they
 either commit or abort.</p>
 <p>Transactions that update multiversion databases are not freed until the
 last page version that the transaction created is flushed from cache.
-This means that applications using MVCC may need a transaction for each
-page in cache, in the extreme case.</p>
+This means that applications using multi-version concurrency control may
+need a transaction for each page in cache, in the extreme case.</p>
 <p>When all of the memory available in the database environment for
 transactions is in use, calls to <a href="../api_c/txn_begin.html">DB_ENV-&gt;txn_begin</a> will fail (until some
 active transactions complete).  If this interface is never called, the

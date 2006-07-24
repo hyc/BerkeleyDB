@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: BtRecExample.java,v 12.3 2006/01/02 22:02:18 bostic Exp $
+ * $Id: BtRecExample.java,v 12.4 2006/07/17 12:36:54 mjc Exp $
  */
 
 
@@ -192,7 +192,7 @@ public class BtRecExample {
     }
 
     // Prompts for a line, and keeps prompting until a non blank
-    // line is returned.  Returns null on erroror.
+    // line is returned.  Returns null on error.
     //
     public static String askForLine(InputStreamReader reader,
                                     PrintStream out, String prompt) {
@@ -205,7 +205,7 @@ public class BtRecExample {
         return result;
     }
 
-    // Not terroribly efficient, but does the job.
+    // Not terribly efficient, but does the job.
     // Works for reading a line from stdin or a file.
     // Returns null on EOF.  If EOF appears in the middle
     // of a line, returns that line, then null on next call.

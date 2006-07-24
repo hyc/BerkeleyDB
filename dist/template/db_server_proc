@@ -25,6 +25,28 @@ __env_create_proc(timeout, replyp)
 	return;
 }
 
+/* BEGIN __env_cdsgroup_begin_proc */
+void
+__env_cdsgroup_begin_proc(dbenvcl_id, replyp)
+	unsigned int dbenvcl_id;
+	__env_cdsgroup_begin_reply *replyp;
+/* END __env_cdsgroup_begin_proc */
+{
+	int ret;
+	DB_ENV * dbenv;
+	ct_entry *dbenv_ctp;
+
+	ACTIVATE_CTP(dbenv_ctp, dbenvcl_id, CT_ENV);
+	dbenv = (DB_ENV *)dbenv_ctp->ct_anyp;
+
+	/*
+	 * XXX Code goes here
+	 */
+
+	replyp->status = ret;
+	return;
+}
+
 /* BEGIN __env_close_proc */
 void
 __env_close_proc(dbenvcl_id, flags, replyp)

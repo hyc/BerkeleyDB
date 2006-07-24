@@ -15,15 +15,7 @@ AH_TEMPLATE(HAVE_FILESYSTEM_NOTZERO,
 AH_TEMPLATE(HAVE_UNLINK_WITH_OPEN_FAILURE,
     [Define to 1 if unlink of file with open file descriptors will fail.])
 
-AH_BOTTOM([/*
- * Exit success/failure macros.
- */
-#ifndef	HAVE_EXIT_SUCCESS
-#define	EXIT_FAILURE	1
-#define	EXIT_SUCCESS	0
-#endif
-
-#include "clib_port.h"
+AH_BOTTOM([#include "clib_port.h"
 
 #ifdef DB_WIN32
 #include "win_db.h"

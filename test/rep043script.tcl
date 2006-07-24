@@ -3,7 +3,7 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep043script.tcl,v 1.6 2006/04/12 03:24:06 sue Exp $
+# $Id: rep043script.tcl,v 1.7 2006/06/27 22:31:09 bostic Exp $
 #
 # Rep043 script - constant writes to an env which may be
 # either a master or a client, or changing between the
@@ -62,7 +62,7 @@ set marker [eval "berkdb_open \
 # Write records to the database.
 set iter INIT
 set olditer $iter
-while { [llength [$marker get DONE]] == 0 } {  
+while { [llength [$marker get DONE]] == 0 } {
 	for { set i 0 } { $i < $nentries } { incr i } {
 	 	set kd [$marker get ITER]
 		if { [llength $kd] == 0 } {
@@ -74,7 +74,7 @@ while { [llength [$marker get DONE]] == 0 } {
 			puts "Entry $i: Iter changed from $olditer to $iter"
 			set olditer $iter
 		}
-	
+
 		set key WRITER.$writerid.$iter.$i
 		set str string.$i
 
@@ -89,13 +89,13 @@ puts "res is $res, abort"
 			error_check_good txn_abort [$t abort] 0
 		}
 
-		# If the handle is dead, get a new one. 
+		# If the handle is dead, get a new one.
 		if { [is_substr $res DB_REP_HANDLE_DEAD] == 1 } {
 puts "Close - dead handle."
 			error_check_good db_close [$db close] 0
 puts "Getting new handle"
 			set db [eval {berkdb_open_noerr} \
-			    -env $dbenv -auto_commit $testfile] 
+			    -env $dbenv -auto_commit $testfile]
 			error_check_good db_open [is_valid_db $db] TRUE
 		}
 

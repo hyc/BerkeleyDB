@@ -1,4 +1,4 @@
-# $Id: Makefile.in,v 12.61 2006/06/19 15:56:34 bostic Exp $
+# $Id: Makefile.in,v 12.67 2006/07/17 13:08:14 mjc Exp $
 
 srcdir=	@srcdir@/..
 builddir=.
@@ -22,15 +22,15 @@ transform=@program_transform_name@
 ##################################################
 # Paths for standard user-level commands.
 ##################################################
+AR=	@AR@
+CHMOD=	@CHMOD@
+CP=	@CP@
+LN=	@LN@
+MKDIR=	@MKDIR@
+RANLIB=	@RANLIB@
+RM=	@RM@
 SHELL=	@db_cv_path_sh@
-ar=	@db_cv_path_ar@
-chmod=	@db_cv_path_chmod@
-cp=	@db_cv_path_cp@
-ln=	@db_cv_path_ln@
-mkdir=	@db_cv_path_mkdir@
-ranlib=	@db_cv_path_ranlib@
-rm=	@db_cv_path_rm@
-strip=	@db_cv_path_strip@
+STRIP=	@STRIP@
 
 ##################################################
 # General library information.
@@ -56,7 +56,7 @@ CC=		@MAKEFILE_CC@
 CCLINK=		@MAKEFILE_CCLINK@ @CFLAGS@
 
 LDFLAGS=	@LDFLAGS@
-LIBS=		@LIBS@ @LIBSO_LIBS@
+LIBS=		@LIBSO_LIBS@
 TEST_LIBS=	@TEST_LIBS@
 LIBCSO_LIBS=	@LIBCSO_LIBS@ @LIBSO_LIBS@
 
@@ -180,9 +180,9 @@ PRINT_OBJS=\
 
 C_OBJS= @ADDITIONAL_OBJS@ @REPLACEMENT_OBJS@ @CRYPTO_OBJS@ @RPC_CLIENT_OBJS@ \
 	crdel_auto@o@ crdel_rec@o@ ctime@o@ db@o@ db_am@o@ db_auto@o@ \
-	db_byteorder@o@ db_cam@o@ db_clock@o@ db_conv@o@ db_dispatch@o@ \
-	db_dup@o@ db_err@o@ db_getlong@o@ db_idspace@o@ db_iface@o@ \
-	db_join@o@ db_log2@o@ db_meta@o@ db_method@o@ db_open@o@ \
+	db_byteorder@o@ db_cam@o@ db_cds@o@ db_clock@o@ db_conv@o@ \
+	db_dispatch@o@ db_dup@o@ db_err@o@ db_getlong@o@ db_idspace@o@ \
+	db_iface@o@ db_join@o@ db_log2@o@ db_meta@o@ db_method@o@ db_open@o@ \
 	db_overflow@o@ db_pr@o@ db_rec@o@ db_reclaim@o@ db_remove@o@ \
 	db_rename@o@ db_ret@o@ db_salloc@o@ db_setid@o@ db_setlsn@o@ \
 	db_shash@o@ db_stati@o@ db_truncate@o@ db_upg@o@ db_upg_opd@o@ \
@@ -370,6 +370,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/Transaction.java \
 	$(JAVA_SLEEPYCAT)/db/TransactionConfig.java \
 	$(JAVA_SLEEPYCAT)/db/TransactionStats.java \
+	$(JAVA_SLEEPYCAT)/db/UpdateConflictException.java \
 	$(JAVA_SLEEPYCAT)/db/VerifyConfig.java \
 	$(JAVA_SLEEPYCAT)/db/VersionMismatchException.java \
 	$(JAVA_SLEEPYCAT)/db/internal/Db.java \
@@ -558,7 +559,7 @@ LIB_INSTALL_FILE_LIST=\
 ##################################################
 all: @BUILD_TARGET@
 
-install-strip install: all @INSTALL_TARGET@
+install: all @INSTALL_TARGET@
 
 ##################################################
 # Library and standard utilities build.
@@ -570,33 +571,33 @@ $(libdb): $(DEF_LIB)
 
 # Real static C library.
 $(libdb_version): $(C_OBJS)
-	$(ar) cr $@ $(C_OBJS)
-	test ! -f $(ranlib) || $(ranlib) $@
-	$(rm) -f $(libdb)
-	$(ln) -s $(libdb_version) $(libdb)
+	$(AR) cr $@ $(C_OBJS)
+	test "$(RANLIB)" = "none" || $(RANLIB) $@
+	$(RM) -f $(libdb)
+	$(LN) -s $(libdb_version) $(libdb)
 
 # Shared C library.
 $(libso_target): $(C_OBJS)
 	$(SOLINK) $(SOFLAGS) $(LDFLAGS) -o $@ $(C_OBJS) $(LIBCSO_LIBS)
-	$(rm) -f $(libdb)
-	$(ln) -s .libs/$(libdb_version) $(libdb)
+	$(RM) -f $(libdb)
+	$(LN) -s .libs/$(libdb_version) $(libdb)
 
 # Static C++ library named libdb_cxx.a.
 $(libcxx): $(DEF_LIB_CXX)
 
 # Real static C++ library.
 $(libcxx_version): $(CXX_OBJS) $(C_OBJS)
-	$(ar) cr $@ $(CXX_OBJS) $(C_OBJS)
-	test ! -f $(ranlib) || $(ranlib) $@
-	$(rm) -f $(libcxx)
-	$(ln) -s $(libcxx_version) $(libcxx)
+	$(AR) cr $@ $(CXX_OBJS) $(C_OBJS)
+	test "$(RANLIB)" = "none" || $(RANLIB) $@
+	$(RM) -f $(libcxx)
+	$(LN) -s $(libcxx_version) $(libcxx)
 
 # Shared C++ library.
 $(libxso_target): $(CXX_OBJS) $(C_OBJS)
 	$(XSOLINK) $(SOFLAGS) $(LDFLAGS) \
 	    -o $@ $(CXX_OBJS) $(C_OBJS) $(LIBXSO_LIBS)
-	$(rm) -f $(libcxx)
-	$(ln) -s .libs/$(libcxx_version) $(libcxx)
+	$(RM) -f $(libcxx)
+	$(LN) -s .libs/$(libcxx_version) $(libcxx)
 
 # Shared Java library.
 $(libjso_target): $(JAVA_OBJS) $(C_OBJS)
@@ -616,14 +617,15 @@ java:	$(libj_jarfile) $(libj_exjarfile)
 
 $(libj_jarfile): $(JAVA_DBSRCS)
 	@test -d $(JAVA_CLASSTOP) || \
-	   ($(mkdir) -p $(JAVA_CLASSTOP) && $(chmod) $(dmode) $(JAVA_CLASSTOP))
+	   ($(MKDIR) -p $(JAVA_CLASSTOP) && \
+	   $(CHMOD) $(dmode) $(JAVA_CLASSTOP))
 	$(JAVAC) -d $(JAVA_CLASSTOP) $(JAVACFLAGS) $(JAVA_DBSRCS)
 	cd $(JAVA_CLASSTOP) && $(JAR) cf ../$(libj_jarfile) ./com/sleepycat
 
 $(libj_exjarfile): $(libj_jarfile) $(JAVA_EXSRCS)
 	@test -d $(JAVA_EXCLASSTOP) || \
-	   ($(mkdir) -p $(JAVA_EXCLASSTOP) && \
-		$(chmod) $(dmode) $(JAVA_EXCLASSTOP))
+	   ($(MKDIR) -p $(JAVA_EXCLASSTOP) && \
+		$(CHMOD) $(dmode) $(JAVA_EXCLASSTOP))
 	$(JAVAC) -classpath $(libj_jarfile) -d $(JAVA_EXCLASSTOP) \
 		$(JAVACFLAGS) $(JAVA_EXSRCS)
 	cd $(JAVA_EXCLASSTOP) && $(JAR) cf ../$(libj_exjarfile) .
@@ -710,62 +712,62 @@ uninstall: uninstall_include uninstall_lib uninstall_utilities uninstall_docs
 
 install_setup:
 	@test -d $(DESTDIR)$(prefix) || \
-	    ($(mkdir) -p $(DESTDIR)$(prefix) && \
-	    $(chmod) $(dmode) $(DESTDIR)$(prefix))
+	    ($(MKDIR) -p $(DESTDIR)$(prefix) && \
+	    $(CHMOD) $(dmode) $(DESTDIR)$(prefix))
 
 INCDOT=	db.h db_cxx.h @ADDITIONAL_INCS@
 install_include:
 	@echo "Installing DB include files: $(DESTDIR)$(includedir) ..."
 	@test -d $(DESTDIR)$(includedir) || \
-	    ($(mkdir) -p $(DESTDIR)$(includedir) && \
-	    $(chmod) $(dmode) $(DESTDIR)$(includedir))
-	@cd $(DESTDIR)$(includedir) && $(rm) -f $(INCDOT)
-	@$(cp) -p $(INCDOT) $(DESTDIR)$(includedir)
-	@cd $(DESTDIR)$(includedir) && $(chmod) $(fmode) $(INCDOT)
+	    ($(MKDIR) -p $(DESTDIR)$(includedir) && \
+	    $(CHMOD) $(dmode) $(DESTDIR)$(includedir))
+	@cd $(DESTDIR)$(includedir) && $(RM) -f $(INCDOT)
+	@$(CP) -p $(INCDOT) $(DESTDIR)$(includedir)
+	@cd $(DESTDIR)$(includedir) && $(CHMOD) $(fmode) $(INCDOT)
 
 uninstall_include:
-	@cd $(DESTDIR)$(includedir) && $(rm) -f $(INCDOT)
+	@cd $(DESTDIR)$(includedir) && $(RM) -f $(INCDOT)
 
 install_lib:
 	@echo "Installing DB library: $(DESTDIR)$(libdir) ..."
 	@test -d $(DESTDIR)$(libdir) || \
-	    ($(mkdir) -p $(DESTDIR)$(libdir) && \
-	    $(chmod) $(dmode) $(DESTDIR)$(libdir))
-	@cd $(DESTDIR)$(libdir) && $(rm) -f $(LIB_INSTALL_FILE_LIST)
+	    ($(MKDIR) -p $(DESTDIR)$(libdir) && \
+	    $(CHMOD) $(dmode) $(DESTDIR)$(libdir))
+	@cd $(DESTDIR)$(libdir) && $(RM) -f $(LIB_INSTALL_FILE_LIST)
 	@$(INSTALLER) @INSTALL_LIBS@ $(DESTDIR)$(libdir)
 	@(cd $(DESTDIR)$(libdir) && \
-	    test -f $(libso) && $(ln) -s $(libso) $(libso_default); \
-	    test -f $(libso) && $(ln) -s $(libso) $(libso_major); \
-	    test -f $(libxso) && $(ln) -s $(libxso) $(libxso_default); \
-	    test -f $(libxso) && $(ln) -s $(libxso) $(libxso_major); \
-	    test -f $(libtso) && $(ln) -s $(libtso) $(libtso_default); \
-	    test -f $(libtso) && $(ln) -s $(libtso) $(libtso_major); \
-	    test -f $(libjso) && $(ln) -s $(libjso) $(libjso_default); \
-	    test -f $(libjso) && $(ln) -s $(libjso) $(libjso_major); \
-	    test -f $(libjso) && $(ln) -s $(libjso) $(libjso_g)) || true
+	    test -f $(libso) && $(LN) -s $(libso) $(libso_default); \
+	    test -f $(libso) && $(LN) -s $(libso) $(libso_major); \
+	    test -f $(libxso) && $(LN) -s $(libxso) $(libxso_default); \
+	    test -f $(libxso) && $(LN) -s $(libxso) $(libxso_major); \
+	    test -f $(libtso) && $(LN) -s $(libtso) $(libtso_default); \
+	    test -f $(libtso) && $(LN) -s $(libtso) $(libtso_major); \
+	    test -f $(libjso) && $(LN) -s $(libjso) $(libjso_default); \
+	    test -f $(libjso) && $(LN) -s $(libjso) $(libjso_major); \
+	    test -f $(libjso) && $(LN) -s $(libjso) $(libjso_g)) || exit 0
 	@(test -f $(libj_jarfile) && \
-	    $(cp) $(libj_jarfile) $(DESTDIR)$(libdir) && \
-	    $(chmod) $(fmode) $(DESTDIR)$(libdir)/$(libj_jarfile)) || true
+	    $(CP) $(libj_jarfile) $(DESTDIR)$(libdir) && \
+	    $(CHMOD) $(fmode) $(DESTDIR)$(libdir)/$(libj_jarfile)) || exit 0
 
 uninstall_lib:
-	@cd $(DESTDIR)$(libdir) && $(rm) -f $(LIB_INSTALL_FILE_LIST)
+	@cd $(DESTDIR)$(libdir) && $(RM) -f $(LIB_INSTALL_FILE_LIST)
 
 install_utilities:
 	@echo "Installing DB utilities: $(DESTDIR)$(bindir) ..."
 	@test -d $(DESTDIR)$(bindir) || \
-	    ($(mkdir) -p $(DESTDIR)$(bindir) && \
-	    $(chmod) $(dmode) $(DESTDIR)$(bindir))
+	    ($(MKDIR) -p $(DESTDIR)$(bindir) && \
+	    $(CHMOD) $(dmode) $(DESTDIR)$(bindir))
 	@for i in $(UTIL_PROGS); do \
-		$(rm) -f $(DESTDIR)$(bindir)/$$i $(DESTDIR)$(bindir)/$$i.exe; \
-		test -f $$i.exe && i=$$i.exe || true; \
+		test -f $$i.exe && i=$$i.exe || i=$$i; \
+		$(RM) -f $(DESTDIR)$(bindir)/$$i; \
 		$(INSTALLER) $$i $(DESTDIR)$(bindir)/$$i; \
-		test -f $(strip) && $(strip) $(DESTDIR)$(bindir)/$$i || true; \
-		$(chmod) $(emode) $(DESTDIR)$(bindir)/$$i; \
+		test "$(STRIP)" = "none" || $(STRIP) $(DESTDIR)$(bindir)/$$i; \
+		$(CHMOD) $(emode) $(DESTDIR)$(bindir)/$$i; \
 	done
 
 uninstall_utilities:
 	@(cd $(DESTDIR)$(bindir); for i in $(UTIL_PROGS); do \
-		$(rm) -f $$i $$i.exe; \
+		$(RM) -f $$i $$i.exe; \
 	done)
 
 DOCLIST=api_c api_cxx api_tcl collections gsg gsg_txn images index.html \
@@ -774,22 +776,22 @@ DOCLIST=api_c api_cxx api_tcl collections gsg gsg_txn images index.html \
 install_docs:
 	@echo "Installing documentation: $(DESTDIR)$(docdir) ..."
 	@test -d $(DESTDIR)$(docdir) || \
-	    ($(mkdir) -p $(DESTDIR)$(docdir) && \
-	    $(chmod) $(dmode) $(DESTDIR)$(docdir))
-	@cd $(DESTDIR)$(docdir) && $(rm) -rf $(DOCLIST)
-	@cd $(srcdir)/docs && $(cp) -pr $(DOCLIST) $(DESTDIR)$(docdir)/
+	    ($(MKDIR) -p $(DESTDIR)$(docdir) && \
+	    $(CHMOD) $(dmode) $(DESTDIR)$(docdir))
+	@cd $(DESTDIR)$(docdir) && $(RM) -rf $(DOCLIST)
+	@cd $(srcdir)/docs && $(CP) -pr $(DOCLIST) $(DESTDIR)$(docdir)/
 
 uninstall_docs:
-	@cd $(DESTDIR)$(docdir) && $(rm) -rf $(DOCLIST)
+	@cd $(DESTDIR)$(docdir) && $(RM) -rf $(DOCLIST)
 
 ##################################################
 # Remaining standard Makefile targets.
 ##################################################
 CLEAN_LIST=\
 	TxnGuide TxnGuideInMemory bench_001 berkeley_db_cxxsvc \
-	berkeley_db_svc db_dump185 db_perf db_reptest dbs \
-	ex_access ex_apprec ex_btrec ex_dbclient ex_env ex_lock \
-	ex_mpool ex_repquote ex_sequence ex_thread ex_tpcb \
+	berkeley_db_svc db_dump185 db_perf db_reptest dbs ex_access \
+	ex_apprec ex_btrec ex_dbclient ex_env ex_lock ex_mpool \
+	ex_rep_base ex_rep_mgr ex_sequence ex_thread ex_tpcb \
 	example_database_load example_database_read excxx_access \
 	excxx_btrec excxx_env excxx_example_database_load \
 	excxx_example_database_read excxx_lock excxx_mpool \
@@ -797,15 +799,15 @@ CLEAN_LIST=\
 	txn_guide_inmemory
 
 mostly-clean clean:
-	$(rm) -rf $(C_OBJS)
-	$(rm) -rf $(CXX_OBJS) $(JAVA_OBJS) $(TCL_OBJS)
-	$(rm) -rf $(RPC_CLIENT_OBJS) $(RPC_SRV_OBJS) $(RPC_CXXSRV_OBJS)
-	$(rm) -rf $(UTIL_PROGS) *.exe $(CLEAN_LIST)
-	$(rm) -rf $(JAVA_CLASSTOP) $(JAVA_EXCLASSTOP)
-	$(rm) -rf tags *@o@ *.o *.o.lock *.lo core *.core
-	$(rm) -rf ALL.OUT.* PARALLEL_TESTDIR.*
-	$(rm) -rf RUN_LOG RUNQUEUE TESTDIR TESTDIR.A TEST.LIST
-	$(rm) -rf logtrack_seen.db tm .libs $(LIB_INSTALL_FILE_LIST)
+	$(RM) -rf $(C_OBJS)
+	$(RM) -rf $(CXX_OBJS) $(JAVA_OBJS) $(TCL_OBJS)
+	$(RM) -rf $(RPC_CLIENT_OBJS) $(RPC_SRV_OBJS) $(RPC_CXXSRV_OBJS)
+	$(RM) -rf $(UTIL_PROGS) *.exe $(CLEAN_LIST)
+	$(RM) -rf $(JAVA_CLASSTOP) $(JAVA_EXCLASSTOP)
+	$(RM) -rf tags *@o@ *.o *.o.lock *.lo core *.core
+	$(RM) -rf ALL.OUT.* PARALLEL_TESTDIR.*
+	$(RM) -rf RUN_LOG RUNQUEUE TESTDIR TESTDIR.A TEST.LIST
+	$(RM) -rf logtrack_seen.db tm .libs $(LIB_INSTALL_FILE_LIST)
 
 REALCLEAN_LIST=\
 	Makefile clib_port.h confdefs.h config.cache config.log config.status \
@@ -815,14 +817,14 @@ REALCLEAN_LIST=\
 	gen_db_server.c win_db.h
 
 distclean maintainer-clean realclean: clean
-	$(rm) -rf $(REALCLEAN_LIST)
-	$(rm) -rf libtool
+	$(RM) -rf $(REALCLEAN_LIST)
+	$(RM) -rf libtool
 
 check depend dvi info obj TAGS:
-	@echo "$@: make target not supported" && true
+	@echo "make: $@ target not available"
 
 dist rpm rpmbuild:
-	@echo "$@: make target not supported" && false
+	@echo "make: $@ target not available" && exit 1
 
 ##################################################
 # Multi-threaded testers, benchmarks.
@@ -1038,11 +1040,28 @@ ex_mpool: ex_mpool@o@ $(DEF_LIB)
 	$(CCLINK) -o $@ $(LDFLAGS) ex_mpool@o@ $(DEF_LIB) $(LIBS)
 	$(POSTLINK) $@
 
-ex_rq_main@o@:	$(srcdir)/examples_c/ex_repquote/ex_rq_main.c
+rep_base@o@: $(srcdir)/examples_c/ex_rep/base/rep_base.c
 	$(CC) $(CFLAGS) $?
+rep_common@o@: $(srcdir)/examples_c/ex_rep/common/rep_common.c
+	$(CC) $(CFLAGS) $?
+rep_msg@o@: $(srcdir)/examples_c/ex_rep/base/rep_msg.c
+	$(CC) $(CFLAGS) $?
+rep_net@o@: $(srcdir)/examples_c/ex_rep/base/rep_net.c
+	$(CC) $(CFLAGS) $?
+EX_REP_BASE_OBJS=\
+	rep_base@o@ rep_common@o@ rep_msg@o@ rep_net@o@
+ex_rep_base: $(EX_REP_BASE_OBJS) $(DEF_LIB)
+	$(CCLINK) -o $@ \
+	    $(LDFLAGS) $(EX_REP_BASE_OBJS) $(DEF_LIB) $(TEST_LIBS) $(LIBS)
+	$(POSTLINK) $@
 
-ex_repquote: ex_rq_main@o@ $(DEF_LIB)
-	$(CCLINK) -o $@ $(LDFLAGS) ex_rq_main@o@ $(DEF_LIB) $(TEST_LIBS) $(LIBS)
+rep_mgr@o@: $(srcdir)/examples_c/ex_rep/mgr/rep_mgr.c
+	$(CC) $(CFLAGS) $?
+EX_REP_MGR_OBJS=\
+	rep_common@o@ rep_mgr@o@
+ex_rep_mgr: $(EX_REP_MGR_OBJS) $(DEF_LIB)
+	$(CCLINK) -o $@ \
+	    $(LDFLAGS) $(EX_REP_MGR_OBJS) $(DEF_LIB) $(TEST_LIBS) $(LIBS)
 	$(POSTLINK) $@
 
 ex_sequence@o@: $(srcdir)/examples_c/ex_sequence.c
@@ -1249,6 +1268,8 @@ db_autop@o@: $(srcdir)/db/db_autop.c
 db_byteorder@o@: $(srcdir)/common/db_byteorder.c
 	 $(CC) $(CFLAGS) $?
 db_cam@o@: $(srcdir)/db/db_cam.c
+	 $(CC) $(CFLAGS) $?
+db_cds@o@: $(srcdir)/db/db_cds.c
 	 $(CC) $(CFLAGS) $?
 db_clock@o@: $(srcdir)/common/db_clock.c
 	 $(CC) $(CFLAGS) $?

@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: qam_files.c,v 12.15 2006/05/24 15:58:24 sue Exp $
+ * $Id: qam_files.c,v 12.16 2006/06/22 19:05:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -795,7 +795,7 @@ int __qam_nameop(dbp, txn, newname, op)
 			continue;
 		/* Make sure we have all numbers. foo.db vs. foo.db.0. */
 		for (cp = &names[i][len]; *cp != '\0'; cp++)
-			if (!isdigit(*cp))
+			if (!isdigit((int)*cp))
 				break;
 		if (*cp != '\0')
 			continue;

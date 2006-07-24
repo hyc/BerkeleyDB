@@ -1,11 +1,11 @@
-# $Id: buildrel,v 12.8 2006/04/24 16:39:27 bostic Exp $
+# $Id: buildrel,v 12.11 2006/07/20 13:50:14 bostic Exp $
 #
 # Build the distribution package.
 #
 # A set of commands intended to be cut and pasted into a csh window.
 
 setenv D		~bostic/sleepycat/db.rel
-setenv DBCONF		~bostic/bin/dbconf
+setenv DBCONF		"~bostic/bin/dbconf thread"
 setenv TARGETDIR	~bostic/sleepycat/
 
 # Update the release number.
@@ -42,6 +42,7 @@ rm -rf $R/docs && cp -r $D/docs $R/docs
 # Remove source directories we don't distribute.
 #
 # PATCH RELEASE: starting point.
+cd $R && rm -rf build_brew os_brew
 cd $R && rm -rf docs_src docs/api_java docs/api_c/pindex.src
 cd $R && rm -rf java/src/com/sleepycat/xa
 cd $R && rm -rf rpc_server/java

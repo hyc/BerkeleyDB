@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_rec.c,v 12.23 2006/06/12 22:52:15 bostic Exp $
+ * $Id: db_rec.c,v 12.24 2006/06/27 22:21:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -18,7 +18,8 @@
 static int __db_pg_free_recover_int __P((DB_ENV *,
     __db_pg_freedata_args *, DB *, DB_LSN *, DB_MPOOLFILE *, db_recops, int));
 static int __db_pg_free_recover_42_int __P((DB_ENV *,
-    __db_pg_freedata_42_args *, DB *, DB_LSN *, DB_MPOOLFILE *, db_recops, int));
+    __db_pg_freedata_42_args *,
+    DB *, DB_LSN *, DB_MPOOLFILE *, db_recops, int));
 
 /*
  * PUBLIC: int __db_addrem_recover
@@ -1644,7 +1645,8 @@ __db_pg_freedata_42_recover(dbenv, dbtp, lsnp, op, info)
 	REC_PRINT(__db_pg_freedata_42_print);
 	REC_INTRO(__db_pg_freedata_42_read, 1, 0);
 
-	ret = __db_pg_free_recover_42_int(dbenv, argp, file_dbp, lsnp, mpf, op, 1);
+	ret = __db_pg_free_recover_42_int(
+	    dbenv, argp, file_dbp, lsnp, mpf, op, 1);
 
 done:	*lsnp = argp->prev_lsn;
 out:
@@ -1730,7 +1732,8 @@ next2:	if ((ret = __memp_fget(mpf, &argp->next, NULL, 0, &pagep)) != 0) {
 		pagep->prev_pgno = argp->prev;
 
 		modified = 1;
-	} else if ((argp->opcode == DB_REM_PAGE_COMPAT && cmp_n == 0 && DB_UNDO(op)) ||
+	} else if ((argp->opcode == DB_REM_PAGE_COMPAT &&
+	    cmp_n == 0 && DB_UNDO(op)) ||
 	    (argp->opcode == DB_ADD_PAGE_COMPAT && cmp_p == 0 && DB_REDO(op))) {
 		/* Undo the remove or redo the add. */
 		pagep->prev_pgno = argp->pgno;

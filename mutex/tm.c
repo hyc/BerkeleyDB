@@ -1,7 +1,7 @@
 /*
  * Standalone mutex tester for Berkeley DB mutexes.
  *
- * $Id: tm.c,v 12.13 2006/06/11 12:27:33 bostic Exp $
+ * $Id: tm.c,v 12.14 2006/07/17 15:16:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -681,8 +681,7 @@ tm_file_init()
 		exit(EXIT_FAILURE);
 	}
 
-	if ((err = __os_seek(dbenv, fhp,
-	    0, 0, len, 0, DB_OS_SEEK_SET)) != 0 ||
+	if ((err = __os_seek(dbenv, fhp, 0, 0, len)) != 0 ||
 	    (err = __os_write(dbenv, fhp, &err, 1, &nwrite)) != 0 ||
 	    nwrite != 1) {
 		(void)fprintf(stderr,

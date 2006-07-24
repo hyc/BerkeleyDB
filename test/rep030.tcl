@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep030.tcl,v 12.12 2006/06/14 18:37:20 sue Exp $
+# $Id: rep030.tcl,v 12.15 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep030
 # TEST	Test of internal initialization multiple files and pagesizes.
@@ -18,14 +18,14 @@
 proc rep030 { method { niter 500 } { tnum "030" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Valid for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -90,7 +90,7 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -210,7 +210,7 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	error_check_good emptydb [is_valid_db $db] TRUE
 	error_check_good empty_close [$db close] 0
 	#
-	# Keep this subdb (regular if queue) database open. 
+	# Keep this subdb (regular if queue) database open.
 	# We need it a few times later on.
 	#
 	set db [eval {berkdb_open_noerr -env $masterenv -auto_commit -create \
@@ -251,6 +251,7 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	if { $opts == "clean" } {
 		env_cleanup $clientdir
 		file mkdir $clientdir/data
+		file mkdir $clientdir/data2
 	}
 	if { $opts == "bulk" } {
 		error_check_good bulk [$masterenv rep_config {bulk on}] 0

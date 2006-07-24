@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: log.c,v 12.34 2006/06/12 23:17:56 bostic Exp $
+ * $Id: log.c,v 12.37 2006/07/17 15:16:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -112,7 +112,7 @@ __log_open(dbenv)
 		 * so that checkpoint gets a valid ckp_lsn value.
 		 */
 		if (IS_INIT_LSN(lp->lsn) &&
-		    (ret = __log_newfile(dblp, NULL, 0)) != 0)
+		    (ret = __log_newfile(dblp, NULL, 0, 0)) != 0)
 			goto err;
 
 		/*
@@ -1184,8 +1184,7 @@ __log_zero(dbenv, from_lsn, to_lsn)
 	memset(buf, 0, sizeof(buf));
 
 	/* Initialize the write position. */
-	if ((ret = __os_seek(dbenv,
-	    dblp->lfhp, 0, 0, from_lsn->offset, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, dblp->lfhp, 0, 0, from_lsn->offset)) != 0)
 		goto err;
 
 	while (len > 0) {
@@ -1200,31 +1199,6 @@ err:	(void)__os_closehandle(dbenv, dblp->lfhp);
 	dblp->lfhp = NULL;
 
 	return (ret);
-}
-
-/*
- * __log_stable_lsn --
- *	Get the most recent stable LSN.  No committed transaction
- *	can have a larger LSN.
- *
- * PUBLIC: int __log_stable_lsn __P((DB_ENV *, DB_LSN *));
- */
-int
-__log_stable_lsn(dbenv, lsnp)
-	DB_ENV *dbenv;
-	DB_LSN *lsnp;
-{
-	DB_LOG *dblp;
-	LOG *lp;
-
-	dblp = dbenv->lg_handle;
-	lp = (LOG *)dblp->reginfo.primary;
-
-	LOG_SYSTEM_LOCK(dbenv);
-	*lsnp = lp->lsn;
-	LOG_SYSTEM_UNLOCK(dbenv);
-
-	return (0);
 }
 
 /*

@@ -1,30 +1,30 @@
-# Microsoft Developer Studio Project File - Name="ex_repquote" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="ex_rep_base" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
 
-CFG=ex_repquote - Win32 Debug
+CFG=ex_rep_base - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "ex_repquote.mak".
+!MESSAGE NMAKE /f "ex_rep_base.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "ex_repquote.mak" CFG="ex_repquote - Win32 Debug"
+!MESSAGE NMAKE /f "ex_rep_base.mak" CFG="ex_rep_base - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "ex_repquote - Win32 Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - Win32 Debug" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - Win32 ASCII Debug" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - Win32 ASCII Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - x64 Debug AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - x64 Release AMD64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - x64 Debug IA64" (based on "Win32 (x86) Console Application")
-!MESSAGE "ex_repquote - x64 Release IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - Win32 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - Win32 ASCII Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - Win32 ASCII Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - x64 Debug AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - x64 Release AMD64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - x64 Debug IA64" (based on "Win32 (x86) Console Application")
+!MESSAGE "ex_rep_base - x64 Release IA64" (based on "Win32 (x86) Console Application")
 !MESSAGE 
 
 # Begin Project
@@ -34,17 +34,17 @@ CFG=ex_repquote - Win32 Debug
 CPP=cl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "ex_repquote - Win32 Release"
+!IF  "$(CFG)" == "ex_rep_base - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release"
-# PROP BASE Intermediate_Dir "Release/ex_repquote"
+# PROP BASE Intermediate_Dir "Release/ex_rep_base"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release/ex_repquote"
+# PROP Intermediate_Dir "Release/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"  /FD /c
@@ -55,20 +55,20 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 libdb45.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release"
+# ADD BASE LINK32 ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 libdb45.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - Win32 Debug"
+!ELSEIF  "$(CFG)" == "ex_rep_base - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug"
-# PROP BASE Intermediate_Dir "Debug/ex_repquote"
+# PROP BASE Intermediate_Dir "Debug/ex_rep_base"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug/ex_repquote"
+# PROP Intermediate_Dir "Debug/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"  /FD /c
@@ -79,21 +79,21 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libdb45d.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug"
+# ADD BASE LINK32 ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 libdb45d.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - Win32 ASCII Debug"
+!ELSEIF  "$(CFG)" == "ex_rep_base - Win32 ASCII Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug_ASCII"
-# PROP BASE Intermediate_Dir "Debug_ASCII/ex_repquote"
+# PROP BASE Intermediate_Dir "Debug_ASCII/ex_rep_base"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug_ASCII"
-# PROP Intermediate_Dir "Debug_ASCII/ex_repquote"
+# PROP Intermediate_Dir "Debug_ASCII/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Z7 /Od /I "." /I ".." /D "WIN32" /D "_DEBUG" /D "_CONSOLE"  /FD /c
@@ -104,21 +104,21 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no
-# ADD LINK32 libdb45d.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_ASCII"
+# ADD BASE LINK32 libdb45d.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no
+# ADD LINK32 libdb45d.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /pdb:none /debug /machine:I386 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_ASCII"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - Win32 ASCII Release"
+!ELSEIF  "$(CFG)" == "ex_rep_base - Win32 ASCII Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release_ASCII"
-# PROP BASE Intermediate_Dir "Release_ASCII/ex_repquote"
+# PROP BASE Intermediate_Dir "Release_ASCII/ex_rep_base"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release_ASCII"
-# PROP Intermediate_Dir "Release_ASCII/ex_repquote"
+# PROP Intermediate_Dir "Release_ASCII/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /I "." /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE"  /FD /c
@@ -129,21 +129,21 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt"
-# ADD LINK32 libdb45.lib  kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release_ASCII"
+# ADD BASE LINK32 libdb45.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt"
+# ADD LINK32 libdb45.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:I386 /nodefaultlib:"libcmt" /libpath:"Release_ASCII"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - x64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "ex_rep_base - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug_AMD64"
-# PROP BASE Intermediate_Dir "Debug_AMD64/ex_repquote"
+# PROP BASE Intermediate_Dir "Debug_AMD64/ex_rep_base"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug_AMD64"
-# PROP Intermediate_Dir "Debug_AMD64/ex_repquote"
+# PROP Intermediate_Dir "Debug_AMD64/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /EHsc /Z7 /Od /I "." /I ".." /D "WIN32" /D "_DEBUG" /D "_CONSOLE"  /Wp64 /FD /c
@@ -154,21 +154,21 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no
-# ADD LINK32 libdb45d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_AMD64"
+# ADD BASE LINK32 libdb45d.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no
+# ADD LINK32 libdb45d.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:AMD64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_AMD64"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - x64 Release AMD64"
+!ELSEIF  "$(CFG)" == "ex_rep_base - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release_AMD64"
-# PROP BASE Intermediate_Dir "Release_AMD64/ex_repquote"
+# PROP BASE Intermediate_Dir "Release_AMD64/ex_rep_base"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release_AMD64"
-# PROP Intermediate_Dir "Release_AMD64/ex_repquote"
+# PROP Intermediate_Dir "Release_AMD64/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /EHsc /O2 /I "." /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE"  /Wp64 /FD /c
@@ -179,21 +179,21 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt"
-# ADD LINK32 libdb45.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt" /libpath:"Release_AMD64"
+# ADD BASE LINK32 libdb45.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt"
+# ADD LINK32 libdb45.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:AMD64 /nodefaultlib:"libcmt" /libpath:"Release_AMD64"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - x64 Debug IA64"
+!ELSEIF  "$(CFG)" == "ex_rep_base - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug_IA64"
-# PROP BASE Intermediate_Dir "Debug_IA64/ex_repquote"
+# PROP BASE Intermediate_Dir "Debug_IA64/ex_rep_base"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug_IA64"
-# PROP Intermediate_Dir "Debug_IA64/ex_repquote"
+# PROP Intermediate_Dir "Debug_IA64/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /EHsc /Z7 /Od /I "." /I ".." /D "WIN32" /D "_DEBUG" /D "_CONSOLE"  /Wp64 /FD /c
@@ -204,21 +204,21 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no
-# ADD LINK32 libdb45d.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_IA64"
+# ADD BASE LINK32 libdb45d.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no
+# ADD LINK32 libdb45d.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /debug /machine:IA64 /nodefaultlib:"libcmtd" /fixed:no /libpath:"Debug_IA64"
 
-!ELSEIF  "$(CFG)" == "ex_repquote - x64 Release IA64"
+!ELSEIF  "$(CFG)" == "ex_rep_base - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release_IA64"
-# PROP BASE Intermediate_Dir "Release_IA64/ex_repquote"
+# PROP BASE Intermediate_Dir "Release_IA64/ex_rep_base"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release_IA64"
-# PROP Intermediate_Dir "Release_IA64/ex_repquote"
+# PROP Intermediate_Dir "Release_IA64/ex_rep_base"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /EHsc /O2 /I "." /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE"  /Wp64 /FD /c
@@ -229,24 +229,36 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt"
-# ADD LINK32 libdb45.lib  bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt" /libpath:"Release_IA64"
+# ADD BASE LINK32 libdb45.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt"
+# ADD LINK32 libdb45.lib ws2_32.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:console /machine:IA64 /nodefaultlib:"libcmt" /libpath:"Release_IA64"
 
 !ENDIF 
 
 # Begin Target
 
-# Name "ex_repquote - Win32 Release"
-# Name "ex_repquote - Win32 Debug"
-# Name "ex_repquote - Win32 ASCII Debug"
-# Name "ex_repquote - Win32 ASCII Release"
-# Name "ex_repquote - x64 Debug AMD64"
-# Name "ex_repquote - x64 Release AMD64"
-# Name "ex_repquote - x64 Debug IA64"
-# Name "ex_repquote - x64 Release IA64"
+# Name "ex_rep_base - Win32 Release"
+# Name "ex_rep_base - Win32 Debug"
+# Name "ex_rep_base - Win32 ASCII Debug"
+# Name "ex_rep_base - Win32 ASCII Release"
+# Name "ex_rep_base - x64 Debug AMD64"
+# Name "ex_rep_base - x64 Release AMD64"
+# Name "ex_rep_base - x64 Debug IA64"
+# Name "ex_rep_base - x64 Release IA64"
 # Begin Source File
 
-SOURCE=..\examples_c\ex_repquote\ex_rq_main.c
+SOURCE=..\examples_c\ex_rep\base\rep_base.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\examples_c\ex_rep\base\rep_msg.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\examples_c\ex_rep\base\rep_net.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\examples_c\ex_rep\common\rep_common.c
 # End Source File
 # Begin Source File
 

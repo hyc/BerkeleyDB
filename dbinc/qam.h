@@ -4,11 +4,15 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: qam.h,v 12.7 2006/04/27 13:40:14 mjc Exp $
+ * $Id: qam.h,v 12.8 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef	_DB_QAM_H_
 #define	_DB_QAM_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * QAM data elements: a status field and the data.
@@ -166,6 +170,10 @@ typedef enum {
 
 #define	__qam_dirty(dbp, pgno, pagep, lsnp, flags) \
 	__qam_fprobe(dbp, pgno, lsnp, pagep, QAM_PROBE_DIRTY, flags)
+
+#if defined(__cplusplus)
+}
+#endif
 
 #include "dbinc_auto/qam_auto.h"
 #include "dbinc_auto/qam_ext.h"

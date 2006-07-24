@@ -103,6 +103,7 @@
 
 /* Deal with Microsoft's attempt at deprecating C standard runtime functions */
 #if !defined(SWIG_NO_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
+# undef _CRT_SECURE_NO_DEPRECATE
 # define _CRT_SECURE_NO_DEPRECATE
 #endif
 
@@ -211,7 +212,7 @@ static jclass dbex_class, deadex_class, lockex_class, memex_class;
 static jclass repdupmasterex_class, rephandledeadex_class;
 static jclass repholdelectionex_class, repjoinfailex_class, replockoutex_class;
 static jclass repunavailex_class;
-static jclass runrecex_class, versionex_class;
+static jclass runrecex_class, updconfex_class, versionex_class;
 static jclass filenotfoundex_class, illegalargex_class, outofmemerr_class;
 static jclass bytearray_class, string_class, outputstream_class;
 
@@ -357,6 +358,9 @@ static jfieldID mpool_stat_st_hash_wait_fid;
 static jfieldID mpool_stat_st_hash_max_wait_fid;
 static jfieldID mpool_stat_st_region_nowait_fid;
 static jfieldID mpool_stat_st_region_wait_fid;
+static jfieldID mpool_stat_st_mvcc_frozen_fid;
+static jfieldID mpool_stat_st_mvcc_thawed_fid;
+static jfieldID mpool_stat_st_mvcc_freed_fid;
 static jfieldID mpool_stat_st_alloc_fid;
 static jfieldID mpool_stat_st_alloc_buckets_fid;
 static jfieldID mpool_stat_st_alloc_max_buckets_fid;
@@ -486,7 +490,7 @@ static jmethodID memex_construct, memex_update_method;
 static jmethodID repdupmasterex_construct, rephandledeadex_construct;
 static jmethodID repholdelectionex_construct, repjoinfailex_construct;
 static jmethodID replockoutex_construct, repunavailex_construct;
-static jmethodID runrecex_construct, versionex_construct;
+static jmethodID runrecex_construct, updconfex_construct, versionex_construct;
 static jmethodID filenotfoundex_construct, illegalargex_construct;
 static jmethodID outofmemerr_construct;
 static jmethodID lock_construct;
@@ -544,6 +548,7 @@ const struct {
 	{ &replockoutex_class, DB_PKG "ReplicationLockoutException" },
 	{ &repunavailex_class, DB_PKG "ReplicationSiteUnavailableException" },
 	{ &runrecex_class, DB_PKG "RunRecoveryException" },
+	{ &updconfex_class, DB_PKG "UpdateConflictException" },
 	{ &versionex_class, DB_PKG "VersionMismatchException" },
 	{ &filenotfoundex_class, "java/io/FileNotFoundException" },
 	{ &illegalargex_class, "java/lang/IllegalArgumentException" },
@@ -720,6 +725,9 @@ const struct {
 	{ &mpool_stat_st_hash_max_wait_fid, &mpool_stat_class, "st_hash_max_wait", "I" },
 	{ &mpool_stat_st_region_nowait_fid, &mpool_stat_class, "st_region_nowait", "I" },
 	{ &mpool_stat_st_region_wait_fid, &mpool_stat_class, "st_region_wait", "I" },
+	{ &mpool_stat_st_mvcc_frozen_fid, &mpool_stat_class, "st_mvcc_frozen", "I" },
+	{ &mpool_stat_st_mvcc_thawed_fid, &mpool_stat_class, "st_mvcc_thawed", "I" },
+	{ &mpool_stat_st_mvcc_freed_fid, &mpool_stat_class, "st_mvcc_freed", "I" },
 	{ &mpool_stat_st_alloc_fid, &mpool_stat_class, "st_alloc", "I" },
 	{ &mpool_stat_st_alloc_buckets_fid, &mpool_stat_class, "st_alloc_buckets", "I" },
 	{ &mpool_stat_st_alloc_max_buckets_fid, &mpool_stat_class, "st_alloc_max_buckets", "I" },
@@ -890,6 +898,8 @@ const struct {
 	{ &repunavailex_construct, &repunavailex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &runrecex_construct, &runrecex_class, "<init>",
+	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
+	{ &updconfex_construct, &updconfex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &versionex_construct, &versionex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
@@ -1111,11 +1121,15 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 	
 	case DB_LOCK_NOTGRANTED:
 		return (jthrowable)(*jenv)->NewObject(jenv, lockex_class,
-		    lockex_construct, jmsg, 0, 0, NULL, NULL, 0, jdbenv);
+		    lockex_construct, jmsg, err, 0, NULL, NULL, 0, jdbenv);
+	
+	case DB_UPDATE_CONFLICT:
+		return (jthrowable)(*jenv)->NewObject(jenv, updconfex_class,
+		    updconfex_construct, jmsg, err, jdbenv);
 	
 	case DB_VERSION_MISMATCH:
 		return (jthrowable)(*jenv)->NewObject(jenv, versionex_class,
-		    versionex_construct, jmsg, 0, 0, NULL, NULL, 0, jdbenv);
+		    versionex_construct, jmsg, err, jdbenv);
 	
 	default:
 		return (jthrowable)(*jenv)->NewObject(jenv, dbex_class,
@@ -1728,7 +1742,7 @@ static int __dbj_app_dispatch(DB_ENV *dbenv,
 	return (ret);
 }
 
-static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id) 
+static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info) 
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
 	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
@@ -2122,17 +2136,30 @@ Java_com_sleepycat_db_internal_db_1javaJNI_deleteRef0(
 		(*jenv)->DeleteGlobalRef(jenv, jref);
 }
 
+/*
+ * For reasons unknown, the version of gcc that ships with SUSE 10 miscompiles
+ * this code when optimization levels '-O2' or higher are used.  We work around
+ * this by using a more involved way of extracting the pointers.  The rest of
+ * the JNI code should be converted to doing it this way in the future -- we
+ * don't know where else this bug might surface, and using a union is slightly
+ * less ugly than casting.
+ */
 JNIEXPORT jlong JNICALL
 Java_com_sleepycat_db_internal_db_1javaJNI_getDbEnv0(
-    JNIEnv *jenv, jclass jcls, jlong jarg1) {
-	DB *self = *(DB **)(void *)&jarg1;
-	jlong env_cptr;
+    JNIEnv *jenv, jclass jcls, jlong jdb) {
+	DB *self;
+	union {
+		jlong lval;
+		void *pval;
+	} u;
 
 	COMPQUIET(jenv, NULL);
 	COMPQUIET(jcls, NULL);
 
-	*(DB_ENV **)(void *)&env_cptr = self->dbenv;
-	return (env_cptr);
+	u.lval = jdb;
+	self = (DB *)u.pval;
+	u.pval = self->dbenv;
+	return (u.lval);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -2472,6 +2499,11 @@ SWIGINTERN void DbEnv_err(struct DbEnv *self,int error,char const *message){
 SWIGINTERN void DbEnv_errx(struct DbEnv *self,char const *message){
 		self->errx(self, message);
 	}
+SWIGINTERN DB_TXN *DbEnv_cdsgroup_begin(struct DbEnv *self){
+		DB_TXN *tid = NULL;
+		errno = self->cdsgroup_begin(self, &tid);
+		return tid;
+	}
 SWIGINTERN db_ret_t DbEnv_fileid_reset(struct DbEnv *self,char const *file,u_int32_t flags){
 		return self->fileid_reset(self, file, flags);
 	}
@@ -2584,7 +2616,7 @@ SWIGINTERN db_ret_t DbEnv_set_tx_max(struct DbEnv *self,u_int32_t max){
 SWIGINTERN db_ret_t DbEnv_set_app_dispatch(struct DbEnv *self,int (*tx_recover)(DB_ENV *,DBT *,DB_LSN *,db_recops)){
 		return self->set_app_dispatch(self, tx_recover);
 	}
-SWIGINTERN db_ret_t DbEnv_set_event_notify(struct DbEnv *self,void (*event_notify)(DB_ENV *,u_int32_t)){
+SWIGINTERN db_ret_t DbEnv_set_event_notify(struct DbEnv *self,void (*event_notify)(DB_ENV *,u_int32_t,void *)){
 		return self->set_event_notify(self, event_notify);
 	}
 SWIGINTERN db_ret_t DbEnv_set_tx_timestamp(struct DbEnv *self,time_t *timestamp){
@@ -5295,6 +5327,25 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1errx(JN
 }
 
 
+JNIEXPORT jlong JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1cdsgroup_1begin(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jlong jresult = 0 ;
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  DB_TXN *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  result = (DB_TXN *)DbEnv_cdsgroup_begin(arg1); 
+  *(DB_TXN **)&jresult = result; 
+  return jresult;
+}
+
+
 JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1fileid_1reset(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jint jarg3) {
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -6110,7 +6161,7 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1ap
 
 JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1event_1notify(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg2) {
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
-  void (*arg2)(DB_ENV *,u_int32_t) = (void (*)(DB_ENV *,u_int32_t)) 0 ;
+  void (*arg2)(DB_ENV *,u_int32_t,void *) = (void (*)(DB_ENV *,u_int32_t,void *)) 0 ;
   db_ret_t result;
   
   (void)jenv;

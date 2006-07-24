@@ -3,11 +3,11 @@
 # Copyright (c) 2000-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test076.tcl,v 12.2 2006/01/02 22:03:28 bostic Exp $
+# $Id: test076.tcl,v 12.3 2006/07/12 18:18:01 carol Exp $
 #
 # TEST	test076
 # TEST	Test creation of many small databases in a single environment. [#1528].
-proc test076 { method { ndbs 1000  } { tnum "076" } args } {
+proc test076 { method { ndbs 1000 } { tnum "076" } args } {
 	global is_qnx_test
 	source ./include.tcl
 
@@ -48,6 +48,10 @@ proc test076 { method { ndbs 1000  } { tnum "076" } args } {
 	if { $is_qnx_test && $ndbs > 100 } {
 		set ndbs 100
 	}
+	if { [is_queueext $method] } {
+		set ndbs 500
+	}
+
 	puts -nonewline "Test$tnum $method ($args): "
 	puts -nonewline "Create $ndbs"
 	puts " small databases in one env."

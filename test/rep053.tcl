@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep053.tcl,v 12.10 2006/03/10 21:44:32 carol Exp $
+# $Id: rep053.tcl,v 12.12 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep053
 # TEST	Replication and basic client-to-client synchronization.
@@ -15,14 +15,14 @@
 proc rep053 { method { niter 200 } { tnum "053" } args } {
 	source ./include.tcl
 
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -31,7 +31,7 @@ proc rep053 { method { niter 200 } { tnum "053" } args } {
 	# Run the body of the test with and without recovery,
 	# and with and without cleaning.  Skip recovery with in-memory
 	# logging - it doesn't make sense.
-	set throttle { "throttle" "" } 
+	set throttle { "throttle" "" }
 	foreach r $test_recopts {
 		foreach t $throttle {
 			foreach l $logsets {
@@ -72,7 +72,7 @@ proc rep053_sub { method niter tnum logset recargs throttle largs } {
 	set c_logtype [lindex $logset 1]
 	set c2_logtype [lindex $logset 2]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set c2_logargs [adjust_logargs $c2_logtype]
@@ -105,7 +105,7 @@ proc rep053_sub { method niter tnum logset recargs throttle largs } {
 	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# If throttling is specified, turn it on here.  Throttle the
-	# client, since this is a test of client-to-client sync up. 
+	# client, since this is a test of client-to-client sync up.
 	if { $throttle == "throttle" } {
 		error_check_good \
 		    throttle [$clientenv rep_limit 0 [expr 32 * 1024]] 0
@@ -152,7 +152,7 @@ proc rep053_sub { method niter tnum logset recargs throttle largs } {
 	# The original client should have received at least one request for
 	# service from the new client.  Since this is a fully operational
 	# client, there should be no misses and more than one request only
-	# if we are throttling. 
+	# if we are throttling.
 	#
 	if { $throttle == "throttle" } {
 		error_check_good req [expr $req > 1] 1

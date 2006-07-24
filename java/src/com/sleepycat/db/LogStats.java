@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class LogStats {
     // no public constructor
-    protected LogStats() {}
+    /* package */ LogStats() {}
 
     private int st_magic;
     public int getMagic() {

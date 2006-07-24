@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mutex.h,v 12.18 2006/06/05 16:35:46 bostic Exp $
+ * $Id: mutex.h,v 12.19 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef _DB_MUTEX_H_
 #define	_DB_MUTEX_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * Mutexes are represented by unsigned, 32-bit integral values.  As the
@@ -138,6 +142,10 @@
 #endif
 #ifndef DB_END_SINGLE_THREAD
 #define	DB_END_SINGLE_THREAD
+#endif
+
+#if defined(__cplusplus)
+}
 #endif
 
 #include "dbinc_auto/mutex_ext.h"

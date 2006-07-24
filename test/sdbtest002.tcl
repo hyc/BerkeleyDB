@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdbtest002.tcl,v 12.2 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdbtest002.tcl,v 12.3 2006/06/30 19:55:43 carol Exp $
 #
 # TEST	sdbtest002
 # TEST	Tests multiple access methods in one subdb access by multiple
@@ -91,11 +91,6 @@ proc sdbtest002 { {nentries 10000} } {
 		error_check_good db_open [is_valid_db $db] TRUE
 		dump_file $db $txn $t1 $checkfunc
 		error_check_good db_close [$db close] 0
-		#
-		# This is just so that t2 is there and empty
-		# since we are only appending below.
-		#
-		exec > $t2
 
 		# Now compare the keys to see if they match the dictionary (or ints)
 		if { [is_record_based $method] == 1 } {

@@ -4,7 +4,7 @@
  * Copyright (c) 2000-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: db_server_proc.c,v 12.11 2006/06/12 23:18:17 bostic Exp $
+ * $Id: db_server_proc.c,v 12.12 2006/07/17 13:08:38 mjc Exp $
  */
 
 #include "db_config.h"
@@ -56,6 +56,43 @@ __env_set_cachesize_proc(dbenvcl_id, gbytes, bytes, ncache, replyp)
 	dbenv = (DB_ENV *)dbenv_ctp->ct_anyp;
 
 	ret = dbenv->set_cachesize(dbenv, gbytes, bytes, ncache);
+
+	replyp->status = ret;
+	return;
+}
+
+/*
+ * PUBLIC: void __env_cdsgroup_begin_proc __P((u_int,
+ * PUBLIC:      __env_cdsgroup_begin_reply *));
+ */
+void
+__env_cdsgroup_begin_proc(dbenvcl_id, replyp)
+	u_int dbenvcl_id;
+	__env_cdsgroup_begin_reply *replyp;
+{
+	DB_ENV *dbenv;
+	DB_TXN *txnp;
+	ct_entry *ctp, *dbenv_ctp;
+	int ret;
+
+	ACTIVATE_CTP(dbenv_ctp, dbenvcl_id, CT_ENV);
+	dbenv = (DB_ENV *)dbenv_ctp->ct_anyp;
+
+	ctp = new_ct_ent(&replyp->status);
+	if (ctp == NULL)
+		return;
+
+	ret = dbenv->cdsgroup_begin(dbenv, &txnp);
+	if (ret == 0) {
+		ctp->ct_txnp = txnp;
+		ctp->ct_type = CT_TXN;
+		ctp->ct_parent = NULL;
+		ctp->ct_envparent = dbenv_ctp;
+		replyp->txnidcl_id = ctp->ct_id;
+		__dbsrv_settimeout(ctp, dbenv_ctp->ct_timeout);
+		__dbsrv_active(ctp);
+	} else
+		__dbclear_ctp(ctp);
 
 	replyp->status = ret;
 	return;

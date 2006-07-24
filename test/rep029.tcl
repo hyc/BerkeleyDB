@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep029.tcl,v 12.14 2006/03/10 21:42:11 carol Exp $
+# $Id: rep029.tcl,v 12.16 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep029
 # TEST	Test of internal initialization.
@@ -17,12 +17,12 @@
 proc rep029 { method { niter 200 } { tnum "029" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 	if { $checking_valid_methods } {
-		return $valid_methods	
+		return "ALL"
 	}
 	global passwd
 	global has_crypto
@@ -41,7 +41,7 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 			return
 		}
 	}
-		
+
 	# This test needs to set its own pagesize.
 	set pgindex [lsearch -exact $args "-pagesize"]
 	if { $pgindex != -1 } {
@@ -71,12 +71,12 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep029_sub $method $niter $tnum $envargs \
-				    $l $r $c $inmem $args	
+				    $l $r $c $inmem $args
 
 				# Skip encrypted tests if not supported.
 				if { $has_crypto == 0 || $inmem } {
 					continue
-				}	
+				}
 
 				# Run same set of tests with security.
 				#
@@ -121,7 +121,7 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -144,7 +144,7 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
 	    $c_logargs -log_max $log_max $envargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \ 
+#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
 #	    $c_logargs -log_max $log_max $envargs \
 #	    -verbose {rep on} -errpfx CLIENT -errfile /dev/stderr \
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"

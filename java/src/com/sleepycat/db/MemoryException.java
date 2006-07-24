@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: MemoryException.java,v 12.2 2006/01/02 22:02:36 bostic Exp $
+ * $Id: MemoryException.java,v 12.3 2006/07/14 07:45:58 mjc Exp $
  */
 package com.sleepycat.db;
 
@@ -14,7 +14,7 @@ public class MemoryException extends DatabaseException {
     private DatabaseEntry dbt = null;
     private String message;
 
-    protected MemoryException(final String s,
+    /* package */ MemoryException(final String s,
                               final DatabaseEntry dbt,
                               final int errno,
                               final DbEnv dbenv) {

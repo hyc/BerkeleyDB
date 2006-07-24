@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: bt_recno.c,v 12.25 2006/06/13 06:21:47 mjc Exp $
+ * $Id: bt_recno.c,v 12.26 2006/06/23 21:55:19 bostic Exp $
  */
 
 #include "db_config.h"
@@ -1193,7 +1193,7 @@ __ram_sread(dbc, top)
 		data.size = 0;
 		if (F_ISSET(dbp, DB_AM_FIXEDLEN))
 			for (len = t->re_len; len > 0; --len) {
-				if ((ch = getc(t->re_fp)) == EOF) {
+				if ((ch = fgetc(t->re_fp)) == EOF) {
 					if (data.size == 0)
 						goto eof;
 					break;
@@ -1202,7 +1202,7 @@ __ram_sread(dbc, top)
 			}
 		else
 			for (;;) {
-				if ((ch = getc(t->re_fp)) == EOF) {
+				if ((ch = fgetc(t->re_fp)) == EOF) {
 					if (data.size == 0)
 						goto eof;
 					break;

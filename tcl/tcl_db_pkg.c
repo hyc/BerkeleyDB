@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.31 2006/05/05 14:54:02 bostic Exp $
+ * $Id: tcl_db_pkg.c,v 12.32 2006/06/20 12:54:57 sue Exp $
  */
 
 #include "db_config.h"
@@ -387,6 +387,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-cdb",
 		"-cdb_alldb",
 		"-client_timeout",
+		"-event",
 		"-lock",
 		"-lock_conflict",
 		"-lock_detect",
@@ -458,6 +459,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_CDB,
 		ENV_CDB_ALLDB,
 		ENV_CLIENT_TO,
+		ENV_EVENT,
 		ENV_LOCK,
 		ENV_CONFLICT,
 		ENV_DETECT,
@@ -618,21 +620,13 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 	 * From here on we must 'goto error' in order to clean up the
 	 * env from db_env_create.
 	 */
-	if (server != NULL) {
-		(*env)->set_errpfx((*env), ip->i_name);
-		(*env)->set_errcall((*env), _ErrorFunc);
-		if ((ret = (*env)->set_rpc_server((*env), NULL, server,
-		    client_to, server_to, 0)) != 0) {
-			result = TCL_ERROR;
-			goto error;
-		}
-	} else {
-		/*
-		 * Create the environment handle before parsing the args
-		 * since we'll be modifying the environment as we parse.
-		 */
-		(*env)->set_errpfx((*env), ip->i_name);
-		(*env)->set_errcall((*env), _ErrorFunc);
+	(*env)->set_errpfx((*env), ip->i_name);
+	(*env)->set_errcall((*env), _ErrorFunc);
+	if (server != NULL &&
+	    (ret = (*env)->set_rpc_server((*env), NULL, server,
+	    client_to, server_to, 0)) != 0) {
+		result = TCL_ERROR;
+		goto error;
 	}
 
 	/* Hang our info pointer on the env handle, so we can do callbacks. */
@@ -772,6 +766,15 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			ret = (*env)->set_lk_detect(*env, detect);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "lock_detect");
+			break;
+		case ENV_EVENT:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "-event eventproc");
+				result = TCL_ERROR;
+				break;
+			}
+			result = tcl_EventNotify(interp, *env, objv[i++], ip);
 			break;
 		case ENV_LOCK_MAX_LOCKS:
 		case ENV_LOCK_MAX_LOCKERS:

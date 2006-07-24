@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: env_failchk.c,v 12.26 2006/05/05 14:53:30 bostic Exp $
+ * $Id: env_failchk.c,v 12.27 2006/06/27 22:22:02 bostic Exp $
  */
 
 #include "db_config.h"
@@ -102,7 +102,7 @@ __env_thread_init(dbenv, created)
 			}
 			return (0);
 		}
-		
+
 		if (!created) {
 			__db_errx(dbenv,
 		"thread table must be allocated at environment create time");

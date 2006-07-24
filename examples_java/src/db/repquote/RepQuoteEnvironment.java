@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: RepQuoteEnvironment.java,v 1.1 2006/05/11 11:55:32 alexg Exp $
+ * $Id: RepQuoteEnvironment.java,v 1.2 2006/06/27 22:48:15 bostic Exp $
  */
 
 package db.repquote;
@@ -19,8 +19,8 @@ import com.sleepycat.db.*;
 public class RepQuoteEnvironment extends Environment
 {
     private boolean isMaster;
-    
-    public RepQuoteEnvironment(final java.io.File host, 
+
+    public RepQuoteEnvironment(final java.io.File host,
         EnvironmentConfig config)
         throws DatabaseException, java.io.FileNotFoundException
     {

@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_method.c,v 12.31 2006/06/12 23:17:59 bostic Exp $
+ * $Id: mp_method.c,v 12.33 2006/07/17 23:57:01 ubell Exp $
  */
 
 #include "db_config.h"
@@ -359,6 +359,7 @@ __memp_nameop(dbenv, fileid, newname, fullold, fullnew, inmem)
 	roff_t newname_off;
 	u_int32_t bucket;
 	int locked, ret;
+	size_t nlen;
 	void *p;
 
 #undef	op_is_remove
@@ -368,6 +369,7 @@ __memp_nameop(dbenv, fileid, newname, fullold, fullnew, inmem)
 
 	dbmp = NULL;
 	mfp = NULL;
+	p = NULL;
 	locked = ret = 0;
 
 	if (!MPOOL_ON(dbenv))
@@ -392,17 +394,17 @@ __memp_nameop(dbenv, fileid, newname, fullold, fullnew, inmem)
 	 */
 	hp = R_ADDR(dbmp->reginfo, mp->ftab);
 	if (op_is_remove) {
-		p = NULL;
 		COMPQUIET(newname_off, INVALID_ROFF);
 	} else {
+		nlen = strlen(newname);
 		if ((ret = __memp_alloc(dbmp, dbmp->reginfo,
-		    NULL, strlen(newname) + 1, &newname_off, &p)) != 0)
+		    NULL,  nlen + 1, &newname_off, &p)) != 0)
 			return (ret);
-		memcpy(p, newname, strlen(newname) + 1);
+		memcpy(p, newname, nlen + 1);
 		MPOOL_SYSTEM_LOCK(dbenv);
 		locked = 1;
 		if (inmem) {
-			bucket = FNBUCKET(newname, strlen(newname));
+			bucket = FNBUCKET(newname, nlen);
 			nhp = hp + bucket;
 			MUTEX_LOCK(dbenv, nhp->mtx_hash);
 			SH_TAILQ_FOREACH(mfp, &nhp->hash_bucket, q, __mpoolfile)
@@ -481,10 +483,6 @@ __memp_nameop(dbenv, fileid, newname, fullold, fullnew, inmem)
 		}
 	}
 
-	/* Delete the memory we no longer need. */
-	if (p != NULL)
-		__memp_free(&dbmp->reginfo[0], NULL, p);
-
 fsop:	if (mfp == NULL && inmem) {
 		ret = ENOENT;
 		goto err;
@@ -515,7 +513,11 @@ fsop:	if (mfp == NULL && inmem) {
 		}
 	}
 
-err:	if (locked == 1)
+	/* Delete the memory we no longer need. */
+err:	if (p != NULL)
+		__memp_free(&dbmp->reginfo[0], NULL, p);
+
+	if (locked == 1)
 		MPOOL_SYSTEM_UNLOCK(dbenv);
 	return (ret);
 }
@@ -634,7 +636,7 @@ __memp_ftruncate(dbmfp, pgno, flags)
 	 * locked at a higher level of the system.
 	 */
 	if (ret == 0) {
-		mfp->last_flushed_pgno = mfp->last_pgno = pgno - 1;
+		mfp->last_pgno = pgno - 1;
 		if (mfp->last_flushed_pgno > mfp->last_pgno)
 			mfp->last_flushed_pgno = mfp->last_pgno;
 	}

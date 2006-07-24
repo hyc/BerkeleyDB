@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: os.h,v 12.14 2006/06/12 13:51:19 bostic Exp $
+ * $Id: os.h,v 12.16 2006/07/17 15:16:33 bostic Exp $
  */
 
 #ifndef _DB_OS_H_
@@ -29,7 +29,7 @@ extern "C" {
 			break;						\
 		(ret) = __os_get_syserr();				\
 		if (((__t_ret = __os_posix_err(ret)) == EAGAIN ||	\
-	    	    __t_ret == EBUSY || __t_ret == EINTR ||		\
+		    __t_ret == EBUSY || __t_ret == EINTR ||		\
 		    __t_ret == EIO || __t_ret == 70) && --__retries > 0)\
 			continue;					\
 		break;							\
@@ -43,7 +43,7 @@ extern "C" {
 			break;						\
 		(ret) = __os_get_syserr();				\
 		if (((__t_ret = __os_posix_err(ret)) == EAGAIN ||	\
-	    	    __t_ret == EBUSY || __t_ret == EINTR ||		\
+		    __t_ret == EBUSY || __t_ret == EINTR ||		\
 		    __t_ret == EIO) && --__retries > 0)			\
 			continue;					\
 		break;							\
@@ -76,15 +76,6 @@ extern "C" {
 #define	DB_OSO_SEQ	0x0080		/* Expected sequential access. */
 #define	DB_OSO_TEMP	0x0100		/* Remove after last close. */
 #define	DB_OSO_TRUNC	0x0200		/* POSIX: O_TRUNC */
-
-/*
- * Seek options understood by __os_seek.
- */
-typedef enum {
-	DB_OS_SEEK_CUR,			/* POSIX: SEEK_CUR */
-	DB_OS_SEEK_END,			/* POSIX: SEEK_END */
-	DB_OS_SEEK_SET			/* POSIX: SEEK_SET */
-} DB_OS_SEEK;
 
 /*
  * We group certain seek/write calls into a single function so that we

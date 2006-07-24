@@ -1,4 +1,4 @@
-<!--$Id: mastersync.so,v 1.6 2005/11/07 18:19:04 alanb Exp $-->
+<!--$Id: mastersync.so,v 1.9 2006/07/21 16:31:12 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -23,38 +23,50 @@ controls an application can use to reduce the synchronization burden.</p>
 <h3>Delaying client synchronization</h3>
 <p>When a replication group has a new master, either as specified by the
 application or as a result of winning an election, all clients in the
-replication group must synchronize with the new master.  This can strain
-the resources of the new master since a large number of clients may be
-attempting to communicate with and transfer records from the master.
-Client applications wanting to delay client synchronization should call
-the  <a href="../../api_c/rep_config.html">DB_ENV-&gt;rep_set_config</a> method with the <a href="../../api_c/rep_config.html#DB_REP_CONF_DELAYCLIENT">DB_REP_CONF_DELAYCLIENT</a>
-flag.  This configuration causes the client to return
-UNREF==DB_REP_NEWMASTER from the <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> method as always, but
-the client will not proceed to synchronize with the new master.</p>
+replication group must synchronize with the new master.  This can
+strain the resources of the new master since a large number of clients
+may be attempting to communicate with and transfer records from the
+master.  Client applications wanting to delay client synchronization
+should call the <a href="../../api_c/rep_config.html">DB_ENV-&gt;rep_set_config</a> method with the
+<a href="../../api_c/rep_config.html#DB_REP_CONF_DELAYCLIENT">DB_REP_CONF_DELAYCLIENT</a> flag.  The application will be
+notified of the establishment of the new master as usual, but the
+client will not proceed to synchronize with the new master.</p>
+<p>Replication Manager notifies applications of a new master via the
+<a href="../../api_c/env_event_notify.html#DB_EVENT_REP_NEWMASTER">DB_EVENT_REP_NEWMASTER</a> event.  Applications using the Base
+replication API learn of a new master when the
+<a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> method returns <a href="../../api_c/rep_message.html#DB_REP_NEWMASTER">DB_REP_NEWMASTER</a>.</p> 
 <p>Client applications choosing to delay synchronization in this manner are
 responsible for synchronizing the client environment at some future time
 using the <a href="../../api_c/rep_sync.html">DB_ENV-&gt;rep_sync</a> method.</p>
 <h3>Client-to-client synchronization</h3>
-<p>Clients may accept and service requests from other clients.  Clients
-request records calling the client application's transport callback
-function.  Requests that can be satisfied by other clients will have the
-<a href="../../api_c/rep_transport.html#DB_REP_ANYWHERE">DB_REP_ANYWHERE</a> flag set for the transport function.
-Applications may choose to send these requests to any client or to
-ignore the flag and send them to the site specified by the message's
-environment id.</p>
-<p>Client applications may use whatever algorithm they choose to load
-balance requests to other clients.  Any client receiving a request it
-is unable to satisfy will reply to the requesting client, telling the
-requesting client that it is unable to provide the requested
-information, and the original client will re-request the information.
-Additionally, if the original request never reaches the client to which
-the application sends the request, the original client will again
-re-request the information.  In either of these cases, the re-request
-will have the <a href="../../api_c/rep_transport.html#DB_REP_REREQUEST">DB_REP_REREQUEST</a> flag set for the transport
-function.  Applications may respond to the <a href="../../api_c/rep_transport.html#DB_REP_REREQUEST">DB_REP_REREQUEST</a>
-flag by forwarding the request to the master (as specified by the
-message's environment id), or by continuing to forward the request
-to another client.</p>
+<p>Instead of synchronizing with the new master, it is sometimes possible
+for a client to synchronize with another client.  Berkeley DB initiates
+synchronization at the client by sending a request message via the
+transport call-back function of the communication infrastructure.  The
+message is destined for the master site, but is also marked with a
+<a href="../../api_c/rep_transport.html#DB_REP_ANYWHERE">DB_REP_ANYWHERE</a> flag.  The application may choose to send such
+a request to another client, or to ignore the flag, sending it to its
+indicated destination.</p>
+<p>Furthermore, when the other client receives such a request it may be
+unable to satisfy it.  In this case it will reply to the requesting
+client, telling it that it is unable to provide the requested
+information.  The requesting client will then re-issue the request.
+Additionally, if the original request never reaches the other client,
+the requesting client will again re-issue the request.  In either of
+these cases the message will be marked with the
+<a href="../../api_c/rep_transport.html#DB_REP_REREQUEST">DB_REP_REREQUEST</a> flag.  The application may continue trying
+find another client to service the request, or it may give up and
+simply send it to the master (i.e., the environment ID explicitly
+specified to the transport function).</p>
+<p>Applications written to the Base replication API have complete freedom
+in choosing where to send these <a href="../../api_c/rep_transport.html#DB_REP_ANYWHERE">DB_REP_ANYWHERE</a> requests, and
+in deciding how to handle <a href="../../api_c/rep_transport.html#DB_REP_REREQUEST">DB_REP_REREQUEST</a>.</p>
+<p>Replication Manager allows an application to designate one remote site
+(called its "peer") to receive client-to-client requests, via the
+flags parameter to the <a href="../../api_c/repmgr_remote_site.html">DB_ENV-&gt;repmgr_add_remote_site</a> method.  Replication
+Manager will always first try to send requests marked with the
+<a href="../../api_c/rep_transport.html#DB_REP_ANYWHERE">DB_REP_ANYWHERE</a> flag to its peer, if available.  However, it
+will always send a <a href="../../api_c/rep_transport.html#DB_REP_REREQUEST">DB_REP_REREQUEST</a> to the master site.</p>
 <p>The delayed synchronization and client-to-client synchronization
 features allow applications to do load balancing within replication
 groups.  For example, consider a replication group with 5 sites, A, B,

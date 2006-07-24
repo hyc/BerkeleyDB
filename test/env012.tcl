@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #       Sleepycat Software.  All rights reserved.
 #
-# $Id: env012.tcl,v 12.8 2006/01/02 22:03:14 bostic Exp $
+# $Id: env012.tcl,v 12.9 2006/06/27 22:31:08 bostic Exp $
 #
 # TEST	env012
 # TEST	Test DB_REGISTER.
@@ -13,23 +13,23 @@
 # TEST
 # TEST	Then, the real tests:
 # TEST	For each test, we start a process that opens an env with -register.
-# TEST	
+# TEST
 # TEST	1. Verify that a 2nd process can enter the existing env with -register.
-# TEST	
+# TEST
 # TEST	2. Kill the 1st process, and verify that the 2nd process can enter
 # TEST	with "-register -recover".
 # TEST
-# TEST	3. Kill the 1st process, and verify that the 2nd process cannot 
+# TEST	3. Kill the 1st process, and verify that the 2nd process cannot
 # TEST	enter with just "-register".
-# TEST	
-# TEST	4. While the 1st process is still running, a 2nd process enters 
+# TEST
+# TEST	4. While the 1st process is still running, a 2nd process enters
 # TEST	with "-register".  Kill the 1st process.  Verify that a 3rd process
-# TEST	can enter with "-register -recover".  Verify that the 3rd process, 
+# TEST	can enter with "-register -recover".  Verify that the 3rd process,
 # TEST	entering, causes process 2 to fail with the message DB_RUNRECOVERY.
 # TEST
 # TEST	5. We had a bug where recovery was always run with -register
-# TEST	if there were empty slots in the process registry file.  Verify 
-# TEST	that recovery doesn't automatically run if there is an empty slot. 
+# TEST	if there were empty slots in the process registry file.  Verify
+# TEST	that recovery doesn't automatically run if there is an empty slot.
 proc env012 { } {
 	source ./include.tcl
 	set tnum "012"
@@ -44,7 +44,7 @@ proc env012 { } {
 		puts "Skipping env$tnum; DB_REGISTER is not supported."
 	}
 	error_check_good env_close [$env close] 0
-		    
+
 	puts "\tEnv$tnum.b: Second process can join with -register."
 	env_cleanup $testdir
 	set testfile TESTFILE
@@ -74,7 +74,7 @@ proc env012 { } {
 	puts "\tEnv$tnum.c: Second process can join with -register\
 	    -recover after first process is killed."
 	env_cleanup $testdir
-	
+
 	puts "\t\tEnv$tnum.c1: Start process 1."
 	set pids {}
 	set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
@@ -86,7 +86,7 @@ proc env012 { } {
 	puts "\t\tEnv$tnum.c2: Kill process 1."
 	set pids [findprocessids $testdir $pids]
 	foreach pid $pids {
-		tclkill $pid 
+		tclkill $pid
 	}
 
 	puts "\t\tEnv$tnum.c3: Start process 2."
@@ -103,7 +103,7 @@ proc env012 { } {
 	puts "\tEnv$tnum.d: Second process cannot join without -recover\
 	    after first process is killed."
 	env_cleanup $testdir
-	
+
 	puts "\t\tEnv$tnum.d1: Start process 1."
 	set pids {}
 	set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
@@ -115,7 +115,7 @@ proc env012 { } {
 	puts "\t\tEnv$tnum.d2: Kill process 1."
 	set pids [findprocessids $testdir $pids]
 	foreach pid $pids {
-		tclkill $pid 
+		tclkill $pid
 	}
 
 	puts "\t\tEnv$tnum.d3: Start process 2."
@@ -125,14 +125,14 @@ proc env012 { } {
 	tclsleep 2
 	watch_procs $p2 1 120
 
-	# Check log files.  Log p1 should be clean, but we 
+	# Check log files.  Log p1 should be clean, but we
 	# expect DB_RUNRECOVERY in log p2.
 	logcheck $testdir/env$tnum.log.p1
 	logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
 
 	puts "\tEnv$tnum.e: Running registered process detects failure."
 	env_cleanup $testdir
-	
+
 	puts "\t\tEnv$tnum.e1: Start process 1."
 	set pids {}
 	set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
@@ -141,7 +141,7 @@ proc env012 { } {
 	lappend pids $p1
 	tclsleep 2
 
-	# Identify child process to kill later. 
+	# Identify child process to kill later.
 	set pids [findprocessids $testdir $pids]
 
 	puts "\t\tEnv$tnum.e2: Start process 2."
@@ -162,8 +162,8 @@ proc env012 { } {
 
 	watch_procs $p2 1 120
 	watch_procs $p3 1 120
-	
-	# Check log files.  Logs p1 and p3 should be clean, but we 
+
+	# Check log files.  Logs p1 and p3 should be clean, but we
 	# expect DB_RUNRECOVERY in log p2.
 	logcheck $testdir/env$tnum.log.p1
 	logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
@@ -188,7 +188,7 @@ proc env012 { } {
 
 	logcheck $testdir/env$tnum.log.p1
 	logcheck $testdir/env$tnum.log.p2
-    
+
 	# Start two more process.  Neither should signal a need for recovery.
 	puts "\t\tEnv$tnum.f3: Start process 3."
 	set p3 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
@@ -196,7 +196,7 @@ proc env012 { } {
 	    $testdir $testfile GET $key $data RECOVER 10 &]
 
 	tclsleep 2
-    
+
 	puts "\t\tEnv$tnum.f4: Start process 4."
 	set p4 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
 	    $testdir/env$tnum.log.p4 \
@@ -227,21 +227,21 @@ proc logcheckfails { logname message }  {
 			close $f
 			return 0
 		}
-	}		
+	}
 	close $f
 	puts "FAIL: Did not find expected error $message."
 }
 
 # The script wrap.tcl creates a parent and a child process.  We
-# can't see the child pids, so find them by their sentinel files. 
-# This creates a list where the parent pid is always listed 
+# can't see the child pids, so find them by their sentinel files.
+# This creates a list where the parent pid is always listed
 # before the child pid.
 proc findprocessids { testdir plist }  {
 	set beginfiles [glob $testdir/begin.*]
 	foreach b $beginfiles {
 		regsub $testdir/begin. $b {} pid
 		if { [lsearch -exact $plist $pid] == -1 } {
-			lappend plist $pid	
+			lappend plist $pid
 		}
 	}
 	return $plist

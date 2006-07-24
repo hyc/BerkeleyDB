@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_region.c,v 12.16 2006/06/19 14:55:37 mjc Exp $
+ * $Id: mp_region.c,v 12.20 2006/07/11 13:24:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -229,6 +229,7 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 		SH_TAILQ_INIT(&hp->hash_bucket);
 		hp->hash_page_dirty = hp->hash_priority = hp->hash_io_wait = 0;
 		hp->flags = 0;
+		ZERO_LSN(hp->old_reader);
 	}
 	mp->htab_buckets = mp->stat.st_hash_buckets = htab_buckets;
 
@@ -259,10 +260,11 @@ __memp_region_size(dbenv, reg_sizep, htab_bucketsp)
 {
 	roff_t reg_size;
 
-	/* Figure out how big each cache region is. */
-	reg_size = (roff_t)(dbenv->mp_gbytes / dbenv->mp_ncache) * GIGABYTE;
-	reg_size += ((roff_t)(dbenv->mp_gbytes %
-	    dbenv->mp_ncache) * GIGABYTE) / dbenv->mp_ncache;
+	/*
+	 * Figure out how big each cache region is.  Cast an operand to roff_t
+	 * so we do 64-bit arithmetic as appropriate.
+	 */
+	reg_size = ((roff_t)GIGABYTE / dbenv->mp_ncache) * dbenv->mp_gbytes;
 	reg_size += dbenv->mp_bytes / dbenv->mp_ncache;
 	*reg_sizep = reg_size;
 
@@ -342,13 +344,13 @@ __memp_dbenv_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	BH *bhp;
+	BH_FROZEN_ALLOC *frozen_alloc;
 	DB_MPOOL *dbmp;
 	DB_MPOOLFILE *dbmfp;
 	DB_MPOOL_HASH *hp;
 	DB_MPREG *mpreg;
 	MPOOL *mp;
 	REGINFO *reginfo;
-	void *p;
 	u_int32_t bucket, i;
 	int ret, t_ret;
 
@@ -370,8 +372,11 @@ __memp_dbenv_refresh(dbenv)
 			    bucket < mp->htab_buckets; ++hp, ++bucket) {
 				while ((bhp = SH_TAILQ_FIRST(
 				    &hp->hash_bucket, __bh)) != NULL)
-					if (!F_ISSET(bhp, BH_FROZEN) &&
-					    (t_ret = __memp_bhfree(
+					if (F_ISSET(bhp, BH_FROZEN))
+						SH_TAILQ_REMOVE(
+						    &hp->hash_bucket, bhp,
+						    hq, __bh);
+					else if ((t_ret = __memp_bhfree(
 					    dbmp, hp, bhp,
 					    BH_FREE_FREEMEM |
 					    BH_FREE_UNLOCKED)) != 0 && ret == 0)
@@ -383,9 +388,12 @@ __memp_dbenv_refresh(dbenv)
 				    dbenv, &hp->mtx_io)) != 0 && ret == 0)
 					ret = t_ret;
 			}
-			while ((p = (void *)SH_TAILQ_FIRST(
-			    &mp->alloc_frozen, __bh_frozen_a)) != NULL)
-				__db_shalloc_free(reginfo, p);
+			while ((frozen_alloc = SH_TAILQ_FIRST(
+			    &mp->alloc_frozen, __bh_frozen_a)) != NULL) {
+				SH_TAILQ_REMOVE(&mp->alloc_frozen, frozen_alloc,
+				    links, __bh_frozen_a);
+				__db_shalloc_free(reginfo, frozen_alloc);
+			}
 		}
 
 	/* Discard DB_MPOOLFILEs. */
@@ -410,6 +418,9 @@ __memp_dbenv_refresh(dbenv)
 		reginfo = &dbmp->reginfo[0];
 		mp = dbmp->reginfo[0].primary;
 		__memp_free(reginfo, NULL, R_ADDR(reginfo, mp->regids));
+
+		/* Discard the File table. */
+		__memp_free(reginfo, NULL, R_ADDR(reginfo, mp->ftab));
 
 		/* Discard Hash tables. */
 		for (i = 0; i < dbmp->nreg; ++i) {

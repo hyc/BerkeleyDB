@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb018.tcl,v 12.4 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdb018.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sdb018
 # TEST	Tests join of in-memory named databases.
@@ -44,7 +44,7 @@ proc sdb018 {method {nentries 100} args } {
 	set chkindex [lsearch -exact $args "-chksum"]
 	if { $chkindex != -1 } {
 		set args [lreplace $args $chkindex $chkindex]
-	} 
+	}
 
 	set testfile ""
 	berkdb srand $rand_init
@@ -54,7 +54,7 @@ proc sdb018 {method {nentries 100} args } {
 
 		set cache [expr 1024 * 1024 * 10]
 		set env [berkdb_env -create -home $testdir \
-		    -cachesize "0 $cache 1" ] 
+		    -cachesize "0 $cache 1" ]
 		append args $opt
 		set oargs $args
 		append oargs " -env $env"

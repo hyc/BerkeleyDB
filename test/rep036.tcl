@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep036.tcl,v 12.5 2006/03/10 21:44:32 carol Exp $
+# $Id: rep036.tcl,v 12.7 2006/07/19 17:45:35 carol Exp $
 #
 # TEST  	rep036
 # TEST	Multiple master processes writing to the database.
@@ -12,15 +12,15 @@
 proc rep036 { method { niter 200 } { tnum "036" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Valid for btree only.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree } 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."

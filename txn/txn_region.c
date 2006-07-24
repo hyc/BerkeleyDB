@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: txn_region.c,v 12.16 2006/05/05 14:54:12 bostic Exp $
+ * $Id: txn_region.c,v 12.18 2006/07/08 16:27:51 bostic Exp $
  */
 
 #include "db_config.h"
@@ -346,21 +346,27 @@ __txn_oldest_reader(dbenv, lsnp)
 	DB_ENV *dbenv;
 	DB_LSN *lsnp;
 {
+	DB_LSN old_lsn;
 	DB_TXNMGR *mgr;
 	DB_TXNREGION *region;
 	TXN_DETAIL *td;
+	int ret;
 
-	MAX_LSN(*lsnp);
-	mgr = dbenv->tx_handle;
-	if (mgr == NULL)
+	if ((mgr = dbenv->tx_handle) == NULL)
 		return (0);
 	region = mgr->reginfo.primary;
 
+	if ((ret = __log_current_lsn(dbenv, &old_lsn, NULL, NULL)) != 0)
+		return (ret);
+
 	TXN_SYSTEM_LOCK(dbenv);
 	SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail)
-		if (log_compare(&td->read_lsn, lsnp) < 0)
-			*lsnp = td->read_lsn;
+		if (log_compare(&td->read_lsn, &old_lsn) < 0)
+			old_lsn = td->read_lsn;
 	TXN_SYSTEM_UNLOCK(dbenv);
+
+	DB_ASSERT(dbenv, log_compare(&old_lsn, lsnp) >= 0);
+	*lsnp = old_lsn;
 
 	return (0);
 }

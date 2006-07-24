@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: txn_recover.c,v 12.16 2006/05/05 14:54:12 bostic Exp $
+ * $Id: txn_recover.c,v 12.17 2006/07/07 03:51:15 ubell Exp $
  */
 
 #include "db_config.h"
@@ -82,6 +82,9 @@ __txn_recover_pp(dbenv, preplist, count, retp, flags)
 		__db_errx(dbenv, "operation not permitted while in recovery");
 		return (EINVAL);
 	}
+
+	if (flags != DB_FIRST && flags != DB_NEXT)
+		return (__db_ferr(dbenv, "DB_ENV->txn_recover", 0));
 
 	ENV_ENTER(dbenv, ip);
 	REPLICATION_WRAP(dbenv,
@@ -174,8 +177,6 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 		SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail) {
 			if (F_ISSET(td, TXN_DTL_RESTORED))
 				nrestores++;
-			if (F_ISSET(td, TXN_DTL_COLLECTED))
-				open_files = 0;
 			F_CLR(td, TXN_DTL_COLLECTED);
 		}
 		mgr->n_discards = 0;

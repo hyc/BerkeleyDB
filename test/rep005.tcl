@@ -3,7 +3,7 @@
 # Copyright (c) 2002-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep005.tcl,v 12.8 2006/04/19 17:04:45 sue Exp $
+# $Id: rep005.tcl,v 12.10 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  rep005
 # TEST	Replication election test with error handling.
@@ -16,15 +16,15 @@
 proc rep005 { method args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Skip for all methods except btree.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree }
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep005: Skipping for method $method."

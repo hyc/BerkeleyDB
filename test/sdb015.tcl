@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb015.tcl,v 12.5 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdb015.tcl,v 12.6 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sdb015
 # TEST	Tests basic in-memory named database functionality
@@ -21,7 +21,7 @@ proc sdb015 { method {nentries 1000} args } {
 
 	if { [is_queueext $method] == 1 } {
 		puts "Subdb015: skipping for method $method"
-		return 
+		return
 	}
 
 	# Skip test if given an env - this test needs its own.
@@ -38,7 +38,7 @@ proc sdb015 { method {nentries 1000} args } {
 	set chkindex [lsearch -exact $args "-chksum"]
 	if { $chkindex != -1 } {
 		set args [lreplace $args $chkindex $chkindex]
-	} 
+	}
 
 	set largs $args
 	subdb015_main $method $nentries $largs

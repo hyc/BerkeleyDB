@@ -1,4 +1,4 @@
-<!--$Id: program.so,v 11.14 2006/04/24 17:06:53 bostic Exp $-->
+<!--$Id: program.so,v 11.15 2006/07/24 17:46:17 sue Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -19,7 +19,8 @@
 <p>The Tcl API closely parallels the Berkeley DB programmatic interfaces.  If you
 are already familiar with one of those interfaces, there will not be many
 surprises in the Tcl API.</p>
-<p>The Tcl API does not support multithreading.  The Tcl shell itself is
+<p>The Tcl API currently does not support multithreading although
+it could be made to do so.  The Tcl shell itself is
 not multithreaded and the Berkeley DB extensions use global data unprotected
 from multiple threads.</p>
 <p>Several pieces of Berkeley DB functionality are not available in the Tcl API.

@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: env007.tcl,v 12.10 2006/06/08 00:46:21 bostic Exp $
+# $Id: env007.tcl,v 12.11 2006/06/27 22:31:08 bostic Exp $
 #
 # TEST	env007
 # TEST	Test DB_CONFIG config file options for berkdb env.
@@ -283,7 +283,7 @@ proc env007 { } {
 	}
 
 	if { $has_crypto == 1 } {
-		lappend envopenlist { 
+		lappend envopenlist {
 		    "-encryptaes" "$passwd" "-encryptaes" "get_encrypt_flags" }
 	}
 
@@ -308,9 +308,9 @@ proc env007 { } {
 		set ret [catch {eval $e $envarg $envval} env]
 
 		if { $ret != 0 } {
-			# If the env open failed, it may be because we're on a 
-			# platform such as HP-UX 10 that won't support mutexes 
-			# in shmget memory.  Verify that the return value was 
+			# If the env open failed, it may be because we're on a
+			# platform such as HP-UX 10 that won't support mutexes
+			# in shmget memory.  Verify that the return value was
 			# EINVAL or EOPNOTSUPP and bail gracefully.
 			error_check_good \
 			    is_shm_test [is_substr $envarg -system_mem] 1
@@ -532,8 +532,8 @@ proc env007 { } {
 			    $testdir/a.db} db]
 		}
 		if { $ret != 0 } {
-			# If the open failed, it may be because we're on a 
-			# platform such as HP-UX 10 that won't support 
+			# If the open failed, it may be because we're on a
+			# platform such as HP-UX 10 that won't support
 			# locks in process-local memory.
 			# Verify that the return value was EOPNOTSUPP
 			# and bail gracefully.

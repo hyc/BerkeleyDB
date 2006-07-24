@@ -29,4 +29,4 @@ global valid_methods
 global checking_valid_methods
 global test_recopts
 
-set KILL "@db_cv_path_kill@"
+set KILL "@KILL@"

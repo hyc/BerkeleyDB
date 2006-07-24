@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep020.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
+# $Id: rep020.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  rep020
 # TEST	Replication elections - test election generation numbers.
@@ -13,16 +13,16 @@ proc rep020 { method args } {
 	global rand_init
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 	set tnum "020"
 
 	# Run for btree only.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree } 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."

@@ -1,5 +1,5 @@
 # Code to load up the tests in to the Queue database
-# $Id: parallel.tcl,v 12.3 2005/10/27 14:09:28 carol Exp $
+# $Id: parallel.tcl,v 12.4 2006/06/26 18:43:57 carol Exp $
 proc load_queue { file  {dbdir RUNQUEUE} nitems } {
 	global serial_tests
 	global num_serial
@@ -148,7 +148,7 @@ proc run_parallel { nprocs {list run_all} {nitems ALL} } {
 			close $f
 		} res]
 	}
-	watch_procs $pidlist 300 600000
+	watch_procs $pidlist 300 1000000
 
 	set failed 0
 	for { set i 0 } { $i <= $nprocs } { incr i } {

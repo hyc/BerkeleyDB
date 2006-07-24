@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: RepQuoteExample.cpp,v 1.3 2006/05/23 19:17:23 bostic Exp $
+ * $Id: RepQuoteExample.cpp,v 1.6 2006/07/18 08:52:01 alexg Exp $
  */
 
 /*
@@ -49,6 +49,7 @@ const char *progname = "excxx_repquote";
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <direct.h>
 #define	sleep(s)		Sleep(1000 * (s))
 
 extern "C" {
@@ -85,7 +86,7 @@ private:
 	DbEnv           cur_env;
 
 	// private methods.
-	static int print_stocks(Dbc *dbc);
+	static int print_stocks(Db *dbp);
 };
 
 static void usage()
@@ -93,7 +94,7 @@ static void usage()
 	cerr << "usage: " << progname << endl
 	    << "[-h home][-o host:port][-m host:port][-f host:port]"
 		<< "[-n nsites][-p priority]" << endl;
-	
+
 	cerr << "\t -m host:port (required; m stands for me)" << endl
 		<< "\t -o host:port (optional; o stands for other; any "
 		<< "number of these may bespecified)" << endl
@@ -145,7 +146,7 @@ int main(int argc, char **argv)
 			config.totalsites = atoi(optarg);
 			break;
 		case 'f':
-			tmppeer = true; // FALLTHROUGH 
+			tmppeer = true; // FALLTHROUGH
 		case 'o':
 			tmphost = strtok(optarg, ":");
 			if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -168,8 +169,8 @@ int main(int argc, char **argv)
 			usage();
 		}
 	}
-	
-	// Error check command line. 
+
+	// Error check command line.
 	if ((!config.got_listen_address) || config.home == NULL)
 		usage();
 
@@ -177,8 +178,6 @@ int main(int argc, char **argv)
 	try {
 		if((ret = runner.init(&config)) != 0)
 			goto err;
-		// Sleep to give ourselves time to find a master. 
-		sleep(5);
 		if((ret = runner.doloop()) != 0)
 			goto err;
 	} catch (DbException dbe) {
@@ -192,7 +191,7 @@ err:
 
 RepQuoteExample::RepQuoteExample() : app_config(0), cur_env(0)
 {
-	app_data.is_master = 0; // assume I start out as client 
+	app_data.is_master = 0; // assume I start out as client
 }
 
 int RepQuoteExample::init(RepConfigInfo *config)
@@ -207,17 +206,17 @@ int RepQuoteExample::init(RepConfigInfo *config)
 	cur_env.set_event_notify(event_callback);
 	cur_env.repmgr_set_ack_policy(DB_REPMGR_ACKS_ALL);
 
-	if ((ret = cur_env.repmgr_set_local_site(app_config->this_host.host, 
+	if ((ret = cur_env.repmgr_set_local_site(app_config->this_host.host,
 		app_config->this_host.port, 0)) != 0) {
 		// should throw an exception anyway.
 		cerr << "Could not set listen address to host:port "
-		    << app_config->this_host.host << ":" 
+		    << app_config->this_host.host << ":"
 		    << app_config->this_host.port
 		    << "error: " << ret << endl;
 		cerr << "WARNING: This should have been an exception." << endl;
 	}
 
-	for ( REP_HOST_INFO *cur = app_config->other_hosts; cur != NULL; 
+	for ( REP_HOST_INFO *cur = app_config->other_hosts; cur != NULL;
 		cur = cur->next) {
 		if ((ret = cur_env.repmgr_add_remote_site(cur->host, cur->port,
 			cur->peer ? DB_REPMGR_PEER : 0)) != 0) {
@@ -248,9 +247,9 @@ int RepQuoteExample::init(RepConfigInfo *config)
 	cur_env.set_flags(DB_TXN_NOSYNC, 1);
 
 	try {
-		cur_env.open(app_config->home, DB_CREATE | DB_RECOVER | 
-		    DB_THREAD | DB_INIT_REP | DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL |
-		    DB_INIT_TXN, 0); 
+		cur_env.open(app_config->home, DB_CREATE | DB_RECOVER |
+		    DB_THREAD | DB_INIT_REP | DB_INIT_LOCK | DB_INIT_LOG | 
+		    DB_INIT_MPOOL | DB_INIT_TXN, 0);
 	} catch(DbException dbe) {
 		cerr << "Caught an exception during DB environment open." << endl
 		    << "Ensure that the home directory is created prior to starting"
@@ -261,7 +260,7 @@ int RepQuoteExample::init(RepConfigInfo *config)
 	if (app_config->verbose &&
 	    (ret = cur_env.set_verbose(DB_VERB_REPLICATION, 1)) != 0)
 		goto err;
-	
+
 	if ((ret = cur_env.repmgr_start(3, app_config->start_policy)) != 0)
 		goto err;
 
@@ -271,19 +270,11 @@ err:
 
 int RepQuoteExample::terminate()
 {
-	// release any other_hosts contacted.
-	if (app_config->other_hosts != NULL) {
-		REP_HOST_INFO *CurItem = app_config->other_hosts;
-		while (CurItem->next != NULL)
-		{
-			REP_HOST_INFO *TmpItem = CurItem;
-			free(CurItem);
-			CurItem = TmpItem;
-		}
-		free(CurItem);
+	try {
+		cur_env.close(0);
+	} catch (DbException dbe) {
+		cout << "error closing environment: " << dbe.what() << endl;
 	}
-	
-	cur_env.close(0);
 	return 0;
 }
 
@@ -291,10 +282,9 @@ int RepQuoteExample::terminate()
 int RepQuoteExample::doloop()
 {
 	Db *dbp;
-	Dbc *dbc;
 	Dbt key, data;
 	char buf[BUFSIZE], *rbuf;
-	int ret, t_ret, was_master;
+	int ret, was_master;
 
 	dbp = NULL;
 	memset(&key, 0, sizeof(key));
@@ -302,96 +292,87 @@ int RepQuoteExample::doloop()
 	ret = was_master = 0;
 
 	for (;;) {
-		/*
-		 * Check whether I've changed from client to master or the
-		 * other way around.
-		 */
-		if (app_data.is_master != was_master) {
-			if (dbp != NULL)
-				(void)dbp->close(DB_NOSYNC);
-			dbp = NULL;
-			was_master = app_data.is_master;
-		}
-		
 		if (dbp == NULL) {
 			dbp = new Db(&cur_env, 0);
 
-			// Set page size small so page allocation is cheap. 
+			// Set page size small so page allocation is cheap.
 			if ((ret = dbp->set_pagesize(512)) != 0)
 				goto err;
-		
-			if ((ret = dbp->open(NULL, DATABASE,
-			    NULL, DB_BTREE,
-			    app_data.is_master ? DB_CREATE | DB_AUTO_COMMIT :
-			    DB_RDONLY, 0)) != 0) {
-				if (ret == ENOENT) {
-					cout << "No stock database available yet." << endl;
-					if ((ret = dbp->close(0)) != 0) {
-						cur_env.err(ret, "DB->close");
+
+			try {
+				dbp->open(NULL, DATABASE, NULL, DB_BTREE,
+			        app_data.is_master ? DB_CREATE | DB_AUTO_COMMIT :
+			        DB_AUTO_COMMIT, 0);
+			} catch(DbException dbe) {
+				/* It is expected that the database open will fail
+				 * when client sites first start up.
+				 * It can take a while for the master site to be found
+				 * and synced, and no DB is available until then.
+				 */
+				if (dbe.get_errno() == ENOENT) {
+					cout << "No stock db available yet - retrying." << endl;
+					try {
+						dbp->close(0);
+					} catch (DbException dbe2) {
+						cout << "Unexpected error closing after failed" <<
+							" open, message: " << dbe2.what() << endl;
+						dbp = NULL;
 						goto err;
 					}
 					dbp = NULL;
 					sleep(SLEEPTIME);
 					continue;
+				} else {
+					cur_env.err(ret, "DB->open");
+					throw dbe;
 				}
-				cur_env.err(ret, "DB->open");
-				goto err;
 			}
 		}
 
-		if (app_data.is_master) {
-			cout << "QUOTESERVER> " << flush;
+		cout << "QUOTESERVER" ;
+		if (!app_data.is_master)
+			cout << "(read-only)";
+		cout << "> " << flush;
 
-			if (fgets(buf, sizeof(buf), stdin) == NULL)
-				break;
-			(void)strtok(&buf[0], " \t\n");
-			rbuf = strtok(NULL, " \t\n");
-			if (rbuf == NULL || rbuf[0] == '\0') {
-				if (strncmp(buf, "exit", 4) == 0 ||
-				    strncmp(buf, "quit", 4) == 0)
-					break;
-				cur_env.errx("Format: TICKER VALUE");
-				continue;
-			}
-		
-			key.set_data(buf);
-			key.set_size((u_int32_t)strlen(buf));
-		
-			data.set_data(rbuf);
-			data.set_size((u_int32_t)strlen(rbuf));
-
-			if ((ret = dbp->put(NULL, &key, &data, DB_AUTO_COMMIT)) != 0)
-			{
-				dbp->err(ret, "DB->put");
-				if (ret != DB_KEYEXIST)
-					goto err;
-			}
-		} else {
-			sleep(SLEEPTIME);
-
-			dbc = NULL;
-			if ((ret = dbp->cursor(NULL, &dbc, 0)) != 0 ||
-			    (ret = print_stocks(dbc)) != 0) {
-				cur_env.err(ret, "Error traversing data");
-				goto err;
-			}
-			if (dbc != NULL &&
-			    (t_ret = dbc->close()) != 0 && ret == 0)
-				ret = t_ret;
-
-			switch (ret) {
+		if (fgets(buf, sizeof(buf), stdin) == NULL)
+			break;
+		if (strtok(&buf[0], " \t\n") == NULL) {
+			switch ((ret = print_stocks(dbp))) {
 			case 0:
-			case DB_LOCK_DEADLOCK:
 				continue;
 			case DB_REP_HANDLE_DEAD:
-				if (dbp != NULL) {
-					(void)dbp->close(DB_NOSYNC);
-					dbp = NULL;
-				}
-				continue;
+				(void)dbp->close(DB_NOSYNC);
+				dbp = NULL;
 			default:
+				dbp->err(ret, "Error traversing data");
 				goto err;
 			}
+		}
+		rbuf = strtok(NULL, " \t\n");
+		if (rbuf == NULL || rbuf[0] == '\0') {
+			if (strncmp(buf, "exit", 4) == 0 ||
+			    strncmp(buf, "quit", 4) == 0)
+				break;
+			cur_env.errx("Format: TICKER VALUE");
+			continue;
+		}
+
+		if (!app_data.is_master) {
+			cur_env.errx("Can't update at client");
+			continue;
+		}
+
+		key.set_data(buf);
+		key.set_size((u_int32_t)strlen(buf));
+
+		data.set_data(rbuf);
+		data.set_size((u_int32_t)strlen(rbuf));
+
+		if ((ret = dbp->put(NULL, &key, &data, DB_AUTO_COMMIT)) != 0)
+		{
+			dbp->err(ret, "DB->put");
+			if (ret != DB_KEYEXIST)
+				goto err;
 		}
 	}
 
@@ -416,8 +397,9 @@ void RepQuoteExample::event_callback(DbEnv* dbenv, u_int32_t which, void *info)
 		app->is_master = 0;
 		break;
 
+	case DB_EVENT_REP_STARTUPDONE: /* FALLTHROUGH */
 	case DB_EVENT_REP_NEWMASTER:
-		// I don't care about this one, for now. 
+		// I don't care about this one, for now.
 		break;
 
 	default:
@@ -425,19 +407,25 @@ void RepQuoteExample::event_callback(DbEnv* dbenv, u_int32_t which, void *info)
 	}
 }
 
-int RepQuoteExample::print_stocks(Dbc *dbc)
+int RepQuoteExample::print_stocks(Db *dbp)
 {
+	Dbc *dbc;
 	Dbt key, data;
 #define	MAXKEYSIZE	10
 #define	MAXDATASIZE	20
 	char keybuf[MAXKEYSIZE + 1], databuf[MAXDATASIZE + 1];
-	int ret;
+	int ret, t_ret;
 	u_int32_t keysize, datasize;
+
+ 	if ((ret = dbp->cursor(NULL, &dbc, 0)) != 0) {
+		dbp->err(ret, "can't open cursor");
+		return (ret);
+	}
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
 
-	cout << "\tSymbol\tPrice" << endl 
+	cout << "\tSymbol\tPrice" << endl
 	    << "\t======\t=====" << endl;
 
 	for (ret = dbc->get(&key, &data, DB_FIRST);
@@ -447,7 +435,7 @@ int RepQuoteExample::print_stocks(Dbc *dbc)
 		memcpy(keybuf, key.get_data(), keysize);
 		keybuf[keysize] = '\0';
 
-		datasize = data.get_size() >= 
+		datasize = data.get_size() >=
 		    MAXDATASIZE ? MAXDATASIZE : data.get_size();
 		memcpy(databuf, data.get_data(), datasize);
 		databuf[datasize] = '\0';
@@ -455,6 +443,17 @@ int RepQuoteExample::print_stocks(Dbc *dbc)
 		cout << "\t" << keybuf << "\t" << databuf << endl;
 	}
 	cout << endl << flush;
-	return (ret == DB_NOTFOUND ? 0 : ret);
+
+	if ((t_ret = dbc->close()) != 0 && ret == 0)
+		ret = t_ret;
+
+	switch (ret) {
+	case 0:
+	case DB_NOTFOUND:
+	case DB_LOCK_DEADLOCK:
+		return (0);
+	default:
+		return (ret);
+	}
 }
 

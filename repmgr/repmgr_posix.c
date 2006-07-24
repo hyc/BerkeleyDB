@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_posix.c,v 1.13 2006/06/12 23:48:36 alanb Exp $
+ * $Id: repmgr_posix.c,v 1.17 2006/07/14 19:16:50 alanb Exp $
  */
 
 #include "db_config.h"
@@ -15,6 +15,15 @@
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
+#endif
+
+/*
+ * A very rough guess at the maximum stack space one of our threads could ever
+ * need, which we hope is plenty conservative.  This can be patched in the field
+ * if necessary.
+ */
+#ifdef _POSIX_THREAD_ATTR_STACKSIZE
+size_t __repmgr_guesstimated_max = (128 * 1024);
 #endif
 
 static int finish_connecting __P((DB_ENV *, REPMGR_CONNECTION *));
@@ -30,8 +39,44 @@ __repmgr_thread_start(dbenv, runnable)
 	DB_ENV *dbenv;
 	REPMGR_RUNNABLE *runnable;
 {
+	pthread_attr_t *attrp;
+#ifdef _POSIX_THREAD_ATTR_STACKSIZE
+	pthread_attr_t attributes;
+	size_t size;
+	int ret;
+#endif
+
 	runnable->finished = FALSE;
-	return (pthread_create(&runnable->thread_id, NULL,
+
+#ifdef _POSIX_THREAD_ATTR_STACKSIZE
+	attrp = &attributes;
+	if ((ret = pthread_attr_init(&attributes)) != 0) {
+		dbenv->err(dbenv,
+		    ret, "pthread_attr_init in repmgr_thread_start");
+		return (ret);
+	}
+
+	/*
+	 * On a 64-bit machine it seems reasonable that we could need twice as
+	 * much stack space as we did on a 32-bit machine.
+	 */
+	size = __repmgr_guesstimated_max;
+	if (sizeof(size_t) > 4)
+		size *= 2;
+#ifdef PTHREAD_STACK_MIN
+	if (size < PTHREAD_STACK_MIN)
+		size = PTHREAD_STACK_MIN;
+#endif
+	if ((ret = pthread_attr_setstacksize(&attributes, size)) != 0) {
+		dbenv->err(dbenv,
+		    ret, "pthread_attr_setstacksize in repmgr_thread_start");
+		return (ret);
+	}
+#else	
+	attrp = NULL;
+#endif
+	
+	return (pthread_create(&runnable->thread_id, attrp,
 		    runnable->run, dbenv));
 }
 
@@ -618,8 +663,9 @@ finish_connecting(dbenv, conn)
 	REPMGR_CONNECTION *conn;
 {
 	DB_REP *db_rep;
-	repmgr_netaddr_t *addr;
+	REPMGR_SITE *site;
 	socklen_t len;
+	SITE_STRING_BUFFER buffer;
 	u_int eid;
 	int error, ret;
 
@@ -637,16 +683,16 @@ finish_connecting(dbenv, conn)
 
 err_rpt:
 	db_rep = dbenv->rep_handle;
-	
+
 	DB_ASSERT(dbenv, IS_VALID_EID(conn->eid));
 	eid = (u_int)conn->eid;
-	
-	addr = &SITE_FROM_EID(eid)->net_addr;
+
+	site = SITE_FROM_EID(eid);
 	__db_err(dbenv, errno,
-	    "connecting to site %s(%d)", addr->host, addr->port);
+	    "connecting to %s", __repmgr_format_site_loc(site, buffer));
 
 	/* If we've exhausted the list of possible addresses, give up. */
-	if (ADDR_LIST_NEXT(&SITE_FROM_EID(eid)->net_addr) == NULL)
+	if (ADDR_LIST_NEXT(&site->net_addr) == NULL)
 		return (DB_REP_UNAVAIL);
 
 	/*

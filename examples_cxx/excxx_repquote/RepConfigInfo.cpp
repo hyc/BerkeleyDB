@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: RepConfigInfo.cpp,v 1.1 2006/05/05 04:58:04 alexg Exp $
+ * $Id: RepConfigInfo.cpp,v 1.3 2006/07/08 03:32:09 alexg Exp $
  */
 
 #include "RepConfigInfo.h"
@@ -32,7 +32,8 @@ RepConfigInfo::~RepConfigInfo()
 			CurItem = TmpItem;
 		}
 		free(CurItem);
-	}	
+	}
+	other_hosts = NULL;
 }
 
 void RepConfigInfo::addOtherHost(char* host, int port, bool peer)

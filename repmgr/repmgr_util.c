@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_util.c,v 1.15 2006/06/19 06:41:44 mjc Exp $
+ * $Id: repmgr_util.c,v 1.18 2006/07/17 22:16:07 alanb Exp $
  */
 
 #include "db_config.h"
@@ -144,6 +144,10 @@ __repmgr_new_site(dbenv, sitep, addr, state)
 	REPMGR_SITE *site;
 	u_int new_site_max, eid;
 	int ret;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+	SITE_STRING_BUFFER buffer;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	if (db_rep->site_cnt >= db_rep->site_max) {
@@ -164,6 +168,8 @@ __repmgr_new_site(dbenv, sitep, addr, state)
 	site->priority = -1;	/* OOB value indicates we don't yet know. */
 	site->state = state;
 
+	RPRINT(dbenv, (dbenv, &mb, "EID %u is assigned for %s", eid,
+		   __repmgr_format_site_loc(site, buffer)));
 	*sitep = site;
 	return (0);
 }
@@ -333,7 +339,7 @@ __repmgr_get_nsites(db_rep)
 	DB_REP *db_rep;
 {
 	if (db_rep->config_nsites > 0)
-		return (db_rep->config_nsites);
+		return ((u_int)db_rep->config_nsites);
 
 	/*
 	 * The number of other sites in our table, plus 1 to count ourself.
@@ -351,4 +357,37 @@ __repmgr_thread_failure(dbenv, why)
 {
 	(void)__repmgr_stop_threads(dbenv);
 	(void)__db_panic(dbenv, why);
+}
+
+/*
+ * Format a printable representation of a site location, suitable for inclusion
+ * in an error message.  The buffer must be at least as big as
+ * MAX_SITE_LOC_STRING. 
+ *
+ * PUBLIC: char *__repmgr_format_eid_loc __P((DB_REP *, int, char *));
+ */
+char *
+__repmgr_format_eid_loc(db_rep, eid, buffer)
+	DB_REP *db_rep;
+	int eid;
+	char *buffer;
+{
+	if (IS_VALID_EID(eid))
+		return (__repmgr_format_site_loc(SITE_FROM_EID(eid), buffer));
+
+	snprintf(buffer, MAX_SITE_LOC_STRING, "(unidentified site)");
+	return (buffer);
+}
+
+/*
+ * PUBLIC: char *__repmgr_format_site_loc __P((REPMGR_SITE *, char *));
+ */
+char *
+__repmgr_format_site_loc(site, buffer)
+	REPMGR_SITE *site;
+	char *buffer;
+{
+	snprintf(buffer, MAX_SITE_LOC_STRING, "site %s:%lu",
+	    site->net_addr.host, (u_long)site->net_addr.port);
+	return (buffer);
 }

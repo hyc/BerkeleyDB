@@ -1,4 +1,4 @@
-<!--$Id: db_open.so,v 10.114 2006/05/04 12:32:14 mjc Exp $-->
+<!--$Id: db_open.so,v 10.116 2006/07/14 07:49:09 mjc Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -99,8 +99,11 @@ DB_CREATE flag is not specified, the Db::open will fail.
 flag is only meaningful when specified with the DB_CREATE
 flag.
 <dt><a name="DB_MULTIVERSION">DB_MULTIVERSION</a><dd>Open the database with support for multiversion concurrency control.
+This will cause updates to the database to follow a copy-on-write
+protocol, which is required to support Snapshot Isolation.  See
+<a href="../api_cxx/txn_begin.html#DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a> for more information.
 The UNREF==DB_MULTIVERISON flag requires that the database be opened
-inside a transaction and is not supported for queue databases.
+in a transaction and is not supported for queue databases.
 <dt><a name="DB_NOMMAP">DB_NOMMAP</a><dd>Do not map this database into process memory (see the
 <a href="../api_cxx/env_set_mp_mmapsize.html">DbEnv::set_mp_mmapsize</a> method for further information).
 <dt><a name="DB_RDONLY">DB_RDONLY</a><dd>Open the database for reading only.  Any attempt to modify items in the

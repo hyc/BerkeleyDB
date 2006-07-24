@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_page.h,v 12.8 2006/02/28 17:54:35 ubell Exp $
+ * $Id: db_page.h,v 12.9 2006/06/27 22:22:00 bostic Exp $
  */
 
 #ifndef _DB_PAGE_H_
@@ -534,7 +534,7 @@ typedef struct _hoffdup {
 #define	B_DISSET(t)	((t) & B_DELETE)
 
 #define	B_TYPE(t)		((t) & ~B_DELETE)
-#define	B_TSET(t, type) 	((t) = B_TYPE(type))
+#define	B_TSET(t, type)	((t) = B_TYPE(type))
 #define	B_TSET_DELETED(t, type) ((t) = (type) | B_DELETE)
 
 /*

@@ -92,7 +92,7 @@ static int __dbj_app_dispatch(DB_ENV *dbenv,
 	return (ret);
 }
 
-static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id) 
+static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info) 
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
 	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
@@ -460,7 +460,7 @@ JAVA_CALLBACK(void (*db_msgcall_fcn)(const DB_ENV *, const char *),
     com.sleepycat.db.MessageHandler, message)
 JAVA_CALLBACK(void (*db_panic_fcn)(DB_ENV *, int),
     com.sleepycat.db.PanicHandler, panic)
-JAVA_CALLBACK(void (*event_notify)(DB_ENV *, u_int32_t),
+JAVA_CALLBACK(void (*event_notify)(DB_ENV *, u_int32_t, void *),
     com.sleepycat.db.EventHandler, event_notify)
 JAVA_CALLBACK(int (*tx_recover)(DB_ENV *, DBT *, DB_LSN *, db_recops),
     com.sleepycat.db.LogRecordHandler, app_dispatch)

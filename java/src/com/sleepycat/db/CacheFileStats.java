@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class CacheFileStats {
     // no public constructor
-    protected CacheFileStats() {}
+    /* package */ CacheFileStats() {}
 
     private String file_name;
     public String getFileName() {

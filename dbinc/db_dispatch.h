@@ -32,11 +32,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_dispatch.h,v 12.6 2006/01/02 22:01:48 bostic Exp $
+ * $Id: db_dispatch.h,v 12.7 2006/07/05 05:37:08 mjc Exp $
  */
 
 #ifndef _DB_DISPATCH_H_
 #define	_DB_DISPATCH_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * Declarations and typedefs for the list of transaction IDs used during
@@ -105,5 +109,9 @@ typedef enum {
 	LIMBO_TIMESTAMP,	/* We are recovering to a timestamp. */
 	LIMBO_COMPENSATE	/* After recover to ts, generate log records. */
 } db_limbo_state;
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* !_DB_DISPATCH_H_ */

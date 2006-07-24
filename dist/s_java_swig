@@ -1,5 +1,5 @@
 #!/bin/sh -
-#       $Id: s_java_swig,v 12.3 2006/03/24 04:57:06 mjc Exp $
+#       $Id: s_java_swig,v 12.5 2006/06/26 16:24:53 bostic Exp $
 #
 # Run SWIG to generate the Java APIs
 
@@ -63,3 +63,11 @@ done
       echo '#include "db_config.h"'
       sed '/#include "db_config.h"/d' < db_java_wrap.c
 ) > $t && cp $t db_java_wrap.c
+
+# The following might become redundant with newer swig versions.. 
+# builds usually already define _CRT_SECURE_NO_DEPRECATE 
+(
+      sed -e '/# define _CRT_SECURE_NO_DEPRECATE/i\
+# undef _CRT_SECURE_NO_DEPRECATE' < db_java_wrap.c
+) > $t && cp $t db_java_wrap.c
+

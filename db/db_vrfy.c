@@ -4,7 +4,7 @@
  * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_vrfy.c,v 12.26 2006/05/05 14:53:14 bostic Exp $
+ * $Id: db_vrfy.c,v 12.27 2006/07/17 15:16:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -444,7 +444,7 @@ __db_vrfy_pagezero(dbp, vdp, fhp, flags)
 	 * may be zero;  this is okay, as we want page zero anyway and
 	 * 0*0 == 0.
 	 */
-	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0 ||
+	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0 ||
 	    (ret = __os_read(dbenv, fhp, mbuf, DBMETASIZE, &nr)) != 0) {
 		__db_err(dbenv, ret,
 		    "Metadata page %lu cannot be read", (u_long)PGNO_BASE_MD);
@@ -2563,8 +2563,8 @@ __db_guesspgsize(dbenv, fhp)
 		 * our previous guess; that last one was probably the page size.
 		 */
 		for (i = 1; i <= 3; i++) {
-			if (__os_seek(dbenv, fhp, i, guess,
-			    SSZ(DBMETA, type), 0, DB_OS_SEEK_SET) != 0)
+			if (__os_seek(
+			    dbenv, fhp, i, guess, SSZ(DBMETA, type)) != 0)
 				break;
 			if (__os_read(dbenv,
 			    fhp, &type, 1, &nr) != 0 || nr == 0)

@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_alloc.c,v 12.14 2006/06/19 14:55:35 mjc Exp $
+ * $Id: mp_alloc.c,v 12.17 2006/07/10 01:04:10 mjc Exp $
  */
 
 #include "db_config.h"
@@ -31,18 +31,17 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	roff_t *offsetp;
 	void *retp;
 {
-	BH *bhp, *current_bhp, *tbhp;
+	BH *bhp, *oldest_bhp, *tbhp;
 	BH_FROZEN_PAGE *frozen_bhp;
 	DB_ENV *dbenv;
 	DB_MPOOL_HASH *dbht, *hp, *hp_end, *hp_tmp;
-	DB_LSN old_lsn;
 	MPOOL *c_mp;
 	MPOOLFILE *bh_mfp;
 	size_t freed_space;
 	db_mutex_t mutex;
 	u_int32_t buckets, buffers, high_priority, priority;
 	u_int32_t put_counter, total_buckets;
-	int aggressive, alloc_freeze, giveup, ret;
+	int aggressive, alloc_freeze, giveup, got_oldest, ret;
 	u_int8_t *endp;
 	void *p;
 
@@ -52,9 +51,8 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	hp_end = &dbht[c_mp->htab_buckets];
 
 	buckets = buffers = put_counter = total_buckets = 0;
-	aggressive = alloc_freeze = giveup = 0;
+	aggressive = alloc_freeze = giveup = got_oldest = 0;
 	hp_tmp = NULL;
-	ZERO_LSN(old_lsn);
 
 	c_mp->stat.st_alloc++;
 
@@ -200,14 +198,6 @@ found:		if (offsetp != NULL)
 
 			switch (++aggressive) {
 			case 1:
-				/*
-				 * Get the oldest reader LSN.  There is a
-				 * tradeoff here, because if we had the LSN
-				 * earlier, we might have found pages to evict,
-				 * but to get it, we need to lock the
-				 * transaction region.
-				 */
-				(void)__txn_oldest_reader(dbenv, &old_lsn);
 				break;
 			case 2:
 				put_counter = c_mp->put_counter;
@@ -272,22 +262,48 @@ found:		if (offsetp != NULL)
 		 * we have to restart.  We will still take the first buffer on
 		 * the bucket's list, though, if it has a low enough priority.
 		 */
-		if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
+this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			goto next_hb;
 
-		for (tbhp = current_bhp = bhp;
-		    tbhp != NULL;
-		    tbhp = SH_CHAIN_PREV(tbhp, vc, __bh))
-			if (tbhp->ref == 0 && tbhp->priority <= bhp->priority)
-				bhp = tbhp;
-
-		if (bhp->ref != 0 || bhp->priority > priority)
-			goto next_hb;
+		buffers++;
 
 		/* Find the associated MPOOLFILE. */
 		bh_mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
 
-		buffers++;
+		/* Select the lowest priority buffer in the chain. */
+		for (oldest_bhp = bhp, tbhp = SH_CHAIN_PREV(bhp, vc, __bh);
+		    tbhp != NULL;
+		    oldest_bhp = tbhp, tbhp = SH_CHAIN_PREV(tbhp, vc, __bh))
+			if (tbhp->ref <= bhp->ref &&
+			    tbhp->priority <= bhp->priority)
+				bhp = tbhp;
+
+		/*
+		 * Prefer the last buffer in the chain.
+		 *
+		 * If the oldest buffer isn't obsolete with respect to the
+		 * cached old reader LSN, recalculate the oldest reader LSN
+		 * and retry.  There is a tradeoff here, because if we had the
+		 * LSN earlier, we might have found pages to evict, but to get
+		 * it, we need to lock the transaction region.
+		 */
+		if (oldest_bhp != bhp && oldest_bhp->ref == 0) {
+			if (F_ISSET(bhp, BH_FROZEN) &&
+			    !F_ISSET(oldest_bhp, BH_FROZEN))
+				bhp = oldest_bhp;
+			else if (BH_OBSOLETE(oldest_bhp, hp->old_reader))
+				bhp = oldest_bhp;
+			else if (!got_oldest &&
+			    __txn_oldest_reader(dbenv, &hp->old_reader) == 0) {
+				got_oldest = 1;
+				if (BH_OBSOLETE(oldest_bhp, hp->old_reader))
+					bhp = oldest_bhp;
+			}
+		}
+
+		if (bhp->ref != 0 || (bhp != oldest_bhp &&
+		    !aggressive && bhp->priority > priority))
+			goto next_hb;
 
 		/* If the page is dirty, pin it and write it. */
 		ret = 0;
@@ -305,16 +321,25 @@ found:		if (offsetp != NULL)
 		 * itself or the next version created could be read by the
 		 * oldest reader in the system.
 		 */
-		if (ret == 0 && bh_mfp->multiversion &&
-		    !SH_CHAIN_SINGLETON(bhp, vc) && !F_ISSET(bhp, BH_FROZEN)) {
-			if (!aggressive)
-				goto next_hb;
-			if (((bhp == current_bhp) ?
-			    log_compare(&old_lsn, VISIBLE_LSN(dbenv, bhp)) :
-			    log_compare(&old_lsn, VISIBLE_LSN(dbenv,
-			    SH_CHAIN_NEXT(bhp, vc, __bh))) <= 0))
+		if (ret == 0 && bh_mfp->multiversion) {
+			if (!got_oldest && !SH_CHAIN_HASPREV(bhp, vc) &&
+			    !BH_OBSOLETE(bhp, hp->old_reader)) {
+				(void)__txn_oldest_reader(dbenv,
+				    &hp->old_reader);
+				got_oldest = 1;
+			}
+			if (SH_CHAIN_HASPREV(bhp, vc) ||
+			    !BH_OBSOLETE(bhp, hp->old_reader)) {
+				/*
+				 * Before freezing, double-check that we have
+				 * an up-to-date old_reader LSN.
+				 */
+				if (!aggressive ||
+				    F_ISSET(bhp, BH_FROZEN) || bhp->ref != 0)
+					goto next_hb;
 				ret = __memp_bh_freeze(dbmp,
 				    infop, hp, bhp, &alloc_freeze);
+			}
 		}
 
 		/*
@@ -352,12 +377,10 @@ found:		if (offsetp != NULL)
 				return (ret);
 			}
 			alloc_freeze = 0;
-			goto next_hb;
+			goto this_hb;
 		} else if (alloc_freeze) {
-			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0) {
-				MUTEX_UNLOCK(dbenv, mutex);
+			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0)
 				return (ret);
-			}
 			MVCC_MPROTECT(bhp->buf, bh_mfp->stat.st_pagesize,
 			    PROT_READ | PROT_WRITE | PROT_EXEC);
 
@@ -376,19 +399,15 @@ found:		if (offsetp != NULL)
 			continue;
 		} else if (mfp != NULL &&
 		    mfp->stat.st_pagesize == bh_mfp->stat.st_pagesize) {
-			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0) {
-				MUTEX_UNLOCK(dbenv, mutex);
+			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0)
 				return (ret);
-			}
 			p = bhp;
 			goto found;
 		} else {
 			freed_space += __db_shalloc_sizeof(bhp);
 			if ((ret = __memp_bhfree(dbmp,
-			    hp, bhp, BH_FREE_FREEMEM)) != 0) {
-				MUTEX_UNLOCK(dbenv, mutex);
+			    hp, bhp, BH_FREE_FREEMEM)) != 0)
 				return (ret);
-			}
 		}
 
 		if (aggressive > 1)
@@ -461,7 +480,7 @@ __memp_bad_buffer(dbenv, hp)
 	 * Find the highest priority buffer in the bucket.  Buffers are
 	 * sorted by priority, so it's the last one in the bucket.
 	 */
-	priority = __memp_bh_priority(last_bhp);
+	priority = BH_PRIORITY(last_bhp);
 
 	/*
 	 * Append our buffer to the bucket and set its priority to be just as
@@ -472,7 +491,7 @@ __memp_bad_buffer(dbenv, hp)
 		bhp->priority = priority;
 
 	/* Reset the hash bucket's priority. */
-	hp->hash_priority = __memp_bh_priority(
+	hp->hash_priority = BH_PRIORITY(
 	    SH_TAILQ_FIRSTP(&hp->hash_bucket, __bh));
 
 #ifdef DIAGNOSTIC
@@ -496,7 +515,7 @@ __memp_check_order(dbenv, hp)
 	DB_ENV *dbenv;
 	DB_MPOOL_HASH *hp;
 {
-	BH *bhp, *prev_bhp;
+	BH *bhp, *prev_bhp, *tbhp;
 	u_int32_t min_priority;
 
 	/*
@@ -504,16 +523,26 @@ __memp_check_order(dbenv, hp)
 	 */
 	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 		return;
+
 	DB_ASSERT(dbenv, SH_CHAIN_NEXT(bhp, vc, __bh) == NULL);
 	for (prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh); prev_bhp != NULL;
 	    prev_bhp = SH_CHAIN_PREV(prev_bhp, vc, __bh))
 		DB_ASSERT(dbenv, prev_bhp ==
 		    SH_CHAIN_PREV(SH_CHAIN_NEXT(prev_bhp, vc, __bh), vc, __bh));
 
-	min_priority = __memp_bh_priority(bhp);
+	min_priority = BH_PRIORITY(bhp);
 	DB_ASSERT(dbenv, min_priority == hp->hash_priority);
 
-	while ((bhp = SH_TAILQ_NEXT(bhp, hq, __bh)) != NULL)
-		DB_ASSERT(dbenv, min_priority <= __memp_bh_priority(bhp));
+	do {
+		DB_ASSERT(dbenv, SH_CHAIN_NEXT(bhp, vc, __bh) == NULL);
+		DB_ASSERT(dbenv, min_priority <= BH_PRIORITY(bhp));
+
+		for (tbhp = SH_TAILQ_NEXT(bhp, hq, __bh); tbhp != NULL;
+		    tbhp = SH_TAILQ_NEXT(tbhp, hq, __bh))
+			DB_ASSERT(dbenv, bhp->pgno != tbhp->pgno ||
+			    bhp->mf_offset != tbhp->mf_offset);
+
+		bhp = SH_TAILQ_NEXT(bhp, hq, __bh);
+	} while (bhp != NULL);
 }
 #endif

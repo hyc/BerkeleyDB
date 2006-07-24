@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TpcbExample.java,v 12.5 2006/01/02 22:02:18 bostic Exp $
+ * $Id: TpcbExample.java,v 12.7 2006/07/17 12:36:55 mjc Exp $
  */
 
 package db;
@@ -316,12 +316,12 @@ class TpcbExample {
         case TELLER:
             min += branches;
             num = tellers;
-            // Fallthrough
+            // fallthrough
         case BRANCH:
             if (type == BRANCH)
                 num = branches;
             min += accounts;
-            // Fallthrough
+            // fallthrough
         case ACCOUNT:
             max = min + num - 1;
         }
@@ -482,7 +482,7 @@ class TpcbExample {
             d_histdbt.setPartial(0, 0, true);
 
             // START PER-TRANSACTION TIMING.
-            // 
+            //
             // Technically, TPCB requires a limit on response time, you only
             // get to count transactions that complete within 2 seconds.
             // That's not an issue for this sample application -- regardless,
@@ -662,7 +662,7 @@ class TpcbExample {
         TpcbExample app = null;
         try {
             app = new TpcbExample(home, accounts, branches, tellers, history,
-                                  mpool, txn_no_sync);
+                                  mpool, iflag || txn_no_sync);
         } catch (Exception e1) {
             errExit(e1, "initializing environment failed");
         }

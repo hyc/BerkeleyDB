@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_msg.c,v 1.15 2006/06/19 06:41:42 mjc Exp $
+ * $Id: repmgr_msg.c,v 1.16 2006/07/05 19:03:24 alanb Exp $
  */
 
 #include "db_config.h"
@@ -40,11 +40,15 @@ message_loop(dbenv)
 {
 	REPMGR_MESSAGE *msg;
 	int ret;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	while ((ret = __repmgr_queue_get(dbenv, &msg)) == 0) {
 		while ((ret = process_message(dbenv, &msg->control, &msg->rec,
 		    msg->originating_eid)) == DB_LOCK_DEADLOCK)
-			;
+			RPRINT(dbenv, (dbenv, &mb, "repmgr deadlock retry"));
+		
 		__os_free(dbenv, msg);
 		if (ret != 0)
 			return (ret);
@@ -156,6 +160,9 @@ ack_message(dbenv, generation, lsn)
 	DB_REPMGR_ACK ack;
 	DBT control2, rec2;
 	int ret;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	/*
@@ -163,8 +170,12 @@ ack_message(dbenv, generation, lsn)
 	 * site.  If we're not in touch with the master, we drop it, since
 	 * there's not much else we can do.
 	 */
-	if (!IS_VALID_EID(db_rep->master_eid) || db_rep->master_eid == SELF_EID)
+	if (!IS_VALID_EID(db_rep->master_eid) ||
+	    db_rep->master_eid == SELF_EID) {
+		RPRINT(dbenv, (dbenv, &mb,
+		    "dropping ack with master %d", db_rep->master_eid));
 		return (0);
+	}
 
 	ret = 0;
 	LOCK_MUTEX(db_rep->mutex);
@@ -204,6 +215,10 @@ handle_newsite(dbenv, rec)
 	u_int16_t port;
 	int ret;
 	char *host;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+	SITE_STRING_BUFFER buffer;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	/*
@@ -228,11 +243,16 @@ handle_newsite(dbenv, rec)
 
 	/* It's me, do nothing. */
 	if (strcmp(host, db_rep->my_addr.host) == 0 &&
-	    port == db_rep->my_addr.port)
+	    port == db_rep->my_addr.port) {
+		RPRINT(dbenv, (dbenv, &mb, "repmgr ignores own NEWSITE info"));
 		return (0);
+	}
 
 	LOCK_MUTEX(db_rep->mutex);
 	if ((ret = __repmgr_add_site(dbenv, host, port, &site)) == EEXIST) {
+		RPRINT(dbenv, (dbenv, &mb,
+		    "NEWSITE info from %s was already known",
+		    __repmgr_format_site_loc(site, buffer)));
 		/*
 		 * TODO: test this.  Is this really how it works?  When
 		 * a site comes back on-line, do we really get NEWSITE?
@@ -270,9 +290,13 @@ handle_newsite(dbenv, rec)
 			 */
 		} else
 			goto unlock; /* Nothing to do. */
-	} else if (ret != 0)
-		goto unlock;
-
+	} else {
+		RPRINT(dbenv, (dbenv, &mb, "NEWSITE info added %s",
+		    __repmgr_format_site_loc(site, buffer)));
+		if (ret != 0)
+			goto unlock;
+	}
+	
 	/*
 	 * Wake up the main thread to connect to the new or reawakened
 	 * site.

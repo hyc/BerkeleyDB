@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_method.c,v 1.19 2006/06/19 06:41:42 mjc Exp $
+ * $Id: repmgr_method.c,v 1.20 2006/07/05 19:03:24 alanb Exp $
  */
 
 #include "db_config.h"
@@ -332,14 +332,6 @@ __repmgr_set_local_site(dbenv, host, port, flags)
 	repmgr_netaddr_t addr;
 	int locked, ret;
 	const char *sharable_host;
-
-	/*
-	 * The system value is available from sysconf(_SC_HOST_NAME_MAX).
-	 * Historically, the maximum host name was 256.
-	 */
-#ifndef MAXHOSTNAMELEN
-#define	MAXHOSTNAMELEN	256
-#endif
 	char buffer[MAXHOSTNAMELEN];
 
 	if (flags != 0)

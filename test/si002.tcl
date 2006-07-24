@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: si002.tcl,v 12.6 2006/01/02 22:03:24 bostic Exp $
+# $Id: si002.tcl,v 12.7 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	si002
 # TEST	Basic cursor-based secondary index put/delete test
@@ -27,11 +27,11 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 	# Renumbering recno databases can't be used as primaries.
 	if { [is_rrecno $pmethod] == 1 } {
 		puts "Skipping si$tnum for method $pmethod"
-		return 
+		return
 	}
 
 	# Method/args for all the secondaries.  If only one method
-	# was specified, assume the same method (for btree or hash) 
+	# was specified, assume the same method (for btree or hash)
 	# and a standard number of secondaries.  If primary is not
 	# btree or hash, force secondaries to be one btree, one hash.
 	set methods [lrange $methods 1 end]
@@ -64,7 +64,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 		set envflags [$env get_open_flags]
 		if { [lsearch -exact $envflags "-thread"] != -1 } {
 			puts "Skipping si$tnum for threaded env"
-			return 
+			return
 		}
 		set testdir [get_home $env]
 	}

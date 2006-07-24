@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: cxx_env.cpp,v 12.26 2006/06/19 14:25:35 mjc Exp $
+ * $Id: cxx_env.cpp,v 12.28 2006/07/17 13:08:01 mjc Exp $
  */
 
 #include "db_config.h"
@@ -862,7 +862,7 @@ int DbEnv::set_event_notify(void (*arg)(DbEnv *, u_int32_t, void *))
 
 	event_func_callback_ = arg;
 
-	return (dbenv->set_event_notify(dbenv, 
+	return (dbenv->set_event_notify(dbenv,
 	    arg == 0 ? 0 : _event_func_intercept_c));
 }
 
@@ -947,6 +947,21 @@ int DbEnv::set_thread_id_string(
 	    arg == 0 ? 0 : _thread_id_string_intercept_c)) != 0)
 		DB_ERROR(this, "DbEnv::set_thread_id_string", ret,
 		    error_policy());
+
+	return (ret);
+}
+
+int DbEnv::cdsgroup_begin(DbTxn **tid)
+{
+	DB_ENV *env = unwrap(this);
+	DB_TXN *txn;
+	int ret;
+
+	ret = env->cdsgroup_begin(env, &txn);
+	if (DB_RETOK_STD(ret))
+		*tid = new DbTxn(txn);
+	else
+		DB_ERROR(this, "DbEnv::cdsgroup_begin", ret, error_policy());
 
 	return (ret);
 }
@@ -1085,7 +1100,7 @@ DBENV_METHOD(repmgr_get_ack_policy, (int *policy), (dbenv, policy))
 DBENV_METHOD(repmgr_set_ack_policy, (int policy), (dbenv, policy))
 DBENV_METHOD(repmgr_set_local_site, (const char* host, u_int16_t port,
     u_int32_t flags), (dbenv, host, port, flags))
-DBENV_METHOD(repmgr_start, (int nthreads, u_int32_t flags), 
+DBENV_METHOD(repmgr_start, (int nthreads, u_int32_t flags),
     (dbenv, nthreads, flags))
 
 // End advanced replication API method implementations.

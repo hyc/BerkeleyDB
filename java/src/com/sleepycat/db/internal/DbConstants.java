@@ -34,6 +34,12 @@ public interface DbConstants
     int DB_EID_INVALID = -2;
     int DB_ENCRYPT = 0x00020000;
     int DB_ENCRYPT_AES = 0x0000001;
+    int DB_EVENT_PANIC = 1;
+    int DB_EVENT_REP_CLIENT = 2;
+    int DB_EVENT_REP_MASTER = 3;
+    int DB_EVENT_REP_NEWMASTER = 4;
+    int DB_EVENT_REP_STARTUPDONE = 5;
+    int DB_EVENT_WRITE_FAILED = 6;
     int DB_EXCL = 0x0004000;
     int DB_FAST_STAT = 0x0000001;
     int DB_FIRST = 7;
@@ -134,6 +140,7 @@ public interface DbConstants
     int DB_REPMGR_ACKS_NONE = 3;
     int DB_REPMGR_ACKS_ONE = 4;
     int DB_REPMGR_ACKS_ONE_PEER = 5;
+    int DB_REPMGR_ACKS_QUORUM = 6;
     int DB_REPMGR_PEER = 0x01;
     int DB_REP_ACK_TIMEOUT = 1;
     int DB_REP_ANYWHERE = 0x0000001;
@@ -144,13 +151,8 @@ public interface DbConstants
     int DB_REP_CONF_NOWAIT = 0x0008;
     int DB_REP_CONNECTION_RETRY = 4;
     int DB_REP_ELECTION = 2;
-    int DB_REP_ELECTION_TIMEOUT = 2;
     int DB_REP_ELECTION_RETRY = 3;
-    int DB_EVENT_PANIC = 1;
-    int DB_EVENT_REP_CLIENT = 2;
-    int DB_EVENT_REP_MASTER = 3;
-    int DB_EVENT_REP_NEWMASTER = 4;
-    int DB_EVENT_REP_STARTUPDONE = 5;
+    int DB_REP_ELECTION_TIMEOUT = 2;
     int DB_REP_FULL_ELECTION = 3;
     int DB_REP_IGNORE = -30983;
     int DB_REP_ISPERM = -30982;
@@ -202,7 +204,7 @@ public interface DbConstants
     int DB_VERIFY = 0x0000002;
     int DB_VERSION_MAJOR = 4;
     int DB_VERSION_MINOR = 5;
-    int DB_VERSION_PATCH = 8;
+    int DB_VERSION_PATCH = 14;
     int DB_WRITECURSOR = 32;
     int DB_XA_CREATE = 0x0000002;
     int DB_XIDDATASIZE = 128;

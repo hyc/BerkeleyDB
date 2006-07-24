@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb016.tcl,v 12.7 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdb016.tcl,v 12.8 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sdb016
 # TEST	Creates many in-memory named dbs and puts a small amount of
@@ -12,7 +12,7 @@
 # TEST	Use the first 100 entries from the dictionary as names.
 # TEST	Insert each with entry as name of subdatabase and a partial list
 # TEST	as key/data.  After all are entered, retrieve all; compare output
-# TEST	to original. 
+# TEST	to original.
 proc sdb016 { method {nentries 100} args } {
 	source ./include.tcl
 
@@ -41,7 +41,7 @@ proc sdb016 { method {nentries 100} args } {
 	set chkindex [lsearch -exact $args "-chksum"]
 	if { $chkindex != -1 } {
 		set args [lreplace $args $chkindex $chkindex]
-	} 
+	}
 
 	env_cleanup $testdir
 
@@ -92,7 +92,7 @@ proc sdb016 { method {nentries 100} args } {
 		incr fcount
 	}
 	close $fdid
-	
+
 	puts "\tSubdb$tnum.b: Clean up."
 	error_check_good env_close [$env close] 0
 }

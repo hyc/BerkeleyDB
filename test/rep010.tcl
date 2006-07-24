@@ -3,7 +3,7 @@
 # Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep010.tcl,v 12.5 2006/03/10 21:42:11 carol Exp $
+# $Id: rep010.tcl,v 12.7 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  rep010
 # TEST	Replication and ISPERM
@@ -17,14 +17,14 @@
 proc rep010 { method { niter 100 } { tnum "010" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Run for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Run for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]

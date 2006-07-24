@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: EnvironmentConfig.java,v 12.16 2006/06/03 13:51:01 bostic Exp $
+ * $Id: EnvironmentConfig.java,v 12.18 2006/07/14 07:45:58 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -386,7 +386,7 @@ public class EnvironmentConfig implements Cloneable {
         this.repmgrLocalSiteAddr = repmgrLocalSiteAddr;
     }
 
-    public ReplicationHostAddress setReplicationManagerLocalSite()
+    public ReplicationHostAddress getReplicationManagerLocalSite()
     {
         return repmgrLocalSiteAddr;
     }
@@ -763,7 +763,7 @@ public class EnvironmentConfig implements Cloneable {
         this.txnSnapshot = txnSnapshot;
     }
 
-    public boolean getSnapshot() {
+    public boolean getTxnSnapshot() {
         return txnSnapshot;
     }
 

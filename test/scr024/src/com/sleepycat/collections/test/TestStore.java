@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TestStore.java,v 12.2 2006/01/02 22:03:39 bostic Exp $
+ * $Id: TestStore.java,v 12.3 2006/06/27 22:48:28 bostic Exp $
  */
 
 package com.sleepycat.collections.test;
@@ -267,11 +267,11 @@ class TestStore {
         DbCompat.setReadUncommitted(config, true);
         config.setTransactional(CurrentTransaction.getInstance(env) != null);
         if (primary != null) {
-            return DbCompat.openSecondaryDatabase(env, null, 
+            return DbCompat.openSecondaryDatabase(env, null,
                                                   fileName, null,
                                                   primary, config);
         } else {
-            return DbCompat.openDatabase(env, null, 
+            return DbCompat.openDatabase(env, null,
                                          fileName, null,
                                          config);
         }

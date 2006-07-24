@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: log_put.c,v 12.39 2006/05/25 16:59:31 sue Exp $
+ * $Id: log_put.c,v 12.41 2006/07/17 15:16:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -83,7 +83,7 @@ __log_put(dbenv, lsnp, udbt, flags)
 	u_int32_t flags;
 {
 	DB_CIPHER *db_cipher;
-	DBT *dbt, t;
+	DBT *dbt, newfiledbt, t;
 	DB_LOG *dblp;
 	DB_LSN lsn, old_lsn;
 	DB_REP *db_rep;
@@ -185,9 +185,13 @@ __log_put(dbenv, lsnp, udbt, flags)
 		 * that the record we already put is a commit, so we don't just
 		 * want to return failure.
 		 */
-		if (!IS_ZERO_LSN(old_lsn))
+		if (!IS_ZERO_LSN(old_lsn)) {
+			memset(&newfiledbt, 0, sizeof(newfiledbt));
+			newfiledbt.data = &lp->persist.version;
+			newfiledbt.size = sizeof(lp->persist.version);
 			(void)__rep_send_message(dbenv, DB_EID_BROADCAST,
-			    REP_NEWFILE, &old_lsn, NULL, 0, 0);
+			    REP_NEWFILE, &old_lsn, &newfiledbt, 0, 0);
+		}
 
 		/*
 		 * If we're doing bulk processing put it in the bulk buffer.
@@ -411,7 +415,7 @@ __log_put_next(dbenv, lsn, dbt, hdr, old_lsnp)
 			return (EINVAL);
 		}
 
-		if ((ret = __log_newfile(dblp, NULL, 0)) != 0)
+		if ((ret = __log_newfile(dblp, NULL, 0, 0)) != 0)
 			return (ret);
 
 		/*
@@ -501,13 +505,14 @@ __log_flush_commit(dbenv, lsnp, flags)
  *	Initialize and switch to a new log file.  (Note that this is
  * called both when no log yet exists and when we fill a log file.)
  *
- * PUBLIC: int __log_newfile __P((DB_LOG *, DB_LSN *, u_int32_t));
+ * PUBLIC: int __log_newfile __P((DB_LOG *, DB_LSN *, u_int32_t, u_int32_t));
  */
 int
-__log_newfile(dblp, lsnp, logfile)
+__log_newfile(dblp, lsnp, logfile, version)
 	DB_LOG *dblp;
 	DB_LSN *lsnp;
 	u_int32_t logfile;
+	u_int32_t version;
 {
 	DB_CIPHER *db_cipher;
 	DB_ENV *dbenv;
@@ -595,6 +600,15 @@ __log_newfile(dblp, lsnp, logfile)
 		tsize += db_cipher->adj_size(tsize);
 	if ((ret = __os_calloc(dbenv, 1, tsize, &tmp)) != 0)
 		return (ret);
+	/*
+	 * If we're told what version to make this file, then we
+	 * need to be at that version.  Update here.
+	 */
+	if (version != 0) {
+		__log_set_version(dbenv, version);
+		if ((ret = __env_init_rec(dbenv, version)) != 0)
+			goto err;
+	}
 	lp->persist.log_size = lp->log_size = lp->log_nsize;
 	memcpy(tmp, &lp->persist, sizeof(LOGP));
 	DB_SET_DBT(t, tmp, tsize);
@@ -726,8 +740,7 @@ err:
 	 */
 	if (w_off + lp->buffer_size < lp->w_off) {
 		DB_ASSERT(dbenv, !lp->db_log_inmemory);
-		if ((t_ret = __os_seek(dbenv,
-		    dblp->lfhp, 0, 0, w_off, 0, DB_OS_SEEK_SET)) != 0 ||
+		if ((t_ret = __os_seek(dbenv, dblp->lfhp, 0, 0, w_off)) != 0 ||
 		    (t_ret = __os_read(dbenv, dblp->lfhp, dblp->bufp,
 		    b_off, &nr)) != 0)
 			return (__db_panic(dbenv, t_ret));

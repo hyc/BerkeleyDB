@@ -3,9 +3,9 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: log008.tcl,v 12.2 2006/01/02 22:03:16 bostic Exp $
+# $Id: log008.tcl,v 12.3 2006/06/27 22:31:08 bostic Exp $
 #
-# TEST	Test what happens if a txn_ckp record falls into a	
+# TEST	Test what happens if a txn_ckp record falls into a
 # TEST 	different log file than the DBREG_CKP records generated
 # TEST	by the same checkpoint.
 
@@ -16,12 +16,12 @@ proc log008 { { nhandles 100 } args } {
 	puts "Log$tnum: Checkpoint test with records spanning log files."
 	env_cleanup $testdir
 
-	# Set up env command for use later. 
-	set envcmd "berkdb_env -create -txn -home $testdir" 
+	# Set up env command for use later.
+	set envcmd "berkdb_env -create -txn -home $testdir"
 
 	# Start up a child process which will open a bunch of handles
-	# on a database and write to it, running until it creates a 
-	# checkpoint with records spanning two log files. 
+	# on a database and write to it, running until it creates a
+	# checkpoint with records spanning two log files.
 	puts "\tLog$tnum.a: Spawning child tclsh."
 	set pid [exec $tclsh_path $test_path/wrap.tcl \
 	    log008script.tcl $testdir/log008script.log $nhandles &]

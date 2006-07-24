@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_windows_dsp,v 12.7 2006/04/18 21:14:02 alanb Exp $
+#	$Id: s_windows_dsp,v 12.9 2006/07/13 06:19:45 mjc Exp $
 #
 # Build Windows/32 .dsp files.
 
@@ -46,7 +46,7 @@ create_dsp()
     done
     sed -e "/@SOURCE_FILES@/r$dspoutput.insert" \
         -e "/@SOURCE_FILES@/d" \
-	-e "/@POST_BUILD@/r$postbuild" \
+        -e "/@POST_BUILD@/r$postbuild" \
         -e "/@POST_BUILD@/d" \
         -e "s/@project_name@/$projname/g" \
         -e "s/@bin_rel_dest@/Release/g" \
@@ -120,7 +120,16 @@ do
             ;;
         app=* )
             appname=`echo $module | sed -e 's/^app=//'`
-            create_dsp $appname " $module " $TMPA $BUILDDIR/app_dsp.src
+            case "$appname" in
+            ex_rep_base )
+                libs='ws2_32.lib'
+                ;;
+            * )
+                libs=''
+                ;;
+            esac
+            create_dsp $appname " $module " $TMPA $BUILDDIR/app_dsp.src '' \
+                $libs $libs
             ;;
         vx|vxsmall )
             ;;

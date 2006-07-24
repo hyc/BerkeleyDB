@@ -3,33 +3,33 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep052.tcl,v 12.6 2006/03/10 21:44:32 carol Exp $
+# $Id: rep052.tcl,v 12.8 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep052
 # TEST	Test of replication with NOWAIT.
 # TEST
-# TEST	One master, one client.  After initializing 
-# TEST	everything normally, close client and let the 
-# TEST	master get ahead -- far enough that the master 
+# TEST	One master, one client.  After initializing
+# TEST	everything normally, close client and let the
+# TEST	master get ahead -- far enough that the master
 # TEST 	no longer has the client's last log file.
-# TEST	Reopen the client and turn on NOWAIT. 
+# TEST	Reopen the client and turn on NOWAIT.
 # TEST	Process a few messages to get the client into
 # TEST	recovery mode, and verify that lockout occurs
 # TEST 	on a txn API call (txn_begin) and an env API call.
-# TEST	Process all the messages and verify that lockout 
-# TEST 	is over. 
+# TEST	Process all the messages and verify that lockout
+# TEST 	is over.
 
 proc rep052 { method { niter 200 } { tnum "052" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -62,7 +62,7 @@ proc rep052 { method { niter 200 } { tnum "052" } args } {
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep052_sub $method $niter $tnum $envargs \
-			    $l $r $args	
+			    $l $r $args
 		}
 	}
 }
@@ -94,12 +94,12 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_txnargs [adjust_txnargs $m_logtype]
 	set c_txnargs [adjust_txnargs $c_logtype]
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
-	
+
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
@@ -135,7 +135,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	incr start $niter
 	process_msgs $envlist
 
-	# Find out what exists on the client before closing.  We'll need 
+	# Find out what exists on the client before closing.  We'll need
 	# to loop until the first master log file > last client log file.
 	set last_client_log [get_logfile $clientenv last]
 
@@ -159,11 +159,11 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 			set res \
 			    [eval exec $util_path/db_archive -d -h $masterdir]
 		}
-		# Make sure we have a gap between the last client log and 
-		# the first master log.  This is easy with on-disk logs, since 
-		# we archive, but will take longer with in-memory logging. 
+		# Make sure we have a gap between the last client log and
+		# the first master log.  This is easy with on-disk logs, since
+		# we archive, but will take longer with in-memory logging.
 		set first_master_log [get_logfile $masterenv first]
-		if { $first_master_log > $last_client_log } { 
+		if { $first_master_log > $last_client_log } {
 			set stop 1
 		}
 	}
@@ -177,10 +177,10 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	# Turn on nowait.
 	$clientenv rep_config {nowait on}
 
-	# Process messages a few times, just enough to get client 
+	# Process messages a few times, just enough to get client
 	# into lockout/recovery mode, but not enough to complete recovery.
 	set iter 4
-	for { set i 0 } { $i < $iter } { incr i } { 
+	for { set i 0 } { $i < $iter } { incr i } {
 		set nproced [proc_msgs_once $envlist NONE err]
 	}
 

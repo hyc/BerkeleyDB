@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_upg_opd.c,v 12.5 2006/05/05 14:53:14 bostic Exp $
+ * $Id: db_upg_opd.c,v 12.6 2006/07/17 15:16:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -18,16 +18,16 @@ static int __db_build_ri __P((DB *, DB_FH *, PAGE *, PAGE *, u_int32_t, int *));
 static int __db_up_ovref __P((DB *, DB_FH *, db_pgno_t));
 
 #define	GET_PAGE(dbp, fhp, pgno, page) {				\
-	if ((ret = __os_seek(dbp->dbenv,				\
-	    fhp, pgno, (dbp)->pgsize, 0, 0, DB_OS_SEEK_SET)) != 0)	\
+	if ((ret = __os_seek(						\
+	    dbp->dbenv, fhp, pgno, (dbp)->pgsize, 0)) != 0)		\
 		goto err;						\
 	if ((ret = __os_read(dbp->dbenv,				\
 	    fhp, page, (dbp)->pgsize, &n)) != 0)			\
 		goto err;						\
 }
 #define	PUT_PAGE(dbp, fhp, pgno, page) {				\
-	if ((ret = __os_seek(dbp->dbenv,				\
-	    fhp, pgno, (dbp)->pgsize, 0, 0, DB_OS_SEEK_SET)) != 0)	\
+	if ((ret = __os_seek(						\
+	    dbp->dbenv, fhp, pgno, (dbp)->pgsize, 0)) != 0)		\
 		goto err;						\
 	if ((ret = __os_write(dbp->dbenv,				\
 	    fhp, page, (dbp)->pgsize, &n)) != 0)			\

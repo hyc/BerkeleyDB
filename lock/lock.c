@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: lock.c,v 12.28 2006/06/12 23:17:55 bostic Exp $
+ * $Id: lock.c,v 12.29 2006/07/17 19:53:09 ubell Exp $
  */
 
 #include "db_config.h"
@@ -561,12 +561,13 @@ __lock_get_internal(lt, locker, flags, obj, lock_mode, timeout, lock)
 	}
 
 	/*
-	 * If there are conflicting holders we will have to wait.  An upgrade
-	 * or dirty reader goes to the head of the queue, everyone else to the
-	 * back.
+	 * If there are conflicting holders we will have to wait.  If we
+	 * already hold a lock on this object or are doing an upgrade or
+	 * this is a dirty reader it goes to the head of the queue, everyone
+	 * else to the back.
 	 */
 	if (lp != NULL) {
-		if (LF_ISSET(DB_LOCK_UPGRADE) ||
+		if (ihold || LF_ISSET(DB_LOCK_UPGRADE) ||
 		    lock_mode == DB_LOCK_READ_UNCOMMITTED)
 			action = HEAD;
 		else

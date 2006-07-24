@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: si005.tcl,v 12.6 2006/01/02 22:03:24 bostic Exp $
+# $Id: si005.tcl,v 12.7 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	si005
 # TEST	Basic secondary index put/delete test with transactions
@@ -17,13 +17,13 @@ proc si005 { methods {nentries 200} {tnum "005"} args } {
 	set pomethod [convert_method $pmethod]
 
 	# Renumbering recno databases can't be used as primaries.
-	if { [is_rrecno $pmethod] == 1 } { 
+	if { [is_rrecno $pmethod] == 1 } {
 		puts "Skipping si$tnum for method $pmethod"
-		return 
+		return
 	}
 
 	# Method/args for all the secondaries.  If only one method
-	# was specified, assume the same method (for btree or hash) 
+	# was specified, assume the same method (for btree or hash)
 	# and a standard number of secondaries.  If primary is not
 	# btree or hash, force secondaries to be one btree, one hash.
 	set methods [lrange $methods 1 end]
@@ -72,7 +72,7 @@ proc si005 { methods {nentries 200} {tnum "005"} args } {
 	}
 
 	cleanup $testdir $env
-	puts "si$tnum \{\[ list $pmethod $methods \]\} $nentries" 
+	puts "si$tnum \{\[ list $pmethod $methods \]\} $nentries"
 	puts "\twith transactions"
 
 	set pname "primary$tnum.db"

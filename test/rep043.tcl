@@ -3,37 +3,34 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep043.tcl,v 1.7 2006/03/10 21:44:32 carol Exp $
+# $Id: rep043.tcl,v 1.9 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep043
-# TEST	
-# TEST	Constant writes during upgrade/downgrade. 
+# TEST
+# TEST	Constant writes during upgrade/downgrade.
 # TEST
 # TEST	Three envs take turns being master.  Each env
-# TEST	has a child process which does writes all the 
+# TEST	has a child process which does writes all the
 # TEST	time.  They will succeed when that env is master
-# TEST	and fail when it is not. 
+# TEST	and fail when it is not.
 
 proc rep043 { method { rotations 25 } { tnum "043" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Valid for non-record-based methods only.
-	if { $checking_valid_methods } { 
+	# Skip for record-based methods.
+	if { $checking_valid_methods } {
+		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_record_based $method] == 1 } {
-				set idx [lsearch -exact $valid_methods $method]
-				if { $idx >= 0 } { 
-					set valid_methods \
-					    [lreplace $valid_methods $idx $idx]
-				}
+			if { [is_record_based $method] != 1 } {
+				lappend test_methods $method
 			}
 		}
-		return $valid_methods
+		return $test_methods
 	}
 	if { [is_record_based $method] == 1 } {
 		puts "Skipping rep$tnum for record-based methods."
@@ -150,7 +147,7 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	    -create -btree -auto_commit -env $markerenv marker.db"]
 
 	# Start the 3 child processes: one for each env.
-	set pids {} 
+	set pids {}
 	set dirlist "0 $masterdir 1 $clientdir 2 $clientdir2"
 	foreach { writer dir } $dirlist {
 		puts "\tRep$tnum.a: Fork child process WRITER$writer."
@@ -172,7 +169,7 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 			set nextmasterenv $env1
 			set nextdir $clientdir
 		} elseif { $masterenv == $env1 } {
-			set nextmasterenv $env2 
+			set nextmasterenv $env2
 			set nextdir $clientdir2
 		} elseif { $masterenv == $env2 } {
 			set nextmasterenv $env0
@@ -180,7 +177,7 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 		} else {
 			puts "FAIL: could not identify current master"
 			return
-		}			
+		}
 
 		puts "\tRep$tnum.b.$i: Open master db in $curdir."
 		set mdb [eval {berkdb_open_noerr} -env $masterenv -auto_commit \
@@ -218,9 +215,9 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 
 		process_msgs $envlist
 	}
-	
 
-	puts "\tRep$tnum.f: Clean up."	
+
+	puts "\tRep$tnum.f: Clean up."
 	# Tell the child processes we are done.
 	error_check_good marker_done [$marker put DONE DONE] 0
 	error_check_good marker_close [$marker close] 0

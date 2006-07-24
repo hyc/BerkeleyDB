@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: si003.tcl,v 12.6 2006/01/02 22:03:24 bostic Exp $
+# $Id: si003.tcl,v 12.7 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	si003
 # TEST	si001 with secondaries created and closed mid-test
@@ -25,13 +25,13 @@ proc si003 { methods {nentries 200} {tnum "003"} args } {
 	set pomethod [convert_method $pmethod]
 
 	# Renumbering recno databases can't be used as primaries.
-	if { [is_rrecno $pmethod] == 1 } { 
+	if { [is_rrecno $pmethod] == 1 } {
 		puts "Skipping si$tnum for method $pmethod"
-		return 
+		return
 	}
 
 	# Method/args for all the secondaries.  If only one method
-	# was specified, assume the same method (for btree or hash) 
+	# was specified, assume the same method (for btree or hash)
 	# and a standard number of secondaries.  If primary is not
 	# btree or hash, force secondaries to be one btree, one hash.
 	set methods [lrange $methods 1 end]
@@ -65,12 +65,12 @@ proc si003 { methods {nentries 200} {tnum "003"} args } {
 		if { [lsearch -exact $envflags "-thread"] != -1 &&\
 		    [is_queue $pmethod] == 1 } {
 			puts "Skipping si$tnum for threaded env with queue"
-			return 
+			return
 		}
 		set testdir [get_home $env]
 	}
 
-	puts "si$tnum \{\[ list $pmethod $methods \]\} $nentries" 
+	puts "si$tnum \{\[ list $pmethod $methods \]\} $nentries"
 	cleanup $testdir $env
 
 	set pname "primary$tnum.db"

@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: RepQuoteExample.java,v 1.2 2006/05/11 22:28:15 alexg Exp $
+ * $Id: RepQuoteExample.java,v 1.4 2006/07/08 03:32:10 alexg Exp $
  */
 
 package db.repquote;
@@ -26,10 +26,10 @@ public class RepQuoteExample implements EventHandler
 
     public static void usage()
     {
-        System.err.println("usage: " + RepConfig.progname); 
-        System.err.println("[-h home][-o host:port][-m host:port]" + 
+        System.err.println("usage: " + RepConfig.progname);
+        System.err.println("[-h home][-o host:port][-m host:port]" +
             "[-f host:port][-n nsites][-p priority]");
-    
+
         System.err.println("\t -m host:port (required; m stands for me)\n" +
              "\t -o host:port (optional; o stands for other; any " +
              "number of these may bespecified)\n" +
@@ -39,7 +39,7 @@ public class RepQuoteExample implements EventHandler
              "\t    in which case we try to dynamically compute the " +
              "number of sites in\n" +
              "\t    the replication group)\n" +
-             "\t -p priority (optional: defaults to 100)\n"); 
+             "\t -p priority (optional: defaults to 100)\n");
 
         System.exit(1);
     }
@@ -55,10 +55,10 @@ public class RepQuoteExample implements EventHandler
         for (int i = 0; i < argv.length; i++)
         {
             isPeer = false;
-            if (argv[i] == "-C") {
+            if (argv[i].compareTo("-C") == 0) {
                 config.startPolicy = ReplicationManagerStartPolicy.REP_CLIENT;
             } else if (argv[i].compareTo("-F") == 0) {
-                config.startPolicy = 
+                config.startPolicy =
                     ReplicationManagerStartPolicy.REP_FULL_ELECTION;
             } else if (argv[i].compareTo("-h") == 0) {
                 // home - a string arg.
@@ -86,7 +86,7 @@ public class RepQuoteExample implements EventHandler
             } else if (argv[i].compareTo("-n") == 0) {
                 i++;
                 config.totalSites = Integer.parseInt(argv[i]);
-            } else if (argv[i].compareTo("-f") == 0 || 
+            } else if (argv[i].compareTo("-f") == 0 ||
                        argv[i].compareTo("-o") == 0) {
                 if (argv[i] == "-f")
                     isPeer = true;
@@ -117,7 +117,7 @@ public class RepQuoteExample implements EventHandler
 
         }
 
-        // Error check command line. 
+        // Error check command line.
         if ((!config.gotListenAddress()) || config.home.length() == 0)
             usage();
 
@@ -125,11 +125,11 @@ public class RepQuoteExample implements EventHandler
         try {
             runner = new RepQuoteExample();
             runner.init(config);
-            
-            // Sleep to give ourselves time to find a master. 
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {}
+
+            // Sleep to give ourselves time to find a master.
+            //try {
+            //    Thread.sleep(5000);
+            //} catch (InterruptedException e) {}
 
             runner.doloop();
             runner.terminate();
@@ -205,35 +205,25 @@ public class RepQuoteExample implements EventHandler
 
         for (;;)
         {
-            /*
-             * Check whether I've changed from client to master or the
-             * other way around.
-             */
-            if (dbenv.getIsMaster() != wasMaster) {
-                if (db != null)
-                    db.close(true); // close with noSync.
-                db = null;
-                wasMaster = dbenv.getIsMaster();
-            }
             if (db == null) {
                 DatabaseConfig dbconf = new DatabaseConfig();
-                // Set page size small so page allocation is cheap. 
+                // Set page size small so page allocation is cheap.
                 dbconf.setPageSize(512);
                 dbconf.setType(DatabaseType.BTREE);
                 if (dbenv.getIsMaster()) {
                     dbconf.setAllowCreate(true);
-                    dbconf.setTransactional(true);
-                } else {
-                    dbconf.setReadOnly(true);
                 }
+                dbconf.setTransactional(true);
 
                 try {
                     db = dbenv.openDatabase
                         (null, RepConfig.progname, null, dbconf);
                 } catch (java.io.FileNotFoundException e) {
                     System.err.println("no stock database available yet.");
-                    db.close(true);
-                    db = null;
+                    if (db != null) {
+                        db.close(true);
+                        db = null;
+                    }
                     try {
                         Thread.sleep(RepConfig.SLEEPTIME);
                     } catch (InterruptedException ie) {}
@@ -241,44 +231,30 @@ public class RepQuoteExample implements EventHandler
                 }
             }
 
-            BufferedReader stdin = 
+            BufferedReader stdin =
                 new BufferedReader(new InputStreamReader(System.in));
-            if (dbenv.getIsMaster()) {
-                // listen for input, and add it to the database.
-                System.out.print("QUOTESERVER> ");
-                System.out.flush();
-                String nextline = null;
+
+            // listen for input, and add it to the database.
+            System.out.print("QUOTESERVER");
+            if (!dbenv.getIsMaster())
+                System.out.print("(read-only)");
+            System.out.print("> ");
+            System.out.flush();
+            String nextline = null;
+            try {
+                nextline = stdin.readLine();
+            } catch (IOException ioe) {
+                System.err.println("Unable to get data from stdin");
+                break;
+            }
+            String[] words = nextline.split("\\s");
+
+            // A blank line causes the DB to be dumped to stdout.
+            if (words.length == 0 || 
+                (words.length == 1 && words[0].length() == 0)) {
                 try {
-                    nextline = stdin.readLine();
-                } catch (IOException ioe) {
-                    System.err.println("Unable to get data from stdin");
-                    break;
-                }
-                String[] words = nextline.split("\\s");
-
-                if (words.length == 1 && 
-                    (words[0].compareToIgnoreCase("quit") == 0 || 
-                    words[0].compareToIgnoreCase("exit") == 0)) {
-                    break;
-                } else if (words.length != 2) {
-                    System.err.println("Format: TICKER VALUE");
-                    continue;
-                }
-
-                DatabaseEntry key = new DatabaseEntry(words[0].getBytes());
-                DatabaseEntry data = new DatabaseEntry(words[1].getBytes());
-
-                db.put(null, key, data);
-            } else {
-                try {
-                    Thread.sleep(RepConfig.SLEEPTIME);
-                } catch (InterruptedException ie) {}
-
-                Cursor dbc = db.openCursor(null, null);
-                try {
-                    OperationStatus ret = printStocks(dbc);
+                    printStocks(db);
                 } catch (DeadlockException de) {
-                    dbc.close();
                     continue;
                 } catch (DatabaseException e) {
                     // this could be DB_REP_HANDLE_DEAD
@@ -287,13 +263,31 @@ public class RepQuoteExample implements EventHandler
                         "DB: " + e.toString());
                     System.err.println("Expected if it was due to a dead " +
                         "replication handle, otherwise an unexpected error.");
-                    dbc.close();
                     db.close(true); // close no sync.
                     db = null;
                     continue;
                 }
-                dbc.close();
+                continue;
             }
+
+            if (words.length == 1 &&
+                (words[0].compareToIgnoreCase("quit") == 0 ||
+                words[0].compareToIgnoreCase("exit") == 0)) {
+                break;
+            } else if (words.length != 2) {
+                System.err.println("Format: TICKER VALUE");
+                continue;
+            }
+
+            if (!dbenv.getIsMaster()) {
+                System.err.println("Can't update client.");
+                continue;
+            }
+
+            DatabaseEntry key = new DatabaseEntry(words[0].getBytes());
+            DatabaseEntry data = new DatabaseEntry(words[1].getBytes());
+
+            db.put(null, key, data);
         }
         if (db != null)
             db.close(true);
@@ -321,9 +315,15 @@ public class RepQuoteExample implements EventHandler
         return ret;
     }
 
-    private OperationStatus printStocks(Cursor dbc)
+    /*
+     * void return type since error conditions are propogated
+     * via exceptions.
+     */
+    private void printStocks(Database db)
         throws DeadlockException, DatabaseException
     {
+        Cursor dbc = db.openCursor(null, null);
+        
         System.out.println("\tSymbol\tPrice");
         System.out.println("\t======\t=====");
 
@@ -340,8 +340,7 @@ public class RepQuoteExample implements EventHandler
             System.out.println("\t"+keystr+"\t"+datastr);
 
         }
-        // other return types are propogated by exception
-        return OperationStatus.SUCCESS;
+        dbc.close();
     }
 } // end class
 

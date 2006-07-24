@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: lock.h,v 12.9 2006/03/23 18:54:06 bostic Exp $
+ * $Id: lock.h,v 12.10 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef	_DB_LOCK_H_
 #define	_DB_LOCK_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #define	DB_LOCK_DEFAULT_N	1000	/* Default # of locks in region. */
 
@@ -231,6 +235,10 @@ struct __db_lock {
 #define	__lock_locker_hash(locker)	(locker)
 #define	LOCKER_LOCK(lt, reg, locker, ndx)				\
 	ndx = __lock_locker_hash(locker) % (reg)->locker_t_size;
+
+#if defined(__cplusplus)
+}
+#endif
 
 #include "dbinc_auto/lock_ext.h"
 #endif /* !_DB_LOCK_H_ */

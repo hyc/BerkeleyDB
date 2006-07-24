@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: DatabaseException.java,v 12.2 2006/01/02 22:02:33 bostic Exp $
+ * $Id: DatabaseException.java,v 12.3 2006/07/14 07:45:57 mjc Exp $
  */
 package com.sleepycat.db;
 
@@ -30,7 +30,7 @@ public class DatabaseException extends Exception {
         this.dbenv = dbenv;
     }
 
-    protected DatabaseException(final String s,
+    /* package */ DatabaseException(final String s,
                                 final int errno,
                                 final DbEnv dbenv) {
         this(s, errno, (dbenv == null) ? null : dbenv.wrapper);

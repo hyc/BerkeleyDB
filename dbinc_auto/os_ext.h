@@ -58,7 +58,7 @@ int __os_io __P((DB_ENV *, int, DB_FH *, db_pgno_t, u_int32_t, u_int32_t, u_int3
 int __os_read __P((DB_ENV *, DB_FH *, void *, size_t, size_t *));
 int __os_write __P((DB_ENV *, DB_FH *, void *, size_t, size_t *));
 int __os_physwrite __P((DB_ENV *, DB_FH *, void *, size_t, size_t *));
-int __os_seek __P((DB_ENV *, DB_FH *, db_pgno_t, u_int32_t, u_int32_t, int, DB_OS_SEEK));
+int __os_seek __P((DB_ENV *, DB_FH *, db_pgno_t, u_int32_t, u_int32_t));
 void __os_sleep __P((DB_ENV *, u_long, u_long));
 u_int32_t __os_spin __P((DB_ENV *));
 int __os_exists __P((DB_ENV *, const char *, int *));

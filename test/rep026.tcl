@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep026.tcl,v 12.7 2006/04/12 03:24:06 sue Exp $
+# $Id: rep026.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep026
 # TEST	Replication elections - simulate a crash after sending
@@ -14,15 +14,15 @@ proc rep026 { method args } {
 
 	global mixed_mode_logging
 	set tnum "026"
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for btree only.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree } 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."

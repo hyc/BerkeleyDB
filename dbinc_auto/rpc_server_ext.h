@@ -8,6 +8,7 @@ extern "C" {
 
 void __env_get_cachesize_proc __P((u_int, __env_get_cachesize_reply *));
 void __env_set_cachesize_proc __P((u_int, u_int32_t, u_int32_t, u_int32_t, __env_set_cachesize_reply *));
+void __env_cdsgroup_begin_proc __P((u_int, __env_cdsgroup_begin_reply *));
 void __env_close_proc __P((u_int, u_int32_t, __env_close_reply *));
 void __env_create_proc __P((u_int32_t, __env_create_reply *));
 void __env_dbremove_proc __P((u_int, u_int, char *, char *, u_int32_t, __env_dbremove_reply *));

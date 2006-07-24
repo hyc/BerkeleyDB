@@ -6,6 +6,9 @@
 extern "C" {
 #endif
 
+#ifndef HAVE_ABORT
+void abort __P((void));
+#endif
 #ifndef HAVE_ATOI
 int atoi __P((const char *));
 #endif

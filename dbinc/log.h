@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: log.h,v 12.20 2006/06/14 17:09:16 bostic Exp $
+ * $Id: log.h,v 12.22 2006/07/05 05:37:09 mjc Exp $
  */
 
-#ifndef _LOG_H_
-#define	_LOG_H_
+#ifndef _DB_LOG_H_
+#define	_DB_LOG_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*******************************************************
  * DBREG:
@@ -133,7 +137,7 @@ struct __hdr {
  *	This helps avoids the race misreading the log while it
  * it is being updated.
  */
-#define LOG_HDR_SUM(crypto, hdr, sum) do {				\
+#define	LOG_HDR_SUM(crypto, hdr, sum) do {				\
 	if (crypto) {							\
 		((u_int32_t *)sum)[0] ^= ((HDR *)hdr)->prev;		\
 		((u_int32_t *)sum)[1] ^= ((HDR *)hdr)->len;		\
@@ -403,7 +407,11 @@ typedef enum {
 	DB_LV_OLD_UNREADABLE
 } logfile_validity;
 
+#if defined(__cplusplus)
+}
+#endif
+
 #include "dbinc_auto/dbreg_auto.h"
 #include "dbinc_auto/dbreg_ext.h"
 #include "dbinc_auto/log_ext.h"
-#endif /* !_LOG_H_ */
+#endif /* !_DB_LOG_H_ */

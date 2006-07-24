@@ -1,4 +1,4 @@
-<!--$Id: comm.so,v 1.15 2006/03/15 19:39:16 bostic Exp $-->
+<!--$Id: comm.so,v 1.18 2006/07/14 23:04:42 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -11,11 +11,14 @@
 <body bgcolor=white>
 <table width="100%"><tr valign=top>
 <td><h3><dl><dt>Berkeley DB Reference Guide:<dd>Berkeley DB Replication</dl></h3></td>
-<td align=right><a href="../rep/app.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/newsite.html"><img src="../../images/next.gif" alt="Next"></a>
+<td align=right><a href="../rep/base_meth.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/newsite.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
 <p>
 <h3 align=center>Building the communications infrastructure</h3>
-<p>The replication support in an application is typically written with one
+<p>Replication Manager provides a built-in communications
+infrastructure.</p>
+<p>For applications that use the Base replication API, which must provide
+their own communications infrastructure, it is typically written with one
 or more threads of control looping on one or more communication
 channels, receiving and sending messages.  These threads accept messages
 from remote environments for the local database environment, and accept
@@ -62,7 +65,7 @@ calling the <a href="../../api_c/rep_elect.html">DB_ENV-&gt;rep_elect</a> method
 <dt><a href="../../api_c/rep_message.html#DB_REP_HOLDELECTION">DB_REP_HOLDELECTION</a><dd>When <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> returns <a href="../../api_c/rep_message.html#DB_REP_HOLDELECTION">DB_REP_HOLDELECTION</a>, it means
 that another database environment in the replication group has called
 for an election.  The application should call the <a href="../../api_c/rep_elect.html">DB_ENV-&gt;rep_elect</a> method.
-<dt><a href="../../api_c/rep_message.html#DB_REP_IGNORE">DB_REP_IGNORE</a><dd>When <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> returns <a href="../../api_c/rep_message.html#DB_REP_IGNORE">DB_REP_IGNORE</a>, it means a
+<dt><a href="../../api_c/rep_message.html#DB_REP_IGNORE">DB_REP_IGNORE</a><dd>When <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> returns <a href="../../api_c/rep_message.html#DB_REP_IGNORE">DB_REP_IGNORE</a>, it means that
 this message cannot be processed.
 This is normally an indication that this message
 is irrelevant to the current replication state, such as a message
@@ -73,11 +76,11 @@ permanent record, perhaps a message previously returned as
 written to disk.  This record may have filled a gap in the log record that
 allowed additional records to be written.  The <b>ret_lsnp</b>
 contains the maximum LSN of the permanent records written.
-<dt>UNREF==DB_REP_NEWMASTER<dd>When <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> returns UNREF==DB_REP_NEWMASTER, it means that
+<dt><a href="../../api_c/rep_message.html#DB_REP_NEWMASTER">DB_REP_NEWMASTER</a><dd>When <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> returns <a href="../../api_c/rep_message.html#DB_REP_NEWMASTER">DB_REP_NEWMASTER</a>, it means that
 a new master has been elected.  The call will also return the local
 environment's ID for that master.  If the ID of the master has changed,
 the application may need to reconfigure itself (for example, to redirect
-update queries to the new master rather then the old one).  If the new
+update queries to the new master rather than the old one).  If the new
 master is the local environment, then the application must call the
 <a href="../../api_c/rep_start.html">DB_ENV-&gt;rep_start</a> method, and reconfigure the supporting Berkeley DB library as a
 replication master.
@@ -93,13 +96,8 @@ not yet arrived.  This operation will be written to disk when the
 missing messages arrive.  The <b>ret_lsnp</b> argument will contain
 the LSN of this record.  The application should take whatever action
 is deemed necessary to retain its recoverability characteristics.
-<dt>UNREF==DB_REP_STARTUPDONE<dd>When <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> returns UNREF==DB_REP_STARTUPDONE, it means that
-the client has completed its startup synchronization activities and is
-now processing live log messages from the master.  Live log messages
-are messages that the master is sending due to operations, as opposed
-to resending log messages due to a request for log records from the client.
 </dl>
-<table width="100%"><tr><td><br></td><td align=right><a href="../rep/app.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/newsite.html"><img src="../../images/next.gif" alt="Next"></a>
+<table width="100%"><tr><td><br></td><td align=right><a href="../rep/base_meth.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/newsite.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
 <p><font size=1><a href="../../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
 </body>

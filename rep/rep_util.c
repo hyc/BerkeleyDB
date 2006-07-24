@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_util.c,v 12.60 2006/06/12 23:18:11 bostic Exp $
+ * $Id: rep_util.c,v 12.62 2006/07/17 22:16:08 alanb Exp $
  */
 
 #include "db_config.h"
@@ -37,6 +37,7 @@
 	}								\
 } while (0)
 
+static int __rep_newmaster_empty __P((DB_ENV *, DB_LSN *, REP_CONTROL *, int));
 #ifdef REP_DIAGNOSTIC
 static void __rep_print_logmsg __P((DB_ENV *, const DBT *, DB_LSN *));
 #endif
@@ -354,7 +355,7 @@ __rep_send_message(dbenv, eid, rtype, lsnp, dbt, ctlflags, repflags)
 	if (rep->version == DB_REPVERSION)
 		cntrl.rectype = rtype;
 	else if (rep->version < DB_REPVERSION) {
-		cntrl.rectype = __repmsg_to_old[rep->version][rtype];
+		cntrl.rectype = __rep_msg_to_old(rep->version, rtype);
 		RPRINT(dbenv, (dbenv, &mb,
 		    "rep_send_msg: rtype %lu to version %lu record %lu.",
 		    (u_long)rtype, (u_long)rep->version,
@@ -508,7 +509,7 @@ __rep_new_master(dbenv, cntrl, eid)
 	REGENV *renv;
 	REGINFO *infop;
 	REP *rep;
-	int change, do_req, ret, t_ret;
+	int change, do_req, ret;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
 #endif
@@ -521,6 +522,11 @@ __rep_new_master(dbenv, cntrl, eid)
 	__rep_elect_done(dbenv, rep);
 	change = rep->gen != cntrl->gen || rep->master_id != eid;
 	if (change) {
+		if ((ret = __env_init_rec(dbenv, cntrl->log_version)) != 0) {
+			REP_SYSTEM_UNLOCK(dbenv);
+			return (ret);
+		}
+
 		/*
 		 * If we are already locking out others, we're either
 		 * in the middle of sync-up recovery or internal init
@@ -558,8 +564,7 @@ __rep_new_master(dbenv, cntrl, eid)
 		rep->stat.st_startup_complete = 0;
 		__log_set_version(dbenv, cntrl->log_version);
 		rep->version = cntrl->rep_version;
-		if ((ret = __env_init_rec(dbenv, cntrl->log_version)) != 0)
-			goto err;
+		
 		/*
 		 * If we're delaying client sync-up, we know we have a
 		 * new/changed master now, set flag indicating we are
@@ -615,45 +620,8 @@ __rep_new_master(dbenv, cntrl, eid)
 	 * records from the master.
 	 */
 	if (IS_INIT_LSN(lsn) || IS_ZERO_LSN(lsn)) {
-		/*
-		 * If we have no log, then we have no files to open
-		 * in recovery, but we've opened what we can, which
-		 * is none.  Mark DBREP_OPENFILES here.
-		 */
-empty:		MUTEX_LOCK(dbenv, rep->mtx_clientdb);
-		F_SET(db_rep, DBREP_OPENFILES);
-		ZERO_LSN(lp->verify_lsn);
-		REP_SYSTEM_LOCK(dbenv);
-		F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK);
-		REP_SYSTEM_UNLOCK(dbenv);
-
-		if (!IS_INIT_LSN(cntrl->lsn)) {
-			/*
-			 * We're making an ALL_REQ.  But now that we've
-			 * cleared the flags, we're likely receiving new
-			 * log records from the master, resulting in a gap
-			 * immediately.  So to avoid multiple data streams,
-			 * set the wait_recs value high now to give the master
-			 * a chance to start sending us these records before
-			 * the gap code re-requests the same gap.  Wait_recs
-			 * will get reset once we start receiving these
-			 * records.
-			 */
-			lp->wait_recs = rep->max_gap;
-			MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
-			/*
-			 * Don't send the ALL_REQ if we're delayed.  But we
-			 * check here, after lp->wait_recs is set up so that
-			 * when the app calls rep_sync, everything is ready
-			 * to go.
-			 */
-			if (!F_ISSET(rep, REP_F_DELAY))
-				(void)__rep_send_message(dbenv, eid,
-				    REP_ALL_REQ, &lsn, NULL,
-				    0, DB_REP_ANYWHERE);
-		} else
-			MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
-
+		if ((ret = __rep_newmaster_empty(dbenv, &lsn, cntrl, eid)) != 0)
+			return (ret);
 		return (DB_REP_NEWMASTER);
 	}
 
@@ -667,7 +635,10 @@ empty:		MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	if (cntrl->lsn.file < lsn.file) {
 		if ((ret = __log_cursor(dbenv, &logc)) != 0)
 			goto err;
-		if ((ret = __log_c_get(logc, &first_lsn, &dbt, DB_FIRST)) != 0)
+		if ((ret = __log_c_get(logc,
+		    &first_lsn, &dbt, DB_FIRST)) == DB_NOTFOUND)
+			goto notfound;
+		else if (ret != 0)
 			goto err;
 		if (cntrl->lsn.file < first_lsn.file) {
 			__db_errx(dbenv,
@@ -682,45 +653,11 @@ empty:		MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	}
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		goto err;
-	ret = __rep_log_backup(dbenv, rep, logc, &lsn);
-err:	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
-		ret = t_ret;
-	if (ret == DB_NOTFOUND) {
-		/*
-		 * If we don't have an identification record, we still might
-		 * have some log records but we're discarding them to sync up
-		 * with the master from the start.  Therefore, truncate our log
-		 * and go to the no log case.  In-memory logs can't be
-		 * completely zeroed using __log_vtruncate, so just zero them
-		 * out.
-		 */
-		INIT_LSN(lsn);
-		RPRINT(dbenv, (dbenv, &mb,
-		    "No commit or ckp found.  Truncate log."));
-		ret = lp->db_log_inmemory ?
-		    __log_zero(dbenv, &lsn, &lp->lsn) :
-		    __log_vtruncate(dbenv, &lsn, &lsn, NULL);
-		if (ret != 0 && ret != DB_NOTFOUND)
-			return (ret);
-		infop = dbenv->reginfo;
-		renv = infop->primary;
-		REP_SYSTEM_LOCK(dbenv);
-		(void)time(&renv->rep_timestamp);
-		REP_SYSTEM_UNLOCK(dbenv);
-		goto empty;
-	}
+	if ((ret = __rep_log_backup(dbenv, rep, logc, &lsn)) == DB_NOTFOUND)
+		goto notfound;
+	else if (ret != 0)
+		goto err;
 
-	/*
-	 * If we failed here, we need to clear the flags we may
-	 * have set above because we're not going to be setting
-	 * the verify_lsn.
-	 */
-	if (ret != 0) {
-		REP_SYSTEM_LOCK(dbenv);
-		F_CLR(rep, REP_F_RECOVER_MASK | REP_F_DELAY);
-		REP_SYSTEM_UNLOCK(dbenv);
-		return (ret);
-	}
 
 	/*
 	 * Finally, we have a record to ask for.
@@ -735,6 +672,101 @@ err:	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
 		    eid, REP_VERIFY_REQ, &lsn, NULL, 0, DB_REP_ANYWHERE);
 
 	return (DB_REP_NEWMASTER);
+
+err:	if (logc != NULL)
+		(void)__log_c_close(logc);
+	/*
+	 * If we failed, we need to clear the flags we may have set above
+	 * because we're not going to be setting the verify_lsn.
+	 */
+	REP_SYSTEM_LOCK(dbenv);
+	F_CLR(rep, REP_F_RECOVER_MASK | REP_F_DELAY);
+	REP_SYSTEM_UNLOCK(dbenv);
+	return (ret);
+
+notfound:
+	(void)__log_c_close(logc);
+	/*
+	 * If we don't have an identification record, we still
+	 * might have some log records but we're discarding them
+	 * to sync up with the master from the start.
+	 * Therefore, truncate our log and treat it as if it
+	 * were empty.  In-memory logs can't be completely
+	 * zeroed using __log_vtruncate, so just zero them out.
+	 */
+	INIT_LSN(lsn);
+	RPRINT(dbenv, (dbenv, &mb, "No commit or ckp found.  Truncate log."));
+	ret = lp->db_log_inmemory ?
+	    __log_zero(dbenv, &lsn, &lp->lsn) :
+	    __log_vtruncate(dbenv, &lsn, &lsn, NULL);
+	if (ret != 0 && ret != DB_NOTFOUND)
+		return (ret);
+	infop = dbenv->reginfo;
+	renv = infop->primary;
+	REP_SYSTEM_LOCK(dbenv);
+	(void)time(&renv->rep_timestamp);
+	REP_SYSTEM_UNLOCK(dbenv);
+	if ((ret = __rep_newmaster_empty(dbenv, &lsn, cntrl, eid)) != 0)
+		return (ret);
+	return (DB_REP_NEWMASTER);
+}
+
+/*
+ * __rep_newmaster_empty
+ *      Handle the case of a NEWMASTER message received when we have an empty
+ * log.  If both the master and we agree that the max LSN is 0,0, then there is
+ * no recovery to be done.  If we are at 0 and the master is not, then we just
+ * need to request all the log records from the master.
+ */
+static int
+__rep_newmaster_empty(dbenv, lsnp, cntrl, eid)
+	DB_ENV *dbenv;
+	DB_LSN *lsnp;
+	REP_CONTROL *cntrl;
+	int eid;
+{
+	DB_REP *db_rep;
+	REP *rep;
+	LOG *lp;
+
+	db_rep = dbenv->rep_handle;
+	rep = db_rep->region;
+	lp = dbenv->lg_handle->reginfo.primary;
+
+	/*
+	 * If we have no log, then we have no files to open in recovery, but
+	 * we've opened what we can, which is none.  Mark DBREP_OPENFILES here.
+	 */
+	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
+	F_SET(db_rep, DBREP_OPENFILES);
+	ZERO_LSN(lp->verify_lsn);
+	REP_SYSTEM_LOCK(dbenv);
+	F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK);
+	REP_SYSTEM_UNLOCK(dbenv);
+	
+	if (!IS_INIT_LSN(cntrl->lsn)) {
+		/*
+		 * We're making an ALL_REQ.  But now that we've cleared the
+		 * flags, we're likely receiving new log records from the
+		 * master, resulting in a gap immediately.  So to avoid multiple
+		 * data streams, set the wait_recs value high now to give the
+		 * master a chance to start sending us these records before the
+		 * gap code re-requests the same gap.  Wait_recs will get reset
+		 * once we start receiving these records.
+		 */
+		lp->wait_recs = rep->max_gap;
+		MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+		/*
+		 * Don't send the ALL_REQ if we're delayed.  But we check here,
+		 * after lp->wait_recs is set up so that when the app calls
+		 * rep_sync, everything is ready to go.
+		 */
+		if (!F_ISSET(rep, REP_F_DELAY))
+			(void)__rep_send_message(dbenv, eid, REP_ALL_REQ,
+			    lsnp, NULL, 0, DB_REP_ANYWHERE);
+	} else
+		MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+	return (0);
 }
 
 /*
@@ -1349,6 +1381,83 @@ send:	if ((repth->type == typemore || !LF_ISSET(REP_THROTTLE_ONLY)) &&
 	return (0);
 }
 
+/*
+ * __rep_msg_to_old --
+ *	Convert current message numbers to old message numbers.
+ *
+ * PUBLIC: u_int32_t __rep_msg_to_old __P((u_int32_t, u_int32_t));
+ */
+u_int32_t
+__rep_msg_to_old(version, rectype)
+	u_int32_t version, rectype;
+{
+	/*
+	 * We need to convert from current message numbers to old numbers and
+	 * we need to convert from old numbers to current numbers.  Offset by
+	 * one for more readable code.
+	 */
+	/*
+	 * Everything for version 0 is invalid, there is no version 0.
+	 */
+	static const u_int32_t table[DB_REPVERSION][REP_MAX_MSG+1] = {
+	{   REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+	    REP_INVALID, REP_INVALID },
+	{   REP_INVALID, 1, 2, 3, REP_INVALID, REP_INVALID,
+	    4, 5, REP_INVALID, 6, 7, 8, 9, 10, 11, 12, 13,
+	    14, 15, REP_INVALID, REP_INVALID, 16, REP_INVALID,
+	    REP_INVALID, REP_INVALID, 19, 20, 21, 22, 23 },
+	{   REP_INVALID, 1, 2, 3, REP_INVALID, REP_INVALID,
+	    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	    17, 18, 19, REP_INVALID, 20, 21, 22, 23, 24, 25, 26 }
+	};
+	return (table[version][rectype]);
+}
+
+/*
+ * __rep_msg_from_old --
+ *	Convert old message numbers to current message numbers.
+ *
+ * PUBLIC: u_int32_t __rep_msg_from_old __P((u_int32_t, u_int32_t));
+ */
+u_int32_t
+__rep_msg_from_old(version, rectype)
+	u_int32_t version, rectype;
+{
+	/*
+	 * We need to convert from current message numbers to old numbers and
+	 * we need to convert from old numbers to current numbers.  Offset by
+	 * one for more readable code.
+	 */
+	/*
+	 * Everything for version 0 is invalid, there is no version 0.
+	 */
+	const u_int32_t table[DB_REPVERSION][REP_MAX_MSG+1] = {
+		{   REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID },
+		{   REP_INVALID, 1, 2, 3, 6, 7, 9, 10, 11, 12, 13,
+		    14, 15, 16, 17, 18, 21, REP_INVALID, REP_INVALID,
+		    25, 26, 27, 28, 29,
+		    REP_INVALID, REP_INVALID, REP_INVALID, REP_INVALID,
+		    REP_INVALID, REP_INVALID },
+		{   REP_INVALID, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13,
+		    14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
+		    27, 28, 29, REP_INVALID, REP_INVALID, REP_INVALID }
+	};
+	return (table[version][rectype]);
+}
+
 #ifdef DIAGNOSTIC
 /*
  * PUBLIC: void __rep_print_message __P((DB_ENV *, int, REP_CONTROL *, char *));
@@ -1366,7 +1475,7 @@ __rep_print_message(dbenv, eid, rp, str)
 
 	rectype = rp->rectype;
 	if (rp->rep_version != DB_REPVERSION)
-		rectype = __repmsg_from_old[rp->rep_version][rectype];
+		rectype = __rep_msg_from_old(rp->rep_version, rectype);
 	switch (rectype) {
 	case REP_ALIVE:
 		type = "alive";

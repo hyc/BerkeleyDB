@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: Environment.java,v 12.12 2006/05/11 11:27:38 alexg Exp $
+ * $Id: Environment.java,v 12.13 2006/07/17 13:08:15 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -303,6 +303,11 @@ public class Environment {
     }
 
     /* Transaction management */
+    public Transaction beginCDSGroup() throws DatabaseException {
+
+        return new Transaction(dbenv.cdsgroup_begin());
+    }
+
     public Transaction beginTransaction(final Transaction parent,
                                         TransactionConfig config)
         throws DatabaseException {

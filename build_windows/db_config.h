@@ -9,7 +9,6 @@
 #define DB_WIN32 1
 
 /* Define to 1 if you want a debugging version. */
-/* #undef DEBUG */
 #if defined(_DEBUG)
 #if !defined(DEBUG)
 #define DEBUG 1
@@ -27,6 +26,9 @@
 
 /* Define to 1 if 64-bit types are available. */
 #define HAVE_64BIT_TYPES 1
+
+/* Define to 1 if you have the `abort' function. */
+#define HAVE_ABORT 1
 
 /* Define to 1 if you have the `atoi' function. */
 #define HAVE_ATOI 1
@@ -285,9 +287,6 @@
 #define HAVE_QUEUE 1
 #endif
 
-/* Define to 1 if you have the `rand' function. */
-#define HAVE_RAND 1
-
 /* Define to 1 if you have the `raise' function. */
 #define HAVE_RAISE 1
 
@@ -435,13 +434,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.5.8"
+#define PACKAGE_STRING "Berkeley DB 4.5.14"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.5.8"
+#define PACKAGE_TARNAME "db-4.5.14"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.5.8"
+#define PACKAGE_VERSION "4.5.14"
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
 /* #undef STAT_MACROS_BROKEN */
@@ -463,14 +462,6 @@
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
-
-/*
- * Exit success/failure macros.
- */
-#ifndef	HAVE_EXIT_SUCCESS
-#define	EXIT_FAILURE	1
-#define	EXIT_SUCCESS	0
-#endif
 
 #include "clib_port.h"
 #include "win_db.h"

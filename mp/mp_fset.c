@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_fset.c,v 12.13 2006/06/19 14:55:35 mjc Exp $
+ * $Id: mp_fset.c,v 12.14 2006/06/29 00:02:38 mjc Exp $
  */
 
 #include "db_config.h"
@@ -39,8 +39,7 @@ __memp_fset_pp(dbmfp, pgaddr, flags)
 	if (flags == 0)
 		return (__db_ferr(dbenv, "memp_fset", 1));
 
-	if ((ret = __db_fchk(dbenv, "memp_fset", flags,
-	    DB_MPOOL_CLEAN | DB_MPOOL_DISCARD)) != 0)
+	if ((ret = __db_fchk(dbenv, "memp_fset", flags, DB_MPOOL_DISCARD)) != 0)
 		return (ret);
 
 	ENV_ENTER(dbenv, ip);
@@ -81,14 +80,6 @@ __memp_fset(dbmfp, pgaddr, flags)
 	hp = &hp[NBUCKET(c_mp, bhp->mf_offset, bhp->pgno)];
 
 	MUTEX_LOCK(dbenv, hp->mtx_hash);
-
-	/* Set/clear the page bits. */
-	if (LF_ISSET(DB_MPOOL_CLEAN) &&
-	    F_ISSET(bhp, BH_DIRTY) && !F_ISSET(bhp, BH_DIRTY_CREATE)) {
-		DB_ASSERT(dbenv, hp->hash_page_dirty != 0);
-		--hp->hash_page_dirty;
-		F_CLR(bhp, BH_DIRTY);
-	}
 
 	if (LF_ISSET(DB_MPOOL_DISCARD))
 		F_SET(bhp, BH_DISCARD);
@@ -155,7 +146,7 @@ __memp_dirty(dbmfp, addrp, txn, flags)
 				__db_errx(dbenv,
 				    "%s: error getting a page for writing",
 				    __memp_fn(dbmfp));
-			*(void **)addrp = NULL;
+			*(void **)addrp = pgaddr;
 			return (ret);
 		}
 

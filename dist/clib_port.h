@@ -1,4 +1,12 @@
 /*
+ * Exit success/failure macros.
+ */
+#ifndef	HAVE_EXIT_SUCCESS
+#define	EXIT_FAILURE	1
+#define	EXIT_SUCCESS	0
+#endif
+
+/*
  * Don't step on the namespace.  Other libraries may have their own
  * implementations of these functions, we don't want to use their
  * implementations or force them to use ours based on the load order.

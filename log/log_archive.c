@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: log_archive.c,v 12.18 2006/06/11 12:27:30 bostic Exp $
+ * $Id: log_archive.c,v 12.19 2006/07/05 22:46:37 ubell Exp $
  */
 
 #include "db_config.h"
@@ -256,8 +256,11 @@ __log_get_stable_lsn(dbenv, stable_lsn)
 {
 	DB_LOGC *logc;
 	DBT rec;
+	LOG *lp;
 	__txn_ckp_args *ckp_args;
 	int ret, t_ret;
+
+	lp = dbenv->lg_handle->reginfo.primary;
 
 	ret = 0;
 	memset(&rec, 0, sizeof(rec));
@@ -286,12 +289,19 @@ __log_get_stable_lsn(dbenv, stable_lsn)
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		goto err;
 	/*
-	 * If we can read it, set the stable_lsn to the ckp_lsn in the
-	 * checkpoint record.
+	 * Read checkpoint records until we find one that is on disk,
+	 * then copy the ckp_lsn to the stable_lsn;
 	 */
-	if ((ret = __log_c_get(logc, stable_lsn, &rec, DB_SET)) == 0 &&
+	while ((ret = __log_c_get(logc, stable_lsn, &rec, DB_SET)) == 0 &&
 	    (ret = __txn_ckp_read(dbenv, rec.data, &ckp_args)) == 0) {
-		*stable_lsn = ckp_args->ckp_lsn;
+		if (stable_lsn->file < lp->s_lsn.file ||
+		    (stable_lsn->file == lp->s_lsn.file &&
+		    stable_lsn->offset < lp->s_lsn.offset)) {
+			*stable_lsn = ckp_args->ckp_lsn;
+			__os_free(dbenv, ckp_args);
+			break;
+		}
+		*stable_lsn = ckp_args->last_ckp;
 		__os_free(dbenv, ckp_args);
 	}
 	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)

@@ -122,11 +122,15 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 	
 	case DB_LOCK_NOTGRANTED:
 		return (jthrowable)(*jenv)->NewObject(jenv, lockex_class,
-		    lockex_construct, jmsg, 0, 0, NULL, NULL, 0, jdbenv);
+		    lockex_construct, jmsg, err, 0, NULL, NULL, 0, jdbenv);
+	
+	case DB_UPDATE_CONFLICT:
+		return (jthrowable)(*jenv)->NewObject(jenv, updconfex_class,
+		    updconfex_construct, jmsg, err, jdbenv);
 	
 	case DB_VERSION_MISMATCH:
 		return (jthrowable)(*jenv)->NewObject(jenv, versionex_class,
-		    versionex_construct, jmsg, 0, 0, NULL, NULL, 0, jdbenv);
+		    versionex_construct, jmsg, err, jdbenv);
 	
 	default:
 		return (jthrowable)(*jenv)->NewObject(jenv, dbex_class,

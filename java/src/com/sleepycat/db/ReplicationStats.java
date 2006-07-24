@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class ReplicationStats {
     // no public constructor
-    protected ReplicationStats() {}
+    /* package */ ReplicationStats() {}
 
     private int st_status;
     public int getStatus() {

@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_elect.c,v 1.13 2006/06/14 21:46:33 alanb Exp $
+ * $Id: repmgr_elect.c,v 1.15 2006/07/05 19:03:24 alanb Exp $
  */
 
 #include "db_config.h"
@@ -12,6 +12,7 @@
 #define	__INCLUDE_NETWORKING	1
 #include "db_int.h"
 
+static int __repmgr_is_ready __P((DB_ENV *));
 static int __repmgr_elect_main __P((DB_ENV *));
 static void *__repmgr_elect_thread __P((void *));
 static int start_election_thread __P((DB_ENV *));
@@ -33,19 +34,26 @@ __repmgr_init_election(dbenv, initial_operation)
 {
 	DB_REP *db_rep;
 	int ret;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	db_rep->operation_needed = initial_operation;
 	if (db_rep->elect_thread == NULL)
 		ret = start_election_thread(dbenv);
 	else if (db_rep->elect_thread->finished) {
+		RPRINT(dbenv, (dbenv, &mb, "join dead elect thread"));
 		if ((ret = __repmgr_thread_join(db_rep->elect_thread)) != 0)
 			return (ret);
 		__os_free(dbenv, db_rep->elect_thread);
 		db_rep->elect_thread = NULL;
 		ret = start_election_thread(dbenv);
-	} else if ((ret = __repmgr_signal(&db_rep->check_election)) != 0)
-		__db_err(dbenv, ret, "can't signal election thread");
+	} else {
+		RPRINT(dbenv, (dbenv, &mb, "reusing existing elect thread"));
+		if ((ret = __repmgr_signal(&db_rep->check_election)) != 0)
+			__db_err(dbenv, ret, "can't signal election thread");
+	}
 	return (ret);
 }
 
@@ -110,8 +118,10 @@ __repmgr_elect_main(dbenv)
 	struct timespec deadline;
 #endif
 	u_int nsites, nvotes;
-	int ret, done, chosen_master;
-	int last_op, to_do;
+	int chosen_master, done, failure_recovery, last_op, ret, to_do;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	last_op = 0;
@@ -120,21 +130,46 @@ __repmgr_elect_main(dbenv)
 	to_do = db_rep->operation_needed;
 	db_rep->operation_needed = 0;
 	UNLOCK_MUTEX(db_rep->mutex);
+	if (to_do == ELECT_FAILURE_ELECTION) {
+		failure_recovery = TRUE;
+		to_do = ELECT_ELECTION;
+	} else
+		failure_recovery = FALSE;
+	
 
 	for (;;) {
+		RPRINT(dbenv, (dbenv, &mb, "elect thread to do: %d", to_do));
 		switch (to_do) {
 		case ELECT_ELECTION:
-			/*
-			 * TODO: nsites computation, perhaps it disappears in
-			 * the improved rep_elect() API
-			 */
 			nsites = __repmgr_get_nsites(db_rep);
+
+			/*
+			 * If we're doing an election because we noticed that
+			 * the master failed, it's reasonable to expect that the
+			 * master won't participate.  By not waiting for its
+			 * vote, we can probably complete the election faster.
+			 */
+			if (failure_recovery)
+				nsites--;
 
 			if (db_rep->init_policy == DB_REP_FULL_ELECTION &&
 			    !db_rep->found_master)
 				nvotes = nsites;
-			else
+			else {
 				nvotes = 0;
+				if (nsites == 1 && failure_recovery) {
+					/*
+					 * We've just lost the only other site
+					 * in the group, so there's no point in
+					 * holding an election.
+					 */
+					if ((ret = __repmgr_become_master(
+					    dbenv)) != 0)
+						return (ret);
+					break;
+				}
+			}
+					
 			switch (ret = dbenv->rep_elect(dbenv,
 			    (int)nsites, (int)nvotes, &chosen_master, 0)) {
 			case DB_REP_UNAVAIL:
@@ -177,9 +212,7 @@ __repmgr_elect_main(dbenv)
 		}
 
 		LOCK_MUTEX(db_rep->mutex);
-		while (db_rep->operation_needed == 0 &&
-		    !db_rep->finished &&
-		    !IS_VALID_EID(db_rep->master_eid)) {
+		while (!__repmgr_is_ready(dbenv)) {
 #ifdef DB_WIN32
 			duration = db_rep->election_retry_wait / 1000;
 			ret = SignalObjectAndWait(db_rep->mutex,
@@ -202,6 +235,11 @@ __repmgr_elect_main(dbenv)
 		/*
 		 * Ways we can get here: time out, operation needed, master
 		 * becomes valid, or thread shut-down command.
+		 *
+		 * If we're not yet done, figure out what to do next: if we've
+		 * been told explicity what to do (operation_needed), do that.
+		 * Otherwise, what we do next is approximately the complement of
+		 * what we just did; in other words, we alternate.
 		 */
 		done = IS_VALID_EID(db_rep->master_eid) || db_rep->finished;
 		if (done)
@@ -227,12 +265,6 @@ __repmgr_elect_main(dbenv)
 			db_rep->operation_needed = 0;
 
 		/*
-		 * TODO: figuring out what (if anything) "to_do" next gets a
-		 * little more complicated when we consider the other init
-		 * policies.  Make it so!  See note at __repmgr_start.
-		 */
-
-		/*
 		 * TODO: is it possible for an operation_needed to be set, with
 		 * nevertheless a valid master?  I don't think so.  Would a more
 		 * straightforward exit test involve "operation_needed" instead
@@ -245,6 +277,29 @@ __repmgr_elect_main(dbenv)
 	}
 }
 
+/*
+ * Tests whether the election thread is ready to do something, or if it should
+ * wait a little while.
+ */
+static int
+__repmgr_is_ready(dbenv)
+	DB_ENV *dbenv;
+{
+	DB_REP *db_rep;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
+
+	db_rep = dbenv->rep_handle;
+
+	RPRINT(dbenv, (dbenv, &mb,
+	    "repmgr elect: needed %d, finished %d, master %d",
+	    db_rep->operation_needed, db_rep->finished, db_rep->master_eid));
+
+	return (db_rep->operation_needed ||
+	    db_rep->finished || IS_VALID_EID(db_rep->master_eid));
+}
+	    
 /*
  * PUBLIC: int __repmgr_become_master __P((DB_ENV *));
  */

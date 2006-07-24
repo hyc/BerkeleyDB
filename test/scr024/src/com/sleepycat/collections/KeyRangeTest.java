@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: KeyRangeTest.java,v 12.3 2006/06/09 14:32:37 mark Exp $
+ * $Id: KeyRangeTest.java,v 12.4 2006/06/27 22:48:22 bostic Exp $
  */
 
 package com.sleepycat.collections;
@@ -109,7 +109,7 @@ public class KeyRangeTest extends TestCase {
 
     private void closeDb()
         throws Exception {
-        
+
         store.close();
         store = null;
         env.close();

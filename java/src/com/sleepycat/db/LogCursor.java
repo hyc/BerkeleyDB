@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: LogCursor.java,v 12.2 2006/01/02 22:02:36 bostic Exp $
+ * $Id: LogCursor.java,v 12.3 2006/07/14 07:45:58 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -13,9 +13,9 @@ import com.sleepycat.db.internal.DbConstants;
 import com.sleepycat.db.internal.DbLogc;
 
 public class LogCursor {
-    protected DbLogc logc;
+    /* package */ DbLogc logc;
 
-    protected LogCursor(final DbLogc logc) {
+    /* package */ LogCursor(final DbLogc logc) {
         this.logc = logc;
     }
 

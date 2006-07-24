@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class BtreeStats extends DatabaseStats {
     // no public constructor
-    protected BtreeStats() {}
+    /* package */ BtreeStats() {}
 
     private int bt_magic;
     public int getMagic() {

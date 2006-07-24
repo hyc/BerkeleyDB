@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_iface.c,v 12.42 2006/06/12 22:52:14 bostic Exp $
+ * $Id: db_iface.c,v 12.44 2006/07/17 13:08:03 mjc Exp $
  */
 
 #include "db_config.h"
@@ -359,7 +359,8 @@ __db_cursor(dbp, txn, dbcp, flags)
 	if (CDB_LOCKING(dbenv)) {
 		op = LF_ISSET(DB_OPFLAGS_MASK);
 		mode = (op == DB_WRITELOCK) ? DB_LOCK_WRITE :
-		    ((op == DB_WRITECURSOR) ? DB_LOCK_IWRITE : DB_LOCK_READ);
+		    ((op == DB_WRITECURSOR || txn != NULL) ? DB_LOCK_IWRITE :
+		    DB_LOCK_READ);
 		if ((ret = __lock_get(dbenv, dbc->locker, 0,
 		    &dbc->lock_dbt, mode, &dbc->mylock)) != 0)
 			goto err;
@@ -1255,7 +1256,8 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 	if (dname != NULL) {
 		/* QAM can only be done on in-memory subdatabases. */
 		if (type == DB_QUEUE && fname != NULL) {
-			__db_errx(dbenv, "Queue databases must be one-per-file");
+			__db_errx(
+			    dbenv, "Queue databases must be one-per-file");
 			return (EINVAL);
 		}
 

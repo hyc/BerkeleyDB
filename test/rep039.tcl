@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep039.tcl,v 1.12 2006/03/10 21:44:32 carol Exp $
+# $Id: rep039.tcl,v 1.14 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep039
 # TEST	Test of internal initialization and master changes.
@@ -23,26 +23,23 @@ proc rep039 { method { niter 200 } { tnum "039" } args } {
 	source ./include.tcl
 
 	# Run for btree and queue methods only.
-	if { $checking_valid_methods } { 
+	if { $checking_valid_methods } {
+		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_btree $method] == 0 && \
-			    [is_queue $method] == 0 } {
-				set idx [lsearch -exact $valid_methods $method]
-				if { $idx >= 0 } { 
-					set valid_methods \
-					    [lreplace $valid_methods $idx $idx]
-				}
+			if { [is_btree $method] == 1 || \
+			    [is_queue $method] == 1 } {
+				lappend test_methods $method
 			}
 		}
-		return $valid_methods
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 && [is_queue $method] == 0 } {
 		puts "Rep$tnum: skipping for non-btree, non-queue method."
-		return 
+		return
 	}
 
 	# Skip for mixed-mode logging -- this test has a very large
-	# set of iterations already. 
+	# set of iterations already.
 	global mixed_mode_logging
 	if { $mixed_mode_logging > 0 } {
 		puts "Rep$tnum: Skipping for mixed mode logging."
@@ -197,7 +194,7 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 
 	#
 	# We want to simulate a master continually getting new
-	# records while an update is going on. 
+	# records while an update is going on.
 	#
 	set entries 10
 	eval rep_test $method $masterenv NULL $entries $niter 0 0 0 $largs
@@ -209,7 +206,7 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 	# 4.  Master send update info and client does page_req.
 	#
 	# We vary the number of times we call proc_msgs_once (via pmsgs)
-	# so that we test switching master at each point in the 
+	# so that we test switching master at each point in the
 	# internal initialization processing.
 	#
 	set nproced 0

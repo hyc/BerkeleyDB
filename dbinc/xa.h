@@ -4,15 +4,19 @@
  * Copyright (c) 1998-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: xa.h,v 12.2 2006/01/02 22:01:51 bostic Exp $
+ * $Id: xa.h,v 12.3 2006/07/05 05:37:10 mjc Exp $
  */
 /*
  * Start of xa.h header
  *
  * Define a symbol to prevent multiple inclusions of this header file
  */
-#ifndef	XA_H
-#define	XA_H
+#ifndef	_DB_XA_H_
+#define	_DB_XA_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * Transaction branch identification: XID and NULLXID:
@@ -173,7 +177,8 @@ struct xa_switch_t {
 #define	XAER_DUPID	-8		/* the XID already exists */
 #define	XAER_OUTSIDE	-9		/* resource manager doing work outside
 					transaction */
-#endif /* ifndef XA_H */
-/*
- * End of xa.h header
- */
+
+#if defined(__cplusplus)
+}
+#endif
+#endif /* !_DB_XA_H_ */

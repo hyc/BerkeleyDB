@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: ReplicationManagerAckPolicy.java,v 12.1 2006/05/11 11:27:38 alexg Exp $
+ * $Id: ReplicationManagerAckPolicy.java,v 12.2 2006/07/05 06:47:30 alexg Exp $
  */
 
 package com.sleepycat.db;
@@ -29,10 +29,14 @@ public final class ReplicationManagerAckPolicy {
 
     public static final ReplicationManagerAckPolicy ONE_PEER =
         new ReplicationManagerAckPolicy(
-        "ONE_PEER", DbConstants.DB_REPMGR_ACKS_ONE_PEER);
+            "ONE_PEER", DbConstants.DB_REPMGR_ACKS_ONE_PEER);
+
+    public static final ReplicationManagerAckPolicy QUORUM =
+        new ReplicationManagerAckPolicy(
+            "QUORUM", DbConstants.DB_REPMGR_ACKS_QUORUM);
 
     /* package */
-    public static ReplicationManagerAckPolicy fromInt(int type) {
+    static ReplicationManagerAckPolicy fromInt(int type) {
         switch(type) {
         case DbConstants.DB_REPMGR_ACKS_ALL:
             return ALL;
@@ -44,6 +48,8 @@ public final class ReplicationManagerAckPolicy {
             return ONE;
         case DbConstants.DB_REPMGR_ACKS_ONE_PEER:
             return ONE_PEER;
+        case DbConstants.DB_REPMGR_ACKS_QUORUM:
+            return QUORUM;
         default:
             throw new IllegalArgumentException(
                 "Unknown ACK policy: " + type);

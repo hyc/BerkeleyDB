@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_dup.c,v 12.14 2006/06/13 06:21:55 mjc Exp $
+ * $Id: hash_dup.c,v 12.15 2006/06/29 00:02:32 mjc Exp $
  */
 
 /*
@@ -530,8 +530,10 @@ __ham_check_move(dbc, add_len)
 		return (ret);
 
 	/* Add new page at the end of the chain. */
-	if ((ret = __memp_dirty(mpf, &next_pagep, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf, &next_pagep, dbc->txn, 0)) != 0) {
+		(void)__memp_fput(mpf, next_pagep, 0);
 		return (ret);
+	}
 
 	if (P_FREESPACE(dbp, next_pagep) < new_datalen && (ret =
 	    __ham_add_ovflpage(dbc, next_pagep, 1, &next_pagep)) != 0) {

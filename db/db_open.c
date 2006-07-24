@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_open.c,v 12.23 2006/06/12 22:52:15 bostic Exp $
+ * $Id: db_open.c,v 12.24 2006/06/27 22:21:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -190,7 +190,7 @@ __db_open(dbp, txn, fname, dname, type, flags, mode, meta_pgno)
 			    txn, dname, mode, flags, &id)) == 0 &&
 			    DBENV_LOGGING(dbenv) && !F_ISSET(dbp, DB_AM_RECOVER)
 #if !defined(DEBUG_ROP)
-	    && !F_ISSET(dbp, DB_AM_RDONLY)
+			    && !F_ISSET(dbp, DB_AM_RDONLY)
 #endif
 			)
 				ret = __dbreg_log_id(dbp,

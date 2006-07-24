@@ -1,4 +1,4 @@
-<!--$Id: bulk.so,v 1.3 2006/03/15 19:39:16 bostic Exp $-->
+<!--$Id: bulk.so,v 1.4 2006/07/14 23:04:42 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -31,7 +31,7 @@ transaction commit or checkpoint record) is queued for the client.</p>
 <p>When a client is responding to another client's request for information,
 and bulk transfer has been configured, records will accumulate in a bulk
 buffer.  The bulk buffer will be sent to the client when the buffer is
-full or when the client's request has been satisfied, no particular type
+full or when the client's request has been satisfied; no particular type
 of record will cause the buffer to be sent.</p>
 <p>The size of the bulk buffer itself is internally determined and cannot
 be configured.  However, the overall size of a transfer may be limited

@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: RepConfig.java,v 1.1 2006/05/11 11:55:32 alexg Exp $
+ * $Id: RepConfig.java,v 1.2 2006/06/27 22:48:15 bostic Exp $
  */
 
 package db.repquote;
@@ -21,14 +21,14 @@ public class RepConfig
     public static final int CACHESIZE = 10 * 1024 * 1024;
     public static final int SLEEPTIME = 5000;
 
-    // member variables containing configuration information 
+    // member variables containing configuration information
     public String home; // String specifying the home directory for rep files.
     public Vector otherHosts; // stores an optional set of "other" hosts.
     public int priority; // priority within the replication group.
     public ReplicationManagerStartPolicy startPolicy;
     public ReplicationHostAddress thisHost; // The host address to listen to.
     // Optional parameter specifying the # of sites in the replication group.
-    public int totalSites; 
+    public int totalSites;
     public boolean verbose;
 
     // member variables used internally.
@@ -62,7 +62,7 @@ public class RepConfig
 
     public ReplicationHostAddress getThisHost()
     {
-        if (!gotListenAddress) 
+        if (!gotListenAddress)
             System.err.println("Warning: no host specified, returning default.");
         return thisHost;
     }
@@ -92,7 +92,7 @@ public class RepConfig
             return null;
         return (ReplicationHostAddress)otherHosts.get(currOtherHost);
     }
-    
+
     public ReplicationHostAddress getOtherHost(int i)
     {
         if (i >= otherHosts.size())

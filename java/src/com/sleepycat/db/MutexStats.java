@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class MutexStats {
     // no public constructor
-    protected MutexStats() {}
+    /* package */ MutexStats() {}
 
     private int st_mutex_align;
     public int getMutexAlign() {

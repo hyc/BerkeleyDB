@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_overflow.c,v 12.10 2006/05/05 14:53:13 bostic Exp $
+ * $Id: db_overflow.c,v 12.11 2006/06/29 00:02:30 mjc Exp $
  */
 
 #include "db_config.h"
@@ -342,8 +342,10 @@ __db_doff(dbc, pgno)
 			return (__db_ovref(dbc, pgno, -1));
 		}
 
-		if ((ret = __memp_dirty(mpf, &pagep, dbc->txn, 0)) != 0)
+		if ((ret = __memp_dirty(mpf, &pagep, dbc->txn, 0)) != 0) {
+			(void)__memp_fput(mpf, pagep, 0);
 			return (ret);
+		}
 
 		if (DBC_LOGGING(dbc)) {
 			tmp_dbt.data = (u_int8_t *)pagep + P_OVERHEAD(dbp);

@@ -1,4 +1,4 @@
-<!--$Id: pri.so,v 1.6 2003/04/04 18:27:19 sue Exp $-->
+<!--$Id: pri.so,v 1.7 2006/07/14 23:04:42 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -18,8 +18,10 @@
 <p>Each database environment included in a replication group must have
 a priority, which specifies a relative ordering among the different
 environments in a replication group.  This ordering is a factor in
-determining which environment will be selected as a new master in
-case the existing master fails.</p>
+determining which environment will be selected as a new master in case
+the existing master fails.  Both Replication Manager applications and
+applications which use the Base replication API should specify
+environment priorities.</p>
 <p>Priorities must be a non-negative integer, but do not need to be unique
 throughout the replication group.  A priority of 0 means the system can
 never become a master, regardless.  Otherwise, larger valued priorities

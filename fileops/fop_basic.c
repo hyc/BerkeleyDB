@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: fop_basic.c,v 12.15 2006/05/05 14:53:31 bostic Exp $
+ * $Id: fop_basic.c,v 12.16 2006/07/17 15:16:35 bostic Exp $
  */
 
 #include "db_config.h"
@@ -220,8 +220,7 @@ __fop_write(dbenv,
 	}
 
 	/* Seek to offset. */
-	if ((ret = __os_seek(dbenv,
-	    fhp, pageno, pgsize, off, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, pageno, pgsize, off)) != 0)
 		goto err;
 
 	/* Now do the write. */

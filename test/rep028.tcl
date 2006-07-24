@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep028.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
+# $Id: rep028.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  	rep028
 # TEST	Replication and non-rep env handles. (Also see rep006.)
@@ -17,10 +17,10 @@
 proc rep028 { method { niter 100 } { tnum "028" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 	# Skip test for HP-UX because we can't open an env twice.
 	if { $is_hp_test == 1 } {
 		puts "\tRep$tnum: Skipping for HP-UX."
@@ -28,9 +28,9 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 	}
 
 	# Run for btree only.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree } 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "\tRep$tnum: Skipping for method $method."

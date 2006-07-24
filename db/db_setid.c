@@ -4,7 +4,7 @@
  * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_setid.c,v 12.14 2006/05/05 14:53:14 bostic Exp $
+ * $Id: db_setid.c,v 12.15 2006/07/17 15:16:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -115,7 +115,7 @@ __env_fileid_reset(dbenv, name, encrypted)
 		goto err;
 	}
 	memcpy(((DBMETA *)mbuf)->uid, fileid, DB_FILE_ID_LEN);
-	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0, 0, DB_OS_SEEK_SET)) != 0)
+	if ((ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 		goto err;
 	if ((ret = __os_write(dbenv, fhp, mbuf, 256, &n)) != 0)
 		goto err;

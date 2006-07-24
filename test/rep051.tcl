@@ -3,15 +3,15 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep051.tcl,v 12.6 2006/03/10 21:44:32 carol Exp $
+# $Id: rep051.tcl,v 12.8 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep051
 # TEST	Test of compaction with replication.
 # TEST
 # TEST	Run rep_test in a replicated master environment.
 # TEST	Delete a large number of entries and compact with -freespace.
-# TEST	Propagate the changes to the client and make sure client and 
-# TEST	master match.  
+# TEST	Propagate the changes to the client and make sure client and
+# TEST	master match.
 
 proc rep051 { method { niter 5000 } { tnum "051" } args } {
 	source ./include.tcl
@@ -21,24 +21,20 @@ proc rep051 { method { niter 5000 } { tnum "051" } args } {
 	}
 
 	# Compaction is an option for btree and recno databases only.
-	if { $checking_valid_methods } { 
+	if { $checking_valid_methods } {
+		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_hash $method] == 1 || \
-			    [is_queue $method] == 1 } {
-				set idx [lsearch -exact $valid_methods $method]
-				if { $idx >= 0 } { 
-					set valid_methods \
-					    [lreplace $valid_methods $idx $idx]
-				}
+			if { [is_btree $method] == 1 || [is_recno $method] == 1 } {
+				lappend test_methods $method
 			}
 		}
-		return $valid_methods
+		return $test_methods
 	}
 	if { [is_hash $method] == 1 || [is_queue $method] == 1 } {
 		puts "Skipping test$tnum for method $method."
 		return
 	}
-							
+
 	# Run tests with and without recovery.  If we're doing testing
 	# of in-memory logging, skip the combination of recovery
 	# and in-memory logging -- it doesn't make sense.
@@ -122,7 +118,7 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
 
-	# Explicitly create the db handle so we can do deletes, 
+	# Explicitly create the db handle so we can do deletes,
 	# and also to make the page size small.
 	set testfile "test.db"
 	set omethod [convert_method $method]
@@ -157,7 +153,7 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 		if { [expr $count % $n] != 0 } {
 			error_check_good dbc_del [$dbc del] 0
 		}
-		set dbt [$dbc get -next] 
+		set dbt [$dbc get -next]
 		incr count -1
 	}
 
@@ -170,8 +166,8 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 	set t [$masterenv txn]
 	error_check_good txn [is_valid_txn $t $masterenv] TRUE
 	set txn "-txn $t"
- 
-	set ret [eval {$db compact} $txn {-freespace}] 
+
+	set ret [eval {$db compact} $txn {-freespace}]
 
 	error_check_good t_commit [$t commit] 0
 	error_check_good db_sync [$db sync] 0
@@ -184,7 +180,7 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 	# Reverify.
 	puts "\tRep$tnum.b: Verifying client database contents."
 	rep_verify $masterdir $masterenv $clientdir $clientenv
-	
+
 	# Clean up.
 	error_check_good db_close [$db close] 0
 	error_check_good masterenv_close [$masterenv close] 0

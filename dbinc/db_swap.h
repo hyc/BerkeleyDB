@@ -32,11 +32,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_swap.h,v 12.4 2006/01/02 22:01:50 bostic Exp $
+ * $Id: db_swap.h,v 12.5 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef _DB_SWAP_H_
 #define	_DB_SWAP_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * Little endian <==> big endian 64-bit swap macros.
@@ -167,4 +171,7 @@
 		P_32_SWAP(p);						\
 } while (0)
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_DB_SWAP_H_ */

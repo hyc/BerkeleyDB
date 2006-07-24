@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_meta.c,v 12.31 2006/06/12 22:52:15 bostic Exp $
+ * $Id: db_meta.c,v 12.32 2006/06/29 00:02:30 mjc Exp $
  */
 
 #include "db_config.h"
@@ -183,7 +183,7 @@ __db_new(dbc, type, pagepp)
 	}
 	LSN(h) = LSN(meta);
 
-	ret = __memp_fput(mpf, meta, DB_MPOOL_DIRTY);
+	ret = __memp_fput(mpf, meta, 0);
 	meta = NULL;
 	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
 		ret = t_ret;
@@ -429,6 +429,9 @@ logged:
 		      dbc, meta, h, list, start, nelem);
 		h = NULL;
 	} else if (h->pgno == last_pgno) {
+		LSN(h) = LSN(meta);
+		P_INIT(h, dbp->pgsize,
+		    h->pgno, PGNO_INVALID, next_pgno, 0, P_INVALID);
 		if ((ret = __memp_fput(mpf, h, DB_MPOOL_DISCARD)) != 0)
 			goto err1;
 		h = NULL;
@@ -598,8 +601,10 @@ __db_pg_truncate(mpf, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
 			goto err;
 		}
 		if (!in_recovery || log_compare(&LSN(h), &lp->lsn) == 0) {
-			if ((ret = __memp_dirty(mpf, &h, txn, 0)) != 0)
+			if ((ret = __memp_dirty(mpf, &h, txn, 0)) != 0) {
+				(void)__memp_fput(mpf, h, 0);
 				goto err;
+			}
 			if (lp == &list[nelems - 1])
 				NEXT_PGNO(h) = PGNO_INVALID;
 			else

@@ -3,14 +3,14 @@
 # Copyright (c) 2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep064.tcl,v 12.2 2006/04/26 19:17:22 carol Exp $
+# $Id: rep064.tcl,v 12.4 2006/07/19 17:45:36 carol Exp $
 #
 # TEST	rep064
 # TEST	Replication rename and forced-upgrade test.
 # TEST
-# TEST	The test verifies that the client correctly 
+# TEST	The test verifies that the client correctly
 # TEST	(internally) closes files when upgrading to master.
-# TEST	It does this by having the master have a database 
+# TEST	It does this by having the master have a database
 # TEST	open, then crashing.  The client upgrades to master,
 # TEST	and attempts to remove the open database.
 
@@ -23,10 +23,10 @@ proc rep064 { method { niter 10 } { tnum "064" } args } {
 
 	# Run for btree only.  Since we're testing removal of a
 	# file, method doesn't make any difference.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree }
-		return $valid_methods
-	}	
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
+	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."
 		return
@@ -37,7 +37,7 @@ proc rep064 { method { niter 10 } { tnum "064" } args } {
 
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
-		foreach l $logsets { 
+		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
 				puts "Rep$tnum: Skipping\
@@ -101,7 +101,7 @@ proc rep064_sub { method niter tnum logset recargs largs } {
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
 
-	puts "\tRep$tnum.a: Open an empty db, and leave it open."	
+	puts "\tRep$tnum.a: Open an empty db, and leave it open."
 	set opendb "open.db"
 	set masterdb \
 	    [berkdb_open -env $masterenv -create -btree -auto_commit $opendb]

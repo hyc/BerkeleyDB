@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_net.c,v 1.26 2006/06/19 15:56:48 bostic Exp $
+ * $Id: repmgr_net.c,v 1.29 2006/07/19 19:19:18 alanb Exp $
  */
 
 #include "db_config.h"
@@ -92,6 +92,9 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 	int ret, t_ret;
 	REPMGR_SITE *site;
 	REPMGR_CONNECTION *conn;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 
@@ -112,11 +115,11 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 		    IS_VALID_EID(db_rep->peer) &&
 		    (site = __repmgr_available_site(dbenv, db_rep->peer)) !=
 		    NULL) {
-			/*
-			 * Send to peer site.
-			 */
+			RPRINT(dbenv, (dbenv, &mb, "sending request to peer"));
 		} else if ((site = __repmgr_available_site(dbenv, eid)) ==
 		    NULL) {
+			RPRINT(dbenv, (dbenv, &mb,
+			    "ignoring message sent to unavailable site"));
 			ret = DB_REP_UNAVAIL;
 			goto out;
 		}
@@ -190,6 +193,9 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 			ret = DB_REP_UNAVAIL;
 			goto out;
 		}
+		/* In ALL_PEERS case, display of "needed" might be confusing. */
+		RPRINT(dbenv, (dbenv, &mb, "will await acks, `needed' == %u",
+			   needed));
 		ret = __repmgr_await_ack(dbenv, lsnp);
 	}
 
@@ -318,6 +324,10 @@ __repmgr_send_internal(dbenv, conn, msg)
 	int ret;
 	size_t nw;
 	size_t total_written;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+	SITE_STRING_BUFFER buffer;
+#endif
 
 	DB_ASSERT(dbenv, !F_ISSET(conn, CONN_CONNECTING));
 	if (!STAILQ_EMPTY(&conn->outbound_queue)) {
@@ -326,9 +336,13 @@ __repmgr_send_internal(dbenv, conn, msg)
 		 * thread, so we can't try sending in-line here.  We can only
 		 * queue the msg for later.
 		 */
+		RPRINT(dbenv, (dbenv, &mb, "msg to %s to be queued",
+		    __repmgr_format_eid_loc(dbenv->rep_handle,
+		    conn->eid, buffer)));
 		if (conn->out_queue_length < OUT_QUEUE_LIMIT)
 			return (enqueue_msg(dbenv, conn, msg, 0));
 		else {
+			RPRINT(dbenv, (dbenv, &mb, "queue limit exceeded"));
 /*			repmgr->stats.tossed_msgs++; */
 			return (0);
 		}
@@ -354,6 +368,9 @@ __repmgr_send_internal(dbenv, conn, msg)
 		return (DB_REP_UNAVAIL);
 	}
 
+	RPRINT(dbenv, (dbenv, &mb, "wrote only %lu bytes to %s",
+	    (u_long)total_written,
+	    __repmgr_format_eid_loc(dbenv->rep_handle, conn->eid, buffer)));
 	/*
 	 * We can't send any more without blocking: queue (a pointer to) a
 	 * "flattened" copy of the message, so that the select() thread will
@@ -517,18 +534,9 @@ __repmgr_bust_connection(dbenv, conn)
 
 		if (eid == db_rep->master_eid) {
 			db_rep->master_eid = DB_EID_INVALID;
-			if (__repmgr_get_nsites(db_rep) > 2)
-				ret = __repmgr_init_election(
-				    dbenv, ELECT_ELECTION);
-			else {
-				/*
-				 * We've just lost the only other site in the
-				 * group, so there's no point in holding an
-				 * election.
-				 */
-				ret = __repmgr_become_master(dbenv);
-			}
-			if (ret != 0)
+
+			if ((ret = __repmgr_init_election( 
+			    dbenv, ELECT_FAILURE_ELECTION)) != 0)
 				return (ret);
 		}
 	}
@@ -837,8 +845,7 @@ out:
 }
 
 /*
- * Initializes net-related memory in the db_rep handle, including initial
- * allocation of the sites table.
+ * Initializes net-related memory in the db_rep handle.
  *
  * PUBLIC: int __repmgr_net_create __P((DB_ENV *, DB_REP *));
  */
@@ -951,11 +958,7 @@ __repmgr_net_close(dbenv)
 	int ret;
 
 	db_rep = dbenv->rep_handle;
-	/*
-	 * If we never even got a chance to initialize memory, then the value of
-	 * listen_fd is not reliable.
-	 */
-	if (db_rep->sites == NULL || db_rep->listen_fd == INVALID_SOCKET)
+	if (db_rep->listen_fd == INVALID_SOCKET)
 		return (0);
 
 	ret = 0;

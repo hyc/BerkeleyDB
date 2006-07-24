@@ -14,10 +14,10 @@ import com.sleepycat.db.internal.DbUtil;
 public class TransactionStats
 {
     // no public constructor
-    protected TransactionStats() {}
+    /* package */ TransactionStats() {}
 
     public static class Active {        // no public constructor
-        protected Active() {}
+        /* package */ Active() {}
 
         private int txnid;
         public int getTxnId() {
@@ -45,7 +45,7 @@ public class TransactionStats
         }
 
         private int mvcc_ref;
-        public int getMvccRef() {
+        public int getMultiversionRef() {
             return mvcc_ref;
         }
 

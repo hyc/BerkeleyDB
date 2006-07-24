@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_internal.c,v 12.8 2006/05/05 14:54:02 bostic Exp $
+ * $Id: tcl_internal.c,v 12.11 2006/06/27 22:22:13 bostic Exp $
  */
 
 #include "db_config.h"
@@ -497,6 +497,107 @@ _ErrorFunc(dbenv, pfx, msg)
 	Tcl_AddErrorInfo(interp, err);
 	Tcl_AppendResult(interp, err, "\n", NULL);
 	__os_free(NULL, err);
+	return;
+}
+
+/*
+ * PUBLIC: void _EventFunc __P((DB_ENV *, u_int32_t, void *));
+ */
+void
+_EventFunc(dbenv, event, info)
+	DB_ENV *dbenv;
+	u_int32_t event;
+	void *info;
+{
+#define	TCLDB_EVENTITEMS 2	/* Event name and any info */
+#define	TCLDB_SENDEVENT 2
+	DBTCL_INFO *ip;
+	Tcl_Interp *interp;
+	Tcl_Obj *event_o, *origobj;
+	Tcl_Obj *myobjv[TCLDB_EVENTITEMS], *objv[TCLDB_SENDEVENT];
+	int i, myobjc, result;
+
+	ip = (DBTCL_INFO *)dbenv->app_private;
+	interp = ip->i_interp;
+	if (ip->i_event == NULL)
+		return;
+	objv[0] = ip->i_event;
+
+	/*
+	 * Most events don't have additional info.  Assume none
+	 * and handle individually those that do.
+	 */
+	myobjv[1] = NULL;
+	myobjc = 1;
+	switch (event) {
+	case DB_EVENT_PANIC:
+		/*
+		 * Info is the original error code.
+		 */
+		myobjv[0] = NewStringObj("panic", strlen("panic"));
+		myobjv[myobjc++] = Tcl_NewIntObj(*(int *)info);
+		break;
+	case DB_EVENT_REP_CLIENT:
+		myobjv[0] = NewStringObj("rep_client", strlen("rep_client"));
+		break;
+	case DB_EVENT_REP_MASTER:
+		myobjv[0] = NewStringObj("rep_master", strlen("rep_master"));
+		break;
+	case DB_EVENT_REP_NEWMASTER:
+		/*
+		 * Info is the EID of the new master.
+		 */
+		myobjv[0] = NewStringObj("newmaster", strlen("newmaster"));
+		myobjv[myobjc++] = Tcl_NewIntObj(*(int *)info);
+		break;
+	case DB_EVENT_REP_STARTUPDONE:
+		myobjv[0] = NewStringObj("startupdone", strlen("startupdone"));
+		break;
+	case DB_EVENT_WRITE_FAILED:
+		myobjv[0] =
+		    NewStringObj("write_failed", strlen("write_failed"));
+		break;
+	default:
+		__db_errx(dbenv, "Tcl unknown event %lu", (u_long)event);
+		return;
+	}
+
+	for (i = 0; i < myobjc; i++)
+		Tcl_IncrRefCount(myobjv[i]);
+
+	event_o = Tcl_NewListObj(myobjc, myobjv);
+	Tcl_IncrRefCount(event_o);
+	objv[1] = event_o;
+
+	/*
+	 * We really want to return the original result to the
+	 * user.  So, save the result obj here, and then after
+	 * we've taken care of the Tcl_EvalObjv, set the result
+	 * back to this original result.
+	 */
+	origobj = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(origobj);
+	result = Tcl_EvalObjv(interp, TCLDB_SENDEVENT, objv, 0);
+	if (result != TCL_OK) {
+		/*
+		 * XXX
+		 * This probably isn't the right error behavior, but
+		 * this error should only happen if the Tcl callback is
+		 * somehow invalid, which is a fatal scripting bug.
+		 * The event handler is a void function so we either
+		 * just return or abort.
+		 * For now, abort.
+		 */
+		__db_errx(dbenv, "Tcl event failure");
+		abort();
+	}
+
+	Tcl_SetObjResult(interp, origobj);
+	Tcl_DecrRefCount(origobj);
+	for (i = 0; i < myobjc; i++)
+		Tcl_DecrRefCount(myobjv[i]);
+	Tcl_DecrRefCount(event_o);
+
 	return;
 }
 

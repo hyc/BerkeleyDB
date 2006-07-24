@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep007.tcl,v 12.8 2006/03/10 21:42:11 carol Exp $
+# $Id: rep007.tcl,v 12.10 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  	rep007
 # TEST	Replication and bad LSNs
@@ -16,14 +16,14 @@
 proc rep007 { method { niter 10 } { tnum "007" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# All access methods are allowed.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]

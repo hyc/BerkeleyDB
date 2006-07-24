@@ -3,10 +3,10 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: txn013.tcl,v 12.2 2006/01/02 22:03:30 bostic Exp $
+# $Id: txn013.tcl,v 12.3 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	txn013
-# TEST	Test of txns used in the wrong environment. 
+# TEST	Test of txns used in the wrong environment.
 # TEST	Set up two envs.  Start a txn in one env, and attempt to use it
 # TEST 	in the other env.  Verify we get the appropriate error message.
 proc txn013 { } {
@@ -28,14 +28,14 @@ proc txn013 { } {
 	error_check_good env1 [is_valid_env $env1] TRUE
 	error_check_good env2 [is_valid_env $env2] TRUE
 
-	# Open a database in each environment. 
+	# Open a database in each environment.
 	puts "\tTxn$tnum.b: Open a database in each environment."
 	set db1 [berkdb_open_noerr \
 	    -env $env1 -create -auto_commit -btree $testfile]
 	set db2 [berkdb_open_noerr \
 	    -env $env2 -create -auto_commit -btree $testfile]
 
-	# Create txns in both environments. 
+	# Create txns in both environments.
 	puts "\tTxn$tnum.c: Start a transaction in each environment."
 	set txn1 [$env1 txn]
 	set txn2 [$env2 txn]

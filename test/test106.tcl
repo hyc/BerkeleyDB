@@ -3,7 +3,7 @@
 # Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test106.tcl,v 12.3 2006/01/02 22:03:29 bostic Exp $
+# $Id: test106.tcl,v 12.4 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	test106
 # TEST
@@ -105,7 +105,7 @@ proc test106 { method {nitems 100} {niter 200} {tnum "106"} args } {
 		tclkill $dpid
 	}
 
-	# If this test created the env, close it. 
+	# If this test created the env, close it.
 	if { $eindex == -1 } {
 		error_check_good env_close [$env close] 0
 	}

@@ -4,7 +4,7 @@
  * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_cam.c,v 12.41 2006/06/08 06:00:40 mjc Exp $
+ * $Id: db_cam.c,v 12.42 2006/06/22 04:25:55 ubell Exp $
  */
 
 #include "db_config.h"
@@ -1485,6 +1485,7 @@ __db_c_del_oldskey(sdbp, dbc_arg, skey, pkey, olddata)
 	int ret, t_ret;
 	u_int32_t rmw;
 
+	sdbc = NULL;
 	dbp = sdbp->s_primary;
 	dbenv = dbp->dbenv;
 	rmw = STD_LOCKING(dbc_arg) ? DB_RMW : 0;
@@ -1507,13 +1508,15 @@ __db_c_del_oldskey(sdbp, dbc_arg, skey, pkey, olddata)
 	 */
 	if (F_ISSET(skey, DB_DBT_ISSET) &&
 	    ((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
-	    &oldskey, skey) == 0)
-		return (DB_KEYEXIST);
+	    &oldskey, skey) == 0) {
+		ret = DB_KEYEXIST;
+		goto err;
+	}
 
 	if ((ret = __db_cursor_int(
 	    sdbp, dbc_arg->txn, sdbp->type,
 	    PGNO_INVALID, 0, dbc_arg->locker, &sdbc)) != 0)
-		return (ret);
+		goto err;
 	if (CDB_LOCKING(dbenv)) {
 		DB_ASSERT(dbenv, sdbc->mylock.off == LOCK_INVALID);
 		F_SET(sdbc, DBC_WRITER);
@@ -1537,7 +1540,7 @@ __db_c_del_oldskey(sdbp, dbc_arg, skey, pkey, olddata)
 		ret = __db_secondary_corrupt(dbp);
 	SWAP_IF_NEEDED(sdbp, pkey);
 
-	FREE_IF_NEEDED(dbenv, &oldskey);
+err:	FREE_IF_NEEDED(dbenv, &oldskey);
 	if (sdbc != NULL && (t_ret = __db_c_close(sdbc)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);

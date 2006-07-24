@@ -3,7 +3,7 @@
 # Copyright (c) 1999-2006
 #       Sleepycat Software.  All rights reserved.
 #
-# $Id: rpc.src,v 12.17 2006/06/03 13:51:25 bostic Exp $
+# $Id: rpc.src,v 12.18 2006/07/17 13:08:33 mjc Exp $
 #
 # Syntax:
 # BEGIN	function_name  {CODE | LINKONLY | RETCODE}
@@ -63,6 +63,11 @@ END
 ######################################################
 # DB_ENV handle methods.
 ######################################################
+BEGIN	env_cdsgroup_begin	RETCODE
+ARG	ID	DB_ENV *	dbenv
+ARG	IGNORE	DB_TXN **	txnpp
+RET	ID	long		txnid
+END
 BEGIN	env_close		CODE
 ARG	ID	DB_ENV *	dbenv
 ARG	INT	u_int32_t	flags

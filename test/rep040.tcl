@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep040.tcl,v 12.8 2006/03/10 21:44:32 carol Exp $
+# $Id: rep040.tcl,v 12.10 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep040
 # TEST	Test of racing rep_start and transactions.
@@ -17,14 +17,14 @@
 proc rep040 { method { niter 200 } { tnum "040" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -69,7 +69,7 @@ proc rep040_sub { method niter tnum logset recargs largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -158,7 +158,7 @@ proc rep040_sub { method niter tnum logset recargs largs } {
 	process_msgs $envlist
 	error_check_good txn [$t commit] 0
 	tclsleep 80
-	
+
 	error_check_good txn [$t2 commit] 0
 	puts "\tRep$tnum.c: Waiting for child ..."
 	process_msgs $envlist

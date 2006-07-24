@@ -1,4 +1,4 @@
-# $Id: mutex.ac,v 12.17 2006/05/16 21:13:09 bostic Exp $
+# $Id: mutex.ac,v 12.18 2006/06/20 20:31:01 bostic Exp $
 
 # POSIX pthreads tests: inter-process safe and intra-process only.
 AC_DEFUN(AM_PTHREADS_SHARED, [
@@ -552,7 +552,7 @@ PPC/gcc-assembly)
 			AC_DEFINE(HAVE_MUTEX_PPC_GCC_ASSEMBLY)
 			AH_TEMPLATE(HAVE_MUTEX_PPC_GCC_ASSEMBLY,
 			    [Define to 1 to use the GCC compiler and PowerPC assembly language mutexes.]);;
-ReliantUNIX/initspin)	LIBS="$LIBS -lmproc"
+ReliantUNIX/initspin)	LIBSO_LIBS="$LIBSO_LIBS -lmproc"
 			ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_RELIANTUNIX_INITSPIN)
 			AH_TEMPLATE(HAVE_MUTEX_RELIANTUNIX_INITSPIN,

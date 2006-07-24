@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 12.38 2006/06/19 15:56:38 bostic Exp $
+# $Id: configure.ac,v 12.41 2006/07/13 06:55:42 mjc Exp $
 # Process this file with autoconf to produce a configure script.
 
 PACKAGE=db
@@ -150,7 +150,7 @@ aix4.3.*|aix5*)
 	CPPFLAGS="$CPPFLAGS -D_THREAD_SAFE"
 	LDFLAGS="$LDFLAGS -Wl,-brtl";;
 bsdi3*)	CC=${CC-"shlicc2"}
-	LIBS="$LIBS -lipc";;
+	LIBSO_LIBS="$LIBSO_LIBS -lipc";;
 cygwin*)
 	CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE -D_REENTRANT";;
 freebsd*)
@@ -162,7 +162,7 @@ hpux*)	CPPFLAGS="$CPPFLAGS -D_REENTRANT";;
 irix*)	optimize_debug="-O2"
 	CPPFLAGS="$CPPFLAGS -D_SGI_MP_SOURCE";;
 mpeix*)	CPPFLAGS="$CPPFLAGS -D_POSIX_SOURCE -D_SOCKET_SOURCE"
-	LIBS="$LIBS -lsocket -lsvipc";;
+	LIBSO_LIBS="$LIBSO_LIBS -lsocket -lsvipc";;
 osf*)	CPPFLAGS="$CPPFLAGS -pthread";;
 *qnx*)	AC_DEFINE(HAVE_QNX)
 	AH_TEMPLATE(HAVE_QNX, [Define to 1 if building on QNX.]);;
@@ -250,7 +250,7 @@ if test "$db_cv_cxx" = "yes"; then
 		case "$host_os" in
 		aix*)		AC_CHECK_TOOL(CCC, xlC_r)
 				LIBXSO_LIBS="-lC_r $LIBXSO_LIBS"
-				LIBS="-lC_r $LIBS";;
+				LIBSO_LIBS="-lC_r $LIBSO_LIBS";;
 		hpux*)		AC_CHECK_TOOL(CCC, aCC);;
 		irix*)		AC_CHECK_TOOL(CCC, CC);;
 		osf*)		AC_CHECK_TOOL(CCC, cxx);;
@@ -417,7 +417,7 @@ fi
 
 # MinGW support.
 if test "$db_cv_mingw" = "yes"; then
-	OSDIR= os_windows
+	OSDIR=os_windows
 	PATH_SEPARATOR="\\\\/:"
 
 	AC_DEFINE(DB_WIN32)
@@ -445,7 +445,7 @@ if test "$db_cv_exit_defines" = "yes"; then
 fi
 
 # Check for mutexes.
-# We do this first because it changes $LIBSO_LIBS and $LIBS.
+# We do this first because it changes $LIBSO_LIBS.
 AM_DEFINE_MUTEXES
 
 # Test for various functions/libraries -- do tests that change library values
@@ -475,13 +475,17 @@ AC_HAVE_LIBRARY(nsl, TEST_LIBS="$TEST_LIBS -lnsl")
 AC_HAVE_LIBRARY(pthread, TEST_LIBS="$TEST_LIBS -lpthread")
 AC_HAVE_LIBRARY(socket, TEST_LIBS="$TEST_LIBS -lsocket")
 
+# Update LIBS so that the rest of our tests are run with the libraries we'll
+# load against.
+LIBS="$LIBSO_LIBS"
+
 # Checks for system functions for which we have replacements.
 #
 # The only portable getcwd call is getcwd(char *, size_t), where the
 # buffer is non-NULL -- Solaris can't handle a NULL buffer, and they
 # deleted getwd().
 AC_REPLACE_FUNCS(\
-	atoi atol getcwd getenv getopt isalpha isdigit isprint isspace\
+	abort atoi atol getcwd getenv getopt isalpha isdigit isprint isspace\
 	memcmp memcpy memmove printf raise rand strcasecmp strcat strchr\
 	strdup strerror strncat strncmp strrchr strsep strtol strtoul)
 

@@ -1,4 +1,4 @@
-<!--$Id: rep_nsites.so,v 1.1 2006/03/15 19:39:22 bostic Exp $-->
+<!--$Id: rep_nsites.so,v 1.2 2006/06/23 01:28:47 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -30,24 +30,12 @@ DbEnv::rep_get_nsites(int *nsitesp);
 </pre></h3>
 <hr size=1 noshade>
 <h3>Description: DbEnv::rep_set_nsites</h3>
-<p>The DbEnv::rep_set_nsites method specifies the number of replication sites
-expected to participate in an election.  Once the current site has
-election information from that many sites, it will short-circuit the
-election and immediately cast its vote for a new master.</p>
-<p>The DbEnv::rep_set_nsites method is not called by most replication
-applications.  It should only be called by applications implementing
-their own network transport layer, explicitly holding replication group
-elections and handling replication messages outside of the replication
-manager framework.</p>
-<p>We recommend <b>nsites</b> be set to:</p>
-<blockquote><pre>sites participating in the election - 1</pre></blockquote>
-<p>This allows replication groups to elect a new master immediately if the
-current master fails.  Setting the <b>nsites</b> value to the number
-of sites participating in the replication election ensures all sites in
-the group get the chance to participate in the election, at the cost of
-potentially slower elections.  Setting <b>nsites</b> to lower values
-can increase the speed of an election, but can also result in election
-failure, and is usually not recommended.</p>
+<p>The DbEnv::rep_set_nsites method specifies the total number of sites
+in a replication group.</p>
+<p>The DbEnv::rep_set_nsites method is typically called by applications which
+use the Berkeley DB library "replication manager" support.  (However, see
+also the <a href="../api_cxx/rep_elect.html">DbEnv::rep_elect</a> man page, the description of the <b>nsites</b>
+parameter.)</p>
 <p>The DbEnv::rep_set_nsites method configures a database environment, not only operations
 performed using the specified <a href="../api_cxx/env_class.html">DbEnv</a> handle.</p>
 <p>The DbEnv::rep_set_nsites method may be called at any time during the life of the
@@ -59,12 +47,12 @@ failure, and returns 0 on success.
 </p>
 <h3>Parameters</h3>
 <dl compact>
-<dt><b>nsites</b><dd>A positive integer specifying the number of replication sites expected
-to participate in an election.
+<dt><b>nsites</b><dd>A positive integer specifying the total number of sites in the replication
+group.
 </dl>
 <hr size=1 noshade>
 <h3>Description: DbEnv::rep_get_nsites</h3>
-<p>The DbEnv::rep_get_nsites method returns the number of replication sites expected to participate in an election.</p>
+<p>The DbEnv::rep_get_nsites method returns the total number of sites in the replication group.</p>
 <p>The DbEnv::rep_get_nsites method may be called at any time during the life of the
 application.</p>
 <p>The DbEnv::rep_get_nsites method
@@ -75,7 +63,7 @@ failure, and returns 0 on success.
 <h3>Parameters</h3>
 <dl compact>
 <dt><b>nsitesp</b><dd>The DbEnv::rep_get_nsites method returns  the
-number of replication sites expected to participate in an election in <b>nsitesp</b>.
+total number of sites in the replication group in <b>nsitesp</b>.
 </dl>
 <hr size=1 noshade>
 <h3>Class</h3>

@@ -4,7 +4,7 @@
  * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_log.c,v 12.37 2006/06/03 13:51:10 bostic Exp $
+ * $Id: rep_log.c,v 12.38 2006/07/03 14:18:44 sue Exp $
  */
 
 #include "db_config.h"
@@ -29,12 +29,12 @@ __rep_allreq(dbenv, rp, eid)
 	DB_LOGC *logc;
 	DB_LSN oldfilelsn;
 	DB_REP *db_rep;
-	DBT data_dbt;
+	DBT data_dbt, newfiledbt;
 	REP *rep;
 	REP_BULK bulk;
 	REP_THROTTLE repth;
 	uintptr_t bulkoff;
-	u_int32_t bulkflags, flags, use_bulk;
+	u_int32_t bulkflags, flags, use_bulk, version;
 	int ret, t_ret;
 
 	ret = 0;
@@ -102,9 +102,15 @@ __rep_allreq(dbenv, rp, eid)
 	for (;
 	    ret == 0 && repth.type != REP_LOG_MORE;
 	    ret = __log_c_get(logc, &repth.lsn, &data_dbt, DB_NEXT)) {
-		if (repth.lsn.file != oldfilelsn.file)
+		if (repth.lsn.file != oldfilelsn.file) {
+			if ((ret = __log_c_version(logc, &version)) != 0)
+				break;
+			memset(&newfiledbt, 0, sizeof(newfiledbt));
+			newfiledbt.data = &version;
+			newfiledbt.size = sizeof(version);
 			(void)__rep_send_message(dbenv,
-			    eid, REP_NEWFILE, &oldfilelsn, NULL, 0, 0);
+			    eid, REP_NEWFILE, &oldfilelsn, &newfiledbt, 0, 0);
+		}
 		/*
 		 * If we are configured for bulk, try to send this as a bulk
 		 * request.  If not configured, or it is too big for bulk
@@ -308,13 +314,13 @@ __rep_logreq(dbenv, rp, rec, eid)
 	DB_LOGC *logc;
 	DB_LSN endlsn, lsn, oldfilelsn;
 	DB_REP *db_rep;
-	DBT data_dbt;
+	DBT data_dbt, newfiledbt;
 	LOG *lp;
 	REP *rep;
 	REP_BULK bulk;
 	REP_THROTTLE repth;
 	uintptr_t bulkoff;
-	u_int32_t bulkflags, use_bulk;
+	u_int32_t bulkflags, use_bulk, version;
 	int ret, t_ret;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
@@ -405,8 +411,16 @@ __rep_logreq(dbenv, rp, rec, eid)
 					ret = DB_NOTFOUND;
 			} else {
 				endlsn.offset += logc->c_len;
-				(void)__rep_send_message(dbenv, eid,
-				    REP_NEWFILE, &endlsn, NULL, 0, 0);
+				if ((ret = __log_c_version(logc,
+				    &version)) == 0) {
+					memset(&newfiledbt, 0,
+					    sizeof(newfiledbt));
+					newfiledbt.data = &version;
+					newfiledbt.size = sizeof(version);
+					(void)__rep_send_message(dbenv, eid,
+					    REP_NEWFILE, &endlsn,
+					    &newfiledbt, 0, 0);
+				}
 			}
 		} else {
 			/* Case 3 */
@@ -465,9 +479,15 @@ __rep_logreq(dbenv, rp, rec, eid)
 		}
 		if (log_compare(&repth.lsn, (DB_LSN *)rec->data) >= 0)
 			break;
-		if (repth.lsn.file != oldfilelsn.file)
+		if (repth.lsn.file != oldfilelsn.file) {
+			if ((ret = __log_c_version(logc, &version)) != 0)
+				break;
+			memset(&newfiledbt, 0, sizeof(newfiledbt));
+			newfiledbt.data = &version;
+			newfiledbt.size = sizeof(version);
 			(void)__rep_send_message(dbenv,
-			    eid, REP_NEWFILE, &oldfilelsn, NULL, 0, 0);
+			    eid, REP_NEWFILE, &oldfilelsn, &newfiledbt, 0, 0);
+		}
 		/*
 		 * If we are configured for bulk, try to send this as a bulk
 		 * request.  If not configured, or it is too big for bulk

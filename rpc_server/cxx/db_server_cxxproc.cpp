@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2006
  *      Sleepycat Software.  All rights reserved.
  *
- * $Id: db_server_cxxproc.cpp,v 12.10 2006/05/05 14:54:00 bostic Exp $
+ * $Id: db_server_cxxproc.cpp,v 12.11 2006/07/17 13:08:44 mjc Exp $
  */
 
 #include "db_config.h"
@@ -49,6 +49,37 @@ __env_set_cachesize_proc(
 	dbenv = (DbEnv *)dbenv_ctp->ct_anyp;
 
 	ret = dbenv->set_cachesize(gbytes, bytes, ncache);
+
+	replyp->status = ret;
+	return;
+}
+
+void
+__env_cdsgroup_begin_proc(u_int dbenvcl_id, __env_cdsgroup_begin_reply *replyp)
+{
+	DbEnv *dbenv;
+	DbTxn *txnp;
+	ct_entry *ctp, *dbenv_ctp;
+	int ret;
+
+	ACTIVATE_CTP(dbenv_ctp, dbenvcl_id, CT_ENV);
+	dbenv = (DbEnv *)dbenv_ctp->ct_anyp;
+
+	ctp = new_ct_ent(&replyp->status);
+	if (ctp == NULL)
+		return;
+
+	ret = dbenv->cdsgroup_begin(&txnp);
+	if (ret == 0) {
+		ctp->ct_txnp = txnp;
+		ctp->ct_type = CT_TXN;
+		ctp->ct_parent = NULL;
+		ctp->ct_envparent = dbenv_ctp;
+		replyp->txnidcl_id = ctp->ct_id;
+		__dbsrv_settimeout(ctp, dbenv_ctp->ct_timeout);
+		__dbsrv_active(ctp);
+	} else
+		__dbclear_ctp(ctp);
 
 	replyp->status = ret;
 	return;

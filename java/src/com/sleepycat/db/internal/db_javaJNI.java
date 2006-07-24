@@ -142,6 +142,7 @@ class db_javaJNI {
   public final static native void DbEnv_dbrename(long jarg1, long jarg2, String jarg3, String jarg4, String jarg5, int jarg6) throws com.sleepycat.db.DatabaseException, java.io.FileNotFoundException;
   public final static native void DbEnv_err(long jarg1, int jarg2, String jarg3) /* no exception */;
   public final static native void DbEnv_errx(long jarg1, String jarg2) /* no exception */;
+  public final static native long DbEnv_cdsgroup_begin(long jarg1) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_fileid_reset(long jarg1, String jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native String[] DbEnv_get_data_dirs(long jarg1) throws com.sleepycat.db.DatabaseException;
   public final static native int DbEnv_get_encrypt_flags(long jarg1) throws com.sleepycat.db.DatabaseException;

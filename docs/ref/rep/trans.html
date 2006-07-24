@@ -1,4 +1,4 @@
-<!--$Id: trans.so,v 1.16 2005/10/16 00:54:32 bostic Exp $-->
+<!--$Id: trans.so,v 1.17 2006/07/14 23:04:42 alanb Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -127,6 +127,22 @@ master environment, specification of <a href="../../api_c/env_set_flags.html#DB_
 client environment, the priorities of different sites participating in
 an election, and the behavior of the application's <b>send</b>
 function.</p>
+<p>Applications using Replication Manager are free to use
+<a href="../../api_c/env_set_flags.html#DB_TXN_NOSYNC">DB_TXN_NOSYNC</a> at the master and/or clients as they see fit.
+The behavior of the <b>send</b> function that Replication Manager
+provides on the application's behalf is determined by an
+"acknowledgement policy", which is configured by the
+<a href="../../api_c/repmgr_ack_policy.html">DB_ENV-&gt;repmgr_set_ack_policy</a> method.  Clients always send acknowledgements
+for <a href="../../api_c/rep_transport.html#DB_REP_PERMANENT">DB_REP_PERMANENT</a> messages (unless the acknowledgement
+policy in effect indicates that the master doesn't care about them).
+For a <a href="../../api_c/rep_transport.html#DB_REP_PERMANENT">DB_REP_PERMANENT</a> message, the master blocks the sending
+thread until either it receives the proper number of acknowledgements,
+or the <a href="../../api_c/rep_timeout.html#DB_REP_ACK_TIMEOUT">DB_REP_ACK_TIMEOUT</a> expires.  In the case of timeout,
+Replication Manager returns an error code from the <b>send</b>
+function, causing Berkeley DB to flush the transaction log before returning
+to the application, as described above.  The default acknowledgement
+policy is <a href="../../api_c/repmgr_set_ack_policy.html#DB_REPMGR_ACKS_QUORUM">DB_REPMGR_ACKS_QUORUM</a>, which ensures that the effect
+of a permanent record remains durable following an election.</p>
 <p>First, it is rarely useful to write and synchronously flush the log when
 a transaction commits on a replication client.  It may be useful where
 systems share resources and multiple systems commonly fail at the same

@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: ReplicationManagerStartPolicy.java,v 12.1 2006/05/11 11:27:38 alexg Exp $
+ * $Id: ReplicationManagerStartPolicy.java,v 12.2 2006/07/05 06:47:30 alexg Exp $
  */
 
 package com.sleepycat.db;
@@ -30,7 +30,7 @@ public final class ReplicationManagerStartPolicy {
         "REP_FULL_ELECTION", DbConstants.DB_REP_FULL_ELECTION);
 
     /* package */
-    public static ReplicationManagerStartPolicy fromInt(int type) {
+    static ReplicationManagerStartPolicy fromInt(int type) {
         switch(type) {
         case DbConstants.DB_REP_MASTER:
             return REP_MASTER;

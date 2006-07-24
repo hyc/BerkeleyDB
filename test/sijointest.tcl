@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sijointest.tcl,v 12.2 2006/01/02 22:03:24 bostic Exp $
+# $Id: sijointest.tcl,v 12.3 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sijointest: Secondary index and join test.
 # TEST 	This used to be si005.tcl.
@@ -38,7 +38,7 @@ proc sijointest { methods {nentries 1000} args } {
 	set omethods [convert_methods $methods]
 
 	puts "Secondary index join test."
-	puts "sijoin  \{\[ list $pmethod $methods \]\} $nentries" 
+	puts "sijoin  \{\[ list $pmethod $methods \]\} $nentries"
 	env_cleanup $testdir
 
 	set pname "sijoin-primary.db"

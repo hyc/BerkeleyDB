@@ -4,7 +4,7 @@
  * Copyright (c) 2005
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: repmgr_sel.c,v 1.17 2006/06/19 06:41:44 mjc Exp $
+ * $Id: repmgr_sel.c,v 1.20 2006/07/14 21:19:53 alanb Exp $
  */
 
 #include "db_config.h"
@@ -12,7 +12,7 @@
 #define	__INCLUDE_NETWORKING	1
 #include "db_int.h"
 
-static int __repmgr_connect __P((DB_ENV*, socket_t *, repmgr_netaddr_t *));
+static int __repmgr_connect __P((DB_ENV*, socket_t *, REPMGR_SITE *));
 static int record_ack __P((DB_ENV *, REPMGR_SITE *, DB_REPMGR_ACK *));
 static int dispatch_phase_completion __P((DB_ENV *, REPMGR_CONNECTION *));
 static int notify_handshake __P((DB_ENV *, REPMGR_CONNECTION *));
@@ -50,6 +50,9 @@ __repmgr_accept(dbenv)
 #ifdef DB_WIN32
 	WSAEVENT event_obj;
 #endif
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	addrlen = sizeof(siaddr);
@@ -82,11 +85,15 @@ __repmgr_accept(dbenv)
 		case EOPNOTSUPP:
 		case ENETUNREACH:
 #endif
+			RPRINT(dbenv, (dbenv, &mb,
+			    "accept error %d considered innocuous", ret));
 			return (0);
 		default:
+			__db_err(dbenv, ret, "accept error");
 			return (ret);
 		}
 	}
+	RPRINT(dbenv, (dbenv, &mb, "accepted a new connection"));
 
 	if ((ret = __repmgr_set_nonblocking(s)) != 0) {
 		__db_err(dbenv, ret, "can't set nonblock after accept");
@@ -246,7 +253,7 @@ __repmgr_connect_site(dbenv, eid)
 	site = SITE_FROM_EID(eid);
 
 	flags = 0;
-	switch (ret = __repmgr_connect(dbenv, &s, &site->net_addr)) {
+	switch (ret = __repmgr_connect(dbenv, &s, site)) {
 	case 0:
 		flags = 0;
 #ifdef DB_WIN32
@@ -311,21 +318,27 @@ __repmgr_connect_site(dbenv, eid)
 }
 
 static int
-__repmgr_connect(dbenv, socket_result, addr)
+__repmgr_connect(dbenv, socket_result, site)
 	DB_ENV *dbenv;
 	socket_t *socket_result;
-	repmgr_netaddr_t *addr;
+	REPMGR_SITE *site;
 {
+	repmgr_netaddr_t *addr;
 	ADDRINFO *ai;
 	socket_t s;
 	char *why;
 	int ret;
+	SITE_STRING_BUFFER buffer;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	/*
-	 * I guess lint doesn't know about DB_ASSERT, so it can't tell that this
+	 * Lint doesn't know about DB_ASSERT, so it can't tell that this
 	 * loop will always get executed at least once, giving 'why' a value.
 	 */
 	COMPQUIET(why, "");
+	addr = &site->net_addr;
 	ai = ADDR_LIST_CURRENT(addr);
 	DB_ASSERT(dbenv, ai != NULL);
 	for (; ai != NULL; ai = ADDR_LIST_NEXT(addr)) {
@@ -348,6 +361,9 @@ __repmgr_connect(dbenv, socket_result, addr)
 
 		if (ret == 0 || ret == INPROGRESS) {
 			*socket_result = s;
+			RPRINT(dbenv, (dbenv, &mb,
+			    "init connection to %s with result %d",
+			    __repmgr_format_site_loc(site, buffer), ret));
 			return (ret);
 		}
 
@@ -357,7 +373,8 @@ __repmgr_connect(dbenv, socket_result, addr)
 
 	/* We've exhausted all possible addresses. */
 	ret = net_errno;
-	__db_err(dbenv, ret, why);
+	__db_err(dbenv, ret, "%s to %s", why,
+	    __repmgr_format_site_loc(site, buffer));
 	return (ret);
 }
 
@@ -407,6 +424,7 @@ __repmgr_read_from_site(dbenv, conn)
 	DB_ENV *dbenv;
 	REPMGR_CONNECTION *conn;
 {
+	SITE_STRING_BUFFER buffer;
 	size_t nr;
 	int ret;
 
@@ -426,7 +444,10 @@ __repmgr_read_from_site(dbenv, conn)
 			case WOULDBLOCK:
 				return (0);
 			default:
-				__db_err(dbenv, ret, "can't read from site");
+				(void)__repmgr_format_eid_loc(dbenv->rep_handle,
+				    conn->eid, buffer);
+				__db_err(dbenv, ret,
+				    "can't read from %s", buffer);
 				return (DB_REP_UNAVAIL);
 			}
 		}
@@ -436,8 +457,9 @@ __repmgr_read_from_site(dbenv, conn)
 				return (dispatch_phase_completion(dbenv,
 					    conn));
 		} else {
-			/* TODO: provide better detail on which connection. */
-			__db_errx(dbenv, "EOF on connection");
+			(void)__repmgr_format_eid_loc(dbenv->rep_handle,
+			    conn->eid, buffer);
+			__db_errx(dbenv, "EOF on connection from %s", buffer);
 			return (DB_REP_UNAVAIL);
 		}
 	}
@@ -466,6 +488,9 @@ dispatch_phase_completion(dbenv, conn)
 	char *host;
 	u_int port;
 	int ret, eid;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 	switch (conn->reading_phase) {
@@ -612,6 +637,14 @@ dispatch_phase_completion(dbenv, conn)
 				__db_errx(dbenv, "bad handshake msg size");
 				return (DB_REP_UNAVAIL);
 			}
+			
+			port = handshake->port;
+			host = conn->input.repmgr_msg.rec.data;
+			host[conn->input.repmgr_msg.rec.size-1] = '\0';
+
+			RPRINT(dbenv, (dbenv, &mb,
+				   "got handshake %s:%u, pri %lu", host, port,
+				   (u_long)ntohl(handshake->priority)));
 
 			if (IS_VALID_EID(conn->eid)) {
 				/*
@@ -621,15 +654,17 @@ dispatch_phase_completion(dbenv, conn)
 				 * priority.
 				 */
 				site = SITE_FROM_EID(conn->eid);
+				RPRINT(dbenv, (dbenv, &mb,
+				    "handshake from connection to %s:%lu",
+				    site->net_addr.host,
+				    (u_long)site->net_addr.port));
 			} else {
-				port = handshake->port;
-				host = conn->input.repmgr_msg.rec.data;
-				host[conn->input.repmgr_msg.rec.size-1] = '\0';
-
 				if (IS_VALID_EID(eid =
 				    __repmgr_find_site(dbenv, host, port))) {
 					site = SITE_FROM_EID(eid);
 					if (site->state == SITE_IDLE) {
+						RPRINT(dbenv, (dbenv, &mb,
+					"handshake from previously idle site"));
 						retry = site->ref.retry;
 						TAILQ_REMOVE(&db_rep->retries,
 						    retry, entries);
@@ -649,6 +684,8 @@ dispatch_phase_completion(dbenv, conn)
 						return (DB_REP_UNAVAIL);
 					}
 				} else {
+					RPRINT(dbenv, (dbenv, &mb,
+					  "handshake introduces unknown site"));
 					if ((ret = __repmgr_pack_netaddr(
 					    dbenv, host, port, NULL,
 					    &addr)) != 0)
@@ -720,7 +757,6 @@ notify_handshake(dbenv, conn)
 
 	COMPQUIET(conn, NULL);
 
-	RPRINT(dbenv, (dbenv, &mb, "received handshake"));
 	db_rep = dbenv->rep_handle;
 	/*
 	 * If we're moping around wishing we knew who the master was, then
@@ -732,6 +768,8 @@ notify_handshake(dbenv, conn)
 	 */
 	if (db_rep->master_eid == DB_EID_INVALID && !db_rep->done_one) {
 		db_rep->done_one = TRUE;
+		RPRINT(dbenv, (dbenv, &mb,
+		    "handshake with no known master to wake election thread"));
 		return (__repmgr_init_election(dbenv, ELECT_REPSTART));
 	}
 	return (0);
@@ -745,12 +783,25 @@ record_ack(dbenv, site, ack)
 {
 	DB_REP *db_rep;
 	int ret;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+	SITE_STRING_BUFFER buffer;
+#endif
 
 	db_rep = dbenv->rep_handle;
 
 	/* Ignore stale acks. */
-	if (ack->generation < db_rep->generation)
+	if (ack->generation < db_rep->generation) {
+		RPRINT(dbenv, (dbenv, &mb,
+		    "ignoring stale ack (%lu<%lu), from %s",
+		     (u_long)ack->generation, (u_long)db_rep->generation,
+		     __repmgr_format_site_loc(site, buffer)));
 		return (0);
+	}
+	RPRINT(dbenv, (dbenv, &mb,
+	    "got ack [%lu][%lu](%lu) from %s", (u_long)ack->lsn.file,
+	    (u_long)ack->lsn.offset, (u_long)ack->generation,
+	    __repmgr_format_site_loc(site, buffer)));
 
 	/*
 	 * TODO: what about future ones?  Ideally, you'd like to wake up any

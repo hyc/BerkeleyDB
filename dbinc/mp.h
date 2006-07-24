@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp.h,v 12.15 2006/06/19 14:55:30 mjc Exp $
+ * $Id: mp.h,v 12.20 2006/07/13 06:18:53 mjc Exp $
  */
 
 #ifndef	_DB_MP_H_
 #define	_DB_MP_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 struct __bh;		typedef struct __bh BH;
 struct __bh_frozen;	typedef struct __bh_frozen_p BH_FROZEN_PAGE;
@@ -92,7 +96,8 @@ struct __db_mpreg {
  *	more frequent than a random data page.
  */
 #define	NCACHE(mp, mf_offset, pgno)					\
-	(((pgno) ^ ((u_int32_t)(mf_offset) >> 3)) % ((MPOOL *)mp)->nreg)
+	(((MPOOL *)mp)->nreg == 1 ? 0 :					\
+	(((pgno) ^ ((u_int32_t)(mf_offset) >> 3)) % ((MPOOL *)mp)->nreg))
 
 /*
  * NBUCKET --
@@ -116,11 +121,11 @@ struct __db_mpreg {
  */
 
 /* Number of file hash buckets, a small prime number */
-#define MPOOL_FILE_BUCKETS	17
+#define	MPOOL_FILE_BUCKETS	17
 
-#define FHASH(id, len)	__ham_func5(NULL, id, len)
+#define	FHASH(id, len)	__ham_func5(NULL, id, (u_int32_t)(len))
 
-#define FNBUCKET(id, len)						\
+#define	FNBUCKET(id, len)						\
 	(FHASH(id, len) % MPOOL_FILE_BUCKETS)
 
 /* Macros to lock/unlock the mpool region as a whole. */
@@ -223,6 +228,11 @@ struct __db_mpool_hash {
 	u_int32_t	hash_priority;	/* Minimum priority of bucket buffer. */
 
 	u_int32_t	hash_io_wait;	/* Count of I/O waits. */
+	u_int32_t	hash_frozen;	/* Count of frozen buffers. */
+	u_int32_t	hash_thawed;	/* Count of thawed buffers. */
+	u_int32_t	hash_frozen_freed;/* Count of freed frozen buffers. */
+
+	DB_LSN		old_reader;	/* Oldest snapshot reader (cached). */
 
 #define	IO_WAITER	0x001		/* Thread is waiting on page. */
 	u_int32_t	flags;
@@ -286,7 +296,7 @@ struct __mpoolfile {
 	int32_t	  deadfile;		/* Dirty pages can be discarded. */
 
 	u_int32_t bucket;		/* hash bucket for this file. */
-	
+
 	/*
 	 * None of the following fields are thread protected.
 	 *
@@ -366,8 +376,7 @@ struct __mpoolfile {
  */
 #define	BH_FREE_FREEMEM		0x01
 #define	BH_FREE_REUSE		0x02
-#define	BH_FREE_SHELVE		0x04
-#define	BH_FREE_UNLOCKED	0x08
+#define	BH_FREE_UNLOCKED	0x04
 
 /*
  * BH --
@@ -420,9 +429,9 @@ struct __bh_frozen_p {
 
 /*
  * BH_FROZEN_ALLOC --
- * 	Frozen buffer headers are allocated a page at a time in general.  This
- * 	structure is allocated at the beginning of the page so that the
- * 	allocation chunks can be tracked and freed (for private environments).
+ *	Frozen buffer headers are allocated a page at a time in general.  This
+ *	structure is allocated at the beginning of the page so that the
+ *	allocation chunks can be tracked and freed (for private environments).
  */
 struct __bh_frozen_a {
 	SH_TAILQ_ENTRY links;
@@ -435,12 +444,23 @@ struct __bh_frozen_a {
 #define	BH_OWNER(dbenv, bhp)						\
     ((TXN_DETAIL *)R_ADDR(&dbenv->tx_handle->reginfo, bhp->td_off))
 
-#define	BH_OWNED_BY(dbenv, bhp, txn)	((txn) != NULL && \
-    (bhp)->td_off != INVALID_ROFF && \
+#define	BH_OWNED_BY(dbenv, bhp, txn)	((txn) != NULL &&		\
+    (bhp)->td_off != INVALID_ROFF &&					\
     (txn)->td == BH_OWNER(dbenv, bhp))
+
+#define	BH_PRIORITY(bhp)						\
+    ((bhp) == NULL ? 0 :						\
+    SH_CHAIN_SINGLETON(bhp, vc) ? (bhp)->priority :			\
+     __memp_bh_priority(bhp))
 
 #define	VISIBLE_LSN(dbenv, bhp)						\
     (&BH_OWNER(dbenv, bhp)->visible_lsn)
+
+#define	BH_OBSOLETE(bhp, old_lsn)	((SH_CHAIN_HASNEXT(bhp, vc) ?	\
+	log_compare(&(old_lsn), VISIBLE_LSN(dbenv,			\
+	SH_CHAIN_NEXTP(bhp, vc, __bh))) :				\
+	(bhp->td_off == INVALID_ROFF ? 1 :				\
+	log_compare(&(old_lsn), VISIBLE_LSN(dbenv, bhp)))) > 0)
 
 #define	MVCC_SKIP_CURADJ(dbc, pgno)					\
     (dbc->txn != NULL && F_ISSET(dbc->txn, TXN_SNAPSHOT) &&		\
@@ -449,7 +469,7 @@ struct __bh_frozen_a {
 #if defined(DIAG_MVCC) && defined(HAVE_MPROTECT)
 #define	VM_PAGESIZE 4096
 #define	MVCC_BHSIZE(mfp, sz) do {					\
-	sz += VM_PAGESIZE + sizeof (BH);				\
+	sz += VM_PAGESIZE + sizeof(BH);					\
 	if (mfp->stat.st_pagesize < VM_PAGESIZE)			\
 		sz += VM_PAGESIZE - mfp->stat.st_pagesize;		\
 } while (0)
@@ -459,7 +479,7 @@ struct __bh_frozen_a {
 		BH *__bhp;						\
 		void *__orig = (p);					\
 		p = ALIGNP_INC(p, VM_PAGESIZE);				\
-		if ((u_int8_t *)p < (u_int8_t *)__orig + sizeof (BH))	\
+		if ((u_int8_t *)p < (u_int8_t *)__orig + sizeof(BH))	\
 			p = (u_int8_t *)p + VM_PAGESIZE;		\
 		__bhp = (BH *)((u_int8_t *)p - SSZA(BH, buf));		\
 		DB_ASSERT(dbenv,					\
@@ -506,6 +526,10 @@ struct __bh_frozen_a {
  * Flags to __memp_ftruncate.
  */
 #define	MP_TRUNC_RECOVER	0x01
+
+#if defined(__cplusplus)
+}
+#endif
 
 #include "dbinc_auto/mp_ext.h"
 #endif /* !_DB_MP_H_ */

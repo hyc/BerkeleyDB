@@ -3,12 +3,12 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: test110.tcl,v 1.6 2006/01/02 22:03:29 bostic Exp $
+# $Id: test110.tcl,v 1.7 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	test110
 # TEST	Partial get test with duplicates.
 # TEST
-# TEST	For hash and btree, create and populate a database  
+# TEST	For hash and btree, create and populate a database
 # TEST	with dups. Randomly selecting offset and length,
 # TEST	retrieve data from each record and make sure we
 # TEST	get what we expect.
@@ -18,13 +18,13 @@ proc test110 { method {nentries 10000} {ndups 3} args } {
 
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
-	
+
 	if { [is_record_based $method] == 1 || \
 		[is_rbtree $method] == 1 } {
 		puts "Test110 skipping for method $method"
 		return
 	}
-							    
+
 	# Create the database and open the dictionary
 	set txnenv 0
 	set eindex [lsearch -exact $args "-env"]
@@ -84,14 +84,14 @@ proc test110 { method {nentries 10000} {ndups 3} args } {
 
 		set dbc [eval {$db cursor} $txn]
 		error_check_good db_cursor [is_valid_cursor $dbc $db] TRUE
-	
+
 		set ret [$dbc get -set $key]
 
 		set j 0
 		for { set dbt [$dbc get -current] } \
 		    { $j < $ndups } \
 		    { set dbt [$dbc get -next] } {
-			set d [lindex [lindex $dbt 0] 1] 
+			set d [lindex [lindex $dbt 0] 1]
 			error_check_good dupget:$key:$j $d [pad_data $method $j.$data]
 			incr j
 		}
@@ -107,9 +107,9 @@ proc test110 { method {nentries 10000} {ndups 3} args } {
 	for { set i 0 } { [gets $did str] != -1 && $i < $nentries } \
 	    { incr i } {
 		set key $str
-		
+
 		set data [pad_data $method [replicate $str $kvals($key)]]
-		set j 0 
+		set j 0
 
 		# Set up cursor.  We will use the cursor to walk the dups.
 		if { $txnenv == 1 } {
@@ -120,7 +120,7 @@ proc test110 { method {nentries 10000} {ndups 3} args } {
 
 		set dbc [eval {$db cursor} $txn]
 		error_check_good db_cursor [is_valid_cursor $dbc $db] TRUE
- 
+
  		# Position cursor at the first of the dups.
 		set ret [$dbc get -set $key]
 
@@ -142,7 +142,7 @@ proc test110 { method {nentries 10000} {ndups 3} args } {
 
 			set ret [eval {$dbc get} -current \
 			    {-partial [list $beg $len]}]
-	
+
 			# In order for tcl to handle this, we have to overwrite the
 			# last character with a NULL.  That makes the length one less
 			# than we expect.

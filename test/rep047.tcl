@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep047.tcl,v 12.8 2006/03/10 21:44:32 carol Exp $
+# $Id: rep047.tcl,v 12.10 2006/07/19 17:45:35 carol Exp $
 #
 # TEST  rep047
 # TEST	Replication and log gap bulk transfers.
@@ -21,9 +21,9 @@ proc rep047 { method { nentries 200 } { tnum "047" } args } {
 		return
 	}
 
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -74,7 +74,7 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	set c_logtype [lindex $logset 1]
 	set c2_logtype [lindex $logset 2]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set c2_logargs [adjust_logargs $c2_logtype]

@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_bh.c,v 12.26 2006/06/19 13:33:28 mjc Exp $
+ * $Id: mp_bh.c,v 12.27 2006/06/29 00:02:38 mjc Exp $
  */
 
 #include "db_config.h"
@@ -531,7 +531,7 @@ __memp_bhfree(dbmp, hp, bhp, flags)
 	MPOOLFILE *mfp;
 	BH *next_bhp, *prev_bhp;
 	u_int32_t n_cache;
-	int reorder, ret;
+	int reorder, ret, t_ret;
 #ifdef DIAG_MVCC
 	size_t pagesize;
 #endif
@@ -550,24 +550,38 @@ __memp_bhfree(dbmp, hp, bhp, flags)
 #endif
 
 	DB_ASSERT(dbenv, bhp->ref == 0);
+	DB_ASSERT(dbenv, LF_ISSET(BH_FREE_UNLOCKED) ||
+	    SH_CHAIN_SINGLETON(bhp, vc) ||
+	    (SH_CHAIN_HASNEXT(bhp, vc) &&
+	    F_ISSET(SH_CHAIN_NEXT(bhp, vc, __bh), BH_FROZEN) &&
+	    bhp->td_off == INVALID_ROFF) ||
+	    (SH_CHAIN_HASPREV(bhp, vc) ?
+	    IS_MAX_LSN(*VISIBLE_LSN(dbenv, bhp)) :
+	    BH_OBSOLETE(bhp, hp->old_reader)));
 
 	/*
 	 * Delete the buffer header from the hash bucket queue or the
 	 * version chain and reset the hash bucket's priority, if necessary.
 	 */
-	prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh);
-	reorder = (__memp_bh_priority(bhp) == bhp->priority);
-
-	if ((next_bhp = SH_CHAIN_NEXT(bhp, vc, __bh)) == NULL) {
-		if (prev_bhp != NULL)
-			SH_TAILQ_INSERT_AFTER(&hp->hash_bucket,
-			    bhp, prev_bhp, hq, __bh);
+	if (SH_CHAIN_SINGLETON(bhp, vc)) {
 		SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
+		hp->hash_priority =
+		    BH_PRIORITY(SH_TAILQ_FIRST(&hp->hash_bucket, __bh));
+	} else {
+		reorder = (__memp_bh_priority(bhp) == bhp->priority);
+
+		prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh);
+		if ((next_bhp = SH_CHAIN_NEXT(bhp, vc, __bh)) == NULL) {
+			if (prev_bhp != NULL)
+				SH_TAILQ_INSERT_AFTER(&hp->hash_bucket,
+				    bhp, prev_bhp, hq, __bh);
+			SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
+		}
+		SH_CHAIN_REMOVE(bhp, vc, __bh);
+		if (reorder)
+			__memp_bucket_reorder(hp,
+			    next_bhp != NULL ? next_bhp : prev_bhp);
 	}
-	SH_CHAIN_REMOVE(bhp, vc, __bh);
-	if (reorder)
-		__memp_bucket_reorder(hp,
-		    next_bhp != NULL ? next_bhp : prev_bhp);
 
 #ifdef DIAGNOSTIC
 	__memp_check_order(dbenv, hp);
@@ -624,12 +638,11 @@ __memp_bhfree(dbmp, hp, bhp, flags)
 	 * If this is its last reference, remove it.
 	 */
 	MUTEX_LOCK(dbenv, mfp->mutex);
-	if (--mfp->block_cnt == 0 && mfp->mpf_cnt == 0)
-		ret = __memp_mf_discard(dbmp, mfp);
-	else {
-		ret = 0;
+	if (--mfp->block_cnt == 0 && mfp->mpf_cnt == 0) {
+		if ((t_ret = __memp_mf_discard(dbmp, mfp)) != 0 && ret == 0)
+			ret = t_ret;
+	} else
 		MUTEX_UNLOCK(dbenv, mfp->mutex);
-	}
 
 	return (ret);
 }

@@ -107,6 +107,7 @@ int __db_s_first __P((DB *, DB **));
 int __db_s_next __P((DB **));
 int __db_s_done __P((DB *));
 u_int32_t __db_partsize __P((u_int32_t, DBT *));
+int __cdsgroup_begin __P((DB_ENV *, DB_TXN **));
 int __db_pgin __P((DB_ENV *, db_pgno_t, void *, DBT *));
 int __db_pgout __P((DB_ENV *, db_pgno_t, void *, DBT *));
 void __db_metaswap __P((PAGE *));

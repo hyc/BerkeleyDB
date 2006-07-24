@@ -4,7 +4,7 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mp_fput.c,v 12.14 2006/05/05 14:53:40 bostic Exp $
+ * $Id: mp_fput.c,v 12.18 2006/07/13 13:10:25 bostic Exp $
  */
 
 #include "db_config.h"
@@ -82,7 +82,7 @@ __memp_fput(dbmfp, pgaddr, flags)
 	 */
 	if (flags) {
 		if (__db_fchk(dbenv, "memp_fput", flags,
-		    DB_MPOOL_CLEAN | DB_MPOOL_DISCARD) != 0) {
+		    DB_MPOOL_DISCARD) != 0) {
 			flags = 0;
 			ret = EINVAL;
 			DB_ASSERT(dbenv, 0);
@@ -124,13 +124,6 @@ __memp_fput(dbmfp, pgaddr, flags)
 
 	MUTEX_LOCK(dbenv, hp->mtx_hash);
 
-	/* Set/clear the page bits. */
-	if (LF_ISSET(DB_MPOOL_CLEAN) &&
-	    F_ISSET(bhp, BH_DIRTY) && !F_ISSET(bhp, BH_DIRTY_CREATE)) {
-		DB_ASSERT(dbenv, hp->hash_page_dirty != 0);
-		--hp->hash_page_dirty;
-		F_CLR(bhp, BH_DIRTY);
-	}
 	if (LF_ISSET(DB_MPOOL_DISCARD))
 		F_SET(bhp, BH_DISCARD);
 
@@ -139,9 +132,10 @@ __memp_fput(dbmfp, pgaddr, flags)
 	 * application returns a page twice.
 	 */
 	if (bhp->ref == 0) {
-		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 		__db_errx(dbenv, "%s: page %lu: unpinned page returned",
 		    __memp_fn(dbmfp), (u_long)bhp->pgno);
+		DB_ASSERT(dbenv, bhp->ref != 0);
+		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 		return (__db_panic(dbenv, EACCES));
 	}
 
@@ -170,9 +164,9 @@ __memp_fput(dbmfp, pgaddr, flags)
 	MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, 0);
 
 	/* Update priority values. */
-	if (F_ISSET(bhp, BH_DISCARD) || mfp->priority == MPOOL_PRI_VERY_LOW) {
+	if (F_ISSET(bhp, BH_DISCARD) || mfp->priority == MPOOL_PRI_VERY_LOW)
 		bhp->priority = 0;
-	} else {
+	else {
 		/*
 		 * We don't lock the LRU counter or the stat.st_pages field, if
 		 * we get garbage (which won't happen on a 32-bit machine), it
@@ -195,7 +189,11 @@ __memp_fput(dbmfp, pgaddr, flags)
 				bhp->priority += adjust;
 	}
 
-	__memp_bucket_reorder(hp, bhp);
+	if (SH_TAILQ_FIRST(&hp->hash_bucket, __bh) ==
+	    SH_TAILQ_LAST(&hp->hash_bucket, hq, __bh))
+		hp->hash_priority = BH_PRIORITY(bhp);
+	else
+		__memp_bucket_reorder(hp, bhp);
 #ifdef DIAGNOSTIC
 	__memp_check_order(dbenv, hp);
 #endif

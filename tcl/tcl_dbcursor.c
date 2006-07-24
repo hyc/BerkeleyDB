@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_dbcursor.c,v 12.7 2006/05/05 14:54:02 bostic Exp $
+ * $Id: tcl_dbcursor.c,v 12.10 2006/07/15 16:55:50 bostic Exp $
  */
 
 #include "db_config.h"
@@ -451,14 +451,15 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 	result = TCL_OK;
 	flag = 0;
 	freekey = freedata = 0;
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
+	memset(&pdata, 0, sizeof(DBT));
 
 	if (objc < 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-args? ?key?");
 		return (TCL_ERROR);
 	}
 
-	memset(&key, 0, sizeof(key));
-	memset(&data, 0, sizeof(data));
 	/*
 	 * Get the command name index from the object based on the options
 	 * defined above.
@@ -774,7 +775,6 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 	}
 
 	_debug_check();
-	memset(&pdata, 0, sizeof(DBT));
 	if (ispget) {
 		F_SET(&pdata, DB_DBT_MALLOC);
 		ret = dbc->c_pget(dbc, &key, &data, &pdata, flag);
@@ -817,18 +817,26 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 				    key.data, key.size, data.data, data.size);
 		}
 	}
-	if (key.data != NULL && F_ISSET(&key, DB_DBT_MALLOC))
-		__os_ufree(dbc->dbp->dbenv, key.data);
-	if (data.data != NULL && F_ISSET(&data, DB_DBT_MALLOC))
-		__os_ufree(dbc->dbp->dbenv, data.data);
-	if (pdata.data != NULL && F_ISSET(&pdata, DB_DBT_MALLOC))
-		__os_ufree(dbc->dbp->dbenv, pdata.data);
 out1:
 	if (result == TCL_OK)
 		Tcl_SetObjResult(interp, retlist);
+	/*
+	 * If DB_DBT_MALLOC is set we need to free if DB allocated anything.
+	 * If DB_DBT_USERMEM is set we need to free it because
+	 * we allocated it (for data_buf_size/key_buf_size).  That
+	 * allocation does not apply to the pdata DBT.
+	 */
 out:
-	if (data.data != NULL && flag & (DB_MULTIPLE|DB_MULTIPLE_KEY))
+	if (key.data != NULL && F_ISSET(&key, DB_DBT_MALLOC))
+		__os_ufree(dbc->dbp->dbenv, key.data);
+	if (key.data != NULL && F_ISSET(&key, DB_DBT_USERMEM))
+		__os_free(dbc->dbp->dbenv, key.data);
+	if (data.data != NULL && F_ISSET(&data, DB_DBT_MALLOC))
+		__os_ufree(dbc->dbp->dbenv, data.data);
+	if (data.data != NULL && F_ISSET(&data, DB_DBT_USERMEM))
 		__os_free(dbc->dbp->dbenv, data.data);
+	if (pdata.data != NULL && F_ISSET(&pdata, DB_DBT_MALLOC))
+		__os_ufree(dbc->dbp->dbenv, pdata.data);
 	if (freedata)
 		__os_free(NULL, dtmp);
 	if (freekey)

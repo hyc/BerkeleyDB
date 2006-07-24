@@ -82,7 +82,7 @@ static jclass dbex_class, deadex_class, lockex_class, memex_class;
 static jclass repdupmasterex_class, rephandledeadex_class;
 static jclass repholdelectionex_class, repjoinfailex_class, replockoutex_class;
 static jclass repunavailex_class;
-static jclass runrecex_class, versionex_class;
+static jclass runrecex_class, updconfex_class, versionex_class;
 static jclass filenotfoundex_class, illegalargex_class, outofmemerr_class;
 static jclass bytearray_class, string_class, outputstream_class;
 
@@ -228,6 +228,9 @@ static jfieldID mpool_stat_st_hash_wait_fid;
 static jfieldID mpool_stat_st_hash_max_wait_fid;
 static jfieldID mpool_stat_st_region_nowait_fid;
 static jfieldID mpool_stat_st_region_wait_fid;
+static jfieldID mpool_stat_st_mvcc_frozen_fid;
+static jfieldID mpool_stat_st_mvcc_thawed_fid;
+static jfieldID mpool_stat_st_mvcc_freed_fid;
 static jfieldID mpool_stat_st_alloc_fid;
 static jfieldID mpool_stat_st_alloc_buckets_fid;
 static jfieldID mpool_stat_st_alloc_max_buckets_fid;
@@ -357,7 +360,7 @@ static jmethodID memex_construct, memex_update_method;
 static jmethodID repdupmasterex_construct, rephandledeadex_construct;
 static jmethodID repholdelectionex_construct, repjoinfailex_construct;
 static jmethodID replockoutex_construct, repunavailex_construct;
-static jmethodID runrecex_construct, versionex_construct;
+static jmethodID runrecex_construct, updconfex_construct, versionex_construct;
 static jmethodID filenotfoundex_construct, illegalargex_construct;
 static jmethodID outofmemerr_construct;
 static jmethodID lock_construct;
@@ -415,6 +418,7 @@ const struct {
 	{ &replockoutex_class, DB_PKG "ReplicationLockoutException" },
 	{ &repunavailex_class, DB_PKG "ReplicationSiteUnavailableException" },
 	{ &runrecex_class, DB_PKG "RunRecoveryException" },
+	{ &updconfex_class, DB_PKG "UpdateConflictException" },
 	{ &versionex_class, DB_PKG "VersionMismatchException" },
 	{ &filenotfoundex_class, "java/io/FileNotFoundException" },
 	{ &illegalargex_class, "java/lang/IllegalArgumentException" },
@@ -591,6 +595,9 @@ const struct {
 	{ &mpool_stat_st_hash_max_wait_fid, &mpool_stat_class, "st_hash_max_wait", "I" },
 	{ &mpool_stat_st_region_nowait_fid, &mpool_stat_class, "st_region_nowait", "I" },
 	{ &mpool_stat_st_region_wait_fid, &mpool_stat_class, "st_region_wait", "I" },
+	{ &mpool_stat_st_mvcc_frozen_fid, &mpool_stat_class, "st_mvcc_frozen", "I" },
+	{ &mpool_stat_st_mvcc_thawed_fid, &mpool_stat_class, "st_mvcc_thawed", "I" },
+	{ &mpool_stat_st_mvcc_freed_fid, &mpool_stat_class, "st_mvcc_freed", "I" },
 	{ &mpool_stat_st_alloc_fid, &mpool_stat_class, "st_alloc", "I" },
 	{ &mpool_stat_st_alloc_buckets_fid, &mpool_stat_class, "st_alloc_buckets", "I" },
 	{ &mpool_stat_st_alloc_max_buckets_fid, &mpool_stat_class, "st_alloc_max_buckets", "I" },
@@ -761,6 +768,8 @@ const struct {
 	{ &repunavailex_construct, &repunavailex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &runrecex_construct, &runrecex_class, "<init>",
+	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
+	{ &updconfex_construct, &updconfex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &versionex_construct, &versionex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },

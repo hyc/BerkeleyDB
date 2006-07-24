@@ -4,7 +4,7 @@
  * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_backup.c,v 12.62 2006/06/12 23:18:08 bostic Exp $
+ * $Id: rep_backup.c,v 12.63 2006/07/03 14:18:44 sue Exp $
  */
 
 #include "db_config.h"
@@ -50,13 +50,14 @@ __rep_update_req(dbenv, eid)
 	DB_ENV *dbenv;
 	int eid;
 {
-	DBT updbt;
+	DBT updbt, vdbt;
 	DB_LOG *dblp;
+	DB_LOGC *logc;
 	DB_LSN lsn;
 	size_t filelen, filesz, updlen;
-	u_int32_t filecnt;
+	u_int32_t filecnt, version;
 	u_int8_t *buf, *fp;
-	int ret;
+	int ret, t_ret;
 
 	/*
 	 * Allocate enough for all currently open files and then some.
@@ -71,6 +72,7 @@ __rep_update_req(dbenv, eid)
 	 *	...
 	 */
 	dblp = dbenv->lg_handle;
+	logc = NULL;
 	filecnt = 0;
 	filelen = 0;
 	updlen = 0;
@@ -95,9 +97,25 @@ __rep_update_req(dbenv, eid)
 		goto err;
 
 	/*
+	 * Now get the version number of the log file of that LSN.
+	 */
+	if ((ret = __log_cursor(dbenv, &logc)) != 0)
+		goto err;
+
+	memset(&vdbt, 0, sizeof(vdbt));
+	/*
+	 * Set our log cursor on the LSN we are sending.
+	 */
+	if ((ret = __log_c_get(logc, &lsn, &vdbt, DB_SET)) != 0)
+		goto err;
+
+	if ((ret = __log_c_version(logc, &version)) != 0)
+		goto err;
+	/*
 	 * Package up the update information.
 	 */
-	if ((ret = __rep_update_buf(buf, filesz, &updlen, &lsn, filecnt)) != 0)
+	if ((ret = __rep_update_buf(buf, filesz, &updlen,
+	    &lsn, version, filecnt)) != 0)
 		goto err;
 	/*
 	 * We have all the file information now.  Send it to the client.
@@ -111,6 +129,8 @@ __rep_update_req(dbenv, eid)
 	    dbenv, eid, REP_UPDATE, &lsn, &updbt, 0, DB_REP_ANYWHERE);
 
 err:	__os_free(dbenv, buf);
+	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
+		ret = t_ret;
 	return (ret);
 }
 
@@ -901,6 +921,7 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	 */
 	REP_SYSTEM_LOCK(dbenv);
 	rep->first_lsn = rup->first_lsn;
+	rep->first_vers = rup->first_vers;
 	rep->last_lsn = rp->lsn;
 	rep->nfiles = rup->num_files;
 	rep->curfile = 0;
@@ -1988,7 +2009,7 @@ __rep_log_setup(dbenv, rep)
 	 * Set up the log starting at the file number of the first LSN we
 	 * need to get from the master.
 	 */
-	ret = __log_newfile(dblp, &lsn, rep->first_lsn.file);
+	ret = __log_newfile(dblp, &lsn, rep->first_lsn.file, rep->first_vers);
 
 	/*
 	 * We reset first_lsn to the lp->lsn.  We were given the LSN of

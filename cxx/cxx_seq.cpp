@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: cxx_seq.cpp,v 12.4 2006/05/05 14:53:12 bostic Exp $
+ * $Id: cxx_seq.cpp,v 12.5 2006/06/27 22:48:00 bostic Exp $
  */
 
 #include "db_config.h"
@@ -87,20 +87,20 @@ DBSEQ_METHOD(get_range, (db_seq_t *minp, db_seq_t *maxp), (seq, minp, maxp), 0)
 DBSEQ_METHOD(set_range, (db_seq_t min, db_seq_t max), (seq, min, max), 0)
 
 Db *DbSequence::get_db()
-{     
+{
 	DB_SEQUENCE *seq = unwrap(this);
 	DB *db;
 	(void)seq->get_db(seq, &db);
 	return Db::get_Db(db);
-} 
+}
 
 Dbt *DbSequence::get_key()
-{     
+{
 	DB_SEQUENCE *seq = unwrap(this);
 	memset(&key_, 0, sizeof (DBT));
 	(void)seq->get_key(seq, &key_);
 	return Dbt::get_Dbt(&key_);
-} 
+}
 
 // static method
 DbSequence *DbSequence::wrap_DB_SEQUENCE(DB_SEQUENCE *seq)

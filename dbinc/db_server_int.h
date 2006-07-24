@@ -4,11 +4,15 @@
  * Copyright (c) 2000-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_server_int.h,v 12.7 2006/01/02 22:01:50 bostic Exp $
+ * $Id: db_server_int.h,v 12.8 2006/07/05 05:37:08 mjc Exp $
  */
 
 #ifndef _DB_SERVER_INT_H_
 #define	_DB_SERVER_INT_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #define	DB_SERVER_TIMEOUT	300	/* 5 minutes */
 #define	DB_SERVER_MAXTIMEOUT	1200	/* 20 minutes */
@@ -151,4 +155,7 @@ extern int __dbsrv_verbose;
 		__os_ufree((dbenv), (p));				\
 } while (0)
 
+#if defined(__cplusplus)
+}
+#endif
 #endif	/* !_DB_SERVER_INT_H_ */

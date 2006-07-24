@@ -3,7 +3,7 @@
 # Copyright (c) 1996-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: testutils.tcl,v 12.16 2006/02/24 21:06:55 carol Exp $
+# $Id: testutils.tcl,v 12.19 2006/07/19 17:45:36 carol Exp $
 #
 # Test system utilities
 #
@@ -225,7 +225,7 @@ proc dump_file_walk { c outfile checkfunc start continue {flag ""} } {
 		set d2 [lindex $kd 1]
 		if { $checkfunc != "NONE" } {
 			$checkfunc $k $d2
-		}		
+		}
 		puts $outf $k
 		# XXX: Geoff Mainland
 		# puts $outf "$k $d2"
@@ -712,7 +712,7 @@ proc watch_procs { pidlist {delay 30} {max 3600} {quiet 0} } {
 			if { $r == 0 } {
 				lappend rlist $i
 			} else {
-				# It's OK if the process is already dead, but 
+				# It's OK if the process is already dead, but
 				# we want to know about other kinds of failures.
 				if { [is_substr $res "no such process"] == 0 &&
 				    [is_substr $res "No such process"] == 0 &&
@@ -740,6 +740,15 @@ proc watch_procs { pidlist {delay 30} {max 3600} {quiet 0} } {
 	if { $quiet == 0 } {
 		puts "All processes have exited."
 	}
+
+	#
+	# Once we are done, remove all old sentinel files.
+	#
+	set oldsent [glob -nocomplain $testdir/begin* $testdir/end*]
+	foreach f oldsent {
+		fileremove -f $f
+	}
+
 }
 
 # These routines are all used from within the dbscript.tcl tester.
@@ -1214,13 +1223,13 @@ proc cleanup { dir env { quiet 0 } } {
 		}
 		if {[llength $remfiles] > 0} {
 			#
-			# In the HFS file system there are cases where not 
-			# all files are removed on the first attempt.  If 
-			# it fails, try again a few times. 
-			# 
-			# This bug has been compensated for in Tcl with a fix 
-			# checked into Tcl 8.4.  When Berkeley DB requires 
-			# Tcl 8.5, we can remove this while loop and replace 
+			# In the HFS file system there are cases where not
+			# all files are removed on the first attempt.  If
+			# it fails, try again a few times.
+			#
+			# This bug has been compensated for in Tcl with a fix
+			# checked into Tcl 8.4.  When Berkeley DB requires
+			# Tcl 8.5, we can remove this while loop and replace
 			# it with a simple 'fileremove -f $remfiles'.
 			#
 			set count 0
@@ -3001,7 +3010,7 @@ proc dumploadtest { db } {
 	eval berkdb dbremove $dbarg $newdbname
 }
 
-# Test regular and aggressive salvage procedures for all databases 
+# Test regular and aggressive salvage procedures for all databases
 # in a directory.
 proc salvagetest { dir { noredo 0 } { quiet 0 } } {
 	global util_path
@@ -3032,23 +3041,23 @@ proc salvagetest { dir { noredo 0 } { quiet 0 } } {
 		set salvagefile $db-salvage
 		set sortedsalvage $db-salvage-sorted
 		set aggsalvagefile $db-aggsalvage
-	
+
 		set dbarg ""
 		set utilflag ""
 		if { $encrypt != 0 } {
 			set dbarg "-encryptany $passwd"
 			set utilflag "-P $passwd"
 		}
-	
-		# Dump the database with salvage, with aggressive salvage, 
+
+		# Dump the database with salvage, with aggressive salvage,
 		# and without salvage.
 		#
 		set rval [catch {eval {exec $util_path/db_dump} $utilflag -r \
 		    -f $salvagefile $db} res]
 		error_check_good salvage($db:$res) $rval 0
 		filesort $salvagefile $sortedsalvage
-	
-		# We can't avoid occasional verify failures in aggressive 
+
+		# We can't avoid occasional verify failures in aggressive
 		# salvage.  Make sure it's the expected failure.
 		set rval [catch {eval {exec $util_path/db_dump} $utilflag -R \
 		    -f $aggsalvagefile $db} res]
@@ -3059,22 +3068,22 @@ puts "res is $res"
 		} else {
 			error_check_good aggressive_salvage($db:$res) $rval 0
 		}
-	
-		# Queue databases must be dumped with -k to display record 
+
+		# Queue databases must be dumped with -k to display record
 		# numbers if we're not in salvage mode.
 		if { [isqueuedump $salvagefile] == 1 } {
 			append utilflag " -k "
 		}
-	
+
 		# Discard db_pagesize lines from file dumped with ordinary
-		# db_dump -- they are omitted from a salvage dump. 
+		# db_dump -- they are omitted from a salvage dump.
 		set rval [catch {eval {exec $util_path/db_dump} $utilflag \
 		    -f $dumpfile $db} res]
 		error_check_good dump($db:$res) $rval 0
 		filesort $dumpfile $sorteddump
 		discardline $sorteddump TEMPFILE "db_pagesize="
 		file copy -force TEMPFILE $sorteddump
-	
+
 		# A non-aggressively salvaged file should match db_dump.
 		error_check_good compare_dump_and_salvage \
 		    [filecmp $sorteddump $sortedsalvage] 0
@@ -3083,7 +3092,7 @@ puts "res is $res"
 	}
 }
 
-# Reads infile, writes to outfile, discarding any line whose 
+# Reads infile, writes to outfile, discarding any line whose
 # beginning matches the given string.
 proc discardline { infile outfile discard } {
 	set fdin [open $infile r]
@@ -3094,11 +3103,11 @@ proc discardline { infile outfile discard } {
 			puts $fdout $str
 		}
 	}
-	close $fdin 
+	close $fdin
 	close $fdout
 }
 
-# Inspects dumped file for "type=" line.  Returns 1 if type=queue. 
+# Inspects dumped file for "type=" line.  Returns 1 if type=queue.
 proc isqueuedump { file } {
 	set fd [open $file r]
 
@@ -3114,7 +3123,7 @@ proc isqueuedump { file } {
 		}
 	}
 	puts "did not find type= line in dumped file"
-	close $fd 
+	close $fd
 }
 
 # Generate randomly ordered, guaranteed-unique four-character strings that can
@@ -3618,7 +3627,7 @@ proc get_logfile { env where } {
 }
 
 # Determine whether logs are in-mem or on-disk.
-# This requires the existence of logs to work correctly. 
+# This requires the existence of logs to work correctly.
 proc check_log_location { env } {
 	if { [catch {get_logfile $env first} res] } {
 		puts "FAIL: env $env not configured for logging"
@@ -3640,15 +3649,19 @@ proc check_log_location { env } {
 
 proc find_valid_methods { test } {
 	global checking_valid_methods
-	global valid_methods
-	set checking_valid_methods 1
 	set valid_methods \
 	    { btree rbtree queue queueext hash recno frecno rrecno }
 
 	# To find valid methods, call the test with checking_valid_methods
 	# on.  It doesn't matter what method we use for this call, so we
 	# arbitrarily pick btree.
-	set valid_methods [$test btree]
+	#
+	set checking_valid_methods 1
+	set test_methods [$test btree]
 	set checking_valid_methods 0
-	return $valid_methods
+	if { $test_methods == "ALL" } {
+		return $valid_methods
+	} else {
+		return $test_methods
+	}		
 }

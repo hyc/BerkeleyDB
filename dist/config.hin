@@ -24,6 +24,9 @@
 /* Define to 1 if 64-bit types are available. */
 #undef HAVE_64BIT_TYPES
 
+/* Define to 1 if you have the `abort' function. */
+#undef HAVE_ABORT
+
 /* Define to 1 if you have the `atoi' function. */
 #undef HAVE_ATOI
 
@@ -476,14 +479,6 @@
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
-
-/*
- * Exit success/failure macros.
- */
-#ifndef	HAVE_EXIT_SUCCESS
-#define	EXIT_FAILURE	1
-#define	EXIT_SUCCESS	0
-#endif
 
 #include "clib_port.h"
 

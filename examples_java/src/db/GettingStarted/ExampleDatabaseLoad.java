@@ -114,7 +114,7 @@ public class ExampleDatabaseLoad {
             myDbs.getVendorDB().put(null, theKey, theData);
         }
     }
-    
+
 
     private void loadInventoryDb()
         throws DatabaseException {

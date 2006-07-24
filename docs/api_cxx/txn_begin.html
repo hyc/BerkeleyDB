@@ -1,4 +1,4 @@
-<!--$Id: txn_begin.so,v 10.75 2006/04/28 15:27:41 mjc Exp $-->
+<!--$Id: txn_begin.so,v 10.76 2006/07/14 07:49:11 mjc Exp $-->
 <!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -73,12 +73,12 @@ overrides that setting.</p>
 of this transaction, cause the operation to
 return DB_LOCK_DEADLOCK or throw a <a href="../api_cxx/deadlock_class.html">DbDeadlockException</a>
 immediately instead of blocking on the lock.
-<dt><a name="DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a><dd>This transaction will have snapshot isolation.  For databases with the
+<dt><a name="DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a><dd>This transaction will execute with snapshot isolation.  For databases with the
 <a href="../api_cxx/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a> flag set, data values will be read as they are when
-the transaction begins, without taking read locks.  Updates operations
-performed in the transaction will cause the error
-<a href="../api_cxx/memp_fget.html#DB_UPDATE_CONFLICT">DB_UPDATE_CONFLICT</a> if data is modified between reading and
-writing it.
+the transaction begins, without taking read locks.  
+<p>The error <a href="../api_cxx/memp_fget.html#DB_UPDATE_CONFLICT">DB_UPDATE_CONFLICT</a> will be returned from update
+operations if a snapshot transaction attempts to update data
+which was modified after the snapshot transaction read it.</p>
 <dt><a name="DB_TXN_SYNC">DB_TXN_SYNC</a><dd>Synchronously flush the log when this transaction commits or prepares.
 This means the transaction will exhibit all of the ACID (atomicity,
 consistency, isolation, and durability) properties.

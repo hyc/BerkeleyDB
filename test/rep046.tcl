@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep046.tcl,v 12.11 2006/03/10 21:44:32 carol Exp $
+# $Id: rep046.tcl,v 12.13 2006/07/19 17:45:35 carol Exp $
 #
 # TEST  rep046
 # TEST	Replication and basic bulk transfer.
@@ -22,7 +22,7 @@ proc rep046 { method { nentries 200 } { tnum "046" } args } {
 	}
 
 	if { $checking_valid_methods } {
-		return $valid_methods 
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -136,7 +136,7 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 	set bulkxfer2 [stat_field $masterenv rep_stat "Bulk buffer transfers"]
 	error_check_good recstat [expr $bulkrec2 > $bulkrec1] 1
 	error_check_good xferstat [expr $bulkxfer2 > $bulkxfer1] 1
-	rep_verify $masterdir $masterenv $clientdir $clientenv 
+	rep_verify $masterdir $masterenv $clientdir $clientenv
 
 	puts "\tRep$tnum.c: Very long txn"
 	set skip $niter
@@ -166,8 +166,8 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 	#
 	# Send in '2' exactly because we're sending in the flag to use
 	# the overflow entries.  We have 2 overflow entries.
-	# If it's fixed length, we can't overflow.  Induce throttling by 
-	# putting in a bunch more entries. 
+	# If it's fixed length, we can't overflow.  Induce throttling by
+	# putting in a bunch more entries.
 	if { [is_fixed_length $method] == 1 } {
 		rep_test_bulk $method $masterenv $masterdb $niter $start $start 0
 	} else {

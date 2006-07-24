@@ -4,7 +4,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: ex_tpcb.c,v 12.3 2006/01/02 22:01:59 bostic Exp $
+ * $Id: ex_tpcb.c,v 12.4 2006/07/22 14:13:03 bostic Exp $
  */
 
 #include <sys/types.h>
@@ -247,7 +247,8 @@ db_init(home, prefix, cachesize, flags)
 	int ret;
 
 	if ((ret = db_env_create(&dbenv, 0)) != 0) {
-		dbenv->err(dbenv, ret, "db_env_create");
+		fprintf(stderr,
+		    "%s: db_env_create: %s\n", progname, db_strerror(ret));
 		return (NULL);
 	}
 	dbenv->set_errfile(dbenv, stderr);

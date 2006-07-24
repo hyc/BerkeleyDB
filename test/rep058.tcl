@@ -3,10 +3,10 @@
 # Copyright (c) 2005-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep058.tcl,v 12.5 2006/05/03 20:27:33 carol Exp $
+# $Id: rep058.tcl,v 12.7 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep058
-# TEST	
+# TEST
 # TEST	Replication with early databases
 # TEST
 # TEST	Mimic an application where they create a database before
@@ -16,15 +16,15 @@
 proc rep058 { method { tnum "058" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# There should be no difference with methods.  Just use btree.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree }
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep058: Skipping for method $method."
@@ -33,10 +33,10 @@ proc rep058 { method { tnum "058" } args } {
 
 	set args [convert_args $method $args]
 
-	set logsets [create_logsets 2] 
+	set logsets [create_logsets 2]
 	foreach r $test_recopts {
 		foreach l $logsets {
-			set logindex [lsearch -exact $l "in-memory"] 
+			set logindex [lsearch -exact $l "in-memory"]
 			if { $r == "-recover" && $logindex != -1 } {
 				puts "Skipping test with -recover for\
 				    in-memory logs."
@@ -64,13 +64,13 @@ proc rep058_sub { method tnum logset recargs largs } {
 	replsetup $testdir/MSGQUEUEDIR
 	file mkdir $masterdir
 	file mkdir $clientdir
-	
-	set m_logtype [lindex $logset 0] 
-	set c_logtype [lindex $logset 1] 
 
-	# In-memory logs require a large log buffer, and cannot 
-	# be used with -txn nosync.  Adjust the args for master 
-	# and client. 
+	set m_logtype [lindex $logset 0]
+	set c_logtype [lindex $logset 1]
+
+	# In-memory logs require a large log buffer, and cannot
+	# be used with -txn nosync.  Adjust the args for master
+	# and client.
 	set m_logargs [adjust_logargs $m_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]

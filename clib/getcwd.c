@@ -32,14 +32,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: getcwd.c,v 12.3 2006/05/05 14:53:08 bostic Exp $
+ * $Id: getcwd.c,v 12.4 2006/06/27 22:48:00 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
 
-#ifndef NO_SYSTEM_INCLUDES 
+#ifndef NO_SYSTEM_INCLUDES
 #if HAVE_DIRENT_H
 # include <dirent.h>
 # define NAMLEN(dirent) strlen((dirent)->d_name)

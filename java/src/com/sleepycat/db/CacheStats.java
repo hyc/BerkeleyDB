@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class CacheStats {
     // no public constructor
-    protected CacheStats() {}
+    /* package */ CacheStats() {}
 
     private int st_gbytes;
     public int getGbytes() {
@@ -158,6 +158,21 @@ public class CacheStats {
         return st_region_wait;
     }
 
+    private int st_mvcc_frozen;
+    public int getMultiversionFrozen() {
+        return st_mvcc_frozen;
+    }
+
+    private int st_mvcc_thawed;
+    public int getMultiversionThawed() {
+        return st_mvcc_thawed;
+    }
+
+    private int st_mvcc_freed;
+    public int getMultiversionFreed() {
+        return st_mvcc_freed;
+    }
+
     private int st_alloc;
     public int getAlloc() {
         return st_alloc;
@@ -219,6 +234,9 @@ public class CacheStats {
             + "\n  st_hash_max_wait=" + st_hash_max_wait
             + "\n  st_region_nowait=" + st_region_nowait
             + "\n  st_region_wait=" + st_region_wait
+            + "\n  st_mvcc_frozen=" + st_mvcc_frozen
+            + "\n  st_mvcc_thawed=" + st_mvcc_thawed
+            + "\n  st_mvcc_freed=" + st_mvcc_freed
             + "\n  st_alloc=" + st_alloc
             + "\n  st_alloc_buckets=" + st_alloc_buckets
             + "\n  st_alloc_max_buckets=" + st_alloc_max_buckets

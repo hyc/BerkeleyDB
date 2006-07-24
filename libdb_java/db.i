@@ -609,6 +609,12 @@ struct DbEnv
 	}
 #endif
 
+	DB_TXN *cdsgroup_begin() {
+		DB_TXN *tid = NULL;
+		errno = self->cdsgroup_begin(self, &tid);
+		return tid;
+	}
+
 	db_ret_t fileid_reset(const char *file, u_int32_t flags) {
 		return self->fileid_reset(self, file, flags);
 	}
@@ -780,7 +786,7 @@ struct DbEnv
 	}
 
 	db_ret_t set_event_notify(
-	    void (*event_notify)(DB_ENV *, u_int32_t)) {
+	    void (*event_notify)(DB_ENV *, u_int32_t, void *)) {
 		return self->set_event_notify(self, event_notify);
 	}
 

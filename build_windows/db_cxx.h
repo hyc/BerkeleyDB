@@ -5,7 +5,7 @@
  * Copyright (c) 1997-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_cxx.in,v 12.24 2006/06/19 14:25:34 mjc Exp $
+ * $Id: db_cxx.in,v 12.25 2006/07/17 13:08:09 mjc Exp $
  */
 
 #ifndef _DB_CXX_H_
@@ -388,6 +388,7 @@ public:
 
 	// These methods match those in the C interface.
 	//
+	virtual int cdsgroup_begin(DbTxn **tid);
 	virtual int close(u_int32_t);
 	virtual int dbremove(DbTxn *txn, const char *name, const char *subdb,
 	    u_int32_t flags);

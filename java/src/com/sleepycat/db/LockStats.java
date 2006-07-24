@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class LockStats {
     // no public constructor
-    protected LockStats() {}
+    /* package */ LockStats() {}
 
     private int st_id;
     public int getId() {

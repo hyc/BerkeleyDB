@@ -11,7 +11,7 @@ package com.sleepycat.db;
 
 public class SequenceStats {
     // no public constructor
-    protected SequenceStats() {}
+    /* package */ SequenceStats() {}
 
     private int st_wait;
     public int getWait() {

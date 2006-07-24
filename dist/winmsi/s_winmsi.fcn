@@ -1,4 +1,4 @@
-#	$Id: s_winmsi.fcn,v 1.10 2005/12/01 03:04:20 bostic Exp $
+#	$Id: s_winmsi.fcn,v 1.11 2006/06/29 23:57:29 alexg Exp $
 #
 # The common functions used by the s_winmsi scripts (both
 # for core DB and DB/XML).
@@ -959,10 +959,11 @@ CleanInputFile() {
         -e 's:\${PRODUCT_MAJMIN}:'"${PRODUCT_MAJMIN}":g \
         -e 's:\${PRODUCT_STAGE}:'"${PRODUCT_STAGE}":g \
 	-e 's:\${PRODUCT_SHARED_WINMSIDIR}:'"${PRODUCT_SHARED_WINMSIDIR}":g \
+        -e 's/^[ \t]*$//'	\
           < "$1" > "$2"
 
    # count tabs on each line
-   sed -e 's/[^	]//g' -e 's/[	]/x/g' < "$2" | (
+   sed -e 's/[^\t]//g' -e 's/[\t]/x/g' < "$2" | (
         read line
         linecount=1
         while [ "$line" != '' ]; do

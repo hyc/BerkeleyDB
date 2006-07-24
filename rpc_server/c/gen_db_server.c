@@ -23,6 +23,20 @@ __db_env_create_4005__SVCSUFFIX__(msg, req)
 	return (&reply);
 }
 
+__env_cdsgroup_begin_reply *
+__db_env_cdsgroup_begin_4005__SVCSUFFIX__(msg, req)
+	__env_cdsgroup_begin_msg *msg;
+	struct svc_req *req;
+{
+	static __env_cdsgroup_begin_reply reply; /* must be static */
+	COMPQUIET(req, NULL);
+
+	__env_cdsgroup_begin_proc(msg->dbenvcl_id,
+	    &reply);
+
+	return (&reply);
+}
+
 __env_close_reply *
 __db_env_close_4005__SVCSUFFIX__(msg, req)
 	__env_close_msg *msg;

@@ -4,11 +4,16 @@
  * Copyright (c) 1998-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: db_join.h,v 12.3 2006/01/02 22:01:49 bostic Exp $
+ * $Id: db_join.h,v 12.4 2006/07/05 05:37:08 mjc Exp $
  */
 
 #ifndef _DB_JOIN_H_
 #define	_DB_JOIN_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /*
  * Joins use a join cursor that is similar to a regular DB cursor except
  * that it only supports c_get and c_close functionality.  Also, it does
@@ -27,4 +32,7 @@ typedef struct __join_cursor {
 	u_int32_t flags;
 } JOIN_CURSOR;
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_DB_JOIN_H_ */

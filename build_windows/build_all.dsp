@@ -21,10 +21,10 @@ CFG=build_all - Win32 Debug
 !MESSAGE "build_all - Win32 Debug" (based on "Win32 (x86) External Target")
 !MESSAGE "build_all - Win32 ASCII Debug" (based on "Win32 (x86) External Target")
 !MESSAGE "build_all - Win32 ASCII Release" (based on "Win32 (x86) External Target")
-!MESSAGE "build_all - Win64 Debug AMD64" (based on "Win32 (x86) External Target")
-!MESSAGE "build_all - Win64 Release AMD64" (based on "Win32 (x86) External Target")
-!MESSAGE "build_all - Win64 Debug IA64" (based on "Win32 (x86) External Target")
-!MESSAGE "build_all - Win64 Release IA64" (based on "Win32 (x86) External Target")
+!MESSAGE "build_all - x64 Debug AMD64" (based on "Win32 (x86) External Target")
+!MESSAGE "build_all - x64 Release AMD64" (based on "Win32 (x86) External Target")
+!MESSAGE "build_all - x64 Debug IA64" (based on "Win32 (x86) External Target")
+!MESSAGE "build_all - x64 Release IA64" (based on "Win32 (x86) External Target")
 !MESSAGE 
 
 # Begin Project
@@ -90,7 +90,7 @@ CFG=build_all - Win32 Debug
 # PROP Cmd_Line "echo DB Release version built."
 # PROP Target_Dir ""
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Debug AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -105,7 +105,7 @@ CFG=build_all - Win32 Debug
 # PROP Cmd_Line "echo DB Debug version built."
 # PROP Target_Dir ""
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Release AMD64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -120,7 +120,7 @@ CFG=build_all - Win32 Debug
 # PROP Cmd_Line "echo DB Release version built."
 # PROP Target_Dir ""
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Debug IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -135,7 +135,7 @@ CFG=build_all - Win32 Debug
 # PROP Cmd_Line "echo DB Debug version built."
 # PROP Target_Dir ""
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Release IA64"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -158,10 +158,10 @@ CFG=build_all - Win32 Debug
 # Name "build_all - Win32 Debug"
 # Name "build_all - Win32 ASCII Debug"
 # Name "build_all - Win32 ASCII Release"
-# Name "build_all - Win64 Debug AMD64"
-# Name "build_all - Win64 Release AMD64"
-# Name "build_all - Win64 Debug IA64"
-# Name "build_all - Win64 Release IA64"
+# Name "build_all - x64 Debug AMD64"
+# Name "build_all - x64 Release AMD64"
+# Name "build_all - x64 Debug IA64"
+# Name "build_all - x64 Release IA64"
 
 !IF  "$(CFG)" == "build_all - Win32 Release"
 
@@ -171,13 +171,13 @@ CFG=build_all - Win32 Debug
 
 !ELSEIF  "$(CFG)" == "build_all - Win32 ASCII Release"
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Debug AMD64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Debug AMD64"
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Release AMD64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Release AMD64"
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Debug IA64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Debug IA64"
 
-!ELSEIF  "$(CFG)" == "build_all - Win64 Release IA64"
+!ELSEIF  "$(CFG)" == "build_all - x64 Release IA64"
 
 !ENDIF 
 

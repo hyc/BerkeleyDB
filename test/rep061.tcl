@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep061.tcl,v 1.1 2006/04/19 18:36:37 sue Exp $
+# $Id: rep061.tcl,v 1.3 2006/07/19 17:45:36 carol Exp $
 #
 # TEST	rep061
 # TEST	Test of internal initialization multiple files and pagesizes
@@ -19,24 +19,20 @@
 proc rep061 { method { niter 500 } { tnum "061" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for btree and queue only.
-	if { $checking_valid_methods } { 
+	if { $checking_valid_methods } {
+		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_btree $method] != 1 && \
-			    [is_queue $method] != 1 } {
-				set idx [lsearch -exact $valid_methods $method]
-				if { $idx >= 0 } { 
-					set valid_methods \
-					    [lreplace $valid_methods $idx $idx]
-				}
+			if { [is_btree $method] == 1 || [is_queue $method] == 1 } {
+				lappend test_methods $method
 			}
 		}
-		return $valid_methods
+		return $test_methods
 	}
 	if { [is_btree $method] != 1 && [is_queue $method] != 1 } {
 		puts "Skipping rep061 for method $method."
@@ -121,7 +117,7 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_txnargs [adjust_txnargs $m_logtype]
 	set c_txnargs [adjust_txnargs $c_logtype]
 
@@ -224,7 +220,7 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	error_check_good emptydb [is_valid_db $db] TRUE
 	error_check_good empty_close [$db close] 0
 	#
-	# Keep this subdb (regular if queue) database open. 
+	# Keep this subdb (regular if queue) database open.
 	# We need it a few times later on.
 	#
 	set db [eval {berkdb_open_noerr -env $masterenv -auto_commit -create \

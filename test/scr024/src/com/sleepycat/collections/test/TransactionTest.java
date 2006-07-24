@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TransactionTest.java,v 12.5 2006/06/09 14:32:42 mark Exp $
+ * $Id: TransactionTest.java,v 12.6 2006/06/27 22:48:28 bostic Exp $
  */
 
 package com.sleepycat.collections.test;
@@ -200,7 +200,7 @@ public class TransactionTest extends TestCase {
         DatabaseConfig dbConfig = new DatabaseConfig();
         DbCompat.setTypeBtree(dbConfig);
         dbConfig.setAllowCreate(true);
-        Database db = DbCompat.openDatabase(env, null, 
+        Database db = DbCompat.openDatabase(env, null,
                                             dbName(1), null,
                                             dbConfig);
         map = new StoredSortedMap(db, testStore.getKeyBinding(),
@@ -214,7 +214,7 @@ public class TransactionTest extends TestCase {
         //
         dbConfig.setTransactional(true);
         currentTxn.beginTransaction(null);
-        db = DbCompat.openDatabase(env, currentTxn.getTransaction(), 
+        db = DbCompat.openDatabase(env, currentTxn.getTransaction(),
                                    dbName(2), null, dbConfig);
         currentTxn.commitTransaction();
         map = new StoredSortedMap(db, testStore.getKeyBinding(),

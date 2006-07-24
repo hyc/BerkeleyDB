@@ -4,7 +4,7 @@
  * Copyright (c) 2004-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: rep_elect.c,v 12.23 2006/06/12 23:18:08 bostic Exp $
+ * $Id: rep_elect.c,v 12.25 2006/06/27 22:22:07 bostic Exp $
  */
 
 #include "db_config.h"
@@ -13,6 +13,19 @@
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
 #include "dbinc/log.h"
+
+/*
+ * We need to check sites == nsites, not more than half
+ * like we do in __rep_elect and the VOTE2 code.  The
+ * reason is that we want to process all the incoming votes
+ * and not short-circuit once we reach more than half.  The
+ * real winner's vote may be in the last half.
+ */
+#define	IS_PHASE1_DONE(rep)    \
+    ((rep)->sites >= (rep)->nsites && (rep)->w_priority != 0)
+
+#define	I_HAVE_WON(rep, winner)   \
+    ((rep)->votes >= (rep)->nvotes && winner == (rep)->eid)
 
 static void __rep_cmp_vote __P((DB_ENV *, REP *, int, DB_LSN *,
     int, u_int32_t, u_int32_t, u_int32_t));
@@ -183,17 +196,22 @@ restart:
 	/* Now send vote */
 	send_vote = DB_EID_INVALID;
 	egen = rep->egen;
+	done = IS_PHASE1_DONE(rep);
 	REP_SYSTEM_UNLOCK(dbenv);
 	__rep_send_vote(dbenv, &lsn, nsites, ack, priority, tiebreaker, egen,
 	    DB_EID_BROADCAST, REP_VOTE1, ctlflags);
 	DB_ENV_TEST_RECOVERY(dbenv, DB_TEST_ELECTVOTE1, ret, NULL);
+	if (done) {
+		REP_SYSTEM_LOCK(dbenv);
+		goto vote;
+	}
 	ret = __rep_wait(dbenv, to, eidp, REP_F_EPHASE1);
 	switch (ret) {
 		case 0:
 			/* Check if election complete or phase complete. */
 			if (*eidp != DB_EID_INVALID) {
 				RPRINT(dbenv, (dbenv, &mb,
-				    "Ended election phase 1 %d", ret));
+				    "Ended election phase 1"));
 				goto edone;
 			}
 			goto phase2;
@@ -236,7 +254,7 @@ restart:
 		goto restart;
 	}
 	if (rep->sites >= rep->nvotes) {
-
+vote:
 		/* We think we've seen enough to cast a vote. */
 		send_vote = rep->winner;
 		/*
@@ -287,7 +305,15 @@ restart:
 
 		}
 
-phase2:		ret = __rep_wait(dbenv, to, eidp, REP_F_EPHASE2);
+phase2:
+		if (I_HAVE_WON(rep, send_vote)) {
+			RPRINT(dbenv, (dbenv, &mb,
+			    "Skipping phase2 wait: already got %d votes",
+			    rep->votes));
+			REP_SYSTEM_LOCK(dbenv);
+			goto i_won;
+		}
+		ret = __rep_wait(dbenv, to, eidp, REP_F_EPHASE2);
 		RPRINT(dbenv, (dbenv, &mb,
 		    "Ended election phase 2 %d", ret));
 		switch (ret) {
@@ -318,10 +344,10 @@ phase2:		ret = __rep_wait(dbenv, to, eidp, REP_F_EPHASE2);
 		}
 		done = rep->votes >= rep->nvotes;
 		RPRINT(dbenv, (dbenv, &mb,
-		    "After phase 2: done %d, votes %d, nsites %d",
-		    done, rep->votes, rep->nsites));
-		if (send_vote == rep->eid && done) {
-			__rep_elect_master(dbenv, rep, eidp);
+		    "After phase 2: votes %d, nvotes %d, nsites %d",
+		    rep->votes, rep->nvotes, rep->nsites));
+		if (I_HAVE_WON(rep, send_vote)) {
+i_won:			__rep_elect_master(dbenv, rep, eidp);
 			ret = 0;
 			goto lockdone;
 		}
@@ -381,7 +407,7 @@ __rep_vote1(dbenv, rp, rec, eid)
 	REP_OLD_VOTE_INFO *ovi;
 	REP_VOTE_INFO tmpvi, *vi;
 	u_int32_t egen;
-	int done, master, ret;
+	int master, ret;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
 #endif
@@ -519,15 +545,7 @@ __rep_vote1(dbenv, rp, rec, eid)
 
 	master = rep->winner;
 	lsn = rep->w_lsn;
-	/*
-	 * We need to check sites == nsites, not more than half
-	 * like we do in __rep_elect and the VOTE2 code below.  The
-	 * reason is that we want to process all the incoming votes
-	 * and not short-circuit once we reach more than half.  The
-	 * real winner's vote may be in the last half.
-	 */
-	done = rep->sites >= rep->nsites && rep->w_priority >= 0;
-	if (done) {
+	if (IS_PHASE1_DONE(rep)) {
 		RPRINT(dbenv,
 		    (dbenv, &mb, "Phase1 election done"));
 		RPRINT(dbenv, (dbenv, &mb, "Voting for %d%s",
@@ -552,7 +570,7 @@ err:		REP_SYSTEM_UNLOCK(dbenv);
 
 /*
  * __rep_vote2 --
- *	Handle incoming vote1 message on a client.
+ *	Handle incoming vote2 message on a client.
  *
  * PUBLIC: int __rep_vote2 __P((DB_ENV *, DBT *, int *));
  */
@@ -569,7 +587,7 @@ __rep_vote2(dbenv, rec, eidp)
 	REP *rep;
 	REP_OLD_VOTE_INFO *ovi;
 	REP_VOTE_INFO tmpvi, *vi;
-	int done, ret;
+	int ret;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
 #endif
@@ -653,10 +671,9 @@ __rep_vote2(dbenv, rec, eidp)
 		ret = 0;
 		goto err;
 	}
-	done = rep->votes >= rep->nvotes;
 	RPRINT(dbenv, (dbenv, &mb, "Counted vote %d of %d",
 	    rep->votes, rep->nvotes));
-	if (done) {
+	if (I_HAVE_WON(rep, rep->winner)) {
 		__rep_elect_master(dbenv, rep, eidp);
 		ret = DB_REP_NEWMASTER;
 	}

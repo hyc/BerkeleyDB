@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: tcl_env.c,v 12.26 2006/06/12 19:13:56 sue Exp $
+ * $Id: tcl_env.c,v 12.28 2006/07/17 13:08:44 mjc Exp $
  */
 
 #include "db_config.h"
@@ -49,6 +49,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"attributes",
 		"errfile",
 		"errpfx",
+		"event",
 		"id_reset",
 		"lock_detect",
 		"lock_id",
@@ -92,6 +93,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"txn_timeout",
 		"verbose",
 #endif
+		"cdsgroup",
 		"close",
 		"dbremove",
 		"dbrename",
@@ -132,6 +134,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVATTR,
 		ENVERRFILE,
 		ENVERRPFX,
+		ENVEVENT,
 		ENVIDRESET,
 		ENVLKDETECT,
 		ENVLKID,
@@ -175,6 +178,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVTXNTIMEOUT,
 		ENVVERB,
 #endif
+		ENVCDSGROUP,
 		ENVCLOSE,
 		ENVDBREMOVE,
 		ENVDBRENAME,
@@ -258,6 +262,16 @@ env_Cmd(clientData, interp, objc, objv)
 	res = NULL;
 	switch ((enum envcmds)cmdindex) {
 #ifdef CONFIG_TEST
+	case ENVEVENT:
+		/*
+		 * Two args for this.  Error if different.
+		 */
+		if (objc != 3) {
+			Tcl_WrongNumArgs(interp, 2, objv, NULL);
+			return (TCL_ERROR);
+		}
+		result = tcl_EventNotify(interp, dbenv, objv[2], envip);
+		break;
 	case ENVIDRESET:
 		result = tcl_EnvIdReset(interp, objc, objv, dbenv);
 		break;
@@ -532,6 +546,9 @@ env_Cmd(clientData, interp, objc, objv)
 		result = tcl_EnvVerbose(interp, dbenv, objv[2], objv[3]);
 		break;
 #endif
+	case ENVCDSGROUP:
+		result = tcl_CDSGroup(interp, objc, objv, dbenv, envip);
+		break;
 	case ENVCLOSE:
 		/*
 		 * No args for this.  Error if there are some.
@@ -1408,6 +1425,42 @@ tcl_EnvAttr(interp, objc, objv, dbenv)
 	Tcl_SetObjResult(interp, retlist);
 err:
 	return (result);
+}
+
+/*
+ * tcl_EventNotify --
+ *	Call DB_ENV->set_event_notify().
+ *
+ * PUBLIC: int tcl_EventNotify  __P((Tcl_Interp *, DB_ENV *, Tcl_Obj *,
+ * PUBLIC:    DBTCL_INFO *));
+ *
+ *	Note that this normally can/should be achieved as an argument to
+ * berkdb env, but we need to test changing the event function on
+ * the fly.
+ */
+int
+tcl_EventNotify(interp, dbenv, eobj, ip)
+	Tcl_Interp *interp;		/* Interpreter */
+	DB_ENV *dbenv;
+	Tcl_Obj *eobj;		/* The event proc */
+	DBTCL_INFO *ip;
+{
+	int ret;
+
+	/*
+	 * We don't need to crack the event procedure out now.
+	 */
+	/*
+	 * If we're replacing an existing event proc, decrement it now.
+	 */
+	if (ip->i_event != NULL)
+		Tcl_DecrRefCount(ip->i_event);
+	ip->i_event = eobj;
+	Tcl_IncrRefCount(ip->i_event);
+	_debug_check();
+	ret = dbenv->set_event_notify(dbenv, _EventFunc);
+	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+	    "env event"));
 }
 
 /*

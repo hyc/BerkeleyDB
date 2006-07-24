@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep012.tcl,v 12.7 2006/03/10 21:42:11 carol Exp $
+# $Id: rep012.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep012
 # TEST	Replication and dead DB handles.
@@ -16,14 +16,14 @@
 proc rep012 { method { niter 10 } { tnum "012" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -130,7 +130,7 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 		set mpdb [eval {berkdb_open_noerr -env $env0 -auto_commit \
 		    -create -mode 0644} $largs $omethod $pname]
 		error_check_good dbopen [is_valid_db $mpdb] TRUE
-	
+
 		# Open the secondary
 		# Open a 2nd handle to the same secondary
 		set msdb [eval {berkdb_open_noerr -env $env0 -auto_commit \

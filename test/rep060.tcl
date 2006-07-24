@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep060.tcl,v 12.4 2006/03/10 21:44:32 carol Exp $
+# $Id: rep060.tcl,v 12.6 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep060
 # TEST	Test of normally running clients and internal initialization.
@@ -18,24 +18,20 @@ proc rep060 { method { niter 200 } { tnum "060" } args } {
 	source ./include.tcl
 
 	# Run for btree and queue only.
-	if { $checking_valid_methods } { 
+	if { $checking_valid_methods } {
+		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_btree $method] != 1 && \
-			    [is_queue $method] != 1 } {
-				set idx [lsearch -exact $valid_methods $method]
-				if { $idx >= 0 } { 
-					set valid_methods \
-					    [lreplace $valid_methods $idx $idx]
-				}
+			if { [is_btree $method] == 1 || [is_queue $method] == 1 } {
+				lappend test_methods $method
 			}
 		}
-		return $valid_methods
+		return $test_methods
 	}
 	if { [is_btree $method] != 1 && [is_queue $method] != 1 } {
 		puts "Skipping rep060 for method $method."
 		return
 	}
-	
+
 	set args [convert_args $method $args]
 
 	# This test needs to set its own pagesize.
@@ -100,7 +96,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -139,7 +135,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	set start 0
 	eval rep_test $method $masterenv $db $niter $start $start 0 0 $largs
 	incr start $niter
-	
+
 	set stop 0
 	set endlog 10
 	while { $stop == 0 } {
@@ -208,7 +204,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	}
 
 	#
-	# The user may have the database open itself.  
+	# The user may have the database open itself.
 	#
 	if { $opt == "user" } {
 		set cdb [eval {berkdb_open_noerr -env} $clientenv $dbname]
@@ -234,7 +230,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 		puts "\tRep$tnum.e1: Archive on master."
 		set res [eval exec $util_path/db_archive -d -h $masterdir]
 	} else {
-		# Master is in-memory, and we'll need a different 
+		# Master is in-memory, and we'll need a different
 		# technique to create the gap forcing internal init.
 		puts "\tRep$tnum.e1: Run rep_test until gap is created."
 		set stop 0
@@ -243,7 +239,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 			    NULL $niter $start $start 0 0 $largs
 			incr start $niter
 			set first_master_log [get_logfile $masterenv first]
-			if { $first_master_log > $last_client_log } { 
+			if { $first_master_log > $last_client_log } {
 				set stop 1
 			}
 		}
@@ -274,8 +270,8 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 				}
 			}
 		}
-	} 
-	process_msgs $envlist 
+	}
+	process_msgs $envlist
 
 	#
 	# If we get through the user loop with a valid db, then it better
@@ -293,7 +289,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 		puts "\tRep$tnum.h: Verify correct internal initialization."
 	}
 	error_check_good close [$db close] 0
-	process_msgs $envlist 
+	process_msgs $envlist
 
 	# We have now forced an internal initialization.  Verify it is correct.
 	rep_verify $masterdir $masterenv $clientdir $clientenv 1

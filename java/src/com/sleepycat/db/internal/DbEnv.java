@@ -228,6 +228,11 @@ public class DbEnv {
     db_javaJNI.DbEnv_errx(swigCPtr, message);
   }
 
+  public DbTxn cdsgroup_begin() throws com.sleepycat.db.DatabaseException {
+    long cPtr = db_javaJNI.DbEnv_cdsgroup_begin(swigCPtr);
+    return (cPtr == 0) ? null : new DbTxn(cPtr, false);
+  }
+
   public void fileid_reset(String file, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_fileid_reset(swigCPtr, file, flags); }
 
   public String[] get_data_dirs() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_data_dirs(swigCPtr); }

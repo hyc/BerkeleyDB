@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: mutex_int.h,v 12.20 2006/05/04 14:45:37 bostic Exp $
+ * $Id: mutex_int.h,v 12.21 2006/07/05 05:37:09 mjc Exp $
  */
 
 #ifndef _DB_MUTEX_INT_H_
 #define	_DB_MUTEX_INT_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*********************************************************************
  * POSIX.1 pthreads interface.
@@ -841,4 +845,7 @@ struct __db_mutex_t {			/* Mutex. */
 	(DB_MUTEX *)							\
 	    ((u_int8_t *)mtxmgr->mutex_array + (indx) * mtxregion->mutex_size);
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_DB_MUTEX_INT_H_ */

@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-int __rep_update_buf __P((u_int8_t *, size_t, size_t *, DB_LSN *, u_int32_t));
+int __rep_update_buf __P((u_int8_t *, size_t, size_t *, DB_LSN *, u_int32_t, u_int32_t));
 int __rep_update_read __P((DB_ENV *, void *, void **, __rep_update_args **));
 int __rep_fileinfo_buf __P((u_int8_t *, size_t, size_t *, u_int32_t, db_pgno_t, db_pgno_t, u_int32_t, int32_t, u_int32_t, u_int32_t, const DBT *, const DBT *));
 int __rep_fileinfo_read __P((DB_ENV *, void *, void **, __rep_fileinfo_args **));
@@ -80,6 +80,8 @@ int __op_rep_exit __P((DB_ENV *));
 int __rep_get_gen __P((DB_ENV *, u_int32_t *));
 int __rep_lockout __P((DB_ENV *, REP *, u_int32_t));
 int __rep_send_throttle __P((DB_ENV *, int, REP_THROTTLE *, u_int32_t));
+u_int32_t __rep_msg_to_old __P((u_int32_t, u_int32_t));
+u_int32_t __rep_msg_from_old __P((u_int32_t, u_int32_t));
 void __rep_print_message __P((DB_ENV *, int, REP_CONTROL *, char *));
 int __rep_verify __P((DB_ENV *, REP_CONTROL *, DBT *, int, time_t));
 int __rep_verify_fail __P((DB_ENV *, REP_CONTROL *, int));

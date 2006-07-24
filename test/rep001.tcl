@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep001.tcl,v 12.8 2006/03/10 21:42:11 carol Exp $
+# $Id: rep001.tcl,v 12.10 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  rep001
 # TEST	Replication rename and forced-upgrade test.
@@ -24,8 +24,8 @@ proc rep001 { method { niter 1000 } { tnum "001" } args } {
 		return
 	}
 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	# Rep056 runs rep001 with in-memory named databases.
@@ -61,13 +61,13 @@ proc rep001 { method { niter 1000 } { tnum "001" } args } {
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep001_sub $method \
 			    $niter $tnum $envargs $l $recopt $inmem $args
-	
+
 			# Skip encrypted tests if not supported.
 			if { $has_crypto == 0 || $inmem } {
 				continue
 			}
 
-			# Run the same tests with security.  In-memory 
+			# Run the same tests with security.  In-memory
 			# databases don't work with encryption.
 			append envargs " -encryptaes $passwd "
 			append args " -encrypt "

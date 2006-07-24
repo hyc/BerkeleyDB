@@ -1,5 +1,5 @@
 /*-
- * $Id: win_db.h,v 12.156 2006/06/19 16:48:33 bostic Exp $
+ * $Id: win_db.h,v 12.166 2006/07/24 18:54:34 bostic Exp $
  *
  * The following provides the information necessary to build Berkeley
  * DB on native Windows, and other Windows environments such as MinGW.

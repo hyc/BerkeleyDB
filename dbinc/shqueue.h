@@ -4,11 +4,11 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: shqueue.h,v 12.5 2006/06/19 14:55:30 mjc Exp $
+ * $Id: shqueue.h,v 12.7 2006/07/05 05:37:09 mjc Exp $
  */
 
-#ifndef	_SYS_SHQUEUE_H_
-#define	_SYS_SHQUEUE_H_
+#ifndef	_DB_SHQUEUE_H_
+#define	_DB_SHQUEUE_H_
 
 /*
  * This file defines three types of data structures: chains, lists and
@@ -51,19 +51,23 @@ struct {								\
 	((dest == NULL) ? -1 : SH_PTR_TO_OFF(src, dest))
 
 #define	SH_CHAIN_INIT(elm, field)					\
-	(elm)->field.sce_next = (elm)->field.sce_prev =		\
+	(elm)->field.sce_next = (elm)->field.sce_prev =			\
 	    CHAIN_PTR_TO_OFF(elm, NULL)
 
-#define	SH_CHAIN_NEXT(elm, field, type)					\
-	((struct type *)((elm)->field.sce_next == -1 ? NULL :		\
-	(u_int8_t *)(elm) + (elm)->field.sce_next))
+#define	SH_CHAIN_HASNEXT(elm, field)	((elm)->field.sce_next != -1)
+#define	SH_CHAIN_NEXTP(elm, field, type)				\
+    ((struct type *)((u_int8_t *)(elm) + (elm)->field.sce_next))
+#define	SH_CHAIN_NEXT(elm, field, type)	(SH_CHAIN_HASNEXT(elm, field) ?	\
+    SH_CHAIN_NEXTP(elm, field, type) : (struct type *)NULL)
 
-#define	SH_CHAIN_PREV(elm, field, type)					\
-	((struct type *)((elm)->field.sce_prev == -1 ? NULL :		\
-	(u_int8_t *)(elm) + (elm)->field.sce_prev))
+#define	SH_CHAIN_HASPREV(elm, field)	((elm)->field.sce_prev != -1)
+#define	SH_CHAIN_PREVP(elm, field, type)				\
+    ((struct type *)((u_int8_t *)(elm) + (elm)->field.sce_prev))
+#define	SH_CHAIN_PREV(elm, field, type)	(SH_CHAIN_HASPREV(elm, field) ?	\
+     SH_CHAIN_PREVP(elm, field, type) : (struct type *)NULL)
 
 #define	SH_CHAIN_SINGLETON(elm, field)					\
-	((elm)->field.sce_next == -1 && (elm)->field.sce_prev == -1)
+    (!SH_CHAIN_HASNEXT(elm, field) && !SH_CHAIN_HASPREV(elm, field))
 
 #define	SH_CHAIN_INSERT_AFTER(listelm, elm, field, type) do {		\
 	struct type *__next = SH_CHAIN_NEXT(listelm, field, type);	\
@@ -398,4 +402,4 @@ struct {								\
 #if defined(__cplusplus)
 }
 #endif
-#endif	/* !_SYS_SHQUEUE_H_ */
+#endif	/* !_DB_SHQUEUE_H_ */

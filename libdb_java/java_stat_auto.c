@@ -163,6 +163,9 @@ static int __dbj_fill_mpool_stat(JNIEnv *jnienv,
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_hash_max_wait_fid, statp, st_hash_max_wait);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_region_nowait_fid, statp, st_region_nowait);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_region_wait_fid, statp, st_region_wait);
+	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_mvcc_frozen_fid, statp, st_mvcc_frozen);
+	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_mvcc_thawed_fid, statp, st_mvcc_thawed);
+	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_mvcc_freed_fid, statp, st_mvcc_freed);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_alloc_fid, statp, st_alloc);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_alloc_buckets_fid, statp, st_alloc_buckets);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_alloc_max_buckets_fid, statp, st_alloc_max_buckets);

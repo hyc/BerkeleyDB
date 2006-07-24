@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: TupleOrderingTest.java,v 12.4 2006/06/09 14:32:31 mark Exp $
+ * $Id: TupleOrderingTest.java,v 12.5 2006/06/27 22:48:20 bostic Exp $
  */
 
 package com.sleepycat.bind.tuple.test;
@@ -317,7 +317,7 @@ public class TupleOrderingTest extends TestCase {
     }
 
     public void testFloat() {
-        
+
         // Only positive floats and doubles are ordered deterministically
 
         final float[] DATA = {
@@ -339,7 +339,7 @@ public class TupleOrderingTest extends TestCase {
     }
 
     public void testDouble() {
-        
+
         // Only positive floats and doubles are ordered deterministically
 
         final double[] DATA = {

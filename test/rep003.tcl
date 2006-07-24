@@ -3,7 +3,7 @@
 # Copyright (c) 2002-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep003.tcl,v 12.4 2006/03/10 21:42:11 carol Exp $
+# $Id: rep003.tcl,v 12.6 2006/07/19 17:43:45 carol Exp $
 #
 # TEST  	rep003
 # TEST	Repeated shutdown/restart replication test
@@ -17,23 +17,20 @@ proc rep003 { method { tnum "003" } args } {
 	source ./include.tcl
 	global rep003_dbname rep003_omethod rep003_oargs
 
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Skip for record-based methods.
-	if { $checking_valid_methods } { 
+	if { $checking_valid_methods } {
+		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_record_based $method] == 1 } {
-				set idx [lsearch -exact $valid_methods $method]
-				if { $idx >= 0 } { 
-					set valid_methods \
-					    [lreplace $valid_methods $idx $idx]
-				}
+			if { [is_record_based $method] != 1 } {
+				lappend test_methods $method
 			}
 		}
-		return $valid_methods
+		return $test_methods
 	}
 	if { [is_record_based $method] } {
 		puts "Rep$tnum: Skipping for method $method"

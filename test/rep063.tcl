@@ -3,7 +3,7 @@
 # Copyright (c) 2002-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep063.tcl,v 1.2 2006/05/16 14:56:06 carol Exp $
+# $Id: rep063.tcl,v 1.4 2006/07/19 17:45:36 carol Exp $
 #
 # TEST  rep063
 # TEST	Replication election test with simulated different versions
@@ -20,16 +20,16 @@ proc rep063 { method args } {
 	global errorInfo
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 	set tnum "063"
 
 	# Skip for all methods except btree.
 	if { $checking_valid_methods } {
-		set valid_methods { btree } 
-		return $valid_methods
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
 		puts "Rep$tnum: Skipping for method $method."
@@ -186,7 +186,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set envlist [lreplace $envlist 4 4]
 	set cl3 [lindex $envlist 3]
 	set envlist [lreplace $envlist 3 3]
-	
+
 	set m "Rep$tnum.b"
 	#
 	# Client 0 has the biggest LSN of clients 0, 1, 2.
@@ -346,7 +346,7 @@ proc rep063_movelsn_reopen { method envlist env_cmd eindex largs } {
 	#
 	set niter 10
 	eval rep_test $method $masterenv NULL $niter 0 0 0 0 $largs
-	
+
 	foreach cl $clrlist {
 		replclear $cl
 	}

@@ -3,12 +3,12 @@
 # Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep042.tcl,v 12.8 2006/03/10 21:44:32 carol Exp $
+# $Id: rep042.tcl,v 12.10 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep042
 # TEST	Concurrency with updates.
 # TEST
-# TEST 	Verify racing role changes and updates don't result in 
+# TEST 	Verify racing role changes and updates don't result in
 # TEST  pages with LSN 0,1.  Set up an environment that is master.
 # TEST  Spawn child process that does a delete, but using the
 # TEST  $env check so that it sleeps in the middle of the call.
@@ -19,14 +19,14 @@
 proc rep042 { method { niter 10 } { tnum "042" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Valid for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -125,7 +125,7 @@ proc rep042_sub { method niter tnum logset recargs largs } {
 		set pid [exec $tclsh_path $test_path/wrap.tcl \
 		    rep042script.tcl $scrlog \
 		    $masterdir $sleepval $dbname $op &]
-	
+
 		# Wait for child process to start up.
 		while { 1 } {
 			if { [file exists $masterdir/marker.db] == 0  } {
@@ -135,10 +135,10 @@ proc rep042_sub { method niter tnum logset recargs largs } {
 				break
 			}
 		}
-	
+
  		puts "\tRep$tnum.c: Downgrade during child $op."
 		error_check_good downgrade [$masterenv rep_start -client] 0
-	
+
 		puts "\tRep$tnum.d: Waiting for child ..."
 		# Watch until the child is done.
 		watch_procs $pid 5
@@ -151,7 +151,7 @@ proc rep042_sub { method niter tnum logset recargs largs } {
 			    [eval $db put -txn $t $i [chop_data $method data$i]] 0
 			error_check_good txn_commit [$t commit] 0
 		}
-		process_msgs "{$masterenv 1} {$clientenv 2}" 
+		process_msgs "{$masterenv 1} {$clientenv 2}"
 
 		error_check_good check [check_script $scrlog "read-only"] 1
 		fileremove -f $masterdir/marker.db

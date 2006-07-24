@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: qam.c,v 12.31 2006/06/12 23:18:08 bostic Exp $
+ * $Id: qam.c,v 12.33 2006/07/14 19:21:22 ubell Exp $
  */
 
 #include "db_config.h"
@@ -649,7 +649,7 @@ __qam_c_get(dbc, key, data, flags, pgnop)
 	QMETA *meta;
 	QUEUE *t;
 	QUEUE_CURSOR *cp;
-	db_lockmode_t lock_mode;
+	db_lockmode_t lock_mode, meta_mode;
 	db_pgno_t metapno;
 	db_recno_t first;
 	int exact, inorder, is_first, locked, ret, t_ret, wait, with_delete;
@@ -668,6 +668,7 @@ __qam_c_get(dbc, key, data, flags, pgnop)
 	with_delete = 0;
 	retrying = 0;
 	lock_mode = F_ISSET(dbc, DBC_RMW) ? DB_LOCK_WRITE : DB_LOCK_READ;
+	meta_mode = DB_LOCK_READ;
 	meta = NULL;
 	inorder = F_ISSET(dbp, DB_AM_INORDER);
 	t_ret = 0;
@@ -681,7 +682,7 @@ __qam_c_get(dbc, key, data, flags, pgnop)
 	if (flags == DB_CONSUME) {
 		with_delete = 1;
 		flags = DB_FIRST;
-		lock_mode = DB_LOCK_WRITE;
+		meta_mode = lock_mode = DB_LOCK_WRITE;
 	}
 
 	DEBUG_LREAD(dbc, dbc->txn, "qam_c_get",
@@ -714,7 +715,7 @@ get_next:
 	case DB_PREV_NODUP:
 	case DB_LAST:
 		if ((ret = __db_lget(dbc,
-		    0, metapno, lock_mode, 0, &metalock)) != 0)
+		    0, metapno, meta_mode, 0, &metalock)) != 0)
 			goto err;
 		locked = 1;
 		break;
@@ -792,7 +793,7 @@ retry:	/* Update the record number. */
 				 */
 				if (locked == 0) {
 					if ((ret = __db_lget(dbc, 0, metapno,
-					    lock_mode, 0, &metalock)) != 0)
+					    meta_mode, 0, &metalock)) != 0)
 						goto err;
 					locked = 1;
 					if (cp->recno != RECNO_OOB &&
@@ -892,7 +893,7 @@ retry:	/* Update the record number. */
 #endif
 		first = 0;
 		if ((ret =
-		    __db_lget(dbc, 0, metapno, lock_mode, 0, &metalock)) != 0)
+		    __db_lget(dbc, 0, metapno, meta_mode, 0, &metalock)) != 0)
 			goto err;
 		locked = 1;
 		goto retry;
@@ -917,7 +918,7 @@ retry:	/* Update the record number. */
 	case DB_GET_BOTH_RANGE:
 	case DB_LAST:
 		if ((ret =
-		    __db_lget(dbc, 0, metapno, lock_mode, 0, &metalock)) != 0)
+		    __db_lget(dbc, 0, metapno, meta_mode, 0, &metalock)) != 0)
 			goto lerr;
 		locked = 1;
 		if ((is_first && cp->recno != meta->first_recno) ||
@@ -973,7 +974,10 @@ release_retry:	/* Release locks and retry, if possible. */
 		cp->page = pg = NULL;
 		if ((ret = __LPUT(dbc, pglock)) != 0)
 			goto err1;
-		if ((ret = __TLPUT(dbc, cp->lock)) != 0)
+		if (with_delete) {
+			if ((ret = __LPUT(dbc, cp->lock)) != 0)
+				goto err1;
+		} else if ((ret = __TLPUT(dbc, cp->lock)) != 0)
 			goto err1;
 
 		/*
@@ -1131,7 +1135,7 @@ release_retry:	/* Release locks and retry, if possible. */
 		 */
 
 		if (locked == 0 && (ret = __db_lget(
-		    dbc, 0, metapno, lock_mode, 0, &metalock)) != 0)
+		    dbc, 0, metapno, meta_mode, 0, &metalock)) != 0)
 			goto err1;
 		locked = 1;
 

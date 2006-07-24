@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep050.tcl,v 12.7 2006/03/10 21:44:32 carol Exp $
+# $Id: rep050.tcl,v 12.9 2006/07/19 17:45:35 carol Exp $
 #
 # TEST	rep050
 # TEST	Replication and delay syncing clients - change master test.
@@ -21,14 +21,14 @@
 proc rep050 { method { niter 10 } { tnum "050" } args } {
 	source ./include.tcl
 
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
-	
-	# Valid for all access methods. 
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	}
+
+	# Valid for all access methods.
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -261,7 +261,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 			set tmp $mid
 			set mid $cid
 			set cid $tmp
-	
+
 			puts "\tRep$tnum.g: Swap master/client while delayed"
 			set nextlet "h"
 			error_check_good downgrade \
@@ -296,7 +296,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 			set tmp $mid
 			set mid $cid
 			set cid $tmp
-	
+
 			puts "\tRep$tnum.h: Swap master/client while syncing"
 			error_check_good downgrade \
 			    [$clientenv rep_start -client] 0

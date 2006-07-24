@@ -4,11 +4,15 @@
  * Copyright (c) 1996-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: crypto.h,v 12.3 2006/01/02 22:01:47 bostic Exp $
+ * $Id: crypto.h,v 12.4 2006/07/05 05:37:07 mjc Exp $
  */
 
 #ifndef	_DB_CRYPTO_H_
 #define	_DB_CRYPTO_H_
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*
  * !!!
@@ -75,4 +79,8 @@ typedef struct __aes_cipher {
 
 #include "dbinc_auto/crypto_ext.h"
 #endif /* HAVE_CRYPTO */
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_DB_CRYPTO_H_ */

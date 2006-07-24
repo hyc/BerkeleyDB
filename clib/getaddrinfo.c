@@ -4,7 +4,7 @@
  * Copyright (c) 2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: getaddrinfo.c,v 1.3 2006/06/19 16:10:48 bostic Exp $
+ * $Id: getaddrinfo.c,v 1.4 2006/06/27 22:21:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -58,7 +58,7 @@ __db_getaddrinfo(dbenv, nodename, port, servname, hints, res)
 	COMPQUIET(hints, NULL);
 	COMPQUIET(servname, NULL);
 
-	/* 
+	/*
 	 * Basic implementation of IPv4 component of getaddrinfo.
 	 * Limited to the functionality used by repmgr.
 	 */
@@ -150,7 +150,7 @@ __db_freeaddrinfo(dbenv, ai)
 	for (next = ai; next != NULL; next = tmpaddr) {
 		if (next->ai_canonname != NULL)
 			__os_free(dbenv, next->ai_canonname);
-		
+
 		if (next->ai_addr != NULL)
 			__os_free(dbenv, next->ai_addr);
 

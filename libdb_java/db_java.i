@@ -567,17 +567,30 @@ Java_com_sleepycat_db_internal_db_1javaJNI_deleteRef0(
 		(*jenv)->DeleteGlobalRef(jenv, jref);
 }
 
+/*
+ * For reasons unknown, the version of gcc that ships with SUSE 10 miscompiles
+ * this code when optimization levels '-O2' or higher are used.  We work around
+ * this by using a more involved way of extracting the pointers.  The rest of
+ * the JNI code should be converted to doing it this way in the future -- we
+ * don't know where else this bug might surface, and using a union is slightly
+ * less ugly than casting.
+ */
 JNIEXPORT jlong JNICALL
 Java_com_sleepycat_db_internal_db_1javaJNI_getDbEnv0(
-    JNIEnv *jenv, jclass jcls, jlong jarg1) {
-	DB *self = *(DB **)(void *)&jarg1;
-	jlong env_cptr;
+    JNIEnv *jenv, jclass jcls, jlong jdb) {
+	DB *self;
+	union {
+		jlong lval;
+		void *pval;
+	} u;
 
 	COMPQUIET(jenv, NULL);
 	COMPQUIET(jcls, NULL);
 
-	*(DB_ENV **)(void *)&env_cptr = self->dbenv;
-	return (env_cptr);
+	u.lval = jdb;
+	self = (DB *)u.pval;
+	u.pval = self->dbenv;
+	return (u.lval);
 }
 
 JNIEXPORT jboolean JNICALL

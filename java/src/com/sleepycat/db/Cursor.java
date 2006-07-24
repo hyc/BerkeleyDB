@@ -4,7 +4,7 @@
  * Copyright (c) 2002-2006
  *	Sleepycat Software.  All rights reserved.
  *
- * $Id: Cursor.java,v 12.2 2006/01/02 22:02:33 bostic Exp $
+ * $Id: Cursor.java,v 12.4 2006/07/17 13:08:15 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -14,17 +14,20 @@ import com.sleepycat.db.internal.Dbc;
 
 public class Cursor {
     /* package */ Dbc dbc;
-    protected Database database;
-    protected CursorConfig config;
+    /* package */ Database database;
+    /* package */ CursorConfig config;
 
-    protected Cursor() {
+    // Constructor needed by Java RPC server
+    protected Cursor(final Database database, final CursorConfig config) {
+        this.database = database;
+        this.config = config;
     }
 
     Cursor(final Database database, final Dbc dbc, final CursorConfig config)
         throws DatabaseException {
 
-        this.dbc = dbc;
         this.database = database;
+        this.dbc = dbc;
         this.config = config;
     }
 

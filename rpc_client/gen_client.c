@@ -93,6 +93,40 @@ out:
 }
 
 /*
+ * PUBLIC: int __dbcl_env_cdsgroup_begin __P((DB_ENV *, DB_TXN **));
+ */
+int
+__dbcl_env_cdsgroup_begin(dbenv, txnpp)
+	DB_ENV * dbenv;
+	DB_TXN ** txnpp;
+{
+	CLIENT *cl;
+	__env_cdsgroup_begin_msg msg;
+	__env_cdsgroup_begin_reply *replyp = NULL;
+	int ret;
+
+	ret = 0;
+	if (dbenv == NULL || !RPC_ON(dbenv))
+		return (__dbcl_noserver(dbenv));
+
+	cl = (CLIENT *)dbenv->cl_handle;
+
+	msg.dbenvcl_id = dbenv->cl_id;
+
+	replyp = __db_env_cdsgroup_begin_4005(&msg, cl);
+	if (replyp == NULL) {
+		__db_errx(dbenv, clnt_sperror(cl, "Berkeley DB"));
+		ret = DB_NOSERVER;
+		goto out;
+	}
+	ret = __dbcl_env_cdsgroup_begin_ret(dbenv, txnpp, replyp);
+out:
+	if (replyp != NULL)
+		xdr_free((xdrproc_t)xdr___env_cdsgroup_begin_reply, (void *)replyp);
+	return (ret);
+}
+
+/*
  * PUBLIC: int __dbcl_env_close __P((DB_ENV *, u_int32_t));
  */
 int
@@ -3130,6 +3164,7 @@ void
 __dbcl_dbenv_init(dbenv)
 	DB_ENV *dbenv;
 {
+	dbenv->cdsgroup_begin = __dbcl_env_cdsgroup_begin;
 	dbenv->close = __dbcl_env_close;
 	dbenv->dbremove = __dbcl_env_dbremove;
 	dbenv->dbrename = __dbcl_env_dbrename;

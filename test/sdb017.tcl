@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: sdb017.tcl,v 12.4 2006/01/02 22:03:23 bostic Exp $
+# $Id: sdb017.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
 #
 # TEST	sdb017
 # TEST	Test DB->rename() for in-memory named databases.
@@ -13,7 +13,7 @@ proc sdb017 { method args } {
 
 	if { [is_queueext $method] == 1 } {
 		puts "Subdb017: Skipping for method $method"
-		return 
+		return
 	}
 
 	set omethod [convert_method $method]
@@ -24,7 +24,7 @@ proc sdb017 { method args } {
 	# Skip test if given an env - this test needs its own.
 	set eindex [lsearch -exact $args "-env"]
 	if { $eindex != -1 } {
-		incr eindex 
+		incr eindex
 		set env [lindex $args $eindex]
 		puts "Subdb017 skipping for env $env"
 		return
@@ -35,15 +35,15 @@ proc sdb017 { method args } {
 	set chkindex [lsearch -exact $args "-chksum"]
 	if { $chkindex != -1 } {
 		set args [lreplace $args $chkindex $chkindex]
-	} 
+	}
 
 	# Make sure we're starting from a clean slate.
 	env_cleanup $testdir
 
-        # Set up env. 
-        set env [berkdb_env_noerr -create -home $testdir -mode 0644] 
+        # Set up env.
+        set env [berkdb_env_noerr -create -home $testdir -mode 0644]
 	error_check_good env_open [is_valid_env $env] TRUE
- 
+
 	set oldsdb OLDDB
 	set newsdb NEWDB
 

@@ -3,7 +3,7 @@
 # Copyright (c) 2003-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep017.tcl,v 12.6 2006/04/12 03:24:06 sue Exp $
+# $Id: rep017.tcl,v 12.8 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep017
 # TEST	Concurrency with checkpoints.
@@ -18,14 +18,14 @@
 proc rep017 { method { niter 10 } { tnum "017" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
 	# Run for all access methods.
-	if { $checking_valid_methods } { 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]

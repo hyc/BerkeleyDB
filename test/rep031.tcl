@@ -3,7 +3,7 @@
 # Copyright (c) 2004-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep031.tcl,v 12.12 2006/03/14 19:53:20 carol Exp $
+# $Id: rep031.tcl,v 12.14 2006/07/19 17:43:45 carol Exp $
 #
 # TEST	rep031
 # TEST	Test of internal initialization and blocked operations.
@@ -18,22 +18,22 @@
 proc rep031 { method { niter 200 } { tnum "031" } args } {
 
 	source ./include.tcl
-	if { $is_windows9x_test == 1 } { 
+	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
 		return
-	} 
+	}
 
-	# There is nothing method-sensitive in this test, so 
+	# There is nothing method-sensitive in this test, so
 	# skip for all except btree.
-	if { $checking_valid_methods } { 
-		set valid_methods { btree } 
-		return $valid_methods
+	if { $checking_valid_methods } {
+		set test_methods { btree }
+		return $test_methods
 	}
 	if { [is_btree $method] != 1 } {
 		puts "Skipping rep031 for method $method."
 		return
 	}
-	
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 2]
 
@@ -94,7 +94,7 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
 
-	# In-memory logs cannot be used with -txn nosync.  
+	# In-memory logs cannot be used with -txn nosync.
 	set m_logargs [adjust_logargs $m_logtype]
 	set c_logargs [adjust_logargs $c_logtype]
 	set m_txnargs [adjust_txnargs $m_logtype]
@@ -137,7 +137,7 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 
 	puts "\tRep$tnum.b: Close client."
 	# Find out what exists on the client.  We need to loop until
-	# the first master log file > last client log file. 
+	# the first master log file > last client log file.
 	if { $c_logtype != "in-memory" } {
 		set res [eval exec $util_path/db_archive -l -h $clientdir]
 	}
@@ -157,7 +157,7 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 		if { $m_logtype != "in-memory"} {
 			set res \
 			    [eval exec $util_path/db_archive -d -h $masterdir]
-		} 
+		}
 		set first_master_log [get_logfile $masterenv first]
 		if { $first_master_log > $last_client_log } {
 			set stop 1

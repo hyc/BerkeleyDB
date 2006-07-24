@@ -3,7 +3,7 @@
 # Copyright (c) 2001-2006
 #	Sleepycat Software.  All rights reserved.
 #
-# $Id: rep048.tcl,v 12.5 2006/03/10 21:44:32 carol Exp $
+# $Id: rep048.tcl,v 12.7 2006/07/19 17:45:35 carol Exp $
 #
 # TEST  rep048
 # TEST	Replication and log gap bulk transfers.
@@ -16,7 +16,7 @@ proc rep048 { method { nentries 3000 } { tnum "048" } args } {
 	source ./include.tcl
 
 	if { $checking_valid_methods } {
-		return $valid_methods
+		return "ALL"
 	}
 
 	set args [convert_args $method $args]
@@ -109,7 +109,7 @@ proc rep048_sub { method niter tnum recargs largs } {
 
 	set bulkxfer1 [stat_field $masterenv rep_stat "Bulk buffer transfers"]
 	error_check_bad bulk $bulkxfer1 0
-	
+
 	puts "\tRep$tnum.d: Waiting for child ..."
 	# Watch until the child is done.
 	watch_procs $pid 5
