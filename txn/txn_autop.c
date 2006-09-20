@@ -35,14 +35,12 @@ __txn_regop_42_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_regop_42_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_regop_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_regop_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\topcode: %ld\n", (long)argp->opcode);
 	timeval = (time_t)argp->timestamp;
 	lt = localtime(&timeval);
@@ -83,14 +81,12 @@ __txn_regop_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_regop_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_regop%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_regop%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\topcode: %ld\n", (long)argp->opcode);
 	timeval = (time_t)argp->timestamp;
 	lt = localtime(&timeval);
@@ -132,14 +128,12 @@ __txn_ckp_42_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_ckp_42_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_ckp_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_ckp_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tckp_lsn: [%lu][%lu]\n",
 	    (u_long)argp->ckp_lsn.file, (u_long)argp->ckp_lsn.offset);
 	(void)printf("\tlast_ckp: [%lu][%lu]\n",
@@ -182,14 +176,12 @@ __txn_ckp_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_ckp_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_ckp%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_ckp%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tckp_lsn: [%lu][%lu]\n",
 	    (u_long)argp->ckp_lsn.file, (u_long)argp->ckp_lsn.offset);
 	(void)printf("\tlast_ckp: [%lu][%lu]\n",
@@ -230,14 +222,12 @@ __txn_child_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_child_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_child%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_child%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tchild: 0x%lx\n", (u_long)argp->child);
 	(void)printf("\tc_lsn: [%lu][%lu]\n",
 	    (u_long)argp->c_lsn.file, (u_long)argp->c_lsn.offset);
@@ -269,14 +259,12 @@ __txn_xa_regop_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_xa_regop_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_xa_regop%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_xa_regop%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\topcode: %lu\n", (u_long)argp->opcode);
 	(void)printf("\txid: ");
 	for (i = 0; i < argp->xid.size; i++) {
@@ -317,14 +305,12 @@ __txn_recycle_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __txn_recycle_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__txn_recycle%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__txn_recycle%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tmin: %u\n", argp->min);
 	(void)printf("\tmax: %u\n", argp->max);
 	(void)printf("\n");

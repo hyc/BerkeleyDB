@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os.h,v 12.16 2006/07/17 15:16:33 bostic Exp $
+ * $Id: os.h,v 12.18 2006/09/05 15:02:30 mjc Exp $
  */
 
 #ifndef _DB_OS_H_
@@ -96,7 +96,8 @@ struct __fh_t {
 	int	ref;			/* Reference count. */
 
 #if defined(DB_WIN32)
-	HANDLE	handle;		/* Windows/32 file handle. */
+	HANDLE	handle;			/* Windows/32 file handle. */
+	HANDLE	trunc_handle;		/* Handle for truncate calls. */
 #endif
 	int	fd;			/* POSIX file descriptor. */
 

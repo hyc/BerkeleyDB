@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_server_int.h,v 12.8 2006/07/05 05:37:08 mjc Exp $
+ * $Id: db_server_int.h,v 12.9 2006/08/24 14:45:29 bostic Exp $
  */
 
 #ifndef _DB_SERVER_INT_H_

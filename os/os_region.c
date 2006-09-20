@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_region.c,v 12.7 2006/05/05 14:53:43 bostic Exp $
+ * $Id: os_region.c,v 12.9 2006/08/24 14:46:18 bostic Exp $
  */
 
 #include "db_config.h"
@@ -102,8 +102,8 @@ __os_r_attach(dbenv, infop, rp)
 
 	rp->size_orig = rp->size;
 	if (infop->addr != infop->addr_orig)
-		rp->size -=
-		    (u_int8_t *)infop->addr - (u_int8_t *)infop->addr_orig;
+		rp->size -= (roff_t)
+		    ((u_int8_t *)infop->addr - (u_int8_t *)infop->addr_orig);
 
 	return (0);
 }

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: MultipleNIODataEntry.java,v 1.1 2006/03/13 01:55:49 alexg Exp $
+ * $Id: MultipleNIODataEntry.java,v 1.3 2006/09/08 20:32:14 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -47,7 +47,7 @@ public class MultipleNIODataEntry extends MultipleEntry {
         this.data_nio.position(pos - INT32SZ);
         this.data_nio.get(intarr, 0, 8);
         this.data_nio.position(saveoffset);
-        
+
         final int dataoff = DbUtil.array2int(intarr, 4);
 
         // crack out the data offset and length.

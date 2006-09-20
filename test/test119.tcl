@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2003-2005
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test119.tcl,v 12.3 2006/06/27 22:31:09 bostic Exp $
+# $Id: test119.tcl,v 12.4 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	test119
 # TEST	Test behavior when Berkeley DB returns DB_BUFFER_SMALL on a cursor.

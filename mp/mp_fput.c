@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_fput.c,v 12.18 2006/07/13 13:10:25 bostic Exp $
+ * $Id: mp_fput.c,v 12.22 2006/09/07 20:05:33 bostic Exp $
  */
 
 #include "db_config.h"
@@ -109,7 +109,6 @@ __memp_fput(dbmfp, pgaddr, flags)
 		MPOOL_SYSTEM_UNLOCK(dbenv);
 		__db_errx(dbenv,
 		    "%s: more pages returned than retrieved", __memp_fn(dbmfp));
-		DB_ASSERT(dbenv, 0);
 		return (__db_panic(dbenv, EACCES));
 	}
 	--dbmfp->pinref;
@@ -179,7 +178,7 @@ __memp_fput(dbmfp, pgaddr, flags)
 			adjust = (int)c_mp->stat.st_pages / mfp->priority;
 
 		if (F_ISSET(bhp, BH_DIRTY))
-			adjust += c_mp->stat.st_pages / MPOOL_PRI_DIRTY;
+			adjust += (int)c_mp->stat.st_pages / MPOOL_PRI_DIRTY;
 
 		if (adjust > 0) {
 			if (UINT32_MAX - bhp->priority >= (u_int32_t)adjust)
@@ -193,7 +192,7 @@ __memp_fput(dbmfp, pgaddr, flags)
 	    SH_TAILQ_LAST(&hp->hash_bucket, hq, __bh))
 		hp->hash_priority = BH_PRIORITY(bhp);
 	else
-		__memp_bucket_reorder(hp, bhp);
+		__memp_bucket_reorder(dbenv, hp, bhp);
 #ifdef DIAGNOSTIC
 	__memp_check_order(dbenv, hp);
 #endif
@@ -232,7 +231,7 @@ __memp_reset_lru(dbenv, infop)
 	DB_ENV *dbenv;
 	REGINFO *infop;
 {
-	BH *bhp;
+	BH *bhp, *tbhp;
 	DB_MPOOL_HASH *hp;
 	MPOOL *c_mp;
 	u_int32_t bucket;
@@ -259,11 +258,12 @@ __memp_reset_lru(dbenv, infop)
 
 		MUTEX_LOCK(dbenv, hp->mtx_hash);
 		SH_TAILQ_FOREACH(bhp, &hp->hash_bucket, hq, __bh)
-			do {
-				if (bhp->priority != UINT32_MAX &&
-				    bhp->priority > MPOOL_BASE_DECREMENT)
-					bhp->priority -= MPOOL_BASE_DECREMENT;
-			} while ((bhp = SH_CHAIN_PREV(bhp, vc, __bh)) != NULL);
+			for (tbhp = bhp; tbhp != NULL;
+			    tbhp = SH_CHAIN_PREV(tbhp, vc, __bh)) {
+				if (tbhp->priority != UINT32_MAX &&
+				    tbhp->priority > MPOOL_BASE_DECREMENT)
+					tbhp->priority -= MPOOL_BASE_DECREMENT;
+			}
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 	}
 

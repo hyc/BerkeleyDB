@@ -168,7 +168,7 @@ class db_javaJNI {
   public final static native void DbEnv_set_mp_mmapsize(long jarg1, long jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_msgcall(long jarg1, com.sleepycat.db.MessageHandler jarg2) /* no exception */;
   public final static native void DbEnv_set_paniccall(long jarg1, com.sleepycat.db.PanicHandler jarg2) throws com.sleepycat.db.DatabaseException;
-  public final static native void DbEnv_set_rpc_server(long jarg1, DbClient jarg2, String jarg3, long jarg4, long jarg5, int jarg6) throws com.sleepycat.db.DatabaseException;
+  public final static native void DbEnv_set_rpc_server(long jarg1, String jarg2, long jarg3, long jarg4, int jarg5) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_shm_key(long jarg1, long jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_timeout(long jarg1, long jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_tmp_dir(long jarg1, String jarg2) throws com.sleepycat.db.DatabaseException;
@@ -254,10 +254,11 @@ class db_javaJNI {
   public final static native void DbEnv_rep_set_nsites(long jarg1, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_rep_set_priority(long jarg1, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_rep_set_timeout(long jarg1, int jarg2, long jarg3) throws com.sleepycat.db.DatabaseException;
-  public final static native void DbEnv_repmgr_add_remote_site(long jarg1, String jarg2, int jarg3, int jarg4) throws com.sleepycat.db.DatabaseException;
+  public final static native int DbEnv_repmgr_add_remote_site(long jarg1, String jarg2, int jarg3, int jarg4) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_repmgr_get_ack_policy(long jarg1) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_repmgr_set_ack_policy(long jarg1, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_repmgr_set_local_site(long jarg1, String jarg2, int jarg3, int jarg4) throws com.sleepycat.db.DatabaseException;
+  public final static native com.sleepycat.db.ReplicationHostAddress[] DbEnv_repmgr_site_list(long jarg1) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_repmgr_start(long jarg1, int jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native String DbEnv_strerror(int jarg1) /* no exception */;
   public final static native int DbEnv_get_version_major() /* no exception */;

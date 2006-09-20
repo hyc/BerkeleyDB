@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test120.tcl,v 12.2 2006/06/27 22:31:09 bostic Exp $
+# $Id: test120.tcl,v 12.3 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	test120
 # TEST	Test of multi-version concurrency control.

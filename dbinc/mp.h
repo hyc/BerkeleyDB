@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp.h,v 12.20 2006/07/13 06:18:53 mjc Exp $
+ * $Id: mp.h,v 12.23 2006/09/07 15:11:26 mjc Exp $
  */
 
 #ifndef	_DB_MP_H_
@@ -449,18 +449,17 @@ struct __bh_frozen_a {
     (txn)->td == BH_OWNER(dbenv, bhp))
 
 #define	BH_PRIORITY(bhp)						\
-    ((bhp) == NULL ? 0 :						\
-    SH_CHAIN_SINGLETON(bhp, vc) ? (bhp)->priority :			\
+    (SH_CHAIN_SINGLETON(bhp, vc) ? (bhp)->priority :			\
      __memp_bh_priority(bhp))
 
 #define	VISIBLE_LSN(dbenv, bhp)						\
     (&BH_OWNER(dbenv, bhp)->visible_lsn)
 
 #define	BH_OBSOLETE(bhp, old_lsn)	((SH_CHAIN_HASNEXT(bhp, vc) ?	\
-	log_compare(&(old_lsn), VISIBLE_LSN(dbenv,			\
+	LOG_COMPARE(&(old_lsn), VISIBLE_LSN(dbenv,			\
 	SH_CHAIN_NEXTP(bhp, vc, __bh))) :				\
 	(bhp->td_off == INVALID_ROFF ? 1 :				\
-	log_compare(&(old_lsn), VISIBLE_LSN(dbenv, bhp)))) > 0)
+	LOG_COMPARE(&(old_lsn), VISIBLE_LSN(dbenv, bhp)))) > 0)
 
 #define	MVCC_SKIP_CURADJ(dbc, pgno)					\
     (dbc->txn != NULL && F_ISSET(dbc->txn, TXN_SNAPSHOT) &&		\

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: tcl_rep.c,v 12.23 2006/07/20 18:53:01 bostic Exp $
+ * $Id: tcl_rep.c,v 12.25 2006/09/07 08:06:37 alexg Exp $
  */
 
 #include "db_config.h"
@@ -929,7 +929,7 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				break;
 			_debug_check();
 			ret = dbenv->repmgr_add_remote_site(dbenv,
-			    arg, uintarg, remote_flag);
+			    arg, uintarg, NULL, remote_flag);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "repmgr_add_remote_site");
 			break;

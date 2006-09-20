@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2004-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_backup.c,v 12.63 2006/07/03 14:18:44 sue Exp $
+ * $Id: rep_backup.c,v 12.75 2006/09/19 14:14:09 mjc Exp $
  */
 
 #include "db_config.h"
@@ -35,6 +35,7 @@ static int __rep_page_sendpages __P((DB_ENV *, int,
     __rep_fileinfo_args *, DB_MPOOLFILE *, DB *));
 static int __rep_queue_filedone __P((DB_ENV *, REP *, __rep_fileinfo_args *));
 static int __rep_remove_dbs __P((DB_ENV *));
+static int __rep_remove_logs __P((DB_ENV *));
 static int __rep_walk_dir __P((DB_ENV *, const char *, u_int8_t **, u_int8_t *,
     size_t *, size_t *, u_int32_t *, int));
 static int __rep_write_page __P((DB_ENV *, REP *, __rep_fileinfo_args *));
@@ -126,7 +127,7 @@ __rep_update_req(dbenv, eid)
 	lsn = ((LOG *)dblp->reginfo.primary)->lsn;
 	LOG_SYSTEM_UNLOCK(dbenv);
 	(void)__rep_send_message(
-	    dbenv, eid, REP_UPDATE, &lsn, &updbt, 0, DB_REP_ANYWHERE);
+	    dbenv, eid, REP_UPDATE, &lsn, &updbt, 0, 0);
 
 err:	__os_free(dbenv, buf);
 	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
@@ -207,7 +208,6 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 	u_int32_t *filecntp;
 	int do_remove;
 {
-	DB *dummydbp;
 	DBT namedbt, uiddbt;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
@@ -276,12 +276,14 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 			 * Calling __fop_remove will both purge any matching
 			 * fileid from mpool and unlink it on disk.
 			 */
+#ifdef HAVE_QUEUE
 			/*
 			 * Handle queue separately.  __fop_remove will not
 			 * remove extent files.  Use __qam_remove to remove
 			 * extent files that might exist under this name.
 			 */
 			if (tmpfp.type == (u_int32_t)DB_QUEUE) {
+				DB *dummydbp;
 				if ((ret = db_create(&dummydbp, dbenv, 0))
 				    != 0)
 					goto err;
@@ -298,6 +300,7 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 				    DB_NOSYNC)) != 0)
 					goto err;
 			}
+#endif
 			/*
 			 * We call fop_remove even if we've called qam_remove.
 			 * That will only have removed extent files.  Now
@@ -313,7 +316,7 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 		 */
 		RPRINT(dbenv, (dbenv, &mb,
     "Walk_dir: File %d (of %d) %s at 0x%lx: pgsize %lu, max_pgno %lu",
-		    tmpfp.filenum, *filecntp, names[i], (u_long)rfp,
+		    tmpfp.filenum, *filecntp, names[i], P_TO_ULONG(rfp),
 		    (u_long)tmpfp.pgsize, (u_long)tmpfp.max_pgno));
 		DB_SET_DBT(namedbt, names[i], strlen(names[i]) + 1);
 		uiddbt.data = uid;
@@ -428,7 +431,6 @@ __rep_get_fileinfo(dbenv, file, subdb, rfp, uid, filecntp)
 	u_int8_t *uid;
 	u_int32_t *filecntp;
 {
-
 	DB *dbp, *entdbp;
 	DB_LOCK lk;
 	DB_LOG *dblp;
@@ -883,9 +885,10 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	 * We do not clear REP_F_READY or rep->in_recovery in this code.
 	 * We'll eventually call the normal __rep_verify_match recovery
 	 * code and that will clear all the flags and allow others to
-	 * proceed.
+	 * proceed.  We only need to lockout the API here.  We do not
+	 * need to lockout other message threads.
 	 */
-	if ((ret = __rep_lockout(dbenv, rep, 1)) != 0)
+	if ((ret = __rep_lockout_api(dbenv, rep)) != 0)
 		goto err;
 	/*
 	 * We need to update the timestamp and kill any open handles
@@ -958,9 +961,11 @@ __rep_update_setup(dbenv, eid, rp, rec)
 #endif
 
 	/*
-	 * We need to remove all databases the client has prior to
+	 * We need to remove all logs and databases the client has prior to
 	 * getting pages for current databases on the master.
 	 */
+	if ((ret = __rep_remove_logs(dbenv)) != 0)
+		goto errmem;
 	if ((ret = __rep_remove_dbs(dbenv)) != 0)
 		goto errmem;
 
@@ -1018,6 +1023,53 @@ err:	/*
 	}
 	REP_SYSTEM_UNLOCK(dbenv);
 	return (ret);
+}
+
+/*
+ * __rep_remove_logs -
+ *	Remove our logs to prepare for internal init.
+ */
+static int
+__rep_remove_logs(dbenv)
+	DB_ENV *dbenv;
+{
+	DB_LOG *dblp;
+	DB_LSN lsn;
+	LOG *lp;
+	u_int32_t fnum, lastfile;
+	int ret;
+	char *name;
+
+	dblp = dbenv->lg_handle;
+	lp = dblp->reginfo.primary;
+	ret = 0;
+
+	/*
+	 * Call memp_sync to flush out any logs that might
+	 * be in the log buffers and not on disk before
+	 * we remove files on disk.
+	 */
+	if ((ret = __memp_sync(dbenv, NULL)) != 0)
+		return (ret);
+	/*
+	 * Forcibly remove existing log files or reset
+	 * the in-memory log space.
+	 */
+	if (lp->db_log_inmemory) {
+		INIT_LSN(lsn);
+		if ((ret = __log_zero(dbenv, &lsn, &lp->lsn)) != 0)
+			return (ret);
+	} else {
+		lastfile = lp->lsn.file;
+		for (fnum = 1; fnum <= lastfile; fnum++) {
+			if ((ret = __log_name(dblp, fnum, &name, NULL, 0)) != 0)
+				return (ret);
+			(void)time(&lp->timestamp);
+			(void)__os_unlink(dbenv, name);
+			__os_free(dbenv, name);
+		}
+	}
+	return (0);
 }
 
 /*
@@ -1101,8 +1153,14 @@ __rep_bulk_page(dbenv, eid, rp, rec)
 		RPRINT(dbenv, (dbenv, &mb,
 		    "rep_bulk_page: rep_page ret %d", ret));
 
-		if (ret != 0)
+		/*
+		 * If this set of pages is already done just return.
+		 */
+		if (ret != 0) {
+			if (ret == DB_REP_PAGEDONE)
+				ret = 0;
 			break;
+		}
 	}
 	return (ret);
 }
@@ -1137,7 +1195,7 @@ __rep_page(dbenv, eid, rp, rec)
 	rep = db_rep->region;
 
 	if (!F_ISSET(rep, REP_F_RECOVER_PAGE))
-		return (0);
+		return (DB_REP_PAGEDONE);
 	if ((ret = __rep_fileinfo_read(dbenv, rec->data, &next, &msgfp)) != 0)
 		return (ret);
 	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
@@ -1158,6 +1216,7 @@ __rep_page(dbenv, eid, rp, rec)
 		RPRINT(dbenv,
 		    (dbenv, &mb, "Msg file %d != curfile %d",
 		    msgfp->filenum, rep->curfile));
+		ret = DB_REP_PAGEDONE;
 		goto err;
 	}
 	/*
@@ -1217,7 +1276,7 @@ __rep_page(dbenv, eid, rp, rec)
 	 * Now check the LSN on the page and save it if it is later
 	 * than the one we have.
 	 */
-	if (log_compare(&rp->lsn, &rep->last_lsn) > 0)
+	if (LOG_COMPARE(&rp->lsn, &rep->last_lsn) > 0)
 		rep->last_lsn = rp->lsn;
 
 	/*
@@ -1548,8 +1607,8 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 				break;
 			}
 			/*
-			 * Subtract 1 from waiting_pg because recno's are
-			 * 1-based and pages are 0-based and we added 1
+			 * Subtract 1 from waiting_pg because record numbers
+			 * are 1-based and pages are 0-based and we added 1
 			 * into the page number when we put it into the db.
 			 */
 			rep->waiting_pg = *(db_pgno_t *)key.data;
@@ -1744,7 +1803,8 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 		    (u_long)rep->first_lsn.file, (u_long)rep->first_lsn.offset,
 		    (u_long)rep->last_lsn.file, (u_long)rep->last_lsn.offset));
 		(void)__rep_send_message(dbenv, eid,
-		    REP_LOG_REQ, &rep->first_lsn, &dbt, 0, DB_REP_ANYWHERE);
+		    REP_LOG_REQ, &rep->first_lsn, &dbt, 
+		    REPCTL_INIT, DB_REP_ANYWHERE);
 		REP_SYSTEM_LOCK(dbenv);
 		return (0);
 	}
@@ -1979,31 +2039,12 @@ __rep_log_setup(dbenv, rep)
 	DB_TXNMGR *mgr;
 	DB_TXNREGION *region;
 	LOG *lp;
-	u_int32_t fnum, lastfile;
 	int ret;
-	char *name;
 
 	dblp = dbenv->lg_handle;
 	lp = dblp->reginfo.primary;
 	mgr = dbenv->tx_handle;
 	region = mgr->reginfo.primary;
-
-	/*
-	 * Forcibly remove *all* existing log files.
-	 */
-	if (lp->db_log_inmemory) {
-		INIT_LSN(lsn);
-		if ((ret = __log_zero(dbenv, &lsn, &lp->lsn)) != 0)
-			return (ret);
-	} else {
-		lastfile = lp->lsn.file;
-		for (fnum = 1; fnum <= lastfile; fnum++) {
-			if ((ret = __log_name(dblp, fnum, &name, NULL, 0)) != 0)
-				goto err;
-			(void)__os_unlink(dbenv, name);
-			__os_free(dbenv, name);
-		}
-	}
 
 	/*
 	 * Set up the log starting at the file number of the first LSN we
@@ -2021,7 +2062,6 @@ __rep_log_setup(dbenv, rep)
 	TXN_SYSTEM_LOCK(dbenv);
 	ZERO_LSN(region->last_ckp);
 	TXN_SYSTEM_UNLOCK(dbenv);
-err:
 	return (ret);
 }
 

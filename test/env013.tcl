@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#       Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: env013.tcl,v 1.7 2006/06/27 22:31:08 bostic Exp $
+# $Id: env013.tcl,v 1.8 2006/08/24 14:46:35 bostic Exp $
 #
 # TEST	env013
 # TEST	Test of basic functionality of fileid_reset.

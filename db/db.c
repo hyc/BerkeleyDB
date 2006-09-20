@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -36,7 +36,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db.c,v 12.39 2006/05/12 13:36:47 bostic Exp $
+ * $Id: db.c,v 12.42 2006/09/19 15:06:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -971,7 +971,7 @@ never_opened:
 
 	if (!reuse && dbp->lid != DB_LOCK_INVALIDID) {
 		/* We may have pending trade operations on this dbp. */
-		if (txn != NULL)
+		if (IS_REAL_TXN(txn))
 			__txn_remlock(dbenv, txn, &dbp->handle_lock, dbp->lid);
 
 		/* We may be holding the handle lock; release it. */
@@ -1176,7 +1176,7 @@ __db_backup_name(dbenv, name, txn, backup)
 	 *	4. multi-component path + transaction
 	 */
 	p = __db_rpath(name);
-	if (txn == NULL) {
+	if (!IS_REAL_TXN(txn)) {
 #ifdef HAVE_VXWORKS
 	    { int i, n;
 		/* On VxWorks we must support 8.3 names. */

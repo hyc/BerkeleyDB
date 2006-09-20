@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep031.tcl,v 12.14 2006/07/19 17:43:45 carol Exp $
+# $Id: rep031.tcl,v 12.17 2006/09/11 19:47:22 sue Exp $
 #
 # TEST	rep031
 # TEST	Test of internal initialization and blocked operations.
@@ -259,11 +259,12 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 		}
 	}
 
+	set timeout 30
 	#
-	# Sleep 32 seconds - The timeout is 30 seconds, but we need
+	# Sleep timeout+2 seconds - The timeout is 60 seconds, but we need
 	# to sleep a bit longer to make sure we cross the timeout.
 	#
-	set to 32
+	set to [expr $timeout + 2]
 	puts "\tRep$tnum.k: Wait $to seconds to timeout"
 	tclsleep $to
 	puts "\tRep$tnum.l: Retry blocked operations after wait"

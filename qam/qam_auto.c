@@ -360,9 +360,15 @@ __qam_mvptr_log(dbp, txnp, ret_lsnp, flags,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (metalsn != NULL)
+	if (metalsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(metalsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, metalsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, metalsn, sizeof(*metalsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*metalsn));
 	bp += sizeof(*metalsn);
 
@@ -592,9 +598,15 @@ __qam_del_log(dbp, txnp, ret_lsnp, flags, lsn, pgno, indx, recno)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -828,9 +840,15 @@ __qam_add_log(dbp, txnp, ret_lsnp, flags, lsn, pgno, indx, recno, data,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -1101,9 +1119,15 @@ __qam_delext_log(dbp, txnp, ret_lsnp, flags, lsn, pgno, indx, recno, data)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 

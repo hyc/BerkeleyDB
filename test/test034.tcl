@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1998-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test034.tcl,v 12.2 2006/01/02 22:03:26 bostic Exp $
+# $Id: test034.tcl,v 12.3 2006/08/24 14:46:40 bostic Exp $
 #
 # TEST	test034
 # TEST	test032 with off-page duplicates

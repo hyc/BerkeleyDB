@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_stub.c,v 12.17 2006/06/03 13:51:10 bostic Exp $
+ * $Id: rep_stub.c,v 12.18 2006/08/24 14:46:25 bostic Exp $
  */
 
 #ifndef HAVE_REPLICATION

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_dump.c,v 12.7 2006/05/05 14:53:17 bostic Exp $
+ * $Id: db_dump.c,v 12.9 2006/08/26 09:23:01 bostic Exp $
  */
 
 #include "db_config.h"
@@ -15,7 +15,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
 #endif
 
 int	 db_dump_db_init __P((DB_ENV *, char *, int, u_int32_t, int *));

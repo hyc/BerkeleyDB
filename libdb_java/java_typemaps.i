@@ -306,15 +306,6 @@ JAVA_TYPEMAP(time_t *, long, jlong)
 	$1 = &time;
 %}
 
-JAVA_TYPEMAP(void *client, DbClient, jobject)
-%typemap(check) void *client %{
-	if ($1 != NULL) {
-		__dbj_throw(jenv, EINVAL, "DbEnv.set_rpc_server client arg "
-		    "must be null; reserved for future use", NULL, JDBENV);
-		return $null;
-	}
-%}
-
 JAVA_TYPEMAP(DB_KEY_RANGE *, com.sleepycat.db.KeyRange, jobject)
 %typemap(in) DB_KEY_RANGE * (DB_KEY_RANGE range) {
 	$1 = &range;
@@ -733,12 +724,44 @@ out0:	return;
 
 JAVA_TYPEMAP(int *envid, DbEnv.RepProcessMessage, jobject)
 %typemap(in) int *envid (int id) %{
-	id = (*jenv)->GetIntField(jenv, $input, rep_processmsg_envid);
+	id = (*jenv)->GetIntField(jenv, $input, rep_processmsg_envid_fid);
 	$1 = &id;
 %}
 
 %typemap(argout) int *envid %{
-	(*jenv)->SetIntField(jenv, $input, rep_processmsg_envid, *$1);
+	(*jenv)->SetIntField(jenv, $input, rep_processmsg_envid_fid, *$1);
 %}
+
+JAVA_TYPEMAP(struct __db_repmgr_sites,
+    com.sleepycat.db.ReplicationHostAddress[], jobjectArray)
+%typemap(out) struct __db_repmgr_sites
+{
+	int i, len;
+
+	len = $1.nsites;
+	$result = (*jenv)->NewObjectArray(jenv, (jsize)len, rephost_class,
+	    NULL);
+	if ($result == NULL)
+		return $null; /* an exception is pending */
+	for (i = 0; i < len; i++) {
+		jobject jrep_addr = (*jenv)->NewObject(jenv,
+		    rephost_class, rephost_construct);
+
+		(*jenv)->SetObjectField(jenv, jrep_addr, rephost_host_fid,
+		    (*jenv)->NewStringUTF(jenv, $1.sites[i].host));
+		(*jenv)->SetIntField(jenv, jrep_addr, rephost_port_fid,
+		    $1.sites[i].port);
+		(*jenv)->SetIntField(jenv, jrep_addr, rephost_eid_fid,
+		    $1.sites[i].eid);
+		(*jenv)->SetIntField(jenv, jrep_addr, rephost_status_fid,
+		    $1.sites[i].status);
+
+		if (jrep_addr == NULL)
+			return $null; /* An exception is pending */
+
+		(*jenv)->SetObjectArrayElement(jenv, $result, i, jrep_addr);
+	}
+	__os_ufree(NULL, $1.sites);
+}
 
 JAVA_TYPEMAP(void *, Object, jobject)

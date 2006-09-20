@@ -6,7 +6,7 @@
     <title>Designing Your Application for Recovery</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="filemanagement.html" title="Chapter 5. Managing DB Files" />
     <link rel="previous" href="recovery.html" title="Recovery Procedures" />
     <link rel="next" href="hotfailover.html" title="Using Hot Failovers" />
@@ -60,6 +60,8 @@
                 in the application's main thread, and then pass that handle to each of the threads that will be
                 performing DB operations. We illustrate this with our final example in this book (see 
                 <a href="txnexample_c.html">Transaction Example</a>
+                
+                
                 
                 for more information).
             </p>
@@ -328,7 +330,7 @@
           <p>
                     For very large and robust multi-process applications, the most common way to ensure all the
                     processes are working as intended is to make use of a watchdog process. To assist a watchdog
-                    process, Sleepycat offers a failure checking mechanism.
+                    process, DB offers a failure checking mechanism.
                 </p>
           <p>
                     When a thread of control fails with open environment handles, the result is that there may be
@@ -336,7 +338,7 @@
                     quickly or not at all, depending on data access patterns.
                 </p>
           <p>
-                    In any case, the Sleepycat failure checking mechanism allows a watchdog to detect if an environment is 
+                    In any case, the DB failure checking mechanism allows a watchdog to detect if an environment is 
                     unusable as a result of a thread of control failure. It should be called periodically 
                     (for example, once a minute) from the watchdog process. If the environment is deemed unusable, then
                     the watchdog process is notified that recovery should be run. It is then up to the watchdog to

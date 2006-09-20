@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_region.c,v 12.27 2006/07/05 16:26:15 alanb Exp $
+ * $Id: rep_region.c,v 12.29 2006/08/24 14:46:25 bostic Exp $
  */
 
 #include "db_config.h"
@@ -146,7 +146,7 @@ __rep_dbenv_refresh(dbenv)
 
 /*
  * __rep_close --
- *      Shut down all of replication, including Replication Framework.
+ *      Shut down all of replication.
  *
  * PUBLIC: int __rep_close __P((DB_ENV *));
  */
@@ -156,13 +156,7 @@ __rep_close(dbenv)
 {
 	int ret, t_ret;
 
-#ifdef HAVE_REPLICATION_THREADS
-	ret = __repmgr_close(dbenv);
-#else
-	ret = 0;
-#endif
-	if ((t_ret = __rep_preclose(dbenv)) != 0 && ret == 0)
-		ret = t_ret;
+	ret = __rep_preclose(dbenv);
 	if ((t_ret = __rep_closefiles(dbenv)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);

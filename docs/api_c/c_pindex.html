@@ -71,7 +71,7 @@
 <tr><td align=right>selecting a </td><td>&nbsp;<a href="../ref/am_conf/cachesize.html#2">cache</a> size</td></tr>
 <tr><td align=right>introduction to the memory </td><td>&nbsp;<a href="../ref/mp/intro.html#3">cache</a> subsystem</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/archival.html#3">catastrophic</a> recovery</td></tr>
-<tr><td align=right>Patches, Updates and </td><td>&nbsp;<a href="http://www.sleepycat.com/update/index.html">Change</a> logs</td></tr>
+<tr><td align=right>Patches, Updates and </td><td>&nbsp;<a href="http://www.oracle.com/technology/software/products/berkeley-db/db/index.html">Change</a> logs</td></tr>
 <tr><td align=right>database page </td><td>&nbsp;<a href="../api_c/db_set_flags.html#2">checksum</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/curclose.html#2">closing</a> a cursor</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/close.html#2">closing</a> a database</td></tr>
@@ -89,7 +89,7 @@
 <tr><td align=right>retrieving records with a </td><td>&nbsp;<a href="../ref/am/curget.html#3">cursor</a></td></tr>
 <tr><td align=right>storing records with a </td><td>&nbsp;<a href="../ref/am/curput.html#3">cursor</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am_misc/stability.html#2">cursor</a> stability</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#7">cursor</a> stability</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#4">cursor</a> stability</td></tr>
 <tr><td align=right>database </td><td>&nbsp;<a href="../ref/am/cursor.html#2">cursors</a></td></tr>
 <tr><td align=right>DBT </td><td>&nbsp;<a href="../api_c/dbt_class.html#data">data</a></td></tr>
 <tr><td align=right>DBcursor-&gt;c_put </td><td>&nbsp;<a href="../api_c/dbc_put.html#DB_AFTER">DB_AFTER</a></td></tr>
@@ -179,6 +179,7 @@
 <tr><td align=right>DBcursor-&gt;c_get </td><td>&nbsp;<a href="../api_c/dbc_get.html#DB_LAST">DB_LAST</a></td></tr>
 <tr><td align=right>DB_LOGC-&gt;get </td><td>&nbsp;<a href="../api_c/logc_get.html#DB_LAST">DB_LAST</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;open </td><td>&nbsp;<a href="../api_c/env_open.html#DB_LOCKDOWN">DB_LOCKDOWN</a></td></tr>
+<tr><td align=right>DB_ENV-&gt;txn_begin </td><td>&nbsp;<a href="../api_c/txn_begin.html#DB_LOCK_DEADLOCK">DB_LOCK_DEADLOCK</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/program/errorret.html#4">DB_LOCK_DEADLOCK</a></td></tr>
 <tr><td align=right>Error returns to applications </td><td>&nbsp;<a href="../ref/program/errorret.html#DB_LOCK_DEADLOCK">DB_LOCK_DEADLOCK</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;set_lk_detect </td><td>&nbsp;<a href="../api_c/env_set_lk_detect.html#DB_LOCK_DEFAULT">DB_LOCK_DEFAULT</a></td></tr>
@@ -216,8 +217,6 @@
 <tr><td align=right>DB_ENV-&gt;set_flags </td><td>&nbsp;<a href="../api_c/env_set_flags.html#DB_LOG_AUTOREMOVE">DB_LOG_AUTOREMOVE</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;set_flags </td><td>&nbsp;<a href="../api_c/env_set_flags.html#DB_LOG_BUFFER_FULL">DB_LOG_BUFFER_FULL</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;set_flags </td><td>&nbsp;<a href="../api_c/env_set_flags.html#DB_LOG_INMEMORY">DB_LOG_INMEMORY</a></td></tr>
-<tr><td align=right>DB_MPOOLFILE-&gt;put </td><td>&nbsp;<a href="../api_c/memp_fput.html#DB_MPOOL_CLEAN">DB_MPOOL_CLEAN</a></td></tr>
-<tr><td align=right>DB_MPOOLFILE-&gt;set </td><td>&nbsp;<a href="../api_c/memp_fset.html#DB_MPOOL_CLEAN">DB_MPOOL_CLEAN</a></td></tr>
 <tr><td align=right>DB_MPOOLFILE-&gt;get </td><td>&nbsp;<a href="../api_c/memp_fget.html#DB_MPOOL_CREATE">DB_MPOOL_CREATE</a></td></tr>
 <tr><td align=right>DB_MPOOLFILE-&gt;get </td><td>&nbsp;<a href="../api_c/memp_fget.html#DB_MPOOL_DIRTY">DB_MPOOL_DIRTY</a></td></tr>
 <tr><td align=right>DB_MPOOLFILE-&gt;put </td><td>&nbsp;<a href="../api_c/memp_fput.html#DB_MPOOL_DISCARD">DB_MPOOL_DISCARD</a></td></tr>
@@ -307,6 +306,8 @@
 <tr><td align=right>DB_ENV-&gt;repmgr_set_ack_policy </td><td>&nbsp;<a href="../api_c/repmgr_ack_policy.html#DB_REPMGR_ACKS_ONE">DB_REPMGR_ACKS_ONE</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;repmgr_set_ack_policy </td><td>&nbsp;<a href="../api_c/repmgr_ack_policy.html#DB_REPMGR_ACKS_ONE_PEER">DB_REPMGR_ACKS_ONE_PEER</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;repmgr_set_ack_policy </td><td>&nbsp;<a href="../api_c/repmgr_ack_policy.html#DB_REPMGR_ACKS_QUORUM">DB_REPMGR_ACKS_QUORUM</a></td></tr>
+<tr><td align=right>DB_ENV-&gt;repmgr_site_list </td><td>&nbsp;<a href="../api_c/repmgr_site_list.html#DB_REPMGR_CONNECTED">DB_REPMGR_CONNECTED</a></td></tr>
+<tr><td align=right>DB_ENV-&gt;repmgr_site_list </td><td>&nbsp;<a href="../api_c/repmgr_site_list.html#DB_REPMGR_DISCONNECTED">DB_REPMGR_DISCONNECTED</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;repmgr_add_remote_site </td><td>&nbsp;<a href="../api_c/repmgr_remote_site.html#DB_REPMGR_PEER">DB_REPMGR_PEER</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;rep_set_timeout </td><td>&nbsp;<a href="../api_c/rep_timeout.html#DB_REP_ACK_TIMEOUT">DB_REP_ACK_TIMEOUT</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;rep_set_transport </td><td>&nbsp;<a href="../api_c/rep_transport.html#DB_REP_ANYWHERE">DB_REP_ANYWHERE</a></td></tr>
@@ -425,12 +426,12 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/lock/dead.html#2">deadlocks</a></td></tr>
 <tr><td align=right>introduction to </td><td>&nbsp;<a href="../ref/debug/intro.html#2">debugging</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/debug/common.html#2">debugging</a> applications</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#11">degree</a> 1 isolation</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#9">degree</a> 2 isolation</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#8">degree</a> 1 isolation</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#6">degree</a> 2 isolation</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am_misc/stability.html#4">degrees</a> of isolation</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/delete.html#2">deleting</a> records</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/curdel.html#2">deleting</a> records with a cursor</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#13">dirty</a> reads</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#10">dirty</a> reads</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am_misc/diskspace.html#2">disk</a> space requirements</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/xa/intro.html#2">Distributed</a> Transactions</td></tr>
 <tr><td align=right>DBT </td><td>&nbsp;<a href="../api_c/dbt_class.html#dlen">dlen</a></td></tr>
@@ -466,6 +467,7 @@
 <tr><td align=right>recovery and </td><td>&nbsp;<a href="../ref/transapp/filesys.html#2">filesystem</a> operations</td></tr>
 <tr><td align=right>remote </td><td>&nbsp;<a href="../ref/env/remote.html#2">filesystems</a></td></tr>
 <tr><td align=right>page </td><td>&nbsp;<a href="../ref/am_conf/h_ffactor.html#2">fill</a> factor</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/program/ram.html#2">Flash</a> memory configurations</td></tr>
 <tr><td align=right>configuring a small memory </td><td>&nbsp;<a href="../ref/build_unix/conf.html#12">footprint</a> library</td></tr>
 <tr><td align=right>Berkeley DB </td><td>&nbsp;<a href="../ref/program/scope.html#3">free-threaded</a> handles</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/freebsd.html#2">FreeBSD</a></td></tr>
@@ -477,8 +479,8 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/program/compatible.html#2">interface</a> compatibility</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/irix.html#2">IRIX</a></td></tr>
 <tr><td align=right>degrees of </td><td>&nbsp;<a href="../ref/am_misc/stability.html#5">isolation</a></td></tr>
-<tr><td align=right>degree 1 </td><td>&nbsp;<a href="../ref/transapp/read.html#10">isolation</a></td></tr>
-<tr><td align=right>degree 2 </td><td>&nbsp;<a href="../ref/transapp/read.html#8">isolation</a></td></tr>
+<tr><td align=right>degree 2 </td><td>&nbsp;<a href="../ref/transapp/read.html#5">isolation</a></td></tr>
+<tr><td align=right>degree 1 </td><td>&nbsp;<a href="../ref/transapp/read.html#7">isolation</a></td></tr>
 <tr><td align=right>configuring the </td><td>&nbsp;<a href="../ref/build_unix/conf.html#10">Java</a> API</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/java/compat.html#2">Java</a> compatibility</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/java/conf.html#2">Java</a> configuration</td></tr>
@@ -518,8 +520,8 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/ext/mod.html#3">mod</a></td></tr>
 <tr><td align=right>DB_ENV-&gt;lock_vec </td><td>&nbsp;<a href="../api_c/lock_vec.html#mode">mode</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/program/copy.html#3">moving</a> databases</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#4">multiversion</a> concurrency control</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#5">MVCC</a></td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#12">multiversion</a> concurrency control</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#13">MVCC</a></td></tr>
 <tr><td align=right>Berkeley DB library </td><td>&nbsp;<a href="../ref/program/namespace.html#2">name</a> spaces</td></tr>
 <tr><td align=right>file </td><td>&nbsp;<a href="../ref/env/naming.html#2">naming</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/join.html#4">natural</a> join</td></tr>
@@ -533,15 +535,15 @@
 <tr><td align=right>selecting a </td><td>&nbsp;<a href="../ref/am_conf/pagesize.html#2">page</a> size</td></tr>
 <tr><td align=right>ignore database environment </td><td>&nbsp;<a href="../api_c/env_set_flags.html#11">panic</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am_misc/partial.html#2">partial</a> record storage and retrieval</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="http://www.sleepycat.com/update/index.html">Patches,</a> Updates and Change logs</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="http://www.oracle.com/technology/software/products/berkeley-db/db/index.html">Patches,</a> Updates and Change logs</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/ext/perl.html#2">Perl</a></td></tr>
 <tr><td align=right>retrieved key/data </td><td>&nbsp;<a href="../ref/am_misc/perm.html#2">permanence</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/ext/php.html#2">PHP</a></td></tr>
 <tr><td align=right>task/thread </td><td>&nbsp;<a href="../ref/program/faq.html#2">priority</a></td></tr>
-<tr><td align=right>Sleepycat Software's Berkeley DB </td><td>&nbsp;<a href="../ref/intro/products.html#2">products</a></td></tr>
+<tr><td align=right>Berkeley DB </td><td>&nbsp;<a href="../ref/intro/products.html#2">products</a></td></tr>
 <tr><td align=right>building for </td><td>&nbsp;<a href="../ref/build_unix/intro.html#5">QNX</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/qnx.html#2">QNX</a></td></tr>
-<tr><td align=right>dirty </td><td>&nbsp;<a href="../ref/transapp/read.html#12">reads</a></td></tr>
+<tr><td align=right>dirty </td><td>&nbsp;<a href="../ref/transapp/read.html#9">reads</a></td></tr>
 <tr><td align=right>accessing Btree records by </td><td>&nbsp;<a href="../api_c/db_set_flags.html#7">record</a> number</td></tr>
 <tr><td align=right>logical </td><td>&nbsp;<a href="../ref/am_conf/logrec.html#2">record</a> numbers</td></tr>
 <tr><td align=right>managing </td><td>&nbsp;<a href="../ref/am_conf/recno.html#2">record-based</a> databases</td></tr>
@@ -571,13 +573,12 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/shlib.html#2">shared</a> libraries</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/program/appsignals.html#2">signal</a> handling</td></tr>
 <tr><td align=right>DBT </td><td>&nbsp;<a href="../api_c/dbt_class.html#size">size</a></td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="http://www.sleepycat.com/">Sleepycat</a> Software</td></tr>
-<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#3">snapshot</a> isolation</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/transapp/read.html#11">snapshot</a> isolation</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/solaris.html#2">Solaris</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/distrib/layout.html#2">source</a> code layout</td></tr>
 <tr><td align=right>turn off reverse </td><td>&nbsp;<a href="../api_c/db_set_flags.html#9">splits</a> in Btree databases</td></tr>
 <tr><td align=right>cursor </td><td>&nbsp;<a href="../ref/am_misc/stability.html#3">stability</a></td></tr>
-<tr><td align=right>cursor </td><td>&nbsp;<a href="../ref/transapp/read.html#6">stability</a></td></tr>
+<tr><td align=right>cursor </td><td>&nbsp;<a href="../ref/transapp/read.html#3">stability</a></td></tr>
 <tr><td align=right>disabling </td><td>&nbsp;<a href="../ref/build_unix/conf.html#6">static</a> libraries</td></tr>
 <tr><td align=right>database </td><td>&nbsp;<a href="../ref/am/stat.html#2">statistics</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/put.html#2">storing</a> records</td></tr>
@@ -626,7 +627,7 @@
 <tr><td align=right>building for </td><td>&nbsp;<a href="../ref/build_unix/intro.html#4">UNIX</a></td></tr>
 <tr><td align=right>building for </td><td>&nbsp;<a href="../ref/build_unix/notes.html#3">UNIX</a> FAQ</td></tr>
 <tr><td align=right>configuring Berkeley DB for </td><td>&nbsp;<a href="../ref/build_unix/conf.html#3">UNIX</a> systems</td></tr>
-<tr><td align=right>Patches, </td><td>&nbsp;<a href="http://www.sleepycat.com/update/index.html">Updates</a> and Change logs</td></tr>
+<tr><td align=right>Patches, </td><td>&nbsp;<a href="http://www.oracle.com/technology/software/products/berkeley-db/db/index.html">Updates</a> and Change logs</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/am/upgrade.html#2">upgrading</a> databases</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/upgrade.2.0/toc.html#2">Upgrading</a> to release 2.0</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/upgrade.3.0/toc.html#2">Upgrading</a> to release 3.0</td></tr>
@@ -651,6 +652,6 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/env/region.html#2">__db.001</a></td></tr>
 </table>
 </center>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

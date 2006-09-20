@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: ReplicationManagerStartPolicy.java,v 12.2 2006/07/05 06:47:30 alexg Exp $
+ * $Id: ReplicationManagerStartPolicy.java,v 12.4 2006/09/08 20:32:14 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -49,7 +49,7 @@ public final class ReplicationManagerStartPolicy {
     private String statusName;
     private int id;
 
-    private ReplicationManagerStartPolicy(final String statusName, 
+    private ReplicationManagerStartPolicy(final String statusName,
         final int id) {
 
         this.statusName = statusName;

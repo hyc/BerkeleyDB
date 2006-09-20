@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: qam_rec.c,v 12.17 2006/06/12 23:18:08 bostic Exp $
+ * $Id: qam_rec.c,v 12.20 2006/09/09 14:28:24 bostic Exp $
  */
 
 #include "db_config.h"
@@ -106,12 +106,12 @@ __qam_incfirst_recover(dbenv, dbtp, lsnp, op, info)
 		trunc_lsn = ((DB_TXNHEAD *)info)->trunc_lsn;
 		/* if we are truncating, update the LSN */
 		if (!IS_ZERO_LSN(trunc_lsn) &&
-		    log_compare(&LSN(meta), &trunc_lsn) > 0) {
+		    LOG_COMPARE(&LSN(meta), &trunc_lsn) > 0) {
 			REC_DIRTY(mpf, &meta);
 			LSN(meta) = trunc_lsn;
 		}
 	} else {
-		if (log_compare(&LSN(meta), lsnp) < 0) {
+		if (LOG_COMPARE(&LSN(meta), lsnp) < 0) {
 			REC_DIRTY(mpf, &meta);
 			LSN(meta) = *lsnp;
 		}
@@ -213,8 +213,8 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 		}
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(meta));
-	cmp_p = log_compare(&LSN(meta), &argp->metalsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(meta));
+	cmp_p = LOG_COMPARE(&LSN(meta), &argp->metalsn);
 
 	/*
 	 * Under normal circumstances, we never undo a movement of one of
@@ -236,7 +236,7 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 		/* If the page lsn is beyond the truncate point, move it back */
 		trunc_lsn = ((DB_TXNHEAD *)info)->trunc_lsn;
 		if (!IS_ZERO_LSN(trunc_lsn) &&
-		    log_compare(&trunc_lsn, &LSN(meta)) < 0) {
+		    LOG_COMPARE(&trunc_lsn, &LSN(meta)) < 0) {
 			REC_DIRTY(mpf, &meta);
 			LSN(meta) = argp->metalsn;
 		}
@@ -340,7 +340,7 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 		pagep->type = P_QAMDATA;
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 
 	if (DB_UNDO(op)) {
 		/* make sure first is behind us */
@@ -394,7 +394,7 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 		F_CLR(qp, QAM_VALID);
 		/*
 		 * We only move the LSN forward during replication.
-		 * During recovery we could obsucre an update from
+		 * During recovery we could obscure an update from
 		 * a partially completed transaction while processing
 		 * a hot backup.  [#13823]
 		 */
@@ -461,7 +461,7 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 		pagep->type = P_QAMDATA;
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 
 	if (DB_UNDO(op)) {
 		/* make sure first is behind us */
@@ -511,7 +511,7 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 		F_CLR(qp, QAM_VALID);
 		/*
 		 * We only move the LSN forward during replication.
-		 * During recovery we could obsucre an update from
+		 * During recovery we could obscure an update from
 		 * a partially completed transaction while processing
 		 * a hot backup.  [#13823]
 		 */
@@ -577,7 +577,7 @@ __qam_add_recover(dbenv, dbtp, lsnp, op, info)
 		pagep->type = P_QAMDATA;
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 
 	if (DB_REDO(op)) {
 		/* Fix meta-data page. */
@@ -606,7 +606,7 @@ __qam_add_recover(dbenv, dbtp, lsnp, op, info)
 				goto err;
 			/*
 			 * We only move the LSN forward during replication.
-			 * During recovery we could obsucre an update from
+			 * During recovery we could obscure an update from
 			 * a partially completed transaction while processing
 			 * a hot backup.  [#13823]
 			 */

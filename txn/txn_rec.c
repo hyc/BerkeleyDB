@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1996
@@ -32,7 +32,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn_rec.c,v 12.12 2006/05/24 16:24:54 sue Exp $
+ * $Id: txn_rec.c,v 12.14 2006/08/24 14:46:53 bostic Exp $
  */
 
 #include "db_config.h"
@@ -89,7 +89,7 @@ __txn_regop_recover(dbenv, dbtp, lsnp, op, info)
 	} else if ((dbenv->tx_timestamp != 0 &&
 	    argp->timestamp > (int32_t)dbenv->tx_timestamp) ||
 	    (!IS_ZERO_LSN(headp->trunc_lsn) &&
-	    log_compare(&headp->trunc_lsn, lsnp) < 0)) {
+	    LOG_COMPARE(&headp->trunc_lsn, lsnp) < 0)) {
 		/*
 		 * We failed either the timestamp check or the trunc_lsn check,
 		 * so we treat this as an abort even if it was a commit record.
@@ -536,7 +536,7 @@ __txn_regop_42_recover(dbenv, dbtp, lsnp, op, info)
 	} else if ((dbenv->tx_timestamp != 0 &&
 	    argp->timestamp > (int32_t)dbenv->tx_timestamp) ||
 	    (!IS_ZERO_LSN(headp->trunc_lsn) &&
-	    log_compare(&headp->trunc_lsn, lsnp) < 0)) {
+	    LOG_COMPARE(&headp->trunc_lsn, lsnp) < 0)) {
 		/*
 		 * We failed either the timestamp check or the trunc_lsn check,
 		 * so we treat this as an abort even if it was a commit record.

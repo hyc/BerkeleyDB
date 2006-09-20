@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_base.c,v 12.13 2006/07/08 02:51:25 alanb Exp $
+ * $Id: rep_base.c,v 12.15 2006/09/08 20:32:06 bostic Exp $
  */
 
 #include <sys/types.h>
@@ -141,7 +141,7 @@ main(argc, argv)
 		usage(progname);
 
 	dbenv->rep_set_priority(dbenv, priority);
-	
+
 
 #ifdef _WIN32
 	/* Initialize the Windows sockets DLL. */

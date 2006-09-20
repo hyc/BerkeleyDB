@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: tcl_mp.c,v 12.5 2006/06/29 00:02:42 mjc Exp $
+ * $Id: tcl_mp.c,v 12.7 2006/09/11 14:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -374,6 +374,9 @@ tcl_MpStat(interp, objc, objv, envp)
 	    sp->st_hash_max_wait);
 	MAKE_STAT_LIST("Number of region lock nowaits", sp->st_region_nowait);
 	MAKE_STAT_LIST("Number of region lock waits", sp->st_region_wait);
+	MAKE_STAT_LIST("Buffers frozen", sp->st_mvcc_frozen);
+	MAKE_STAT_LIST("Buffers thawed", sp->st_mvcc_thawed);
+	MAKE_STAT_LIST("Frozen buffers freed", sp->st_mvcc_freed);
 	MAKE_STAT_LIST("Page allocations", sp->st_alloc);
 	MAKE_STAT_LIST("Buckets examined during allocation",
 	    sp->st_alloc_buckets);
@@ -382,6 +385,7 @@ tcl_MpStat(interp, objc, objv, envp)
 	MAKE_STAT_LIST("Pages examined during allocation", sp->st_alloc_pages);
 	MAKE_STAT_LIST("Maximum pages examined during allocation",
 	    sp->st_alloc_max_pages);
+	MAKE_STAT_LIST("Threads waiting on buffer I/O", sp->st_io_wait);
 
 	/*
 	 * Save global stat list as res1.  The MAKE_STAT_LIST

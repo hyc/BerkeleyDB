@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: log007.tcl,v 12.4 2006/06/27 22:31:08 bostic Exp $
+# $Id: log007.tcl,v 12.5 2006/08/24 14:46:36 bostic Exp $
 #
 # TEST	log007
 # TEST	Test of in-memory logging bugs. [#11505]

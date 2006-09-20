@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_vx_abs.c,v 12.2 2006/01/02 22:02:55 bostic Exp $
+ * $Id: os_vx_abs.c,v 12.3 2006/08/24 14:46:20 bostic Exp $
  */
 
 #include "db_config.h"

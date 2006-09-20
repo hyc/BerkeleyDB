@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test025.tcl,v 12.2 2006/01/02 22:03:26 bostic Exp $
+# $Id: test025.tcl,v 12.3 2006/08/24 14:46:40 bostic Exp $
 #
 # TEST	test025
 # TEST	DB_APPEND flag test.

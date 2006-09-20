@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: cxx_env.cpp,v 12.28 2006/07/17 13:08:01 mjc Exp $
+ * $Id: cxx_env.cpp,v 12.32 2006/09/13 14:53:36 mjc Exp $
  */
 
 #include "db_config.h"
@@ -602,12 +602,6 @@ void DbEnv::runtime_error(DbEnv *env,
 				rr_except.set_env(env);
 				throw rr_except;
 			}
-		case DB_UPDATE_CONFLICT:
-			{
-				DbUpdateConflictException uc_except(caller);
-				uc_except.set_env(env);
-				throw uc_except;
-			}
 		default:
 			{
 				DbException except(caller, error);
@@ -1095,11 +1089,13 @@ DBENV_METHOD(rep_get_timeout, (int which, db_timeout_t * timeout),
 DBENV_METHOD(rep_set_timeout, (int which, db_timeout_t timeout),
     (dbenv, which, timeout))
 DBENV_METHOD(repmgr_add_remote_site, (const char* host, u_int16_t port,
-    u_int32_t flags), (dbenv, host, port, flags))
+    int * eidp, u_int32_t flags), (dbenv, host, port, eidp, flags))
 DBENV_METHOD(repmgr_get_ack_policy, (int *policy), (dbenv, policy))
 DBENV_METHOD(repmgr_set_ack_policy, (int policy), (dbenv, policy))
 DBENV_METHOD(repmgr_set_local_site, (const char* host, u_int16_t port,
     u_int32_t flags), (dbenv, host, port, flags))
+DBENV_METHOD(repmgr_site_list, (u_int *countp, DB_REPMGR_SITE **listp),
+    (dbenv, countp, listp))
 DBENV_METHOD(repmgr_start, (int nthreads, u_int32_t flags),
     (dbenv, nthreads, flags))
 

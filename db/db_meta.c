@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_meta.c,v 12.32 2006/06/29 00:02:30 mjc Exp $
+ * $Id: db_meta.c,v 12.35 2006/08/24 14:45:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -600,7 +600,7 @@ __db_pg_truncate(mpf, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
 			}
 			goto err;
 		}
-		if (!in_recovery || log_compare(&LSN(h), &lp->lsn) == 0) {
+		if (!in_recovery || LOG_COMPARE(&LSN(h), &lp->lsn) == 0) {
 			if ((ret = __memp_dirty(mpf, &h, txn, 0)) != 0) {
 				(void)__memp_fput(mpf, h, 0);
 				goto err;
@@ -917,7 +917,7 @@ __db_lget(dbc, action, pgno, mode, lkflags, lockp)
 	if (CDB_LOCKING(dbenv) || !LOCKING_ON(dbenv) ||
 	    (MULTIVERSION(dbp) && mode == DB_LOCK_READ &&
 	    dbc->txn != NULL && F_ISSET(dbc->txn, TXN_SNAPSHOT)) ||
-	    F_ISSET(dbc, DBC_COMPENSATE) || (F_ISSET(dbc, DBC_RECOVER) &&
+	    F_ISSET(dbc, DBC_DONTLOCK) || (F_ISSET(dbc, DBC_RECOVER) &&
 	    (action != LCK_ROLLBACK || IS_REP_CLIENT(dbenv))) ||
 	    (action != LCK_ALWAYS && F_ISSET(dbc, DBC_OPD))) {
 		LOCK_INIT(*lockp);

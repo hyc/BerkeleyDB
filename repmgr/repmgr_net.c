@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_net.c,v 1.29 2006/07/19 19:19:18 alanb Exp $
+ * $Id: repmgr_net.c,v 1.39 2006/09/19 14:14:11 mjc Exp $
  */
 
 #include "db_config.h"
@@ -127,7 +127,7 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 		conn = site->ref.conn;
 		if ((ret = __repmgr_send_one(dbenv, conn, REPMGR_REP_MESSAGE,
 		    control, rec)) == DB_REP_UNAVAIL &&
-		    (t_ret = __repmgr_bust_connection(dbenv, conn)) != 0)
+		    (t_ret = __repmgr_bust_connection(dbenv, conn, FALSE)) != 0)
 			ret = t_ret;
 		if (ret != 0)
 			goto out;
@@ -177,25 +177,26 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 
 		case DB_REPMGR_ACKS_QUORUM:
 			/*
-			 * "The minimum number of acks necessary to ensure that
-			 * the transaction is durable if an election is held."
+			 * The minimum number of acks necessary to ensure that
+			 * the transaction is durable if an election is held.
 			 */
 			needed = (__repmgr_get_nsites(db_rep) - 1) / 2;
 			available = npeers;
 			break;
 
 		default:
-			DB_ASSERT(dbenv, FALSE);
 			COMPQUIET(available, 0);
 			COMPQUIET(needed, 0);
+			(void)__db_unknown_path(dbenv, "__repmgr_send");
+			break;
 		}
 		if (available < needed) {
 			ret = DB_REP_UNAVAIL;
 			goto out;
 		}
 		/* In ALL_PEERS case, display of "needed" might be confusing. */
-		RPRINT(dbenv, (dbenv, &mb, "will await acks, `needed' == %u",
-			   needed));
+		RPRINT(dbenv, (dbenv, &mb,
+		    "will await acknowledgement: need %u", needed));
 		ret = __repmgr_await_ack(dbenv, lsnp);
 	}
 
@@ -239,7 +240,7 @@ __repmgr_send_broadcast(dbenv, control, rec, nsitesp, npeersp)
 {
 	DB_REP *db_rep;
 	struct sending_msg msg;
-	REPMGR_CONNECTION *conn, *next;
+	REPMGR_CONNECTION *conn;
 	REPMGR_SITE *site;
 	u_int nsites, npeers;
 	int ret;
@@ -250,15 +251,13 @@ __repmgr_send_broadcast(dbenv, control, rec, nsitesp, npeersp)
 	nsites = npeers = 0;
 
 	/*
-	 * Traverse the connections list.  The TAILQ_FOREACH macro would be
-	 * suitable here, except that it doesn't allow unlinking the current
-	 * element, which is needed for __repmgr_bust_connection.
+	 * Traverse the connections list.  Here, even in bust_connection, we
+	 * don't unlink the current list entry, so we can use the TAILQ_FOREACH
+	 * macro.
 	 */
-	for (conn = TAILQ_FIRST(&db_rep->connections);
-	     conn != NULL;
-	     conn = next) {
-		next = TAILQ_NEXT(conn, entries);
-		if (F_ISSET(conn, CONN_CONNECTING) || !IS_VALID_EID(conn->eid))
+	TAILQ_FOREACH(conn, &db_rep->connections, entries) {
+		if (F_ISSET(conn, CONN_CONNECTING | CONN_DEFUNCT) ||
+		    !IS_VALID_EID(conn->eid))
 			continue;
 
 		if ((ret = __repmgr_send_internal(dbenv, conn, &msg)) == 0) {
@@ -267,7 +266,8 @@ __repmgr_send_broadcast(dbenv, control, rec, nsitesp, npeersp)
 			if (site->priority > 0)
 				npeers++;
 		} else if (ret == DB_REP_UNAVAIL) {
-			if ((ret = __repmgr_bust_connection(dbenv, conn)) != 0)
+			if ((ret = __repmgr_bust_connection(
+			     dbenv, conn, FALSE)) != 0)
 				return (ret);
 		} else
 			return (ret);
@@ -385,8 +385,8 @@ __repmgr_send_internal(dbenv, conn, msg)
 	 * Wake the main select thread so that it can discover that it has
 	 * received ownership of this connection.  Note that we didn't have to
 	 * do this in the previous case (above), because the non-empty queue
-	 * implies that the select() thread is alread managing ownership of this
-	 * connection.
+	 * implies that the select() thread is already managing ownership of
+	 * this connection.
 	 */
 #ifdef DB_WIN32
 	if (WSAEventSelect(conn->fd, conn->event_object,
@@ -484,42 +484,47 @@ __repmgr_is_permanent(dbenv, lsnp)
 		is_perm = !has_missing_peer;
 		break;
 	default:
-		DB_ASSERT(dbenv, FALSE);
-		COMPQUIET(is_perm, FALSE);
+		is_perm = FALSE;
+		(void)__db_unknown_path(dbenv, "__repmgr_is_permanent");
 	}
 	return (is_perm);
 }
 
 /*
- * Cleans up a broken connection.  The conn struct must be on the connections
- * list upon entry.  We take it off the list and free its memory as part of the
- * clean-up.  So on return from here, caller must not further refer to it.  Note
- * that this seems to preclude use of the TAILQ_FOREACH iterator in the caller.
+ * Abandons a connection, to recover from an error.  Upon entry the conn struct
+ * must be on the connections list.
  *
- * PUBLIC: int __repmgr_bust_connection __P((DB_ENV *, REPMGR_CONNECTION *));
+ * If the 'do_close' flag is true, we do the whole job; the clean-up includes
+ * removing the struct from the list and freeing all its memory, so upon return
+ * the caller must not refer to it any further.  Otherwise, we merely mark the
+ * connection for clean-up later by the main thread.
+ *
+ * PUBLIC: int __repmgr_bust_connection __P((DB_ENV *,
+ * PUBLIC:     REPMGR_CONNECTION *, int));
  *
  * !!!
  * Caller holds mutex.
  */
 int
-__repmgr_bust_connection(dbenv, conn)
+__repmgr_bust_connection(dbenv, conn, do_close)
 	DB_ENV *dbenv;
 	REPMGR_CONNECTION *conn;
+	int do_close;
 {
 	DB_REP *db_rep;
 	int ret, eid;
 
 	db_rep = dbenv->rep_handle;
+	ret = 0;
 
 	DB_ASSERT(dbenv, !TAILQ_EMPTY(&db_rep->connections));
-	TAILQ_REMOVE(&db_rep->connections, conn, entries);
-
-	/*
-	 * Once conn has been taken off the list, free it before trying anything
-	 * that can fail, lest we risk dropping it, creating a leak.
-	 */
 	eid = conn->eid;
-	__repmgr_cleanup_connection(dbenv, conn);
+	if (do_close)
+		__repmgr_cleanup_connection(dbenv, conn);
+	else {
+		F_SET(conn, CONN_DEFUNCT);
+		conn->eid = -1;
+	}
 
 	/*
 	 * When we first accepted the incoming connection, we set conn->eid to
@@ -528,6 +533,7 @@ __repmgr_bust_connection(dbenv, conn)
 	 * connection, the following scary stuff will correctly not happen.
 	 */
 	if (IS_VALID_EID(eid)) {
+		/* schedule_connection_attempt wakes the main thread. */
 		if ((ret = __repmgr_schedule_connection_attempt(
 		    dbenv, (u_int)eid, FALSE)) != 0)
 			return (ret);
@@ -535,12 +541,18 @@ __repmgr_bust_connection(dbenv, conn)
 		if (eid == db_rep->master_eid) {
 			db_rep->master_eid = DB_EID_INVALID;
 
-			if ((ret = __repmgr_init_election( 
+			if ((ret = __repmgr_init_election(
 			    dbenv, ELECT_FAILURE_ELECTION)) != 0)
 				return (ret);
 		}
+	} else if (!do_close) {
+		/*
+		 * One way or another, make sure the main thread is poked, so
+		 * that we do the deferred clean-up.
+		 */
+		ret = __repmgr_wake_main_thread(dbenv);
 	}
-	return (0);
+	return (ret);
 }
 
 /*
@@ -552,10 +564,14 @@ __repmgr_cleanup_connection(dbenv, conn)
 	DB_ENV *dbenv;
 	REPMGR_CONNECTION *conn;
 {
+	DB_REP *db_rep;
 	QUEUED_OUTPUT *out;
 	REPMGR_FLAT *msg;
 	DBT *dbt;
 
+	db_rep = dbenv->rep_handle;
+
+	TAILQ_REMOVE(&db_rep->connections, conn, entries);
 	(void)closesocket(conn->fd);
 #ifdef DB_WIN32
 	(void)WSACloseEvent(conn->event_object);
@@ -766,8 +782,8 @@ __repmgr_getaddr(dbenv, host, port, flags, result)
 	}
 
 #ifdef DB_WIN32
-	if (!(DB_REP *)(dbenv->
-	    rep_handle)->wsa_inited && (ret = __repmgr_wsa_init(dbenv)) != 0)
+	if (!dbenv->rep_handle->wsa_inited &&
+	    (ret = __repmgr_wsa_init(dbenv)) != 0)
 		return (ret);
 #endif
 
@@ -916,7 +932,7 @@ __repmgr_listen(dbenv)
 			break;
 		}
 
-		if (bind(s, ai->ai_addr, ai->ai_addrlen) != 0) {
+		if (bind(s, ai->ai_addr, (socklen_t)ai->ai_addrlen) != 0) {
 			why = "can't bind socket to listening address";
 			(void)closesocket(s);
 			s = INVALID_SOCKET;
@@ -1013,7 +1029,6 @@ __repmgr_net_destroy(dbenv, db_rep)
 
 	while (!TAILQ_EMPTY(&db_rep->connections)) {
 		conn = TAILQ_FIRST(&db_rep->connections);
-		TAILQ_REMOVE(&db_rep->connections, conn, entries);
 		__repmgr_cleanup_connection(dbenv, conn);
 	}
 

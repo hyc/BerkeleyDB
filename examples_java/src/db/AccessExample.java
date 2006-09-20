@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: AccessExample.java,v 12.4 2006/07/17 12:19:10 mjc Exp $
+ * $Id: AccessExample.java,v 12.5 2006/08/24 14:46:01 bostic Exp $
  */
 
 

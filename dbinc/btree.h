@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: btree.h,v 12.11 2006/07/05 05:37:07 mjc Exp $
+ * $Id: btree.h,v 12.12 2006/08/24 14:45:27 bostic Exp $
  */
 #ifndef	_DB_BTREE_H_
 #define	_DB_BTREE_H_

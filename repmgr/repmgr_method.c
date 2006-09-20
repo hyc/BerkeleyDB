@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_method.c,v 1.20 2006/07/05 19:03:24 alanb Exp $
+ * $Id: repmgr_method.c,v 1.28 2006/09/11 15:15:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -74,8 +74,7 @@ __repmgr_start(dbenv, nthreads, flags)
 
 	if ((ret = __repmgr_net_init(dbenv, db_rep)) != 0 ||
 	    (ret = __repmgr_init_sync(dbenv, db_rep)) != 0 ||
-	    (ret =
-		dbenv->rep_set_transport(dbenv, SELF_EID, __repmgr_send)) != 0)
+	    (ret = __rep_set_transport(dbenv, SELF_EID, __repmgr_send)) != 0)
 		return (ret);
 
 	/*
@@ -88,7 +87,7 @@ __repmgr_start(dbenv, nthreads, flags)
 	else {
 		if ((ret = __repmgr_prepare_my_addr(dbenv, &my_addr)) != 0)
 			return (ret);
-		ret = dbenv->rep_start(dbenv, &my_addr, DB_REP_CLIENT);
+		ret = __rep_start(dbenv, &my_addr, DB_REP_CLIENT);
 		__os_free(dbenv, my_addr.data);
 		if (ret == 0) {
 			LOCK_MUTEX(db_rep->mutex);
@@ -137,13 +136,18 @@ __repmgr_close(dbenv)
 {
 	DB_REP *db_rep;
 	int ret, t_ret;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	ret = 0;
 	db_rep = dbenv->rep_handle;
 	if (db_rep->selector != NULL) {
+		RPRINT(dbenv, (dbenv, &mb, "Stopping repmgr threads"));
 		ret = __repmgr_stop_threads(dbenv);
 		if ((t_ret = __repmgr_await_threads(dbenv)) != 0 && ret == 0)
 			ret = t_ret;
+		RPRINT(dbenv, (dbenv, &mb, "Repmgr threads are finished"));
 	}
 
 	if ((t_ret = __repmgr_net_close(dbenv)) != 0 && ret == 0)
@@ -209,6 +213,7 @@ __repmgr_dbenv_create(dbenv, db_rep)
 	db_rep->config_nsites = 0;
 	db_rep->peer = DB_EID_INVALID;
 	db_rep->perm_policy = DB_REPMGR_ACKS_QUORUM;
+	db_rep->my_priority = 100;
 
 	/*
 	 * TODO: OK, this has just crossed my pain tolerance threshold: I think
@@ -317,7 +322,7 @@ __repmgr_await_threads(dbenv)
 }
 
 /*
- * PUBLIC: int __repmgr_set_local_site __P((DB_ENV *, const char*, u_int,
+ * PUBLIC: int __repmgr_set_local_site __P((DB_ENV *, const char *, u_int,
  * PUBLIC:     u_int32_t));
  */
 int
@@ -390,18 +395,19 @@ __repmgr_set_local_site(dbenv, host, port, flags)
  * won't affect our select() loop.
  *
  * PUBLIC: int __repmgr_add_remote_site __P((DB_ENV *, const char *, u_int,
- * PUBLIC: u_int32_t));
+ * PUBLIC: int *, u_int32_t));
  */
 int
-__repmgr_add_remote_site(dbenv, host, port, flags)
+__repmgr_add_remote_site(dbenv, host, port, eidp, flags)
 	DB_ENV *dbenv;
-	const char* host;
+	const char *host;
 	u_int port;
+	int *eidp;
 	u_int32_t flags;
 {
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
-	int locked, ret;
+	int eid, locked, ret;
 
 	if ((ret = __db_fchk(dbenv,
 	    "DB_ENV->repmgr_add_remote_site", flags, DB_REPMGR_PEER)) != 0)
@@ -421,10 +427,16 @@ __repmgr_add_remote_site(dbenv, host, port, flags)
 	} else
 		locked = FALSE;
 
-	if ((ret = __repmgr_add_site(dbenv, host, port, &site)) == 0 &&
-	    LF_ISSET(DB_REPMGR_PEER))
-		db_rep->peer = EID_FROM_SITE(site);
-	if (locked)
+	if ((ret = __repmgr_add_site(dbenv, host, port, &site)) != 0)
+		goto unlock;
+	eid = EID_FROM_SITE(site);
+
+	if (LF_ISSET(DB_REPMGR_PEER))
+		db_rep->peer = eid;
+	if (eidp != NULL)
+		*eidp = eid;
+
+unlock:	if (locked)
 		UNLOCK_MUTEX(db_rep->mutex);
 	return (ret);
 }

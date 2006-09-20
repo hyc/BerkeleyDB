@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: MarshalledObject.java,v 12.2 2006/01/02 22:03:33 bostic Exp $
+ * $Id: MarshalledObject.java,v 12.3 2006/08/24 14:46:45 bostic Exp $
  */
 
 package com.sleepycat.bind.tuple.test;

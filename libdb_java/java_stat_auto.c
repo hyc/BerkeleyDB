@@ -4,7 +4,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 static int __dbj_fill_bt_stat(JNIEnv *jnienv,
     jobject jobj, struct __db_bt_stat *statp) {
@@ -160,6 +160,7 @@ static int __dbj_fill_mpool_stat(JNIEnv *jnienv,
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_hash_examined_fid, statp, st_hash_examined);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_hash_nowait_fid, statp, st_hash_nowait);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_hash_wait_fid, statp, st_hash_wait);
+	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_hash_max_nowait_fid, statp, st_hash_max_nowait);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_hash_max_wait_fid, statp, st_hash_max_wait);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_region_nowait_fid, statp, st_region_nowait);
 	JAVADB_STAT_INT(jnienv, jobj, mpool_stat_st_region_wait_fid, statp, st_region_wait);
@@ -301,6 +302,7 @@ static int __dbj_fill_txn_active(JNIEnv *jnienv,
 	JAVADB_STAT_LSN(jnienv, jobj, txn_active_lsn_fid, statp, lsn);
 	JAVADB_STAT_LSN(jnienv, jobj, txn_active_read_lsn_fid, statp, read_lsn);
 	JAVADB_STAT_INT(jnienv, jobj, txn_active_mvcc_ref_fid, statp, mvcc_ref);
+	JAVADB_STAT_INT(jnienv, jobj, txn_active_status_fid, statp, status);
 	JAVADB_STAT_INT(jnienv, jobj, txn_active_xa_status_fid, statp, xa_status);
 	JAVADB_STAT_XID(jnienv, jobj, txn_active_xid_fid, statp, xid);
 	JAVADB_STAT_STRING(jnienv, jobj, txn_active_name_fid, statp, name);

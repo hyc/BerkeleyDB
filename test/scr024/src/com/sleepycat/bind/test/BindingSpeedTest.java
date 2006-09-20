@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: BindingSpeedTest.java,v 12.3 2006/06/09 14:32:27 mark Exp $
+ * $Id: BindingSpeedTest.java,v 12.5 2006/09/12 00:37:27 alexg Exp $
  */
 
 package com.sleepycat.bind.test;
@@ -324,11 +324,11 @@ public class BindingSpeedTest extends TestCase {
 
         to.reset();
         Data data = new Data();
-        to.writeString((String) getters[0].invoke(data, null));
-        to.writeString((String) getters[1].invoke(data, null));
-        to.writeInt(((Integer) getters[2].invoke(data, null)).intValue());
-        to.writeInt(((Integer) getters[3].invoke(data, null)).intValue());
-        to.writeString((String) getters[4].invoke(data, null));
+        to.writeString((String) getters[0].invoke(data, (Object[])null));
+        to.writeString((String) getters[1].invoke(data, (Object[])null));
+        to.writeInt(((Integer) getters[2].invoke(data, (Object[])null)).intValue());
+        to.writeInt(((Integer) getters[3].invoke(data, (Object[])null)).intValue());
+        to.writeString((String) getters[4].invoke(data, (Object[])null));
 
         TupleInput ti = new TupleInput(
                           to.getBufferBytes(), to.getBufferOffset(),

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: RepQuoteEnvironment.java,v 1.2 2006/06/27 22:48:15 bostic Exp $
+ * $Id: RepQuoteEnvironment.java,v 1.3 2006/08/24 14:46:03 bostic Exp $
  */
 
 package db.repquote;

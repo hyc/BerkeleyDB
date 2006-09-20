@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: txn_failchk.c,v 12.5 2006/05/05 14:54:11 bostic Exp $
+ * $Id: txn_failchk.c,v 12.6 2006/08/24 14:46:53 bostic Exp $
  */
 
 #include "db_config.h"

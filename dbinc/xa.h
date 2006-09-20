@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1998-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: xa.h,v 12.3 2006/07/05 05:37:10 mjc Exp $
+ * $Id: xa.h,v 12.4 2006/08/24 14:45:30 bostic Exp $
  */
 /*
  * Start of xa.h header

@@ -1,12 +1,12 @@
-# $Id: buildrel,v 12.11 2006/07/20 13:50:14 bostic Exp $
+# $Id: buildrel,v 12.14 2006/09/20 01:12:33 bostic Exp $
 #
 # Build the distribution package.
 #
 # A set of commands intended to be cut and pasted into a csh window.
 
-setenv D		~bostic/sleepycat/db.rel
+setenv D		~bostic/berkeleydb/db.rel
 setenv DBCONF		"~bostic/bin/dbconf thread"
-setenv TARGETDIR	~bostic/sleepycat/
+setenv TARGETDIR	~bostic/berkeleydb/
 
 # Update the release number.
 cd $D/dist
@@ -39,19 +39,21 @@ cd db_docs && sh build $D clean && sh build $D |& sed '/.html$/d'
 cd je/docs_src && sh build db ../../db
 rm -rf $R/docs && cp -r $D/docs $R/docs
 
-# Remove source directories we don't distribute.
-#
+########################################
 # PATCH RELEASE: starting point.
+########################################
+
+# Fix symbolic links and permissions.
+cd $R/dist && sh s_perm
+cd $R/dist && sh s_symlink
+
+# Remove source directories we don't distribute.
 cd $R && rm -rf build_brew os_brew
 cd $R && rm -rf docs_src docs/api_java docs/api_c/pindex.src
 cd $R && rm -rf java/src/com/sleepycat/xa
 cd $R && rm -rf rpc_server/java
 cd $R && rm -rf test/TODO test/upgrade test_perf test_purify
 cd $R && rm -rf test_rep test_server test_thread test_vxworks test_xa
-
-# Fix symbolic links and permissions.
-cd $R/dist && sh s_perm
-cd $R/dist && sh s_symlink
 
 # Build a version and smoke test.
 cd $R && rm -rf build_run && mkdir build_run
@@ -93,7 +95,7 @@ awk '{ if (length() > 99) print "Path length: " length() " bytes: " $0;}'
 # Create the non-crypto tree.
 setenv RNC "$R/../db-$VERSION.NC"
 rm -rf $RNC $R/../__TMP && mkdir $R/../__TMP
-cd $R/../__TMP && gzcat $T | tar xpf - && mv -i db-$VERSION $RNC
+cd $R/../__TMP && gzcat $T | pax -r && mv -i db-$VERSION $RNC
 cd $R && rm -rf $R/../__TMP
 cd $RNC/dist && sh s_crypto
 

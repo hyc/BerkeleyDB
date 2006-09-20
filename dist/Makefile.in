@@ -1,4 +1,4 @@
-# $Id: Makefile.in,v 12.67 2006/07/17 13:08:14 mjc Exp $
+# $Id: Makefile.in,v 12.79 2006/09/13 14:53:38 mjc Exp $
 
 srcdir=	@srcdir@/..
 builddir=.
@@ -94,6 +94,7 @@ libxso_major=	$(libcxx_base)-$(LIBMAJOR)@SOSUFFIX@
 ##################################################
 CLASSPATH=	$(JAVA_CLASSTOP)
 LIBJSO_LIBS=	@LIBJSO_LIBS@ @LIBSO_LIBS@
+SWIGCFLAGS=	@SWIGCFLAGS@
 
 JAR=		@JAR@
 JAVAC=		env CLASSPATH="$(CLASSPATH)" @JAVAC@
@@ -172,7 +173,8 @@ REP_OBJS=\
 REPMGR_OBJS=\
 	getaddrinfo@o@\
 	repmgr_elect@o@ repmgr_method@o@ repmgr_msg@o@ repmgr_net@o@ \
-	repmgr_posix@o@ repmgr_queue@o@ repmgr_sel@o@ repmgr_util@o@
+	repmgr_posix@o@ repmgr_queue@o@ repmgr_sel@o@ repmgr_stat@o@ \
+	repmgr_util@o@
 PRINT_OBJS=\
 	btree_autop@o@ crdel_autop@o@ db_autop@o@ dbreg_autop@o@ \
 	fileops_autop@o@ hash_autop@o@ qam_autop@o@ rep_autop@o@ \
@@ -200,15 +202,15 @@ C_OBJS= @ADDITIONAL_OBJS@ @REPLACEMENT_OBJS@ @CRYPTO_OBJS@ @RPC_CLIENT_OBJS@ \
 	mp_register@o@ mp_stat@o@ mp_sync@o@ mp_trickle@o@ mut_alloc@o@ \
 	mut_failchk@o@ mut_method@o@ mut_region@o@ mut_stat@o@ os_abs@o@ \
 	os_alloc@o@ os_clock@o@ os_config@o@ os_dir@o@ os_errno@o@ \
-	os_fid@o@ os_flock@o@ os_fsync@o@ os_fzero@o@ os_handle@o@ \
-	os_map@o@ os_method@o@ os_mkdir@o@ os_oflags@o@ os_open@o@ \
-	os_pid@o@ os_region@o@ os_rename@o@ os_root@o@ os_rpath@o@ \
-	os_rw@o@ os_seek@o@ os_sleep@o@ os_spin@o@ os_stat@o@ \
-	os_tmpdir@o@ os_truncate@o@ os_uid@o@ os_unlink@o@ os_yield@o@ \
-	seq_stat@o@ sequence@o@ sha1@o@ snprintf@o@ txn@o@ txn_auto@o@ \
-	txn_chkpt@o@ txn_failchk@o@ txn_method@o@ txn_rec@o@ \
-	txn_recover@o@ txn_region@o@ txn_stat@o@ txn_util@o@ xa@o@ \
-	xa_db@o@ xa_map@o@
+	os_fid@o@ os_flock@o@ os_fsync@o@ os_fzero@o@ os_getenv@o@ \
+	os_handle@o@ os_map@o@ os_method@o@ os_mkdir@o@ os_oflags@o@ \
+	os_open@o@ os_pid@o@ os_region@o@ os_rename@o@ os_root@o@ \
+	os_rpath@o@ os_rw@o@ os_seek@o@ os_sleep@o@ os_spin@o@ \
+	os_stat@o@ os_tmpdir@o@ os_truncate@o@ os_uid@o@ os_unlink@o@ \
+	os_yield@o@ seq_stat@o@ sequence@o@ sha1@o@ snprintf@o@ txn@o@ \
+	txn_auto@o@ txn_chkpt@o@ txn_failchk@o@ txn_method@o@ \
+	txn_rec@o@ txn_recover@o@ txn_region@o@ txn_stat@o@ \
+	txn_util@o@ xa@o@ xa_db@o@ xa_map@o@
 
 CXX_OBJS=\
 	cxx_db@o@ cxx_dbc@o@ cxx_dbt@o@ cxx_env@o@ cxx_except@o@ cxx_lock@o@ \
@@ -370,11 +372,9 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/Transaction.java \
 	$(JAVA_SLEEPYCAT)/db/TransactionConfig.java \
 	$(JAVA_SLEEPYCAT)/db/TransactionStats.java \
-	$(JAVA_SLEEPYCAT)/db/UpdateConflictException.java \
 	$(JAVA_SLEEPYCAT)/db/VerifyConfig.java \
 	$(JAVA_SLEEPYCAT)/db/VersionMismatchException.java \
 	$(JAVA_SLEEPYCAT)/db/internal/Db.java \
-	$(JAVA_SLEEPYCAT)/db/internal/DbClient.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbConstants.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbEnv.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbLock.java \
@@ -482,6 +482,7 @@ JAVA_EXSRCS=\
 	$(JAVA_EXDIR)/db/AccessExample.java \
 	$(JAVA_EXDIR)/db/BtRecExample.java \
 	$(JAVA_EXDIR)/db/BulkAccessExample.java \
+	$(JAVA_EXDIR)/db/BulkAccessNIOExample.java \
 	$(JAVA_EXDIR)/db/EnvExample.java \
 	$(JAVA_EXDIR)/db/GettingStarted/ExampleDatabaseLoad.java \
 	$(JAVA_EXDIR)/db/GettingStarted/ExampleDatabaseRead.java \
@@ -770,8 +771,8 @@ uninstall_utilities:
 		$(RM) -f $$i $$i.exe; \
 	done)
 
-DOCLIST=api_c api_cxx api_tcl collections gsg gsg_txn images index.html \
-	java ref sleepycat utility
+DOCLIST=api_c api_cxx api_tcl collections gsg gsg_db_rep gsg_txn images \
+	index.html java license ref utility
 
 install_docs:
 	@echo "Installing documentation: $(DESTDIR)$(docdir) ..."
@@ -1519,6 +1520,8 @@ os_fsync@o@: $(srcdir)/@OSDIR@/os_fsync.c
 	 $(CC) $(CFLAGS) $?
 os_fzero@o@: $(srcdir)/os/os_fzero.c
 	 $(CC) $(CFLAGS) $?
+os_getenv@o@: $(srcdir)/@OSDIR@/os_getenv.c
+	 $(CC) $(CFLAGS) $?
 os_handle@o@: $(srcdir)/@OSDIR@/os_handle.c
 	 $(CC) $(CFLAGS) $?
 os_map@o@: $(srcdir)/@OSDIR@/os_map.c
@@ -1623,6 +1626,8 @@ repmgr_queue@o@: $(srcdir)/repmgr/repmgr_queue.c
 	$(CC) $(CFLAGS) $?
 repmgr_sel@o@: $(srcdir)/repmgr/repmgr_sel.c
 	$(CC) $(CFLAGS) $?
+repmgr_stat@o@: $(srcdir)/repmgr/repmgr_stat.c
+	$(CC) $(CFLAGS) $?
 repmgr_util@o@: $(srcdir)/repmgr/repmgr_util.c
 	$(CC) $(CFLAGS) $?
 rijndael-alg-fst@o@: $(srcdir)/crypto/rijndael/rijndael-alg-fst.c
@@ -1704,7 +1709,7 @@ cxx_txn@o@: $(srcdir)/cxx/cxx_txn.cpp
 # Java API build rules.
 ##################################################
 db_java_wrap@o@: $(srcdir)/libdb_java/db_java_wrap.c
-	$(CC) $(CFLAGS) $?
+	$(CC) $(CFLAGS) $(SWIGCFLAGS) $?
 
 ##################################################
 # Tcl API build rules.
@@ -1803,8 +1808,6 @@ atol@o@: $(srcdir)/clib/atol.c
 ctime@o@: $(srcdir)/clib/ctime.c
 	 $(CC) $(CFLAGS) $?
 getaddrinfo@o@: $(srcdir)/clib/getaddrinfo.c
-	$(CC) $(CFLAGS) $?
-getenv@o@: $(srcdir)/clib/getenv.c
 	$(CC) $(CFLAGS) $?
 getcwd@o@: $(srcdir)/clib/getcwd.c
 	$(CC) $(CFLAGS) $?

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep045script.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
+# $Id: rep045script.tcl,v 12.7 2006/09/15 13:16:25 carol Exp $
 #
 # Rep045 script - replication with version dbs.
 #
@@ -45,7 +45,7 @@ error_check_good script_cenv_open [is_valid_env $clientenv] TRUE
 
 # Start up deadlock detector.
 set dpid [exec $util_path/db_deadlock \
-    -a o -v -t 5 -h $testdir >& $testdir/dd.out &]
+    -a o -v -t 5 -h $clientdir >& $testdir/dd.out &]
 
 # Initialize version number.  Don't try to open the first
 # version database until the master has completed setting it up.

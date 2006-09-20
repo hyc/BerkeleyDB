@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: bt_recno.c,v 12.26 2006/06/23 21:55:19 bostic Exp $
+ * $Id: bt_recno.c,v 12.28 2006/08/24 14:44:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -981,7 +981,7 @@ __ram_source(dbp)
 	 * much care other than we'll complain if there are any modifications
 	 * when it comes time to write the database back to the source.
 	 */
-	if ((t->re_fp = fopen(t->re_source, "r")) == NULL) {
+	if ((t->re_fp = fopen(t->re_source, "rb")) == NULL) {
 		ret = __os_get_errno();
 		__db_err(dbenv, ret, "%s", t->re_source);
 		return (ret);
@@ -1077,7 +1077,7 @@ __ram_writeback(dbp)
 		}
 		t->re_fp = NULL;
 	}
-	if ((fp = fopen(t->re_source, "w")) == NULL) {
+	if ((fp = fopen(t->re_source, "wb")) == NULL) {
 		ret = __os_get_errno();
 		__db_err(dbenv, ret, "%s", t->re_source);
 		goto err;

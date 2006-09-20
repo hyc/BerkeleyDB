@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: log_get.c,v 12.31 2006/07/03 14:18:43 sue Exp $
+ * $Id: log_get.c,v 12.35 2006/09/07 20:05:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -480,8 +480,7 @@ __log_c_get_int(logc, alsn, dbt, flags)
 		nlsn = *alsn;
 		break;
 	default:
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__log_c_get_int");
 		goto err;
 	}
 
@@ -529,7 +528,7 @@ next_file:	++nlsn.file;
 	 */
 	ZERO_LSN(last_lsn);
 	if (!F_ISSET(logc, DB_LOG_DISK) ||
-	    log_compare(&nlsn, &logc->c_lsn) > 0) {
+	    LOG_COMPARE(&nlsn, &logc->c_lsn) > 0) {
 		F_CLR(logc, DB_LOG_DISK);
 
 		if ((ret = __log_c_inregion(logc,
@@ -631,7 +630,6 @@ nohdr:		switch (flags) {
 			 */
 			__db_errx(dbenv,
 		"Encountered zero length records while traversing backwards");
-			DB_ASSERT(dbenv, 0);
 			ret = __db_panic(dbenv, DB_RUNRECOVERY);
 			goto err;
 		case DB_SET:
@@ -816,12 +814,12 @@ __log_c_inregion(logc, lsn, rlockp, last_lsn, hdr, pp, need_cksump)
 	 */
 	if (IS_ZERO_LSN(lp->lsn))
 		return (0);
-	if (log_compare(lsn, &lp->lsn) >= 0)
+	if (LOG_COMPARE(lsn, &lp->lsn) >= 0)
 		return (DB_NOTFOUND);
 	else if (lp->db_log_inmemory) {
 		if ((ret = __log_inmem_lsnoff(dblp, lsn, &b_region)) != 0)
 			return (ret);
-	} else if (lp->b_off == 0 || log_compare(lsn, &lp->f_lsn) < 0)
+	} else if (lp->b_off == 0 || LOG_COMPARE(lsn, &lp->f_lsn) < 0)
 		return (0);
 
 	/*
@@ -845,7 +843,7 @@ __log_c_inregion(logc, lsn, rlockp, last_lsn, hdr, pp, need_cksump)
 	 * header.  In that case, it's safe to return zero, here: it will be
 	 * caught in our caller.  Otherwise, the LSN is bogus.  Fail hard.
 	 */
-	if (lp->db_log_inmemory || log_compare(lsn, &lp->f_lsn) > 0) {
+	if (lp->db_log_inmemory || LOG_COMPARE(lsn, &lp->f_lsn) > 0) {
 		if (!lp->db_log_inmemory)
 			b_region = lsn->offset - lp->w_off;
 		__log_inmem_copyout(dblp, b_region, hdr, hdr->size);
@@ -1287,14 +1285,16 @@ __log_c_set_maxrec(logc, np)
  * This is used by a replication client to process a bulk log message from the
  * master and convert it into individual __rep_apply requests.
  *
- * PUBLIC: int __log_rep_split __P((DB_ENV *, REP_CONTROL *, DBT *, DB_LSN *));
+ * PUBLIC: int __log_rep_split __P((DB_ENV *, REP_CONTROL *, DBT *, DB_LSN *,
+ * PUBLIC:     DB_LSN *));
  */
 int
-__log_rep_split(dbenv, rp, rec, ret_lsnp)
+__log_rep_split(dbenv, rp, rec, ret_lsnp, last_lsnp)
 	DB_ENV *dbenv;
 	REP_CONTROL *rp;
 	DBT *rec;
 	DB_LSN *ret_lsnp;
+	DB_LSN *last_lsnp;
 {
 	DB_LSN save_lsn, tmp_lsn;
 	DBT logrec;
@@ -1351,7 +1351,8 @@ __log_rep_split(dbenv, rp, rec, ret_lsnp)
 		p += len;
 		if (p >= ep && is_perm)
 			F_SET(&tmprp, REPCTL_PERM);
-		ret = __rep_apply(dbenv, &tmprp, &logrec, &tmp_lsn, &is_dup);
+		ret = __rep_apply(dbenv,
+		    &tmprp, &logrec, &tmp_lsn, &is_dup, last_lsnp);
 		RPRINT(dbenv, (dbenv, &mb,
 		    "log_split: rep_apply ret %d, tmp_lsn [%lu][%lu]",
 		    ret, (u_long)tmp_lsn.file, (u_long)tmp_lsn.offset));

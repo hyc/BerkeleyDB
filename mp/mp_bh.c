@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_bh.c,v 12.27 2006/06/29 00:02:38 mjc Exp $
+ * $Id: mp_bh.c,v 12.31 2006/09/07 19:11:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -374,10 +374,10 @@ __memp_pgwrite(dbenv, dbmfp, hp, bhp)
 		dblp = dbenv->lg_handle;
 		lp = dblp->reginfo.primary;
 		if (!lp->db_log_inmemory &&
-		    log_compare(&lp->s_lsn, &LSN(bhp->buf)) <= 0) {
+		    LOG_COMPARE(&lp->s_lsn, &LSN(bhp->buf)) <= 0) {
 			MUTEX_LOCK(dbenv, lp->mtx_flush);
 			DB_ASSERT(dbenv,
-			    log_compare(&lp->s_lsn, &LSN(bhp->buf)) > 0);
+			    LOG_COMPARE(&lp->s_lsn, &LSN(bhp->buf)) > 0);
 			MUTEX_UNLOCK(dbenv, lp->mtx_flush);
 		}
 	}
@@ -563,24 +563,23 @@ __memp_bhfree(dbmp, hp, bhp, flags)
 	 * Delete the buffer header from the hash bucket queue or the
 	 * version chain and reset the hash bucket's priority, if necessary.
 	 */
-	if (SH_CHAIN_SINGLETON(bhp, vc)) {
+	reorder = (__memp_bh_priority(bhp) == bhp->priority);
+	prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh);
+	if ((next_bhp = SH_CHAIN_NEXT(bhp, vc, __bh)) == NULL) {
+		if (prev_bhp != NULL)
+			SH_TAILQ_INSERT_AFTER(&hp->hash_bucket,
+			    bhp, prev_bhp, hq, __bh);
 		SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
-		hp->hash_priority =
-		    BH_PRIORITY(SH_TAILQ_FIRST(&hp->hash_bucket, __bh));
-	} else {
-		reorder = (__memp_bh_priority(bhp) == bhp->priority);
-
-		prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh);
-		if ((next_bhp = SH_CHAIN_NEXT(bhp, vc, __bh)) == NULL) {
-			if (prev_bhp != NULL)
-				SH_TAILQ_INSERT_AFTER(&hp->hash_bucket,
-				    bhp, prev_bhp, hq, __bh);
-			SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
-		}
-		SH_CHAIN_REMOVE(bhp, vc, __bh);
-		if (reorder)
-			__memp_bucket_reorder(hp,
-			    next_bhp != NULL ? next_bhp : prev_bhp);
+		next_bhp = prev_bhp;
+	}
+	SH_CHAIN_REMOVE(bhp, vc, __bh);
+	if (reorder) {
+		if (next_bhp != NULL)
+			__memp_bucket_reorder(dbenv, hp, next_bhp);
+		else
+			hp->hash_priority = SH_TAILQ_EMPTY(&hp->hash_bucket) ?
+			    0 : BH_PRIORITY(
+			    SH_TAILQ_FIRSTP(&hp->hash_bucket, __bh));
 	}
 
 #ifdef DIAGNOSTIC

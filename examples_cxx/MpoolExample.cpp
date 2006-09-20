@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: MpoolExample.cpp,v 12.3 2006/04/27 13:40:42 mjc Exp $
+ * $Id: MpoolExample.cpp,v 12.4 2006/08/24 14:45:49 bostic Exp $
  */
 
 #include <sys/types.h>

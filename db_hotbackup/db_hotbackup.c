@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_hotbackup.c,v 1.27 2006/06/12 17:40:50 bostic Exp $
+ * $Id: db_hotbackup.c,v 1.30 2006/08/26 09:23:07 bostic Exp $
  */
 
 #include "db_config.h"
@@ -16,7 +16,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
 #endif
 
 enum which_open { OPEN_ORIGINAL, OPEN_HOT_BACKUP };
@@ -47,7 +47,7 @@ main(argc, argv)
 	int remove_max, ret, update, verbose;
 	char *backup_dir, **data_dir, *home, *passwd;
 	const char **ddir, **dir, *log_dir;
-	char time_buf[CTIME_BUFLEN];
+	char home_buf[DB_MAXPATHLEN], time_buf[CTIME_BUFLEN];
 
 	if ((progname = strrchr(argv[0], '/')) == NULL)
 		progname = argv[0];
@@ -140,8 +140,19 @@ main(argc, argv)
 	 * We require a source database environment directory and a target
 	 * backup directory.
 	 */
-	if (home == NULL)
-		home = getenv("DB_HOME");
+	if (home == NULL) {
+		home = home_buf;
+		if ((ret = __os_getenv(
+		    NULL, "DB_HOME", &home, sizeof(home_buf))) != 0) {
+			fprintf(stderr,
+		    "%s failed to get environment variable DB_HOME: %s\n",
+			    progname, db_strerror(ret));
+			return (EXIT_FAILURE);
+		}
+		/*
+		 * home set to NULL if __os_getenv failed to find DB_HOME.
+		 */
+	}
 	if (home == NULL) {
 		fprintf(stderr,
 		    "%s: no source database environment specified\n", progname);

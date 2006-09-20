@@ -35,14 +35,12 @@ __ham_insdel_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_insdel_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_insdel%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_insdel%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\topcode: %lu\n", (u_long)argp->opcode);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tpgno: %lu\n", (u_long)argp->pgno);
@@ -87,14 +85,12 @@ __ham_newpage_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_newpage_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_newpage%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_newpage%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\topcode: %lu\n", (u_long)argp->opcode);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tprev_pgno: %lu\n", (u_long)argp->prev_pgno);
@@ -134,14 +130,12 @@ __ham_splitdata_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_splitdata_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_splitdata%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_splitdata%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\topcode: %lu\n", (u_long)argp->opcode);
 	(void)printf("\tpgno: %lu\n", (u_long)argp->pgno);
@@ -181,14 +175,12 @@ __ham_replace_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_replace_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_replace%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_replace%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tpgno: %lu\n", (u_long)argp->pgno);
 	(void)printf("\tndx: %lu\n", (u_long)argp->ndx);
@@ -236,14 +228,12 @@ __ham_copypage_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_copypage_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_copypage%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_copypage%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tpgno: %lu\n", (u_long)argp->pgno);
 	(void)printf("\tpagelsn: [%lu][%lu]\n",
@@ -286,14 +276,12 @@ __ham_metagroup_42_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_metagroup_42_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_metagroup_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_metagroup_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tbucket: %lu\n", (u_long)argp->bucket);
 	(void)printf("\tmmpgno: %lu\n", (u_long)argp->mmpgno);
@@ -332,14 +320,12 @@ __ham_metagroup_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_metagroup_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_metagroup%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_metagroup%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tbucket: %lu\n", (u_long)argp->bucket);
 	(void)printf("\tmmpgno: %lu\n", (u_long)argp->mmpgno);
@@ -379,14 +365,12 @@ __ham_groupalloc_42_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_groupalloc_42_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_groupalloc_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_groupalloc_42%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tmeta_lsn: [%lu][%lu]\n",
 	    (u_long)argp->meta_lsn.file, (u_long)argp->meta_lsn.offset);
@@ -419,14 +403,12 @@ __ham_groupalloc_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_groupalloc_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_groupalloc%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_groupalloc%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tmeta_lsn: [%lu][%lu]\n",
 	    (u_long)argp->meta_lsn.file, (u_long)argp->meta_lsn.offset);
@@ -460,14 +442,12 @@ __ham_curadj_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_curadj_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_curadj%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_curadj%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tpgno: %lu\n", (u_long)argp->pgno);
 	(void)printf("\tindx: %lu\n", (u_long)argp->indx);
@@ -502,14 +482,12 @@ __ham_chgpg_print(dbenv, dbtp, lsnp, notused2, notused3)
 	if ((ret = __ham_chgpg_read(dbenv, dbtp->data, &argp)) != 0)
 		return (ret);
 	(void)printf(
-	    "[%lu][%lu]__ham_chgpg%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
-	    (u_long)lsnp->file,
-	    (u_long)lsnp->offset,
+    "[%lu][%lu]__ham_chgpg%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (argp->type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)argp->type,
 	    (u_long)argp->txnp->txnid,
-	    (u_long)argp->prev_lsn.file,
-	    (u_long)argp->prev_lsn.offset);
+	    (u_long)argp->prev_lsn.file, (u_long)argp->prev_lsn.offset);
 	(void)printf("\tfileid: %ld\n", (long)argp->fileid);
 	(void)printf("\tmode: %ld\n", (long)argp->mode);
 	(void)printf("\told_pgno: %lu\n", (u_long)argp->old_pgno);

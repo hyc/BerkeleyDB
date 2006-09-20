@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: TupleOrderingTest.java,v 12.5 2006/06/27 22:48:20 bostic Exp $
+ * $Id: TupleOrderingTest.java,v 12.6 2006/08/24 14:46:45 bostic Exp $
  */
 
 package com.sleepycat.bind.tuple.test;

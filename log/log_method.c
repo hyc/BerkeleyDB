@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: log_method.c,v 12.8 2006/05/05 14:53:38 bostic Exp $
+ * $Id: log_method.c,v 12.10 2006/08/30 10:05:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -229,7 +229,7 @@ __log_set_lg_regionmax(dbenv, lg_regionmax)
 					/* Let's not be silly. */
 	if (lg_regionmax != 0 && lg_regionmax < LG_BASE_REGION_SIZE) {
 		__db_errx(dbenv,
-		    "log file size must be >= %d", LG_BASE_REGION_SIZE);
+		    "log region size must be >= %d", LG_BASE_REGION_SIZE);
 		return (EINVAL);
 	}
 

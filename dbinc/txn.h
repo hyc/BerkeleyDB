@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: txn.h,v 12.11 2006/07/05 05:37:10 mjc Exp $
+ * $Id: txn.h,v 12.13 2006/08/24 14:45:30 bostic Exp $
  */
 
 #ifndef	_DB_TXN_H_
@@ -61,24 +61,17 @@ typedef struct __txn_detail {
 	SH_TAILQ_HEAD(__tdkids)	kids;	/* Linked list of child txn detail. */
 	SH_TAILQ_ENTRY		klinks;
 
-#define	TXN_RUNNING		1
-#define	TXN_ABORTED		2
-#define	TXN_PREPARED		3
-#define	TXN_COMMITTED		4
+	/* TXN_{ABORTED, COMMITTED PREPARED, RUNNING} */
 	u_int32_t status;		/* status of the transaction */
+
 #define	TXN_DTL_COLLECTED	0x1	/* collected during txn_recover */
 #define	TXN_DTL_RESTORED	0x2	/* prepared txn restored */
 #define	TXN_DTL_INMEMORY	0x4	/* uses in memory logs */
 	u_int32_t flags;
 
+	/* TXN_XA_{ABORTED, DEADLOCKED, ENDED, PREPARED, STARTED, SUSPENDED} */
 	SH_TAILQ_ENTRY	links;		/* active/free/snapshot list */
 
-#define	TXN_XA_ABORTED		1
-#define	TXN_XA_DEADLOCKED	2
-#define	TXN_XA_ENDED		3
-#define	TXN_XA_PREPARED		4
-#define	TXN_XA_STARTED		5
-#define	TXN_XA_SUSPENDED	6
 	u_int32_t xa_status;		/* XA status */
 
 	/*

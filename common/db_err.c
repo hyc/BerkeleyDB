@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_err.c,v 12.37 2006/07/17 13:07:58 mjc Exp $
+ * $Id: db_err.c,v 12.44 2006/09/13 14:53:34 mjc Exp $
  */
 
 #include "db_config.h"
@@ -140,9 +140,7 @@ __db_assert(dbenv, e, file, line)
 {
 	__db_errx(dbenv, "assert failure: %s/%d: \"%s\"", file, line, e);
 
-	/* We want a stack trace of how this could possibly happen. */
 	abort();
-
 	/* NOTREACHED */
 }
 #endif
@@ -200,6 +198,7 @@ __db_panic(dbenv, errval)
 	 * under certain conditions.
 	 */
 	abort();
+	/* NOTREACHED */
 #endif
 
 	/*
@@ -311,8 +310,6 @@ db_strerror(error)
 	case DB_SECONDARY_BAD:
 		return
 	    ("DB_SECONDARY_BAD: Secondary index inconsistent with primary");
-	case DB_UPDATE_CONFLICT:
-		return ("DB_UPDATE_CONFLICT: MVCC updates conflicted.");
 	case DB_VERIFY_BAD:
 		return ("DB_VERIFY_BAD: Database verification failed");
 	case DB_VERSION_MISMATCH:
@@ -601,12 +598,16 @@ __db_unknown_flag(dbenv, routine, flag)
 	u_int32_t flag;
 {
 	__db_errx(dbenv, "%s: Unknown flag: %#x", routine, (u_int)flag);
-	DB_ASSERT(dbenv, 0);
+
+#ifdef DIAGNOSTIC
+	abort();
+	/* NOTREACHED */
+#endif
 	return (EINVAL);
 }
 
 /*
- * __db_unknown_type -- report internal error
+ * __db_unknown_type -- report internal database type error
  *
  * PUBLIC: int __db_unknown_type __P((DB_ENV *, char *, DBTYPE));
  */
@@ -617,9 +618,32 @@ __db_unknown_type(dbenv, routine, type)
 	DBTYPE type;
 {
 	__db_errx(dbenv,
-	    "%s: Unexpected DB type: %s", routine, __db_dbtype_to_string(type));
+	    "%s: Unexpected database type: %s",
+	    routine, __db_dbtype_to_string(type));
 
-	DB_ASSERT(dbenv, 0);
+#ifdef DIAGNOSTIC
+	abort();
+	/* NOTREACHED */
+#endif
+	return (EINVAL);
+}
+
+/*
+ * __db_unknown_path -- report unexpected database code path error.
+ *
+ * PUBLIC: int __db_unknown_path __P((DB_ENV *, char *));
+ */
+int
+__db_unknown_path(dbenv, routine)
+	DB_ENV *dbenv;
+	char *routine;
+{
+	__db_errx(dbenv, "%s: Unexpected code path error", routine);
+
+#ifdef DIAGNOSTIC
+	abort();
+	/* NOTREACHED */
+#endif
 	return (EINVAL);
 }
 
@@ -846,18 +870,27 @@ __dbc_logging(dbc)
 		__db_errx(dbenv, "Dbc_logging: Client update");
 		goto err;
 	}
+
+#ifndef DEBUG_WOP
+	/*
+	 * If DEBUG_WOP is enabled, then we'll generate debugging log records
+	 * that are non-transactional.  This is OK.
+	 */
 	if (IS_REP_MASTER(dbenv) &&
 	    dbc->txn == NULL && !F_ISSET(dbc->dbp, DB_AM_NOT_DURABLE)) {
 		__db_errx(dbenv, "Dbc_logging: Master non-txn update");
 		goto err;
 	}
+#endif
+
 	if (0) {
-err:		__db_errx(dbenv, "Rep: flags 0x%lx msg_th %lu, start_th %d",
-		    (u_long)rep->flags, (u_long)rep->msg_th, rep->start_th);
+err:		__db_errx(dbenv, "Rep: flags 0x%lx msg_th %lu, lockout_th %d",
+		    (u_long)rep->flags, (u_long)rep->msg_th, rep->lockout_th);
 		__db_errx(dbenv, "Rep: handle %lu, opcnt %lu, in_rec %d",
 		    (u_long)rep->handle_cnt, (u_long)rep->op_cnt,
 		    rep->in_recovery);
 		abort();
+		/* NOTREACHED */
 	}
 	}
 #endif

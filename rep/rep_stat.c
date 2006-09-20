@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_stat.c,v 12.13 2006/05/19 19:25:21 bostic Exp $
+ * $Id: rep_stat.c,v 12.16 2006/09/07 16:51:04 bostic Exp $
  */
 
 #include "db_config.h"
@@ -367,6 +367,11 @@ __rep_print_stats(dbenv, flags)
 
 	__os_ufree(dbenv, sp);
 
+#ifdef HAVE_REPLICATION_THREADS
+	if ((ret = __repmgr_print_stats(dbenv)) != 0)
+		return (ret);
+#endif
+
 	return (0);
 }
 
@@ -444,7 +449,7 @@ __rep_print_all(dbenv, flags)
 
 	STAT_LONG("Thread is in rep_elect", rep->elect_th);
 	STAT_ULONG("Callers in rep_proc_msg", rep->msg_th);
-	STAT_LONG("Thread is in rep_start", rep->start_th);
+	STAT_LONG("Thread is in msg lockout", rep->lockout_th);
 	STAT_ULONG("Library handle count", rep->handle_cnt);
 	STAT_ULONG("Multi-step operation count", rep->op_cnt);
 	STAT_LONG("Running recovery", rep->in_recovery);

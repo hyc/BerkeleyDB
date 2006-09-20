@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: dead005.tcl,v 12.3 2006/02/21 15:46:37 carol Exp $
+# $Id: dead005.tcl,v 12.4 2006/08/24 14:46:35 bostic Exp $
 #
 # Deadlock Test 5.
 # Test out the minlocks, maxlocks, and minwrites options

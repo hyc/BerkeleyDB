@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn.c,v 12.52 2006/07/07 13:54:01 bostic Exp $
+ * $Id: txn.c,v 12.55 2006/08/24 14:46:52 bostic Exp $
  */
 
 #include "db_config.h"
@@ -649,7 +649,7 @@ __txn_commit(txn, flags)
 
 					DB_ASSERT(dbenv, __log_current_lsn(
 					    dbenv, &s_lsn, NULL, NULL) == 0);
-					DB_ASSERT(dbenv, log_compare(
+					DB_ASSERT(dbenv, LOG_COMPARE(
 					    &td->visible_lsn, &s_lsn) <= 0);
 					COMPQUIET(s_lsn.file, 0);
 				}
@@ -701,8 +701,6 @@ __txn_commit(txn, flags)
 
 	if (ret != 0)
 		goto err;
-
-	td->status = TXN_COMMITTED;
 
 	/* This is OK because __txn_end can only fail with a panic. */
 	return (__txn_end(txn, 1));
@@ -847,8 +845,6 @@ done:	SET_LOG_FLAGS(dbenv, txn, lflags);
 	    (ret = __txn_regop_log(dbenv, txn, &td->last_lsn,
 	    lflags, TXN_ABORT, (int32_t)time(NULL), id, NULL)) != 0)
 		return (__db_panic(dbenv, ret));
-
-	td->status = TXN_ABORTED;
 
 	/* __txn_end always panics if it errors, so pass the return along. */
 	return (__txn_end(txn, 0));
@@ -1292,6 +1288,7 @@ __txn_end(txn, is_commit)
 	TXN_SYSTEM_LOCK(dbenv);
 
 	td = txn->td;
+	td->status = is_commit ? TXN_COMMITTED : TXN_ABORTED;
 	SH_TAILQ_REMOVE(&region->active_txn, td, links, __txn_detail);
 	if (F_ISSET(td, TXN_DTL_RESTORED)) {
 		region->stat.st_nrestores--;

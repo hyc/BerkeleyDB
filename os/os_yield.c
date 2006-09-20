@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_yield.c,v 12.9 2006/05/19 19:25:18 bostic Exp $
+ * $Id: os_yield.c,v 12.11 2006/09/06 13:33:25 bostic Exp $
  */
 
 #include "db_config.h"
@@ -32,9 +32,7 @@ __os_yield(dbenv)
 		return;
 	}
 
-#if defined(HAVE_VXWORKS)
-	taskDelay(1);
-#elif defined(HAVE_MUTEX_UI_THREADS)
+#if defined(HAVE_MUTEX_UI_THREADS)
 	thr_yield();
 #elif defined(HAVE_PTHREAD_YIELD) &&					\
     (defined(HAVE_MUTEX_PTHREADS) || defined(HAVE_PTHREAD_API))

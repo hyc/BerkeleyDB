@@ -62,7 +62,7 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 
 	if (msg == NULL)
 		msg = db_strerror(err);
-	
+
 	jmsg = (*jenv)->NewStringUTF(jenv, msg);
 
 	switch (err) {
@@ -119,19 +119,15 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 	case DB_LOCK_DEADLOCK:
 		return (jthrowable)(*jenv)->NewObject(jenv, deadex_class,
 		    deadex_construct, jmsg, err, jdbenv);
-	
+
 	case DB_LOCK_NOTGRANTED:
 		return (jthrowable)(*jenv)->NewObject(jenv, lockex_class,
 		    lockex_construct, jmsg, err, 0, NULL, NULL, 0, jdbenv);
-	
-	case DB_UPDATE_CONFLICT:
-		return (jthrowable)(*jenv)->NewObject(jenv, updconfex_class,
-		    updconfex_construct, jmsg, err, jdbenv);
-	
+
 	case DB_VERSION_MISMATCH:
 		return (jthrowable)(*jenv)->NewObject(jenv, versionex_class,
 		    versionex_construct, jmsg, err, jdbenv);
-	
+
 	default:
 		return (jthrowable)(*jenv)->NewObject(jenv, dbex_class,
 		    dbex_construct, jmsg, err, jdbenv);
@@ -156,13 +152,13 @@ static int __dbj_throw(JNIEnv *jenv,
 			 */
 			if (msg == NULL)
 				msg = db_strerror(err);
-	
+
 			 __db_errx(NULL, "Couldn't create exception for: '%s'",
 			     msg);
 		} else
 			(*jenv)->Throw(jenv, t);
 	}
-	
+
 	return (err);
 }
 %}

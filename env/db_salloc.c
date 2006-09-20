@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_salloc.c,v 12.9 2006/05/05 14:53:30 bostic Exp $
+ * $Id: db_salloc.c,v 12.10 2006/08/24 14:45:38 bostic Exp $
  */
 
 #include "db_config.h"

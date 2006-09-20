@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_fzero.c,v 12.15 2006/07/17 15:16:47 bostic Exp $
+ * $Id: os_fzero.c,v 12.17 2006/09/19 14:14:12 mjc Exp $
  */
 
 #include "db_config.h"
@@ -76,7 +76,7 @@ __os_zerofill(dbenv, fhp)
 	 * flush them to disk, then write the last one to disk and flush it.
 	 */
 	for (group_sync = 0; stat_offset < write_offset; group_sync = 1) {
-		if (write_offset - stat_offset <= blen) {
+		if (write_offset - stat_offset <= (off_t)blen) {
 			blen = (size_t)(write_offset - stat_offset);
 			if (group_sync && (ret = __os_fsync(dbenv, fhp)) != 0)
 				goto err;

@@ -2,12 +2,12 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield,
  * -- astubble@rice.edu.
  *
- * $Id: hmac.c,v 12.7 2006/06/27 22:22:06 bostic Exp $
+ * $Id: hmac.c,v 12.9 2006/09/09 14:28:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -96,7 +96,7 @@ __db_chksum(hdr, data, data_len, mac_key, store)
 	 * checksum value so that we can have a known value there when
 	 * we verify the checksum.
 	 * If we are passed a log header XOR in prev and len so we have
-	 * some redunency on these fields.  Mostly we need to be sure that
+	 * some redundancy on these fields.  Mostly we need to be sure that
 	 * we detect a race when doing hot backups and reading a live log
 	 * file.
 	 */

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_cam.c,v 12.42 2006/06/22 04:25:55 ubell Exp $
+ * $Id: db_cam.c,v 12.43 2006/08/24 14:45:15 bostic Exp $
  */
 
 #include "db_config.h"

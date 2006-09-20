@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_stat.c,v 12.33 2006/05/19 19:25:15 bostic Exp $
+ * $Id: env_stat.c,v 12.36 2006/09/08 19:25:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -85,12 +85,6 @@ __env_stat_print(dbenv, flags)
 	/* The subsystems don't know anything about DB_STAT_SUBSYSTEM. */
 	LF_CLR(DB_STAT_SUBSYSTEM);
 
-	if (MUTEX_ON(dbenv)) {
-		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
-		if ((ret = __mutex_stat_print(dbenv, flags)) != 0)
-			return (ret);
-	}
-
 	if (LOGGING_ON(dbenv)) {
 		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 		if ((ret = __log_stat_print(dbenv, flags)) != 0)
@@ -122,6 +116,12 @@ __env_stat_print(dbenv, flags)
 	if (TXN_ON(dbenv)) {
 		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 		if ((ret = __txn_stat_print(dbenv, flags)) != 0)
+			return (ret);
+	}
+
+	if (MUTEX_ON(dbenv)) {
+		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
+		if ((ret = __mutex_stat_print(dbenv, flags)) != 0)
 			return (ret);
 	}
 

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: sdb018.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
+# $Id: sdb018.tcl,v 12.6 2006/08/24 14:46:39 bostic Exp $
 #
 # TEST	sdb018
 # TEST	Tests join of in-memory named databases.

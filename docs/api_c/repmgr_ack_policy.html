@@ -1,5 +1,5 @@
-<!--$Id: repmgr_ack_policy.so,v 1.4 2006/06/27 22:49:29 bostic Exp $-->
-<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
+<!--$Id: repmgr_ack_policy.so,v 1.5 2006/09/07 19:26:44 alanb Exp $-->
+<!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -32,8 +32,9 @@ DB_ENV-&gt;repmgr_get_ack_policy(DB_ENV *env, int *ack_policyp);
 <h3>Description: DB_ENV-&gt;repmgr_set_ack_policy</h3>
 <p>The DB_ENV-&gt;repmgr_set_ack_policy method specifies how master and client sites
 will handle acknowledgment of replication messages which are necessary
-for "permanent" records.  Note that it is essential for all sites in a
-replication group to configure the same acknowledgement policy.</p>
+for "permanent" records.  The current implementation requires all
+sites in a replication group configure the same acknowledgement
+policy.</p>
 <p>The DB_ENV-&gt;repmgr_set_ack_policy method configures a database environment, not only operations
 performed using the specified <a href="../api_c/env_class.html">DB_ENV</a> handle.</p>
 <p>The DB_ENV-&gt;repmgr_set_ack_policy method may be called at any time during the life of the
@@ -72,17 +73,17 @@ policy.
 <a href="../api_c/rep_timeout.html#DB_REP_ACK_TIMEOUT">DB_REP_ACK_TIMEOUT</a> specified by <a href="../api_c/rep_timeout.html">DB_ENV-&gt;rep_set_timeout</a>.</p>
 </dl>
 <hr size=1 noshade>
-<h3>Description: DB_ENV-&gt;get_repmgr_ack_policy</h3>
-<p>The DB_ENV-&gt;get_repmgr_ack_policy method returns the replication manager's client acknowledgment policy.</p>
-<p>The DB_ENV-&gt;get_repmgr_ack_policy method may be called at any time during the life of the
+<h3>Description: DB_ENV-&gt;repmgr_get_ack_policy</h3>
+<p>The DB_ENV-&gt;repmgr_get_ack_policy method returns the replication manager's client acknowledgment policy.</p>
+<p>The DB_ENV-&gt;repmgr_get_ack_policy method may be called at any time during the life of the
 application.</p>
-<p>The DB_ENV-&gt;get_repmgr_ack_policy method
+<p>The DB_ENV-&gt;repmgr_get_ack_policy method
 returns a non-zero error value on failure
 and 0 on success.
 </p>
 <h3>Parameters</h3>
 <dl compact>
-<dt><b>ack_policyp</b><dd>The DB_ENV-&gt;get_repmgr_ack_policy method returns  the
+<dt><b>ack_policyp</b><dd>The DB_ENV-&gt;repmgr_get_ack_policy method returns  the
 replication manager's client acknowledgment policy in <b>ack_policyp</b>.
 </dl>
 <hr size=1 noshade>
@@ -94,6 +95,6 @@ replication manager's client acknowledgment policy in <b>ack_policyp</b>.
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_c/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

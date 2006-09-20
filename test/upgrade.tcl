@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: upgrade.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
+# $Id: upgrade.tcl,v 12.8 2006/09/18 14:22:44 carol Exp $
 
 source ./include.tcl
 
@@ -324,14 +324,25 @@ proc _log_test { temp_dir release method file } {
 		}
 	}
 
-	if { $current_logvers > $saved_logvers } {
+	# Log versions prior to 8 can only be read by their own version.
+	# Log versions of 8 or greater are readable by Berkeley DB 4.5
+	# or greater, but the output of printlog does not match unless 
+	# the versions are identical.
+	set logoldver 8
+	if { $current_logvers > $saved_logvers &&\
+	    $current_logvers < $logoldver } {
 		error_check_good historic_log_version \
 		    [is_substr $message "historic log version"] 1
-	} else {
+	} elseif { $current_logvers > $saved_logvers } {
+		error_check_good db_printlog:$message $ret 0
+	} elseif { $current_logvers == $saved_logvers  } {
 		error_check_good db_printlog:$message $ret 0
 		# Compare logs.prlog and $file.prlog (should match)
 		error_check_good "Compare printlogs" [filecmp \
 		    "$temp_dir/logs.prlog" "$temp_dir/$file.prlog"] 0
+	} elseif { $current_logvers < $saved_logvers } {
+		puts -nonewline "FAIL: current log version $current_logvers "
+		puts "cannot be less than saved log version $save_logvers."
 	}
 }
 
@@ -344,6 +355,7 @@ proc gen_upgrade { dir { save_crypto 1 } { save_non_crypto 1 } } {
 	global upgrade_be
 	global upgrade_method
 	global upgrade_name
+	global valid_methods
 	global test_names
 	global parms
 	global encrypt
@@ -381,8 +393,7 @@ proc gen_upgrade { dir { save_crypto 1 } { save_non_crypto 1 } } {
 	error_check_good env_close [$env close] 0
 
 	# Generate test databases for each access method and endianness.
-	foreach method \
-	    "btree rbtree hash recno rrecno frecno queue queueext" {
+	foreach method $valid_methods {
 		set o [open GENERATE.OUT a]
 		puts $o "\nGenerating $method files"
 		close $o

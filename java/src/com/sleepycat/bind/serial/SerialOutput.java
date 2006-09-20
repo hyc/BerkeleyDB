@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: SerialOutput.java,v 12.3 2006/01/02 22:02:23 bostic Exp $
+ * $Id: SerialOutput.java,v 12.5 2006/09/08 20:32:11 bostic Exp $
  */
 
 package com.sleepycat.bind.serial;
@@ -40,7 +40,7 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  */
 public class SerialOutput extends ObjectOutputStream {
 
-    /* 
+    /*
      * Serialization version constants. Instead of hardcoding these we get them
      * by creating a SerialOutput, which itself guarantees that we'll always
      * use a PROTOCOL_VERSION_2 header.

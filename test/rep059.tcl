@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep059.tcl,v 1.5 2006/07/19 17:45:35 carol Exp $
+# $Id: rep059.tcl,v 1.7 2006/09/08 20:32:18 bostic Exp $
 #
 # TEST	rep059
 # TEST
@@ -25,8 +25,8 @@ proc rep059 { method { tnum "059" } args } {
 	}
 	# There should be no difference with methods.  Just use btree.
 	#
-	if { $checking_valid_methods } 
-		set test_methods { btree } 
+	if { $checking_valid_methods }
+		set test_methods { btree }
 		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {

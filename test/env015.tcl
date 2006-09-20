@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: env015.tcl,v 12.2 2006/06/27 22:31:08 bostic Exp $
+# $Id: env015.tcl,v 12.4 2006/09/13 13:26:05 mjc Exp $
 #
 # TEST	env015
 # TEST	Rename the underlying directory of an env, make sure everything
@@ -36,7 +36,13 @@ proc env015 { } {
 		}
 
 		puts "\tEnv015.b: Rename directory."
-		file rename -force $testdir $newdir
+		if { $is_windows_test } {
+			file mkdir $newdir
+			eval file rename -force [glob $testdir/*] $newdir
+			fileremove -force $testdir
+		} else {
+			file rename -force $testdir $newdir
+		}
 
 		puts "\tEnv015.c: Database is still available in new directory."
 		for { set i 0 } { $i < 10 } { incr i } {

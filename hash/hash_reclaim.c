@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: hash_reclaim.c,v 12.4 2006/05/05 14:53:32 bostic Exp $
+ * $Id: hash_reclaim.c,v 12.6 2006/08/24 14:46:05 bostic Exp $
  */
 
 #include "db_config.h"
@@ -41,6 +41,13 @@ __ham_reclaim(dbp, txn)
 
 	if ((ret = __ham_get_meta(dbc)) != 0)
 		goto err;
+
+	/* Write lock the metapage for deallocations. */
+	if ((ret = __ham_dirty_meta(dbc, 0)) != 0)
+		goto err;
+
+	/* Avoid locking every page, we have the handle locked exclusive. */
+	F_SET(dbc, DBC_DONTLOCK);
 
 	if ((ret = __ham_traverse(dbc,
 	    DB_LOCK_WRITE, __db_reclaim_callback, dbc, 1)) != 0)

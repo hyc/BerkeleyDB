@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep043script.tcl,v 1.7 2006/06/27 22:31:09 bostic Exp $
+# $Id: rep043script.tcl,v 1.8 2006/08/24 14:46:38 bostic Exp $
 #
 # Rep043 script - constant writes to an env which may be
 # either a master or a client, or changing between the

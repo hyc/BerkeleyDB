@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: RepConfig.java,v 1.2 2006/06/27 22:48:15 bostic Exp $
+ * $Id: RepConfig.java,v 1.5 2006/09/08 20:32:02 bostic Exp $
  */
 
 package db.repquote;
@@ -73,7 +73,8 @@ public class RepConfig
 
     public void addOtherHost(String host, int port, boolean peer)
     {
-        ReplicationHostAddress newInfo = new ReplicationHostAddress(host, port, peer);
+        ReplicationHostAddress newInfo =
+		    new ReplicationHostAddress(host, port, peer, false);
         otherHosts.add(newInfo);
     }
 

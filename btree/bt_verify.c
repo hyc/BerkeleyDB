@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: bt_verify.c,v 12.25 2006/07/05 05:44:22 mjc Exp $
+ * $Id: bt_verify.c,v 12.27 2006/09/07 20:05:25 bostic Exp $
  */
 
 #include "db_config.h"
@@ -18,7 +18,7 @@
 static int __bam_safe_getdata __P((DB *, PAGE *, u_int32_t, int, DBT *, int *));
 static int __bam_vrfy_inp __P((DB *, VRFY_DBINFO *, PAGE *, db_pgno_t,
     db_indx_t *, u_int32_t));
-static int __bam_vrfy_treeorder __P((DB *, db_pgno_t, PAGE *, BINTERNAL *,
+static int __bam_vrfy_treeorder __P((DB *, PAGE *, BINTERNAL *,
     BINTERNAL *, int (*)(DB *, const DBT *, const DBT *), u_int32_t));
 static int __ram_vrfy_inp __P((DB *, VRFY_DBINFO *, PAGE *, db_pgno_t,
     db_indx_t *, u_int32_t));
@@ -205,10 +205,7 @@ __ram_vrfy_leaf(dbp, vdp, h, pgno, flags)
 		return (ret);
 
 	if (TYPE(h) != P_LRECNO) {
-		/* We should not have been called. */
-		TYPE_ERR_PRINT(dbenv, "__ram_vrfy_leaf", pgno, TYPE(h));
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__ram_vrfy_leaf");
 		goto err;
 	}
 
@@ -316,9 +313,7 @@ __bam_vrfy(dbp, vdp, h, pgno, flags)
 	case P_LDUP:
 		break;
 	default:
-		TYPE_ERR_PRINT(dbenv, "__bam_vrfy", pgno, TYPE(h));
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__bam_vrfy");
 		goto err;
 	}
 
@@ -411,9 +406,7 @@ __ram_vrfy_inp(dbp, vdp, h, pgno, nentriesp, flags)
 		return (ret);
 
 	if (TYPE(h) != P_IRECNO) {
-		TYPE_ERR_PRINT(dbenv, "__ram_vrfy_inp", pgno, TYPE(h));
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__ram_vrfy_inp");
 		goto err;
 	}
 
@@ -545,9 +538,7 @@ __bam_vrfy_inp(dbp, vdp, h, pgno, nentriesp, flags)
 		 */
 		if (LF_ISSET(DB_SALVAGE))
 			break;
-		TYPE_ERR_PRINT(dbenv, "__bam_vrfy_inp", pgno, TYPE(h));
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__bam_vrfy_inp");
 		goto err;
 	}
 
@@ -992,10 +983,7 @@ __bam_vrfy_itemorder(dbp, vdp, h, pgno, nentries, ovflok, hasdups, flags)
 			 * This means our caller screwed up and sent us
 			 * an inappropriate page.
 			 */
-			TYPE_ERR_PRINT(dbenv,
-			    "__bam_vrfy_itemorder", pgno, TYPE(h))
-			DB_ASSERT(dbenv, 0);
-			ret = EINVAL;
+			ret = __db_unknown_path(dbenv, "__bam_vrfy_itemorder");
 			goto err;
 		}
 
@@ -1586,10 +1574,8 @@ bad_prev:				isbad = 1;
 	    ret = __db_vrfy_ccnext(cc, &child))
 		if (child->type == V_RECNO) {
 			if (pip->type != P_IRECNO) {
-				TYPE_ERR_PRINT(dbenv, "__bam_vrfy_subtree",
-				    pgno, pip->type);
-				DB_ASSERT(dbenv, 0);
-				ret = EINVAL;
+				ret = __db_unknown_path(
+				    dbenv, "__bam_vrfy_subtree");
 				goto err;
 			}
 			if ((ret = __bam_vrfy_subtree(dbp, vdp, child->pgno,
@@ -1827,7 +1813,7 @@ done:	if (F_ISSET(pip, VRFY_INCOMPLETE) && isbad == 0 && ret == 0) {
 			func = __bam_defcmp;
 
 		if ((ret = __bam_vrfy_treeorder(
-		    dbp, pgno, h, l, r, func, flags)) != 0) {
+		    dbp, h, l, r, func, flags)) != 0) {
 			if (ret == DB_VERIFY_BAD)
 				isbad = 1;
 			else
@@ -1903,9 +1889,8 @@ err:	if (toplevel) {
  *	no higher key we must sort less than.
  */
 static int
-__bam_vrfy_treeorder(dbp, pgno, h, lp, rp, func, flags)
+__bam_vrfy_treeorder(dbp, h, lp, rp, func, flags)
 	DB *dbp;
-	db_pgno_t pgno;
 	PAGE *h;
 	BINTERNAL *lp, *rp;
 	int (*func) __P((DB *, const DBT *, const DBT *));
@@ -1939,9 +1924,7 @@ __bam_vrfy_treeorder(dbp, pgno, h, lp, rp, func, flags)
 		last = NUM_ENT(h) - P_INDX;
 		break;
 	default:
-		TYPE_ERR_PRINT(dbenv, "__bam_vrfy_treeorder", pgno, TYPE(h));
-		DB_ASSERT(dbenv, 0);
-		return (EINVAL);
+		return (__db_unknown_path(dbenv, "__bam_vrfy_treeorder"));
 	}
 
 	/*
@@ -1966,13 +1949,9 @@ __bam_vrfy_treeorder(dbp, pgno, h, lp, rp, func, flags)
 			if ((ret = __db_goff(dbp, NULL, &dbt,
 			    bo->tlen, bo->pgno, NULL, NULL)) != 0)
 				return (ret);
-		} else {
-			DB_ASSERT(dbenv, 0);
-			EPRINT((dbenv,
-			    "Page %lu: unknown type for internal record",
-			    (u_long)PGNO(h)));
-			return (EINVAL);
-		}
+		} else
+			return (
+			    __db_unknown_path(dbenv, "__bam_vrfy_treeorder"));
 
 		/* On error, fall through, free if needed, and return. */
 		if ((ret = __bam_cmp(dbp, NULL, &dbt, h, 0, func, &cmp)) == 0) {
@@ -2002,13 +1981,9 @@ __bam_vrfy_treeorder(dbp, pgno, h, lp, rp, func, flags)
 			if ((ret = __db_goff(dbp, NULL, &dbt,
 			    bo->tlen, bo->pgno, NULL, NULL)) != 0)
 				return (ret);
-		} else {
-			DB_ASSERT(dbenv, 0);
-			EPRINT((dbenv,
-			    "Page %lu: unknown type for internal record",
-			    (u_long)PGNO(h)));
-			return (EINVAL);
-		}
+		} else
+			return (
+			    __db_unknown_path(dbenv, "__bam_vrfy_treeorder"));
 
 		/* On error, fall through, free if needed, and return. */
 		if ((ret = __bam_cmp(dbp, NULL, &dbt,
@@ -2237,9 +2212,9 @@ __bam_salvage(dbp, vdp, pgno, pgtype, h, handle, callback, key, flags)
 			 * We should never get here; __db_vrfy_inpitem should
 			 * not be returning 0 if bk->type is unrecognizable.
 			 */
-			DB_ASSERT(dbenv, 0);
+			t_ret = __db_unknown_path(dbenv, "__bam_salvage");
 			if (ret == 0)
-				ret = EINVAL;
+				ret = t_ret;
 			goto err;
 		}
 
@@ -2309,10 +2284,8 @@ __bam_salvage_walkdupint(dbp, vdp, h, key, handle, callback, flags)
 				ret = t_ret;
 			break;
 		default:
-			__db_errx(dbenv,
-			    "__bam_salvage_walkdupint called on non-int. page");
-			DB_ASSERT(dbenv, 0);
-			return (EINVAL);
+			return (__db_unknown_path(
+			    dbenv, "__bam_salvage_walkdupint"));
 		}
 		/* Pass SA_SKIPFIRSTKEY, if set, on to the 0th child only. */
 		flags &= ~LF_ISSET(SA_SKIPFIRSTKEY);

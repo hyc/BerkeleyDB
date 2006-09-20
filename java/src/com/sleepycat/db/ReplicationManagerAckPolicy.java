@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: ReplicationManagerAckPolicy.java,v 12.2 2006/07/05 06:47:30 alexg Exp $
+ * $Id: ReplicationManagerAckPolicy.java,v 12.3 2006/08/24 14:46:09 bostic Exp $
  */
 
 package com.sleepycat.db;

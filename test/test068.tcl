@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test068.tcl,v 12.3 2006/04/13 15:34:44 carol Exp $
+# $Id: test068.tcl,v 12.4 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	test068
 # TEST	Test of DB_BEFORE and DB_AFTER with partial puts.

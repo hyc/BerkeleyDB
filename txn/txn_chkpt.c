@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn_chkpt.c,v 12.25 2006/05/05 14:54:11 bostic Exp $
+ * $Id: txn_chkpt.c,v 12.27 2006/08/24 14:46:53 bostic Exp $
  */
 
 #include "db_config.h"
@@ -257,7 +257,7 @@ __txn_getactive(dbenv, lsnp)
 	SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail)
 		if (td->begin_lsn.file != 0 &&
 		    td->begin_lsn.offset != 0 &&
-		    log_compare(&td->begin_lsn, lsnp) < 0)
+		    LOG_COMPARE(&td->begin_lsn, lsnp) < 0)
 			*lsnp = td->begin_lsn;
 	TXN_SYSTEM_UNLOCK(dbenv);
 
@@ -319,7 +319,7 @@ __txn_updateckp(dbenv, lsnp)
 	 * called.
 	 */
 	TXN_SYSTEM_LOCK(dbenv);
-	if (log_compare(&region->last_ckp, lsnp) < 0) {
+	if (LOG_COMPARE(&region->last_ckp, lsnp) < 0) {
 		region->last_ckp = *lsnp;
 		(void)time(&region->time_ckp);
 	}

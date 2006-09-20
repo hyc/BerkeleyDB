@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2001-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: si007.tcl,v 12.5 2006/06/27 22:31:09 bostic Exp $
+# $Id: si007.tcl,v 12.6 2006/08/24 14:46:39 bostic Exp $
 #
 # TEST	si007
 # TEST	Secondary index put/delete with lorder test

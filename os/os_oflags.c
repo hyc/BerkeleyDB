@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_oflags.c,v 12.5 2006/06/10 13:21:38 bostic Exp $
+ * $Id: os_oflags.c,v 12.6 2006/08/24 14:46:18 bostic Exp $
  */
 
 #include "db_config.h"

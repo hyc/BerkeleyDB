@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: cxx_int.h,v 12.3 2006/07/05 05:37:07 mjc Exp $
+ * $Id: cxx_int.h,v 12.4 2006/08/24 14:45:27 bostic Exp $
  */
 
 #ifndef _DB_CXX_INT_H_

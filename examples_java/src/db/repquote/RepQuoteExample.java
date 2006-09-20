@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: RepQuoteExample.java,v 1.4 2006/07/08 03:32:10 alexg Exp $
+ * $Id: RepQuoteExample.java,v 1.10 2006/09/09 14:12:42 bostic Exp $
  */
 
 package db.repquote;
@@ -19,6 +19,61 @@ import java.lang.InterruptedException;
 import com.sleepycat.db.*;
 import db.repquote.RepConfig;
 
+/**
+ * RepQuoteExample is a simple but complete demonstration of a replicated
+ * application. The application is a mock stock ticker. The master accepts a
+ * stock symbol and an numerical value as input, and stores this information
+ * into a replicated database; either master or clients can display the
+ * contents of the database.
+ * <p>
+ * The options to start a given replication node are:
+ * <pre>
+ *   -M (configure this process to start as a master)
+ *   -C (configure this process to start as a client)
+ *   -F Call a full election at startup
+ *   -h environment home directory
+ *   -m host:port (required; m stands for me)
+ *   -o host:port (optional; o stands for other; any number of these may
+ *      be specified)
+ *   -f host:port (optional; f stands for friend, and indicates a peer
+ *      relationship to the specified site)
+ *   -n nsites (optional; number of sites in replication group.
+ *      Defaults to 0 in which case we dynamically compute the number of
+ *      sites in the replication group)
+ *   -p priority (optional: defaults to 100)
+ *   -v Enable verbose logging
+ * </pre>
+ * <p>
+ * A typical session begins with a command such as the following to start a
+ * master:
+ *
+ * <pre>
+ *   java db.repquote.RepQuoteExample -M -h dir1 -m localhost:6000
+ * </pre>
+ *
+ * and several clients:
+ *
+ * <pre>
+ *   java db.repquote.RepQuoteExample -C -h dir2
+ *               -m localhost:6001 -o localhost:6000
+ *   java db.repquote.RepQuoteExample -C -h dir3
+ *               -m localhost:6002 -o localhost:6000
+ *   java db.repquote.RepQuoteExample -C -h dir4
+ *               -m localhost:6003 -o localhost:6000
+ * </pre>
+ *
+ * <p>
+ * Each process is a member of a DB replication group. The sample application
+ * expects the following commands to stdin:
+ * <ul>
+ * <li>NEWLINE -- print all the stocks held in the database</li>
+ * <li>quit -- shutdown this node</li>
+ * <li>exit -- shutdown this node</li>
+ * <li>stock_symbol number -- enter this stock and number into the
+ * database</li>
+ * </ul>
+ */
+
 public class RepQuoteExample implements EventHandler
 {
     private RepConfig appConfig;
@@ -27,19 +82,25 @@ public class RepQuoteExample implements EventHandler
     public static void usage()
     {
         System.err.println("usage: " + RepConfig.progname);
-        System.err.println("[-h home][-o host:port][-m host:port]" +
-            "[-f host:port][-n nsites][-p priority]");
+        System.err.println("[-C][-M][-F][-h home][-o host:port]" +
+            "[-m host:port][-f host:port][-n nsites][-p priority][-v]");
 
-        System.err.println("\t -m host:port (required; m stands for me)\n" +
-             "\t -o host:port (optional; o stands for other; any " +
-             "number of these may bespecified)\n" +
+        System.err.println(
+             "\t -C start the site as client of the replication group\n" +
+             "\t -F Call a full election at startup\n" +
+             "\t -M start the site as master of the replication group\n" +
+             "\t -f host:port (optional; f stands for friend and \n" +
+             "\t    indicates a peer relationship to the specified site)\n" +
              "\t -h home directory\n" +
-             "\t -n nsites (optional; number of sites in replication " +
-             "group; defaults to 0\n" +
-             "\t    in which case we try to dynamically compute the " +
-             "number of sites in\n" +
-             "\t    the replication group)\n" +
-             "\t -p priority (optional: defaults to 100)\n");
+             "\t -m host:port (required; m stands for me)\n" +
+             "\t -n nsites (optional; number of sites in replication \n" +
+             "\t    group; defaults to 0\n" +
+             "\t    In which case the number of sites are computed \n" +
+             "\t    dynamically\n" +
+             "\t -o host:port (optional; o stands for other; any number\n" +
+             "\t    of these may be specified)\n" +
+             "\t -p priority (optional: defaults to 100)\n" +
+             "\t -v Enable verbose logging\n");
 
         System.exit(1);
     }
@@ -135,7 +196,7 @@ public class RepQuoteExample implements EventHandler
             runner.terminate();
         } catch (DatabaseException dbe) {
             System.err.println("Caught an exception during " +
-                "initialization or processing: " + dbe.toString());
+                "initialization or processing: " + dbe);
             if (runner != null)
                 runner.terminate();
         }
@@ -186,7 +247,7 @@ public class RepQuoteExample implements EventHandler
         try {
             dbenv = new RepQuoteEnvironment(appConfig.getHome(), envConfig);
         } catch(FileNotFoundException e) {
-            System.err.println("FileNotFound exception: " + e.toString());
+            System.err.println("FileNotFound exception: " + e);
             System.err.println(
                 "Ensure that the environment directory is pre-created.");
             ret = 1;
@@ -200,7 +261,6 @@ public class RepQuoteExample implements EventHandler
     public int doloop()
         throws DatabaseException
     {
-        boolean wasMaster = false;
         Database db = null;
 
         for (;;)
@@ -250,7 +310,7 @@ public class RepQuoteExample implements EventHandler
             String[] words = nextline.split("\\s");
 
             // A blank line causes the DB to be dumped to stdout.
-            if (words.length == 0 || 
+            if (words.length == 0 ||
                 (words.length == 1 && words[0].length() == 0)) {
                 try {
                     printStocks(db);
@@ -260,7 +320,7 @@ public class RepQuoteExample implements EventHandler
                     // this could be DB_REP_HANDLE_DEAD
                     // should close the database and continue
                     System.err.println("Got db exception reading replication" +
-                        "DB: " + e.toString());
+                        "DB: " + e);
                     System.err.println("Expected if it was due to a dead " +
                         "replication handle, otherwise an unexpected error.");
                     db.close(true); // close no sync.
@@ -297,6 +357,7 @@ public class RepQuoteExample implements EventHandler
     public void terminate()
         throws DatabaseException
     {
+        dbenv.close();
     }
 
     public int handleEvent(EventType event)
@@ -323,7 +384,7 @@ public class RepQuoteExample implements EventHandler
         throws DeadlockException, DatabaseException
     {
         Cursor dbc = db.openCursor(null, null);
-        
+
         System.out.println("\tSymbol\tPrice");
         System.out.println("\t======\t=====");
 

@@ -189,7 +189,7 @@ int __db_chk_meta __P((DB_ENV *, DB *, DBMETA *, int));
 int __db_meta_setup __P((DB_ENV *, DB *, const char *, DBMETA *, u_int32_t, int));
 int __db_goff __P((DB *, DB_TXN *, DBT *, u_int32_t, db_pgno_t, void **, u_int32_t *));
 int __db_poff __P((DBC *, const DBT *, db_pgno_t *));
-int __db_ovref __P((DBC *, db_pgno_t, int32_t));
+int __db_ovref __P((DBC *, db_pgno_t));
 int __db_doff __P((DBC *, db_pgno_t));
 int __db_moff __P((DB *, DB_TXN *, const DBT *, db_pgno_t, u_int32_t, int (*)(DB *, const DBT *, const DBT *), int *));
 int __db_vrfy_overflow __P((DB *, VRFY_DBINFO *, PAGE *, db_pgno_t, u_int32_t));

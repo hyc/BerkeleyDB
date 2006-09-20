@@ -4,7 +4,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -143,6 +143,11 @@ public class CacheStats {
         return st_hash_wait;
     }
 
+    private int st_hash_max_nowait;
+    public int getHashMaxNowait() {
+        return st_hash_max_nowait;
+    }
+
     private int st_hash_max_wait;
     public int getHashMaxWait() {
         return st_hash_max_wait;
@@ -231,6 +236,7 @@ public class CacheStats {
             + "\n  st_hash_examined=" + st_hash_examined
             + "\n  st_hash_nowait=" + st_hash_nowait
             + "\n  st_hash_wait=" + st_hash_wait
+            + "\n  st_hash_max_nowait=" + st_hash_max_nowait
             + "\n  st_hash_max_wait=" + st_hash_max_wait
             + "\n  st_region_nowait=" + st_region_nowait
             + "\n  st_region_wait=" + st_region_wait

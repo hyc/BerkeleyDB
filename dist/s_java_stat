@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_java_stat,v 12.13 2006/07/19 13:25:54 mjc Exp $
+#	$Id: s_java_stat,v 12.14 2006/08/24 14:45:35 bostic Exp $
 #
 # Build the Java files.
 
@@ -9,9 +9,8 @@ msgjava="/*-
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */"
-
 
 s=/tmp/__java.sed
 t=/tmp/__java

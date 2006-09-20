@@ -1,9 +1,9 @@
 # Sel the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rpc002.tcl,v 12.4 2006/01/02 22:03:22 bostic Exp $
+# $Id: rpc002.tcl,v 12.5 2006/08/24 14:46:38 bostic Exp $
 #
 # TEST	rpc002
 # TEST	Test invalid RPC functions and make sure we error them correctly

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: MultipleKeyNIODataEntry.java,v 1.1 2006/03/13 01:55:49 alexg Exp $
+ * $Id: MultipleKeyNIODataEntry.java,v 1.3 2006/09/08 20:32:14 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -57,7 +57,7 @@ public class MultipleKeyNIODataEntry extends MultipleEntry {
         final int keysz = DbUtil.array2int(intarr, 8);
         final int dataoff = DbUtil.array2int(intarr, 4);
         final int datasz = DbUtil.array2int(intarr, 0);
-        
+
         // move the position to one before the last offset read.
         pos -= INT32SZ*4;
 

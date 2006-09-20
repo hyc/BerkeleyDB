@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: sdb015.tcl,v 12.6 2006/06/27 22:31:09 bostic Exp $
+# $Id: sdb015.tcl,v 12.7 2006/08/24 14:46:39 bostic Exp $
 #
 # TEST	sdb015
 # TEST	Tests basic in-memory named database functionality

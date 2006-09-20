@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -32,7 +32,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: dbreg_rec.c,v 12.15 2006/05/10 17:28:07 bostic Exp $
+ * $Id: dbreg_rec.c,v 12.17 2006/09/07 20:05:28 bostic Exp $
  */
 
 #include "db_config.h"
@@ -41,7 +41,6 @@
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
 #include "dbinc/log.h"
-#include "dbinc/mp.h"
 #include "dbinc/txn.h"
 
 static int __dbreg_open_file __P((DB_ENV *,
@@ -118,9 +117,8 @@ __dbreg_register_recover(dbenv, dbtp, lsnp, op, info)
 			do_open = 1;
 		break;
 	default:
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
-		break;
+		ret = __db_unknown_path(dbenv, "__dbreg_register_recover");
+		goto out;
 	}
 
 	if (do_open) {

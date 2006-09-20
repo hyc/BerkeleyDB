@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_verify.c,v 12.6 2006/06/09 18:37:02 margo Exp $
+ * $Id: db_verify.c,v 12.8 2006/08/26 09:23:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -13,7 +13,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
 #endif
 
 int db_verify_main __P((int, char *[]));

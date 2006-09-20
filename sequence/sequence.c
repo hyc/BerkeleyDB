@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2004-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: sequence.c,v 12.36 2006/05/11 16:05:40 ubell Exp $
+ * $Id: sequence.c,v 12.38 2006/08/24 14:46:31 bostic Exp $
  */
 
 #include "db_config.h"
@@ -741,7 +741,7 @@ err:	MUTEX_UNLOCK(dbenv, seq->mtx_seq);
 
 /*
  * __seq_get_db --
- *	Accessor for dbp passed into db_sequence_create  call
+ *	Accessor for dbp passed into db_sequence_create call
  *
  */
 static int

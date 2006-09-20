@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: DbCompat.java,v 12.6 2006/01/02 22:02:32 bostic Exp $
+ * $Id: DbCompat.java,v 12.7 2006/08/31 18:14:08 bostic Exp $
  */
 
 package com.sleepycat.compat;

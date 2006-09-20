@@ -6,8 +6,8 @@
     <title>Chapter 2. Enabling Transactions</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
+    <link rel="up" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="previous" href="perftune-intro.html" title="Performance Tuning" />
     <link rel="next" href="envopen.html" title="Opening a Transactional Environment and&#10;            Database&#10;            &#10;        " />
   </head>
@@ -151,8 +151,9 @@
           </li>
           <li>
             <p>
-            Initialize the logging subsystem. While this is enabled by default for transactional applications, Sleepycat
-            recommends that you explicitly initialize it anyway for the purposes of code readability. The logging
+            Initialize the logging subsystem. While this is enabled by
+            default for transactional applications, we suggest that 
+            you explicitly initialize it anyway for the purposes of code readability. The logging
             subsystem is what provides your transactional application its durability guarantee, and it is required for
             recoverability purposes. See <a href="filemanagement.html">Managing DB Files</a>
             for more information.
@@ -178,9 +179,16 @@
             <span>
                 encapsulating the database open in a transaction.
             </span>
+            
+            
 
-             Note that the common practice is for auto commit to be used to transaction-protect the
-             database open.
+             <span>
+             Note that the common practice is for auto commit to be used to
+             transaction-protect the database open. To use auto-commit, you
+             must still enable transactions as described here, but you do
+             not have to explicitly use a transaction when you open your
+             database. An example of this is given in the next section.
+             </span>
         </p>
           </li>
         </ul>
@@ -219,6 +227,7 @@
         logs, the regions can be maintained strictly in-memory if your
         application requires it. For an example of an application that
         manages all environment files in-memory, see
+            <span><a href="inmem_txnexample_c.html">In-Memory Transaction Example</a>.</span>
             
             
     </p>
@@ -351,7 +360,7 @@
             <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
               <h3 class="title">Note</h3>
               <p>
-                Sleepycat strongly discourages you from using absolute path names for your 
+                Try not to use absolute path names for your 
                 environment's files. Under certain recovery scenarios, absolute path names can
                 render your environment unrecoverable. This occurs if you are attempting to recover 
                 you environment on a system that does not support the absolute path name that you used.
@@ -615,14 +624,7 @@
         function to directly return the error string that corresponds to a
         particular error number. For more information on the 
         <tt class="function">db_strerror()</tt> function, see the <tt class="literal">Error Returns</tt>
-        section of the  
-        
-        <span>
-            
-            <a href="http://www.sleepycat.com/docs/gsg/CXX/returns.html" target="_top">
-                Berkeley DB for C++ Getting Started Guide
-            </a>
-        </span>
+        section of the <i class="citetitle">Getting Started with Berkeley DB</i> guide. 
      </p>
         </div>
         <div class="sect2" lang="en" xml:lang="en">
@@ -703,7 +705,6 @@
                 <span>
                 <a href="inmem_txnexample_c.html">In-Memory Transaction Example</a>.)
                 </span>
-                
                 
                 
         </p>

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_method.c,v 12.38 2006/07/19 19:19:19 alanb Exp $
+ * $Id: rep_method.c,v 12.46 2006/09/09 14:19:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -238,7 +238,8 @@ __rep_config_map(dbenv, inflagsp, outflagsp)
  * the library.  Rep_start checks the following:
  *
  * rep->msg_th - this is the count of threads currently in rep_process_message
- * rep->start_th - this is set if a thread is in rep_start.
+ * rep->lockout_th - this is set if a thread is in rep_start or other
+ *  operation requiring lockout with rep_proc_msg threads.
  * rep->handle_cnt - number of threads actively using a dbp in library.
  * rep->txn_cnt - number of active txns.
  * REP_F_READY - Replication flag that indicates that we wish to run
@@ -266,9 +267,9 @@ __rep_start(dbenv, dbt, flags)
 	DB_REP *db_rep;
 	LOG *lp;
 	REP *rep;
-	u_int32_t oldvers, repflags;
-	int announce, init_db, redo_prepared, ret, role_chg;
-	int sleep_cnt, t_ret;
+	u_int32_t oldvers, pending_event, repflags;
+	int announce, init_db, locked, redo_prepared, ret, role_chg;
+	int t_ret;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
 #endif
@@ -279,6 +280,7 @@ __rep_start(dbenv, dbt, flags)
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
+	locked = 0;
 
 	if ((ret = __db_fchk(dbenv, "DB_ENV->rep_start", flags,
 	    DB_REP_CLIENT | DB_REP_MASTER)) != 0)
@@ -308,20 +310,22 @@ __rep_start(dbenv, dbt, flags)
 	if ((ret = __log_flush(dbenv, NULL)) != 0)
 		return (ret);
 
+	pending_event = DB_EVENT_NO_SUCH_EVENT;
 	REP_SYSTEM_LOCK(dbenv);
 	/*
 	 * We only need one thread to start-up replication, so if
 	 * there is another thread in rep_start, we'll let it finish
-	 * its work and have this thread simply return.
+	 * its work and have this thread simply return.  Similarly,
+	 * if a thread is in a critical lockout section we return.
 	 */
-	if (rep->start_th != 0) {
+	if (rep->lockout_th != 0) {
 		/*
-		 * There is already someone in rep_start.  Return.
+		 * There is already someone in lockout.  Return.
 		 */
-		RPRINT(dbenv, (dbenv, &mb, "Thread already in rep_start"));
+		RPRINT(dbenv, (dbenv, &mb, "Thread already in lockout"));
 		goto err;
-	} else
-		rep->start_th = 1;
+	} else if ((ret = __rep_lockout_msg(dbenv, rep, 0)) != 0)
+		goto errunlock;
 
 	role_chg = (!F_ISSET(rep, REP_F_MASTER) && LF_ISSET(DB_REP_MASTER)) ||
 	    (!F_ISSET(rep, REP_F_CLIENT) && LF_ISSET(DB_REP_CLIENT));
@@ -329,22 +333,12 @@ __rep_start(dbenv, dbt, flags)
 	/*
 	 * Wait for any active txns or mpool ops to complete, and
 	 * prevent any new ones from occurring, only if we're
-	 * changing roles.  If we are not changing roles, then we
-	 * only need to coordinate with msg_th.
+	 * changing roles.
 	 */
 	if (role_chg) {
-		if ((ret = __rep_lockout(dbenv, rep, 0)) != 0)
+		if ((ret = __rep_lockout_api(dbenv, rep)) != 0)
 			goto errunlock;
-	} else {
-		for (sleep_cnt = 0; rep->msg_th != 0;) {
-			if (++sleep_cnt % 60 == 0)
-				__db_errx(dbenv,
-	"DB_ENV->rep_start waiting %d minutes for replication message thread",
-				    sleep_cnt / 60);
-			REP_SYSTEM_UNLOCK(dbenv);
-			__os_sleep(dbenv, 1, 0);
-			REP_SYSTEM_LOCK(dbenv);
-		}
+		locked = 1;
 	}
 
 	if (LF_ISSET(DB_REP_MASTER)) {
@@ -361,7 +355,7 @@ __rep_start(dbenv, dbt, flags)
 			 * number of used fileids, each getting written
 			 * on checkpoint.  Just close them.
 			 * Then invalidate all files open in the logging
-			 * region.  Thes are files open by other processes
+			 * region.  These are files open by other processes
 			 * attached to the environment.  They must be
 			 * closed by the other processes when they notice
 			 * the change in role.
@@ -402,10 +396,14 @@ __rep_start(dbenv, dbt, flags)
 		}
 		rep->master_id = rep->eid;
 		/*
-		 * Note, setting flags below implicitly clears out
-		 * REP_F_NOARCHIVE, REP_F_INIT and REP_F_READY.
+		 * Clear out almost everything, and then set MASTER.  Leave
+		 * READY alone in case we did a lockout above; we'll clear it in
+		 * a moment (below), once we've written the txn_recycle into the
+		 * log.
 		 */
-		rep->flags = REP_F_MASTER;
+		repflags = F_ISSET(rep, REP_F_READY);
+		FLD_SET(repflags, REP_F_MASTER);
+		rep->flags = repflags;
 
 		dblp = (DB_LOG *)dbenv->lg_handle;
 		lp = dblp->reginfo.primary;
@@ -426,9 +424,8 @@ __rep_start(dbenv, dbt, flags)
 				goto errunlock;
 		}
 		rep->version = DB_REPVERSION;
-		rep->start_th = 0;
+		rep->lockout_th = 0;
 		REP_SYSTEM_UNLOCK(dbenv);
-		dblp = dbenv->lg_handle;
 		LOG_SYSTEM_LOCK(dbenv);
 		lsn = lp->lsn;
 		LOG_SYSTEM_UNLOCK(dbenv);
@@ -443,16 +440,17 @@ __rep_start(dbenv, dbt, flags)
 		    DB_EID_BROADCAST, REP_NEWMASTER, &lsn, NULL, 0, 0);
 		ret = 0;
 		if (role_chg) {
-			DB_EVENT(dbenv, DB_EVENT_REP_MASTER, NULL);
-			if ((ret = __dbreg_invalidate_files(dbenv)) != 0)
-				goto errlock;
-			if ((ret = __rep_closefiles(dbenv)) != 0)
-				goto errlock;
-			ret = __txn_reset(dbenv);
+			pending_event = DB_EVENT_REP_MASTER;
+			ret = __dbreg_invalidate_files(dbenv);
+			if ((t_ret = __rep_closefiles(dbenv)) != 0 && ret == 0)
+				ret = t_ret;
+			if ((t_ret = __txn_reset(dbenv)) != 0 && ret == 0)
+				ret = t_ret;
 			DB_ENV_TEST_RECYCLE(dbenv, ret);
 			REP_SYSTEM_LOCK(dbenv);
 			F_CLR(rep, REP_F_READY);
 			rep->in_recovery = 0;
+			locked = 0;
 			REP_SYSTEM_UNLOCK(dbenv);
 		}
 		/*
@@ -510,12 +508,13 @@ __rep_start(dbenv, dbt, flags)
 		if (ret != 0)
 			goto errlock;
 		if (role_chg)
-			DB_EVENT(dbenv, DB_EVENT_REP_CLIENT, NULL);
+			pending_event = DB_EVENT_REP_CLIENT;
 		REP_SYSTEM_LOCK(dbenv);
-		rep->start_th = 0;
-		if (role_chg) {
+		rep->lockout_th = 0;
+		if (locked) {
 			F_CLR(rep, REP_F_READY);
 			rep->in_recovery = 0;
+			locked = 0;
 		}
 		REP_SYSTEM_UNLOCK(dbenv);
 
@@ -538,20 +537,22 @@ __rep_start(dbenv, dbt, flags)
 	if (0) {
 		/*
 		 * We have separate labels for errors.  If we're returning an
-		 * error before we've set start_th, we use 'err'.  If
+		 * error before we've set lockout_th, we use 'err'.  If
 		 * we are erroring while holding the region mutex, then we use
 		 * 'errunlock' label.  If we're erroring without holding the rep
 		 * mutex we must use 'errlock'.
 		 */
 DB_TEST_RECOVERY_LABEL
 errlock:	REP_SYSTEM_LOCK(dbenv);
-errunlock:	rep->start_th = 0;
-		if (role_chg) {
+errunlock:	rep->lockout_th = 0;
+		if (locked) {
 			F_CLR(rep, REP_F_READY);
 			rep->in_recovery = 0;
 		}
 err:		REP_SYSTEM_UNLOCK(dbenv);
 	}
+	if (pending_event != DB_EVENT_NO_SUCH_EVENT)
+		DB_EVENT(dbenv, pending_event, NULL);
 	return (ret);
 }
 
@@ -881,7 +882,7 @@ __rep_restore_prepared(dbenv)
 	 * were isolated, this should be safe.
 	 */
 	for (ret = __log_c_get(logc, &lsn, &rec, DB_LAST);
-	    ret == 0 && log_compare(&lsn, &ckp_lsn) > 0;
+	    ret == 0 && LOG_COMPARE(&lsn, &ckp_lsn) > 0;
 	    ret = __log_c_get(logc, &lsn, &rec, DB_PREV)) {
 		memcpy(&rectype, rec.data, sizeof(rectype));
 		switch (rectype) {

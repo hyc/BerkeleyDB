@@ -134,18 +134,18 @@ run()
 	# Boot Tuxedo.
 	# You should see something like:
 	#
-	# INFO: BEA Tuxedo, Version 8.1 
+	# INFO: BEA Tuxedo, Version 8.1
 	# INFO: Serial #: 650522264138-1510597376252,
 	#	Expiration 2005-02-15, Maxusers 100
 	# INFO: Licensed to: BEA Evaluation Customer
-	# 
+	#
 	# Booting admin processes ...
-	# 
+	#
 	# exec BBL -A :
 	#         process id=13845 ... Started.
-	# 
+	#
 	# Booting server processes ...
-	# 
+	#
 	# exec DBRM -A :
 	#         process id=13846 ... Started.
 	# exec DBRM -A :
@@ -265,7 +265,7 @@ egrep "^BERKELEY-DB:db_xa_switch:" $TUXDIR/udataobj/RM > /dev/null || {
 # Everything is built in and run from the "run" subdirectory.
 RUN=`pwd`/run; export RUN
 
-FIELDTBLS32=datafml.fml;	export FIELDTBLS32 
+FIELDTBLS32=datafml.fml;	export FIELDTBLS32
 FLDTBLDIR32=$RUN/config;	export FLDTBLDIR32
 TLOGDEVICE=$RUN/data/dlog;	export TLOGDEVICE
 TUXCONFIG=$RUN/config/tuxconfig;export TUXCONFIG

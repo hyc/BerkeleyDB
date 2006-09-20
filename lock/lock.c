@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: lock.c,v 12.29 2006/07/17 19:53:09 ubell Exp $
+ * $Id: lock.c,v 12.30 2006/08/24 14:46:10 bostic Exp $
  */
 
 #include "db_config.h"

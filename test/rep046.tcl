@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2001-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep046.tcl,v 12.13 2006/07/19 17:45:35 carol Exp $
+# $Id: rep046.tcl,v 12.16 2006/09/07 14:48:25 carol Exp $
 #
 # TEST  rep046
 # TEST	Replication and basic bulk transfer.
@@ -62,10 +62,10 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 	set ma_envcmd "berkdb_env -create -txn nosync \
 	    -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
-	set ma_envcmd "berkdb_env -create -txn nosync \
-	    -lock_max_locks 10000 -lock_max_objects 10000 \
-	    -errpfx MASTER -verbose {rep off} -errfile /dev/stderr \
-	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
+#	set ma_envcmd "berkdb_env -create -txn nosync \
+#	    -lock_max_locks 10000 -lock_max_objects 10000 \
+#	    -errpfx MASTER -verbose {rep on} -errfile /dev/stderr \
+#	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 
@@ -174,21 +174,33 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 		rep_test_bulk $method $masterenv $masterdb 2 0 0 1
 	}
 	process_msgs $envlist
-	set bulkovf2 [stat_field $masterenv rep_stat "Bulk buffer overflows"]
-	set bulkfill2 [stat_field $masterenv rep_stat "Bulk buffer fills"]
-	#
-	# !!!
+
+	# Determine whether this build is configured with --enable-debug_rop
+	# or --enable-debug_wop.
+	set conf [berkdb getconfig]
+	set debug_rop_wop 0
+	if { [is_substr $conf "debug_rop"] == 1 \
+	    || [is_substr $conf "debug_wop"] == 1 } {
+		set debug_rop_wop 1
+	}
+
 	# Generally overflows cannot happen because large data gets
 	# broken up into overflow pages, and none will be larger than
 	# the buffer.  However, if we're configured for debug_rop/wop
-	# then we record the data as is.  So we *might* have overflowed.
+	# then we record the data as is and will overflow.
 	#
-	if { [is_fixed_length $method] == 0} {
-		set overflow_ok [expr $bulkovf2 > $bulkovf1 || $bulkovf2 == 0]
-		error_check_good ovfstat $overflow_ok 1
+	set bulkovf2 [stat_field $masterenv rep_stat "Bulk buffer overflows"]
+	set bulkfill2 [stat_field $masterenv rep_stat "Bulk buffer fills"]
+	if { [is_fixed_length $method] == 0 } {
 		error_check_good fillstat1 [expr $bulkfill2 > $bulkfill1] 1
+		if { $debug_rop_wop == 1 } {
+			error_check_good overflows [expr $bulkovf2 > $bulkovf1] 1
+		} else {
+			error_check_good no_overflows $bulkovf2 0
+		}
 	}
-	#
+
+
 	# !!!
 	# Turn off bulk processing now on the master.  We need to do
 	# this because some configurations (like debug_rop/wop) will

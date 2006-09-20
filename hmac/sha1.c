@@ -1,5 +1,5 @@
 /*
- * $Id: sha1.c,v 12.1 2006/05/05 14:53:34 bostic Exp $
+ * $Id: sha1.c,v 12.2 2006/09/08 20:32:10 bostic Exp $
  */
 
 #include "db_config.h"
@@ -13,7 +13,7 @@ By Steve Reid <sreid@sea-to-sky.net>
 100% Public Domain
 
 -----------------
-Modified 7/98 
+Modified 7/98
 By James H. Brown <jbrown@burgoyne.com>
 Still 100% Public Domain
 
@@ -35,7 +35,7 @@ Since the file IO in main() reads 16K at a time, any file 8K or larger would
 be guaranteed to generate the wrong hash (e.g. Test Vector #3, a million
 "a"s).
 
-I also changed the declaration of variables i & j in SHA1Update to 
+I also changed the declaration of variables i & j in SHA1Update to
 unsigned long from unsigned int for the same reason.
 
 These changes should make no difference to any 32 bit implementations since
@@ -62,7 +62,7 @@ Still 100% public domain
 Modified 4/01
 By Saul Kravitz <Saul.Kravitz@celera.com>
 Still 100% PD
-Modified to run on Compaq Alpha hardware.  
+Modified to run on Compaq Alpha hardware.
 
 
 */
@@ -109,7 +109,7 @@ __db_SHAPrintContext(context, msg)
 {
   printf("%s (%d,%d) %x %x %x %x %x\n",
 	 msg,
-	 context->count[0], context->count[1], 
+	 context->count[0], context->count[1],
 	 context->state[0],
 	 context->state[1],
 	 context->state[2],
@@ -122,7 +122,7 @@ __db_SHAPrintContext(context, msg)
 
 /*
  * __db_SHA1Transform --
- * 
+ *
  * PUBLIC: void __db_SHA1Transform __P((u_int32_t *, unsigned char *));
  */
 void
@@ -187,7 +187,7 @@ static int is_bigendian = -1;
 
 /* SHA1Init - Initialize new context */
 
-/*   
+/*
  * __db_SHA1Init --
  *      Initialize new context
  *
@@ -286,6 +286,6 @@ unsigned char finalcount[8];
     __db_SHA1Transform(context->state, context->buffer);
 #endif
 }
-  
+
 /*************************************************************/
 

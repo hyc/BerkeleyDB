@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_page.c,v 12.19 2006/06/13 06:21:55 mjc Exp $
+ * $Id: hash_page.c,v 12.21 2006/09/07 20:05:30 bostic Exp $
  */
 
 /*
@@ -1937,8 +1937,8 @@ __ham_c_delpg(dbc, old_pgno, new_pgno, num_ent, op, orderp)
 					hcp->order += order;
 					break;
 				default:
-					DB_ASSERT(dbenv, 0);
-					return (__db_panic(dbenv, EINVAL));
+					return (__db_unknown_path(
+					    dbenv, "__ham_c_delpg"));
 				}
 				if (my_txn != NULL && cp->txn != my_txn)
 					found = 1;

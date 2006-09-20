@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: KeyRangeException.java,v 1.1 2006/06/09 14:32:17 mark Exp $
+ * $Id: KeyRangeException.java,v 1.2 2006/08/31 18:14:11 bostic Exp $
  */
 
 package com.sleepycat.util.keyrange;

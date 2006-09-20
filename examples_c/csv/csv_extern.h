@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: csv_extern.h,v 1.6 2006/01/02 22:02:01 bostic Exp $
+ * $Id: csv_extern.h,v 1.7 2006/08/24 14:45:43 bostic Exp $
  */
 
 extern DbRecord DbRecord_base;			/* Initialized structure. */

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test053.tcl,v 12.2 2006/01/02 22:03:27 bostic Exp $
+# $Id: test053.tcl,v 12.3 2006/08/24 14:46:40 bostic Exp $
 #
 # TEST	test053
 # TEST	Test of the DB_REVSPLITOFF flag in the Btree and Btree-w-recnum

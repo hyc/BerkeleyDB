@@ -1,5 +1,5 @@
-<!--$Id: ex_rq.so,v 1.6 2006/07/14 23:04:42 alanb Exp $-->
-<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
+<!--$Id: ex_rq.so,v 1.7 2006/08/24 18:01:51 bostic Exp $-->
+<!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -50,13 +50,13 @@ information.</p>
 <p>The final piece of a replicated application is the code that loops,
 receives, and processes messages from a given remote environment.
 ex_rep_base runs one of these loops in a parallel thread for each
-socket connection (see the hm_loop function (in
+socket connection (see the hm_loop function in
 <b>ex_rep/base/rep_msg.c</b>).  Other applications may want to queue
 messages somehow and process them asynchronously, or select() on a
-number of sockets and either look up the correct environment ID for
-each or encapsulate the ID in the communications protocol.</p>
+number of sockets and either look up the correct environment ID for each
+or encapsulate the ID in the communications protocol.</p>
 <table width="100%"><tr><td><br></td><td align=right><a href="../rep/ex_comm.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../xa/intro.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
-<p><font size=1><a href="../../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

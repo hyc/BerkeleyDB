@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_sync.c,v 12.21 2006/06/12 23:17:59 bostic Exp $
+ * $Id: mp_sync.c,v 12.24 2006/08/24 14:46:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -119,7 +119,7 @@ __memp_sync(dbenv, lsnp)
 	/* If we've flushed to the requested LSN, return that information. */
 	if (lsnp != NULL) {
 		MPOOL_SYSTEM_LOCK(dbenv);
-		if (log_compare(lsnp, &mp->lsn) <= 0) {
+		if (LOG_COMPARE(lsnp, &mp->lsn) <= 0) {
 			*lsnp = mp->lsn;
 
 			MPOOL_SYSTEM_UNLOCK(dbenv);
@@ -133,7 +133,7 @@ __memp_sync(dbenv, lsnp)
 
 	if (lsnp != NULL) {
 		MPOOL_SYSTEM_LOCK(dbenv);
-		if (log_compare(lsnp, &mp->lsn) > 0)
+		if (LOG_COMPARE(lsnp, &mp->lsn) > 0)
 			mp->lsn = *lsnp;
 		MPOOL_SYSTEM_UNLOCK(dbenv);
 	}
@@ -275,7 +275,7 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 
 	/*
 	 * Walk each cache's list of buffers and mark all dirty buffers to be
-	 * written and all pinned buffers to be potentially written, depending
+	 * written and all dirty buffers to be potentially written, depending
 	 * on our flags.
 	 */
 	for (ar_cnt = 0, n_cache = 0; n_cache < mp->nreg; ++n_cache) {
@@ -294,23 +294,8 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 
 			MUTEX_LOCK(dbenv, hp->mtx_hash);
 			SH_TAILQ_FOREACH(bhp, &hp->hash_bucket, hq, __bh) {
-				/* Always ignore unreferenced, clean pages. */
-				if (bhp->ref == 0 && !F_ISSET(bhp, BH_DIRTY))
-					continue;
-
-				/*
-				 * Checkpoints have to wait on all pinned pages,
-				 * as pages may be marked dirty when returned to
-				 * the cache.
-				 *
-				 * File syncs only wait on pages both pinned and
-				 * dirty.  (We don't care if pages are marked
-				 * dirty when returned to the cache, that means
-				 * there's another writing thread and flushing
-				 * the cache for this handle is meaningless.)
-				 */
-				if (op == DB_SYNC_FILE &&
-				    !F_ISSET(bhp, BH_DIRTY))
+				/* Always ignore clean pages. */
+				if (!F_ISSET(bhp, BH_DIRTY))
 					continue;
 
 				mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
@@ -421,10 +406,10 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		 * If we can't find the buffer we're done, somebody else had
 		 * to have written it.
 		 *
-		 * If the buffer isn't pinned or dirty, we're done, there's
-		 * no work needed.
+		 * If the buffer isn't dirty, we're done, there's no work
+		 * needed.
 		 */
-		if (bhp == NULL || (bhp->ref == 0 && !F_ISSET(bhp, BH_DIRTY))) {
+		if (bhp == NULL || !F_ISSET(bhp, BH_DIRTY)) {
 			MUTEX_UNLOCK(dbenv, mutex);
 			--remaining;
 			bharray[i].track_hp = NULL;
@@ -452,7 +437,7 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		}
 
 		/*
-		 * The buffer is either pinned or dirty.
+		 * The buffer is dirty and may also be pinned.
 		 *
 		 * Set the sync wait-for count, used to count down outstanding
 		 * references to this buffer as they are returned to the cache.
@@ -490,9 +475,9 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		if (maxopenfd != 0 && bhp->mf_offset != last_mf_offset) {
 			if (++filecnt >= maxopenfd) {
 				filecnt = 0;
-				if ((ret = __memp_close_flush_files(
-				    dbenv, dbmp, 1)) != 0)
-					break;
+				if ((t_ret = __memp_close_flush_files(
+				    dbenv, dbmp, 1)) != 0 && ret == 0)
+					ret = t_ret;
 			}
 			last_mf_offset = bhp->mf_offset;
 		}
@@ -511,16 +496,20 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 		 * dirty, we write it.  We only try to write the buffer once.
 		 */
 		if (bhp->ref_sync == 0 && F_ISSET(bhp, BH_DIRTY)) {
-			hb_lock = 0;
 			MUTEX_UNLOCK(dbenv, mutex);
+			hb_lock = 0;
 
 			mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
-			if ((ret = __memp_bhwrite(dbmp, hp, mfp, bhp, 1)) == 0)
+			if ((t_ret =
+			    __memp_bhwrite(dbmp, hp, mfp, bhp, 1)) == 0)
 				++wrote;
-			else
+			else {
+				if (ret == 0)
+					ret = t_ret;
 				__db_errx
 				    (dbenv, "%s: unable to flush page: %lu",
 				    __memp_fns(dbmp, mfp), (u_long)bhp->pgno);
+			}
 
 			/*
 			 * Avoid saturating the disk, sleep once we've done
@@ -568,9 +557,6 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 
 		/* Release the hash bucket mutex. */
 		MUTEX_UNLOCK(dbenv, mutex);
-
-		if (ret != 0)
-			break;
 	}
 
 done:	/*

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: tcl_internal.c,v 12.11 2006/06/27 22:22:13 bostic Exp $
+ * $Id: tcl_internal.c,v 12.13 2006/08/24 14:46:33 bostic Exp $
  */
 
 #include "db_config.h"
@@ -145,7 +145,7 @@ _DeleteInfo(p)
 	LIST_REMOVE(p, entries);
 	if (p->i_lockobj.data != NULL)
 		__os_free(NULL, p->i_lockobj.data);
-	if (p->i_err != NULL && p->i_err != stderr) {
+	if (p->i_err != NULL && p->i_err != stderr && p->i_err != stdout) {
 		(void)fclose(p->i_err);
 		p->i_err = NULL;
 	}

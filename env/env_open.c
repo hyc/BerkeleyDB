@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_open.c,v 12.66 2006/06/21 20:13:45 bostic Exp $
+ * $Id: env_open.c,v 12.71 2006/08/24 14:45:39 bostic Exp $
  */
 
 #include "db_config.h"
@@ -179,10 +179,10 @@ __env_open(dbenv, db_home, flags, mode)
 	DB_THREAD_INFO *ip;
 	REGINFO *infop;
 	u_int32_t init_flags, orig_flags;
-	int need_recovery, rep_check, ret, t_ret;
+	int register_recovery, rep_check, ret, t_ret;
 
 	ip = NULL;
-	need_recovery = rep_check = 0;
+	register_recovery = rep_check = 0;
 
 	/* Initial configuration. */
 	if ((ret = __env_config(dbenv, db_home, flags, mode)) != 0)
@@ -202,9 +202,9 @@ __env_open(dbenv, db_home, flags, mode)
 	 * thing we do.
 	 */
 	if (LF_ISSET(DB_REGISTER)) {
-		if ((ret = __envreg_register(dbenv, &need_recovery)) != 0)
+		if ((ret = __envreg_register(dbenv, &register_recovery)) != 0)
 			goto err;
-		if (need_recovery) {
+		if (register_recovery) {
 			if (!LF_ISSET(DB_RECOVER)) {
 				__db_errx(dbenv,
 	    "The DB_RECOVER flag was not specified, and recovery is needed");
@@ -447,47 +447,44 @@ __env_open(dbenv, db_home, flags, mode)
 	if ((ret = __db_e_golive(dbenv)) != 0)
 		goto err;
 
-	if (rep_check && (ret = __env_db_rep_exit(dbenv)) != 0)
-		goto err;
+	if (rep_check)
+		ret = __env_db_rep_exit(dbenv);
 
-	ENV_LEAVE(dbenv, ip);
-	return (0);
+err:	ENV_LEAVE(dbenv, ip);
 
-err:	/*
-	 * If we fail after creating the regions, panic and remove them.
-	 *
-	 * !!!
-	 * No need to call __env_db_rep_exit, that work is done by the calls to
-	 * __env_refresh.
-	 */
-	infop = dbenv->reginfo;
-	if (infop != NULL && F_ISSET(infop, REGION_CREATE)) {
-		ret = __db_panic(dbenv, ret);
+	if (ret != 0) {
+		/*
+		 * If we fail after creating the regions, panic and remove them.
+		 *
+		 * !!!
+		 * No need to call __env_db_rep_exit, that work is done by the
+		 * calls to __env_refresh.
+		 */
+		infop = dbenv->reginfo;
+		if (infop != NULL && F_ISSET(infop, REGION_CREATE)) {
+			ret = __db_panic(dbenv, ret);
 
-		/* Refresh the DB_ENV so we can use it to call remove. */
-		(void)__env_refresh(dbenv, orig_flags, rep_check);
-		(void)__db_e_remove(dbenv, DB_FORCE);
-		(void)__env_refresh(dbenv, orig_flags, 0);
-	} else
-		(void)__env_refresh(dbenv, orig_flags, rep_check);
+			/* Refresh the DB_ENV so can use it to call remove. */
+			(void)__env_refresh(dbenv, orig_flags, rep_check);
+			(void)__db_e_remove(dbenv, DB_FORCE);
+			(void)__env_refresh(dbenv, orig_flags, 0);
+		} else
+			(void)__env_refresh(dbenv, orig_flags, rep_check);
+	}
 
-	ENV_LEAVE(dbenv, ip);
-
-	if (need_recovery) {
+	if (register_recovery) {
 		/*
 		 * If recovery succeeded, release our exclusive lock, other
 		 * processes can now proceed.
 		 *
-		 * If recovery failed, unregister now.
+		 * If recovery failed, unregister now and let another process
+		 * clean up.
 		 */
 		if (ret == 0 && (t_ret = __envreg_xunlock(dbenv)) != 0)
 			ret = t_ret;
 		if (ret != 0)
 			(void)__envreg_unregister(dbenv, 1);
 	}
-
-	if (ret == 0 && dbenv->thr_hashtab != NULL)
-		ret = __env_set_state(dbenv, &ip, THREAD_OUT);
 
 	return (ret);
 }
@@ -540,8 +537,8 @@ __env_config(dbenv, db_home, flags, mode)
 	u_int32_t flags;
 	int mode;
 {
-	const char *p;
 	int ret;
+	char *home, home_buf[DB_MAXPATHLEN];
 
 	/*
 	 * Set the database home.
@@ -551,14 +548,19 @@ __env_config(dbenv, db_home, flags, mode)
 	 * option.  Otherwise, use the environment if it's permitted
 	 * and initialized.
 	 */
-	if ((p = db_home) == NULL &&
-	    (LF_ISSET(DB_USE_ENVIRON) ||
-	    (LF_ISSET(DB_USE_ENVIRON_ROOT) && __os_isroot())) &&
-	    (p = getenv("DB_HOME")) != NULL && p[0] == '\0') {
-		__db_errx(dbenv, "illegal DB_HOME environment variable");
-		return (EINVAL);
+	home = (char *)db_home;
+	if (home == NULL && (LF_ISSET(DB_USE_ENVIRON) ||
+	    (LF_ISSET(DB_USE_ENVIRON_ROOT) && __os_isroot()))) {
+		home = home_buf;
+		if ((ret = __os_getenv(
+		    dbenv, "DB_HOME", &home, sizeof(home_buf))) != 0)
+			return (ret);
+		/*
+		 * home set to NULL if __os_getenv failed to find DB_HOME.
+		 */
 	}
-	if (p != NULL && (ret = __os_strdup(dbenv, p, &dbenv->db_home)) != 0)
+	if (home != NULL &&
+	    (ret = __os_strdup(dbenv, home, &dbenv->db_home)) != 0)
 		return (ret);
 
 	/* Default permissions are read-write for both owner and group. */
@@ -606,8 +608,20 @@ __env_close_pp(dbenv, flags)
 		ret = t_ret;
 
 	rep_check = IS_ENV_REPLICATED(dbenv) ? 1 : 0;
-	if (rep_check && (t_ret = __env_rep_enter(dbenv, 0)) != 0 && ret == 0)
-		ret = t_ret;
+	if (rep_check) {
+#ifdef HAVE_REPLICATION_THREADS
+		/*
+		 * Shut down Replication Manager threads first of all.  This
+		 * must be done before __env_rep_enter to avoid a deadlock that
+		 * could occur if repmgr's background threads try to do a rep
+		 * operation that needs __rep_lockout.
+		 */
+		if ((t_ret = __repmgr_close(dbenv)) != 0 && ret == 0)
+			ret = t_ret;
+#endif
+		if ((t_ret = __env_rep_enter(dbenv, 0)) != 0 && ret == 0)
+			ret = t_ret;
+	}
 
 	if ((t_ret = __env_close(dbenv, rep_check)) != 0 && ret == 0)
 		ret = t_ret;

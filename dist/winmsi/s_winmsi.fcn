@@ -1,4 +1,4 @@
-#	$Id: s_winmsi.fcn,v 1.11 2006/06/29 23:57:29 alexg Exp $
+#	$Id: s_winmsi.fcn,v 1.12 2006/09/14 15:50:51 mjc Exp $
 #
 # The common functions used by the s_winmsi scripts (both
 # for core DB and DB/XML).
@@ -237,7 +237,7 @@ RunM4() {
 
     # Given a version number, like 2.3.45, we want to
     # create a 8 character name for the directory like db2_3_45.
-    # This name is under a "Sleepycat Software" directory,
+    # This name is under a "Oracle" directory,
     # so it only needs to be unique within the universe of BDB versions.
     # TODO: instead of using a version number like $DB_VERSION,
     # maybe use $DB_VERSION_UNIQUE_NAME which looks like "_2003"
@@ -477,7 +477,7 @@ ProcessLinks() {
             echo "[InternetShortcut]$CR"       >> $UrlName
             echo "URL=$Url$CR"     | RunM4     >> $UrlName   || exit 1
             echo "Modified=$MODTIMEHEX$CR"     >> $UrlName
-            # TODO: we could have an Entry for IconFile=sleepyweb.ico IconIndex=1?
+            # TODO: we could have an Entry for IconFile=oracleweb.ico IconIndex=1?
             echo ''
             Xecho "<File Id=\"File.$Shortname\" "
             Xecho "   LongName=\"$UrlName\" Name=\"$UrlShortName\""
@@ -488,7 +488,7 @@ ProcessLinks() {
          if $CommandShortcut; then
 	   echo "@echo off"                               > $UrlName
            echo "set DBROOTDIR="                         >> $UrlName
-           echo "for /F \"tokens=3 delims=	\" %%A in ('REG QUERY \"HKLM\\SOFTWARE\\Sleepycat Software\\$PRODUCT_NAME\\$PRODUCT_VERSION\" /v RootDirectory') do set DBROOTDIR=%%A"                                   >> $UrlName
+           echo "for /F \"tokens=3 delims=	\" %%A in ('REG QUERY \"HKLM\\SOFTWARE\\Oracle\\$PRODUCT_NAME\\$PRODUCT_VERSION\" /v RootDirectory') do set DBROOTDIR=%%A"                                   >> $UrlName
            echo "if ERRORLEVEL 2 goto MISSING"           >> $UrlName
            echo "if not defined DBROOTDIR goto MISSING"  >> $UrlName
            echo "set FN=\"%DBROOTDIR%$Program\""         >> $UrlName

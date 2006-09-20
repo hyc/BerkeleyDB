@@ -3,9 +3,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_cxx.in,v 12.25 2006/07/17 13:08:09 mjc Exp $
+ * $Id: db_cxx.in,v 12.28 2006/09/13 14:53:37 mjc Exp $
  */
 
 #ifndef _DB_CXX_H_
@@ -89,7 +89,6 @@ class DbLockNotGrantedException;                 // forward
 class DbMemoryException;                         // forward
 class DbRepHandleDeadException;                  // forward
 class DbRunRecoveryException;                    // forward
-class DbUpdateConflictException;                 // forward
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -601,11 +600,12 @@ public:
 	virtual int rep_get_timeout(int which, db_timeout_t *timeout);
 	virtual int rep_set_timeout(int which, db_timeout_t timeout);
 	virtual int repmgr_add_remote_site(const char * host, u_int16_t port,
-	    u_int32_t flags);
+	    int *eidp, u_int32_t flags);
 	virtual int repmgr_get_ack_policy(int *policy);
 	virtual int repmgr_set_ack_policy(int policy);
 	virtual int repmgr_set_local_site(const char * host, u_int16_t port,
 	    u_int32_t flags);
+	virtual int repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);
 	virtual int repmgr_start(int nthreads, u_int32_t flags);
 
 	// Conversion functions
@@ -1165,21 +1165,6 @@ public:
 
 	DbRunRecoveryException(const DbRunRecoveryException &);
 	DbRunRecoveryException &operator = (const DbRunRecoveryException &);
-};
-
-//
-// A specific sort of exception that occurs when
-// an operation is aborted to resolve a deadlock.
-//
-class _exported DbUpdateConflictException : public DbException
-{
-public:
-	virtual ~DbUpdateConflictException() throw();
-	DbUpdateConflictException(const char *description);
-
-	DbUpdateConflictException(const DbUpdateConflictException &);
-	DbUpdateConflictException & operator =
-	    (const DbUpdateConflictException &);
 };
 
 //

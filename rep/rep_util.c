@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_util.c,v 12.62 2006/07/17 22:16:08 alanb Exp $
+ * $Id: rep_util.c,v 12.73 2006/09/15 15:59:37 alanb Exp $
  */
 
 #include "db_config.h"
@@ -244,11 +244,9 @@ __rep_send_bulk(dbenv, bulkp, ctlflags)
 
 	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	/*
-	 * If we're successful, reset the offset pointer to 0.
-	 * Clear the transmit flag regardless.
+	 * Ready the buffer for further records.
 	 */
-	if (ret == 0)
-		*(bulkp->offp) = 0;
+	*(bulkp->offp) = 0;
 	FLD_CLR(*(bulkp->flagsp), BULK_XMIT);
 	return (ret);
 }
@@ -343,6 +341,11 @@ __rep_send_message(dbenv, eid, rtype, lsnp, dbt, ctlflags, repflags)
 	lp = dblp->reginfo.primary;
 	ret = 0;
 
+#if defined(DEBUG_ROP) || defined(DEBUG_WOP)
+	if (db_rep->send == NULL)
+		return (0);
+#endif
+
 	/* Set up control structure. */
 	memset(&cntrl, 0, sizeof(cntrl));
 	if (lsnp == NULL)
@@ -383,11 +386,6 @@ __rep_send_message(dbenv, eid, rtype, lsnp, dbt, ctlflags, repflags)
 		dbt = &scrap_dbt;
 	}
 
-	REP_PRINT_MESSAGE(dbenv, eid, &cntrl, "rep_send_message");
-#ifdef REP_DIAGNOSTIC
-	if (FLD_ISSET(dbenv->verbose, DB_VERB_REPLICATION) && rtype == REP_LOG)
-		__rep_print_logmsg(dbenv, dbt, lsnp);
-#endif
 	/*
 	 * There are several types of records: commit and checkpoint records
 	 * that affect database durability, regular log records that might
@@ -420,6 +418,12 @@ __rep_send_message(dbenv, eid, rtype, lsnp, dbt, ctlflags, repflags)
 	 */
 	if (rep->version != DB_REPVERSION)
 		FLD_CLR(myflags, DB_REP_ANYWHERE);
+
+	REP_PRINT_MESSAGE(dbenv, eid, &cntrl, "rep_send_message", myflags);
+#ifdef REP_DIAGNOSTIC
+	if (FLD_ISSET(dbenv->verbose, DB_VERB_REPLICATION) && rtype == REP_LOG)
+		__rep_print_logmsg(dbenv, dbt, lsnp);
+#endif
 
 	/*
 	 * If DB_REP_PERMANENT is set, the LSN better be non-zero.
@@ -461,11 +465,10 @@ __rep_print_logmsg(dbenv, logdbt, lsnp)
 	DB_LSN *lsnp;
 {
 	/* Static structures to hold the printing functions. */
-	static int (**ptab)__P((DB_ENV *,
-	    DBT *, DB_LSN *, db_recops, void *)) = NULL;
-	size_t ptabsize = 0;
+	static size_t ptabsize;
+	static int (**ptab)__P((DB_ENV *, DBT *, DB_LSN *, db_recops, void *));
 
-	if (ptabsize == 0) {
+	if (ptab == NULL) {
 		/* Initialize the table. */
 		(void)__bam_init_print(dbenv, &ptab, &ptabsize);
 		(void)__crdel_init_print(dbenv, &ptab, &ptabsize);
@@ -509,7 +512,7 @@ __rep_new_master(dbenv, cntrl, eid)
 	REGENV *renv;
 	REGINFO *infop;
 	REP *rep;
-	int change, do_req, ret;
+	int change, do_req, lockout, ret, t_ret;
 #ifdef DIAGNOSTIC
 	DB_MSGBUF mb;
 #endif
@@ -518,15 +521,11 @@ __rep_new_master(dbenv, cntrl, eid)
 	rep = db_rep->region;
 	ret = 0;
 	logc = NULL;
+	lockout = 0;
 	REP_SYSTEM_LOCK(dbenv);
 	__rep_elect_done(dbenv, rep);
 	change = rep->gen != cntrl->gen || rep->master_id != eid;
 	if (change) {
-		if ((ret = __env_init_rec(dbenv, cntrl->log_version)) != 0) {
-			REP_SYSTEM_UNLOCK(dbenv);
-			return (ret);
-		}
-
 		/*
 		 * If we are already locking out others, we're either
 		 * in the middle of sync-up recovery or internal init
@@ -539,6 +538,16 @@ __rep_new_master(dbenv, cntrl, eid)
 		 * our old internal init information.  We need to clean
 		 * up any flags and unlock our lockout.
 		 */
+		if (rep->lockout_th != 0)
+			goto lckout;
+
+		if ((ret = __rep_lockout_msg(dbenv, rep, 1)) != 0)
+			goto errlck;
+
+		lockout = 1;
+		if ((ret = __env_init_rec(dbenv, cntrl->log_version)) != 0)
+			goto errlck;
+
 		if (rep->in_recovery || F_ISSET(rep, REP_F_READY)) {
 			REP_SYSTEM_UNLOCK(dbenv);
 			MUTEX_LOCK(dbenv, rep->mtx_clientdb);
@@ -564,7 +573,7 @@ __rep_new_master(dbenv, cntrl, eid)
 		rep->stat.st_startup_complete = 0;
 		__log_set_version(dbenv, cntrl->log_version);
 		rep->version = cntrl->rep_version;
-		
+
 		/*
 		 * If we're delaying client sync-up, we know we have a
 		 * new/changed master now, set flag indicating we are
@@ -573,6 +582,8 @@ __rep_new_master(dbenv, cntrl, eid)
 		if (FLD_ISSET(rep->config, REP_C_DELAYCLIENT))
 			F_SET(rep, REP_F_DELAY);
 		F_SET(rep, REP_F_NOARCHIVE | REP_F_RECOVER_VERIFY);
+		rep->lockout_th = 0;
+		lockout = 0;
 	}
 	REP_SYSTEM_UNLOCK(dbenv);
 
@@ -600,7 +611,7 @@ __rep_new_master(dbenv, cntrl, eid)
 				    DB_REP_ANYWHERE);
 		} else {
 			MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
-			if (log_compare(&lsn, &cntrl->lsn) < 0 && do_req)
+			if (LOG_COMPARE(&lsn, &cntrl->lsn) < 0 && do_req)
 				(void)__rep_send_message(dbenv, eid,
 				    REP_ALL_REQ, &lsn, NULL,
 				    0, DB_REP_ANYWHERE);
@@ -635,8 +646,10 @@ __rep_new_master(dbenv, cntrl, eid)
 	if (cntrl->lsn.file < lsn.file) {
 		if ((ret = __log_cursor(dbenv, &logc)) != 0)
 			goto err;
-		if ((ret = __log_c_get(logc,
-		    &first_lsn, &dbt, DB_FIRST)) == DB_NOTFOUND)
+		ret = __log_c_get(logc, &first_lsn, &dbt, DB_FIRST);
+		if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+			ret = t_ret;
+		if (ret == DB_NOTFOUND)
 			goto notfound;
 		else if (ret != 0)
 			goto err;
@@ -646,18 +659,16 @@ __rep_new_master(dbenv, cntrl, eid)
 			ret = DB_REP_JOIN_FAILURE;
 			goto err;
 		}
-		ret = __log_c_close(logc);
-		logc = NULL;
-		if (ret != 0)
-			goto err;
 	}
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		goto err;
-	if ((ret = __rep_log_backup(dbenv, rep, logc, &lsn)) == DB_NOTFOUND)
+	ret = __rep_log_backup(dbenv, rep, logc, &lsn);
+	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+		ret = t_ret;
+	if (ret == DB_NOTFOUND)
 		goto notfound;
 	else if (ret != 0)
 		goto err;
-
 
 	/*
 	 * Finally, we have a record to ask for.
@@ -673,19 +684,18 @@ __rep_new_master(dbenv, cntrl, eid)
 
 	return (DB_REP_NEWMASTER);
 
-err:	if (logc != NULL)
-		(void)__log_c_close(logc);
-	/*
+err:	/*
 	 * If we failed, we need to clear the flags we may have set above
 	 * because we're not going to be setting the verify_lsn.
 	 */
 	REP_SYSTEM_LOCK(dbenv);
+errlck:	if (lockout)
+		rep->lockout_th = 0;
 	F_CLR(rep, REP_F_RECOVER_MASK | REP_F_DELAY);
-	REP_SYSTEM_UNLOCK(dbenv);
+lckout:	REP_SYSTEM_UNLOCK(dbenv);
 	return (ret);
 
 notfound:
-	(void)__log_c_close(logc);
 	/*
 	 * If we don't have an identification record, we still
 	 * might have some log records but we're discarding them
@@ -743,7 +753,7 @@ __rep_newmaster_empty(dbenv, lsnp, cntrl, eid)
 	REP_SYSTEM_LOCK(dbenv);
 	F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK);
 	REP_SYSTEM_UNLOCK(dbenv);
-	
+
 	if (!IS_INIT_LSN(cntrl->lsn)) {
 		/*
 		 * We're making an ALL_REQ.  But now that we've cleared the
@@ -1242,18 +1252,17 @@ __rep_get_gen(dbenv, genp)
 }
 
 /*
- * __rep_lockout --
+ * __rep_lockout_api --
  *	Coordinate with other threads in the library and active txns so
  *	that we can run single-threaded, for recovery or internal backup.
  *	Assumes the caller holds the region mutex.
  *
- * PUBLIC: int __rep_lockout __P((DB_ENV *, REP *, u_int32_t));
+ * PUBLIC: int __rep_lockout_api __P((DB_ENV *, REP *));
  */
 int
-__rep_lockout(dbenv, rep, msg_th)
+__rep_lockout_api(dbenv, rep)
 	DB_ENV *dbenv;
 	REP *rep;
-	u_int32_t msg_th;
 {
 	int wait_cnt;
 
@@ -1281,7 +1290,7 @@ __rep_lockout(dbenv, rep, msg_th)
 	 * to go to 1 (us).
 	 */
 	rep->in_recovery = 1;
-	for (wait_cnt = 0; rep->handle_cnt != 0 || rep->msg_th > msg_th;) {
+	for (wait_cnt = 0; rep->handle_cnt != 0;) {
 		REP_SYSTEM_UNLOCK(dbenv);
 		__os_sleep(dbenv, 1, 0);
 #ifdef DIAGNOSTIC
@@ -1291,9 +1300,49 @@ __rep_lockout(dbenv, rep, msg_th)
 			(u_long)rep->handle_cnt, (u_long)rep->msg_th);
 		if (++wait_cnt % 60 == 0)
 			__db_errx(dbenv,
-"Waiting for handle count (%lu) or msg_th (%lu) to complete replication lockout for %d minutes",
-			(u_long)rep->handle_cnt, (u_long)rep->msg_th,
+"Waiting for handle count (%lu) to complete replication lockout for %d minutes",
+			(u_long)rep->handle_cnt,
 			wait_cnt / 60);
+#endif
+		REP_SYSTEM_LOCK(dbenv);
+	}
+
+	return (0);
+}
+
+/*
+ * __rep_lockout_msg --
+ *	Coordinate with other threads processing messages so that
+ *	we can run single-threaded and know that no incoming
+ *	message can change the world (i.e., like a NEWMASTER message).
+ *	This call should be short-term covering a specific critical
+ *	operation where we need to make sure no new messages arrive
+ *	in the middle and all message threads are out before we start it.
+ *	Assumes the caller holds the region mutex.
+ *
+ * PUBLIC: int __rep_lockout_msg __P((DB_ENV *, REP *, u_int32_t));
+ */
+int
+__rep_lockout_msg(dbenv, rep, msg_th)
+	DB_ENV *dbenv;
+	REP *rep;
+	u_int32_t msg_th;
+{
+	int wait_cnt;
+
+	rep->lockout_th = 1;
+	for (wait_cnt = 0; rep->msg_th > msg_th;) {
+		REP_SYSTEM_UNLOCK(dbenv);
+		__os_sleep(dbenv, 1, 0);
+#ifdef DIAGNOSTIC
+		if (wait_cnt == 5)
+			__db_errx(dbenv,
+"Waiting for msg_th (%lu) to complete replication lockout",
+			(u_long)rep->msg_th);
+		if (++wait_cnt % 60 == 0)
+			__db_errx(dbenv,
+"Waiting for msg_th (%lu) to complete replication lockout for %d minutes",
+			(u_long)rep->msg_th, wait_cnt / 60);
 #endif
 		REP_SYSTEM_LOCK(dbenv);
 	}
@@ -1460,18 +1509,20 @@ __rep_msg_from_old(version, rectype)
 
 #ifdef DIAGNOSTIC
 /*
- * PUBLIC: void __rep_print_message __P((DB_ENV *, int, REP_CONTROL *, char *));
+ * PUBLIC: void __rep_print_message
+ * PUBLIC:     __P((DB_ENV *, int, REP_CONTROL *, char *, u_int32_t));
  */
 void
-__rep_print_message(dbenv, eid, rp, str)
+__rep_print_message(dbenv, eid, rp, str, flags)
 	DB_ENV *dbenv;
 	int eid;
 	REP_CONTROL *rp;
 	char *str;
+	u_int32_t flags;
 {
 	DB_MSGBUF mb;
 	u_int32_t rectype;
-	char *type;
+	char ftype[32], *type;
 
 	rectype = rp->rectype;
 	if (rp->rep_version != DB_REPVERSION)
@@ -1568,11 +1619,26 @@ __rep_print_message(dbenv, eid, rp, str)
 		type = "NOTYPE";
 		break;
 	}
+
+	/*
+	 * !!!
+	 * If adding new flags to print out make sure the aggregate
+	 * length cannot overflow the buffer.
+	 */
+	ftype[0] = '\0';
+	if (LF_ISSET(DB_REP_ANYWHERE))
+		(void)strcat(ftype, " any");
+	if (LF_ISSET(DB_REP_NOBUFFER))
+		(void)strcat(ftype, " nobuf");
+	if (LF_ISSET(DB_REP_PERMANENT))
+		(void)strcat(ftype, " perm");
+	if (LF_ISSET(DB_REP_REREQUEST))
+		(void)strcat(ftype, " rereq");
 	RPRINT(dbenv,
 	    (dbenv, &mb,
-    "%s %s: msgv = %lu logv %lu gen = %lu eid %d, type %s, LSN [%lu][%lu]",
+    "%s %s: msgv = %lu logv %lu gen = %lu eid %d, type %s, LSN [%lu][%lu] %s",
 	    dbenv->db_home, str,
 	    (u_long)rp->rep_version, (u_long)rp->log_version, (u_long)rp->gen,
-	    eid, type, (u_long)rp->lsn.file, (u_long)rp->lsn.offset));
+	    eid, type, (u_long)rp->lsn.file, (u_long)rp->lsn.offset, ftype));
 }
 #endif

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mut_region.c,v 12.17 2006/06/14 15:23:29 bostic Exp $
+ * $Id: mut_region.c,v 12.18 2006/08/24 14:46:16 bostic Exp $
  */
 
 #include "db_config.h"

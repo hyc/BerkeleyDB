@@ -2,20 +2,16 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_posix.c,v 1.17 2006/07/14 19:16:50 alanb Exp $
+ * $Id: repmgr_posix.c,v 1.22 2006/09/11 15:15:20 bostic Exp $
  */
 
 #include "db_config.h"
 
 #define	__INCLUDE_NETWORKING	1
+#define	__INCLUDE_SELECT_H	1
 #include "db_int.h"
-#ifndef NO_SYSTEM_INCLUDES
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
-#endif
 
 /*
  * A very rough guess at the maximum stack space one of our threads could ever
@@ -51,7 +47,7 @@ __repmgr_thread_start(dbenv, runnable)
 #ifdef _POSIX_THREAD_ATTR_STACKSIZE
 	attrp = &attributes;
 	if ((ret = pthread_attr_init(&attributes)) != 0) {
-		dbenv->err(dbenv,
+		__db_err(dbenv,
 		    ret, "pthread_attr_init in repmgr_thread_start");
 		return (ret);
 	}
@@ -68,14 +64,14 @@ __repmgr_thread_start(dbenv, runnable)
 		size = PTHREAD_STACK_MIN;
 #endif
 	if ((ret = pthread_attr_setstacksize(&attributes, size)) != 0) {
-		dbenv->err(dbenv,
+		__db_err(dbenv,
 		    ret, "pthread_attr_setstacksize in repmgr_thread_start");
 		return (ret);
 	}
-#else	
+#else
 	attrp = NULL;
 #endif
-	
+
 	return (pthread_create(&runnable->thread_id, attrp,
 		    runnable->run, dbenv));
 }
@@ -518,9 +514,19 @@ __repmgr_select_loop(dbenv)
 
 		/*
 		 * Examine all connections to see what sort of I/O to ask for on
-		 * each one.
+		 * each one.  The TAILQ_FOREACH macro would be suitable here,
+		 * except that it doesn't allow unlinking the current element,
+		 * which is needed for cleanup_connection.
 		 */
-		TAILQ_FOREACH(conn, &db_rep->connections, entries) {
+		for (conn = TAILQ_FIRST(&db_rep->connections);
+		     conn != NULL;
+		     conn = next) {
+			next = TAILQ_NEXT(conn, entries);
+			if (F_ISSET(conn, CONN_DEFUNCT)) {
+				__repmgr_cleanup_connection(dbenv, conn);
+				continue;
+			}
+
 			if (F_ISSET(conn, CONN_CONNECTING)) {
 				FD_SET((u_int)conn->fd, &reads);
 				FD_SET((u_int)conn->fd, &writes);
@@ -596,7 +602,7 @@ __repmgr_select_loop(dbenv)
 					    conn)) == DB_REP_UNAVAIL) {
 						if ((ret =
 						    __repmgr_bust_connection(
-						    dbenv, conn)) != 0)
+						    dbenv, conn, TRUE)) != 0)
 							goto out;
 					} else if (ret != 0)
 						goto out;
@@ -613,7 +619,7 @@ __repmgr_select_loop(dbenv)
 				    dbenv, conn)) == DB_REP_UNAVAIL) {
 					if ((ret =
 					    __repmgr_bust_connection(dbenv,
-					    conn)) != 0)
+					    conn, TRUE)) != 0)
 						goto out;
 					continue;
 				} else if (ret != 0)
@@ -626,7 +632,7 @@ __repmgr_select_loop(dbenv)
 				    == DB_REP_UNAVAIL) {
 					if ((ret =
 					    __repmgr_bust_connection(dbenv,
-					    conn)) != 0)
+					    conn, TRUE)) != 0)
 						goto out;
 					continue;
 				} else if (ret != 0)
@@ -701,7 +707,6 @@ err_rpt:
 	 * now.
 	 */
 	DB_ASSERT(dbenv, !TAILQ_EMPTY(&db_rep->connections));
-	TAILQ_REMOVE(&db_rep->connections, conn, entries);
 	__repmgr_cleanup_connection(dbenv, conn);
 	ret = __repmgr_connect_site(dbenv, eid);
 	DB_ASSERT(dbenv, ret != DB_REP_UNAVAIL);

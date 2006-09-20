@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: CurrentTransaction.java,v 12.5 2006/06/09 14:32:05 mark Exp $
+ * $Id: CurrentTransaction.java,v 12.7 2006/09/08 20:32:13 bostic Exp $
  */
 
 package com.sleepycat.collections;
@@ -330,7 +330,7 @@ public class CurrentTransaction {
             CursorConfig cdbConfig;
             if (writeCursor) {
                 if (cdbCursors.readCursors.size() > 0) {
-                    
+
                     /*
                      * Although CDB allows opening a write cursor when a read
                      * cursor is open, a self-deadlock will occur if a write is

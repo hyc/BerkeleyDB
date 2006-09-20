@@ -3039,6 +3039,24 @@ os_fzero.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_getenv.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_getenv.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_getenv.c_objects
+os_getenv.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_getenv.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../os/os_handle.c_dependDone
 TRUE
 <END>
@@ -3054,6 +3072,24 @@ os_handle.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../os/os_handle.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_method.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_method.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_method.c_objects
+os_method.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_method.c_tool
 C/C++ compiler
 <END>
 
@@ -3363,24 +3399,6 @@ os_yield.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependDone
-TRUE
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependencies
-$(PRJ_DIR)/db_config.h \
-	$(PRJ_DIR)/db_int.h \
-	$(PRJ_DIR)/db.h
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_objects
-os_vx_rpath.o
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_tool
-C/C++ compiler
-<END>
-
 <BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_abs.c_dependDone
 TRUE
 <END>
@@ -3432,6 +3450,24 @@ os_vx_map.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_map.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_objects
+os_vx_rpath.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_tool
 C/C++ compiler
 <END>
 
@@ -4185,7 +4221,9 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../os/os_flock.c \
 	$(PRJ_DIR)/../os/os_fsync.c \
 	$(PRJ_DIR)/../os/os_fzero.c \
+	$(PRJ_DIR)/../os/os_getenv.c \
 	$(PRJ_DIR)/../os/os_handle.c \
+	$(PRJ_DIR)/../os/os_method.c \
 	$(PRJ_DIR)/../os/os_mkdir.c \
 	$(PRJ_DIR)/../os/os_oflags.c \
 	$(PRJ_DIR)/../os/os_open.c \
@@ -4203,10 +4241,10 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../os/os_uid.c \
 	$(PRJ_DIR)/../os/os_unlink.c \
 	$(PRJ_DIR)/../os/os_yield.c \
-	$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_abs.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_config.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_map.c \
+	$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c \
 	$(PRJ_DIR)/../qam/qam.c \
 	$(PRJ_DIR)/../qam/qam_auto.c \
 	$(PRJ_DIR)/../qam/qam_conv.c \

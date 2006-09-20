@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: crdel_rec.c,v 12.11 2006/05/10 17:28:06 bostic Exp $
+ * $Id: crdel_rec.c,v 12.13 2006/08/24 14:45:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -58,7 +58,7 @@ __crdel_metasub_recover(dbenv, dbtp, lsnp, op, info)
 		}
 	}
 
-	cmp_p = log_compare(&LSN(pagep), &argp->lsn);
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->lsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->lsn);
 
 	if (cmp_p == 0 && DB_REDO(op)) {

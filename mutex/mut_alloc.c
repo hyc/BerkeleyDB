@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mut_alloc.c,v 12.12 2006/05/10 15:56:24 bostic Exp $
+ * $Id: mut_alloc.c,v 12.15 2006/08/24 14:46:16 bostic Exp $
  */
 
 #include "db_config.h"
@@ -142,7 +142,7 @@ __mutex_alloc_int(dbenv, locksys, alloc_id, flags, indxp)
 	if (LF_ISSET(DB_MUTEX_PROCESS_ONLY))
 		dbenv->thread_id(dbenv, &mutexp->pid, NULL);
 
-#ifdef DIAGNOSTIC
+#ifdef HAVE_STATISTICS
 	mutexp->alloc_id = alloc_id;
 #else
 	COMPQUIET(alloc_id, 0);

@@ -689,6 +689,7 @@ use constant IGNORE => 'ignore' ;
 	DB_REP_EGENCHG             => DEFINE,
 	DB_REP_LOGREADY            => DEFINE,
 	DB_REP_PAGEDONE            => DEFINE,
+	DB_REP_STARTUPDONE         => DEFINE,
 	DB_SEQUENCE_VERSION        => DEFINE,
 	DB_SEQ_DEC                 => DEFINE,
 	DB_SEQ_INC                 => DEFINE,

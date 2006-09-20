@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2003-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep042script.tcl,v 12.5 2006/04/12 03:24:06 sue Exp $
+# $Id: rep042script.tcl,v 12.6 2006/08/24 14:46:38 bostic Exp $
 #
 # Rep042 script - concurrency with updates.
 

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: RepConfigInfo.h,v 1.1 2006/05/05 04:58:04 alexg Exp $
+ * $Id: RepConfigInfo.h,v 1.2 2006/08/24 14:45:50 bostic Exp $
  */
 #include <db_cxx.h>
 

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1998-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_tmpdir.c,v 12.8 2006/06/11 12:27:40 bostic Exp $
+ * $Id: os_tmpdir.c,v 12.11 2006/08/24 14:46:18 bostic Exp $
  */
 
 #include "db_config.h"
@@ -31,7 +31,7 @@ __os_tmpdir(dbenv, flags)
 	DB_ENV *dbenv;
 	u_int32_t flags;
 {
-	int isdir;
+	int isdir, ret;
 
 	/*
 	 * !!!
@@ -50,34 +50,45 @@ __os_tmpdir(dbenv, flags)
 		"C:/tmp",		/* Windows. */
 		NULL
 	};
-	const char * const *lp, *p;
+	const char * const *lp;
+	char *tdir, tdir_buf[DB_MAXPATHLEN];
 
 	/* Use the environment if it's permitted and initialized. */
 	if (LF_ISSET(DB_USE_ENVIRON) ||
 	    (LF_ISSET(DB_USE_ENVIRON_ROOT) && __os_isroot())) {
-		if ((p = getenv("TMPDIR")) != NULL && p[0] == '\0') {
-			__db_errx(dbenv, "illegal TMPDIR environment variable");
-			return (EINVAL);
-		}
-		/* Windows */
-		if (p == NULL && (p = getenv("TEMP")) != NULL && p[0] == '\0') {
-			__db_errx(dbenv, "illegal TEMP environment variable");
-			return (EINVAL);
-		}
-		/* Windows */
-		if (p == NULL && (p = getenv("TMP")) != NULL && p[0] == '\0') {
-			__db_errx(dbenv, "illegal TMP environment variable");
-			return (EINVAL);
-		}
+		/* POSIX: TMPDIR */
+		tdir = tdir_buf;
+		if ((ret = __os_getenv(
+		    dbenv, "TMPDIR", &tdir, sizeof(tdir_buf))) != 0)
+			return (ret);
+		if (tdir != NULL && tdir[0] != '\0')
+			goto found;
+
+		/*
+		 * Windows: TEMP, TMP
+		 */
+		tdir = tdir_buf;
+		if ((ret = __os_getenv(
+		    dbenv, "TEMP", &tdir, sizeof(tdir_buf))) != 0)
+			return (ret);
+		if (tdir != NULL && tdir[0] != '\0')
+			goto found;
+
+		tdir = tdir_buf;
+		if ((ret = __os_getenv(
+		    dbenv, "TMP", &tdir, sizeof(tdir_buf))) != 0)
+			return (ret);
+		if (tdir != NULL && tdir[0] != '\0')
+			goto found;
+
 		/* Macintosh */
-		if (p == NULL &&
-		    (p = getenv("TempFolder")) != NULL && p[0] == '\0') {
-			__db_errx(dbenv,
-			    "illegal TempFolder environment variable");
-			return (EINVAL);
-		}
-		if (p != NULL)
-			return (__os_strdup(dbenv, p, &dbenv->db_tmp_dir));
+		tdir = tdir_buf;
+		if ((ret = __os_getenv(
+		    dbenv, "TempFolder", &tdir, sizeof(tdir_buf))) != 0)
+			return (ret);
+
+		if (tdir != NULL && tdir[0] != '\0')
+found:			return (__os_strdup(dbenv, tdir, &dbenv->db_tmp_dir));
 	}
 
 #ifdef macintosh
@@ -93,7 +104,6 @@ __os_tmpdir(dbenv, flags)
 #ifdef DB_WIN32
 	/* Get the path to the temporary directory. */
 	{
-		int ret;
 		_TCHAR tpath[DB_MAXPATHLEN + 1];
 		char *path, *eos;
 

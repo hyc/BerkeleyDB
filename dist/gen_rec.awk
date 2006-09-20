@@ -3,9 +3,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: gen_rec.awk,v 12.16 2006/06/09 18:37:07 margo Exp $
+# $Id: gen_rec.awk,v 12.22 2006/09/14 15:00:47 bostic Exp $
 #
 
 # This awk script generates all the log, print, and read routines for the DB
@@ -589,10 +589,27 @@ function log_function()
 				    sizes[i]) >> CFILE;
 				printf("\t\treturn (ENOMEM);\n") >> CFILE;
 			}
-			printf("\tif (%s != NULL)\n", vars[i]) >> CFILE;
-			printf("\t\tmemcpy(bp, %s, %s);\n", vars[i], \
+			printf("\tif (%s != NULL)", vars[i]) >> CFILE;
+			if (not_buf && has_dbp && types[i] == "DB_LSN *") {
+				printf(" {\n\t\tif (txnp != NULL) {\n") \
+				    >> CFILE;
+				printf( \
+	"\t\t\tLOG *lp = dbenv->lg_handle->reginfo.primary;\n") >> CFILE;
+				printf( \
+	"\t\t\tif (LOG_COMPARE(%s, &lp->lsn) >= 0 && (ret =\n", vars[i]) \
+				    >> CFILE;
+				printf( \
+	"\t\t\t    __log_check_page_lsn(dbenv, dbp, %s) != 0))\n", vars[i]) \
+				    >> CFILE;
+				printf("\t\t\t\treturn (ret);\n") >> CFILE;
+				printf("\t\t}") >> CFILE;
+			}
+			printf("\n\t\tmemcpy(bp, %s, %s);\n", vars[i], \
 			    sizes[i]) >> CFILE;
-			printf("\telse\n") >> CFILE;
+			if (not_buf && has_dbp && types[i] == "DB_LSN *")
+				printf("\t} else\n") >> CFILE;
+			else
+				printf("\telse\n") >> CFILE;
 			printf("\t\tmemset(bp, 0, %s);\n", sizes[i]) >> CFILE;
 			printf("\tbp += %s;\n\n", sizes[i]) >> CFILE;
 		}
@@ -761,18 +778,15 @@ function print_function()
 	printf("\t\treturn (ret);\n") >> PFILE;
 
 	# Print values in every record
-	printf("\t(void)printf(\n\t    \"[%%lu][%%lu]%s%%s: ",\
-	     funcname) >> PFILE;
-	printf("rec: %%lu txnp %%lx ") >> PFILE;
-	printf("prevlsn [%%lu][%%lu]\\n\",\n") >> PFILE;
-	printf("\t    (u_long)lsnp->file,\n") >> PFILE;
-	printf("\t    (u_long)lsnp->offset,\n") >> PFILE;
+	printf("\t(void)printf(\n    \"[%%lu][%%lu]%s%%s: ", funcname) >> PFILE;
+	printf("rec: %%lu txnp %%lx prevlsn [%%lu][%%lu]\\n\",\n") >> PFILE;
+	printf("\t    (u_long)lsnp->file, (u_long)lsnp->offset,\n") >> PFILE;
 	printf("\t    (argp->type & DB_debug_FLAG) ? \"_debug\" : \"\",\n") \
 	     >> PFILE;
 	printf("\t    (u_long)argp->type,\n") >> PFILE;
 	printf("\t    (u_long)argp->txnp->txnid,\n") >> PFILE;
-	printf("\t    (u_long)argp->prev_lsn.file,\n") >> PFILE;
-	printf("\t    (u_long)argp->prev_lsn.offset);\n") >> PFILE;
+	printf("\t    (u_long)argp->prev_lsn.file, ") >> PFILE;
+	printf("(u_long)argp->prev_lsn.offset);\n") >> PFILE;
 
 	# Now print fields of argp
 	for (i = 0; i < nvars; i ++) {

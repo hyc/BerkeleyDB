@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_load.c,v 12.16 2006/05/05 14:53:18 bostic Exp $
+ * $Id: db_load.c,v 12.18 2006/08/26 09:23:08 bostic Exp $
  */
 
 #include "db_config.h"
@@ -15,7 +15,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
 #endif
 
 typedef struct {			/* XXX: Globals. */

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: recd021.tcl,v 12.3 2006/01/02 22:03:18 bostic Exp $
+# $Id: recd021.tcl,v 12.4 2006/08/24 14:46:37 bostic Exp $
 #
 # TEST	recd021
 # TEST	Test of failed opens in recovery.

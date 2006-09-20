@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_errno.c,v 12.5 2006/06/19 15:10:46 bostic Exp $
+ * $Id: os_errno.c,v 12.6 2006/08/24 14:46:17 bostic Exp $
  */
 
 #include "db_config.h"

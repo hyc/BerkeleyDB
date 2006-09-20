@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_fopen.c,v 12.31 2006/06/12 23:17:59 bostic Exp $
+ * $Id: mp_fopen.c,v 12.34 2006/09/09 13:55:52 bostic Exp $
  */
 
 #include "db_config.h"
@@ -247,6 +247,7 @@ __memp_fopen(dbmfp, mfp, path, flags, mode, pgsize)
 			__db_err(dbenv, ret, "%s", rpath);
 			goto err;
 		}
+
 		/*
 		 * Don't permit files that aren't a multiple of the pagesize,
 		 * and find the number of the last page in the file, all the
@@ -257,6 +258,7 @@ __memp_fopen(dbmfp, mfp, path, flags, mode, pgsize)
 		 * page size, round down to a page, we'll take care of the
 		 * partial page outside the mpool system.
 		 */
+		DB_ASSERT(dbenv, pagesize != 0);
 		if (bytes % pagesize != 0) {
 			if (LF_ISSET(DB_ODDFILESIZE))
 				bytes -= (u_int32_t)(bytes % pagesize);
@@ -303,10 +305,10 @@ __memp_fopen(dbmfp, mfp, path, flags, mode, pgsize)
 	 * a matching entry, we ensure that it's never found again, and we
 	 * create a new entry for the current request.
 	 */
-
-	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE))
+	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE)) {
+		DB_ASSERT(dbenv, path != NULL);
 		bucket = FNBUCKET(path, strlen(path));
-	else
+	} else
 		bucket = FNBUCKET(dbmfp->fileid, DB_FILE_ID_LEN);
 	hp += bucket;
 
@@ -333,6 +335,7 @@ check:	MUTEX_LOCK(dbenv, hp->mtx_hash);
 			if (!mfp->no_backing_file)
 				continue;
 
+			DB_ASSERT(dbenv, path != NULL);
 			if (strcmp(path, R_ADDR(dbmp->reginfo, mfp->path_off)))
 				continue;
 
@@ -341,7 +344,7 @@ check:	MUTEX_LOCK(dbenv, hp->mtx_hash);
 			 * it is set in the region, but not in the dbmfp.
 			 */
 			if (!F_ISSET(dbmfp, MP_FILEID_SET))
-				__memp_set_fileid(dbmfp,
+				(void)__memp_set_fileid(dbmfp,
 				    R_ADDR(dbmp->reginfo, mfp->fileid_off));
 		} else
 			if (memcmp(dbmfp->fileid, R_ADDR(dbmp->reginfo,
@@ -470,6 +473,7 @@ alloc:		/*
 		 *
 		 * Note correction: page numbers are zero-based, not 1-based.
 		 */
+		DB_ASSERT(dbenv, pagesize != 0);
 		last_pgno = (db_pgno_t)(mbytes * (MEGABYTE / pagesize));
 		last_pgno += (db_pgno_t)(bytes / pagesize);
 		if (last_pgno != 0)
@@ -591,7 +595,7 @@ have_mfp:
 			if (dbmfp->mfp == tmp_dbmfp->mfp &&
 			    (F_ISSET(dbmfp, MP_READONLY) ||
 			    !F_ISSET(tmp_dbmfp, MP_READONLY))) {
-				__mutex_free(dbenv, &dbmfp->fhp->mtx_fh);
+				(void)__mutex_free(dbenv, &dbmfp->fhp->mtx_fh);
 				(void)__os_closehandle(dbenv, dbmfp->fhp);
 				++tmp_dbmfp->fhp->ref;
 				dbmfp->fhp = tmp_dbmfp->fhp;

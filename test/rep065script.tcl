@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep065script.tcl,v 12.3 2006/07/11 19:26:40 carol Exp $
+# $Id: rep065script.tcl,v 12.7 2006/09/08 20:32:18 bostic Exp $
 #
 # rep065script - procs to use at each replication site in the
 # replication upgrade test.
@@ -110,21 +110,21 @@ proc rep065scr_starttest { role oplist envid msgdir mydir allids markerfile } {
 		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
 		    -errpfx MASTER -txn -rep_master \
 		    -rep_transport \[list $envid replsend\]"
-		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
-		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
-		    -errpfx MASTER -txn -rep_master \
-		    -verbose {rep on} -errfile /dev/stderr \
-		    -rep_transport \[list $envid replsend\]"
+#		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
+#		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
+#		    -errpfx MASTER -txn -rep_master \
+#		    -verbose {rep on} -errfile /dev/stderr \
+#		    -rep_transport \[list $envid replsend\]"
 	} elseif { $role == "CLIENT" } {
 		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
 		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
 		    -errpfx CLIENT -txn -rep_client \
 		    -rep_transport \[list $envid replsend\]"
-		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
-		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
-		    -errpfx CLIENT -txn -rep_client \
-		    -verbose {rep on} -errfile /dev/stderr \
-		    -rep_transport \[list $envid replsend\]"
+#		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
+#		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
+#		    -errpfx CLIENT -txn -rep_client \
+#		    -verbose {rep on} -errfile /dev/stderr \
+#		    -rep_transport \[list $envid replsend\]"
 	} else {
 		puts "FAIL: unrecognized replication role $role"
 		return
@@ -220,18 +220,18 @@ puts "$mydir: Loop: Looking for START$envid.  Got $s"
 		set rep_env_cmd "berkdb_env_noerr -home $mydir \
 		    -errpfx MASTER -txn -rep_master \
 		    -rep_transport \[list $envid replsend\]"
-		set rep_env_cmd "berkdb_env_noerr -home $mydir \
-		    -errpfx MASTER -txn -rep_master \
-		    -verbose {rep on} -errfile /dev/stderr \
-		    -rep_transport \[list $envid replsend\]"
+#		set rep_env_cmd "berkdb_env_noerr -home $mydir \
+#		    -errpfx MASTER -txn -rep_master \
+#		    -verbose {rep on} -errfile /dev/stderr \
+#		    -rep_transport \[list $envid replsend\]"
 	} elseif { $role == "CLIENT" } {
 		set rep_env_cmd "berkdb_env_noerr -home $mydir \
 		    -errpfx CLIENT -txn -rep_client \
 		    -rep_transport \[list $envid replsend\]"
-		set rep_env_cmd "berkdb_env_noerr -home $mydir \
-		    -errpfx CLIENT -txn -rep_client \
-		    -verbose {rep on} -errfile /dev/stderr \
-		    -rep_transport \[list $envid replsend\]"
+#		set rep_env_cmd "berkdb_env_noerr -home $mydir \
+#		    -errpfx CLIENT -txn -rep_client \
+#		    -verbose {rep on} -errfile /dev/stderr \
+#		    -rep_transport \[list $envid replsend\]"
 	} else {
 		puts "FAIL: unrecognized replication role $role"
 		return
@@ -369,9 +369,9 @@ set is_repchild 1
 puts "Did args. now source reputils"
 source $reputils_path/reputils.tcl
 
-set markerdir $ctldir/MARKER
+set markerdir $msgtestdir/MARKER
 if { [file exists $markerdir] == 0 } {
-	file mkdir $markerdir 
+	file mkdir $markerdir
 }
 set markerfile $markerdir/marker.db
 

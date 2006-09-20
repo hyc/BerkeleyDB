@@ -277,9 +277,7 @@ __APIREL__/api_cxx/memp_fopen.html__OCT__DB_MULTIVERSION DbMpoolFile::open@DB_MU
 __APIREL__/api_cxx/memp_fopen.html__OCT__DB_NOMMAP DbMpoolFile::open@DB_NOMMAP
 __APIREL__/api_cxx/memp_fopen.html__OCT__DB_ODDFILESIZE DbMpoolFile::open@DB_ODDFILESIZE
 __APIREL__/api_cxx/memp_fopen.html__OCT__DB_RDONLY DbMpoolFile::open@DB_RDONLY
-__APIREL__/api_cxx/memp_fput.html__OCT__DB_MPOOL_CLEAN DbMpoolFile::put@DB_MPOOL_CLEAN
 __APIREL__/api_cxx/memp_fput.html__OCT__DB_MPOOL_DISCARD DbMpoolFile::put@DB_MPOOL_DISCARD
-__APIREL__/api_cxx/memp_fset.html__OCT__DB_MPOOL_CLEAN DbMpoolFile::set@DB_MPOOL_CLEAN
 __APIREL__/api_cxx/memp_fset.html__OCT__DB_MPOOL_DISCARD DbMpoolFile::set@DB_MPOOL_DISCARD
 __APIREL__/api_cxx/memp_set_flags.html__OCT__DB_MPOOL_NOFILE DbMpoolFile::set_flags@DB_MPOOL_NOFILE
 __APIREL__/api_cxx/memp_set_flags.html__OCT__DB_MPOOL_UNLINK DbMpoolFile::set_flags@DB_MPOOL_UNLINK
@@ -332,6 +330,8 @@ __APIREL__/api_cxx/repmgr_ack_policy.html__OCT__DB_REPMGR_ACKS_ONE DbEnv::repmgr
 __APIREL__/api_cxx/repmgr_ack_policy.html__OCT__DB_REPMGR_ACKS_ONE_PEER DbEnv::repmgr_set_ack_policy@DB_REPMGR_ACKS_ONE_PEER
 __APIREL__/api_cxx/repmgr_ack_policy.html__OCT__DB_REPMGR_ACKS_QUORUM DbEnv::repmgr_set_ack_policy@DB_REPMGR_ACKS_QUORUM
 __APIREL__/api_cxx/repmgr_remote_site.html__OCT__DB_REPMGR_PEER DbEnv::repmgr_add_remote_site@DB_REPMGR_PEER
+__APIREL__/api_cxx/repmgr_site_list.html__OCT__DB_REPMGR_CONNECTED DbEnv::repmgr_site_list@DB_REPMGR_CONNECTED
+__APIREL__/api_cxx/repmgr_site_list.html__OCT__DB_REPMGR_DISCONNECTED DbEnv::repmgr_site_list@DB_REPMGR_DISCONNECTED
 __APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_MASTER DbEnv::repmgr_start@DB_REP_MASTER
 __APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_CLIENT DbEnv::repmgr_start@DB_REP_CLIENT
 __APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_ELECTION DbEnv::repmgr_start@DB_REP_ELECTION
@@ -352,6 +352,7 @@ __APIREL__/api_cxx/txn_begin.html__OCT__DB_READ_UNCOMMITTED DbEnv::txn_begin@DB_
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_NOSYNC DbEnv::txn_begin@DB_TXN_NOSYNC
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_NOWAIT DbEnv::txn_begin@DB_TXN_NOWAIT
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_SNAPSHOT DbEnv::txn_begin@DB_TXN_SNAPSHOT
+__APIREL__/api_cxx/txn_begin.html__OCT__DB_LOCK_DEADLOCK DbEnv::txn_begin@DB_LOCK_DEADLOCK
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_SYNC DbEnv::txn_begin@DB_TXN_SYNC
 __APIREL__/api_cxx/txn_checkpoint.html__OCT__DB_FORCE DbEnv::txn_checkpoint@DB_FORCE
 __APIREL__/api_cxx/txn_commit.html__OCT__DB_TXN_NOSYNC DbTxn::commit@DB_TXN_NOSYNC

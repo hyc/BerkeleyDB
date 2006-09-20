@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: log_archive.c,v 12.19 2006/07/05 22:46:37 ubell Exp $
+ * $Id: log_archive.c,v 12.21 2006/09/07 20:05:32 bostic Exp $
  */
 
 #include "db_config.h"
@@ -168,8 +168,7 @@ __log_archive(dbenv, listp, flags)
 		fnum = stable_lsn.file - 1;
 		break;
 	default:
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__log_archive");
 		goto err;
 	}
 

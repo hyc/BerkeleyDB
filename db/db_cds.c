@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_cds.c,v 12.3 2006/07/17 15:07:03 bostic Exp $
+ * $Id: db_cds.c,v 12.5 2006/09/07 05:46:15 mjc Exp $
  */
 
 #include "db_config.h"
@@ -49,7 +49,9 @@ static int __cdsgroup_commit(txn, flags)
 	u_int32_t flags;
 {
 	DB_ENV *dbenv;
+	DB_LOCKREQ lreq;
 	u_int32_t locker;
+	int ret, t_ret;
 
 	COMPQUIET(flags, 0);
 	dbenv = txn->mgrp->dbenv;
@@ -60,11 +62,18 @@ static int __cdsgroup_commit(txn, flags)
 		return (EINVAL);
 	}
 
+	/* We may be holding handle locks; release them. */
+	lreq.op = DB_LOCK_PUT_ALL;
+	lreq.obj = NULL;
+	ret = __lock_vec(dbenv, txn->txnid, 0, &lreq, 1, NULL);
+
 	dbenv = txn->mgrp->dbenv;
 	locker = txn->txnid;
 	__os_free(dbenv, txn->mgrp);
 	__os_free(dbenv, txn);
-	return (__lock_id_free(dbenv, locker));
+	if ((t_ret = __lock_id_free(dbenv, locker)) != 0 && ret == 0)
+		ret = t_ret;
+	return (ret);
 }
 
 static int __cdsgroup_discard(txn, flags)

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: fop_basic.c,v 12.16 2006/07/17 15:16:35 bostic Exp $
+ * $Id: fop_basic.c,v 12.19 2006/09/19 15:06:59 bostic Exp $
  */
 
 #include "db_config.h"
@@ -133,7 +133,7 @@ __fop_remove(dbenv, txn, fileid, name, appname, flags)
 	    __db_appname(dbenv, appname, name, 0, NULL, &real_name)) != 0)
 		goto err;
 
-	if (txn == NULL) {
+	if (!IS_REAL_TXN(txn)) {
 		if (fileid != NULL && (ret = __memp_nameop(
 		    dbenv, fileid, NULL, real_name, NULL, 0)) != 0)
 			goto err;

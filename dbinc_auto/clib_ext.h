@@ -25,9 +25,6 @@ void __db_freeaddrinfo __P((DB_ENV *, ADDRINFO *));
 #ifndef HAVE_GETCWD
 char *getcwd __P((char *, size_t));
 #endif
-#ifndef HAVE_GETENV
-char *getenv __P((const char *));
-#endif
 #ifndef HAVE_GETOPT
 int getopt __P((int, char * const *, const char *));
 #endif

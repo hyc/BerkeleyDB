@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_rec.c,v 12.19 2006/06/13 06:21:55 mjc Exp $
+ * $Id: hash_rec.c,v 12.22 2006/08/24 14:46:05 bostic Exp $
  */
 
 #include "db_config.h"
@@ -110,8 +110,8 @@ __ham_insdel_recover(dbenv, dbtp, lsnp, op, info)
 		}
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 	/*
 	 * Two possible things going on:
@@ -211,8 +211,8 @@ __ham_newpage_recover(dbenv, dbtp, lsnp, op, info)
 	 * it.
 	 */
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	if ((cmp_p == 0 && DB_REDO(op) && argp->opcode == PUTOVFL) ||
@@ -243,8 +243,8 @@ __ham_newpage_recover(dbenv, dbtp, lsnp, op, info)
 ppage:	if (argp->prev_pgno != PGNO_INVALID) {
 		REC_FGET(mpf, argp->prev_pgno, &pagep, npage);
 
-		cmp_n = log_compare(lsnp, &LSN(pagep));
-		cmp_p = log_compare(&LSN(pagep), &argp->prevlsn);
+		cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+		cmp_p = LOG_COMPARE(&LSN(pagep), &argp->prevlsn);
 		CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->prevlsn);
 		change = 0;
 
@@ -275,8 +275,8 @@ ppage:	if (argp->prev_pgno != PGNO_INVALID) {
 npage:	if (argp->next_pgno != PGNO_INVALID) {
 		REC_FGET(mpf, argp->next_pgno, &pagep, done);
 
-		cmp_n = log_compare(lsnp, &LSN(pagep));
-		cmp_p = log_compare(&LSN(pagep), &argp->nextlsn);
+		cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+		cmp_p = LOG_COMPARE(&LSN(pagep), &argp->nextlsn);
 		CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->nextlsn);
 		change = 0;
 
@@ -345,8 +345,8 @@ __ham_replace_recover(dbenv, dbtp, lsnp, op, info)
 
 	REC_FGET(mpf, argp->pgno, &pagep, done);
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	memset(&dbt, 0, sizeof(dbt));
@@ -467,8 +467,8 @@ __ham_splitdata_recover(dbenv, dbtp, lsnp, op, info)
 		}
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	/*
@@ -542,8 +542,8 @@ __ham_copypage_recover(dbenv, dbtp, lsnp, op, info)
 	/* This is the bucket page. */
 	REC_FGET(mpf, argp->pgno, &pagep, donext);
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
@@ -568,8 +568,8 @@ donext:	/* Now fix up the "next" page. */
 	REC_FGET(mpf, argp->next_pgno, &pagep, do_nn);
 
 	/* For REDO just update the LSN. For UNDO copy page back. */
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->nextlsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->nextlsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->nextlsn);
 	if (cmp_p == 0 && DB_REDO(op)) {
 		REC_DIRTY(mpf, &pagep);
@@ -589,8 +589,8 @@ do_nn:	if (argp->nnext_pgno == PGNO_INVALID)
 
 	REC_FGET(mpf, argp->nnext_pgno, &pagep, done);
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->nnextlsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->nnextlsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->nnextlsn);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
@@ -700,8 +700,8 @@ __ham_metagroup_recover(dbenv, dbtp, lsnp, op, info)
 	 */
 	did_alloc = groupgrow;
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
@@ -736,8 +736,8 @@ do_meta:
 	hcp = (HASH_CURSOR *)dbc->internal;
 	if ((ret = __ham_get_meta(dbc)) != 0)
 		goto out;
-	cmp_n = log_compare(lsnp, &hcp->hdr->dbmeta.lsn);
-	cmp_p = log_compare(&hcp->hdr->dbmeta.lsn, &argp->metalsn);
+	cmp_n = LOG_COMPARE(lsnp, &hcp->hdr->dbmeta.lsn);
+	cmp_p = LOG_COMPARE(&hcp->hdr->dbmeta.lsn, &argp->metalsn);
 	CHECK_LSN(dbenv, op, cmp_p, &hcp->hdr->dbmeta.lsn, &argp->metalsn);
 	if (cmp_p == 0 && DB_REDO(op)) {
 		/* Redo the actual updating of bucket counts. */
@@ -797,8 +797,8 @@ do_meta:
 				ret = 0;
 			goto out;
 		}
-		cmp_n = log_compare(lsnp, &mmeta->lsn);
-		cmp_p = log_compare(&mmeta->lsn, &argp->mmetalsn);
+		cmp_n = LOG_COMPARE(lsnp, &mmeta->lsn);
+		cmp_p = LOG_COMPARE(&mmeta->lsn, &argp->mmetalsn);
 		if (cmp_p == 0 && DB_REDO(op)) {
 			REC_DIRTY(mpf, &mmeta);
 			mmeta->lsn = *lsnp;
@@ -875,8 +875,8 @@ __ham_groupalloc_recover(dbenv, dbtp, lsnp, op, info)
 			goto done;
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(mmeta));
-	cmp_p = log_compare(&LSN(mmeta), &argp->meta_lsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(mmeta));
+	cmp_p = LOG_COMPARE(&LSN(mmeta), &argp->meta_lsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(mmeta), &argp->meta_lsn);
 
 	/*
@@ -904,7 +904,7 @@ __ham_groupalloc_recover(dbenv, dbtp, lsnp, op, info)
 		pagep = NULL;
 		if ((ret = __memp_fget(mpf, &pgno, NULL,
 		    DB_MPOOL_EDIT, &pagep)) == 0) {
-			if (log_compare(&pagep->lsn, lsnp) != 0) {
+			if (LOG_COMPARE(&pagep->lsn, lsnp) != 0) {
 				if ((ret = __memp_fput(mpf,
 				     pagep, DB_MPOOL_DISCARD)) != 0)
 					goto out;
@@ -942,7 +942,7 @@ __ham_groupalloc_recover(dbenv, dbtp, lsnp, op, info)
 		 */
 		if (pagep != NULL) {
 			REC_DIRTY(mpf, &pagep);
-			if (log_compare(&pagep->lsn, lsnp) == 0)
+			if (LOG_COMPARE(&pagep->lsn, lsnp) == 0)
 				ZERO_LSN(pagep->lsn);
 
 			if ((ret = __memp_fput(mpf, pagep, 0)) != 0)
@@ -1278,8 +1278,8 @@ __ham_metagroup_42_recover(dbenv, dbtp, lsnp, op, info)
 	 */
 	did_alloc = groupgrow;
 
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
@@ -1301,8 +1301,8 @@ do_meta:
 	hcp = (HASH_CURSOR *)dbc->internal;
 	if ((ret = __ham_get_meta(dbc)) != 0)
 		goto out;
-	cmp_n = log_compare(lsnp, &hcp->hdr->dbmeta.lsn);
-	cmp_p = log_compare(&hcp->hdr->dbmeta.lsn, &argp->metalsn);
+	cmp_n = LOG_COMPARE(lsnp, &hcp->hdr->dbmeta.lsn);
+	cmp_p = LOG_COMPARE(&hcp->hdr->dbmeta.lsn, &argp->metalsn);
 	CHECK_LSN(dbenv, op, cmp_p, &hcp->hdr->dbmeta.lsn, &argp->metalsn);
 	if (cmp_p == 0 && DB_REDO(op)) {
 		/* Redo the actual updating of bucket counts. */
@@ -1352,8 +1352,8 @@ do_meta:
 				ret = 0;
 			goto out;
 		}
-		cmp_n = log_compare(lsnp, &mmeta->lsn);
-		cmp_p = log_compare(&mmeta->lsn, &argp->mmetalsn);
+		cmp_n = LOG_COMPARE(lsnp, &mmeta->lsn);
+		cmp_p = LOG_COMPARE(&mmeta->lsn, &argp->mmetalsn);
 		if (cmp_p == 0 && DB_REDO(op)) {
 			REC_DIRTY(mpf, &mmeta);
 			mmeta->lsn = *lsnp;
@@ -1409,10 +1409,9 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 	DBC *dbc;
 	PAGE *pagep;
 	db_pgno_t pgno;
-	int cmp_n, cmp_p, modified, ret;
+	int cmp_n, cmp_p, ret;
 
 	mmeta = NULL;
-	modified = 0;
 	REC_PRINT(__ham_groupalloc_42_print);
 	REC_INTRO(__ham_groupalloc_42_read, 0, 0);
 
@@ -1425,8 +1424,8 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 			goto done;
 	}
 
-	cmp_n = log_compare(lsnp, &LSN(mmeta));
-	cmp_p = log_compare(&LSN(mmeta), &argp->meta_lsn);
+	cmp_n = LOG_COMPARE(lsnp, &LSN(mmeta));
+	cmp_p = LOG_COMPARE(&LSN(mmeta), &argp->meta_lsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(mmeta), &argp->meta_lsn);
 
 	/*
@@ -1443,8 +1442,8 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 		if ((ret = __ham_alloc_pages_42(file_dbp, argp, lsnp)) != 0)
 			goto out;
 		if (cmp_p == 0) {
+			REC_DIRTY(mpf, &mmeta);
 			LSN(mmeta) = *lsnp;
-			modified = 1;
 		}
 	} else if (DB_UNDO(op)) {
 		/*
@@ -1453,7 +1452,7 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 		 */
 		pagep = NULL;
 		if ((ret = __memp_fget(mpf, &pgno, NULL, 0, &pagep)) == 0) {
-			if (log_compare(&pagep->lsn, lsnp) != 0) {
+			if (LOG_COMPARE(&pagep->lsn, lsnp) != 0) {
 				if ((ret = __memp_fput(mpf,
 				     pagep, DB_MPOOL_DISCARD)) != 0)
 					goto out;
@@ -1465,7 +1464,7 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 		 * Reset the last page back to its preallocation state.
 		 */
 		if (pagep != NULL) {
-			if (log_compare(&pagep->lsn, lsnp) == 0)
+			if (LOG_COMPARE(&pagep->lsn, lsnp) == 0)
 				ZERO_LSN(pagep->lsn);
 
 			if ((ret =
@@ -1479,8 +1478,8 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 		    info, argp->fileid, argp->start_pgno, argp->num)) != 0)
 			goto out;
 		if (cmp_n == 0) {
+			REC_DIRTY(mpf, &mmeta);
 			LSN(mmeta) = argp->meta_lsn;
-			modified = 1;
 		}
 	}
 
@@ -1490,8 +1489,8 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 	 * will only be valid on REDO.
 	 */
 	if (pgno > mmeta->last_pgno) {
+		REC_DIRTY(mpf, &mmeta);
 		mmeta->last_pgno = pgno;
-		modified = 1;
 	}
 
 done:	if (ret == 0)
@@ -1499,7 +1498,7 @@ done:	if (ret == 0)
 	ret = 0;
 
 out:	if (mmeta != NULL)
-		(void)__memp_fput(mpf, mmeta, modified ? DB_MPOOL_DIRTY : 0);
+		(void)__memp_fput(mpf, mmeta, 0);
 
 	if (ret == ENOENT && op == DB_TXN_BACKWARD_ALLOC)
 		ret = 0;

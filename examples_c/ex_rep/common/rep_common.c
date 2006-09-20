@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_common.c,v 12.12 2006/07/09 01:07:01 alanb Exp $
+ * $Id: rep_common.c,v 12.13 2006/09/08 20:32:06 bostic Exp $
  */
 
 #include <errno.h>
@@ -135,7 +135,7 @@ doloop(dbenv, app_data)
 			/* Set page size small so page allocation is cheap. */
 			if ((ret = dbp->set_pagesize(dbp, 512)) != 0)
 				goto err;
-		
+
 			flags = DB_AUTO_COMMIT;
 			if (app_data->is_master)
 				flags |= DB_CREATE;
@@ -157,12 +157,12 @@ doloop(dbenv, app_data)
 				goto err;
 			}
 		}
-		
+
 
 		printf("QUOTESERVER%s> ",
 		    app_data->is_master ? "" : " (read-only)");
 		fflush(stdout);
-		
+
 		if (fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
 		if (strtok(&buf[0], " \t\n") == NULL) {
@@ -190,13 +190,13 @@ doloop(dbenv, app_data)
 			dbenv->errx(dbenv, "Can't update at client");
 			continue;
 		}
-		
+
 		key.data = buf;
 		key.size = (u_int32_t)strlen(buf);
-		
+
 		data.data = rbuf;
 		data.size = (u_int32_t)strlen(rbuf);
-		
+
 		if ((ret = dbp->put(dbp,
 		    NULL, &key, &data, DB_AUTO_COMMIT)) != 0) {
 			dbp->err(dbp, ret, "DB->put");

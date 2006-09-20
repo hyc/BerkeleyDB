@@ -1,5 +1,5 @@
-<!--$Id: env_open.so,v 10.110 2006/03/06 16:49:13 bostic Exp $-->
-<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
+<!--$Id: env_open.so,v 10.111 2006/08/02 17:39:47 bostic Exp $-->
+<!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -51,8 +51,9 @@ resolution in general, see <a href="../ref/env/naming.html">Berkeley DB File
 Naming</a>.  The environment variable <b>DB_HOME</b> may be used as
 the path of the database home, as described in
 <a href="../ref/env/naming.html">Berkeley DB File Naming</a>.
-<p>On Windows, the <b>db_home</b> argument will be interpreted as a UTF-8
-string, which is equivalent to ASCII for Latin characters.</p>
+<p>When using a Unicode build on Windows (the default), the <b>db_home</b>
+argument will be interpreted as a UTF-8 string, which is equivalent to
+ASCII for Latin characters.</p>
 <dt><b>flags</b><dd>The <b>flags</b> parameter specifies the subsystems that are initialized
 and how the application's environment affects Berkeley DB file naming, among
 other things.
@@ -235,8 +236,12 @@ An incorrectly formatted <b>NAME VALUE</b> entry or line was found; or if an
 invalid flag value or parameter was specified.
 </dl>
 <dl compact>
-<dt>ENOSPC<dd>HP-UX only: a previously created Berkeley DB environment for this process still
-exists.
+<dt>ENOSPC<dd>HP-UX only:
+Due to the constraints of the PA-RISC memory architecture, HP-UX does not
+allow a process to map a file into its address space multiple times.
+For this reason, each Berkeley DB environment may be opened only once by a
+process on HP-UX; that is, calls to DbEnv::open will fail if the
+specified Berkeley DB environment has been opened and not subsequently closed.
 </dl>
 <dl compact>
 <dt>ENOENT<dd>The file or directory does not exist.
@@ -270,6 +275,6 @@ open method flags in <b>flagsp</b>.
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_cxx/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

@@ -71,6 +71,10 @@ public class Db {
 		dbenv = null;
 	}
 
+	public boolean getPrivateDbEnv() throws com.sleepycat.db.DatabaseException {
+		return private_dbenv;
+	}
+
 	public synchronized void close(int flags) throws DatabaseException {
 		try {
 			close0(flags);
@@ -78,7 +82,7 @@ public class Db {
 			cleanup();
 		}
 	}
-	
+
 	public DbEnv get_env() throws DatabaseException {
 		return dbenv;
 	}

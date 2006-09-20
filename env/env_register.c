@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2004-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_register.c,v 1.27 2006/07/17 15:16:34 bostic Exp $
+ * $Id: env_register.c,v 1.30 2006/09/09 14:28:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -13,10 +13,11 @@
 
 #define	REGISTER_FILE	"__db.register"
 
-#define	PID_EMPTY	"X%23lu\n"	/* An unused PID entry. */
-#define	PID_FMT		"%24lu\n"	/* File PID format. */
-#define	PID_ISEMPTY(p)	(p[0] == 'X')
-#define	PID_LEN		25		/* Length of PID line. */
+#define	PID_EMPTY	"X                      0\n"	/* Unused PID entry */
+#define	PID_FMT		"%24lu\n"			/* PID entry format */
+							/* Unused PID test */
+#define	PID_ISEMPTY(p)	(memcmp(p, PID_EMPTY, PID_LEN) == 0)
+#define	PID_LEN		(25)				/* PID entry length */
 
 #define	REGISTRY_LOCK(dbenv, pos, nowait)				\
 	__os_fdlock(dbenv, (dbenv)->registry, (off_t)(pos), 1, nowait)
@@ -74,6 +75,13 @@ static  int __envreg_add __P((DB_ENV *, int *));
  * verifies it CANNOT acquire the lock for any non-empty slot.  If a lock for
  * a non-empty slot is available, we know a process died holding an open handle,
  * and recovery needs to be run.
+ *
+ * It's possible to get corruption in the registry file.  If a write system
+ * call fails after partially completing, there can be corrupted entries in
+ * the registry file, or a partial entry at the end of the file.  This is OK.
+ * A corrupted entry will be flagged as a non-empty line during the registry
+ * file walk.  Since the line was corrupted by process failure, no process will
+ * hold a lock on the slot, which will lead to recovery being run.
  *
  * There can still be processes running in the environment when we recover it,
  * and, in fact, there can still be processes running in the old environment
@@ -212,8 +220,16 @@ __envreg_add(dbenv, need_recoveryp)
 			return (ret);
 		if (nr == 0)
 			break;
-		if (nr != PID_LEN)
-			goto corrupt;
+
+		/*
+		 * A partial record at the end of the file is possible if a
+		 * previously un-registered process was interrupted while
+		 * registering.
+		 */
+		if (nr != PID_LEN) {
+			need_recovery = 1;
+			break;
+		}
 
 		if (PID_ISEMPTY(buf)) {
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
@@ -268,21 +284,21 @@ __envreg_add(dbenv, need_recoveryp)
 			return (ret);
 		end = (off_t)mbytes * MEGABYTE + bytes;
 
-		/* Confirm the file is of a reasonable size. */
-		DB_ASSERT(dbenv, end % PID_LEN == 0);
-
 		/*
 		 * Seek to the beginning of the file and overwrite slots to
 		 * the end of the file.
+		 *
+		 * It's possible for there to be a partial entry at the end of
+		 * the file if a process died when trying to register.  If so,
+		 * correct for it and overwrite it as well.
 		 */
 		if ((ret = __os_seek(dbenv, dbenv->registry, 0, 0, 0)) != 0)
 			return (ret);
-		snprintf(buf, sizeof(buf), PID_EMPTY, (u_long)0);
-		for (lcnt = (u_int)end / PID_LEN; lcnt > 0; --lcnt)
-			if ((ret = __os_write(
-			    dbenv, dbenv->registry, buf, PID_LEN, &nw)) != 0 ||
-			    nw != PID_LEN)
-				goto corrupt;
+		for (lcnt = (u_int)end / PID_LEN +
+		    ((u_int)end % PID_LEN == 0 ? 0 : 1); lcnt > 0; --lcnt)
+			if ((ret = __os_write(dbenv,
+			    dbenv->registry, PID_EMPTY, PID_LEN, &nw)) != 0)
+				return (ret);
 	}
 
 	/*
@@ -307,8 +323,7 @@ __envreg_add(dbenv, need_recoveryp)
 			if ((ret = __os_seek(dbenv,
 			    dbenv->registry, 0, 0, (u_int32_t)pos)) != 0 ||
 			    (ret = __os_write(dbenv,
-			    dbenv->registry, pid_buf, PID_LEN, &nw)) != 0 ||
-			    nw != PID_LEN)
+			    dbenv->registry, pid_buf, PID_LEN, &nw)) != 0)
 				return (ret);
 			dbenv->registry_off = (u_int32_t)pos;
 			break;
@@ -317,11 +332,6 @@ __envreg_add(dbenv, need_recoveryp)
 
 	if (need_recovery)
 		*need_recoveryp = 1;
-
-	if (0) {
-corrupt:	__db_errx(dbenv, "%s: file contents corrupted", REGISTER_FILE);
-		return (ret == 0 ? EACCES : ret);
-	}
 
 	return (ret);
 }
@@ -339,7 +349,6 @@ __envreg_unregister(dbenv, recovery_failed)
 {
 	size_t nw;
 	int ret, t_ret;
-	char buf[PID_LEN + 10];
 
 	ret = 0;
 
@@ -359,12 +368,10 @@ __envreg_unregister(dbenv, recovery_failed)
 	 * lock, and threads of control reviewing the register file ignore any
 	 * slots which they can't lock.
 	 */
-	snprintf(buf, sizeof(buf), PID_EMPTY, (u_long)0);
 	if ((ret = __os_seek(dbenv,
 	    dbenv->registry, 0, 0, dbenv->registry_off)) != 0 ||
 	    (ret = __os_write(
-	    dbenv, dbenv->registry, buf, PID_LEN, &nw)) != 0 ||
-	    nw != PID_LEN)
+	    dbenv, dbenv->registry, PID_EMPTY, PID_LEN, &nw)) != 0)
 		goto err;
 
 	/*

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: RepConfigInfo.cpp,v 1.3 2006/07/08 03:32:09 alexg Exp $
+ * $Id: RepConfigInfo.cpp,v 1.4 2006/08/24 14:45:50 bostic Exp $
  */
 
 #include "RepConfigInfo.h"

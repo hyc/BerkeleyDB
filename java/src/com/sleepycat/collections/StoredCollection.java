@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: StoredCollection.java,v 12.4 2006/06/09 14:32:06 mark Exp $
+ * $Id: StoredCollection.java,v 12.6 2006/09/08 20:32:13 bostic Exp $
  */
 
 package com.sleepycat.collections;
@@ -192,7 +192,7 @@ public abstract class StoredCollection extends StoredContainer
      * Java iterators do not need to be closed.
      */
     public StoredIterator iterator(boolean writeAllowed) {
-        
+
         return storedIterator(writeAllowed);
     }
 

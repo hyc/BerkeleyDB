@@ -6,7 +6,7 @@
     <title>Transaction Example</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="wrapup.html" title="Chapter 6. Summary and Examples" />
     <link rel="previous" href="wrapup.html" title="Chapter 6. Summary and Examples" />
     <link rel="next" href="inmem_txnexample_c.html" title="In-Memory Transaction Example" />
@@ -35,7 +35,7 @@
         <div></div>
       </div>
       <p>
-        The following C code provides a fully functional example of a
+        The following code provides a fully functional example of a
         multi-threaded transactional DB application. For improved
         portability across platforms, this examples uses pthreads to
         provide threading support.
@@ -163,7 +163,7 @@ main(int argc, char *argv[])
             <p>
             We specify <tt class="literal">DB_RECOVER</tt>, which means that normal
             recovery is run every time we start the application. This is
-            highly desirable and recommended by Sleepycat for most
+            highly desirable and recommended for most
             applications.
         </p>
           </li>

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mut_pthread.c,v 12.18 2006/05/10 15:56:24 bostic Exp $
+ * $Id: mut_pthread.c,v 12.19 2006/08/24 14:46:16 bostic Exp $
  */
 
 #include "db_config.h"

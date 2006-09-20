@@ -6,8 +6,8 @@
     <title>Chapter 2. Enabling Transactions</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
+    <link rel="up" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="previous" href="perftune-intro.html" title="Performance Tuning" />
     <link rel="next" href="envopen.html" title="Opening a Transactional Environment and&#10;            Database&#10;            &#10;        " />
   </head>
@@ -153,9 +153,16 @@
             </span>
 
             
+            
+            
 
-             Note that the common practice is for auto commit to be used to transaction-protect the
-             database open.
+             <span>
+             Note that the common practice is for auto commit to be used to
+             transaction-protect the database open. To use auto-commit, you
+             must still enable transactions as described here, but you do
+             not have to explicitly use a transaction when you open your
+             database. An example of this is given in the next section.
+             </span>
         </p>
           </li>
         </ul>
@@ -196,6 +203,7 @@
         manages all environment files in-memory, see
             
             <span><a href="inmem_txnexample_java.html">In-Memory Transaction Example</a>.</span>
+            
     </p>
         <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
@@ -326,7 +334,7 @@
             <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
               <h3 class="title">Note</h3>
               <p>
-                Sleepycat strongly discourages you from using absolute path names for your 
+                Try not to use absolute path names for your 
                 environment's files. Under certain recovery scenarios, absolute path names can
                 render your environment unrecoverable. This occurs if you are attempting to recover 
                 you environment on a system that does not support the absolute path name that you used.
@@ -629,7 +637,6 @@
                 <span>
                 <a href="inmem_txnexample_java.html">In-Memory Transaction Example</a>.)
                 </span>
-                
                 
         </p>
           </div>

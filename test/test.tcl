@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test.tcl,v 12.28 2006/06/27 22:31:09 bostic Exp $
+# $Id: test.tcl,v 12.30 2006/08/24 14:46:39 bostic Exp $
 
 source ./include.tcl
 
@@ -140,6 +140,7 @@ proc run_std { { testname ALL } args } {
 	global test_names
 	global one_test
 	global has_crypto
+	global valid_methods
 	source ./include.tcl
 
 	set one_test $testname
@@ -292,8 +293,7 @@ proc run_std { { testname ALL } args } {
 		# XXX
 		# Broken up into separate tclsh instantiations so we don't
 		# require so much memory.
-		foreach method \
-		    "btree hash queue queueext recno rbtree frecno rrecno" {
+		foreach method $valid_methods {
 			puts "Running $method tests"
 			foreach test $test_names(test) {
 				if { $run == 0 } {
@@ -386,7 +386,7 @@ proc check_output { file } {
 		^Repl:\ssdb\d\d\d:.*|
 		^Script\swatcher\sprocess\s.*|
 		^Secondary\sindex\sjoin\s.*|
-		^Sleepycat\sSoftware:\sBerkeley\sDB\s.*|
+		^\sBerkeley\sDB\s.*|
 		^Test\ssuite\srun\s.*|
 		^Unlinking\slog:\serror\smessage\sOK$|
 		^Verifying\s.*|
@@ -825,7 +825,9 @@ proc run_subsystem { sub { display 0 } { run 1} } {
 
 proc run_test { test {display 0} {run 1} args } {
 	source ./include.tcl
-	foreach method "hash queue queueext recno rbtree frecno rrecno btree" {
+	global valid_methods
+
+	foreach method $valid_methods {
 		if { $display } {
 			puts "eval $test -$method $args; verify_dir $testdir \"\" 1"
 		}
@@ -1490,12 +1492,12 @@ proc run_recds { {run 1} {display 0} args } {
 	global test_names
 	global gen_upgrade_log
 	global encrypt
+	global valid_methods
 
 	set log_log_record_types 1
 	logtrack_init
 
-	foreach method \
-	    "btree rbtree hash queue queueext recno frecno rrecno" {
+	foreach method $valid_methods {
 		check_handles
 #set test_names(recd) "recd005 recd017"
 		foreach test $test_names(recd) {
@@ -1535,6 +1537,7 @@ proc run_all { { testname ALL } args } {
 	global test_names
 	global one_test
 	global has_crypto
+	global valid_methods
 	source ./include.tcl
 
 	fileremove -f ALL.OUT
@@ -1624,8 +1627,7 @@ proc run_all { { testname ALL } args } {
 		# XXX
 		# Broken up into separate tclsh instantiations so
 		# we don't require so much memory.
-		foreach method \
-		   "btree rbtree hash queue queueext recno frecno rrecno" {
+		foreach method $valid_methods {
 			puts "Running $method tests with pagesize $pgsz"
 			foreach sub {test sdb si} {
 				foreach test $test_names($sub) {
@@ -1659,7 +1661,7 @@ proc run_all { { testname ALL } args } {
 	#
 	# Run access method tests at default page size in one env.
 	#
-	foreach method "btree rbtree hash queue queueext recno frecno rrecno" {
+	foreach method $valid_methods {
 		puts "Running $method tests in a txn env"
 		foreach sub {test sdb si} {
 			foreach test $test_names($sub) {
@@ -1690,7 +1692,7 @@ proc run_all { { testname ALL } args } {
 	# Run access method tests at default page size in thread-enabled env.
 	# We're not truly running threaded tests, just testing the interface.
 	#
-	foreach method "btree rbtree hash queue queueext recno frecno rrecno" {
+	foreach method $valid_methods {
 		puts "Running $method tests in a threaded txn env"
 		foreach sub {test sdb si} {
 			foreach test $test_names($sub) {
@@ -1720,7 +1722,7 @@ proc run_all { { testname ALL } args } {
 	#
 	# Run access method tests at default page size with -alloc enabled.
 	#
-	foreach method "btree rbtree hash queue queueext recno frecno rrecno" {
+	foreach method $valid_methods {
 		puts "Running $method tests in an env with -alloc"
 		foreach sub {test sdb si} {
 			foreach test $test_names($sub) {

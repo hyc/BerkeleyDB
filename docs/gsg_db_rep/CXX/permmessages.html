@@ -6,7 +6,7 @@
     <title>Permanent Message Handling</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="introduction.html" title="Chapter 1. Introduction" />
     <link rel="previous" href="elections.html" title="Holding Elections" />
     <link rel="next" href="txnapp.html" title="Chapter 2. Transactional Application" />
@@ -64,7 +64,7 @@
                     First, the replicas must transactional-commit the data
                     modifications identified by the message. And then, upon
                     a successful commit, the replication framework sends the master a
-                    message acknowledgement.
+                    message acknowledgment.
             </p>
       <p>
                     For the master (again, using the replication framework), things are a little more complicated than
@@ -264,7 +264,7 @@
               <p>
                                            Require acknowledgments from a
                                            quorum. A quorum is reached when
-                                           acknowledgements are received from the
+                                           acknowledgments are received from the
                                            minimum number of electable
                                            replicas needed to ensure that
                                            the record remains durable if
@@ -358,7 +358,7 @@
                         So implementing permanent messages means that when
                         you write your replication communications channel,
                         you must also write it in such a way as to also
-                        handle permanent message acknowledgements.
+                        handle permanent message acknowledgments.
                    </p>
         <p>
                         For more information on implementing permanent

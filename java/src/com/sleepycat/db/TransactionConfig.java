@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: TransactionConfig.java,v 12.4 2006/04/27 13:40:54 mjc Exp $
+ * $Id: TransactionConfig.java,v 12.6 2006/09/08 20:32:14 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -38,7 +38,7 @@ public class TransactionConfig implements Cloneable {
     public void setReadCommitted(final boolean readCommitted) {
         this.readCommitted = readCommitted;
     }
-    
+
     public boolean getReadCommitted() {
         return readCommitted;
     }

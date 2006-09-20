@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: txn_region.c,v 12.18 2006/07/08 16:27:51 bostic Exp $
+ * $Id: txn_region.c,v 12.20 2006/08/24 14:46:53 bostic Exp $
  */
 
 #include "db_config.h"
@@ -361,11 +361,11 @@ __txn_oldest_reader(dbenv, lsnp)
 
 	TXN_SYSTEM_LOCK(dbenv);
 	SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail)
-		if (log_compare(&td->read_lsn, &old_lsn) < 0)
+		if (LOG_COMPARE(&td->read_lsn, &old_lsn) < 0)
 			old_lsn = td->read_lsn;
 	TXN_SYSTEM_UNLOCK(dbenv);
 
-	DB_ASSERT(dbenv, log_compare(&old_lsn, lsnp) >= 0);
+	DB_ASSERT(dbenv, LOG_COMPARE(&old_lsn, lsnp) >= 0);
 	*lsnp = old_lsn;
 
 	return (0);

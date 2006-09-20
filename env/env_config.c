@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_config.c,v 12.65 2006/06/13 06:21:50 mjc Exp $
+ * $Id: env_config.c,v 12.67 2006/09/19 14:14:07 mjc Exp $
  */
 
 #include "db_config.h"
@@ -355,13 +355,16 @@ static int
 __config_split(input, argv)
 	char *input, *argv[CONFIG_SLOTS];
 {
+	int count;
 	char **ap;
 
-	for (ap = argv; (*ap = strsep(&input, " \t\n")) != NULL;)
-		if (**ap != '\0')
+	for (count = 0, ap = argv; (*ap = strsep(&input, " \t\n")) != NULL;)
+		if (**ap != '\0') {
+			++count;
 			if (++ap == &argv[CONFIG_SLOTS - 1]) {
 				*ap = NULL;
 				break;
 			}
-	return (ap - argv);
+		}
+	return (count);
 }

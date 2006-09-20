@@ -6,7 +6,7 @@
     <title>Locks, Blocks, and Deadlocks</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="previous" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="next" href="lockingsubsystem.html" title="The Locking Subsystem" />
@@ -97,14 +97,16 @@
                 <p>
                         This is the thing that holds the lock. In a
                         transactional application, the locker is a
-                        transaction handle. For non-transactional
-                        operations, the locker is a
-                        cursor or a
+                        transaction handle. 
+                       <span> 
+                        For non-transactional operations, the locker is a cursor or a
                             
                             <span>Db</span>
                             
                             
                         handle. 
+                        </span>
+                       
                     </p>
               </li>
               <li>
@@ -208,6 +210,11 @@
                     a read lock on any object that the cursor has examined until
                     such a time as the transaction is committed
                     or aborted. 
+                    <span>
+                            You can avoid these read locks by using
+                            snapshot isolation. See <a href="isolation.html#snapshot_isolation">Using Snapshot Isolation</a>
+                            for details.
+                    </span>
                 </p>
           <p>
                     In the following figure, <tt class="literal">Txn A</tt> and
@@ -247,11 +254,10 @@
               </li>
               <li>
                 <p>
-                            All non-transaction operations hold write locks
-                            until such a time as the write is completed. So
-                            if you are using a database handle to write to a
-                            database, the underlying write lock is held until
-                            that write is completed. 
+                            All non-transaction operations hold locks
+                            until such a time as the operation is completed. 
+                            For cursor operations, the lock is held until the cursor is moved to a new position or
+                            closed.
                         </p>
               </li>
             </ol>
@@ -429,8 +435,8 @@
                             </p>
                 <p>
                                 In addition, by default transactional cursors hold read
-                                locks until such a time as the cursor
-                                handle is closed.  For this reason, try to
+                                locks until such a time as the transaction is completed.
+                                For this reason, try to
                                 minimize the time you keep
                                 transactional cursors
                                 opened, or reduce your isolation
@@ -469,7 +475,7 @@
                                 the cursor to release its read locks as
                                 soon as it is done reading the record (as
                                 opposed to holding its read locks until the
-                                cursor is closed).
+                                transaction ends).
                              </p>
                 <p>
                                 Be aware that reducing your
@@ -556,7 +562,7 @@
                 capable of recognizing the deadlock and notifying at least
                 one thread that it is in a deadlock situation.
                 Once notified, a thread of
-                control must abandoned the attempted operation in order to
+                control must abandon the attempted operation in order to
                 resolve the deadlock.
 
                 <span>
@@ -574,11 +580,11 @@
                 thread of the control, the thread is said to be 
                 <span class="emphasis"><em>self-deadlocked</em></span>.
             </p>
-        <div class="sect2" lang="en" xml:lang="en">
+        <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="deadlockavoidance"></a>Deadlock Avoidance</h3>
+                <h4 class="title"><a id="deadlockavoidance"></a>Deadlock Avoidance</h4>
               </div>
             </div>
             <div></div>
@@ -604,6 +610,12 @@
                             in the same basic order, there is no
                             possibility of a deadlock (threads can still
                             block, however).
+                        </p>
+                <p>
+                            Be aware that if you are using secondary databases (indices), it is not possible to obtain
+                            locks in a consistent order because you cannot predict the order in which locks are obtained
+                            in secondary databases. If you are writing a concurrent application and you are using
+                            secondary databases, you must be prepared to handle deadlocks.
                         </p>
               </li>
               <li>

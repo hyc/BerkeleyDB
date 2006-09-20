@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: fop_util.c,v 12.31 2006/06/11 12:27:28 bostic Exp $
+ * $Id: fop_util.c,v 12.36 2006/09/19 15:06:59 bostic Exp $
  */
 
 #include "db_config.h"
@@ -550,8 +550,10 @@ create:	if (txn != NULL && IS_REP_CLIENT(dbenv)) {
 		if ((ret = __fop_create(dbenv,
 		    stxn, &fhp, tmpname, DB_APP_DATA, mode, dflags)) != 0) {
 			/*
-			 * If we don't have transactions there is a race on
-			 * creating the temp file.
+			 * If no transactions, there is a race on creating the
+			 * backup file, as the backup file name is the same for
+			 * all processes.  Wait for the other process to finish
+			 * with the name.
 			 */
 			if (!TXN_ON(dbenv) && ret == EEXIST) {
 				__os_free(dbenv, tmpname);
@@ -866,7 +868,7 @@ DB_TEST_RECOVERY_LABEL
 	 * before we register this event, we'd better remove any
 	 * events that we've already registered for the master.
 	 */
-	if (!F_ISSET(dbp, DB_AM_RECOVER) && txn != NULL) {
+	if (!F_ISSET(dbp, DB_AM_RECOVER) && IS_REAL_TXN(txn)) {
 		/* Unregister old master events. */
 		 __txn_remlock(dbenv,
 		    txn, &mdbp->handle_lock, DB_LOCK_INVALIDID);
@@ -909,7 +911,6 @@ __fop_remove_setup(dbp, txn, name, flags)
 	DB_ENV *dbenv;
 	DB_FH *fhp;
 	DB_LOCK elock;
-	u_int32_t refcnt;
 	u_int8_t mbuf[DBMETASIZE];
 	int ret;
 
@@ -1003,25 +1004,7 @@ retry:	if (LOCKING_ON(dbenv)) {
 		goto retry;
 	} else if ((ret = __ENV_LPUT(dbenv, elock)) != 0)
 		goto err;
-
-	/* Check if the file is already open. */
-	if ((ret = __memp_get_refcnt(dbenv, dbp, &refcnt)) != 0)
-		goto err;
-
-	/*
-	 * Now, error check.  If the file is already open, then we must have
-	 * it open (since we got the lock) and we need to panic, because this
-	 * is a self deadlock and the application has a bug. If the file isn't
-	 * open, but it's in the midst of a rename then this file doesn't
-	 * really exist.  Note that in-memory files will always have an
-	 * artificially incremented ref count.
-	 */
-	if ((F_ISSET(dbp, DB_AM_INMEM) && refcnt != 2) ||
-	    (!F_ISSET(dbp, DB_AM_INMEM) && refcnt != 0)) {
-		__db_errx(dbenv,
-    "Attempting to remove or rename currently open file caused self-deadlock");
-		ret = __db_panic(dbenv, DB_LOCK_DEADLOCK);
-	} else if (F_ISSET(dbp, DB_AM_IN_RENAME))
+	else if (F_ISSET(dbp, DB_AM_IN_RENAME))
 		ret = ENOENT;
 
 	if (0) {

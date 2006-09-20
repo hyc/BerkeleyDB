@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: sdb019.tcl,v 12.5 2006/04/27 13:41:24 mjc Exp $
+# $Id: sdb019.tcl,v 12.7 2006/09/13 14:54:13 carol Exp $
 #
 # TEST	sdb019
 # TEST	Tests in-memory subdatabases.
@@ -47,8 +47,10 @@ proc sdb019 { method { nentries 100 } args } {
 	if { $pgindex != -1 } {
 		incr pgindex
 		set pagesize [lindex $args $pgindex]
-		set cache [expr 8 * $pagesize]
-		set csize "0 $cache 1"
+		if { $pagesize > 16384 } {
+			set cache [expr 8 * $pagesize]
+			set csize "0 $cache 1"
+		}
 	}
 
 	# Create the env.

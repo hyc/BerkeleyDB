@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2004-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_elect.c,v 12.25 2006/06/27 22:22:07 bostic Exp $
+ * $Id: rep_elect.c,v 12.35 2006/09/13 17:43:40 alanb Exp $
  */
 
 #include "db_config.h"
@@ -22,14 +22,13 @@
  * real winner's vote may be in the last half.
  */
 #define	IS_PHASE1_DONE(rep)    \
-    ((rep)->sites >= (rep)->nsites && (rep)->w_priority != 0)
+    ((rep)->sites >= (rep)->nsites && (rep)->w_priority > 0)
 
 #define	I_HAVE_WON(rep, winner)   \
     ((rep)->votes >= (rep)->nvotes && winner == (rep)->eid)
 
 static void __rep_cmp_vote __P((DB_ENV *, REP *, int, DB_LSN *,
     int, u_int32_t, u_int32_t, u_int32_t));
-static int __rep_cmp_vote2 __P((DB_ENV *, REP *, int, u_int32_t));
 static int __rep_elect_init
 	       __P((DB_ENV *, DB_LSN *, int, int, int *, u_int32_t *));
 static int __rep_tally __P((DB_ENV *, REP *, int, int *, u_int32_t, roff_t));
@@ -88,7 +87,7 @@ __rep_elect(dbenv, given_nsites, nvotes, eidp, flags)
 	 * it asks us to compute the value representing a simple majority.
 	 */
 	nsites = given_nsites == 0 ? db_rep->config_nsites : given_nsites;
-	ack = nvotes == 0 ? (nsites / 2) + 1 : nvotes;
+	ack = nvotes == 0 ? ELECTION_MAJORITY(nsites) : nvotes;
 
 	/*
 	 * XXX
@@ -139,7 +138,8 @@ __rep_elect(dbenv, given_nsites, nvotes, eidp, flags)
 	 */
 	if (priority > 0 && priority <= 10) {
 		RPRINT(dbenv,
-		    (dbenv, &mb, "Set ELECTABLE with priority 0"));
+		    (dbenv, &mb,
+	   "Artificially setting priority 0 (ELECTABLE) for CONFIG_TEST mode"));
 		DB_ASSERT(dbenv, ctlflags == REPCTL_ELECTABLE);
 		priority = 0;
 	}
@@ -209,7 +209,7 @@ restart:
 	switch (ret) {
 		case 0:
 			/* Check if election complete or phase complete. */
-			if (*eidp != DB_EID_INVALID) {
+			if (*eidp != DB_EID_INVALID && !IN_ELECTION(rep)) {
 				RPRINT(dbenv, (dbenv, &mb,
 				    "Ended election phase 1"));
 				goto edone;
@@ -306,7 +306,7 @@ vote:
 		}
 
 phase2:
-		if (I_HAVE_WON(rep, send_vote)) {
+		if (I_HAVE_WON(rep, rep->winner)) {
 			RPRINT(dbenv, (dbenv, &mb,
 			    "Skipping phase2 wait: already got %d votes",
 			    rep->votes));
@@ -318,7 +318,10 @@ phase2:
 		    "Ended election phase 2 %d", ret));
 		switch (ret) {
 			case 0:
-				goto edone;
+				if (*eidp != DB_EID_INVALID)				
+					goto edone;
+				ret = DB_REP_UNAVAIL;
+				break;
 			case DB_REP_EGENCHG:
 				if (to > timeout)
 					to = timeout;
@@ -346,7 +349,7 @@ phase2:
 		RPRINT(dbenv, (dbenv, &mb,
 		    "After phase 2: votes %d, nvotes %d, nsites %d",
 		    rep->votes, rep->nvotes, rep->nsites));
-		if (I_HAVE_WON(rep, send_vote)) {
+		if (I_HAVE_WON(rep, rep->winner)) {
 i_won:			__rep_elect_master(dbenv, rep, eidp);
 			ret = 0;
 			goto lockdone;
@@ -389,14 +392,14 @@ DB_TEST_RECOVERY_LABEL
  * __rep_vote1 --
  *	Handle incoming vote1 message on a client.
  *
- * PUBLIC: int __rep_vote1 __P((DB_ENV *, REP_CONTROL *, DBT *, int));
+ * PUBLIC: int __rep_vote1 __P((DB_ENV *, REP_CONTROL *, DBT *, int *));
  */
 int
-__rep_vote1(dbenv, rp, rec, eid)
+__rep_vote1(dbenv, rp, rec, eidp)
 	DB_ENV *dbenv;
 	REP_CONTROL *rp;
 	DBT *rec;
-	int eid;
+	int *eidp;
 {
 	DB_LOG *dblp;
 	DB_LSN lsn;
@@ -458,7 +461,7 @@ __rep_vote1(dbenv, rp, rec, eid)
 		data_dbt.data = &egen;
 		data_dbt.size = sizeof(egen);
 		(void)__rep_send_message(dbenv,
-		    eid, REP_ALIVE, &rp->lsn, &data_dbt, 0, 0);
+		    *eidp, REP_ALIVE, &rp->lsn, &data_dbt, 0, 0);
 		return (ret);
 	}
 	if (vi->egen > rep->egen) {
@@ -468,16 +471,22 @@ __rep_vote1(dbenv, rp, rec, eid)
 		__rep_elect_done(dbenv, rep);
 		rep->egen = vi->egen;
 	}
-	if (!IN_ELECTION(rep))
+
+	/*
+	 * If this site (sender of the VOTE1) is the first to the party, simply
+	 * initialize values from the message.  Otherwise, see if the site knows
+	 * about more sites, and/or requires more votes, than we do.
+	 */
+	if (!IN_ELECTION_TALLY(rep)) {
 		F_SET(rep, REP_F_TALLY);
-
-	/* Check if this site knows about more sites than we do. */
-	if (vi->nsites > rep->nsites)
 		rep->nsites = vi->nsites;
-
-	/* Check if this site requires more votes than we do. */
-	if (vi->nvotes > rep->nvotes)
 		rep->nvotes = vi->nvotes;
+	} else {
+		if (vi->nsites > rep->nsites)
+			rep->nsites = vi->nsites;
+		if (vi->nvotes > rep->nvotes)
+			rep->nvotes = vi->nvotes;
+	}
 
 	/*
 	 * We are keeping the vote, let's see if that changes our
@@ -505,7 +514,7 @@ __rep_vote1(dbenv, rp, rec, eid)
 	 * Record this vote.  If we get back non-zero, we
 	 * ignore the vote.
 	 */
-	if ((ret = __rep_tally(dbenv, rep, eid, &rep->sites,
+	if ((ret = __rep_tally(dbenv, rep, *eidp, &rep->sites,
 	    vi->egen, rep->tally_off)) != 0) {
 		RPRINT(dbenv, (dbenv, &mb,
 		    "Tally returned %d, sites %d",
@@ -515,7 +524,7 @@ __rep_vote1(dbenv, rp, rec, eid)
 	}
 	RPRINT(dbenv, (dbenv, &mb,
 	    "Incoming vote: (eid)%d (pri)%d %s (gen)%lu (egen)%lu [%lu,%lu]",
-	    eid, vi->priority,
+	    *eidp, vi->priority,
 	    F_ISSET(rp, REPCTL_ELECTABLE) ? "ELECTABLE" : "",
 	    (u_long)rp->gen, (u_long)vi->egen,
 	    (u_long)rp->lsn.file, (u_long)rp->lsn.offset));
@@ -528,7 +537,7 @@ __rep_vote1(dbenv, rp, rec, eid)
 		    (u_long)rep->w_lsn.file,
 		    (u_long)rep->w_lsn.offset));
 #endif
-	__rep_cmp_vote(dbenv, rep, eid, &rp->lsn, vi->priority,
+	__rep_cmp_vote(dbenv, rep, *eidp, &rp->lsn, vi->priority,
 	    rp->gen, vi->tiebreaker, rp->flags);
 	/*
 	 * If you get a vote and you're not in an election, we've
@@ -556,6 +565,13 @@ __rep_vote1(dbenv, rp, rec, eid)
 		if (master == rep->eid) {
 			(void)__rep_tally(dbenv, rep, rep->eid,
 			    &rep->votes, egen, rep->v2tally_off);
+			RPRINT(dbenv, (dbenv, &mb,
+			    "After phase 1 done: counted vote %d of %d",
+			    rep->votes, rep->nvotes));
+			if (I_HAVE_WON(rep, rep->winner)) {
+				__rep_elect_master(dbenv, rep, eidp);
+				ret = DB_REP_NEWMASTER;
+			}
 			goto err;
 		}
 		REP_SYSTEM_UNLOCK(dbenv);
@@ -650,21 +666,26 @@ __rep_vote2(dbenv, rec, eidp)
 	 * 1. If we receive a latent VOTE2 from an earlier election,
 	 * we want to ignore it.
 	 * 2. If we receive a VOTE2 from a site from which we never
-	 * received a VOTE1, we want to ignore it.
+	 * received a VOTE1, we want to record it, because we simply
+	 * may be processing messages out of order or its vote1 got lost,
+	 * but that site got all the votes it needed to send it.
 	 * 3. If we have received a duplicate VOTE2 from this election
 	 * from the same site we want to ignore it.
 	 * 4. If this is from the current election and someone is
 	 * really voting for us, then we finally get to record it.
 	 */
 	/*
-	 * __rep_cmp_vote2 checks for cases 1 and 2.
+	 * Case 1.
 	 */
-	if ((ret = __rep_cmp_vote2(dbenv, rep, *eidp, vi->egen)) != 0) {
+	if (vi->egen != rep->egen) {
+		RPRINT(dbenv, (dbenv, &mb, "Bad vote egen %lu.  Mine %lu",
+		    (u_long)vi->egen, (u_long)rep->egen));
 		ret = 0;
 		goto err;
 	}
+
 	/*
-	 * __rep_tally takes care of cases 3 and 4.
+	 * __rep_tally takes care of cases 2, 3 and 4.
 	 */
 	if ((ret = __rep_tally(dbenv, rep, *eidp, &rep->votes,
 	    vi->egen, rep->v2tally_off)) != 0) {
@@ -684,7 +705,7 @@ err:	REP_SYSTEM_UNLOCK(dbenv);
 
 /*
  * __rep_tally --
- *	Handle incoming vote1 message on a client.  Called with the db_rep
+ *	Handle incoming vote message on a client.  Called with the db_rep
  *	mutex held.  This function will return 0 if we successfully tally
  *	the vote and non-zero if the vote is ignored.  This will record
  *	both VOTE1 and VOTE2 records, depending on which region offset the
@@ -775,7 +796,7 @@ __rep_cmp_vote(dbenv, rep, eid, lsnp, priority, gen, tiebreaker, flags)
 #else
 	COMPQUIET(dbenv, NULL);
 #endif
-	cmp = log_compare(lsnp, &rep->w_lsn);
+	cmp = LOG_COMPARE(lsnp, &rep->w_lsn);
 	/*
 	 * If we've seen more than one, compare us to the best so far.
 	 * If we're the first, make ourselves the winner to start.
@@ -829,44 +850,6 @@ __rep_cmp_vote(dbenv, rep, eid, lsnp, priority, gen, tiebreaker, flags)
 }
 
 /*
- * __rep_cmp_vote2 --
- *	Compare incoming vote2 message with vote1's we've recorded.  Called
- *	with the db_rep mutex held.  We return 0 if the VOTE2 is from a
- *	site we've heard from and it is from this election.  Otherwise return 1.
- *
- */
-static int
-__rep_cmp_vote2(dbenv, rep, eid, egen)
-	DB_ENV *dbenv;
-	REP *rep;
-	int eid;
-	u_int32_t egen;
-{
-	int i;
-	REP_VTALLY *tally, *vtp;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
-
-	tally = R_ADDR((REGINFO *)dbenv->reginfo, rep->tally_off);
-	i = 0;
-	vtp = &tally[i];
-	for (i = 0; i < rep->sites; i++) {
-		vtp = &tally[i];
-		if (vtp->eid == eid && vtp->egen == egen) {
-			RPRINT(dbenv, (dbenv, &mb,
-			    "Found matching vote1 (%d, %lu), at %d of %d",
-			    eid, (u_long)egen, i, rep->sites));
-			return (0);
-		}
-	}
-	RPRINT(dbenv,
-	    (dbenv, &mb, "Didn't find vote1 for eid %d, egen %lu",
-	    eid, (u_long)egen));
-	return (1);
-}
-
-/*
  * __rep_elect_init
  *	Initialize an election.  Sets beginp non-zero if the election is
  * already in progress; makes it 0 otherwise.
@@ -915,9 +898,20 @@ __rep_elect_init(dbenv, lsnp, nsites, nvotes, beginp, otally)
 			goto err;
 		DB_ENV_TEST_RECOVERY(dbenv, DB_TEST_ELECTINIT, ret, NULL);
 		rep->elect_th = 1;
-		rep->nsites = nsites;
-		rep->nvotes = nvotes;
-		rep->master_id = DB_EID_INVALID;
+		/*
+		 * If we're the first to the party, we simply set initial
+		 * values: pre-existing values would be left over from previous
+		 * election.
+		 */
+		if (!IN_ELECTION_TALLY(rep)) {
+			rep->nsites = nsites;
+			rep->nvotes = nvotes;
+		} else {
+			if (nsites > rep->nsites)
+				rep->nsites = nsites;
+			if (nvotes > rep->nvotes)
+				rep->nvotes = nvotes;
+		}
 	}
 DB_TEST_RECOVERY_LABEL
 err:	REP_SYSTEM_UNLOCK(dbenv);
@@ -981,7 +975,7 @@ __rep_wait(dbenv, timeout, eidp, flags)
 		__os_sleep(dbenv, 0, sleeptime);
 		REP_SYSTEM_LOCK(dbenv);
 		echg = egen != rep->egen;
-		done = !F_ISSET(rep, flags) && rep->master_id != DB_EID_INVALID;
+		done = !F_ISSET(rep, flags);
 
 		*eidp = rep->master_id;
 		REP_SYSTEM_UNLOCK(dbenv);

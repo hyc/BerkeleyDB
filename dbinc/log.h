@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: log.h,v 12.22 2006/07/05 05:37:09 mjc Exp $
+ * $Id: log.h,v 12.24 2006/08/24 14:45:29 bostic Exp $
  */
 
 #ifndef _DB_LOG_H_
@@ -105,6 +105,7 @@ struct __db_log {
 	 */
 	u_int32_t lfname;		/* Log file "name". */
 	DB_FH	 *lfhp;			/* Log file handle. */
+	time_t	  lf_timestamp;		/* Log file timestamp. */
 
 	u_int8_t *bufp;			/* Region buffer. */
 
@@ -223,6 +224,17 @@ struct __log {
 	DB_LSN	   s_lsn;		/* LSN of the last sync. */
 
 	DB_LOG_STAT stat;		/* Log statistics. */
+
+	/*
+	 * This timestamp is updated anytime someone unlinks log
+	 * files.  This can happen when calling __log_vtruncate
+	 * or replication internal init when it unlinks log files.
+	 *
+	 * The timestamp is used so that other processes that might
+	 * have file handles to log files know to close/reopen them
+	 * so they're not potentially writing to now-removed files.
+	 */
+	time_t	   timestamp;		/* Log trunc timestamp. */
 
 	/*
 	 * !!!

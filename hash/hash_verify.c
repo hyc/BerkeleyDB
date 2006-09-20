@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: hash_verify.c,v 12.15 2006/05/05 14:53:32 bostic Exp $
+ * $Id: hash_verify.c,v 12.17 2006/09/07 20:05:31 bostic Exp $
  */
 
 #include "db_config.h"
@@ -196,9 +196,7 @@ __ham_vrfy(dbp, vdp, h, pgno, flags)
 		return (ret);
 
 	if (TYPE(h) != P_HASH) {
-		TYPE_ERR_PRINT(dbenv, "__ham_vrfy", pgno, TYPE(h));
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__ham_vrfy");
 		goto err;
 	}
 
@@ -672,7 +670,6 @@ __ham_vrfy_bucket(dbp, vdp, m, bucket, flags)
 
 		/* We already checked this, but just in case... */
 		if (!IS_VALID_PGNO(next_pgno)) {
-			DB_ASSERT(dbenv, 0);
 			EPRINT((dbenv,
 			    "Page %lu: hash page has bad next_pgno",
 			    (u_long)pgno));

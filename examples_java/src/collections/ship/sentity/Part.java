@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: Part.java,v 12.3 2006/01/02 22:02:14 bostic Exp $
+ * $Id: Part.java,v 12.4 2006/08/24 14:45:59 bostic Exp $
  */
 
 package collections.ship.sentity;

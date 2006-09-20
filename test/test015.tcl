@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test015.tcl,v 12.3 2006/04/13 15:34:44 carol Exp $
+# $Id: test015.tcl,v 12.4 2006/08/24 14:46:40 bostic Exp $
 #
 # TEST	test015
 # TEST	Partial put test

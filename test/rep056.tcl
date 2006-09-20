@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep056.tcl,v 1.5 2006/07/19 17:45:35 carol Exp $
+# $Id: rep056.tcl,v 1.6 2006/08/24 14:46:38 bostic Exp $
 #
 # TEST  rep056
 # TEST	Replication test with in-memory named databases.

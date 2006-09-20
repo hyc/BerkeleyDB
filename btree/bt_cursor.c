@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: bt_cursor.c,v 12.18 2006/05/05 17:29:59 bostic Exp $
+ * $Id: bt_cursor.c,v 12.23 2006/09/14 23:55:24 bostic Exp $
  */
 
 #include "db_config.h"
@@ -46,7 +46,7 @@ static int  __bam_isopd __P((DBC *, db_pgno_t *));
  * the held interior page so we use ACQUIRE_COUPLE.
  */
 #undef	ACQUIRE
-#define	ACQUIRE(dbc, mode, lpgno, lock, fpgno, pagep, ret) do {		\
+#define	ACQUIRE(dbc, mode, lpgno, lock, fpgno, pagep, flags, ret) do {	\
 	DB_MPOOLFILE *__mpf = (dbc)->dbp->mpf;				\
 	if ((pagep) != NULL) {						\
 		ret = __memp_fput(__mpf, pagep, 0);			\
@@ -54,19 +54,20 @@ static int  __bam_isopd __P((DBC *, db_pgno_t *));
 	} else								\
 		ret = 0;						\
 	if ((ret) == 0 && STD_LOCKING(dbc))				\
-		ret = __db_lget(dbc, LCK_COUPLE, lpgno, mode, 0, &(lock));\
+		ret = __db_lget(					\
+		    dbc, LCK_COUPLE, lpgno, mode, flags, &(lock));	\
 	if ((ret) == 0)							\
-		ret = __memp_fget(__mpf, &(fpgno), dbc->txn,		\
+		ret = __memp_fget(__mpf, &(fpgno), (dbc)->txn,		\
 		    0, &(pagep));					\
 } while (0)
 
 /* Acquire a new page/lock for a cursor. */
 #undef	ACQUIRE_CUR
-#define	ACQUIRE_CUR(dbc, mode, p, ret) do {				\
+#define	ACQUIRE_CUR(dbc, mode, p, flags, ret) do {			\
 	BTREE_CURSOR *__cp = (BTREE_CURSOR *)(dbc)->internal;		\
 	if (p != __cp->pgno)						\
 		__cp->pgno = PGNO_INVALID;				\
-	ACQUIRE(dbc, mode, p, __cp->lock, p, __cp->page, ret);		\
+	ACQUIRE(dbc, mode, p, __cp->lock, p, __cp->page, flags, ret);	\
 	if ((ret) == 0) {						\
 		__cp->pgno = p;						\
 		__cp->lock_mode = (mode);				\
@@ -707,7 +708,7 @@ __bam_c_del(dbc)
 			goto err;
 		cp->page = cp->csp->page;
 	} else {
-		ACQUIRE_CUR(dbc, DB_LOCK_WRITE, cp->pgno, ret);
+		ACQUIRE_CUR(dbc, DB_LOCK_WRITE, cp->pgno, 0, ret);
 		if (ret != 0)
 			goto err;
 	}
@@ -2157,7 +2158,7 @@ __bam_c_next(dbc, initial_move, deleted_okay)
 		    F_ISSET(dbc, DBC_RMW) ? DB_LOCK_WRITE : DB_LOCK_READ;
 	}
 	if (cp->page == NULL) {
-		ACQUIRE_CUR(dbc, lock_mode, cp->pgno, ret);
+		ACQUIRE_CUR(dbc, lock_mode, cp->pgno, 0, ret);
 		if (ret != 0)
 			return (ret);
 	}
@@ -2178,7 +2179,7 @@ __bam_c_next(dbc, initial_move, deleted_okay)
 			    = NEXT_PGNO(cp->page)) == PGNO_INVALID)
 				return (DB_NOTFOUND);
 
-			ACQUIRE_CUR(dbc, lock_mode, pgno, ret);
+			ACQUIRE_CUR(dbc, lock_mode, pgno, 0, ret);
 			if (ret != 0)
 				return (ret);
 			cp->indx = 0;
@@ -2226,7 +2227,7 @@ __bam_c_prev(dbc)
 		    F_ISSET(dbc, DBC_RMW) ? DB_LOCK_WRITE : DB_LOCK_READ;
 	}
 	if (cp->page == NULL) {
-		ACQUIRE_CUR(dbc, lock_mode, cp->pgno, ret);
+		ACQUIRE_CUR(dbc, lock_mode, cp->pgno, 0, ret);
 		if (ret != 0)
 			return (ret);
 	}
@@ -2238,7 +2239,7 @@ __bam_c_prev(dbc)
 			    PREV_PGNO(cp->page)) == PGNO_INVALID)
 				return (DB_NOTFOUND);
 
-			ACQUIRE_CUR(dbc, lock_mode, pgno, ret);
+			ACQUIRE_CUR(dbc, lock_mode, pgno, 0, ret);
 			if (ret != 0)
 				return (ret);
 
@@ -2355,12 +2356,15 @@ fast_search:	/*
 		 *
 		 * The page may not exist: if a transaction created the page
 		 * and then aborted, the page might have been truncated from
-		 * the end of the file.
+		 * the end of the file.  We don't want to wait on the lock.
+		 * The page may not even be relevant to this search.
 		 */
 		h = NULL;
-		ACQUIRE_CUR(dbc, DB_LOCK_WRITE, bt_lpgno, ret);
+		ACQUIRE_CUR(dbc, DB_LOCK_WRITE, bt_lpgno, DB_LOCK_NOWAIT, ret);
 		if (ret != 0) {
-			if (ret == DB_PAGE_NOTFOUND)
+			if (ret == DB_LOCK_DEADLOCK ||
+			    ret == DB_LOCK_NOTGRANTED ||
+			    ret == DB_PAGE_NOTFOUND)
 				ret = 0;
 			goto fast_miss;
 		}
@@ -2377,7 +2381,7 @@ fast_search:	/*
 
 		/* Verify that this page cannot have moved to another db. */
 		if (F_ISSET(dbp, DB_AM_SUBDB) &&
-		    log_compare(&t->bt_llsn, &LSN(h)) != 0)
+		    LOG_COMPARE(&t->bt_llsn, &LSN(h)) != 0)
 			goto fast_miss;
 		/*
 		 * What we do here is test to see if we're at the beginning or
@@ -2391,7 +2395,7 @@ fast_search:	/*
 			indx = NUM_ENT(h) - P_INDX;
 			if ((ret = __bam_cmp(dbp, dbc->txn,
 			    key, h, indx, t->bt_compare, &cmp)) != 0)
-				return (ret);
+				goto fast_miss;
 
 			if (cmp < 0)
 				goto try_begin;
@@ -2419,7 +2423,7 @@ try_begin:	if (h->prev_pgno == PGNO_INVALID) {
 			indx = 0;
 			if ((ret = __bam_cmp(dbp, dbc->txn,
 			    key, h, indx, t->bt_compare, &cmp)) != 0)
-				return (ret);
+				goto fast_miss;
 
 			if (cmp > 0)
 				goto fast_miss;

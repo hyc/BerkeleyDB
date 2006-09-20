@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: testutils.tcl,v 12.19 2006/07/19 17:45:36 carol Exp $
+# $Id: testutils.tcl,v 12.26 2006/09/08 20:32:17 bostic Exp $
 #
 # Test system utilities
 #
@@ -1626,6 +1626,7 @@ proc op_recover_prep { op dir env_cmd dbfile gidf cmd } {
 	# active transaction.  Leave it alone so the close won't
 	# quietly abort it on us.
 	if { [is_substr $op "prepare"] != 1 } {
+		error_check_good log_flush [$env log_flush] 0
 		error_check_good envclose [$env close] 0
 	}
 	return
@@ -1830,7 +1831,11 @@ proc unpopulate { db txn num } {
 	return 0
 }
 
+# Flush logs for txn envs only.
 proc reset_env { env } {
+	if { [is_txnenv $env] } {
+		error_check_good log_flush [$env log_flush] 0
+	}
 	error_check_good env_close [$env close] 0
 }
 
@@ -2179,8 +2184,13 @@ proc send_cmd { fd cmd {sleep 2}} {
 }
 
 proc rcv_result { fd } {
+	global errorInfo
+
 	set r [gets $fd result]
-	error_check_bad remote_read $r -1
+	if { $r == -1 } {
+		puts "FAIL: gets returned -1 (EOF)"
+		puts "FAIL: errorInfo is $errorInfo"
+	}
 
 	return $result
 }
@@ -3533,55 +3543,15 @@ proc big_endian { } {
 	}
 }
 
-# Search logs to find if we have debug records.
-proc log_has_debug_records { dir } {
-	source ./include.tcl
-	global encrypt
+# Check if this is a debug build.  Use 'string equal' so we
+# don't get fooled by debug_rop and debug_wop.
+proc is_debug { } {
 
-	set tmpfile $dir/printlog.out
-	set stat [catch \
-	    {exec $util_path/db_printlog -h $dir > $tmpfile} ret]
-	error_check_good db_printlog $stat 0
-
-	set f [open $tmpfile r]
-	while { [gets $f record] >= 0 } {
-		set r [regexp {\[[^\]]*\]\[[^\]]*\]([^\:]*)\:} $record whl name]
-		if { $r == 1 && [string match *_debug $name] != 1 } {
-			close $f
-			fileremove $tmpfile
+	set conf [berkdb getconfig]
+	foreach item $conf {
+		if { [string equal $item "debug"] } {
 			return 1
 		}
-	}
-	close $f
-	fileremove $tmpfile
-	return 0
-}
-
-# Set up a temporary database to check if this is a debug build.
-proc is_debug { } {
-	source ./include.tcl
-
-	set tempdir $testdir/temp
-	file mkdir $tempdir
-	set env [berkdb_env -create -log -home $testdir/temp]
-	error_check_good temp_env_open [is_valid_env $env] TRUE
-
-	set file temp.db
-	set db [berkdb_open -create -env $env -btree $file]
-	error_check_good temp_db_open [is_valid_db $db] TRUE
-
-	set key KEY
-	set data DATA
-	error_check_good temp_db_put [$db put $key $data] 0
-	set ret [$db get $key]
-	error_check_good get_key [lindex [lindex $ret 0] 0] $key
-	error_check_good get_data [lindex [lindex $ret 0] 1] $data
-	error_check_good temp_db_close [$db close] 0
-	error_check_good temp_db_remove [$env dbremove $file] 0
-	error_check_good temp_env_close [$env close] 0
-
-	if { [log_has_debug_records $tempdir] == 1 } {
-		return 1
 	}
 	return 0
 }
@@ -3649,8 +3619,7 @@ proc check_log_location { env } {
 
 proc find_valid_methods { test } {
 	global checking_valid_methods
-	set valid_methods \
-	    { btree rbtree queue queueext hash recno frecno rrecno }
+	global valid_methods
 
 	# To find valid methods, call the test with checking_valid_methods
 	# on.  It doesn't matter what method we use for this call, so we
@@ -3663,5 +3632,5 @@ proc find_valid_methods { test } {
 		return $valid_methods
 	} else {
 		return $test_methods
-	}		
+	}
 }

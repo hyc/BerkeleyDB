@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: hash_stat.c,v 12.8 2006/05/05 14:53:32 bostic Exp $
+ * $Id: hash_stat.c,v 12.10 2006/09/07 20:05:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -472,10 +472,9 @@ __ham_traverse(dbc, mode, callback, cookie, look_past_max)
 				case H_DUPLICATE:
 					break;
 				default:
-					DB_ASSERT(dbp->dbenv, 0);
-					ret = EINVAL;
+					ret = __db_unknown_path(
+					    dbp->dbenv, "__ham_traverse");
 					goto err;
-
 				}
 			}
 

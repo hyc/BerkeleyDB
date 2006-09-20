@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_alloc.c,v 12.17 2006/07/10 01:04:10 mjc Exp $
+ * $Id: mp_alloc.c,v 12.20 2006/09/07 15:11:26 mjc Exp $
  */
 
 #include "db_config.h"
@@ -64,7 +64,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	 * before free-ing and re-allocating buffers.
 	 */
 	if (mfp != NULL) {
-		len = SSZ(BH, buf) + mfp->stat.st_pagesize;
+		len = SSZA(BH, buf) + mfp->stat.st_pagesize;
 		/* Add space for alignment padding for MVCC diagnostics. */
 		MVCC_BHSIZE(mfp, len);
 	}
@@ -371,7 +371,7 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 		 */
 		if (F_ISSET(bhp, BH_FROZEN)) {
 			++bhp->ref;
-			if ((ret = __memp_bh_freezefree(dbmp, infop, hp,
+			if ((ret = __memp_bh_thaw(dbmp, infop, hp,
 			    bhp, NULL)) != 0) {
 				MUTEX_UNLOCK(dbenv, mutex);
 				return (ret);
@@ -515,34 +515,37 @@ __memp_check_order(dbenv, hp)
 	DB_ENV *dbenv;
 	DB_MPOOL_HASH *hp;
 {
-	BH *bhp, *prev_bhp, *tbhp;
-	u_int32_t min_priority;
+	BH *bhp, *first_bhp, *tbhp;
+	u_int32_t priority, last_priority;
 
 	/*
 	 * Assumes the hash bucket is locked.
 	 */
-	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
-		return;
+	last_priority = hp->hash_priority;
+	for (bhp = first_bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh);
+	    bhp != NULL; bhp = SH_TAILQ_NEXT(bhp, hq, __bh)) {
+		DB_ASSERT(dbenv, !SH_CHAIN_HASNEXT(bhp, vc));
 
-	DB_ASSERT(dbenv, SH_CHAIN_NEXT(bhp, vc, __bh) == NULL);
-	for (prev_bhp = SH_CHAIN_PREV(bhp, vc, __bh); prev_bhp != NULL;
-	    prev_bhp = SH_CHAIN_PREV(prev_bhp, vc, __bh))
-		DB_ASSERT(dbenv, prev_bhp ==
-		    SH_CHAIN_PREV(SH_CHAIN_NEXT(prev_bhp, vc, __bh), vc, __bh));
+		priority = BH_PRIORITY(bhp);
+		DB_ASSERT(dbenv, (bhp == first_bhp) ?
+		    priority == last_priority : priority >= last_priority);
+		last_priority = priority;
 
-	min_priority = BH_PRIORITY(bhp);
-	DB_ASSERT(dbenv, min_priority == hp->hash_priority);
+		/* Chains have referential integrity. */
+		for (tbhp = SH_CHAIN_PREV(bhp, vc, __bh); tbhp != NULL;
+		    tbhp = SH_CHAIN_PREV(tbhp, vc, __bh))
+			DB_ASSERT(dbenv, tbhp == SH_CHAIN_PREV(
+			    SH_CHAIN_NEXT(tbhp, vc, __bh), vc, __bh));
 
-	do {
-		DB_ASSERT(dbenv, SH_CHAIN_NEXT(bhp, vc, __bh) == NULL);
-		DB_ASSERT(dbenv, min_priority <= BH_PRIORITY(bhp));
-
+		/*
+		 * No repeats.
+		 * XXX This is O(N**2) where N is the number of buffers in the
+		 * bucket, but we generally assume small buckets.
+		 */
 		for (tbhp = SH_TAILQ_NEXT(bhp, hq, __bh); tbhp != NULL;
 		    tbhp = SH_TAILQ_NEXT(tbhp, hq, __bh))
 			DB_ASSERT(dbenv, bhp->pgno != tbhp->pgno ||
 			    bhp->mf_offset != tbhp->mf_offset);
-
-		bhp = SH_TAILQ_NEXT(bhp, hq, __bh);
-	} while (bhp != NULL);
+	}
 }
 #endif

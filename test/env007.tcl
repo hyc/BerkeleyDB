@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: env007.tcl,v 12.11 2006/06/27 22:31:08 bostic Exp $
+# $Id: env007.tcl,v 12.13 2006/09/12 18:19:08 carol Exp $
 #
 # TEST	env007
 # TEST	Test DB_CONFIG config file options for berkdb env.
@@ -42,7 +42,7 @@ proc env007 { } {
 	set rlist {
 	{ " -txn_max " "set_tx_max" "19" "31"
 	    "Env007.a1: Txn Max" "txn_stat"
-	    "Max Txns" "0" "get_tx_max" }
+	    "Maximum txns" "0" "get_tx_max" }
 	{ " -lock_max_locks " "set_lk_max_locks" "17" "29"
 	    "Env007.a2: Lock Max" "lock_stat"
 	    "Maximum locks" "0" "get_lk_max_locks" }

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test114.tcl,v 12.9 2006/05/02 17:20:54 carol Exp $
+# $Id: test114.tcl,v 12.10 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	test114
 # TEST	Test database compaction with overflows.

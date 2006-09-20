@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: StoredSortedMap.java,v 12.4 2006/06/09 14:32:09 mark Exp $
+ * $Id: StoredSortedMap.java,v 12.6 2006/09/08 20:32:13 bostic Exp $
  */
 
 package com.sleepycat.collections;
@@ -139,7 +139,7 @@ public class StoredSortedMap extends StoredMap implements SortedMap {
      * com.sleepycat.db.DatabaseException} is thrown.
      */
     public StoredSortedMap(Database database, EntryBinding keyBinding,
-                           EntityBinding valueEntityBinding, 
+                           EntityBinding valueEntityBinding,
                            PrimaryKeyAssigner keyAssigner) {
 
         super(new DataView(database, keyBinding, null, valueEntityBinding,

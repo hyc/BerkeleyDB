@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep062.tcl,v 1.3 2006/07/19 17:45:36 carol Exp $
+# $Id: rep062.tcl,v 1.5 2006/09/11 18:54:25 carol Exp $
 #
 # TEST	rep062
 # TEST	Test of internal initialization where client has a different
@@ -278,7 +278,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 		error_check_good db2_close [$db2 close] 0
 		error_check_good masterenv_close [$masterenv close] 0
 		error_check_good clientenv_close [$clientenv close] 0
+		replclose $testdir/MSGQUEUEDIR
 	}
-	replclose $testdir/MSGQUEUEDIR
 }
 

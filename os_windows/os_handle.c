@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1998-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_handle.c,v 12.8 2006/06/08 13:59:43 bostic Exp $
+ * $Id: os_handle.c,v 12.10 2006/09/05 15:02:31 mjc Exp $
  */
 
 #include "db_config.h"
@@ -81,7 +81,7 @@ __os_closehandle(dbenv, fhp)
 	DB_ENV *dbenv;
 	DB_FH *fhp;
 {
-	int ret;
+	int ret, t_ret;
 
 	ret = 0;
 
@@ -94,6 +94,12 @@ __os_closehandle(dbenv, fhp)
 			RETRY_CHK((!CloseHandle(fhp->handle)), ret);
 		else
 			RETRY_CHK((_close(fhp->fd)), ret);
+
+		if (fhp->trunc_handle != INVALID_HANDLE_VALUE) {
+			RETRY_CHK((!CloseHandle(fhp->trunc_handle)), t_ret);
+			if (t_ret != 0 && ret == 0)
+				ret = t_ret;
+		}
 
 		if (ret != 0) {
 			__db_syserr(dbenv, ret, "CloseHandle");

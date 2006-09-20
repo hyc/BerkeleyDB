@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_printlog.c,v 12.17 2006/06/14 18:02:50 sue Exp $
+ * $Id: db_printlog.c,v 12.20 2006/08/26 09:23:10 bostic Exp $
  */
 
 #include "db_config.h"
@@ -20,7 +20,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
 #endif
 
 int env_init_print __P((DB_ENV *, u_int32_t,
@@ -246,7 +246,7 @@ main(argc, argv)
 		 * We may have reached the end of the range we're displaying.
 		 */
 		if (!IS_ZERO_LSN(stop)) {
-			cmp = log_compare(&key, &stop);
+			cmp = LOG_COMPARE(&key, &stop);
 			if ((rflag && cmp < 0) || (!rflag && cmp > 0))
 				break;
 		}

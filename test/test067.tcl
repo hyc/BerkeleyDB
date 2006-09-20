@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test067.tcl,v 12.2 2006/01/02 22:03:27 bostic Exp $
+# $Id: test067.tcl,v 12.3 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	test067
 # TEST	Test of DB_CURRENT partial puts onto almost empty duplicate

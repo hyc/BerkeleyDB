@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: qam.c,v 12.33 2006/07/14 19:21:22 ubell Exp $
+ * $Id: qam.c,v 12.38 2006/09/09 14:28:24 bostic Exp $
  */
 
 #include "db_config.h"
@@ -76,7 +76,7 @@ __qam_position(dbc, recnop, lock_mode, get_mode, exactp)
 
 	if (PGNO(cp->page) == 0) {
 		/*
-		 * We have read an unitialized page: set the page number if
+		 * We have read an uninitialized page: set the page number if
 		 * we're creating the page.  Otherwise, we know that the record
 		 * doesn't exist yet.
 		 */
@@ -233,7 +233,7 @@ __qam_c_put(dbc, key, data, flags, pgnop)
 	db_pgno_t pg;
 	db_recno_t new_cur, new_first;
 	u_int32_t opcode;
-	int exact, ret, t_ret;
+	int exact, ret, t_ret, writelock;
 
 	dbp = dbc->dbp;
 	dbenv = dbp->dbenv;
@@ -254,7 +254,6 @@ __qam_c_put(dbc, key, data, flags, pgnop)
 		break;
 	default:
 		/* The interface shouldn't let anything else through. */
-		DB_ASSERT(dbenv, 0);
 		return (__db_ferr(dbenv, "DBC->put", 0));
 	}
 
@@ -294,13 +293,14 @@ __qam_c_put(dbc, key, data, flags, pgnop)
 	pg = ((QUEUE *)dbp->q_internal)->q_meta;
 
 	/*
-	 * Get the meta page first, we don't want to write lock it while trying
+	 * Get the meta page first, we don't want to lock it while trying
 	 * to pin it.
 	 */
+	writelock = 0;
 	if ((ret = __memp_fget(mpf, &pg, dbc->txn, 0, &meta)) != 0)
 		return (ret);
 	if ((ret = __db_lget(dbc, LCK_COUPLE,
-	    pg,  DB_LOCK_WRITE, 0, &cp->lock)) != 0) {
+	    pg,  DB_LOCK_READ, 0, &cp->lock)) != 0) {
 		(void)__memp_fput(mpf, meta, 0);
 		return (ret);
 	}
@@ -316,6 +316,7 @@ __qam_c_put(dbc, key, data, flags, pgnop)
 	 * insert is.
 	 */
 
+recheck:
 	if (meta->first_recno == meta->cur_recno) {
 		new_first = cp->recno;
 		new_cur = cp->recno + 1;
@@ -337,8 +338,19 @@ __qam_c_put(dbc, key, data, flags, pgnop)
 		}
 	}
 
-	if (opcode != 0 &&
-	    ((ret = __memp_dirty(mpf, &meta, dbc->txn, DB_MPOOL_DIRTY)) != 0 ||
+	if (opcode == 0)
+		goto done;
+
+	/* Drop the read lock and get the a write lock on the meta page. */
+	if (writelock == 0 && (ret = __db_lget(dbc, LCK_COUPLE_ALWAYS,
+	     pg,  DB_LOCK_WRITE, 0, &cp->lock)) != 0) {
+		(void)__memp_fput(mpf, meta, 0);
+		return (ret);
+	}
+	if (writelock++ == 0)
+		goto recheck;
+
+	if (((ret = __memp_dirty(mpf, &meta, dbc->txn, DB_MPOOL_DIRTY)) != 0 ||
 	    (DBC_LOGGING(dbc) &&
 	    (ret = __qam_mvptr_log(dbp, dbc->txn,
 	    &meta->dbmeta.lsn, 0, opcode, meta->first_recno,
@@ -351,7 +363,7 @@ __qam_c_put(dbc, key, data, flags, pgnop)
 	if (opcode & QAM_SETFIRST)
 		meta->first_recno = new_first;
 
-	if ((t_ret = __memp_fput(mpf, meta, 0)) != 0 && ret == 0)
+done:	if ((t_ret = __memp_fput(mpf, meta, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Don't hold the meta page long term. */
@@ -595,6 +607,7 @@ __qam_c_del(dbc)
 	 * our position while we have the record locked.
 	 * If it's pointing at the deleted record then lock
 	 * the metapage and check again as lower numbered
+recheck:
 	 * record may have been inserted.
 	 */
 	if (cp->recno == meta->first_recno) {
@@ -983,7 +996,7 @@ release_retry:	/* Release locks and retry, if possible. */
 		/*
 		 * If we don't need locks and we are out of range
 		 * then we can just skip to the FIRST/LAST record
-		 * otherwise we must itterate to lock the records
+		 * otherwise we must iterate to lock the records
 		 * and get serializability.
 		 */
 		switch (flags) {

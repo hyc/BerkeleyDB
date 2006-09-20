@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_fget.c,v 12.27 2006/07/07 03:59:35 mjc Exp $
+ * $Id: mp_fget.c,v 12.33 2006/09/13 14:53:42 mjc Exp $
  */
 
 #include "db_config.h"
@@ -250,35 +250,6 @@ retry:	st_hsearch = 0;
 			continue;
 
 		if (mvcc) {
-			/* We've got a buffer header we're re-instantiating. */
-			if (frozen_bhp != NULL) {
-				/*
-				 * If the empty buffer has been filled in the
-				 * meantime, don't overwrite it.
-				 */
-				if (!F_ISSET(frozen_bhp, BH_FROZEN)) {
-					need_free = (--frozen_bhp->ref == 0);
-					MUTEX_UNLOCK(dbenv, hp->mtx_hash);
-					MPOOL_REGION_LOCK(dbenv, infop);
-					__memp_free(infop, mfp, alloc_bhp);
-					if (need_free)
-						SH_TAILQ_INSERT_TAIL(
-						    &c_mp->free_frozen,
-						    frozen_bhp, hq);
-					MPOOL_REGION_UNLOCK(dbenv, infop);
-					MUTEX_LOCK(dbenv, hp->mtx_hash);
-				} else {
-					if ((ret = __memp_bh_unfreeze(dbmp,
-					    infop, hp,
-					    frozen_bhp, alloc_bhp)) != 0)
-						goto err;
-					bhp = alloc_bhp;
-				}
-
-				frozen_bhp = alloc_bhp = NULL;
-				break;
-			}
-
 			/*
 			 * Snapshot reads -- get the version of the page that
 			 * was visible *at* the read_lsn.
@@ -295,12 +266,16 @@ retry:	st_hsearch = 0;
 				DB_ASSERT(dbenv, bhp != NULL);
 			}
 
-			makecopy = dirty &&
-			    !BH_OWNED_BY(dbenv, bhp, txn);
-
+			makecopy = dirty && !BH_OWNED_BY(dbenv, bhp, txn);
 			if (makecopy && bhp != current_bhp) {
-				ret = DB_UPDATE_CONFLICT;
+				ret = DB_LOCK_DEADLOCK;
 				goto err;
+			}
+
+			if (F_ISSET(bhp, BH_FROZEN) &&
+			    !F_ISSET(bhp, BH_FREED)) {
+				DB_ASSERT(dbenv, frozen_bhp == NULL);
+				frozen_bhp = bhp;
 			}
 		}
 
@@ -331,8 +306,8 @@ retry:	st_hsearch = 0;
 		    !F_ISSET(dbenv, DB_ENV_NOLOCKING); first = 0) {
 			/*
 			 * If someone is trying to sync this buffer and the
-			 * buffer is hot, they may never get in.  Give up
-			 * and try again.
+			 * buffer is hot, they may never get in.  Give up and
+			 * try again.
 			 */
 			if (!first && bhp->ref_sync != 0) {
 				--bhp->ref;
@@ -365,13 +340,26 @@ retry:	st_hsearch = 0;
 		}
 
 		/*
-		 * If there is no data associated with the buffer header we've
-		 * found, allocate a new page, then instantiate it.
+		 * If the buffer was frozen before we waited for any I/O to
+		 * complete and is still frozen, we need to unfreeze it.
+		 * Otherwise, it was unfrozen while we waited, and we need to
+		 * search again.
 		 */
-		if (F_ISSET(bhp, BH_FROZEN) && !F_ISSET(bhp, BH_FREED)) {
-			frozen_bhp = bhp;
-			bhp = NULL;
+		if (frozen_bhp != NULL && !F_ISSET(frozen_bhp, BH_FROZEN)) {
+thawed:			need_free = (--frozen_bhp->ref == 0);
 			b_incr = 0;
+			MUTEX_UNLOCK(dbenv, hp->mtx_hash);
+			MPOOL_REGION_LOCK(dbenv, infop);
+			if (alloc_bhp != NULL) {
+				__memp_free(infop, mfp, alloc_bhp);
+				alloc_bhp = NULL;
+			}
+			if (need_free)
+				SH_TAILQ_INSERT_TAIL(&c_mp->free_frozen,
+				    frozen_bhp, hq);
+			MPOOL_REGION_UNLOCK(dbenv, infop);
+			frozen_bhp = NULL;
+			goto retry;
 		}
 
 		++mfp->stat.st_cache_hit;
@@ -478,7 +466,7 @@ retry:	st_hsearch = 0;
 			 * that we've seen a buffer older than the oldest
 			 * snapshot read LSN.
 			 */
-			if (makecopy && (oldest_bhp =
+			if ((makecopy || frozen_bhp != NULL) && (oldest_bhp =
 			    SH_CHAIN_PREV(bhp, vc, __bh)) != NULL) {
 				while (SH_CHAIN_HASPREV(oldest_bhp, vc))
 					oldest_bhp = SH_CHAIN_PREVP(oldest_bhp,
@@ -502,7 +490,7 @@ retry:	st_hsearch = 0;
 			}
 		}
 
-		if (!makecopy || alloc_bhp != NULL)
+		if ((!makecopy && frozen_bhp == NULL) || alloc_bhp != NULL)
 			/* We found the buffer -- we're done. */
 			break;
 
@@ -668,10 +656,10 @@ alloc:		/*
 		 * insert the new page in the version chain similar to when
 		 * we copy on write.
 		 */
-		if (makecopy || (extending && F_ISSET(bhp, BH_FREED))) {
+		if (extending && F_ISSET(bhp, BH_FREED))
 			makecopy = 1;
+		if (makecopy || frozen_bhp != NULL)
 			break;
-		}
 
 		/* Free the allocated memory, we no longer need it.  Since we
 		 * can't acquire the region lock while holding the hash bucket
@@ -788,7 +776,38 @@ alloc:		/*
 		MUTEX_UNLOCK(dbenv, mfp->mutex);
 	}
 
+	DB_ASSERT(dbenv, bhp != NULL);
 	DB_ASSERT(dbenv, bhp->ref != 0);
+
+	/* We've got a buffer header we're re-instantiating. */
+	if (frozen_bhp != NULL) {
+		DB_ASSERT(dbenv, alloc_bhp != NULL);
+
+		/*
+		 * If the empty buffer has been filled in the meantime, don't
+		 * overwrite it.
+		 */
+		if (!F_ISSET(frozen_bhp, BH_FROZEN))
+			goto thawed;
+		else {
+			if ((ret = __memp_bh_thaw(dbmp, infop, hp,
+			    frozen_bhp, alloc_bhp)) != 0)
+				goto err;
+			bhp = alloc_bhp;
+		}
+
+		frozen_bhp = alloc_bhp = NULL;
+
+		/*
+		 * If we're updating a buffer that was frozen, we have to go
+		 * through all of that again to allocate another buffer to hold
+		 * the new copy.
+		 */
+		if (makecopy) {
+			MUTEX_UNLOCK(dbenv, hp->mtx_hash);
+			goto alloc;
+		}
+	}
 
 	/*
 	 * If we're the only reference, update buffer and bucket priorities.
@@ -810,7 +829,7 @@ alloc:		/*
 			reorder = (BH_PRIORITY(bhp) == bhp->priority);
 			bhp->priority = UINT32_MAX;
 			if (reorder)
-				__memp_bucket_reorder(hp, bhp);
+				__memp_bucket_reorder(dbenv, hp, bhp);
 		}
 	}
 
@@ -848,7 +867,8 @@ alloc:		/*
 	/* Copy-on-write. */
 	if (makecopy && state != SECOND_MISS) {
 		DB_ASSERT(dbenv, !SH_CHAIN_HASNEXT(bhp, vc));
-		DB_ASSERT(dbenv, alloc_bhp != NULL && bhp != NULL);
+		DB_ASSERT(dbenv, bhp != NULL);
+		DB_ASSERT(dbenv, alloc_bhp != NULL);
 		DB_ASSERT(dbenv, alloc_bhp != bhp);
 
 		if (bhp->ref == 1)

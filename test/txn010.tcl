@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: txn010.tcl,v 12.2 2006/01/02 22:03:30 bostic Exp $
+# $Id: txn010.tcl,v 12.3 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	txn010
 # TEST	Test DB_ENV->txn_checkpoint arguments/flags

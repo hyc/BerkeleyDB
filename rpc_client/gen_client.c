@@ -3364,6 +3364,15 @@ __dbcl_dbenv_init(dbenv)
 	dbenv->rep_get_limit =
 	    (int (*)(DB_ENV *, u_int32_t *, u_int32_t *))
 	    __dbcl_dbenv_illegal;
+	dbenv->rep_get_nsites =
+	    (int (*)(DB_ENV *, int *))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_get_priority =
+	    (int (*)(DB_ENV *, int *))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_get_timeout =
+	    (int (*)(DB_ENV *, int, db_timeout_t *))
+	    __dbcl_dbenv_illegal;
 	dbenv->rep_process_message =
 	    (int (*)(DB_ENV *, DBT *, DBT *, int *, DB_LSN *))
 	    __dbcl_dbenv_illegal;
@@ -3372,6 +3381,15 @@ __dbcl_dbenv_init(dbenv)
 	    __dbcl_dbenv_illegal;
 	dbenv->rep_set_limit =
 	    (int (*)(DB_ENV *, u_int32_t, u_int32_t))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_set_nsites =
+	    (int (*)(DB_ENV *, int))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_set_priority =
+	    (int (*)(DB_ENV *, int))
+	    __dbcl_dbenv_illegal;
+	dbenv->rep_set_timeout =
+	    (int (*)(DB_ENV *, int, db_timeout_t))
 	    __dbcl_dbenv_illegal;
 	dbenv->rep_set_transport =
 	    (int (*)(DB_ENV *, int, int (*)(DB_ENV *, const DBT *, const DBT *, const DB_LSN *, int, u_int32_t)))
@@ -3388,6 +3406,24 @@ __dbcl_dbenv_init(dbenv)
 	dbenv->rep_sync =
 	    (int (*)(DB_ENV *, u_int32_t))
 	    __dbcl_dbenv_illegal;
+	dbenv->repmgr_add_remote_site =
+	    (int (*)(DB_ENV *, const char *, u_int, int *, u_int32_t))
+	    __dbcl_dbenv_illegal;
+	dbenv->repmgr_get_ack_policy =
+	    (int (*)(DB_ENV *, int *))
+	    __dbcl_dbenv_illegal;
+	dbenv->repmgr_set_ack_policy =
+	    (int (*)(DB_ENV *, int))
+	    __dbcl_dbenv_illegal;
+	dbenv->repmgr_set_local_site =
+	    (int (*)(DB_ENV *, const char *, u_int, u_int32_t))
+	    __dbcl_dbenv_illegal;
+	dbenv->repmgr_site_list =
+	    (int (*)(DB_ENV *, u_int *, DB_REPMGR_SITE **))
+	    __dbcl_dbenv_illegal;
+	dbenv->repmgr_start =
+	    (int (*)(DB_ENV *, int, u_int32_t))
+	    __dbcl_dbenv_illegal;
 	dbenv->set_alloc =
 	    (int (*)(DB_ENV *, void *(*)(size_t), void *(*)(void *, size_t), void (*)(void *)))
 	    __dbcl_dbenv_illegal;
@@ -3399,6 +3435,9 @@ __dbcl_dbenv_init(dbenv)
 	    (int (*)(DB_ENV *, const char *))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_encrypt = __dbcl_env_set_encrypt;
+	dbenv->set_event_notify =
+	    (int (*)(DB_ENV *, void (*)(DB_ENV *, u_int32_t, void *)))
+	    __dbcl_dbenv_illegal;
 	dbenv->set_feedback =
 	    (int (*)(DB_ENV *, void (*)(DB_ENV *, int, int)))
 	    __dbcl_dbenv_illegal;

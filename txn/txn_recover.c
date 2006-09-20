@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: txn_recover.c,v 12.17 2006/07/07 03:51:15 ubell Exp $
+ * $Id: txn_recover.c,v 12.19 2006/08/24 14:46:53 bostic Exp $
  */
 
 #include "db_config.h"
@@ -217,7 +217,7 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 		}
 
 		if (!IS_ZERO_LSN(td->begin_lsn) &&
-		    log_compare(&td->begin_lsn, &min) < 0)
+		    LOG_COMPARE(&td->begin_lsn, &min) < 0)
 			min = td->begin_lsn;
 
 		(*retp)++;
@@ -281,7 +281,7 @@ __txn_openfiles(dbenv, min, force)
 		while (!IS_ZERO_LSN(open_lsn) && (ret =
 		    __log_c_get(logc, &open_lsn, &data, DB_SET)) == 0 &&
 		    (force ||
-		    (min != NULL && log_compare(min, &open_lsn) < 0))) {
+		    (min != NULL && LOG_COMPARE(min, &open_lsn) < 0))) {
 			/* Format the log record. */
 			if ((ret = __txn_ckp_read(dbenv,
 			    data.data, &ckp_args)) != 0) {

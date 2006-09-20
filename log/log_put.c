@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: log_put.c,v 12.41 2006/07/17 15:16:44 bostic Exp $
+ * $Id: log_put.c,v 12.46 2006/08/24 14:46:12 bostic Exp $
  */
 
 #include "db_config.h"
@@ -110,6 +110,7 @@ __log_put(dbenv, lsnp, udbt, flags)
 	ZERO_LSN(old_lsn);
 	hdr.len = hdr.prev = 0;
 
+#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP)
 	/*
 	 * If we are not a rep application, but are sharing a master rep env,
 	 * we should not be writing log records.
@@ -120,6 +121,7 @@ __log_put(dbenv, lsnp, udbt, flags)
 		    "to modify a replicated environment");
 		return (EINVAL);
 	}
+#endif
 
 	/*
 	 * If we are coming from the logging code, we use an internal flag,
@@ -325,12 +327,7 @@ __log_current_lsn(dbenv, lsnp, mbytesp, bytesp)
 	LOG_SYSTEM_LOCK(dbenv);
 
 	/*
-	 * We are trying to get the LSN of the last entry in the log.  We use
-	 * this in three places: 1) DB_ENV->txn_checkpoint uses it as a first
-	 * value when trying to compute an LSN such that all transactions begun
-	 * before it are complete.   2) DB_ENV->txn_begin uses it as the
-	 * begin_lsn. 3) While opening a file to see if we've gotten rid of
-	 * too many log files.
+	 * We need the LSN of the last entry in the log.
 	 *
 	 * Typically, it's easy to get the last written LSN, you simply look
 	 * at the current log pointer and back up the number of bytes of the
@@ -905,7 +902,7 @@ __log_flush_int(dblp, lsnp, release)
 		 * Flushes may be requested out of LSN order;  be
 		 * sure we only move lp->t_lsn forward.
 		 */
-		if (log_compare(&lp->t_lsn, &flush_lsn) < 0)
+		if (LOG_COMPARE(&lp->t_lsn, &flush_lsn) < 0)
 			lp->t_lsn = flush_lsn;
 
 		commit->lsn = flush_lsn;
@@ -961,7 +958,7 @@ flush:	MUTEX_LOCK(dbenv, lp->mtx_flush);
 	 * written to this log file.  Acquire a file descriptor if we don't
 	 * already have one.
 	 */
-	if (lp->b_off != 0 && log_compare(&flush_lsn, &lp->f_lsn) >= 0) {
+	if (lp->b_off != 0 && LOG_COMPARE(&flush_lsn, &lp->f_lsn) >= 0) {
 		if ((ret = __log_write(dblp,
 		    dblp->bufp, (u_int32_t)lp->b_off)) != 0) {
 			MUTEX_UNLOCK(dbenv, lp->mtx_flush);
@@ -1024,7 +1021,7 @@ done:
 	if (lp->ncommit != 0) {
 		first = 1;
 		SH_TAILQ_FOREACH(commit, &lp->commits, links, __db_commit)
-			if (log_compare(&lp->s_lsn, &commit->lsn) > 0) {
+			if (LOG_COMPARE(&lp->s_lsn, &commit->lsn) > 0) {
 				MUTEX_UNLOCK(dbenv, commit->mtx_txnwait);
 				SH_TAILQ_REMOVE(
 				    &lp->commits, commit, links, __db_commit);
@@ -1147,7 +1144,8 @@ __log_write(dblp, addr, len)
 	 * about to write to the start of it, in other words, if the write
 	 * offset is zero.
 	 */
-	if (dblp->lfhp == NULL || dblp->lfname != lp->lsn.file)
+	if (dblp->lfhp == NULL || dblp->lfname != lp->lsn.file ||
+	    dblp->lf_timestamp != lp->timestamp)
 		if ((ret = __log_newfh(dblp, lp->w_off == 0)) != 0)
 			return (ret);
 
@@ -1357,6 +1355,7 @@ __log_name(dblp, filenumber, namep, fhpp, flags)
 	}
 
 	/* Open the new-style file -- if we succeed, we're done. */
+	dblp->lf_timestamp = lp->timestamp;
 	if ((ret = __os_open_extend(dbenv, *namep, 0, flags, mode, fhpp)) == 0)
 		return (0);
 
@@ -1454,7 +1453,7 @@ __log_rep_put(dbenv, lsnp, rec)
 	__db_chksum(&hdr, t.data, t.size,
 	    (CRYPTO_ON(dbenv)) ? db_cipher->mac_key : NULL, hdr.chksum);
 
-	DB_ASSERT(dbenv, log_compare(lsnp, &lp->lsn) == 0);
+	DB_ASSERT(dbenv, LOG_COMPARE(lsnp, &lp->lsn) == 0);
 	ret = __log_putr(dblp, lsnp, dbt, lp->lsn.offset - lp->len, &hdr);
 err:
 	/*

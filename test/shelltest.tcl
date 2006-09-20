@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2001-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: shelltest.tcl,v 12.5 2006/01/02 22:03:23 bostic Exp $
+# $Id: shelltest.tcl,v 12.6 2006/08/24 14:46:39 bostic Exp $
 #
 # TEST	scr###
 # TEST	The scr### directories are shell scripts that test a variety of

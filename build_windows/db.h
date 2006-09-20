@@ -3,9 +3,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db.in,v 12.100 2006/07/17 13:08:09 mjc Exp $
+ * $Id: db.in,v 12.108 2006/09/13 14:53:37 mjc Exp $
  *
  * db.h include file layout:
  *	General.
@@ -60,8 +60,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	5
-#define	DB_VERSION_PATCH	14
-#define	DB_VERSION_STRING	"Sleepycat Software: Berkeley DB 4.5.14: (July 24, 2006)"
+#define	DB_VERSION_PATCH	20
+#define	DB_VERSION_STRING	"Berkeley DB 4.5.20: (September 20, 2006)"
 
 /*
  * !!!
@@ -181,6 +181,8 @@ struct __db_preplist;	typedef struct __db_preplist DB_PREPLIST;
 struct __db_qam_stat;	typedef struct __db_qam_stat DB_QUEUE_STAT;
 struct __db_rep;	typedef struct __db_rep DB_REP;
 struct __db_rep_stat;	typedef struct __db_rep_stat DB_REP_STAT;
+struct __db_repmgr_site; \
+			typedef struct __db_repmgr_site DB_REPMGR_SITE;
 struct __db_seq_record; typedef struct __db_seq_record DB_SEQ_RECORD;
 struct __db_seq_stat;	typedef struct __db_seq_stat DB_SEQUENCE_STAT;
 struct __db_sequence;	typedef struct __db_sequence DB_SEQUENCE;
@@ -872,6 +874,7 @@ struct __db_mpool_stat {
 	u_int32_t st_hash_examined;	/* Total hash entries searched. */
 	u_int32_t st_hash_nowait;	/* Hash lock granted with nowait. */
 	u_int32_t st_hash_wait;		/* Hash lock granted after wait. */
+	u_int32_t st_hash_max_nowait;	/* Max hash lock granted with nowait. */
 	u_int32_t st_hash_max_wait;	/* Max hash lock granted after wait. */
 	u_int32_t st_region_nowait;	/* Region lock granted with nowait. */
 	u_int32_t st_region_wait;	/* Region lock granted after wait. */
@@ -1052,11 +1055,27 @@ struct __db_txn_active {
 	u_int32_t parentid;		/* Transaction ID of parent */
 	pid_t     pid;			/* Process owning txn ID */
 	db_threadid_t tid;		/* Thread owning txn ID */
+
 	DB_LSN	  lsn;			/* LSN when transaction began */
+
 	DB_LSN	  read_lsn;		/* Read LSN for MVCC */
 	u_int32_t mvcc_ref;		/* MVCC reference count */
+
+#define	TXN_ABORTED		1
+#define	TXN_COMMITTED		2
+#define	TXN_PREPARED		3
+#define	TXN_RUNNING		4
+	u_int32_t status;		/* Status of the transaction */
+
+#define	TXN_XA_ABORTED		1
+#define	TXN_XA_DEADLOCKED	2
+#define	TXN_XA_ENDED		3
+#define	TXN_XA_PREPARED		4
+#define	TXN_XA_STARTED		5
+#define	TXN_XA_SUSPENDED	6
 	u_int32_t xa_status;		/* XA status */
-	u_int8_t  xid[DB_XIDDATASIZE];	/* XA global transaction ID */
+
+	u_int8_t  xid[DB_XIDDATASIZE];	/* Global transaction ID */
 	char	  name[51];		/* 50 bytes of name, nul termination */
 };
 
@@ -1120,6 +1139,7 @@ struct __db_txn_stat {
 #define	DB_REP_CONNECTION_RETRY 4
 
 /* Event notification types. */
+#define	DB_EVENT_NO_SUCH_EVENT		0 /* out-of-band sentinel value */
 #define	DB_EVENT_PANIC			1
 #define	DB_EVENT_REP_CLIENT		2
 #define	DB_EVENT_REP_MASTER		3
@@ -1129,6 +1149,17 @@ struct __db_txn_stat {
 
 /* Flag value for repmgr_add_remote_site. */
 #define	DB_REPMGR_PEER          0x01
+
+/* Replication Manager site status. */
+struct __db_repmgr_site {
+        int eid;
+        char *host;
+        u_int port;
+
+#define	DB_REPMGR_CONNECTED	0x01
+#define	DB_REPMGR_DISCONNECTED	0x02
+        u_int32_t status;
+};
 
 /* Replication statistics. */
 struct __db_rep_stat {
@@ -1392,9 +1423,8 @@ typedef enum {
 #define	DB_REP_UNAVAIL		(-30976)/* Site cannot currently be reached. */
 #define	DB_RUNRECOVERY		(-30975)/* Panic return. */
 #define	DB_SECONDARY_BAD	(-30974)/* Secondary index corrupt. */
-#define	DB_UPDATE_CONFLICT	(-30973)/* Snapshot Isolation write conflict. */
-#define	DB_VERIFY_BAD		(-30972)/* Verify failed; bad format. */
-#define	DB_VERSION_MISMATCH	(-30971)/* Environment version mismatch. */
+#define	DB_VERIFY_BAD		(-30973)/* Verify failed; bad format. */
+#define	DB_VERSION_MISMATCH	(-30972)/* Environment version mismatch. */
 
 /* DB (private) error return codes. */
 #define	DB_ALREADY_ABORTED	(-30899)
@@ -1845,15 +1875,15 @@ struct __dbc {
 	/* DBC PRIVATE HANDLE LIST END */
 
 /*
- * DBC_COMPENSATE and DBC_RECOVER are used during recovery and transaction
+ * DBC_DONTLOCK and DBC_RECOVER are used during recovery and transaction
  * abort.  If a transaction is being aborted or recovered then DBC_RECOVER
  * will be set and locking and logging will be disabled on this cursor.  If
  * we are performing a compensating transaction (e.g. free page processing)
- * then DB_COMPENSATE will be set to inhibit locking, but logging will still
- * be required.
+ * then DB_DONTLOCK will be set to inhibit locking, but logging will still
+ * be required. DB_DONTLOCK is also used if the whole database is locked.
  */
 #define	DBC_ACTIVE		0x0001	/* Cursor in use. */
-#define	DBC_COMPENSATE		0x0002	/* Cursor compensating, don't lock. */
+#define	DBC_DONTLOCK		0x0002	/* Don't lock on this cursor. */
 #define	DBC_MULTIPLE		0x0004	/* Return Multiple data. */
 #define	DBC_MULTIPLE_KEY	0x0008	/* Return Multiple keys and data. */
 #define	DBC_OPD			0x0010	/* Cursor references off-page dups. */
@@ -2262,11 +2292,13 @@ struct __db_env {
 	int  (*rep_stat_print) __P((DB_ENV *, u_int32_t));
 	int  (*rep_sync) __P((DB_ENV *, u_int32_t));
 	int  (*repmgr_add_remote_site) __P((DB_ENV *, const char *, u_int,
-		u_int32_t));
+		int *, u_int32_t));
 	int  (*repmgr_get_ack_policy) __P((DB_ENV *, int *));
 	int  (*repmgr_set_ack_policy) __P((DB_ENV *, int));
 	int  (*repmgr_set_local_site) __P((DB_ENV *, const char *, u_int,
 		u_int32_t));
+	int  (*repmgr_site_list) __P((DB_ENV *, u_int *,
+		DB_REPMGR_SITE **));
 	int  (*repmgr_start) __P((DB_ENV *, int, u_int32_t));
 	int  (*set_alloc) __P((DB_ENV *, void *(*)(size_t),
 		void *(*)(void *, size_t), void (*)(void *)));

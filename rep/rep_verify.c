@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2004-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_verify.c,v 12.29 2006/06/08 15:13:57 bostic Exp $
+ * $Id: rep_verify.c,v 12.32 2006/09/07 03:05:26 sue Exp $
  */
 
 #include "db_config.h"
@@ -171,16 +171,16 @@ __rep_verify_fail(dbenv, rp, eid)
 	 */
 	if (FLD_ISSET(rep->config, REP_C_NOAUTOINIT) &&
 	    ((F_ISSET(rep, REP_F_RECOVER_VERIFY) &&
-	    log_compare(&rp->lsn, &lp->verify_lsn) == 0) ||
+	    LOG_COMPARE(&rp->lsn, &lp->verify_lsn) == 0) ||
 	    (F_ISSET(rep, REP_F_RECOVER_MASK) == 0 &&
-	    log_compare(&rp->lsn, &lp->ready_lsn) >= 0))) {
+	    LOG_COMPARE(&rp->lsn, &lp->ready_lsn) >= 0))) {
 		ret = DB_REP_JOIN_FAILURE;
 		goto unlock;
 	}
 	if (((F_ISSET(rep, REP_F_RECOVER_VERIFY)) &&
-	    log_compare(&rp->lsn, &lp->verify_lsn) == 0) ||
+	    LOG_COMPARE(&rp->lsn, &lp->verify_lsn) == 0) ||
 	    (F_ISSET(rep, REP_F_RECOVER_MASK) == 0 &&
-	    log_compare(&rp->lsn, &lp->ready_lsn) >= 0)) {
+	    LOG_COMPARE(&rp->lsn, &lp->ready_lsn) >= 0)) {
 		F_CLR(rep, REP_F_RECOVER_VERIFY);
 		F_SET(rep, REP_F_RECOVER_UPDATE);
 		ZERO_LSN(rep->first_lsn);
@@ -284,7 +284,7 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 		update = 0;
 	while (update == 0 &&
 	    (ret = __log_c_get(logc, &lsn, &mylog, DB_PREV)) == 0 &&
-	    log_compare(&lsn, lsnp) > 0) {
+	    LOG_COMPARE(&lsn, lsnp) > 0) {
 		memcpy(&rectype, mylog.data, sizeof(rectype));
 		if (rectype == DB___txn_regop) {
 			if (rep->version >= DB_REPVERSION_44) {
@@ -377,13 +377,17 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 	 * operations out of DB and run recovery.
 	 */
 	REP_SYSTEM_LOCK(dbenv);
-	if (!F_ISSET(rep, REP_F_RECOVER_LOG) &&
-	    (F_ISSET(rep, REP_F_READY) || rep->in_recovery != 0)) {
+	if (rep->lockout_th != 0 ||
+	    (!F_ISSET(rep, REP_F_RECOVER_LOG) &&
+	    (F_ISSET(rep, REP_F_READY) || rep->in_recovery != 0))) {
 		rep->stat.st_msgs_recover++;
 		goto errunlock;
 	}
 
-	if ((ret = __rep_lockout(dbenv, rep, 1)) != 0)
+	if ((ret = __rep_lockout_msg(dbenv, rep, 1)) != 0)
+		goto errunlock;
+
+	if ((ret = __rep_lockout_api(dbenv, rep)) != 0)
 		goto errunlock;
 
 	/* OK, everyone is out, we can now run recovery. */
@@ -391,6 +395,7 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 
 	if ((ret = __rep_dorecovery(dbenv, reclsnp, &trunclsn)) != 0) {
 		REP_SYSTEM_LOCK(dbenv);
+		rep->lockout_th = 0;
 		rep->in_recovery = 0;
 		F_CLR(rep, REP_F_READY);
 		goto errunlock;
@@ -425,6 +430,7 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 	REP_SYSTEM_LOCK(dbenv);
 	rep->stat.st_log_queued = 0;
 	rep->in_recovery = 0;
+	rep->lockout_th = 0;
 	F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK);
 	if (ret != 0)
 		goto errunlock2;

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: tcl_txn.c,v 12.13 2006/07/17 13:08:44 mjc Exp $
+ * $Id: tcl_txn.c,v 12.16 2006/09/11 14:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -325,7 +325,7 @@ tcl_CDSGroup(interp, objc, objv, envp, envip)
 	int result, ret;
 	char newname[MSG_SIZE];
 
-	if (objc != 0) {
+	if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 1, objv, "env cdsgroup");
 		return (TCL_ERROR);
 	}
@@ -409,13 +409,15 @@ tcl_TxnStat(interp, objc, objv, envp)
 	MAKE_STAT_LSN("LSN of last checkpoint", &sp->st_last_ckp);
 	MAKE_STAT_LIST("Time of last checkpoint", sp->st_time_ckp);
 	MAKE_STAT_LIST("Last txn ID allocated", sp->st_last_txnid);
-	MAKE_STAT_LIST("Max Txns", sp->st_maxtxns);
+	MAKE_STAT_LIST("Maximum txns", sp->st_maxtxns);
 	MAKE_STAT_LIST("Number aborted txns", sp->st_naborts);
-	MAKE_STAT_LIST("Number active txns", sp->st_nactive);
-	MAKE_STAT_LIST("Maximum  active txns", sp->st_maxnactive);
 	MAKE_STAT_LIST("Number txns begun", sp->st_nbegins);
 	MAKE_STAT_LIST("Number committed txns", sp->st_ncommits);
+	MAKE_STAT_LIST("Number active txns", sp->st_nactive);
+	MAKE_STAT_LIST("Number of snapshot txns", sp->st_nsnapshot);
 	MAKE_STAT_LIST("Number restored txns", sp->st_nrestores);
+	MAKE_STAT_LIST("Maximum active txns", sp->st_maxnactive);
+	MAKE_STAT_LIST("Maximum snapshot txns", sp->st_maxnsnapshot);
 	MAKE_STAT_LIST("Number of region lock waits", sp->st_region_wait);
 	MAKE_STAT_LIST("Number of region lock nowaits", sp->st_region_nowait);
 	for (i = 0, p = sp->st_txnarray; i < sp->st_nactive; i++, p++)

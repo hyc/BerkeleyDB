@@ -6,8 +6,8 @@
     <title>Chapter 1. Introduction</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
+    <link rel="up" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="previous" href="preface.html" title="Preface" />
     <link rel="next" href="recovery-intro.html" title="Recoverability" />
   </head>
@@ -92,13 +92,13 @@
     discussion on performance considerations for your transactional application.
   </p>
       <p>
-    You should understand the concepts from
+    You should understand the concepts from the
         <span>
-            <i class="citetitle">Getting Started with Berkeley DB</i>
+                <i class="citetitle">Getting Started with Berkeley DB</i>
         </span>
         
         
-     before reading this book.
+     guide before reading this book.
   </p>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -150,7 +150,7 @@
               <p>
                 In other words, whatever consistency requirements your application has will never be violated by DB.
                 If, for example, your application requires every record to include an employee ID, and your
-                code faithfully adds that ID to the records it's database records, then DB will never
+                code faithfully adds that ID to its database records, then DB will never
                 violate that consistency requirement. The ID will remain in the database records until such a time as your
                 application chooses to delete it.
             </p>
@@ -166,8 +166,9 @@
                 wrapped inside a transaction will always have a clean and
                 consistent view of your databases. They never have to see
                 updates currently in progress under the protection of another transaction. 
-                Note, however, that
-                isolation guarantees can be relaxed. See 
+                Note, however, that isolation guarantees can be 
+                
+                 relaxed from the default setting.   See 
                 <a href="isolation.html">Isolation</a>
                 for more information.
             </p>
@@ -224,7 +225,7 @@
         </p>
           <p>
             Finally, by following the programming examples shown in this book, you can write your code so as to protect
-            you data in the event that your code crashes. However, no programming API can protect you against logic
+            your data in the event that your code crashes. However, no programming API can protect you against logic
             failures in your own code; transactions cannot protect you from simply writing the wrong thing to your
             databases.
         </p>

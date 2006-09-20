@@ -6,8 +6,8 @@
     <title>Chapter 2. Transactional Application</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
+    <link rel="up" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="previous" href="permmessages.html" title="Permanent Message Handling" />
     <link rel="next" href="simpleprogramlisting.html" title="Program Listing" />
   </head>
@@ -53,7 +53,10 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="simpleprogramlisting.html#repconfiginfo_cxx">Class: RepConfigInfo</a>
+                  <a href="simpleprogramlisting.html#repconfiginfo_cxx">
+                            Class: RepConfigInfo
+                            
+                    </a>
                 </span>
               </dt>
               <dt>
@@ -86,6 +89,7 @@
                   <a href="simpleprogramlisting.html#printstocks_c">
                             
                             Method: RepMgr::print_stocks()
+                            
                     </a>
                 </span>
               </dt>
@@ -106,7 +110,7 @@
         transaction-protected DB application, so we will not be
         covering those concepts in this book. To learn how to write a
         transaction-protected application, see the 
-        <i class="citetitle">Berkeley DB Transaction Processing Guide</i>.
+        <i class="citetitle">Berkeley DB Getting Started with Transaction Processing</i> guide.
     </p>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -141,6 +145,23 @@
                 usage. In it, we use entirely fictitious stock market
                 symbols and price values.
             </p>
+        <pre class="programlisting">&gt; ./SimpleTxn -h env_home_dir
+QUOTESERVER&gt; stock1 88
+QUOTESERVER&gt; stock2 .08
+QUOTESERVER&gt; 
+        Symbol  Price
+        ======  =====
+        stock1  88
+
+QUOTESERVER&gt; stock1 88.9
+QUOTESERVER&gt; 
+        Symbol  Price
+        ======  =====
+        stock1  88.9
+        stock2  .08
+
+QUOTESERVER&gt; quit 
+&gt;</pre>
       </div>
     </div>
     <div class="navfooter">

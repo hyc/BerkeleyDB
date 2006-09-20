@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_uid.c,v 12.21 2006/05/19 19:57:51 bostic Exp $
+ * $Id: os_uid.c,v 12.23 2006/09/15 19:24:50 bostic Exp $
  */
 
 #include "db_config.h"
@@ -30,7 +30,7 @@ __os_unique_id(dbenv, idp)
 
 	/*
 	 * Our randomized value is comprised of our process ID, the current
-	 * time of day and a couple of a stack addresses, all XOR'd together.
+	 * time of day and a stack address, all XOR'd together.
 	 */
 	__os_id(dbenv, &pid, NULL);
 	__os_clock(dbenv, &sec, &usec);

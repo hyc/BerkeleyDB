@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test051.tcl,v 12.4 2006/06/26 17:36:32 carol Exp $
+# $Id: test051.tcl,v 12.5 2006/08/24 14:46:40 bostic Exp $
 #
 # TEST	test051
 # TEST	Fixed-length record Recno test.

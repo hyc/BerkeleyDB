@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2005
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_msg.c,v 12.9 2006/07/08 02:51:25 alanb Exp $
+ * $Id: rep_msg.c,v 12.10 2006/08/24 14:45:45 bostic Exp $
  */
 
 #include <sys/types.h>

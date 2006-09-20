@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_open.c,v 12.24 2006/06/27 22:21:58 bostic Exp $
+ * $Id: db_open.c,v 12.30 2006/09/19 15:06:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -83,7 +83,7 @@ __db_open(dbp, txn, fname, dname, type, flags, mode, meta_pgno)
 	if (LF_ISSET(DB_READ_UNCOMMITTED))
 		F_SET(dbp, DB_AM_READ_UNCOMMITTED);
 
-	if (txn != NULL)
+	if (IS_REAL_TXN(txn))
 		F_SET(dbp, DB_AM_TXN);
 
 	/* Fill in the type. */
@@ -230,7 +230,7 @@ __db_open(dbp, txn, fname, dname, type, flags, mode, meta_pgno)
 	 */
 	if (!F_ISSET(dbp, DB_AM_RECOVER) && (fname != NULL || dname != NULL) &&
 	    LOCK_ISSET(dbp->handle_lock)) {
-		if (txn != NULL)
+		if (IS_REAL_TXN(txn))
 			ret = __txn_lockevent(dbenv,
 			    txn, dbp, &dbp->handle_lock, dbp->lid);
 		else if (LOCKING_ON(dbenv))
@@ -378,7 +378,7 @@ __db_chk_meta(dbenv, dbp, meta, do_metachk)
 	DBMETA *meta;
 	int do_metachk;
 {
-	DB_LSN cur_lsn, swap_lsn;
+	DB_LSN swap_lsn;
 	int is_hmac, ret, swapped;
 	u_int32_t magic, orig_chk;
 	u_int8_t *chksum;
@@ -454,28 +454,9 @@ lsn_retry:
 			goto lsn_retry;
 		}
 		if (!IS_REP_CLIENT(dbenv) &&
-		    !IS_NOT_LOGGED_LSN(swap_lsn) && !IS_ZERO_LSN(swap_lsn)) {
+		    !IS_NOT_LOGGED_LSN(swap_lsn) && !IS_ZERO_LSN(swap_lsn))
 			/* Need to do check. */
-			if ((ret = __log_current_lsn(dbenv,
-			    &cur_lsn, NULL, NULL)) != 0)
-				return (ret);
-			if (log_compare(&swap_lsn, &cur_lsn) > 0) {
-				__db_errx(dbenv,
-			"file %s has LSN %lu/%lu, past end of log at %lu/%lu",
-				    dbp->fname == NULL ? "unknown" : dbp->fname,
-				    (u_long)swap_lsn.file,
-				    (u_long)swap_lsn.offset,
-				    (u_long)cur_lsn.file,
-				    (u_long)cur_lsn.offset);
-				__db_errx(dbenv, "%s",
-    "Commonly caused by moving a database from one transactional database");
-				__db_errx(dbenv, "%s",
-    "environment to another without clearing the database LSNs, or removing");
-				__db_errx(dbenv, "%s",
-    "all of the log files from a database environment");
-				return (EINVAL);
-			}
-		}
+			ret = __log_check_page_lsn(dbenv, dbp, &swap_lsn);
 	}
 	return (ret);
 }

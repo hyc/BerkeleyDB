@@ -6,7 +6,7 @@
     <title>Example Processing Loop</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="fwrkmasterreplica.html" title="Chapter 4. Replica versus Master Processes" />
     <link rel="previous" href="processingloop.html" title="Processing Loop" />
     <link rel="next" href="addfeatures.html" title="Chapter 5. Additional Features" />
@@ -45,6 +45,7 @@
                           application used 
                           
                           <span>(see <a href="simpleprogramlisting.html#doloop_cxx">Method: RepMgr::doloop()</a>)</span>
+                          
                           to fully support our replicated application. 
                   </p>
       <p>
@@ -127,11 +128,16 @@ private:
     static int print_stocks(Db *dbp);
 }; </pre>
       <p>
-        That done, we can skip the <tt class="function">main()</tt>
-        function, because it does not change. Instead, we skip down to our
-        <tt class="classname">RepMgr</tt> constructor where we initialize our
-        <tt class="literal">APP_DATA is_master</tt> data member:
+        That done, we can skip the 
+        
+        <span><tt class="methodname">main()</tt> method, because it does not change.</span>
+        
+        
+        Instead, we skip down to our
+        <span><tt class="classname">RepMgr</tt> constructor where we initialize our
+        <tt class="literal">APP_DATA is_master</tt> data member:</span>
 
+        
 </p>
       <pre class="programlisting">
 RepMgr::RepMgr() : app_config(0), dbenv(0)
@@ -301,10 +307,13 @@ int RepMgr::doloop()
             <a href="simpleprogramlisting.html#printstocks_c">
                             
                             <span>Method: RepMgr::print_stocks()</span>
+                            
                     </a>).
     </p>
       <p>
-            When we call <tt class="function">print_stocks()</tt>, 
+            When we call 
+               <span><tt class="function">print_stocks()</tt>, </span>
+               
             we check for a dead replication handle. Dead
             replication handles happen whenever a replication election
             results in a previously committed transaction becoming
@@ -376,7 +385,18 @@ err:    if (dbp != NULL)
         With that completed, we are all done updating our application
         for replication. 
 
-        
+        The only remaining 
+         
+        <span>method, <tt class="function">print_stocks()</tt>,</span> 
+         
+
+        is unmodified from when we
+        originally introduced it. For details on that function, see
+        <a href="simpleprogramlisting.html#printstocks_c">
+                            
+                            <span>Method: RepMgr::print_stocks()</span>
+                            
+                    </a>.
 </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -395,12 +415,6 @@ err:    if (dbp != NULL)
                 is not strictly necessary; multiple instances of this
                 code can run on the same machine provided the
                 environment home restriction is observed.
-        </p>
-        <p>
-                We did not write this sample application such that you
-                can force a given environment to be the master, so exactly
-                which process will become the master at startup time
-                is not predictable.
         </p>
         <p>
                 To run a process, make sure the environment home

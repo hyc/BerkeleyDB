@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_dispatch.c,v 12.23 2006/05/24 20:25:06 bostic Exp $
+ * $Id: db_dispatch.c,v 12.26 2006/08/24 14:45:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -456,7 +456,7 @@ __db_txnlist_add(dbenv, hp, txnid, status, lsn)
 		hp->maxlsn = *lsn;
 
 	DB_ASSERT(dbenv, lsn == NULL ||
-	    status != TXN_COMMIT || log_compare(&hp->maxlsn, lsn) >= 0);
+	    status != TXN_COMMIT || LOG_COMPARE(&hp->maxlsn, lsn) >= 0);
 
 	return (0);
 }
@@ -500,7 +500,7 @@ __db_txnlist_ckp(dbenv, hp, ckp_lsn)
 	COMPQUIET(dbenv, NULL);
 
 	if (IS_ZERO_LSN(hp->ckplsn) && !IS_ZERO_LSN(hp->maxlsn) &&
-	    log_compare(&hp->maxlsn, ckp_lsn) >= 0)
+	    LOG_COMPARE(&hp->maxlsn, ckp_lsn) >= 0)
 		hp->ckplsn = *ckp_lsn;
 }
 
@@ -1364,7 +1364,7 @@ __db_limbo_fix(dbp, ctxn, elp, lastp, meta, state)
 				 * marked compensating, but in case we didn't
 				 * do the open, we have to mark it explicitly.
 				 */
-				F_SET(dbc, DBC_COMPENSATE);
+				F_SET(dbc, DBC_DONTLOCK);
 
 				/*
 				 * If aborting a txn for a different process

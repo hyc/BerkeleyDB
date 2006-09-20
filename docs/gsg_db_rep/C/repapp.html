@@ -6,8 +6,8 @@
     <title>Chapter 3. The DB Replication Framework</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
+    <link rel="up" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="previous" href="simpleprogramlisting.html" title="Program Listing" />
     <link rel="next" href="repmgr_init_example_c.html" title="Adding the Replication Framework to&#10;                    simple_txn&#10;                    &#10;            " />
   </head>
@@ -89,6 +89,7 @@
                 <span class="sect2">
                   <a href="fwrkpermmessage.html#perm2fmwrkexample">Adding a Permanent Message Policy to 
                             rep_mgr
+                            
                             
                     </a>
                 </span>
@@ -212,6 +213,13 @@
           </li>
         </ol>
       </div>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+                            The replication framework allows you to only use one
+                            environment handle per process.
+                    </p>
+      </div>
       <p>
                     When you are ready to shut down your application: 
             </p>
@@ -287,6 +295,20 @@
                 stops and starts replication. Note that other replication
                 activities are omitted for brevity.
             </p>
+        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+          <h3 class="title">Note</h3>
+          <p>
+            Note that the following code fragment would be part of a larger
+            class that must implement
+            <tt class="classname">com.sleepycat.db.EventHandler</tt>. This
+            class is used to track state changes between master and
+            replica. We put off that implementation for the moment, but the
+            point remains that the following code fragment would be
+            contained in a method or two that you would include in your 
+            <tt class="classname">com.sleepycat.db.EventHandler</tt> 
+            implementation. 
+        </p>
+        </div>
         <pre class="programlisting">#include &lt;db.h&gt;
 
 /* Use a 10mb cache */

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_vrfy_stub.c,v 12.4 2006/05/05 14:53:15 bostic Exp $
+ * $Id: db_vrfy_stub.c,v 12.5 2006/08/24 14:45:16 bostic Exp $
  */
 
 #ifndef HAVE_VERIFY

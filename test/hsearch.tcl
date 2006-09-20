@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: hsearch.tcl,v 12.2 2006/01/02 22:03:14 bostic Exp $
+# $Id: hsearch.tcl,v 12.3 2006/08/24 14:46:35 bostic Exp $
 #
 # Historic Hsearch interface test.
 # Use the first 1000 entries from the dictionary.

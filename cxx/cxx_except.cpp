@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: cxx_except.cpp,v 12.8 2006/06/27 17:49:37 gmf Exp $
+ * $Id: cxx_except.cpp,v 12.10 2006/09/13 14:53:37 mjc Exp $
  */
 
 #include "db_config.h"
@@ -350,35 +350,6 @@ DbRunRecoveryException::DbRunRecoveryException
 
 DbRunRecoveryException
 &DbRunRecoveryException::operator =(const DbRunRecoveryException &that)
-{
-	if (this != &that)
-		DbException::operator=(that);
-	return (*this);
-}
-
-////////////////////////////////////////////////////////////////////////
-//                                                                    //
-//                      DbUpdateConflictException                     //
-//                                                                    //
-////////////////////////////////////////////////////////////////////////
-
-DbUpdateConflictException::~DbUpdateConflictException() throw()
-{
-}
-
-DbUpdateConflictException::DbUpdateConflictException(const char *description)
-:	DbException(description, DB_UPDATE_CONFLICT)
-{
-}
-
-DbUpdateConflictException::DbUpdateConflictException
-    (const DbUpdateConflictException &that)
-:	DbException(that)
-{
-}
-
-DbUpdateConflictException
-&DbUpdateConflictException::operator =(const DbUpdateConflictException &that)
 {
 	if (this != &that)
 		DbException::operator=(that);

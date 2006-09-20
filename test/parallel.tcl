@@ -1,5 +1,5 @@
 # Code to load up the tests in to the Queue database
-# $Id: parallel.tcl,v 12.4 2006/06/26 18:43:57 carol Exp $
+# $Id: parallel.tcl,v 12.5 2006/07/28 14:00:25 carol Exp $
 proc load_queue { file  {dbdir RUNQUEUE} nitems } {
 	global serial_tests
 	global num_serial
@@ -328,6 +328,7 @@ proc mkparalleldirs { nprocs basename queuedir } {
 
 proc run_ptest { nprocs test args } {
 	global parms
+	global valid_methods
 	set basename ./PARALLEL_TESTDIR
 	set queuedir NULL
 	source ./include.tcl
@@ -335,8 +336,7 @@ proc run_ptest { nprocs test args } {
 	mkparalleldirs $nprocs $basename $queuedir
 
 	if { [info exists parms($test)] } {
-		foreach method \
-		    "hash queue queueext recno rbtree frecno rrecno btree" {
+		foreach method $valid_methods {
 			if { [eval exec_ptest $nprocs $basename \
 			    $test $method $args] != 0 } {
 				break

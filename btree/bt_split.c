@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -36,7 +36,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_split.c,v 12.12 2006/05/05 17:30:00 bostic Exp $
+ * $Id: bt_split.c,v 12.16 2006/09/08 18:41:05 bostic Exp $
  */
 
 #include "db_config.h"
@@ -514,6 +514,7 @@ __bam_broot(dbc, rootp, lp, rp)
 {
 	BINTERNAL bi, *child_bi;
 	BKEYDATA *child_bk;
+	BOVERFLOW bo, *child_bo;
 	BTREE_CURSOR *cp;
 	DB *dbp;
 	DBT hdr, data;
@@ -532,9 +533,6 @@ __bam_broot(dbc, rootp, lp, rp)
 	P_INIT(rootp, dbp->pgsize,
 	    root_pgno, PGNO_INVALID, PGNO_INVALID, lp->level + 1, P_IBTREE);
 
-	memset(&data, 0, sizeof(data));
-	memset(&hdr, 0, sizeof(hdr));
-
 	/*
 	 * The btree comparison code guarantees that the left-most key on any
 	 * internal btree page is never used, so it doesn't need to be filled
@@ -548,8 +546,7 @@ __bam_broot(dbc, rootp, lp, rp)
 		bi.nrecs = __bam_total(dbp, lp);
 		RE_NREC_SET(rootp, bi.nrecs);
 	}
-	hdr.data = &bi;
-	hdr.size = SSZA(BINTERNAL, data);
+	DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
 	if ((ret =
 	    __db_pitem(dbc, rootp, 0, BINTERNAL_SIZE(0), &hdr, NULL)) != 0)
 		return (ret);
@@ -558,27 +555,28 @@ __bam_broot(dbc, rootp, lp, rp)
 	case P_IBTREE:
 		/* Copy the first key of the child page onto the root page. */
 		child_bi = GET_BINTERNAL(dbp, rp, 0);
-
-		bi.len = child_bi->len;
-		B_TSET(bi.type, child_bi->type);
-		bi.pgno = rp->pgno;
-		if (F_ISSET(cp, C_RECNUM)) {
-			bi.nrecs = __bam_total(dbp, rp);
-			RE_NREC_ADJ(rootp, bi.nrecs);
-		}
-		hdr.data = &bi;
-		hdr.size = SSZA(BINTERNAL, data);
-		data.data = child_bi->data;
-		data.size = child_bi->len;
-		if ((ret = __db_pitem(dbc, rootp, 1,
-		    BINTERNAL_SIZE(child_bi->len), &hdr, &data)) != 0)
-			return (ret);
-
-		/* Increment the overflow ref count. */
-		if (B_TYPE(child_bi->type) == B_OVERFLOW)
-			if ((ret = __db_ovref(dbc,
-			    ((BOVERFLOW *)(child_bi->data))->pgno, 1)) != 0)
+		switch (B_TYPE(child_bi->type)) {
+		case B_KEYDATA:
+			bi.len = child_bi->len;
+			B_TSET(bi.type, B_KEYDATA);
+			bi.pgno = rp->pgno;
+			if (F_ISSET(cp, C_RECNUM)) {
+				bi.nrecs = __bam_total(dbp, rp);
+				RE_NREC_ADJ(rootp, bi.nrecs);
+			}
+			DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
+			DB_SET_DBT(data, child_bi->data, child_bi->len);
+			if ((ret = __db_pitem(dbc, rootp, 1,
+			    BINTERNAL_SIZE(child_bi->len), &hdr, &data)) != 0)
 				return (ret);
+			break;
+		case B_OVERFLOW:
+			child_bo = (BOVERFLOW *)child_bi->data;
+			goto do_overflow;
+		case B_DUPLICATE:
+		default:
+			goto pgfmt;
+		}
 		break;
 	case P_LDUP:
 	case P_LBTREE:
@@ -587,49 +585,55 @@ __bam_broot(dbc, rootp, lp, rp)
 		switch (B_TYPE(child_bk->type)) {
 		case B_KEYDATA:
 			bi.len = child_bk->len;
-			B_TSET(bi.type, child_bk->type);
+			B_TSET(bi.type, B_KEYDATA);
 			bi.pgno = rp->pgno;
 			if (F_ISSET(cp, C_RECNUM)) {
 				bi.nrecs = __bam_total(dbp, rp);
 				RE_NREC_ADJ(rootp, bi.nrecs);
 			}
-			hdr.data = &bi;
-			hdr.size = SSZA(BINTERNAL, data);
-			data.data = child_bk->data;
-			data.size = child_bk->len;
+			DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
+			DB_SET_DBT(data, child_bk->data, child_bk->len);
 			if ((ret = __db_pitem(dbc, rootp, 1,
 			    BINTERNAL_SIZE(child_bk->len), &hdr, &data)) != 0)
 				return (ret);
 			break;
-		case B_DUPLICATE:
 		case B_OVERFLOW:
+			/* Copy the overflow key. */
+			child_bo = (BOVERFLOW *)child_bk;
+do_overflow:		memset(&bo, 0, sizeof(bo));
+			bo.type = B_OVERFLOW;
+			bo.tlen = child_bo->tlen;
+			memset(&hdr, 0, sizeof(hdr));
+			if ((ret = __db_goff(dbp,
+			     dbc->txn, &hdr, child_bo->tlen,
+			     child_bo->pgno, &hdr.data, &hdr.size)) == 0)
+				ret = __db_poff(dbc, &hdr, &bo.pgno);
+
+			if (hdr.data != NULL)
+				__os_free(dbp->dbenv, hdr.data);
+			if (ret != 0)
+				return (ret);
+
 			bi.len = BOVERFLOW_SIZE;
-			B_TSET(bi.type, child_bk->type);
+			B_TSET(bi.type, B_OVERFLOW);
 			bi.pgno = rp->pgno;
 			if (F_ISSET(cp, C_RECNUM)) {
 				bi.nrecs = __bam_total(dbp, rp);
 				RE_NREC_ADJ(rootp, bi.nrecs);
 			}
-			hdr.data = &bi;
-			hdr.size = SSZA(BINTERNAL, data);
-			data.data = child_bk;
-			data.size = BOVERFLOW_SIZE;
+			DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
+			DB_SET_DBT(data, &bo, BOVERFLOW_SIZE);
 			if ((ret = __db_pitem(dbc, rootp, 1,
 			    BINTERNAL_SIZE(BOVERFLOW_SIZE), &hdr, &data)) != 0)
 				return (ret);
-
-			/* Increment the overflow ref count. */
-			if (B_TYPE(child_bk->type) == B_OVERFLOW)
-				if ((ret = __db_ovref(dbc,
-				    ((BOVERFLOW *)child_bk)->pgno, 1)) != 0)
-					return (ret);
 			break;
+		case B_DUPLICATE:
 		default:
-			return (__db_pgfmt(dbp->dbenv, rp->pgno));
+			goto pgfmt;
 		}
 		break;
 	default:
-		return (__db_pgfmt(dbp->dbenv, rp->pgno));
+pgfmt:		return (__db_pgfmt(dbp->dbenv, rp->pgno));
 	}
 	return (0);
 }
@@ -657,9 +661,7 @@ __ram_root(dbc, rootp, lp, rp)
 	    root_pgno, PGNO_INVALID, PGNO_INVALID, lp->level + 1, P_IRECNO);
 
 	/* Initialize the header. */
-	memset(&hdr, 0, sizeof(hdr));
-	hdr.data = &ri;
-	hdr.size = RINTERNAL_SIZE;
+	DB_SET_DBT(hdr, &ri, RINTERNAL_SIZE);
 
 	/* Insert the left and right keys, set the header information. */
 	ri.pgno = lp->pgno;
@@ -690,6 +692,7 @@ __bam_pinsert(dbc, parent, lchild, rchild, flags)
 {
 	BINTERNAL bi, *child_bi;
 	BKEYDATA *child_bk, *tmp_bk;
+	BOVERFLOW bo, *child_bo;
 	BTREE *t;
 	BTREE_CURSOR *cp;
 	DB *dbp;
@@ -748,27 +751,27 @@ __bam_pinsert(dbc, parent, lchild, rchild, flags)
 		if (LF_ISSET(BPI_SPACEONLY))
 			return (0);
 
-		/* Add a new record for the right page. */
-		memset(&bi, 0, sizeof(bi));
-		bi.len = child_bi->len;
-		B_TSET(bi.type, child_bi->type);
-		bi.pgno = rchild->pgno;
-		bi.nrecs = nrecs;
-		memset(&hdr, 0, sizeof(hdr));
-		hdr.data = &bi;
-		hdr.size = SSZA(BINTERNAL, data);
-		memset(&data, 0, sizeof(data));
-		data.data = child_bi->data;
-		data.size = child_bi->len;
-		if ((ret = __db_pitem(dbc, ppage, off,
-		    BINTERNAL_SIZE(child_bi->len), &hdr, &data)) != 0)
-			return (ret);
-
-		/* Increment the overflow ref count. */
-		if (B_TYPE(child_bi->type) == B_OVERFLOW)
-			if ((ret = __db_ovref(dbc,
-			    ((BOVERFLOW *)(child_bi->data))->pgno, 1)) != 0)
+		switch (B_TYPE(child_bi->type)) {
+		case B_KEYDATA:
+			/* Add a new record for the right page. */
+			memset(&bi, 0, sizeof(bi));
+			bi.len = child_bi->len;
+			B_TSET(bi.type, B_KEYDATA);
+			bi.pgno = rchild->pgno;
+			bi.nrecs = nrecs;
+			DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
+			DB_SET_DBT(data, child_bi->data, child_bi->len);
+			if ((ret = __db_pitem(dbc, ppage, off,
+			    BINTERNAL_SIZE(child_bi->len), &hdr, &data)) != 0)
 				return (ret);
+			break;
+		case B_OVERFLOW:
+			child_bo = (BOVERFLOW *)child_bi->data;
+			goto do_overflow;
+		case B_DUPLICATE:
+		default:
+			goto pgfmt;
+		}
 		break;
 	case P_LDUP:
 	case P_LBTREE:
@@ -813,12 +816,8 @@ __bam_pinsert(dbc, parent, lchild, rchild, flags)
 			    (TYPE(lchild) == P_LDUP ? O_INDX : P_INDX));
 			if (B_TYPE(tmp_bk->type) != B_KEYDATA)
 				goto noprefix;
-			memset(&a, 0, sizeof(a));
-			a.size = tmp_bk->len;
-			a.data = tmp_bk->data;
-			memset(&b, 0, sizeof(b));
-			b.size = child_bk->len;
-			b.data = child_bk->data;
+			DB_SET_DBT(a, tmp_bk->data, tmp_bk->len);
+			DB_SET_DBT(b, child_bk->data, child_bk->len);
 			nksize = (u_int32_t)func(dbp, &a, &b);
 			if ((n = BINTERNAL_PSIZE(nksize)) < nbytes)
 				nbytes = n;
@@ -832,20 +831,15 @@ noprefix:		if (P_FREESPACE(dbp, ppage) < nbytes)
 
 			memset(&bi, 0, sizeof(bi));
 			bi.len = nksize;
-			B_TSET(bi.type, child_bk->type);
+			B_TSET(bi.type, B_KEYDATA);
 			bi.pgno = rchild->pgno;
 			bi.nrecs = nrecs;
-			memset(&hdr, 0, sizeof(hdr));
-			hdr.data = &bi;
-			hdr.size = SSZA(BINTERNAL, data);
-			memset(&data, 0, sizeof(data));
-			data.data = child_bk->data;
-			data.size = nksize;
+			DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
+			DB_SET_DBT(data, child_bk->data, nksize);
 			if ((ret = __db_pitem(dbc, ppage, off,
 			    BINTERNAL_SIZE(nksize), &hdr, &data)) != 0)
 				return (ret);
 			break;
-		case B_DUPLICATE:
 		case B_OVERFLOW:
 			nbytes = BINTERNAL_PSIZE(BOVERFLOW_SIZE);
 
@@ -854,29 +848,37 @@ noprefix:		if (P_FREESPACE(dbp, ppage) < nbytes)
 			if (LF_ISSET(BPI_SPACEONLY))
 				return (0);
 
+			/* Copy the overflow key. */
+			child_bo = (BOVERFLOW *)child_bk;
+do_overflow:		memset(&bo, 0, sizeof(bo));
+			bo.type = B_OVERFLOW;
+			bo.tlen = child_bo->tlen;
+			memset(&hdr, 0, sizeof(hdr));
+			if ((ret = __db_goff(dbp,
+			     dbc->txn, &hdr, child_bo->tlen,
+			     child_bo->pgno, &hdr.data, &hdr.size)) == 0)
+				ret = __db_poff(dbc, &hdr, &bo.pgno);
+
+			if (hdr.data != NULL)
+				__os_free(dbp->dbenv, hdr.data);
+			if (ret != 0)
+				return (ret);
+
 			memset(&bi, 0, sizeof(bi));
 			bi.len = BOVERFLOW_SIZE;
-			B_TSET(bi.type, child_bk->type);
+			B_TSET(bi.type, B_OVERFLOW);
 			bi.pgno = rchild->pgno;
 			bi.nrecs = nrecs;
-			memset(&hdr, 0, sizeof(hdr));
-			hdr.data = &bi;
-			hdr.size = SSZA(BINTERNAL, data);
-			memset(&data, 0, sizeof(data));
-			data.data = child_bk;
-			data.size = BOVERFLOW_SIZE;
+			DB_SET_DBT(hdr, &bi, SSZA(BINTERNAL, data));
+			DB_SET_DBT(data, &bo, BOVERFLOW_SIZE);
 			if ((ret = __db_pitem(dbc, ppage, off,
 			    BINTERNAL_SIZE(BOVERFLOW_SIZE), &hdr, &data)) != 0)
 				return (ret);
 
-			/* Increment the overflow ref count. */
-			if (B_TYPE(child_bk->type) == B_OVERFLOW)
-				if ((ret = __db_ovref(dbc,
-				    ((BOVERFLOW *)child_bk)->pgno, 1)) != 0)
-					return (ret);
 			break;
+		case B_DUPLICATE:
 		default:
-			return (__db_pgfmt(dbp->dbenv, rchild->pgno));
+			goto pgfmt;
 		}
 		break;
 	case P_IRECNO:
@@ -889,9 +891,7 @@ noprefix:		if (P_FREESPACE(dbp, ppage) < nbytes)
 			return (0);
 
 		/* Add a new record for the right page. */
-		memset(&hdr, 0, sizeof(hdr));
-		hdr.data = &ri;
-		hdr.size = RINTERNAL_SIZE;
+		DB_SET_DBT(hdr, &ri, RINTERNAL_SIZE);
 		ri.pgno = rchild->pgno;
 		ri.nrecs = nrecs;
 		if ((ret = __db_pitem(dbc,
@@ -899,7 +899,7 @@ noprefix:		if (P_FREESPACE(dbp, ppage) < nbytes)
 			return (ret);
 		break;
 	default:
-		return (__db_pgfmt(dbp->dbenv, rchild->pgno));
+pgfmt:		return (__db_pgfmt(dbp->dbenv, rchild->pgno));
 	}
 
 	/*

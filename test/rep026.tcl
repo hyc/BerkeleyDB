@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep026.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
+# $Id: rep026.tcl,v 12.12 2006/09/13 21:51:23 carol Exp $
 #
 # TEST	rep026
 # TEST	Replication elections - simulate a crash after sending

@@ -1163,6 +1163,22 @@ rep065
 	the 4.5 tcl code (e.g. test.tcl).
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep066
+	Replication and dead log handles.
+
+	Run rep_test on master and a client.
+	Simulate client crashes (master continues) until log 2.
+	Open 2nd master env handle and put something in log and flush.
+	Downgrade master, restart client as master.
+	Run rep_test on newmaster until log 2.
+	New master writes log records, newclient processes records
+	and 2nd newclient env handle calls log_flush.
+	New master commits, newclient processes and should succeed.
+	Make sure 2nd handle detects the old log handle and doesn't
+	write to a stale handle (if it does, the processing of the
+	commit will fail).
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rpc001
 	Test RPC server timeouts for cursor, txn and env handles.
 

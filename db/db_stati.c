@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_stati.c,v 12.19 2006/05/19 19:24:54 bostic Exp $
+ * $Id: db_stati.c,v 12.21 2006/08/24 14:45:16 bostic Exp $
  */
 
 #include "db_config.h"
@@ -402,7 +402,7 @@ int __db_print_citem(dbc)
 {
 	static const FN fn[] = {
 		{ DBC_ACTIVE,		"DBC_ACTIVE" },
-		{ DBC_COMPENSATE,	"DBC_COMPENSATE" },
+		{ DBC_DONTLOCK,		"DBC_DONTLOCK" },
 		{ DBC_MULTIPLE,		"DBC_MULTIPLE" },
 		{ DBC_MULTIPLE_KEY,	"DBC_MULTIPLE_KEY" },
 		{ DBC_OPD,		"DBC_OPD" },

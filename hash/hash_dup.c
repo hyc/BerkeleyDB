@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_dup.c,v 12.15 2006/06/29 00:02:32 mjc Exp $
+ * $Id: hash_dup.c,v 12.17 2006/09/07 20:05:29 bostic Exp $
  */
 
 /*
@@ -195,8 +195,7 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 			tmp_val.doff = hcp->dup_off + DUP_SIZE(hcp->dup_len);
 			break;
 		default:
-			DB_ASSERT(dbenv, 0);
-			return (EINVAL);
+			return (__db_unknown_path(dbenv, "__ham_add_dup"));
 		}
 
 		/* Add the duplicate. */
@@ -219,8 +218,7 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 			hcp->dup_len = nval->size;
 			break;
 		default:
-			DB_ASSERT(dbenv, 0);
-			return (EINVAL);
+			return (__db_unknown_path(dbenv, "__ham_add_dup"));
 		}
 		ret = __ham_c_update(dbc, tmp_val.size, 1, 1);
 		return (ret);

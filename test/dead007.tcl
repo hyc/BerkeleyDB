@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1996-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: dead007.tcl,v 12.2 2006/01/02 22:03:12 bostic Exp $
+# $Id: dead007.tcl,v 12.3 2006/08/24 14:46:35 bostic Exp $
 #
 # TEST	dead007
 # TEST	Tests for locker and txn id wraparound.

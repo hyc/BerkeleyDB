@@ -6,7 +6,7 @@
     <title>Backup Procedures</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="filemanagement.html" title="Chapter 5. Managing DB Files" />
     <link rel="previous" href="filemanagement.html" title="Chapter 5. Managing DB Files" />
     <link rel="next" href="recovery.html" title="Recovery Procedures" />
@@ -235,7 +235,7 @@
                 at the time of the backup.
             </p>
         <p>
-                You can use the <span><b class="command">db_hotbackup</b></span> command line utility to create a hotbackup for you. This
+                You can use the <span><b class="command">db_hotbackup</b></span> command line utility to create a hot backup for you. This
                 utility will (optionally) run a checkpoint and the copy all necessary files to a target directory.
             </p>
         <p>
@@ -312,7 +312,7 @@
                 (should one be required).
               </p>
         <p>
-                You can also shorten recovery time by runnning recovery against the backup as you take each incremental
+                You can also shorten recovery time by running recovery against the backup as you take each incremental
                 backup.  Running recovery as you go means that there will be less work for DB to do if you should
                 ever need to restore your environment from the backup.
             </p>

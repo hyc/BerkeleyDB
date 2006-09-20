@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_verify.h,v 12.7 2006/07/05 05:37:09 mjc Exp $
+ * $Id: db_verify.h,v 12.9 2006/09/08 21:57:14 bostic Exp $
  */
 
 #ifndef _DB_VERIFY_H_
@@ -27,12 +27,6 @@ extern "C" {
 	if (!LF_ISSET(DB_SALVAGE))					\
 		__db_errx x;						\
 } while (0)
-
-/* For fatal type errors--i.e., verifier bugs. */
-#define	TYPE_ERR_PRINT(dbenv, func, pgno, ptype)			\
-	EPRINT(((dbenv),						\
-	    "Page %lu: %s called on nonsensical page of type %lu",	\
-	    (u_long)(pgno), (func), (u_long)(ptype)));
 
 /* Complain about a totally zeroed page where we don't expect one. */
 #define	ZEROPG_ERR_PRINT(dbenv, pgno, str) do {				\

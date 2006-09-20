@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_windows.c,v 1.11 2006/06/19 06:41:44 mjc Exp $
+ * $Id: repmgr_windows.c,v 1.14 2006/09/11 15:15:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -464,7 +464,7 @@ __repmgr_select_loop(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_REP *db_rep;
-	REPMGR_CONNECTION *conn;
+	REPMGR_CONNECTION *conn, *next;
 	REPMGR_RETRY *retry;
 	select_timeout_t timeout;
 	WSAEVENT events[WSA_MAXIMUM_WAIT_EVENTS];
@@ -499,15 +499,24 @@ __repmgr_select_loop(dbenv)
 		nevents = 2;
 
 		/*
-		 * Add an event for each socket that we're interested in.  (For
-		 * now [until we implement flow control], that's all of them, in
-		 * one form or another.)
+		 * Add an event for each surviving socket that we're interested
+		 * in.  (For now [until we implement flow control], that's all
+		 * of them, in one form or another.)
 		 *     Note that even if we're suffering flow control, we
 		 * nevertheless still read if we haven't even yet gotten a
 		 * handshake.   Why?  (1) Handshakes are important; and (2) they
 		 * don't hurt anything flow-control-wise.
+		 *     Loop just like TAILQ_FOREACH, except that we need to be
+		 * able to unlink a list entry.
 		 */
-		TAILQ_FOREACH(conn, &db_rep->connections, entries) {
+		for (conn = TAILQ_FIRST(&db_rep->connections);
+		     conn != NULL;
+		     conn = next) {
+			next = TAILQ_NEXT(conn, entries);
+			if (F_ISSET(conn, CONN_DEFUNCT)) {
+				__repmgr_cleanup_connection(dbenv, conn);
+				continue;
+			}
 			if (F_ISSET(conn, CONN_CONNECTING) ||
 			    !STAILQ_EMPTY(&conn->outbound_queue) ||
 			    (!flow_control || !IS_VALID_EID(conn->eid))) {
@@ -638,7 +647,7 @@ handle_completion(dbenv, conn)
 	return (0);
 
 err:	if (ret == DB_REP_UNAVAIL)
-		return (__repmgr_bust_connection(dbenv, conn));
+		return (__repmgr_bust_connection(dbenv, conn, TRUE));
 	return (ret);
 }
 
@@ -667,7 +676,7 @@ finish_connecting(dbenv, conn, events)
 /*		    FORMAT_MESSAGE_FROM_SYSTEM | */
 /*		    FORMAT_MESSAGE_ARGUMENT_ARRAY, */
 /*		    NULL, ret, 0, (LPTSTR)reason, sizeof(reason), values); */
-/*		dbenv->errx(dbenv/\*, ret*\/, "connecting: %s", */
+/*		__db_err(dbenv/\*, ret*\/, "connecting: %s", */
 /*		    reason); */
 /*		LocalFree(reason); */
 		__db_err(dbenv, ret, "connecting");
@@ -692,7 +701,6 @@ err:
 		return (DB_REP_UNAVAIL);
 
 	DB_ASSERT(dbenv, !TAILQ_EMPTY(&db_rep->connections));
-	TAILQ_REMOVE(&db_rep->connections, conn, entries);
 	__repmgr_cleanup_connection(dbenv, conn);
 	ret = __repmgr_connect_site(dbenv, eid);
 	DB_ASSERT(dbenv, ret != DB_REP_UNAVAIL);

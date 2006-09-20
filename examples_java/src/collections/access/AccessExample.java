@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: AccessExample.java,v 12.3 2006/01/02 22:02:08 bostic Exp $
+ * $Id: AccessExample.java,v 12.4 2006/08/24 14:45:51 bostic Exp $
  */
 
 package collections.access;
@@ -36,7 +36,7 @@ import com.sleepycat.db.EnvironmentConfig;
  * use of the new com.sleepycat.collections.* collections style classes to make
  * life easier.
  *
- *@author     Gregory Burd <gburd@sleepycat.com>
+ *@author     Gregory Burd
  *@created    October 22, 2002
  */
 public class AccessExample

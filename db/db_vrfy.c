@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_vrfy.c,v 12.27 2006/07/17 15:16:32 bostic Exp $
+ * $Id: db_vrfy.c,v 12.29 2006/09/07 20:05:26 bostic Exp $
  */
 
 #include "db_config.h"
@@ -884,9 +884,7 @@ __db_vrfy_structure(dbp, vdp, dbname, meta_pgno, flags)
 		goto err;
 	case DB_UNKNOWN:
 	default:
-		/* This should only happen if the verifier is somehow broken. */
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__db_vrfy_structure");
 		goto err;
 	}
 
@@ -1263,9 +1261,7 @@ __db_vrfy_meta(dbp, vdp, meta, pgno, flags)
 		dbtype = DB_QUEUE;
 		break;
 	default:
-		/* The verifier should never let us get here. */
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__db_vrfy_meta");
 		goto err;
 	}
 

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2001-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: reputils.tcl,v 12.27 2006/06/29 18:30:40 carol Exp $
+# $Id: reputils.tcl,v 12.30 2006/09/13 21:51:23 carol Exp $
 #
 # Replication testing utilities
 
@@ -660,7 +660,8 @@ proc replready { machid tf } {
 			set nkeys [stat_field $queuedbs($tofrom) \
 			    stat "Number of keys"]
 			if { $nkeys != 0 } {
-				lappend closed [list $toid $fromid temp.$tofrom]
+				lappend closed \
+				    [list $toid $fromid temp.$tofrom]
 		 		error_check_good temp_close \
 				    [$queuedbs($tofrom) close] 0
 			}

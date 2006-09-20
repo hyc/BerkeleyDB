@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_put.c,v 12.18 2006/05/05 14:53:01 bostic Exp $
+ * $Id: bt_put.c,v 12.21 2006/09/06 20:37:00 ubell Exp $
  */
 
 #include "db_config.h"
@@ -81,7 +81,8 @@ __bam_iitem(dbc, key, data, op, flags)
 	PAGE *h;
 	db_indx_t cnt, indx;
 	u_int32_t data_size, have_bytes, need_bytes, needed, pages, pagespace;
-	int cmp, bigkey, bigdata, dupadjust, padrec, replace, ret, was_deleted;
+	int cmp, bigkey, bigdata, del, dupadjust;
+	int padrec, replace, ret, t_ret, was_deleted;
 
 	COMPQUIET(bk, NULL);
 	COMPQUIET(cnt, 0);
@@ -93,7 +94,7 @@ __bam_iitem(dbc, key, data, op, flags)
 	t = dbp->bt_internal;
 	h = cp->page;
 	indx = cp->indx;
-	dupadjust = replace = was_deleted = 0;
+	del = dupadjust = replace = was_deleted = 0;
 
 	/*
 	 * Fixed-length records with partial puts: it's an error to specify
@@ -349,6 +350,7 @@ __bam_iitem(dbc, key, data, op, flags)
 		if (bigdata || B_TYPE(bk->type) != B_KEYDATA) {
 			if ((ret = __bam_ditem(dbc, h, indx)) != 0)
 				return (ret);
+			del = 1;
 			break;
 		}
 
@@ -366,9 +368,8 @@ __bam_iitem(dbc, key, data, op, flags)
 		 * in this case; the actual records should never be created.
 		 */
 		DB_ASSERT(dbenv, !LF_ISSET(BI_DELETED));
-		if ((ret = __bam_ovput(dbc,
-		    B_OVERFLOW, PGNO_INVALID, h, indx, data)) != 0)
-			return (ret);
+		ret = __bam_ovput(dbc,
+		    B_OVERFLOW, PGNO_INVALID, h, indx, data);
 	} else {
 		if (LF_ISSET(BI_DELETED)) {
 			B_TSET_DELETED(bk_tmp.type, B_KEYDATA);
@@ -382,8 +383,15 @@ __bam_iitem(dbc, key, data, op, flags)
 		else
 			ret = __db_pitem(dbc, h, indx,
 			    BKEYDATA_SIZE(data->size), NULL, data);
-		if (ret != 0)
-			return (ret);
+	}
+	if (ret != 0) {
+		if (del == 1 && (t_ret =
+		     __bam_ca_di(dbc, PGNO(h), indx + 1, -1)) != 0) {
+			__db_err(dbenv, t_ret,
+			    "cursor adjustment after delete failed");
+			return (__db_panic(dbenv, t_ret));
+		}
+		return (ret);
 	}
 
 	/*

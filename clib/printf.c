@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: printf.c,v 1.3 2006/06/11 14:28:03 bostic Exp $
+ * $Id: printf.c,v 1.5 2006/09/13 19:10:57 bostic Exp $
  */
 
 #include "db_config.h"
@@ -38,6 +38,14 @@ printf(fmt, va_alist)
 	va_start(ap);
 #endif
 	len = (size_t)vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_BREW
+	/*
+	 * The BREW vsnprintf function return count includes the trailing
+	 * nul-termination character.
+	 */
+	if (len > 0 && len <= sizeof(buf) && buf[len - 1] == '\0')
+		--len;
+#endif
 
 	va_end(ap);
 
@@ -78,6 +86,14 @@ fprintf(fp, fmt, va_alist)
 	va_start(ap);
 #endif
 	len = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_BREW
+	/*
+	 * The BREW vsnprintf function return count includes the trailing
+	 * nul-termination character.
+	 */
+	if (len > 0 && len <= sizeof(buf) && buf[len - 1] == '\0')
+		--len;
+#endif
 
 	va_end(ap);
 
@@ -108,6 +124,14 @@ vfprintf(fp, fmt, ap)
 	char buf[2048];    /* !!!: END OF THE STACK DON'T TRUST SPRINTF. */
 
 	len = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_BREW
+	/*
+	 * The BREW vsnprintf function return count includes the trailing
+	 * nul-termination character.
+	 */
+	if (len > 0 && len <= sizeof(buf) && buf[len - 1] == '\0')
+		--len;
+#endif
 
 	/*
 	 * We implement printf/fprintf with fwrite, because Berkeley DB uses

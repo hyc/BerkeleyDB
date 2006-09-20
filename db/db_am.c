@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1998-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_am.c,v 12.22 2006/06/16 15:05:03 mjc Exp $
+ * $Id: db_am.c,v 12.24 2006/08/24 14:45:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -225,7 +225,7 @@ __db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
 	if (F_ISSET(dbp, DB_AM_RECOVER))
 		F_SET(dbc, DBC_RECOVER);
 	if (F_ISSET(dbp, DB_AM_COMPENSATE))
-		F_SET(dbc, DBC_COMPENSATE);
+		F_SET(dbc, DBC_DONTLOCK);
 
 	/* Refresh the DBC internal structure. */
 	cp = dbc->internal;

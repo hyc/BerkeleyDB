@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_stat.c,v 12.24 2006/06/29 00:02:39 mjc Exp $
+ * $Id: mp_stat.c,v 12.28 2006/09/11 14:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -190,7 +190,7 @@ __memp_stat(dbenv, gspp, fspp, flags)
 		 * add the per-file information.
 		 */
 		if ((ret = __memp_walk_files(dbenv, mp, __memp_file_stats,
-		    sp, NULL, fspp == NULL ? flags : 0)) != 0)
+		    sp, NULL, fspp == NULL ? LF_ISSET(DB_STAT_CLEAR) : 0)) != 0)
 			return (ret);
 	}
 
@@ -224,7 +224,7 @@ __memp_stat(dbenv, gspp, fspp, flags)
 		    mp, __memp_get_files, &tfsp, &i, flags)) != 0)
 			return (ret);
 
-		*tfsp = NULL;
+		*++tfsp = NULL;
 	}
 
 	return (0);
@@ -239,10 +239,10 @@ __memp_file_stats(dbenv, mfp, argp, countp, flags)
 	u_int32_t flags;
 {
 	DB_MPOOL_STAT *sp;
+	u_int32_t pagesize;
 
 	COMPQUIET(dbenv, NULL);
 	COMPQUIET(countp, NULL);
-	COMPQUIET(flags, 0);
 
 	sp = argp;
 
@@ -252,6 +252,11 @@ __memp_file_stats(dbenv, mfp, argp, countp, flags)
 	sp->st_page_create += mfp->stat.st_page_create;
 	sp->st_page_in += mfp->stat.st_page_in;
 	sp->st_page_out += mfp->stat.st_page_out;
+	if (LF_ISSET(DB_STAT_CLEAR)) {
+		pagesize = mfp->stat.st_pagesize;
+		memset(&mfp->stat, 0, sizeof(mfp->stat));
+		mfp->stat.st_pagesize = pagesize;
+	}
 	return (0);
 }
 
@@ -300,8 +305,8 @@ __memp_get_files(dbenv, mfp, argp, countp, flags)
 	DB_MPOOL_FSTAT **tfsp, *tstruct;
 	char *name, *tname;
 	size_t nlen;
+	u_int32_t pagesize;
 
-	COMPQUIET(flags, 0);
 	if (*countp == 0)
 		return (0);
 
@@ -327,6 +332,12 @@ __memp_get_files(dbenv, mfp, argp, countp, flags)
 
 	*(DB_MPOOL_FSTAT ***)argp = tfsp;
 	(*countp)--;
+
+	if (LF_ISSET(DB_STAT_CLEAR)) {
+		pagesize = mfp->stat.st_pagesize;
+		memset(&mfp->stat, 0, sizeof(mfp->stat));
+		mfp->stat.st_pagesize = pagesize;
+	}
 	return (0);
 }
 
@@ -459,9 +470,10 @@ __memp_print_stats(dbenv, flags)
 	    "The number of hash bucket locks that required waiting",
 	    (u_long)gsp->st_hash_wait, DB_PCT(
 	    gsp->st_hash_wait, gsp->st_hash_wait + gsp->st_hash_nowait), NULL);
-	__db_dl(dbenv,
+	__db_dl_pct(dbenv,
     "The maximum number of times any hash bucket lock was waited for",
-	    (u_long)gsp->st_hash_max_wait);
+	    (u_long)gsp->st_hash_max_wait, DB_PCT(gsp->st_hash_max_wait,
+	    gsp->st_hash_max_wait + gsp->st_hash_max_nowait), NULL);
 	__db_dl_pct(dbenv,
 	    "The number of region locks that required waiting",
 	    (u_long)gsp->st_region_wait, DB_PCT(gsp->st_region_wait,
@@ -483,6 +495,7 @@ __memp_print_stats(dbenv, flags)
 	    (u_long)gsp->st_alloc_pages);
 	__db_dl(dbenv, "The max number of pages examined for an allocation",
 	    (u_long)gsp->st_alloc_max_pages);
+	__db_dl(dbenv, "Threads waited on page I/O", (u_long)gsp->st_io_wait);
 
 	for (tfsp = fsp; fsp != NULL && *tfsp != NULL; ++tfsp) {
 		if (LF_ISSET(DB_STAT_ALL))
@@ -805,8 +818,10 @@ __memp_stat_wait(dbenv, reginfo, mp, mstat, flags)
 		    dbenv, hp->mtx_hash, &tmp_wait, &tmp_nowait);
 		mstat->st_hash_nowait += tmp_nowait;
 		mstat->st_hash_wait += tmp_wait;
-		if (tmp_wait > mstat->st_hash_max_wait)
+		if (tmp_wait > mstat->st_hash_max_wait) {
 			mstat->st_hash_max_wait = tmp_wait;
+			mstat->st_hash_max_nowait = tmp_nowait;
+		}
 		if (LF_ISSET(DB_STAT_CLEAR))
 			__mutex_clear(dbenv, hp->mtx_hash);
 

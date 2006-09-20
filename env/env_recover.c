@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_recover.c,v 12.30 2006/06/27 22:22:02 bostic Exp $
+ * $Id: env_recover.c,v 12.34 2006/09/09 14:28:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,7 +21,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nSleepycat Software Inc.  All rights reserved.\n";
+    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
 #endif
 
 static int	__db_log_corrupt __P((DB_ENV *, DB_LSN *));
@@ -295,7 +295,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 		 * the logs and before the timestamp.
 		 */
 		if ((dbenv->tx_timestamp != 0 || max_lsn != NULL) &&
-		    log_compare(&lowlsn, &first_lsn) < 0) {
+		    LOG_COMPARE(&lowlsn, &first_lsn) < 0) {
 			DB_ASSERT(dbenv, have_rec == 0);
 			first_lsn = lowlsn;
 		}
@@ -338,7 +338,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 	 * above), so there is nothing to do.
 	 */
 	if (ret == DB_NOTFOUND) {
-		if (log_compare(&lsn, &last_lsn) != 0)
+		if (LOG_COMPARE(&lsn, &last_lsn) != 0)
 			ret = __db_log_corrupt(dbenv, &lsn);
 		else
 			ret = 0;
@@ -379,7 +379,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 
 	pass = "backward";
 	for (ret = __log_c_get(logc, &lsn, &data, DB_LAST);
-	    ret == 0 && log_compare(&lsn, &first_lsn) >= 0;
+	    ret == 0 && LOG_COMPARE(&lsn, &first_lsn) >= 0;
 	    ret = __log_c_get(logc, &lsn, &data, DB_PREV)) {
 		if (dbenv->db_feedback != NULL) {
 			progress = 34 + (int)(33 * (__lsn_diff(&first_lsn,
@@ -398,7 +398,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 		}
 	}
 	if (ret == DB_NOTFOUND) {
-		if (log_compare(&lsn, &first_lsn) > 0)
+		if (LOG_COMPARE(&lsn, &first_lsn) > 0)
 			ret = __db_log_corrupt(dbenv, &lsn);
 		else
 			ret = 0;
@@ -443,7 +443,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 		 * we need to make sure that we don't try to roll
 		 * forward beyond the soon-to-be end of log.
 		 */
-		if (log_compare(&lsn, &stop_lsn) >= 0)
+		if (LOG_COMPARE(&lsn, &stop_lsn) >= 0)
 			break;
 
 	}
@@ -497,7 +497,7 @@ done:
 	/* Take a checkpoint here to force any dirty data pages to disk. */
 	if ((ret = __txn_checkpoint(dbenv, 0, 0, DB_FORCE)) != 0) {
 		/*
-		 * If there was no space for the chekcpoint we can
+		 * If there was no space for the checkpoint we can
 		 * still bring the environment up.  No updates will
 		 * be able to commit either, but the environment can
 		 * be used read only.
@@ -705,7 +705,7 @@ __log_backup(dbenv, logc, max_lsn, start_lsn, cmp)
 			 * or equal max_lsn.
 			 */
 			cmp_lsn = ckp_args->ckp_lsn;
-			lcmp = (log_compare(&cmp_lsn, max_lsn) <= 0);
+			lcmp = (LOG_COMPARE(&cmp_lsn, max_lsn) <= 0);
 		} else {
 			/*
 			 * When we're walking back through the checkpoints
@@ -713,7 +713,7 @@ __log_backup(dbenv, logc, max_lsn, start_lsn, cmp)
 			 * than the max_lsn (also a ckp LSN).
 			 */
 			cmp_lsn = lsn;
-			lcmp = (log_compare(&cmp_lsn, max_lsn) < 0);
+			lcmp = (LOG_COMPARE(&cmp_lsn, max_lsn) < 0);
 		}
 		if (lcmp) {
 			*start_lsn = cmp_lsn;
@@ -778,7 +778,7 @@ __log_earliest(dbenv, logc, lowtime, lowlsn)
 		if (rectype != DB___txn_ckp)
 			continue;
 		if ((ret = __txn_ckp_read(dbenv, data.data, &ckpargs)) == 0) {
-			cmp = log_compare(&ckpargs->ckp_lsn, &first_lsn);
+			cmp = LOG_COMPARE(&ckpargs->ckp_lsn, &first_lsn);
 			*lowlsn = ckpargs->ckp_lsn;
 			*lowtime = ckpargs->timestamp;
 
@@ -851,7 +851,7 @@ __env_openfiles(dbenv, logc, txninfo,
 		if ((ret = __log_c_get(logc, &lsn, data, DB_NEXT)) != 0) {
 			if (ret == DB_NOTFOUND) {
 				if (last_lsn != NULL &&
-				   log_compare(&lsn, last_lsn) != 0)
+				   LOG_COMPARE(&lsn, last_lsn) != 0)
 					ret = __db_log_corrupt(dbenv, &lsn);
 				else
 					ret = 0;

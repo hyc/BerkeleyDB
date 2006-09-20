@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_fset.c,v 12.14 2006/06/29 00:02:38 mjc Exp $
+ * $Id: mp_fset.c,v 12.16 2006/09/13 14:53:42 mjc Exp $
  */
 
 #include "db_config.h"
@@ -142,7 +142,7 @@ __memp_dirty(dbmfp, addrp, txn, flags)
 	    txn != NULL && !BH_OWNED_BY(dbenv, bhp, ancestor)) {
 		if ((ret = __memp_fget(dbmfp,
 		    &pgno, txn, flags, addrp)) != 0) {
-			if (ret != DB_UPDATE_CONFLICT)
+			if (ret != DB_LOCK_DEADLOCK)
 				__db_errx(dbenv,
 				    "%s: error getting a page for writing",
 				    __memp_fn(dbmfp));

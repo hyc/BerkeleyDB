@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: log008script.tcl,v 12.3 2006/06/27 22:31:08 bostic Exp $
+# $Id: log008script.tcl,v 12.4 2006/08/24 14:46:36 bostic Exp $
 #
 # Log008 script - dbreg_ckp and txn_ckp records spanning log files.
 #

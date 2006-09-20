@@ -55,7 +55,7 @@ __db_makeKey(key, direction, keyLen, keyMaterial)
 	char *keyMaterial;
 {
 	u8 cipherKey[MAXKB];
-	
+
 	if (key == NULL) {
 		return BAD_KEY_INSTANCE;
 	}
@@ -135,7 +135,7 @@ __db_blockEncrypt(cipher, key, input, inputLen, outBuffer)
 	}
 
 	numBlocks = (int)(inputLen/128);
-	
+
 	switch (cipher->mode) {
 	case MODE_ECB:
 		for (i = numBlocks; i > 0; i--) {
@@ -144,7 +144,7 @@ __db_blockEncrypt(cipher, key, input, inputLen, outBuffer)
 			outBuffer += 16;
 		}
 		break;
-		
+
 	case MODE_CBC:
 		iv = cipher->IV;
 		for (i = numBlocks; i > 0; i--) {
@@ -180,7 +180,7 @@ __db_blockEncrypt(cipher, key, input, inputLen, outBuffer)
 	default:
 		return BAD_CIPHER_STATE;
 	}
-	
+
 	return 128*numBlocks;
 }
 
@@ -304,7 +304,7 @@ __db_blockDecrypt(cipher, key, input, inputLen, outBuffer)
 			outBuffer += 16;
 		}
 		break;
-		
+
 	case MODE_CBC:
 		memcpy(tmpiv, cipher->IV, MAX_IV_SIZE);
 		for (i = numBlocks; i > 0; i--) {
@@ -340,7 +340,7 @@ __db_blockDecrypt(cipher, key, input, inputLen, outBuffer)
 	default:
 		return BAD_CIPHER_STATE;
 	}
-	
+
 	return 128*numBlocks;
 }
 
@@ -397,7 +397,7 @@ __db_padDecrypt(cipher, key, input, inputOctets, outBuffer)
 		}
 		memcpy(outBuffer, block, 16 - padLen);
 		break;
-		
+
 	case MODE_CBC:
 		/* all blocks but last */
 		memcpy(tmpiv, cipher->IV, MAX_IV_SIZE);
@@ -429,11 +429,11 @@ __db_padDecrypt(cipher, key, input, inputOctets, outBuffer)
 		}
 		memcpy(outBuffer, block, 16 - padLen);
 		break;
-	
+
 	default:
 		return BAD_CIPHER_STATE;
 	}
-	
+
 	return 16*numBlocks - padLen;
 }
 
@@ -442,7 +442,7 @@ __db_padDecrypt(cipher, key, input, inputOctets, outBuffer)
  *	cipherUpdateRounds:
  *
  *	Encrypts/Decrypts exactly one full block a specified number of rounds.
- *	Only used in the Intermediate Value Known Answer Test.	
+ *	Only used in the Intermediate Value Known Answer Test.
  *
  *	Returns:
  *		TRUE - on success
@@ -475,17 +475,17 @@ __db_cipherUpdateRounds(cipher, key, input, inputLen, outBuffer, rounds)
 	case DIR_ENCRYPT:
 		__db_rijndaelEncryptRound(key->rk, key->Nr, block, rounds);
 		break;
-		
+
 	case DIR_DECRYPT:
 		__db_rijndaelDecryptRound(key->rk, key->Nr, block, rounds);
 		break;
-		
+
 	default:
 		return BAD_KEY_DIR;
-	} 
+	}
 
 	memcpy(outBuffer, block, 16);
-	
+
 	return TRUE;
 }
 #endif /* INTERMEDIATE_VALUE_KAT */

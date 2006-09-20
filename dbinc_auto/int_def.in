@@ -437,9 +437,6 @@
 #ifndef HAVE_GETCWD
 #define	getcwd getcwd@DB_VERSION_UNIQUE_NAME@
 #endif
-#ifndef HAVE_GETENV
-#define	getenv getenv@DB_VERSION_UNIQUE_NAME@
-#endif
 #ifndef HAVE_GETOPT
 #define	getopt getopt@DB_VERSION_UNIQUE_NAME@
 #endif
@@ -548,6 +545,7 @@
 #define	__db_msg __db_msg@DB_VERSION_UNIQUE_NAME@
 #define	__db_unknown_flag __db_unknown_flag@DB_VERSION_UNIQUE_NAME@
 #define	__db_unknown_type __db_unknown_type@DB_VERSION_UNIQUE_NAME@
+#define	__db_unknown_path __db_unknown_path@DB_VERSION_UNIQUE_NAME@
 #define	__db_check_txn __db_check_txn@DB_VERSION_UNIQUE_NAME@
 #define	__db_txn_deadlock_err __db_txn_deadlock_err@DB_VERSION_UNIQUE_NAME@
 #define	__db_not_txn_env __db_not_txn_env@DB_VERSION_UNIQUE_NAME@
@@ -915,6 +913,7 @@
 #define	__log_archive_pp __log_archive_pp@DB_VERSION_UNIQUE_NAME@
 #define	__log_get_stable_lsn __log_get_stable_lsn@DB_VERSION_UNIQUE_NAME@
 #define	__log_autoremove __log_autoremove@DB_VERSION_UNIQUE_NAME@
+#define	__log_check_page_lsn __log_check_page_lsn@DB_VERSION_UNIQUE_NAME@
 #define	__log_printf_capi __log_printf_capi@DB_VERSION_UNIQUE_NAME@
 #define	__log_printf_pp __log_printf_pp@DB_VERSION_UNIQUE_NAME@
 #define	__log_printf __log_printf@DB_VERSION_UNIQUE_NAME@
@@ -999,7 +998,6 @@
 #define	__memp_get_mp_mmapsize __memp_get_mp_mmapsize@DB_VERSION_UNIQUE_NAME@
 #define	__memp_set_mp_mmapsize __memp_set_mp_mmapsize@DB_VERSION_UNIQUE_NAME@
 #define	__memp_nameop __memp_nameop@DB_VERSION_UNIQUE_NAME@
-#define	__memp_get_refcnt __memp_get_refcnt@DB_VERSION_UNIQUE_NAME@
 #define	__memp_ftruncate __memp_ftruncate@DB_VERSION_UNIQUE_NAME@
 #define	__memp_alloc_freelist __memp_alloc_freelist@DB_VERSION_UNIQUE_NAME@
 #define	__memp_free_freelist __memp_free_freelist@DB_VERSION_UNIQUE_NAME@
@@ -1010,8 +1008,7 @@
 #define	__memp_bh_settxn __memp_bh_settxn@DB_VERSION_UNIQUE_NAME@
 #define	__memp_skip_curadj __memp_skip_curadj@DB_VERSION_UNIQUE_NAME@
 #define	__memp_bh_freeze __memp_bh_freeze@DB_VERSION_UNIQUE_NAME@
-#define	__memp_bh_freezefree __memp_bh_freezefree@DB_VERSION_UNIQUE_NAME@
-#define	__memp_bh_unfreeze __memp_bh_unfreeze@DB_VERSION_UNIQUE_NAME@
+#define	__memp_bh_thaw __memp_bh_thaw@DB_VERSION_UNIQUE_NAME@
 #define	__memp_open __memp_open@DB_VERSION_UNIQUE_NAME@
 #define	__memp_region_mutex_count __memp_region_mutex_count@DB_VERSION_UNIQUE_NAME@
 #define	__memp_dbenv_refresh __memp_dbenv_refresh@DB_VERSION_UNIQUE_NAME@
@@ -1100,6 +1097,7 @@
 #define	__os_fdlock __os_fdlock@DB_VERSION_UNIQUE_NAME@
 #define	__os_fsync __os_fsync@DB_VERSION_UNIQUE_NAME@
 #define	__os_zerofill __os_zerofill@DB_VERSION_UNIQUE_NAME@
+#define	__os_getenv __os_getenv@DB_VERSION_UNIQUE_NAME@
 #define	__os_openhandle __os_openhandle@DB_VERSION_UNIQUE_NAME@
 #define	__os_closehandle __os_closehandle@DB_VERSION_UNIQUE_NAME@
 #define	__os_r_sysattach __os_r_sysattach@DB_VERSION_UNIQUE_NAME@
@@ -1271,7 +1269,8 @@
 #define	__op_rep_enter __op_rep_enter@DB_VERSION_UNIQUE_NAME@
 #define	__op_rep_exit __op_rep_exit@DB_VERSION_UNIQUE_NAME@
 #define	__rep_get_gen __rep_get_gen@DB_VERSION_UNIQUE_NAME@
-#define	__rep_lockout __rep_lockout@DB_VERSION_UNIQUE_NAME@
+#define	__rep_lockout_api __rep_lockout_api@DB_VERSION_UNIQUE_NAME@
+#define	__rep_lockout_msg __rep_lockout_msg@DB_VERSION_UNIQUE_NAME@
 #define	__rep_send_throttle __rep_send_throttle@DB_VERSION_UNIQUE_NAME@
 #define	__rep_msg_to_old __rep_msg_to_old@DB_VERSION_UNIQUE_NAME@
 #define	__rep_msg_from_old __rep_msg_from_old@DB_VERSION_UNIQUE_NAME@
@@ -1337,6 +1336,8 @@
 #define	__repmgr_send_handshake __repmgr_send_handshake@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_read_from_site __repmgr_read_from_site@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_write_some __repmgr_write_some@DB_VERSION_UNIQUE_NAME@
+#define	__repmgr_site_list __repmgr_site_list@DB_VERSION_UNIQUE_NAME@
+#define	__repmgr_print_stats __repmgr_print_stats@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_schedule_connection_attempt __repmgr_schedule_connection_attempt@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_reset_for_reading __repmgr_reset_for_reading@DB_VERSION_UNIQUE_NAME@
 #define	__repmgr_new_connection __repmgr_new_connection@DB_VERSION_UNIQUE_NAME@

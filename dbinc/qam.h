@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: qam.h,v 12.8 2006/07/05 05:37:09 mjc Exp $
+ * $Id: qam.h,v 12.9 2006/08/24 14:45:29 bostic Exp $
  */
 
 #ifndef	_DB_QAM_H_

@@ -6,7 +6,7 @@
     <title>The Locking Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
     <link rel="previous" href="blocking_deadlocks.html" title="Locks, Blocks, and Deadlocks" />
     <link rel="next" href="isolation.html" title="Isolation" />
@@ -45,8 +45,8 @@
             This section describes the locking subsystem as it is used to
             protect DB resources. In particular, issues on configuration are
             examined here. For information on using the locking subsystem to
-            manage non-DB resources, see the <i class="citetitle">Berkeley DB Programmer's
-            Reference Guide.</i>
+            manage non-DB resources, see the
+            <i class="citetitle">Berkeley DB Programmer's Reference Guide</i>.
         </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -354,7 +354,7 @@ try {
         <pre class="programlisting">&gt; /usr/local/db_install/bin/db_deadlock -h /export/dbenv -a y</pre>
         <p>
         For more information, see the
-        <a href="http://www.sleepycat.com/docs/utility/db_deadlock.html" target="_top">
+        <a href="http://www.oracle.com/technology/documentation/berkeley-db/db/utility/db_deadlock.html" target="_top">
             <tt class="literal">db_deadlock</tt> reference documentation.
         </a>
     </p>
@@ -377,7 +377,8 @@ try {
                         throws <tt class="literal">DeadlockException</tt> in that
                         thread.
                     </span>
-                 When this happens, the thread must:
+                    
+                 If a deadlock is detected, the thread must:
             </p>
         <div class="orderedlist">
           <ol type="1">
@@ -428,6 +429,7 @@ while (retry_count &lt; MAX_DEADLOCK_RETRIES) {
         txn = myEnv.beginTransaction(null, null);
         myDatabase.put(txn, key, data);
         txn.commit();
+        return 0;
     } catch (DeadlockException de) {
         try {
             // Abort the transaction and increment the
@@ -451,8 +453,7 @@ while (retry_count &lt; MAX_DEADLOCK_RETRIES) {
             return -1;    
         }
     }
-}
-return 0; </pre>
+} </pre>
       </div>
     </div>
     <div class="navfooter">

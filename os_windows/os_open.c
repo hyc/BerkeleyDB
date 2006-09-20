@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_open.c,v 12.12 2006/06/10 13:34:18 bostic Exp $
+ * $Id: os_open.c,v 12.16 2006/09/12 01:49:36 mjc Exp $
  */
 
 #include "db_config.h"
@@ -136,10 +136,27 @@ __os_open_extend(dbenv, name, page_size, flags, mode, fhpp)
 			attr |= FILE_FLAG_NO_BUFFERING;
 	}
 
+	fhp->handle = fhp->trunc_handle = INVALID_HANDLE_VALUE;
 	for (nrepeat = 1;; ++nrepeat) {
-		fhp->handle =
-		    CreateFile(tname, access, share, NULL, createflag, attr, 0);
-		if (fhp->handle == INVALID_HANDLE_VALUE) {
+		if (fhp->handle == INVALID_HANDLE_VALUE)
+			fhp->handle = CreateFile(
+			    tname, access, share, NULL, createflag, attr, 0);
+
+		/*
+		 * Windows does not provide truncate directly.  There is no
+		 * safe way to use a handle for truncate concurrently with
+		 * reads or writes.  To deal with this, we open a second handle
+		 * used just for truncating.
+		 */
+		if (fhp->handle != INVALID_HANDLE_VALUE &&
+		    !LF_ISSET(DB_OSO_RDONLY | DB_OSO_TEMP) &&
+		    fhp->trunc_handle == INVALID_HANDLE_VALUE)
+			fhp->trunc_handle = CreateFile(
+			    tname, access, share, NULL, OPEN_EXISTING, attr, 0);
+
+		if (fhp->handle == INVALID_HANDLE_VALUE ||
+		    (!LF_ISSET(DB_OSO_RDONLY | DB_OSO_TEMP) &&
+		    fhp->trunc_handle == INVALID_HANDLE_VALUE)) {
 			/*
 			 * If it's a "temporary" error, we retry up to 3 times,
 			 * waiting up to 12 seconds.  While it's not a problem

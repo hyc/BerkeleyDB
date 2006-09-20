@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mkpath.c,v 12.15 2006/06/11 12:27:24 bostic Exp $
+ * $Id: mkpath.c,v 12.16 2006/08/24 14:45:11 bostic Exp $
  */
 
 #include "db_config.h"

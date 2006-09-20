@@ -24,9 +24,6 @@
 #ifndef	HAVE_GETCWD
 #define	getcwd		__db_Cgetcwd
 #endif
-#ifndef	HAVE_GETENV
-#define	getenv		__db_Cgetenv
-#endif
 #ifndef	HAVE_GETOPT
 #define	getopt		__db_Cgetopt
 #define	optarg		__db_Coptarg

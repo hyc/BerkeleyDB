@@ -1,4 +1,4 @@
-#	$Id: srcfiles.in,v 12.49 2006/07/23 13:49:02 bostic Exp $
+#	$Id: srcfiles.in,v 12.53 2006/09/09 14:08:39 bostic Exp $
 #
 # This is an input file for the s_windows_dsp and s_vxworks scripts.  It lists
 # the source files in the Berkeley DB tree and notes which are used to build
@@ -57,16 +57,20 @@ build_windows/dbkill.cpp			testutil
 build_windows/libdb.def				dynamic
 build_windows/libdb.rc				dynamic
 build_windows/libdb_tcl.def			tcl
+clib/abort.c
 clib/atoi.c
 clib/atol.c
 clib/ctime.c					dynamic small static vx vxsmall
 clib/getaddrinfo.c				dynamic static
 clib/getcwd.c
-clib/getenv.c
 clib/getopt.c					vx vxsmall
+clib/isalpha.c
+clib/isdigit.c
+clib/isprint.c
 clib/isspace.c
 clib/memcmp.c
 clib/memmove.c
+clib/printf.c
 clib/raise.c
 clib/rand.c
 clib/snprintf.c					vx vxsmall
@@ -302,9 +306,10 @@ os/os_fid.c					vx vxsmall
 os/os_flock.c					vx vxsmall
 os/os_fsync.c					vx vxsmall
 os/os_fzero.c					dynamic small static vx vxsmall
+os/os_getenv.c					vx vxsmall
 os/os_handle.c					vx vxsmall
 os/os_map.c
-os/os_method.c
+os/os_method.c					vx vxsmall
 os/os_mkdir.c					dynamic small static vx vxsmall
 os/os_oflags.c					dynamic small static vx vxsmall
 os/os_open.c					vx vxsmall
@@ -323,10 +328,36 @@ os/os_truncate.c				vx vxsmall
 os/os_uid.c					dynamic small static vx vxsmall
 os/os_unlink.c					vx vxsmall
 os/os_yield.c					vx vxsmall
-os_vxworks/os_vx_rpath.c			vx vxsmall
+os_brew/abort.c
+os_brew/ctime.c
+os_brew/fclose.c
+os_brew/fgetc.c
+os_brew/fgets.c
+os_brew/fopen.c
+os_brew/fwrite.c
+os_brew/getcwd.c
+os_brew/localtime.c
+os_brew/os_abs.c
+os_brew/os_config.c
+os_brew/os_dir.c
+os_brew/os_errno.c
+os_brew/os_handle.c
+os_brew/os_mkdir.c
+os_brew/os_oflags.c
+os_brew/os_open.c
+os_brew/os_pid.c
+os_brew/os_rename.c
+os_brew/os_rw.c
+os_brew/os_seek.c
+os_brew/os_sleep.c
+os_brew/os_stat.c
+os_brew/os_truncate.c
+os_brew/os_unlink.c
+os_brew/time.c
 os_vxworks/os_vx_abs.c				vx vxsmall
 os_vxworks/os_vx_config.c			vx vxsmall
 os_vxworks/os_vx_map.c				vx vxsmall
+os_vxworks/os_vx_rpath.c			vx vxsmall
 os_windows/os_abs.c				dynamic small static
 os_windows/os_clock.c				dynamic small static
 os_windows/os_config.c				dynamic small static
@@ -335,6 +366,7 @@ os_windows/os_errno.c				dynamic small static
 os_windows/os_fid.c				dynamic small static
 os_windows/os_flock.c				dynamic small static
 os_windows/os_fsync.c				dynamic small static
+os_windows/os_getenv.c				dynamic small static
 os_windows/os_handle.c				dynamic small static
 os_windows/os_map.c				dynamic small static
 os_windows/os_open.c				dynamic small static
@@ -375,8 +407,10 @@ repmgr/repmgr_elect.c				dynamic static
 repmgr/repmgr_method.c				dynamic static
 repmgr/repmgr_msg.c				dynamic static
 repmgr/repmgr_net.c				dynamic static
+repmgr/repmgr_posix.c
 repmgr/repmgr_queue.c				dynamic static
 repmgr/repmgr_sel.c				dynamic static
+repmgr/repmgr_stat.c				dynamic static
 repmgr/repmgr_util.c				dynamic static
 repmgr/repmgr_windows.c				dynamic static
 rpc_client/client.c

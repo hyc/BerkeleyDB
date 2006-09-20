@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: bt_curadj.c,v 12.9 2006/06/13 06:21:46 mjc Exp $
+ * $Id: bt_curadj.c,v 12.11 2006/08/24 14:44:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -284,11 +284,12 @@ __bam_ca_dup(my_dbc, first, fpgno, fi, tpgno, ti)
 	DB_ENV *dbenv;
 	DB_LSN lsn;
 	DB_TXN *my_txn;
-	int found, ret;
+	int found, ret, t_ret;
 
 	dbp = my_dbc->dbp;
 	dbenv = dbp->dbenv;
 	my_txn = IS_SUBTRANSACTION(my_dbc->txn) ? my_dbc->txn : NULL;
+	ret = 0;
 
 	/*
 	 * Adjust the cursors.  See the comment in __bam_ca_delete().
@@ -319,8 +320,8 @@ loop:		MUTEX_LOCK(dbenv, dbp->mutex);
 			    orig_cp->lock_mode != DB_LOCK_NG);
 			*/
 			if ((ret = __bam_opd_cursor(dbp,
-			    dbc, first, tpgno, ti)) !=0)
-				return (ret);
+			    dbc, first, tpgno, ti)) != 0)
+				goto err;
 			if (my_txn != NULL && dbc->txn != my_txn)
 				found = 1;
 			/* We released the mutex to get a cursor, start over. */
@@ -328,14 +329,16 @@ loop:		MUTEX_LOCK(dbenv, dbp->mutex);
 		}
 		MUTEX_UNLOCK(dbenv, dbp->mutex);
 	}
-	MUTEX_UNLOCK(dbenv, dbenv->mtx_dblist);
+err:	MUTEX_UNLOCK(dbenv, dbenv->mtx_dblist);
 
 	if (found != 0 && DBC_LOGGING(my_dbc)) {
-		if ((ret = __bam_curadj_log(dbp, my_dbc->txn,
-		    &lsn, 0, DB_CA_DUP, fpgno, tpgno, 0, first, fi, ti)) != 0)
-			return (ret);
+		if ((t_ret = __bam_curadj_log(dbp, my_dbc->txn,
+		    &lsn, 0, DB_CA_DUP, fpgno, tpgno, 0, first, fi, ti)) != 0 &&
+		    ret == 0)
+			ret = t_ret;
 	}
-	return (0);
+
+	return (ret);
 }
 
 /*
@@ -360,6 +363,7 @@ __bam_ca_undodup(dbp, first, fpgno, fi, ti)
 	int ret;
 
 	dbenv = dbp->dbenv;
+	ret = 0;
 
 	/*
 	 * Adjust the cursors.  See the comment in __bam_ca_delete().
@@ -388,7 +392,7 @@ loop:		MUTEX_LOCK(dbenv, dbp->mutex);
 				continue;
 			MUTEX_UNLOCK(dbenv, dbp->mutex);
 			if ((ret = __db_c_close(orig_cp->opd)) != 0)
-				return (ret);
+				goto err;
 			orig_cp->opd = NULL;
 			orig_cp->indx = fi;
 			/*
@@ -399,9 +403,9 @@ loop:		MUTEX_LOCK(dbenv, dbp->mutex);
 		}
 		MUTEX_UNLOCK(dbenv, dbp->mutex);
 	}
-	MUTEX_UNLOCK(dbenv, dbenv->mtx_dblist);
+err:	MUTEX_UNLOCK(dbenv, dbenv->mtx_dblist);
 
-	return (0);
+	return (ret);
 }
 
 /*

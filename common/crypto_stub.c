@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: crypto_stub.c,v 12.4 2006/04/28 01:12:22 bostic Exp $
+ * $Id: crypto_stub.c,v 12.5 2006/08/24 14:45:10 bostic Exp $
  */
 
 #include "db_config.h"

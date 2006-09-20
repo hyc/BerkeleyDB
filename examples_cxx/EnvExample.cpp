@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: EnvExample.cpp,v 12.2 2006/01/02 22:02:07 bostic Exp $
+ * $Id: EnvExample.cpp,v 12.3 2006/08/24 14:45:49 bostic Exp $
  */
 
 #include <sys/types.h>

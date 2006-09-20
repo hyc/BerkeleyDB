@@ -50,6 +50,11 @@ struct __db_out_stream {
 	int (*callback) __P((void *, const void *));
 };
 
+struct __db_repmgr_sites {
+	DB_REPMGR_SITE *sites;
+	u_int32_t nsites;
+};
+
 #define	Db __db
 #define	Dbc __dbc
 #define	Dbt __db_dbt
@@ -420,7 +425,7 @@ struct Db
 
 #ifndef SWIGJAVA
 	db_ret_t set_paniccall(void (* db_panic_fcn)(DB_ENV *, int)) {
-		return self->set_paniccall(self,  db_panic_fcn);
+		return self->set_paniccall(self, db_panic_fcn);
 	}
 #endif /* SWIGJAVA */
 
@@ -758,9 +763,9 @@ struct DbEnv
 		return self->set_paniccall(self, db_panic_fcn);
 	}
 
-	db_ret_t set_rpc_server(void *client, char *host,
+	db_ret_t set_rpc_server(char *host,
 	    long cl_timeout, long sv_timeout, u_int32_t flags) {
-		return self->set_rpc_server(self, client, host,
+		return self->set_rpc_server(self, NULL, host,
 		    cl_timeout, sv_timeout, flags);
 	}
 
@@ -1170,7 +1175,7 @@ struct DbEnv
 
 	int rep_elect(int nsites, int nvotes, u_int32_t flags) {
 		int id;
-		errno = self->rep_elect(self, nsites, nvotes, &id, flags);		    
+		errno = self->rep_elect(self, nsites, nvotes, &id, flags);
 		return id;
 	}
 
@@ -1230,7 +1235,7 @@ struct DbEnv
 
 	/* Advanced replication functions. */
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-        int rep_get_nsites() {
+	int rep_get_nsites() {
 		int ret;
 		errno = self->rep_get_nsites(self, &ret);
 		return ret;
@@ -1241,9 +1246,9 @@ struct DbEnv
 		errno = self->rep_get_priority(self, &ret);
 		return ret;
 	}
-	
-	u_int32_t  rep_get_timeout(int which) {
-		u_int32_t  ret;
+
+	u_int32_t rep_get_timeout(int which) {
+		u_int32_t ret;
 		errno = self->rep_get_timeout(self, which, &ret);
 		return ret;
 	}
@@ -1261,26 +1266,39 @@ struct DbEnv
 		return self->rep_set_timeout(self, which, timeout);
 	}
 
-        db_ret_t  repmgr_add_remote_site(const char * host, u_int32_t port, 
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
+	int repmgr_add_remote_site(const char * host, u_int32_t port,
 	    u_int32_t flags) {
-		return self->repmgr_add_remote_site(self,  host, port, flags);
+		int eid;
+		errno = self->repmgr_add_remote_site(self, host, port, &eid, flags);
+		return eid;
 	}
 
-        db_ret_t  repmgr_get_ack_policy() {
+	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
+	db_ret_t repmgr_get_ack_policy() {
 		int ret;
 		errno = self->repmgr_get_ack_policy(self, &ret);
 		return ret;
 	}
 
-        db_ret_t  repmgr_set_ack_policy(int policy) {
+	db_ret_t repmgr_set_ack_policy(int policy) {
 		return self->repmgr_set_ack_policy(self, policy);
 	}
 
-        db_ret_t  repmgr_set_local_site(const char * host, u_int32_t port, u_int32_t flags) {
+	db_ret_t repmgr_set_local_site(const char * host, u_int32_t port, u_int32_t flags) {
 		return self->repmgr_set_local_site(self, host, port, flags);
 	}
 
-        db_ret_t  repmgr_start(int nthreads, u_int32_t flags) {
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
+	struct __db_repmgr_sites repmgr_site_list() {
+		struct __db_repmgr_sites sites;
+		errno = self->repmgr_site_list(self,
+		    &sites.nsites, &sites.sites);
+		return sites;
+	}
+
+	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
+	db_ret_t repmgr_start(int nthreads, u_int32_t flags) {
 		return self->repmgr_start(self, nthreads, flags);
 	}
 

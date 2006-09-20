@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *    Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: BulkAccessNIOExample.java,v 1.3 2006/07/17 23:19:21 alexg Exp $
+ * $Id: BulkAccessNIOExample.java,v 1.4 2006/08/24 14:46:02 bostic Exp $
  */
 
 package db;

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: isspace.c,v 1.1 2006/05/28 14:03:32 bostic Exp $
+ * $Id: isspace.c,v 1.2 2006/08/24 14:45:10 bostic Exp $
  */
 
 #include "db_config.h"

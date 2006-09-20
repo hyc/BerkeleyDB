@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_file.c,v 12.11 2006/07/17 15:16:34 bostic Exp $
+ * $Id: env_file.c,v 12.12 2006/08/24 14:45:39 bostic Exp $
  */
 
 #include "db_config.h"

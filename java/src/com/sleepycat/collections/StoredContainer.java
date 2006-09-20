@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: StoredContainer.java,v 12.5 2006/06/09 14:32:07 mark Exp $
+ * $Id: StoredContainer.java,v 12.6 2006/08/31 18:14:08 bostic Exp $
  */
 
 package com.sleepycat.collections;

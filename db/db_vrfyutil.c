@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_vrfyutil.c,v 12.10 2006/06/09 18:36:58 margo Exp $
+ * $Id: db_vrfyutil.c,v 12.12 2006/09/11 15:13:24 bostic Exp $
  */
 
 #include "db_config.h"
@@ -51,7 +51,7 @@ __db_vrfy_dbinfo_create(dbenv, pgsize, vdpp)
 
 	/* If transactional, make sure we don't log. */
 	if (TXN_ON(dbenv) &&
-	    (ret = cdbp->set_flags(cdbp, DB_TXN_NOT_DURABLE)) != 0)
+	    (ret = __db_set_flags(cdbp, DB_TXN_NOT_DURABLE)) != 0)
 		goto err;
 	if ((ret = __db_open(cdbp,
 	    NULL, NULL, NULL, DB_BTREE, DB_CREATE, 0600, PGNO_BASE_MD)) != 0)
@@ -65,7 +65,7 @@ __db_vrfy_dbinfo_create(dbenv, pgsize, vdpp)
 
 	/* If transactional, make sure we don't log. */
 	if (TXN_ON(dbenv) &&
-	    (ret = pgdbp->set_flags(pgdbp, DB_TXN_NOT_DURABLE)) != 0)
+	    (ret = __db_set_flags(pgdbp, DB_TXN_NOT_DURABLE)) != 0)
 		goto err;
 
 	if ((ret = __db_open(pgdbp,
@@ -281,7 +281,7 @@ __db_vrfy_pgset(dbenv, pgsize, dbpp)
 
 	/* If transactional, make sure we don't log. */
 	if (TXN_ON(dbenv) &&
-	    (ret = dbp->set_flags(dbp, DB_TXN_NOT_DURABLE)) != 0)
+	    (ret = __db_set_flags(dbp, DB_TXN_NOT_DURABLE)) != 0)
 		goto err;
 	if ((ret = __db_open(dbp,
 	    NULL, NULL, NULL, DB_BTREE, DB_CREATE, 0600, PGNO_BASE_MD)) == 0)

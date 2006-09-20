@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_method.c,v 12.22 2006/06/08 13:33:40 bostic Exp $
+ * $Id: db_method.c,v 12.23 2006/08/24 14:45:16 bostic Exp $
  */
 
 #include "db_config.h"

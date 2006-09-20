@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test121.tcl,v 1.4 2006/06/28 19:34:29 carol Exp $
+# $Id: test121.tcl,v 1.6 2006/09/08 20:32:18 bostic Exp $
 #
 # TEST	test121
 # TEST	Tests of multi-version concurrency control.
@@ -46,8 +46,8 @@ proc test121 { method {tnum "121"} args } {
 	env_cleanup $testdir
 	puts "\tTest$tnum.a: Creating txn env."
 
-	# Raise cachesize so this test focuses on cursor adjustment 
-	# and not on small cache issues. 
+	# Raise cachesize so this test focuses on cursor adjustment
+	# and not on small cache issues.
 	set cachesize [expr 1024 * 1024]
 	set max_locks 2000
 	set max_objects 2000

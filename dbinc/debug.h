@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1998-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: debug.h,v 12.7 2006/06/08 13:33:40 bostic Exp $
+ * $Id: debug.h,v 12.8 2006/08/24 14:45:29 bostic Exp $
  */
 
 #ifndef _DB_DEBUG_H_

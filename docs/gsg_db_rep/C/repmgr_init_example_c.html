@@ -9,7 +9,7 @@
             </title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
     <link rel="previous" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
     <link rel="next" href="fwrkpermmessage.html" title="Permanent Message Handling" />
@@ -95,7 +95,7 @@
                     <tt class="literal">simple_txn</tt> 
                      
                     code to a new file called
-                    <tt class="literal">rep_mgr.c</tt>. 
+                    <tt class="literal">rep_mgr.c</tt>.
 
                     <span>
                     We then make the corresponding change to the program name.
@@ -311,14 +311,20 @@ err: if (dbenv != NULL)
             <span>Beyond that, the rest of our application remains the same for
             now, with the exception of the <tt class="function">env_init()</tt>
             function, which we use to actually open our environment handle.
-            The </span>
+            The flags </span>
 
             
 
-            flags we use to open the environment are slightly different for a
+            
+
+            we use to open the environment are slightly different for a
             replicated application than they are for a non-replicated
             application. Namely, replication requires the
+            <span>
             <tt class="literal">DB_INIT_REP</tt> flag. 
+            </span>
+
+            
     </p>
       <p>
             Also, because we are using the replication framework, we must prepare

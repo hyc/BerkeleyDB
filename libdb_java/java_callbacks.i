@@ -92,16 +92,18 @@ static int __dbj_app_dispatch(DB_ENV *dbenv,
 	return (ret);
 }
 
-static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info) 
+static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
 	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
 	int ret;
 
-	if(jdbenv == NULL)
-		return ; 
+	COMPQUIET(info, NULL);
 
-	ret = (*jenv)->CallNonvirtualIntMethod(jenv, jdbenv, dbenv_class, 
+	if(jdbenv == NULL)
+		return ;
+
+	ret = (*jenv)->CallNonvirtualIntMethod(jenv, jdbenv, dbenv_class,
 	    event_notify_method, event_id);
 
 	if((*jenv)->ExceptionOccurred(jenv)) {

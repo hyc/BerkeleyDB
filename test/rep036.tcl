@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep036.tcl,v 12.7 2006/07/19 17:45:35 carol Exp $
+# $Id: rep036.tcl,v 12.9 2006/09/15 14:48:14 carol Exp $
 #
 # TEST  	rep036
 # TEST	Multiple master processes writing to the database.
@@ -95,6 +95,11 @@ proc rep036_sub { method niter tnum envargs logset args } {
 	set envlist "{$env1 1} {$env2 2}"
 	process_msgs $envlist
 
+#	# Start up deadlock detector.
+#	# Commented out, as are two more sections below - see [#15049].
+#       set dpid [eval {exec $util_path/db_deadlock} \
+#	    -a o -v -t 2.0 -h $masterdir >& $testdir/dd.parent.out &]
+				    
 	# Set up master database.
 	set testfile "rep$tnum.db"
 	set omethod [convert_method $method]
@@ -135,6 +140,17 @@ proc rep036_sub { method niter tnum envargs logset args } {
 		set txn "-txn $t"
 		set ret [eval \
 			{$mdb put} $txn {$key [chop_data $method $string]}]
+
+#		# Writing to this database can deadlock.  If we do, let the
+#		# deadlock detector break the lock, wait a second, and try again.
+#		while { [catch {eval {$mdb put}\
+#		    $txn {$key [chop_data $method $string]}} ret] } {
+#			# Make sure the failure is a deadlock.
+#			error_check_good deadlock [is_substr $ret DB_LOCK_DEADLOCK] 1
+#			tclsleep 1
+#		}
+
+
 		error_check_good mdb_put $ret 0
 		error_check_good txn_commit [$t commit] 0
 
@@ -156,6 +172,9 @@ proc rep036_sub { method niter tnum envargs logset args } {
 	watch_procs $pidlist 1
 	process_msgs $envlist
 
+#	# We are done with the deadlock detector.
+#	error_check_good kill_deadlock_detector [tclkill $dpid] ""
+		
 	puts "\tRep$tnum.c: Verify logs and databases"
 	# Check that master and client logs and dbs are identical.
 	# Logs first ...

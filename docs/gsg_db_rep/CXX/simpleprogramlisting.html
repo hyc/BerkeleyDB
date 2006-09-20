@@ -6,7 +6,7 @@
     <title>Program Listing</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="txnapp.html" title="Chapter 2. Transactional Application" />
     <link rel="previous" href="txnapp.html" title="Chapter 2. Transactional Application" />
     <link rel="next" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
@@ -54,8 +54,8 @@
                 Also, this application is single-threaded. It is possible
                 to write a multi-threaded or multi-process application that 
                 performs replication. That said, the concepts described in
-                this book are applicable to single threaded,
-                multi-threaded, and multi-process applications so nothing
+                this book are applicable to both single threaded and
+                multi-threaded applications so nothing
                 is gained by multi-threading this application other than
                 distracting complexity. This manual
                 does, however, identify where care must be taken when
@@ -65,14 +65,17 @@
       <p>
                 Finally, remember that transaction processing is not described in
                 this manual. Rather, see the 
-                <i class="citetitle">Berkeley DB Transaction Processing Guide</i> for details on 
+                <i class="citetitle">Berkeley DB Getting Started with Transaction Processing</i> guide for details on 
                 that topic.
             </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="repconfiginfo_cxx"></a>Class: RepConfigInfo</h3>
+              <h3 class="title"><a id="repconfiginfo_cxx"></a>
+                            <span>Class: RepConfigInfo</span>
+                            
+                    </h3>
             </div>
           </div>
           <div></div>
@@ -91,6 +94,7 @@
         <p>
                             The class that we create is called
                             <tt class="classname">RepConfigInfo</tt>
+                            
                             and its only purpose at this time is to track
                             the location of our environment home directory.
                     </p>
@@ -302,7 +306,7 @@ err:
                 </p>
         <p>
                         First, we show the class constructor
-                        implementation, which is only used to initalize a
+                        implementation, which is only used to initialize a
                         few variables:
                 </p>
         <pre class="programlisting">RepMgr::RepMgr() : app_config(0), dbenv(0)
@@ -420,7 +424,7 @@ int RepMgr::doloop()
                 </p>
         <p>
                     Autocommit is described in greater detail in the 
-                    <i class="citetitle">Berkeley DB Transaction Processing Guide</i>.
+                    <i class="citetitle">Berkeley DB Getting Started with Transaction Processing</i> guide.
                 </p>
         <pre class="programlisting">    for (;;) {
         if (dbp == NULL) {
@@ -454,7 +458,7 @@ int RepMgr::doloop()
            entered at this prompt.  If the user fails to enter at least one 
             space in the value string, a simple help message is printed and
             the prompt is returned to the user. That is the only error
-            checking is performed here. In a real-world application,
+            checking performed here. In a real-world application,
             at a minimum the application would probably check to ensure
             that the price was in fact an integer or float value. 
             However, in order to keep this example code as simple as
@@ -510,7 +514,7 @@ int RepMgr::doloop()
     }  </pre>
         <p>
             Finally, we close our database before returning from the
-            function.
+            method.
         </p>
         <pre class="programlisting">err:    if (dbp != NULL) {
         (void)dbp-&gt;close(DB_NOSYNC);
@@ -527,6 +531,7 @@ int RepMgr::doloop()
               <h3 class="title"><a id="printstocks_c"></a>
                             
                             <span>Method: RepMgr::print_stocks()</span>
+                            
                     </h3>
             </div>
           </div>
@@ -534,19 +539,19 @@ int RepMgr::doloop()
         </div>
         <p>
                         The <tt class="function">print_stocks()</tt> 
+                          
                         
                         <span>method</span>
                         simply takes a database handle, opens a cursor, and uses 
-                        it to display all
-                        the information it finds in a database.
+                        it to display all the information it finds in a database.
                         This is trivial cursor operation that should hold
                         no surprises for you. We simply provide it here for
                         the sake of completeness.
                     </p>
         <p>
                         If you are unfamiliar with basic cursor operations,
-                        please see the <i class="citetitle">Berkeley DB Getting Started
-                        Guide.</i>
+                        please see the <i class="citetitle">Getting Started with Berkeley DB</i>
+                        guide.
                     </p>
         <pre class="programlisting">int RepMgr::print_stocks(Db *dbp)
 {

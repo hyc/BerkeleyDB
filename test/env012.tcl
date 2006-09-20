@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#       Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: env012.tcl,v 12.9 2006/06/27 22:31:08 bostic Exp $
+# $Id: env012.tcl,v 12.11 2006/09/18 19:43:26 carol Exp $
 #
 # TEST	env012
 # TEST	Test DB_REGISTER.
@@ -100,74 +100,78 @@ proc env012 { } {
 	logcheck $testdir/env$tnum.log.p1
 	logcheck $testdir/env$tnum.log.p2
 
-	puts "\tEnv$tnum.d: Second process cannot join without -recover\
-	    after first process is killed."
-	env_cleanup $testdir
+	if { $is_windows_test == 1 } {
+		puts "Skipping sections .d and .e on Windows platform."
+	} else {
+		puts "\tEnv$tnum.d: Second process cannot join without -recover\
+		    after first process is killed."
+		env_cleanup $testdir
 
-	puts "\t\tEnv$tnum.d1: Start process 1."
-	set pids {}
-	set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
-	    $testdir/env$tnum.log.p1 \
-	    $testdir $testfile PUT $key $data RECOVER 10 &]
-	lappend pids $p1
-	tclsleep 2
+		puts "\t\tEnv$tnum.d1: Start process 1."
+		set pids {}
+		set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+		    $testdir/env$tnum.log.p1 \
+		    $testdir $testfile PUT $key $data RECOVER 10 &]
+		lappend pids $p1
+		tclsleep 2
 
-	puts "\t\tEnv$tnum.d2: Kill process 1."
-	set pids [findprocessids $testdir $pids]
-	foreach pid $pids {
-		tclkill $pid
+		puts "\t\tEnv$tnum.d2: Kill process 1."
+		set pids [findprocessids $testdir $pids]
+		foreach pid $pids {
+			tclkill $pid
+		}
+
+		puts "\t\tEnv$tnum.d3: Start process 2."
+		set p2 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+		    $testdir/env$tnum.log.p2 \
+		    $testdir $testfile GET $key $data 0 0 &]
+		tclsleep 2
+		watch_procs $p2 1 120
+
+		# Check log files.  Log p1 should be clean, but we
+		# expect DB_RUNRECOVERY in log p2.
+		logcheck $testdir/env$tnum.log.p1
+		logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
+
+		puts "\tEnv$tnum.e: Running registered process detects failure."
+		env_cleanup $testdir
+
+		puts "\t\tEnv$tnum.e1: Start process 1."
+		set pids {}
+		set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+		    $testdir/env$tnum.log.p1 \
+		    $testdir $testfile PUT $key $data RECOVER 10 &]
+		lappend pids $p1
+		tclsleep 2
+
+		# Identify child process to kill later.
+		set pids [findprocessids $testdir $pids]
+
+		puts "\t\tEnv$tnum.e2: Start process 2."
+		set p2 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+		    $testdir/env$tnum.log.p2 \
+		    $testdir $testfile LOOP $key $data 0 10 &]
+
+		puts "\t\tEnv$tnum.e3: Kill process 1."
+		foreach pid $pids {
+			tclkill $pid
+		}
+
+		puts "\t\tEnv$tnum.e4: Start process 3."
+		set p3 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
+		    $testdir/env$tnum.log.p3 \
+		    $testdir $testfile GET $key $data RECOVER 0 &]
+		tclsleep 2
+
+		watch_procs $p2 1 120
+		watch_procs $p3 1 120
+
+		# Check log files.  Logs p1 and p3 should be clean, but we
+		# expect DB_RUNRECOVERY in log p2.
+		logcheck $testdir/env$tnum.log.p1
+		logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
+		logcheck $testdir/env$tnum.log.p3
 	}
-
-	puts "\t\tEnv$tnum.d3: Start process 2."
-	set p2 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
-	    $testdir/env$tnum.log.p2 \
-	    $testdir $testfile GET $key $data 0 0 &]
-	tclsleep 2
-	watch_procs $p2 1 120
-
-	# Check log files.  Log p1 should be clean, but we
-	# expect DB_RUNRECOVERY in log p2.
-	logcheck $testdir/env$tnum.log.p1
-	logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
-
-	puts "\tEnv$tnum.e: Running registered process detects failure."
-	env_cleanup $testdir
-
-	puts "\t\tEnv$tnum.e1: Start process 1."
-	set pids {}
-	set p1 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
-	    $testdir/env$tnum.log.p1 \
-	    $testdir $testfile PUT $key $data RECOVER 10 &]
-	lappend pids $p1
-	tclsleep 2
-
-	# Identify child process to kill later.
-	set pids [findprocessids $testdir $pids]
-
-	puts "\t\tEnv$tnum.e2: Start process 2."
-	set p2 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
-	    $testdir/env$tnum.log.p2 \
-	    $testdir $testfile LOOP $key $data 0 10 &]
-
-	puts "\t\tEnv$tnum.e3: Kill process 1."
-	foreach pid $pids {
-		tclkill $pid
-	}
-
-	puts "\t\tEnv$tnum.e4: Start process 3."
-	set p3 [exec $tclsh_path $test_path/wrap.tcl envscript.tcl \
-	    $testdir/env$tnum.log.p3 \
-	    $testdir $testfile GET $key $data RECOVER 0 &]
-	tclsleep 2
-
-	watch_procs $p2 1 120
-	watch_procs $p3 1 120
-
-	# Check log files.  Logs p1 and p3 should be clean, but we
-	# expect DB_RUNRECOVERY in log p2.
-	logcheck $testdir/env$tnum.log.p1
-	logcheckfails $testdir/env$tnum.log.p2 DB_RUNRECOVERY
-	logcheck $testdir/env$tnum.log.p3
 
 	puts "\tEnv$tnum.f: Empty slot shouldn't cause automatic recovery."
 

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: bt_compact.c,v 12.51 2006/06/14 15:21:50 ubell Exp $
+ * $Id: bt_compact.c,v 12.53 2006/08/24 14:44:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -2101,7 +2101,7 @@ __bam_truncate_root_page(dbc, pg, indx, c_data)
 	 * fix to get rid of multiple references.
 	 */
 	if (TYPE(page) == P_OVERFLOW && OV_REF(page) > 1) {
-		if ((ret = __db_ovref(dbc, bo->pgno, -1)) != 0)
+		if ((ret = __db_ovref(dbc, bo->pgno)) != 0)
 			goto err;
 		memset(&orig, 0, sizeof(orig));
 		if ((ret = __db_goff(dbp, dbc->txn, &orig,

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *      Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_server_cxxproc.cpp,v 12.11 2006/07/17 13:08:44 mjc Exp $
+ * $Id: db_server_cxxproc.cpp,v 12.12 2006/08/24 14:46:29 bostic Exp $
  */
 
 #include "db_config.h"

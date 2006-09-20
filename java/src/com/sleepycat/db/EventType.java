@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: EventType.java,v 1.1 2006/05/04 05:24:05 alexg Exp $
+ * $Id: EventType.java,v 1.3 2006/09/10 01:40:07 alexg Exp $
  */
 
 package com.sleepycat.db;
@@ -24,6 +24,12 @@ public final class EventType {
 
     public static final EventType REP_NEW_MASTER =
         new EventType("REP_NEW_MASTER", DbConstants.DB_EVENT_REP_NEWMASTER);
+
+    public static final EventType REP_STARTUPDONE =
+        new EventType("REP_STARTUPDONE", DbConstants.DB_EVENT_REP_STARTUPDONE);
+
+    public static final EventType WRITE_FAILED =
+        new EventType("WRITE_FAILED", DbConstants.DB_EVENT_WRITE_FAILED);
 
     /* package */
     public static EventType fromInt(int type) {

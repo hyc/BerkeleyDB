@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2003-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep048script.tcl,v 12.3 2006/04/12 03:24:07 sue Exp $
+# $Id: rep048script.tcl,v 12.4 2006/08/24 14:46:38 bostic Exp $
 #
 # Rep048 script - toggle bulk transfer while updates are going on.
 

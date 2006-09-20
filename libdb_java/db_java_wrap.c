@@ -205,14 +205,14 @@ static jclass keyrange_class;
 static jclass bt_stat_class, compact_class, h_stat_class, lock_stat_class;
 static jclass log_stat_class, mpool_stat_class, mpool_fstat_class;
 static jclass mutex_stat_class, qam_stat_class, rep_stat_class;
-static jclass seq_stat_class, txn_stat_class;
+static jclass rephost_class, seq_stat_class, txn_stat_class;
 static jclass txn_active_class;
 static jclass lock_class, lockreq_class, rep_processmsg_class;
 static jclass dbex_class, deadex_class, lockex_class, memex_class;
 static jclass repdupmasterex_class, rephandledeadex_class;
 static jclass repholdelectionex_class, repjoinfailex_class, replockoutex_class;
 static jclass repunavailex_class;
-static jclass runrecex_class, updconfex_class, versionex_class;
+static jclass runrecex_class, versionex_class;
 static jclass filenotfoundex_class, illegalargex_class, outofmemerr_class;
 static jclass bytearray_class, string_class, outputstream_class;
 
@@ -224,7 +224,9 @@ static jfieldID kr_less_fid, kr_equal_fid, kr_greater_fid;
 static jfieldID lock_cptr_fid;
 static jfieldID lockreq_op_fid, lockreq_modeflag_fid, lockreq_timeout_fid;
 static jfieldID lockreq_obj_fid, lockreq_lock_fid;
-static jfieldID rep_processmsg_envid;
+static jfieldID rep_processmsg_envid_fid;
+static jfieldID rephost_port_fid, rephost_host_fid, rephost_eid_fid;
+static jfieldID rephost_status_fid;
 
 /* BEGIN-STAT-FIELD-DECLS */
 static jfieldID bt_stat_bt_magic_fid;
@@ -355,6 +357,7 @@ static jfieldID mpool_stat_st_hash_longest_fid;
 static jfieldID mpool_stat_st_hash_examined_fid;
 static jfieldID mpool_stat_st_hash_nowait_fid;
 static jfieldID mpool_stat_st_hash_wait_fid;
+static jfieldID mpool_stat_st_hash_max_nowait_fid;
 static jfieldID mpool_stat_st_hash_max_wait_fid;
 static jfieldID mpool_stat_st_region_nowait_fid;
 static jfieldID mpool_stat_st_region_wait_fid;
@@ -472,6 +475,7 @@ static jfieldID txn_active_pid_fid;
 static jfieldID txn_active_lsn_fid;
 static jfieldID txn_active_read_lsn_fid;
 static jfieldID txn_active_mvcc_ref_fid;
+static jfieldID txn_active_status_fid;
 static jfieldID txn_active_xa_status_fid;
 static jfieldID txn_active_xid_fid;
 static jfieldID txn_active_name_fid;
@@ -489,8 +493,9 @@ static jmethodID dbex_construct, deadex_construct, lockex_construct;
 static jmethodID memex_construct, memex_update_method;
 static jmethodID repdupmasterex_construct, rephandledeadex_construct;
 static jmethodID repholdelectionex_construct, repjoinfailex_construct;
+static jmethodID rephost_construct;
 static jmethodID replockoutex_construct, repunavailex_construct;
-static jmethodID runrecex_construct, updconfex_construct, versionex_construct;
+static jmethodID runrecex_construct, versionex_construct;
 static jmethodID filenotfoundex_construct, illegalargex_construct;
 static jmethodID outofmemerr_construct;
 static jmethodID lock_construct;
@@ -544,11 +549,11 @@ const struct {
 	{ &repdupmasterex_class, DB_PKG "ReplicationDuplicateMasterException" },
 	{ &rephandledeadex_class, DB_PKG "ReplicationHandleDeadException" },
 	{ &repholdelectionex_class, DB_PKG "ReplicationHoldElectionException" },
+	{ &rephost_class, DB_PKG "ReplicationHostAddress" },
 	{ &repjoinfailex_class, DB_PKG "ReplicationJoinFailureException" },
 	{ &replockoutex_class, DB_PKG "ReplicationLockoutException" },
 	{ &repunavailex_class, DB_PKG "ReplicationSiteUnavailableException" },
 	{ &runrecex_class, DB_PKG "RunRecoveryException" },
-	{ &updconfex_class, DB_PKG "UpdateConflictException" },
 	{ &versionex_class, DB_PKG "VersionMismatchException" },
 	{ &filenotfoundex_class, "java/io/FileNotFoundException" },
 	{ &illegalargex_class, "java/lang/IllegalArgumentException" },
@@ -722,6 +727,7 @@ const struct {
 	{ &mpool_stat_st_hash_examined_fid, &mpool_stat_class, "st_hash_examined", "I" },
 	{ &mpool_stat_st_hash_nowait_fid, &mpool_stat_class, "st_hash_nowait", "I" },
 	{ &mpool_stat_st_hash_wait_fid, &mpool_stat_class, "st_hash_wait", "I" },
+	{ &mpool_stat_st_hash_max_nowait_fid, &mpool_stat_class, "st_hash_max_nowait", "I" },
 	{ &mpool_stat_st_hash_max_wait_fid, &mpool_stat_class, "st_hash_max_wait", "I" },
 	{ &mpool_stat_st_region_nowait_fid, &mpool_stat_class, "st_region_nowait", "I" },
 	{ &mpool_stat_st_region_wait_fid, &mpool_stat_class, "st_region_wait", "I" },
@@ -839,12 +845,17 @@ const struct {
 	{ &txn_active_lsn_fid, &txn_active_class, "lsn", "L" DB_PKG "LogSequenceNumber;" },
 	{ &txn_active_read_lsn_fid, &txn_active_class, "read_lsn", "L" DB_PKG "LogSequenceNumber;" },
 	{ &txn_active_mvcc_ref_fid, &txn_active_class, "mvcc_ref", "I" },
+	{ &txn_active_status_fid, &txn_active_class, "status", "I" },
 	{ &txn_active_xa_status_fid, &txn_active_class, "xa_status", "I" },
 	{ &txn_active_xid_fid, &txn_active_class, "xid", "[B" },
 	{ &txn_active_name_fid, &txn_active_class, "name", "Ljava/lang/String;" },
 /* END-STAT-FIELDS */
 
-	{ &rep_processmsg_envid, &rep_processmsg_class, "envid", "I" }
+	{ &rephost_port_fid, &rephost_class, "port", "I" },
+	{ &rephost_host_fid, &rephost_class, "host", "Ljava/lang/String;" },
+	{ &rephost_eid_fid, &rephost_class, "eid", "I" },
+	{ &rephost_status_fid, &rephost_class, "status", "I" },
+	{ &rep_processmsg_envid_fid, &rep_processmsg_class, "envid", "I" }
 };
 
 const struct {
@@ -872,6 +883,7 @@ const struct {
 	{ &seq_stat_construct, &seq_stat_class, "<init>", "()V" },
 	{ &txn_stat_construct, &txn_stat_class, "<init>", "()V" },
 	{ &txn_active_construct, &txn_active_class, "<init>", "()V" },
+	{ &rephost_construct, &rephost_class, "<init>", "()V" },
 
 	{ &dbex_construct, &dbex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
@@ -898,8 +910,6 @@ const struct {
 	{ &repunavailex_construct, &repunavailex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &runrecex_construct, &runrecex_class, "<init>",
-	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
-	{ &updconfex_construct, &updconfex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &versionex_construct, &versionex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
@@ -1061,7 +1071,7 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 
 	if (msg == NULL)
 		msg = db_strerror(err);
-	
+
 	jmsg = (*jenv)->NewStringUTF(jenv, msg);
 
 	switch (err) {
@@ -1118,19 +1128,15 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 	case DB_LOCK_DEADLOCK:
 		return (jthrowable)(*jenv)->NewObject(jenv, deadex_class,
 		    deadex_construct, jmsg, err, jdbenv);
-	
+
 	case DB_LOCK_NOTGRANTED:
 		return (jthrowable)(*jenv)->NewObject(jenv, lockex_class,
 		    lockex_construct, jmsg, err, 0, NULL, NULL, 0, jdbenv);
-	
-	case DB_UPDATE_CONFLICT:
-		return (jthrowable)(*jenv)->NewObject(jenv, updconfex_class,
-		    updconfex_construct, jmsg, err, jdbenv);
-	
+
 	case DB_VERSION_MISMATCH:
 		return (jthrowable)(*jenv)->NewObject(jenv, versionex_class,
 		    versionex_construct, jmsg, err, jdbenv);
-	
+
 	default:
 		return (jthrowable)(*jenv)->NewObject(jenv, dbex_class,
 		    dbex_construct, jmsg, err, jdbenv);
@@ -1155,13 +1161,13 @@ static int __dbj_throw(JNIEnv *jenv,
 			 */
 			if (msg == NULL)
 				msg = db_strerror(err);
-	
+
 			 __db_errx(NULL, "Couldn't create exception for: '%s'",
 			     msg);
 		} else
 			(*jenv)->Throw(jenv, t);
 	}
-	
+
 	return (err);
 }
 
@@ -1742,16 +1748,18 @@ static int __dbj_app_dispatch(DB_ENV *dbenv,
 	return (ret);
 }
 
-static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info) 
+static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
 	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
 	int ret;
 
-	if(jdbenv == NULL)
-		return ; 
+	COMPQUIET(info, NULL);
 
-	ret = (*jenv)->CallNonvirtualIntMethod(jenv, jdbenv, dbenv_class, 
+	if(jdbenv == NULL)
+		return ;
+
+	ret = (*jenv)->CallNonvirtualIntMethod(jenv, jdbenv, dbenv_class,
 	    event_notify_method, event_id);
 
 	if((*jenv)->ExceptionOccurred(jenv)) {
@@ -2136,30 +2144,17 @@ Java_com_sleepycat_db_internal_db_1javaJNI_deleteRef0(
 		(*jenv)->DeleteGlobalRef(jenv, jref);
 }
 
-/*
- * For reasons unknown, the version of gcc that ships with SUSE 10 miscompiles
- * this code when optimization levels '-O2' or higher are used.  We work around
- * this by using a more involved way of extracting the pointers.  The rest of
- * the JNI code should be converted to doing it this way in the future -- we
- * don't know where else this bug might surface, and using a union is slightly
- * less ugly than casting.
- */
 JNIEXPORT jlong JNICALL
 Java_com_sleepycat_db_internal_db_1javaJNI_getDbEnv0(
-    JNIEnv *jenv, jclass jcls, jlong jdb) {
-	DB *self;
-	union {
-		jlong lval;
-		void *pval;
-	} u;
+    JNIEnv *jenv, jclass jcls, jlong jarg1) {
+	DB *self = *(DB **)(void *)&jarg1;
+	jlong ret;
 
 	COMPQUIET(jenv, NULL);
 	COMPQUIET(jcls, NULL);
 
-	u.lval = jdb;
-	self = (DB *)u.pval;
-	u.pval = self->dbenv;
-	return (u.lval);
+	*(DB_ENV **)(void *)&ret = self->dbenv;
+	return (ret);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -2184,6 +2179,11 @@ struct __db_lk_conflicts {
 struct __db_out_stream {
 	void *handle;
 	int (*callback) __P((void *, const void *));
+};
+
+struct __db_repmgr_sites {
+	DB_REPMGR_SITE *sites;
+	u_int32_t nsites;
 };
 
 #define	Db __db
@@ -2597,8 +2597,8 @@ SWIGINTERN void DbEnv_set_msgcall(struct DbEnv *self,void (*db_msgcall_fcn)(DB_E
 SWIGINTERN db_ret_t DbEnv_set_paniccall(struct DbEnv *self,void (*db_panic_fcn)(DB_ENV *,int)){
 		return self->set_paniccall(self, db_panic_fcn);
 	}
-SWIGINTERN db_ret_t DbEnv_set_rpc_server(struct DbEnv *self,void *client,char *host,long cl_timeout,long sv_timeout,u_int32_t flags){
-		return self->set_rpc_server(self, client, host,
+SWIGINTERN db_ret_t DbEnv_set_rpc_server(struct DbEnv *self,char *host,long cl_timeout,long sv_timeout,u_int32_t flags){
+		return self->set_rpc_server(self, NULL, host,
 		    cl_timeout, sv_timeout, flags);
 	}
 SWIGINTERN db_ret_t DbEnv_set_shm_key(struct DbEnv *self,long shm_key){
@@ -2902,7 +2902,7 @@ SWIGINTERN jlong DbEnv_rep_get_limit(struct DbEnv *self){
 	}
 SWIGINTERN int DbEnv_rep_elect(struct DbEnv *self,int nsites,int nvotes,u_int32_t flags){
 		int id;
-		errno = self->rep_elect(self, nsites, nvotes, &id, flags);		    
+		errno = self->rep_elect(self, nsites, nvotes, &id, flags);
 		return id;
 	}
 SWIGINTERN int DbEnv_rep_process_message(struct DbEnv *self,DBT *control,DBT *rec,int *envid,DB_LSN *ret_lsn){
@@ -2953,7 +2953,7 @@ SWIGINTERN int DbEnv_rep_get_priority(struct DbEnv *self){
 		return ret;
 	}
 SWIGINTERN u_int32_t DbEnv_rep_get_timeout(struct DbEnv *self,int which){
-		u_int32_t  ret;
+		u_int32_t ret;
 		errno = self->rep_get_timeout(self, which, &ret);
 		return ret;
 	}
@@ -2966,8 +2966,10 @@ SWIGINTERN db_ret_t DbEnv_rep_set_priority(struct DbEnv *self,int priority){
 SWIGINTERN db_ret_t DbEnv_rep_set_timeout(struct DbEnv *self,int which,db_timeout_t timeout){
 		return self->rep_set_timeout(self, which, timeout);
 	}
-SWIGINTERN db_ret_t DbEnv_repmgr_add_remote_site(struct DbEnv *self,char const *host,u_int32_t port,u_int32_t flags){
-		return self->repmgr_add_remote_site(self,  host, port, flags);
+SWIGINTERN int DbEnv_repmgr_add_remote_site(struct DbEnv *self,char const *host,u_int32_t port,u_int32_t flags){
+		int eid;
+		errno = self->repmgr_add_remote_site(self, host, port, &eid, flags);
+		return eid;
 	}
 SWIGINTERN db_ret_t DbEnv_repmgr_get_ack_policy(struct DbEnv *self){
 		int ret;
@@ -2979,6 +2981,12 @@ SWIGINTERN db_ret_t DbEnv_repmgr_set_ack_policy(struct DbEnv *self,int policy){
 	}
 SWIGINTERN db_ret_t DbEnv_repmgr_set_local_site(struct DbEnv *self,char const *host,u_int32_t port,u_int32_t flags){
 		return self->repmgr_set_local_site(self, host, port, flags);
+	}
+SWIGINTERN struct __db_repmgr_sites DbEnv_repmgr_site_list(struct DbEnv *self){
+		struct __db_repmgr_sites sites;
+		errno = self->repmgr_site_list(self,
+		    &sites.nsites, &sites.sites);
+		return sites;
 	}
 SWIGINTERN db_ret_t DbEnv_repmgr_start(struct DbEnv *self,int nthreads,u_int32_t flags){
 		return self->repmgr_start(self, nthreads, flags);
@@ -5992,46 +6000,37 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1pa
 }
 
 
-JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1rpc_1server(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg2, jstring jarg3, jlong jarg4, jlong jarg5, jint jarg6) {
+JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1rpc_1server(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jlong jarg3, jlong jarg4, jint jarg5) {
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
-  void *arg2 = (void *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  long arg3 ;
   long arg4 ;
-  long arg5 ;
-  u_int32_t arg6 ;
+  u_int32_t arg5 ;
   db_ret_t result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(struct DbEnv **)&jarg1; 
-  arg2 = *(void **)&jarg2; 
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
-    if (!arg3) return ;
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return ;
   }
+  arg3 = (long)jarg3; 
   arg4 = (long)jarg4; 
-  arg5 = (long)jarg5; 
-  arg6 = (u_int32_t)jarg6; 
+  arg5 = (u_int32_t)jarg5; 
   
   if (jarg1 == 0) {
     __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
     return ;
   }
   
-  if (arg2 != NULL) {
-    __dbj_throw(jenv, EINVAL, "DbEnv.set_rpc_server client arg "
-      "must be null; reserved for future use", NULL, JDBENV);
-    return ;
-  }
-  
-  
-  result = (db_ret_t)DbEnv_set_rpc_server(arg1,arg2,arg3,arg4,arg5,arg6);
+  result = (db_ret_t)DbEnv_set_rpc_server(arg1,arg2,arg3,arg4,arg5);
   if (!DB_RETOK_STD(result)) {
     __dbj_throw(jenv, result, NULL, NULL, JDBENV);
   }
   
-  if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, arg3);
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, arg2);
 }
 
 
@@ -8074,7 +8073,7 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1rep_1pr
     return 0; /* An exception will be pending. */
   }
   
-  id4 = (*jenv)->GetIntField(jenv, jarg4, rep_processmsg_envid);
+  id4 = (*jenv)->GetIntField(jenv, jarg4, rep_processmsg_envid_fid);
   arg4 = &id4;
   
   
@@ -8106,7 +8105,7 @@ JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1rep_1pr
   
   jresult = (jint)result; 
   
-  (*jenv)->SetIntField(jenv, jarg4, rep_processmsg_envid, *arg4);
+  (*jenv)->SetIntField(jenv, jarg4, rep_processmsg_envid_fid, *arg4);
   
   __dbj_dbt_release(jenv, jarg2, arg2, &ldbt2); 
   __dbj_dbt_release(jenv, jarg3, arg3, &ldbt3); 
@@ -8502,12 +8501,13 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1rep_1se
 }
 
 
-JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1repmgr_1add_1remote_1site(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jint jarg3, jint jarg4) {
+JNIEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1repmgr_1add_1remote_1site(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jint jarg3, jint jarg4) {
+  jint jresult = 0 ;
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
   char *arg2 = (char *) 0 ;
   u_int32_t arg3 ;
   u_int32_t arg4 ;
-  db_ret_t result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -8515,22 +8515,25 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1repmgr_
   arg2 = 0;
   if (jarg2) {
     arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
-    if (!arg2) return ;
+    if (!arg2) return 0;
   }
   arg3 = (u_int32_t)jarg3; 
   arg4 = (u_int32_t)jarg4; 
   
   if (jarg1 == 0) {
     __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
-    return ;
+    return 0;
   }
   
-  result = (db_ret_t)DbEnv_repmgr_add_remote_site(arg1,(char const *)arg2,arg3,arg4);
-  if (!DB_RETOK_STD(result)) {
-    __dbj_throw(jenv, result, NULL, NULL, JDBENV);
+  errno = 0;
+  result = (int)DbEnv_repmgr_add_remote_site(arg1,(char const *)arg2,arg3,arg4);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
   }
   
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, arg2);
+  return jresult;
 }
 
 
@@ -8607,6 +8610,58 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1repmgr_
   }
   
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, arg2);
+}
+
+
+JNIEXPORT jobjectArray JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1repmgr_1site_1list(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jobjectArray jresult = 0 ;
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  struct __db_repmgr_sites result;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = DbEnv_repmgr_site_list(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
+  }
+  
+  {
+    int i, len;
+    
+    len = (&result)->nsites;
+    jresult = (*jenv)->NewObjectArray(jenv, (jsize)len, rephost_class,
+      NULL);
+    if (jresult == NULL)
+    return 0; /* an exception is pending */
+    for (i = 0; i < len; i++) {
+      jobject jrep_addr = (*jenv)->NewObject(jenv,
+        rephost_class, rephost_construct);
+      
+      (*jenv)->SetObjectField(jenv, jrep_addr, rephost_host_fid,
+        (*jenv)->NewStringUTF(jenv, (&result)->sites[i].host));
+      (*jenv)->SetIntField(jenv, jrep_addr, rephost_port_fid,
+        (&result)->sites[i].port);
+      (*jenv)->SetIntField(jenv, jrep_addr, rephost_eid_fid,
+        (&result)->sites[i].eid);
+      (*jenv)->SetIntField(jenv, jrep_addr, rephost_status_fid,
+        (&result)->sites[i].status);
+      
+      if (jrep_addr == NULL)
+      return 0; /* An exception is pending */
+      
+      (*jenv)->SetObjectArrayElement(jenv, jresult, i, jrep_addr);
+    }
+    __os_ufree(NULL, (&result)->sites);
+  }
+  return jresult;
 }
 
 

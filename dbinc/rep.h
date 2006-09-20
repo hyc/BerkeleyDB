@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep.h,v 12.48 2006/07/19 18:33:58 sue Exp $
+ * $Id: rep.h,v 12.57 2006/09/12 01:06:35 alanb Exp $
  */
 
 #ifndef _DB_REP_H_
@@ -72,6 +72,17 @@ extern "C" {
 #define	REP_MAX_MSG	29
 
 /*
+ * This is the list of client-to-client requests messages.
+ * We use this to decide if we're doing client-to-client and
+ * might need to send a rerequest.
+ */
+#define	REP_MSG_REQ(rectype)			\
+    (rectype == REP_ALL_REQ ||			\
+    rectype == REP_LOG_REQ ||			\
+    rectype == REP_PAGE_REQ ||			\
+    rectype == REP_VERIFY_REQ)
+
+/*
  * Note that the version information should be at the beginning of the
  * structure, so that we can rearrange the rest of it while letting the
  * version checks continue to work.  DB_REPVERSION should be revved any time
@@ -102,12 +113,14 @@ extern "C" {
  * !!! This function assumes a local DB_MSGBUF variable called 'mb'.
  */
 #ifdef DIAGNOSTIC
-#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str)				\
-	__rep_print_message(dbenv, eid, rp, str)
+#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str, fl)			\
+	__rep_print_message(dbenv, eid, rp, str, fl)
 #define	RPRINT(e, x) do {						\
 	if (FLD_ISSET((e)->verbose, DB_VERB_REPLICATION)) {		\
 		DB_MSGBUF_INIT(&mb);					\
-		if ((e)->db_errpfx == NULL) {				\
+		if ((e)->db_errpfx != NULL)				\
+			__db_msgadd((e), &mb, "%s: ", (e)->db_errpfx);	\
+		else if (REP_ON(e)) {					\
 			REP *_r = (e)->rep_handle->region;		\
 			if (F_ISSET(_r, REP_F_CLIENT))			\
 				__db_msgadd((e), &mb, "CLIENT: ");	\
@@ -116,13 +129,13 @@ extern "C" {
 			else						\
 				__db_msgadd((e), &mb, "REP_UNDEF: ");	\
 		} else							\
-			__db_msgadd((e), &mb, "%s: ", (e)->db_errpfx);	\
+			__db_msgadd((e), &mb, "REP_UNDEF: ");		\
 		__db_msgadd x;						\
 		DB_MSGBUF_FLUSH((e), &mb);				\
 	}								\
 } while (0)
 #else
-#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str)
+#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str, fl)
 #define	RPRINT(e, x)
 #endif
 
@@ -185,7 +198,7 @@ typedef struct __rep {
 	/* Status change information */
 	int		elect_th;	/* A thread is in rep_elect. */
 	u_int32_t	msg_th;		/* Number of callers in rep_proc_msg. */
-	int		start_th;	/* A thread is in rep_start. */
+	int		lockout_th;	/* A thread is in msg lockout. */
 	u_int32_t	handle_cnt;	/* Count of handles in library. */
 	u_int32_t	op_cnt;		/* Multi-step operation count.*/
 	int		in_recovery;	/* Running recovery now. */
@@ -258,6 +271,7 @@ typedef struct __rep {
 	F_ISSET((R), REP_F_EPHASE1 | REP_F_EPHASE2)
 #define	IN_ELECTION_TALLY(R) \
 	F_ISSET((R), REP_F_EPHASE1 | REP_F_EPHASE2 | REP_F_TALLY)
+#define	ELECTION_MAJORITY(n) (((n) / 2) + 1)
 
 #define	IS_REP_MASTER(dbenv)						\
 	(REP_ON(dbenv) &&						\
@@ -436,6 +450,7 @@ typedef struct {
 #define	DB_LOG_RESEND_42_44	0x40
 
 #define	REPCTL_ELECTABLE	0x01	/* Upgraded client is electable. */
+#define	REPCTL_INIT		0x02	/* Internal init message. */
 #define	REPCTL_PERM		DB_LOG_PERM_42_44
 #define	REPCTL_RESEND		DB_LOG_RESEND_42_44
 	u_int32_t	flags;		/* log_put flag value. */

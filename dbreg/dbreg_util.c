@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: dbreg_util.c,v 12.18 2006/06/12 18:28:00 sue Exp $
+ * $Id: dbreg_util.c,v 12.20 2006/09/09 14:28:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -224,7 +224,7 @@ __dbreg_close_files(dbenv)
 /*
  * __dbreg_invalidate_files --
  *	Invalidate files when we change replication roles.  Save the
- * id so that another process will beable to clean up the information
+ * id so that another process will be able to clean up the information
  * when it notices.
  *
  * PUBLIC: int __dbreg_invalidate_files __P((DB_ENV *));

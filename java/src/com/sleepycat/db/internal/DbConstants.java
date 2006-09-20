@@ -141,6 +141,7 @@ public interface DbConstants
     int DB_REPMGR_ACKS_ONE = 4;
     int DB_REPMGR_ACKS_ONE_PEER = 5;
     int DB_REPMGR_ACKS_QUORUM = 6;
+    int DB_REPMGR_CONNECTED = 0x01;
     int DB_REPMGR_PEER = 0x01;
     int DB_REP_ACK_TIMEOUT = 1;
     int DB_REP_ANYWHERE = 0x0000001;
@@ -204,7 +205,7 @@ public interface DbConstants
     int DB_VERIFY = 0x0000002;
     int DB_VERSION_MAJOR = 4;
     int DB_VERSION_MINOR = 5;
-    int DB_VERSION_PATCH = 14;
+    int DB_VERSION_PATCH = 20;
     int DB_WRITECURSOR = 32;
     int DB_XA_CREATE = 0x0000002;
     int DB_XIDDATASIZE = 128;

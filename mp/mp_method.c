@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mp_method.c,v 12.33 2006/07/17 23:57:01 ubell Exp $
+ * $Id: mp_method.c,v 12.36 2006/09/15 18:54:13 margo Exp $
  */
 
 #include "db_config.h"
@@ -424,9 +424,10 @@ __memp_nameop(dbenv, fileid, newname, fullold, fullnew, inmem)
 		MPOOL_SYSTEM_LOCK(dbenv);
 	locked = 1;
 
-	if (inmem)
+	if (inmem) {
+		DB_ASSERT(dbenv, fullold != NULL);
 		hp += FNBUCKET(fullold, strlen(fullold));
-	else
+	} else
 		hp += FNBUCKET(fileid, DB_FILE_ID_LEN);
 
 	/*
@@ -520,61 +521,6 @@ err:	if (p != NULL)
 	if (locked == 1)
 		MPOOL_SYSTEM_UNLOCK(dbenv);
 	return (ret);
-}
-
-/*
- * __memp_get_refcnt
- *	Return a reference count, given a fileid.
- *
- * PUBLIC: int __memp_get_refcnt __P((DB_ENV *, DB *, u_int32_t *));
- */
-int
-__memp_get_refcnt(dbenv, dbp, refp)
-	DB_ENV *dbenv;
-	DB *dbp;
-	u_int32_t *refp;
-{
-	DB_MPOOL *dbmp;
-	DB_MPOOL_HASH *hp;
-	MPOOL *mp;
-	MPOOLFILE *mfp;
-
-	*refp = 0;
-
-	if (!MPOOL_ON(dbenv))
-		return (0);
-
-	dbmp = dbenv->mp_handle;
-	mp = dbmp->reginfo[0].primary;
-
-	/*
-	 * Find the file -- if mpool doesn't know about this file, the
-	 * reference count is 0.
-	 */
-	hp = R_ADDR(dbmp->reginfo, mp->ftab);
-	if (F_ISSET(dbp, DB_AM_INMEM))
-		hp += FNBUCKET(dbp->dname, strlen(dbp->dname));
-	else
-		hp += FNBUCKET(dbp->fileid, DB_FILE_ID_LEN);
-	MUTEX_LOCK(dbenv, hp->mtx_hash);
-	SH_TAILQ_FOREACH(mfp, &hp->hash_bucket, q, __mpoolfile) {
-		/* Ignore non-active files. */
-		if (mfp->deadfile || F_ISSET(mfp, MP_TEMP))
-			continue;
-
-		/* Ignore non-matching files. */
-		if (memcmp(dbp->fileid, R_ADDR(
-		    dbmp->reginfo, mfp->fileid_off), DB_FILE_ID_LEN) != 0)
-			continue;
-
-		MUTEX_LOCK(dbenv, mfp->mutex);
-		*refp = mfp->mpf_cnt;
-		MUTEX_UNLOCK(dbenv, mfp->mutex);
-		break;
-	}
-	MUTEX_UNLOCK(dbenv, hp->mtx_hash);
-
-	return (0);
 }
 
 #ifdef HAVE_FTRUNCATE

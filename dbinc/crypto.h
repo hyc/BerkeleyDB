@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: crypto.h,v 12.4 2006/07/05 05:37:07 mjc Exp $
+ * $Id: crypto.h,v 12.5 2006/08/24 14:45:27 bostic Exp $
  */
 
 #ifndef	_DB_CRYPTO_H_

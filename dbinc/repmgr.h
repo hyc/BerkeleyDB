@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr.h,v 12.5 2006/07/12 21:04:48 bostic Exp $
+ * $Id: repmgr.h,v 12.10 2006/09/19 14:14:07 mjc Exp $
  */
 
 #ifndef _DB_REPMGR_H_
@@ -35,7 +35,7 @@ typedef pthread_mutex_t mgr_mutex_t;
 typedef pthread_cond_t cond_var_t;
 typedef struct iovec db_iovec_t;
 #endif
-	
+
 /*
  * The system value is available from sysconf(_SC_HOST_NAME_MAX).
  * Historically, the maximum host name was 256.
@@ -45,7 +45,7 @@ typedef struct iovec db_iovec_t;
 #endif
 
 /* A buffer big enough for the string "site host.domain.com:65535". */
-#define MAX_SITE_LOC_STRING (MAXHOSTNAMELEN+20)
+#define	MAX_SITE_LOC_STRING (MAXHOSTNAMELEN+20)
 typedef char SITE_STRING_BUFFER[MAX_SITE_LOC_STRING+1];
 
 struct __repmgr_connection;
@@ -177,7 +177,8 @@ struct __repmgr_connection {
 #ifdef DB_WIN32
 	WSAEVENT event_object;
 #endif
-#define	CONN_CONNECTING 0x01	/* nonblocking connect in progress */
+#define	CONN_CONNECTING	0x01	/* nonblocking connect in progress */
+#define	CONN_DEFUNCT	0x02	/* socket close pending */
 	u_int32_t flags;
 
 	/*
@@ -221,7 +222,7 @@ typedef struct addrinfo	ADDRINFO;
 /*
  * Some windows platforms have getaddrinfo (Windows XP), some don't.  We don't
  * support conditional compilation in our Windows build, so we always use our
- * own getaddinfo implementation.  Rename everything so that we don't collide
+ * own getaddrinfo implementation.  Rename everything so that we don't collide
  * with the system libraries.
  */
 #undef	AI_PASSIVE
@@ -307,7 +308,7 @@ typedef struct {
  * array index.
  */
 #define	SITE_FROM_EID(eid)	(&db_rep->sites[eid])
-#define	EID_FROM_SITE(s)	((s) - (&db_rep->sites[0]))
+#define	EID_FROM_SITE(s)	((int)((s) - (&db_rep->sites[0])))
 #define	IS_VALID_EID(e)		((e) >= 0)
 #define	SELF_EID		INT_MAX
 

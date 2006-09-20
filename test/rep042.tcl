@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2003-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep042.tcl,v 12.10 2006/07/19 17:45:35 carol Exp $
+# $Id: rep042.tcl,v 12.13 2006/09/08 20:32:18 bostic Exp $
 #
 # TEST	rep042
 # TEST	Concurrency with updates.
@@ -153,7 +153,16 @@ proc rep042_sub { method niter tnum logset recargs largs } {
 		}
 		process_msgs "{$masterenv 1} {$clientenv 2}"
 
-		error_check_good check [check_script $scrlog "read-only"] 1
+		# We expect to find the error "attempt to modify a read-only
+		# database."  If we don't, report what we did find as a failure.
+		set readonly_error [check_script $scrlog "read-only"]
+		if { $readonly_error != 1 } {
+			set errstrings [eval findfail $scrlog]
+			if { [llength $errstrings] > 0 } {
+				puts "FAIL: unexpected error(s)\
+				    found in file $scrlog:$errstrings"
+			}
+		}
 		fileremove -f $masterdir/marker.db
 	}
 

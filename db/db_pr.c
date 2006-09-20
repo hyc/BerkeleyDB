@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_pr.c,v 12.27 2006/05/05 14:53:13 bostic Exp $
+ * $Id: db_pr.c,v 12.29 2006/09/07 20:05:26 bostic Exp $
  */
 
 #include "db_config.h"
@@ -1476,10 +1476,7 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 		}
 		break;
 	case DB_UNKNOWN:			/* Impossible. */
-		__db_errx(dbenv,
-		    "Unknown or unsupported DB type in __db_prheader");
-		DB_ASSERT(dbenv, 0);
-		ret = EINVAL;
+		ret = __db_unknown_path(dbenv, "__db_prheader");
 		goto err;
 	}
 

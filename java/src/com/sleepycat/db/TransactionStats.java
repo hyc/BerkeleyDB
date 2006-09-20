@@ -4,7 +4,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -49,6 +49,11 @@ public class TransactionStats
             return mvcc_ref;
         }
 
+        private int status;
+        public int getStatus() {
+            return status;
+        }
+
         private int xa_status;
         public int getXaStatus() {
             return xa_status;
@@ -72,6 +77,7 @@ public class TransactionStats
                 + "\n      lsn=" + lsn
                 + "\n      read_lsn=" + read_lsn
                 + "\n      mvcc_ref=" + mvcc_ref
+                + "\n      status=" + status
                 + "\n      xa_status=" + xa_status
                 + "\n      xid=" + DbUtil.byteArrayToString(xid)
                 + "\n      name=" + name

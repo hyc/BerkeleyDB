@@ -142,9 +142,15 @@ __ham_insdel_log(dbp, txnp, ret_lsnp, flags,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (pagelsn != NULL)
+	if (pagelsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, pagelsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, pagelsn, sizeof(*pagelsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*pagelsn));
 	bp += sizeof(*pagelsn);
 
@@ -409,9 +415,15 @@ __ham_newpage_log(dbp, txnp, ret_lsnp, flags,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (prevlsn != NULL)
+	if (prevlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(prevlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, prevlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, prevlsn, sizeof(*prevlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*prevlsn));
 	bp += sizeof(*prevlsn);
 
@@ -419,9 +431,15 @@ __ham_newpage_log(dbp, txnp, ret_lsnp, flags,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (pagelsn != NULL)
+	if (pagelsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, pagelsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, pagelsn, sizeof(*pagelsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*pagelsn));
 	bp += sizeof(*pagelsn);
 
@@ -429,9 +447,15 @@ __ham_newpage_log(dbp, txnp, ret_lsnp, flags,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (nextlsn != NULL)
+	if (nextlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(nextlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, nextlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, nextlsn, sizeof(*nextlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*nextlsn));
 	bp += sizeof(*nextlsn);
 
@@ -675,9 +699,15 @@ __ham_splitdata_log(dbp, txnp, ret_lsnp, flags, opcode, pgno, pageimage, pagelsn
 		bp += pageimage->size;
 	}
 
-	if (pagelsn != NULL)
+	if (pagelsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, pagelsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, pagelsn, sizeof(*pagelsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*pagelsn));
 	bp += sizeof(*pagelsn);
 
@@ -910,9 +940,15 @@ __ham_replace_log(dbp, txnp, ret_lsnp, flags, pgno, ndx, pagelsn, off, olditem,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (pagelsn != NULL)
+	if (pagelsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, pagelsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, pagelsn, sizeof(*pagelsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*pagelsn));
 	bp += sizeof(*pagelsn);
 
@@ -1185,9 +1221,15 @@ __ham_copypage_log(dbp, txnp, ret_lsnp, flags, pgno, pagelsn, next_pgno, nextlsn
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (pagelsn != NULL)
+	if (pagelsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, pagelsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, pagelsn, sizeof(*pagelsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*pagelsn));
 	bp += sizeof(*pagelsn);
 
@@ -1195,9 +1237,15 @@ __ham_copypage_log(dbp, txnp, ret_lsnp, flags, pgno, pagelsn, next_pgno, nextlsn
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (nextlsn != NULL)
+	if (nextlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(nextlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, nextlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, nextlsn, sizeof(*nextlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*nextlsn));
 	bp += sizeof(*nextlsn);
 
@@ -1205,9 +1253,15 @@ __ham_copypage_log(dbp, txnp, ret_lsnp, flags, pgno, pagelsn, next_pgno, nextlsn
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (nnextlsn != NULL)
+	if (nnextlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(nnextlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, nnextlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, nnextlsn, sizeof(*nnextlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*nnextlsn));
 	bp += sizeof(*nnextlsn);
 
@@ -1533,9 +1587,15 @@ __ham_metagroup_log(dbp, txnp, ret_lsnp, flags, bucket, mmpgno, mmetalsn, mpgno,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (mmetalsn != NULL)
+	if (mmetalsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(mmetalsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, mmetalsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, mmetalsn, sizeof(*mmetalsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*mmetalsn));
 	bp += sizeof(*mmetalsn);
 
@@ -1543,9 +1603,15 @@ __ham_metagroup_log(dbp, txnp, ret_lsnp, flags, bucket, mmpgno, mmetalsn, mpgno,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (metalsn != NULL)
+	if (metalsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(metalsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, metalsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, metalsn, sizeof(*metalsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*metalsn));
 	bp += sizeof(*metalsn);
 
@@ -1553,9 +1619,15 @@ __ham_metagroup_log(dbp, txnp, ret_lsnp, flags, bucket, mmpgno, mmetalsn, mpgno,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (pagelsn != NULL)
+	if (pagelsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, pagelsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, pagelsn, sizeof(*pagelsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*pagelsn));
 	bp += sizeof(*pagelsn);
 
@@ -1853,9 +1925,15 @@ __ham_groupalloc_log(dbp, txnp, ret_lsnp, flags, meta_lsn, start_pgno, num, unus
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (meta_lsn != NULL)
+	if (meta_lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(meta_lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, meta_lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, meta_lsn, sizeof(*meta_lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*meta_lsn));
 	bp += sizeof(*meta_lsn);
 

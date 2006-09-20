@@ -1,5 +1,5 @@
-<!--$Id: memp_stat.so,v 10.65 2006/07/14 07:49:09 mjc Exp $-->
-<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
+<!--$Id: memp_stat.so,v 10.67 2006/09/11 16:56:44 bostic Exp $-->
+<!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -78,6 +78,9 @@ although examining the application page fault rate may be helpful).
 bucket lock without waiting.
 <dt>u_int32_t st_hash_wait;<dd>Number of times that a thread of control was forced to wait before
 obtaining a hash bucket lock.
+<dt>u_int32_t st_hash_max_nowait;<dd>The number of times a thread of control was able to obtain the hash
+bucket lock without waiting on the bucket which had the maximum number
+of times that a thread of control needed to wait.
 <dt>u_int32_t st_hash_max_wait;<dd>Maximum number of times any hash bucket lock was waited for by a
 thread of control.
 <dt>u_int32_t st_region_wait;<dd>Number of times that a thread of control was forced to wait before
@@ -173,6 +176,6 @@ of the following values:
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_cxx/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

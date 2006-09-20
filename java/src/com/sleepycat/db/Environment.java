@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: Environment.java,v 12.13 2006/07/17 13:08:15 mjc Exp $
+ * $Id: Environment.java,v 12.16 2006/09/08 20:32:14 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -238,12 +238,12 @@ public class Environment {
     }
 
     public void setReplicationTimeout(
-        final ReplicationTimeoutType type, final int replicationTimeout) 
+        final ReplicationTimeoutType type, final int replicationTimeout)
         throws DatabaseException {
         dbenv.rep_set_timeout(type.getId(), replicationTimeout);
     }
 
-    public int getReplicationTimeout(final ReplicationTimeoutType type) 
+    public int getReplicationTimeout(final ReplicationTimeoutType type)
         throws DatabaseException {
         return dbenv.rep_get_timeout(type.getId());
     }
@@ -277,6 +277,11 @@ public class Environment {
 
         return dbenv.log_stat(StatsConfig.checkNull(config).getFlags());
     }
+
+	public ReplicationHostAddress[] getReplicationSiteList()
+	    throws DatabaseException {
+		return dbenv.repmgr_site_list();
+	}
 
     public ReplicationStats getReplicationStats(StatsConfig config)
         throws DatabaseException {

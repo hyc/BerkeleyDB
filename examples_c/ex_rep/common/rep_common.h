@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_common.h,v 12.1 2006/07/07 23:36:10 alanb Exp $
+ * $Id: rep_common.h,v 12.2 2006/08/24 14:45:46 bostic Exp $
  */
 
 typedef struct {

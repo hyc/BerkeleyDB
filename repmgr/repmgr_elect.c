@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_elect.c,v 1.15 2006/07/05 19:03:24 alanb Exp $
+ * $Id: repmgr_elect.c,v 1.23 2006/09/12 01:06:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -39,6 +39,14 @@ __repmgr_init_election(dbenv, initial_operation)
 #endif
 
 	db_rep = dbenv->rep_handle;
+
+	if (db_rep->finished) {
+		RPRINT(dbenv, (dbenv, &mb,
+		    "ignoring elect thread request %d; repmgr is finished",
+		    initial_operation));
+		return (0);
+	}
+
 	db_rep->operation_needed = initial_operation;
 	if (db_rep->elect_thread == NULL)
 		ret = start_election_thread(dbenv);
@@ -126,7 +134,28 @@ __repmgr_elect_main(dbenv)
 	db_rep = dbenv->rep_handle;
 	last_op = 0;
 
+	/*
+	 * db_rep->operation_needed is the mechanism by which the outside world
+	 * (running in a different thread) tells us what it wants us to do.  It
+	 * is obviously relevant when we're just starting up.  But it can also
+	 * be set if a subsequent request for us to do something occurs while
+	 * we're still looping.
+	 *
+	 * ELECT_FAILURE_ELECTION asks us to start by doing an election, but to
+	 * do so in failure recovery mode.  This failure recovery mode may
+	 * persist through several loop iterations: as long as it takes us to
+	 * succeed in finding a master, or until we get asked to perform a new
+	 * request.  Thus the time for mapping ELECT_FAILURE_ELECTION to the
+	 * internal ELECT_ELECTION, as well as the setting of the failure
+	 * recovery flag, is at the point we receive the new request from
+	 * operation_needed (either here, or within the loop below).
+	 */
 	LOCK_MUTEX(db_rep->mutex);
+	if (db_rep->finished) {
+		db_rep->elect_thread->finished = TRUE;
+		UNLOCK_MUTEX(db_rep->mutex);
+		return (0);
+	}
 	to_do = db_rep->operation_needed;
 	db_rep->operation_needed = 0;
 	UNLOCK_MUTEX(db_rep->mutex);
@@ -135,7 +164,6 @@ __repmgr_elect_main(dbenv)
 		to_do = ELECT_ELECTION;
 	} else
 		failure_recovery = FALSE;
-	
 
 	for (;;) {
 		RPRINT(dbenv, (dbenv, &mb, "elect thread to do: %d", to_do));
@@ -143,34 +171,41 @@ __repmgr_elect_main(dbenv)
 		case ELECT_ELECTION:
 			nsites = __repmgr_get_nsites(db_rep);
 
-			/*
-			 * If we're doing an election because we noticed that
-			 * the master failed, it's reasonable to expect that the
-			 * master won't participate.  By not waiting for its
-			 * vote, we can probably complete the election faster.
-			 */
-			if (failure_recovery)
-				nsites--;
-
 			if (db_rep->init_policy == DB_REP_FULL_ELECTION &&
 			    !db_rep->found_master)
 				nvotes = nsites;
 			else {
-				nvotes = 0;
-				if (nsites == 1 && failure_recovery) {
-					/*
-					 * We've just lost the only other site
-					 * in the group, so there's no point in
-					 * holding an election.
-					 */
-					if ((ret = __repmgr_become_master(
-					    dbenv)) != 0)
-						return (ret);
-					break;
+				nvotes = ELECTION_MAJORITY(nsites);
+
+				/*
+				 * If we're doing an election because we noticed
+				 * that the master failed, it's reasonable to
+				 * expect that the master won't participate.  By
+				 * not waiting for its vote, we can probably
+				 * complete the election faster.  But note that
+				 * we shouldn't allow this to affect nvotes
+				 * calculation.
+				 */
+				if (failure_recovery) {
+					nsites--;
+
+					if (nsites == 1) {
+						/*
+						 * We've just lost the only
+						 * other site in the group, so
+						 * there's no point in holding
+						 * an election.
+						 */
+						if ((ret =
+						    __repmgr_become_master(
+						    dbenv)) != 0)
+							return (ret);
+						break;
+					}
 				}
 			}
-					
-			switch (ret = dbenv->rep_elect(dbenv,
+
+			switch (ret = __rep_elect(dbenv,
 			    (int)nsites, (int)nvotes, &chosen_master, 0)) {
 			case DB_REP_UNAVAIL:
 				break;
@@ -192,7 +227,7 @@ __repmgr_elect_main(dbenv)
 			if ((ret =
 			    __repmgr_prepare_my_addr(dbenv, &my_addr)) != 0)
 				return (ret);
-			ret = dbenv->rep_start(dbenv, &my_addr, DB_REP_CLIENT);
+			ret = __rep_start(dbenv, &my_addr, DB_REP_CLIENT);
 			__os_free(dbenv, my_addr.data);
 			if (ret != 0) {
 				__db_err(dbenv, ret, "rep_start");
@@ -237,7 +272,7 @@ __repmgr_elect_main(dbenv)
 		 * becomes valid, or thread shut-down command.
 		 *
 		 * If we're not yet done, figure out what to do next: if we've
-		 * been told explicity what to do (operation_needed), do that.
+		 * been told explicitly what to do (operation_needed), do that.
 		 * Otherwise, what we do next is approximately the complement of
 		 * what we just did; in other words, we alternate.
 		 */
@@ -261,8 +296,14 @@ __repmgr_elect_main(dbenv)
 				    !db_rep->found_master)
 					to_do = ELECT_REPSTART;
 			}
-		} else
+		} else {
 			db_rep->operation_needed = 0;
+			if (to_do == ELECT_FAILURE_ELECTION) {
+				failure_recovery = TRUE;
+				to_do = ELECT_ELECTION;
+			} else
+				failure_recovery = FALSE;
+		}
 
 		/*
 		 * TODO: is it possible for an operation_needed to be set, with
@@ -293,13 +334,13 @@ __repmgr_is_ready(dbenv)
 	db_rep = dbenv->rep_handle;
 
 	RPRINT(dbenv, (dbenv, &mb,
-	    "repmgr elect: needed %d, finished %d, master %d",
+	    "repmgr elect: opcode %d, finished %d, master %d",
 	    db_rep->operation_needed, db_rep->finished, db_rep->master_eid));
 
 	return (db_rep->operation_needed ||
 	    db_rep->finished || IS_VALID_EID(db_rep->master_eid));
 }
-	    
+
 /*
  * PUBLIC: int __repmgr_become_master __P((DB_ENV *));
  */
@@ -317,7 +358,7 @@ __repmgr_become_master(dbenv)
 
 	if ((ret = __repmgr_prepare_my_addr(dbenv, &my_addr)) != 0)
 		return (ret);
-	ret = dbenv->rep_start(dbenv, &my_addr, DB_REP_MASTER);
+	ret = __rep_start(dbenv, &my_addr, DB_REP_MASTER);
 	__os_free(dbenv, my_addr.data);
 	if (ret != 0)
 		return (ret);

@@ -9,7 +9,7 @@
             </title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
     <link rel="previous" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
     <link rel="next" href="fwrkpermmessage.html" title="Permanent Message Handling" />
@@ -95,13 +95,14 @@
                      
                     <tt class="literal">SimpleTxn</tt> 
                     code to a new file called
-                    <tt class="literal">RepMgr.cpp</tt>. 
+                    <tt class="literal">RepMgr.cpp</tt>.
 
                     
 
                     <span>
                             Having done that, we must make some significant
-                            changes to our <tt class="classname">RepConfigInfo</tt>
+                            changes to our 
+                            <tt class="classname">RepConfigInfo</tt>
                             class because now we will be using it to
                             maintain a lot more information.
                     </span>
@@ -112,13 +113,13 @@
                 host and port information for all &quot;other&quot; servers
                 identified to the application via the
                 <tt class="literal">-o</tt> command line option. This structure
-                is chainable, which makes cleaning up at program shutdown
+                is chain-able, which makes cleaning up at program shutdown
                 time easier.
             </p>
       <pre class="programlisting">#include &lt;db_cxx.h&gt;
 #include &lt;iostream&gt;
 
-<b class="userinput"><tt>// Chainable struct used to store host information.
+<b class="userinput"><tt>// Chain-able struct used to store host information.
 typedef struct RepHostInfoObj{
     char* host;
     int port;
@@ -199,13 +200,14 @@ public:
     other_hosts = NULL;</tt></b>
 } </pre>
       <p>
-        Having complete our update to the
-        <tt class="classname">RepConfigInfo</tt> class, we can now start making
+        Having completed our update to the
+        <tt class="classname">RepConfigInfo</tt> 
+         
+        class, we can now start making
         changes to the main portion of our program. We begin by changing
-        the program's name.
+        the program's name. 
 </p>
-      <pre class="programlisting">
-using std::cout;
+      <pre class="programlisting">using std::cout;
 using std::cin;
 using std::cerr;
 using std::endl;
@@ -286,7 +288,7 @@ static void usage()
 
     cerr <b class="userinput"><tt>&lt;&lt; &quot;\t -m host:port (required; m stands for me)&quot; &lt;&lt; endl
          &lt;&lt; &quot;\t -o host:port (optional; o stands for other; any &quot;
-         &lt;&lt; &quot;number of these may bespecified)&quot; &lt;&lt; endl</tt></b>
+         &lt;&lt; &quot;number of these may be specified)&quot; &lt;&lt; endl</tt></b>
          &lt;&lt; &quot;\t -h home directory&quot; &lt;&lt; endl
          <b class="userinput"><tt>&lt;&lt; &quot;\t -n nsites (optional; number of sites in replication &quot;
          &lt;&lt; &quot;group; defaults to 0&quot; &lt;&lt; endl
@@ -310,8 +312,7 @@ static void usage()
     RepConfigInfo config;
     char ch<b class="userinput"><tt>, *portstr, *tmphost;
     int tmpport;</tt></b>
-    int ret;
-     </pre>
+    int ret; </pre>
       <p>
         Now we collect our command line arguments. As we do so, we will
         configure host and port information as required, and we will
@@ -375,7 +376,9 @@ err:
     return 0;
 }  </pre>
       <p>
-        Now we need to update our <tt class="methodname">RepMgr::init()</tt>
+        Now we need to update our 
+            <tt class="methodname">RepMgr::init()</tt>
+            
         method. Our updates are at first related to configuring
         replication. First, we need to update the method so that we can 
         identify the local site to the environment handle (that is, the site identified by the 
@@ -403,7 +406,10 @@ int RepMgr::init(RepConfigInfo *config)
     }</tt></b> </pre>
       <p>
     And we also add code to allow us to identify &quot;other&quot; sites to the environment handle (that is,
-the sites that we identify using the <tt class="literal">-o</tt> command line option):     
+the sites that we identify using the <tt class="literal">-o</tt> command line
+option). To do this, we iterate over each of the &quot;other&quot; sites provided to
+us using the <tt class="literal">-o</tt> command line option, and we add each one
+individually in turn:     
 </p>
       <pre class="programlisting">    <b class="userinput"><tt>for ( REP_HOST_INFO *cur = app_config-&gt;other_hosts; cur != NULL;
         cur = cur-&gt;next) {
@@ -428,12 +434,18 @@ the sites that we identify using the <tt class="literal">-o</tt> command line op
       <p>
             
 
-            <span>We can now open our environment. Note that the </span>
+            <span>We can now open our environment. Note that the flags</span>
 
-            flags we use to open the environment are slightly different for a
+            
+
+            we use to open the environment are slightly different for a
             replicated application than they are for a non-replicated
             application. Namely, replication requires the
+            <span>
             <tt class="literal">DB_INIT_REP</tt> flag. 
+            </span>
+
+            
     </p>
       <p>
             Also, because we are using the replication framework, we must prepare
@@ -464,7 +476,10 @@ the sites that we identify using the <tt class="literal">-o</tt> command line op
       <p>
         Finally, we start replication before we exit this method.
         Immediately after exiting this method, our application will go into
-        the <tt class="methodname">RepMgr::doloop()</tt>, which is where
+        the 
+        <tt class="methodname">RepMgr::doloop()</tt>
+        
+        method, which is where
        the bulk of our application's work is performed. We update that
        method in the next chapter. 
 </p>

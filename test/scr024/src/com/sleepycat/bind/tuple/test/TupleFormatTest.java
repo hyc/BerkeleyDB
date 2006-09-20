@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: TupleFormatTest.java,v 12.4 2006/06/09 14:32:31 mark Exp $
+ * $Id: TupleFormatTest.java,v 12.5 2006/08/24 14:46:45 bostic Exp $
  */
 
 package com.sleepycat.bind.tuple.test;

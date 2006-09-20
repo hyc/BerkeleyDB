@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: txn012.tcl,v 12.3 2006/06/27 22:31:09 bostic Exp $
+# $Id: txn012.tcl,v 12.4 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	txn012
 # TEST	Test txn->getname and txn->setname.

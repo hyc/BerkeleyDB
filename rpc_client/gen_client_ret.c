@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: gen_client_ret.c,v 12.5 2006/07/17 13:08:33 mjc Exp $
+ * $Id: gen_client_ret.c,v 12.7 2006/09/08 19:27:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -183,7 +183,6 @@ __dbcl_env_cdsgroup_begin_ret(envp, txnpp, replyp)
 	*txnpp = txn;
 	return (replyp->status);
 }
-
 
 /*
  * PUBLIC: int __dbcl_txn_commit_ret

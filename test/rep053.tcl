@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2001-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep053.tcl,v 12.12 2006/07/19 17:45:35 carol Exp $
+# $Id: rep053.tcl,v 12.13 2006/08/24 14:46:38 bostic Exp $
 #
 # TEST	rep053
 # TEST	Replication and basic client-to-client synchronization.

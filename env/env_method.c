@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: env_method.c,v 12.43 2006/07/17 13:08:15 mjc Exp $
+ * $Id: env_method.c,v 12.47 2006/09/11 15:40:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -268,16 +268,19 @@ __env_init(dbenv)
 	dbenv->repmgr_get_ack_policy = __repmgr_get_ack_policy;
 	dbenv->repmgr_set_ack_policy = __repmgr_set_ack_policy;
 	dbenv->repmgr_set_local_site = __repmgr_set_local_site;
+	dbenv->repmgr_site_list = __repmgr_site_list;
 	dbenv->repmgr_start = __repmgr_start;
-#else
-	dbenv->repmgr_add_remote_site =
-	    (int (*)(DB_ENV *, const char *, u_int, u_int32_t))__db_norepmgr;
+#else /* !HAVE_REPLICATION_THREADS */
+	dbenv->repmgr_add_remote_site = (int (*)(DB_ENV *,
+	    const char *, u_int, int *, u_int32_t))__db_norepmgr;
 	dbenv->repmgr_get_ack_policy = (int (*)(DB_ENV *, int *))__db_norepmgr;
 	dbenv->repmgr_set_ack_policy = (int (*)(DB_ENV *, int))__db_norepmgr;
 	dbenv->repmgr_set_local_site =
 	    (int (*)(DB_ENV *, const char *, u_int, u_int32_t))__db_norepmgr;
+	dbenv->repmgr_site_list =
+	    (int (*)(DB_ENV *, u_int *, DB_REPMGR_SITE **))__db_norepmgr;
 	dbenv->repmgr_start = (int (*)(DB_ENV *, int, u_int32_t))__db_norepmgr;
-#endif
+#endif /* HAVE_REPLICATION_THREADS */
 	dbenv->set_alloc = __env_set_alloc;
 	dbenv->set_app_dispatch = __env_set_app_dispatch;
 	dbenv->set_cachesize = __memp_set_cachesize;

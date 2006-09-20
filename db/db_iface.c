@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_iface.c,v 12.44 2006/07/17 13:08:03 mjc Exp $
+ * $Id: db_iface.c,v 12.51 2006/09/19 15:06:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -341,7 +341,8 @@ __db_cursor(dbp, txn, dbcp, flags)
 
 	dbenv = dbp->dbenv;
 
-	if (MULTIVERSION(dbp) && txn == NULL && LF_ISSET(DB_TXN_SNAPSHOT)) {
+	if (MULTIVERSION(dbp) && txn == NULL && (LF_ISSET(DB_TXN_SNAPSHOT) ||
+	    F_ISSET(dbenv, DB_ENV_TXN_SNAPSHOT))) {
 		if ((ret =
 		    __txn_begin(dbenv, NULL, &txn, DB_TXN_SNAPSHOT)) != 0)
 			return (ret);
@@ -1061,11 +1062,11 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 		if ((ret = __db_txn_auto_init(dbenv, &txn)) != 0)
 			goto err;
 		txn_local = 1;
-	} else
-		if (txn != NULL && !TXN_ON(dbenv)) {
-			ret = __db_not_txn_env(dbenv);
-			goto err;
-		}
+	} else if (txn != NULL && !TXN_ON(dbenv) &&
+	    (!CDB_LOCKING(dbenv) || !F_ISSET(txn, TXN_CDSGROUP))) {
+		ret = __db_not_txn_env(dbenv);
+		goto err;
+	}
 	LF_CLR(DB_AUTO_COMMIT);
 
 	/*
@@ -1110,7 +1111,7 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	 * If not transactional, remove the databases/subdatabases.  If we're
 	 * transactional, the child transaction abort cleans up.
 	 */
-txnerr:	if (ret != 0 && txn == NULL) {
+txnerr:	if (ret != 0 && !IS_REAL_TXN(txn)) {
 		remove_me = F_ISSET(dbp, DB_AM_CREATED);
 		if (F_ISSET(dbp, DB_AM_CREATED_MSTR) ||
 		    (dname == NULL && remove_me))
@@ -1232,7 +1233,7 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 	}
 
 	/* DB_MULTIVERSION requires a database configured for transactions. */
-	if (LF_ISSET(DB_MULTIVERSION) && txn == NULL) {
+	if (LF_ISSET(DB_MULTIVERSION) && !IS_REAL_TXN(txn)) {
 		__db_errx(dbenv,
 		    "DB_MULTIVERSION illegal without a transaction specified");
 		return (EINVAL);
@@ -1434,11 +1435,15 @@ __db_pget_arg(dbp, pkey, flags)
 	    (ret = __dbt_ferr(dbp, "primary key", pkey, 1)) != 0)
 		return (ret);
 
-	/* But the pkey field can't be NULL if we're doing a DB_GET_BOTH. */
-	if (pkey == NULL && flags == DB_GET_BOTH) {
-		__db_errx(dbenv,
+	if (flags == DB_GET_BOTH) {
+		/* The pkey field can't be NULL if we're doing a DB_GET_BOTH. */
+		if (pkey == NULL) {
+			__db_errx(dbenv,
 		    "DB_GET_BOTH on a secondary index requires a primary key");
-		return (EINVAL);
+			return (EINVAL);
+		}
+		if ((ret = __dbt_usercopy(dbenv, pkey)) != 0)
+			return (ret);
 	}
 
 	return (0);
@@ -1727,7 +1732,6 @@ __db_c_close_pp(dbc)
 	 */
 	if (!F_ISSET(dbc, DBC_ACTIVE)) {
 		__db_errx(dbenv, "Closing already-closed cursor");
-		DB_ASSERT(dbenv, 0);
 		ret = EINVAL;
 		goto err;
 	}
@@ -2372,7 +2376,7 @@ err:		return (__db_ferr(dbenv, "DBcursor->put", 0));
 		return (ret);
 
 	/* Keys shouldn't have partial flags during a put. */
-	if (key != NULL && F_ISSET(key, DB_DBT_PARTIAL))
+	if (key_flags && F_ISSET(key, DB_DBT_PARTIAL))
 		return (__db_ferr(dbenv, "key DBT", 0));
 
 	/*

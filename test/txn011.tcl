@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2003-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: txn011.tcl,v 12.4 2006/06/27 22:31:09 bostic Exp $
+# $Id: txn011.tcl,v 12.5 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	txn011
 # TEST	Test durable and non-durable txns.

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_util.c,v 1.18 2006/07/17 22:16:07 alanb Exp $
+ * $Id: repmgr_util.c,v 1.27 2006/09/19 14:14:12 mjc Exp $
  */
 
 #include "db_config.h"
@@ -24,6 +24,9 @@
  *
  * !!!
  * Caller should hold mutex.
+ *
+ * Unless an error occurs, we always attempt to wake the main thread;
+ * __repmgr_bust_connection relies on this behavior.
  */
 int
 __repmgr_schedule_connection_attempt(dbenv, eid, immediate)
@@ -202,7 +205,8 @@ void
 __repmgr_iovec_init(v)
 	REPMGR_IOVECS *v;
 {
-	v->offset = v->count = v->total_bytes = 0;
+	v->offset = v->count = 0;
+	v->total_bytes = 0;
 }
 
 /*
@@ -252,17 +256,37 @@ __repmgr_update_consumed(v, byte_count)
 	db_iovec_t *iov;
 	int i;
 
-	for (i=v->offset; ; i++) {
+	for (i = v->offset; ; i++) {
 		DB_ASSERT(NULL, i < v->count && byte_count > 0);
 		iov = &v->vectors[i];
 		if (byte_count > iov->iov_len) {
+			/*
+			 * We've consumed (more than) this vector's worth.
+			 * Adjust count and continue.
+			 */
 			byte_count -= iov->iov_len;
-			/* and keep going */
 		} else {
-			if ((iov->iov_len -= byte_count) > 0)
+			/* Adjust length of remaining portion of vector. */
+			iov->iov_len -= byte_count;
+			if (iov->iov_len > 0) {
+				/*
+				 * Still some left in this vector.  Adjust base
+				 * address too, and leave offset pointing here.
+				 */
+				iov->iov_base = (void *)
+				    ((u_int8_t *)iov->iov_base + byte_count);
 				v->offset = i;
-			else
+			} else {
+				/*
+				 * Consumed exactly to a vector boundary.
+				 * Advance to next vector for next time.
+				 */
 				v->offset = i+1;
+			}
+			/*
+			 * If offset has reached count, the entire thing is
+			 * consumed.
+			 */
 			return (v->offset >= v->count);
 		}
 	}
@@ -272,7 +296,7 @@ __repmgr_update_consumed(v, byte_count)
  * Builds a buffer containing our network address information, suitable for
  * publishing as cdata via a call to rep_start, and sets up the given DBT to
  * point to it.  The buffer is dynamically allocated memory, and the caller must
- * assume resposibility for it.
+ * assume responsibility for it.
  *
  * PUBLIC: int __repmgr_prepare_my_addr __P((DB_ENV *, DBT *));
  */
@@ -299,9 +323,7 @@ __repmgr_prepare_my_addr(dbenv, dbt)
 	if ((ret = __os_malloc(dbenv, size, &ptr)) != 0)
 		return (ret);
 
-	memset(dbt, 0, sizeof(*dbt));
-	dbt->data = ptr;
-	dbt->size = size;
+	DB_INIT_DBT(*dbt, ptr, size);
 
 	memcpy(ptr, &port_buffer, sizeof(port_buffer));
 	ptr = &ptr[sizeof(port_buffer)];
@@ -362,7 +384,7 @@ __repmgr_thread_failure(dbenv, why)
 /*
  * Format a printable representation of a site location, suitable for inclusion
  * in an error message.  The buffer must be at least as big as
- * MAX_SITE_LOC_STRING. 
+ * MAX_SITE_LOC_STRING.
  *
  * PUBLIC: char *__repmgr_format_eid_loc __P((DB_REP *, int, char *));
  */

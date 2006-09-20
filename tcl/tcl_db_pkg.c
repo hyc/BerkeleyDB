@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.32 2006/06/20 12:54:57 sue Exp $
+ * $Id: tcl_db_pkg.c,v 12.36 2006/09/08 19:22:21 bostic Exp $
  */
 
 #include "db_config.h"
@@ -45,6 +45,7 @@ static int	bdb_SeqOpen __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
 #ifdef CONFIG_TEST
 static int	bdb_DbUpgrade __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int	bdb_DbVerify __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
+static int	bdb_GetConfig __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int	bdb_Handles __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int	bdb_MsgType __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 
@@ -120,6 +121,7 @@ berkdb_Cmd(notused, interp, objc, objv)
 	static const char *berkdbcmds[] = {
 #ifdef CONFIG_TEST
 		"dbverify",
+		"getconfig",
 		"handles",
 		"msgtype",
 		"upgrade",
@@ -151,6 +153,7 @@ berkdb_Cmd(notused, interp, objc, objv)
 	enum berkdbcmds {
 #ifdef CONFIG_TEST
 		BDB_DBVERIFY,
+		BDB_GETCONFIG,
 		BDB_HANDLES,
 		BDB_MSGTYPE,
 		BDB_UPGRADE,
@@ -215,6 +218,9 @@ berkdb_Cmd(notused, interp, objc, objv)
 #ifdef CONFIG_TEST
 	case BDB_DBVERIFY:
 		result = bdb_DbVerify(interp, objc, objv);
+		break;
+	case BDB_GETCONFIG:
+		result = bdb_GetConfig(interp, objc, objv);
 		break;
 	case BDB_HANDLES:
 		result = bdb_Handles(interp, objc, objv);
@@ -3133,6 +3139,70 @@ error:
 
 #ifdef CONFIG_TEST
 /*
+ * bdb_GetConfig --
+ *	Implements the getconfig command.
+ */
+#define	ADD_CONFIG_NAME(name)						\
+	conf = NewStringObj(name, strlen(name));			\
+	if (Tcl_ListObjAppendElement(interp, res, conf) != TCL_OK)	\
+		return (TCL_ERROR);
+
+static int
+bdb_GetConfig(interp, objc, objv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+{
+	Tcl_Obj *res, *conf;
+
+	/*
+	 * No args.  Error if we have some
+	 */
+	if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, "");
+		return (TCL_ERROR);
+	}
+	res = Tcl_NewListObj(0, NULL);
+	conf = NULL;
+
+	/*
+	 * This command conditionally adds strings in based on
+	 * how DB is configured so that the test suite can make
+	 * decisions based on that.  For now only implement the
+	 * configuration pieces we need.
+	 */
+#ifdef DEBUG
+	ADD_CONFIG_NAME("debug");
+#endif
+#ifdef DEBUG_ROP
+	ADD_CONFIG_NAME("debug_rop");
+#endif
+#ifdef DEBUG_WOP
+	ADD_CONFIG_NAME("debug_wop");
+#endif
+#ifdef HAVE_HASH
+	ADD_CONFIG_NAME("hash");
+#endif
+#ifdef HAVE_QUEUE
+	ADD_CONFIG_NAME("queue");
+#endif
+#ifdef HAVE_REPLICATION
+	ADD_CONFIG_NAME("rep");
+#endif
+#ifdef HAVE_REPLICATION_THREADS
+	ADD_CONFIG_NAME("repmgr");
+#endif
+#ifdef HAVE_RPC
+	ADD_CONFIG_NAME("rpc");
+#endif
+#ifdef HAVE_VERIFY
+	ADD_CONFIG_NAME("verify");
+#endif
+	Tcl_SetObjResult(interp, res);
+	return (TCL_OK);
+}
+
+/*
  * bdb_Handles --
  *	Implements the handles command.
  */
@@ -3185,10 +3255,12 @@ bdb_MsgType(interp, objc, objv)
 	 */
 	static const char *msgnames[] = {
 		"no_type", "alive", "alive_req", "all_req",
+		"bulk_log", "bulk_page",
 		"dupmaster", "file", "file_fail", "file_req", "log",
 		"log_more", "log_req", "master_req", "newclient",
 		"newfile", "newmaster", "newsite", "page",
-		"page_fail", "page_req", "update", "update_req",
+		"page_fail", "page_more", "page_req",
+		"rerequest", "update", "update_req",
 		"verify", "verify_fail", "verify_req",
 		"vote1", "vote2", NULL
 	};

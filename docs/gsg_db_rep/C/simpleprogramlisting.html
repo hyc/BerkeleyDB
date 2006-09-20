@@ -6,7 +6,7 @@
     <title>Program Listing</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="txnapp.html" title="Chapter 2. Transactional Application" />
     <link rel="previous" href="txnapp.html" title="Chapter 2. Transactional Application" />
     <link rel="next" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
@@ -54,8 +54,8 @@
                 Also, this application is single-threaded. It is possible
                 to write a multi-threaded or multi-process application that 
                 performs replication. That said, the concepts described in
-                this book are applicable to single threaded,
-                multi-threaded, and multi-process applications so nothing
+                this book are applicable to both single threaded and
+                multi-threaded applications so nothing
                 is gained by multi-threading this application other than
                 distracting complexity. This manual
                 does, however, identify where care must be taken when
@@ -65,7 +65,7 @@
       <p>
                 Finally, remember that transaction processing is not described in
                 this manual. Rather, see the 
-                <i class="citetitle">Berkeley DB Transaction Processing Guide</i> for details on 
+                <i class="citetitle">Berkeley DB Getting Started with Transaction Processing</i> guide for details on 
                 that topic.
             </p>
       <div class="sect2" lang="en" xml:lang="en">
@@ -111,7 +111,7 @@ const char *progname = &quot;simple_txn&quot;;  </pre>
                 Then we perform a couple of forward declarations. The first
                 of these, <tt class="function">create_env()</tt> and
                 <tt class="function">env_init()</tt> are used to open
-                and intialize our environment.
+                and initialize our environment.
              </p>
         <p>
                      Next we declare
@@ -350,7 +350,7 @@ doloop(DB_ENV *dbenv)
                 </p>
         <p>
                     Autocommit is described in greater detail in the 
-                    <i class="citetitle">Berkeley DB Transaction Processing Guide</i>.
+                    <i class="citetitle">Berkeley DB Getting Started with Transaction Processing</i> guide.
                 </p>
         <pre class="programlisting">    for (;;) {
 
@@ -386,7 +386,7 @@ doloop(DB_ENV *dbenv)
            entered at this prompt.  If the user fails to enter at least one 
             space in the value string, a simple help message is printed and
             the prompt is returned to the user. That is the only error
-            checking is performed here. In a real-world application,
+            checking performed here. In a real-world application,
             at a minimum the application would probably check to ensure
             that the price was in fact an integer or float value. 
             However, in order to keep this example code as simple as
@@ -457,6 +457,7 @@ doloop(DB_ENV *dbenv)
               <h3 class="title"><a id="printstocks_c"></a>
                             <span>Function: print_stocks()</span>
                             
+                            
                     </h3>
             </div>
           </div>
@@ -464,19 +465,19 @@ doloop(DB_ENV *dbenv)
         </div>
         <p>
                         The <tt class="function">print_stocks()</tt> 
+                          
                         <span>function</span>
                         
                         simply takes a database handle, opens a cursor, and uses 
-                        it to display all
-                        the information it finds in a database.
+                        it to display all the information it finds in a database.
                         This is trivial cursor operation that should hold
                         no surprises for you. We simply provide it here for
                         the sake of completeness.
                     </p>
         <p>
                         If you are unfamiliar with basic cursor operations,
-                        please see the <i class="citetitle">Berkeley DB Getting Started
-                        Guide.</i>
+                        please see the <i class="citetitle">Getting Started with Berkeley DB</i>
+                        guide.
                     </p>
         <pre class="programlisting">/*
  * A function that takes a cursor and displays the entire

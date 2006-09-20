@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_vxworks,v 12.12 2006/06/26 17:34:19 bostic Exp $
+#	$Id: s_vxworks,v 12.13 2006/09/13 16:57:49 bostic Exp $
 #
 # Build the VxWorks files.
 
@@ -213,21 +213,80 @@ for i in $PROGRAM_LIST; do
 	    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 done
 
+# Output the build lines for a single utility.
+#	$1 == application name
+util_one()
+{
+	egrep "app=$1" srcfiles.in |
+	awk '{print $1}' |
+	sed 's/ex_access/dbdemo/' > $u
+
+	# Build a list of source files.
+	for i in `cat $u`; do
+		if test "$1" = "ex_access" -o "$1" = `basename $i .c`; then
+			i=`basename $i`
+		else
+			i="\$(PRJ_DIR)/../../$i"
+		fi
+		o="<BEGIN> FILE_$i"
+		
+		echo "${o}_dependDone"
+		echo "FALSE"
+		echo "<END>"
+		echo
+		echo "${o}_dependencies"
+		echo "<END>"
+		echo
+		echo "${o}_objects"
+		echo "`basename $i .c`.o"
+		echo "<END>"
+		echo
+		echo "${o}_tool"
+		echo "C/C++ compiler"
+		echo "<END>"
+		echo
+	done
+	echo "<BEGIN> PROJECT_FILES"
+	for i in `cat $u`; do
+		if test "$1" = "ex_access" -o "$1" = `basename $i .c`; then
+			i="`basename $i`"
+		else
+			i="../../$i"
+		fi
+		echo "\$(PRJ_DIR)/$i"
+	done |
+	sed -e '${' \
+	    -e 'p' \
+	    -e 'd' \
+	    -e '}' \
+	    -e 's/$/ \\/'
+	echo "<END>"
+	echo
+	echo "<BEGIN> userComments"
+	if test "$1" = "ex_access"; then
+		echo "dbdemo"
+	else
+		echo "$1"
+	fi
+	echo "<END>"
+}
+
 # Build VxWorks Tornado 2.0 project files for the utilities.
 for i in $PROGRAM_LIST; do
 	if [ $i = "ex_access" ]; then
 		target=dbdemo
-		dir=../examples_c
 	else
 		target=$i
-		dir=../$i
 	fi
 
-	sed "s/__DB_APPLICATION_NAME__/$target/g" < vx_2.0/wpj.in > $t
+	(sed -e "s/__DB_APPLICATION_NAME__/$target/g" < vx_2.0/wpj.in
+	    util_one $i) > $t
 	f=../build_vxworks/$target/${target}20.wpj
 	cmp $t $f > /dev/null 2>&1 ||
 	    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
-	sed "s/__DB_APPLICATION_NAME__/$target/g" < vx_2.2/wpj.in > $t
+
+	(sed -e "s/__DB_APPLICATION_NAME__/$target/g" < vx_2.2/wpj.in
+	    util_one $i) > $t
 	f=../build_vxworks/$target/${target}22.wpj
 	cmp $t $f > /dev/null 2>&1 ||
 	    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: log.c,v 12.37 2006/07/17 15:16:43 bostic Exp $
+ * $Id: log.c,v 12.40 2006/08/24 14:46:12 bostic Exp $
  */
 
 #include "db_config.h"
@@ -276,6 +276,7 @@ mem_err:	__db_errx( dbenv, "unable to allocate log region memory");
 	if (F_ISSET(dbenv, DB_ENV_LOG_INMEMORY))
 		lp->db_log_inmemory = 1;
 
+	(void)time(&lp->timestamp);
 	return (0);
 }
 
@@ -1023,7 +1024,7 @@ __log_vtruncate(dbenv, lsn, ckplsn, trunclsn)
 	 * to our current end of log.
 	 */
 	MUTEX_LOCK(dbenv, lp->mtx_flush);
-	if (log_compare(&lp->s_lsn, lsn) > 0)
+	if (LOG_COMPARE(&lp->s_lsn, lsn) > 0)
 		lp->s_lsn = lp->lsn;
 	MUTEX_UNLOCK(dbenv, lp->mtx_flush);
 
@@ -1124,8 +1125,8 @@ __log_zero(dbenv, from_lsn, to_lsn)
 	char *fname;
 
 	dblp = dbenv->lg_handle;
-	DB_ASSERT(dbenv, log_compare(from_lsn, to_lsn) <= 0);
-	if (log_compare(from_lsn, to_lsn) > 0) {
+	DB_ASSERT(dbenv, LOG_COMPARE(from_lsn, to_lsn) <= 0);
+	if (LOG_COMPARE(from_lsn, to_lsn) > 0) {
 		__db_errx(dbenv,
 		    "Warning: truncating to point beyond end of log");
 		return (0);
@@ -1164,6 +1165,7 @@ __log_zero(dbenv, from_lsn, to_lsn)
 			break;
 		}
 		(void)__os_closehandle(dbenv, fhp);
+		(void)time(&lp->timestamp);
 		ret = __os_unlink(dbenv, fname);
 		__os_free(dbenv, fname);
 		if (ret != 0)
@@ -1353,14 +1355,14 @@ __log_inmem_chkspace(dblp, len)
 		active_lsn.offset = 0;
 
 		/* If we didn't make any progress, give up. */
-		if (log_compare(&active_lsn, &old_active_lsn) == 0) {
+		if (LOG_COMPARE(&active_lsn, &old_active_lsn) == 0) {
 			__db_errx(dbenv,
       "In-memory log buffer is full (an active transaction spans the buffer)");
 			return (DB_LOG_BUFFER_FULL);
 		}
 
 		/* Make sure we're moving the region LSN forwards. */
-		if (log_compare(&active_lsn, &lp->active_lsn) > 0) {
+		if (LOG_COMPARE(&active_lsn, &lp->active_lsn) > 0) {
 			lp->active_lsn = active_lsn;
 			(void)__log_inmem_lsnoff(dblp, &active_lsn,
 			    &lp->a_off);

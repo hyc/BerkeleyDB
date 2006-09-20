@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 1999-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: conscript.tcl,v 12.2 2006/01/02 22:03:11 bostic Exp $
+# $Id: conscript.tcl,v 12.3 2006/08/24 14:46:34 bostic Exp $
 #
 # Script for DB_CONSUME test (test070.tcl).
 # Usage: conscript dir file runtype nitems outputfile tnum args

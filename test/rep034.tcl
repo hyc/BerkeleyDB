@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep034.tcl,v 12.10 2006/07/19 17:45:35 carol Exp $
+# $Id: rep034.tcl,v 12.13 2006/09/08 20:32:18 bostic Exp $
 #
 # TEST	rep034
 # TEST	Test of client startup synchronization.
@@ -166,6 +166,17 @@ proc rep034_sub { method niter tnum logset recargs opts largs } {
 	set startup_done 0
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+
+	#
+	# Record the number of rerequests now because they can
+	# happen during initial processing or later.
+	#
+	if { $anyopt == "anywhere" } {
+		set clrereq1 [stat_field $clientenv rep_stat \
+		    "Client rerequests"]
+		set nclrereq1 [stat_field $newclient rep_stat \
+		    "Client rerequests"]
+	}
 	set envlist "{$newclient 1} {$clientenv 2} {$newmaster 3}"
 	process_msgs $envlist
 
@@ -187,10 +198,6 @@ proc rep034_sub { method niter tnum logset recargs opts largs } {
 	#
 	if { $anyopt == "anywhere" } {
 		puts "\tRep$tnum.e.1: Generate messages for rerequest"
-		set clrereq1 [stat_field $clientenv rep_stat \
-		    "Client rerequests"]
-		set nclrereq1 [stat_field $newclient rep_stat \
-		    "Client rerequests"]
 		set niter 50
 		eval rep_test $method $newmaster NULL $niter 0 0 0 0 $largs
 		process_msgs $envlist

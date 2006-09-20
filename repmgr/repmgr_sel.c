@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_sel.c,v 1.20 2006/07/14 21:19:53 alanb Exp $
+ * $Id: repmgr_sel.c,v 1.25 2006/09/19 14:14:11 mjc Exp $
  */
 
 #include "db_config.h"
@@ -132,7 +132,7 @@ __repmgr_accept(dbenv)
 	case 0:
 		return (0);
 	case DB_REP_UNAVAIL:
-		return (__repmgr_bust_connection(dbenv, conn));
+		return (__repmgr_bust_connection(dbenv, conn, TRUE));
 	default:
 		return (ret);
 	}
@@ -304,7 +304,7 @@ __repmgr_connect_site(dbenv, eid)
 		case 0:
 			break;
 		case DB_REP_UNAVAIL:
-			return (__repmgr_bust_connection(dbenv, con));
+			return (__repmgr_bust_connection(dbenv, con, TRUE));
 		default:
 			return (ret);
 		}
@@ -356,7 +356,7 @@ __repmgr_connect(dbenv, socket_result, site)
 			return (ret);
 		}
 
-		if (connect(s, ai->ai_addr, ai->ai_addrlen) != 0)
+		if (connect(s, ai->ai_addr, (socklen_t)ai->ai_addrlen) != 0)
 			ret = net_errno;
 
 		if (ret == 0 || ret == INPROGRESS) {
@@ -387,11 +387,13 @@ __repmgr_send_handshake(dbenv, conn)
 	REPMGR_CONNECTION *conn;
 {
 	DB_REP *db_rep;
+	REP *rep;
 	repmgr_netaddr_t *my_addr;
 	DB_REPMGR_HANDSHAKE buffer;
 	DBT cntrl, rec;
 
 	db_rep = dbenv->rep_handle;
+	rep = db_rep->region;
 	my_addr = &db_rep->my_addr;
 
 	/*
@@ -402,13 +404,12 @@ __repmgr_send_handshake(dbenv, conn)
 
 	buffer.version = DB_REPMGR_VERSION;
 	/* TODO: using network byte order is pointless if we only do it here. */
-	buffer.priority = htonl((u_int32_t)db_rep->my_priority);
+	buffer.priority = htonl((u_int32_t)rep->priority);
 	buffer.port = my_addr->port;
 	cntrl.data = &buffer;
 	cntrl.size = sizeof(buffer);
 
-	rec.data = my_addr->host;
-	rec.size = strlen(rec.data) + 1;
+	DB_SET_DBT(rec, my_addr->host, strlen(my_addr->host) + 1);
 
 	return (__repmgr_send_one(dbenv, conn, REPMGR_HANDSHAKE, &cntrl, &rec));
 }
@@ -637,7 +638,7 @@ dispatch_phase_completion(dbenv, conn)
 				__db_errx(dbenv, "bad handshake msg size");
 				return (DB_REP_UNAVAIL);
 			}
-			
+
 			port = handshake->port;
 			host = conn->input.repmgr_msg.rec.data;
 			host[conn->input.repmgr_msg.rec.size-1] = '\0';
@@ -838,7 +839,7 @@ __repmgr_write_some(dbenv, conn)
 		output = STAILQ_FIRST(&conn->outbound_queue);
 		msg = output->msg;
 		if ((bytes = send(conn->fd, &msg->data[output->offset],
-		    msg->length - output->offset, 0)) == SOCKET_ERROR) {
+		    (size_t)msg->length - output->offset, 0)) == SOCKET_ERROR) {
 			if ((ret = net_errno) == WOULDBLOCK)
 				return (0);
 			else {

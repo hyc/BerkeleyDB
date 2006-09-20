@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_errno.c,v 12.8 2006/06/19 15:56:45 bostic Exp $
+ * $Id: os_errno.c,v 12.10 2006/09/19 14:14:13 mjc Exp $
  */
 
 #include "db_config.h"
@@ -112,8 +112,8 @@ __os_strerror(error, buf, len)
 	 * Explicitly call FormatMessageA, since we want to receive a char
 	 * string back, not a tchar string.
 	 */
-	FormatMessageA(
-	    FORMAT_MESSAGE_FROM_SYSTEM, 0, (DWORD)error, 0, buf, len - 1, NULL);
+	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+	    0, (DWORD)error, 0, buf, (DWORD)(len - 1), NULL);
 	buf[len - 1] = '\0';
 
 	return (buf);

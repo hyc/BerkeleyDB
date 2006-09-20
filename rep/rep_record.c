@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_record.c,v 12.41 2006/07/03 14:18:45 sue Exp $
+ * $Id: rep_record.c,v 12.51 2006/09/11 19:41:20 sue Exp $
  */
 
 #include "db_config.h"
@@ -35,7 +35,7 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 		RPRINT(dbenv,						\
 		    (dbenv, &mb, "Master record received on client"));	\
 		REP_PRINT_MESSAGE(dbenv,				\
-		    *eidp, rp, "rep_process_message");			\
+		    *eidp, rp, "rep_process_message", 0);		\
 		ret = EINVAL;						\
 		goto errlock;						\
 	}								\
@@ -46,7 +46,7 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 		RPRINT(dbenv,						\
 		    (dbenv, &mb, "Client record received on master"));	\
 		REP_PRINT_MESSAGE(dbenv,				\
-		    *eidp, rp, "rep_process_message");			\
+		    *eidp, rp, "rep_process_message", 0);		\
 		(void)__rep_send_message(dbenv,				\
 		    DB_EID_BROADCAST, REP_DUPMASTER, NULL, NULL, 0, 0);	\
 		ret = DB_REP_DUPMASTER;					\
@@ -96,7 +96,7 @@ static int __rep_skip_msg __P((DB_ENV *, REP *, int, u_int32_t));
 	if (F_ISSET(rep, REP_F_DELAY) ||				\
 	    (recovering &&						\
 	    (!F_ISSET(rep, REP_F_RECOVER_LOG) ||			\
-	     log_compare(&rp->lsn, &rep->last_lsn) > 0))) {		\
+	     LOG_COMPARE(&rp->lsn, &rep->last_lsn) > 0))) {		\
 		/* Not holding region mutex, may miscount */		\
 		rep->stat.st_msgs_recover++;				\
 		ret = __rep_skip_msg(dbenv, rep, *eidp, rp->rectype);	\
@@ -131,7 +131,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	DB_LSN *ret_lsnp;
 {
 	DB_LOG *dblp;
-	DB_LSN lsn;
+	DB_LSN last_lsn, lsn;
 	DB_REP *db_rep;
 	DBT data_dbt;
 	LOG *lp;
@@ -178,13 +178,13 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	 * Acquire the replication lock.
 	 */
 	REP_SYSTEM_LOCK(dbenv);
-	if (rep->start_th != 0) {
+	if (rep->lockout_th != 0) {
 		/*
 		 * If we're racing with a thread in rep_start, then
 		 * just ignore the message and return.
 		 */
 		RPRINT(dbenv, (dbenv, &mb,
-		    "Racing rep_start, ignore message."));
+		    "Racing replication msg lockout, ignore message."));
 		if (F_ISSET(rp, REPCTL_PERM))
 			ret = DB_REP_IGNORE;
 		REP_SYSTEM_UNLOCK(dbenv);
@@ -202,7 +202,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	 * Check the version number for both rep and log.  If it is
 	 * an old version we support, convert it.  Otherwise complain.
 	 */
-	REP_PRINT_MESSAGE(dbenv, *eidp, rp, "rep_process_message");
+	REP_PRINT_MESSAGE(dbenv, *eidp, rp, "rep_process_message", 0);
 	if (rp->rep_version < DB_REPVERSION) {
 		RPRINT(dbenv, (dbenv, &mb,
 		    "Received record %lu with old rep version %lu",
@@ -403,6 +403,8 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		break;
 	case REP_LOG_REQ:
 		RECOVERING_SKIP;
+		if (F_ISSET(rp, REPCTL_INIT))
+			MASTER_UPDATE(dbenv, renv);
 		ret = __rep_logreq(dbenv, rp, rec, *eidp);
 		CLIENT_REREQ;
 		break;
@@ -486,9 +488,9 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	case REP_NEWFILE:
 		RECOVERING_LOG_SKIP;
 		CLIENT_ONLY(rep, rp);
-		ret = __rep_apply(dbenv, rp, rec, ret_lsnp, NULL);
+		ret = __rep_apply(dbenv, rp, rec, ret_lsnp, NULL, &last_lsn);
 		if (ret == DB_REP_LOGREADY)
-			ret = __rep_logready(dbenv, rep, savetime);
+			ret = __rep_logready(dbenv, rep, savetime, &last_lsn);
 		break;
 	case REP_NEWMASTER:
 		/*
@@ -513,6 +515,8 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		 */
 		CLIENT_ONLY(rep, rp);
 		ret = __rep_page(dbenv, *eidp, rp, rec);
+		if (ret == DB_REP_PAGEDONE)
+			ret = 0;
 		break;
 	case REP_PAGE_FAIL:
 		/*
@@ -561,7 +565,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	case REP_VERIFY:
 		if (recovering) {
 			MUTEX_LOCK(dbenv, rep->mtx_clientdb);
-			cmp = log_compare(&lp->verify_lsn, &rp->lsn);
+			cmp = LOG_COMPARE(&lp->verify_lsn, &rp->lsn);
 			MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
 			/*
 			 * If this is not the verify record I want, skip it.
@@ -591,7 +595,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		/*
 		 * Handle even if we're recovering.
 		 */
-		ret = __rep_vote1(dbenv, rp, rec, *eidp);
+		ret = __rep_vote1(dbenv, rp, rec, eidp);
 		break;
 	case REP_VOTE2:
 		/*
@@ -631,15 +635,16 @@ out:
  * we try to process as much as possible from __db.rep.db to catch up.
  *
  * PUBLIC: int __rep_apply __P((DB_ENV *, REP_CONTROL *,
- * PUBLIC:     DBT *, DB_LSN *, int *));
+ * PUBLIC:     DBT *, DB_LSN *, int *, DB_LSN *));
  */
 int
-__rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp)
+__rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp, last_lsnp)
 	DB_ENV *dbenv;
 	REP_CONTROL *rp;
 	DBT *rec;
 	DB_LSN *ret_lsnp;
 	int *is_dupp;
+	DB_LSN *last_lsnp;
 {
 	DB_REP *db_rep;
 	DBT control_dbt, key_dbt;
@@ -669,10 +674,10 @@ __rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp)
 	lp = dblp->reginfo.primary;
 	REP_SYSTEM_LOCK(dbenv);
 	if (F_ISSET(rep, REP_F_RECOVER_LOG) &&
-	    log_compare(&lp->ready_lsn, &rep->first_lsn) < 0)
+	    LOG_COMPARE(&lp->ready_lsn, &rep->first_lsn) < 0)
 		lp->ready_lsn = rep->first_lsn;
 	REP_SYSTEM_UNLOCK(dbenv);
-	cmp = log_compare(&rp->lsn, &lp->ready_lsn);
+	cmp = LOG_COMPARE(&rp->lsn, &lp->ready_lsn);
 
 	if (cmp == 0) {
 		if ((ret =
@@ -687,7 +692,7 @@ __rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp)
 		ZERO_LSN(lp->max_wait_lsn);
 
 		while (ret == 0 &&
-		    log_compare(&lp->ready_lsn, &lp->waiting_lsn) == 0) {
+		    LOG_COMPARE(&lp->ready_lsn, &lp->waiting_lsn) == 0) {
 			/*
 			 * We just filled in a gap in the log record stream.
 			 * Write subsequent records to the log.
@@ -736,7 +741,7 @@ gap_check:
 		 * need to ask for any records.
 		 */
 		if (!IS_ZERO_LSN(lp->waiting_lsn) &&
-		    log_compare(&lp->ready_lsn, &lp->waiting_lsn) != 0) {
+		    LOG_COMPARE(&lp->ready_lsn, &lp->waiting_lsn) != 0) {
 			/*
 			 * We got a record and processed it, but we may
 			 * still be waiting for more records.  If we
@@ -790,7 +795,7 @@ gap_check:
 			goto done;
 
 		if (IS_ZERO_LSN(lp->waiting_lsn) ||
-		    log_compare(&rp->lsn, &lp->waiting_lsn) < 0)
+		    LOG_COMPARE(&rp->lsn, &lp->waiting_lsn) < 0)
 			lp->waiting_lsn = rp->lsn;
 
 		/*
@@ -816,16 +821,22 @@ gap_check:
 	}
 
 	/* Check if we need to go back into the table. */
-	if (ret == 0 && log_compare(&lp->ready_lsn, &lp->waiting_lsn) == 0)
+	if (ret == 0 && LOG_COMPARE(&lp->ready_lsn, &lp->waiting_lsn) == 0)
 		goto gap_check;
 
 done:
-err:	/* Check if we need to go back into the table. */
+err:	/*
+	 * In case of a race, to make sure only one thread can get
+	 * DB_REP_LOGREADY, zero out rep->last_lsn to show that we've gotten to
+	 * this point.
+	 */
 	REP_SYSTEM_LOCK(dbenv);
 	if (ret == 0 &&
 	    F_ISSET(rep, REP_F_RECOVER_LOG) &&
-	    log_compare(&lp->ready_lsn, &rep->last_lsn) >= 0) {
-		rep->last_lsn = max_lsn;
+	    !IS_ZERO_LSN(rep->last_lsn) &&
+	    LOG_COMPARE(&lp->ready_lsn, &rep->last_lsn) >= 0) {
+		*last_lsnp = max_lsn;
+		ZERO_LSN(rep->last_lsn);
 		ZERO_LSN(max_lsn);
 		ret = DB_REP_LOGREADY;
 	}
@@ -836,7 +847,7 @@ err:	/* Check if we need to go back into the table. */
 		if (ret_lsnp != NULL)
 			*ret_lsnp = max_lsn;
 		ret = DB_REP_ISPERM;
-		DB_ASSERT(dbenv, log_compare(&max_lsn, &lp->max_perm_lsn) >= 0);
+		DB_ASSERT(dbenv, LOG_COMPARE(&max_lsn, &lp->max_perm_lsn) >= 0);
 		lp->max_perm_lsn = max_lsn;
 	}
 	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
@@ -1123,14 +1134,14 @@ err:	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
 
 /*
  * __rep_lsn_cmp --
- *	qsort-type-compatible wrapper for log_compare.
+ *	qsort-type-compatible wrapper for LOG_COMPARE.
  */
 static int
 __rep_lsn_cmp(lsn1, lsn2)
 	const void *lsn1, *lsn2;
 {
 
-	return (log_compare((DB_LSN *)lsn1, (DB_LSN *)lsn2));
+	return (LOG_COMPARE((DB_LSN *)lsn1, (DB_LSN *)lsn2));
 }
 
 /*
@@ -1606,7 +1617,7 @@ __rep_skip_msg(dbenv, rep, eid, rectype)
 	 * If we have a request message from a client then immediately
 	 * send a REP_REREQUEST back to that client since we're skipping it.
 	 */
-	if (rep->master_id != DB_EID_INVALID && eid != rep->master_id)
+	if (F_ISSET(rep, REP_F_CLIENT) && REP_MSG_REQ(rectype))
 		do_req = 1;
 	else {
 		/* Check for need to retransmit. */
@@ -1626,14 +1637,14 @@ __rep_skip_msg(dbenv, rep, eid, rectype)
 		 * then we need to rerequest.
 		 * 3.  If the message didn't come from a master (i.e. client
 		 * to client), then send a rerequest back to the sender so
-		 * the sender can rerequest it elsewhere.
+		 * the sender can rerequest it elsewhere, if we are a client.
 		 */
 		if (rep->master_id == DB_EID_INVALID)	/* Case 1. */
 			(void)__rep_send_message(dbenv,
 			    DB_EID_BROADCAST, REP_MASTER_REQ, NULL, NULL, 0, 0);
 		else if (eid == rep->master_id)		/* Case 2. */
 			ret = __rep_resend_req(dbenv, 0);
-		else					/* Case 3. */
+		else if (F_ISSET(rep, REP_F_CLIENT))	/* Case 3. */
 			(void)__rep_send_message(dbenv,
 			    eid, REP_REREQUEST, NULL, NULL, 0, 0);
 	}

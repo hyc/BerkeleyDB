@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: EnvironmentConfig.java,v 12.18 2006/07/14 07:45:58 mjc Exp $
+ * $Id: EnvironmentConfig.java,v 12.21 2006/09/08 20:32:14 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -67,7 +67,7 @@ public class EnvironmentConfig implements Cloneable {
     private long txnTimeout = 0L;
     private java.util.Date txnTimestamp = null;
     private java.io.File temporaryDirectory = null;
-    private ReplicationManagerAckPolicy repmgrAckPolicy = 
+    private ReplicationManagerAckPolicy repmgrAckPolicy =
         ReplicationManagerAckPolicy.ALL;
     private ReplicationHostAddress repmgrLocalSiteAddr = null;
     private java.util.Vector repmgrRemoteSites = new java.util.Vector();
@@ -950,8 +950,8 @@ public class EnvironmentConfig implements Cloneable {
         if (rpcServer != oldConfig.rpcServer ||
             rpcClientTimeout != oldConfig.rpcClientTimeout ||
             rpcServerTimeout != oldConfig.rpcServerTimeout)
-            dbenv.set_rpc_server(null, rpcServer,
-                rpcClientTimeout, rpcServerTimeout, 0);
+            dbenv.set_rpc_server(rpcServer,
+		rpcClientTimeout, rpcServerTimeout, 0);
 
         // We always set DB_TIME_NOTGRANTED in the Java API, because
         // LockNotGrantedException extends DeadlockException, so there's no
@@ -1152,9 +1152,9 @@ public class EnvironmentConfig implements Cloneable {
         if (mutexTestAndSetSpins != oldConfig.mutexTestAndSetSpins)
             dbenv.mutex_set_tas_spins(mutexTestAndSetSpins);
         if (replicationNSites != oldConfig.replicationNSites)
-            dbenv.rep_set_nsites(replicationNSites);    
+            dbenv.rep_set_nsites(replicationNSites);
         if (replicationPriority != oldConfig.replicationPriority)
-            dbenv.rep_set_priority(replicationPriority);    
+            dbenv.rep_set_priority(replicationPriority);
         if (lockTimeout != oldConfig.lockTimeout)
             dbenv.set_timeout(lockTimeout, DbConstants.DB_SET_LOCK_TIMEOUT);
         if (txnMaxActive != oldConfig.txnMaxActive)
@@ -1174,12 +1174,12 @@ public class EnvironmentConfig implements Cloneable {
             dbenv.repmgr_set_local_site(
                 repmgrLocalSiteAddr.host, repmgrLocalSiteAddr.port, 0);
         }
-        for (java.util.Enumeration elems = repmgrRemoteSites.elements(); 
+        for (java.util.Enumeration elems = repmgrRemoteSites.elements();
             elems.hasMoreElements();)
         {
-            ReplicationHostAddress nextAddr = 
+            ReplicationHostAddress nextAddr =
                 (ReplicationHostAddress)elems.nextElement();
-            dbenv.repmgr_add_remote_site(nextAddr.host, nextAddr.port, 
+            dbenv.repmgr_add_remote_site(nextAddr.host, nextAddr.port,
                 nextAddr.isPeer ? DbConstants.DB_REPMGR_PEER : 0);
         }
     }

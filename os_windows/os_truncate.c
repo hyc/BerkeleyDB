@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2004-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_truncate.c,v 12.9 2006/07/05 07:45:25 mjc Exp $
+ * $Id: os_truncate.c,v 12.12 2006/09/05 15:30:18 mjc Exp $
  */
 
 #include "db_config.h"
@@ -31,7 +31,6 @@ __os_truncate(dbenv, fhp, pgno, pgsize)
 		};
 	} off;
 	off_t offset;
-	HANDLE dup_handle;
 	int ret;
 
 	ret = 0;
@@ -60,18 +59,8 @@ __os_truncate(dbenv, fhp, pgno, pgsize)
 	/*
 	 * Windows doesn't provide truncate directly.  Instead, it has
 	 * SetEndOfFile, which truncates to the current position.  To
-	 * deal with that, we first duplicate the file handle, then
-	 * seek and set the end of file.  This is necessary to avoid
-	 * races with {Read,Write}File in other threads.
-	 */
-	if (!DuplicateHandle(GetCurrentProcess(), fhp->handle,
-	    GetCurrentProcess(), &dup_handle, 0, FALSE,
-	    DUPLICATE_SAME_ACCESS)) {
-		ret = __os_get_syserr();
-		goto err;
-	}
-
-	/*
+	 * deal with that, we open a duplicate file handle for truncating.
+	 *
 	 * We want to retry the truncate call, which involves a SetFilePointer
 	 * and a SetEndOfFile, but there are several complications:
 	 *
@@ -88,14 +77,11 @@ __os_truncate(dbenv, fhp, pgno, pgsize)
 	 * offsets, because it isn't supported on Win9x/ME.
 	 */
 	RETRY_CHK((off.bigint = (__int64)pgsize * pgno,
-	    (SetFilePointer(dup_handle, off.low, &off.high, FILE_BEGIN) ==
-	    INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) ||
-	    !SetEndOfFile(dup_handle)), ret);
+	    (SetFilePointer(fhp->trunc_handle, off.low, &off.high, FILE_BEGIN)
+	    == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) ||
+	    !SetEndOfFile(fhp->trunc_handle)), ret);
 
-	if (!CloseHandle(dup_handle) && ret == 0)
-		ret = __os_get_syserr();
-
-err:	if (ret != 0) {
+	if (ret != 0) {
 		__db_syserr(dbenv, ret, "SetFilePointer: %lu", pgno * pgsize);
 		ret = __os_posix_err(ret);
 	}

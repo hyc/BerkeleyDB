@@ -1,12 +1,14 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2000-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: testparams.tcl,v 12.75 2006/07/12 18:14:03 carol Exp $
+# $Id: testparams.tcl,v 12.82 2006/09/08 20:32:18 bostic Exp $
 
 source ./include.tcl
 global is_freebsd_test
+global tcl_platform
+global rpc_tests
 global one_test
 global serial_tests
 set serial_tests {rep002 rep005 rep016 rep020 rep022 rep026 rep031 rep063}
@@ -46,7 +48,7 @@ set test_names(rep)	[list rep001 rep002 rep003 rep005 rep006 rep007 \
     rep028 rep029 rep030 rep031 rep032 rep033 rep034 rep035 rep036 rep037 \
     rep038 rep039 rep040 rep041 rep042 rep043 rep044 rep045 rep046 rep047 \
     rep048 rep049 rep050 rep051 rep052 rep053 rep054 rep055 rep056 rep057 \
-    rep058 rep060 rep061 rep062 rep063 rep064 rep065]
+    rep058 rep060 rep061 rep062 rep063 rep064 rep065 rep066]
 set test_names(rpc)	[list rpc001 rpc002 rpc003 rpc004 rpc005 rpc006]
 set test_names(rsrc)	[list rsrc001 rsrc002 rsrc003 rsrc004]
 set test_names(sdb)	[list sdb001 sdb002 sdb003 sdb004 sdb005 sdb006 \
@@ -76,16 +78,26 @@ set rpc_tests(berkeley_db_svc) [concat $test_names(test) $test_names(sdb)]
 set rpc_tests(berkeley_db_cxxsvc) $test_names(test)
 set rpc_tests(berkeley_db_javasvc) $test_names(test)
 
-# FreeBSD, starting at version 5.4,  has problems dealing with large
-# messages over RPC.  Exclude those tests.  We can put them back if
-# FreeBSD addresses this bug.  SR [#13542].
+# FreeBSD, in version 5.4, has problems dealing with large messages
+# over RPC.  Exclude those tests.  We believe these problems are
+# resolved for later versions.  SR [#13542]
 set freebsd_skip_tests_for_rpc [list test003 test008 test009 test012 test017 \
-    test028 test081 test095 test102]
+    test028 test081 test095 test102 test103 test119 sdb004 sdb011]
+set freebsd_5_4 0
 if { $is_freebsd_test } {
-	foreach test $freebsd_skip_tests_for_rpc {
-		set idx [lsearch -exact $rpc_tests(berkeley_db_svc) $test]
-		if { $idx >= 0 } {
-			lreplace $rpc_tests(berkeley_db_svc) $idx $idx
+	set version $tcl_platform(osVersion)
+	if { [is_substr $version "5.4"] } {
+		set freebsd_5_4 1
+	}
+}
+if { $freebsd_5_4 } {
+	foreach svc {berkeley_db_svc berkeley_db_cxxsvc berkeley_db_javasvc} {
+		foreach test $freebsd_skip_tests_for_rpc {
+			set idx [lsearch -exact $rpc_tests($svc) $test]
+			if { $idx >= 0 } {
+				set rpc_tests($svc)\
+				    [lreplace $rpc_tests($svc) $idx $idx]
+			}
 		}
 	}
 }

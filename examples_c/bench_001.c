@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: bench_001.c,v 12.4 2006/06/03 13:21:47 bostic Exp $
+ * $Id: bench_001.c,v 12.5 2006/08/24 14:45:41 bostic Exp $
  */
 
 /*

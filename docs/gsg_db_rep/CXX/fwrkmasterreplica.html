@@ -6,8 +6,8 @@
     <title>Chapter 4. Replica versus Master Processes</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
-    <link rel="up" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
+    <link rel="up" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="previous" href="fmwrkconnectretry.html" title="Managing Connection Retries" />
     <link rel="next" href="processingloop.html" title="Processing Loop" />
   </head>
@@ -149,7 +149,7 @@
                                   </p>
               <p>
                                           The replica has completed startup
-                                          syncrhonization and is now
+                                          synchronization and is now
                                           processing log records received
                                           from the master.
                                   </p>
@@ -252,7 +252,7 @@ event_callback(DbEnv *dbenv, u_int32_t which, void *info)
     case DB_EVENT_REP_STARTUPDONE: /* fallthrough */
     case DB_EVENT_REP_NEWMASTER:
         /* Ignore. */
-        reak;
+        break;
 
     default:
         dbenv-&gt;errx(dbenv, &quot;ignoring event %d&quot;, which);

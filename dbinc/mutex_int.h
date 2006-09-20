@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: mutex_int.h,v 12.21 2006/07/05 05:37:09 mjc Exp $
+ * $Id: mutex_int.h,v 12.22 2006/08/24 14:45:29 bostic Exp $
  */
 
 #ifndef _DB_MUTEX_INT_H_

@@ -93,7 +93,7 @@ public class DbEnv {
 
 	private final int handle_event_notify(int event) {
 		return event_notify_handler.handleEvent(EventType.fromInt(event));
-	} 
+	}
 
 	public EventHandler get_event_notify() throws com.sleepycat.db.DatabaseException {
 		return event_notify_handler;
@@ -291,7 +291,7 @@ public class DbEnv {
 
   public void set_paniccall(com.sleepycat.db.PanicHandler db_panic_fcn) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_paniccall(swigCPtr,  (panic_handler = db_panic_fcn) ); }
 
-  public void set_rpc_server(DbClient client, String host, long cl_timeout, long sv_timeout, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_rpc_server(swigCPtr, client, host, cl_timeout, sv_timeout, flags); }
+  public void set_rpc_server(String host, long cl_timeout, long sv_timeout, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_rpc_server(swigCPtr, host, cl_timeout, sv_timeout, flags); }
 
   public void set_shm_key(long shm_key) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_shm_key(swigCPtr, shm_key); }
 
@@ -504,13 +504,17 @@ public class DbEnv {
 
   public void rep_set_timeout(int which, long timeout) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_rep_set_timeout(swigCPtr, which, timeout); }
 
-  public void repmgr_add_remote_site(String host, int port, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_repmgr_add_remote_site(swigCPtr, host, port, flags); }
+  public int repmgr_add_remote_site(String host, int port, int flags) throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.DbEnv_repmgr_add_remote_site(swigCPtr, host, port, flags);
+  }
 
   public void repmgr_get_ack_policy() throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_repmgr_get_ack_policy(swigCPtr); }
 
   public void repmgr_set_ack_policy(int policy) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_repmgr_set_ack_policy(swigCPtr, policy); }
 
   public void repmgr_set_local_site(String host, int port, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_repmgr_set_local_site(swigCPtr, host, port, flags); }
+
+  public com.sleepycat.db.ReplicationHostAddress[] repmgr_site_list() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_repmgr_site_list(swigCPtr); }
 
   public void repmgr_start(int nthreads, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_repmgr_start(swigCPtr, nthreads, flags); }
 

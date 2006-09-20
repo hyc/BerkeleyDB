@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: recd023.tcl,v 12.4 2006/06/27 22:31:08 bostic Exp $
+# $Id: recd023.tcl,v 12.6 2006/08/24 14:46:37 bostic Exp $
 #
 # TEST	recd023
 # TEST	Test recover of reverse split.
@@ -71,11 +71,13 @@ proc recd023 { method args } {
 
 	# Overwrite the current database with the saved database.
 	file copy -force $testdir/$testfile.save $testdir/$testfile
+	error_check_good log_flush [$env log_flush] 0
 	error_check_good env_close [$env close] 0
 
 	# Recover the saved database to roll forward and apply the deletes.
 	set env [berkdb_env -create -txn -home $testdir -recover]
 	error_check_good env_open [is_valid_env $env] TRUE
+	error_check_good log_flush [$env log_flush] 0
 	error_check_good env_close [$env close] 0
 
 	error_check_good verify_dir [verify_dir $testdir "\tRecd$tnum.e: "] 0

@@ -1,4 +1,4 @@
-# $Id: win_exports.in,v 12.19 2006/06/08 13:33:51 bostic Exp $
+# $Id: win_exports.in,v 12.20 2006/08/10 08:21:51 alexg Exp $
 
 # Standard interfaces.
 	db_create
@@ -53,6 +53,7 @@
 	__os_dirlist
 	__os_free
 	__os_get_syserr
+	__os_getenv
 	__os_ioinfo
 	__os_malloc
 	__os_mkdir

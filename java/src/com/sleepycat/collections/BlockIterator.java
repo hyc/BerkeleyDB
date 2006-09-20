@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: BlockIterator.java,v 12.1 2006/06/09 14:32:05 mark Exp $
+ * $Id: BlockIterator.java,v 12.3 2006/09/08 20:32:13 bostic Exp $
  */
 
 package com.sleepycat.collections;
@@ -265,7 +265,7 @@ class BlockIterator implements BaseIterator {
     }
 
     /**
-     * Moves the cursor to the key/data at the given slot, and returns false 
+     * Moves the cursor to the key/data at the given slot, and returns false
      * if the reposition (search) fails.
      */
     private boolean moveCursor(int i, DataCursor cursor)
@@ -398,7 +398,7 @@ class BlockIterator implements BaseIterator {
             int last = keys.length - 1;
             int next = nextIndex;
             boolean found = false;
-        
+
             /* Reposition to the last known key/data pair. */
             int repos = cursor.repositionRange
                 (keys[next], priKeys[next], values[next], false);
@@ -622,7 +622,7 @@ class BlockIterator implements BaseIterator {
                     if (!moveCursor(insertIndex, cursor)) {
                         throw new IllegalStateException();
                     }
-                    
+
                     /*
                      * For a recno-renumber database or a database with
                      * unsorted duplicates, insert before the iterator 'next'

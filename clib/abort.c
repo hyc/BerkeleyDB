@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: abort.c,v 1.1 2006/07/12 14:23:56 bostic Exp $
+ * $Id: abort.c,v 1.3 2006/09/07 14:12:59 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,6 +21,9 @@
 void
 abort()
 {
+#ifdef SIGABRT
+	raise(SIGABRT);			/* Try and drop core. */
+#endif
 	exit(1);
 	/* NOTREACHED */
 }

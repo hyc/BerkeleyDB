@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_overflow.c,v 12.11 2006/06/29 00:02:30 mjc Exp $
+ * $Id: db_overflow.c,v 12.13 2006/08/24 14:45:16 bostic Exp $
  */
 
 #include "db_config.h"
@@ -272,15 +272,14 @@ __db_poff(dbc, dbt, pgnop)
 
 /*
  * __db_ovref --
- *	Increment/decrement the reference count on an overflow page.
+ *	Decrement the reference count on an overflow page.
  *
- * PUBLIC: int __db_ovref __P((DBC *, db_pgno_t, int32_t));
+ * PUBLIC: int __db_ovref __P((DBC *, db_pgno_t));
  */
 int
-__db_ovref(dbc, pgno, adjust)
+__db_ovref(dbc, pgno)
 	DBC *dbc;
 	db_pgno_t pgno;
-	int32_t adjust;
 {
 	DB *dbp;
 	DB_MPOOLFILE *mpf;
@@ -295,16 +294,25 @@ __db_ovref(dbc, pgno, adjust)
 
 	if (DBC_LOGGING(dbc)) {
 		if ((ret = __db_ovref_log(dbp,
-		    dbc->txn, &LSN(h), 0, h->pgno, adjust, &LSN(h))) != 0) {
+		    dbc->txn, &LSN(h), 0, h->pgno, -1, &LSN(h))) != 0) {
 			(void)__memp_fput(mpf, h, 0);
 			return (ret);
 		}
 	} else
 		LSN_NOT_LOGGED(LSN(h));
-	OV_REF(h) += adjust;
 
-	(void)__memp_fput(mpf, h, 0);
-	return (0);
+	/*
+	 * In BDB releases before 4.5, the overflow reference counts were
+	 * incremented when an overflow item was split onto an internal
+	 * page.  There was a lock race in that code, and rather than fix
+	 * the race, we changed BDB to copy overflow items when splitting
+	 * them onto internal pages.  The code to decrement reference
+	 * counts remains so databases already in the field continue to
+	 * work.
+	 */
+	--OV_REF(h);
+
+	return (__memp_fput(mpf, h, 0));
 }
 
 /*
@@ -339,7 +347,7 @@ __db_doff(dbc, pgno)
 		 */
 		if (OV_REF(pagep) > 1) {
 			(void)__memp_fput(mpf, pagep, 0);
-			return (__db_ovref(dbc, pgno, -1));
+			return (__db_ovref(dbc, pgno));
 		}
 
 		if ((ret = __memp_dirty(mpf, &pagep, dbc->txn, 0)) != 0) {

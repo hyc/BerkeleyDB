@@ -928,6 +928,10 @@ SOURCE=..\os_windows\os_fsync.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\os_windows\os_getenv.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\os_windows\os_handle.c
 # End Source File
 # Begin Source File
@@ -1077,6 +1081,10 @@ SOURCE=..\repmgr\repmgr_queue.c
 # Begin Source File
 
 SOURCE=..\repmgr\repmgr_sel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\repmgr\repmgr_stat.c
 # End Source File
 # Begin Source File
 

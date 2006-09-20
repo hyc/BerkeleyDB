@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -36,7 +36,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db185_int.in,v 12.3 2006/01/02 22:01:35 bostic Exp $
+ * $Id: db185_int.in,v 12.4 2006/08/24 14:45:17 bostic Exp $
  */
 
 #ifndef _DB185_INT_H_

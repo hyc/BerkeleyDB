@@ -6,7 +6,7 @@
     <title>The Replication APIs</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="introduction.html" title="Chapter 1. Introduction" />
     <link rel="previous" href="repadvantage.html" title="Replication Benefits" />
     <link rel="next" href="elections.html" title="Holding Elections" />
@@ -38,7 +38,7 @@
                 There are two ways that you can choose to implement
                 replication in your transactional application. The first,
                 and preferred, mechanism is to use the pre-packaged
-                replication framework that Sleepycat provides with its
+                replication framework that comes with the
                 DB distribution. This framework should be sufficient
                 for most customers.
             </p>
@@ -65,7 +65,7 @@
           <div></div>
         </div>
         <p>
-                    Sleepycat's pre-packaged replication framework exists
+                    DB's pre-packaged replication framework exists
                     as a layer on top of the DB library. The replication framework is a
                     multi-threaded implementation that allows you to easily add
                     replication to your existing transactional application.
@@ -111,6 +111,12 @@
               <p>
                             Requires a single process for the master replica.
                         </p>
+            </li>
+            <li>
+              <p>
+                                    Requires that only one instance of the
+                                    environment handle be used.
+                            </p>
             </li>
             <li>
               <p>
@@ -192,8 +198,7 @@
         <p>
                         For information on writing a replicated application
                         using the Berkeley DB replication APIs, see the
-                        <i class="citetitle">Berkeley DB Programmer's Reference
-                                Guide</i>.
+                        <i class="citetitle">Berkeley DB Programmer's Reference Guide</i>.
                 </p>
       </div>
     </div>

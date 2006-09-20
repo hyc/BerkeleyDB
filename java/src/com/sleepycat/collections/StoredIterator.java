@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *      Oracle Corporation.  All rights reserved.
  *
- * $Id: StoredIterator.java,v 12.3 2006/06/09 14:32:07 mark Exp $
+ * $Id: StoredIterator.java,v 12.5 2006/09/08 20:32:13 bostic Exp $
  */
 
 package com.sleepycat.collections;
@@ -476,7 +476,7 @@ public class StoredIterator implements BaseIterator, Cloneable {
         toPrevious = MOVE_PREV;
         toCurrent = 0;
         currentData = null;
-        /* 
+        /*
 	 * Initialize cursor at beginning to avoid "initial previous == last"
 	 * behavior when cursor is uninitialized.
 	 *

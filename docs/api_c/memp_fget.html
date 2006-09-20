@@ -1,5 +1,5 @@
-<!--$Id: memp_fget.so,v 10.45 2006/06/28 19:43:08 bostic Exp $-->
-<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
+<!--$Id: memp_fget.so,v 10.48 2006/09/13 14:30:54 mjc Exp $-->
+<!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -58,7 +58,9 @@ being evicted from the pool.  For files open with the
 if this is the first time the specified transaction is modifying it.
 <dt><a name="DB_MPOOL_EDIT">DB_MPOOL_EDIT</a><dd>The page will be modified and must be written to the source file before
 being evicted from the pool.  No copy of the page will be made, regardless
-of the <a href="../api_c/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a> setting.
+of the <a href="../api_c/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a> setting.  This flag is only intended for
+use in situations where a transaction handle is not available, such as during
+aborts or recovery.
 <dt><a name="DB_MPOOL_LAST">DB_MPOOL_LAST</a><dd>Return the last page of the source file, and copy its page number into
 the memory location to which <b>pgnoaddr</b> refers.
 <dt><a name="DB_MPOOL_NEW">DB_MPOOL_NEW</a><dd>Create a new page in the file, and copy its page number into the memory
@@ -79,9 +81,11 @@ create or retrieve.
 number 0, not page number 1.</b></p>
 <dt><b>txnid</b><dd>If the operation is part of an application-specified
 transaction, the <b>txnid</b> parameter is a transaction handle
-returned from <a href="../api_c/txn_begin.html">DB_ENV-&gt;txn_begin</a>; otherwise NULL.  A transaction is only
-relevant if the file is open for multiversion concurrency control by
-passing <a href="../api_c/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a> to <a href="../api_c/memp_fopen.html">DB_MPOOLFILE-&gt;open</a>.
+returned from <a href="../api_c/txn_begin.html">DB_ENV-&gt;txn_begin</a>; otherwise NULL.  A transaction is
+required if the file is open for multiversion concurrency control by
+passing <a href="../api_c/db_open.html#DB_MULTIVERSION">DB_MULTIVERSION</a> to <a href="../api_c/memp_fopen.html">DB_MPOOLFILE-&gt;open</a> and the
+DB_MPOOL_DIRTY, DB_MPOOL_CREATE or
+DB_MPOOL_NEW flags were specified.  Otherwise it is ignored.
 </dl>
 <h3>Errors</h3>
 <p>The DB_MPOOLFILE-&gt;get method
@@ -102,7 +106,7 @@ DB_MPOOL_NEW was set.; or if an
 invalid flag value or parameter was specified.
 </dl>
 <dl compact>
-<dt>DB_UPDATE_CONFLICT<dd>For transactions configured with <a href="../api_c/txn_begin.html#DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a>, the page has
+<dt>DB_LOCK_DEADLOCK<dd>For transactions configured with <a href="../api_c/txn_begin.html#DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a>, the page has
 been modified since the transaction began.
 </dl>
 <dl compact>
@@ -117,6 +121,6 @@ been modified since the transaction began.
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_c/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

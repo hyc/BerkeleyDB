@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep065.tcl,v 12.5 2006/07/19 19:15:23 carol Exp $
+# $Id: rep065.tcl,v 12.9 2006/09/08 20:32:18 bostic Exp $
 #
 # TEST	rep065
 # TEST	Tests replication running with different versions.
@@ -71,8 +71,8 @@ proc rep065_sub { mv nsites slist } {
 	# Set up the historical build directory.  The master will start
 	# running with historical code.
 	#
-	# This test presumes we are running in the current build 
-	# directory and that the expected historical builds are 
+	# This test presumes we are running in the current build
+	# directory and that the expected historical builds are
 	# set up in a similar fashion.  If they are not, quit gracefully.
 
 	set pwd [pwd]
@@ -84,7 +84,7 @@ proc rep065_sub { mv nsites slist } {
 		return
 	}
 	if { [file exists $histdir/db_verify] == 0 } {
-		puts -nonewline "Skipping iteration: historical version $vers" 
+		puts -nonewline "Skipping iteration: historical version $vers"
 		puts " is missing some executables.  Is it built?"
 		return
 	}
@@ -92,7 +92,7 @@ proc rep065_sub { mv nsites slist } {
 	set histtestdir $histdir/TESTDIR
 
 	env_cleanup $histtestdir
-	set markerdir $controldir/MARKER
+	set markerdir $controldir/$testdir/MARKER
 	file delete -force $markerdir
 
 	# Create site directories.  They start running in the historical
@@ -220,7 +220,7 @@ proc rep065_sub { mv nsites slist } {
 			    $sitedir($i) $reputils_path &]
 		}
 
-		watch_procs $pids 20
+		watch_procs $pids 10
 		#
 		# Now that each site created its verification files,
 		# we can now verify everyone.

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: RepQuoteExample.cpp,v 1.6 2006/07/18 08:52:01 alexg Exp $
+ * $Id: RepQuoteExample.cpp,v 1.11 2006/09/09 14:15:56 bostic Exp $
  */
 
 /*
@@ -46,10 +46,10 @@ using std::flush;
 
 const char *progname = "excxx_repquote";
 
+#include <errno.h>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <direct.h>
 #define	sleep(s)		Sleep(1000 * (s))
 
 extern "C" {
@@ -97,7 +97,7 @@ static void usage()
 
 	cerr << "\t -m host:port (required; m stands for me)" << endl
 		<< "\t -o host:port (optional; o stands for other; any "
-		<< "number of these may bespecified)" << endl
+		<< "number of these may be specified)" << endl
 		<< "\t -h home directory" << endl
 		<< "\t -n nsites (optional; number of sites in replication "
 		<< "group; defaults to 0" << endl
@@ -219,7 +219,7 @@ int RepQuoteExample::init(RepConfigInfo *config)
 	for ( REP_HOST_INFO *cur = app_config->other_hosts; cur != NULL;
 		cur = cur->next) {
 		if ((ret = cur_env.repmgr_add_remote_site(cur->host, cur->port,
-			cur->peer ? DB_REPMGR_PEER : 0)) != 0) {
+			NULL, cur->peer ? DB_REPMGR_PEER : 0)) != 0) {
 				// should have resulted in an exception.
 				cerr << "could not add site." << endl
 				    << "WARNING: This should have been an exception." << endl;
@@ -248,7 +248,7 @@ int RepQuoteExample::init(RepConfigInfo *config)
 
 	try {
 		cur_env.open(app_config->home, DB_CREATE | DB_RECOVER |
-		    DB_THREAD | DB_INIT_REP | DB_INIT_LOCK | DB_INIT_LOG | 
+		    DB_THREAD | DB_INIT_REP | DB_INIT_LOCK | DB_INIT_LOG |
 		    DB_INIT_MPOOL | DB_INIT_TXN, 0);
 	} catch(DbException dbe) {
 		cerr << "Caught an exception during DB environment open." << endl

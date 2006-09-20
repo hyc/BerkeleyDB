@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: TransactionTest.java,v 12.6 2006/06/27 22:48:28 bostic Exp $
+ * $Id: TransactionTest.java,v 12.7 2006/08/24 14:46:47 bostic Exp $
  */
 
 package com.sleepycat.collections.test;

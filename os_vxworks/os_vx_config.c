@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_vx_config.c,v 12.4 2006/06/10 20:59:23 bostic Exp $
+ * $Id: os_vx_config.c,v 12.6 2006/08/24 14:46:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -24,6 +24,16 @@ __os_fs_notzero()
 	 * and that breaks Berkeley DB.
 	 */
 	return (1);
+}
+
+/*
+ * __os_support_direct_io --
+ *      Return 1 if we support direct I/O.
+ */
+int
+__os_support_direct_io()
+{
+	return (0);
 }
 
 /*

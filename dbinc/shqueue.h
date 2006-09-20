@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: shqueue.h,v 12.7 2006/07/05 05:37:09 mjc Exp $
+ * $Id: shqueue.h,v 12.9 2006/09/07 15:11:26 mjc Exp $
  */
 
 #ifndef	_DB_SHQUEUE_H_
@@ -47,12 +47,8 @@ struct {								\
 	ssize_t sce_prev;	/* relative offset of prev element */	\
 }
 
-#define	CHAIN_PTR_TO_OFF(src, dest)					\
-	((dest == NULL) ? -1 : SH_PTR_TO_OFF(src, dest))
-
 #define	SH_CHAIN_INIT(elm, field)					\
-	(elm)->field.sce_next = (elm)->field.sce_prev =			\
-	    CHAIN_PTR_TO_OFF(elm, NULL)
+	(elm)->field.sce_next = (elm)->field.sce_prev =	-1
 
 #define	SH_CHAIN_HASNEXT(elm, field)	((elm)->field.sce_next != -1)
 #define	SH_CHAIN_NEXTP(elm, field, type)				\
@@ -67,33 +63,39 @@ struct {								\
      SH_CHAIN_PREVP(elm, field, type) : (struct type *)NULL)
 
 #define	SH_CHAIN_SINGLETON(elm, field)					\
-    (!SH_CHAIN_HASNEXT(elm, field) && !SH_CHAIN_HASPREV(elm, field))
+    (!(SH_CHAIN_HASNEXT(elm, field) || SH_CHAIN_HASPREV(elm, field)))
 
 #define	SH_CHAIN_INSERT_AFTER(listelm, elm, field, type) do {		\
 	struct type *__next = SH_CHAIN_NEXT(listelm, field, type);	\
-	(elm)->field.sce_next =	CHAIN_PTR_TO_OFF(elm, __next);		\
-	(elm)->field.sce_prev = CHAIN_PTR_TO_OFF(elm, listelm);		\
-	if (__next != NULL)						\
-		__next->field.sce_prev = CHAIN_PTR_TO_OFF(__next, elm);	\
-	(listelm)->field.sce_next = CHAIN_PTR_TO_OFF(listelm, elm);	\
+	if (__next != NULL) {						\
+		(elm)->field.sce_next =	SH_PTR_TO_OFF(elm, __next);	\
+		__next->field.sce_prev = SH_PTR_TO_OFF(__next, elm);	\
+	} else								\
+		(elm)->field.sce_next = -1;				\
+	(elm)->field.sce_prev = SH_PTR_TO_OFF(elm, listelm);		\
+	(listelm)->field.sce_next = SH_PTR_TO_OFF(listelm, elm);	\
 } while (0)
 
 #define	SH_CHAIN_INSERT_BEFORE(listelm, elm, field, type) do {		\
 	struct type *__prev = SH_CHAIN_PREV(listelm, field, type);	\
-	(elm)->field.sce_next = CHAIN_PTR_TO_OFF(elm, listelm);		\
-	(elm)->field.sce_prev = CHAIN_PTR_TO_OFF(elm, __prev);		\
-	if (__prev != NULL)						\
-		__prev->field.sce_next = CHAIN_PTR_TO_OFF(__prev, elm);	\
-	(listelm)->field.sce_prev = CHAIN_PTR_TO_OFF(listelm, elm);	\
+	if (__prev != NULL) {						\
+		(elm)->field.sce_prev = SH_PTR_TO_OFF(elm, __prev);	\
+		__prev->field.sce_next = SH_PTR_TO_OFF(__prev, elm);	\
+	} else								\
+		(elm)->field.sce_prev = -1;				\
+	(elm)->field.sce_next = SH_PTR_TO_OFF(elm, listelm);		\
+	(listelm)->field.sce_prev = SH_PTR_TO_OFF(listelm, elm);	\
 } while (0)
 
 #define	SH_CHAIN_REMOVE(elm, field, type) do {				\
 	struct type *__prev = SH_CHAIN_PREV(elm, field, type);		\
 	struct type *__next = SH_CHAIN_NEXT(elm, field, type);		\
 	if (__next != NULL)						\
-		__next->field.sce_prev = CHAIN_PTR_TO_OFF(__next, __prev);\
+		__next->field.sce_prev = (__prev == NULL) ? -1 :	\
+		    SH_PTR_TO_OFF(__next, __prev);			\
 	if (__prev != NULL)						\
-		__prev->field.sce_next = CHAIN_PTR_TO_OFF(__prev, __next);\
+		__prev->field.sce_next = (__next == NULL) ? -1 :	\
+		    SH_PTR_TO_OFF(__prev, __next);			\
 	SH_CHAIN_INIT(elm, field);					\
 } while (0)
 
@@ -147,7 +149,7 @@ struct {								\
 
 #define	SH_LIST_FOREACH(var, head, field, type)				\
 	for ((var) = SH_LIST_FIRST((head), type);			\
-	    (var);							\
+	    (var) != NULL;						\
 	    (var) = SH_LIST_NEXT((var), field, type))
 
 /*
@@ -310,12 +312,12 @@ struct {								\
 
 #define	SH_TAILQ_FOREACH(var, head, field, type)			\
 	for ((var) = SH_TAILQ_FIRST((head), type);			\
-	    (var);							\
+	    (var) != NULL;						\
 	    (var) = SH_TAILQ_NEXT((var), field, type))
 
 #define	SH_TAILQ_FOREACH_REVERSE(var, head, field, type)		\
 	for ((var) = SH_TAILQ_LAST((head), field, type);		\
-	    (var);							\
+	    (var) != NULL;						\
 	    (var) = SH_TAILQ_PREV((head), (var), field, type))
 
 #define	SH_TAILQ_INIT(head) {						\

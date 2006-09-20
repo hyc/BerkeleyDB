@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1999-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: tcl_log.c,v 12.9 2006/06/14 22:21:44 bostic Exp $
+ * $Id: tcl_log.c,v 12.10 2006/08/24 14:46:33 bostic Exp $
  */
 
 #include "db_config.h"

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2000-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: wrap.tcl,v 12.3 2006/06/21 15:28:02 sue Exp $
+# $Id: wrap.tcl,v 12.4 2006/08/24 14:46:41 bostic Exp $
 #
 # Sentinel file wrapper for multi-process tests.  This is designed to avoid a
 # set of nasty bugs, primarily on Windows, where pid reuse causes watch_procs

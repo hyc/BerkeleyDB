@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2005-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: repmgr_msg.c,v 1.16 2006/07/05 19:03:24 alanb Exp $
+ * $Id: repmgr_msg.c,v 1.23 2006/09/11 15:15:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -48,7 +48,7 @@ message_loop(dbenv)
 		while ((ret = process_message(dbenv, &msg->control, &msg->rec,
 		    msg->originating_eid)) == DB_LOCK_DEADLOCK)
 			RPRINT(dbenv, (dbenv, &mb, "repmgr deadlock retry"));
-		
+
 		__os_free(dbenv, msg);
 		if (ret != 0)
 			return (ret);
@@ -64,9 +64,13 @@ process_message(dbenv, control, rec, eid)
 	int eid;
 {
 	DB_REP *db_rep;
+	REP *rep;
 	DB_LSN permlsn;
 	int ret;
 	u_int32_t generation;
+#ifdef DIAGNOSTIC
+	DB_MSGBUF mb;
+#endif
 
 	db_rep = dbenv->rep_handle;
 
@@ -76,8 +80,8 @@ process_message(dbenv, control, rec, eid)
 	 */
 	generation = db_rep->generation;
 
-	switch (ret = dbenv->rep_process_message(dbenv, control, rec, &eid,
-		    &permlsn)) {
+	switch (ret =
+	    __rep_process_message(dbenv, control, rec, &eid, &permlsn)) {
 	case DB_REP_NEWSITE:
 		return (handle_newsite(dbenv, rec));
 
@@ -95,6 +99,8 @@ process_message(dbenv, control, rec, eid)
 			 * application.  If that were not the case, we could
 			 * instead copy it into a scratch variable.
 			 */
+			RPRINT(dbenv,
+			    (dbenv, &mb, "firing NEWMASTER (%d) event", eid));
 			DB_EVENT(dbenv, DB_EVENT_REP_NEWMASTER, &eid);
 			if ((ret = __repmgr_stash_generation(dbenv)) != 0)
 				return (ret);
@@ -123,9 +129,10 @@ process_message(dbenv, control, rec, eid)
 		/*
 		 * Don't bother sending ack if master doesn't care about it.
 		 */
+		rep = db_rep->region;
 		if (db_rep->perm_policy == DB_REPMGR_ACKS_NONE ||
 		    (IS_PEER_POLICY(db_rep->perm_policy) &&
-		    db_rep->my_priority == 0))
+		    rep->priority == 0))
 			break;
 
 		if ((ret = ack_message(dbenv, generation, &permlsn)) != 0)
@@ -192,7 +199,7 @@ ack_message(dbenv, generation, lsn)
 		conn = site->ref.conn;
 		if ((ret = __repmgr_send_one(dbenv, conn, REPMGR_ACK,
 		    &control2, &rec2)) == DB_REP_UNAVAIL)
-			ret = __repmgr_bust_connection(dbenv, conn);
+			ret = __repmgr_bust_connection(dbenv, conn, FALSE);
 	}
 
 	UNLOCK_MUTEX(db_rep->mutex);
@@ -226,7 +233,7 @@ handle_newsite(dbenv, rec)
 	 * this is me or if we already have a connection to this new
 	 * site.  If we don't, establish a new one.
 	 *
-	 * Unmarshal the cdata: a 2-byte port number, in network byte order,
+	 * Unmarshall the cdata: a 2-byte port number, in network byte order,
 	 * followed by the host name string, which should already be
 	 * null-terminated, but let's make sure.
 	 */
@@ -296,7 +303,7 @@ handle_newsite(dbenv, rec)
 		if (ret != 0)
 			goto unlock;
 	}
-	
+
 	/*
 	 * Wake up the main thread to connect to the new or reawakened
 	 * site.
@@ -317,7 +324,7 @@ __repmgr_stash_generation(dbenv)
 	DB_REP_STAT *statp;
 	int ret;
 
-	if ((ret = dbenv->rep_stat(dbenv, &statp, 0)) != 0)
+	if ((ret = __rep_stat_pp(dbenv, &statp, 0)) != 0)
 		return (ret);
 	dbenv->rep_handle->generation = statp->st_gen;
 

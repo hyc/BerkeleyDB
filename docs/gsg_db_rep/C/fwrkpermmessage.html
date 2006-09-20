@@ -6,7 +6,7 @@
     <title>Permanent Message Handling</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Replicated Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Framework" />
     <link rel="previous" href="repmgr_init_example_c.html" title="Adding the Replication Framework to&#10;                    simple_txn&#10;                    &#10;            " />
     <link rel="next" href="electiontimes.html" title="Managing Election Times" />
@@ -198,7 +198,7 @@
                 </p>
               <p>
                     A quorum of electable peers must acknowledge the message within the timeout period. 
-                    A quorum is reached when acknowledgements are received from the minimum number 
+                    A quorum is reached when acknowledgments are received from the minimum number 
                     of environments needed to ensure that the record remains durable 
                     if an election is held. That is, the master wants to hear from enough 
                     electable replicas that they have committed the record so that if an election 
@@ -274,6 +274,7 @@
               <h3 class="title"><a id="perm2fmwrkexample"></a>Adding a Permanent Message Policy to 
                             <span>rep_mgr</span>
                             
+                            
                     </h3>
             </div>
           </div>
@@ -282,6 +283,7 @@
         <p>
                         For illustration purposes, we will now update 
                         <tt class="literal">rep_mgr</tt>
+                        
                         
                         such that it requires only one acknowledgment from
                         a replica on transactional commits. Also, we will give
@@ -319,7 +321,7 @@
     <b class="userinput"><tt>/* Permanent messages require at least one ack */
     dbenv-&gt;repmgr_set_ack_policy(dbenv, DB_REPMGR_ACKS_ONE);
     /* Give 500 microseconds to receive the ack */
-    dbenv-&gt;rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 5);</tt></b>
+    dbenv-&gt;rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);</tt></b>
 
     /* Collect the command line options */
     while ((ch = getopt(argc, argv, &quot;h:<b class="userinput"><tt>m:o:p:</tt></b>&quot;)) != EOF)

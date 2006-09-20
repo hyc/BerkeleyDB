@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2005-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: test113.tcl,v 12.6 2006/06/27 22:31:09 bostic Exp $
+# $Id: test113.tcl,v 12.7 2006/08/24 14:46:41 bostic Exp $
 #
 # TEST	test113
 # TEST	Test database compaction with duplicates.

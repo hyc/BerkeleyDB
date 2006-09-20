@@ -6,7 +6,7 @@
     <title>Configuring the Transaction Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Writing Transactional Applications with Berkeley DB" />
+    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="usingtxns.html" title="Chapter 3. Transaction Basics" />
     <link rel="previous" href="txnindices.html" title="Secondary Indices with Transaction Applications" />
     <link rel="next" href="txnconcurrency.html" title="Chapter 4. Concurrency" />
@@ -55,8 +55,12 @@
                     Configure the maximum number of simultaneous
                     transactions needed by your application. 
                     In general, you should not need to do this unless you
-                    use deeply nest transactions or have many threads all
-                    of which have active transactions.
+                    use deeply nested transactions or you have many threads all
+                    of which have active transactions. In addition, you may
+                    need to a higher maximum number of transactions if you
+                    are using snapshot isolation. See
+                    <a href="isolation.html#sisolation_maxtxn">Snapshot Isolation Transactional Requirements</a>
+                    for details.
                 </p>
             <p>
                     By default, your application can support 20 active
@@ -114,6 +118,10 @@
                     (This might happen if, for example, your
                     transaction blocks or requests too much
                     data.)
+                </p>
+                <p>
+                    Note that by default transaction timeouts are set to 0 seconds, which means that they never time
+                    out.
                 </p>
                 <p>
                     To set the maximum timeout value for your transactions,

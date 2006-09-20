@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_ovfl_vrfy.c,v 12.6 2006/05/05 14:53:13 bostic Exp $
+ * $Id: db_ovfl_vrfy.c,v 12.8 2006/09/07 20:05:26 bostic Exp $
  */
 
 #include "db_config.h"
@@ -247,7 +247,6 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 			EPRINT((dbenv,
 			    "Page %lu: bad next_pgno %lu on overflow page",
 			    (u_long)pgno, (u_long)next));
-			DB_ASSERT(dbenv, 0);
 			ret = DB_VERIFY_BAD;
 			goto err;
 		}

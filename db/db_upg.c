@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_upg.c,v 12.7 2006/07/17 15:16:32 bostic Exp $
+ * $Id: db_upg.c,v 12.8 2006/08/24 14:45:16 bostic Exp $
  */
 
 #include "db_config.h"

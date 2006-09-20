@@ -1,11 +1,11 @@
 #!/bin/sh -
-#       $Id: s_java_swig,v 12.5 2006/06/26 16:24:53 bostic Exp $
+#       $Id: s_java_swig,v 12.6 2006/09/08 20:28:44 bostic Exp $
 #
 # Run SWIG to generate the Java APIs
 
 t=/tmp/__db_a
 trap 'rm -f $t ; exit 0' 0
-trap 'rm -f $t ; exit 1' 1 2 3 13 15   
+trap 'rm -f $t ; exit 1' 1 2 3 13 15
 
 SWIG=swig
 SWIG_DIR=../libdb_java
@@ -64,8 +64,8 @@ done
       sed '/#include "db_config.h"/d' < db_java_wrap.c
 ) > $t && cp $t db_java_wrap.c
 
-# The following might become redundant with newer swig versions.. 
-# builds usually already define _CRT_SECURE_NO_DEPRECATE 
+# The following might become redundant with newer swig versions.
+# builds usually already define _CRT_SECURE_NO_DEPRECATE
 (
       sed -e '/# define _CRT_SECURE_NO_DEPRECATE/i\
 # undef _CRT_SECURE_NO_DEPRECATE' < db_java_wrap.c

@@ -2,7 +2,7 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1996-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993
@@ -39,7 +39,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: dbm.c,v 12.7 2006/05/12 13:36:54 bostic Exp $
+ * $Id: dbm.c,v 12.8 2006/08/24 14:45:31 bostic Exp $
  */
 
 #define	DB_DBM_HSEARCH	1

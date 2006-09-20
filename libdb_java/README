@@ -1,5 +1,5 @@
 Berkeley DB's Java API
-$Id: README,v 12.1 2005/12/02 18:30:42 alanb Exp $
+$Id: README,v 12.2 2006/08/24 14:46:10 bostic Exp $
 
 Berkeley DB's Java API is now generated with SWIG
 (http://www.swig.org).  This document describes how SWIG is used -
@@ -73,7 +73,7 @@ SWIG directives are added to the input.  In particular:
   which includes the method signature and a call to the method.
 
   * SWIG's automatically generated function names happen to collide
-    with Sleepycat's naming convention.  For example, in a SWIG class
+    with Berkeley DB's naming convention.  For example, in a SWIG class
     called __db, a method called "open" would result in a wrapper
     function called "__db_open", which already exists in DB.  This is
     another reason why making these static functions is important.

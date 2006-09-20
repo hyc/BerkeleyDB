@@ -309,6 +309,9 @@
 /* Define to 1 if you have the `shmget' function. */
 /* #undef HAVE_SHMGET */
 
+/* Define to 1 if you have the `sigaction' function. */
+/* #undef HAVE_SIGACTION */
+
 /* Define to 1 if thread identifier type db_threadid_t is integral. */
 #define HAVE_SIMPLE_THREAD_TYPE 1
 
@@ -420,19 +423,19 @@
 /* #undef HAVE__FSTATI64 */
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "support@sleepycat.com"
+#define PACKAGE_BUGREPORT "Oracle Technology Network Berkeley DB forum"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.5.14"
+#define PACKAGE_STRING "Berkeley DB 4.5.20"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.5.14"
+#define PACKAGE_TARNAME "db-4.5.20"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.5.14"
+#define PACKAGE_VERSION "4.5.20"
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
 /* #undef STAT_MACROS_BROKEN */

@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep027.tcl,v 12.8 2006/07/19 17:43:45 carol Exp $
+# $Id: rep027.tcl,v 12.9 2006/08/24 14:46:37 bostic Exp $
 #
 # TEST	rep027
 # TEST	Replication and secondary indexes.

@@ -1,7 +1,7 @@
 ACK_WAITER	../repmgr/repmgr_windows.c	/^} ACK_WAITER;$/
 ACK_WAITERS_TABLE	../dbinc/repmgr.h	/^struct __ack_waiters_table;$/
 ACQUIRE	../btree/bt_cursor.c	/^#define	ACQUIRE(dbc, mode, lpgno, lock, fpgno, pag/
-ACQUIRE_CUR	../btree/bt_cursor.c	/^#define	ACQUIRE_CUR(dbc, mode, p, ret) do {				\\$/
+ACQUIRE_CUR	../btree/bt_cursor.c	/^#define	ACQUIRE_CUR(dbc, mode, p, flags, ret) do {/
 ACQUIRE_WRITE_LOCK	../btree/bt_cursor.c	/^#define	ACQUIRE_WRITE_LOCK(dbc, ret) do {				\\$/
 ACTION	../dbinc/db.in	/^} ACTION;$/
 ACTIVATE_CTP	../dbinc/db_server_int.h	/^#define	ACTIVATE_CTP(ctp, id, type) {					\\$/
@@ -9,6 +9,7 @@ ADDRINFO	../dbinc/repmgr.h	/^typedef struct addrinfo	ADDRINFO;$/
 ADDR_LIST_CURRENT	../dbinc/repmgr.h	/^#define	ADDR_LIST_CURRENT(na)	((na)->current)$/
 ADDR_LIST_FIRST	../dbinc/repmgr.h	/^#define	ADDR_LIST_FIRST(na)	((na)->current = (na)-/
 ADDR_LIST_NEXT	../dbinc/repmgr.h	/^#define	ADDR_LIST_NEXT(na)	((na)->current = (na)->/
+ADD_CONFIG_NAME	../tcl/tcl_db_pkg.c	/^#define	ADD_CONFIG_NAME(name)						\\$/
 AES_CIPHER	../dbinc/crypto.h	/^} AES_CIPHER;$/
 AI_CANONNAME	../dbinc/repmgr.h	/^#define	AI_CANONNAME	0x02$/
 AI_NUMERICHOST	../dbinc/repmgr.h	/^#define	AI_NUMERICHOST	0x04$/
@@ -116,7 +117,6 @@ CDB_LOCKING_INIT	../db/db_cam.c	/^#define	CDB_LOCKING_INIT(dbenv, dbc)					\\$/
 CD_CLR	../btree/bt_recno.c	/^#define	CD_CLR(cp) {							\\$/
 CD_ISSET	../btree/bt_recno.c	/^#define	CD_ISSET(cp)							\\$/
 CD_SET	../btree/bt_recno.c	/^#define	CD_SET(cp) {							\\$/
-CHAIN_PTR_TO_OFF	../dbinc/shqueue.h	/^#define	CHAIN_PTR_TO_OFF(src, dest)					\\$/
 CHAR64LONG16	../hmac/sha1.c	/^} CHAR64LONG16;$/
 CHARKEY	../dbinc/hash.h	/^#define	CHARKEY			"%$sniglet^&"$/
 CHECK_LSN	../dbinc/log.h	/^#define	CHECK_LSN(e, redo, cmp, lsn, prev)				\\$/
@@ -141,7 +141,8 @@ CONFIG_SLOTS	../env/env_config.c	/^#define	CONFIG_SLOTS	10$/
 CONFIG_UINT32	../env/env_config.c	/^#define	CONFIG_UINT32(s, f) do {					\\$/
 CONFLICTS	../dbinc/lock.h	/^#define	CONFLICTS(T, R, HELD, WANTED) \\$/
 CONNECTION_LIST	../dbinc/repmgr.h	/^typedef TAILQ_HEAD(__repmgr_conn_list, __repmgr_co/
-CONN_CONNECTING	../dbinc/repmgr.h	/^#define	CONN_CONNECTING 0x01	\/* nonblocking conne/
+CONN_CONNECTING	../dbinc/repmgr.h	/^#define	CONN_CONNECTING	0x01	\/* nonblocking conne/
+CONN_DEFUNCT	../dbinc/repmgr.h	/^#define	CONN_DEFUNCT	0x02	\/* socket close pending/
 COPY_OBJ	../lock/lock_list.c	/^#define	COPY_OBJ(dp, obj)	do {					\\$/
 COPY_RET_MEM	../dbinc/db_int.in	/^#define	COPY_RET_MEM(src, dest)				\\$/
 CRYPTO_ON	../dbinc/db_int.in	/^#define	CRYPTO_ON(dbenv)	((dbenv)->crypto_handle !/
@@ -173,7 +174,7 @@ DB2JDBENV	../libdb_java/db_java_wrap.c	/^#define	DB2JDBENV ((jobject)DB_ENV_INTE
 DBC	../dbinc/db.in	/^struct __dbc;		typedef struct __dbc DBC;$/
 DBC2JDBENV	../libdb_java/db_java_wrap.c	/^#define	DBC2JDBENV ((jobject)DB_ENV_INTERNAL(arg1-/
 DBC_ACTIVE	../dbinc/db.in	/^#define	DBC_ACTIVE		0x0001	\/* Cursor in use. *\/$/
-DBC_COMPENSATE	../dbinc/db.in	/^#define	DBC_COMPENSATE		0x0002	\/* Cursor compensa/
+DBC_DONTLOCK	../dbinc/db.in	/^#define	DBC_DONTLOCK		0x0002	\/* Don't lock on thi/
 DBC_INTERNAL	../dbinc/db.in	/^struct __dbc_internal;	typedef struct __dbc_intern/
 DBC_LOGGING	../dbinc/db_int.in	/^#define	DBC_LOGGING(dbc)	__dbc_logging(dbc)$/
 DBC_METHOD	../cxx/cxx_dbc.cpp	/^\/\/ Helper macro for simple methods that pass thr/
@@ -357,6 +358,7 @@ DB_ENV_TXN_SNAPSHOT	../dbinc/db.in	/^#define	DB_ENV_TXN_SNAPSHOT	0x08000000 \/* 
 DB_ENV_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_ENV_TXN_WRITE_NOSYNC	0x10000000 \/* DB_/
 DB_ENV_YIELDCPU	../dbinc/db.in	/^#define	DB_ENV_YIELDCPU		0x20000000 \/* DB_YIELDCP/
 DB_EVENT	../dbinc/db_int.in	/^#define	DB_EVENT(dbenv, e, einfo) do {					\\$/
+DB_EVENT_NO_SUCH_EVENT	../dbinc/db.in	/^#define	DB_EVENT_NO_SUCH_EVENT		0 \/* out-of-band /
 DB_EVENT_PANIC	../dbinc/db.in	/^#define	DB_EVENT_PANIC			1$/
 DB_EVENT_REP_CLIENT	../dbinc/db.in	/^#define	DB_EVENT_REP_CLIENT		2$/
 DB_EVENT_REP_MASTER	../dbinc/db.in	/^#define	DB_EVENT_REP_MASTER		3$/
@@ -645,8 +647,11 @@ DB_REPMGR_ACKS_NONE	../dbinc/db.in	/^#define	DB_REPMGR_ACKS_NONE		3$/
 DB_REPMGR_ACKS_ONE	../dbinc/db.in	/^#define	DB_REPMGR_ACKS_ONE		4$/
 DB_REPMGR_ACKS_ONE_PEER	../dbinc/db.in	/^#define	DB_REPMGR_ACKS_ONE_PEER		5$/
 DB_REPMGR_ACKS_QUORUM	../dbinc/db.in	/^#define	DB_REPMGR_ACKS_QUORUM		6$/
+DB_REPMGR_CONNECTED	../dbinc/db.in	/^#define	DB_REPMGR_CONNECTED	0x01$/
+DB_REPMGR_DISCONNECTED	../dbinc/db.in	/^#define	DB_REPMGR_DISCONNECTED	0x02$/
 DB_REPMGR_HANDSHAKE	../dbinc/repmgr.h	/^} DB_REPMGR_HANDSHAKE;$/
 DB_REPMGR_PEER	../dbinc/db.in	/^#define	DB_REPMGR_PEER          0x01$/
+DB_REPMGR_SITE	../dbinc/db.in	/^			typedef struct __db_repmgr_site DB_REPMGR_SITE;/
 DB_REPMGR_VERSION	../dbinc/repmgr.h	/^#define	DB_REPMGR_VERSION	1$/
 DB_REPVERSION	../dbinc/rep.h	/^#define	DB_REPVERSION	3$/
 DB_REPVERSION_42	../dbinc/rep.h	/^#define	DB_REPVERSION_42	1$/
@@ -799,7 +804,6 @@ DB_TXN_SYNC	../dbinc/db.in	/^#define	DB_TXN_SYNC	      0x0008000	\/* Always syn/
 DB_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_TXN_WRITE_NOSYNC   0x0000800	\/* Write /
 DB_UNDO	../dbinc/db.in	/^#define	DB_UNDO(op)	((op) == DB_TXN_ABORT ||			\\$/
 DB_UNREF	../dbinc/db.in	/^#define	DB_UNREF	      0x0000080	\/* Report unrefe/
-DB_UPDATE_CONFLICT	../dbinc/db.in	/^#define	DB_UPDATE_CONFLICT	(-30973)\/* Snapshot Is/
 DB_UPDATE_SECONDARY	../dbinc/db.in	/^#define	DB_UPDATE_SECONDARY	31	\/* c_get(), c_del(/
 DB_UPGRADE	../dbinc/db.in	/^#define	DB_UPGRADE	      0x0000001	\/* Upgrading. /
 DB_USERCOPY_GETDATA	../dbinc/db.in	/^#define	DB_USERCOPY_GETDATA	0x0001$/
@@ -812,11 +816,11 @@ DB_VERB_REGISTER	../dbinc/db.in	/^#define	DB_VERB_REGISTER	0x0004	\/* Dump waits
 DB_VERB_REPLICATION	../dbinc/db.in	/^#define	DB_VERB_REPLICATION	0x0008	\/* Replication/
 DB_VERB_WAITSFOR	../dbinc/db.in	/^#define	DB_VERB_WAITSFOR	0x0010	\/* Dump waits-for/
 DB_VERIFY	../dbinc/db.in	/^#define	DB_VERIFY	      0x0000002	\/* Verifying. */
-DB_VERIFY_BAD	../dbinc/db.in	/^#define	DB_VERIFY_BAD		(-30972)\/* Verify failed; /
+DB_VERIFY_BAD	../dbinc/db.in	/^#define	DB_VERIFY_BAD		(-30973)\/* Verify failed; /
 DB_VERIFY_FATAL	../dbinc/db.in	/^#define	DB_VERIFY_FATAL		(-30888)\/* DB->verify ca/
 DB_VERSION_MAJOR	../dbinc/db.in	/^#define	DB_VERSION_MAJOR	@DB_VERSION_MAJOR@$/
 DB_VERSION_MINOR	../dbinc/db.in	/^#define	DB_VERSION_MINOR	@DB_VERSION_MINOR@$/
-DB_VERSION_MISMATCH	../dbinc/db.in	/^#define	DB_VERSION_MISMATCH	(-30971)\/* Environmen/
+DB_VERSION_MISMATCH	../dbinc/db.in	/^#define	DB_VERSION_MISMATCH	(-30972)\/* Environmen/
 DB_VERSION_PATCH	../dbinc/db.in	/^#define	DB_VERSION_PATCH	@DB_VERSION_PATCH@$/
 DB_VERSION_STRING	../dbinc/db.in	/^#define	DB_VERSION_STRING	@DB_VERSION_STRING@$/
 DB_WRITECURSOR	../dbinc/db.in	/^#define	DB_WRITECURSOR		32	\/* cursor() *\/$/
@@ -930,10 +934,11 @@ DbEnv_rep_set_transport	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv
 DbEnv_rep_start	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_rep_start(struct DbEnv */
 DbEnv_rep_stat	../libdb_java/db_java_wrap.c	/^SWIGINTERN DB_REP_STAT *DbEnv_rep_stat(struct DbEn/
 DbEnv_rep_sync	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_rep_sync(struct DbEnv *s/
-DbEnv_repmgr_add_remote_site	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_repmgr_add_remote_site(s/
+DbEnv_repmgr_add_remote_site	../libdb_java/db_java_wrap.c	/^SWIGINTERN int DbEnv_repmgr_add_remote_site(struct/
 DbEnv_repmgr_get_ack_policy	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_repmgr_get_ack_policy(st/
 DbEnv_repmgr_set_ack_policy	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_repmgr_set_ack_policy(st/
 DbEnv_repmgr_set_local_site	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_repmgr_set_local_site(st/
+DbEnv_repmgr_site_list	../libdb_java/db_java_wrap.c	/^SWIGINTERN struct __db_repmgr_sites DbEnv_repmgr_s/
 DbEnv_repmgr_start	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_repmgr_start(struct DbEn/
 DbEnv_set_app_dispatch	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_set_app_dispatch(struct /
 DbEnv_set_cachesize	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbEnv_set_cachesize(struct DbE/
@@ -1014,7 +1019,6 @@ DbTxn_id	../libdb_java/db_java_wrap.c	/^SWIGINTERN u_int32_t DbTxn_id(struct DbT
 DbTxn_prepare	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbTxn_prepare(struct DbTxn *se/
 DbTxn_set_name	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbTxn_set_name(struct DbTxn *s/
 DbTxn_set_timeout	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t DbTxn_set_timeout(struct DbTxn/
-DbUpdateConflictException	../cxx/cxx_except.cpp	/^DbUpdateConflictException::~DbUpdateConflictExcept/
 Db_associate	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t Db_associate(struct Db *self,D/
 Db_close	../libdb_java/db_java_wrap.c	/^SWIGINTERN int Db_close(struct Db *self,u_int32_t /
 Db_compact	../libdb_java/db_java_wrap.c	/^SWIGINTERN db_ret_t Db_compact(struct Db *self,DB_/
@@ -1085,7 +1089,8 @@ Dbc_get	../libdb_java/db_java_wrap.c	/^SWIGINTERN int Dbc_get(struct Dbc *self,D
 Dbc_pget	../libdb_java/db_java_wrap.c	/^SWIGINTERN int Dbc_pget(struct Dbc *self,DBT *key,/
 Dbc_put	../libdb_java/db_java_wrap.c	/^SWIGINTERN int Dbc_put(struct Dbc *self,DBT *key,D/
 Dbt	../cxx/cxx_dbt.cpp	/^Dbt::Dbt()$/
-EID_FROM_SITE	../dbinc/repmgr.h	/^#define	EID_FROM_SITE(s)	((s) - (&db_rep->sites[0]/
+EID_FROM_SITE	../dbinc/repmgr.h	/^#define	EID_FROM_SITE(s)	((int)((s) - (&db_rep->si/
+ELECTION_MAJORITY	../dbinc/rep.h	/^#define	ELECTION_MAJORITY(n) (((n) \/ 2) + 1)$/
 ELECT_ELECTION	../dbinc/rep.h	/^#define	ELECT_ELECTION 1	\/* Call for an election./
 ELECT_FAILURE_ELECTION	../dbinc/rep.h	/^#define	ELECT_FAILURE_ELECTION 3 \/* Do election, /
 ELECT_REPSTART	../dbinc/rep.h	/^#define	ELECT_REPSTART 2	\/* Call rep_start(CLIENT/
@@ -1231,6 +1236,7 @@ IS_MAX_LSN	../dbinc/db_int.in	/^#define	IS_MAX_LSN(LSN) \\$/
 IS_NOT_LOGGED_LSN	../dbinc/db_int.in	/^#define	IS_NOT_LOGGED_LSN(LSN) \\$/
 IS_PEER_POLICY	../dbinc/repmgr.h	/^#define	IS_PEER_POLICY(p) ((p) == DB_REPMGR_ACKS_A/
 IS_PHASE1_DONE	../rep/rep_elect.c	/^#define	IS_PHASE1_DONE(rep)    \\$/
+IS_REAL_TXN	../dbinc/db_int.in	/^#define	IS_REAL_TXN(txn)						\\$/
 IS_RECOVERING	../dbinc/db_int.in	/^#define	IS_RECOVERING(dbenv)						\\$/
 IS_REP_CLIENT	../dbinc/rep.h	/^#define	IS_REP_CLIENT(dbenv)						\\$/
 IS_REP_MASTER	../dbinc/rep.h	/^#define	IS_REP_MASTER(dbenv)						\\$/
@@ -1313,6 +1319,7 @@ LOFFSET	../dbinc/db_page.h	/^#define	LOFFSET(dbp, pg)						\\$/
 LOG	../dbinc/log.h	/^struct __log;		typedef struct __log LOG;$/
 LOGGING_ON	../dbinc/db_int.in	/^#define	LOGGING_ON(dbenv)	((dbenv)->lg_handle != N/
 LOGP	../dbinc/log.h	/^struct __log_persist;	typedef struct __log_persist/
+LOG_COMPARE	../dbinc/db_int.in	/^#define	LOG_COMPARE(lsn0, lsn1)						\\$/
 LOG_HDR_SUM	../dbinc/log.h	/^#define	LOG_HDR_SUM(crypto, hdr, sum) do {				\\$/
 LOG_OP	../dbinc/debug.h	/^#define	LOG_OP(C, T, O, K, A, F) {					\\$/
 LOG_SYSTEM_LOCK	../dbinc/log.h	/^#define	LOG_SYSTEM_LOCK(dbenv)						\\$/
@@ -1350,7 +1357,7 @@ MAX_PAGE_NUMBER	../dbinc/db_185.in	/^#define	MAX_PAGE_NUMBER	0xffffffff	\/* >= #
 MAX_PAGE_OFFSET	../dbinc/db_185.in	/^#define	MAX_PAGE_OFFSET	65535		\/* >= # of bytes i/
 MAX_PGNOS	../lock/lock_list.c	/^#define	MAX_PGNOS	0xffff$/
 MAX_REC_NUMBER	../dbinc/db_185.in	/^#define	MAX_REC_NUMBER	0xffffffff	\/* >= # of reco/
-MAX_SITE_LOC_STRING	../dbinc/repmgr.h	/^#define MAX_SITE_LOC_STRING (MAXHOSTNAMELEN+20)$/
+MAX_SITE_LOC_STRING	../dbinc/repmgr.h	/^#define	MAX_SITE_LOC_STRING (MAXHOSTNAMELEN+20)$/
 MEGABYTE	../dbinc/db_int.in	/^#define	MEGABYTE	1048576$/
 MEM_ALIGN	../repmgr/repmgr_sel.c	/^#define	MEM_ALIGN sizeof(double)$/
 MINFILL	../dbinc/hash.h	/^#define	MINFILL		4$/
@@ -1503,10 +1510,10 @@ PGNO_BASE_MD	../dbinc/db_page.h	/^#define	PGNO_BASE_MD	0	\/* Base database: meta
 PGNO_INVALID	../dbinc/db_page.h	/^#define	PGNO_INVALID	0	\/* Invalid page number in /
 PG_CHKSUM	../dbinc/db_page.h	/^} PG_CHKSUM;$/
 PG_CRYPTO	../dbinc/db_page.h	/^} PG_CRYPTO;$/
-PID_EMPTY	../env/env_register.c	/^#define	PID_EMPTY	"X%23lu\\n"	\/* An unused PID en/
-PID_FMT	../env/env_register.c	/^#define	PID_FMT		"%24lu\\n"	\/* File PID format. */
-PID_ISEMPTY	../env/env_register.c	/^#define	PID_ISEMPTY(p)	(p[0] == 'X')$/
-PID_LEN	../env/env_register.c	/^#define	PID_LEN		25		\/* Length of PID line. *\/$/
+PID_EMPTY	../env/env_register.c	/^#define	PID_EMPTY	"X                      0\\n"	\//
+PID_FMT	../env/env_register.c	/^#define	PID_FMT		"%24lu\\n"			\/* PID entry format/
+PID_ISEMPTY	../env/env_register.c	/^#define	PID_ISEMPTY(p)	(memcmp(p, PID_EMPTY, PID_L/
+PID_LEN	../env/env_register.c	/^#define	PID_LEN		(25)				\/* PID entry length *\/$/
 POWER_OF_TWO	../dbinc/db_int.in	/^#define	POWER_OF_TWO(x)	(((x) & ((x) - 1)) == 0)$/
 PREPLISTSIZE	../rep/rep_method.c	/^#define	PREPLISTSIZE	50$/
 PREV_PGNO	../dbinc/db_page.h	/^#define	PREV_PGNO(p)	(((PAGE *)p)->prev_pgno)$/
@@ -1623,6 +1630,7 @@ REGISTRY_LOCK	../env/env_register.c	/^#define	REGISTRY_LOCK(dbenv, pos, nowait)	
 REGISTRY_UNLOCK	../env/env_register.c	/^#define	REGISTRY_UNLOCK(dbenv, pos)					\\$/
 REP	../dbinc/rep.h	/^} REP;$/
 REPCTL_ELECTABLE	../dbinc/rep.h	/^#define	REPCTL_ELECTABLE	0x01	\/* Upgraded client /
+REPCTL_INIT	../dbinc/rep.h	/^#define	REPCTL_INIT		0x02	\/* Internal init messag/
 REPCTL_PERM	../dbinc/rep.h	/^#define	REPCTL_PERM		DB_LOG_PERM_42_44$/
 REPCTL_RESEND	../dbinc/rep.h	/^#define	REPCTL_RESEND		DB_LOG_RESEND_42_44$/
 REPDBNAME	../dbinc/rep.h	/^#define	REPDBNAME	"__db.rep.db"$/
@@ -1678,6 +1686,7 @@ REP_LOG_MORE	../dbinc/rep.h	/^#define	REP_LOG_MORE	11	\/* There are more log rec
 REP_LOG_REQ	../dbinc/rep.h	/^#define	REP_LOG_REQ	12	\/* Request for a log recor/
 REP_MASTER_REQ	../dbinc/rep.h	/^#define	REP_MASTER_REQ	13	\/* Who is the master */
 REP_MAX_MSG	../dbinc/rep.h	/^#define	REP_MAX_MSG	29$/
+REP_MSG_REQ	../dbinc/rep.h	/^#define	REP_MSG_REQ(rectype)			\\$/
 REP_NEWCLIENT	../dbinc/rep.h	/^#define	REP_NEWCLIENT	14	\/* Announces the presenc/
 REP_NEWFILE	../dbinc/rep.h	/^#define	REP_NEWFILE	15	\/* Announce a log file cha/
 REP_NEWMASTER	../dbinc/rep.h	/^#define	REP_NEWMASTER	16	\/* Announces who the mas/
@@ -1688,7 +1697,7 @@ REP_PAGE	../dbinc/rep.h	/^#define	REP_PAGE	18	\/* Database page. *\/$/
 REP_PAGE_FAIL	../dbinc/rep.h	/^#define	REP_PAGE_FAIL	19	\/* Requested page does n/
 REP_PAGE_MORE	../dbinc/rep.h	/^#define	REP_PAGE_MORE	20	\/* There are more pages /
 REP_PAGE_REQ	../dbinc/rep.h	/^#define	REP_PAGE_REQ	21	\/* Request for a database/
-REP_PRINT_MESSAGE	../dbinc/rep.h	/^#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str)				/
+REP_PRINT_MESSAGE	../dbinc/rep.h	/^#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str, fl)/
 REP_REREQUEST	../dbinc/rep.h	/^#define	REP_REREQUEST	22	\/* Force rerequest. *\/$/
 REP_SYSTEM_LOCK	../dbinc/rep.h	/^#define	REP_SYSTEM_LOCK(dbenv)						\\$/
 REP_SYSTEM_UNLOCK	../dbinc/rep.h	/^#define	REP_SYSTEM_UNLOCK(dbenv)					\\$/
@@ -1999,11 +2008,11 @@ TRASHIT	../dbinc/queue.h	/^#define	TRASHIT(x)	do {(x) = (void *)-1;} while (0/
 TRUE	../dbinc/db_int.in	/^#define	TRUE		(!FALSE)$/
 TXN2JDBENV	../libdb_java/db_java_wrap.c	/^#define	TXN2JDBENV ((jobject)DB_ENV_INTERNAL(arg1-/
 TXN_ABORT	../dbinc/txn.h	/^#define	TXN_ABORT	3$/
-TXN_ABORTED	../dbinc/txn.h	/^#define	TXN_ABORTED		2$/
+TXN_ABORTED	../dbinc/db.in	/^#define	TXN_ABORTED		1$/
 TXN_CDSGROUP	../dbinc/db.in	/^#define	TXN_CDSGROUP		0x0002	\/* CDS group handle./
 TXN_CHILDCOMMIT	../dbinc/db.in	/^#define	TXN_CHILDCOMMIT		0x0001	\/* Txn has commit/
 TXN_COMMIT	../dbinc/txn.h	/^#define	TXN_COMMIT	1$/
-TXN_COMMITTED	../dbinc/txn.h	/^#define	TXN_COMMITTED		4$/
+TXN_COMMITTED	../dbinc/db.in	/^#define	TXN_COMMITTED		2$/
 TXN_COMPENSATE	../dbinc/db.in	/^#define	TXN_COMPENSATE		0x0004	\/* Compensating tr/
 TXN_DEADLOCK	../dbinc/db.in	/^#define	TXN_DEADLOCK		0x0008	\/* Txn has deadlocke/
 TXN_DETAIL	../dbinc/txn.h	/^} TXN_DETAIL;$/
@@ -2025,12 +2034,12 @@ TXN_NOWAIT	../dbinc/db.in	/^#define	TXN_NOWAIT		0x0080	\/* Do not wait on lock/
 TXN_OK	../dbinc/txn.h	/^#define	TXN_OK		0$/
 TXN_ON	../dbinc/db_int.in	/^#define	TXN_ON(dbenv)		((dbenv)->tx_handle != NULL/
 TXN_PREPARE	../dbinc/txn.h	/^#define	TXN_PREPARE	2$/
-TXN_PREPARED	../dbinc/txn.h	/^#define	TXN_PREPARED		3$/
+TXN_PREPARED	../dbinc/db.in	/^#define	TXN_PREPARED		3$/
 TXN_PRIVATE	../dbinc/db.in	/^#define	TXN_PRIVATE		0x0100	\/* Txn owned by curso/
 TXN_READ_COMMITTED	../dbinc/db.in	/^#define	TXN_READ_COMMITTED	0x0200	\/* Txn has degr/
 TXN_READ_UNCOMMITTED	../dbinc/db.in	/^#define	TXN_READ_UNCOMMITTED	0x0400	\/* Txn has de/
 TXN_RESTORED	../dbinc/db.in	/^#define	TXN_RESTORED		0x0800	\/* Txn has been rest/
-TXN_RUNNING	../dbinc/txn.h	/^#define	TXN_RUNNING		1$/
+TXN_RUNNING	../dbinc/db.in	/^#define	TXN_RUNNING		4$/
 TXN_SNAPSHOT	../dbinc/db.in	/^#define	TXN_SNAPSHOT		0x1000	\/* Snapshot Isolatio/
 TXN_SYNC	../dbinc/db.in	/^#define	TXN_SYNC		0x2000	\/* Write and sync on pre/
 TXN_SYNC_FLAGS	../dbinc/db.in	/^#define	TXN_SYNC_FLAGS (TXN_SYNC | TXN_NOSYNC | TX/
@@ -2038,14 +2047,13 @@ TXN_SYSTEM_LOCK	../dbinc/txn.h	/^#define	TXN_SYSTEM_LOCK(dbenv)						\\$/
 TXN_SYSTEM_UNLOCK	../dbinc/txn.h	/^#define	TXN_SYSTEM_UNLOCK(dbenv)					\\$/
 TXN_UNEXPECTED	../dbinc/txn.h	/^#define	TXN_UNEXPECTED	6$/
 TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	TXN_WRITE_NOSYNC	0x4000	\/* Write only on /
-TXN_XA_ABORTED	../dbinc/txn.h	/^#define	TXN_XA_ABORTED		1$/
-TXN_XA_DEADLOCKED	../dbinc/txn.h	/^#define	TXN_XA_DEADLOCKED	2$/
-TXN_XA_ENDED	../dbinc/txn.h	/^#define	TXN_XA_ENDED		3$/
-TXN_XA_PREPARED	../dbinc/txn.h	/^#define	TXN_XA_PREPARED		4$/
-TXN_XA_STARTED	../dbinc/txn.h	/^#define	TXN_XA_STARTED		5$/
-TXN_XA_SUSPENDED	../dbinc/txn.h	/^#define	TXN_XA_SUSPENDED	6$/
+TXN_XA_ABORTED	../dbinc/db.in	/^#define	TXN_XA_ABORTED		1$/
+TXN_XA_DEADLOCKED	../dbinc/db.in	/^#define	TXN_XA_DEADLOCKED	2$/
+TXN_XA_ENDED	../dbinc/db.in	/^#define	TXN_XA_ENDED		3$/
+TXN_XA_PREPARED	../dbinc/db.in	/^#define	TXN_XA_PREPARED		4$/
+TXN_XA_STARTED	../dbinc/db.in	/^#define	TXN_XA_STARTED		5$/
+TXN_XA_SUSPENDED	../dbinc/db.in	/^#define	TXN_XA_SUSPENDED	6$/
 TYPE	../dbinc/db_page.h	/^#define	TYPE(p)		(((PAGE *)p)->type)$/
-TYPE_ERR_PRINT	../dbinc/db_verify.h	/^#define	TYPE_ERR_PRINT(dbenv, func, pgno, ptype)		/
 T_RESTORED	../db/db_dispatch.c	/^#define	T_RESTORED(txn)       ((txn) != NULL && F_/
 UINT16_MAX	../dbinc/db_int.in	/^#define	UINT16_MAX	65535		\/* Maximum 16-bit unsig/
 UINT32_CMP	../lock/lock_list.c	/^#define	UINT32_CMP(A, B)	((A) == (B) ? 0 : ((A) > /
@@ -2112,6 +2120,7 @@ XA_RDONLY	../dbinc/xa.h	/^#define	XA_RDONLY	3		\/* the transaction branch wa/
 XA_RETRY	../dbinc/xa.h	/^#define	XA_RETRY	4		\/* routine returned with no e/
 XID	../dbinc/xa.h	/^typedef	struct xid_t XID;$/
 XIDDATASIZE	../dbinc/xa.h	/^#define	XIDDATASIZE	128		\/* size in bytes *\/$/
+XID_FIELD_IS_SET	../txn/txn_stat.c	/^#define	XID_FIELD_IS_SET(p)						\\$/
 ZEROPG_ERR_PRINT	../dbinc/db_verify.h	/^#define	ZEROPG_ERR_PRINT(dbenv, pgno, str) do {			/
 ZERO_LSN	../dbinc/db_int.in	/^#define	ZERO_LSN(LSN) do {						\\$/
 ZF_LARGE_WRITE	../os/os_fzero.c	/^#define	ZF_LARGE_WRITE	(64 * 1024)$/
@@ -2375,7 +2384,7 @@ __bam_vrfy_itemorder	../btree/bt_verify.c	/^__bam_vrfy_itemorder(dbp, vdp, h, pg
 __bam_vrfy_meta	../btree/bt_verify.c	/^__bam_vrfy_meta(dbp, vdp, meta, pgno, flags)$/
 __bam_vrfy_structure	../btree/bt_verify.c	/^__bam_vrfy_structure(dbp, vdp, meta_pgno, flags)$/
 __bam_vrfy_subtree	../btree/bt_verify.c	/^__bam_vrfy_subtree(dbp, vdp, pgno, l, r, flags, le/
-__bam_vrfy_treeorder	../btree/bt_verify.c	/^__bam_vrfy_treeorder(dbp, pgno, h, lp, rp, func, f/
+__bam_vrfy_treeorder	../btree/bt_verify.c	/^__bam_vrfy_treeorder(dbp, h, lp, rp, func, flags)$/
 __bh	../dbinc/mp.h	/^struct __bh {$/
 __bh_frozen_a	../dbinc/mp.h	/^struct __bh_frozen_a {$/
 __bh_frozen_p	../dbinc/mp.h	/^struct __bh_frozen_p {$/
@@ -2804,7 +2813,7 @@ __db_open_arg	../db/db_iface.c	/^__db_open_arg(dbp, txn, fname, dname, type, fla
 __db_open_pp	../db/db_iface.c	/^__db_open_pp(dbp, txn, fname, dname, type, flags, /
 __db_open_proc	../rpc_server/c/db_server_proc.c	/^__db_open_proc(dbpcl_id, txnpcl_id, name, subdb, t/
 __db_out_stream	../libdb_java/db_java_wrap.c	/^struct __db_out_stream {$/
-__db_ovref	../db/db_overflow.c	/^__db_ovref(dbc, pgno, adjust)$/
+__db_ovref	../db/db_overflow.c	/^__db_ovref(dbc, pgno)$/
 __db_ovref_log	../db/db_auto.c	/^__db_ovref_log(dbp, txnp, ret_lsnp, flags, pgno, a/
 __db_ovref_print	../db/db_autop.c	/^__db_ovref_print(dbenv, dbtp, lsnp, notused2, notu/
 __db_ovref_read	../db/db_auto.c	/^__db_ovref_read(dbenv, recbuf, argpp)$/
@@ -2920,6 +2929,8 @@ __db_rename_proc	../rpc_server/c/db_server_proc.c	/^__db_rename_proc(dbpcl_id, n
 __db_rep	../dbinc/rep.h	/^struct __db_rep {$/
 __db_rep_enter	../rep/rep_util.c	/^__db_rep_enter(dbp, checkgen, checklock, return_no/
 __db_rep_stat	../dbinc/db.in	/^struct __db_rep_stat {$/
+__db_repmgr_site	../dbinc/db.in	/^struct __db_repmgr_site {$/
+__db_repmgr_sites	../libdb_java/db_java_wrap.c	/^struct __db_repmgr_sites {$/
 __db_ret	../db/db_ret.c	/^__db_ret(dbp, txn, h, indx, dbt, memp, memsize)$/
 __db_retcopy	../db/db_ret.c	/^__db_retcopy(dbenv, dbt, data, len, memp, memsize)/
 __db_rijndaelDecrypt	../crypto/rijndael/rijndael-alg-fst.c	/^__db_rijndaelDecrypt(rk, Nr, ct, pt)$/
@@ -3046,6 +3057,7 @@ __db_txnmgr	../dbinc/txn.h	/^struct __db_txnmgr {$/
 __db_txnregion	../dbinc/txn.h	/^struct __db_txnregion {$/
 __db_unknown_error	../common/db_err.c	/^__db_unknown_error(error)$/
 __db_unknown_flag	../common/db_err.c	/^__db_unknown_flag(dbenv, routine, flag)$/
+__db_unknown_path	../common/db_err.c	/^__db_unknown_path(dbenv, routine)$/
 __db_unknown_type	../common/db_err.c	/^__db_unknown_type(dbenv, routine, type)$/
 __db_unmap_rmid	../xa/xa_map.c	/^__db_unmap_rmid(rmid)$/
 __db_unmap_xid	../xa/xa_map.c	/^__db_unmap_xid(dbenv, xid, off)$/
@@ -3698,6 +3710,7 @@ __log_c_set_maxrec	../log/log_get.c	/^__log_c_set_maxrec(logc, np)$/
 __log_c_shortread	../log/log_get.c	/^__log_c_shortread(logc, lsn, check_silent)$/
 __log_c_version	../log/log_get.c	/^__log_c_version(logc, versionp)$/
 __log_c_version_pp	../log/log_get.c	/^__log_c_version_pp(logc, versionp, flags)$/
+__log_check_page_lsn	../log/log_compare.c	/^__log_check_page_lsn(dbenv, dbp, lsnp)$/
 __log_check_sizes	../log/log_method.c	/^__log_check_sizes(dbenv, lg_max, lg_bsize)$/
 __log_current_lsn	../log/log_put.c	/^__log_current_lsn(dbenv, lsnp, mbytesp, bytesp)$/
 __log_cursor	../log/log_get.c	/^__log_cursor(dbenv, logcp)$/
@@ -3750,7 +3763,7 @@ __log_recover	../log/log.c	/^__log_recover(dblp)$/
 __log_region_mutex_count	../log/log.c	/^__log_region_mutex_count(dbenv)$/
 __log_region_size	../log/log.c	/^__log_region_size(dbenv)$/
 __log_rep_put	../log/log_put.c	/^__log_rep_put(dbenv, lsnp, rec)$/
-__log_rep_split	../log/log_get.c	/^__log_rep_split(dbenv, rp, rec, ret_lsnp)$/
+__log_rep_split	../log/log_get.c	/^__log_rep_split(dbenv, rp, rec, ret_lsnp, last_lsn/
 __log_set_flags	../log/log_method.c	/^__log_set_flags(dbenv, flags, on)$/
 __log_set_lg_bsize	../log/log_method.c	/^__log_set_lg_bsize(dbenv, lg_bsize)$/
 __log_set_lg_dir	../log/log_method.c	/^__log_set_lg_dir(dbenv, dir)$/
@@ -3771,13 +3784,12 @@ __memp_alloc	../mp/mp_alloc.c	/^__memp_alloc(dbmp, infop, mfp, len, offsetp, ret
 __memp_alloc_freelist	../mp/mp_method.c	/^__memp_alloc_freelist(dbmfp, nelems, listp)$/
 __memp_bad_buffer	../mp/mp_alloc.c	/^__memp_bad_buffer(dbenv, hp)$/
 __memp_bh_freeze	../mp/mp_mvcc.c	/^__memp_bh_freeze(dbmp, infop, hp, bhp, need_frozen/
-__memp_bh_freezefree	../mp/mp_mvcc.c	/^__memp_bh_freezefree(dbmp, infop, hp, frozen_bhp, /
 __memp_bh_priority	../mp/mp_mvcc.c	/^__memp_bh_priority(bhp)$/
 __memp_bh_settxn	../mp/mp_mvcc.c	/^int __memp_bh_settxn(dbmp, mfp, bhp, vtd)$/
-__memp_bh_unfreeze	../mp/mp_mvcc.c	/^__memp_bh_unfreeze(dbmp, infop, hp, frozen_bhp, al/
+__memp_bh_thaw	../mp/mp_mvcc.c	/^__memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_/
 __memp_bhfree	../mp/mp_bh.c	/^__memp_bhfree(dbmp, hp, bhp, flags)$/
 __memp_bhwrite	../mp/mp_bh.c	/^__memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)$/
-__memp_bucket_reorder	../mp/mp_mvcc.c	/^__memp_bucket_reorder(hp, bhp)$/
+__memp_bucket_reorder	../mp/mp_mvcc.c	/^__memp_bucket_reorder(dbenv, hp, bhp)$/
 __memp_check_order	../mp/mp_alloc.c	/^__memp_check_order(dbenv, hp)$/
 __memp_close_flush_files	../mp/mp_sync.c	/^__memp_close_flush_files(dbenv, dbmp, dosync)$/
 __memp_count_files	../mp/mp_stat.c	/^__memp_count_files(dbenv, mfp, argp, countp, flags/
@@ -3820,7 +3832,6 @@ __memp_get_mp_max_write	../mp/mp_method.c	/^__memp_get_mp_max_write(dbenv, maxwr
 __memp_get_mp_mmapsize	../mp/mp_method.c	/^__memp_get_mp_mmapsize(dbenv, mp_mmapsizep)$/
 __memp_get_pgcookie	../mp/mp_fmethod.c	/^__memp_get_pgcookie(dbmfp, pgcookie)$/
 __memp_get_priority	../mp/mp_fmethod.c	/^__memp_get_priority(dbmfp, priorityp)$/
-__memp_get_refcnt	../mp/mp_method.c	/^__memp_get_refcnt(dbenv, dbp, refp)$/
 __memp_init	../mp/mp_region.c	/^__memp_init(dbenv, dbmp, reginfo_off, htab_buckets/
 __memp_init_config	../mp/mp_region.c	/^__memp_init_config(dbenv, mp)$/
 __memp_inmemlist	../mp/mp_fopen.c	/^__memp_inmemlist(dbenv, namesp, cntp)$/
@@ -3929,6 +3940,7 @@ __os_get_errno	../os/os_errno.c	/^__os_get_errno()$/
 __os_get_errno_ret_zero	../os/os_errno.c	/^__os_get_errno_ret_zero()$/
 __os_get_neterr	../os/os_errno.c	/^__os_get_neterr()$/
 __os_get_syserr	../os/os_errno.c	/^__os_get_syserr()$/
+__os_getenv	../os/os_getenv.c	/^__os_getenv(dbenv, name, bpp, buflen)$/
 __os_guard	../os/os_alloc.c	/^__os_guard(dbenv)$/
 __os_id	../os/os_pid.c	/^__os_id(dbenv, pidp, tidp)$/
 __os_io	../os/os_rw.c	/^__os_io(dbenv, op, fhp, pgno, pgsize, relative, io/
@@ -4084,7 +4096,7 @@ __ram_writeback	../btree/bt_recno.c	/^__ram_writeback(dbp)$/
 __reg_type	../env/env_stat.c	/^__reg_type(t)$/
 __rep_abort_prepared	../rep/rep_method.c	/^__rep_abort_prepared(dbenv)$/
 __rep_allreq	../rep/rep_log.c	/^__rep_allreq(dbenv, rp, eid)$/
-__rep_apply	../rep/rep_record.c	/^__rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp)$/
+__rep_apply	../rep/rep_record.c	/^__rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp, las/
 __rep_bt_cmp	../rep/rep_method.c	/^__rep_bt_cmp(dbp, dbt1, dbt2)$/
 __rep_bulk_alloc	../rep/rep_util.c	/^__rep_bulk_alloc(dbenv, bulkp, eid, offp, flagsp, /
 __rep_bulk_free	../rep/rep_util.c	/^__rep_bulk_free(dbenv, bulkp, flags)$/
@@ -4093,11 +4105,11 @@ __rep_bulk_message	../rep/rep_util.c	/^__rep_bulk_message(dbenv, bulk, repth, ls
 __rep_bulk_page	../rep/rep_backup.c	/^__rep_bulk_page(dbenv, eid, rp, rec)$/
 __rep_check_doreq	../rep/rep_record.c	/^__rep_check_doreq(dbenv, rep)$/
 __rep_check_uid	../rep/rep_backup.c	/^__rep_check_uid(dbenv, fp, endfp, uid)$/
+__rep_chk_newfile	../rep/rep_log.c	/^__rep_chk_newfile(dbenv, logc, rep, rp, eid)$/
 __rep_client_dbinit	../rep/rep_method.c	/^__rep_client_dbinit(dbenv, startup, which)$/
 __rep_close	../rep/rep_region.c	/^__rep_close(dbenv)$/
 __rep_closefiles	../rep/rep_region.c	/^__rep_closefiles(dbenv)$/
 __rep_cmp_vote	../rep/rep_elect.c	/^__rep_cmp_vote(dbenv, rep, eid, lsnp, priority, ge/
-__rep_cmp_vote2	../rep/rep_elect.c	/^__rep_cmp_vote2(dbenv, rep, eid, egen)$/
 __rep_collect_txn	../rep/rep_record.c	/^__rep_collect_txn(dbenv, lsnp, lc)$/
 __rep_config_map	../rep/rep_method.c	/^__rep_config_map(dbenv, inflagsp, outflagsp)$/
 __rep_conv_vers	../rep/rep_method.c	/^__rep_conv_vers(dbenv, log_ver)$/
@@ -4128,12 +4140,13 @@ __rep_get_timeout	../rep/rep_method.c	/^__rep_get_timeout(dbenv, which, timeout)
 __rep_getnext	../rep/rep_record.c	/^__rep_getnext(dbenv)$/
 __rep_grow_sites	../rep/rep_util.c	/^__rep_grow_sites(dbenv, nsites)$/
 __rep_init_cleanup	../rep/rep_backup.c	/^__rep_init_cleanup(dbenv, rep, force)$/
-__rep_lockout	../rep/rep_util.c	/^__rep_lockout(dbenv, rep, msg_th)$/
+__rep_lockout_api	../rep/rep_util.c	/^__rep_lockout_api(dbenv, rep)$/
+__rep_lockout_msg	../rep/rep_util.c	/^__rep_lockout_msg(dbenv, rep, msg_th)$/
 __rep_log	../rep/rep_log.c	/^__rep_log(dbenv, rp, rec, savetime, ret_lsnp)$/
 __rep_log_backup	../rep/rep_verify.c	/^__rep_log_backup(dbenv, rep, logc, lsn)$/
 __rep_log_setup	../rep/rep_backup.c	/^__rep_log_setup(dbenv, rep)$/
 __rep_loggap_req	../rep/rep_log.c	/^__rep_loggap_req(dbenv, rep, lsnp, gapflags)$/
-__rep_logready	../rep/rep_log.c	/^__rep_logready(dbenv, rep, savetime)$/
+__rep_logready	../rep/rep_log.c	/^__rep_logready(dbenv, rep, savetime, last_lsnp)$/
 __rep_logreq	../rep/rep_log.c	/^__rep_logreq(dbenv, rp, rec, eid)$/
 __rep_lsn_cmp	../rep/rep_record.c	/^__rep_lsn_cmp(lsn1, lsn2)$/
 __rep_mpf_open	../rep/rep_backup.c	/^__rep_mpf_open(dbenv, mpfp, rfp, flags)$/
@@ -4153,7 +4166,7 @@ __rep_pggap_req	../rep/rep_backup.c	/^__rep_pggap_req(dbenv, rep, reqfp, gapflag
 __rep_preclose	../rep/rep_region.c	/^__rep_preclose(dbenv)$/
 __rep_print_all	../rep/rep_stat.c	/^__rep_print_all(dbenv, flags)$/
 __rep_print_logmsg	../rep/rep_util.c	/^__rep_print_logmsg(dbenv, logdbt, lsnp)$/
-__rep_print_message	../rep/rep_util.c	/^__rep_print_message(dbenv, eid, rp, str)$/
+__rep_print_message	../rep/rep_util.c	/^__rep_print_message(dbenv, eid, rp, str, flags)$/
 __rep_print_stats	../rep/rep_stat.c	/^__rep_print_stats(dbenv, flags)$/
 __rep_process_message	../rep/rep_record.c	/^__rep_process_message(dbenv, control, rec, eidp, r/
 __rep_process_rec	../rep/rep_record.c	/^__rep_process_rec(dbenv, rp, rec, typep, ret_lsnp)/
@@ -4162,6 +4175,7 @@ __rep_queue_filedone	../rep/rep_backup.c	/^__rep_queue_filedone(dbenv, rep, rfp)
 __rep_region_destroy	../rep/rep_region.c	/^__rep_region_destroy(dbenv)$/
 __rep_remfirst	../rep/rep_record.c	/^__rep_remfirst(dbenv, cntrl, rec)$/
 __rep_remove_dbs	../rep/rep_backup.c	/^__rep_remove_dbs(dbenv)$/
+__rep_remove_logs	../rep/rep_backup.c	/^__rep_remove_logs(dbenv)$/
 __rep_resend_req	../rep/rep_record.c	/^__rep_resend_req(dbenv, rereq)$/
 __rep_restore_prepared	../rep/rep_method.c	/^__rep_restore_prepared(dbenv)$/
 __rep_send_bulk	../rep/rep_util.c	/^__rep_send_bulk(dbenv, bulkp, ctlflags)$/
@@ -4191,7 +4205,7 @@ __rep_verify	../rep/rep_verify.c	/^__rep_verify(dbenv, rp, rec, eid, savetime)$/
 __rep_verify_fail	../rep/rep_verify.c	/^__rep_verify_fail(dbenv, rp, eid)$/
 __rep_verify_match	../rep/rep_verify.c	/^__rep_verify_match(dbenv, reclsnp, savetime)$/
 __rep_verify_req	../rep/rep_verify.c	/^__rep_verify_req(dbenv, rp, eid)$/
-__rep_vote1	../rep/rep_elect.c	/^__rep_vote1(dbenv, rp, rec, eid)$/
+__rep_vote1	../rep/rep_elect.c	/^__rep_vote1(dbenv, rp, rec, eidp)$/
 __rep_vote2	../rep/rep_elect.c	/^__rep_vote2(dbenv, rec, eidp)$/
 __rep_wait	../rep/rep_elect.c	/^__rep_wait(dbenv, timeout, eidp, flags)$/
 __rep_walk_dir	../rep/rep_backup.c	/^__rep_walk_dir(dbenv, dir, fp, origfp, fileszp, fi/
@@ -4200,13 +4214,13 @@ __rep_write_page	../rep/rep_backup.c	/^__rep_write_page(dbenv, rep, msgfp)$/
 __repmgr_accept	../repmgr/repmgr_sel.c	/^__repmgr_accept(dbenv)$/
 __repmgr_add_buffer	../repmgr/repmgr_util.c	/^__repmgr_add_buffer(v, address, length)$/
 __repmgr_add_dbt	../repmgr/repmgr_util.c	/^__repmgr_add_dbt(v, dbt)$/
-__repmgr_add_remote_site	../repmgr/repmgr_method.c	/^__repmgr_add_remote_site(dbenv, host, port, flags)/
+__repmgr_add_remote_site	../repmgr/repmgr_method.c	/^__repmgr_add_remote_site(dbenv, host, port, eidp, /
 __repmgr_add_site	../repmgr/repmgr_net.c	/^__repmgr_add_site(dbenv, host, port, newsitep)$/
 __repmgr_available_site	../repmgr/repmgr_net.c	/^__repmgr_available_site(dbenv, eid)$/
 __repmgr_await_ack	../repmgr/repmgr_posix.c	/^__repmgr_await_ack(dbenv, lsnp)$/
 __repmgr_await_threads	../repmgr/repmgr_method.c	/^__repmgr_await_threads(dbenv)$/
 __repmgr_become_master	../repmgr/repmgr_elect.c	/^__repmgr_become_master(dbenv)$/
-__repmgr_bust_connection	../repmgr/repmgr_net.c	/^__repmgr_bust_connection(dbenv, conn)$/
+__repmgr_bust_connection	../repmgr/repmgr_net.c	/^__repmgr_bust_connection(dbenv, conn, do_close)$/
 __repmgr_cleanup_connection	../repmgr/repmgr_net.c	/^__repmgr_cleanup_connection(dbenv, conn)$/
 __repmgr_cleanup_netaddr	../repmgr/repmgr_util.c	/^__repmgr_cleanup_netaddr(dbenv, addr)$/
 __repmgr_close	../repmgr/repmgr_method.c	/^__repmgr_close(dbenv)$/
@@ -4242,6 +4256,7 @@ __repmgr_new_connection	../repmgr/repmgr_util.c	/^__repmgr_new_connection(dbenv,
 __repmgr_new_site	../repmgr/repmgr_util.c	/^__repmgr_new_site(dbenv, sitep, addr, state)$/
 __repmgr_pack_netaddr	../repmgr/repmgr_net.c	/^__repmgr_pack_netaddr(dbenv, host, port, list, add/
 __repmgr_prepare_my_addr	../repmgr/repmgr_util.c	/^__repmgr_prepare_my_addr(dbenv, dbt)$/
+__repmgr_print_stats	../repmgr/repmgr_stat.c	/^__repmgr_print_stats(dbenv)$/
 __repmgr_queue_create	../repmgr/repmgr_queue.c	/^__repmgr_queue_create(dbenv, db_rep)$/
 __repmgr_queue_destroy	../repmgr/repmgr_queue.c	/^__repmgr_queue_destroy(dbenv)$/
 __repmgr_queue_get	../repmgr/repmgr_queue.c	/^__repmgr_queue_get(dbenv, msgp)$/
@@ -4266,6 +4281,7 @@ __repmgr_set_local_site	../repmgr/repmgr_method.c	/^__repmgr_set_local_site(dben
 __repmgr_set_nonblocking	../repmgr/repmgr_posix.c	/^int __repmgr_set_nonblocking(fd)$/
 __repmgr_signal	../repmgr/repmgr_posix.c	/^__repmgr_signal(v)$/
 __repmgr_site	../dbinc/repmgr.h	/^struct __repmgr_site {$/
+__repmgr_site_list	../repmgr/repmgr_stat.c	/^__repmgr_site_list(dbenv, countp, listp)$/
 __repmgr_start	../repmgr/repmgr_method.c	/^__repmgr_start(dbenv, nthreads, flags)$/
 __repmgr_stash_generation	../repmgr/repmgr_msg.c	/^__repmgr_stash_generation(dbenv)$/
 __repmgr_stop_threads	../repmgr/repmgr_method.c	/^__repmgr_stop_threads(dbenv)$/
@@ -4348,6 +4364,7 @@ __txn_get_tx_max	../txn/txn_method.c	/^__txn_get_tx_max(dbenv, tx_maxp)$/
 __txn_get_tx_timestamp	../txn/txn_method.c	/^__txn_get_tx_timestamp(dbenv, timestamp)$/
 __txn_getactive	../txn/txn_chkpt.c	/^__txn_getactive(dbenv, lsnp)$/
 __txn_getckp	../txn/txn_chkpt.c	/^__txn_getckp(dbenv, lsnp)$/
+__txn_gid	../txn/txn_stat.c	/^__txn_gid(dbenv, mbp, txn)$/
 __txn_id	../txn/txn.c	/^__txn_id(txn)$/
 __txn_id_set	../txn/txn_region.c	/^__txn_id_set(dbenv, cur_txnid, max_txnid)$/
 __txn_init	../txn/txn_region.c	/^__txn_init(dbenv, mgr)$/
@@ -4395,6 +4412,7 @@ __txn_stat	../txn/txn_stat.c	/^__txn_stat(dbenv, statp, flags)$/
 __txn_stat_pp	../txn/txn_stat.c	/^__txn_stat_pp(dbenv, statp, flags)$/
 __txn_stat_print	../txn/txn_stat.c	/^__txn_stat_print(dbenv, flags)$/
 __txn_stat_print_pp	../txn/txn_stat.c	/^__txn_stat_print_pp(dbenv, flags)$/
+__txn_status	../txn/txn_stat.c	/^__txn_status(txn)$/
 __txn_undo	../txn/txn.c	/^__txn_undo(txn)$/
 __txn_updateckp	../txn/txn_chkpt.c	/^__txn_updateckp(dbenv, lsnp)$/
 __txn_xa_begin	../txn/txn.c	/^__txn_xa_begin(dbenv, txn)$/
@@ -4402,7 +4420,6 @@ __txn_xa_regop_log	../txn/txn_auto.c	/^__txn_xa_regop_log(dbenv, txnp, ret_lsnp,
 __txn_xa_regop_print	../txn/txn_autop.c	/^__txn_xa_regop_print(dbenv, dbtp, lsnp, notused2, /
 __txn_xa_regop_read	../txn/txn_auto.c	/^__txn_xa_regop_read(dbenv, recbuf, argpp)$/
 __txn_xa_regop_recover	../txn/txn_rec.c	/^__txn_xa_regop_recover(dbenv, dbtp, lsnp, op, info/
-__txn_xid_stats	../txn/txn_stat.c	/^__txn_xid_stats(dbenv, mbp, txn_active)$/
 __ua_memcpy	../os/os_alloc.c	/^__ua_memcpy(dst, src, len)$/
 __usermem	../log/log_archive.c	/^__usermem(dbenv, listp)$/
 __vrfy_childinfo	../dbinc/db_verify.h	/^struct __vrfy_childinfo {$/
@@ -4457,6 +4474,7 @@ bdb_DbUpgrade	../tcl/tcl_db_pkg.c	/^bdb_DbUpgrade(interp, objc, objv)$/
 bdb_DbVerify	../tcl/tcl_db_pkg.c	/^bdb_DbVerify(interp, objc, objv)$/
 bdb_DbmCommand	../tcl/tcl_compat.c	/^bdb_DbmCommand(interp, objc, objv, flag, dbm)$/
 bdb_EnvOpen	../tcl/tcl_db_pkg.c	/^bdb_EnvOpen(interp, objc, objv, ip, env)$/
+bdb_GetConfig	../tcl/tcl_db_pkg.c	/^bdb_GetConfig(interp, objc, objv)$/
 bdb_HCommand	../tcl/tcl_compat.c	/^bdb_HCommand(interp, objc, objv)$/
 bdb_Handles	../tcl/tcl_db_pkg.c	/^bdb_Handles(interp, objc, objv)$/
 bdb_MsgType	../tcl/tcl_db_pkg.c	/^bdb_MsgType(interp, objc, objv)$/
@@ -4643,7 +4661,6 @@ get_obj	../cxx/cxx_except.cpp	/^const Dbt* DbLockNotGrantedException::get_obj() 
 get_op	../cxx/cxx_except.cpp	/^db_lockop_t DbLockNotGrantedException::get_op() co/
 get_tableent	../rpc_server/c/db_server_util.c	/^get_tableent(id)$/
 getcwd	../clib/getcwd.c	/^getcwd(pt, size)$/
-getenv	../clib/getenv.c	/^getenv(name)$/
 getopt	../clib/getopt.c	/^getopt(nargc, nargv, ostr)$/
 h_hash_callback_	../cxx/cxx_db.cpp	/^,	h_hash_callback_(0)$/
 handle_completion	../repmgr/repmgr_windows.c	/^handle_completion(dbenv, conn)$/
@@ -4729,7 +4746,6 @@ new_ct_ent	../rpc_server/c/db_server_util.c	/^new_ct_ent(errp)$/
 next	../cxx/cxx_multi.cpp	/^bool DbMultipleDataIterator::next(Dbt &data)$/
 nextkey	../dbinc/db.in	/^#define	nextkey(a)	__db_dbm_nextkey@DB_VERSION_UNI/
 notify_handshake	../repmgr/repmgr_sel.c	/^notify_handshake(dbenv, conn)$/
-onint	../common/util_sig.c	/^onint(signo)$/
 op_is_remove	../mp/mp_method.c	/^#define	op_is_remove	(newname == NULL)$/
 os_pid_t	../mutex/tm.c	/^typedef HANDLE os_pid_t;$/
 os_spawn	../mutex/tm.c	/^os_spawn(path, argv)$/
@@ -4790,10 +4806,12 @@ set_event_notify	../cxx/cxx_env.cpp	/^int DbEnv::set_event_notify(void (*arg)(Db
 set_feedback	../cxx/cxx_env.cpp	/^int DbEnv::set_feedback(void (*arg)(DbEnv *, int, /
 set_message_stream	../cxx/cxx_env.cpp	/^void DbEnv::set_message_stream(__DB_STD(ostream) */
 set_paniccall	../cxx/cxx_env.cpp	/^int DbEnv::set_paniccall(void (*arg)(DbEnv *, int)/
+set_signal	../common/util_sig.c	/^set_signal(s, is_dflt)$/
 set_thread_id_string	../cxx/cxx_env.cpp	/^int DbEnv::set_thread_id_string($/
 setup_sending_msg	../repmgr/repmgr_net.c	/^setup_sending_msg(msg, type, control, rec)$/
 sfonoff	../tcl/tcl_env.c	/^	enum sfonoff {$/
 sfwhich	../tcl/tcl_env.c	/^	enum sfwhich {$/
+signal_handler	../common/util_sig.c	/^signal_handler(signo)$/
 size_t	../dbinc/db_cxx.in	/^		(size_t);$/
 snprintf	../clib/snprintf.c	/^snprintf(str, n, fmt, va_alist)$/
 socket_t	../dbinc/repmgr.h	/^typedef SOCKET socket_t;$/
@@ -4909,9 +4927,9 @@ txnckpopts	../tcl/tcl_txn.c	/^	enum txnckpopts {$/
 txncmds	../tcl/tcl_txn.c	/^	enum txncmds {$/
 txnop_t	../txn/txn.c	/^} txnop_t;$/
 txnopts	../tcl/tcl_txn.c	/^	enum txnopts {$/
-u16	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int16_t	u16;	$/
+u16	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int16_t	u16;$/
 u32	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int32_t	u32;$/
-u8	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int8_t	u8;	$/
+u8	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int8_t	u8;$/
 u_int32_t	../dbinc/db_cxx.in	/^		(DB *, const void *, u_int32_t);$/
 unmap_file	../mutex/tm.c	/^unmap_file(addr, fhp)$/
 usage	../mutex/tm.c	/^usage()$/

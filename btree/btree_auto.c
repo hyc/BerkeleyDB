@@ -141,9 +141,15 @@ __bam_split_log(dbp, txnp, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (llsn != NULL)
+	if (llsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(llsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, llsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, llsn, sizeof(*llsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*llsn));
 	bp += sizeof(*llsn);
 
@@ -151,9 +157,15 @@ __bam_split_log(dbp, txnp, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (rlsn != NULL)
+	if (rlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(rlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, rlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, rlsn, sizeof(*rlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*rlsn));
 	bp += sizeof(*rlsn);
 
@@ -165,9 +177,15 @@ __bam_split_log(dbp, txnp, ret_lsnp, flags, left, llsn, right, rlsn, indx,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (nlsn != NULL)
+	if (nlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(nlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, nlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, nlsn, sizeof(*nlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*nlsn));
 	bp += sizeof(*nlsn);
 
@@ -464,9 +482,15 @@ __bam_rsplit_log(dbp, txnp, ret_lsnp, flags, pgno, pgdbt, root_pgno, nrec, roote
 		bp += rootent->size;
 	}
 
-	if (rootlsn != NULL)
+	if (rootlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(rootlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, rootlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, rootlsn, sizeof(*rootlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*rootlsn));
 	bp += sizeof(*rootlsn);
 
@@ -699,9 +723,15 @@ __bam_adj_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, indx_copy, is_insert)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -937,9 +967,15 @@ __bam_cadjust_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, adjust, opflags)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -1172,9 +1208,15 @@ __bam_cdel_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -1402,9 +1444,15 @@ __bam_repl_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, isdeleted, orig,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -1682,9 +1730,15 @@ __bam_root_log(dbp, txnp, ret_lsnp, flags, meta_pgno, root_pgno, meta_lsn)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (meta_lsn != NULL)
+	if (meta_lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(meta_lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, meta_lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, meta_lsn, sizeof(*meta_lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*meta_lsn));
 	bp += sizeof(*meta_lsn);
 
@@ -2459,9 +2513,15 @@ __bam_relink_log(dbp, txnp, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, nex
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn_prev != NULL)
+	if (lsn_prev != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn_prev, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn_prev) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn_prev, sizeof(*lsn_prev));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn_prev));
 	bp += sizeof(*lsn_prev);
 
@@ -2469,9 +2529,15 @@ __bam_relink_log(dbp, txnp, ret_lsnp, flags, pgno, new_pgno, prev, lsn_prev, nex
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn_next != NULL)
+	if (lsn_next != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn_next, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn_next) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn_next, sizeof(*lsn_next));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn_next));
 	bp += sizeof(*lsn_next);
 
@@ -2704,9 +2770,15 @@ __bam_merge_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 
@@ -2714,9 +2786,15 @@ __bam_merge_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, npgno, nlsn, hdr,
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (nlsn != NULL)
+	if (nlsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(nlsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, nlsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, nlsn, sizeof(*nlsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*nlsn));
 	bp += sizeof(*nlsn);
 
@@ -2987,9 +3065,15 @@ __bam_pgno_log(dbp, txnp, ret_lsnp, flags, pgno, lsn, indx, opgno, npgno)
 	memcpy(bp, &uinttmp, sizeof(uinttmp));
 	bp += sizeof(uinttmp);
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 

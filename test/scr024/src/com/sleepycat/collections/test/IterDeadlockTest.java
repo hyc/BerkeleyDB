@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: IterDeadlockTest.java,v 12.4 2006/06/09 14:32:42 mark Exp $
+ * $Id: IterDeadlockTest.java,v 12.5 2006/08/24 14:46:46 bostic Exp $
  */
 
 package com.sleepycat.collections.test;

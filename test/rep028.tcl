@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep028.tcl,v 12.9 2006/07/19 17:43:45 carol Exp $
+# $Id: rep028.tcl,v 12.11 2006/08/24 14:46:37 bostic Exp $
 #
 # TEST  	rep028
 # TEST	Replication and non-rep env handles. (Also see rep006.)
@@ -21,11 +21,6 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 		puts "Skipping replication test on Win 9x platform."
 		return
 	}
-	# Skip test for HP-UX because we can't open an env twice.
-	if { $is_hp_test == 1 } {
-		puts "\tRep$tnum: Skipping for HP-UX."
-		return
-	}
 
 	# Run for btree only.
 	if { $checking_valid_methods } {
@@ -34,6 +29,12 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 	}
 	if { [is_btree $method] == 0 } {
 		puts "\tRep$tnum: Skipping for method $method."
+		return
+	}
+
+	# Skip test for HP-UX because we can't open an env twice.
+	if { $is_hp_test == 1 } {
+		puts "\tRep$tnum: Skipping for HP-UX."
 		return
 	}
 

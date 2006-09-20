@@ -75,14 +75,14 @@ static jclass keyrange_class;
 static jclass bt_stat_class, compact_class, h_stat_class, lock_stat_class;
 static jclass log_stat_class, mpool_stat_class, mpool_fstat_class;
 static jclass mutex_stat_class, qam_stat_class, rep_stat_class;
-static jclass seq_stat_class, txn_stat_class;
+static jclass rephost_class, seq_stat_class, txn_stat_class;
 static jclass txn_active_class;
 static jclass lock_class, lockreq_class, rep_processmsg_class;
 static jclass dbex_class, deadex_class, lockex_class, memex_class;
 static jclass repdupmasterex_class, rephandledeadex_class;
 static jclass repholdelectionex_class, repjoinfailex_class, replockoutex_class;
 static jclass repunavailex_class;
-static jclass runrecex_class, updconfex_class, versionex_class;
+static jclass runrecex_class, versionex_class;
 static jclass filenotfoundex_class, illegalargex_class, outofmemerr_class;
 static jclass bytearray_class, string_class, outputstream_class;
 
@@ -94,7 +94,9 @@ static jfieldID kr_less_fid, kr_equal_fid, kr_greater_fid;
 static jfieldID lock_cptr_fid;
 static jfieldID lockreq_op_fid, lockreq_modeflag_fid, lockreq_timeout_fid;
 static jfieldID lockreq_obj_fid, lockreq_lock_fid;
-static jfieldID rep_processmsg_envid;
+static jfieldID rep_processmsg_envid_fid;
+static jfieldID rephost_port_fid, rephost_host_fid, rephost_eid_fid;
+static jfieldID rephost_status_fid;
 
 /* BEGIN-STAT-FIELD-DECLS */
 static jfieldID bt_stat_bt_magic_fid;
@@ -225,6 +227,7 @@ static jfieldID mpool_stat_st_hash_longest_fid;
 static jfieldID mpool_stat_st_hash_examined_fid;
 static jfieldID mpool_stat_st_hash_nowait_fid;
 static jfieldID mpool_stat_st_hash_wait_fid;
+static jfieldID mpool_stat_st_hash_max_nowait_fid;
 static jfieldID mpool_stat_st_hash_max_wait_fid;
 static jfieldID mpool_stat_st_region_nowait_fid;
 static jfieldID mpool_stat_st_region_wait_fid;
@@ -342,6 +345,7 @@ static jfieldID txn_active_pid_fid;
 static jfieldID txn_active_lsn_fid;
 static jfieldID txn_active_read_lsn_fid;
 static jfieldID txn_active_mvcc_ref_fid;
+static jfieldID txn_active_status_fid;
 static jfieldID txn_active_xa_status_fid;
 static jfieldID txn_active_xid_fid;
 static jfieldID txn_active_name_fid;
@@ -359,8 +363,9 @@ static jmethodID dbex_construct, deadex_construct, lockex_construct;
 static jmethodID memex_construct, memex_update_method;
 static jmethodID repdupmasterex_construct, rephandledeadex_construct;
 static jmethodID repholdelectionex_construct, repjoinfailex_construct;
+static jmethodID rephost_construct;
 static jmethodID replockoutex_construct, repunavailex_construct;
-static jmethodID runrecex_construct, updconfex_construct, versionex_construct;
+static jmethodID runrecex_construct, versionex_construct;
 static jmethodID filenotfoundex_construct, illegalargex_construct;
 static jmethodID outofmemerr_construct;
 static jmethodID lock_construct;
@@ -414,11 +419,11 @@ const struct {
 	{ &repdupmasterex_class, DB_PKG "ReplicationDuplicateMasterException" },
 	{ &rephandledeadex_class, DB_PKG "ReplicationHandleDeadException" },
 	{ &repholdelectionex_class, DB_PKG "ReplicationHoldElectionException" },
+	{ &rephost_class, DB_PKG "ReplicationHostAddress" },
 	{ &repjoinfailex_class, DB_PKG "ReplicationJoinFailureException" },
 	{ &replockoutex_class, DB_PKG "ReplicationLockoutException" },
 	{ &repunavailex_class, DB_PKG "ReplicationSiteUnavailableException" },
 	{ &runrecex_class, DB_PKG "RunRecoveryException" },
-	{ &updconfex_class, DB_PKG "UpdateConflictException" },
 	{ &versionex_class, DB_PKG "VersionMismatchException" },
 	{ &filenotfoundex_class, "java/io/FileNotFoundException" },
 	{ &illegalargex_class, "java/lang/IllegalArgumentException" },
@@ -592,6 +597,7 @@ const struct {
 	{ &mpool_stat_st_hash_examined_fid, &mpool_stat_class, "st_hash_examined", "I" },
 	{ &mpool_stat_st_hash_nowait_fid, &mpool_stat_class, "st_hash_nowait", "I" },
 	{ &mpool_stat_st_hash_wait_fid, &mpool_stat_class, "st_hash_wait", "I" },
+	{ &mpool_stat_st_hash_max_nowait_fid, &mpool_stat_class, "st_hash_max_nowait", "I" },
 	{ &mpool_stat_st_hash_max_wait_fid, &mpool_stat_class, "st_hash_max_wait", "I" },
 	{ &mpool_stat_st_region_nowait_fid, &mpool_stat_class, "st_region_nowait", "I" },
 	{ &mpool_stat_st_region_wait_fid, &mpool_stat_class, "st_region_wait", "I" },
@@ -709,12 +715,17 @@ const struct {
 	{ &txn_active_lsn_fid, &txn_active_class, "lsn", "L" DB_PKG "LogSequenceNumber;" },
 	{ &txn_active_read_lsn_fid, &txn_active_class, "read_lsn", "L" DB_PKG "LogSequenceNumber;" },
 	{ &txn_active_mvcc_ref_fid, &txn_active_class, "mvcc_ref", "I" },
+	{ &txn_active_status_fid, &txn_active_class, "status", "I" },
 	{ &txn_active_xa_status_fid, &txn_active_class, "xa_status", "I" },
 	{ &txn_active_xid_fid, &txn_active_class, "xid", "[B" },
 	{ &txn_active_name_fid, &txn_active_class, "name", "Ljava/lang/String;" },
 /* END-STAT-FIELDS */
 
-	{ &rep_processmsg_envid, &rep_processmsg_class, "envid", "I" }
+	{ &rephost_port_fid, &rephost_class, "port", "I" },
+	{ &rephost_host_fid, &rephost_class, "host", "Ljava/lang/String;" },
+	{ &rephost_eid_fid, &rephost_class, "eid", "I" },
+	{ &rephost_status_fid, &rephost_class, "status", "I" },
+	{ &rep_processmsg_envid_fid, &rep_processmsg_class, "envid", "I" }
 };
 
 const struct {
@@ -742,6 +753,7 @@ const struct {
 	{ &seq_stat_construct, &seq_stat_class, "<init>", "()V" },
 	{ &txn_stat_construct, &txn_stat_class, "<init>", "()V" },
 	{ &txn_active_construct, &txn_active_class, "<init>", "()V" },
+	{ &rephost_construct, &rephost_class, "<init>", "()V" },
 
 	{ &dbex_construct, &dbex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
@@ -768,8 +780,6 @@ const struct {
 	{ &repunavailex_construct, &repunavailex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &runrecex_construct, &runrecex_class, "<init>",
-	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
-	{ &updconfex_construct, &updconfex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },
 	{ &versionex_construct, &versionex_class, "<init>",
 	    "(Ljava/lang/String;IL" DB_PKG "internal/DbEnv;)V" },

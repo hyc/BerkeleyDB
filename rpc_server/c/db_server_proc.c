@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2000-2006
- *      Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: db_server_proc.c,v 12.12 2006/07/17 13:08:38 mjc Exp $
+ * $Id: db_server_proc.c,v 12.14 2006/09/19 13:39:44 mjc Exp $
  */
 
 #include "db_config.h"
@@ -2346,29 +2346,37 @@ __dbc_c_get_proc(dbccl_id, keydlen, keydoff, keyulen, keyflags, keydata,
 	key.dlen = keydlen;
 	key.ulen = keyulen;
 	key.doff = keydoff;
-	/*
-	 * Ignore memory related flags on server.
-	 */
-	key.flags = DB_DBT_MALLOC;
+	key.size = keysize;
+	if (keyflags & DB_DBT_USERMEM) {
+		if ((ret = __os_umalloc(dbenv, key.ulen, &key.data)) != 0)
+			goto err;
+		if (keydata != 0)
+			memcpy(key.data, keydata,
+			    (key.size < key.ulen) ? key.size : key.ulen);
+		key.flags = DB_DBT_USERMEM;
+	} else {
+		key.data = keydata;
+		key.flags = DB_DBT_MALLOC;
+	}
 	if (keyflags & DB_DBT_PARTIAL)
 		key.flags |= DB_DBT_PARTIAL;
-	key.size = keysize;
-	key.data = keydata;
 
 	data.dlen = datadlen;
 	data.ulen = dataulen;
 	data.doff = datadoff;
 	data.size = datasize;
-	data.data = datadata;
-	if (flags & DB_MULTIPLE || flags & DB_MULTIPLE_KEY) {
-		if (data.data == 0) {
-			ret = __os_umalloc(dbenv, data.ulen, &data.data);
-			if (ret != 0)
-				goto err;
-		}
-		data.flags |= DB_DBT_USERMEM;
-	} else
-		data.flags |= DB_DBT_MALLOC;
+	if (flags & (DB_MULTIPLE | DB_MULTIPLE_KEY) ||
+	    dataflags & DB_DBT_USERMEM) {
+		if ((ret = __os_umalloc(dbenv, data.ulen, &data.data)) != 0)
+			goto err;
+		if (datadata != 0)
+			memcpy(data.data, datadata,
+			    (data.size < data.ulen) ? data.size : data.ulen);
+		data.flags = DB_DBT_USERMEM;
+	} else {
+		data.data = datadata;
+		data.flags = DB_DBT_MALLOC;
+	}
 	if (dataflags & DB_DBT_PARTIAL)
 		data.flags |= DB_DBT_PARTIAL;
 

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: ReplicationStatus.java,v 12.5 2006/06/15 19:18:32 alanb Exp $
+ * $Id: ReplicationStatus.java,v 12.6 2006/08/24 14:46:09 bostic Exp $
  */
 
 package com.sleepycat.db;

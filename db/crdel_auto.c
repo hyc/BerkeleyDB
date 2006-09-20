@@ -135,9 +135,15 @@ __crdel_metasub_log(dbp, txnp, ret_lsnp, flags, pgno, page, lsn)
 		bp += page->size;
 	}
 
-	if (lsn != NULL)
+	if (lsn != NULL) {
+		if (txnp != NULL) {
+			LOG *lp = dbenv->lg_handle->reginfo.primary;
+			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
+			    __log_check_page_lsn(dbenv, dbp, lsn) != 0))
+				return (ret);
+		}
 		memcpy(bp, lsn, sizeof(*lsn));
-	else
+	} else
 		memset(bp, 0, sizeof(*lsn));
 	bp += sizeof(*lsn);
 

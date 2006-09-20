@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 1997-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: os_sleep.c,v 12.7 2006/06/08 13:33:59 bostic Exp $
+ * $Id: os_sleep.c,v 12.9 2006/09/06 20:22:12 bostic Exp $
  */
 
 #include "db_config.h"
@@ -39,6 +39,16 @@ __os_sleep(dbenv, secs, usecs)
 	 * It's important that we yield the processor here so that other
 	 * processes or threads are permitted to run.
 	 *
+	 * XXX
+	 * VxWorks doesn't yield the processor on select.  This isn't really
+	 * an infinite loop, even though __os_yield can call __os_sleep, and
+	 * we'll fix this when the tree isn't frozen. [#15037]
+	 */
+#ifdef HAVE_VXWORKS
+	__os_yield(dbenv);
+#endif
+
+	/*
 	 * Sheer raving paranoia -- don't select for 0 time.
 	 */
 	t.tv_sec = (long)secs;

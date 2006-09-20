@@ -1,9 +1,9 @@
 # See the file LICENSE for redistribution information.
 #
 # Copyright (c) 2004-2006
-#	Sleepycat Software.  All rights reserved.
+#	Oracle Corporation.  All rights reserved.
 #
-# $Id: rep035script.tcl,v 12.3 2006/04/12 03:24:06 sue Exp $
+# $Id: rep035script.tcl,v 12.4 2006/08/24 14:46:37 bostic Exp $
 #
 # Rep035 script - continually calls lock_detect, txn_checkpoint,
 # or mpool_trickle.

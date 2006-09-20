@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2002-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: DatabaseConfig.java,v 12.4 2006/04/27 13:40:53 mjc Exp $
+ * $Id: DatabaseConfig.java,v 12.6 2006/08/24 14:46:07 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -516,7 +516,6 @@ public class DatabaseConfig implements Cloneable {
 
         int dbFlags = 0;
         dbFlags |= checksum ? DbConstants.DB_CHKSUM : 0;
-        dbFlags |= (password != null) ? DbConstants.DB_ENCRYPT : 0;
         dbFlags |= btreeRecordNumbers ? DbConstants.DB_RECNUM : 0;
         dbFlags |= queueInOrder ? DbConstants.DB_INORDER : 0;
         dbFlags |= renumbering ? DbConstants.DB_RENUMBER : 0;
@@ -525,6 +524,8 @@ public class DatabaseConfig implements Cloneable {
         dbFlags |= snapshot ? DbConstants.DB_SNAPSHOT : 0;
         dbFlags |= unsortedDuplicates ? DbConstants.DB_DUP : 0;
         dbFlags |= transactionNotDurable ? DbConstants.DB_TXN_NOT_DURABLE : 0;
+        if (!db.getPrivateDbEnv())
+                dbFlags |= (password != null) ? DbConstants.DB_ENCRYPT : 0;
 
         if (dbFlags != 0)
             db.set_flags(dbFlags);
@@ -548,7 +549,7 @@ public class DatabaseConfig implements Cloneable {
             db.set_message_stream(messageStream);
         if (pageSize != oldConfig.pageSize)
             db.set_pagesize(pageSize);
-        if (password != oldConfig.password)
+        if (password != oldConfig.password && db.getPrivateDbEnv())
             db.set_encrypt(password, DbConstants.DB_ENCRYPT_AES);
         if (queueExtentSize != oldConfig.queueExtentSize)
             db.set_q_extentsize(queueExtentSize);

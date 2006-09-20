@@ -1,9 +1,10 @@
-# $Id: configure.ac,v 12.41 2006/07/13 06:55:42 mjc Exp $
+# $Id: configure.ac,v 12.46 2006/09/19 00:33:58 bostic Exp $
 # Process this file with autoconf to produce a configure script.
 
 PACKAGE=db
-AC_INIT(Berkeley DB,
-	__EDIT_DB_VERSION__, support@sleepycat.com, db-__EDIT_DB_VERSION__)
+AC_INIT(Berkeley DB, __EDIT_DB_VERSION__,
+	[Oracle Technology Network Berkeley DB forum],
+	db-__EDIT_DB_VERSION__)
 AC_CONFIG_SRCDIR([../db/db.c])
 AC_CONFIG_HEADERS([db_config.h:config.hin])
 
@@ -68,6 +69,7 @@ AC_SUBST(REPLACEMENT_OBJS)
 AC_SUBST(RPC_CLIENT_OBJS)
 AC_SUBST(RPC_SERVER_H)
 AC_SUBST(SOFLAGS)
+AC_SUBST(SWIGCFLAGS)
 AC_SUBST(TEST_LIBS)
 AC_SUBST(db_int_def)
 AC_SUBST(o)
@@ -341,7 +343,7 @@ case "$host_os" in
     ;;
     *)
         LIBTSO_MODULE="-module"
-        LIBTSO_MODSUFFIX=@MODSUFFIX@
+        LIBTSO_MODSUFFIX=$MODSUFFIX
     ;;
 esac
 
@@ -403,6 +405,14 @@ if test "$db_cv_java" = "yes"; then
 	* )
 		AC_MSG_ERROR([Java version 1.3 or higher required, got $JAVA_VERSION]) ;;
 	esac
+
+	# Because of the code that SWIG generates to cast between pointers and
+	# integers, we need to add the flag "-fno-strict-aliasing" to the gcc
+	# command line when compiling the JNI code.  This is documented in
+	# [#14953] and at http://www.swig.org/Doc1.3/Java.html
+	if test ${GCC} = "yes"; then
+		SWIGCFLAGS="-fno-strict-aliasing"
+	fi
 
 	for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
 	do
@@ -491,10 +501,18 @@ AC_REPLACE_FUNCS(\
 
 # Check for system functions we optionally use.
 AC_CHECK_FUNCS(\
-   _fstati64 clock_gettime directio fchmod fcntl fdatasync ftruncate\
-   getaddrinfo getrusage gettimeofday getuid mprotect pstat_getdynamic\
-   pthread_yield sched_yield select snprintf stat strftime sysconf\
-   vsnprintf yield)
+   _fstati64 clock_gettime directio fchmod fcntl fdatasync getaddrinfo\
+   getrusage gettimeofday getuid mprotect pstat_getdynamic pthread_yield\
+   sched_yield select sigaction snprintf stat strftime sysconf vsnprintf\
+   yield)
+
+# Replication can't run correctly if ftruncate isn't available.
+AC_CHECK_FUNCS(ftruncate)
+if test \
+    "$db_cv_build_replication" = "yes" -a "$ac_cv_func_ftruncate" = "no"; then
+	db_cv_build_replication=no
+	AC_MSG_WARN([replication requires ftruncate, replication disabled.])
+fi
 
 # ctime_r --
 #

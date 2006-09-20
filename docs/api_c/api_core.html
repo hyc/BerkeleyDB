@@ -1,15 +1,15 @@
 <!--DO NOT EDIT: automatically built by build script.-->
-<!--Copyright 1997-2006 by Sleepycat Software, Inc.-->
+<!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
 <head>
-<title>Berkeley DB: Berkeley DB: C Handle Methods (version 4.5.13)</title>
+<title>Berkeley DB: Berkeley DB: C Handle Methods (version 4.5.20)</title>
 <meta name="description" content="Berkeley DB: An embedded database programmatic toolkit.">
 <meta name="keywords" content="embedded,database,programmatic,toolkit,btree,hash,hashing,transaction,transactions,locking,logging,access method,access methods,Java,C,C++">
 </head>
 <body bgcolor=white>
-<h3 align=center>Berkeley DB: C Handle Methods (version 4.5.13)</h3>
+<h3 align=center>Berkeley DB: C Handle Methods (version 4.5.20)</h3>
 <table border=1 align=center>
 <tr><th>C Handle Methods</th><th>Description</th></tr>
 <!--Db::--><tr><td><a href="../api_c/db_class.html">db_create</a></td><td>Create a database handle</td></tr>
@@ -22,12 +22,11 @@
 <!--Db::fd--><tr><td><a href="../api_c/db_fd.html">DB-&gt;fd</a></td><td>Return a file descriptor from a database</td></tr>
 <!--Db::get--><tr><td><a href="../api_c/db_get.html">DB-&gt;get</a>, <a href="../api_c/db_get.html">DB-&gt;pget</a></td><td>Get items from a database</td></tr>
 <!--Db::get_byteswapped--><tr><td><a href="../api_c/db_get_byteswapped.html">DB-&gt;get_byteswapped</a></td><td>Return if the underlying database is in host order</td></tr>
-<!--Db::get_env--><tr><td><a href="../api_c/db_getenv.html">DB-&gt;get_env</a></td><td>Return database environment handle</td></tr>
-<!--Db::get_mpf--><tr><td><a href="../api_c/db_get_mpf.html">DB-&gt;get_mpf</a></td><td>Return underlying <a href="../api_c/mempfile_class.html">DB_MPOOLFILE</a> handle</td></tr>
+<!--Db::get_env--><tr><td><a href="../api_c/db_getenv.html">DB-&gt;get_env</a></td><td>Return <a href="../api_c/db_class.html">DB</a>'s underlying <a href="../api_c/env_class.html">DB_ENV</a> handle</td></tr>
 <!--Db::get_type--><tr><td><a href="../api_c/db_get_type.html">DB-&gt;get_type</a></td><td>Return the database type</td></tr>
 <!--Db::join--><tr><td><a href="../api_c/db_join.html">DB-&gt;join</a></td><td>Perform a database join on cursors</td></tr>
 <!--Db::key_range--><tr><td><a href="../api_c/db_key_range.html">DB-&gt;key_range</a></td><td>Return estimate of key location</td></tr>
-<!--Db::mpf--><tr><td><a href="../api_c/db_get_mpf.html">DB-&gt;get_mpf</a></td><td>Return the database's memory pool handle</td></tr>
+<!--Db::mpf--><tr><td><a href="../api_c/db_get_mpf.html">DB-&gt;get_mpf</a></td><td>Return <a href="../api_c/db_class.html">DB</a>'s underlying <a href="../api_c/mempfile_class.html">DB_MPOOLFILE</a> handle</td></tr>
 <!--Db::open--><tr><td><a href="../api_c/db_open.html">DB-&gt;open</a></td><td>Open a database</td></tr>
 <!--Db::put--><tr><td><a href="../api_c/db_put.html">DB-&gt;put</a></td><td>Store items into a database</td></tr>
 <!--Db::remove--><tr><td><a href="../api_c/db_remove.html">DB-&gt;remove</a></td><td>Remove a database</td></tr>
@@ -69,6 +68,7 @@
 <!--DbCursor::put--><tr><td><a href="../api_c/dbc_put.html">DBcursor-&gt;c_put</a></td><td>Store by cursor</td></tr>
 <!--DbDeadlockException-->
 <!--DbEnv::--><tr><td><a href="../api_c/env_class.html">db_env_create</a></td><td>Create an environment handle</td></tr>
+<!--DbEnv::cdsgroup_begin--><tr><td><a href="../api_c/env_cdsgroup_begin.html">DB_ENV-&gt;cdsgroup_begin</a></td><td>Get a locker ID in Berkeley DB Concurrent Data Store</td></tr>
 <!--DbEnv::close--><tr><td><a href="../api_c/env_close.html">DB_ENV-&gt;close</a></td><td>Close an environment</td></tr>
 <!--DbEnv::dbremove--><tr><td><a href="../api_c/env_dbremove.html">DB_ENV-&gt;dbremove</a></td><td>Remove a database</td></tr>
 <!--DbEnv::dbrename--><tr><td><a href="../api_c/env_dbrename.html">DB_ENV-&gt;dbrename</a></td><td>Rename a database</td></tr>
@@ -121,6 +121,7 @@
 <!--DbEnv::repmgr_add_remote_site--><tr><td><a href="../api_c/repmgr_remote_site.html">DB_ENV-&gt;repmgr_add_remote_site</a></td><td>Specify the replication manager's remote sites</td></tr>
 <!--DbEnv::repmgr_set_ack_policy--><tr><td><a href="../api_c/repmgr_ack_policy.html">DB_ENV-&gt;repmgr_set_ack_policy</a></td><td>Specify the replication manager's client acknowledgement policy</td></tr>
 <!--DbEnv::repmgr_set_local_site--><tr><td><a href="../api_c/repmgr_local_site.html">DB_ENV-&gt;repmgr_set_local_site</a></td><td>Specify the replication manager's local site</td></tr>
+<!--DbEnv::repmgr_site_list--><tr><td><a href="../api_c/repmgr_site_list.html">DB_ENV-&gt;repmgr_site_list</a></td><td>List the sites and their status</td></tr>
 <!--DbEnv::repmgr_start--><tr><td><a href="../api_c/repmgr_start.html">DB_ENV-&gt;repmgr_start</a></td><td>Start the replication manager</td></tr>
 <!--DbEnv::set_alloc--><tr><td><a href="../api_c/env_set_alloc.html">DB_ENV-&gt;set_alloc</a></td><td>Set local space allocation functions</td></tr>
 <!--DbEnv::set_app_dispatch--><tr><td><a href="../api_c/env_set_app_dispatch.html">DB_ENV-&gt;set_app_dispatch</a></td><td>Configure application recovery</td></tr>
@@ -210,6 +211,6 @@
 <!--db_version--><tr><td><a href="../api_c/env_version.html">db_version</a></td><td>Return version information</td></tr>
 <!--log_compare--><tr><td><a href="../api_c/log_compare.html">log_compare</a></td><td>Compare two Log Sequence Numbers</td></tr>
 </table>
-<p><font size=1><a href="../sleepycat/legal.html">Copyright (c) 1996-2006</a> <a href="http://www.sleepycat.com">Sleepycat Software, Inc.</a> - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
 </body>
 </html>

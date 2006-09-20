@@ -34,6 +34,7 @@ int __os_fileid __P((DB_ENV *, const char *, int, u_int8_t *));
 int __os_fdlock __P((DB_ENV *, DB_FH *, off_t, int, int));
 int __os_fsync __P((DB_ENV *, DB_FH *));
 int __os_zerofill __P((DB_ENV *, DB_FH *));
+int __os_getenv __P((DB_ENV *, const char *, char **, size_t));
 int __os_openhandle __P((DB_ENV *, const char *, int, int, DB_FH **));
 int __os_closehandle __P((DB_ENV *, DB_FH *));
 int __os_r_sysattach __P((DB_ENV *, REGINFO *, REGION *));

@@ -2,9 +2,9 @@
  * See the file LICENSE for redistribution information.
  *
  * Copyright (c) 2001-2006
- *	Sleepycat Software.  All rights reserved.
+ *	Oracle Corporation.  All rights reserved.
  *
- * $Id: rep_mgr.c,v 12.12 2006/07/07 23:36:10 alanb Exp $
+ * $Id: rep_mgr.c,v 12.15 2006/09/08 20:32:06 bostic Exp $
  */
 
 #include <sys/types.h>
@@ -98,7 +98,7 @@ main(argc, argv)
 			}
 			port = (unsigned short)atoi(portstr);
 			if ((ret = dbenv->repmgr_add_remote_site(dbenv, host,
-			    port, friend ? DB_REPMGR_PEER : 0)) != 0) {
+			    port, NULL, friend ? DB_REPMGR_PEER : 0)) != 0) {
 				dbenv->err(dbenv, ret,
 				    "Could not add site %s:%d", host,
 				    (int)port);
@@ -127,7 +127,7 @@ main(argc, argv)
 
 	if ((ret = env_init(dbenv, home)) != 0)
 		goto err;
-	
+
 	if ((ret = dbenv->repmgr_start(dbenv, 3, start_policy)) != 0)
 		goto err;
 
