@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: sdb003.tcl,v 12.3 2006/08/24 14:46:39 bostic Exp $
+# $Id: sdb003.tcl,v 12.5 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	sdb003
 # TEST	Tests many subdbs
@@ -70,9 +69,6 @@ proc sdb003 { method {nentries 1000} args } {
 	set ndataent 10
 	set fdid [open $dict]
 	while { [gets $fdid str] != -1 && $fcount < $nentries } {
-		if { $str == "" } {
-			continue
-		}
 		set subdb $str
 		set db [eval {berkdb_open -create -mode 0644} \
 		    $args {$omethod $testfile $subdb}]

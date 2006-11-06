@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_dump.c,v 12.9 2006/08/26 09:23:01 bostic Exp $
+ * $Id: db_dump.c,v 12.11 2006/11/01 00:52:33 bostic Exp $
  */
 
 #include "db_config.h"
@@ -15,7 +14,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
+    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
 #endif
 
 int	 db_dump_db_init __P((DB_ENV *, char *, int, u_int32_t, int *));
@@ -413,7 +412,7 @@ db_dump_dump_sub(dbenv, parent_dbp, parent_name, pflag, keyflag)
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
-	while ((ret = dbcp->c_get(dbcp, &key, &data, DB_NEXT)) == 0) {
+	while ((ret = dbcp->get(dbcp, &key, &data, DB_NEXT)) == 0) {
 		/* Nul terminate the subdatabase name. */
 		if ((subdb = malloc(key.size + 1)) == NULL) {
 			dbenv->err(dbenv, ENOMEM, NULL);
@@ -445,7 +444,7 @@ db_dump_dump_sub(dbenv, parent_dbp, parent_name, pflag, keyflag)
 		return (1);
 	}
 
-	if ((ret = dbcp->c_close(dbcp)) != 0) {
+	if ((ret = dbcp->close(dbcp)) != 0) {
 		parent_dbp->err(parent_dbp, ret, "DBcursor->close");
 		return (1);
 	}
@@ -476,7 +475,7 @@ db_dump_show_subs(dbp)
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
-	while ((ret = dbcp->c_get(dbcp, &key, &data, DB_NEXT)) == 0) {
+	while ((ret = dbcp->get(dbcp, &key, &data, DB_NEXT)) == 0) {
 		if ((ret = dbp->dbenv->prdbt(
 		    &key, 1, NULL, stdout, __db_pr_callback, 0)) != 0) {
 			dbp->errx(dbp, NULL);
@@ -488,7 +487,7 @@ db_dump_show_subs(dbp)
 		return (1);
 	}
 
-	if ((ret = dbcp->c_close(dbcp)) != 0) {
+	if ((ret = dbcp->close(dbcp)) != 0) {
 		dbp->err(dbp, ret, "DBcursor->close");
 		return (1);
 	}

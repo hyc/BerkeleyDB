@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: os_map.c,v 12.8 2006/08/24 14:46:21 bostic Exp $
+ * $Id: os_map.c,v 12.10 2006/11/01 00:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -111,6 +110,10 @@ __os_mapfile(dbenv, path, fhp, len, is_rdonly, addr)
 	size_t len;
 	void **addr;
 {
+	if (dbenv != NULL &&
+	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv, "fileops: mmap %s", path);
+
 	return (__os_map(dbenv, path, NULL, fhp, len, 0, 0, is_rdonly, addr));
 }
 
@@ -124,6 +127,10 @@ __os_unmapfile(dbenv, addr, len)
 	void *addr;
 	size_t len;
 {
+	if (dbenv != NULL &&
+	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv, "fileops: munmap");
+
 	return (!UnmapViewOfFile(addr) ? __os_posix_err(__os_get_syserr()) : 0);
 }
 

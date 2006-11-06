@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep050.tcl,v 12.10 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep050.tcl,v 12.12 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep050
 # TEST	Replication and delay syncing clients - change master test.
@@ -108,6 +107,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 #	    -home $env1dir -rep_transport \[list 1 replsend\]"
 	set env1 [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $env1] TRUE
+	$env1 rep_limit 0 0
 
 	# Open two clients
 	repladd 2
@@ -120,6 +120,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 #	    -home $env2dir -rep_transport \[list 2 replsend\]"
 	set env2 [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $env2] TRUE
+	$env2 rep_limit 0 0
 
 	repladd 3
 	set dc1_envcmd "berkdb_env_noerr -create $dc1_txnargs \
@@ -131,6 +132,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 #	    -home $delaycldir1 -rep_transport \[list 3 replsend\]"
 	set dc1env [eval $dc1_envcmd $recargs -rep_client]
 	error_check_good client2_env [is_valid_env $dc1env] TRUE
+	$dc1env rep_limit 0 0
 
 	repladd 4
 	set dc2_envcmd "berkdb_env_noerr -create $dc2_txnargs \
@@ -142,6 +144,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 #	    -home $delaycldir2 -rep_transport \[list 4 replsend\]"
 	set dc2env [eval $dc2_envcmd $recargs -rep_client]
 	error_check_good client3_env [is_valid_env $dc2env] TRUE
+	$dc2env rep_limit 0 0
 
 	repladd 5
 	set dc3_envcmd "berkdb_env_noerr -create $dc3_txnargs \
@@ -233,6 +236,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 		puts "\tRep$tnum.f: Start 4th, clean delayed client."
 		set dc3env [eval $dc3_envcmd $recargs -rep_client]
 		error_check_good client4_env [is_valid_env $dc3env] TRUE
+		$dc3env rep_limit 0 0
 		error_check_good set_delay [$dc3env rep_config \
 		    {delayclient on}] 0
 		set envlist "{$env1 1} {$env2 2} {$dc1env 3} \

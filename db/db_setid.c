@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: db_setid.c,v 12.16 2006/08/24 14:45:16 bostic Exp $
+ * $Id: db_setid.c,v 12.19 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -131,7 +130,7 @@ __env_fileid_reset(dbenv, name, encrypted)
 	 *
 	 * Create the DB object.
 	 */
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 		goto err;
 
 	/* If configured with a password, the databases are encrypted. */
@@ -163,7 +162,7 @@ __env_fileid_reset(dbenv, name, encrypted)
 	memset(&data, 0, sizeof(data));
 	if ((ret = __db_cursor(dbp, NULL, &dbcp, 0)) != 0)
 		goto err;
-	while ((ret = __db_c_get(dbcp, &key, &data, DB_NEXT)) == 0) {
+	while ((ret = __dbc_get(dbcp, &key, &data, DB_NEXT)) == 0) {
 		/*
 		 * XXX
 		 * We're handling actual data, not on-page meta-data, so it
@@ -182,7 +181,7 @@ __env_fileid_reset(dbenv, name, encrypted)
 	if (ret == DB_NOTFOUND)
 		ret = 0;
 
-err:	if (dbcp != NULL && (t_ret = __db_c_close(dbcp)) != 0 && ret == 0)
+err:	if (dbcp != NULL && (t_ret = __dbc_close(dbcp)) != 0 && ret == 0)
 		ret = t_ret;
 	if (dbp != NULL && (t_ret = __db_close(dbp, NULL, 0)) != 0 && ret == 0)
 		ret = t_ret;

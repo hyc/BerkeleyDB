@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_mkdir.c,v 12.16 2006/08/24 14:46:18 bostic Exp $
+ * $Id: os_mkdir.c,v 12.18 2006/11/01 00:53:40 bostic Exp $
  */
 
 #include "db_config.h"
@@ -25,7 +24,9 @@ __os_mkdir(dbenv, name, mode)
 {
 	int ret;
 
-	COMPQUIET(dbenv, NULL);
+	if (dbenv != NULL &&
+	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv, "fileops: mkdir %s", name);
 
 	/* Make the directory, with paranoid permissions. */
 #ifdef HAVE_VXWORKS

@@ -1,6 +1,5 @@
-<!--$Id: mastersync.so,v 1.11 2006/08/24 17:59:56 bostic Exp $-->
-<!--Copyright 1997-2006 by Oracle Corporation-->
-<!--All rights reserved.-->
+<!--$Id: mastersync.so,v 1.12 2006/11/02 20:31:52 alanb Exp $-->
+<!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
 <head>
@@ -54,7 +53,7 @@ information.  The requesting client will then re-issue the request.
 Additionally, if the original request never reaches the other client,
 the requesting client will again re-issue the request.  In either of
 these cases the message will be marked with the <a href="../../api_c/rep_transport.html#DB_REP_REREQUEST">DB_REP_REREQUEST</a>
-flag.  The application may continue trying find another client to
+flag.  The application may continue trying to find another client to
 service the request, or it may give up and simply send it to the master
 (that is, the environment ID explicitly specified to the transport
 function).</p>
@@ -113,6 +112,6 @@ time.  This can be accomplished by turning off the
 or by performing a hot backup.</p>
 <table width="100%"><tr><td><br></td><td align=right><a href="../rep/elect.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/init.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
-<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996,2006 Oracle.  All rights reserved.</font>
 </body>
 </html>

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: RepConfig.java,v 1.5 2006/09/08 20:32:02 bostic Exp $
+ * $Id: RepConfig.java,v 1.6 2006/11/01 00:53:19 bostic Exp $
  */
 
 package db.repquote;

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_load.c,v 12.18 2006/08/26 09:23:08 bostic Exp $
+ * $Id: db_load.c,v 12.20 2006/11/01 00:52:35 bostic Exp $
  */
 
 #include "db_config.h"
@@ -15,7 +14,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
+    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
 #endif
 
 typedef struct {			/* XXX: Globals. */
@@ -858,7 +857,27 @@ db_load_rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp)
 
 		value = p--;
 
-		if (name[0] == '\0' || value[0] == '\0')
+		if (name[0] == '\0')
+			goto badfmt;
+
+		/* 
+		 * The only values that may be zero-length are database names.
+		 * In the original Berkeley DB code it was possible to create
+		 * zero-length database names, and the db_load code was then
+		 * changed to allow such databases to be be dumped and loaded.
+		 * [#8204]
+		 */
+		if (strcmp(name, "database") == 0 ||
+		    strcmp(name, "subdatabase") == 0) {
+			if ((ret = db_load_convprintable(dbenv, value, subdbp)) != 0) {
+				dbp->err(dbp, ret, "error reading db name");
+				goto err;
+			}
+			continue;
+		}
+
+		/* No other values may be zero-length. */
+		if (value[0] == '\0')
 			goto badfmt;
 
 		if (strcmp(name, "HEADER") == 0)
@@ -908,14 +927,6 @@ db_load_rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp)
 			}
 			dbp->errx(dbp, "line %lu: unknown type", G(lineno));
 			goto err;
-		}
-		if (strcmp(name, "database") == 0 ||
-		    strcmp(name, "subdatabase") == 0) {
-			if ((ret = db_load_convprintable(dbenv, value, subdbp)) != 0) {
-				dbp->err(dbp, ret, "error reading db name");
-				goto err;
-			}
-			continue;
 		}
 		if (strcmp(name, "keys") == 0) {
 			if (strcmp(value, "1") == 0)
@@ -1024,6 +1035,9 @@ db_load_convprintable(dbenv, instr, outstrp)
 	/*
 	 * Just malloc a string big enough for the whole input string;
 	 * the output string will be smaller (or of equal length).
+	 *
+	 * Note that we may be passed a zero-length string and need to
+	 * be able to duplicate it.
 	 */
 	if ((outstr = malloc(strlen(instr) + 1)) == NULL)
 		return (ENOMEM);

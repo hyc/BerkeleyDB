@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mut_stat.c,v 12.17 2006/08/24 14:46:16 bostic Exp $
+ * $Id: mut_stat.c,v 12.21 2006/11/01 00:53:38 bostic Exp $
  */
 
 #include "db_config.h"
@@ -149,10 +148,6 @@ __mutex_print_stats(dbenv, flags)
 	u_int32_t flags;
 {
 	DB_MUTEX_STAT *sp;
-	DB_MUTEXMGR *mtxmgr;
-	DB_MUTEXREGION *mtxregion;
-	REGINFO *infop;
-	THREAD_INFO *thread;
 	int ret;
 
 	if ((ret = __mutex_stat(dbenv, &sp, LF_ISSET(DB_STAT_CLEAR))) != 0)
@@ -175,20 +170,6 @@ __mutex_print_stats(dbenv, flags)
 	STAT_ULONG("Mutex maximum in-use count", sp->st_mutex_inuse_max);
 
 	__os_ufree(dbenv, sp);
-
-	/*
-	 * Dump out the info we have on thread tracking, we do it here only
-	 * because we share the region.
-	 */
-	if (dbenv->thr_hashtab != NULL) {
-		mtxmgr = dbenv->mutex_handle;
-		mtxregion = mtxmgr->reginfo.primary;
-		infop = &mtxmgr->reginfo;
-		thread = R_ADDR(infop, mtxregion->thread_off);
-		STAT_ULONG("Thread blocks allocated", thread->thr_count);
-		STAT_ULONG("Thread allocation threshold", thread->thr_max);
-		STAT_ULONG("Thread hash buckets", thread->thr_nbucket);
-	}
 
 	return (0);
 }
@@ -222,7 +203,7 @@ __mutex_print_all(dbenv, flags)
 	mtxmgr = dbenv->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
 
-	__db_print_reginfo(dbenv, &mtxmgr->reginfo, "Mutex");
+	__db_print_reginfo(dbenv, &mtxmgr->reginfo, "Mutex", flags);
 	__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 
 	__db_msg(dbenv, "DB_MUTEXREGION structure:");

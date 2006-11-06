@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: db_truncate.c,v 12.18 2006/08/24 14:45:16 bostic Exp $
+ * $Id: db_truncate.c,v 12.20 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -179,7 +178,7 @@ __db_truncate(dbp, txn, countp)
 	}
 
 	/* Discard the cursor. */
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	DB_TEST_RECOVERY(dbp, DB_TEST_POSTDESTROY, ret, NULL);

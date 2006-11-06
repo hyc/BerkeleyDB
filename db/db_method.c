@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: db_method.c,v 12.23 2006/08/24 14:45:16 bostic Exp $
+ * $Id: db_method.c,v 12.30 2006/11/01 00:52:29 bostic Exp $
  */
 
 #include "db_config.h"
@@ -20,7 +19,7 @@
 #include "dbinc/txn.h"
 
 #ifdef HAVE_RPC
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <rpc/rpc.h>
 #endif
 #include "db_server.h"
@@ -33,7 +32,7 @@ static DB_ENV *__db_get_env __P((DB *));
 static DB_MPOOLFILE *__db_get_mpf __P((DB *));
 static int  __db_get_transactional __P((DB *));
 static int  __db_get_type __P((DB *, DBTYPE *dbtype));
-static int  __db_init __P((DB_ENV *, DB *, u_int32_t));
+static int  __db_init __P((DB *, u_int32_t));
 static int  __db_set_alloc __P((DB *, void *(*)(size_t),
 		void *(*)(void *, size_t), void (*)(void *)));
 static int  __db_set_append_recno __P((DB *, int (*)(DB *, DBT *, db_recno_t)));
@@ -72,10 +71,10 @@ db_create(dbpp, dbenv, flags)
 	DB_ENV *dbenv;
 	u_int32_t flags;
 {
-	DB *dbp;
 	DB_THREAD_INFO *ip;
-	DB_REP *db_rep;
 	int ret;
+
+	ip = NULL;
 
 	/* Check for invalid function flags. */
 	switch (flags) {
@@ -100,27 +99,44 @@ db_create(dbpp, dbenv, flags)
 		return (__db_ferr(dbenv, "db_create", 0));
 	}
 
-	ip = NULL;
-	if (dbenv != NULL)
-		ENV_ENTER(dbenv, ip);
-	/* Allocate the DB. */
-	if ((ret = __os_calloc(dbenv, 1, sizeof(*dbp), &dbp)) != 0) {
-		if (dbenv != NULL)
-			ENV_LEAVE(dbenv, ip);
-		return (ret);
-	}
-
-	if ((ret = __db_init(dbenv, dbp, flags)) != 0)
-		goto err;
-
 	/* If we don't have an environment yet, allocate a local one. */
 	if (dbenv == NULL) {
 		if ((ret = db_env_create(&dbenv, 0)) != 0)
-			goto err;
+			return (ret);
 		F_SET(dbenv, DB_ENV_DBLOCAL);
-		ENV_ENTER(dbenv, ip);
 	}
+
+	ENV_ENTER(dbenv, ip);
+	ret = __db_create_internal(dbpp, dbenv, flags);
+	ENV_LEAVE(dbenv, ip);
+	return (ret);
+}
+
+/*
+ * __db_create_internal --
+ *	DB constructor internal routine.
+ *
+ * PUBLIC: int __db_create_internal  __P((DB **, DB_ENV *, u_int32_t));
+ */
+int
+__db_create_internal(dbpp, dbenv, flags)
+	DB **dbpp;
+	DB_ENV *dbenv;
+	u_int32_t flags;
+{
+	DB *dbp;
+	DB_REP *db_rep;
+	int ret;
+
+	dbp = NULL;
+	/* Allocate and initialize the DB handle. */
+	if ((ret = __os_calloc(dbenv, 1, sizeof(*dbp), &dbp)) != 0)
+		goto err;
+
 	dbp->dbenv = dbenv;
+	if ((ret = __db_init(dbp, flags)) != 0)
+		goto err;
+
 	MUTEX_LOCK(dbenv, dbenv->mtx_dblist);
 	++dbenv->db_ref;
 	MUTEX_UNLOCK(dbenv, dbenv->mtx_dblist);
@@ -150,13 +166,16 @@ db_create(dbpp, dbenv, flags)
 	*dbpp = dbp;
 	return (0);
 
-err:	if (dbp->mpf != NULL)
+err:	if (dbp != NULL && dbp->mpf != NULL)
 		(void)__memp_fclose(dbp->mpf, 0);
-	if (dbenv != NULL && F_ISSET(dbenv, DB_ENV_DBLOCAL))
+
+
+	if (F_ISSET(dbenv, DB_ENV_DBLOCAL))
 		(void)__env_close(dbenv, 0);
-	__os_free(dbenv, dbp);
+
+	if (dbp != NULL)
+		__os_free(dbenv, dbp);
 	*dbpp = NULL;
-	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
@@ -165,8 +184,7 @@ err:	if (dbp->mpf != NULL)
  *	Initialize a DB structure.
  */
 static int
-__db_init(dbenv, dbp, flags)
-	DB_ENV *dbenv;
+__db_init(dbp, flags)
 	DB *dbp;
 	u_int32_t flags;
 {
@@ -259,7 +277,7 @@ __db_init(dbenv, dbp, flags)
 	 * RPC specific: must be last, as we replace methods set by the
 	 * access methods.
 	 */
-	if (dbenv != NULL && RPC_ON(dbenv)) {
+	if (RPC_ON(dbp->dbenv)) {
 		__dbcl_dbp_init(dbp);
 		/*
 		 * !!!
@@ -267,11 +285,9 @@ __db_init(dbenv, dbp, flags)
 		 * can't handle that.
 		 */
 		dbp->open = __dbcl_db_open_wrap;
-		if ((ret = __dbcl_db_create(dbp, dbenv, flags)) != 0)
+		if ((ret = __dbcl_db_create(dbp, dbp->dbenv, flags)) != 0)
 			return (ret);
 	}
-#else
-	COMPQUIET(dbenv, NULL);
 #endif
 
 	return (0);
@@ -308,7 +324,7 @@ __dbh_am_chk(dbp, flags)
 
 /*
  * __dbh_err --
- *	Error message, including the standard error string.
+ *	Db.err method.
  */
 static void
 #ifdef STDC_HEADERS
@@ -321,12 +337,13 @@ __dbh_err(dbp, error, fmt, va_alist)
 	va_dcl
 #endif
 {
+	/* Message with error string, to stderr by default. */
 	DB_REAL_ERR(dbp->dbenv, error, DB_ERROR_SET, 1, fmt);
 }
 
 /*
  * __dbh_errx --
- *	Error message.
+ *	Db.errx method.
  */
 static void
 #ifdef STDC_HEADERS
@@ -338,6 +355,7 @@ __dbh_errx(dbp, fmt, va_alist)
 	va_dcl
 #endif
 {
+	/* Message without error string, to stderr by default. */
 	DB_REAL_ERR(dbp->dbenv, 0, DB_ERROR_NOT_SET, 1, fmt);
 }
 
@@ -629,7 +647,9 @@ __db_get_flags(dbp, flagsp)
 		DB_DUP,
 		DB_DUPSORT,
 		DB_ENCRYPT,
+#ifdef HAVE_QUEUE
 		DB_INORDER,
+#endif
 		DB_RECNUM,
 		DB_RENUMBER,
 		DB_REVSPLITOFF,

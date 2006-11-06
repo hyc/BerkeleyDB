@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: env006.tcl,v 12.3 2006/08/24 14:46:35 bostic Exp $
+# $Id: env006.tcl,v 12.4 2006/11/01 00:53:53 bostic Exp $
 #
 # TEST	env006
 # TEST	Make sure that all the utilities exist and run.

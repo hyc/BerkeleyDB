@@ -16,8 +16,8 @@
 </td></tr></table>
 <p>
 <h3 align=center>Storing records with a cursor</h3>
-<p>The <a href="../../api_c/dbc_put.html">DBcursor-&gt;c_put</a> method stores records into the database using a cursor.  In
-general, <a href="../../api_c/dbc_put.html">DBcursor-&gt;c_put</a> takes a key and inserts the associated data
+<p>The <a href="../../api_c/dbc_put.html">DBcursor-&gt;put</a> method stores records into the database using a cursor.  In
+general, <a href="../../api_c/dbc_put.html">DBcursor-&gt;put</a> takes a key and inserts the associated data
 into the database, at a location controlled by a specified flag.</p>
 <p>There are several flags that you can set to customize storage:</p>
 <dl compact>
@@ -31,7 +31,7 @@ supplied key.
 <dt><a href="../../api_c/dbc_put.html#DB_KEYLAST">DB_KEYLAST</a><dd>Create a new record, as the last of the duplicate records for the supplied
 key.
 </dl>
-<p>In all cases, the cursor is repositioned by a <a href="../../api_c/dbc_put.html">DBcursor-&gt;c_put</a> operation
+<p>In all cases, the cursor is repositioned by a <a href="../../api_c/dbc_put.html">DBcursor-&gt;put</a> operation
 to point to the newly inserted key/data pair in the database.</p>
 <p>The following is a code example showing a cursor storing two data items
 in a database that supports duplicate data items:</p>

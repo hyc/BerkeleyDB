@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep030.tcl,v 12.16 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep030.tcl,v 12.18 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep030
 # TEST	Test of internal initialization multiple files and pagesizes.
@@ -80,12 +79,8 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	# The documentation says that the log file must be at least
 	# four times the size of the in-memory log buffer.
 	set maxpg 16384
-	set log_buf [expr $maxpg * 2]
-	set log_max [expr $log_buf * 4]
+	set log_max [expr $maxpg * 8]
 	set cache [expr $maxpg * 32 ]
-
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]

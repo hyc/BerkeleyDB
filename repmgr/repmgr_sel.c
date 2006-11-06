@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_sel.c,v 1.25 2006/09/19 14:14:11 mjc Exp $
+ * $Id: repmgr_sel.c,v 1.28 2006/11/01 00:53:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -13,9 +12,11 @@
 #include "db_int.h"
 
 static int __repmgr_connect __P((DB_ENV*, socket_t *, REPMGR_SITE *));
-static int record_ack __P((DB_ENV *, REPMGR_SITE *, DB_REPMGR_ACK *));
 static int dispatch_phase_completion __P((DB_ENV *, REPMGR_CONNECTION *));
 static int notify_handshake __P((DB_ENV *, REPMGR_CONNECTION *));
+static int record_ack __P((DB_ENV *, REPMGR_SITE *, DB_REPMGR_ACK *));
+static int __repmgr_try_one __P((DB_ENV *, u_int));
+
 
 /*
  * PUBLIC: void *__repmgr_select_thread __P((void *));
@@ -50,9 +51,6 @@ __repmgr_accept(dbenv)
 #ifdef DB_WIN32
 	WSAEVENT event_obj;
 #endif
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	addrlen = sizeof(siaddr);
@@ -85,7 +83,7 @@ __repmgr_accept(dbenv)
 		case EOPNOTSUPP:
 		case ENETUNREACH:
 #endif
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "accept error %d considered innocuous", ret));
 			return (0);
 		default:
@@ -93,7 +91,7 @@ __repmgr_accept(dbenv)
 			return (ret);
 		}
 	}
-	RPRINT(dbenv, (dbenv, &mb, "accepted a new connection"));
+	RPRINT(dbenv, (dbenv, "accepted a new connection"));
 
 	if ((ret = __repmgr_set_nonblocking(s)) != 0) {
 		__db_err(dbenv, ret, "can't set nonblock after accept");
@@ -153,9 +151,7 @@ __repmgr_retry_connections(dbenv)
 {
 	DB_REP *db_rep;
 	REPMGR_RETRY *retry;
-	repmgr_netaddr_t *addr;
 	repmgr_timeval_t now;
-	ADDRINFO *list;
 	u_int eid;
 	int ret;
 
@@ -172,32 +168,7 @@ __repmgr_retry_connections(dbenv)
 		eid = retry->eid;
 		__os_free(dbenv, retry);
 
-		/*
-		 * If have never yet successfully resolved this site's host
-		 * name, try to do so now.
-		 *
-		 * (Throughout all the rest of repmgr, we almost never do any
-		 * sort of blocking operation in the select thread.  This is the
-		 * sole exception to that rule.  Fortunately, it should rarely
-		 * happen.  It only happens for a site that we only learned
-		 * about because it connected to us: not only were we not
-		 * configured to know about it, but we also never got a NEWSITE
-		 * message about it.  And even then only after the connection
-		 * fails and we want to retry it from this end.)
-		 */
-		addr = &SITE_FROM_EID(eid)->net_addr;
-		if (ADDR_LIST_FIRST(addr) == NULL) {
-			if (__repmgr_getaddr(dbenv,
-			    addr->host, addr->port, 0, &list) == 0) {
-				addr->address_list = list;
-				(void)ADDR_LIST_FIRST(addr);
-			} else if ((ret = __repmgr_schedule_connection_attempt(
-			    dbenv, eid, FALSE)) != 0)
-				return (ret);
-			else
-				continue;
-		}
-		if ((ret = __repmgr_connect_site(dbenv, eid)) != 0)
+		if ((ret = __repmgr_try_one(dbenv, eid)) != 0)
 			return (ret);
 	}
 	return (0);
@@ -218,12 +189,61 @@ __repmgr_first_try_connections(dbenv)
 	int ret;
 
 	db_rep = dbenv->rep_handle;
-	for (eid=0; eid<db_rep->site_cnt; eid++) {
-		ADDR_LIST_FIRST(&SITE_FROM_EID(eid)->net_addr);
-		if ((ret = __repmgr_connect_site(dbenv, eid)) != 0)
+	for (eid=0; eid<db_rep->site_cnt; eid++)
+		if ((ret = __repmgr_try_one(dbenv, eid)) != 0)
+			return (ret);
+	return (0);
+}
+
+/*
+ * Makes a best-effort attempt to connect to the indicated site.  Returns a
+ * non-zero error indication only for disastrous failures.  For retryable
+ * errors, we will have scheduled another attempt, and that can be considered
+ * success enough.
+ */
+static int
+__repmgr_try_one(dbenv, eid)
+	DB_ENV *dbenv;
+	u_int eid;
+{
+	DB_REP *db_rep;
+	ADDRINFO *list;
+	repmgr_netaddr_t *addr;
+	int ret;
+
+	db_rep = dbenv->rep_handle;
+
+	/*
+	 * If have never yet successfully resolved this site's host name, try to
+	 * do so now.
+	 *
+	 * Throughout all the rest of repmgr, we almost never do any sort of
+	 * blocking operation in the select thread.  This is the sole exception
+	 * to that rule.  Fortunately, it should rarely happen:
+	 *
+	 * - for a site that we only learned about because it connected to us:
+	 *   not only were we not configured to know about it, but we also never
+	 *   got a NEWSITE message about it.  And even then only if the
+	 *   connection fails and we want to retry it from this end;
+	 *
+	 * - if the name look-up system (e.g., DNS) is not working (let's hope
+	 *   it's temporary), or the host name is not found.
+	 */
+	addr = &SITE_FROM_EID(eid)->net_addr;
+	if (ADDR_LIST_FIRST(addr) == NULL) {
+		if ((ret = __repmgr_getaddr(
+		    dbenv, addr->host, addr->port, 0, &list)) == 0) {
+			addr->address_list = list;
+			(void)ADDR_LIST_FIRST(addr);
+		} else if (ret == DB_REP_UNAVAIL)
+			return (__repmgr_schedule_connection_attempt(
+			    dbenv, eid, FALSE));
+		else
 			return (ret);
 	}
-	return (0);
+
+	/* Here, when we have a valid address. */
+	return (__repmgr_connect_site(dbenv, eid));
 }
 
 /*
@@ -329,9 +349,6 @@ __repmgr_connect(dbenv, socket_result, site)
 	char *why;
 	int ret;
 	SITE_STRING_BUFFER buffer;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	/*
 	 * Lint doesn't know about DB_ASSERT, so it can't tell that this
@@ -361,7 +378,7 @@ __repmgr_connect(dbenv, socket_result, site)
 
 		if (ret == 0 || ret == INPROGRESS) {
 			*socket_result = s;
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "init connection to %s with result %d",
 			    __repmgr_format_site_loc(site, buffer), ret));
 			return (ret);
@@ -489,9 +506,6 @@ dispatch_phase_completion(dbenv, conn)
 	char *host;
 	u_int port;
 	int ret, eid;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	switch (conn->reading_phase) {
@@ -643,7 +657,7 @@ dispatch_phase_completion(dbenv, conn)
 			host = conn->input.repmgr_msg.rec.data;
 			host[conn->input.repmgr_msg.rec.size-1] = '\0';
 
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 				   "got handshake %s:%u, pri %lu", host, port,
 				   (u_long)ntohl(handshake->priority)));
 
@@ -655,7 +669,7 @@ dispatch_phase_completion(dbenv, conn)
 				 * priority.
 				 */
 				site = SITE_FROM_EID(conn->eid);
-				RPRINT(dbenv, (dbenv, &mb,
+				RPRINT(dbenv, (dbenv,
 				    "handshake from connection to %s:%lu",
 				    site->net_addr.host,
 				    (u_long)site->net_addr.port));
@@ -664,7 +678,7 @@ dispatch_phase_completion(dbenv, conn)
 				    __repmgr_find_site(dbenv, host, port))) {
 					site = SITE_FROM_EID(eid);
 					if (site->state == SITE_IDLE) {
-						RPRINT(dbenv, (dbenv, &mb,
+						RPRINT(dbenv, (dbenv,
 					"handshake from previously idle site"));
 						retry = site->ref.retry;
 						TAILQ_REMOVE(&db_rep->retries,
@@ -685,7 +699,7 @@ dispatch_phase_completion(dbenv, conn)
 						return (DB_REP_UNAVAIL);
 					}
 				} else {
-					RPRINT(dbenv, (dbenv, &mb,
+					RPRINT(dbenv, (dbenv,
 					  "handshake introduces unknown site"));
 					if ((ret = __repmgr_pack_netaddr(
 					    dbenv, host, port, NULL,
@@ -752,9 +766,6 @@ notify_handshake(dbenv, conn)
 	REPMGR_CONNECTION *conn;
 {
 	DB_REP *db_rep;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	COMPQUIET(conn, NULL);
 
@@ -769,7 +780,7 @@ notify_handshake(dbenv, conn)
 	 */
 	if (db_rep->master_eid == DB_EID_INVALID && !db_rep->done_one) {
 		db_rep->done_one = TRUE;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "handshake with no known master to wake election thread"));
 		return (__repmgr_init_election(dbenv, ELECT_REPSTART));
 	}
@@ -783,23 +794,20 @@ record_ack(dbenv, site, ack)
 	DB_REPMGR_ACK *ack;
 {
 	DB_REP *db_rep;
-	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
 	SITE_STRING_BUFFER buffer;
-#endif
+	int ret;
 
 	db_rep = dbenv->rep_handle;
 
 	/* Ignore stale acks. */
 	if (ack->generation < db_rep->generation) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "ignoring stale ack (%lu<%lu), from %s",
 		     (u_long)ack->generation, (u_long)db_rep->generation,
 		     __repmgr_format_site_loc(site, buffer)));
 		return (0);
 	}
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "got ack [%lu][%lu](%lu) from %s", (u_long)ack->lsn.file,
 	    (u_long)ack->lsn.offset, (u_long)ack->generation,
 	    __repmgr_format_site_loc(site, buffer)));

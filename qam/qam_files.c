@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_files.c,v 12.17 2006/08/24 14:46:24 bostic Exp $
+ * $Id: qam_files.c,v 12.19 2006/11/01 00:53:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -601,7 +600,7 @@ __qam_extent_names(dbenv, name, namelistp)
 
 	*namelistp = NULL;
 	filelist = NULL;
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 		return (ret);
 	if ((ret = __db_open(dbp,
 	    NULL, name, NULL, DB_QUEUE, DB_RDONLY, 0, PGNO_BASE_MD)) != 0)

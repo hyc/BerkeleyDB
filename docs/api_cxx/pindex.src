@@ -100,6 +100,7 @@ __APIREL__/api_cxx/dbc_get.html__OCT__DB_NEXT Dbc::get@DB_NEXT
 __APIREL__/api_cxx/dbc_get.html__OCT__DB_NEXT_DUP Dbc::get@DB_NEXT_DUP
 __APIREL__/api_cxx/dbc_get.html__OCT__DB_NEXT_NODUP Dbc::get@DB_NEXT_NODUP
 __APIREL__/api_cxx/dbc_get.html__OCT__DB_PREV Dbc::get@DB_PREV
+__APIREL__/api_cxx/dbc_get.html__OCT__DB_PREV_DUP Dbc::get@DB_PREV_DUP
 __APIREL__/api_cxx/dbc_get.html__OCT__DB_PREV_NODUP Dbc::get@DB_PREV_NODUP
 __APIREL__/api_cxx/dbc_get.html__OCT__DB_SET Dbc::get@DB_SET
 __APIREL__/api_cxx/dbc_get.html__OCT__DB_SET_RANGE Dbc::get@DB_SET_RANGE
@@ -184,6 +185,7 @@ __APIREL__/api_cxx/env_set_flags.html__OCT__DB_REGION_INIT DbEnv::set_flags@DB_R
 __APIREL__/api_cxx/env_set_flags.html__OCT__DB_TIME_NOTGRANTED DbEnv::set_flags@DB_TIME_NOTGRANTED
 __APIREL__/api_cxx/env_set_flags.html__OCT__14 turn off synchronous @transaction commit
 __APIREL__/api_cxx/env_set_flags.html__OCT__DB_TXN_NOSYNC DbEnv::set_flags@DB_TXN_NOSYNC
+__APIREL__/api_cxx/env_set_flags.html__OCT__DB_TXN_NOWAIT DbEnv::set_flags@DB_TXN_NOWAIT
 __APIREL__/api_cxx/env_set_flags.html__OCT__DB_TXN_SNAPSHOT DbEnv::set_flags@DB_TXN_SNAPSHOT
 __APIREL__/api_cxx/env_set_flags.html__OCT__15 turn off synchronous @transaction commit
 __APIREL__/api_cxx/env_set_flags.html__OCT__DB_TXN_WRITE_NOSYNC DbEnv::set_flags@DB_TXN_WRITE_NOSYNC
@@ -202,6 +204,8 @@ __APIREL__/api_cxx/env_set_timeout.html__OCT__DB_SET_LOCK_TIMEOUT DbEnv::set_tim
 __APIREL__/api_cxx/env_set_timeout.html__OCT__DB_SET_TXN_TIMEOUT DbEnv::set_timeout@DB_SET_TXN_TIMEOUT
 __APIREL__/api_cxx/env_set_tmp_dir.html__OCT__2 @temporary files
 __APIREL__/api_cxx/env_set_verbose.html__OCT__DB_VERB_DEADLOCK DbEnv::set_verbose@DB_VERB_DEADLOCK
+__APIREL__/api_cxx/env_set_verbose.html__OCT__DB_VERB_FILEOPS DbEnv::set_verbose@DB_VERB_FILEOPS
+__APIREL__/api_cxx/env_set_verbose.html__OCT__DB_VERB_FILEOPS_ALL DbEnv::set_verbose@DB_VERB_FILEOPS_ALL
 __APIREL__/api_cxx/env_set_verbose.html__OCT__DB_VERB_RECOVERY DbEnv::set_verbose@DB_VERB_RECOVERY
 __APIREL__/api_cxx/env_set_verbose.html__OCT__DB_VERB_REGISTER DbEnv::set_verbose@DB_VERB_REGISTER
 __APIREL__/api_cxx/env_set_verbose.html__OCT__DB_VERB_REPLICATION DbEnv::set_verbose@DB_VERB_REPLICATION
@@ -290,7 +294,7 @@ __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_CLEAR DbEnv::memp_stat@DB_STAT_C
 __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_CLEAR DbEnv::memp_stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_ALL DbEnv::memp_stat@DB_STAT_ALL
 __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_MEMP_HASH DbEnv::memp_stat@DB_STAT_MEMP_HASH
-__APIREL__/api_cxx/memp_class.html__OCT__DB_BUFFER_SMALL DbMemoryException@DB_BUFFER_SMALL
+__APIREL__/api_cxx/memp_class.html__OCT__2 @DB_BUFFER_SMALL
 __APIREL__/api_cxx/mutex_alloc.html__OCT__DB_MUTEX_PROCESS_ONLY DbEnv::mutex_alloc@DB_MUTEX_PROCESS_ONLY
 __APIREL__/api_cxx/mutex_alloc.html__OCT__DB_MUTEX_SELF_BLOCK DbEnv::mutex_alloc@DB_MUTEX_SELF_BLOCK
 __APIREL__/api_cxx/mutex_stat.html__OCT__DB_STAT_CLEAR DbEnv::mutex_stat@DB_STAT_CLEAR
@@ -354,6 +358,7 @@ __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_NOWAIT DbEnv::txn_begin@DB_TXN_NO
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_SNAPSHOT DbEnv::txn_begin@DB_TXN_SNAPSHOT
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_LOCK_DEADLOCK DbEnv::txn_begin@DB_LOCK_DEADLOCK
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_SYNC DbEnv::txn_begin@DB_TXN_SYNC
+__APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_WAIT DbEnv::txn_begin@DB_TXN_WAIT
 __APIREL__/api_cxx/txn_checkpoint.html__OCT__DB_FORCE DbEnv::txn_checkpoint@DB_FORCE
 __APIREL__/api_cxx/txn_commit.html__OCT__DB_TXN_NOSYNC DbTxn::commit@DB_TXN_NOSYNC
 __APIREL__/api_cxx/txn_commit.html__OCT__DB_TXN_SYNC DbTxn::commit@DB_TXN_SYNC

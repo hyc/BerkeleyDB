@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep036script.tcl,v 12.5 2006/09/15 14:48:14 carol Exp $
+# $Id: rep036script.tcl,v 12.6 2006/11/01 00:53:57 bostic Exp $
 #
 # Rep036 script - create additional writers in master env.
 #

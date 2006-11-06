@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: fop_basic.c,v 12.19 2006/09/19 15:06:59 bostic Exp $
+ * $Id: fop_basic.c,v 12.20 2006/11/01 00:53:20 bostic Exp $
  */
 
 #include "db_config.h"

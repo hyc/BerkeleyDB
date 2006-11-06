@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_util.c,v 12.8 2006/08/24 14:46:53 bostic Exp $
+ * $Id: txn_util.c,v 12.9 2006/11/01 00:54:23 bostic Exp $
  */
 
 #include "db_config.h"

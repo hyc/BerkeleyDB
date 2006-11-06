@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mut_region.c,v 12.18 2006/08/24 14:46:16 bostic Exp $
+ * $Id: mut_region.c,v 12.22 2006/11/01 00:53:38 bostic Exp $
  */
 
 #include "db_config.h"
@@ -15,6 +14,7 @@
 #include "dbinc/mp.h"
 #include "dbinc/mutex_int.h"
 
+static size_t __mutex_align_size __P((DB_ENV *));
 static int __mutex_region_init __P((DB_ENV *, DB_MUTEXMGR *));
 static size_t __mutex_region_size __P((DB_ENV *));
 
@@ -22,11 +22,12 @@ static size_t __mutex_region_size __P((DB_ENV *));
  * __mutex_open --
  *	Open a mutex region.
  *
- * PUBLIC: int __mutex_open __P((DB_ENV *));
+ * PUBLIC: int __mutex_open __P((DB_ENV *, int));
  */
 int
-__mutex_open(dbenv)
+__mutex_open(dbenv, create_ok)
 	DB_ENV *dbenv;
+	int create_ok;
 {
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
@@ -63,12 +64,12 @@ __mutex_open(dbenv)
 	if ((ret = __os_calloc(dbenv, 1, sizeof(DB_MUTEXMGR), &mtxmgr)) != 0)
 		return (ret);
 
-	/* Join/create the txn region. */
+	/* Join/create the mutex region. */
 	mtxmgr->reginfo.dbenv = dbenv;
 	mtxmgr->reginfo.type = REGION_TYPE_MUTEX;
 	mtxmgr->reginfo.id = INVALID_REGION_ID;
 	mtxmgr->reginfo.flags = REGION_JOIN_OK;
-	if (F_ISSET(dbenv, DB_ENV_CREATE))
+	if (create_ok)
 		F_SET(&mtxmgr->reginfo, REGION_CREATE_OK);
 	if ((ret = __db_r_attach(dbenv,
 	    &mtxmgr->reginfo, __mutex_region_size(dbenv))) != 0)
@@ -82,7 +83,7 @@ __mutex_open(dbenv)
 	/* Set the local addresses. */
 	mtxregion = mtxmgr->reginfo.primary =
 	    R_ADDR(&mtxmgr->reginfo, mtxmgr->reginfo.rp->primary);
-	mtxmgr->mutex_array = R_ADDR(&mtxmgr->reginfo, mtxregion->mutex_offset);
+	mtxmgr->mutex_array = R_ADDR(&mtxmgr->reginfo, mtxregion->mutex_off);
 
 	dbenv->mutex_handle = mtxmgr;
 
@@ -123,15 +124,6 @@ __mutex_open(dbenv)
 		}
 	}
 
-	/*
-	 * Initialize thread tracking.  We want to do this as early
-	 * as possible in case we die.  This sits in the mutex region
-	 * so do it now.
-	 */
-	if ((ret = __env_thread_init(dbenv,
-	    F_ISSET(&mtxmgr->reginfo, REGION_CREATE))) != 0)
-		goto err;
-
 	return (0);
 
 err:	dbenv->mutex_handle = NULL;
@@ -159,8 +151,8 @@ __mutex_region_init(dbenv, mtxmgr)
 
 	COMPQUIET(mutexp, NULL);
 
-	if ((ret = __db_shalloc(&mtxmgr->reginfo,
-	    sizeof(DB_MUTEXREGION), 0, &mtxmgr->reginfo.primary)) != 0) {
+	if ((ret = __env_alloc(&mtxmgr->reginfo,
+	    sizeof(DB_MUTEXREGION), &mtxmgr->reginfo.primary)) != 0) {
 		__db_errx(dbenv,
 		    "Unable to allocate memory for the mutex region");
 		return (ret);
@@ -174,8 +166,7 @@ __mutex_region_init(dbenv, mtxmgr)
 	    dbenv, MTX_MUTEX_REGION, 0, &mtxregion->mtx_region)) != 0)
 		return (ret);
 
-	mtxregion->mutex_size =
-	    (size_t)DB_ALIGN(sizeof(DB_MUTEX), dbenv->mutex_align);
+	mtxregion->mutex_size = __mutex_align_size(dbenv);
 
 	mtxregion->stat.st_mutex_align = dbenv->mutex_align;
 	mtxregion->stat.st_mutex_cnt = dbenv->mutex_cnt;
@@ -183,22 +174,29 @@ __mutex_region_init(dbenv, mtxmgr)
 
 	/*
 	 * Get a chunk of memory to be used for the mutexes themselves.  Each
-	 * piece of the memory must be properly aligned.
+	 * piece of the memory must be properly aligned, and that alignment
+	 * may be more restrictive than the memory alignment returned by the
+	 * underlying allocation code.  We already know how much memory each
+	 * mutex in the array will take up, but we need to offset the first
+	 * mutex in the array so the array begins properly aligned.
 	 *
 	 * The OOB mutex (MUTEX_INVALID) is 0.  To make this work, we ignore
 	 * the first allocated slot when we build the free list.  We have to
 	 * correct the count by 1 here, though, otherwise our counter will be
 	 * off by 1.
 	 */
-	if ((ret = __db_shalloc(&mtxmgr->reginfo,
+	if ((ret = __env_alloc(&mtxmgr->reginfo,
+	    mtxregion->stat.st_mutex_align +
 	    (mtxregion->stat.st_mutex_cnt + 1) * mtxregion->mutex_size,
-	    mtxregion->stat.st_mutex_align, &mutex_array)) != 0) {
+	    &mutex_array)) != 0) {
 		__db_errx(dbenv,
 		    "Unable to allocate memory for mutexes from the region");
 		return (ret);
 	}
 
-	mtxregion->mutex_offset = R_OFFSET(&mtxmgr->reginfo, mutex_array);
+	mtxregion->mutex_off_alloc = R_OFFSET(&mtxmgr->reginfo, mutex_array);
+	mutex_array = ALIGNP_INC(mutex_array, mtxregion->stat.st_mutex_align);
+	mtxregion->mutex_off = R_OFFSET(&mtxmgr->reginfo, mutex_array);
 	mtxmgr->mutex_array = mutex_array;
 
 	/*
@@ -257,8 +255,8 @@ __mutex_dbenv_refresh(dbenv)
 		__mutex_resource_return(dbenv, reginfo);
 #endif
 		/* Discard the mutex array. */
-		__db_shalloc_free(
-		    reginfo, R_ADDR(reginfo, mtxregion->mutex_offset));
+		__env_alloc_free(
+		    reginfo, R_ADDR(reginfo, mtxregion->mutex_off_alloc));
 	}
 
 	/* Detach from the region. */
@@ -272,6 +270,18 @@ __mutex_dbenv_refresh(dbenv)
 }
 
 /*
+ * __mutex_align_size --
+ *	Return how much memory each mutex will take up if an array of them
+ *	are to be properly aligned, individually, within the array.
+ */
+static size_t
+__mutex_align_size(dbenv)
+	DB_ENV *dbenv;
+{
+	return ((size_t)DB_ALIGN(sizeof(DB_MUTEX), (dbenv)->mutex_align));
+}
+
+/*
  * __mutex_region_size --
  *	 Return the amount of space needed for the mutex region.
  */
@@ -282,16 +292,11 @@ __mutex_region_size(dbenv)
 	size_t s;
 
 	s = sizeof(DB_MUTEXMGR) + 1024;
-	s += dbenv->mutex_cnt *
-	    __db_shalloc_size(sizeof(DB_MUTEX), dbenv->mutex_align);
-	/*
-	 * Allocate space for thread info blocks.  Max is only advisory,
-	 * so we allocate 25% more.
-	 */
-	s += (dbenv->thr_max + dbenv->thr_max/4) *
-	    __db_shalloc_size(sizeof(DB_THREAD_INFO), sizeof(roff_t));
-	s += dbenv->thr_nbucket *
-	    __db_shalloc_size(sizeof(DB_HASHTAB), sizeof(roff_t));
+
+	/* We discard one mutex for the OOB slot. */
+	s += __env_alloc_size(
+	    (dbenv->mutex_cnt + 1) *__mutex_align_size(dbenv));
+
 	return (s);
 }
 
@@ -334,7 +339,7 @@ __mutex_resource_return(dbenv, infop)
 	mtxmgr->reginfo = *infop;
 	mtxregion = mtxmgr->reginfo.primary =
 	    R_ADDR(&mtxmgr->reginfo, mtxmgr->reginfo.rp->primary);
-	mtxmgr->mutex_array = R_ADDR(&mtxmgr->reginfo, mtxregion->mutex_offset);
+	mtxmgr->mutex_array = R_ADDR(&mtxmgr->reginfo, mtxregion->mutex_off);
 
 	/*
 	 * This is a little strange, but the mutex_handle is what all of the

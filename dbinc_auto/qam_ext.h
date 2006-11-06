@@ -9,8 +9,8 @@ extern "C" {
 int __qam_position __P((DBC *, db_recno_t *, db_lockmode_t, u_int32_t, int *));
 int __qam_pitem __P((DBC *,  QPAGE *, u_int32_t, db_recno_t, DBT *));
 int __qam_append __P((DBC *, DBT *, DBT *));
-int __qam_c_dup __P((DBC *, DBC *));
-int __qam_c_init __P((DBC *));
+int __qamc_dup __P((DBC *, DBC *));
+int __qamc_init __P((DBC *));
 int __qam_truncate __P((DBC *, u_int32_t *));
 int __qam_delete __P((DBC *,  DBT *));
 int __qam_incfirst_log __P((DB *, DB_TXN *, DB_LSN *, u_int32_t, db_recno_t, db_pgno_t));

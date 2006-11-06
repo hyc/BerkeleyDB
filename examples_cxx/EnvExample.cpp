@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: EnvExample.cpp,v 12.3 2006/08/24 14:45:49 bostic Exp $
+ * $Id: EnvExample.cpp,v 12.4 2006/11/01 00:52:57 bostic Exp $
  */
 
 #include <sys/types.h>

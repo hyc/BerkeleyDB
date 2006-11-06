@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: txn003.tcl,v 12.5 2006/08/24 14:46:41 bostic Exp $
+# $Id: txn003.tcl,v 12.6 2006/11/01 00:54:03 bostic Exp $
 #
 # TEST	txn003
 # TEST	Test abort/commit/prepare of txns with outstanding child txns.

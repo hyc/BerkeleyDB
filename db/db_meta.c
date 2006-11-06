@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -39,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_meta.c,v 12.35 2006/08/24 14:45:15 bostic Exp $
+ * $Id: db_meta.c,v 12.38 2006/11/02 21:24:19 ubell Exp $
  */
 
 #include "db_config.h"
@@ -262,7 +261,9 @@ __db_free(dbc, h)
 	DB *dbp;
 	DBT ddbt, ldbt;
 	DB_LOCK metalock;
+	DB_LSN *lsnp;
 	DB_MPOOLFILE *mpf;
+	PAGE *prev;
 	db_pgno_t last_pgno, *lp, next_pgno, pgno, prev_pgno;
 	u_int32_t lflag, nelem;
 	int do_truncate, ret, t_ret;
@@ -276,6 +277,7 @@ __db_free(dbc, h)
 	prev_pgno = PGNO_INVALID;
 	nelem = 0;
 	meta = NULL;
+	prev = NULL;
 	do_truncate = 0;
 	lp = NULL;
 
@@ -352,21 +354,25 @@ __db_free(dbc, h)
 	}
 
 no_sort:
-	if (prev_pgno != PGNO_INVALID) {
-		if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+	if (prev_pgno == PGNO_INVALID) {
+		if ((ret = __memp_dirty(mpf, &meta, dbc->txn, 0)) != 0)
 			goto err1;
-		meta = NULL;
+		lsnp = &LSN(meta);
+	} else {
 		pgno = prev_pgno;
-		if ((ret = __memp_fget(mpf, &pgno, dbc->txn, 0, &meta)) != 0)
+		if ((ret = __memp_fget(mpf,
+		    &pgno, dbc->txn, DB_MPOOL_DIRTY, &prev)) != 0)
 			goto err1;
-		next_pgno = NEXT_PGNO(meta);
-	}
+		next_pgno = NEXT_PGNO(prev);
+		lsnp = &LSN(prev);
+	} 
 #endif
 
-	if ((ret = __memp_dirty(mpf, &meta, dbc->txn, 0)) != 0)
-		goto err1;
-
-	/* Log the change. */
+	/*
+	 * Log the change.
+	 *	We are either logging an update to the metapage or to the
+	 * previous page in the sorted list.
+	 */
 	if (DBC_LOGGING(dbc)) {
 		memset(&ldbt, 0, sizeof(ldbt));
 		ldbt.data = h;
@@ -394,8 +400,8 @@ no_sort:
 				ddbt.data = (u_int8_t *)h + HOFFSET(h);
 				ddbt.size = dbp->pgsize - HOFFSET(h);
 				if ((ret = __db_pg_freedata_log(dbp, dbc->txn,
-				     &LSN(meta), lflag,
-				     h->pgno, &LSN(meta), pgno,
+				     lsnp, lflag,
+				     h->pgno, lsnp, pgno,
 				     &ldbt, next_pgno, last_pgno, &ddbt)) != 0)
 					goto err1;
 				goto logged;
@@ -415,11 +421,12 @@ no_sort:
 		}
 
 		if ((ret = __db_pg_free_log(dbp,
-		      dbc->txn, &LSN(meta), lflag, h->pgno,
-		      &LSN(meta), pgno, &ldbt, next_pgno, last_pgno)) != 0)
+		      dbc->txn, lsnp, lflag, h->pgno,
+		      lsnp, pgno, &ldbt, next_pgno, last_pgno)) != 0)
 			goto err1;
 	} else
-		LSN_NOT_LOGGED(LSN(meta));
+		LSN_NOT_LOGGED(*lsnp);
+
 logged:
 #ifdef HAVE_FTRUNCATE
 	if (do_truncate) {
@@ -429,7 +436,7 @@ logged:
 		      dbc, meta, h, list, start, nelem);
 		h = NULL;
 	} else if (h->pgno == last_pgno) {
-		LSN(h) = LSN(meta);
+		LSN(h) = *lsnp;
 		P_INIT(h, dbp->pgsize,
 		    h->pgno, PGNO_INVALID, next_pgno, 0, P_INVALID);
 		if ((ret = __memp_fput(mpf, h, DB_MPOOL_DISCARD)) != 0)
@@ -461,14 +468,17 @@ logged:
 		if (prev_pgno == PGNO_INVALID)
 			meta->free = h->pgno;
 		else
-			NEXT_PGNO(meta) = h->pgno;
+			NEXT_PGNO(prev) = h->pgno;
 	}
 
 	/* Discard the metadata or previous page. */
 err1:	if (meta != NULL &&
-	    (t_ret = __memp_fput(mpf, (PAGE *)meta, 0)) != 0 && ret == 0)
+	    (t_ret = __memp_fput(mpf, (PAGE *) meta, 0)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
+		ret = t_ret;
+	if (prev != (PAGE*) meta && prev != NULL &&
+	    (t_ret = __memp_fput(mpf, prev, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Discard the caller's page reference. */
@@ -762,7 +772,7 @@ err:	if (list != NULL)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
 		ret = t_ret;
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }

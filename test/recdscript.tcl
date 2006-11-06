@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: recdscript.tcl,v 12.3 2006/08/24 14:46:37 bostic Exp $
+# $Id: recdscript.tcl,v 12.4 2006/11/01 00:53:54 bostic Exp $
 #
 # Recovery txn prepare script
 # Usage: recdscript op dir envcmd dbfile cmd

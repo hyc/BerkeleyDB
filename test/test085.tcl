@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2000-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2000,2006 Oracle.  All rights reserved.
 #
-# $Id: test085.tcl,v 12.3 2006/08/24 14:46:41 bostic Exp $
+# $Id: test085.tcl,v 12.4 2006/11/01 00:54:02 bostic Exp $
 #
 # TEST	test085
 # TEST	Test of cursor behavior when a cursor is pointing to a deleted

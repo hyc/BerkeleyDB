@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_iface.c,v 12.51 2006/09/19 15:06:58 bostic Exp $
+ * $Id: db_iface.c,v 12.55 2006/11/01 00:52:29 bostic Exp $
  */
 
 #include "db_config.h"
@@ -25,10 +24,10 @@
 
 static int __db_associate_arg __P((DB *, DB *,
 	       int (*)(DB *, const DBT *, const DBT *, DBT *), u_int32_t));
-static int __db_c_del_arg __P((DBC *, u_int32_t));
-static int __db_c_get_arg __P((DBC *, DBT *, DBT *, u_int32_t));
-static int __db_c_pget_arg __P((DBC *, DBT *, u_int32_t));
-static int __db_c_put_arg __P((DBC *, DBT *, DBT *, u_int32_t));
+static int __dbc_del_arg __P((DBC *, u_int32_t));
+static int __dbc_get_arg __P((DBC *, DBT *, DBT *, u_int32_t));
+static int __dbc_pget_arg __P((DBC *, DBT *, u_int32_t));
+static int __dbc_put_arg __P((DBC *, DBT *, DBT *, u_int32_t));
 static int __db_curinval __P((const DB_ENV *));
 static int __db_cursor_arg __P((DB *, u_int32_t));
 static int __db_del_arg __P((DB *, DBT *, u_int32_t));
@@ -127,7 +126,7 @@ __db_associate_pp(dbp, txn, sdbp, callback, flags)
 		goto err;
 
 	while ((sdbc = TAILQ_FIRST(&sdbp->free_queue)) != NULL)
-		if ((ret = __db_c_destroy(sdbc)) != 0)
+		if ((ret = __dbc_destroy(sdbc)) != 0)
 			goto err;
 
 	ret = __db_associate(dbp, txn, sdbp, callback, flags);
@@ -382,7 +381,7 @@ __db_cursor(dbp, txn, dbcp, flags)
 	*dbcp = dbc;
 	return (0);
 
-err:	(void)__db_c_close(dbc);
+err:	(void)__dbc_close(dbc);
 	return (ret);
 }
 
@@ -708,9 +707,9 @@ __db_get(dbp, txn, key, data, flags)
 	if (LF_ISSET(~(DB_RMW | DB_MULTIPLE)) == 0)
 		LF_SET(DB_SET);
 
-	ret = __db_c_get(dbc, key, data, flags);
+	ret = __dbc_get(dbc, key, data, flags);
 
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -978,7 +977,7 @@ __db_key_range_pp(dbp, txn, key, kr, flags)
 
 		ret = __bam_key_range(dbc, key, kr, flags);
 
-		if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 			ret = t_ret;
 		__dbt_userfree(dbenv, key, NULL, NULL);
 		break;
@@ -1381,9 +1380,9 @@ __db_pget(dbp, txn, skey, pkey, data, flags)
 	if (flags == 0 || flags == DB_RMW)
 		flags |= DB_SET;
 
-	ret = __db_c_pget(dbc, skey, pkey, data, flags);
+	ret = __dbc_pget(dbc, skey, pkey, data, flags);
 
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -1705,13 +1704,13 @@ err:	ENV_LEAVE(dbenv, ip);
 }
 
 /*
- * __db_c_close_pp --
- *	DBC->c_close pre/post processing.
+ * __dbc_close_pp --
+ *	DBC->close pre/post processing.
  *
- * PUBLIC: int __db_c_close_pp __P((DBC *));
+ * PUBLIC: int __dbc_close_pp __P((DBC *));
  */
 int
-__db_c_close_pp(dbc)
+__dbc_close_pp(dbc)
 	DBC *dbc;
 {
 	DB_ENV *dbenv;
@@ -1738,7 +1737,7 @@ __db_c_close_pp(dbc)
 
 	/* Check for replication block. */
 	handle_check = dbc->txn == NULL && IS_ENV_REPLICATED(dbenv);
-	ret = __db_c_close(dbc);
+	ret = __dbc_close(dbc);
 
 	/* Release replication block. */
 	if (handle_check &&
@@ -1750,13 +1749,13 @@ err:	ENV_LEAVE(dbenv, ip);
 }
 
 /*
- * __db_c_count_pp --
- *	DBC->c_count pre/post processing.
+ * __dbc_count_pp --
+ *	DBC->count pre/post processing.
  *
- * PUBLIC: int __db_c_count_pp __P((DBC *, db_recno_t *, u_int32_t));
+ * PUBLIC: int __dbc_count_pp __P((DBC *, db_recno_t *, u_int32_t));
  */
 int
-__db_c_count_pp(dbc, recnop, flags)
+__dbc_count_pp(dbc, recnop, flags)
 	DBC *dbc;
 	db_recno_t *recnop;
 	u_int32_t flags;
@@ -1786,19 +1785,19 @@ __db_c_count_pp(dbc, recnop, flags)
 
 	ENV_ENTER(dbenv, ip);
 
-	ret = __db_c_count(dbc, recnop);
+	ret = __dbc_count(dbc, recnop);
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
 /*
- * __db_c_del_pp --
- *	DBC->c_del pre/post processing.
+ * __dbc_del_pp --
+ *	DBC->del pre/post processing.
  *
- * PUBLIC: int __db_c_del_pp __P((DBC *, u_int32_t));
+ * PUBLIC: int __dbc_del_pp __P((DBC *, u_int32_t));
  */
 int
-__db_c_del_pp(dbc, flags)
+__dbc_del_pp(dbc, flags)
 	DBC *dbc;
 	u_int32_t flags;
 {
@@ -1812,7 +1811,7 @@ __db_c_del_pp(dbc, flags)
 
 	PANIC_CHECK(dbenv);
 
-	if ((ret = __db_c_del_arg(dbc, flags)) != 0)
+	if ((ret = __dbc_del_arg(dbc, flags)) != 0)
 		return (ret);
 
 	ENV_ENTER(dbenv, ip);
@@ -1822,18 +1821,18 @@ __db_c_del_pp(dbc, flags)
 		goto err;
 
 	DEBUG_LWRITE(dbc, dbc->txn, "DBcursor->del", NULL, NULL, flags);
-	ret = __db_c_del(dbc, flags);
+	ret = __dbc_del(dbc, flags);
 err:
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
 /*
- * __db_c_del_arg --
- *	Check DBC->c_del arguments.
+ * __dbc_del_arg --
+ *	Check DBC->del arguments.
  */
 static int
-__db_c_del_arg(dbc, flags)
+__dbc_del_arg(dbc, flags)
 	DBC *dbc;
 	u_int32_t flags;
 {
@@ -1869,13 +1868,13 @@ __db_c_del_arg(dbc, flags)
 }
 
 /*
- * __db_c_dup_pp --
- *	DBC->c_dup pre/post processing.
+ * __dbc_dup_pp --
+ *	DBC->dup pre/post processing.
  *
- * PUBLIC: int __db_c_dup_pp __P((DBC *, DBC **, u_int32_t));
+ * PUBLIC: int __dbc_dup_pp __P((DBC *, DBC **, u_int32_t));
  */
 int
-__db_c_dup_pp(dbc, dbcp, flags)
+__dbc_dup_pp(dbc, dbcp, flags)
 	DBC *dbc, **dbcp;
 	u_int32_t flags;
 {
@@ -1899,19 +1898,19 @@ __db_c_dup_pp(dbc, dbcp, flags)
 
 	ENV_ENTER(dbenv, ip);
 
-	ret = __db_c_dup(dbc, dbcp, flags);
+	ret = __dbc_dup(dbc, dbcp, flags);
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
 /*
- * __db_c_get_pp --
- *	DBC->c_get pre/post processing.
+ * __dbc_get_pp --
+ *	DBC->get pre/post processing.
  *
- * PUBLIC: int __db_c_get_pp __P((DBC *, DBT *, DBT *, u_int32_t));
+ * PUBLIC: int __dbc_get_pp __P((DBC *, DBT *, DBT *, u_int32_t));
  */
 int
-__db_c_get_pp(dbc, key, data, flags)
+__dbc_get_pp(dbc, key, data, flags)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -1926,14 +1925,14 @@ __db_c_get_pp(dbc, key, data, flags)
 
 	PANIC_CHECK(dbenv);
 
-	if ((ret = __db_c_get_arg(dbc, key, data, flags)) != 0)
+	if ((ret = __dbc_get_arg(dbc, key, data, flags)) != 0)
 		return (ret);
 
 	ENV_ENTER(dbenv, ip);
 
 	DEBUG_LREAD(dbc, dbc->txn, "DBcursor->get",
 	    flags == DB_SET || flags == DB_SET_RANGE ? key : NULL, NULL, flags);
-	ret = __db_c_get(dbc, key, data, flags);
+	ret = __dbc_get(dbc, key, data, flags);
 
 	ENV_LEAVE(dbenv, ip);
 	__dbt_userfree(dbenv, key, NULL, data);
@@ -1941,11 +1940,11 @@ __db_c_get_pp(dbc, key, data, flags)
 }
 
 /*
- * __db_c_get_arg --
+ * __dbc_get_arg --
  *	Common DBC->get argument checking, used by both DBC->get and DBC->pget.
  */
 static int
-__db_c_get_arg(dbc, key, data, flags)
+__dbc_get_arg(dbc, key, data, flags)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -2009,6 +2008,7 @@ __db_c_get_arg(dbc, key, data, flags)
 		break;
 	case DB_LAST:
 	case DB_PREV:
+	case DB_PREV_DUP:
 	case DB_PREV_NODUP:
 		if (multi)
 multi_err:		return (__db_ferr(dbenv, "DBcursor->get", 1));
@@ -2077,11 +2077,13 @@ err:		__dbt_userfree(dbenv, key, NULL, data);
 	}
 
 	/*
-	 * The cursor must be initialized for DB_CURRENT, DB_GET_RECNO and
-	 * DB_NEXT_DUP.  Return EINVAL for an invalid cursor, otherwise 0.
+	 * The cursor must be initialized for DB_CURRENT, DB_GET_RECNO,
+	 * DB_PREV_DUP and DB_NEXT_DUP.  Return EINVAL for an invalid
+	 * cursor, otherwise 0.
 	 */
 	if (!IS_INITIALIZED(dbc) && (flags == DB_CURRENT ||
-	    flags == DB_GET_RECNO || flags == DB_NEXT_DUP))
+	    flags == DB_GET_RECNO ||
+	    flags == DB_NEXT_DUP || flags == DB_PREV_DUP))
 		return (__db_curinval(dbenv));
 
 	/* Check for consistent transaction usage. */
@@ -2144,13 +2146,13 @@ __db_secondary_close_pp(dbp, flags)
 }
 
 /*
- * __db_c_pget_pp --
- *	DBC->c_pget pre/post processing.
+ * __dbc_pget_pp --
+ *	DBC->pget pre/post processing.
  *
- * PUBLIC: int __db_c_pget_pp __P((DBC *, DBT *, DBT *, DBT *, u_int32_t));
+ * PUBLIC: int __dbc_pget_pp __P((DBC *, DBT *, DBT *, DBT *, u_int32_t));
  */
 int
-__db_c_pget_pp(dbc, skey, pkey, data, flags)
+__dbc_pget_pp(dbc, skey, pkey, data, flags)
 	DBC *dbc;
 	DBT *skey, *pkey, *data;
 	u_int32_t flags;
@@ -2165,12 +2167,12 @@ __db_c_pget_pp(dbc, skey, pkey, data, flags)
 
 	PANIC_CHECK(dbenv);
 
-	if ((ret = __db_c_pget_arg(dbc, pkey, flags)) != 0 ||
-	    (ret = __db_c_get_arg(dbc, skey, data, flags)) != 0)
+	if ((ret = __dbc_pget_arg(dbc, pkey, flags)) != 0 ||
+	    (ret = __dbc_get_arg(dbc, skey, data, flags)) != 0)
 		return (ret);
 
 	ENV_ENTER(dbenv, ip);
-	ret = __db_c_pget(dbc, skey, pkey, data, flags);
+	ret = __dbc_pget(dbc, skey, pkey, data, flags);
 	ENV_LEAVE(dbenv, ip);
 
 	__dbt_userfree(dbenv, skey, pkey, data);
@@ -2178,11 +2180,11 @@ __db_c_pget_pp(dbc, skey, pkey, data, flags)
 }
 
 /*
- * __db_c_pget_arg --
+ * __dbc_pget_arg --
  *	Check DBC->pget arguments.
  */
 static int
-__db_c_pget_arg(dbc, pkey, flags)
+__dbc_pget_arg(dbc, pkey, flags)
 	DBC *dbc;
 	DBT *pkey;
 	u_int32_t flags;
@@ -2225,7 +2227,7 @@ __db_c_pget_arg(dbc, pkey, flags)
 			return (ret);
 		break;
 	default:
-		/* __db_c_get_arg will catch the rest. */
+		/* __dbc_get_arg will catch the rest. */
 		break;
 	}
 
@@ -2247,13 +2249,13 @@ __db_c_pget_arg(dbc, pkey, flags)
 }
 
 /*
- * __db_c_put_pp --
+ * __dbc_put_pp --
  *	DBC->put pre/post processing.
  *
- * PUBLIC: int __db_c_put_pp __P((DBC *, DBT *, DBT *, u_int32_t));
+ * PUBLIC: int __dbc_put_pp __P((DBC *, DBT *, DBT *, u_int32_t));
  */
 int
-__db_c_put_pp(dbc, key, data, flags)
+__dbc_put_pp(dbc, key, data, flags)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -2268,7 +2270,7 @@ __db_c_put_pp(dbc, key, data, flags)
 
 	PANIC_CHECK(dbenv);
 
-	if ((ret = __db_c_put_arg(dbc, key, data, flags)) != 0)
+	if ((ret = __dbc_put_arg(dbc, key, data, flags)) != 0)
 		return (ret);
 
 	ENV_ENTER(dbenv, ip);
@@ -2281,7 +2283,7 @@ __db_c_put_pp(dbc, key, data, flags)
 	    flags == DB_KEYFIRST || flags == DB_KEYLAST ||
 	    flags == DB_NODUPDATA || flags == DB_UPDATE_SECONDARY ?
 	    key : NULL, data, flags);
-	ret =__db_c_put(dbc, key, data, flags);
+	ret =__dbc_put(dbc, key, data, flags);
 
 err:	ENV_LEAVE(dbenv, ip);
 	__dbt_userfree(dbenv, key, NULL, data);
@@ -2289,11 +2291,11 @@ err:	ENV_LEAVE(dbenv, ip);
 }
 
 /*
- * __db_c_put_arg --
+ * __dbc_put_arg --
  *	Check DBC->put arguments.
  */
 static int
-__db_c_put_arg(dbc, key, data, flags)
+__dbc_put_arg(dbc, key, data, flags)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -2378,6 +2380,16 @@ err:		return (__db_ferr(dbenv, "DBcursor->put", 0));
 	/* Keys shouldn't have partial flags during a put. */
 	if (key_flags && F_ISSET(key, DB_DBT_PARTIAL))
 		return (__db_ferr(dbenv, "key DBT", 0));
+
+	/*
+	 * Data should only have a partial flag if overwriting the
+	 * current entry.
+	 */
+	if (F_ISSET(data, DB_DBT_PARTIAL) && flags != DB_CURRENT) {
+		__db_errx(dbenv,
+    "partial put on a cursor only valid when overwriting the current entry");
+		return (EINVAL);
+	}
 
 	/*
 	 * The cursor must be initialized for anything other than DB_KEYFIRST

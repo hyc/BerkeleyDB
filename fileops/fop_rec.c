@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: fop_rec.c,v 12.12 2006/08/24 14:46:03 bostic Exp $
+ * $Id: fop_rec.c,v 12.14 2006/11/01 00:53:20 bostic Exp $
  */
 
 #include "db_config.h"
@@ -79,7 +78,7 @@ __fop_create_recover(dbenv, dbtp, lsnp, op, info)
 		(void)__os_unlink(dbenv, real_name);
 	else if (DB_REDO(op)) {
 		if ((ret = __os_open(dbenv, real_name,
-		    DB_OSO_CREATE | DB_OSO_EXCL, (int)argp->mode, &fhp)) == 0)
+		    DB_OSO_CREATE, (int)argp->mode, &fhp)) == 0)
 			(void)__os_closehandle(dbenv, fhp);
 		else
 			goto out;

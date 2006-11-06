@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -35,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn.c,v 12.55 2006/08/24 14:46:52 bostic Exp $
+ * $Id: txn.c,v 12.60 2006/11/01 00:54:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -394,7 +393,7 @@ __txn_begin_int(txn, internal)
 
 	/* Allocate a new transaction detail structure. */
 	if ((ret =
-	    __db_shalloc(&mgr->reginfo, sizeof(TXN_DETAIL), 0, &td)) != 0) {
+	    __env_alloc(&mgr->reginfo, sizeof(TXN_DETAIL), &td)) != 0) {
 		__db_errx(dbenv,
 		    "Unable to allocate memory for transaction detail");
 		goto err;
@@ -1072,11 +1071,11 @@ __txn_set_name(txn, name)
 	ENV_ENTER(dbenv, ip);
 	TXN_SYSTEM_LOCK(dbenv);
 	if (td->name != INVALID_ROFF) {
-		__db_shalloc_free(
+		__env_alloc_free(
 		    &mgr->reginfo, R_ADDR(&mgr->reginfo, td->name));
 		td->name = INVALID_ROFF;
 	}
-	if ((ret = __db_shalloc(&mgr->reginfo, len, 0, &p)) != 0) {
+	if ((ret = __env_alloc(&mgr->reginfo, len, &p)) != 0) {
 		TXN_SYSTEM_UNLOCK(dbenv);
 		__db_errx(dbenv,
 		    "Unable to allocate memory for transaction name");
@@ -1116,16 +1115,18 @@ __txn_set_timeout(txn, timeout, op)
 	db_timeout_t timeout;
 	u_int32_t op;
 {
+	DB_ENV *dbenv;
 	DB_THREAD_INFO *ip;
 	int ret;
 
-	if (op != DB_SET_TXN_TIMEOUT &&  op != DB_SET_LOCK_TIMEOUT)
-		return (__db_ferr(txn->mgrp->dbenv, "DB_TXN->set_timeout", 0));
+	dbenv = txn->mgrp->dbenv;
 
-	ENV_ENTER(txn->mgrp->dbenv, ip);
-	ret = __lock_set_timeout(
-	    txn->mgrp->dbenv, txn->txnid, timeout, op);
-	ENV_LEAVE(txn->mgrp->dbenv, ip);
+	if (op != DB_SET_TXN_TIMEOUT && op != DB_SET_LOCK_TIMEOUT)
+		return (__db_ferr(dbenv, "DB_TXN->set_timeout", 0));
+
+	ENV_ENTER(dbenv, ip);
+	ret = __lock_set_timeout(dbenv, txn->txnid, timeout, op);
+	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
@@ -1296,7 +1297,7 @@ __txn_end(txn, is_commit)
 	}
 
 	if (td->name != INVALID_ROFF) {
-		__db_shalloc_free(
+		__env_alloc_free(
 		    &mgr->reginfo, R_ADDR(&mgr->reginfo, td->name));
 		td->name = INVALID_ROFF;
 	}
@@ -1324,7 +1325,7 @@ __txn_end(txn, is_commit)
 	}
 
 	if (td != NULL)
-		__db_shalloc_free(&mgr->reginfo, td);
+		__env_alloc_free(&mgr->reginfo, td);
 
 	if (is_commit)
 		region->stat.st_ncommits++;
@@ -1339,7 +1340,7 @@ __txn_end(txn, is_commit)
 	 * if any.
 	 */
 	if (LOCKING_ON(dbenv) && (ret =
-	    __lock_freefamilylocker(dbenv->lk_handle, txn->txnid)) != 0)
+	    __lock_freefamilylocker(dbenv, txn->txnid)) != 0)
 		return (__db_panic(dbenv, ret));
 	if (txn->parent != NULL)
 		TAILQ_REMOVE(&txn->parent->kids, txn, klinks);
@@ -1474,7 +1475,7 @@ __txn_undo(txn)
 		 * The dispatch routine returns the lsn of the record
 		 * before the current one in the key_lsn argument.
 		 */
-		if ((ret = __log_c_get(logc, &key_lsn, &rdbt, DB_SET)) == 0) {
+		if ((ret = __logc_get(logc, &key_lsn, &rdbt, DB_SET)) == 0) {
 			ret = __txn_dispatch_undo(dbenv,
 			    txn, &rdbt, &key_lsn, txnlist);
 		}
@@ -1491,7 +1492,7 @@ __txn_undo(txn)
 	ret = __db_do_the_limbo(dbenv, ptxn, txn, txnlist, LIMBO_NORMAL);
 #endif
 
-err:	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
+err:	if (logc != NULL && (t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (ptxn == NULL && txnlist != NULL)

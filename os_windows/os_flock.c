@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_flock.c,v 1.12 2006/08/24 14:46:21 bostic Exp $
+ * $Id: os_flock.c,v 1.14 2006/11/01 00:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -28,6 +27,11 @@ __os_fdlock(dbenv, fhp, offset, acquire, nowait)
 
 	DB_ASSERT(dbenv,
 	    F_ISSET(fhp, DB_FH_OPENED) && fhp->handle != INVALID_HANDLE_VALUE);
+
+	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv,
+		    "fileops: flock %s %s offset %lu",
+		    fhp->name, acquire ? "acquire": "release", (u_long)offset);
 
 	/*
 	 * Windows file locking interferes with read/write operations, so we

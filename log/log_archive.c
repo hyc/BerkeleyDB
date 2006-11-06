@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: log_archive.c,v 12.21 2006/09/07 20:05:32 bostic Exp $
+ * $Id: log_archive.c,v 12.23 2006/11/01 00:53:35 bostic Exp $
  */
 
 #include "db_config.h"
@@ -141,8 +140,8 @@ __log_archive(dbenv, listp, flags)
 #ifdef UMRW
 		ZERO_LSN(stable_lsn);
 #endif
-		ret = __log_c_get(logc, &stable_lsn, &rec, DB_LAST);
-		if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+		ret = __logc_get(logc, &stable_lsn, &rec, DB_LAST);
+		if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
 			goto err;
@@ -291,7 +290,7 @@ __log_get_stable_lsn(dbenv, stable_lsn)
 	 * Read checkpoint records until we find one that is on disk,
 	 * then copy the ckp_lsn to the stable_lsn;
 	 */
-	while ((ret = __log_c_get(logc, stable_lsn, &rec, DB_SET)) == 0 &&
+	while ((ret = __logc_get(logc, stable_lsn, &rec, DB_SET)) == 0 &&
 	    (ret = __txn_ckp_read(dbenv, rec.data, &ckp_args)) == 0) {
 		if (stable_lsn->file < lp->s_lsn.file ||
 		    (stable_lsn->file == lp->s_lsn.file &&
@@ -303,7 +302,7 @@ __log_get_stable_lsn(dbenv, stable_lsn)
 		*stable_lsn = ckp_args->last_ckp;
 		__os_free(dbenv, ckp_args);
 	}
-	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 err:
 	return (ret);
@@ -373,7 +372,7 @@ __build_data(dbenv, pref, listp)
 	memset(&rec, 0, sizeof(rec));
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		return (ret);
-	for (n = 0; (ret = __log_c_get(logc, &lsn, &rec, DB_PREV)) == 0;) {
+	for (n = 0; (ret = __logc_get(logc, &lsn, &rec, DB_PREV)) == 0;) {
 		if (rec.size < sizeof(rectype)) {
 			ret = EINVAL;
 			__db_errx(dbenv, "DB_ENV->log_archive: bad log record");
@@ -430,7 +429,7 @@ free_continue:	__os_free(dbenv, argp);
 	}
 	if (ret == DB_NOTFOUND)
 		ret = 0;
-	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 	if (ret != 0)
 		goto err1;

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep061.tcl,v 1.4 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep061.tcl,v 1.6 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep061
 # TEST	Test of internal initialization multiple files and pagesizes
@@ -110,8 +109,7 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	# The documentation says that the log file must be at least
 	# four times the size of the in-memory log buffer.
 	set maxpg 16384
-	set log_buf [expr $maxpg * 2]
-	set log_max [expr $log_buf * 4]
+	set log_max [expr $maxpg * 8]
 	set cache [expr $maxpg * 32 ]
 
 	set m_logtype [lindex $logset 0]
@@ -124,12 +122,10 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    -log_buffer $log_buf -log_max $log_max \
-	    -cachesize { 0 $cache 1 } \
+	    -log_max $log_max -cachesize { 0 $cache 1 } \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 #	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    -log_buffer $log_buf -log_max $log_max \
-#	    -cachesize { 0 $cache 1 }\
+#	    -log_max $log_max -cachesize { 0 $cache 1 }\
 #	    -verbose {rep on} -errpfx MASTER -errfile /dev/stderr \
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
@@ -138,12 +134,10 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    -log_buffer $log_buf -log_max $log_max \
-	    -cachesize { 0 $cache 1 }\
+	    -log_max $log_max -cachesize { 0 $cache 1 }\
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 #	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    -log_buffer $log_buf -log_max $log_max \
-#	    -cachesize { 0 $cache 1 }\
+#	    -log_max $log_max -cachesize { 0 $cache 1 }\
 #	    -verbose {rep on} -errpfx CLIENT \
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]

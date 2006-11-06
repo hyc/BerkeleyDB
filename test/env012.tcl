@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: env012.tcl,v 12.11 2006/09/18 19:43:26 carol Exp $
+# $Id: env012.tcl,v 12.12 2006/11/01 00:53:53 bostic Exp $
 #
 # TEST	env012
 # TEST	Test DB_REGISTER.

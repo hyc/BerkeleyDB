@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -39,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_open.c,v 12.16 2006/08/24 14:46:05 bostic Exp $
+ * $Id: hash_open.c,v 12.18 2006/11/01 00:53:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -127,7 +126,7 @@ __ham_open(dbp, txn, name, base_pgno, flags)
 err2:	/* Release the meta data page */
 	if ((t_ret = __ham_release_meta(dbc)) != 0 && ret == 0)
 		ret = t_ret;
-err1:	if ((t_ret  = __db_c_close(dbc)) != 0 && ret == 0)
+err1:	if ((t_ret  = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -546,7 +545,7 @@ err:	/* Now put the master-metadata page back. */
 	if ((t_ret = __LPUT(dbc, metalock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (dbc != NULL)
-		if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 			ret = t_ret;
 	return (ret);
 }

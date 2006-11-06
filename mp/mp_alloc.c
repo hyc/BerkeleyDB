@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_alloc.c,v 12.20 2006/09/07 15:11:26 mjc Exp $
+ * $Id: mp_alloc.c,v 12.22 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -86,7 +85,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	 * we need in the hopes it will coalesce into a contiguous chunk of the
 	 * right size.  In the latter case we branch back here and try again.
 	 */
-alloc:	if ((ret = __db_shalloc(infop, len, 0, &p)) == 0) {
+alloc:	if ((ret = __env_alloc(infop, len, &p)) == 0) {
 		if (mfp != NULL)
 			c_mp->stat.st_pages++;
 		MPOOL_REGION_UNLOCK(dbenv, infop);
@@ -404,7 +403,7 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			p = bhp;
 			goto found;
 		} else {
-			freed_space += __db_shalloc_sizeof(bhp);
+			freed_space += __env_alloc_sizeof(bhp);
 			if ((ret = __memp_bhfree(dbmp,
 			    hp, bhp, BH_FREE_FREEMEM)) != 0)
 				return (ret);
@@ -449,7 +448,7 @@ __memp_free(infop, mfp, buf)
 {
 	MVCC_BHUNALIGN(mfp, buf);
 	COMPQUIET(mfp, NULL);
-	__db_shalloc_free(infop, buf);
+	__env_alloc_free(infop, buf);
 }
 
 /*

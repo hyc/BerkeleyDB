@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2003,2006 Oracle.  All rights reserved.
 #
-# $Id: rep015.tcl,v 12.8 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep015.tcl,v 12.9 2006/11/01 00:53:55 bostic Exp $
 #
 # TEST	rep015
 # TEST	Locking across multiple pages with replication.

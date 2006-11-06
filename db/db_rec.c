@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_rec.c,v 12.31 2006/09/19 04:04:49 ubell Exp $
+ * $Id: db_rec.c,v 12.34 2006/11/02 21:55:28 ubell Exp $
  */
 
 #include "db_config.h"
@@ -659,13 +658,13 @@ __db_pg_free_recover_int(dbenv, argp, file_dbp, lsnp, mpf, op, data)
 		*/
 		if (argp->pgno == argp->last_pgno)
 			meta->last_pgno = argp->pgno - 1;
-		else if (prevp == NULL)
+		else if (is_meta)
 			meta->free = argp->pgno;
 		else
 			NEXT_PGNO(prevp) = argp->pgno;
 #else
 		/* Need to redo the deallocation. */
-		if (prevp == NULL)
+		if (is_meta)
 			meta->free = argp->pgno;
 		else
 			NEXT_PGNO(prevp) = argp->pgno;
@@ -674,20 +673,20 @@ __db_pg_free_recover_int(dbenv, argp, file_dbp, lsnp, mpf, op, data)
 		 * we are a replica, then we never executed the
 		 * original allocation which incremented meta->free.
 		 */
-		if (prevp == NULL && meta->last_pgno < meta->free)
+		if (is_meta && meta->last_pgno < meta->free)
 			meta->last_pgno = meta->free;
 #endif
 		LSN(meta) = *lsnp;
 	} else if (cmp_n == 0 && DB_UNDO(op)) {
 		/* Need to undo the deallocation. */
 		REC_DIRTY(mpf, &meta);
-		if (prevp == NULL)
+		if (is_meta) {
+			if (meta->last_pgno < argp->pgno)
+				meta->last_pgno = argp->pgno;
 			meta->free = argp->next;
-		else
+		} else
 			NEXT_PGNO(prevp) = argp->next;
 		LSN(meta) = argp->meta_lsn;
-		if (prevp == NULL && meta->last_pgno < argp->pgno)
-			meta->last_pgno = argp->pgno;
 	}
 
 check_meta:
@@ -820,7 +819,6 @@ done:
 	if (meta != NULL && (ret = __memp_fput(mpf, meta, 0)) != 0)
 		goto out;
 	meta = NULL;
-
 	ret = 0;
 
 out:	if (pagep != NULL)

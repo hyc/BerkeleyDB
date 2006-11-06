@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: test.tcl,v 12.30 2006/08/24 14:46:39 bostic Exp $
+# $Id: test.tcl,v 12.32 2006/11/01 16:25:40 carol Exp $
 
 source ./include.tcl
 
@@ -121,7 +120,7 @@ source $test_path/testparams.tcl
 # doesn't support encryption, and encryption tests should be skipped.
 set has_crypto 1
 set stat [catch {set db \
-    [eval {berkdb open -create -btree -encryptaes test_passwd} ] } result ]
+    [eval {berkdb_open -create -btree -encryptaes test_passwd} ] } result ]
 if { $stat != 0 } {
 	# Make sure it's the right error for a non-crypto release.
 	error_check_good non_crypto_release \

@@ -14,9 +14,10 @@ AES_CIPHER	../dbinc/crypto.h	/^} AES_CIPHER;$/
 AI_CANONNAME	../dbinc/repmgr.h	/^#define	AI_CANONNAME	0x02$/
 AI_NUMERICHOST	../dbinc/repmgr.h	/^#define	AI_NUMERICHOST	0x04$/
 AI_PASSIVE	../dbinc/repmgr.h	/^#define	AI_PASSIVE	0x01$/
-ALIGNP_DEC	../dbinc/db_int.in	/^#define	ALIGNP_DEC(p, bound)						\\$/
 ALIGNP_INC	../dbinc/db_int.in	/^#define	ALIGNP_INC(p, bound)						\\$/
 ALIVE_ON	../dbinc/db_int.in	/^#define	ALIVE_ON(dbenv)		((dbenv)->is_alive != NUL/
+ALLOC_ELEMENT	../env/env_alloc.c	/^} ALLOC_ELEMENT;$/
+ALLOC_LAYOUT	../env/env_alloc.c	/^} ALLOC_LAYOUT;$/
 ALREADY_FLUSHED	../log/log_put.c	/^#define	ALREADY_FLUSHED(lp, lsnp)					\\$/
 ANYSITE	../rep/rep_record.c	/^#define	ANYSITE(rep)$/
 APPNAME	../dbinc/db_int.in	/^} APPNAME;$/
@@ -229,9 +230,10 @@ DB_ADD_DUP	../dbinc/db_am.h	/^#define	DB_ADD_DUP	1$/
 DB_ADD_PAGE_COMPAT	../dbinc/db_am.h	/^#define	DB_ADD_PAGE_COMPAT	5	\/* Compatibility for/
 DB_AES_CHUNK	../dbinc/crypto.h	/^#define	DB_AES_CHUNK	16	\/* AES byte unit size *\//
 DB_AES_KEYLEN	../dbinc/crypto.h	/^#define	DB_AES_KEYLEN	128	\/* AES key length *\/$/
-DB_AFTER	../dbinc/db.in	/^#define	DB_AFTER		 1	\/* c_put() *\/$/
+DB_AFTER	../dbinc/db.in	/^#define	DB_AFTER		 1	\/* Dbc.put *\/$/
 DB_AGGRESSIVE	../dbinc/db.in	/^#define	DB_AGGRESSIVE	      0x0000001	\/* Salvage /
 DB_ALIGN	../dbinc/db_int.in	/^#define	DB_ALIGN(v, bound)						\\$/
+DB_ALLOC_SIZE	../env/env_alloc.c	/^#define	DB_ALLOC_SIZE(len)						\\$/
 DB_ALREADY_ABORTED	../dbinc/db.in	/^#define	DB_ALREADY_ABORTED	(-30899)$/
 DB_AM_CHKSUM	../dbinc/db.in	/^#define	DB_AM_CHKSUM		0x00000001 \/* Checksumming /
 DB_AM_CL_WRITER	../dbinc/db.in	/^#define	DB_AM_CL_WRITER		0x00000002 \/* Allow writ/
@@ -264,7 +266,7 @@ DB_AM_SUBDB	../dbinc/db.in	/^#define	DB_AM_SUBDB		0x08000000 \/* Subdatabases s/
 DB_AM_SWAP	../dbinc/db.in	/^#define	DB_AM_SWAP		0x10000000 \/* Pages need to b/
 DB_AM_TXN	../dbinc/db.in	/^#define	DB_AM_TXN		0x20000000 \/* Opened in a tran/
 DB_AM_VERIFYING	../dbinc/db.in	/^#define	DB_AM_VERIFYING		0x40000000 \/* DB handle /
-DB_APPEND	../dbinc/db.in	/^#define	DB_APPEND		 2	\/* put() *\/$/
+DB_APPEND	../dbinc/db.in	/^#define	DB_APPEND		 2	\/* Db.put *\/$/
 DB_ARCH_ABS	../dbinc/db.in	/^#define	DB_ARCH_ABS	0x001		\/* Absolute pathnames./
 DB_ARCH_DATA	../dbinc/db.in	/^#define	DB_ARCH_DATA	0x002		\/* Data files. *\/$/
 DB_ARCH_LOG	../dbinc/db.in	/^#define	DB_ARCH_LOG	0x004		\/* Log files. *\/$/
@@ -272,7 +274,7 @@ DB_ARCH_REMOVE	../dbinc/db.in	/^#define	DB_ARCH_REMOVE	0x008	\/* Remove log file
 DB_ASSERT	../dbinc/debug.h	/^#define	DB_ASSERT(env, e)						\\$/
 DB_ASSOC_IMMUTABLE_KEY	../dbinc/db.in	/^#define	DB_ASSOC_IMMUTABLE_KEY    0x00000001 \/* S/
 DB_AUTO_COMMIT	../dbinc/db.in	/^#define	DB_AUTO_COMMIT	      0x02000000\/* Implied/
-DB_BEFORE	../dbinc/db.in	/^#define	DB_BEFORE		 3	\/* c_put() *\/$/
+DB_BEFORE	../dbinc/db.in	/^#define	DB_BEFORE		 3	\/* Dbc.put *\/$/
 DB_BEGIN_SINGLE_THREAD	../dbinc/mutex.h	/^#define	DB_BEGIN_SINGLE_THREAD do {					\\$/
 DB_BTREEMAGIC	../dbinc/db.in	/^#define	DB_BTREEMAGIC	0x053162$/
 DB_BTREEOLDVER	../dbinc/db.in	/^#define	DB_BTREEOLDVER	8		\/* Oldest btree version/
@@ -288,10 +290,10 @@ DB_CLEARLEN_NOTSET	../dbinc/db_int.in	/^#define	DB_CLEARLEN_NOTSET	UINT32_MAX	\/
 DB_COMMIT_FLUSH	../dbinc/log.h	/^#define	DB_COMMIT_FLUSH		0x0001	\/* Flush the log /
 DB_COMPACT	../dbinc/db.in	/^struct __db_compact;	typedef struct __db_compact D/
 DB_COMPACT_FLAGS	../dbinc/db.in	/^#define	DB_COMPACT_FLAGS      \\$/
-DB_CONSUME	../dbinc/db.in	/^#define	DB_CONSUME		 4	\/* get() *\/$/
-DB_CONSUME_WAIT	../dbinc/db.in	/^#define	DB_CONSUME_WAIT		 5	\/* get() *\/$/
+DB_CONSUME	../dbinc/db.in	/^#define	DB_CONSUME		 4	\/* Db.get *\/$/
+DB_CONSUME_WAIT	../dbinc/db.in	/^#define	DB_CONSUME_WAIT		 5	\/* Db.get *\/$/
 DB_CREATE	../dbinc/db.in	/^#define	DB_CREATE	      0x0000001	\/* Create file /
-DB_CURRENT	../dbinc/db.in	/^#define	DB_CURRENT		 6	\/* c_get(), c_put(), DB_LO/
+DB_CURRENT	../dbinc/db.in	/^#define	DB_CURRENT		 6	\/* Dbc.get, Dbc.put, DbLog/
 DB_CXX_NO_EXCEPTIONS	../dbinc/db.in	/^#define	DB_CXX_NO_EXCEPTIONS  0x0000001	\/* C++: r/
 DB_DBM_HSEARCH	../dbinc/db.in	/^#define	DB_DBM_HSEARCH	0		\/* No historic interfac/
 DB_DBT_APPMALLOC	../dbinc/db.in	/^#define	DB_DBT_APPMALLOC	0x001	\/* Callback alloca/
@@ -327,21 +329,21 @@ DB_ENV	../dbinc/db.in	/^struct __db_env;	typedef struct __db_env DB_ENV;$/
 DB_ENV_AUTO_COMMIT	../dbinc/db.in	/^#define	DB_ENV_AUTO_COMMIT	0x00000001 \/* DB_AUTO_/
 DB_ENV_CDB	../dbinc/db.in	/^#define	DB_ENV_CDB		0x00000002 \/* DB_INIT_CDB. */
 DB_ENV_CDB_ALLDB	../dbinc/db.in	/^#define	DB_ENV_CDB_ALLDB	0x00000004 \/* CDB enviro/
-DB_ENV_CREATE	../dbinc/db.in	/^#define	DB_ENV_CREATE		0x00000008 \/* DB_CREATE se/
-DB_ENV_DBLOCAL	../dbinc/db.in	/^#define	DB_ENV_DBLOCAL		0x00000010 \/* Environment/
-DB_ENV_DIRECT_DB	../dbinc/db.in	/^#define	DB_ENV_DIRECT_DB	0x00000020 \/* DB_DIRECT_/
-DB_ENV_DIRECT_LOG	../dbinc/db.in	/^#define	DB_ENV_DIRECT_LOG	0x00000040 \/* DB_DIRECT/
-DB_ENV_DSYNC_DB	../dbinc/db.in	/^#define	DB_ENV_DSYNC_DB		0x00000080 \/* DB_DSYNC_D/
-DB_ENV_DSYNC_LOG	../dbinc/db.in	/^#define	DB_ENV_DSYNC_LOG	0x00000100 \/* DB_DSYNC_L/
-DB_ENV_FATAL	../dbinc/db.in	/^#define	DB_ENV_FATAL		0x00000200 \/* Doing fatal r/
+DB_ENV_DBLOCAL	../dbinc/db.in	/^#define	DB_ENV_DBLOCAL		0x00000008 \/* Environment/
+DB_ENV_DIRECT_DB	../dbinc/db.in	/^#define	DB_ENV_DIRECT_DB	0x00000010 \/* DB_DIRECT_/
+DB_ENV_DIRECT_LOG	../dbinc/db.in	/^#define	DB_ENV_DIRECT_LOG	0x00000020 \/* DB_DIRECT/
+DB_ENV_DSYNC_DB	../dbinc/db.in	/^#define	DB_ENV_DSYNC_DB		0x00000040 \/* DB_DSYNC_D/
+DB_ENV_DSYNC_LOG	../dbinc/db.in	/^#define	DB_ENV_DSYNC_LOG	0x00000080 \/* DB_DSYNC_L/
+DB_ENV_FATAL	../dbinc/db.in	/^#define	DB_ENV_FATAL		0x00000100 \/* Doing fatal r/
 DB_ENV_INTERNAL	../libdb_java/db_java_wrap.c	/^#define	DB_ENV_INTERNAL(dbenv) ((dbenv)->api2_inte/
-DB_ENV_LOCKDOWN	../dbinc/db.in	/^#define	DB_ENV_LOCKDOWN		0x00000400 \/* DB_LOCKDOW/
-DB_ENV_LOG_AUTOREMOVE	../dbinc/db.in	/^#define	DB_ENV_LOG_AUTOREMOVE   0x00000800 \/* DB_/
-DB_ENV_LOG_INMEMORY	../dbinc/db.in	/^#define	DB_ENV_LOG_INMEMORY     0x00001000 \/* DB_/
-DB_ENV_MULTIVERSION	../dbinc/db.in	/^#define	DB_ENV_MULTIVERSION	0x00002000 \/* DB_MULT/
-DB_ENV_NOLOCKING	../dbinc/db.in	/^#define	DB_ENV_NOLOCKING	0x00004000 \/* DB_NOLOCKI/
-DB_ENV_NOMMAP	../dbinc/db.in	/^#define	DB_ENV_NOMMAP		0x00008000 \/* DB_NOMMAP se/
-DB_ENV_NOPANIC	../dbinc/db.in	/^#define	DB_ENV_NOPANIC		0x00010000 \/* Okay if pan/
+DB_ENV_LOCKDOWN	../dbinc/db.in	/^#define	DB_ENV_LOCKDOWN		0x00000200 \/* DB_LOCKDOW/
+DB_ENV_LOG_AUTOREMOVE	../dbinc/db.in	/^#define	DB_ENV_LOG_AUTOREMOVE   0x00000400 \/* DB_/
+DB_ENV_LOG_INMEMORY	../dbinc/db.in	/^#define	DB_ENV_LOG_INMEMORY     0x00000800 \/* DB_/
+DB_ENV_MULTIVERSION	../dbinc/db.in	/^#define	DB_ENV_MULTIVERSION	0x00001000 \/* DB_MULT/
+DB_ENV_NOLOCKING	../dbinc/db.in	/^#define	DB_ENV_NOLOCKING	0x00002000 \/* DB_NOLOCKI/
+DB_ENV_NOMMAP	../dbinc/db.in	/^#define	DB_ENV_NOMMAP		0x00004000 \/* DB_NOMMAP se/
+DB_ENV_NOPANIC	../dbinc/db.in	/^#define	DB_ENV_NOPANIC		0x00008000 \/* Okay if pan/
+DB_ENV_NO_OUTPUT_SET	../dbinc/db.in	/^#define	DB_ENV_NO_OUTPUT_SET	0x00010000 \/* No out/
 DB_ENV_OPEN_CALLED	../dbinc/db.in	/^#define	DB_ENV_OPEN_CALLED	0x00020000 \/* DB_ENV->/
 DB_ENV_OVERWRITE	../dbinc/db.in	/^#define	DB_ENV_OVERWRITE	0x00040000 \/* DB_OVERWRI/
 DB_ENV_PRIVATE	../dbinc/db.in	/^#define	DB_ENV_PRIVATE		0x00080000 \/* DB_PRIVATE /
@@ -370,11 +372,12 @@ DB_EXTENT	../dbinc/db.in	/^#define	DB_EXTENT	      0x0008000	\/* internal: de/
 DB_FAST_STAT	../dbinc/db.in	/^#define	DB_FAST_STAT	      0x0000001 \/* Don't tra/
 DB_FCNTL_LOCKING	../dbinc/db.in	/^#define	DB_FCNTL_LOCKING      0x0008000	\/* UNDOC:/
 DB_FH	../dbinc/db.in	/^struct __fh_t;		typedef struct __fh_t DB_FH;$/
-DB_FH_NOSYNC	../dbinc/os.h	/^#define	DB_FH_NOSYNC	0x01		\/* Handle doesn't need/
-DB_FH_OPENED	../dbinc/os.h	/^#define	DB_FH_OPENED	0x02		\/* Handle is valid. */
-DB_FH_UNLINK	../dbinc/os.h	/^#define	DB_FH_UNLINK	0x04		\/* Unlink on close *\//
+DB_FH_ENVLINK	../dbinc/os.h	/^#define	DB_FH_ENVLINK	0x01		\/* We're linked on th/
+DB_FH_NOSYNC	../dbinc/os.h	/^#define	DB_FH_NOSYNC	0x02		\/* Handle doesn't need/
+DB_FH_OPENED	../dbinc/os.h	/^#define	DB_FH_OPENED	0x04		\/* Handle is valid. */
+DB_FH_UNLINK	../dbinc/os.h	/^#define	DB_FH_UNLINK	0x08		\/* Unlink on close *\//
 DB_FILE_ID_LEN	../dbinc/db.in	/^#define	DB_FILE_ID_LEN		20	\/* Unique file ID leng/
-DB_FIRST	../dbinc/db.in	/^#define	DB_FIRST		 7	\/* c_get(), DB_LOGC->get() */
+DB_FIRST	../dbinc/db.in	/^#define	DB_FIRST		 7	\/* Dbc.get, DbLogc->get *\/$/
 DB_FLUSH	../dbinc/db.in	/^#define	DB_FLUSH		0x001	\/* Flush data to disk (pu/
 DB_FNAME_DURABLE	../dbinc/log.h	/^#define	DB_FNAME_DURABLE	0x02	\/* File is durable./
 DB_FNAME_NOTLOGGED	../dbinc/log.h	/^#define	DB_FNAME_NOTLOGGED	0x01	\/* Log of close f/
@@ -384,10 +387,10 @@ DB_FREEZER_MAGIC	../mp/mp_mvcc.c	/^#define	DB_FREEZER_MAGIC 0x06102002$/
 DB_FREE_SPACE	../dbinc/db.in	/^#define	DB_FREE_SPACE         0x00008000 \/* Free /
 DB_FTYPE_NOTSET	../dbinc/db_int.in	/^#define	DB_FTYPE_NOTSET		 0		\/* Don't call... *\//
 DB_FTYPE_SET	../dbinc/db_int.in	/^#define	DB_FTYPE_SET		-1		\/* Call pgin\/pgout fun/
-DB_GET_BOTH	../dbinc/db.in	/^#define	DB_GET_BOTH		 8	\/* get(), c_get() *\/$/
-DB_GET_BOTHC	../dbinc/db.in	/^#define	DB_GET_BOTHC		 9	\/* c_get() (internal) */
-DB_GET_BOTH_RANGE	../dbinc/db.in	/^#define	DB_GET_BOTH_RANGE	10	\/* get(), c_get() */
-DB_GET_RECNO	../dbinc/db.in	/^#define	DB_GET_RECNO		11	\/* c_get() *\/$/
+DB_GET_BOTH	../dbinc/db.in	/^#define	DB_GET_BOTH		 8	\/* Db.get, Dbc.get *\/$/
+DB_GET_BOTHC	../dbinc/db.in	/^#define	DB_GET_BOTHC		 9	\/* Dbc.get (internal) */
+DB_GET_BOTH_RANGE	../dbinc/db.in	/^#define	DB_GET_BOTH_RANGE	10	\/* Db.get, Dbc.get */
+DB_GET_RECNO	../dbinc/db.in	/^#define	DB_GET_RECNO		11	\/* Dbc.get *\/$/
 DB_GLOBAL	../dbinc/globals.h	/^#define	DB_GLOBAL(v)	__db_global_values.v$/
 DB_GLOBALS	../dbinc/globals.h	/^} DB_GLOBALS;$/
 DB_GROW_SIZE	../dbinc/log.h	/^#define	DB_GROW_SIZE	64$/
@@ -429,14 +432,14 @@ DB_IS_READONLY	../dbinc/db_am.h	/^#define	DB_IS_READONLY(dbp)						\\$/
 DB_IS_THREADED	../dbinc/db_int.in	/^#define	DB_IS_THREADED(dbp)						\\$/
 DB_IV_BYTES	../dbinc/db_int.in	/^#define	DB_IV_BYTES     16		\/* Bytes per IV *\/$/
 DB_JOINENV	../dbinc/db.in	/^#define	DB_JOINENV	      0x0	\/* Compatibility. */
-DB_JOIN_ITEM	../dbinc/db.in	/^#define	DB_JOIN_ITEM		12	\/* c_get(); do not do pr/
+DB_JOIN_ITEM	../dbinc/db.in	/^#define	DB_JOIN_ITEM		12	\/* Dbc.get; don't do pri/
 DB_JOIN_NOSORT	../dbinc/db.in	/^#define	DB_JOIN_NOSORT	      0x0000001	\/* Don't t/
 DB_KEYEMPTY	../dbinc/db.in	/^#define	DB_KEYEMPTY		(-30997)\/* Key\/data deleted/
 DB_KEYEXIST	../dbinc/db.in	/^#define	DB_KEYEXIST		(-30996)\/* The key\/data pai/
-DB_KEYFIRST	../dbinc/db.in	/^#define	DB_KEYFIRST		13	\/* c_put() *\/$/
-DB_KEYLAST	../dbinc/db.in	/^#define	DB_KEYLAST		14	\/* c_put() *\/$/
+DB_KEYFIRST	../dbinc/db.in	/^#define	DB_KEYFIRST		13	\/* Dbc.put *\/$/
+DB_KEYLAST	../dbinc/db.in	/^#define	DB_KEYLAST		14	\/* Dbc.put *\/$/
 DB_KEY_RANGE	../dbinc/db.in	/^struct __key_range;	typedef struct __key_range DB_/
-DB_LAST	../dbinc/db.in	/^#define	DB_LAST			15	\/* c_get(), DB_LOGC->get() */
+DB_LAST	../dbinc/db.in	/^#define	DB_LAST			15	\/* Dbc.get, DbLogc->get *\/$/
 DB_LOCK	../dbinc/db.in	/^struct __db_lock_u;	typedef struct __db_lock_u DB_/
 DB_LOCKDOWN	../dbinc/db.in	/^#define	DB_LOCKDOWN	      0x0100000	\/* Lock memor/
 DB_LOCKER	../dbinc/lock.h	/^} DB_LOCKER;$/
@@ -490,6 +493,7 @@ DB_LOGVERSION_42	../dbinc/rep.h	/^#define	DB_LOGVERSION_42	8$/
 DB_LOGVERSION_43	../dbinc/rep.h	/^#define	DB_LOGVERSION_43	10$/
 DB_LOGVERSION_44	../dbinc/rep.h	/^#define	DB_LOGVERSION_44	11$/
 DB_LOGVERSION_45	../dbinc/rep.h	/^#define	DB_LOGVERSION_45	12$/
+DB_LOGVERSION_46	../dbinc/rep.h	/^#define	DB_LOGVERSION_46	12$/
 DB_LOG_AUTOREMOVE	../dbinc/db.in	/^#define	DB_LOG_AUTOREMOVE     0x00080000\/* Automa/
 DB_LOG_BUFFER_FULL	../dbinc/db.in	/^#define	DB_LOG_BUFFER_FULL	(-30993)\/* In-memory l/
 DB_LOG_CHKPNT	../dbinc/db.in	/^#define	DB_LOG_CHKPNT		0x002	\/* Flush supports a /
@@ -556,20 +560,20 @@ DB_MUTEX_PROCESS_ONLY	../dbinc/db.in	/^#define	DB_MUTEX_PROCESS_ONLY	0x08	\/* Mu
 DB_MUTEX_SELF_BLOCK	../dbinc/db.in	/^#define	DB_MUTEX_SELF_BLOCK	0x10	\/* Must be able /
 DB_MUTEX_STAT	../dbinc/db.in	/^struct __db_mutex_stat;	typedef struct __db_mutex_/
 DB_NEEDSPLIT	../dbinc/db.in	/^#define	DB_NEEDSPLIT		(-30897)\/* Page needs to be/
-DB_NEXT	../dbinc/db.in	/^#define	DB_NEXT			16	\/* c_get(), DB_LOGC->get() */
-DB_NEXT_DUP	../dbinc/db.in	/^#define	DB_NEXT_DUP		17	\/* c_get() *\/$/
-DB_NEXT_NODUP	../dbinc/db.in	/^#define	DB_NEXT_NODUP		18	\/* c_get() *\/$/
-DB_NODUPDATA	../dbinc/db.in	/^#define	DB_NODUPDATA		19	\/* put(), c_put() *\/$/
+DB_NEXT	../dbinc/db.in	/^#define	DB_NEXT			16	\/* Dbc.get, DbLogc->get *\/$/
+DB_NEXT_DUP	../dbinc/db.in	/^#define	DB_NEXT_DUP		17	\/* Dbc.get *\/$/
+DB_NEXT_NODUP	../dbinc/db.in	/^#define	DB_NEXT_NODUP		18	\/* Dbc.get *\/$/
+DB_NODUPDATA	../dbinc/db.in	/^#define	DB_NODUPDATA		19	\/* Db.put, Dbc.put *\/$/
 DB_NOLOCKING	../dbinc/db.in	/^#define	DB_NOLOCKING	      0x00200000\/* Set locki/
 DB_NOMMAP	../dbinc/db.in	/^#define	DB_NOMMAP	      0x0000010	\/* Don't mmap u/
 DB_NONBLOCK	../dbinc/db_int.in	/^#define	DB_NONBLOCK(C)	((C)->txn != NULL && F_ISSE/
 DB_NOORDERCHK	../dbinc/db.in	/^#define	DB_NOORDERCHK	      0x0000002	\/* Skip sor/
-DB_NOOVERWRITE	../dbinc/db.in	/^#define	DB_NOOVERWRITE		20	\/* put() *\/$/
+DB_NOOVERWRITE	../dbinc/db.in	/^#define	DB_NOOVERWRITE		20	\/* Db.put *\/$/
 DB_NOPANIC	../dbinc/db.in	/^#define	DB_NOPANIC	      0x00400000\/* Set panic s/
 DB_NOSERVER	../dbinc/db.in	/^#define	DB_NOSERVER		(-30992)\/* Server panic retu/
 DB_NOSERVER_HOME	../dbinc/db.in	/^#define	DB_NOSERVER_HOME	(-30991)\/* Bad home sent/
 DB_NOSERVER_ID	../dbinc/db.in	/^#define	DB_NOSERVER_ID		(-30990)\/* Bad ID sent to/
-DB_NOSYNC	../dbinc/db.in	/^#define	DB_NOSYNC		21	\/* close() *\/$/
+DB_NOSYNC	../dbinc/db.in	/^#define	DB_NOSYNC		21	\/* Db.close *\/$/
 DB_NOTFOUND	../dbinc/db.in	/^#define	DB_NOTFOUND		(-30989)\/* Key\/data pair no/
 DB_NO_AUTO_COMMIT	../dbinc/db.in	/^#define	DB_NO_AUTO_COMMIT     0x0010000	\/* Overri/
 DB_NTOHL	../dbinc/db_swap.h	/^#define	DB_NTOHL(p) do {						\\$/
@@ -602,10 +606,11 @@ DB_PCT	../dbinc/db_int.in	/^#define	DB_PCT(v, total)						\\$/
 DB_PCT_PG	../dbinc/db_int.in	/^#define	DB_PCT_PG(v, total, pgsize)					\\$/
 DB_PGINFO	../dbinc/db_int.in	/^} DB_PGINFO;$/
 DB_PKG	../libdb_java/db_java_wrap.c	/^#define	DB_PKG "com\/sleepycat\/db\/"$/
-DB_POSITION	../dbinc/db.in	/^#define	DB_POSITION		22	\/* c_dup() *\/$/
+DB_POSITION	../dbinc/db.in	/^#define	DB_POSITION		22	\/* Dbc.dup *\/$/
 DB_PREPLIST	../dbinc/db.in	/^struct __db_preplist;	typedef struct __db_preplist/
-DB_PREV	../dbinc/db.in	/^#define	DB_PREV			23	\/* c_get(), DB_LOGC->get() */
-DB_PREV_NODUP	../dbinc/db.in	/^#define	DB_PREV_NODUP		24	\/* c_get(), DB_LOGC->ge/
+DB_PREV	../dbinc/db.in	/^#define	DB_PREV			23	\/* Dbc.get, DbLogc->get *\/$/
+DB_PREV_DUP	../dbinc/db.in	/^#define	DB_PREV_DUP		24	\/* Dbc.get *\/$/
+DB_PREV_NODUP	../dbinc/db.in	/^#define	DB_PREV_NODUP		25	\/* Dbc.get *\/$/
 DB_PRINTABLE	../dbinc/db.in	/^#define	DB_PRINTABLE	      0x0000020	\/* Use print/
 DB_PRIVATE	../dbinc/db.in	/^#define	DB_PRIVATE	      0x0200000	\/* DB_ENV is p/
 DB_PR_PAGE	../dbinc/db.in	/^#define	DB_PR_PAGE	      0x0000008	\/* Show page c/
@@ -618,7 +623,7 @@ DB_RDONLY	../dbinc/db.in	/^#define	DB_RDONLY	      0x0000020	\/* Read-only (O/
 DB_RDWRMASTER	../dbinc/db.in	/^#define	DB_RDWRMASTER	      0x0020000	\/* UNDOC: a/
 DB_READ_COMMITTED	../dbinc/db.in	/^#define	DB_READ_COMMITTED     0x04000000\/* Degree/
 DB_READ_UNCOMMITTED	../dbinc/db.in	/^#define	DB_READ_UNCOMMITTED   0x08000000\/* Degree/
-DB_REAL_ERR	../dbinc/debug.h	/^#define	DB_REAL_ERR(env, error, error_set, default/
+DB_REAL_ERR	../dbinc/debug.h	/^#define	DB_REAL_ERR(env, error, error_set, app_cal/
 DB_REAL_MSG	../dbinc/debug.h	/^#define	DB_REAL_MSG(env, fmt) {						\\$/
 DB_RECNUM	../dbinc/db.in	/^#define	DB_RECNUM	      0x00080000 \/* Btree: reco/
 DB_RECORD_LOCK	../dbinc/db.in	/^#define	DB_RECORD_LOCK	2$/
@@ -658,6 +663,7 @@ DB_REPVERSION_42	../dbinc/rep.h	/^#define	DB_REPVERSION_42	1$/
 DB_REPVERSION_43	../dbinc/rep.h	/^#define	DB_REPVERSION_43	2$/
 DB_REPVERSION_44	../dbinc/rep.h	/^#define	DB_REPVERSION_44	3$/
 DB_REPVERSION_45	../dbinc/rep.h	/^#define	DB_REPVERSION_45	3$/
+DB_REPVERSION_46	../dbinc/rep.h	/^#define	DB_REPVERSION_46	3$/
 DB_REPVERSION_INVALID	../dbinc/rep.h	/^#define	DB_REPVERSION_INVALID	0$/
 DB_REP_ACK_TIMEOUT	../dbinc/db.in	/^#define	DB_REP_ACK_TIMEOUT	1$/
 DB_REP_ANYWHERE	../dbinc/db.in	/^#define	DB_REP_ANYWHERE	      0x0000001	\/* Messag/
@@ -737,15 +743,15 @@ DB_SERVER_FLAGMASK	../dbinc/db_server_int.h	/^#define	DB_SERVER_FLAGMASK	(					\
 DB_SERVER_IDLETIMEOUT	../dbinc/db_server_int.h	/^#define	DB_SERVER_IDLETIMEOUT	86400	\/* 1 day *\/$/
 DB_SERVER_MAXTIMEOUT	../dbinc/db_server_int.h	/^#define	DB_SERVER_MAXTIMEOUT	1200	\/* 20 minutes */
 DB_SERVER_TIMEOUT	../dbinc/db_server_int.h	/^#define	DB_SERVER_TIMEOUT	300	\/* 5 minutes *\/$/
-DB_SET	../dbinc/db.in	/^#define	DB_SET			25	\/* c_get(), DB_LOGC->get() */
+DB_SET	../dbinc/db.in	/^#define	DB_SET			26	\/* Dbc.get, DbLogc->get *\/$/
 DB_SET_CALLBACK	../cxx/cxx_db.cpp	/^#define	DB_SET_CALLBACK(_cxxname, _name, _cxxargsp/
 DB_SET_DBT	../dbinc/db_int.in	/^#define	DB_SET_DBT(dbt, d, s)  do {					\\$/
-DB_SET_LOCK_TIMEOUT	../dbinc/db.in	/^#define	DB_SET_LOCK_TIMEOUT	26	\/* set_timout() */
-DB_SET_RANGE	../dbinc/db.in	/^#define	DB_SET_RANGE		27	\/* c_get() *\/$/
-DB_SET_RECNO	../dbinc/db.in	/^#define	DB_SET_RECNO		28	\/* get(), c_get() *\/$/
+DB_SET_LOCK_TIMEOUT	../dbinc/db.in	/^#define	DB_SET_LOCK_TIMEOUT	1	\/* Set lock timeout/
+DB_SET_RANGE	../dbinc/db.in	/^#define	DB_SET_RANGE		27	\/* Dbc.get *\/$/
+DB_SET_RECNO	../dbinc/db.in	/^#define	DB_SET_RECNO		28	\/* Db.get, Dbc.get *\/$/
 DB_SET_TXN_LSNP	../dbinc/log.h	/^#define	DB_SET_TXN_LSNP(txn, blsnp, llsnp) do {			/
-DB_SET_TXN_NOW	../dbinc/db.in	/^#define	DB_SET_TXN_NOW		29	\/* set_timout() (inter/
-DB_SET_TXN_TIMEOUT	../dbinc/db.in	/^#define	DB_SET_TXN_TIMEOUT	30	\/* set_timout() *\//
+DB_SET_TXN_NOW	../dbinc/db.in	/^#define	DB_SET_TXN_NOW		2	\/* Timeout lock now (in/
+DB_SET_TXN_TIMEOUT	../dbinc/db.in	/^#define	DB_SET_TXN_TIMEOUT	3	\/* Set transaction t/
 DB_SNAPSHOT	../dbinc/db.in	/^#define	DB_SNAPSHOT	      0x00400000 \/* Recno: sn/
 DB_STAT_ALL	../dbinc/db.in	/^#define	DB_STAT_ALL	      0x0000002	\/* Print: Eve/
 DB_STAT_CLEAR	../dbinc/db.in	/^#define	DB_STAT_CLEAR	      0x0000004	\/* Clear st/
@@ -761,6 +767,7 @@ DB_STAT_SUBSYSTEM	../dbinc/db.in	/^#define	DB_STAT_SUBSYSTEM     0x0000200 \/* P
 DB_SURPRISE_KID	../dbinc/db.in	/^#define	DB_SURPRISE_KID		(-30892)\/* Child commit /
 DB_SWAPBYTES	../dbinc/db.in	/^#define	DB_SWAPBYTES		(-30891)\/* Database needs b/
 DB_SYSTEM_MEM	../dbinc/db.in	/^#define	DB_SYSTEM_MEM	      0x1000000	\/* Use syst/
+DB_TEMP_DIRECTORY	../os/os_tmpdir.c	/^#define	DB_TEMP_DIRECTORY(n) {						\\$/
 DB_TEST_ELECTINIT	../dbinc/db.in	/^#define	DB_TEST_ELECTINIT	 1	\/* after __rep_elect/
 DB_TEST_ELECTVOTE1	../dbinc/db.in	/^#define	DB_TEST_ELECTVOTE1	 2	\/* after sending VO/
 DB_TEST_POSTDESTROY	../dbinc/db.in	/^#define	DB_TEST_POSTDESTROY	 3	\/* after destroy o/
@@ -804,17 +811,19 @@ DB_TXN_SYNC	../dbinc/db.in	/^#define	DB_TXN_SYNC	      0x0008000	\/* Always syn/
 DB_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_TXN_WRITE_NOSYNC   0x0000800	\/* Write /
 DB_UNDO	../dbinc/db.in	/^#define	DB_UNDO(op)	((op) == DB_TXN_ABORT ||			\\$/
 DB_UNREF	../dbinc/db.in	/^#define	DB_UNREF	      0x0000080	\/* Report unrefe/
-DB_UPDATE_SECONDARY	../dbinc/db.in	/^#define	DB_UPDATE_SECONDARY	31	\/* c_get(), c_del(/
+DB_UPDATE_SECONDARY	../dbinc/db.in	/^#define	DB_UPDATE_SECONDARY	29	\/* Dbc.get, Dbc.de/
 DB_UPGRADE	../dbinc/db.in	/^#define	DB_UPGRADE	      0x0000001	\/* Upgrading. /
 DB_USERCOPY_GETDATA	../dbinc/db.in	/^#define	DB_USERCOPY_GETDATA	0x0001$/
 DB_USERCOPY_SETDATA	../dbinc/db.in	/^#define	DB_USERCOPY_SETDATA	0x0002$/
 DB_USE_ENVIRON	../dbinc/db.in	/^#define	DB_USE_ENVIRON	      0x0001000	\/* Use the/
 DB_USE_ENVIRON_ROOT	../dbinc/db.in	/^#define	DB_USE_ENVIRON_ROOT   0x0002000	\/* Use th/
 DB_VERB_DEADLOCK	../dbinc/db.in	/^#define	DB_VERB_DEADLOCK	0x0001	\/* Deadlock detec/
-DB_VERB_RECOVERY	../dbinc/db.in	/^#define	DB_VERB_RECOVERY	0x0002	\/* Recovery infor/
-DB_VERB_REGISTER	../dbinc/db.in	/^#define	DB_VERB_REGISTER	0x0004	\/* Dump waits-for/
-DB_VERB_REPLICATION	../dbinc/db.in	/^#define	DB_VERB_REPLICATION	0x0008	\/* Replication/
-DB_VERB_WAITSFOR	../dbinc/db.in	/^#define	DB_VERB_WAITSFOR	0x0010	\/* Dump waits-for/
+DB_VERB_FILEOPS	../dbinc/db.in	/^#define	DB_VERB_FILEOPS		0x0002	\/* Major file ope/
+DB_VERB_FILEOPS_ALL	../dbinc/db.in	/^#define	DB_VERB_FILEOPS_ALL	0x0004	\/* All file op/
+DB_VERB_RECOVERY	../dbinc/db.in	/^#define	DB_VERB_RECOVERY	0x0008	\/* Recovery infor/
+DB_VERB_REGISTER	../dbinc/db.in	/^#define	DB_VERB_REGISTER	0x0010	\/* Dump waits-for/
+DB_VERB_REPLICATION	../dbinc/db.in	/^#define	DB_VERB_REPLICATION	0x0020	\/* Replication/
+DB_VERB_WAITSFOR	../dbinc/db.in	/^#define	DB_VERB_WAITSFOR	0x0040	\/* Dump waits-for/
 DB_VERIFY	../dbinc/db.in	/^#define	DB_VERIFY	      0x0000002	\/* Verifying. */
 DB_VERIFY_BAD	../dbinc/db.in	/^#define	DB_VERIFY_BAD		(-30973)\/* Verify failed; /
 DB_VERIFY_FATAL	../dbinc/db.in	/^#define	DB_VERIFY_FATAL		(-30888)\/* DB->verify ca/
@@ -823,8 +832,8 @@ DB_VERSION_MINOR	../dbinc/db.in	/^#define	DB_VERSION_MINOR	@DB_VERSION_MINOR@$/
 DB_VERSION_MISMATCH	../dbinc/db.in	/^#define	DB_VERSION_MISMATCH	(-30972)\/* Environmen/
 DB_VERSION_PATCH	../dbinc/db.in	/^#define	DB_VERSION_PATCH	@DB_VERSION_PATCH@$/
 DB_VERSION_STRING	../dbinc/db.in	/^#define	DB_VERSION_STRING	@DB_VERSION_STRING@$/
-DB_WRITECURSOR	../dbinc/db.in	/^#define	DB_WRITECURSOR		32	\/* cursor() *\/$/
-DB_WRITELOCK	../dbinc/db.in	/^#define	DB_WRITELOCK		33	\/* cursor() (internal) */
+DB_WRITECURSOR	../dbinc/db.in	/^#define	DB_WRITECURSOR		30	\/* Db.cursor *\/$/
+DB_WRITELOCK	../dbinc/db.in	/^#define	DB_WRITELOCK		31	\/* Db.cursor (internal) /
 DB_WRITEOPEN	../dbinc/db.in	/^#define	DB_WRITEOPEN	      0x0040000	\/* UNDOC: op/
 DB_XA_CREATE	../dbinc/db.in	/^#define	DB_XA_CREATE	      0x0000002	\/* Open in a/
 DB_XIDDATASIZE	../dbinc/db.in	/^#define	DB_XIDDATASIZE	128$/
@@ -1105,6 +1114,7 @@ ENV_REQUIRES_CONFIG	../dbinc/db_int.in	/^#define	ENV_REQUIRES_CONFIG(dbenv, hand
 ENV_REQUIRES_CONFIG_XX	../dbinc/db_int.in	/^#define	ENV_REQUIRES_CONFIG_XX(dbenv, handle, i, f/
 EPG	../dbinc/btree.h	/^struct __epg;		typedef struct __epg EPG;$/
 EPRINT	../dbinc/db_verify.h	/^#define	EPRINT(x) do {							\\$/
+ERRSTR	../clib/strerror.c	/^#define	ERRSTR(v, s) do {						\\$/
 FALSE	../dbinc/db_int.in	/^#define	FALSE		0$/
 FAST_HASH	../lock/lock_util.c	/^#define	FAST_HASH(P) {			\\$/
 FHASH	../dbinc/mp.h	/^#define	FHASH(id, len)	__ham_func5(NULL, id, (u_in/
@@ -1123,6 +1133,8 @@ FNAME	../dbinc/db.in	/^struct __fname;		typedef struct __fname FNAME;$/
 FNBUCKET	../dbinc/mp.h	/^#define	FNBUCKET(id, len)						\\$/
 FREE_IF_CHANGED	../dbinc/db_server_int.h	/^#define	FREE_IF_CHANGED(dbenv, p, orig) do {				\\/
 FREE_IF_NEEDED	../dbinc/db_int.in	/^#define	FREE_IF_NEEDED(dbenv, dbt)					\\$/
+FREE_STRING	../dbinc/win_db.h	/^#define	FREE_STRING(dbenv, s) do {					\\$/
+FROM_TSTRING	../dbinc/win_db.h	/^#define	FROM_TSTRING(dbenv, ts, s, ret) {				\\$/
 F_CLR	../dbinc/db_int.in	/^#define	F_CLR(p, f)		(p)->flags &= ~(f)$/
 F_ISSET	../dbinc/db_int.in	/^#define	F_ISSET(p, f)		((p)->flags & (f))$/
 F_SET	../dbinc/db_int.in	/^#define	F_SET(p, f)		(p)->flags |= (f)$/
@@ -1151,6 +1163,7 @@ HASHINFO	../dbinc/db_185.in	/^} HASHINFO;$/
 HASHMAGIC	../dbinc/db_185.in	/^#define	HASHMAGIC	0x061561$/
 HASHVERSION	../dbinc/db_185.in	/^#define	HASHVERSION	2$/
 HASH_CURSOR	../dbinc/hash.h	/^} HASH_CURSOR;$/
+HASH_SIZE	../env/db_shash.c	/^#define	HASH_SIZE(power, prime) {					\\$/
 HASH_UNUSED1	../dbinc/hash.h	/^#define	HASH_UNUSED1	0x60$/
 HASH_UNUSED2	../dbinc/hash.h	/^#define	HASH_UNUSED2	0x70$/
 HDR	../dbinc/log.h	/^struct __hdr;		typedef struct __hdr HDR;$/
@@ -1194,7 +1207,6 @@ H_OK	../dbinc/hash.h	/^#define	H_OK		0x0080		\/* Request succeeded. *\/$/
 H_PAIRDATA	../dbinc/db_page.h	/^#define	H_PAIRDATA(dbp, pg, indx)	P_ENTRY(dbp, pg,/
 H_PAIRKEY	../dbinc/db_page.h	/^#define	H_PAIRKEY(dbp, pg, indx)	P_ENTRY(dbp, pg, /
 H_PAIRSIZE	../dbinc/db_page.h	/^#define	H_PAIRSIZE(dbp, pg, psize, indx)				\\$/
-ILLEGAL_SIZE	../env/db_salloc.c	/^#define	ILLEGAL_SIZE	1			\/* An illegal size. *\/$/
 INFOTYPE	../dbinc/tcl_db.h	/^enum INFOTYPE {$/
 INITIAL_ALLOCATION	../repmgr/repmgr_windows.c	/^#define	INITIAL_ALLOCATION 5		\/* arbitrary size */
 INITIAL_DEAD_ALLOC	../lock/lock_deadlock.c	/^#define	INITIAL_DEAD_ALLOC	8$/
@@ -1202,13 +1214,14 @@ INITIAL_SITES_ALLOCATION	../repmgr/repmgr_util.c	/^#define	INITIAL_SITES_ALLOCAT
 INIT_LSN	../dbinc/db_int.in	/^#define	INIT_LSN(LSN)		do {					\\$/
 INPROGRESS	../dbinc/repmgr.h	/^#define	INPROGRESS		WSAEWOULDBLOCK$/
 INP_OFFSET	../db/db_vrfy.c	/^#define	INP_OFFSET(dbp, h, i)	\\$/
-INT64_MAX	../dbinc/db_int.in	/^#define	INT64_MAX	_I64_MAX$/
-INT64_MIN	../dbinc/db_int.in	/^#define	INT64_MIN	_I64_MIN$/
+INVALID_FILE_ATTRIBUTES	../dbinc/win_db.h	/^#define	INVALID_FILE_ATTRIBUTES ((DWORD)-1)$/
+INVALID_HANDLE_VALUE	../dbinc/win_db.h	/^#define	INVALID_HANDLE_VALUE ((HANDLE)-1)$/
 INVALID_LSNMSG	../tcl/tcl_internal.c	/^#define	INVALID_LSNMSG "Invalid LSN with %d parts./
 INVALID_ORDER	../dbinc/btree.h	/^#define	INVALID_ORDER	0$/
 INVALID_REGION_ID	../dbinc/region.h	/^#define	INVALID_REGION_ID	0	\/* Out-of-band region/
 INVALID_REGION_SEGID	../dbinc/region.h	/^#define	INVALID_REGION_SEGID	-1	\/* Segment IDs ar/
 INVALID_ROFF	../dbinc/region.h	/^#define	INVALID_ROFF		0$/
+INVALID_SET_FILE_POINTER	../dbinc/win_db.h	/^#define	INVALID_SET_FILE_POINTER ((DWORD)-1)$/
 INVALID_SOCKET	../dbinc/repmgr.h	/^#define	INVALID_SOCKET		-1$/
 IN_ELECTION	../dbinc/rep.h	/^#define	IN_ELECTION(R)							\\$/
 IN_ELECTION_TALLY	../dbinc/rep.h	/^#define	IN_ELECTION_TALLY(R) \\$/
@@ -1403,32 +1416,33 @@ MS_PER_SEC	../dbinc/db_int.in	/^#define	MS_PER_SEC	1000		\/* Milliseconds in a s
 MTX_APPLICATION	../dbinc/mutex.h	/^#define	MTX_APPLICATION		 1$/
 MTX_DB_HANDLE	../dbinc/mutex.h	/^#define	MTX_DB_HANDLE		 2$/
 MTX_ENV_DBLIST	../dbinc/mutex.h	/^#define	MTX_ENV_DBLIST		 3$/
-MTX_ENV_REGION	../dbinc/mutex.h	/^#define	MTX_ENV_REGION		 4$/
-MTX_LOCK_REGION	../dbinc/mutex.h	/^#define	MTX_LOCK_REGION		 5$/
-MTX_LOGICAL_LOCK	../dbinc/mutex.h	/^#define	MTX_LOGICAL_LOCK	 6$/
-MTX_LOG_FILENAME	../dbinc/mutex.h	/^#define	MTX_LOG_FILENAME	 7$/
-MTX_LOG_FLUSH	../dbinc/mutex.h	/^#define	MTX_LOG_FLUSH		 8$/
-MTX_LOG_HANDLE	../dbinc/mutex.h	/^#define	MTX_LOG_HANDLE		 9$/
-MTX_LOG_REGION	../dbinc/mutex.h	/^#define	MTX_LOG_REGION		10$/
-MTX_MAX_ENTRY	../dbinc/mutex.h	/^#define	MTX_MAX_ENTRY		28$/
-MTX_MPOOLFILE_HANDLE	../dbinc/mutex.h	/^#define	MTX_MPOOLFILE_HANDLE	11$/
-MTX_MPOOL_FH	../dbinc/mutex.h	/^#define	MTX_MPOOL_FH		12$/
-MTX_MPOOL_FILE_BUCKET	../dbinc/mutex.h	/^#define	MTX_MPOOL_FILE_BUCKET	13$/
-MTX_MPOOL_HANDLE	../dbinc/mutex.h	/^#define	MTX_MPOOL_HANDLE	14$/
-MTX_MPOOL_HASH_BUCKET	../dbinc/mutex.h	/^#define	MTX_MPOOL_HASH_BUCKET	15$/
-MTX_MPOOL_IO	../dbinc/mutex.h	/^#define	MTX_MPOOL_IO		16$/
-MTX_MPOOL_REGION	../dbinc/mutex.h	/^#define	MTX_MPOOL_REGION	17$/
-MTX_MUTEX_REGION	../dbinc/mutex.h	/^#define	MTX_MUTEX_REGION	18$/
-MTX_MUTEX_TEST	../dbinc/mutex.h	/^#define	MTX_MUTEX_TEST		19$/
-MTX_REP_DATABASE	../dbinc/mutex.h	/^#define	MTX_REP_DATABASE	20$/
-MTX_REP_REGION	../dbinc/mutex.h	/^#define	MTX_REP_REGION		21$/
-MTX_SEQUENCE	../dbinc/mutex.h	/^#define	MTX_SEQUENCE		22$/
-MTX_TWISTER	../dbinc/mutex.h	/^#define	MTX_TWISTER		23$/
-MTX_TXN_ACTIVE	../dbinc/mutex.h	/^#define	MTX_TXN_ACTIVE		24$/
-MTX_TXN_CHKPT	../dbinc/mutex.h	/^#define	MTX_TXN_CHKPT		25$/
-MTX_TXN_COMMIT	../dbinc/mutex.h	/^#define	MTX_TXN_COMMIT		26$/
-MTX_TXN_MVCC	../dbinc/mutex.h	/^#define	MTX_TXN_MVCC		27$/
-MTX_TXN_REGION	../dbinc/mutex.h	/^#define	MTX_TXN_REGION		28$/
+MTX_ENV_HANDLE	../dbinc/mutex.h	/^#define	MTX_ENV_HANDLE		 4$/
+MTX_ENV_REGION	../dbinc/mutex.h	/^#define	MTX_ENV_REGION		 5$/
+MTX_LOCK_REGION	../dbinc/mutex.h	/^#define	MTX_LOCK_REGION		 6$/
+MTX_LOGICAL_LOCK	../dbinc/mutex.h	/^#define	MTX_LOGICAL_LOCK	 7$/
+MTX_LOG_FILENAME	../dbinc/mutex.h	/^#define	MTX_LOG_FILENAME	 8$/
+MTX_LOG_FLUSH	../dbinc/mutex.h	/^#define	MTX_LOG_FLUSH		 9$/
+MTX_LOG_HANDLE	../dbinc/mutex.h	/^#define	MTX_LOG_HANDLE		10$/
+MTX_LOG_REGION	../dbinc/mutex.h	/^#define	MTX_LOG_REGION		11$/
+MTX_MAX_ENTRY	../dbinc/mutex.h	/^#define	MTX_MAX_ENTRY		29$/
+MTX_MPOOLFILE_HANDLE	../dbinc/mutex.h	/^#define	MTX_MPOOLFILE_HANDLE	12$/
+MTX_MPOOL_FH	../dbinc/mutex.h	/^#define	MTX_MPOOL_FH		13$/
+MTX_MPOOL_FILE_BUCKET	../dbinc/mutex.h	/^#define	MTX_MPOOL_FILE_BUCKET	14$/
+MTX_MPOOL_HANDLE	../dbinc/mutex.h	/^#define	MTX_MPOOL_HANDLE	15$/
+MTX_MPOOL_HASH_BUCKET	../dbinc/mutex.h	/^#define	MTX_MPOOL_HASH_BUCKET	16$/
+MTX_MPOOL_IO	../dbinc/mutex.h	/^#define	MTX_MPOOL_IO		17$/
+MTX_MPOOL_REGION	../dbinc/mutex.h	/^#define	MTX_MPOOL_REGION	18$/
+MTX_MUTEX_REGION	../dbinc/mutex.h	/^#define	MTX_MUTEX_REGION	19$/
+MTX_MUTEX_TEST	../dbinc/mutex.h	/^#define	MTX_MUTEX_TEST		20$/
+MTX_REP_DATABASE	../dbinc/mutex.h	/^#define	MTX_REP_DATABASE	21$/
+MTX_REP_REGION	../dbinc/mutex.h	/^#define	MTX_REP_REGION		22$/
+MTX_SEQUENCE	../dbinc/mutex.h	/^#define	MTX_SEQUENCE		23$/
+MTX_TWISTER	../dbinc/mutex.h	/^#define	MTX_TWISTER		24$/
+MTX_TXN_ACTIVE	../dbinc/mutex.h	/^#define	MTX_TXN_ACTIVE		25$/
+MTX_TXN_CHKPT	../dbinc/mutex.h	/^#define	MTX_TXN_CHKPT		26$/
+MTX_TXN_COMMIT	../dbinc/mutex.h	/^#define	MTX_TXN_COMMIT		27$/
+MTX_TXN_MVCC	../dbinc/mutex.h	/^#define	MTX_TXN_MVCC		28$/
+MTX_TXN_REGION	../dbinc/mutex.h	/^#define	MTX_TXN_REGION		29$/
 MT_FILE	../mutex/tm.c	/^#define	MT_FILE		"TESTDIR\/mutex.file"$/
 MT_FILE_QUIT	../mutex/tm.c	/^#define	MT_FILE_QUIT	"TESTDIR\/mutex.file.quit"$/
 MULTIVERSION	../dbinc/mp.h	/^#define	MULTIVERSION(dbp)	((dbp)->mpf->mfp->multiv/
@@ -1630,9 +1644,10 @@ REGISTRY_LOCK	../env/env_register.c	/^#define	REGISTRY_LOCK(dbenv, pos, nowait)	
 REGISTRY_UNLOCK	../env/env_register.c	/^#define	REGISTRY_UNLOCK(dbenv, pos)					\\$/
 REP	../dbinc/rep.h	/^} REP;$/
 REPCTL_ELECTABLE	../dbinc/rep.h	/^#define	REPCTL_ELECTABLE	0x01	\/* Upgraded client /
-REPCTL_INIT	../dbinc/rep.h	/^#define	REPCTL_INIT		0x02	\/* Internal init messag/
-REPCTL_PERM	../dbinc/rep.h	/^#define	REPCTL_PERM		DB_LOG_PERM_42_44$/
-REPCTL_RESEND	../dbinc/rep.h	/^#define	REPCTL_RESEND		DB_LOG_RESEND_42_44$/
+REPCTL_FLUSH	../dbinc/rep.h	/^#define	REPCTL_FLUSH		0x02	\/* Record should be fl/
+REPCTL_INIT	../dbinc/rep.h	/^#define	REPCTL_INIT		0x04	\/* Internal init messag/
+REPCTL_PERM	../dbinc/rep.h	/^#define	REPCTL_PERM		DB_LOG_PERM_42_44	\/* 0x20 */
+REPCTL_RESEND	../dbinc/rep.h	/^#define	REPCTL_RESEND		DB_LOG_RESEND_42_44	\/* 0x4/
 REPDBNAME	../dbinc/rep.h	/^#define	REPDBNAME	"__db.rep.db"$/
 REPLICATION_WRAP	../dbinc/rep.h	/^#define	REPLICATION_WRAP(dbenv, func_call, ret) do/
 REPMGR_ACK	../dbinc/repmgr.h	/^#define	REPMGR_ACK		1	\/* Acknowledgement. *\/$/
@@ -1659,6 +1674,7 @@ REP_C_BULK	../dbinc/rep.h	/^#define	REP_C_BULK		0x00001		\/* Bulk transfer. */
 REP_C_DELAYCLIENT	../dbinc/rep.h	/^#define	REP_C_DELAYCLIENT	0x00002		\/* Delay clien/
 REP_C_NOAUTOINIT	../dbinc/rep.h	/^#define	REP_C_NOAUTOINIT	0x00004		\/* No auto init/
 REP_C_NOWAIT	../dbinc/rep.h	/^#define	REP_C_NOWAIT		0x00008		\/* Immediate error/
+REP_DEFAULT_THROTTLE	../dbinc/rep.h	/^#define	REP_DEFAULT_THROTTLE	(10 * MEGABYTE) \/* D/
 REP_DUPMASTER	../dbinc/rep.h	/^#define	REP_DUPMASTER	6	\/* Duplicate master detec/
 REP_EGENNAME	../dbinc/rep.h	/^#define	REP_EGENNAME	"__db.rep.egen"$/
 REP_FILE	../dbinc/rep.h	/^#define	REP_FILE	7	\/* Page of a database file. NO/
@@ -1666,18 +1682,22 @@ REP_FILE_FAIL	../dbinc/rep.h	/^#define	REP_FILE_FAIL	8	\/* File requested does n
 REP_FILE_REQ	../dbinc/rep.h	/^#define	REP_FILE_REQ	9	\/* Request for a database /
 REP_F_CLIENT	../dbinc/rep.h	/^#define	REP_F_CLIENT		0x00001		\/* Client replica./
 REP_F_DELAY	../dbinc/rep.h	/^#define	REP_F_DELAY		0x00002		\/* Delaying client /
-REP_F_EPHASE1	../dbinc/rep.h	/^#define	REP_F_EPHASE1		0x00004		\/* In phase 1 of /
-REP_F_EPHASE2	../dbinc/rep.h	/^#define	REP_F_EPHASE2		0x00008		\/* In phase 2 of /
-REP_F_MASTER	../dbinc/rep.h	/^#define	REP_F_MASTER		0x00010		\/* Master replica./
-REP_F_MASTERELECT	../dbinc/rep.h	/^#define	REP_F_MASTERELECT	0x00020		\/* Master elec/
-REP_F_NOARCHIVE	../dbinc/rep.h	/^#define	REP_F_NOARCHIVE		0x00040		\/* Rep blocks l/
-REP_F_READY	../dbinc/rep.h	/^#define	REP_F_READY		0x00080		\/* Wait for txn_cnt/
-REP_F_RECOVER_LOG	../dbinc/rep.h	/^#define	REP_F_RECOVER_LOG	0x00100		\/* In recovery/
+REP_F_EGENUPDATE	../dbinc/rep.h	/^#define	REP_F_EGENUPDATE	0x00004		\/* Egen updated/
+REP_F_EPHASE1	../dbinc/rep.h	/^#define	REP_F_EPHASE1		0x00008		\/* In phase 1 of /
+REP_F_EPHASE2	../dbinc/rep.h	/^#define	REP_F_EPHASE2		0x00010		\/* In phase 2 of /
+REP_F_INREPELECT	../dbinc/rep.h	/^#define	REP_F_INREPELECT	0x00020		\/* Thread in re/
+REP_F_MASTER	../dbinc/rep.h	/^#define	REP_F_MASTER		0x00040		\/* Master replica./
+REP_F_MASTERELECT	../dbinc/rep.h	/^#define	REP_F_MASTERELECT	0x00080		\/* Master elec/
+REP_F_NOARCHIVE	../dbinc/rep.h	/^#define	REP_F_NOARCHIVE		0x00100		\/* Rep blocks l/
+REP_F_READY_API	../dbinc/rep.h	/^#define	REP_F_READY_API		0x00200		\/* Need handle_/
+REP_F_READY_MSG	../dbinc/rep.h	/^#define	REP_F_READY_MSG		0x00400		\/* Wait for msg/
+REP_F_READY_OP	../dbinc/rep.h	/^#define	REP_F_READY_OP		0x00800		\/* Wait for txn_/
+REP_F_RECOVER_LOG	../dbinc/rep.h	/^#define	REP_F_RECOVER_LOG	0x01000		\/* In recovery/
 REP_F_RECOVER_MASK	../dbinc/rep.h	/^#define	REP_F_RECOVER_MASK						\\$/
-REP_F_RECOVER_PAGE	../dbinc/rep.h	/^#define	REP_F_RECOVER_PAGE	0x00200		\/* In recover/
-REP_F_RECOVER_UPDATE	../dbinc/rep.h	/^#define	REP_F_RECOVER_UPDATE	0x00400		\/* In recov/
-REP_F_RECOVER_VERIFY	../dbinc/rep.h	/^#define	REP_F_RECOVER_VERIFY	0x00800		\/* In recov/
-REP_F_TALLY	../dbinc/rep.h	/^#define	REP_F_TALLY		0x01000		\/* Tallied vote bef/
+REP_F_RECOVER_PAGE	../dbinc/rep.h	/^#define	REP_F_RECOVER_PAGE	0x02000		\/* In recover/
+REP_F_RECOVER_UPDATE	../dbinc/rep.h	/^#define	REP_F_RECOVER_UPDATE	0x04000		\/* In recov/
+REP_F_RECOVER_VERIFY	../dbinc/rep.h	/^#define	REP_F_RECOVER_VERIFY	0x08000		\/* In recov/
+REP_F_TALLY	../dbinc/rep.h	/^#define	REP_F_TALLY		0x10000		\/* Tallied vote bef/
 REP_GAP_FORCE	../dbinc/rep.h	/^#define	REP_GAP_FORCE		0x001	\/* Force a request f/
 REP_GAP_REREQUEST	../dbinc/rep.h	/^#define	REP_GAP_REREQUEST	0x002	\/* Gap request is/
 REP_INVALID	../dbinc/rep.h	/^#define	REP_INVALID	0	\/* Invalid message type. */
@@ -1733,7 +1753,7 @@ RINTERNAL_SIZE	../dbinc/db_page.h	/^#define	RINTERNAL_SIZE							\\$/
 RLOCK	../log/log_get.c	/^typedef enum { L_ALREADY, L_ACQUIRED, L_NONE } RLO/
 RMNAMESZ	../dbinc/xa.h	/^#define	RMNAMESZ	32		\/* length of resource manage/
 RPC_ON	../dbinc/db_int.in	/^#define	RPC_ON(dbenv)		((dbenv)->cl_handle != NULL/
-RPRINT	../dbinc/rep.h	/^#define	RPRINT(e, x) do {						\\$/
+RPRINT	../dbinc/rep.h	/^#define	RPRINT(dbenv, x) do {						\\$/
 RSMSG	../db185/db185.c	/^#define	RSMSG \\$/
 R_ADDR	../dbinc/region.h	/^#define	R_ADDR(reginfop, offset)					\\$/
 R_CURSOR	../dbinc/db_185.in	/^#define	R_CURSOR	1		\/* del, put, seq *\/$/
@@ -1778,7 +1798,7 @@ SET_MAP	../lock/lock_deadlock.c	/^#define	SET_MAP(M, B)	((M)[(B) \/ 32] |= (1 <<
 SET_RET_MEM	../dbinc/db_int.in	/^#define	SET_RET_MEM(dbc, owner)				\\$/
 SHA1HANDSOFF	../hmac/sha1.c	/^#define SHA1HANDSOFF$/
 SHA1_CTX	../dbinc/hmac.h	/^} SHA1_CTX;$/
-SHALLOC_FRAGMENT	../env/db_salloc.c	/^#define	SHALLOC_FRAGMENT	32$/
+SHALLOC_FRAGMENT	../env/env_alloc.c	/^#define	SHALLOC_FRAGMENT	(sizeof(ALLOC_ELEMENT) + /
 SHM_R	../os/os_map.c	/^#define	SHM_R	0400$/
 SHM_W	../os/os_map.c	/^#define	SHM_W	0200$/
 SHOBJECT_LOCK	../dbinc/lock.h	/^#define	SHOBJECT_LOCK(lt, reg, shobj, ndx)				\\$/
@@ -1899,6 +1919,7 @@ STAILQ_NEXT	../dbinc/queue.h	/^#define	STAILQ_NEXT(elm, field)	((elm)->field.stq
 STAILQ_REMOVE	../dbinc/queue.h	/^#define	STAILQ_REMOVE(head, elm, type, field) do {/
 STAILQ_REMOVE_HEAD	../dbinc/queue.h	/^#define	STAILQ_REMOVE_HEAD(head, field) do {				\\/
 STAILQ_REMOVE_HEAD_UNTIL	../dbinc/queue.h	/^#define	STAILQ_REMOVE_HEAD_UNTIL(head, elm, field)/
+STAT	../env/env_alloc.c	/^#define	STAT(a)	a$/
 STAT_FMT	../dbinc/db_int.in	/^#define	STAT_FMT(msg, fmt, type, v) do {				\\$/
 STAT_HEX	../dbinc/db_int.in	/^#define	STAT_HEX(msg, v)						\\$/
 STAT_ISSET	../dbinc/db_int.in	/^#define	STAT_ISSET(msg, p)						\\$/
@@ -1924,6 +1945,7 @@ ST_TOPLEVEL	../dbinc/db_verify.h	/^#define	ST_TOPLEVEL	0x00800000	\/* Subtree ==
 SWAP	../crypto/rijndael/rijndael-alg-fst.c	/^#define SWAP(x) (_lrotl(x, 8) & 0x00ff00ff | _lrot/
 SWAP16	../dbinc/db_swap.h	/^#define	SWAP16(p) {							\\$/
 SWAP32	../dbinc/db_swap.h	/^#define	SWAP32(p) {							\\$/
+SWAPINIT	../clib/qsort.c	/^#define SWAPINIT(a, es) swaptype = ((char *)a - (c/
 SWAP_IF_NEEDED	../dbinc/db_am.h	/^#define	SWAP_IF_NEEDED(sdbp, pkey)					\\$/
 SWIGEXPORT	../libdb_java/db_java_wrap.c	/^#     define SWIGEXPORT$/
 SWIGINLINE	../libdb_java/db_java_wrap.c	/^#   define SWIGINLINE inline$/
@@ -2003,6 +2025,7 @@ TMUSEASYNC	../dbinc/xa.h	/^#define	TMUSEASYNC	0x00000004L	\/* resource manage/
 TM_JOIN	../dbinc/xa.h	/^#define	TM_JOIN		2		\/* caller is joining existing/
 TM_OK	../dbinc/xa.h	/^#define	TM_OK		0		\/* normal execution *\/$/
 TM_RESUME	../dbinc/xa.h	/^#define	TM_RESUME	1		\/* caller is resuming associ/
+TO_TSTRING	../dbinc/win_db.h	/^#define	TO_TSTRING(dbenv, s, ts, ret) do {				\\$/
 TRACEBUF	../dbinc/queue.h	/^#define	TRACEBUF	struct qm_trace trace;$/
 TRASHIT	../dbinc/queue.h	/^#define	TRASHIT(x)	do {(x) = (void *)-1;} while (0/
 TRUE	../dbinc/db_int.in	/^#define	TRUE		(!FALSE)$/
@@ -2055,10 +2078,7 @@ TXN_XA_STARTED	../dbinc/db.in	/^#define	TXN_XA_STARTED		5$/
 TXN_XA_SUSPENDED	../dbinc/db.in	/^#define	TXN_XA_SUSPENDED	6$/
 TYPE	../dbinc/db_page.h	/^#define	TYPE(p)		(((PAGE *)p)->type)$/
 T_RESTORED	../db/db_dispatch.c	/^#define	T_RESTORED(txn)       ((txn) != NULL && F_/
-UINT16_MAX	../dbinc/db_int.in	/^#define	UINT16_MAX	65535		\/* Maximum 16-bit unsig/
 UINT32_CMP	../lock/lock_list.c	/^#define	UINT32_CMP(A, B)	((A) == (B) ? 0 : ((A) > /
-UINT32_MAX	../dbinc/db_int.in	/^#define	UINT32_MAX	4294967295U	\/* Maximum 32-bit /
-UINT64_MAX	../dbinc/db_int.in	/^#define	UINT64_MAX	_UI64_MAX$/
 UMRW_SET	../dbinc/debug.h	/^#define	UMRW_SET(v)	(v) = 0$/
 UNLOCK_MUTEX	../dbinc/repmgr.h	/^#define	UNLOCK_MUTEX(m) do {						\\$/
 UPPER_MASK	../crypto/mersenne/mt19937db.c	/^#define UPPER_MASK 0x80000000 \/* most significant/
@@ -2088,6 +2108,7 @@ V_DUPLICATE	../dbinc/db_verify.h	/^#define	V_DUPLICATE	1		\/* off-page dup metad
 V_OVERFLOW	../dbinc/db_verify.h	/^#define	V_OVERFLOW	2		\/* overflow page *\/$/
 V_RECNO	../dbinc/db_verify.h	/^#define	V_RECNO		3		\/* btree internal or leaf pag/
 WAITER_SLOT_IN_USE	../repmgr/repmgr_windows.c	/^#define	WAITER_SLOT_IN_USE(w) ((w)->lsnp != NULL)$/
+WIN32_LEAN_AND_MEAN	../dbinc/win_db.h	/^#define	WIN32_LEAN_AND_MEAN$/
 WOULDBLOCK	../dbinc/repmgr.h	/^#define	WOULDBLOCK		WSAEWOULDBLOCK$/
 WRAPPED_CLASS	../dbinc/cxx_int.h	/^\/\/$/
 XAER_ASYNC	../dbinc/xa.h	/^#define	XAER_ASYNC	-2		\/* asynchronous operation /
@@ -2124,7 +2145,7 @@ XID_FIELD_IS_SET	../txn/txn_stat.c	/^#define	XID_FIELD_IS_SET(p)						\\$/
 ZEROPG_ERR_PRINT	../dbinc/db_verify.h	/^#define	ZEROPG_ERR_PRINT(dbenv, pgno, str) do {			/
 ZERO_LSN	../dbinc/db_int.in	/^#define	ZERO_LSN(LSN) do {						\\$/
 ZF_LARGE_WRITE	../os/os_fzero.c	/^#define	ZF_LARGE_WRITE	(64 * 1024)$/
-_CRT_SECURE_NO_DEPRECATE	../libdb_java/db_java_wrap.c	/^# define _CRT_SECURE_NO_DEPRECATE$/
+_CRT_SECURE_NO_DEPRECATE	../dbinc/win_db.h	/^#define	_CRT_SECURE_NO_DEPRECATE 1$/
 _CopyObjBytes	../tcl/tcl_internal.c	/^_CopyObjBytes(interp, obj, newp, sizep, freep)$/
 _DB_185_H_	../dbinc/db_185.in	/^#define	_DB_185_H_$/
 _DB_AM_H_	../dbinc/db_am.h	/^#define	_DB_AM_H_$/
@@ -2188,6 +2209,7 @@ _SetListElemWideInt	../tcl/tcl_internal.c	/^_SetListElemWideInt(interp, list, el
 _SetListRecnoElem	../tcl/tcl_internal.c	/^_SetListRecnoElem(interp, list, elem1, elem2, e2si/
 _SetMultiList	../tcl/tcl_internal.c	/^_SetMultiList(interp, list, key, data, type, flag)/
 _TxnInfoDelete	../tcl/tcl_txn.c	/^_TxnInfoDelete(interp, txnip)$/
+_WIN32_WINNT	../dbinc/win_db.h	/^#define	_WIN32_WINNT 0x0400$/
 __BIT_TYPES_DEFINED__	../dbinc/db.in	/^#define	__BIT_TYPES_DEFINED__$/
 __DBC_INTERNAL	../dbinc/db_int.in	/^#define	__DBC_INTERNAL							\\$/
 __DB_STD	../dbinc/db_cxx.in	/^#define	__DB_STD(x)	std::x$/
@@ -2203,6 +2225,7 @@ __R_UNUSED	../dbinc/db_185.in	/^#define	__R_UNUSED	2		\/* UNUSED *\/$/
 __SH_LIST_PREV_OFF	../dbinc/shqueue.h	/^#define	__SH_LIST_PREV_OFF(elm, field)					\\$/
 __SH_TAILQ_LAST_OFF	../dbinc/shqueue.h	/^#define	__SH_TAILQ_LAST_OFF(head)					\\$/
 __SH_TAILQ_PREV_OFF	../dbinc/shqueue.h	/^#define	__SH_TAILQ_PREV_OFF(elm, field)					\\$/
+__STDC__	../dbinc/win_db.h	/^#define __STDC__ 1$/
 __TLPUT	../dbinc/db_am.h	/^#define	__TLPUT(dbc, lock)						\\$/
 __absname	../log/log_archive.c	/^__absname(dbenv, pref, name, newnamep)$/
 __ack_waiters_table	../repmgr/repmgr_windows.c	/^struct __ack_waiters_table {$/
@@ -2229,22 +2252,6 @@ __bam_build	../btree/bt_put.c	/^__bam_build(dbc, op, dbt, h, indx, nbytes)$/
 __bam_bulk	../btree/bt_cursor.c	/^__bam_bulk(dbc, data, flags)$/
 __bam_bulk_duplicates	../btree/bt_cursor.c	/^__bam_bulk_duplicates(dbc, pgno, dbuf, keyoff, off/
 __bam_bulk_overflow	../btree/bt_cursor.c	/^__bam_bulk_overflow(dbc, len, pgno, dp)$/
-__bam_c_close	../btree/bt_cursor.c	/^__bam_c_close(dbc, root_pgno, rmroot)$/
-__bam_c_count	../btree/bt_cursor.c	/^__bam_c_count(dbc, recnop)$/
-__bam_c_del	../btree/bt_cursor.c	/^__bam_c_del(dbc)$/
-__bam_c_destroy	../btree/bt_cursor.c	/^__bam_c_destroy(dbc)$/
-__bam_c_dup	../btree/bt_cursor.c	/^__bam_c_dup(orig_dbc, new_dbc)$/
-__bam_c_get	../btree/bt_cursor.c	/^__bam_c_get(dbc, key, data, flags, pgnop)$/
-__bam_c_getstack	../btree/bt_cursor.c	/^__bam_c_getstack(dbc)$/
-__bam_c_init	../btree/bt_cursor.c	/^__bam_c_init(dbc, dbtype)$/
-__bam_c_next	../btree/bt_cursor.c	/^__bam_c_next(dbc, initial_move, deleted_okay)$/
-__bam_c_physdel	../btree/bt_cursor.c	/^__bam_c_physdel(dbc)$/
-__bam_c_prev	../btree/bt_cursor.c	/^__bam_c_prev(dbc)$/
-__bam_c_put	../btree/bt_cursor.c	/^__bam_c_put(dbc, key, data, flags, pgnop)$/
-__bam_c_refresh	../btree/bt_cursor.c	/^__bam_c_refresh(dbc)$/
-__bam_c_rget	../btree/bt_cursor.c	/^__bam_c_rget(dbc, data)$/
-__bam_c_search	../btree/bt_cursor.c	/^__bam_c_search(dbc, root_pgno, key, flags, exactp)/
-__bam_c_writelock	../btree/bt_cursor.c	/^__bam_c_writelock(dbc)$/
 __bam_ca_delete	../btree/bt_curadj.c	/^__bam_ca_delete(dbp, pgno, indx, delete, countp)$/
 __bam_ca_di	../btree/bt_curadj.c	/^__bam_ca_di(my_dbc, pgno, indx, adjust)$/
 __bam_ca_dup	../btree/bt_curadj.c	/^__bam_ca_dup(my_dbc, first, fpgno, fi, tpgno, ti)$/
@@ -2385,6 +2392,22 @@ __bam_vrfy_meta	../btree/bt_verify.c	/^__bam_vrfy_meta(dbp, vdp, meta, pgno, fla
 __bam_vrfy_structure	../btree/bt_verify.c	/^__bam_vrfy_structure(dbp, vdp, meta_pgno, flags)$/
 __bam_vrfy_subtree	../btree/bt_verify.c	/^__bam_vrfy_subtree(dbp, vdp, pgno, l, r, flags, le/
 __bam_vrfy_treeorder	../btree/bt_verify.c	/^__bam_vrfy_treeorder(dbp, h, lp, rp, func, flags)$/
+__bamc_close	../btree/bt_cursor.c	/^__bamc_close(dbc, root_pgno, rmroot)$/
+__bamc_count	../btree/bt_cursor.c	/^__bamc_count(dbc, recnop)$/
+__bamc_del	../btree/bt_cursor.c	/^__bamc_del(dbc)$/
+__bamc_destroy	../btree/bt_cursor.c	/^__bamc_destroy(dbc)$/
+__bamc_dup	../btree/bt_cursor.c	/^__bamc_dup(orig_dbc, new_dbc)$/
+__bamc_get	../btree/bt_cursor.c	/^__bamc_get(dbc, key, data, flags, pgnop)$/
+__bamc_getstack	../btree/bt_cursor.c	/^__bamc_getstack(dbc)$/
+__bamc_init	../btree/bt_cursor.c	/^__bamc_init(dbc, dbtype)$/
+__bamc_next	../btree/bt_cursor.c	/^__bamc_next(dbc, initial_move, deleted_okay)$/
+__bamc_physdel	../btree/bt_cursor.c	/^__bamc_physdel(dbc)$/
+__bamc_prev	../btree/bt_cursor.c	/^__bamc_prev(dbc)$/
+__bamc_put	../btree/bt_cursor.c	/^__bamc_put(dbc, key, data, flags, pgnop)$/
+__bamc_refresh	../btree/bt_cursor.c	/^__bamc_refresh(dbc)$/
+__bamc_rget	../btree/bt_cursor.c	/^__bamc_rget(dbc, data)$/
+__bamc_search	../btree/bt_cursor.c	/^__bamc_search(dbc, root_pgno, key, flags, exactp)$/
+__bamc_writelock	../btree/bt_cursor.c	/^__bamc_writelock(dbc)$/
 __bh	../dbinc/mp.h	/^struct __bh {$/
 __bh_frozen_a	../dbinc/mp.h	/^struct __bh_frozen_a {$/
 __bh_frozen_p	../dbinc/mp.h	/^struct __bh_frozen_p {$/
@@ -2431,7 +2454,6 @@ __crypto_region_destroy	../crypto/crypto.c	/^__crypto_region_destroy(dbenv)$/
 __crypto_region_init	../crypto/crypto.c	/^__crypto_region_init(dbenv)$/
 __crypto_set_passwd	../crypto/crypto.c	/^__crypto_set_passwd(dbenv_src, dbenv_dest)$/
 __cursor	../dbinc/btree.h	/^struct __cursor {$/
-__data	../env/db_salloc.c	/^struct __data {$/
 __db	../dbinc/db.in	/^struct __db {$/
 __db185_open	../db185/db185.c	/^__db185_open(file, oflags, mode, type, openinfo)$/
 __db_31_offdup	../db/db_upg_opd.c	/^__db_31_offdup(dbp, real_name, fhp, sorted, pgnop)/
@@ -2446,7 +2468,6 @@ __db_addrem_log	../db/db_auto.c	/^__db_addrem_log(dbp, txnp, ret_lsnp, flags,$/
 __db_addrem_print	../db/db_autop.c	/^__db_addrem_print(dbenv, dbtp, lsnp, notused2, not/
 __db_addrem_read	../db/db_auto.c	/^__db_addrem_read(dbenv, recbuf, argpp)$/
 __db_addrem_recover	../db/db_rec.c	/^__db_addrem_recover(dbenv, dbtp, lsnp, op, info)$/
-__db_allocinfo	../os/os_alloc.c	/^union __db_allocinfo {$/
 __db_append_primary	../db/db_am.c	/^__db_append_primary(dbc, key, data)$/
 __db_appname	../env/env_open.c	/^__db_appname(dbenv, appname, file, tmp_oflags, fhp/
 __db_apprec	../env/env_recover.c	/^__db_apprec(dbenv, max_lsn, trunclsn, update, flag/
@@ -2469,33 +2490,6 @@ __db_build_ri	../db/db_upg_opd.c	/^__db_build_ri(dbp, fhp, ipage, page, indx, no
 __db_buildpartial	../db/db_cam.c	/^__db_buildpartial(dbp, oldrec, partial, newrec)$/
 __db_byteorder	../common/db_byteorder.c	/^__db_byteorder(dbenv, lorder)$/
 __db_byteswap	../db/db_conv.c	/^__db_byteswap(dbenv, dbp, pg, h, pagesize, pgin)$/
-__db_c_cleanup	../db/db_cam.c	/^__db_c_cleanup(dbc, dbc_n, failed)$/
-__db_c_close	../db/db_cam.c	/^__db_c_close(dbc)$/
-__db_c_close_pp	../db/db_iface.c	/^__db_c_close_pp(dbc)$/
-__db_c_count	../db/db_cam.c	/^__db_c_count(dbc, recnop)$/
-__db_c_count_pp	../db/db_iface.c	/^__db_c_count_pp(dbc, recnop, flags)$/
-__db_c_del	../db/db_cam.c	/^__db_c_del(dbc, flags)$/
-__db_c_del_arg	../db/db_iface.c	/^__db_c_del_arg(dbc, flags)$/
-__db_c_del_oldskey	../db/db_cam.c	/^__db_c_del_oldskey(sdbp, dbc_arg, skey, pkey, oldd/
-__db_c_del_pp	../db/db_iface.c	/^__db_c_del_pp(dbc, flags)$/
-__db_c_del_primary	../db/db_cam.c	/^__db_c_del_primary(dbc)$/
-__db_c_del_secondary	../db/db_cam.c	/^__db_c_del_secondary(dbc)$/
-__db_c_destroy	../db/db_cam.c	/^__db_c_destroy(dbc)$/
-__db_c_dup	../db/db_cam.c	/^__db_c_dup(dbc_orig, dbcp, flags)$/
-__db_c_dup_pp	../db/db_iface.c	/^__db_c_dup_pp(dbc, dbcp, flags)$/
-__db_c_get	../db/db_cam.c	/^__db_c_get(dbc_arg, key, data, flags)$/
-__db_c_get_arg	../db/db_iface.c	/^__db_c_get_arg(dbc, key, data, flags)$/
-__db_c_get_pp	../db/db_iface.c	/^__db_c_get_pp(dbc, key, data, flags)$/
-__db_c_idup	../db/db_cam.c	/^__db_c_idup(dbc_orig, dbcp, flags)$/
-__db_c_newopd	../db/db_cam.c	/^__db_c_newopd(dbc_parent, root, oldopd, dbcp)$/
-__db_c_pget	../db/db_cam.c	/^__db_c_pget(dbc, skey, pkey, data, flags)$/
-__db_c_pget_arg	../db/db_iface.c	/^__db_c_pget_arg(dbc, pkey, flags)$/
-__db_c_pget_pp	../db/db_iface.c	/^__db_c_pget_pp(dbc, skey, pkey, data, flags)$/
-__db_c_pget_recno	../db/db_cam.c	/^__db_c_pget_recno(sdbc, pkey, data, flags)$/
-__db_c_put	../db/db_cam.c	/^__db_c_put(dbc_arg, key, data, flags)$/
-__db_c_put_arg	../db/db_iface.c	/^__db_c_put_arg(dbc, key, data, flags)$/
-__db_c_put_pp	../db/db_iface.c	/^__db_c_put_pp(dbc, key, data, flags)$/
-__db_c_secondary_get_pp	../db/db_cam.c	/^__db_c_secondary_get_pp(dbc, skey, data, flags)$/
 __db_check_chksum	../hmac/hmac.c	/^__db_check_chksum(dbenv, hdr, db_cipher, chksum, d/
 __db_check_lsn	../common/db_err.c	/^__db_check_lsn(dbenv, lsn, prev)$/
 __db_check_txn	../common/db_err.c	/^__db_check_txn(dbp, txn, assoc_lid, read_op)$/
@@ -2515,6 +2509,7 @@ __db_close_proc	../rpc_server/c/db_server_proc.c	/^__db_close_proc(dbpcl_id, fla
 __db_commit	../dbinc/log.h	/^struct __db_commit {$/
 __db_compact	../dbinc/db.in	/^struct __db_compact {$/
 __db_compact_pp	../db/db_iface.c	/^__db_compact_pp(dbp, txn, start, stop, c_data, fla/
+__db_create_internal	../db/db_method.c	/^__db_create_internal(dbpp, dbenv, flags)$/
 __db_create_proc	../rpc_server/c/db_server_proc.c	/^__db_create_proc(dbenvcl_id, flags, replyp)$/
 __db_ctime	../clib/ctime.c	/^__db_ctime(tod, time_buf)$/
 __db_curinval	../db/db_iface.c	/^__db_curinval(dbenv)$/
@@ -2524,53 +2519,53 @@ __db_cursor_check	../db/db_truncate.c	/^__db_cursor_check(dbp)$/
 __db_cursor_int	../db/db_am.c	/^__db_cursor_int(dbp, txn, dbtype, root, is_opd, lo/
 __db_cursor_pp	../db/db_iface.c	/^__db_cursor_pp(dbp, txn, dbcp, flags)$/
 __db_cursor_proc	../rpc_server/c/db_server_proc.c	/^__db_cursor_proc(dbpcl_id, txnpcl_id, flags, reply/
-__db_db_associate_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_associate_4005__SVCSUFFIX__(msg, req)$/
-__db_db_close_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_close_4005__SVCSUFFIX__(msg, req)$/
-__db_db_create_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_create_4005__SVCSUFFIX__(msg, req)$/
-__db_db_cursor_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_cursor_4005__SVCSUFFIX__(msg, req)$/
-__db_db_del_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_del_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_bt_minkey_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_bt_minkey_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_dbname_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_dbname_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_encrypt_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_encrypt_flags_4005__SVCSUFFIX__(msg, r/
-__db_db_get_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_flags_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_h_ffactor_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_h_ffactor_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_h_nelem_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_h_nelem_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_lorder_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_lorder_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_open_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_open_flags_4005__SVCSUFFIX__(msg, req)/
-__db_db_get_pagesize_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_pagesize_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_q_extentsize_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_q_extentsize_4005__SVCSUFFIX__(msg, re/
-__db_db_get_re_delim_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_re_delim_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_re_len_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_re_len_4005__SVCSUFFIX__(msg, req)$/
-__db_db_get_re_pad_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_re_pad_4005__SVCSUFFIX__(msg, req)$/
-__db_db_join_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_join_4005__SVCSUFFIX__(msg, req)$/
-__db_db_key_range_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_key_range_4005__SVCSUFFIX__(msg, req)$/
-__db_db_open_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_open_4005__SVCSUFFIX__(msg, req)$/
-__db_db_pget_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_pget_4005__SVCSUFFIX__(msg, req)$/
-__db_db_put_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_put_4005__SVCSUFFIX__(msg, req)$/
-__db_db_remove_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_remove_4005__SVCSUFFIX__(msg, req)$/
-__db_db_rename_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_rename_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_bt_minkey_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_bt_minkey_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_encrypt_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_encrypt_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_flags_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_h_ffactor_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_h_ffactor_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_h_nelem_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_h_nelem_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_lorder_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_lorder_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_pagesize_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_pagesize_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_q_extentsize_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_q_extentsize_4005__SVCSUFFIX__(msg, re/
-__db_db_set_re_delim_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_re_delim_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_re_len_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_re_len_4005__SVCSUFFIX__(msg, req)$/
-__db_db_set_re_pad_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_re_pad_4005__SVCSUFFIX__(msg, req)$/
-__db_db_stat_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_stat_4005__SVCSUFFIX__(msg, req)$/
-__db_db_sync_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_sync_4005__SVCSUFFIX__(msg, req)$/
-__db_db_truncate_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_truncate_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_close_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_close_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_count_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_count_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_del_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_del_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_dup_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_dup_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_get_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_get_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_pget_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_pget_4005__SVCSUFFIX__(msg, req)$/
-__db_dbc_c_put_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_c_put_4005__SVCSUFFIX__(msg, req)$/
+__db_db_associate_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_associate_4006__SVCSUFFIX__(msg, req)$/
+__db_db_close_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_close_4006__SVCSUFFIX__(msg, req)$/
+__db_db_create_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_create_4006__SVCSUFFIX__(msg, req)$/
+__db_db_cursor_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_cursor_4006__SVCSUFFIX__(msg, req)$/
+__db_db_del_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_del_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_bt_minkey_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_bt_minkey_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_dbname_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_dbname_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_encrypt_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_encrypt_flags_4006__SVCSUFFIX__(msg, r/
+__db_db_get_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_flags_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_h_ffactor_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_h_ffactor_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_h_nelem_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_h_nelem_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_lorder_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_lorder_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_open_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_open_flags_4006__SVCSUFFIX__(msg, req)/
+__db_db_get_pagesize_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_pagesize_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_q_extentsize_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_q_extentsize_4006__SVCSUFFIX__(msg, re/
+__db_db_get_re_delim_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_re_delim_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_re_len_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_re_len_4006__SVCSUFFIX__(msg, req)$/
+__db_db_get_re_pad_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_get_re_pad_4006__SVCSUFFIX__(msg, req)$/
+__db_db_join_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_join_4006__SVCSUFFIX__(msg, req)$/
+__db_db_key_range_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_key_range_4006__SVCSUFFIX__(msg, req)$/
+__db_db_open_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_open_4006__SVCSUFFIX__(msg, req)$/
+__db_db_pget_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_pget_4006__SVCSUFFIX__(msg, req)$/
+__db_db_put_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_put_4006__SVCSUFFIX__(msg, req)$/
+__db_db_remove_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_remove_4006__SVCSUFFIX__(msg, req)$/
+__db_db_rename_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_rename_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_bt_minkey_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_bt_minkey_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_encrypt_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_encrypt_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_flags_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_h_ffactor_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_h_ffactor_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_h_nelem_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_h_nelem_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_lorder_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_lorder_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_pagesize_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_pagesize_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_q_extentsize_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_q_extentsize_4006__SVCSUFFIX__(msg, re/
+__db_db_set_re_delim_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_re_delim_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_re_len_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_re_len_4006__SVCSUFFIX__(msg, req)$/
+__db_db_set_re_pad_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_set_re_pad_4006__SVCSUFFIX__(msg, req)$/
+__db_db_stat_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_stat_4006__SVCSUFFIX__(msg, req)$/
+__db_db_sync_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_sync_4006__SVCSUFFIX__(msg, req)$/
+__db_db_truncate_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_db_truncate_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_close_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_close_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_count_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_count_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_del_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_del_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_dup_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_dup_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_get_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_get_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_pget_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_pget_4006__SVCSUFFIX__(msg, req)$/
+__db_dbc_put_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_dbc_put_4006__SVCSUFFIX__(msg, req)$/
 __db_dbenv_mpool	../db/db.c	/^__db_dbenv_mpool(dbp, fname, flags)$/
 __db_dbenv_setup	../db/db.c	/^__db_dbenv_setup(dbp, txn, fname, dname, id, flags/
 __db_dbm_close	../dbm/dbm.c	/^__db_dbm_close()$/
@@ -2607,31 +2602,31 @@ __db_dump	../db/db_pr.c	/^__db_dump(dbp, subname, callback, handle, pflag, k/
 __db_dump_pp	../db/db_pr.c	/^__db_dump_pp(dbp, subname, callback, handle, pflag/
 __db_dumptree	../db/db_pr.c	/^__db_dumptree(dbp, txn, op, name)$/
 __db_duperr	../db/db_cam.c	/^__db_duperr(dbp, flags)$/
-__db_e_attach	../env/env_region.c	/^__db_e_attach(dbenv, init_flagsp)$/
+__db_e_attach	../env/env_region.c	/^__db_e_attach(dbenv, init_flagsp, create_ok)$/
 __db_e_detach	../env/env_region.c	/^__db_e_detach(dbenv, destroy)$/
 __db_e_golive	../env/env_region.c	/^__db_e_golive(dbenv)$/
 __db_e_remfile	../env/env_region.c	/^__db_e_remfile(dbenv)$/
 __db_e_remove	../env/env_region.c	/^__db_e_remove(dbenv, flags)$/
 __db_env	../dbinc/db.in	/^struct __db_env {$/
-__db_env_cdsgroup_begin_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_cdsgroup_begin_4005__SVCSUFFIX__(msg, req/
-__db_env_close_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_close_4005__SVCSUFFIX__(msg, req)$/
+__db_env_cdsgroup_begin_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_cdsgroup_begin_4006__SVCSUFFIX__(msg, req/
+__db_env_close_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_close_4006__SVCSUFFIX__(msg, req)$/
 __db_env_config	../env/env_method.c	/^__db_env_config(dbenv, i, flags)$/
-__db_env_create_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_create_4005__SVCSUFFIX__(msg, req)$/
-__db_env_dbremove_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_dbremove_4005__SVCSUFFIX__(msg, req)$/
-__db_env_dbrename_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_dbrename_4005__SVCSUFFIX__(msg, req)$/
+__db_env_create_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_create_4006__SVCSUFFIX__(msg, req)$/
+__db_env_dbremove_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_dbremove_4006__SVCSUFFIX__(msg, req)$/
+__db_env_dbrename_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_dbrename_4006__SVCSUFFIX__(msg, req)$/
 __db_env_destroy	../env/env_method.c	/^__db_env_destroy(dbenv)$/
-__db_env_get_cachesize_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_cachesize_4005__SVCSUFFIX__(msg, req)/
-__db_env_get_encrypt_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_encrypt_flags_4005__SVCSUFFIX__(msg, /
-__db_env_get_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_flags_4005__SVCSUFFIX__(msg, req)$/
-__db_env_get_home_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_home_4005__SVCSUFFIX__(msg, req)$/
-__db_env_get_open_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_open_flags_4005__SVCSUFFIX__(msg, req/
-__db_env_open_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_open_4005__SVCSUFFIX__(msg, req)$/
-__db_env_remove_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_remove_4005__SVCSUFFIX__(msg, req)$/
-__db_env_set_cachesize_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_set_cachesize_4005__SVCSUFFIX__(msg, req)/
-__db_env_set_encrypt_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_set_encrypt_4005__SVCSUFFIX__(msg, req)$/
-__db_env_set_flags_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_set_flags_4005__SVCSUFFIX__(msg, req)$/
-__db_env_txn_begin_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_txn_begin_4005__SVCSUFFIX__(msg, req)$/
-__db_env_txn_recover_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_txn_recover_4005__SVCSUFFIX__(msg, req)$/
+__db_env_get_cachesize_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_cachesize_4006__SVCSUFFIX__(msg, req)/
+__db_env_get_encrypt_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_encrypt_flags_4006__SVCSUFFIX__(msg, /
+__db_env_get_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_flags_4006__SVCSUFFIX__(msg, req)$/
+__db_env_get_home_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_home_4006__SVCSUFFIX__(msg, req)$/
+__db_env_get_open_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_get_open_flags_4006__SVCSUFFIX__(msg, req/
+__db_env_open_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_open_4006__SVCSUFFIX__(msg, req)$/
+__db_env_remove_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_remove_4006__SVCSUFFIX__(msg, req)$/
+__db_env_set_cachesize_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_set_cachesize_4006__SVCSUFFIX__(msg, req)/
+__db_env_set_encrypt_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_set_encrypt_4006__SVCSUFFIX__(msg, req)$/
+__db_env_set_flags_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_set_flags_4006__SVCSUFFIX__(msg, req)$/
+__db_env_txn_begin_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_txn_begin_4006__SVCSUFFIX__(msg, req)$/
+__db_env_txn_recover_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_env_txn_recover_4006__SVCSUFFIX__(msg, req)$/
 __db_err	../common/db_err.c	/^__db_err(dbenv, error fmt, va_alist)$/
 __db_errcall	../common/db_err.c	/^__db_errcall(dbenv, error, error_set, fmt, ap)$/
 __db_errfile	../common/db_err.c	/^__db_errfile(dbenv, error, error_set, fmt, ap)$/
@@ -2708,7 +2703,7 @@ __db_idcmp	../common/db_idspace.c	/^__db_idcmp(a, b)$/
 __db_idspace	../common/db_idspace.c	/^__db_idspace(inuse, n, minp, maxp)$/
 __db_ilock	../dbinc/db.in	/^struct __db_ilock {$/
 __db_infohead	../dbinc/tcl_db.h	/^#define	__db_infohead __dbtcl_global.g_infohead$/
-__db_init	../db/db_method.c	/^__db_init(dbenv, dbp, flags)$/
+__db_init	../db/db_method.c	/^__db_init(dbp, flags)$/
 __db_init_meta	../db/db_meta.c	/^__db_init_meta(dbp, p, pgno, pgtype)$/
 __db_init_print	../db/db_autop.c	/^__db_init_print(dbenv, dtabp, dtabsizep)$/
 __db_init_recover	../db/db_auto.c	/^__db_init_recover(dbenv, dtabp, dtabsizep)$/
@@ -2780,6 +2775,7 @@ __db_mpoolfile	../dbinc/db.in	/^struct __db_mpoolfile {$/
 __db_mpreg	../dbinc/mp.h	/^struct __db_mpreg {$/
 __db_msg	../common/db_err.c	/^__db_msg(dbenv, fmt, va_alist)$/
 __db_msgadd	../common/db_err.c	/^__db_msgadd(dbenv, mbp, fmt, va_alist)$/
+__db_msgadd_ap	../common/db_err.c	/^__db_msgadd_ap(dbenv, mbp, fmt, ap)$/
 __db_msgcall	../common/db_err.c	/^__db_msgcall(dbenv, fmt, ap)$/
 __db_msgfile	../common/db_err.c	/^__db_msgfile(dbenv, fmt, ap)$/
 __db_mutex_stat	../dbinc/db.in	/^struct __db_mutex_stat {$/
@@ -2890,7 +2886,7 @@ __db_print_citem	../db/db_stati.c	/^int __db_print_citem(dbc)$/
 __db_print_cursor	../db/db_stati.c	/^__db_print_cursor(dbp)$/
 __db_print_fh	../env/env_stat.c	/^__db_print_fh(dbenv, tag, fh, flags)$/
 __db_print_fileid	../env/env_stat.c	/^__db_print_fileid(dbenv, id, suffix)$/
-__db_print_reginfo	../env/env_stat.c	/^__db_print_reginfo(dbenv, infop, s)$/
+__db_print_reginfo	../env/env_stat.c	/^__db_print_reginfo(dbenv, infop, s, flags)$/
 __db_print_stats	../db/db_stati.c	/^__db_print_stats(dbp, flags)$/
 __db_prnpage	../db/db_pr.c	/^__db_prnpage(dbp, txn, pgno)$/
 __db_proff	../db/db_pr.c	/^__db_proff(dbenv, mbp, vp)$/
@@ -2992,11 +2988,6 @@ __db_set_re_delim_proc	../rpc_server/c/db_server_proc.c	/^__db_set_re_delim_proc
 __db_set_re_len_proc	../rpc_server/c/db_server_proc.c	/^__db_set_re_len_proc(dbpcl_id, len, replyp)$/
 __db_set_re_pad_proc	../rpc_server/c/db_server_proc.c	/^__db_set_re_pad_proc(dbpcl_id, pad, replyp)$/
 __db_sgenrand	../crypto/mersenne/mt19937db.c	/^__db_sgenrand(seed, mt, mtip)$/
-__db_shalloc	../env/db_salloc.c	/^__db_shalloc(infop, len, align, retp)$/
-__db_shalloc_free	../env/db_salloc.c	/^__db_shalloc_free(infop, ptr)$/
-__db_shalloc_init	../env/db_salloc.c	/^__db_shalloc_init(infop, size)$/
-__db_shalloc_size	../env/db_salloc.c	/^__db_shalloc_size(len, align)$/
-__db_shalloc_sizeof	../env/db_salloc.c	/^__db_shalloc_sizeof(ptr)$/
 __db_space_err	../common/db_err.c	/^__db_space_err(dbp)$/
 __db_stat	../db/db_stati.c	/^__db_stat(dbp, txn, spp, flags)$/
 __db_stat_arg	../db/db_stati.c	/^__db_stat_arg(dbp, flags)$/
@@ -3028,14 +3019,14 @@ __db_truncate_freelist	../db/db_meta.c	/^__db_truncate_freelist(dbc, meta, h, li
 __db_truncate_pp	../db/db_truncate.c	/^__db_truncate_pp(dbp, txn, countp, flags)$/
 __db_truncate_proc	../rpc_server/c/db_server_proc.c	/^__db_truncate_proc(dbpcl_id, txnpcl_id, flags, rep/
 __db_txn	../dbinc/db.in	/^struct __db_txn {$/
-__db_txn_abort_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_abort_4005__SVCSUFFIX__(msg, req)$/
+__db_txn_abort_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_abort_4006__SVCSUFFIX__(msg, req)$/
 __db_txn_active	../dbinc/db.in	/^struct __db_txn_active {$/
 __db_txn_auto_init	../db/db_iface.c	/^__db_txn_auto_init(dbenv, txnidp)$/
 __db_txn_auto_resolve	../db/db_iface.c	/^__db_txn_auto_resolve(dbenv, txn, nosync, ret)$/
-__db_txn_commit_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_commit_4005__SVCSUFFIX__(msg, req)$/
+__db_txn_commit_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_commit_4006__SVCSUFFIX__(msg, req)$/
 __db_txn_deadlock_err	../common/db_err.c	/^__db_txn_deadlock_err(dbenv)$/
-__db_txn_discard_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_discard_4005__SVCSUFFIX__(msg, req)$/
-__db_txn_prepare_4005__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_prepare_4005__SVCSUFFIX__(msg, req)$/
+__db_txn_discard_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_discard_4006__SVCSUFFIX__(msg, req)$/
+__db_txn_prepare_4006__SVCSUFFIX__	../rpc_server/c/gen_db_server.c	/^__db_txn_prepare_4006__SVCSUFFIX__(msg, req)$/
 __db_txn_stat	../dbinc/db.in	/^struct __db_txn_stat {$/
 __db_txnhead	../dbinc/db_dispatch.h	/^struct __db_txnhead {$/
 __db_txnlist	../dbinc/db_dispatch.h	/^struct __db_txnlist {$/
@@ -3123,16 +3114,43 @@ __db_xa_rollback	../xa/xa.c	/^__db_xa_rollback(xid, rmid, arg_flags)$/
 __db_xa_start	../xa/xa.c	/^__db_xa_start(xid, rmid, arg_flags)$/
 __db_xid_to_txn	../xa/xa_map.c	/^__db_xid_to_txn(dbenv, xid, offp)$/
 __dbc	../dbinc/db.in	/^struct __dbc {$/
-__dbc_c_close_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_close_proc(dbccl_id, replyp)$/
-__dbc_c_count_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_count_proc(dbccl_id, flags, replyp)$/
-__dbc_c_del_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_del_proc(dbccl_id, flags, replyp)$/
-__dbc_c_dup_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_dup_proc(dbccl_id, flags, replyp)$/
-__dbc_c_get_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_get_proc(dbccl_id, keydlen, keydoff, keyul/
-__dbc_c_pget_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_pget_proc(dbccl_id, skeydlen, skeydoff, sk/
-__dbc_c_put_proc	../rpc_server/c/db_server_proc.c	/^__dbc_c_put_proc(dbccl_id, keydlen, keydoff, keyul/
+__dbc_cleanup	../db/db_cam.c	/^__dbc_cleanup(dbc, dbc_n, failed)$/
+__dbc_close	../db/db_cam.c	/^__dbc_close(dbc)$/
 __dbc_close_int	../rpc_server/c/db_server_util.c	/^__dbc_close_int(dbc_ctp)$/
+__dbc_close_pp	../db/db_iface.c	/^__dbc_close_pp(dbc)$/
+__dbc_close_proc	../rpc_server/c/db_server_proc.c	/^__dbc_close_proc(dbccl_id, replyp)$/
+__dbc_count	../db/db_cam.c	/^__dbc_count(dbc, recnop)$/
+__dbc_count_pp	../db/db_iface.c	/^__dbc_count_pp(dbc, recnop, flags)$/
+__dbc_count_proc	../rpc_server/c/db_server_proc.c	/^__dbc_count_proc(dbccl_id, flags, replyp)$/
+__dbc_del	../db/db_cam.c	/^__dbc_del(dbc, flags)$/
+__dbc_del_arg	../db/db_iface.c	/^__dbc_del_arg(dbc, flags)$/
+__dbc_del_oldskey	../db/db_cam.c	/^__dbc_del_oldskey(sdbp, dbc_arg, skey, pkey, oldda/
+__dbc_del_pp	../db/db_iface.c	/^__dbc_del_pp(dbc, flags)$/
+__dbc_del_primary	../db/db_cam.c	/^__dbc_del_primary(dbc)$/
+__dbc_del_proc	../rpc_server/c/db_server_proc.c	/^__dbc_del_proc(dbccl_id, flags, replyp)$/
+__dbc_del_secondary	../db/db_cam.c	/^__dbc_del_secondary(dbc)$/
+__dbc_destroy	../db/db_cam.c	/^__dbc_destroy(dbc)$/
+__dbc_dup	../db/db_cam.c	/^__dbc_dup(dbc_orig, dbcp, flags)$/
+__dbc_dup_pp	../db/db_iface.c	/^__dbc_dup_pp(dbc, dbcp, flags)$/
+__dbc_dup_proc	../rpc_server/c/db_server_proc.c	/^__dbc_dup_proc(dbccl_id, flags, replyp)$/
+__dbc_get	../db/db_cam.c	/^__dbc_get(dbc_arg, key, data, flags)$/
+__dbc_get_arg	../db/db_iface.c	/^__dbc_get_arg(dbc, key, data, flags)$/
+__dbc_get_pp	../db/db_iface.c	/^__dbc_get_pp(dbc, key, data, flags)$/
+__dbc_get_proc	../rpc_server/c/db_server_proc.c	/^__dbc_get_proc(dbccl_id, keydlen, keydoff, keyulen/
+__dbc_idup	../db/db_cam.c	/^__dbc_idup(dbc_orig, dbcp, flags)$/
 __dbc_internal	../dbinc/db_int.in	/^struct __dbc_internal {$/
 __dbc_logging	../common/db_err.c	/^__dbc_logging(dbc)$/
+__dbc_newopd	../db/db_cam.c	/^__dbc_newopd(dbc_parent, root, oldopd, dbcp)$/
+__dbc_pget	../db/db_cam.c	/^__dbc_pget(dbc, skey, pkey, data, flags)$/
+__dbc_pget_arg	../db/db_iface.c	/^__dbc_pget_arg(dbc, pkey, flags)$/
+__dbc_pget_pp	../db/db_iface.c	/^__dbc_pget_pp(dbc, skey, pkey, data, flags)$/
+__dbc_pget_proc	../rpc_server/c/db_server_proc.c	/^__dbc_pget_proc(dbccl_id, skeydlen, skeydoff, skey/
+__dbc_pget_recno	../db/db_cam.c	/^__dbc_pget_recno(sdbc, pkey, data, flags)$/
+__dbc_put	../db/db_cam.c	/^__dbc_put(dbc_arg, key, data, flags)$/
+__dbc_put_arg	../db/db_iface.c	/^__dbc_put_arg(dbc, key, data, flags)$/
+__dbc_put_pp	../db/db_iface.c	/^__dbc_put_pp(dbc, key, data, flags)$/
+__dbc_put_proc	../rpc_server/c/db_server_proc.c	/^__dbc_put_proc(dbccl_id, keydlen, keydoff, keyulen/
+__dbc_secondary_get_pp	../db/db_cam.c	/^__dbc_secondary_get_pp(dbc, skey, data, flags)$/
 __dbcl_c_destroy	../rpc_client/client.c	/^__dbcl_c_destroy(dbc)$/
 __dbcl_c_refresh	../rpc_client/client.c	/^__dbcl_c_refresh(dbc)$/
 __dbcl_c_setup	../rpc_client/client.c	/^__dbcl_c_setup(cl_id, dbp, dbcp)$/
@@ -3190,20 +3208,20 @@ __dbcl_db_stat_ret	../rpc_client/gen_client_ret.c	/^__dbcl_db_stat_ret(dbp, txnp
 __dbcl_db_sync	../rpc_client/gen_client.c	/^__dbcl_db_sync(dbp, flags)$/
 __dbcl_db_truncate	../rpc_client/gen_client.c	/^__dbcl_db_truncate(dbp, txnp, countp, flags)$/
 __dbcl_db_truncate_ret	../rpc_client/gen_client_ret.c	/^__dbcl_db_truncate_ret(dbp, txnp, countp, flags, r/
-__dbcl_dbc_c_close	../rpc_client/gen_client.c	/^__dbcl_dbc_c_close(dbc)$/
-__dbcl_dbc_c_close_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_c_close_ret(dbc, replyp)$/
-__dbcl_dbc_c_count	../rpc_client/gen_client.c	/^__dbcl_dbc_c_count(dbc, countp, flags)$/
-__dbcl_dbc_c_count_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_c_count_ret(dbc, countp, flags, replyp)/
-__dbcl_dbc_c_del	../rpc_client/gen_client.c	/^__dbcl_dbc_c_del(dbc, flags)$/
-__dbcl_dbc_c_dup	../rpc_client/gen_client.c	/^__dbcl_dbc_c_dup(dbc, dbcp, flags)$/
-__dbcl_dbc_c_dup_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_c_dup_ret(dbc, dbcp, flags, replyp)$/
-__dbcl_dbc_c_get	../rpc_client/gen_client.c	/^__dbcl_dbc_c_get(dbc, key, data, flags)$/
-__dbcl_dbc_c_get_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_c_get_ret(dbc, key, data, flags, replyp/
-__dbcl_dbc_c_pget	../rpc_client/gen_client.c	/^__dbcl_dbc_c_pget(dbc, skey, pkey, data, flags)$/
-__dbcl_dbc_c_pget_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_c_pget_ret(dbc, skey, pkey, data, flags/
-__dbcl_dbc_c_put	../rpc_client/gen_client.c	/^__dbcl_dbc_c_put(dbc, key, data, flags)$/
-__dbcl_dbc_c_put_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_c_put_ret(dbc, key, data, flags, replyp/
+__dbcl_dbc_close	../rpc_client/gen_client.c	/^__dbcl_dbc_close(dbc)$/
+__dbcl_dbc_close_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_close_ret(dbc, replyp)$/
+__dbcl_dbc_count	../rpc_client/gen_client.c	/^__dbcl_dbc_count(dbc, countp, flags)$/
+__dbcl_dbc_count_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_count_ret(dbc, countp, flags, replyp)$/
+__dbcl_dbc_del	../rpc_client/gen_client.c	/^__dbcl_dbc_del(dbc, flags)$/
+__dbcl_dbc_dup	../rpc_client/gen_client.c	/^__dbcl_dbc_dup(dbc, dbcp, flags)$/
+__dbcl_dbc_dup_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_dup_ret(dbc, dbcp, flags, replyp)$/
+__dbcl_dbc_get	../rpc_client/gen_client.c	/^__dbcl_dbc_get(dbc, key, data, flags)$/
+__dbcl_dbc_get_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_get_ret(dbc, key, data, flags, replyp)$/
 __dbcl_dbc_init	../rpc_client/gen_client.c	/^__dbcl_dbc_init(dbc)$/
+__dbcl_dbc_pget	../rpc_client/gen_client.c	/^__dbcl_dbc_pget(dbc, skey, pkey, data, flags)$/
+__dbcl_dbc_pget_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_pget_ret(dbc, skey, pkey, data, flags, /
+__dbcl_dbc_put	../rpc_client/gen_client.c	/^__dbcl_dbc_put(dbc, key, data, flags)$/
+__dbcl_dbc_put_ret	../rpc_client/gen_client_ret.c	/^__dbcl_dbc_put_ret(dbc, key, data, flags, replyp)$/
 __dbcl_dbclose_common	../rpc_client/client.c	/^__dbcl_dbclose_common(dbp)$/
 __dbcl_dbenv_illegal	../rpc_client/gen_client.c	/^__dbcl_dbenv_illegal(dbenv)$/
 __dbcl_dbenv_init	../rpc_client/gen_client.c	/^__dbcl_dbenv_init(dbenv)$/
@@ -3343,6 +3361,12 @@ __dd_debug	../lock/lock_deadlock.c	/^__dd_debug(dbenv, idmap, bitmap, nlockers, 
 __dd_find	../lock/lock_deadlock.c	/^__dd_find(dbenv, bmp, idmap, nlockers, nalloc, dea/
 __dd_isolder	../lock/lock_deadlock.c	/^__dd_isolder(a, b, lock_max, txn_max)$/
 __dd_verify	../lock/lock_deadlock.c	/^__dd_verify(idmap, deadmap, tmpmap, origmap, nlock/
+__env_alloc	../env/env_alloc.c	/^__env_alloc(infop, len, retp)$/
+__env_alloc_free	../env/env_alloc.c	/^__env_alloc_free(infop, ptr)$/
+__env_alloc_init	../env/env_alloc.c	/^__env_alloc_init(infop, size)$/
+__env_alloc_print	../env/env_alloc.c	/^__env_alloc_print(infop, flags)$/
+__env_alloc_size	../env/env_alloc.c	/^__env_alloc_size(len)$/
+__env_alloc_sizeof	../env/env_alloc.c	/^__env_alloc_sizeof(ptr)$/
 __env_cdsgroup_begin_proc	../rpc_server/c/db_server_proc.c	/^__env_cdsgroup_begin_proc(dbenvcl_id, replyp)$/
 __env_close	../env/env_open.c	/^__env_close(dbenv, rep_check)$/
 __env_close_int	../rpc_server/c/db_server_util.c	/^__env_close_int(id, flags, force)$/
@@ -3374,6 +3398,7 @@ __env_get_msgfile	../env/env_method.c	/^__env_get_msgfile(dbenv, msgfilep)$/
 __env_get_open_flags	../env/env_open.c	/^__env_get_open_flags(dbenv, flagsp)$/
 __env_get_open_flags_proc	../rpc_server/c/db_server_proc.c	/^__env_get_open_flags_proc(dbenvcl_id, replyp)$/
 __env_get_shm_key	../env/env_method.c	/^__env_get_shm_key(dbenv, shm_keyp)$/
+__env_get_thread_count	../env/env_method.c	/^__env_get_thread_count(dbenv, countp)$/
 __env_get_tmp_dir	../env/env_method.c	/^__env_get_tmp_dir(dbenv, dirp)$/
 __env_get_verbose	../env/env_method.c	/^__env_get_verbose(dbenv, which, onoffp)$/
 __env_in_api	../env/env_failchk.c	/^__env_in_api(dbenv)$/
@@ -3391,7 +3416,7 @@ __env_open_proc	../rpc_server/c/db_server_proc.c	/^__env_open_proc(dbenvcl_id, h
 __env_openfiles	../env/env_recover.c	/^__env_openfiles(dbenv, logc, txninfo,$/
 __env_print_all	../env/env_stat.c	/^__env_print_all(dbenv, flags)$/
 __env_print_stats	../env/env_stat.c	/^__env_print_stats(dbenv, flags)$/
-__env_print_threads	../env/env_stat.c	/^__env_print_threads(dbenv)$/
+__env_print_thread	../env/env_stat.c	/^__env_print_thread(dbenv)$/
 __env_read_db_config	../env/env_config.c	/^__env_read_db_config(dbenv)$/
 __env_refresh	../env/env_open.c	/^__env_refresh(dbenv, orig_flags, rep_check)$/
 __env_remove	../env/env_open.c	/^__env_remove(dbenv, db_home, flags)$/
@@ -3426,7 +3451,7 @@ __env_set_verbose	../env/env_method.c	/^__env_set_verbose(dbenv, which, on)$/
 __env_stat_print	../env/env_stat.c	/^__env_stat_print(dbenv, flags)$/
 __env_stat_print_pp	../env/env_stat.c	/^__env_stat_print_pp(dbenv, flags)$/
 __env_thread_id_string	../env/env_failchk.c	/^__env_thread_id_string(dbenv, pid, tid, buf)$/
-__env_thread_init	../env/env_failchk.c	/^__env_thread_init(dbenv, created)$/
+__env_thread_init	../env/env_failchk.c	/^__env_thread_init(dbenv, during_creation)$/
 __env_thread_state_print	../env/env_stat.c	/^__env_thread_state_print(state)$/
 __env_txn_begin_proc	../rpc_server/c/db_server_proc.c	/^__env_txn_begin_proc(dbenvcl_id, parentcl_id, flag/
 __env_txn_recover_proc	../rpc_server/c/db_server_proc.c	/^__env_txn_recover_proc(dbenvcl_id, count, flags, r/
@@ -3435,6 +3460,7 @@ __envreg_register	../env/env_register.c	/^__envreg_register(dbenv, need_recovery
 __envreg_unregister	../env/env_register.c	/^__envreg_unregister(dbenv, recovery_failed)$/
 __envreg_xunlock	../env/env_register.c	/^__envreg_xunlock(dbenv)$/
 __epg	../dbinc/btree.h	/^struct __epg {$/
+__fdlist	../dbinc/db.in	/^	struct __fdlist {$/
 __fh_t	../dbinc/os.h	/^struct __fh_t {$/
 __fname	../dbinc/log.h	/^struct __fname {$/
 __fop_create	../fileops/fop_basic.c	/^__fop_create(dbenv, txn, fhpp, name, appname, mode/
@@ -3487,18 +3513,6 @@ __ham_add_ovflpage	../hash/hash_page.c	/^__ham_add_ovflpage(dbc, pagep, release,
 __ham_alloc_pages	../hash/hash_rec.c	/^__ham_alloc_pages(file_dbp, argp, lsnp)$/
 __ham_alloc_pages_42	../hash/hash_rec.c	/^__ham_alloc_pages_42(dbp, argp, lsnp)$/
 __ham_bulk	../hash/hash.c	/^__ham_bulk(dbc, data, flags)$/
-__ham_c_chgpg	../hash/hash_dup.c	/^__ham_c_chgpg(dbc, old_pgno, old_index, new_pgno, /
-__ham_c_close	../hash/hash.c	/^__ham_c_close(dbc, root_pgno, rmroot)$/
-__ham_c_count	../hash/hash.c	/^__ham_c_count(dbc, recnop)$/
-__ham_c_del	../hash/hash.c	/^__ham_c_del(dbc)$/
-__ham_c_delpg	../hash/hash_page.c	/^__ham_c_delpg(dbc, old_pgno, new_pgno, num_ent, op/
-__ham_c_destroy	../hash/hash.c	/^__ham_c_destroy(dbc)$/
-__ham_c_dup	../hash/hash.c	/^__ham_c_dup(orig_dbc, new_dbc)$/
-__ham_c_get	../hash/hash.c	/^__ham_c_get(dbc, key, data, flags, pgnop)$/
-__ham_c_init	../hash/hash.c	/^__ham_c_init(dbc)$/
-__ham_c_put	../hash/hash.c	/^__ham_c_put(dbc, key, data, flags, pgnop)$/
-__ham_c_update	../hash/hash.c	/^__ham_c_update(dbc, len, add, is_dup)$/
-__ham_c_writelock	../hash/hash.c	/^__ham_c_writelock(dbc)$/
 __ham_call_hash	../hash/hash.c	/^__ham_call_hash(dbc, k, len)$/
 __ham_check_move	../hash/hash_dup.c	/^__ham_check_move(dbc, add_len)$/
 __ham_chgpg_log	../hash/hash_auto.c	/^__ham_chgpg_log(dbp, txnp, ret_lsnp, flags, mode, /
@@ -3594,6 +3608,7 @@ __ham_replace_recover	../hash/hash_rec.c	/^__ham_replace_recover(dbenv, dbtp, ls
 __ham_replpair	../hash/hash_page.c	/^__ham_replpair(dbc, dbt, make_dup)$/
 __ham_reputpair	../hash/hash_page.c	/^__ham_reputpair(dbp, p, ndx, key, data)$/
 __ham_salvage	../hash/hash_verify.c	/^__ham_salvage(dbp, vdp, pgno, h, handle, callback,/
+__ham_set_h_compare	../hash/hash_method.c	/^__ham_set_h_compare(dbp, func)$/
 __ham_set_h_ffactor	../hash/hash_method.c	/^__ham_set_h_ffactor(dbp, h_ffactor)$/
 __ham_set_h_hash	../hash/hash_method.c	/^__ham_set_h_hash(dbp, func)$/
 __ham_set_h_nelem	../hash/hash_method.c	/^__ham_set_h_nelem(dbp, h_nelem)$/
@@ -3614,6 +3629,18 @@ __ham_vrfy_hashing	../hash/hash_verify.c	/^__ham_vrfy_hashing(dbp, nentries, m, 
 __ham_vrfy_item	../hash/hash_verify.c	/^__ham_vrfy_item(dbp, vdp, pgno, h, i, flags)$/
 __ham_vrfy_meta	../hash/hash_verify.c	/^__ham_vrfy_meta(dbp, vdp, m, pgno, flags)$/
 __ham_vrfy_structure	../hash/hash_verify.c	/^__ham_vrfy_structure(dbp, vdp, meta_pgno, flags)$/
+__hamc_chgpg	../hash/hash_dup.c	/^__hamc_chgpg(dbc, old_pgno, old_index, new_pgno, n/
+__hamc_close	../hash/hash.c	/^__hamc_close(dbc, root_pgno, rmroot)$/
+__hamc_count	../hash/hash.c	/^__hamc_count(dbc, recnop)$/
+__hamc_del	../hash/hash.c	/^__hamc_del(dbc)$/
+__hamc_delpg	../hash/hash_page.c	/^__hamc_delpg(dbc, old_pgno, new_pgno, num_ent, op,/
+__hamc_destroy	../hash/hash.c	/^__hamc_destroy(dbc)$/
+__hamc_dup	../hash/hash.c	/^__hamc_dup(orig_dbc, new_dbc)$/
+__hamc_get	../hash/hash.c	/^__hamc_get(dbc, key, data, flags, pgnop)$/
+__hamc_init	../hash/hash.c	/^__hamc_init(dbc)$/
+__hamc_put	../hash/hash.c	/^__hamc_put(dbc, key, data, flags, pgnop)$/
+__hamc_update	../hash/hash.c	/^__hamc_update(dbc, len, add, is_dup)$/
+__hamc_writelock	../hash/hash.c	/^__hamc_writelock(dbc)$/
 __hdr	../dbinc/log.h	/^struct __hdr {$/
 __int64	../libdb_java/db_java_wrap.c	/^  typedef long long __int64;$/
 __key_range	../dbinc/db.in	/^struct __key_range {$/
@@ -3631,7 +3658,7 @@ __lock_expired	../lock/lock_timer.c	/^__lock_expired(dbenv, now, timevalp)$/
 __lock_expires	../lock/lock_timer.c	/^__lock_expires(dbenv, timevalp, timeout)$/
 __lock_failchk	../lock/lock_failchk.c	/^__lock_failchk(dbenv)$/
 __lock_fix_list	../lock/lock_list.c	/^__lock_fix_list(dbenv, list_dbt, nlocks)$/
-__lock_freefamilylocker	../lock/lock_id.c	/^__lock_freefamilylocker(lt, locker)$/
+__lock_freefamilylocker	../lock/lock_id.c	/^__lock_freefamilylocker(dbenv, locker)$/
 __lock_freelock	../lock/lock.c	/^__lock_freelock(lt, lockp, locker, flags)$/
 __lock_freelocker	../lock/lock_id.c	/^__lock_freelocker(lt, region, sh_locker, indx)$/
 __lock_get	../lock/lock.c	/^__lock_get(dbenv, locker, flags, obj, lock_mode, l/
@@ -3660,7 +3687,7 @@ __lock_locker_hash	../dbinc/lock.h	/^#define	__lock_locker_hash(locker)	(locker)
 __lock_locker_is_parent	../lock/lock.c	/^__lock_locker_is_parent(dbenv, locker, child, retp/
 __lock_nomem	../lock/lock_util.c	/^__lock_nomem(dbenv, res)$/
 __lock_ohash	../lock/lock_util.c	/^__lock_ohash(dbt)$/
-__lock_open	../lock/lock_region.c	/^__lock_open(dbenv)$/
+__lock_open	../lock/lock_region.c	/^__lock_open(dbenv, create_ok)$/
 __lock_print_all	../lock/lock_stat.c	/^__lock_print_all(dbenv, flags)$/
 __lock_print_header	../lock/lock_stat.c	/^__lock_print_header(dbenv)$/
 __lock_print_stats	../lock/lock_stat.c	/^__lock_print_stats(dbenv, flags)$/
@@ -3680,7 +3707,7 @@ __lock_set_lk_detect	../lock/lock_method.c	/^__lock_set_lk_detect(dbenv, lk_dete
 __lock_set_lk_max_lockers	../lock/lock_method.c	/^__lock_set_lk_max_lockers(dbenv, lk_max)$/
 __lock_set_lk_max_locks	../lock/lock_method.c	/^__lock_set_lk_max_locks(dbenv, lk_max)$/
 __lock_set_lk_max_objects	../lock/lock_method.c	/^__lock_set_lk_max_objects(dbenv, lk_max)$/
-__lock_set_thread_id	../lock/lock_id.c	/^__lock_set_thread_id(lref, pid, tid)$/
+__lock_set_thread_id	../lock/lock_id.c	/^__lock_set_thread_id(lref_arg, pid, tid)$/
 __lock_set_timeout	../lock/lock_timer.c	/^__lock_set_timeout(dbenv, locker, timeout, op)$/
 __lock_set_timeout_internal	../lock/lock_timer.c	/^__lock_set_timeout_internal(dbenv, locker, timeout/
 __lock_sort_cmp	../lock/lock_list.c	/^__lock_sort_cmp(a, b)$/
@@ -3696,20 +3723,6 @@ __log_archive	../log/log_archive.c	/^__log_archive(dbenv, listp, flags)$/
 __log_archive_pp	../log/log_archive.c	/^__log_archive_pp(dbenv, listp, flags)$/
 __log_autoremove	../log/log_archive.c	/^__log_autoremove(dbenv)$/
 __log_backup	../env/env_recover.c	/^__log_backup(dbenv, logc, max_lsn, start_lsn, cmp)/
-__log_c_close	../log/log_get.c	/^__log_c_close(logc)$/
-__log_c_close_pp	../log/log_get.c	/^__log_c_close_pp(logc, flags)$/
-__log_c_get	../log/log_get.c	/^__log_c_get(logc, alsn, dbt, flags)$/
-__log_c_get_int	../log/log_get.c	/^__log_c_get_int(logc, alsn, dbt, flags)$/
-__log_c_get_pp	../log/log_get.c	/^__log_c_get_pp(logc, alsn, dbt, flags)$/
-__log_c_hdrchk	../log/log_get.c	/^__log_c_hdrchk(logc, lsn, hdr, eofp)$/
-__log_c_incursor	../log/log_get.c	/^__log_c_incursor(logc, lsn, hdr, pp)$/
-__log_c_inregion	../log/log_get.c	/^__log_c_inregion(logc, lsn, rlockp, last_lsn, hdr,/
-__log_c_io	../log/log_get.c	/^__log_c_io(logc, fnum, offset, p, nrp, eofp)$/
-__log_c_ondisk	../log/log_get.c	/^__log_c_ondisk(logc, lsn, last_lsn, flags, hdr, pp/
-__log_c_set_maxrec	../log/log_get.c	/^__log_c_set_maxrec(logc, np)$/
-__log_c_shortread	../log/log_get.c	/^__log_c_shortread(logc, lsn, check_silent)$/
-__log_c_version	../log/log_get.c	/^__log_c_version(logc, versionp)$/
-__log_c_version_pp	../log/log_get.c	/^__log_c_version_pp(logc, versionp, flags)$/
 __log_check_page_lsn	../log/log_compare.c	/^__log_check_page_lsn(dbenv, dbp, lsnp)$/
 __log_check_sizes	../log/log_method.c	/^__log_check_sizes(dbenv, lg_max, lg_bsize)$/
 __log_current_lsn	../log/log_put.c	/^__log_current_lsn(dbenv, lsnp, mbytesp, bytesp)$/
@@ -3747,7 +3760,7 @@ __log_is_outdated	../log/log.c	/^__log_is_outdated(dbenv, fnum, outdatedp)$/
 __log_name	../log/log_put.c	/^__log_name(dblp, filenumber, namep, fhpp, flags)$/
 __log_newfh	../log/log_put.c	/^__log_newfh(dblp, create)$/
 __log_newfile	../log/log_put.c	/^__log_newfile(dblp, lsnp, logfile, version)$/
-__log_open	../log/log.c	/^__log_open(dbenv)$/
+__log_open	../log/log.c	/^__log_open(dbenv, create_ok)$/
 __log_persist	../dbinc/log.h	/^struct __log_persist {$/
 __log_print_all	../log/log_stat.c	/^__log_print_all(dbenv, flags)$/
 __log_print_stats	../log/log_stat.c	/^__log_print_stats(dbenv, flags)$/
@@ -3779,6 +3792,20 @@ __log_valid	../log/log.c	/^__log_valid(dblp, number, set_persist, fhpp, flags/
 __log_vtruncate	../log/log.c	/^__log_vtruncate(dbenv, lsn, ckplsn, trunclsn)$/
 __log_write	../log/log_put.c	/^__log_write(dblp, addr, len)$/
 __log_zero	../log/log.c	/^__log_zero(dbenv, from_lsn, to_lsn)$/
+__logc_close	../log/log_get.c	/^__logc_close(logc)$/
+__logc_close_pp	../log/log_get.c	/^__logc_close_pp(logc, flags)$/
+__logc_get	../log/log_get.c	/^__logc_get(logc, alsn, dbt, flags)$/
+__logc_get_int	../log/log_get.c	/^__logc_get_int(logc, alsn, dbt, flags)$/
+__logc_get_pp	../log/log_get.c	/^__logc_get_pp(logc, alsn, dbt, flags)$/
+__logc_hdrchk	../log/log_get.c	/^__logc_hdrchk(logc, lsn, hdr, eofp)$/
+__logc_incursor	../log/log_get.c	/^__logc_incursor(logc, lsn, hdr, pp)$/
+__logc_inregion	../log/log_get.c	/^__logc_inregion(logc, lsn, rlockp, last_lsn, hdr, /
+__logc_io	../log/log_get.c	/^__logc_io(logc, fnum, offset, p, nrp, eofp)$/
+__logc_ondisk	../log/log_get.c	/^__logc_ondisk(logc, lsn, last_lsn, flags, hdr, pp,/
+__logc_set_maxrec	../log/log_get.c	/^__logc_set_maxrec(logc, np)$/
+__logc_shortread	../log/log_get.c	/^__logc_shortread(logc, lsn, check_silent)$/
+__logc_version	../log/log_get.c	/^__logc_version(logc, versionp)$/
+__logc_version_pp	../log/log_get.c	/^__logc_version_pp(logc, versionp, flags)$/
 __lsn_diff	../env/env_recover.c	/^__lsn_diff(low, high, current, max, is_forward)$/
 __memp_alloc	../mp/mp_alloc.c	/^__memp_alloc(dbmp, infop, mfp, len, offsetp, retp)/
 __memp_alloc_freelist	../mp/mp_method.c	/^__memp_alloc_freelist(dbmfp, nelems, listp)$/
@@ -3791,7 +3818,7 @@ __memp_bhfree	../mp/mp_bh.c	/^__memp_bhfree(dbmp, hp, bhp, flags)$/
 __memp_bhwrite	../mp/mp_bh.c	/^__memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)$/
 __memp_bucket_reorder	../mp/mp_mvcc.c	/^__memp_bucket_reorder(dbenv, hp, bhp)$/
 __memp_check_order	../mp/mp_alloc.c	/^__memp_check_order(dbenv, hp)$/
-__memp_close_flush_files	../mp/mp_sync.c	/^__memp_close_flush_files(dbenv, dbmp, dosync)$/
+__memp_close_flush_files	../mp/mp_sync.c	/^__memp_close_flush_files(dbenv, dosync)$/
 __memp_count_files	../mp/mp_stat.c	/^__memp_count_files(dbenv, mfp, argp, countp, flags/
 __memp_dbenv_create	../mp/mp_method.c	/^__memp_dbenv_create(dbenv)$/
 __memp_dbenv_destroy	../mp/mp_method.c	/^__memp_dbenv_destroy(dbenv)$/
@@ -3840,7 +3867,7 @@ __memp_mf_discard	../mp/mp_fopen.c	/^__memp_mf_discard(dbmp, mfp)$/
 __memp_mf_sync	../mp/mp_sync.c	/^__memp_mf_sync(dbmp, mfp, region_locked)$/
 __memp_mfp_alloc	../mp/mp_fopen.c	/^__memp_mfp_alloc(dbmp, dbmfp, path, pagesize, flag/
 __memp_nameop	../mp/mp_method.c	/^__memp_nameop(dbenv, fileid, newname, fullold, ful/
-__memp_open	../mp/mp_region.c	/^__memp_open(dbenv)$/
+__memp_open	../mp/mp_region.c	/^__memp_open(dbenv, create_ok)$/
 __memp_pg	../mp/mp_bh.c	/^__memp_pg(dbmfp, bhp, is_pgin)$/
 __memp_pgread	../mp/mp_bh.c	/^__memp_pgread(dbmfp, hp, bhp, can_create)$/
 __memp_pgwrite	../mp/mp_bh.c	/^__memp_pgwrite(dbenv, dbmfp, hp, bhp)$/
@@ -3875,7 +3902,7 @@ __memp_stat_print_pp	../mp/mp_stat.c	/^__memp_stat_print_pp(dbenv, flags)$/
 __memp_stat_wait	../mp/mp_stat.c	/^__memp_stat_wait(dbenv, reginfo, mp, mstat, flags)/
 __memp_sync	../mp/mp_sync.c	/^__memp_sync(dbenv, lsnp)$/
 __memp_sync_file	../mp/mp_sync.c	/^__memp_sync_file(dbenv, mfp, argp, countp, flags)$/
-__memp_sync_files	../mp/mp_sync.c	/^int __memp_sync_files(dbenv, dbmp)$/
+__memp_sync_files	../mp/mp_sync.c	/^int __memp_sync_files(dbenv)$/
 __memp_sync_int	../mp/mp_sync.c	/^__memp_sync_int(dbenv, dbmfp, trickle_max, op, wro/
 __memp_sync_pp	../mp/mp_sync.c	/^__memp_sync_pp(dbenv, lsnp)$/
 __memp_trickle	../mp/mp_trickle.c	/^__memp_trickle(dbenv, pct, nwrotep)$/
@@ -3886,6 +3913,7 @@ __mpe_fsync	../os/os_fsync.c	/^__mpe_fsync(fd)$/
 __mpool	../dbinc/mp.h	/^struct __mpool {$/
 __mpoolfile	../dbinc/mp.h	/^struct __mpoolfile {$/
 __mut_failchk	../mutex/mut_failchk.c	/^__mut_failchk(dbenv)$/
+__mutex_align_size	../mutex/mut_region.c	/^__mutex_align_size(dbenv)$/
 __mutex_alloc	../mutex/mut_alloc.c	/^__mutex_alloc(dbenv, alloc_id, flags, indxp)$/
 __mutex_alloc_int	../mutex/mut_alloc.c	/^__mutex_alloc_int(dbenv, locksys, alloc_id, flags,/
 __mutex_alloc_pp	../mutex/mut_method.c	/^__mutex_alloc_pp(dbenv, flags, indxp)$/
@@ -3902,7 +3930,7 @@ __mutex_get_tas_spins	../mutex/mut_method.c	/^__mutex_get_tas_spins(dbenv, tas_s
 __mutex_init	../dbinc/mutex.h	/^#define	__mutex_init(a, b, c)		__db_pthread_mutex_/
 __mutex_lock	../dbinc/mutex.h	/^#define	__mutex_lock(a, b)		__db_pthread_mutex_loc/
 __mutex_lock_pp	../mutex/mut_method.c	/^__mutex_lock_pp(dbenv, indx)$/
-__mutex_open	../mutex/mut_region.c	/^__mutex_open(dbenv)$/
+__mutex_open	../mutex/mut_region.c	/^__mutex_open(dbenv, create_ok)$/
 __mutex_print_all	../mutex/mut_stat.c	/^__mutex_print_all(dbenv, flags)$/
 __mutex_print_debug_single	../mutex/mut_stat.c	/^__mutex_print_debug_single(dbenv, tag, mutex, flag/
 __mutex_print_debug_stats	../mutex/mut_stat.c	/^__mutex_print_debug_stats(dbenv, mbp, mutex, flags/
@@ -3924,6 +3952,7 @@ __mutex_unlock_pp	../mutex/mut_method.c	/^__mutex_unlock_pp(dbenv, indx)$/
 __no_system_mem	../os/os_map.c	/^__no_system_mem(dbenv)$/
 __op_rep_enter	../rep/rep_util.c	/^__op_rep_enter(dbenv)$/
 __op_rep_exit	../rep/rep_util.c	/^__op_rep_exit(dbenv)$/
+__os_abort	../os/os_abort.c	/^__os_abort()$/
 __os_abspath	../os/os_abs.c	/^__os_abspath(path)$/
 __os_calloc	../os/os_alloc.c	/^__os_calloc(dbenv, num, size, storep)$/
 __os_clock	../os/os_clock.c	/^__os_clock(dbenv, secsp, usecsp)$/
@@ -3956,7 +3985,6 @@ __os_openhandle	../os/os_handle.c	/^__os_openhandle(dbenv, name, flags, mode, fh
 __os_physwrite	../os/os_rw.c	/^__os_physwrite(dbenv, fhp, addr, len, nwp)$/
 __os_posix_err	../os/os_errno.c	/^__os_posix_err(error)$/
 __os_pstat_getdynamic	../os/os_spin.c	/^__os_pstat_getdynamic()$/
-__os_qnx_region_open	../os/os_open.c	/^__os_qnx_region_open(dbenv, name, oflags, mode, fh/
 __os_r_attach	../os/os_region.c	/^__os_r_attach(dbenv, infop, rp)$/
 __os_r_detach	../os/os_region.c	/^__os_r_detach(dbenv, infop, destroy)$/
 __os_r_sysattach	../os/os_map.c	/^__os_r_sysattach(dbenv, infop, rp)$/
@@ -3964,10 +3992,9 @@ __os_r_sysdetach	../os/os_map.c	/^__os_r_sysdetach(dbenv, infop, destroy)$/
 __os_read	../os/os_rw.c	/^__os_read(dbenv, fhp, addr, len, nrp)$/
 __os_realloc	../os/os_alloc.c	/^__os_realloc(dbenv, size, storep)$/
 __os_region_unlink	../os/os_unlink.c	/^__os_region_unlink(dbenv, path)$/
-__os_rename	../os/os_rename.c	/^__os_rename(dbenv, old, new, silent)$/
+__os_rename	../os/os_rename.c	/^__os_rename(dbenv, oldname, newname, silent)$/
 __os_seek	../os/os_seek.c	/^__os_seek(dbenv, fhp, pgno, pgsize, relative)$/
 __os_set_errno	../os/os_errno.c	/^__os_set_errno(evalue)$/
-__os_shmname	../os/os_open.c	/^__os_shmname(dbenv, name, newnamep)$/
 __os_sleep	../os/os_sleep.c	/^__os_sleep(dbenv, secs, usecs)$/
 __os_spin	../os/os_spin.c	/^__os_spin(dbenv)$/
 __os_strdup	../os/os_alloc.c	/^__os_strdup(dbenv, str, storep)$/
@@ -3996,13 +4023,6 @@ __qam_add_read	../qam/qam_auto.c	/^__qam_add_read(dbenv, recbuf, argpp)$/
 __qam_add_recover	../qam/qam_rec.c	/^__qam_add_recover(dbenv, dbtp, lsnp, op, info)$/
 __qam_append	../qam/qam.c	/^__qam_append(dbc, key, data)$/
 __qam_bulk	../qam/qam.c	/^__qam_bulk(dbc, data, flags)$/
-__qam_c_close	../qam/qam.c	/^__qam_c_close(dbc, root_pgno, rmroot)$/
-__qam_c_del	../qam/qam.c	/^__qam_c_del(dbc)$/
-__qam_c_destroy	../qam/qam.c	/^__qam_c_destroy(dbc)$/
-__qam_c_dup	../qam/qam.c	/^__qam_c_dup(orig_dbc, new_dbc)$/
-__qam_c_get	../qam/qam.c	/^__qam_c_get(dbc, key, data, flags, pgnop)$/
-__qam_c_init	../qam/qam.c	/^__qam_c_init(dbc)$/
-__qam_c_put	../qam/qam.c	/^__qam_c_put(dbc, key, data, flags, pgnop)$/
 __qam_consume	../qam/qam.c	/^__qam_consume(dbc, meta, first)$/
 __qam_db_close	../qam/qam_method.c	/^__qam_db_close(dbp, flags)$/
 __qam_db_create	../qam/qam_method.c	/^__qam_db_create(dbp)$/
@@ -4062,6 +4082,13 @@ __qam_vrfy_data	../qam/qam_verify.c	/^__qam_vrfy_data(dbp, vdp, h, pgno, flags)$
 __qam_vrfy_meta	../qam/qam_verify.c	/^__qam_vrfy_meta(dbp, vdp, meta, pgno, flags)$/
 __qam_vrfy_structure	../qam/qam_verify.c	/^__qam_vrfy_structure(dbp, vdp, flags)$/
 __qam_vrfy_walkqueue	../qam/qam_verify.c	/^__qam_vrfy_walkqueue(dbp, vdp, handle, callback, f/
+__qamc_close	../qam/qam.c	/^__qamc_close(dbc, root_pgno, rmroot)$/
+__qamc_del	../qam/qam.c	/^__qamc_del(dbc)$/
+__qamc_destroy	../qam/qam.c	/^__qamc_destroy(dbc)$/
+__qamc_dup	../qam/qam.c	/^__qamc_dup(orig_dbc, new_dbc)$/
+__qamc_get	../qam/qam.c	/^__qamc_get(dbc, key, data, flags, pgnop)$/
+__qamc_init	../qam/qam.c	/^__qamc_init(dbc)$/
+__qamc_put	../qam/qam.c	/^__qamc_put(dbc, key, data, flags, pgnop)$/
 __qcursor	../dbinc/qam.h	/^struct __qcursor {$/
 __qmpf	../dbinc/qam.h	/^	struct __qmpf {$/
 __queue	../dbinc/qam.h	/^struct __queue {$/
@@ -4069,9 +4096,6 @@ __queue_pageinfo	../qam/qam_method.c	/^__queue_pageinfo(dbp, firstp, lastp, empt
 __queued_output	../dbinc/repmgr.h	/^struct __queued_output {$/
 __ram_add	../btree/bt_recno.c	/^__ram_add(dbc, recnop, data, flags, bi_flags)$/
 __ram_append	../btree/bt_recno.c	/^__ram_append(dbc, key, data)$/
-__ram_c_del	../btree/bt_recno.c	/^__ram_c_del(dbc)$/
-__ram_c_get	../btree/bt_recno.c	/^__ram_c_get(dbc, key, data, flags, pgnop)$/
-__ram_c_put	../btree/bt_recno.c	/^__ram_c_put(dbc, key, data, flags, pgnop)$/
 __ram_ca	../btree/bt_recno.c	/^__ram_ca(dbc_arg, op, foundp)$/
 __ram_ca_delete	../btree/bt_curadj.c	/^__ram_ca_delete(dbp, root_pgno, foundp)$/
 __ram_get_re_delim	../btree/bt_method.c	/^__ram_get_re_delim(dbp, re_delimp)$/
@@ -4093,6 +4117,9 @@ __ram_update	../btree/bt_recno.c	/^__ram_update(dbc, recno, can_create)$/
 __ram_vrfy_inp	../btree/bt_verify.c	/^__ram_vrfy_inp(dbp, vdp, h, pgno, nentriesp, flags/
 __ram_vrfy_leaf	../btree/bt_verify.c	/^__ram_vrfy_leaf(dbp, vdp, h, pgno, flags)$/
 __ram_writeback	../btree/bt_recno.c	/^__ram_writeback(dbp)$/
+__ramc_del	../btree/bt_recno.c	/^__ramc_del(dbc)$/
+__ramc_get	../btree/bt_recno.c	/^__ramc_get(dbc, key, data, flags, pgnop)$/
+__ramc_put	../btree/bt_recno.c	/^__ramc_put(dbc, key, data, flags, pgnop)$/
 __reg_type	../env/env_stat.c	/^__reg_type(t)$/
 __rep_abort_prepared	../rep/rep_method.c	/^__rep_abort_prepared(dbenv)$/
 __rep_allreq	../rep/rep_log.c	/^__rep_allreq(dbenv, rp, eid)$/
@@ -4164,6 +4191,7 @@ __rep_page_req	../rep/rep_backup.c	/^__rep_page_req(dbenv, eid, rec)$/
 __rep_page_sendpages	../rep/rep_backup.c	/^__rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)$/
 __rep_pggap_req	../rep/rep_backup.c	/^__rep_pggap_req(dbenv, rep, reqfp, gapflags)$/
 __rep_preclose	../rep/rep_region.c	/^__rep_preclose(dbenv)$/
+__rep_print	../rep/rep_util.c	/^__rep_print(dbenv, fmt, va_alist)$/
 __rep_print_all	../rep/rep_stat.c	/^__rep_print_all(dbenv, flags)$/
 __rep_print_logmsg	../rep/rep_util.c	/^__rep_print_logmsg(dbenv, logdbt, lsnp)$/
 __rep_print_message	../rep/rep_util.c	/^__rep_print_message(dbenv, eid, rp, str, flags)$/
@@ -4290,6 +4318,7 @@ __repmgr_thread_join	../repmgr/repmgr_posix.c	/^__repmgr_thread_join(thread)$/
 __repmgr_thread_start	../repmgr/repmgr_posix.c	/^__repmgr_thread_start(dbenv, runnable)$/
 __repmgr_timeval_cmp	../repmgr/repmgr_util.c	/^__repmgr_timeval_cmp(a, b)$/
 __repmgr_timeval_diff_current	../repmgr/repmgr_posix.c	/^__repmgr_timeval_diff_current(dbenv, when, result)/
+__repmgr_try_one	../repmgr/repmgr_sel.c	/^__repmgr_try_one(dbenv, eid)$/
 __repmgr_unlock_mutex	../repmgr/repmgr_posix.c	/^__repmgr_unlock_mutex(mutex)$/
 __repmgr_update_consumed	../repmgr/repmgr_util.c	/^__repmgr_update_consumed(v, byte_count)$/
 __repmgr_wake_main_thread	../repmgr/repmgr_posix.c	/^__repmgr_wake_main_thread(dbenv)$/
@@ -4375,7 +4404,7 @@ __txn_lockevent	../txn/txn_util.c	/^__txn_lockevent(dbenv, txn, dbp, lock, locke
 __txn_logrec	../dbinc/txn.h	/^struct __txn_logrec {$/
 __txn_map_gid	../txn/txn_recover.c	/^__txn_map_gid(dbenv, gid, tdp, offp)$/
 __txn_oldest_reader	../txn/txn_region.c	/^__txn_oldest_reader(dbenv, lsnp)$/
-__txn_open	../txn/txn_region.c	/^__txn_open(dbenv)$/
+__txn_open	../txn/txn_region.c	/^__txn_open(dbenv, create_ok)$/
 __txn_openfiles	../txn/txn_recover.c	/^__txn_openfiles(dbenv, min, force)$/
 __txn_preclose	../txn/txn.c	/^__txn_preclose(dbenv)$/
 __txn_prepare	../txn/txn.c	/^__txn_prepare(txn, gid)$/
@@ -4459,7 +4488,6 @@ _thread_id_intercept	../cxx/cxx_env.cpp	/^void DbEnv::_thread_id_intercept(DB_EN
 _thread_id_intercept_c	../cxx/cxx_env.cpp	/^void _thread_id_intercept_c(DB_ENV *env, pid_t *pi/
 _thread_id_string_intercept	../cxx/cxx_env.cpp	/^char *DbEnv::_thread_id_string_intercept(DB_ENV *e/
 _thread_id_string_intercept_c	../cxx/cxx_env.cpp	/^char *_thread_id_string_intercept_c(DB_ENV *env, p/
-abort	../clib/abort.c	/^abort()$/
 ack_message	../repmgr/repmgr_msg.c	/^ack_message(dbenv, generation, lsn)$/
 add_home	../rpc_server/c/db_server_util.c	/^add_home(home)$/
 add_passwd	../rpc_server/c/db_server_util.c	/^add_passwd(passwd)$/
@@ -4528,6 +4556,7 @@ db185_put	../db185/db185.c	/^db185_put(db185p, key185, data185, flags)$/
 db185_seq	../db185/db185.c	/^db185_seq(db185p, key185, data185, flags)$/
 db185_sync	../db185/db185.c	/^db185_sync(db185p, flags)$/
 db_Cmd	../tcl/tcl_db.c	/^db_Cmd(clientData, interp, objc, objv)$/
+db_allocinfo_t	../os/os_alloc.c	/^} db_allocinfo_t;$/
 db_ca_mode	../dbinc/btree.h	/^} db_ca_mode;$/
 db_create	../db/db_method.c	/^db_create(dbpp, dbenv, flags)$/
 db_env_create	../env/env_method.c	/^db_env_create(dbenvpp, flags)$/
@@ -4641,7 +4670,7 @@ firstkey	../dbinc/db.in	/^#define	firstkey	__db_dbm_firstkey@DB_VERSION_UNIQ/
 flatten	../repmgr/repmgr_net.c	/^flatten(dbenv, msg)$/
 fprintf	../clib/printf.c	/^fprintf(fp, fmt, va_alist)$/
 free_wait_slot	../repmgr/repmgr_windows.c	/^free_wait_slot(dbenv, slot)$/
-fsync	../os/os_fsync.c	/^#define	fsync(fd)	__vx_fsync(fd)$/
+fsync	../dbinc/win_db.h	/^#define	fsync			_commit$/
 get	../cxx/cxx_dbc.cpp	/^int Dbc::get(Dbt* key, Dbt *data, u_int32_t _flags/
 get_app_private	../cxx/cxx_env.cpp	/^void *DbEnv::get_app_private() const$/
 get_byteswapped	../cxx/cxx_db.cpp	/^int Db::get_byteswapped(int *isswapped)$/
@@ -4660,8 +4689,10 @@ get_mpf	../cxx/cxx_db.cpp	/^DbMpoolFile *Db::get_mpf()$/
 get_obj	../cxx/cxx_except.cpp	/^const Dbt* DbLockNotGrantedException::get_obj() co/
 get_op	../cxx/cxx_except.cpp	/^db_lockop_t DbLockNotGrantedException::get_op() co/
 get_tableent	../rpc_server/c/db_server_util.c	/^get_tableent(id)$/
-getcwd	../clib/getcwd.c	/^getcwd(pt, size)$/
+getcwd	../dbinc/win_db.h	/^#define	getcwd(buf, size)	_getcwd(buf, size)$/
 getopt	../clib/getopt.c	/^getopt(nargc, nargv, ostr)$/
+getpid	../dbinc/win_db.h	/^#define	getpid			_getpid$/
+h_errno	../dbinc/win_db.h	/^#define	h_errno			WSAGetLastError()$/
 h_hash_callback_	../cxx/cxx_db.cpp	/^,	h_hash_callback_(0)$/
 handle_completion	../repmgr/repmgr_windows.c	/^handle_completion(dbenv, conn)$/
 handle_newsite	../repmgr/repmgr_msg.c	/^handle_newsite(dbenv, rec)$/
@@ -4727,9 +4758,11 @@ logputopts	../tcl/tcl_log.c	/^	enum logputopts {$/
 lsnwhich	../tcl/tcl_env.c	/^	enum lsnwhich {$/
 lvopts	../tcl/tcl_lock.c	/^	enum lvopts {$/
 map_file	../mutex/tm.c	/^map_file(gm_addrp, tm_addrp, lm_addrp, fhpp)$/
+med3	../clib/qsort.c	/^med3(a, b, c, cmp)$/
 memcmp	../clib/memcmp.c	/^memcmp(s1, s2, n)$/
 message_loop	../repmgr/repmgr_msg.c	/^message_loop(dbenv)$/
 mgr_mutex_t	../dbinc/repmgr.h	/^typedef HANDLE mgr_mutex_t;$/
+min	../clib/qsort.c	/^#define min(a, b)	(a) < (b) ? a : b$/
 mp_Cmd	../tcl/tcl_mp.c	/^mp_Cmd(clientData, interp, objc, objv)$/
 mpcmds	../tcl/tcl_mp.c	/^	enum mpcmds {$/
 mpget	../tcl/tcl_mp.c	/^	enum mpget {$/
@@ -4775,6 +4808,7 @@ pthread_mutex_unlock	../mutex/mut_pthread.c	/^#define	pthread_mutex_unlock		_lwp
 qam_name_op	../dbinc/qam.h	/^} qam_name_op;$/
 qam_probe_mode	../dbinc/qam.h	/^} qam_probe_mode;$/
 qm_trace	../dbinc/queue.h	/^struct qm_trace {$/
+qsort	../clib/qsort.c	/^qsort(a, n, es, cmp)$/
 raise	../clib/raise.c	/^raise(s)$/
 rand	../clib/rand.c	/^int rand(void)	\/* RAND_MAX assumed to be 32767 */
 rcmds	../tcl/tcl_util.c	/^	enum rcmds {$/
@@ -4813,7 +4847,7 @@ sfonoff	../tcl/tcl_env.c	/^	enum sfonoff {$/
 sfwhich	../tcl/tcl_env.c	/^	enum sfwhich {$/
 signal_handler	../common/util_sig.c	/^signal_handler(signo)$/
 size_t	../dbinc/db_cxx.in	/^		(size_t);$/
-snprintf	../clib/snprintf.c	/^snprintf(str, n, fmt, va_alist)$/
+snprintf	../dbinc/win_db.h	/^#define	snprintf		_snprintf$/
 socket_t	../dbinc/repmgr.h	/^typedef SOCKET socket_t;$/
 socklen_t	../dbinc/repmgr.h	/^typedef int socklen_t;$/
 sockopt_t	../dbinc/repmgr.h	/^typedef char * sockopt_t;$/
@@ -4837,6 +4871,9 @@ strrchr	../clib/strrchr.c	/^char *strrchr(const char *p, int ch)$/
 strsep	../clib/strsep.c	/^strsep(stringp, delim)$/
 strtol	../clib/strtol.c	/^strtol(nptr, endptr, base)$/
 strtoul	../clib/strtoul.c	/^strtoul(nptr, endptr, base)$/
+swap	../clib/qsort.c	/^#define swap(a, b)					\\$/
+swapcode	../clib/qsort.c	/^#define swapcode(TYPE, parmi, parmj, n) { 		\\$/
+swapfunc	../clib/qsort.c	/^swapfunc(a, b, n, swaptype)$/
 tcl_CDSGroup	../tcl/tcl_txn.c	/^tcl_CDSGroup(interp, objc, objv, envp, envip)$/
 tcl_DbAssociate	../tcl/tcl_db.c	/^tcl_DbAssociate(interp, objc, objv, dbp)$/
 tcl_DbClose	../tcl/tcl_db.c	/^tcl_DbClose(interp, objc, objv, dbp, dbip)$/
@@ -4933,12 +4970,13 @@ u8	../crypto/rijndael/rijndael-alg-fst.h	/^typedef u_int8_t	u8;$/
 u_int32_t	../dbinc/db_cxx.in	/^		(DB *, const void *, u_int32_t);$/
 unmap_file	../mutex/tm.c	/^unmap_file(addr, fhp)$/
 usage	../mutex/tm.c	/^usage()$/
+vecswap	../clib/qsort.c	/^#define vecswap(a, b, n) 	if ((n) > 0) swapfunc(a,/
 verbonoff	../tcl/tcl_env.c	/^	enum verbonoff {$/
 verbwhich	../tcl/tcl_env.c	/^	enum verbwhich {$/
 version_check	../rpc_server/c/db_server_util.c	/^version_check()$/
 vfprintf	../clib/printf.c	/^vfprintf(fp, fmt, ap)$/
 void	../dbinc/db_cxx.in	/^		(void *);$/
-vsnprintf	../clib/snprintf.c	/^vsnprintf(str, n, fmt, ap)$/
+vsnprintf	../dbinc/win_db.h	/^#define	vsnprintf		_vsnprintf$/
 wakeup_start	../mutex/tm.c	/^wakeup_start(id)$/
 wakeup_wait	../mutex/tm.c	/^wakeup_wait()$/
 what	../cxx/cxx_except.cpp	/^const char *DbException::what() const throw()$/

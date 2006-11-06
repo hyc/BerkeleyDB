@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_config.c,v 12.67 2006/09/19 14:14:07 mjc Exp $
+ * $Id: env_config.c,v 12.69 2006/11/01 00:52:48 bostic Exp $
  */
 
 #include "db_config.h"
@@ -329,6 +328,10 @@ format:		__db_errx(dbenv,
 			goto format;
 		if (strcasecmp(argv[1], "db_verb_deadlock") == 0)
 			flags = DB_VERB_DEADLOCK;
+		else if (strcasecmp(argv[1], "db_verb_fileops") == 0)
+			flags = DB_VERB_FILEOPS;
+		else if (strcasecmp(argv[1], "db_verb_fileops_all") == 0)
+			flags = DB_VERB_FILEOPS_ALL;
 		else if (strcasecmp(argv[1], "db_verb_recovery") == 0)
 			flags = DB_VERB_RECOVERY;
 		else if (strcasecmp(argv[1], "db_verb_register") == 0)

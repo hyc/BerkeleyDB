@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_db.h,v 12.8 2006/08/24 14:45:30 bostic Exp $
+ * $Id: tcl_db.h,v 12.10 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef _DB_TCL_DB_H_
@@ -83,7 +82,7 @@ typedef struct dbtcl_info {
 	char *i_errpfx;
 
 	/* Callbacks--Tcl_Objs containing proc names */
-	Tcl_Obj *i_btcompare;
+	Tcl_Obj *i_compare;
 	Tcl_Obj *i_dupcompare;
 	Tcl_Obj *i_event;
 	Tcl_Obj *i_hashproc;

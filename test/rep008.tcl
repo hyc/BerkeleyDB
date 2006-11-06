@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep008.tcl,v 12.9 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep008.tcl,v 12.12 2006/11/01 00:53:54 bostic Exp $
 #
 # TEST	rep008
 # TEST	Replication, back up and synchronizing
@@ -114,13 +113,12 @@ proc rep008_sub { method niter tnum recargs largs } {
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
 
-	#
 	# Process the messages to get them out of the db.
 	#
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist 0 NONE err
 	error_check_bad err $err 0
-	error_check_good errchk [is_substr $err "Client was never part"] 1
+	error_check_good errchk [is_substr $err "DB_REP_JOIN_FAILURE"] 1
 
 	error_check_good masterenv_close [$masterenv close] 0
 	error_check_good clientenv_close [$clientenv close] 0

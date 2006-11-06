@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_stat.c,v 12.17 2006/08/24 14:46:11 bostic Exp $
+ * $Id: lock_stat.c,v 12.19 2006/11/01 00:53:34 bostic Exp $
  */
 
 #include "db_config.h"
@@ -266,7 +265,7 @@ __lock_print_all(dbenv, flags)
 
 	LOCK_SYSTEM_LOCK(dbenv);
 
-	__db_print_reginfo(dbenv, &lt->reginfo, "Lock");
+	__db_print_reginfo(dbenv, &lt->reginfo, "Lock", flags);
 
 	if (LF_ISSET(DB_STAT_ALL | DB_STAT_LOCK_PARAMS)) {
 		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));

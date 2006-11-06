@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -35,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_dup.c,v 12.17 2006/09/07 20:05:29 bostic Exp $
+ * $Id: hash_dup.c,v 12.19 2006/11/01 00:53:22 bostic Exp $
  */
 
 /*
@@ -53,7 +52,7 @@
 #include "dbinc/btree.h"
 #include "dbinc/mp.h"
 
-static int __ham_c_chgpg __P((DBC *,
+static int __hamc_chgpg __P((DBC *,
     db_pgno_t, u_int32_t, db_pgno_t, u_int32_t));
 static int __ham_check_move __P((DBC *, u_int32_t));
 static int __ham_dcursor __P((DBC *, db_pgno_t, u_int32_t));
@@ -130,7 +129,7 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 
 		if ((ret = __ham_dup_convert(dbc)) != 0)
 			return (ret);
-		return (hcp->opd->c_am_put(hcp->opd,
+		return (hcp->opd->am_put(hcp->opd,
 		    NULL, nval, flags, NULL));
 	}
 
@@ -220,7 +219,7 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 		default:
 			return (__db_unknown_path(dbenv, "__ham_add_dup"));
 		}
-		ret = __ham_c_update(dbc, tmp_val.size, 1, 1);
+		ret = __hamc_update(dbc, tmp_val.size, 1, 1);
 		return (ret);
 	}
 
@@ -591,7 +590,7 @@ __ham_check_move(dbc, add_len)
 	__ham_copy_item(dbp, hcp->page, H_DATAINDEX(hcp->indx), next_pagep);
 
 	/* Update all cursors that used to point to this item. */
-	if ((ret = __ham_c_chgpg(dbc, PGNO(hcp->page), H_KEYINDEX(hcp->indx),
+	if ((ret = __hamc_chgpg(dbc, PGNO(hcp->page), H_KEYINDEX(hcp->indx),
 	    PGNO(next_pagep), NUM_ENT(next_pagep) - 2)) != 0)
 		goto out;
 
@@ -772,7 +771,7 @@ __ham_dcursor(dbc, pgno, indx)
 	dbp = dbc->dbp;
 	hcp = (HASH_CURSOR *)dbc->internal;
 
-	if ((ret = __db_c_newopd(dbc, pgno, hcp->opd, &hcp->opd)) != 0)
+	if ((ret = __dbc_newopd(dbc, pgno, hcp->opd, &hcp->opd)) != 0)
 		return (ret);
 
 	dcp = (BTREE_CURSOR *)hcp->opd->internal;
@@ -801,7 +800,7 @@ __ham_dcursor(dbc, pgno, indx)
 }
 
 /*
- * __ham_c_chgpg --
+ * __hamc_chgpg --
  *	Adjust the cursors after moving an item to a new page.  We only
  *	move cursors that are pointing at this one item and are not
  *	deleted;  since we only touch non-deleted cursors, and since
@@ -810,7 +809,7 @@ __ham_dcursor(dbc, pgno, indx)
  *	on abort really do refer to this one item.
  */
 static int
-__ham_c_chgpg(dbc, old_pgno, old_index, new_pgno, new_index)
+__hamc_chgpg(dbc, old_pgno, old_index, new_pgno, new_index)
 	DBC *dbc;
 	db_pgno_t old_pgno, new_pgno;
 	u_int32_t old_index, new_index;

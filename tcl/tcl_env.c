@@ -1,16 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_env.c,v 12.29 2006/08/24 14:46:33 bostic Exp $
+ * $Id: tcl_env.c,v 12.32 2006/11/01 00:53:51 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <tcl.h>
 #endif
 #include "dbinc/lock.h"
@@ -1270,6 +1269,8 @@ tcl_EnvVerbose(interp, dbenv, which, onoff)
 {
 	static const char *verbwhich[] = {
 		"deadlock",
+		"fileops",
+		"fileops_all",
 		"recovery",
 		"register",
 		"rep",
@@ -1278,6 +1279,8 @@ tcl_EnvVerbose(interp, dbenv, which, onoff)
 	};
 	enum verbwhich {
 		ENVVERB_DEADLOCK,
+		ENVVERB_FILEOPS,
+		ENVVERB_FILEOPS_ALL,
 		ENVVERB_RECOVERY,
 		ENVVERB_REGISTER,
 		ENVVERB_REPLICATION,
@@ -1302,6 +1305,12 @@ tcl_EnvVerbose(interp, dbenv, which, onoff)
 	switch ((enum verbwhich)optindex) {
 	case ENVVERB_DEADLOCK:
 		wh = DB_VERB_DEADLOCK;
+		break;
+	case ENVVERB_FILEOPS:
+		wh = DB_VERB_FILEOPS;
+		break;
+	case ENVVERB_FILEOPS_ALL:
+		wh = DB_VERB_FILEOPS_ALL;
 		break;
 	case ENVVERB_RECOVERY:
 		wh = DB_VERB_RECOVERY;
@@ -2310,6 +2319,8 @@ env_GetVerbose(interp, objc, objv, dbenv)
 		char *arg;
 	} verbose_flags[] = {
 		{ DB_VERB_DEADLOCK, "deadlock" },
+		{ DB_VERB_FILEOPS, "fileops" },
+		{ DB_VERB_FILEOPS_ALL, "fileops_all" },
 		{ DB_VERB_RECOVERY, "recovery" },
 		{ DB_VERB_REGISTER, "register" },
 		{ DB_VERB_REPLICATION, "rep" },

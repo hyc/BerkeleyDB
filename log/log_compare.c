@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: log_compare.c,v 12.8 2006/09/14 15:00:49 bostic Exp $
+ * $Id: log_compare.c,v 12.9 2006/11/01 00:53:35 bostic Exp $
  */
 
 #include "db_config.h"

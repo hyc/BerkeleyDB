@@ -31,7 +31,7 @@ int __db_pthread_mutex_init __P((DB_ENV *, db_mutex_t, u_int32_t));
 int __db_pthread_mutex_lock __P((DB_ENV *, db_mutex_t));
 int __db_pthread_mutex_unlock __P((DB_ENV *, db_mutex_t));
 int __db_pthread_mutex_destroy __P((DB_ENV *, db_mutex_t));
-int __mutex_open __P((DB_ENV *));
+int __mutex_open __P((DB_ENV *, int));
 int __mutex_dbenv_refresh __P((DB_ENV *));
 void __mutex_resource_return __P((DB_ENV *, REGINFO *));
 int __mutex_stat __P((DB_ENV *, DB_MUTEX_STAT **, u_int32_t));

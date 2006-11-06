@@ -1,4 +1,4 @@
-<!--$Id: small.so,v 10.9 2006/08/24 16:32:26 bostic Exp $-->
+<!--$Id: small.so,v 10.10 2006/10/12 19:43:47 bostic Exp $-->
 <!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -34,7 +34,9 @@ enter --disable-replication as an argument to configure.
 --disable-verify as an argument to configure.
 <dt><a name="--enable-smallbuild">--enable-smallbuild</a><dd>Equivalent to individually specifying --disable-cryptography,
 --disable-hash, --disable-queue, --disable-replication,
---disable-statistics and --disable-verify
+--disable-statistics and --disable-verify.  In addition, when compiling
+building with the GNU gcc compiler, the --enable-smallbuild option uses
+the -Os compiler build flag instead of the default -O3.
 </dl>
 <p>The following configuration options will increase the size of the Berkeley DB
 library dramatically and are only useful when debugging applications:</p>
@@ -50,7 +52,7 @@ only a static library, configure Berkeley DB with the
 <a href="../../ref/build_unix/conf.html">--disable-shared</a> option.</p>
 <p>The size of the Berkeley DB library varies a lot depending on the compiler,
 machine architecture, and configuration options.  As an estimate,
-production Berkeley DB libraries built with current GNU gcc compilers have
+production Berkeley DB libraries built with GNU gcc version 3.X compilers have
 footprints in the range of 400KB to 790KB on 32-bit x86 architectures,
 and in the range of 490KB to 920KB on 64-bit x86 architectures.</p>
 <p>For assistance in further reducing the size of the Berkeley DB library, or in

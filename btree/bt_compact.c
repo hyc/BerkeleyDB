@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_compact.c,v 12.53 2006/08/24 14:44:43 bostic Exp $
+ * $Id: bt_compact.c,v 12.55 2006/11/01 00:51:56 bostic Exp $
  */
 
 #include "db_config.h"
@@ -213,7 +212,7 @@ no_free:
 			RESTORE_START;
 		}
 
-		if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 			ret = t_ret;
 
 err:		if (txn_local && txn != NULL) {
@@ -607,7 +606,7 @@ next:	/*
 	/* case 3 -- different parents. */
 	if (*spanp) {
 		CTRACE(dbc, "Span", "", start, 0);
-		if (ndbc == NULL && (ret = __db_c_dup(dbc, &ndbc, 0)) != 0)
+		if (ndbc == NULL && (ret = __dbc_dup(dbc, &ndbc, 0)) != 0)
 			goto err;
 		ncp = (BTREE_CURSOR *)ndbc->internal;
 		ncp->recno = next_recno;
@@ -780,9 +779,9 @@ next:	/*
 			goto next_page;
 
 		/* If they have the same parent, just dup the cursor */
-		if (ndbc != NULL && (ret = __db_c_close(ndbc)) != 0)
+		if (ndbc != NULL && (ret = __dbc_close(ndbc)) != 0)
 			goto err1;
-		if ((ret = __db_c_dup(dbc, &ndbc, DB_POSITION)) != 0)
+		if ((ret = __dbc_dup(dbc, &ndbc, DB_POSITION)) != 0)
 			goto err1;
 		ncp = (BTREE_CURSOR *)ndbc->internal;
 
@@ -888,7 +887,7 @@ next_no_release:
 		 */
 		if (pgs_done != 0 && *spanp) {
 deleted:		if (((ret = __bam_stkrel(ndbc, 0)) != 0 ||
-			     (ret = __db_c_close(ndbc)) != 0))
+			     (ret = __dbc_close(ndbc)) != 0))
 				goto err;
 			*donep = 0;
 			return (0);
@@ -916,7 +915,7 @@ err:	if (dbc != NULL &&
 	if (ndbc != NULL) {
 		if ((t_ret = __bam_stkrel(ndbc, STK_CLRDBC)) != 0 && ret == 0)
 			ret = t_ret;
-		else if ((t_ret = __db_c_close(ndbc)) != 0 && ret == 0)
+		else if ((t_ret = __dbc_close(ndbc)) != 0 && ret == 0)
 			ret = t_ret;
 	}
 
@@ -1807,7 +1806,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, donep)
 			goto err;
 		if (level == LEAFLEVEL)
 			continue;
-		if ((ret = __db_c_newopd(dbc, bo->pgno, NULL, &opd)) != 0)
+		if ((ret = __dbc_newopd(dbc, bo->pgno, NULL, &opd)) != 0)
 			return (ret);
 		if (!have_lock) {
 			if ((ret = __db_lget(dbc, 0,
@@ -1833,13 +1832,13 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, donep)
 		if (ret != 0)
 			goto err;
 
-		ret = __db_c_close(opd);
+		ret = __dbc_close(opd);
 		opd = NULL;
 		if (ret != 0)
 			goto err;
 	}
 
-err:	if (opd != NULL && (t_ret = __db_c_close(opd)) != 0 && ret == 0)
+err:	if (opd != NULL && (t_ret = __dbc_close(opd)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -2312,7 +2311,7 @@ new_txn:
 			break;
 	} while (pgno != cp->root);
 
-	if ((ret = __db_c_close(dbc)) != 0)
+	if ((ret = __dbc_close(dbc)) != 0)
 		goto err;
 	dbc = NULL;
 	if (local_txn) {
@@ -2325,7 +2324,7 @@ new_txn:
 
 err:	if (dbc != NULL && (t_ret = __bam_stkrel(dbc, 0)) != 0 && ret == 0)
 		ret = t_ret;
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 	if (local_txn &&
 	    txn != NULL && (t_ret = __txn_abort(txn)) != 0 && ret == 0)
@@ -2390,7 +2389,7 @@ __bam_free_freelist(dbp, txn)
 err:	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
 
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);

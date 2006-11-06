@@ -70,7 +70,7 @@ int __txn_recover_pp __P((DB_ENV *, DB_PREPLIST *, long, long *, u_int32_t));
 int __txn_recover __P((DB_ENV *, DB_PREPLIST *, long, long *, u_int32_t));
 int __txn_get_prepared __P((DB_ENV *, XID *, DB_PREPLIST *, long, long *, u_int32_t));
 int __txn_openfiles __P((DB_ENV *, DB_LSN *, int));
-int __txn_open __P((DB_ENV *));
+int __txn_open __P((DB_ENV *, int));
 int __txn_findlastckp __P((DB_ENV *, DB_LSN *, DB_LSN *));
 int __txn_dbenv_refresh __P((DB_ENV *));
 int __txn_id_set __P((DB_ENV *, u_int32_t, u_int32_t));

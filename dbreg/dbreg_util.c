@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: dbreg_util.c,v 12.20 2006/09/09 14:28:22 bostic Exp $
+ * $Id: dbreg_util.c,v 12.22 2006/11/01 00:52:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -527,7 +526,7 @@ __dbreg_do_open(dbenv,
 	cstat = TXN_EXPECTED;
 	fname = name;
 	dname = NULL;
-	if ((ret = db_create(&dbp, lp->dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, lp->dbenv, 0)) != 0)
 		return (ret);
 
 	/*
@@ -618,7 +617,7 @@ __dbreg_check_master(dbenv, uid, name)
 	int ret;
 
 	ret = 0;
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 		return (ret);
 	F_SET(dbp, DB_AM_RECOVER);
 	ret = __db_open(dbp, NULL,

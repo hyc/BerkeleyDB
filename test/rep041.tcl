@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep041.tcl,v 12.11 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep041.tcl,v 12.14 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep041
 # TEST  Turn replication on and off at run-time.
@@ -84,11 +83,7 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
@@ -111,6 +106,7 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 #	    -home $masterdir -rep"
 	set masterenv [eval $ma_envcmd $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
+	$masterenv rep_limit 0 0
 
         # Run rep_test in the master to advance log files.
 	puts "\tRep$tnum.b: Running rep_test to create some log files."
@@ -153,6 +149,7 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 #	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 
 	# Set up envlist for processing messages later.
 	set envlist "{$masterenv 1} {$clientenv 2}"

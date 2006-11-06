@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_stat.c,v 12.16 2006/09/07 16:51:04 bostic Exp $
+ * $Id: rep_stat.c,v 12.19 2006/11/01 00:53:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -388,10 +387,13 @@ __rep_print_all(dbenv, flags)
 		{ REP_F_CLIENT,		"REP_F_CLIENT" },
 		{ REP_F_EPHASE1,	"REP_F_EPHASE1" },
 		{ REP_F_EPHASE2,	"REP_F_EPHASE2" },
+		{ REP_F_INREPELECT,	"REP_F_INREPELECT" },
 		{ REP_F_MASTER,		"REP_F_MASTER" },
 		{ REP_F_MASTERELECT,	"REP_F_MASTERELECT" },
 		{ REP_F_NOARCHIVE,	"REP_F_NOARCHIVE" },
-		{ REP_F_READY,		"REP_F_READY" },
+		{ REP_F_READY_API,	"REP_F_READY_API" },
+		{ REP_F_READY_MSG,	"REP_F_READY_MSG" },
+		{ REP_F_READY_OP,	"REP_F_READY_OP" },
 		{ REP_F_RECOVER_LOG,	"REP_F_RECOVER_LOG" },
 		{ REP_F_RECOVER_PAGE,	"REP_F_RECOVER_PAGE" },
 		{ REP_F_RECOVER_UPDATE,	"REP_F_RECOVER_UPDATE" },
@@ -447,12 +449,9 @@ __rep_print_all(dbenv, flags)
 	STAT_ULONG("Request gap", rep->request_gap);
 	STAT_ULONG("Maximum gap", rep->max_gap);
 
-	STAT_LONG("Thread is in rep_elect", rep->elect_th);
 	STAT_ULONG("Callers in rep_proc_msg", rep->msg_th);
-	STAT_LONG("Thread is in msg lockout", rep->lockout_th);
 	STAT_ULONG("Library handle count", rep->handle_cnt);
 	STAT_ULONG("Multi-step operation count", rep->op_cnt);
-	STAT_LONG("Running recovery", rep->in_recovery);
 	__db_msg(dbenv, "%.24s\tRecovery timestamp",
 	    renv->rep_timestamp == 0 ?
 	    "0" : __db_ctime(&renv->rep_timestamp, time_buf));

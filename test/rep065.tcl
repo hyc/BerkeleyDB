@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2006 Oracle.  All rights reserved.
 #
-# $Id: rep065.tcl,v 12.9 2006/09/08 20:32:18 bostic Exp $
+# $Id: rep065.tcl,v 12.10 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep065
 # TEST	Tests replication running with different versions.

@@ -58,8 +58,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 libdb45.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release/libdb_tcl45.dll" /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 libdb46.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release/libdb_tcl46.dll" /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - Win32 Debug"
 
@@ -85,8 +85,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libdb45d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /pdb:none /debug /machine:I386 /out:"Debug/libdb_tcl45d.dll" /fixed:no /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 libdb46d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /pdb:none /debug /machine:I386 /out:"Debug/libdb_tcl46d.dll" /fixed:no /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - Win32 ASCII Debug"
 
@@ -114,8 +114,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /pdb:none /debug /machine:I386 /out:"Debug_ASCII/libdb_tcl45d.dll" /fixed:no
-# ADD LINK32 libdb45d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /pdb:none /debug /machine:I386 /out:"Debug_ASCII/libdb_tcl45d.dll" /fixed:no /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /pdb:none /debug /machine:I386 /out:"Debug_ASCII/libdb_tcl46d.dll" /fixed:no
+# ADD LINK32 libdb46d.lib tcl84g.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /pdb:none /debug /machine:I386 /out:"Debug_ASCII/libdb_tcl46d.dll" /fixed:no /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - Win32 ASCII Release"
 
@@ -141,8 +141,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release_ASCII/libdb_tcl45.dll"
-# ADD LINK32 libdb45.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release_ASCII/libdb_tcl45.dll" /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release_ASCII/libdb_tcl46.dll"
+# ADD LINK32 libdb46.lib tcl84.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:I386 /out:"Release_ASCII/libdb_tcl46.dll" /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - x64 Debug AMD64"
 
@@ -169,8 +169,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /debug /machine:AMD64 /out:"Debug_AMD64/libdb_tcl45d.dll" /fixed:no
-# ADD LINK32 libdb45d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /debug /machine:AMD64 /out:"Debug_AMD64/libdb_tcl45d.dll" /fixed:no /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /debug /machine:AMD64 /out:"Debug_AMD64/libdb_tcl46d.dll" /fixed:no
+# ADD LINK32 libdb46d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /debug /machine:AMD64 /out:"Debug_AMD64/libdb_tcl46d.dll" /fixed:no /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - x64 Release AMD64"
 
@@ -196,8 +196,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:AMD64 /out:"Release_AMD64/libdb_tcl45.dll"
-# ADD LINK32 libdb45.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:AMD64 /out:"Release_AMD64/libdb_tcl45.dll" /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:AMD64 /out:"Release_AMD64/libdb_tcl46.dll"
+# ADD LINK32 libdb46.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:AMD64 /out:"Release_AMD64/libdb_tcl46.dll" /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - x64 Debug IA64"
 
@@ -225,8 +225,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /debug /machine:IA64 /out:"Debug_IA64/libdb_tcl45d.dll" /fixed:no
-# ADD LINK32 libdb45d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /debug /machine:IA64 /out:"Debug_IA64/libdb_tcl45d.dll" /fixed:no /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /debug /machine:IA64 /out:"Debug_IA64/libdb_tcl46d.dll" /fixed:no
+# ADD LINK32 libdb46d.lib tcl84g.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /export:__db_assert /debug /machine:IA64 /out:"Debug_IA64/libdb_tcl46d.dll" /fixed:no /libpath:"$(OUTDIR)"
 
 !ELSEIF  "$(CFG)" == "db_tcl - x64 Release IA64"
 
@@ -252,8 +252,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libdb45.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:IA64 /out:"Release_IA64/libdb_tcl45.dll"
-# ADD LINK32 libdb45.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:IA64 /out:"Release_IA64/libdb_tcl45.dll" /libpath:"$(OUTDIR)"
+# ADD BASE LINK32 libdb46.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:IA64 /out:"Release_IA64/libdb_tcl46.dll"
+# ADD LINK32 libdb46.lib tcl84.lib bufferoverflowU.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /base:"0x13000000" /subsystem:windows /dll /machine:IA64 /out:"Release_IA64/libdb_tcl46.dll" /libpath:"$(OUTDIR)"
 
 !ENDIF 
 
@@ -270,6 +270,10 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\libdb_tcl.def
+# End Source File
+# Begin Source File
+
+SOURCE=..\os\os_abort.c
 # End Source File
 # Begin Source File
 

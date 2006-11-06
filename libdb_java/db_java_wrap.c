@@ -2452,29 +2452,29 @@ SWIGINTERN int_bool Db_verify(struct Db *self,char const *file,char const *datab
 			return 1;
 	}
 SWIGINTERN db_ret_t Dbc_close(struct Dbc *self){
-		return self->c_close(self);
+		return self->close(self);
 	}
 SWIGINTERN db_recno_t Dbc_count(struct Dbc *self,u_int32_t flags){
 		db_recno_t count = 0;
-		errno = self->c_count(self, &count, flags);
+		errno = self->count(self, &count, flags);
 		return count;
 	}
 SWIGINTERN int Dbc_del(struct Dbc *self,u_int32_t flags){
-		return self->c_del(self, flags);
+		return self->del(self, flags);
 	}
 SWIGINTERN DBC *Dbc_dup(struct Dbc *self,u_int32_t flags){
 		DBC *newcurs = NULL;
-		errno = self->c_dup(self, &newcurs, flags);
+		errno = self->dup(self, &newcurs, flags);
 		return newcurs;
 	}
 SWIGINTERN int Dbc_get(struct Dbc *self,DBT *key,DBT *data,u_int32_t flags){
-		return self->c_get(self, key, data, flags);
+		return self->get(self, key, data, flags);
 	}
 SWIGINTERN int Dbc_pget(struct Dbc *self,DBT *key,DBT *pkey,DBT *data,u_int32_t flags){
-		return self->c_pget(self, key, pkey, data, flags);
+		return self->pget(self, key, pkey, data, flags);
 	}
 SWIGINTERN int Dbc_put(struct Dbc *self,DBT *key,DBT *data,u_int32_t flags){
-		return self->c_put(self, key, data, flags);
+		return self->put(self, key, data, flags);
 	}
 SWIGINTERN struct DbEnv *new_DbEnv(u_int32_t flags){
 		DB_ENV *self = NULL;

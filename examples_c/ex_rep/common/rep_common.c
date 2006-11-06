@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: rep_common.c,v 12.13 2006/09/08 20:32:06 bostic Exp $
+ * $Id: rep_common.c,v 12.15 2006/11/01 00:52:54 bostic Exp $
  */
 
 #include <errno.h>
@@ -80,9 +79,9 @@ print_stocks(dbp)
 	printf("\tSymbol\tPrice\n");
 	printf("\t======\t=====\n");
 
-	for (ret = dbc->c_get(dbc, &key, &data, DB_FIRST);
+	for (ret = dbc->get(dbc, &key, &data, DB_FIRST);
 	    ret == 0;
-	    ret = dbc->c_get(dbc, &key, &data, DB_NEXT)) {
+	    ret = dbc->get(dbc, &key, &data, DB_NEXT)) {
 		keysize = key.size > MAXKEYSIZE ? MAXKEYSIZE : key.size;
 		memcpy(keybuf, key.data, keysize);
 		keybuf[keysize] = '\0';
@@ -96,7 +95,7 @@ print_stocks(dbp)
 	printf("\n");
 	fflush(stdout);
 
-	if ((t_ret = dbc->c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = dbc->close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	switch (ret) {

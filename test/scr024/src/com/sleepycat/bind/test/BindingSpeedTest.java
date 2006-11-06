@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: BindingSpeedTest.java,v 12.5 2006/09/12 00:37:27 alexg Exp $
+ * $Id: BindingSpeedTest.java,v 12.6 2006/11/01 00:54:08 bostic Exp $
  */
 
 package com.sleepycat.bind.test;

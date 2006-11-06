@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep002.tcl,v 12.10 2006/09/13 16:51:39 carol Exp $
+# $Id: rep002.tcl,v 12.12 2006/11/01 00:53:54 bostic Exp $
 #
 # TEST  	rep002
 # TEST	Basic replication election test.
@@ -60,7 +59,7 @@ proc rep002 { method { niter 10 } { nclients 3 } { tnum "002" } args } {
 proc rep002_sub { method niter nclients tnum logset recargs largs } {
 	source ./include.tcl
 	global elect_timeout elect_serial
-	set elect_timeout 5000000
+	set elect_timeout(default) 5000000
 
 	env_cleanup $testdir
 
@@ -160,8 +159,8 @@ proc rep002_sub { method niter nclients tnum logset recargs largs } {
 		set got_hold_elect($i) 0
 		set elect_pipe($i) INVALID
 	}
-	set elect_pipe(0) [start_election C0 \
-	    $qdir $env_cmd(0) [expr $nclients + 1] $nclients 20 $elect_timeout]
+	set elect_pipe(0) [start_election C0 $qdir $env_cmd(0) \
+	    [expr $nclients + 1] $nclients 20 $elect_timeout(default)]
 
 	tclsleep 2
 
@@ -176,7 +175,7 @@ proc rep002_sub { method niter nclients tnum logset recargs largs } {
 			incr elect_serial
 			set elect_pipe(M) [start_election CM $qdir \
 			    $env_cmd(M) [expr $nclients + 1] $nclients \
-			    0 $elect_timeout]
+			    0 $elect_timeout(default)]
 			set got_hold_elect(M) 1
 		}
 
@@ -195,7 +194,7 @@ proc rep002_sub { method niter nclients tnum logset recargs largs } {
 				set elect_pipe($i) [start_election $pfx $qdir \
 			    	    $env_cmd($i) [expr $nclients + 1] \
 				    $nclients 0 \
-				    $elect_timeout]
+				    $elect_timeout(default)]
 				set got_hold_elect($i) 1
 			}
 		}

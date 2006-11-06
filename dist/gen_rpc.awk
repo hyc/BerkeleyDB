@@ -1,5 +1,5 @@
 #
-# $Id: gen_rpc.awk,v 12.7 2006/05/05 15:29:43 bostic Exp $
+# $Id: gen_rpc.awk,v 12.9 2006/10/24 13:23:16 bostic Exp $
 # Awk script for generating client/server RPC code.
 #
 # This awk script generates most of the RPC routines for DB client/server
@@ -984,7 +984,7 @@ function general_headers()
 	printf("#include \"db_config.h\"\n") >> CFILE
 	printf("\n") >> CFILE
 	printf("#include \"db_int.h\"\n") >> CFILE
-	printf("#ifndef NO_SYSTEM_INCLUDES\n") >> CFILE
+	printf("#ifdef HAVE_SYSTEM_INCLUDE_FILES\n") >> CFILE
 	printf("#include <rpc/rpc.h>\n") >> CFILE
 	printf("#endif\n") >> CFILE
 	printf("#include \"db_server.h\"\n") >> CFILE
@@ -1001,7 +1001,7 @@ function general_headers()
 	printf("#include \"db_config.h\"\n") >> SFILE
 	printf("\n") >> SFILE
 	printf("#include \"db_int.h\"\n") >> SFILE
-	printf("#ifndef NO_SYSTEM_INCLUDES\n") >> SFILE
+	printf("#ifdef HAVE_SYSTEM_INCLUDE_FILES\n") >> SFILE
 	printf("#include <rpc/rpc.h>\n") >> SFILE
 	printf("#endif\n") >> SFILE
 	printf("#include \"db_server.h\"\n") >> SFILE
@@ -1012,7 +1012,7 @@ function general_headers()
 	printf("#include \"db_config.h\"\n") >> PFILE
 	printf("\n") >> PFILE
 	printf("#include \"db_int.h\"\n") >> PFILE
-	printf("#ifndef NO_SYSTEM_INCLUDES\n") >> PFILE
+	printf("#ifdef HAVE_SYSTEM_INCLUDE_FILES\n") >> PFILE
 	printf("#include <rpc/rpc.h>\n") >> PFILE
 	printf("#endif\n") >> PFILE
 	printf("#include \"db_server.h\"\n") >> PFILE
@@ -1075,19 +1075,24 @@ function illegal_functions(OUTPUT)
 
 function obj_func(v, l)
 {
-	# Ignore db_create -- there's got to be something cleaner, but I
-	# don't want to rewrite rpc.src right now.
+	# Ignore db_create and env_create -- there's got to be something
+	# cleaner, but I don't want to rewrite rpc.src right now.
 	if (name == "db_create")
 		return;
 	if (name == "env_create")
 		return;
 
-	# Strip off the leading prefix for the method name -- there's got to
-	# be something cleaner, but I don't want to rewrite rpc.src right now.
+	# Strip off the leading prefix for the method name.
+	#
+	# There are two method names for cursors, the old and the new.
+	#
+	# There just has to be something cleaner, but yadda, yadda, yadda.
 	len = length(name);
 	i = index(name, "_");
-	l[obj_indx] = sprintf("\t%s->%s = __dbcl_%s;",
-	    v, substr(name, i + 1, len - i), name);
+	s = substr(name, i + 1, len - i)
+
+	o = v == "dbc" ? sprintf(" = %s->c_%s", v, s) : ""
+	l[obj_indx] = sprintf("\t%s->%s%s = __dbcl_%s;", v, s, o, name)
 }
 
 function obj_illegal(l, handle, method, proto)

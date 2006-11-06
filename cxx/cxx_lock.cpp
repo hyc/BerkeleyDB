@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: cxx_lock.cpp,v 12.4 2006/08/24 14:45:13 bostic Exp $
+ * $Id: cxx_lock.cpp,v 12.5 2006/11/01 00:52:27 bostic Exp $
  */
 
 #include "db_config.h"

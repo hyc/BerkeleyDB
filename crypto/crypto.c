@@ -1,13 +1,12 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield
  * -- astubble@rice.edu
  *
- * $Id: crypto.c,v 12.10 2006/08/24 14:45:12 bostic Exp $
+ * $Id: crypto.c,v 12.12 2006/11/01 00:52:25 bostic Exp $
  */
 
 #include "db_config.h"
@@ -53,13 +52,12 @@ __crypto_region_init(dbenv)
 		 * information that contains the passwd.  After we copy the
 		 * passwd, we smash and free the one in the dbenv.
 		 */
-		if ((ret =
-		    __db_shalloc(infop, sizeof(CIPHER), 0, &cipher)) != 0)
+		if ((ret = __env_alloc(infop, sizeof(CIPHER), &cipher)) != 0)
 			return (ret);
 		memset(cipher, 0, sizeof(*cipher));
-		if ((ret = __db_shalloc(
-		    infop, dbenv->passwd_len, 0, &sh_passwd)) != 0) {
-			__db_shalloc_free(infop, cipher);
+		if ((ret =
+		    __env_alloc(infop, dbenv->passwd_len, &sh_passwd)) != 0) {
+			__env_alloc_free(infop, cipher);
 			return (ret);
 		}
 		memset(sh_passwd, 0, dbenv->passwd_len);
@@ -158,8 +156,8 @@ __crypto_region_destroy(dbenv)
 	renv = infop->primary;
 	if (renv->cipher_off != INVALID_ROFF) {
 		cipher = R_ADDR(infop, renv->cipher_off);
-		__db_shalloc_free(infop, R_ADDR(infop, cipher->passwd));
-		__db_shalloc_free(infop, cipher);
+		__env_alloc_free(infop, R_ADDR(infop, cipher->passwd));
+		__env_alloc_free(infop, cipher);
 	}
 	return (0);
 }

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: db_cds.c,v 12.5 2006/09/07 05:46:15 mjc Exp $
+ * $Id: db_cds.c,v 12.6 2006/11/01 00:52:29 bostic Exp $
  */
 
 #include "db_config.h"

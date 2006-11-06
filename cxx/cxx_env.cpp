@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: cxx_env.cpp,v 12.32 2006/09/13 14:53:36 mjc Exp $
+ * $Id: cxx_env.cpp,v 12.34 2006/11/01 00:52:27 bostic Exp $
  */
 
 #include "db_config.h"
@@ -408,6 +407,7 @@ bool DbEnv::is_bigendian()
 	return unwrap(this)->is_bigendian() ? true : false;
 }
 
+DBENV_METHOD(get_thread_count, (u_int32_t *count), (dbenv, count))
 DBENV_METHOD(set_thread_count, (u_int32_t count), (dbenv, count))
 
 // used internally during constructor

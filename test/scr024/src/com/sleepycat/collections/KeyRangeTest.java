@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: KeyRangeTest.java,v 12.5 2006/08/24 14:46:45 bostic Exp $
+ * $Id: KeyRangeTest.java,v 12.6 2006/11/01 00:54:10 bostic Exp $
  */
 
 package com.sleepycat.collections;

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_alloc.c,v 12.8 2006/08/24 14:46:17 bostic Exp $
+ * $Id: os_alloc.c,v 12.11 2006/11/01 00:53:39 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,10 +13,10 @@
 #ifdef DIAGNOSTIC
 static void __os_guard __P((DB_ENV *));
 
-union __db_allocinfo {
+typedef union {
 	size_t size;
 	double align;
-};
+} db_allocinfo_t;
 #endif
 
 /*
@@ -238,7 +237,7 @@ __os_malloc(dbenv, size, storep)
 
 #ifdef DIAGNOSTIC
 	/* Add room for size and a guard byte. */
-	size += sizeof(union __db_allocinfo) + 1;
+	size += sizeof(db_allocinfo_t) + 1;
 #endif
 
 	if (DB_GLOBAL(j_malloc) != NULL)
@@ -271,8 +270,8 @@ __os_malloc(dbenv, size, storep)
 	 */
 	((u_int8_t *)p)[size - 1] = CLEAR_BYTE;
 
-	((union __db_allocinfo *)p)->size = size;
-	p = &((union __db_allocinfo *)p)[1];
+	((db_allocinfo_t *)p)->size = size;
+	p = &((db_allocinfo_t *)p)[1];
 #endif
 	*(void **)storep = p;
 
@@ -306,15 +305,15 @@ __os_realloc(dbenv, size, storep)
 
 #ifdef DIAGNOSTIC
 	/* Add room for size and a guard byte. */
-	size += sizeof(union __db_allocinfo) + 1;
+	size += sizeof(db_allocinfo_t) + 1;
 
 	/* Back up to the real beginning */
-	ptr = &((union __db_allocinfo *)ptr)[-1];
+	ptr = &((db_allocinfo_t *)ptr)[-1];
 
 	{
 		size_t s;
 
-		s = ((union __db_allocinfo *)ptr)->size;
+		s = ((db_allocinfo_t *)ptr)->size;
 		if (((u_int8_t *)ptr)[s - 1] != CLEAR_BYTE)
 			 __os_guard(dbenv);
 	}
@@ -345,8 +344,8 @@ __os_realloc(dbenv, size, storep)
 #ifdef DIAGNOSTIC
 	((u_int8_t *)p)[size - 1] = CLEAR_BYTE;	/* Initialize guard byte. */
 
-	((union __db_allocinfo *)p)->size = size;
-	p = &((union __db_allocinfo *)p)[1];
+	((db_allocinfo_t *)p)->size = size;
+	p = &((db_allocinfo_t *)p)[1];
 #endif
 
 	*(void **)storep = p;
@@ -374,8 +373,8 @@ __os_free(dbenv, ptr)
 	if (ptr == NULL)
 		return;
 
-	ptr = &((union __db_allocinfo *)ptr)[-1];
-	size = ((union __db_allocinfo *)ptr)->size;
+	ptr = &((db_allocinfo_t *)ptr)[-1];
+	size = ((db_allocinfo_t *)ptr)->size;
 	if (((u_int8_t *)ptr)[size - 1] != CLEAR_BYTE)
 		 __os_guard(dbenv);
 
@@ -401,7 +400,7 @@ __os_guard(dbenv)
 	DB_ENV *dbenv;
 {
 	__db_errx(dbenv, "Guard byte incorrect during free");
-	abort();
+	__os_abort();
 	/* NOTREACHED */
 }
 #endif

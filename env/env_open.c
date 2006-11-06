@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_open.c,v 12.71 2006/08/24 14:45:39 bostic Exp $
+ * $Id: env_open.c,v 12.78 2006/11/02 18:51:06 bostic Exp $
  */
 
 #include "db_config.h"
@@ -179,7 +178,7 @@ __env_open(dbenv, db_home, flags, mode)
 	DB_THREAD_INFO *ip;
 	REGINFO *infop;
 	u_int32_t init_flags, orig_flags;
-	int register_recovery, rep_check, ret, t_ret;
+	int create_ok, register_recovery, rep_check, ret, t_ret;
 
 	ip = NULL;
 	register_recovery = rep_check = 0;
@@ -232,8 +231,7 @@ __env_open(dbenv, db_home, flags, mode)
 			goto err;
 
 	/* Convert the DB_ENV->open flags to internal flags. */
-	if (LF_ISSET(DB_CREATE))
-		F_SET(dbenv, DB_ENV_CREATE);
+	create_ok = LF_ISSET(DB_CREATE) ? 1 : 0;
 	if (LF_ISSET(DB_LOCKDOWN))
 		F_SET(dbenv, DB_ENV_LOCKDOWN);
 	if (LF_ISSET(DB_PRIVATE))
@@ -278,7 +276,7 @@ __env_open(dbenv, db_home, flags, mode)
 		FLD_SET(init_flags, DB_INITENV_REP);
 	if (LF_ISSET(DB_INIT_TXN))
 		FLD_SET(init_flags, DB_INITENV_TXN);
-	if ((ret = __db_e_attach(dbenv, &init_flags)) != 0)
+	if ((ret = __db_e_attach(dbenv, &init_flags, create_ok)) != 0)
 		goto err;
 
 	/*
@@ -325,18 +323,34 @@ __env_open(dbenv, db_home, flags, mode)
 	F_SET(dbenv, DB_ENV_OPEN_CALLED);
 
 	/*
+	 * Initialize thread tracking and enter the API.
+	 */
+	infop = dbenv->reginfo;
+	if ((ret = __env_thread_init(
+	    dbenv, F_ISSET(infop, REGION_CREATE) ? 1 : 0)) != 0)
+		goto err;
+
+	ENV_ENTER(dbenv, ip);
+
+	/*
 	 * Initialize the subsystems.
-	 *
+	 */
+#ifdef HAVE_MUTEX_SUPPORT
+	/*
 	 * Initialize the mutex regions first.  There's no ordering requirement,
 	 * but it's simpler to get this in place so we don't have to keep track
 	 * of mutexes for later allocation, once the mutex region is created we
 	 * can go ahead and do the allocation for real.
 	 */
-	if ((ret = __mutex_open(dbenv)) != 0)
+	if ((ret = __mutex_open(dbenv, create_ok)) != 0)
 		goto err;
-
-	/* __mutex_open creates the thread info region, enter it now. */
-	ENV_ENTER(dbenv, ip);
+#endif
+	/*
+	 * Initialize the handle's mutex.
+	 */
+	if ((ret = __mutex_alloc(dbenv,
+	    MTX_ENV_HANDLE, DB_MUTEX_PROCESS_ONLY, &dbenv->mtx_env)) != 0)
+		goto err;
 
 	/*
 	 * Initialize the replication area next, so that we can lock out this
@@ -349,12 +363,30 @@ __env_open(dbenv, db_home, flags, mode)
 	if (rep_check && (ret = __env_rep_enter(dbenv, 0)) != 0)
 		goto err;
 
-	if (LF_ISSET(DB_INIT_MPOOL))
-		if ((ret = __memp_open(dbenv)) != 0)
+	if (LF_ISSET(DB_INIT_MPOOL)) {
+		if ((ret = __memp_open(dbenv, create_ok)) != 0)
 			goto err;
+
+		/*
+		 * Initialize the DB list and its mutex.  If the mpool is
+		 * not initialized, we can't ever open a DB handle, which
+		 * is why this code lives here.
+		 */
+		TAILQ_INIT(&dbenv->dblist);
+		if ((ret = __mutex_alloc(dbenv, MTX_ENV_DBLIST,
+		    DB_MUTEX_PROCESS_ONLY, &dbenv->mtx_dblist)) != 0)
+			goto err;
+
+		/* Register DB's pgin/pgout functions.  */
+		if ((ret = __memp_register(
+		    dbenv, DB_FTYPE_SET, __db_pgin, __db_pgout)) != 0)
+			goto err;
+	}
+
 	/*
 	 * Initialize the ciphering area prior to any running of recovery so
-	 * that we can initialize the keys, etc. before recovery.
+	 * that we can initialize the keys, etc. before recovery, including
+	 * the MT mutex.
 	 *
 	 * !!!
 	 * This must be after the mpool init, but before the log initialization
@@ -362,6 +394,9 @@ __env_open(dbenv, db_home, flags, mode)
 	 */
 	if (LF_ISSET(DB_INIT_MPOOL | DB_INIT_LOG | DB_INIT_TXN) &&
 	    (ret = __crypto_region_init(dbenv)) != 0)
+		goto err;
+	if ((ret = __mutex_alloc(dbenv, MTX_TWISTER,
+	    DB_MUTEX_PROCESS_ONLY, &dbenv->mtx_mt)) != 0)
 		goto err;
 
 	/*
@@ -371,14 +406,14 @@ __env_open(dbenv, db_home, flags, mode)
 	 * atomicity guarantees, but not necessarily need concurrency.
 	 */
 	if (LF_ISSET(DB_INIT_LOG | DB_INIT_TXN))
-		if ((ret = __log_open(dbenv)) != 0)
+		if ((ret = __log_open(dbenv, create_ok)) != 0)
 			goto err;
 	if (LF_ISSET(DB_INIT_LOCK))
-		if ((ret = __lock_open(dbenv)) != 0)
+		if ((ret = __lock_open(dbenv, create_ok)) != 0)
 			goto err;
 
 	if (LF_ISSET(DB_INIT_TXN)) {
-		if ((ret = __txn_open(dbenv)) != 0)
+		if ((ret = __txn_open(dbenv, create_ok)) != 0)
 			goto err;
 
 		/*
@@ -386,36 +421,6 @@ __env_open(dbenv, db_home, flags, mode)
 		 * the function tables.
 		 */
 		if ((ret = __env_init_rec(dbenv, DB_LOGVERSION)) != 0)
-			goto err;
-	}
-
-	/*
-	 * Initialize the DB list, and its mutex as necessary.  If the env
-	 * handle isn't free-threaded we don't need a mutex because there
-	 * will never be more than a single DB handle on the list.  If the
-	 * mpool wasn't initialized, then we can't ever open a DB handle.
-	 *
-	 * We also need to initialize the MT mutex as necessary, so do them
-	 * both.
-	 *
-	 * !!!
-	 * This must come after the __memp_open call above because if we are
-	 * recording mutexes for system resources, we will do it in the mpool
-	 * region for environments and db handles.  So, the mpool region must
-	 * already be initialized.
-	 */
-	TAILQ_INIT(&dbenv->dblist);
-	if (LF_ISSET(DB_INIT_MPOOL)) {
-		if ((ret = __mutex_alloc(dbenv, MTX_ENV_DBLIST,
-		    DB_MUTEX_PROCESS_ONLY, &dbenv->mtx_dblist)) != 0)
-			goto err;
-		if ((ret = __mutex_alloc(dbenv, MTX_TWISTER,
-		    DB_MUTEX_PROCESS_ONLY, &dbenv->mtx_mt)) != 0)
-			goto err;
-
-		/* Register DB's pgin/pgout functions.  */
-		if ((ret = __memp_register(
-		    dbenv, DB_FTYPE_SET, __db_pgin, __db_pgout)) != 0)
 			goto err;
 	}
 
@@ -435,7 +440,6 @@ __env_open(dbenv, db_home, flags, mode)
 	 * transaction ID and logs the reset if that's appropriate, so we
 	 * don't need to do anything here in the recover case.
 	 */
-	infop = dbenv->reginfo;
 	if (TXN_ON(dbenv) &&
 	    !F_ISSET(dbenv, DB_ENV_LOG_INMEMORY) &&
 	    F_ISSET(infop, REGION_CREATE) &&
@@ -641,6 +645,7 @@ __env_close(dbenv, rep_check)
 	DB_ENV *dbenv;
 	int rep_check;
 {
+	DB_FH *fhp;
 	int ret, t_ret;
 	char **p;
 
@@ -678,6 +683,18 @@ __env_close(dbenv, rep_check)
 	if (dbenv->registry != NULL) {
 		(void)__envreg_unregister(dbenv, 0);
 		dbenv->registry = NULL;
+	}
+
+	/* Check we've closed all underlying file handles. */
+	if (TAILQ_FIRST(&dbenv->fdlist) != NULL) {
+		__db_errx(dbenv,
+		    "File handles still open at environment close");
+		while ((fhp = TAILQ_FIRST(&dbenv->fdlist)) != NULL) {
+			__db_errx(dbenv, "Open file handle: %s", fhp->name);
+			(void)__os_closehandle(dbenv, fhp);
+		}
+		if (ret == 0)
+			ret = EINVAL;
 	}
 
 	/* Release any string-based configuration parameters we've copied. */
@@ -758,16 +775,18 @@ __env_refresh(dbenv, orig_flags, rep_check)
 			ret = t_ret;
 	}
 
+	/* Discard the DB_ENV handle mutex. */
+	if ((t_ret = __mutex_free(dbenv, &dbenv->mtx_env)) != 0 && ret == 0)
+		ret = t_ret;
+
 	/*
 	 * Discard DB list and its mutex.
 	 * Discard the MT mutex.
 	 *
 	 * !!!
-	 * This must be done before we close the mpool region because we
-	 * may have allocated the DB handle mutex in the mpool region.
-	 * It must be done *after* we close the log region, though, because
-	 * we close databases and try to acquire the mutex when we close
-	 * log file handles.  Ick.
+	 * This must be done after we close the log region, because we close
+	 * database handles and so acquire this mutex when we close log file
+	 * handles.
 	 */
 	if (dbenv->db_ref != 0) {
 		__db_errx(dbenv,
@@ -781,7 +800,6 @@ __env_refresh(dbenv, orig_flags, rep_check)
 			ret = EINVAL;
 	}
 	TAILQ_INIT(&dbenv->dblist);
-
 	if ((t_ret = __mutex_free(dbenv, &dbenv->mtx_dblist)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __mutex_free(dbenv, &dbenv->mtx_mt)) != 0 && ret == 0)
@@ -835,9 +853,11 @@ __env_refresh(dbenv, orig_flags, rep_check)
 	    (t_ret = __env_set_state(dbenv, &ip, THREAD_OUT)) != 0 && ret == 0)
 		ret = t_ret;
 
+#ifdef HAVE_MUTEX_SUPPORT
 	if (MUTEX_ON(dbenv) &&
 	    (t_ret = __mutex_dbenv_refresh(dbenv)) != 0 && ret == 0)
 		ret = t_ret;
+#endif
 
 	if (dbenv->reginfo != NULL) {
 		if ((t_ret = __db_e_detach(dbenv, 0)) != 0 && ret == 0)

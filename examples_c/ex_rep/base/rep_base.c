@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_base.c,v 12.15 2006/09/08 20:32:06 bostic Exp $
+ * $Id: rep_base.c,v 12.17 2006/11/01 00:52:52 bostic Exp $
  */
 
 #include <sys/types.h>
@@ -233,12 +232,27 @@ main(argc, argv)
 	}
 
 	/* Wait on the connection threads. */
-	if (thread_join(all_thr, &astatus) || thread_join(conn_thr, &cstatus))
+	if (thread_join(all_thr, &astatus) || thread_join(conn_thr, &cstatus)) {
 		ret = -1;
-	if (ret == 0 &&
-	    ((uintptr_t)astatus != EXIT_SUCCESS ||
-	    (uintptr_t)cstatus != EXIT_SUCCESS))
+		goto err;
+	}
+	if ((uintptr_t)astatus != EXIT_SUCCESS ||
+	    (uintptr_t)cstatus != EXIT_SUCCESS) {
 		ret = -1;
+		goto err;
+	}
+	
+	/*
+	 * We have used the DB_TXN_NOSYNC environment flag for improved
+	 * performance without the usual sacrifice of transactional durability,
+	 * as discussed in the "Transactional guarantees" page of the Reference
+	 * Guide: if one replication site crashes, we can expect the data to
+	 * exist at another site.  However, in case we shut down all sites
+	 * gracefully, we push out the end of the log here so that the most
+	 * recent transactions don't mysteriously disappear.
+	 */
+	if ((ret = dbenv->log_flush(dbenv, NULL)) != 0)
+		dbenv->err(dbenv, ret, "log_flush");
 
 err:	if (machtab != NULL)
 		free(machtab);

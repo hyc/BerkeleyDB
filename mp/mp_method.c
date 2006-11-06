@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_method.c,v 12.36 2006/09/15 18:54:13 margo Exp $
+ * $Id: mp_method.c,v 12.37 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"

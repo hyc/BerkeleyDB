@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: hash_stat.c,v 12.10 2006/09/07 20:05:30 bostic Exp $
+ * $Id: hash_stat.c,v 12.12 2006/11/01 00:53:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -441,7 +440,7 @@ __ham_traverse(dbc, mode, callback, cookie, look_past_max)
 				case H_OFFDUP:
 					memcpy(&opgno, HOFFDUP_PGNO(hk),
 					    sizeof(db_pgno_t));
-					if ((ret = __db_c_newopd(dbc,
+					if ((ret = __dbc_newopd(dbc,
 					    opgno, NULL, &opd)) != 0)
 						return (ret);
 					if ((ret = __bam_traverse(opd,
@@ -449,7 +448,7 @@ __ham_traverse(dbc, mode, callback, cookie, look_past_max)
 					    callback, cookie))
 					    != 0)
 						goto err;
-					if ((ret = __db_c_close(opd)) != 0)
+					if ((ret = __dbc_close(opd)) != 0)
 						return (ret);
 					opd = NULL;
 					break;
@@ -499,7 +498,7 @@ __ham_traverse(dbc, mode, callback, cookie, look_past_max)
 
 	}
 err:	if (opd != NULL &&
-	    (t_ret = __db_c_close(opd)) != 0 && ret == 0)
+	    (t_ret = __dbc_close(opd)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }

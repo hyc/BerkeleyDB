@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep005.tcl,v 12.11 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep005.tcl,v 12.13 2006/11/01 00:53:54 bostic Exp $
 #
 # TEST  rep005
 # TEST	Replication election test with error handling.
@@ -178,7 +177,6 @@ proc rep005_elect { ecmd celist qdir msg count \
 	upvar $winner win
 	upvar $lsn_lose last_win
 
-	set elect_timeout 5000000
 	set nclients [llength $elist]
 	set nsites [expr $nclients + 1]
 

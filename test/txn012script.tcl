@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2005,2006 Oracle.  All rights reserved.
 #
-# $Id: txn012script.tcl,v 12.4 2006/08/24 14:46:41 bostic Exp $
+# $Id: txn012script.tcl,v 12.5 2006/11/01 00:54:03 bostic Exp $
 #
 # Script to check that txn names can be seen across processes.
 # Names over 50 characters will be truncated.

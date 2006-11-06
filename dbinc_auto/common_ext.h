@@ -29,6 +29,7 @@ void __db_errx __P((const DB_ENV *, const char *, ...)) __attribute__ ((__format
 void __db_errcall __P((const DB_ENV *, int, db_error_set_t, const char *, va_list));
 void __db_errfile __P((const DB_ENV *, int, db_error_set_t, const char *, va_list));
 void __db_msgadd __P((DB_ENV *, DB_MSGBUF *, const char *, ...)) __attribute__ ((__format__ (__printf__, 3, 4)));
+void __db_msgadd_ap __P((DB_ENV *, DB_MSGBUF *, const char *, va_list));
 void __db_msg __P((const DB_ENV *, const char *, ...)) __attribute__ ((__format__ (__printf__, 2, 3)));
 int __db_unknown_flag __P((DB_ENV *, char *, u_int32_t));
 int __db_unknown_type __P((DB_ENV *, char *, DBTYPE));

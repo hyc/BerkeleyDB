@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: sdbutils.tcl,v 12.4 2006/08/24 14:46:39 bostic Exp $
+# $Id: sdbutils.tcl,v 12.5 2006/11/01 00:53:59 bostic Exp $
 #
 proc build_all_subdb { dbname methods psize dups {nentries 100} {dbargs ""}} {
 	set nsubdbs [llength $dups]

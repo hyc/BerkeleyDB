@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_pr.c,v 12.29 2006/09/07 20:05:26 bostic Exp $
+ * $Id: db_pr.c,v 12.32 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -373,7 +372,6 @@ __db_hmeta(dbp, h, flags)
 	HMETA *h;
 	u_int32_t flags;
 {
-	DB_MSGBUF mb;
 	static const FN fn[] = {
 		{ DB_HASH_DUP,		"duplicates" },
 		{ DB_HASH_SUBDB,	"multiple-databases" },
@@ -381,6 +379,7 @@ __db_hmeta(dbp, h, flags)
 		{ 0,			NULL }
 	};
 	DB_ENV *dbenv;
+	DB_MSGBUF mb;
 	int i;
 
 	dbenv = dbp->dbenv;
@@ -813,6 +812,9 @@ __db_prflags(dbenv, mbp, flags, fn, prefix, suffix)
 	int found, standalone;
 	const char *sep;
 
+	if (fn == NULL)
+		return;
+
 	/*
 	 * If it's a standalone message, output the suffix (which will be the
 	 * label), regardless of whether we found anything or not, and flush
@@ -959,15 +961,11 @@ __db_dumptree(dbp, txn, op, name)
 const FN *
 __db_get_flags_fn()
 {
-	static const FN __db_flags_fn[] = {
-		{ 0,	NULL }
-	};
-
 	/*
 	 * !!!
 	 * The Tcl API uses this interface, stub it off.
 	 */
-	return (__db_flags_fn);
+	return (NULL);
 }
 #endif
 
@@ -1064,7 +1062,7 @@ __db_dump(dbp, subname, callback, handle, pflag, keyflag)
 	}
 
 retry: while ((ret =
-	    __db_c_get(dbcp, &key, &data, DB_NEXT | DB_MULTIPLE_KEY)) == 0) {
+	    __dbc_get(dbcp, &key, &data, DB_NEXT | DB_MULTIPLE_KEY)) == 0) {
 		DB_MULTIPLE_INIT(pointer, &data);
 		for (;;) {
 			if (is_recno)
@@ -1099,7 +1097,7 @@ retry: while ((ret =
 	if ((t_ret = __db_prfooter(handle, callback)) != 0 && ret == 0)
 		ret = t_ret;
 
-err:	if ((t_ret = __db_c_close(dbcp)) != 0 && ret == 0)
+err:	if ((t_ret = __dbc_close(dbcp)) != 0 && ret == 0)
 		ret = t_ret;
 	if (data.data != NULL)
 		__os_free(dbenv, data.data);

@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -36,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db.c,v 12.42 2006/09/19 15:06:58 bostic Exp $
+ * $Id: db.c,v 12.46 2006/11/01 00:52:28 bostic Exp $
  */
 
 #include "db_config.h"
@@ -88,7 +87,7 @@ __db_master_open(subdbp, txn, name, flags, mode, dbpp)
 	*dbpp = NULL;
 
 	/* Open up a handle on the main database. */
-	if ((ret = db_create(&dbp, subdbp->dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, subdbp->dbenv, 0)) != 0)
 		return (ret);
 
 	/*
@@ -196,7 +195,7 @@ __db_master_update(mdbp, sdbp, txn, subdb, type, action, newname, flags)
 	memset(&data, 0, sizeof(data));
 	F_SET(&data, DB_DBT_MALLOC);
 
-	ret = __db_c_get(dbc, &key, &data,
+	ret = __dbc_get(dbc, &key, &data,
 	    DB_SET | ((STD_LOCKING(dbc) && modify) ? DB_RMW : 0));
 
 	/*
@@ -219,7 +218,7 @@ __db_master_update(mdbp, sdbp, txn, subdb, type, action, newname, flags)
 		 * Delete the subdatabase entry first;  if this fails,
 		 * we don't want to touch the actual subdb pages.
 		 */
-		if ((ret = __db_c_del(dbc, 0)) != 0)
+		if ((ret = __dbc_del(dbc, 0)) != 0)
 			goto err;
 
 		/*
@@ -273,12 +272,12 @@ __db_master_update(mdbp, sdbp, txn, subdb, type, action, newname, flags)
 
 		/*
 		 * We don't actually care what the meta page of the potentially-
-		 * overwritten DB is;  we just care about existence.
+		 * overwritten DB is; we just care about existence.
 		 */
 		memset(&ndata, 0, sizeof(ndata));
 		F_SET(&ndata, DB_DBT_USERMEM | DB_DBT_PARTIAL);
 
-		if ((ret = __db_c_get(ndbc, &key, &ndata, DB_SET)) == 0) {
+		if ((ret = __dbc_get(ndbc, &key, &ndata, DB_SET)) == 0) {
 			/* A subdb called newname exists.  Bail. */
 			ret = EEXIST;
 			__db_errx(dbenv, "rename: database %s exists", newname);
@@ -287,18 +286,18 @@ __db_master_update(mdbp, sdbp, txn, subdb, type, action, newname, flags)
 			goto err;
 
 		/*
-		 * Now do the put first;  we don't want to lose our
-		 * sole reference to the subdb.  Use the second cursor
-		 * so that the first one continues to point to the old record.
+		 * Now do the put first; we don't want to lose our only
+		 * reference to the subdb.  Use the second cursor so the
+		 * first one continues to point to the old record.
 		 */
-		if ((ret = __db_c_put(ndbc, &key, &data, DB_KEYFIRST)) != 0)
+		if ((ret = __dbc_put(ndbc, &key, &data, DB_KEYFIRST)) != 0)
 			goto err;
-		if ((ret = __db_c_del(dbc, 0)) != 0) {
+		if ((ret = __dbc_del(dbc, 0)) != 0) {
 			/*
 			 * If the delete fails, try to delete the record
 			 * we just put, in case we're not txn-protected.
 			 */
-			(void)__db_c_del(ndbc, 0);
+			(void)__dbc_del(ndbc, 0);
 			goto err;
 		}
 
@@ -347,7 +346,7 @@ __db_master_update(mdbp, sdbp, txn, subdb, type, action, newname, flags)
 		memset(&ndata, 0, sizeof(ndata));
 		ndata.data = &t_pgno;
 		ndata.size = sizeof(db_pgno_t);
-		if ((ret = __db_c_put(dbc, &key, &ndata, DB_KEYLAST)) != 0)
+		if ((ret = __dbc_put(dbc, &key, &ndata, DB_KEYLAST)) != 0)
 			goto err;
 		F_SET(sdbp, DB_AM_CREATED);
 		break;
@@ -365,9 +364,9 @@ done:	/*
 	/* Discard the cursor(s) and data. */
 	if (data.data != NULL)
 		__os_ufree(dbenv, data.data);
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
-	if (ndbc != NULL && (t_ret = __db_c_close(ndbc)) != 0 && ret == 0)
+	if (ndbc != NULL && (t_ret = __dbc_close(ndbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -790,14 +789,14 @@ __db_refresh(dbp, txn, flags, deferred_closep, reuse)
 	 */
 	resync = TAILQ_FIRST(&dbp->active_queue) == NULL ? 0 : 1;
 	while ((dbc = TAILQ_FIRST(&dbp->active_queue)) != NULL)
-		if ((t_ret = __db_c_close(dbc)) != 0) {
+		if ((t_ret = __dbc_close(dbc)) != 0) {
 			if (ret == 0)
 				ret = t_ret;
 			break;
 		}
 
 	while ((dbc = TAILQ_FIRST(&dbp->free_queue)) != NULL)
-		if ((t_ret = __db_c_destroy(dbc)) != 0) {
+		if ((t_ret = __dbc_destroy(dbc)) != 0) {
 			if (ret == 0)
 				ret = t_ret;
 			break;
@@ -1265,7 +1264,7 @@ __db_disassociate(sdbp)
 	sdbp->s_refcnt = 0;
 
 	while ((dbc = TAILQ_FIRST(&sdbp->free_queue)) != NULL)
-		if ((t_ret = __db_c_destroy(dbc)) != 0 && ret == 0)
+		if ((t_ret = __dbc_destroy(dbc)) != 0 && ret == 0)
 			ret = t_ret;
 
 	F_CLR(sdbp, DB_AM_SECONDARY);

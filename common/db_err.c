@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_err.c,v 12.44 2006/09/13 14:53:34 mjc Exp $
+ * $Id: db_err.c,v 12.50 2006/11/01 00:52:21 bostic Exp $
  */
 
 #include "db_config.h"
@@ -140,7 +139,7 @@ __db_assert(dbenv, e, file, line)
 {
 	__db_errx(dbenv, "assert failure: %s/%d: \"%s\"", file, line, e);
 
-	abort();
+	__os_abort();
 	/* NOTREACHED */
 }
 #endif
@@ -197,7 +196,7 @@ __db_panic(dbenv, errval)
 	 * test suite to check to make sure that DB_RUNRECOVERY is returned
 	 * under certain conditions.
 	 */
-	abort();
+	__os_abort();
 	/* NOTREACHED */
 #endif
 
@@ -351,8 +350,7 @@ __db_unknown_error(error)
 
 /*
  * __db_syserr --
- *	Standard DB system-specific error routine.  The same as __db_err except
- *	we use a system-specific function to translate errors to strings.
+ *	Standard error routine.
  *
  * PUBLIC: void __db_syserr __P((const DB_ENV *, int, const char *, ...))
  * PUBLIC:    __attribute__ ((__format__ (__printf__, 3, 4)));
@@ -368,13 +366,17 @@ __db_syserr(dbenv, error fmt, va_alist)
 	va_dcl
 #endif
 {
+	/*
+	 * The same as DB->err, except we don't default to writing to stderr
+	 * after any output channel has been configured, and we use a system-
+	 * specific function to translate errors to strings.
+	 */
 	DB_REAL_ERR(dbenv, error, DB_ERROR_SYSTEM, 0, fmt);
 }
 
 /*
  * __db_err --
- *	Standard DB error routine.  The same as DB->err, except we don't write
- *	to stderr if no output mechanism was specified.
+ *	Standard error routine.
  *
  * PUBLIC: void __db_err __P((const DB_ENV *, int, const char *, ...))
  * PUBLIC:    __attribute__ ((__format__ (__printf__, 3, 4)));
@@ -390,13 +392,16 @@ __db_err(dbenv, error fmt, va_alist)
 	va_dcl
 #endif
 {
+	/*
+	 * The same as DB->err, except we don't default to writing to stderr
+	 * once an output channel has been configured.
+	 */
 	DB_REAL_ERR(dbenv, error, DB_ERROR_SET, 0, fmt);
 }
 
 /*
  * __db_errx --
- *	Standard DB error routine.  The same as DB->errx, except we don't write
- *	to stderr if no output mechanism was specified.
+ *	Standard error routine.
  *
  * PUBLIC: void __db_errx __P((const DB_ENV *, const char *, ...))
  * PUBLIC:    __attribute__ ((__format__ (__printf__, 2, 3)));
@@ -411,6 +416,10 @@ __db_errx(dbenv, fmt, va_alist)
 	va_dcl
 #endif
 {
+	/*
+	 * The same as DB->errx, except we don't default to writing to stderr
+	 * once an output channel has been configured.
+	 */
 	DB_REAL_ERR(dbenv, 0, DB_ERROR_NOT_SET, 0, fmt);
 }
 
@@ -500,17 +509,34 @@ __db_msgadd(dbenv, mbp, fmt, va_alist)
 #endif
 {
 	va_list ap;
-	size_t len, olen;
-	char buf[2048];		/* !!!: END OF THE STACK DON'T TRUST SPRINTF. */
 
 #ifdef STDC_HEADERS
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
-	len = (size_t)vsnprintf(buf, sizeof(buf), fmt, ap);
-
+	__db_msgadd_ap(dbenv, mbp, fmt, ap);
 	va_end(ap);
+}
+
+/*
+ * __db_msgadd_ap --
+ *	Aggregate a set of strings into a buffer for the callback API.
+ *
+ * PUBLIC: void __db_msgadd_ap
+ * PUBLIC:     __P((DB_ENV *, DB_MSGBUF *, const char *, va_list));
+ */
+void
+__db_msgadd_ap(dbenv, mbp, fmt, ap)
+	DB_ENV *dbenv;
+	DB_MSGBUF *mbp;
+	const char *fmt;
+	va_list ap;
+{
+	size_t len, olen;
+	char buf[2048];		/* !!!: END OF THE STACK DON'T TRUST SPRINTF. */
+
+	len = (size_t)vsnprintf(buf, sizeof(buf), fmt, ap);
 
 	/*
 	 * There's a heap buffer in the DB_ENV handle we use to aggregate the
@@ -600,7 +626,7 @@ __db_unknown_flag(dbenv, routine, flag)
 	__db_errx(dbenv, "%s: Unknown flag: %#x", routine, (u_int)flag);
 
 #ifdef DIAGNOSTIC
-	abort();
+	__os_abort();
 	/* NOTREACHED */
 #endif
 	return (EINVAL);
@@ -622,7 +648,7 @@ __db_unknown_type(dbenv, routine, type)
 	    routine, __db_dbtype_to_string(type));
 
 #ifdef DIAGNOSTIC
-	abort();
+	__os_abort();
 	/* NOTREACHED */
 #endif
 	return (EINVAL);
@@ -641,7 +667,7 @@ __db_unknown_path(dbenv, routine)
 	__db_errx(dbenv, "%s: Unexpected code path error", routine);
 
 #ifdef DIAGNOSTIC
-	abort();
+	__os_abort();
 	/* NOTREACHED */
 #endif
 	return (EINVAL);
@@ -884,12 +910,11 @@ __dbc_logging(dbc)
 #endif
 
 	if (0) {
-err:		__db_errx(dbenv, "Rep: flags 0x%lx msg_th %lu, lockout_th %d",
-		    (u_long)rep->flags, (u_long)rep->msg_th, rep->lockout_th);
-		__db_errx(dbenv, "Rep: handle %lu, opcnt %lu, in_rec %d",
-		    (u_long)rep->handle_cnt, (u_long)rep->op_cnt,
-		    rep->in_recovery);
-		abort();
+err:		__db_errx(dbenv, "Rep: flags 0x%lx msg_th %lu",
+		    (u_long)rep->flags, (u_long)rep->msg_th);
+		__db_errx(dbenv, "Rep: handle %lu, opcnt %lu",
+		    (u_long)rep->handle_cnt, (u_long)rep->op_cnt);
+		__os_abort();
 		/* NOTREACHED */
 	}
 	}

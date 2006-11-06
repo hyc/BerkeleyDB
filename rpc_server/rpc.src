@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: rpc.src,v 12.20 2006/09/11 15:52:44 bostic Exp $
+# $Id: rpc.src,v 12.23 2006/11/01 00:53:47 bostic Exp $
 #
 # Syntax:
 # BEGIN	function_name  {CODE | LINKONLY | RETCODE}
@@ -131,6 +130,7 @@ ARG	ID	DB_ENV *	dbenv
 ARET	INT	u_int32_t	flags
 END
 NOFUNC	env_get_shm_key		DB_ENV *, long *
+NOFUNC	env_get_thread_count	DB_ENV *, u_int32_t *
 NOFUNC	env_get_timeout		DB_ENV *, db_timeout_t *, u_int32_t
 NOFUNC	env_get_tmp_dir		DB_ENV *, const char **
 NOFUNC	env_get_tx_max		DB_ENV *, u_int32_t *
@@ -546,26 +546,26 @@ NOFUNC	db_verify		DB *, const char *, const char *, FILE *, u_int32_t
 ######################################################
 # DBC handle methods.
 ######################################################
-BEGIN	dbc_c_close		RETCODE
+BEGIN	dbc_close		RETCODE
 ARG	ID	DBC *		dbc
 END
-BEGIN	dbc_c_count		RETCODE
+BEGIN	dbc_count		RETCODE
 ARG	ID	DBC *		dbc
 ARG	IGNORE	db_recno_t *	countp
 ARG	INT	u_int32_t	flags
 RET	INT	db_recno_t	dupcount
 END
-BEGIN	dbc_c_del		CODE
+BEGIN	dbc_del			CODE
 ARG	ID	DBC *		dbc
 ARG	INT	u_int32_t	flags
 END
-BEGIN	dbc_c_dup		RETCODE
+BEGIN	dbc_dup			RETCODE
 ARG	ID	DBC *		dbc
 ARG	IGNORE	DBC **		dbcp
 ARG	INT	u_int32_t	flags
 RET	ID	long		dbcid
 END
-BEGIN	dbc_c_get		RETCODE
+BEGIN	dbc_get			RETCODE
 ARG	ID	DBC *		dbc
 ARG	DBT	DBT *		key
 ARG	DBT	DBT *		data
@@ -573,7 +573,7 @@ ARG	INT	u_int32_t	flags
 RET	DBT	DBT *		key
 RET	DBT	DBT *		data
 END
-BEGIN	dbc_c_pget		RETCODE
+BEGIN	dbc_pget		RETCODE
 ARG	ID	DBC *		dbc
 ARG	DBT	DBT *		skey
 ARG	DBT	DBT *		pkey
@@ -583,7 +583,7 @@ RET	DBT	DBT *		skey
 RET	DBT	DBT *		pkey
 RET	DBT	DBT *		data
 END
-BEGIN	dbc_c_put		RETCODE
+BEGIN	dbc_put			RETCODE
 ARG	ID	DBC *		dbc
 ARG	DBT	DBT *		key
 ARG	DBT	DBT *		data

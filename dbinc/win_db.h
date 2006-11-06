@@ -1,5 +1,5 @@
 /*-
- * $Id: win_db.in,v 12.19 2006/06/19 15:56:39 bostic Exp $
+ * $Id: win_db.h,v 12.22 2006/10/25 00:42:13 bostic Exp $
  *
  * The following provides the information necessary to build Berkeley
  * DB on native Windows, and other Windows environments such as MinGW.
@@ -8,7 +8,9 @@
 /*
  * Avoid warnings with Visual Studio 8.
  */
+#ifndef _CRT_SECURE_NO_DEPRECATE
 #define	_CRT_SECURE_NO_DEPRECATE 1
+#endif
 
 /*
  * Windows NT 4.0 and later required for the replication manager.
@@ -57,12 +59,6 @@
 #endif
 
 /*
- * All of the necessary includes have been included, ignore the #includes
- * in the Berkeley DB source files.
- */
-#define	NO_SYSTEM_INCLUDES
-
-/*
  * Microsoft's C runtime library has fsync, getcwd, getpid, snprintf and
  * vsnprintf, but under different names.
  */
@@ -75,18 +71,11 @@
 #define	h_errno			WSAGetLastError()
 
 /*
- * Windows defines off_t to long (i.e., 32 bits).  We need to pass 64-bit
- * file offsets, so we declare our own.
- */
-#define	off_t	__db_off_t
-typedef __int64 off_t;
-
-/*
  * Win32 does not have getopt.
  *
- * The externs are here (instead of using db_config.h and clib_port.h),
- * because Berkeley DB example programs use getopt and they can't #include
- * those files.
+ * The externs are here, instead of using db_config.h and clib_port.h, because
+ * that approach changes function names to BDB specific names, and the example
+ * programs use getopt and can't use BDB specific names.
  */
 #if defined(__cplusplus)
 extern "C" {
@@ -94,6 +83,17 @@ extern "C" {
 extern int getopt(int, char * const *, const char *);
 #if defined(__cplusplus)
 }
+#endif
+
+/*
+ * Microsoft's compiler _doesn't_ define __STDC__ unless you invoke it with
+ * arguments turning OFF all vendor extensions.  Even more unfortunately, if
+ * we do that, it fails to parse windows.h!!!!!  So, we define __STDC__ here,
+ * after windows.h comes in.  Note: the compiler knows we've defined it, and
+ * starts enforcing strict ANSI compliance from this point on.
+ */
+#ifndef __STDC__
+#define __STDC__ 1
 #endif
 
 #ifdef _UNICODE

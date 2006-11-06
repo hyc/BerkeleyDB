@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_msg.c,v 1.23 2006/09/11 15:15:20 bostic Exp $
+ * $Id: repmgr_msg.c,v 1.26 2006/11/01 00:53:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -40,14 +39,11 @@ message_loop(dbenv)
 {
 	REPMGR_MESSAGE *msg;
 	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	while ((ret = __repmgr_queue_get(dbenv, &msg)) == 0) {
 		while ((ret = process_message(dbenv, &msg->control, &msg->rec,
 		    msg->originating_eid)) == DB_LOCK_DEADLOCK)
-			RPRINT(dbenv, (dbenv, &mb, "repmgr deadlock retry"));
+			RPRINT(dbenv, (dbenv, "repmgr deadlock retry"));
 
 		__os_free(dbenv, msg);
 		if (ret != 0)
@@ -68,9 +64,6 @@ process_message(dbenv, control, rec, eid)
 	DB_LSN permlsn;
 	int ret;
 	u_int32_t generation;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 
@@ -100,7 +93,7 @@ process_message(dbenv, control, rec, eid)
 			 * instead copy it into a scratch variable.
 			 */
 			RPRINT(dbenv,
-			    (dbenv, &mb, "firing NEWMASTER (%d) event", eid));
+			    (dbenv, "firing NEWMASTER (%d) event", eid));
 			DB_EVENT(dbenv, DB_EVENT_REP_NEWMASTER, &eid);
 			if ((ret = __repmgr_stash_generation(dbenv)) != 0)
 				return (ret);
@@ -167,9 +160,6 @@ ack_message(dbenv, generation, lsn)
 	DB_REPMGR_ACK ack;
 	DBT control2, rec2;
 	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	/*
@@ -179,7 +169,7 @@ ack_message(dbenv, generation, lsn)
 	 */
 	if (!IS_VALID_EID(db_rep->master_eid) ||
 	    db_rep->master_eid == SELF_EID) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "dropping ack with master %d", db_rep->master_eid));
 		return (0);
 	}
@@ -217,15 +207,12 @@ handle_newsite(dbenv, rec)
 	ADDRINFO *ai;
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
+	SITE_STRING_BUFFER buffer;
 	repmgr_netaddr_t *addr;
 	size_t hlen;
 	u_int16_t port;
 	int ret;
 	char *host;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-	SITE_STRING_BUFFER buffer;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	/*
@@ -251,13 +238,13 @@ handle_newsite(dbenv, rec)
 	/* It's me, do nothing. */
 	if (strcmp(host, db_rep->my_addr.host) == 0 &&
 	    port == db_rep->my_addr.port) {
-		RPRINT(dbenv, (dbenv, &mb, "repmgr ignores own NEWSITE info"));
+		RPRINT(dbenv, (dbenv, "repmgr ignores own NEWSITE info"));
 		return (0);
 	}
 
 	LOCK_MUTEX(db_rep->mutex);
 	if ((ret = __repmgr_add_site(dbenv, host, port, &site)) == EEXIST) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "NEWSITE info from %s was already known",
 		    __repmgr_format_site_loc(site, buffer)));
 		/*
@@ -281,13 +268,17 @@ handle_newsite(dbenv, rec)
 		 * first connected to us, we may not yet have had a chance to
 		 * look up its addresses.  Even though we don't need them just
 		 * now, this is an advantageous opportunity to get them since we
-		 * can do so away from the critical select thread.
+		 * can do so away from the critical select thread.  Give up only
+		 * for a disastrous failure.
 		 */
 		addr = &site->net_addr;
-		if (addr->address_list == NULL &&
-		    __repmgr_getaddr(dbenv,
-		    addr->host, addr->port, 0, &ai) == 0)
-			addr->address_list = ai;
+		if (addr->address_list == NULL) {
+			if ((ret = __repmgr_getaddr(dbenv,
+			    addr->host, addr->port, 0, &ai)) == 0)
+				addr->address_list = ai;
+			else if (ret != DB_REP_UNAVAIL)
+				goto unlock;
+		}
 
 		ret = 0;
 		if (site->state == SITE_IDLE) {
@@ -298,10 +289,10 @@ handle_newsite(dbenv, rec)
 		} else
 			goto unlock; /* Nothing to do. */
 	} else {
-		RPRINT(dbenv, (dbenv, &mb, "NEWSITE info added %s",
-		    __repmgr_format_site_loc(site, buffer)));
 		if (ret != 0)
 			goto unlock;
+		RPRINT(dbenv, (dbenv, "NEWSITE info added %s",
+		    __repmgr_format_site_loc(site, buffer)));
 	}
 
 	/*

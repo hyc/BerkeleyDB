@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_sync.c,v 12.24 2006/08/24 14:46:15 bostic Exp $
+ * $Id: mp_sync.c,v 12.28 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,8 +20,8 @@ typedef struct {
 } BH_TRACK;
 
 static int __bhcmp __P((const void *, const void *));
-static int __memp_close_flush_files __P((DB_ENV *, DB_MPOOL *, int));
-static int __memp_sync_files __P((DB_ENV *, DB_MPOOL *));
+static int __memp_close_flush_files __P((DB_ENV *, int));
+static int __memp_sync_files __P((DB_ENV *));
 static int __memp_sync_file __P((DB_ENV *,
 		MPOOLFILE *, void *, u_int32_t *, u_int32_t));
 
@@ -476,7 +475,7 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 			if (++filecnt >= maxopenfd) {
 				filecnt = 0;
 				if ((t_ret = __memp_close_flush_files(
-				    dbenv, dbmp, 1)) != 0 && ret == 0)
+				    dbenv, 1)) != 0 && ret == 0)
 					ret = t_ret;
 			}
 			last_mf_offset = bhp->mf_offset;
@@ -568,13 +567,13 @@ done:	/*
 	 */
 	if (ret == 0 && (op == DB_SYNC_CACHE || op == DB_SYNC_FILE)) {
 		if (dbmfp == NULL)
-			ret = __memp_sync_files(dbenv, dbmp);
+			ret = __memp_sync_files(dbenv);
 		else
 			ret = __os_fsync(dbenv, dbmfp->fhp);
 	}
 
 	/* If we've opened files to flush pages, close them. */
-	if ((t_ret = __memp_close_flush_files(dbenv, dbmp, 0)) != 0 && ret == 0)
+	if ((t_ret = __memp_close_flush_files(dbenv, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
 err:	__os_free(dbenv, bharray);
@@ -710,17 +709,18 @@ __memp_sync_file(dbenv, mfp, argp, countp, flags)
  *	Sync all the files in the environment, open or not.
  */
 static
-int __memp_sync_files(dbenv, dbmp)
+int __memp_sync_files(dbenv)
 	DB_ENV *dbenv;
-	DB_MPOOL *dbmp;
 {
+	DB_MPOOL *dbmp;
 	DB_MPOOL_HASH *hp;
 	MPOOL *mp;
 	MPOOLFILE *mfp, *next_mfp;
 	int i, need_discard_pass, ret;
 
-	need_discard_pass = ret = 0;
+	dbmp = dbenv->mp_handle;
 	mp = dbmp->reginfo[0].primary;
+	need_discard_pass = ret = 0;
 
 	ret = __memp_walk_files(dbenv,
 	    mp, __memp_sync_file, &need_discard_pass, 0, DB_STAT_NOERROR);
@@ -734,7 +734,7 @@ int __memp_sync_files(dbenv, dbmp)
 
 	hp = R_ADDR(dbmp->reginfo, mp->ftab);
 	for (i = 0; i < MPOOL_FILE_BUCKETS; i++, hp++) {
-		MUTEX_LOCK(dbenv, hp->mtx_hash);
+retry:		MUTEX_LOCK(dbenv, hp->mtx_hash);
 		for (mfp = SH_TAILQ_FIRST(&hp->hash_bucket,
 		    __mpoolfile); mfp != NULL; mfp = next_mfp) {
 			next_mfp = SH_TAILQ_NEXT(mfp, q, __mpoolfile);
@@ -747,9 +747,11 @@ int __memp_sync_files(dbenv, dbmp)
 				continue;
 
 			MUTEX_LOCK(dbenv, mfp->mutex);
-			if (mfp->block_cnt == 0 && mfp->mpf_cnt == 0)
+			if (mfp->block_cnt == 0 && mfp->mpf_cnt == 0) {
+				MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 				(void)__memp_mf_discard(dbmp, mfp);
-			else
+				goto retry;
+			} else
 				MUTEX_UNLOCK(dbenv, mfp->mutex);
 		}
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
@@ -805,14 +807,16 @@ __memp_mf_sync(dbmp, mfp, region_locked)
  *	Close files opened only to flush buffers.
  */
 static int
-__memp_close_flush_files(dbenv, dbmp, dosync)
+__memp_close_flush_files(dbenv, dosync)
 	DB_ENV *dbenv;
-	DB_MPOOL *dbmp;
 	int dosync;
 {
+	DB_MPOOL *dbmp;
 	DB_MPOOLFILE *dbmfp;
 	MPOOLFILE *mfp;
 	int ret;
+
+	dbmp = dbenv->mp_handle;
 
 	/*
 	 * The routine exists because we must close files opened by sync to

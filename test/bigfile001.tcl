@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: bigfile001.tcl,v 12.4 2006/08/24 14:46:34 bostic Exp $
+# $Id: bigfile001.tcl,v 12.5 2006/11/01 00:53:53 bostic Exp $
 #
 # TEST	bigfile001
 # TEST	Create a database greater than 4 GB in size.  Close, verify.

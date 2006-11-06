@@ -63,7 +63,7 @@ last record in the database, will implicitly create records 26 and 27
 as well as 28.  All first, last, next and previous cursor operations
 will automatically skip over these implicitly created records.  So, if
 record number 5 is the only record the application has created,
-implicitly creating records 1 through 4, the <a href="../../api_c/dbc_get.html">DBcursor-&gt;c_get</a> method with the
+implicitly creating records 1 through 4, the <a href="../../api_c/dbc_get.html">DBcursor-&gt;get</a> method with the
 <a href="../../api_c/dbc_get.html#DB_FIRST">DB_FIRST</a> flag will return record number 5, not record number 1.
 Attempts to explicitly retrieve implicitly created records by their
 record number will result in a special error return,

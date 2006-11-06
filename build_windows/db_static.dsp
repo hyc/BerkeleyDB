@@ -54,8 +54,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Release/libdb45s.lib"
-# ADD LIB32 /nologo /out:"Release/libdb45s.lib"
+# ADD BASE LIB32 /nologo /out:"Release/libdb46s.lib"
+# ADD LIB32 /nologo /out:"Release/libdb46s.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - Win32 Debug"
 
@@ -77,8 +77,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Debug/libdb45sd.lib"
-# ADD LIB32 /nologo /out:"Debug/libdb45sd.lib"
+# ADD BASE LIB32 /nologo /out:"Debug/libdb46sd.lib"
+# ADD LIB32 /nologo /out:"Debug/libdb46sd.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - Win32 ASCII Release"
 
@@ -100,8 +100,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Release_ASCII/libdb45s.lib"
-# ADD LIB32 /nologo /out:"Release_ASCII/libdb45s.lib"
+# ADD BASE LIB32 /nologo /out:"Release_ASCII/libdb46s.lib"
+# ADD LIB32 /nologo /out:"Release_ASCII/libdb46s.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - Win32 ASCII Debug"
 
@@ -123,8 +123,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Debug_ASCII/libdb45sd.lib"
-# ADD LIB32 /nologo /out:"Debug_ASCII/libdb45sd.lib"
+# ADD BASE LIB32 /nologo /out:"Debug_ASCII/libdb46sd.lib"
+# ADD LIB32 /nologo /out:"Debug_ASCII/libdb46sd.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - x64 Debug AMD64"
 
@@ -146,8 +146,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Debug_AMD64/libdb45sd.lib"
-# ADD LIB32 /nologo /out:"Debug_AMD64/libdb45sd.lib"
+# ADD BASE LIB32 /nologo /out:"Debug_AMD64/libdb46sd.lib"
+# ADD LIB32 /nologo /out:"Debug_AMD64/libdb46sd.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - x64 Release AMD64"
 
@@ -169,8 +169,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Release_AMD64/libdb45s.lib"
-# ADD LIB32 /nologo /out:"Release_AMD64/libdb45s.lib"
+# ADD BASE LIB32 /nologo /out:"Release_AMD64/libdb46s.lib"
+# ADD LIB32 /nologo /out:"Release_AMD64/libdb46s.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - x64 Debug IA64"
 
@@ -192,8 +192,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Debug_IA64/libdb45sd.lib"
-# ADD LIB32 /nologo /out:"Debug_IA64/libdb45sd.lib"
+# ADD BASE LIB32 /nologo /out:"Debug_IA64/libdb46sd.lib"
+# ADD LIB32 /nologo /out:"Debug_IA64/libdb46sd.lib"
 
 !ELSEIF  "$(CFG)" == "db_static - x64 Release IA64"
 
@@ -215,8 +215,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo /out:"Release_IA64/libdb45s.lib"
-# ADD LIB32 /nologo /out:"Release_IA64/libdb45s.lib"
+# ADD BASE LIB32 /nologo /out:"Release_IA64/libdb46s.lib"
+# ADD LIB32 /nologo /out:"Release_IA64/libdb46s.lib"
 
 !ENDIF 
 
@@ -576,11 +576,11 @@ SOURCE=..\dbreg\dbreg_util.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\env\db_salloc.c
+SOURCE=..\env\db_shash.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\env\db_shash.c
+SOURCE=..\env\env_alloc.c
 # End Source File
 # Begin Source File
 
@@ -853,6 +853,10 @@ SOURCE=..\mutex\mut_stat.c
 # Begin Source File
 
 SOURCE=..\mutex\mut_win32.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\os\os_abort.c
 # End Source File
 # Begin Source File
 

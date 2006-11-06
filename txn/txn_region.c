@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_region.c,v 12.20 2006/08/24 14:46:53 bostic Exp $
+ * $Id: txn_region.c,v 12.25 2006/11/01 00:54:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -20,11 +19,12 @@ static size_t __txn_region_size __P((DB_ENV *));
  * __txn_open --
  *	Open a transaction region.
  *
- * PUBLIC: int __txn_open __P((DB_ENV *));
+ * PUBLIC: int __txn_open __P((DB_ENV *, int));
  */
 int
-__txn_open(dbenv)
+__txn_open(dbenv, create_ok)
 	DB_ENV *dbenv;
+	int create_ok;
 {
 	DB_TXNMGR *mgr;
 	int ret;
@@ -40,7 +40,7 @@ __txn_open(dbenv)
 	mgr->reginfo.type = REGION_TYPE_TXN;
 	mgr->reginfo.id = INVALID_REGION_ID;
 	mgr->reginfo.flags = REGION_JOIN_OK;
-	if (F_ISSET(dbenv, DB_ENV_CREATE))
+	if (create_ok)
 		F_SET(&mgr->reginfo, REGION_CREATE_OK);
 	if ((ret = __db_r_attach(dbenv,
 	    &mgr->reginfo, __txn_region_size(dbenv))) != 0)
@@ -106,8 +106,8 @@ __txn_init(dbenv, mgr)
 			return (ret);
 	}
 
-	if ((ret = __db_shalloc(&mgr->reginfo,
-	    sizeof(DB_TXNREGION), 0, &mgr->reginfo.primary)) != 0) {
+	if ((ret = __env_alloc(&mgr->reginfo,
+	    sizeof(DB_TXNREGION), &mgr->reginfo.primary)) != 0) {
 		__db_errx(dbenv,
 		    "Unable to allocate memory for the transaction region");
 		return (ret);
@@ -168,10 +168,10 @@ __txn_findlastckp(dbenv, lsnp, max_lsn)
 	memset(&dbt, 0, sizeof(dbt));
 	if (max_lsn != NULL) {
 		lsn = *max_lsn;
-		if ((ret = __log_c_get(logc, &lsn, &dbt, DB_SET)) != 0)
+		if ((ret = __logc_get(logc, &lsn, &dbt, DB_SET)) != 0)
 			goto err;
 	} else {
-		if ((ret = __log_c_get(logc, &lsn, &dbt, DB_LAST)) != 0)
+		if ((ret = __logc_get(logc, &lsn, &dbt, DB_LAST)) != 0)
 			goto err;
 		/*
 		 * Twiddle the last LSN so it points to the beginning of the
@@ -182,7 +182,7 @@ __txn_findlastckp(dbenv, lsnp, max_lsn)
 	}
 
 	/* Read backwards, looking for checkpoints. */
-	while ((ret = __log_c_get(logc, &lsn, &dbt, DB_PREV)) == 0) {
+	while ((ret = __logc_get(logc, &lsn, &dbt, DB_PREV)) == 0) {
 		if (dbt.size < sizeof(u_int32_t))
 			continue;
 		memcpy(&rectype, dbt.data, sizeof(u_int32_t));
@@ -192,7 +192,7 @@ __txn_findlastckp(dbenv, lsnp, max_lsn)
 		}
 	}
 
-err:	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/*
@@ -283,8 +283,7 @@ __txn_dbenv_refresh(dbenv)
  *	 Return the amount of space needed for the txn region.  Make the
  *	 region large enough to hold txn_max transaction detail structures
  *	 plus some space to hold thread handles and the beginning of the
- *	 shalloc region and anything we need for mutex system resource
- *	 recording.
+ *	 alloc region and anything we need for mutex system resource recording.
  */
 static size_t
 __txn_region_size(dbenv)
@@ -388,6 +387,7 @@ int __txn_add_buffer(dbenv, td)
 	++td->mvcc_ref;
 	MUTEX_UNLOCK(dbenv, td->mvcc_mtx);
 
+	COMPQUIET(dbenv, NULL);
 	return (0);
 }
 
@@ -426,7 +426,7 @@ int __txn_remove_buffer(dbenv, td, hash_mtx)
 		TXN_SYSTEM_LOCK(dbenv);
 		SH_TAILQ_REMOVE(&region->mvcc_txn, td, links, __txn_detail);
 		--region->stat.st_nsnapshot;
-		__db_shalloc_free(&mgr->reginfo, td);
+		__env_alloc_free(&mgr->reginfo, td);
 		TXN_SYSTEM_UNLOCK(dbenv);
 
 		MUTEX_LOCK(dbenv, hash_mtx);

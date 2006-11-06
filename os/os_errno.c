@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: os_errno.c,v 12.6 2006/08/24 14:46:17 bostic Exp $
+ * $Id: os_errno.c,v 12.7 2006/11/01 00:53:39 bostic Exp $
  */
 
 #include "db_config.h"

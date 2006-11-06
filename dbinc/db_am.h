@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_am.h,v 12.17 2006/08/24 14:45:29 bostic Exp $
+ * $Id: db_am.h,v 12.19 2006/11/01 00:52:40 bostic Exp $
  */
 #ifndef _DB_AM_H_
 #define	_DB_AM_H_
@@ -76,7 +75,7 @@ extern "C" {
 	if (argp != NULL)						\
 		__os_free(dbenv, argp);					\
 	if (dbc != NULL &&						\
-	    (__t_ret = __db_c_close(dbc)) != 0 && ret == 0)		\
+	    (__t_ret = __dbc_close(dbc)) != 0 && ret == 0)		\
 		ret = __t_ret;						\
 	}								\
 	return (ret)

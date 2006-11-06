@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: cxx_dbc.cpp,v 12.5 2006/08/24 14:45:13 bostic Exp $
+ * $Id: cxx_dbc.cpp,v 12.7 2006/11/01 00:52:27 bostic Exp $
  */
 
 #include "db_config.h"
@@ -33,7 +32,7 @@ int Dbc::_name _argspec							\
 	int ret;							\
 	DBC *dbc = this;						\
 									\
-	ret = dbc->c_##_name _arglist;					\
+	ret = dbc->_name _arglist;					\
 	if (!_retok(ret))						\
 		DB_ERROR(DbEnv::get_DbEnv(dbc->dbp->dbenv), \
 			"Dbc::" # _name, ret, ON_ERROR_UNKNOWN); \
@@ -58,7 +57,7 @@ int Dbc::dup(Dbc** cursorp, u_int32_t _flags)
 	DBC *dbc = this;
 	DBC *new_cursor = 0;
 
-	ret = dbc->c_dup(dbc, &new_cursor, _flags);
+	ret = dbc->dup(dbc, &new_cursor, _flags);
 
 	if (DB_RETOK_STD(ret))
 		// The following cast implies that Dbc can be no larger than DBC
@@ -75,7 +74,7 @@ int Dbc::get(Dbt* key, Dbt *data, u_int32_t _flags)
 	int ret;
 	DBC *dbc = this;
 
-	ret = dbc->c_get(dbc, key, data, _flags);
+	ret = dbc->get(dbc, key, data, _flags);
 
 	if (!DB_RETOK_DBCGET(ret)) {
 		if (ret == DB_BUFFER_SMALL && DB_OVERFLOWED_DBT(key))
@@ -97,7 +96,7 @@ int Dbc::pget(Dbt* key, Dbt *pkey, Dbt *data, u_int32_t _flags)
 	int ret;
 	DBC *dbc = this;
 
-	ret = dbc->c_pget(dbc, key, pkey, data, _flags);
+	ret = dbc->pget(dbc, key, pkey, data, _flags);
 
 	/* Logic is the same as for Dbc::get - reusing macro. */
 	if (!DB_RETOK_DBCGET(ret)) {

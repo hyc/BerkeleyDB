@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: recd007.tcl,v 12.6 2006/08/24 14:46:36 bostic Exp $
+# $Id: recd007.tcl,v 12.7 2006/11/01 00:53:54 bostic Exp $
 #
 # TEST	recd007
 # TEST	File create/delete tests.

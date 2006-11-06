@@ -36,6 +36,9 @@
 /* Define to 1 if you have the `atol' function. */
 #define HAVE_ATOL 1
 
+/* Define to 1 if building BREW. */
+/* #undef HAVE_BREW */
+
 /* Define to 1 if you have the `clock_gettime' function. */
 /* #undef HAVE_CLOCK_GETTIME */
 
@@ -66,6 +69,9 @@
 /* Define to 1 if you have the `fchmod' function. */
 /* #undef HAVE_FCHMOD */
 
+/* Define to 1 if you have the `fclose' function. */
+#define HAVE_FCLOSE 1
+
 /* Define to 1 if you have the `fcntl' function. */
 /* #undef HAVE_FCNTL */
 
@@ -75,11 +81,23 @@
 /* Define to 1 if you have the `fdatasync' function. */
 /* #undef HAVE_FDATASYNC */
 
+/* Define to 1 if you have the `fgetc' function. */
+#define HAVE_FGETC 1
+
+/* Define to 1 if you have the `fgets' function. */
+#define HAVE_FGETS 1
+
 /* Define to 1 if allocated filesystem blocks are not zeroed. */
 #define HAVE_FILESYSTEM_NOTZERO 1
 
+/* Define to 1 if you have the `fopen' function. */
+#define HAVE_FOPEN 1
+
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
+
+/* Define to 1 if you have the `fwrite' function. */
+#define HAVE_FWRITE 1
 
 /* Define to 1 if you have the `getaddrinfo' function. */
 /* #undef HAVE_GETADDRINFO */
@@ -122,6 +140,9 @@
 
 /* Define to 1 if you have the `isprint' function. */
 #define HAVE_ISPRINT 1
+
+/* Define to 1 if you have the `localtime' function. */
+#define HAVE_LOCALTIME 1
 
 /* Define to 1 if you have the `isspace' function. */
 #define HAVE_ISSPACE 1
@@ -222,6 +243,9 @@
 /* Define to 1 to use the GCC compiler and Sparc assembly language mutexes. */
 /* #undef HAVE_MUTEX_SPARC_GCC_ASSEMBLY */
 
+/* Define to 1 if the Berkeley DB library should support mutexes. */
+#define HAVE_MUTEX_SUPPORT 1
+
 /* Define to 1 if mutexes hold system resources. */
 /* #undef HAVE_MUTEX_SYSTEM_RESOURCES */
 
@@ -281,6 +305,9 @@
 
 /* Define to 1 if building on QNX. */
 /* #undef HAVE_QNX */
+
+/* Define to 1 if you have the `qsort' function. */
+#define HAVE_QSORT 1
 
 /* Define to 1 if building Queue access method. */
 #ifndef HAVE_SMALLBUILD
@@ -384,6 +411,9 @@
 /* Define to 1 if you have the `sysconf' function. */
 /* #undef HAVE_SYSCONF */
 
+/* Define to 1 if port includes files in the Berkeley DB source code. */
+/* #undef HAVE_SYSTEM_INCLUDE_FILES */
+
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_SYS_DIR_H */
@@ -406,6 +436,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
+
+/* Define to 1 if you have the `time' function. */
+#define HAVE_TIME 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
@@ -437,13 +470,49 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.5.20"
+#define PACKAGE_STRING "Berkeley DB 4.6.1"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.5.20"
+#define PACKAGE_TARNAME "db-4.6.1"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.5.20"
+#define PACKAGE_VERSION "4.6.1"
+
+/* The size of a `char', as computed by sizeof. */
+/* #undef SIZEOF_CHAR */
+
+/* The size of a `char *', as computed by sizeof. */
+/* #undef SIZEOF_CHAR_P */
+
+/* The size of a `int', as computed by sizeof. */
+/* #undef SIZEOF_INT */
+
+/* The size of a `long', as computed by sizeof. */
+/* #undef SIZEOF_LONG */
+
+/* The size of a `long long', as computed by sizeof. */
+/* #undef SIZEOF_LONG_LONG */
+
+/* The size of a `short', as computed by sizeof. */
+/* #undef SIZEOF_SHORT */
+
+/* The size of a `size_t', as computed by sizeof. */
+/* #undef SIZEOF_SIZE_T */
+
+/* The size of a `unsigned char', as computed by sizeof. */
+/* #undef SIZEOF_UNSIGNED_CHAR */
+
+/* The size of a `unsigned int', as computed by sizeof. */
+/* #undef SIZEOF_UNSIGNED_INT */
+
+/* The size of a `unsigned long', as computed by sizeof. */
+/* #undef SIZEOF_UNSIGNED_LONG */
+
+/* The size of a `unsigned long long', as computed by sizeof. */
+/* #undef SIZEOF_UNSIGNED_LONG_LONG */
+
+/* The size of a `unsigned short', as computed by sizeof. */
+/* #undef SIZEOF_UNSIGNED_SHORT */
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
 /* #undef STAT_MACROS_BROKEN */
@@ -466,14 +535,8 @@
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
 
-#include "clib_port.h"
-#include "win_db.h"
-
-/*
- * Microsoft's compiler _doesn't_ define __STDC__ unless you invoke it with
- * arguments turning OFF all vendor extensions.  Even more unfortunately, if
- * we do that, it fails to parse windows.h!!!!!  So, we define __STDC__ here,
- * after windows.h comes in.  Note: the compiler knows we've defined it, and
- * starts enforcing strict ANSI compliance from this point on.
- */
-#define __STDC__ 1
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+/* #undef inline */
+#endif

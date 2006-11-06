@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: crdel_rec.c,v 12.13 2006/08/24 14:45:15 bostic Exp $
+ * $Id: crdel_rec.c,v 12.15 2006/11/01 00:52:28 bostic Exp $
  */
 
 #include "db_config.h"
@@ -144,7 +143,7 @@ __crdel_inmem_create_recover(dbenv, dbtp, lsnp, op, info)
 		 * tmp file.
 		 */
 		if (ret != 0) {
-			if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+			if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 				goto out;
 
 			F_SET(dbp, DB_AM_RECOVER | DB_AM_INMEM);

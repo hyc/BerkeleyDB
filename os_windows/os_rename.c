@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_rename.c,v 12.6 2006/08/24 14:46:22 bostic Exp $
+ * $Id: os_rename.c,v 12.8 2006/11/01 00:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -23,6 +22,10 @@ __os_rename(dbenv, oldname, newname, silent)
 {
 	_TCHAR *toldname, *tnewname;
 	int ret;
+
+	if (dbenv != NULL &&
+	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv, "fileops: rename %s to %s", oldname, newname);
 
 	TO_TSTRING(dbenv, oldname, toldname, ret);
 	if (ret != 0)

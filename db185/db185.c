@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db185.c,v 12.7 2006/08/31 17:59:25 bostic Exp $
+ * $Id: db185.c,v 12.9 2006/11/01 00:52:31 bostic Exp $
  */
 
 #include "db_config.h"
@@ -13,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
+    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
 #endif
 
 #include "db185_int.h"
@@ -279,7 +278,7 @@ db185_del(db185p, key185, flags)
 	if (flags & ~R_CURSOR)
 		goto einval;
 	if (flags & R_CURSOR)
-		ret = db185p->dbc->c_del(db185p->dbc, 0);
+		ret = db185p->dbc->del(db185p->dbc, 0);
 	else
 		ret = dbp->del(dbp, NULL, &key, 0);
 
@@ -378,7 +377,7 @@ db185_put(db185p, key185, data185, flags)
 		ret = dbp->put(dbp, NULL, &key, &data, 0);
 		break;
 	case R_CURSOR:
-		ret = db185p->dbc->c_put(db185p->dbc, &key, &data, DB_CURRENT);
+		ret = db185p->dbc->put(db185p->dbc, &key, &data, DB_CURRENT);
 		break;
 	case R_IAFTER:
 	case R_IBEFORE:
@@ -388,14 +387,14 @@ db185_put(db185p, key185, data185, flags)
 		if ((ret = dbp->cursor(dbp, NULL, &dbcp_put, 0)) != 0)
 			break;
 		if ((ret =
-		    dbcp_put->c_get(dbcp_put, &key, &data, DB_SET)) == 0) {
+		    dbcp_put->get(dbcp_put, &key, &data, DB_SET)) == 0) {
 			memset(&data, 0, sizeof(data));
 			data.data = data185->data;
 			data.size = data185->size;
-			ret = dbcp_put->c_put(dbcp_put, &key, &data,
+			ret = dbcp_put->put(dbcp_put, &key, &data,
 			    flags == R_IAFTER ? DB_AFTER : DB_BEFORE);
 		}
-		if ((t_ret = dbcp_put->c_close(dbcp_put)) != 0 && ret == 0)
+		if ((t_ret = dbcp_put->close(dbcp_put)) != 0 && ret == 0)
 			ret = t_ret;
 		break;
 	case R_NOOVERWRITE:
@@ -408,7 +407,7 @@ db185_put(db185p, key185, data185, flags)
 		if ((ret = dbp->put(dbp, NULL, &key, &data, 0)) != 0)
 			break;
 		ret =
-		    db185p->dbc->c_get(db185p->dbc, &key, &data, DB_SET_RANGE);
+		    db185p->dbc->get(db185p->dbc, &key, &data, DB_SET_RANGE);
 		break;
 	default:
 		goto einval;
@@ -472,7 +471,7 @@ db185_seq(db185p, key185, data185, flags)
 	default:
 		goto einval;
 	}
-	switch (ret = db185p->dbc->c_get(db185p->dbc, &key, &data, flags)) {
+	switch (ret = db185p->dbc->get(db185p->dbc, &key, &data, flags)) {
 	case 0:
 		key185->data = key.data;
 		key185->size = key.size;

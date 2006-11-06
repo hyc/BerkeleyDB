@@ -45,7 +45,7 @@ the creation of an extra object (the DBC object), which is then used to
 access the database.
 <p>Specifically, the partial key match and range search functionality of the
 R_CURSOR flag in DB-&gt;seq has been replaced by the
-<a href="../../api_c/dbc_get.html#DB_SET_RANGE">DB_SET_RANGE</a> flag in <a href="../../api_c/dbc_get.html">DBcursor-&gt;c_get</a>.</p>
+<a href="../../api_c/dbc_get.html#DB_SET_RANGE">DB_SET_RANGE</a> flag in <a href="../../api_c/dbc_get.html">DBcursor-&gt;get</a>.</p>
 <p><li>In version 2 of the Berkeley DB library, additions or deletions into Recno
 (fixed and variable-length record) databases no longer automatically
 logically renumber all records after the add/delete point, by default.

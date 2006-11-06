@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2006 Oracle.  All rights reserved.
 #
-# $Id: rep065script.tcl,v 12.7 2006/09/08 20:32:18 bostic Exp $
+# $Id: rep065script.tcl,v 12.9 2006/11/01 00:53:58 bostic Exp $
 #
 # rep065script - procs to use at each replication site in the
 # replication upgrade test.
@@ -105,22 +104,28 @@ proc rep065scr_starttest { role oplist envid msgdir mydir allids markerfile } {
 	error_check_good marker [is_valid_db $markerdb] TRUE
 	puts "set up env cmd"
 	set lockmax 40000
+	set logbuf [expr 16 * 1024]
+	set logmax [expr $logbuf * 4]
 	if { $role == "MASTER" } {
 		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
+		    -log_max $logmax -log_buffer $logbuf \
 		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
 		    -errpfx MASTER -txn -rep_master \
 		    -rep_transport \[list $envid replsend\]"
 #		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
+#		    -log_max $logmax -log_buffer $logbuf \
 #		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
 #		    -errpfx MASTER -txn -rep_master \
 #		    -verbose {rep on} -errfile /dev/stderr \
 #		    -rep_transport \[list $envid replsend\]"
 	} elseif { $role == "CLIENT" } {
 		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
+		    -log_max $logmax -log_buffer $logbuf \
 		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
 		    -errpfx CLIENT -txn -rep_client \
 		    -rep_transport \[list $envid replsend\]"
 #		set rep_env_cmd "berkdb_env_noerr -create -home $mydir \
+#		    -log_max $logmax -log_buffer $logbuf \
 #		    -lock_max_objects $lockmax -lock_max_locks $lockmax \
 #		    -errpfx CLIENT -txn -rep_client \
 #		    -verbose {rep on} -errfile /dev/stderr \

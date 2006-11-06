@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr.h,v 12.10 2006/09/19 14:14:07 mjc Exp $
+ * $Id: repmgr.h,v 12.11 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef _DB_REPMGR_H_

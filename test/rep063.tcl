@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep063.tcl,v 1.5 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep063.tcl,v 1.7 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST  rep063
 # TEST	Replication election test with simulated different versions
@@ -63,6 +62,8 @@ proc rep063 { method args } {
 
 proc rep063_sub { method nclients tnum logset recargs largs } {
 	source ./include.tcl
+	global electable_pri
+
 	set niter 80
 
 	env_cleanup $testdir
@@ -202,7 +203,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set nvotes $nclients
 	set winner 1
 	set elector 2
-	setpriority pri $nclients $winner
+	setpriority pri $nclients $winner 0 1
 	run_election env_cmd envlist err_cmd pri crash\
 	    $qdir $m $elector $nsites $nvotes $nclients $winner
 	#
@@ -229,7 +230,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	# and client 1 a real 0 priority new client.
 	#
 	set winner 0
-	setpriority pri $nclients $winner
+	setpriority pri $nclients $winner 0 1
 	set pri(1) 0
 	run_election env_cmd envlist err_cmd pri crash\
 	    $qdir $m $elector $nsites $nvotes $nclients $winner
@@ -248,7 +249,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	# is a bigger LSN "new" client participating.
 	#
 	set winner 1
-	setpriority pri $nclients $winner
+	setpriority pri $nclients $winner 0 1
 	set pri(2) [expr $pri(1) / 2]
 	run_election env_cmd envlist err_cmd pri crash\
 	    $qdir $m $elector $nsites $nvotes $nclients $winner
@@ -261,7 +262,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	#
 	# Client 1 now has a bigger LSN, so make it unelectable.  Add in
 	# old client 3 since that should be the biggest LSN of all these.
-	# Set all other priorities to 10 to make them all equal (and
+	# Set all other priorities to electable_pri to make them all equal (and
 	# all "new" clients).  We know client 3 should win because we
 	# set its LSN much farther ahead in the beginning.
 	#
@@ -270,10 +271,10 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set nclients 4
 	set nsites $nclients
 	set nvotes $nclients
-	set pri(0) 10
+	set pri(0) $electable_pri
 	set pri(1) 0
-	set pri(2) 10
-	set pri(3) 10
+	set pri(2) $electable_pri
+	set pri(3) $electable_pri
 	replclear [lindex $cl3 1]
 	lappend envlist $cl3
 	#
@@ -295,11 +296,11 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set nclients 5
 	set nsites $nclients
 	set nvotes $nclients
-	set pri(0) 10
-	set pri(1) 10
-	set pri(2) 10
-	set pri(3) 10
-	set pri(4) 10
+	set pri(0) $electable_pri
+	set pri(1) $electable_pri
+	set pri(2) $electable_pri
+	set pri(3) $electable_pri
+	set pri(4) $electable_pri
 	replclear [expr $winner + 2]
 	lappend envlist $cl4
 	#

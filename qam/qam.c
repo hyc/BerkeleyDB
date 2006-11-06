@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam.c,v 12.38 2006/09/09 14:28:24 bostic Exp $
+ * $Id: qam.c,v 12.41 2006/11/01 00:53:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -18,11 +17,11 @@
 #include "dbinc/qam.h"
 
 static int __qam_bulk __P((DBC *, DBT *, u_int32_t));
-static int __qam_c_close __P((DBC *, db_pgno_t, int *));
-static int __qam_c_del __P((DBC *));
-static int __qam_c_destroy __P((DBC *));
-static int __qam_c_get __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
-static int __qam_c_put __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
+static int __qamc_close __P((DBC *, db_pgno_t, int *));
+static int __qamc_del __P((DBC *));
+static int __qamc_destroy __P((DBC *));
+static int __qamc_get __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
+static int __qamc_put __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
 static int __qam_consume __P((DBC *, QMETA *, db_recno_t));
 static int __qam_getno __P((DB *, const DBT *, db_recno_t *));
 
@@ -213,12 +212,12 @@ err:	if (allocated)
 	return (ret);
 }
 /*
- * __qam_c_put
+ * __qamc_put
  *	Cursor put for queued access method.
  *	BEFORE and AFTER cannot be specified.
  */
 static int
-__qam_c_put(dbc, key, data, flags, pgnop)
+__qamc_put(dbc, key, data, flags, pgnop)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -517,11 +516,11 @@ err:	/* Release the meta page. */
 }
 
 /*
- * __qam_c_del --
+ * __qamc_del --
  *	Qam cursor->am_del function
  */
 static int
-__qam_c_del(dbc)
+__qamc_del(dbc)
 	DBC *dbc;
 {
 	DB *dbp;
@@ -641,11 +640,11 @@ err:	if ((t_ret = __memp_fput(mpf, meta, 0)) != 0 && ret == 0)
 #endif
 
 /*
- * __qam_c_get --
- *	Queue cursor->c_get function.
+ * __qamc_get --
+ *	Queue DBC->get function.
  */
 static int
-__qam_c_get(dbc, key, data, flags, pgnop)
+__qamc_get(dbc, key, data, flags, pgnop)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -698,7 +697,7 @@ __qam_c_get(dbc, key, data, flags, pgnop)
 		meta_mode = lock_mode = DB_LOCK_WRITE;
 	}
 
-	DEBUG_LREAD(dbc, dbc->txn, "qam_c_get",
+	DEBUG_LREAD(dbc, dbc->txn, "qamc_get",
 	    flags == DB_SET || flags == DB_SET_RANGE ? key : NULL, NULL, flags);
 
 	/* Make lint and friends happy. */
@@ -745,6 +744,7 @@ retry:	/* Update the record number. */
 	case DB_CURRENT:
 		break;
 	case DB_NEXT_DUP:
+	case DB_PREV_DUP:
 		ret = DB_NOTFOUND;
 		goto err;
 		/* NOTREACHED */
@@ -881,7 +881,7 @@ retry:	/* Update the record number. */
 			goto err;
 		break;
 	default:
-		ret = __db_unknown_flag(dbenv, "__qam_c_get", flags);
+		ret = __db_unknown_flag(dbenv, "__qamc_get", flags);
 		goto err;
 	}
 
@@ -1088,7 +1088,7 @@ release_retry:	/* Release locks and retry, if possible. */
 
 		/*
 		 * Check and see if we *have* any secondary indices.
-		 * If we do, we're a primary, so call __db_c_del_primary
+		 * If we do, we're a primary, so call __dbc_del_primary
 		 * to delete the references to the item we're about to
 		 * delete.
 		 *
@@ -1097,20 +1097,20 @@ release_retry:	/* Release locks and retry, if possible. */
 		 * to perform any additional ops on this cursor.
 		 */
 		if (LIST_FIRST(&dbp->s_secondaries) != NULL) {
-			if ((ret = __db_c_idup(dbc,
+			if ((ret = __dbc_idup(dbc,
 			    &dbcdup, DB_POSITION)) != 0)
 				goto err1;
 
-			if ((ret = __db_c_del_primary(dbcdup)) != 0) {
+			if ((ret = __dbc_del_primary(dbcdup)) != 0) {
 				/*
-				 * The __db_c_del_primary return is more
+				 * The __dbc_del_primary return is more
 				 * interesting.
 				 */
-				(void)__db_c_close(dbcdup);
+				(void)__dbc_close(dbcdup);
 				goto err1;
 			}
 
-			if ((ret = __db_c_close(dbcdup)) != 0)
+			if ((ret = __dbc_close(dbcdup)) != 0)
 				goto err1;
 		}
 
@@ -1553,11 +1553,11 @@ done:	/* Release the meta page. */
 }
 
 /*
- * __qam_c_close --
+ * __qamc_close --
  *	Close down the cursor from a single use.
  */
 static int
-__qam_c_close(dbc, root_pgno, rmroot)
+__qamc_close(dbc, root_pgno, rmroot)
 	DBC *dbc;
 	db_pgno_t root_pgno;
 	int *rmroot;
@@ -1585,14 +1585,14 @@ __qam_c_close(dbc, root_pgno, rmroot)
 }
 
 /*
- * __qam_c_dup --
+ * __qamc_dup --
  *	Duplicate a queue cursor, such that the new one holds appropriate
  *	locks for the position of the original.
  *
- * PUBLIC: int __qam_c_dup __P((DBC *, DBC *));
+ * PUBLIC: int __qamc_dup __P((DBC *, DBC *));
  */
 int
-__qam_c_dup(orig_dbc, new_dbc)
+__qamc_dup(orig_dbc, new_dbc)
 	DBC *orig_dbc, *new_dbc;
 {
 	QUEUE_CURSOR *orig, *new;
@@ -1606,12 +1606,12 @@ __qam_c_dup(orig_dbc, new_dbc)
 }
 
 /*
- * __qam_c_init
+ * __qamc_init
  *
- * PUBLIC: int __qam_c_init __P((DBC *));
+ * PUBLIC: int __qamc_init __P((DBC *));
  */
 int
-__qam_c_init(dbc)
+__qamc_init(dbc)
 	DBC *dbc;
 {
 	QUEUE_CURSOR *cp;
@@ -1630,30 +1630,30 @@ __qam_c_init(dbc)
 	}
 
 	/* Initialize methods. */
-	dbc->c_close = __db_c_close_pp;
-	dbc->c_count = __db_c_count_pp;
-	dbc->c_del = __db_c_del_pp;
-	dbc->c_dup = __db_c_dup_pp;
-	dbc->c_get = __db_c_get_pp;
-	dbc->c_pget = __db_c_pget_pp;
-	dbc->c_put = __db_c_put_pp;
-	dbc->c_am_bulk = __qam_bulk;
-	dbc->c_am_close = __qam_c_close;
-	dbc->c_am_del = __qam_c_del;
-	dbc->c_am_destroy = __qam_c_destroy;
-	dbc->c_am_get = __qam_c_get;
-	dbc->c_am_put = __qam_c_put;
-	dbc->c_am_writelock = NULL;
+	dbc->close = dbc->c_close = __dbc_close_pp;
+	dbc->count = dbc->c_count = __dbc_count_pp;
+	dbc->del = dbc->c_del = __dbc_del_pp;
+	dbc->dup = dbc->c_dup = __dbc_dup_pp;
+	dbc->get = dbc->c_get = __dbc_get_pp;
+	dbc->pget = dbc->c_pget = __dbc_pget_pp;
+	dbc->put = dbc->c_put = __dbc_put_pp;
+	dbc->am_bulk = __qam_bulk;
+	dbc->am_close = __qamc_close;
+	dbc->am_del = __qamc_del;
+	dbc->am_destroy = __qamc_destroy;
+	dbc->am_get = __qamc_get;
+	dbc->am_put = __qamc_put;
+	dbc->am_writelock = NULL;
 
 	return (0);
 }
 
 /*
- * __qam_c_destroy --
+ * __qamc_destroy --
  *	Close a single cursor -- internal version.
  */
 static int
-__qam_c_destroy(dbc)
+__qamc_destroy(dbc)
 	DBC *dbc;
 {
 	/* Discard the structures. */
@@ -1702,7 +1702,7 @@ __qam_truncate(dbc, countp)
 
 	/* Walk the queue, counting rows. */
 	for (count = 0;
-	    (ret = __qam_c_get(dbc, NULL, NULL, DB_CONSUME, &metapno)) == 0;)
+	    (ret = __qamc_get(dbc, NULL, NULL, DB_CONSUME, &metapno)) == 0;)
 		count++;
 	if (ret != DB_NOTFOUND)
 		return (ret);
@@ -1764,7 +1764,7 @@ __qam_delete(dbc, key)
 	if ((ret = __qam_getno(dbc->dbp, key, &cp->recno)) != 0)
 		goto err;
 
-	ret = __qam_c_del(dbc);
+	ret = __qamc_del(dbc);
 
 err:	return (ret);
 }

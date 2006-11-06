@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: db_rename.c,v 12.20 2006/09/19 15:06:58 bostic Exp $
+ * $Id: db_rename.c,v 12.22 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -77,7 +76,7 @@ __env_dbrename_pp(dbenv, txn, name, subdb, newname, flags)
 
 	LF_CLR(DB_AUTO_COMMIT);
 
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 		goto err;
 
 	ret = __db_rename_int(dbp, txn, name, subdb, newname);

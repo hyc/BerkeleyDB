@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: db_server_cxxproc.cpp,v 12.12 2006/08/24 14:46:29 bostic Exp $
+ * $Id: db_server_cxxproc.cpp,v 12.14 2006/11/01 00:53:48 bostic Exp $
  */
 
 #include "db_config.h"
@@ -1894,9 +1893,9 @@ out:
 }
 
 extern "C" void
-__dbc_c_close_proc(
+__dbc_close_proc(
 	u_int dbccl_id,
-	__dbc_c_close_reply *replyp)
+	__dbc_close_reply *replyp)
 {
 	ct_entry *dbc_ctp;
 
@@ -1906,10 +1905,10 @@ __dbc_c_close_proc(
 }
 
 extern "C" void
-__dbc_c_count_proc(
+__dbc_count_proc(
 	u_int dbccl_id,
 	u_int32_t flags,
-	__dbc_c_count_reply *replyp)
+	__dbc_count_reply *replyp)
 {
 	Dbc *dbc;
 	ct_entry *dbc_ctp;
@@ -1927,10 +1926,10 @@ __dbc_c_count_proc(
 }
 
 extern "C" void
-__dbc_c_del_proc(
+__dbc_del_proc(
 	u_int dbccl_id,
 	u_int32_t flags,
-	__dbc_c_del_reply *replyp)
+	__dbc_del_reply *replyp)
 {
 	Dbc *dbc;
 	ct_entry *dbc_ctp;
@@ -1946,10 +1945,10 @@ __dbc_c_del_proc(
 }
 
 extern "C" void
-__dbc_c_dup_proc(
+__dbc_dup_proc(
 	u_int dbccl_id,
 	u_int32_t flags,
-	__dbc_c_dup_reply *replyp)
+	__dbc_dup_reply *replyp)
 {
 	Dbc *dbc, *newdbc;
 	ct_entry *dbc_ctp, *new_ctp;
@@ -1983,7 +1982,7 @@ __dbc_c_dup_proc(
 }
 
 extern "C" void
-__dbc_c_get_proc(
+__dbc_get_proc(
 	u_int dbccl_id,
 	u_int32_t keydlen,
 	u_int32_t keydoff,
@@ -1998,7 +1997,7 @@ __dbc_c_get_proc(
 	void *datadata,
 	u_int32_t datasize,
 	u_int32_t flags,
-	__dbc_c_get_reply *replyp,
+	__dbc_get_reply *replyp,
 	int * freep)
 {
 	Dbc *dbc;
@@ -2104,7 +2103,7 @@ err:		FREE_IF_CHANGED(dbenv->get_DB_ENV(),
 }
 
 extern "C" void
-__dbc_c_pget_proc(
+__dbc_pget_proc(
 	u_int dbccl_id,
 	u_int32_t skeydlen,
 	u_int32_t skeydoff,
@@ -2125,7 +2124,7 @@ __dbc_c_pget_proc(
 	void *datadata,
 	u_int32_t datasize,
 	u_int32_t flags,
-	__dbc_c_pget_reply *replyp,
+	__dbc_pget_reply *replyp,
 	int * freep)
 {
 	Dbc *dbc;
@@ -2246,7 +2245,7 @@ err:		FREE_IF_CHANGED(dbenv->get_DB_ENV(),
 }
 
 extern "C" void
-__dbc_c_put_proc(
+__dbc_put_proc(
 	u_int dbccl_id,
 	u_int32_t keydlen,
 	u_int32_t keydoff,
@@ -2261,7 +2260,7 @@ __dbc_c_put_proc(
 	void *datadata,
 	u_int32_t datasize,
 	u_int32_t flags,
-	__dbc_c_put_reply *replyp,
+	__dbc_put_reply *replyp,
 	int * freep)
 {
 	Db *dbp;

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep029.tcl,v 12.17 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep029.tcl,v 12.20 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep029
 # TEST	Test of internal initialization.
@@ -67,7 +66,7 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 				set envargs ""
 				set args $saved_args
 				puts "Rep$tnum ($method $envargs $r $c $args):\
-				    Test of internal initialization with $msg."
+				    Test of internal initialization $msg."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep029_sub $method $niter $tnum $envargs \
@@ -113,10 +112,7 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
@@ -158,7 +154,8 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	# Run rep_test in the master (and update client).
 	puts "\tRep$tnum.a: Running rep_test in replicated env."
 	set start 0
-	eval rep_test $method $masterenv NULL $niter $start $start 0 $inmem $largs
+	eval rep_test \
+	    $method $masterenv NULL $niter $start $start 0 $inmem $largs
 	incr start $niter
 	process_msgs $envlist 0 NONE err
 	error_check_good process_msgs $err 0

@@ -34,7 +34,7 @@
  *	@(#)errno.h	8.5 (Berkeley) 1/21/94
  * FreeBSD: /repoman/r/ncvs/src/sys/sys/errno.h,v 1.28 2005/04/02 12:33:28 das Exp $
  *
- * $Id: errno.h,v 1.2 2006/06/11 16:13:13 bostic Exp $
+ * $Id: errno.h,v 1.3 2006/09/27 14:55:55 bostic Exp $
  */
 
 #ifndef _SYS_ERRNO_H_
@@ -91,7 +91,10 @@ extern int	__db_errno;
 #ifndef _POSIX_SOURCE
 #define	EWOULDBLOCK	EAGAIN		/* Operation would block */
 #define	EINPROGRESS	36		/* Operation now in progress */
+
+#ifndef EALREADY			/* BREW already has an EALREADY. */
 #define	EALREADY	37		/* Operation already in progress */
+#endif
 
 /* ipc/network software -- argument errors */
 #define	ENOTSOCK	38		/* Socket operation on non-socket */

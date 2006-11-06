@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep026.tcl,v 12.12 2006/09/13 21:51:23 carol Exp $
+# $Id: rep026.tcl,v 12.13 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep026
 # TEST	Replication elections - simulate a crash after sending

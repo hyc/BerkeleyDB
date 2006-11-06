@@ -29,7 +29,7 @@ version upgrade (<a href="../../api_c/db_upgrade.html">DB-&gt;upgrade</a>), veri
 (<a href="../../api_c/db_verify.html">DB-&gt;verify</a>), flushing to a backing file (<a href="../../api_c/db_sync.html">DB-&gt;sync</a>),
 and association of secondary indices (<a href="../../api_c/db_associate.html">DB-&gt;associate</a>).  Database
 handles are eventually closed using <a href="../../api_c/db_close.html">DB-&gt;close</a>.</p>
-<!--$Id: m4.methods,v 1.11 2006/08/25 16:40:00 bostic Exp $-->
+<!--$Id: m4.methods,v 1.12 2006/10/27 00:28:44 bostic Exp $-->
 <table border=1 align=center>
 <tr><th>Database Operations</th><th>Description</th></tr>
 <!--Db::--><tr><td><a href="../../api_c/db_class.html">db_create</a></td><td>Create a database handle</td></tr>
@@ -77,6 +77,7 @@ handles are eventually closed using <a href="../../api_c/db_close.html">DB-&gt;c
 <!--Db::set_re_pad--><tr><td><a href="../../api_c/db_set_re_pad.html">DB-&gt;set_re_pad</a></td><td>Set the fixed-length record pad byte</td></tr>
 <!--Db::set_re_source--><tr><td><a href="../../api_c/db_set_re_source.html">DB-&gt;set_re_source</a></td><td>Set the backing Recno text file</td></tr>
 <tr><th>Hash Configuration</th><th><br></th></tr>
+<!--Db::set_h_compare--><tr><td><a href="../../api_c/db_set_h_compare.html">DB-&gt;set_h_compare</a></td><td>Set a Hash comparison function</td></tr>
 <!--Db::set_h_ffactor--><tr><td><a href="../../api_c/db_set_h_ffactor.html">DB-&gt;set_h_ffactor</a></td><td>Set the Hash table density</td></tr>
 <!--Db::set_h_hash--><tr><td><a href="../../api_c/db_set_h_hash.html">DB-&gt;set_h_hash</a></td><td>Set a hashing function</td></tr>
 <!--Db::set_h_nelem--><tr><td><a href="../../api_c/db_set_h_nelem.html">DB-&gt;set_h_nelem</a></td><td>Set the Hash table size</td></tr>

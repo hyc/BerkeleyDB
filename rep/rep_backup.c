@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_backup.c,v 12.75 2006/09/19 14:14:09 mjc Exp $
+ * $Id: rep_backup.c,v 12.83 2006/11/01 00:53:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -107,10 +106,10 @@ __rep_update_req(dbenv, eid)
 	/*
 	 * Set our log cursor on the LSN we are sending.
 	 */
-	if ((ret = __log_c_get(logc, &lsn, &vdbt, DB_SET)) != 0)
+	if ((ret = __logc_get(logc, &lsn, &vdbt, DB_SET)) != 0)
 		goto err;
 
-	if ((ret = __log_c_version(logc, &version)) != 0)
+	if ((ret = __logc_version(logc, &version)) != 0)
 		goto err;
 	/*
 	 * Package up the update information.
@@ -130,7 +129,7 @@ __rep_update_req(dbenv, eid)
 	    dbenv, eid, REP_UPDATE, &lsn, &updbt, 0, 0);
 
 err:	__os_free(dbenv, buf);
-	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
+	if (logc != NULL && (t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -195,7 +194,7 @@ __rep_find_dbs(dbenv, fp, fileszp, filelenp, filecntp, do_remove)
  * __rep_walk_dir --
  *
  * This is the routine that walks a directory and fills in the structures
- * that we use to generate messages to the client telling it what files
+ * that we use to generate messages to the client telling it what
  * files are available.  If the directory name is NULL, then we should
  * walk the list of in-memory named files.
  */
@@ -209,9 +208,6 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 	int do_remove;
 {
 	DBT namedbt, uiddbt;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 	__rep_fileinfo_args tmpfp;
 	size_t len, offset;
 	int cnt, first_file, i, ret;
@@ -221,12 +217,12 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 	memset(&namedbt, 0, sizeof(namedbt));
 	memset(&uiddbt, 0, sizeof(uiddbt));
 	if (dir == NULL) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Walk_dir: Getting info for in-memory named files"));
 		if ((ret = __memp_inmemlist(dbenv, &names, &cnt)) != 0)
 			return (ret);
 	} else {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Walk_dir: Getting info for dir: %s", dir));
 		if ((ret = __os_dirlist(dbenv, dir, &names, &cnt)) != 0)
 			return (ret);
@@ -234,11 +230,11 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 	rfp = NULL;
 	if (fp != NULL)
 		rfp = *fp;
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "Walk_dir: Dir %s has %d files", dir, cnt));
 	first_file = 1;
 	for (i = 0; i < cnt; i++) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Walk_dir: File %d name: %s", i, names[i]));
 		/*
 		 * Skip DB-owned files: __db*, DB_CONFIG, log*
@@ -265,7 +261,7 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 			/*
 			 * If we find a file that isn't a database, skip it.
 			 */
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "Walk_dir: File %d %s: returned error %s",
 			    i, names[i], db_strerror(ret)));
 			ret = 0;
@@ -284,14 +280,14 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 			 */
 			if (tmpfp.type == (u_int32_t)DB_QUEUE) {
 				DB *dummydbp;
-				if ((ret = db_create(&dummydbp, dbenv, 0))
-				    != 0)
+				if ((ret = __db_create_internal(
+				    &dummydbp, dbenv, 0)) != 0)
 					goto err;
-				RPRINT(dbenv, (dbenv, &mb,
+				RPRINT(dbenv, (dbenv,
     "Walk_dir: QAM: Unlink %s via __qam_remove", names[i]));
 				if ((ret = __qam_remove(dummydbp, NULL,
 				    names[i], NULL)) != 0) {
-					RPRINT(dbenv, (dbenv, &mb,
+					RPRINT(dbenv, (dbenv,
 					    "Walk_dir: qam_remove returned %d",
 					    ret));
 					goto err;
@@ -314,13 +310,11 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 		/*
 		 * Only do this if we're not removing.
 		 */
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
     "Walk_dir: File %d (of %d) %s at 0x%lx: pgsize %lu, max_pgno %lu",
 		    tmpfp.filenum, *filecntp, names[i], P_TO_ULONG(rfp),
 		    (u_long)tmpfp.pgsize, (u_long)tmpfp.max_pgno));
-		DB_SET_DBT(namedbt, names[i], strlen(names[i]) + 1);
-		uiddbt.data = uid;
-		uiddbt.size = DB_FILE_ID_LEN;
+
 		/*
 		 * Check if we already have info on this file.  Since we're
 		 * walking directories, we only need to check the first
@@ -345,8 +339,10 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 			}
 			first_file = 0;
 		}
-retry:
-		ret = __rep_fileinfo_buf(rfp, *fileszp, &len,
+
+		DB_SET_DBT(namedbt, names[i], strlen(names[i]) + 1);
+		DB_SET_DBT(uiddbt, uid, DB_FILE_ID_LEN);
+retry:		ret = __rep_fileinfo_buf(rfp, *fileszp, &len,
 		    tmpfp.pgsize, tmpfp.pgno, tmpfp.max_pgno,
 		    tmpfp.filenum, tmpfp.id, tmpfp.type,
 		    tmpfp.flags, &uiddbt, &namedbt);
@@ -393,9 +389,6 @@ __rep_check_uid(dbenv, fp, endfp, uid)
 	u_int8_t *fuid;
 	int ret;
 	void *next;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	ret = 0;
 	next = fp;
@@ -408,7 +401,7 @@ __rep_check_uid(dbenv, fp, endfp, uid)
 		}
 		fuid = (u_int8_t *)rfp->uid.data;
 		if (memcmp(fuid, uid, DB_FILE_ID_LEN) == 0) {
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "Check_uid: Found matching file."));
 			ret = DB_KEYEXIST;
 			goto err;
@@ -446,7 +439,7 @@ __rep_get_fileinfo(dbenv, file, subdb, rfp, uid, filecntp)
 	mpf = NULL;
 	LOCK_INIT(lk);
 
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 		goto err;
 	if ((ret = __db_open(dbp, NULL, file, subdb, DB_UNKNOWN,
 	    DB_RDONLY | (F_ISSET(dbenv, DB_ENV_THREAD) ? DB_THREAD : 0),
@@ -489,7 +482,7 @@ __rep_get_fileinfo(dbenv, file, subdb, rfp, uid, filecntp)
 err:
 	if ((t_ret = __LPUT(dbc, lk)) != 0 && ret == 0)
 		ret = t_ret;
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 	if (pagep != NULL &&
 	    (t_ret = __memp_fput(mpf, pagep, 0)) != 0 && ret == 0)
@@ -544,9 +537,6 @@ __rep_page_req(dbenv, eid, rec)
 	REP *rep;
 	int ret, t_ret;
 	void *next;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
@@ -559,7 +549,7 @@ __rep_page_req(dbenv, eid, rec)
 	 * See if we can find it already.  If so we can quickly access its
 	 * mpool and process.  Otherwise we have to open the file ourselves.
 	 */
-	RPRINT(dbenv, (dbenv, &mb, "page_req: file %d page %lu to %lu",
+	RPRINT(dbenv, (dbenv, "page_req: file %d page %lu to %lu",
 	    msgfp->filenum, (u_long)msgfp->pgno, (u_long)msgfp->max_pgno));
 	LOG_SYSTEM_LOCK(dbenv);
 	if (msgfp->id >= 0 && dblp->dbentry_cnt > msgfp->id) {
@@ -569,7 +559,7 @@ __rep_page_req(dbenv, eid, rec)
 			if (memcmp(msgfp->uid.data, dbp->log_filename->ufid,
 			    DB_FILE_ID_LEN) == 0) {
 				LOG_SYSTEM_UNLOCK(dbenv);
-				RPRINT(dbenv, (dbenv, &mb,
+				RPRINT(dbenv, (dbenv,
 				    "page_req: found %d in dbreg",
 				    msgfp->filenum));
 				ret = __rep_page_sendpages(dbenv, eid,
@@ -585,13 +575,13 @@ __rep_page_req(dbenv, eid, rec)
 	 * We need to open the file and then send its pages.
 	 * If we cannot open the file, we send REP_FILE_FAIL.
 	 */
-	RPRINT(dbenv, (dbenv, &mb, "page_req: Open %d via mpf_open",
-	    msgfp->filenum));
+	RPRINT(dbenv,
+	    (dbenv, "page_req: Open %d via mpf_open", msgfp->filenum));
 	if ((ret = __rep_mpf_open(dbenv, &mpf, msgfp, 0)) != 0) {
 		memset(&msgdbt, 0, sizeof(msgdbt));
 		msgdbt.data = msgfp;
 		msgdbt.size = sizeof(*msgfp);
-		RPRINT(dbenv, (dbenv, &mb, "page_req: Open %d failed",
+		RPRINT(dbenv, (dbenv, "page_req: Open %d failed",
 		    msgfp->filenum));
 		if (F_ISSET(rep, REP_F_MASTER))
 			(void)__rep_send_message(dbenv, eid, REP_FILE_FAIL,
@@ -635,9 +625,6 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 	u_int32_t bulkflags, lockid, use_bulk;
 	int opened, ret, t_ret;
 	u_int8_t *buf;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
@@ -649,7 +636,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 	use_bulk = FLD_ISSET(rep->config, REP_C_BULK);
 	if (msgfp->type == (u_int32_t)DB_QUEUE) {
 		if (dbp == NULL) {
-			if ((ret = db_create(&qdbp, dbenv, 0)) != 0)
+			if ((ret = __db_create_internal(&qdbp, dbenv, 0)) != 0)
 				goto err;
 			/*
 			 * We need to check whether this is in-memory so that
@@ -674,7 +661,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 		goto err;
 	memset(&msgdbt, 0, sizeof(msgdbt));
 	memset(&pgdbt, 0, sizeof(pgdbt));
-	RPRINT(dbenv, (dbenv, &mb, "sendpages: file %d page %lu to %lu",
+	RPRINT(dbenv, (dbenv, "sendpages: file %d page %lu to %lu",
 	    msgfp->filenum, (u_long)msgfp->pgno, (u_long)msgfp->max_pgno));
 	memset(&repth, 0, sizeof(repth));
 	/*
@@ -745,7 +732,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 			msgfp->pgno = p;
 			if (F_ISSET(rep, REP_F_MASTER)) {
 				ret = 0;
-				RPRINT(dbenv, (dbenv, &mb,
+				RPRINT(dbenv, (dbenv,
 				    "sendpages: PAGE_FAIL on page %lu",
 				    (u_long)p));
 				(void)__rep_send_message(dbenv, eid,
@@ -758,7 +745,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 		else
 			DB_SET_DBT(pgdbt, pagep, msgfp->pgsize);
 		len = 0;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "sendpages: %lu, page lsn [%lu][%lu]", (u_long)p,
 		    (u_long)pagep->lsn.file, (u_long)pagep->lsn.offset));
 		ret = __rep_fileinfo_buf(buf, msgsz, &len,
@@ -798,7 +785,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 			    &repth.lsn, &msgdbt, 0);
 		if (!use_bulk || ret == DB_REP_BULKOVF)
 			ret = __rep_send_throttle(dbenv, eid, &repth, 0);
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "sendpages: %lu, lsn [%lu][%lu]", (u_long)p,
 		    (u_long)repth.lsn.file, (u_long)repth.lsn.offset));
 		/*
@@ -859,10 +846,6 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	int ret;
 	u_int32_t count, infolen;
 	void *next;
-#ifdef DIAGNOSTIC
-	__rep_fileinfo_args *msgfp;
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
@@ -882,7 +865,7 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	 */
 	F_SET(rep, REP_F_RECOVER_PAGE);
 	/*
-	 * We do not clear REP_F_READY or rep->in_recovery in this code.
+	 * We do not clear REP_F_READY_* in this code.
 	 * We'll eventually call the normal __rep_verify_match recovery
 	 * code and that will clear all the flags and allow others to
 	 * proceed.  We only need to lockout the API here.  We do not
@@ -935,11 +918,11 @@ __rep_update_setup(dbenv, eid, rp, rec)
 
 	__os_free(dbenv, rup);
 
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "Update setup for %d files.", rep->nfiles));
-	RPRINT(dbenv, (dbenv, &mb, "Update setup:  First LSN [%lu][%lu].",
+	RPRINT(dbenv, (dbenv, "Update setup:  First LSN [%lu][%lu].",
 	    (u_long)rep->first_lsn.file, (u_long)rep->first_lsn.offset));
-	RPRINT(dbenv, (dbenv, &mb, "Update setup:  Last LSN [%lu][%lu]",
+	RPRINT(dbenv, (dbenv, "Update setup:  Last LSN [%lu][%lu]",
 	    (u_long)rep->last_lsn.file, (u_long)rep->last_lsn.offset));
 
 	infolen = rec->size - sizeof(__rep_update_args);
@@ -949,15 +932,18 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	rep->finfo = rep->originfo;
 	if ((ret = __rep_fileinfo_read(dbenv,
 	    rep->finfo, &next, &rep->curinfo)) != 0) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Update setup: Fileinfo read: %s", db_strerror(ret)));
 		goto errmem1;
 	}
 	rep->nextinfo = next;
 
 #ifdef DIAGNOSTIC
+	{
+	__rep_fileinfo_args *msgfp;
 	msgfp = rep->curinfo;
 	DB_ASSERT(dbenv, msgfp->pgno == 0);
+	}
 #endif
 
 	/*
@@ -974,7 +960,7 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	 * where we'll keep our page information.
 	 */
 	if ((ret = __rep_client_dbinit(dbenv, 1, REP_PG)) != 0) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Update setup: Client_dbinit %s", db_strerror(ret)));
 		goto errmem;
 	}
@@ -987,7 +973,7 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	pagereq_dbt.size =
 	    (u_int32_t)((u_int8_t *)rep->nextinfo - (u_int8_t *)rep->finfo);
 
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "Update PAGE_REQ file 0: pgsize %lu, maxpg %lu",
 	    (u_long)rep->curinfo->pgsize,
 	    (u_long)rep->curinfo->max_pgno));
@@ -1014,11 +1000,11 @@ err:	/*
 	 * the rep_lockout.  We need to move back to the RECOVER_UPDATE stage.
 	 */
 	if (ret != 0) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Update_setup: Error: Clear PAGE, set UPDATE again. %s",
 		    db_strerror(ret)));
-		F_CLR(rep, REP_F_RECOVER_PAGE | REP_F_READY);
-		rep->in_recovery = 0;
+		F_CLR(rep, REP_F_RECOVER_PAGE | REP_F_READY_API |
+		    REP_F_READY_OP);
 		F_SET(rep, REP_F_RECOVER_UPDATE);
 	}
 	REP_SYSTEM_UNLOCK(dbenv);
@@ -1112,9 +1098,6 @@ __rep_bulk_page(dbenv, eid, rp, rec)
 	u_int32_t len;
 	int ret;
 	u_int8_t *p, *ep;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	memset(&pgrec, 0, sizeof(pgrec));
 	/*
@@ -1139,10 +1122,10 @@ __rep_bulk_page(dbenv, eid, rp, rec)
 		p += sizeof(DB_LSN);
 		pgrec.data = p;
 		pgrec.size = len;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "rep_bulk_page: Processing LSN [%lu][%lu]",
 		    (u_long)tmprp.lsn.file, (u_long)tmprp.lsn.offset));
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
     "rep_bulk_page: p %#lx ep %#lx pgrec data %#lx, size %lu (%#lx)",
 		    P_TO_ULONG(p), P_TO_ULONG(ep), P_TO_ULONG(pgrec.data),
 		    (u_long)pgrec.size, (u_long)pgrec.size));
@@ -1150,7 +1133,7 @@ __rep_bulk_page(dbenv, eid, rp, rec)
 		 * Now send the page info DBT to the page processing function.
 		 */
 		ret = __rep_page(dbenv, eid, &tmprp, &pgrec);
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "rep_bulk_page: rep_page ret %d", ret));
 
 		/*
@@ -1186,9 +1169,6 @@ __rep_page(dbenv, eid, rp, rec)
 	db_recno_t recno;
 	int ret;
 	void *next;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	ret = 0;
 	db_rep = dbenv->rep_handle;
@@ -1200,7 +1180,7 @@ __rep_page(dbenv, eid, rp, rec)
 		return (ret);
 	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	REP_SYSTEM_LOCK(dbenv);
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "PAGE: Received page %lu from file %d",
 	    (u_long)msgfp->pgno, msgfp->filenum));
 	/*
@@ -1213,8 +1193,7 @@ __rep_page(dbenv, eid, rp, rec)
 	 * is updating, then we'd have to verify the file's uid here too.
 	 */
 	if (msgfp->filenum != rep->curfile) {
-		RPRINT(dbenv,
-		    (dbenv, &mb, "Msg file %d != curfile %d",
+		RPRINT(dbenv, (dbenv, "Msg file %d != curfile %d",
 		    msgfp->filenum, rep->curfile));
 		ret = DB_REP_PAGEDONE;
 		goto err;
@@ -1240,7 +1219,7 @@ __rep_page(dbenv, eid, rp, rec)
 	 */
 	ret = __db_put(rep->file_dbp, NULL, &key, &data, DB_NOOVERWRITE);
 	if (ret == DB_KEYEXIST) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "PAGE: Received duplicate page %lu from file %d",
 		    (u_long)msgfp->pgno, msgfp->filenum));
 		rep->stat.st_pg_duplicated++;
@@ -1250,7 +1229,7 @@ __rep_page(dbenv, eid, rp, rec)
 	if (ret != 0)
 		goto err;
 
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "PAGE: Write page %lu into mpool", (u_long)msgfp->pgno));
 	/*
 	 * We put the page in the database file itself.
@@ -1312,9 +1291,6 @@ __rep_page_fail(dbenv, eid, rec)
 	__rep_fileinfo_args *msgfp, *rfp;
 	int ret;
 	void *next;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	ret = 0;
 	db_rep = dbenv->rep_handle;
@@ -1336,7 +1312,7 @@ __rep_page_fail(dbenv, eid, rec)
 	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	REP_SYSTEM_LOCK(dbenv);
 	if (msgfp->filenum != rep->curfile) {
-		RPRINT(dbenv, (dbenv, &mb, "Msg file %d != curfile %d",
+		RPRINT(dbenv, (dbenv, "Msg file %d != curfile %d",
 		    msgfp->filenum, rep->curfile));
 		REP_SYSTEM_UNLOCK(dbenv);
 		MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
@@ -1351,7 +1327,7 @@ __rep_page_fail(dbenv, eid, rec)
 		 * may disappear, as well as at the end.  Use msgfp->pgno
 		 * to adjust accordingly.
 		 */
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 	    "page_fail: BEFORE page %lu failed. ready %lu, max %lu, npages %d",
 		    (u_long)msgfp->pgno, (u_long)rep->ready_pg,
 		    (u_long)rfp->max_pgno, rep->npages));
@@ -1361,11 +1337,12 @@ __rep_page_fail(dbenv, eid, rec)
 			rep->ready_pg = msgfp->pgno + 1;
 			rep->npages = rep->ready_pg;
 		}
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 	    "page_fail: AFTER page %lu failed. ready %lu, max %lu, npages %d",
 		    (u_long)msgfp->pgno, (u_long)rep->ready_pg,
 		    (u_long)rfp->max_pgno, rep->npages));
 	}
+
 	/*
 	 * We've lowered the number of pages expected.  It is possible that
 	 * this was the last page we were expecting.  Now we need to see if
@@ -1392,9 +1369,6 @@ __rep_write_page(dbenv, rep, msgfp)
 	__rep_fileinfo_args *rfp;
 	int ret;
 	void *dst;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	rfp = NULL;
 
@@ -1414,7 +1388,7 @@ __rep_write_page(dbenv, rep, msgfp)
 			 * Recreate the file on disk.  We'll be putting
 			 * the data into the file via mpool.
 			 */
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "rep_write_page: Calling fop_create for %s",
 			    (char *)rfp->info.data));
 			if ((ret = __fop_create(dbenv, NULL, NULL,
@@ -1483,9 +1457,6 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 	__rep_fileinfo_args *rfp;
 	db_recno_t recno;
 	int ret, t_ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	dblp = dbenv->lg_handle;
 	lp = dblp->reginfo.primary;
@@ -1527,7 +1498,7 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 	 * We just want to return.
 	 */
 	if (msgfp->pgno < rep->ready_pg) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "PAGE_GAP: pgno %lu < ready %lu, waiting %lu",
 		    (u_long)msgfp->pgno, (u_long)rep->ready_pg,
 		    (u_long)rep->waiting_pg));
@@ -1540,7 +1511,7 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 	 * (earlier) the current waiting_pg.  There is nothing
 	 * to do but see if we need to request.
 	 */
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
     "PAGE_GAP: pgno %lu, max_pg %lu ready %lu, waiting %lu max_wait %lu",
 	    (u_long)msgfp->pgno, (u_long)rfp->max_pgno, (u_long)rep->ready_pg,
 	    (u_long)rep->waiting_pg, (u_long)rep->max_wait_pg));
@@ -1584,23 +1555,23 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 			 * We know that page is there, this should
 			 * find the record.
 			 */
-			ret = __db_c_get(dbc, &key, &data, DB_SET);
+			ret = __dbc_get(dbc, &key, &data, DB_SET);
 			if (ret != 0)
 				goto err;
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "PAGE_GAP: Set cursor for ready %lu, waiting %lu",
 			    (u_long)rep->ready_pg, (u_long)rep->waiting_pg));
 		}
 		while (ret == 0 && rep->ready_pg == rep->waiting_pg) {
 			rep->ready_pg++;
-			ret = __db_c_get(dbc, &key, &data, DB_NEXT);
+			ret = __dbc_get(dbc, &key, &data, DB_NEXT);
 			/*
 			 * If we get to the end of the list, there are no
 			 * more gaps.  Reset waiting_pg.
 			 */
 			if (ret == DB_NOTFOUND || ret == DB_KEYEMPTY) {
 				rep->waiting_pg = PGNO_INVALID;
-				RPRINT(dbenv, (dbenv, &mb,
+				RPRINT(dbenv, (dbenv,
 	    "PAGE_GAP: Next cursor No next - ready %lu, waiting %lu",
 				    (u_long)rep->ready_pg,
 				    (u_long)rep->waiting_pg));
@@ -1613,7 +1584,7 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 			 */
 			rep->waiting_pg = *(db_pgno_t *)key.data;
 			rep->waiting_pg--;
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 	    "PAGE_GAP: Next cursor ready %lu, waiting %lu",
 			    (u_long)rep->ready_pg, (u_long)rep->waiting_pg));
 		}
@@ -1648,7 +1619,11 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 		}
 		/*
 		 * If we got REP_PAGE_MORE we always want to ask for more.
+		 * We need to set rfp->pgno to the current page number
+		 * we will use to ask for more pages.
 		 */
+		if (type == REP_PAGE_MORE)
+			rfp->pgno = msgfp->pgno;
 		if ((__rep_check_doreq(dbenv, rep) || type == REP_PAGE_MORE) &&
 		    ((ret = __rep_pggap_req(dbenv, rep, rfp,
 		    (type == REP_PAGE_MORE) ? REP_GAP_FORCE : 0)) != 0))
@@ -1659,7 +1634,7 @@ __rep_page_gap(dbenv, rep, msgfp, type)
 	}
 
 err:
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -1735,9 +1710,6 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 	DBT dbt;
 	__rep_fileinfo_args *rfp;
 	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	/*
 	 * We've put our page, now we need to do any gap processing
@@ -1756,7 +1728,7 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 	 * max_pgno is 0-based and npages is 1-based, so we don't have
 	 * all the pages until npages is > max_pgno.
 	 */
-	RPRINT(dbenv, (dbenv, &mb, "FILEDONE: have %lu pages. Need %lu.",
+	RPRINT(dbenv, (dbenv, "FILEDONE: have %lu pages. Need %lu.",
 	    (u_long)rep->npages, (u_long)rfp->max_pgno + 1));
 	if (rep->npages <= rfp->max_pgno)
 		return (0);
@@ -1776,7 +1748,7 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 	if ((ret = __rep_init_cleanup(dbenv, rep, 0)) != 0)
 		goto err;
 	if (rep->curfile == rep->nfiles) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "FILEDONE: have %d files.  RECOVER_LOG now", rep->nfiles));
 		/*
 		 * Move to REP_RECOVER_LOG state.
@@ -1798,7 +1770,7 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 		REP_SYSTEM_UNLOCK(dbenv);
 		if ((ret = __rep_log_setup(dbenv, rep)) != 0)
 			goto err;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "FILEDONE: LOG_REQ from LSN [%lu][%lu] to [%lu][%lu]",
 		    (u_long)rep->first_lsn.file, (u_long)rep->first_lsn.offset,
 		    (u_long)rep->last_lsn.file, (u_long)rep->last_lsn.offset));
@@ -1822,7 +1794,7 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 	rep->waiting_pg = PGNO_INVALID;
 	rep->max_wait_pg = PGNO_INVALID;
 	memset(&dbt, 0, sizeof(dbt));
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "FILEDONE: Next file %d.  Request pages 0 to %lu",
 	    rep->curinfo->filenum, (u_long)rep->curinfo->max_pgno));
 	dbt.data = rep->finfo;
@@ -1922,7 +1894,14 @@ __rep_pggap_req(dbenv, rep, reqfp, gapflags)
 	 */
 	flags = 0;
 	memset(&max_pg_dbt, 0, sizeof(max_pg_dbt));
-	tmpfp->pgno = rep->ready_pg;
+	/*
+	 * If this is a PAGE_MORE and we're forcing then we want to
+	 * force the request to ask for the next page after this one.
+	 */
+	if (FLD_ISSET(gapflags, REP_GAP_FORCE))
+		tmpfp->pgno++;
+	else
+		tmpfp->pgno = rep->ready_pg;
 	max_pg_dbt.data = rep->finfo;
 	max_pg_dbt.size =
 	    (u_int32_t)((u_int8_t *)rep->nextinfo - (u_int8_t *)rep->finfo);
@@ -1938,8 +1917,18 @@ __rep_pggap_req(dbenv, rep, reqfp, gapflags)
 				rep->max_wait_pg = rep->curinfo->max_pgno;
 			else
 				rep->max_wait_pg = rep->ready_pg;
-		} else
-			rep->max_wait_pg = rep->waiting_pg - 1;
+		} else {
+			/*
+			 * If we're forcing, and waiting_pg is less than
+			 * the page we want to start this request at, then
+			 * we set max_wait_pg to the max pgno in the file.
+			 */
+			if (FLD_ISSET(gapflags, REP_GAP_FORCE) &&
+			  rep->waiting_pg < tmpfp->pgno)
+				rep->max_wait_pg = rep->curinfo->max_pgno;
+			else
+				rep->max_wait_pg = rep->waiting_pg - 1;
+		}
 		tmpfp->max_pgno = rep->max_wait_pg;
 		/*
 		 * Gap requests are "new" and can go anywhere.
@@ -2099,9 +2088,6 @@ __rep_queue_filedone(dbenv, rep, rfp)
 	db_pgno_t first, last;
 	u_int32_t flags;
 	int empty, ret, t_ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	ret = 0;
 	if (rep->queue_dbp == NULL) {
@@ -2111,7 +2097,8 @@ __rep_queue_filedone(dbenv, rep, rfp)
 		 */
 		if ((ret = __memp_sync(dbenv, NULL)) != 0)
 			goto out;
-		if ((ret = db_create(&rep->queue_dbp, dbenv, 0)) != 0)
+		if ((ret = __db_create_internal(
+		    &rep->queue_dbp, dbenv, 0)) != 0)
 			goto out;
 		flags = DB_NO_AUTO_COMMIT |
 		    (F_ISSET(dbenv, DB_ENV_THREAD) ? DB_THREAD : 0);
@@ -2128,7 +2115,7 @@ __rep_queue_filedone(dbenv, rep, rfp)
 	if ((ret = __queue_pageinfo(rep->queue_dbp,
 	    &first, &last, &empty, 0, 0)) != 0)
 		goto out;
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "Queue fileinfo: first %lu, last %lu, empty %d",
 	    (u_long)first, (u_long)last, empty));
 	/*
@@ -2151,7 +2138,7 @@ __rep_queue_filedone(dbenv, rep, rfp)
 			    QAM_RECNO_PAGE(rep->queue_dbp, UINT32_MAX);
 		} else
 			rfp->max_pgno = last;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Queue fileinfo: First req: first %lu, last %lu",
 		    (u_long)first, (u_long)rfp->max_pgno));
 		goto req;
@@ -2164,7 +2151,7 @@ __rep_queue_filedone(dbenv, rep, rfp)
 		 */
 		first = 1;
 		rfp->max_pgno = last;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "Queue fileinfo: Wrap req: first %lu, last %lu",
 		    (u_long)first, (u_long)last));
 req:

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mutex_int.h,v 12.22 2006/08/24 14:45:29 bostic Exp $
+ * $Id: mutex_int.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef _DB_MUTEX_INT_H_
@@ -799,7 +798,8 @@ struct __db_mutexmgr {
  */
 typedef struct __db_mutexregion {
 	/* These fields are initialized at create time and never modified. */
-	roff_t		mutex_offset;	/* Offset of mutex array */
+	roff_t		mutex_off_alloc;/* Offset of mutex array */
+	roff_t		mutex_off;	/* Adjusted offset of mutex array */
 	size_t		mutex_size;	/* Size of the aligned mutex */
 	roff_t		thread_off;	/* Offset of the thread area. */
 

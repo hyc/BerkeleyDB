@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.36 2006/09/08 19:22:21 bostic Exp $
+ * $Id: tcl_db_pkg.c,v 12.39 2006/11/01 00:53:51 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,7 +13,7 @@
 #endif
 
 #include "db_int.h"
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <tcl.h>
 #endif
 #include "dbinc/db_page.h"
@@ -1379,6 +1378,7 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 #ifdef CONFIG_TEST
 		"-btcompare",
 		"-dupcompare",
+		"-hashcompare",
 		"-hashproc",
 		"-lorder",
 		"-minkey",
@@ -1432,6 +1432,7 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 #ifdef CONFIG_TEST
 		TCL_DB_BTCOMPARE,
 		TCL_DB_DUPCOMPARE,
+		TCL_DB_HASHCOMPARE,
 		TCL_DB_HASHPROC,
 		TCL_DB_LORDER,
 		TCL_DB_MINKEY,
@@ -1619,8 +1620,8 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 			 * Tcl's object refcounting will--I hope--take care
 			 * of the memory management here.
 			 */
-			ip->i_btcompare = objv[i++];
-			Tcl_IncrRefCount(ip->i_btcompare);
+			ip->i_compare = objv[i++];
+			Tcl_IncrRefCount(ip->i_compare);
 			_debug_check();
 			ret = (*dbp)->set_bt_compare(*dbp, tcl_bt_compare);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
@@ -1644,6 +1645,28 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 			ret = (*dbp)->set_dup_compare(*dbp, tcl_dup_compare);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "set_dup_compare");
+			break;
+		case TCL_DB_HASHCOMPARE:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "-hashcompare compareproc");
+				result = TCL_ERROR;
+				break;
+			}
+
+			/*
+			 * Store the object containing the procedure name.
+			 * We don't need to crack it out now--we'll want
+			 * to bundle it up to pass into Tcl_EvalObjv anyway.
+			 * Tcl's object refcounting will--I hope--take care
+			 * of the memory management here.
+			 */
+			ip->i_compare = objv[i++];
+			Tcl_IncrRefCount(ip->i_compare);
+			_debug_check();
+			ret = (*dbp)->set_h_compare(*dbp, tcl_bt_compare);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "set_h_compare");
 			break;
 		case TCL_DB_HASHPROC:
 			if (i >= objc) {
@@ -3401,7 +3424,7 @@ tcl_bt_compare(dbp, dbta, dbtb)
 	const DBT *dbta, *dbtb;
 {
 	return (tcl_compare_callback(dbp, dbta, dbtb,
-	    ((DBTCL_INFO *)dbp->api_internal)->i_btcompare, "bt_compare"));
+	    ((DBTCL_INFO *)dbp->api_internal)->i_compare, "bt_compare"));
 }
 
 static int
@@ -3417,7 +3440,7 @@ tcl_dup_compare(dbp, dbta, dbtb)
  * tcl_compare_callback --
  *	Tcl callback for set_bt_compare and set_dup_compare. What this
  * function does is stuff the data fields of the two DBTs into Tcl ByteArray
- * objects, then call the procedure stored in ip->i_btcompare on the two
+ * objects, then call the procedure stored in ip->i_compare on the two
  * objects.  Then we return that procedure's result as the comparison.
  */
 static int

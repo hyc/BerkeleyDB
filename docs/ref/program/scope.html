@@ -68,7 +68,7 @@ handle is not free-threaded.  Cursors may span threads, but only
 serially, that is, the application must serialize access to the
 <a href="../../api_c/dbc_class.html">DBC</a> handles.  If the cursor is to be used to perform operations
 on behalf of a transaction, the cursor must be opened and closed within
-the context of that single transaction.  Once <a href="../../api_c/dbc_close.html">DBcursor-&gt;c_close</a> has been
+the context of that single transaction.  Once <a href="../../api_c/dbc_close.html">DBcursor-&gt;close</a> has been
 called, the handle may not be accessed again, regardless of the
 method's return.
 </dl>

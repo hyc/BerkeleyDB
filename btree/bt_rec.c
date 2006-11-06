@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_rec.c,v 12.21 2006/08/24 14:44:44 bostic Exp $
+ * $Id: bt_rec.c,v 12.23 2006/11/01 00:51:57 bostic Exp $
  */
 
 #include "db_config.h"
@@ -995,7 +994,7 @@ __bam_rcuradj_recover(dbenv, dbtp, lsnp, op, info)
 	}
 
 done:	*lsnp = argp->prev_lsn;
-out:	if (rdbc != NULL && (t_ret = __db_c_close(rdbc)) != 0 && ret == 0)
+out:	if (rdbc != NULL && (t_ret = __dbc_close(rdbc)) != 0 && ret == 0)
 		ret = t_ret;
 	REC_CLOSE;
 }

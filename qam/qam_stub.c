@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_stub.c,v 12.5 2006/08/24 14:46:24 bostic Exp $
+ * $Id: qam_stub.c,v 12.7 2006/11/01 00:53:44 bostic Exp $
  */
 
 #ifndef	HAVE_QUEUE
@@ -77,7 +76,7 @@ __qam_append(dbc, key, data)
 }
 
 int
-__qam_c_dup(orig_dbc, new_dbc)
+__qamc_dup(orig_dbc, new_dbc)
 	DBC *orig_dbc, *new_dbc;
 {
 	COMPQUIET(new_dbc, NULL);
@@ -85,7 +84,7 @@ __qam_c_dup(orig_dbc, new_dbc)
 }
 
 int
-__qam_c_init(dbc)
+__qamc_init(dbc)
 	DBC *dbc;
 {
 	return (__db_no_queue_am(dbc->dbp->dbenv));

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2006 Oracle.  All rights reserved.
 #
-# $Id: rep062.tcl,v 1.5 2006/09/11 18:54:25 carol Exp $
+# $Id: rep062.tcl,v 1.7 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep062
 # TEST	Test of internal initialization where client has a different
@@ -78,12 +77,8 @@ proc rep062_sub { method tnum logset recargs largs } {
 	# The documentation says that the log file must be at least
 	# four times the size of the in-memory log buffer.
 	set maxpg 16384
-	set log_buf [expr $maxpg * 2]
-	set log_max [expr $log_buf * 4]
-	set cache [expr $maxpg * 32 ]
-
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $maxpg * 8]
+	set cache [expr $maxpg * 32]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]

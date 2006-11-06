@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_region.c,v 12.29 2006/08/24 14:46:25 bostic Exp $
+ * $Id: rep_region.c,v 12.32 2006/11/01 00:53:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -39,7 +38,7 @@ __rep_open(dbenv)
 
 	if (renv->rep_off == INVALID_ROFF) {
 		/* Must create the region. */
-		if ((ret = __db_shalloc(infop, sizeof(REP), 0, &rep)) != 0)
+		if ((ret = __env_alloc(infop, sizeof(REP), &rep)) != 0)
 			return (ret);
 		memset(rep, 0, sizeof(*rep));
 
@@ -126,7 +125,7 @@ __rep_region_destroy(dbenv)
 	infop = dbenv->reginfo;
 	renv = infop->primary;
 	if (renv->rep_off != INVALID_ROFF)
-		__db_shalloc_free(infop, R_ADDR(infop, renv->rep_off));
+		__env_alloc_free(infop, R_ADDR(infop, renv->rep_off));
 
 	return (ret);
 }
@@ -273,9 +272,6 @@ __rep_egen_init(dbenv, rep)
 	int ret;
 	size_t cnt;
 	char *p;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	if ((ret =
 	    __db_appname(dbenv, DB_APP_NONE, REP_EGENNAME, 0, NULL, &p)) != 0)
@@ -297,8 +293,7 @@ __rep_egen_init(dbenv, rep)
 		if ((ret = __os_read(dbenv, fhp, &rep->egen, sizeof(u_int32_t),
 		    &cnt)) < 0 || cnt == 0)
 			goto err1;
-		RPRINT(dbenv, (dbenv, &mb, "Read in egen %lu",
-		    (u_long)rep->egen));
+		RPRINT(dbenv, (dbenv, "Read in egen %lu", (u_long)rep->egen));
 err1:		 (void)__os_closehandle(dbenv, fhp);
 	}
 err:	__os_free(dbenv, p);

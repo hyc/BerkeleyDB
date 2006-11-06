@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_stat.c,v 12.28 2006/09/11 14:53:42 bostic Exp $
+ * $Id: mp_stat.c,v 12.30 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -551,7 +550,7 @@ __memp_print_all(dbenv, flags)
 
 	MPOOL_SYSTEM_LOCK(dbenv);
 
-	__db_print_reginfo(dbenv, dbmp->reginfo, "Mpool");
+	__db_print_reginfo(dbenv, dbmp->reginfo, "Mpool", flags);
 	__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 
 	__db_msg(dbenv, "MPOOL structure:");

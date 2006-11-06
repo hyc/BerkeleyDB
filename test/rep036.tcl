@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep036.tcl,v 12.9 2006/09/15 14:48:14 carol Exp $
+# $Id: rep036.tcl,v 12.10 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST  	rep036
 # TEST	Multiple master processes writing to the database.

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: testutils.tcl,v 12.26 2006/09/08 20:32:17 bostic Exp $
+# $Id: testutils.tcl,v 12.28 2006/11/01 00:54:03 bostic Exp $
 #
 # Test system utilities
 #
@@ -3563,7 +3562,7 @@ proc adjust_logargs { logtype } {
 	} elseif { $logtype == "on-disk" } {
 		set logargs ""
 	} else {
-		puts "FAIL: unrecognized log type $logtype"
+		error "FAIL: unrecognized log type $logtype"
 	}
 	return $logargs
 }
@@ -3574,7 +3573,7 @@ proc adjust_txnargs { logtype } {
 	} elseif { $logtype == "on-disk" } {
 		set txnargs " -txn nosync "
 	} else {
-		puts "FAIL: unrecognized log type $logtype"
+		error "FAIL: unrecognized log type $logtype"
 	}
 	return $txnargs
 }

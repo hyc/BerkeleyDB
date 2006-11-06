@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-int __log_open __P((DB_ENV *));
+int __log_open __P((DB_ENV *, int));
 int __log_find __P((DB_LOG *, int, u_int32_t *, logfile_validity *));
 int __log_valid __P((DB_LOG *, u_int32_t, int, DB_FH **, u_int32_t, logfile_validity *, u_int32_t *));
 int __log_dbenv_refresh __P((DB_ENV *));
@@ -31,9 +31,9 @@ int __log_printf_pp __P((DB_ENV *, DB_TXN *, const char *, va_list));
 int __log_printf __P((DB_ENV *, DB_TXN *, const char *, ...)) __attribute__ ((__format__ (__printf__, 3, 4)));
 int __log_cursor_pp __P((DB_ENV *, DB_LOGC **, u_int32_t));
 int __log_cursor __P((DB_ENV *, DB_LOGC **));
-int __log_c_close __P((DB_LOGC *));
-int __log_c_version __P((DB_LOGC *, u_int32_t *));
-int __log_c_get __P((DB_LOGC *, DB_LSN *, DBT *, u_int32_t));
+int __logc_close __P((DB_LOGC *));
+int __logc_version __P((DB_LOGC *, u_int32_t *));
+int __logc_get __P((DB_LOGC *, DB_LSN *, DBT *, u_int32_t));
 int __log_rep_split __P((DB_ENV *, REP_CONTROL *, DBT *, DB_LSN *, DB_LSN *));
 int __log_dbenv_create __P((DB_ENV *));
 void __log_dbenv_destroy __P((DB_ENV *));

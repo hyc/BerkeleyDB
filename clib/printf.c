@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: printf.c,v 1.5 2006/09/13 19:10:57 bostic Exp $
+ * $Id: printf.c,v 1.6 2006/11/01 00:52:17 bostic Exp $
  */
 
 #include "db_config.h"

@@ -1,0 +1,17 @@
+"$(OUTDIR)\bdb_brew.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
+    $(LIB32) @<<
+  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "bdb_brew - Win32 Debug"
+
+OUTDIR=.\Debug
+INTDIR=.\Debug/bdb_brew
+# Begin Custom Macros
+OutDir=.\Debug
+# End Custom Macros
+
+ALL : "$(OUTDIR)\bdb_brew.lib"
+
+
+CLEAN :

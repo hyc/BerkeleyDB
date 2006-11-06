@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: log_put.c,v 12.46 2006/08/24 14:46:12 bostic Exp $
+ * $Id: log_put.c,v 12.49 2006/11/01 00:53:35 bostic Exp $
  */
 
 #include "db_config.h"
@@ -176,6 +175,8 @@ __log_put(dbenv, lsnp, udbt, flags)
 		lock_held = 0;
 		ctlflags = LF_ISSET(DB_LOG_COMMIT | DB_LOG_CHKPNT) ?
 		    REPCTL_PERM : 0;
+		if (LF_ISSET(DB_FLUSH))
+			ctlflags |= REPCTL_FLUSH;
 
 		/*
 		 * If we changed files and we're in a replicated environment,
@@ -882,13 +883,13 @@ __log_flush_int(dblp, lsnp, release)
 	if (release && lp->in_flush != 0) {
 		if ((commit = SH_TAILQ_FIRST(
 		    &lp->free_commits, __db_commit)) == NULL) {
-			if ((ret = __db_shalloc(&dblp->reginfo,
-			    sizeof(struct __db_commit), 0, &commit)) != 0)
+			if ((ret = __env_alloc(&dblp->reginfo,
+			    sizeof(struct __db_commit), &commit)) != 0)
 				goto flush;
 			memset(commit, 0, sizeof(*commit));
 			if ((ret = __mutex_alloc(dbenv, MTX_TXN_COMMIT,
 			    DB_MUTEX_SELF_BLOCK, &commit->mtx_txnwait)) != 0) {
-				__db_shalloc_free(&dblp->reginfo, commit);
+				__env_alloc_free(&dblp->reginfo, commit);
 				return (ret);
 			}
 			MUTEX_LOCK(dbenv, commit->mtx_txnwait);

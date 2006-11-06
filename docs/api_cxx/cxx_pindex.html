@@ -104,7 +104,7 @@
 <tr><td align=right>Dbc::put </td><td>&nbsp;<a href="../api_cxx/dbc_put.html#DB_BEFORE">DB_BEFORE</a></td></tr>
 <tr><td align=right>Db::open </td><td>&nbsp;<a href="../api_cxx/db_open.html#DB_BTREE">DB_BTREE</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../api_cxx/dbt_class.html#3">DB_BUFFER_SMALL</a></td></tr>
-<tr><td align=right>DbMemoryException </td><td>&nbsp;<a href="../api_cxx/memp_class.html#DB_BUFFER_SMALL">DB_BUFFER_SMALL</a></td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../api_cxx/memp_class.html#2">DB_BUFFER_SMALL</a></td></tr>
 <tr><td align=right>DbEnv::set_flags </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#DB_CDB_ALLDB">DB_CDB_ALLDB</a></td></tr>
 <tr><td align=right>Db::set_flags </td><td>&nbsp;<a href="../api_cxx/db_set_flags.html#DB_CHKSUM">DB_CHKSUM</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/env/db_config.html#2">DB_CONFIG</a></td></tr>
@@ -267,6 +267,7 @@
 <tr><td align=right>Dbc::dup </td><td>&nbsp;<a href="../api_cxx/dbc_dup.html#DB_POSITION">DB_POSITION</a></td></tr>
 <tr><td align=right>Dbc::get </td><td>&nbsp;<a href="../api_cxx/dbc_get.html#DB_PREV">DB_PREV</a></td></tr>
 <tr><td align=right>DbLogc::get </td><td>&nbsp;<a href="../api_cxx/logc_get.html#DB_PREV">DB_PREV</a></td></tr>
+<tr><td align=right>Dbc::get </td><td>&nbsp;<a href="../api_cxx/dbc_get.html#DB_PREV_DUP">DB_PREV_DUP</a></td></tr>
 <tr><td align=right>Dbc::get </td><td>&nbsp;<a href="../api_cxx/dbc_get.html#DB_PREV_NODUP">DB_PREV_NODUP</a></td></tr>
 <tr><td align=right>Db::verify </td><td>&nbsp;<a href="../api_cxx/db_verify.html#DB_PRINTABLE">DB_PRINTABLE</a></td></tr>
 <tr><td align=right>DbMpoolFile::set_priority </td><td>&nbsp;<a href="../api_cxx/memp_set_priority.html#DB_PRIORITY_DEFAULT">DB_PRIORITY_DEFAULT</a></td></tr>
@@ -394,6 +395,7 @@
 <tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_NOSYNC">DB_TXN_NOSYNC</a></td></tr>
 <tr><td align=right>DbTxn::commit </td><td>&nbsp;<a href="../api_cxx/txn_commit.html#DB_TXN_NOSYNC">DB_TXN_NOSYNC</a></td></tr>
 <tr><td align=right>Db::set_flags </td><td>&nbsp;<a href="../api_cxx/db_set_flags.html#DB_TXN_NOT_DURABLE">DB_TXN_NOT_DURABLE</a></td></tr>
+<tr><td align=right>DbEnv::set_flags </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#DB_TXN_NOWAIT">DB_TXN_NOWAIT</a></td></tr>
 <tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_NOWAIT">DB_TXN_NOWAIT</a></td></tr>
 <tr><td align=right>DbEnv::set_app_dispatch </td><td>&nbsp;<a href="../api_cxx/env_set_app_dispatch.html#DB_TXN_PRINT">DB_TXN_PRINT</a></td></tr>
 <tr><td align=right>Db::cursor </td><td>&nbsp;<a href="../api_cxx/db_cursor.html#DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a></td></tr>
@@ -401,6 +403,7 @@
 <tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_SNAPSHOT">DB_TXN_SNAPSHOT</a></td></tr>
 <tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_SYNC">DB_TXN_SYNC</a></td></tr>
 <tr><td align=right>DbTxn::commit </td><td>&nbsp;<a href="../api_cxx/txn_commit.html#DB_TXN_SYNC">DB_TXN_SYNC</a></td></tr>
+<tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_WAIT">DB_TXN_WAIT</a></td></tr>
 <tr><td align=right>DbEnv::set_flags </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#DB_TXN_WRITE_NOSYNC">DB_TXN_WRITE_NOSYNC</a></td></tr>
 <tr><td align=right>Db::open </td><td>&nbsp;<a href="../api_cxx/db_open.html#DB_UNKNOWN">DB_UNKNOWN</a></td></tr>
 <tr><td align=right>Db::set_feedback </td><td>&nbsp;<a href="../api_cxx/db_set_feedback.html#DB_UPGRADE">DB_UPGRADE</a></td></tr>
@@ -409,6 +412,8 @@
 <tr><td align=right>DbEnv::open </td><td>&nbsp;<a href="../api_cxx/env_open.html#DB_USE_ENVIRON_ROOT">DB_USE_ENVIRON_ROOT</a></td></tr>
 <tr><td align=right>DbEnv::remove </td><td>&nbsp;<a href="../api_cxx/env_remove.html#DB_USE_ENVIRON_ROOT">DB_USE_ENVIRON_ROOT</a></td></tr>
 <tr><td align=right>DbEnv::set_verbose </td><td>&nbsp;<a href="../api_cxx/env_set_verbose.html#DB_VERB_DEADLOCK">DB_VERB_DEADLOCK</a></td></tr>
+<tr><td align=right>DbEnv::set_verbose </td><td>&nbsp;<a href="../api_cxx/env_set_verbose.html#DB_VERB_FILEOPS">DB_VERB_FILEOPS</a></td></tr>
+<tr><td align=right>DbEnv::set_verbose </td><td>&nbsp;<a href="../api_cxx/env_set_verbose.html#DB_VERB_FILEOPS_ALL">DB_VERB_FILEOPS_ALL</a></td></tr>
 <tr><td align=right>DbEnv::set_verbose </td><td>&nbsp;<a href="../api_cxx/env_set_verbose.html#DB_VERB_RECOVERY">DB_VERB_RECOVERY</a></td></tr>
 <tr><td align=right>DbEnv::set_verbose </td><td>&nbsp;<a href="../api_cxx/env_set_verbose.html#DB_VERB_REGISTER">DB_VERB_REGISTER</a></td></tr>
 <tr><td align=right>DbEnv::set_verbose </td><td>&nbsp;<a href="../api_cxx/env_set_verbose.html#DB_VERB_REPLICATION">DB_VERB_REPLICATION</a></td></tr>
@@ -633,6 +638,7 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/upgrade.4.3/toc.html#2">Upgrading</a> to release 4.3</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/upgrade.4.4/toc.html#2">Upgrading</a> to release 4.4</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/upgrade.4.5/toc.html#2">Upgrading</a> to release 4.5</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/upgrade.4.6/toc.html#2">Upgrading</a> to release 4.6</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/arch/utilities.html#2">utilities</a></td></tr>
 <tr><td align=right>database </td><td>&nbsp;<a href="../ref/am/verify.html#2">verification</a></td></tr>
 <tr><td align=right>building for </td><td>&nbsp;<a href="../ref/build_vxworks/faq.html#3">VxWorks</a> FAQ</td></tr>
@@ -645,6 +651,6 @@
 <tr><td align=right></td><td>&nbsp;<a href="../ref/env/region.html#2">__db.001</a></td></tr>
 </table>
 </center>
-<p><font size=1>Copyright (c) 1996-2006 Oracle Corporation - All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996,2006 Oracle.  All rights reserved.</font>
 </body>
 </html>

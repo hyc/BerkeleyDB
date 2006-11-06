@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_rw.c,v 12.15 2006/08/24 14:46:22 bostic Exp $
+ * $Id: os_rw.c,v 12.17 2006/11/01 00:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -36,6 +35,13 @@ __os_io(dbenv, op, fhp, pgno, pgsize, relative, io_len, buf, niop)
 		over.Offset = (DWORD)(off & 0xffffffff);
 		over.OffsetHigh = (DWORD)(off >> 32);
 		over.hEvent = 0; /* we don't want asynchronous notifications */
+
+		if (dbenv != NULL &&
+		    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
+			__db_msg(dbenv,
+			    "fileops: %s %s: %lu bytes at offset %lu",
+			    op == DB_IO_READ ? "read" : "write",
+			    fhp->name, (u_long)io_len, (u_long)off);
 
 		switch (op) {
 		case DB_IO_READ:
@@ -96,6 +102,11 @@ __os_read(dbenv, fhp, addr, len, nrp)
 	u_int8_t *taddr;
 
 	ret = 0;
+
+	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv,
+		    "fileops: read %s: %lu bytes", fhp->name, (u_long)len);
+
 	for (taddr = addr,
 	    offset = 0; offset < len; taddr += nr, offset += nr) {
 		RETRY_CHK((!ReadFile(fhp->handle,
@@ -151,6 +162,10 @@ __os_physwrite(dbenv, fhp, addr, len, nwp)
 	DWORD count;
 	int ret;
 	u_int8_t *taddr;
+
+	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv,
+		    "fileops: write %s: %lu bytes", fhp->name, (u_long)len);
 
 	/*
 	 * Make a last "panic" check.  Imagine a thread of control running in

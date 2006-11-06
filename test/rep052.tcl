@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep052.tcl,v 12.9 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep052.tcl,v 12.12 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep052
 # TEST	Test of replication with NOWAIT.
@@ -86,10 +85,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
@@ -111,6 +107,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
+	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
@@ -123,6 +120,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -172,6 +170,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	env_cleanup $clientdir
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 	set envlist "{$masterenv 1} {$clientenv 2}"
 
 	# Turn on nowait.

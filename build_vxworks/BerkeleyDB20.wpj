@@ -1635,24 +1635,6 @@ dbreg_util.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_salloc.c_dependDone
-TRUE
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_salloc.c_dependencies
-$(PRJ_DIR)/db_config.h \
-	$(PRJ_DIR)/db_int.h \
-	$(PRJ_DIR)/db.h
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_salloc.c_objects
-db_salloc.o
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_salloc.c_tool
-C/C++ compiler
-<END>
-
 <BEGIN> FILE_$(PRJ_DIR)/../env/db_shash.c_dependDone
 TRUE
 <END>
@@ -1668,6 +1650,24 @@ db_shash.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../env/db_shash.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_alloc.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_alloc.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_alloc.c_objects
+env_alloc.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_alloc.c_tool
 C/C++ compiler
 <END>
 
@@ -2895,6 +2895,24 @@ mut_tas.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_abort.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_abort.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_abort.c_objects
+os_abort.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os/os_abort.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../os/os_alloc.c_dependDone
 TRUE
 <END>
@@ -3450,6 +3468,24 @@ os_vx_map.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_map.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_objects
+os_vx_open.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_tool
 C/C++ compiler
 <END>
 
@@ -4143,8 +4179,8 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../dbreg/dbreg_rec.c \
 	$(PRJ_DIR)/../dbreg/dbreg_stat.c \
 	$(PRJ_DIR)/../dbreg/dbreg_util.c \
-	$(PRJ_DIR)/../env/db_salloc.c \
 	$(PRJ_DIR)/../env/db_shash.c \
+	$(PRJ_DIR)/../env/env_alloc.c \
 	$(PRJ_DIR)/../env/env_config.c \
 	$(PRJ_DIR)/../env/env_failchk.c \
 	$(PRJ_DIR)/../env/env_file.c \
@@ -4213,6 +4249,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../mutex/mut_region.c \
 	$(PRJ_DIR)/../mutex/mut_stat.c \
 	$(PRJ_DIR)/../mutex/mut_tas.c \
+	$(PRJ_DIR)/../os/os_abort.c \
 	$(PRJ_DIR)/../os/os_alloc.c \
 	$(PRJ_DIR)/../os/os_clock.c \
 	$(PRJ_DIR)/../os/os_dir.c \
@@ -4244,6 +4281,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_abs.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_config.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_map.c \
+	$(PRJ_DIR)/../os_vxworks/os_vx_open.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c \
 	$(PRJ_DIR)/../qam/qam.c \
 	$(PRJ_DIR)/../qam/qam_auto.c \

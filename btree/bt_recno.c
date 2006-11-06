@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_recno.c,v 12.28 2006/08/24 14:44:44 bostic Exp $
+ * $Id: bt_recno.c,v 12.32 2006/11/01 00:51:57 bostic Exp $
  */
 
 #include "db_config.h"
@@ -141,7 +140,7 @@ __ram_open(dbp, txn, name, base_pgno, flags)
 			ret = 0;
 
 		/* Discard the cursor. */
-		if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 			ret = t_ret;
 	}
 
@@ -182,13 +181,13 @@ __ram_append(dbc, key, data)
 }
 
 /*
- * __ram_c_del --
- *	Recno cursor->c_del function.
+ * __ramc_del --
+ *	Recno DBC->del function.
  *
- * PUBLIC: int __ram_c_del __P((DBC *));
+ * PUBLIC: int __ramc_del __P((DBC *));
  */
 int
-__ram_c_del(dbc)
+__ramc_del(dbc)
 	DBC *dbc;
 {
 	BKEYDATA bk;
@@ -313,14 +312,14 @@ err:	if (stack && (t_ret = __bam_stkrel(dbc, STK_CLRDBC)) != 0 && ret == 0)
 }
 
 /*
- * __ram_c_get --
- *	Recno cursor->c_get function.
+ * __ramc_get --
+ *	Recno DBC->get function.
  *
- * PUBLIC: int __ram_c_get
+ * PUBLIC: int __ramc_get
  * PUBLIC:     __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
  */
 int
-__ram_c_get(dbc, key, data, flags, pgnop)
+__ramc_get(dbc, key, data, flags, pgnop)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -386,6 +385,16 @@ retry:	switch (flags) {
 		flags = DB_NEXT;
 		cp->recno = 1;
 		break;
+	case DB_PREV_DUP:
+		/*
+		 * If we're not in an off-page dup set, we know there's no
+		 * previous duplicate since recnos don't have them.  If we
+		 * are in an off-page dup set, the previous item assuredly
+		 * is a dup, so we set flags to DB_PREV and keep going.
+		 */
+		if (!F_ISSET(dbc, DBC_OPD))
+			return (DB_NOTFOUND);
+		/* FALLTHROUGH */
 	case DB_PREV_NODUP:
 		/*
 		 * Recno databases don't have duplicates, set flags to DB_PREV
@@ -451,7 +460,7 @@ retry:	switch (flags) {
 			goto err;
 		break;
 	default:
-		ret = __db_unknown_flag(dbp->dbenv, "__ram_c_get", flags);
+		ret = __db_unknown_flag(dbp->dbenv, "__ramc_get", flags);
 		goto err;
 	}
 
@@ -550,13 +559,13 @@ err:	CD_CLR(cp);
 }
 
 /*
- * __ram_c_put --
- *	Recno cursor->c_put function.
+ * __ramc_put --
+ *	Recno DBC->put function.
  *
- * PUBLIC: int __ram_c_put __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
+ * PUBLIC: int __ramc_put __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
  */
 int
-__ram_c_put(dbc, key, data, flags, pgnop)
+__ramc_put(dbc, key, data, flags, pgnop)
 	DBC *dbc;
 	DBT *key, *data;
 	u_int32_t flags;
@@ -1132,7 +1141,7 @@ done:	/* Close the file descriptor. */
 	}
 
 	/* Discard the cursor. */
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Discard memory allocated to hold the data items. */

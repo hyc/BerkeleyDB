@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: dbreg.c,v 12.20 2006/08/24 14:45:31 bostic Exp $
+ * $Id: dbreg.c,v 12.22 2006/11/01 00:52:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -109,12 +108,12 @@ __dbreg_setup(dbp, name, create_txnid)
 
 	/* Allocate an FNAME and, if necessary, a buffer for the name itself. */
 	LOG_SYSTEM_LOCK(dbenv);
-	if ((ret = __db_shalloc(infop, sizeof(FNAME), 0, &fnp)) != 0)
+	if ((ret = __env_alloc(infop, sizeof(FNAME), &fnp)) != 0)
 		goto err;
 	memset(fnp, 0, sizeof(FNAME));
 	if (name != NULL) {
 		len = strlen(name) + 1;
-		if ((ret = __db_shalloc(infop, len, 0, &namep)) != 0)
+		if ((ret = __env_alloc(infop, len, &namep)) != 0)
 			goto err;
 		fnp->name_off = R_OFFSET(infop, namep);
 		memcpy(namep, name, len);
@@ -176,8 +175,8 @@ __dbreg_teardown(dbp)
 
 	LOG_SYSTEM_LOCK(dbenv);
 	if (fnp->name_off != INVALID_ROFF)
-		__db_shalloc_free(infop, R_ADDR(infop, fnp->name_off));
-	__db_shalloc_free(infop, fnp);
+		__env_alloc_free(infop, R_ADDR(infop, fnp->name_off));
+	__env_alloc_free(infop, fnp);
 	LOG_SYSTEM_UNLOCK(dbenv);
 
 	dbp->log_filename = NULL;
@@ -607,8 +606,8 @@ __dbreg_push_id(dbenv, dbp, id)
 	if (lp->free_fid_stack == INVALID_ROFF ||
 	    lp->free_fids_alloced <= lp->free_fids + 1) {
 		LOG_SYSTEM_LOCK(dbenv);
-		if ((ret = __db_shalloc(infop,
-		    (lp->free_fids_alloced + 20) * sizeof(u_int32_t), 0,
+		if ((ret = __env_alloc(infop,
+		    (lp->free_fids_alloced + 20) * sizeof(u_int32_t),
 		    &newstack)) != 0) {
 			LOG_SYSTEM_UNLOCK(dbenv);
 			return (ret);
@@ -618,7 +617,7 @@ __dbreg_push_id(dbenv, dbp, id)
 			stack = R_ADDR(infop, lp->free_fid_stack);
 			memcpy(newstack, stack,
 			    lp->free_fids_alloced * sizeof(u_int32_t));
-			__db_shalloc_free(infop, stack);
+			__env_alloc_free(infop, stack);
 		}
 		lp->free_fid_stack = R_OFFSET(infop, newstack);
 		lp->free_fids_alloced += 20;

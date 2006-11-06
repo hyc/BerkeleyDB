@@ -2,6 +2,10 @@
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+A long_timeout would be several minutes whereas a normal
+	short timeout would be a few seconds.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MVCC and cursor adjustment.
 	Set up a -snapshot cursor and position it in the middle
 	of a database.
@@ -1177,6 +1181,35 @@ rep066
 	Make sure 2nd handle detects the old log handle and doesn't
 	write to a stale handle (if it does, the processing of the
 	commit will fail).
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep067
+	Replication election test with large timeouts.
+
+	Test replication elections among clients with widely varying
+	timeouts.  This test is used to simulate a customer that
+	wants to force full participation in an election, but only
+	if all sites are present (i.e. if all sites are restarted
+	together).  If any site has already been part of the group,
+	then we want to be able to elect a master based on majority.
+	Using varied timeouts, we can force full participation if
+	all sites are present with "long_timeout" amount of time and
+	then revert to majority.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep068
+	Verify replication of dbreg operations does not hang clients.
+	In a simple replication group, create a database with very
+	little data.  With DB_TXN_NOSYNC the database can be created
+	at the client even though the log is not flushed.  If we crash
+	and restart, the application of the log starts over again, even
+	though the database is still there.  The application can open
+	the database before replication tries to re-apply the create.
+	This causes a hang as replication waits to be able to get a
+	handle lock.
+
+	Run for btree only because access method shouldn't matter.
+
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rpc001

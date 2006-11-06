@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep032.tcl,v 12.10 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep032.tcl,v 12.12 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep032
 # TEST	Test of log gap processing.
@@ -110,9 +109,8 @@ proc rep032_sub { method niter tnum logset recargs opts largs } {
 
 	puts "\tRep$tnum.b: Check client processed everything properly."
 	set queued [stat_field $clientenv rep_stat "Maximum log records queued"]
-	set request [stat_field $clientenv rep_stat "Log records requested"]
+	set request1 [stat_field $clientenv rep_stat "Log records requested"]
 	error_check_good queued $queued 0
-	error_check_good request $request 0
 
 	# Run rep_test in the master (don't update client).
 	# First run with dropping all client messages via replclear.
@@ -133,9 +131,9 @@ proc rep032_sub { method niter tnum logset recargs opts largs } {
 
 	puts "\tRep$tnum.e: Check we re-requested and had a backlog."
 	set queued [stat_field $clientenv rep_stat "Maximum log records queued"]
-	set request [stat_field $clientenv rep_stat "Log records requested"]
+	set request2 [stat_field $clientenv rep_stat "Log records requested"]
 	error_check_bad queued $queued 0
-	error_check_bad request $request 0
+	error_check_bad request $request1 $request2
 
 	puts "\tRep$tnum.f: Verify logs and databases"
 	#

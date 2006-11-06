@@ -1,4 +1,4 @@
-# $Id: buildrel,v 12.14 2006/09/20 01:12:33 bostic Exp $
+# $Id: buildrel,v 12.15 2006/10/05 01:06:19 bostic Exp $
 #
 # Build the distribution package.
 #
@@ -34,8 +34,8 @@ cd $D && cvs -q status | \
 	-e 's;,v$;;' | pax -rw $R/
 
 # Build the documentation, copy it into place.
-cd db_docs && cvs -q update
-cd db_docs && sh build $D clean && sh build $D |& sed '/.html$/d'
+cd bdb_docs && cvs -q update
+cd bdb_docs && sh build $D clean && sh build $D |& sed '/.html$/d'
 cd je/docs_src && sh build db ../../db
 rm -rf $R/docs && cp -r $D/docs $R/docs
 
@@ -48,8 +48,8 @@ cd $R/dist && sh s_perm
 cd $R/dist && sh s_symlink
 
 # Remove source directories we don't distribute.
-cd $R && rm -rf build_brew os_brew
-cd $R && rm -rf docs_src docs/api_java docs/api_c/pindex.src
+cd $R && rm -rf build_brew build_brew_x os_brew
+cd $R && rm -rf docs_src
 cd $R && rm -rf java/src/com/sleepycat/xa
 cd $R && rm -rf rpc_server/java
 cd $R && rm -rf test/TODO test/upgrade test_perf test_purify

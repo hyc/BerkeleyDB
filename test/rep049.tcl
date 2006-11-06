@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep049.tcl,v 12.11 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep049.tcl,v 12.13 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep049
 # TEST	Replication and delay syncing clients - basic test.
@@ -96,6 +95,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 #	    -home $env1dir -rep_transport \[list 1 replsend\]"
 	set env1 [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $env1] TRUE
+	$env1 rep_limit 0 0
 
 	# Open two clients
 	repladd 2
@@ -108,6 +108,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 #	    -home $env2dir -rep_transport \[list 2 replsend\]"
 	set env2 [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $env2] TRUE
+	$env2 rep_limit 0 0
 
 	repladd 3
 	set dc_envcmd "berkdb_env_noerr -create $dc_txnargs \
@@ -119,6 +120,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 #	    -home $delaycldir -rep_transport \[list 3 replsend\]"
 	set dcenv [eval $dc_envcmd $recargs -rep_client]
 	error_check_good client2_env [is_valid_env $dcenv] TRUE
+	$dcenv rep_limit 0 0
 
 	#
 	# !!!

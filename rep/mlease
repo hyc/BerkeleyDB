@@ -1,0 +1,216 @@
+Design Document for Master Leases
+
+A. Why do we need master leases at all?
+
+Consider the following scenario:
+
+A, B, C, D, and E form a replication group.
+At time 0, A is the master.
+At time 1, the network partitions leaving A on one side and B through E
+on the other.
+
+In our current system, B through E will now hold an election; let's say
+they elect B.
+
+We now have two masters, A and B, each responding to read requests.  (A
+cannot respond to write requests, because it will not hear from a
+majority of its replicas to commit, but the problem here has to do with
+master read consistency.)
+
+If the application needs consistent reads, it's reasonable to direct
+those reads to a master, because the replicas could be delayed, but even
+then, in this scenario, a reader at A can be given out of date data.
+
+Google implemented master leases to avoid this problem.  The lease
+mechanism prevents B through E from holding a successful election until
+A's master lease expires, even though A is no longer in communication
+with the other replicas.
+
+B. Implementing master leases in Berkeley DB.
+
+1. API changes:
+	dbenv->rep_set_master_lease(DB_ENV *dbenv,
+	    u_int32_t nsites, u_int32_t timeout, float clock_scale_factor)
+
+If this is never called, we do nothing differently than we do today.
+
+If this is called then we are doing three things:
+
+	* Turning master leases on -- requiring that a master believe
+	  there are nsites/2 +1 replicas with valid leases in order to
+	  respond to a read request.
+
+	* Establishing a lease timeout interval of "timeout"
+
+	* Setting this site's clock_scale_factor (see below).
+
+The timeout is the length of time that a replica considers the master
+to hold a lease.  A replica promises not to participate in an election
+for at least "timeout" milliseconds after communicating with a master.
+The master promises not to respond to read requests unless it has heard
+from nsites/2 + 1 of the replicas within the lease timeout interval.
+
+2. Optional API change
+
+This design is written as if whenever you turn master leases on, ALL
+reads to the master require that the lease be held.  We could make this
+enforcement optional.  If we did that, then we would need one of two new
+flags to db->get and dbc->{p}get: either one that says "Ignore leases"
+or one that says "Respect leases"
+
+3. All sites in a replication group must agree on the
+master_lease_timeout and the clock_scale_factor (which is the maximum
+difference in clock rates in the group -- more detail below).
+
+4. Enforcing and adhering to the lease mechanism.
+
+The master maintains a global view of lease status while each replica
+maintains only a local view.   Let's start with the replica.
+
+Whenever the replica sends an acknowledgement, it sets it lease timeout
+value.  A replica will never start or participate in an election until
+that lease expires.  For example, let's say that the lease timeout is
+5000 ms.  If the replica sends an acknowledgement to the master at time
+T, then the replica will not participate in an election until T+5000.
+
+The master side is a bit more complicated.  For each replica, the master
+maintains state indicating its perception of the replica's lease value.
+When the master needs to respond to read requests, it examines the lease
+state for all the replicas and responds only if it perceives that at
+least nsites/2 + 1 of the replicas are still holding a valid lease.
+
+(In the discussion below, assume a global clock; we'll relax that in the
+next section.)
+
+Again, consider a lease timeout value of 5000.
+
+Let's say that the master has 4 replicas and the master received acks
+from them at times:
+
+	R1	10,000
+	R2	11,000
+	R3	12,000
+	R4	13,000
+
+At time 14,000, the master happily responds to reads: all clients have
+a valid lease.
+
+At time 14,999, the master sill responds to reads, because R2-4 still
+have leases.
+
+At time 16,999, only R3 and R4 still have valid leases.  However, that
+means that the master and R3 and R4 are all in agreement, so you can
+still respond.
+
+However, at time 17001, only R4 still has a valid lease.  That means
+that R1-3 could elect a new master.  Therefore the current master cannot
+respond to a read request without refreshing someone's lease.
+
+We'll discuss eager versus lazy lease refresh below.
+
+5. Lease Maintenance
+
+In Google's case, application send and receive functions perform the
+lease maintenance activities of:
+
+	Replicas sending acks to the master
+	Master maintenance of replica lease values
+	Lease refresh
+
+For us to implement this, we will have to handle this in
+__rep_process_message.
+
+In __rep_process_message:
+	If replica, ack all log messages, not just PERM ones
+
+	If master and incoming is ACK, update client lease information
+	for sender
+
+Question: Should we interpret any message from a client as a lease
+refresh or just ACKs?
+
+Eager versus Lazy lease maintenance:
+
+In a fairly busy system, we would expect that replicas are constantly
+receiving log records from the master, and therefore that the master
+lease is regularly being refreshed.  The designs question to consider
+are: 1) How does replica log record transmission affect this?  and 2)
+If the system is not busy, how/when does the master refresh leases?
+
+If replicas are receiving log records from the master via another
+replica, should they ACK the master?  One one hand, that's the only way
+to refresh the master's lease.  On the other hand, the reason for
+replica to replica transmission is to offload the master.  At this
+point, I'd argue that any site that can participate in an election, must
+send ACKs to the master.
+
+Next, consider the lightly loaded system.  With lazy refresh, the master
+does nothing until a read operation is requested.  If it finds that not
+enough replicas have valid leases, then the master could send out as
+many "ping" requests as necessary to get replicas to  ACK and reset
+their lease.
+
+With eager refresh, the master would notice that leases were about to
+expire and would proactively send the pings to keep the leases alive.
+
+Eager refresh requires additional threads on which masters can set
+timers to wait. Since we do not necessarily have that without the
+replication framework, I'd argue to use lazy refresh capabilities for
+now.
+
+6. Replica elections.
+
+A replica may not call and/or participate in an election until its lease
+times out.  On one hand, implementing this is simple:
+
+	In __rep_elect, simply sleep until the timeout interval has
+	expired and then begin normal election processing.
+
+The question then becomes what to do with messages from the master that
+arrive while a replica is waiting to participate in an election.
+
+I would argue that reception of a record from the master should obviate
+the need for an election, but this discussion actually seems to be
+precisely the conversation that we're having in SR #14752.  The design
+here should wait for resolution of that SR (and that SR should probably
+be informed by this design, so that we don't preclude master leases in
+whatever we decide).
+
+7. Clock Skew
+
+We cannot assume global clocks, so we have to account for clock skew and
+nodes running at slightly different clock frequencies in calculating
+lease periods.  I would suggest that we take Google's approach, which
+is outlined here.
+
+The master interprets the replica's lease timeout from the time the
+master last sent a message that the replica acknowledged.
+
+The replicas, in turn, use their own local time to compute timeouts:
+whenever they receive a message from the master, they update their lease
+timeout value as reception time + timeout interval.
+
+Both sides must compensate for possible clock skew:
+
+Assume a maximum clock-rate skew among replicas for computing lease
+timeouts.
+
+The clock_scale_factor parameter, specified in dbenv->rep_set_master_lease,
+is interpreted as follows:
+
+	If the slowest replica's clock is a factor of clock_scale_factor
+	slower than the fastest clock, then if the faster clock goes
+	from time t1 to t2 in X seconds, the slower clock does it in
+	clock_scale_factor * X seconds.
+	
+	A master should set a replica's lease expiration to the start
+	time of the sent message + (lease_duration / clock_scale_factor)
+	[in case the replica has a slow clock].
+	
+	A replica should extend its lease to:
+
+		received message time + (lease_duration * clock_scale_factor) 
+
+	[in case this replica has a fast clock].
+
+	The clock_scale_factor should be at least 1.

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep066.tcl,v 12.4 2006/09/08 20:32:18 bostic Exp $
+# $Id: rep066.tcl,v 12.6 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep066
 # TEST	Replication and dead log handles.
@@ -71,10 +70,7 @@ proc rep066_sub { method niter tnum logset recargs largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-	set m_logargs " -log_buffer $log_buf "
-	set c_logargs " -log_buffer $log_buf "
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]

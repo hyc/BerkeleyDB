@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_id.c,v 12.16 2006/08/24 14:46:11 bostic Exp $
+ * $Id: lock_id.c,v 12.18 2006/11/01 00:53:34 bostic Exp $
  */
 
 #include "db_config.h"
@@ -107,14 +106,17 @@ err:	LOCK_SYSTEM_UNLOCK(dbenv);
 /*
  * __lock_set_thread_id --
  *	Set the thread_id in an existing locker.
- * PUBLIC: void __lock_set_thread_id __P((DB_LOCKER *, pid_t, db_threadid_t));
+ * PUBLIC: void __lock_set_thread_id __P((void *, pid_t, db_threadid_t));
  */
 void
-__lock_set_thread_id(lref, pid, tid)
-	DB_LOCKER *lref;
+__lock_set_thread_id(lref_arg, pid, tid)
+	void *lref_arg;
 	pid_t pid;
 	db_threadid_t tid;
 {
+	DB_LOCKER *lref;
+
+	lref = lref_arg;
 	lref->pid = pid;
 	lref->tid = tid;
 }
@@ -349,20 +351,20 @@ err:	LOCK_SYSTEM_UNLOCK(dbenv);
  *
  * This must be called without the locker bucket locked.
  *
- * PUBLIC: int __lock_freefamilylocker  __P((DB_LOCKTAB *, u_int32_t));
+ * PUBLIC: int __lock_freefamilylocker  __P((DB_ENV *, u_int32_t));
  */
 int
-__lock_freefamilylocker(lt, locker)
-	DB_LOCKTAB *lt;
+__lock_freefamilylocker(dbenv, locker)
+	DB_ENV *dbenv;
 	u_int32_t locker;
 {
-	DB_ENV *dbenv;
+	DB_LOCKTAB *lt;
 	DB_LOCKER *sh_locker;
 	DB_LOCKREGION *region;
 	u_int32_t indx;
 	int ret;
 
-	dbenv = lt->dbenv;
+	lt = dbenv->lk_handle;
 	region = lt->reginfo.primary;
 
 	LOCK_SYSTEM_LOCK(dbenv);

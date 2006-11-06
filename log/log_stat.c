@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: log_stat.c,v 12.13 2006/08/24 14:46:12 bostic Exp $
+ * $Id: log_stat.c,v 12.15 2006/11/01 00:53:36 bostic Exp $
  */
 
 #include "db_config.h"
@@ -242,7 +241,7 @@ __log_print_all(dbenv, flags)
 
 	LOG_SYSTEM_LOCK(dbenv);
 
-	__db_print_reginfo(dbenv, &dblp->reginfo, "Log");
+	__db_print_reginfo(dbenv, &dblp->reginfo, "Log", flags);
 
 	__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 	__db_msg(dbenv, "DB_LOG handle information:");

@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_windows_dsp,v 12.9 2006/07/13 06:19:45 mjc Exp $
+#	$Id: s_windows_dsp,v 12.13 2006/10/19 12:57:37 bostic Exp $
 #
 # Build Windows/32 .dsp files.
 
@@ -18,9 +18,9 @@ create_dsp()
     debug_libs="$7"     # libraries to link against in Debug builds
     lib_suffix="$8"     # the library name is libdb@lib_suffix@@VERSION@
 
-    srctemplate="$BUILDDIR/srcfile_dsp.src"    # template file for the src file fragments
+			# template file for the src file fragments
+    srctemplate="$BUILDDIR/srcfile_dsp.src"
     dspoutput=$BUILDDIR/$projname.dsp
-
 
     postbuild=$dspoutput.postbuild
     if [ ! -f $postbuild ] ; then
@@ -131,7 +131,7 @@ do
             create_dsp $appname " $module " $TMPA $BUILDDIR/app_dsp.src '' \
                 $libs $libs
             ;;
-        vx|vxsmall )
+        brew|brewsmall|vx|vxsmall )
             ;;
         * )
             echo \

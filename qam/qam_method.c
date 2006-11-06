@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_method.c,v 12.8 2006/08/24 14:46:24 bostic Exp $
+ * $Id: qam_method.c,v 12.10 2006/11/01 00:53:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -310,7 +309,7 @@ __qam_rr(dbp, txn, name, subdb, newname, op)
 	if (F_ISSET(dbp, DB_AM_OPEN_CALLED))
 		tmpdbp = dbp;
 	else {
-		if ((ret = db_create(&tmpdbp, dbenv, 0)) != 0)
+		if ((ret = __db_create_internal(&tmpdbp, dbenv, 0)) != 0)
 			return (ret);
 
 		/*

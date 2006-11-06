@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_net.c,v 1.39 2006/09/19 14:14:11 mjc Exp $
+ * $Id: repmgr_net.c,v 1.43 2006/11/01 00:53:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -92,9 +91,6 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 	int ret, t_ret;
 	REPMGR_SITE *site;
 	REPMGR_CONNECTION *conn;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 
@@ -115,10 +111,10 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 		    IS_VALID_EID(db_rep->peer) &&
 		    (site = __repmgr_available_site(dbenv, db_rep->peer)) !=
 		    NULL) {
-			RPRINT(dbenv, (dbenv, &mb, "sending request to peer"));
+			RPRINT(dbenv, (dbenv, "sending request to peer"));
 		} else if ((site = __repmgr_available_site(dbenv, eid)) ==
 		    NULL) {
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "ignoring message sent to unavailable site"));
 			ret = DB_REP_UNAVAIL;
 			goto out;
@@ -195,7 +191,7 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 			goto out;
 		}
 		/* In ALL_PEERS case, display of "needed" might be confusing. */
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "will await acknowledgement: need %u", needed));
 		ret = __repmgr_await_ack(dbenv, lsnp);
 	}
@@ -321,13 +317,10 @@ __repmgr_send_internal(dbenv, conn, msg)
 {
 #define	OUT_QUEUE_LIMIT 10	/* arbitrary, for now */
 	REPMGR_IOVECS iovecs;
+	SITE_STRING_BUFFER buffer;
 	int ret;
 	size_t nw;
 	size_t total_written;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-	SITE_STRING_BUFFER buffer;
-#endif
 
 	DB_ASSERT(dbenv, !F_ISSET(conn, CONN_CONNECTING));
 	if (!STAILQ_EMPTY(&conn->outbound_queue)) {
@@ -336,13 +329,13 @@ __repmgr_send_internal(dbenv, conn, msg)
 		 * thread, so we can't try sending in-line here.  We can only
 		 * queue the msg for later.
 		 */
-		RPRINT(dbenv, (dbenv, &mb, "msg to %s to be queued",
+		RPRINT(dbenv, (dbenv, "msg to %s to be queued",
 		    __repmgr_format_eid_loc(dbenv->rep_handle,
 		    conn->eid, buffer)));
 		if (conn->out_queue_length < OUT_QUEUE_LIMIT)
 			return (enqueue_msg(dbenv, conn, msg, 0));
 		else {
-			RPRINT(dbenv, (dbenv, &mb, "queue limit exceeded"));
+			RPRINT(dbenv, (dbenv, "queue limit exceeded"));
 /*			repmgr->stats.tossed_msgs++; */
 			return (0);
 		}
@@ -368,7 +361,7 @@ __repmgr_send_internal(dbenv, conn, msg)
 		return (DB_REP_UNAVAIL);
 	}
 
-	RPRINT(dbenv, (dbenv, &mb, "wrote only %lu bytes to %s",
+	RPRINT(dbenv, (dbenv, "wrote only %lu bytes to %s",
 	    (u_long)total_written,
 	    __repmgr_format_eid_loc(dbenv->rep_handle, conn->eid, buffer)));
 	/*
@@ -768,8 +761,10 @@ __repmgr_getaddr(dbenv, host, port, flags, result)
 	ADDRINFO **result;
 {
 	ADDRINFO *answer, hints;
-	int ret;
 	char buffer[10];		/* 2**16 fits in 5 digits. */
+#ifdef DB_WIN32
+	int ret;
+#endif
 
 	/*
 	 * Ports are really 16-bit unsigned values, but it's too painful to
@@ -792,9 +787,16 @@ __repmgr_getaddr(dbenv, host, port, flags, result)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = flags;
 	(void)snprintf(buffer, sizeof(buffer), "%u", port);
-	if ((ret =
-	    __db_getaddrinfo(dbenv, host, port, buffer, &hints, &answer)) != 0)
-		return (ret);
+
+	/*
+	 * Although it's generally bad to discard error information, the return
+	 * code from __db_getaddrinfo is undependable.  Our callers at least
+	 * would like to be able to distinguish errors in getaddrinfo (which we
+	 * want to consider to be retryable), from other failure (e.g., EINVAL,
+	 * above).
+	 */
+	if (__db_getaddrinfo(dbenv, host, port, buffer, &hints, &answer) != 0)
+		return (DB_REP_UNAVAIL);
 	*result = answer;
 
 	return (0);
@@ -834,7 +836,11 @@ __repmgr_add_site(dbenv, host, port, newsitep)
 		goto out;
 	}
 
-	if ((ret = __repmgr_getaddr(dbenv, host, port, 0, &address_list)) != 0)
+	if ((ret = __repmgr_getaddr(
+	    dbenv, host, port, 0, &address_list)) == DB_REP_UNAVAIL) {
+		/* Allow retryable errors.  We'll try again later. */
+		address_list = NULL;
+	} else if (ret != 0)
 		return (ret);
 
 	if ((ret = __repmgr_pack_netaddr(

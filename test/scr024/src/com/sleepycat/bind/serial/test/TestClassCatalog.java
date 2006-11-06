@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: TestClassCatalog.java,v 12.3 2006/08/24 14:46:43 bostic Exp $
+ * $Id: TestClassCatalog.java,v 12.4 2006/11/01 00:54:07 bostic Exp $
  */
 
 package com.sleepycat.bind.serial.test;

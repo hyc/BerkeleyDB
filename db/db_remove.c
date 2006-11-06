@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: db_remove.c,v 12.28 2006/09/19 15:06:58 bostic Exp $
+ * $Id: db_remove.c,v 12.30 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -77,7 +76,7 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 		}
 	LF_CLR(DB_AUTO_COMMIT);
 
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 		goto err;
 
 	ret = __db_remove_int(dbp, txn, name, subdb, flags);
@@ -371,7 +370,7 @@ __db_subdb_remove(dbp, txn, name, subdb)
 	mdbp = sdbp = NULL;
 
 	/* Open the subdatabase. */
-	if ((ret = db_create(&sdbp, dbp->dbenv, 0)) != 0)
+	if ((ret = __db_create_internal(&sdbp, dbp->dbenv, 0)) != 0)
 		goto err;
 	if ((ret = __db_open(sdbp,
 	    txn, name, subdb, DB_UNKNOWN, DB_WRITEOPEN, 0, PGNO_BASE_MD)) != 0)

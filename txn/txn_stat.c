@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_stat.c,v 12.18 2006/08/24 14:46:53 bostic Exp $
+ * $Id: txn_stat.c,v 12.20 2006/11/01 00:54:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -317,7 +316,7 @@ __txn_print_all(dbenv, flags)
 
 	TXN_SYSTEM_LOCK(dbenv);
 
-	__db_print_reginfo(dbenv, &mgr->reginfo, "Transaction");
+	__db_print_reginfo(dbenv, &mgr->reginfo, "Transaction", flags);
 
 	__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 	__db_msg(dbenv, "DB_TXNMGR handle information:");

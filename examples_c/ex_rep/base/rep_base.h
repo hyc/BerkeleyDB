@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2005
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2005 Oracle.  All rights reserved.
  *
- * $Id: rep_base.h,v 12.11 2006/08/24 14:45:45 bostic Exp $
+ * $Id: rep_base.h,v 12.12 2006/11/01 00:52:52 bostic Exp $
  */
 
 #ifndef _EX_REPQUOTE_H_

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_fmethod.c,v 12.13 2006/08/24 14:46:14 bostic Exp $
+ * $Id: mp_fmethod.c,v 12.15 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -540,8 +539,8 @@ __memp_fns(dbmp, mfp)
 	DB_MPOOL *dbmp;
 	MPOOLFILE *mfp;
 {
-	if (mfp->path_off == 0)
-		return ((char *)"temporary");
+	if (mfp == NULL || mfp->path_off == 0)
+		return ((char *)"unknown");
 
 	return ((char *)R_ADDR(dbmp->reginfo, mfp->path_off));
 }

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2006
- *      Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: JoinTest.java,v 12.5 2006/08/31 18:14:14 bostic Exp $
+ * $Id: JoinTest.java,v 12.6 2006/11/01 00:54:12 bostic Exp $
  */
 
 package com.sleepycat.collections.test;

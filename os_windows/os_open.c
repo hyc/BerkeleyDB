@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_open.c,v 12.16 2006/09/12 01:49:36 mjc Exp $
+ * $Id: os_open.c,v 12.20 2006/11/01 00:53:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -43,8 +42,12 @@ __os_open_extend(dbenv, name, page_size, flags, mode, fhpp)
 	_TCHAR *drive, *tname;
 	_TCHAR dbuf[4]; /* <letter><colon><slash><nul> */
 
-	fhp = NULL;
+	*fhpp = NULL;
 	tname = NULL;
+
+	if (dbenv != NULL &&
+	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv, "fileops: open %s", name);
 
 #define	OKFLAGS								\
 	(DB_OSO_ABSMODE | DB_OSO_CREATE | DB_OSO_DIRECT | DB_OSO_DSYNC |\
@@ -57,8 +60,24 @@ __os_open_extend(dbenv, name, page_size, flags, mode, fhpp)
 	if (ret != 0)
 		goto err;
 
+	/*
+	 * Allocate the file handle and copy the file name.  We generally only
+	 * use the name for verbose or error messages, but on systems where we
+	 * can't unlink temporary files immediately, we use the name to unlink
+	 * the temporary file when the file handle is closed.
+	 *
+	 * Lock the DB_ENV handle and insert the new file handle on the list.
+	 */
 	if ((ret = __os_calloc(dbenv, 1, sizeof(DB_FH), &fhp)) != 0)
+		return (ret);
+	if ((ret = __os_strdup(dbenv, name, &fhp->name)) != 0)
 		goto err;
+	if (dbenv != NULL) {
+		MUTEX_LOCK(dbenv, dbenv->mtx_env);
+		TAILQ_INSERT_TAIL(&dbenv->fdlist, fhp, q);
+		MUTEX_UNLOCK(dbenv, dbenv->mtx_env);
+		F_SET(fhp, DB_FH_ENVLINK);
+	}
 
 	/*
 	 * Otherwise, use the Windows/32 CreateFile interface so that we can

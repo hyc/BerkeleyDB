@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_recover.c,v 12.19 2006/08/24 14:46:53 bostic Exp $
+ * $Id: txn_recover.c,v 12.21 2006/11/01 00:54:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -279,7 +278,7 @@ __txn_openfiles(dbenv, min, force)
 	memset(&data, 0, sizeof(data));
 	if ((ret = __txn_getckp(dbenv, &open_lsn)) == 0)
 		while (!IS_ZERO_LSN(open_lsn) && (ret =
-		    __log_c_get(logc, &open_lsn, &data, DB_SET)) == 0 &&
+		    __logc_get(logc, &open_lsn, &data, DB_SET)) == 0 &&
 		    (force ||
 		    (min != NULL && LOG_COMPARE(min, &open_lsn) < 0))) {
 			/* Format the log record. */
@@ -300,7 +299,7 @@ __txn_openfiles(dbenv, min, force)
 			    ckp_args->last_ckp;
 			__os_free(dbenv, ckp_args);
 			if (force) {
-				if ((ret = __log_c_get(logc, &open_lsn,
+				if ((ret = __logc_get(logc, &open_lsn,
 				    &data, DB_SET)) != 0)
 					goto err;
 				break;
@@ -317,7 +316,7 @@ __txn_openfiles(dbenv, min, force)
 	 * - We are forcing an openfiles and we have our ckp_lsn.
 	 */
 	if ((ret == DB_NOTFOUND || IS_ZERO_LSN(open_lsn)) && (ret =
-	    __log_c_get(logc, &open_lsn, &data, DB_FIRST)) != 0) {
+	    __logc_get(logc, &open_lsn, &data, DB_FIRST)) != 0) {
 		__db_errx(dbenv, "No log records");
 		goto err;
 	}
@@ -330,7 +329,7 @@ __txn_openfiles(dbenv, min, force)
 		__db_txnlist_end(dbenv, txninfo);
 
 err:
-	if (logc != NULL && (t_ret = __log_c_close(logc)) != 0 && ret == 0)
+	if (logc != NULL && (t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }

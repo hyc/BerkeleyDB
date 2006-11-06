@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep038.tcl,v 12.12 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep038.tcl,v 12.15 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep038
 # TEST	Test of internal initialization and ongoing master updates.
@@ -80,10 +79,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
@@ -105,6 +101,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
+	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
@@ -117,6 +114,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -165,6 +163,7 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 	}
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	#
 	# We want to simulate a master continually getting new

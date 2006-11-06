@@ -1,4 +1,4 @@
-<!--$Id: db_open.so,v 10.119 2006/09/13 14:30:52 mjc Exp $-->
+<!--$Id: db_open.so,v 10.120 2006/10/18 19:54:36 bostic Exp $-->
 <!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -206,8 +206,8 @@ unrolled a committed transaction.
 <dt>DB_REP_LOCKOUT<dd>The operation was blocked by client/master synchronization.
 </dl>
 <hr size=1 noshade>
-<h3>Description: DB-&gt;get_database</h3>
-<p>The DB-&gt;get_database method returns the current filename and database
+<h3>Description: DB-&gt;get_dbname</h3>
+<p>The DB-&gt;get_dbname method returns the current filename and database
 name.</p>
 <h3>Parameters</h3>
 <dl compact>
@@ -216,9 +216,9 @@ a pointer to the current filename is copied.
 <dt><b>dbnamep</b><dd>The <b>dbnamep</b> parameter references memory into which
 a pointer to the current database name is copied. 
 </dl>
-<p>The DB-&gt;get_database method may be called at any time during the life of the
+<p>The DB-&gt;get_dbname method may be called at any time during the life of the
 application.</p>
-<p>The DB-&gt;get_database method
+<p>The DB-&gt;get_dbname method
 returns a non-zero error value on failure
 and 0 on success.
 </p>

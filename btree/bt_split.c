@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -36,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_split.c,v 12.16 2006/09/08 18:41:05 bostic Exp $
+ * $Id: bt_split.c,v 12.18 2006/11/01 00:51:57 bostic Exp $
  */
 
 #include "db_config.h"
@@ -277,6 +276,9 @@ __bam_page(dbc, pp, cp)
 	ret = -1;
 
 	/*
+	 * Create new left page for the split, and fill in everything
+	 * except its LSN and next-page page number.
+	 *
 	 * Create a new right page for the split, and fill in everything
 	 * except its LSN and page number.
 	 *
@@ -293,22 +295,17 @@ __bam_page(dbc, pp, cp)
 	 * up the tree badly, because we've violated the rule of always locking
 	 * down the tree, and never up.
 	 */
-	if ((ret = __os_malloc(dbp->dbenv, dbp->pgsize, &rp)) != 0)
-		goto err;
-	P_INIT(rp, dbp->pgsize, 0,
-	    ISINTERNAL(cp->page) ? PGNO_INVALID : PGNO(cp->page),
-	    ISINTERNAL(cp->page) ? PGNO_INVALID : NEXT_PGNO(cp->page),
-	    cp->page->level, TYPE(cp->page));
-
-	/*
-	 * Create new left page for the split, and fill in everything
-	 * except its LSN and next-page page number.
-	 */
-	if ((ret = __os_malloc(dbp->dbenv, dbp->pgsize, &lp)) != 0)
+	if ((ret = __os_malloc(dbp->dbenv, dbp->pgsize * 2, &lp)) != 0)
 		goto err;
 	P_INIT(lp, dbp->pgsize, PGNO(cp->page),
 	    ISINTERNAL(cp->page) ?  PGNO_INVALID : PREV_PGNO(cp->page),
 	    ISINTERNAL(cp->page) ?  PGNO_INVALID : 0,
+	    cp->page->level, TYPE(cp->page));
+
+	rp = (PAGE *)((u_int8_t *)lp + dbp->pgsize);
+	P_INIT(rp, dbp->pgsize, 0,
+	    ISINTERNAL(cp->page) ? PGNO_INVALID : PGNO(cp->page),
+	    ISINTERNAL(cp->page) ? PGNO_INVALID : NEXT_PGNO(cp->page),
 	    cp->page->level, TYPE(cp->page));
 
 	/*
@@ -447,7 +444,6 @@ __bam_page(dbc, pp, cp)
 		goto err;
 
 	__os_free(dbp->dbenv, lp);
-	__os_free(dbp->dbenv, rp);
 
 	/*
 	 * Success -- write the real pages back to the store.  As we never
@@ -477,8 +473,6 @@ __bam_page(dbc, pp, cp)
 
 err:	if (lp != NULL)
 		__os_free(dbp->dbenv, lp);
-	if (rp != NULL)
-		__os_free(dbp->dbenv, rp);
 	if (alloc_rp != NULL)
 		(void)__memp_fput(mpf, alloc_rp, 0);
 	if (tp != NULL)

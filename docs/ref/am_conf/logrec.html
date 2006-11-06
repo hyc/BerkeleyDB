@@ -20,7 +20,7 @@
 record numbers.  Record numbers are 1-based, not 0-based, that is, the
 first record in a database is record number 1.</p>
 <p>In all cases for the Queue and Recno access methods, and when calling
-the Btree access method using the <a href="../../api_c/db_get.html">DB-&gt;get</a> and <a href="../../api_c/dbc_get.html">DBcursor-&gt;c_get</a> methods
+the Btree access method using the <a href="../../api_c/db_get.html">DB-&gt;get</a> and <a href="../../api_c/dbc_get.html">DBcursor-&gt;get</a> methods
 with the <a href="../../api_c/db_get.html#DB_SET_RECNO">DB_SET_RECNO</a> flag specified, the <b>data</b> field of
 the key <a href="../../api_c/dbt_class.html">DBT</a> must be a pointer to a memory location of type
 <b>db_recno_t</b>, as typedef'd in the standard Berkeley DB include file.

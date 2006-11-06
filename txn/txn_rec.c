@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1996
@@ -32,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn_rec.c,v 12.14 2006/08/24 14:46:53 bostic Exp $
+ * $Id: txn_rec.c,v 12.16 2006/11/01 00:54:23 bostic Exp $
  */
 
 #include "db_config.h"
@@ -418,8 +417,7 @@ __txn_restore_txn(dbenv, lsnp, argp)
 	TXN_SYSTEM_LOCK(dbenv);
 
 	/* Allocate a new transaction detail structure. */
-	if ((ret =
-	    __db_shalloc(&mgr->reginfo, sizeof(TXN_DETAIL), 0, &td)) != 0) {
+	if ((ret = __env_alloc(&mgr->reginfo, sizeof(TXN_DETAIL), &td)) != 0) {
 		TXN_SYSTEM_UNLOCK(dbenv);
 		return (ret);
 	}

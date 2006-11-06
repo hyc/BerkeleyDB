@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mutex.h,v 12.20 2006/08/24 14:45:29 bostic Exp $
+ * $Id: mutex.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef _DB_MUTEX_H_
@@ -27,32 +26,34 @@ extern "C" {
 #define	MTX_APPLICATION		 1
 #define	MTX_DB_HANDLE		 2
 #define	MTX_ENV_DBLIST		 3
-#define	MTX_ENV_REGION		 4
-#define	MTX_LOCK_REGION		 5
-#define	MTX_LOGICAL_LOCK	 6
-#define	MTX_LOG_FILENAME	 7
-#define	MTX_LOG_FLUSH		 8
-#define	MTX_LOG_HANDLE		 9
-#define	MTX_LOG_REGION		10
-#define	MTX_MPOOLFILE_HANDLE	11
-#define	MTX_MPOOL_FH		12
-#define	MTX_MPOOL_FILE_BUCKET	13
-#define	MTX_MPOOL_HANDLE	14
-#define	MTX_MPOOL_HASH_BUCKET	15
-#define	MTX_MPOOL_IO		16
-#define	MTX_MPOOL_REGION	17
-#define	MTX_MUTEX_REGION	18
-#define	MTX_MUTEX_TEST		19
-#define	MTX_REP_DATABASE	20
-#define	MTX_REP_REGION		21
-#define	MTX_SEQUENCE		22
-#define	MTX_TWISTER		23
-#define	MTX_TXN_ACTIVE		24
-#define	MTX_TXN_CHKPT		25
-#define	MTX_TXN_COMMIT		26
-#define	MTX_TXN_MVCC		27
-#define	MTX_TXN_REGION		28
-#define	MTX_MAX_ENTRY		28
+#define	MTX_ENV_HANDLE		 4
+#define	MTX_ENV_REGION		 5
+#define	MTX_LOCK_REGION		 6
+#define	MTX_LOGICAL_LOCK	 7
+#define	MTX_LOG_FILENAME	 8
+#define	MTX_LOG_FLUSH		 9
+#define	MTX_LOG_HANDLE		10
+#define	MTX_LOG_REGION		11
+#define	MTX_MPOOLFILE_HANDLE	12
+#define	MTX_MPOOL_FH		13
+#define	MTX_MPOOL_FILE_BUCKET	14
+#define	MTX_MPOOL_HANDLE	15
+#define	MTX_MPOOL_HASH_BUCKET	16
+#define	MTX_MPOOL_IO		17
+#define	MTX_MPOOL_REGION	18
+#define	MTX_MUTEX_REGION	19
+#define	MTX_MUTEX_TEST		20
+#define	MTX_REP_DATABASE	21
+#define	MTX_REP_REGION		22
+#define	MTX_SEQUENCE		23
+#define	MTX_TWISTER		24
+#define	MTX_TXN_ACTIVE		25
+#define	MTX_TXN_CHKPT		26
+#define	MTX_TXN_COMMIT		27
+#define	MTX_TXN_MVCC		28
+#define	MTX_TXN_REGION		29
+
+#define	MTX_MAX_ENTRY		29
 
 /* Redirect mutex calls to the correct functions. */
 #if defined(HAVE_MUTEX_PTHREADS) ||					\
@@ -93,6 +94,7 @@ extern "C" {
  * the macros to always return a panic value rather than saving the actual
  * return value of the mutex routine.
  */
+#ifdef HAVE_MUTEX_SUPPORT
 #define	MUTEX_LOCK(dbenv, mutex) do {					\
 	if ((mutex) != MUTEX_INVALID &&					\
 	    __mutex_lock(dbenv, mutex) != 0)				\
@@ -103,6 +105,18 @@ extern "C" {
 	    __mutex_unlock(dbenv, mutex) != 0)				\
 		return (DB_RUNRECOVERY);				\
 } while (0)
+#else
+/*
+ * XXX
+ * There are calls to lock/unlock mutexes outside of #ifdef's -- replace
+ * the call with something the compiler can discard, but which will make
+ * if-then-else blocks work correctly.
+ */
+#define	MUTEX_LOCK(dbenv, mutex)					\
+	(mutex) = (mutex);
+#define	MUTEX_UNLOCK(dbenv, mutex)					\
+	(mutex) = (mutex);
+#endif
 
 /*
  * Berkeley DB ports may require single-threading at places in the code.

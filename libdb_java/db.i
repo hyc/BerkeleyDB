@@ -498,40 +498,40 @@ struct Dbc
 %extend {
 	JAVA_EXCEPT(DB_RETOK_STD, NULL)
 	db_ret_t close() {
-		return self->c_close(self);
+		return self->close(self);
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DBC2JDBENV)
 	db_recno_t count(u_int32_t flags) {
 		db_recno_t count = 0;
-		errno = self->c_count(self, &count, flags);
+		errno = self->count(self, &count, flags);
 		return count;
 	}
 
 	JAVA_EXCEPT(DB_RETOK_DBCDEL, DBC2JDBENV)
 	int del(u_int32_t flags) {
-		return self->c_del(self, flags);
+		return self->del(self, flags);
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DBC2JDBENV)
 	DBC *dup(u_int32_t flags) {
 		DBC *newcurs = NULL;
-		errno = self->c_dup(self, &newcurs, flags);
+		errno = self->dup(self, &newcurs, flags);
 		return newcurs;
 	}
 
 	JAVA_EXCEPT(DB_RETOK_DBCGET, DBC2JDBENV)
 	int get(DBT* key, DBT *data, u_int32_t flags) {
-		return self->c_get(self, key, data, flags);
+		return self->get(self, key, data, flags);
 	}
 
 	int pget(DBT* key, DBT* pkey, DBT *data, u_int32_t flags) {
-		return self->c_pget(self, key, pkey, data, flags);
+		return self->pget(self, key, pkey, data, flags);
 	}
 
 	JAVA_EXCEPT(DB_RETOK_DBCPUT, DBC2JDBENV)
 	int put(DBT* key, DBT *data, u_int32_t flags) {
-		return self->c_put(self, key, data, flags);
+		return self->put(self, key, data, flags);
 	}
 }
 };
@@ -575,6 +575,12 @@ struct DbEnv
 	}
 
 #ifndef SWIGJAVA
+	u_int32_t get_thread_count() {
+		u_int32_t ret;
+		errno = self->get_thread_count(self, &ret);
+		return ret;
+	}
+
 	pid_t getpid() {
 		pid_t ret;
 		db_threadid_t junk;

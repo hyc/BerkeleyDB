@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_method.c,v 1.28 2006/09/11 15:15:20 bostic Exp $
+ * $Id: repmgr_method.c,v 1.30 2006/11/01 00:53:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -136,18 +135,15 @@ __repmgr_close(dbenv)
 {
 	DB_REP *db_rep;
 	int ret, t_ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	ret = 0;
 	db_rep = dbenv->rep_handle;
 	if (db_rep->selector != NULL) {
-		RPRINT(dbenv, (dbenv, &mb, "Stopping repmgr threads"));
+		RPRINT(dbenv, (dbenv, "Stopping repmgr threads"));
 		ret = __repmgr_stop_threads(dbenv);
 		if ((t_ret = __repmgr_await_threads(dbenv)) != 0 && ret == 0)
 			ret = t_ret;
-		RPRINT(dbenv, (dbenv, &mb, "Repmgr threads are finished"));
+		RPRINT(dbenv, (dbenv, "Repmgr threads are finished"));
 	}
 
 	if ((t_ret = __repmgr_net_close(dbenv)) != 0 && ret == 0)

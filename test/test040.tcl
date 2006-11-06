@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1998-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1998,2006 Oracle.  All rights reserved.
 #
-# $Id: test040.tcl,v 12.3 2006/08/24 14:46:40 bostic Exp $
+# $Id: test040.tcl,v 12.4 2006/11/01 00:54:01 bostic Exp $
 #
 # TEST	test040
 # TEST	Test038 with off-page duplicates

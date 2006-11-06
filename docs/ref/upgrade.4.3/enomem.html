@@ -21,7 +21,7 @@ indicate that the buffer in a <a href="../../api_c/dbt_class.html">DBT</a> confi
 retrieved.  The 4.3 release adds a new error, <a href="../../api_c/dbt_class.html#DB_BUFFER_SMALL">DB_BUFFER_SMALL</a>,
 that is returned in this case.</p>
 <p>The reason for the change is that the use of <b>ENOMEM</b> was
-ambiguous: calls such as <a href="../../api_c/db_get.html">DB-&gt;get</a> or <a href="../../api_c/dbc_get.html">DBcursor-&gt;c_get</a> could return
+ambiguous: calls such as <a href="../../api_c/db_get.html">DB-&gt;get</a> or <a href="../../api_c/dbc_get.html">DBcursor-&gt;get</a> could return
 <b>ENOMEM</b> either if a <a href="../../api_c/dbt_class.html">DBT</a> was too small or if some resource
 was exhausted.</p>
 <p>The result is that starting with the 4.3 release, C applications should

@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -35,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_dispatch.c,v 12.26 2006/08/24 14:45:15 bostic Exp $
+ * $Id: db_dispatch.c,v 12.29 2006/11/01 00:52:29 bostic Exp $
  */
 
 #include "db_config.h"
@@ -1109,7 +1108,7 @@ retry:		dbp_created = 0;
 			goto next;
 
 		if (ret != 0) {
-			if ((ret = db_create(&dbp, dbenv, 0)) != 0)
+			if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
 				goto err;
 
 			/*
@@ -1388,7 +1387,7 @@ __db_limbo_fix(dbp, ctxn, elp, lastp, meta, state)
 				 */
 				if (ret != 0) {
 					/* Assume that this is out of space. */
-					(void)__db_c_close(dbc);
+					(void)__dbc_close(dbc);
 					dbc = NULL;
 					goto err;
 				}
@@ -1408,7 +1407,7 @@ __db_limbo_fix(dbp, ctxn, elp, lastp, meta, state)
 err:	if (pagep != NULL && (t_ret = __memp_fput(mpf, pagep, 0)) != 0 &&
 	    ret == 0)
 		ret = t_ret;
-	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }

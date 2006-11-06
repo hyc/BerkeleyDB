@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_failchk.c,v 12.9 2006/08/24 14:46:11 bostic Exp $
+ * $Id: lock_failchk.c,v 12.11 2006/11/01 00:53:34 bostic Exp $
  */
 
 #include "db_config.h"
@@ -84,7 +83,8 @@ retry:	LOCK_SYSTEM_LOCK(dbenv);
 			 * but we assume the dead thread will never release
 			 * it.
 			 */
-			if ((ret = __lock_freefamilylocker(lt, lip->id)) != 0)
+			if ((ret =
+			    __lock_freefamilylocker(dbenv, lip->id)) != 0)
 				return (ret);
 			goto retry;
 		}

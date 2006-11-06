@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_stati.c,v 12.21 2006/08/24 14:45:16 bostic Exp $
+ * $Id: db_stati.c,v 12.23 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -113,7 +112,7 @@ __db_stat(dbp, txn, spp, flags)
 		break;
 	}
 
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -257,7 +256,7 @@ __db_print_stats(dbp, flags)
 		break;
 	}
 
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);

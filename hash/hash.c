@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -39,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash.c,v 12.25 2006/08/24 14:46:04 bostic Exp $
+ * $Id: hash.c,v 12.30 2006/11/01 00:53:21 bostic Exp $
  */
 
 #include "db_config.h"
@@ -52,12 +51,12 @@
 #include "dbinc/mp.h"
 
 static int  __ham_bulk __P((DBC *, DBT *, u_int32_t));
-static int  __ham_c_close __P((DBC *, db_pgno_t, int *));
-static int  __ham_c_del __P((DBC *));
-static int  __ham_c_destroy __P((DBC *));
-static int  __ham_c_get __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
-static int  __ham_c_put __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
-static int  __ham_c_writelock __P((DBC *));
+static int  __hamc_close __P((DBC *, db_pgno_t, int *));
+static int  __hamc_del __P((DBC *));
+static int  __hamc_destroy __P((DBC *));
+static int  __hamc_get __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
+static int  __hamc_put __P((DBC *, DBT *, DBT *, u_int32_t, db_pgno_t *));
+static int  __hamc_writelock __P((DBC *));
 static int  __ham_dup_return __P((DBC *, DBT *, u_int32_t));
 static int  __ham_expand_table __P((DBC *));
 static int  __ham_lookup __P((DBC *,
@@ -105,7 +104,7 @@ __ham_quick_delete(dbc)
 	if ((ret = __ham_get_meta(dbc)) != 0)
 		return (ret);
 
-	if ((ret = __ham_c_writelock(dbc)) == 0)
+	if ((ret = __hamc_writelock(dbc)) == 0)
 		ret = __ham_del_pair(dbc, 1);
 
 	if ((t_ret = __ham_release_meta(dbc)) != 0 && ret == 0)
@@ -116,13 +115,13 @@ __ham_quick_delete(dbc)
 
 /* ****************** CURSORS ********************************** */
 /*
- * __ham_c_init --
+ * __hamc_init --
  *	Initialize the hash-specific portion of a cursor.
  *
- * PUBLIC: int __ham_c_init __P((DBC *));
+ * PUBLIC: int __hamc_init __P((DBC *));
  */
 int
-__ham_c_init(dbc)
+__hamc_init(dbc)
 	DBC *dbc;
 {
 	DB_ENV *dbenv;
@@ -140,30 +139,30 @@ __ham_c_init(dbc)
 	}
 
 	dbc->internal = (DBC_INTERNAL *) new_curs;
-	dbc->c_close = __db_c_close_pp;
-	dbc->c_count = __db_c_count_pp;
-	dbc->c_del = __db_c_del_pp;
-	dbc->c_dup = __db_c_dup_pp;
-	dbc->c_get = __db_c_get_pp;
-	dbc->c_pget = __db_c_pget_pp;
-	dbc->c_put = __db_c_put_pp;
-	dbc->c_am_bulk = __ham_bulk;
-	dbc->c_am_close = __ham_c_close;
-	dbc->c_am_del = __ham_c_del;
-	dbc->c_am_destroy = __ham_c_destroy;
-	dbc->c_am_get = __ham_c_get;
-	dbc->c_am_put = __ham_c_put;
-	dbc->c_am_writelock = __ham_c_writelock;
+	dbc->close = dbc->c_close = __dbc_close_pp;
+	dbc->count = dbc->c_count = __dbc_count_pp;
+	dbc->del = dbc->c_del = __dbc_del_pp;
+	dbc->dup = dbc->c_dup = __dbc_dup_pp;
+	dbc->get = dbc->c_get = __dbc_get_pp;
+	dbc->pget = dbc->c_pget = __dbc_pget_pp;
+	dbc->put = dbc->c_put = __dbc_put_pp;
+	dbc->am_bulk = __ham_bulk;
+	dbc->am_close = __hamc_close;
+	dbc->am_del = __hamc_del;
+	dbc->am_destroy = __hamc_destroy;
+	dbc->am_get = __hamc_get;
+	dbc->am_put = __hamc_put;
+	dbc->am_writelock = __hamc_writelock;
 
 	return (__ham_item_init(dbc));
 }
 
 /*
- * __ham_c_close --
+ * __hamc_close --
  *	Close down the cursor from a single use.
  */
 static int
-__ham_c_close(dbc, root_pgno, rmroot)
+__hamc_close(dbc, root_pgno, rmroot)
 	DBC *dbc;
 	db_pgno_t root_pgno;
 	int *rmroot;
@@ -204,7 +203,7 @@ __ham_c_close(dbc, root_pgno, rmroot)
 			root_pgno = PGNO_INVALID;
 
 		if ((ret =
-		    hcp->opd->c_am_close(hcp->opd, root_pgno, &doroot)) != 0)
+		    hcp->opd->am_close(hcp->opd, root_pgno, &doroot)) != 0)
 			goto out;
 		if (doroot != 0) {
 			if ((ret = __memp_dirty(mpf, &hcp->page,
@@ -227,11 +226,11 @@ done:	if ((t_ret = __ham_item_init(dbc)) != 0 && ret == 0)
 }
 
 /*
- * __ham_c_destroy --
+ * __hamc_destroy --
  *	Cleanup the access method private part of a cursor.
  */
 static int
-__ham_c_destroy(dbc)
+__hamc_destroy(dbc)
 	DBC *dbc;
 {
 	HASH_CURSOR *hcp;
@@ -245,13 +244,13 @@ __ham_c_destroy(dbc)
 }
 
 /*
- * __ham_c_count --
+ * __hamc_count --
  *	Return a count of on-page duplicates.
  *
- * PUBLIC: int __ham_c_count __P((DBC *, db_recno_t *));
+ * PUBLIC: int __hamc_count __P((DBC *, db_recno_t *));
  */
 int
-__ham_c_count(dbc, recnop)
+__hamc_count(dbc, recnop)
 	DBC *dbc;
 	db_recno_t *recnop;
 {
@@ -306,7 +305,7 @@ err:	if ((t_ret = __memp_fput(mpf, hcp->page, 0)) != 0 && ret == 0)
 }
 
 static int
-__ham_c_del(dbc)
+__hamc_del(dbc)
 	DBC *dbc;
 {
 	DB *dbp;
@@ -351,7 +350,7 @@ __ham_c_del(dbc)
 			if ((ret = __ham_replpair(dbc, &repldbt, 0)) == 0) {
 				hcp->dup_tlen -= DUP_SIZE(hcp->dup_len);
 				F_SET(hcp, H_DELETED);
-				ret = __ham_c_update(dbc,
+				ret = __hamc_update(dbc,
 				    DUP_SIZE(hcp->dup_len), 0, 1);
 			}
 		}
@@ -369,14 +368,14 @@ out:	if (hcp->page != NULL) {
 }
 
 /*
- * __ham_c_dup --
+ * __hamc_dup --
  *	Duplicate a hash cursor, such that the new one holds appropriate
  *	locks for the position of the original.
  *
- * PUBLIC: int __ham_c_dup __P((DBC *, DBC *));
+ * PUBLIC: int __hamc_dup __P((DBC *, DBC *));
  */
 int
-__ham_c_dup(orig_dbc, new_dbc)
+__hamc_dup(orig_dbc, new_dbc)
 	DBC *orig_dbc, *new_dbc;
 {
 	HASH_CURSOR *orig, *new;
@@ -399,7 +398,7 @@ __ham_c_dup(orig_dbc, new_dbc)
 }
 
 static int
-__ham_c_get(dbc, key, data, flags, pgnop)
+__hamc_get(dbc, key, data, flags, pgnop)
 	DBC *dbc;
 	DBT *key;
 	DBT *data;
@@ -430,45 +429,43 @@ __ham_c_get(dbc, key, data, flags, pgnop)
 
 	ret = 0;
 	switch (flags) {
+	case DB_PREV_DUP:
+		F_SET(hcp, H_DUPONLY);
+		goto prev;
 	case DB_PREV_NODUP:
 		F_SET(hcp, H_NEXT_NODUP);
 		/* FALLTHROUGH */
 	case DB_PREV:
 		if (IS_INITIALIZED(dbc)) {
-			ret = __ham_item_prev(dbc, lock_type, pgnop);
+prev:			ret = __ham_item_prev(dbc, lock_type, pgnop);
 			break;
 		}
 		/* FALLTHROUGH */
 	case DB_LAST:
 		ret = __ham_item_last(dbc, lock_type, pgnop);
 		break;
+	case DB_NEXT_DUP:
+	case DB_GET_BOTHC:
+		/* cgetchk has already determined that the cursor is set. */
+		F_SET(hcp, H_DUPONLY);
+		goto next;
 	case DB_NEXT_NODUP:
 		F_SET(hcp, H_NEXT_NODUP);
 		/* FALLTHROUGH */
 	case DB_NEXT:
 		if (IS_INITIALIZED(dbc)) {
-			ret = __ham_item_next(dbc, lock_type, pgnop);
+next:			ret = __ham_item_next(dbc, lock_type, pgnop);
 			break;
 		}
 		/* FALLTHROUGH */
 	case DB_FIRST:
 		ret = __ham_item_first(dbc, lock_type, pgnop);
 		break;
-	case DB_NEXT_DUP:
-		/* cgetchk has already determined that the cursor is set. */
-		F_SET(hcp, H_DUPONLY);
-		ret = __ham_item_next(dbc, lock_type, pgnop);
-		break;
 	case DB_SET:
 	case DB_SET_RANGE:
 	case DB_GET_BOTH:
 	case DB_GET_BOTH_RANGE:
 		ret = __ham_lookup(dbc, key, 0, lock_type, pgnop);
-		break;
-	case DB_GET_BOTHC:
-		F_SET(hcp, H_DUPONLY);
-
-		ret = __ham_item_next(dbc, lock_type, pgnop);
 		break;
 	case DB_CURRENT:
 		/* cgetchk has already determined that the cursor is set. */
@@ -480,7 +477,7 @@ __ham_c_get(dbc, key, data, flags, pgnop)
 		ret = __ham_item(dbc, lock_type, pgnop);
 		break;
 	default:
-		ret = __db_unknown_flag(dbenv, "__ham_c_get", flags);
+		ret = __db_unknown_flag(dbenv, "__hamc_get", flags);
 		break;
 	}
 
@@ -496,7 +493,7 @@ __ham_c_get(dbc, key, data, flags, pgnop)
 				ret = __ham_dup_return(dbc, data, flags);
 			break;
 		} else if (!F_ISSET(hcp, H_NOMORE)) {
-			__db_errx(dbenv, "H_NOMORE returned to __ham_c_get");
+			__db_errx(dbenv, "H_NOMORE returned to __hamc_get");
 			ret = EINVAL;
 			break;
 		}
@@ -507,6 +504,7 @@ __ham_c_get(dbc, key, data, flags, pgnop)
 		switch (flags) {
 			case DB_LAST:
 			case DB_PREV:
+			case DB_PREV_DUP:
 			case DB_PREV_NODUP:
 				ret = __memp_fput(mpf, hcp->page, 0);
 				hcp->page = NULL;
@@ -937,7 +935,7 @@ get_space:
 			/*
 			 * Restore cursor to its previous state.  We're past
 			 * the last item in the last bucket, so the next
-			 * DBC->c_get(DB_NEXT) will return DB_NOTFOUND.
+			 * DBC->get(DB_NEXT) will return DB_NOTFOUND.
 			 */
 			cp->bucket--;
 			ret = DB_NOTFOUND;
@@ -970,7 +968,7 @@ get_space:
 }
 
 static int
-__ham_c_put(dbc, key, data, flags, pgnop)
+__hamc_put(dbc, key, data, flags, pgnop)
 	DBC *dbc;
 	DBT *key;
 	DBT *data;
@@ -1061,7 +1059,7 @@ __ham_c_put(dbc, key, data, flags, pgnop)
 		ret = __ham_item(dbc, DB_LOCK_WRITE, pgnop);
 		break;
 	default:
-		ret = __db_unknown_flag(dbp->dbenv, "__ham_c_put", flags);
+		ret = __db_unknown_flag(dbp->dbenv, "__hamc_put", flags);
 		break;
 	}
 
@@ -1541,7 +1539,7 @@ __ham_overwrite(dbc, nval, flags)
 			    (hcp->dup_tlen - nondup_size) + newsize)) {
 				if ((ret = __ham_dup_convert(dbc)) != 0)
 					return (ret);
-				return (hcp->opd->c_am_put(hcp->opd,
+				return (hcp->opd->am_put(hcp->opd,
 				    NULL, nval, flags, NULL));
 			}
 
@@ -1623,7 +1621,7 @@ __ham_overwrite(dbc, nval, flags)
 			    (hcp->dup_tlen - hcp->dup_len) + nval->size)) {
 				if ((ret = __ham_dup_convert(dbc)) != 0)
 					return (ret);
-				return (hcp->opd->c_am_put(hcp->opd,
+				return (hcp->opd->am_put(hcp->opd,
 				    NULL, nval, flags, NULL));
 			}
 
@@ -1696,6 +1694,8 @@ __ham_lookup(dbc, key, sought, mode, pgnop)
 	db_pgno_t *pgnop;
 {
 	DB *dbp;
+	DBT pg_dbt;
+	HASH *t;
 	HASH_CURSOR *hcp;
 	db_pgno_t pgno;
 	u_int32_t tlen;
@@ -1703,6 +1703,7 @@ __ham_lookup(dbc, key, sought, mode, pgnop)
 	u_int8_t *hk, *dk;
 
 	dbp = dbc->dbp;
+	t = dbp->h_internal;
 	hcp = (HASH_CURSOR *)dbc->internal;
 	/*
 	 * Set up cursor so that we're looking for space to add an item
@@ -1730,8 +1731,8 @@ __ham_lookup(dbc, key, sought, mode, pgnop)
 			if (tlen == key->size) {
 				memcpy(&pgno,
 				    HOFFPAGE_PGNO(hk), sizeof(db_pgno_t));
-				if ((ret = __db_moff(dbp, dbc->txn,
-				    key, pgno, tlen, NULL, &match)) != 0)
+				if ((ret = __db_moff(dbp, dbc->txn, key,
+				     pgno, tlen, t->h_compare, &match)) != 0)
 					return (ret);
 				if (match == 0)
 					goto found_key;
@@ -1739,9 +1740,16 @@ __ham_lookup(dbc, key, sought, mode, pgnop)
 			break;
 		case H_KEYDATA:
 			if (key->size ==
-			    LEN_HKEY(dbp, hcp->page, dbp->pgsize, hcp->indx) &&
-			    memcmp(key->data,
-			    HKEYDATA_DATA(hk), key->size) == 0) {
+			    LEN_HKEY(dbp, hcp->page, dbp->pgsize, hcp->indx)) {
+				if (t->h_compare != NULL) {
+					DB_SET_DBT(pg_dbt,
+					    HKEYDATA_DATA(hk),key->size);
+					if (t->h_compare(
+					    dbp, key, &pg_dbt) != 0)
+						break;
+				} else if (memcmp(key->data,
+				     HKEYDATA_DATA(hk), key->size) != 0) 
+				     	break;
 				/* Found the key, check for data type. */
 found_key:			F_SET(hcp, H_OK);
 				dk = H_PAIRDATA(dbp, hcp->page, hcp->indx);
@@ -1757,7 +1765,7 @@ found_key:			F_SET(hcp, H_OK);
 			 * These are errors because keys are never
 			 * duplicated, only data items are.
 			 */
-			return (__db_pgfmt(dbp->dbenv, PGNO(hcp->page)));
+			 /* FALLTHROUGH */
 		default:
 			return (__db_pgfmt(dbp->dbenv, PGNO(hcp->page)));
 		}
@@ -1814,11 +1822,11 @@ __ham_init_dbt(dbenv, dbt, size, bufp, sizep)
  * added (add == 1) or deleted (add == 0).
  * dup indicates if the addition occurred into a duplicate set.
  *
- * PUBLIC: int __ham_c_update
+ * PUBLIC: int __hamc_update
  * PUBLIC:    __P((DBC *, u_int32_t, int, int));
  */
 int
-__ham_c_update(dbc, len, add, is_dup)
+__hamc_update(dbc, len, add, is_dup)
 	DBC *dbc;
 	u_int32_t len;
 	int add, is_dup;
@@ -2074,7 +2082,7 @@ err:
 }
 
 static int
-__ham_c_writelock(dbc)
+__hamc_writelock(dbc)
 	DBC *dbc;
 {
 	DB_LOCK tmp_lock;

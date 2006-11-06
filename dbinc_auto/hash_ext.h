@@ -7,12 +7,12 @@ extern "C" {
 #endif
 
 int __ham_quick_delete __P((DBC *));
-int __ham_c_init __P((DBC *));
-int __ham_c_count __P((DBC *, db_recno_t *));
-int __ham_c_dup __P((DBC *, DBC *));
+int __hamc_init __P((DBC *));
+int __hamc_count __P((DBC *, db_recno_t *));
+int __hamc_dup __P((DBC *, DBC *));
 u_int32_t __ham_call_hash __P((DBC *, u_int8_t *, u_int32_t));
 int __ham_init_dbt __P((DB_ENV *, DBT *, u_int32_t, void **, u_int32_t *));
-int __ham_c_update __P((DBC *, u_int32_t, int, int));
+int __hamc_update __P((DBC *, u_int32_t, int, int));
 int __ham_get_clist __P((DB *, db_pgno_t, u_int32_t, DBC ***));
 int __ham_insdel_log __P((DB *, DB_TXN *, DB_LSN *, u_int32_t, u_int32_t, db_pgno_t, u_int32_t, DB_LSN *, const DBT *, const DBT *));
 int __ham_insdel_read __P((DB_ENV *, void *, __ham_insdel_args **));
@@ -65,6 +65,7 @@ int __ham_dirty_meta __P((DBC *, u_int32_t));
 int __ham_db_create __P((DB *));
 int __ham_db_close __P((DB *));
 int __ham_get_h_ffactor __P((DB *, u_int32_t *));
+int __ham_set_h_compare __P((DB *, int (*)(DB *, const DBT *, const DBT *)));
 int __ham_get_h_nelem __P((DB *, u_int32_t *));
 int __ham_open __P((DB *, DB_TXN *, const char * name, db_pgno_t, u_int32_t));
 int __ham_metachk __P((DB *, const char *, HMETA *));

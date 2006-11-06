@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_fput.c,v 12.22 2006/09/07 20:05:33 bostic Exp $
+ * $Id: mp_fput.c,v 12.24 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -267,5 +266,6 @@ __memp_reset_lru(dbenv, infop)
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 	}
 
+	COMPQUIET(dbenv, NULL);
 	return (0);
 }

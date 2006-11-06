@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: env009.tcl,v 12.4 2006/09/12 18:22:37 carol Exp $
+# $Id: env009.tcl,v 12.5 2006/11/01 00:53:53 bostic Exp $
 #
 # TEST	env009
 # TEST	Test calls to all the various stat functions.  We have several

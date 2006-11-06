@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2005,2006 Oracle.  All rights reserved.
 #
-# $Id: test114.tcl,v 12.10 2006/08/24 14:46:41 bostic Exp $
+# $Id: test114.tcl,v 12.11 2006/11/01 00:54:02 bostic Exp $
 #
 # TEST	test114
 # TEST	Test database compaction with overflows.

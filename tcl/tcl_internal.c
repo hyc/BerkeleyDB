@@ -1,16 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_internal.c,v 12.13 2006/08/24 14:46:33 bostic Exp $
+ * $Id: tcl_internal.c,v 12.18 2006/11/01 00:53:51 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <tcl.h>
 #endif
 #include "dbinc/tcl_db.h"
@@ -151,8 +150,8 @@ _DeleteInfo(p)
 	}
 	if (p->i_errpfx != NULL)
 		__os_free(NULL, p->i_errpfx);
-	if (p->i_btcompare != NULL)
-		Tcl_DecrRefCount(p->i_btcompare);
+	if (p->i_compare != NULL)
+		Tcl_DecrRefCount(p->i_compare);
 	if (p->i_dupcompare != NULL)
 		Tcl_DecrRefCount(p->i_dupcompare);
 	if (p->i_hashproc != NULL)
@@ -589,7 +588,7 @@ _EventFunc(dbenv, event, info)
 		 * For now, abort.
 		 */
 		__db_errx(dbenv, "Tcl event failure");
-		abort();
+		__os_abort();
 	}
 
 	Tcl_SetObjResult(interp, origobj);
@@ -693,6 +692,13 @@ _GetFlagsList(interp, flags, fnp)
 	int result;
 
 	newlist = Tcl_NewObj();
+
+	/* 
+	 * If the Berkeley DB library wasn't compiled with statistics, then
+	 * we may get a NULL reference.
+	 */
+	if (fnp == NULL)
+		return (newlist);
 
 	/*
 	 * Append a Tcl_Obj containing each pertinent flag string to the

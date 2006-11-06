@@ -1,4 +1,4 @@
-<!--$Id: db_open.so,v 10.119 2006/09/13 14:30:52 mjc Exp $-->
+<!--$Id: db_open.so,v 10.120 2006/10/18 19:54:36 bostic Exp $-->
 <!--Copyright 1997-2006 by Oracle Corporation-->
 <!--All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
@@ -212,8 +212,8 @@ to grant a lock in the allowed time, the Db::open method will fail and
 either return <a href="../ref/program/errorret.html#DB_LOCK_NOTGRANTED">DB_LOCK_NOTGRANTED</a> or
 throw a <a href="../api_cxx/lockng_class.html">DbLockNotGrantedException</a> exception.</p>
 <hr size=1 noshade>
-<h3>Description: Db::get_database</h3>
-<p>The Db::get_database method returns the current filename and database
+<h3>Description: Db::get_dbname</h3>
+<p>The Db::get_dbname method returns the current filename and database
 name.</p>
 <h3>Parameters</h3>
 <dl compact>
@@ -222,9 +222,9 @@ a pointer to the current filename is copied.
 <dt><b>dbnamep</b><dd>The <b>dbnamep</b> parameter references memory into which
 a pointer to the current database name is copied. 
 </dl>
-<p>The Db::get_database method may be called at any time during the life of the
+<p>The Db::get_dbname method may be called at any time during the life of the
 application.</p>
-<p>The Db::get_database method
+<p>The Db::get_dbname method
 either returns a non-zero error value
 or throws an exception that encapsulates a non-zero error value on
 failure, and returns 0 on success.

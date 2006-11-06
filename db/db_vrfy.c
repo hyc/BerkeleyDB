@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: db_vrfy.c,v 12.29 2006/09/07 20:05:26 bostic Exp $
+ * $Id: db_vrfy.c,v 12.32 2006/11/01 00:52:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -570,6 +569,7 @@ __db_vrfy_pagezero(dbp, vdp, fhp, flags)
 
 	/*
 	 * 28-31: Free list page number.
+	 * 32-35: Last page in database file.
 	 * We'll verify its sensibility when we do inter-page
 	 * verification later;  for now, just store it.
 	 */
@@ -1336,6 +1336,14 @@ __db_vrfy_meta(dbp, vdp, meta, pgno, flags)
 		    (u_long)pgno, (u_long)meta->free));
 	}
 
+	if (pgno == PGNO_BASE_MD && meta->last_pgno != vdp->last_pgno) {
+		isbad = 1;
+		EPRINT((dbenv,
+		    "Page %lu: last_pgno is not correct: %lu != %lu",
+		    (u_long)pgno,
+		    (u_long)meta->last_pgno, (u_long)vdp->last_pgno));
+	}
+
 	/*
 	 * We have now verified the common fields of the metadata page.
 	 * Clear the flag that told us they had been incompletely checked.
@@ -1450,7 +1458,7 @@ __db_vrfy_subdbs(dbp, vdp, dbname, flags)
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
-	while ((ret = __db_c_get(dbc, &key, &data, DB_NEXT)) == 0) {
+	while ((ret = __dbc_get(dbc, &key, &data, DB_NEXT)) == 0) {
 		if (data.size != sizeof(db_pgno_t)) {
 			EPRINT((dbenv,
 			    "Subdatabase entry not page-number size"));
@@ -1507,7 +1515,7 @@ __db_vrfy_subdbs(dbp, vdp, dbname, flags)
 	if (ret == DB_NOTFOUND)
 		ret = 0;
 
-err:	if (dbc != NULL && (t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+err:	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if ((t_ret = __db_close(mdbp, NULL, 0)) != 0 && ret == 0)
@@ -1692,7 +1700,7 @@ __db_vrfy_orderchkonly(dbp, vdp, name, subdb, flags)
 		break;
 	}
 
-err:	if (pgsc != NULL && (t_ret = __db_c_close(pgsc)) != 0 && ret == 0)
+err:	if (pgsc != NULL && (t_ret = __dbc_close(pgsc)) != 0 && ret == 0)
 		ret = t_ret;
 	if (pgset != NULL &&
 	    (t_ret = __db_close(pgset, NULL, 0)) != 0 && ret == 0)
@@ -1899,7 +1907,7 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 		ret = t_ret;
 
 	/* Re-open the cursor so we traverse the database again. */
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 	dbc = NULL;
 
@@ -1943,7 +1951,7 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 	if (t_ret != 0 && ret == 0)
 		ret = t_ret;
 
-	if ((t_ret = __db_c_close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	__os_free(dbenv, ovflbuf);
@@ -2302,7 +2310,7 @@ __db_salvage_subdbs(dbp, vdp, handle, callback, flags, hassubsp)
 	if (t_ret != DB_NOTFOUND && ret == 0)
 		ret = t_ret;
 
-err:	if (pgsc != NULL && (t_ret = __db_c_close(pgsc)) != 0 && ret == 0)
+err:	if (pgsc != NULL && (t_ret = __dbc_close(pgsc)) != 0 && ret == 0)
 		ret = t_ret;
 	if (pgset != NULL &&
 	    (t_ret = __db_close(pgset, NULL, 0)) != 0 && ret ==0)
@@ -2473,7 +2481,7 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 		if (ret != DB_NOTFOUND)
 			goto err;
 
-		if ((ret = __db_c_close(pgsc)) != 0)
+		if ((ret = __dbc_close(pgsc)) != 0)
 			goto err;
 		if ((ret = __db_prfooter(handle, callback)) != 0)
 			goto err;

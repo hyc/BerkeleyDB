@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_stat.c,v 12.12 2006/08/24 14:44:45 bostic Exp $
+ * $Id: bt_stat.c,v 12.13 2006/11/01 00:51:57 bostic Exp $
  */
 
 #include "db_config.h"

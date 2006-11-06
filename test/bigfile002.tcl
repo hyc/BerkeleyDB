@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: bigfile002.tcl,v 12.5 2006/08/24 14:46:34 bostic Exp $
+# $Id: bigfile002.tcl,v 12.6 2006/11/01 00:53:53 bostic Exp $
 #
 # TEST	bigfile002
 # TEST	This one should be faster and not require so much disk space,

@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -39,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash.h,v 12.5 2006/08/24 14:45:29 bostic Exp $
+ * $Id: hash.h,v 12.7 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef	_DB_HASH_H_
@@ -54,8 +53,9 @@ typedef struct hash_t {
 	db_pgno_t meta_pgno;	/* Page number of the meta data page. */
 	u_int32_t h_ffactor;	/* Fill factor. */
 	u_int32_t h_nelem;	/* Number of elements. */
-				/* Hash function. */
+				/* Hash and compare functions. */
 	u_int32_t (*h_hash) __P((DB *, const void *, u_int32_t));
+	int (*h_compare) __P((DB *, const DBT *, const DBT *));
 } HASH;
 
 /* Cursor structure definitions. */

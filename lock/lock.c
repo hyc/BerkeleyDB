@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock.c,v 12.30 2006/08/24 14:46:10 bostic Exp $
+ * $Id: lock.c,v 12.32 2006/11/01 00:53:33 bostic Exp $
  */
 
 #include "db_config.h"
@@ -1126,7 +1125,7 @@ __lock_put_internal(lt, lockp, obj_ndx, flags)
 		SH_TAILQ_REMOVE(
 		    &lt->obj_tab[obj_ndx], sh_obj, links, __db_lockobj);
 		if (sh_obj->lockobj.size > sizeof(sh_obj->objdata))
-			__db_shalloc_free(&lt->reginfo,
+			__env_alloc_free(&lt->reginfo,
 			    SH_DBT_PTR(&sh_obj->lockobj));
 		SH_TAILQ_INSERT_HEAD(
 		    &region->free_objs, sh_obj, links, __db_lockobj);
@@ -1250,12 +1249,12 @@ __lock_getobj(lt, obj, ndx, create, retp)
 
 		/*
 		 * If we can fit this object in the structure, do so instead
-		 * of shalloc-ing space for it.
+		 * of alloc-ing space for it.
 		 */
 		if (obj->size <= sizeof(sh_obj->objdata))
 			p = sh_obj->objdata;
 		else if ((ret =
-		    __db_shalloc(&lt->reginfo, obj->size, 0, &p)) != 0) {
+		    __env_alloc(&lt->reginfo, obj->size, &p)) != 0) {
 			__db_errx(dbenv, "No space for lock object storage");
 			goto err;
 		}

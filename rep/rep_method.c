@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_method.c,v 12.46 2006/09/09 14:19:20 bostic Exp $
+ * $Id: rep_method.c,v 12.52 2006/11/01 00:53:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -38,6 +37,7 @@ __rep_dbenv_create(dbenv)
 		return (ret);
 
 	db_rep->eid = DB_EID_INVALID;
+	db_rep->bytes = REP_DEFAULT_THROTTLE;
 	db_rep->request_gap = DB_REP_REQUEST_GAP;
 	db_rep->max_gap = DB_REP_MAX_GAP;
 
@@ -130,6 +130,7 @@ __rep_set_config(dbenv, which, on)
 {
 	DB_LOG *dblp;
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REP *rep;
 	REP_BULK bulk;
@@ -151,6 +152,7 @@ __rep_set_config(dbenv, which, on)
 	    dbenv, db_rep->region, "DB_ENV->rep_set_config", DB_INIT_REP);
 
 	mapped = 0;
+	ENV_ENTER(dbenv, ip);
 	__rep_config_map(dbenv, &which, &mapped);
 	if (REP_ON(dbenv)) {
 		rep = db_rep->region;
@@ -199,6 +201,7 @@ __rep_set_config(dbenv, which, on)
 		else
 			FLD_CLR(db_rep->config, mapped);
 	}
+	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
@@ -238,11 +241,9 @@ __rep_config_map(dbenv, inflagsp, outflagsp)
  * the library.  Rep_start checks the following:
  *
  * rep->msg_th - this is the count of threads currently in rep_process_message
- * rep->lockout_th - this is set if a thread is in rep_start or other
- *  operation requiring lockout with rep_proc_msg threads.
  * rep->handle_cnt - number of threads actively using a dbp in library.
  * rep->txn_cnt - number of active txns.
- * REP_F_READY - Replication flag that indicates that we wish to run
+ * REP_F_READY_* - Replication flag that indicates that we wish to run
  * recovery, and want to prohibit new transactions from entering and cause
  * existing ones to return immediately (with a DB_LOCK_DEADLOCK error).
  *
@@ -265,14 +266,12 @@ __rep_start(dbenv, dbt, flags)
 	DB_LOG *dblp;
 	DB_LSN lsn;
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REP *rep;
 	u_int32_t oldvers, pending_event, repflags;
 	int announce, init_db, locked, redo_prepared, ret, role_chg;
 	int t_ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	PANIC_CHECK(dbenv);
 	ENV_REQUIRES_CONFIG_XX(
@@ -303,6 +302,8 @@ __rep_start(dbenv, dbt, flags)
 		return (EINVAL);
 	}
 
+	ENV_ENTER(dbenv, ip);
+
 	/*
 	 * In order to correctly check log files for old versions, we
 	 * need to flush the logs.
@@ -318,11 +319,11 @@ __rep_start(dbenv, dbt, flags)
 	 * its work and have this thread simply return.  Similarly,
 	 * if a thread is in a critical lockout section we return.
 	 */
-	if (rep->lockout_th != 0) {
+	if (F_ISSET(rep, REP_F_READY_MSG)) {
 		/*
 		 * There is already someone in lockout.  Return.
 		 */
-		RPRINT(dbenv, (dbenv, &mb, "Thread already in lockout"));
+		RPRINT(dbenv, (dbenv, "Thread already in lockout"));
 		goto err;
 	} else if ((ret = __rep_lockout_msg(dbenv, rep, 0)) != 0)
 		goto errunlock;
@@ -390,18 +391,19 @@ __rep_start(dbenv, dbt, flags)
 			}
 			if (rep->egen <= rep->gen)
 				rep->egen = rep->gen + 1;
-			RPRINT(dbenv, (dbenv, &mb,
+			RPRINT(dbenv, (dbenv,
 			    "New master gen %lu, egen %lu",
 			    (u_long)rep->gen, (u_long)rep->egen));
 		}
 		rep->master_id = rep->eid;
 		/*
 		 * Clear out almost everything, and then set MASTER.  Leave
-		 * READY alone in case we did a lockout above; we'll clear it in
-		 * a moment (below), once we've written the txn_recycle into the
-		 * log.
+		 * READY_* alone in case we did a lockout above;
+		 * we'll clear it in a moment (below), once we've written
+		 * the txn_recycle into the log.
 		 */
-		repflags = F_ISSET(rep, REP_F_READY);
+		repflags = F_ISSET(rep, REP_F_READY_API | REP_F_READY_MSG |
+		    REP_F_READY_OP);
 		FLD_SET(repflags, REP_F_MASTER);
 		rep->flags = repflags;
 
@@ -417,14 +419,14 @@ __rep_start(dbenv, dbt, flags)
 		 * recovery table since it contains pointers to old
 		 * recovery functions.
 		 */
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "rep_start: Old log version was %lu", (u_long)oldvers));
 		if (lp->persist.version != DB_LOGVERSION) {
 			if ((ret = __env_init_rec(dbenv, DB_LOGVERSION)) != 0)
 				goto errunlock;
 		}
 		rep->version = DB_REPVERSION;
-		rep->lockout_th = 0;
+		F_CLR(rep, REP_F_READY_MSG);
 		REP_SYSTEM_UNLOCK(dbenv);
 		LOG_SYSTEM_LOCK(dbenv);
 		lsn = lp->lsn;
@@ -448,8 +450,7 @@ __rep_start(dbenv, dbt, flags)
 				ret = t_ret;
 			DB_ENV_TEST_RECYCLE(dbenv, ret);
 			REP_SYSTEM_LOCK(dbenv);
-			F_CLR(rep, REP_F_READY);
-			rep->in_recovery = 0;
+			F_CLR(rep, REP_F_READY_API | REP_F_READY_OP);
 			locked = 0;
 			REP_SYSTEM_UNLOCK(dbenv);
 		}
@@ -475,12 +476,12 @@ __rep_start(dbenv, dbt, flags)
 			init_db = 1;
 		}
 		/* Zero out everything except recovery and tally flags. */
-		repflags = F_ISSET(rep, REP_F_NOARCHIVE |
+		repflags = F_ISSET(rep, REP_F_NOARCHIVE | REP_F_READY_MSG |
 		    REP_F_RECOVER_MASK | REP_F_TALLY);
 		FLD_SET(repflags, REP_F_CLIENT);
 		if ((ret = __log_get_oldversion(dbenv, &oldvers)) != 0)
 			goto errunlock;
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "rep_start: Found old version log %d", oldvers));
 		if (oldvers >= DB_LOGVERSION_42) {
 			__log_set_version(dbenv, oldvers);
@@ -510,10 +511,9 @@ __rep_start(dbenv, dbt, flags)
 		if (role_chg)
 			pending_event = DB_EVENT_REP_CLIENT;
 		REP_SYSTEM_LOCK(dbenv);
-		rep->lockout_th = 0;
+		F_CLR(rep, REP_F_READY_MSG);
 		if (locked) {
-			F_CLR(rep, REP_F_READY);
-			rep->in_recovery = 0;
+			F_CLR(rep, REP_F_READY_API | REP_F_READY_OP);
 			locked = 0;
 		}
 		REP_SYSTEM_UNLOCK(dbenv);
@@ -526,12 +526,10 @@ __rep_start(dbenv, dbt, flags)
 		 * will allow the client to either perform recovery or
 		 * simply join in.
 		 */
-		if (announce) {
-			if ((ret = __dbt_usercopy(dbenv, dbt)) != 0)
-				goto err;
+		if (announce)
 			(void)__rep_send_message(dbenv,
 			    DB_EID_BROADCAST, REP_NEWCLIENT, NULL, dbt, 0, 0);
-		} else
+		else
 			(void)__rep_send_message(dbenv,
 			    DB_EID_BROADCAST, REP_ALIVE_REQ, NULL, NULL, 0, 0);
 	}
@@ -539,23 +537,21 @@ __rep_start(dbenv, dbt, flags)
 	if (0) {
 		/*
 		 * We have separate labels for errors.  If we're returning an
-		 * error before we've set lockout_th, we use 'err'.  If
+		 * error before we've set REP_F_READY_MSG, we use 'err'.  If
 		 * we are erroring while holding the region mutex, then we use
-		 * 'errunlock' label.  If we're erroring without holding the rep
+		 * 'errunlock' label.  If we error without holding the rep
 		 * mutex we must use 'errlock'.
 		 */
 DB_TEST_RECOVERY_LABEL
 errlock:	REP_SYSTEM_LOCK(dbenv);
-errunlock:	rep->lockout_th = 0;
-		if (locked) {
-			F_CLR(rep, REP_F_READY);
-			rep->in_recovery = 0;
-		}
+errunlock:	F_CLR(rep, REP_F_READY_MSG);
+		if (locked)
+			F_CLR(rep, REP_F_READY_API | REP_F_READY_OP);
 err:		REP_SYSTEM_UNLOCK(dbenv);
 	}
 	if (pending_event != DB_EVENT_NO_SUCH_EVENT)
 		DB_EVENT(dbenv, pending_event, NULL);
-	__dbt_userfree(dbenv, dbt, NULL, NULL);
+	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
@@ -782,7 +778,7 @@ __rep_restore_prepared(dbenv)
 	 */
 	memset(&rec, 0, sizeof(DBT));
 	if ((ret = __txn_getckp(dbenv, &lsn)) == 0) {
-		if ((ret = __log_c_get(logc, &lsn, &rec, DB_SET)) != 0)  {
+		if ((ret = __logc_get(logc, &lsn, &rec, DB_SET)) != 0)  {
 			__db_errx(dbenv,
 			    "Checkpoint record at LSN [%lu][%lu] not found",
 			    (u_long)lsn.file, (u_long)lsn.offset);
@@ -809,13 +805,13 @@ __rep_restore_prepared(dbenv)
 			goto err;
 		}
 
-		if ((ret = __log_c_get(logc, &ckp_lsn, &rec, DB_SET)) != 0) {
+		if ((ret = __logc_get(logc, &ckp_lsn, &rec, DB_SET)) != 0) {
 			__db_errx(dbenv,
 			    "Checkpoint LSN record [%lu][%lu] not found",
 			    (u_long)ckp_lsn.file, (u_long)ckp_lsn.offset);
 			goto err;
 		}
-	} else if ((ret = __log_c_get(logc, &lsn, &rec, DB_FIRST)) != 0) {
+	} else if ((ret = __logc_get(logc, &lsn, &rec, DB_FIRST)) != 0) {
 		if (ret == DB_NOTFOUND) {
 			/* An empty log means no PBNYC txns. */
 			ret = 0;
@@ -838,7 +834,7 @@ __rep_restore_prepared(dbenv)
 		    (u_int8_t *)rec.data + sizeof(u_int32_t), sizeof(low_txn));
 		if (low_txn != 0)
 			break;
-	} while ((ret = __log_c_get(logc, &lsn, &rec, DB_NEXT)) == 0);
+	} while ((ret = __logc_get(logc, &lsn, &rec, DB_NEXT)) == 0);
 
 	/* If there are no txns, there are no PBNYC txns. */
 	if (ret == DB_NOTFOUND) {
@@ -848,7 +844,7 @@ __rep_restore_prepared(dbenv)
 		goto err;
 
 	/* Now, the high txnid. */
-	if ((ret = __log_c_get(logc, &lsn, &rec, DB_LAST)) != 0) {
+	if ((ret = __logc_get(logc, &lsn, &rec, DB_LAST)) != 0) {
 		/*
 		 * Note that DB_NOTFOUND is unacceptable here because we
 		 * had to have looked at some log record to get this far.
@@ -862,7 +858,7 @@ __rep_restore_prepared(dbenv)
 		    (u_int8_t *)rec.data + sizeof(u_int32_t), sizeof(hi_txn));
 		if (hi_txn != 0)
 			break;
-	} while ((ret = __log_c_get(logc, &lsn, &rec, DB_PREV)) == 0);
+	} while ((ret = __logc_get(logc, &lsn, &rec, DB_PREV)) == 0);
 	if (ret == DB_NOTFOUND) {
 		ret = 0;
 		goto done;
@@ -884,9 +880,9 @@ __rep_restore_prepared(dbenv)
 	 * Since all PBNYC txns still held locks on the old master and
 	 * were isolated, this should be safe.
 	 */
-	for (ret = __log_c_get(logc, &lsn, &rec, DB_LAST);
+	for (ret = __logc_get(logc, &lsn, &rec, DB_LAST);
 	    ret == 0 && LOG_COMPARE(&lsn, &ckp_lsn) > 0;
-	    ret = __log_c_get(logc, &lsn, &rec, DB_PREV)) {
+	    ret = __logc_get(logc, &lsn, &rec, DB_PREV)) {
 		memcpy(&rectype, rec.data, sizeof(rectype));
 		switch (rectype) {
 		case DB___txn_regop:
@@ -953,7 +949,7 @@ __rep_restore_prepared(dbenv)
 		ret = 0;
 
 done:
-err:	t_ret = __log_c_close(logc);
+err:	t_ret = __logc_close(logc);
 
 	if (txninfo != NULL)
 		__db_txnlist_end(dbenv, txninfo);
@@ -1011,6 +1007,7 @@ __rep_set_limit(dbenv, gbytes, bytes)
 	u_int32_t gbytes, bytes;
 {
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	REP *rep;
 
 	db_rep = dbenv->rep_handle;
@@ -1024,10 +1021,12 @@ __rep_set_limit(dbenv, gbytes, bytes)
 
 	if (REP_ON(dbenv)) {
 		rep = db_rep->region;
+		ENV_ENTER(dbenv, ip);
 		REP_SYSTEM_LOCK(dbenv);
 		rep->gbytes = gbytes;
 		rep->bytes = bytes;
 		REP_SYSTEM_UNLOCK(dbenv);
+		ENV_LEAVE(dbenv, ip);
 	} else {
 		db_rep->gbytes = gbytes;
 		db_rep->bytes = bytes;
@@ -1329,6 +1328,7 @@ __rep_set_transport(dbenv, eid, f_send)
 	    int, u_int32_t));
 {
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	REP *rep;
 
 	if (f_send == NULL) {
@@ -1348,9 +1348,11 @@ __rep_set_transport(dbenv, eid, f_send)
 
 	if (REP_ON(dbenv)) {
 		rep = db_rep->region;
+		ENV_ENTER(dbenv, ip);
 		REP_SYSTEM_LOCK(dbenv);
 		rep->eid = eid;
 		REP_SYSTEM_UNLOCK(dbenv);
+		ENV_LEAVE(dbenv, ip);
 	} else
 		db_rep->eid = eid;
 	return (0);
@@ -1370,11 +1372,13 @@ __rep_flush(dbenv)
 	DBT rec;
 	DB_LOGC *logc;
 	DB_LSN lsn;
+	DB_THREAD_INFO *ip;
 	int ret, t_ret;
 
 	PANIC_CHECK(dbenv);
 	ENV_REQUIRES_CONFIG_XX(
 	    dbenv, rep_handle, "DB_ENV->rep_flush", DB_INIT_REP);
+	ENV_ENTER(dbenv, ip);
 
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		return (ret);
@@ -1382,14 +1386,15 @@ __rep_flush(dbenv)
 	memset(&rec, 0, sizeof(rec));
 	memset(&lsn, 0, sizeof(lsn));
 
-	if ((ret = __log_c_get(logc, &lsn, &rec, DB_LAST)) != 0)
+	if ((ret = __logc_get(logc, &lsn, &rec, DB_LAST)) != 0)
 		goto err;
 
 	(void)__rep_send_message(dbenv,
 	    DB_EID_BROADCAST, REP_LOG, &lsn, &rec, 0, 0);
 
-err:	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
+	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
 
@@ -1408,6 +1413,7 @@ __rep_sync(dbenv, flags)
 	DB_LOG *dblp;
 	DB_LSN lsn;
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REP *rep;
 	int master;
@@ -1424,6 +1430,8 @@ __rep_sync(dbenv, flags)
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
 
+	ENV_ENTER(dbenv, ip);
+
 	/*
 	 * Simple cases.  If we're not in the DELAY state we have nothing
 	 * to do.  If we don't know who the master is, send a MASTER_REQ.
@@ -1437,7 +1445,7 @@ __rep_sync(dbenv, flags)
 		REP_SYSTEM_UNLOCK(dbenv);
 		(void)__rep_send_message(dbenv, DB_EID_BROADCAST,
 		    REP_MASTER_REQ, NULL, NULL, 0, 0);
-		return (0);
+		goto out;
 	}
 	/*
 	 * We want to hold the rep mutex to test and then clear the
@@ -1446,7 +1454,7 @@ __rep_sync(dbenv, flags)
 	 */
 	if (!F_ISSET(rep, REP_F_DELAY)) {
 		REP_SYSTEM_UNLOCK(dbenv);
-		return (0);
+		goto out;
 	}
 
 	/*
@@ -1468,6 +1476,8 @@ __rep_sync(dbenv, flags)
 		type = REP_VERIFY_REQ;
 	(void)__rep_send_message(dbenv, master, type, &lsn, NULL, 0,
 	    DB_REP_ANYWHERE);
+
+out:	ENV_LEAVE(dbenv, ip);
 	return (0);
 }
 

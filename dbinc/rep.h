@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep.h,v 12.57 2006/09/12 01:06:35 alanb Exp $
+ * $Id: rep.h,v 12.64 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef _DB_REP_H_
@@ -96,48 +95,30 @@ extern "C" {
 #define	DB_LOGVERSION_43	10
 #define	DB_LOGVERSION_44	11
 #define	DB_LOGVERSION_45	12
+#define	DB_LOGVERSION_46	12
 #define	DB_REPVERSION_INVALID	0
 #define	DB_REPVERSION_42	1
 #define	DB_REPVERSION_43	2
 #define	DB_REPVERSION_44	3
 #define	DB_REPVERSION_45	3
+#define	DB_REPVERSION_46	3
 #define	DB_REPVERSION	3
 
 /*
- * REP_PRINT_MESSAGE
- *	A function to print a debugging message.
- *
  * RPRINT
- *	A macro for debug printing.  Takes as an arg the arg set for __db_msg.
- *
- * !!! This function assumes a local DB_MSGBUF variable called 'mb'.
+ * REP_PRINT_MESSAGE
+ *	Macros for verbose replication messages.
  */
-#ifdef DIAGNOSTIC
-#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str, fl)			\
-	__rep_print_message(dbenv, eid, rp, str, fl)
-#define	RPRINT(e, x) do {						\
-	if (FLD_ISSET((e)->verbose, DB_VERB_REPLICATION)) {		\
-		DB_MSGBUF_INIT(&mb);					\
-		if ((e)->db_errpfx != NULL)				\
-			__db_msgadd((e), &mb, "%s: ", (e)->db_errpfx);	\
-		else if (REP_ON(e)) {					\
-			REP *_r = (e)->rep_handle->region;		\
-			if (F_ISSET(_r, REP_F_CLIENT))			\
-				__db_msgadd((e), &mb, "CLIENT: ");	\
-			else if (F_ISSET((_r), REP_F_MASTER))		\
-				__db_msgadd((e), &mb, "MASTER: ");	\
-			else						\
-				__db_msgadd((e), &mb, "REP_UNDEF: ");	\
-		} else							\
-			__db_msgadd((e), &mb, "REP_UNDEF: ");		\
-		__db_msgadd x;						\
-		DB_MSGBUF_FLUSH((e), &mb);				\
+#define	RPRINT(dbenv, x) do {						\
+	if (FLD_ISSET((dbenv)->verbose, DB_VERB_REPLICATION)) {		\
+		__rep_print x;						\
 	}								\
 } while (0)
-#else
-#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str, fl)
-#define	RPRINT(e, x)
-#endif
+#define	REP_PRINT_MESSAGE(dbenv, eid, rp, str, fl) do {			\
+	if (FLD_ISSET((dbenv)->verbose, DB_VERB_REPLICATION)) {		\
+		__rep_print_message(dbenv, eid, rp, str, fl);		\
+	}								\
+} while (0)
 
 /*
  * Election gen file name
@@ -187,6 +168,7 @@ typedef struct __rep {
 	int		priority;	/* My priority in an election. */
 	int		config_nsites;
 	db_timeout_t	elect_timeout;
+#define	REP_DEFAULT_THROTTLE	(10 * MEGABYTE) /* Default value is < 1Gig. */
 	u_int32_t	gbytes;		/* Limit on data sent in single... */
 	u_int32_t	bytes;		/* __rep_process_message call. */
 #define	DB_REP_REQUEST_GAP	4
@@ -196,12 +178,9 @@ typedef struct __rep {
 	u_int32_t	max_gap;	/* Maximum number of records before
 					 * requesting a missing log record. */
 	/* Status change information */
-	int		elect_th;	/* A thread is in rep_elect. */
 	u_int32_t	msg_th;		/* Number of callers in rep_proc_msg. */
-	int		lockout_th;	/* A thread is in msg lockout. */
 	u_int32_t	handle_cnt;	/* Count of handles in library. */
 	u_int32_t	op_cnt;		/* Multi-step operation count.*/
-	int		in_recovery;	/* Running recovery now. */
 
 	/* Backup information. */
 	u_int32_t	nfiles;		/* Number of files we have info on. */
@@ -244,27 +223,35 @@ typedef struct __rep {
 
 #define	REP_F_CLIENT		0x00001		/* Client replica. */
 #define	REP_F_DELAY		0x00002		/* Delaying client sync-up. */
-#define	REP_F_EPHASE1		0x00004		/* In phase 1 of election. */
-#define	REP_F_EPHASE2		0x00008		/* In phase 2 of election. */
-#define	REP_F_MASTER		0x00010		/* Master replica. */
-#define	REP_F_MASTERELECT	0x00020		/* Master elect */
-#define	REP_F_NOARCHIVE		0x00040		/* Rep blocks log_archive */
-#define	REP_F_READY		0x00080		/* Wait for txn_cnt to be 0. */
-#define	REP_F_RECOVER_LOG	0x00100		/* In recovery - log. */
-#define	REP_F_RECOVER_PAGE	0x00200		/* In recovery - pages. */
-#define	REP_F_RECOVER_UPDATE	0x00400		/* In recovery - files. */
-#define	REP_F_RECOVER_VERIFY	0x00800		/* In recovery - verify. */
-#define	REP_F_TALLY		0x01000		/* Tallied vote before elect. */
+#define	REP_F_EGENUPDATE	0x00004		/* Egen updated by ALIVE msg. */
+#define	REP_F_EPHASE1		0x00008		/* In phase 1 of election. */
+#define	REP_F_EPHASE2		0x00010		/* In phase 2 of election. */
+#define	REP_F_INREPELECT	0x00020		/* Thread in rep_elect. */
+#define	REP_F_MASTER		0x00040		/* Master replica. */
+#define	REP_F_MASTERELECT	0x00080		/* Master elect */
+#define	REP_F_NOARCHIVE		0x00100		/* Rep blocks log_archive */
+#define	REP_F_READY_API		0x00200		/* Need handle_cnt to be 0. */
+#define	REP_F_READY_MSG		0x00400		/* Wait for msg_th to be 0. */
+#define	REP_F_READY_OP		0x00800		/* Wait for txn_cnt to be 0. */
+#define	REP_F_RECOVER_LOG	0x01000		/* In recovery - log. */
+#define	REP_F_RECOVER_PAGE	0x02000		/* In recovery - pages. */
+#define	REP_F_RECOVER_UPDATE	0x04000		/* In recovery - files. */
+#define	REP_F_RECOVER_VERIFY	0x08000		/* In recovery - verify. */
+#define	REP_F_TALLY		0x10000		/* Tallied vote before elect. */
 	u_int32_t	flags;
 } REP;
 
 /*
  * Recovery flag mask to easily check any/all recovery bits.  That is
- * REP_F_READY and all REP_F_RECOVER*.  This must change if the values
- * of the flags change.
+ * REP_F_READY_{API|OP} and all REP_F_RECOVER*.  This must change if the values
+ * of the flags change.  NOTE:  We do not include REP_F_READY_MSG in
+ * this mask because it is used frequently in non-recovery related
+ * areas and we want to manipulate it separately (see especially
+ * in __rep_new_master).
  */
 #define	REP_F_RECOVER_MASK						\
-    (REP_F_READY | REP_F_RECOVER_LOG | REP_F_RECOVER_PAGE |		\
+    (REP_F_READY_API | REP_F_READY_OP |					\
+     REP_F_RECOVER_LOG | REP_F_RECOVER_PAGE |				\
      REP_F_RECOVER_UPDATE | REP_F_RECOVER_VERIFY)
 
 #define	IN_ELECTION(R)							\
@@ -450,9 +437,10 @@ typedef struct {
 #define	DB_LOG_RESEND_42_44	0x40
 
 #define	REPCTL_ELECTABLE	0x01	/* Upgraded client is electable. */
-#define	REPCTL_INIT		0x02	/* Internal init message. */
-#define	REPCTL_PERM		DB_LOG_PERM_42_44
-#define	REPCTL_RESEND		DB_LOG_RESEND_42_44
+#define	REPCTL_FLUSH		0x02	/* Record should be flushed. */
+#define	REPCTL_INIT		0x04	/* Internal init message. */
+#define	REPCTL_PERM		DB_LOG_PERM_42_44	/* 0x20 */
+#define	REPCTL_RESEND		DB_LOG_RESEND_42_44	/* 0x40 */
 	u_int32_t	flags;		/* log_put flag value. */
 } REP_CONTROL;
 

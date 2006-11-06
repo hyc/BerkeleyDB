@@ -1,16 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_db.c,v 12.23 2006/08/24 14:46:32 bostic Exp $
+ * $Id: tcl_db.c,v 12.26 2006/11/01 00:53:51 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <tcl.h>
 #endif
 #include "dbinc/db_page.h"
@@ -1584,10 +1583,10 @@ tcl_DbGet(interp, objc, objv, dbp, ispget)
 	if (ispget) {
 		_debug_check();
 		F_SET(&pkey, DB_DBT_MALLOC);
-		ret = dbc->c_pget(dbc, &key, &pkey, &data, cflag | rmw);
+		ret = dbc->pget(dbc, &key, &pkey, &data, cflag | rmw);
 	} else {
 		_debug_check();
-		ret = dbc->c_get(dbc, &key, &data, cflag | rmw);
+		ret = dbc->get(dbc, &key, &data, cflag | rmw);
 	}
 	result = _ReturnSetup(interp, ret, DB_RETOK_DBCGET(ret),
 	    "db get (cursor)");
@@ -1636,9 +1635,9 @@ tcl_DbGet(interp, objc, objv, dbp, ispget)
 		data = save;
 		if (ispget) {
 			F_SET(&pkey, DB_DBT_MALLOC);
-			ret = dbc->c_pget(dbc, &key, &pkey, &data, cflag | rmw);
+			ret = dbc->pget(dbc, &key, &pkey, &data, cflag | rmw);
 		} else
-			ret = dbc->c_get(dbc, &key, &data, cflag | rmw);
+			ret = dbc->get(dbc, &key, &data, cflag | rmw);
 		if (ret == 0 && prefix != NULL &&
 		    memcmp(key.data, prefix, strlen(prefix)) != 0) {
 			/*
@@ -1649,7 +1648,7 @@ tcl_DbGet(interp, objc, objv, dbp, ispget)
 		}
 	}
 out1:
-	(void)dbc->c_close(dbc);
+	(void)dbc->close(dbc);
 	if (result == TCL_OK)
 		Tcl_SetObjResult(interp, retlist);
 out:
@@ -1867,7 +1866,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 			flag = DB_FIRST;
 		else
 			flag = DB_SET_RANGE;
-		ret = dbc->c_get(dbc, &key, &data, flag);
+		ret = dbc->get(dbc, &key, &data, flag);
 		while (ret == 0 &&
 		    memcmp(key.data, prefix, strlen(prefix)) == 0) {
 			/*
@@ -1876,7 +1875,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 			 * move ahead.
 			 */
 			_debug_check();
-			ret = dbc->c_del(dbc, 0);
+			ret = dbc->del(dbc, 0);
 			if (ret != 0) {
 				result = _ReturnSetup(interp, ret,
 				    DB_RETOK_DBCDEL(ret), "db c_del");
@@ -1888,7 +1887,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 			 */
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
-			ret = dbc->c_get(dbc, &key, &data, DB_NEXT);
+			ret = dbc->get(dbc, &key, &data, DB_NEXT);
 		}
 		if (ret == DB_NOTFOUND)
 			ret = 0;
@@ -1898,7 +1897,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 		 * have multiple nuls at the end, so we free using __os_free().
 		 */
 		__os_free(dbp->dbenv, prefix);
-		(void)dbc->c_close(dbc);
+		(void)dbc->close(dbc);
 		result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db del");
 	}
 out:
@@ -2457,7 +2456,7 @@ tcl_DbGetjoin(interp, objc, objv, dbp)
 			goto out;
 		}
 		key.data = ktmp;
-		ret = (listp[j])->c_get(listp[j], &key, &data, DB_SET);
+		ret = (listp[j])->get(listp[j], &key, &data, DB_SET);
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_DBCGET(ret),
 		    "db cget")) == TCL_ERROR)
 			goto out;
@@ -2475,7 +2474,7 @@ tcl_DbGetjoin(interp, objc, objv, dbp)
 		memset(&data, 0, sizeof(data));
 		key.flags |= DB_DBT_MALLOC;
 		data.flags |= DB_DBT_MALLOC;
-		ret = dbc->c_get(dbc, &key, &data, 0);
+		ret = dbc->get(dbc, &key, &data, 0);
 		/*
 		 * Build up our {name value} sublist
 		 */
@@ -2487,7 +2486,7 @@ tcl_DbGetjoin(interp, objc, objv, dbp)
 			__os_ufree(dbp->dbenv, data.data);
 		}
 	}
-	(void)dbc->c_close(dbc);
+	(void)dbc->close(dbc);
 	if (result == TCL_OK)
 		Tcl_SetObjResult(interp, retlist);
 out:
@@ -2495,7 +2494,7 @@ out:
 		__os_free(dbp->dbenv, ktmp);
 	while (j) {
 		if (listp[j])
-			(void)(listp[j])->c_close(listp[j]);
+			(void)(listp[j])->close(listp[j]);
 		j--;
 	}
 	__os_free(dbp->dbenv, listp);
@@ -2682,11 +2681,11 @@ tcl_DbCount(interp, objc, objv, dbp)
 	/*
 	 * Move our cursor to the key.
 	 */
-	ret = dbc->c_get(dbc, &key, &data, DB_SET);
+	ret = dbc->get(dbc, &key, &data, DB_SET);
 	if (ret == DB_KEYEMPTY || ret == DB_NOTFOUND)
 		count = 0;
 	else {
-		ret = dbc->c_count(dbc, &count, 0);
+		ret = dbc->count(dbc, &count, 0);
 		if (ret != 0) {
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "db c count");
@@ -2698,7 +2697,7 @@ tcl_DbCount(interp, objc, objv, dbp)
 
 out:	if (ktmp != NULL && freekey)
 		__os_free(dbp->dbenv, ktmp);
-	(void)dbc->c_close(dbc);
+	(void)dbc->close(dbc);
 	return (result);
 }
 

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep031.tcl,v 12.17 2006/09/11 19:47:22 sue Exp $
+# $Id: rep031.tcl,v 12.19 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep031
 # TEST	Test of internal initialization and blocked operations.
@@ -85,11 +84,7 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
@@ -248,8 +243,7 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 		if { $is_hp_test != 1 } {
 			puts "\tRep$tnum.j.1: Log_archive in new non-rep env."
 			set newenv [berkdb_env_noerr -txn nosync \
-			    -log_buffer $log_buf -log_max $log_max \
-			    -home $masterdir]
+			    -log_max $log_max -home $masterdir]
 			error_check_good newenv [is_valid_env $newenv] TRUE
 			set res [$newenv log_archive -arch_remove]
 			set res [eval exec \

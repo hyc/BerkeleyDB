@@ -118,7 +118,7 @@ the put call will succeed.</p>
 <p>It is an error to attempt a partial put using the <a href="../api_c/db_put.html">DB-&gt;put</a> function
 in a database that supports duplicate records.
 Partial puts in databases supporting duplicate records must be done
-using a <a href="../api_c/dbc_put.html">DBcursor-&gt;c_put</a> function.</p>
+using a <a href="../api_c/dbc_put.html">DBcursor-&gt;put</a> function.</p>
 <p>It is an error to attempt a partial put with differing <b>dlen</b> and
 <b>size</b> values in Queue or Recno databases with fixed-length records.</p>
 <p>For example, if the data portion of a retrieved record was 100 bytes,

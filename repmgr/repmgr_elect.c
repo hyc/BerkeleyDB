@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_elect.c,v 1.23 2006/09/12 01:06:34 alanb Exp $
+ * $Id: repmgr_elect.c,v 1.25 2006/11/01 00:53:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -34,14 +33,11 @@ __repmgr_init_election(dbenv, initial_operation)
 {
 	DB_REP *db_rep;
 	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 
 	if (db_rep->finished) {
-		RPRINT(dbenv, (dbenv, &mb,
+		RPRINT(dbenv, (dbenv,
 		    "ignoring elect thread request %d; repmgr is finished",
 		    initial_operation));
 		return (0);
@@ -51,14 +47,14 @@ __repmgr_init_election(dbenv, initial_operation)
 	if (db_rep->elect_thread == NULL)
 		ret = start_election_thread(dbenv);
 	else if (db_rep->elect_thread->finished) {
-		RPRINT(dbenv, (dbenv, &mb, "join dead elect thread"));
+		RPRINT(dbenv, (dbenv, "join dead elect thread"));
 		if ((ret = __repmgr_thread_join(db_rep->elect_thread)) != 0)
 			return (ret);
 		__os_free(dbenv, db_rep->elect_thread);
 		db_rep->elect_thread = NULL;
 		ret = start_election_thread(dbenv);
 	} else {
-		RPRINT(dbenv, (dbenv, &mb, "reusing existing elect thread"));
+		RPRINT(dbenv, (dbenv, "reusing existing elect thread"));
 		if ((ret = __repmgr_signal(&db_rep->check_election)) != 0)
 			__db_err(dbenv, ret, "can't signal election thread");
 	}
@@ -99,18 +95,15 @@ __repmgr_elect_thread(args)
 {
 	DB_ENV *dbenv = args;
 	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
-	RPRINT(dbenv, (dbenv, &mb, "starting election thread"));
+	RPRINT(dbenv, (dbenv, "starting election thread"));
 
 	if ((ret = __repmgr_elect_main(dbenv)) != 0) {
 		__db_err(dbenv, ret, "election thread failed");
 		__repmgr_thread_failure(dbenv, ret);
 	}
 
-	RPRINT(dbenv, (dbenv, &mb, "election thread is exiting"));
+	RPRINT(dbenv, (dbenv, "election thread is exiting"));
 	return (NULL);
 }
 
@@ -127,9 +120,6 @@ __repmgr_elect_main(dbenv)
 #endif
 	u_int nsites, nvotes;
 	int chosen_master, done, failure_recovery, last_op, ret, to_do;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	last_op = 0;
@@ -166,7 +156,7 @@ __repmgr_elect_main(dbenv)
 		failure_recovery = FALSE;
 
 	for (;;) {
-		RPRINT(dbenv, (dbenv, &mb, "elect thread to do: %d", to_do));
+		RPRINT(dbenv, (dbenv, "elect thread to do: %d", to_do));
 		switch (to_do) {
 		case ELECT_ELECTION:
 			nsites = __repmgr_get_nsites(db_rep);
@@ -327,13 +317,10 @@ __repmgr_is_ready(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_REP *db_rep;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-#endif
 
 	db_rep = dbenv->rep_handle;
 
-	RPRINT(dbenv, (dbenv, &mb,
+	RPRINT(dbenv, (dbenv,
 	    "repmgr elect: opcode %d, finished %d, master %d",
 	    db_rep->operation_needed, db_rep->finished, db_rep->master_eid));
 

@@ -1,0 +1,38 @@
+<!--"$Id: 2.7.5.html,v 1.1 2003/01/10 13:42:58 mao Exp $ (Sleepycat) $Date: 2003/01/10 13:42:58 $"-->
+<html>
+<head>
+<title>The Berkeley DB Package: DB 2.7.5 Change Log</title>
+<meta name="description" content="Berkeley DB: A database programmatic toolkit."> 
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btree,hash,hashing,transaction,transactions,locking,logging,access method,access methods"> 
+</head>
+<body bgcolor=white>
+
+<h1 align=center>Berkeley DB 2.7.5 Change Log</h1>
+
+Berkeley DB version 2.7.5 is version 2.7.4 with a set of specific bug
+fixes applied.  There were no interface changes or new features.
+
+<h3>Bug Fixes:</h3>
+<ol>
+
+<p><li>
+When deleting a Btree key/data pair using the DB-&gt;del interface, there
+was a potential NULL pointer dereference.
+
+<p><li>
+Lockers were being left on locker chains under some circumstances,
+causing a potential resource leak.
+
+<p><li>
+XA cursors were not being linked into the database active queue.
+
+<p><li>
+Modify Berkeley DB recovery to work correctly in an XA environment.
+
+<p><li>
+Update the version numbers from Berkeley DB 2.7.4 to Berkeley DB 2.7.5. 
+
+</ol>
+
+</body>
+</html>

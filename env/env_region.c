@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_region.c,v 12.19 2006/08/24 14:45:40 bostic Exp $
+ * $Id: env_region.c,v 12.24 2006/11/01 00:52:48 bostic Exp $
  */
 
 #include "db_config.h"
@@ -22,19 +21,19 @@ static int  __db_faultmem __P((DB_ENV *, void *, size_t, int));
  * __db_e_attach
  *	Join/create the environment
  *
- * PUBLIC: int __db_e_attach __P((DB_ENV *, u_int32_t *));
+ * PUBLIC: int __db_e_attach __P((DB_ENV *, u_int32_t *, int));
  */
 int
-__db_e_attach(dbenv, init_flagsp)
+__db_e_attach(dbenv, init_flagsp, create_ok)
 	DB_ENV *dbenv;
 	u_int32_t *init_flagsp;
+	int create_ok;
 {
 	REGENV *renv;
 	REGENV_REF ref;
 	REGINFO *infop;
 	REGION *rp, tregion;
-	size_t size;
-	size_t nrw;
+	size_t nrw, s, size;
 	u_int32_t bytes, i, mbytes, nregions;
 	u_int retry_cnt;
 	int majver, minver, patchver, ret, segid;
@@ -53,7 +52,7 @@ loop:	renv = NULL;
 	infop->type = REGION_TYPE_ENV;
 	infop->id = REGION_ID_ENV;
 	infop->flags = REGION_JOIN_OK;
-	if (F_ISSET(dbenv, DB_ENV_CREATE))
+	if (create_ok)
 		F_SET(infop, REGION_CREATE_OK);
 
 	/*
@@ -88,7 +87,7 @@ loop:	renv = NULL;
 	 * failure in all but one.  POSIX 1003.1 requires that EEXIST be the
 	 * errno return value -- I sure hope they're right.
 	 */
-	if (F_ISSET(dbenv, DB_ENV_CREATE)) {
+	if (create_ok) {
 		if ((ret = __os_open(dbenv, infop->name,
 		    DB_OSO_CREATE | DB_OSO_EXCL | DB_OSO_REGION,
 		    dbenv->db_mode, &dbenv->lockfhp)) == 0)
@@ -206,8 +205,8 @@ loop:	renv = NULL;
 
 	/*
 	 * The environment's REGENV structure has to live at offset 0 instead
-	 * of the usual shalloc information.  Set the primary reference and
-	 * correct the "addr" value to reference the shalloc region.  Note,
+	 * of the usual alloc information.  Set the primary reference and
+	 * correct the "addr" value to reference the alloc region.  Note,
 	 * this means that all of our offsets (R_ADDR/R_OFFSET) get shifted
 	 * as well, but that should be fine.
 	 */
@@ -218,10 +217,6 @@ loop:	renv = NULL;
 	/*
 	 * Make sure the region matches our build.  Special case a region
 	 * that's all nul bytes, just treat it like any other corruption.
-	 *
-	 * !!!
-	 * We don't display the major/minor version from the environment,
-	 * because it may be in a different place in the two regions.
 	 */
 	if (renv->majver != DB_VERSION_MAJOR ||
 	    renv->minver != DB_VERSION_MINOR) {
@@ -316,14 +311,23 @@ creation:
 	 * Allocate room for REGION structures plus overhead.
 	 *
 	 * XXX
-	 * Overhead is so high because encryption passwds are stored in the
-	 * base environment region, as are replication vote arrays.  This is
-	 * a bug, not a feature, replication needs its own region.
+	 * Overhead is so high because encryption passwds, replication vote
+	 * arrays and the thread control block table are all stored in the
+	 * base environment region.  This is a bug, at the least replication
+	 * should have its own region.
+	 *
+	 * Allocate space for thread info blocks.  Max is only advisory,
+	 * so we allocate 25% more.
 	 */
 	memset(&tregion, 0, sizeof(tregion));
 	nregions = dbenv->mp_ncache + 10;
-	tregion.size =
-	   (roff_t)(nregions * sizeof(REGION) + dbenv->passwd_len + 16 * 1024);
+	s = nregions * sizeof(REGION);
+	s += dbenv->passwd_len;
+	s += (dbenv->thr_max + dbenv->thr_max / 4) *
+	    __env_alloc_size(sizeof(DB_THREAD_INFO));
+	s += dbenv->thr_nbucket * __env_alloc_size(sizeof(DB_HASHTAB));
+	s += 16 * 1024;
+	tregion.size = s;
 	tregion.segid = INVALID_REGION_SEGID;
 	if ((ret = __os_r_attach(dbenv, infop, &tregion)) != 0)
 		goto err;
@@ -348,13 +352,13 @@ creation:
 	 * the entire region as allocation space.
 	 *
 	 * Set the primary reference and correct the "addr" value to reference
-	 * the shalloc region.  Note, this requires that we "uncorrect" it at
+	 * the alloc region.  Note, this requires that we "uncorrect" it at
 	 * region detach, and that all of our offsets (R_ADDR/R_OFFSET) will be
 	 * shifted as well, but that should be fine.
 	 */
 	infop->primary = infop->addr;
 	infop->addr = (u_int8_t *)infop->addr + sizeof(REGENV);
-	__db_shalloc_init(infop, tregion.size - sizeof(REGENV));
+	__env_alloc_init(infop, tregion.size - sizeof(REGENV));
 
 	/*
 	 * Initialize the rest of the REGENV structure.  (Don't set the magic
@@ -390,8 +394,7 @@ creation:
 	 * we're manipulating the list.
 	 */
 	renv->region_cnt = nregions;
-	if ((ret =
-	    __db_shalloc(infop, nregions * sizeof(REGION), 0, &rp)) != 0) {
+	if ((ret = __env_alloc(infop, nregions * sizeof(REGION), &rp)) != 0) {
 		__db_err(
 		    dbenv, ret, "unable to create new master region array");
 		goto err;
@@ -400,9 +403,7 @@ creation:
 	for (i = 0; i < nregions; ++i, ++rp)
 		rp->id = INVALID_REGION_ID;
 
-	renv->cipher_off = INVALID_ROFF;
-
-	renv->rep_off = INVALID_ROFF;
+	renv->cipher_off = renv->thread_off = renv->rep_off = INVALID_ROFF;
 	renv->flags = 0;
 	renv->op_timestamp = renv->rep_timestamp = 0;
 
@@ -605,7 +606,7 @@ __db_e_detach(dbenv, destroy)
 		infop->rp = &rp;
 
 		if (renv->region_off != INVALID_ROFF)
-			__db_shalloc_free(
+			__env_alloc_free(
 			   infop, R_ADDR(infop, renv->region_off));
 
 		/* Discard any mutex resources we may have acquired. */
@@ -692,7 +693,7 @@ __db_e_remove(dbenv, flags)
 	F_SET(dbenv, DB_ENV_NOPANIC);
 
 	/* Join the environment. */
-	if ((ret = __db_e_attach(dbenv, NULL)) != 0) {
+	if ((ret = __db_e_attach(dbenv, NULL, 0)) != 0) {
 		/*
 		 * If we can't join it, we assume that's because it doesn't
 		 * exist.  It would be better to know why we failed, but it
@@ -954,7 +955,7 @@ __db_r_attach(dbenv, infop, size)
 	 * If we created the region, initialize it for allocation.
 	 */
 	if (F_ISSET(infop, REGION_CREATE))
-		__db_shalloc_init(infop, rp->size);
+		__env_alloc_init(infop, rp->size);
 
 	return (0);
 
@@ -1000,7 +1001,7 @@ __db_r_detach(dbenv, infop, destroy)
 	 * we make.
 	 */
 	if (F_ISSET(dbenv, DB_ENV_PRIVATE) && infop->primary != NULL)
-		__db_shalloc_free(infop, infop->primary);
+		__env_alloc_free(infop, infop->primary);
 
 	/* Detach from the underlying OS region. */
 	ret = __os_r_detach(dbenv, infop, destroy);

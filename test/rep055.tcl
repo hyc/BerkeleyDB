@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep055.tcl,v 1.8 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep055.tcl,v 1.10 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep055
 # TEST	Test of internal initialization and log archiving.
@@ -89,6 +88,7 @@ proc rep055_sub { method niter tnum recargs opts largs } {
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
+	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
@@ -101,6 +101,7 @@ proc rep055_sub { method niter tnum recargs opts largs } {
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -164,6 +165,7 @@ proc rep055_sub { method niter tnum recargs opts largs } {
 	}
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	#
 	# Process messages once to get partially through internal init.

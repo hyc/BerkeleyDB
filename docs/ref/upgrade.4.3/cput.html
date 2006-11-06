@@ -15,7 +15,7 @@
 </td></tr></table>
 <p>
 <h3 align=center>Release 4.3: DBcursor-&gt;c_put</h3>
-<p>The 4.3 release disallows the <a href="../../api_c/dbc_get.html#DB_CURRENT">DB_CURRENT</a> flag to the <a href="../../api_c/dbc_put.html">DBcursor-&gt;c_put</a> method
+<p>The 4.3 release disallows the <a href="../../api_c/dbc_get.html#DB_CURRENT">DB_CURRENT</a> flag to the <a href="../../api_c/dbc_put.html">DBcursor-&gt;put</a> method
 after the current item referenced by the cursor has been deleted.  Applications
 using this sequence of operations should be changed to do the put without first
 deleting the item.</p>

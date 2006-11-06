@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: mp_mvcc.c,v 12.24 2006/09/18 13:11:50 mjc Exp $
+ * $Id: mp_mvcc.c,v 12.26 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -251,8 +250,8 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 		*need_frozenp = 1;
 
 		/* There might be a small amount of unallocated space. */
-		if (__db_shalloc(infop,
-		    sizeof(BH_FROZEN_ALLOC) + sizeof(BH_FROZEN_PAGE), 0,
+		if (__env_alloc(infop,
+		    sizeof(BH_FROZEN_ALLOC) + sizeof(BH_FROZEN_PAGE),
 		    &frozen_alloc) == 0) {
 			frozen_bhp = (BH *)(frozen_alloc + 1);
 			SH_TAILQ_INSERT_HEAD(&c_mp->alloc_frozen, frozen_alloc,

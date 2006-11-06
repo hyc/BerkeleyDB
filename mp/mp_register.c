@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_register.c,v 12.11 2006/08/24 14:46:15 bostic Exp $
+ * $Id: mp_register.c,v 12.12 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"

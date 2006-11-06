@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: ctime.c,v 12.10 2006/08/24 14:45:09 bostic Exp $
+ * $Id: ctime.c,v 12.11 2006/11/01 00:52:16 bostic Exp $
  */
 
 #include "db_config.h"

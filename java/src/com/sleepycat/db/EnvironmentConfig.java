@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: EnvironmentConfig.java,v 12.21 2006/09/08 20:32:14 bostic Exp $
+ * $Id: EnvironmentConfig.java,v 12.23 2006/11/01 00:53:30 bostic Exp $
  */
 
 package com.sleepycat.db;
@@ -113,6 +112,8 @@ public class EnvironmentConfig implements Cloneable {
 
     /* Verbose Flags */
     private boolean verboseDeadlock = false;
+    private boolean verboseFileops = false;
+    private boolean verboseFileopsAll = false;
     private boolean verboseRecovery = false;
     private boolean verboseRegister = false;
     private boolean verboseReplication = false;
@@ -815,42 +816,105 @@ public class EnvironmentConfig implements Cloneable {
         return useEnvironmentRoot;
     }
 
+    public void setVerbose(final VerboseConfig flag, boolean enable) {
+        int iflag = flag.getInternalFlag();
+        switch (iflag) {
+        case DbConstants.DB_VERB_DEADLOCK:
+            verboseDeadlock = enable;
+            break;
+        case DbConstants.DB_VERB_FILEOPS:
+            verboseFileops = enable;
+            break;
+        case DbConstants.DB_VERB_FILEOPS_ALL:
+            verboseFileopsAll = enable;
+            break;
+        case DbConstants.DB_VERB_RECOVERY:
+            verboseRecovery = enable;
+            break;
+        case DbConstants.DB_VERB_REGISTER:
+            verboseRegister = enable;
+            break;
+        case DbConstants.DB_VERB_REPLICATION:
+            verboseReplication = enable;
+            break;
+        case DbConstants.DB_VERB_WAITSFOR:
+            verboseWaitsFor = enable;
+            break;
+        default:
+            throw new IllegalArgumentException(
+                "Unknown verbose flag: " + DbEnv.strerror(iflag));
+        }
+    }
+
+    public boolean getVerbose(final VerboseConfig flag) {
+        int iflag = flag.getInternalFlag();
+        switch (iflag) {
+        case DbConstants.DB_VERB_DEADLOCK:
+            return verboseDeadlock;
+        case DbConstants.DB_VERB_FILEOPS:
+            return verboseFileops;
+        case DbConstants.DB_VERB_FILEOPS_ALL:
+            return verboseFileopsAll;
+        case DbConstants.DB_VERB_RECOVERY:
+            return verboseRecovery;
+        case DbConstants.DB_VERB_REGISTER:
+            return verboseRegister;
+        case DbConstants.DB_VERB_REPLICATION:
+            return verboseReplication;
+        case DbConstants.DB_VERB_WAITSFOR:
+            return verboseWaitsFor;
+        default:
+            throw new IllegalArgumentException(
+                "Unknown verbose flag: " + DbEnv.strerror(iflag));
+       }
+    }
+
+    /* @deprecated */
     public void setVerboseDeadlock(final boolean verboseDeadlock) {
         this.verboseDeadlock = verboseDeadlock;
     }
 
+    /* @deprecated */
     public boolean getVerboseDeadlock() {
         return verboseDeadlock;
     }
 
+    /* @deprecated */
     public void setVerboseRecovery(final boolean verboseRecovery) {
         this.verboseRecovery = verboseRecovery;
     }
 
+    /* @deprecated */
     public boolean getVerboseRecovery() {
         return verboseRecovery;
     }
 
+    /* @deprecated */
     public void setVerboseRegister(final boolean verboseRegister) {
         this.verboseRegister = verboseRegister;
     }
 
+    /* @deprecated */
     public boolean getVerboseRegister() {
         return verboseRegister;
     }
 
+    /* @deprecated */
     public void setVerboseReplication(final boolean verboseReplication) {
         this.verboseReplication = verboseReplication;
     }
 
+    /* @deprecated */
     public boolean getVerboseReplication() {
         return verboseReplication;
     }
 
+    /* @deprecated */
     public void setVerboseWaitsFor(final boolean verboseWaitsFor) {
         this.verboseWaitsFor = verboseWaitsFor;
     }
 
+    /* @deprecated */
     public boolean getVerboseWaitsFor() {
         return verboseWaitsFor;
     }
@@ -1060,6 +1124,16 @@ public class EnvironmentConfig implements Cloneable {
         if (!verboseDeadlock && oldConfig.verboseDeadlock)
             dbenv.set_verbose(DbConstants.DB_VERB_DEADLOCK, false);
 
+        if (verboseFileops && !oldConfig.verboseFileops)
+            dbenv.set_verbose(DbConstants.DB_VERB_FILEOPS, true);
+        if (!verboseFileops && oldConfig.verboseFileops)
+            dbenv.set_verbose(DbConstants.DB_VERB_FILEOPS, false);
+
+        if (verboseFileopsAll && !oldConfig.verboseFileopsAll)
+            dbenv.set_verbose(DbConstants.DB_VERB_FILEOPS_ALL, true);
+        if (!verboseFileopsAll && oldConfig.verboseFileopsAll)
+            dbenv.set_verbose(DbConstants.DB_VERB_FILEOPS_ALL, false);
+
         if (verboseRecovery && !oldConfig.verboseRecovery)
             dbenv.set_verbose(DbConstants.DB_VERB_RECOVERY, true);
         if (!verboseRecovery && oldConfig.verboseRecovery)
@@ -1232,6 +1306,8 @@ public class EnvironmentConfig implements Cloneable {
 
         /* Verbose flags */
         verboseDeadlock = dbenv.get_verbose(DbConstants.DB_VERB_DEADLOCK);
+        verboseFileops = dbenv.get_verbose(DbConstants.DB_VERB_FILEOPS);
+        verboseFileopsAll = dbenv.get_verbose(DbConstants.DB_VERB_FILEOPS_ALL);
         verboseRecovery = dbenv.get_verbose(DbConstants.DB_VERB_RECOVERY);
         verboseRegister = dbenv.get_verbose(DbConstants.DB_VERB_REGISTER);
         verboseReplication = dbenv.get_verbose(DbConstants.DB_VERB_REPLICATION);

@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep037.tcl,v 12.10 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep037.tcl,v 12.13 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep037
 # TEST	Test of internal initialization and page throttling.
@@ -42,7 +41,7 @@ proc rep037 { method { niter 1500 } { tnum "037" } args } {
 
 	# Run the body of the test with and without recovery,
 	# and with and without cleaning.
-	set cleanopts { clean noclean }
+	set cleanopts { bulk clean noclean }
 	foreach r $test_recopts {
 		foreach c $cleanopts {
 			foreach l $logsets {
@@ -82,10 +81,7 @@ proc rep037_sub { method niter tnum logset recargs clean largs } {
 	# four times the size of the in-memory log buffer.
 	set pagesize 4096
 	append largs " -pagesize $pagesize "
-	set log_buf [expr $pagesize * 2]
-	set log_max [expr $log_buf * 4]
-	set m_logargs " -log_buffer $log_buf"
-	set c_logargs " -log_buffer $log_buf"
+	set log_max [expr $pagesize * 8]
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
@@ -96,6 +92,16 @@ proc rep037_sub { method niter tnum logset recargs clean largs } {
 	set m_txnargs [adjust_txnargs $m_logtype]
 	set c_txnargs [adjust_txnargs $c_logtype]
 
+	#
+	# If using bulk processing, just use clean.  We could add
+	# another control loop to do bulk+clean and then bulk+noclean
+	# but that seems like overkill.
+	#
+	set bulk 0
+	if { $clean == "bulk" } {
+		set bulk 1
+		set clean "clean"
+	}
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
@@ -120,6 +126,10 @@ proc rep037_sub { method niter tnum logset recargs clean largs } {
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+
+	if { $bulk } {
+		error_check_good set_bulk [$masterenv rep_config {bulk on}] 0
+	}
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"

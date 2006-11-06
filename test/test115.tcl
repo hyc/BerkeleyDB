@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2005,2006 Oracle.  All rights reserved.
 #
-# $Id: test115.tcl,v 12.13 2006/08/24 14:46:41 bostic Exp $
+# $Id: test115.tcl,v 12.14 2006/11/01 00:54:02 bostic Exp $
 #
 # TEST	test115
 # TEST	Test database compaction with user-specified btree sort.

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: util.c,v 1.19 2006/08/24 14:45:43 bostic Exp $
+ * $Id: util.c,v 1.20 2006/11/01 00:52:51 bostic Exp $
  */
 
 #include "csv.h"

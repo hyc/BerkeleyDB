@@ -1,4 +1,4 @@
-# $Id: mutex.ac,v 12.18 2006/06/20 20:31:01 bostic Exp $
+# $Id: mutex.ac,v 12.20 2006/09/30 15:23:04 bostic Exp $
 
 # POSIX pthreads tests: inter-process safe and intra-process only.
 AC_DEFUN(AM_PTHREADS_SHARED, [
@@ -94,6 +94,11 @@ AC_CACHE_CHECK([for mutexes], db_cv_mutex, [
 db_cv_mutex=no
 
 orig_libs=$LIBS
+
+# Mutexes can be disabled.
+if test "$db_cv_build_mutexsupport" = "no"; then
+	db_cv_mutex="disabled";
+fi
 
 # User-specified POSIX or UI mutexes.
 #
@@ -481,9 +486,18 @@ AC_TRY_COMPILE(,[
 ], [db_cv_mutex="UTS/cc-assembly"])
 fi
 
-# default to UNIX fcntl system call mutexes.
+# UNIX fcntl system call mutexes.
 if test "$db_cv_mutex" = no; then
 	db_cv_mutex="UNIX/fcntl"
+AC_TRY_LINK([
+#include <fcntl.h>],[
+	struct flock l;
+	l.l_whence = SEEK_SET;
+	l.l_start = 10;
+	l.l_len = 1;
+	l.l_type = F_WRLCK;
+	fcntl(0, F_SETLK, &l);
+], [db_cv_mutex="UNIX/fcntl"])
 fi
 ])
 
@@ -491,6 +505,17 @@ AC_SUBST(thread_h_decl)
 AC_SUBST(db_threadid_t_decl)
 db_threadid_t_decl=notset
 
+# Mutexes may not have been found, or may have been disabled.
+case "$db_cv_mutex" in
+disabled)		;;
+no)
+			AC_MSG_ERROR([Unable to find a mutex implementation]);;
+*)			AC_DEFINE(HAVE_MUTEX_SUPPORT)
+			AH_TEMPLATE(HAVE_MUTEX_SUPPORT,
+			    [Define to 1 if the Berkeley DB library should support mutexes.])
+esac
+
+# Configure for a specific mutex type.
 case "$db_cv_mutex" in
 68K/gcc-assembly)	ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_68K_GCC_ASSEMBLY)
@@ -633,6 +658,7 @@ UNIX/fcntl)		AC_MSG_WARN(
 			AC_DEFINE(HAVE_MUTEX_FCNTL)
 			AH_TEMPLATE(HAVE_MUTEX_FCNTL,
 			    [Define to 1 to use the UNIX fcntl system call mutexes.]);;
+disabled)		;;
 *)			AC_MSG_ERROR([Unknown mutex interface: $db_cv_mutex]);;
 esac
 

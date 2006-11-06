@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_verify.c,v 12.32 2006/09/07 03:05:26 sue Exp $
+ * $Id: rep_verify.c,v 12.36 2006/11/01 00:53:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -53,7 +52,7 @@ __rep_verify(dbenv, rp, rec, eid, savetime)
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		return (ret);
 	memset(&mylog, 0, sizeof(mylog));
-	if ((ret = __log_c_get(logc, &rp->lsn, &mylog, DB_SET)) != 0)
+	if ((ret = __logc_get(logc, &rp->lsn, &mylog, DB_SET)) != 0)
 		goto err;
 	match = 0;
 	memcpy(&rectype, mylog.data, sizeof(rectype));
@@ -112,7 +111,7 @@ __rep_verify(dbenv, rp, rec, eid, savetime)
 	} else
 		ret = __rep_verify_match(dbenv, &rp->lsn, savetime);
 
-err:	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -161,13 +160,13 @@ __rep_verify_fail(dbenv, rp, eid)
 	 * We don't want an old or delayed VERIFY_FAIL
 	 * message to throw us into internal initialization
 	 * when we shouldn't be.
-	 *
-	 * Only go into internal initialization if:
-	 * We are set for AUTOINIT mode.
-	 * We are in RECOVER_VERIFY and this LSN == verify_lsn.
-	 * We are not in any RECOVERY and we are expecting
-	 *    an LSN that no longer exists on the master.
-	 * Otherwise, ignore this message.
+	 */
+	/*
+	 * Return DB_REP_JOIN_FAILURE only if:
+	 * REP_C_NOAUTOINIT is configured and
+	 * we're in VERIFY and this is the LSN we're verifying,
+	 * or we are in normal mode (no recovery flags set)
+	 * and the failing LSN is the next one we're ready for.
 	 */
 	if (FLD_ISSET(rep->config, REP_C_NOAUTOINIT) &&
 	    ((F_ISSET(rep, REP_F_RECOVER_VERIFY) &&
@@ -177,6 +176,14 @@ __rep_verify_fail(dbenv, rp, eid)
 		ret = DB_REP_JOIN_FAILURE;
 		goto unlock;
 	}
+	
+	/*
+	 * Commence an internal init if:
+	 * We are in VERIFY state and the failing LSN is the one we
+	 * were verifying or
+	 * we are in normal state (no recovery flags set) and
+	 * the failing LSN is the one we're ready for.
+	 */
 	if (((F_ISSET(rep, REP_F_RECOVER_VERIFY)) &&
 	    LOG_COMPARE(&rp->lsn, &lp->verify_lsn) == 0) ||
 	    (F_ISSET(rep, REP_F_RECOVER_MASK) == 0 &&
@@ -190,6 +197,9 @@ __rep_verify_fail(dbenv, rp, eid)
 		(void)__rep_send_message(dbenv,
 		    eid, REP_UPDATE_REQ, NULL, NULL, 0, 0);
 	} else {
+		/*
+		 * Otherwise ignore this message.
+		 */
 unlock:		REP_SYSTEM_UNLOCK(dbenv);
 		MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
 	}
@@ -225,14 +235,14 @@ __rep_verify_req(dbenv, rp, eid)
 	d = &data_dbt;
 	memset(d, 0, sizeof(data_dbt));
 	F_SET(logc, DB_LOG_SILENT_ERR);
-	ret = __log_c_get(logc, &rp->lsn, d, DB_SET);
+	ret = __logc_get(logc, &rp->lsn, d, DB_SET);
 	/*
-	 * If the LSN was invalid, then we might get a not
-	 * found, we might get an EIO, we could get anything.
+	 * If the LSN was invalid, then we might get a DB_NOTFOUND
+	 * we might get an EIO, we could get anything.
 	 * If we get a DB_NOTFOUND, then there is a chance that
 	 * the LSN comes before the first file present in which
-	 * case we need to return a fail so that the client can return
-	 * a DB_OUTDATED.
+	 * case we need to return a fail so that the client can
+	 * perform an internal init or return a REP_JOIN_FAILURE.
 	 *
 	 * If we're a client servicing this request and we get a
 	 * NOTFOUND, return it so the caller can rerequest from
@@ -251,7 +261,7 @@ __rep_verify_req(dbenv, rp, eid)
 
 	(void)__rep_send_message(dbenv, eid, type, &rp->lsn, d, 0, 0);
 notfound:
-	ret = __log_c_close(logc);
+	ret = __logc_close(logc);
 	return (ret);
 }
 
@@ -283,7 +293,7 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 	else
 		update = 0;
 	while (update == 0 &&
-	    (ret = __log_c_get(logc, &lsn, &mylog, DB_PREV)) == 0 &&
+	    (ret = __logc_get(logc, &lsn, &mylog, DB_PREV)) == 0 &&
 	    LOG_COMPARE(&lsn, lsnp) > 0) {
 		memcpy(&rectype, mylog.data, sizeof(rectype));
 		if (rectype == DB___txn_regop) {
@@ -305,7 +315,7 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 		}
 	}
 	/*
-	 * Handle if the log_c_get fails.
+	 * Handle if the logc_get fails.
 	 */
 	if (ret != 0)
 		goto err;
@@ -318,7 +328,7 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 	if ((ret = __db_apprec(dbenv, lsnp, trunclsnp, update, 0)) == 0)
 		F_SET(db_rep, DBREP_OPENFILES);
 
-err:	if ((t_ret = __log_c_close(logc)) != 0 && ret == 0)
+err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -377,16 +387,25 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 	 * operations out of DB and run recovery.
 	 */
 	REP_SYSTEM_LOCK(dbenv);
-	if (rep->lockout_th != 0 ||
+	if (F_ISSET(rep, REP_F_READY_MSG) ||
 	    (!F_ISSET(rep, REP_F_RECOVER_LOG) &&
-	    (F_ISSET(rep, REP_F_READY) || rep->in_recovery != 0))) {
+	    F_ISSET(rep, REP_F_READY_API | REP_F_READY_OP))) {
+		/*
+		 * We lost.  The world changed and we should do nothing.
+		 */
 		rep->stat.st_msgs_recover++;
 		goto errunlock;
 	}
 
+	/*
+	 * Lockout all message threads but ourselves.
+	 */
 	if ((ret = __rep_lockout_msg(dbenv, rep, 1)) != 0)
 		goto errunlock;
 
+	/*
+	 * Lockout the API and wait for operations to complete.
+	 */
 	if ((ret = __rep_lockout_api(dbenv, rep)) != 0)
 		goto errunlock;
 
@@ -395,9 +414,7 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 
 	if ((ret = __rep_dorecovery(dbenv, reclsnp, &trunclsn)) != 0) {
 		REP_SYSTEM_LOCK(dbenv);
-		rep->lockout_th = 0;
-		rep->in_recovery = 0;
-		F_CLR(rep, REP_F_READY);
+		F_CLR(rep, REP_F_READY_API | REP_F_READY_MSG | REP_F_READY_OP);
 		goto errunlock;
 	}
 
@@ -429,27 +446,20 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 
 	REP_SYSTEM_LOCK(dbenv);
 	rep->stat.st_log_queued = 0;
-	rep->in_recovery = 0;
-	rep->lockout_th = 0;
+	F_CLR(rep, REP_F_READY_MSG);
 	F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK);
 	if (ret != 0)
 		goto errunlock2;
 
 	/*
 	 * If the master_id is invalid, this means that since
-	 * the last record was sent, somebody declared an
-	 * election and we may not have a master to request
+	 * the last record was sent, something happened to the
+	 * master and we may not have a master to request
 	 * things of.
 	 *
 	 * This is not an error;  when we find a new master,
 	 * we'll re-negotiate where the end of the log is and
 	 * try to bring ourselves up to date again anyway.
-	 *
-	 * !!!
-	 * We cannot assert the election flags though because
-	 * somebody may have declared an election and then
-	 * got an error, thus clearing the election flags
-	 * but we still have an invalid master_id.
 	 */
 	master = rep->master_id;
 	REP_SYSTEM_UNLOCK(dbenv);
@@ -503,7 +513,7 @@ __rep_log_backup(dbenv, rep, logc, lsn)
 	COMPQUIET(dbenv, NULL);
 	ret = 0;
 	memset(&mylog, 0, sizeof(mylog));
-	while ((ret = __log_c_get(logc, lsn, &mylog, DB_PREV)) == 0) {
+	while ((ret = __logc_get(logc, lsn, &mylog, DB_PREV)) == 0) {
 		/*
 		 * Determine what we look for based on version number.
 		 * Due to the contents of records changing between

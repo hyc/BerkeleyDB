@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -39,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_page.c,v 12.21 2006/09/07 20:05:30 bostic Exp $
+ * $Id: hash_page.c,v 12.23 2006/11/01 00:53:22 bostic Exp $
  */
 
 /*
@@ -57,7 +56,7 @@
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 
-static int __ham_c_delpg
+static int __hamc_delpg
     __P((DBC *, db_pgno_t, db_pgno_t, u_int32_t, db_ham_mode, u_int32_t *));
 
 /*
@@ -633,7 +632,7 @@ __ham_del_pair(dbc, reclaim_page)
 	/*
 	 * Update cursors that are on the page where the delete happend.
 	 */
-	if ((ret = __ham_c_update(dbc, 0, 0, 0)) != 0)
+	if ((ret = __hamc_update(dbc, 0, 0, 0)) != 0)
 		return (ret);
 
 	/*
@@ -715,7 +714,7 @@ __ham_del_pair(dbc, reclaim_page)
 		 * Update cursors to reflect the fact that records
 		 * on the second page have moved to the first page.
 		 */
-		if ((ret = __ham_c_delpg(dbc, PGNO(n_pagep),
+		if ((ret = __hamc_delpg(dbc, PGNO(n_pagep),
 		    PGNO(p), 0, DB_HAM_DELFIRSTPG, &order)) != 0)
 			goto err;
 
@@ -801,7 +800,7 @@ __ham_del_pair(dbc, reclaim_page)
 			ret = t_ret;
 		if (ret != 0)
 			return (ret);
-		if ((ret = __ham_c_delpg(dbc,
+		if ((ret = __hamc_delpg(dbc,
 		    chg_pgno, hcp->pgno, hcp->indx, op, &order)) != 0)
 			return (ret);
 		hcp->order += order;
@@ -1811,7 +1810,7 @@ __ham_dpair(dbp, p, indx)
 }
 
 /*
- * __ham_c_delpg --
+ * __hamc_delpg --
  *
  * Adjust the cursors after we've emptied a page in a bucket, taking
  * care that when we move cursors pointing to deleted items, their
@@ -1841,7 +1840,7 @@ __ham_dpair(dbp, p, indx)
  *	be careful of.  This is DB_HAM_DELLASTPG.
  */
 static int
-__ham_c_delpg(dbc, old_pgno, new_pgno, num_ent, op, orderp)
+__hamc_delpg(dbc, old_pgno, new_pgno, num_ent, op, orderp)
 	DBC *dbc;
 	db_pgno_t old_pgno, new_pgno;
 	u_int32_t num_ent;
@@ -1938,7 +1937,7 @@ __ham_c_delpg(dbc, old_pgno, new_pgno, num_ent, op, orderp)
 					break;
 				default:
 					return (__db_unknown_path(
-					    dbenv, "__ham_c_delpg"));
+					    dbenv, "__hamc_delpg"));
 				}
 				if (my_txn != NULL && cp->txn != my_txn)
 					found = 1;

@@ -1,8 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -39,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_rec.c,v 12.22 2006/08/24 14:46:05 bostic Exp $
+ * $Id: hash_rec.c,v 12.24 2006/11/01 00:53:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -1073,7 +1072,7 @@ __ham_curadj_recover(dbenv, dbtp, lsnp, op, info)
 	hcp->order = argp->order;
 	if (!argp->add)
 		F_SET(hcp, H_DELETED);
-	(void)__ham_c_update(dbc, argp->len, !argp->add, argp->is_dup);
+	(void)__hamc_update(dbc, argp->len, !argp->add, argp->is_dup);
 
 done:	*lsnp = argp->prev_lsn;
 out:	REC_CLOSE;
@@ -1189,7 +1188,7 @@ __ham_chgpg_recover(dbenv, dbtp, lsnp, op, info)
 				 * under us.
 				 */
 				MUTEX_UNLOCK(dbenv, file_dbp->mutex);
-				if ((ret = __db_c_close(lcp->opd)) != 0)
+				if ((ret = __dbc_close(lcp->opd)) != 0)
 					goto out;
 				MUTEX_LOCK(dbenv, file_dbp->mutex);
 				lcp->opd = NULL;

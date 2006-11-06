@@ -1,0 +1,40 @@
+<!--"$Id: 2.7.1.html,v 1.1 2003/01/10 13:42:43 mao Exp $ (Sleepycat) $Date: 2003/01/10 13:42:43 $"-->
+<html>
+<head>
+<title>The Berkeley DB Package: DB 2.7.1 Change Log</title>
+<meta name="description" content="Berkeley DB: A database programmatic toolkit."> 
+<meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btree,hash,hashing,transaction,transactions,locking,logging,access method,access methods"> 
+</head>
+<body bgcolor=white>
+
+<h1 align=center>Berkeley DB 2.7.1 Change Log</h1>
+
+<h3>New Features:</h3>
+<ol>
+
+<p><li>
+This release includes support for nested transactions.  (No
+interface changes were required.)
+
+</ol>
+<h3>System Porting and Build Procedure Changes:</h3>
+<ol>
+
+<p><li>
+FreeBSD systems are now built using the flags <b>-D_THREAD_SAFE</b> and
+<b>-pthread</b> instead of directly loading with the <b>-lc_r</b> library.
+
+<p><li>
+Linux systems are now built using the <b>-D_REENTRANT</b> flag.
+
+</ol>
+<h3>Other Changes:</h3>
+<ol>
+
+<p><li>
+The default memory pool cache size has been increase from 128K to 256K.
+
+</ol>
+
+</body>
+</html>

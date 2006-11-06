@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_compat.c,v 12.4 2006/08/24 14:46:32 bostic Exp $
+ * $Id: tcl_compat.c,v 12.6 2006/11/01 00:53:51 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,7 +11,7 @@
 
 #define	DB_DBM_HSEARCH	1
 #include "db_int.h"
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <tcl.h>
 #endif
 #include "dbinc/tcl_db.h"

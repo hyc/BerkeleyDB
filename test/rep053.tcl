@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep053.tcl,v 12.13 2006/08/24 14:46:38 bostic Exp $
+# $Id: rep053.tcl,v 12.14 2006/11/01 00:53:58 bostic Exp $
 #
 # TEST	rep053
 # TEST	Replication and basic client-to-client synchronization.

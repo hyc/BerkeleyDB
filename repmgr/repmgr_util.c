@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_util.c,v 1.27 2006/09/19 14:14:12 mjc Exp $
+ * $Id: repmgr_util.c,v 1.29 2006/11/01 00:53:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -145,12 +144,9 @@ __repmgr_new_site(dbenv, sitep, addr, state)
 {
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
+	SITE_STRING_BUFFER buffer;
 	u_int new_site_max, eid;
 	int ret;
-#ifdef DIAGNOSTIC
-	DB_MSGBUF mb;
-	SITE_STRING_BUFFER buffer;
-#endif
 
 	db_rep = dbenv->rep_handle;
 	if (db_rep->site_cnt >= db_rep->site_max) {
@@ -171,8 +167,8 @@ __repmgr_new_site(dbenv, sitep, addr, state)
 	site->priority = -1;	/* OOB value indicates we don't yet know. */
 	site->state = state;
 
-	RPRINT(dbenv, (dbenv, &mb, "EID %u is assigned for %s", eid,
-		   __repmgr_format_site_loc(site, buffer)));
+	RPRINT(dbenv, (dbenv, "EID %u is assigned for %s", eid,
+	    __repmgr_format_site_loc(site, buffer)));
 	*sitep = site;
 	return (0);
 }

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_dir.c,v 12.8 2006/08/24 14:46:17 bostic Exp $
+ * $Id: os_dir.c,v 12.10 2006/11/01 00:53:39 bostic Exp $
  */
 
 #include "db_config.h"
@@ -46,6 +45,10 @@ __os_dirlist(dbenv, dir, namesp, cntp)
 	struct stat sb;
 	int arraysz, cnt, ret;
 	char **names, buf[DB_MAXPATHLEN];
+
+	if (dbenv != NULL &&
+	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
+		__db_msg(dbenv, "fileops: directory list %s", dir);
 
 	if (DB_GLOBAL(j_dirlist) != NULL)
 		return (DB_GLOBAL(j_dirlist)(dir, namesp, cntp));

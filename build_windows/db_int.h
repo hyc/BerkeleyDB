@@ -2,19 +2,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_int.in,v 12.41 2006/09/19 15:06:59 bostic Exp $
+ * $Id: db_int.in,v 12.47 2006/11/01 00:52:40 bostic Exp $
  */
 
 #ifndef _DB_INT_H_
 #define	_DB_INT_H_
 
 /*******************************************************
- * Berkeley DB includes.
+ * Berkeley DB ANSI/POSIX include files.
  *******************************************************/
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #include <sys/types.h>
 #ifdef DIAG_MVCC
 #include <sys/mman.h>
@@ -70,9 +69,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#endif /* !HAVE_SYSTEM_INCLUDE_FILES */
+
+#ifdef DB_WIN32
+#include "dbinc/win_db.h"
 #endif
 
 #include "db.h"
+#include "clib_port.h"
 
 #include "dbinc/queue.h"
 #include "dbinc/shqueue.h"
@@ -84,41 +88,6 @@ extern "C" {
 /*******************************************************
  * General purpose constants and macros.
  *******************************************************/
-#ifndef	UINT16_MAX
-#define	UINT16_MAX	65535		/* Maximum 16-bit unsigned. */
-#endif
-#ifndef	UINT32_MAX
-#ifdef __STDC__
-#define	UINT32_MAX	4294967295U	/* Maximum 32-bit unsigned. */
-#else
-#define	UINT32_MAX	0xffffffff	/* Maximum 32-bit unsigned. */
-#endif
-#endif
-
-#if defined(HAVE_64BIT_TYPES)
-#undef	INT64_MAX
-#undef	INT64_MIN
-#undef	UINT64_MAX
-
-#ifdef	DB_WIN32
-#define	INT64_MAX	_I64_MAX
-#define	INT64_MIN	_I64_MIN
-#define	UINT64_MAX	_UI64_MAX
-#else
-/*
- * Override the system's 64-bit min/max constants.  AIX's 32-bit compiler can
- * handle 64-bit values, but the system's constants don't include the LL/ULL
- * suffix, and so can't be compiled using the 32-bit compiler.
- */
-#define	INT64_MAX	9223372036854775807LL
-#define	INT64_MIN	(-INT64_MAX-1)
-#define	UINT64_MAX	18446744073709551615ULL
-#endif	/* DB_WIN32 */
-
-#define	INT64_FMT	"%I64d"
-#define	UINT64_FMT	"%I64u"
-#endif	/* HAVE_64BIT_TYPES */
-
 #undef	FALSE
 #define	FALSE		0
 #undef	TRUE
@@ -159,11 +128,6 @@ extern "C" {
 #undef	ALIGNP_INC
 #define	ALIGNP_INC(p, bound)						\
 	(void *)(((uintptr_t)(p) + (bound) - 1) & ~(((uintptr_t)(bound)) - 1))
-
-/* Decrement a pointer to a specific boundary. */
-#undef	ALIGNP_DEC
-#define	ALIGNP_DEC(p, bound)						\
-	(void *)((uintptr_t)(p) & ~(((uintptr_t)(bound)) - 1))
 
 /*
  * Print an address as a u_long (a u_long is the largest type we can print
@@ -437,7 +401,7 @@ typedef enum {
 #ifdef DIAGNOSTIC
 #define	ENV_LEAVE(dbenv, ip) do {					\
 	if ((ip) != NULL) {						\
-		DB_ASSERT(dbenv, ip->dbth_state == THREAD_ACTIVE);	\
+		DB_ASSERT(dbenv, (ip)->dbth_state == THREAD_ACTIVE);	\
 		(ip)->dbth_state = THREAD_OUT;				\
 	}								\
 } while (0)

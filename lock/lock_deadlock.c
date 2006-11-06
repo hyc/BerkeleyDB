@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_deadlock.c,v 12.17 2006/08/24 14:46:10 bostic Exp $
+ * $Id: lock_deadlock.c,v 12.18 2006/11/01 00:53:33 bostic Exp $
  */
 
 #include "db_config.h"

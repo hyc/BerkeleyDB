@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep039.tcl,v 1.15 2006/08/24 14:46:37 bostic Exp $
+# $Id: rep039.tcl,v 1.17 2006/11/01 00:53:57 bostic Exp $
 #
 # TEST	rep039
 # TEST	Test of internal initialization and master changes.
@@ -109,6 +108,7 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 #	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
+	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
@@ -121,6 +121,7 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 #	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 
 	# Open 2nd client
 	repladd 3
@@ -133,6 +134,7 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 #	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set clientenv2 [eval $cl2_envcmd $recargs -rep_client]
 	error_check_good client2_env [is_valid_env $clientenv2] TRUE
+	$clientenv2 rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2} {$clientenv2 3}"
@@ -189,6 +191,7 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 	}
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	$clientenv rep_limit 0 0
 	set envlist "{$masterenv 1} {$clientenv 2} {$clientenv2 3}"
 	proc_msgs_once $envlist
 

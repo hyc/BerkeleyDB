@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_verify.c,v 12.9 2006/08/24 14:46:24 bostic Exp $
+ * $Id: qam_verify.c,v 12.11 2006/11/01 00:53:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -44,12 +43,12 @@ __qam_vrfy_meta(dbp, vdp, meta, pgno, flags)
 	qp = (QUEUE *)dbp->q_internal;
 	extents = NULL;
 	first = last = 0;
+	isbad = 0;
 	buf = NULL;
 	names = NULL;
 
 	if ((ret = __db_vrfy_getpageinfo(vdp, pgno, &pip)) != 0)
 		return (ret);
-	isbad = 0;
 
 	/*
 	 * Queue can't be used in subdatabases, so if this isn't set

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: db_cxx.in,v 12.28 2006/09/13 14:53:37 mjc Exp $
+ * $Id: db_cxx.in,v 12.30 2006/11/01 00:52:40 bostic Exp $
  */
 
 #ifndef _DB_CXX_H_
@@ -582,6 +581,7 @@ public:
 	virtual int rep_set_transport(int, int (*)(DbEnv *,
 	    const Dbt *, const Dbt *, const DbLsn *, int, u_int32_t));
 	virtual int set_rep_request(u_int32_t, u_int32_t);
+	virtual int get_thread_count(u_int32_t *);
 	virtual int set_thread_count(u_int32_t);
 	virtual int set_thread_id(void (*)(DbEnv *, pid_t *, db_threadid_t *));
 	virtual int set_thread_id_string(char *(*)(DbEnv *,

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1998,2006 Oracle.  All rights reserved.
  *
- * $Id: region.h,v 12.9 2006/08/24 14:45:30 bostic Exp $
+ * $Id: region.h,v 12.11 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef _DB_REGION_H_
@@ -176,14 +175,15 @@ typedef struct __db_reg_env {
 
 	/*
 	 * The mtx_regenv mutex protects the environment reference count and
-	 * memory allocation from the primary shared region (the crypto and
-	 * replication implementations allocate memory from the primary shared
-	 * region).  The rest of the fields are initialized at creation time,
-	 * and so don't need mutex protection.  The flags, op_timestamp and
-	 * rep_timestamp fields are used by replication only and are
-	 * protected * by the replication mutex.  The rep_timestamp is
-	 * is not protected when it is used in recovery as that is already
-	 * single threaded.
+	 * memory allocation from the primary shared region (the crypto, thread
+	 * control block and replication implementations allocate memory from
+	 * the primary shared region).
+	 *
+	 * The rest of the fields are initialized at creation time, and don't
+	 * need mutex protection.  The flags, op_timestamp and rep_timestamp
+	 * fields are used by replication only and are protected by the
+	 * replication mutex.  The rep_timestamp is is not protected when it
+	 * is used in recovery as that is already single threaded.
 	 */
 	db_mutex_t mtx_regenv;		/* Refcnt, region allocation mutex. */
 	u_int32_t  refcnt;		/* References to the environment. */
@@ -192,6 +192,8 @@ typedef struct __db_reg_env {
 	roff_t	  region_off;		/* Offset of region array */
 
 	roff_t	  cipher_off;		/* Offset of cipher area */
+
+	roff_t	  thread_off;		/* Offset of the thread area. */
 
 	roff_t	  rep_off;		/* Offset of the replication area. */
 #define	DB_REGENV_REPLOCKED	0x0001	/* Env locked for rep backup. */

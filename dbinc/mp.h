@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp.h,v 12.23 2006/09/07 15:11:26 mjc Exp $
+ * $Id: mp.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
  */
 
 #ifndef	_DB_MP_H_

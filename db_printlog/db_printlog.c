@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_printlog.c,v 12.20 2006/08/26 09:23:10 bostic Exp $
+ * $Id: db_printlog.c,v 12.22 2006/11/01 00:52:36 bostic Exp $
  */
 
 #include "db_config.h"
@@ -20,7 +19,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2006\nOracle Corporation.  All rights reserved.\n";
+    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
 #endif
 
 int env_init_print __P((DB_ENV *, u_int32_t,
@@ -229,7 +228,7 @@ main(argc, argv)
 	}
 	for (; !__db_util_interrupted(); logcflag = rflag ? DB_PREV : DB_NEXT) {
 		if (repflag) {
-			ret = dbc->c_get(dbc, &keydbt, &data, logcflag);
+			ret = dbc->get(dbc, &keydbt, &data, logcflag);
 			if (ret == 0)
 				key = ((REP_CONTROL *)keydbt.data)->lsn;
 		} else
@@ -292,7 +291,7 @@ shutdown:	exitval = 1;
 	if (logc != NULL && (ret = logc->close(logc, 0)) != 0)
 		exitval = 1;
 
-	if (dbc != NULL && (ret = dbc->c_close(dbc)) != 0)
+	if (dbc != NULL && (ret = dbc->close(dbc)) != 0)
 		exitval = 1;
 
 	if (dbp != NULL && (ret = dbp->close(dbp, 0)) != 0)

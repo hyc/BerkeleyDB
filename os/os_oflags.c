@@ -1,17 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_oflags.c,v 12.6 2006/08/24 14:46:18 bostic Exp $
+ * $Id: os_oflags.c,v 12.8 2006/11/01 00:53:40 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
 
-#ifndef NO_SYSTEM_INCLUDES
+#ifdef HAVE_SYSTEM_INCLUDE_FILES
 #ifdef HAVE_SHMGET
 #include <sys/ipc.h>
 #include <sys/shm.h>

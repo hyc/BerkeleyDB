@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: PackedIntegerTest.java,v 1.2 2006/08/24 14:46:47 bostic Exp $
+ * $Id: PackedIntegerTest.java,v 1.3 2006/11/01 00:54:15 bostic Exp $
  */
 
 package com.sleepycat.util.test;

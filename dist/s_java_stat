@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_java_stat,v 12.14 2006/08/24 14:45:35 bostic Exp $
+#	$Id: s_java_stat,v 12.15 2006/11/01 00:52:45 bostic Exp $
 #
 # Build the Java files.
 
@@ -8,8 +8,7 @@ msgjava="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  */"
 
 s=/tmp/__java.sed

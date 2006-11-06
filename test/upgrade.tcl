@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: upgrade.tcl,v 12.8 2006/09/18 14:22:44 carol Exp $
+# $Id: upgrade.tcl,v 12.9 2006/11/01 00:54:03 bostic Exp $
 
 source ./include.tcl
 

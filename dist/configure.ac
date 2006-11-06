@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 12.46 2006/09/19 00:33:58 bostic Exp $
+# $Id: configure.ac,v 12.54 2006/11/06 17:07:09 bostic Exp $
 # Process this file with autoconf to produce a configure script.
 
 PACKAGE=db
@@ -130,6 +130,9 @@ AC_PROG_INSTALL
 BUILD_TARGET="library_build"
 INSTALL_TARGET="library_install"
 
+# Respect the environment LIBS settings
+LIBSO_LIBS="$LIBS"
+
 # This is where we handle stuff that autoconf can't handle: compiler,
 # preprocessor and load flags, libraries that the standard tests don't
 # look for.
@@ -215,7 +218,25 @@ else
 	esac
 fi
 
-# Checks for compiler characteristics.
+# Check for "const" and "inline" keywords.
+AC_C_CONST
+AC_C_INLINE
+
+# We use prototypes and the keyword "const" in db.h which doesn't include
+# db_config.h, so we have to figure out what to do there.   We don't have
+# much choice, we look at internal autoconf variables.
+AC_SUBST(DB_CONST)
+if test "$ac_cv_c_const" != "yes"; then
+	DB_CONST="#define const"
+fi
+
+# Now prototypes.
+#
+# There is an autoconf AC_C_PROTOTYPES macro, but it doesn't set internal
+# variables, so it doesn't help us at all -- use the internal variable for
+# STDC compilers instead.
+#
+# First, clear __P, some other systems use it too.
 DB_PROTO1="#undef __P"
 
 # AC_PROG_CC_STDC only sets ac_cv_prog_cc_stdc if the test fails, so
@@ -224,12 +245,6 @@ if test "$ac_cv_prog_cc_stdc" = "no"; then
 	DB_PROTO2="#define	__P(protos)	()"
 else
 	DB_PROTO2="#define	__P(protos)	protos"
-fi
-
-AC_C_CONST
-AC_SUBST(DB_CONST)
-if test "$ac_cv_c_const" != "yes"; then
-	DB_CONST="#define const"
 fi
 
 # Because of shared library building, the ${CC} used for config tests
@@ -435,6 +450,7 @@ if test "$db_cv_mingw" = "yes"; then
 else
 	OSDIR=os
 	PATH_SEPARATOR="/"
+	AC_DEFINE(HAVE_SYSTEM_INCLUDE_FILES)
 fi
 
 # Checks for include files, structures, C types.
@@ -495,16 +511,18 @@ LIBS="$LIBSO_LIBS"
 # buffer is non-NULL -- Solaris can't handle a NULL buffer, and they
 # deleted getwd().
 AC_REPLACE_FUNCS(\
-	abort atoi atol getcwd getenv getopt isalpha isdigit isprint isspace\
-	memcmp memcpy memmove printf raise rand strcasecmp strcat strchr\
-	strdup strerror strncat strncmp strrchr strsep strtol strtoul)
+	abort atoi atol getcwd getenv getopt isalpha isdigit isprint\
+	isspace memcmp memcpy memmove printf qsort raise rand strcasecmp\
+	strcat strchr strdup strerror strncat strncmp strrchr strsep\
+	strtol strtoul)
 
 # Check for system functions we optionally use.
 AC_CHECK_FUNCS(\
-   _fstati64 clock_gettime directio fchmod fcntl fdatasync getaddrinfo\
-   getrusage gettimeofday getuid mprotect pstat_getdynamic pthread_yield\
-   sched_yield select sigaction snprintf stat strftime sysconf vsnprintf\
-   yield)
+	_fstati64 clock_gettime directio fchmod fclose fcntl fdatasync\
+	fgetc fgets fopen fwrite getaddrinfo getrusage gettimeofday\
+	getuid localtime mprotect pstat_getdynamic pthread_yield\
+	sched_yield select sigaction snprintf stat strftime sysconf time\
+	vsnprintf yield)
 
 # Replication can't run correctly if ftruncate isn't available.
 AC_CHECK_FUNCS(ftruncate)
@@ -723,6 +741,13 @@ else
 	CRYPTO_OBJS="crypto_stub${o}"
 fi
 
+# The mutex code can be disabled.
+if test "$db_cv_build_mutexsupport" = "yes"; then
+	ADDITIONAL_OBJS="$ADDITIONAL_OBJS \$(MUTEX_OBJS)"
+else
+	ADDITIONAL_OBJS="$ADDITIONAL_OBJS mut_stub${o}"
+fi
+
 # If DIAGNOSTIC is defined, include the log print routines in the library
 # itself, various diagnostic modes use them.
 if test "$db_cv_diagnostic" = "yes"; then
@@ -750,14 +775,8 @@ AC_SUBST(LTLIBOBJS)
 CREATE_LIST="Makefile
     db_cxx.h:$srcdir/../dbinc/db_cxx.in
     db_int.h:$srcdir/../dbinc/db_int.in
-    clib_port.h:$srcdir/../dist/clib_port.h
+    clib_port.h:$srcdir/../dist/clib_port.in
     include.tcl:$srcdir/../test/include.tcl"
-
-# MinGW needs win_db.h.
-if test "$db_cv_mingw" = "yes"; then
-CREATE_LIST="$CREATE_LIST
-    win_db.h:$srcdir/win_db.in"
-fi
 
 # Create the db.h file from a source file, a list of global function
 # prototypes, and, if configured for unique names, a list of #defines

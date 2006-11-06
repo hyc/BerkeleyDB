@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_region.c,v 12.21 2006/08/24 14:46:15 bostic Exp $
+ * $Id: mp_region.c,v 12.25 2006/11/01 00:53:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -20,11 +19,12 @@ static void	__memp_region_size __P((DB_ENV *, roff_t *, u_int32_t *));
  * __memp_open --
  *	Internal version of memp_open: only called from DB_ENV->open.
  *
- * PUBLIC: int __memp_open __P((DB_ENV *));
+ * PUBLIC: int __memp_open __P((DB_ENV *, int));
  */
 int
-__memp_open(dbenv)
+__memp_open(dbenv, create_ok)
 	DB_ENV *dbenv;
+	int create_ok;
 {
 	DB_MPOOL *dbmp;
 	MPOOL *mp;
@@ -50,7 +50,7 @@ __memp_open(dbenv)
 	reginfo.type = REGION_TYPE_MPOOL;
 	reginfo.id = INVALID_REGION_ID;
 	reginfo.flags = REGION_JOIN_OK;
-	if (F_ISSET(dbenv, DB_ENV_CREATE))
+	if (create_ok)
 		F_SET(&reginfo, REGION_CREATE_OK);
 	if ((ret = __db_r_attach(dbenv, &reginfo, reg_size)) != 0)
 		goto err;
@@ -178,8 +178,7 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 	void *p;
 
 	reginfo = &dbmp->reginfo[reginfo_off];
-	if ((ret = __db_shalloc(
-	    reginfo, sizeof(MPOOL), 0, &reginfo->primary)) != 0)
+	if ((ret = __env_alloc(reginfo, sizeof(MPOOL), &reginfo->primary)) != 0)
 		goto mem_err;
 	reginfo->rp->primary = R_OFFSET(reginfo, reginfo->primary);
 	mp = reginfo->primary;
@@ -193,14 +192,14 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 		ZERO_LSN(mp->lsn);
 
 		mp->nreg = dbmp->nreg;
-		if ((ret = __db_shalloc(&dbmp->reginfo[0],
-		    dbmp->nreg * sizeof(u_int32_t), 0, &p)) != 0)
+		if ((ret = __env_alloc(&dbmp->reginfo[0],
+		    dbmp->nreg * sizeof(u_int32_t), &p)) != 0)
 			goto mem_err;
 		mp->regids = R_OFFSET(dbmp->reginfo, p);
 
 		/* Allocate file table space and initialize it. */
-		if ((ret = __db_shalloc(reginfo,
-		    MPOOL_FILE_BUCKETS * sizeof(DB_MPOOL_HASH), 0, &htab)) != 0)
+		if ((ret = __env_alloc(reginfo,
+		    MPOOL_FILE_BUCKETS * sizeof(DB_MPOOL_HASH), &htab)) != 0)
 			goto mem_err;
 		mp->ftab = R_OFFSET(reginfo, htab);
 		for (i = 0; i < MPOOL_FILE_BUCKETS; i++) {
@@ -214,8 +213,8 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 	}
 
 	/* Allocate hash table space and initialize it. */
-	if ((ret = __db_shalloc(reginfo,
-	    htab_buckets * sizeof(DB_MPOOL_HASH), 0, &htab)) != 0)
+	if ((ret = __env_alloc(reginfo,
+	    htab_buckets * sizeof(DB_MPOOL_HASH), &htab)) != 0)
 		goto mem_err;
 	mp->htab = R_OFFSET(reginfo, htab);
 	for (i = 0; i < htab_buckets; i++) {
@@ -228,6 +227,7 @@ __memp_init(dbenv, dbmp, reginfo_off, htab_buckets)
 			return (ret);
 		SH_TAILQ_INIT(&hp->hash_bucket);
 		hp->hash_page_dirty = hp->hash_priority = hp->hash_io_wait = 0;
+		hp->hash_frozen = hp->hash_thawed = hp->hash_frozen_freed = 0;
 		hp->flags = 0;
 		ZERO_LSN(hp->old_reader);
 	}
@@ -392,7 +392,7 @@ __memp_dbenv_refresh(dbenv)
 			    &mp->alloc_frozen, __bh_frozen_a)) != NULL) {
 				SH_TAILQ_REMOVE(&mp->alloc_frozen, frozen_alloc,
 				    links, __bh_frozen_a);
-				__db_shalloc_free(reginfo, frozen_alloc);
+				__env_alloc_free(reginfo, frozen_alloc);
 			}
 		}
 

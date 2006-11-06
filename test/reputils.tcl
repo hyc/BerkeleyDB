@@ -1,9 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: reputils.tcl,v 12.30 2006/09/13 21:51:23 carol Exp $
+# $Id: reputils.tcl,v 12.34 2006/11/01 16:27:11 carol Exp $
 #
 # Replication testing utilities
 
@@ -42,7 +41,10 @@ set perm_response_list {}
 global perm_sent_list
 set perm_sent_list {}
 global elect_timeout
-set elect_timeout 50000000
+unset -nocomplain elect_timeout
+set elect_timeout(default) 5000000
+global electable_pri
+set electable_pri 5
 set drop 0
 global anywhere
 set anywhere 0
@@ -749,7 +751,8 @@ proc replsetuptempfile { to from queuedir } {
 	global queuedbs
 
 	set pid [pid]
-	set queuedbs($to.$from.$pid) [berkdb open -create -excl -recno\
+# puts "Open new temp.$to.$from.$pid"
+	set queuedbs($to.$from.$pid) [berkdb_open -create -excl -recno\
 	    -renumber $queuedir/temp.$to.$from.$pid]
 	error_check_good open_queuedbs [is_valid_db $queuedbs($to.$from.$pid)] TRUE
 }
@@ -795,6 +798,7 @@ proc replprocessqueue { dbenv machid { skip_interval 0 } { hold_electp NONE } \
 	set nproced 0
 
 	set queuedir $qtestdir/MSGQUEUEDIR
+# puts "replprocqueue: Make ready messages to eid $machid"
 	replready $machid to
 
 	# Change directories temporarily so we get just the msg file name.
@@ -937,8 +941,20 @@ proc replprocessqueue { dbenv machid { skip_interval 0 } { hold_electp NONE } \
 
 		if { $nkeys == 0 } {
 			set dbname [string replace $msgdb 0 5 done.]
-#			file rename -force $queuedir/$msgdb $queuedir/$dbname
-			file delete -force $queuedir/$msgdb
+			#
+			# We have to do a special dance to get rid of the 
+			# empty messaging files because of the way Windows 
+			# handles open files marked for deletion. 
+			# On Windows, a file is marked for deletion but
+			# does not actually get deleted until the last handle
+			# is closed.  This causes a problem when a test tries 
+			# to create a new file with a previously-used name, 
+			# and Windows believes the old file still exists.
+			# Therefore, we rename the files before deleting them, 
+			# to guarantee they are out of the way. 
+			#
+			file rename -force $queuedir/$msgdb $queuedir/$dbname
+			file delete -force $queuedir/$dbname
 		}
 	}
 	# Return the number of messages processed.
@@ -985,7 +1001,7 @@ set elect_serial 0
 proc start_election \
     { pfx qdir envstring nsites nvotes pri timeout {err "none"} {crash 0}} {
 	source ./include.tcl
-	global elect_serial elect_timeout elections_in_progress machids
+	global elect_serial elections_in_progress machids
 
 	set filelist {}
 	set ret [catch {glob $testdir/ELECTION*.$elect_serial} result]
@@ -1009,7 +1025,7 @@ proc start_election \
 #	    /dev/stdout -errpfx $pfx \]"
 	puts $oid "\$dbenv test abort $err"
 	puts $oid "set res \[catch \{\$dbenv rep_elect $nsites $nvotes $pri \
-	    $elect_timeout\} ret\]"
+	    $timeout\} ret\]"
 	puts $oid "set r \[open \$testdir/ELECTION_RESULT.$elect_serial w\]"
 	puts $oid "if \{\$res == 0 \} \{"
 	puts $oid "puts \$r \"NEWMASTER \$ret\""
@@ -1022,7 +1038,7 @@ proc start_election \
 	if { $err != "none" && $crash != 1 } {
 		puts $oid "\$dbenv test abort none"
 		puts $oid "set res \[catch \{\$dbenv rep_elect $nsites \
-		    $nvotes $pri $elect_timeout\} ret\]"
+		    $nvotes $pri $timeout\} ret\]"
 		puts $oid "if \{\$res == 0 \} \{"
 		puts $oid "puts \$r \"NEWMASTER \$ret\""
 		puts $oid "\} else \{"
@@ -1042,14 +1058,25 @@ proc start_election \
 	return $elect_serial
 }
 
-proc setpriority { priority nclients winner {start 0} } {
+#
+# If we are doing elections during upgrade testing, set
+# upgrade to 1.  Doing that sets the priority to the
+# test priority in rep_elect, which will simulate a
+# 0-priority but electable site.
+#
+proc setpriority { priority nclients winner {start 0} {upgrade 0} } {
+	global electable_pri
 	upvar $priority pri
 
 	for { set i $start } { $i < [expr $nclients + $start] } { incr i } {
 		if { $i == $winner } {
 			set pri($i) 100
 		} else {
-			set pri($i) 10
+			if { $upgrade } {
+				set pri($i) $electable_pri
+			} else {
+				set pri($i) 10
+			}
 		}
 	}
 }
@@ -1089,12 +1116,53 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 	upvar $priority pri
 	upvar $crsh crash
 
-	set elect_timeout 15000000
+	set elect_timeout(default) 15000000
+	# Windows and HP-UX require a longer timeout.
+	if { $is_windows_test == 1 || $is_hp_test == 1 } {
+		set elect_timeout(default) [expr $elect_timeout(default) * 2]
+	}
 
+	set long_timeout $elect_timeout(default)
+	#
+	# Initialize tries based on the default timeout.
+	# We use tries to loop looking for messages because
+	# as sites are sleeping waiting for their timeout
+	# to expire we need to keep checking for messages.
+	#
+	set tries [expr [expr $long_timeout * 4] / 1000000]
+	#
+	# Retry indicates whether the test should retry the election
+	# if it gets a timeout.  This is primarily used for the
+	# varied timeout election test because we expect short timeouts
+	# to timeout when interacting with long timeouts and the
+	# short timeout sites need to call elections again.
+	#
+	set retry 0
 	foreach pair $cenvlist {
 		set id [lindex $pair 1]
 		set i [expr $id - 2]
 		set elect_pipe($i) INVALID
+		#
+		# Array get should return us a list of 1 element:
+		# { {$i timeout_value} }
+		# If that doesn't exist, use the default.
+		#
+		set this_timeout [array get elect_timeout $i]
+		if { [llength $this_timeout] } {
+			set e_timeout($i) [lindex $this_timeout 1]
+			#
+			# Set number of tries based on the biggest
+			# timeout we see in this group if using
+			# varied timeouts.
+			#
+			set retry 1
+			if { $e_timeout($i) > $long_timeout } {
+				set long_timeout $e_timeout($i)
+				set tries [expr $long_timeout / 1000000]
+			}
+		} else {
+			set e_timeout($i) $elect_timeout(default)
+		}
 		replclear $id
 	}
 
@@ -1113,18 +1181,14 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 	    expected winner is $win (eid [expr $win + 2])"
 	incr elect_serial
 	set pfx "CHILD$elector.$elect_serial"
-	# Windows and HP-UX require a longer timeout.
-	if { $is_windows_test == 1 || $is_hp_test == 1 } {
-		set elect_timeout [expr $elect_timeout * 2]
-	}
 	set elect_pipe($elector) [start_election \
 	    $pfx $qdir $env_cmd($elector) $nsites $nvotes $pri($elector) \
-	    $elect_timeout $err_cmd($elector) $crash($elector)]
+	    $e_timeout($elector) $err_cmd($elector) $crash($elector)]
 
 	tclsleep 2
 
 	set got_newmaster 0
-	set tries [expr [expr $elect_timeout * 4] / 1000000]
+	set max_retry $tries
 
 	# If we're simulating a crash, skip the while loop and
 	# just give the initial election a chance to complete.
@@ -1135,9 +1199,11 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 		}
 	}
 
+	set orig_tries $tries
 	if { $crashing == 1 } {
 		tclsleep 10
 	} else {
+		set retry_cnt 0
 		while { 1 } {
 			set nproced 0
 			set he 0
@@ -1146,10 +1212,11 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 
 			foreach pair $cenvlist {
 				set he 0
+				set unavail 0
 				set envid [lindex $pair 1]
 				set i [expr $envid - 2]
 				set clientenv($i) [lindex $pair 0]
-				set child_done [check_election $elect_pipe($i) nm2]
+				set child_done [check_election $elect_pipe($i) nm2 unavail]
 				if { $got_newmaster == 0 && $nm2 != 0 } {
 					error_check_good newmaster_is_master2 $nm2 \
 					    [expr $win + 2]
@@ -1168,6 +1235,18 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 				incr nproced \
 				    [replprocessqueue $clientenv($i) $envid 0 he nm]
 # puts "Tries $tries: Processed queue for client $i, $nproced msgs he $he nm $nm nm2 $nm2"
+				# If the previous election failed with a
+				# timeout and we need to retry because we
+				# are testing varying site timeouts, force
+				# a hold election to start a new one.
+				if { $unavail && $retry && $retry_cnt < $max_retry} {
+					incr retry_cnt
+					puts "\t\t$msg.2.b: Client $i timed\
+					    out. Retry $retry_cnt\
+					    of max $max_retry"
+					set he 1
+					set tries $orig_tries
+				}
 				if { $he == 1 } {
 					#
 					# Only close down the election pipe if the
@@ -1188,7 +1267,7 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 						set elect_pipe($i) [start_election \
 						    $pfx $qdir \
 						    $env_cmd($i) $nsites \
-						    $nvotes $pri($i) $elect_timeout]
+						    $nvotes $pri($i) $e_timeout($i)]
 						set got_hold_elect($i) 1
 					}
 				}
@@ -1226,6 +1305,15 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 			# election has finished...
 			if { $nproced == 0 } {
 				incr tries -1
+				#
+				# If we have a newmaster already, set tries
+				# down to just allow straggling messages to
+				# be processed.  Tries could be a very large
+				# number if we have long timeouts.
+				#
+				if { $got_newmaster != 0 && $tries > 10 } {
+					set tries 10
+				}
 				if { $tries == 0 } {
 					break
 				} else {
@@ -1288,14 +1376,16 @@ proc got_newmaster { cenv i newmaster win {dbname "test.db"} } {
 	}
 }
 
-proc check_election { id newmasterp } {
+proc check_election { id newmasterp unavailp } {
 	source ./include.tcl
 
 	if { $id == "INVALID" } {
 		return 0
 	}
 	upvar $newmasterp newmaster
+	upvar $unavailp unavail
 	set newmaster 0
+	set unavail 0
 	set res [catch {open $testdir/ELECTION_RESULT.$id} nmid]
 	if { $res != 0 } {
 		return 0
@@ -1305,6 +1395,9 @@ proc check_election { id newmasterp } {
 		set str [lindex $val 0]
 		if { [is_substr $str NEWMASTER] } {
 			set newmaster [lindex $val 1]
+		}
+		if { [is_substr $val UNAVAIL] } {
+			set unavail 1
 		}
 	}
 	close $nmid
@@ -1676,7 +1769,7 @@ proc rep_test_upg { method env repdb {nentries 10000} \
 		set t [$env txn]
 		error_check_good txn [is_valid_txn $t $env] TRUE
 		set txn "-txn $t"
-puts "rep_test_upg: put $count of $nentries: key $key, data $str"
+# puts "rep_test_upg: put $count of $nentries: key $key, data $str"
 		set ret [eval \
 		    {$db put} $txn $pflags {$key [chop_data $method $str]}]
 		error_check_good put $ret 0
@@ -1799,6 +1892,7 @@ proc proc_msgs_once { elist {dupp NONE} {errp NONE} } {
 		set envid [lindex $pair 1]
 		#
 		# If we need to send in all the other args
+# puts "Call replpq with on $envid"
 		incr nproced [replprocessqueue $envname $envid \
 		    0 NONE NONE dupmaster errorp]
 		#
@@ -1809,6 +1903,7 @@ proc proc_msgs_once { elist {dupp NONE} {errp NONE} } {
 			return 0
 		}
 		if { $errorp != 0 && $errorp != "NONE" } {
+# puts "Returning due to error $errorp"
 			return 0
 		}
 	}

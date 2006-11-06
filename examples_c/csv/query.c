@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006
- *	Oracle Corporation.  All rights reserved.
+ * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: query.c,v 1.14 2006/08/24 14:45:43 bostic Exp $
+ * $Id: query.c,v 1.15 2006/11/01 00:52:50 bostic Exp $
  */
 
 #include "csv.h"

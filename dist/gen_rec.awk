@@ -2,10 +2,9 @@
 #
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996-2006
-#	Oracle Corporation.  All rights reserved.
+# Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: gen_rec.awk,v 12.22 2006/09/14 15:00:47 bostic Exp $
+# $Id: gen_rec.awk,v 12.23 2006/11/01 00:52:45 bostic Exp $
 #
 
 # This awk script generates all the log, print, and read routines for the DB
