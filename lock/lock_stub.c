@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_stub.c,v 12.2 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_stub.c,v 12.3 2006/11/09 14:30:22 bostic Exp $
  */
 
 #include "db_config.h"
@@ -252,10 +252,12 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 }
 
 int
-__lock_open(dbenv)
+__lock_open(dbenv, create_ok)
 	DB_ENV *dbenv;
+	int create_ok;
 {
 	COMPQUIET(dbenv, NULL);
+	COMPQUIET(create_ok, 0);
 	return (0);
 }
 

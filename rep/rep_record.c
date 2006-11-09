@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_record.c,v 12.59 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_record.c,v 12.60 2006/11/07 23:54:00 alanb Exp $
  */
 
 #include "db_config.h"
@@ -172,6 +172,7 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 
 	ENV_ENTER(dbenv, ip);
 
+	REP_PRINT_MESSAGE(dbenv, *eidp, rp, "rep_process_message", 0);
 	/*
 	 * Acquire the replication lock.
 	 */
@@ -186,6 +187,18 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		if (F_ISSET(rp, REPCTL_PERM))
 			ret = DB_REP_IGNORE;
 		REP_SYSTEM_UNLOCK(dbenv);
+		/*
+		 * If another client has sent a c2c request to us, it may be a
+		 * long time before it resends the request (due to its dual data
+		 * streams avoidance heuristic); let it know we can't serve the
+		 * request just now.
+		 */
+		if (F_ISSET(rep, REP_F_CLIENT) && REP_MSG_REQ(rp->rectype)) {
+			rep->stat.st_client_svc_req++;
+			rep->stat.st_client_svc_miss++;
+			(void)__rep_send_message(dbenv,
+			    *eidp, REP_REREQUEST, NULL, NULL, 0, 0);
+		}
 		goto out;
 	}
 	rep->msg_th++;
@@ -200,7 +213,6 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	 * Check the version number for both rep and log.  If it is
 	 * an old version we support, convert it.  Otherwise complain.
 	 */
-	REP_PRINT_MESSAGE(dbenv, *eidp, rp, "rep_process_message", 0);
 	if (rp->rep_version < DB_REPVERSION) {
 		RPRINT(dbenv, (dbenv,
 		    "Received record %lu with old rep version %lu",

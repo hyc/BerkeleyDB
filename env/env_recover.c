@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_recover.c,v 12.36 2006/11/01 00:52:48 bostic Exp $
+ * $Id: env_recover.c,v 12.37 2006/11/09 14:27:06 bostic Exp $
  */
 
 #include "db_config.h"
@@ -28,7 +28,10 @@ static int	__env_init_rec_42 __P((DB_ENV *));
 static int	__env_init_rec_43 __P((DB_ENV *));
 static int	__env_init_rec_45 __P((DB_ENV *));
 static int	__log_earliest __P((DB_ENV *, DB_LOGC *, int32_t *, DB_LSN *));
+
+#ifndef HAVE_BREW
 static double	__lsn_diff __P((DB_LSN *, DB_LSN *, DB_LSN *, u_int32_t, int));
+#endif
 
 /*
  * __db_apprec --
@@ -308,6 +311,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 		goto err;
 	}
 
+#ifndef HAVE_BREW
 	if (dbenv->db_feedback != NULL) {
 		if (last_lsn.file == first_lsn.file)
 			nfiles = (double)
@@ -320,6 +324,7 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 		if (nfiles < 0.001)
 			nfiles = 0.001;
 	}
+#endif
 
 	/* Find a low txnid. */
 	ret = 0;
@@ -380,11 +385,15 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 	for (ret = __logc_get(logc, &lsn, &data, DB_LAST);
 	    ret == 0 && LOG_COMPARE(&lsn, &first_lsn) >= 0;
 	    ret = __logc_get(logc, &lsn, &data, DB_PREV)) {
+#ifdef HAVE_BREW
+		COMPQUIET(progress, 0);
+#else
 		if (dbenv->db_feedback != NULL) {
 			progress = 34 + (int)(33 * (__lsn_diff(&first_lsn,
 			    &last_lsn, &lsn, log_size, 0) / nfiles));
 			dbenv->db_feedback(dbenv, DB_RECOVER, progress);
 		}
+#endif
 		tlsn = lsn;
 		ret = __db_dispatch(dbenv, dbenv->recover_dtab,
 		    dbenv->recover_dtab_size, &data, &tlsn,
@@ -422,11 +431,13 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 
 	for (ret = __logc_get(logc, &lsn, &data, DB_NEXT);
 	    ret == 0; ret = __logc_get(logc, &lsn, &data, DB_NEXT)) {
+#ifndef HAVE_BREW
 		if (dbenv->db_feedback != NULL) {
 			progress = 67 + (int)(33 * (__lsn_diff(&first_lsn,
 			    &last_lsn, &lsn, log_size, 1) / nfiles));
 			dbenv->db_feedback(dbenv, DB_RECOVER, progress);
 		}
+#endif
 		tlsn = lsn;
 		ret = __db_dispatch(dbenv, dbenv->recover_dtab,
 		    dbenv->recover_dtab_size, &data, &tlsn,
@@ -613,6 +624,7 @@ err:	if (logc != NULL && (t_ret = __logc_close(logc)) != 0 && ret == 0)
 	return (ret);
 }
 
+#ifndef HAVE_BREW
 /*
  * Figure out how many logfiles we have processed.  If we are moving
  * forward (is_forward != 0), then we're computing current - low.  If
@@ -657,6 +669,7 @@ __lsn_diff(low, high, current, max, is_forward)
 	}
 	return (nf);
 }
+#endif
 
 /*
  * __log_backup --
@@ -830,12 +843,17 @@ __env_openfiles(dbenv, logc, txninfo,
 
 	lsn = *open_lsn;
 	for (;;) {
+#ifdef HAVE_BREW
+		COMPQUIET(nfiles, (double)0.001);
+		COMPQUIET(progress, 0);
+#else
 		if (in_recovery && dbenv->db_feedback != NULL) {
 			DB_ASSERT(dbenv, last_lsn != NULL);
 			progress = (int)(33 * (__lsn_diff(open_lsn,
 			   last_lsn, &lsn, log_size, 1) / nfiles));
 			dbenv->db_feedback(dbenv, DB_RECOVER, progress);
 		}
+#endif
 		tlsn = lsn;
 		ret = __db_dispatch(dbenv,
 		    dbenv->recover_dtab, dbenv->recover_dtab_size, data, &tlsn,

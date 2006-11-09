@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_alloc.c,v 12.13 2006/11/01 00:52:48 bostic Exp $
+ * $Id: env_alloc.c,v 12.14 2006/11/08 22:35:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -123,6 +123,18 @@ __env_alloc_init(infop, size)
 #define	DB_ALLOC_SIZE(len)						\
 	(size_t)DB_ALIGN((len) + sizeof(ALLOC_ELEMENT), sizeof(uintmax_t))
 #endif
+
+/*
+ * __env_alloc_overhead --
+ *	Return the overhead needed for an allocation.
+ *
+ * PUBLIC: size_t __env_alloc_overhead __P((void));
+ */
+size_t
+__env_alloc_overhead()
+{
+	return (sizeof(ALLOC_ELEMENT));
+}
 
 /*
  * __env_alloc_size --

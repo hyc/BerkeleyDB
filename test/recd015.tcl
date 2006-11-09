@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: recd015.tcl,v 12.4 2006/11/01 00:53:54 bostic Exp $
+# $Id: recd015.tcl,v 12.5 2006/11/06 21:22:24 carol Exp $
 #
 # TEST	recd015
 # TEST	This is a recovery test for testing lots of prepared txns.
@@ -25,8 +25,8 @@ proc recd015 { method args } {
 
 	set env_cmd "berkdb_env -create -txn -home $testdir"
 	set msg "\tRecd015.a"
-	puts "$msg Simple test to prepare $numtxns txn "
 	foreach op { abort commit discard } {
+		puts "$msg: Simple test to prepare $numtxns txn with $op "
 		env_cleanup $testdir
 		recd015_body $env_cmd $testfile $numtxns $msg $op
 	}
@@ -52,8 +52,8 @@ proc recd015 { method args } {
 	error_check_good envclose [$env close] 0
 
 	set msg "\tRecd015.b"
-	puts "$msg Large test to prepare $numtxns txn "
 	foreach op { abort commit discard } {
+		puts "$msg: Large test to prepare $numtxns txn with $op"
 		recd015_body $env_cmd $testfile $numtxns $msg $op
 	}
 

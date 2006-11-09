@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_brew_dsp,v 1.1 2006/09/27 15:01:01 bostic Exp $
+#	$Id: s_brew_dsp,v 1.2 2006/11/09 14:11:09 bostic Exp $
 #
 # Build BREW .dsp files.
 
@@ -9,37 +9,19 @@ SRCFILES=srcfiles.in
 
 s=/tmp/__db_a
 t=/tmp/__db_b
-u=/tmp/__db_c
 
-trap 'rm -f $s $t $u; exit 0' 0
-trap 'rm -f $s $t $u; exit 1' 1 2 3 13 15
+trap 'rm -f $s $t; exit 0' 0
+trap 'rm -f $s $t; exit 1' 1 2 3 13 15
 
-# Copy in the bdb_brew.dsw file.
-f=../build_brew/bdb_brew.dsw
-i=brew/bdb_brew.dsw
-cmp $i $f > /dev/null 2>&1 ||
-    (echo "Building $f" && rm -f $f && cp $i $f && chmod 444 $f)
-
-# $1 is the srcfiles.in keyword
-# $2 is the .dsp file name.
+# Build the bdb_brew.dsp file.
 dsp()
 {
-	# Build the .dsp file.
-	f=../build_brew/$2
-	grep -w $1 $SRCFILES | awk '{print $1}' > $s
+	grep -w brew $SRCFILES | awk '{print $1}' > $s
+	cp $s /tmp/_f
 
-	# Small builds require the HAVE_SMALLBUILD #define
-	:>$u
-	if test "$1" = "brewsmall"; then
-		echo 's/^# ADD BASE CPP/& \/D "HAVE_SMALLBUILD"/' >> $u
-		echo 's/^# ADD CPP/& \/D "HAVE_SMALLBUILD"/' >> $u
-		echo 's/bdb_brew/bdb_brew_small/g' >> $u
-	fi
-
-	(cat brew/bdb_brew.dsp.1 | sed -f $u
+	(cat brew/bdb_brew.dsp;
 	for i in `cat $s`; do
 		echo '# Begin Source File'
-		echo ''
 		echo "SOURCE=..\\$i"
 		echo '# End Source File'
 	done | sed 's/\//\\/g'
@@ -47,66 +29,38 @@ dsp()
 	echo '# End Target'
 	echo '# End Project') > $t
 
+	f=../build_brew/bdb_brew.dsp
 	cmp $t $f > /dev/null 2>&1 ||
 	    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 }
 
-dsp brew bdb_brew.dsp
-dsp brewsmall bdb_brew_small.dsp
-
-# $1 is the srcfiles.in keyword
-# $2 is the .mak file name.
+# Build the bdbread.mak applet example file.
 mak()
 {
-	# Build the bdb_brew.mak file.
-	f=../build_brew/$2
-	grep -w $1 $SRCFILES | awk '{print $1}' > $s
+	(echo -n 'OBJS           =bdbread.o AEEModGen.o AEEAppGen.o'
+	grep -w brew $SRCFILES |
+	    awk '{print $1}' |
+	    sed -e 's/.*\///' \
+	        -e 's/\.c/\.o/g' |
+	    awk '{printf " %s", $1}'
+	echo "") > $s
 
-	# Small builds require the HAVE_SMALLBUILD #define
-	:>$u
-	if test "$1" = "brewsmall"; then
-		echo 's/^CPP_PROJ=/&\/HAVE_SMALLBUILD /' >> $u
-	fi
+	sed -e '/LIST OF OBJECT FILES/{' \
+	    -e "r $s" \
+	    -e 'd' \
+	    -e '}' < brew/bdbread.mak > $t
 
-	(cat brew/bdb_brew.mak.1 | sed -f $u
-	echo ""
-	for i in `cat $s`; do
-		echo "	-@erase \"\$(INTDIR)\\`basename $i .c`.obj\""
-	done
-	cat brew/bdb_brew.mak.2 | sed -f $u
-	echo ""
-	for i in `cat $s`; do
-		echo "	\"\$(INTDIR)\\`basename $i .c`.obj\" \\"
-	done
-	cat brew/bdb_brew.mak.3 | sed -f $u
-	echo ""
-	for i in `cat $s`; do
-		echo "	-@erase \"\$(INTDIR)\\`basename $i .c`.obj\""
-	done
-	cat brew/bdb_brew.mak.4 | sed -f $u
-	echo ""
-	for i in `cat $s`; do
-		echo "	\"\$(INTDIR)\\`basename $i .c`.obj\" \\"
-	done
-	cat brew/bdb_brew.mak.5 | sed -f $u
-	echo ""
-	for i in `cat $s`; do
-		echo "SOURCE=..\\`echo $i | sed -e 's/\//\\\\/g'`"
-		echo ""
-		echo "\"\$(INTDIR)\\`basename $i .c`.obj\" : \$(SOURCE) \"\$(INTDIR)\""
-		echo "	\$(CPP) \$(CPP_PROJ) \$(SOURCE)"
-		echo ""
-		echo ""
-	done
-	echo ""
-	echo "!ENDIF "
-	echo "") > $t
+	for i in `grep -w brew $SRCFILES | awk '{print $1}'`; do
+		echo "`basename $i .c`.o:	../$i"
+	done |
+	sed 's/\//\\/g' >> $t
 
+	f=../build_brew/bdbread.mak
 	cmp $t $f > /dev/null 2>&1 ||
 	    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 }
 
-mak brew bdb_brew.mak
-mak brewsmall bdb_brew_small.mak
+dsp
+mak
 
 exit 0

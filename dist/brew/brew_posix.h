@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2006
  *	Oracle Corp.  All rights reserved.
  *
- * $Id: brew_posix.h,v 1.2 2006/09/30 15:23:07 bostic Exp $
+ * $Id: brew_posix.h,v 1.3 2006/11/09 14:13:51 bostic Exp $
  */
 
 typedef void *AEEAppInfo;
@@ -36,11 +36,13 @@ typedef struct {
 	int	wYear;
 } JulianType;
 
+#define	AECHAR					char
 #define	AEECLSID_FILEMGR			(1)
 #define	BREW_EPOCH_OFFSET			(1)
 #define	DBGPRINTF				printf
 #define	FILE_MANAGER_CREATE(a, b, c)		(b = (IFileMgr *)a, c = 0)
 #define	FILE_MANAGER_ERR(a, b, c, d, e)		(b = (IFileMgr *)a, e = 0)
+#define	FLOAT_TO_WSTR(a, b, c)			(a = c)
 #define	GETAPPINSTANCE()			(NULL)
 #define	GETJULIANDATE(a, b)
 #define	GETTIMESECONDS()			(0)
@@ -70,6 +72,7 @@ typedef struct {
 #define	LOCALTIMEOFFSET(a)			(1)
 #define	MEMCPY(a, b, c)				(NULL)
 #define	MSLEEP(a)
+#define	WSTR_TO_STR(a, b, c)			strncpy(b, a, c)
 #define	__os_fsync(a, b)			(0)
 
 #define	SUCCESS					(0)
@@ -84,7 +87,6 @@ typedef struct {
 #define	_SEEK_END				(1)
 #define	_SEEK_START				(1)
 
-
 #define	EBADFILENAME				(1)
 #define	EBADSEEKPOS				(2)
 #define	EDIRNOEXISTS				(3)
@@ -98,3 +100,5 @@ typedef struct {
 #define	ENOMEDIA				(11)
 #define	ENOMEMORY				(12)
 #define	EOUTOFNODES				(13)
+
+#define	static

@@ -626,6 +626,7 @@
 #define	__db_tablesize __db_tablesize@DB_VERSION_UNIQUE_NAME@
 #define	__db_hashinit __db_hashinit@DB_VERSION_UNIQUE_NAME@
 #define	__env_alloc_init __env_alloc_init@DB_VERSION_UNIQUE_NAME@
+#define	__env_alloc_overhead __env_alloc_overhead@DB_VERSION_UNIQUE_NAME@
 #define	__env_alloc_size __env_alloc_size@DB_VERSION_UNIQUE_NAME@
 #define	__env_alloc __env_alloc@DB_VERSION_UNIQUE_NAME@
 #define	__env_alloc_free __env_alloc_free@DB_VERSION_UNIQUE_NAME@

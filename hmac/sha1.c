@@ -1,5 +1,5 @@
 /*
- * $Id: sha1.c,v 12.2 2006/09/08 20:32:10 bostic Exp $
+ * $Id: sha1.c,v 12.3 2006/11/09 14:29:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -136,7 +136,7 @@ typedef union {
     u_int32_t l[16];
 } CHAR64LONG16;
 CHAR64LONG16* block;
-static int is_bigendian = -1;
+    int is_bigendian;
 #ifdef SHA1HANDSOFF
     unsigned char workspace[64];
 
@@ -145,8 +145,8 @@ static int is_bigendian = -1;
 #else
     block = (CHAR64LONG16*)buffer;
 #endif
-    if (is_bigendian == -1)
-    	is_bigendian = __db_isbigendian();
+    is_bigendian = __db_isbigendian();
+
     /* Copy context->state[] to working vars */
     a = state[0];
     b = state[1];

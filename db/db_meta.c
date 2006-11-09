@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_meta.c,v 12.38 2006/11/02 21:24:19 ubell Exp $
+ * $Id: db_meta.c,v 12.39 2006/11/07 21:24:01 ubell Exp $
  */
 
 #include "db_config.h"
@@ -458,7 +458,7 @@ logged:
 		 */
 		if ((ret = __memp_dirty(mpf, &h, dbc->txn, 0)) != 0)
 			goto err1;
-		LSN(h) = LSN(meta);
+		LSN(h) = *lsnp;
 		P_INIT(h, dbp->pgsize,
 		    h->pgno, PGNO_INVALID, next_pgno, 0, P_INVALID);
 #ifdef DIAGNOSTIC

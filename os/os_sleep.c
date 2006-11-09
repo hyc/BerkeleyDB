@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_sleep.c,v 12.10 2006/11/01 00:53:40 bostic Exp $
+ * $Id: os_sleep.c,v 12.11 2006/11/08 23:10:39 alanb Exp $
  */
 
 #include "db_config.h"
@@ -48,7 +48,8 @@ __os_sleep(dbenv, secs, usecs)
 #endif
 
 	/*
-	 * Sheer raving paranoia -- don't select for 0 time.
+	 * Sheer raving paranoia -- don't select for 0 time, in case some
+	 * implementation doesn't yield the processor in that case.
 	 */
 	t.tv_sec = (long)secs;
 	if (secs == 0 && usecs == 0)

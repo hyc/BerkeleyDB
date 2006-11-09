@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_config.c,v 12.69 2006/11/01 00:52:48 bostic Exp $
+ * $Id: env_config.c,v 12.70 2006/11/08 23:06:57 ubell Exp $
  */
 
 #include "db_config.h"
@@ -211,6 +211,8 @@ format:		__db_errx(dbenv,
 			return (__env_set_flags(dbenv, DB_REGION_INIT, 1));
 		if (strcasecmp(argv[1], "db_txn_nosync") == 0)
 			return (__env_set_flags(dbenv, DB_TXN_NOSYNC, 1));
+		if (strcasecmp(argv[1], "db_txn_nowait") == 0)
+			return (__env_set_flags(dbenv, DB_TXN_NOWAIT, 1));
 		if (strcasecmp(argv[1], "db_txn_snapshot") == 0)
 			return (__env_set_flags(dbenv, DB_TXN_SNAPSHOT, 1));
 		if (strcasecmp(argv[1], "db_txn_write_nosync") == 0)

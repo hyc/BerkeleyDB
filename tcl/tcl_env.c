@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_env.c,v 12.32 2006/11/01 00:53:51 bostic Exp $
+ * $Id: tcl_env.c,v 12.33 2006/11/07 19:21:15 sue Exp $
  */
 
 #include "db_config.h"
@@ -1066,6 +1066,8 @@ tcl_EnvRemove(interp, objc, objv, dbenv, envip)
 			if (result != TCL_OK)
 				goto error;
 		}
+		e->set_errpfx(e, "EnvRemove");
+		e->set_errcall(e, _ErrorFunc);
 	} else {
 		/*
 		 * We have to clean up any info associated with this env,

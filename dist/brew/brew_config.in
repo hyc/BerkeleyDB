@@ -38,6 +38,9 @@
 /* Define to 1 if building BREW. */
 #define HAVE_BREW 1
 
+/* Define to 1 if building on BREW (SDK2). */
+#define HAVE_BREW_SDK2 1
+
 /* Define to 1 if you have the `clock_gettime' function. */
 /* #undef HAVE_CLOCK_GETTIME */
 
@@ -118,9 +121,7 @@
 /* #undef HAVE_GETUID */
 
 /* Define to 1 if building Hash access method. */
-#ifndef HAVE_SMALLBUILD
-#define HAVE_HASH 1
-#endif
+/* #undef HAVE_HASH */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
@@ -303,9 +304,7 @@
 /* #undef HAVE_QSORT */
 
 /* Define to 1 if building Queue access method. */
-#ifndef HAVE_SMALLBUILD
-#define HAVE_QUEUE 1
-#endif
+/* #undef HAVE_QUEUE */
 
 /* Define to 1 if you have the `raise' function. */
 /* #undef HAVE_RAISE */
@@ -317,9 +316,7 @@
 /* #undef HAVE_REPLICATION */
 
 /* Define to 1 if building the Berkeley DB replication framework. */
-#ifndef HAVE_SMALLBUILD
 /* #undef HAVE_REPLICATION_THREADS */
-#endif
 
 /* Define to 1 if building RPC client/server. */
 /* #undef HAVE_RPC */
@@ -438,9 +435,7 @@
 /* #undef HAVE_UNLINK_WITH_OPEN_FAILURE */
 
 /* Define to 1 if building access method verification support. */
-#ifndef HAVE_SMALLBUILD
-#define HAVE_VERIFY 1
-#endif
+/* #undef HAVE_VERIFY */
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1

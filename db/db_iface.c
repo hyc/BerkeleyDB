@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_iface.c,v 12.55 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_iface.c,v 12.56 2006/11/09 14:27:06 bostic Exp $
  */
 
 #include "db_config.h"
@@ -966,6 +966,7 @@ __db_key_range_pp(dbp, txn, key, kr, flags)
 	 */
 	switch (dbp->type) {
 	case DB_BTREE:
+#ifndef HAVE_BREW
 		if ((ret = __dbt_usercopy(dbenv, key)) != 0)
 			goto err;
 
@@ -981,6 +982,12 @@ __db_key_range_pp(dbp, txn, key, kr, flags)
 			ret = t_ret;
 		__dbt_userfree(dbenv, key, NULL, NULL);
 		break;
+#else
+		COMPQUIET(dbc, NULL);
+		COMPQUIET(key, NULL);
+		COMPQUIET(kr, NULL);
+		/* FALLTHROUGH */
+#endif
 	case DB_HASH:
 	case DB_QUEUE:
 	case DB_RECNO:

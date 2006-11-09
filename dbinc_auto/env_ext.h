@@ -9,6 +9,7 @@ extern "C" {
 u_int32_t __db_tablesize __P((u_int32_t));
 void __db_hashinit __P((void *, u_int32_t));
 void __env_alloc_init __P((REGINFO *, size_t));
+size_t __env_alloc_overhead __P((void));
 size_t __env_alloc_size __P((size_t));
 int __env_alloc __P((REGINFO *, size_t, void *));
 void __env_alloc_free __P((REGINFO *, void *));

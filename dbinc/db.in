@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db.in,v 12.120 2006/11/01 00:52:40 bostic Exp $
+ * $Id: db.in,v 12.121 2006/11/08 23:06:56 ubell Exp $
  *
  * db.h include file layout:
  *	General.
@@ -215,10 +215,10 @@ struct __db_dbt {
 #define	DB_THREAD	      0x0000080	/* Applications are threaded. */
 #define	DB_TRUNCATE	      0x0000100	/* Discard existing DB (O_TRUNC). */
 #define	DB_TXN_NOSYNC	      0x0000200	/* Do not sync log on commit. */
-#define	DB_TXN_NOT_DURABLE    0x0000400	/* Do not log changes. */
-#define	DB_TXN_WRITE_NOSYNC   0x0000800	/* Write the log but don't sync. */
-#define	DB_USE_ENVIRON	      0x0001000	/* Use the environment. */
-#define	DB_USE_ENVIRON_ROOT   0x0002000	/* Use the environment if root. */
+#define	DB_TXN_NOWAIT	      0x0000400	/* Do not wait for locks. */
+#define	DB_TXN_NOT_DURABLE    0x0000800	/* Do not log changes. */
+#define	DB_TXN_WRITE_NOSYNC   0x0001000	/* Write the log but don't sync. */
+#define	DB_SPARE_FLAG         0x0002000	/* Spare. */
 
 /*
  * Common flags --
@@ -268,19 +268,24 @@ struct __db_dbt {
 #define	DB_XA_CREATE	      0x0000002	/* Open in an XA environment. */
 
 /*
- * Flags private to DB_ENV->open.
+ * Flags shared by DB_ENV->remove and DB_ENV->open.
  *	   Shared flags up to 0x0002000 */
-#define	DB_INIT_CDB	      0x0004000	/* Concurrent Access Methods. */
-#define	DB_INIT_LOCK	      0x0008000	/* Initialize locking. */
-#define	DB_INIT_LOG	      0x0010000	/* Initialize logging. */
-#define	DB_INIT_MPOOL	      0x0020000	/* Initialize mpool. */
-#define	DB_INIT_REP	      0x0040000	/* Initialize replication. */
-#define	DB_INIT_TXN	      0x0080000	/* Initialize transactions. */
-#define	DB_LOCKDOWN	      0x0100000	/* Lock memory into physical core. */
-#define	DB_PRIVATE	      0x0200000	/* DB_ENV is process local. */
-#define	DB_RECOVER_FATAL      0x0400000	/* Run catastrophic recovery. */
-#define	DB_REGISTER	      0x0800000	/* Multi-process registry. */
-#define	DB_SYSTEM_MEM	      0x1000000	/* Use system-backed memory. */
+#define	DB_USE_ENVIRON	      0x0004000	/* Use the environment. */
+#define	DB_USE_ENVIRON_ROOT   0x0008000	/* Use the environment if root. */
+/*
+ * Flags private to DB_ENV->open.
+ */
+#define	DB_INIT_CDB	      0x0010000	/* Concurrent Access Methods. */
+#define	DB_INIT_LOCK	      0x0020000	/* Initialize locking. */
+#define	DB_INIT_LOG	      0x0040000	/* Initialize logging. */
+#define	DB_INIT_MPOOL	      0x0080000	/* Initialize mpool. */
+#define	DB_INIT_REP	      0x0100000	/* Initialize replication. */
+#define	DB_INIT_TXN	      0x0200000	/* Initialize transactions. */
+#define	DB_LOCKDOWN	      0x0400000	/* Lock memory into physical core. */
+#define	DB_PRIVATE	      0x0800000	/* DB_ENV is process local. */
+#define	DB_RECOVER_FATAL      0x1000000	/* Run catastrophic recovery. */
+#define	DB_REGISTER	      0x2000000	/* Multi-process registry. */
+#define	DB_SYSTEM_MEM	      0x4000000	/* Use system-backed memory. */
 
 #define	DB_JOINENV	      0x0	/* Compatibility. */
 
@@ -302,8 +307,8 @@ struct __db_dbt {
 /*
  * Flags private to DB_ENV->txn_begin.
  *	   Shared flags up to 0x0002000 */
-#define	DB_TXN_NOWAIT	      0x0004000	/* Do not wait for locks in this TXN. */
-#define	DB_TXN_SYNC	      0x0008000	/* Always sync log on commit. */
+#define	DB_TXN_SYNC	      0x0004000	/* Always sync log on commit. */
+#define	DB_TXN_WAIT	      0x0008000	/* Always wait for locks in this TXN. */
 
 /*
  * Flags private to DB_ENV->set_encrypt.
@@ -2413,9 +2418,10 @@ struct __db_env {
 #define	DB_ENV_THREAD		0x01000000 /* DB_THREAD set. */
 #define	DB_ENV_TIME_NOTGRANTED	0x02000000 /* DB_TIME_NOTGRANTED set. */
 #define	DB_ENV_TXN_NOSYNC	0x04000000 /* DB_TXN_NOSYNC set. */
-#define	DB_ENV_TXN_SNAPSHOT	0x08000000 /* DB_TXN_SNAPSHOT set. */
-#define	DB_ENV_TXN_WRITE_NOSYNC	0x10000000 /* DB_TXN_WRITE_NOSYNC set. */
-#define	DB_ENV_YIELDCPU		0x20000000 /* DB_YIELDCPU set. */
+#define	DB_ENV_TXN_NOWAIT	0x08000000 /* DB_TXN_NOWAIT set. */
+#define	DB_ENV_TXN_SNAPSHOT	0x10000000 /* DB_TXN_SNAPSHOT set. */
+#define	DB_ENV_TXN_WRITE_NOSYNC	0x20000000 /* DB_TXN_WRITE_NOSYNC set. */
+#define	DB_ENV_YIELDCPU		0x40000000 /* DB_YIELDCPU set. */
 	u_int32_t flags;
 };
 

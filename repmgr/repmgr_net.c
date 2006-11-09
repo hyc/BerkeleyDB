@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_net.c,v 1.43 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_net.c,v 1.44 2006/11/07 22:48:05 alanb Exp $
  */
 
 #include "db_config.h"
@@ -1018,6 +1018,8 @@ __repmgr_net_destroy(dbenv, db_rep)
 	REPMGR_RETRY *retry;
 	REPMGR_SITE *site;
 	u_int i;
+
+	__repmgr_cleanup_netaddr(dbenv, &db_rep->my_addr);
 
 	if (db_rep->sites == NULL)
 		return;

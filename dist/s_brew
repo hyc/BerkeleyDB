@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_brew,v 12.2 2006/10/10 00:00:15 bostic Exp $
+#	$Id: s_brew,v 12.3 2006/11/09 14:10:39 bostic Exp $
 #
 # Build the BREW files.
 
@@ -50,7 +50,16 @@ s/@DB_CONST@//
 s/@DB_PROTO1@/#undef __P/
 s/@DB_PROTO2@/#define	__P(protos)	protos/
 /@platform_header@/d
-/@platform_footer@/d
+/@platform_footer@/{
+	i\\
+typedef struct {\\
+\	AEEApplet a;			/* AEEApplet must be listed first. */\\
+\	void *db_global_values;\\
+} BDBApp;\\
+int brew_bdb_begin __P((void));\\
+int brew_bdb_end __P((void));
+	d
+}
 /^#ifndef.__NO_SYSTEM_INCLUDES/i\\
 #include <AEEFile.h>
 /^#ifndef.__NO_SYSTEM_INCLUDES/,/^#endif/d

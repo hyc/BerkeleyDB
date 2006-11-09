@@ -3,17 +3,10 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: env_method.c,v 12.59 2006/11/02 18:51:06 bostic Exp $
+ * $Id: env_method.c,v 12.61 2006/11/09 14:28:02 bostic Exp $
  */
 
 #include "db_config.h"
-
-/*
- * This is the file that initializes the global array.  Do it this way because
- * people keep changing one without changing the other.  Having declaration and
- * initialization in one file will hopefully fix that.
- */
-#define	DB_INITIALIZE_DB_GLOBALS	1
 
 #include "db_int.h"
 #include "dbinc/crypto.h"
@@ -545,7 +538,10 @@ __env_map_flags(dbenv, inflagsp, outflagsp)
 	DB_ENV *dbenv;
 	u_int32_t *inflagsp, *outflagsp;
 {
-	static const struct {
+#ifndef HAVE_BREW
+	static
+#endif
+	const struct {
 		u_int32_t inflag, outflag;
 	} *fmp, flagmap[] = {
 		{ DB_AUTO_COMMIT,	DB_ENV_AUTO_COMMIT },
@@ -564,10 +560,12 @@ __env_map_flags(dbenv, inflagsp, outflagsp)
 		{ DB_REGION_INIT,	DB_ENV_REGION_INIT },
 		{ DB_TIME_NOTGRANTED,	DB_ENV_TIME_NOTGRANTED },
 		{ DB_TXN_NOSYNC,	DB_ENV_TXN_NOSYNC },
+		{ DB_TXN_NOWAIT,	DB_ENV_TXN_NOWAIT },
 		{ DB_TXN_SNAPSHOT,	DB_ENV_TXN_SNAPSHOT },
 		{ DB_TXN_WRITE_NOSYNC,	DB_ENV_TXN_WRITE_NOSYNC },
 		{ DB_YIELDCPU,		DB_ENV_YIELDCPU }
 	};
+	
 	u_int i;
 
 	COMPQUIET(dbenv, NULL);
@@ -604,6 +602,7 @@ __env_get_flags(dbenv, flagsp)
 		DB_REGION_INIT,
 		DB_TIME_NOTGRANTED,
 		DB_TXN_NOSYNC,
+		DB_TXN_NOWAIT,
 		DB_TXN_SNAPSHOT,
 		DB_TXN_WRITE_NOSYNC,
 		DB_YIELDCPU,
@@ -653,8 +652,8 @@ __env_set_flags(dbenv, flags, on)
 	    DB_LOG_INMEMORY | DB_MULTIVERSION | DB_NOLOCKING |		\
 	    DB_NOMMAP | DB_NOPANIC | DB_OVERWRITE |			\
 	    DB_PANIC_ENVIRONMENT | DB_REGION_INIT |			\
-	    DB_TIME_NOTGRANTED | DB_TXN_NOSYNC | DB_TXN_SNAPSHOT |	\
-	    DB_TXN_WRITE_NOSYNC | DB_YIELDCPU)
+	    DB_TIME_NOTGRANTED | DB_TXN_NOSYNC | DB_TXN_NOWAIT |	\
+	    DB_TXN_SNAPSHOT |	DB_TXN_WRITE_NOSYNC | DB_YIELDCPU)
 
 	if (LF_ISSET(~OK_FLAGS))
 		return (__db_ferr(dbenv, "DB_ENV->set_flags", 0));

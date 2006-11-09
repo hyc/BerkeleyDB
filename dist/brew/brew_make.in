@@ -16,6 +16,7 @@ t: t.c libdb.a
 t.c:
 	echo '#include <sys/types.h>' > $@
 	echo '#include <stdio.h>' >> $@
+	echo '#define	AEEApplet char' >> $@
 	echo '#include "db.h"' >> $@
 	echo 'int main() {' >> $@
 	echo '	DB_ENV *dbenv; db_env_create(&dbenv, 0); return (0); }' >> $@

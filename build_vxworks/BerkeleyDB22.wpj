@@ -1784,6 +1784,24 @@ env_file.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_globals.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_globals.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_globals.c_objects
+env_globals.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_globals.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../env/env_method.c_dependDone
 TRUE
 <END>
@@ -4243,6 +4261,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../env/env_config.c \
 	$(PRJ_DIR)/../env/env_failchk.c \
 	$(PRJ_DIR)/../env/env_file.c \
+	$(PRJ_DIR)/../env/env_globals.c \
 	$(PRJ_DIR)/../env/env_method.c \
 	$(PRJ_DIR)/../env/env_open.c \
 	$(PRJ_DIR)/../env/env_recover.c \

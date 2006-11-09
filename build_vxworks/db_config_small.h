@@ -47,6 +47,9 @@
 /* Define to 1 if building BREW. */
 /* #undef HAVE_BREW */
 
+/* Define to 1 if building on BREW (SDK2). */
+/* #undef HAVE_BREW_SDK2 */
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
 
@@ -462,13 +465,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.6.1"
+#define PACKAGE_STRING "Berkeley DB 4.6.2"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.6.1"
+#define PACKAGE_TARNAME "db-4.6.2"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.6.1"
+#define PACKAGE_VERSION "4.6.2"
 
 /* The size of a `char', as computed by sizeof. */
 /* #undef SIZEOF_CHAR */

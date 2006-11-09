@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_region.c,v 12.25 2006/11/01 00:54:23 bostic Exp $
+ * $Id: txn_region.c,v 12.26 2006/11/08 22:37:13 bostic Exp $
  */
 
 #include "db_config.h"
@@ -280,10 +280,7 @@ __txn_dbenv_refresh(dbenv)
 
 /*
  * __txn_region_size --
- *	 Return the amount of space needed for the txn region.  Make the
- *	 region large enough to hold txn_max transaction detail structures
- *	 plus some space to hold thread handles and the beginning of the
- *	 alloc region and anything we need for mutex system resource recording.
+ *	 Return the amount of space needed for the txn region.
  */
 static size_t
 __txn_region_size(dbenv)
@@ -291,8 +288,16 @@ __txn_region_size(dbenv)
 {
 	size_t s;
 
+	/*
+	 * Make the region large enough to hold the primary transaction region
+	 * structure, txn_max transaction detail structures, txn_max chunks of
+	 * overhead required by the underlying shared region allocator for each
+	 * chunk of memory, txn_max transaction names, at an average of 20
+	 * bytes each, and 10KB for safety.
+	 */
 	s = sizeof(DB_TXNREGION) +
-	    dbenv->tx_max * sizeof(TXN_DETAIL) + 10 * 1024;
+	    dbenv->tx_max * (sizeof(TXN_DETAIL) + __env_alloc_overhead() + 20) +
+	    10 * 1024;
 	return (s);
 }
 

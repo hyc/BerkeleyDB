@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: globals.h,v 12.5 2006/11/01 00:52:41 bostic Exp $
+ * $Id: globals.h,v 12.6 2006/11/09 14:23:11 bostic Exp $
  */
 
 #ifndef _DB_GLOBALS_H_
@@ -23,6 +23,9 @@ extern "C" {
 #endif
 
 typedef struct __db_globals {
+#ifdef HAVE_BREW
+	struct tm ltm;			/* BREW localtime structure */
+#endif
 #ifdef HAVE_VXWORKS
 	u_int32_t db_global_init;	/* VxWorks: inited */
 	SEM_ID db_global_lock;		/* VxWorks: global semaphore */
@@ -31,6 +34,16 @@ typedef struct __db_globals {
 	TAILQ_HEAD(__db_envq, __db_env) db_envq;
 
 	char *db_line;			/* DB display string. */
+
+	char error_buf[40];		/* Error string buffer. */
+
+	int uid_init;			/* srand set in UID generator */
+
+	u_long rand_next;		/* rand/srand value */
+
+	u_int32_t fid_serial;		/* file id counter */
+
+	int db_errno;			/* Errno value if not available */
 
 	int	(*j_close) __P((int));	/* Underlying OS interface jump table.*/
 	void	(*j_dirfree) __P((char **, int));
@@ -57,6 +70,10 @@ typedef struct __db_globals {
 	int	(*j_yield) __P((void));
 } DB_GLOBALS;
 
+#ifdef HAVE_BREW
+#define	DB_GLOBAL(v)							\
+	((DB_GLOBALS *)(((BDBApp *)GETAPPINSTANCE())->db_global_values))->v
+#else
 #ifdef DB_INITIALIZE_DB_GLOBALS
 DB_GLOBALS __db_global_values = {
 #ifdef HAVE_VXWORKS
@@ -67,7 +84,11 @@ DB_GLOBALS __db_global_values = {
 	{NULL, &__db_global_values.db_envq.tqh_first},
 
 	"=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=",
-
+	{ 0 },
+	0,
+	0,
+	0,
+	0,
 	NULL,
 	NULL,
 	NULL,
@@ -96,6 +117,7 @@ extern	DB_GLOBALS	__db_global_values;
 #endif
 
 #define	DB_GLOBAL(v)	__db_global_values.v
+#endif /* HAVE_BREW */
 
 #if defined(__cplusplus)
 }

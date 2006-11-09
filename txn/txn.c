@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn.c,v 12.60 2006/11/01 00:54:22 bostic Exp $
+ * $Id: txn.c,v 12.61 2006/11/08 23:07:00 ubell Exp $
  */
 
 #include "db_config.h"
@@ -108,9 +108,9 @@ __txn_begin_pp(dbenv, parent, txnpp, flags)
 
 	if ((ret = __db_fchk(dbenv,
 	    "txn_begin", flags,
-	    DB_READ_COMMITTED | DB_READ_UNCOMMITTED | DB_TXN_NOWAIT |
+	    DB_READ_COMMITTED | DB_READ_UNCOMMITTED |
 	    DB_TXN_NOSYNC | DB_TXN_SNAPSHOT | DB_TXN_SYNC |
-	    DB_TXN_WRITE_NOSYNC)) != 0)
+	    DB_TXN_WAIT | DB_TXN_WRITE_NOSYNC | DB_TXN_NOWAIT)) != 0)
 		return (ret);
 	if ((ret = __db_fcchk(dbenv, "txn_begin", flags,
 	    DB_TXN_WRITE_NOSYNC | DB_TXN_NOSYNC, DB_TXN_SYNC)) != 0)
@@ -181,19 +181,20 @@ __txn_begin(dbenv, parent, txnpp, flags)
 	TAILQ_INIT(&txn->events);
 	STAILQ_INIT(&txn->logs);
 	txn->flags = TXN_MALLOC;
+	if (LF_ISSET(DB_TXN_NOSYNC))
+		F_SET(txn, TXN_NOSYNC);
+	if (LF_ISSET(DB_TXN_NOWAIT) ||
+	    (F_ISSET(dbenv, DB_ENV_TXN_NOWAIT) && !LF_ISSET(DB_TXN_WAIT)))
+		F_SET(txn, TXN_NOWAIT);
 	if (LF_ISSET(DB_READ_COMMITTED))
 		F_SET(txn, TXN_READ_COMMITTED);
 	if (LF_ISSET(DB_READ_UNCOMMITTED))
 		F_SET(txn, TXN_READ_UNCOMMITTED);
-	if (LF_ISSET(DB_TXN_NOSYNC))
-		F_SET(txn, TXN_NOSYNC);
 	if (LF_ISSET(DB_TXN_SNAPSHOT) || F_ISSET(dbenv, DB_ENV_TXN_SNAPSHOT) ||
 	    (parent != NULL && F_ISSET(parent, TXN_SNAPSHOT)))
 		F_SET(txn, TXN_SNAPSHOT);
 	if (LF_ISSET(DB_TXN_SYNC))
 		F_SET(txn, TXN_SYNC);
-	if (LF_ISSET(DB_TXN_NOWAIT))
-		F_SET(txn, TXN_NOWAIT);
 	if (LF_ISSET(DB_TXN_WRITE_NOSYNC))
 		F_SET(txn, TXN_WRITE_NOSYNC);
 

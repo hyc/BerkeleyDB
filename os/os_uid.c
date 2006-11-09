@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: os_uid.c,v 12.24 2006/11/01 00:53:40 bostic Exp $
+ * $Id: os_uid.c,v 12.25 2006/11/09 14:23:16 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,7 +21,6 @@ __os_unique_id(dbenv, idp)
 	DB_ENV *dbenv;
 	u_int32_t *idp;
 {
-	static int first = 1;
 	pid_t pid;
 	u_int32_t id, sec, usec;
 
@@ -41,9 +40,9 @@ __os_unique_id(dbenv, idp)
 	 * that's not all that easy to do.  Seed and use srand()/rand(), if
 	 * we can find them.
 	 */
-	if (first == 1) {
+	if (DB_GLOBAL(uid_init) == 0) {
+		DB_GLOBAL(uid_init) = 1;
 		srand((u_int)id);
-		first = 0;
 	}
 	id ^= (u_int)rand();
 

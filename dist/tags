@@ -356,9 +356,10 @@ DB_ENV_TEST_RECYCLE	../dbinc/debug.h	/^#define	DB_ENV_TEST_RECYCLE(env, ret) do 
 DB_ENV_THREAD	../dbinc/db.in	/^#define	DB_ENV_THREAD		0x01000000 \/* DB_THREAD se/
 DB_ENV_TIME_NOTGRANTED	../dbinc/db.in	/^#define	DB_ENV_TIME_NOTGRANTED	0x02000000 \/* DB_T/
 DB_ENV_TXN_NOSYNC	../dbinc/db.in	/^#define	DB_ENV_TXN_NOSYNC	0x04000000 \/* DB_TXN_NO/
-DB_ENV_TXN_SNAPSHOT	../dbinc/db.in	/^#define	DB_ENV_TXN_SNAPSHOT	0x08000000 \/* DB_TXN_/
-DB_ENV_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_ENV_TXN_WRITE_NOSYNC	0x10000000 \/* DB_/
-DB_ENV_YIELDCPU	../dbinc/db.in	/^#define	DB_ENV_YIELDCPU		0x20000000 \/* DB_YIELDCP/
+DB_ENV_TXN_NOWAIT	../dbinc/db.in	/^#define	DB_ENV_TXN_NOWAIT	0x08000000 \/* DB_TXN_NO/
+DB_ENV_TXN_SNAPSHOT	../dbinc/db.in	/^#define	DB_ENV_TXN_SNAPSHOT	0x10000000 \/* DB_TXN_/
+DB_ENV_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_ENV_TXN_WRITE_NOSYNC	0x20000000 \/* DB_/
+DB_ENV_YIELDCPU	../dbinc/db.in	/^#define	DB_ENV_YIELDCPU		0x40000000 \/* DB_YIELDCP/
 DB_EVENT	../dbinc/db_int.in	/^#define	DB_EVENT(dbenv, e, einfo) do {					\\$/
 DB_EVENT_NO_SUCH_EVENT	../dbinc/db.in	/^#define	DB_EVENT_NO_SUCH_EVENT		0 \/* out-of-band /
 DB_EVENT_PANIC	../dbinc/db.in	/^#define	DB_EVENT_PANIC			1$/
@@ -391,7 +392,7 @@ DB_GET_BOTH	../dbinc/db.in	/^#define	DB_GET_BOTH		 8	\/* Db.get, Dbc.get *\/$/
 DB_GET_BOTHC	../dbinc/db.in	/^#define	DB_GET_BOTHC		 9	\/* Dbc.get (internal) */
 DB_GET_BOTH_RANGE	../dbinc/db.in	/^#define	DB_GET_BOTH_RANGE	10	\/* Db.get, Dbc.get */
 DB_GET_RECNO	../dbinc/db.in	/^#define	DB_GET_RECNO		11	\/* Dbc.get *\/$/
-DB_GLOBAL	../dbinc/globals.h	/^#define	DB_GLOBAL(v)	__db_global_values.v$/
+DB_GLOBAL	../dbinc/globals.h	/^#define	DB_GLOBAL(v)							\\$/
 DB_GLOBALS	../dbinc/globals.h	/^} DB_GLOBALS;$/
 DB_GROW_SIZE	../dbinc/log.h	/^#define	DB_GROW_SIZE	64$/
 DB_HANDLE_LOCK	../dbinc/db.in	/^#define	DB_HANDLE_LOCK	1$/
@@ -416,14 +417,14 @@ DB_INITENV_LOG	../env/env_open.c	/^#define	DB_INITENV_LOG		0x0008	\/* DB_INIT_LO
 DB_INITENV_MPOOL	../env/env_open.c	/^#define	DB_INITENV_MPOOL	0x0010	\/* DB_INIT_MPOOL /
 DB_INITENV_REP	../env/env_open.c	/^#define	DB_INITENV_REP		0x0020	\/* DB_INIT_REP *\//
 DB_INITENV_TXN	../env/env_open.c	/^#define	DB_INITENV_TXN		0x0040	\/* DB_INIT_TXN *\//
-DB_INITIALIZE_DB_GLOBALS	../env/env_method.c	/^#define	DB_INITIALIZE_DB_GLOBALS	1$/
-DB_INIT_CDB	../dbinc/db.in	/^#define	DB_INIT_CDB	      0x0004000	\/* Concurrent/
+DB_INITIALIZE_DB_GLOBALS	../env/env_globals.c	/^#define	DB_INITIALIZE_DB_GLOBALS	1$/
+DB_INIT_CDB	../dbinc/db.in	/^#define	DB_INIT_CDB	      0x0010000	\/* Concurrent/
 DB_INIT_DBT	../dbinc/db_int.in	/^#define	DB_INIT_DBT(dbt, d, s)  do {					\\$/
-DB_INIT_LOCK	../dbinc/db.in	/^#define	DB_INIT_LOCK	      0x0008000	\/* Initializ/
-DB_INIT_LOG	../dbinc/db.in	/^#define	DB_INIT_LOG	      0x0010000	\/* Initialize/
-DB_INIT_MPOOL	../dbinc/db.in	/^#define	DB_INIT_MPOOL	      0x0020000	\/* Initiali/
-DB_INIT_REP	../dbinc/db.in	/^#define	DB_INIT_REP	      0x0040000	\/* Initialize/
-DB_INIT_TXN	../dbinc/db.in	/^#define	DB_INIT_TXN	      0x0080000	\/* Initialize/
+DB_INIT_LOCK	../dbinc/db.in	/^#define	DB_INIT_LOCK	      0x0020000	\/* Initializ/
+DB_INIT_LOG	../dbinc/db.in	/^#define	DB_INIT_LOG	      0x0040000	\/* Initialize/
+DB_INIT_MPOOL	../dbinc/db.in	/^#define	DB_INIT_MPOOL	      0x0080000	\/* Initiali/
+DB_INIT_REP	../dbinc/db.in	/^#define	DB_INIT_REP	      0x0100000	\/* Initialize/
+DB_INIT_TXN	../dbinc/db.in	/^#define	DB_INIT_TXN	      0x0200000	\/* Initialize/
 DB_INORDER	../dbinc/db.in	/^#define	DB_INORDER	      0x00040000 \/* Queue: str/
 DB_INTERNAL	../libdb_java/db_java_wrap.c	/^#define	DB_INTERNAL(db) ((db)->api_internal)$/
 DB_IO_READ	../dbinc/os.h	/^#define	DB_IO_READ	1$/
@@ -441,7 +442,7 @@ DB_KEYLAST	../dbinc/db.in	/^#define	DB_KEYLAST		14	\/* Dbc.put *\/$/
 DB_KEY_RANGE	../dbinc/db.in	/^struct __key_range;	typedef struct __key_range DB_/
 DB_LAST	../dbinc/db.in	/^#define	DB_LAST			15	\/* Dbc.get, DbLogc->get *\/$/
 DB_LOCK	../dbinc/db.in	/^struct __db_lock_u;	typedef struct __db_lock_u DB_/
-DB_LOCKDOWN	../dbinc/db.in	/^#define	DB_LOCKDOWN	      0x0100000	\/* Lock memor/
+DB_LOCKDOWN	../dbinc/db.in	/^#define	DB_LOCKDOWN	      0x0400000	\/* Lock memor/
 DB_LOCKER	../dbinc/lock.h	/^} DB_LOCKER;$/
 DB_LOCKER_DELETED	../dbinc/lock.h	/^#define	DB_LOCKER_DELETED	0x0001$/
 DB_LOCKER_DIRTY	../dbinc/lock.h	/^#define	DB_LOCKER_DIRTY		0x0002$/
@@ -612,7 +613,7 @@ DB_PREV	../dbinc/db.in	/^#define	DB_PREV			23	\/* Dbc.get, DbLogc->get *\/$/
 DB_PREV_DUP	../dbinc/db.in	/^#define	DB_PREV_DUP		24	\/* Dbc.get *\/$/
 DB_PREV_NODUP	../dbinc/db.in	/^#define	DB_PREV_NODUP		25	\/* Dbc.get *\/$/
 DB_PRINTABLE	../dbinc/db.in	/^#define	DB_PRINTABLE	      0x0000020	\/* Use print/
-DB_PRIVATE	../dbinc/db.in	/^#define	DB_PRIVATE	      0x0200000	\/* DB_ENV is p/
+DB_PRIVATE	../dbinc/db.in	/^#define	DB_PRIVATE	      0x0800000	\/* DB_ENV is p/
 DB_PR_PAGE	../dbinc/db.in	/^#define	DB_PR_PAGE	      0x0000008	\/* Show page c/
 DB_PR_RECOVERYTEST	../dbinc/db.in	/^#define	DB_PR_RECOVERYTEST    0x0000010	\/* Recove/
 DB_QAMMAGIC	../dbinc/db.in	/^#define	DB_QAMMAGIC	0x042253$/
@@ -628,7 +629,7 @@ DB_REAL_MSG	../dbinc/debug.h	/^#define	DB_REAL_MSG(env, fmt) {						\\$/
 DB_RECNUM	../dbinc/db.in	/^#define	DB_RECNUM	      0x00080000 \/* Btree: reco/
 DB_RECORD_LOCK	../dbinc/db.in	/^#define	DB_RECORD_LOCK	2$/
 DB_RECOVER	../dbinc/db.in	/^#define	DB_RECOVER	      0x0000040	\/* Run normal /
-DB_RECOVER_FATAL	../dbinc/db.in	/^#define	DB_RECOVER_FATAL      0x0400000	\/* Run ca/
+DB_RECOVER_FATAL	../dbinc/db.in	/^#define	DB_RECOVER_FATAL      0x1000000	\/* Run ca/
 DB_REDO	../dbinc/db.in	/^#define	DB_REDO(op)	((op) == DB_TXN_FORWARD_ROLL |/
 DB_REGENV_REPLOCKED	../dbinc/region.h	/^#define	DB_REGENV_REPLOCKED	0x0001	\/* Env locked /
 DB_REGENV_TIMEOUT	../dbinc/region.h	/^#define	DB_REGENV_TIMEOUT	30	\/* Backup timeout. */
@@ -638,7 +639,7 @@ DB_REGION_INIT	../dbinc/db.in	/^#define	DB_REGION_INIT	      0x20000000\/* Page-
 DB_REGION_MAGIC	../dbinc/db.in	/^#define	DB_REGION_MAGIC	0x120897	\/* Environment m/
 DB_REGION_NAME_LENGTH	../dbinc/region.h	/^#define	DB_REGION_NAME_LENGTH	8		\/* Length of fil/
 DB_REGION_PREFIX	../dbinc/region.h	/^#define	DB_REGION_PREFIX	"__db"		\/* DB file name /
-DB_REGISTER	../dbinc/db.in	/^#define	DB_REGISTER	      0x0800000	\/* Multi-proc/
+DB_REGISTER	../dbinc/db.in	/^#define	DB_REGISTER	      0x2000000	\/* Multi-proc/
 DB_REM_BIG	../dbinc/db_am.h	/^#define	DB_REM_BIG	4$/
 DB_REM_DUP	../dbinc/db_am.h	/^#define	DB_REM_DUP	2$/
 DB_REM_PAGE_COMPAT	../dbinc/db_am.h	/^#define	DB_REM_PAGE_COMPAT	6	\/* Compatibility for/
@@ -753,6 +754,7 @@ DB_SET_TXN_LSNP	../dbinc/log.h	/^#define	DB_SET_TXN_LSNP(txn, blsnp, llsnp) do {
 DB_SET_TXN_NOW	../dbinc/db.in	/^#define	DB_SET_TXN_NOW		2	\/* Timeout lock now (in/
 DB_SET_TXN_TIMEOUT	../dbinc/db.in	/^#define	DB_SET_TXN_TIMEOUT	3	\/* Set transaction t/
 DB_SNAPSHOT	../dbinc/db.in	/^#define	DB_SNAPSHOT	      0x00400000 \/* Recno: sn/
+DB_SPARE_FLAG	../dbinc/db.in	/^#define	DB_SPARE_FLAG         0x0002000	\/* Spare./
 DB_STAT_ALL	../dbinc/db.in	/^#define	DB_STAT_ALL	      0x0000002	\/* Print: Eve/
 DB_STAT_CLEAR	../dbinc/db.in	/^#define	DB_STAT_CLEAR	      0x0000004	\/* Clear st/
 DB_STAT_LOCK_CONF	../dbinc/db.in	/^#define	DB_STAT_LOCK_CONF     0x0000008	\/* Print:/
@@ -766,7 +768,7 @@ DB_STAT_NOERROR	../dbinc/db.in	/^#define	DB_STAT_NOERROR       0x0000100 \/* Int
 DB_STAT_SUBSYSTEM	../dbinc/db.in	/^#define	DB_STAT_SUBSYSTEM     0x0000200 \/* Print:/
 DB_SURPRISE_KID	../dbinc/db.in	/^#define	DB_SURPRISE_KID		(-30892)\/* Child commit /
 DB_SWAPBYTES	../dbinc/db.in	/^#define	DB_SWAPBYTES		(-30891)\/* Database needs b/
-DB_SYSTEM_MEM	../dbinc/db.in	/^#define	DB_SYSTEM_MEM	      0x1000000	\/* Use syst/
+DB_SYSTEM_MEM	../dbinc/db.in	/^#define	DB_SYSTEM_MEM	      0x4000000	\/* Use syst/
 DB_TEMP_DIRECTORY	../os/os_tmpdir.c	/^#define	DB_TEMP_DIRECTORY(n) {						\\$/
 DB_TEST_ELECTINIT	../dbinc/db.in	/^#define	DB_TEST_ELECTINIT	 1	\/* after __rep_elect/
 DB_TEST_ELECTVOTE1	../dbinc/db.in	/^#define	DB_TEST_ELECTVOTE1	 2	\/* after sending VO/
@@ -803,20 +805,21 @@ DB_TXNVERSION	../dbinc/db.in	/^#define	DB_TXNVERSION	1$/
 DB_TXN_ACTIVE	../dbinc/db.in	/^struct __db_txn_active;	typedef struct __db_txn_ac/
 DB_TXN_CKP	../dbinc/db.in	/^#define	DB_TXN_CKP		(-30889)\/* Encountered ckp re/
 DB_TXN_NOSYNC	../dbinc/db.in	/^#define	DB_TXN_NOSYNC	      0x0000200	\/* Do not s/
-DB_TXN_NOT_DURABLE	../dbinc/db.in	/^#define	DB_TXN_NOT_DURABLE    0x0000400	\/* Do not/
-DB_TXN_NOWAIT	../dbinc/db.in	/^#define	DB_TXN_NOWAIT	      0x0004000	\/* Do not w/
+DB_TXN_NOT_DURABLE	../dbinc/db.in	/^#define	DB_TXN_NOT_DURABLE    0x0000800	\/* Do not/
+DB_TXN_NOWAIT	../dbinc/db.in	/^#define	DB_TXN_NOWAIT	      0x0000400	\/* Do not w/
 DB_TXN_SNAPSHOT	../dbinc/db.in	/^#define	DB_TXN_SNAPSHOT	      0x10000000\/* Snapsh/
 DB_TXN_STAT	../dbinc/db.in	/^struct __db_txn_stat;	typedef struct __db_txn_stat/
-DB_TXN_SYNC	../dbinc/db.in	/^#define	DB_TXN_SYNC	      0x0008000	\/* Always syn/
-DB_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_TXN_WRITE_NOSYNC   0x0000800	\/* Write /
+DB_TXN_SYNC	../dbinc/db.in	/^#define	DB_TXN_SYNC	      0x0004000	\/* Always syn/
+DB_TXN_WAIT	../dbinc/db.in	/^#define	DB_TXN_WAIT	      0x0008000	\/* Always wai/
+DB_TXN_WRITE_NOSYNC	../dbinc/db.in	/^#define	DB_TXN_WRITE_NOSYNC   0x0001000	\/* Write /
 DB_UNDO	../dbinc/db.in	/^#define	DB_UNDO(op)	((op) == DB_TXN_ABORT ||			\\$/
 DB_UNREF	../dbinc/db.in	/^#define	DB_UNREF	      0x0000080	\/* Report unrefe/
 DB_UPDATE_SECONDARY	../dbinc/db.in	/^#define	DB_UPDATE_SECONDARY	29	\/* Dbc.get, Dbc.de/
 DB_UPGRADE	../dbinc/db.in	/^#define	DB_UPGRADE	      0x0000001	\/* Upgrading. /
 DB_USERCOPY_GETDATA	../dbinc/db.in	/^#define	DB_USERCOPY_GETDATA	0x0001$/
 DB_USERCOPY_SETDATA	../dbinc/db.in	/^#define	DB_USERCOPY_SETDATA	0x0002$/
-DB_USE_ENVIRON	../dbinc/db.in	/^#define	DB_USE_ENVIRON	      0x0001000	\/* Use the/
-DB_USE_ENVIRON_ROOT	../dbinc/db.in	/^#define	DB_USE_ENVIRON_ROOT   0x0002000	\/* Use th/
+DB_USE_ENVIRON	../dbinc/db.in	/^#define	DB_USE_ENVIRON	      0x0004000	\/* Use the/
+DB_USE_ENVIRON_ROOT	../dbinc/db.in	/^#define	DB_USE_ENVIRON_ROOT   0x0008000	\/* Use th/
 DB_VERB_DEADLOCK	../dbinc/db.in	/^#define	DB_VERB_DEADLOCK	0x0001	\/* Deadlock detec/
 DB_VERB_FILEOPS	../dbinc/db.in	/^#define	DB_VERB_FILEOPS		0x0002	\/* Major file ope/
 DB_VERB_FILEOPS_ALL	../dbinc/db.in	/^#define	DB_VERB_FILEOPS_ALL	0x0004	\/* All file op/
@@ -3364,6 +3367,7 @@ __dd_verify	../lock/lock_deadlock.c	/^__dd_verify(idmap, deadmap, tmpmap, origma
 __env_alloc	../env/env_alloc.c	/^__env_alloc(infop, len, retp)$/
 __env_alloc_free	../env/env_alloc.c	/^__env_alloc_free(infop, ptr)$/
 __env_alloc_init	../env/env_alloc.c	/^__env_alloc_init(infop, size)$/
+__env_alloc_overhead	../env/env_alloc.c	/^__env_alloc_overhead()$/
 __env_alloc_print	../env/env_alloc.c	/^__env_alloc_print(infop, flags)$/
 __env_alloc_size	../env/env_alloc.c	/^__env_alloc_size(len)$/
 __env_alloc_sizeof	../env/env_alloc.c	/^__env_alloc_sizeof(ptr)$/

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_stat.c,v 12.13 2006/11/01 00:51:57 bostic Exp $
+ * $Id: bt_stat.c,v 12.14 2006/11/09 14:27:05 bostic Exp $
  */
 
 #include "db_config.h"
@@ -453,6 +453,7 @@ __bam_stat_print(dbc, flags)
 }
 #endif
 
+#ifndef HAVE_BREW
 /*
  * __bam_key_range --
  *	Return proportion of keys relative to given key.  The numbers are
@@ -482,6 +483,7 @@ __bam_key_range(dbc, dbt, kp, flags)
 	kp->less = kp->greater = 0.0;
 
 	factor = 1.0;
+
 	/* Correct the leaf page. */
 	cp->csp->entries /= 2;
 	cp->csp->indx /= 2;
@@ -523,6 +525,7 @@ __bam_key_range(dbc, dbt, kp, flags)
 
 	return (0);
 }
+#endif
 
 /*
  * __bam_traverse --

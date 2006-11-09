@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.39 2006/11/01 00:53:51 bostic Exp $
+ * $Id: tcl_db_pkg.c,v 12.41 2006/11/08 23:06:58 ubell Exp $
  */
 
 #include "db_config.h"
@@ -424,6 +424,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-snapshot",
 		"-thread",
 		"-time_notgranted",
+		"-txn_nowait",
 		"-txn_timeout",
 		"-txn_timestamp",
 		"-verbose",
@@ -496,6 +497,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_SNAPSHOT,
 		ENV_THREAD,
 		ENV_TIME_NOTGRANTED,
+		ENV_TXN_NOWAIT,
 		ENV_TXN_TIMEOUT,
 		ENV_TXN_TIME,
 		ENV_VERBOSE,
@@ -812,6 +814,9 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 				result = _ReturnSetup(interp, ret,
 				    DB_RETOK_STD(ret), "lock_max");
 			}
+			break;
+		case ENV_TXN_NOWAIT:
+			FLD_SET(set_flags, DB_TXN_NOWAIT);
 			break;
 		case ENV_TXN_TIME:
 		case ENV_TXN_TIMEOUT:
@@ -2618,6 +2623,8 @@ bdb_DbRemove(interp, objc, objv)
 			goto error;
 		}
 
+		dbp->set_errpfx(dbp, "DbRemove");
+		dbp->set_errcall(dbp, _ErrorFunc);
 		if (passwd != NULL) {
 			ret = dbp->set_encrypt(dbp, passwd, enc_flag);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
@@ -2838,6 +2845,8 @@ bdb_DbRename(interp, objc, objv)
 			    "db_create");
 			goto error;
 		}
+		dbp->set_errpfx(dbp, "DbRename");
+		dbp->set_errcall(dbp, _ErrorFunc);
 		if (passwd != NULL) {
 			ret = dbp->set_encrypt(dbp, passwd, enc_flag);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
@@ -3404,6 +3413,8 @@ bdb_DbUpgrade(interp, objc, objv)
 		goto error;
 	}
 
+	dbp->set_errpfx(dbp, "DbUpgrade");
+	dbp->set_errcall(dbp, _ErrorFunc);
 	ret = dbp->upgrade(dbp, db, flags);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db upgrade");
 error:

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_txn.c,v 12.18 2006/11/01 00:53:52 bostic Exp $
+ * $Id: tcl_txn.c,v 12.19 2006/11/08 23:06:59 ubell Exp $
  */
 
 #include "db_config.h"
@@ -140,6 +140,7 @@ tcl_Txn(interp, objc, objv, envp, envip)
 		"-read_committed",
 		"-read_uncommitted",
 		"-txn_timeout",
+		"-txn_wait",
 #endif
 		"-nosync",
 		"-nowait",
@@ -155,6 +156,7 @@ tcl_Txn(interp, objc, objv, envp, envip)
 		TXNREAD_COMMITTED,
 		TXNREAD_UNCOMMITTED,
 		TXNTIMEOUT,
+		TXNWAIT,
 #endif
 		TXNNOSYNC,
 		TXNNOWAIT,
@@ -245,6 +247,9 @@ get_timeout:		if (i >= objc) {
 			break;
 		case TXNSYNC:
 			flag |= DB_TXN_SYNC;
+			break;
+		case TXNWAIT:
+			flag |= DB_TXN_WAIT;
 			break;
 		case TXNWRNOSYNC:
 			flag |= DB_TXN_WRITE_NOSYNC;

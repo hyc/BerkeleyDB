@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_dispatch.c,v 12.29 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_dispatch.c,v 12.30 2006/11/09 15:31:52 margo Exp $
  */
 
 #include "db_config.h"
@@ -221,6 +221,7 @@ __db_dispatch(dbenv, dtab, dtabsize, db, lsnp, redo, info)
 		case DB___txn_recycle:
 		case DB___txn_ckp:
 		case DB___db_noop:
+		case DB___dbreg_register:
 			make_call = 1;
 			break;
 
@@ -258,17 +259,6 @@ __db_dispatch(dbenv, dtab, dtabsize, db, lsnp, redo, info)
 				redo = DB_TXN_BACKWARD_ALLOC;
 			} else
 #endif
-			if (rectype == DB___dbreg_register) {
-				/*
-				 * This may be a transaction dbreg_register.
-				 * If it is, we only make the call on a COMMIT,
-				 * which we checked above. If it's not, then we
-				 * should always make the call, because we need
-				 * the file open information.
-				 */
-				if (txnid == 0)
-					make_call = 1;
-			}
 		}
 		break;
 	case DB_TXN_BACKWARD_ALLOC:

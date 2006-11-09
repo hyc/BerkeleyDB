@@ -556,6 +556,10 @@ SOURCE=..\env\env_file.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\env\env_globals.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\env\env_method.c
 # End Source File
 # Begin Source File

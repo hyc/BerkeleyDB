@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_err.c,v 12.50 2006/11/01 00:52:21 bostic Exp $
+ * $Id: db_err.c,v 12.51 2006/11/09 14:23:11 bostic Exp $
  */
 
 #include "db_config.h"
@@ -342,10 +342,9 @@ __db_unknown_error(error)
 	 * be a trailing nul byte since the error buffer is nul filled
 	 * and longer than any error message.
 	 */
-	static char ebuf[40];
-
-	(void)snprintf(ebuf, sizeof(ebuf), "Unknown error: %d", error);
-	return (ebuf);
+	(void)snprintf(DB_GLOBAL(error_buf),
+	    sizeof(DB_GLOBAL(error_buf)), "Unknown error: %d", error);
+	return (DB_GLOBAL(error_buf));
 }
 
 /*

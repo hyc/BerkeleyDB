@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_upg.c,v 12.9 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_upg.c,v 12.10 2006/11/09 14:47:57 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,27 +14,6 @@
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
 #include "dbinc/qam.h"
-
-static int (* const func_31_list[P_PAGETYPE_MAX])
-    __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *)) = {
-	NULL,			/* P_INVALID */
-	NULL,			/* __P_DUPLICATE */
-	__ham_31_hash,		/* P_HASH */
-	NULL,			/* P_IBTREE */
-	NULL,			/* P_IRECNO */
-	__bam_31_lbtree,	/* P_LBTREE */
-	NULL,			/* P_LRECNO */
-	NULL,			/* P_OVERFLOW */
-	__ham_31_hashmeta,	/* P_HASHMETA */
-	__bam_31_btreemeta,	/* P_BTREEMETA */
-	NULL,			/* P_QAMMETA */
-	NULL,			/* P_QAMDATA */
-	NULL,			/* P_LDUP */
-};
-
-static int __db_page_pass __P((DB *, char *, u_int32_t, int (* const [])
-	       (DB *, char *, u_int32_t, DB_FH *, PAGE *, int *), DB_FH *));
-static int __db_set_lastpgno __P((DB *, char *, DB_FH *));
 
 /*
  * __db_upgrade_pp --
@@ -62,8 +41,37 @@ __db_upgrade_pp(dbp, fname, flags)
 	if ((ret = __db_fchk(dbenv, "DB->upgrade", flags, DB_DUPSORT)) != 0)
 		return (ret);
 
+#ifdef HAVE_BREW
+	COMPQUIET(fname, NULL);
+	__db_errx(dbenv, "upgrade not supported");
+	return (EINVAL);
+#else
 	return (__db_upgrade(dbp, fname, flags));
+#endif
 }
+
+#ifndef HAVE_BREW
+static int (* const func_31_list[P_PAGETYPE_MAX])
+    __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *)) = {
+	NULL,			/* P_INVALID */
+	NULL,			/* __P_DUPLICATE */
+	__ham_31_hash,		/* P_HASH */
+	NULL,			/* P_IBTREE */
+	NULL,			/* P_IRECNO */
+	__bam_31_lbtree,	/* P_LBTREE */
+	NULL,			/* P_LRECNO */
+	NULL,			/* P_OVERFLOW */
+	__ham_31_hashmeta,	/* P_HASHMETA */
+	__bam_31_btreemeta,	/* P_BTREEMETA */
+	NULL,			/* P_QAMMETA */
+	NULL,			/* P_QAMDATA */
+	NULL,			/* P_LDUP */
+};
+
+static int __db_page_pass __P((DB *, char *, u_int32_t, int (* const [])
+	       (DB *, char *, u_int32_t, DB_FH *, PAGE *, int *), DB_FH *));
+static int __db_set_lastpgno __P((DB *, char *, DB_FH *));
+
 
 /*
  * __db_upgrade --
@@ -399,3 +407,4 @@ __db_set_lastpgno(dbp, real_name, fhp)
 
 	return (0);
 }
+#endif

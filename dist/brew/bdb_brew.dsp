@@ -66,7 +66,7 @@ LIB32=link.exe -lib
 # PROP Target_Dir ""
 LINK32=link.exe
 # ADD BASE CPP /nologo /MDd /W3 /GX /Z7 /Od /I "." /I ".." /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FD /c
-# ADD CPP /nologo /MDd /W3 /GX /ZI /Od /X /I "." /I ".." /I "$(BREWDIR)\inc" /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "_DEBUG" /D "AEE_SIMULATOR" /D "__NO_SYSTEM_INCLUDES" /FD /c
+# ADD CPP /nologo /MDd /W3 /GX /ZI /Od /X /I "." /I ".." /I "$(BREWDIR)\inc" /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "_DEBUG" /D "AEE_SIMULATOR" /D "__NO_SYSTEM_INCLUDES" /FR /FD /c
 # ADD BASE RSC /l 0xc09
 # ADD RSC /l 0xc09
 BSC32=bscmake.exe
@@ -105,8 +105,11 @@ SOURCE=.\db_config.h
 
 SOURCE=.\db_int.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\errno.h
+# End Source File
 # End Group
 # Begin Group "source_files"
 
-# PROP Default_Filter ".c"
 # PROP Default_Filter ""

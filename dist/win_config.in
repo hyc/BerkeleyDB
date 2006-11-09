@@ -38,6 +38,9 @@
 /* Define to 1 if building BREW. */
 /* #undef HAVE_BREW */
 
+/* Define to 1 if building on BREW (SDK2). */
+/* #undef HAVE_BREW_SDK2 */
+
 /* Define to 1 if you have the `clock_gettime' function. */
 /* #undef HAVE_CLOCK_GETTIME */
 

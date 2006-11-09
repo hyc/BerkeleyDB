@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_stat.c,v 12.42 2006/11/01 00:52:49 bostic Exp $
+ * $Id: env_stat.c,v 12.43 2006/11/08 23:06:57 ubell Exp $
  */
 
 #include "db_config.h"
@@ -198,6 +198,7 @@ __env_print_all(dbenv, flags)
 		{ DB_ENV_THREAD,		"DB_ENV_THREAD" },
 		{ DB_ENV_TIME_NOTGRANTED,	"DB_ENV_TIME_NOTGRANTED" },
 		{ DB_ENV_TXN_NOSYNC,		"DB_ENV_TXN_NOSYNC" },
+		{ DB_ENV_TXN_NOWAIT,		"DB_ENV_TXN_NOWAIT" },
 		{ DB_ENV_TXN_WRITE_NOSYNC,	"DB_ENV_TXN_WRITE_NOSYNC" },
 		{ DB_ENV_YIELDCPU,		"DB_ENV_YIELDCPU" },
 		{ 0,				NULL }

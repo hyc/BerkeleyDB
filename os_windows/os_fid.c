@@ -3,15 +3,12 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: os_fid.c,v 12.10 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_fid.c,v 12.11 2006/11/09 14:23:17 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-
-#define	SERIAL_INIT	0
-static u_int32_t fid_serial = SERIAL_INIT;
 
 /*
  * __os_fileid --
@@ -64,11 +61,11 @@ __os_fileid(dbenv, fname, unique_okay, fidp)
 	 * pushes us out of pid space on most platforms, and has few
 	 * interesting properties in base 2.
 	 */
-	if (fid_serial == SERIAL_INIT) {
+	if (DB_GLOBAL(fid_serial) == 0) {
 		__os_id(dbenv, &pid, NULL);
-		fid_serial = pid;
+		DB_GLOBAL(fid_serial) = pid;
 	} else
-		fid_serial += 100000;
+		DB_GLOBAL(fid_serial) += 100000;
 
 	/*
 	 * First we open the file, because we're not given a handle to it.
@@ -133,8 +130,8 @@ __os_fileid(dbenv, fname, unique_okay, fidp)
 			st.wMilliseconds;
 		for (p = (u_int8_t *)&tmp, i = sizeof(u_int32_t); i > 0; --i)
 			*fidp++ = *p++;
-		for (p = (u_int8_t *)&fid_serial, i = sizeof(u_int32_t);
-		    i > 0; --i)
+		for (p = (u_int8_t *)
+		    &DB_GLOBAL(fid_serial), i = sizeof(u_int32_t); i > 0; --i)
 			*fidp++ = *p++;
 	} else {
 		tmp = (u_int32_t)fi.dwVolumeSerialNumber;

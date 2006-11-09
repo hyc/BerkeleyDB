@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_backup.c,v 12.83 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_backup.c,v 12.84 2006/11/07 23:52:32 alanb Exp $
  */
 
 #include "db_config.h"
@@ -1314,9 +1314,7 @@ __rep_page_fail(dbenv, eid, rec)
 	if (msgfp->filenum != rep->curfile) {
 		RPRINT(dbenv, (dbenv, "Msg file %d != curfile %d",
 		    msgfp->filenum, rep->curfile));
-		REP_SYSTEM_UNLOCK(dbenv);
-		MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
-		return (0);
+		goto out;
 	}
 	rfp = rep->curinfo;
 	if (rfp->type != (u_int32_t)DB_QUEUE)
@@ -1351,8 +1349,10 @@ __rep_page_fail(dbenv, eid, rec)
 	 * send out a page request for the next file's pages.
 	 */
 	ret = __rep_filedone(dbenv, eid, rep, msgfp, REP_PAGE_FAIL);
+out:
 	REP_SYSTEM_UNLOCK(dbenv);
 	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+	__os_free(dbenv, msgfp);
 	return (ret);
 }
 
