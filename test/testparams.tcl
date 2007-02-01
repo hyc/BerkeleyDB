@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2000,2006 Oracle.  All rights reserved.
 #
-# $Id: testparams.tcl,v 12.85 2006/11/01 00:54:03 bostic Exp $
+# $Id: testparams.tcl,v 12.88 2007/01/23 20:19:09 carol Exp $
 
 source ./include.tcl
 global is_freebsd_test
@@ -26,7 +26,7 @@ set test_names(env)	[list env001 env002 env003 env004 env005 env006 \
 set test_names(fop)	[list fop001 fop002 fop003 fop004 fop005 fop006 \
     fop007 fop008]
 set test_names(init)	[list rep029 rep030 rep031 rep033 rep037 rep038 rep039\
-    rep055 rep060 rep061 rep062]
+    rep055 rep057 rep060 rep061 rep062 rep070]
 set test_names(inmemdb)	[list fop007 fop008 rep056 rep057 sdb013 sdb014 \
     sdb015 sdb016 sdb017 sdb018 sdb019 sdb020]
 set test_names(lock)    [list lock001 lock002 lock003 lock004 lock005 lock006]
@@ -43,7 +43,8 @@ set test_names(rep)	[list rep001 rep002 rep003 rep005 rep006 rep007 \
     rep028 rep029 rep030 rep031 rep032 rep033 rep034 rep035 rep036 rep037 \
     rep038 rep039 rep040 rep041 rep042 rep043 rep044 rep045 rep046 rep047 \
     rep048 rep049 rep050 rep051 rep052 rep053 rep054 rep055 rep056 rep057 \
-    rep058 rep060 rep061 rep062 rep063 rep064 rep065 rep066 rep067]
+    rep058 rep060 rep061 rep062 rep063 rep064 rep065 rep066 rep067 rep068 \
+    rep070]
 set test_names(rpc)	[list rpc001 rpc002 rpc003 rpc004 rpc005 rpc006]
 set test_names(rsrc)	[list rsrc001 rsrc002 rsrc003 rsrc004]
 set test_names(sdb)	[list sdb001 sdb002 sdb003 sdb004 sdb005 sdb006 \
@@ -67,7 +68,7 @@ set test_names(test)	[list test001 test002 test003 test004 test005 \
     test109 test110 test111 test112 test113 test114 test115 test116 test117 \
     test119 test120 test121 test122]
 set test_names(txn)	[list txn001 txn002 txn003 txn004 txn005 txn006 \
-    txn007 txn008 txn009 txn010 txn011 txn012 txn013]
+    txn007 txn008 txn009 txn010 txn011 txn012 txn013 txn014]
 
 set rpc_tests(berkeley_db_svc) [concat $test_names(test) $test_names(sdb)]
 set rpc_tests(berkeley_db_cxxsvc) $test_names(test)
@@ -232,6 +233,9 @@ set parms(rep062) "062"
 set parms(rep063) ""
 set parms(rep064) {10 "064"}
 set parms(rep065} {3}
+set parms(rep066) {10 "066"}
+set parms(rep067) ""
+set parms(rep068) {"068"}
 set parms(subdb001) ""
 set parms(subdb002) 10000
 set parms(subdb003) 1000

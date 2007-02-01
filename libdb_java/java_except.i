@@ -65,6 +65,12 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 
 	jmsg = (*jenv)->NewStringUTF(jenv, msg);
 
+	/* Retrieve error message logged by DB */
+	if (jdbenv != NULL) {
+		jmsg = (jstring) (*jenv)->CallNonvirtualObjectMethod(jenv,
+		    jdbenv, dbenv_class, get_err_msg_method, jmsg);
+	}
+
 	switch (err) {
 	case EINVAL:
 		return (jthrowable)(*jenv)->NewObject(jenv,

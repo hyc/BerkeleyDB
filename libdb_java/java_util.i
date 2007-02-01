@@ -2,6 +2,11 @@
 	static {
 		/* An alternate library name can be specified via a property. */
 		String libname;
+		int v_major, v_minor, v_patch;
+
+		v_major = DbConstants.DB_VERSION_MAJOR;
+		v_minor = DbConstants.DB_VERSION_MINOR;
+		v_patch = DbConstants.DB_VERSION_PATCH;
 
 		if ((libname =
 		    System.getProperty("sleepycat.db.libfile")) != null)
@@ -16,9 +21,7 @@
 				 * On Windows, library name is something like
 				 * "libdb_java42.dll" or "libdb_java42d.dll".
 				 */
-				libname = "libdb_java" +
-				    DbConstants.DB_VERSION_MAJOR +
-				    DbConstants.DB_VERSION_MINOR;
+				libname = "libdb_java" + v_major + v_minor;
 
 				try {
 					System.loadLibrary(libname);
@@ -36,18 +39,22 @@
 				 * "libdb_java-3.0.so".
 				 */
 				System.loadLibrary("db_java-" +
-				    DbConstants.DB_VERSION_MAJOR + "." +
-				    DbConstants.DB_VERSION_MINOR);
+				    v_major + "." + v_minor);
 			}
 		}
 
 		initialize();
 
-		if (DbEnv_get_version_major() != DbConstants.DB_VERSION_MAJOR ||
-		    DbEnv_get_version_minor() != DbConstants.DB_VERSION_MINOR ||
-		    DbEnv_get_version_patch() != DbConstants.DB_VERSION_PATCH)
+		if (DbEnv_get_version_major() != v_major ||
+		    DbEnv_get_version_minor() != v_minor ||
+		    DbEnv_get_version_patch() != v_patch)
 			throw new RuntimeException(
-		      "Berkeley DB library version doesn't match Java classes");
+		      "Berkeley DB library version " + 
+		      DbEnv_get_version_major() + "." +
+		      DbEnv_get_version_minor() + "." + 
+		      DbEnv_get_version_patch() +
+		      " doesn't match Java class library version " + 
+		      v_major + "." + v_minor + "." + v_patch);
 	}
 
 	static native final void initialize();
@@ -353,7 +360,7 @@ static jfieldID txn_active_name_fid;
 
 static jmethodID dbenv_construct, dbt_construct, dblsn_construct;
 static jmethodID dbpreplist_construct, dbtxn_construct;
-static jmethodID bt_stat_construct, h_stat_construct;
+static jmethodID bt_stat_construct, get_err_msg_method, h_stat_construct;
 static jmethodID lock_stat_construct, log_stat_construct;
 static jmethodID mpool_stat_construct, mpool_fstat_construct;
 static jmethodID mutex_stat_construct, qam_stat_construct;
@@ -375,8 +382,8 @@ static jmethodID msgcall_method, paniccall_method, rep_transport_method;
 static jmethodID event_notify_method;
 
 static jmethodID append_recno_method, bt_compare_method, bt_prefix_method;
-static jmethodID db_feedback_method, dup_compare_method, h_hash_method;
-static jmethodID seckey_create_method;
+static jmethodID db_feedback_method, dup_compare_method, h_compare_method;
+static jmethodID h_hash_method, seckey_create_method;
 
 static jmethodID outputstream_write_method;
 
@@ -742,6 +749,8 @@ const struct {
 	{ &dbtxn_construct, &dbtxn_class, "<init>", "(JZ)V" },
 
 	{ &bt_stat_construct, &bt_stat_class, "<init>", "()V" },
+	{ &get_err_msg_method, &dbenv_class, "get_err_msg", 
+	    "(Ljava/lang/String;)Ljava/lang/String;" },
 	{ &h_stat_construct, &h_stat_class, "<init>", "()V" },
 	{ &lock_stat_construct, &lock_stat_class, "<init>", "()V" },
 	{ &log_stat_construct, &log_stat_class, "<init>", "()V" },
@@ -815,6 +824,8 @@ const struct {
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)I" },
 	{ &db_feedback_method, &db_class, "handle_db_feedback", "(II)V" },
 	{ &dup_compare_method, &db_class, "handle_dup_compare",
+	    "([B[B)I" },
+	{ &h_compare_method, &db_class, "handle_h_compare",
 	    "([B[B)I" },
 	{ &h_hash_method, &db_class, "handle_h_hash", "([BI)I" },
 	{ &seckey_create_method, &db_class, "handle_seckey_create",

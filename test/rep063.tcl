@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep063.tcl,v 1.7 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep063.tcl,v 1.8 2006/12/07 19:37:44 carol Exp $
 #
 # TEST  rep063
 # TEST	Replication election test with simulated different versions
@@ -16,8 +16,6 @@
 # TEST  the master with varying LSNs and priorities.
 #
 proc rep063 { method args } {
-	global errorInfo
-
 	source ./include.tcl
 	if { $is_windows9x_test == 1 } {
 		puts "Skipping replication test on Win 9x platform."
@@ -63,7 +61,13 @@ proc rep063 { method args } {
 proc rep063_sub { method nclients tnum logset recargs largs } {
 	source ./include.tcl
 	global electable_pri
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	set niter 80
 
 	env_cleanup $testdir
@@ -86,15 +90,11 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 		set c_txnargs($i) [adjust_txnargs $c_logtype($i)]
 	}
 
-# To debug elections, the lines to uncomment are below the
-# error checking portion of this test.  This is needed in order
-# for the error messages to come back in errorInfo and for
-# that portion of the test to pass.
 	# Open a master.
 	set envlist {}
 	repladd 1
-	set env_cmd(M) "berkdb_env -create -log_max 1000000 -home $masterdir \
-	    $m_txnargs $m_logargs -rep_master \
+	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
+	    -home $masterdir $m_txnargs $m_logargs -rep_master $verbargs \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
@@ -155,10 +155,6 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	error_check_good masterenv_close [$masterenv close] 0
 	set envlist [lreplace $envlist 0 0]
 
-# To debug elections, uncomment the lines below to turn on verbose
-# and set the errfile.  Also edit reputils.tcl
-# in proc start_election and swap the 2 commented lines with
-# their counterpart.
 	for { set i 0 } { $i < $nclients } { incr i } {
 		replclear [expr $i + 2]
 		#
@@ -173,11 +169,11 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
  		#
 		set pri($i) 0
 		#
-#		error_check_good pfx [$clientenv($i) errpfx CLIENT$i] 0
-#		error_check_good verb [$clientenv($i) verbose rep on] 0
-#		$clientenv($i) errfile /dev/stderr
-#		set env_cmd($i) [concat $env_cmd($i) \
-#		    "-errpfx CLIENT$i -verbose {rep on} -errfile /dev/stderr"]
+		if { $rep_verbose == 1 } {
+			error_check_good pfx [$clientenv($i) errpfx CLIENT$i] 0
+			set env_cmd($i) [concat $env_cmd($i) \
+			    "-errpfx CLIENT$i $verbargs "]
+		}
 	}
 	#
 	# Remove clients 3 and 4 from the envlist.  We'll save those for

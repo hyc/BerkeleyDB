@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn_chkpt.c,v 12.28 2006/11/01 00:54:22 bostic Exp $
+ * $Id: txn_chkpt.c,v 12.29 2007/01/31 20:08:34 sue Exp $
  */
 
 #include "db_config.h"
@@ -42,6 +42,7 @@
 #include "db_int.h"
 #include "dbinc/log.h"
 #include "dbinc/mp.h"
+#include "dbinc/rep.h"
 #include "dbinc/txn.h"
 
 /*
@@ -176,7 +177,21 @@ __txn_checkpoint(dbenv, kbytes, minutes, flags)
 	 * sees a later chk_lsn but competes first.  An archive process could
 	 * then remove a log this checkpoint depends on.
 	 */
-do_ckp:	MUTEX_LOCK(dbenv, region->mtx_ckp);
+do_ckp:	
+	if (LOGGING_ON(dbenv) && REP_ON(dbenv) &&
+	    IS_REP_MASTER(dbenv)) {
+		/*
+		 * Send out message that tells clients to begin sync'ing
+		 * so that by the time we're done and our checkpoint
+		 * log record gets to the clients, and they do the
+		 * checkpoint for real, it isn't a huge spike in I/O
+		 * preventing new records from getting processed.
+		 */
+		DB_ASSERT(dbenv, ((DB_REP *)dbenv->rep_handle)->send != NULL);
+		__rep_send_message(dbenv, DB_EID_BROADCAST, REP_START_SYNC,
+		    NULL, NULL, 0, 0);
+	}
+	MUTEX_LOCK(dbenv, region->mtx_ckp);
 	if ((ret = __txn_getactive(dbenv, &ckp_lsn)) != 0)
 		goto err;
 

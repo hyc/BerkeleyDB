@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2003,2006 Oracle.  All rights reserved.
 #
-# $Id: rep018.tcl,v 12.10 2006/11/01 00:53:55 bostic Exp $
+# $Id: rep018.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep018
 # TEST	Replication with dbremove.
@@ -46,6 +46,13 @@ proc rep018 { method { niter 10 } { tnum "018" } args } {
 
 proc rep018_sub { method niter tnum logset recargs largs } {
 	source ./include.tcl
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 
@@ -70,19 +77,17 @@ proc rep018_sub { method niter tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create \
-	    -log_max 1000000 -home $masterdir \
-	    $m_txnargs $m_logargs -rep_master \
+	    -log_max 1000000 -home $masterdir $verbargs \
+	    $m_txnargs $m_logargs -rep_master -errpfx MASTER \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create -home $clientdir \
-	    $c_txnargs $c_logargs -rep_client \
+	    $c_txnargs $c_logargs -rep_client $verbargs -errpfx CLIENT \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the client online.
 	process_msgs "{$masterenv 1} {$clientenv 2}"
@@ -165,5 +170,4 @@ proc rep018_sub { method niter tnum logset recargs largs } {
 		puts "FAIL: error message in rep018 log file: $str"
 	}
 }
-
 

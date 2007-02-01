@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep029.tcl,v 12.20 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep029.tcl,v 12.21 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep029
 # TEST	Test of internal initialization.
@@ -96,7 +96,13 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	global testdir
 	global passwd
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -126,26 +132,18 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -log_max $log_max $envargs \
-	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx MASTER -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
+	    $m_logargs -log_max $log_max $envargs $verbargs \
+	    -errpfx MASTER -home $masterdir \
+	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max $envargs \
-	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx CLIENT -errfile /dev/stderr \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
+	    $c_logargs -log_max $log_max $envargs $verbargs \
+	    -errpfx CLIENT -home $clientdir \
+	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -253,7 +251,8 @@ proc rep029_sub { method niter tnum envargs logset recargs opts inmem largs } {
 	# Add records to the master and update client.
 	puts "\tRep$tnum.g: Add more records and check again."
 	set entries 10
-	eval rep_test $method $masterenv NULL $entries $start $start 0 $inmem $largs
+	eval rep_test \
+	    $method $masterenv NULL $entries $start $start 0 $inmem $largs
 	incr start $entries
 	process_msgs $envlist 0 NONE err
 	error_check_good process_msgs $err 0

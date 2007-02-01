@@ -1,3 +1,5 @@
+# $Id: mlease,v 1.6 2006/11/29 18:25:03 bostic Exp $
+
 Design Document for Master Leases
 
 A. Why do we need master leases at all?
@@ -29,31 +31,55 @@ with the other replicas.
 B. Implementing master leases in Berkeley DB.
 
 Note: When we talk about elections, we talk about having at least
-nsites/2 + 1 sites participate.  When we talk about master leases,
-we need the same idea: a majority of the sites agree on who the
-master is.  However, with respect to master leases, the master itself
-always thinks that it is the master, so it need only have nsites/2
-replicas grant the lease to it in order to retain it.  Keep that in
-mind as you read the design.
+nsites/2 + 1 sites participate.  When we talk about master leases, we
+need the same idea: a majority of the sites agree on who the master is.
+However, with respect to master leases, the master itself always thinks
+that it is the master, so it need only have nsites/2 replicas grant the
+lease to it in order to retain it.  Keep that in mind as you read the
+design.
 
 1. API changes:
 
-Before calling dbenv->rep_set_master_lease (described below), the
-application must call dbenv->rep_set_nsites(DB_ENV *dbenv, int nsites)
-to specify the number of sites in the replication group.   In addition,
-all calls to dbenv->rep_elect must use nsites=0 in that call, so that
-the elections and master leases agree on the size of the replication
-group. The nsites value set in dbenv->rep_set_nsites will be used to
-control elections and to determine the number of sites needed for the
-master to retain its lease.
+Leases are turned on via a new API:
 
 	dbenv->rep_set_master_lease(DB_ENV *dbenv,
 	    u_int32_t timeout, u_int32_t clock_scale_factor)
 
+This function must be called before a site calls dbenv->rep_start for
+the first time.
 
-If this is never called, we do nothing differently than we do today.
+Once enabled, leases cannot be disabled without closing and reopening
+the application.
 
-If this is called then we do three things differently:
+Pre-conditions:
+
+Before calling this API, the site must:
+	1. set its replication group size using
+	   dbenv->rep_set_nsites(DB_ENV *dbenv, int nsites)
+
+	2. set the lease timeout value using
+	   dbenv->set_timeout(DB_ENV *dbenv,
+	       db_timeout_t timeout, u_int32_t flags)
+
+	   with flags set to DB_SET_LEASE_TIMEOUT
+
+	The call to dbenv->rep_set_nsites specifies the number of sites
+	in the replication group; all calls to dbenv->rep_elect must use
+	nsites=0, so that the elections and master leases agree on the
+	size of the replication group. The nsites value set in
+	dbenv->rep_set_nsites will be used to control elections and to
+	determine the number of sites needed for the master to retain
+	its lease.
+
+	The timeout value in the dbenv->set_timeout call specifies the
+	length of time that a replica grants a lease to the master.  A
+	replica promises not to participate in an election while it has
+	granted a lease to the master.
+
+If dbenv->rep_set_master_lease is never called, we do nothing
+differently than we do today.
+
+If it is called then we do three things differently:
 
 	* Turning master leases on -- requiring that in order to respond
 	  to a read request, a master hold a master lease by means of
@@ -64,12 +90,8 @@ If this is called then we do three things differently:
 
 	* Setting the group's clock_scale_factor (see below).
 
-The timeout is the length of time that a replica grants a lease to the
-master.  A replica promises not to participate in an election while
-it has granted a lease to the master.
-
 The master promises not to respond to read requests unless at least
-nsites/2  of the replicas have granted the master a lease within the
+nsites/2 of the replicas have granted the master a lease within the
 timeout interval.
 
 2. Optional API change
@@ -79,6 +101,9 @@ reads to the master require that the lease be held.  We could make this
 enforcement optional.  If we did that, then we would need one of two new
 flags to db->get and dbc->{p}get: either one that says "Ignore leases"
 or one that says "Respect leases"
+
+If we do not provide the option to do non-lease gets, then I believe we
+do need to provide the ability to simply turn master leases off.
 
 3. All sites in a replication group must agree on the
 master_lease_timeout and the clock_scale_factor (which is the maximum
@@ -107,8 +132,8 @@ next section.)
 Again, consider a lease timeout value of 5000.
 
 Let's say that the master has 4 replicas and the master sent messages
-to replicas at the times below and that each of the replicas acked
-those messages:
+to replicas at the times below and that each of the replicas acked those
+messages:
 
 	R1	10,000
 	R2	11,000
@@ -119,14 +144,14 @@ At time 14,000, the master happily responds to reads: it has 4 valid
 lease grants from the replicas (5 sites still think the master is the
 master).
 
-At time 15,001, the master sill responds to reads, because it has
-valid lease grants from R2-4 (4 of 5 sites still think that the
-master is the master).
+At time 15,001, the master sill responds to reads, because it has valid
+lease grants from R2-4 (4 of 5 sites still think that the master is the
+master).
 
-At time 16,999, only the master has lease grants only from
-R3 and R4.  However, that means that the master and R3 and R4
-are all in agreement, so the master can still respond (3 of 5
-sites still agree on the master).
+At time 16,999, only the master has lease grants only from R3 and R4.
+However, that means that the master and R3 and R4 are all in agreement,
+so the master can still respond (3 of 5 sites still agree on the
+master).
 
 However, at time 17001, only R4 is still granting its lease.  That means
 that R1-3 could elect a new master.  Therefore the current master cannot
@@ -150,34 +175,41 @@ New state:
 
 In replica:	timestamp containing the last time the replica granted
 		a lease to the master.
-In master:	an entry for each replica that contains:
 
-		Msg-ID	Time_of_Msg-ID		Lease-timeout
+		Note: if you receive a NEWMASTER with a new gen before
+		your lease grant has expired, something is wrong.  You
+		should not accept the NEWMASTER until the lease has
+		expired.  Acceptance of a new master should be treated
+		as a new lease grant and timestamps should be updated
+		appropriately.
 
-		Msg-ID uniquely identifies the last log message that
-		the master sent to this replica.  The Time_of_Msg-ID
-		is the time at which this message was sent.
+In master:	an entry for each replica that contains the Lease-timeout
+		value for that replica.  This timeout must be expressed
+		relative to the master's clock.
 
-		Lease-timeout is the master-local time that the
-		grant from this replica expires.
+		Since we cannot assume any kind of clock synchronization
+		between sites, the master and replicas will have to
+		coordinate as described below.
 
 In __rep_process_message:
 	Replica:	in response to a log record or a request for
 			an ACK:
 			1. update timestamp to current time + timeout.
 			2. send an ACK to the master.  This message
-			should uniquely identify the message it is
-			acking (probably by LSN).  This ACK should happen
-			even if the log record is not immediately
-			processed.
+			must contain the master's timestamp included in
+			the message it is acking.
 
-			NOTE: If a replica is receiving log records
-			from another replica (for any reason), then
-			the master's view of lease management becomes
-			more complicated.  I believe  there are two cases.
-			Let's assume we have sites Rn, replicas to whom the
-			master speaks directly and sites rn who receive log
-			records indirectly from other replicas.
+			This ACK should happen even if the log record
+			is not immediately processed.
+
+			NOTE: If a replica is receiving log records from
+			another replica (for any reason), then the
+			master's view of lease management becomes more
+			complicated.  I believe  there are two cases.
+			Let's assume we have sites Rn, replicas to whom
+			the master speaks directly and sites rn who
+			receive log records indirectly from other
+			replicas.
 
 			1) If the rn sites can participate in elections,
 			then the master *must* consider them in lease
@@ -185,17 +217,19 @@ In __rep_process_message:
 			record they must still ack the master.
 
 			2) If the rn sites cannot participate in an
-			election, then they needn't send ACKs to the
+			election, then they mustn't send ACKs to the
 			master.
 
 			So, if a replica is an elector, then it must ACK
-			directly to the master.  And, the master must maintain
-			state for any replica capable of participating in an
-			election.
+			directly to the master.  And, the master must
+			maintain state for any replica capable of
+			participating in an election.
 
 	Master:		If message is an ACK;
-			if ACK is to the message identified in Msg-ID
-			set Lease-timeout = Time of Msg-ID + timeout.
+			if message-timestamp+Lease Timeout (properly
+			modified by clock skew) is greater than the
+			current lease grant for this replica, update
+			Lease-timeout for this replica accordingly.
 
 In __rep_send_message:
 
@@ -214,11 +248,11 @@ Next, consider the lightly loaded system.  With lazy refresh, the master
 does nothing until a read operation is requested.  If it finds that not
 enough replicas have valid leases, then the master could send out as
 many "ping" requests as necessary to get replicas to  ACK and reset
-their lease. (I would re-introduce the ALIVE_REQ and ALIVE messages for
-this purpose.)
+their lease. (I would introduce the LEASE_REQ and LEASE_GRANT messages
+for this purpose.)
 
 With eager refresh, the master would notice that leases were about to
-expire and would proactively send the pings to keep the leases alive.
+expire and would pro-actively send the pings to keep the leases alive.
 
 Eager refresh requires additional threads on which masters can set
 timers to wait. Since we do not necessarily have that without the
@@ -267,14 +301,14 @@ is interpreted as follows:
 
 	First, it is a percentage, greater than 100 (this is how we
 	sneakily transmit a floating point number as an integer).  So,
-	the first thing a site does is divide the clock_scale_factor
-	by 100.
+	the first thing a site does is divide the clock_scale_factor by
+	100.
 
 	If the slowest replica's clock is a factor of clock_scale_factor
 	slower than the fastest clock, then if the faster clock goes
 	from time t1 to t2 in X seconds, the slower clock does it in
 	clock_scale_factor * X seconds.
-	
+
 	A master should set a replica's lease expiration to the start
 	time of the sent message + (lease_duration / clock_scale_factor)
 	[in case the replica has a slow clock].

@@ -292,7 +292,11 @@ err:	(*jenv)->DeleteLocalRef(jenv, jdbtarr);
 	return (ret);
 }
 
-static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+/*
+ * Shared by __dbj_bt_compare and __dbj_h_compare 
+ */
+static int __dbj_am_compare(DB *db, const DBT *dbt1, const DBT *dbt2,
+    jmethodID compare_method)
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
 	jobject jdb = (jobject)DB_INTERNAL(db);
@@ -323,7 +327,7 @@ static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 	}
 
 	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
-	    bt_compare_method, jdbtarr1, jdbtarr2);
+	    compare_method, jdbtarr1, jdbtarr2);
 
 	if ((*jenv)->ExceptionOccurred(jenv)) {
 		/* The exception will be thrown, so this could be any error. */
@@ -336,6 +340,11 @@ static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 		(*jenv)->DeleteLocalRef(jenv, jdbtarr2);
 
 	return (ret);
+}
+
+static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+{
+	return __dbj_am_compare(db, dbt1, dbt2, bt_compare_method);
 }
 
 static size_t __dbj_bt_prefix(DB *db, const DBT *dbt1, const DBT *dbt2)
@@ -430,6 +439,11 @@ static void __dbj_db_feedback(DB *db, int opcode, int percent)
 		    db_feedback_method, opcode, percent);
 }
 
+static int __dbj_h_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+{
+	return __dbj_am_compare(db, dbt1, dbt2, h_compare_method);
+}
+
 static u_int32_t __dbj_h_hash(DB *db, const void *data, u_int32_t len)
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
@@ -489,5 +503,7 @@ JAVA_CALLBACK(int (*dup_compare_fcn)(DB *, const DBT *, const DBT *),
     java.util.Comparator, dup_compare)
 JAVA_CALLBACK(void (*db_feedback_fcn)(DB *, int, int),
     com.sleepycat.db.FeedbackHandler, db_feedback)
+JAVA_CALLBACK(int (*h_compare_fcn)(DB *, const DBT *, const DBT *),
+    java.util.Comparator, h_compare)
 JAVA_CALLBACK(u_int32_t (*h_hash_fcn)(DB *, const void *, u_int32_t),
     com.sleepycat.db.Hasher, h_hash)

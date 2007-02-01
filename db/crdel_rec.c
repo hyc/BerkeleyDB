@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: crdel_rec.c,v 12.15 2006/11/01 00:52:28 bostic Exp $
+ * $Id: crdel_rec.c,v 12.17 2006/11/29 21:23:11 ubell Exp $
  */
 
 #include "db_config.h"
@@ -61,7 +61,7 @@ __crdel_metasub_recover(dbenv, dbtp, lsnp, op, info)
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->lsn);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
-		REC_DIRTY(mpf, &pagep);
+		REC_DIRTY(mpf, file_dbp->priority, &pagep);
 		memcpy(pagep, argp->page.data, argp->page.size);
 		LSN(pagep) = *lsnp;
 
@@ -88,14 +88,15 @@ __crdel_metasub_recover(dbenv, dbtp, lsnp, op, info)
 		 * freed.  Opening the subdb will have reinitialized the
 		 * page, but not the lsn.
 		 */
-		REC_DIRTY(mpf, &pagep);
+		REC_DIRTY(mpf, file_dbp->priority, &pagep);
 		LSN(pagep) = argp->lsn;
 	}
 
 done:	*lsnp = argp->prev_lsn;
 	ret = 0;
 
-out:	if (pagep != NULL && (t_ret = __memp_fput(mpf, pagep, 0)) != 0 &&
+out:	if (pagep != NULL &&
+	     (t_ret = __memp_fput(mpf, pagep, file_dbp->priority)) != 0 &&
 	    ret == 0)
 		ret = t_ret;
 
@@ -166,14 +167,14 @@ __crdel_inmem_create_recover(dbenv, dbtp, lsnp, op, info)
 			goto out;
 		dbp->preserve_fid = 1;
 		MAKE_INMEM(dbp);
-		if ((ret = __db_dbenv_setup(dbp,
+		if ((ret = __db_env_setup(dbp,
 		    NULL, NULL, argp->name.data, TXN_INVALID, 0)) != 0)
 			goto out;
-		ret = __db_dbenv_mpool(dbp, argp->name.data, 0);
+		ret = __db_env_mpool(dbp, argp->name.data, 0);
 
 		if (ret == ENOENT) {
 			dbp->pgsize = argp->pgsize;
-			if ((ret = __db_dbenv_mpool(dbp,
+			if ((ret = __db_env_mpool(dbp,
 			    argp->name.data, DB_CREATE)) != 0)
 				goto out;
 		} else if (ret != 0)

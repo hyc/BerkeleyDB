@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: mp_mvcc.c,v 12.26 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_mvcc.c,v 12.27 2006/12/06 02:45:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -284,7 +284,7 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 	if ((ret = __db_appname(dbenv, DB_APP_NONE, filename,
 	    0, NULL, &real_name)) != 0)
 		goto err;
-	if ((ret = __os_open_extend(dbenv, real_name, pagesize,
+	if ((ret = __os_open(dbenv, real_name, pagesize,
 	    DB_OSO_CREATE | DB_OSO_EXCL, dbenv->db_mode, &fhp)) == 0) {
 		/* We're creating the file -- initialize the metadata page. */
 		magic = DB_FREEZER_MAGIC;
@@ -298,8 +298,8 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 		    (ret = __os_seek(dbenv, fhp, 0, 0, 0)) != 0)
 			goto err;
 	} else if (ret == EEXIST)
-		ret = __os_open_extend(dbenv, real_name, pagesize, 0,
-		    dbenv->db_mode, &fhp);
+		ret = __os_open(
+		    dbenv, real_name, pagesize, 0, dbenv->db_mode, &fhp);
 	if (ret != 0)
 		goto err;
 	if ((ret = __os_read(dbenv, fhp, &magic, sizeof(u_int32_t),
@@ -491,8 +491,8 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	    &real_name)) != 0)
 		goto err;
 
-	if ((ret = __os_open_extend(dbenv, real_name, pagesize, 0,
-	    dbenv->db_mode, &fhp)) != 0)
+	if ((ret = __os_open(
+	    dbenv, real_name, pagesize, 0, dbenv->db_mode, &fhp)) != 0)
 		goto err;
 
 	/*

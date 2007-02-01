@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: log_put.c,v 12.49 2006/11/01 00:53:35 bostic Exp $
+ * $Id: log_put.c,v 12.52 2007/01/27 03:22:07 alanb Exp $
  */
 
 #include "db_config.h"
@@ -574,8 +574,11 @@ __log_newfile(dblp, lsnp, logfile, version)
 		if (lp->db_log_inmemory) {
 			lsn = lp->lsn;
 			(void)__log_vtruncate(dbenv, &lsn, &lsn, NULL);
-		} else if ((ret = __log_newfh(dblp, 1)) != 0)
-			return (ret);
+		} else {
+			lp->s_lsn = lp->lsn;
+			if ((ret = __log_newfh(dblp, 1)) != 0)
+				return (ret);
+		}
 	}
 
 	DB_ASSERT(dbenv, lp->db_log_inmemory || lp->b_off == 0);
@@ -598,6 +601,7 @@ __log_newfile(dblp, lsnp, logfile, version)
 		tsize += db_cipher->adj_size(tsize);
 	if ((ret = __os_calloc(dbenv, 1, tsize, &tmp)) != 0)
 		return (ret);
+	need_free = 1;
 	/*
 	 * If we're told what version to make this file, then we
 	 * need to be at that version.  Update here.
@@ -610,7 +614,6 @@ __log_newfile(dblp, lsnp, logfile, version)
 	lp->persist.log_size = lp->log_size = lp->log_nsize;
 	memcpy(tmp, &lp->persist, sizeof(LOGP));
 	DB_SET_DBT(t, tmp, tsize);
-	need_free = 1;
 
 	if ((ret =
 	    __log_encrypt_record(dbenv, &t, &hdr, (u_int32_t)tsize)) != 0)
@@ -1357,7 +1360,7 @@ __log_name(dblp, filenumber, namep, fhpp, flags)
 
 	/* Open the new-style file -- if we succeed, we're done. */
 	dblp->lf_timestamp = lp->timestamp;
-	if ((ret = __os_open_extend(dbenv, *namep, 0, flags, mode, fhpp)) == 0)
+	if ((ret = __os_open(dbenv, *namep, 0, flags, mode, fhpp)) == 0)
 		return (0);
 
 	/*
@@ -1389,7 +1392,7 @@ __log_name(dblp, filenumber, namep, fhpp, flags)
 	 * space allocated for the new-style name and return the old-style
 	 * name to the caller.
 	 */
-	if ((ret = __os_open(dbenv, oname, flags, mode, fhpp)) == 0) {
+	if ((ret = __os_open(dbenv, oname, 0, flags, mode, fhpp)) == 0) {
 		__os_free(dbenv, *namep);
 		*namep = oname;
 		return (0);

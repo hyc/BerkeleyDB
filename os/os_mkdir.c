@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_mkdir.c,v 12.18 2006/11/01 00:53:40 bostic Exp $
+ * $Id: os_mkdir.c,v 12.19 2007/01/22 06:12:17 alexg Exp $
  */
 
 #include "db_config.h"
@@ -29,11 +29,8 @@ __os_mkdir(dbenv, name, mode)
 		__db_msg(dbenv, "fileops: mkdir %s", name);
 
 	/* Make the directory, with paranoid permissions. */
-#ifdef HAVE_VXWORKS
+#if defined(HAVE_VXWORKS)
 	RETRY_CHK((mkdir((char *)name)), ret);
-#else
-#ifdef DB_WIN32
-	RETRY_CHK((_mkdir(name)), ret);
 #else
 	RETRY_CHK((mkdir(name, __db_omode("rwx------"))), ret);
 #endif
@@ -41,13 +38,12 @@ __os_mkdir(dbenv, name, mode)
 		return (__os_posix_err(ret));
 
 	/* Set the absolute permissions, if specified. */
-#ifndef DB_WIN32
+#if !defined(HAVE_VXWORKS)
 	if (mode != 0) {
 		RETRY_CHK((chmod(name, mode)), ret);
 		if (ret != 0)
 			ret = __os_posix_err(ret);
 	}
-#endif
 #endif
 	return (ret);
 }

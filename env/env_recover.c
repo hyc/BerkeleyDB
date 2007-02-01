@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_recover.c,v 12.37 2006/11/09 14:27:06 bostic Exp $
+ * $Id: env_recover.c,v 12.39 2007/01/08 17:46:42 ubell Exp $
  */
 
 #include "db_config.h"
@@ -588,6 +588,26 @@ done:
 			dbenv->rep_handle->region->op_cnt =
 			    region->stat.st_nrestores;
 		if ((ret = __txn_recycle_id(dbenv)) != 0)
+			goto err;
+	}
+
+	/*
+	 * We must be sure to zero the tail of the log.  Otherwise a partial
+	 * record may be at the end of the log and it may never be fully
+	 * overwritten.
+	 */
+	if (max_lsn == NULL && dbenv->tx_timestamp == 0) {
+		/* We are going to truncate, so we'd best close the cursor. */
+		if (logc != NULL && (ret = __logc_close(logc)) != 0)
+			goto err;
+		logc = NULL;
+
+		/* Truncate from beyond the last record in the log. */
+		if ((ret =
+		    __log_current_lsn(dbenv, &last_lsn, NULL, NULL)) != 0)
+			goto err;
+		if ((ret = __log_vtruncate(dbenv,
+		    &last_lsn, &region->last_ckp, NULL)) != 0)
 			goto err;
 	}
 

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep003.tcl,v 12.8 2006/11/01 00:53:54 bostic Exp $
+# $Id: rep003.tcl,v 12.9 2006/12/07 20:04:54 carol Exp $
 #
 # TEST  	rep003
 # TEST	Repeated shutdown/restart replication test
@@ -64,7 +64,13 @@ proc rep003 { method { tnum "003" } args } {
 
 proc rep003_sub { method tnum logset recargs largs } {
 	source ./include.tcl
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -87,7 +93,7 @@ proc rep003_sub { method tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
-	    -errpfx MASTER -errfile /dev/stderr \
+	    -errpfx MASTER $verbargs \
 	    -home $masterdir -txn $m_logargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
@@ -101,7 +107,7 @@ proc rep003_sub { method tnum logset recargs largs } {
 	# Open a client.
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create -private -home $clientdir \
-	    -txn $c_logargs -errpfx CLIENT -errfile /dev/stderr \
+	    -txn $c_logargs -errpfx CLIENT $verbargs \
 	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
@@ -265,7 +271,7 @@ proc rep003_sub { method tnum logset recargs largs } {
 
 proc rep003_put { masterenv key data } {
 	global rep003_dbname rep003_omethod rep003_oargs
-
+ 
 	set db [eval {berkdb_open_noerr -create -env $masterenv -auto_commit} \
 	    $rep003_omethod $rep003_oargs $rep003_dbname]
 	error_check_good rep3_put_open($key,$data) [is_valid_db $db] TRUE

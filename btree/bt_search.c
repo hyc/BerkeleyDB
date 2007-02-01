@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_search.c,v 12.25 2006/11/01 00:51:57 bostic Exp $
+ * $Id: bt_search.c,v 12.26 2006/11/29 21:23:10 ubell Exp $
  */
 
 #include "db_config.h"
@@ -113,7 +113,7 @@ try_again:
 	    (LF_ISSET(SR_START) && slevel == LEVEL(h)))) {
 		if (!STD_LOCKING(dbc))
 			goto no_relock;
-		ret = __memp_fput(mpf, h, 0);
+		ret = __memp_fput(mpf, h, dbc->priority);
 		if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
@@ -131,7 +131,7 @@ try_again:
 		    (LF_ISSET(SR_WRITE) && LEVEL(h) == LEAFLEVEL) ||
 		    (LF_ISSET(SR_START) && slevel == LEVEL(h)))) {
 			/* Someone else split the root, start over. */
-			ret = __memp_fput(mpf, h, 0);
+			ret = __memp_fput(mpf, h, dbc->priority);
 			if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 				ret = t_ret;
 			if (ret != 0)
@@ -279,8 +279,8 @@ __bam_search(dbc, root_pgno, key, flags, slevel, recnop, exactp)
 				if ((t_ret =
 				    __LPUT(dbc, lock)) != 0 && ret == 0)
 					ret = t_ret;
-				if ((t_ret =
-				    __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+				if ((t_ret = __memp_fput(mpf,
+				     h, dbc->priority)) != 0 && ret == 0)
 					ret = t_ret;
 				return (ret);
 			}
@@ -301,7 +301,8 @@ get_next:			/*
 				 */
 				if ((ret = __LPUT(dbc, lock)) != 0)
 					goto err;
-				if ((ret = __memp_fput(mpf, h, 0)) != 0)
+				if ((ret =
+				    __memp_fput(mpf, h, dbc->priority)) != 0)
 					goto err;
 				h = NULL;
 				LF_SET(SR_MIN);
@@ -366,13 +367,13 @@ next:		if (recnop != NULL)
 				if ((t_ret =
 				    __LPUT(dbc, lock)) != 0 && ret == 0)
 					ret = t_ret;
-				if ((t_ret =
-				    __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+				if ((t_ret = __memp_fput(mpf,
+				    h, dbc->priority)) != 0 && ret == 0)
 					ret = t_ret;
 				return (ret);
 			}
 			BT_STK_NUMPUSH(dbenv, cp, h, indx, ret);
-			(void)__memp_fput(mpf, h, 0);
+			(void)__memp_fput(mpf, h, dbc->priority);
 			h = NULL;
 			if ((ret = __db_lget(dbc,
 			    LCK_COUPLE_ALWAYS, pg, lock_mode, 0, &lock)) != 0) {
@@ -438,7 +439,7 @@ next:		if (recnop != NULL)
 			 * edge, then drop the subtree.
 			 */
 			if (!LF_ISSET(SR_DEL | SR_NEXT)) {
-				if ((ret = __memp_fput(mpf, h, 0)) != 0)
+				if ((ret = __memp_fput(mpf, h, dbc->priority)) != 0)
 					goto err;
 				goto lock_next;
 			}
@@ -578,7 +579,8 @@ found:	*exactp = 1;
 		BT_STK_NUM(dbenv, cp, h, indx, ret);
 		if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 			ret = t_ret;
-		if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		     __memp_fput(mpf, h, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 	} else {
 		if (LF_ISSET(SR_DEL) && cp->csp == cp->sp)
@@ -590,7 +592,8 @@ found:	*exactp = 1;
 
 	return (0);
 
-err:	if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+err:	if (h != NULL && (t_ret =
+	    __memp_fput(mpf, h, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Keep any not-found page locked for serializability. */
@@ -636,8 +639,8 @@ __bam_stkrel(dbc, flags)
 				cp->page = NULL;
 				LOCK_INIT(cp->lock);
 			}
-			if ((t_ret =
-			    __memp_fput(mpf, epg->page, 0)) != 0 && ret == 0)
+			if ((t_ret = __memp_fput(mpf,
+			     epg->page, dbc->priority)) != 0 && ret == 0)
 				ret = t_ret;
 			/*
 			 * XXX

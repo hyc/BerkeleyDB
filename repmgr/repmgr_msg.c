@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_msg.c,v 1.26 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_msg.c,v 1.27 2006/12/29 01:12:50 alanb Exp $
  */
 
 #include "db_config.h"
@@ -147,6 +147,10 @@ process_message(dbenv, control, rec, eid)
 
 /*
  * Acknowledges a message.
+ *
+ * !!!
+ * Note that this cannot be called from the select() thread, in case we call
+ * __repmgr_bust_connection(..., FALSE).
  */
 static int
 ack_message(dbenv, generation, lsn)

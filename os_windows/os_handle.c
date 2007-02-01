@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1998,2006 Oracle.  All rights reserved.
  *
- * $Id: os_handle.c,v 12.15 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_handle.c,v 12.16 2007/01/22 06:12:20 alexg Exp $
  */
 
 #include "db_config.h"
@@ -21,6 +21,14 @@ __os_openhandle(dbenv, name, flags, mode, fhpp)
 	int flags, mode;
 	DB_FH **fhpp;
 {
+#ifdef DB_WINCE
+	/*
+	 * __os_openhandle API is not implemented on WinCE.
+	 * It is not currently called from within the Berkeley DB library,
+	 * so don't log the failure via the __db_err mechanism.
+	 */
+	return (EFAULT);
+#else
 	DB_FH *fhp;
 	int ret, nrepeat, retries;
 
@@ -88,6 +96,7 @@ __os_openhandle(dbenv, name, flags, mode, fhpp)
 
 err:	(void)__os_closehandle(dbenv, fhp);
 	return (ret);
+#endif
 }
 
 /*
@@ -124,7 +133,11 @@ __os_closehandle(dbenv, fhp)
 		if (fhp->handle != INVALID_HANDLE_VALUE)
 			RETRY_CHK((!CloseHandle(fhp->handle)), ret);
 		else
+#ifdef DB_WINCE
+			ret = EFAULT;
+#else
 			RETRY_CHK((_close(fhp->fd)), ret);
+#endif
 
 		if (fhp->trunc_handle != INVALID_HANDLE_VALUE) {
 			RETRY_CHK((!CloseHandle(fhp->trunc_handle)), t_ret);

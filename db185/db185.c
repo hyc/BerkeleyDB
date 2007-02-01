@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db185.c,v 12.9 2006/11/01 00:52:31 bostic Exp $
+ * $Id: db185.c,v 12.10 2006/11/15 20:48:00 bostic Exp $
  */
 
 #include "db_config.h"
@@ -155,6 +155,15 @@ __db185_open(file, oflags, mode, type, openinfo)
 			oflags |= O_RDWR;
 			file = NULL;
 		}
+
+		/*
+		 * !!!
+		 * Set the O_CREAT flag in case the application didn't -- in DB
+		 * 1.85 the backing file was the file being created and it may
+		 * exist, but DB 2.X is creating a temporary Btree database and
+		 * we need the create flag to do that.
+		 */
+		oflags |= O_CREAT;
 
 		if ((ri = openinfo) != NULL) {
 			/*

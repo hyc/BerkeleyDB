@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_mp.c,v 12.9 2006/11/01 00:53:52 bostic Exp $
+ * $Id: tcl_mp.c,v 12.11 2006/11/30 19:05:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -23,7 +23,7 @@ static int      pg_Cmd __P((ClientData, Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int      tcl_MpGet __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
     DB_MPOOLFILE *, DBTCL_INFO *));
 static int      tcl_Pg __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
-    void *, DB_MPOOLFILE *, DBTCL_INFO *, int));
+    void *, DB_MPOOLFILE *, DBTCL_INFO *));
 static int      tcl_PgInit __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
     void *, DBTCL_INFO *));
 static int      tcl_PgIsset __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
@@ -729,7 +729,6 @@ pg_Cmd(clientData, interp, objc, objv)
 		"pgnum",
 		"pgsize",
 		"put",
-		"set",
 		NULL
 	};
 	enum pgcmds {
@@ -737,8 +736,7 @@ pg_Cmd(clientData, interp, objc, objv)
 		PGISSET,
 		PGNUM,
 		PGSIZE,
-		PGPUT,
-		PGSET
+		PGPUT
 	};
 	DB_MPOOLFILE *mp;
 	int cmdindex, length, result;
@@ -783,10 +781,8 @@ pg_Cmd(clientData, interp, objc, objv)
 	case PGSIZE:
 		res = Tcl_NewWideIntObj((Tcl_WideInt)pgip->i_pgsz);
 		break;
-	case PGSET:
 	case PGPUT:
-		result = tcl_Pg(interp, objc, objv, page, mp, pgip,
-		    (enum pgcmds)cmdindex == PGSET ? 0 : 1);
+		result = tcl_Pg(interp, objc, objv, page, mp, pgip);
 		break;
 	case PGINIT:
 		result = tcl_PgInit(interp, objc, objv, page, pgip);
@@ -806,14 +802,13 @@ pg_Cmd(clientData, interp, objc, objv)
 }
 
 static int
-tcl_Pg(interp, objc, objv, page, mp, pgip, putop)
+tcl_Pg(interp, objc, objv, page, mp, pgip)
 	Tcl_Interp *interp;		/* Interpreter */
 	int objc;			/* How many arguments? */
 	Tcl_Obj *CONST objv[];		/* The argument objects */
 	void *page;			/* Page pointer */
 	DB_MPOOLFILE *mp;		/* Mpool pointer */
 	DBTCL_INFO *pgip;		/* Info pointer */
-	int putop;			/* Operation */
 {
 	static const char *pgopt[] = {
 		"-discard",
@@ -841,17 +836,12 @@ tcl_Pg(interp, objc, objv, page, mp, pgip, putop)
 	}
 
 	_debug_check();
-	if (putop)
-		ret = mp->put(mp, page, flag);
-	else
-		ret = mp->set(mp, page, flag);
+	ret = mp->put(mp, page, DB_PRIORITY_UNCHANGED, flag);
 
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "page");
 
-	if (putop) {
-		(void)Tcl_DeleteCommand(interp, pgip->i_name);
-		_DeleteInfo(pgip);
-	}
+	(void)Tcl_DeleteCommand(interp, pgip->i_name);
+	_DeleteInfo(pgip);
 	return (result);
 }
 

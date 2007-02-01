@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2006 Oracle.  All rights reserved.
 #
-# $Id: rep062.tcl,v 1.7 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep062.tcl,v 1.8 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep062
 # TEST	Test of internal initialization where client has a different
@@ -69,7 +69,13 @@ proc rep062_sub { method tnum logset recargs largs } {
 	global util_path
 	global passwd
 	global encrypt
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	set masterdir $testdir/MASTERDIR
 	set clientdir $testdir/CLIENTDIR
 
@@ -146,30 +152,18 @@ proc rep062_sub { method tnum logset recargs largs } {
 		# Open a master.
 		repladd 1
 		set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-		    $m_logargs -log_max $log_max \
+		    $m_logargs -log_max $log_max $verbargs -errpfx MASTER \
 		    -cachesize { 0 $cache 1 } $envflags \
 		    -home $masterdir -rep_transport \[list 1 replsend\]"
-#		set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#		    $m_logargs -log_max $log_max \
-#		    -cachesize { 0 $cache 1 } $envflags \
-#		    -verbose {rep on} -errpfx MASTER -errfile /dev/stderr \
-#		    -home $masterdir -rep_transport \[list 1 replsend\]"
 		set masterenv [eval $ma_envcmd $recargs -rep_master]
-		error_check_good master_env [is_valid_env $masterenv] TRUE
 
 		# Open a client.
 		repladd 2
 		set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-		    $c_logargs -log_max $log_max \
+		    $c_logargs -log_max $log_max $verbargs -errpfx CLIENT \
 		    -cachesize { 0 $cache 1 } $envflags \
 		    -home $clientdir -rep_transport \[list 2 replsend\]"
-#		set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#		    $c_logargs -log_max $log_max \
-#		    -cachesize { 0 $cache 1 } $envflags \
-#		    -verbose {rep on} -errpfx CLIENT -errfile /dev/stderr \
-#		    -home $clientdir -rep_transport \[list 2 replsend\]"
 		set clientenv [eval $cl_envcmd $recargs -rep_client]
-		error_check_good client_env [is_valid_env $clientenv] TRUE
 
 		# Bring the client online by processing the startup messages.
 		set envlist "{$masterenv 1} {$clientenv 2}"

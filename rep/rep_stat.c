@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_stat.c,v 12.19 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_stat.c,v 12.20 2006/12/13 01:25:39 ubell Exp $
  */
 
 #include "db_config.h"
@@ -191,7 +191,7 @@ __rep_stat_print(dbenv, flags)
 	int ret;
 
 	orig_flags = flags;
-	LF_CLR(DB_STAT_CLEAR);
+	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
 	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
 		ret = __rep_print_stats(dbenv, orig_flags);
 		if (flags == 0 || ret != 0)

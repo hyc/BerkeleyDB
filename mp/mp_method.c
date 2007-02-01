@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_method.c,v 12.37 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_method.c,v 12.39 2006/11/29 20:08:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,13 +14,13 @@
 #include "dbinc/hash.h"
 
 /*
- * __memp_dbenv_create --
+ * __memp_env_create --
  *	Mpool specific creation of the DB_ENV structure.
  *
- * PUBLIC: int __memp_dbenv_create __P((DB_ENV *));
+ * PUBLIC: int __memp_env_create __P((DB_ENV *));
  */
 int
-__memp_dbenv_create(dbenv)
+__memp_env_create(dbenv)
 	DB_ENV *dbenv;
 {
 	/*
@@ -44,13 +44,13 @@ __memp_dbenv_create(dbenv)
 }
 
 /*
- * __memp_dbenv_destroy --
+ * __memp_env_destroy --
  *	Mpool specific destruction of the DB_ENV structure.
  *
- * PUBLIC: void __memp_dbenv_destroy __P((DB_ENV *));
+ * PUBLIC: void __memp_env_destroy __P((DB_ENV *));
  */
 void
-__memp_dbenv_destroy(dbenv)
+__memp_env_destroy(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, NULL);
@@ -223,12 +223,13 @@ __memp_set_mp_max_openfd(dbenv, maxopenfd)
 }
 
 /*
- * PUBLIC: int __memp_get_mp_max_write __P((DB_ENV *, int *, int *));
+ * PUBLIC: int __memp_get_mp_max_write __P((DB_ENV *, int *, db_timeout_t *));
  */
 int
 __memp_get_mp_max_write(dbenv, maxwritep, maxwrite_sleepp)
 	DB_ENV *dbenv;
-	int *maxwritep, *maxwrite_sleepp;
+	int *maxwritep;
+	db_timeout_t *maxwrite_sleepp;
 {
 	DB_MPOOL *dbmp;
 	MPOOL *mp;
@@ -254,12 +255,13 @@ __memp_get_mp_max_write(dbenv, maxwritep, maxwrite_sleepp)
  * __memp_set_mp_max_write --
  *	Set the maximum continuous I/O count.
  *
- * PUBLIC: int __memp_set_mp_max_write __P((DB_ENV *, int, int));
+ * PUBLIC: int __memp_set_mp_max_write __P((DB_ENV *, int, db_timeout_t));
  */
 int
 __memp_set_mp_max_write(dbenv, maxwrite, maxwrite_sleep)
 	DB_ENV *dbenv;
-	int maxwrite, maxwrite_sleep;
+	int maxwrite;
+	db_timeout_t maxwrite_sleep;
 {
 	DB_MPOOL *dbmp;
 	MPOOL *mp;

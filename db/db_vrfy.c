@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: db_vrfy.c,v 12.32 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_vrfy.c,v 12.35 2006/12/06 02:45:52 bostic Exp $
  */
 
 #include "db_config.h"
@@ -251,7 +251,7 @@ __db_verify(dbp, name, subdb, handle, callback, flags)
 	 * safe to open the database normally and then use the page swapping
 	 * code, which makes life easier.
 	 */
-	if ((ret = __os_open(dbenv, real_name, DB_OSO_RDONLY, 0, &fhp)) != 0)
+	if ((ret = __os_open(dbenv, real_name, 0, DB_OSO_RDONLY, 0, &fhp)) != 0)
 		goto err;
 
 	/* Verify the metadata page 0; set pagesize and type. */
@@ -270,11 +270,11 @@ __db_verify(dbp, name, subdb, handle, callback, flags)
 	 * enough to use.
 	 *
 	 * The dbp is not open, but the file is open in the fhp, and we
-	 * cannot assume that __db_open is safe.  Call __db_dbenv_setup,
+	 * cannot assume that __db_open is safe.  Call __db_env_setup,
 	 * the [safe] part of __db_open that initializes the environment--
 	 * and the mpool--manually.
 	 */
-	if ((ret = __db_dbenv_setup(dbp, NULL,
+	if ((ret = __db_env_setup(dbp, NULL,
 	    name, subdb, TXN_INVALID, DB_ODDFILESIZE | DB_RDONLY)) != 0)
 		goto err;
 
@@ -752,7 +752,7 @@ __db_vrfy_walkpages(dbp, vdp, handle, callback, flags)
 		 * Just as with the page get, bail if and only if we're
 		 * not salvaging.
 		 */
-		if ((t_ret = __memp_fput(mpf, h, 0)) != 0) {
+		if ((t_ret = __memp_fput(mpf, h, dbp->priority)) != 0) {
 			if (ret == 0)
 				ret = t_ret;
 			if (!LF_ISSET(DB_SALVAGE))
@@ -775,7 +775,8 @@ __db_vrfy_walkpages(dbp, vdp, handle, callback, flags)
 	}
 
 	if (0) {
-err:		if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0)
+err:		if (h != NULL &&
+		    (t_ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 			return (ret == 0 ? t_ret : ret);
 	}
 
@@ -1634,7 +1635,8 @@ __db_vrfy_orderchkonly(dbp, vdp, name, subdb, flags)
 			    NULL, currpg, p, NUM_ENT(currpg), 1,
 			    F_ISSET(&btmeta->dbmeta, BTM_DUP), flags)) != 0)
 				goto err;
-			if ((ret = __memp_fput(mpf, currpg, 0)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, currpg, dbp->priority)) != 0)
 				goto err;
 			currpg = NULL;
 		}
@@ -1687,7 +1689,8 @@ __db_vrfy_orderchkonly(dbp, vdp, name, subdb, flags)
 				    flags, h_internal->h_hash)) != 0)
 					goto err;
 				pgno = NEXT_PGNO(currpg);
-				if ((ret = __memp_fput(mpf, currpg, 0)) != 0)
+				if ((ret = __memp_fput(mpf,
+				    currpg, dbp->priority)) != 0)
 					goto err;
 				currpg = NULL;
 			}
@@ -1705,9 +1708,10 @@ err:	if (pgsc != NULL && (t_ret = __dbc_close(pgsc)) != 0 && ret == 0)
 	if (pgset != NULL &&
 	    (t_ret = __db_close(pgset, NULL, 0)) != 0 && ret == 0)
 		ret = t_ret;
-	if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0)
+	if (h != NULL && (t_ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 		ret = t_ret;
-	if (currpg != NULL && (t_ret = __memp_fput(mpf, currpg, 0)) != 0)
+	if (currpg != NULL &&
+	    (t_ret = __memp_fput(mpf, currpg, dbp->priority)) != 0)
 		ret = t_ret;
 	if ((t_ret = __db_close(mdbp, NULL, 0)) != 0)
 		ret = t_ret;
@@ -1896,7 +1900,8 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 			DB_ASSERT(dbenv, 0);
 			break;
 		}
-		if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		    __memp_fput(mpf, h, dbp->priority)) != 0 && ret == 0)
 			ret = t_ret;
 	}
 
@@ -1941,7 +1946,8 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 			DB_ASSERT(dbenv, 0);	/* Shouldn't ever happen. */
 			break;
 		}
-		if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		    __memp_fput(mpf, h, dbp->priority)) != 0 && ret == 0)
 			ret = t_ret;
 	}
 
@@ -2217,7 +2223,7 @@ __db_salvage_duptree(dbp, vdp, pgno, key, handle, callback, flags)
 		goto err;
 	}
 
-err:	if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+err:	if ((t_ret = __memp_fput(mpf, h, dbp->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -2271,7 +2277,8 @@ __db_salvage_subdbs(dbp, vdp, handle, callback, flags, hassubsp)
 	    (t_ret = __db_vrfy_putpageinfo(dbenv, vdp, pip)) != 0 && ret == 0)
 		ret = t_ret;
 	if (h != NULL) {
-		if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		     __memp_fput(mpf, h, dbp->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		h = NULL;
 	}
@@ -2301,7 +2308,8 @@ __db_salvage_subdbs(dbp, vdp, handle, callback, flags, hassubsp)
 		if (t_ret != 0 && ret == 0)
 			ret = t_ret;
 		if (h != NULL) {
-			if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+			if ((t_ret = __memp_fput(mpf,
+			    h, dbp->priority)) != 0 && ret == 0)
 				ret = t_ret;
 			h = NULL;
 		}
@@ -2315,7 +2323,8 @@ err:	if (pgsc != NULL && (t_ret = __dbc_close(pgsc)) != 0 && ret == 0)
 	if (pgset != NULL &&
 	    (t_ret = __db_close(pgset, NULL, 0)) != 0 && ret ==0)
 		ret = t_ret;
-	if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+	if (h != NULL &&
+	    (t_ret = __memp_fput(mpf, h, dbp->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -2421,7 +2430,7 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 		if ((ret =
 		    __db_vrfy_common(dbp, vdp, subpg, meta_pgno, flags)) != 0) {
 			err_ret = ret;
-			(void)__memp_fput(mpf, subpg, 0);
+			(void)__memp_fput(mpf, subpg, dbp->priority);
 			continue;
 		}
 		switch (TYPE(subpg)) {
@@ -2429,7 +2438,7 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 			if ((ret = __bam_vrfy_meta(dbp,
 			    vdp, (BTMETA *)subpg, meta_pgno, flags)) != 0) {
 				err_ret = ret;
-				(void)__memp_fput(mpf, subpg, 0);
+				(void)__memp_fput(mpf, subpg, dbp->priority);
 				continue;
 			}
 			break;
@@ -2437,7 +2446,7 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 			if ((ret = __ham_vrfy_meta(dbp,
 			    vdp, (HMETA *)subpg, meta_pgno, flags)) != 0) {
 				err_ret = ret;
-				(void)__memp_fput(mpf, subpg, 0);
+				(void)__memp_fput(mpf, subpg, dbp->priority);
 				continue;
 			}
 			break;
@@ -2447,7 +2456,7 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 			continue;
 		}
 
-		if ((ret = __memp_fput(mpf, subpg, 0)) != 0) {
+		if ((ret = __memp_fput(mpf, subpg, dbp->priority)) != 0) {
 			err_ret = ret;
 			continue;
 		}
@@ -2474,7 +2483,8 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 			if ((ret = __db_salvage(dbp, vdp, p, subpg,
 			    handle, callback, flags)) != 0)
 				err_ret = ret;
-			if ((ret = __memp_fput(mpf, subpg, 0)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, subpg, dbp->priority)) != 0)
 				err_ret = ret;
 		}
 
@@ -2533,7 +2543,7 @@ __db_meta2pgset(dbp, vdp, pgno, flags, pgset)
 		break;
 	}
 
-	if ((t_ret = __memp_fput(mpf, h, 0)) != 0)
+	if ((t_ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 		return (t_ret);
 	return (ret);
 }

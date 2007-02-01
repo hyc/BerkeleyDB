@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep.h,v 12.64 2006/11/01 00:52:41 bostic Exp $
+ * $Id: rep.h,v 12.71 2007/01/31 20:08:33 sue Exp $
  */
 
 #ifndef _DB_REP_H_
@@ -52,23 +52,23 @@ extern "C" {
 #define	REP_PAGE_MORE	20	/* There are more pages to request. */
 #define	REP_PAGE_REQ	21	/* Request for a database page. */
 #define	REP_REREQUEST	22	/* Force rerequest. */
-#define	REP_UPDATE	23	/* Environment hotcopy information. */
-#define	REP_UPDATE_REQ	24	/* Request for hotcopy information. */
-#define	REP_VERIFY	25	/* A log record for verification. */
-#define	REP_VERIFY_FAIL	26	/* The client is outdated. */
-#define	REP_VERIFY_REQ	27	/* Request for a log record to verify. */
-#define	REP_VOTE1	28	/* Send out your information for an election. */
-#define	REP_VOTE2	29	/* Send a "you are master" vote. */
-
+#define	REP_START_SYNC	23	/* Tell client to begin syncing a ckp.*/
+#define	REP_UPDATE	24	/* Environment hotcopy information. */
+#define	REP_UPDATE_REQ	25	/* Request for hotcopy information. */
+#define	REP_VERIFY	26	/* A log record for verification. */
+#define	REP_VERIFY_FAIL	27	/* The client is outdated. */
+#define	REP_VERIFY_REQ	28	/* Request for a log record to verify. */
+#define	REP_VOTE1	29	/* Send out your information for an election. */
+#define	REP_VOTE2	30	/* Send a "you are master" vote. */
 /*
  * Maximum message number for conversion tables.  Update this
  * value as the largest message number above increases.
  *
  * !!!
  * NOTE: When changing messages above, the two tables for upgrade support
- * need adjusting.  They are in rep_record.c.
+ * need adjusting.  They are in rep_util.c.
  */
-#define	REP_MAX_MSG	29
+#define	REP_MAX_MSG	30
 
 /*
  * This is the list of client-to-client requests messages.
@@ -101,8 +101,8 @@ extern "C" {
 #define	DB_REPVERSION_43	2
 #define	DB_REPVERSION_44	3
 #define	DB_REPVERSION_45	3
-#define	DB_REPVERSION_46	3
-#define	DB_REPVERSION	3
+#define	DB_REPVERSION_46	4
+#define	DB_REPVERSION		DB_REPVERSION_46
 
 /*
  * RPRINT
@@ -132,6 +132,22 @@ extern "C" {
  * election, should it crash.
  */
 #define	REP_EGENNAME	"__db.rep.egen"
+
+/*
+ * Internal init flag file name:
+ * The existence of this file serves as an indication that the client is in the
+ * process of Internal Initialization, in case it crashes before completing.
+ * During internal init the client's partially reconstructed database pages and
+ * logs may be in an inconsistent state, so much so that running recovery must
+ * be avoided.  Furthermore, there is no other way to reliably recognize this
+ * condition.  Therefore, when we open an environment, and we're just about to
+ * run recovery, we check for this file first.  If it exists we must discard all
+ * logs and databases.  This avoids the recovery problems, and leads to a fresh
+ * attempt at internal init if the environment becomes a replication client and
+ * finds a master.  The list of databases which may need to be removed is stored
+ * in this file.
+ */
+#define	REP_INITNAME	"__db.rep.init"
 
 /*
  * Database types for __rep_client_dbinit
@@ -167,7 +183,8 @@ typedef struct __rep {
 	int		nvotes;		/* Number of votes needed. */
 	int		priority;	/* My priority in an election. */
 	int		config_nsites;
-	db_timeout_t	elect_timeout;
+	db_timeout_t	elect_timeout;	/* Normal election timeout. */
+	db_timeout_t	full_elect_timeout; /* Full election timeout. */
 #define	REP_DEFAULT_THROTTLE	(10 * MEGABYTE) /* Default value is < 1Gig. */
 	u_int32_t	gbytes;		/* Limit on data sent in single... */
 	u_int32_t	bytes;		/* __rep_process_message call. */
@@ -178,9 +195,11 @@ typedef struct __rep {
 	u_int32_t	max_gap;	/* Maximum number of records before
 					 * requesting a missing log record. */
 	/* Status change information */
-	u_int32_t	msg_th;		/* Number of callers in rep_proc_msg. */
+	u_int32_t	apply_th;	/* Number of callers in rep_apply. */
+	u_int32_t	msg_th;		/* Number of callers in rep_proc_msg.*/
 	u_int32_t	handle_cnt;	/* Count of handles in library. */
 	u_int32_t	op_cnt;		/* Multi-step operation count.*/
+	DB_LSN		sync_lsn;	/* LSN for STARTUPDONE. */
 
 	/* Backup information. */
 	u_int32_t	nfiles;		/* Number of files we have info on. */
@@ -208,8 +227,8 @@ typedef struct __rep {
 	DB_LSN		w_lsn;		/* Winner LSN. */
 	u_int32_t	w_tiebreaker;	/* Winner tiebreaking value. */
 	int		votes;		/* Number of votes for this site. */
-	u_int32_t	esec;		/* Election start seconds. */
-	u_int32_t	eusec;		/* Election start useconds. */
+
+	db_timespec	etime;		/* Election start timestamp. */
 
 	/* Statistics. */
 	DB_REP_STAT	stat;
@@ -226,18 +245,21 @@ typedef struct __rep {
 #define	REP_F_EGENUPDATE	0x00004		/* Egen updated by ALIVE msg. */
 #define	REP_F_EPHASE1		0x00008		/* In phase 1 of election. */
 #define	REP_F_EPHASE2		0x00010		/* In phase 2 of election. */
-#define	REP_F_INREPELECT	0x00020		/* Thread in rep_elect. */
-#define	REP_F_MASTER		0x00040		/* Master replica. */
-#define	REP_F_MASTERELECT	0x00080		/* Master elect */
-#define	REP_F_NOARCHIVE		0x00100		/* Rep blocks log_archive */
-#define	REP_F_READY_API		0x00200		/* Need handle_cnt to be 0. */
-#define	REP_F_READY_MSG		0x00400		/* Wait for msg_th to be 0. */
-#define	REP_F_READY_OP		0x00800		/* Wait for txn_cnt to be 0. */
-#define	REP_F_RECOVER_LOG	0x01000		/* In recovery - log. */
-#define	REP_F_RECOVER_PAGE	0x02000		/* In recovery - pages. */
-#define	REP_F_RECOVER_UPDATE	0x04000		/* In recovery - files. */
-#define	REP_F_RECOVER_VERIFY	0x08000		/* In recovery - verify. */
-#define	REP_F_TALLY		0x10000		/* Tallied vote before elect. */
+#define	REP_F_GROUP_ESTD	0x00020		/* Rep group is established. */
+#define	REP_F_INREPELECT	0x00040		/* Thread in rep_elect. */
+#define	REP_F_MASTER		0x00080		/* Master replica. */
+#define	REP_F_MASTERELECT	0x00100		/* Master elect */
+#define	REP_F_NOARCHIVE		0x00200		/* Rep blocks log_archive */
+#define	REP_F_READY_API		0x00400		/* Need handle_cnt to be 0. */
+#define	REP_F_READY_APPLY	0x00800		/* Need apply_th to be 0. */
+#define	REP_F_READY_MSG		0x01000		/* Need msg_th to be 0. */
+#define	REP_F_READY_OP		0x02000		/* Need op_cnt to be 0. */
+#define	REP_F_RECOVER_LOG	0x04000		/* In recovery - log. */
+#define	REP_F_RECOVER_PAGE	0x08000		/* In recovery - pages. */
+#define	REP_F_RECOVER_UPDATE	0x10000		/* In recovery - files. */
+#define	REP_F_RECOVER_VERIFY	0x20000		/* In recovery - verify. */
+#define	REP_F_SKIPPED_APPLY	0x40000		/* Skipped applying a record. */
+#define	REP_F_TALLY		0x80000		/* Tallied vote before elect. */
 	u_int32_t	flags;
 } REP;
 
@@ -346,7 +368,8 @@ struct __db_rep {
 
 	u_int32_t	config;		/* Configuration flags. */
 	int		config_nsites;
-	db_timeout_t	elect_timeout;
+	db_timeout_t	elect_timeout;	/* Normal election timeout. */
+	db_timeout_t	full_elect_timeout; /* Full election timeout. */
 	int		my_priority;
 	/*
 	 * End of shared configuration information.
@@ -423,7 +446,6 @@ struct __db_rep {
  * Control structure for replication communication infrastructure.
  */
 typedef struct {
-#define	DB_REPVERSION	3
 	u_int32_t	rep_version;	/* Replication version number. */
 	u_int32_t	log_version;	/* Log version number. */
 
@@ -438,7 +460,8 @@ typedef struct {
 
 #define	REPCTL_ELECTABLE	0x01	/* Upgraded client is electable. */
 #define	REPCTL_FLUSH		0x02	/* Record should be flushed. */
-#define	REPCTL_INIT		0x04	/* Internal init message. */
+#define	REPCTL_GROUP_ESTD	0x04	/* Message from site in a group. */
+#define	REPCTL_INIT		0x08	/* Internal init message. */
 #define	REPCTL_PERM		DB_LOG_PERM_42_44	/* 0x20 */
 #define	REPCTL_RESEND		DB_LOG_RESEND_42_44	/* 0x40 */
 	u_int32_t	flags;		/* log_put flag value. */

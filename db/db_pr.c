@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_pr.c,v 12.32 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_pr.c,v 12.33 2006/11/29 21:23:12 ubell Exp $
  */
 
 #include "db_config.h"
@@ -242,7 +242,7 @@ __db_prtree(dbp, txn, flags)
 		if ((ret = __memp_fget(mpf, &i, txn, 0, &h)) != 0)
 			return (ret);
 		(void)__db_prpage(dbp, h, flags);
-		if ((ret = __memp_fput(mpf, h, 0)) != 0)
+		if ((ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 			return (ret);
 	}
 
@@ -297,7 +297,7 @@ __db_meta(dbp, dbmeta, fn, flags)
 				break;
 			}
 			pgno = h->next_pgno;
-			(void)__memp_fput(mpf, h, 0);
+			(void)__memp_fput(mpf, h, dbp->priority);
 			__db_msgadd(dbenv, &mb, "%s%lu", sep, (u_long)pgno);
 			if (++cnt % 10 == 0) {
 				DB_MSGBUF_FLUSH(dbenv, &mb);
@@ -450,7 +450,7 @@ __db_prnpage(dbp, txn, pgno)
 
 	ret = __db_prpage(dbp, h, DB_PR_PAGE);
 
-	if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+	if ((t_ret = __memp_fput(mpf, h, dbp->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);

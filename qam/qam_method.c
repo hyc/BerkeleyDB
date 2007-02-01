@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_method.c,v 12.10 2006/11/01 00:53:44 bostic Exp $
+ * $Id: qam_method.c,v 12.12 2007/01/04 19:40:35 bostic Exp $
  */
 
 #include "db_config.h"
@@ -179,7 +179,7 @@ __queue_pageinfo(dbp, firstp, lastp, emptyp, prpage, flags)
 	COMPQUIET(flags, 0);
 #endif
 
-	if ((t_ret = __memp_fput(mpf, meta, 0)) != 0 && ret == 0)
+	if ((t_ret = __memp_fput(mpf, meta, dbp->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -230,7 +230,7 @@ begin:
 			return (ret);
 		}
 		(void)__db_prpage(dbp, h, flags);
-		if ((ret = __qam_fput(dbp, i, h, 0)) != 0)
+		if ((ret = __qam_fput(dbp, i, h, dbp->priority)) != 0)
 			return (ret);
 	}
 
@@ -293,8 +293,6 @@ __qam_rr(dbp, txn, name, subdb, newname, op)
 
 	dbenv = dbp->dbenv;
 	ret = 0;
-
-	PANIC_CHECK(dbenv);
 
 	if (subdb != NULL && name != NULL) {
 		__db_errx(dbenv,

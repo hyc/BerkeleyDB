@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_files.c,v 12.19 2006/11/01 00:53:44 bostic Exp $
+ * $Id: qam_files.c,v 12.21 2007/01/17 15:15:47 margo Exp $
  */
 
 #include "db_config.h"
@@ -26,15 +26,16 @@
  * Calculate which extent the page is in, open and create if necessary.
  *
  * PUBLIC: int __qam_fprobe __P((DB *, db_pgno_t,
- * PUBLIC:     DB_TXN *, void *, qam_probe_mode, u_int32_t));
+ * PUBLIC:     DB_TXN *, void *, qam_probe_mode, DB_CACHE_PRIORITY, u_int32_t));
  */
 int
-__qam_fprobe(dbp, pgno, txn, addrp, mode, flags)
+__qam_fprobe(dbp, pgno, txn, addrp, mode, priority, flags)
 	DB *dbp;
 	db_pgno_t pgno;
 	DB_TXN *txn;
 	void *addrp;
 	qam_probe_mode mode;
+	DB_CACHE_PRIORITY priority;
 	u_int32_t flags;
 {
 	DB_ENV *dbenv;
@@ -56,9 +57,9 @@ __qam_fprobe(dbp, pgno, txn, addrp, mode, flags)
 		case QAM_PROBE_GET:
 			return (__memp_fget(mpf, &pgno, txn, flags, addrp));
 		case QAM_PROBE_PUT:
-			return (__memp_fput(mpf, addrp, flags));
+			return (__memp_fput(mpf, addrp, priority));
 		case QAM_PROBE_DIRTY:
-			return (__memp_dirty(mpf, addrp, txn, flags));
+			return (__memp_dirty(mpf, addrp, txn, priority, flags));
 		case QAM_PROBE_MPF:
 			*(DB_MPOOLFILE **)addrp = mpf;
 			return (0);
@@ -295,10 +296,11 @@ err:
 				return (0);
 			break;
 		case QAM_PROBE_PUT:
-			ret = __memp_fput(mpf, addrp, flags);
+			ret = __memp_fput(mpf, addrp, dbp->priority);
 			break;
 		case QAM_PROBE_DIRTY:
-			return (__memp_dirty(mpf, addrp, txn, flags));
+			return (__memp_dirty(mpf,
+			    addrp, txn, dbp->priority, flags));
 		case QAM_PROBE_MPF:
 			*(DB_MPOOLFILE **)addrp = mpf;
 			return (0);
@@ -522,7 +524,7 @@ __qam_gen_filelist(dbp, filelistp)
 	current = meta->cur_recno;
 	first = meta->first_recno;
 
-	if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+	if ((ret = __memp_fput(mpf, meta, dbp->priority)) != 0)
 		return (ret);
 
 	/*
@@ -562,7 +564,7 @@ again:
 
 	for (i = first; i >= first && i <= stop; i += rec_extent) {
 		if ((ret = __qam_fprobe(dbp, QAM_RECNO_PAGE(dbp, i), NULL,
-		    &fp->mpf, QAM_PROBE_MPF, 0)) != 0) {
+		    &fp->mpf, QAM_PROBE_MPF, dbp->priority, 0)) != 0) {
 			if (ret == ENOENT)
 				continue;
 			return (ret);
@@ -821,7 +823,7 @@ int __qam_nameop(dbp, txn, newname, op)
 			     ndir, PATH_SEPARATOR[0], new, exid);
 			QAM_EXNAME(qp, exid, buf, sizeof(buf));
 			if ((ret = __fop_rename(dbenv,
-			    txn, buf, nbuf, fid, DB_APP_DATA,
+			    txn, buf, nbuf, fid, DB_APP_DATA, 1,
 			    F_ISSET(dbp, DB_AM_NOT_DURABLE) ?
 			    DB_LOG_NOT_DURABLE : 0)) != 0)
 				goto err;

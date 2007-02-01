@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn.c,v 12.61 2006/11/08 23:07:00 ubell Exp $
+ * $Id: txn.c,v 12.67 2007/01/19 15:37:39 bostic Exp $
  */
 
 #include "db_config.h"
@@ -49,21 +49,10 @@
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 
-#define	SET_LOG_FLAGS(dbenv, txn, lflags)				\
-	do {								\
-		lflags = DB_LOG_COMMIT;					\
-		if (F_ISSET(txn, TXN_SYNC))				\
-			lflags |= DB_FLUSH;				\
-		else if (F_ISSET(txn, TXN_WRITE_NOSYNC))		\
-			lflags |= DB_LOG_WRNOSYNC;			\
-		else if (!F_ISSET(txn, TXN_NOSYNC) &&			\
-		    !F_ISSET(dbenv, DB_ENV_TXN_NOSYNC)) {		\
-			if (F_ISSET(dbenv, DB_ENV_TXN_WRITE_NOSYNC))	\
-				lflags |= DB_LOG_WRNOSYNC;		\
-			else						\
-				lflags |= DB_FLUSH;			\
-		}							\
-	} while (0)
+#define	LOG_FLAGS(txn)						\
+		(DB_LOG_COMMIT | (F_ISSET(txn, TXN_SYNC) ?	\
+		DB_FLUSH : (F_ISSET(txn, TXN_WRITE_NOSYNC) ?	\
+		DB_LOG_WRNOSYNC : 0)))
 
 /*
  * __txn_isvalid enumerated types.  We cannot simply use the transaction
@@ -78,7 +67,7 @@ typedef enum {
 } txnop_t;
 
 static int  __txn_abort_pp __P((DB_TXN *));
-static int  __txn_begin_int __P((DB_TXN *, int));
+static int  __txn_begin_int __P((DB_TXN *));
 static int  __txn_commit_pp __P((DB_TXN *, u_int32_t));
 static int  __txn_discard __P((DB_TXN *, u_int32_t));
 static int  __txn_dispatch_undo
@@ -181,8 +170,24 @@ __txn_begin(dbenv, parent, txnpp, flags)
 	TAILQ_INIT(&txn->events);
 	STAILQ_INIT(&txn->logs);
 	txn->flags = TXN_MALLOC;
-	if (LF_ISSET(DB_TXN_NOSYNC))
+	
+	/* 
+	 * Set the sync mode for commit.  Any local bits override those
+	 * in the environment.  SYNC is the default.
+	 */
+	if (LF_ISSET(DB_TXN_SYNC))
+		F_SET(txn, TXN_SYNC);
+	else if (LF_ISSET(DB_TXN_NOSYNC))
 		F_SET(txn, TXN_NOSYNC);
+	else if (LF_ISSET(DB_TXN_WRITE_NOSYNC))
+		F_SET(txn, TXN_WRITE_NOSYNC);
+	else if (F_ISSET(dbenv, DB_ENV_TXN_NOSYNC)) 
+		F_SET(txn, TXN_NOSYNC);
+	else if (F_ISSET(dbenv, DB_ENV_TXN_WRITE_NOSYNC))
+		F_SET(txn, TXN_WRITE_NOSYNC);
+	else
+		F_SET(txn, TXN_SYNC);
+		
 	if (LF_ISSET(DB_TXN_NOWAIT) ||
 	    (F_ISSET(dbenv, DB_ENV_TXN_NOWAIT) && !LF_ISSET(DB_TXN_WAIT)))
 		F_SET(txn, TXN_NOWAIT);
@@ -193,12 +198,8 @@ __txn_begin(dbenv, parent, txnpp, flags)
 	if (LF_ISSET(DB_TXN_SNAPSHOT) || F_ISSET(dbenv, DB_ENV_TXN_SNAPSHOT) ||
 	    (parent != NULL && F_ISSET(parent, TXN_SNAPSHOT)))
 		F_SET(txn, TXN_SNAPSHOT);
-	if (LF_ISSET(DB_TXN_SYNC))
-		F_SET(txn, TXN_SYNC);
-	if (LF_ISSET(DB_TXN_WRITE_NOSYNC))
-		F_SET(txn, TXN_WRITE_NOSYNC);
 
-	if ((ret = __txn_begin_int(txn, 0)) != 0)
+	if ((ret = __txn_begin_int(txn)) != 0)
 		goto err;
 	td = txn->td;
 
@@ -267,7 +268,7 @@ __txn_xa_begin(dbenv, txn)
 	memset(&txn->lock_timeout, 0, sizeof(db_timeout_t));
 	memset(&txn->expire, 0, sizeof(db_timeout_t));
 
-	return (__txn_begin_int(txn, 0));
+	return (__txn_begin_int(txn));
 }
 
 /*
@@ -342,7 +343,7 @@ __txn_compensate_begin(dbenv, txnpp)
 	txn->flags = TXN_COMPENSATE | TXN_MALLOC;
 
 	*txnpp = txn;
-	return (__txn_begin_int(txn, 1));
+	return (__txn_begin_int(txn));
 }
 
 /*
@@ -350,9 +351,8 @@ __txn_compensate_begin(dbenv, txnpp)
  *	Normal DB version of txn_begin.
  */
 static int
-__txn_begin_int(txn, internal)
+__txn_begin_int(txn)
 	DB_TXN *txn;
-	int internal;
 {
 	DB_ENV *dbenv;
 	DB_TXNMGR *mgr;
@@ -368,14 +368,6 @@ __txn_begin_int(txn, internal)
 	TXN_SYSTEM_LOCK(dbenv);
 	if (!F_ISSET(txn, TXN_COMPENSATE) && F_ISSET(region, TXN_IN_RECOVERY)) {
 		__db_errx(dbenv, "operation not permitted during recovery");
-		ret = EINVAL;
-		goto err;
-	}
-
-	/* Make sure that we aren't still recovering prepared transactions. */
-	if (!internal && region->stat.st_nrestores != 0) {
-		__db_errx(dbenv,
-    "recovery of prepared but not yet committed transactions is incomplete");
 		ret = EINVAL;
 		goto err;
 	}
@@ -537,7 +529,7 @@ __txn_commit(txn, flags)
 	REGENV *renv;
 	REGINFO *infop;
 	TXN_DETAIL *td;
-	u_int32_t id, lflags;
+	u_int32_t id;
 	int ret, t_ret;
 
 	dbenv = txn->mgrp->dbenv;
@@ -550,7 +542,7 @@ __txn_commit(txn, flags)
 	 * return.  If the transaction deadlocked, they want abort, not commit.
 	 */
 	if (F_ISSET(txn, TXN_DEADLOCK)) {
-		ret = __db_txn_deadlock_err(dbenv);
+		ret = __db_txn_deadlock_err(dbenv, txn);
 		goto err;
 	}
 
@@ -637,9 +629,9 @@ __txn_commit(txn, flags)
 			}
 
 			if (ret == 0 && !IS_ZERO_LSN(td->last_lsn)) {
-				SET_LOG_FLAGS(dbenv, txn, lflags);
 				ret = __txn_regop_log(dbenv, txn,
-				    &td->visible_lsn, lflags, TXN_COMMIT,
+				    &td->visible_lsn, LOG_FLAGS(txn),
+				    TXN_COMMIT,
 				    (int32_t)time(NULL), id, request.obj);
 				if (ret == 0)
 					td->last_lsn = td->visible_lsn;
@@ -762,7 +754,7 @@ __txn_abort(txn)
 	REGENV *renv;
 	REGINFO *infop;
 	TXN_DETAIL *td;
-	u_int32_t id, lflags;
+	u_int32_t id;
 	int ret;
 
 	dbenv = txn->mgrp->dbenv;
@@ -840,10 +832,9 @@ undo:	if ((ret = __txn_undo(txn)) != 0)
 	 * then we log the abort so we know that this transaction
 	 * was actually completed.
 	 */
-done:	SET_LOG_FLAGS(dbenv, txn, lflags);
-	if (DBENV_LOGGING(dbenv) && td->status == TXN_PREPARED &&
+done:	 if (DBENV_LOGGING(dbenv) && td->status == TXN_PREPARED &&
 	    (ret = __txn_regop_log(dbenv, txn, &td->last_lsn,
-	    lflags, TXN_ABORT, (int32_t)time(NULL), id, NULL)) != 0)
+	    LOG_FLAGS(txn), TXN_ABORT, (int32_t)time(NULL), id, NULL)) != 0)
 		return (__db_panic(dbenv, ret));
 
 	/* __txn_end always panics if it errors, so pass the return along. */
@@ -943,7 +934,7 @@ __txn_prepare(txn, gid)
 	if ((ret = __txn_isvalid(txn, TXN_OP_PREPARE)) != 0)
 		return (ret);
 	if (F_ISSET(txn, TXN_DEADLOCK))
-		return (__db_txn_deadlock_err(dbenv));
+		return (__db_txn_deadlock_err(dbenv, txn));
 
 	ENV_ENTER(dbenv, ip);
 
@@ -971,8 +962,7 @@ __txn_prepare(txn, gid)
 	memset(&request, 0, sizeof(request));
 	if (LOCKING_ON(dbenv)) {
 		request.op = DB_LOCK_PUT_READ;
-		if (IS_REP_MASTER(dbenv) &&
-		    !IS_ZERO_LSN(td->last_lsn)) {
+		if (!IS_ZERO_LSN(td->last_lsn)) {
 			memset(&list_dbt, 0, sizeof(list_dbt));
 			request.obj = &list_dbt;
 		}
@@ -1588,10 +1578,10 @@ __txn_force_abort(dbenv, buffer)
 }
 
 /*
- * __txn_preclose
- *	Before we can close an environment, we need to check if we
- * were in the midst of taking care of restored transactions.  If
- * so, then we need to close the files that we opened.
+ * __txn_preclose --
+ *	Before we can close an environment, we need to check if we were in the
+ *	middle of taking care of restored transactions.  If so, close the files
+ *	we opened.
  *
  * PUBLIC: int __txn_preclose __P((DB_ENV *));
  */
@@ -1616,9 +1606,9 @@ __txn_preclose(dbenv)
 
 	if (do_closefiles) {
 		/*
-		 * Set the DBLOG_RECOVER flag while closing these
-		 * files so they do not create additional log records
-		 * that will confuse future recoveries.
+		 * Set the DBLOG_RECOVER flag while closing these files so they
+		 * do not create additional log records that will confuse future
+		 * recoveries.
 		 */
 		F_SET(dbenv->lg_handle, DBLOG_RECOVER);
 		ret = __dbreg_close_files(dbenv);

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep008.tcl,v 12.12 2006/11/01 00:53:54 bostic Exp $
+# $Id: rep008.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep008
 # TEST	Replication, back up and synchronizing
@@ -52,7 +52,13 @@ proc rep008 { method { niter 10 } { tnum "008" } args } {
 proc rep008_sub { method niter tnum recargs largs } {
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -65,23 +71,17 @@ proc rep008_sub { method niter tnum recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
-	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
+	set ma_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -home $masterdir -errpfx MASTER \
+	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
-	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
+	set cl_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -home $clientdir -errpfx CLIENT \
+	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"

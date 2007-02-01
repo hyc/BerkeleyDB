@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_upg.c,v 12.10 2006/11/09 14:47:57 bostic Exp $
+ * $Id: db_upg.c,v 12.11 2006/12/06 02:45:52 bostic Exp $
  */
 
 #include "db_config.h"
@@ -101,7 +101,7 @@ __db_upgrade(dbp, fname, flags)
 		return (ret);
 
 	/* Open the file. */
-	if ((ret = __os_open(dbenv, real_name, 0, 0, &fhp)) != 0) {
+	if ((ret = __os_open(dbenv, real_name, 0, 0, 0, &fhp)) != 0) {
 		__db_err(dbenv, ret, "%s", real_name);
 		return (ret);
 	}

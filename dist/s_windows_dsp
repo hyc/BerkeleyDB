@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_windows_dsp,v 12.13 2006/10/19 12:57:37 bostic Exp $
+#	$Id: s_windows_dsp,v 12.14 2007/01/22 06:12:14 alexg Exp $
 #
 # Build Windows/32 .dsp files.
 
@@ -17,10 +17,16 @@ create_dsp()
     release_libs="$6"   # libraries to link against in Release builds
     debug_libs="$7"     # libraries to link against in Debug builds
     lib_suffix="$8"     # the library name is libdb@lib_suffix@@VERSION@
+    proj_type="$9"	# the project type dsp or vcp
+
+    # Set the default project type to be "dsp"
+    if [ ! "$proj_type" ] ; then
+	    proj_type=dsp
+    fi
 
 			# template file for the src file fragments
-    srctemplate="$BUILDDIR/srcfile_dsp.src"
-    dspoutput=$BUILDDIR/$projname.dsp
+    srctemplate="$BUILDDIR/srcfile_$proj_type.src"
+    dspoutput=$BUILDDIR/$projname.$proj_type
 
     postbuild=$dspoutput.postbuild
     if [ ! -f $postbuild ] ; then
@@ -87,58 +93,73 @@ sed -e "s/#.*$//" \
 MODULES="`sed -e 's/^[^ ]* //' < $TMPA \
     | tr ' ' '\012' | sort | uniq`"
 
-for BUILDDIR in ../build_windows
+for module in $MODULES
 do
-    for module in $MODULES
-    do
-        case "$module" in
-        dynamic )
-            create_dsp db_dll " $module " $TMPA $BUILDDIR/dynamic_dsp.src \
-                '' 'ws2_32.lib' 'ws2_32.lib'
-            ;;
-        small )
-            create_dsp db_small " $module " $TMPA $BUILDDIR/static_dsp.src \
-                '/D "HAVE_SMALLBUILD"' '' '' _small
-            ;;
-        static )
-            create_dsp db_static " $module " $TMPA $BUILDDIR/static_dsp.src
-            ;;
-        java )
-            create_dsp db_java " $module " $TMPA $BUILDDIR/dynamic_dsp.src '' \
-                'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@.lib' \
-                'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d.lib' _java
-            ;;
-        tcl )
-            create_dsp db_tcl " $module " $TMPA $BUILDDIR/dynamic_dsp.src \
-                '/D "DB_TCL_SUPPORT"' \
-                'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@.lib tcl84.lib' \
-                'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d.lib tcl84g.lib' _tcl
-            ;;
-        testutil )
-            create_dsp db_test " $module " $TMPA $BUILDDIR/app_dsp.src \
-	        '' '/out:"dbkill.exe"' '/out:"dbkill.exe"'
-            ;;
-        app=* )
-            appname=`echo $module | sed -e 's/^app=//'`
-            case "$appname" in
-            ex_rep_base )
-                libs='ws2_32.lib'
-                ;;
-            * )
-                libs=''
-                ;;
-            esac
-            create_dsp $appname " $module " $TMPA $BUILDDIR/app_dsp.src '' \
-                $libs $libs
-            ;;
-        brew|brewsmall|vx|vxsmall )
+    case "$module" in
+    dynamic )
+	BUILDDIR=../build_windows
+        create_dsp db_dll " $module " $TMPA $BUILDDIR/dynamic_dsp.src \
+            '' 'ws2_32.lib' 'ws2_32.lib'
+        ;;
+    small )
+	BUILDDIR=../build_windows
+        create_dsp db_small " $module " $TMPA $BUILDDIR/static_dsp.src \
+            '/D "HAVE_SMALLBUILD"' '' '' _small
+        ;;
+    static )
+	BUILDDIR=../build_windows
+        create_dsp db_static " $module " $TMPA $BUILDDIR/static_dsp.src
+        ;;
+    ce)
+	BUILDDIR=../build_wince
+        create_dsp db_static " $module " $TMPA \
+	    ../build_wince/static_vcp.src '' '' '' '' vcp
+        ;;
+    ce_small)
+	BUILDDIR=../build_wince
+        create_dsp db_small " $module " $TMPA  \
+            ../build_wince/static_vcp.src '/D "HAVE_SMALLBUILD"' \
+	    '' '' _small vcp
+        ;;
+    java )
+        BUILDDIR=../build_windows
+        create_dsp db_java " $module " $TMPA $BUILDDIR/dynamic_dsp.src '' \
+            'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@.lib' \
+            'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d.lib' _java
+        ;;
+    tcl )
+        BUILDDIR=../build_windows
+        create_dsp db_tcl " $module " $TMPA $BUILDDIR/dynamic_dsp.src \
+            '/D "DB_TCL_SUPPORT"' \
+            'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@.lib tcl84.lib' \
+            'libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d.lib tcl84g.lib' _tcl
+        ;;
+    testutil )
+	BUILDDIR=../build_windows
+        create_dsp db_test " $module " $TMPA $BUILDDIR/app_dsp.src \
+	    '' '/out:"dbkill.exe"' '/out:"dbkill.exe"'
+        ;;
+    app=* )
+	BUILDDIR=../build_windows
+        appname=`echo $module | sed -e 's/^app=//'`
+        case "$appname" in
+        ex_rep_base )
+            libs='ws2_32.lib'
             ;;
         * )
-            echo \
-    "s_windows_dsp: module name $module in $SRCFILES is unknown type"
+            libs=''
             ;;
         esac
-    done
+        create_dsp $appname " $module " $TMPA $BUILDDIR/app_dsp.src '' \
+            $libs $libs
+        ;;
+    brew|brewsmall|vx|vxsmall )
+        ;;
+    * )
+        echo \
+    "s_windows_dsp: module name $module in $SRCFILES is unknown type"
+        ;;
+    esac
 done
 
 rm -f $TMPA

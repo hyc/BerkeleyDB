@@ -31,13 +31,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: txn_rec.c,v 12.16 2006/11/01 00:54:23 bostic Exp $
+ * $Id: txn_rec.c,v 12.17 2006/12/27 21:26:04 margo Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
 #include "dbinc/db_page.h"
+#include "dbinc/lock.h"
 #include "dbinc/txn.h"
 #include "dbinc/db_am.h"
 
@@ -141,6 +142,7 @@ __txn_xa_regop_recover(dbenv, dbtp, lsnp, op, info)
 	db_recops op;
 	void *info;
 {
+	DBT *lock_dbt;
 	__txn_xa_regop_args *argp;
 	int ret;
 	u_int32_t status;
@@ -168,9 +170,8 @@ __txn_xa_regop_recover(dbenv, dbtp, lsnp, op, info)
 
 	/*
 	 * If we are rolling forward, then an aborted prepare
-	 * indicates that this may the last record we'll see for
-	 * this transaction ID, so we should remove it from the
-	 * list.
+	 * indicates that this may be the last record we'll see for
+	 * this transaction ID, so we should remove it from the list.
 	 */
 
 	if (op == DB_TXN_FORWARD_ROLL) {
@@ -211,8 +212,17 @@ txn_err:		__db_errx(dbenv,
 			    (u_long)argp->txnp->txnid);
 			ret = DB_NOTFOUND;
 		} else if ((ret = __db_txnlist_add(dbenv,
-		   info, argp->txnp->txnid, TXN_COMMIT, lsnp)) == 0)
+		   info, argp->txnp->txnid, TXN_COMMIT, lsnp)) == 0) {
+		   	/* Re-acquire the locks for this transaction. */
+			lock_dbt = &argp->locks;
+			if (LOCKING_ON(dbenv) &&
+			    (ret = __lock_get_list(dbenv,
+			          (u_long)argp->txnp->txnid,
+				  0, DB_LOCK_WRITE, lock_dbt)) != 0)
+				goto err;
+
 			ret = __txn_restore_txn(dbenv, lsnp, argp);
+		}
 	} else
 		ret = 0;
 

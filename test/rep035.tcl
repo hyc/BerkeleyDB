@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep035.tcl,v 12.11 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep035.tcl,v 12.12 2006/12/07 19:37:44 carol Exp $
 #
 # TEST  	rep035
 # TEST	Test sync-up recovery in replication.
@@ -47,7 +47,13 @@ proc rep035 { method { niter 100 } { tnum "035" } args } {
 proc rep035_sub { method niter tnum envargs logset largs } {
 	source ./include.tcl
 	global testdir
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -75,43 +81,26 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create \
+	set env_cmd(M) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
 	    -errpfx MASTER -errfile /dev/stderr $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
-#	    -errpfx MASTER -errfile /dev/stderr $m_txnargs -rep_master \
-#	    -verbose {rep on} \
-#	    -rep_transport \[list 1 replsend\]"
 	set env1 [eval $env_cmd(M)]
-	error_check_good env1 [is_valid_env $env1] TRUE
 
 	# Open two clients
 	repladd 2
-	set env_cmd(C1) "berkdb_env_noerr -create \
+	set env_cmd(C1) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs -home $clientdir1 $c_logargs \
 	    -errfile /dev/stderr -errpfx CLIENT $c_txnargs -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C1) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs -home $clientdir1 $c_logargs \
-#	    -errfile /dev/stderr -errpfx CLIENT $c_txnargs -rep_client \
-#	    -verbose {rep on} \
-#	    -rep_transport \[list 2 replsend\]"
 	set env2 [eval $env_cmd(C1)]
-	error_check_good env2 [is_valid_env $env2] TRUE
 
 	# Second client needs lock_detect flag.
 	repladd 3
-	set env_cmd(C2) "berkdb_env_noerr -create \
+	set env_cmd(C2) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs -home $clientdir2 $c2_logargs \
 	    -errpfx CLIENT2 -errfile /dev/stderr $c2_txnargs -rep_client \
 	    -lock_detect default -rep_transport \[list 3 replsend\]"
-#	set env_cmd(C2) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs -home $clientdir2 $c2_logargs \
-#	    -errpfx CLIENT2 -errfile /dev/stderr $c2_txnargs -rep_client \
-#	    -verbose {rep on} \
-#	    -lock_detect default -rep_transport \[list 3 replsend\]"
 	set env3 [eval $env_cmd(C2)]
 	error_check_good client_env [is_valid_env $env3] TRUE
 
@@ -230,9 +219,9 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 	}
 
 	# Communicate with child processes by creating a marker file.
-	set markerenv [berkdb_env -create -home $testdir -txn]
+	set markerenv [berkdb_env_noerr -create -home $testdir -txn]
 	error_check_good markerenv_open [is_valid_env $markerenv] TRUE
-	set marker [eval "berkdb_open \
+	set marker [eval "berkdb_open_noerr \
 	    -create -btree -auto_commit -env $markerenv marker.db"]
 	error_check_good marker_close [$marker close] 0
 

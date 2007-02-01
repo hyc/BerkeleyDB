@@ -1,4 +1,4 @@
-<!--$Id: env_remove.so,v 10.44 2004/08/13 03:38:57 bostic Exp $-->
+<!--$Id: env_remove.so,v 10.45 2006/12/08 16:22:45 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -101,10 +101,7 @@ example, users with a user-ID of 0 on UNIX systems).
 <p>The DB_ENV-&gt;remove method
 may fail and return one of the following non-zero errors:</p>
 <dl compact>
-<dt>EBUSY  <dd>The shared memory region was in use and the force flag was not set.
-</dl>
-<dl compact>
-<dt>ENOENT<dd>The file or directory does not exist.
+<dt>EBUSY<dd>The shared memory region was in use and the force flag was not set.
 </dl>
 <hr size=1 noshade>
 <h3>Class</h3>

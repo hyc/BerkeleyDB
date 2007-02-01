@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_method.c,v 12.52 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_method.c,v 12.60 2006/11/30 18:14:48 alanb Exp $
  */
 
 #include "db_config.h"
@@ -21,13 +21,13 @@ static u_int32_t __rep_conv_vers __P((DB_ENV *, u_int32_t));
 static int  __rep_restore_prepared __P((DB_ENV *));
 
 /*
- * __rep_dbenv_create --
+ * __rep_env_create --
  *	Replication-specific initialization of the DB_ENV structure.
  *
- * PUBLIC: int __rep_dbenv_create __P((DB_ENV *));
+ * PUBLIC: int __rep_env_create __P((DB_ENV *));
  */
 int
-__rep_dbenv_create(dbenv)
+__rep_env_create(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_REP *db_rep;
@@ -40,9 +40,10 @@ __rep_dbenv_create(dbenv)
 	db_rep->bytes = REP_DEFAULT_THROTTLE;
 	db_rep->request_gap = DB_REP_REQUEST_GAP;
 	db_rep->max_gap = DB_REP_MAX_GAP;
+	db_rep->elect_timeout = 2 * US_PER_SEC;			/* 2 seconds */
 
 #ifdef HAVE_REPLICATION_THREADS
-	if ((ret = __repmgr_dbenv_create(dbenv, db_rep)) != 0) {
+	if ((ret = __repmgr_env_create(dbenv, db_rep)) != 0) {
 		__os_free(dbenv, db_rep);
 		return (ret);
 	}
@@ -53,18 +54,18 @@ __rep_dbenv_create(dbenv)
 }
 
 /*
- * __rep_dbenv_destroy --
+ * __rep_env_destroy --
  *	Replication-specific destruction of the DB_ENV structure.
  *
- * PUBLIC: void __rep_dbenv_destroy __P((DB_ENV *));
+ * PUBLIC: void __rep_env_destroy __P((DB_ENV *));
  */
 void
-__rep_dbenv_destroy(dbenv)
+__rep_env_destroy(dbenv)
 	DB_ENV *dbenv;
 {
 	if (dbenv->rep_handle != NULL) {
 #ifdef HAVE_REPLICATION_THREADS
-		__repmgr_dbenv_destroy(dbenv, dbenv->rep_handle);
+		__repmgr_env_destroy(dbenv, dbenv->rep_handle);
 #endif
 		__os_free(dbenv, dbenv->rep_handle);
 		dbenv->rep_handle = NULL;
@@ -269,7 +270,7 @@ __rep_start(dbenv, dbt, flags)
 	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REP *rep;
-	u_int32_t oldvers, pending_event, repflags;
+	u_int32_t oldvers, pending_event, repflags, role;
 	int announce, init_db, locked, redo_prepared, ret, role_chg;
 	int t_ret;
 
@@ -280,18 +281,17 @@ __rep_start(dbenv, dbt, flags)
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
 	locked = 0;
+	pending_event = DB_EVENT_NO_SUCH_EVENT;
 
-	if ((ret = __db_fchk(dbenv, "DB_ENV->rep_start", flags,
-	    DB_REP_CLIENT | DB_REP_MASTER)) != 0)
-		return (ret);
+	role = flags & DB_REPFLAGS_MASK;
 
-	/* Exactly one of CLIENT and MASTER must be specified. */
-	if ((ret = __db_fcchk(dbenv,
-	    "DB_ENV->rep_start", flags, DB_REP_CLIENT, DB_REP_MASTER)) != 0)
-		return (ret);
-	if (!LF_ISSET(DB_REP_CLIENT | DB_REP_MASTER)) {
+	switch (role) {
+	case DB_REP_CLIENT:
+	case DB_REP_MASTER:
+		break;
+	default:
 		__db_errx(dbenv,
-	"DB_ENV->rep_start: replication mode must be specified");
+	"DB_ENV->rep_start: must specify DB_REP_CLIENT or DB_REP_MASTER");
 		return (EINVAL);
 	}
 
@@ -309,9 +309,8 @@ __rep_start(dbenv, dbt, flags)
 	 * need to flush the logs.
 	 */
 	if ((ret = __log_flush(dbenv, NULL)) != 0)
-		return (ret);
+		goto out;
 
-	pending_event = DB_EVENT_NO_SUCH_EVENT;
 	REP_SYSTEM_LOCK(dbenv);
 	/*
 	 * We only need one thread to start-up replication, so if
@@ -324,12 +323,13 @@ __rep_start(dbenv, dbt, flags)
 		 * There is already someone in lockout.  Return.
 		 */
 		RPRINT(dbenv, (dbenv, "Thread already in lockout"));
-		goto err;
+		REP_SYSTEM_UNLOCK(dbenv);
+		goto out;
 	} else if ((ret = __rep_lockout_msg(dbenv, rep, 0)) != 0)
 		goto errunlock;
 
-	role_chg = (!F_ISSET(rep, REP_F_MASTER) && LF_ISSET(DB_REP_MASTER)) ||
-	    (!F_ISSET(rep, REP_F_CLIENT) && LF_ISSET(DB_REP_CLIENT));
+	role_chg = (!F_ISSET(rep, REP_F_MASTER) && role == DB_REP_MASTER) ||
+	    (!F_ISSET(rep, REP_F_CLIENT) && role == DB_REP_CLIENT);
 
 	/*
 	 * Wait for any active txns or mpool ops to complete, and
@@ -342,7 +342,7 @@ __rep_start(dbenv, dbt, flags)
 		locked = 1;
 	}
 
-	if (LF_ISSET(DB_REP_MASTER)) {
+	if (role == DB_REP_MASTER) {
 		if (role_chg) {
 			/*
 			 * If we're upgrading from having been a client,
@@ -404,7 +404,12 @@ __rep_start(dbenv, dbt, flags)
 		 */
 		repflags = F_ISSET(rep, REP_F_READY_API | REP_F_READY_MSG |
 		    REP_F_READY_OP);
-		FLD_SET(repflags, REP_F_MASTER);
+#ifdef	DIAGNOSTIC
+		if (!F_ISSET(rep, REP_F_GROUP_ESTD))
+			RPRINT(dbenv, (dbenv,
+			    "Establishing group as master."));
+#endif
+		FLD_SET(repflags, REP_F_MASTER | REP_F_GROUP_ESTD);
 		rep->flags = repflags;
 
 		dblp = (DB_LOG *)dbenv->lg_handle;
@@ -526,10 +531,12 @@ __rep_start(dbenv, dbt, flags)
 		 * will allow the client to either perform recovery or
 		 * simply join in.
 		 */
-		if (announce)
+		if (announce) {
+			if ((ret = __dbt_usercopy(dbenv, dbt)) != 0)
+				goto out;
 			(void)__rep_send_message(dbenv,
 			    DB_EID_BROADCAST, REP_NEWCLIENT, NULL, dbt, 0, 0);
-		else
+		} else
 			(void)__rep_send_message(dbenv,
 			    DB_EID_BROADCAST, REP_ALIVE_REQ, NULL, NULL, 0, 0);
 	}
@@ -547,10 +554,12 @@ errlock:	REP_SYSTEM_LOCK(dbenv);
 errunlock:	F_CLR(rep, REP_F_READY_MSG);
 		if (locked)
 			F_CLR(rep, REP_F_READY_API | REP_F_READY_OP);
-err:		REP_SYSTEM_UNLOCK(dbenv);
+		REP_SYSTEM_UNLOCK(dbenv);
 	}
+out:
 	if (pending_event != DB_EVENT_NO_SUCH_EVENT)
 		DB_EVENT(dbenv, pending_event, NULL);
+	__dbt_userfree(dbenv, dbt, NULL, NULL);
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
@@ -1156,6 +1165,12 @@ __rep_set_timeout(dbenv, which, timeout)
 		else
 			db_rep->elect_timeout = timeout;
 		break;
+	case DB_REP_FULL_ELECTION_TIMEOUT:
+		if (REP_ON(dbenv))
+			rep->full_elect_timeout = timeout;
+		else
+			db_rep->full_elect_timeout = timeout;
+		break;
 #ifdef HAVE_REPLICATION_THREADS
 	case DB_REP_ACK_TIMEOUT:
 		db_rep->ack_timeout = timeout;
@@ -1187,18 +1202,18 @@ __rep_get_timeout(dbenv, which, timeout)
 {
 	DB_REP *db_rep;
 	REP *rep;
-	int ret;
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
-	ret = 0;
 
 	switch (which) {
 	case DB_REP_ELECTION_TIMEOUT:
-		if (REP_ON(dbenv))
-			*timeout = rep->elect_timeout;
-		else
-			*timeout = db_rep->elect_timeout;
+		*timeout = REP_ON(dbenv) ?
+		    rep->elect_timeout : db_rep->elect_timeout;
+		break;
+	case DB_REP_FULL_ELECTION_TIMEOUT:
+		*timeout = REP_ON(dbenv) ?
+		    rep->full_elect_timeout : db_rep->full_elect_timeout;
 		break;
 #ifdef HAVE_REPLICATION_THREADS
 	case DB_REP_ACK_TIMEOUT:
@@ -1213,20 +1228,17 @@ __rep_get_timeout(dbenv, which, timeout)
 #endif
 	default:
 		__db_errx(dbenv,
-		    "Unknown timeout type argument to DB_ENV->rep_get_timeout");
-		ret = EINVAL;
+		    "unknown timeout type argument to DB_ENV->rep_get_timeout");
+		return (EINVAL);
 	}
 
-	return (ret);
+	return (0);
 }
 
 /*
  * __rep_get_request --
  *	Get the minimum and maximum number of log records that we wait
  *	before retransmitting.
- *
- * !!!
- * UNDOCUMENTED.
  *
  * PUBLIC: int __rep_get_request __P((DB_ENV *, u_int32_t *, u_int32_t *));
  */
@@ -1267,9 +1279,6 @@ __rep_get_request(dbenv, minp, maxp)
  * __rep_set_request --
  *	Set the minimum and maximum number of log records that we wait
  *	before retransmitting.
- *
- * !!!
- * UNDOCUMENTED.
  *
  * PUBLIC: int __rep_set_request __P((DB_ENV *, u_int32_t, u_int32_t));
  */

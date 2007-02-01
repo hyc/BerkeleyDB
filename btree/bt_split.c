@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_split.c,v 12.18 2006/11/01 00:51:57 bostic Exp $
+ * $Id: bt_split.c,v 12.19 2006/11/29 21:23:10 ubell Exp $
  */
 
 #include "db_config.h"
@@ -189,7 +189,8 @@ __bam_root(dbc, cp)
 		goto err;
 	}
 
-	if ((ret = __memp_dirty(mpf, &cp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf,
+	    &cp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 
 	/* Create new left and right pages for the split. */
@@ -235,13 +236,16 @@ __bam_root(dbc, cp)
 	ret = __bam_ca_split(dbc, cp->page->pgno, lp->pgno, rp->pgno, split, 1);
 
 	/* Success or error: release pages and locks. */
-err:	if ((t_ret = __memp_fput(mpf, cp->page, 0)) != 0 && ret == 0)
+err:	if ((t_ret =
+	     __memp_fput(mpf, cp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, cp->lock)) != 0 && ret == 0)
 		ret = t_ret;
-	if (lp != NULL && (t_ret = __memp_fput(mpf, lp, 0)) != 0 && ret == 0)
+	if (lp != NULL &&
+	     (t_ret = __memp_fput(mpf, lp, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
-	if (rp != NULL && (t_ret = __memp_fput(mpf, rp, 0)) != 0 && ret == 0)
+	if (rp != NULL &&
+	     (t_ret = __memp_fput(mpf, rp, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -377,11 +381,13 @@ __bam_page(dbc, pp, cp)
 	 */
 	PGNO(rp) = NEXT_PGNO(lp) = PGNO(alloc_rp);
 
-	if ((ret = __memp_dirty(mpf, &cp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf,
+	    &cp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 
 	/* Actually update the parent page. */
-	if ((ret = __memp_dirty(mpf, &pp->page, dbc->txn, 0)) != 0 ||
+	if ((ret = __memp_dirty(mpf,
+	    &pp->page, dbc->txn, dbc->priority, 0)) != 0 ||
 	    (ret = __bam_pinsert(dbc, pp, lp, rp, 0)) != 0)
 		goto err;
 
@@ -451,20 +457,24 @@ __bam_page(dbc, pp, cp)
 	 * releasing locks on the pages that reference it.  We're finished
 	 * modifying the page so it's not really necessary, but it's neater.
 	 */
-	if ((t_ret = __memp_fput(mpf, alloc_rp, 0)) != 0 && ret == 0)
+	if ((t_ret =
+	     __memp_fput(mpf, alloc_rp, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, rplock)) != 0 && ret == 0)
 		ret = t_ret;
-	if ((t_ret = __memp_fput(mpf, pp->page, 0)) != 0 && ret == 0)
+	if ((t_ret =
+	     __memp_fput(mpf, pp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, pp->lock)) != 0 && ret == 0)
 		ret = t_ret;
-	if ((t_ret = __memp_fput(mpf, cp->page, 0)) != 0 && ret == 0)
+	if ((t_ret =
+	     __memp_fput(mpf, cp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, cp->lock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (tp != NULL) {
-		if ((t_ret = __memp_fput(mpf, tp, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		     __memp_fput(mpf, tp, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		if ((t_ret = __TLPUT(dbc, tplock)) != 0 && ret == 0)
 			ret = t_ret;
@@ -474,21 +484,21 @@ __bam_page(dbc, pp, cp)
 err:	if (lp != NULL)
 		__os_free(dbp->dbenv, lp);
 	if (alloc_rp != NULL)
-		(void)__memp_fput(mpf, alloc_rp, 0);
+		(void)__memp_fput(mpf, alloc_rp, dbc->priority);
 	if (tp != NULL)
-		(void)__memp_fput(mpf, tp, 0);
+		(void)__memp_fput(mpf, tp, dbc->priority);
 
 	/* We never updated the new or next pages, we can release them. */
 	(void)__LPUT(dbc, rplock);
 	(void)__LPUT(dbc, tplock);
 
-	(void)__memp_fput(mpf, pp->page, 0);
+	(void)__memp_fput(mpf, pp->page, dbc->priority);
 	if (ret == DB_NEEDSPLIT)
 		(void)__LPUT(dbc, pp->lock);
 	else
 		(void)__TLPUT(dbc, pp->lock);
 
-	(void)__memp_fput(mpf, cp->page, 0);
+	(void)__memp_fput(mpf, cp->page, dbc->priority);
 	if (ret == DB_NEEDSPLIT)
 		(void)__LPUT(dbc, cp->lock);
 	else

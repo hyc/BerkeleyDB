@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_cursor.c,v 12.26 2006/11/01 00:51:56 bostic Exp $
+ * $Id: bt_cursor.c,v 12.27 2006/11/29 21:23:09 ubell Exp $
  */
 
 #include "db_config.h"
@@ -48,7 +48,7 @@ static int  __bam_isopd __P((DBC *, db_pgno_t *));
 #define	ACQUIRE(dbc, mode, lpgno, lock, fpgno, pagep, flags, ret) do {	\
 	DB_MPOOLFILE *__mpf = (dbc)->dbp->mpf;				\
 	if ((pagep) != NULL) {						\
-		ret = __memp_fput(__mpf, pagep, 0);			\
+		ret = __memp_fput(__mpf, pagep, dbc->priority);		\
 		pagep = NULL;						\
 	} else								\
 		ret = 0;						\
@@ -98,7 +98,7 @@ static int  __bam_isopd __P((DBC *, db_pgno_t *));
 	DB_MPOOLFILE *__mpf = (dbc)->dbp->mpf;				\
 	int __t_ret;							\
 	if ((__cp->page) != NULL) {					\
-		__t_ret = __memp_fput(__mpf, __cp->page, 0);		\
+		__t_ret = __memp_fput(__mpf, __cp->page, dbc->priority);\
 		__cp->page = NULL;					\
 	} else								\
 		__t_ret = 0;						\
@@ -377,7 +377,7 @@ __bamc_close(dbc, root_pgno, rmroot)
 		if ((ret = __memp_fget(mpf, &cp->pgno, dbc->txn, 0, &h)) != 0)
 			goto err;
 		root_pgno = GET_BOVERFLOW(dbp, h, cp->indx + O_INDX)->pgno;
-		if ((ret = __memp_fput(mpf, h, 0)) != 0)
+		if ((ret = __memp_fput(mpf, h, dbc->priority)) != 0)
 			goto err;
 
 		dbc_c = dbc_opd;
@@ -515,7 +515,7 @@ delete:	/*
 		if ((ret = __db_free(dbc, h)) != 0)
 			goto err;
 	} else {
-		if ((ret = __memp_fput(mpf, h, 0)) != 0)
+		if ((ret = __memp_fput(mpf, h, dbc->priority)) != 0)
 			goto err;
 		goto done;
 	}
@@ -660,7 +660,7 @@ __bamc_count(dbc, recnop)
 
 	*recnop = recno;
 
-	ret = __memp_fput(mpf, cp->page, 0);
+	ret = __memp_fput(mpf, cp->page, dbc->priority);
 	cp->page = NULL;
 
 	return (ret);
@@ -713,7 +713,8 @@ __bamc_del(dbc)
 	}
 
 	/* Mark the page dirty. */
-	if ((ret = __memp_dirty(mpf, &cp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf,
+	    &cp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 
 	/* Log the change. */
@@ -741,7 +742,8 @@ err:	/*
 		(void)__bam_stkrel(dbc, 0);
 	} else
 		if (cp->page != NULL &&
-		    (t_ret = __memp_fput(mpf, cp->page, 0)) != 0 && ret == 0)
+		    (t_ret = __memp_fput(mpf,
+		    cp->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 
 	cp->page = NULL;
@@ -1632,7 +1634,7 @@ __bam_getbothc(dbc, data)
 			return (DB_NOTFOUND);
 
 		/* Discard the current page, we're going to do a full search. */
-		if ((ret = __memp_fput(mpf, cp->page, 0)) != 0)
+		if ((ret = __memp_fput(mpf, cp->page, dbc->priority)) != 0)
 			return (ret);
 		cp->page = NULL;
 
@@ -2085,7 +2087,7 @@ __bamc_rget(dbc, data)
 	if ((ret = __db_ret(dbp, dbc->txn, cp->page,
 	    cp->indx, &dbt, &dbc->my_rkey.data, &dbc->my_rkey.ulen)) != 0)
 		goto err;
-	ret = __memp_fput(mpf, cp->page, 0);
+	ret = __memp_fput(mpf, cp->page, dbc->priority);
 	cp->page = NULL;
 	if (ret != 0)
 		return (ret);
@@ -2580,7 +2582,8 @@ __bamc_physdel(dbc)
 	 * Delete the key item first, otherwise the on-page duplicate checks
 	 * in __bam_ditem() won't work!
 	 */
-	if ((ret = __memp_dirty(dbp->mpf, &cp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    &cp->page, dbc->txn, dbc->priority, 0)) != 0)
 		return (ret);
 	if (TYPE(cp->page) == P_LBTREE) {
 		if ((ret = __bam_ditem(dbc, cp->page, cp->indx)) != 0)
@@ -2667,7 +2670,7 @@ __bamc_getstack(dbc)
 	    &dbt, SR_KEYFIRST, 1, NULL, &exact);
 
 err:	/* Discard the key and the page. */
-	if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+	if ((t_ret = __memp_fput(mpf, h, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -2723,7 +2726,7 @@ __bam_opd_exists(dbc, pgno)
 	else
 		ret = DB_KEYEXIST;
 
-	(void)__memp_fput(dbc->dbp->mpf, h, 0);
+	(void)__memp_fput(dbc->dbp->mpf, h, dbc->priority);
 
 	return (ret);
 }

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: sequence.c,v 12.42 2006/11/03 21:40:07 bostic Exp $
+ * $Id: sequence.c,v 12.44 2007/01/18 18:42:57 ubell Exp $
  */
 
 #include "db_config.h"
@@ -189,15 +189,21 @@ __seq_open_pp(seq, txn, keyp, flags)
 
 	if (keyp->size == 0) {
 		__db_errx(dbenv, "Zero length sequence key specified");
+		ret = EINVAL;
 		goto err;
 	}
 
 	if ((ret = __db_get_flags(dbp, &tflags)) != 0)
 		goto err;
 
+	if (DB_IS_READONLY(dbp)) {
+		ret = __db_rdonly(dbp->dbenv, "DB_SEQUENCE->open");
+		goto err;
+	}
 	if (FLD_ISSET(tflags, DB_DUP)) {
 		__db_errx(dbenv,
 	"Sequences not supported in databases configured for duplicate data");
+		ret = EINVAL;
 		goto err;
 	}
 
@@ -225,6 +231,9 @@ __seq_open_pp(seq, txn, keyp, flags)
 
 	seq->seq_data.ulen = seq->seq_data.size = sizeof(seq->seq_record);
 	seq->seq_rp = &seq->seq_record;
+
+	if ((ret = __dbt_usercopy(dbenv, keyp)) != 0)
+		goto err;
 
 	memset(&seq->seq_key, 0, sizeof(DBT));
 	if ((ret = __os_malloc(dbenv, keyp->size, &seq->seq_key.data)) != 0)
@@ -363,6 +372,7 @@ err:	if (txn_local &&
 		ret = t_ret;
 
 	ENV_LEAVE(dbenv, ip);
+	__dbt_userfree(dbenv, keyp, NULL, NULL);
 	return (ret);
 }
 
@@ -762,6 +772,10 @@ __seq_get_key(seq, key)
 	DBT *key;
 {
 	SEQ_ILLEGAL_BEFORE_OPEN(seq, "DB_SEQUENCE->get_key");
+
+	if (F_ISSET(key, DB_DBT_USERCOPY))
+		return (__db_retcopy(seq->seq_dbp->dbenv, key,
+		    seq->seq_key.data, seq->seq_key.size, NULL, 0));
 
 	key->data = seq->seq_key.data;
 	key->size = key->ulen = seq->seq_key.size;

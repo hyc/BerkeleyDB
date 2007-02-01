@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2006 Oracle.  All rights reserved.
 #
-# $Id: rep068.tcl,v 1.3 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep068.tcl,v 1.4 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep068
 # TEST	Verify replication of dbreg operations does not hang clients.
@@ -58,7 +58,13 @@ proc rep068 { method { tnum "068" } args } {
 #
 proc rep068_sub { method tnum recargs nosync largs } {
 	global testdir
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	set KEY "any old key"
 	set DATA "arbitrary data"
 	set DBNAME "test.db"
@@ -77,31 +83,25 @@ proc rep068_sub { method tnum recargs nosync largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create  \
+	set ma_envcmd "berkdb_env_noerr -create $verbargs -errpfx MASTER \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-# 	set ma_envcmd "berkdb_env_noerr -create  \
-# 	    -verbose {rep on} -errpfx MASTER \
-# 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs $nosync_args -rep_master]
 
 	# Open a client
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create  \
+	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-# 	set cl_envcmd "berkdb_env_noerr -create  \
-# 	    -verbose {rep on} -errpfx CLIENT \
-# 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs $nosync_args -rep_client]
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
 					
-	# open/create a database, maybe put just one record in it
-	# abandon the client env, and restart it.  before trying to sync,
-	# open the database at the client
+	# Open/create a database, maybe put just one record in it
+	# abandon the client env, and restart it.  Before trying to sync,
+	# open the database at the client.
 
-	set db [berkdb_open -auto_commit \
+	set db [berkdb_open_noerr -auto_commit \
 	     -btree -create -env $masterenv $DBNAME]
 	set ret [$db put $KEY $DATA]
 	error_check_good initial_insert $ret 0
@@ -122,7 +122,7 @@ proc rep068_sub { method tnum recargs nosync largs } {
 	# to at least try to open the database, and "dare ourselves" not to hang
 	# if it turns out to be present.
 	#
-	if {[catch {set client_db [berkdb_open \
+	if {[catch {set client_db [berkdb_open_noerr \
 	    -auto_commit -unknown -env $clientenv $DBNAME]} result] == 0} {
 		puts "\t\tRep$tnum.a(ii): warning: db open at restarted client\
 		    succeeded unexpectedly"
@@ -135,15 +135,14 @@ proc rep068_sub { method tnum recargs nosync largs } {
 	puts "\tRep$tnum.c: Sync-up completed."
 
 	if {$client_db == "NULL"} {
-		set client_db \
-		    [berkdb_open -auto_commit -unknown -env $clientenv $DBNAME]
+		set client_db [berkdb_open_noerr \
+		    -auto_commit -unknown -env $clientenv $DBNAME]
 	}
 	set result [$client_db get $KEY]
 	error_check_good one_pair [llength $result] 1
 	set val [lindex $result 0 1]
 	error_check_good "value still matches" $val $DATA
 	puts "\tRep$tnum.d: Confirmed correct data."
-
 
  	$client_db close
 	$clientenv close

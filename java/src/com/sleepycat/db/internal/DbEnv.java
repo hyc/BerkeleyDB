@@ -50,6 +50,7 @@ public class DbEnv {
 	private ReplicationTransport rep_transport_handler;
 	private java.io.OutputStream error_stream;
 	private java.io.OutputStream message_stream;
+	private ThreadLocal errMsg;
 
 	public static class RepProcessMessage {
 		public int envid;
@@ -61,6 +62,7 @@ public class DbEnv {
 	 */
 	void initialize() {
 		dbenv_ref = db_java.initDbEnvRef0(this, this);
+		errMsg = new ThreadLocal();
 		/* Start with System.err as the default error stream. */
 		set_error_stream(System.err);
 		set_message_stream(System.out);
@@ -118,7 +120,27 @@ public class DbEnv {
 	}
 
 	private final void handle_error(String msg) {
+		StringBuffer tbuf = (StringBuffer) errMsg.get();
+		/* 
+		 * Populate the errMsg ThreadLocal on demand, since the 
+		 * callback can be made from different threads.
+		 */
+		if (tbuf == null) {
+			tbuf = new StringBuffer();
+			errMsg.set(tbuf);
+		}
+		tbuf.append(msg);
 		error_handler.error(wrapper, this.errpfx, msg);
+	}
+
+	private final String get_err_msg(String orig_msg) {
+		String ret = null;
+		StringBuffer tbuf = (StringBuffer) errMsg.get();
+		if (tbuf != null) {
+			ret = tbuf.toString();
+			tbuf.delete(0, tbuf.length());
+		}
+		return orig_msg + ": " + ret;
 	}
 
 	public ErrorHandler get_errcall() /* no exception */ {

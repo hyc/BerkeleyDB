@@ -32,7 +32,7 @@ int __qam_delext_print __P((DB_ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __qam_init_print __P((DB_ENV *, int (***)(DB_ENV *, DBT *, DB_LSN *, db_recops, void *), size_t *));
 int __qam_mswap __P((PAGE *));
 int __qam_pgin_out __P((DB_ENV *, db_pgno_t, void *, DBT *));
-int __qam_fprobe __P((DB *, db_pgno_t, DB_TXN *, void *, qam_probe_mode, u_int32_t));
+int __qam_fprobe __P((DB *, db_pgno_t, DB_TXN *, void *, qam_probe_mode, DB_CACHE_PRIORITY, u_int32_t));
 int __qam_fclose __P((DB *, db_pgno_t));
 int __qam_fremove __P((DB *, db_pgno_t));
 int __qam_sync __P((DB *));

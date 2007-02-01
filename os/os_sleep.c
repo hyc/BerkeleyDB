@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_sleep.c,v 12.11 2006/11/08 23:10:39 alanb Exp $
+ * $Id: os_sleep.c,v 12.13 2006/11/29 20:08:51 bostic Exp $
  */
 
 #include "db_config.h"
@@ -26,7 +26,7 @@ __os_sleep(dbenv, secs, usecs)
 	int ret;
 
 	/* Don't require that the values be normalized. */
-	for (; usecs >= 1000000; usecs -= 1000000)
+	for (; usecs >= US_PER_SEC; usecs -= US_PER_SEC)
 		++secs;
 
 	if (DB_GLOBAL(j_sleep) != NULL) {
@@ -35,8 +35,8 @@ __os_sleep(dbenv, secs, usecs)
 	}
 
 	/*
-	 * It's important that we yield the processor here so that other
-	 * processes or threads are permitted to run.
+	 * It's important we yield the processor here so other processes or
+	 * threads can run.
 	 *
 	 * XXX
 	 * VxWorks doesn't yield the processor on select.  This isn't really

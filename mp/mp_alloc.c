@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_alloc.c,v 12.22 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_alloc.c,v 12.23 2006/11/14 21:21:25 ubell Exp $
  */
 
 #include "db_config.h"
@@ -159,6 +159,15 @@ found:		if (offsetp != NULL)
 		 */
 		if (SH_TAILQ_FIRST(&hp->hash_bucket, __bh) == NULL)
 			continue;
+		/*
+		 * Skip buckets that only have pinned pages.
+		 * 
+		 * Again we are doing this without locking. If we misread
+		 * the number we might improperly skip a bucket but this is
+		 * not fatal.
+		 */
+		if (hp->hash_priority == UINT32_MAX)
+			continue;
 
 		/*
 		 * The failure mode is when there are too many buffers we can't
@@ -222,10 +231,16 @@ found:		if (offsetp != NULL)
 		}
 
 		if (!aggressive) {
-			/* Skip high priority buckets. */
-			if (hp->hash_priority > high_priority)
+			/* Adjust if the bucket has not been reset. */
+			priority = hp->hash_priority;
+			if (c_mp->lru_reset != 0 &&
+			    c_mp->lru_reset <= hp - dbht)
+				priority -= MPOOL_BASE_DECREMENT;
+			/*
+			 * Skip high priority buckets.
+			 */
+			if (priority > high_priority)
 				continue;
-
 			/*
 			 * Find two buckets and select the one with the lowest
 			 * priority.  Performance testing shows that looking
@@ -236,18 +251,23 @@ found:		if (offsetp != NULL)
 				hp_tmp = hp;
 				continue;
 			}
-			if (hp->hash_priority > hp_tmp->hash_priority)
+			if (c_mp->lru_reset &&
+			    c_mp->lru_reset <= hp_tmp - dbht) {
+				if (priority > hp_tmp->hash_priority -
+				    MPOOL_BASE_DECREMENT)
+					hp = hp_tmp;
+			} else if (priority > hp_tmp->hash_priority)
 				hp = hp_tmp;
 			hp_tmp = NULL;
 		}
-
-		/* Remember the priority of the buffer we're looking for. */
-		priority = hp->hash_priority;
 
 		/* Unlock the region and lock the hash bucket. */
 		MPOOL_REGION_UNLOCK(dbenv, infop);
 		mutex = hp->mtx_hash;
 		MUTEX_LOCK(dbenv, mutex);
+
+		/* Remember the priority of the buffer we're looking for. */
+		priority = hp->hash_priority;
 
 #ifdef DIAGNOSTIC
 		__memp_check_order(dbenv, hp);

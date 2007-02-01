@@ -1,4 +1,4 @@
-<!--$Id: txn_begin.so,v 10.79 2006/11/08 22:56:05 bostic Exp $-->
+<!--$Id: txn_begin.so,v 10.80 2006/12/13 18:09:09 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -97,6 +97,17 @@ that setting.</p>
 of this transaction, wait for the lock.
 <p>This behavior is the default for Berkeley DB environments unless the
 DB_TXN_NOWAIT flag was specified to the
+<a href="../api_cxx/env_set_flags.html">DbEnv::set_flags</a> method.  Any value specified to this method overrides
+that setting.</p>
+<dt><a name="DB_TXN_WRITE_NOSYNC">DB_TXN_WRITE_NOSYNC</a><dd>Write, but do not synchronously flush, the log when this transaction
+commits.  This means the transaction will exhibit the ACI (atomicity,
+consistency, and isolation) properties, but not D (durability); that is,
+database integrity will be maintained, but if the system fails, it is
+possible some number of the most recently committed transactions may be
+undone during recovery.  The number of transactions at risk is governed
+by how often the system flushes dirty buffers to disk and how often the
+log is flushed or checkpointed.
+<p>This behavior may be set for a Berkeley DB environment using the
 <a href="../api_cxx/env_set_flags.html">DbEnv::set_flags</a> method.  Any value specified to this method overrides
 that setting.</p>
 </dl>

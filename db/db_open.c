@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_open.c,v 12.31 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_open.c,v 12.35 2006/12/19 20:42:54 ubell Exp $
  */
 
 #include "db_config.h"
@@ -176,7 +176,7 @@ __db_open(dbp, txn, fname, dname, type, flags, mode, meta_pgno)
 		LF_SET(DB_TRUNCATE);
 
 	/* Set up the underlying environment. */
-	if ((ret = __db_dbenv_setup(dbp, txn, fname, dname, id, flags)) != 0)
+	if ((ret = __db_env_setup(dbp, txn, fname, dname, id, flags)) != 0)
 		return (ret);
 
 	/* For in-memory databases, we now need to open/create the database. */
@@ -188,6 +188,9 @@ __db_open(dbp, txn, fname, dname, type, flags, mode, meta_pgno)
 			if ((ret = __fop_file_setup(dbp,
 			    txn, dname, mode, flags, &id)) == 0 &&
 			    DBENV_LOGGING(dbenv) && !F_ISSET(dbp, DB_AM_RECOVER)
+#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP) && !defined(DIAGNOSTIC)
+			    && txn != NULL
+#endif
 #if !defined(DEBUG_ROP)
 			    && !F_ISSET(dbp, DB_AM_RDONLY)
 #endif
@@ -328,7 +331,8 @@ __db_init_subdb(mdbp, dbp, name, txn)
 		    txn, 0, &meta)) != 0)
 			goto err;
 		ret = __db_meta_setup(mdbp->dbenv, dbp, name, meta, 0, 0);
-		if ((t_ret = __memp_fput(mpf, meta, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		     __memp_fput(mpf, meta, dbp->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		/*
 		 * If __db_meta_setup found that the meta-page hadn't

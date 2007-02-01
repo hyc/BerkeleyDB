@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_backup.c,v 12.84 2006/11/07 23:52:32 alanb Exp $
+ * $Id: rep_backup.c,v 12.93 2007/01/29 17:42:57 alanb Exp $
  */
 
 #include "db_config.h"
@@ -22,10 +22,12 @@ static int __rep_check_uid __P(( DB_ENV *, u_int8_t *, u_int8_t *, u_int8_t *));
 static int __rep_filedone __P((DB_ENV *, int, REP *, __rep_fileinfo_args *,
     u_int32_t));
 static int __rep_find_dbs __P((DB_ENV *, u_int8_t **, size_t *,
-    size_t *, u_int32_t *, int));
+    size_t *, u_int32_t *));
 static int __rep_get_fileinfo __P((DB_ENV *, const char *,
     const char *, __rep_fileinfo_args *, u_int8_t *, u_int32_t *));
-static int __rep_log_setup __P((DB_ENV *, REP *));
+static int __rep_get_file_list __P((DB_ENV *, DB_FH *, DBT *));
+static int __rep_log_setup __P((DB_ENV *,
+    REP *, u_int32_t, u_int32_t, DB_LSN *));
 static int __rep_mpf_open __P((DB_ENV *, DB_MPOOLFILE **,
     __rep_fileinfo_args *, u_int32_t));
 static int __rep_page_gap __P((DB_ENV *, REP *, __rep_fileinfo_args *,
@@ -33,10 +35,15 @@ static int __rep_page_gap __P((DB_ENV *, REP *, __rep_fileinfo_args *,
 static int __rep_page_sendpages __P((DB_ENV *, int,
     __rep_fileinfo_args *, DB_MPOOLFILE *, DB *));
 static int __rep_queue_filedone __P((DB_ENV *, REP *, __rep_fileinfo_args *));
-static int __rep_remove_dbs __P((DB_ENV *));
+static int __rep_remove_all __P((DB_ENV *, DBT *));
+static int __rep_remove_file __P((DB_ENV *, u_int8_t *, const char *,
+    u_int32_t));
 static int __rep_remove_logs __P((DB_ENV *));
+static int __rep_remove_by_list __P((DB_ENV *, void *, u_int32_t));
+static int __rep_remove_by_prefix __P((DB_ENV *, const char *, const char *,
+    size_t, APPNAME));
 static int __rep_walk_dir __P((DB_ENV *, const char *, u_int8_t **, u_int8_t *,
-    size_t *, size_t *, u_int32_t *, int));
+    size_t *, size_t *, u_int32_t *));
 static int __rep_write_page __P((DB_ENV *, REP *, __rep_fileinfo_args *));
 
 /*
@@ -86,7 +93,7 @@ __rep_update_req(dbenv, eid)
 	 */
 	fp = buf + sizeof(__rep_update_args);
 	if ((ret = __rep_find_dbs(
-	    dbenv, &fp, &filesz, &filelen, &filecnt, 0)) != 0)
+	    dbenv, &fp, &filesz, &filelen, &filecnt)) != 0)
 		goto err;
 
 	/*
@@ -141,14 +148,19 @@ err:	__os_free(dbenv, buf);
  *	need to	open them, gather the necessary information and then close
  *	them. Then we need to figure out if they're already in the dbentry
  *	array.
+ *
+ * !!!
+ * The pointer *fp is expected to point into a buffer that may be used for an
+ * UPDATE message, at an offset equal to the size of __rep_update_args.  This
+ * assumption is relied upon if the buffer is found to be too small and must be
+ * reallocated.
  */
 static int
-__rep_find_dbs(dbenv, fp, fileszp, filelenp, filecntp, do_remove)
+__rep_find_dbs(dbenv, fp, fileszp, filelenp, filecntp)
 	DB_ENV *dbenv;
 	u_int8_t **fp;
 	size_t *fileszp, *filelenp;
 	u_int32_t *filecntp;
-	int do_remove;
 {
 	int ret;
 	char **ddir, *real_dir;
@@ -162,18 +174,15 @@ __rep_find_dbs(dbenv, fp, fileszp, filelenp, filecntp, do_remove)
 		 * env home dir.
 		 */
 		ret = __rep_walk_dir(dbenv, dbenv->db_home, fp, NULL,
-		    fileszp, filelenp, filecntp, do_remove);
+		    fileszp, filelenp, filecntp);
 	} else {
-		if (fp != NULL)
-			origfp = *fp;
-		else
-			origfp = NULL;
+		origfp = *fp;
 		for (ddir = dbenv->db_data_dir; *ddir != NULL; ++ddir) {
 			if ((ret = __db_appname(dbenv, DB_APP_NONE,
 			    *ddir, 0, NULL, &real_dir)) != 0)
 				break;
 			if ((ret = __rep_walk_dir(dbenv, real_dir, fp, origfp,
-			    fileszp, filelenp, filecntp, do_remove)) != 0)
+			    fileszp, filelenp, filecntp)) != 0)
 				break;
 			__os_free(dbenv, real_dir);
 			real_dir = NULL;
@@ -181,9 +190,9 @@ __rep_find_dbs(dbenv, fp, fileszp, filelenp, filecntp, do_remove)
 	}
 
 	/* Now, collect any in-memory named databases. */
-	if (ret == 0 && do_remove == 0)
+	if (ret == 0)
 		ret = __rep_walk_dir(dbenv, NULL,
-		    fp, NULL, fileszp, filelenp, filecntp, do_remove);
+		    fp, NULL, fileszp, filelenp, filecntp);
 
 	if (real_dir != NULL)
 		__os_free(dbenv, real_dir);
@@ -199,13 +208,12 @@ __rep_find_dbs(dbenv, fp, fileszp, filelenp, filecntp, do_remove)
  * walk the list of in-memory named files.
  */
 static int
-__rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
+__rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp)
 	DB_ENV *dbenv;
 	const char *dir;
 	u_int8_t **fp, *origfp;
 	size_t *fileszp, *filelenp;
 	u_int32_t *filecntp;
-	int do_remove;
 {
 	DBT namedbt, uiddbt;
 	__rep_fileinfo_args tmpfp;
@@ -267,49 +275,6 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp, do_remove)
 			ret = 0;
 			continue;
 		}
-		if (do_remove) {
-			/*
-			 * Calling __fop_remove will both purge any matching
-			 * fileid from mpool and unlink it on disk.
-			 */
-#ifdef HAVE_QUEUE
-			/*
-			 * Handle queue separately.  __fop_remove will not
-			 * remove extent files.  Use __qam_remove to remove
-			 * extent files that might exist under this name.
-			 */
-			if (tmpfp.type == (u_int32_t)DB_QUEUE) {
-				DB *dummydbp;
-				if ((ret = __db_create_internal(
-				    &dummydbp, dbenv, 0)) != 0)
-					goto err;
-				RPRINT(dbenv, (dbenv,
-    "Walk_dir: QAM: Unlink %s via __qam_remove", names[i]));
-				if ((ret = __qam_remove(dummydbp, NULL,
-				    names[i], NULL)) != 0) {
-					RPRINT(dbenv, (dbenv,
-					    "Walk_dir: qam_remove returned %d",
-					    ret));
-					goto err;
-				}
-				if ((ret = __db_close(dummydbp, NULL,
-				    DB_NOSYNC)) != 0)
-					goto err;
-			}
-#endif
-			/*
-			 * We call fop_remove even if we've called qam_remove.
-			 * That will only have removed extent files.  Now
-			 * we need to deal with the actual file itself.
-			 */
-			if ((ret = __fop_remove(dbenv, NULL, uid,
-			    names[i], DB_APP_DATA, 0)) != 0)
-				goto err;
-			continue;
-		}
-		/*
-		 * Only do this if we're not removing.
-		 */
 		RPRINT(dbenv, (dbenv,
     "Walk_dir: File %d (of %d) %s at 0x%lx: pgsize %lu, max_pgno %lu",
 		    tmpfp.filenum, *filecntp, names[i], P_TO_ULONG(rfp),
@@ -473,7 +438,7 @@ __rep_get_fileinfo(dbenv, file, subdb, rfp, uid, filecntp)
 	rfp->type = (u_int32_t)dbp->type;
 	rfp->flags = dbp->flags;
 	rfp->id = DB_LOGFILEID_INVALID;
-	ret = __memp_fput(dbp->mpf, pagep, 0);
+	ret = __memp_fput(dbp->mpf, pagep, dbc->priority);
 	pagep = NULL;
 	if ((t_ret = __LPUT(dbc, lk)) != 0 && ret == 0)
 		ret = t_ret;
@@ -484,8 +449,8 @@ err:
 		ret = t_ret;
 	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
-	if (pagep != NULL &&
-	    (t_ret = __memp_fput(mpf, pagep, 0)) != 0 && ret == 0)
+	if (pagep != NULL && (t_ret =
+	    __memp_fput(mpf, pagep, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if (dbp != NULL && (t_ret = __db_close(dbp, NULL, 0)) != 0 && ret == 0)
 		ret = t_ret;
@@ -753,7 +718,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 		    msgfp->filenum, msgfp->id, msgfp->type,
 		    msgfp->flags, &msgfp->uid, &pgdbt);
 		if (msgfp->type != (u_int32_t)DB_QUEUE || p == 0)
-			t_ret = __memp_fput(mpf, pagep, 0);
+			t_ret = __memp_fput(mpf, pagep, DB_PRIORITY_UNCHANGED);
 #ifdef HAVE_QUEUE
 		else
 			/*
@@ -761,7 +726,7 @@ __rep_page_sendpages(dbenv, eid, msgfp, mpf, dbp)
 			 * we're not compiled with queue, then we're guaranteed
 			 * to have set REP_PAGE_FAIL above.
 			 */
-			t_ret = __qam_fput(qdbp, p, pagep, 0);
+			t_ret = __qam_fput(qdbp, p, pagep, qdbp->priority);
 #endif
 		if ((t_ret = __ENV_LPUT(dbenv, lock)) != 0 && ret == 0)
 			ret = t_ret;
@@ -854,7 +819,7 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	ret = 0;
 
 	REP_SYSTEM_LOCK(dbenv);
-	if (!F_ISSET(rep, REP_F_RECOVER_UPDATE)) {
+	if (!F_ISSET(rep, REP_F_RECOVER_UPDATE) || IN_ELECTION(rep)) {
 		REP_SYSTEM_UNLOCK(dbenv);
 		return (0);
 	}
@@ -909,6 +874,14 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	rep->first_lsn = rup->first_lsn;
 	rep->first_vers = rup->first_vers;
 	rep->last_lsn = rp->lsn;
+	/*
+	 * We need to take the larger of the LSNs for the sync_lsn
+	 * for the STARTUPDONE event.  We don't want to trigger
+	 * STARTUPDONE in the middle of internal init because we
+	 * aren't done starting up.
+	 */
+	if (LOG_COMPARE(&rp->lsn, &rep->sync_lsn) > 0)
+		rep->sync_lsn = rp->lsn;
 	rep->nfiles = rup->num_files;
 	rep->curfile = 0;
 	rep->ready_pg = 0;
@@ -950,9 +923,7 @@ __rep_update_setup(dbenv, eid, rp, rec)
 	 * We need to remove all logs and databases the client has prior to
 	 * getting pages for current databases on the master.
 	 */
-	if ((ret = __rep_remove_logs(dbenv)) != 0)
-		goto errmem;
-	if ((ret = __rep_remove_dbs(dbenv)) != 0)
+	if ((ret = __rep_remove_all(dbenv, rec)) != 0)
 		goto errmem;
 
 	/*
@@ -1012,6 +983,121 @@ err:	/*
 }
 
 /*
+ * Removes all existing logs and databases, at the start of internal init.  But
+ * before we do, write a list of the databases onto the init file, so that in
+ * case we crash in the middle, we'll know how to resume when we restart.
+ * Finally, also write into the init file the UPDATE message from the master (in
+ * the "rec" DBT), which includes the (new) list of databases we intend to
+ * request copies of (again, so that we know what to do if we crash in the
+ * middle).
+ *
+ * For the sake of simplicity, these database lists are in the form of an UPDATE
+ * message (since we already have the mechanisms in place), even though strictly
+ * speaking that contains more information than we really need to store.
+ */
+static int
+__rep_remove_all(dbenv, rec)
+	DB_ENV *dbenv;
+	DBT *rec;
+{
+	__rep_fileinfo_args *finfo;
+	DB_FH *fhp;
+	DB_LSN unused;
+	size_t cnt, filelen, filesz, updlen;
+	u_int32_t bufsz, filecnt;
+	char *fname;
+	int ret, t_ret;
+	u_int8_t *buf, *fp, *origfp;
+
+	ZERO_LSN(unused);
+	finfo = NULL;
+	fname = NULL;
+	fhp = NULL;
+
+	/*
+	 * 1. Get list of databases currently present at this client, which we
+	 *    intend to remove.
+	 */
+	filelen = 0;
+	filecnt = 0;
+	filesz = MEGABYTE;
+	if ((ret = __os_calloc(dbenv, 1, filesz, &buf)) != 0)
+		return (ret);
+	origfp = fp = buf + sizeof(__rep_update_args);
+	if ((ret = __rep_find_dbs(
+	    dbenv, &fp, &filesz, &filelen, &filecnt)) != 0)
+		goto out;
+	if ((ret = __rep_update_buf(buf, filesz, &updlen,
+	    &unused, 0, filecnt)) != 0)
+		goto out;
+
+	/*
+	 * 2. Before removing anything, safe-store the database list, so that in
+	 *    case we crash before we've removed them all, when we restart we
+	 *    can clean up what we were doing.
+	 */
+	if ((ret = __db_appname(
+	    dbenv, DB_APP_NONE, REP_INITNAME, 0, NULL, &fname)) != 0)
+		goto out;
+	bufsz = updlen + filelen;
+	/* (Short writes aren't possible, so we don't have to verify 'cnt'.) */
+	if ((ret = __os_open(dbenv, fname, 0,
+	    DB_OSO_CREATE | DB_OSO_TRUNC, __db_omode(OWNER_RW), &fhp)) != 0 ||
+	    (ret = __os_write(dbenv, fhp, &bufsz, sizeof(bufsz), &cnt)) != 0 ||
+	    (ret = __os_write(dbenv, fhp, buf, bufsz, &cnt)) != 0 ||
+	    (ret = __os_fsync(dbenv, fhp)) != 0) {
+		__db_err(dbenv, ret, "%s", fname);
+		goto out;
+	}
+
+	/*
+	 * 3. Go ahead and remove logs and databases.  The databases get removed
+	 *    according to the list we just finished safe-storing.
+	 */
+	if ((ret = __rep_remove_logs(dbenv)) != 0)
+		goto out;
+	if ((ret = __rep_closefiles(dbenv)) != 0)
+		goto out;
+	fp = origfp;
+	while (filecnt-- > 0) {
+		if ((ret =__rep_fileinfo_read(dbenv,
+		    fp, (void*)&fp, &finfo)) != 0)
+			goto out;
+		if ((ret = __rep_remove_file(dbenv,
+		    finfo->uid.data, finfo->info.data, finfo->type)) != 0)
+			goto out;
+		__os_free(dbenv, finfo);
+		finfo = NULL;
+	}
+
+	/*
+	 * 4. Safe-store the (new) list of database files we intend to copy from
+	 *    the master (again, so that in case we crash before we're finished
+	 *    doing so, we'll have enough information to clean up and start over
+	 *    again).
+	 */
+	if ((ret = __os_write(dbenv, fhp,
+	    &rec->size, sizeof(rec->size), &cnt)) != 0 ||
+	    (ret = __os_write(dbenv, fhp, rec->data, rec->size, &cnt)) != 0 ||
+	    (ret = __os_fsync(dbenv, fhp)) != 0) {
+		__db_err(dbenv, ret, "%s", fname);
+		goto out;
+	}
+
+out:
+	if (fhp != NULL && (t_ret = __os_closehandle(dbenv, fhp)) && ret == 0)
+		ret = t_ret;
+	if (fname != NULL)
+		__os_free(dbenv, fname);
+	if (finfo != NULL)
+		__os_free(dbenv, finfo);
+	__os_free(dbenv, buf);
+	return (ret);
+}
+
+
+
+/*
  * __rep_remove_logs -
  *	Remove our logs to prepare for internal init.
  */
@@ -1043,7 +1129,7 @@ __rep_remove_logs(dbenv)
 	 */
 	if (lp->db_log_inmemory) {
 		INIT_LSN(lsn);
-		if ((ret = __log_zero(dbenv, &lsn, &lp->lsn)) != 0)
+		if ((ret = __log_zero(dbenv, &lsn)) != 0)
 			return (ret);
 	} else {
 		lastfile = lp->lsn.file;
@@ -1059,26 +1145,65 @@ __rep_remove_logs(dbenv)
 }
 
 /*
- * __rep_remove_dbs
- *	Walk the directories removing databases.
+ * Removes a file during internal init.  Assumes underlying subsystems are
+ * active; therefore, this can't be used for internal init crash recovery.
  */
 static int
-__rep_remove_dbs(dbenv)
+__rep_remove_file(dbenv, uid, name, type)
 	DB_ENV *dbenv;
+	u_int8_t *uid;
+	const char *name;
+	u_int32_t type;
 {
-	u_int32_t filecnt;
+	DB *dbp;
+	char *real_name;
 	int ret;
 
-	filecnt = 0;
-	if ((ret = __rep_closefiles(dbenv)) != 0)
-		return (ret);
+	real_name = NULL;
 
 	/*
-	 * We find the databases and remove them instead of building up
-	 * the file information.
+	 * Calling __fop_remove will both purge any matching
+	 * fileid from mpool and unlink it on disk.
 	 */
-	return (ret = __rep_find_dbs(dbenv, NULL, NULL, NULL, &filecnt, 1));
-}
+#ifdef HAVE_QUEUE
+	/*
+	 * Handle queue separately.  __fop_remove will not
+	 * remove extent files.  Use __qam_remove to remove
+	 * extent files that might exist under this name.
+	 */
+	if (type == (u_int32_t)DB_QUEUE) {
+		if ((ret = __db_create_internal(&dbp, dbenv, 0)) != 0)
+			goto out;
+
+		if ((ret = __db_appname(dbenv,
+		    DB_APP_DATA, name, 0, NULL, &real_name)) != 0)
+			return (ret);
+		
+		if ((ret = __fop_remove_setup(dbp, NULL, real_name, 0)) != 0)
+			goto out;
+		
+		RPRINT(dbenv, (dbenv, "QAM: Unlink %s via __qam_remove", name));
+		if ((ret = __qam_remove(dbp, NULL, name, NULL)) != 0) {
+			RPRINT(dbenv, (dbenv, "qam_remove returned %d", ret));
+			(void)__db_close(dbp, NULL, DB_NOSYNC);
+			goto out;
+		}
+		if ((ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0)
+			goto out;
+	}
+#endif
+	/*
+	 * We call fop_remove even if we've called qam_remove.
+	 * That will only have removed extent files.  Now
+	 * we need to deal with the actual file itself.
+	 */
+	ret = __fop_remove(dbenv, NULL, uid, name, DB_APP_DATA, 0);
+
+out:
+	if (real_name != NULL)
+		__os_free(dbenv, real_name);
+	return (ret);
+}	
 
 /*
  * __rep_bulk_page
@@ -1254,9 +1379,17 @@ __rep_page(dbenv, eid, rp, rec)
 	/*
 	 * Now check the LSN on the page and save it if it is later
 	 * than the one we have.
+	 *
+	 * We need to take the larger of the LSNs for the sync_lsn
+	 * for the STARTUPDONE event.  We don't want to trigger
+	 * STARTUPDONE in the middle of internal init because we
+	 * aren't done starting up.
 	 */
-	if (LOG_COMPARE(&rp->lsn, &rep->last_lsn) > 0)
+	if (LOG_COMPARE(&rp->lsn, &rep->last_lsn) > 0) {
 		rep->last_lsn = rp->lsn;
+		if (LOG_COMPARE(&rep->last_lsn, &rep->sync_lsn) > 0)
+			rep->sync_lsn = rep->last_lsn;
+	}
 
 	/*
 	 * We've successfully written the page.  Now we need to see if
@@ -1430,10 +1563,11 @@ __rep_write_page(dbenv, rep, msgfp)
 	memcpy(dst, msgfp->info.data, msgfp->pgsize);
 #ifdef HAVE_QUEUE
 	if (msgfp->type == (u_int32_t)DB_QUEUE && msgfp->pgno != 0)
-		ret = __qam_fput(rep->queue_dbp, msgfp->pgno, dst, 0);
+		ret = __qam_fput(rep->queue_dbp,
+		     msgfp->pgno, dst, rep->queue_dbp->priority);
 	else
 #endif
-		ret = __memp_fput(rep->file_mpf, dst, 0);
+		ret = __memp_fput(rep->file_mpf, dst, rep->file_dbp->priority);
 
 err:	return (ret);
 }
@@ -1652,7 +1786,9 @@ __rep_init_cleanup(dbenv, rep, force)
 	REP *rep;
 	int force;
 {
-	int ret, t_ret;
+	DB_LOG *dblp;
+	LOG *lp;
+	int cleanup_failure, ret, t_ret;
 
 	ret = 0;
 	/*
@@ -1682,11 +1818,67 @@ __rep_init_cleanup(dbenv, rep, force)
 		__os_free(dbenv, rep->curinfo);
 		rep->curinfo = NULL;
 	}
-	if (rep->originfo != NULL &&
-	    (force || ++rep->curfile == rep->nfiles)) {
+	if (rep->originfo != NULL && force) {
+		/*
+		 * Clean up files involved in an interrupted internal init.
+		 *
+		 * 1. logs
+		 *   a) remove old log files
+		 *   b) set up initial log file #1
+		 * 2. database files
+		 * 3. the "init file"
+		 *
+		 * Steps 1 and 2 can be attempted independently.  Step 1b is
+		 * dependent on successful completion of 1a.  Step 3 must not be
+		 * done if anything fails along the way, because the init file's
+		 * raison d'etre is to show that some files remain to be cleaned
+		 * up.
+		 */
+		RPRINT(dbenv, (dbenv, "clean up interrupted internal init"));
+		cleanup_failure = 0;
+
+		if ((t_ret = __rep_remove_logs(dbenv)) == 0) {
+			/*
+			 * Since we have no logs, recover by making it look like
+			 * the case when a new client first starts up, namely we
+			 * have nothing but a fresh log file #1.  This is a
+			 * little wasteful, since we may soon remove this log
+			 * file again.  But that's OK, because this is the
+			 * unusual case of NEWMASTER during internal init, and
+			 * the rest of internal init doubtless dwarfs this.
+			 */
+			dblp = dbenv->lg_handle;
+			lp = dblp->reginfo.primary;
+			
+			if ((t_ret = __rep_log_setup(dbenv,
+			    rep, 1, DB_LOGVERSION, &lp->ready_lsn)) != 0) {
+				cleanup_failure = 1;
+				if (ret == 0)
+					ret = t_ret;
+			}
+		} else {
+			cleanup_failure = 1;
+			if (ret == 0)
+				ret = t_ret;
+		}
+
+		if ((t_ret = __rep_remove_by_list(dbenv,
+		    rep->originfo, rep->nfiles)) != 0) {
+			cleanup_failure = 1;
+			if (ret == 0)
+				ret = t_ret;
+		}
+
+		if (!cleanup_failure &&
+		    (t_ret = __rep_remove_init_file(dbenv)) != 0) {
+			if (ret == 0)
+				ret = t_ret;
+		}
+
 		__os_free(dbenv, rep->originfo);
 		rep->originfo = NULL;
 	}
+
 	return (ret);
 }
 
@@ -1747,7 +1939,7 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 	 */
 	if ((ret = __rep_init_cleanup(dbenv, rep, 0)) != 0)
 		goto err;
-	if (rep->curfile == rep->nfiles) {
+	if (++rep->curfile == rep->nfiles) {
 		RPRINT(dbenv, (dbenv,
 		    "FILEDONE: have %d files.  RECOVER_LOG now", rep->nfiles));
 		/*
@@ -1768,7 +1960,8 @@ __rep_filedone(dbenv, eid, rep, msgfp, type)
 		dbt.data = &rep->last_lsn;
 		dbt.size = sizeof(rep->last_lsn);
 		REP_SYSTEM_UNLOCK(dbenv);
-		if ((ret = __rep_log_setup(dbenv, rep)) != 0)
+		if ((ret = __rep_log_setup(dbenv, rep,
+		    rep->first_lsn.file, rep->first_vers, NULL)) != 0)
 			goto err;
 		RPRINT(dbenv, (dbenv,
 		    "FILEDONE: LOG_REQ from LSN [%lu][%lu] to [%lu][%lu]",
@@ -1825,7 +2018,7 @@ __rep_mpf_open(dbenv, mpfp, rfp, flags)
 		return (ret);
 
 	/*
-	 * We need a dbp to pass into to __db_dbenv_mpool.  Set up
+	 * We need a dbp to pass into to __db_env_mpool.  Set up
 	 * only the parts that it needs.
 	 */
 	db.dbenv = dbenv;
@@ -1838,7 +2031,7 @@ __rep_mpf_open(dbenv, mpfp, rfp, flags)
 	db.mpf = *mpfp;
 	if (F_ISSET(&db, DB_AM_INMEM))
 		(void)__memp_set_flags(db.mpf, DB_MPOOL_NOFILE, 1);
-	if ((ret = __db_dbenv_mpool(&db, rfp->info.data, flags)) != 0) {
+	if ((ret = __db_env_mpool(&db, rfp->info.data, flags)) != 0) {
 		(void)__memp_fclose(*mpfp, 0);
 		*mpfp = NULL;
 	}
@@ -2019,9 +2212,12 @@ __rep_finfo_alloc(dbenv, rfpsrc, rfpp)
  *	to get our logs set up for the proper file.
  */
 static int
-__rep_log_setup(dbenv, rep)
+__rep_log_setup(dbenv, rep, file, version, lsnp)
 	DB_ENV *dbenv;
 	REP *rep;
+	u_int32_t file;
+	u_int32_t version;
+	DB_LSN *lsnp;
 {
 	DB_LOG *dblp;
 	DB_LSN lsn;
@@ -2039,7 +2235,9 @@ __rep_log_setup(dbenv, rep)
 	 * Set up the log starting at the file number of the first LSN we
 	 * need to get from the master.
 	 */
-	ret = __log_newfile(dblp, &lsn, rep->first_lsn.file, rep->first_vers);
+	if ((ret = __log_newfile(dblp, &lsn, file, version)) == 0 &&
+	    lsnp != NULL)
+		*lsnp = lsn;
 
 	/*
 	 * We reset first_lsn to the lp->lsn.  We were given the LSN of
@@ -2182,4 +2380,282 @@ out:
 		ret = DB_REP_PAGEDONE;
 	return (ret);
 #endif
+}
+
+/*
+ * PUBLIC: int __rep_remove_init_file __P((DB_ENV *));
+ */
+int
+__rep_remove_init_file(dbenv)
+	DB_ENV *dbenv;
+{
+	int ret;
+	char *name;
+
+	if ((ret = __db_appname(
+	    dbenv, DB_APP_NONE, REP_INITNAME, 0, NULL, &name)) != 0)
+		return (ret);
+	(void)__os_unlink(dbenv, name);	
+	__os_free(dbenv, name);
+	return (0);
+}	
+
+/*
+ * Checks for the existence of the internal init flag file.  If it exists, we
+ * remove all logs and databases, and then remove the flag file.  This is
+ * intended to force the internal init to start over again, and thus affords
+ * protection against a client crashing during internal init.  This function
+ * must be called before normal recovery in order to be properly effective.
+ * 
+ * !!!
+ * This function should only be called during initial set-up of the environment,
+ * before various subsystems are initialized.  It doesn't rely on the
+ * subsystems' code having been initialized, and it summarily deletes files "out
+ * from under" them, which might disturb the subsystems if they were up.
+ * 
+ * PUBLIC: int __rep_reset_init __P((DB_ENV *));
+ */
+int
+__rep_reset_init(dbenv)
+	DB_ENV *dbenv;
+{
+	DB_FH *fhp;
+	__rep_update_args *rup;
+	DBT dbt;
+	char *allocated_dir, *dir, *init_name;
+	void *next;
+	int ret, t_ret;
+
+	allocated_dir = NULL;
+	rup = NULL;
+	dbt.data = NULL;
+
+	if ((ret = __db_appname(
+	    dbenv, DB_APP_NONE, REP_INITNAME, 0, NULL, &init_name)) != 0)
+		return (ret);
+	
+	if ((ret = __os_open(dbenv, init_name, 0, DB_OSO_RDONLY,
+	    __db_omode(OWNER_RW), &fhp)) != 0) {
+		if (ret == ENOENT)
+			ret = 0;
+		goto out;
+	}
+	
+	RPRINT(dbenv, (dbenv, "Cleaning up interrupted internal init"));
+
+	/* There are a few possibilities:
+	 *   1. no init file, or less than 1 full file list
+	 *   2. exactly one full file list
+	 *   3. more than one, less then a second full file list
+	 *   4. second file list in full
+	 *
+	 * In cases 2 or 4, we need to remove all logs, and then remove files
+	 * according to the (most recent) file list.  (In case 1 or 3, we don't
+	 * have to do anything.)
+	 *
+	 * The __rep_get_file_list function takes care of folding these cases
+	 * into two simple outcomes:
+	 */
+	ret = __rep_get_file_list(dbenv, fhp, &dbt);
+	if ((t_ret = __os_closehandle(dbenv, fhp)) != 0 || ret != 0) {
+		if (ret == 0)
+			ret = t_ret;
+		goto out;
+	}
+	if (dbt.data == NULL) {
+		/*
+		 * The init file did not end with an intact file list.  Since we
+		 * never start log/db removal without an intact file list
+		 * sync'ed to the init file, this must mean we don't have any
+		 * partial set of files to clean up.  So all we need to do is
+		 * remove the init file.
+		 */
+		goto rm;
+	}
+		
+	/* Remove all log files. */
+	if (dbenv->db_log_dir == NULL)
+		dir = dbenv->db_home;
+	else {
+		if ((ret = __db_appname(dbenv, DB_APP_NONE,
+		    dbenv->db_log_dir, 0, NULL, &dir)) != 0)
+			goto out;
+		allocated_dir = dir;
+	}
+
+	if ((ret = __rep_remove_by_prefix(dbenv,
+	    dir, LFPREFIX, sizeof(LFPREFIX)-1, DB_APP_LOG)) != 0)
+		goto out;
+
+	/*
+	 * Remove databases according to the list, and queue extent files by
+	 * searching them out on a walk through the data_dir's.
+	 */
+	if ((ret = __rep_update_read(dbenv, dbt.data, &next, &rup)) != 0)
+		goto out;
+	if ((ret = __rep_remove_by_list(dbenv, next, rup->num_files)) != 0)
+		goto out;
+
+
+	/* Here, we've established that the file exists. */
+rm:	(void)__os_unlink(dbenv, init_name);
+out:	if (rup != NULL)
+		__os_free(dbenv, rup);
+	if (allocated_dir != NULL)
+		__os_free(dbenv, allocated_dir);
+	if (dbt.data != NULL)
+		free(dbt.data);	/* whatever that might mean */
+	
+	__os_free(dbenv, init_name);
+	return (ret);
+}
+
+/*
+ * Reads the last fully intact file list from the init file.  If the file ends
+ * with a partial list (or is empty), we're not interested in it.  Lack of a
+ * full file list is indicated by a NULL dbt->data.  On success, the list is
+ * returned in allocated space, which becomes the responsibility of the caller.
+ *
+ * The file format is a u_int32_t buffer length, in native format, followed by
+ * the file list itself, in the same format as in an UPDATE message (though many
+ * parts of it in this case are meaningless).
+ */
+static int
+__rep_get_file_list(dbenv, fhp, dbt)
+	DB_ENV *dbenv;
+	DB_FH *fhp;
+	DBT *dbt;
+{
+	u_int32_t length;
+	size_t cnt;
+	int i, ret;
+
+	/* At most 2 file lists: old and new. */
+	dbt->data = NULL;
+	for (i = 1; i <= 2; i++) {
+		if ((ret = __os_read(dbenv,
+		    fhp, &length, sizeof(length), &cnt)) != 0)
+			goto err;
+
+		/*
+		 * Reaching the end here is fine, if we've been through at least
+		 * once already.
+		 */
+		if (cnt == 0 && dbt->data != NULL)
+			break;
+		if (cnt != sizeof(length)) 
+			goto err;
+
+		if ((ret = __os_realloc(dbenv,
+		    (size_t)length, &dbt->data)) != 0)
+			goto err;
+
+		if ((ret = __os_read(dbenv, fhp, dbt->data, length, &cnt)) != 0
+		    || cnt != (size_t)length)
+			goto err;
+	}
+
+	dbt->size = length;
+	return (0);
+
+err:
+	/*
+	 * Note that it's OK to get here with a zero value in 'ret': it means we
+	 * read less than we expected, and dbt->data == NULL indicates to the
+	 * caller that we don't have an intact list.
+	 */
+	if (dbt->data != NULL)
+		__os_free(dbenv, dbt->data);
+	dbt->data = NULL;
+	return (ret);
+}
+
+/*
+ * Removes every file in a given directory that matches a given prefix.  Notice
+ * how similar this is to __rep_walk_dir.
+ */
+static int
+__rep_remove_by_prefix(dbenv, dir, prefix, pref_len, appname)
+	DB_ENV *dbenv;
+	const char *dir;
+	const char *prefix;
+	size_t pref_len;
+	APPNAME appname;	/* What kind of name. */
+{
+	char *namep, **names;
+	int cnt, i, ret;
+
+	if ((ret = __os_dirlist(dbenv, dir, &names, &cnt)) != 0)
+		return (ret);
+	for (i = 0; i < cnt; i++) {
+		if (strncmp(names[i], prefix, pref_len) == 0) {
+			if ((ret = __db_appname(dbenv,
+			    appname, names[i], 0, NULL, &namep)) != 0)
+				goto out;
+			(void)__os_unlink(dbenv, namep);
+			__os_free(dbenv, namep);
+		}
+	}
+out:	__os_dirfree(dbenv, names, cnt);
+	return (ret);
+}
+
+/*
+ * Removes database files according to the contents of a list.
+ *
+ * This function must support removal either during environment creation, or
+ * when an internal init is reset in the middle.  This means it must work
+ * regardless of whether underlying subsystems are initialized.  However, it may
+ * assume that databases are not open.
+ */
+static int
+__rep_remove_by_list(dbenv, filelist, count)
+	DB_ENV *dbenv;
+	void *filelist;
+	u_int32_t count;
+{
+	__rep_fileinfo_args *file_argsp;
+	char **ddir, *dir, *namep;
+	int ret;
+
+	ret = 0;
+	file_argsp = NULL;
+	while (count-- > 0) {
+		if ((ret = __rep_fileinfo_read(dbenv,
+		    filelist, &filelist, &file_argsp)) != 0)
+			goto out;
+		if ((ret = __db_appname(dbenv,
+		    DB_APP_DATA, file_argsp->info.data, 0, NULL, &namep)) != 0)
+			goto out;
+		(void)__os_unlink(dbenv, namep);
+		__os_free(dbenv, namep);
+		__os_free(dbenv, file_argsp);
+		file_argsp = NULL;
+	}
+
+
+	/* Notice how similar this code is to __rep_find_dbs. */
+	if (dbenv->db_data_dir == NULL)
+		ret = __rep_remove_by_prefix(dbenv, dbenv->db_home,
+		    QUEUE_EXTENT_PREFIX, sizeof(QUEUE_EXTENT_PREFIX) - 1,
+		    DB_APP_DATA);
+	else {
+		for (ddir = dbenv->db_data_dir; *ddir != NULL; ++ddir) {
+			if ((ret = __db_appname(dbenv, DB_APP_NONE,
+			    *ddir, 0, NULL, &dir)) != 0)
+				break;
+			ret = __rep_remove_by_prefix(dbenv, dir,
+			    QUEUE_EXTENT_PREFIX, sizeof(QUEUE_EXTENT_PREFIX)-1,
+			    DB_APP_DATA);
+			__os_free(dbenv, dir);
+			if (ret != 0)
+				break;
+		}
+	}
+
+
+out:
+	if (file_argsp != NULL)
+		__os_free(dbenv, file_argsp);
+	return (ret);
 }

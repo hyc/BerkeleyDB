@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash.c,v 12.30 2006/11/01 00:53:21 bostic Exp $
+ * $Id: hash.c,v 12.32 2006/11/29 21:23:16 ubell Exp $
  */
 
 #include "db_config.h"
@@ -207,15 +207,15 @@ __hamc_close(dbc, root_pgno, rmroot)
 			goto out;
 		if (doroot != 0) {
 			if ((ret = __memp_dirty(mpf, &hcp->page,
-			    dbc->txn, 0)) != 0)
+			    dbc->txn, dbc->priority, 0)) != 0)
 				goto out;
 			if ((ret = __ham_del_pair(dbc, 1)) != 0)
 				goto out;
 		}
 	}
 
-out:	if (hcp->page != NULL &&
-	    (t_ret = __memp_fput(mpf, hcp->page, 0)) != 0 && ret == 0)
+out:	if (hcp->page != NULL && (t_ret =
+	    __memp_fput(mpf, hcp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if (gotmeta != 0 && (t_ret = __ham_release_meta(dbc)) != 0 && ret == 0)
 		ret = t_ret;
@@ -298,7 +298,8 @@ __hamc_count(dbc, recnop)
 
 	*recnop = recno;
 
-err:	if ((t_ret = __memp_fput(mpf, hcp->page, 0)) != 0 && ret == 0)
+err:	if ((t_ret =
+	     __memp_fput(mpf, hcp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	hcp->page = NULL;
 	return (ret);
@@ -331,7 +332,8 @@ __hamc_del(dbc)
 	if (HPAGE_TYPE(dbp, hcp->page, H_DATAINDEX(hcp->indx)) == H_OFFDUP)
 		goto out;
 
-	if ((ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf,
+	    &hcp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto out;
 
 	if (F_ISSET(hcp, H_ISDUP)) { /* On-page duplicate. */
@@ -358,7 +360,8 @@ __hamc_del(dbc)
 		ret = __ham_del_pair(dbc, 1);
 
 out:	if (hcp->page != NULL) {
-		if ((t_ret = __memp_fput(mpf, hcp->page, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		    hcp->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		hcp->page = NULL;
 	}
@@ -506,7 +509,8 @@ next:			ret = __ham_item_next(dbc, lock_type, pgnop);
 			case DB_PREV:
 			case DB_PREV_DUP:
 			case DB_PREV_NODUP:
-				ret = __memp_fput(mpf, hcp->page, 0);
+				ret = __memp_fput(mpf,
+				    hcp->page, dbc->priority);
 				hcp->page = NULL;
 				if (hcp->bucket == 0) {
 					ret = DB_NOTFOUND;
@@ -524,7 +528,8 @@ next:			ret = __ham_item_next(dbc, lock_type, pgnop);
 			case DB_FIRST:
 			case DB_NEXT:
 			case DB_NEXT_NODUP:
-				ret = __memp_fput(mpf, hcp->page, 0);
+				ret = __memp_fput(mpf,
+				    hcp->page, dbc->priority);
 				hcp->page = NULL;
 				hcp->indx = NDX_INVALID;
 				hcp->bucket++;
@@ -723,7 +728,8 @@ back_up:
 						if (ret != DB_NOTFOUND)
 							return (ret);
 						if ((ret = __memp_fput(mpf,
-						    cp->page, 0)) != 0)
+						    cp->page,
+						    dbc->priority)) != 0)
 							return (ret);
 						cp->page = NULL;
 						if (cp->bucket == 0) {
@@ -924,7 +930,8 @@ get_space:
 			goto next_pg;
 		if (ret != DB_NOTFOUND)
 			return (ret);
-		if ((ret = __memp_fput(dbc->dbp->mpf, cp->page, 0)) != 0)
+		if ((ret = __memp_fput(dbc->dbp->mpf,
+		    cp->page, dbc->priority)) != 0)
 			return (ret);
 		cp->page = NULL;
 		if ((ret = __ham_get_meta(dbc)) != 0)
@@ -1013,7 +1020,8 @@ __hamc_put(dbc, key, data, flags, pgnop)
 		    key, nbytes, DB_LOCK_WRITE, pgnop)) == DB_NOTFOUND) {
 			if (hcp->seek_found_page != PGNO_INVALID &&
 			    hcp->seek_found_page != hcp->pgno) {
-				if ((ret = __memp_fput(mpf, hcp->page, 0)) != 0)
+				if ((ret = __memp_fput(mpf,
+				    hcp->page, dbc->priority)) != 0)
 					goto err2;
 				hcp->page = NULL;
 				hcp->pgno = hcp->seek_found_page;
@@ -1064,7 +1072,8 @@ __hamc_put(dbc, key, data, flags, pgnop)
 	}
 
 	if (*pgnop == PGNO_INVALID && ret == 0) {
-		if ((ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0)) != 0)
+		if ((ret = __memp_dirty(mpf,
+		    &hcp->page, dbc->txn, dbc->priority, 0)) != 0)
 			goto done;
 		if (flags == DB_CURRENT ||
 		    ((flags == DB_KEYFIRST ||
@@ -1076,7 +1085,8 @@ __hamc_put(dbc, key, data, flags, pgnop)
 	}
 
 done:	if (hcp->page != NULL) {
-		if ((t_ret = __memp_fput(mpf, hcp->page, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		    hcp->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		if (t_ret == 0)
 			hcp->page = NULL;
@@ -1224,7 +1234,7 @@ __ham_expand_table(dbc)
 
 	/* Write out whatever page we ended up modifying. */
 	h->lsn = lsn;
-	if ((ret = __memp_fput(mpf, h, 0)) != 0)
+	if ((ret = __memp_fput(mpf, h, dbc->priority)) != 0)
 		goto err;
 	h = NULL;
 
@@ -1242,12 +1252,13 @@ __ham_expand_table(dbc)
 
 err:	if (got_meta)
 		if ((t_ret =
-		    __memp_fput(mpf, mmeta, 0)) != 0 && ret == 0)
+		    __memp_fput(mpf, mmeta, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
 			ret = t_ret;
 	if (h != NULL)
-		if ((t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		    h, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 
 	return (ret);
@@ -1742,7 +1753,7 @@ __ham_lookup(dbc, key, sought, mode, pgnop)
 			if (key->size ==
 			    LEN_HKEY(dbp, hcp->page, dbp->pgsize, hcp->indx)) {
 				if (t->h_compare != NULL) {
-					DB_SET_DBT(pg_dbt,
+					DB_INIT_DBT(pg_dbt,
 					    HKEYDATA_DATA(hk),key->size);
 					if (t->h_compare(
 					    dbp, key, &pg_dbt) != 0)

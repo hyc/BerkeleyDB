@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_am.h,v 12.19 2006/11/01 00:52:40 bostic Exp $
+ * $Id: db_am.h,v 12.20 2006/11/29 21:23:13 ubell Exp $
  */
 #ifndef _DB_AM_H_
 #define	_DB_AM_H_
@@ -117,8 +117,9 @@ extern "C" {
 			goto cont;					\
 	}
 #endif
-#define	REC_DIRTY(mpf, pagep)						\
-	if ((ret = __memp_dirty(mpf, pagep, NULL, DB_MPOOL_EDIT)) != 0) {\
+#define	REC_DIRTY(mpf, priority, pagep)					\
+	if ((ret = __memp_dirty(mpf,					\
+	    pagep, NULL, priority, DB_MPOOL_EDIT)) != 0) {		\
 		ret = __db_pgerr(file_dbp, PGNO(*(pagep)), ret);	\
 		goto out;						\
 	}

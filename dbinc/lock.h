@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock.h,v 12.12 2006/11/01 00:52:41 bostic Exp $
+ * $Id: lock.h,v 12.13 2006/11/29 20:08:41 bostic Exp $
  */
 
 #ifndef	_DB_LOCK_H_
@@ -39,24 +39,6 @@ extern "C" {
 	((m) == DB_LOCK_WRITE || (m) == DB_LOCK_WWRITE || \
 	    (m) == DB_LOCK_IWRITE || (m) == DB_LOCK_IWR)
 
-/*
- * Lock timers.
- */
-typedef struct {
-	u_int32_t	tv_sec;		/* Seconds. */
-	u_int32_t	tv_usec;	/* Microseconds. */
-} db_timeval_t;
-
-#define	LOCK_TIME_ISVALID(time)		((time)->tv_sec != 0)
-#define	LOCK_SET_TIME_INVALID(time)	((time)->tv_sec = 0)
-#define	LOCK_TIME_ISMAX(time)		((time)->tv_sec == UINT32_MAX)
-#define	LOCK_SET_TIME_MAX(time)		((time)->tv_sec = UINT32_MAX)
-#define	LOCK_TIME_EQUAL(t1, t2)						\
-	((t1)->tv_sec == (t2)->tv_sec && (t1)->tv_usec == (t2)->tv_usec)
-#define	LOCK_TIME_GREATER(t1, t2)					\
-	((t1)->tv_sec > (t2)->tv_sec ||					\
-	((t1)->tv_sec == (t2)->tv_sec && (t1)->tv_usec > (t2)->tv_usec))
-
 /* Macros to lock/unlock the lock region as a whole. */
 #define	LOCK_SYSTEM_LOCK(dbenv)						\
 	MUTEX_LOCK(dbenv, ((DB_LOCKREGION *)				\
@@ -74,7 +56,7 @@ typedef struct __db_lockregion {
 
 	u_int32_t	need_dd;	/* flag for deadlock detector */
 	u_int32_t	detect;		/* run dd on every conflict */
-	db_timeval_t	next_timeout;	/* next time to expire a lock */
+	db_timespec	next_timeout;	/* next time to expire a lock */
 					/* free lock header */
 	SH_TAILQ_HEAD(__flock) free_locks;
 					/* free obj header */
@@ -149,8 +131,8 @@ typedef struct __db_locker {
 	SH_TAILQ_ENTRY links;		/* Links for free and hash list. */
 	SH_TAILQ_ENTRY ulinks;		/* Links in-use list. */
 	SH_LIST_HEAD(_held) heldby;	/* Locks held by this locker. */
-	db_timeval_t	lk_expire;	/* When current lock expires. */
-	db_timeval_t	tx_expire;	/* When this txn expires. */
+	db_timespec	lk_expire;	/* When current lock expires. */
+	db_timespec	tx_expire;	/* When this txn expires. */
 	db_timeout_t	lk_timeout;	/* How long do we let locks live. */
 
 #define	DB_LOCKER_DELETED	0x0001

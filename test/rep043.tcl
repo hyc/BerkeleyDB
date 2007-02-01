@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2005,2006 Oracle.  All rights reserved.
 #
-# $Id: rep043.tcl,v 1.11 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep043.tcl,v 1.12 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep043
 # TEST
@@ -59,8 +59,14 @@ proc rep043 { method { rotations 25 } { tnum "043" } args } {
 }
 
 proc rep043_sub { method rotations tnum logset recargs largs } {
-	global testdir
 	source ./include.tcl
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -97,43 +103,25 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -errpfx ENV0 -errfile /dev/stderr \
+	    $m_logargs -errpfx ENV0 -errfile /dev/stderr $verbargs \
 	    -cachesize {0 4194304 3} -lock_detect default \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -lock_detect default \
-#	    -cachesize {0 4194304 3} \
-#	    -errpfx ENV0 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set env0 [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $env0] TRUE
 
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -errpfx ENV1 -errfile /dev/stderr \
+	    $c_logargs -errpfx ENV1 -errfile /dev/stderr $verbargs \
 	    -cachesize {0 2097152 2} -lock_detect default \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -lock_detect default \
-#	    -cachesize {0 2097152 2} \
-#	    -errpfx ENV1 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set env1 [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $env1] TRUE
 
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -errpfx ENV2 -errfile /dev/stderr \
+	    $c2_logargs -errpfx ENV2 -errfile /dev/stderr $verbargs \
 	    -cachesize {0 1048576 1} -lock_detect default \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
-#	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-#	    $c2_logargs -lock_detect default \
-#	    -cachesize {0 1048576 1} \
-#	    -errpfx ENV2 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set env2 [eval $cl2_envcmd $recargs -rep_client]
-	error_check_good client_env2 [is_valid_env $env2] TRUE
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$env0 1} {$env1 2} {$env2 3}"

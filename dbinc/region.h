@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1998,2006 Oracle.  All rights reserved.
  *
- * $Id: region.h,v 12.11 2006/11/01 00:52:41 bostic Exp $
+ * $Id: region.h,v 12.12 2006/11/16 16:44:54 bostic Exp $
  */
 
 #ifndef _DB_REGION_H_
@@ -225,12 +225,12 @@ typedef struct __db_region {
 /*
  * Per-process/per-attachment information about a single region.
  */
-struct __db_reginfo_t {		/* __db_r_attach IN parameters. */
+struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 	DB_ENV	   *dbenv;		/* Enclosing environment. */
 	reg_type_t  type;		/* Region type. */
 	u_int32_t   id;			/* Region id. */
 
-				/* __db_r_attach OUT parameters. */
+				/* env_region_attach OUT parameters. */
 	REGION	   *rp;			/* Shared region. */
 
 	char	   *name;		/* Region file name. */

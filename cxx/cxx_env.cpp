@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: cxx_env.cpp,v 12.34 2006/11/01 00:52:27 bostic Exp $
+ * $Id: cxx_env.cpp,v 12.35 2006/11/29 20:08:39 bostic Exp $
  */
 
 #include "db_config.h"
@@ -741,9 +741,9 @@ DBENV_METHOD(get_lk_max_objects, (u_int32_t *max_objectsp),
 DBENV_METHOD(set_lk_max_objects, (u_int32_t max_objects), (dbenv, max_objects))
 DBENV_METHOD(get_mp_max_openfd, (int *maxopenfdp), (dbenv, maxopenfdp))
 DBENV_METHOD(set_mp_max_openfd, (int maxopenfd), (dbenv, maxopenfd))
-DBENV_METHOD(get_mp_max_write, (int *maxwritep, int *maxwrite_sleepp),
+DBENV_METHOD(get_mp_max_write, (int *maxwritep, db_timeout_t *maxwrite_sleepp),
     (dbenv, maxwritep, maxwrite_sleepp))
-DBENV_METHOD(set_mp_max_write, (int maxwrite, int maxwrite_sleep),
+DBENV_METHOD(set_mp_max_write, (int maxwrite, db_timeout_t maxwrite_sleep),
     (dbenv, maxwrite, maxwrite_sleep))
 DBENV_METHOD(get_mp_mmapsize, (size_t *mmapsizep), (dbenv, mmapsizep))
 DBENV_METHOD(set_mp_mmapsize, (size_t mmapsize), (dbenv, mmapsize))

@@ -1212,6 +1212,14 @@ rep068
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep070
+	Test of internal initialization and startup_done event.
+
+	Get a client into internal init. 
+	Do not do any additional updates on the master and make
+	sure that the client gets the startup_done event.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rpc001
 	Test RPC server timeouts for cursor, txn and env handles.
 
@@ -2303,12 +2311,16 @@ test092
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test093
-	Test using set_bt_compare.
+	Test set_bt_compare (btree key comparison function) and
+	set_h_compare (hash key comparison function). 
 
-	Use the first 10,000 entries from the dictionary.
-	Insert each with self as key and data; retrieve each.
-	After all are entered, retrieve all; compare output to original.
-	Close file, reopen, do retrieve and re-verify.
+	Open a database with a comparison function specified, 
+	populate, and close, saving a list with that key order as
+	we do so.  Reopen and read in the keys, saving in another
+	list; the keys should be in the order specified by the 
+	comparison function.  Sort the original saved list of keys 
+	using the comparison function, and verify that it matches
+	the keys as read out of the database.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test094
@@ -2573,3 +2585,21 @@ txn013
 	Test of txns used in the wrong environment.
 	Set up two envs.  Start a txn in one env, and attempt to use it
 	in the other env.  Verify we get the appropriate error message.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+txn014
+	Test of parent and child txns working on the same database.
+	A txn that will become a parent create a database. 
+	A txn that will not become a parent creates another database. 
+	Start a child txn of the 1st txn.
+	Verify that the parent txn is disabled while child is open. 
+	1. Child reads contents with child handle (should succeed).
+	2. Child reads contents with parent handle (should succeed).
+	Verify that the non-parent txn can read from its database, 
+	and that the child txn cannot.
+	Return to the child txn. 
+	3. Child writes with child handle (should succeed).
+	4. Child writes with parent handle (should succeed).
+
+	Commit the child, verify that the parent can write again.
+	Check contents of database with a second child.

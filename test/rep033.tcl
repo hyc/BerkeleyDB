@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep033.tcl,v 12.12 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep033.tcl,v 12.13 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep033
 # TEST	Test of internal initialization with rename and remove of dbs.
@@ -48,7 +48,13 @@ proc rep033 { method { niter 200 } { tnum "033" } args } {
 proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -71,25 +77,17 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
 	    -log_buffer $log_buf -log_max $log_max $envargs \
+	    -errpfx MASTER $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -log_buffer $log_buf -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
 	    -log_buffer $log_buf -log_max $log_max $envargs \
+	    -errpfx CLIENT $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -log_buffer $log_buf -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -97,10 +95,10 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 
 	puts "\tRep$tnum.a: Create several databases on master."
 	set oflags " -env $masterenv $method -create -auto_commit "
-	set dbw [eval {berkdb_open} $oflags $largs w.db]
-	set dbx [eval {berkdb_open} $oflags $largs x.db]
-	set dby [eval {berkdb_open} $oflags $largs y.db]
-	set dbz [eval {berkdb_open} $oflags $largs z.db]
+	set dbw [eval {berkdb_open_noerr} $oflags $largs w.db]
+	set dbx [eval {berkdb_open_noerr} $oflags $largs x.db]
+	set dby [eval {berkdb_open_noerr} $oflags $largs y.db]
+	set dbz [eval {berkdb_open_noerr} $oflags $largs z.db]
 	error_check_good dbw_close [$dbw close] 0
 	error_check_good dbx_close [$dbx close] 0
 	error_check_good dby_close [$dby close] 0
@@ -124,8 +122,8 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	# rep_test an existing handle.
 	#
 	puts "\tRep$tnum.c: Create new databases.  Populate with rep_test."
-	set dba [eval {berkdb_open} $oflags $largs a.db]
-	set dbb [eval {berkdb_open} $oflags $largs b.db]
+	set dba [eval {berkdb_open_noerr} $oflags $largs a.db]
+	set dbb [eval {berkdb_open_noerr} $oflags $largs b.db]
 	eval rep_test $method $masterenv $dba $niter 0 0 0 0 $largs
 	eval rep_test $method $masterenv $dbb $niter 0 0 0 0 $largs
 	error_check_good dba_close [$dba close] 0
@@ -180,8 +178,10 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	#
 	set dbnames "x.db w.db c.db"
 	foreach db $dbnames {
-		set db1 [eval {berkdb_open -env $masterenv} $largs {-rdonly $db}]
-		set db2 [eval {berkdb_open -env $clientenv} $largs {-rdonly $db}]
+		set db1 [eval \
+		    {berkdb_open_noerr -env $masterenv} $largs {-rdonly $db}]
+		set db2 [eval \
+		    {berkdb_open_noerr -env $clientenv} $largs {-rdonly $db}]
 
 		error_check_good compare:$db [db_compare \
 		    $db1 $db2 $masterdir/$db $clientdir/$db] 0

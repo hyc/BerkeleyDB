@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_rec.c,v 12.21 2006/11/01 00:53:44 bostic Exp $
+ * $Id: qam_rec.c,v 12.23 2006/12/27 21:26:04 margo Exp $
  */
 
 #include "db_config.h"
@@ -25,14 +25,10 @@
  * transaction may be completed during a later hot backup cycle.
  */
 
-/* Determine if we are restoring prepared transactions from __txn_recover. */
-#define	IS_IN_RESTORE(dbenv)						\
-	(((DB_TXNREGION *)						\
-	     (dbenv)->tx_handle->reginfo.primary)->stat.st_nrestores != 0)
-
 /* Queue version of REC_DIRTY -- needs to probe the correct file. */
 #define	QAM_DIRTY(dbp, pgno, pagep)					\
-	if ((ret = __qam_dirty((dbp), pgno, pagep, NULL, 0)) != 0) {	\
+	if ((ret = __qam_dirty((dbp),					\
+	    pgno, pagep, NULL, (dbp)->priority)) != 0) {		\
 		ret = __db_pgerr((dbp), (pgno), ret);			\
 		goto out;						\
 	}
@@ -98,7 +94,7 @@ __qam_incfirst_recover(dbenv, dbtp, lsnp, op, info)
 	 */
 	if (DB_UNDO(op)) {
 		if (QAM_BEFORE_FIRST(meta, argp->recno)) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			meta->first_recno = argp->recno;
 		}
 
@@ -106,12 +102,12 @@ __qam_incfirst_recover(dbenv, dbtp, lsnp, op, info)
 		/* if we are truncating, update the LSN */
 		if (!IS_ZERO_LSN(trunc_lsn) &&
 		    LOG_COMPARE(&LSN(meta), &trunc_lsn) > 0) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			LSN(meta) = trunc_lsn;
 		}
 	} else {
 		if (LOG_COMPARE(&LSN(meta), lsnp) < 0) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			LSN(meta) = *lsnp;
 		}
 		if (meta->page_ext == 0)
@@ -126,8 +122,8 @@ __qam_incfirst_recover(dbenv, dbtp, lsnp, op, info)
 			if ((ret = __qam_position(dbc,
 			    &meta->first_recno, DB_LOCK_READ, 0, &exact)) != 0)
 				goto err;
-			if (cp->page != NULL && (ret =
-			    __qam_fput(file_dbp, cp->pgno, cp->page, 0)) != 0)
+			if (cp->page != NULL && (ret = __qam_fput(file_dbp,
+			    cp->pgno, cp->page, dbc->priority)) != 0)
 				goto err;
 
 			if (exact == 1)
@@ -137,14 +133,14 @@ __qam_incfirst_recover(dbenv, dbtp, lsnp, op, info)
 				if ((ret =
 				    __qam_fremove(file_dbp, cp->pgno)) != 0)
 					goto err;
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			meta->first_recno++;
 			if (meta->first_recno == RECNO_OOB)
 				meta->first_recno++;
 		}
 	}
 
-	ret = __memp_fput(mpf, meta, 0);
+	ret = __memp_fput(mpf, meta, dbc->priority);
 	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (ret != 0)
@@ -154,7 +150,7 @@ done:	*lsnp = argp->prev_lsn;
 	ret = 0;
 
 	if (0) {
-err:		(void)__memp_fput(mpf, meta, 0);
+err:		(void)__memp_fput(mpf, meta, dbc->priority);
 		(void)__LPUT(dbc, lock);
 	}
 
@@ -227,7 +223,7 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 	 */
 	if (DB_UNDO(op)) {
 		if ((argp->opcode & QAM_TRUNCATE) && cmp_n <= 0) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			meta->first_recno = argp->old_first;
 			meta->cur_recno = argp->old_cur;
 			LSN(meta) = argp->metalsn;
@@ -236,11 +232,11 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 		trunc_lsn = ((DB_TXNHEAD *)info)->trunc_lsn;
 		if (!IS_ZERO_LSN(trunc_lsn) &&
 		    LOG_COMPARE(&trunc_lsn, &LSN(meta)) < 0) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			LSN(meta) = argp->metalsn;
 		}
 	} else if (op == DB_TXN_APPLY || cmp_p == 0) {
-		REC_DIRTY(mpf, &meta);
+		REC_DIRTY(mpf, dbc->priority, &meta);
 		cp = (QUEUE_CURSOR *)dbc->internal;
 		if ((argp->opcode & QAM_SETFIRST) &&
 		    meta->first_recno == argp->old_first) {
@@ -255,7 +251,7 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 					meta->first_recno = argp->new_first;
 				if (cp->page != NULL &&
 				    (ret = __qam_fput(file_dbp,
-				    cp->pgno, cp->page, 0)) != 0)
+				    cp->pgno, cp->page, dbc->priority)) != 0)
 					goto err;
 			}
 		}
@@ -272,7 +268,7 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 					meta->cur_recno = argp->new_cur;
 				if (cp->page != NULL &&
 				    (ret = __qam_fput(file_dbp,
-				    cp->pgno, cp->page, 0)) != 0)
+				    cp->pgno, cp->page, dbc->priority)) != 0)
 					goto err;
 			}
 		}
@@ -280,7 +276,7 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 		meta->dbmeta.lsn = *lsnp;
 	}
 
-	if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+	if ((ret = __memp_fput(mpf, meta, dbc->priority)) != 0)
 		goto out;
 
 	if ((ret = __LPUT(dbc, lock)) != 0)
@@ -290,7 +286,7 @@ done:	*lsnp = argp->prev_lsn;
 	ret = 0;
 
 	if (0) {
-err:		(void)__memp_fput(mpf, meta, 0);
+err:		(void)__memp_fput(mpf, meta, dbc->priority);
 		(void)__LPUT(dbc, lock);
 	}
 
@@ -357,11 +353,11 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 		    (meta->first_recno <= meta->cur_recno ||
 		    meta->first_recno -
 		    argp->recno < argp->recno - meta->cur_recno))) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			meta->first_recno = argp->recno;
-			ret = __memp_fput(mpf, meta, 0);
+			ret = __memp_fput(mpf, meta, dbc->priority);
 		} else
-			ret = __memp_fput(mpf, meta, 0);
+			ret = __memp_fput(mpf, meta, dbc->priority);
 		if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
@@ -374,17 +370,12 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 
 		/*
 		 * Move the LSN back to this point;  do not move it forward.
-		 * Only move it back if we're in recovery.  If we're in
-		 * an abort, because we don't hold a page lock, we could
-		 * foul up a concurrent put.  Having too late an LSN
-		 * is harmless in queue except when we're determining
+		 * If we're in an abort, because we don't hold a page lock,
+		 * we could foul up a concurrent put.  Having too late an
+		 * LSN * is harmless in queue except when we're determining
 		 * what we need to roll forward during recovery.  [#2588]
-		 * If we are aborting a restored transaction then it
-		 * might get rolled forward later so the LSN needs to
-		 * be correct in that case too. [#12181]
 		 */
-		if (cmp_n <= 0 &&
-		      (op == DB_TXN_BACKWARD_ROLL || IS_IN_RESTORE(dbenv)))
+		if (cmp_n <= 0 && op == DB_TXN_BACKWARD_ROLL)
 			LSN(pagep) = argp->lsn;
 	} else if (op == DB_TXN_APPLY || (cmp_n > 0 && DB_REDO(op))) {
 		/* Need to redo delete - clear the valid bit */
@@ -400,14 +391,14 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 		if (op == DB_TXN_APPLY)
 			LSN(pagep) = *lsnp;
 	}
-	if ((ret = __qam_fput(file_dbp, argp->pgno, pagep, 0)) != 0)
+	if ((ret = __qam_fput(file_dbp, argp->pgno, pagep, dbc->priority)) != 0)
 		goto out;
 
 done:	*lsnp = argp->prev_lsn;
 	ret = 0;
 
 	if (0) {
-err:		(void)__qam_fput(file_dbp, argp->pgno, pagep, 0);
+err:		(void)__qam_fput(file_dbp, argp->pgno, pagep, dbc->priority);
 	}
 out:	REC_CLOSE;
 }
@@ -479,9 +470,9 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 		    meta->first_recno -
 		    argp->recno < argp->recno - meta->cur_recno))) {
 			meta->first_recno = argp->recno;
-			ret = __memp_fput(mpf, meta, 0);
+			ret = __memp_fput(mpf, meta, dbc->priority);
 		} else
-			ret = __memp_fput(mpf, meta, 0);
+			ret = __memp_fput(mpf, meta, dbc->priority);
 		if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
@@ -494,14 +485,12 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 
 		/*
 		 * Move the LSN back to this point;  do not move it forward.
-		 * Only move it back if we're in recovery.  If we're in
-		 * an abort, because we don't hold a page lock, we could
-		 * foul up a concurrent put.  Having too late an LSN
-		 * is harmless in queue except when we're determining
+		 * If we're in an abort, because we don't hold a page lock,
+		 * we could foul up a concurrent put.  Having too late an
+		 * LSN is harmless in queue except when we're determining
 		 * what we need to roll forward during recovery.  [#2588]
 		 */
-		if (cmp_n <= 0 &&
-		      (op == DB_TXN_BACKWARD_ROLL || IS_IN_RESTORE(dbenv)))
+		if (cmp_n <= 0 && op == DB_TXN_BACKWARD_ROLL)
 			LSN(pagep) = argp->lsn;
 	} else if (op == DB_TXN_APPLY || (cmp_n > 0 && DB_REDO(op))) {
 		QAM_DIRTY(file_dbp, pagep->pgno, &pagep);
@@ -517,14 +506,14 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 		if (op == DB_TXN_APPLY)
 			LSN(pagep) = *lsnp;
 	}
-	if ((ret = __qam_fput(file_dbp, argp->pgno, pagep, 0)) != 0)
+	if ((ret = __qam_fput(file_dbp, argp->pgno, pagep, dbc->priority)) != 0)
 		goto out;
 
 done:	*lsnp = argp->prev_lsn;
 	ret = 0;
 
 	if (0) {
-err:		(void)__qam_fput(file_dbp, argp->pgno, pagep, 0);
+err:		(void)__qam_fput(file_dbp, argp->pgno, pagep, dbc->priority);
 	}
 out:	REC_CLOSE;
 }
@@ -585,15 +574,15 @@ __qam_add_recover(dbenv, dbtp, lsnp, op, info)
 		    0, &meta)) != 0)
 			goto err;
 		if (QAM_BEFORE_FIRST(meta, argp->recno)) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			meta->first_recno = argp->recno;
 		}
 		if (argp->recno == meta->cur_recno ||
 		    QAM_AFTER_CURRENT(meta, argp->recno)) {
-			REC_DIRTY(mpf, &meta);
+			REC_DIRTY(mpf, dbc->priority, &meta);
 			meta->cur_recno = argp->recno + 1;
 		}
-		if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+		if ((ret = __memp_fput(mpf, meta, dbc->priority)) != 0)
 			goto err;
 
 		/* Now update the actual page if necessary. */
@@ -637,26 +626,23 @@ __qam_add_recover(dbenv, dbtp, lsnp, op, info)
 
 		/*
 		 * Move the LSN back to this point;  do not move it forward.
-		 * Only move it back if we're in recovery.  If we're in
-		 * an abort, because we don't hold a page lock, we could
-		 * foul up a concurrent put.  Having too late an LSN
-		 * is harmless in queue except when we're determining
+		 * If we're in an abort, because we don't hold a page lock,
+		 * we could foul up a concurrent put.  Having too late an
+		 * LSN is harmless in queue except when we're determining
 		 * what we need to roll forward during recovery.  [#2588]
 		 */
-		if (cmp_n <= 0 &&
-		      (op == DB_TXN_BACKWARD_ROLL || IS_IN_RESTORE(dbenv)))
+		if (cmp_n <= 0 && op == DB_TXN_BACKWARD_ROLL)
 			LSN(pagep) = argp->lsn;
 	}
 
-	if ((ret = __qam_fput(file_dbp,
-	    argp->pgno, pagep, 0)) != 0)
+	if ((ret = __qam_fput(file_dbp, argp->pgno, pagep, dbc->priority)) != 0)
 		goto out;
 
 done:	*lsnp = argp->prev_lsn;
 	ret = 0;
 
 	if (0) {
-err:		(void)__qam_fput(file_dbp, argp->pgno, pagep, 0);
+err:		(void)__qam_fput(file_dbp, argp->pgno, pagep, dbc->priority);
 	}
 
 out:	REC_CLOSE;

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep066.tcl,v 12.6 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep066.tcl,v 12.7 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep066
 # TEST	Replication and dead log handles.
@@ -55,7 +55,13 @@ proc rep066 { method { niter 10 } { tnum "066" } args } {
 
 proc rep066_sub { method niter tnum logset recargs largs } {
 	global testdir
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -86,29 +92,18 @@ proc rep066_sub { method niter tnum logset recargs largs } {
 	# Later we'll open a 2nd handle to this env.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -errpfx ENV0 -log_max $log_max \
+	    $m_logargs -errpfx ENV0 -log_max $log_max $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max \
-#	    -errpfx ENV0 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set env0 [eval $ma_envcmd $recargs -rep_master]
 	set masterenv $env0
-	error_check_good master_env [is_valid_env $env0] TRUE
 
 	# Open a client.
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -errpfx ENV1 -log_max $log_max \
+	    $c_logargs -errpfx ENV1 -log_max $log_max $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max \
-#	    -errpfx ENV1 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set env1 [eval $cl_envcmd $recargs -rep_client]
 	set clientenv $env1
-	error_check_good client_env [is_valid_env $env1] TRUE
-
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$env0 1} {$env1 2}"
@@ -145,8 +140,8 @@ proc rep066_sub { method niter tnum logset recargs largs } {
 	set omethod [convert_method $method]
 	set txn [$masterenv txn]
 	error_check_good txn [is_valid_txn $txn $masterenv] TRUE
-	set db [eval {berkdb_open_noerr -env $masterenv -txn $txn \
-	    -create -mode 0644} $largs $omethod $testfile2]
+	set db [eval {berkdb_open_noerr -env $masterenv -errpfx MASTER \
+	    -txn $txn -create -mode 0644} $largs $omethod $testfile2]
 	error_check_good dbopen [is_valid_db $db] TRUE
 
 	# Flush on the 2nd handle
@@ -198,8 +193,8 @@ proc rep066_sub { method niter tnum logset recargs largs } {
 	puts "\tRep$tnum.f: Create some log records."
 	set txn [$masterenv txn]
 	error_check_good txn [is_valid_txn $txn $masterenv] TRUE
-	set db [eval {berkdb_open_noerr -env $masterenv -txn $txn \
-	    -create -mode 0644} $largs $omethod $testfile2]
+	set db [eval {berkdb_open_noerr -env $masterenv -errpfx MASTER \
+	    -txn $txn -create -mode 0644} $largs $omethod $testfile2]
 	error_check_good dbopen [is_valid_db $db] TRUE
 
 	process_msgs $envlist

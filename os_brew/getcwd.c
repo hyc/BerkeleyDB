@@ -4,7 +4,7 @@
  * Copyright (c) 2006
  *	Oracle Corp.  All rights reserved.
  *
- * $Id: getcwd.c,v 1.2 2006/11/09 14:33:42 bostic Exp $
+ * $Id: getcwd.c,v 1.3 2007/02/01 13:15:31 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,7 +21,7 @@ getcwd(buf, size)
 {
 	IFileMgr *pIFileMgr;
 	int ret;
-#ifndef AEE_SIMULATOR
+#ifndef HAVE_BREW_SDK2
 	int outlen;
 #endif
 
@@ -56,5 +56,7 @@ getcwd(buf, size)
 		return (buf);
 
 	__os_set_errno(ret);
+
+	COMPQUIET(size, 0);
 	return (NULL);
 }

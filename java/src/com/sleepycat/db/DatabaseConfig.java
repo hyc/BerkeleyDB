@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: DatabaseConfig.java,v 12.7 2006/11/01 00:53:29 bostic Exp $
+ * $Id: DatabaseConfig.java,v 12.8 2006/11/14 03:32:34 alexg Exp $
  */
 
 package com.sleepycat.db;
@@ -73,6 +73,7 @@ public class DatabaseConfig implements Cloneable {
     private FeedbackHandler feedbackHandler = null;
     private ErrorHandler errorHandler = null;
     private MessageHandler messageHandler = null;
+    private java.util.Comparator hashComparator = null;
     private Hasher hasher = null;
     private RecordNumberAppender recnoAppender = null;
     private PanicHandler panicHandler = null;
@@ -230,6 +231,14 @@ public class DatabaseConfig implements Cloneable {
 
     public int getHashFillFactor() {
         return hashFillFactor;
+    }
+
+    public void setHashComparator(final java.util.Comparator hashComparator) {
+        this.hashComparator = hashComparator;
+    }
+
+    public java.util.Comparator getHashComparator() {
+        return hashComparator;
     }
 
     public void setHasher(final Hasher hasher) {
@@ -572,6 +581,8 @@ public class DatabaseConfig implements Cloneable {
             db.set_feedback(feedbackHandler);
         if (errorHandler != oldConfig.errorHandler)
             db.set_errcall(errorHandler);
+        if (hashComparator != oldConfig.hashComparator)
+            db.set_h_compare(hashComparator);
         if (hasher != oldConfig.hasher)
             db.set_h_hash(hasher);
         if (messageHandler != oldConfig.messageHandler)
@@ -644,6 +655,7 @@ public class DatabaseConfig implements Cloneable {
         duplicateComparator = db.get_dup_compare();
         feedbackHandler = db.get_feedback();
         errorHandler = db.get_errcall();
+        hashComparator = db.get_h_compare();
         hasher = db.get_h_hash();
         messageHandler = db.get_msgcall();
         recnoAppender = db.get_append_recno();

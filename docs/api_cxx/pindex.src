@@ -73,7 +73,6 @@ __APIREL__/api_cxx/db_stat.html__OCT__DB_READ_COMMITTED Db::stat@DB_READ_COMMITT
 __APIREL__/api_cxx/db_stat.html__OCT__DB_READ_UNCOMMITTED Db::stat@DB_READ_UNCOMMITTED
 __APIREL__/api_cxx/db_stat.html__OCT__DB_FAST_STAT Db::stat@DB_FAST_STAT
 __APIREL__/api_cxx/db_stat.html__OCT__DB_STAT_ALL Db::stat@DB_STAT_ALL
-__APIREL__/api_cxx/db_stat.html__OCT__DB_STAT_CLEAR Db::stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/db_upgrade.html__OCT__DB_DUPSORT Db::upgrade@DB_DUPSORT
 __APIREL__/api_cxx/db_upgrade.html__OCT__DB_OLD_VERSION Db::upgrade@DB_OLD_VERSION
 __APIREL__/api_cxx/db_verify.html__OCT__2 @DB_VERIFY_BAD
@@ -123,6 +122,7 @@ __APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_PANIC DbEnv::set_event_n
 __APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_REP_CLIENT DbEnv::set_event_notify@DB_EVENT_REP_CLIENT
 __APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_REP_MASTER DbEnv::set_event_notify@DB_EVENT_REP_MASTER
 __APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_REP_NEWMASTER DbEnv::set_event_notify@DB_EVENT_REP_NEWMASTER
+__APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_REP_PERM_FAILED DbEnv::set_event_notify@DB_EVENT_REP_PERM_FAILED
 __APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_REP_STARTUPDONE DbEnv::set_event_notify@DB_EVENT_REP_STARTUPDONE
 __APIREL__/api_cxx/env_event_notify.html__OCT__DB_EVENT_WRITE_FAILED DbEnv::set_event_notify@DB_EVENT_WRITE_FAILED
 __APIREL__/api_cxx/env_open.html__OCT__DB_INIT_CDB DbEnv::open@DB_INIT_CDB
@@ -234,6 +234,7 @@ __APIREL__/api_cxx/lock_detect.html__OCT__DB_LOCK_YOUNGEST DbEnv::lock_detect@DB
 __APIREL__/api_cxx/lock_get.html__OCT__DB_LOCK_NOWAIT DbEnv::lock_get@DB_LOCK_NOWAIT
 __APIREL__/api_cxx/lock_stat.html__OCT__DB_STAT_CLEAR DbEnv::lock_stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/lock_stat.html__OCT__DB_STAT_ALL DbEnv::lock_stat@DB_STAT_ALL
+__APIREL__/api_cxx/lock_stat.html__OCT__DB_STAT_CLEAR DbEnv::lock_stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/lock_stat.html__OCT__DB_STAT_LOCK_CONF DbEnv::lock_stat@DB_STAT_LOCK_CONF
 __APIREL__/api_cxx/lock_stat.html__OCT__DB_STAT_LOCK_LOCKERS DbEnv::lock_stat@DB_STAT_LOCK_LOCKERS
 __APIREL__/api_cxx/lock_stat.html__OCT__DB_STAT_LOCK_OBJECTS DbEnv::lock_stat@DB_STAT_LOCK_OBJECTS
@@ -281,8 +282,12 @@ __APIREL__/api_cxx/memp_fopen.html__OCT__DB_MULTIVERSION DbMpoolFile::open@DB_MU
 __APIREL__/api_cxx/memp_fopen.html__OCT__DB_NOMMAP DbMpoolFile::open@DB_NOMMAP
 __APIREL__/api_cxx/memp_fopen.html__OCT__DB_ODDFILESIZE DbMpoolFile::open@DB_ODDFILESIZE
 __APIREL__/api_cxx/memp_fopen.html__OCT__DB_RDONLY DbMpoolFile::open@DB_RDONLY
-__APIREL__/api_cxx/memp_fput.html__OCT__DB_MPOOL_DISCARD DbMpoolFile::put@DB_MPOOL_DISCARD
-__APIREL__/api_cxx/memp_fset.html__OCT__DB_MPOOL_DISCARD DbMpoolFile::set@DB_MPOOL_DISCARD
+__APIREL__/api_cxx/memp_fput.html__OCT__DB_PRIORITY_UNCHANGED DbMpoolFile::put@DB_PRIORITY_UNCHANGED
+__APIREL__/api_cxx/memp_fput.html__OCT__DB_PRIORITY_VERY_LOW DbMpoolFile::put@DB_PRIORITY_VERY_LOW
+__APIREL__/api_cxx/memp_fput.html__OCT__DB_PRIORITY_LOW DbMpoolFile::put@DB_PRIORITY_LOW
+__APIREL__/api_cxx/memp_fput.html__OCT__DB_PRIORITY_DEFAULT DbMpoolFile::put@DB_PRIORITY_DEFAULT
+__APIREL__/api_cxx/memp_fput.html__OCT__DB_PRIORITY_HIGH DbMpoolFile::put@DB_PRIORITY_HIGH
+__APIREL__/api_cxx/memp_fput.html__OCT__DB_PRIORITY_VERY_HIGH DbMpoolFile::put@DB_PRIORITY_VERY_HIGH
 __APIREL__/api_cxx/memp_set_flags.html__OCT__DB_MPOOL_NOFILE DbMpoolFile::set_flags@DB_MPOOL_NOFILE
 __APIREL__/api_cxx/memp_set_flags.html__OCT__DB_MPOOL_UNLINK DbMpoolFile::set_flags@DB_MPOOL_UNLINK
 __APIREL__/api_cxx/memp_set_priority.html__OCT__DB_PRIORITY_VERY_LOW DbMpoolFile::set_priority@DB_PRIORITY_VERY_LOW
@@ -291,8 +296,8 @@ __APIREL__/api_cxx/memp_set_priority.html__OCT__DB_PRIORITY_DEFAULT DbMpoolFile:
 __APIREL__/api_cxx/memp_set_priority.html__OCT__DB_PRIORITY_HIGH DbMpoolFile::set_priority@DB_PRIORITY_HIGH
 __APIREL__/api_cxx/memp_set_priority.html__OCT__DB_PRIORITY_VERY_HIGH DbMpoolFile::set_priority@DB_PRIORITY_VERY_HIGH
 __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_CLEAR DbEnv::memp_stat@DB_STAT_CLEAR
-__APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_CLEAR DbEnv::memp_stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_ALL DbEnv::memp_stat@DB_STAT_ALL
+__APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_CLEAR DbEnv::memp_stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/memp_stat.html__OCT__DB_STAT_MEMP_HASH DbEnv::memp_stat@DB_STAT_MEMP_HASH
 __APIREL__/api_cxx/memp_class.html__OCT__2 @DB_BUFFER_SMALL
 __APIREL__/api_cxx/mutex_alloc.html__OCT__DB_MUTEX_PROCESS_ONLY DbEnv::mutex_alloc@DB_MUTEX_PROCESS_ONLY
@@ -319,9 +324,10 @@ __APIREL__/api_cxx/rep_stat.html__OCT__DB_STAT_CLEAR DbEnv::rep_stat@DB_STAT_CLE
 __APIREL__/api_cxx/rep_stat.html__OCT__DB_STAT_ALL DbEnv::rep_stat@DB_STAT_ALL
 __APIREL__/api_cxx/rep_stat.html__OCT__DB_STAT_CLEAR DbEnv::rep_stat@DB_STAT_CLEAR
 __APIREL__/api_cxx/rep_timeout.html__OCT__DB_REP_ACK_TIMEOUT DbEnv::rep_set_timeout@DB_REP_ACK_TIMEOUT
+__APIREL__/api_cxx/rep_timeout.html__OCT__DB_REP_CONNECTION_RETRY DbEnv::rep_set_timeout@DB_REP_CONNECTION_RETRY
 __APIREL__/api_cxx/rep_timeout.html__OCT__DB_REP_ELECTION_TIMEOUT DbEnv::rep_set_timeout@DB_REP_ELECTION_TIMEOUT
 __APIREL__/api_cxx/rep_timeout.html__OCT__DB_REP_ELECTION_RETRY DbEnv::rep_set_timeout@DB_REP_ELECTION_RETRY
-__APIREL__/api_cxx/rep_timeout.html__OCT__DB_REP_CONNECTION_RETRY DbEnv::rep_set_timeout@DB_REP_CONNECTION_RETRY
+__APIREL__/api_cxx/rep_timeout.html__OCT__DB_REP_FULL_ELECTION_TIMEOUT DbEnv::rep_set_timeout@DB_REP_FULL_ELECTION_TIMEOUT
 __APIREL__/api_cxx/rep_transport.html__OCT__2 @DB_EID_BROADCAST
 __APIREL__/api_cxx/rep_transport.html__OCT__DB_REP_ANYWHERE DbEnv::rep_set_transport@DB_REP_ANYWHERE
 __APIREL__/api_cxx/rep_transport.html__OCT__DB_REP_NOBUFFER DbEnv::rep_set_transport@DB_REP_NOBUFFER
@@ -339,7 +345,6 @@ __APIREL__/api_cxx/repmgr_site_list.html__OCT__DB_REPMGR_DISCONNECTED DbEnv::rep
 __APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_MASTER DbEnv::repmgr_start@DB_REP_MASTER
 __APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_CLIENT DbEnv::repmgr_start@DB_REP_CLIENT
 __APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_ELECTION DbEnv::repmgr_start@DB_REP_ELECTION
-__APIREL__/api_cxx/repmgr_start.html__OCT__DB_REP_FULL_ELECTION DbEnv::repmgr_start@DB_REP_FULL_ELECTION
 __APIREL__/api_cxx/seq_get.html__OCT__DB_TXN_NOSYNC DbSequence::get@DB_TXN_NOSYNC
 __APIREL__/api_cxx/seq_open.html__OCT__DB_CREATE DbSequence::open@DB_CREATE
 __APIREL__/api_cxx/seq_open.html__OCT__DB_EXCL DbSequence::open@DB_EXCL
@@ -359,6 +364,7 @@ __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_SNAPSHOT DbEnv::txn_begin@DB_TXN_
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_LOCK_DEADLOCK DbEnv::txn_begin@DB_LOCK_DEADLOCK
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_SYNC DbEnv::txn_begin@DB_TXN_SYNC
 __APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_WAIT DbEnv::txn_begin@DB_TXN_WAIT
+__APIREL__/api_cxx/txn_begin.html__OCT__DB_TXN_WRITE_NOSYNC DbEnv::txn_begin@DB_TXN_WRITE_NOSYNC
 __APIREL__/api_cxx/txn_checkpoint.html__OCT__DB_FORCE DbEnv::txn_checkpoint@DB_FORCE
 __APIREL__/api_cxx/txn_commit.html__OCT__DB_TXN_NOSYNC DbTxn::commit@DB_TXN_NOSYNC
 __APIREL__/api_cxx/txn_commit.html__OCT__DB_TXN_SYNC DbTxn::commit@DB_TXN_SYNC

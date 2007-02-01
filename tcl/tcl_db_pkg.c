@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.41 2006/11/08 23:06:58 ubell Exp $
+ * $Id: tcl_db_pkg.c,v 12.44 2006/12/19 19:46:06 sue Exp $
  */
 
 #include "db_config.h"
@@ -963,7 +963,8 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			if (result != TCL_OK)
 				break;
 			_debug_check();
-			ret = (*env)->set_mp_max_write(*env, intarg, intarg2);
+			ret = (*env)->set_mp_max_write(
+			    *env, intarg, (db_timeout_t)intarg2);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "set_mp_max_write");
 			break;
@@ -2897,6 +2898,8 @@ bdb_DbVerify(interp, objc, objv)
 		"-env",
 		"-errfile",
 		"-errpfx",
+		"-noorderchk",
+		"-orderchkonly",
 		"-unref",
 		"--",
 		NULL
@@ -2908,6 +2911,8 @@ bdb_DbVerify(interp, objc, objv)
 		TCL_DBVRFY_ENV,
 		TCL_DBVRFY_ERRFILE,
 		TCL_DBVRFY_ERRPFX,
+		TCL_DBVRFY_NOORDERCHK,
+		TCL_DBVRFY_ORDERCHKONLY,
 		TCL_DBVRFY_UNREF,
 		TCL_DBVRFY_ENDARG
 	};
@@ -2915,14 +2920,15 @@ bdb_DbVerify(interp, objc, objv)
 	DB *dbp;
 	FILE *errf;
 	u_int32_t enc_flag, flags, set_flags;
-	int endarg, i, optindex, result, ret;
-	char *arg, *db, *errpfx, *passwd;
+	int endarg, i, optindex, result, ret, subdblen;
+	char *arg, *db, *errpfx, *passwd, *subdb;
+	u_char *subdbtmp;
 
 	envp = NULL;
 	dbp = NULL;
 	passwd = NULL;
 	result = TCL_OK;
-	db = errpfx = NULL;
+	db = errpfx = subdb = NULL;
 	errf = NULL;
 	flags = endarg = 0;
 	enc_flag = set_flags = 0;
@@ -3026,6 +3032,12 @@ bdb_DbVerify(interp, objc, objv)
 				break;
 			}
 			break;
+		case TCL_DBVRFY_NOORDERCHK:
+			flags |= DB_NOORDERCHK;
+			break;
+		case TCL_DBVRFY_ORDERCHKONLY:
+			flags |= DB_ORDERCHKONLY;
+			break;
 		case TCL_DBVRFY_UNREF:
 			flags |= DB_UNREF;
 			break;
@@ -3047,9 +3059,32 @@ bdb_DbVerify(interp, objc, objv)
 	/*
 	 * The remaining arg is the db filename.
 	 */
-	if (i == (objc - 1))
+	/*
+	 * Any args we have left, (better be 1 or 2 left) are
+	 * file names.  If there is 1, a db name, if 2 a db and subdb name.
+	 */
+	if (i != objc) {
+		/*
+		 * Dbs must be NULL terminated file names, but subdbs can
+		 * be anything.  Use Strings for the db name and byte
+		 * arrays for the subdb.
+		 */
 		db = Tcl_GetStringFromObj(objv[i++], NULL);
-	else {
+		if (strcmp(db, "") == 0)
+			db = NULL;
+		if (i != objc) {
+			subdbtmp =
+			    Tcl_GetByteArrayFromObj(objv[i++], &subdblen);
+			if ((ret = __os_malloc(envp,
+			   (size_t)subdblen + 1, &subdb)) != 0) {
+				Tcl_SetResult(interp, db_strerror(ret),
+				    TCL_STATIC);
+				return (0);
+			}
+			memcpy(subdb, subdbtmp, (size_t)subdblen);
+			subdb[subdblen] = '\0';
+		}
+	} else {
 		Tcl_WrongNumArgs(interp, 2, objv, "?args? filename");
 		result = TCL_ERROR;
 		goto error;
@@ -3080,7 +3115,7 @@ bdb_DbVerify(interp, objc, objv)
 	/*
 	 * The verify method is a destructor, NULL out the dbp.
 	 */
-	ret = dbp->verify(dbp, db, NULL, NULL, flags);
+	ret = dbp->verify(dbp, db, subdb, NULL, flags);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db verify");
 	dbp = NULL;
 error:

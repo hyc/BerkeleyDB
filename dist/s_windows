@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_windows,v 12.23 2006/10/25 00:42:17 bostic Exp $
+#	$Id: s_windows,v 12.24 2007/01/22 06:12:14 alexg Exp $
 #
 # Build Windows include files.
 
@@ -115,6 +115,11 @@ s/@DB_CONST@//
 s/@DB_PROTO1@/#undef __P/
 s/@DB_PROTO2@/#define	__P(protos)	protos/
 ENDOFSEDTEXT
+# The db.h, db_int.h files are identical between Windows and WinCE.
+# This may change in the future, for now have the script copy
+# the headers into the build_wince directory.
+# WinCE does not support the C++ API, so don't need to copy db_cxx.h
+
 (echo "$msgc" &&
     sed -f $s ../dbinc/db.in &&
     cat ../dbinc_auto/ext_prot.in) > $t
@@ -124,6 +129,9 @@ test `egrep '@.*@' $t` && {
 	exit 1
 }
 f=../build_windows/db.h
+cmp $t $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+f=../build_wince/db.h
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 
@@ -155,8 +163,11 @@ test `egrep '@.*@' $t` && {
 f=../build_windows/db_int.h
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+f=../build_wince/db_int.h
+cmp $t $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 
-# Build the Windows db_config.h.
+# Build the Windows and WinCE db_config.h.
 # We don't fail, but we complain if the win_config.in file isn't up-to-date.
 check_config()
 {
@@ -172,6 +183,11 @@ check_config()
 check_config win_config.in
 f=../build_windows/db_config.h
 (echo "$msgc" && sed "s/__EDIT_DB_VERSION__/$DB_VERSION/" win_config.in) > $t
+cmp $t $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+check_config wince_config.in
+f=../build_wince/db_config.h
+(echo "$msgc" && sed "s/__EDIT_DB_VERSION__/$DB_VERSION/" wince_config.in) > $t
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 
@@ -211,5 +227,13 @@ test `egrep '@.*@' $t` && {
 f=../build_windows/clib_port.h
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+f=../build_wince/clib_port.h
+cmp $t $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+
+# Copy in errno.h.
+f=../build_wince/errno.h
+cmp errno.h $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp errno.h $f && chmod 444 $f)
 
 rm -f $s $t

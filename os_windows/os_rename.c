@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_rename.c,v 12.8 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_rename.c,v 12.9 2007/01/22 06:12:20 alexg Exp $
  */
 
 #include "db_config.h"
@@ -41,13 +41,16 @@ __os_rename(dbenv, oldname, newname, silent)
 
 	if (__os_posix_err(ret) == EEXIST) {
 		ret = 0;
+#ifndef DB_WINCE
 		if (__os_is_winnt()) {
 			if (!MoveFileEx(
 			    toldname, tnewname, MOVEFILE_REPLACE_EXISTING))
 				ret = __os_get_syserr();
-		} else {
+		} else
+#endif
+		{
 			/*
-			 * There is no MoveFileEx for Win9x/Me, so we have to
+			 * There is no MoveFileEx for Win9x/Me/CE, so we have to
 			 * do the best we can.  Note that the MoveFile call
 			 * above would have succeeded if oldname and newname
 			 * refer to the same file, so we don't need to check

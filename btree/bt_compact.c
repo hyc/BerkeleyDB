@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_compact.c,v 12.55 2006/11/01 00:51:56 bostic Exp $
+ * $Id: bt_compact.c,v 12.57 2006/12/15 21:10:37 ubell Exp $
  */
 
 #include "db_config.h"
@@ -245,7 +245,7 @@ done:	if (LF_ISSET(DB_FREE_SPACE)) {
 		if (ret == 0 && !LF_ISSET(DB_FREELIST_ONLY) && (t_ret =
 		    __memp_fget(dbp->mpf, &pgno, txn, 0, &meta)) == 0) {
 			done = meta->free == PGNO_INVALID;
-			ret = __memp_fput(dbp->mpf, meta, 0);
+			ret = __memp_fput(dbp->mpf, meta, dbc->priority);
 		}
 
 		if (!done)
@@ -259,8 +259,8 @@ done:	if (LF_ISSET(DB_FREE_SPACE)) {
 		    __memp_fget(dbp->mpf, &pgno, txn, 0, &meta)) == 0) {
 			c_data->compact_pages_truncated =
 			    truncated + last_pgno - meta->last_pgno;
-			if ((t_ret =
-			    __memp_fput(dbp->mpf, meta, 0)) != 0 && ret == 0)
+			if ((t_ret = __memp_fput(
+			    dbp->mpf, meta, dbc->priority)) != 0 && ret == 0)
 				ret = t_ret;
 		} else if (ret == 0)
 			ret = t_ret;
@@ -495,7 +495,7 @@ next:	/*
 		     dbc, &pg, factor, 0, c_data, &pgs_done)) != 0)
 			goto err;
 		npgno = NEXT_PGNO(pg);
-		if ((ret = __memp_fput(dbmp, pg, 0)) != 0)
+		if ((ret = __memp_fput(dbmp, pg, dbc->priority)) != 0)
 			goto err;
 		pg = NULL;
 		/*
@@ -548,7 +548,7 @@ next:	/*
 	/* Release the page so we don't deadlock getting its parent. */
 	if ((ret = __LPUT(dbc, cp->csp->lock)) != 0)
 		goto err;
-	if ((ret = __memp_fput(dbmp, pg, 0)) != 0)
+	if ((ret = __memp_fput(dbmp, pg, dbc->priority)) != 0)
 		goto err;
 	BT_STK_CLR(cp);
 	pg = NULL;
@@ -632,8 +632,8 @@ next:	/*
 			}
 
 		}
-		if ((ret =
-		    __memp_dirty(dbp->mpf, &ncp->csp->page, dbc->txn, 0)) != 0)
+		if ((ret = __memp_dirty(dbp->mpf,
+		    &ncp->csp->page, dbc->txn, dbc->priority, 0)) != 0)
 			goto err;
 		PTRACE(dbc, "SDups", PGNO(ncp->csp->page), start, 0);
 		if (check_dups && (ret = __bam_compact_dups(ndbc,
@@ -670,8 +670,8 @@ next:	/*
 				goto err1;
 		}
 
-		if ((ret =
-		    __memp_dirty(dbp->mpf, &cp->csp->page, dbc->txn, 0)) != 0)
+		if ((ret = __memp_dirty(dbp->mpf,
+		    &cp->csp->page, dbc->txn, dbc->priority, 0)) != 0)
 			goto err1;
 		pg = cp->csp->page;
 		npgno = NEXT_PGNO(pg);
@@ -748,7 +748,7 @@ next:	/*
 			goto next_page;
 
 		if ((ret = __memp_dirty(dbp->mpf, &cp->csp->page,
-		    dbc->txn, 0)) != 0)
+		    dbc->txn, dbc->priority, 0)) != 0)
 			goto err;
 		pg = cp->csp->page;
 
@@ -919,9 +919,11 @@ err:	if (dbc != NULL &&
 			ret = t_ret;
 	}
 
-	if (pg != NULL && (t_ret = __memp_fput(dbmp, pg, 0) != 0) && ret == 0)
+	if (pg != NULL && (t_ret =
+	     __memp_fput(dbmp, pg, dbc->priority) != 0) && ret == 0)
 		ret = t_ret;
-	if (npg != NULL && (t_ret = __memp_fput(dbmp, npg, 0) != 0) && ret == 0)
+	if (npg != NULL && (t_ret =
+	     __memp_fput(dbmp, npg, dbc->priority) != 0) && ret == 0)
 		ret = t_ret;
 
 	*donep = done;
@@ -1212,8 +1214,10 @@ noprefix:
 
 	/* Loop through the records and move them from npg to pg. */
 no_check: is_dup = first_dup = next_dup = 0;
-	if ((ret = __memp_dirty(dbp->mpf, &cp->csp->page, dbc->txn, 0)) != 0 ||
-	    (ret = __memp_dirty(dbp->mpf, &ncp->csp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    &cp->csp->page, dbc->txn, dbc->priority, 0)) != 0 ||
+	    (ret = __memp_dirty(dbp->mpf,
+	    &ncp->csp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 	pg = cp->csp->page;
 	npg = ncp->csp->page;
@@ -1337,8 +1341,10 @@ __bam_merge_pages(dbc, ndbc, c_data)
 	if (nent == 0)
 		goto free;
 
-	if ((ret = __memp_dirty(dbp->mpf, &cp->csp->page, dbc->txn, 0)) != 0 ||
-	    (ret = __memp_dirty(dbp->mpf, &ncp->csp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    &cp->csp->page, dbc->txn, dbc->priority, 0)) != 0 ||
+	    (ret = __memp_dirty(dbp->mpf,
+	    &ncp->csp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 	pg = cp->csp->page;
 	npg = ncp->csp->page;
@@ -1414,7 +1420,7 @@ free:	/*
 			goto err;
 		if (level == LEVEL(npg))
 			level = 0;
-		if ((ret = __memp_fput(dbmp, npg, 0)) != 0)
+		if ((ret = __memp_fput(dbmp, npg, dbc->priority)) != 0)
 			goto err;
 		npg = NULL;
 		if (level != 0) {
@@ -1494,8 +1500,10 @@ __bam_merge_internal(dbc, ndbc, level, c_data, merged)
 	if (npg == pg)
 		goto done;
 
-	if ((ret = __memp_dirty(dbmp, &cp->csp->page, dbc->txn, 0)) != 0 ||
-	    (ret = __memp_dirty(dbmp, &ncp->csp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbmp,
+	    &cp->csp->page, dbc->txn, dbc->priority, 0)) != 0 ||
+	    (ret = __memp_dirty(dbmp,
+	    &ncp->csp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 	pg = cp->csp->page;
 	npg = ncp->csp->page;
@@ -1671,7 +1679,8 @@ fits:	memset(&bi, 0, sizeof(bi));
 	 * anything to them.
 	 */
 	do {
-		if ((ret = __memp_fput(dbmp, nsave_csp->page, 0)) != 0)
+		if ((ret =
+		    __memp_fput(dbmp, nsave_csp->page, dbc->priority)) != 0)
 			goto err;
 		if ((ret = __LPUT(dbc, nsave_csp->lock)) != 0)
 			goto err;
@@ -1705,7 +1714,8 @@ fits:	memset(&bi, 0, sizeof(bi));
 				goto err;
 			if (level == LEVEL(npg))
 				level = 0;
-			if ((ret = __memp_fput(dbmp, npg, 0)) != 0)
+			if ((ret =
+			     __memp_fput(dbmp, npg, dbc->priority)) != 0)
 				goto err;
 			npg = NULL;
 			if (level != 0) {
@@ -1775,7 +1785,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, donep)
 					goto err;
 				have_lock = 1;
 				if ((ret = __memp_dirty(dbp->mpf, ppg,
-				    dbc->txn, 0)) != 0)
+				    dbc->txn, dbc->priority, 0)) != 0)
 					goto err;
 				pg = *ppg;
 			}
@@ -1802,7 +1812,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, donep)
 			goto err;
 
 		level = dpg->level;
-		if ((ret = __memp_fput(dbmp, dpg, 0)) != 0)
+		if ((ret = __memp_fput(dbmp, dpg, dbc->priority)) != 0)
 			goto err;
 		if (level == LEAFLEVEL)
 			continue;
@@ -1814,7 +1824,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, donep)
 				goto err;
 			have_lock = 1;
 			if ((ret = __memp_dirty(dbp->mpf, ppg,
-			    dbc->txn, 0)) != 0)
+			    dbc->txn, dbc->priority, 0)) != 0)
 				goto err;
 			pg = *ppg;
 		}
@@ -1895,7 +1905,8 @@ __bam_truncate_page(dbc, pgp, update_parent)
 		return (__db_free(dbc, newpage));
 	}
 
-	if ((ret = __memp_dirty(dbp->mpf, &newpage, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    &newpage, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 
 	/* Log if necessary. */
@@ -1926,7 +1937,8 @@ __bam_truncate_page(dbc, pgp, update_parent)
 	LSN(newpage) = lsn;
 
 	/* Empty the old page. */
-	if ((ret = __memp_dirty(dbp->mpf, pgp, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    pgp, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 	if (TYPE(*pgp) == P_OVERFLOW)
 		OV_LEN(*pgp) = 0;
@@ -1969,7 +1981,8 @@ __bam_truncate_page(dbc, pgp, update_parent)
 
 	/* Update the parent. */
 	epg = &cp->csp[-1];
-	if ((ret = __memp_dirty(dbp->mpf, &epg->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    &epg->page, dbc->txn, dbc->priority, 0)) != 0)
 		return (ret);
 
 	switch (TYPE(epg->page)) {
@@ -1996,7 +2009,7 @@ __bam_truncate_page(dbc, pgp, update_parent)
 
 done:	return (0);
 
-err:	(void)__memp_fput(dbp->mpf, newpage, 0);
+err:	(void)__memp_fput(dbp->mpf, newpage, dbc->priority);
 	return (ret);
 }
 
@@ -2027,7 +2040,7 @@ __bam_truncate_overflow(dbc, pgno, pg_lock, c_data)
 		return (ret);
 
 	while ((pgno = NEXT_PGNO(page)) != PGNO_INVALID) {
-		if ((ret = __memp_fput(dbp->mpf, page, 0)) != 0)
+		if ((ret = __memp_fput(dbp->mpf, page, dbc->priority)) != 0)
 			return (ret);
 		if ((ret = __memp_fget(dbp->mpf, &pgno, dbc->txn,
 		    0, &page)) != 0)
@@ -2045,7 +2058,8 @@ __bam_truncate_overflow(dbc, pgno, pg_lock, c_data)
 	}
 
 	if (page != NULL &&
-	    (t_ret = __memp_fput(dbp->mpf, page, 0)) != 0 && ret == 0)
+	    (t_ret = __memp_fput(
+	        dbp->mpf, page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
@@ -2131,7 +2145,7 @@ __bam_truncate_root_page(dbc, pg, indx, c_data)
 	*pgnop = newpgno;
 
 err:	if (page != NULL && (t_ret =
-	      __memp_fput(dbp->mpf, page, 0)) != 0 && ret == 0)
+	      __memp_fput(dbp->mpf, page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -2362,10 +2376,10 @@ __bam_free_freelist(dbp, txn)
 {
 	DBC *dbc;
 	DB_LOCK lock;
-	int ret, t_ret;
+	int auto_commit, ret, t_ret;
 
 	LOCK_INIT(lock);
-	ret = 0;
+	auto_commit = ret = 0;
 
 	/*
 	 * If we are not in a transaction then we need to get
@@ -2375,8 +2389,21 @@ __bam_free_freelist(dbp, txn)
 
 	dbc = NULL;
 	if (IS_DB_AUTO_COMMIT(dbp, txn)) {
+		/*
+		 * We must not timeout the lock or we will not free the list.
+		 * We ignore errors from txn_begin as there is little that
+		 * the application can do with the error and we want to 
+		 * get the lock and free the list if at all possible.
+		 */
+		if (__txn_begin(dbp->dbenv, NULL, &txn, 0) == 0) {
+			(void)__lock_set_timeout(dbp->dbenv,
+			    txn->txnid, 0, DB_SET_TXN_TIMEOUT);
+			(void)__lock_set_timeout(dbp->dbenv,
+			    txn->txnid, 0, DB_SET_LOCK_TIMEOUT);
+			auto_commit = 1;
+		}
 		/* Get a cursor so we can call __db_lget. */
-		if ((ret = __db_cursor(dbp, NULL, &dbc, 0)) != 0)
+		if ((ret = __db_cursor(dbp, txn, &dbc, 0)) != 0)
 			return (ret);
 
 		if ((ret = __db_lget(dbc,
@@ -2390,6 +2417,9 @@ err:	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
+		ret = t_ret;
+
+	if (auto_commit && __txn_abort(txn) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_getenv.c,v 1.5 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_getenv.c,v 1.6 2007/01/22 06:12:20 alexg Exp $
  */
 
 #include "db_config.h"
@@ -21,6 +21,11 @@ __os_getenv(dbenv, name, bpp, buflen)
 	char **bpp;
 	size_t buflen;
 {
+#ifdef DB_WINCE
+	COMPQUIET(name, NULL);
+	/* WinCE does not have a getenv implementation. */
+	return (0);
+#else
 	_TCHAR *tname, tbuf[1024];
 	int ret;
 	char *p;
@@ -93,4 +98,5 @@ small_buf:
 	    "%s: buffer too small to hold environment variable %s",
 	    name, p);
 	return (EINVAL);
+#endif
 }

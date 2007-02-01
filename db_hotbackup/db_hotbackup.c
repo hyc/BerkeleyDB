@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_hotbackup.c,v 1.31 2006/11/01 00:52:35 bostic Exp $
+ * $Id: db_hotbackup.c,v 1.32 2007/01/31 16:06:34 bostic Exp $
  */
 
 #include "db_config.h"
@@ -47,6 +47,18 @@ main(argc, argv)
 	char *backup_dir, **data_dir, *home, *passwd;
 	const char **ddir, **dir, *log_dir;
 	char home_buf[DB_MAXPATHLEN], time_buf[CTIME_BUFLEN];
+
+	/*
+	 * Make sure all verbose message are output before any error messages
+	 * in the case where the output is being logged into a file.  This
+	 * call has to be done before any operation is performed on the stream.
+	 *
+	 * Use unbuffered I/O because line-buffered I/O requires a buffer, and
+	 * some operating systems have buffer alignment and size constraints we
+	 * don't want to care about.  There isn't enough output for the calls
+	 * to matter.
+	 */
+	setbuf(stdout, NULL);
 
 	if ((progname = strrchr(argv[0], '/')) == NULL)
 		progname = argv[0];
@@ -373,7 +385,6 @@ env_init(dbenvp, home, log_dir, data_dir, passwd, which)
 	dbenv->set_errfile(dbenv, stderr);
 	setbuf(stderr, NULL);
 	dbenv->set_errpfx(dbenv, progname);
-	(void)setvbuf(stdout, NULL, _IOLBF, 0);
 
 	/*
 	 * If a log directory has been specified, and it's not the same as the

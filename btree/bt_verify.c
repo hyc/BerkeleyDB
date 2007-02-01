@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_verify.c,v 12.28 2006/11/01 00:51:58 bostic Exp $
+ * $Id: bt_verify.c,v 12.29 2006/11/29 21:23:10 ubell Exp $
  */
 
 #include "db_config.h"
@@ -1865,7 +1865,8 @@ err:	if (toplevel) {
 		vdp->leaf_type = leaf_type;
 	}
 
-	if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+	if (h != NULL && (t_ret =
+	    __memp_fput(mpf, h, DB_PRIORITY_UNCHANGED)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __db_vrfy_putpageinfo(dbenv, vdp, pip)) != 0 && ret == 0)
 		ret = t_ret;
@@ -2365,7 +2366,7 @@ __bam_meta2pgset(dbp, vdp, btmeta, flags, pgset)
 			goto err;
 		}
 
-		if ((ret = __memp_fput(mpf, h, 0)) != 0)
+		if ((ret = __memp_fput(mpf, h, DB_PRIORITY_UNCHANGED)) != 0)
 			err_ret = ret;
 		h = NULL;
 	}
@@ -2397,13 +2398,13 @@ traverse:
 			goto err;
 
 		current = NEXT_PGNO(h);
-		if ((ret = __memp_fput(mpf, h, 0)) != 0)
+		if ((ret = __memp_fput(mpf, h, DB_PRIORITY_UNCHANGED)) != 0)
 			err_ret = ret;
 		h = NULL;
 	}
 
 err:	if (h != NULL)
-		(void)__memp_fput(mpf, h, 0);
+		(void)__memp_fput(mpf, h, DB_PRIORITY_UNCHANGED);
 
 	return (ret == 0 ? err_ret : ret);
 }

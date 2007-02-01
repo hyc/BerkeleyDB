@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2005 Oracle.  All rights reserved.
  *
- * $Id: os_open.c,v 1.3 2006/11/01 00:53:41 bostic Exp $
+ * $Id: os_open.c,v 1.4 2006/12/06 02:45:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,25 +12,10 @@
 
 /*
  * __os_open --
- *	Open a file descriptor.
- */
-int
-__os_open(dbenv, name, flags, mode, fhpp)
-	DB_ENV *dbenv;
-	const char *name;
-	u_int32_t flags;
-	int mode;
-	DB_FH **fhpp;
-{
-	return (__os_open_extend(dbenv, name, 0, flags, mode, fhpp));
-}
-
-/*
- * __os_open_extend --
  *	Open a file descriptor (including page size and log size information).
  */
 int
-__os_open_extend(dbenv, name, page_size, flags, mode, fhpp)
+__os_open(dbenv, name, page_size, flags, mode, fhpp)
 	DB_ENV *dbenv;
 	const char *name;
 	u_int32_t page_size, flags;

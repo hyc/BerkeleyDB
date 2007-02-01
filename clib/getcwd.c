@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: getcwd.c,v 12.7 2006/11/01 00:52:16 bostic Exp $
+ * $Id: getcwd.c,v 12.8 2007/01/22 06:12:08 alexg Exp $
  */
 
 #include "db_config.h"
@@ -62,7 +62,7 @@
 	    (dp->d_name[1] == '.' && dp->d_name[2] == '\0')))
 
 #ifndef dirfd
-#define   dirfd(dirp)     ((dirp)->dd_fd)
+#define	dirfd(dirp)     ((dirp)->dd_fd)
 #endif
 
 /*

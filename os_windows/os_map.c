@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: os_map.c,v 12.10 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_map.c,v 12.14 2007/01/30 07:00:39 mjc Exp $
  */
 
 #include "db_config.h"
@@ -25,28 +25,30 @@ __os_r_sysattach(dbenv, infop, rp)
 	REGION *rp;
 {
 	DB_FH *fhp;
-	int is_system, ret;
+	int ret;
+
+	/*
+	 * On Windows/9X, files that are opened by multiple processes do not
+	 * share data correctly.  For this reason, we require that DB_PRIVATE
+	 * be specified on that platform.
+	 */
+	if (!F_ISSET(dbenv, DB_ENV_PRIVATE) && __os_is_winnt() == 0) {
+		__db_err(dbenv,
+		    EINVAL, "Windows 9X systems must specify DB_PRIVATE");
+		return (EINVAL);
+	}
 
 	/*
 	 * Try to open/create the file.  We DO NOT need to ensure that multiple
 	 * threads/processes attempting to simultaneously create the region are
 	 * properly ordered, our caller has already taken care of that.
 	 */
-	if ((ret = __os_open(dbenv, infop->name,
-	    F_ISSET(infop, REGION_CREATE_OK) ? DB_OSO_CREATE: 0,
+	if ((ret = __os_open(dbenv, infop->name, 0, DB_OSO_REGION |
+	    (F_ISSET(infop, REGION_CREATE_OK) ? DB_OSO_CREATE : 0),
 	    dbenv->db_mode, &fhp)) != 0) {
 		__db_err(dbenv, ret, "%s", infop->name);
 		return (ret);
 	}
-
-	/*
-	 * On Windows/9X, files that are opened by multiple processes do not
-	 * share data correctly.  For this reason, the DB_SYSTEM_MEM flag is
-	 * implied for any application that does not specify the DB_PRIVATE
-	 * flag.
-	 */
-	is_system = F_ISSET(dbenv, DB_ENV_SYSTEM_MEM) ||
-	    (!F_ISSET(dbenv, DB_ENV_PRIVATE) && __os_is_winnt() == 0);
 
 	/*
 	 * Map the file in.  If we're creating an in-system-memory region,
@@ -55,8 +57,8 @@ __os_r_sysattach(dbenv, infop, rp)
 	 * environment file.
 	 */
 	ret = __os_map(dbenv, infop->name, infop, fhp, rp->size,
-	   1, is_system, 0, &infop->addr);
-	if (ret == 0 && is_system == 1)
+	   1, F_ISSET(dbenv, DB_ENV_SYSTEM_MEM), 0, &infop->addr);
+	if (ret == 0 && F_ISSET(dbenv, DB_ENV_SYSTEM_MEM))
 		rp->segid = 1;
 
 	(void)__os_closehandle(dbenv, fhp);
@@ -232,6 +234,11 @@ __os_map(dbenv, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	 * paging file namespace.
 	 */
 	if (use_pagefile) {
+#ifdef DB_WINCE
+		__db_errx(dbenv, "Unable to memory map regions using system "
+		    "memory on WinCE.");
+		return (EFAULT);
+#endif
 		TO_TSTRING(dbenv, path, tpath, ret);
 		if (ret != 0)
 			return (ret);
@@ -266,6 +273,7 @@ __os_map(dbenv, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	 */
 	hMemory = NULL;
 	if (use_pagefile) {
+#ifndef DB_WINCE
 		hMemory = OpenFileMapping(
 		    is_rdonly ? FILE_MAP_READ : FILE_MAP_ALL_ACCESS,
 		    0, shmem_name);
@@ -273,11 +281,21 @@ __os_map(dbenv, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 		if (hMemory == NULL && F_ISSET(infop, REGION_CREATE_OK))
 			hMemory = CreateFileMapping((HANDLE)-1, 0,
 			    is_rdonly ? PAGE_READONLY : PAGE_READWRITE,
-			    0, (DWORD)len, shmem_name);
-	} else
+			    (DWORD)(len >> 32), (DWORD)len, shmem_name);
+#endif
+	} else {
 		hMemory = CreateFileMapping(fhp->handle, 0,
 		    is_rdonly ? PAGE_READONLY : PAGE_READWRITE,
-		    0, (DWORD)len, NULL);
+		    (DWORD)(len >> 32), (DWORD)len, NULL);
+#ifdef DB_WINCE
+		/*
+		 * WinCE automatically closes the handle passed in.
+		 * Ensure DB does not attempt to close the handle again.
+		 */
+		fhp->handle = INVALID_HANDLE_VALUE;
+		F_CLR(fhp, DB_FH_OPENED);
+#endif
+	}
 
 	if (hMemory == NULL) {
 		ret = __os_get_syserr();

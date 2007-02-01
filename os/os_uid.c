@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: os_uid.c,v 12.25 2006/11/09 14:23:16 bostic Exp $
+ * $Id: os_uid.c,v 12.26 2006/11/29 20:08:51 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,8 +21,9 @@ __os_unique_id(dbenv, idp)
 	DB_ENV *dbenv;
 	u_int32_t *idp;
 {
+	db_timespec v;
 	pid_t pid;
-	u_int32_t id, sec, usec;
+	u_int32_t id;
 
 	*idp = 0;
 
@@ -31,9 +32,10 @@ __os_unique_id(dbenv, idp)
 	 * time of day and a stack address, all XOR'd together.
 	 */
 	__os_id(dbenv, &pid, NULL);
-	__os_clock(dbenv, &sec, &usec);
+	__os_gettime(dbenv, &v);
 
-	id = (u_int32_t)pid ^ sec ^ usec ^ P_TO_UINT32(&pid);
+	id = (u_int32_t)pid ^
+	    (u_int32_t)v.tv_sec ^ (u_int32_t)v.tv_nsec ^ P_TO_UINT32(&pid);
 
 	/*
 	 * We could try and find a reasonable random-number generator, but

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_sync.c,v 12.28 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_sync.c,v 12.33 2007/01/19 14:04:33 bostic Exp $
  */
 
 #include "db_config.h"
@@ -208,6 +208,8 @@ __mp_xxx_fh(dbmfp, fhp)
 	DB_MPOOLFILE *dbmfp;
 	DB_FH **fhp;
 {
+	int ret;
+
 	/*
 	 * This is a truly spectacular layering violation, intended ONLY to
 	 * support compatibility for the DB 1.85 DB->fd call.
@@ -225,7 +227,10 @@ __mp_xxx_fh(dbmfp, fhp)
 	if ((*fhp = dbmfp->fhp) != NULL)
 		return (0);
 
-	return (__memp_sync_int(dbmfp->dbenv, dbmfp, 0, DB_SYNC_FILE, NULL));
+	if ((ret =
+	    __memp_sync_int(dbmfp->dbenv, dbmfp, 0, DB_SYNC_FILE, NULL)) == 0)
+		*fhp = dbmfp->fhp;
+	return (ret);
 }
 
 /*
@@ -249,9 +254,10 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 	MPOOL *c_mp, *mp;
 	MPOOLFILE *mfp;
 	db_mutex_t mutex;
+	db_timeout_t maxwrite_sleep;
 	roff_t last_mf_offset;
 	u_int32_t ar_cnt, ar_max, i, n_cache, remaining, wrote;
-	int filecnt, hb_lock, maxopenfd, maxwrite, maxwrite_sleep;
+	int filecnt, hb_lock, maxopenfd, maxwrite;
 	int pass, ret, t_ret, wait_cnt, write_cnt;
 
 	dbmp = dbenv->mp_handle;
@@ -300,12 +306,12 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 				mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
 
 				/*
-				 * Ignore in-memory files, even if they are
-				 * temp files to whom a backing file has been
-				 * allocated.
+				 * Ignore in-memory files, unless the file is
+				 * specifically being flushed.
 				 */
-				if (mfp->no_backing_file ||
-				    F_ISSET(mfp, MP_TEMP))
+				if (mfp->no_backing_file)
+					continue;
+				if (F_ISSET(mfp, MP_TEMP) && op != DB_SYNC_FILE)
 					continue;
 
 				/*
@@ -435,36 +441,33 @@ __memp_sync_int(dbenv, dbmfp, trickle_max, op, wrotep)
 			continue;
 		}
 
-		/*
-		 * The buffer is dirty and may also be pinned.
-		 *
-		 * Set the sync wait-for count, used to count down outstanding
-		 * references to this buffer as they are returned to the cache.
-		 */
-		bhp->ref_sync = bhp->ref;
-
 		/* Pin the buffer into memory and lock it. */
 		++bhp->ref;
 		F_SET(bhp, BH_LOCKED);
 
 		/*
-		 * Unlock the hash bucket and wait for the wait-for count to
-		 * go to 0.   No new thread can acquire the buffer because we
-		 * have it locked.
+		 * If the buffer is referenced by another thread, set the sync
+		 * wait-for count (used to count down outstanding references to
+		 * this buffer as they are returned to the cache), then unlock
+		 * the hash bucket and wait for the count to go to 0.   No other
+		 * thread can acquire the buffer because we have it locked.
 		 *
 		 * If a thread attempts to re-pin a page, the wait-for count
-		 * will never go to 0 (the thread spins on our buffer lock,
+		 * will never go to 0 (that thread spins on our buffer lock,
 		 * while we spin on the thread's ref count).  Give up if we
-		 * don't get the buffer in 3 seconds, we can try again later.
+		 * don't get the buffer in 3 seconds, we'll try again later.
 		 *
 		 * If, when the wait-for count goes to 0, the buffer is found
 		 * to be dirty, write it.
 		 */
-		MUTEX_UNLOCK(dbenv, mutex);
-		for (wait_cnt = 1;
-		    bhp->ref_sync != 0 && wait_cnt < 4; ++wait_cnt)
-			__os_sleep(dbenv, 1, 0);
-		MUTEX_LOCK(dbenv, mutex);
+		bhp->ref_sync = bhp->ref - 1;
+		if (bhp->ref_sync != 0) {
+			MUTEX_UNLOCK(dbenv, mutex);
+			for (wait_cnt = 1;
+			    bhp->ref_sync != 0 && wait_cnt < 4; ++wait_cnt)
+				__os_sleep(dbenv, 1, 0);
+			MUTEX_LOCK(dbenv, mutex);
+		}
 		hb_lock = 1;
 
 		/*
@@ -708,8 +711,8 @@ __memp_sync_file(dbenv, mfp, argp, countp, flags)
  * __memp_sync_files --
  *	Sync all the files in the environment, open or not.
  */
-static
-int __memp_sync_files(dbenv)
+static int
+__memp_sync_files(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_MPOOL *dbmp;
@@ -787,7 +790,7 @@ __memp_mf_sync(dbmp, mfp, region_locked)
 
 	if ((ret = __db_appname(dbenv, DB_APP_DATA,
 	    R_ADDR(dbmp->reginfo, mfp->path_off), 0, NULL, &rpath)) == 0) {
-		if ((ret = __os_open(dbenv, rpath, 0, 0, &fhp)) == 0) {
+		if ((ret = __os_open(dbenv, rpath, 0, 0, 0, &fhp)) == 0) {
 			ret = __os_fsync(dbenv, fhp);
 			if ((t_ret =
 			    __os_closehandle(dbenv, fhp)) != 0 && ret == 0)

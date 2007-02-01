@@ -1,4 +1,4 @@
-# $Id: check,v 10.145 2006/10/09 20:25:55 bostic Exp $
+# $Id: check,v 10.146 2006/11/30 21:20:11 bostic Exp $
 #
 # Script to check HTML output for links that reference nonexistent
 # pages, and for pages that aren't referenced by anything.
@@ -457,6 +457,7 @@ t44()
 	sed -e '/\/am.*@Access Methods$/d' \
 	    -e '/\/apprec.*@Application Specific Logging and Recovery$/d' \
 	    -e '/\/arch\/.*@Architecture$/d' \
+	    -e '/\/build_brew\/.*@Building Berkeley DB for BREW$/d' \
 	    -e '/\/build_unix\/.*@Building Berkeley DB for UNIX\/POSIX systems$/d' \
 	    -e '/\/build_vxworks\/.*@Building Berkeley DB for VxWorks systems$/d' \
 	    -e '/\/build_win\/.*@Building Berkeley DB for Windows systems$/d' \

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: strerror.c,v 12.10 2006/11/01 00:52:17 bostic Exp $
+ * $Id: strerror.c,v 12.11 2007/01/22 18:29:08 bostic Exp $
  */
 
 /*
@@ -186,17 +186,27 @@ strerror(num)
 	ERRSTR(ENOLCK, "No locks available");
 	ERRSTR(ENOSYS, "Function not implemented");
 	ERRSTR(EFTYPE, "Inappropriate file type or format");
+#ifdef EAUTH
 	ERRSTR(EAUTH, "Authentication error");
+#endif
+#ifdef ENEEDAUTH
 	ERRSTR(ENEEDAUTH, "Need authenticator");
+#endif
 	ERRSTR(EIDRM, "Identifier removed");
 	ERRSTR(ENOMSG, "No message of desired type");
+#ifdef EOVERFLOW
 	ERRSTR(EOVERFLOW, "Value too large to be stored in data type");
+#endif
 	ERRSTR(ECANCELED, "Operation canceled");
 	ERRSTR(EILSEQ, "Illegal byte sequence");
+#ifdef ENOATTR
 	ERRSTR(ENOATTR, "Attribute not found");
+#endif
 
 /* General */
+#ifdef EDOOFUS
 	ERRSTR(EDOOFUS, "Programming error");
+#endif
 
 #ifdef EBADMSG
 	ERRSTR(EBADMSG, "Bad message");

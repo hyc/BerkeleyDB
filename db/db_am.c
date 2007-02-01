@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1998,2006 Oracle.  All rights reserved.
  *
- * $Id: db_am.c,v 12.27 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_am.c,v 12.28 2006/11/29 21:23:11 ubell Exp $
  */
 
 #include "db_config.h"
@@ -19,6 +19,7 @@
 
 static int __db_append_primary __P((DBC *, DBT *, DBT *));
 static int __db_secondary_get __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
+static int __dbc_set_priority __P((DBC *, DB_CACHE_PRIORITY));
 
 /*
  * __db_cursor_int --
@@ -168,6 +169,8 @@ __db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
 	/* Refresh the DBC structure. */
 	dbc->dbtype = dbtype;
 	RESET_RET_MEM(dbc);
+	dbc->set_priority = __dbc_set_priority;
+	dbc->priority = dbp->priority;
 
 	if ((dbc->txn = txn) != NULL)
 		dbc->locker = txn->txnid;
@@ -877,4 +880,13 @@ err:	if (pdbc != NULL && (t_ret = __dbc_close(pdbc)) != 0 && ret == 0)
 	if (sdbp != NULL && (t_ret = __db_s_done(sdbp)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
+}
+
+static int
+__dbc_set_priority(dbc, priority)
+	DBC *dbc;
+	DB_CACHE_PRIORITY priority;
+{
+	dbc->priority = priority;
+	return (0);
 }

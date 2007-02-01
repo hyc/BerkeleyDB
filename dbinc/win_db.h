@@ -1,5 +1,5 @@
 /*-
- * $Id: win_db.h,v 12.22 2006/10/25 00:42:13 bostic Exp $
+ * $Id: win_db.h,v 12.23 2007/01/22 06:12:12 alexg Exp $
  *
  * The following provides the information necessary to build Berkeley
  * DB on native Windows, and other Windows environments such as MinGW.
@@ -19,18 +19,21 @@
 #define	_WIN32_WINNT 0x0400
 #endif
 
+#ifndef DB_WINCE
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
 
 #include <direct.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <io.h>
 #include <limits.h>
 #include <memory.h>
 #include <process.h>
 #include <signal.h>
+#endif /* DB_WINCE */
+
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
@@ -63,8 +66,11 @@
  * vsnprintf, but under different names.
  */
 #define	fsync			_commit
+
+#ifndef DB_WINCE 
 #define	getcwd(buf, size)	_getcwd(buf, size)
-#define	getpid			_getpid
+#endif
+#define getpid			GetCurrentProcessId
 #define	snprintf		_snprintf
 #define	vsnprintf		_vsnprintf
 

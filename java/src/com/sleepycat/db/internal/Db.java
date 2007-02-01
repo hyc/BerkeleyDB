@@ -48,6 +48,7 @@ public class Db {
 	private BtreePrefixCalculator bt_prefix_handler;
 	private Comparator dup_compare_handler;
 	private FeedbackHandler db_feedback_handler;
+	private Comparator h_compare_handler;
 	private Hasher h_hash_handler;
 	private SecondaryKeyCreator seckey_create_handler;
 
@@ -123,6 +124,14 @@ public class Db {
 
 	public FeedbackHandler get_feedback() throws com.sleepycat.db.DatabaseException {
 		return db_feedback_handler;
+	}
+
+	private final int handle_h_compare(byte[] arr1, byte[] arr2) {
+		return h_compare_handler.compare(arr1, arr2);
+	}
+
+	public Comparator get_h_compare() throws com.sleepycat.db.DatabaseException {
+		return h_compare_handler;
 	}
 
 	private final int handle_dup_compare(byte[] arr1, byte[] arr2) {
@@ -365,6 +374,8 @@ public class Db {
   public void set_feedback(com.sleepycat.db.FeedbackHandler db_feedback_fcn) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_feedback(swigCPtr,  (db_feedback_handler = db_feedback_fcn) ); }
 
   public void set_flags(int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_flags(swigCPtr, flags); }
+
+  public void set_h_compare(java.util.Comparator h_compare_fcn) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_h_compare(swigCPtr,  (h_compare_handler = h_compare_fcn) ); }
 
   public void set_h_ffactor(int h_ffactor) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_h_ffactor(swigCPtr, h_ffactor); }
 

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: env_method.c,v 12.61 2006/11/09 14:28:02 bostic Exp $
+ * $Id: env_method.c,v 12.64 2006/12/13 16:06:48 bostic Exp $
  */
 
 #include "db_config.h"
@@ -90,13 +90,13 @@ db_env_create(dbenvpp, flags)
 		F_SET(dbenv, DB_ENV_RPCCLIENT);
 #endif
 	if ((ret = __env_init(dbenv)) != 0 ||
-	    (ret = __lock_dbenv_create(dbenv)) != 0 ||
-	    (ret = __log_dbenv_create(dbenv)) != 0 ||
-	    (ret = __memp_dbenv_create(dbenv)) != 0 ||
+	    (ret = __lock_env_create(dbenv)) != 0 ||
+	    (ret = __log_env_create(dbenv)) != 0 ||
+	    (ret = __memp_env_create(dbenv)) != 0 ||
 #ifdef HAVE_REPLICATION
-	    (ret = __rep_dbenv_create(dbenv)) != 0 ||
+	    (ret = __rep_env_create(dbenv)) != 0 ||
 #endif
-	    (ret = __txn_dbenv_create(dbenv)))
+	    (ret = __txn_env_create(dbenv)))
 		goto err;
 
 #ifdef HAVE_RPC
@@ -133,13 +133,13 @@ void
 __db_env_destroy(dbenv)
 	DB_ENV *dbenv;
 {
-	__lock_dbenv_destroy(dbenv);
-	__log_dbenv_destroy(dbenv);
-	__memp_dbenv_destroy(dbenv);
+	__lock_env_destroy(dbenv);
+	__log_env_destroy(dbenv);
+	__memp_env_destroy(dbenv);
 #ifdef HAVE_REPLICATION
-	__rep_dbenv_destroy(dbenv);
+	__rep_env_destroy(dbenv);
 #endif
-	__txn_dbenv_destroy(dbenv);
+	__txn_env_destroy(dbenv);
 
 	memset(dbenv, CLEAR_BYTE, sizeof(DB_ENV));
 	__os_free(NULL, dbenv);
@@ -234,8 +234,8 @@ __env_init(dbenv)
 	dbenv->mutex_set_increment = __mutex_set_increment;
 	dbenv->mutex_set_max = __mutex_set_max;
 	dbenv->mutex_set_tas_spins = __mutex_set_tas_spins;
-	dbenv->mutex_stat = __mutex_stat;
-	dbenv->mutex_stat_print = __mutex_stat_print;
+	dbenv->mutex_stat = __mutex_stat_pp;
+	dbenv->mutex_stat_print = __mutex_stat_print_pp;
 	dbenv->mutex_unlock = __mutex_unlock_pp;
 	dbenv->open = __env_open_pp;
 	dbenv->remove = __env_remove;
@@ -685,7 +685,7 @@ __env_set_flags(dbenv, flags, on)
 			__db_errx(dbenv, "Environment panic set");
 			(void)__db_panic(dbenv, DB_RUNRECOVERY);
 		} else
-			__db_panic_set(dbenv, 0);
+			__env_panic_set(dbenv, 0);
 	}
 	if (LF_ISSET(DB_REGION_INIT))
 		ENV_ILLEGAL_AFTER_OPEN(dbenv,

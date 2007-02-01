@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_verify.c,v 12.36 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_verify.c,v 12.39 2007/01/27 03:22:07 alanb Exp $
  */
 
 #include "db_config.h"
@@ -100,6 +100,7 @@ __rep_verify(dbenv, rp, rec, eid, savetime)
 				else {
 					F_SET(rep, REP_F_RECOVER_UPDATE);
 					ZERO_LSN(rep->first_lsn);
+					ret = 0;
 				}
 				REP_SYSTEM_UNLOCK(dbenv);
 				if (ret == 0)
@@ -149,10 +150,9 @@ __rep_verify_fail(dbenv, rp, eid)
 	    !F_ISSET(rep, REP_F_RECOVER_VERIFY))
 		return (0);
 	/*
-	 * Update stats.  Reset startup_complete.
+	 * Update stats.  
 	 */
 	rep->stat.st_outdated++;
-	rep->stat.st_startup_complete = 0;
 
 	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	REP_SYSTEM_LOCK(dbenv);
@@ -412,7 +412,8 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 	/* OK, everyone is out, we can now run recovery. */
 	REP_SYSTEM_UNLOCK(dbenv);
 
-	if ((ret = __rep_dorecovery(dbenv, reclsnp, &trunclsn)) != 0) {
+	if ((ret = __rep_dorecovery(dbenv, reclsnp, &trunclsn)) != 0 ||
+	    (ret = __rep_remove_init_file(dbenv)) != 0) {
 		REP_SYSTEM_LOCK(dbenv);
 		F_CLR(rep, REP_F_READY_API | REP_F_READY_MSG | REP_F_READY_OP);
 		goto errunlock;

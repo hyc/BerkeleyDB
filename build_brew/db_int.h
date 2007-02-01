@@ -4,7 +4,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_int.in,v 12.47 2006/11/01 00:52:40 bostic Exp $
+ * $Id: db_int.in,v 12.48 2006/11/29 20:08:41 bostic Exp $
  */
 
 #ifndef _DB_INT_H_
@@ -97,8 +97,12 @@ extern "C" {
 #define	MEGABYTE	1048576
 #define	GIGABYTE	1073741824
 
-#define	MS_PER_SEC	1000		/* Milliseconds in a second. */
-#define	USEC_PER_MS	1000		/* Microseconds in a millisecond. */
+#define	MS_PER_NS	1000000		/* Milliseconds in a nanosecond */
+#define	MS_PER_SEC	1000		/* Milliseconds in a second */
+#define	NS_PER_MS	1000000		/* Nanoseconds in a millisecond */
+#define	NS_PER_US	1000		/* Nanoseconds in a microsecond */
+#define	US_PER_MS	1000		/* Microseconds in a millisecond */
+#define	US_PER_SEC	1000000		/* Microseconds in a second */
 
 #define	RECNO_OOB	0		/* Illegal record number. */
 
@@ -680,6 +684,7 @@ typedef SH_TAILQ_HEAD(__hash_head) DB_HASHTAB;
 
 
 #include "dbinc/globals.h"
+#include "dbinc/clock.h"
 #include "dbinc/debug.h"
 #include "dbinc/region.h"
 #include "dbinc_auto/env_ext.h"

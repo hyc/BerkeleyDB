@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_fopen.c,v 12.35 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_fopen.c,v 12.37 2006/12/06 02:45:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -212,7 +212,7 @@ __memp_fopen(dbmfp, mfp, path, flags, mode, pgsize)
 		}
 		if ((ret = __db_appname(dbenv,
 		     DB_APP_DATA, path, 0, NULL, &rpath)) == 0)
-			ret = __os_open_extend(dbenv, rpath,
+			ret = __os_open(dbenv, rpath,
 			     (u_int32_t)pagesize, oflags, mode, &dbmfp->fhp);
 		if (mfp != NULL)
 			MPOOL_SYSTEM_UNLOCK(dbenv);
@@ -741,14 +741,12 @@ __memp_fclose_pp(dbmfp, flags)
 
 	/*
 	 * Validate arguments, but as a handle destructor, we can't fail.
-	 *
-	 * !!!
-	 * DB_MPOOL_DISCARD: Undocumented flag: DB private.
 	 */
-	(void)__db_fchk(dbenv, "DB_MPOOLFILE->close", flags, DB_MPOOL_DISCARD);
+	if (flags != 0)
+		(void)__db_ferr(dbenv, "DB_MPOOLFILE->close", 0);
 
 	ENV_ENTER(dbenv, ip);
-	REPLICATION_WRAP(dbenv, (__memp_fclose(dbmfp, flags)), ret);
+	REPLICATION_WRAP(dbenv, (__memp_fclose(dbmfp, 0)), ret);
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep060.tcl,v 12.9 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep060.tcl,v 12.10 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep060
 # TEST	Test of normally running clients and internal initialization.
@@ -20,7 +20,8 @@ proc rep060 { method { niter 200 } { tnum "060" } args } {
 	if { $checking_valid_methods } {
 		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_btree $method] == 1 || [is_queue $method] == 1 } {
+			if { [is_btree $method] == 1 || \
+			    [is_queue $method] == 1 } {
 				lappend test_methods $method
 			}
 		}
@@ -70,7 +71,13 @@ proc rep060 { method { niter 200 } { tnum "060" } args } {
 
 proc rep060_sub { method niter tnum logset recargs opt largs } {
 	source ./include.tcl
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -100,14 +107,9 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -log_max $log_max \
+	    $m_logargs -log_max $log_max -errpfx MASTER $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Set a low limit so that there are lots of reps between
 	# master and client.  This allows greater control over
@@ -154,14 +156,9 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	puts "\tRep$tnum.c: Open client."
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max \
+	    $c_logargs -log_max $log_max -errpfx CLIENT $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx CLIENT -errfile /dev/stderr \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"

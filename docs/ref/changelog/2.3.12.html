@@ -1,4 +1,4 @@
-<!--"$Id: 2.3.12.html,v 1.2 2006/10/09 19:18:01 bostic Exp $ (Sleepycat) $Date: 2006/10/09 19:18:01 $"-->
+<!--"$Id: 2.3.12.html,v 1.4 2007/01/05 15:47:00 bostic Exp $ (Sleepycat) $Date: 2007/01/05 15:47:00 $"-->
 <html>
 <head>
 <title>The Berkeley DB Package: Interface Changes introduced in DB 2.3.12</title>
@@ -7,7 +7,7 @@
 </head>
 <body bgcolor=white>
 
-<h1 align=center>Interface Changes introduced in DB 2.3.12:</h1>
+<h3 align=center>Interface Changes introduced in DB 2.3.12:</h3>
 
 <ol>
 
@@ -16,7 +16,7 @@ A new DB interface, <b>db_jump_set</b>(), has been added.  The
 <b>db_jump_set</b> function enables applications to replace underlying
 DB library functionality by replacing entries in a function call jump
 table.  This interface is intended for applications needing to do
-run-time linking to specific underlying libraries, for eaxmple, for
+run-time linking to specific underlying libraries, for example, for
 systems where the malloc(3) that the application will use is not known
 until run-time.  The <b>db_yield</b> field previously found in the
 DB_ENV structure has been removed, and its functionality incorporated

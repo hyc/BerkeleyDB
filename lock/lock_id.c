@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_id.c,v 12.18 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_id.c,v 12.19 2006/11/29 20:08:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -271,8 +271,8 @@ __lock_getlocker(lt, locker, indx, create, retp)
 		sh_locker->nlocks = 0;
 		sh_locker->nwrites = 0;
 		sh_locker->lk_timeout = 0;
-		LOCK_SET_TIME_INVALID(&sh_locker->tx_expire);
-		LOCK_SET_TIME_INVALID(&sh_locker->lk_expire);
+		timespecclear(&sh_locker->tx_expire);
+		timespecclear(&sh_locker->lk_expire);
 
 		SH_TAILQ_INSERT_HEAD(
 		    &lt->locker_tab[indx], sh_locker, links, __db_locker);

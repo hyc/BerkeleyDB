@@ -473,13 +473,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.6.2"
+#define PACKAGE_STRING "Berkeley DB 4.6.3"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.6.2"
+#define PACKAGE_TARNAME "db-4.6.3"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.6.2"
+#define PACKAGE_VERSION "4.6.3"
 
 /* The size of a `char', as computed by sizeof. */
 /* #undef SIZEOF_CHAR */
@@ -541,5 +541,5 @@
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-/* #undef inline */
+#define inline __inline
 #endif

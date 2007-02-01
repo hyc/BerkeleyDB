@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_stat.c,v 12.9 2006/11/01 00:53:44 bostic Exp $
+ * $Id: qam_stat.c,v 12.10 2006/11/29 21:23:21 ubell Exp $
  */
 
 #include "db_config.h"
@@ -73,7 +73,7 @@ __qam_stat(dbc, spp, flags)
 	first = QAM_RECNO_PAGE(dbp, meta->first_recno);
 	last = QAM_RECNO_PAGE(dbp, meta->cur_recno);
 
-	ret = __memp_fput(mpf, meta, 0);
+	ret = __memp_fput(mpf, meta, dbc->priority);
 	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (ret != 0)
@@ -123,7 +123,7 @@ begin:
 				sp->qs_pgfree += re_len;
 		}
 
-		ret = __qam_fput(dbp, pgno, h, 0);
+		ret = __qam_fput(dbp, pgno, h, dbc->priority);
 		if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
@@ -166,7 +166,7 @@ meta_only:
 	sp->qs_cur_recno = meta->cur_recno;
 
 	/* Discard the meta-data page. */
-	ret = __memp_fput(mpf, meta, 0);
+	ret = __memp_fput(mpf, meta, dbc->priority);
 	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (ret != 0)

@@ -483,7 +483,7 @@ static jfieldID txn_active_name_fid;
 
 static jmethodID dbenv_construct, dbt_construct, dblsn_construct;
 static jmethodID dbpreplist_construct, dbtxn_construct;
-static jmethodID bt_stat_construct, h_stat_construct;
+static jmethodID bt_stat_construct, get_err_msg_method, h_stat_construct;
 static jmethodID lock_stat_construct, log_stat_construct;
 static jmethodID mpool_stat_construct, mpool_fstat_construct;
 static jmethodID mutex_stat_construct, qam_stat_construct;
@@ -505,8 +505,8 @@ static jmethodID msgcall_method, paniccall_method, rep_transport_method;
 static jmethodID event_notify_method;
 
 static jmethodID append_recno_method, bt_compare_method, bt_prefix_method;
-static jmethodID db_feedback_method, dup_compare_method, h_hash_method;
-static jmethodID seckey_create_method;
+static jmethodID db_feedback_method, dup_compare_method, h_compare_method;
+static jmethodID h_hash_method, seckey_create_method;
 
 static jmethodID outputstream_write_method;
 
@@ -872,6 +872,8 @@ const struct {
 	{ &dbtxn_construct, &dbtxn_class, "<init>", "(JZ)V" },
 
 	{ &bt_stat_construct, &bt_stat_class, "<init>", "()V" },
+	{ &get_err_msg_method, &dbenv_class, "get_err_msg", 
+	    "(Ljava/lang/String;)Ljava/lang/String;" },
 	{ &h_stat_construct, &h_stat_class, "<init>", "()V" },
 	{ &lock_stat_construct, &lock_stat_class, "<init>", "()V" },
 	{ &log_stat_construct, &log_stat_class, "<init>", "()V" },
@@ -945,6 +947,8 @@ const struct {
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)I" },
 	{ &db_feedback_method, &db_class, "handle_db_feedback", "(II)V" },
 	{ &dup_compare_method, &db_class, "handle_dup_compare",
+	    "([B[B)I" },
+	{ &h_compare_method, &db_class, "handle_h_compare",
 	    "([B[B)I" },
 	{ &h_hash_method, &db_class, "handle_h_hash", "([BI)I" },
 	{ &seckey_create_method, &db_class, "handle_seckey_create",
@@ -1073,6 +1077,12 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 		msg = db_strerror(err);
 
 	jmsg = (*jenv)->NewStringUTF(jenv, msg);
+
+	/* Retrieve error message logged by DB */
+	if (jdbenv != NULL) {
+		jmsg = (jstring) (*jenv)->CallNonvirtualObjectMethod(jenv,
+		    jdbenv, dbenv_class, get_err_msg_method, jmsg);
+	}
 
 	switch (err) {
 	case EINVAL:
@@ -1948,7 +1958,11 @@ err:	(*jenv)->DeleteLocalRef(jenv, jdbtarr);
 	return (ret);
 }
 
-static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+/*
+ * Shared by __dbj_bt_compare and __dbj_h_compare 
+ */
+static int __dbj_am_compare(DB *db, const DBT *dbt1, const DBT *dbt2,
+    jmethodID compare_method)
 {
 	JNIEnv *jenv = __dbj_get_jnienv();
 	jobject jdb = (jobject)DB_INTERNAL(db);
@@ -1979,7 +1993,7 @@ static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 	}
 
 	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
-	    bt_compare_method, jdbtarr1, jdbtarr2);
+	    compare_method, jdbtarr1, jdbtarr2);
 
 	if ((*jenv)->ExceptionOccurred(jenv)) {
 		/* The exception will be thrown, so this could be any error. */
@@ -1992,6 +2006,11 @@ static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 		(*jenv)->DeleteLocalRef(jenv, jdbtarr2);
 
 	return (ret);
+}
+
+static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+{
+	return __dbj_am_compare(db, dbt1, dbt2, bt_compare_method);
 }
 
 static size_t __dbj_bt_prefix(DB *db, const DBT *dbt1, const DBT *dbt2)
@@ -2084,6 +2103,11 @@ static void __dbj_db_feedback(DB *db, int opcode, int percent)
 	if (jdb != NULL)
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdb, db_class,
 		    db_feedback_method, opcode, percent);
+}
+
+static int __dbj_h_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+{
+	return __dbj_am_compare(db, dbt1, dbt2, h_compare_method);
 }
 
 static u_int32_t __dbj_h_hash(DB *db, const void *data, u_int32_t len)
@@ -2389,6 +2413,9 @@ SWIGINTERN db_ret_t Db_set_feedback(struct Db *self,void (*db_feedback_fcn)(DB *
 	}
 SWIGINTERN db_ret_t Db_set_flags(struct Db *self,u_int32_t flags){
 		return self->set_flags(self, flags);
+	}
+SWIGINTERN db_ret_t Db_set_h_compare(struct Db *self,int (*h_compare_fcn)(DB *,DBT const *,DBT const *)){
+		return self->set_h_compare(self, h_compare_fcn);
 	}
 SWIGINTERN db_ret_t Db_set_h_ffactor(struct Db *self,u_int32_t h_ffactor){
 		return self->set_h_ffactor(self, h_ffactor);
@@ -4477,6 +4504,31 @@ JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1flags
   }
   
   result = (db_ret_t)Db_set_flags(arg1,arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
+  }
+  
+}
+
+
+JNIEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1h_1compare(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg2) {
+  struct Db *arg1 = (struct Db *) 0 ;
+  int (*arg2)(DB *,DBT const *,DBT const *) = (int (*)(DB *,DBT const *,DBT const *)) 0 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  arg2 = (jarg2 == NULL) ? NULL : __dbj_h_compare;
+  
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)Db_set_h_compare(arg1,arg2);
   if (!DB_RETOK_STD(result)) {
     __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
   }

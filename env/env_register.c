@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: env_register.c,v 1.31 2006/11/01 00:52:48 bostic Exp $
+ * $Id: env_register.c,v 1.34 2007/01/05 14:59:27 bostic Exp $
  */
 
 #include "db_config.h"
@@ -121,7 +121,7 @@ __envreg_register(dbenv, need_recoveryp)
 	if ((ret =
 	    __db_appname(dbenv, DB_APP_NONE, REGISTER_FILE, 0, NULL, &pp)) != 0)
 		goto err;
-	if ((ret = __os_open(dbenv, pp,
+	if ((ret = __os_open(dbenv, pp, 0,
 	    DB_OSO_CREATE, __db_omode("rw-rw----"), &dbenv->registry)) != 0)
 		goto err;
 
@@ -205,7 +205,7 @@ __envreg_add(dbenv, need_recoveryp)
 	snprintf(pid_buf, sizeof(pid_buf), PID_FMT, (u_long)pid);
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-		__db_msg(dbenv, "===== %lu: before add", (u_long)pid);
+		__db_msg(dbenv, "%lu: adding self to registry", (u_long)pid);
 
 	/*
 	 * Read the file.  Skip empty slots, and check that a lock is held
@@ -277,6 +277,9 @@ __envreg_add(dbenv, need_recoveryp)
 	 * exiting Berkeley DB -- they'll discard their lock when they exit.
 	 */
 	if (need_recovery) {
+		if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
+			__db_msg(dbenv, "%lu: recovery required", (u_long)pid);
+
 		/* Figure out how big the file is. */
 		if ((ret = __os_ioinfo(
 		    dbenv, NULL, dbenv->registry, &mbytes, &bytes, NULL)) != 0)

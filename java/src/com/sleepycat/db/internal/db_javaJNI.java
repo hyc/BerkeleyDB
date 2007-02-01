@@ -13,6 +13,11 @@ class db_javaJNI {
 	static {
 		/* An alternate library name can be specified via a property. */
 		String libname;
+		int v_major, v_minor, v_patch;
+
+		v_major = DbConstants.DB_VERSION_MAJOR;
+		v_minor = DbConstants.DB_VERSION_MINOR;
+		v_patch = DbConstants.DB_VERSION_PATCH;
 
 		if ((libname =
 		    System.getProperty("sleepycat.db.libfile")) != null)
@@ -27,9 +32,7 @@ class db_javaJNI {
 				 * On Windows, library name is something like
 				 * "libdb_java42.dll" or "libdb_java42d.dll".
 				 */
-				libname = "libdb_java" +
-				    DbConstants.DB_VERSION_MAJOR +
-				    DbConstants.DB_VERSION_MINOR;
+				libname = "libdb_java" + v_major + v_minor;
 
 				try {
 					System.loadLibrary(libname);
@@ -47,18 +50,22 @@ class db_javaJNI {
 				 * "libdb_java-3.0.so".
 				 */
 				System.loadLibrary("db_java-" +
-				    DbConstants.DB_VERSION_MAJOR + "." +
-				    DbConstants.DB_VERSION_MINOR);
+				    v_major + "." + v_minor);
 			}
 		}
 
 		initialize();
 
-		if (DbEnv_get_version_major() != DbConstants.DB_VERSION_MAJOR ||
-		    DbEnv_get_version_minor() != DbConstants.DB_VERSION_MINOR ||
-		    DbEnv_get_version_patch() != DbConstants.DB_VERSION_PATCH)
+		if (DbEnv_get_version_major() != v_major ||
+		    DbEnv_get_version_minor() != v_minor ||
+		    DbEnv_get_version_patch() != v_patch)
 			throw new RuntimeException(
-		      "Berkeley DB library version doesn't match Java classes");
+		      "Berkeley DB library version " + 
+		      DbEnv_get_version_major() + "." +
+		      DbEnv_get_version_minor() + "." + 
+		      DbEnv_get_version_patch() +
+		      " doesn't match Java class library version " + 
+		      v_major + "." + v_minor + "." + v_patch);
 	}
 
 	static native final void initialize();
@@ -114,6 +121,7 @@ class db_javaJNI {
   public final static native void Db_set_encrypt(long jarg1, String jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_feedback(long jarg1, com.sleepycat.db.FeedbackHandler jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_flags(long jarg1, int jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native void Db_set_h_compare(long jarg1, java.util.Comparator jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_h_ffactor(long jarg1, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_h_hash(long jarg1, com.sleepycat.db.Hasher jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_h_nelem(long jarg1, int jarg2) throws com.sleepycat.db.DatabaseException;

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_flock.c,v 1.14 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_flock.c,v 1.16 2007/01/30 07:00:39 mjc Exp $
  */
 
 #include "db_config.h"
@@ -21,6 +21,17 @@ __os_fdlock(dbenv, fhp, offset, acquire, nowait)
 	int acquire, nowait;
 	off_t offset;
 {
+#ifdef DB_WINCE
+	/*
+	 * This functionality is not supported by WinCE, so just fail.
+	 *
+	 * Should only happen if an app attempts to open an environment
+	 * with the DB_REGISTER flag.
+	 */
+	 __db_errx(dbenv, "fdlock API not implemented for WinCE, DB_REGISTER "
+	     "environment flag not supported.");
+	return (EFAULT);
+#else
 	int ret;
 	DWORD low, high;
 	OVERLAPPED over;
@@ -70,4 +81,5 @@ __os_fdlock(dbenv, fhp, offset, acquire, nowait)
 		    !UnlockFile(fhp->handle, low, high, 1, 0), ret);
 
 	return (__os_posix_err(ret));
+#endif
 }

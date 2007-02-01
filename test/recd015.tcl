@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: recd015.tcl,v 12.5 2006/11/06 21:22:24 carol Exp $
+# $Id: recd015.tcl,v 12.6 2006/11/09 16:10:50 carol Exp $
 #
 # TEST	recd015
 # TEST	This is a recovery test for testing lots of prepared txns.
@@ -35,7 +35,7 @@ proc recd015 { method args } {
 	# Now test large numbers of prepared txns to test DB_NEXT
 	# on txn_recover.
 	#
-	set numtxns 250
+	set numtxns 10000
 	set testfile recd015.db
 	set txnmax [expr $numtxns + 5]
 	#

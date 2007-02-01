@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_record.c,v 12.60 2006/11/07 23:54:00 alanb Exp $
+ * $Id: rep_record.c,v 12.68 2007/01/31 20:08:33 sue Exp $
  */
 
 #include "db_config.h"
@@ -157,6 +157,14 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		__db_errx(dbenv,
 	"Environment not configured as replication master or client");
 		return (EINVAL);
+	}
+
+	if ((ret = __dbt_usercopy(dbenv, control)) != 0 ||
+	    (ret = __dbt_usercopy(dbenv, rec)) != 0) {
+		__dbt_userfree(dbenv, control, rec, NULL);
+		__db_errx(dbenv,
+	"DB_ENV->rep_process_message: error retrieving DBT contents");
+		return ret;
 	}
 
 	ret = 0;
@@ -317,6 +325,20 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		 * in an election or you have a NEWMASTER or an ALIVE message
 		 * whose processing will do the right thing below.
 		 */
+	}
+
+	/*
+	 * If the sender is part of an established group, so are we now.
+	 */
+	if (F_ISSET(rp, REPCTL_GROUP_ESTD)) {
+		REP_SYSTEM_LOCK(dbenv);
+#ifdef	DIAGNOSTIC
+		if (!F_ISSET(rep, REP_F_GROUP_ESTD))
+			RPRINT(dbenv, (dbenv,
+			    "I am now part of an established group"));
+#endif
+		F_SET(rep, REP_F_GROUP_ESTD);
+		REP_SYSTEM_UNLOCK(dbenv);
 	}
 
 	/*
@@ -561,6 +583,10 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 		rep->stat.st_client_rerequests++;
 		ret = __rep_resend_req(dbenv, 1);
 		break;
+	case REP_START_SYNC:
+		RECOVERING_SKIP;
+		ret = __memp_sync(dbenv, NULL);
+		break;
 	case REP_UPDATE:
 		/*
 		 * Handle even if we're recovering.
@@ -637,6 +663,7 @@ out:
 			*ret_lsnp = rp->lsn;
 		ret = DB_REP_NOTPERM;
 	}
+	__dbt_userfree(dbenv, control, rec, NULL);
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
@@ -672,13 +699,15 @@ __rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp, last_lsnp)
 	LOG *lp;
 	REP *rep;
 	u_int32_t rectype;
-	int cmp, ret;
+	int cmp, event, ret, set_apply;
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;
 	dbp = db_rep->rep_db;
+	event = 0;
 	rectype = 0;
 	ret = 0;
+	set_apply = 0;
 	memset(&control_dbt, 0, sizeof(control_dbt));
 	memset(&rec_dbt, 0, sizeof(rec_dbt));
 	ZERO_LSN(max_lsn);
@@ -690,10 +719,44 @@ __rep_apply(dbenv, rp, rec, ret_lsnp, is_dupp, last_lsnp)
 	if (F_ISSET(rep, REP_F_RECOVER_LOG) &&
 	    LOG_COMPARE(&lp->ready_lsn, &rep->first_lsn) < 0)
 		lp->ready_lsn = rep->first_lsn;
-	REP_SYSTEM_UNLOCK(dbenv);
 	cmp = LOG_COMPARE(&rp->lsn, &lp->ready_lsn);
+	/*
+	 * If we are going to skip or process any message other
+	 * than a duplicate, make note of it if we're in an
+	 * election so that the election can rerequest proactively.
+	 */
+	if (F_ISSET(rep, REP_F_READY_APPLY) && cmp >= 0)
+		F_SET(rep, REP_F_SKIPPED_APPLY);
 
 	if (cmp == 0) {
+		/*
+		 * If we are in an election (i.e. we've sent a vote
+		 * with an LSN in it), then we drop the next record
+		 * we're expecting.  When we find a master, we'll
+		 * either go into sync, or if it was an existing
+		 * master, rerequest this one record (later records
+		 * are accumulating in the temp db).
+		 *
+		 * We can simply return here, and rep_process_message
+		 * will set NOTPERM if necessary for this record.
+		 */
+		if (F_ISSET(rep, REP_F_READY_APPLY)) {
+			/*
+			 * We will simply return now.  All special return
+			 * processing should be ignored because the special
+			 * values are just initialized.  Variables like
+			 * rectype and max_lsn are still 0.
+			 */
+			RPRINT(dbenv, (dbenv,
+			    "rep_apply: In election. Ignoring [%lu][%lu]",
+			    (u_long)rp->lsn.file, (u_long)rp->lsn.offset));
+			REP_SYSTEM_UNLOCK(dbenv);
+			MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+			goto out;
+		}
+		rep->apply_th++;
+		set_apply = 1;
+		REP_SYSTEM_UNLOCK(dbenv);
 		if ((ret =
 		    __rep_process_rec(dbenv, rp, rec, &rectype, &max_lsn)) != 0)
 			goto err;
@@ -779,6 +842,7 @@ gap_check:
 		 * calculations to determine if we should issue requests
 		 * for new records.
 		 */
+		REP_SYSTEM_UNLOCK(dbenv);
 		memset(&key_dbt, 0, sizeof(key_dbt));
 		key_dbt.data = rp;
 		key_dbt.size = sizeof(*rp);
@@ -822,11 +886,8 @@ gap_check:
 		}
 		goto done;
 	} else {
-		/*
-		 * We may miscount if we race, since we
-		 * don't currently hold the rep mutex.
-		 */
 		rep->stat.st_log_duplicated++;
+		REP_SYSTEM_UNLOCK(dbenv);
 		if (is_dupp != NULL)
 			*is_dupp = 1;
 		if (F_ISSET(rp, REPCTL_PERM))
@@ -854,7 +915,13 @@ err:	/*
 		ZERO_LSN(max_lsn);
 		ret = DB_REP_LOGREADY;
 	}
-	REP_SYSTEM_UNLOCK(dbenv);
+	/*
+	 * Only decrement if we were actually applying log records.
+	 * We do not care if we processed a dup record or put one
+	 * in the temp db.
+	 */
+	if (set_apply)
+		rep->apply_th--;
 
 	if (ret == 0 && !F_ISSET(rep, REP_F_RECOVER_LOG) &&
 	    !IS_ZERO_LSN(max_lsn)) {
@@ -864,18 +931,23 @@ err:	/*
 		DB_ASSERT(dbenv, LOG_COMPARE(&max_lsn, &lp->max_perm_lsn) >= 0);
 		lp->max_perm_lsn = max_lsn;
 	}
-	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
 
 	/*
-	 * Startup is complete when we process our first live record.  We know
-	 * we've processed at least one record when rectype is non-zero.
+	 * Startup is complete when we process the LSN the master told
+	 * us about in the NEWMASTER message.
 	 */
-	if ((ret == 0 || ret == DB_REP_ISPERM) && !F_ISSET(rp, REPCTL_RESEND) &&
-	    rectype != 0 && rep->stat.st_startup_complete == 0) {
+	if ((ret == 0 || ret == DB_REP_ISPERM) &&
+	    rep->stat.st_startup_complete == 0 &&
+	    LOG_COMPARE(&lp->ready_lsn, &rep->sync_lsn) >= 0) {
 		rep->stat.st_startup_complete = 1;
+		event = 1;
+	}
+	REP_SYSTEM_UNLOCK(dbenv);
+	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+	if (event) {
 		RPRINT(dbenv, (dbenv,
 		    "Firing STARTUPDONE event [%lu][%lu]",
-		    (u_long)rp->lsn.file, (u_long)rp->lsn.offset));
+		    (u_long)rep->sync_lsn.file, (u_long)rep->sync_lsn.offset));
 		DB_EVENT(dbenv, DB_EVENT_REP_STARTUPDONE, NULL);
 	}
 	if (ret == 0 && rp->rectype == REP_NEWFILE && lp->db_log_autoremove)
@@ -885,6 +957,7 @@ err:	/*
 	if (rec_dbt.data != NULL)
 		__os_ufree(dbenv, rec_dbt.data);
 
+out:
 	switch (ret) {
 	case 0:
 		break;
@@ -895,8 +968,8 @@ err:	/*
 	case DB_REP_LOGREADY:
 		RPRINT(dbenv, (dbenv,
 		    "Returning LOGREADY up to [%lu][%lu]",
-		    (u_long)rep->last_lsn.file,
-		    (u_long)rep->last_lsn.offset));
+		    (u_long)last_lsnp->file,
+		    (u_long)last_lsnp->offset));
 		break;
 	case DB_REP_NOTPERM:
 		if (!F_ISSET(rep, REP_F_RECOVER_LOG) &&

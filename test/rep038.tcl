@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep038.tcl,v 12.15 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep038.tcl,v 12.16 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep038
 # TEST	Test of internal initialization and ongoing master updates.
@@ -63,7 +63,13 @@ proc rep038 { method { niter 200 } { tnum "038" } args } {
 proc rep038_sub { method niter tnum logset recargs clean largs } {
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -93,27 +99,17 @@ proc rep038_sub { method niter tnum logset recargs clean largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -log_max $log_max \
+	    $m_logargs -log_max $log_max -errpfx MASTER $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max \
+	    $c_logargs -log_max $log_max -errpfx CLIENT $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 	$clientenv rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.

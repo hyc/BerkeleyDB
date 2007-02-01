@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: RepQuoteExample.cpp,v 1.12 2006/11/01 00:52:59 bostic Exp $
+ * $Id: RepQuoteExample.cpp,v 1.14 2006/12/18 19:08:58 alanb Exp $
  */
 
 /*
@@ -117,14 +117,11 @@ int main(int argc, char **argv)
 	int ret;
 
 	// Extract the command line parameters
-	while ((ch = getopt(argc, argv, "CFf:h:Mm:n:o:p:v")) != EOF) {
+	while ((ch = getopt(argc, argv, "Cf:h:Mm:n:o:p:v")) != EOF) {
 		tmppeer = false;
 		switch (ch) {
 		case 'C':
 			config.start_policy = DB_REP_CLIENT;
-			break;
-		case 'F':
-			config.start_policy = DB_REP_FULL_ELECTION;
 			break;
 		case 'h':
 			config.home = optarg;
@@ -398,6 +395,7 @@ void RepQuoteExample::event_callback(DbEnv* dbenv, u_int32_t which, void *info)
 
 	case DB_EVENT_REP_STARTUPDONE: /* FALLTHROUGH */
 	case DB_EVENT_REP_NEWMASTER:
+        case DB_EVENT_REP_PERM_FAILED:
 		// I don't care about this one, for now.
 		break;
 

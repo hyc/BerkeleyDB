@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_err.c,v 12.51 2006/11/09 14:23:11 bostic Exp $
+ * $Id: db_err.c,v 12.54 2006/12/12 16:03:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -179,7 +179,7 @@ __db_panic(dbenv, errval)
 	int errval;
 {
 	if (dbenv != NULL) {
-		__db_panic_set(dbenv, 1);
+		__env_panic_set(dbenv, 1);
 
 		__db_err(dbenv, errval, "PANIC");
 
@@ -206,22 +206,6 @@ __db_panic(dbenv, errval)
 	 * Order shall return.
 	 */
 	return (DB_RUNRECOVERY);
-}
-
-/*
- * __db_panic_set --
- *	Set/clear unrecoverable error.
- *
- * PUBLIC: void __db_panic_set __P((DB_ENV *, int));
- */
-void
-__db_panic_set(dbenv, on)
-	DB_ENV *dbenv;
-	int on;
-{
-	if (dbenv != NULL && dbenv->reginfo != NULL)
-		((REGENV *)
-		    ((REGINFO *)dbenv->reginfo)->primary)->panic = on ? 1 : 0;
 }
 
 /*
@@ -738,7 +722,7 @@ __db_check_txn(dbp, txn, assoc_lid, read_op)
 		}
 
 		if (F_ISSET(txn, TXN_DEADLOCK))
-			return (__db_txn_deadlock_err(dbenv));
+			return (__db_txn_deadlock_err(dbenv, txn));
 		if (dbp->cur_lid >= TXN_MINIMUM && dbp->cur_lid != txn->txnid) {
 			if ((ret = __lock_locker_is_parent(dbenv,
 			     dbp->cur_lid, txn->txnid, &isp)) != 0)
@@ -790,13 +774,22 @@ open_err:
  * __db_txn_deadlock_err --
  *	Transaction has allready been deadlocked.
  *
- * PUBLIC: int __db_txn_deadlock_err __P((DB_ENV *));
+ * PUBLIC: int __db_txn_deadlock_err __P((DB_ENV *, DB_TXN *));
  */
 int
-__db_txn_deadlock_err(dbenv)
+__db_txn_deadlock_err(dbenv, txn)
 	DB_ENV *dbenv;
+	DB_TXN *txn;
 {
-	__db_errx(dbenv, "Previous deadlock return not resolved");
+	const char *name;
+
+	name = NULL;
+	(void)__txn_get_name(txn, &name);
+
+	__db_errx(dbenv,
+	    "%s%sprevious transaction deadlock return not resolved",
+	    name == NULL ? "" : name, name == NULL ? "" : ": ");
+
 	return (EINVAL);
 }
 

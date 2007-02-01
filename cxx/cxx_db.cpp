@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: cxx_db.cpp,v 12.14 2006/11/01 00:52:27 bostic Exp $
+ * $Id: cxx_db.cpp,v 12.15 2006/11/14 03:32:29 alexg Exp $
  */
 
 #include "db_config.h"
@@ -96,6 +96,7 @@ Db::Db(DbEnv *env, u_int32_t flags)
 ,	bt_prefix_callback_(0)
 ,	dup_compare_callback_(0)
 ,	feedback_callback_(0)
+,	h_compare_callback_(0)
 ,	h_hash_callback_(0)
 {
 	if (env_ == 0)
@@ -477,6 +478,14 @@ DB_CALLBACK_C_INTERCEPT(dup_compare,
 DB_SET_CALLBACK(set_dup_compare, dup_compare,
     (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
 
+DB_CALLBACK_C_INTERCEPT(h_compare,
+    int, (DB *cthis, const DBT *data1, const DBT *data2),
+    return,
+    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2)))
+
+DB_SET_CALLBACK(set_h_compare, h_compare,
+    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
+
 DB_CALLBACK_C_INTERCEPT(h_hash,
     u_int32_t, (DB *cthis, const void *data, u_int32_t len),
     return, (cxxthis, data, len))
@@ -551,6 +560,8 @@ DB_METHOD(get_flags, (u_int32_t *flagsp), (db, flagsp),
     DB_RETOK_STD)
 DB_METHOD(set_flags, (u_int32_t flags), (db, flags),
     DB_RETOK_STD)
+DB_METHOD(set_h_compare, (h_compare_fcn_type func),
+    (db, func), DB_RETOK_STD)
 DB_METHOD(get_h_ffactor, (u_int32_t *h_ffactorp),
     (db, h_ffactorp), DB_RETOK_STD)
 DB_METHOD(set_h_ffactor, (u_int32_t h_ffactor),

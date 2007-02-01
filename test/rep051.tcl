@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep051.tcl,v 12.10 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep051.tcl,v 12.11 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep051
 # TEST	Test of compaction with replication.
@@ -23,7 +23,8 @@ proc rep051 { method { niter 5000 } { tnum "051" } args } {
 	if { $checking_valid_methods } {
 		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_btree $method] == 1 || [is_recno $method] == 1 } {
+			if { [is_btree $method] == 1 || \
+			    [is_recno $method] == 1 } {
 				lappend test_methods $method
 			}
 		}
@@ -44,12 +45,14 @@ proc rep051 { method { niter 5000 } { tnum "051" } args } {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
 			if { $recopt == "-recover" && $logindex != -1 } {
-				puts "Skipping test with -recover for in-memory logs."
+				puts "Skipping test \
+				    with -recover for in-memory logs."
 				continue
 			}
 			set envargs ""
 			set args $saved_args
-			puts "Rep$tnum: Replication with compaction ($method $recopt)."
+			puts "Rep$tnum:\
+			    Replication with compaction ($method $recopt)."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep051_sub $method \
@@ -60,8 +63,13 @@ proc rep051 { method { niter 5000 } { tnum "051" } args } {
 
 proc rep051_sub { method niter tnum envargs logset recargs largs } {
 	source ./include.tcl
-	global testdir
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -85,33 +93,19 @@ proc rep051_sub { method niter tnum envargs logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create \
+	set env_cmd(M) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs $m_logargs $recargs \
 	    -home $masterdir -errpfx MASTER $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs $m_logargs $recargs \
-#	    -home $masterdir \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -errpfx MASTER $m_txnargs -rep_master \
-#	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env_noerr -create \
+	set env_cmd(C) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs $c_logargs $recargs \
 	    -home $clientdir -errpfx CLIENT $c_txnargs -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs $c_logargs $recargs \
-#	    -home $clientdir \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -errpfx CLIENT $c_txnargs -rep_client \
-#	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C)]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: log.c,v 12.44 2006/11/01 00:53:35 bostic Exp $
+ * $Id: log.c,v 12.48 2007/01/03 16:42:42 ubell Exp $
  */
 
 #include "db_config.h"
@@ -53,7 +53,7 @@ __log_open(dbenv, create_ok)
 	dblp->reginfo.flags = REGION_JOIN_OK;
 	if (create_ok)
 		F_SET(&dblp->reginfo, REGION_CREATE_OK);
-	if ((ret = __db_r_attach(
+	if ((ret = __env_region_attach(
 	    dbenv, &dblp->reginfo, __log_region_size(dbenv))) != 0)
 		goto err;
 
@@ -166,7 +166,7 @@ err:	dbenv->lg_handle = NULL;
 	if (dblp->reginfo.addr != NULL) {
 		if (region_locked)
 			LOG_SYSTEM_UNLOCK(dbenv);
-		(void)__db_r_detach(dbenv, &dblp->reginfo, 0);
+		(void)__env_region_detach(dbenv, &dblp->reginfo, 0);
 	}
 
 	(void)__mutex_free(dbenv, &dblp->mtx_dbreg);
@@ -415,7 +415,7 @@ __log_find(dblp, find_first, valp, statusp)
 	u_int32_t clv, logval;
 	int cnt, fcnt, ret;
 	const char *dir;
-	char *c, **names, *p, *q, savech;
+	char *c, **names, *p, *q;
 
 	dbenv = dblp->dbenv;
 	lp = dblp->reginfo.primary;
@@ -439,28 +439,15 @@ __log_find(dblp, find_first, valp, statusp)
 	/* Find the directory name. */
 	if ((ret = __log_name(dblp, 1, &p, NULL, 0)) != 0)
 		return (ret);
-	if ((q = __db_rpath(p)) == NULL) {
-		COMPQUIET(savech, 0);
+	if ((q = __db_rpath(p)) == NULL)
 		dir = PATH_DOT;
-	} else {
-		savech = *q;
+	else {
 		*q = '\0';
 		dir = p;
 	}
 
 	/* Get the list of file names. */
-	ret = __os_dirlist(dbenv, dir, &names, &fcnt);
-
-	/*
-	 * !!!
-	 * We overwrote a byte in the string with a nul.  Restore the string
-	 * so that the diagnostic checks in the memory allocation code work
-	 * and any error messages display the right file name.
-	 */
-	if (q != NULL)
-		*q = savech;
-
-	if (ret != 0) {
+	if ((ret = __os_dirlist(dbenv, dir, &names, &fcnt)) != 0) {
 		__db_err(dbenv, ret, "%s", dir);
 		__os_free(dbenv, p);
 		return (ret);
@@ -772,13 +759,13 @@ err:	if (fname != NULL)
 }
 
 /*
- * __log_dbenv_refresh --
+ * __log_env_refresh --
  *	Clean up after the log system on a close or failed open.
  *
- * PUBLIC: int __log_dbenv_refresh __P((DB_ENV *));
+ * PUBLIC: int __log_env_refresh __P((DB_ENV *));
  */
 int
-__log_dbenv_refresh(dbenv)
+__log_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_LOG *dblp;
@@ -851,6 +838,13 @@ __log_dbenv_refresh(dbenv)
 			    __db_filestart);
 			__env_alloc_free(reginfo, filestart);
 		}
+
+		/* Discard replication bulk buffer. */
+		if (lp->bulk_buf != INVALID_ROFF) {
+			__env_alloc_free(reginfo,
+			    R_ADDR(reginfo, lp->bulk_buf));
+			lp->bulk_buf = INVALID_ROFF;
+		}
 	}
 
 	/* Discard the per-thread DBREG mutex. */
@@ -858,7 +852,7 @@ __log_dbenv_refresh(dbenv)
 		ret = t_ret;
 
 	/* Detach from the region. */
-	if ((t_ret = __db_r_detach(dbenv, reginfo, 0)) != 0 && ret == 0)
+	if ((t_ret = __env_region_detach(dbenv, reginfo, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Close open files, release allocated memory. */
@@ -963,7 +957,6 @@ __log_vtruncate(dbenv, lsn, ckplsn, trunclsn)
 	DBT log_dbt;
 	DB_LOG *dblp;
 	DB_LOGC *logc;
-	DB_LSN end_lsn;
 	LOG *lp;
 	u_int32_t bytes, len;
 	int ret, t_ret;
@@ -992,7 +985,6 @@ __log_vtruncate(dbenv, lsn, ckplsn, trunclsn)
 	if ((ret = __log_flush_int(dblp, NULL, 0)) != 0)
 		goto err;
 
-	end_lsn = lp->lsn;
 	lp->lsn = *lsn;
 	lp->len = len;
 	lp->lsn.offset += lp->len;
@@ -1020,7 +1012,7 @@ __log_vtruncate(dbenv, lsn, ckplsn, trunclsn)
 	lp->stat.st_wc_bytes += bytes % MEGABYTE;
 
 	/*
-	 * If the saved lsn is greater than our new end of log, reset it
+	 * If the synced lsn is greater than our new end of log, reset it
 	 * to our current end of log.
 	 */
 	MUTEX_LOCK(dbenv, lp->mtx_flush);
@@ -1036,7 +1028,7 @@ __log_vtruncate(dbenv, lsn, ckplsn, trunclsn)
 		*trunclsn = lp->lsn;
 
 	/* Truncate the log to the new point. */
-	if ((ret = __log_zero(dbenv, &lp->lsn, &end_lsn)) != 0)
+	if ((ret = __log_zero(dbenv, &lp->lsn)) != 0)
 		goto err;
 
 err:	LOG_SYSTEM_UNLOCK(dbenv);
@@ -1107,12 +1099,12 @@ out:	__os_free(dbenv, name);
  * __log_zero --
  *	Zero out the tail of a log after a truncate.
  *
- * PUBLIC: int __log_zero __P((DB_ENV *, DB_LSN *, DB_LSN *));
+ * PUBLIC: int __log_zero __P((DB_ENV *, DB_LSN *));
  */
 int
-__log_zero(dbenv, from_lsn, to_lsn)
+__log_zero(dbenv, from_lsn)
 	DB_ENV *dbenv;
-	DB_LSN *from_lsn, *to_lsn;
+	DB_LSN *from_lsn;
 {
 	DB_FH *fhp;
 	DB_LOG *dblp;
@@ -1125,14 +1117,14 @@ __log_zero(dbenv, from_lsn, to_lsn)
 	char *fname;
 
 	dblp = dbenv->lg_handle;
-	DB_ASSERT(dbenv, LOG_COMPARE(from_lsn, to_lsn) <= 0);
-	if (LOG_COMPARE(from_lsn, to_lsn) > 0) {
+	lp = (LOG *)dblp->reginfo.primary;
+	DB_ASSERT(dbenv, LOG_COMPARE(from_lsn, &lp->lsn) <= 0);
+	if (LOG_COMPARE(from_lsn, &lp->lsn) > 0) {
 		__db_errx(dbenv,
 		    "Warning: truncating to point beyond end of log");
 		return (0);
 	}
 
-	lp = (LOG *)dblp->reginfo.primary;
 	if (lp->db_log_inmemory) {
 		/*
 		 * Remove the files that are invalidated by this truncate.

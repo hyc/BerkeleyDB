@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_fget.c,v 12.34 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_fget.c,v 12.35 2006/12/14 23:00:25 ubell Exp $
  */
 
 #include "db_config.h"
@@ -160,7 +160,8 @@ __memp_fget(dbmfp, pgnoaddr, txn, flags, addrp)
 	 * update, allocate a mutex.  If no transaction has been supplied, that
 	 * will be caught later, when we know whether one is required.
 	 */
-	if (mvcc && txn != NULL && txn->td != NULL) {
+	if (mvcc)
+	if (txn != NULL && txn->td != NULL) {
 		/* We're only interested in the ultimate parent transaction. */
 		while (txn->parent != NULL)
 			txn = txn->parent;

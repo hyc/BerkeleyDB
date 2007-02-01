@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2003,2006 Oracle.  All rights reserved.
 #
-# $Id: rep011.tcl,v 12.10 2006/11/01 00:53:55 bostic Exp $
+# $Id: rep011.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep011
 # TEST	Replication: test open handle across an upgrade.
@@ -66,7 +66,13 @@ proc rep011_sub { method tnum envargs logset recargs largs } {
 	source ./include.tcl
 	global testdir
 	global encrypt
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -89,21 +95,19 @@ proc rep011_sub { method tnum envargs logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env -create \
-	    -log_max 1000000 $m_logargs $envargs -home $masterdir \
-	    $m_txnargs -rep_master -rep_transport \
+	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
+	    $m_logargs $envargs $verbargs -home $masterdir \
+	    $m_txnargs -errpfx MASTER -rep_master -rep_transport \
 	    \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env -create \
-	    $c_logargs $envargs -home $clientdir \
-	    $c_txnargs -rep_client -rep_transport \
+	set env_cmd(C) "berkdb_env_noerr -create \
+	    $c_logargs $envargs $verbargs -home $clientdir \
+	    $c_txnargs -errpfx CLIENT -rep_client -rep_transport \
 	    \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -113,7 +117,7 @@ proc rep011_sub { method tnum envargs logset recargs largs } {
 	# handles open across an upgrade.
 	puts "\tRep$tnum.a:\
 	    Opening test database for post-upgrade client logging test."
-	set master_upg_db [berkdb_open \
+	set master_upg_db [berkdb_open_noerr \
 	    -create -auto_commit -btree -env $masterenv rep$tnum-upg.db]
 	set puttxn [$masterenv txn]
 	error_check_good master_upg_db_put \
@@ -125,7 +129,7 @@ proc rep011_sub { method tnum envargs logset recargs largs } {
 	process_msgs $envlist
 
 	# Open the cross-upgrade database on the client and check its contents.
-	set client_upg_db [berkdb_open \
+	set client_upg_db [berkdb_open_noerr \
 	     -create -auto_commit -btree -env $clientenv rep$tnum-upg.db]
 	error_check_good client_upg_db_get [$client_upg_db get hello] \
 	     [list [list hello world]]
@@ -140,10 +144,9 @@ proc rep011_sub { method tnum envargs logset recargs largs } {
 	error_check_good upgrade_client [$newmasterenv rep_start -master] 0
 
 	puts "\tRep$tnum.d: Reopen old master as client and catch up."
-	set newclientenv [eval {berkdb_env -create -recover} $envargs \
-	    -txn nosync \
+	set newclientenv [eval {berkdb_env_noerr -create -recover} $envargs \
+	    -txn nosync -errpfx NEWCLIENT $verbargs \
 	    {-home $masterdir -rep_client -rep_transport [list 1 replsend]}]
-	error_check_good newclient_env [is_valid_env $newclientenv] TRUE
 	set envlist "{$newclientenv 1} {$newmasterenv 2}"
 	process_msgs $envlist
 
@@ -161,7 +164,8 @@ proc rep011_sub { method tnum envargs logset recargs largs } {
 	# update the database.
 	puts "\tRep$tnum.f: Test that client did update the database."
 	error_check_good client_upg_db_close [$client_upg_db close] 0
-	set newclient_upg_db [berkdb_open -env $newclientenv rep$tnum-upg.db]
+	set newclient_upg_db \
+	    [berkdb_open_noerr -env $newclientenv rep$tnum-upg.db]
 	error_check_good newclient_upg_db_get [$newclient_upg_db get hello] \
 	    [list [list hello there]]
 	error_check_good newclient_upg_db_close [$newclient_upg_db close] 0

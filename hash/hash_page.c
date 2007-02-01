@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_page.c,v 12.23 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_page.c,v 12.24 2006/11/29 21:23:17 ubell Exp $
  */
 
 /*
@@ -148,7 +148,7 @@ __ham_item_reset(dbc)
 
 	ret = 0;
 	if (hcp->page != NULL)
-		ret = __memp_fput(mpf, hcp->page, 0);
+		ret = __memp_fput(mpf, hcp->page, dbc->priority);
 
 	if ((t_ret = __ham_item_init(dbc)) != 0 && ret == 0)
 		ret = t_ret;
@@ -696,8 +696,8 @@ __ham_del_pair(dbc, reclaim_page)
 
 		if (nn_pagep != NULL) {
 			PREV_PGNO(nn_pagep) = PGNO(p);
-			if ((ret =
-			    __memp_fput(mpf, nn_pagep, 0)) != 0) {
+			if ((ret = __memp_fput(mpf,
+			    nn_pagep, dbc->priority)) != 0) {
 				nn_pagep = NULL;
 				goto err;
 			}
@@ -792,11 +792,11 @@ __ham_del_pair(dbc, reclaim_page)
 		hcp->page = NULL;
 		chg_pgno = PGNO(p);
 		ret = __db_free(dbc, p);
-		if ((t_ret =
-		    __memp_fput(mpf, p_pagep, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		       p_pagep, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
-		if (n_pagep != NULL && (t_ret =
-		    __memp_fput(mpf, n_pagep, 0)) != 0 && ret == 0)
+		if (n_pagep != NULL && (t_ret = __memp_fput(mpf,
+		    n_pagep, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
 			return (ret);
@@ -809,11 +809,11 @@ __ham_del_pair(dbc, reclaim_page)
 
 err:	/* Clean up any pages. */
 	if (n_pagep != NULL)
-		(void)__memp_fput(mpf, n_pagep, 0);
+		(void)__memp_fput(mpf, n_pagep, dbc->priority);
 	if (nn_pagep != NULL)
-		(void)__memp_fput(mpf, nn_pagep, 0);
+		(void)__memp_fput(mpf, nn_pagep, dbc->priority);
 	if (p_pagep != NULL)
-		(void)__memp_fput(mpf, p_pagep, 0);
+		(void)__memp_fput(mpf, p_pagep, dbc->priority);
 	return (ret);
 }
 
@@ -1308,21 +1308,21 @@ __ham_split_page(dbc, obucket, nbucket)
 		LSN_NOT_LOGGED(LSN(new_pagep));
 	}
 
-	ret = __memp_fput(mpf, old_pagep, 0);
+	ret = __memp_fput(mpf, old_pagep, dbc->priority);
 	if ((t_ret =
-	    __memp_fput(mpf, new_pagep, 0)) != 0 && ret == 0)
+	    __memp_fput(mpf, new_pagep, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (0) {
 err:		if (old_pagep != NULL)
-			(void)__memp_fput(mpf, old_pagep, 0);
+			(void)__memp_fput(mpf, old_pagep, dbc->priority);
 		if (new_pagep != NULL) {
 			P_INIT(new_pagep, dbp->pgsize,
 			     npgno, PGNO_INVALID, PGNO_INVALID, 0, P_HASH);
-			(void)__memp_fput(mpf, new_pagep, 0);
+			(void)__memp_fput(mpf, new_pagep, dbc->priority);
 		}
 		if (temp_pagep != NULL && PGNO(temp_pagep) != bucket_pgno)
-			(void)__memp_fput(mpf, temp_pagep, 0);
+			(void)__memp_fput(mpf, temp_pagep, dbc->priority);
 	}
 	if ((t_ret = __TLPUT(dbc, block)) != 0 && ret == 0)
 		ret = t_ret;
@@ -1400,7 +1400,8 @@ __ham_add_el(dbc, key, val, type)
 	 */
 	if (P_FREESPACE(dbp, hcp->page) < pairsize) {
 		do_expand = 1;
-		if ((ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0)) != 0)
+		if ((ret = __memp_dirty(mpf,
+		    &hcp->page, dbc->txn, dbc->priority, 0)) != 0)
 			return (ret);
 		if ((ret = __ham_add_ovflpage(dbc,
 		    (PAGE *)hcp->page, 1, (PAGE **)&hcp->page)) != 0)
@@ -1426,7 +1427,8 @@ __ham_add_el(dbc, key, val, type)
 		}
 	}
 
-	if ((ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf,
+	    &hcp->page, dbc->txn, dbc->priority, 0)) != 0)
 		return (ret);
 
 	/*
@@ -1585,7 +1587,7 @@ __ham_add_ovflpage(dbc, pagep, release, pp)
 		if ((ret = __ham_newpage_log(dbp, dbc->txn, &new_lsn, 0,
 		    PUTOVFL, PGNO(pagep), &LSN(pagep), PGNO(new_pagep),
 		    &LSN(new_pagep), PGNO_INVALID, NULL)) != 0) {
-			(void)__memp_fput(mpf, pagep, 0);
+			(void)__memp_fput(mpf, pagep, dbc->priority);
 			return (ret);
 		}
 	} else
@@ -1598,7 +1600,7 @@ __ham_add_ovflpage(dbc, pagep, release, pp)
 	PREV_PGNO(new_pagep) = PGNO(pagep);
 
 	if (release)
-		ret = __memp_fput(mpf, pagep, 0);
+		ret = __memp_fput(mpf, pagep, dbc->priority);
 
 	*pp = new_pagep;
 	return (ret);
@@ -1705,7 +1707,7 @@ __ham_next_cpage(dbc, pgno)
 	hcp = (HASH_CURSOR *)dbc->internal;
 
 	if (hcp->page != NULL &&
-	    (ret = __memp_fput(mpf, hcp->page, 0)) != 0)
+	    (ret = __memp_fput(mpf, hcp->page, dbc->priority)) != 0)
 		return (ret);
 	hcp->page = NULL;
 

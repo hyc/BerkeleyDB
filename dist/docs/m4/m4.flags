@@ -1,4 +1,4 @@
-dnl $Id: m4.flags,v 10.138 2006/09/11 23:31:26 mjc Exp $
+dnl $Id: m4.flags,v 10.139 2006/11/30 19:05:22 bostic Exp $
 dnl ###################################################################
 dnl FLAGS
 dnl ###################################################################
@@ -99,17 +99,6 @@ m4_tagns(m4_idef(DB_LOCK_RANDOM), [dnl
 Reject the lock request for a random locker ID.])
 m4_tagns(m4_idef(DB_LOCK_YOUNGEST), [dnl
 Reject the lock request for the locker ID with the youngest lock.])
-m4_tagend])
-
-dnl ###################################################################
-dnl Memp_fput, memp_fset flags.
-dnl ###################################################################
-define(m4_memp_pgflags, [dnl
-m4_sf_or_may
-m4_tagbegin
-m4_tag(m4_idef(DB_MPOOL_DISCARD), [dnl
-The page is unlikely to be useful in the near future, and should be
-discarded before other pages in the pool.])
 m4_tagend])
 
 dnl ###################################################################

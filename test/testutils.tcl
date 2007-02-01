@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: testutils.tcl,v 12.28 2006/11/01 00:54:03 bostic Exp $
+# $Id: testutils.tcl,v 12.29 2007/01/24 15:12:50 carol Exp $
 #
 # Test system utilities
 #
@@ -710,16 +710,6 @@ proc watch_procs { pidlist {delay 30} {max 3600} {quiet 0} } {
 			set r [ catch { exec $KILL -0 $i } res ]
 			if { $r == 0 } {
 				lappend rlist $i
-			} else {
-				# It's OK if the process is already dead, but
-				# we want to know about other kinds of failures.
-				if { [is_substr $res "no such process"] == 0 &&
-				    [is_substr $res "No such process"] == 0 &&
-				    [is_substr $res\
-				    "process does not exist"] == 0 } {
-					puts "FAIL: Problem\
-					    reported killing process $i: $res"
-				}
 			}
 		}
 		if { [ llength $rlist] == 0 } {

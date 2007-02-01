@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_net.c,v 1.44 2006/11/07 22:48:05 alanb Exp $
+ * $Id: repmgr_net.c,v 1.46 2006/12/29 01:12:50 alanb Exp $
  */
 
 #include "db_config.h"
@@ -74,6 +74,12 @@ static REPMGR_SITE *__repmgr_available_site __P((DB_ENV *, int));
 /*
  * __repmgr_send --
  *	The send function for DB_ENV->rep_set_transport.
+ *
+ * !!!
+ * This is only ever called as the replication transport call-back, which means
+ * it's either on one of our message processing threads or an application
+ * thread.  It cannot be called from the select() thread, in case we call
+ * __repmgr_bust_connection(..., FALSE).
  *
  * PUBLIC: int __repmgr_send __P((DB_ENV *, const DBT *, const DBT *,
  * PUBLIC:     const DB_LSN *, int, u_int32_t));
@@ -197,7 +203,8 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 	}
 
 out:	UNLOCK_MUTEX(db_rep->mutex);
-
+	if (ret != 0 && LF_ISSET(DB_REP_PERMANENT))
+		DB_EVENT(dbenv, DB_EVENT_REP_PERM_FAILED, NULL);
 	return (ret);
 }
 
@@ -227,6 +234,10 @@ __repmgr_available_site(dbenv, eid)
  *
  * !!!
  * Caller must hold dbenv->mutex.
+ *
+ * !!!
+ * Note that this cannot be called from the select() thread, in case we call
+ * __repmgr_bust_connection(..., FALSE).
  */
 static int
 __repmgr_send_broadcast(dbenv, control, rec, nsitesp, npeersp)

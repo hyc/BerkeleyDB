@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_mgr.c,v 12.17 2006/11/01 00:52:54 bostic Exp $
+ * $Id: rep_mgr.c,v 12.18 2006/11/13 19:49:45 alanb Exp $
  */
 
 #include <sys/types.h>
@@ -52,14 +52,11 @@ main(argc, argv)
 	start_policy = DB_REP_ELECTION;	/* default */
 	priority = 100;		/* default */
 
-	while ((ch = getopt(argc, argv, "CFf:h:Mm:n:o:p:v")) != EOF) {
+	while ((ch = getopt(argc, argv, "Cf:h:Mm:n:o:p:v")) != EOF) {
 		friend = 0;
 		switch (ch) {
 		case 'C':
 			start_policy = DB_REP_CLIENT;
-			break;
-		case 'F':
-			start_policy = DB_REP_FULL_ELECTION;
 			break;
 		case 'h':
 			home = optarg;

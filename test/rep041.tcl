@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep041.tcl,v 12.14 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep041.tcl,v 12.15 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep041
 # TEST  Turn replication on and off at run-time.
@@ -67,7 +67,13 @@ proc rep041 { method { niter 500 } { tnum "041" } args } {
 proc rep041_sub { method niter tnum envargs logset recargs largs } {
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -97,15 +103,10 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 	# Open a master.
 	puts "\tRep$tnum.a: Open master with replication OFF."
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -log_max $log_max $envargs \
+	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
+	    $m_logargs -log_max $log_max $envargs -errpfx MASTER \
 	    -home $masterdir -rep"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep"
 	set masterenv [eval $ma_envcmd $recargs]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 	$masterenv rep_limit 0 0
 
         # Run rep_test in the master to advance log files.
@@ -138,17 +139,11 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 	# Open a client
 	puts "\tRep$tnum.e: Open client."
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max $envargs \
+	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $verbargs \
+	    $c_logargs -log_max $log_max $envargs -errpfx CLIENT \
 	    -home $clientdir \
 	    -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir \
-#	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 	$clientenv rep_limit 0 0
 
 	# Set up envlist for processing messages later.

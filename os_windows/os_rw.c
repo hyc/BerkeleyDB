@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_rw.c,v 12.17 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_rw.c,v 12.18 2007/01/22 06:12:20 alexg Exp $
  */
 
 #include "db_config.h"
@@ -26,6 +26,7 @@ __os_io(dbenv, op, fhp, pgno, pgsize, relative, io_len, buf, niop)
 {
 	int ret;
 
+#ifndef DB_WINCE
 	if (__os_is_winnt()) {
 		ULONG64 off;
 		OVERLAPPED over;
@@ -65,7 +66,9 @@ __os_io(dbenv, op, fhp, pgno, pgsize, relative, io_len, buf, niop)
 		}
 	}
 
-slow:	MUTEX_LOCK(dbenv, fhp->mtx_fh);
+slow:
+#endif
+	MUTEX_LOCK(dbenv, fhp->mtx_fh);
 
 	if ((ret = __os_seek(dbenv, fhp, pgno, pgsize, relative)) != 0)
 		goto err;

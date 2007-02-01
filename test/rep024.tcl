@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep024.tcl,v 12.10 2006/11/01 00:53:56 bostic Exp $
+# $Id: rep024.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
 #
 # TEST  	rep024
 # TEST	Replication page allocation / verify test
@@ -53,7 +53,13 @@ proc rep024 { method { niter 1000 } { tnum "024" } args } {
 
 proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	source ./include.tcl
-	global testdir
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -82,29 +88,17 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	repladd 1
 	set env_cmd(1) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs $recargs -home $masterdir \
-	    -errpfx MASTER -txn $m_logargs \
+	    -errpfx MASTER $verbargs -txn $m_logargs \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(1) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs $recargs -home $masterdir \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -errpfx MASTER -txn $m_logargs \
-#	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(1) -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set env_cmd(2) "berkdb_env_noerr -create \
 	    -log_max 1000000 $envargs $recargs -home $clientdir \
-	    -errpfx CLIENT -txn $c_logargs \
+	    -errpfx CLIENT $verbargs -txn $c_logargs \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(2) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs $recargs -home $clientdir \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -errpfx CLIENT -txn $c_logargs \
-#	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(2) -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -125,7 +119,7 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 
 	set omethod [convert_method $method]
 	set testfile "test$tnum.db"
-	set db [eval "berkdb_open -create $omethod -auto_commit \
+	set db [eval "berkdb_open_noerr -create $omethod -auto_commit \
 	    -pagesize $pagesize -env $masterenv $largs $testfile"]
 	eval rep_test $method $masterenv $db $niter 0 0 0 0 $largs
 	process_msgs $envlist
@@ -169,7 +163,7 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 		process_msgs $envlist
 		if { $option == "add new data" } {
 			set key [expr $niter + 2]
-			set db [eval "berkdb_open -create $omethod \
+			set db [eval "berkdb_open_noerr -create $omethod \
 			    -auto_commit -pagesize $pagesize \
 			    -env $newmasterenv $largs $testfile"]
 			set pages1 [r24_check_pages $db $method]

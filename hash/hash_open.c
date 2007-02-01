@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_open.c,v 12.18 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_open.c,v 12.20 2006/12/14 23:00:25 ubell Exp $
  */
 
 #include "db_config.h"
@@ -365,7 +365,7 @@ __ham_new_file(dbp, txn, fhp, name)
 		if ((ret = __db_log_page(dbp,
 		    txn, &lsn, meta->dbmeta.pgno, (PAGE *)meta)) != 0)
 			goto err;
-		ret = __memp_fput(mpf, meta, 0);
+		ret = __memp_fput(mpf, meta, dbp->priority);
 		meta = NULL;
 		if (ret != 0)
 			goto err;
@@ -380,7 +380,7 @@ __ham_new_file(dbp, txn, fhp, name)
 		if ((ret =
 		    __db_log_page(dbp, txn, &page->lsn, lpgno, page)) != 0)
 			goto err;
-		ret = __memp_fput(mpf, page, 0);
+		ret = __memp_fput(mpf, page, dbp->priority);
 		page = NULL;
 		if (ret != 0)
 			goto err;
@@ -429,9 +429,9 @@ err:	if (buf != NULL)
 		__os_free(dbenv, buf);
 	else {
 		if (meta != NULL)
-			(void)__memp_fput(mpf, meta, 0);
+			(void)__memp_fput(mpf, meta, dbp->priority);
 		if (page != NULL)
-			(void)__memp_fput(mpf, page, 0);
+			(void)__memp_fput(mpf, page, dbp->priority);
 	}
 	return (ret);
 }
@@ -509,14 +509,18 @@ __ham_new_subdb(mdbp, dbp, txn)
 		goto err;
 
 	/* Reflect the group allocation. */
-	if (DBENV_LOGGING(dbenv))
+	if (DBENV_LOGGING(dbenv)
+#if !defined(DEBUG_WOP)
+	    && txn != NULL
+#endif
+	)
 		if ((ret = __ham_groupalloc_log(mdbp, txn,
 		    &LSN(mmeta), 0, &LSN(mmeta), meta->spares[0],
 		    meta->max_bucket + 1, 0, mmeta->last_pgno)) != 0)
 			goto err;
 
 	/* Release the new meta-data page. */
-	if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+	if ((ret = __memp_fput(mpf, meta, dbc->priority)) != 0)
 		goto err;
 	meta = NULL;
 
@@ -530,17 +534,17 @@ __ham_new_subdb(mdbp, dbp, txn)
 	mmeta->last_pgno = lpgno;
 	P_INIT(h, dbp->pgsize, lpgno, PGNO_INVALID, PGNO_INVALID, 0, P_HASH);
 	LSN(h) = LSN(mmeta);
-	if ((ret = __memp_fput(mpf, h, 0)) != 0)
+	if ((ret = __memp_fput(mpf, h, dbc->priority)) != 0)
 		goto err;
 
 err:	/* Now put the master-metadata page back. */
-	if (mmeta != NULL &&
-	    (t_ret = __memp_fput(mpf, mmeta, 0)) != 0 && ret == 0)
+	if (mmeta != NULL && (t_ret = __memp_fput(mpf,
+	        mmeta, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __LPUT(dbc, mmlock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (meta != NULL &&
-	    (t_ret = __memp_fput(mpf, meta, 0)) != 0 && ret == 0)
+	    (t_ret = __memp_fput(mpf, meta, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __LPUT(dbc, metalock)) != 0 && ret == 0)
 		ret = t_ret;

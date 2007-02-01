@@ -1,4 +1,4 @@
-<!--$Id: lock_stat.so,v 10.65 2005/07/20 16:26:38 bostic Exp $-->
+<!--$Id: lock_stat.so,v 10.66 2006/11/13 21:26:29 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -98,8 +98,12 @@ invalid flag value or parameter was specified.
 </dl>
 <hr size=1 noshade>
 <h3>Description: DB_ENV-&gt;lock_stat_print</h3>
-<p>The DB_ENV-&gt;lock_stat_print method prints diagnostic information to the output
-channel described by the <a href="../api_c/env_set_msgfile.html">DB_ENV-&gt;set_msgfile</a> method.</p>
+<p>The DB_ENV-&gt;lock_stat_print method displays the
+locking subsystem statistical information, as described for the DB_ENV-&gt;lock_stat method.
+The information is printed to a specified output channel (see the
+<a href="../api_c/env_set_msgfile.html">DB_ENV-&gt;set_msgfile</a> method for more information), or passed to an
+application callback function (see the <a href="../api_c/env_set_msgcall.html">DB_ENV-&gt;set_msgcall</a> method for
+more information).</p>
 <p>The DB_ENV-&gt;lock_stat_print method may not be called before the <a href="../api_c/env_open.html">DB_ENV-&gt;open</a> method has
 been called.</p>
 <p>The DB_ENV-&gt;lock_stat_print method
@@ -108,10 +112,11 @@ and 0 on success.
 </p>
 <h3>Parameters</h3>
 <dl compact>
-<dt><b>flags</b><dd>The <b>flags</b> parameter must be set by bitwise inclusively <b>OR</b>'ing together one or more
-of the following values:
+<dt><b>flags</b><dd>The <b>flags</b> parameter must be set to 0 or by bitwise inclusively <b>OR</b>'ing together one
+or more of the following values:
 <dl compact>
 <dt><a name="DB_STAT_ALL">DB_STAT_ALL</a><dd>Display all available information.
+<dt><a name="DB_STAT_CLEAR">DB_STAT_CLEAR</a><dd>Reset statistics after displaying their values.
 <dt><a name="DB_STAT_LOCK_CONF">DB_STAT_LOCK_CONF</a><dd>Display the lock conflict matrix.
 <dt><a name="DB_STAT_LOCK_LOCKERS">DB_STAT_LOCK_LOCKERS</a><dd>Display the lockers within hash chains.
 <dt><a name="DB_STAT_LOCK_OBJECTS">DB_STAT_LOCK_OBJECTS</a><dd>Display the lock objects within hash chains.

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_open.c,v 12.13 2006/11/01 00:53:44 bostic Exp $
+ * $Id: qam_open.c,v 12.14 2006/11/29 21:23:21 ubell Exp $
  */
 
 #include "db_config.h"
@@ -110,8 +110,8 @@ __qam_open(dbp, txn, name, base_pgno, mode, flags)
 	t->q_meta = base_pgno;
 	t->q_root = base_pgno + 1;
 
-err:	if (qmeta != NULL &&
-	    (t_ret = __memp_fput(mpf, qmeta, 0)) != 0 && ret == 0)
+err:	if (qmeta != NULL && (t_ret =
+	    __memp_fput(mpf, qmeta, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Don't hold the meta page long term. */
@@ -326,7 +326,7 @@ __qam_new_file(dbp, txn, fhp, name)
 		if ((ret = __db_log_page(dbp,
 		    txn, &meta->dbmeta.lsn, pgno, (PAGE *)meta)) != 0)
 			goto err;
-		ret = __memp_fput(mpf, meta, 0);
+		ret = __memp_fput(mpf, meta, dbp->priority);
 	} else {
 		pginfo.db_pagesize = dbp->pgsize;
 		pginfo.flags =
@@ -347,6 +347,6 @@ __qam_new_file(dbp, txn, fhp, name)
 err:	if (name != NULL)
 		__os_free(dbenv, buf);
 	else if (meta != NULL)
-		(void)__memp_fput(mpf, meta, 0);
+		(void)__memp_fput(mpf, meta, dbp->priority);
 	return (ret);
 }

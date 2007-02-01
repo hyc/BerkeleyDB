@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep053.tcl,v 12.14 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep053.tcl,v 12.15 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep053
 # TEST	Replication and basic client-to-client synchronization.
@@ -55,6 +55,13 @@ proc rep053_sub { method niter tnum logset recargs throttle largs } {
 	global anywhere
 	global testdir
 	global util_path
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -82,26 +89,16 @@ proc rep053_sub { method niter tnum logset recargs throttle largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -errpfx MASTER \
+	    $m_logargs -errpfx MASTER $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -errpfx MASTER \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -errpfx CLIENT \
+	    $c_logargs -errpfx CLIENT $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -errpfx CLIENT \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# If throttling is specified, turn it on here.  Throttle the
 	# client, since this is a test of client-to-client sync up.
@@ -117,12 +114,8 @@ proc rep053_sub { method niter tnum logset recargs throttle largs } {
 	# when it starts.
 	#
 	set dc1_envcmd "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -errpfx DELAYCL \
+	    $c2_logargs -errpfx DELAYCL $verbargs \
 	    -home $delaycldir1 -rep_transport \[list 3 replsend\]"
-#	set dc1_envcmd "berkdb_env_noerr -create $c2_txnargs \
-#	    $c2_logargs -errpfx DELAYCL \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -home $delaycldir1 -rep_transport \[list 3 replsend\]"
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"

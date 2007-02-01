@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_internal.c,v 12.18 2006/11/01 00:53:51 bostic Exp $
+ * $Id: tcl_internal.c,v 12.20 2006/12/18 19:08:52 alanb Exp $
  */
 
 #include "db_config.h"
@@ -162,6 +162,8 @@ _DeleteInfo(p)
 		Tcl_DecrRefCount(p->i_rep_eid);
 	if (p->i_rep_send != NULL)
 		Tcl_DecrRefCount(p->i_rep_send);
+	if (p->i_event != NULL)
+		Tcl_DecrRefCount(p->i_event);
 	__os_free(NULL, p->i_name);
 	__os_free(NULL, p);
 
@@ -548,6 +550,9 @@ _EventFunc(dbenv, event, info)
 		 */
 		myobjv[0] = NewStringObj("newmaster", strlen("newmaster"));
 		myobjv[myobjc++] = Tcl_NewIntObj(*(int *)info);
+		break;
+	case DB_EVENT_REP_PERM_FAILED:
+		myobjv[0] = NewStringObj("perm_failed", strlen("perm_failed"));
 		break;
 	case DB_EVENT_REP_STARTUPDONE:
 		myobjv[0] = NewStringObj("startupdone", strlen("startupdone"));

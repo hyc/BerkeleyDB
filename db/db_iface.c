@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_iface.c,v 12.56 2006/11/09 14:27:06 bostic Exp $
+ * $Id: db_iface.c,v 12.57 2007/01/31 16:14:36 margo Exp $
  */
 
 #include "db_config.h"
@@ -1114,11 +1114,13 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	F_CLR(dbp, DB_AM_DISCARD | DB_AM_CREATED | DB_AM_CREATED_MSTR);
 
 	/*
-	 * If not transactional, remove the databases/subdatabases.  If we're
-	 * transactional, the child transaction abort cleans up.
+	 * If not transactional, remove the databases/subdatabases if it is
+	 * persistent.  If we're transactional, the child transaction abort
+	 * cleans up.
 	 */
 txnerr:	if (ret != 0 && !IS_REAL_TXN(txn)) {
-		remove_me = F_ISSET(dbp, DB_AM_CREATED);
+		remove_me = (F_ISSET(dbp, DB_AM_CREATED) &&
+			(fname != NULL || dname != NULL)) ? 1 : 0;
 		if (F_ISSET(dbp, DB_AM_CREATED_MSTR) ||
 		    (dname == NULL && remove_me))
 			/* Remove file. */

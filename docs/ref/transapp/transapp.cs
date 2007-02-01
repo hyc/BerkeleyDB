@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 
 	add_cat(dbenv, db_cats,
 		"Amy Adams",
-		"Oracle Corporation",
+		"Oracle",
 		"394 E. Riding Dr., Carlisle, MA 01741, USA",
 		"abyssinian",
 		"bengal",

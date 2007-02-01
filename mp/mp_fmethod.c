@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_fmethod.c,v 12.15 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_fmethod.c,v 12.16 2006/11/30 18:33:32 ubell Exp $
  */
 
 #include "db_config.h"
@@ -82,7 +82,6 @@ __memp_fcreate(dbenv, retp)
 	dbmfp->get_priority = __memp_get_priority;
 	dbmfp->open = __memp_fopen_pp;
 	dbmfp->put = __memp_fput_pp;
-	dbmfp->set = __memp_fset_pp;
 	dbmfp->set_clear_len = __memp_set_clear_len;
 	dbmfp->set_fileid = __memp_set_fileid;
 	dbmfp->set_flags = __memp_set_flags;

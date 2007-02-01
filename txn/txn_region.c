@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_region.c,v 12.26 2006/11/08 22:37:13 bostic Exp $
+ * $Id: txn_region.c,v 12.28 2006/11/23 15:27:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -42,7 +42,7 @@ __txn_open(dbenv, create_ok)
 	mgr->reginfo.flags = REGION_JOIN_OK;
 	if (create_ok)
 		F_SET(&mgr->reginfo, REGION_CREATE_OK);
-	if ((ret = __db_r_attach(dbenv,
+	if ((ret = __env_region_attach(dbenv,
 	    &mgr->reginfo, __txn_region_size(dbenv))) != 0)
 		goto err;
 
@@ -65,7 +65,7 @@ __txn_open(dbenv, create_ok)
 
 err:	dbenv->tx_handle = NULL;
 	if (mgr->reginfo.addr != NULL)
-		(void)__db_r_detach(dbenv, &mgr->reginfo, 0);
+		(void)__env_region_detach(dbenv, &mgr->reginfo, 0);
 
 	(void)__mutex_free(dbenv, &mgr->mutex);
 	__os_free(dbenv, mgr);
@@ -203,13 +203,13 @@ err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 }
 
 /*
- * __txn_dbenv_refresh --
+ * __txn_env_refresh --
  *	Clean up after the transaction system on a close or failed open.
  *
- * PUBLIC: int __txn_dbenv_refresh __P((DB_ENV *));
+ * PUBLIC: int __txn_env_refresh __P((DB_ENV *));
  */
 int
-__txn_dbenv_refresh(dbenv)
+__txn_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_TXN *txn;
@@ -269,13 +269,30 @@ __txn_dbenv_refresh(dbenv)
 		ret = t_ret;
 
 	/* Detach from the region. */
-	if ((t_ret = __db_r_detach(dbenv, reginfo, 0)) != 0 && ret == 0)
+	if ((t_ret = __env_region_detach(dbenv, reginfo, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
 	__os_free(dbenv, mgr);
 
 	dbenv->tx_handle = NULL;
 	return (ret);
+}
+
+/*
+ * __txn_region_mutex_count --
+ *	Return the number of mutexes the txn region will need.
+ *
+ * PUBLIC: u_int32_t __txn_region_mutex_count __P((DB_ENV *));
+ */
+u_int32_t
+__txn_region_mutex_count(dbenv)
+	DB_ENV *dbenv;
+{
+	/*
+	 * We need a MVCC mutex for each TXN_DETAIL structure, a mutex for
+	 * DB_TXNMGR structure, two mutexes for the DB_TXNREGION structure.
+	 */
+	return (dbenv->tx_max + 1 + 2);
 }
 
 /*

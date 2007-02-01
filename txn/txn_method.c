@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_method.c,v 12.7 2006/11/01 00:54:23 bostic Exp $
+ * $Id: txn_method.c,v 12.8 2006/11/16 16:45:00 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,13 +12,13 @@
 #include "dbinc/txn.h"
 
 /*
- * __txn_dbenv_create --
+ * __txn_env_create --
  *	Transaction specific initialization of the DB_ENV structure.
  *
- * PUBLIC: int __txn_dbenv_create __P((DB_ENV *));
+ * PUBLIC: int __txn_env_create __P((DB_ENV *));
  */
 int
-__txn_dbenv_create(dbenv)
+__txn_env_create(dbenv)
 	DB_ENV *dbenv;
 {
 	/*
@@ -33,13 +33,13 @@ __txn_dbenv_create(dbenv)
 }
 
 /*
- * __txn_dbenv_destroy --
+ * __txn_env_destroy --
  *	Transaction specific destruction of the DB_ENV structure.
  *
- * PUBLIC: void __txn_dbenv_destroy __P((DB_ENV *));
+ * PUBLIC: void __txn_env_destroy __P((DB_ENV *));
  */
 void
-__txn_dbenv_destroy(dbenv)
+__txn_env_destroy(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, NULL);

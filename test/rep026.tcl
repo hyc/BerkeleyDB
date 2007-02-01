@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep026.tcl,v 12.13 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep026.tcl,v 12.14 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep026
 # TEST	Replication elections - simulate a crash after sending
@@ -54,8 +54,14 @@ proc rep026 { method args } {
 
 proc rep026_sub { method nclients tnum logset largs } {
 	source ./include.tcl
-	global errorInfo
 	global machids queuedbs
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -75,25 +81,20 @@ proc rep026_sub { method nclients tnum logset largs } {
 		set c_txnargs($i) [adjust_txnargs $c_logtype($i)]
 	}
 
-# To debug elections, the lines to uncomment are below the
-# error checking portion of this test.  This is needed in order
-# for the error messages to come back in errorInfo and for
-# that portion of the test to pass.
 	# Open a master.
 	set envlist {}
 	repladd 1
-	set env_cmd(M) "berkdb_env -create -log_max 1000000 \
+	set env_cmd(M) "berkdb_env -create -log_max 1000000 $verbargs \
 	    -home $masterdir $m_txnargs $m_logargs -rep_master \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 	lappend envlist "$masterenv 1"
 
 	# Open the clients.
 	for { set i 0 } { $i < $nclients } { incr i } {
 		set envid [expr $i + 2]
 		repladd $envid
-		set env_cmd($i) "berkdb_env_noerr -create \
+		set env_cmd($i) "berkdb_env_noerr -create $verbargs \
 		    -home $clientdir($i) $c_txnargs($i) $c_logargs($i) \
 		    -rep_client -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i)]
@@ -112,21 +113,19 @@ proc rep026_sub { method nclients tnum logset largs } {
 	error_check_good masterenv_close [$masterenv close] 0
 	set envlist [lreplace $envlist 0 0]
 
-# To debug elections, uncomment the lines below to turn on verbose
-# and set the errfile.  Also edit reputils.tcl
-# in proc start_election and swap the 2 commented lines with
-# their counterpart.
 	foreach pair $envlist {
 		set i [expr [lindex $pair 1] - 2]
 		replclear [expr $i + 2]
 		set err_cmd($i) "none"
 		set crash($i) 0
 		set pri($i) 10
-#		error_check_good pfx [$clientenv($i) errpfx CLIENT$i] 0
-#		error_check_good verb [$clientenv($i) verbose rep on] 0
-#		$clientenv($i) errfile /dev/stderr
-#		set env_cmd($i) [concat $env_cmd($i) \
-#		    "-errpfx CLIENT$i -verbose {rep on} -errfile /dev/stderr"]
+		if { $rep_verbose == 1 } {
+			$clientenv($i) errpfx CLIENT$i
+			$clientenv($i) verbose rep on
+			$clientenv($i) errfile /dev/stderr
+			set env_cmd($i) [concat $env_cmd($i) \
+			    "-errpfx CLIENT$i -errfile /dev/stderr"]
+		}
 	}
 
 	# In each case we simulate a crash in client C, recover, and
@@ -207,16 +206,19 @@ proc rep026_sub { method nclients tnum logset largs } {
 		    $elector $elector "$clientenv($elector) [expr $elector + 2]"]
 		process_msgs $envlist
 
-		# Verify egens (should be +1 in C, and unchanged in other clients).
+		# Verify egens (should be +1 in C, and unchanged 
+		# in other clients).
 		foreach pair $envlist {
 			set i [expr [lindex $pair 1] - 2]
 			set clientenv($i) [lindex $pair 0]
-			set newegen($i) [stat_field \
-			    $clientenv($i) rep_stat "Election generation number"]
+			set newegen($i) [stat_field $clientenv($i) \
+			    rep_stat "Election generation number"]
 			if { $i == $elector } {
-				error_check_good egen+1 $newegen($i) [expr $egen($i) + 1]
+				error_check_good \
+				    egen+1 $newegen($i) [expr $egen($i) + 1]
 			} else {
-				error_check_good egen_unchanged $newegen($i) $egen($i)
+				error_check_good \
+				    egen_unchanged $newegen($i) $egen($i)
 			}
 		}
 

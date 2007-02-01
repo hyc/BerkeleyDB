@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: db_cxx.in,v 12.30 2006/11/01 00:52:40 bostic Exp $
+ * $Id: db_cxx.in,v 12.34 2006/11/30 19:05:19 bostic Exp $
  */
 
 #ifndef _DB_CXX_H_
@@ -161,6 +161,8 @@ extern "C" {
 		(DB *, const DBT *, const DBT *);
 	typedef int (*dup_compare_fcn_type)         /*C++ version available*/
 		(DB *, const DBT *, const DBT *);
+	typedef int (*h_compare_fcn_type)          /*C++ version available*/
+		(DB *, const DBT *, const DBT *);
 	typedef u_int32_t (*h_hash_fcn_type)        /*C++ version available*/
 		(DB *, const void *, u_int32_t);
 	typedef int (*pgin_fcn_type)
@@ -234,6 +236,8 @@ public:
 	virtual int set_feedback(void (*)(Db *, int, int));
 	virtual int get_flags(u_int32_t *);
 	virtual int set_flags(u_int32_t);
+	virtual int set_h_compare(h_compare_fcn_type); /*deprecated*/
+	virtual int set_h_compare(int (*)(Db *, const Dbt *, const Dbt *));
 	virtual int get_h_ffactor(u_int32_t *);
 	virtual int set_h_ffactor(u_int32_t);
 	virtual int set_h_hash(h_hash_fcn_type); /*deprecated*/
@@ -325,6 +329,7 @@ public:
 	size_t (*bt_prefix_callback_)(Db *, const Dbt *, const Dbt *);
 	int (*dup_compare_callback_)(Db *, const Dbt *, const Dbt *);
 	void (*feedback_callback_)(Db *, int, int);
+	int (*h_compare_callback_)(Db *, const Dbt *, const Dbt *);
 	u_int32_t (*h_hash_callback_)(Db *, const void *, u_int32_t);
 };
 
@@ -450,8 +455,8 @@ public:
 	virtual int set_mp_mmapsize(size_t);
 	virtual int get_mp_max_openfd(int *);
 	virtual int set_mp_max_openfd(int);
-	virtual int get_mp_max_write(int *, int *);
-	virtual int set_mp_max_write(int, int);
+	virtual int get_mp_max_write(int *, db_timeout_t *);
+	virtual int set_mp_max_write(int, db_timeout_t);
 	virtual void set_msgcall(void (*)(const DbEnv *, const char *));
 	virtual void get_msgfile(FILE **);
 	virtual void set_msgfile(FILE *);
@@ -755,8 +760,7 @@ public:
 	int get(db_pgno_t *pgnoaddr, DbTxn *txn, u_int32_t flags, void *pagep);
 	int open(const char *file, u_int32_t flags, int mode, size_t pagesize);
 	int get_transactional(void);
-	int put(void *pgaddr, u_int32_t flags);
-	int set(void *pgaddr, u_int32_t flags);
+	int put(void *pgaddr, DB_CACHE_PRIORITY priority, u_int32_t flags);
 	int get_clear_len(u_int32_t *len);
 	int set_clear_len(u_int32_t len);
 	int get_fileid(u_int8_t *fileid);

@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_put.c,v 12.22 2006/11/01 00:51:57 bostic Exp $
+ * $Id: bt_put.c,v 12.23 2006/11/29 21:23:10 ubell Exp $
  */
 
 #include "db_config.h"
@@ -246,7 +246,7 @@ __bam_iitem(dbc, key, data, op, flags)
 			return (__db_space_err(dbp));
 	}
 
-	if ((ret = __memp_dirty(mpf, &h, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf, &h, dbc->txn, dbc->priority, 0)) != 0)
 		return (ret);
 	if (cp->csp->page == cp->page)
 		cp->csp->page = h;
@@ -873,7 +873,7 @@ __bam_dup_convert(dbc, h, indx, cnt)
 	ret = __bam_ca_di(dbc,
 	    PGNO(h), first + P_INDX, (int)(first + P_INDX - indx));
 
-err:	if ((t_ret = __memp_fput(mpf, dp, 0)) != 0 && ret == 0)
+err:	if ((t_ret = __memp_fput(mpf, dp, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);

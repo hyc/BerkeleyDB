@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_stat.c,v 12.30 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_stat.c,v 12.31 2006/12/13 01:25:38 ubell Exp $
  */
 
 #include "db_config.h"
@@ -164,7 +164,8 @@ __memp_stat(dbenv, gspp, fspp, flags)
 				    c_mp->stat.st_alloc_max_pages;
 
 			if (LF_ISSET(DB_STAT_CLEAR)) {
-				__mutex_clear(dbenv, c_mp->mtx_region);
+				if (!LF_ISSET(DB_STAT_SUBSYSTEM))
+					__mutex_clear(dbenv, c_mp->mtx_region);
 
 				MPOOL_SYSTEM_LOCK(dbenv);
 				st_bytes = c_mp->stat.st_bytes;
@@ -387,7 +388,7 @@ __memp_stat_print(dbenv, flags)
 	int ret;
 
 	orig_flags = flags;
-	LF_CLR(DB_STAT_CLEAR);
+	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
 	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
 		ret = __memp_print_stats(dbenv, orig_flags);
 		if (flags == 0 || ret != 0)
@@ -821,7 +822,8 @@ __memp_stat_wait(dbenv, reginfo, mp, mstat, flags)
 			mstat->st_hash_max_wait = tmp_wait;
 			mstat->st_hash_max_nowait = tmp_nowait;
 		}
-		if (LF_ISSET(DB_STAT_CLEAR))
+		if (LF_ISSET(DB_STAT_CLEAR |
+		    DB_STAT_SUBSYSTEM) == DB_STAT_CLEAR)
 			__mutex_clear(dbenv, hp->mtx_hash);
 
 		mstat->st_io_wait += hp->hash_io_wait;

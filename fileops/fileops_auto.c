@@ -710,6 +710,16 @@ __fop_write_read(dbenv, recbuf, argpp)
  * PUBLIC: int __fop_rename_log __P((DB_ENV *, DB_TXN *, DB_LSN *,
  * PUBLIC:     u_int32_t, const DBT *, const DBT *, const DBT *, u_int32_t));
  */
+/*
+ * PUBLIC: int __fop_rename_noundo_log __P((DB_ENV *, DB_TXN *,
+ * PUBLIC:     DB_LSN *, u_int32_t, const DBT *, const DBT *, const DBT *,
+ * PUBLIC:     u_int32_t));
+ */
+/*
+ * PUBLIC: int __fop_rename_int_log __P((DB_ENV *, DB_TXN *,
+ * PUBLIC:     DB_LSN *, u_int32_t, const DBT *, const DBT *, const DBT *,
+ * PUBLIC:     u_int32_t, u_int32_t));
+ */
 int
 __fop_rename_log(dbenv, txnp, ret_lsnp, flags,
     oldname, newname, fileid, appname)
@@ -721,6 +731,39 @@ __fop_rename_log(dbenv, txnp, ret_lsnp, flags,
 	const DBT *newname;
 	const DBT *fileid;
 	u_int32_t appname;
+
+{
+	return(__fop_rename_int_log(dbenv, txnp, ret_lsnp, flags,
+    oldname, newname, fileid, appname, DB___fop_rename));
+}
+int
+__fop_rename_noundo_log(dbenv, txnp, ret_lsnp, flags,
+    oldname, newname, fileid, appname)
+	DB_ENV *dbenv;
+	DB_TXN *txnp;
+	DB_LSN *ret_lsnp;
+	u_int32_t flags;
+	const DBT *oldname;
+	const DBT *newname;
+	const DBT *fileid;
+	u_int32_t appname;
+
+{
+	return(__fop_rename_int_log(dbenv, txnp, ret_lsnp, flags,
+    oldname, newname, fileid, appname, DB___fop_rename_noundo));
+}
+int
+__fop_rename_int_log(dbenv, txnp, ret_lsnp, flags,
+    oldname, newname, fileid, appname, type)
+	DB_ENV *dbenv;
+	DB_TXN *txnp;
+	DB_LSN *ret_lsnp;
+	u_int32_t flags;
+	const DBT *oldname;
+	const DBT *newname;
+	const DBT *fileid;
+	u_int32_t appname;
+	u_int32_t type;
 {
 	DBT logrec;
 	DB_TXNLOGREC *lr;
@@ -732,7 +775,7 @@ __fop_rename_log(dbenv, txnp, ret_lsnp, flags,
 
 	COMPQUIET(lr, NULL);
 
-	rectype = DB___fop_rename;
+	rectype = type;
 	npad = 0;
 	rlsnp = ret_lsnp;
 
@@ -1221,6 +1264,9 @@ __fop_init_recover(dbenv, dtabp, dtabsizep)
 		return (ret);
 	if ((ret = __db_add_recovery(dbenv, dtabp, dtabsizep,
 	    __fop_rename_recover, DB___fop_rename)) != 0)
+		return (ret);
+	if ((ret = __db_add_recovery(dbenv, dtabp, dtabsizep,
+	    __fop_rename_noundo_recover, DB___fop_rename_noundo)) != 0)
 		return (ret);
 	if ((ret = __db_add_recovery(dbenv, dtabp, dtabsizep,
 	    __fop_file_remove_recover, DB___fop_file_remove)) != 0)

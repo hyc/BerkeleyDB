@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db_deadlock.c,v 12.14 2006/11/01 00:52:33 bostic Exp $
+ * $Id: db_deadlock.c,v 12.15 2006/12/13 22:04:45 ubell Exp $
  */
 
 #include "db_config.h"
@@ -46,7 +46,7 @@ db_deadlock_main(argc, argv)
 	u_int32_t atype;
 	time_t now;
 	u_long secs, usecs;
-	int ch, exitval, ret, verbose;
+	int rejected, ch, exitval, ret, verbose;
 	char *home, *logfile, *passwd, *str, time_buf[CTIME_BUFLEN];
 
 	if ((progname = strrchr(argv[0], '/')) == NULL)
@@ -184,10 +184,13 @@ db_deadlock_main(argc, argv)
 			    "running at %.24s", __db_ctime(&now, time_buf));
 		}
 
-		if ((ret = dbenv->lock_detect(dbenv, 0, atype, NULL)) != 0) {
+		if ((ret =
+		    dbenv->lock_detect(dbenv, 0, atype, &rejected)) != 0) {
 			dbenv->err(dbenv, ret, "DB_ENV->lock_detect");
 			goto shutdown;
 		}
+		if (verbose) 
+			dbenv->errx(dbenv, "rejected %d locks", rejected);
 
 		/* Make a pass every "secs" secs and "usecs" usecs. */
 		if (secs == 0 && usecs == 0)

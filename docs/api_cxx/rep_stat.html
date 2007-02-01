@@ -1,4 +1,4 @@
-<!--$Id: rep_stat.so,v 10.39 2005/11/11 19:00:31 bostic Exp $-->
+<!--$Id: rep_stat.so,v 10.40 2006/11/09 16:46:27 sue Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -86,7 +86,7 @@ time is <b>st_election_sec</b> plus <b>st_election_usec</b>).
 <dt>u_int32_t st_log_queued_max;<dd>The maximum number of log records ever queued at once.
 <dt>u_int32_t st_log_queued_total;<dd>The total number of log records queued.
 <dt>u_int32_t st_log_records;<dd>The number of log records received and appended to the log.
-<dt>u_int32_t st_log_requested;<dd>The number of log records missed and requested.
+<dt>u_int32_t st_log_requested;<dd>The number of times log records were missed and requested.
 <dt>u_int32_t st_master;<dd>The current master environment ID.
 <dt>u_int32_t st_master_changes;<dd>The number of times the master has changed.
 <dt>u_int32_t st_msgs_badgen;<dd>The number of messages received with a bad generation number.

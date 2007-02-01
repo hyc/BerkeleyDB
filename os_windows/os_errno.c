@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: os_errno.c,v 12.11 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_errno.c,v 12.12 2007/01/22 06:12:19 alexg Exp $
  */
 
 #include "db_config.h"
@@ -105,8 +105,23 @@ __os_strerror(error, buf, len)
 	char *buf;
 	size_t len;
 {
+#ifdef DB_WINCE
+#define	MAX_TMPBUF_LEN 512
+	_TCHAR tbuf[MAX_TMPBUF_LEN];
+	size_t  maxlen;
+
 	DB_ASSERT(NULL, error != 0);
 
+	memset(tbuf, 0, sizeof(_TCHAR)*MAX_TMPBUF_LEN);
+	maxlen = (len > MAX_TMPBUF_LEN ? MAX_TMPBUF_LEN : len);
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, (DWORD)error,
+		0, tbuf, maxlen-1, NULL);
+
+	if (WideCharToMultiByte(CP_UTF8, 0, tbuf, -1,
+		buf, len, 0, NULL) == 0)
+		strncpy(buf, "Error message translation failed.", len);
+#else
+	DB_ASSERT(NULL, error != 0);
 	/*
 	 * Explicitly call FormatMessageA, since we want to receive a char
 	 * string back, not a tchar string.
@@ -114,6 +129,7 @@ __os_strerror(error, buf, len)
 	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
 	    0, (DWORD)error, 0, buf, (DWORD)(len - 1), NULL);
 	buf[len - 1] = '\0';
+#endif
 
 	return (buf);
 }
@@ -134,6 +150,9 @@ __os_posix_err(error)
 	 * Translate the Windows error codes we care about.
 	 */
 	switch (error) {
+	case ERROR_INVALID_PARAMETER:
+		return (EINVAL);
+
 	case ERROR_FILE_NOT_FOUND:
 	case ERROR_INVALID_DRIVE:
 	case ERROR_PATH_NOT_FOUND:

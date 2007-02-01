@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_ovfl_vrfy.c,v 12.9 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_ovfl_vrfy.c,v 12.10 2006/11/29 21:23:12 ubell Exp $
  */
 
 #include "db_config.h"
@@ -346,7 +346,7 @@ __db_safe_goff(dbp, vdp, pgno, dbt, buf, flags)
 
 		pgno = NEXT_PGNO(h);
 
-		if ((ret = __memp_fput(mpf, h, 0)) != 0)
+		if ((ret = __memp_fput(mpf, h, DB_PRIORITY_UNCHANGED)) != 0)
 			break;
 		h = NULL;
 	}
@@ -361,7 +361,8 @@ __db_safe_goff(dbp, vdp, pgno, dbt, buf, flags)
 	}
 
 	/* If we broke out on error, don't leave pages pinned. */
-	if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0 && ret == 0)
+	if (h != NULL && (t_ret =
+	    __memp_fput(mpf, h, DB_PRIORITY_UNCHANGED)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);

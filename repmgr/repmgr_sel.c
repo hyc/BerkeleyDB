@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_sel.c,v 1.28 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_sel.c,v 1.30 2006/12/29 01:12:50 alanb Exp $
  */
 
 #include "db_config.h"
@@ -37,6 +37,10 @@ __repmgr_select_thread(args)
 
 /*
  * PUBLIC: int __repmgr_accept __P((DB_ENV *));
+ *
+ * !!!
+ * Only ever called in the select() thread, since we may call
+ * __repmgr_bust_connection(..., TRUE).
  */
 int
 __repmgr_accept(dbenv)
@@ -151,16 +155,16 @@ __repmgr_retry_connections(dbenv)
 {
 	DB_REP *db_rep;
 	REPMGR_RETRY *retry;
-	repmgr_timeval_t now;
+	db_timespec now;
 	u_int eid;
 	int ret;
 
 	db_rep = dbenv->rep_handle;
-	__os_clock(dbenv, &now.tv_sec, &now.tv_usec);
+	__os_gettime(dbenv, &now);
 
 	while (!TAILQ_EMPTY(&db_rep->retries)) {
 		retry = TAILQ_FIRST(&db_rep->retries);
-		if (__repmgr_timeval_cmp(&retry->time, &now) > 0)
+		if (timespeccmp(&retry->time, &now, >=))
 			break;	/* since items are in time order */
 
 		TAILQ_REMOVE(&db_rep->retries, retry, entries);
@@ -250,6 +254,10 @@ __repmgr_try_one(dbenv, eid)
  * Tries to establish a connection with the site indicated by the given eid,
  * starting with the "current" element of its address list and trying as many
  * addresses as necessary until the list is exhausted.
+ *
+ * !!!
+ * Only ever called in the select() thread, since we may call
+ * __repmgr_bust_connection(..., TRUE).
  *
  * PUBLIC: int __repmgr_connect_site __P((DB_ENV *, u_int eid));
  */
@@ -408,6 +416,8 @@ __repmgr_send_handshake(dbenv, conn)
 	repmgr_netaddr_t *my_addr;
 	DB_REPMGR_HANDSHAKE buffer;
 	DBT cntrl, rec;
+
+	DB_ASSERT(dbenv, !F_ISSET(conn, CONN_CONNECTING | CONN_DEFUNCT));
 
 	db_rep = dbenv->rep_handle;
 	rep = db_rep->region;

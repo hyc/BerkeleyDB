@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep039.tcl,v 1.17 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep039.tcl,v 1.18 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep039
 # TEST	Test of internal initialization and master changes.
@@ -76,7 +76,13 @@ proc rep039 { method { niter 200 } { tnum "039" } args } {
 proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -99,41 +105,26 @@ proc rep039_sub { method niter tnum recargs clean archive pmsgs largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
-	    -log_buffer $log_buf -log_max $log_max \
+	set ma_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -log_buffer $log_buf -log_max $log_max -errpfx MASTER \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -log_buffer $log_buf -log_max $log_max \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
-	    -log_buffer $log_buf -log_max $log_max \
+	set cl_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -log_buffer $log_buf -log_max $log_max -errpfx CLIENT \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -log_buffer $log_buf -log_max $log_max \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 	$clientenv rep_limit 0 0
 
 	# Open 2nd client
 	repladd 3
-	set cl2_envcmd "berkdb_env_noerr -create -txn nosync \
-	    -log_buffer $log_buf -log_max $log_max \
+	set cl2_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -log_buffer $log_buf -log_max $log_max -errpfx CLIENT2 \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
-#	set cl2_envcmd "berkdb_env_noerr -create -txn nosync \
-#	    -log_buffer $log_buf -log_max $log_max \
-#	    -verbose {rep on} -errpfx CLIENT2 \
-#	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set clientenv2 [eval $cl2_envcmd $recargs -rep_client]
-	error_check_good client2_env [is_valid_env $clientenv2] TRUE
 	$clientenv2 rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.

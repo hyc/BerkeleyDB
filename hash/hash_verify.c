@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: hash_verify.c,v 12.19 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_verify.c,v 12.20 2006/11/29 21:23:17 ubell Exp $
  */
 
 #include "db_config.h"
@@ -494,9 +494,9 @@ __ham_vrfy_structure(dbp, vdp, meta_pgno, flags)
 		goto err;
 	}
 
-err:	if ((t_ret = __memp_fput(mpf, m, 0)) != 0)
+err:	if ((t_ret = __memp_fput(mpf, m, dbp->priority)) != 0)
 		return (t_ret);
-	if (h != NULL && (t_ret = __memp_fput(mpf, h, 0)) != 0)
+	if (h != NULL && (t_ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 		return (t_ret);
 	return ((isbad == 1 && ret == 0) ? DB_VERIFY_BAD: ret);
 }
@@ -762,7 +762,7 @@ __ham_vrfy_hashing(dbp, nentries, m, thisbucket, pgno, flags, hfunc)
 
 err:	if (dbt.data != NULL)
 		__os_ufree(dbp->dbenv, dbt.data);
-	if ((t_ret = __memp_fput(mpf, h, 0)) != 0)
+	if ((t_ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 		return (t_ret);
 
 	return ((ret == 0 && isbad == 1) ? DB_VERIFY_BAD : ret);
@@ -999,12 +999,14 @@ __ham_meta2pgset(dbp, vdp, hmeta, flags, pgset)
 				 * pgset.
 				 */
 				if (++totpgs > vdp->last_pgno) {
-					(void)__memp_fput(mpf, h, 0);
+					(void)__memp_fput(mpf,
+					    h, dbp->priority);
 					return (DB_VERIFY_BAD);
 				}
 				if ((ret =
 				    __db_vrfy_pgset_inc(pgset, pgno)) != 0) {
-					(void)__memp_fput(mpf, h, 0);
+					(void)__memp_fput(mpf,
+					    h, dbp->priority);
 					return (ret);
 				}
 
@@ -1012,7 +1014,7 @@ __ham_meta2pgset(dbp, vdp, hmeta, flags, pgset)
 			} else
 				pgno = PGNO_INVALID;
 
-			if ((ret = __memp_fput(mpf, h, 0)) != 0)
+			if ((ret = __memp_fput(mpf, h, dbp->priority)) != 0)
 				return (ret);
 
 			/* If the new pgno is wonky, go onto the next bucket. */

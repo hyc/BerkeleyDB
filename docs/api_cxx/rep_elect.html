@@ -1,4 +1,4 @@
-<!--$Id: rep_elect.so,v 1.24 2006/06/23 01:28:47 alanb Exp $-->
+<!--$Id: rep_elect.so,v 1.25 2006/11/15 20:13:50 sue Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -90,7 +90,10 @@ sites all restarting at the same time, it makes more sense to set
 known missing site.  Furthermore, in order to ensure the best choice
 from among sites that may take longer to boot than the local site,
 setting <b>nvotes</b> also to this same total number of sites will
-guarantee that every site in the group is considered.  (See the
+guarantee that every site in the group is considered.  Alternatively,
+using the special timeout for full elections allows full participation
+on restart but allows election of a master if one site does not
+reboot and rejoin the group in a reasonable amount of time. (See the
 <a href="../ref/rep/elect.html">Elections</a>
 section in the Berkeley DB Reference Guide for more information.)</p>
 <p>Setting <b>nsites</b> to lower values can increase the speed of an

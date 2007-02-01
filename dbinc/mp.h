@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
+ * $Id: mp.h,v 12.27 2006/11/29 20:08:41 bostic Exp $
  */
 
 #ifndef	_DB_MP_H_
@@ -168,7 +168,7 @@ struct __mpool {
 	size_t mp_mmapsize;		/* Maximum file size for mmap. */
 	int    mp_maxopenfd;		/* Maximum open file descriptors. */
 	int    mp_maxwrite;		/* Maximum buffers to write. */
-	int    mp_maxwrite_sleep;	/* Sleep after writing max buffers. */
+	db_timeout_t mp_maxwrite_sleep;	/* Sleep after writing max buffers. */
 
 	/*
 	 * The nreg, regids and maint_off fields are not thread protected,
@@ -191,7 +191,8 @@ struct __mpool {
 	u_int32_t htab_buckets;	/* Number of hash table entries. */
 	roff_t	  htab;		/* Hash table offset. */
 	u_int32_t last_checked;	/* Last bucket checked for free. */
-	u_int32_t lru_count;	/* Counter for buffer LRU */
+	u_int32_t lru_count;	/* Counter for buffer LRU. */
+	int32_t   lru_reset;	/* Hash bucket lru reset point. */
 
 	roff_t	  ftab;		/* Hash table of files. */
 

@@ -396,6 +396,11 @@ struct Db
 		return self->set_flags(self, flags);
 	}
 
+	db_ret_t set_h_compare(
+	    int (*h_compare_fcn)(DB *, const DBT *, const DBT *)) {
+		return self->set_h_compare(self, h_compare_fcn);
+	}
+
 	db_ret_t set_h_ffactor(u_int32_t h_ffactor) {
 		return self->set_h_ffactor(self, h_ffactor);
 	}

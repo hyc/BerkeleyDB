@@ -717,24 +717,6 @@ db_byteorder.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../common/db_clock.c_dependDone
-TRUE
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../common/db_clock.c_dependencies
-$(PRJ_DIR)/db_config.h \
-	$(PRJ_DIR)/db_int.h \
-	$(PRJ_DIR)/db.h
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../common/db_clock.c_objects
-db_clock.o
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../common/db_clock.c_tool
-C/C++ compiler
-<END>
-
 <BEGIN> FILE_$(PRJ_DIR)/../common/db_err.c_dependDone
 TRUE
 <END>
@@ -804,6 +786,24 @@ db_log2.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../common/db_log2.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../common/db_shash.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../common/db_shash.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../common/db_shash.c_objects
+db_shash.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../common/db_shash.c_tool
 C/C++ compiler
 <END>
 
@@ -1635,24 +1635,6 @@ dbreg_util.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_shash.c_dependDone
-TRUE
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_shash.c_dependencies
-$(PRJ_DIR)/db_config.h \
-	$(PRJ_DIR)/db_int.h \
-	$(PRJ_DIR)/db.h
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_shash.c_objects
-db_shash.o
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../env/db_shash.c_tool
-C/C++ compiler
-<END>
-
 <BEGIN> FILE_$(PRJ_DIR)/../env/env_alloc.c_dependDone
 TRUE
 <END>
@@ -1758,6 +1740,24 @@ env_method.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../env/env_method.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_name.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_name.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_name.c_objects
+env_name.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../env/env_name.c_tool
 C/C++ compiler
 <END>
 
@@ -3489,24 +3489,6 @@ os_vx_map.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_dependDone
-TRUE
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_dependencies
-$(PRJ_DIR)/db_config.h \
-	$(PRJ_DIR)/db_int.h \
-	$(PRJ_DIR)/db.h
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_objects
-os_vx_open.o
-<END>
-
-<BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_open.c_tool
-C/C++ compiler
-<END>
-
 <BEGIN> FILE_$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c_dependDone
 TRUE
 <END>
@@ -4146,11 +4128,11 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../clib/strdup.c \
 	$(PRJ_DIR)/../clib/strsep.c \
 	$(PRJ_DIR)/../common/db_byteorder.c \
-	$(PRJ_DIR)/../common/db_clock.c \
 	$(PRJ_DIR)/../common/db_err.c \
 	$(PRJ_DIR)/../common/db_getlong.c \
 	$(PRJ_DIR)/../common/db_idspace.c \
 	$(PRJ_DIR)/../common/db_log2.c \
+	$(PRJ_DIR)/../common/db_shash.c \
 	$(PRJ_DIR)/../common/mkpath.c \
 	$(PRJ_DIR)/../common/util_arg.c \
 	$(PRJ_DIR)/../common/util_cache.c \
@@ -4197,13 +4179,13 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../dbreg/dbreg_rec.c \
 	$(PRJ_DIR)/../dbreg/dbreg_stat.c \
 	$(PRJ_DIR)/../dbreg/dbreg_util.c \
-	$(PRJ_DIR)/../env/db_shash.c \
 	$(PRJ_DIR)/../env/env_alloc.c \
 	$(PRJ_DIR)/../env/env_config.c \
 	$(PRJ_DIR)/../env/env_failchk.c \
 	$(PRJ_DIR)/../env/env_file.c \
 	$(PRJ_DIR)/../env/env_globals.c \
 	$(PRJ_DIR)/../env/env_method.c \
+	$(PRJ_DIR)/../env/env_name.c \
 	$(PRJ_DIR)/../env/env_open.c \
 	$(PRJ_DIR)/../env/env_recover.c \
 	$(PRJ_DIR)/../env/env_region.c \
@@ -4300,7 +4282,6 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_abs.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_config.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_map.c \
-	$(PRJ_DIR)/../os_vxworks/os_vx_open.c \
 	$(PRJ_DIR)/../os_vxworks/os_vx_rpath.c \
 	$(PRJ_DIR)/../qam/qam.c \
 	$(PRJ_DIR)/../qam/qam_auto.c \

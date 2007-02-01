@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_posix.c,v 1.23 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_posix.c,v 1.25 2006/12/29 01:12:50 alanb Exp $
  */
 
 #include "db_config.h"
@@ -173,26 +173,20 @@ __repmgr_compute_wait_deadline(dbenv, result, wait)
 	struct timespec *result;
 	db_timeout_t wait;
 {
-	u_int32_t secs, usecs;
+	db_timespec v;
 
 	/*
 	 * Start with "now"; then add the "wait" offset.
+	 *
+	 * A db_timespec is the same as a "struct timespec" so we can pass
+	 * result directly to the underlying Berkeley DB OS routine.
 	 */
-	__os_clock(dbenv, &secs, &usecs);
+	__os_gettime(dbenv, (db_timespec *)result);
 
-	if (wait > 1000000) {
-		secs += wait / 1000000;
-		usecs += wait % 1000000;
-	} else
-		usecs += wait;
+	/* Convert microsecond wait to a timespec. */
+	DB_TIMEOUT_TO_TIMESPEC(wait, &v);
 
-	if (usecs > 1000000) {
-		secs++;
-		usecs -= 1000000;
-	}
-
-	result->tv_sec = (time_t)secs;
-	result->tv_nsec = (long)(usecs * 1000);
+	timespecadd(result, &v);
 }
 
 /*
@@ -438,48 +432,17 @@ __repmgr_readv(fd, iovec, buf_count, byte_count_p)
 }
 
 /*
- * Calculate the time duration from now til "when", in the form of a struct
- * timeval (suitable for select()), clipping the result at 0 (i.e., avoid a
- * negative result).
- *
- * PUBLIC: void __repmgr_timeval_diff_current
- * PUBLIC:    __P((DB_ENV *, repmgr_timeval_t *, select_timeout_t *));
- */
-void
-__repmgr_timeval_diff_current(dbenv, when, result)
-	DB_ENV *dbenv;
-	repmgr_timeval_t *when;
-	select_timeout_t *result;
-{
-	repmgr_timeval_t now;
-
-	__os_clock(dbenv, &now.tv_sec, &now.tv_usec);
-	if (__repmgr_timeval_cmp(when, &now) <= 0)
-		result->tv_sec = result->tv_usec = 0;
-	else {
-		/*
-		 * Do the arithmetic; first see if we need to "borrow".
-		 */
-		if (when->tv_usec < now.tv_usec) {
-			when->tv_usec += 1000000;
-			when->tv_sec--;
-		}
-		result->tv_usec = (long)(when->tv_usec - now.tv_usec);
-		result->tv_sec = (time_t)(when->tv_sec - now.tv_sec);
-	}
-}
-
-/*
  * PUBLIC: int __repmgr_select_loop __P((DB_ENV *));
  */
 int
 __repmgr_select_loop(dbenv)
 	DB_ENV *dbenv;
 {
+	struct timeval select_timeout, *select_timeout_p;
 	DB_REP *db_rep;
 	REPMGR_CONNECTION *conn, *next;
 	REPMGR_RETRY *retry;
-	select_timeout_t timeout, *timeout_p;
+	db_timespec timeout;
 	fd_set reads, writes;
 	int ret, flow_control, maxfd, nready;
 	u_int8_t buf[10];	/* arbitrary size */
@@ -513,19 +476,9 @@ __repmgr_select_loop(dbenv)
 
 		/*
 		 * Examine all connections to see what sort of I/O to ask for on
-		 * each one.  The TAILQ_FOREACH macro would be suitable here,
-		 * except that it doesn't allow unlinking the current element,
-		 * which is needed for cleanup_connection.
+		 * each one.
 		 */
-		for (conn = TAILQ_FIRST(&db_rep->connections);
-		     conn != NULL;
-		     conn = next) {
-			next = TAILQ_NEXT(conn, entries);
-			if (F_ISSET(conn, CONN_DEFUNCT)) {
-				__repmgr_cleanup_connection(dbenv, conn);
-				continue;
-			}
-
+		TAILQ_FOREACH(conn, &db_rep->connections, entries) {
 			if (F_ISSET(conn, CONN_CONNECTING)) {
 				FD_SET((u_int)conn->fd, &reads);
 				FD_SET((u_int)conn->fd, &writes);
@@ -555,19 +508,23 @@ __repmgr_select_loop(dbenv)
 		 * only have to examine the first one.)
 		 */
 		if (TAILQ_EMPTY(&db_rep->retries))
-			timeout_p = NULL;
+			select_timeout_p = NULL;
 		else {
 			retry = TAILQ_FIRST(&db_rep->retries);
 
-			timeout_p = &timeout;
-			__repmgr_timeval_diff_current(
-			    dbenv, &retry->time, timeout_p);
+			__repmgr_timespec_diff_now(
+			    dbenv, &retry->time, &timeout);
+
+			/* Convert the timespec to a timeval. */
+			select_timeout.tv_sec = timeout.tv_sec;
+			select_timeout.tv_usec = timeout.tv_nsec / NS_PER_US;
+			select_timeout_p = &select_timeout;
 		}
 
 		UNLOCK_MUTEX(db_rep->mutex);
 
-		if ((ret = select(maxfd + 1, &reads, &writes, NULL, timeout_p))
-		    == -1) {
+		if ((ret = select(maxfd + 1,
+		    &reads, &writes, NULL, select_timeout_p)) == -1) {
 			switch (ret = errno) {
 			case EINTR:
 			case EWOULDBLOCK:
@@ -581,14 +538,33 @@ __repmgr_select_loop(dbenv)
 		nready = ret;
 
 		LOCK_MUTEX(db_rep->mutex);
+
+		/*
+		 * The first priority thing we must do is to clean up any
+		 * pending defunct connections.  Otherwise, if they have any
+		 * lingering pending input, we get very confused if we try to
+		 * process it.
+		 *
+		 * The TAILQ_FOREACH macro would be suitable here, except that
+		 * it doesn't allow unlinking the current element, which is
+		 * needed for cleanup_connection.
+		 */
+		for (conn = TAILQ_FIRST(&db_rep->connections);
+		     conn != NULL;
+		     conn = next) {
+			next = TAILQ_NEXT(conn, entries);
+			if (F_ISSET(conn, CONN_DEFUNCT))
+				__repmgr_cleanup_connection(dbenv, conn);
+		}
+		
 		if ((ret = __repmgr_retry_connections(dbenv)) != 0)
 			goto out;
 		if (nready == 0)
 			continue;
 
 		/*
-		 * Traverse the linked list.  Almost like TAILQ_FOREACH, except
-		 * that we need the ability to unlink an element along the way.
+		 * Traverse the linked list.  (Again, like TAILQ_FOREACH, except
+		 * that we need the ability to unlink an element along the way.)
 		 */
 		for (conn = TAILQ_FIRST(&db_rep->connections);
 		     conn != NULL;
@@ -704,6 +680,10 @@ err_rpt:
 	 * This is just like a little mini-"bust_connection", except that we
 	 * don't reschedule for later, 'cuz we're just about to try again right
 	 * now.
+	 *
+	 * !!!
+	 * Which means this must only be called on the select() thread, since
+	 * only there are we allowed to actually close a connection.
 	 */
 	DB_ASSERT(dbenv, !TAILQ_EMPTY(&db_rep->connections));
 	__repmgr_cleanup_connection(dbenv, conn);

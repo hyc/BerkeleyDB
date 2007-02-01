@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2006
  *	Oracle Corporation.  All rights reserved.
  *
- * $Id: globals.c,v 1.1 2006/11/09 14:55:24 bostic Exp $
+ * $Id: globals.c,v 1.3 2006/11/15 13:37:19 bostic Exp $
  */
 
 #include "db_config.h"
@@ -33,7 +33,7 @@ brew_bdb_begin()
 		((BDBApp *)GETAPPINSTANCE())->db_global_values = p;
 
 		TAILQ_INIT(&DB_GLOBAL(db_envq));
-		DB_GLOBAL(db_line) = 
+		DB_GLOBAL(db_line) =
 		    "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=";
 	}
 	return (0);
@@ -43,7 +43,7 @@ brew_bdb_begin()
  * brew_bdb_end --
  *	Close down the BREW port of Berkeley DB.
  */
-int
+void
 brew_bdb_end()
 {
 	void *p;
@@ -51,6 +51,4 @@ brew_bdb_end()
 	p = ((BDBApp *)GETAPPINSTANCE())->db_global_values;
 
 	free(p);
-
-	return (0);
 }

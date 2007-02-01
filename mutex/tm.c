@@ -1,7 +1,7 @@
 /*
  * Standalone mutex tester for Berkeley DB mutexes.
  *
- * $Id: tm.c,v 12.14 2006/07/17 15:16:46 bostic Exp $
+ * $Id: tm.c,v 12.15 2006/12/06 02:45:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -265,7 +265,7 @@ main(argc, argv)
 
 		/* Signal wakeup process to exit. */
 		if ((err = __os_open(
-		    dbenv, MT_FILE_QUIT, DB_OSO_CREATE, 0664, &fhp)) != 0) {
+		    dbenv, MT_FILE_QUIT, 0, DB_OSO_CREATE, 0664, &fhp)) != 0) {
 			fprintf(stderr, "tm: open %s\n", db_strerror(err));
 			goto fail;
 		}
@@ -292,7 +292,7 @@ main(argc, argv)
 
 		/* Signal wakeup process to exit. */
 		if ((err = __os_open(
-		    dbenv, MT_FILE_QUIT, DB_OSO_CREATE, 0664, &fhp)) != 0) {
+		    dbenv, MT_FILE_QUIT, 0, DB_OSO_CREATE, 0664, &fhp)) != 0) {
 			fprintf(stderr, "tm: open %s\n", db_strerror(err));
 			goto fail;
 		}
@@ -675,7 +675,7 @@ tm_file_init()
 	(void)unlink(MT_FILE);
 
 	if ((err = __os_open(dbenv, MT_FILE,
-	    DB_OSO_CREATE | DB_OSO_TRUNC, 0666, &fhp)) == -1) {
+	    0, DB_OSO_CREATE | DB_OSO_TRUNC, 0666, &fhp)) == -1) {
 		(void)fprintf(stderr,
 		    "%s: open: %s\n", MT_FILE, db_strerror(err));
 		exit(EXIT_FAILURE);
@@ -841,7 +841,7 @@ map_file(gm_addrp, tm_addrp, lm_addrp, fhpp)
 #ifndef MAP_FILE
 #define	MAP_FILE	0
 #endif
-	if ((err = __os_open(dbenv, MT_FILE, 0, 0, &fhp)) != 0) {
+	if ((err = __os_open(dbenv, MT_FILE, 0, 0, 0, &fhp)) != 0) {
 		fprintf(stderr, "%s: open %s\n", MT_FILE, db_strerror(err));
 		exit(EXIT_FAILURE);
 	}

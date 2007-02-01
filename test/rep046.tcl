@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep046.tcl,v 12.17 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep046.tcl,v 12.18 2006/12/07 19:37:44 carol Exp $
 #
 # TEST  rep046
 # TEST	Replication and basic bulk transfer.
@@ -42,7 +42,13 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 	global overflowword2
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	set orig_tdir $testdir
 	env_cleanup $testdir
 
@@ -58,44 +64,28 @@ proc rep046_sub { method niter tnum recargs throttle largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env -create -txn nosync \
-	    -lock_max_locks 10000 -lock_max_objects 10000 \
+	set ma_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -lock_max_locks 10000 -lock_max_objects 10000 -errpfx MASTER \
 	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env -create -txn nosync \
-#	    -lock_max_locks 10000 -lock_max_objects 10000 \
-#	    -errpfx MASTER -verbose {rep on} -errfile /dev/stderr \
-#	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	repladd 2
-	set cl_envcmd "berkdb_env -create -txn nosync \
-	    -home $clientdir \
+	set cl_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+	    -home $clientdir -errpfx CLIENT \
 	    -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -rep_client -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env -create -txn nosync \
-#	    -home $clientdir \
-#	    -lock_max_locks 10000 -lock_max_objects 10000 \
-#	    -errpfx CLIENT -verbose {rep on} -errfile /dev/stderr \
-#	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	if { $throttle == "throttle" } {
 		set clientdir2 $testdir/CLIENTDIR2
 		file mkdir $clientdir2
 		repladd 3
-		set cl2_envcmd "berkdb_env -create -txn nosync \
-		    -home $clientdir2 \
+		set cl2_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
+		    -home $clientdir2 -errpfx CLIENT2 \
 	    	    -lock_max_locks 10000 -lock_max_objects 10000 \
 		    -rep_client -rep_transport \[list 3 replsend\]"
-#		set cl2_envcmd "berkdb_env -create -txn nosync \
-#		    -home $clientdir2 \
-#	    	    -lock_max_locks 10000 -lock_max_objects 10000 \
-#		    -errpfx CLIENT2 -verbose {rep on} -errfile /dev/stderr \
-#		    -rep_client -rep_transport \[list 3 replsend\]"
 		set cl2env [eval $cl2_envcmd $recargs]
-		error_check_good client2_env [is_valid_env $cl2env] TRUE
 		set envlist "{$masterenv 1} {$clientenv 2} {$cl2env 3}"
 		#
 		# Turn throttling on in master

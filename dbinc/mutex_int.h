@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mutex_int.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
+ * $Id: mutex_int.h,v 12.26 2007/01/22 06:12:11 alexg Exp $
  */
 
 #ifndef _DB_MUTEX_INT_H_
@@ -288,7 +288,7 @@ typedef unsigned int tsl_t;
  * platforms, and it improves performance on Pentium 4 processor platforms."
  */
 #ifdef HAVE_MUTEX_WIN32
-#ifndef _WIN64
+#if !defined(_WIN64) && !defined(DB_WINCE)
 #define	MUTEX_PAUSE		{__asm{_emit 0xf3}; __asm{_emit 0x90}}
 #endif
 #endif
@@ -747,8 +747,9 @@ typedef unsigned char tsl_t;
 	__r & 1;							\
 })
 
-#define	MUTEX_UNSET(tsl)	(*(tsl) = 0)
+#define	MUTEX_UNSET(tsl)        (*(volatile tsl_t *)(tsl) = 0)
 #define	MUTEX_INIT(tsl)		MUTEX_UNSET(tsl)
+#define	MUTEX_PAUSE		asm volatile ("rep; nop" : : );
 #endif
 #endif
 
@@ -837,7 +838,7 @@ struct __db_mutex_t {			/* Mutex. */
 	 * the possible flags values, getting a single byte on some machines
 	 * is expensive, and the mutex structure is a MP hot spot.
 	 */
-	u_int32_t flags;		/* MUTEX_XXX */
+	volatile u_int32_t flags;		/* MUTEX_XXX */
 };
 
 /* Macro to get a reference to a specific mutex. */

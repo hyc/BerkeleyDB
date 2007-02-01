@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_dup.c,v 12.19 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_dup.c,v 12.20 2006/11/29 21:23:16 ubell Exp $
  */
 
 /*
@@ -198,7 +198,8 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 		}
 
 		/* Add the duplicate. */
-		if ((ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0)) != 0 ||
+		if ((ret = __memp_dirty(mpf,
+		    &hcp->page, dbc->txn, dbc->priority, 0)) != 0 ||
 		    (ret = __ham_replpair(dbc, &tmp_val, 0)) != 0)
 			return (ret);
 
@@ -365,13 +366,14 @@ finish:		if (ret == 0) {
 	 * item.
 	 */
 	if (ret == 0)
-		ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0);
+		ret = __memp_dirty(mpf,
+		    &hcp->page, dbc->txn, dbc->priority, 0);
 
 	if (ret == 0)
 		ret = __ham_move_offpage(dbc, hcp->page,
 		    (u_int32_t)H_DATAINDEX(hcp->indx), PGNO(dp));
 
-err:	if ((t_ret = __memp_fput(mpf, dp, 0)) != 0 && ret == 0)
+err:	if ((t_ret = __memp_fput(mpf, dp, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (ret == 0)
@@ -507,7 +509,7 @@ __ham_check_move(dbc, add_len)
 	for (next_pgno = NEXT_PGNO(hcp->page); next_pgno != PGNO_INVALID;
 	    next_pgno = NEXT_PGNO(next_pagep)) {
 		if (next_pagep != NULL &&
-		    (ret = __memp_fput(mpf, next_pagep, 0)) != 0)
+		    (ret = __memp_fput(mpf, next_pagep, dbc->priority)) != 0)
 			return (ret);
 
 		if ((ret = __memp_fget(mpf, &next_pgno, dbc->txn,
@@ -519,7 +521,8 @@ __ham_check_move(dbc, add_len)
 	}
 
 	/* No more pages, add one. */
-	if ((ret = __memp_dirty(mpf, &hcp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(mpf,
+	    &hcp->page, dbc->txn, dbc->priority, 0)) != 0)
 		return (ret);
 
 	if (next_pagep == NULL && (ret = __ham_add_ovflpage(dbc,
@@ -527,14 +530,15 @@ __ham_check_move(dbc, add_len)
 		return (ret);
 
 	/* Add new page at the end of the chain. */
-	if ((ret = __memp_dirty(mpf, &next_pagep, dbc->txn, 0)) != 0) {
-		(void)__memp_fput(mpf, next_pagep, 0);
+	if ((ret = __memp_dirty(mpf,
+	    &next_pagep, dbc->txn, dbc->priority, 0)) != 0) {
+		(void)__memp_fput(mpf, next_pagep, dbc->priority);
 		return (ret);
 	}
 
 	if (P_FREESPACE(dbp, next_pagep) < new_datalen && (ret =
 	    __ham_add_ovflpage(dbc, next_pagep, 1, &next_pagep)) != 0) {
-		(void)__memp_fput(mpf, next_pagep, 0);
+		(void)__memp_fput(mpf, next_pagep, dbc->priority);
 		return (ret);
 	}
 
@@ -573,15 +577,16 @@ __ham_check_move(dbc, add_len)
 		    dbc->txn, &new_lsn, 0, rectype, PGNO(next_pagep),
 		    (u_int32_t)NUM_ENT(next_pagep), &LSN(next_pagep),
 		    &k, &d)) != 0) {
-			(void)__memp_fput(mpf, next_pagep, 0);
+			(void)__memp_fput(mpf, next_pagep, dbc->priority);
 			return (ret);
 		}
 	} else
 		LSN_NOT_LOGGED(new_lsn);
 
 	/* Move lsn onto page. */
-	if ((ret = __memp_dirty(mpf, &next_pagep, dbc->txn, 0)) != 0) {
-		(void)__memp_fput(mpf, next_pagep, 0);
+	if ((ret = __memp_dirty(mpf,
+	    &next_pagep, dbc->txn, dbc->priority, 0)) != 0) {
+		(void)__memp_fput(mpf, next_pagep, dbc->priority);
 		return (ret);
 	}
 	LSN(next_pagep) = new_lsn;	/* Structure assignment. */
@@ -610,7 +615,8 @@ __ham_check_move(dbc, add_len)
 	if (!STD_LOCKING(dbc))
 		hcp->hdr->nelem++;
 
-out:	if ((t_ret = __memp_fput(mpf, hcp->page, 0)) != 0 && ret == 0)
+out:	if ((t_ret =
+	    __memp_fput(mpf, hcp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	hcp->page = next_pagep;
 	hcp->pgno = PGNO(hcp->page);

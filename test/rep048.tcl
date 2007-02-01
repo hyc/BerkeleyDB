@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep048.tcl,v 12.9 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep048.tcl,v 12.10 2006/12/07 19:37:44 carol Exp $
 #
 # TEST  rep048
 # TEST	Replication and log gap bulk transfers.
@@ -32,7 +32,13 @@ proc rep048_sub { method niter tnum recargs largs } {
 	source ./include.tcl
 	global overflowword1
 	global overflowword2
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	set orig_tdir $testdir
 	env_cleanup $testdir
 
@@ -47,20 +53,17 @@ proc rep048_sub { method niter tnum recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env -create -txn nosync \
-	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env -create -txn nosync \
-#	    -errpfx MASTER -verbose {rep on} \
-#	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
+	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
+	    -errpfx MASTER $verbargs -home $masterdir \
+	    -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 
+	# Open a client. 
 	repladd 2
-	set cl_envcmd "berkdb_env -create -txn nosync -home $clientdir \
+	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
+	    -errpfx CLIENT $verbargs -home $clientdir \
 	    -rep_client -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env -create -txn nosync -home $clientdir \
-#	    -errpfx CLIENT -verbose {rep on} \
-#	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
 

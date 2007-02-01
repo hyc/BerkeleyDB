@@ -228,14 +228,12 @@ the life of the application.</p>
 <dt><a name="DB_PANIC_ENVIRONMENT">DB_PANIC_ENVIRONMENT</a><dd>If set, Berkeley DB will set the panic state for the database environment.
 (Database environments in a panic state normally refuse all attempts to
 call Berkeley DB functions, returning <a href="../ref/program/errorret.html#DB_RUNRECOVERY">DB_RUNRECOVERY</a>.) This flag may
-not be specified using the environment's <b>DB_CONFIG</b> file.  This
-flag may be used to configure Berkeley DB only after the <a href="../api_c/env_open.html">DB_ENV-&gt;open</a> method
-is called.
+not be specified using the environment's <b>DB_CONFIG</b> file.
 <p>Calling DB_ENV-&gt;set_flags with the DB_PANIC_ENVIRONMENT flag affects the
 database environment, including all threads of control accessing the
 database environment.</p>
-<p>The DB_PANIC_ENVIRONMENT flag may be used to configure Berkeley DB at any time during
-the life of the application.</p>
+<p>The DB_PANIC_ENVIRONMENT flag may be used to configure Berkeley DB only after the
+<a href="../api_c/env_open.html">DB_ENV-&gt;open</a> method is called.</p>
 <a name="13"><!--meow--></a>
 <dt><a name="DB_REGION_INIT">DB_REGION_INIT</a><dd>In some applications, the expense of page-faulting the underlying shared
 memory regions can affect performance.  (For example, if the page-fault

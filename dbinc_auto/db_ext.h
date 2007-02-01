@@ -26,8 +26,8 @@ int __crdel_inmem_rename_recover __P((DB_ENV *, DBT *, DB_LSN *, db_recops, void
 int __crdel_inmem_remove_recover __P((DB_ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_master_open __P((DB *, DB_TXN *, const char *, u_int32_t, int, DB **));
 int __db_master_update __P((DB *, DB *, DB_TXN *, const char *, DBTYPE, mu_action, const char *, u_int32_t));
-int __db_dbenv_setup __P((DB *, DB_TXN *, const char *, const char *, u_int32_t, u_int32_t));
-int __db_dbenv_mpool __P((DB *, const char *, u_int32_t));
+int __db_env_setup __P((DB *, DB_TXN *, const char *, const char *, u_int32_t, u_int32_t));
+int __db_env_mpool __P((DB *, const char *, u_int32_t));
 int __db_close __P((DB *, DB_TXN *, u_int32_t));
 int __db_refresh __P((DB *, DB_TXN *, u_int32_t, int *, int));
 int __db_log_page __P((DB *, DB_TXN *, DB_LSN *, db_pgno_t, PAGE *));
@@ -167,7 +167,7 @@ int __db_free __P((DBC *, PAGE *));
 void __db_freelist_pos __P((db_pgno_t, db_pgno_t *, u_int32_t, u_int32_t *));
 #endif
 #ifdef HAVE_FTRUNCATE
-int __db_pg_truncate __P((DB_MPOOLFILE *, DB_TXN *, struct pglist *list, DB_COMPACT *, u_int32_t *, db_pgno_t *, DB_LSN *, int));
+int __db_pg_truncate __P((DB *, DB_TXN *, struct pglist *list, DB_COMPACT *, u_int32_t *, db_pgno_t *, DB_LSN *, int));
 #endif
 #ifdef HAVE_FTRUNCATE
 int __db_free_truncate __P((DB *, DB_TXN *, u_int32_t, DB_COMPACT *, struct pglist **, u_int32_t *, db_pgno_t *));

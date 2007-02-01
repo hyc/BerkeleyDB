@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_util.c,v 1.29 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_util.c,v 1.31 2006/12/08 17:58:02 alanb Exp $
  */
 
 #include "db_config.h"
@@ -36,27 +36,23 @@ __repmgr_schedule_connection_attempt(dbenv, eid, immediate)
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
 	REPMGR_RETRY *retry;
-	repmgr_timeval_t t;
+	db_timespec t, v;
 	int ret;
 
 	db_rep = dbenv->rep_handle;
 	if ((ret = __os_malloc(dbenv, sizeof(*retry), &retry)) != 0)
 		return (ret);
 
-	__os_clock(dbenv, &t.tv_sec, &t.tv_usec);
+	__os_gettime(dbenv, &t);
 	if (immediate)
 		TAILQ_INSERT_HEAD(&db_rep->retries, retry, entries);
 	else {
-		if ((t.tv_usec += db_rep->connection_retry_wait%1000000) >
-		    1000000) {
-			t.tv_sec++;
-			t.tv_usec -= 1000000;
-		}
-		t.tv_sec += db_rep->connection_retry_wait/1000000;
+		DB_TIMEOUT_TO_TIMESPEC(db_rep->connection_retry_wait, &v);
+		timespecadd(&t, &v);
 		TAILQ_INSERT_TAIL(&db_rep->retries, retry, entries);
 	}
 	retry->eid = eid;
-	memcpy(&retry->time, &t, sizeof(repmgr_timeval_t));
+	retry->time = t;
 
 	site = SITE_FROM_EID(eid);
 	site->state = SITE_IDLE;
@@ -329,23 +325,6 @@ __repmgr_prepare_my_addr(dbenv, dbt)
 }
 
 /*
- * PUBLIC: int __repmgr_timeval_cmp
- * PUBLIC:     __P((repmgr_timeval_t *, repmgr_timeval_t *));
- */
-int
-__repmgr_timeval_cmp(a, b)
-	repmgr_timeval_t *a, *b;
-{
-	if (a->tv_sec == b->tv_sec) {
-		if (a->tv_usec == b->tv_usec)
-			return (0);
-		else
-			return (a->tv_usec < b->tv_usec ? -1 : 1);
-	} else
-		return (a->tv_sec < b->tv_sec ? -1 : 1);
-}
-
-/*
  * Provide the appropriate value for nsites, the number of sites in the
  * replication group.  If the application has specified a value, use that.
  * Otherwise, just use the number of sites we know of.
@@ -409,3 +388,27 @@ __repmgr_format_site_loc(site, buffer)
 	    site->net_addr.host, (u_long)site->net_addr.port);
 	return (buffer);
 }
+
+/*
+ * __repmgr_timespec_diff_now --
+ *	Calculate the time duration from now til "when".
+ *
+ * PUBLIC: void __repmgr_timespec_diff_now
+ * PUBLIC:    __P((DB_ENV *, db_timespec *, db_timespec *));
+ */
+void
+__repmgr_timespec_diff_now(dbenv, when, result)
+	DB_ENV *dbenv;
+	db_timespec *when, *result;
+{
+	db_timespec now;
+
+	__os_gettime(dbenv, &now);
+	if (timespeccmp(&now, when, >=))
+		timespecclear(result);
+	else {
+		*result = *when;
+		timespecsub(result, &now);
+	}
+}
+

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep028.tcl,v 12.12 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep028.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
 #
 # TEST  	rep028
 # TEST	Replication and non-rep env handles. (Also see rep006.)
@@ -63,9 +63,14 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 
 proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	source ./include.tcl
-	global testdir
 	global is_hp_test
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	set omethod [convert_method $method]
 	env_cleanup $testdir
 
@@ -91,28 +96,17 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	puts "\tRep$tnum.a: Open replicated envs and non-replicated client env."
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create \
-	    -log_max 1000000 -home $masterdir \
+	    -log_max 1000000 -home $masterdir $verbargs \
 	    $m_txnargs $m_logargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create \
-#	    -log_max 1000000 -home $masterdir \
-#	    $m_txnargs $m_logargs -rep_master \
-#	     -verbose {rep on} -errpfx MASTER \
-#	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -home $clientdir \
+	    $c_logargs -home $clientdir $verbargs \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C) "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -home $clientdir \
-#	     -verbose {rep on} -errpfx CLIENT \
-#	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Open 2nd non-replication handle on client env, and create
 	# a db.  Note, by not specifying any subsystem args, we
@@ -161,7 +155,7 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 
 	# Open the same db through the master handle.  Put data
 	# and process messages.
-	set db [eval berkdb_open \
+	set db [eval berkdb_open_noerr \
 	    -create $omethod -env $masterenv -auto_commit $dbname]
 	error_check_good db_open [is_valid_db $db] TRUE
 	eval rep_test $method $masterenv $db $niter 0 0 0 0 $largs

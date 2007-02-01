@@ -328,10 +328,6 @@ SOURCE=..\common\db_byteorder.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\db_clock.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\common\db_err.c
 # End Source File
 # Begin Source File
@@ -345,6 +341,10 @@ SOURCE=..\common\db_idspace.c
 # Begin Source File
 
 SOURCE=..\common\db_log2.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\db_shash.c
 # End Source File
 # Begin Source File
 
@@ -576,10 +576,6 @@ SOURCE=..\dbreg\dbreg_util.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\env\db_shash.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\env\env_alloc.c
 # End Source File
 # Begin Source File
@@ -601,6 +597,10 @@ SOURCE=..\env\env_globals.c
 # Begin Source File
 
 SOURCE=..\env\env_method.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\env\env_name.c
 # End Source File
 # Begin Source File
 
@@ -872,10 +872,6 @@ SOURCE=..\os\os_fzero.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\os\os_mkdir.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\os\os_oflags.c
 # End Source File
 # Begin Source File
@@ -945,6 +941,10 @@ SOURCE=..\os_windows\os_handle.c
 # Begin Source File
 
 SOURCE=..\os_windows\os_map.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\os_windows\os_mkdir.c
 # End Source File
 # Begin Source File
 

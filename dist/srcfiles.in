@@ -1,4 +1,4 @@
-#	$Id: srcfiles.in,v 12.63 2006/11/09 14:12:10 bostic Exp $
+#	$Id: srcfiles.in,v 12.69 2007/01/22 06:12:14 alexg Exp $
 #
 # This is an input file for the s_windows_dsp and s_vxworks scripts.  It lists
 # the source files in the Berkeley DB tree and notes which are used to build
@@ -21,25 +21,25 @@
 #   vx			File is in the VxWorks library.
 #   vxsmall		File is in the small VxWorks library.
 
-btree/bt_compact.c				brew dynamic small static vx vxsmall
-btree/bt_compare.c				brew dynamic small static vx vxsmall
-btree/bt_conv.c					brew dynamic small static vx vxsmall
-btree/bt_curadj.c				brew dynamic small static vx vxsmall
-btree/bt_cursor.c				brew dynamic small static vx vxsmall
-btree/bt_delete.c				brew dynamic small static vx vxsmall
-btree/bt_method.c				brew dynamic small static vx vxsmall
-btree/bt_open.c					brew dynamic small static vx vxsmall
-btree/bt_put.c					brew dynamic small static vx vxsmall
-btree/bt_rec.c					brew dynamic small static vx vxsmall
-btree/bt_reclaim.c				brew dynamic small static vx vxsmall
-btree/bt_recno.c				brew dynamic small static vx vxsmall
-btree/bt_rsearch.c				brew dynamic small static vx vxsmall
-btree/bt_search.c				brew dynamic small static vx vxsmall
-btree/bt_split.c				brew dynamic small static vx vxsmall
-btree/bt_stat.c					brew dynamic small static vx vxsmall
-btree/bt_upgrade.c				dynamic small static vx vxsmall
-btree/bt_verify.c				dynamic static vx
-btree/btree_auto.c				brew dynamic small static vx vxsmall
+btree/bt_compact.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_compare.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_conv.c					brew ce ce_small dynamic small static vx vxsmall
+btree/bt_curadj.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_cursor.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_delete.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_method.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_open.c					brew ce ce_small dynamic small static vx vxsmall
+btree/bt_put.c					brew ce ce_small dynamic small static vx vxsmall
+btree/bt_rec.c					brew ce ce_small dynamic small static vx vxsmall
+btree/bt_reclaim.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_recno.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_rsearch.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_search.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_split.c				brew ce ce_small dynamic small static vx vxsmall
+btree/bt_stat.c					brew ce ce_small dynamic small static vx vxsmall
+btree/bt_upgrade.c				ce ce_small dynamic small static vx vxsmall
+btree/bt_verify.c				ce ce_small dynamic static vx
+btree/btree_auto.c				brew ce ce_small dynamic small static vx vxsmall
 btree/btree_autop.c				app=db_printlog
 build_vxworks/db_archive/db_archive.c
 build_vxworks/db_checkpoint/db_checkpoint.c
@@ -61,7 +61,7 @@ clib/atoi.c
 clib/atol.c					brew
 clib/ctime.c					dynamic small static vx vxsmall
 clib/getaddrinfo.c				dynamic static
-clib/getcwd.c
+clib/getcwd.c					
 clib/getopt.c					vx vxsmall
 clib/isalpha.c					brew
 clib/isdigit.c					brew
@@ -74,34 +74,34 @@ clib/qsort.c					brew
 clib/raise.c
 clib/rand.c					brew
 clib/snprintf.c					vx vxsmall
-clib/strcasecmp.c				brew dynamic small static vx vxsmall
+clib/strcasecmp.c				brew ce ce_small dynamic small static vx vxsmall
 clib/strcat.c
 clib/strchr.c
-clib/strdup.c					vx vxsmall
-clib/strerror.c					brew
+clib/strdup.c					ce ce_small vx vxsmall
+clib/strerror.c					ce ce_small brew
 clib/strncat.c					brew
 clib/strncmp.c
 clib/strrchr.c
-clib/strsep.c					brew dynamic small static vx vxsmall
+clib/strsep.c					brew ce ce_small dynamic small static vx vxsmall
 clib/strtol.c					brew
 clib/strtoul.c
-common/crypto_stub.c				brew small vxsmall
-common/db_byteorder.c				brew dynamic small static vx vxsmall
-common/db_clock.c				dynamic static vx
-common/db_err.c					brew dynamic small static vx vxsmall
-common/db_getlong.c				brew dynamic small static vx vxsmall
-common/db_idspace.c				brew dynamic small static vx vxsmall
-common/db_log2.c				brew dynamic small static vx vxsmall
-common/mkpath.c					brew dynamic small static vx vxsmall
+common/crypto_stub.c				brew ce_small small vxsmall
+common/db_byteorder.c				brew ce ce_small dynamic small static vx vxsmall
+common/db_err.c					brew ce ce_small dynamic small static vx vxsmall
+common/db_getlong.c				brew ce ce_small dynamic small static vx vxsmall
+common/db_idspace.c				brew ce ce_small dynamic small static vx vxsmall
+common/db_log2.c				brew ce ce_small dynamic small static vx vxsmall
+common/db_shash.c				brew ce ce_small dynamic small static vx vxsmall
+common/mkpath.c					brew ce ce_small dynamic small static vx vxsmall
 common/util_arg.c				vx vxsmall
-common/util_cache.c				dynamic small static vx vxsmall
-common/util_log.c				dynamic small static vx vxsmall
+common/util_cache.c				ce ce_small dynamic small static vx vxsmall
+common/util_log.c				ce ce_small dynamic small static vx vxsmall
 common/util_sig.c				dynamic small static vx vxsmall
-crypto/aes_method.c				dynamic static vx
-crypto/crypto.c					dynamic static vx
-crypto/mersenne/mt19937db.c			dynamic static vx
-crypto/rijndael/rijndael-alg-fst.c		dynamic static vx
-crypto/rijndael/rijndael-api-fst.c		dynamic static vx
+crypto/aes_method.c				ce dynamic static vx
+crypto/crypto.c					ce dynamic static vx
+crypto/mersenne/mt19937db.c			ce dynamic static vx
+crypto/rijndael/rijndael-alg-fst.c		ce dynamic static vx
+crypto/rijndael/rijndael-api-fst.c		ce dynamic static vx
 cxx/cxx_db.cpp					dynamic small static
 cxx/cxx_dbc.cpp					dynamic small static
 cxx/cxx_dbt.cpp					dynamic small static
@@ -113,40 +113,40 @@ cxx/cxx_mpool.cpp				dynamic small static
 cxx/cxx_multi.cpp				dynamic small static
 cxx/cxx_seq.cpp					dynamic small static
 cxx/cxx_txn.cpp					dynamic small static
-db/crdel_auto.c					brew dynamic small static vx vxsmall
+db/crdel_auto.c					brew ce ce_small dynamic small static vx vxsmall
 db/crdel_autop.c				app=db_printlog
-db/crdel_rec.c					brew dynamic small static vx vxsmall
-db/db.c						brew dynamic small static vx vxsmall
-db/db_am.c					brew dynamic small static vx vxsmall
-db/db_auto.c					brew dynamic small static vx vxsmall
+db/crdel_rec.c					brew ce ce_small dynamic small static vx vxsmall
+db/db.c						brew ce ce_small dynamic small static vx vxsmall
+db/db_am.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_auto.c					brew ce ce_small dynamic small static vx vxsmall
 db/db_autop.c					app=db_printlog
-db/db_cam.c					brew dynamic small static vx vxsmall
-db/db_cds.c					brew dynamic small static vx vxsmall
-db/db_conv.c					brew dynamic small static vx vxsmall
-db/db_dispatch.c				brew dynamic small static vx vxsmall
-db/db_dup.c					brew dynamic small static vx vxsmall
-db/db_iface.c					brew dynamic small static vx vxsmall
-db/db_join.c					brew dynamic small static vx vxsmall
-db/db_meta.c					brew dynamic small static vx vxsmall
-db/db_method.c					brew dynamic small static vx vxsmall
-db/db_open.c					brew dynamic small static vx vxsmall
-db/db_overflow.c				brew dynamic small static vx vxsmall
-db/db_ovfl_vrfy.c				dynamic static vx
-db/db_pr.c					brew dynamic small static vx vxsmall
-db/db_rec.c					brew dynamic small static vx vxsmall
-db/db_reclaim.c					brew dynamic small static vx vxsmall
-db/db_remove.c					brew dynamic small static vx vxsmall
-db/db_rename.c					brew dynamic small static vx vxsmall
-db/db_ret.c					brew dynamic small static vx vxsmall
-db/db_setid.c					brew dynamic small static vx vxsmall
-db/db_setlsn.c					brew dynamic small static vx vxsmall
-db/db_stati.c					brew dynamic small static vx vxsmall
-db/db_truncate.c				brew dynamic small static vx vxsmall
-db/db_upg.c					brew dynamic small static vx vxsmall
-db/db_upg_opd.c					dynamic small static vx vxsmall
-db/db_vrfy.c					dynamic static vx
-db/db_vrfy_stub.c				brew small vxsmall
-db/db_vrfyutil.c				dynamic static vx
+db/db_cam.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_cds.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_conv.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_dispatch.c				brew ce ce_small dynamic small static vx vxsmall
+db/db_dup.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_iface.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_join.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_meta.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_method.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_open.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_overflow.c				brew ce ce_small dynamic small static vx vxsmall
+db/db_ovfl_vrfy.c				ce dynamic static vx
+db/db_pr.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_rec.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_reclaim.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_remove.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_rename.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_ret.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_setid.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_setlsn.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_stati.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_truncate.c				brew ce ce_small dynamic small static vx vxsmall
+db/db_upg.c					brew ce ce_small dynamic small static vx vxsmall
+db/db_upg_opd.c					ce ce_small dynamic small static vx vxsmall
+db/db_vrfy.c					ce dynamic static vx
+db/db_vrfy_stub.c				brew ce_small small vxsmall
+db/db_vrfyutil.c				ce dynamic static vx
 db185/db185.c
 db_archive/db_archive.c				app=db_archive
 db_checkpoint/db_checkpoint.c			app=db_checkpoint
@@ -164,24 +164,24 @@ db_stat/db_stat.c				app=db_stat
 db_upgrade/db_upgrade.c				app=db_upgrade
 db_verify/db_verify.c				app=db_verify
 dbm/dbm.c					dynamic static
-dbreg/dbreg.c					brew dynamic small static vx vxsmall
-dbreg/dbreg_auto.c				brew dynamic small static vx vxsmall
+dbreg/dbreg.c					brew ce ce_small dynamic small static vx vxsmall
+dbreg/dbreg_auto.c				brew ce ce_small dynamic small static vx vxsmall
 dbreg/dbreg_autop.c				app=db_printlog
-dbreg/dbreg_rec.c				brew dynamic small static vx vxsmall
-dbreg/dbreg_stat.c				brew dynamic small static vx vxsmall
-dbreg/dbreg_util.c				brew dynamic small static vx vxsmall
-env/db_shash.c					brew dynamic small static vx vxsmall
-env/env_alloc.c					brew dynamic small static vx vxsmall
-env/env_config.c				brew dynamic small static vx vxsmall
-env/env_failchk.c				brew dynamic small static vx vxsmall
-env/env_file.c					brew dynamic small static vx vxsmall
-env/env_globals.c				dynamic small static vx vxsmall
-env/env_method.c				brew dynamic small static vx vxsmall
-env/env_open.c					brew dynamic small static vx vxsmall
-env/env_recover.c				brew dynamic small static vx vxsmall
-env/env_region.c				brew dynamic small static vx vxsmall
-env/env_register.c				brew dynamic small static vx vxsmall
-env/env_stat.c					brew dynamic small static vx vxsmall
+dbreg/dbreg_rec.c				brew ce ce_small dynamic small static vx vxsmall
+dbreg/dbreg_stat.c				brew ce ce_small dynamic small static vx vxsmall
+dbreg/dbreg_util.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_alloc.c					brew ce ce_small dynamic small static vx vxsmall
+env/env_config.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_failchk.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_file.c					brew ce ce_small dynamic small static vx vxsmall
+env/env_globals.c				ce ce_small dynamic small static vx vxsmall
+env/env_method.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_name.c					brew ce ce_small dynamic small static vx vxsmall
+env/env_open.c					brew ce ce_small dynamic small static vx vxsmall
+env/env_recover.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_region.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_register.c				brew ce ce_small dynamic small static vx vxsmall
+env/env_stat.c					brew ce ce_small dynamic small static vx vxsmall
 examples_c/bench_001.c
 examples_c/csv/DbRecord.c			app=ex_csvload app=ex_csvquery
 examples_c/csv/code.c				app=ex_csvcode
@@ -229,79 +229,79 @@ examples_cxx/getting_started/excxx_example_database_load.cpp	app=excxx_example_d
 examples_cxx/getting_started/excxx_example_database_read.cpp	app=excxx_example_database_read
 examples_cxx/txn_guide/TxnGuide.cpp		app=excxx_txnguide
 examples_cxx/txn_guide/TxnGuideInMemory.cpp	app=excxx_txnguide_inmem
-fileops/fileops_auto.c				brew dynamic small static vx vxsmall
+fileops/fileops_auto.c				brew ce ce_small dynamic small static vx vxsmall
 fileops/fileops_autop.c				app=db_printlog
-fileops/fop_basic.c				brew dynamic small static vx vxsmall
-fileops/fop_rec.c				brew dynamic small static vx vxsmall
-fileops/fop_util.c				brew dynamic small static vx vxsmall
+fileops/fop_basic.c				brew ce ce_small dynamic small static vx vxsmall
+fileops/fop_rec.c				brew ce ce_small dynamic small static vx vxsmall
+fileops/fop_util.c				brew ce ce_small dynamic small static vx vxsmall
 gen_db_server.c
-hash/hash.c					dynamic static vx
-hash/hash_auto.c				dynamic static vx
+hash/hash.c					ce dynamic static vx
+hash/hash_auto.c				ce dynamic static vx
 hash/hash_autop.c				app=db_printlog
-hash/hash_conv.c				dynamic static vx
-hash/hash_dup.c					dynamic static vx
-hash/hash_func.c				brew dynamic small static vx vxsmall
-hash/hash_meta.c				dynamic static vx
-hash/hash_method.c				dynamic static vx
-hash/hash_open.c				dynamic static vx
-hash/hash_page.c				dynamic static vx
-hash/hash_rec.c					dynamic static vx
-hash/hash_reclaim.c				dynamic static vx
-hash/hash_stat.c				dynamic static vx
-hash/hash_stub.c				brew small vxsmall
-hash/hash_upgrade.c				dynamic static vx
-hash/hash_verify.c				dynamic static vx
-hmac/hmac.c					brew dynamic small static vx vxsmall
-hmac/sha1.c					brew dynamic small static vx vxsmall
-hsearch/hsearch.c				dynamic static vx
+hash/hash_conv.c				ce dynamic static vx
+hash/hash_dup.c					ce dynamic static vx
+hash/hash_func.c				brew ce ce_small dynamic small static vx vxsmall
+hash/hash_meta.c				ce dynamic static vx
+hash/hash_method.c				ce dynamic static vx
+hash/hash_open.c				ce dynamic static vx
+hash/hash_page.c				ce dynamic static vx
+hash/hash_rec.c					ce dynamic static vx
+hash/hash_reclaim.c				ce dynamic static vx
+hash/hash_stat.c				ce dynamic static vx
+hash/hash_stub.c				brew ce_small small vxsmall
+hash/hash_upgrade.c				ce dynamic static vx
+hash/hash_verify.c				ce dynamic static vx
+hmac/hmac.c					brew ce ce_small dynamic small static vx vxsmall
+hmac/sha1.c					brew ce ce_small dynamic small static vx vxsmall
+hsearch/hsearch.c				ce dynamic static vx
 libdb_java/db_java_wrap.c			java
-lock/lock.c					dynamic small static vx vxsmall
-lock/lock_deadlock.c				dynamic small static vx vxsmall
-lock/lock_failchk.c				dynamic small static vx vxsmall
-lock/lock_id.c					dynamic small static vx vxsmall
-lock/lock_list.c				dynamic small static vx vxsmall
-lock/lock_method.c				dynamic small static vx vxsmall
-lock/lock_region.c				dynamic small static vx vxsmall
-lock/lock_stat.c				dynamic small static vx vxsmall
+lock/lock.c					ce ce_small dynamic small static vx vxsmall
+lock/lock_deadlock.c				ce ce_small dynamic small static vx vxsmall
+lock/lock_failchk.c				ce ce_small dynamic small static vx vxsmall
+lock/lock_id.c					ce ce_small dynamic small static vx vxsmall
+lock/lock_list.c				ce ce_small dynamic small static vx vxsmall
+lock/lock_method.c				ce ce_small dynamic small static vx vxsmall
+lock/lock_region.c				ce ce_small dynamic small static vx vxsmall
+lock/lock_stat.c				ce ce_small dynamic small static vx vxsmall
 lock/lock_stub.c				brew
-lock/lock_timer.c				dynamic small static vx vxsmall
-lock/lock_util.c				dynamic small static vx vxsmall
-log/log.c					brew dynamic small static vx vxsmall
-log/log_archive.c				brew dynamic small static vx vxsmall
-log/log_compare.c				brew dynamic small static vx vxsmall
-log/log_debug.c					brew dynamic small static vx vxsmall
-log/log_get.c					brew dynamic small static vx vxsmall
-log/log_method.c				brew dynamic small static vx vxsmall
-log/log_put.c					brew dynamic small static vx vxsmall
-log/log_stat.c					brew dynamic small static vx vxsmall
-mp/mp_alloc.c					brew dynamic small static vx vxsmall
-mp/mp_bh.c					brew dynamic small static vx vxsmall
-mp/mp_fget.c					brew dynamic small static vx vxsmall
-mp/mp_fmethod.c					brew dynamic small static vx vxsmall
-mp/mp_fopen.c					brew dynamic small static vx vxsmall
-mp/mp_fput.c					brew dynamic small static vx vxsmall
-mp/mp_fset.c					brew dynamic small static vx vxsmall
-mp/mp_method.c					brew dynamic small static vx vxsmall
-mp/mp_mvcc.c					brew dynamic small static vx vxsmall
-mp/mp_region.c					brew dynamic small static vx vxsmall
-mp/mp_register.c				brew dynamic small static vx vxsmall
-mp/mp_stat.c					brew dynamic small static vx vxsmall
-mp/mp_sync.c					brew dynamic small static vx vxsmall
-mp/mp_trickle.c					brew dynamic small static vx vxsmall
-mutex/mut_alloc.c				dynamic small static vx vxsmall
-mutex/mut_failchk.c				dynamic small static vx vxsmall
+lock/lock_timer.c				ce ce_small dynamic small static vx vxsmall
+lock/lock_util.c				ce ce_small dynamic small static vx vxsmall
+log/log.c					brew ce ce_small dynamic small static vx vxsmall
+log/log_archive.c				brew ce ce_small dynamic small static vx vxsmall
+log/log_compare.c				brew ce ce_small dynamic small static vx vxsmall
+log/log_debug.c					brew ce ce_small dynamic small static vx vxsmall
+log/log_get.c					brew ce ce_small dynamic small static vx vxsmall
+log/log_method.c				brew ce ce_small dynamic small static vx vxsmall
+log/log_put.c					brew ce ce_small dynamic small static vx vxsmall
+log/log_stat.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_alloc.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_bh.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_fget.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_fmethod.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_fopen.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_fput.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_fset.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_method.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_mvcc.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_region.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_register.c				brew ce ce_small dynamic small static vx vxsmall
+mp/mp_stat.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_sync.c					brew ce ce_small dynamic small static vx vxsmall
+mp/mp_trickle.c					brew ce ce_small dynamic small static vx vxsmall
+mutex/mut_alloc.c				ce ce_small dynamic small static vx vxsmall
+mutex/mut_failchk.c				ce ce_small dynamic small static vx vxsmall
 mutex/mut_fcntl.c
-mutex/mut_method.c				dynamic small static vx vxsmall
+mutex/mut_method.c				ce ce_small dynamic small static vx vxsmall
 mutex/mut_pthread.c
-mutex/mut_region.c				dynamic small static vx vxsmall
-mutex/mut_stat.c				dynamic small static vx vxsmall
+mutex/mut_region.c				ce ce_small dynamic small static vx vxsmall
+mutex/mut_stat.c				ce ce_small dynamic small static vx vxsmall
 mutex/mut_stub.c				brew
 mutex/mut_tas.c					vx vxsmall
-mutex/mut_win32.c				dynamic small static
+mutex/mut_win32.c				ce ce_small dynamic small static
 mutex/tm.c					app=tm
-os/os_abort.c					dynamic small static vx vxsmall tcl
+os/os_abort.c					ce ce_small dynamic small static vx vxsmall tcl
 os/os_abs.c
-os/os_alloc.c					brew dynamic small static vx vxsmall
+os/os_alloc.c					brew ce ce_small dynamic small static vx vxsmall
 os/os_clock.c					brew vx vxsmall
 os/os_config.c
 os/os_dir.c					vx vxsmall
@@ -309,27 +309,27 @@ os/os_errno.c					vx vxsmall
 os/os_fid.c					brew vx vxsmall
 os/os_flock.c					brew vx vxsmall
 os/os_fsync.c					vx vxsmall
-os/os_fzero.c					brew dynamic small static vx vxsmall
+os/os_fzero.c					brew ce ce_small dynamic small static vx vxsmall
 os/os_getenv.c					brew vx vxsmall
 os/os_handle.c					vx vxsmall
 os/os_map.c					brew
 os/os_method.c					vx vxsmall
-os/os_mkdir.c					dynamic small static vx vxsmall
-os/os_oflags.c					dynamic small static vx vxsmall
+os/os_mkdir.c					vx vxsmall
+os/os_oflags.c					ce ce_small dynamic small static vx vxsmall
 os/os_open.c					vx vxsmall
-os/os_pid.c					dynamic small static vx vxsmall
-os/os_region.c					brew dynamic small static vx vxsmall
+os/os_pid.c					ce ce_small dynamic small static vx vxsmall
+os/os_region.c					brew ce ce_small dynamic small static vx vxsmall
 os/os_rename.c					vx vxsmall
-os/os_root.c					brew dynamic small static vx vxsmall
-os/os_rpath.c					brew dynamic small static
+os/os_root.c					brew ce ce_small dynamic small static vx vxsmall
+os/os_rpath.c					brew ce ce_small dynamic small static
 os/os_rw.c					vx vxsmall
 os/os_seek.c					vx vxsmall
 os/os_sleep.c					vx vxsmall
 os/os_spin.c					vx vxsmall
 os/os_stat.c					vx vxsmall
-os/os_tmpdir.c					brew dynamic small static vx vxsmall
+os/os_tmpdir.c					brew ce ce_small dynamic small static vx vxsmall
 os/os_truncate.c				vx vxsmall
-os/os_uid.c					brew dynamic small static vx vxsmall
+os/os_uid.c					brew ce ce_small dynamic small static vx vxsmall
 os/os_unlink.c					vx vxsmall
 os/os_yield.c					brew vx vxsmall
 os_brew/ctime.c					brew
@@ -359,44 +359,48 @@ os_brew/os_stat.c				brew
 os_brew/os_truncate.c				brew
 os_brew/os_unlink.c				brew
 os_brew/time.c					brew
+os_qnx/os_qnx_open.c
 os_vxworks/os_vx_abs.c				vx vxsmall
 os_vxworks/os_vx_config.c			vx vxsmall
 os_vxworks/os_vx_map.c				vx vxsmall
-os_vxworks/os_vx_open.c				vx vxsmall
 os_vxworks/os_vx_rpath.c			vx vxsmall
-os_windows/os_abs.c				dynamic small static
-os_windows/os_clock.c				dynamic small static
-os_windows/os_config.c				dynamic small static
-os_windows/os_dir.c				dynamic small static
-os_windows/os_errno.c				dynamic small static
-os_windows/os_fid.c				dynamic small static
-os_windows/os_flock.c				dynamic small static
-os_windows/os_fsync.c				dynamic small static
-os_windows/os_getenv.c				dynamic small static
-os_windows/os_handle.c				dynamic small static
-os_windows/os_map.c				dynamic small static
-os_windows/os_open.c				dynamic small static
-os_windows/os_rename.c				dynamic small static
-os_windows/os_rw.c				dynamic small static
-os_windows/os_seek.c				dynamic small static
-os_windows/os_sleep.c				dynamic small static
-os_windows/os_spin.c				dynamic small static
-os_windows/os_stat.c				dynamic small static
-os_windows/os_truncate.c			dynamic small static
-os_windows/os_unlink.c				dynamic small static
-os_windows/os_yield.c				dynamic small static
-qam/qam.c					dynamic static vx
-qam/qam_auto.c					dynamic static vx
+os_windows/ce_ctime.c				ce ce_small 
+os_windows/ce_getcwd.c				ce ce_small 
+os_windows/ce_time.c				ce ce_small
+os_windows/os_abs.c				ce ce_small dynamic small static
+os_windows/os_clock.c				ce ce_small dynamic small static
+os_windows/os_config.c				ce ce_small dynamic small static
+os_windows/os_dir.c				ce ce_small dynamic small static
+os_windows/os_errno.c				ce ce_small dynamic small static
+os_windows/os_fid.c				ce ce_small dynamic small static
+os_windows/os_flock.c				ce ce_small dynamic small static
+os_windows/os_fsync.c				ce ce_small dynamic small static
+os_windows/os_getenv.c				ce ce_small dynamic small static
+os_windows/os_handle.c				ce ce_small dynamic small static
+os_windows/os_map.c				ce ce_small dynamic small static
+os_windows/os_mkdir.c				ce ce_small dynamic small static 
+os_windows/os_open.c				ce ce_small dynamic small static
+os_windows/os_rename.c				ce ce_small dynamic small static
+os_windows/os_rw.c				ce ce_small dynamic small static
+os_windows/os_seek.c				ce ce_small dynamic small static
+os_windows/os_sleep.c				ce ce_small dynamic small static
+os_windows/os_spin.c				ce ce_small dynamic small static
+os_windows/os_stat.c				ce ce_small dynamic small static
+os_windows/os_truncate.c			ce ce_small dynamic small static
+os_windows/os_unlink.c				ce ce_small dynamic small static
+os_windows/os_yield.c				ce ce_small dynamic small static
+qam/qam.c					ce dynamic static vx
+qam/qam_auto.c					ce dynamic static vx
 qam/qam_autop.c					app=db_printlog
-qam/qam_conv.c					dynamic static vx
-qam/qam_files.c					dynamic static vx
-qam/qam_method.c				dynamic static vx
-qam/qam_open.c					dynamic static vx
-qam/qam_rec.c					dynamic static vx
-qam/qam_stat.c					dynamic static vx
-qam/qam_stub.c					brew small vxsmall
-qam/qam_upgrade.c				dynamic static vx
-qam/qam_verify.c				dynamic static vx
+qam/qam_conv.c					ce dynamic static vx
+qam/qam_files.c					ce dynamic static vx
+qam/qam_method.c				ce dynamic static vx
+qam/qam_open.c					ce dynamic static vx
+qam/qam_rec.c					ce dynamic static vx
+qam/qam_stat.c					ce dynamic static vx
+qam/qam_stub.c					brew ce_small small vxsmall
+qam/qam_upgrade.c				ce dynamic static vx
+qam/qam_verify.c				ce dynamic static vx
 rep/rep_auto.c					dynamic static vx
 rep/rep_autop.c					app=db_printlog
 rep/rep_backup.c				dynamic static vx
@@ -406,7 +410,7 @@ rep/rep_method.c				dynamic static vx
 rep/rep_record.c				dynamic static vx
 rep/rep_region.c				dynamic static vx
 rep/rep_stat.c					dynamic static vx
-rep/rep_stub.c					brew small vxsmall
+rep/rep_stub.c					brew ce ce_small small vxsmall
 rep/rep_util.c					dynamic static vx
 rep/rep_verify.c				dynamic static vx
 repmgr/repmgr_elect.c				dynamic static
@@ -426,8 +430,8 @@ rpc_server/c/db_server_proc.c
 rpc_server/c/db_server_util.c
 rpc_server/cxx/db_server_cxxproc.cpp
 rpc_server/cxx/db_server_cxxutil.cpp
-sequence/seq_stat.c				dynamic small static
-sequence/sequence.c				dynamic small static
+sequence/seq_stat.c				ce ce_small dynamic small static
+sequence/sequence.c				ce ce_small dynamic small static
 tcl/tcl_compat.c				tcl
 tcl/tcl_db.c					tcl
 tcl/tcl_db_pkg.c				tcl
@@ -485,18 +489,18 @@ test_rep/reptest_spawn.c			app=db_reptest
 test_rep/reptest_thread.c			app=db_reptest
 test_rep/reptest_txn.c				app=db_reptest
 test_rep/reptest_util.c				app=db_reptest
-txn/txn.c					brew dynamic small static vx vxsmall
-txn/txn_auto.c					brew dynamic small static vx vxsmall
+txn/txn.c					brew ce ce_small dynamic small static vx vxsmall
+txn/txn_auto.c					brew ce ce_small dynamic small static vx vxsmall
 txn/txn_autop.c					app=db_printlog
-txn/txn_chkpt.c					brew dynamic small static vx vxsmall
-txn/txn_failchk.c				brew dynamic small static vx vxsmall
-txn/txn_method.c				brew dynamic small static vx vxsmall
-txn/txn_rec.c					brew dynamic small static vx vxsmall
-txn/txn_recover.c				brew dynamic small static vx vxsmall
-txn/txn_region.c				brew dynamic small static vx vxsmall
-txn/txn_stat.c					brew dynamic small static vx vxsmall
-txn/txn_util.c					brew dynamic small static vx vxsmall
-xa/xa.c						dynamic small static vx vxsmall
-xa/xa_db.c					dynamic small static vx vxsmall
-xa/xa_map.c					dynamic small static vx vxsmall
+txn/txn_chkpt.c					brew ce ce_small dynamic small static vx vxsmall
+txn/txn_failchk.c				brew ce ce_small dynamic small static vx vxsmall
+txn/txn_method.c				brew ce ce_small dynamic small static vx vxsmall
+txn/txn_rec.c					brew ce ce_small dynamic small static vx vxsmall
+txn/txn_recover.c				brew ce ce_small dynamic small static vx vxsmall
+txn/txn_region.c				brew ce ce_small dynamic small static vx vxsmall
+txn/txn_stat.c					brew ce ce_small dynamic small static vx vxsmall
+txn/txn_util.c					brew ce ce_small dynamic small static vx vxsmall
+xa/xa.c						ce ce_small dynamic small static vx vxsmall
+xa/xa_db.c					ce ce_small dynamic small static vx vxsmall
+xa/xa_map.c					ce ce_small dynamic small static vx vxsmall
 xa/xa_stub.c					brew

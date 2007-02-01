@@ -6,8 +6,6 @@
 extern "C" {
 #endif
 
-u_int32_t __db_tablesize __P((u_int32_t));
-void __db_hashinit __P((void *, u_int32_t));
 void __env_alloc_init __P((REGINFO *, size_t));
 size_t __env_alloc_overhead __P((void));
 size_t __env_alloc_size __P((size_t));
@@ -45,6 +43,7 @@ int  __env_set_verbose __P((DB_ENV *, u_int32_t, int));
 int __db_mi_env __P((DB_ENV *, const char *));
 int __db_mi_open __P((DB_ENV *, const char *, int));
 int __db_env_config __P((DB_ENV *, char *, u_int32_t));
+int __db_appname __P((DB_ENV *, APPNAME, const char *, u_int32_t, DB_FH **, char **));
 int __env_open_pp __P((DB_ENV *, const char *, u_int32_t, int));
 int __env_open __P((DB_ENV *, const char *, u_int32_t, int));
 int __env_remove __P((DB_ENV *, const char *, u_int32_t));
@@ -52,17 +51,20 @@ int __env_config __P((DB_ENV *, const char *, u_int32_t, int));
 int __env_close_pp __P((DB_ENV *, u_int32_t));
 int __env_close __P((DB_ENV *, int));
 int __env_get_open_flags __P((DB_ENV *, u_int32_t *));
-int __db_appname __P((DB_ENV *, APPNAME, const char *, u_int32_t, DB_FH **, char **));
 int __db_apprec __P((DB_ENV *, DB_LSN *, DB_LSN *, int, u_int32_t));
 int    __log_backup __P((DB_ENV *, DB_LOGC *, DB_LSN *, DB_LSN *, u_int32_t));
 int __env_openfiles __P((DB_ENV *, DB_LOGC *, void *, DBT *, DB_LSN *, DB_LSN *, double, int));
 int __env_init_rec __P((DB_ENV *, u_int32_t));
-int __db_e_attach __P((DB_ENV *, u_int32_t *, int));
-int __db_e_golive __P((DB_ENV *));
-int __db_e_detach __P((DB_ENV *, int));
-int __db_e_remove __P((DB_ENV *, u_int32_t));
-int __db_r_attach __P((DB_ENV *, REGINFO *, size_t));
-int __db_r_detach __P((DB_ENV *, REGINFO *, int));
+int __env_attach __P((DB_ENV *, u_int32_t *, int, int));
+int __env_turn_on __P((DB_ENV *));
+int __env_turn_off __P((DB_ENV *, u_int32_t));
+void __env_panic_set __P((DB_ENV *, int));
+int __env_ref_increment __P((DB_ENV *));
+int __env_ref_decrement __P((DB_ENV *));
+int __env_detach __P((DB_ENV *, int));
+int __env_remove_env __P((DB_ENV *));
+int __env_region_attach __P((DB_ENV *, REGINFO *, size_t));
+int __env_region_detach __P((DB_ENV *, REGINFO *, int));
 int __envreg_register __P((DB_ENV *, int *));
 int __envreg_unregister __P((DB_ENV *, int));
 int __envreg_xunlock __P((DB_ENV *));

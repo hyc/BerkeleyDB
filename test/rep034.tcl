@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep034.tcl,v 12.14 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep034.tcl,v 12.17 2006/12/07 20:04:54 carol Exp $
 #
 # TEST	rep034
 # TEST	Test of client startup synchronization.
@@ -37,7 +37,7 @@ proc rep034 { method { niter 2 } { tnum "034" } args } {
 	# or from the master.  List them together to make the test shorter.
 	# We don't need to test every combination.
 	#
-	set opts { {stat anywhere} {ret from_master} }
+	set opts {"" anywhere}
 	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
@@ -58,12 +58,18 @@ proc rep034 { method { niter 2 } { tnum "034" } args } {
 	}
 }
 
-proc rep034_sub { method niter tnum logset recargs opts largs } {
+proc rep034_sub { method niter tnum logset recargs anyopt largs } {
 	global anywhere
 	global testdir
 	global util_path
 	global startup_done
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -89,8 +95,6 @@ proc rep034_sub { method niter tnum logset recargs opts largs } {
 	set c_txnargs [adjust_txnargs $c_logtype]
 	set c2_txnargs [adjust_txnargs $c2_logtype]
 
-	set stup [lindex $opts 0]
-	set anyopt [lindex $opts 1]
         if { $anyopt == "anywhere" } {
 		set anywhere 1
 	} else {
@@ -100,38 +104,23 @@ proc rep034_sub { method niter tnum logset recargs opts largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $m_logargs \
-	    -event rep_startup_event \
+	    -event rep_startup_event $verbargs -errpfx MASTER \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $m_logargs \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -event rep_startup_event \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $c_logargs \
-	    -event rep_startup_event \
+	    -event rep_startup_event $verbargs -errpfx CLIENT \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $c_logargs \
-#	    -event rep_startup_event \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Open a client
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs $c2_logargs \
-	    -event rep_startup_event \
+	    -event rep_startup_event $verbargs -errpfx CLIENT2 \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
-#	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs $c2_logargs \
-#	    -event rep_startup_event \
-#	    -verbose {rep on} -errpfx CLIENT2 \
-#	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set client2env [eval $cl2_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $client2env] TRUE
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2} {$client2env 3}"
@@ -179,9 +168,20 @@ proc rep034_sub { method niter tnum logset recargs opts largs } {
 	set envlist "{$newclient 1} {$clientenv 2} {$newmaster 3}"
 	process_msgs $envlist
 
-	puts "\tRep$tnum.d: Verify client in startup mode"
+	puts "\tRep$tnum.d: Verify client startup mode"
 	set start [stat_field $clientenv rep_stat "Startup complete"]
-	error_check_good start_incomplete $start 0
+	#
+	# If we are receiving the messages from the client, then
+	# we should not have received all of the records needed
+	# for STARTUPDONE.  If we are receiving from the master,
+	# then we should cross the NEWMASTER LSN and see that
+	# startup completed with no live records.
+	#
+	if { $anyopt == "anywhere" } {
+		error_check_good start_incomplete $start 0
+	} else {
+		error_check_good start_incomplete $start 1
+	}
 
 	puts "\tRep$tnum.e: Generate live message"
 	eval rep_test $method $newmaster NULL $niter 0 0 0 0 $largs
@@ -216,14 +216,14 @@ proc rep034_sub { method niter tnum logset recargs opts largs } {
 		process_msgs $envlist
 	}
 
-	if { $stup == "stat" } {
-		puts "\tRep$tnum.f: Verify client completed startup via stat"
-		set start [stat_field $clientenv rep_stat "Startup complete"]
-		error_check_good start_complete $start 1
-	} else {
-		puts "\tRep$tnum.f: Verify client completed startup via event"
-		error_check_good start_complete $startup_done 1
-	}
+	#
+	# No matter what startup should be complete by now.
+	#
+	puts "\tRep$tnum.f.0: Verify client completed startup via stat"
+	set start [stat_field $clientenv rep_stat "Startup complete"]
+	error_check_good start_complete $start 1
+	puts "\tRep$tnum.f.1: Verify client completed startup via event"
+	error_check_good start_complete $startup_done 1
 
 	puts "\tRep$tnum.g: Check message handling of client."
 	#

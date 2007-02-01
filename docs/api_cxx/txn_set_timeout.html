@@ -1,4 +1,4 @@
-<!--$Id: txn_set_timeout.so,v 10.21 2005/05/20 15:07:45 bostic Exp $-->
+<!--$Id: txn_set_timeout.so,v 10.22 2006/12/16 13:52:36 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -28,8 +28,8 @@ DbTxn::set_timeout(db_timeout_t timeout, u_int32_t flags);
 <h3>Description: DbTxn::set_timeout</h3>
 <p>The DbTxn::set_timeout method sets timeout values for locks or
 transactions for the specified transaction.</p>
-<p>All Timeouts are checked whenever a thread of control blocks on a lock
-or when deadlock detection is performed.  In the case of
+<p>Timeouts are checked whenever a thread of control blocks on a lock or
+when deadlock detection is performed.  In the case of
 DB_SET_LOCK_TIMEOUT, the timeout is for any single lock request.
 In the case of DB_SET_TXN_TIMEOUT, the timeout is for the life
 of the transaction.  As timeouts are only checked when the lock request

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mut_region.c,v 12.22 2006/11/01 00:53:38 bostic Exp $
+ * $Id: mut_region.c,v 12.24 2006/11/23 15:27:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,6 +12,7 @@
 #include "dbinc/log.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
+#include "dbinc/txn.h"
 #include "dbinc/mutex_int.h"
 
 static size_t __mutex_align_size __P((DB_ENV *));
@@ -58,6 +59,7 @@ __mutex_open(dbenv, create_ok)
 		    __lock_region_mutex_count(dbenv) +
 		    __log_region_mutex_count(dbenv) +
 		    __memp_region_mutex_count(dbenv) +
+		    __txn_region_mutex_count(dbenv) +
 		    dbenv->mutex_inc + 100;
 
 	/* Create/initialize the mutex manager structure. */
@@ -71,7 +73,7 @@ __mutex_open(dbenv, create_ok)
 	mtxmgr->reginfo.flags = REGION_JOIN_OK;
 	if (create_ok)
 		F_SET(&mtxmgr->reginfo, REGION_CREATE_OK);
-	if ((ret = __db_r_attach(dbenv,
+	if ((ret = __env_region_attach(dbenv,
 	    &mtxmgr->reginfo, __mutex_region_size(dbenv))) != 0)
 		goto err;
 
@@ -128,7 +130,7 @@ __mutex_open(dbenv, create_ok)
 
 err:	dbenv->mutex_handle = NULL;
 	if (mtxmgr->reginfo.addr != NULL)
-		(void)__db_r_detach(dbenv, &mtxmgr->reginfo, 0);
+		(void)__env_region_detach(dbenv, &mtxmgr->reginfo, 0);
 
 	__os_free(dbenv, mtxmgr);
 	return (ret);
@@ -223,13 +225,13 @@ __mutex_region_init(dbenv, mtxmgr)
 }
 
 /*
- * __mutex_dbenv_refresh --
+ * __mutex_env_refresh --
  *	Clean up after the mutex region on a close or failed open.
  *
- * PUBLIC: int __mutex_dbenv_refresh __P((DB_ENV *));
+ * PUBLIC: int __mutex_env_refresh __P((DB_ENV *));
  */
 int
-__mutex_dbenv_refresh(dbenv)
+__mutex_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_MUTEXMGR *mtxmgr;
@@ -260,7 +262,7 @@ __mutex_dbenv_refresh(dbenv)
 	}
 
 	/* Detach from the region. */
-	ret = __db_r_detach(dbenv, reginfo, 0);
+	ret = __env_region_detach(dbenv, reginfo, 0);
 
 	__os_free(dbenv, mtxmgr);
 
@@ -325,8 +327,8 @@ __mutex_resource_return(dbenv, infop)
 	 *
 	 * Walk the list of mutexes and destroy any live ones.
 	 *
-	 * This is just like joining a region -- the REGINFO we're handed
-	 * is the same as the one returned by __db_r_attach(), all we have
+	 * This is just like joining a region -- the REGINFO we're handed is
+	 * the same as the one returned by __env_region_attach(), all we have
 	 * to do is fill in the links.
 	 *
 	 * !!!

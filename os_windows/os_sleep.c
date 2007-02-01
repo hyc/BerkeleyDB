@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_sleep.c,v 12.5 2006/11/01 00:53:42 bostic Exp $
+ * $Id: os_sleep.c,v 12.7 2006/11/29 20:08:52 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,13 +21,12 @@ __os_sleep(dbenv, secs, usecs)
 {
 	COMPQUIET(dbenv, NULL);
 
-	/* Don't require that the values be normalized. */
-	for (; usecs >= 1000000; ++secs, usecs -= 1000000)
-		;
-
 	/*
-	 * It's important that we yield the processor here so that other
-	 * processes or threads are permitted to run.
+	 * It's important we yield the processor here so other processes or
+	 * threads can run.
+	 *
+	 * Sheer raving paranoia -- don't sleep for 0 time, in case some
+	 * implementation doesn't yield the processor in that case.
 	 */
-	Sleep(secs * 1000 + usecs / 1000);
+	Sleep(secs * MS_PER_SEC + (usecs / US_PER_MS) + 1);
 }

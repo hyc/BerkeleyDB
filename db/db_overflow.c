@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_overflow.c,v 12.15 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_overflow.c,v 12.16 2006/11/29 21:23:12 ubell Exp $
  */
 
 #include "db_config.h"
@@ -165,7 +165,8 @@ skip_alloc:
 				if ((ret = dbenv->dbt_usercopy(
 				    dbt, dbt->size - needed,
 				    src, bytes, DB_USERCOPY_SETDATA)) != 0) {
-					(void)__memp_fput(mpf, h, 0);
+					(void)__memp_fput(mpf,
+					     h, dbp->priority);
 					return (ret);
 				}
 			} else
@@ -175,7 +176,7 @@ skip_alloc:
 		}
 		curoff += OV_LEN(h);
 		pgno = h->next_pgno;
-		(void)__memp_fput(mpf, h, 0);
+		(void)__memp_fput(mpf, h, dbp->priority);
 	}
 	return (0);
 }
@@ -240,7 +241,8 @@ __db_poff(dbc, dbt, pgnop)
 			    lastp == NULL ? &null_lsn : &LSN(lastp),
 			    &null_lsn)) != 0) {
 				if (lastp != NULL)
-					(void)__memp_fput(mpf, lastp, 0);
+					(void)__memp_fput(mpf,
+					     lastp, dbc->priority);
 				lastp = pagep;
 				break;
 			}
@@ -266,12 +268,12 @@ __db_poff(dbc, dbt, pgnop)
 		else {
 			lastp->next_pgno = PGNO(pagep);
 			pagep->prev_pgno = PGNO(lastp);
-			(void)__memp_fput(mpf, lastp, 0);
+			(void)__memp_fput(mpf, lastp, dbc->priority);
 		}
 		lastp = pagep;
 	}
-	if (lastp != NULL &&
-	    (t_ret = __memp_fput(mpf, lastp, 0)) != 0 && ret == 0)
+	if (lastp != NULL && (t_ret =
+	    __memp_fput(mpf, lastp, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -301,7 +303,7 @@ __db_ovref(dbc, pgno)
 	if (DBC_LOGGING(dbc)) {
 		if ((ret = __db_ovref_log(dbp,
 		    dbc->txn, &LSN(h), 0, h->pgno, -1, &LSN(h))) != 0) {
-			(void)__memp_fput(mpf, h, 0);
+			(void)__memp_fput(mpf, h, dbc->priority);
 			return (ret);
 		}
 	} else
@@ -318,7 +320,7 @@ __db_ovref(dbc, pgno)
 	 */
 	--OV_REF(h);
 
-	return (__memp_fput(mpf, h, 0));
+	return (__memp_fput(mpf, h, dbc->priority));
 }
 
 /*
@@ -352,12 +354,13 @@ __db_doff(dbc, pgno)
 		 * decrement the reference count and return.
 		 */
 		if (OV_REF(pagep) > 1) {
-			(void)__memp_fput(mpf, pagep, 0);
+			(void)__memp_fput(mpf, pagep, dbc->priority);
 			return (__db_ovref(dbc, pgno));
 		}
 
-		if ((ret = __memp_dirty(mpf, &pagep, dbc->txn, 0)) != 0) {
-			(void)__memp_fput(mpf, pagep, 0);
+		if ((ret = __memp_dirty(mpf,
+		    &pagep, dbc->txn, dbc->priority, 0)) != 0) {
+			(void)__memp_fput(mpf, pagep, dbc->priority);
 			return (ret);
 		}
 
@@ -370,7 +373,7 @@ __db_doff(dbc, pgno)
 			    PGNO(pagep), PREV_PGNO(pagep),
 			    NEXT_PGNO(pagep), &tmp_dbt,
 			    &LSN(pagep), &null_lsn, &null_lsn)) != 0) {
-				(void)__memp_fput(mpf, pagep, 0);
+				(void)__memp_fput(mpf, pagep, dbc->priority);
 				return (ret);
 			}
 		} else
@@ -450,7 +453,7 @@ __db_moff(dbp, txn, dbt, pgno, tlen, cmpfunc, cmpp)
 				break;
 			}
 		pgno = NEXT_PGNO(pagep);
-		if ((ret = __memp_fput(mpf, pagep, 0)) != 0)
+		if ((ret = __memp_fput(mpf, pagep, dbp->priority)) != 0)
 			return (ret);
 		if (*cmpp != 0)
 			return (0);

@@ -222,6 +222,9 @@ SOURCE=..\common\db_idspace.c
 SOURCE=..\common\db_log2.c
 # End Source File
 # Begin Source File
+SOURCE=..\common\db_shash.c
+# End Source File
+# Begin Source File
 SOURCE=..\common\mkpath.c
 # End Source File
 # Begin Source File
@@ -324,9 +327,6 @@ SOURCE=..\dbreg\dbreg_stat.c
 SOURCE=..\dbreg\dbreg_util.c
 # End Source File
 # Begin Source File
-SOURCE=..\env\db_shash.c
-# End Source File
-# Begin Source File
 SOURCE=..\env\env_alloc.c
 # End Source File
 # Begin Source File
@@ -340,6 +340,9 @@ SOURCE=..\env\env_file.c
 # End Source File
 # Begin Source File
 SOURCE=..\env\env_method.c
+# End Source File
+# Begin Source File
+SOURCE=..\env\env_name.c
 # End Source File
 # Begin Source File
 SOURCE=..\env\env_open.c

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: RepQuoteExample.java,v 1.11 2006/11/01 00:53:20 bostic Exp $
+ * $Id: RepQuoteExample.java,v 1.14 2006/12/18 19:08:56 alanb Exp $
  */
 
 package db.repquote;
@@ -29,7 +29,6 @@ import db.repquote.RepConfig;
  * <pre>
  *   -M (configure this process to start as a master)
  *   -C (configure this process to start as a client)
- *   -F Call a full election at startup
  *   -h environment home directory
  *   -m host:port (required; m stands for me)
  *   -o host:port (optional; o stands for other; any number of these may
@@ -86,7 +85,6 @@ public class RepQuoteExample implements EventHandler
 
         System.err.println(
              "\t -C start the site as client of the replication group\n" +
-             "\t -F Call a full election at startup\n" +
              "\t -M start the site as master of the replication group\n" +
              "\t -f host:port (optional; f stands for friend and \n" +
              "\t    indicates a peer relationship to the specified site)\n" +
@@ -117,9 +115,6 @@ public class RepQuoteExample implements EventHandler
             isPeer = false;
             if (argv[i].compareTo("-C") == 0) {
                 config.startPolicy = ReplicationManagerStartPolicy.REP_CLIENT;
-            } else if (argv[i].compareTo("-F") == 0) {
-                config.startPolicy =
-                    ReplicationManagerStartPolicy.REP_FULL_ELECTION;
             } else if (argv[i].compareTo("-h") == 0) {
                 // home - a string arg.
                 i++;
@@ -366,7 +361,9 @@ public class RepQuoteExample implements EventHandler
             dbenv.setIsMaster(true);
         else if (event == EventType.REP_CLIENT)
             dbenv.setIsMaster(false);
-        else if (event == EventType.REP_NEW_MASTER) {
+        else if (event == EventType.REP_NEW_MASTER ||
+                 event == EventType.REP_PERM_FAILED ||
+                 event == EventType.REP_STARTUPDONE) {
             // ignored for now.
         } else {
             System.err.println("Unknown event callback received.\n");

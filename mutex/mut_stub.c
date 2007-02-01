@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mut_stub.c,v 12.2 2006/11/01 00:53:38 bostic Exp $
+ * $Id: mut_stub.c,v 12.3 2006/12/16 14:29:33 bostic Exp $
  */
 
 #ifndef HAVE_MUTEX_SUPPORT
@@ -204,7 +204,7 @@ __mutex_set_wait_info(dbenv, mutex, waitp, nowaitp)
 }
 
 int
-__mutex_stat(dbenv, statp, flags)
+__mutex_stat_pp(dbenv, statp, flags)
 	DB_ENV *dbenv;
 	DB_MUTEX_STAT **statp;
 	u_int32_t flags;
@@ -215,7 +215,7 @@ __mutex_stat(dbenv, statp, flags)
 }
 
 int
-__mutex_stat_print(dbenv, flags)
+__mutex_stat_print_pp(dbenv, flags)
 	DB_ENV *dbenv;
 	u_int32_t flags;
 {

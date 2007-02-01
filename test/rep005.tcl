@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep005.tcl,v 12.13 2006/11/01 00:53:54 bostic Exp $
+# $Id: rep005.tcl,v 12.14 2006/12/07 19:35:19 carol Exp $
 #
 # TEST  rep005
 # TEST	Replication election test with error handling.
@@ -57,7 +57,13 @@ proc rep005_sub { method tnum niter nclients logset recargs largs } {
 	source ./include.tcl
 	global rand_init
 	error_check_good set_random_seed [berkdb srand $rand_init] 0
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -79,20 +85,10 @@ proc rep005_sub { method tnum niter nclients logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env -create -log_max 1000000 \
-	    -home $masterdir $m_logargs \
+	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
+	    -home $masterdir $m_logargs -errpfx MASTER $verbargs \
 	    $m_txnargs -rep_master -rep_transport \[list 1 replsend\]"
-# To debug elections, uncomment the line below and further below
-# for the clients to turn on verbose.  Also edit reputils.tcl
-# in proc start_election and swap the 2 commented lines with
-# their counterpart.
-#	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
-#	    -home $masterdir $m_logargs \
-#	    $m_txnargs -rep_master \
-#	    -verbose {rep on} -errpfx MASTER -errfile /dev/stderr \
-#	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	set envlist {}
 	lappend envlist "$masterenv 1"
@@ -101,16 +97,12 @@ proc rep005_sub { method tnum niter nclients logset recargs largs } {
 	for { set i 0 } { $i < $nclients } { incr i } {
 		set envid [expr $i + 2]
 		repladd $envid
-		set env_cmd($i) "berkdb_env -create -home $clientdir($i) \
-		    $c_logargs($i) $c_txnargs($i) -rep_client \
+		set env_cmd($i) "berkdb_env_noerr -create \
+		    -home $clientdir($i) $c_logargs($i) \
+		    $c_txnargs($i) -rep_client $verbargs \
+		    -errpfx CLIENT$i \
 		    -rep_transport \[list $envid replsend\]"
-#		set env_cmd($i) "berkdb_env_noerr -create -home $clientdir($i) \
-#		    -verbose {rep on} -errpfx CLIENT$i -errfile /dev/stderr \
-#		    $c_logargs($i) $c_txnargs($i) -rep_client \
-#		    -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i) $recargs]
-		error_check_good \
-		    client_env($i) [is_valid_env $clientenv($i)] TRUE
 		lappend envlist "$clientenv($i) $envid"
 	}
 

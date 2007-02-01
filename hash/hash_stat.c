@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: hash_stat.c,v 12.12 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_stat.c,v 12.13 2006/11/29 21:23:17 ubell Exp $
  */
 
 #include "db_config.h"
@@ -75,7 +75,7 @@ __ham_stat(dbc, spp, flags)
 			goto err;
 
 		pgno = h->next_pgno;
-		(void)__memp_fput(mpf, h, 0);
+		(void)__memp_fput(mpf, h, dbc->priority);
 	}
 
 	/* Now traverse the rest of the table. */
@@ -491,7 +491,8 @@ __ham_traverse(dbc, mode, callback, cookie, look_past_max)
 			goto err;
 
 		if (hcp->page != NULL) {
-			if ((ret = __memp_fput(mpf, hcp->page, 0)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, hcp->page, dbc->priority)) != 0)
 				return (ret);
 			hcp->page = NULL;
 		}

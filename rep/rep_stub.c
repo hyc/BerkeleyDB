@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_stub.c,v 12.20 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_stub.c,v 12.24 2006/11/16 16:37:08 bostic Exp $
  */
 
 #ifndef HAVE_REPLICATION
@@ -90,12 +90,12 @@ __rep_bulk_message(dbenv, bulkp, repth, lsnp, dbt, flags)
 	return (__db_norep(dbenv));
 }
 
-void
-__rep_dbenv_refresh(dbenv)
+int
+__rep_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, NULL);
-	return;
+	return (0);
 }
 
 int
@@ -253,14 +253,6 @@ __rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
 	COMPQUIET(eidp, NULL);
 	COMPQUIET(ret_lsnp, NULL);
 	return (__db_norep(dbenv));
-}
-
-int
-__rep_region_destroy(dbenv)
-	DB_ENV *dbenv;
-{
-	COMPQUIET(dbenv, NULL);
-	return (0);
 }
 
 int

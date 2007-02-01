@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep023.tcl,v 12.11 2006/11/01 00:53:56 bostic Exp $
+# $Id: rep023.tcl,v 12.12 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep023
 # TEST	Replication using two master handles.
@@ -65,6 +65,13 @@ proc rep023 { method { niter 10 } { tnum "023" } args } {
 
 proc rep023_sub { method niter tnum logset recargs startopt largs } {
 	global testdir
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -86,31 +93,24 @@ proc rep023_sub { method niter tnum logset recargs startopt largs } {
 
 	# Open 1st master.
 	repladd 1
-	set ma_envcmd "berkdb_env -create $m_txnargs $m_logargs \
-	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env -create $m_txnargs $m_logargs \
-#	    -errpfx MASTER -verbose {rep on} \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
+	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $m_logargs \
+	    $verbargs -errpfx MASTER -home $masterdir \
+	    -rep_transport \[list 1 replsend\]"
 	set masterenv1 [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv1] TRUE
 
 	# Open 2nd handle on master.  The master envs will share
 	# the same envid.
 	set masterenv2 [eval $ma_envcmd]
-	error_check_good master_env [is_valid_env $masterenv2] TRUE
 	if { $startopt == 1 } {
 		error_check_good rep_start [$masterenv2 rep_start -master] 0
 	}
 
 	# Open a client.
 	repladd 2
-	set cl_envcmd "berkdb_env -create $c_txnargs $c_logargs \
-	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env -create $c_txnargs $c_logargs \
-#	    -errpfx CLIENT1 -verbose {rep on} \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
+	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
+	    $c_logargs $verbargs -errpfx CLIENT -home $clientdir \
+	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the clients online by processing the startup messages.
 	# Process messages on the first masterenv handle, not the second.

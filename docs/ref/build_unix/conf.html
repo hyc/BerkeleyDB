@@ -1,4 +1,4 @@
-<!--$Id: conf.so,v 10.63 2006/04/07 21:08:34 bostic Exp $-->
+<!--$Id: conf.so,v 10.64 2007/01/18 16:58:49 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -60,11 +60,13 @@ be specified when configuring to build production binaries.
 --enable-debug_wop as an argument to configure.  This argument should not
 be specified when configuring to build production binaries.
 <dt><a name="--enable-diagnostic">--enable-diagnostic</a><dd>To build Berkeley DB with run-time debugging checks, enter --enable-diagnostic
-as an argument to configure.  This will cause a number of special checks
-to be performed when Berkeley DB is running.  Applications built using this
-argument should not share database environments with applications built
-without this argument.  This argument should not be specified when
-configuring to build production binaries.
+as an argument to configure.  This causes a number of additional checks
+to be performed when Berkeley DB is running, and also causes some failures to
+trigger process abort rather than returning errors to the application.
+Applications built using this argument should not share database
+environments with applications built without this argument.  This
+argument should not be specified when configuring to build production
+binaries.
 <a name="9"><!--meow--></a>
 <dt><a name="--enable-dump185">--enable-dump185</a><dd>To convert Berkeley DB 1.85 (or earlier) databases to this release of Berkeley DB,
 enter --enable-dump185 as an argument to configure.  This will build the

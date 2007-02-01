@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep012.tcl,v 12.11 2006/11/01 00:53:55 bostic Exp $
+# $Id: rep012.tcl,v 12.12 2006/12/07 19:35:19 carol Exp $
 #
 # TEST	rep012
 # TEST	Replication and dead DB handles.
@@ -50,7 +50,13 @@ proc rep012 { method { niter 10 } { tnum "012" } args } {
 proc rep012_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global verbose_check_secondaries
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -79,39 +85,24 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -errpfx ENV0 \
+	    $m_logargs -errpfx ENV0 $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs \
-#	    -errpfx ENV0 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set env0 [eval $ma_envcmd $recargs -rep_master]
 	set masterenv $env0
-	error_check_good master_env [is_valid_env $env0] TRUE
 
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -errpfx ENV1 \
+	    $c_logargs -errpfx ENV1 $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs \
-#	    -errpfx ENV1 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set env1 [eval $cl_envcmd $recargs -rep_client]
 	set clientenv $env1
-	error_check_good client_env [is_valid_env $env1] TRUE
 
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -errpfx ENV2 \
+	    $c2_logargs -errpfx ENV2 $verbargs \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
-#	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-#	    $c2_logargs \
-#	    -errpfx ENV2 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set cl2env [eval $cl2_envcmd $recargs -rep_client]
-	error_check_good client2_env [is_valid_env $cl2env] TRUE
 
 	set testfile "test$tnum.db"
 	set pname "primary$tnum.db"

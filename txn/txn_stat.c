@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: txn_stat.c,v 12.20 2006/11/01 00:54:23 bostic Exp $
+ * $Id: txn_stat.c,v 12.21 2006/12/13 01:25:40 ubell Exp $
  */
 
 #include "db_config.h"
@@ -133,7 +133,8 @@ __txn_stat(dbenv, statp, flags)
 	    &stats->st_region_wait, &stats->st_region_nowait);
 	stats->st_regsize = mgr->reginfo.rp->size;
 	if (LF_ISSET(DB_STAT_CLEAR)) {
-		__mutex_clear(dbenv, region->mtx_region);
+		if (!LF_ISSET(DB_STAT_SUBSYSTEM))
+			__mutex_clear(dbenv, region->mtx_region);
 		memset(&region->stat, 0, sizeof(region->stat));
 		region->stat.st_maxtxns = region->maxtxns;
 		region->stat.st_maxnactive =
@@ -191,7 +192,7 @@ __txn_stat_print(dbenv, flags)
 	int ret;
 
 	orig_flags = flags;
-	LF_CLR(DB_STAT_CLEAR);
+	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
 	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
 		ret = __txn_print_stats(dbenv, orig_flags);
 		if (flags == 0 || ret != 0)

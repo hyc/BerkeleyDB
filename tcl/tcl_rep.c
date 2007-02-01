@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_rep.c,v 12.27 2006/11/01 00:53:52 bostic Exp $
+ * $Id: tcl_rep.c,v 12.31 2007/01/31 20:24:25 sue Exp $
  */
 
 #include "db_config.h"
@@ -174,10 +174,11 @@ tcl_RepElect(interp, objc, objv, dbenv)
 	DB_ENV *dbenv;			/* Environment pointer */
 {
 	int eid, nsites, nvotes, pri, result, ret;
-	u_int32_t timeout;
+	u_int32_t full_timeout, timeout;
 
-	if (objc != 6) {
-		Tcl_WrongNumArgs(interp, 6, objv, "nsites pri timeout");
+	if (objc != 6 && objc != 7) {
+		Tcl_WrongNumArgs(interp, 6, objv,
+		    "nsites nvotes pri timeout [full_timeout]");
 		return (TCL_ERROR);
 	}
 
@@ -189,6 +190,10 @@ tcl_RepElect(interp, objc, objv, dbenv)
 		return (result);
 	if ((result = _GetUInt32(interp, objv[5], &timeout)) != TCL_OK)
 		return (result);
+	full_timeout = 0;
+	if (objc == 7)
+		if ((result = _GetUInt32(interp, objv[5], &timeout)) != TCL_OK)
+			return (result);
 
 	_debug_check();
 
@@ -197,6 +202,11 @@ tcl_RepElect(interp, objc, objv, dbenv)
 			    "env rep_elect (rep_set_priority)"));
 	if ((ret = dbenv->rep_set_timeout(dbenv, DB_REP_ELECTION_TIMEOUT,
 	    timeout)) != 0)
+		return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "env rep_elect (rep_set_timeout)"));
+
+	if (full_timeout != 0 && (ret = dbenv->rep_set_timeout(dbenv,
+	    DB_REP_FULL_ELECTION_TIMEOUT, full_timeout)) != 0)
 		return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "env rep_elect (rep_set_timeout)"));
 
@@ -458,10 +468,10 @@ tcl_RepStart(interp, objc, objv, dbenv)
 		i++;
 		switch ((enum tclrpstrt)optindex) {
 		case TCL_RPSTRT_CLIENT:
-			flag |= DB_REP_CLIENT;
+			flag = DB_REP_CLIENT;
 			break;
 		case TCL_RPSTRT_MASTER:
-			flag |= DB_REP_MASTER;
+			flag = DB_REP_MASTER;
 			break;
 		}
 	}
@@ -546,7 +556,6 @@ tcl_RepProcessMessage(interp, objc, objv, dbenv)
 	 * {HOLDELECTION 0} -  HOLDELECTION, no other info needed.
 	 * {NEWMASTER #} - NEWMASTER and its ID.
 	 * {NEWSITE 0} - NEWSITE, no other info needed.
-	 * {STARTUPDONE 0} - STARTUPDONE, no other info needed.
 	 * {IGNORE {LSN list}} - IGNORE and this msg's LSN.
 	 * {ISPERM {LSN list}} - ISPERM and the perm LSN.
 	 * {NOTPERM {LSN list}} - NOTPERM and this msg's LSN.
@@ -725,7 +734,7 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Election generation number", sp->st_election_gen);
 	MAKE_STAT_LSN("Election max LSN", &sp->st_election_lsn);
 	MAKE_STAT_LIST("Election sites", sp->st_election_nsites);
-	MAKE_STAT_LIST("Election votes", sp->st_election_nvotes);
+	MAKE_STAT_LIST("Election nvotes", sp->st_election_nvotes);
 	MAKE_STAT_LIST("Election priority", sp->st_election_priority);
 	MAKE_STAT_LIST("Election tiebreaker", sp->st_election_tiebreaker);
 	MAKE_STAT_LIST("Election votes", sp->st_election_votes);
@@ -946,8 +955,6 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				start_flag = DB_REP_CLIENT;
 			else if (strcmp(arg, "elect") == 0)
 				start_flag = DB_REP_ELECTION;
-			else if (strcmp(arg, "full_elect") == 0)
-				start_flag = DB_REP_FULL_ELECTION;
 			else {
 				Tcl_AddErrorInfo(
 				    interp, "start: illegal state");

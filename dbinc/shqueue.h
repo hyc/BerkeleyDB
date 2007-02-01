@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: shqueue.h,v 12.10 2006/11/01 00:52:41 bostic Exp $
+ * $Id: shqueue.h,v 12.11 2007/01/08 22:54:35 ubell Exp $
  */
 
 #ifndef	_DB_SHQUEUE_H_
@@ -380,7 +380,7 @@ struct {								\
 	} else {							\
 		(elm)->field.stqe_next = -1;				\
 		(head)->stqh_last =					\
-		    SH_PTR_TO_OFF(head, &elm->field.stqe_next);		\
+		    SH_PTR_TO_OFF(head, &(elm)->field.stqe_next);	\
 	}								\
 	(listelm)->field.stqe_next = SH_PTR_TO_OFF(listelm, elm);	\
 	(elm)->field.stqe_prev = SH_TAILQ_NEXT_TO_PREV(listelm, field);	\
@@ -392,7 +392,7 @@ struct {								\
 		    (elm)->field.stqe_prev +				\
 		    SH_PTR_TO_OFF(SH_TAILQ_NEXTP(elm,			\
 		    field, type), elm);					\
-		*__SH_TAILQ_PREV_OFF(elm, field) += elm->field.stqe_next;\
+		*__SH_TAILQ_PREV_OFF(elm, field) += (elm)->field.stqe_next;\
 	} else {							\
 		(head)->stqh_last = (elm)->field.stqe_prev +		\
 			SH_PTR_TO_OFF(head, elm);			\

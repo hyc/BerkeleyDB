@@ -6,7 +6,7 @@
  * Some parts of this code originally written by Adam Stubblefield
  * -- astubble@rice.edu
  *
- * $Id: crypto.c,v 12.12 2006/11/01 00:52:25 bostic Exp $
+ * $Id: crypto.c,v 12.17 2006/11/16 19:49:56 bostic Exp $
  */
 
 #include "db_config.h"
@@ -111,53 +111,64 @@ __crypto_region_init(dbenv)
 }
 
 /*
- * __crypto_dbenv_close --
+ * __crypto_env_close --
  *	Crypto-specific destruction of DB_ENV structure.
  *
- * PUBLIC: int __crypto_dbenv_close __P((DB_ENV *));
+ * PUBLIC: int __crypto_env_close __P((DB_ENV *));
  */
 int
-__crypto_dbenv_close(dbenv)
+__crypto_env_close(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_CIPHER *db_cipher;
 	int ret;
 
-	ret = 0;
-	db_cipher = dbenv->crypto_handle;
 	if (dbenv->passwd != NULL) {
 		memset(dbenv->passwd, 0xff, dbenv->passwd_len-1);
 		__os_free(dbenv, dbenv->passwd);
 		dbenv->passwd = NULL;
 	}
+
 	if (!CRYPTO_ON(dbenv))
 		return (0);
+
+	ret = 0;
+	db_cipher = dbenv->crypto_handle;
 	if (!F_ISSET(db_cipher, CIPHER_ANY))
 		ret = db_cipher->close(dbenv, db_cipher->data);
 	__os_free(dbenv, db_cipher);
+
+	dbenv->crypto_handle = NULL;
 	return (ret);
 }
 
 /*
- * __crypto_region_destroy --
- *	Destroy any system resources allocated in the primary region.
+ * __crypto_env_refresh --
+ *	Clean up after the crpto system on a close or failed open.
  *
- * PUBLIC: int __crypto_region_destroy __P((DB_ENV *));
+ * PUBLIC: int __crypto_env_refresh __P((DB_ENV *));
  */
 int
-__crypto_region_destroy(dbenv)
+__crypto_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	CIPHER *cipher;
 	REGENV *renv;
 	REGINFO *infop;
 
-	infop = dbenv->reginfo;
-	renv = infop->primary;
-	if (renv->cipher_off != INVALID_ROFF) {
-		cipher = R_ADDR(infop, renv->cipher_off);
-		__env_alloc_free(infop, R_ADDR(infop, cipher->passwd));
-		__env_alloc_free(infop, cipher);
+	/*
+	 * If a private region, return the memory to the heap.  Not needed for
+	 * filesystem-backed or system shared memory regions, that memory isn't
+	 * owned by any particular process.
+	 */
+	if (F_ISSET(dbenv, DB_ENV_PRIVATE)) {
+		infop = dbenv->reginfo;
+		renv = infop->primary;
+		if (renv->cipher_off != INVALID_ROFF) {
+			cipher = R_ADDR(infop, renv->cipher_off);
+			__env_alloc_free(infop, R_ADDR(infop, cipher->passwd));
+			__env_alloc_free(infop, cipher);
+		}
 	}
 	return (0);
 }
@@ -246,8 +257,7 @@ __crypto_decrypt_meta(dbenv, dbp, mbuf, do_metachk)
 	 * since been removed).
 	 *
 	 * Ugly check to jump out if this format is older than what we support.
-	 * It assumes no encrypted page will have an unencrypted magic number,
-	 * but that seems relatively safe.  [#10920]
+	 * This works because we do not encrypt the page header.
 	 */
 	if (meta->magic == DB_HASHMAGIC && meta->version <= 5)
 		return (0);

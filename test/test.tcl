@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1996,2006 Oracle.  All rights reserved.
 #
-# $Id: test.tcl,v 12.32 2006/11/01 16:25:40 carol Exp $
+# $Id: test.tcl,v 12.35 2007/01/25 15:11:34 carol Exp $
 
 source ./include.tcl
 
@@ -119,8 +119,8 @@ source $test_path/testparams.tcl
 # Try to open an encrypted database.  If it fails, this release
 # doesn't support encryption, and encryption tests should be skipped.
 set has_crypto 1
-set stat [catch {set db \
-    [eval {berkdb_open -create -btree -encryptaes test_passwd} ] } result ]
+set stat [catch {set db [eval {berkdb_open_noerr \
+    -create -btree -encryptaes test_passwd} ] } result ]
 if { $stat != 0 } {
 	# Make sure it's the right error for a non-crypto release.
 	error_check_good non_crypto_release \
@@ -361,6 +361,7 @@ proc check_output { file } {
 		^100.*|
 		^eval\s.*|
 		^exec\s.*|
+		^fileops:\s.*|
 		^jointest.*$|
 		^r\sarchive\s*|
 		^r\sdbm\s*|
@@ -1110,7 +1111,7 @@ proc run_secenv { method test {largs ""} } {
 	set stat [catch {
 		check_handles
 		set env [eval {berkdb_env -create -mode 0644 -home $testdir \
-		    -encryptaes $passwd -cachesize {0 2097152 1}}]
+		    -encryptaes $passwd -cachesize {0 4194304 1}}]
 		error_check_good env_open [is_valid_env $env] TRUE
 		append largs " -env $env "
 
@@ -1328,7 +1329,7 @@ proc run_envmethod { method test {display 0} {run 1} {outfile stdout} \
 	set envargs ""
 
 	# Enlarge the cache by default - some compaction tests need it.
-	set cacheargs "-cachesize {0 2097152 1}"
+	set cacheargs "-cachesize {0 4194304 1}"
 	env_cleanup $testdir
 
 	if { $display == 1 } {

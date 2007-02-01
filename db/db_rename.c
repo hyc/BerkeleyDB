@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: db_rename.c,v 12.22 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_rename.c,v 12.23 2006/11/29 21:23:12 ubell Exp $
  */
 
 #include "db_config.h"
@@ -343,7 +343,7 @@ __db_subdb_rename(dbp, txn, name, subdb, newname)
 	    dbp, mdbp->lid, DB_LOCK_WRITE, NULL, NOWAIT_FLAG(txn))) != 0)
 		goto err;
 
-	ret = __memp_fput(mdbp->mpf, meta, 0);
+	ret = __memp_fput(mdbp->mpf, meta, dbp->priority);
 	meta = NULL;
 	if (ret != 0)
 		goto err;
@@ -356,8 +356,8 @@ __db_subdb_rename(dbp, txn, name, subdb, newname)
 
 DB_TEST_RECOVERY_LABEL
 err:
-	if (meta != NULL &&
-	    (t_ret = __memp_fput(mdbp->mpf, meta, 0)) != 0 && ret == 0)
+	if (meta != NULL && (t_ret =
+	    __memp_fput(mdbp->mpf, meta, dbp->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (mdbp != NULL &&

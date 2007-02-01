@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: db_method.c,v 12.30 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_method.c,v 12.32 2007/01/11 20:50:27 bostic Exp $
  */
 
 #include "db_config.h"
@@ -46,6 +46,7 @@ static int  __db_set_feedback __P((DB *, void (*)(DB *, int, int)));
 static void __db_map_flags __P((DB *, u_int32_t *, u_int32_t *));
 static int  __db_get_pagesize __P((DB *, u_int32_t *));
 static int  __db_set_paniccall __P((DB *, void (*)(DB_ENV *, int)));
+static int  __db_set_priority __P((DB *, DB_CACHE_PRIORITY));
 static void __db_set_errcall
 	      __P((DB *, void (*)(const DB_ENV *, const char *, const char *)));
 static void __db_get_errfile __P((DB *, FILE **));
@@ -109,6 +110,10 @@ db_create(dbpp, dbenv, flags)
 	ENV_ENTER(dbenv, ip);
 	ret = __db_create_internal(dbpp, dbenv, flags);
 	ENV_LEAVE(dbenv, ip);
+
+	if (ret != 0 && F_ISSET(dbenv, DB_ENV_DBLOCAL))
+		(void)__env_close(dbenv, 0);
+
 	return (ret);
 }
 
@@ -168,10 +173,6 @@ __db_create_internal(dbpp, dbenv, flags)
 
 err:	if (dbp != NULL && dbp->mpf != NULL)
 		(void)__memp_fclose(dbp->mpf, 0);
-
-
-	if (F_ISSET(dbenv, DB_ENV_DBLOCAL))
-		(void)__env_close(dbenv, 0);
 
 	if (dbp != NULL)
 		__os_free(dbenv, dbp);
@@ -249,6 +250,7 @@ __db_init(dbp, flags)
 	dbp->set_msgfile = __db_set_msgfile;
 	dbp->set_pagesize = __db_set_pagesize;
 	dbp->set_paniccall = __db_set_paniccall;
+	dbp->set_priority = __db_set_priority;
 	dbp->stat = __db_stat_pp;
 	dbp->stat_print = __db_stat_print_pp;
 	dbp->sync = __db_sync_pp;
@@ -871,4 +873,13 @@ __db_set_paniccall(dbp, paniccall)
 	void (*paniccall) __P((DB_ENV *, int));
 {
 	return (__env_set_paniccall(dbp->dbenv, paniccall));
+}
+
+static int
+__db_set_priority(dbp, priority)
+	DB *dbp;
+	DB_CACHE_PRIORITY priority;
+{
+	dbp->priority = priority;
+	return (0);
 }

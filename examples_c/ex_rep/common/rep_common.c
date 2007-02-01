@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2006 Oracle.  All rights reserved.
  *
- * $Id: rep_common.c,v 12.15 2006/11/01 00:52:54 bostic Exp $
+ * $Id: rep_common.c,v 12.17 2007/01/18 17:37:48 alanb Exp $
  */
 
 #include <errno.h>
@@ -44,6 +44,10 @@ event_callback(dbenv, which, info)
 
 	case DB_EVENT_REP_CLIENT:
 		app->is_master = 0;
+		break;
+
+	case DB_EVENT_REP_PERM_FAILED:
+		printf("insufficient acks\n");
 		break;
 
 	case DB_EVENT_REP_STARTUPDONE: /* FALLTHROUGH */
@@ -117,7 +121,7 @@ doloop(dbenv, app_data)
 {
 	DB *dbp;
 	DBT key, data;
-	char buf[BUFSIZE], *rbuf;
+	char buf[BUFSIZE], *first, *price;
 	u_int32_t flags;
 	int ret;
 
@@ -127,6 +131,32 @@ doloop(dbenv, app_data)
 	memset(&data, 0, sizeof(data));
 
 	for (;;) {
+		printf("QUOTESERVER%s> ",
+		    app_data->is_master ? "" : " (read-only)");
+		fflush(stdout);
+		
+		if (fgets(buf, sizeof(buf), stdin) == NULL)
+			break;
+		
+#define	DELIM " \t\n"
+		if ((first = strtok(&buf[0], DELIM)) == NULL) {
+			/* Blank input line. */
+			price = NULL;
+		} else if ((price = strtok(NULL, DELIM)) == NULL) {
+			/* Just one input token. */
+			if (strncmp(buf, "exit", 4) == 0 ||
+			    strncmp(buf, "quit", 4) == 0)
+				break;
+			dbenv->errx(dbenv, "Format: TICKER VALUE");
+			continue;
+		} else {
+			/* Normal two-token input line. */
+			if (first != NULL && !app_data->is_master) {
+				dbenv->errx(dbenv, "Can't update at client");
+				continue;
+			}
+		}
+
 		if (dbp == NULL) {
 			if ((ret = db_create(&dbp, dbenv, 0)) != 0)
 				return (ret);
@@ -149,7 +179,6 @@ doloop(dbenv, app_data)
 						goto err;
 					}
 					dbp = NULL;
-					sleep(SLEEPTIME);
 					continue;
 				}
 				dbenv->err(dbenv, ret, "DB->open");
@@ -157,14 +186,7 @@ doloop(dbenv, app_data)
 			}
 		}
 
-
-		printf("QUOTESERVER%s> ",
-		    app_data->is_master ? "" : " (read-only)");
-		fflush(stdout);
-
-		if (fgets(buf, sizeof(buf), stdin) == NULL)
-			break;
-		if (strtok(&buf[0], " \t\n") == NULL) {
+		if (first == NULL)
 			switch ((ret = print_stocks(dbp))) {
 			case 0:
 				continue;
@@ -175,31 +197,18 @@ doloop(dbenv, app_data)
 				dbp->err(dbp, ret, "Error traversing data");
 				goto err;
 			}
-		}
-		rbuf = strtok(NULL, " \t\n");
-		if (rbuf == NULL || rbuf[0] == '\0') {
-			if (strncmp(buf, "exit", 4) == 0 ||
-			    strncmp(buf, "quit", 4) == 0)
-				break;
-			dbenv->errx(dbenv, "Format: TICKER VALUE");
-			continue;
-		}
-
-		if (!app_data->is_master) {
-			dbenv->errx(dbenv, "Can't update at client");
-			continue;
-		}
-
-		key.data = buf;
-		key.size = (u_int32_t)strlen(buf);
-
-		data.data = rbuf;
-		data.size = (u_int32_t)strlen(rbuf);
-
-		if ((ret = dbp->put(dbp,
-		    NULL, &key, &data, DB_AUTO_COMMIT)) != 0) {
-			dbp->err(dbp, ret, "DB->put");
-			goto err;
+		else {
+			key.data = first;
+			key.size = (u_int32_t)strlen(first);
+			
+			data.data = price;
+			data.size = (u_int32_t)strlen(price);
+			
+			if ((ret = dbp->put(dbp,
+				 NULL, &key, &data, DB_AUTO_COMMIT)) != 0) {
+				dbp->err(dbp, ret, "DB->put");
+				goto err;
+			}
 		}
 	}
 

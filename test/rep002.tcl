@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2002,2006 Oracle.  All rights reserved.
 #
-# $Id: rep002.tcl,v 12.12 2006/11/01 00:53:54 bostic Exp $
+# $Id: rep002.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
 #
 # TEST  	rep002
 # TEST	Basic replication election test.
@@ -61,6 +61,13 @@ proc rep002_sub { method niter nclients tnum logset recargs largs } {
 	global elect_timeout elect_serial
 	set elect_timeout(default) 5000000
 
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -83,17 +90,12 @@ proc rep002_sub { method niter nclients tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
-	    -home $masterdir $m_logargs -errpfx MASTER \
+	    -home $masterdir $m_logargs -errpfx MASTER $verbargs \
 	    $m_txnargs -rep_master -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
-#	    -home $masterdir $m_logargs -errpfx MASTER -errfile /dev/stderr \
-#	    -verbose {rep on} $m_txnargs -rep_master \
-#	    -rep_transport \[list 1 replsend\]"
 	# In an election test, the -recovery arg must not go
 	# in the env_cmd string because that is going to be
 	# passed to a child process.
 	set masterenv [eval $env_cmd(M) $recargs]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open the clients.
 	for { set i 0 } { $i < $nclients } { incr i } {
@@ -101,14 +103,8 @@ proc rep002_sub { method niter nclients tnum logset recargs largs } {
 		repladd $envid
 		set env_cmd($i) "berkdb_env_noerr -create -home $clientdir($i) \
 		    $c_logargs($i) $c_txnargs($i) -rep_client -errpfx CLIENT$i \
-		    -rep_transport \[list $envid replsend\]"
-#		set env_cmd($i) "berkdb_env_noerr -create -home $clientdir($i) \
-#		    $c_logargs($i) -verbose {rep on} -errfile /dev/stderr \
-#		    $c_txnargs($i) -rep_client -errpfx CLIENT$i \
-#		    -rep_transport \[list $envid replsend\]"
+		    $verbargs -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i) $recargs]
-		error_check_good \
-		    client_env($i) [is_valid_env $clientenv($i)] TRUE
 	}
 
 	# Loop, processing first the master's messages, then the client's,

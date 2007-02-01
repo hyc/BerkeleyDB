@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2002,2006 Oracle.  All rights reserved.
  *
- * $Id: mut_win32.c,v 12.22 2006/11/01 00:53:38 bostic Exp $
+ * $Id: mut_win32.c,v 12.23 2007/01/22 06:12:16 alexg Exp $
  */
 
 #include "db_config.h"
@@ -47,6 +47,7 @@ static __inline int get_handle(dbenv, mutexp, eventp)
 	for (id = (mutexp)->id; id != 0; id >>= 4)
 		*--p = hex_digits[id & 0xf];
 
+#ifndef DB_WINCE
 	if (!security_initialized) {
 		InitializeSecurityDescriptor(&null_sd,
 		    SECURITY_DESCRIPTOR_REVISION);
@@ -56,6 +57,7 @@ static __inline int get_handle(dbenv, mutexp, eventp)
 		all_sa.lpSecurityDescriptor = &null_sd;
 		security_initialized = 1;
 	}
+#endif
 
 	if ((*eventp = CreateEvent(&all_sa, FALSE, FALSE, idbuf)) == NULL) {
 		ret = __os_get_syserr();

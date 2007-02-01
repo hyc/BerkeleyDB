@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2005,2006 Oracle.  All rights reserved.
  *
- * $Id: repmgr_elect.c,v 1.25 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_elect.c,v 1.27 2006/11/29 20:08:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -161,37 +161,29 @@ __repmgr_elect_main(dbenv)
 		case ELECT_ELECTION:
 			nsites = __repmgr_get_nsites(db_rep);
 
-			if (db_rep->init_policy == DB_REP_FULL_ELECTION &&
-			    !db_rep->found_master)
-				nvotes = nsites;
-			else {
-				nvotes = ELECTION_MAJORITY(nsites);
+			nvotes = ELECTION_MAJORITY(nsites);
 
-				/*
-				 * If we're doing an election because we noticed
-				 * that the master failed, it's reasonable to
-				 * expect that the master won't participate.  By
-				 * not waiting for its vote, we can probably
-				 * complete the election faster.  But note that
-				 * we shouldn't allow this to affect nvotes
-				 * calculation.
-				 */
-				if (failure_recovery) {
-					nsites--;
+			/*
+			 * If we're doing an election because we noticed that
+			 * the master failed, it's reasonable to expect that the
+			 * master won't participate.  By not waiting for its
+			 * vote, we can probably complete the election faster.
+			 * But note that we shouldn't allow this to affect
+			 * nvotes calculation.
+			 */
+			if (failure_recovery) {
+				nsites--;
 
-					if (nsites == 1) {
-						/*
-						 * We've just lost the only
-						 * other site in the group, so
-						 * there's no point in holding
-						 * an election.
-						 */
-						if ((ret =
-						    __repmgr_become_master(
-						    dbenv)) != 0)
-							return (ret);
-						break;
-					}
+				if (nsites == 1) {
+					/*
+					 * We've just lost the only other site
+					 * in the group, so there's no point in
+					 * holding an election.
+					 */
+					if ((ret = __repmgr_become_master(
+					    dbenv)) != 0)
+						return (ret);
+					break;
 				}
 			}
 
@@ -239,7 +231,7 @@ __repmgr_elect_main(dbenv)
 		LOCK_MUTEX(db_rep->mutex);
 		while (!__repmgr_is_ready(dbenv)) {
 #ifdef DB_WIN32
-			duration = db_rep->election_retry_wait / 1000;
+			duration = db_rep->election_retry_wait / US_PER_MS;
 			ret = SignalObjectAndWait(db_rep->mutex,
 			    db_rep->check_election, duration, FALSE);
 			LOCK_MUTEX(db_rep->mutex);

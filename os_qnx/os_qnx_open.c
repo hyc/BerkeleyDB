@@ -3,15 +3,12 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: os_vx_open.c,v 12.20 2006/11/01 00:53:41 bostic Exp $
+ * $Id: os_qnx_open.c,v 12.21 2006/12/21 02:05:03 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-
-#ifdef HAVE_QNX
-#endif
 
 /*
  * __os_qnx_region_open --

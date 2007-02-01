@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2005 Oracle.  All rights reserved.
  *
- * $Id: os_sleep.c,v 1.4 2006/11/09 14:31:01 bostic Exp $
+ * $Id: os_sleep.c,v 1.6 2007/02/01 13:15:31 bostic Exp $
  */
 
 #include "db_config.h"
@@ -21,11 +21,10 @@ __os_sleep(dbenv, secs, usecs)
 {
 	COMPQUIET(dbenv, NULL);
 
-	/* Don't require that the values be normalized. */
-	for (; usecs >= 1000000; usecs -= 1000000)
-		++secs;
-
-#ifndef HAVE_BREW_SDK2
-	MSLEEP(secs * 1000 + usecs / 1000);
+#ifdef HAVE_BREW_SDK2
+	COMPQUIET(secs, 0);
+	COMPQUIET(usecs, 0);
+#else
+	MSLEEP(secs * MS_PER_SEC + usecs / US_PER_MS);
 #endif
 }

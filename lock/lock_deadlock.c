@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_deadlock.c,v 12.18 2006/11/01 00:53:33 bostic Exp $
+ * $Id: lock_deadlock.c,v 12.20 2006/12/13 22:04:45 ubell Exp $
  */
 
 #include "db_config.h"
@@ -44,8 +44,8 @@ typedef struct {
 } locker_info;
 
 static int __dd_abort __P((DB_ENV *, locker_info *, int *));
-static int __dd_build __P((DB_ENV *,
-	    u_int32_t, u_int32_t **, u_int32_t *, u_int32_t *, locker_info **));
+static int __dd_build __P((DB_ENV *, u_int32_t,
+	    u_int32_t **, u_int32_t *, u_int32_t *, locker_info **, int*));
 static int __dd_find __P((DB_ENV *,
 	    u_int32_t *, locker_info *, u_int32_t, u_int32_t, u_int32_t ***));
 static int __dd_isolder __P((u_int32_t, u_int32_t, u_int32_t, u_int32_t));
@@ -64,10 +64,10 @@ static void __dd_debug
  * PUBLIC: int __lock_detect_pp __P((DB_ENV *, u_int32_t, u_int32_t, int *));
  */
 int
-__lock_detect_pp(dbenv, flags, atype, abortp)
+__lock_detect_pp(dbenv, flags, atype, rejectp)
 	DB_ENV *dbenv;
 	u_int32_t flags, atype;
-	int *abortp;
+	int *rejectp;
 {
 	DB_THREAD_INFO *ip;
 	int ret;
@@ -97,7 +97,7 @@ __lock_detect_pp(dbenv, flags, atype, abortp)
 	}
 
 	ENV_ENTER(dbenv, ip);
-	REPLICATION_WRAP(dbenv, (__lock_detect(dbenv, atype, abortp)), ret);
+	REPLICATION_WRAP(dbenv, (__lock_detect(dbenv, atype, rejectp)), ret);
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
@@ -109,14 +109,14 @@ __lock_detect_pp(dbenv, flags, atype, abortp)
  * PUBLIC: int __lock_detect __P((DB_ENV *, u_int32_t, int *));
  */
 int
-__lock_detect(dbenv, atype, abortp)
+__lock_detect(dbenv, atype, rejectp)
 	DB_ENV *dbenv;
 	u_int32_t atype;
-	int *abortp;
+	int *rejectp;
 {
 	DB_LOCKREGION *region;
 	DB_LOCKTAB *lt;
-	db_timeval_t now;
+	db_timespec now;
 	locker_info *idmap;
 	u_int32_t *bitmap, *copymap, **deadp, **free_me, *tmpmap;
 	u_int32_t i, cid, keeper, killid, limit, nalloc, nlockers;
@@ -133,8 +133,8 @@ __lock_detect(dbenv, atype, abortp)
 	free_me = NULL;
 
 	lt = dbenv->lk_handle;
-	if (abortp != NULL)
-		*abortp = 0;
+	if (rejectp != NULL)
+		*rejectp = 0;
 
 	/* Check if a detector run is necessary. */
 	LOCK_SYSTEM_LOCK(dbenv);
@@ -142,9 +142,9 @@ __lock_detect(dbenv, atype, abortp)
 	/* Make a pass only if auto-detect would run. */
 	region = lt->reginfo.primary;
 
-	LOCK_SET_TIME_INVALID(&now);
+	timespecclear(&now);
 	if (region->need_dd == 0 &&
-	     (!LOCK_TIME_ISVALID(&region->next_timeout) ||
+	     (!timespecisset(&region->next_timeout) ||
 	     !__lock_expired(dbenv, &now, &region->next_timeout))) {
 		LOCK_SYSTEM_UNLOCK(dbenv);
 		return (0);
@@ -156,7 +156,8 @@ __lock_detect(dbenv, atype, abortp)
 	region->need_dd = 0;
 
 	/* Build the waits-for bitmap. */
-	ret = __dd_build(dbenv, atype, &bitmap, &nlockers, &nalloc, &idmap);
+	ret = __dd_build(dbenv,
+	    atype, &bitmap, &nlockers, &nalloc, &idmap, rejectp);
 	lock_max = region->stat.st_cur_maxid;
 	LOCK_SYSTEM_UNLOCK(dbenv);
 	if (ret != 0 || atype == DB_LOCK_EXPIRE)
@@ -205,8 +206,8 @@ __lock_detect(dbenv, atype, abortp)
 	killid = BAD_KILLID;
 	free_me = deadp;
 	for (; *deadp != NULL; deadp++) {
-		if (abortp != NULL)
-			++*abortp;
+		if (rejectp != NULL)
+			++*rejectp;
 		killid = (u_int32_t)(*deadp - bitmap) / nalloc;
 		limit = killid;
 
@@ -362,10 +363,11 @@ err:	if (free_me != NULL)
 #define	DD_INVALID_ID	((u_int32_t) -1)
 
 static int
-__dd_build(dbenv, atype, bmp, nlockers, allocp, idmap)
+__dd_build(dbenv, atype, bmp, nlockers, allocp, idmap, rejectp)
 	DB_ENV *dbenv;
 	u_int32_t atype, **bmp, *nlockers, *allocp;
 	locker_info **idmap;
+	int *rejectp;
 {
 	struct __db_lock *lp;
 	DB_LOCKER *lip, *lockerp, *child;
@@ -373,15 +375,15 @@ __dd_build(dbenv, atype, bmp, nlockers, allocp, idmap)
 	DB_LOCKREGION *region;
 	DB_LOCKTAB *lt;
 	locker_info *id_array;
-	db_timeval_t now, min_timeout;
+	db_timespec now, min_timeout;
 	u_int32_t *bitmap, count, dd, *entryp, id, ndx, nentries, *tmpmap;
 	u_int8_t *pptr;
 	int is_first, ret;
 
 	lt = dbenv->lk_handle;
 	region = lt->reginfo.primary;
-	LOCK_SET_TIME_INVALID(&now);
-	LOCK_SET_TIME_MAX(&min_timeout);
+	timespecclear(&now);
+	timespecclear(&min_timeout);
 
 	/*
 	 * While we always check for expired timeouts, if we are called with
@@ -404,10 +406,13 @@ __dd_build(dbenv, atype, bmp, nlockers, allocp, idmap)
 						lp->status = DB_LSTAT_EXPIRED;
 						MUTEX_UNLOCK(
 						    dbenv, lp->mtx_lock);
+						if (rejectp != NULL)
+							++*rejectp;
 						continue;
 					}
-					if (LOCK_TIME_GREATER(
-					    &min_timeout, &lockerp->lk_expire))
+					if (!timespecisset(&min_timeout) ||
+					    timespeccmp(&min_timeout,
+					    &lockerp->lk_expire, >))
 						min_timeout =
 						    lockerp->lk_expire;
 				}
@@ -563,10 +568,13 @@ retry:	count = region->stat.st_nlockers;
 				    &now, &lockerp->lk_expire)) {
 					lp->status = DB_LSTAT_EXPIRED;
 					MUTEX_UNLOCK(dbenv, lp->mtx_lock);
+					if (rejectp != NULL)
+						++*rejectp;
 					continue;
 				}
-				if (LOCK_TIME_GREATER(
-				    &min_timeout, &lockerp->lk_expire))
+				if (!timespecisset(&min_timeout) ||
+				    timespeccmp(
+				    &min_timeout, &lockerp->lk_expire, >))
 					min_timeout = lockerp->lk_expire;
 			}
 
@@ -673,12 +681,8 @@ get_lock:		id_array[id].last_lock = R_OFFSET(&lt->reginfo, lp);
 	*bmp = bitmap;
 	*allocp = nentries;
 	__os_free(dbenv, tmpmap);
-done:	if (LOCK_TIME_ISVALID(&region->next_timeout)) {
-		if (LOCK_TIME_ISMAX(&min_timeout))
-			LOCK_SET_TIME_INVALID(&region->next_timeout);
-		else
-			region->next_timeout = min_timeout;
-	}
+done:	if (timespecisset(&region->next_timeout))
+		region->next_timeout = min_timeout;
 	return (0);
 }
 

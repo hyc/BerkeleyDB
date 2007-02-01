@@ -1,4 +1,4 @@
-# $Id: Makefile.in,v 12.86 2006/11/09 14:20:18 bostic Exp $
+# $Id: Makefile.in,v 12.90 2006/12/22 15:27:30 bostic Exp $
 
 srcdir=	@srcdir@/..
 builddir=.
@@ -184,15 +184,15 @@ PRINT_OBJS=\
 
 C_OBJS= @ADDITIONAL_OBJS@ @REPLACEMENT_OBJS@ @CRYPTO_OBJS@ @RPC_CLIENT_OBJS@ \
 	crdel_auto@o@ crdel_rec@o@ ctime@o@ db@o@ db_am@o@ db_auto@o@ \
-	db_byteorder@o@ db_cam@o@ db_cds@o@ db_clock@o@ db_conv@o@ \
-	db_dispatch@o@ db_dup@o@ db_err@o@ db_getlong@o@ db_idspace@o@ \
-	db_iface@o@ db_join@o@ db_log2@o@ db_meta@o@ db_method@o@ \
-	db_open@o@ db_overflow@o@ db_pr@o@ db_rec@o@ db_reclaim@o@ \
-	db_remove@o@ db_rename@o@ db_ret@o@ db_setid@o@ db_setlsn@o@ \
-	db_shash@o@ db_stati@o@ db_truncate@o@ db_upg@o@ db_upg_opd@o@ \
-	dbm@o@ dbreg@o@ dbreg_auto@o@ dbreg_rec@o@ dbreg_stat@o@ \
-	dbreg_util@o@ env_alloc@o@ env_config@o@ env_failchk@o@ \
-	env_file@o@ env_globals@o@ env_method@o@ env_open@o@ \
+	db_byteorder@o@ db_cam@o@ db_cds@o@ db_conv@o@ db_dispatch@o@ \
+	db_dup@o@ db_err@o@ db_getlong@o@ db_idspace@o@ db_iface@o@ \
+	db_join@o@ db_log2@o@ db_meta@o@ db_method@o@ db_open@o@ \
+	db_overflow@o@ db_pr@o@ db_rec@o@ db_reclaim@o@ db_remove@o@ \
+	db_rename@o@ db_ret@o@ db_setid@o@ db_setlsn@o@ db_shash@o@ \
+	db_stati@o@ db_truncate@o@ db_upg@o@ db_upg_opd@o@ dbm@o@ \
+	dbreg@o@ dbreg_auto@o@ dbreg_rec@o@ dbreg_stat@o@ dbreg_util@o@ \
+	env_alloc@o@ env_config@o@ env_failchk@o@ env_file@o@ \
+	env_globals@o@ env_method@o@ env_name@o@ env_open@o@ \
 	env_recover@o@ env_region@o@ env_register@o@ env_stat@o@ \
 	fileops_auto@o@ fop_basic@o@ fop_rec@o@ fop_util@o@ hash_func@o@ \
 	hmac@o@ hsearch@o@ lock@o@ lock_deadlock@o@ lock_failchk@o@ \
@@ -1274,8 +1274,6 @@ db_cam@o@: $(srcdir)/db/db_cam.c
 	 $(CC) $(CFLAGS) $?
 db_cds@o@: $(srcdir)/db/db_cds.c
 	 $(CC) $(CFLAGS) $?
-db_clock@o@: $(srcdir)/common/db_clock.c
-	 $(CC) $(CFLAGS) $?
 db_conv@o@: $(srcdir)/db/db_conv.c
 	 $(CC) $(CFLAGS) $?
 db_dispatch@o@: $(srcdir)/db/db_dispatch.c
@@ -1320,7 +1318,7 @@ db_setid@o@: $(srcdir)/db/db_setid.c
 	 $(CC) $(CFLAGS) $?
 db_setlsn@o@: $(srcdir)/db/db_setlsn.c
 	 $(CC) $(CFLAGS) $?
-db_shash@o@: $(srcdir)/env/db_shash.c
+db_shash@o@: $(srcdir)/common/db_shash.c
 	 $(CC) $(CFLAGS) $?
 db_stati@o@: $(srcdir)/db/db_stati.c
 	 $(CC) $(CFLAGS) $?
@@ -1361,6 +1359,8 @@ env_file@o@: $(srcdir)/env/env_file.c
 env_globals@o@: $(srcdir)/env/env_globals.c
 	 $(CC) $(CFLAGS) $?
 env_method@o@: $(srcdir)/env/env_method.c
+	 $(CC) $(CFLAGS) $?
+env_name@o@: $(srcdir)/env/env_name.c
 	 $(CC) $(CFLAGS) $?
 env_open@o@: $(srcdir)/env/env_open.c
 	 $(CC) $(CFLAGS) $?
@@ -1543,6 +1543,8 @@ os_oflags@o@: $(srcdir)/os/os_oflags.c
 os_open@o@: $(srcdir)/@OSDIR@/os_open.c
 	 $(CC) $(CFLAGS) $?
 os_pid@o@: $(srcdir)/os/os_pid.c
+	 $(CC) $(CFLAGS) $?
+os_qnx_open@o@: $(srcdir)/os_qnx/os_qnx_open.c
 	 $(CC) $(CFLAGS) $?
 os_region@o@: $(srcdir)/os/os_region.c
 	 $(CC) $(CFLAGS) $?

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: db_setlsn.c,v 12.15 2006/11/01 00:52:30 bostic Exp $
+ * $Id: db_setlsn.c,v 12.16 2006/11/29 21:23:12 ubell Exp $
  */
 
 #include "db_config.h"
@@ -98,7 +98,7 @@ __env_lsn_reset(dbenv, name, encrypted)
 	    (ret = __memp_fget(mpf, &pgno, NULL, DB_MPOOL_DIRTY, &pagep)) == 0;
 	    ++pgno) {
 		LSN_NOT_LOGGED(pagep->lsn);
-		if ((ret = __memp_fput(mpf, pagep, 0)) != 0)
+		if ((ret = __memp_fput(mpf, pagep, DB_PRIORITY_UNCHANGED)) != 0)
 			goto err;
 	}
 

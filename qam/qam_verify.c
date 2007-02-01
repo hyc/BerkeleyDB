@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: qam_verify.c,v 12.11 2006/11/01 00:53:44 bostic Exp $
+ * $Id: qam_verify.c,v 12.12 2006/11/29 21:23:21 ubell Exp $
  */
 
 #include "db_config.h"
@@ -408,7 +408,7 @@ put:			if ((ret = __db_vrfy_putpageinfo(dbenv, vdp, pip)) != 0)
 		}
 
 		/* Again, keep going iff we're salvaging. */
-		if ((t_ret = __qam_fput(dbp, i, h, 0)) != 0) {
+		if ((t_ret = __qam_fput(dbp, i, h, dbp->priority)) != 0) {
 			if (LF_ISSET(DB_SALVAGE)) {
 				if (ret == 0)
 					ret = t_ret;
@@ -438,7 +438,7 @@ put:			if ((ret = __db_vrfy_putpageinfo(dbenv, vdp, pip)) != 0)
 	}
 
 	if (0) {
-err:		if ((t_ret = __qam_fput(dbp, i, h, 0)) != 0)
+err:		if ((t_ret = __qam_fput(dbp, i, h, dbp->priority)) != 0)
 			return (ret == 0 ? t_ret : ret);
 		if (pip != NULL &&
 		     (t_ret = __db_vrfy_putpageinfo(dbenv, vdp, pip)) != 0)

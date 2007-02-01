@@ -1,4 +1,4 @@
-<!--$Id: env_event_notify.so,v 10.9 2006/06/27 22:49:29 bostic Exp $-->
+<!--$Id: env_event_notify.so,v 10.11 2006/12/19 16:50:34 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -63,21 +63,28 @@ new master; the local site is not the new master.  The
 <b>event_info</b> parameter points to an integer containing the
 environment ID of the new master.
 <p>The DB_EVENT_REP_NEWMASTER event is provided only to applications using
-the replication manager support.</p>
+the Replication Manager support.</p>
+<dt><a name="DB_EVENT_REP_PERM_FAILED">DB_EVENT_REP_PERM_FAILED</a><dd>The replication manager did not receive enough acknowledgements (based on
+the acknowledgement policy configured with <a href="../api_c/repmgr_ack_policy.html">DB_ENV-&gt;repmgr_set_ack_policy</a>)
+to ensure a transaction's durability within the replication group.  The
+transaction will be flushed to the master's local disk storage for
+durability.
+<p>The DB_EVENT_REP_PERM_FAILED event is provided only to applications
+configured for the replication manager.</p>
 <dt><a name="DB_EVENT_REP_STARTUPDONE">DB_EVENT_REP_STARTUPDONE</a><dd>The client has completed startup synchronization and is now processing
 live log records received from the master.
 <dt><a name="DB_EVENT_WRITE_FAILED">DB_EVENT_WRITE_FAILED</a><dd>A Berkeley DB write to stable storage failed.
 </dl>
-<p>Berkeley DB is not re-entrant.  Callback functions should not attempt to make
-library calls (for example, to release locks or close open handles).
-Re-entering Berkeley DB is not guaranteed to work correctly, and the results
-are undefined.</p>
 <dt>event_info<dd>The <b>event_info</b> parameter may reference memory which contains
 additional information describing an event.  By default,
 <b>event_info</b> is NULL; specific events may pass non-NULL values,
 in which case the event will also describe the memory's structure.
 </dl>
 </dl>
+<p>Berkeley DB is not re-entrant.  Callback functions should not attempt to make
+library calls (for example, to release locks or close open handles).
+Re-entering Berkeley DB is not guaranteed to work correctly, and the results
+are undefined.</p>
 <hr size=1 noshade>
 <h3>Class</h3>
 <a href="../api_c/env_class.html">DB_ENV</a>

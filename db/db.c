@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db.c,v 12.46 2006/11/01 00:52:28 bostic Exp $
+ * $Id: db.c,v 12.51 2006/12/19 20:42:54 ubell Exp $
  */
 
 #include "db_config.h"
@@ -357,8 +357,8 @@ done:	/*
 	 * If we allocated a page: if we're successful, mark the page dirty
 	 * and return it to the cache, otherwise, discard/free it.
 	 */
-	if (p != NULL &&
-	    (t_ret = __memp_fput(mdbp->mpf, p, 0)) != 0 && ret == 0)
+	if (p != NULL && (t_ret =
+	     __memp_fput(mdbp->mpf, p, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* Discard the cursor(s) and data. */
@@ -373,14 +373,14 @@ done:	/*
 }
 
 /*
- * __db_dbenv_setup --
+ * __db_env_setup --
  *	Set up the underlying environment during a db_open.
  *
- * PUBLIC: int __db_dbenv_setup __P((DB *,
+ * PUBLIC: int __db_env_setup __P((DB *,
  * PUBLIC:     DB_TXN *, const char *, const char *, u_int32_t, u_int32_t));
  */
 int
-__db_dbenv_setup(dbp, txn, fname, dname, id, flags)
+__db_env_setup(dbp, txn, fname, dname, id, flags)
 	DB *dbp;
 	DB_TXN *txn;
 	const char *fname, *dname;
@@ -409,7 +409,7 @@ __db_dbenv_setup(dbp, txn, fname, dname, id, flags)
 
 	/* Join the underlying cache. */
 	if ((!F_ISSET(dbp, DB_AM_INMEM) || dname == NULL) &&
-	    (ret = __db_dbenv_mpool(dbp, fname, flags)) != 0)
+	    (ret = __db_env_mpool(dbp, fname, flags)) != 0)
 		return (ret);
 
 	/* We may need a per-thread mutex. */
@@ -424,6 +424,9 @@ __db_dbenv_setup(dbp, txn, fname, dname, id, flags)
 	 * still need an FNAME struct, so LOGGING_ON is the correct macro.
 	 */
 	if (LOGGING_ON(dbenv) && dbp->log_filename == NULL &&
+#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP) && !defined(DIAGNOSTIC)
+	    (txn != NULL || F_ISSET(dbp, DB_AM_RECOVER)) &&
+#endif
 	    (ret = __dbreg_setup(dbp,
 	    F_ISSET(dbp, DB_AM_INMEM) ? dname : fname, id)) != 0)
 		return (ret);
@@ -433,6 +436,9 @@ __db_dbenv_setup(dbp, txn, fname, dname, id, flags)
 	 * that already did so, then assign this dbp a log fileid.
 	 */
 	if (DBENV_LOGGING(dbenv) && !F_ISSET(dbp, DB_AM_RECOVER) &&
+#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP) && !defined(DIAGNOSTIC)
+	    txn != NULL &&
+#endif
 #if !defined(DEBUG_ROP)
 	    !F_ISSET(dbp, DB_AM_RDONLY) &&
 #endif
@@ -492,13 +498,13 @@ __db_dbenv_setup(dbp, txn, fname, dname, id, flags)
 }
 
 /*
- * __db_dbenv_mpool --
+ * __db_env_mpool --
  *	Set up the underlying environment cache during a db_open.
  *
- * PUBLIC: int __db_dbenv_mpool __P((DB *, const char *, u_int32_t));
+ * PUBLIC: int __db_env_mpool __P((DB *, const char *, u_int32_t));
  */
 int
-__db_dbenv_mpool(dbp, fname, flags)
+__db_env_mpool(dbp, fname, flags)
 	DB *dbp;
 	const char *fname;
 	u_int32_t flags;
@@ -1467,10 +1473,10 @@ __db_makecopy(dbenv, src, dest)
 	if (__os_malloc(dbenv, 1024, &buf) != 0)
 		return;
 
-	if (__os_open(dbenv,
-	    src, DB_OSO_RDONLY, __db_omode(OWNER_RW), &rfhp) != 0)
+	if (__os_open(dbenv, src, 0,
+	    DB_OSO_RDONLY, __db_omode(OWNER_RW), &rfhp) != 0)
 		goto err;
-	if (__os_open(dbenv, dest,
+	if (__os_open(dbenv, dest, 0,
 	    DB_OSO_CREATE | DB_OSO_TRUNC, __db_omode(OWNER_RW), &wfhp) != 0)
 		goto err;
 

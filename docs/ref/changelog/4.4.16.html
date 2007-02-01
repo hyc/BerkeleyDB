@@ -1,4 +1,4 @@
-<!--$Id: 4.4.16.html,v 1.21 2006/10/09 19:18:01 bostic Exp $-->
+<!--$Id: 4.4.16.html,v 1.23 2007/01/05 15:47:00 bostic Exp $-->
 <html>
 <head>
 <title>The Berkeley DB Package: DB 4.4.16 Change Log</title>
@@ -7,7 +7,7 @@
 </head>
 <body bgcolor=white>
 
-<h1 align=center>Berkeley DB 4.4.16 Change Log</h1>
+<h3 align=center>Berkeley DB 4.4.16 Change Log</h3>
 
 <h3>Database or Log File On-Disk Format Changes:</h3>
 <ol>
@@ -301,7 +301,7 @@ middle of initializing. [#13074]
 <li>Fix a bug where rep_timestamp could be updated when it should not
 be updated. [#13331]
 <li>Fix a bug with bulk transfer when toggling during updates. [#13339]
-<li>Change EIVAL to DB_REP_JOIN_FAILURE. [#12110]
+<li>Change EINVAL error return to DB_REP_JOIN_FAILURE. [#12110]
 <li>Add C++ exception for DB_REP_HANDLE_DEAD. [#13361]
 <li>Fix a bug where starting an election concurrently with processing a
 NEWMASTER message could cause the send function to be called with an

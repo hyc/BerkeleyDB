@@ -2,9 +2,9 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep036.tcl,v 12.10 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep036.tcl,v 12.11 2006/12/07 19:37:44 carol Exp $
 #
-# TEST  	rep036
+# TEST	rep036
 # TEST	Multiple master processes writing to the database.
 # TEST	One process handles all message processing.
 
@@ -42,8 +42,13 @@ proc rep036 { method { niter 200 } { tnum "036" } args } {
 
 proc rep036_sub { method niter tnum envargs logset args } {
 	source ./include.tcl
-	global testdir
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -64,31 +69,19 @@ proc rep036_sub { method niter tnum envargs logset args } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create \
+	set env_cmd(M) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
 	    -errpfx MASTER -errfile /dev/stderr -txn -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs -home $masterdir $m_logargs \
-#	    -errpfx MASTER -errfile /dev/stderr -txn -rep_master \
-#	    -verbose {rep on} \
-#	    -rep_transport \[list 1 replsend\]"
 	set env1 [eval $env_cmd(M)]
-	error_check_good env1 [is_valid_env $env1] TRUE
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env_noerr -create \
+	set env_cmd(C) "berkdb_env_noerr -create $verbargs \
 	    -log_max 1000000 $envargs -home $clientdir $c_logargs \
 	    -errfile /dev/stderr -errpfx CLIENT -txn -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs -home $clientdir $c_logargs \
-#	    -errfile /dev/stderr -errpfx CLIENT -txn -rep_client \
-#	    -verbose {rep on} \
-#	    -rep_transport \[list 2 replsend\]"
 	set env2 [eval $env_cmd(C)]
-	error_check_good env2 [is_valid_env $env2] TRUE
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$env1 1} {$env2 2}"
@@ -188,8 +181,8 @@ proc rep036_sub { method niter tnum envargs logset args } {
 #	    [filecmp $masterdir/prlog $clientdir/prlog] 0
 
 	# ... now the databases.
-	set db1 [eval {berkdb_open -env $env1 -rdonly $testfile}]
-	set db2 [eval {berkdb_open -env $env2 -rdonly $testfile}]
+	set db1 [eval {berkdb_open_noerr -env $env1 -rdonly $testfile}]
+	set db2 [eval {berkdb_open_noerr -env $env2 -rdonly $testfile}]
 
 	error_check_good comparedbs [db_compare \
 	    $db1 $db2 $masterdir/$testfile $clientdir/$testfile] 0

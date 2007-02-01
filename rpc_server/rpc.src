@@ -2,7 +2,7 @@
 #
 # Copyright (c) 1999,2006 Oracle.  All rights reserved.
 #
-# $Id: rpc.src,v 12.23 2006/11/01 00:53:47 bostic Exp $
+# $Id: rpc.src,v 12.24 2006/11/29 20:09:01 bostic Exp $
 #
 # Syntax:
 # BEGIN	function_name  {CODE | LINKONLY | RETCODE}
@@ -122,7 +122,7 @@ NOFUNC	env_get_lk_max_lockers	DB_ENV *, u_int32_t *
 NOFUNC	env_get_lk_max_locks	DB_ENV *, u_int32_t *
 NOFUNC	env_get_lk_max_objects	DB_ENV *, u_int32_t *
 NOFUNC	env_get_mp_max_openfd	DB_ENV *, int *
-NOFUNC	env_get_mp_max_write	DB_ENV *, int *, int *
+NOFUNC	env_get_mp_max_write	DB_ENV *, int *, db_timeout_t *
 NOFUNC	env_get_mp_mmapsize	DB_ENV *, size_t *
 LOCAL	env_get_msgfile
 BEGIN	env_get_open_flags	CODE
@@ -247,7 +247,7 @@ NOFUNC	env_set_lk_max_lockers	DB_ENV *, u_int32_t
 NOFUNC	env_set_lk_max_locks	DB_ENV *, u_int32_t
 NOFUNC	env_set_lk_max_objects	DB_ENV *, u_int32_t
 NOFUNC	env_set_mp_max_openfd	DB_ENV *, int
-NOFUNC	env_set_mp_max_write	DB_ENV *, int, int
+NOFUNC	env_set_mp_max_write	DB_ENV *, int, db_timeout_t
 NOFUNC	env_set_mp_mmapsize	DB_ENV *, size_t
 LOCAL	env_set_msgcall
 LOCAL	env_set_msgfile

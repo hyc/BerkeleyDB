@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock.c,v 12.32 2006/11/01 00:53:33 bostic Exp $
+ * $Id: lock.c,v 12.33 2006/11/29 20:08:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -326,7 +326,7 @@ __lock_vec(dbenv, locker, flags, list, nlist, elistp)
 		}
 
 	if (ret == 0 && region->detect != DB_LOCK_NORUN &&
-	     (region->need_dd || LOCK_TIME_ISVALID(&region->next_timeout)))
+	     (region->need_dd || timespecisset(&region->next_timeout)))
 		run_dd = 1;
 	LOCK_SYSTEM_UNLOCK(dbenv);
 
@@ -775,16 +775,16 @@ upgrade:	lp = R_ADDR(&lt->reginfo, lock->off);
 		if (timeout != 0)
 			__lock_expires(dbenv, &sh_locker->lk_expire, timeout);
 		else
-			LOCK_SET_TIME_INVALID(&sh_locker->lk_expire);
+			timespecclear(&sh_locker->lk_expire);
 
-		if (LOCK_TIME_ISVALID(&sh_locker->tx_expire) &&
+		if (timespecisset(&sh_locker->tx_expire) &&
 			(timeout == 0 || __lock_expired(dbenv,
 			    &sh_locker->lk_expire, &sh_locker->tx_expire)))
 				sh_locker->lk_expire = sh_locker->tx_expire;
-		if (LOCK_TIME_ISVALID(&sh_locker->lk_expire) &&
-		    (!LOCK_TIME_ISVALID(&region->next_timeout) ||
-		    LOCK_TIME_GREATER(
-		    &region->next_timeout, &sh_locker->lk_expire)))
+		if (timespecisset(&sh_locker->lk_expire) &&
+		    (!timespecisset(&region->next_timeout) ||
+		    timespeccmp(
+		    &region->next_timeout, &sh_locker->lk_expire, >)))
 			region->next_timeout = sh_locker->lk_expire;
 
 		newl->status = DB_LSTAT_WAITING;
@@ -812,7 +812,7 @@ upgrade:	lp = R_ADDR(&lt->reginfo, lock->off);
 
 		/* Turn off lock timeout. */
 		if (newl->status != DB_LSTAT_EXPIRED)
-			LOCK_SET_TIME_INVALID(&sh_locker->lk_expire);
+			timespecclear(&sh_locker->lk_expire);
 
 		switch (newl->status) {
 		case DB_LSTAT_ABORTED:
@@ -825,8 +825,8 @@ expired:		SHOBJECT_LOCK(lt, region, sh_obj, obj_ndx);
 			newl = NULL;
 			if (ret != 0)
 				goto err;
-			if (LOCK_TIME_EQUAL(
-			    &sh_locker->lk_expire, &sh_locker->tx_expire))
+			if (timespeccmp(
+			    &sh_locker->lk_expire, &sh_locker->tx_expire, ==))
 				region->stat.st_ntxntimeouts++;
 			else
 				region->stat.st_nlocktimeouts++;
@@ -976,7 +976,7 @@ __lock_put_nolock(dbenv, lock, runp, flags)
 
 	*runp = 0;
 	if (ret == 0 && region->detect != DB_LOCK_NORUN &&
-	     (region->need_dd || LOCK_TIME_ISVALID(&region->next_timeout)))
+	     (region->need_dd || timespecisset(&region->next_timeout)))
 		*runp = 1;
 
 	return (ret);

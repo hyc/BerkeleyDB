@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_trickle.c,v 12.10 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_trickle.c,v 12.11 2007/01/24 15:40:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -80,6 +80,7 @@ __memp_trickle(dbenv, pct, nwrotep)
 		__memp_stat_hash(&dbmp->reginfo[i], c_mp, &dtmp);
 		dirty += dtmp;
 	}
+	DB_ASSERT(dbenv, dirty <= total);
 
 	/*
 	 * If there are sufficient clean buffers, no buffers or no dirty

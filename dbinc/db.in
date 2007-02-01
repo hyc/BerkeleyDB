@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: db.in,v 12.121 2006/11/08 23:06:56 ubell Exp $
+ * $Id: db.in,v 12.130 2007/01/11 21:32:59 bostic Exp $
  *
  * db.h include file layout:
  *	General.
@@ -730,15 +730,16 @@ struct __db_log_stat {
 #define	DB_MPOOL_LAST		0x010	/* Return the last page. */
 #define	DB_MPOOL_NEW		0x020	/* Create a new page. */
 
-/* Flag values for DB_MPOOLFILE->put, DB_MPOOLFILE->set. */
-#define	DB_MPOOL_DISCARD	0x001	/* Don't cache the page. */
+/* Undocumented flag value for DB_MPOOLFILE->close. */
+#define	DB_MPOOL_DISCARD 	0x001	/* Discard file. */
 
 /* Flags values for DB_MPOOLFILE->set_flags. */
 #define	DB_MPOOL_NOFILE		0x001	/* Never open a backing file. */
 #define	DB_MPOOL_UNLINK		0x002	/* Unlink the file on last close. */
 
-/* Priority values for DB_MPOOLFILE->set_priority. */
+/* Priority values for DB_MPOOLFILE->{put,set_priority}. */
 typedef enum {
+	DB_PRIORITY_UNCHANGED = 0,
 	DB_PRIORITY_VERY_LOW=1,
 	DB_PRIORITY_LOW=2,
 	DB_PRIORITY_DEFAULT=3,
@@ -800,8 +801,7 @@ struct __db_mpoolfile {
 	int (*get)
 	    __P((DB_MPOOLFILE *, db_pgno_t *, DB_TXN *, u_int32_t, void *));
 	int (*open) __P((DB_MPOOLFILE *, const char *, u_int32_t, int, size_t));
-	int (*put) __P((DB_MPOOLFILE *, void *, u_int32_t));
-	int (*set) __P((DB_MPOOLFILE *, void *, u_int32_t));
+	int (*put) __P((DB_MPOOLFILE *, void *, DB_CACHE_PRIORITY, u_int32_t));
 	int (*get_clear_len) __P((DB_MPOOLFILE *, u_int32_t *));
 	int (*set_clear_len) __P((DB_MPOOLFILE *, u_int32_t));
 	int (*get_fileid) __P((DB_MPOOLFILE *, u_int8_t *));
@@ -846,7 +846,7 @@ struct __db_mpool_stat {
 	size_t	  st_mmapsize;		/* Maximum file size for mmap. */
 	int	  st_maxopenfd;		/* Maximum number of open fd's. */
 	int	  st_maxwrite;		/* Maximum buffers to write. */
-	int	  st_maxwrite_sleep;	/* Sleep after writing max buffers. */
+	db_timeout_t st_maxwrite_sleep;	/* Sleep after writing max buffers. */
 	u_int32_t st_map;		/* Pages from mapped files. */
 	u_int32_t st_cache_hit;		/* Pages found in the cache. */
 	u_int32_t st_cache_miss;	/* Pages not found in the cache. */
@@ -1112,8 +1112,9 @@ struct __db_txn_stat {
  */
 #define	DB_REP_CLIENT			1
 #define	DB_REP_ELECTION			2
-#define	DB_REP_FULL_ELECTION		3
-#define	DB_REP_MASTER			4
+#define	DB_REP_MASTER			3
+
+#define	DB_REPFLAGS_MASK	0x000000ff	/* Mask for rep modes. */
 
 /* Acknowledgement policies. */
 #define	DB_REPMGR_ACKS_ALL		1
@@ -1123,11 +1124,12 @@ struct __db_txn_stat {
 #define	DB_REPMGR_ACKS_ONE_PEER		5
 #define	DB_REPMGR_ACKS_QUORUM		6
 
-/* Replication Framework timeout configuration values. */
-#define	DB_REP_ACK_TIMEOUT	1
-#define	DB_REP_ELECTION_TIMEOUT 2
-#define	DB_REP_ELECTION_RETRY	3
-#define	DB_REP_CONNECTION_RETRY 4
+/* Replication timeout configuration values. */
+#define	DB_REP_ACK_TIMEOUT		1	/* RepMgr acknowledgements. */
+#define	DB_REP_CONNECTION_RETRY		2	/* RepMgr connections. */
+#define	DB_REP_ELECTION_TIMEOUT		3	/* Rep normal elections. */
+#define	DB_REP_ELECTION_RETRY		4	/* RepMgr elect retries. */
+#define	DB_REP_FULL_ELECTION_TIMEOUT	5	/* Rep full elections. */
 
 /* Event notification types. */
 #define	DB_EVENT_NO_SUCH_EVENT		0 /* out-of-band sentinel value */
@@ -1135,8 +1137,9 @@ struct __db_txn_stat {
 #define	DB_EVENT_REP_CLIENT		2
 #define	DB_EVENT_REP_MASTER		3
 #define	DB_EVENT_REP_NEWMASTER		4
-#define	DB_EVENT_REP_STARTUPDONE	5
-#define	DB_EVENT_WRITE_FAILED		6
+#define	DB_EVENT_REP_PERM_FAILED	5
+#define	DB_EVENT_REP_STARTUPDONE	6
+#define	DB_EVENT_WRITE_FAILED		7
 
 /* Flag value for repmgr_add_remote_site. */
 #define	DB_REPMGR_PEER          0x01
@@ -1436,6 +1439,7 @@ struct __db {
 	 * Public: owned by the application.
 	 *******************************************************/
 	u_int32_t pgsize;		/* Database logical page size. */
+	DB_CACHE_PRIORITY priority;	/* Database priority in cache. */
 
 					/* Callbacks. */
 	int (*db_append_recno) __P((DB *, DBT *, db_recno_t));
@@ -1658,6 +1662,7 @@ struct __db {
 	void (*set_msgfile) __P((DB *, FILE *));
 	int  (*set_pagesize) __P((DB *, u_int32_t));
 	int  (*set_paniccall) __P((DB *, void (*)(DB_ENV *, int)));
+	int  (*set_priority) __P((DB *, DB_CACHE_PRIORITY));
 	int  (*set_q_extentsize) __P((DB *, u_int32_t));
 	int  (*set_re_delim) __P((DB *, int));
 	int  (*set_re_len) __P((DB *, u_int32_t));
@@ -1801,6 +1806,7 @@ struct __db {
 struct __dbc {
 	DB *dbp;			/* Related DB access method. */
 	DB_TXN	 *txn;			/* Associated transaction. */
+	DB_CACHE_PRIORITY priority;	/* Priority in cache. */
 
 	/*
 	 * Active/free cursor queues.
@@ -1863,6 +1869,8 @@ struct __dbc {
 	int (*c_get) __P((DBC *, DBT *, DBT *, u_int32_t));
 	int (*c_pget) __P((DBC *, DBT *, DBT *, DBT *, u_int32_t));
 	int (*c_put) __P((DBC *, DBT *, DBT *, u_int32_t));
+	int (*set_priority) __P((DBC *, DB_CACHE_PRIORITY));
+	/* DBC PUBLIC HANDLE LIST END */
 
 	/* DBC PRIVATE HANDLE LIST BEGIN */
 	int (*am_bulk) __P((DBC *, DBT *, u_int32_t));
@@ -2070,8 +2078,7 @@ struct __db_env {
 	size_t		 mp_mmapsize;	/* Maximum file size for mmap. */
 	int		 mp_maxopenfd;	/* Maximum open file descriptors. */
 	int		 mp_maxwrite;	/* Maximum buffers to write. */
-	int				/* Sleep after writing max buffers. */
-			 mp_maxwrite_sleep;
+	db_timeout_t mp_maxwrite_sleep;	/* Sleep after writing max buffers. */
 
 	/* Transactions. */
 	u_int32_t	 tx_max;	/* Maximum number of transactions. */
@@ -2227,7 +2234,7 @@ struct __db_env {
 	int  (*get_lk_max_locks) __P((DB_ENV *, u_int32_t *));
 	int  (*get_lk_max_objects) __P((DB_ENV *, u_int32_t *));
 	int  (*get_mp_max_openfd) __P((DB_ENV *, int *));
-	int  (*get_mp_max_write) __P((DB_ENV *, int *, int *));
+	int  (*get_mp_max_write) __P((DB_ENV *, int *, db_timeout_t *));
 	int  (*get_mp_mmapsize) __P((DB_ENV *, size_t *));
 	void (*get_msgfile) __P((DB_ENV *, FILE **));
 	int  (*get_open_flags) __P((DB_ENV *, u_int32_t *));
@@ -2342,7 +2349,7 @@ struct __db_env {
 	int  (*set_lk_max_locks) __P((DB_ENV *, u_int32_t));
 	int  (*set_lk_max_objects) __P((DB_ENV *, u_int32_t));
 	int  (*set_mp_max_openfd) __P((DB_ENV *, int));
-	int  (*set_mp_max_write) __P((DB_ENV *, int, int));
+	int  (*set_mp_max_write) __P((DB_ENV *, int, db_timeout_t));
 	int  (*set_mp_mmapsize) __P((DB_ENV *, size_t));
 	void (*set_msgcall)
 		__P((DB_ENV *, void (*)(const DB_ENV *, const char *)));
@@ -2399,29 +2406,30 @@ struct __db_env {
 #define	DB_ENV_DIRECT_LOG	0x00000020 /* DB_DIRECT_LOG set. */
 #define	DB_ENV_DSYNC_DB		0x00000040 /* DB_DSYNC_DB set. */
 #define	DB_ENV_DSYNC_LOG	0x00000080 /* DB_DSYNC_LOG set. */
-#define	DB_ENV_FATAL		0x00000100 /* Doing fatal recovery in env. */
-#define	DB_ENV_LOCKDOWN		0x00000200 /* DB_LOCKDOWN set. */
-#define	DB_ENV_LOG_AUTOREMOVE   0x00000400 /* DB_LOG_AUTOREMOVE set. */
-#define	DB_ENV_LOG_INMEMORY     0x00000800 /* DB_LOG_INMEMORY set. */
-#define	DB_ENV_MULTIVERSION	0x00001000 /* DB_MULTIVERSION set. */
-#define	DB_ENV_NOLOCKING	0x00002000 /* DB_NOLOCKING set. */
-#define	DB_ENV_NOMMAP		0x00004000 /* DB_NOMMAP set. */
-#define	DB_ENV_NOPANIC		0x00008000 /* Okay if panic set. */
-#define	DB_ENV_NO_OUTPUT_SET	0x00010000 /* No output channel set. */
-#define	DB_ENV_OPEN_CALLED	0x00020000 /* DB_ENV->open called. */
-#define	DB_ENV_OVERWRITE	0x00040000 /* DB_OVERWRITE set. */
-#define	DB_ENV_PRIVATE		0x00080000 /* DB_PRIVATE set. */
-#define	DB_ENV_REGION_INIT	0x00100000 /* DB_REGION_INIT set. */
-#define	DB_ENV_RPCCLIENT	0x00200000 /* DB_RPCCLIENT set. */
-#define	DB_ENV_RPCCLIENT_GIVEN	0x00400000 /* User-supplied RPC client struct */
-#define	DB_ENV_SYSTEM_MEM	0x00800000 /* DB_SYSTEM_MEM set. */
-#define	DB_ENV_THREAD		0x01000000 /* DB_THREAD set. */
-#define	DB_ENV_TIME_NOTGRANTED	0x02000000 /* DB_TIME_NOTGRANTED set. */
-#define	DB_ENV_TXN_NOSYNC	0x04000000 /* DB_TXN_NOSYNC set. */
-#define	DB_ENV_TXN_NOWAIT	0x08000000 /* DB_TXN_NOWAIT set. */
-#define	DB_ENV_TXN_SNAPSHOT	0x10000000 /* DB_TXN_SNAPSHOT set. */
-#define	DB_ENV_TXN_WRITE_NOSYNC	0x20000000 /* DB_TXN_WRITE_NOSYNC set. */
-#define	DB_ENV_YIELDCPU		0x40000000 /* DB_YIELDCPU set. */
+#define	DB_ENV_LOCKDOWN		0x00000100 /* DB_LOCKDOWN set. */
+#define	DB_ENV_LOG_AUTOREMOVE   0x00000200 /* DB_LOG_AUTOREMOVE set. */
+#define	DB_ENV_LOG_INMEMORY     0x00000400 /* DB_LOG_INMEMORY set. */
+#define	DB_ENV_MULTIVERSION	0x00000800 /* DB_MULTIVERSION set. */
+#define	DB_ENV_NOLOCKING	0x00001000 /* DB_NOLOCKING set. */
+#define	DB_ENV_NOMMAP		0x00002000 /* DB_NOMMAP set. */
+#define	DB_ENV_NOPANIC		0x00004000 /* Okay if panic set. */
+#define	DB_ENV_NO_OUTPUT_SET	0x00008000 /* No output channel set. */
+#define	DB_ENV_OPEN_CALLED	0x00010000 /* DB_ENV->open called. */
+#define	DB_ENV_OVERWRITE	0x00020000 /* DB_OVERWRITE set. */
+#define	DB_ENV_PRIVATE		0x00040000 /* DB_PRIVATE set. */
+#define	DB_ENV_RECOVER_FATAL	0x00080000 /* Doing fatal recovery in env. */
+#define	DB_ENV_REF_COUNTED	0x00100000 /* Region references this handle. */
+#define	DB_ENV_REGION_INIT	0x00200000 /* DB_REGION_INIT set. */
+#define	DB_ENV_RPCCLIENT	0x00400000 /* DB_RPCCLIENT set. */
+#define	DB_ENV_RPCCLIENT_GIVEN	0x00800000 /* User-supplied RPC client struct */
+#define	DB_ENV_SYSTEM_MEM	0x01000000 /* DB_SYSTEM_MEM set. */
+#define	DB_ENV_THREAD		0x02000000 /* DB_THREAD set. */
+#define	DB_ENV_TIME_NOTGRANTED	0x04000000 /* DB_TIME_NOTGRANTED set. */
+#define	DB_ENV_TXN_NOSYNC	0x08000000 /* DB_TXN_NOSYNC set. */
+#define	DB_ENV_TXN_NOWAIT	0x10000000 /* DB_TXN_NOWAIT set. */
+#define	DB_ENV_TXN_SNAPSHOT	0x20000000 /* DB_TXN_SNAPSHOT set. */
+#define	DB_ENV_TXN_WRITE_NOSYNC	0x40000000 /* DB_TXN_WRITE_NOSYNC set. */
+#define	DB_ENV_YIELDCPU		0x80000000 /* DB_YIELDCPU set. */
 	u_int32_t flags;
 };
 

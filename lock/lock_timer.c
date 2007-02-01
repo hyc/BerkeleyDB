@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_timer.c,v 12.8 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_timer.c,v 12.9 2006/11/29 20:08:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -72,19 +72,19 @@ __lock_set_timeout_internal(dbenv, locker, timeout, op)
 
 	if (op == DB_SET_TXN_TIMEOUT) {
 		if (timeout == 0)
-			LOCK_SET_TIME_INVALID(&sh_locker->tx_expire);
+			timespecclear(&sh_locker->tx_expire);
 		else
 			__lock_expires(dbenv, &sh_locker->tx_expire, timeout);
 	} else if (op == DB_SET_LOCK_TIMEOUT) {
 		sh_locker->lk_timeout = timeout;
 		F_SET(sh_locker, DB_LOCKER_TIMEOUT);
 	} else if (op == DB_SET_TXN_NOW) {
-		LOCK_SET_TIME_INVALID(&sh_locker->tx_expire);
+		timespecclear(&sh_locker->tx_expire);
 		__lock_expires(dbenv, &sh_locker->tx_expire, 0);
 		sh_locker->lk_expire = sh_locker->tx_expire;
-		if (!LOCK_TIME_ISVALID(&region->next_timeout) ||
-		    LOCK_TIME_GREATER(
-		    &region->next_timeout, &sh_locker->lk_expire))
+		if (!timespecisset(&region->next_timeout) ||
+		    timespeccmp(
+			&region->next_timeout, &sh_locker->lk_expire, >))
 			region->next_timeout = sh_locker->lk_expire;
 	} else
 		return (EINVAL);
@@ -129,7 +129,7 @@ __lock_inherit_timeout(dbenv, parent, locker)
 	 * the child locker at this point.
 	 */
 	if (parent_locker == NULL ||
-	    (LOCK_TIME_ISVALID(&parent_locker->tx_expire) &&
+	    (timespecisset(&parent_locker->tx_expire) &&
 	    !F_ISSET(parent_locker, DB_LOCKER_TIMEOUT))) {
 		ret = EINVAL;
 		goto done;
@@ -145,7 +145,7 @@ __lock_inherit_timeout(dbenv, parent, locker)
 	if (F_ISSET(parent_locker, DB_LOCKER_TIMEOUT)) {
 		sh_locker->lk_timeout = parent_locker->lk_timeout;
 		F_SET(sh_locker, DB_LOCKER_TIMEOUT);
-		if (!LOCK_TIME_ISVALID(&parent_locker->tx_expire))
+		if (!timespecisset(&parent_locker->tx_expire))
 			ret = EINVAL;
 	}
 
@@ -156,48 +156,47 @@ err:	LOCK_SYSTEM_UNLOCK(dbenv);
 
 /*
  * __lock_expires --
- *	Set the expire time given the time to live.  If timevalp is set then
- *	it contains "now".  This avoids repeated system calls to get the time.
+ *	Set the expire time given the time to live.
  *
- * PUBLIC: void __lock_expires __P((DB_ENV *, db_timeval_t *, db_timeout_t));
+ * PUBLIC: void __lock_expires __P((DB_ENV *, db_timespec *, db_timeout_t));
  */
 void
-__lock_expires(dbenv, timevalp, timeout)
+__lock_expires(dbenv, timespecp, timeout)
 	DB_ENV *dbenv;
-	db_timeval_t *timevalp;
+	db_timespec *timespecp;
 	db_timeout_t timeout;
 {
-	if (!LOCK_TIME_ISVALID(timevalp))
-		__os_clock(dbenv, &timevalp->tv_sec, &timevalp->tv_usec);
-	if (timeout > 1000000) {
-		timevalp->tv_sec += timeout / 1000000;
-		timevalp->tv_usec += timeout % 1000000;
-	} else
-		timevalp->tv_usec += timeout;
+	db_timespec v;
 
-	if (timevalp->tv_usec > 1000000) {
-		timevalp->tv_sec++;
-		timevalp->tv_usec -= 1000000;
-	}
+	/*
+	 * If timespecp is set then it contains "now".  This avoids repeated
+	 * system calls to get the time.
+	 */
+	if (!timespecisset(timespecp))
+		__os_gettime(dbenv, timespecp);
+
+	/* Convert the microsecond timeout argument to a timespec. */
+	DB_TIMEOUT_TO_TIMESPEC(timeout, &v);
+
+	/* Add the timeout to "now". */
+	timespecadd(timespecp, &v);
 }
 
 /*
  * __lock_expired -- determine if a lock has expired.
  *
- * PUBLIC: int __lock_expired __P((DB_ENV *, db_timeval_t *, db_timeval_t *));
+ * PUBLIC: int __lock_expired __P((DB_ENV *, db_timespec *, db_timespec *));
  */
 int
-__lock_expired(dbenv, now, timevalp)
+__lock_expired(dbenv, now, timespecp)
 	DB_ENV *dbenv;
-	db_timeval_t *now, *timevalp;
+	db_timespec *now, *timespecp;
 {
-	if (!LOCK_TIME_ISVALID(timevalp))
+	if (!timespecisset(timespecp))
 		return (0);
 
-	if (!LOCK_TIME_ISVALID(now))
-		__os_clock(dbenv, &now->tv_sec, &now->tv_usec);
+	if (!timespecisset(now))
+		__os_gettime(dbenv, now);
 
-	return (now->tv_sec > timevalp->tv_sec ||
-	    (now->tv_sec == timevalp->tv_sec &&
-	    now->tv_usec >= timevalp->tv_usec));
+	return (timespeccmp(now, timespecp, >=));
 }

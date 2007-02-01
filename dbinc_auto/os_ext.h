@@ -17,7 +17,7 @@ int __os_malloc __P((DB_ENV *, size_t, void *));
 int __os_realloc __P((DB_ENV *, size_t, void *));
 void __os_free __P((DB_ENV *, void *));
 void *__ua_memcpy __P((void *, const void *, size_t));
-void __os_clock __P((DB_ENV *, u_int32_t *, u_int32_t *));
+void __os_gettime __P((DB_ENV *, db_timespec *));
 int __os_fs_notzero __P((void));
 int __os_support_direct_io __P((void));
 int __os_support_db_register __P((void));
@@ -45,8 +45,7 @@ int __os_unmapfile __P((DB_ENV *, void *, size_t));
 int __os_mkdir __P((DB_ENV *, const char *, int));
 u_int32_t __db_oflags __P((int));
 int __db_omode __P((const char *));
-int __os_open __P((DB_ENV *, const char *, u_int32_t, int, DB_FH **));
-int __os_open_extend __P((DB_ENV *, const char *, u_int32_t, u_int32_t, int, DB_FH **));
+int __os_open __P((DB_ENV *, const char *, u_int32_t, u_int32_t, int, DB_FH **));
 void __os_id __P((DB_ENV *, pid_t *, db_threadid_t*));
 int __os_r_attach __P((DB_ENV *, REGINFO *, REGION *));
 int __os_r_detach __P((DB_ENV *, REGINFO *, int));
@@ -95,8 +94,12 @@ int __os_qnx_region_open __P((DB_ENV *, const char *, int, int, DB_FH *));
 #ifdef HAVE_QNX
 int __os_qnx_shmname __P((DB_ENV *, const char *, char **));
 #endif
+#ifndef HAVE_TIME
+time_t time __P((time_t *));
+#endif
 int __os_is_winnt __P((void));
 int __os_get_neterr __P((void));
+int __os_mkdir __P((DB_ENV *, const char *, int));
 
 #if defined(__cplusplus)
 }

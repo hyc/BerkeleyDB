@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_stat.c,v 12.19 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_stat.c,v 12.21 2006/12/13 01:25:36 ubell Exp $
  */
 
 #include "db_config.h"
@@ -87,7 +87,8 @@ __lock_stat(dbenv, statp, flags)
 	if (LF_ISSET(DB_STAT_CLEAR)) {
 		tmp = region->stat;
 		memset(&region->stat, 0, sizeof(region->stat));
-		__mutex_clear(dbenv, region->mtx_region);
+		if (!LF_ISSET(DB_STAT_SUBSYSTEM))
+			__mutex_clear(dbenv, region->mtx_region);
 
 		region->stat.st_id = tmp.st_id;
 		region->stat.st_cur_maxid = tmp.st_cur_maxid;
@@ -155,7 +156,7 @@ __lock_stat_print(dbenv, flags)
 	int ret;
 
 	orig_flags = flags;
-	LF_CLR(DB_STAT_CLEAR);
+	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
 	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
 		ret = __lock_print_stats(dbenv, orig_flags);
 		if (flags == 0 || ret != 0)
@@ -277,18 +278,19 @@ __lock_print_all(dbenv, flags)
 		STAT_ULONG("obj_off", lrp->obj_off);
 		STAT_ULONG("locker_off", lrp->locker_off);
 		STAT_ULONG("need_dd", lrp->need_dd);
-		if (LOCK_TIME_ISVALID(&lrp->next_timeout)) {
+		if (timespecisset(&lrp->next_timeout)) {
 #ifdef HAVE_STRFTIME
 			time_t t = (time_t)lrp->next_timeout.tv_sec;
 			char tbuf[64];
 			if (strftime(tbuf, sizeof(tbuf),
 			    "%m-%d-%H:%M:%S", localtime(&t)) != 0)
-				__db_msg(dbenv, "next_timeout: %s.%lu",
-				     tbuf, (u_long)lrp->next_timeout.tv_usec);
+				__db_msg(dbenv, "next_timeout: %s.%09lu",
+				     tbuf, (u_long)lrp->next_timeout.tv_nsec);
 			else
 #endif
-				__db_msg(dbenv, "next_timeout: %lu",
-				     (u_long)lrp->next_timeout.tv_usec);
+				__db_msg(dbenv, "next_timeout: %lu.%09lu",
+				     (u_long)lrp->next_timeout.tv_sec,
+				     (u_long)lrp->next_timeout.tv_nsec);
 		}
 	}
 
@@ -345,33 +347,35 @@ __lock_dump_locker(dbenv, mbp, lt, lip)
 	    dbenv->thread_id_string(dbenv, lip->pid, lip->tid, buf));
 	__db_msgadd(
 	    dbenv, mbp, "%s", F_ISSET(lip, DB_LOCKER_DELETED) ? "(D)" : "   ");
-	if (LOCK_TIME_ISVALID(&lip->tx_expire)) {
+	if (timespecisset(&lip->tx_expire)) {
 #ifdef HAVE_STRFTIME
 		time_t t = (time_t)lip->tx_expire.tv_sec;
 		char tbuf[64];
 		if (strftime(tbuf, sizeof(tbuf),
 		    "%m-%d-%H:%M:%S", localtime(&t)) != 0)
-			__db_msgadd(dbenv, mbp, "expires %s.%lu",
-			    tbuf, (u_long)lip->tx_expire.tv_usec);
+			__db_msgadd(dbenv, mbp, "expires %s.%09lu",
+			    tbuf, (u_long)lip->tx_expire.tv_nsec);
 		else
 #endif
-			__db_msgadd(dbenv, mbp, "expires %lu",
-			    (u_long)lip->tx_expire.tv_usec);
+			__db_msgadd(dbenv, mbp, "expires %lu.%09lu",
+			    (u_long)lip->tx_expire.tv_sec,
+			    (u_long)lip->tx_expire.tv_nsec);
 	}
 	if (F_ISSET(lip, DB_LOCKER_TIMEOUT))
 		__db_msgadd(dbenv, mbp, " lk timeout %u", lip->lk_timeout);
-	if (LOCK_TIME_ISVALID(&lip->lk_expire)) {
+	if (timespecisset(&lip->lk_expire)) {
 #ifdef HAVE_STRFTIME
 		time_t t = (time_t)lip->lk_expire.tv_sec;
 		char tbuf[64];
 		if (strftime(tbuf,
 		    sizeof(tbuf), "%m-%d-%H:%M:%S", localtime(&t)) != 0)
-			__db_msgadd(dbenv, mbp, " lk expires %s.%lu",
-			    tbuf, (u_long)lip->lk_expire.tv_usec);
+			__db_msgadd(dbenv, mbp, " lk expires %s.%09lu",
+			    tbuf, (u_long)lip->lk_expire.tv_nsec);
 		else
 #endif
-			__db_msgadd(dbenv, mbp, " lk expires %lu",
-			    (u_long)lip->lk_expire.tv_usec);
+			__db_msgadd(dbenv, mbp, " lk expires %lu.%09lu",
+			    (u_long)lip->lk_expire.tv_sec,
+			    (u_long)lip->lk_expire.tv_nsec);
 	}
 	DB_MSGBUF_FLUSH(dbenv, mbp);
 

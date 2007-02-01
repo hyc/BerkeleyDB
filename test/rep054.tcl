@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep054.tcl,v 1.11 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep054.tcl,v 1.13 2006/12/11 16:51:21 carol Exp $
 #
 # TEST	rep054
 # TEST	Test of internal initialization where a far-behind
@@ -62,7 +62,14 @@ proc rep054 { method { nentries 200 } { tnum "054" } args } {
 proc rep054_sub { method nentries tnum logset recargs largs } {
 	global testdir
 	global util_path
-
+	global errorInfo
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 
@@ -98,36 +105,24 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -log_max $log_max \
+	    $m_logargs -log_max $log_max $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx MASTER -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max \
+	    $c_logargs -log_max $log_max $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Open 2nd client
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -log_max $log_max \
+	    $c2_logargs -log_max $log_max $verbargs \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
-#	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-#	    $c2_logargs -log_max $log_max \
-#	    -verbose {rep on} -errpfx CLIENT2 \
-#	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set clientenv2 [eval $cl2_envcmd $recargs -rep_client]
 	error_check_good client2_env [is_valid_env $clientenv2] TRUE
 

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep049.tcl,v 12.13 2006/11/01 00:53:57 bostic Exp $
+# $Id: rep049.tcl,v 12.14 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep049
 # TEST	Replication and delay syncing clients - basic test.
@@ -54,6 +54,13 @@ proc rep049 { method { niter 10 } { tnum "049" } args } {
 proc rep049_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global util_path
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -86,38 +93,26 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
+	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
 	    $m_logargs -errpfx ENV1 -cachesize {0 4194304 3} \
 	    -home $env1dir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -cachesize {0 4194304 3} \
-#	    -errpfx ENV1 -verbose {rep on} -errfile /dev/stderr \
-#	    -home $env1dir -rep_transport \[list 1 replsend\]"
 	set env1 [eval $ma_envcmd $recargs -rep_master]
 	error_check_good master_env [is_valid_env $env1] TRUE
 	$env1 rep_limit 0 0
 
 	# Open two clients
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
+	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $verbargs \
 	    $c_logargs -errpfx ENV2 \
 	    -home $env2dir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -errpfx ENV2 \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -home $env2dir -rep_transport \[list 2 replsend\]"
 	set env2 [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $env2] TRUE
 	$env2 rep_limit 0 0
 
 	repladd 3
 	set dc_envcmd "berkdb_env_noerr -create $dc_txnargs \
-	    $dc_logargs -errpfx ENV3 \
+	    $verbargs $dc_logargs -errpfx ENV3 \
 	    -home $delaycldir -rep_transport \[list 3 replsend\]"
-#	set dc_envcmd "berkdb_env_noerr -create $dc_txnargs \
-#	    $dc_logargs -errpfx DELAYCL \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -home $delaycldir -rep_transport \[list 3 replsend\]"
 	set dcenv [eval $dc_envcmd $recargs -rep_client]
 	error_check_good client2_env [is_valid_env $dcenv] TRUE
 	$dcenv rep_limit 0 0
@@ -128,12 +123,8 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	# We'll do the repladd and execute this env command later.
 	#
 	set fc_envcmd "berkdb_env_noerr -create $fc_txnargs \
-	    $fc_logargs -errpfx ENV4 \
+	    $fc_logargs -errpfx ENV4 $verbargs \
 	    -home $freshcldir -rep_transport \[list 4 replsend\]"
-#	set fc_envcmd "berkdb_env_noerr -create $fc_txnargs \
-#	    $fc_logargs \
-#	    -errpfx FRESHCL -verbose {rep on} -errfile /dev/stderr \
-#	    -home $freshcldir -rep_transport \[list 4 replsend\]"
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$env1 1} {$env2 2} {$dcenv 3}"
@@ -145,7 +136,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 
 	process_msgs $envlist
 
-	puts "\tRep$tnum.b: Set delayed sync on client.  Basic test"
+	puts "\tRep$tnum.b: Set delayed sync on client.  Basic test."
 	error_check_good set_delay [$dcenv rep_config {delayclient on}] 0
 	#
 	# Call sync when we're not delayed.  Verify it just returns and

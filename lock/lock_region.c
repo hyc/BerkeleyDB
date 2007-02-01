@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_region.c,v 12.14 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_region.c,v 12.16 2006/11/29 20:08:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -79,7 +79,7 @@ __lock_open(dbenv, create_ok)
 	if (create_ok)
 		F_SET(&lt->reginfo, REGION_CREATE_OK);
 	size = __lock_region_size(dbenv);
-	if ((ret = __db_r_attach(dbenv, &lt->reginfo, size)) != 0)
+	if ((ret = __env_region_attach(dbenv, &lt->reginfo, size)) != 0)
 		goto err;
 
 	/* If we created the region, initialize it. */
@@ -141,7 +141,7 @@ err:	dbenv->lk_handle = NULL;
 	if (lt->reginfo.addr != NULL) {
 		if (region_locked)
 			LOCK_SYSTEM_UNLOCK(dbenv);
-		(void)__db_r_detach(dbenv, &lt->reginfo, 0);
+		(void)__env_region_detach(dbenv, &lt->reginfo, 0);
 	}
 
 	__os_free(dbenv, lt);
@@ -192,7 +192,7 @@ __lock_region_init(dbenv, lt)
 	}
 
 	region->need_dd = 0;
-	LOCK_SET_TIME_INVALID(&region->next_timeout);
+	timespecclear(&region->next_timeout);
 	region->detect = DB_LOCK_NORUN;
 	region->lk_timeout = dbenv->lk_timeout;
 	region->tx_timeout = dbenv->tx_timeout;
@@ -268,13 +268,13 @@ mem_err:		__db_errx(dbenv,
 }
 
 /*
- * __lock_dbenv_refresh --
+ * __lock_env_refresh --
  *	Clean up after the lock system on a close or failed open.
  *
- * PUBLIC: int __lock_dbenv_refresh __P((DB_ENV *));
+ * PUBLIC: int __lock_env_refresh __P((DB_ENV *));
  */
 int
-__lock_dbenv_refresh(dbenv)
+__lock_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	struct __db_lock *lp;
@@ -329,7 +329,7 @@ __lock_dbenv_refresh(dbenv)
 	}
 
 	/* Detach from the region. */
-	ret = __db_r_detach(dbenv, reginfo, 0);
+	ret = __env_region_detach(dbenv, reginfo, 0);
 
 	/* Discard DB_LOCKTAB. */
 	__os_free(dbenv, lt);

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_log.c,v 12.54 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_log.c,v 12.55 2007/01/27 03:22:07 alanb Exp $
  */
 
 #include "db_config.h"
@@ -606,6 +606,11 @@ __rep_logready(dbenv, rep, savetime, last_lsnp)
 	    savetime)) == 0) {
 		REP_SYSTEM_LOCK(dbenv);
 		ZERO_LSN(rep->first_lsn);
+
+		DB_ASSERT(dbenv, rep->originfo != NULL);
+		__os_free(dbenv, rep->originfo);
+		rep->originfo = NULL;
+		
 		F_CLR(rep, REP_F_RECOVER_LOG);
 		REP_SYSTEM_UNLOCK(dbenv);
 	} else {

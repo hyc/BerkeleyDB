@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: MpoolExample.cpp,v 12.5 2006/11/01 00:52:58 bostic Exp $
+ * $Id: MpoolExample.cpp,v 12.6 2006/11/29 21:49:31 bostic Exp $
  */
 
 #include <sys/types.h>
@@ -198,7 +198,7 @@ MpoolExample::run(int hits, int pagesize, int npages)
 			     << *(int *)p << ")\n";
 			return (EXIT_FAILURE);
 		}
-		if ((ret = mfp->put(p, 0)) != 0) {
+		if ((ret = mfp->put(p, DB_PRIORITY_UNCHANGED, 0)) != 0) {
 			cerr << "MpoolExample: unable to return page "
 			     << (unsigned long)pageno << ": "
 			     << strerror(ret) << "\n";

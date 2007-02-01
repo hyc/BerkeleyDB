@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep061.tcl,v 1.6 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep061.tcl,v 1.8 2006/12/20 16:44:42 sue Exp $
 #
 # TEST	rep061
 # TEST	Test of internal initialization multiple files and pagesizes
@@ -86,6 +86,12 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	global util_path
 	global drop drop_msg
 	global startup_done
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
 
 	env_cleanup $testdir
 
@@ -121,27 +127,17 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    -log_max $log_max -cachesize { 0 $cache 1 } \
+	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
+	    -log_max $log_max -cachesize { 0 $cache 1 } -errpfx MASTER \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    -log_max $log_max -cachesize { 0 $cache 1 }\
-#	    -verbose {rep on} -errpfx MASTER -errfile /dev/stderr \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    -log_max $log_max -cachesize { 0 $cache 1 }\
+	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $verbargs \
+	    -log_max $log_max -cachesize { 0 $cache 1 } -errpfx CLIENT \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    -log_max $log_max -cachesize { 0 $cache 1 }\
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	#
 	# Since we're dropping messages, set the rerequest values
@@ -254,6 +250,11 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
+	#
+	# Since we are dropping frequent messages, we set the
+	# rerequest rate low to make sure the test finishes.
+	#
+	$clientenv rep_request 2 8
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist 0 NONE err
 	set done 0
@@ -288,9 +289,12 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 		set entries 4
 		eval rep_test $method $masterenv $db $entries $niter 0 0 0 $largs
 		process_msgs $envlist 0 NONE err
-		set startup_done [stat_field $clientenv rep_stat \
-		    "Startup complete"]
-		if { $startup_done || $iter >= $max_drop_iter } {
+		set stat [exec $util_path/db_stat -N -r -R A -h $clientdir]
+		#
+		# Loop until we are done with the RECOVER_PAGE phase.
+		#
+		set in_page [is_substr $stat "REP_F_RECOVER_PAGE"]
+		if { !$in_page || $iter >= $max_drop_iter } {
 			#
 			# If we're dropping, stop doing so.
 			# If we're not dropping, we're done.

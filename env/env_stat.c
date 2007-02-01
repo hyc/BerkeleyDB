@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_stat.c,v 12.43 2006/11/08 23:06:57 ubell Exp $
+ * $Id: env_stat.c,v 12.45 2007/01/11 21:33:03 bostic Exp $
  */
 
 #include "db_config.h"
@@ -81,9 +81,6 @@ __env_stat_print(dbenv, flags)
 	if (!LF_ISSET(DB_STAT_SUBSYSTEM))
 		return (0);
 
-	/* The subsystems don't know anything about DB_STAT_SUBSYSTEM. */
-	LF_CLR(DB_STAT_SUBSYSTEM);
-
 	if (LOGGING_ON(dbenv)) {
 		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 		if ((ret = __log_stat_print(dbenv, flags)) != 0)
@@ -118,6 +115,11 @@ __env_stat_print(dbenv, flags)
 			return (ret);
 	}
 
+	/*
+	 * Dump the mutexes last.  If DB_STAT_CLEAR is set this will
+	 * clear out the mutex counters and we want to see them in 
+	 * the context of the other subsystems first.
+	 */
 	if (MUTEX_ON(dbenv)) {
 		__db_msg(dbenv, "%s", DB_GLOBAL(db_line));
 		if ((ret = __mutex_stat_print(dbenv, flags)) != 0)
@@ -181,7 +183,7 @@ __env_print_all(dbenv, flags)
 		{ DB_ENV_DIRECT_LOG,		"DB_ENV_DIRECT_LOG" },
 		{ DB_ENV_DSYNC_DB,		"DB_ENV_DSYNC_DB" },
 		{ DB_ENV_DSYNC_LOG,		"DB_ENV_DSYNC_LOG" },
-		{ DB_ENV_FATAL,			"DB_ENV_FATAL" },
+		{ DB_ENV_RECOVER_FATAL,		"DB_ENV_RECOVER_FATAL" },
 		{ DB_ENV_LOCKDOWN,		"DB_ENV_LOCKDOWN" },
 		{ DB_ENV_LOG_AUTOREMOVE,	"DB_ENV_LOG_AUTOREMOVE" },
 		{ DB_ENV_LOG_INMEMORY,		"DB_ENV_LOG_INMEMORY" },

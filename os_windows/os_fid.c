@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: os_fid.c,v 12.11 2006/11/09 14:23:17 bostic Exp $
+ * $Id: os_fid.c,v 12.14 2007/01/30 21:54:11 bostic Exp $
  */
 
 #include "db_config.h"
@@ -71,7 +71,8 @@ __os_fileid(dbenv, fname, unique_okay, fidp)
 	 * First we open the file, because we're not given a handle to it.
 	 * If we can't open it, we're in trouble.
 	 */
-	if ((ret = __os_open(dbenv, fname, DB_OSO_RDONLY, _S_IREAD, &fhp)) != 0)
+	if ((ret = __os_open(dbenv, fname, 0,
+	    DB_OSO_RDONLY, __db_omode("r--------"), &fhp)) != 0)
 		return (ret);
 
 	/* File open, get its info */

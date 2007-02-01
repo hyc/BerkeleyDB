@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: reputils.tcl,v 12.34 2006/11/01 16:27:11 carol Exp $
+# $Id: reputils.tcl,v 12.36 2006/12/07 19:37:44 carol Exp $
 #
 # Replication testing utilities
 
@@ -48,6 +48,39 @@ set electable_pri 5
 set drop 0
 global anywhere
 set anywhere 0
+
+global rep_verbose
+set rep_verbose 0
+
+# To run a replication test with verbose messages, type 
+# 'run_verbose <test> <method>'. 
+proc run_verbose { reptest args } {
+	global rep_verbose
+	if { [string match rep* $reptest] == 0 } {
+		error "run_verbose runs only for rep tests"
+		return
+	}
+
+	set rep_verbose 1
+	if { [catch {
+		eval $reptest $args
+		flush stdout
+		flush stderr
+	} res] != 0 } {
+		global errorInfo
+
+		set rep_verbose 0
+		set fnl [string first "\n" $errorInfo]
+		set theError [string range $errorInfo 0 [expr $fnl - 1]]
+		if {[string first FAIL $errorInfo] == -1} {
+			error "FAIL:[timestamp]\
+			    run_verbose: $reptest: $theError"
+		} else {
+			error $theError;
+		}
+	}			
+	set rep_verbose 0
+}
 
 # The default for replication testing is for logs to be on-disk.
 # Mixed-mode log testing provides a mixture of on-disk and
@@ -1002,6 +1035,7 @@ proc start_election \
     { pfx qdir envstring nsites nvotes pri timeout {err "none"} {crash 0}} {
 	source ./include.tcl
 	global elect_serial elections_in_progress machids
+	global rep_verbose
 
 	set filelist {}
 	set ret [catch {glob $testdir/ELECTION*.$elect_serial} result]
@@ -1019,13 +1053,16 @@ proc start_election \
 	puts $oid "replsetup $qdir"
 	foreach i $machids { puts $oid "repladd $i" }
 	puts $oid "set env_cmd \{$envstring\}"
-	puts $oid "set dbenv \[eval \$env_cmd -errfile \
-	    $testdir/ELECTION_ERRFILE.$elect_serial -errpfx $pfx \]"
-#	puts $oid "set dbenv \[eval \$env_cmd -errfile \
-#	    /dev/stdout -errpfx $pfx \]"
+	if { $rep_verbose == 1 } {
+		puts $oid "set dbenv \[eval \$env_cmd -errfile \
+		    /dev/stdout -errpfx $pfx \]"
+	} else {
+		puts $oid "set dbenv \[eval \$env_cmd -errfile \
+		    $testdir/ELECTION_ERRFILE.$elect_serial -errpfx $pfx \]"
+	}
 	puts $oid "\$dbenv test abort $err"
-	puts $oid "set res \[catch \{\$dbenv rep_elect $nsites $nvotes $pri \
-	    $timeout\} ret\]"
+	puts $oid "set res \[catch \{\$dbenv rep_elect $nsites \
+	    $nvotes $pri $timeout\} ret\]"
 	puts $oid "set r \[open \$testdir/ELECTION_RESULT.$elect_serial w\]"
 	puts $oid "if \{\$res == 0 \} \{"
 	puts $oid "puts \$r \"NEWMASTER \$ret\""
@@ -1049,7 +1086,9 @@ proc start_election \
 	close $oid
 
 	set t [open "|$tclsh_path >& $testdir/ELECTION_OUTPUT.$elect_serial" w]
-#	set t [open "|$tclsh_path" w]
+	if { $rep_verbose } {
+		set t [open "|$tclsh_path" w]
+	}
 	puts $t "source ./include.tcl"
 	puts $t "source $testdir/ELECTION_SOURCE.$elect_serial"
 	flush $t
@@ -1184,7 +1223,6 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 	set elect_pipe($elector) [start_election \
 	    $pfx $qdir $env_cmd($elector) $nsites $nvotes $pri($elector) \
 	    $e_timeout($elector) $err_cmd($elector) $crash($elector)]
-
 	tclsleep 2
 
 	set got_newmaster 0
@@ -2003,4 +2041,30 @@ proc rep_startup_event { event } {
 		set startup_done 1
 	}
 	return
+}
+
+# Return a list of TCP port numbers that are not currently in use on
+# the local system.  Note that this doesn't actually reserve the
+# ports, so it's possible that by the time the caller tries to use
+# them, another process could have taken one of them.  But for our
+# purposes that's unlikely enough that this is still useful: it's
+# still better than trying to find hard-coded port numbers that will
+# always be available.
+# 
+proc available_ports { n } {
+    set ports {}
+    set socks {}
+
+    while {[incr n -1] >= 0} {
+        set sock [socket -server Unused -myaddr localhost 0]
+        set port [lindex [fconfigure $sock -sockname] 2]
+
+        lappend socks $sock
+        lappend ports $port
+    }
+
+    foreach sock $socks {
+        close $sock
+    }
+    return $ports
 }

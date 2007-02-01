@@ -1,4 +1,4 @@
-dnl $Id: m4.db,v 10.182 2006/10/11 23:44:55 bostic Exp $
+dnl $Id: m4.db,v 10.185 2006/11/13 21:26:43 bostic Exp $
 
 include(m4/m4.init)
 include(m4/m4.html)
@@ -219,8 +219,21 @@ request key and record counts without incurring the performance penalty
 of traversing the entire database.])])
 m4_tag(m4_idef(DB_STAT_ALL), [dnl
 Display all available information.])
+ifelse($1, dbh_stat_print,, [dnl
 m4_tag(m4_idef(DB_STAT_CLEAR), [dnl
-Reset statistics after displaying their values.])
+Reset statistics after displaying their values.])])
+ifelse($1, lock_stat_print, [dnl
+m4_tagns(m4_idef(DB_STAT_LOCK_CONF), [dnl
+Display the lock conflict matrix.])
+m4_tagns(m4_idef(DB_STAT_LOCK_LOCKERS), [dnl
+Display the lockers within hash chains.])
+m4_tagns(m4_idef(DB_STAT_LOCK_OBJECTS), [dnl
+Display the lock objects within hash chains.])
+m4_tagns(m4_idef(DB_STAT_LOCK_PARAMS), [dnl
+Display the locking subsystem parameters.])])
+ifelse($1, memp_stat_print, [dnl
+m4_tag(m4_idef(DB_STAT_MEMP_HASH), [dnl
+Display the buffers with hash chains.])])
 ifelse($1, dbenv_stat_print, [dnl
 m4_tag(m4_idef(DB_STAT_SUBSYSTEM), [dnl
 Display information for all configured subsystems.])])

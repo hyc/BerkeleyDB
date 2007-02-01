@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_stub.c,v 12.3 2006/11/09 14:30:22 bostic Exp $
+ * $Id: lock_stub.c,v 12.5 2007/02/01 13:15:15 bostic Exp $
  */
 
 #include "db_config.h"
@@ -31,7 +31,7 @@ __db_nolocking(dbenv)
 }
 
 int
-__lock_dbenv_create(dbenv)
+__lock_env_create(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, 0);
@@ -39,7 +39,7 @@ __lock_dbenv_create(dbenv)
 }
 
 void
-__lock_dbenv_destroy(dbenv)
+__lock_env_destroy(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, 0);
@@ -272,7 +272,7 @@ __lock_id_free(dbenv, id)
 }
 
 int
-__lock_dbenv_refresh(dbenv)
+__lock_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, NULL);
@@ -433,5 +433,20 @@ __lock_failchk(dbenv)
 	DB_ENV *dbenv;
 {
 	COMPQUIET(dbenv, NULL);
+	return (0);
+}
+
+int
+__lock_get_list(dbenv, locker, flags, lock_mode, list)
+	DB_ENV *dbenv;
+	u_int32_t locker, flags;
+	db_lockmode_t lock_mode;
+	DBT *list;
+{
+	COMPQUIET(dbenv, NULL);
+	COMPQUIET(locker, 0);
+	COMPQUIET(flags, 0);
+	COMPQUIET(lock_mode, 0);
+	COMPQUIET(list, NULL);
 	return (0);
 }

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: log_stat.c,v 12.15 2006/11/01 00:53:36 bostic Exp $
+ * $Id: log_stat.c,v 12.16 2006/12/13 01:25:37 ubell Exp $
  */
 
 #include "db_config.h"
@@ -84,7 +84,7 @@ __log_stat(dbenv, statp, flags)
 
 	__mutex_set_wait_info(dbenv, lp->mtx_region,
 	    &stats->st_region_wait, &stats->st_region_nowait);
-	if (LF_ISSET(DB_STAT_CLEAR))
+	if (LF_ISSET(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM) == DB_STAT_CLEAR)
 		__mutex_clear(dbenv, lp->mtx_region);
 	stats->st_regsize = dblp->reginfo.rp->size;
 
@@ -142,7 +142,7 @@ __log_stat_print(dbenv, flags)
 	int ret;
 
 	orig_flags = flags;
-	LF_CLR(DB_STAT_CLEAR);
+	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
 	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
 		ret = __log_print_stats(dbenv, orig_flags);
 		if (flags == 0 || ret != 0)

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2004,2006 Oracle.  All rights reserved.
 #
-# $Id: rep052.tcl,v 12.12 2006/11/01 00:53:58 bostic Exp $
+# $Id: rep052.tcl,v 12.13 2006/12/07 19:37:44 carol Exp $
 #
 # TEST	rep052
 # TEST	Test of replication with NOWAIT.
@@ -69,7 +69,13 @@ proc rep052 { method { niter 200 } { tnum "052" } args } {
 proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	global testdir
 	global util_path
-
+	global rep_verbose
+ 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -98,28 +104,18 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -log_max $log_max $envargs \
+	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
+	    $m_logargs -log_max $log_max $envargs -errpfx MASTER \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
-#	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-#	    $m_logargs -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx MASTER \
-#	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 	$masterenv rep_limit 0 0
 
 	# Open a client
 	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max $envargs \
+	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $verbargs \
+	    $c_logargs -log_max $log_max $envargs -errpfx CLIENT \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
-#	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-#	    $c_logargs -log_max $log_max $envargs \
-#	    -verbose {rep on} -errpfx CLIENT \
-#	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 	$clientenv rep_limit 0 0
 
 	# Bring the clients online by processing the startup messages.
@@ -185,7 +181,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 
 	puts "\tRep$tnum.f: Verify we are locked out of txn API calls."
 	if { [catch { set txn [$clientenv txn] } res] } {
-		error_check_good txn_lockout [is_substr $res "locked out"] 1
+		error_check_good txn_lockout [is_substr $res "DB_REP_LOCKOUT"] 1
 	} else {
 		error_check_good txn_no_lockout [$txn commit] 0
 		puts "FAIL: Not locked out of txn API calls: $res"
@@ -193,7 +189,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 
 	puts "\tRep$tnum.g: Verify we are locked out of env API calls."
 	if { [catch { set stat [$clientenv lock_stat] } res] } {
-		error_check_good env_lockout [is_substr $res "locked out"] 1
+		error_check_good env_lockout [is_substr $res "DB_REP_LOCKOUT"] 1
 	} else {
 		puts "FAIL: Not locked out of env API calls: $res"
 	}

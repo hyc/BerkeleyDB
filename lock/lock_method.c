@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: lock_method.c,v 12.14 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_method.c,v 12.15 2006/11/16 16:44:58 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,13 +12,13 @@
 #include "dbinc/lock.h"
 
 /*
- * __lock_dbenv_create --
+ * __lock_env_create --
  *	Lock specific creation of the DB_ENV structure.
  *
- * PUBLIC: int __lock_dbenv_create __P((DB_ENV *));
+ * PUBLIC: int __lock_env_create __P((DB_ENV *));
  */
 int
-__lock_dbenv_create(dbenv)
+__lock_env_create(dbenv)
 	DB_ENV *dbenv;
 {
 	/*
@@ -35,13 +35,13 @@ __lock_dbenv_create(dbenv)
 }
 
 /*
- * __lock_dbenv_destroy --
+ * __lock_env_destroy --
  *	Lock specific destruction of the DB_ENV structure.
  *
- * PUBLIC: void __lock_dbenv_destroy __P((DB_ENV *));
+ * PUBLIC: void __lock_env_destroy __P((DB_ENV *));
  */
 void
-__lock_dbenv_destroy(dbenv)
+__lock_env_destroy(dbenv)
 	DB_ENV *dbenv;
 {
 	if (dbenv->lk_conflicts != NULL) {

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2001,2006 Oracle.  All rights reserved.
  *
- * $Id: rep_region.c,v 12.32 2006/11/01 00:53:45 bostic Exp $
+ * $Id: rep_region.c,v 12.39 2007/01/18 21:43:32 alanb Exp $
  */
 
 #include "db_config.h"
@@ -77,6 +77,7 @@ __rep_open(dbenv)
 		rep->config_nsites = db_rep->config_nsites;
 		rep->config = db_rep->config;
 		rep->elect_timeout = db_rep->elect_timeout;
+		rep->full_elect_timeout = db_rep->full_elect_timeout;
 		rep->priority = db_rep->my_priority;
 
 		F_SET(rep, REP_F_NOARCHIVE);
@@ -95,62 +96,64 @@ __rep_open(dbenv)
 }
 
 /*
- * __rep_region_destroy --
- *	Destroy any system resources allocated in the replication region.
+ * __rep_env_refresh --
+ *	Replication-specific refresh of the DB_ENV structure.
  *
- * PUBLIC: int __rep_region_destroy __P((DB_ENV *));
+ * PUBLIC: int __rep_env_refresh __P((DB_ENV *));
  */
 int
-__rep_region_destroy(dbenv)
+__rep_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	DB_REP *db_rep;
 	REGENV *renv;
 	REGINFO *infop;
+	REP *rep;
 	int ret, t_ret;
 
-	if (!REP_ON(dbenv))
-		return (0);
-
-	ret = 0;
-
 	db_rep = dbenv->rep_handle;
-	if (db_rep->region != NULL) {
-		ret = __mutex_free(dbenv, &db_rep->region->mtx_region);
-		if ((t_ret = __mutex_free(
-		    dbenv, &db_rep->region->mtx_clientdb)) != 0 && ret == 0)
-			ret = t_ret;
-	}
-
+	rep = db_rep->region;
 	infop = dbenv->reginfo;
 	renv = infop->primary;
-	if (renv->rep_off != INVALID_ROFF)
-		__env_alloc_free(infop, R_ADDR(infop, renv->rep_off));
+	ret = 0;
 
-	return (ret);
-}
+	/*
+	 * If we are the last reference closing the env, clear our knowledge of
+	 * belonging to a group.
+	 */
+	if (renv->refcnt == 1)
+		F_CLR(rep, REP_F_GROUP_ESTD);
 
-/*
- * __rep_dbenv_refresh --
- *	Replication-specific refresh of the DB_ENV structure.
- *
- * PUBLIC: void __rep_dbenv_refresh __P((DB_ENV *));
- */
-void
-__rep_dbenv_refresh(dbenv)
-	DB_ENV *dbenv;
-{
+	/*
+	 * If a private region, return the memory to the heap.  Not needed for
+	 * filesystem-backed or system shared memory regions, that memory isn't
+	 * owned by any particular process.
+	 */
+	if (F_ISSET(dbenv, DB_ENV_PRIVATE)) {
+		db_rep = dbenv->rep_handle;
+		if (db_rep->region != NULL) {
+			ret = __mutex_free(dbenv, &db_rep->region->mtx_region);
+			if ((t_ret = __mutex_free(dbenv,
+			    &db_rep->region->mtx_clientdb)) != 0 && ret == 0)
+				ret = t_ret;
+		}
+
+		if (renv->rep_off != INVALID_ROFF)
+			__env_alloc_free(infop, R_ADDR(infop, renv->rep_off));
+	}
+
 	dbenv->rep_handle->region = NULL;
+	return (ret);
 }
 
 /*
  * __rep_close --
  *      Shut down all of replication.
  *
- * PUBLIC: int __rep_close __P((DB_ENV *));
+ * PUBLIC: int __rep_env_close __P((DB_ENV *));
  */
 int
-__rep_close(dbenv)
+__rep_env_close(dbenv)
 	DB_ENV *dbenv;
 {
 	int ret, t_ret;
@@ -287,11 +290,11 @@ __rep_egen_init(dbenv, rep)
 		/*
 		 * File exists, open it and read in our egen.
 		 */
-		if ((ret = __os_open(dbenv, p, DB_OSO_RDONLY,
-		    __db_omode(OWNER_RW), &fhp)) != 0)
+		if ((ret = __os_open(dbenv, p, 0,
+		    DB_OSO_RDONLY, __db_omode(OWNER_RW), &fhp)) != 0)
 			goto err;
 		if ((ret = __os_read(dbenv, fhp, &rep->egen, sizeof(u_int32_t),
-		    &cnt)) < 0 || cnt == 0)
+		    &cnt)) != 0 || cnt != sizeof(u_int32_t))
 			goto err1;
 		RPRINT(dbenv, (dbenv, "Read in egen %lu", (u_long)rep->egen));
 err1:		 (void)__os_closehandle(dbenv, fhp);
@@ -319,7 +322,7 @@ __rep_write_egen(dbenv, egen)
 	if ((ret =
 	    __db_appname(dbenv, DB_APP_NONE, REP_EGENNAME, 0, NULL, &p)) != 0)
 		return (ret);
-	if ((ret = __os_open(dbenv, p, DB_OSO_CREATE | DB_OSO_TRUNC,
+	if ((ret = __os_open(dbenv, p, 0, DB_OSO_CREATE | DB_OSO_TRUNC,
 	    __db_omode(OWNER_RW), &fhp)) == 0) {
 		if ((ret = __os_write(dbenv, fhp, &egen, sizeof(u_int32_t),
 		    &cnt)) != 0 || ((ret = __os_fsync(dbenv, fhp)) != 0))

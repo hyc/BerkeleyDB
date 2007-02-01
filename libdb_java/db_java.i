@@ -71,6 +71,7 @@ import java.util.Comparator;
 	private ReplicationTransport rep_transport_handler;
 	private java.io.OutputStream error_stream;
 	private java.io.OutputStream message_stream;
+	private ThreadLocal errMsg;
 
 	public static class RepProcessMessage {
 		public int envid;
@@ -82,6 +83,7 @@ import java.util.Comparator;
 	 */
 	void initialize() {
 		dbenv_ref = db_java.initDbEnvRef0(this, this);
+		errMsg = new ThreadLocal();
 		/* Start with System.err as the default error stream. */
 		set_error_stream(System.err);
 		set_message_stream(System.out);
@@ -139,7 +141,27 @@ import java.util.Comparator;
 	}
 
 	private final void handle_error(String msg) {
+		StringBuffer tbuf = (StringBuffer) errMsg.get();
+		/* 
+		 * Populate the errMsg ThreadLocal on demand, since the 
+		 * callback can be made from different threads.
+		 */
+		if (tbuf == null) {
+			tbuf = new StringBuffer();
+			errMsg.set(tbuf);
+		}
+		tbuf.append(msg);
 		error_handler.error(wrapper, this.errpfx, msg);
+	}
+
+	private final String get_err_msg(String orig_msg) {
+		String ret = null;
+		StringBuffer tbuf = (StringBuffer) errMsg.get();
+		if (tbuf != null) {
+			ret = tbuf.toString();
+			tbuf.delete(0, tbuf.length());
+		}
+		return orig_msg + ": " + ret;
 	}
 
 	public ErrorHandler get_errcall() {
@@ -248,6 +270,7 @@ import java.util.Comparator;
 	private BtreePrefixCalculator bt_prefix_handler;
 	private Comparator dup_compare_handler;
 	private FeedbackHandler db_feedback_handler;
+	private Comparator h_compare_handler;
 	private Hasher h_hash_handler;
 	private SecondaryKeyCreator seckey_create_handler;
 
@@ -323,6 +346,14 @@ import java.util.Comparator;
 
 	public FeedbackHandler get_feedback() {
 		return db_feedback_handler;
+	}
+
+	private final int handle_h_compare(byte[] arr1, byte[] arr2) {
+		return h_compare_handler.compare(arr1, arr2);
+	}
+
+	public Comparator get_h_compare() {
+		return h_compare_handler;
 	}
 
 	private final int handle_dup_compare(byte[] arr1, byte[] arr2) {

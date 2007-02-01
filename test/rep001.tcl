@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2001,2006 Oracle.  All rights reserved.
 #
-# $Id: rep001.tcl,v 12.12 2006/11/01 00:53:54 bostic Exp $
+# $Id: rep001.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
 #
 # TEST  rep001
 # TEST	Replication rename and forced-upgrade test.
@@ -84,7 +84,13 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	source ./include.tcl
 	global testdir
 	global encrypt
+	global rep_verbose
 
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {rep on} "
+	}
+ 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -109,32 +115,18 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	# Open a master.
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create \
-	    -log_max 1000000 $envargs $m_logargs $recargs \
+	    -log_max 1000000 $envargs $m_logargs $recargs $verbargs \
 	    -home $masterdir -errpfx MASTER $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
-#	set env_cmd(M) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs $m_logargs $recargs \
-#	    -home $masterdir \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -errpfx MASTER $m_txnargs -rep_master \
-#	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
-	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open a client
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create \
-	    -log_max 1000000 $envargs $c_logargs $recargs \
+	    -log_max 1000000 $envargs $c_logargs $recargs $verbargs \
 	    -home $clientdir -errpfx CLIENT $c_txnargs -rep_client \
 	    -rep_transport \[list 2 replsend\]"
-#	set env_cmd(C) "berkdb_env_noerr -create \
-#	    -log_max 1000000 $envargs $c_logargs $recargs \
-#	    -home $clientdir \
-#	    -verbose {rep on} -errfile /dev/stderr \
-#	    -errpfx CLIENT $c_txnargs -rep_client \
-#	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C)]
-	error_check_good client_env [is_valid_env $clientenv] TRUE
 
 	# Bring the client online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -175,10 +167,9 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	puts "\tRep$tnum.f: Reopen old master as client and catch up."
 	# Throttle master so it can't send everything at once
 	$newmasterenv rep_limit 0 [expr 64 * 1024]
-	set newclientenv [eval {berkdb_env -create -recover} \
-	    $envargs -txn nosync \
+	set newclientenv [eval {berkdb_env_noerr -create -recover} \
+	    $envargs -txn nosync -errpfx NEWCLIENT \
 	    {-home $masterdir -rep_client -rep_transport [list 1 replsend]}]
-	error_check_good newclient_env [is_valid_env $newclientenv] TRUE
 	set envlist "{$newclientenv 1} {$newmasterenv 2}"
 	process_msgs $envlist
 
@@ -200,7 +191,8 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	# Verify the database in the client dir.
 	puts "\tRep$tnum.h: Verifying new client database contents."
 
-	rep_verify $masterdir $newmasterenv $clientdir $newclientenv 0 1 1 $dbname
+	rep_verify \
+	    $masterdir $newmasterenv $clientdir $newclientenv 0 1 1 $dbname
 
 	error_check_good newmasterenv_close [$newmasterenv close] 0
 	error_check_good newclientenv_close [$newclientenv close] 0

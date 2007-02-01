@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1999,2006 Oracle.  All rights reserved.
  *
- * $Id: tcl_env.c,v 12.33 2006/11/07 19:21:15 sue Exp $
+ * $Id: tcl_env.c,v 12.34 2006/11/29 20:09:07 bostic Exp $
  */
 
 #include "db_config.h"
@@ -215,14 +215,14 @@ env_Cmd(clientData, interp, objc, objv)
 	DBTCL_INFO *envip;
 	DB_ENV *dbenv;
 	Tcl_Obj *myobjv[3], *res;
-	char newname[MSG_SIZE];
-	int cmdindex, i, intvalue1, intvalue2, ncache, result, ret;
-	u_int32_t bytes, gbytes, value;
+	db_timeout_t timeout;
 	size_t size;
-	long shm_key;
 	time_t timeval;
+	u_int32_t bytes, gbytes, value;
+	long shm_key;
+	int cmdindex, i, intvalue, ncache, result, ret;
 	const char *strval, **dirs;
-	char *strarg;
+	char *strarg, newname[MSG_SIZE];
 #ifdef CONFIG_TEST
 	DBTCL_INFO *logcip;
 	DB_LOGC *logc;
@@ -654,10 +654,10 @@ env_Cmd(clientData, interp, objc, objv)
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
 			return (TCL_ERROR);
 		}
-		ret = dbenv->get_lg_filemode(dbenv, &intvalue1);
+		ret = dbenv->get_lg_filemode(dbenv, &intvalue);
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 		    "env get_lg_filemode")) == TCL_OK)
-			res = Tcl_NewLongObj((long)intvalue1);
+			res = Tcl_NewLongObj((long)intvalue);
 		break;
 	case ENVGETLGMAX:
 		if (objc != 2) {
@@ -717,21 +717,21 @@ env_Cmd(clientData, interp, objc, objv)
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
 			return (TCL_ERROR);
 		}
-		ret = dbenv->get_mp_max_openfd(dbenv, &intvalue1);
+		ret = dbenv->get_mp_max_openfd(dbenv, &intvalue);
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 		    "env get_mp_max_openfd")) == TCL_OK)
-			res = Tcl_NewIntObj(intvalue1);
+			res = Tcl_NewIntObj(intvalue);
 		break;
 	case ENVGETMPMAXWRITE:
 		if (objc != 2) {
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
 			return (TCL_ERROR);
 		}
-		ret = dbenv->get_mp_max_write(dbenv, &intvalue1, &intvalue2);
+		ret = dbenv->get_mp_max_write(dbenv, &intvalue, &timeout);
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 		    "env get_mp_max_write")) == TCL_OK) {
-			myobjv[0] = Tcl_NewIntObj(intvalue1);
-			myobjv[1] = Tcl_NewIntObj(intvalue2);
+			myobjv[0] = Tcl_NewIntObj(intvalue);
+			myobjv[1] = Tcl_NewIntObj((int)timeout);
 			res = Tcl_NewListObj(2, myobjv);
 		}
 		break;

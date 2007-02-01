@@ -1,4 +1,4 @@
-<!--$Id: dbt_bulk.so,v 10.13 2005/12/01 02:27:35 mjc Exp $-->
+<!--$Id: dbt_bulk.so,v 10.14 2007/01/31 14:45:22 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -71,6 +71,8 @@ the length, in bytes, of that data element.  Deleted records are not
 included in the results.  The <b>pointer</b> parameter is set to NULL
 if there are no more key/data pairs in the returned set.</p>
 </dl>
+<p>These macros may be called multiple times, but DB_MULTIPLE_INIT
+must be called before each new access of the data.</p>
 </tt>
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_c/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>

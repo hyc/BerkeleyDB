@@ -1,4 +1,4 @@
-<!--$Id: memp_stat.so,v 10.67 2006/09/11 16:56:44 bostic Exp $-->
+<!--$Id: memp_stat.so,v 10.68 2006/11/13 21:22:07 bostic Exp $-->
 <!--Copyright 1997,2006 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
@@ -54,7 +54,7 @@ The following DB_MPOOL_STAT fields will be filled in:</p>
 <dt>size_t st_mmapsize;<dd>Maximum memory-mapped file size.
 <dt>int st_maxopenfd;<dd>Maximum open file descriptors.
 <dt>int st_maxwrite;<dd>Maximum sequential buffer writes.
-<dt>int st_maxwrite_sleep;<dd>Sleep after writing maximum sequential buffers.
+<dt>db_timeout_t st_maxwrite_sleep;<dd>Microseconds to pause after writing maximum sequential buffers.
 <dt>u_int32_t st_map;<dd>Requested pages mapped into the process' address space (there is no
 available information about whether or not this request caused disk I/O,
 although examining the application page fault rate may be helpful).
@@ -95,11 +95,6 @@ region mutex without waiting.
 <dt>u_int32_t st_alloc_pages;<dd>Number of pages checked during allocation.
 <dt>u_int32_t st_alloc_max_pages;<dd>Maximum number of pages checked during an allocation.
 <dt>u_int32_t st_io_wait;<dd>Number of operations blocked waiting for I/O to complete.
-</dl>
-The <b>flags</b> parameter must be set to 0 or
-the following value:
-<dl compact>
-<dt><a name="DB_STAT_CLEAR">DB_STAT_CLEAR</a><dd>Reset statistics after returning their values.
 </dl>
 <p>If <b>fsp</b> is non-NULL, a pointer to a NULL-terminated
 variable length array of statistics for individual files, in the cache
@@ -144,8 +139,12 @@ invalid flag value or parameter was specified.
 </dl>
 <hr size=1 noshade>
 <h3>Description: DB_ENV-&gt;memp_stat_print</h3>
-<p>The DB_ENV-&gt;memp_stat_print method prints diagnostic information to the output
-channel described by the <a href="../api_c/env_set_msgfile.html">DB_ENV-&gt;set_msgfile</a> method.</p>
+<p>The DB_ENV-&gt;memp_stat_print method displays the
+memory pool subsystem statistical information, as described for the DB_ENV-&gt;memp_stat method.
+The information is printed to a specified output channel (see the
+<a href="../api_c/env_set_msgfile.html">DB_ENV-&gt;set_msgfile</a> method for more information), or passed to an
+application callback function (see the <a href="../api_c/env_set_msgcall.html">DB_ENV-&gt;set_msgcall</a> method for
+more information).</p>
 <p>The DB_ENV-&gt;memp_stat_print method may not be called before the <a href="../api_c/env_open.html">DB_ENV-&gt;open</a> method has
 been called.</p>
 <p>The DB_ENV-&gt;memp_stat_print method
@@ -154,10 +153,11 @@ and 0 on success.
 </p>
 <h3>Parameters</h3>
 <dl compact>
-<dt><b>flags</b><dd>The <b>flags</b> parameter must be set by bitwise inclusively <b>OR</b>'ing together one or more
-of the following values:
+<dt><b>flags</b><dd>The <b>flags</b> parameter must be set to 0 or by bitwise inclusively <b>OR</b>'ing together one
+or more of the following values:
 <dl compact>
 <dt><a name="DB_STAT_ALL">DB_STAT_ALL</a><dd>Display all available information.
+<dt><a name="DB_STAT_CLEAR">DB_STAT_CLEAR</a><dd>Reset statistics after displaying their values.
 <dt><a name="DB_STAT_MEMP_HASH">DB_STAT_MEMP_HASH</a><dd>Display the buffers with hash chains.
 </dl>
 </dl>

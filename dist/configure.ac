@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 12.54 2006/11/06 17:07:09 bostic Exp $
+# $Id: configure.ac,v 12.55 2006/12/21 14:21:40 bostic Exp $
 # Process this file with autoconf to produce a configure script.
 
 PACKAGE=db
@@ -169,7 +169,8 @@ irix*)	optimize_debug="-O2"
 mpeix*)	CPPFLAGS="$CPPFLAGS -D_POSIX_SOURCE -D_SOCKET_SOURCE"
 	LIBSO_LIBS="$LIBSO_LIBS -lsocket -lsvipc";;
 osf*)	CPPFLAGS="$CPPFLAGS -pthread";;
-*qnx*)	AC_DEFINE(HAVE_QNX)
+*qnx*)	qnx_build="yes"
+	AC_DEFINE(HAVE_QNX)
 	AH_TEMPLATE(HAVE_QNX, [Define to 1 if building on QNX.]);;
 solaris*)
 	CPPFLAGS="$CPPFLAGS -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS ";;
@@ -752,6 +753,11 @@ fi
 # itself, various diagnostic modes use them.
 if test "$db_cv_diagnostic" = "yes"; then
 	ADDITIONAL_OBJS="$ADDITIONAL_OBJS \$(PRINT_OBJS)"
+fi
+
+# If building for QNX, we need additional OS files.
+if test "$qnx_build" = "yes"; then
+	ADDITIONAL_OBJS="$ADDITIONAL_OBJS os_qnx_open${o}"
 fi
 
 # We need to add the additional object files into the Makefile with the correct

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: ex_mpool.c,v 12.5 2006/11/01 00:52:49 bostic Exp $
+ * $Id: ex_mpool.c,v 12.6 2006/11/29 21:48:55 bostic Exp $
  */
 
 #include <sys/types.h>
@@ -227,7 +227,7 @@ run(hits, cachesize, pagesize, npages, progname)
 			    (u_long)pageno, *(int *)p);
 			goto err;
 		}
-		if ((ret = mfp->put(mfp, p, 0)) != 0) {
+		if ((ret = mfp->put(mfp, p, DB_PRIORITY_UNCHANGED, 0)) != 0) {
 			dbenv->err(dbenv, ret,
 			    "unable to return page %lu", (u_long)pageno);
 			goto err;

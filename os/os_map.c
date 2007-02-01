@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: os_map.c,v 12.16 2006/11/01 00:53:39 bostic Exp $
+ * $Id: os_map.c,v 12.17 2006/12/06 02:45:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -147,7 +147,7 @@ __os_r_sysattach(dbenv, infop, rp)
 	 * the region are properly ordered, our caller has already taken care
 	 * of that.
 	 */
-	if ((ret = __os_open(dbenv, infop->name,
+	if ((ret = __os_open(dbenv, infop->name, 0,
 	    DB_OSO_REGION |
 	    (F_ISSET(infop, REGION_CREATE_OK) ? DB_OSO_CREATE : 0),
 	    dbenv->db_mode, &fhp)) != 0)

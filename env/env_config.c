@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: env_config.c,v 12.70 2006/11/08 23:06:57 ubell Exp $
+ * $Id: env_config.c,v 12.71 2006/11/29 20:08:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -280,7 +280,8 @@ format:		__db_errx(dbenv,
 			goto format;
 		CONFIG_GET_INT(argv[1], &lv1);
 		CONFIG_GET_INT(argv[2], &lv2);
-		return (__memp_set_mp_max_write(dbenv, (int)lv1, (int)lv2));
+		return (__memp_set_mp_max_write(
+		    dbenv, (int)lv1, (db_timeout_t)lv2));
 	}
 
 	CONFIG_UINT32("set_mp_mmapsize", __memp_set_mp_mmapsize);

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1997,2006 Oracle.  All rights reserved.
  *
- * $Id: bt_recno.c,v 12.32 2006/11/01 00:51:57 bostic Exp $
+ * $Id: bt_recno.c,v 12.33 2006/11/29 21:23:10 ubell Exp $
  */
 
 #include "db_config.h"
@@ -227,7 +227,8 @@ __ramc_del(dbc)
 	stack = 1;
 
 	/* Copy the page into the cursor. */
-	if ((ret = __memp_dirty(dbp->mpf, &cp->csp->page, dbc->txn, 0)) != 0)
+	if ((ret = __memp_dirty(dbp->mpf,
+	    &cp->csp->page, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 	STACK_TO_CURSOR(cp, ret);
 	if (ret != 0)

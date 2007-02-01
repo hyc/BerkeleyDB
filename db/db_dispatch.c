@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_dispatch.c,v 12.30 2006/11/09 15:31:52 margo Exp $
+ * $Id: db_dispatch.c,v 12.32 2007/01/22 00:29:59 alexg Exp $
  */
 
 #include "db_config.h"
@@ -257,7 +257,7 @@ __db_dispatch(dbenv, dtab, dtabsize, db, lsnp, redo, info)
 				 */
 				make_call = 1;
 				redo = DB_TXN_BACKWARD_ALLOC;
-			} else
+			}
 #endif
 		}
 		break;
@@ -1186,7 +1186,8 @@ retry:		dbp_created = 0;
 		 */
 		else if (last_pgno == meta->free) {
 			/* No change to page; just put the page back. */
-			if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, meta, DB_PRIORITY_UNCHANGED)) != 0)
 				goto err;
 			meta = NULL;
 		} else {
@@ -1199,7 +1200,8 @@ retry:		dbp_created = 0;
 			 */
 			if (!IS_RECOVERING(dbenv) && !T_RESTORED(txn))
 				__db_errx(dbenv, "Flushing free list to disk");
-			if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, meta, DB_PRIORITY_UNCHANGED)) != 0)
 				goto err;
 			meta = NULL;
 			/*
@@ -1217,7 +1219,8 @@ retry:		dbp_created = 0;
 				    DB_MPOOL_DIRTY, &meta)) != 0)
 					goto err;
 				meta->free = last_pgno;
-				if ((ret = __memp_fput(mpf, meta, 0)) != 0)
+				if ((ret = __memp_fput(mpf,
+				    meta, DB_PRIORITY_UNCHANGED)) != 0)
 					goto err;
 				meta = NULL;
 			} else {
@@ -1253,7 +1256,7 @@ next:
 	}
 
 err:	if (meta != NULL)
-		(void)__memp_fput(mpf, meta, 0);
+		(void)__memp_fput(mpf, meta, DB_PRIORITY_UNCHANGED);
 	return (ret);
 }
 
@@ -1316,8 +1319,8 @@ __db_limbo_fix(dbp, ctxn, elp, lastp, meta, state)
 					    &next, ctxn, 0, &freep)) != 0)
 						goto err;
 					next = NEXT_PGNO(freep);
-					if ((ret =
-					    __memp_fput(mpf, freep, 0)) != 0)
+					if ((ret = __memp_fput(mpf,
+					    freep, DB_PRIORITY_UNCHANGED)) != 0)
 						goto err;
 				}
 
@@ -1387,14 +1390,15 @@ __db_limbo_fix(dbp, ctxn, elp, lastp, meta, state)
 			elp->u.p.pgno_array[i] = PGNO_INVALID;
 
 		if (pagep != NULL) {
-			ret = __memp_fput(mpf, pagep, 0);
+			ret = __memp_fput(mpf, pagep, DB_PRIORITY_UNCHANGED);
 			pagep = NULL;
 		}
 		if (ret != 0)
 			goto err;
 	}
 
-err:	if (pagep != NULL && (t_ret = __memp_fput(mpf, pagep, 0)) != 0 &&
+err:	if (pagep != NULL &&
+	    (t_ret = __memp_fput(mpf, pagep, DB_PRIORITY_UNCHANGED)) != 0 &&
 	    ret == 0)
 		ret = t_ret;
 	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
@@ -1436,7 +1440,8 @@ __db_limbo_prepare(dbp, txn, elp)
 		if (IS_ZERO_LSN(LSN(pagep)))
 			ret = __db_pg_prepare_log(dbp, txn, &lsn, 0, pgno);
 
-		if ((t_ret = __memp_fput(mpf, pagep, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		    pagep, DB_PRIORITY_UNCHANGED)) != 0 && ret == 0)
 			ret = t_ret;
 
 		if (ret != 0)

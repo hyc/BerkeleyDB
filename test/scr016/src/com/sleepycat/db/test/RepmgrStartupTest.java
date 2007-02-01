@@ -168,27 +168,6 @@ public class RepmgrStartupTest implements EventHandler
         }
     }
 
-    @Test (timeout=3000) public void startFullElection()
-    {
-        try {
-            // start replication manager
-            dbenv.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_FULL_ELECTION);
-        } catch(DatabaseException dbe) {
-            fail("Unexpected database exception came from replicationManagerStart." + dbe.toString());
-        }
-        try {
-            java.lang.Thread.sleep(1000);
-        }catch(InterruptedException ie) {}
-        
-        try {
-            dbenv.close();
-            Environment.remove(homedir, false, envConfig);
-        } catch(FileNotFoundException fnfe) {
-        } catch(DatabaseException dbe) {
-            fail("Unexpected database exception came during shutdown." + dbe.toString());
-        }
-    }
-
     @Test (timeout=15000) public void startMasterWaitBeforeShutdown()
     {
         try {

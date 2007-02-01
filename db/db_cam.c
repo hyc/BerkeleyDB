@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2000,2006 Oracle.  All rights reserved.
  *
- * $Id: db_cam.c,v 12.46 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_cam.c,v 12.49 2007/01/17 16:04:30 margo Exp $
  */
 
 #include "db_config.h"
@@ -432,6 +432,7 @@ __dbc_idup(dbc_orig, dbcp, flags)
 	    DB_LOCK_IWRITE : DB_LOCK_READ, &dbc_n->mylock)) != 0)
 		goto err;
 
+	dbc_n->priority = dbc_orig->priority;
 	*dbcp = dbc_n;
 	return (0);
 
@@ -473,6 +474,7 @@ __dbc_newopd(dbc_parent, root, oldopd, dbcp)
 	    dbc_parent->txn, dbtype, root, 1, dbc_parent->locker, &opd)) != 0)
 		return (ret);
 
+	opd->priority = dbc_parent->priority;
 	*dbcp = opd;
 
 	/*
@@ -571,9 +573,10 @@ __dbc_get(dbc_arg, key, data, flags)
 	 * application's DBT if there is a custom comparator: it might be a
 	 * partial key containing only the unique identifier.
 	 */
-	if ((flags == DB_GET_BOTH || flags == DB_GET_BOTH_RANGE ||
-	    flags == DB_SET) &&
-	    ((BTREE *)dbp->bt_internal)->bt_compare == __bam_defcmp)
+	if ((flags == DB_GET_BOTH ||
+	    flags == DB_GET_BOTH_RANGE || flags == DB_SET) &&
+	    ((BTREE *)dbp->bt_internal)->bt_compare == __bam_defcmp &&
+	    ((HASH *)dbp->h_internal)->h_compare == NULL)
 		F_SET(key, DB_DBT_ISSET);
 
 	if (flags == DB_GET_BOTH && dbp->dup_compare == NULL)
@@ -1406,13 +1409,9 @@ skip_s_update:
 	/*
 	 * Perform an operation on the main cursor.  Duplicate the cursor,
 	 * and call the underlying function.
-	 *
-	 * XXX: MARGO
-	 *
+	 */
 	tmp_flags = flags == DB_AFTER ||
 	    flags == DB_BEFORE || flags == DB_CURRENT ? DB_POSITION : 0;
-	 */
-	tmp_flags = DB_POSITION;
 
 	/*
 	 * If this cursor is going to be closed immediately, we don't
@@ -1601,15 +1600,15 @@ __dbc_cleanup(dbc, dbc_n, failed)
 
 	/* Discard any pages we're holding. */
 	if (internal->page != NULL) {
-		if ((t_ret =
-		    __memp_fput(mpf, internal->page, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		     internal->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		internal->page = NULL;
 	}
 	opd = internal->opd;
 	if (opd != NULL && opd->internal->page != NULL) {
 		if ((t_ret =
-		    __memp_fput(mpf, opd->internal->page, 0)) != 0 && ret == 0)
+		    __memp_fput(mpf, opd->internal->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		opd->internal->page = NULL;
 	}
@@ -1632,15 +1631,15 @@ __dbc_cleanup(dbc, dbc_n, failed)
 		return (ret);
 
 	if (dbc_n->internal->page != NULL) {
-		if ((t_ret = __memp_fput(
-		    mpf, dbc_n->internal->page, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		    dbc_n->internal->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		dbc_n->internal->page = NULL;
 	}
 	opd = dbc_n->internal->opd;
 	if (opd != NULL && opd->internal->page != NULL) {
-		if ((t_ret =
-		    __memp_fput(mpf, opd->internal->page, 0)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		     opd->internal->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		opd->internal->page = NULL;
 	}

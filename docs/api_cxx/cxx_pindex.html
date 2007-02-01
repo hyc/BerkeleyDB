@@ -56,6 +56,7 @@
 <tr><td align=right>turn off system </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#5">buffering</a> for database files</td></tr>
 <tr><td align=right>turn off system </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#4">buffering</a> for log files</td></tr>
 <tr><td align=right>turn off system </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#6">buffering</a> for log files</td></tr>
+<tr><td align=right></td><td>&nbsp;<a href="../ref/build_brew/intro.html#2">building</a> for BREW</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/intro.html#3">building</a> for QNX</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/intro.html#2">building</a> for UNIX</td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../ref/build_unix/notes.html#2">building</a> for UNIX FAQ</td></tr>
@@ -142,6 +143,7 @@
 <tr><td align=right>DbEnv::set_event_notify </td><td>&nbsp;<a href="../api_cxx/env_event_notify.html#DB_EVENT_REP_CLIENT">DB_EVENT_REP_CLIENT</a></td></tr>
 <tr><td align=right>DbEnv::set_event_notify </td><td>&nbsp;<a href="../api_cxx/env_event_notify.html#DB_EVENT_REP_MASTER">DB_EVENT_REP_MASTER</a></td></tr>
 <tr><td align=right>DbEnv::set_event_notify </td><td>&nbsp;<a href="../api_cxx/env_event_notify.html#DB_EVENT_REP_NEWMASTER">DB_EVENT_REP_NEWMASTER</a></td></tr>
+<tr><td align=right>DbEnv::set_event_notify </td><td>&nbsp;<a href="../api_cxx/env_event_notify.html#DB_EVENT_REP_PERM_FAILED">DB_EVENT_REP_PERM_FAILED</a></td></tr>
 <tr><td align=right>DbEnv::set_event_notify </td><td>&nbsp;<a href="../api_cxx/env_event_notify.html#DB_EVENT_REP_STARTUPDONE">DB_EVENT_REP_STARTUPDONE</a></td></tr>
 <tr><td align=right>DbEnv::set_event_notify </td><td>&nbsp;<a href="../api_cxx/env_event_notify.html#DB_EVENT_WRITE_FAILED">DB_EVENT_WRITE_FAILED</a></td></tr>
 <tr><td align=right>Db::open </td><td>&nbsp;<a href="../api_cxx/db_open.html#DB_EXCL">DB_EXCL</a></td></tr>
@@ -220,8 +222,6 @@
 <tr><td align=right>DbEnv::set_flags </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#DB_LOG_INMEMORY">DB_LOG_INMEMORY</a></td></tr>
 <tr><td align=right>DbMpoolFile::get </td><td>&nbsp;<a href="../api_cxx/memp_fget.html#DB_MPOOL_CREATE">DB_MPOOL_CREATE</a></td></tr>
 <tr><td align=right>DbMpoolFile::get </td><td>&nbsp;<a href="../api_cxx/memp_fget.html#DB_MPOOL_DIRTY">DB_MPOOL_DIRTY</a></td></tr>
-<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_MPOOL_DISCARD">DB_MPOOL_DISCARD</a></td></tr>
-<tr><td align=right>DbMpoolFile::set </td><td>&nbsp;<a href="../api_cxx/memp_fset.html#DB_MPOOL_DISCARD">DB_MPOOL_DISCARD</a></td></tr>
 <tr><td align=right>DbMpoolFile::get </td><td>&nbsp;<a href="../api_cxx/memp_fget.html#DB_MPOOL_EDIT">DB_MPOOL_EDIT</a></td></tr>
 <tr><td align=right>DbMpoolFile::get </td><td>&nbsp;<a href="../api_cxx/memp_fget.html#DB_MPOOL_LAST">DB_MPOOL_LAST</a></td></tr>
 <tr><td align=right>DbMpoolFile::get </td><td>&nbsp;<a href="../api_cxx/memp_fget.html#DB_MPOOL_NEW">DB_MPOOL_NEW</a></td></tr>
@@ -270,10 +270,16 @@
 <tr><td align=right>Dbc::get </td><td>&nbsp;<a href="../api_cxx/dbc_get.html#DB_PREV_DUP">DB_PREV_DUP</a></td></tr>
 <tr><td align=right>Dbc::get </td><td>&nbsp;<a href="../api_cxx/dbc_get.html#DB_PREV_NODUP">DB_PREV_NODUP</a></td></tr>
 <tr><td align=right>Db::verify </td><td>&nbsp;<a href="../api_cxx/db_verify.html#DB_PRINTABLE">DB_PRINTABLE</a></td></tr>
+<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_PRIORITY_DEFAULT">DB_PRIORITY_DEFAULT</a></td></tr>
 <tr><td align=right>DbMpoolFile::set_priority </td><td>&nbsp;<a href="../api_cxx/memp_set_priority.html#DB_PRIORITY_DEFAULT">DB_PRIORITY_DEFAULT</a></td></tr>
+<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_PRIORITY_HIGH">DB_PRIORITY_HIGH</a></td></tr>
 <tr><td align=right>DbMpoolFile::set_priority </td><td>&nbsp;<a href="../api_cxx/memp_set_priority.html#DB_PRIORITY_HIGH">DB_PRIORITY_HIGH</a></td></tr>
+<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_PRIORITY_LOW">DB_PRIORITY_LOW</a></td></tr>
 <tr><td align=right>DbMpoolFile::set_priority </td><td>&nbsp;<a href="../api_cxx/memp_set_priority.html#DB_PRIORITY_LOW">DB_PRIORITY_LOW</a></td></tr>
+<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_PRIORITY_UNCHANGED">DB_PRIORITY_UNCHANGED</a></td></tr>
+<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_PRIORITY_VERY_HIGH">DB_PRIORITY_VERY_HIGH</a></td></tr>
 <tr><td align=right>DbMpoolFile::set_priority </td><td>&nbsp;<a href="../api_cxx/memp_set_priority.html#DB_PRIORITY_VERY_HIGH">DB_PRIORITY_VERY_HIGH</a></td></tr>
+<tr><td align=right>DbMpoolFile::put </td><td>&nbsp;<a href="../api_cxx/memp_fput.html#DB_PRIORITY_VERY_LOW">DB_PRIORITY_VERY_LOW</a></td></tr>
 <tr><td align=right>DbMpoolFile::set_priority </td><td>&nbsp;<a href="../api_cxx/memp_set_priority.html#DB_PRIORITY_VERY_LOW">DB_PRIORITY_VERY_LOW</a></td></tr>
 <tr><td align=right>DbEnv::open </td><td>&nbsp;<a href="../api_cxx/env_open.html#DB_PRIVATE">DB_PRIVATE</a></td></tr>
 <tr><td align=right>Db::open </td><td>&nbsp;<a href="../api_cxx/db_open.html#DB_QUEUE">DB_QUEUE</a></td></tr>
@@ -320,7 +326,7 @@
 <tr><td align=right>DbEnv::repmgr_start </td><td>&nbsp;<a href="../api_cxx/repmgr_start.html#DB_REP_ELECTION">DB_REP_ELECTION</a></td></tr>
 <tr><td align=right>DbEnv::rep_set_timeout </td><td>&nbsp;<a href="../api_cxx/rep_timeout.html#DB_REP_ELECTION_RETRY">DB_REP_ELECTION_RETRY</a></td></tr>
 <tr><td align=right>DbEnv::rep_set_timeout </td><td>&nbsp;<a href="../api_cxx/rep_timeout.html#DB_REP_ELECTION_TIMEOUT">DB_REP_ELECTION_TIMEOUT</a></td></tr>
-<tr><td align=right>DbEnv::repmgr_start </td><td>&nbsp;<a href="../api_cxx/repmgr_start.html#DB_REP_FULL_ELECTION">DB_REP_FULL_ELECTION</a></td></tr>
+<tr><td align=right>DbEnv::rep_set_timeout </td><td>&nbsp;<a href="../api_cxx/rep_timeout.html#DB_REP_FULL_ELECTION_TIMEOUT">DB_REP_FULL_ELECTION_TIMEOUT</a></td></tr>
 <tr><td align=right></td><td>&nbsp;<a href="../api_cxx/db_put.html#2">DB_REP_HANDLE_DEAD</a></td></tr>
 <tr><td align=right>DbEnv::rep_process_message </td><td>&nbsp;<a href="../api_cxx/rep_message.html#DB_REP_HOLDELECTION">DB_REP_HOLDELECTION</a></td></tr>
 <tr><td align=right>DbEnv::rep_process_message </td><td>&nbsp;<a href="../api_cxx/rep_message.html#DB_REP_IGNORE">DB_REP_IGNORE</a></td></tr>
@@ -364,7 +370,6 @@
 <tr><td align=right>DbEnv::mutex_stat </td><td>&nbsp;<a href="../api_cxx/mutex_stat.html#DB_STAT_ALL">DB_STAT_ALL</a></td></tr>
 <tr><td align=right>DbEnv::rep_stat </td><td>&nbsp;<a href="../api_cxx/rep_stat.html#DB_STAT_ALL">DB_STAT_ALL</a></td></tr>
 <tr><td align=right>DbEnv::txn_stat </td><td>&nbsp;<a href="../api_cxx/txn_stat.html#DB_STAT_ALL">DB_STAT_ALL</a></td></tr>
-<tr><td align=right>Db::stat </td><td>&nbsp;<a href="../api_cxx/db_stat.html#DB_STAT_CLEAR">DB_STAT_CLEAR</a></td></tr>
 <tr><td align=right>DbEnv::stat_print </td><td>&nbsp;<a href="../api_cxx/env_stat.html#DB_STAT_CLEAR">DB_STAT_CLEAR</a></td></tr>
 <tr><td align=right>DbEnv::lock_stat </td><td>&nbsp;<a href="../api_cxx/lock_stat.html#DB_STAT_CLEAR">DB_STAT_CLEAR</a></td></tr>
 <tr><td align=right>DbEnv::log_stat </td><td>&nbsp;<a href="../api_cxx/log_stat.html#DB_STAT_CLEAR">DB_STAT_CLEAR</a></td></tr>
@@ -405,6 +410,7 @@
 <tr><td align=right>DbTxn::commit </td><td>&nbsp;<a href="../api_cxx/txn_commit.html#DB_TXN_SYNC">DB_TXN_SYNC</a></td></tr>
 <tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_WAIT">DB_TXN_WAIT</a></td></tr>
 <tr><td align=right>DbEnv::set_flags </td><td>&nbsp;<a href="../api_cxx/env_set_flags.html#DB_TXN_WRITE_NOSYNC">DB_TXN_WRITE_NOSYNC</a></td></tr>
+<tr><td align=right>DbEnv::txn_begin </td><td>&nbsp;<a href="../api_cxx/txn_begin.html#DB_TXN_WRITE_NOSYNC">DB_TXN_WRITE_NOSYNC</a></td></tr>
 <tr><td align=right>Db::open </td><td>&nbsp;<a href="../api_cxx/db_open.html#DB_UNKNOWN">DB_UNKNOWN</a></td></tr>
 <tr><td align=right>Db::set_feedback </td><td>&nbsp;<a href="../api_cxx/db_set_feedback.html#DB_UPGRADE">DB_UPGRADE</a></td></tr>
 <tr><td align=right>DbEnv::open </td><td>&nbsp;<a href="../api_cxx/env_open.html#DB_USE_ENVIRON">DB_USE_ENVIRON</a></td></tr>

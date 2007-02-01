@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1996,2006 Oracle.  All rights reserved.
  *
- * $Id: mp_region.c,v 12.25 2006/11/01 00:53:37 bostic Exp $
+ * $Id: mp_region.c,v 12.26 2006/11/16 16:44:59 bostic Exp $
  */
 
 #include "db_config.h"
@@ -52,7 +52,7 @@ __memp_open(dbenv, create_ok)
 	reginfo.flags = REGION_JOIN_OK;
 	if (create_ok)
 		F_SET(&reginfo, REGION_CREATE_OK);
-	if ((ret = __db_r_attach(dbenv, &reginfo, reg_size)) != 0)
+	if ((ret = __env_region_attach(dbenv, &reginfo, reg_size)) != 0)
 		goto err;
 
 	/*
@@ -89,7 +89,7 @@ __memp_open(dbenv, create_ok)
 			dbmp->reginfo[i].type = REGION_TYPE_MPOOL;
 			dbmp->reginfo[i].id = INVALID_REGION_ID;
 			dbmp->reginfo[i].flags = REGION_CREATE_OK;
-			if ((ret = __db_r_attach(
+			if ((ret = __env_region_attach(
 			    dbenv, &dbmp->reginfo[i], reg_size)) != 0)
 				goto err;
 			if ((ret =
@@ -121,7 +121,7 @@ __memp_open(dbenv, create_ok)
 			dbmp->reginfo[i].type = REGION_TYPE_MPOOL;
 			dbmp->reginfo[i].id = regids[i];
 			dbmp->reginfo[i].flags = REGION_JOIN_OK;
-			if ((ret = __db_r_attach(
+			if ((ret = __env_region_attach(
 			    dbenv, &dbmp->reginfo[i], 0)) != 0)
 				goto err;
 		}
@@ -149,7 +149,7 @@ err:	dbenv->mp_handle = NULL;
 	if (dbmp->reginfo != NULL && dbmp->reginfo[0].addr != NULL) {
 		for (i = 0; i < dbmp->nreg; ++i)
 			if (dbmp->reginfo[i].id != INVALID_REGION_ID)
-				(void)__db_r_detach(
+				(void)__env_region_detach(
 				    dbenv, &dbmp->reginfo[i], 0);
 		__os_free(dbenv, dbmp->reginfo);
 	}
@@ -334,13 +334,13 @@ __memp_init_config(dbenv, mp)
 }
 
 /*
- * __memp_dbenv_refresh --
+ * __memp_env_refresh --
  *	Clean up after the mpool system on a close or failed open.
  *
- * PUBLIC: int __memp_dbenv_refresh __P((DB_ENV *));
+ * PUBLIC: int __memp_env_refresh __P((DB_ENV *));
  */
 int
-__memp_dbenv_refresh(dbenv)
+__memp_env_refresh(dbenv)
 	DB_ENV *dbenv;
 {
 	BH *bhp;
@@ -433,7 +433,8 @@ __memp_dbenv_refresh(dbenv)
 	/* Detach from the region. */
 	for (i = 0; i < dbmp->nreg; ++i) {
 		reginfo = &dbmp->reginfo[i];
-		if ((t_ret = __db_r_detach(dbenv, reginfo, 0)) != 0 && ret == 0)
+		if ((t_ret =
+		    __env_region_detach(dbenv, reginfo, 0)) != 0 && ret == 0)
 			ret = t_ret;
 	}
 

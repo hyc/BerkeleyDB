@@ -1,5 +1,5 @@
 /*-
- * $Id: brew_db.in,v 1.4 2006/11/09 14:13:51 bostic Exp $
+ * $Id: brew_db.in,v 1.5 2006/11/15 13:36:48 bostic Exp $
  *
  * The following provides the information necessary to build Berkeley DB
  * on BREW.
@@ -17,9 +17,9 @@
 /*
  * BREW doesn't have stdio.
  */
-#define EOF	(-1)			/* Declare stdio's EOF. */
+#define	EOF	(-1)			/* Declare stdio's EOF. */
 #define	stderr	((IFile *)1)		/* Flag to call DBGPRINTF. */
-#define	stdout	((IFile *)1)		
+#define	stdout	((IFile *)1)
 
 /*
  * POSIX time structure/function compatibility.
@@ -29,15 +29,15 @@
  * functionality into os/.
  */
 struct tm {
-        int tm_sec;     /* seconds after the minute - [0,59] */
-        int tm_min;     /* minutes after the hour - [0,59] */
-        int tm_hour;    /* hours since midnight - [0,23] */
-        int tm_mday;    /* day of the month - [1,31] */
-        int tm_mon;     /* months since January - [0,11] */
-        int tm_year;    /* years since 1900 */
-        int tm_wday;    /* days since Sunday - [0,6] */
-        int tm_yday;    /* days since January 1 - [0,365] */
-        int tm_isdst;   /* daylight savings time flag */
+	int tm_sec;     /* seconds after the minute - [0,59] */
+	int tm_min;     /* minutes after the hour - [0,59] */
+	int tm_hour;    /* hours since midnight - [0,23] */
+	int tm_mday;    /* day of the month - [1,31] */
+	int tm_mon;     /* months since January - [0,11] */
+	int tm_year;    /* years since 1900 */
+	int tm_wday;    /* days since Sunday - [0,6] */
+	int tm_yday;    /* days since January 1 - [0,365] */
+	int tm_isdst;   /* daylight savings time flag */
 	/*
 	 * We don't provide tm_zone or tm_gmtoff because BREW doesn't
 	 * provide them.
@@ -142,7 +142,9 @@ time_t	   time(time_t *);
 #define	FILE_MANAGER_ERR(dbenv, mgr, name, op, ret) do {		\
 	int __ret;							\
 	__ret = IFILEMGR_GetLastError(mgr);				\
-	__db_syserr(dbenv,						\
-	    __ret, (name) == NULL ? "%s" : "%s: %s", name, op);		\
+	if ((name) == NULL)						\
+		__db_syserr(dbenv, __ret, "%s", op);			\
+	else								\
+		__db_syserr(dbenv, __ret, "%s: %s", name, op);		\
 	(ret) = __os_posix_err(__ret);					\
 } while (0)

@@ -3215,7 +3215,7 @@ __dbcl_dbenv_init(dbenv)
 	    (int (*)(DB_ENV *, int *))
 	    __dbcl_dbenv_illegal;
 	dbenv->get_mp_max_write =
-	    (int (*)(DB_ENV *, int *, int *))
+	    (int (*)(DB_ENV *, int *, db_timeout_t *))
 	    __dbcl_dbenv_illegal;
 	dbenv->get_mp_mmapsize =
 	    (int (*)(DB_ENV *, size_t *))
@@ -3485,7 +3485,7 @@ __dbcl_dbenv_init(dbenv)
 	    (int (*)(DB_ENV *, int))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_mp_max_write =
-	    (int (*)(DB_ENV *, int, int))
+	    (int (*)(DB_ENV *, int, db_timeout_t))
 	    __dbcl_dbenv_illegal;
 	dbenv->set_mp_mmapsize =
 	    (int (*)(DB_ENV *, size_t))
