@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: ReplicationHostAddress.java,v 12.5 2006/11/01 00:53:30 bostic Exp $
+ * $Id: ReplicationHostAddress.java,v 12.7 2007/07/06 00:22:54 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -28,7 +28,13 @@ public class ReplicationHostAddress
         this(host, port, false, false);
     }
 
-    public ReplicationHostAddress(String host, int port, boolean isPeer, boolean isConnected)
+    public ReplicationHostAddress(String host, int port, boolean isPeer)
+    {
+        this(host, port, isPeer, false);
+    }
+
+    public ReplicationHostAddress(String host, int port,
+                                  boolean isPeer, boolean isConnected)
     {
         this.host = host;
         this.port = port;

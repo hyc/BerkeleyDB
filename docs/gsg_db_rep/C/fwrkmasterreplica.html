@@ -218,7 +218,7 @@ my_app_data.is_master = 0; /* Assume we start as a replica */
  * to it's app_private member.
  */
 if ((ret = db_env_create(&amp;dbenv, 0)) != 0 ) {
-    fprintf(stderr, &quot;Error creating handles: %s\n&quot;,
+    fprintf(stderr, "Error creating handles: %s\n",
         db_strerror(ret));
     goto err;
 }
@@ -259,7 +259,7 @@ event_callback(DB_ENV *dbenv, u_int32_t which, void *info)
         break;
 
     default:
-        dbenv-&gt;errx(dbenv, &quot;ignoring event %d&quot;, which);
+        dbenv-&gt;errx(dbenv, "ignoring event %d", which);
     }
 } </pre>
         <p>

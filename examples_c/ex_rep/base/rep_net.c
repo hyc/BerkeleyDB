@@ -1,13 +1,12 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2005 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: rep_net.c,v 12.13 2006/11/01 00:52:53 bostic Exp $
+ * $Id: rep_net.c,v 12.17 2007/05/17 17:29:27 bostic Exp $
  */
 
 #include <sys/types.h>
-#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +14,6 @@
 
 #include <db.h>
 #include "rep_base.h"
-#include "../common/rep_common.h"
 #ifndef _SYS_QUEUE_H
 /*
  * Some *BSD Unix variants include the Queue macros in their libraries and
@@ -339,7 +337,7 @@ listen_socket_init(progname, port)
 	 */
 	sockopt = 1;
 	setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
-	    (const char *)&sockopt, sizeof (sockopt));
+	    (const char *)&sockopt, sizeof(sockopt));
 
 	if (bind(s, (struct sockaddr *)&si, sizeof(si)) != 0) {
 		perror("can't bind listen socket");
@@ -638,9 +636,9 @@ quote_send(dbenv, control, rec, lsnp, eid, flags)
 		fprintf(stderr, "socket write error in send() function\n");
 
 	if ((t_ret = mutex_unlock(&machtab->mtmutex)) != 0) {
-	        dbenv->errx(dbenv, "can't unlock mutex");
-	        if (ret == 0)
-		        ret = t_ret;
+		dbenv->errx(dbenv, "can't unlock mutex");
+		if (ret == 0)
+			ret = t_ret;
 	}
 
 	return (ret);

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep054.tcl,v 1.13 2006/12/11 16:51:21 carol Exp $
+# $Id: rep054.tcl,v 1.16 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep054
 # TEST	Test of internal initialization where a far-behind
@@ -64,12 +64,12 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 	global util_path
 	global errorInfo
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 
@@ -129,6 +129,12 @@ proc rep054_sub { method nentries tnum logset recargs largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2} {$clientenv2 3}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$masterenv test force noarchive_timeout
 
 	# Run rep_test in the master and in each client.
 	puts "\tRep$tnum.a: Running rep_test in master & clients."

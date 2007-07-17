@@ -68,7 +68,7 @@ try {
 
     // Database and environment opens omitted
 
-    String replacementData = &quot;new data&quot;;
+    String replacementData = "new data";
 
     Transaction txn = myEnv.beginTransaction(null, null);
     Cursor cursor = null;
@@ -81,7 +81,7 @@ try {
         while(cursor.getNext(key, data, LockMode.DEFAULT) ==
            OperationStatus.SUCCESS) {
             
-            data.setData(replacementData.getBytes(&quot;UTF-8&quot;));
+            data.setData(replacementData.getBytes("UTF-8"));
             // No transaction handle is used on the cursor read or write
             // methods.
             cursor.putCurrent(data);

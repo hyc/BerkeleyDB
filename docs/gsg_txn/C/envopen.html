@@ -58,7 +58,7 @@
       <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -66,14 +66,14 @@ main(void)
     int ret, ret_c;
     u_int32_t env_flags;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
     
     envp = NULL;
 
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -87,7 +87,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -97,7 +97,7 @@ err:
     if (envp != NULL) {
         ret_c = envp-&gt;close(envp, 0);
         if (ret_c != 0) {
-            fprintf(stderr, &quot;environment close failed: %s\n&quot;,
+            fprintf(stderr, "environment close failed: %s\n",
                 db_strerror(ret_c));
             ret = ret_c;
         }
@@ -127,7 +127,7 @@ err:
       <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -136,8 +136,8 @@ main(void)
     u_int32_t <b class="userinput"><tt>db_flags,</tt></b> env_flags;
     <b class="userinput"><tt>DB *dbp;</tt></b>
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    <b class="userinput"><tt>const char *file_name = &quot;mydb.db&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    <b class="userinput"><tt>const char *file_name = "mydb.db";
     
     dbp = NULL;</tt></b>
     envp = NULL;
@@ -145,7 +145,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -159,7 +159,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -167,7 +167,7 @@ main(void)
     <b class="userinput"><tt>/* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database creation failed&quot;);
+        envp-&gt;err(envp, ret, "Database creation failed");
         goto err;
     }
 
@@ -180,7 +180,7 @@ main(void)
                     db_flags,   /* Open flags */
                     0);         /* File mode. Using defaults */
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database '%s' open failed&quot;,
+        envp-&gt;err(envp, ret, "Database '%s' open failed",
             file_name);
         goto err;
     }</tt></b>
@@ -191,7 +191,7 @@ err:
     if (dbp != NULL) {
         ret_c = dbp-&gt;close(dbp, 0);
         if (ret_c != 0) {
-            envp-&gt;err(envp, ret_c, &quot;Database close failed.&quot;);
+            envp-&gt;err(envp, ret_c, "Database close failed.");
             ret = ret_c
         }
     }</tt></b>
@@ -201,7 +201,7 @@ err:
     if (envp != NULL) {
         ret_c = envp-&gt;close(envp, 0);
         if (ret_c != 0) {
-            fprintf(stderr, &quot;environment close failed: %s\n&quot;,
+            fprintf(stderr, "environment close failed: %s\n",
                 db_strerror(ret_c));
             ret = ret_c;
         }

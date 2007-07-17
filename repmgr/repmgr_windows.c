@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_windows.c,v 1.17 2006/12/29 01:12:50 alanb Exp $
+ * $Id: repmgr_windows.c,v 1.22 2007/06/11 18:29:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -68,7 +68,8 @@ __repmgr_thread_join(thread)
 	return (GetLastError());
 }
 
-int __repmgr_set_nonblocking(s)
+int
+__repmgr_set_nonblocking(s)
 	SOCKET s;
 {
 	int ret;
@@ -602,6 +603,7 @@ handle_completion(dbenv, conn)
 	if ((ret = WSAEnumNetworkEvents(conn->fd, conn->event_object, &events))
 	    == SOCKET_ERROR) {
 		__db_err(dbenv, net_errno, "EnumNetworkEvents");
+		STAT(dbenv->rep_handle->region->mstat.st_connection_drop++);
 		ret = DB_REP_UNAVAIL;
 		goto err;
 	}
@@ -614,6 +616,8 @@ handle_completion(dbenv, conn)
 			__db_err(dbenv,
 			    events.iErrorCode[FD_CLOSE_BIT],
 			    "connection closed");
+			STAT(dbenv->rep_handle->
+			    region->mstat.st_connection_drop++);
 			ret = DB_REP_UNAVAIL;
 			goto err;
 		}
@@ -623,6 +627,8 @@ handle_completion(dbenv, conn)
 				__db_err(dbenv,
 				    events.iErrorCode[FD_WRITE_BIT],
 				    "error writing");
+				STAT(dbenv->rep_handle->
+				    region->mstat.st_connection_drop++);
 				ret = DB_REP_UNAVAIL;
 				goto err;
 			} else if ((ret =
@@ -635,6 +641,8 @@ handle_completion(dbenv, conn)
 				__db_err(dbenv,
 				    events.iErrorCode[FD_READ_BIT],
 				    "error reading");
+				STAT(dbenv->rep_handle->
+				    region->mstat.st_connection_drop++);
 				ret = DB_REP_UNAVAIL;
 				goto err;
 			} else if ((ret =
@@ -662,10 +670,8 @@ finish_connecting(dbenv, conn, events)
 	int ret/*, t_ret*/;
 /*	DWORD_PTR values[1]; */
 
-	if (!(events->lNetworkEvents & FD_CONNECT)) {
-		/* TODO: Is this even possible? */
+	if (!(events->lNetworkEvents & FD_CONNECT))
 		return (0);
-	}
 
 	F_CLR(conn, CONN_CONNECTING);
 
@@ -696,8 +702,10 @@ err:
 	eid = conn->eid;
 	DB_ASSERT(dbenv, IS_VALID_EID(eid));
 
-	if (ADDR_LIST_NEXT(&SITE_FROM_EID(eid)->net_addr) == NULL)
+	if (ADDR_LIST_NEXT(&SITE_FROM_EID(eid)->net_addr) == NULL) {
+		STAT(db_rep->region->mstat.st_connect_fail++);
 		return (DB_REP_UNAVAIL);
+	}
 
 	DB_ASSERT(dbenv, !TAILQ_EMPTY(&db_rep->connections));
 	__repmgr_cleanup_connection(dbenv, conn);

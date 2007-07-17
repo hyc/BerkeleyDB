@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: recd005.tcl,v 12.6 2006/11/01 00:53:54 bostic Exp $
+# $Id: recd005.tcl,v 12.7 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	recd005
 # TEST	Verify reuse of file ids works on catastrophic recovery.

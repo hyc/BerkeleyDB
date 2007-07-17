@@ -50,7 +50,7 @@
             (in-memory cache). Frequently, but not always, you will also 
             initialize the locking subsystem.  For example:
         </p>
-      <pre class="programlisting">#include &quot;db_cxx.h&quot;
+      <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -63,7 +63,7 @@ int main(void)
                           DB_INIT_MPOOL |  // Initialize the cache
                           DB_INIT_TXN;     // Initialize transactions
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -71,7 +71,7 @@ int main(void)
         myEnv.open(envHome.c_str(), env_flags, 0);
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database environment: &quot;
+        std::cerr &lt;&lt; "Error opening database environment: "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
         return (EXIT_FAILURE);
@@ -80,7 +80,7 @@ int main(void)
     try {
         myEnv.close(0);
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error closing database environment: &quot;
+        std::cerr &lt;&lt; "Error closing database environment: "
                 &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
         return (EXIT_FAILURE);
@@ -107,7 +107,7 @@ int main(void)
 
         
     </p>
-      <pre class="programlisting">#include &quot;db_cxx.h&quot;
+      <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -122,9 +122,9 @@ int main(void)
 
     <b class="userinput"><tt>u_int32_t db_flags = DB_CREATE | DB_AUTO_COMMIT;
     Db *dbp = NULL;
-    const char *file_name = &quot;mydb.db&quot;;</tt></b>
+    const char *file_name = "mydb.db";</tt></b>
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -139,8 +139,8 @@ int main(void)
                   0);         // File mode. Using defaults </tt></b>
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot;
+        std::cerr &lt;&lt; "Error opening database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
@@ -149,8 +149,8 @@ int main(void)
         <b class="userinput"><tt>dbp-&gt;close(0);</tt></b>
         myEnv.close(0);
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error closing database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot;
+        std::cerr &lt;&lt; "Error closing database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
         return (EXIT_FAILURE);

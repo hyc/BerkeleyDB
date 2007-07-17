@@ -52,6 +52,15 @@
         </a>
             </span>
           </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="keyCreator.html#multikeys">Working with Multiple Keys</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
           <dt>
             <span class="sect1">
               <a href="readSecondary.html">Reading Secondary Databases</a>
@@ -118,7 +127,7 @@
     people such as names, addresses, phone numbers, and so forth.
     While your application may frequently want to query a person by user
     ID (that is, by the information stored in the key), it may also on occasion
-    want to location people by, say, their name.
+    want to locate people by, say, their name.
   </p>
       <p>
     Rather than iterate through all of the records in your database, examining
@@ -259,7 +268,7 @@ Db my_index(NULL, 0);    // Secondary
 
 // Open the primary
 my_database.open(NULL,       // Transaction pointer
-                 &quot;my_db.db&quot;, // On-disk file that holds the database.
+                 "my_db.db", // On-disk file that holds the database.
                 NULL,        // Optional logical database name
                 DB_BTREE,    // Database access method
                 DB_CREATE,   // Open flags
@@ -271,7 +280,7 @@ my_index.set_flags(DB_DUPSORT);
 
 // Open the secondary
 my_index.open(NULL,              // Transaction pointer
-              &quot;my_secondary.db&quot;, // On-disk file that holds the database.
+              "my_secondary.db", // On-disk file that holds the database.
               NULL,              // Optional logical database name
               DB_BTREE,          // Database access method
               DB_CREATE,         // Open flags.

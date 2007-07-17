@@ -82,10 +82,10 @@ dbp-&gt;get_open_flags(dbp, &amp;open_flags); </pre>
 ...
 DB *dbp;
 
-/* Database open and subsequent operations omitted for clarity */
+/* Database handle creation omitted for clarity */
 
 dbp-&gt;remove(dbp,                   /* Database pointer */
-            &quot;mydb.db&quot;,             /* Database file to remove */
+            "mydb.db",             /* Database file to remove */
             NULL,                  /* Database to remove. This is
                                     * NULL so the entire file is
                                     * removed.  */
@@ -110,14 +110,14 @@ dbp-&gt;remove(dbp,                   /* Database pointer */
 ...
 DB *dbp;
 
-/* Database open and subsequent operations omitted for clarity */
+/* Database handle creation omitted for clarity */
 
 dbp-&gt;rename(dbp,                    /* Database pointer */
-             &quot;mydb.db&quot;,             /* Database file to rename */
+             "mydb.db",             /* Database file to rename */
              NULL,                  /* Database to rename. This is
                                      * NULL so the entire file is
                                      * renamed.  */
-            &quot;newdb.db&quot;,             /* New database file name */
+            "newdb.db",             /* New database file name */
             0);                     /* Flags. None used. */</pre>
           </li>
         </ul>

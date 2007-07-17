@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_put.c,v 12.23 2006/11/29 21:23:10 ubell Exp $
+ * $Id: bt_put.c,v 12.25 2007/05/25 15:37:48 bostic Exp $
  */
 
 #include "db_config.h"
@@ -83,7 +83,6 @@ __bam_iitem(dbc, key, data, op, flags)
 	int cmp, bigkey, bigdata, del, dupadjust;
 	int padrec, replace, ret, t_ret, was_deleted;
 
-	COMPQUIET(bk, NULL);
 	COMPQUIET(cnt, 0);
 
 	dbp = dbc->dbp;
@@ -253,13 +252,6 @@ __bam_iitem(dbc, key, data, op, flags)
 	cp->page = h;
 
 	/*
-	 * Recalculate this pointer -- the page pointer (h) may have
-	 * changed during the update.
-	 */
-	bk = GET_BKEYDATA(dbp, h,
-	    indx + (TYPE(h) == P_LBTREE ? O_INDX : 0));
-
-	/*
 	 * The code breaks it up into five cases:
 	 *
 	 * 1. Insert a new key/data pair.
@@ -323,9 +315,9 @@ __bam_iitem(dbc, key, data, op, flags)
 		if ((ret = __bam_ca_delete(dbp, PGNO(h), indx, 0, NULL)) != 0)
 			return (ret);
 
-		if (TYPE(h) == P_LBTREE) {
+		if (TYPE(h) == P_LBTREE)
 			++indx;
-		}
+		bk = GET_BKEYDATA(dbp, h, indx);
 
 		/*
 		 * In a Btree deleted records aren't counted (deleted records

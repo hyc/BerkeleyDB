@@ -1,18 +1,18 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: test093.tcl,v 12.6 2006/11/29 17:49:21 carol Exp $
+# $Id: test093.tcl,v 12.8 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	test093
 # TEST	Test set_bt_compare (btree key comparison function) and
-# TEST	set_h_compare (hash key comparison function). 
+# TEST	set_h_compare (hash key comparison function).
 # TEST
-# TEST	Open a database with a comparison function specified, 
+# TEST	Open a database with a comparison function specified,
 # TEST	populate, and close, saving a list with that key order as
 # TEST	we do so.  Reopen and read in the keys, saving in another
-# TEST	list; the keys should be in the order specified by the 
-# TEST	comparison function.  Sort the original saved list of keys 
+# TEST	list; the keys should be in the order specified by the
+# TEST	comparison function.  Sort the original saved list of keys
 # TEST	using the comparison function, and verify that it matches
 # TEST	the keys as read out of the database.
 
@@ -105,7 +105,7 @@ proc test093_run { method dbargs nentries tnum compflag cmpfunc sortfunc } {
 	set t3 $testdir/t3
 	set txn ""
 
-	# Use btvals to save the order of the keys as they are 
+	# Use btvals to save the order of the keys as they are
 	# written to the database.  The btvalsck variable will contain
 	# the values as sorted by the comparison function.
 	set btvals {}

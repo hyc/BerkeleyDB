@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mut_stat.c,v 12.24 2006/12/16 14:34:36 bostic Exp $
+ * $Id: mut_stat.c,v 12.26 2007/05/17 17:18:01 bostic Exp $
  */
 
 #include "db_config.h"
@@ -115,7 +115,6 @@ __mutex_stat_print_pp(dbenv, flags)
 	ENV_LEAVE(dbenv, ip);
 	return (ret);
 }
-
 
 /*
  * __mutex_stat_print

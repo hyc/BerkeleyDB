@@ -107,7 +107,7 @@
               <p>
                     No permanent message acknowledgments are required. If
                     this policy is selected, permanent message handling is
-                    essentially &quot;turned off.&quot; That is, the master will
+                    essentially "turned off." That is, the master will
                     never wait for replica acknowledgments. In this case,
                     transaction log data is either flushed or not strictly
                     depending on the type of commit that is being performed
@@ -310,26 +310,26 @@
 
     if ((ret = dbenv.repmgr_set_local_site(app_config-&gt;this_host.host,
         app_config-&gt;this_host.port, 0)) != 0) {
-        cerr &lt;&lt; &quot;Could not set listen address to host:port &quot;
-             &lt;&lt; app_config-&gt;this_host.host &lt;&lt; &quot;:&quot;
+        cerr &lt;&lt; "Could not set listen address to host:port "
+             &lt;&lt; app_config-&gt;this_host.host &lt;&lt; ":"
              &lt;&lt; app_config-&gt;this_host.port
-             &lt;&lt; &quot;error: &quot; &lt;&lt; ret &lt;&lt; endl;
+             &lt;&lt; "error: " &lt;&lt; ret &lt;&lt; endl;
     }
 
     for ( REP_HOST_INFO *cur = app_config-&gt;other_hosts; cur != NULL;
         cur = cur-&gt;next) {
         if ((ret = dbenv.repmgr_add_remote_site(cur-&gt;host, cur-&gt;port,
                                                 0)) != 0) {
-                cerr &lt;&lt; &quot;could not add site.&quot; &lt;&lt; endl
+                cerr &lt;&lt; "could not add site." &lt;&lt; endl
         }
     }
 
     if (app_config-&gt;totalsites &gt; 0) {
         try {
             if ((ret = dbenv.rep_set_nsites(app_config-&gt;totalsites)) != 0)
-                dbenv.err(ret, &quot;set_nsites&quot;);
+                dbenv.err(ret, "set_nsites");
         } catch (DbException dbe) {
-            cerr &lt;&lt; &quot;rep_set_nsites call failed. Continuing.&quot; &lt;&lt; endl;
+            cerr &lt;&lt; "rep_set_nsites call failed. Continuing." &lt;&lt; endl;
         }
     }
 

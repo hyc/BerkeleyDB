@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1998,2007 Oracle.  All rights reserved.
  *
- * $Id: region.h,v 12.12 2006/11/16 16:44:54 bostic Exp $
+ * $Id: region.h,v 12.14 2007/05/17 15:15:05 bostic Exp $
  */
 
 #ifndef _DB_REGION_H_
@@ -263,11 +263,17 @@ struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 	(F_ISSET((reginfop)->dbenv, DB_ENV_PRIVATE) ? (roff_t)(p) :	\
 	(roff_t)((u_int8_t *)(p) - (u_int8_t *)(reginfop)->addr))
 
-/* PANIC_CHECK:	Check to see if the DB environment is dead. */
-#define	PANIC_CHECK(dbenv)						\
-	if ((dbenv)->reginfo != NULL && ((REGENV *)			\
+/*
+ * PANIC_ISSET, PANIC_CHECK:
+ *	Check to see if the DB environment is dead.
+ */
+#define	PANIC_ISSET(dbenv)						\
+	((dbenv)->reginfo != NULL && ((REGENV *)			\
 	    ((REGINFO *)(dbenv)->reginfo)->primary)->panic != 0 &&	\
-	    !F_ISSET((dbenv), DB_ENV_NOPANIC))				\
+	    !F_ISSET((dbenv), DB_ENV_NOPANIC))
+
+#define	PANIC_CHECK(dbenv)						\
+	if (PANIC_ISSET(dbenv))						\
 		return (__db_panic_msg(dbenv));
 
 #if defined(__cplusplus)

@@ -50,11 +50,11 @@ public class ClosedDbTest {
         dbConf.setType(DatabaseType.BTREE);
         dbConf.setAllowCreate(true);
         Database db = new Database(TestUtils.getDBFileName(CLOSEDDBTEST_DBNAME), null, dbConf);
-        
+     
     	DatabaseEntry key = new DatabaseEntry("key".getBytes());
     	DatabaseEntry data = new DatabaseEntry("data".getBytes());
     	db.putNoOverwrite(null, key, data);
-    	
+  
     	// Now, retrieve. It would be possible to reuse the
     	// same key object, but that would be a-typical.
     	DatabaseEntry getkey = new DatabaseEntry("key".getBytes());
@@ -63,11 +63,11 @@ public class ClosedDbTest {
     	getdata.setReuseBuffer(false); // TODO: is this enabling DB_DBT_MALLOC?
 
         int ret;
-        
+     
         // close the db - subsequent operations should fail by throwing
         // an exception.
     	db.close();
-    	
+  
     	try {
     	    db.get(null, getkey, getdata, LockMode.DEFAULT);
     	    fail("Database get on a closed Db should not have completed.");

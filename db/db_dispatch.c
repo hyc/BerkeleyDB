@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_dispatch.c,v 12.32 2007/01/22 00:29:59 alexg Exp $
+ * $Id: db_dispatch.c,v 12.37 2007/05/17 15:14:56 bostic Exp $
  */
 
 #include "db_config.h"
@@ -53,7 +53,7 @@ static int __db_limbo_fix __P((DB *, DB_TXN *,
 static int __db_limbo_bucket __P((DB_ENV *,
 	     DB_TXN *, DB_TXNLIST *, db_limbo_state));
 static int __db_limbo_move __P((DB_ENV *, DB_TXN *, DB_TXN *, DB_TXNLIST *));
-static int __db_limbo_prepare __P(( DB *, DB_TXN *, DB_TXNLIST *));
+static int __db_limbo_prepare __P((DB *, DB_TXN *, DB_TXNLIST *));
 static int __db_lock_move __P((DB_ENV *,
 		u_int8_t *, db_pgno_t, db_lockmode_t, DB_TXN *, DB_TXN *));
 static int __db_txnlist_pgnoadd __P((DB_ENV *, DB_TXNHEAD *,
@@ -413,6 +413,21 @@ __db_txnlist_init(dbenv, low_txn, hi_txn, trunc_lsn, retp)
 	return (0);
 }
 
+#define	FIND_GENERATION(hp, txnid, gen) do {				\
+	u_int32_t __i;							\
+	for (__i = 0; __i <= (hp)->generation; __i++)			\
+		/* The range may wrap around the end. */		\
+		if ((hp)->gen_array[__i].txn_min <			\
+		    (hp)->gen_array[__i].txn_max ?			\
+		    ((txnid) >= (hp)->gen_array[__i].txn_min &&		\
+		    (txnid) <= (hp)->gen_array[__i].txn_max) :		\
+		    ((txnid) >= (hp)->gen_array[__i].txn_min ||		\
+		    (txnid) <= (hp)->gen_array[__i].txn_max))		\
+			break;						\
+	DB_ASSERT(dbenv, __i <= (hp)->generation);			\
+	gen = (hp)->gen_array[__i].generation;				\
+} while (0)
+
 /*
  * __db_txnlist_add --
  *	Add an element to our transaction linked list.
@@ -435,10 +450,11 @@ __db_txnlist_add(dbenv, hp, txnid, status, lsn)
 
 	LIST_INSERT_HEAD(&hp->head[DB_TXNLIST_MASK(hp, txnid)], elp, links);
 
+	/* Find the most recent generation containing this ID */
+	FIND_GENERATION(hp, txnid, elp->u.t.generation);
 	elp->type = TXNLIST_TXNID;
 	elp->u.t.txnid = txnid;
 	elp->u.t.status = status;
-	elp->u.t.generation = hp->generation;
 	if (txnid > hp->maxid)
 		hp->maxid = txnid;
 	if (lsn != NULL && IS_ZERO_LSN(hp->maxlsn) && status == TXN_COMMIT)
@@ -626,7 +642,7 @@ __db_txnlist_find_internal(dbenv,
 {
 	struct __db_headlink *head;
 	DB_TXNLIST *p;
-	u_int32_t generation, hash, i;
+	u_int32_t generation, hash;
 	int ret;
 
 	ret = 0;
@@ -637,18 +653,7 @@ __db_txnlist_find_internal(dbenv,
 	switch (type) {
 	case TXNLIST_TXNID:
 		hash = txnid;
-		/* Find the most recent generation containing this ID */
-		for (i = 0; i <= hp->generation; i++)
-			/* The range may wrap around the end. */
-			if (hp->gen_array[i].txn_min <
-			    hp->gen_array[i].txn_max ?
-			    (txnid >= hp->gen_array[i].txn_min &&
-			    txnid <= hp->gen_array[i].txn_max) :
-			    (txnid >= hp->gen_array[i].txn_min ||
-			    txnid <= hp->gen_array[i].txn_max))
-				break;
-		DB_ASSERT(dbenv, i <= hp->generation);
-		generation = hp->gen_array[i].generation;
+		FIND_GENERATION(hp, txnid, generation);
 		break;
 	case TXNLIST_PGNO:
 		memcpy(&hash, uid, sizeof(hash));
@@ -992,11 +997,11 @@ __db_lock_move(dbenv, fileid, pgno, mode, ptxn, txn)
 	lock_dbt.size = sizeof(lock_obj);
 
 	if ((ret = __lock_get(dbenv,
-	    txn->txnid, 0, &lock_dbt, mode, &lock)) == 0) {
+	    txn->locker, 0, &lock_dbt, mode, &lock)) == 0) {
 		memset(&req, 0, sizeof(req));
 		req.lock = lock;
 		req.op = DB_LOCK_TRADE;
-		ret = __lock_vec(dbenv, ptxn->txnid, 0, &req, 1, NULL);
+		ret = __lock_vec(dbenv, ptxn->locker, 0, &req, 1, NULL);
 	}
 	return (ret);
 }

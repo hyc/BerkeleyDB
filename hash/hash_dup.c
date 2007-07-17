@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_dup.c,v 12.20 2006/11/29 21:23:16 ubell Exp $
+ * $Id: hash_dup.c,v 12.25 2007/05/17 17:18:00 bostic Exp $
  */
 
 /*
@@ -220,7 +220,7 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 		default:
 			return (__db_unknown_path(dbenv, "__ham_add_dup"));
 		}
-		ret = __hamc_update(dbc, tmp_val.size, 1, 1);
+		ret = __hamc_update(dbc, tmp_val.size, DB_HAM_CURADJ_ADD, 1);
 		return (ret);
 	}
 
@@ -455,8 +455,9 @@ __ham_check_move(dbc, add_len)
 	PAGE *next_pagep;
 	db_pgno_t next_pgno;
 	u_int32_t new_datalen, old_len, rectype;
+	db_indx_t new_indx;
 	u_int8_t *hk;
-	int ret, t_ret;
+	int key_type, match, ret, t_ret;
 
 	dbp = dbc->dbp;
 	mpf = dbp->mpf;
@@ -552,12 +553,19 @@ __ham_check_move(dbc, add_len)
 			rectype |= PAIR_KEYMASK;
 			k.data = H_PAIRKEY(dbp, hcp->page, hcp->indx);
 			k.size = HOFFPAGE_SIZE;
+			key_type = H_OFFPAGE;
 		} else {
 			k.data =
 			    HKEYDATA_DATA(H_PAIRKEY(dbp, hcp->page, hcp->indx));
 			k.size =
 			    LEN_HKEY(dbp, hcp->page, dbp->pgsize, hcp->indx);
+			key_type = H_KEYDATA;
 		}
+
+		/* Resolve the insert index so it can be written to the log. */
+		if ((ret = __ham_getindex(dbp, dbc->txn, next_pagep, &k,
+		    key_type, &match, &new_indx)) != 0)
+			return (ret);
 
 		if (HPAGE_PTYPE(hk) == H_OFFPAGE) {
 			rectype |= PAIR_DATAMASK;
@@ -575,13 +583,22 @@ __ham_check_move(dbc, add_len)
 
 		if ((ret = __ham_insdel_log(dbp,
 		    dbc->txn, &new_lsn, 0, rectype, PGNO(next_pagep),
-		    (u_int32_t)NUM_ENT(next_pagep), &LSN(next_pagep),
+		    (u_int32_t)new_indx, &LSN(next_pagep),
 		    &k, &d)) != 0) {
 			(void)__memp_fput(mpf, next_pagep, dbc->priority);
 			return (ret);
 		}
-	} else
+	} else {
 		LSN_NOT_LOGGED(new_lsn);
+		/*
+		 * Ensure that an invalid index is passed to __ham_copypair, so
+		 * it knows to resolve the index. Resolving the insert index
+		 * here would require creating a temporary DBT with the key,
+		 * and calling __ham_getindex. Let __ham_copypair do the
+		 * resolution using the final key DBT.
+		 */
+		new_indx = NDX_INVALID;
+	}
 
 	/* Move lsn onto page. */
 	if ((ret = __memp_dirty(mpf,
@@ -591,16 +608,17 @@ __ham_check_move(dbc, add_len)
 	}
 	LSN(next_pagep) = new_lsn;	/* Structure assignment. */
 
-	__ham_copy_item(dbp, hcp->page, H_KEYINDEX(hcp->indx), next_pagep);
-	__ham_copy_item(dbp, hcp->page, H_DATAINDEX(hcp->indx), next_pagep);
+	if ((ret = __ham_copypair(dbp, dbc->txn, hcp->page,
+	    H_KEYINDEX(hcp->indx), next_pagep, &new_indx)) != 0)
+	    goto out;
 
 	/* Update all cursors that used to point to this item. */
 	if ((ret = __hamc_chgpg(dbc, PGNO(hcp->page), H_KEYINDEX(hcp->indx),
-	    PGNO(next_pagep), NUM_ENT(next_pagep) - 2)) != 0)
+	    PGNO(next_pagep), new_indx)) != 0)
 		goto out;
 
 	/* Now delete the pair from the current page. */
-	ret = __ham_del_pair(dbc, 0);
+	ret = __ham_del_pair(dbc, HAM_DEL_NO_RECLAIM);
 
 	/*
 	 * __ham_del_pair decremented nelem.  This is incorrect;  we
@@ -620,7 +638,7 @@ out:	if ((t_ret =
 		ret = t_ret;
 	hcp->page = next_pagep;
 	hcp->pgno = PGNO(hcp->page);
-	hcp->indx = NUM_ENT(hcp->page) - 2;
+	hcp->indx = new_indx;
 	F_SET(hcp, H_EXPAND);
 	F_CLR(hcp, H_DELETED);
 

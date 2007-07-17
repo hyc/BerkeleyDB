@@ -31,7 +31,7 @@ public class EncryptTest {
     }
 
     @Before public void PerTestInit()
-        throws Exception { 
+        throws Exception {
         TestUtils.check_file_removed(TestUtils.getDBFileName(ENCRYPTTEST_DBNAME), true, true);
     }
 
@@ -55,17 +55,17 @@ public class EncryptTest {
         DatabaseConfig dbConf = new DatabaseConfig();
         dbConf.setType(DatabaseType.BTREE);
         dbConf.setAllowCreate(true);
-        
+     
         Database db = new Database(TestUtils.getDBFileName(ENCRYPTTEST_DBNAME), null, dbConf);
 
         DatabaseEntry key = new DatabaseEntry("key".getBytes("UTF-8"));
         DatabaseEntry data = new DatabaseEntry("data".getBytes("UTF-8"));
-        
+     
         db.put(null, key, data);
-        
+     
         db.close();
         //try { Thread.sleep(10000); } catch(InterruptedException e) {}
-        
+     
         if(!findData("key"))
             fail("Did not find the un-encrypted value in the database file after close");
     }
@@ -81,17 +81,17 @@ public class EncryptTest {
         dbConf.setAllowCreate(true);
         dbConf.setEncrypted("password");
         dbConf.setErrorStream(System.err);
-        
+     
         Database db = new Database(TestUtils.getDBFileName(ENCRYPTTEST_DBNAME), null, dbConf);
-        
+     
         DatabaseEntry key = new DatabaseEntry("key".getBytes("UTF-8"));
         DatabaseEntry data = new DatabaseEntry("data".getBytes("UTF-8"));
-        
+     
         db.put(null, key, data);
-        
+     
         db.sync();
         db.close();
-        
+     
         if (findData("key"))
             fail("Found the un-encrypted value in an encrypted database file after close");
     }
@@ -110,7 +110,7 @@ public class EncryptTest {
             byte[] buf  = new byte[(int)f.length()];
             fin.read(buf, 0, (int)f.length());
             fin.close();
-            
+         
             TestUtils.DEBUGOUT(1, "EncryptTest findData file length: " + buf.length);
             byte firstbyte = (toFind.getBytes("UTF-8"))[0];
             // buf can contain non-ascii characters, so no easy string search

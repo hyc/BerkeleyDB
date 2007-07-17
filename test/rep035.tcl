@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep035.tcl,v 12.12 2006/12/07 19:37:44 carol Exp $
+# $Id: rep035.tcl,v 12.17 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  	rep035
 # TEST	Test sync-up recovery in replication.
@@ -48,12 +48,12 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 	source ./include.tcl
 	global testdir
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -108,6 +108,12 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 	set envlist "{$env1 1} {$env2 2} {$env3 3}"
 	process_msgs $envlist
 
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$env1 test force noarchive_timeout
+
 	# We need to fork off 3 child tclsh processes to operate
 	# on Site 3's (client always) home directory:
 	#	Process 1 continually calls lock_detect (DB_LOCK_DEFAULT)
@@ -135,6 +141,11 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 	    rep035script.tcl $testdir/log_archive.log \
 	    $clientdir2 archive &]
 
+	# Pause a bit to let the children get going.
+	tclsleep 5
+
+	set logfilelist [list lock_detect.log \
+	    txn_checkpoint.log memp_trickle.log log_archive.log]
 	set pidlist [list $pid1 $pid2 $pid3 $pid4]
 
 	#
@@ -225,8 +236,18 @@ proc rep035_sub { method niter tnum envargs logset largs } {
 	    -create -btree -auto_commit -env $markerenv marker.db"]
 	error_check_good marker_close [$marker close] 0
 
-	# Script should be able to shut itself down fairly quickly.
-	watch_procs $pidlist 5
+	# Wait for child processes; they should shut down quickly.
+	watch_procs $pidlist 1
+
+	# There should not be any messages in the log files.
+	# If there are, print them out.
+	foreach file $logfilelist {
+		puts "\tRep$tnum.f: Checking $file for errors."
+		set fd [open $testdir/$file r]
+		while { [gets $fd str] != -1 } {
+			error "FAIL: found message $str"
+		}
+	}
 
 	error_check_good masterdb [$masterdb close] 0
 	error_check_good clientdb [$clientdb close] 0

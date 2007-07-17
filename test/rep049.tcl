@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep049.tcl,v 12.14 2006/12/07 19:37:44 carol Exp $
+# $Id: rep049.tcl,v 12.17 2007/05/17 19:33:06 bostic Exp $
 #
 # TEST	rep049
 # TEST	Replication and delay syncing clients - basic test.
@@ -41,7 +41,7 @@ proc rep049 { method { niter 10 } { tnum "049" } args } {
 				continue
 			}
 			puts "Rep$tnum ($r):\
-			    Replication and ($method) delayed syncup."
+			    Replication and ($method) delayed sync-up."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Swap Client logs are [lindex $l 1]"
 			puts "Rep$tnum: Delay Client logs are [lindex $l 2]"
@@ -55,12 +55,12 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -170,7 +170,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	#
 	rep_verify $env2dir $env2 $delaycldir $dcenv
 
-	puts "\tRep$tnum.f: Run rep_test after syncup in new master env"
+	puts "\tRep$tnum.f: Run rep_test after sync-up in new master env"
 	set start [expr $start + $niter]
 	eval rep_test $method $env2 NULL $niter $start $start 0 0 $largs
 	process_msgs $envlist

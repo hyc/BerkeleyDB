@@ -106,7 +106,7 @@ private:
     </p>
         <a id="cxx_db12"></a>
         <pre class="programlisting">// File: MyDb.cpp
-#include &quot;MyDb.hpp&quot;
+#include "MyDb.hpp"
 
 // Class constructor. Requires a path to the location
 // where the database is located, and a database name
@@ -128,12 +128,12 @@ MyDb::MyDb(std::string &amp;path, std::string &amp;dbName)
     // need to catch them both.
     catch(DbException &amp;e)
     {
-        std::cerr &lt;&lt; &quot;Error opening database: &quot; &lt;&lt; dbFileName_ &lt;&lt; &quot;\n&quot;;
+        std::cerr &lt;&lt; "Error opening database: " &lt;&lt; dbFileName_ &lt;&lt; "\n";
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
     catch(std::exception &amp;e)
     {
-        std::cerr &lt;&lt; &quot;Error opening database: &quot; &lt;&lt; dbFileName_ &lt;&lt; &quot;\n&quot;;
+        std::cerr &lt;&lt; "Error opening database: " &lt;&lt; dbFileName_ &lt;&lt; "\n";
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
 }</pre>
@@ -152,17 +152,17 @@ MyDb::close()
     try
     {
         db_.close(0);
-        std::cout &lt;&lt; &quot;Database &quot; &lt;&lt; dbFileName_
-                  &lt;&lt; &quot; is closed.&quot; &lt;&lt; std::endl;
+        std::cout &lt;&lt; "Database " &lt;&lt; dbFileName_
+                  &lt;&lt; " is closed." &lt;&lt; std::endl;
     }
     catch(DbException &amp;e)
     {
-        std::cerr &lt;&lt; &quot;Error closing database: &quot; &lt;&lt; dbFileName_ &lt;&lt; &quot;\n&quot;;
+        std::cerr &lt;&lt; "Error closing database: " &lt;&lt; dbFileName_ &lt;&lt; "\n";
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
     catch(std::exception &amp;e)
     {
-        std::cerr &lt;&lt; &quot;Error closing database: &quot; &lt;&lt; dbFileName_ &lt;&lt; &quot;\n&quot;;
+        std::cerr &lt;&lt; "Error closing database: " &lt;&lt; dbFileName_ &lt;&lt; "\n";
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
 } </pre>

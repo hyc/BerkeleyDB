@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006 Oracle.  All rights reserved.
+ * Copyright (c) 2006,2007 Oracle.  All rights reserved.
  *
- * $Id: rep_common.c,v 12.17 2007/01/18 17:37:48 alanb Exp $
+ * $Id: rep_common.c,v 12.20 2007/05/17 17:29:27 bostic Exp $
  */
 
 #include <errno.h>
@@ -19,46 +19,12 @@
 #define	SLEEPTIME	3
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
+#define	WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #define	sleep(s)		Sleep(1000 * (s))
 #endif
 
-static void event_callback __P((DB_ENV *, u_int32_t, void *));
 static int print_stocks __P((DB *));
-
-static void
-event_callback(dbenv, which, info)
-	DB_ENV *dbenv;
-	u_int32_t which;
-	void *info;
-{
-	APP_DATA *app = dbenv->app_private;
-
-	info = NULL;				/* Currently unused. */
-
-	switch (which) {
-	case DB_EVENT_REP_MASTER:
-		app->is_master = 1;
-		break;
-
-	case DB_EVENT_REP_CLIENT:
-		app->is_master = 0;
-		break;
-
-	case DB_EVENT_REP_PERM_FAILED:
-		printf("insufficient acks\n");
-		break;
-
-	case DB_EVENT_REP_STARTUPDONE: /* FALLTHROUGH */
-	case DB_EVENT_REP_NEWMASTER:
-		/* I don't care about these, for now. */
-		break;
-
-	default:
-		dbenv->errx(dbenv, "ignoring event %d", which);
-	}
-}
 
 static int
 print_stocks(dbp)
@@ -72,7 +38,7 @@ print_stocks(dbp)
 	int ret, t_ret;
 	u_int32_t keysize, datasize;
 
- 	if ((ret = dbp->cursor(dbp, NULL, &dbc, 0)) != 0) {
+	if ((ret = dbp->cursor(dbp, NULL, &dbc, 0)) != 0) {
 		dbp->err(dbp, ret, "can't open cursor");
 		return (ret);
 	}
@@ -115,9 +81,9 @@ print_stocks(dbp)
 #define	BUFSIZE 1024
 
 int
-doloop(dbenv, app_data)
+doloop(dbenv, shared_data)
 	DB_ENV *dbenv;
-	APP_DATA *app_data;
+	SHARED_DATA *shared_data;
 {
 	DB *dbp;
 	DBT key, data;
@@ -132,12 +98,12 @@ doloop(dbenv, app_data)
 
 	for (;;) {
 		printf("QUOTESERVER%s> ",
-		    app_data->is_master ? "" : " (read-only)");
+		    shared_data->is_master ? "" : " (read-only)");
 		fflush(stdout);
-		
+
 		if (fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
-		
+
 #define	DELIM " \t\n"
 		if ((first = strtok(&buf[0], DELIM)) == NULL) {
 			/* Blank input line. */
@@ -151,7 +117,7 @@ doloop(dbenv, app_data)
 			continue;
 		} else {
 			/* Normal two-token input line. */
-			if (first != NULL && !app_data->is_master) {
+			if (first != NULL && !shared_data->is_master) {
 				dbenv->errx(dbenv, "Can't update at client");
 				continue;
 			}
@@ -166,7 +132,7 @@ doloop(dbenv, app_data)
 				goto err;
 
 			flags = DB_AUTO_COMMIT;
-			if (app_data->is_master)
+			if (shared_data->is_master)
 				flags |= DB_CREATE;
 			if ((ret = dbp->open(dbp,
 			    NULL, DATABASE, NULL, DB_BTREE, flags, 0)) != 0) {
@@ -200,10 +166,10 @@ doloop(dbenv, app_data)
 		else {
 			key.data = first;
 			key.size = (u_int32_t)strlen(first);
-			
+
 			data.data = price;
 			data.size = (u_int32_t)strlen(price);
-			
+
 			if ((ret = dbp->put(dbp,
 				 NULL, &key, &data, DB_AUTO_COMMIT)) != 0) {
 				dbp->err(dbp, ret, "DB->put");
@@ -234,12 +200,10 @@ create_env(progname, dbenvp)
 
 	dbenv->set_errfile(dbenv, stderr);
 	dbenv->set_errpfx(dbenv, progname);
-	(void)dbenv->set_event_notify(dbenv, event_callback);
 
 	*dbenvp = dbenv;
 	return (0);
 }
-
 
 /* Open and configure an environment. */
 int
@@ -266,10 +230,10 @@ env_init(dbenv, home)
  * in the system would be maintained in some sort of configuration file.  The
  * critical part of this interface is that we assume at startup that we can
  * find out
- * 	1) what host/port we wish to listen on for connections,
- * 	2) a (possibly empty) list of other sites we should attempt to connect
- * 	to; and
- * 	3) what our Berkeley DB home environment is.
+ *	1) what host/port we wish to listen on for connections,
+ *	2) a (possibly empty) list of other sites we should attempt to connect
+ *	to; and
+ *	3) what our Berkeley DB home environment is.
  *
  * These pieces of information are expressed by the following flags.
  * -m host:port (required; m stands for me)
@@ -291,4 +255,3 @@ usage(progname)
 	    "[-n nsites][-p priority]\n");
 	exit(EXIT_FAILURE);
 }
-

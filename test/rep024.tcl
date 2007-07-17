@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep024.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
+# $Id: rep024.tcl,v 12.14 2007/06/14 18:12:56 alanb Exp $
 #
 # TEST  	rep024
 # TEST	Replication page allocation / verify test
@@ -54,12 +54,12 @@ proc rep024 { method { niter 1000 } { tnum "024" } args } {
 proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -159,6 +159,8 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 		puts "\tRep$tnum.d: Swap master and client ($option)."
 		set newmasterenv [eval $env_cmd(2) -rep_master]
 		set newclientenv [eval $env_cmd(1) -rep_client]
+		set newmasterdir [$newmasterenv get_home]
+		set newclientdir [$newclientenv get_home]
 		set envlist "{$newmasterenv 2} {$newclientenv 1}"
 		process_msgs $envlist
 		if { $option == "add new data" } {
@@ -177,6 +179,17 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 			process_msgs $envlist
 		}
 		puts "\tRep$tnum.e: Close master and client, run verify."
+		#
+		# Verify_dir will db_verify with its own private environment,
+		# which means any dirty pages still in our environment won't be
+		# noticed.  So, make sure there are no dirty pages.  Running
+		# checkpoint at the master flushes its cache, and replicating
+		# that checkpoint to the client makes the client flush its
+		# cache.
+		# 
+		$newmasterenv txn_checkpoint
+  		process_msgs $envlist
+
 		error_check_good newmasterenv_close [$newmasterenv close] 0
 		error_check_good newclientenv_close [$newclientenv close] 0
 		if { $newpages <= 0 } {
@@ -186,9 +199,9 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 		# This test can leave unreferenced pages on systems without
 		# FTRUNCATE and that's OK, so set unref to 0.
 		error_check_good verify \
-		    [verify_dir $masterdir "\tRep$tnum.f: " 0 0 1 0 0] 0
+		    [verify_dir $newmasterdir "\tRep$tnum.f: " 0 0 1 0 0] 0
 		error_check_good verify \
-		    [verify_dir $clientdir "\tRep$tnum.g: " 0 0 1 0 0] 0
+		    [verify_dir $newclientdir "\tRep$tnum.g: " 0 0 1 0 0] 0
 	}
 	replclose $testdir/MSGQUEUEDIR
 }

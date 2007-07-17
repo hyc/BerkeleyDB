@@ -218,7 +218,7 @@ isMaster = false;
 // we must identify the class that is the event handler. In this
 // example, we are performing this from within the class that 
 // implements com.sleepycat.db.EventHandler so we identify
-// &quot;this&quot; class as the event handler
+// "this" class as the event handler
 envConfig.setEventHandler(this); </pre>
         <p>
         That done, we still need to implement the <tt class="methodname">handleEvent</tt>
@@ -234,7 +234,7 @@ envConfig.setEventHandler(this); </pre>
         else if (event == EventType.REP_NEW_MASTER) {
             // ignored for now.
         } else {
-            System.err.println(&quot;Unknown event callback received.\n&quot;);
+            System.err.println("Unknown event callback received.\n");
             ret = 1;
         }
         return ret;

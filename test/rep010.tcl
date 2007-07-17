@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003,2006 Oracle.  All rights reserved.
+# Copyright (c) 2003,2007 Oracle.  All rights reserved.
 #
-# $Id: rep010.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
+# $Id: rep010.tcl,v 12.14 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  rep010
 # TEST	Replication and ISPERM
@@ -52,12 +52,12 @@ proc rep010_sub { method niter tnum logset recargs largs } {
 	berkdb srand $rand_init
 	global perm_sent_list
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 
@@ -95,8 +95,11 @@ proc rep010_sub { method niter tnum logset recargs largs } {
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
 
-	# Bring the client online.
-	rep010_process_msgs $masterenv $clientenv 1
+	# Bring the client online.  Since that now involves internal init, we
+	# have to avoid the special rep010_process_msgs here, because otherwise
+	# we would hang trying to open a log cursor.
+	#
+	process_msgs "{$masterenv 1} {$clientenv 2}"
 
 	# Open database in master, propagate to client.
 	set dbname rep010.db

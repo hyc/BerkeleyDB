@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: sijointest.tcl,v 12.5 2006/11/01 00:54:00 bostic Exp $
+# $Id: sijointest.tcl,v 12.6 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	sijointest: Secondary index and join test.
 # TEST 	This used to be si005.tcl.

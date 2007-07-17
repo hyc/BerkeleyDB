@@ -108,6 +108,16 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 		    repjoinfailex_class, repjoinfailex_construct,
 		    jmsg, err, jdbenv);
 
+	case DB_REP_LEASE_EXPIRED:
+		return (jthrowable)(*jenv)->NewObject(jenv,
+		    repleaseexpiredex_class, repleaseexpiredex_construct,
+		    jmsg, err, jdbenv);
+
+	case DB_REP_LEASE_TIMEOUT:
+		return (jthrowable)(*jenv)->NewObject(jenv,
+		    repleasetimeoutex_class, repleasetimeoutex_construct,
+		    jmsg, err, jdbenv);
+
 	case DB_REP_LOCKOUT:
 		return (jthrowable)(*jenv)->NewObject(jenv,
 		    replockoutex_class, replockoutex_construct,

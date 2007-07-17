@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: StoredMap.java,v 12.8 2006/11/01 00:53:27 bostic Exp $
+ * $Id: StoredMap.java,v 12.9 2007/05/04 00:28:25 mark Exp $
  */
 
 package com.sleepycat.collections;
@@ -89,7 +89,7 @@ public class StoredMap extends StoredContainer implements Map {
      * com.sleepycat.db.DatabaseException} is thrown.
      */
     public StoredMap(Database database, EntryBinding keyBinding,
-                     EntryBinding valueBinding,
+                     EntryBinding valueBinding, 
                      PrimaryKeyAssigner keyAssigner) {
 
         super(new DataView(database, keyBinding, valueBinding, null,
@@ -147,7 +147,7 @@ public class StoredMap extends StoredContainer implements Map {
      * com.sleepycat.db.DatabaseException} is thrown.
      */
     public StoredMap(Database database, EntryBinding keyBinding,
-                     EntityBinding valueEntityBinding,
+                     EntityBinding valueEntityBinding, 
                      PrimaryKeyAssigner keyAssigner) {
 
         super(new DataView(database, keyBinding, null, valueEntityBinding,
@@ -207,7 +207,7 @@ public class StoredMap extends StoredContainer implements Map {
      * duplicates are allowed, this method returns the first duplicate, in the
      * order in which duplicates are configured, that maps to the specified
      * key.
-     *
+     * 
      * This method conforms to the {@link Map#get} interface.
      *
      * @throws RuntimeExceptionWrapper if a {@link
@@ -484,7 +484,7 @@ public class StoredMap extends StoredContainer implements Map {
     public Map duplicatesMap(Object secondaryKey,
                              EntryBinding primaryKeyBinding) {
         try {
-            DataView newView =
+            DataView newView = 
                 view.duplicatesView(secondaryKey, primaryKeyBinding);
             if (isOrdered()) {
                 return new StoredSortedMap(newView);

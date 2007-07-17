@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003,2006 Oracle.  All rights reserved.
+# Copyright (c) 2003,2007 Oracle.  All rights reserved.
 #
-# $Id: rep042.tcl,v 12.15 2006/12/07 19:37:44 carol Exp $
+# $Id: rep042.tcl,v 12.17 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep042
 # TEST	Concurrency with updates.
@@ -54,12 +54,12 @@ proc rep042_sub { method niter tnum logset recargs largs } {
 	source ./include.tcl
 	global perm_response_list
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 

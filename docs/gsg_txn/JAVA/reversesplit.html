@@ -100,7 +100,7 @@ try {
     myEnvConfig.setInitializeLogging(true);
     myEnvConfig.setTransactional(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -112,8 +112,8 @@ try {
     dbConfig.setReverseSplitOff(true);
 
     myDatabase = myEnv.openDatabase(null,               // txn handle
-                                    &quot;sampleDatabase&quot;,   // db file name
-                                    &quot;null&quot;,             // db name
+                                    "sampleDatabase",   // db file name
+                                    "null",             // db name
                                     dbConfig);
 } catch (DatabaseException de) {
     // Exception handling goes here

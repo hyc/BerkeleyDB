@@ -159,9 +159,9 @@ public class FullNameKeyCreator implements SecondaryKeyCreator {
         try {
             PersonData pd = 
                 (PersonData) theBinding.entryToObject(dataEntry);
-                String fullName = pd.getFamiliarName() + &quot; &quot; + 
+                String fullName = pd.getFamiliarName() + " " + 
                     pd.getSurname();
-                resultEntry.setData(fullName.getBytes(&quot;UTF-8&quot;));
+                resultEntry.setData(fullName.getBytes("UTF-8"));
         } catch (IOException willNeverOccur) {}
         return true;
     }
@@ -195,7 +195,7 @@ try {
     mySecConfig.setType(DatabaseType.BTREE);
 
     //Perform the actual open
-    String secDbName = &quot;mySecondaryDatabase&quot;;
+    String secDbName = "mySecondaryDatabase";
     mySecDb = new SecondaryDatabase(secDbName, null, myDb, mySecConfig);
 } catch (DatabaseException de) {
     // Exception handling goes here
@@ -214,6 +214,91 @@ try {
         // Exception handling goes here
     }
 }</pre>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="multikeys"></a>Working with Multiple Keys</h3>
+            </div>
+          </div>
+          <div></div>
+        </div>
+        <p>
+                    Until now we have only discussed indexes as if there is
+                    a one-to-one relationship between the secondary key and
+                    the primary database record. In fact, it is possible to
+                    generate multiple keys for any given record, provided
+                    that you take appropriate steps in your key creator
+                    to do so.
+            </p>
+        <p>
+                    For example, suppose you had a database that contained
+                    information about books. Suppose further that you
+                    sometimes want to look up books by author. Because
+                    sometimes books have multiple authors, you may want to
+                    return multiple secondary keys for every book that you
+                    index.
+            </p>
+        <p>
+                    To do this, you write a key creator that implements
+                    <tt class="classname">SecondaryMultiKeyCreator</tt>
+                    instead of
+                    <tt class="classname">SecondaryKeyCreator</tt>. The key
+                    difference between the two is that 
+                    <tt class="classname">SecondaryKeyCreator</tt>
+                    uses a single <tt class="classname">DatabaseEntry</tt>
+                    object as the result, while  
+                    <tt class="classname">SecondaryMultiKeyCreator</tt>
+                    returns a set of <tt class="classname">DatabaseEntry</tt>
+                    objects (using <tt class="classname">java.util.Set</tt>).
+                    Also, you assign the 
+                    <tt class="classname">SecondaryMultiKeyCreator</tt>
+                    implementation using 
+                    <tt class="methodname">SecondaryConfig.setMultiKeyCreator()</tt>
+                    instead of
+                    <tt class="methodname">SecondaryConfig.setKeyCreator()</tt>.
+             </p>
+        <p>
+                     For example:
+             </p>
+        <pre class="programlisting">package db.GettingStarted;
+
+import com.sleepycat.db.DatabaseEntry;
+import com.sleepycat.db.DatabaseException;
+import com.sleepycat.db.SecondaryDatabase;
+import com.sleepycat.db.SecondaryMultiKeyCreator;
+
+import java.util.HashSet;
+import java.util.Set;
+
+public class MyMultiKeyCreator implements SecondaryMultiKeyCreator {
+
+    // Constructor not implemented. How this is implemented depends on
+    // how you want to extract the data for your keys.
+    MyMultiKeyCreator() {
+        ...
+    }
+
+    // Abstract method that we must implement
+    public void createSecondaryKeys(SecondaryDatabase secDb,
+        DatabaseEntry keyEntry,    // From the primary
+        DatabaseEntry dataEntry,   // From the primary
+        Set results)               // Results set
+        throws DatabaseException {
+
+        try {
+            // Create your keys, adding each to the set
+
+            // Creation of key 'a' not shown
+            results.add(a)
+
+            // Creation of key 'b' not shown
+            results.add(b)
+
+        } catch (IOException willNeverOccur) {}
+    }
+} </pre>
+      </div>
     </div>
     <div class="navfooter">
       <hr />

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
  */
 
@@ -39,7 +39,7 @@ public class AssociateTest {
 
     int callback_count = 0;
     boolean callback_throws = false;
-    
+ 
     @BeforeClass public static void ClassInit() {
 	    TestUtils.loadConfig(null);
         TestUtils.check_file_removed(TestUtils.getDBFileName(ASSOCTEST_DBNAME), true, true);
@@ -157,7 +157,7 @@ public class AssociateTest {
             priDb.get(null, secpkey, tmpdata, null);
             String tmpstr = new String(tmpdata.getData());
             if(tmpstr.compareTo(new String(secdata.getData())) != 0)
-                TestUtils.ERR("Data retrieved from matching primary seconday keys is not consistent. secdata: " + new String(secdata.getData()) +
+                TestUtils.ERR("Data retrieved from matching primary secondary keys is not consistent. secdata: " + new String(secdata.getData()) +
                     " pridata: " + new String(tmpdata.getData()));
         } else {
             TestUtils.ERR("Secondary pget of key: " + new String(seckey.getData()) + " did not succeed.");
@@ -181,7 +181,7 @@ public class AssociateTest {
             priDb.get(null, secpkey, tmpdata, null);
             String tmpstr = new String(tmpdata.getData());
             if(tmpstr.compareTo(new String(secdata.getData())) != 0)
-                TestUtils.ERR("Data retrieved from matching primary seconday keys is not consistent. secdata: " + new String(secdata.getData()) +
+                TestUtils.ERR("Data retrieved from matching primary secondary keys is not consistent. secdata: " + new String(secdata.getData()) +
                     " pridata: " + new String(tmpdata.getData()));
         } else {
             TestUtils.ERR("Secondary pget of key: " + new String(seckey.getData()) + " did not succeed.");

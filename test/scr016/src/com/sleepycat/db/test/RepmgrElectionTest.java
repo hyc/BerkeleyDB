@@ -19,7 +19,7 @@ import java.util.Vector;
 
 import com.sleepycat.db.*;
 
-public class RepmgrElectionTest implements EventHandler, Runnable
+public class RepmgrElectionTest extends EventHandlerAdapter implements Runnable
 {
     static String address = "localhost";
     static int    basePort = 4242;
@@ -48,7 +48,7 @@ public class RepmgrElectionTest implements EventHandler, Runnable
             TestUtils.removeDir(homedirName);
         }
     }
-     
+  
     private static boolean lastSiteStarted = false;
     private static int NUM_WORKER_THREADS = 5;
     @Test(timeout=180000) public void startConductor()
@@ -68,9 +68,9 @@ public class RepmgrElectionTest implements EventHandler, Runnable
             lastSiteStarted = false;
             */
         }
-        
+     
         // stop the master - ensure the client with the highest priority is elected.
-        
+     
         // re-start original master. Call election ensure correct client is elected
     }
 
@@ -85,7 +85,7 @@ public class RepmgrElectionTest implements EventHandler, Runnable
     RepmgrElectionTest(int threadNumber) {
         this.threadNumber = threadNumber;
     }
-    
+ 
     public void run() {
         EnvironmentConfig envConfig;
         Environment dbenv = null;
@@ -130,20 +130,20 @@ public class RepmgrElectionTest implements EventHandler, Runnable
         envConfig.setReplicationPriority(priorities[threadNumber]);
         envConfig.setEventHandler(this);
         envConfig.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
-        
+     
         for(int existingSites = 0; existingSites < threadNumber; existingSites++)
         {
             /*
              * This causes warnings to be produced - it seems only
              * able to make a connection to the master site, not other
              * client sites.
-             * The documentation and code lead me to believe this is not 
+             * The documentation and code lead me to believe this is not
              * as expected - so leaving in here for now.
              */
             ReplicationHostAddress host = new ReplicationHostAddress(address, basePort+existingSites);
             envConfig.replicationManagerAddRemoteSite(host);
         }
-        
+     
         try {
             dbenv = new Environment(homedir, envConfig);
         } catch(FileNotFoundException e) {
@@ -151,7 +151,7 @@ public class RepmgrElectionTest implements EventHandler, Runnable
         } catch(DatabaseException dbe) {
             fail("Unexpected database exception came from environment create." + dbe);
         }
-        
+     
         try {
             /*
              * If all threads are started with REP_ELECTION flag
@@ -161,7 +161,7 @@ public class RepmgrElectionTest implements EventHandler, Runnable
              */
             if(threadNumber == 0)
                 dbenv.replicationManagerStart(NUM_WORKER_THREADS, ReplicationManagerStartPolicy.REP_MASTER);
-            else 
+            else
                 dbenv.replicationManagerStart(NUM_WORKER_THREADS, ReplicationManagerStartPolicy.REP_CLIENT);
         } catch(DatabaseException dbe) {
             fail("Unexpected database exception came from replicationManagerStart." + dbe);
@@ -178,26 +178,22 @@ public class RepmgrElectionTest implements EventHandler, Runnable
         } catch(DatabaseException dbe) {
             fail("Unexpected database exception came during shutdown." + dbe);
         }
-    } 
+    }
+
     /*
      * End worker thread implementation
      */
-    public int handleEvent(EventType event)
-    {
-        int ret = 0;
-        if (event == EventType.REP_MASTER) {
-            TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
-            TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
-        } else if (event == EventType.REP_CLIENT) {
-            TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");            
-        } else if (event == EventType.REP_NEW_MASTER) {
-            TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
-            TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
-        } else {
-            fail("Unknown event callback received: " + event.toString());
-            ret = 1;
-        }
-        return ret;
+    public void handleRepMasterEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
+        TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
     }
 
+    public void handleRepClientEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");         
+    }
+
+    public void handleRepNewMasterEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
+        TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
+    }
 }

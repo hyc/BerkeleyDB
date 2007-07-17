@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2004,2007 Oracle.  All rights reserved.
  *
- * $Id: env_register.c,v 1.34 2007/01/05 14:59:27 bostic Exp $
+ * $Id: env_register.c,v 1.35 2007/05/17 15:15:11 bostic Exp $
  */
 
 #include "db_config.h"

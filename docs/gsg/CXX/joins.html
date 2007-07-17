@@ -98,7 +98,6 @@
         using a 
             
             <span>join cursor.</span>
-    
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -177,9 +176,6 @@
         </div>
         <p>
             For example:
-            <span>
-                
-            </span>
         </p>
         <a id="cxx_index9"></a>
         <pre class="programlisting">#include &lt;db_cxx.h&gt;
@@ -207,7 +203,7 @@ Db automotiveTypeDB(NULL, 0);
 // Position the cursors
 Dbc *color_curs;
 automotiveColorDB.cursor(NULL, &amp;color_curs, 0);
-char *the_color = &quot;red&quot;;
+char *the_color = "red";
 Dbt key(the_color, strlen(the_color) + 1);
 Dbt data;
 if ((ret = color_curs-&gt;get(&amp;key, &amp;data, DB_SET)) != 0) {
@@ -216,7 +212,7 @@ if ((ret = color_curs-&gt;get(&amp;key, &amp;data, DB_SET)) != 0) {
 
 Dbc *make_curs;
 automotiveMakeDB.cursor(NULL, &amp;make_curs, 0);
-char *the_make = &quot;Toyota&quot;;
+char *the_make = "Toyota";
 key.set_data(the_make);
 key.set_size(strlen(the_make) + 1);
 if ((ret = make_curs-&gt;get(&amp;key, &amp;data, DB_SET)) != 0) {
@@ -225,7 +221,7 @@ if ((ret = make_curs-&gt;get(&amp;key, &amp;data, DB_SET)) != 0) {
 
 Dbc *type_curs; 
 automotiveTypeDB.cursor(NULL, &amp;type_curs, 0);
-char *the_type = &quot;minivan&quot;;
+char *the_type = "minivan";
 key.set_data(the_type);
 key.set_size(strlen(the_type) + 1);
 if ((ret = type_curs-&gt;get(&amp;key, &amp;data, DB_SET)) != 0) {

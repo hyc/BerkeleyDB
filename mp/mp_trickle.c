@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mp_trickle.c,v 12.11 2007/01/24 15:40:43 bostic Exp $
+ * $Id: mp_trickle.c,v 12.16 2007/06/01 18:32:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -80,7 +80,6 @@ __memp_trickle(dbenv, pct, nwrotep)
 		__memp_stat_hash(&dbmp->reginfo[i], c_mp, &dtmp);
 		dirty += dtmp;
 	}
-	DB_ASSERT(dbenv, dirty <= total);
 
 	/*
 	 * If there are sufficient clean buffers, no buffers or no dirty
@@ -89,15 +88,21 @@ __memp_trickle(dbenv, pct, nwrotep)
 	if (total == 0 || dirty == 0)
 		return (0);
 
-	clean = total - dirty;
+	/*
+	 * The total number of pages is an exact number, but the dirty page
+	 * count can change while we're walking the hash buckets, and it's
+	 * even possible the dirty page count ends up larger than the total
+	 * number of pages.
+	 */
+	clean = total > dirty ? total - dirty : 0;
 	need_clean = (total * (u_int)pct) / 100;
 	if (clean >= need_clean)
 		return (0);
 
 	need_clean -= clean;
-	ret = __memp_sync_int(
-	    dbenv, NULL, need_clean, DB_SYNC_TRICKLE, &wrote);
-	mp->stat.st_page_trickle += wrote;
+	ret = __memp_sync_int(dbenv, NULL,
+	    need_clean, DB_SYNC_TRICKLE | DB_SYNC_INTERRUPT_OK, &wrote, NULL);
+	STAT((mp->stat.st_page_trickle += wrote));
 	if (nwrotep != NULL)
 		*nwrotep = (int)wrote;
 

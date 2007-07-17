@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: RepQuoteExample.cpp,v 1.14 2006/12/18 19:08:58 alanb Exp $
+ * $Id: RepQuoteExample.cpp,v 1.15 2007/05/17 15:15:31 bostic Exp $
  */
 
 /*

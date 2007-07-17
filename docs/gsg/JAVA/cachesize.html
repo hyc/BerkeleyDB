@@ -56,14 +56,14 @@
          available memory and performance considerations.
     </p>
       <p>
-        Selecting a cache size is something of an art, but fortunately it is
-        selected at database (or environment) open time, so it can be easily
-        tuned to your application's data requirements as they change over time.
-        The best way to determine how large your cache needs to be is to put
-        your application into a production environment and watch to see how much
-        disk I/O is occurring. If your application is going to disk quite a lot
-        to retrieve database records, then you should increase the size of your
-        cache (provided that you have enough memory to do so).
+        Selecting a cache size is something of an art, but fortunately you
+        can change it any time, so it can be easily tuned to your
+        application's changing data requirements.  The best way to
+        determine how large your cache needs to be is to put your
+        application into a production environment and watch to see how much
+        disk I/O is occurring. If your application is going to disk quite a
+        lot to retrieve database records, then you should increase the size
+        of your cache (provided that you have enough memory to do so).
     </p>
       <p>
         You can use the <tt class="literal">db_stat</tt> command line utility with the

@@ -1,12 +1,12 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006 Oracle.  All rights reserved.
+# Copyright (c) 2006,2007 Oracle.  All rights reserved.
 #
-# $Id: test121.tcl,v 1.7 2006/11/01 00:54:03 bostic Exp $
+# $Id: test121.tcl,v 1.9 2007/05/24 18:20:47 carol Exp $
 #
 # TEST	test121
 # TEST	Tests of multi-version concurrency control.
-#
+# TEST
 # TEST	MVCC and cursor adjustment.
 # TEST	Set up a -snapshot cursor and position it in the middle
 # TEST 	of a database.

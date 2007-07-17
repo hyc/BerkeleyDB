@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003,2005 Oracle.  All rights reserved.
+# Copyright (c) 2003,2007 Oracle.  All rights reserved.
 #
-# $Id: test119.tcl,v 12.5 2006/11/01 00:54:02 bostic Exp $
+# $Id: test119.tcl,v 12.6 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	test119
 # TEST	Test behavior when Berkeley DB returns DB_BUFFER_SMALL on a cursor.

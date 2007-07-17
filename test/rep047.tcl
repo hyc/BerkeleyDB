@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep047.tcl,v 12.13 2006/12/07 19:37:44 carol Exp $
+# $Id: rep047.tcl,v 12.16 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  rep047
 # TEST	Replication and log gap bulk transfers.
@@ -54,7 +54,7 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	global util_path
 	global overflowword1 overflowword2
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
@@ -131,6 +131,14 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	process_msgs $envlist
 	rep_verify $masterdir $masterenv $clientdir $clientenv
 
+	# Clean up after rep_verify: remove the temporary "prlog" file.  Now
+	# that a newly joining client uses internal init, when the master scans
+	# its directory for database files it complains about prlog not looking
+	# like a proper db.  This is harmless, but it does put a distracting
+	# error message into the test output.
+	#
+	file delete $masterdir/prlog
+
 	puts "\tRep$tnum.c: Bring new client online"
 	replclear 3
 	set bulkrec1 [stat_field $masterenv rep_stat "Bulk records stored"]
@@ -172,6 +180,13 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	set start $skip
 	rep_test_bulk $method $masterenv $masterdb $niter $start $skip 0
 	set envlist "{$masterenv 1} {$clientenv 2} {$clientenv2 3}"
+
+	# Since we're relying on the client to detect a gap and request missing
+	# records, reset gap parameters to their defaults.  Otherwise,
+	# "wait_recs" is still set at its maximum "high" value, due to this
+	# client having been through an internal init.
+	#
+	$clientenv2 rep_request 4 128
 	process_msgs $envlist
 	#
 	# We know we added 2*$niter items to the database so there should be

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep012.tcl,v 12.12 2006/12/07 19:35:19 carol Exp $
+# $Id: rep012.tcl,v 12.14 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep012
 # TEST	Replication and dead DB handles.
@@ -51,12 +51,12 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global verbose_check_secondaries
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set orig_tdir $testdir
 

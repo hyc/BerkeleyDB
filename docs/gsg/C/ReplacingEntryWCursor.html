@@ -41,7 +41,7 @@
         
 
         <span>
-            <tt class="methodname">DBC-&gt;c_put()</tt>
+            <tt class="methodname">DBC-&gt;put()</tt>
             
             with the <tt class="literal">DB_CURRENT</tt> flag.
         </span>
@@ -56,14 +56,14 @@
 DB *dbp;
 DBC *cursorp;
 DBT key, data;
-char *key1str = &quot;My first string&quot;;
-char *replacement_data = &quot;replace me&quot;;
+char *key1str = "My first string";
+char *replacement_data = "replace me";
 int ret;
 
 /* Initialize our DBTs. */
 memset(&amp;key, 0, sizeof(DBT));
 memset(&amp;data, 0, sizeof(DBT));
-                                                                                                                               
+
 /* Set up our DBTs */
 key.data = key1str;
 key.size = strlen(key1str) + 1;
@@ -74,16 +74,16 @@ key.size = strlen(key1str) + 1;
 dbp-&gt;cursor(dbp, NULL, &amp;cursorp, 0);
 
 /* Position the cursor */
-ret = cursorp-&gt;c_get(cursorp, &amp;key, &amp;data, DB_SET);
+ret = cursorp-&gt;get(cursorp, &amp;key, &amp;data, DB_SET);
 if (ret == 0) {
     data.data = replacement_data;
     data.size = strlen(replacement_data) + 1;
-    cursorp-&gt;c_put(cursorp, &amp;key, &amp;data, DB_CURRENT);
+    cursorp-&gt;put(cursorp, &amp;key, &amp;data, DB_CURRENT);
 }
 
 /* Cursors must be closed */
 if (cursorp != NULL) 
-    cursorp-&gt;c_close(cursorp); 
+    cursorp-&gt;close(cursorp); 
 
 if (dbp != NULL)
     dbp-&gt;close(dbp, 0);</pre>

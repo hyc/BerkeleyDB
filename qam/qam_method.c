@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam_method.c,v 12.12 2007/01/04 19:40:35 bostic Exp $
+ * $Id: qam_method.c,v 12.15 2007/05/17 15:15:50 bostic Exp $
  */
 
 #include "db_config.h"
@@ -314,7 +314,7 @@ __qam_rr(dbp, txn, name, subdb, newname, op)
 		 * We need to make sure we don't self-deadlock, so give
 		 * this dbp the same locker as the incoming one.
 		 */
-		tmpdbp->lid = dbp->lid;
+		tmpdbp->locker = dbp->locker;
 		if ((ret = __db_open(tmpdbp, txn,
 		    name, NULL, DB_QUEUE, DB_RDONLY, 0, PGNO_BASE_MD)) != 0)
 			goto err;
@@ -329,16 +329,22 @@ err:		/*
 		 * Since we copied the locker ID from the dbp, we'd better not
 		 * free it here.
 		 */
-		tmpdbp->lid = DB_LOCK_INVALIDID;
+		tmpdbp->locker = NULL;
 
 		/* We need to remove the lock event we associated with this. */
 		if (txn != NULL)
 			__txn_remlock(dbenv,
 			    txn, &tmpdbp->handle_lock, DB_LOCK_INVALIDID);
 
-		if ((t_ret =
-		    __db_close(tmpdbp, txn, DB_NOSYNC)) != 0 && ret == 0)
-			ret = t_ret;
+		if (txn == NULL ) {
+			if ((t_ret = __db_close(tmpdbp,
+			    txn, DB_NOSYNC)) != 0 && ret == 0)
+				ret = t_ret;
+		} else {
+			if ((t_ret = __txn_closeevent(dbenv,
+			    txn, tmpdbp)) != 0 && ret == 0)
+				ret = t_ret;
+		}
 	}
 	return (ret);
 }

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006 Oracle.  All rights reserved.
+ * Copyright (c) 2006,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_queue.c,v 1.8 2006/11/01 00:53:46 bostic Exp $
+ * $Id: repmgr_queue.c,v 1.9 2007/05/17 15:15:51 bostic Exp $
  */
 
 #include "db_config.h"

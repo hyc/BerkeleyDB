@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002,2006 Oracle.  All rights reserved.
+# Copyright (c) 2002,2007 Oracle.  All rights reserved.
 #
-# $Id: rep063.tcl,v 1.8 2006/12/07 19:37:44 carol Exp $
+# $Id: rep063.tcl,v 1.12 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  rep063
 # TEST	Replication election test with simulated different versions
@@ -62,12 +62,12 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	source ./include.tcl
 	global electable_pri
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set niter 80
 
 	env_cleanup $testdir
@@ -94,6 +94,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set envlist {}
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
+	    -event rep_event \
 	    -home $masterdir $m_txnargs $m_logargs -rep_master $verbargs \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
@@ -105,6 +106,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 		set envid [expr $i + 2]
 		repladd $envid
 		set env_cmd($i) "berkdb_env_noerr -create -home $clientdir($i) \
+		    -event rep_event \
 		    $c_txnargs($i) $c_logargs($i) -rep_client \
 		    -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i) $recargs]
@@ -171,6 +173,7 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 		#
 		if { $rep_verbose == 1 } {
 			error_check_good pfx [$clientenv($i) errpfx CLIENT$i] 0
+			$clientenv($i) verbose rep on
 			set env_cmd($i) [concat $env_cmd($i) \
 			    "-errpfx CLIENT$i $verbargs "]
 		}

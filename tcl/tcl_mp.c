@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_mp.c,v 12.11 2006/11/30 19:05:30 bostic Exp $
+ * $Id: tcl_mp.c,v 12.14 2007/06/22 17:41:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -339,12 +339,14 @@ tcl_MpStat(interp, objc, objv, envp)
 	 * list pairs and free up the memory.
 	 */
 	res = Tcl_NewObj();
+#ifdef HAVE_STATISTICS
 	/*
 	 * MAKE_STAT_LIST assumes 'res' and 'error' label.
 	 */
 	MAKE_STAT_LIST("Cache size (gbytes)", sp->st_gbytes);
 	MAKE_STAT_LIST("Cache size (bytes)", sp->st_bytes);
 	MAKE_STAT_LIST("Number of caches", sp->st_ncache);
+	MAKE_STAT_LIST("Maximum number of caches", sp->st_max_ncache);
 	MAKE_STAT_LIST("Region size", sp->st_regsize);
 	MAKE_STAT_LIST("Maximum memory-mapped file size", sp->st_mmapsize);
 	MAKE_STAT_LIST("Maximum open file descriptors", sp->st_maxopenfd);
@@ -415,6 +417,7 @@ tcl_MpStat(interp, objc, objv, envp)
 		if (result != TCL_OK)
 			goto error;
 	}
+#endif
 	Tcl_SetObjResult(interp, res1);
 error:
 	__os_ufree(envp, sp);

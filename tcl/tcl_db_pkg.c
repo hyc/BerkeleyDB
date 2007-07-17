@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_db_pkg.c,v 12.44 2006/12/19 19:46:06 sue Exp $
+ * $Id: tcl_db_pkg.c,v 12.51 2007/07/09 17:38:45 bostic Exp $
  */
 
 #include "db_config.h"
@@ -416,6 +416,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-region_init",
 		"-rep",
 		"-rep_client",
+		"-rep_lease",
 		"-rep_master",
 		"-rep_transport",
 		"-server",
@@ -431,6 +432,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		"-wrnosync",
 #endif
 		"-cachesize",
+		"-cache_max",
 		"-create",
 		"-data_dir",
 		"-encryptaes",
@@ -489,6 +491,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_REGION_INIT,
 		ENV_REP,
 		ENV_REP_CLIENT,
+		ENV_REP_LEASE,
 		ENV_REP_MASTER,
 		ENV_REP_TRANSPORT,
 		ENV_SERVER,
@@ -504,6 +507,7 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 		ENV_WRNOSYNC,
 #endif
 		ENV_CACHESIZE,
+		ENV_CACHE_MAX,
 		ENV_CREATE,
 		ENV_DATA_DIR,
 		ENV_ENCRYPT_AES,
@@ -1026,6 +1030,23 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			rep_flags = DB_REP_MASTER;
 			FLD_SET(open_flags, DB_INIT_REP);
 			break;
+		case ENV_REP_LEASE:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "-rep_lease {nsites timeout clockskew}");
+				result = TCL_ERROR;
+				break;
+			}
+			result = Tcl_ListObjGetElements(interp, objv[i],
+			    &myobjc, &myobjv);
+			if (result == TCL_OK)
+				i++;
+			else
+				break;
+			result = tcl_RepLease(interp, myobjc, myobjv, *env);
+			if (result == TCL_OK)
+				FLD_SET(open_flags, DB_INIT_REP);
+			break;
 		case ENV_REP_TRANSPORT:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
@@ -1194,6 +1215,30 @@ bdb_EnvOpen(interp, objc, objv, ip, env)
 			    ncaches);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "set_cachesize");
+			break;
+		case ENV_CACHE_MAX:
+			result = Tcl_ListObjGetElements(interp, objv[i],
+			    &myobjc, &myobjv);
+			if (result == TCL_OK)
+				i++;
+			else
+				break;
+			if (myobjc != 2) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-cache_max {gbytes bytes}?");
+				result = TCL_ERROR;
+				break;
+			}
+			result = _GetUInt32(interp, myobjv[0], &gbytes);
+			if (result != TCL_OK)
+				break;
+			result = _GetUInt32(interp, myobjv[1], &bytes);
+			if (result != TCL_OK)
+				break;
+			_debug_check();
+			ret = (*env)->set_cache_max(*env, gbytes, bytes);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "set_cache_max");
 			break;
 		case ENV_SHM_KEY:
 			if (i >= objc) {
@@ -1569,15 +1614,13 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 	(*dbp)->api_internal = ip;
 
 	/*
-	 * XXX Remove restriction when err stuff is not tied to env.
+	 * XXX
+	 * Remove restriction if error handling not tied to env.
 	 *
-	 * The DB->set_err* functions actually overwrite in the
-	 * environment.  So, if we are explicitly using an env,
-	 * don't overwrite what we have already set up.  If we are
-	 * not using one, then we set up since we get a private
-	 * default env.
+	 * The DB->set_err* functions overwrite the environment.  So, if
+	 * we are using an env, don't overwrite it; if not using an env,
+	 * then configure error handling.
 	 */
-	/* XXX  - remove this conditional if/when err is not tied to env */
 	if (envp == NULL) {
 		(*dbp)->set_errpfx((*dbp), ip->i_name);
 		(*dbp)->set_errcall((*dbp), _ErrorFunc);
@@ -2624,8 +2667,17 @@ bdb_DbRemove(interp, objc, objv)
 			goto error;
 		}
 
+		/*
+		 * XXX
+		 * Remove restriction if error handling not tied to env.
+		 *
+		 * The DB->set_err* functions overwrite the environment.  So, if
+		 * we are using an env, don't overwrite it; if not using an env,
+		 * then configure error handling.
+		 */
 		dbp->set_errpfx(dbp, "DbRemove");
 		dbp->set_errcall(dbp, _ErrorFunc);
+
 		if (passwd != NULL) {
 			ret = dbp->set_encrypt(dbp, passwd, enc_flag);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
@@ -2846,8 +2898,17 @@ bdb_DbRename(interp, objc, objv)
 			    "db_create");
 			goto error;
 		}
+		/*
+		 * XXX
+		 * Remove restriction if error handling not tied to env.
+		 *
+		 * The DB->set_err* functions overwrite the environment.  So, if
+		 * we are using an env, don't overwrite it; if not using an env,
+		 * then configure error handling.
+		 */
 		dbp->set_errpfx(dbp, "DbRename");
 		dbp->set_errcall(dbp, _ErrorFunc);
+
 		if (passwd != NULL) {
 			ret = dbp->set_encrypt(dbp, passwd, enc_flag);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
@@ -3323,11 +3384,11 @@ bdb_MsgType(interp, objc, objv)
 	static const char *msgnames[] = {
 		"no_type", "alive", "alive_req", "all_req",
 		"bulk_log", "bulk_page",
-		"dupmaster", "file", "file_fail", "file_req", "log",
-		"log_more", "log_req", "master_req", "newclient",
+		"dupmaster", "file", "file_fail", "file_req", "lease_grant",
+		"log", "log_more", "log_req", "master_req", "newclient",
 		"newfile", "newmaster", "newsite", "page",
 		"page_fail", "page_more", "page_req",
-		"rerequest", "update", "update_req",
+		"rerequest", "startsync", "update", "update_req",
 		"verify", "verify_fail", "verify_req",
 		"vote1", "vote2", NULL
 	};
@@ -3448,8 +3509,18 @@ bdb_DbUpgrade(interp, objc, objv)
 		goto error;
 	}
 
-	dbp->set_errpfx(dbp, "DbUpgrade");
-	dbp->set_errcall(dbp, _ErrorFunc);
+	/*
+	 * XXX
+	 * Remove restriction if error handling not tied to env.
+	 *
+	 * The DB->set_err* functions overwrite the environment.  So, if
+	 * we are using an env, don't overwrite it; if not using an env,
+	 * then configure error handling.
+	 */
+	if (envp == NULL) {
+		dbp->set_errpfx(dbp, "DbUpgrade");
+		dbp->set_errcall(dbp, _ErrorFunc);
+	}
 	ret = dbp->upgrade(dbp, db, flags);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db upgrade");
 error:
@@ -3681,7 +3752,8 @@ tcl_rep_send(dbenv, control, rec, lsnp, eid, flags)
 		 * this error should only happen if the Tcl callback is
 		 * somehow invalid, which is a fatal scripting bug.
 		 */
-err:		__db_errx(dbenv, "Tcl rep_send failure");
+err:		__db_errx(dbenv, "Tcl rep_send failure: %s",
+		    Tcl_GetStringResult(interp));
 		return (EINVAL);
 	}
 

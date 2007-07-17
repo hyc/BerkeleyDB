@@ -1,4 +1,3 @@
-<!-- $Id: mlease.html,v 1.3 2007/01/30 12:20:37 sue Exp $ -->
 <!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
@@ -15,7 +14,7 @@
 <center><i>Susan LoVerso</i> <br>
 <i>sue@sleepycat.com</i> <br>
 <i>Rev 1.1</i><br>
-<i>2007 Jan 29</i><br>
+<i>2007 Feb 2</i><br>
 </center>
 <p><br>
 </p>
@@ -86,6 +85,8 @@ application using leases include:<br>
   <li>Users must implement (Base API users on their own, RepMgr users
 via configuration) a majority (or larger) ACK policy. <br>
   </li>
+  <li>The application must use the election mechanism to decide a master.
+It may not simply declare a site master.</li>
   <li>The send callback must return an error if the majority ACK policy
 is not met for PERM records.</li>
   <li>Users must set the number of sites in the group.</li>
@@ -95,8 +96,7 @@ sites are also.<br>
   </li>
   <li>All applications that care about read guarantees must forward or
 perform all reads on the master.&nbsp; Reading on the client means a
-read ignoring leases.
-  </li>
+read ignoring leases. </li>
 </ul>
 <p>There are some open questions
 remaining.</p>
@@ -172,7 +172,8 @@ must configure for leases called <b>DB_REP_LEASE_TIMEOUT</b>.&nbsp;
 This timeout will be new to
 the <i>dbenv-&gt;rep_set_timeout</i> method. The <b>DB_REP_LEASE_TIMEOUT</b>
 has no default and it is required that the user configure a timeout
-before they turn on leases.&nbsp; That timeout is the amount of time
+before they turn on leases (obviously, this timeout need not be set of
+leases will not be used).&nbsp; That timeout is the amount of time
 the lease is valid on the master and how long it is granted
 on the client.&nbsp; This timeout must be the same
 value on all sites (like log file size).&nbsp; <b>[Document this
@@ -311,10 +312,10 @@ on a client imply
 ignoring leases.</b> If an application wants authoritative reads
 they must forward the read requests to the master and it is the
 application's responsibility to provide the forwarding.
-DB will reject, with <b>EINVAL</b> read
-operations on clients that do not have the DB_IGNORE_LEASE flag set.
-I.e. we force clients/apps to use the flag
-explicitly. <b>[Is that too heavy handed?]</b><br>
+The consensus was that forcing <span style="font-weight: bold;">DB_IGNORE_LEASE</span>
+on client read operations (with leases enabled, obviously) was too
+heavy handed.&nbsp; Read operations on the client will ignore leases,
+but do no special flag checking.<br>
 <br>
 The flag will be called <b>DB_IGNORE_LEASE</b>
 and it will be a flag that can be OR'd into the DB access method and
@@ -334,9 +335,9 @@ adhere to leases are:<br>
   <li><i>Db-&gt;stat </i><b>[maybe?]</b></li>
   <li><i>Dbc-&gt;count</i><b>[maybe?]</b></li>
 </ul>
-The code that will check leases for a client reading will look
+The code that will check leases for a client reading would look
 something
-like this:<br>
+like this, if we decide to become heavy-handed:<br>
 <pre>if (IS_REP_CLIENT(dbenv)) {<br>	[get to rep structure]<br>	if (FLD_ISSET(rep-&gt;config, REP_C_LEASE) &amp;&amp; !LF_ISSET(DB_IGNORE_LEASE)) {<br>		db_err("Read operations must ignore leases or go to master");<br>		ret = EINVAL;<br>		goto err;<br>	}<br>}<br></pre>
 On the master, the new code to abide by leases is more complex.&nbsp;
 After the call to perform the operation we will check the lease.&nbsp;
@@ -356,7 +357,10 @@ Also note that if leases (or replication) are not configured, then <span
 is ignored (and won't error) if used when leases are not in
 effect.&nbsp; The reason is so that we can generically set that flag in
 utility programs like <span style="font-style: italic;">db_dump</span>
-that walk the database with a cursor.<br>
+that walk the database with a cursor.&nbsp; Note that <span
+ style="font-style: italic;">db_dump</span> is the only utility that
+reads with a cursor.<span style="font-style: italic;"><span
+ style="font-style: italic;"></span></span><br>
 <h3><b>Nsites
 and Elections</b></h3>
 The call to <i>dbenv-&gt;rep_set_nsites</i>
@@ -503,7 +507,7 @@ Since both are taking the clock skew
 into account, the client's ending expiration time should never be
 smaller than
 the master's computed expiration time or their value for clock skew may
-not be correct.&nbsp; <b>[I think that is true...]</b><br>
+not be correct.<br>
   </li>
 </ol>
 Any log records (new or resent) that originate from the master and
@@ -577,7 +581,12 @@ timestamp value and massage the incoming data to pass on the real log
 record to <i>rep_apply</i>.&nbsp; On
 bulk transfer, we would just add the timestamp into the buffer.&nbsp;
 On normal transfers, it would incur an additional data copy on the
-master side.&nbsp; That is unfortunate.</li>
+master side.&nbsp; That is unfortunate.&nbsp; Additionally, if this
+record needs to be stored in the temp db, we need some way to get it
+back again later or <span style="font-style: italic;">rep_apply</span>
+would have to extract the timestamp out when it processed the record
+(either live or from the temp db).<br>
+  </li>
   <li>Adding a different message type, such as <b>REP_LOG_ACK</b>.&nbsp;
 Similarly to <b>REP_LOG_MORE</b> this message would be a
 special-case version of a log record.&nbsp; We would extract out the
@@ -655,6 +664,25 @@ on all records, but grants are only sent on the PERM messages.&nbsp; A
 reason to do this is that the later timestamp of a normal log record
 would be used as the timestamp sent in the reply and the master would
 get a more up to date timestamp value and a longer lease.&nbsp; <br>
+<br>
+<span style="font-weight: bold;">[Concern about gap processing here.]</span>&nbsp;
+If we change the <span style="font-weight: bold;">REP_CONTROL</span>
+structure to include the timestamp, we potentially break or at least
+need to revisit the gap processing algorithm.&nbsp; That code assumes
+that the control and record elements for the same LSN look the same
+each and every time.&nbsp; The code stores the <span
+ style="font-style: italic;">control</span> DBT as the key and the <span
+ style="font-style: italic;">rec</span> DBT as the data.&nbsp; We use a
+specialized compare function to sort based on the LSN in the control
+DBT.&nbsp; With master leases, the same record transmitted by a master
+multiple times or client for the same LSN will be different because the
+timestamp field will not be the same.&nbsp; Therefore, the client will
+end up with duplicate entries in the temp database for the same
+LSN.&nbsp; Both solutions (adding the timestamp to <span
+ style="font-weight: bold;">REP_CONTROL</span> and adding a <span
+ style="font-weight: bold;">REPCTL_LEASE</span> flag) can yield
+duplicate entries.&nbsp; The flag would cause the same record from the
+master and client to be different as well.<br>
 <h4>Handling Incoming Lease Grants<br>
 </h4>
 The third piece of lease management is handling the incoming <b>REP_LEASE_GRANT</b>
@@ -766,9 +794,8 @@ the lease grant to expire, will send a <b>REP_MASTER_REQ</b>
 message so that the master will respond with a <b>REP_NEWMASTER</b>
 message and thus,
 allow the client to know the master exists.&nbsp; However, it is also
-desirable <b>[I think, Margo, please let
-me know if the following is not correct]</b> that if the master
-replies to the client, the client also wants to update its lease
+desirable that if the master
+replies to the client, the master wants the client to update its lease
 grant.&nbsp; <br>
 <br>
 Recall that the <b>REP_NEWMASTER</b>
@@ -785,7 +812,7 @@ it needs to deal with leases and both send the <b>REP_NEWMASTER</b>
 message and refresh
 the lease.<br>
 The code will work as follows:<br>
-<pre>if (leases_configured &amp;&amp; (my_grant_still_valid || lease_never_granted) {<br>	if (lease_never_grants)<br>		wait_time = lease_timeout<br>	else<br>		wait_time = grant_expiration - current_time<br>	F_SET(REP_F_EPHASE0);<br>	__rep_send_message(..., REP_MASTER_REQ, ... REPCTL_LEASE);<br>	ret = __rep_wait(..., REP_F_EPHASE0);<br>	if (we found a master)<br>		return<br>} /* if we don't return, fall out and proceed with election */<br></pre>
+<pre>if (leases_configured &amp;&amp; (my_grant_still_valid || lease_never_granted) {<br>	if (lease_never_granted)<br>		wait_time = lease_timeout<br>	else<br>		wait_time = grant_expiration - current_time<br>	F_SET(REP_F_EPHASE0);<br>	__rep_send_message(..., REP_MASTER_REQ, ... REPCTL_LEASE);<br>	ret = __rep_wait(..., REP_F_EPHASE0);<br>	if (we found a master)<br>		return<br>} /* if we don't return, fall out and proceed with election */<br></pre>
 On the master side, the code handling the <b>REP_MASTER_REQ</b> will
 do:<br>
 <pre>if (I am master) {<br>	...<br>	__rep_send_message(REP_NEWMASTER...)<br>	if (F_ISSET(rp, REPCTL_LEASE))<br>		__rep_lease_refresh(...)<br>}<br></pre>
@@ -1113,14 +1140,16 @@ solution naturally falls out of elections and leases really.&nbsp; If a
 client has never granted a lease, it should be considered as having to
 wait a full lease timeout before entering an election.&nbsp;
 Applications already know that leases impact elections and this does
-not seem so bad.<br>
+not seem so bad as it is only on the first election.<br>
 <br>
 Is it sufficient to document that the authoritative read is only as
 authoritative as the durability guarantees they make on the sites that
-indicate it is permanent?<br>
-<br>
-<b>[Your great and insightful suggestions
-are solicited and welcome here!]</b><br>
+indicate it is permanent? Yes, I believe this is sufficient.&nbsp; If
+the application says it is permanent and it really isn't, then the
+application is at fault.&nbsp; Believing the application when it
+indicates with the PERM response that it is permanent avoids the
+authoritative problem <span style="font-weight: bold;">[document this
+application requirement]</span>.&nbsp; <br>
 <h2>Upgrade/Mixed Versions</h2>
 Clearly leases cannot be used with mixed version sites since masters
 running older releases will not have any knowledge of lease

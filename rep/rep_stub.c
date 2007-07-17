@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: rep_stub.c,v 12.24 2006/11/16 16:37:08 bostic Exp $
+ * $Id: rep_stub.c,v 12.32 2007/06/08 14:46:00 bostic Exp $
  */
 
 #ifndef HAVE_REPLICATION
@@ -99,15 +99,13 @@ __rep_env_refresh(dbenv)
 }
 
 int
-__rep_elect(dbenv, nsites, nvotes, eidp, flags)
+__rep_elect(dbenv, nsites, nvotes, flags)
 	DB_ENV *dbenv;
 	int nsites, nvotes;
 	u_int32_t flags;
-	int *eidp;
 {
 	COMPQUIET(nsites, 0);
 	COMPQUIET(nvotes, 0);
-	COMPQUIET(eidp, NULL);
 	COMPQUIET(flags, 0);
 	return (__db_norep(dbenv));
 }
@@ -116,6 +114,34 @@ int
 __rep_flush(dbenv)
 	DB_ENV *dbenv;
 {
+	return (__db_norep(dbenv));
+}
+
+int
+__rep_lease_check(dbenv, refresh)
+	DB_ENV *dbenv;
+	int refresh;
+{
+	COMPQUIET(refresh, 0);
+	return (__db_norep(dbenv));
+}
+
+int
+__rep_lease_expire(dbenv, locked)
+	DB_ENV *dbenv;
+	int locked;
+{
+	COMPQUIET(locked, 0);
+	return (__db_norep(dbenv));
+}
+
+int
+__rep_set_lease(dbenv, clock_scale_factor, flags)
+	DB_ENV *dbenv;
+	u_int32_t clock_scale_factor, flags;
+{
+	COMPQUIET(clock_scale_factor, 0);
+	COMPQUIET(flags, 0);
 	return (__db_norep(dbenv));
 }
 
@@ -210,15 +236,6 @@ __rep_get_limit(dbenv, gbytesp, bytesp)
 }
 
 int
-__rep_get_gen(dbenv, genp)
-	DB_ENV *dbenv;
-	u_int32_t *genp;
-{
-	COMPQUIET(genp, NULL);
-	return (__db_norep(dbenv));
-}
-
-int
 __rep_noarchive(dbenv)
 	DB_ENV *dbenv;
 {
@@ -242,15 +259,15 @@ __rep_preclose(dbenv)
 }
 
 int
-__rep_process_message(dbenv, control, rec, eidp, ret_lsnp)
+__rep_process_message(dbenv, control, rec, eid, ret_lsnp)
 	DB_ENV *dbenv;
 	DBT *control, *rec;
-	int *eidp;
+	int eid;
 	DB_LSN *ret_lsnp;
 {
 	COMPQUIET(control, NULL);
 	COMPQUIET(rec, NULL);
-	COMPQUIET(eidp, NULL);
+	COMPQUIET(eid, 0);
 	COMPQUIET(ret_lsnp, NULL);
 	return (__db_norep(dbenv));
 }

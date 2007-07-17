@@ -161,8 +161,8 @@ Database myDatabase = null;
 
 // Need a key for the put.
 try {
-    String aKey = &quot;myLong&quot;;
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));    
+    String aKey = "myLong";
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));    
 
     // Now build the DatabaseEntry using a TupleBinding
     Long myLong = new Long(123456789l);
@@ -194,8 +194,8 @@ Database myDatabase = null;
 
 try {
     // Need a key for the get
-    String aKey = &quot;myLong&quot;;
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));
+    String aKey = "myLong";
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));
     
     // Need a DatabaseEntry to hold the associated data.
     DatabaseEntry theData = new DatabaseEntry();
@@ -212,11 +212,11 @@ try {
         // Use the binding to convert the byte array contained in theData
         // to a Long type.
         Long theLong = (Long) myBinding.entryToObject(theData);
-        retKey = new String(theKey.getData(), &quot;UTF-8&quot;);
-        System.out.println(&quot;For key: '&quot; + retKey + &quot;' found Long: '&quot; + 
-                            theLong + &quot;'.&quot;);
+        retKey = new String(theKey.getData(), "UTF-8");
+        System.out.println("For key: '" + retKey + "' found Long: '" + 
+                            theLong + "'.");
     } else {
-        System.out.println(&quot;No record found for key '&quot; + retKey + &quot;'.&quot;);
+        System.out.println("No record found for key '" + retKey + "'.");
     }
 } catch (Exception e) {
     // Exception handling goes here
@@ -412,13 +412,13 @@ import com.sleepycat.db.DatabaseType;
 ...
 
 // The key data.
-String aKey = &quot;myData&quot;;
+String aKey = "myData";
 
 // The data data
 MyData data2Store = new MyData();
 data2Store.setLong(123456789l);
 data2Store.setDouble(1234.9876543);
-data2Store.setDescription(&quot;A test instance of this class&quot;);
+data2Store.setDescription("A test instance of this class");
 
 try {
     // Open the database that you will use to store your data
@@ -426,13 +426,13 @@ try {
     myDbConfig.setAllowCreate(true);
     myDbConfig.setSortedDuplicates(true);
     myDbConfig.setType(DatabaseType.BTREE);
-    Database myDatabase = new Database(&quot;myDb&quot;, null, myDbConfig);
+    Database myDatabase = new Database("myDb", null, myDbConfig);
 
     // Open the database that you use to store your class information.
     // The db used to store class information does not require duplicates
     // support.
     myDbConfig.setSortedDuplicates(false);
-    Database myClassDb = new Database(&quot;classDb&quot;, null, myDbConfig); 
+    Database myClassDb = new Database("classDb", null, myDbConfig); 
 
     // Instantiate the class catalog
     StoredClassCatalog classCatalog = new StoredClassCatalog(myClassDb);
@@ -442,7 +442,7 @@ try {
                                                  MyData.class);
 
     // Create the DatabaseEntry for the key
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));
 
     // Create the DatabaseEntry for the data. Use the EntryBinding object
     // that was just created to populate the DatabaseEntry
@@ -485,17 +485,17 @@ import com.sleepycat.db.LockMode;
 ...
 
 // The key data.
-String aKey = &quot;myData&quot;;
+String aKey = "myData";
 
 try {
     // Open the database that stores your data
     DatabaseConfig myDbConfig = new DatabaseConfig();
     myDbConfig.setAllowCreate(false);
     myDbConfig.setType(DatabaseType.BTREE);
-    Database myDatabase = new Database(&quot;myDb&quot;, null, myDbConfig);
+    Database myDatabase = new Database("myDb", null, myDbConfig);
 
     // Open the database that stores your class information.
-    Database myClassDb = new Database(&quot;classDb&quot;, null, myDbConfig); 
+    Database myClassDb = new Database("classDb", null, myDbConfig); 
 
     // Instantiate the class catalog
     StoredClassCatalog classCatalog = new StoredClassCatalog(myClassDb);
@@ -505,7 +505,7 @@ try {
                                                  MyData.class);
 
     // Create DatabaseEntry objects for the key and data
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));
     DatabaseEntry theData = new DatabaseEntry();
 
     // Do the get as normal
@@ -585,7 +585,7 @@ public class MyData2 {
     public MyData2() {
         longData = 0;
         doubleData = new Double(0.0);
-        description = &quot;&quot;;
+        description = "";
     }
 
     public void setLong(long data) {
@@ -724,7 +724,7 @@ TupleBinding keyBinding = new MyTupleBinding();
 MyData2 theKeyData = new MyData2();
 theKeyData.setLong(123456789l);
 theKeyData.setDouble(new Double(12345.6789));
-theKeyData.setString(&quot;My key data&quot;);
+theKeyData.setString("My key data");
 
 DatabaseEntry myKey = new DatabaseEntry();
 

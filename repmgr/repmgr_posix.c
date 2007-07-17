@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_posix.c,v 1.25 2006/12/29 01:12:50 alanb Exp $
+ * $Id: repmgr_posix.c,v 1.29 2007/06/11 18:29:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -88,7 +88,8 @@ __repmgr_thread_join(thread)
 /*
  * PUBLIC: int __repmgr_set_nonblocking __P((socket_t));
  */
-int __repmgr_set_nonblocking(fd)
+int
+__repmgr_set_nonblocking(fd)
 	socket_t fd;
 {
 	int flags;
@@ -123,8 +124,7 @@ __repmgr_wake_waiting_senders(dbenv)
  * LSN.
  *
  * !!!
- * Caller must hold repmgr->mutex (TODO: although that seems a shame, with all
- * that deadline calculation).
+ * Caller must hold repmgr->mutex.
  */
 int
 __repmgr_await_ack(dbenv, lsnp)
@@ -153,8 +153,7 @@ __repmgr_await_ack(dbenv, lsnp)
 		if (db_rep->finished)
 			return (DB_REP_UNAVAIL);
 		if (ret != 0)
-			return (ret); /* TODO: but first check if we need (to
-				       * create) a panic */
+			return (ret);
 	}
 	return (0);
 }
@@ -447,7 +446,6 @@ __repmgr_select_loop(dbenv)
 	int ret, flow_control, maxfd, nready;
 	u_int8_t buf[10];	/* arbitrary size */
 
-	/* TODO: turn this on when the input queue gets too big. */
 	flow_control = FALSE;
 
 	db_rep = dbenv->rep_handle;
@@ -556,7 +554,7 @@ __repmgr_select_loop(dbenv)
 			if (F_ISSET(conn, CONN_DEFUNCT))
 				__repmgr_cleanup_connection(dbenv, conn);
 		}
-		
+
 		if ((ret = __repmgr_retry_connections(dbenv)) != 0)
 			goto out;
 		if (nready == 0)

@@ -151,7 +151,7 @@
       <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -161,15 +161,15 @@ main(void)
     DB *dbp;
     DB_ENV *envp;
     DB_TXN *txn;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    const char *file_name = "mydb.db";
     
     envp = NULL;
 
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -187,7 +187,7 @@ main(void)
      */
     ret = envp-&gt;set_timeout(envp, DB_SET_TXN_TIMEOUT, 1000000);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error setting txn timeout: %s\n&quot;,
+        fprintf(stderr, "Error setting txn timeout: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -197,14 +197,14 @@ main(void)
      */
     ret = envp-&gt;set_tx_max(envp, 40);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error setting max txns: %s\n&quot;,
+        fprintf(stderr, "Error setting max txns: %s\n",
             db_strerror(ret));
         goto err;
     }
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }

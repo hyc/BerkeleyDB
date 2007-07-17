@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mp_fput.c,v 12.30 2006/11/30 19:05:26 bostic Exp $
+ * $Id: mp_fput.c,v 12.36 2007/06/05 11:55:28 mjc Exp $
  */
 
 #include "db_config.h"
@@ -62,13 +62,13 @@ __memp_fput(dbmfp, pgaddr, priority)
 	void *pgaddr;
 	DB_CACHE_PRIORITY priority;
 {
+	BH *bhp;
 	DB_ENV *dbenv;
 	DB_MPOOL *dbmp;
 	DB_MPOOL_HASH *hp;
 	MPOOL *c_mp;
 	MPOOLFILE *mfp;
-	BH *bhp;
-	u_int32_t n_cache;
+	REGINFO *infop;
 	int adjust, pfactor, ret, t_ret;
 
 	dbenv = dbmfp->dbenv;
@@ -104,12 +104,11 @@ __memp_fput(dbmfp, pgaddr, priority)
 #endif
 
 	/* Convert a page address to a buffer header and hash bucket. */
-	n_cache = NCACHE(dbmp->reginfo[0].primary, bhp->mf_offset, bhp->pgno);
-	c_mp = dbmp->reginfo[n_cache].primary;
-	hp = R_ADDR(&dbmp->reginfo[n_cache], c_mp->htab);
-	hp = &hp[NBUCKET(c_mp, bhp->mf_offset, bhp->pgno)];
+	MP_GET_BUCKET(dbmfp, bhp->pgno, &infop, hp, ret);
+	if (ret != 0)
+		return (ret);
+	c_mp = infop->primary;
 
-	MUTEX_LOCK(dbenv, hp->mtx_hash);
 	/*
 	 * Check for a reference count going to zero.  This can happen if the
 	 * application returns a page twice.
@@ -284,13 +283,16 @@ __memp_reset_lru(dbenv, infop)
 			}
 			priority = bhp->priority;
 		}
-		/* Reset the hash bucket's priority. */
-		hp->hash_priority =
-		    SH_TAILQ_FIRST(&hp->hash_bucket, __bh)->priority;
+		/*
+		 * Reset the hash bucket's priority.  The chain is never empty
+		 * in this case, so tbhp will never be NULL.
+		 */
+		if ((tbhp =
+		    SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) != NULL)
+			hp->hash_priority = tbhp->priority;
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 	}
 	c_mp->lru_reset = 0;
-
 
 	COMPQUIET(dbenv, NULL);
 	return (0);

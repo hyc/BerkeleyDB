@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep031.tcl,v 12.20 2006/12/07 19:37:44 carol Exp $
+# $Id: rep031.tcl,v 12.23 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep031
 # TEST	Test of internal initialization and blocked operations.
@@ -69,12 +69,12 @@ proc rep031 { method { niter 200 } { tnum "031" } args } {
 proc rep031_sub { method niter tnum logset recargs clean largs } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -118,6 +118,8 @@ proc rep031_sub { method niter tnum logset recargs clean largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
+
+	$masterenv test force noarchive_timeout
 
 	# Run rep_test in the master (and update client).
 	puts "\tRep$tnum.a: Running rep_test in replicated env."

@@ -104,7 +104,6 @@
         using a 
             <span><tt class="classname">JoinCursor</tt> class instance.</span>
             
-    
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -183,7 +182,6 @@
         </div>
         <p>
             For example:
-            
         </p>
         <a id="java_index9"></a>
         <pre class="programlisting">package db.GettingStarted;
@@ -212,9 +210,9 @@ SecondaryDatabase automotiveTypeDB = null;
 SecondaryDatabase automotiveMakeDB = null;
 
 // Query strings:
-String theColor = &quot;red&quot;;
-String theType = &quot;minivan&quot;;
-String theMake = &quot;Toyota&quot;;
+String theColor = "red";
+String theType = "minivan";
+String theMake = "Toyota";
 
 // Secondary cursors used for the query:
 SecondaryCursor colorSecCursor = null;
@@ -233,9 +231,9 @@ DatabaseEntry foundData = new DatabaseEntry();
 
 try {
     // Database entries used for the query:
-    DatabaseEntry color = new DatabaseEntry(theColor.getBytes(&quot;UTF-8&quot;));
-    DatabaseEntry type = new DatabaseEntry(theType.getBytes(&quot;UTF-8&quot;));
-    DatabaseEntry make = new DatabaseEntry(theMake.getBytes(&quot;UTF-8&quot;));
+    DatabaseEntry color = new DatabaseEntry(theColor.getBytes("UTF-8"));
+    DatabaseEntry type = new DatabaseEntry(theType.getBytes("UTF-8"));
+    DatabaseEntry make = new DatabaseEntry(theMake.getBytes("UTF-8"));
 
     colorSecCursor = automotiveColorDB.openSecondaryCursor(null, null); 
     typeSecCursor = automotiveTypeDB.openSecondaryCursor(null, null); 

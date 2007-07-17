@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep028.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
+# $Id: rep028.tcl,v 12.15 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  	rep028
 # TEST	Replication and non-rep env handles. (Also see rep006.)
@@ -65,12 +65,12 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	source ./include.tcl
 	global is_hp_test
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set omethod [convert_method $method]
 	env_cleanup $testdir
 

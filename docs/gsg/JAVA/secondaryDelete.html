@@ -94,11 +94,11 @@ try {
     // Omitting all database opens
     ...
 
-    String searchName = &quot;John Doe&quot;;
+    String searchName = "John Doe";
     DatabaseEntry searchKey = 
-        new DatabaseEntry(searchName.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(searchName.getBytes("UTF-8"));
 
-    // Delete the first secondary record that uses &quot;John Doe&quot; as
+    // Delete the first secondary record that uses "John Doe" as
     // a key. This causes the primary record referenced by this secondary
     // record to be deleted.
     OperationStatus retVal = mySecondaryDatabase.delete(null, searchKey);

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_method.c,v 1.34 2006/11/29 20:08:58 bostic Exp $
+ * $Id: repmgr_method.c,v 1.38 2007/06/11 18:29:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -13,11 +13,6 @@
 
 static int __repmgr_await_threads __P((DB_ENV *));
 
-/*
- * TODO: should (more of) this function be protected by mutex?  Caution: calling
- * rep_start while holding mutex doesn't work, 'cuz it pushes out a message to
- * the send() function.
- */
 /*
  * PUBLIC: int __repmgr_start __P((DB_ENV *, int, u_int32_t));
  */
@@ -89,7 +84,7 @@ __repmgr_start(dbenv, nthreads, flags)
 		__os_free(dbenv, my_addr.data);
 		if (ret == 0) {
 			LOCK_MUTEX(db_rep->mutex);
-			ret = __repmgr_init_election(dbenv, 0);
+			ret = __repmgr_init_election(dbenv, ELECT_SEEK_MASTER);
 			UNLOCK_MUTEX(db_rep->mutex);
 		}
 	}
@@ -207,16 +202,7 @@ __repmgr_env_create(dbenv, db_rep)
 	db_rep->config_nsites = 0;
 	db_rep->peer = DB_EID_INVALID;
 	db_rep->perm_policy = DB_REPMGR_ACKS_QUORUM;
-	db_rep->my_priority = 100;
 
-	/*
-	 * TODO: OK, this has just crossed my pain tolerance threshold: I think
-	 * this is just getting too unjustifiably complex.  It's probably just
-	 * to have an explicit flag of some sort indicating that initialization
-	 * has been done, and maybe not even bother with the fine granularity of
-	 * initializing net, sync and queue separately (at least in terms of
-	 * letting them succeed or fail independently).
-	 */
 #ifdef DB_WIN32
 	db_rep->waiters = NULL;
 #else
@@ -293,7 +279,6 @@ __repmgr_await_threads(dbenv)
 		db_rep->elect_thread = NULL;
 	}
 
-	/* TODO: if the join fails, how/when do we clean up the memory? */
 	for (i=0; i<db_rep->nthreads && db_rep->messengers[i] != NULL; i++) {
 		messenger = db_rep->messengers[i];
 		if ((t_ret = __repmgr_thread_join(messenger)) != 0 && ret == 0)

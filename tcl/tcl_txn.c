@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_txn.c,v 12.19 2006/11/08 23:06:59 ubell Exp $
+ * $Id: tcl_txn.c,v 12.22 2007/05/17 15:15:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -218,6 +218,9 @@ get_timeout:		if (i >= objc) {
 		case TXNREAD_UNCOMMITTED:
 			flag |= DB_READ_UNCOMMITTED;
 			break;
+		case TXNWAIT:
+			flag |= DB_TXN_WAIT;
+			break;
 #endif
 		case TXNNOSYNC:
 			flag |= DB_TXN_NOSYNC;
@@ -247,9 +250,6 @@ get_timeout:		if (i >= objc) {
 			break;
 		case TXNSYNC:
 			flag |= DB_TXN_SYNC;
-			break;
-		case TXNWAIT:
-			flag |= DB_TXN_WAIT;
 			break;
 		case TXNWRNOSYNC:
 			flag |= DB_TXN_WRITE_NOSYNC;
@@ -409,6 +409,7 @@ tcl_TxnStat(interp, objc, objv, envp)
 	/*
 	 * MAKE_STAT_LIST assumes 'res' and 'error' label.
 	 */
+#ifdef HAVE_STATISTICS
 	MAKE_STAT_LIST("Region size", sp->st_regsize);
 	MAKE_STAT_LSN("LSN of last checkpoint", &sp->st_last_ckp);
 	MAKE_STAT_LIST("Time of last checkpoint", sp->st_time_ckp);
@@ -439,6 +440,7 @@ tcl_TxnStat(interp, objc, objv, envp)
 				break;
 			}
 		}
+#endif
 	Tcl_SetObjResult(interp, res);
 error:
 	__os_ufree(envp, sp);

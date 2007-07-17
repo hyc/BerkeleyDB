@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: env_recover.c,v 12.39 2007/01/08 17:46:42 ubell Exp $
+ * $Id: env_recover.c,v 12.49 2007/06/08 17:34:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -20,13 +20,13 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 static int	__db_log_corrupt __P((DB_ENV *, DB_LSN *));
 static int	__env_init_rec_42 __P((DB_ENV *));
 static int	__env_init_rec_43 __P((DB_ENV *));
-static int	__env_init_rec_45 __P((DB_ENV *));
+static int	__env_init_rec_46 __P((DB_ENV *));
 static int	__log_earliest __P((DB_ENV *, DB_LOGC *, int32_t *, DB_LSN *));
 
 #ifndef HAVE_BREW
@@ -477,11 +477,18 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 
 	if (dbenv->tx_timestamp != 0) {
 		/* We are going to truncate, so we'd best close the cursor. */
-		if (logc != NULL && (ret = __logc_close(logc)) != 0)
-			goto err;
-		logc = NULL;
-		/* Flush everything to disk, we are losing the log. */
-		if ((ret = __memp_sync(dbenv, NULL)) != 0)
+		if (logc != NULL) {
+			if ((ret = __logc_close(logc)) != 0)
+				goto err;
+			logc = NULL;
+		}
+
+		/*
+		 * Flush everything to disk, we are losing the log.  It's
+		 * recovery, ignore any application max-write configuration.
+		 */
+		if ((ret = __memp_sync_int(dbenv, NULL, 0,
+		    DB_SYNC_CACHE | DB_SYNC_SUPPRESS_WRITE, NULL, NULL)) != 0)
 			goto err;
 		region->last_ckp = ((DB_TXNHEAD *)txninfo)->ckplsn;
 		if ((ret = __log_vtruncate(dbenv,
@@ -497,15 +504,16 @@ __db_apprec(dbenv, max_lsn, trunclsn, update, flags)
 		 * if we roll things further back from here.
 		 * These pages are only known in memory at this pont.
 		 */
-		 if ((ret = __db_do_the_limbo(dbenv,
-		       NULL, NULL, txninfo, LIMBO_COMPENSATE)) != 0)
+		if ((ret = __db_do_the_limbo(dbenv,
+		    NULL, NULL, txninfo, LIMBO_COMPENSATE)) != 0)
 			goto err;
 #endif
 	}
 
 done:
 	/* Take a checkpoint here to force any dirty data pages to disk. */
-	if ((ret = __txn_checkpoint(dbenv, 0, 0, DB_FORCE)) != 0) {
+	if (!IS_REP_CLIENT(dbenv) && (ret = __txn_checkpoint(dbenv, 0, 0,
+	    DB_CKP_INTERNAL | DB_FORCE)) != 0) {
 		/*
 		 * If there was no space for the checkpoint we can
 		 * still bring the environment up.  No updates will
@@ -518,9 +526,15 @@ done:
 			goto err;
 	}
 
-	/* Close all the db files that are open. */
-	if ((ret = __dbreg_close_files(dbenv)) != 0)
-		goto err;
+	if (region->stat.st_nrestores == 0) {
+		/* Close all the db files that are open. */
+		if ((ret = __dbreg_close_files(dbenv, 0)) != 0)
+			goto err;
+	} else {
+		if ((ret = __dbreg_mark_restored(dbenv)) != 0)
+			goto err;
+		F_SET(dbenv->lg_handle, DBLOG_OPENFILES);
+	}
 
 	if (max_lsn != NULL) {
 		if (!IS_ZERO_LSN(((DB_TXNHEAD *)txninfo)->ckplsn))
@@ -580,13 +594,6 @@ done:
 		if ((ret = __txn_reset(dbenv)) != 0)
 			goto err;
 	} else {
-		/*
-		 * If we have restored prepared txns then they are in process
-		 * as far as replication is concerned.
-		 */
-		if (REP_ON(dbenv))
-			dbenv->rep_handle->region->op_cnt =
-			    region->stat.st_nrestores;
 		if ((ret = __txn_recycle_id(dbenv)) != 0)
 			goto err;
 	}
@@ -927,14 +934,18 @@ __env_init_rec(dbenv, version)
 	 * functions.  Then we overwrite only specific entries based on
 	 * each previous version we support.
 	 */
-	if ((ret = __env_init_rec_45(dbenv)) != 0)
+	if ((ret = __env_init_rec_46(dbenv)) != 0)
 		return (ret);
 	ret = 0;
 	switch (version) {
 	/*
 	 * There are no log record/recovery differences between
 	 * 4.4 and 4.5.  The log version changed due to checksum.
+	 * There are no log recovery differences between
+	 * 4.5 and 4.6.  The name of the rep_gen in txn_checkpoint
+	 * changed (to spare, since we don't use it anymore).
 	 */
+	case DB_LOGVERSION_46:
 	case DB_LOGVERSION_45:
 	case DB_LOGVERSION_44:
 		break;
@@ -1016,11 +1027,11 @@ err:
 }
 
 /*
- * __env_init_rec_45 --
+ * __env_init_rec_46 --
  *
  */
 static int
-__env_init_rec_45(dbenv)
+__env_init_rec_46(dbenv)
 	DB_ENV *dbenv;
 {
 	int ret;

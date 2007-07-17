@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: TupleOrderingTest.java,v 12.7 2006/11/01 00:54:10 bostic Exp $
+ * $Id: TupleOrderingTest.java,v 12.8 2007/05/04 00:28:28 mark Exp $
  */
 
 package com.sleepycat.bind.tuple.test;
@@ -316,7 +316,7 @@ public class TupleOrderingTest extends TestCase {
     }
 
     public void testFloat() {
-
+        
         // Only positive floats and doubles are ordered deterministically
 
         final float[] DATA = {
@@ -338,7 +338,7 @@ public class TupleOrderingTest extends TestCase {
     }
 
     public void testDouble() {
-
+        
         // Only positive floats and doubles are ordered deterministically
 
         final double[] DATA = {

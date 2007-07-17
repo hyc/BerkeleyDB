@@ -2,9 +2,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_int.in,v 12.48 2006/11/29 20:08:41 bostic Exp $
+ * $Id: db_int.in,v 12.58 2007/05/30 14:06:39 bostic Exp $
  */
 
 #ifndef _DB_INT_H_
@@ -47,7 +47,9 @@
 #endif
 
 #if defined(__INCLUDE_NETWORKING)
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -69,6 +71,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#if defined(__INCLUDE_DIRECTORY)
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define NAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+#endif /* __INCLUDE_DIRECTORY_READ */
+
 #endif /* !HAVE_SYSTEM_INCLUDE_FILES */
 
 #ifdef DB_WIN32
@@ -96,12 +118,13 @@ extern "C" {
 #define	MEGABYTE	1048576
 #define	GIGABYTE	1073741824
 
-#define	MS_PER_NS	1000000		/* Milliseconds in a nanosecond */
-#define	MS_PER_SEC	1000		/* Milliseconds in a second */
 #define	NS_PER_MS	1000000		/* Nanoseconds in a millisecond */
 #define	NS_PER_US	1000		/* Nanoseconds in a microsecond */
+#define	NS_PER_SEC	1000000000	/* Nanoseconds in a second */
 #define	US_PER_MS	1000		/* Microseconds in a millisecond */
 #define	US_PER_SEC	1000000		/* Microseconds in a second */
+#define	MS_PER_NS	1000000		/* Milliseconds in a nanosecond */
+#define	MS_PER_SEC	1000		/* Milliseconds in a second */
 
 #define	RECNO_OOB	0		/* Illegal record number. */
 
@@ -202,6 +225,17 @@ typedef struct __fn {
 	    100 - ((double)(v) * 100) / (((double)total) * (pgsize))))
 
 /*
+ * Statistics update shared memory and so are expensive -- don't update the
+ * values unless we're going to display the results.
+ */
+#undef	STAT
+#ifdef	HAVE_STATISTICS
+#define	STAT(x)	x
+#else
+#define	STAT(x)
+#endif
+
+/*
  * Structure used for callback message aggregation.
  *
  * Display values in XXX_stat_print calls.
@@ -281,6 +315,7 @@ typedef struct __db_msgbuf {
 #define	DB_RETOK_DBDEL(ret)	DB_RETOK_DBCDEL(ret)
 #define	DB_RETOK_DBGET(ret)	DB_RETOK_DBCGET(ret)
 #define	DB_RETOK_DBPUT(ret)	((ret) == 0 || (ret) == DB_KEYEXIST)
+#define	DB_RETOK_EXISTS(ret)	DB_RETOK_DBCGET(ret)
 #define	DB_RETOK_LGGET(ret)	((ret) == 0 || (ret) == DB_NOTFOUND)
 #define	DB_RETOK_MPGET(ret)	((ret) == 0 || (ret) == DB_PAGE_NOTFOUND)
 #define	DB_RETOK_REPPMSG(ret)	((ret) == 0 || \
@@ -616,7 +651,6 @@ typedef struct __dbpginfo {
     ((lsn0)->offset != (lsn1)->offset ?					\
     ((lsn0)->offset < (lsn1)->offset ? -1 : 1) : 0))
 
-
 /*******************************************************
  * Txn.
  *******************************************************/
@@ -714,7 +748,7 @@ typedef SH_TAILQ_HEAD(__hash_head) DB_HASHTAB;
  * Test if we need to log a change.  By default, we don't log operations without
  * associated transactions, unless DIAGNOSTIC, DEBUG_ROP or DEBUG_WOP are on.
  * This is because we want to get log records for read/write operations, and, if
- * we trying to debug something, more information is always better.
+ * we are trying to debug something, more information is always better.
  *
  * The DBC_RECOVER flag is set when we're in abort, as well as during recovery;
  * thus DBC_LOGGING may be false for a particular dbc even when DBENV_LOGGING
@@ -724,7 +758,7 @@ typedef SH_TAILQ_HEAD(__hash_head) DB_HASHTAB;
  * in the log headers, which IS_RECOVERING (and thus DBENV_LOGGING) rely on, and
  * because DBC_RECOVER should be set anytime IS_RECOVERING would be true.
  *
- * If we're not in recovery (master - doing an abort a client applying
+ * If we're not in recovery (master - doing an abort or a client applying
  * a txn), then a client's only path through here is on an internal
  * operation, and a master's only path through here is a transactional
  * operation.  Detect if either is not the case.

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep020.tcl,v 12.12 2006/12/07 19:35:19 carol Exp $
+# $Id: rep020.tcl,v 12.16 2007/05/30 16:19:14 sue Exp $
 #
 # TEST  rep020
 # TEST	Replication elections - test election generation numbers.
@@ -47,12 +47,12 @@ proc rep020_sub { method nclients tnum logset largs } {
 	global errorInfo
 	global mixed_mode_logging
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -76,6 +76,7 @@ proc rep020_sub { method nclients tnum logset largs } {
 	set envlist {}
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 $verbargs \
+	    -event rep_event \
 	    -home $masterdir $m_txnargs $m_logargs -rep_master \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
@@ -85,8 +86,9 @@ proc rep020_sub { method nclients tnum logset largs } {
 	for { set i 0 } { $i < $nclients } { incr i } {
 		set envid [expr $i + 2]
 		repladd $envid
-		set env_cmd($i) "berkdb_env_noerr -create \
-		    -home $clientdir($i) $c_txnargs($i) $c_logargs($i) \
+		set env_cmd($i) "berkdb_env_noerr -create -event rep_event \
+		    $verbargs -home $clientdir($i) \
+		    $c_txnargs($i) $c_logargs($i) \
 		    -rep_client -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i)]
 		lappend envlist "$clientenv($i) $envid"
@@ -231,6 +233,7 @@ proc rep020_sub { method nclients tnum logset largs } {
 			binary scan $data c val
 			close $fid
 			set clientenv($i) [lindex $pair 0]
+			$clientenv($i) log_flush
 			error_check_good \
 			    clientenv_close($i) [$clientenv($i) close] 0
 			set clientenv($i) [eval $env_cmd($i) -recover]

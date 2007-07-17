@@ -148,7 +148,7 @@
       <p>
             For example:
         </p>
-      <pre class="programlisting">#include &quot;db_cxx.h&quot;
+      <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -162,7 +162,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle
                           DB_INIT_TXN;     // Initialize transactions
 
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {

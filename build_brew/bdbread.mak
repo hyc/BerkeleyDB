@@ -33,7 +33,7 @@
 BREW_HOME      =$(BREWDIR)
 ARM_HOME       =$(ARMHOME)
 TARGET         =D:\DB7588~1.BRE\BUILD_~1\bdb_brew
-OBJS           =bdbread.o AEEModGen.o AEEAppGen.o bt_compact.o bt_compare.o bt_conv.o bt_curadj.o bt_cursor.o bt_delete.o bt_method.o bt_open.o bt_put.o bt_rec.o bt_reclaim.o bt_recno.o bt_rsearch.o bt_search.o bt_split.o bt_stat.o btree_auto.o atol.o isalpha.o isdigit.o isprint.o isspace.o printf.o qsort.o rand.o strcasecmp.o strerror.o strncat.o strsep.o strtol.o crypto_stub.o db_byteorder.o db_err.o db_getlong.o db_idspace.o db_log2.o db_shash.o mkpath.o crdel_auto.o crdel_rec.o db.o db_am.o db_auto.o db_cam.o db_cds.o db_conv.o db_dispatch.o db_dup.o db_iface.o db_join.o db_meta.o db_method.o db_open.o db_overflow.o db_pr.o db_rec.o db_reclaim.o db_remove.o db_rename.o db_ret.o db_setid.o db_setlsn.o db_stati.o db_truncate.o db_upg.o db_vrfy_stub.o dbreg.o dbreg_auto.o dbreg_rec.o dbreg_stat.o dbreg_util.o env_alloc.o env_config.o env_failchk.o env_file.o env_method.o env_name.o env_open.o env_recover.o env_region.o env_register.o env_stat.o fileops_auto.o fop_basic.o fop_rec.o fop_util.o hash_func.o hash_stub.o hmac.o sha1.o lock_stub.o log.o log_archive.o log_compare.o log_debug.o log_get.o log_method.o log_put.o log_stat.o mp_alloc.o mp_bh.o mp_fget.o mp_fmethod.o mp_fopen.o mp_fput.o mp_fset.o mp_method.o mp_mvcc.o mp_region.o mp_register.o mp_stat.o mp_sync.o mp_trickle.o mut_stub.o os_alloc.o os_clock.o os_fid.o os_flock.o os_fzero.o os_getenv.o os_map.o os_region.o os_root.o os_rpath.o os_tmpdir.o os_uid.o os_yield.o ctime.o fclose.o fgetc.o fgets.o fopen.o fwrite.o getcwd.o globals.o localtime.o os_abort.o os_abs.o os_config.o os_dir.o os_errno.o os_handle.o os_mkdir.o os_oflags.o os_open.o os_pid.o os_rename.o os_rw.o os_seek.o os_sleep.o os_stat.o os_truncate.o os_unlink.o time.o qam_stub.o rep_stub.o txn.o txn_auto.o txn_chkpt.o txn_failchk.o txn_method.o txn_rec.o txn_recover.o txn_region.o txn_stat.o txn_util.o xa_stub.o
+OBJS           =bdbread.o AEEModGen.o AEEAppGen.o bt_compact.o bt_compare.o bt_conv.o bt_curadj.o bt_cursor.o bt_delete.o bt_method.o bt_open.o bt_put.o bt_rec.o bt_reclaim.o bt_recno.o bt_rsearch.o bt_search.o bt_split.o bt_stat.o btree_auto.o atol.o isalpha.o isdigit.o isprint.o isspace.o printf.o qsort.o rand.o strcasecmp.o strerror.o strncat.o strsep.o strtol.o crypto_stub.o db_byteorder.o db_err.o db_getlong.o db_idspace.o db_log2.o db_shash.o mkpath.o crdel_auto.o crdel_rec.o db.o db_am.o db_auto.o db_cam.o db_cds.o db_conv.o db_dispatch.o db_dup.o db_iface.o db_join.o db_meta.o db_method.o db_open.o db_overflow.o db_pr.o db_rec.o db_reclaim.o db_remove.o db_rename.o db_ret.o db_setid.o db_setlsn.o db_stati.o db_truncate.o db_upg.o db_vrfy_stub.o dbreg.o dbreg_auto.o dbreg_rec.o dbreg_stat.o dbreg_util.o env_alloc.o env_config.o env_failchk.o env_file.o env_method.o env_name.o env_open.o env_recover.o env_region.o env_register.o env_stat.o fileops_auto.o fop_basic.o fop_rec.o fop_util.o hash_func.o hash_stub.o hmac.o sha1.o lock_stub.o log.o log_archive.o log_compare.o log_debug.o log_get.o log_method.o log_put.o log_stat.o mp_alloc.o mp_bh.o mp_fget.o mp_fmethod.o mp_fopen.o mp_fput.o mp_fset.o mp_method.o mp_mvcc.o mp_region.o mp_register.o mp_resize.o mp_stat.o mp_sync.o mp_trickle.o mut_stub.o os_alloc.o os_clock.o os_fid.o os_flock.o os_fzero.o os_getenv.o os_map.o os_region.o os_root.o os_rpath.o os_tmpdir.o os_uid.o os_yield.o ctime.o fclose.o fgetc.o fgets.o fopen.o fwrite.o getcwd.o globals.o localtime.o os_abort.o os_abs.o os_config.o os_dir.o os_errno.o os_handle.o os_mkdir.o os_oflags.o os_open.o os_pid.o os_rename.o os_rw.o os_seek.o os_sleep.o os_stat.o os_truncate.o os_unlink.o time.o qam_stub.o rep_stub.o repmgr_stub.o txn.o txn_auto.o txn_chkpt.o txn_failchk.o txn_method.o txn_rec.o txn_recover.o txn_region.o txn_stat.o txn_util.o xa_stub.o
 APP_INCLUDES   =  -I ..\build_brew  -I ..
 
 #-------------------------------------------------------------------------------
@@ -526,6 +526,7 @@ mp_method.o:	..\mp\mp_method.c
 mp_mvcc.o:	..\mp\mp_mvcc.c
 mp_region.o:	..\mp\mp_region.c
 mp_register.o:	..\mp\mp_register.c
+mp_resize.o:	..\mp\mp_resize.c
 mp_stat.o:	..\mp\mp_stat.c
 mp_sync.o:	..\mp\mp_sync.c
 mp_trickle.o:	..\mp\mp_trickle.c
@@ -572,6 +573,7 @@ os_unlink.o:	..\os_brew\os_unlink.c
 time.o:	..\os_brew\time.c
 qam_stub.o:	..\qam\qam_stub.c
 rep_stub.o:	..\rep\rep_stub.c
+repmgr_stub.o:	..\repmgr\repmgr_stub.c
 txn.o:	..\txn\txn.c
 txn_auto.o:	..\txn\txn_auto.c
 txn_chkpt.o:	..\txn\txn_chkpt.c

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: test074.tcl,v 12.4 2006/11/01 00:54:02 bostic Exp $
+# $Id: test074.tcl,v 12.5 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	test074
 # TEST	Test of DB_NEXT_NODUP.

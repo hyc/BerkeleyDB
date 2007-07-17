@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2002,2006 Oracle.  All rights reserved.
+# Copyright (c) 2002,2007 Oracle.  All rights reserved.
 #
-# $Id: rep067.tcl,v 1.3 2006/12/07 19:37:44 carol Exp $
+# $Id: rep067.tcl,v 1.8 2007/06/15 14:39:51 carol Exp $
 #
 # TEST  rep067
 # TEST	Replication election test with large timeouts.
@@ -16,7 +16,7 @@
 # TEST	Using varied timeouts, we can force full participation if
 # TEST	all sites are present with "long_timeout" amount of time and
 # TEST	then revert to majority.
-#
+# TEST
 # TEST	A long_timeout would be several minutes whereas a normal
 # TEST	short timeout would be a few seconds.
 #
@@ -66,12 +66,12 @@ proc rep067_sub { method tnum niter nclients logset recargs largs } {
 	global rand_init
 	error_check_good set_random_seed [berkdb srand $rand_init] 0
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -94,6 +94,7 @@ proc rep067_sub { method tnum niter nclients logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
+	    -event rep_event \
 	    -home $masterdir $m_logargs $verbargs -errpfx MASTER \
 	    $m_txnargs -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
@@ -105,7 +106,8 @@ proc rep067_sub { method tnum niter nclients logset recargs largs } {
 	for { set i 0 } { $i < $nclients } { incr i } {
 		set envid [expr $i + 2]
 		repladd $envid
-		set env_cmd($i) "berkdb_env_noerr -create -home $clientdir($i) \
+		set env_cmd($i) "berkdb_env_noerr -create \
+		    -event rep_event -home $clientdir($i) \
 		    $c_logargs($i) $c_txnargs($i) -rep_client $verbargs \
 		    -errpfx CLIENT.$i -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i) $recargs]
@@ -134,7 +136,7 @@ proc rep067_sub { method tnum niter nclients logset recargs largs } {
 	# Run the test for all different timoeut combinations.
 	#
 	set c0to { long medium short }
-	set c1to { medium short long } 
+	set c1to { medium short long }
 	set c2to { short medium long }
 	set numtests [expr [llength $c0to] * [llength $c1to] * \
 	    [llength $c2to]]
@@ -142,7 +144,7 @@ proc rep067_sub { method tnum niter nclients logset recargs largs } {
 	set count 0
 	set last_win -1
 	set win -1
-	set quorum { majority all } 
+	set quorum { majority all }
 	foreach q $quorum {
 		puts "\t$m.b: Starting $numtests election with\
 		    timeout tests: $q must participate"
@@ -173,12 +175,19 @@ proc rep067_sub { method tnum niter nclients logset recargs largs } {
 proc rep067_elect { ecmd celist qdir msg count \
     winner lsn_lose elist quorum logset} {
 	global elect_timeout elect_serial
+	global timeout_ok
 	upvar $ecmd env_cmd
 	upvar $celist envlist
 	upvar $winner win
 	upvar $lsn_lose last_win
 
-	#
+	# Set the proper value for the first time through the 
+	# loop.  On subsequent passes, timeout_ok will already 
+	# be set. 
+	if { [info exists timeout_ok] == 0 } {
+		set timeout_ok 0
+	}
+
 	set nclients [llength $elist]
 	set nsites [expr $nclients + 1]
 
@@ -256,7 +265,8 @@ proc rep067_elect { ecmd celist qdir msg count \
 	}
 	set nvotes $nclients
 	run_election env_cmd envlist err_cmd pri crash \
-	    $qdir $msg $elector $nsites $nvotes $nclients $win
+	    $qdir $msg $elector $nsites $nvotes $nclients $win \
+	    0 "test.db" 0 $timeout_ok
 	#
 	# Sometimes test elections with an existing master.
 	# Other times test elections without master by closing the
@@ -267,7 +277,13 @@ proc rep067_elect { ecmd celist qdir msg count \
 	set close_list { 0 0 0 1 1 1 1 1 1 1}
 	set close_len [expr [llength $close_list] - 1]
 	set close_index [berkdb random_int 0 $close_len]
+
+	# Unless we close the master, the next election will time out.
+	set timeout_ok 1
+	
 	if { [lindex $close_list $close_index] == 1 } {
+		# Declare that we expect the next election to succeed.
+		set timeout_ok 0
 		puts -nonewline "\t\t$msg: Closing "
 		error_check_good newmaster_flush [$clientenv($win) log_flush] 0
 		error_check_good newmaster_close [$clientenv($win) close] 0

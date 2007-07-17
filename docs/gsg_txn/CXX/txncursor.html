@@ -45,7 +45,7 @@
             make sure that the cursor is closed before you either commit or
             abort the transaction. For example:
         </p>
-      <pre class="programlisting">#include &quot;db_cxx.h&quot;
+      <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -73,7 +73,7 @@ int main(void)
 
             // Perform our operations. Note that we do not pass a transaction
             // handle here.
-            char *replacementString = &quot;new string&quot;;
+            char *replacementString = "new string";
             while (cursor-&gt;get(&amp;key, &amp;data, DB_NEXT) == 0) {
                 data.set_data(void *)replacementString);
                 data.set_size((strlen(replacementString) + 1) * sizeof(char));
@@ -84,15 +84,15 @@ int main(void)
             cursor-&gt;close();
             txn-&gt;commit(0);
         } catch (DbException &amp;e) {
-            std::cerr &lt;&lt; &quot;Error in transaction: &quot;
+            std::cerr &lt;&lt; "Error in transaction: "
                        &lt;&lt; e.what() &lt;&lt; std::endl;
             cursor-&gt;close();
             txn-&gt;abort();
         }
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot;
+        std::cerr &lt;&lt; "Error opening database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }

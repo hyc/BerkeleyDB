@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: UtfTest.java,v 12.4 2006/11/01 00:54:15 bostic Exp $
+ * $Id: UtfTest.java,v 12.5 2007/05/04 00:28:30 mark Exp $
  */
 
 package com.sleepycat.util.test;

@@ -109,7 +109,7 @@
         <a id="c_cursor10"></a>
         <pre class="programlisting">/* File: example_database_read.c */
 /* gettingstarted_common.h includes db.h for us */
-#include &quot;gettingstarted_common.h&quot;
+#include "gettingstarted_common.h"
 
 /* Forward declarations */
 char * show_inventory_item(void *);
@@ -149,9 +149,9 @@ main(int argc, char *argv[])
     set_db_filenames(&amp;my_stock);
                                                                                                                                 
     /* Open all databases */
-    ret = databases_setup(&amp;my_stock, &quot;example_database_read&quot;, stderr);
+    ret = databases_setup(&amp;my_stock, "example_database_read", stderr);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening databases\n&quot;);
+        fprintf(stderr, "Error opening databases\n");
         databases_close(&amp;my_stock);
         return (ret);
     }
@@ -192,7 +192,7 @@ main(int argc, char *argv[])
      */
     exit_value = 0;
     while ((ret =
-      cursorp-&gt;c_get(cursorp, &amp;key, &amp;data, DB_NEXT))
+      cursorp-&gt;get(cursorp, &amp;key, &amp;data, DB_NEXT))
       == 0)
     {
         the_vendor = show_inventory_item(data.data);
@@ -204,7 +204,7 @@ main(int argc, char *argv[])
     }
                                                                                                                                   
     /* Close the cursor */
-    cursorp-&gt;c_close(cursorp);
+    cursorp-&gt;close(cursorp);
     return(exit_value);
 } </pre>
         <p>
@@ -258,12 +258,12 @@ show_inventory_item(void *vBuf)
     vendor_name = buf + buf_pos;
                                                                                                                                   
     /* Display all this information */
-    printf(&quot;name: %s\n&quot;, name);
-    printf(&quot;\tSKU: %s\n&quot;, sku);
-    printf(&quot;\tCategory: %s\n&quot;, category);
-    printf(&quot;\tPrice: %.2f\n&quot;, price);
-    printf(&quot;\tQuantity: %i\n&quot;, quantity);
-    printf(&quot;\tVendor:\n&quot;);
+    printf("name: %s\n", name);
+    printf("\tSKU: %s\n", sku);
+    printf("\tCategory: %s\n", category);
+    printf("\tPrice: %.2f\n", price);
+    printf("\tQuantity: %i\n", quantity);
+    printf("\tVendor:\n");
                                                                                                                                   
     /* Return the vendor's name */
     return(vendor_name);
@@ -311,17 +311,17 @@ show_vendor_record(char *vendor_name, DB *vendor_dbp)
     /* Get the record */
     ret = vendor_dbp-&gt;get(vendor_dbp, 0, &amp;key, &amp;data, 0);
     if (ret != 0) {
-        vendor_dbp-&gt;err(vendor_dbp, ret, &quot;Error searching for vendor: '%s'&quot;,
+        vendor_dbp-&gt;err(vendor_dbp, ret, "Error searching for vendor: '%s'",
           vendor_name);
         return(ret);
     } else {
-        printf(&quot;\t\t%s\n&quot;, my_vendor.name);
-        printf(&quot;\t\t%s\n&quot;, my_vendor.street);
-        printf(&quot;\t\t%s, %s\n&quot;, my_vendor.city, my_vendor.state);
-        printf(&quot;\t\t%s\n\n&quot;, my_vendor.zipcode);
-        printf(&quot;\t\t%s\n\n&quot;, my_vendor.phone_number);
-        printf(&quot;\t\tContact: %s\n&quot;, my_vendor.sales_rep);
-        printf(&quot;\t\t%s\n&quot;, my_vendor.sales_rep_phone);
+        printf("\t\t%s\n", my_vendor.name);
+        printf("\t\t%s\n", my_vendor.street);
+        printf("\t\t%s, %s\n", my_vendor.city, my_vendor.state);
+        printf("\t\t%s\n\n", my_vendor.zipcode);
+        printf("\t\t%s\n\n", my_vendor.phone_number);
+        printf("\t\tContact: %s\n", my_vendor.sales_rep);
+        printf("\t\t%s\n", my_vendor.sales_rep_phone);
     }
     return(0);
 } </pre>

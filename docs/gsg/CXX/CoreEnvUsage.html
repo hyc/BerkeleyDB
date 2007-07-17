@@ -63,18 +63,18 @@ u_int32_t env_flags = DB_CREATE |     // If the environment does not
                                       // exist, create it.
                       DB_INIT_MPOOL; // Initialize the in-memory cache.
 
-std::string envHome(&quot;/export1/testEnv&quot;);
+std::string envHome("/export1/testEnv");
 DbEnv myEnv(0);
 
 try {
     myEnv.open(envHome.c_str(), env_flags, 0);
 } catch(DbException &amp;e) {
-    std::cerr &lt;&lt; &quot;Error opening database environment: &quot;
+    std::cerr &lt;&lt; "Error opening database environment: "
               &lt;&lt; envHome &lt;&lt; std::endl;
     std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     exit( -1 );
 } catch(std::exception &amp;e) {
-    std::cerr &lt;&lt; &quot;Error opening database environment: &quot;
+    std::cerr &lt;&lt; "Error opening database environment: "
               &lt;&lt; envHome &lt;&lt; std::endl;
     std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     exit( -1 );
@@ -87,12 +87,14 @@ try {
       <a id="cxx_env2"></a>
       <pre class="programlisting">#include &lt;db_cxx.h&gt;
 ...
-u_int32_t env_flags = DB_CREATE;  // If the environment does not
+u_int32_t env_flags = DB_CREATE |  // If the environment does not
                                   // exist, create it.
+                      DB_INIT_MPOOL; // Initialize the in-memory cache.
+std::string envHome("/export1/testEnv");
+                    
 <b class="userinput"><tt>u_int32_t db_flags = DB_CREATE;   // If the database does not
                                   // exist, create it.</tt></b>
-std::string envHome(&quot;/export1/testEnv&quot;);
-<b class="userinput"><tt>std::string dbName(&quot;mydb.db&quot;);</tt></b>
+<b class="userinput"><tt>std::string dbName("mydb.db");</tt></b>
 DbEnv myEnv(0);
 <b class="userinput"><tt>Db *myDb;</tt></b>
 
@@ -106,16 +108,16 @@ try {
                db_flags,
                0);</tt></b>
 } catch(DbException &amp;e) {
-    std::cerr &lt;&lt; &quot;Error opening database environment: &quot;
+    std::cerr &lt;&lt; "Error opening database environment: "
               &lt;&lt; envHome 
-              &lt;&lt; &quot; and database &quot;
+              &lt;&lt; " and database "
               &lt;&lt; dbName &lt;&lt; std::endl;
     std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     exit( -1 );
 } catch(std::exception &amp;e) {
-    std::cerr &lt;&lt; &quot;Error opening database environment: &quot;
+    std::cerr &lt;&lt; "Error opening database environment: "
               &lt;&lt; envHome 
-              &lt;&lt; &quot; and database &quot;
+              &lt;&lt; " and database "
               &lt;&lt; dbName &lt;&lt; std::endl;
     std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     exit( -1 );
@@ -132,16 +134,16 @@ try {
     myEnv.close(0);
     
 } catch(DbException &amp;e) {
-    std::cerr &lt;&lt; &quot;Error closing database environment: &quot;
+    std::cerr &lt;&lt; "Error closing database environment: "
               &lt;&lt; envHome 
-              &lt;&lt; &quot; or database &quot;
+              &lt;&lt; " or database "
               &lt;&lt; dbName &lt;&lt; std::endl;
     std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     exit( -1 );
 } catch(std::exception &amp;e) {
-    std::cerr &lt;&lt; &quot;Error closing database environment: &quot;
+    std::cerr &lt;&lt; "Error closing database environment: "
               &lt;&lt; envHome 
-              &lt;&lt; &quot; or database &quot;
+              &lt;&lt; " or database "
               &lt;&lt; dbName &lt;&lt; std::endl;
     std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     exit( -1 );

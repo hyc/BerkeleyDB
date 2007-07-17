@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006
- *	Oracle Corp.  All rights reserved.
+ * Copyright (c) 2006,2007 Oracle.  All rights reserved.
  *
- * $Id: fclose.c,v 1.2 2006/09/13 17:38:18 bostic Exp $
+ * $Id: fclose.c,v 1.3 2007/05/17 15:15:47 bostic Exp $
  */
 
 #include "db_config.h"

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: test110.tcl,v 1.9 2006/11/01 00:54:02 bostic Exp $
+# $Id: test110.tcl,v 1.10 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	test110
 # TEST	Partial get test with duplicates.

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os_alloc.c,v 12.11 2006/11/01 00:53:39 bostic Exp $
+ * $Id: os_alloc.c,v 12.13 2007/05/17 15:15:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -366,13 +366,20 @@ __os_free(dbenv, ptr)
 {
 #ifdef DIAGNOSTIC
 	size_t size;
+#endif
+
 	/*
-	 * Check that the guard byte (one past the end of the memory) is
-	 * still CLEAR_BYTE.
+	 * ANSI C requires free(NULL) work.  Don't depend on the underlying
+	 * library.
 	 */
 	if (ptr == NULL)
 		return;
 
+#ifdef DIAGNOSTIC
+	/*
+	 * Check that the guard byte (one past the end of the memory) is
+	 * still CLEAR_BYTE.
+	 */
 	ptr = &((db_allocinfo_t *)ptr)[-1];
 	size = ((db_allocinfo_t *)ptr)->size;
 	if (((u_int8_t *)ptr)[size - 1] != CLEAR_BYTE)
@@ -381,8 +388,9 @@ __os_free(dbenv, ptr)
 	/* Overwrite memory. */
 	if (size != 0)
 		memset(ptr, CLEAR_BYTE, size);
-#endif
+#else
 	COMPQUIET(dbenv, NULL);
+#endif
 
 	if (DB_GLOBAL(j_free) != NULL)
 		DB_GLOBAL(j_free)(ptr);

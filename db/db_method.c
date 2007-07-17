@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: db_method.c,v 12.32 2007/01/11 20:50:27 bostic Exp $
+ * $Id: db_method.c,v 12.40 2007/05/22 00:37:15 ubell Exp $
  */
 
 #include "db_config.h"
@@ -30,6 +30,7 @@ static int  __db_get_byteswapped __P((DB *, int *));
 static int  __db_get_dbname __P((DB *, const char **, const char **));
 static DB_ENV *__db_get_env __P((DB *));
 static DB_MPOOLFILE *__db_get_mpf __P((DB *));
+static int  __db_get_multiple __P((DB *));
 static int  __db_get_transactional __P((DB *));
 static int  __db_get_type __P((DB *, DBTYPE *dbtype));
 static int  __db_init __P((DB *, u_int32_t));
@@ -47,6 +48,7 @@ static void __db_map_flags __P((DB *, u_int32_t *, u_int32_t *));
 static int  __db_get_pagesize __P((DB *, u_int32_t *));
 static int  __db_set_paniccall __P((DB *, void (*)(DB_ENV *, int)));
 static int  __db_set_priority __P((DB *, DB_CACHE_PRIORITY));
+static int  __db_get_priority __P((DB *, DB_CACHE_PRIORITY *));
 static void __db_set_errcall
 	      __P((DB *, void (*)(const DB_ENV *, const char *, const char *)));
 static void __db_get_errfile __P((DB *, FILE **));
@@ -100,19 +102,11 @@ db_create(dbpp, dbenv, flags)
 		return (__db_ferr(dbenv, "db_create", 0));
 	}
 
-	/* If we don't have an environment yet, allocate a local one. */
-	if (dbenv == NULL) {
-		if ((ret = db_env_create(&dbenv, 0)) != 0)
-			return (ret);
-		F_SET(dbenv, DB_ENV_DBLOCAL);
-	}
-
-	ENV_ENTER(dbenv, ip);
+	if (dbenv != NULL)
+		ENV_ENTER(dbenv, ip);
 	ret = __db_create_internal(dbpp, dbenv, flags);
-	ENV_LEAVE(dbenv, ip);
-
-	if (ret != 0 && F_ISSET(dbenv, DB_ENV_DBLOCAL))
-		(void)__env_close(dbenv, 0);
+	if (dbenv != NULL)
+		ENV_LEAVE(dbenv, ip);
 
 	return (ret);
 }
@@ -133,7 +127,15 @@ __db_create_internal(dbpp, dbenv, flags)
 	DB_REP *db_rep;
 	int ret;
 
-	dbp = NULL;
+	*dbpp = NULL;
+
+	/* If we don't have an environment yet, allocate a local one. */
+	if (dbenv == NULL) {
+		if ((ret = db_env_create(&dbenv, 0)) != 0)
+			return (ret);
+		F_SET(dbenv, DB_ENV_DBLOCAL);
+	}
+
 	/* Allocate and initialize the DB handle. */
 	if ((ret = __os_calloc(dbenv, 1, sizeof(*dbp), &dbp)) != 0)
 		goto err;
@@ -171,12 +173,15 @@ __db_create_internal(dbpp, dbenv, flags)
 	*dbpp = dbp;
 	return (0);
 
-err:	if (dbp != NULL && dbp->mpf != NULL)
-		(void)__memp_fclose(dbp->mpf, 0);
-
-	if (dbp != NULL)
+err:	if (dbp != NULL) {
+		if (dbp->mpf != NULL)
+			(void)__memp_fclose(dbp->mpf, 0);
 		__os_free(dbenv, dbp);
-	*dbpp = NULL;
+	}
+
+	if (F_ISSET(dbenv, DB_ENV_DBLOCAL))
+		(void)__env_close(dbenv, 0);
+
 	return (ret);
 }
 
@@ -191,7 +196,7 @@ __db_init(dbp, flags)
 {
 	int ret;
 
-	dbp->lid = DB_LOCK_INVALIDID;
+	dbp->locker = NULL;
 	LOCK_INIT(dbp->handle_lock);
 
 	TAILQ_INIT(&dbp->free_queue);
@@ -211,6 +216,7 @@ __db_init(dbp, flags)
 	dbp->dump = __db_dump_pp;
 	dbp->err = __dbh_err;
 	dbp->errx = __dbh_errx;
+	dbp->exists = __db_exists;
 	dbp->fd = __db_fd_pp;
 	dbp->get = __db_get_pp;
 	dbp->get_byteswapped = __db_get_byteswapped;
@@ -224,6 +230,7 @@ __db_init(dbp, flags)
 	dbp->get_lorder = __db_get_lorder;
 	dbp->get_mpf = __db_get_mpf;
 	dbp->get_msgfile = __db_get_msgfile;
+	dbp->get_multiple = __db_get_multiple;
 	dbp->get_open_flags = __db_get_open_flags;
 	dbp->get_pagesize = __db_get_pagesize;
 	dbp->get_transactional = __db_get_transactional;
@@ -251,6 +258,7 @@ __db_init(dbp, flags)
 	dbp->set_pagesize = __db_set_pagesize;
 	dbp->set_paniccall = __db_set_paniccall;
 	dbp->set_priority = __db_set_priority;
+	dbp->get_priority = __db_get_priority;
 	dbp->stat = __db_stat_pp;
 	dbp->stat_print = __db_stat_print_pp;
 	dbp->sync = __db_sync_pp;
@@ -417,8 +425,31 @@ __db_get_mpf(dbp)
 }
 
 /*
+ * get_multiple --
+ *	Return whether this DB handle references a physical file with multiple
+ *	databases.
+ */
+static int
+__db_get_multiple(dbp)
+	DB *dbp;
+{
+	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->get_multiple");
+
+	/*
+	 * Only return TRUE if the handle is for the master database, not for
+	 * any subdatabase in the physical file.  If it's a Btree, with the
+	 * subdatabases flag set, and the meta-data page has the right value,
+	 * return TRUE.  (We don't need to check it's a Btree, I suppose, but
+	 * it doesn't hurt.)
+	 */
+	return (dbp->type == DB_BTREE &&
+	    F_ISSET(dbp, DB_AM_SUBDB) &&
+	    dbp->meta_pgno == PGNO_BASE_MD ? 1 : 0);
+}
+
+/*
  * get_transactional --
- *	Get whether this database was created in a transaction.
+ *	Return whether this database was created in a transaction.
  */
 static int
 __db_get_transactional(dbp)
@@ -881,5 +912,14 @@ __db_set_priority(dbp, priority)
 	DB_CACHE_PRIORITY priority;
 {
 	dbp->priority = priority;
+	return (0);
+}
+
+static int
+__db_get_priority(dbp, priority)
+	DB *dbp;
+	DB_CACHE_PRIORITY *priority;
+{
+	*priority = dbp->priority;
 	return (0);
 }

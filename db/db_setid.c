@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: db_setid.c,v 12.22 2006/12/06 02:45:52 bostic Exp $
+ * $Id: db_setid.c,v 12.26 2007/05/26 00:13:14 ubell Exp $
  */
 
 #include "db_config.h"
@@ -101,8 +101,10 @@ __env_fileid_reset(dbenv, name, encrypted)
 	 * updating the file ID on page 0, we might connect to the file from
 	 * which the copy was made.
 	 */
-	if ((ret = __os_open(dbenv, real_name, 0, 0, 0, &fhp)) != 0)
+	if ((ret = __os_open(dbenv, real_name, 0, 0, 0, &fhp)) != 0) {
+		__db_err(dbenv, ret, "%s", real_name);
 		goto err;
+	}
 	if ((ret = __os_read(dbenv, fhp, mbuf, sizeof(mbuf), &n)) != 0)
 		goto err;
 
@@ -124,8 +126,8 @@ __env_fileid_reset(dbenv, name, encrypted)
 		goto err;
 
 	if ((ret = __db_meta_setup(dbenv,
-	    dbp, real_name, (DBMETA *)mbuf, 0, 1)) != 0)
-	    	goto err;
+	    dbp, real_name, (DBMETA *)mbuf, 0, DB_CHK_META)) != 0)
+		goto err;
 	memcpy(((DBMETA *)mbuf)->uid, fileid, DB_FILE_ID_LEN);
 	cookie.db_pagesize = sizeof(mbuf);
 	cookie.flags = dbp->flags;
@@ -148,7 +150,7 @@ __env_fileid_reset(dbenv, name, encrypted)
 	 * (No existing code, as far as I know, actually uses the file ID of
 	 * a subdatabase, but it's cleaner to get them all.)
 	 */
-	
+
 	/*
 	 * Open the DB file.
 	 *

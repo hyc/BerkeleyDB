@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_meta.c,v 12.42 2007/01/22 06:12:09 alexg Exp $
+ * $Id: db_meta.c,v 12.47 2007/05/17 17:17:41 bostic Exp $
  */
 
 #include "db_config.h"
@@ -264,22 +264,25 @@ __db_free(dbc, h)
 	DB_LSN *lsnp;
 	DB_MPOOLFILE *mpf;
 	PAGE *prev;
-	db_pgno_t last_pgno, *lp, next_pgno, pgno, prev_pgno;
-	u_int32_t lflag, nelem;
-	int do_truncate, ret, t_ret;
+	db_pgno_t last_pgno, next_pgno, pgno, prev_pgno;
+	u_int32_t lflag;
+	int ret, t_ret;
 #ifdef HAVE_FTRUNCATE
-	db_pgno_t *list;
-	u_int32_t position, start;
+	db_pgno_t *list, *lp;
+	u_int32_t nelem, position, start;
+	int do_truncate;
 #endif
 
 	dbp = dbc->dbp;
 	mpf = dbp->mpf;
 	prev_pgno = PGNO_INVALID;
-	nelem = 0;
 	meta = NULL;
 	prev = NULL;
-	do_truncate = 0;
+#ifdef HAVE_FTRUNCATE
 	lp = NULL;
+	nelem = 0;
+	do_truncate = 0;
+#endif
 
 	/*
 	 * Retrieve the metadata page.  If we are not keeping a sorted
@@ -295,12 +298,20 @@ __db_free(dbc, h)
 	if ((ret = __db_lget(dbc,
 	    LCK_ALWAYS, pgno, DB_LOCK_WRITE, 0, &metalock)) != 0)
 		goto err;
-	if ((ret = __memp_fget(mpf, &pgno, dbc->txn, 0, &meta)) != 0)
+
+	/* If we support truncate, we might not dirty the meta page. */
+	if ((ret = __memp_fget(mpf, &pgno, dbc->txn,
+#ifdef HAVE_FTRUNCATE
+	    0,
+#else
+	    DB_MPOOL_DIRTY,
+#endif
+	    &meta)) != 0)
 		goto err1;
 
 	last_pgno = meta->last_pgno;
 	next_pgno = meta->free;
-	/* 
+	/*
 	 * Assign lsnp here so it always initialized when
 	 * HAVE_FTRUNCATE is not defined.
 	 */
@@ -371,7 +382,7 @@ no_sort:
 			goto err1;
 		next_pgno = NEXT_PGNO(prev);
 		lsnp = &LSN(prev);
-	} 
+	}
 #endif
 
 	/*
@@ -826,7 +837,8 @@ __db_truncate_freelist(dbc, meta, h, list, start, nelem)
 			if ((ret = __memp_fget(mpf, lp, dbc->txn, 0, &pg)) != 0)
 				goto err;
 			pp->lsn = LSN(pg);
-			if ((ret = __memp_fput(mpf, pg, DB_PRIORITY_VERY_LOW)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, pg, DB_PRIORITY_VERY_LOW)) != 0)
 				goto err;
 			pp++;
 		}

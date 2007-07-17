@@ -163,7 +163,7 @@
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -171,14 +171,14 @@ main(void)
     int ret, ret_c;
     u_int32_t env_flags;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
     
     envp = NULL;
 
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -194,7 +194,7 @@ main(void)
     /* Configure max locks */
     ret = envp-&gt;set_lk_max_locks(envp, 5000);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error configuring locks: %s\n&quot;,
+        fprintf(stderr, "Error configuring locks: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -202,7 +202,7 @@ main(void)
     /* Open the environment. */
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -212,7 +212,7 @@ err:
     if (envp != NULL) {
         ret_c = envp-&gt;close(envp, 0);
         if (ret_c != 0) {
-            fprintf(stderr, &quot;environment close failed: %s\n&quot;,
+            fprintf(stderr, "environment close failed: %s\n",
                 db_strerror(ret_c));
             ret = ret_c;
         }
@@ -354,7 +354,7 @@ err:
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -364,15 +364,15 @@ main(void)
     DB *dbp;
     DB_ENV *envp;
     DB_TXN *txn;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    const char *file_name = "mydb.db";
     
     envp = NULL;
 
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -392,14 +392,14 @@ main(void)
      */
     ret = envp-&gt;set_lk_detect(envp, DB_LOCK_MINWRITE);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error setting lk detect: %s\n&quot;,
+        fprintf(stderr, "Error setting lk detect: %s\n",
             db_strerror(ret));
         goto err;
     }
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -487,7 +487,7 @@ main(void)
         <pre class="programlisting">retry:
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, 0);
     if (ret != 0) {
-            envp-&gt;err(envp, ret, &quot;txn_begin failed&quot;);
+            envp-&gt;err(envp, ret, "txn_begin failed");
             return (EXIT_FAILURE);
     }
     ...
@@ -508,27 +508,27 @@ main(void)
              * MAX_DEADLOCK_RETRIES times.
              */
             if (retry_count &lt; MAX_DEADLOCK_RETRIES) {
-                printf(&quot;Got DB_LOCK_DEADLOCK.\n&quot;);
-                printf(&quot;Retrying write operation.\n&quot;);
+                printf("Got DB_LOCK_DEADLOCK.\n");
+                printf("Retrying write operation.\n");
                     retry_count++;
                     goto retry;
              }
-             printf(&quot;Got DB_LOCK_DEADLOCK and out of retries.&quot;);
-             printf(&quot;Giving up.\n&quot;);
+             printf("Got DB_LOCK_DEADLOCK and out of retries.");
+             printf("Giving up.\n");
              return (EXIT_FAILURE);
          default:
             /* If some random database error occurs, we just give up */
-            envp-&gt;err(envp, ret, &quot;db put failed&quot;);
+            envp-&gt;err(envp, ret, "db put failed");
             ret = txn-&gt;abort(txn);
             if (ret != 0) {
-                envp-&gt;err(envp, ret, &quot;txn abort failed&quot;);
+                envp-&gt;err(envp, ret, "txn abort failed");
                 return (EXIT_FAILURE);
              } 
          }
     /* If all goes well, commit the transaction */
     ret = txn-&gt;commit(txn, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;txn commit failed&quot;);
+        envp-&gt;err(envp, ret, "txn commit failed");
         return (EXIT_FAILURE);
     }
 

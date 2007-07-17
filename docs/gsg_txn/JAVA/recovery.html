@@ -166,7 +166,7 @@ try {
     // Run normal recovery
     myEnvConfig.setRunRecovery(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // All other operations are identical from here. Notice, however,
@@ -265,7 +265,7 @@ try {
     // Run catastrophic recovery
     <b class="userinput"><tt>myEnvConfig.setRunFatalRecovery(true);</tt></b>
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
 } catch (DatabaseException de) {

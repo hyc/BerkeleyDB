@@ -444,6 +444,9 @@ SOURCE=..\mp\mp_region.c
 SOURCE=..\mp\mp_register.c
 # End Source File
 # Begin Source File
+SOURCE=..\mp\mp_resize.c
+# End Source File
+# Begin Source File
 SOURCE=..\mp\mp_stat.c
 # End Source File
 # Begin Source File
@@ -580,6 +583,9 @@ SOURCE=..\qam\qam_stub.c
 # End Source File
 # Begin Source File
 SOURCE=..\rep\rep_stub.c
+# End Source File
+# Begin Source File
+SOURCE=..\repmgr\repmgr_stub.c
 # End Source File
 # Begin Source File
 SOURCE=..\txn\txn.c

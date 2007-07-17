@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db.src,v 12.8 2006/11/02 21:24:19 ubell Exp $
+ * $Id: db.src,v 12.9 2007/05/17 15:14:56 bostic Exp $
  */
 
 PREFIX	__db

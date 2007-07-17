@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: txnscript.tcl,v 12.4 2006/11/01 00:54:03 bostic Exp $
+# $Id: txnscript.tcl,v 12.5 2007/05/17 15:15:56 bostic Exp $
 #
 # Txn003 script - outstanding child prepare script
 # Usage: txnscript envcmd dbcmd gidf key data

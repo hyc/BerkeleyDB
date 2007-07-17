@@ -173,7 +173,7 @@ try {
     myEnvConfig.setTransactional(true);
     myEnvConfig.setMaxLocks(5000);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
 } catch (DatabaseException de) {
@@ -336,7 +336,7 @@ try {
     // is detected.
     envConfig.setLockDetectMode(LockDetectMode.MINWRITE);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // From here, you open your databases, proceed with your 
@@ -437,11 +437,11 @@ while (retry_count &lt; MAX_DEADLOCK_RETRIES) {
             txn.abort();
             retry_count++;
             if (retry_count &gt;= MAX_DEADLOCK_RETRIES) {
-                System.err.println(&quot;Exceeded retry limit. Giving up.&quot;);
+                System.err.println("Exceeded retry limit. Giving up.");
                 return -1;
             }
         } catch (DatabaseException ae) {
-            System.err.println(&quot;txn abort failed: &quot; + ae.toString());
+            System.err.println("txn abort failed: " + ae.toString());
             return -1;    
         }
     } catch (DatabaseException e) {
@@ -449,7 +449,7 @@ while (retry_count &lt; MAX_DEADLOCK_RETRIES) {
             // Abort the transaction.
             txn.abort();
         } catch (DatabaseException ae) {
-            System.err.println(&quot;txn abort failed: &quot; + ae.toString());
+            System.err.println("txn abort failed: " + ae.toString());
             return -1;    
         }
     }

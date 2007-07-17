@@ -62,7 +62,7 @@
     DB_TXN *txn = NULL;
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, DB_TXN_NOWAIT);
     if (ret != 0) {
-            envp-&gt;err(envp, ret, &quot;txn_begin failed&quot;);
+            envp-&gt;err(envp, ret, "txn_begin failed");
             return (EXIT_FAILURE);
     }
         ....  

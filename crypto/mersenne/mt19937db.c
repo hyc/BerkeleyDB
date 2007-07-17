@@ -1,5 +1,5 @@
 /*
- * $Id: mt19937db.c,v 12.5 2006/11/29 20:08:38 bostic Exp $
+ * $Id: mt19937db.c,v 12.6 2007/04/18 18:16:04 bostic Exp $
  */
 #include "db_config.h"
 
@@ -160,7 +160,7 @@ __db_genrand(dbenv)
 			__db_chksum(NULL, (u_int8_t *)&ts.tv_sec,
 			    sizeof(ts.tv_sec), NULL, (u_int8_t *)&seed);
 		} while (seed == 0);
-        	__db_sgenrand((long)seed, dbenv->mt, &dbenv->mti);
+        	__db_sgenrand((unsigned long)seed, dbenv->mt, &dbenv->mti);
 	}
 
         for (kk=0;kk<N-M;kk++) {

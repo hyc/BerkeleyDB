@@ -143,7 +143,7 @@
             </p>
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
-#include &quot;db.h&quot;     
+#include "db.h"     
 
 int
 main(void)
@@ -151,14 +151,14 @@ main(void)
     int ret;
     u_int32_t env_flags;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
 
     envp = NULL;
 
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -176,7 +176,7 @@ main(void)
     /* Open the environment. */
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -251,7 +251,7 @@ main(void)
             </p>
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
-#include &quot;db.h&quot;     
+#include "db.h"     
 
 int
 main(void)
@@ -259,14 +259,14 @@ main(void)
     int ret;
     u_int32_t env_flags;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
 
     envp = NULL;
 
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -284,7 +284,7 @@ main(void)
     /* Open the environment. */
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }

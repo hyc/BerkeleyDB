@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_verify.c,v 12.9 2006/11/01 00:52:39 bostic Exp $
+ * $Id: db_verify.c,v 12.11 2007/05/17 15:15:05 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 int main __P((int, char *[]));
@@ -35,7 +35,7 @@ main(argc, argv)
 	int quiet, resize, ret;
 	char *home, *passwd;
 
-	if ((progname = strrchr(argv[0], '/')) == NULL)
+	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
 	else
 		++progname;

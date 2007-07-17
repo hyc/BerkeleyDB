@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2004,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2004,2007 Oracle.  All rights reserved.
  *
  * http://www.apache.org/licenses/LICENSE-2.0.txt
  * 
@@ -522,7 +522,7 @@ int mod_db4_db_env_create(DB_ENV **dbenvp, u_int32_t flags)
     /* grab context info from httpd.conf for error file */
     /* grab context info for cachesize */
     if (0 && cachesize) {
-        if(( ret = dbenv->set_cachesize(dbenv, 0, cachesize, 0)) != 0) {
+        if ((ret = dbenv->set_cachesize(dbenv, 0, cachesize, 0)) != 0) {
             dbenv->err(dbenv, ret, "set_cachesize");
             dbenv->close(dbenv, 0);
         }

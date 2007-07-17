@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: hash_stat.c,v 12.13 2006/11/29 21:23:17 ubell Exp $
+ * $Id: hash_stat.c,v 12.17 2007/07/02 16:58:02 alexg Exp $
  */
 
 #include "db_config.h"
@@ -56,6 +56,14 @@ __ham_stat(dbc, spp, flags)
 	/* Copy the fields that we have. */
 	sp->hash_nkeys = hcp->hdr->dbmeta.key_count;
 	sp->hash_ndata = hcp->hdr->dbmeta.record_count;
+	/*
+	 * Don't take the page number from the meta-data page -- that value is
+	 * only maintained in the primary database, we may have been called on
+	 * a subdatabase.
+	 */
+	if ((ret = __memp_get_last_pgno(dbp->mpf, &pgno)) != 0)
+		goto err;
+	sp->hash_pagecnt = pgno + 1;
 	sp->hash_pagesize = dbp->pgsize;
 	sp->hash_buckets = hcp->hdr->max_bucket + 1;
 	sp->hash_magic = hcp->hdr->dbmeta.magic;
@@ -225,6 +233,7 @@ __ham_stat_callback(dbp, pagep, cookie, putp)
 		 * Obviously such pages have no data, so we can just proceed.
 		 */
 		break;
+	case P_HASH_UNSORTED:
 	case P_HASH:
 		/*
 		 * We count the buckets and the overflow pages

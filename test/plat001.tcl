@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2006 Oracle.  All rights reserved.
+# Copyright (c) 2005,2007 Oracle.  All rights reserved.
 #
-# $Id: plat001.tcl,v 1.6 2006/11/01 00:53:54 bostic Exp $
+# $Id: plat001.tcl,v 1.7 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	plat001
 # TEST

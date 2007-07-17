@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: sdb007.tcl,v 12.6 2006/11/01 00:53:58 bostic Exp $
+# $Id: sdb007.tcl,v 12.7 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	sdb007
 # TEST	Tests page size difference errors between subdbs.

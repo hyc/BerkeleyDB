@@ -272,7 +272,7 @@
         <p>
                 For example:
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -288,7 +288,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle
                           DB_INIT_TXN;     // Initialize transactions
 
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -310,8 +310,8 @@ int main(void)
         myEnv.open(envHome.c_str(), env_flags, 0);
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot;
+        std::cerr &lt;&lt; "Error opening database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
@@ -353,7 +353,7 @@ int main(void)
                 large enough that no transaction will ever span the entire
                 buffer. You must also avoid a state where the in-memory
                 buffer is full and no space can be freed because a
-                transaction that started the first log &quot;file&quot; is still
+                transaction that started the first log "file" is still
                 active.
             </p>
         <p>

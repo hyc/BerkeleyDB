@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
- * 
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ *
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
  */
 
@@ -60,18 +60,18 @@ public class PartialGetTest {
     {
         DatabaseEntry key = new DatabaseEntry("key".getBytes());
         Database db = setupDb1(key, data_64chars);
-        
+     
         StringEntry partialData = new StringEntry();
         partialData.setPartial(true);
         partialData.setPartial(0, 12, true);
-        
+     
         if (db.get(null, key, partialData, LockMode.DEFAULT) !=
             OperationStatus.SUCCESS)
             fail("Failed doing partial retrieval, first part of entry on single page.");
         // Validate the data.
         if (!MatchData(data_64chars, partialData.getString(), 12))
             fail("Data mismatch from partial get.");
-        
+     
         partialData.setPartial(12, 12, true);
         if (db.get(null, key, partialData, LockMode.DEFAULT) !=
             OperationStatus.SUCCESS)
@@ -79,10 +79,10 @@ public class PartialGetTest {
         // Validate the data.
         if (!MatchData(new String(data_64chars, 12, 12), partialData.getString(), 12))
             fail("Data mismatch from partial get.");
-            
+         
         db.close(false);
     }
-    
+ 
     /*
      * Retrieve entry using different DB_DBT_alloc flags.
      * Verify results.
@@ -95,20 +95,20 @@ public class PartialGetTest {
         StringEntry partialData = new StringEntry();
         partialData.setPartial(true);
         partialData.setPartial(0, 12, true);
-        
+     
         if (db.get(null, key, partialData, LockMode.DEFAULT) !=
             OperationStatus.SUCCESS)
             fail("Failed doing partial retrieval.");
         // Validate the data.
         if (!MatchData(data_64chars, partialData.getString(), 12))
             fail("Data mismatch from partial get.");
-        
+     
         partialData.setReuseBuffer(true);
         if (db.get(null, key, partialData, LockMode.DEFAULT) !=
             OperationStatus.SUCCESS)
         if (!MatchData(data_64chars, partialData.getString(), 12))
             fail("Data mismatch from partial get.");
-        
+     
         partialData.setReuseBuffer(false);
         partialData.setUserBuffer(64, true);
         partialData.setData(new byte[64]);
@@ -116,7 +116,7 @@ public class PartialGetTest {
             OperationStatus.SUCCESS)
         if (!MatchData(data_64chars, partialData.getString(), 12))
             fail("Data mismatch from partial get.");
-        
+     
         partialData.setPartial(12, 12, true);
         if (db.get(null, key, partialData, LockMode.DEFAULT) !=
             OperationStatus.SUCCESS)
@@ -127,9 +127,9 @@ public class PartialGetTest {
 
         db.close(false);
     }
-    
+ 
     /* Retrieve entry that spans multiple pages. */
-    
+ 
     @Test public void test3()
         throws DatabaseException, FileNotFoundException
     {
@@ -140,11 +140,11 @@ public class PartialGetTest {
             sb.append("abcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_+-=");
         }
         Database db = setupDb1(key, sb.toString().getBytes());
-        
+     
         StringEntry partialData = new StringEntry();
         partialData.setPartial(true);
         partialData.setPartial(0, 12, true);
-        
+     
         if (db.get(null, key, partialData, LockMode.DEFAULT) !=
             OperationStatus.SUCCESS)
             fail("Failed doing partial retrieval.");
@@ -172,7 +172,7 @@ public class PartialGetTest {
 
         db.close(false);
     }
-    
+ 
     /*
      * Test partial retrieval using a cursor.
      */
@@ -180,7 +180,7 @@ public class PartialGetTest {
         throws DatabaseException, FileNotFoundException
     {
     }
-    
+ 
     /*
      * Test partial retrieval using different DB types.
      */
@@ -188,7 +188,7 @@ public class PartialGetTest {
         throws DatabaseException, FileNotFoundException
     {
     }
-    
+ 
     /*
      * Test partial retrieval .
      */
@@ -200,7 +200,7 @@ public class PartialGetTest {
     /*
      * Helper methods and classes follow.
      */
-    
+ 
     private Database setupDb1(DatabaseEntry key, byte[] dataData)
         throws DatabaseException, FileNotFoundException
     {
@@ -211,15 +211,15 @@ public class PartialGetTest {
         dbConfig.setPageSize(1024);
         dbConfig.setAllowCreate(true);
         Database db = new Database(TestUtils.getDBFileName(PARTIALGETTEST_DBNAME), null, dbConfig);
-        
+     
         DatabaseEntry data = new DatabaseEntry(dataData);
-        
+     
         if(db.putNoOverwrite(null, key, data) != OperationStatus.SUCCESS)
             TestUtils.ERR("Failed to create standard entry in database.");
-            
+         
         return db;
     }
-    
+ 
     /* Save converting String to do data comparisons. */
     private boolean MatchData(byte[] data1, byte[] data2, int len)
     {
@@ -241,22 +241,22 @@ public class PartialGetTest {
         TestUtils.DEBUGOUT(0, "data2: " +data2.substring(0, 12));
         return data1.regionMatches(0, data2, 0, len);
     }
-    
+ 
     static /*inner*/
     class StringEntry extends DatabaseEntry {
         StringEntry() {
         }
-        
+     
         StringEntry (String value) {
             setString(value);
         }
-        
+     
         void setString(String value) {
             byte[] data = value.getBytes();
             setData(data);
             setSize(data.length);
         }
-        
+     
         String getString() {
             return new String(getData(), getOffset(), getSize());
         }

@@ -11,9 +11,9 @@ size_t __env_alloc_overhead __P((void));
 size_t __env_alloc_size __P((size_t));
 int __env_alloc __P((REGINFO *, size_t, void *));
 void __env_alloc_free __P((REGINFO *, void *));
-size_t __env_alloc_sizeof __P((void *));
 void __env_alloc_print __P((REGINFO *, u_int32_t));
 int __env_read_db_config __P((DB_ENV *));
+int __config_split __P((char *, char *[]));
 int __env_failchk_pp __P((DB_ENV *, u_int32_t));
 int __env_thread_init __P((DB_ENV *, int));
 int __env_set_state __P((DB_ENV *, DB_THREAD_INFO **, DB_THREAD_STATE));
@@ -76,6 +76,36 @@ void __db_dl_pct __P((DB_ENV *, const char *, u_long, int, const char *));
 void __db_dlbytes __P((DB_ENV *, const char *, u_long, u_long, u_long));
 void __db_print_reginfo __P((DB_ENV *, REGINFO *, const char *, u_int32_t));
 int __db_stat_not_built __P((DB_ENV *));
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_close __P((DB_ENV *));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_add_remote_site __P((DB_ENV *, const char *, u_int, int *, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_get_ack_policy __P((DB_ENV *, int *));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_set_ack_policy __P((DB_ENV *, int));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_set_local_site __P((DB_ENV *, const char *, u_int, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_site_list __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_start __P((DB_ENV *, int, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_stat_pp __P((DB_ENV *, DB_REPMGR_STAT **, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_stat_print_pp __P((DB_ENV *, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_handle_event __P((DB_ENV *, u_int32_t, void *));
+#endif
 
 #if defined(__cplusplus)
 }

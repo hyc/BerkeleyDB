@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: LockDetectMode.java,v 12.4 2006/11/01 00:53:30 bostic Exp $
+ * $Id: LockDetectMode.java,v 12.5 2007/05/17 15:15:41 bostic Exp $
  */
 
 package com.sleepycat.db;

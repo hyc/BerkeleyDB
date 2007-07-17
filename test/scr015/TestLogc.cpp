@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: TestLogc.cpp,v 12.4 2006/11/01 00:54:04 bostic Exp $
+ * $Id: TestLogc.cpp,v 12.5 2007/05/17 15:15:57 bostic Exp $
  */
 
 /*

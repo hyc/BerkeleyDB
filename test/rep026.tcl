@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep026.tcl,v 12.14 2006/12/07 19:35:19 carol Exp $
+# $Id: rep026.tcl,v 12.18 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep026
 # TEST	Replication elections - simulate a crash after sending
@@ -54,14 +54,14 @@ proc rep026 { method args } {
 
 proc rep026_sub { method nclients tnum logset largs } {
 	source ./include.tcl
-	global machids queuedbs
+	global machids
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -85,6 +85,7 @@ proc rep026_sub { method nclients tnum logset largs } {
 	set envlist {}
 	repladd 1
 	set env_cmd(M) "berkdb_env -create -log_max 1000000 $verbargs \
+	    -event rep_event \
 	    -home $masterdir $m_txnargs $m_logargs -rep_master \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
@@ -95,6 +96,7 @@ proc rep026_sub { method nclients tnum logset largs } {
 		set envid [expr $i + 2]
 		repladd $envid
 		set env_cmd($i) "berkdb_env_noerr -create $verbargs \
+		    -event rep_event \
 		    -home $clientdir($i) $c_txnargs($i) $c_logargs($i) \
 		    -rep_client -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i)]
@@ -188,14 +190,7 @@ proc rep026_sub { method nclients tnum logset largs } {
 		# and emptying the originals.
 		set cwd [pwd]
 		foreach machid $machids {
-			replready $machid to
-			cd $qdir
-			set msgdbs [glob -nocomplain ready.$machid.*]
-			foreach msgdb $msgdbs {
-				set savename [string replace $msgdb 0 5 save.]
-				file copy -force $msgdb $savename
-			}
-			cd $cwd
+			file copy -force $qdir/repqueue$machid.db $qdir/save$machid.db
 			replclear $machid
 		}
 
@@ -206,7 +201,7 @@ proc rep026_sub { method nclients tnum logset largs } {
 		    $elector $elector "$clientenv($elector) [expr $elector + 2]"]
 		process_msgs $envlist
 
-		# Verify egens (should be +1 in C, and unchanged 
+		# Verify egens (should be +1 in C, and unchanged
 		# in other clients).
 		foreach pair $envlist {
 			set i [expr [lindex $pair 1] - 2]
@@ -267,14 +262,7 @@ proc restore_messages { qdir } {
 	global machids
 	set cwd [pwd]
 	foreach machid $machids {
-		replready $machid to
-		cd $qdir
-		set msgdbs [glob -nocomplain save.$machid.*]
-		foreach msgdb $msgdbs {
-			set rdyname [string replace $msgdb 0 4 ready.]
-			file copy -force $msgdb $rdyname
-		}
-		cd $cwd
+		file copy -force $qdir/save$machid.db $qdir/repqueue$machid.db
 	}
 }
 

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: log_put.c,v 12.52 2007/01/27 03:22:07 alanb Exp $
+ * $Id: log_put.c,v 12.58 2007/05/30 12:36:55 mjc Exp $
  */
 
 #include "db_config.h"
@@ -121,6 +121,7 @@ __log_put(dbenv, lsnp, udbt, flags)
 		return (EINVAL);
 	}
 #endif
+	DB_ASSERT(dbenv, !IS_REP_CLIENT(dbenv));
 
 	/*
 	 * If we are coming from the logging code, we use an internal flag,
@@ -171,10 +172,17 @@ __log_put(dbenv, lsnp, udbt, flags)
 		 * Replication masters need to drop the lock to send messages,
 		 * but want to drop and reacquire it a minimal number of times.
 		 */
-		LOG_SYSTEM_UNLOCK(dbenv);
-		lock_held = 0;
 		ctlflags = LF_ISSET(DB_LOG_COMMIT | DB_LOG_CHKPNT) ?
 		    REPCTL_PERM : 0;
+		/*
+		 * If using leases, keep track of our last PERM lsn.
+		 * Set this on a master under the log lock.
+		 */
+		if (IS_USING_LEASES(dbenv) &&
+		    FLD_ISSET(ctlflags, REPCTL_PERM))
+			lp->max_perm_lsn = lsn;
+		LOG_SYSTEM_UNLOCK(dbenv);
+		lock_held = 0;
 		if (LF_ISSET(DB_FLUSH))
 			ctlflags |= REPCTL_FLUSH;
 
@@ -239,9 +247,16 @@ __log_put(dbenv, lsnp, udbt, flags)
 		 * Flush it, even if we're running with TXN_NOSYNC,
 		 * on the grounds that it should be in durable
 		 * form somewhere.
+		 *
+		 * If the send fails with this perm record and leases
+		 * are in use, we need to forcibly expire all lease
+		 * grants to prevent authoritative reads.
 		 */
-		if (ret != 0 && FLD_ISSET(ctlflags, REPCTL_PERM))
+		if (ret != 0 && FLD_ISSET(ctlflags, REPCTL_PERM)) {
 			LF_SET(DB_FLUSH);
+			if (IS_USING_LEASES(dbenv))
+				(void)__rep_lease_expire(dbenv, 0);
+		}
 		/*
 		 * We ignore send failures so reset 'ret' to 0 here.
 		 * We needed to check special return values from
@@ -277,7 +292,7 @@ __log_put(dbenv, lsnp, udbt, flags)
 		lp->stat.st_wc_bytes = lp->stat.st_wc_mbytes = 0;
 
 	/* Increment count of records added to the log. */
-	++lp->stat.st_record;
+	STAT(++lp->stat.st_record);
 
 	if (0) {
 panic_check:	/*
@@ -573,7 +588,7 @@ __log_newfile(dblp, lsnp, logfile, version)
 		lp->w_off = 0;
 		if (lp->db_log_inmemory) {
 			lsn = lp->lsn;
-			(void)__log_vtruncate(dbenv, &lsn, &lsn, NULL);
+			(void)__log_zero(dbenv, &lsn);
 		} else {
 			lp->s_lsn = lp->lsn;
 			if ((ret = __log_newfh(dblp, 1)) != 0)
@@ -849,7 +864,7 @@ __log_flush_int(dblp, lsnp, release)
 
 	if (lp->db_log_inmemory) {
 		lp->s_lsn = lp->lsn;
-		++lp->stat.st_scount;
+		STAT(++lp->stat.st_scount);
 		return (0);
 	}
 
@@ -1014,7 +1029,7 @@ flush:	MUTEX_LOCK(dbenv, lp->mtx_flush);
 		LOG_SYSTEM_LOCK(dbenv);
 
 	lp->in_flush--;
-	++lp->stat.st_scount;
+	STAT(++lp->stat.st_scount);
 
 	/*
 	 * How many flush calls (usually commits) did this call actually sync?
@@ -1045,11 +1060,13 @@ done:
 				first = 0;
 			}
 	}
+#ifdef HAVE_STATISTICS
 	if (lp->stat.st_maxcommitperflush < ncommit)
 		lp->stat.st_maxcommitperflush = ncommit;
 	if (lp->stat.st_mincommitperflush > ncommit ||
 	    lp->stat.st_mincommitperflush == 0)
 		lp->stat.st_mincommitperflush = ncommit;
+#endif
 
 	return (ret);
 }
@@ -1099,7 +1116,7 @@ __log_fill(dblp, lsn, addr, len)
 				return (ret);
 			addr = (u_int8_t *)addr + nrec * bsize;
 			len -= nrec * bsize;
-			++lp->stat.st_wcount_fill;
+			STAT(++lp->stat.st_wcount_fill);
 			continue;
 		}
 
@@ -1116,7 +1133,7 @@ __log_fill(dblp, lsn, addr, len)
 			if ((ret = __log_write(dblp, dblp->bufp, bsize)) != 0)
 				return (ret);
 			lp->b_off = 0;
-			++lp->stat.st_wcount_fill;
+			STAT(++lp->stat.st_wcount_fill);
 		}
 	}
 	return (0);
@@ -1181,15 +1198,17 @@ __log_write(dblp, addr, len)
 	lp->w_off += len;
 
 	/* Update written statistics. */
-	if ((lp->stat.st_w_bytes += len) >= MEGABYTE) {
-		lp->stat.st_w_bytes -= MEGABYTE;
-		++lp->stat.st_w_mbytes;
-	}
 	if ((lp->stat.st_wc_bytes += len) >= MEGABYTE) {
 		lp->stat.st_wc_bytes -= MEGABYTE;
 		++lp->stat.st_wc_mbytes;
 	}
+#ifdef HAVE_STATISTICS
+	if ((lp->stat.st_w_bytes += len) >= MEGABYTE) {
+		lp->stat.st_w_bytes -= MEGABYTE;
+		++lp->stat.st_w_mbytes;
+	}
 	++lp->stat.st_wcount;
+#endif
 
 	return (0);
 }
@@ -1421,13 +1440,14 @@ err:	__os_free(dbenv, oname);
  * Note that the REP->mtx_clientdb should be held when this is called.
  * Note that we acquire the log region mutex while holding mtx_clientdb.
  *
- * PUBLIC: int __log_rep_put __P((DB_ENV *, DB_LSN *, const DBT *));
+ * PUBLIC: int __log_rep_put __P((DB_ENV *, DB_LSN *, const DBT *, u_int32_t));
  */
 int
-__log_rep_put(dbenv, lsnp, rec)
+__log_rep_put(dbenv, lsnp, rec, flags)
 	DB_ENV *dbenv;
 	DB_LSN *lsnp;
 	const DBT *rec;
+	u_int32_t flags;
 {
 	DB_CIPHER *db_cipher;
 	DB_LOG *dblp;
@@ -1464,6 +1484,12 @@ err:
 	 * !!! Assume caller holds REP->mtx_clientdb to modify ready_lsn.
 	 */
 	lp->ready_lsn = lp->lsn;
+
+	if (LF_ISSET(DB_LOG_CHKPNT))
+		lp->stat.st_wc_bytes = lp->stat.st_wc_mbytes = 0;
+
+	/* Increment count of records added to the log. */
+	STAT(++lp->stat.st_record);
 	LOG_SYSTEM_UNLOCK(dbenv);
 	if (need_free)
 		__os_free(dbenv, t.data);

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: db_server_proc.c,v 12.17 2006/11/01 00:53:48 bostic Exp $
+ * $Id: db_server_proc.c,v 12.22 2007/06/28 13:59:24 bostic Exp $
  */
 
 #include "db_config.h"
@@ -372,7 +372,8 @@ __env_open_proc(dbenvcl_id, home, flags, mode, replyp)
 	if (__dbsrv_verbose) {
 		dbenv->set_errfile(dbenv, stderr);
 		dbenv->set_errpfx(dbenv, fullhome->home);
-	}
+	} else
+		dbenv->set_errfile(dbenv, NULL);
 
 	/*
 	 * Mask off flags we ignore
@@ -1754,6 +1755,47 @@ err:		FREE_IF_CHANGED(dbp->dbenv, key.data, keydata);
 }
 
 /*
+ * PUBLIC: void __db_get_priority_proc __P((u_int, __db_get_priority_reply *));
+ */
+void
+__db_get_priority_proc(dbpcl_id, replyp)
+	u_int dbpcl_id;
+	__db_get_priority_reply *replyp;
+{
+	DB *dbp;
+	ct_entry *dbp_ctp;
+
+	ACTIVATE_CTP(dbp_ctp, dbpcl_id, CT_DB);
+	dbp = (DB *)dbp_ctp->ct_anyp;
+
+	replyp->status =
+	    dbp->get_priority(dbp, (DB_CACHE_PRIORITY *)&replyp->priority);
+}
+
+/*
+ * PUBLIC: void __db_set_priority_proc __P((u_int, u_int32_t,
+ * PUBLIC:      __db_set_priority_reply *));
+ */
+void
+__db_set_priority_proc(dbpcl_id, priority, replyp)
+	u_int dbpcl_id;
+	u_int32_t priority;
+	__db_set_priority_reply *replyp;
+{
+	DB *dbp;
+	ct_entry *dbp_ctp;
+	int ret;
+
+	ACTIVATE_CTP(dbp_ctp, dbpcl_id, CT_DB);
+	dbp = (DB *)dbp_ctp->ct_anyp;
+
+	ret = dbp->set_priority(dbp, (DB_CACHE_PRIORITY)priority);
+
+	replyp->status = ret;
+	return;
+}
+
+/*
  * PUBLIC: void __db_get_re_delim_proc __P((u_int, __db_get_re_delim_reply *));
  */
 void
@@ -2682,6 +2724,48 @@ __dbc_put_proc(dbccl_id, keydlen, keydoff, keyulen, keyflags, keydata,
 		replyp->keydata.keydata_val = NULL;
 		replyp->keydata.keydata_len = 0;
 	}
+	replyp->status = ret;
+	return;
+}
+
+/*
+ * PUBLIC: void
+ * PUBLIC: __dbc_get_priority_proc __P((u_int, __dbc_get_priority_reply *));
+ */
+void
+__dbc_get_priority_proc(dbccl_id, replyp)
+	u_int dbccl_id;
+	__dbc_get_priority_reply *replyp;
+{
+	DBC *dbc;
+	ct_entry *dbc_ctp;
+
+	ACTIVATE_CTP(dbc_ctp, dbccl_id, CT_CURSOR);
+	dbc = (DBC *)dbc_ctp->ct_anyp;
+
+	replyp->status =
+	    dbc->get_priority(dbc, (DB_CACHE_PRIORITY *)&replyp->priority);
+}
+
+/*
+ * PUBLIC: void __dbc_set_priority_proc __P((u_int, u_int32_t,
+ * PUBLIC:      __dbc_set_priority_reply *));
+ */
+void
+__dbc_set_priority_proc(dbccl_id, priority, replyp)
+	u_int dbccl_id;
+	u_int32_t priority;
+	__dbc_set_priority_reply *replyp;
+{
+	DBC *dbc;
+	ct_entry *dbc_ctp;
+	int ret;
+
+	ACTIVATE_CTP(dbc_ctp, dbccl_id, CT_CURSOR);
+	dbc = (DBC *)dbc_ctp->ct_anyp;
+
+	ret = dbc->set_priority(dbc, (DB_CACHE_PRIORITY)priority);
+
 	replyp->status = ret;
 	return;
 }

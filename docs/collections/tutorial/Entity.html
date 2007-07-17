@@ -118,10 +118,10 @@
 	before writing it to a collection. But this would detract from the
 	convenience of the using the Java collections API. It is convenient
 	to obtain a <tt class="classname">Part</tt> object directly from 
-	<a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.html#get" target="_top">Map.get</a>
+	<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#get" target="_top">Map.get</a>
 	
 	and to add a <tt class="classname">Part</tt> object using 
-	<a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Set.html#add" target="_top">Set.add</a>.
+	<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Set.html#add" target="_top">Set.add</a>.
 	Collections having entity bindings can be used naturally without
 	combining and splitting objects each time a collection method is
 	called; however, an entity binding class must be defined by the
@@ -136,7 +136,7 @@
 	bindings, but the <tt class="classname">SampleDatabase</tt> class was not changed at
 	all. In fact, the Entity program and the Index program can be used
 	interchangeably to access the same physical database files. This
-	demonstrates that bindings are only a &quot;view&quot; onto the physical
+	demonstrates that bindings are only a "view" onto the physical
 	stored data.
 </p>
       <p>
@@ -183,7 +183,7 @@
     An important difference between the entity classes defined here
 	and the key and value classes defined earlier is that the entity
 	classes are not serializable (do not implement the 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/io/Serializable.html" target="_top">Serializable</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/io/Serializable.html" target="_top">Serializable</a>
     
 	interface). This is because the entity classes are not directly
 	stored. The entity binding decomposes an entity object into key and
@@ -243,11 +243,11 @@
 
     public String toString()
     {
-        return &quot;Part: number=&quot; + number +
-               &quot; name=&quot; + name +
-               &quot; color=&quot; + color +
-               &quot; weight=&quot; + weight +
-               &quot; city=&quot; + city + '.';
+        return "Part: number=" + number +
+               " name=" + name +
+               " color=" + color +
+               " weight=" + weight +
+               " city=" + city + '.';
     }
 }</tt></b> </pre>
         <a id="entity_supplier"></a>
@@ -288,10 +288,10 @@
 
     public String toString()
     {
-        return &quot;Supplier: number=&quot; + number +
-               &quot; name=&quot; + name +
-               &quot; status=&quot; + status +
-               &quot; city=&quot; + city + '.';
+        return "Supplier: number=" + number +
+               " name=" + name +
+               " status=" + status +
+               " city=" + city + '.';
     }
 } </tt></b> </pre>
         <a id="entity_shipment"></a>
@@ -325,9 +325,9 @@
 
     public String toString()
     {
-        return &quot;Shipment: part=&quot; + partNumber +
-                &quot; supplier=&quot; + supplierNumber +
-                &quot; quantity=&quot; + quantity + '.';
+        return "Shipment: part=" + partNumber +
+                " supplier=" + supplierNumber +
+                " quantity=" + quantity + '.';
     }
 } </tt></b> </pre>
       </div>

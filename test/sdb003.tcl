@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: sdb003.tcl,v 12.5 2006/11/01 00:53:58 bostic Exp $
+# $Id: sdb003.tcl,v 12.8 2007/07/05 20:48:30 carol Exp $
 #
 # TEST	sdb003
 # TEST	Tests many subdbs
@@ -27,6 +27,7 @@ proc sdb003 { method {nentries 1000} args } {
 	puts "Subdb003: $method ($args) many subdb tests"
 
 	set txnenv 0
+	set rpcenv 0
 	set eindex [lsearch -exact $args "-env"]
 	#
 	# If we are using an env, then testfile should just be the db name.
@@ -38,6 +39,7 @@ proc sdb003 { method {nentries 1000} args } {
 		set testfile subdb003.db
 		incr eindex
 		set env [lindex $args $eindex]
+		set rpcenv [is_rpcenv $env]
 		set txnenv [is_txnenv $env]
 		if { $txnenv == 1 } {
 			append args " -auto_commit "
@@ -69,6 +71,12 @@ proc sdb003 { method {nentries 1000} args } {
 	set ndataent 10
 	set fdid [open $dict]
 	while { [gets $fdid str] != -1 && $fcount < $nentries } {
+		# Unlike the standard API, RPC doesn't support empty
+		# database names. [#15600]
+		if { $str == "" && $rpcenv == 1 } {
+			continue
+		}
+
 		set subdb $str
 		set db [eval {berkdb_open -create -mode 0644} \
 		    $args {$omethod $testfile $subdb}]

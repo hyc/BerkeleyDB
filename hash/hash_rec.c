@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_rec.c,v 12.26 2006/11/29 21:23:17 ubell Exp $
+ * $Id: hash_rec.c,v 12.37 2007/07/04 11:19:01 alexg Exp $
  */
 
 #include "db_config.h"
@@ -73,11 +73,11 @@ __ham_insdel_recover(dbenv, dbtp, lsnp, op, info)
 	DBC *dbc;
 	DB_MPOOLFILE *mpf;
 	PAGE *pagep;
+	db_indx_t dindx;
 	u_int32_t opcode;
-	int cmp_n, cmp_p, ret, type;
+	int cmp_n, cmp_p, dtype, ktype, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 
 	REC_PRINT(__ham_insdel_print);
 	REC_INTRO(__ham_insdel_read, 1, 0);
@@ -112,6 +112,7 @@ __ham_insdel_recover(dbenv, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
+
 	/*
 	 * Two possible things going on:
 	 * redo a delete/undo a put: delete the item from the page.
@@ -119,37 +120,28 @@ __ham_insdel_recover(dbenv, dbtp, lsnp, op, info)
 	 * If we are undoing a delete, then the information logged is the
 	 * entire entry off the page, not just the data of a dbt.  In
 	 * this case, we want to copy it back onto the page verbatim.
-	 * We do this by calling __putitem with the type H_OFFPAGE instead
+	 * We do this by calling __insertpair with the type H_OFFPAGE instead
 	 * of H_KEYDATA.
 	 */
-
 	opcode = OPCODE_OF(argp->opcode);
 	if ((opcode == DELPAIR && cmp_n == 0 && DB_UNDO(op)) ||
 	    (opcode == PUTPAIR && cmp_p == 0 && DB_REDO(op))) {
 		/*
-		 * Need to redo a PUT or undo a delete.  If we are undoing a
-		 * delete, we've got to restore the item back to its original
-		 * position.  That's a royal pain in the butt (because we do
-		 * not store item lengths on the page), but there's no choice.
+		 * Need to redo a PUT or undo a delete.
 		 */
 		REC_DIRTY(mpf, file_dbp->priority, &pagep);
-		if (opcode != DELPAIR ||
-		    argp->ndx == (u_int32_t)NUM_ENT(pagep)) {
-			__ham_putitem(file_dbp, pagep, &argp->key,
-			    DB_UNDO(op) || PAIR_ISKEYBIG(argp->opcode) ?
-			    H_OFFPAGE : H_KEYDATA);
-
-			if (PAIR_ISDATADUP(argp->opcode))
-				type = H_DUPLICATE;
-			else if (DB_UNDO(op) || PAIR_ISDATABIG(argp->opcode))
-				type = H_OFFPAGE;
-			else
-				type = H_KEYDATA;
-			__ham_putitem(file_dbp, pagep, &argp->data, type);
-		} else
-			__ham_reputpair(file_dbp, pagep,
-			    argp->ndx, &argp->key, &argp->data);
-
+		ktype = DB_UNDO(op) || PAIR_ISKEYBIG(argp->opcode) ?
+		    H_OFFPAGE : H_KEYDATA;
+		if (PAIR_ISDATADUP(argp->opcode))
+			dtype = H_DUPLICATE;
+		else if (DB_UNDO(op) || PAIR_ISDATABIG(argp->opcode))
+			dtype = H_OFFPAGE;
+		else
+			dtype = H_KEYDATA;
+		dindx = (db_indx_t)argp->ndx;
+		if ((ret = __ham_insertpair(file_dbp, NULL, pagep, &dindx,
+		    &argp->key, &argp->data, ktype, dtype)) != 0)
+			goto out;
 		LSN(pagep) = DB_REDO(op) ? *lsnp : argp->pagelsn;
 	} else if ((opcode == DELPAIR && cmp_p == 0 && DB_REDO(op)) ||
 	    (opcode == PUTPAIR && cmp_n == 0 && DB_UNDO(op))) {
@@ -196,7 +188,6 @@ __ham_newpage_recover(dbenv, dbtp, lsnp, op, info)
 	int change, cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 
 	REC_PRINT(__ham_newpage_print);
 	REC_INTRO(__ham_newpage_read, 1, 0);
@@ -337,7 +328,6 @@ __ham_replace_recover(dbenv, dbtp, lsnp, op, info)
 	u_int8_t *hk;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 
 	REC_PRINT(__ham_replace_print);
 	REC_INTRO(__ham_replace_read, 1, 0);
@@ -434,7 +424,6 @@ __ham_splitdata_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 
 	REC_PRINT(__ham_splitdata_print);
 	REC_INTRO(__ham_splitdata_read, 1, 0);
@@ -471,7 +460,8 @@ __ham_splitdata_recover(dbenv, dbtp, lsnp, op, info)
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->pagelsn);
 
 	/*
-	 * There are two types of log messages here, one for the old page
+	 * There are three types of log messages here. Two are related
+	 * to an actual page split operation, one for the old page
 	 * and one for the new pages created.  The original image in the
 	 * SPLITOLD record is used for undo.  The image in the SPLITNEW
 	 * is used for redo.  We should never have a case where there is
@@ -479,6 +469,10 @@ __ham_splitdata_recover(dbenv, dbtp, lsnp, op, info)
 	 * the SPLITNEW record.  Therefore, we only have work to do when
 	 * redo NEW messages and undo OLD messages, but we have to update
 	 * LSNs in both cases.
+	 *
+	 * The third message is generated when a page is sorted (SORTPAGE). In
+	 * an undo the original image in the SORTPAGE is used. In a redo we
+	 * recreate the sort operation by calling __ham_sort_page.
 	 */
 	if (cmp_p == 0 && DB_REDO(op)) {
 		REC_DIRTY(mpf, file_dbp->priority, &pagep);
@@ -486,10 +480,15 @@ __ham_splitdata_recover(dbenv, dbtp, lsnp, op, info)
 			/* Need to redo the split described. */
 			memcpy(pagep, argp->pageimage.data,
 			    argp->pageimage.size);
+		else if (argp->opcode == SORTPAGE) {
+			if ((ret = __ham_sort_page(file_dbp,
+			    NULL, NULL, pagep)) != 0)
+				goto out;
+		}
 		LSN(pagep) = *lsnp;
 	} else if (cmp_n == 0 && DB_UNDO(op)) {
 		REC_DIRTY(mpf, file_dbp->priority, &pagep);
-		if (argp->opcode == SPLITOLD) {
+		if (argp->opcode == SPLITOLD || argp->opcode == SORTPAGE) {
 			/* Put back the old image. */
 			memcpy(pagep, argp->pageimage.data,
 			    argp->pageimage.size);
@@ -533,7 +532,6 @@ __ham_copypage_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 
 	REC_PRINT(__ham_copypage_print);
 	REC_INTRO(__ham_copypage_read, 1, 0);
@@ -641,7 +639,6 @@ __ham_metagroup_recover(dbenv, dbtp, lsnp, op, info)
 	u_int32_t flags;
 	int cmp_n, cmp_p, did_alloc, groupgrow, ret;
 
-	COMPQUIET(info, NULL);
 	did_alloc = 0;
 	mmeta = NULL;
 	REC_PRINT(__ham_metagroup_print);
@@ -727,7 +724,8 @@ __ham_metagroup_recover(dbenv, dbtp, lsnp, op, info)
 			pagep->lsn = argp->pagelsn;
 		}
 	}
-	if (pagep != NULL && (ret = __memp_fput(mpf, pagep, dbc->priority)) != 0)
+	if (pagep != NULL &&
+	    (ret = __memp_fput(mpf, pagep, dbc->priority)) != 0)
 		goto out;
 
 do_meta:
@@ -912,7 +910,6 @@ __ham_groupalloc_recover(dbenv, dbtp, lsnp, op, info)
 		} else if (ret != DB_PAGE_NOTFOUND)
 			goto out;
 #ifdef HAVE_FTRUNCATE
-		COMPQUIET(info, NULL);
 		/*
 		 * If the last page was allocated then truncate back
 		 * to the first page.
@@ -944,7 +941,8 @@ __ham_groupalloc_recover(dbenv, dbtp, lsnp, op, info)
 			if (LOG_COMPARE(&pagep->lsn, lsnp) == 0)
 				ZERO_LSN(pagep->lsn);
 
-			if ((ret = __memp_fput(mpf, pagep, file_dbp->priority)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, pagep, file_dbp->priority)) != 0)
 				goto out;
 		}
 		/*
@@ -1052,13 +1050,39 @@ __ham_curadj_recover(dbenv, dbtp, lsnp, op, info)
 	DBC *dbc;
 	int ret;
 	HASH_CURSOR *hcp;
+	db_ham_curadj mode, hamc_mode;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__ham_curadj_print);
 	REC_INTRO(__ham_curadj_read, 0, 1);
 
 	if (op != DB_TXN_ABORT)
 		goto done;
+
+	mode = (db_ham_curadj)argp->add;
+
+	/*
+	 * Reverse the logged operation, so that the consequences are reversed
+	 * by the __hamc_update code.
+	 */
+	switch (mode) {
+	case DB_HAM_CURADJ_DEL:
+		hamc_mode = DB_HAM_CURADJ_ADD;
+		break;
+	case DB_HAM_CURADJ_ADD:
+		hamc_mode = DB_HAM_CURADJ_DEL;
+		break;
+	case DB_HAM_CURADJ_ADDMOD:
+		hamc_mode = DB_HAM_CURADJ_DELMOD;
+		break;
+	case DB_HAM_CURADJ_DELMOD:
+		hamc_mode = DB_HAM_CURADJ_ADDMOD;
+		break;
+	default:
+		__db_errx(dbenv,
+		    "Invalid flag in __ham_curadj_recover");
+		ret = EINVAL;
+		goto out;
+	}
 
 	/*
 	 * Undo the adjustment by reinitializing the the cursor to look like
@@ -1070,9 +1094,9 @@ __ham_curadj_recover(dbenv, dbtp, lsnp, op, info)
 	hcp->indx = argp->indx;
 	hcp->dup_off = argp->dup_off;
 	hcp->order = argp->order;
-	if (!argp->add)
+	if (mode == DB_HAM_CURADJ_DEL)
 		F_SET(hcp, H_DELETED);
-	(void)__hamc_update(dbc, argp->len, !argp->add, argp->is_dup);
+	(void)__hamc_update(dbc, argp->len, hamc_mode, argp->is_dup);
 
 done:	*lsnp = argp->prev_lsn;
 out:	REC_CLOSE;
@@ -1103,7 +1127,6 @@ __ham_chgpg_recover(dbenv, dbtp, lsnp, op, info)
 	HASH_CURSOR *lcp;
 	u_int32_t order, indx;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__ham_chgpg_print);
 	REC_INTRO(__ham_chgpg_read, 0, 0);
 
@@ -1229,7 +1252,6 @@ __ham_metagroup_42_recover(dbenv, dbtp, lsnp, op, info)
 	u_int32_t flags;
 	int cmp_n, cmp_p, did_alloc, groupgrow, ret;
 
-	COMPQUIET(info, NULL);
 	did_alloc = 0;
 	mmeta = NULL;
 	REC_PRINT(__ham_metagroup_42_print);
@@ -1292,7 +1314,8 @@ __ham_metagroup_42_recover(dbenv, dbtp, lsnp, op, info)
 		REC_DIRTY(mpf, dbc->priority, &pagep);
 		pagep->lsn = argp->pagelsn;
 	}
-	if (pagep != NULL && (ret = __memp_fput(mpf, pagep, dbc->priority)) != 0)
+	if (pagep != NULL &&
+	    (ret = __memp_fput(mpf, pagep, dbc->priority)) != 0)
 		goto out;
 
 do_meta:
@@ -1468,7 +1491,8 @@ __ham_groupalloc_42_recover(dbenv, dbtp, lsnp, op, info)
 				ZERO_LSN(pagep->lsn);
 			}
 
-			if ((ret = __memp_fput(mpf, pagep, file_dbp->priority)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, pagep, file_dbp->priority)) != 0)
 				goto out;
 		}
 		/*

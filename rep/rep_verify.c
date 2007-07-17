@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2004,2007 Oracle.  All rights reserved.
  *
- * $Id: rep_verify.c,v 12.39 2007/01/27 03:22:07 alanb Exp $
+ * $Id: rep_verify.c,v 12.51 2007/06/21 19:11:52 bostic Exp $
  */
 
 #include "db_config.h"
@@ -46,8 +46,20 @@ __rep_verify(dbenv, rp, rec, eid, savetime)
 	dblp = dbenv->lg_handle;
 	lp = dblp->reginfo.primary;
 
-	if (IS_ZERO_LSN(lp->verify_lsn))
+	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
+	lsn = lp->verify_lsn;
+	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+	if (IS_ZERO_LSN(lsn))
 		return (ret);
+
+	/*
+	 * We should not ever be in internal init with a lease granted.
+	 */
+	if (IS_USING_LEASES(dbenv)) {
+		REP_SYSTEM_LOCK(dbenv);
+		DB_ASSERT(dbenv, __rep_islease_granted(dbenv) == 0);
+		REP_SYSTEM_UNLOCK(dbenv);
+	}
 
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		return (ret);
@@ -87,11 +99,7 @@ __rep_verify(dbenv, rp, rec, eid, savetime)
 		"Client was never part of master's environment");
 				ret = DB_REP_JOIN_FAILURE;
 			} else {
-				rep->stat.st_outdated++;
-
-				LOG_SYSTEM_LOCK(dbenv);
-				lsn = lp->lsn;
-				LOG_SYSTEM_UNLOCK(dbenv);
+				STAT(rep->stat.st_outdated++);
 				REP_SYSTEM_LOCK(dbenv);
 				F_CLR(rep, REP_F_RECOVER_VERIFY);
 				if (FLD_ISSET(rep->config, REP_C_NOAUTOINIT) ||
@@ -106,7 +114,7 @@ __rep_verify(dbenv, rp, rec, eid, savetime)
 				if (ret == 0)
 					(void)__rep_send_message(dbenv,
 					    eid, REP_UPDATE_REQ, NULL,
-					    NULL, 0, DB_REP_ANYWHERE);
+					    NULL, 0, 0);
 			}
 		}
 	} else
@@ -149,13 +157,19 @@ __rep_verify_fail(dbenv, rp, eid)
 	if (F_ISSET(rep, REP_F_RECOVER_MASK) &&
 	    !F_ISSET(rep, REP_F_RECOVER_VERIFY))
 		return (0);
-	/*
-	 * Update stats.  
-	 */
-	rep->stat.st_outdated++;
-
 	MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 	REP_SYSTEM_LOCK(dbenv);
+	/*
+	 * We should not ever be in internal init with a lease granted.
+	 */
+	DB_ASSERT(dbenv,
+	    !IS_USING_LEASES(dbenv) || __rep_islease_granted(dbenv) == 0);
+
+	/*
+	 * Update stats.
+	 */
+	STAT(rep->stat.st_outdated++);
+
 	/*
 	 * We don't want an old or delayed VERIFY_FAIL
 	 * message to throw us into internal initialization
@@ -176,7 +190,7 @@ __rep_verify_fail(dbenv, rp, eid)
 		ret = DB_REP_JOIN_FAILURE;
 		goto unlock;
 	}
-	
+
 	/*
 	 * Commence an internal init if:
 	 * We are in VERIFY state and the failing LSN is the one we
@@ -249,9 +263,11 @@ __rep_verify_req(dbenv, rp, eid)
 	 * a better source.
 	 */
 	if (ret == DB_NOTFOUND) {
-		if (F_ISSET(rep, REP_F_CLIENT))
-			goto notfound;
-		else if (__log_is_outdated(dbenv, rp->lsn.file, &old) == 0 &&
+		if (F_ISSET(rep, REP_F_CLIENT)) {
+			(void)__logc_close(logc);
+			return (DB_NOTFOUND);
+		}
+		if (__log_is_outdated(dbenv, rp->lsn.file, &old) == 0 &&
 		    old != 0)
 			type = REP_VERIFY_FAIL;
 	}
@@ -260,9 +276,7 @@ __rep_verify_req(dbenv, rp, eid)
 		d = NULL;
 
 	(void)__rep_send_message(dbenv, eid, type, &rp->lsn, d, 0, 0);
-notfound:
-	ret = __logc_close(logc);
-	return (ret);
+	return (__logc_close(logc));
 }
 
 static int
@@ -270,12 +284,12 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 	DB_ENV *dbenv;
 	DB_LSN *lsnp, *trunclsnp;
 {
-	DB_LSN lsn;
+	DB_LSN last_ckp, lsn;
 	DB_REP *db_rep;
 	DBT mylog;
 	DB_LOGC *logc;
 	REP *rep;
-	int ret, t_ret, update;
+	int ret, skip_rec, t_ret, update;
 	u_int32_t rectype, opcode;
 	__txn_regop_args *txnrec;
 	__txn_regop_42_args *txn42rec;
@@ -288,14 +302,46 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 		return (ret);
 
 	memset(&mylog, 0, sizeof(mylog));
-	if (F_ISSET(rep, REP_F_RECOVER_LOG))
+	if (F_ISSET(rep, REP_F_RECOVER_LOG)) {
+		/*
+		 * Internal init can never skip recovery.
+		 * Internal init must always update the timestamp and
+		 * force dead handles.
+		 */
+		skip_rec = 0;
 		update = 1;
-	else
+	} else {
+		skip_rec = 1;
 		update = 0;
+	}
 	while (update == 0 &&
 	    (ret = __logc_get(logc, &lsn, &mylog, DB_PREV)) == 0 &&
 	    LOG_COMPARE(&lsn, lsnp) > 0) {
 		memcpy(&rectype, mylog.data, sizeof(rectype));
+		/*
+		 * Find out if we can skip recovery completely.  If we
+		 * are backing up over any record a client usually
+		 * cares about, we must run recovery.
+		 *
+		 * Skipping sync-up recovery can be pretty scary!
+		 * Here's why we can do it:
+		 * If a master downgraded to client and is now running
+		 * sync-up to a new master, that old master must have
+		 * waited for any outstanding txns to resolve before
+		 * becoming a client.  Also we are in lockout so there
+		 * can be no other operations right now.
+		 *
+		 * If the client wrote a commit record to the log, but
+		 * was descheduled before processing the txn, and then
+		 * a new master was found, we must've let the txn get
+		 * processed because right now we are the only message
+		 * thread allowed to be running.
+		 */
+		DB_ASSERT(dbenv, rep->op_cnt == 0);
+		DB_ASSERT(dbenv, rep->msg_th == 1);
+		if (rectype == DB___txn_regop || rectype == DB___txn_ckp ||
+		    rectype == DB___dbreg_register)
+			skip_rec = 0;
 		if (rectype == DB___txn_regop) {
 			if (rep->version >= DB_REPVERSION_44) {
 				if ((ret = __txn_regop_read(dbenv,
@@ -325,8 +371,23 @@ __rep_dorecovery(dbenv, lsnp, trunclsnp)
 	 * files.  We are guaranteed to be single-threaded here, so no mutex
 	 * is necessary.
 	 */
-	if ((ret = __db_apprec(dbenv, lsnp, trunclsnp, update, 0)) == 0)
-		F_SET(db_rep, DBREP_OPENFILES);
+	if (skip_rec) {
+		if ((ret = __log_get_stable_lsn(dbenv, &last_ckp)) != 0) {
+			if (ret != DB_NOTFOUND)
+				goto err;
+			ZERO_LSN(last_ckp);
+		}
+		RPRINT(dbenv, (dbenv,
+    "Skip sync-up rec.  Truncate log to [%lu][%lu], ckp [%lu][%lu]",
+    (u_long)lsnp->file, (u_long)lsnp->offset,
+    (u_long)last_ckp.file, (u_long)last_ckp.offset));
+		ret = __log_vtruncate(dbenv, lsnp, &last_ckp, trunclsnp);
+	} else
+		ret = __db_apprec(dbenv, lsnp, trunclsnp, update, 0);
+
+	if (ret != 0)
+		goto err;
+	F_SET(db_rep, DBREP_OPENFILES);
 
 err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
@@ -393,7 +454,7 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 		/*
 		 * We lost.  The world changed and we should do nothing.
 		 */
-		rep->stat.st_msgs_recover++;
+		STAT(rep->stat.st_msgs_recover++);
 		goto errunlock;
 	}
 
@@ -439,6 +500,12 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 	 * DB_AM_RECOVER bit in this handle, so that the operation doesn't
 	 * deadlock.
 	 */
+	if (db_rep->rep_db == NULL &&
+	    (ret = __rep_client_dbinit(dbenv, 0, REP_DB)) != 0) {
+		MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
+		goto out;
+	}
+
 	F_SET(db_rep->rep_db, DB_AM_RECOVER);
 	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
 	ret = __db_truncate(db_rep->rep_db, NULL, &unused);
@@ -447,8 +514,7 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 
 	REP_SYSTEM_LOCK(dbenv);
 	rep->stat.st_log_queued = 0;
-	F_CLR(rep, REP_F_READY_MSG);
-	F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK);
+	F_CLR(rep, REP_F_NOARCHIVE | REP_F_RECOVER_MASK | REP_F_READY_MSG);
 	if (ret != 0)
 		goto errunlock2;
 
@@ -488,7 +554,7 @@ __rep_verify_match(dbenv, reclsnp, savetime)
 errunlock2:	MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
 errunlock:	REP_SYSTEM_UNLOCK(dbenv);
 	}
-	return (ret);
+out:	return (ret);
 }
 
 /*

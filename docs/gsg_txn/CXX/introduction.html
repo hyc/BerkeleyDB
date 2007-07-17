@@ -213,9 +213,27 @@
             lose whatever data you were committing at the
             time of the failure, but your databases will be otherwise unaffected.
         </p>
+          <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+            <h3 class="title">Note</h3>
+            <p>
+                    Be aware that many disks have a disk write cache and on
+                    some systems it is enabled by default.  This means that
+                    a transaction can have committed, and to your
+                    application the data may appear to reside on disk, but
+                    the data may in fact reside only in the write cache at
+                    that time. This means that if the disk write cache is
+                    enabled and there is no battery backup for it, data can
+                    be lost after an OS crash even when maximum durability
+                    mode is in use.  For maximum durability, disable the
+                    disk write cache or use a disk write cache with a
+                    battery backup.
+                </p>
+          </div>
           <p>
             Of course, if your <span class="emphasis"><em>disk</em></span> fails, then the transactional benefits described in this book
             are only as good as the backups you have taken. 
+
+
             <span>
                 By spreading your data and log files across separate disks,
                 you can minimize the risk of data loss due to a disk failure, but even in this case it is possible to
@@ -404,7 +422,7 @@
             you can configure your application to see uncommitted reads, which means
             that one transaction can see data that has been modified but not yet
             committed by another transaction. Doing this might mean your
-            transaction reads data &quot;dirtied&quot; by another transaction, 
+            transaction reads data "dirtied" by another transaction, 
             but which subsequently might change before that
             other transaction commits its changes.
             On the other hand, lowering your isolation

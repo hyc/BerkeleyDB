@@ -83,7 +83,7 @@ int __bam_search __P((DBC *, db_pgno_t, const DBT *, u_int32_t, int, db_recno_t 
 int __bam_stkrel __P((DBC *, u_int32_t));
 int __bam_stkgrow __P((DB_ENV *, BTREE_CURSOR *));
 int __bam_split __P((DBC *, void *, db_pgno_t *));
-int __bam_pinsert __P((DBC *, EPG *, PAGE *, PAGE *, int));
+int __bam_pinsert __P((DBC *, EPG *, u_int32_t, PAGE *, PAGE *, int));
 int __bam_copy __P((DB *, PAGE *, PAGE *, u_int32_t, u_int32_t));
 int __bam_stat __P((DBC *, void *, u_int32_t));
 int __bam_stat_print __P((DBC *, u_int32_t));

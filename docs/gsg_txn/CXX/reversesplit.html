@@ -79,7 +79,7 @@
       <p>
             For example:
         </p>
-      <pre class="programlisting">#include &quot;db_cxx.h&quot;
+      <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -95,9 +95,9 @@ int main(void)
 
     u_int32_t db_flags = DB_CREATE | DB_AUTO_COMMIT;
     Db *dbp = NULL;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *file_name = "mydb.db";
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -117,8 +117,8 @@ int main(void)
                   0);         // File mode. Using defaults
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot; &lt;&lt; envHome &lt;&lt; std::endl;
+        std::cerr &lt;&lt; "Error opening database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", " &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }
 
@@ -126,8 +126,8 @@ int main(void)
         dbp-&gt;close(dbp, 0);
         myEnv.close(0);
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error closing database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot; &lt;&lt; envHome &lt;&lt; std::endl;
+        std::cerr &lt;&lt; "Error closing database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", " &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
         return (EXIT_FAILURE);
     }

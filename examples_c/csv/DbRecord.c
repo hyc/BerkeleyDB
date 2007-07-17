@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: DbRecord.c,v 1.13 2006/11/01 00:52:50 bostic Exp $
+ * $Id: DbRecord.c,v 1.14 2007/05/17 15:15:13 bostic Exp $
  */
 
 #include "csv.h"

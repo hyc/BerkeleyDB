@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: testutils.tcl,v 12.29 2007/01/24 15:12:50 carol Exp $
+# $Id: testutils.tcl,v 12.36 2007/07/02 16:06:35 bostic Exp $
 #
 # Test system utilities
 #
@@ -1300,6 +1300,9 @@ proc rpc_server_start { { encrypted 0 } { maxwait 30 } { args "" } } {
 	global passwd
 
 	set encargs ""
+	# Set -v for verbose messages from the RPC server.
+	# set encargs " -v "
+
 	if { $encrypted == 1 } {
 		set encargs " -P $passwd "
 	}
@@ -2851,6 +2854,12 @@ proc verify_dir { {directory $testdir} { pref "" } \
 	}
 
 	foreach db $dbs {
+		# Replication's temp db uses a custom comparison function,
+		# so we can't verify it.
+		#
+		if { [file tail $db] == "__db.rep.db" } {
+			continue
+		}
 		if { [catch \
 		    {eval {berkdb dbverify} $uflag $earg $db} res] != 0 } {
 			puts $res
@@ -3011,7 +3020,7 @@ proc dumploadtest { db } {
 
 # Test regular and aggressive salvage procedures for all databases
 # in a directory.
-proc salvagetest { dir { noredo 0 } { quiet 0 } } {
+proc salvage_dir { dir { noredo 0 } { quiet 0 } } {
 	global util_path
 	global encrypt
 	global passwd
@@ -3061,7 +3070,7 @@ proc salvagetest { dir { noredo 0 } { quiet 0 } } {
 		set rval [catch {eval {exec $util_path/db_dump} $utilflag -R \
 		    -f $aggsalvagefile $db} res]
 		if { $rval == 1 } {
-puts "res is $res"
+#puts "res is $res"
 			error_check_good agg_failure \
 			    [is_substr $res "DB_VERIFY_BAD"] 1
 		} else {
@@ -3286,6 +3295,34 @@ proc check_handles { {outf stdout} } {
 
 proc open_handles { } {
 	return [llength [berkdb handles]]
+}
+
+# Will close any database and cursor handles, cursors first.  
+# Ignores other handles, like env handles. 
+proc close_db_handles { } {
+	set handles [berkdb handles]
+	set db_handles {}
+	set cursor_handles {}
+
+	# Find the handles we want to process.  We can't use
+	# is_valid_cursor to find cursors because we don't know
+	# the cursor's parent database handle.
+	foreach handle $handles {
+		if {[string range $handle 0 1] == "db"} {
+			if { [string first "c" $handle] != -1} {
+				lappend cursor_handles $handle
+			} else {
+				lappend db_handles $handle
+			}
+		}			
+	}
+
+	foreach handle $cursor_handles {
+		error_check_good cursor_close [$handle close] 0
+	}
+	foreach handle $db_handles {
+		error_check_good db_close [$handle close] 0
+	}
 }
 
 proc move_file_extent { dir dbfile tag op } {
@@ -3545,10 +3582,14 @@ proc is_debug { } {
 	return 0
 }
 
-proc adjust_logargs { logtype } {
+proc adjust_logargs { logtype {lbufsize 0} } {
 	if { $logtype == "in-memory" } {
-		set lbuf [expr 1 * [expr 1024 * 1024]]
-		set logargs " -log_inmemory -log_buffer $lbuf "
+		if { $lbufsize == 0 } {
+			set lbuf [expr 1 * [expr 1024 * 1024]]
+			set logargs " -log_inmemory -log_buffer $lbuf "
+		} else {
+			set logargs " -log_inmemory -log_buffer $lbufsize "
+		}
 	} elseif { $logtype == "on-disk" } {
 		set logargs ""
 	} else {

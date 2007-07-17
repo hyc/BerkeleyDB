@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: txn_region.c,v 12.28 2006/11/23 15:27:55 bostic Exp $
+ * $Id: txn_region.c,v 12.31 2007/05/17 15:16:00 bostic Exp $
  */
 
 #include "db_config.h"
@@ -132,7 +132,9 @@ __txn_init(dbenv, mgr)
 	region->time_ckp = time(NULL);
 
 	memset(&region->stat, 0, sizeof(region->stat));
+#ifdef HAVE_STATISTICS
 	region->stat.st_maxtxns = region->maxtxns;
+#endif
 
 	SH_TAILQ_INIT(&region->active_txn);
 	SH_TAILQ_INIT(&region->mvcc_txn);
@@ -398,7 +400,8 @@ __txn_oldest_reader(dbenv, lsnp)
  *
  * PUBLIC: int __txn_add_buffer __P((DB_ENV *, TXN_DETAIL *));
  */
-int __txn_add_buffer(dbenv, td)
+int
+__txn_add_buffer(dbenv, td)
 	DB_ENV *dbenv;
 	TXN_DETAIL *td;
 {
@@ -419,7 +422,8 @@ int __txn_add_buffer(dbenv, td)
  *
  * PUBLIC: int __txn_remove_buffer __P((DB_ENV *, TXN_DETAIL *, db_mutex_t));
  */
-int __txn_remove_buffer(dbenv, td, hash_mtx)
+int
+__txn_remove_buffer(dbenv, td, hash_mtx)
 	DB_ENV *dbenv;
 	TXN_DETAIL *td;
 	db_mutex_t hash_mtx;
@@ -447,7 +451,9 @@ int __txn_remove_buffer(dbenv, td, hash_mtx)
 
 		TXN_SYSTEM_LOCK(dbenv);
 		SH_TAILQ_REMOVE(&region->mvcc_txn, td, links, __txn_detail);
+#ifdef HAVE_STATISTICS
 		--region->stat.st_nsnapshot;
+#endif
 		__env_alloc_free(&mgr->reginfo, td);
 		TXN_SYSTEM_UNLOCK(dbenv);
 

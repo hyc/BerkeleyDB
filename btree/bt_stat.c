@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: bt_stat.c,v 12.15 2006/11/29 21:23:10 ubell Exp $
+ * $Id: bt_stat.c,v 12.17 2007/06/01 16:30:27 bostic Exp $
  */
 
 #include "db_config.h"
@@ -150,6 +150,16 @@ meta_only:
 	sp->bt_minkey = meta->minkey;
 	sp->bt_re_len = meta->re_len;
 	sp->bt_re_pad = meta->re_pad;
+	/*
+	 * Don't take the page number from the meta-data page -- that value is
+	 * only maintained in the primary database, we may have been called on
+	 * a subdatabase.  (Yes, I read the primary database meta-data page
+	 * earlier in this function, but I'm asking the underlying cache so the
+	 * code for the Hash and Btree methods is the same.)
+	 */ 
+	if ((ret = __memp_get_last_pgno(dbp->mpf, &pgno)) != 0)
+		goto err;
+	sp->bt_pagecnt = pgno + 1;
 	sp->bt_pagesize = meta->dbmeta.pagesize;
 	sp->bt_magic = meta->dbmeta.magic;
 	sp->bt_version = meta->dbmeta.version;

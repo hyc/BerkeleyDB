@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db185.c,v 12.10 2006/11/15 20:48:00 bostic Exp $
+ * $Id: db185.c,v 12.11 2007/05/17 15:14:57 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 #include "db185_int.h"

@@ -239,7 +239,7 @@
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -249,10 +249,10 @@ main(void)
     DB *dbp;
     DB_ENV *envp;
     DB_TXN *txn;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    const char *file_name = &quot;mydb.db&quot;;
-    const char *keystr =&quot;thekey&quot;;
-    const char *datastr = &quot;thedata&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    const char *file_name = "mydb.db";
+    const char *keystr ="thekey";
+    const char *datastr = "thedata";
     
     dbp = NULL;
     envp = NULL;
@@ -260,7 +260,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -275,7 +275,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -283,7 +283,7 @@ main(void)
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database creation failed&quot;);
+        envp-&gt;err(envp, ret, "Database creation failed");
         goto err;
     }
 
@@ -300,7 +300,7 @@ main(void)
                     db_flags,   /* Open flags */
                     0);         /* File mode. Using defaults */
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database '%s' open failed&quot;,
+        envp-&gt;err(envp, ret, "Database '%s' open failed",
             file_name);
         goto err;
     }
@@ -309,7 +309,7 @@ main(void)
     txn = NULL;
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, DB_READ_UNCOMMITTED);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Transaction begin failed.&quot;);
+        envp-&gt;err(envp, ret, "Transaction begin failed.");
         goto err;
     }
 
@@ -399,7 +399,7 @@ main(void)
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -409,8 +409,8 @@ main(void)
     DB *dbp;
     DB_ENV *envp;
     DB_TXN *txn;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    const char *file_name = "mydb.db";
     
     dbp = NULL;
     envp = NULL;
@@ -418,7 +418,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -433,7 +433,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -441,7 +441,7 @@ main(void)
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database creation failed&quot;);
+        envp-&gt;err(envp, ret, "Database creation failed");
         goto err;
     }
 
@@ -459,7 +459,7 @@ main(void)
                     db_flags,   /* Open flags */
                     0);         /* File mode. Using defaults */
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database '%s' open failed&quot;,
+        envp-&gt;err(envp, ret, "Database '%s' open failed",
             file_name);
         goto err;
     }
@@ -472,7 +472,7 @@ main(void)
      */
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, DB_READ_COMMITTED);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Transaction begin failed.&quot;);
+        envp-&gt;err(envp, ret, "Transaction begin failed.");
         goto err;
     }
 
@@ -540,7 +540,7 @@ main(void)
           <p>
                     If the cache becomes full of page copies before old
                     copies can be discarded, additional I/O will occur as
-                    pages are written to temporary &quot;freezer&quot; files on disk.
+                    pages are written to temporary "freezer" files on disk.
                     This can substantially reduce throughput, and should be
                     avoided if possible by configuring a large cache and
                     keeping snapshot isolation transactions short.
@@ -714,7 +714,7 @@ main(void)
           <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -723,8 +723,8 @@ main(void)
     u_int32_t db_flags, env_flags;
     DB *dbp;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    const char *file_name = "mydb.db";
     
     dbp = NULL;
     envp = NULL;
@@ -732,7 +732,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -747,7 +747,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -755,7 +755,7 @@ main(void)
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database creation failed&quot;);
+        envp-&gt;err(envp, ret, "Database creation failed");
         goto err;
     }
 
@@ -772,7 +772,7 @@ main(void)
                     db_flags,   /* Open flags */
                     0);         /* File mode. Using defaults */
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database '%s' open failed&quot;,
+        envp-&gt;err(envp, ret, "Database '%s' open failed",
             file_name);
         goto err;
     }

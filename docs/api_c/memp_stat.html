@@ -1,5 +1,5 @@
-<!--$Id: memp_stat.so,v 10.68 2006/11/13 21:22:07 bostic Exp $-->
-<!--Copyright 1997,2006 Oracle.  All rights reserved.-->
+<!--$Id: memp_stat.so,v 10.71 2007/07/06 00:22:53 mjc Exp $-->
+<!--Copyright (c) 1997,2007 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
 <head>
@@ -50,6 +50,8 @@ The following DB_MPOOL_STAT fields will be filled in:</p>
 <dt>size_t st_gbytes;<dd>Gigabytes of cache (total cache size is st_gbytes + st_bytes).
 <dt>size_t st_bytes;<dd>Bytes of cache (total cache size is st_gbytes + st_bytes).
 <dt>u_int32_t st_ncache;<dd>Number of caches.
+<dt>u_int32_t st_max_ncache;<dd>Maximum number of caches, as configured with the
+<a href="../api_c/env_set_cache_max.html">DB_ENV-&gt;set_cache_max</a> method.
 <dt>roff_t st_regsize;<dd>Individual cache size, in bytes.
 <dt>size_t st_mmapsize;<dd>Maximum memory-mapped file size.
 <dt>int st_maxopenfd;<dd>Maximum open file descriptors.
@@ -114,6 +116,8 @@ the cache; that is, each element of the array:</p>
 <dt>u_int32_t st_page_in;<dd>Pages read into the cache.
 <dt>u_int32_t st_page_out;<dd>Pages written from the cache to the backing file.
 </dl>
+<p>The DB_ENV-&gt;memp_stat method may not be called before the <a href="../api_c/env_open.html">DB_ENV-&gt;open</a> method has
+been called.</p>
 <p>The DB_ENV-&gt;memp_stat method
 returns a non-zero error value on failure
 and 0 on success.
@@ -170,6 +174,6 @@ or more of the following values:
 <table width="100%"><tr><td><br></td><td align=right>
 <a href="../api_c/api_core.html"><img src="../images/api.gif" alt="API"></a><a href="../ref/toc.html"><img src="../images/ref.gif" alt="Ref"></a>
 </td></tr></table>
-<p><font size=1>Copyright (c) 1996,2006 Oracle.  All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996,2007 Oracle.  All rights reserved.</font>
 </body>
 </html>

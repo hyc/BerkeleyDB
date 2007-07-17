@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os_qnx_open.c,v 12.21 2006/12/21 02:05:03 bostic Exp $
+ * $Id: os_qnx_open.c,v 12.23 2007/05/17 15:15:47 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,10 +14,10 @@
  * __os_qnx_region_open --
  *	Open a shared memory region file using POSIX shm_open.
  *
- # PUBLIC: #ifdef HAVE_QNX
+ * PUBLIC: #ifdef HAVE_QNX
  * PUBLIC: int __os_qnx_region_open
  * PUBLIC:     __P((DB_ENV *, const char *, int, int, DB_FH *));
- # PUBLIC: #endif
+ * PUBLIC: #endif
  */
 int
 __os_qnx_region_open(dbenv, name, oflags, mode, fhp)

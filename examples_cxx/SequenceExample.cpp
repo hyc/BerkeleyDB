@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: SequenceExample.cpp,v 12.5 2006/11/01 00:52:58 bostic Exp $
+ * $Id: SequenceExample.cpp,v 12.6 2007/05/17 15:15:31 bostic Exp $
  */
 
 #include <sys/types.h>

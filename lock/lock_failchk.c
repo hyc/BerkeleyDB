@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: lock_failchk.c,v 12.11 2006/11/01 00:53:34 bostic Exp $
+ * $Id: lock_failchk.c,v 12.13 2007/05/17 15:15:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -34,6 +34,7 @@ __lock_failchk(dbenv)
 	lrp = lt->reginfo.primary;
 
 retry:	LOCK_SYSTEM_LOCK(dbenv);
+	LOCK_LOCKERS(dbenv, lrp);
 
 	ret = 0;
 	for (i = 0; i < lrp->locker_t_size; i++)
@@ -70,10 +71,11 @@ retry:	LOCK_SYSTEM_LOCK(dbenv);
 			    (u_long)lip->id, dbenv->thread_id_string(
 			    dbenv, lip->pid, lip->tid, buf));
 			LOCK_SYSTEM_UNLOCK(dbenv);
+			UNLOCK_LOCKERS(dbenv, lrp);
 			memset(&request, 0, sizeof(request));
 			request.op = DB_LOCK_PUT_ALL;
-			if ((ret = __lock_vec(
-			    dbenv, lip->id, 0, &request, 1, NULL)) != 0)
+			if ((ret = __lock_vec(dbenv,
+			    lip, 0, &request, 1, NULL)) != 0)
 				return (ret);
 
 			/*
@@ -83,13 +85,13 @@ retry:	LOCK_SYSTEM_LOCK(dbenv);
 			 * but we assume the dead thread will never release
 			 * it.
 			 */
-			if ((ret =
-			    __lock_freefamilylocker(dbenv, lip->id)) != 0)
+			if ((ret = __lock_freefamilylocker(lt, lip)) != 0)
 				return (ret);
 			goto retry;
 		}
 
 	LOCK_SYSTEM_UNLOCK(dbenv);
+	UNLOCK_LOCKERS(dbenv, lrp);
 
 	return (ret);
 }

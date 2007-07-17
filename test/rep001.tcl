@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep001.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
+# $Id: rep001.tcl,v 12.17 2007/06/19 02:50:40 mjc Exp $
 #
 # TEST  rep001
 # TEST	Replication rename and forced-upgrade test.
@@ -90,7 +90,7 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -103,6 +103,9 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 
 	set m_logtype [lindex $logset 0]
 	set c_logtype [lindex $logset 1]
+
+	set verify_subset \
+	    [expr { $m_logtype == "in-memory" || $c_logtype == "in-memory" }]
 
 	# In-memory logs require a large log buffer, and cannot
 	# be used with -txn nosync.  Adjust the args for master
@@ -132,6 +135,12 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
 
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# db_remove in a moment.
+	#
+	$masterenv test force noarchive_timeout
+
 	# Run rep_test in the master (and update client).
 	puts "\tRep$tnum.a:\
 	    Running rep_test in replicated env ($envargs $recargs)."
@@ -145,7 +154,7 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 		set dbname "test.db"
 	}
 
-	rep_verify $masterdir $masterenv $clientdir $clientenv 0 1 1 $dbname
+	rep_verify $masterdir $masterenv $clientdir $clientenv $verify_subset 1 1 $dbname
 
 	# Remove the file (and update client).
 	puts "\tRep$tnum.c: Remove the file on the master and close master."
@@ -192,7 +201,7 @@ proc rep001_sub { method niter tnum envargs logset recargs inmem largs } {
 	puts "\tRep$tnum.h: Verifying new client database contents."
 
 	rep_verify \
-	    $masterdir $newmasterenv $clientdir $newclientenv 0 1 1 $dbname
+	    $masterdir $newmasterenv $clientdir $newclientenv $verify_subset 1 1 $dbname
 
 	error_check_good newmasterenv_close [$newmasterenv close] 0
 	error_check_good newclientenv_close [$newclientenv close] 0

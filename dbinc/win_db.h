@@ -1,5 +1,5 @@
 /*-
- * $Id: win_db.h,v 12.23 2007/01/22 06:12:12 alexg Exp $
+ * $Id: win_db.h,v 12.25 2007/06/29 14:11:25 alexg Exp $
  *
  * The following provides the information necessary to build Berkeley
  * DB on native Windows, and other Windows environments such as MinGW.
@@ -67,11 +67,13 @@
  */
 #define	fsync			_commit
 
-#ifndef DB_WINCE 
+#ifndef DB_WINCE
 #define	getcwd(buf, size)	_getcwd(buf, size)
 #endif
-#define getpid			GetCurrentProcessId
+#define	getpid			GetCurrentProcessId
 #define	snprintf		_snprintf
+#define	strcasecmp		_stricmp
+#define	strncasecmp		_strnicmp
 #define	vsnprintf		_vsnprintf
 
 #define	h_errno			WSAGetLastError()
@@ -99,7 +101,7 @@ extern int getopt(int, char * const *, const char *);
  * starts enforcing strict ANSI compliance from this point on.
  */
 #ifndef __STDC__
-#define __STDC__ 1
+#define	__STDC__ 1
 #endif
 
 #ifdef _UNICODE

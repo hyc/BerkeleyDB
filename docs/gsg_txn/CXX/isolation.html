@@ -236,7 +236,7 @@
                 the database to support uncommitted reads is not enough; you must also declare your read operations to be
                 performed using uncommitted reads. 
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -256,11 +256,11 @@ int main(void)
                          DB_READ_UNCOMMITTED;  // Enable uncommitted reads
 
     Db *dbp = NULL;
-    const char *file_name = &quot;mydb.db&quot;;
-    const char *keystr =&quot;thekey&quot;;
-    const char *datastr = &quot;thedata&quot;;
+    const char *file_name = "mydb.db";
+    const char *keystr ="thekey";
+    const char *datastr = "thedata";
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -358,7 +358,7 @@ int main(void)
         <p>
                 For example, the following creates a transaction that allows committed reads:
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -377,9 +377,9 @@ int main(void)
     // where we DO have to specify a flag on the database open.
     u_int32_t db_flags = DB_CREATE | DB_AUTO_COMMIT;
     Db *dbp = NULL;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *file_name = "mydb.db";
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -462,7 +462,7 @@ int main(void)
           <p>
                     If the cache becomes full of page copies before old
                     copies can be discarded, additional I/O will occur as
-                    pages are written to temporary &quot;freezer&quot; files on disk.
+                    pages are written to temporary "freezer" files on disk.
                     This can substantially reduce throughput, and should be
                     avoided if possible by configuring a large cache and
                     keeping snapshot isolation transactions short.
@@ -633,7 +633,7 @@ int main(void)
                            The following code fragment turns
                            on snapshot isolation for a transaction:
                    </p>
-          <pre class="programlisting">#include &quot;db_cxx.h&quot;
+          <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -651,9 +651,9 @@ int main(void)
     // This is because it is already enabled at the environment level.
     u_int32_t db_flags = DB_CREATE | DB_AUTO_COMMIT;
     Db *dbp = NULL;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *file_name = "mydb.db";
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -668,8 +668,8 @@ int main(void)
                   0);         // File mode. Using defaults
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database and environment: &quot;
-                  &lt;&lt; file_name &lt;&lt; &quot;, &quot;
+        std::cerr &lt;&lt; "Error opening database and environment: "
+                  &lt;&lt; file_name &lt;&lt; ", "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
     }

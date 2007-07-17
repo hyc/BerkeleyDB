@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: rep_stat.c,v 12.20 2006/12/13 01:25:39 ubell Exp $
+ * $Id: rep_stat.c,v 12.26 2007/06/21 16:32:24 alanb Exp $
  */
 
 #include "db_config.h"
@@ -63,7 +63,7 @@ __rep_stat(dbenv, statp, flags)
 	DB_REP_STAT *stats;
 	LOG *lp;
 	REP *rep;
-	u_int32_t queued;
+	u_int32_t queued, startupdone;
 	int dolock, ret;
 
 	db_rep = dbenv->rep_handle;
@@ -117,9 +117,11 @@ __rep_stat(dbenv, statp, flags)
 
 	if (LF_ISSET(DB_STAT_CLEAR)) {
 		queued = rep->stat.st_log_queued;
+		startupdone = rep->stat.st_startup_complete;
 		memset(&rep->stat, 0, sizeof(rep->stat));
 		rep->stat.st_log_queued = rep->stat.st_log_queued_total =
 		    rep->stat.st_log_queued_max = queued;
+		rep->stat.st_startup_complete = startupdone;
 	}
 
 	/*
@@ -134,9 +136,11 @@ __rep_stat(dbenv, statp, flags)
 		stats->st_next_pg = rep->ready_pg;
 		stats->st_waiting_pg = rep->waiting_pg;
 	} else {
-		if (F_ISSET(rep, REP_F_MASTER))
+		if (F_ISSET(rep, REP_F_MASTER)) {
+			LOG_SYSTEM_LOCK(dbenv);
 			stats->st_next_lsn = lp->lsn;
-		else
+			LOG_SYSTEM_UNLOCK(dbenv);
+		} else
 			ZERO_LSN(stats->st_next_lsn);
 		ZERO_LSN(stats->st_waiting_lsn);
 	}
@@ -315,6 +319,9 @@ __rep_print_stats(dbenv, flags)
 	__db_dl(dbenv,
 	    "Number of transactions applied", (u_long)sp->st_txns_applied);
 
+	__db_dl(dbenv, "Number of startsync messages delayed",
+	    (u_long)sp->st_startsync_delayed);
+
 	__db_dl(dbenv, "Number of elections held", (u_long)sp->st_elections);
 	__db_dl(dbenv,
 	    "Number of elections won", (u_long)sp->st_elections_won);
@@ -365,11 +372,6 @@ __rep_print_stats(dbenv, flags)
 	    (u_long)sp->st_client_svc_req);
 
 	__os_ufree(dbenv, sp);
-
-#ifdef HAVE_REPLICATION_THREADS
-	if ((ret = __repmgr_print_stats(dbenv)) != 0)
-		return (ret);
-#endif
 
 	return (0);
 }

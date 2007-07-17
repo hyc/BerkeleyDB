@@ -166,7 +166,7 @@ try {
     myEnvConfig.setInitializeLogging(true);
     myEnvConfig.setTransactional(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -174,15 +174,15 @@ try {
     dbConfig.setTransactional(true);
     dbConfig.setType(DatabaseType.BTREE);
     myDatabase = myEnv.openDatabase(null,              // txn handle
-                                    &quot;sampleDatabase&quot;,  // db file name
+                                    "sampleDatabase",  // db file name
                                     null,              // db name
                                     dbConfig);
-    String keyString = &quot;thekey&quot;;
-    String dataString = &quot;thedata&quot;;
+    String keyString = "thekey";
+    String dataString = "thedata";
     DatabaseEntry key = 
-        new DatabaseEntry(keyString.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(keyString.getBytes("UTF-8"));
     DatabaseEntry data = 
-        new DatabaseEntry(dataString.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(dataString.getBytes("UTF-8"));
 
     Transaction txn = myEnv.beginTransaction(null, null);
         
@@ -329,7 +329,7 @@ try {
         <p>
             Be aware that because your transaction commit caused database
             modifications recorded in your logs to be forced to disk, your modifications
-            are by default &quot;persistent&quot; in that they can be recovered in the event of
+            are by default "persistent" in that they can be recovered in the event of
             an application or system failure. However, recovery time is
             gated by how much data has been modified since the last
             checkpoint, so for applications that perform a lot of writes,

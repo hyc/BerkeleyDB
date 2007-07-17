@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_elect.c,v 1.27 2006/11/29 20:08:58 bostic Exp $
+ * $Id: repmgr_elect.c,v 1.31 2007/05/17 15:15:50 bostic Exp $
  */
 
 #include "db_config.h"
@@ -35,7 +35,6 @@ __repmgr_init_election(dbenv, initial_operation)
 	int ret;
 
 	db_rep = dbenv->rep_handle;
-
 	if (db_rep->finished) {
 		RPRINT(dbenv, (dbenv,
 		    "ignoring elect thread request %d; repmgr is finished",
@@ -119,10 +118,14 @@ __repmgr_elect_main(dbenv)
 	struct timespec deadline;
 #endif
 	u_int nsites, nvotes;
-	int chosen_master, done, failure_recovery, last_op, ret, to_do;
+	int done, failure_recovery, last_op;
+	int need_success, ret, succeeded, to_do;
+
+	COMPQUIET(need_success, TRUE);
 
 	db_rep = dbenv->rep_handle;
 	last_op = 0;
+	failure_recovery = succeeded = FALSE;
 
 	/*
 	 * db_rep->operation_needed is the mechanism by which the outside world
@@ -149,11 +152,32 @@ __repmgr_elect_main(dbenv)
 	to_do = db_rep->operation_needed;
 	db_rep->operation_needed = 0;
 	UNLOCK_MUTEX(db_rep->mutex);
-	if (to_do == ELECT_FAILURE_ELECTION) {
+
+	/*
+	 * The way we are invoked determines the criterion for completion (which
+	 * is represented as "need_success"): if we've been asked to do an
+	 * election, we're only "done" when an election has actually succeeded.
+	 * If we're just here trying to find the master initially, then merely
+	 * getting a valid master_eid suffices.
+	 */
+	switch (to_do) {
+	case ELECT_FAILURE_ELECTION:
 		failure_recovery = TRUE;
 		to_do = ELECT_ELECTION;
-	} else
-		failure_recovery = FALSE;
+		/* FALLTHROUGH */
+	case ELECT_ELECTION:
+		need_success = TRUE;
+		break;
+	case ELECT_SEEK_MASTER:
+		to_do = 0;	/* Caller has already called rep_start. */
+		/* FALLTHROUGH */
+	case ELECT_REPSTART:
+		need_success = FALSE;
+		break;
+	default:
+		DB_ASSERT(dbenv, FALSE);
+	}
+	/* Here, need_success has been initialized. */
 
 	for (;;) {
 		RPRINT(dbenv, (dbenv, "elect thread to do: %d", to_do));
@@ -188,14 +212,18 @@ __repmgr_elect_main(dbenv)
 			}
 
 			switch (ret = __rep_elect(dbenv,
-			    (int)nsites, (int)nvotes, &chosen_master, 0)) {
+			    (int)nsites, (int)nvotes, 0)) {
 			case DB_REP_UNAVAIL:
 				break;
 
 			case 0:
-				if (chosen_master == SELF_EID &&
-				    (ret = __repmgr_become_master(dbenv)) != 0)
-					return (ret);
+				succeeded = TRUE;
+				if (db_rep->takeover_pending) {
+					db_rep->takeover_pending = FALSE;
+					if ((ret =
+					    __repmgr_become_master(dbenv)) != 0)
+						return (ret);
+				}
 				break;
 
 			default:
@@ -229,7 +257,7 @@ __repmgr_elect_main(dbenv)
 		}
 
 		LOCK_MUTEX(db_rep->mutex);
-		while (!__repmgr_is_ready(dbenv)) {
+		while (!succeeded && !__repmgr_is_ready(dbenv)) {
 #ifdef DB_WIN32
 			duration = db_rep->election_retry_wait / US_PER_MS;
 			ret = SignalObjectAndWait(db_rep->mutex,
@@ -250,18 +278,39 @@ __repmgr_elect_main(dbenv)
 		}
 
 		/*
-		 * Ways we can get here: time out, operation needed, master
-		 * becomes valid, or thread shut-down command.
+		 * Ways we can get here: election succeeded, sleep duration
+		 * expired, "operation needed", or thread shut-down command.
 		 *
-		 * If we're not yet done, figure out what to do next: if we've
-		 * been told explicitly what to do (operation_needed), do that.
-		 * Otherwise, what we do next is approximately the complement of
-		 * what we just did; in other words, we alternate.
+		 * If we're not yet done, figure out what to do next (which may
+		 * be trivially easy if we've been told explicitly, via the
+		 * "operation needed" flag).  We must first check if we've been
+		 * told to do a specific operation, because that could make our
+		 * completion criterion more stringent.  Note that we never
+		 * lessen our completion criterion (i.e., unlike the initial
+		 * case, we may leave need_success untouched here).
 		 */
-		done = IS_VALID_EID(db_rep->master_eid) || db_rep->finished;
-		if (done)
+		done = FALSE;
+		if ((to_do = db_rep->operation_needed) != 0) {
+			db_rep->operation_needed = 0;
+			switch (to_do) {
+			case ELECT_FAILURE_ELECTION:
+				failure_recovery = TRUE;
+				to_do = ELECT_ELECTION;
+				/* FALLTHROUGH */
+			case ELECT_ELECTION:
+				need_success = TRUE;
+				break;
+			case ELECT_SEEK_MASTER:
+				to_do = 0;
+				break;
+			default:
+				break;
+			}
+		} else if ((done = (succeeded ||
+		    (!need_success && IS_VALID_EID(db_rep->master_eid)) ||
+		    db_rep->finished)))
 			db_rep->elect_thread->finished = TRUE;
-		else if ((to_do = db_rep->operation_needed) == 0) {
+		else {
 			if (last_op == ELECT_ELECTION)
 				to_do = ELECT_REPSTART;
 			else {
@@ -278,21 +327,7 @@ __repmgr_elect_main(dbenv)
 				    !db_rep->found_master)
 					to_do = ELECT_REPSTART;
 			}
-		} else {
-			db_rep->operation_needed = 0;
-			if (to_do == ELECT_FAILURE_ELECTION) {
-				failure_recovery = TRUE;
-				to_do = ELECT_ELECTION;
-			} else
-				failure_recovery = FALSE;
 		}
-
-		/*
-		 * TODO: is it possible for an operation_needed to be set, with
-		 * nevertheless a valid master?  I don't think so.  Would a more
-		 * straightforward exit test involve "operation_needed" instead
-		 * of (or in addition to) valid master?
-		 */
 
 		UNLOCK_MUTEX(db_rep->mutex);
 		if (done)
@@ -301,8 +336,7 @@ __repmgr_elect_main(dbenv)
 }
 
 /*
- * Tests whether the election thread is ready to do something, or if it should
- * wait a little while.
+ * Tests whether another thread has signalled for our attention.
  */
 static int
 __repmgr_is_ready(dbenv)
@@ -316,8 +350,7 @@ __repmgr_is_ready(dbenv)
 	    "repmgr elect: opcode %d, finished %d, master %d",
 	    db_rep->operation_needed, db_rep->finished, db_rep->master_eid));
 
-	return (db_rep->operation_needed ||
-	    db_rep->finished || IS_VALID_EID(db_rep->master_eid));
+	return (db_rep->operation_needed || db_rep->finished);
 }
 
 /*
@@ -335,14 +368,17 @@ __repmgr_become_master(dbenv)
 	db_rep->master_eid = SELF_EID;
 	db_rep->found_master = TRUE;
 
+	/*
+	 * At the moment, it's useless to pass my address to rep_start here,
+	 * because rep_start ignores it in the case of MASTER.  So we could
+	 * avoid the trouble of allocating and freeing this memory.  But might
+	 * this conceivably change in the future?
+	 */
 	if ((ret = __repmgr_prepare_my_addr(dbenv, &my_addr)) != 0)
 		return (ret);
 	ret = __rep_start(dbenv, &my_addr, DB_REP_MASTER);
 	__os_free(dbenv, my_addr.data);
-	if (ret != 0)
-		return (ret);
-	if ((ret = __repmgr_stash_generation(dbenv)) != 0)
-		return (ret);
+	__repmgr_stash_generation(dbenv);
 
-	return (0);
+	return (ret);
 }

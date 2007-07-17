@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: recd015.tcl,v 12.6 2006/11/09 16:10:50 carol Exp $
+# $Id: recd015.tcl,v 12.8 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	recd015
 # TEST	This is a recovery test for testing lots of prepared txns.
@@ -43,7 +43,8 @@ proc recd015 { method args } {
 	# don't need to send methods and args to the script.
 	#
 	env_cleanup $testdir
-	set env_cmd "berkdb_env -create -txn_max $txnmax -txn -home $testdir"
+	set env_cmd "berkdb_env -create -txn_max \
+		$txnmax -lock_max_lockers $txnmax -txn -home $testdir"
 	set env [eval $env_cmd]
 	error_check_good dbenv [is_valid_env $env] TRUE
 	set db [eval {berkdb_open -create} $omethod -env $env $args $testfile]

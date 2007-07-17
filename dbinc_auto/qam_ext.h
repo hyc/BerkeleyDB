@@ -36,7 +36,7 @@ int __qam_fprobe __P((DB *, db_pgno_t, DB_TXN *, void *, qam_probe_mode, DB_CACH
 int __qam_fclose __P((DB *, db_pgno_t));
 int __qam_fremove __P((DB *, db_pgno_t));
 int __qam_sync __P((DB *));
-int __qam_gen_filelist __P(( DB *, QUEUE_FILELIST **));
+int __qam_gen_filelist __P((DB *, QUEUE_FILELIST **));
 int __qam_extent_names __P((DB_ENV *, char *, char ***));
 void __qam_exid __P((DB *, u_int8_t *, u_int32_t));
 int __qam_nameop __P((DB *, DB_TXN *, const char *, qam_name_op));

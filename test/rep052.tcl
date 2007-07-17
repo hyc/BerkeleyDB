@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep052.tcl,v 12.13 2006/12/07 19:37:44 carol Exp $
+# $Id: rep052.tcl,v 12.16 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep052
 # TEST	Test of replication with NOWAIT.
@@ -70,12 +70,12 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -121,6 +121,12 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$masterenv test force noarchive_timeout
 
 	# Run rep_test in the master (and update client).
 	puts "\tRep$tnum.a: Running rep_test in replicated env."
@@ -174,7 +180,7 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 
 	# Process messages a few times, just enough to get client
 	# into lockout/recovery mode, but not enough to complete recovery.
-	set iter 4
+	set iter 3
 	for { set i 0 } { $i < $iter } { incr i } {
 		set nproced [proc_msgs_once $envlist NONE err]
 	}
@@ -183,15 +189,14 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	if { [catch { set txn [$clientenv txn] } res] } {
 		error_check_good txn_lockout [is_substr $res "DB_REP_LOCKOUT"] 1
 	} else {
-		error_check_good txn_no_lockout [$txn commit] 0
-		puts "FAIL: Not locked out of txn API calls: $res"
+		error "FAIL:[timestamp] Not locked out of txn API calls."
 	}
 
 	puts "\tRep$tnum.g: Verify we are locked out of env API calls."
 	if { [catch { set stat [$clientenv lock_stat] } res] } {
 		error_check_good env_lockout [is_substr $res "DB_REP_LOCKOUT"] 1
 	} else {
-		puts "FAIL: Not locked out of env API calls: $res"
+		error "FAIL:[timestamp] Not locked out of env API calls."
 	}
 
 	# Now catch up and make sure we're not locked out anymore.

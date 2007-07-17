@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_err.c,v 12.54 2006/12/12 16:03:54 bostic Exp $
+ * $Id: db_err.c,v 12.62 2007/05/29 15:23:05 sue Exp $
  */
 
 #include "db_config.h"
@@ -277,11 +277,12 @@ db_strerror(error)
 	case DB_REP_JOIN_FAILURE:
 		return
 	    ("DB_REP_JOIN_FAILURE: Unable to join replication group");
+	case DB_REP_LEASE_EXPIRED:
+		return
+	    ("DB_REP_LEASE_EXPIRED: Replication leases have expired");
 	case DB_REP_LOCKOUT:
 		return
 	    ("DB_REP_LOCKOUT: Waiting for replication recovery to complete");
-	case DB_REP_NEWMASTER:
-		return ("DB_REP_NEWMASTER: A new master has declared itself");
 	case DB_REP_NEWSITE:
 		return ("DB_REP_NEWSITE: A new site has entered the system");
 	case DB_REP_NOTPERM:
@@ -342,7 +343,7 @@ void
 #ifdef STDC_HEADERS
 __db_syserr(const DB_ENV *dbenv, int error, const char *fmt, ...)
 #else
-__db_syserr(dbenv, error fmt, va_alist)
+__db_syserr(dbenv, error, fmt, va_alist)
 	const DB_ENV *dbenv;
 	int error;
 	const char *fmt;
@@ -368,7 +369,7 @@ void
 #ifdef STDC_HEADERS
 __db_err(const DB_ENV *dbenv, int error, const char *fmt, ...)
 #else
-__db_err(dbenv, error fmt, va_alist)
+__db_err(dbenv, error, fmt, va_alist)
 	const DB_ENV *dbenv;
 	int error;
 	const char *fmt;
@@ -660,13 +661,13 @@ __db_unknown_path(dbenv, routine)
  * __db_check_txn --
  *	Check for common transaction errors.
  *
- * PUBLIC: int __db_check_txn __P((DB *, DB_TXN *, u_int32_t, int));
+ * PUBLIC: int __db_check_txn __P((DB *, DB_TXN *, DB_LOCKER *, int));
  */
 int
-__db_check_txn(dbp, txn, assoc_lid, read_op)
+__db_check_txn(dbp, txn, assoc_locker, read_op)
 	DB *dbp;
 	DB_TXN *txn;
-	u_int32_t assoc_lid;
+	DB_LOCKER *assoc_locker;
 	int read_op;
 {
 	DB_ENV *dbenv;
@@ -692,7 +693,8 @@ __db_check_txn(dbp, txn, assoc_lid, read_op)
 	 *	a transaction handle for a non-transactional database
 	 */
 	if (txn == NULL || F_ISSET(txn, TXN_PRIVATE)) {
-		if (dbp->cur_lid >= TXN_MINIMUM)
+		if (dbp->cur_locker != NULL &&
+		    dbp->cur_locker->id >= TXN_MINIMUM)
 			goto open_err;
 
 		if (!read_op && F_ISSET(dbp, DB_AM_TXN)) {
@@ -723,9 +725,11 @@ __db_check_txn(dbp, txn, assoc_lid, read_op)
 
 		if (F_ISSET(txn, TXN_DEADLOCK))
 			return (__db_txn_deadlock_err(dbenv, txn));
-		if (dbp->cur_lid >= TXN_MINIMUM && dbp->cur_lid != txn->txnid) {
+		if (dbp->cur_locker != NULL &&
+		    dbp->cur_locker->id >= TXN_MINIMUM &&
+		     dbp->cur_locker->id != txn->txnid) {
 			if ((ret = __lock_locker_is_parent(dbenv,
-			     dbp->cur_lid, txn->txnid, &isp)) != 0)
+			     dbp->cur_locker, txn->locker, &isp)) != 0)
 				return (ret);
 			if (!isp)
 				goto open_err;
@@ -733,7 +737,7 @@ __db_check_txn(dbp, txn, assoc_lid, read_op)
 	}
 
 	/*
-	 * If dbp->associate_lid is not DB_LOCK_INVALIDID, that means we're in
+	 * If dbp->associate_locker is not NULL, that means we're in
 	 * the middle of a DB->associate with DB_CREATE (i.e., a secondary index
 	 * creation).
 	 *
@@ -747,8 +751,8 @@ __db_check_txn(dbp, txn, assoc_lid, read_op)
 	 * the secondary in another transaction (presumably by updating the
 	 * primary).
 	 */
-	if (!read_op && dbp->associate_lid != DB_LOCK_INVALIDID &&
-	    txn != NULL && dbp->associate_lid != assoc_lid) {
+	if (!read_op && dbp->associate_locker != NULL &&
+	    txn != NULL && dbp->associate_locker != assoc_locker) {
 		__db_errx(dbenv,
 	    "Operation forbidden while secondary index is being created");
 		return (EINVAL);
@@ -870,7 +874,7 @@ __dbc_logging(dbc)
 
 #ifndef	DEBUG_ROP
 	/*
-	 * Only check when DEBUG_ROP is not configured.  People often do
+	 *  Only check when DEBUG_ROP is not configured.  People often do
 	 * non-transactional reads, and debug_rop is going to write
 	 * a log record.
 	 */
@@ -880,12 +884,10 @@ __dbc_logging(dbc)
 	rep = db_rep->region;
 
 	/*
-	 * If we're a client and not running recovery or internally, error.
+	 * If we're a client and not running recovery or non durably, error.
 	 */
-	if (IS_REP_CLIENT(dbenv) &&
-	    !F_ISSET(dbc->dbp, DB_AM_CL_WRITER) &&
-	    !F_ISSET(dbc->dbp, DB_AM_NOT_DURABLE)) {
-		__db_errx(dbenv, "Dbc_logging: Client update");
+	if (IS_REP_CLIENT(dbenv) && !F_ISSET(dbc->dbp, DB_AM_NOT_DURABLE)) {
+		__db_errx(dbenv, "dbc_logging: Client update");
 		goto err;
 	}
 

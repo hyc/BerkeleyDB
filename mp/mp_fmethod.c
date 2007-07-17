@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mp_fmethod.c,v 12.16 2006/11/30 18:33:32 ubell Exp $
+ * $Id: mp_fmethod.c,v 12.19 2007/06/01 16:30:30 bostic Exp $
  */
 
 #include "db_config.h"
@@ -66,7 +66,7 @@ __memp_fcreate(dbenv, retp)
 		return (ret);
 
 	dbmfp->ref = 1;
-	dbmfp->lsn_offset = -1;
+	dbmfp->lsn_offset = DB_LSN_OFF_NOTSET;
 	dbmfp->dbenv = dbenv;
 	dbmfp->mfp = INVALID_ROFF;
 
@@ -76,6 +76,7 @@ __memp_fcreate(dbenv, retp)
 	dbmfp->get_fileid = __memp_get_fileid;
 	dbmfp->get_flags = __memp_get_flags;
 	dbmfp->get_ftype = __memp_get_ftype;
+	dbmfp->get_last_pgno = __memp_get_last_pgno;
 	dbmfp->get_lsn_offset = __memp_get_lsn_offset;
 	dbmfp->get_maxsize = __memp_get_maxsize;
 	dbmfp->get_pgcookie = __memp_get_pgcookie;
@@ -487,16 +488,17 @@ __memp_set_priority(dbmfp, priority)
 }
 
 /*
- * __memp_last_pgno --
+ * __memp_get_last_pgno --
  *	Return the page number of the last page in the file.
  *
  * !!!
- * Undocumented interface: DB private.
+ * The method is undocumented, but the handle is exported, users occasionally
+ * ask for it.
  *
- * PUBLIC: int __memp_last_pgno __P((DB_MPOOLFILE *, db_pgno_t *));
+ * PUBLIC: int __memp_get_last_pgno __P((DB_MPOOLFILE *, db_pgno_t *));
  */
 int
-__memp_last_pgno(dbmfp, pgnoaddr)
+__memp_get_last_pgno(dbmfp, pgnoaddr)
 	DB_MPOOLFILE *dbmfp;
 	db_pgno_t *pgnoaddr;
 {

@@ -24,7 +24,7 @@ import java.io.FileNotFoundException;
 
 import com.sleepycat.db.*;
 
-public class RepmgrConfigTest implements EventHandler
+public class RepmgrConfigTest extends EventHandlerAdapter
 {
     private class ConfigOptions {
         public ConfigOptions(
@@ -55,7 +55,7 @@ public class RepmgrConfigTest implements EventHandler
             this.validStartPolicy        = validStartPolicy;
             this.validPolicy             = validPolicy;
         }
-            
+         
         boolean txnSync;
         boolean initializeReplication;
         boolean verboseReplication;
@@ -67,7 +67,7 @@ public class RepmgrConfigTest implements EventHandler
         ReplicationManagerAckPolicy ackPolicyToSet;
         int nsitesToStart;
         boolean validStartPolicy;
-        
+     
         // should this set of options work or not?
         boolean validPolicy;
     }
@@ -75,7 +75,7 @@ public class RepmgrConfigTest implements EventHandler
     static int    port        = 4242;
     static int    priority    = 100;
     static String homedirName = "";
-    ConfigOptions[] optionVariations = 
+    ConfigOptions[] optionVariations =
         { new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       1,  true,  true ), //0:
           new ConfigOptions(false, true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       1,  true,  true ), //1: disable txnSync
           new ConfigOptions(true,  false, false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       1,  true,  false), //2: don't call initRep
@@ -91,12 +91,12 @@ public class RepmgrConfigTest implements EventHandler
           new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ONE_PEER,  1,  true,  true ), //12:
           new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  null,                                  1,  true,  false), //13: set an invalid ack policy
           new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       -1, true,  false), //14: set nsites negative
-          new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       0,  true,  false), //15: 
+          new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       0,  true,  false), //15:
           new ConfigOptions(true,  true,  false, true,  true,  50, true,  true,  ReplicationManagerAckPolicy.ALL,       1,  false, false), //16: dont set a valid start policy.
         };
     File homedir;
     EnvironmentConfig envConfig;
-    
+ 
     @BeforeClass public static void ClassInit() {
 	    TestUtils.loadConfig(null);
 	    homedirName = TestUtils.BASETEST_DBDIR + "/TESTDIR";
@@ -216,13 +216,13 @@ public class RepmgrConfigTest implements EventHandler
         boolean gotexcept = false;
         Environment dbenv = null;
         try {
-    
+ 
             envConfig.setTxnNoSync(opts.txnSync);
             if (opts.initializeReplication)
                 envConfig.setInitializeReplication(true);
             if (opts.verboseReplication)
                 envConfig.setVerboseReplication(false);
-    
+ 
             if (opts.setLocalSiteEnable) {
                 ReplicationHostAddress haddr = new ReplicationHostAddress(address, port);
                 envConfig.setReplicationManagerLocalSite(haddr);
@@ -231,10 +231,10 @@ public class RepmgrConfigTest implements EventHandler
                 envConfig.setReplicationPriority(opts.replicationPriority);
             if (opts.setValidEventHandler)
                 envConfig.setEventHandler(this);
-            
+         
             if (opts.setAckPolicy)
                 envConfig.setReplicationManagerAckPolicy(opts.ackPolicyToSet);
-            
+         
             try {
                 dbenv = new Environment(homedir, envConfig);
             } catch(FileNotFoundException e) {
@@ -246,10 +246,10 @@ public class RepmgrConfigTest implements EventHandler
                 if (opts.validPolicy)
                     TestUtils.DEBUGOUT(3, "Unexpected DB exception from Environment create." + dbe);
             }
-            
+         
             if (!gotexcept) {
                 try {
-                    // start replication manager 
+                    // start replication manager
                     if (opts.validStartPolicy)
                         dbenv.replicationManagerStart(opts.nsitesToStart, ReplicationManagerStartPolicy.REP_MASTER);
                     else
@@ -271,7 +271,7 @@ public class RepmgrConfigTest implements EventHandler
                     if (opts.validPolicy)
                         TestUtils.DEBUGOUT(3, "Unexpected AssertionError came from replicationManagerStart." + ae);
                 }
-                    
+                 
             }
         } catch (IllegalArgumentException iae) {
                 gotexcept = true;
@@ -295,7 +295,7 @@ public class RepmgrConfigTest implements EventHandler
                 Environment.remove(homedir, true, envConfig);
             } catch(FileNotFoundException fnfe) {
                 gotexcept = true;
-                retval = false; 
+                retval = false;
             } catch(DatabaseException dbe) {
                 TestUtils.DEBUGOUT(3, "Unexpected database exception came during shutdown." + dbe);
                 gotexcept = true; // never expect a shutdown failure.
@@ -307,23 +307,19 @@ public class RepmgrConfigTest implements EventHandler
         }
         return retval;
     }
-    
+ 
     /*
      * TODO: Maybe move this into a general TestEventHandler?
      */
-    public int handleEvent(EventType event)
-    {
-        int ret = 0;
-        if (event == EventType.REP_MASTER) {
-            TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
-        } else if (event == EventType.REP_CLIENT) {
-            TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");            
-        } else if (event == EventType.REP_NEW_MASTER) {
-            TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
-        } else {
-            fail("Unknown event callback received: " + event.toString());
-            ret = 1;
-        }
-        return ret;
+    public void handleRepMasterEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
+    }
+
+    public void handleRepClientEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");         
+    }
+
+    public void handleRepNewMasterEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
     }
 }

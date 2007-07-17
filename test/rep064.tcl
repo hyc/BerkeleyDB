@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006 Oracle.  All rights reserved.
+# Copyright (c) 2006,2007 Oracle.  All rights reserved.
 #
-# $Id: rep064.tcl,v 12.7 2006/12/07 19:37:44 carol Exp $
+# $Id: rep064.tcl,v 12.9 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep064
 # TEST	Replication rename and forced-upgrade test.
@@ -56,12 +56,12 @@ proc rep064_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR

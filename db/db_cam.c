@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: db_cam.c,v 12.49 2007/01/17 16:04:30 margo Exp $
+ * $Id: db_cam.c,v 12.57 2007/06/05 11:46:24 mjc Exp $
  */
 
 #include "db_config.h"
@@ -180,7 +180,7 @@ __dbc_destroy(dbc)
 	if (LOCKING_ON(dbenv) &&
 	    F_ISSET(dbc, DBC_OWN_LID) &&
 	    (t_ret = __lock_id_free(dbenv,
-	    ((DB_LOCKER *)dbc->lref)->id)) != 0 && ret == 0)
+	    (DB_LOCKER *)dbc->lref)) != 0 && ret == 0)
 		ret = t_ret;
 
 	__os_free(dbenv, dbc);
@@ -513,6 +513,7 @@ __dbc_get(dbc_arg, key, data, flags)
 	DB_ENV *dbenv;
 	DB_MPOOLFILE *mpf;
 	db_pgno_t pgno;
+	db_indx_t indx_off;
 	u_int32_t multi, orig_ulen, tmp_flags, tmp_read_uncommitted, tmp_rmw;
 	u_int8_t type;
 	int key_small, ret, t_ret;
@@ -575,8 +576,11 @@ __dbc_get(dbc_arg, key, data, flags)
 	 */
 	if ((flags == DB_GET_BOTH ||
 	    flags == DB_GET_BOTH_RANGE || flags == DB_SET) &&
-	    ((BTREE *)dbp->bt_internal)->bt_compare == __bam_defcmp &&
-	    ((HASH *)dbp->h_internal)->h_compare == NULL)
+	    ((BTREE *)dbp->bt_internal)->bt_compare == __bam_defcmp
+#ifdef HAVE_HASH
+	    && ((HASH *)dbp->h_internal)->h_compare == NULL
+#endif
+	    )
 		F_SET(key, DB_DBT_ISSET);
 
 	if (flags == DB_GET_BOTH && dbp->dup_compare == NULL)
@@ -834,8 +838,9 @@ done:	/*
 			goto err;
 
 		type = TYPE(cp->page);
-		ret = __db_ret(dbp, dbc->txn, cp->page, cp->indx +
-		    (type == P_LBTREE || type == P_HASH ? O_INDX : 0),
+		indx_off = ((type == P_LBTREE ||
+		    type == P_HASH || type == P_HASH_UNSORTED) ? O_INDX : 0);
+		ret = __db_ret(dbp, dbc->txn, cp->page, cp->indx + indx_off,
 		    data, &dbc_arg->rdata->data, &dbc_arg->rdata->ulen);
 	}
 
@@ -895,10 +900,10 @@ __dbc_put(dbc_arg, key, data, flags)
 	DB *dbp, *sdbp;
 	DBC *dbc_n, *oldopd, *opd, *sdbc, *pdbc;
 	DBT olddata, oldpkey, newdata, pkey, temppkey, tempskey;
-	DBT *all_skeys, *skeyp;
+	DBT *all_skeys, *skeyp, *tskeyp;
 	db_pgno_t pgno;
 	int cmp, have_oldrec, ispartial, nodel, re_pad, ret, s_count, t_ret;
-	u_int32_t re_len, rmw, size, tmp_flags;
+	u_int32_t re_len, nskey, rmw, size, tmp_flags;
 
 	/*
 	 * Cursor Cleanup Note:
@@ -1143,7 +1148,7 @@ __dbc_put(dbc_arg, key, data, flags)
 	 */
 	for (ret = __db_s_first(dbp, &sdbp), skeyp = all_skeys;
 	    sdbp != NULL && ret == 0;
-	    ret = __db_s_next(&sdbp), ++skeyp) {
+	    ret = __db_s_next(&sdbp, dbc_arg->txn), ++skeyp) {
 		DB_ASSERT(dbenv, skeyp - all_skeys < s_count);
 		/*
 		 * Don't process this secondary if the key is immutable and we
@@ -1172,16 +1177,32 @@ __dbc_put(dbc_arg, key, data, flags)
 		}
 
 		/*
-		 * If we have the old record, we can generate and remove the
-		 * old secondary key now.  We can also skip the secondary put
+		 * Mark the secondary key DBT(s) as set -- that is, the
+		 * callback returned 0 rather than DB_DONOTINDEX, so we have at
+		 * least one secondary key.
+		 */
+		if (F_ISSET(skeyp, DB_DBT_MULTIPLE)) {
+#ifdef DIAGNOSTIC
+			__db_check_skeyset(sdbp, skeyp);
+#endif
+			for (tskeyp = (DBT *)skeyp->data, nskey = skeyp->size;
+			    nskey > 0; nskey--, tskeyp++)
+				F_SET(tskeyp, DB_DBT_ISSET);
+
+			tskeyp = (DBT *)skeyp->data;
+			nskey = skeyp->size;
+		} else {
+			F_SET(skeyp, DB_DBT_ISSET);
+			tskeyp = skeyp;
+			nskey = 1;
+		}
+
+		/*
+		 * If we have the old record, we can generate and remove any
+		 * old secondary key(s) now.  We can also skip the secondary put
 		 * if there is no change.
 		 */
 		if (have_oldrec) {
-			/*
-			 * Mark that the secondary key is set -- that is, the
-			 * callback returned 0 rather than DB_DONOTINDEX.
-			 */
-			F_SET(skeyp, DB_DBT_ISSET);
 			if ((ret = __dbc_del_oldskey(sdbp, dbc_arg,
 			    skeyp, &pkey, &olddata)) == DB_KEYEXIST)
 				continue;
@@ -1223,78 +1244,87 @@ __dbc_put(dbc_arg, key, data, flags)
 		 */
 		SWAP_IF_NEEDED(sdbp, &pkey);
 
-		/*
-		 * There are three cases here--
-		 * 1) The secondary supports sorted duplicates.
-		 *	If we attempt to put a secondary/primary pair
-		 *	that already exists, that's a duplicate duplicate,
-		 *	and c_put will return DB_KEYEXIST (see __db_duperr).
-		 *	This will leave us with exactly one copy of the
-		 *	secondary/primary pair, and this is just right--we'll
-		 *	avoid deleting it later, as the old and new secondaries
-		 *	will match (since the old secondary is the dup dup
-		 *	that's already there).
-		 * 2) The secondary supports duplicates, but they're not
-		 *	sorted.  We need to avoid putting a duplicate
-		 *	duplicate, because the matching old and new secondaries
-		 *	will prevent us from deleting anything and we'll
-		 *	wind up with two secondary records that point to the
-		 *	same primary key.  Do a c_get(DB_GET_BOTH);  only
-		 *	do the put if the secondary doesn't exist.
-		 * 3) The secondary doesn't support duplicates at all.
-		 *	In this case, secondary keys must be unique;  if
-		 *	another primary key already exists for this
-		 *	secondary key, we have to either overwrite it or
-		 *	not put this one, and in either case we've
-		 *	corrupted the secondary index.  Do a c_get(DB_SET).
-		 *	If the secondary/primary pair already exists, do
-		 *	nothing;  if the secondary exists with a different
-		 *	primary, return an error;  and if the secondary
-		 *	does not exist, put it.
-		 */
-		if (!F_ISSET(sdbp, DB_AM_DUP)) {
-			/* Case 3. */
-			memset(&oldpkey, 0, sizeof(DBT));
-			F_SET(&oldpkey, DB_DBT_MALLOC);
-			ret = __dbc_get(sdbc,
-			    skeyp, &oldpkey, rmw | DB_SET);
-			if (ret == 0) {
-				cmp = __bam_defcmp(sdbp, &oldpkey, &pkey);
-				__os_ufree(dbenv, oldpkey.data);
-				if (cmp != 0) {
-					__db_errx(dbenv, "%s%s",
+		for (; nskey > 0 && ret == 0; nskey--, tskeyp++) {
+			/* Skip this key if it is already in the database. */
+			if (!F_ISSET(tskeyp, DB_DBT_ISSET))
+				continue;
+
+			/*
+			 * There are three cases here--
+			 * 1) The secondary supports sorted duplicates.
+			 *	If we attempt to put a secondary/primary pair
+			 *	that already exists, that's a duplicate
+			 *	duplicate, and c_put will return DB_KEYEXIST
+			 *	(see __db_duperr).  This will leave us with
+			 *	exactly one copy of the secondary/primary pair,
+			 *	and this is just right--we'll avoid deleting it
+			 *	later, as the old and new secondaries will
+			 *	match (since the old secondary is the dup dup
+			 *	that's already there).
+			 * 2) The secondary supports duplicates, but they're not
+			 *	sorted.  We need to avoid putting a duplicate
+			 *	duplicate, because the matching old and new
+			 *	secondaries will prevent us from deleting
+			 *	anything and we'll wind up with two secondary
+			 *	records that point to the same primary key.  Do
+			 *	a c_get(DB_GET_BOTH);  only do the put if the
+			 *	secondary doesn't exist.
+			 * 3) The secondary doesn't support duplicates at all.
+			 *	In this case, secondary keys must be unique;
+			 *	if another primary key already exists for this
+			 *	secondary key, we have to either overwrite it
+			 *	or not put this one, and in either case we've
+			 *	corrupted the secondary index.  Do a
+			 *	c_get(DB_SET).  If the secondary/primary pair
+			 *	already exists, do nothing;  if the secondary
+			 *	exists with a different primary, return an
+			 *	error;  and if the secondary does not exist,
+			 *	put it.
+			 */
+			if (!F_ISSET(sdbp, DB_AM_DUP)) {
+				/* Case 3. */
+				memset(&oldpkey, 0, sizeof(DBT));
+				F_SET(&oldpkey, DB_DBT_MALLOC);
+				ret = __dbc_get(sdbc,
+				    tskeyp, &oldpkey, rmw | DB_SET);
+				if (ret == 0) {
+					cmp = __bam_defcmp(sdbp,
+					    &oldpkey, &pkey);
+					__os_ufree(dbenv, oldpkey.data);
+					if (cmp != 0) {
+						__db_errx(dbenv, "%s%s",
 			    "Put results in a non-unique secondary key in an ",
 			    "index not configured to support duplicates");
-					ret = EINVAL;
+						ret = EINVAL;
+					}
 				}
+				if (ret != DB_NOTFOUND && ret != DB_KEYEMPTY)
+					break;
+			} else if (!F_ISSET(sdbp, DB_AM_DUPSORT)) {
+				/* Case 2. */
+				DB_INIT_DBT(tempskey,
+				    tskeyp->data, tskeyp->size);
+				DB_INIT_DBT(temppkey,
+				    pkey.data, pkey.size);
+				ret = __dbc_get(sdbc, &tempskey, &temppkey,
+				    rmw | DB_GET_BOTH);
+				if (ret != DB_NOTFOUND && ret != DB_KEYEMPTY)
+					break;
 			}
-			if (ret != DB_NOTFOUND && ret != DB_KEYEMPTY)
-				goto skipput;
-		} else if (!F_ISSET(sdbp, DB_AM_DUPSORT)) {
-			/* Case 2. */
-			memset(&tempskey, 0, sizeof(DBT));
-			tempskey.data = skeyp->data;
-			tempskey.size = skeyp->size;
-			memset(&temppkey, 0, sizeof(DBT));
-			temppkey.data = pkey.data;
-			temppkey.size = pkey.size;
-			ret = __dbc_get(sdbc, &tempskey, &temppkey,
-			    rmw | DB_GET_BOTH);
-			if (ret != DB_NOTFOUND && ret != DB_KEYEMPTY)
-				goto skipput;
+
+			ret = __dbc_put(sdbc, tskeyp, &pkey,
+			    DB_UPDATE_SECONDARY);
+
+			/*
+			 * We don't know yet whether this was a put-overwrite
+			 * that in fact changed nothing.  If it was, we may get
+			 * DB_KEYEXIST.  This is not an error.
+			 */
+			if (ret == DB_KEYEXIST)
+				ret = 0;
 		}
 
-		ret = __dbc_put(sdbc, skeyp, &pkey, DB_UPDATE_SECONDARY);
-
-		/*
-		 * We don't know yet whether this was a put-overwrite that
-		 * in fact changed nothing.  If it was, we may get DB_KEYEXIST.
-		 * This is not an error.
-		 */
-		if (ret == DB_KEYEXIST)
-			ret = 0;
-
-skipput:	/* Make sure the primary key is back in native byte-order. */
+		/* Make sure the primary key is back in native byte-order. */
 		SWAP_IF_NEEDED(sdbp, &pkey);
 
 		if ((t_ret = __dbc_close(sdbc)) != 0 && ret == 0)
@@ -1309,7 +1339,6 @@ skipput:	/* Make sure the primary key is back in native byte-order. */
 		 * earlier or it would be cleared in the calls above.
 		 */
 		F_SET(skeyp, DB_DBT_ISSET);
-
 	}
 	if (ret != 0)
 		goto err;
@@ -1350,7 +1379,7 @@ skipput:	/* Make sure the primary key is back in native byte-order. */
 
 	for (ret = __db_s_first(dbp, &sdbp), skeyp = all_skeys;
 	    sdbp != NULL && ret == 0;
-	    ret = __db_s_next(&sdbp), skeyp++) {
+	    ret = __db_s_next(&sdbp, dbc_arg->txn), skeyp++) {
 		DB_ASSERT(dbenv, skeyp - all_skeys < s_count);
 		/*
 		 * Don't process this secondary if the key is immutable.  We
@@ -1459,11 +1488,19 @@ err:	/* Cleanup and cursor resolution. */
 
 	CDB_LOCKING_DONE(dbenv, dbc_arg);
 
-	if (sdbp != NULL && (t_ret = __db_s_done(sdbp)) != 0 && ret == 0)
+	if (sdbp != NULL &&
+	    (t_ret = __db_s_done(sdbp, dbc_arg->txn)) != 0 && ret == 0)
 		ret = t_ret;
 
-	for (skeyp = all_skeys; skeyp - all_skeys < s_count; skeyp++)
+	for (skeyp = all_skeys; skeyp - all_skeys < s_count; skeyp++) {
+		if (F_ISSET(skeyp, DB_DBT_MULTIPLE)) {
+			for (nskey = skeyp->size, tskeyp = (DBT *)skeyp->data;
+			    nskey > 0;
+			    nskey--, tskeyp++)
+				FREE_IF_NEEDED(dbenv, tskeyp);
+		}
 		FREE_IF_NEEDED(dbenv, skeyp);
+	}
 	if (all_skeys != NULL)
 		__os_free(dbenv, all_skeys);
 
@@ -1484,13 +1521,15 @@ __dbc_del_oldskey(sdbp, dbc_arg, skey, pkey, olddata)
 	DB_ENV *dbenv;
 	DB *dbp;
 	DBC *sdbc;
+	DBT *toldskeyp, *tskeyp;
 	DBT oldskey, temppkey, tempskey;
 	int ret, t_ret;
-	u_int32_t rmw;
+	u_int32_t i, noldskey, nsame, nskey, rmw;
 
 	sdbc = NULL;
 	dbp = sdbp->s_primary;
 	dbenv = dbp->dbenv;
+	nsame = 0;
 	rmw = STD_LOCKING(dbc_arg) ? DB_RMW : 0;
 
 	/*
@@ -1504,48 +1543,77 @@ __dbc_del_oldskey(sdbp, dbc_arg, skey, pkey, olddata)
 		return (ret);
 	}
 
-	/*
-	 * If there is a new secondary key, check whether it is different from
-	 * the old secondary key before we delete it.  Note that bt_compare is
-	 * (and must be) set no matter what access method we're in.
-	 */
-	if (F_ISSET(skey, DB_DBT_ISSET) &&
-	    ((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
-	    &oldskey, skey) == 0) {
-		ret = DB_KEYEXIST;
-		goto err;
+	if (F_ISSET(&oldskey, DB_DBT_MULTIPLE)) {
+#ifdef DIAGNOSTIC
+		__db_check_skeyset(sdbp, &oldskey);
+#endif
+		toldskeyp = (DBT *)oldskey.data;
+		noldskey = oldskey.size;
+	} else {
+		toldskeyp = &oldskey;
+		noldskey = 1;
 	}
 
-	if ((ret = __db_cursor_int(
-	    sdbp, dbc_arg->txn, sdbp->type,
-	    PGNO_INVALID, 0, dbc_arg->locker, &sdbc)) != 0)
-		goto err;
-	if (CDB_LOCKING(dbenv)) {
-		DB_ASSERT(dbenv, sdbc->mylock.off == LOCK_INVALID);
-		F_SET(sdbc, DBC_WRITER);
+	if (F_ISSET(skey, DB_DBT_MULTIPLE)) {
+		nskey = skey->size;
+		skey = (DBT *)skey->data;
+	} else
+		nskey = F_ISSET(skey, DB_DBT_ISSET) ? 1 : 0;
+
+	for (; noldskey > 0 && ret == 0; noldskey--, toldskeyp++) {
+		/*
+		 * Check whether this old secondary key is also a new key
+		 * before we delete it.  Note that bt_compare is (and must be)
+		 * set no matter what access method we're in.
+		 */
+		for (i = 0, tskeyp = skey; i < nskey; i++, tskeyp++)
+			if (((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
+			    toldskeyp, tskeyp) == 0) {
+				nsame++;
+				F_CLR(tskeyp, DB_DBT_ISSET);
+				break;
+			}
+
+		if (i < nskey) {
+			FREE_IF_NEEDED(dbenv, toldskeyp);
+			continue;
+		}
+
+		if (sdbc == NULL) {
+			if ((ret = __db_cursor_int(
+			    sdbp, dbc_arg->txn, sdbp->type,
+			    PGNO_INVALID, 0, dbc_arg->locker, &sdbc)) != 0)
+				goto err;
+			if (CDB_LOCKING(dbenv)) {
+				DB_ASSERT(dbenv,
+				    sdbc->mylock.off == LOCK_INVALID);
+				F_SET(sdbc, DBC_WRITER);
+			}
+		}
+
+		/*
+		 * Don't let c_get(DB_GET_BOTH) stomp on our data.  Use
+		 * temporary DBTs instead.
+		 */
+		SWAP_IF_NEEDED(sdbp, pkey);
+		DB_INIT_DBT(temppkey, pkey->data, pkey->size);
+		DB_INIT_DBT(tempskey, toldskeyp->data, toldskeyp->size);
+		if ((ret = __dbc_get(sdbc,
+		    &tempskey, &temppkey, rmw | DB_GET_BOTH)) == 0)
+			ret = __dbc_del(sdbc, DB_UPDATE_SECONDARY);
+		else if (ret == DB_NOTFOUND)
+			ret = __db_secondary_corrupt(dbp);
+		SWAP_IF_NEEDED(sdbp, pkey);
+		FREE_IF_NEEDED(dbenv, toldskeyp);
 	}
 
-	/*
-	 * Don't let c_get(DB_GET_BOTH) stomp on our data.  Use a temp DBT
-	 * instead.
-	 */
-	memset(&tempskey, 0, sizeof(DBT));
-	tempskey.data = oldskey.data;
-	tempskey.size = oldskey.size;
-	SWAP_IF_NEEDED(sdbp, pkey);
-	memset(&temppkey, 0, sizeof(DBT));
-	temppkey.data = pkey->data;
-	temppkey.size = pkey->size;
-	if ((ret = __dbc_get(sdbc,
-	    &tempskey, &temppkey, rmw | DB_GET_BOTH)) == 0)
-		ret = __dbc_del(sdbc, DB_UPDATE_SECONDARY);
-	else if (ret == DB_NOTFOUND)
-		ret = __db_secondary_corrupt(dbp);
-	SWAP_IF_NEEDED(sdbp, pkey);
-
-err:	FREE_IF_NEEDED(dbenv, &oldskey);
+err:	for (; noldskey > 0; noldskey--, toldskeyp++)
+		FREE_IF_NEEDED(dbenv, toldskeyp);
+	FREE_IF_NEEDED(dbenv, &oldskey);
 	if (sdbc != NULL && (t_ret = __dbc_close(sdbc)) != 0 && ret == 0)
 		ret = t_ret;
+	if (ret == 0 && nsame == nskey)
+		return (DB_KEYEXIST);
 	return (ret);
 }
 
@@ -1607,8 +1675,8 @@ __dbc_cleanup(dbc, dbc_n, failed)
 	}
 	opd = internal->opd;
 	if (opd != NULL && opd->internal->page != NULL) {
-		if ((t_ret =
-		    __memp_fput(mpf, opd->internal->page, dbc->priority)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(mpf,
+		    opd->internal->page, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
 		opd->internal->page = NULL;
 	}
@@ -2104,17 +2172,19 @@ __dbc_del_secondary(dbc)
 	DBC *pdbc;
 	DBT skey, pkey;
 	int ret, t_ret;
+	u_int32_t rmw;
 
 	pdbp = dbc->dbp->s_primary;
 	dbenv = pdbp->dbenv;
-	memset(&skey, 0, sizeof(DBT));
-	memset(&pkey, 0, sizeof(DBT));
+	rmw = STD_LOCKING(dbc) ? DB_RMW : 0;
 
 	/*
 	 * Get the current item that we're pointing at.
 	 * We don't actually care about the secondary key, just
 	 * the primary.
 	 */
+	memset(&skey, 0, sizeof(DBT));
+	memset(&pkey, 0, sizeof(DBT));
 	F_SET(&skey, DB_DBT_PARTIAL | DB_DBT_USERMEM);
 	if ((ret = __dbc_get(dbc, &skey, &pkey, DB_CURRENT)) != 0)
 		return (ret);
@@ -2155,8 +2225,7 @@ __dbc_del_secondary(dbc)
 	 * every record in the secondary should correspond to some record
 	 * in the primary.
 	 */
-	if ((ret = __dbc_get(pdbc, &pkey, &skey,
-	    (STD_LOCKING(dbc) ? DB_RMW : 0) | DB_SET)) == 0)
+	if ((ret = __dbc_get(pdbc, &pkey, &skey, DB_SET | rmw)) == 0)
 		ret = __dbc_del(pdbc, 0);
 	else if (ret == DB_NOTFOUND)
 		ret = __db_secondary_corrupt(pdbp);
@@ -2183,11 +2252,14 @@ __dbc_del_primary(dbc)
 	DB_ENV *dbenv;
 	DB *dbp, *sdbp;
 	DBC *sdbc;
+	DBT *tskeyp;
 	DBT data, pkey, skey, temppkey, tempskey;
+	u_int32_t nskey, rmw;
 	int ret, t_ret;
 
 	dbp = dbc->dbp;
 	dbenv = dbp->dbenv;
+	rmw = STD_LOCKING(dbc) ? DB_RMW : 0;
 
 	/*
 	 * If we're called at all, we have at least one secondary.
@@ -2203,7 +2275,7 @@ __dbc_del_primary(dbc)
 	memset(&skey, 0, sizeof(DBT));
 	for (ret = __db_s_first(dbp, &sdbp);
 	    sdbp != NULL && ret == 0;
-	    ret = __db_s_next(&sdbp)) {
+	    ret = __db_s_next(&sdbp, dbc->txn)) {
 		/*
 		 * Get the secondary key for this secondary and the current
 		 * item.
@@ -2220,6 +2292,11 @@ __dbc_del_primary(dbc)
 			goto err;
 		}
 
+#ifdef DIAGNOSTIC
+		if (F_ISSET(&skey, DB_DBT_MULTIPLE))
+			__db_check_skeyset(sdbp, &skey);
+#endif
+
 		/* Open a secondary cursor. */
 		if ((ret = __db_cursor_int(sdbp, dbc->txn, sdbp->type,
 		    PGNO_INVALID, 0, dbc->locker, &sdbc)) != 0)
@@ -2230,41 +2307,57 @@ __dbc_del_primary(dbc)
 			F_SET(sdbc, DBC_WRITER);
 		}
 
-		/*
-		 * Set the secondary cursor to the appropriate item.
-		 * Delete it.
-		 *
-		 * We want to use DB_RMW if locking is on;  it's only
-		 * legal then, though.
-		 *
-		 * !!!
-		 * Don't stomp on any callback-allocated buffer in skey
-		 * when we do a c_get(DB_GET_BOTH); use a temp DBT instead.
-		 * Similarly, don't allow pkey to be invalidated when the
-		 * cursor is closed.
-		 */
-		memset(&tempskey, 0, sizeof(DBT));
-		tempskey.data = skey.data;
-		tempskey.size = skey.size;
-		SWAP_IF_NEEDED(sdbp, &pkey);
-		memset(&temppkey, 0, sizeof(DBT));
-		temppkey.data = pkey.data;
-		temppkey.size = pkey.size;
-		if ((ret = __dbc_get(sdbc, &tempskey, &temppkey,
-		    (STD_LOCKING(dbc) ? DB_RMW : 0) | DB_GET_BOTH)) == 0)
-			ret = __dbc_del(sdbc, DB_UPDATE_SECONDARY);
-		else if (ret == DB_NOTFOUND)
-			ret = __db_secondary_corrupt(dbp);
-		SWAP_IF_NEEDED(sdbp, &pkey);
-		FREE_IF_NEEDED(dbenv, &skey);
+		if (F_ISSET(&skey, DB_DBT_MULTIPLE)) {
+			tskeyp = (DBT *)skey.data;
+			nskey = skey.size;
+		} else {
+			tskeyp = &skey;
+			nskey = 1;
+		}
+
+		for (; nskey > 0; nskey--, tskeyp++) {
+			/*
+			 * Set the secondary cursor to the appropriate item.
+			 * Delete it.
+			 *
+			 * We want to use DB_RMW if locking is on; it's only
+			 * legal then, though.
+			 *
+			 * !!!
+			 * Don't stomp on any callback-allocated buffer in skey
+			 * when we do a c_get(DB_GET_BOTH); use a temp DBT
+			 * instead.  Similarly, don't allow pkey to be
+			 * invalidated when the cursor is closed.
+			 */
+			DB_INIT_DBT(tempskey, tskeyp->data, tskeyp->size);
+			SWAP_IF_NEEDED(sdbp, &pkey);
+			DB_INIT_DBT(temppkey, pkey.data, pkey.size);
+			if ((ret = __dbc_get(sdbc, &tempskey, &temppkey,
+			    DB_GET_BOTH | rmw)) == 0)
+				ret = __dbc_del(sdbc, DB_UPDATE_SECONDARY);
+			else if (ret == DB_NOTFOUND)
+				ret = __db_secondary_corrupt(dbp);
+			SWAP_IF_NEEDED(sdbp, &pkey);
+			FREE_IF_NEEDED(dbenv, tskeyp);
+		}
 
 		if ((t_ret = __dbc_close(sdbc)) != 0 && ret == 0)
 			ret = t_ret;
 		if (ret != 0)
 			goto err;
+
+		/*
+		 * In the common case where there is a single secondary key, we
+		 * will have freed any application-allocated data in skey
+		 * already.  In the multiple key case, we need to free it here.
+		 * It is safe to do this twice as the macro resets the data
+		 * field.
+		 */
+		FREE_IF_NEEDED(dbenv, &skey);
 	}
 
-err:	if (sdbp != NULL && (t_ret = __db_s_done(sdbp)) != 0 && ret == 0)
+err:	if (sdbp != NULL &&
+	    (t_ret = __db_s_done(sdbp, dbc->txn)) != 0 && ret == 0)
 		ret = t_ret;
 	FREE_IF_NEEDED(dbenv, &skey);
 	return (ret);
@@ -2299,11 +2392,12 @@ __db_s_first(pdbp, sdbpp)
  * __db_s_next --
  *	Get the next secondary in the list.
  *
- * PUBLIC: int __db_s_next __P((DB **));
+ * PUBLIC: int __db_s_next __P((DB **, DB_TXN *));
  */
 int
-__db_s_next(sdbpp)
+__db_s_next(sdbpp, txn)
 	DB **sdbpp;
+	DB_TXN *txn;
 {
 	DB_ENV *dbenv;
 	DB *sdbp, *pdbp, *closeme;
@@ -2353,7 +2447,13 @@ __db_s_next(sdbpp)
 	/*
 	 * closeme->close() is a wrapper;  call __db_close explicitly.
 	 */
-	ret = closeme != NULL ? __db_close(closeme, NULL, 0) : 0;
+	if (closeme == NULL)
+		ret = 0;
+	else if (txn == NULL)
+		ret = __db_close(closeme, NULL, 0);
+	else
+		ret = __txn_closeevent(dbenv, txn, closeme);
+
 	return (ret);
 }
 
@@ -2362,15 +2462,16 @@ __db_s_next(sdbpp)
  *	Properly decrement the refcount on a secondary database handle we're
  *	using, without calling __db_s_next.
  *
- * PUBLIC: int __db_s_done __P((DB *));
+ * PUBLIC: int __db_s_done __P((DB *, DB_TXN *));
  */
 int
-__db_s_done(sdbp)
+__db_s_done(sdbp, txn)
 	DB *sdbp;
+	DB_TXN *txn;
 {
 	DB_ENV *dbenv;
 	DB *pdbp;
-	int doclose;
+	int doclose, ret;
 
 	pdbp = sdbp->s_primary;
 	dbenv = pdbp->dbenv;
@@ -2384,7 +2485,13 @@ __db_s_done(sdbp)
 	}
 	MUTEX_UNLOCK(dbenv, pdbp->mutex);
 
-	return (doclose ? __db_close(sdbp, NULL, 0) : 0);
+	if (doclose == 0)
+		ret = 0;
+	else if (txn == NULL)
+		ret = __db_close(sdbp, NULL, 0);
+	else
+		ret = __txn_closeevent(dbenv, txn, sdbp);
+	return (ret);
 }
 
 /*
@@ -2500,3 +2607,33 @@ __db_partsize(nbytes, data)
 
 	return (nbytes + data->size - data->dlen);	/* Case 2 */
 }
+
+#ifdef DIAGNOSTIC
+/*
+ * __db_check_skeyset --
+ *	Diagnostic check that the application's callback returns a set of
+ *	secondary keys without repeats.
+ *
+ * PUBLIC: #ifdef DIAGNOSTIC
+ * PUBLIC: void __db_check_skeyset __P((DB *, DBT *));
+ * PUBLIC: #endif
+ */
+void
+__db_check_skeyset(sdbp, skeyp)
+	DB *sdbp;
+	DBT *skeyp;
+{
+	DB_ENV *dbenv;
+	DBT *firstkey, *lastkey, *key1, *key2;
+
+	dbenv = sdbp->dbenv;
+
+	firstkey = (DBT *)skeyp->data;
+	lastkey = firstkey + skeyp->size;
+	for (key1 = firstkey; key1 < lastkey; key1++)
+		for (key2 = key1 + 1; key2 < lastkey; key2++)
+			DB_ASSERT(dbenv,
+			    ((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
+			    key1, key2) != 0);
+}
+#endif

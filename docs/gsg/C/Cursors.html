@@ -133,7 +133,7 @@ my_database-&gt;cursor(my_database, NULL, &amp;cursorp, 0); </pre>
         <p>
         When you are done with the cursor, you should close it. To close a
         cursor, call the 
-            <tt class="methodname">DBC-&gt;c_close()</tt>
+            <tt class="methodname">DBC-&gt;close()</tt>
             
         method. Note that closing your database while cursors are still opened
         within the scope of the DB handle, especially if those cursors are 
@@ -151,7 +151,7 @@ DBC *cursorp;
 /* Database and cursor open omitted for clarity */
 
 if (cursorp != NULL) 
-    cursorp-&gt;c_close(cursorp); 
+    cursorp-&gt;close(cursorp); 
 
 if (my_database != NULL) 
     my_database-&gt;close(my_database, 0); </pre>

@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_windows,v 12.24 2007/01/22 06:12:14 alexg Exp $
+#	$Id: s_windows,v 12.26 2007/05/24 13:16:50 bostic Exp $
 #
 # Build Windows include files.
 
@@ -68,9 +68,9 @@ typedef u_int32_t uintptr_t;\\
 /@off_t_decl@/{
 	i\\
 /*\\
- * Windows defines off_t to long (i.e., 32 bits).  We need to pass 64-bit\\
- * file offsets, so we declare our own.\\
- */\\
+\ * Windows defines off_t to long (i.e., 32 bits).  We need to pass 64-bit\\
+\ * file offsets, so we declare our own.\\
+\ */\\
 #define	off_t	__db_off_t\\
 typedef int64_t off_t;
 	d
@@ -174,7 +174,7 @@ check_config()
 	egrep '^#undef' config.hin | awk '{print $2}' | sort > $s
 	(egrep '#undef' $1 | awk '{print $3}'
 	 egrep '^#define' $1 | awk '{print $2}') | sed '/__STDC__/d' | sort > $t
-	cmp $s $t || {
+	cmp $s $t > /dev/null || {
 		echo "config.hin and $1 differ"
 		echo "<<< config.hin >>> $1"
 		diff $s $t

@@ -99,19 +99,19 @@ public class SampleViews
     
 	field is used for each database. The StoredMap class implements the
 	standard Java 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.html" target="_top">Map</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html" target="_top">Map</a>
     
 	interface, which has methods for obtaining a 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Set.html" target="_top">Set</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Set.html" target="_top">Set</a>
     
 	of keys, a 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Collection.html" target="_top">Collection</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Collection.html" target="_top">Collection</a>
     
 	of values, or a 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Set.html" target="_top">Set</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Set.html" target="_top">Set</a>
     
 	of 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
     
 	key/value pairs. Because databases contain key/value pairs, any
 	Berkeley DB database may be represented as a Java map.
@@ -251,7 +251,7 @@ public class SampleViews
 	follows.
 </p>
       <a id="cb_sampleviews_usage"></a>
-      <pre class="programlisting"><b class="userinput"><tt>    SampleDatabase sd = new SampleDatabase(new String(&quot;/home&quot;));
+      <pre class="programlisting"><b class="userinput"><tt>    SampleDatabase sd = new SampleDatabase(new String("/home"));
     SampleViews views = new SampleViews(sd);
     Map partMap = views.getPartMap();
     Set supplierEntries = views.getSupplierEntrySet();</tt></b> </pre>

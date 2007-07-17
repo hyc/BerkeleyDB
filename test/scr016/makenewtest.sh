@@ -15,7 +15,7 @@ case $1 in
 esac
 
 outdir="src/com/sleepycat/db/test"
-if [ ! -d $outdir ] 
+if [ ! -d $outdir ]
 then
   echo "Could not find test source directory. Ensure the script is being run from the right place."
   exit 1
@@ -27,14 +27,14 @@ if [ -f $outname ]
 then
   echo "A test with that file name exists."
   echo -n "Are you sure you want to overwrite the file (yes/no)? "
-  read got_ok 
+  read got_ok
   if [ $got_ok != "yes" ]
   then
     exit 1
   else
     echo "" > $outname
   fi
-fi 
+fi
 
 nameupper=`echo $1 | tr -t [:lower:] [:upper:]`
 namelower=`echo $1 | tr -t [:upper:] [:lower:]`
@@ -42,7 +42,7 @@ namelower=`echo $1 | tr -t [:upper:] [:lower:]`
 echo "/*-" >> $outname
 echo " * See the file LICENSE for redistribution information." >> $outname
 echo " * " >> $outname
-echo " * Copyright (c) 2002,2006 Oracle.  All rights reserved." >> $outname
+echo " * Copyright (c) 2002,2007 Oracle.  All rights reserved." >> $outname
 echo " *" >> $outname
 echo " */" >> $outname
 echo "" >> $outname

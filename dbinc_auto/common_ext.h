@@ -32,7 +32,7 @@ void __db_msg __P((const DB_ENV *, const char *, ...)) __attribute__ ((__format_
 int __db_unknown_flag __P((DB_ENV *, char *, u_int32_t));
 int __db_unknown_type __P((DB_ENV *, char *, DBTYPE));
 int __db_unknown_path __P((DB_ENV *, char *));
-int __db_check_txn __P((DB *, DB_TXN *, u_int32_t, int));
+int __db_check_txn __P((DB *, DB_TXN *, DB_LOCKER *, int));
 int __db_txn_deadlock_err __P((DB_ENV *, DB_TXN *));
 int __db_not_txn_env __P((DB_ENV *));
 int __db_rec_toobig __P((DB_ENV *, u_int32_t, u_int32_t));

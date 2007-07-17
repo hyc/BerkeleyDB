@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_brew_dsp,v 1.2 2006/11/09 14:11:09 bostic Exp $
+#	$Id: s_brew_dsp,v 1.3 2007/02/22 17:03:24 bostic Exp $
 #
 # Build BREW .dsp files.
 
@@ -17,7 +17,6 @@ trap 'rm -f $s $t; exit 1' 1 2 3 13 15
 dsp()
 {
 	grep -w brew $SRCFILES | awk '{print $1}' > $s
-	cp $s /tmp/_f
 
 	(cat brew/bdb_brew.dsp;
 	for i in `cat $s`; do

@@ -63,7 +63,7 @@ try {
     ...
     // Create DatabaseEntry objects
     // searchKey is some String.
-    DatabaseEntry theKey = new DatabaseEntry(searchKey.getBytes(&quot;UTF-8&quot;));
+    DatabaseEntry theKey = new DatabaseEntry(searchKey.getBytes("UTF-8"));
     DatabaseEntry theData = new DatabaseEntry();
 
     // Open a cursor using a database handle
@@ -76,10 +76,10 @@ try {
     // Count the number of records using the given key. If there is only
     // one, delete that record.
     if (cursor.count() == 1) {
-            System.out.println(&quot;Deleting &quot; + 
-                               new String(theKey.getData(), &quot;UTF-8&quot;) + 
-                               &quot;|&quot; + 
-                               new String(theData.getData(), &quot;UTF-8&quot;));
+            System.out.println("Deleting " + 
+                               new String(theKey.getData(), "UTF-8") + 
+                               "|" + 
+                               new String(theData.getData(), "UTF-8"));
             cursor.delete();
     }
 } catch (Exception e) {

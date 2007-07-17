@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: lock002.tcl,v 12.6 2006/11/01 00:53:53 bostic Exp $
+# $Id: lock002.tcl,v 12.7 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	lock002
 # TEST	Exercise basic multi-process aspects of lock.

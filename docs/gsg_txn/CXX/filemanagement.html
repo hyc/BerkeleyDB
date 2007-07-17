@@ -302,7 +302,7 @@
             For example, to run a checkpoint from a separate thread of control:
         </p>
         <pre class="programlisting">#include &lt;pthread.h&gt;
-#include &quot;db_cxx.h&quot;
+#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -318,7 +318,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle
                           DB_INIT_TXN;     // Initialize transactions
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -331,7 +331,7 @@ int main(void)
         if ((ret = pthread_create( 
             &amp;ptid, NULL, checkpoint_thread, (void *)&amp;myEnv)) != 0) { 
                 fprintf(stderr, 
-                    &quot;txnapp: failed spawning checkpoint thread: %s\n&quot;, 
+                    "txnapp: failed spawning checkpoint thread: %s\n", 
                     strerror(errno)); 
                 myEnv.close(0);
                 exit (1); 
@@ -352,7 +352,7 @@ checkpoint_thread(void *arg) {
         try {
             dbenv-&gt;txn_checkpoint(0, 0, 0));
         } catch(DbException &amp;e) {
-            dbenv-&gt;err(e.get_errno(), &quot;checkpoint thread&quot;); 
+            dbenv-&gt;err(e.get_errno(), "checkpoint thread"); 
             exit (e.get_errno()); 
         }
     }

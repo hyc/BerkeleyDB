@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: hash_open.c,v 12.20 2006/12/14 23:00:25 ubell Exp $
+ * $Id: hash_open.c,v 12.26 2007/06/14 14:54:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -93,7 +93,7 @@ __ham_open(dbp, txn, name, base_pgno, flags)
 	hashp = dbp->h_internal;
 	hashp->meta_pgno = base_pgno;
 	if ((ret = __ham_get_meta(dbc)) != 0)
-		goto err1;
+		goto err;
 
 	/* Initialize the hdr structure.  */
 	if (hcp->hdr->dbmeta.magic == DB_HASHMAGIC) {
@@ -101,14 +101,6 @@ __ham_open(dbp, txn, name, base_pgno, flags)
 		if (hashp->h_hash == NULL)
 			hashp->h_hash = hcp->hdr->dbmeta.version < 5
 			? __ham_func4 : __ham_func5;
-		if (!F_ISSET(dbp, DB_AM_RDONLY) && !IS_RECOVERING(dbenv) &&
-		    hashp->h_hash(dbp,
-		    CHARKEY, sizeof(CHARKEY)) != hcp->hdr->h_charkey) {
-			__db_errx(dbenv,
-			    "hash: incompatible hash function");
-			ret = EINVAL;
-			goto err2;
-		}
 		hashp->h_nelem = hcp->hdr->nelem;
 		if (F_ISSET(&hcp->hdr->dbmeta, DB_HASH_DUP))
 			F_SET(dbp, DB_AM_DUP);
@@ -116,17 +108,16 @@ __ham_open(dbp, txn, name, base_pgno, flags)
 			F_SET(dbp, DB_AM_DUPSORT);
 		if (F_ISSET(&hcp->hdr->dbmeta, DB_HASH_SUBDB))
 			F_SET(dbp, DB_AM_SUBDB);
-
 	} else if (!IS_RECOVERING(dbenv) && !F_ISSET(dbp, DB_AM_RECOVER)) {
 		__db_errx(dbenv,
-		    "%s: Invalid hash meta page %d", name, base_pgno);
+		    "%s: Invalid hash meta page %lu", name, (u_long)base_pgno);
 		ret = EINVAL;
 	}
 
-err2:	/* Release the meta data page */
+	/* Release the meta data page */
 	if ((t_ret = __ham_release_meta(dbc)) != 0 && ret == 0)
 		ret = t_ret;
-err1:	if ((t_ret  = __dbc_close(dbc)) != 0 && ret == 0)
+err:	if ((t_ret  = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -166,6 +157,7 @@ __ham_metachk(dbp, name, hashm)
 		return (DB_OLD_VERSION);
 	case 7:
 	case 8:
+	case 9:
 		break;
 	default:
 		__db_errx(dbenv,
@@ -539,7 +531,7 @@ __ham_new_subdb(mdbp, dbp, txn)
 
 err:	/* Now put the master-metadata page back. */
 	if (mmeta != NULL && (t_ret = __memp_fput(mpf,
-	        mmeta, dbc->priority)) != 0 && ret == 0)
+		mmeta, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __LPUT(dbc, mmlock)) != 0 && ret == 0)
 		ret = t_ret;

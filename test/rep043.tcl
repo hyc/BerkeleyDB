@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2006 Oracle.  All rights reserved.
+# Copyright (c) 2005,2007 Oracle.  All rights reserved.
 #
-# $Id: rep043.tcl,v 1.12 2006/12/07 19:37:44 carol Exp $
+# $Id: rep043.tcl,v 1.15 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep043
 # TEST
@@ -61,12 +61,12 @@ proc rep043 { method { rotations 25 } { tnum "043" } args } {
 proc rep043_sub { method rotations tnum logset recargs largs } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -213,6 +213,18 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	error_check_good env0_close [$env0 close] 0
 	error_check_good env1_close [$env1 close] 0
 	error_check_good env2_close [$env2 close] 0
+
+	# Make sure the child processes are done.
+	watch_procs $pids 1
+
+	# Check log files for failures.
+	for { set n 0 } { $n < 3 } { incr n } {
+		set file rep043script.log.$n
+		set errstrings [eval findfail $testdir/$file]
+		foreach str $errstrings {
+			puts "FAIL: error message in file $file: $str"
+		}
+	}
 
 	replclose $testdir/MSGQUEUEDIR
 	set testdir $orig_tdir

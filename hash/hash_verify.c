@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: hash_verify.c,v 12.20 2006/11/29 21:23:17 ubell Exp $
+ * $Id: hash_verify.c,v 12.26 2007/07/02 16:58:02 alexg Exp $
  */
 
 #include "db_config.h"
@@ -196,7 +196,7 @@ __ham_vrfy(dbp, vdp, h, pgno, flags)
 	if ((ret = __db_vrfy_getpageinfo(vdp, pgno, &pip)) != 0)
 		return (ret);
 
-	if (TYPE(h) != P_HASH) {
+	if (TYPE(h) != P_HASH && TYPE(h) != P_HASH_UNSORTED) {
 		ret = __db_unknown_path(dbenv, "__ham_vrfy");
 		goto err;
 	}
@@ -241,6 +241,10 @@ __ham_vrfy(dbp, vdp, h, pgno, flags)
 			    dbp, vdp, pgno, h, ent, flags)) != 0)
 				goto err;
 		}
+
+	if (!LF_ISSET(DB_NOORDERCHK) && TYPE(h) == P_HASH &&
+	    (ret = __ham_verify_sorted_page(dbp, NULL, h)) != 0)
+		isbad = 1;
 
 err:	if ((t_ret =
 	    __db_vrfy_putpageinfo(dbenv, vdp, pip)) != 0 && ret == 0)
@@ -460,7 +464,7 @@ __ham_vrfy_structure(dbp, vdp, meta_pgno, flags)
 			continue;
 		}
 
-		if (pip->type != P_HASH) {
+		if (pip->type != P_HASH && pip->type != P_HASH_UNSORTED) {
 			EPRINT((dbp->dbenv,
 			    "Page %lu: hash bucket %lu maps to non-hash page",
 			    (u_long)pgno, (u_long)bucket));
@@ -542,7 +546,8 @@ __ham_vrfy_bucket(dbp, vdp, m, bucket, flags)
 		goto err;
 
 	/* Make sure we got a plausible page number. */
-	if (pgno > vdp->last_pgno || pip->type != P_HASH) {
+	if (pgno > vdp->last_pgno || 
+	    (pip->type != P_HASH && pip->type != P_HASH_UNSORTED)) {
 		EPRINT((dbenv,
 		    "Page %lu: impossible first page in bucket %lu",
 		    (u_long)pgno, (u_long)bucket));
@@ -992,7 +997,7 @@ __ham_meta2pgset(dbp, vdp, hmeta, flags, pgset)
 		for (;;) {
 			if ((ret = __memp_fget(mpf, &pgno, NULL, 0, &h)) != 0)
 				return (ret);
-			if (TYPE(h) == P_HASH) {
+			if (TYPE(h) == P_HASH || TYPE(h) == P_HASH_UNSORTED) {
 
 				/*
 				 * Make sure we don't go past the end of

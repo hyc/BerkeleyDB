@@ -1,4 +1,4 @@
-# $Id: Makefile.in,v 12.90 2006/12/22 15:27:30 bostic Exp $
+# $Id: Makefile.in,v 12.106 2007/07/05 18:35:02 bostic Exp $
 
 srcdir=	@srcdir@/..
 builddir=.
@@ -167,11 +167,15 @@ QUEUE_OBJS=\
 	qam_open@o@ qam_rec@o@ qam_stat@o@ qam_upgrade@o@
 QUEUE_VRFY_OBJS=\
 	qam_verify@o@
+LOCK_OBJS=\
+	lock@o@ lock_deadlock@o@ lock_failchk@o@ lock_id@o@ lock_list@o@ \
+	lock_method@o@ lock_region@o@ lock_stat@o@ lock_timer@o@ lock_util@o@
 MUTEX_OBJS=\
 	mut_alloc@o@ mut_failchk@o@ mut_method@o@ mut_region@o@ mut_stat@o@
 REP_OBJS=\
-	rep_auto@o@ rep_backup@o@ rep_elect@o@ rep_log@o@ rep_method@o@ \
-	rep_record@o@ rep_region@o@ rep_stat@o@ rep_util@o@ rep_verify@o@
+	rep_auto@o@ rep_backup@o@ rep_elect@o@ rep_lease@o@ rep_log@o@ \
+	rep_method@o@ rep_record@o@ rep_region@o@ rep_stat@o@ \
+	rep_util@o@ rep_verify@o@
 REPMGR_OBJS=\
 	getaddrinfo@o@\
 	repmgr_elect@o@ repmgr_method@o@ repmgr_msg@o@ repmgr_net@o@ \
@@ -195,13 +199,11 @@ C_OBJS= @ADDITIONAL_OBJS@ @REPLACEMENT_OBJS@ @CRYPTO_OBJS@ @RPC_CLIENT_OBJS@ \
 	env_globals@o@ env_method@o@ env_name@o@ env_open@o@ \
 	env_recover@o@ env_region@o@ env_register@o@ env_stat@o@ \
 	fileops_auto@o@ fop_basic@o@ fop_rec@o@ fop_util@o@ hash_func@o@ \
-	hmac@o@ hsearch@o@ lock@o@ lock_deadlock@o@ lock_failchk@o@ \
-	lock_id@o@ lock_list@o@ lock_method@o@ lock_region@o@ \
-	lock_stat@o@ lock_timer@o@ lock_util@o@ log@o@ log_archive@o@ \
-	log_compare@o@ log_debug@o@ log_get@o@ log_method@o@ log_put@o@ \
-	log_stat@o@ mkpath@o@ mp_alloc@o@ mp_bh@o@ mp_fget@o@ \
-	mp_fmethod@o@ mp_fopen@o@ mp_fput@o@ mp_fset@o@ mp_method@o@ \
-	mp_mvcc@o@ mp_region@o@ mp_register@o@ mp_stat@o@ mp_sync@o@ \
+	hmac@o@ hsearch@o@ log@o@ log_archive@o@ log_compare@o@ \
+	log_debug@o@ log_get@o@ log_method@o@ log_put@o@ log_stat@o@ \
+	mkpath@o@ mp_alloc@o@ mp_bh@o@ mp_fget@o@ mp_fmethod@o@ \
+	mp_fopen@o@ mp_fput@o@ mp_fset@o@ mp_method@o@ mp_mvcc@o@ \
+	mp_region@o@ mp_register@o@ mp_resize@o@ mp_stat@o@ mp_sync@o@ \
 	mp_trickle@o@ os_abort@o@ os_abs@o@ os_alloc@o@ os_clock@o@ \
 	os_config@o@ os_dir@o@ os_errno@o@ os_fid@o@ os_flock@o@ \
 	os_fsync@o@ os_fzero@o@ os_getenv@o@ os_handle@o@ os_map@o@ \
@@ -241,6 +243,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/bind/serial/TupleSerialKeyCreator.java \
 	$(JAVA_SLEEPYCAT)/bind/serial/TupleSerialMarshalledBinding.java \
 	$(JAVA_SLEEPYCAT)/bind/serial/TupleSerialMarshalledKeyCreator.java \
+	$(JAVA_SLEEPYCAT)/bind/tuple/BigIntegerBinding.java \
 	$(JAVA_SLEEPYCAT)/bind/tuple/BooleanBinding.java \
 	$(JAVA_SLEEPYCAT)/bind/tuple/ByteBinding.java \
 	$(JAVA_SLEEPYCAT)/bind/tuple/CharacterBinding.java \
@@ -312,7 +315,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/EnvironmentConfig.java \
 	$(JAVA_SLEEPYCAT)/db/ErrorHandler.java \
 	$(JAVA_SLEEPYCAT)/db/EventHandler.java \
-	$(JAVA_SLEEPYCAT)/db/EventType.java \
+	$(JAVA_SLEEPYCAT)/db/EventHandlerAdapter.java \
 	$(JAVA_SLEEPYCAT)/db/FeedbackHandler.java \
 	$(JAVA_SLEEPYCAT)/db/HashStats.java \
 	$(JAVA_SLEEPYCAT)/db/Hasher.java \
@@ -353,8 +356,11 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/ReplicationHoldElectionException.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationHostAddress.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationJoinFailureException.java \
+	$(JAVA_SLEEPYCAT)/db/ReplicationLeaseExpiredException.java \
+	$(JAVA_SLEEPYCAT)/db/ReplicationLeaseTimeoutException.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationLockoutException.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationManagerAckPolicy.java \
+	$(JAVA_SLEEPYCAT)/db/ReplicationManagerStats.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationManagerStartPolicy.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationSiteUnavailableException.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationStats.java \
@@ -366,6 +372,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/SecondaryCursor.java \
 	$(JAVA_SLEEPYCAT)/db/SecondaryDatabase.java \
 	$(JAVA_SLEEPYCAT)/db/SecondaryKeyCreator.java \
+	$(JAVA_SLEEPYCAT)/db/SecondaryMultiKeyCreator.java \
 	$(JAVA_SLEEPYCAT)/db/Sequence.java \
 	$(JAVA_SLEEPYCAT)/db/SequenceConfig.java \
 	$(JAVA_SLEEPYCAT)/db/SequenceStats.java \
@@ -524,8 +531,9 @@ RPC_CXXSRV_OBJS=\
 
 UTIL_PROGS=\
 	@ADDITIONAL_PROGS@ \
-	db_archive db_checkpoint db_deadlock db_dump db_hotbackup \
-	db_load db_printlog db_recover db_stat db_upgrade db_verify
+	db_archive db_checkpoint db_codegen db_deadlock db_dump \
+	db_hotbackup db_load db_printlog db_recover db_stat db_upgrade \
+	db_verify
 
 ##################################################
 # List of files installed into the library directory.
@@ -575,7 +583,7 @@ $(libdb): $(DEF_LIB)
 # Real static C library.
 $(libdb_version): $(C_OBJS)
 	$(AR) cr $@ $(C_OBJS)
-	test "$(RANLIB)" = "none" || $(RANLIB) $@
+	$(RANLIB) $@
 	$(RM) -f $(libdb)
 	$(LN) -s $(libdb_version) $(libdb)
 
@@ -591,7 +599,7 @@ $(libcxx): $(DEF_LIB_CXX)
 # Real static C++ library.
 $(libcxx_version): $(CXX_OBJS) $(C_OBJS)
 	$(AR) cr $@ $(CXX_OBJS) $(C_OBJS)
-	test "$(RANLIB)" = "none" || $(RANLIB) $@
+	$(RANLIB) $@
 	$(RM) -f $(libcxx)
 	$(LN) -s $(libcxx_version) $(libcxx)
 
@@ -654,6 +662,11 @@ db_archive: db_archive@o@ util_sig@o@ $(DEF_LIB)
 db_checkpoint: db_checkpoint@o@ util_log@o@ util_sig@o@ $(DEF_LIB)
 	$(CCLINK) -o $@ $(LDFLAGS) \
 	    db_checkpoint@o@ util_log@o@ util_sig@o@ $(DEF_LIB) $(LIBS)
+	$(POSTLINK) $@
+
+db_codegen: db_codegen@o@ code_capi@o@ code_parse@o@ $(DEF_LIB)
+	$(CCLINK) -o $@ $(LDFLAGS) \
+	    db_codegen@o@ code_capi@o@ code_parse@o@ $(DEF_LIB) $(LIBS)
 	$(POSTLINK) $@
 
 db_deadlock: db_deadlock@o@ util_log@o@ util_sig@o@ $(DEF_LIB)
@@ -764,7 +777,7 @@ install_utilities:
 		test -f $$i.exe && i=$$i.exe || i=$$i; \
 		$(RM) -f $(DESTDIR)$(bindir)/$$i; \
 		$(INSTALLER) $$i $(DESTDIR)$(bindir)/$$i; \
-		test "$(STRIP)" = "none" || $(STRIP) $(DESTDIR)$(bindir)/$$i; \
+		$(STRIP) $(DESTDIR)$(bindir)/$$i; \
 		$(CHMOD) $(emode) $(DESTDIR)$(bindir)/$$i; \
 	done
 
@@ -773,8 +786,8 @@ uninstall_utilities:
 		$(RM) -f $$i $$i.exe; \
 	done)
 
-DOCLIST=api_c api_cxx api_tcl collections gsg gsg_db_rep gsg_txn images \
-	index.html java license ref utility
+DOCLIST=api_c api_cxx api_tcl articles collections gsg gsg_db_rep \
+	gsg_txn images index.html java license ref utility
 
 install_docs:
 	@echo "Installing documentation: $(DESTDIR)$(docdir) ..."
@@ -807,10 +820,10 @@ mostly-clean clean:
 	$(RM) -rf $(RPC_CLIENT_OBJS) $(RPC_SRV_OBJS) $(RPC_CXXSRV_OBJS)
 	$(RM) -rf $(UTIL_PROGS) *.exe $(CLEAN_LIST)
 	$(RM) -rf $(JAVA_CLASSTOP) $(JAVA_EXCLASSTOP)
-	$(RM) -rf tags *@o@ *.o *.o.lock *.lo core *.core
+	$(RM) -rf tags *@o@ *.o *.o.lock *.lo core *.core core.*
 	$(RM) -rf ALL.OUT.* PARALLEL_TESTDIR.*
 	$(RM) -rf RUN_LOG RUNQUEUE TESTDIR TESTDIR.A TEST.LIST
-	$(RM) -rf logtrack_seen.db tm .libs $(LIB_INSTALL_FILE_LIST)
+	$(RM) -rf logtrack_seen.db test_mutex .libs $(LIB_INSTALL_FILE_LIST)
 
 REALCLEAN_LIST=\
 	Makefile clib_port.h confdefs.h config.cache config.log config.status \
@@ -978,15 +991,21 @@ db_reptest: $(DBREPTEST_OBJS) $(DEF_LIB)
 	    $(LDFLAGS) $(DBREPTEST_OBJS) $(DEF_LIB) $(TEST_LIBS) $(LIBS)
 	$(POSTLINK) $@
 
-tm@o@: $(srcdir)/mutex/tm.c
+test_mutex@o@: $(srcdir)/mutex/test_mutex.c
 	$(CC) $(CFLAGS) $?
-tm: tm@o@ $(DEF_LIB)
-	$(CCLINK) -o $@ $(LDFLAGS) tm@o@ $(DEF_LIB) $(TEST_LIBS) $(LIBS)
+test_mutex: test_mutex@o@ $(DEF_LIB)
+	$(CCLINK) -o $@ $(LDFLAGS) test_mutex@o@ $(DEF_LIB) $(TEST_LIBS) $(LIBS)
 	$(POSTLINK) $@
 
 ##################################################
 # Example programs for C.
 ##################################################
+application@o@: application.c
+	$(CC) -DBUILD_STANDALONE $(CFLAGS) $?
+application: application@o@ $(DEF_LIB)
+	$(CCLINK) -o $@ $(LDFLAGS) application@o@ $(DEF_LIB) $(LIBS)
+	$(POSTLINK) $@
+
 bench_001@o@: $(srcdir)/examples_c/bench_001.c
 	$(CC) $(CFLAGS) $?
 bench_001: bench_001@o@ $(DEF_LIB)
@@ -1434,6 +1453,8 @@ lock_region@o@:$(srcdir)/lock/lock_region.c
 	 $(CC) $(CFLAGS) $?
 lock_stat@o@:$(srcdir)/lock/lock_stat.c
 	 $(CC) $(CFLAGS) $?
+lock_stub@o@: $(srcdir)/lock/lock_stub.c
+	 $(CC) $(CFLAGS) $?
 lock_timer@o@:$(srcdir)/lock/lock_timer.c
 	 $(CC) $(CFLAGS) $?
 lock_util@o@:$(srcdir)/lock/lock_util.c
@@ -1477,6 +1498,8 @@ mp_mvcc@o@: $(srcdir)/mp/mp_mvcc.c
 mp_region@o@: $(srcdir)/mp/mp_region.c
 	 $(CC) $(CFLAGS) $?
 mp_register@o@: $(srcdir)/mp/mp_register.c
+	 $(CC) $(CFLAGS) $?
+mp_resize@o@: $(srcdir)/mp/mp_resize.c
 	 $(CC) $(CFLAGS) $?
 mp_stat@o@: $(srcdir)/mp/mp_stat.c
 	 $(CC) $(CFLAGS) $?
@@ -1606,6 +1629,8 @@ rep_backup@o@: $(srcdir)/rep/rep_backup.c
 	 $(CC) $(CFLAGS) $?
 rep_elect@o@: $(srcdir)/rep/rep_elect.c
 	 $(CC) $(CFLAGS) $?
+rep_lease@o@: $(srcdir)/rep/rep_lease.c
+	 $(CC) $(CFLAGS) $?
 rep_log@o@: $(srcdir)/rep/rep_log.c
 	 $(CC) $(CFLAGS) $?
 rep_method@o@: $(srcdir)/rep/rep_method.c
@@ -1637,6 +1662,8 @@ repmgr_queue@o@: $(srcdir)/repmgr/repmgr_queue.c
 repmgr_sel@o@: $(srcdir)/repmgr/repmgr_sel.c
 	$(CC) $(CFLAGS) $?
 repmgr_stat@o@: $(srcdir)/repmgr/repmgr_stat.c
+	$(CC) $(CFLAGS) $?
+repmgr_stub@o@: $(srcdir)/repmgr/repmgr_stub.c
 	$(CC) $(CFLAGS) $?
 repmgr_util@o@: $(srcdir)/repmgr/repmgr_util.c
 	$(CC) $(CFLAGS) $?
@@ -1787,6 +1814,8 @@ db_archive@o@: $(srcdir)/db_archive/db_archive.c
 	$(CC) $(CFLAGS) $?
 db_checkpoint@o@: $(srcdir)/db_checkpoint/db_checkpoint.c
 	$(CC) $(CFLAGS) $?
+db_codegen@o@: $(srcdir)/db_codegen/db_codegen.c
+	$(CC) $(CFLAGS) $?
 db_deadlock@o@: $(srcdir)/db_deadlock/db_deadlock.c
 	$(CC) $(CFLAGS) $?
 db_dump@o@: $(srcdir)/db_dump/db_dump.c
@@ -1806,6 +1835,11 @@ db_stat@o@: $(srcdir)/db_stat/db_stat.c
 db_upgrade@o@: $(srcdir)/db_upgrade/db_upgrade.c
 	$(CC) $(CFLAGS) $?
 db_verify@o@: $(srcdir)/db_verify/db_verify.c
+	$(CC) $(CFLAGS) $?
+
+code_parse@o@: $(srcdir)/db_codegen/code_parse.c
+	$(CC) $(CFLAGS) $?
+code_capi@o@: $(srcdir)/db_codegen/code_capi.c
 	$(CC) $(CFLAGS) $?
 
 ##################################################

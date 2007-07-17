@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: BindingSpeedTest.java,v 12.6 2006/11/01 00:54:08 bostic Exp $
+ * $Id: BindingSpeedTest.java,v 12.7 2007/05/04 00:28:28 mark Exp $
  */
 
 package com.sleepycat.bind.test;
@@ -323,11 +323,11 @@ public class BindingSpeedTest extends TestCase {
 
         to.reset();
         Data data = new Data();
-        to.writeString((String) getters[0].invoke(data, (Object[])null));
-        to.writeString((String) getters[1].invoke(data, (Object[])null));
-        to.writeInt(((Integer) getters[2].invoke(data, (Object[])null)).intValue());
-        to.writeInt(((Integer) getters[3].invoke(data, (Object[])null)).intValue());
-        to.writeString((String) getters[4].invoke(data, (Object[])null));
+        to.writeString((String) getters[0].invoke(data, (Object[]) null));
+        to.writeString((String) getters[1].invoke(data, (Object[]) null));
+        to.writeInt(((Integer) getters[2].invoke(data, (Object[]) null)).intValue());
+        to.writeInt(((Integer) getters[3].invoke(data, (Object[]) null)).intValue());
+        to.writeString((String) getters[4].invoke(data, (Object[]) null));
 
         TupleInput ti = new TupleInput(
                           to.getBufferBytes(), to.getBufferOffset(),

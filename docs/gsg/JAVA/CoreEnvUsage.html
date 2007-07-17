@@ -69,7 +69,7 @@ import java.io.FileNotFoundException;
 ...
 
 Environment myEnv = null;
-File envHome = new File(&quot;/export1/testEnv&quot;);
+File envHome = new File("/export1/testEnv");
 try {
     EnvironmentConfig envConf = new EnvironmentConfig();
     envConf.setAllowCreate(true);         // If the environment does not
@@ -105,8 +105,8 @@ import java.io.FileNotFoundException;
 
 Environment myEnv = null;
 Database myDb = null;
-File envHome = new File(&quot;/export1/testEnv&quot;);
-String dbFileName = new String(&quot;mydb.db&quot;, &quot;UTF-8&quot;);
+File envHome = new File("/export1/testEnv");
+String dbFileName = new String("mydb.db", "UTF-8");
 
 try {
     EnvironmentConfig envConf = new EnvironmentConfig();

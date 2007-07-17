@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mut_stub.c,v 12.3 2006/12/16 14:29:33 bostic Exp $
+ * $Id: mut_stub.c,v 12.4 2007/05/17 15:15:45 bostic Exp $
  */
 
 #ifndef HAVE_MUTEX_SUPPORT

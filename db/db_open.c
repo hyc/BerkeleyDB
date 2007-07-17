@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_open.c,v 12.35 2006/12/19 20:42:54 ubell Exp $
+ * $Id: db_open.c,v 12.39 2007/05/29 20:52:57 ubell Exp $
  */
 
 #include "db_config.h"
@@ -234,7 +234,7 @@ __db_open(dbp, txn, fname, dname, type, flags, mode, meta_pgno)
 	    LOCK_ISSET(dbp->handle_lock)) {
 		if (IS_REAL_TXN(txn))
 			ret = __txn_lockevent(dbenv,
-			    txn, dbp, &dbp->handle_lock, dbp->lid);
+			    txn, dbp, &dbp->handle_lock, dbp->locker);
 		else if (LOCKING_ON(dbenv))
 			/* Trade write handle lock for read handle lock. */
 			ret = __lock_downgrade(dbenv,
@@ -372,14 +372,14 @@ err:	return (ret);
  *
  *	Return 0 on success, >0 (errno) on error, -1 on checksum mismatch.
  *
- * PUBLIC: int __db_chk_meta __P((DB_ENV *, DB *, DBMETA *, int));
+ * PUBLIC: int __db_chk_meta __P((DB_ENV *, DB *, DBMETA *, u_int32_t));
  */
 int
-__db_chk_meta(dbenv, dbp, meta, do_metachk)
+__db_chk_meta(dbenv, dbp, meta, flags)
 	DB_ENV *dbenv;
 	DB *dbp;
 	DBMETA *meta;
-	int do_metachk;
+	u_int32_t flags;
 {
 	DB_LSN swap_lsn;
 	int is_hmac, ret, swapped;
@@ -407,7 +407,7 @@ __db_chk_meta(dbenv, dbp, meta, do_metachk)
 		 * We cannot add this to __db_metaswap because that gets done
 		 * later after we've verified the checksum or decrypted.
 		 */
-		if (do_metachk) {
+		if (LF_ISSET(DB_CHK_META)) {
 			swapped = 0;
 chk_retry:		if ((ret = __db_check_chksum(dbenv, NULL,
 			    (DB_CIPHER *)dbenv->crypto_handle, chksum, meta,
@@ -425,11 +425,12 @@ chk_retry:		if ((ret = __db_check_chksum(dbenv, NULL,
 		F_CLR(dbp, DB_AM_CHKSUM);
 
 #ifdef HAVE_CRYPTO
-	ret = __crypto_decrypt_meta(dbenv, dbp, (u_int8_t *)meta, do_metachk);
+	ret = __crypto_decrypt_meta(dbenv,
+	     dbp, (u_int8_t *)meta, LF_ISSET(DB_CHK_META));
 #endif
 
 	/* Now that we're decrypted, we can check LSN. */
-	if (LOGGING_ON(dbenv)) {
+	if (LOGGING_ON(dbenv) && !LF_ISSET(DB_CHK_NOLSN)) {
 		/*
 		 * This gets called both before and after swapping, so we
 		 * need to check ourselves.  If we already swapped it above,
@@ -471,18 +472,18 @@ lsn_retry:
  * valid, and if so, initialize the dbp from the meta-data page.
  *
  * PUBLIC: int __db_meta_setup __P((DB_ENV *,
- * PUBLIC:     DB *, const char *, DBMETA *, u_int32_t, int));
+ * PUBLIC:     DB *, const char *, DBMETA *, u_int32_t, u_int32_t));
  */
 int
-__db_meta_setup(dbenv, dbp, name, meta, oflags, do_metachk)
+__db_meta_setup(dbenv, dbp, name, meta, oflags, flags)
 	DB_ENV *dbenv;
 	DB *dbp;
 	const char *name;
 	DBMETA *meta;
 	u_int32_t oflags;
-	int do_metachk;
+	u_int32_t flags;
 {
-	u_int32_t flags, magic;
+	u_int32_t magic;
 	int ret;
 
 	ret = 0;
@@ -534,7 +535,7 @@ swap_retry:
 	 * checksum match errors here, because we haven't opened the database
 	 * and even a checksum error isn't a reason to panic the environment.
 	 */
-	if ((ret = __db_chk_meta(dbenv, dbp, meta, do_metachk)) != 0) {
+	if ((ret = __db_chk_meta(dbenv, dbp, meta, flags)) != 0) {
 		if (ret == -1)
 			__db_errx(dbenv,
 			    "%s: metadata page checksum error", name);

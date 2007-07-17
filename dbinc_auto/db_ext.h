@@ -35,7 +35,7 @@ int __db_backup_name __P((DB_ENV *, const char *, DB_TXN *, char **));
 #ifdef CONFIG_TEST
 int __db_testcopy __P((DB_ENV *, DB *, const char *));
 #endif
-int __db_cursor_int __P((DB *, DB_TXN *, DBTYPE, db_pgno_t, int, u_int32_t, DBC **));
+int __db_cursor_int __P((DB *, DB_TXN *, DBTYPE, db_pgno_t, int, DB_LOCKER *, DBC **));
 int __db_put __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
 int __db_del __P((DB *, DB_TXN *, DBT *, u_int32_t));
 int __db_sync __P((DB *));
@@ -104,12 +104,17 @@ int __dbc_secondary_get_pp __P((DBC *, DBT *, DBT *, u_int32_t));
 int __dbc_pget __P((DBC *, DBT *, DBT *, DBT *, u_int32_t));
 int __dbc_del_primary __P((DBC *));
 int __db_s_first __P((DB *, DB **));
-int __db_s_next __P((DB **));
-int __db_s_done __P((DB *));
+int __db_s_next __P((DB **, DB_TXN *));
+int __db_s_done __P((DB *, DB_TXN *));
 u_int32_t __db_partsize __P((u_int32_t, DBT *));
+#ifdef DIAGNOSTIC
+void __db_check_skeyset __P((DB *, DBT *));
+#endif
 int __cdsgroup_begin __P((DB_ENV *, DB_TXN **));
 int __db_pgin __P((DB_ENV *, db_pgno_t, void *, DBT *));
 int __db_pgout __P((DB_ENV *, db_pgno_t, void *, DBT *));
+int __db_decrypt_pg __P((DB_ENV *, DB *, PAGE *));
+int __db_encrypt_and_checksum_pg __P((DB_ENV *, DB *, PAGE *));
 void __db_metaswap __P((PAGE *));
 int __db_byteswap __P((DB_ENV *, DB *, db_pgno_t, PAGE *, size_t, int));
 int __db_dispatch __P((DB_ENV *, int (**)__P((DB_ENV *, DBT *, DB_LSN *, db_recops, void *)), size_t, DBT *, DB_LSN *, db_recops, DB_TXNHEAD *));
@@ -135,6 +140,7 @@ int __db_close_pp __P((DB *, u_int32_t));
 int __db_cursor_pp __P((DB *, DB_TXN *, DBC **, u_int32_t));
 int __db_cursor __P((DB *, DB_TXN *, DBC **, u_int32_t));
 int __db_del_pp __P((DB *, DB_TXN *, DBT *, u_int32_t));
+int __db_exists __P((DB *, DB_TXN *, DBT *, u_int32_t));
 int __db_fd_pp __P((DB *, int *));
 int __db_get_pp __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
 int __db_get __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
@@ -186,13 +192,14 @@ int __db_open __P((DB *, DB_TXN *, const char *, const char *, DBTYPE, u_int32_t
 int __db_get_open_flags __P((DB *, u_int32_t *));
 int __db_new_file __P((DB *, DB_TXN *, DB_FH *, const char *));
 int __db_init_subdb __P((DB *, DB *, const char *, DB_TXN *));
-int __db_chk_meta __P((DB_ENV *, DB *, DBMETA *, int));
-int __db_meta_setup __P((DB_ENV *, DB *, const char *, DBMETA *, u_int32_t, int));
+int __db_chk_meta __P((DB_ENV *, DB *, DBMETA *, u_int32_t));
+int __db_meta_setup __P((DB_ENV *, DB *, const char *, DBMETA *, u_int32_t, u_int32_t));
 int __db_goff __P((DB *, DB_TXN *, DBT *, u_int32_t, db_pgno_t, void **, u_int32_t *));
 int __db_poff __P((DBC *, const DBT *, db_pgno_t *));
 int __db_ovref __P((DBC *, db_pgno_t));
 int __db_doff __P((DBC *, db_pgno_t));
 int __db_moff __P((DB *, DB_TXN *, const DBT *, db_pgno_t, u_int32_t, int (*)(DB *, const DBT *, const DBT *), int *));
+int __db_coff __P((DB *, DB_TXN *, const DBT *, const DBT *, int (*)(DB *, const DBT *, const DBT *), int *));
 int __db_vrfy_overflow __P((DB *, VRFY_DBINFO *, PAGE *, db_pgno_t, u_int32_t));
 int __db_vrfy_ovfl_structure __P((DB *, VRFY_DBINFO *, db_pgno_t, u_int32_t, u_int32_t));
 int __db_safe_goff __P((DB *, VRFY_DBINFO *, db_pgno_t, DBT *, void *, u_int32_t));

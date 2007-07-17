@@ -91,6 +91,9 @@
 /* Define to 1 if allocated filesystem blocks are not zeroed. */
 #define HAVE_FILESYSTEM_NOTZERO 1
 
+/* Define to 1 to build Berkeley DB with a fine-grained lock manager. */
+/* #undef HAVE_FINE_GRAINED_LOCK_MANAGER */
+
 /* Define to 1 if you have the `fopen' function. */
 /* #undef HAVE_FOPEN */
 
@@ -123,6 +126,9 @@
 
 /* Define to 1 if building Hash access method. */
 /* #undef HAVE_HASH */
+
+/* Define to 1 if you have the `hstrerror' function. */
+/* #undef HAVE_HSTRERROR */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
@@ -193,6 +199,9 @@
 
 /* Define to 1 to use the msem_XXX mutexes on HP-UX. */
 /* #undef HAVE_MUTEX_HPPA_MSEM_INIT */
+
+/* Define to 1 to use test-and-set mutexes with blocking mutexes. */
+/* #undef HAVE_MUTEX_HYBRID */
 
 /* Define to 1 to use the GCC compiler and IA64 assembly language mutexes. */
 /* #undef HAVE_MUTEX_IA64_GCC_ASSEMBLY */
@@ -268,10 +277,12 @@
 /* Define to 1 to use the GCC compiler and Windows mutexes. */
 /* #undef HAVE_MUTEX_WIN32_GCC */
 
-/* Define to 1 to use the GCC compiler and amd64 assembly language mutexes. */
+/* Define to 1 to use the GCC compiler and 64-bit x86 assembly language
+   mutexes. */
 /* #undef HAVE_MUTEX_X86_64_GCC_ASSEMBLY */
 
-/* Define to 1 to use the GCC compiler and x86 assembly language mutexes. */
+/* Define to 1 to use the GCC compiler and 32-bit x86 assembly language
+   mutexes. */
 /* #undef HAVE_MUTEX_X86_GCC_ASSEMBLY */
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
@@ -321,6 +332,9 @@
 
 /* Define to 1 if building RPC client/server. */
 /* #undef HAVE_RPC */
+
+/* Define to 1 if building on S60. */
+/* #undef HAVE_S60 */
 
 /* Define to 1 if you have the `sched_yield' function. */
 /* #undef HAVE_SCHED_YIELD */
@@ -407,15 +421,15 @@
    */
 /* #undef HAVE_SYS_DIR_H */
 
-/* Define to 1 if you have the <sys/fcntl.h> header file. */
-/* #undef HAVE_SYS_FCNTL_H */
-
 /* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_SYS_NDIR_H */
 
 /* Define to 1 if you have the <sys/select.h> header file. */
 /* #undef HAVE_SYS_SELECT_H */
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+/* #undef HAVE_SYS_SOCKET_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 /* #undef HAVE_SYS_STAT_H */
@@ -434,6 +448,9 @@
 
 /* Define to 1 if unlink of file with open file descriptors will fail. */
 /* #undef HAVE_UNLINK_WITH_OPEN_FAILURE */
+
+/* Define to 1 if port includes historic database upgrade support. */
+/* #undef HAVE_UPGRADE_SUPPORT */
 
 /* Define to 1 if building access method verification support. */
 /* #undef HAVE_VERIFY */
@@ -457,13 +474,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.6.3"
+#define PACKAGE_STRING "Berkeley DB 4.6.18"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.6.3"
+#define PACKAGE_TARNAME "db-4.6.18"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.6.3"
+#define PACKAGE_VERSION "4.6.18"
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
@@ -527,3 +544,6 @@
 #ifndef __cplusplus
 #define inline
 #endif
+
+/* type to use in place of socklen_t if not defined */
+/* #undef socklen_t */

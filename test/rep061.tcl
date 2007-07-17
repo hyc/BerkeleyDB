@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep061.tcl,v 1.8 2006/12/20 16:44:42 sue Exp $
+# $Id: rep061.tcl,v 1.11 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep061
 # TEST	Test of internal initialization multiple files and pagesizes
@@ -87,7 +87,7 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	global drop drop_msg
 	global startup_done
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
@@ -102,14 +102,6 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 
 	file mkdir $masterdir
 	file mkdir $clientdir
-
-	#
-	# Note that by setting these 2 globals below, message dropping
-	# is automatically enabled.  By setting 'drop' to 0, further
-	# down in the test, we disable message dropping.
-	#
-	set drop 1
-	set drop_msg [expr 100 / $dpct]
 
 	# Log size is small so we quickly create more than one.
 	# The documentation says that the log file must be at least
@@ -148,6 +140,20 @@ proc rep061_sub { method niter tnum logset recargs opts dpct largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$masterenv test force noarchive_timeout
+
+	#
+	# Note that by setting these 2 globals below, message dropping
+	# is automatically enabled.  By setting 'drop' to 0, further
+	# down in the test, we disable message dropping.
+	#
+	set drop 1
+	set drop_msg [expr 100 / $dpct]
 
 	# Run rep_test in the master (and update client).
 	set startpgsz 512

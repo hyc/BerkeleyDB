@@ -89,8 +89,8 @@ import java.io.FileNotFoundException; </pre>
     private Database vendorDb = null;
     private Database inventoryDb = null;
 
-    private String vendordb = &quot;VendorDB.db&quot;;
-    private String inventorydb = &quot;InventoryDB.db&quot;;
+    private String vendordb = "VendorDB.db";
+    private String inventorydb = "InventoryDB.db";
 
     // Our constructor does nothing
     public MyDbs() {} </pre>
@@ -107,24 +107,24 @@ import java.io.FileNotFoundException; </pre>
         DatabaseConfig myDbConfig = new DatabaseConfig();
 
         myDbConfig.setErrorStream(System.err);
-        myDbConfig.setErrorPrefix(&quot;MyDbs&quot;);
+        myDbConfig.setErrorPrefix("MyDbs");
         myDbConfig.setType(DatabaseType.BTREE);
         myDbConfig.setAllowCreate(true);
 
         // Now open, or create and open, our databases
         // Open the vendors and inventory databases
         try {
-            vendordb = databasesHome + &quot;/&quot; + vendordb;
+            vendordb = databasesHome + "/" + vendordb;
             vendorDb = new Database(vendordb,
                                     null,
                                     myDbConfig);
 
-            inventorydb = databasesHome + &quot;/&quot; + inventorydb;
+            inventorydb = databasesHome + "/" + inventorydb;
             inventoryDb = new Database(inventorydb,
                                         null,
                                         myDbConfig);
         } catch(FileNotFoundException fnfe) {
-            System.err.println(&quot;MyDbs: &quot; + fnfe.toString());
+            System.err.println("MyDbs: " + fnfe.toString());
             System.exit(-1);
         }
     } </pre>
@@ -152,7 +152,7 @@ import java.io.FileNotFoundException; </pre>
                 inventoryDb.close();
             }
         } catch(DatabaseException dbe) {
-            System.err.println(&quot;Error closing MyDbs: &quot; +
+            System.err.println("Error closing MyDbs: " +
                                 dbe.toString());
             System.exit(-1);
         }

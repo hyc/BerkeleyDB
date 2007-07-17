@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2006 Oracle.  All rights reserved.
+# Copyright (c) 2005,2007 Oracle.  All rights reserved.
 #
-# $Id: test113.tcl,v 12.8 2006/11/01 00:54:02 bostic Exp $
+# $Id: test113.tcl,v 12.9 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	test113
 # TEST	Test database compaction with duplicates.

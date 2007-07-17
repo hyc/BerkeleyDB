@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: env_open.c,v 12.90 2007/01/28 21:33:24 alanb Exp $
+ * $Id: env_open.c,v 12.98 2007/06/08 17:34:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -18,6 +18,7 @@
 #include "dbinc/txn.h"
 
 static int __env_refresh __P((DB_ENV *, u_int32_t, int));
+static int __file_handle_cleanup __P((DB_ENV *));
 
 /*
  * db_version --
@@ -379,6 +380,15 @@ __env_open(dbenv, db_home, flags, mode)
 			goto err;
 
 		/*
+		 * BDB does do cache I/O during recovery and when starting up
+		 * replication.  If creating a new environment, then suppress
+		 * any application max-write configuration.
+		 */
+		if (create_ok)
+			(void)__memp_set_config(
+			    dbenv, DB_MEMP_SUPPRESS_WRITE, 1);
+
+		/*
 		 * Initialize the DB list and its mutex.  If the mpool is
 		 * not initialized, we can't ever open a DB handle, which
 		 * is why this code lives here.
@@ -464,6 +474,10 @@ __env_open(dbenv, db_home, flags, mode)
 
 	if (rep_check)
 		ret = __env_db_rep_exit(dbenv);
+
+	/* Turn any application-specific max-write configuration back on. */
+	if (LF_ISSET(DB_INIT_MPOOL))
+		(void)__memp_set_config(dbenv, DB_MEMP_SUPPRESS_WRITE, 0);
 
 err:	if (ret == 0)
 		ENV_LEAVE(dbenv, ip);
@@ -618,7 +632,16 @@ __env_close_pp(dbenv, flags)
 
 	ret = 0;
 
-	PANIC_CHECK(dbenv);
+	if (PANIC_ISSET(dbenv)) {
+		/* Close all underlying file handles. */
+		(void)__file_handle_cleanup(dbenv);
+
+		/* Close all underlying threads and sockets. */
+		if (IS_ENV_REPLICATED(dbenv))
+			(void)__repmgr_close(dbenv);
+
+		PANIC_CHECK(dbenv);
+	}
 
 	ENV_ENTER(dbenv, ip);
 	/*
@@ -663,7 +686,6 @@ __env_close(dbenv, rep_check)
 	DB_ENV *dbenv;
 	int rep_check;
 {
-	DB_FH *fhp;
 	int ret, t_ret;
 	char **p;
 
@@ -704,16 +726,8 @@ __env_close(dbenv, rep_check)
 	}
 
 	/* Check we've closed all underlying file handles. */
-	if (TAILQ_FIRST(&dbenv->fdlist) != NULL) {
-		__db_errx(dbenv,
-		    "File handles still open at environment close");
-		while ((fhp = TAILQ_FIRST(&dbenv->fdlist)) != NULL) {
-			__db_errx(dbenv, "Open file handle: %s", fhp->name);
-			(void)__os_closehandle(dbenv, fhp);
-		}
-		if (ret == 0)
-			ret = EINVAL;
-	}
+	if ((t_ret = __file_handle_cleanup(dbenv)) != 0 && ret == 0)
+		ret = t_ret;
 
 	/* Release any string-based configuration parameters we've copied. */
 	if (dbenv->db_log_dir != NULL)
@@ -785,7 +799,7 @@ __env_refresh(dbenv, orig_flags, rep_check)
 	if (LOCKING_ON(dbenv)) {
 		if (!F_ISSET(dbenv, DB_ENV_THREAD) &&
 		    dbenv->env_lref != NULL && (t_ret = __lock_id_free(dbenv,
-		    ((DB_LOCKER *)dbenv->env_lref)->id)) != 0 && ret == 0)
+		    (DB_LOCKER *)dbenv->env_lref)) != 0 && ret == 0)
 			ret = t_ret;
 		dbenv->env_lref = NULL;
 
@@ -833,10 +847,16 @@ __env_refresh(dbenv, orig_flags, rep_check)
 		 * If it's a private environment, flush the contents to disk.
 		 * Recovery would have put everything back together, but it's
 		 * faster and cleaner to flush instead.
+		 *
+		 * Ignore application max-write configuration, we're shutting
+		 * down.
 		 */
 		if (F_ISSET(dbenv, DB_ENV_PRIVATE) &&
-		    (t_ret = __memp_sync(dbenv, NULL)) != 0 && ret == 0)
+		    (t_ret = __memp_sync_int(dbenv, NULL, 0,
+		    DB_SYNC_CACHE | DB_SYNC_SUPPRESS_WRITE, NULL, NULL)) != 0 &&
+		    ret == 0)
 			ret = t_ret;
+
 		if ((t_ret = __memp_env_refresh(dbenv)) != 0 && ret == 0)
 			ret = t_ret;
 	}
@@ -940,6 +960,28 @@ __env_refresh(dbenv, orig_flags, rep_check)
 	dbenv->flags = orig_flags;
 
 	return (ret);
+}
+
+/*
+ * __file_handle_cleanup --
+ *	Close any underlying open file handles so we don't leak system
+ *	resources.
+ */
+static int
+__file_handle_cleanup(dbenv)
+	DB_ENV *dbenv;
+{
+	DB_FH *fhp;
+
+	if (TAILQ_FIRST(&dbenv->fdlist) == NULL)
+		return (0);
+
+	__db_errx(dbenv, "File handles still open at environment close");
+	while ((fhp = TAILQ_FIRST(&dbenv->fdlist)) != NULL) {
+		__db_errx(dbenv, "Open file handle: %s", fhp->name);
+		(void)__os_closehandle(dbenv, fhp);
+	}
+	return (EINVAL);
 }
 
 /*

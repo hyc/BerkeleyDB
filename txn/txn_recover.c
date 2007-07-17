@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: txn_recover.c,v 12.21 2006/11/01 00:54:23 bostic Exp $
+ * $Id: txn_recover.c,v 12.29 2007/06/29 00:25:02 margo Exp $
  */
 
 #include "db_config.h"
@@ -133,7 +133,7 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 	XID *xids;
 	DB_PREPLIST *txns;
 	long count;		/* This is long for XA compatibility. */
-	long  *retp;
+	long *retp;
 	u_int32_t flags;
 {
 	DB_LSN min;
@@ -143,15 +143,14 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 	TXN_DETAIL *td;
 	XID *xidp;
 	long i;
-	int nrestores, open_files, ret;
+	int restored, ret;
 
 	*retp = 0;
 
 	MAX_LSN(min);
 	prepp = txns;
 	xidp = xids;
-	nrestores = ret = 0;
-	open_files = 1;
+	restored = ret = 0;
 
 	/*
 	 * If we are starting a scan, then we traverse the active transaction
@@ -172,23 +171,17 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 	 * restored, then we never crashed; just the main server did).
 	 */
 	TXN_SYSTEM_LOCK(dbenv);
-	if (flags == DB_FIRST) {
-		SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail) {
-			if (F_ISSET(td, TXN_DTL_RESTORED))
-				nrestores++;
-			F_CLR(td, TXN_DTL_COLLECTED);
-		}
-		mgr->n_discards = 0;
-	} else
-		open_files = 0;
 
 	/* Now begin collecting active transactions. */
 	for (td = SH_TAILQ_FIRST(&region->active_txn, __txn_detail);
 	    td != NULL && *retp < count;
 	    td = SH_TAILQ_NEXT(td, links, __txn_detail)) {
 		if (td->status != TXN_PREPARED ||
-		    F_ISSET(td, TXN_DTL_COLLECTED))
+		    (flags != DB_FIRST && F_ISSET(td, TXN_DTL_COLLECTED)))
 			continue;
+
+		if (F_ISSET(td, TXN_DTL_RESTORED))
+			restored = 1;
 
 		if (xids != NULL) {
 			xidp->formatID = td->format;
@@ -209,7 +202,8 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 				TXN_SYSTEM_UNLOCK(dbenv);
 				goto err;
 			}
-			__txn_continue(dbenv, prepp->txn, td);
+			if ((ret = __txn_continue(dbenv, prepp->txn, td)) != 0)
+				goto err;
 			F_SET(prepp->txn, TXN_MALLOC);
 			memcpy(prepp->gid, td->xid, sizeof(td->xid));
 			prepp++;
@@ -221,30 +215,43 @@ __txn_get_prepared(dbenv, xids, txns, count, retp, flags)
 
 		(*retp)++;
 		F_SET(td, TXN_DTL_COLLECTED);
-		if (IS_ENV_REPLICATED(dbenv) &&
-		    (ret = __op_rep_enter(dbenv)) != 0)
-			goto err;
 	}
+	if (flags == DB_FIRST)
+		for (; td != NULL; td = SH_TAILQ_NEXT(td, links, __txn_detail))
+			F_CLR(td, TXN_DTL_COLLECTED);
 	TXN_SYSTEM_UNLOCK(dbenv);
 
 	/*
 	 * Now link all the transactions into the transaction manager's list.
 	 */
-	if (txns != NULL) {
+	if (txns != NULL && *retp != 0) {
 		MUTEX_LOCK(dbenv, mgr->mutex);
 		for (i = 0; i < *retp; i++)
 			TAILQ_INSERT_TAIL(&mgr->txn_chain, txns[i].txn, links);
 		MUTEX_UNLOCK(dbenv, mgr->mutex);
-	}
 
-	if (open_files && nrestores && *retp != 0 && !IS_MAX_LSN(min)) {
-		F_SET(dbenv->lg_handle, DBLOG_RECOVER);
+		/*
+		 * If we are restoring, update our count of outstanding
+		 * transactions.
+		 */
+		if (REP_ON(dbenv)) {
+			REP_SYSTEM_LOCK(dbenv);
+			dbenv->rep_handle->region->op_cnt += (u_long)*retp;
+			REP_SYSTEM_UNLOCK(dbenv);
+		}
+
+	}
+	/*
+	 * If recovery already opened the files for us, don't
+	 * do it here.
+	 */
+	if (restored != 0 && flags == DB_FIRST &&
+	    !F_ISSET(dbenv->lg_handle, DBLOG_OPENFILES))
 		ret = __txn_openfiles(dbenv, &min, 0);
-		F_CLR(dbenv->lg_handle, DBLOG_RECOVER);
-	}
-	return (0);
 
-err:	TXN_SYSTEM_UNLOCK(dbenv);
+	if (0) {
+err:		TXN_SYSTEM_UNLOCK(dbenv);
+	}
 	return (ret);
 }
 

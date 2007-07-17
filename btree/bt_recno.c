@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: bt_recno.c,v 12.33 2006/11/29 21:23:10 ubell Exp $
+ * $Id: bt_recno.c,v 12.35 2007/05/17 15:14:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -173,7 +173,7 @@ __ram_append(dbc, key, data)
 		ret = __ram_add(dbc, &cp->recno, data, DB_APPEND, 0);
 
 	/* Return the record number. */
-	if (ret == 0)
+	if (ret == 0 && key != NULL)
 		ret = __db_retcopy(dbc->dbp->dbenv, key, &cp->recno,
 		    sizeof(cp->recno), &dbc->rkey->data, &dbc->rkey->ulen);
 
@@ -717,7 +717,8 @@ split:	if ((ret = __bam_rsearch(dbc, &cp->recno, SR_INSERT, 1, &exact)) != 0)
 	}
 
 	/* Return the key if we've created a new record. */
-	if (!F_ISSET(dbc, DBC_OPD) && (flags == DB_AFTER || flags == DB_BEFORE))
+	if (!F_ISSET(dbc, DBC_OPD) &&
+	    (flags == DB_AFTER || flags == DB_BEFORE) && key != NULL)
 		ret = __db_retcopy(dbenv, key, &cp->recno,
 		    sizeof(cp->recno), &dbc->rkey->data, &dbc->rkey->ulen);
 

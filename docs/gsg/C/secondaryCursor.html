@@ -77,13 +77,13 @@
           <li>
             <p>
             You cannot use <tt class="literal">DB_GET_BOTH</tt> and related flags with
-                <tt class="methodname">DB-&gt;c_get()</tt>
+                <tt class="methodname">DB-&gt;get()</tt>
                 
             and a secondary database. Instead, you must use 
-                <span><tt class="methodname">DB-&gt;c_pget()</tt>.</span>
+                <span><tt class="methodname">DB-&gt;pget()</tt>.</span>
                 
             Also, in that case the primary and secondary key given on the call to 
-                <tt class="methodname">DB-&gt;c_pget()</tt>
+                <tt class="methodname">DB-&gt;pget()</tt>
                 
             must match the secondary key and associated primary record key in
             order for that primary record to be returned as a result of the
@@ -113,7 +113,7 @@
 DB *sdbp;          /* Secondary DB handle */
 DBC *cursorp;      /* Cursor */
 DBT key, data;     /* DBTs used for the delete */
-char *search_name = &quot;John Doe&quot;; /* Name to delete */
+char *search_name = "John Doe"; /* Name to delete */
                                                                                                                                      
 /* Primary and secondary database opens omitted for brevity. */
 
@@ -131,8 +131,8 @@ key.size = strlen(search_name) + 1;
 
  
 /* Position the cursor */
-while (cursorp-&gt;c_get(cursorp, &amp;key, &amp;data, DB_SET) == 0)
-    cursorp-&gt;c_del(cursorp, 0); </pre>
+while (cursorp-&gt;get(cursorp, &amp;key, &amp;data, DB_SET) == 0)
+    cursorp-&gt;del(cursorp, 0); </pre>
     </div>
     <div class="navfooter">
       <hr />

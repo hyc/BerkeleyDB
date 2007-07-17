@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep013.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
+# $Id: rep013.tcl,v 12.16 2007/05/25 18:30:16 alanb Exp $
 #
 # TEST	rep013
 # TEST	Replication and swapping master/clients with open dbs.
@@ -55,12 +55,12 @@ proc rep013_sub { method niter tnum logset recargs anyopt largs } {
 	global testdir
 	global anywhere
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -236,17 +236,14 @@ proc rep013_sub { method niter tnum logset recargs anyopt largs } {
 	}
 	puts "\tRep$tnum.e: Check message handling of client."
 	set req3 [stat_field $cl2env rep_stat "Client service requests"]
-	set miss3 [stat_field $cl2env rep_stat "Client service req misses"]
 	set rereq1 [stat_field $env1 rep_stat "Client rerequests"]
 	set rereq2 [stat_field $env2 rep_stat "Client rerequests"]
 	if { $anyopt == "anywhere" } {
 		error_check_bad req $req3 0
-		error_check_bad miss $miss3 0
 		error_check_bad rereq1 $rereq1 0
 		error_check_bad rereq2 $rereq2 0
 	} else {
 		error_check_good req $req3 0
-		error_check_good miss $miss3 0
 		error_check_good rereq1 $rereq1 0
 		error_check_good rereq2 $rereq2 0
 	}

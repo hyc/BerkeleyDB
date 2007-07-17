@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mut_method.c,v 12.13 2006/11/01 00:53:38 bostic Exp $
+ * $Id: mut_method.c,v 12.14 2007/05/17 15:15:45 bostic Exp $
  */
 
 #include "db_config.h"

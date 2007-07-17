@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
  */
 
@@ -140,7 +140,7 @@ public class CallbackTest
     {
         TestUtils.DEBUGOUT(2, "verifyFeedback callback invoked. percent: " + percent);
     }
-    
+ 
     /*
      * Panic handler interface implementation.
      */

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1998,2007 Oracle.  All rights reserved.
  *
- * $Id: db_am.c,v 12.28 2006/11/29 21:23:11 ubell Exp $
+ * $Id: db_am.c,v 12.39 2007/06/13 18:21:30 ubell Exp $
  */
 
 #include "db_config.h"
@@ -16,26 +16,28 @@
 #include "dbinc/log.h"
 #include "dbinc/mp.h"
 #include "dbinc/qam.h"
+#include "dbinc/txn.h"
 
 static int __db_append_primary __P((DBC *, DBT *, DBT *));
 static int __db_secondary_get __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
 static int __dbc_set_priority __P((DBC *, DB_CACHE_PRIORITY));
+static int __dbc_get_priority __P((DBC *, DB_CACHE_PRIORITY* ));
 
 /*
  * __db_cursor_int --
  *	Internal routine to create a cursor.
  *
- * PUBLIC: int __db_cursor_int
- * PUBLIC:     __P((DB *, DB_TXN *, DBTYPE, db_pgno_t, int, u_int32_t, DBC **));
+ * PUBLIC: int __db_cursor_int __P((DB *,
+ * PUBLIC:     DB_TXN *, DBTYPE, db_pgno_t, int, DB_LOCKER *, DBC **));
  */
 int
-__db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
+__db_cursor_int(dbp, txn, dbtype, root, is_opd, locker, dbcp)
 	DB *dbp;
 	DB_TXN *txn;
 	DBTYPE dbtype;
 	db_pgno_t root;
 	int is_opd;
-	u_int32_t lockerid;
+	DB_LOCKER *locker;
 	DBC **dbcp;
 {
 	DBC *dbc;
@@ -57,6 +59,22 @@ __db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
 	 * of cursors on the queue for a single database.
 	 */
 	MUTEX_LOCK(dbenv, dbp->mutex);
+
+#ifndef HAVE_NO_DB_REFCOUNT
+	/*
+	 * If this DBP is being logged then refcount the log filename
+	 * relative to this transaction. We do this here because we have
+	 * the dbp->mutex which protects the refcount.  If we know this
+	 * cursor will not be used in an update, we could avoid this,
+	 * but we don't have that information.
+	 */
+	if (txn != NULL && !F_ISSET(dbp, DB_AM_RECOVER) &&
+	    dbp->log_filename != NULL &&
+	    !is_opd && locker == NULL && !IS_REP_CLIENT(dbenv) &&
+	    (ret = __txn_record_fname(dbenv, txn, dbp->log_filename)) != 0)
+		return (ret);
+#endif
+
 	TAILQ_FOREACH(dbc, &dbp->free_queue, links)
 		if (dbtype == dbc->dbtype) {
 			TAILQ_REMOVE(&dbp->free_queue, dbc, links);
@@ -170,10 +188,11 @@ __db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
 	dbc->dbtype = dbtype;
 	RESET_RET_MEM(dbc);
 	dbc->set_priority = __dbc_set_priority;
+	dbc->get_priority = __dbc_get_priority;
 	dbc->priority = dbp->priority;
 
 	if ((dbc->txn = txn) != NULL)
-		dbc->locker = txn->txnid;
+		dbc->locker = txn->locker;
 	else if (LOCKING_ON(dbenv)) {
 		/*
 		 * There are certain cases in which we want to create a
@@ -196,8 +215,8 @@ __db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
 		 * ID into this function.  Use this locker ID instead of
 		 * the default as the locker ID for our new cursor.
 		 */
-		if (lockerid != DB_LOCK_INVALIDID)
-			dbc->locker = lockerid;
+		if (locker != NULL)
+			dbc->locker = locker;
 		else {
 			/*
 			 * If we are threaded then we need to set the
@@ -207,7 +226,7 @@ __db_cursor_int(dbp, txn, dbtype, root, is_opd, lockerid, dbcp)
 				dbenv->thread_id(dbenv, &pid, &tid);
 				__lock_set_thread_id(dbc->lref, pid, tid);
 			}
-			dbc->locker = ((DB_LOCKER *)dbc->lref)->id;
+			dbc->locker = (DB_LOCKER *)dbc->lref;
 		}
 	}
 
@@ -561,12 +580,17 @@ __db_associate(dbp, txn, sdbp, callback, flags)
 {
 	DB_ENV *dbenv;
 	DBC *pdbc, *sdbc;
-	DBT skey, key, data;
+	DBT key, data, skey, *tskeyp;
 	int build, ret, t_ret;
+	u_int32_t nskey;
 
 	dbenv = dbp->dbenv;
 	pdbc = sdbc = NULL;
 	ret = 0;
+
+	memset(&skey, 0, sizeof(DBT));
+	nskey = 0;
+	tskeyp = NULL;
 
 	/*
 	 * Check to see if the secondary is empty -- and thus if we should
@@ -655,23 +679,33 @@ __db_associate(dbp, txn, sdbp, callback, flags)
 		    txn, dbp->type, PGNO_INVALID, 0, sdbc->locker, &pdbc)) != 0)
 			goto err;
 
-		/* Lock out other threads, now that we have a locker ID. */
-		dbp->associate_lid = sdbc->locker;
+		/* Lock out other threads, now that we have a locker. */
+		dbp->associate_locker = sdbc->locker;
 
 		memset(&key, 0, sizeof(DBT));
 		memset(&data, 0, sizeof(DBT));
 		while ((ret = __dbc_get(pdbc, &key, &data, DB_NEXT)) == 0) {
-			memset(&skey, 0, sizeof(DBT));
 			if ((ret = callback(sdbp, &key, &data, &skey)) != 0) {
 				if (ret == DB_DONOTINDEX)
 					continue;
 				goto err;
 			}
+			if (F_ISSET(&skey, DB_DBT_MULTIPLE)) {
+#ifdef DIAGNOSTIC
+				__db_check_skeyset(sdbp, &skey);
+#endif
+				nskey = skey.size;
+				tskeyp = (DBT *)skey.data;
+			} else {
+				nskey = 1;
+				tskeyp = &skey;
+			}
 			SWAP_IF_NEEDED(sdbp, &key);
-			if ((ret = __dbc_put(sdbc,
-			    &skey, &key, DB_UPDATE_SECONDARY)) != 0) {
-				FREE_IF_NEEDED(dbenv, &skey);
-				goto err;
+			for (; nskey > 0; nskey--, tskeyp++) {
+				if ((ret = __dbc_put(sdbc,
+				    tskeyp, &key, DB_UPDATE_SECONDARY)) != 0)
+					goto err;
+				FREE_IF_NEEDED(dbenv, tskeyp);
 			}
 			SWAP_IF_NEEDED(sdbp, &key);
 			FREE_IF_NEEDED(dbenv, &skey);
@@ -686,7 +720,11 @@ err:	if (sdbc != NULL && (t_ret = __dbc_close(sdbc)) != 0 && ret == 0)
 	if (pdbc != NULL && (t_ret = __dbc_close(pdbc)) != 0 && ret == 0)
 		ret = t_ret;
 
-	dbp->associate_lid = DB_LOCK_INVALIDID;
+	dbp->associate_locker = NULL;
+
+	for (; nskey > 0; nskey--, tskeyp++)
+		FREE_IF_NEEDED(dbenv, tskeyp);
+	FREE_IF_NEEDED(dbenv, &skey);
 
 	return (ret);
 }
@@ -816,7 +854,7 @@ __db_append_primary(dbc, key, data)
 	 */
 	if ((ret = __db_s_first(dbp, &sdbp)) != 0)
 		goto err;
-	for (; sdbp != NULL && ret == 0; ret = __db_s_next(&sdbp)) {
+	for (; sdbp != NULL && ret == 0; ret = __db_s_next(&sdbp, dbc->txn)) {
 		memset(&skey, 0, sizeof(DBT));
 		if ((ret = sdbp->s_callback(sdbp, key, data, &skey)) != 0) {
 			if (ret == DB_DONOTINDEX)
@@ -877,7 +915,8 @@ err1:		FREE_IF_NEEDED(dbenv, &skey);
 
 err:	if (pdbc != NULL && (t_ret = __dbc_close(pdbc)) != 0 && ret == 0)
 		ret = t_ret;
-	if (sdbp != NULL && (t_ret = __db_s_done(sdbp)) != 0 && ret == 0)
+	if (sdbp != NULL &&
+	    (t_ret = __db_s_done(sdbp, dbc->txn)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
 }
@@ -888,5 +927,14 @@ __dbc_set_priority(dbc, priority)
 	DB_CACHE_PRIORITY priority;
 {
 	dbc->priority = priority;
+	return (0);
+}
+
+static int
+__dbc_get_priority(dbc, priority)
+	DBC *dbc;
+	DB_CACHE_PRIORITY *priority;
+{
+	*priority = dbc->priority;
 	return (0);
 }

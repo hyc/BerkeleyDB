@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os_mkdir.c,v 12.19 2007/01/22 06:12:17 alexg Exp $
+ * $Id: os_mkdir.c,v 12.20 2007/05/17 15:15:46 bostic Exp $
  */
 
 #include "db_config.h"

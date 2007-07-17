@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: reputils.tcl,v 12.36 2006/12/07 19:37:44 carol Exp $
+# $Id: reputils.tcl,v 12.54 2007/07/12 16:36:07 alanb Exp $
 #
 # Replication testing utilities
 
@@ -52,8 +52,8 @@ set anywhere 0
 global rep_verbose
 set rep_verbose 0
 
-# To run a replication test with verbose messages, type 
-# 'run_verbose <test> <method>'. 
+# To run a replication test with verbose messages, type
+# 'run_verbose <test> <method>'.
 proc run_verbose { reptest args } {
 	global rep_verbose
 	if { [string match rep* $reptest] == 0 } {
@@ -78,7 +78,7 @@ proc run_verbose { reptest args } {
 		} else {
 			error $theError;
 		}
-	}			
+	}
 	set rep_verbose 0
 }
 
@@ -178,15 +178,10 @@ proc repl_envsetup { envargs largs test {nclients 1} {droppct 0} { oob 0 } } {
 	global drop drop_msg
 	global masterdir
 	global repenv
-	global qtestdir testdir
 
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
-
-	if { ![info exists qtestdir] } {
-		set qtestdir $testdir
-	}
 
 	set masterdir $testdir/MASTERDIR
 	file mkdir $masterdir
@@ -249,6 +244,12 @@ proc repl_envsetup { envargs largs test {nclients 1} {droppct 0} { oob 0 } } {
 
 	# Process startup messages
 	repl_envprocq $test $nclients $oob
+
+	# Clobber replication's 30-second anti-archive timer, which
+	# will have been started by client sync-up internal init, in
+	# case the test we're about to run wants to do any log
+	# archiving, or database renaming and/or removal.
+	$masterenv test force noarchive_timeout
 
 	return $largs
 }
@@ -466,7 +467,7 @@ proc repl_envclose { test envargs } {
 	global encrypt
 	global masterdir
 	global repenv
-	global qtestdir testdir
+	global drop
 
 	if { [lsearch $envargs "-encrypta*"] !=-1 } {
 		set encrypt 1
@@ -476,7 +477,6 @@ proc repl_envclose { test envargs } {
 	# databases on all the clients, do a checkpoint on the master and
 	# process messages in order to flush all the clients.
 	set drop 0
-	set do_check 0
 	berkdb debug_check
 	puts "\t$test: Checkpointing master."
 	error_check_good masterenv_ckp [$repenv(master) txn_checkpoint] 0
@@ -486,6 +486,7 @@ proc repl_envclose { test envargs } {
 		if { $repenv($ncli) == "NULL" } {
 			break
 		}
+		$repenv($ncli) rep_request 1 1
 	}
 	repl_envprocq $test $ncli
 
@@ -495,36 +496,8 @@ proc repl_envclose { test envargs } {
 		error_check_good client($i)_close [$repenv($i) close] 0
 		verify_dir $clientdir($i) "\t$test: " 0 0 1
 	}
-	replclose $qtestdir/MSGQUEUEDIR
+	replclose $testdir/MSGQUEUEDIR
 
-}
-
-# Close up a replication group - close all message dbs.
-proc replclose { queuedir } {
-	global queuedbs machids
-
-	set dbs [array names queuedbs]
-	foreach tofrom $dbs {
-		set handle $queuedbs($tofrom)
-		error_check_good db_close [$handle close] 0
-		unset queuedbs($tofrom)
-	}
-
-	set machids {}
-}
-
-# Create a replication group for testing.
-proc replsetup { queuedir } {
-	global queuedbs machids
-
-	file mkdir $queuedir
-
-	# If there are any leftover handles, get rid of them.
-	set dbs [array names queuedbs]
-	foreach tofrom $dbs {
-		unset queuedbs($tofrom)
-	}
-	set machids {}
 }
 
 # Replnoop is a dummy function to substitute for replsend
@@ -533,19 +506,42 @@ proc replnoop { control rec fromid toid flags lsn } {
 	return 0
 }
 
+proc replclose { queuedir } {
+	global queueenv queuedbs machids
+
+	foreach m $machids {
+		set db $queuedbs($m)
+		error_check_good dbr_close [$db close] 0
+	}
+	error_check_good qenv_close [$queueenv close] 0
+	set machids {}
+}
+
+# Create a replication group for testing.
+proc replsetup { queuedir } {
+	global queueenv queuedbs machids
+
+	file mkdir $queuedir
+	set max_locks 20000
+	set queueenv [berkdb_env \
+	     -create -txn nosync -lock_max_locks $max_locks -home $queuedir]
+	error_check_good queueenv [is_valid_env $queueenv] TRUE
+
+	if { [info exists queuedbs] } {
+		unset queuedbs
+	}
+	set machids {}
+
+	return $queueenv
+}
+
 # Send function for replication.
 proc replsend { control rec fromid toid flags lsn } {
-	global is_repchild
-	global queuedbs machids
+	global queuedbs queueenv machids
 	global drop drop_msg
 	global perm_sent_list
 	global anywhere
-	global qtestdir testdir
 
-	if { ![info exists qtestdir] } {
-		set qtestdir $testdir
-	}
-	set queuedir $qtestdir/MSGQUEUEDIR
 	set permflags [lsearch $flags "perm"]
 	if { [llength $perm_sent_list] != 0 && $permflags != -1 } {
 #		puts "replsend sent perm message, LSN $lsn"
@@ -569,12 +565,15 @@ proc replsend { control rec fromid toid flags lsn } {
 	if { $toid == -1 } {
 		set machlist $machids
 	} else {
+		if { [info exists queuedbs($toid)] != 1 } {
+			error "replsend: machid $toid not found"
+		}
 		set m NULL
-		# If we can send this anywhere, send it to the first id
-		# we find that is neither toid or fromid.  If we don't
-		# find any other candidates, this falls back to the
-		# original toid.
 		if { $anywhere != 0 } {
+			#
+			# If we can send this anywhere, send it to the first
+			# id we find that is neither toid or fromid.
+			#
 			set anyflags [lsearch $flags "any"]
 			if { $anyflags != -1 } {
 				foreach m $machids {
@@ -587,207 +586,78 @@ proc replsend { control rec fromid toid flags lsn } {
 			}
 		}
 		#
-		# If we didn't find a different site, fall back
-		# to the toid.
+		# If we didn't find a different site, then we must
+		# fallback to the toid.
 		#
 		if { $m == "NULL" } {
 			set machlist [list $toid]
 		}
 	}
+
 	foreach m $machlist {
-		# Do not broadcast to self.
+		# do not broadcast to self.
 		if { $m == $fromid } {
 			continue
 		}
-		# Find the handle for the right message file.
-		set pid [pid]
-		set db $queuedbs($m.$fromid.$pid)
-		set stat [catch {$db put -append [list $control $rec $fromid]} ret]
-	}
-	if { $is_repchild } {
-		replready $fromid from
+
+		set db $queuedbs($m)
+		set txn [$queueenv txn]
+		$db put -txn $txn -append [list $control $rec $fromid]
+		error_check_good replsend_commit [$txn commit] 0
 	}
 
 	return 0
 }
 
 # Discard all the pending messages for a particular site.
-proc replclear { machid {tf "to"}} {
-	global queuedbs qtestdir testdir
+proc replclear { machid } {
+	global queuedbs queueenv
 
-	if { ![info exists qtestdir] } {
-		set qtestdir $testdir
+	if { [info exists queuedbs($machid)] != 1 } {
+		error "FAIL: replclear: machid $machid not found"
 	}
-	set queuedir $qtestdir/MSGQUEUEDIR
-	set orig [pwd]
 
-	cd $queuedir
-	if { $tf == "to" } {
-		set msgdbs [glob -nocomplain ready.$machid.*]
-	} else {
-		set msgdbs [glob -nocomplain ready.*.$machid.*]
+	set db $queuedbs($machid)
+	set txn [$queueenv txn]
+	set dbc [$db cursor -txn $txn]
+	for { set dbt [$dbc get -rmw -first] } { [llength $dbt] > 0 } \
+	    { set dbt [$dbc get -rmw -next] } {
+		error_check_good replclear($machid)_del [$dbc del] 0
 	}
-	foreach m $msgdbs {
-		file delete -force $m
-	}
-	cd $orig
-	set dbs [array names queuedbs]
-	foreach tofrom $dbs {
-		# Process only messages _to_ the specified machid.
-		if { [string match $machid.* $tofrom] == 1 } {
-			set db $queuedbs($tofrom)
-			set dbc [$db cursor]
-			for { set dbt [$dbc get -first] } \
-			    { [llength $dbt] > 0 } \
-			    { set dbt [$dbc get -next] } {
-				error_check_good \
-				    replclear($machid)_del [$dbc del] 0
-			}
-			error_check_good replclear($db)_dbc_close [$dbc close] 0
-		}
-	}
-	cd $queuedir
-	if { $tf == "to" } {
-		set msgdbs [glob -nocomplain temp.$machid.*]
-	} else {
-		set msgdbs [glob -nocomplain temp.*.$machid.*]
-	}
-	foreach m $msgdbs {
-#		file delete -force $m
-	}
-	cd $orig
+	error_check_good replclear($machid)_dbc_close [$dbc close] 0
+	error_check_good replclear($machid)_txn_commit [$txn commit] 0
 }
 
-# Makes messages available to replprocessqueue by closing and
-# renaming the message files.  We ready the files for one machine
-# ID at a time -- just those "to" or "from" the machine we want to
-# process, depending on 'tf'.
-proc replready { machid tf } {
-	global queuedbs machids
-	global counter
-	global qtestdir testdir
-
-	if { ![info exists qtestdir] } {
-		set qtestdir $testdir
-	}
-	set queuedir $qtestdir/MSGQUEUEDIR
-
-	set pid [pid]
-	#
-	# Close the temporary message files for the specified machine.
-	# Only close it if there are messages available.
-	#
-	set dbs [array names queuedbs]
-	set closed {}
-	foreach tofrom $dbs {
-		set toidx [string first . $tofrom]
-		set toid [string replace $tofrom $toidx end]
-		set fidx [expr $toidx + 1]
-		set fromidx [string first . $tofrom $fidx]
-		#
-		# First chop off the end, then chop off the toid
-		# in the beginning.
-		#
-		set fromid [string replace $tofrom $fromidx end]
-		set fromid [string replace $fromid 0 $toidx]
-		if { ($tf == "to" && $machid == $toid) || \
-		    ($tf == "from" && $machid == $fromid) } {
-			set nkeys [stat_field $queuedbs($tofrom) \
-			    stat "Number of keys"]
-			if { $nkeys != 0 } {
-				lappend closed \
-				    [list $toid $fromid temp.$tofrom]
-		 		error_check_good temp_close \
-				    [$queuedbs($tofrom) close] 0
-			}
-		}
-	}
-
-	# Rename the message files.
-	set cwd [pwd]
-	foreach filename $closed {
-		set toid [lindex $filename 0]
-		set fromid [lindex $filename 1]
-		set fname [lindex $filename 2]
-		set tofrom [string replace $fname 0 4]
-		incr counter($machid)
-		cd $queuedir
-# puts "$queuedir: Msg ready $fname to ready.$tofrom.$counter($machid)"
-		file rename -force $fname ready.$tofrom.$counter($machid)
-		cd $cwd
-		replsetuptempfile $toid $fromid $queuedir
-
-	}
-}
-
-# Add a machine to a replication environment.  This checks
-# that we have not already established that machine id, and
-# adds the machid to the list of ids.
+# Add a machine to a replication environment.
 proc repladd { machid } {
-	global queuedbs machids counter qtestdir testdir
+	global queueenv queuedbs machids
 
-	if { ![info exists qtestdir] } {
-		set qtestdir $testdir
-	}
-	set queuedir $qtestdir/MSGQUEUEDIR
-	if { [info exists machids] } {
-		if { [lsearch -exact $machids $machid] >= 0 } {
-			error "FAIL: repladd: machid $machid already exists."
-		}
+	if { [info exists queuedbs($machid)] == 1 } {
+		error "FAIL: repladd: machid $machid already exists"
 	}
 
-	set counter($machid) 0
+	set queuedbs($machid) [berkdb open -auto_commit \
+	    -env $queueenv -create -recno -renumber repqueue$machid.db]
+	error_check_good repqueue_create [is_valid_db $queuedbs($machid)] TRUE
+
 	lappend machids $machid
-
-	# Create all the databases that receive messages sent _to_
-	# the new machid.
-	replcreatetofiles $machid $queuedir
-
-	# Create all the databases that receive messages sent _from_
-	# the new machid.
-	replcreatefromfiles $machid $queuedir
 }
 
-# Creates all the databases that a machid needs for receiving messages
-# from other participants in a replication group.  Used when first
-# establishing the temp files, but also used whenever replready moves the
-# temp files away, because we'll need new files for any future messages.
-proc replcreatetofiles { toid queuedir } {
-	global machids
+# Acquire a handle to work with an existing machine's replication
+# queue.  This is for situations where more than one process
+# is working with a message queue.  In general, having more than one
+# process handle the queue is wrong.  However, in order to test some
+# things, we need two processes (since Tcl doesn't support threads).  We
+# go to great pain in the test harness to make sure this works, but we
+# don't let customers do it.
+proc repljoin { machid } {
+	global queueenv queuedbs machids
 
-	foreach m $machids {
-		# We don't need a file for a machid to send itself messages.
-		if { $m == $toid } {
-			continue
-		}
-		replsetuptempfile $toid $m $queuedir
-	}
-}
+	set queuedbs($machid) [berkdb open -auto_commit \
+	    -env $queueenv repqueue$machid.db]
+	error_check_good repqueue_create [is_valid_db $queuedbs($machid)] TRUE
 
-# Creates all the databases that a machid needs for sending messages
-# to other participants in a replication group.  Used when first
-# establishing the temp files only.  Replready moves files based on
-# recipient, so we recreate files based on the recipient, also.
-proc replcreatefromfiles { fromid queuedir } {
-	global machids
-
-	foreach m $machids {
-		# We don't need a file for a machid to send itself messages.
-		if { $m == $fromid } {
-			continue
-		}
-		replsetuptempfile $m $fromid $queuedir
-	}
-}
-
-proc replsetuptempfile { to from queuedir } {
-	global queuedbs
-
-	set pid [pid]
-# puts "Open new temp.$to.$from.$pid"
-	set queuedbs($to.$from.$pid) [berkdb_open -create -excl -recno\
-	    -renumber $queuedir/temp.$to.$from.$pid]
-	error_check_good open_queuedbs [is_valid_db $queuedbs($to.$from.$pid)] TRUE
+	lappend machids $machid
 }
 
 # Process a queue of messages, skipping every "skip_interval" entry.
@@ -795,10 +665,10 @@ proc replsetuptempfile { to from queuedir } {
 # may end up leaving things in the queue, which should get picked up
 # on a later run.
 proc replprocessqueue { dbenv machid { skip_interval 0 } { hold_electp NONE } \
-    { newmasterp NONE } { dupmasterp NONE } { errp NONE } } {
-	global errorCode
+    { dupmasterp NONE } { errp NONE } } {
+	global queuedbs queueenv errorCode
 	global perm_response_list
-	global qtestdir testdir
+	global startup_done
 
 	# hold_electp is a call-by-reference variable which lets our caller
 	# know we need to hold an election.
@@ -806,13 +676,6 @@ proc replprocessqueue { dbenv machid { skip_interval 0 } { hold_electp NONE } \
 		upvar $hold_electp hold_elect
 	}
 	set hold_elect 0
-
-	# newmasterp is the same idea, only returning the ID of a master
-	# given in a DB_REP_NEWMASTER return.
-	if { [string compare $newmasterp NONE] != 0 } {
-		upvar $newmasterp newmaster
-	}
-	set newmaster 0
 
 	# dupmasterp is a call-by-reference variable which lets our caller
 	# know we have a duplicate master.
@@ -830,169 +693,143 @@ proc replprocessqueue { dbenv machid { skip_interval 0 } { hold_electp NONE } \
 
 	set nproced 0
 
-	set queuedir $qtestdir/MSGQUEUEDIR
-# puts "replprocqueue: Make ready messages to eid $machid"
-	replready $machid to
+	set txn [$queueenv txn]
 
-	# Change directories temporarily so we get just the msg file name.
-	set cwd [pwd]
-	cd $queuedir
-	set msgdbs [glob -nocomplain ready.$machid.*]
-# puts "$queuedir.$machid: My messages: $msgdbs"
-	cd $cwd
-
-	foreach msgdb $msgdbs {
-		set db [berkdb_open $queuedir/$msgdb]
-		set dbc [$db cursor]
-
-		error_check_good process_dbc($machid) \
-		    [is_valid_cursor $dbc $db] TRUE
-
-		for { set dbt [$dbc get -first] } \
-		    { [llength $dbt] != 0 } \
-		    { set dbt [$dbc get -next] } {
-			set data [lindex [lindex $dbt 0] 1]
-			set recno [lindex [lindex $dbt 0] 0]
-
-			# If skip_interval is nonzero, we want to process
-			# messages out of order.  We do this in a simple but
-			# slimy way -- continue walking with the cursor
-			# without processing the message or deleting it from
-			# the queue, but do increment "nproced".  The way
-			# this proc is normally used, the precise value of
-			# nproced doesn't matter--we just don't assume the
-			# queues are empty if it's nonzero.  Thus, if we
-			# contrive to make sure it's nonzero, we'll always
-			# come back to records we've skipped on a later call
-			# to replprocessqueue.  (If there really are no records,
-			# we'll never get here.)
-			#
-			# Skip every skip_interval'th record (and use a
-			# remainder other than zero so that we're guaranteed
-			# to really process at least one record on every call).
-			if { $skip_interval != 0 } {
-				if { $nproced % $skip_interval == 1 } {
-					incr nproced
-					set dbt [$dbc get -next]
-					continue
-				}
-			}
-
-			# We need to remove the current message from the
-			# queue, because we're about to end the transaction
-			# and someone else processing messages might come in
-			# and reprocess this message which would be bad.
-			#
-			error_check_good queue_remove [$dbc del] 0
-
-			# We have to play an ugly cursor game here:  we
-			# currently hold a lock on the page of messages, but
-			# rep_process_message might need to lock the page with
-			# a different cursor in order to send a response.  So
-			# save the next recno, close the cursor, and then
-			# reopen and reset the cursor.  If someone else is
-			# processing this queue, our entry might have gone
-			# away, and we need to be able to handle that.
-			#
-#			error_check_good dbc_process_close [$dbc close] 0
-
-			set ret [catch {$dbenv rep_process_message \
-			    [lindex $data 2] [lindex $data 0] \
-			    [lindex $data 1]} res]
-
-			# Save all ISPERM and NOTPERM responses so we can
-			# compare their LSNs to the LSN in the log.  The
-			# variable perm_response_list holds the entire
-			# response so we can extract responses and LSNs as
-			# needed.
-			#
-			if { [llength $perm_response_list] != 0 && \
-			    ([is_substr $res ISPERM] || [is_substr $res NOTPERM]) } {
-				lappend perm_response_list $res
-			}
-
-			if { $ret != 0 } {
-				if { [string compare $errp NONE] != 0 } {
-					set errorp "$dbenv $machid $res"
-				} else {
-					error "FAIL:[timestamp]\
-					    rep_process_message returned $res"
-				}
-			}
-
-			incr nproced
-			if { $ret == 0 } {
-				set rettype [lindex $res 0]
-				set retval [lindex $res 1]
-				#
-				# Do nothing for 0 and NEWSITE
-				#
-				if { [is_substr $rettype HOLDELECTION] } {
-					set hold_elect 1
-				}
-				if { [is_substr $rettype DUPMASTER] } {
-					set dupmaster "1 $dbenv $machid"
-				}
-				if { [is_substr $rettype NOTPERM] || \
-				    [is_substr $rettype ISPERM] } {
-					set lsnfile [lindex $retval 0]
-					set lsnoff [lindex $retval 1]
-				}
-				if { [is_substr $rettype NEWMASTER] } {
-					set newmaster $retval
-					# Break when we get a NEWMASTER message;
-					# our caller needs to handle it.
-					break
-				}
-			}
-
-			if { $errorp != 0 } {
-				# Break on an error, caller wants to handle it.
-				break
-			}
-			if { $hold_elect == 1 } {
-				# Break on a HOLDELECTION, for the same reason.
-				break
-			}
-			if { $dupmaster == 1 } {
-				# Break on a DUPMASTER, for the same reason.
-				break
-			}
-
-		}
-		error_check_good dbc_close [$dbc close] 0
-
-		#
-		# Check the number of keys remaining because we only
-		# want to rename to done, message file that are
-		# fully processed.  Some message types might break
-		# out of the loop early and we want to process
-		# the remaining messages the next time through.
-		#
-		set nkeys [stat_field $db stat "Number of keys"]
-		error_check_good db_close [$db close] 0
-
-		if { $nkeys == 0 } {
-			set dbname [string replace $msgdb 0 5 done.]
-			#
-			# We have to do a special dance to get rid of the 
-			# empty messaging files because of the way Windows 
-			# handles open files marked for deletion. 
-			# On Windows, a file is marked for deletion but
-			# does not actually get deleted until the last handle
-			# is closed.  This causes a problem when a test tries 
-			# to create a new file with a previously-used name, 
-			# and Windows believes the old file still exists.
-			# Therefore, we rename the files before deleting them, 
-			# to guarantee they are out of the way. 
-			#
-			file rename -force $queuedir/$msgdb $queuedir/$dbname
-			file delete -force $queuedir/$dbname
-		}
+	# If we are running separate processes, the second process has
+	# to join an existing message queue.
+	if { [info exists queuedbs($machid)] == 0 } {
+		repljoin $machid
 	}
+
+	set dbc [$queuedbs($machid) cursor -txn $txn]
+
+	error_check_good process_dbc($machid) \
+	    [is_valid_cursor $dbc $queuedbs($machid)] TRUE
+
+	for { set dbt [$dbc get -first] } \
+	    { [llength $dbt] != 0 } \
+	    { } {
+		set data [lindex [lindex $dbt 0] 1]
+		set recno [lindex [lindex $dbt 0] 0]
+
+		# If skip_interval is nonzero, we want to process messages
+		# out of order.  We do this in a simple but slimy way--
+		# continue walking with the cursor without processing the
+		# message or deleting it from the queue, but do increment
+		# "nproced".  The way this proc is normally used, the
+		# precise value of nproced doesn't matter--we just don't
+		# assume the queues are empty if it's nonzero.  Thus,
+		# if we contrive to make sure it's nonzero, we'll always
+		# come back to records we've skipped on a later call
+		# to replprocessqueue.  (If there really are no records,
+		# we'll never get here.)
+		#
+		# Skip every skip_interval'th record (and use a remainder other
+		# than zero so that we're guaranteed to really process at least
+		# one record on every call).
+		if { $skip_interval != 0 } {
+			if { $nproced % $skip_interval == 1 } {
+				incr nproced
+				set dbt [$dbc get -next]
+				continue
+			}
+		}
+
+		# We need to remove the current message from the queue,
+		# because we're about to end the transaction and someone
+		# else processing messages might come in and reprocess this
+		# message which would be bad.
+		error_check_good queue_remove [$dbc del] 0
+
+		# We have to play an ugly cursor game here:  we currently
+		# hold a lock on the page of messages, but rep_process_message
+		# might need to lock the page with a different cursor in
+		# order to send a response.  So save the next recno, close
+		# the cursor, and then reopen and reset the cursor.
+		# If someone else is processing this queue, our entry might
+		# have gone away, and we need to be able to handle that.
+
+		error_check_good dbc_process_close [$dbc close] 0
+		error_check_good txn_commit [$txn commit] 0
+
+		set ret [catch {$dbenv rep_process_message \
+		    [lindex $data 2] [lindex $data 0] [lindex $data 1]} res]
+
+		# Save all ISPERM and NOTPERM responses so we can compare their
+		# LSNs to the LSN in the log.  The variable perm_response_list
+		# holds the entire response so we can extract responses and
+		# LSNs as needed.
+		#
+		if { [llength $perm_response_list] != 0 && \
+		    ([is_substr $res ISPERM] || [is_substr $res NOTPERM]) } {
+			lappend perm_response_list $res
+		}
+
+		if { $ret != 0 } {
+			if { [string compare $errp NONE] != 0 } {
+				set errorp "$dbenv $machid $res"
+			} else {
+				error "FAIL:[timestamp]\
+				    rep_process_message returned $res"
+			}
+		}
+
+		incr nproced
+
+		# Now, re-establish the cursor position.  We fetch the
+		# current record number.  If there is something there,
+		# that is the record for the next iteration.  If there
+		# is nothing there, then we've consumed the last item
+		# in the queue.
+
+		set txn [$queueenv txn]
+		set dbc [$queuedbs($machid) cursor -txn $txn]
+		set dbt [$dbc get -set_range $recno]
+
+		if { $ret == 0 } {
+			set rettype [lindex $res 0]
+			set retval [lindex $res 1]
+			#
+			# Do nothing for 0 and NEWSITE
+			#
+			if { [is_substr $rettype STARTUPDONE] } {
+				set startup_done 1
+			}
+			if { [is_substr $rettype HOLDELECTION] } {
+				set hold_elect 1
+			}
+			if { [is_substr $rettype DUPMASTER] } {
+				set dupmaster "1 $dbenv $machid"
+			}
+			if { [is_substr $rettype NOTPERM] || \
+			    [is_substr $rettype ISPERM] } {
+				set lsnfile [lindex $retval 0]
+				set lsnoff [lindex $retval 1]
+			}
+		}
+
+		if { $errorp != 0 } {
+			# Break also on an error, caller wants to handle it.
+			break
+		}
+		if { $hold_elect == 1 } {
+			# Break also on a HOLDELECTION, for the same reason.
+			break
+		}
+		if { $dupmaster == 1 } {
+			# Break also on a DUPMASTER, for the same reason.
+			break
+		}
+
+	}
+
+	error_check_good dbc_close [$dbc close] 0
+	error_check_good txn_commit [$txn commit] 0
+
 	# Return the number of messages processed.
 	return $nproced
 }
+
 
 set run_repl_flag "-run_repl"
 
@@ -1049,6 +886,8 @@ proc start_election \
 	set oid [open $testdir/ELECTION_SOURCE.$elect_serial w]
 
 	puts $oid "source $test_path/test.tcl"
+	puts $oid "set elected_event 0"
+	puts $oid "set elected_env \"NONE\""
 	puts $oid "set is_repchild 1"
 	puts $oid "replsetup $qdir"
 	foreach i $machids { puts $oid "repladd $i" }
@@ -1065,7 +904,7 @@ proc start_election \
 	    $nvotes $pri $timeout\} ret\]"
 	puts $oid "set r \[open \$testdir/ELECTION_RESULT.$elect_serial w\]"
 	puts $oid "if \{\$res == 0 \} \{"
-	puts $oid "puts \$r \"NEWMASTER \$ret\""
+	puts $oid "puts \$r \"SUCCESS \$ret\""
 	puts $oid "\} else \{"
 	puts $oid "puts \$r \"ERROR \$ret\""
 	puts $oid "\}"
@@ -1077,11 +916,16 @@ proc start_election \
 		puts $oid "set res \[catch \{\$dbenv rep_elect $nsites \
 		    $nvotes $pri $timeout\} ret\]"
 		puts $oid "if \{\$res == 0 \} \{"
-		puts $oid "puts \$r \"NEWMASTER \$ret\""
+		puts $oid "puts \$r \"SUCCESS \$ret\""
 		puts $oid "\} else \{"
 		puts $oid "puts \$r \"ERROR \$ret\""
 		puts $oid "\}"
 	}
+
+	puts $oid "if \{ \$elected_event == 1 \} \{"
+	puts $oid "puts \$r \"ELECTED \$elected_env\""
+	puts $oid "\}"
+
 	puts $oid "close \$r"
 	close $oid
 
@@ -1142,9 +986,16 @@ proc setpriority { priority nclients winner {start 0} {upgrade 0} } {
 #			and reopened as a client?
 #	dbname		Name of the underlying database.  Defaults to
 # 			the name of the db created by rep_test.
-#
-proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
-    nsites nvotes nclients win {reopen 0} {dbname "test.db"} } {
+# 	ignore		Should the winner ignore its own election?
+#			If ignore is 1, the winner is not made master.
+#	timeout_ok	We expect that this election will not succeed
+# 			in electing a new master (perhaps because there 
+#			already is a master). 
+
+proc run_election { ecmd celist errcmd priority crsh\
+    qdir msg elector nsites nvotes nclients win {reopen 0}\
+    {dbname "test.db"} {ignore 0} {timeout_ok 0} } {
+
 	global elect_timeout elect_serial
 	global is_hp_test
 	global is_windows_test
@@ -1237,6 +1088,12 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 		}
 	}
 
+	global elected_event
+	global elected_env
+	set elected_event 0
+	set c_elected_event 0
+	set elected_env "NONE"
+
 	set orig_tries $tries
 	if { $crashing == 1 } {
 		tclsleep 10
@@ -1245,8 +1102,8 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 		while { 1 } {
 			set nproced 0
 			set he 0
-			set nm 0
-			set nm2 0
+			set winning_envid -1
+			set c_winning_envid -1
 
 			foreach pair $cenvlist {
 				set he 0
@@ -1254,25 +1111,71 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 				set envid [lindex $pair 1]
 				set i [expr $envid - 2]
 				set clientenv($i) [lindex $pair 0]
-				set child_done [check_election $elect_pipe($i) nm2 unavail]
-				if { $got_newmaster == 0 && $nm2 != 0 } {
-					error_check_good newmaster_is_master2 $nm2 \
-					    [expr $win + 2]
-					set got_newmaster $nm2
 
-					# If this env is the new master, it needs to
-					# configure itself as such--this is a different
-					# env handle from the one that performed the
-					# election.
-					if { $nm2 == $envid } {
-						error_check_good make_master($i) \
-						    [$clientenv($i) rep_start -master] \
-						    0
+				# If the "elected" event is received by the
+				# child process, the env set up in that child
+				# is the elected env. 
+				set child_done [check_election $elect_pipe($i)\
+				    unavail c_elected_event c_elected_env]
+				if { $c_elected_event != 0 } {
+					set elected_event 1
+					set c_winning_envid $envid
+					set c_elected_event 0
+				}
+		
+				incr nproced [replprocessqueue \
+				    $clientenv($i) $envid 0 he]
+# puts "Tries $tries:\
+# Processed queue for client $i, $nproced msgs he $he unavail $unavail"
+
+				# Check for completed election.  If it's the
+				# first time we've noticed it, deal with it.
+				if { $elected_event == 1 && \
+				    $got_newmaster == 0 } {
+					set got_newmaster 1
+
+					# Find env id of winner.
+					if { $c_winning_envid != -1 } {
+						set winning_envid \
+						    $c_winning_envid
+						set c_winning_envid -1
+					} else {
+						foreach pair $cenvlist {
+							if { [lindex $pair 0]\
+							    == $elected_env } {
+								set winning_envid \
+								    [lindex $pair 1]
+								break
+							}
+						}
+					}
+
+					# Make sure it's the expected winner.
+					error_check_good right_winner \
+					    $winning_envid [expr $win + 2]
+
+					# Reconfigure winning env as master.
+					if { $ignore == 0 } {
+						error_check_good \
+						    make_master($i) \
+					    	    [$clientenv($i) \
+						    rep_start -master] 0
+					}
+
+					# Occasionally force new log records
+					# to be written.
+					set write [berkdb random_int 1 10]
+					if { $write == 1 } {
+						set db [eval berkdb_open \
+						    -env $clientenv($i) \
+						    -auto_commit $dbname]
+						error_check_good dbopen \
+						    [is_valid_db $db] TRUE
+						error_check_good dbclose \
+						    [$db close] 0
 					}
 				}
-				incr nproced \
-				    [replprocessqueue $clientenv($i) $envid 0 he nm]
-# puts "Tries $tries: Processed queue for client $i, $nproced msgs he $he nm $nm nm2 $nm2"
+
 				# If the previous election failed with a
 				# timeout and we need to retry because we
 				# are testing varying site timeouts, force
@@ -1309,34 +1212,6 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 						set got_hold_elect($i) 1
 					}
 				}
-				if { $nm != 0 } {
-					error_check_good newmaster_is_master $nm \
-					    [expr $win + 2]
-					set got_newmaster $nm
-
-					# If this env is the new master, it needs to
-					# configure itself as such--this is a different
-					# env handle from the one that performed the
-					# election.
-					if { $nm == $envid } {
-						error_check_good make_master($i) \
-						    [$clientenv($i) rep_start -master] \
-						    0
-						# Occasionally force new log records
-						# to be written.
-						set write [berkdb random_int 1 10]
-						if { $write == 1 } {
-							set db [eval \
-							    berkdb_open -env \
-							    $clientenv($i) \
-							    -auto_commit $dbname]
-							error_check_good dbopen \
-							    [is_valid_db $db] TRUE
-							error_check_good dbclose \
-							    [$db close] 0
-						}
-					}
-				}
 			}
 
 			# We need to wait around to make doubly sure that the
@@ -1362,10 +1237,14 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 			}
 		}
 
-		# Verify that expected winner is actually the winner.
-		error_check_good "client $win wins" $got_newmaster [expr $win + 2]
-	}
+		# If we did get a new master, its identity was checked 
+		# at that time.  But we still have to make sure that we 
+		# didn't just time out. 
 
+		if { $got_newmaster == 0 && $timeout_ok == 0 } {
+			error "FAIL: Did not elect new master."
+		}
+	}
 	cleanup_elections
 
 	#
@@ -1379,6 +1258,7 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 
 	if { $reopen == 1 } {
 		puts "\t\t$msg.3: Closing new master and reopening as client"
+		error_check_good log_flush [$clientenv($win) log_flush] 0
 		error_check_good newmaster_close [$clientenv($win) close] 0
 
 		set clientenv($win) [eval $env_cmd($win)]
@@ -1391,39 +1271,20 @@ proc run_election { ecmd celist errcmd priority crsh qdir msg elector \
 	}
 }
 
-proc got_newmaster { cenv i newmaster win {dbname "test.db"} } {
-	upvar $cenv clientenv
-
-	# Check that the new master we got is the one we expected.
-	error_check_good newmaster_is_master $newmaster [expr $win + 2]
-
-	# If this env is the new master, it needs to configure itself
-	# as such -- this is a different env handle from the one that
-	# performed the election.
-	if { $nm == $envid } {
-		error_check_good make_master($i) \
-		    [$clientenv($i) rep_start -master] 0
-		# Occasionally force new log records to be written.
-		set write [berkdb random_int 1 10]
-		if { $write == 1 } {
-			set db [eval berkdb_open -env $clientenv($i) \
-			    -auto_commit -create -btree $dbname]
-			error_check_good dbopen [is_valid_db $db] TRUE
-			error_check_good dbclose [$db close] 0
-		}
-	}
-}
-
-proc check_election { id newmasterp unavailp } {
+proc check_election { id unavailp elected_eventp elected_envp } {
 	source ./include.tcl
 
 	if { $id == "INVALID" } {
 		return 0
 	}
-	upvar $newmasterp newmaster
 	upvar $unavailp unavail
-	set newmaster 0
+	upvar $elected_eventp elected_event
+	upvar $elected_envp elected_env
+
 	set unavail 0
+	set elected_event 0
+	set elected_env "NONE"
+
 	set res [catch {open $testdir/ELECTION_RESULT.$id} nmid]
 	if { $res != 0 } {
 		return 0
@@ -1431,11 +1292,12 @@ proc check_election { id newmasterp unavailp } {
 	while { [gets $nmid val] != -1 } {
 #		puts "result $id: $val"
 		set str [lindex $val 0]
-		if { [is_substr $str NEWMASTER] } {
-			set newmaster [lindex $val 1]
-		}
 		if { [is_substr $val UNAVAIL] } {
 			set unavail 1
+		}
+		if { [is_substr $val ELECTED] } {
+			set elected_event 1
+			set elected_env [lindex $val 1]
 		}
 	}
 	close $nmid
@@ -1444,10 +1306,15 @@ proc check_election { id newmasterp unavailp } {
 
 proc close_election { i } {
 	global elections_in_progress
+	global noenv_messaging
 	global qtestdir
 
+	if { $noenv_messaging == 1 } {
+		set testdir $qtestdir
+	}
+
 	set t $elections_in_progress($i)
-	puts $t "replclose \$qtestdir/MSGQUEUEDIR"
+	puts $t "replclose \$testdir/MSGQUEUEDIR"
 	puts $t "\$dbenv close"
 	close $t
 	unset elections_in_progress($i)
@@ -1910,6 +1777,8 @@ proc process_msgs { elist {perm_response 0} {dupp NONE} {errp NONE} \
 
 
 proc proc_msgs_once { elist {dupp NONE} {errp NONE} } {
+	global noenv_messaging
+
 	if { [string compare $dupp NONE] != 0 } {
 		upvar $dupp dupmaster
 		set dupmaster 0
@@ -1931,8 +1800,13 @@ proc proc_msgs_once { elist {dupp NONE} {errp NONE} } {
 		#
 		# If we need to send in all the other args
 # puts "Call replpq with on $envid"
-		incr nproced [replprocessqueue $envname $envid \
-		    0 NONE NONE dupmaster errorp]
+		if { $noenv_messaging } {
+			incr nproced [replprocessqueue_noenv $envname $envid \
+			    0 NONE dupmaster errorp]
+		} else {
+			incr nproced [replprocessqueue $envname $envid \
+			    0 NONE dupmaster errorp]
+		}
 		#
 		# If the user is expecting to handle an error and we get
 		# one, return the error immediately.
@@ -1948,8 +1822,8 @@ proc proc_msgs_once { elist {dupp NONE} {errp NONE} } {
 	return $nproced
 }
 
-proc rep_verify { masterdir masterenv clientdir clientenv {init_test 0} \
-    {match 1} {logcompare 1} {dbname "test.db"} } {
+proc rep_verify { masterdir masterenv clientdir clientenv \
+    {compare_shared_portion 0} {match 1} {logcompare 1} {dbname "test.db"} } {
 	global util_path
 	global encrypt
 	global passwd
@@ -1978,31 +1852,45 @@ proc rep_verify { masterdir masterenv clientdir clientenv {init_test 0} \
 
 	# Logs first, if specified ...
 	#
-	# If init_test is set, we need to run db_printlog on the log
-	# subset that the client has.  The master may have more (earlier)
-	# log files.
+	# If compare_shared_portion is set, run db_printlog on the log
+	# subset that both client and master have.  Either the client or
+	# the master may have more (earlier) log files, due to internal
+	# initialization, in-memory log wraparound, or other causes.
 	#
 	if { $logcompare } {
-		set margs ""
-		if { $init_test } {
+		set args ""
+		if { $compare_shared_portion } {
+	                set logc [$masterenv log_cursor]
+			error_check_good logc [is_valid_logc $logc $masterenv] TRUE
+			set first [$logc get -first]
+			error_check_good close [$logc close] 0
+			set m_lsn [lindex $first 0]
+
 	                set logc [$clientenv log_cursor]
 			error_check_good logc [is_valid_logc $logc $clientenv] TRUE
 			set first [$logc get -first]
 			error_check_good close [$logc close] 0
-			set lsn [lindex $first 0]
+			set c_lsn [lindex $first 0]
+
+			if { [$masterenv log_compare $m_lsn $c_lsn] < 0 } {
+				set lsn $c_lsn
+			} else {
+				set lsn $m_lsn
+			}
+
 			set file [lindex $lsn 0]
 			set off [lindex $lsn 1]
-			set margs "-b $file/$off"
+			set args "-b $file/$off"
 		}
 		set encargs ""
 		if { $encrypt == 1 } {
 			set encargs " -P $passwd "
 		}
 
-		set stat [catch {eval exec $util_path/db_printlog $margs \
+		set stat [catch {eval exec $util_path/db_printlog $args \
 		    $encargs -h $masterdir > $masterdir/prlog} result]
 		error_check_good stat_mprlog $stat 0
-		set stat [catch {eval exec $util_path/db_printlog \
+		set stat [catch {eval exec $util_path/db_printlog $args \
 		    $encargs -h $clientdir > $clientdir/prlog} result]
 		error_check_good stat_cprlog $stat 0
 		if { $match } {
@@ -2023,7 +1911,7 @@ proc rep_verify { masterdir masterenv clientdir clientenv {init_test 0} \
 	set db2 [eval {berkdb_open_noerr} -env $clientenv -rdonly $dbname]
 
 	if { $match } {
-		error_check_good comparedbs [db_compare \
+		error_check_good [concat comparedbs. $dbname] [db_compare \
 		    $db1 $db2 $masterdir/$dbname $clientdir/$dbname] 0
 	} else {
 		error_check_bad comparedbs [db_compare \
@@ -2033,12 +1921,27 @@ proc rep_verify { masterdir masterenv clientdir clientenv {init_test 0} \
 	error_check_good db2_close [$db2 close] 0
 }
 
-proc rep_startup_event { event } {
+proc rep_event { env eventlist } {
 	global startup_done
+	global elected_event
+	global elected_env
 
-	# puts "rep_startup_event: Got event $event"
+	set event [lindex $eventlist 0]
+# puts "rep_event: Got event $event on env $env"
+	set eventlength [llength $eventlist]
+
 	if { $event == "startupdone" } {
+		error_check_good event_nodata $eventlength 1
 		set startup_done 1
+	}
+	if { $event == "elected" } {
+		error_check_good event_nodata $eventlength 1
+		set elected_event 1
+		set elected_env $env
+	}
+	if { $event == "newmaster" } {
+		error_check_good eiddata $eventlength 2
+		set event_newmasterid [lindex $eventlist 1]
 	}
 	return
 }
@@ -2050,7 +1953,7 @@ proc rep_startup_event { event } {
 # purposes that's unlikely enough that this is still useful: it's
 # still better than trying to find hard-coded port numbers that will
 # always be available.
-# 
+#
 proc available_ports { n } {
     set ports {}
     set socks {}
@@ -2067,4 +1970,77 @@ proc available_ports { n } {
         close $sock
     }
     return $ports
+}
+
+# Wait (a limited amount of time) for the given client environment to achieve
+# the "start-up done" state.
+#
+proc await_startup_done { env { limit 5 } } {
+	for {set i 0} {$i < $limit} {incr i} {
+		if {[stat_field $env rep_stat "Startup complete"]} {
+			break
+		}
+		tclsleep 1
+	}
+}
+
+proc do_leaseop { env db method key envlist { domsgs 1 } } {
+	global alphabet
+
+	#
+	# Put a txn to the database.  Process messages to envlist
+	# if directed to do so.  Read data on the master, ignoring
+	# leases (should always succeed).
+	#
+	set num [berkdb random_int 1 100]
+	set data $alphabet.$num
+	set t [$env txn]
+	error_check_good txn [is_valid_txn $t $env] TRUE
+	set txn "-txn $t"
+	set ret [eval \
+	    {$db put} $txn {$key [chop_data $method $data]}]
+	error_check_good put $ret 0
+	error_check_good txn [$t commit] 0
+
+	if { $domsgs } {
+		process_msgs $envlist
+	}
+
+	#
+	# Now make sure we can successfully read on the master
+	# if we ignore leases.  That should always work.  The
+	# caller will do any lease related calls and checks
+	# that are specific to the test.
+	#
+	set kd [$db get -nolease $key]
+	set curs [$db cursor]
+	set ckd [$curs get -nolease -set $key]
+	$curs close
+	error_check_good kd [llength $kd] 1
+	error_check_good ckd [llength $ckd] 1
+}
+
+#
+# Get the given key, expecting status depending on whether leases
+# are currently expected to be valid or not.
+#
+proc check_leaseget { db key getarg status } {
+	set stat [catch {eval {$db get} $getarg $key} kd]
+	if { $status != 0 } {
+		error_check_good get_result $stat 1
+		error_check_good kd_check \
+		    [is_substr $kd $status] 1
+	} else {
+		error_check_good get_result $stat $status
+	}
+	set curs [$db cursor]
+	set stat [catch {eval {$curs get} $getarg -set $key} kd]
+	if { $status != 0 } {
+		error_check_good get_result2 $stat 1
+		error_check_good kd_check \
+		    [is_substr $kd $status] 1
+	} else {
+		error_check_good get_result2 $stat $status
+	}
+	$curs close
 }

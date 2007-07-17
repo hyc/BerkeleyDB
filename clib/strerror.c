@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1988, 1993
@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: strerror.c,v 12.11 2007/01/22 18:29:08 bostic Exp $
+ * $Id: strerror.c,v 12.13 2007/05/17 16:57:46 bostic Exp $
  */
 
 /*
@@ -87,8 +87,8 @@ strerror(num)
 {
 #define	ERRSTR(v, s) do {						\
 	if (num == (v))							\
-		return(s);						\
-} while (0);
+		return (s);						\
+} while (0)
 	ERRSTR(0, "Undefined error: 0");
 	ERRSTR(EPERM, "Operation not permitted");
 	ERRSTR(ENOENT, "No such file or directory");

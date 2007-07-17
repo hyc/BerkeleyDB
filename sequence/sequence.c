@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2004,2007 Oracle.  All rights reserved.
  *
- * $Id: sequence.c,v 12.44 2007/01/18 18:42:57 ubell Exp $
+ * $Id: sequence.c,v 12.46 2007/05/17 17:18:04 bostic Exp $
  */
 
 #include "db_config.h"
@@ -875,7 +875,7 @@ __seq_remove(seq, txn, flags)
 	/* Release replication block. */
 	if (handle_check && (t_ret = __env_db_rep_exit(dbenv)) != 0 && ret == 0)
 		ret = t_ret;
-err: 	if (txn_local && (t_ret =
+err:	if (txn_local && (t_ret =
 	    __db_txn_auto_resolve(dbenv, txn, 0, ret)) != 0 && ret == 0)
 		ret = t_ret;
 

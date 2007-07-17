@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: log_archive.c,v 12.23 2006/11/01 00:53:35 bostic Exp $
+ * $Id: log_archive.c,v 12.26 2007/05/17 15:15:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -77,7 +77,10 @@ __log_archive(dbenv, listp, flags)
 	u_int array_size, n;
 	u_int32_t fnum;
 	int ret, t_ret;
-	char **array, **arrayp, *name, *p, *pref, path[DB_MAXPATHLEN];
+	char **array, **arrayp, *name, *p, *pref;
+#ifdef HAVE_GETCWD
+	char path[DB_MAXPATHLEN];
+#endif
 
 	dblp = dbenv->lg_handle;
 	lp = (LOG *)dblp->reginfo.primary;
@@ -108,6 +111,7 @@ __log_archive(dbenv, listp, flags)
 	 * Prepend the original absolute pathname if the user wants an
 	 * absolute path to the database environment directory.
 	 */
+#ifdef HAVE_GETCWD
 	if (LF_ISSET(DB_ARCH_ABS)) {
 		/*
 		 * XXX
@@ -126,6 +130,7 @@ __log_archive(dbenv, listp, flags)
 		}
 		pref = path;
 	} else
+#endif
 		pref = NULL;
 
 	LF_CLR(DB_ARCH_ABS);

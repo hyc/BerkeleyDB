@@ -34,7 +34,7 @@
  *	@(#)errno.h	8.5 (Berkeley) 1/21/94
  * FreeBSD: /repoman/r/ncvs/src/sys/sys/errno.h,v 1.28 2005/04/02 12:33:28 das Exp $
  *
- * $Id: errno.h,v 1.4 2007/02/01 13:16:42 bostic Exp $
+ * $Id: errno.h,v 1.4 2006/11/09 14:23:11 bostic Exp $
  */
 
 #ifndef _SYS_ERRNO_H_

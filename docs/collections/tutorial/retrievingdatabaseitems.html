@@ -45,13 +45,13 @@
       <p>
     Retrieving information from the database is accomplished via the
 	standard Java collections API. In the example, the 
-	<a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Set.html#iterator" target="_top">Set.iterator</a>
+	<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Set.html#iterator" target="_top">Set.iterator</a>
 	
     method is used to iterate all 
-	<a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
+	<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
 	
 	objects for each store. All standard Java methods for retrieving
-	objects from a collection may be used with the  Java Collections API.
+	objects from a collection may be used with the DB Java Collections API.
 </p>
       <p>
     The <tt class="methodname">PrintDatabase.doWork()</tt> method calls
@@ -75,11 +75,11 @@ public class Sample
         public void doWork()
             throws Exception
         {
-<b class="userinput"><tt>            printEntries(&quot;Parts&quot;,
+<b class="userinput"><tt>            printEntries("Parts",
                           views.getPartEntrySet().iterator());
-            printEntries(&quot;Suppliers&quot;,
+            printEntries("Suppliers",
                           views.getSupplierEntrySet().iterator());
-            printEntries(&quot;Shipments&quot;,
+            printEntries("Shipments",
                           views.getShipmentEntrySet().iterator());</tt></b>
         }
     }
@@ -92,21 +92,21 @@ public class Sample
 } </pre>
       <p>
     The 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Set.html" target="_top">Set</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Set.html" target="_top">Set</a>
     
 	of 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
     
 	objects for each store is obtained from the <tt class="classname">SampleViews</tt>
 	object. This set can also be obtained by calling the 
-	<a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.html#entrySet" target="_top">Map.entrySet</a>
+	<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#entrySet" target="_top">Map.entrySet</a>
 	
 	method of a stored map.
 </p>
       <p>
     The <tt class="methodname">printEntries()</tt> prints the map entries for any stored
 	map. The 
-	<a href="http://java.sun.com/j2se/1.3/docs/api/java/lang/Object.html#toString" target="_top">Object.toString</a>
+	<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/lang/Object.html#toString" target="_top">Object.toString</a>
 	
 	method of each key and value is called to
 	obtain a printable representation of each object.
@@ -114,7 +114,7 @@ public class Sample
       <a id="cb_printentries"></a>
       <pre class="programlisting">    private void printEntries(String label, Iterator iterator)
     {
-<b class="userinput"><tt>        System.out.println(&quot;\n--- &quot; + label + &quot; ---&quot;);
+<b class="userinput"><tt>        System.out.println("\n--- " + label + " ---");
         while (iterator.hasNext())
         {
             Map.Entry entry = (Map.Entry) iterator.next();

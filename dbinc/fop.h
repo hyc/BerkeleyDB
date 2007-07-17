@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: fop.h,v 12.7 2006/11/01 00:52:41 bostic Exp $
+ * $Id: fop.h,v 12.8 2007/05/17 15:15:05 bostic Exp $
  */
 
 #ifndef	_DB_FOP_H_

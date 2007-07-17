@@ -1,9 +1,9 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1998,2007 Oracle.  All rights reserved.
  *
- * $Id: db_join.c,v 12.16 2006/11/01 00:52:29 bostic Exp $
+ * $Id: db_join.c,v 12.18 2007/05/17 15:14:56 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,6 +12,7 @@
 #include "dbinc/db_page.h"
 #include "dbinc/db_join.h"
 #include "dbinc/btree.h"
+#include "dbinc/lock.h"
 
 static int __db_join_close_pp __P((DBC *));
 static int __db_join_cmp __P((const void *, const void *));
@@ -20,7 +21,7 @@ static int __db_join_get __P((DBC *, DBT *, DBT *, u_int32_t));
 static int __db_join_get_pp __P((DBC *, DBT *, DBT *, u_int32_t));
 static int __db_join_getnext __P((DBC *, DBT *, DBT *, u_int32_t, u_int32_t));
 static int __db_join_primget __P((DB *,
-    DB_TXN *, u_int32_t, DBT *, DBT *, u_int32_t));
+    DB_TXN *, DB_LOCKER *, DBT *, DBT *, u_int32_t));
 static int __db_join_put __P((DBC *, DBT *, DBT *, u_int32_t));
 
 /*
@@ -875,10 +876,10 @@ __db_join_cmp(a, b)
  * locker ID if we're doing CDB locking.
  */
 static int
-__db_join_primget(dbp, txn, lockerid, key, data, flags)
+__db_join_primget(dbp, txn, locker, key, data, flags)
 	DB *dbp;
 	DB_TXN *txn;
-	u_int32_t lockerid;
+	DB_LOCKER  *locker;
 	DBT *key, *data;
 	u_int32_t flags;
 {
@@ -887,7 +888,7 @@ __db_join_primget(dbp, txn, lockerid, key, data, flags)
 	int ret, t_ret;
 
 	if ((ret = __db_cursor_int(dbp,
-	    txn, dbp->type, PGNO_INVALID, 0, lockerid, &dbc)) != 0)
+	    txn, dbp->type, PGNO_INVALID, 0, locker, &dbc)) != 0)
 		return (ret);
 
 	/*

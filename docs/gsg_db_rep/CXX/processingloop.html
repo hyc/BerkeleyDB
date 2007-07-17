@@ -199,12 +199,12 @@ for (;;) {
                     DB_AUTO_COMMIT, 0);
          } catch(DbException dbe) {
             if (dbe.get_errno() == ENOENT) {
-                cout &lt;&lt; &quot;No stock db available yet - retrying.&quot; &lt;&lt; endl;
+                cout &lt;&lt; "No stock db available yet - retrying." &lt;&lt; endl;
                 try {
                     dbp-&gt;close(0);
                 } catch (DbException dbe2) {
-                    cout &lt;&lt; &quot;Unexpected error closing after failed&quot; &lt;&lt;
-                            &quot; open, message: &quot; &lt;&lt; dbe2.what() &lt;&lt; endl;
+                    cout &lt;&lt; "Unexpected error closing after failed" &lt;&lt;
+                            " open, message: " &lt;&lt; dbe2.what() &lt;&lt; endl;
                     dbp = NULL;
                     goto err;
                  }
@@ -212,7 +212,7 @@ for (;;) {
                  sleep(SLEEPTIME);
                  continue;
             } else {
-                dbenv.err(ret, &quot;DB-&gt;open&quot;);
+                dbenv.err(ret, "DB-&gt;open");
                 throw dbe;
             }
          }

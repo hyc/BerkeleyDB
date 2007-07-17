@@ -204,9 +204,9 @@ public class RepQuoteExample <b class="userinput"><tt> implements EventHandler</
         try {
             dbenv = new <b class="userinput"><tt>RepQuoteEnvironment</tt></b>(appConfig.getHome(), envConfig);
         } catch(FileNotFoundException e) {
-            System.err.println(&quot;FileNotFound exception: &quot; + e.toString());
+            System.err.println("FileNotFound exception: " + e.toString());
             System.err.println(
-                &quot;Ensure that the environment directory is pre-created.&quot;);
+                "Ensure that the environment directory is pre-created.");
             ret = 1;
         }
 
@@ -231,7 +231,7 @@ public class RepQuoteExample <b class="userinput"><tt> implements EventHandler</
         else if (event == EventType.REP_NEW_MASTER) {
             // ignored for now.
         } else {
-            System.err.println(&quot;Unknown event callback received.\n&quot;);
+            System.err.println("Unknown event callback received.\n");
             ret = 1;
         }
         return ret;
@@ -283,7 +283,7 @@ public class RepQuoteExample <b class="userinput"><tt> implements EventHandler</
                     db = dbenv.openDatabase
                         (null, RepConfig.progname, null, dbconf);
                 } catch (java.io.FileNotFoundException e) {
-                    <b class="userinput"><tt>System.err.println(&quot;no stock database available yet.&quot;);
+                    <b class="userinput"><tt>System.err.println("no stock database available yet.");
                     if (db != null) {
                         db.close(true);
                         db = null;
@@ -303,19 +303,19 @@ public class RepQuoteExample <b class="userinput"><tt> implements EventHandler</
                 new BufferedReader(new InputStreamReader(System.in));
 
             // listen for input, and add it to the database.
-            System.out.print(&quot;QUOTESERVER&quot;);
+            System.out.print("QUOTESERVER");
             <b class="userinput"><tt>if (!dbenv.getIsMaster())
-                System.out.print(&quot;(read-only)&quot;);
-            System.out.print(&quot;&gt; &quot;);</tt></b>
+                System.out.print("(read-only)");
+            System.out.print("&gt; ");</tt></b>
             System.out.flush();
             String nextline = null;
             try {
                 nextline = stdin.readLine();
             } catch (IOException ioe) {
-                System.err.println(&quot;Unable to get data from stdin&quot;);
+                System.err.println("Unable to get data from stdin");
                 break;
             }
-            String[] words = nextline.split(&quot;\\s&quot;); </pre>
+            String[] words = nextline.split("\\s"); </pre>
       <p>
             When we collect data from the prompt, there is a case that says
             if no data is entered then show the entire stocks database.
@@ -361,19 +361,19 @@ public class RepQuoteExample <b class="userinput"><tt> implements EventHandler</
                     db = null;
                     continue;</tt></b>
                 } catch (DatabaseException e) {
-                    System.err.println(&quot;Got db exception reading &quot; +
-                        &quot;replication DB: &quot; + e.toString());
+                    System.err.println("Got db exception reading " +
+                        "replication DB: " + e.toString());
                     break;
                 }
                 continue;
             }
 
             if (words.length == 1 &amp;&amp;
-                (words[0].compareToIgnoreCase(&quot;quit&quot;) == 0 ||
-                words[0].compareToIgnoreCase(&quot;exit&quot;) == 0)) {
+                (words[0].compareToIgnoreCase("quit") == 0 ||
+                words[0].compareToIgnoreCase("exit") == 0)) {
                 break;
             } else if (words.length != 2) {
-                System.err.println(&quot;Format: TICKER VALUE&quot;);
+                System.err.println("Format: TICKER VALUE");
                 continue;
             } </pre>
       <p>
@@ -384,7 +384,7 @@ public class RepQuoteExample <b class="userinput"><tt> implements EventHandler</
             that happening due to user input at the prompt.
     </p>
       <pre class="programlisting">            <b class="userinput"><tt>if (!dbenv.getIsMaster()) {
-                System.err.println(&quot;Can't update client.&quot;);
+                System.err.println("Can't update client.");
                 continue;
             }</tt></b>
 

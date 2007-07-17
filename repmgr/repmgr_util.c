@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_util.c,v 1.31 2006/12/08 17:58:02 alanb Exp $
+ * $Id: repmgr_util.c,v 1.34 2007/06/11 18:29:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -66,13 +66,6 @@ __repmgr_schedule_connection_attempt(dbenv, eid, immediate)
  * message.
  *
  * PUBLIC: void __repmgr_reset_for_reading __P((REPMGR_CONNECTION *));
- */
-/*
- * TODO: we need to make sure we call this: (1) initially, when we first create
- * a connection; (2) after processing a message, to get ready to read the next
- * one; and (3) after a connection gets successfully re-established after a
- * failure.  (Actually, #1 and #3 should probably end up being the same thing,
- * if the code is organized properly.)
  */
 void
 __repmgr_reset_for_reading(con)
@@ -412,3 +405,22 @@ __repmgr_timespec_diff_now(dbenv, when, result)
 	}
 }
 
+/*
+ * PUBLIC: int __repmgr_repstart __P((DB_ENV *, u_int32_t));
+ */
+int
+__repmgr_repstart(dbenv, flags)
+	DB_ENV *dbenv;
+	u_int32_t flags;
+{
+	DBT my_addr;
+	int ret;
+
+	if ((ret = __repmgr_prepare_my_addr(dbenv, &my_addr)) != 0)
+		return (ret);
+	ret = __rep_start(dbenv, &my_addr, flags);
+	__os_free(dbenv, my_addr.data);
+	if (ret != 0)
+		__db_err(dbenv, ret, "rep_start");
+	return (ret);
+}

@@ -1,10 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006
- *	Oracle Corp.  All rights reserved.
+ * Copyright (c) 2006,2007 Oracle.  All rights reserved.
  *
- * $Id: getcwd.c,v 1.3 2007/02/01 13:15:31 bostic Exp $
+ * $Id: getcwd.c,v 1.4 2007/05/17 15:15:47 bostic Exp $
  */
 
 #include "db_config.h"

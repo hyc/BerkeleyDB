@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_rep.c,v 12.31 2007/01/31 20:24:25 sue Exp $
+ * $Id: tcl_rep.c,v 12.40 2007/06/19 19:43:45 sue Exp $
  */
 
 #include "db_config.h"
@@ -173,7 +173,7 @@ tcl_RepElect(interp, objc, objv, dbenv)
 	Tcl_Obj *CONST objv[];		/* The argument objects */
 	DB_ENV *dbenv;			/* Environment pointer */
 {
-	int eid, nsites, nvotes, pri, result, ret;
+	int nsites, nvotes, pri, result, ret;
 	u_int32_t full_timeout, timeout;
 
 	if (objc != 6 && objc != 7) {
@@ -210,13 +210,8 @@ tcl_RepElect(interp, objc, objv, dbenv)
 		return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "env rep_elect (rep_set_timeout)"));
 
-	if ((ret = dbenv->rep_elect(dbenv, nsites, nvotes, &eid, 0)) != 0)
-		return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-		    "env rep_elect"));
-
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(eid));
-
-	return (TCL_OK);
+	ret = dbenv->rep_elect(dbenv, nsites, nvotes, 0);
+	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret), "env rep_elect"));
 }
 #endif
 
@@ -274,6 +269,54 @@ tcl_RepSync(interp, objc, objv, dbenv)
 	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret), "env rep_sync"));
 }
 #endif
+
+#ifdef CONFIG_TEST
+/*
+ * tcl_RepLease --
+ *	Call DB_ENV->rep_set_lease().
+ *
+ * PUBLIC: int tcl_RepLease  __P((Tcl_Interp *, int, Tcl_Obj * CONST *,
+ * PUBLIC:    DB_ENV *));
+ */
+int
+tcl_RepLease(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;
+{
+	int result, ret;
+	u_int32_t nsites, skew, timeout;
+
+	if (objc != 3) {
+		Tcl_WrongNumArgs(interp, 1, objv, "{nsites timeout clockskew}");
+		return (TCL_ERROR);
+	}
+
+	if ((result = _GetUInt32(interp, objv[0], &nsites)) != TCL_OK)
+		return (result);
+	if ((result = _GetUInt32(interp, objv[1], &timeout)) != TCL_OK)
+		return (result);
+	if ((result = _GetUInt32(interp, objv[2], &skew)) != TCL_OK)
+		return (result);
+	ret = dbenv->rep_set_nsites(dbenv, (int)nsites);
+	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+	    "rep_set_nsites");
+	if (result != TCL_OK)
+		return (result);
+	ret = dbenv->rep_set_timeout(dbenv, DB_REP_LEASE_TIMEOUT,
+	    (db_timeout_t)timeout);
+	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+	    "rep_set_timeout");
+	if (result != TCL_OK)
+		return (result);
+	_debug_check();
+	ret = dbenv->rep_set_lease(dbenv, skew, 0);
+	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+	    "env rep_set_lease"));
+}
+#endif
+
 #ifdef CONFIG_TEST
 /*
  * tcl_RepLimit --
@@ -347,6 +390,35 @@ tcl_RepRequest(interp, objc, objv, dbenv)
 
 	return (_ReturnSetup(interp,
 	    ret, DB_RETOK_STD(ret), "env set_rep_request"));
+}
+#endif
+
+#ifdef CONFIG_TEST
+/*
+ * tcl_RepNoarchiveTimeout --
+ *	Reset the master update timer, to allow immediate log archiving.
+ *
+ * PUBLIC: int tcl_RepNoarchiveTimeout
+ * PUBLIC:     __P((Tcl_Interp *, DB_ENV *));
+ */
+int
+tcl_RepNoarchiveTimeout(interp, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	DB_ENV *dbenv;			/* Environment pointer */
+{
+	REGENV *renv;
+	REGINFO *infop;
+
+	_debug_check();
+	infop = dbenv->reginfo;
+	renv = infop->primary;
+	REP_SYSTEM_LOCK(dbenv);
+	F_CLR(renv, DB_REGENV_REPLOCKED);
+	renv->op_timestamp = 0;
+	REP_SYSTEM_UNLOCK(dbenv);
+
+	return (_ReturnSetup(interp,
+	    0, DB_RETOK_STD(0), "env test force noarchive_timeout"));
 }
 #endif
 
@@ -534,7 +606,7 @@ tcl_RepProcessMessage(interp, objc, objv, dbenv)
 	}
 	rec.data = rtmp;
 	_debug_check();
-	ret = dbenv->rep_process_message(dbenv, &control, &rec, &eid, &permlsn);
+	ret = dbenv->rep_process_message(dbenv, &control, &rec, eid, &permlsn);
 	/*
 	 * !!!
 	 * The TCL API diverges from the C++/Java APIs here.  For us, it
@@ -591,11 +663,6 @@ tcl_RepProcessMessage(interp, objc, objv, dbenv)
 		myobjv[0] = Tcl_NewByteArrayObj(
 		    (u_char *)"ISPERM", (int)strlen("ISPERM"));
 		myobjv[1] = lsnlist;
-		break;
-	case DB_REP_NEWMASTER:
-		myobjv[0] = Tcl_NewByteArrayObj(
-		    (u_char *)"NEWMASTER", (int)strlen("NEWMASTER"));
-		myobjv[1] = Tcl_NewIntObj(eid);
 		break;
 	case DB_REP_NEWSITE:
 		myobjv[0] = Tcl_NewByteArrayObj(
@@ -681,6 +748,7 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	 * list pairs and free up the memory.
 	 */
 	res = Tcl_NewObj();
+#ifdef HAVE_STATISTICS
 	/*
 	 * MAKE_STAT_* assumes 'res' and 'error' label.
 	 */
@@ -740,6 +808,9 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Election votes", sp->st_election_votes);
 	MAKE_STAT_LIST("Election seconds", sp->st_election_sec);
 	MAKE_STAT_LIST("Election usecs", sp->st_election_usec);
+	MAKE_STAT_LIST("Start-sync operations delayed",
+	    sp->st_startsync_delayed);
+#endif
 
 	Tcl_SetObjResult(interp, res);
 error:
@@ -887,7 +958,8 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 			result = _GetUInt32(interp, objv[i++], &uintarg);
 			if (result == TCL_OK) {
 				_debug_check();
-				ret = dbenv->rep_set_nsites(dbenv, uintarg);
+				ret = dbenv->
+				    rep_set_nsites(dbenv, (int)uintarg);
 			}
 			break;
 		case RMGR_PRI:
@@ -1023,6 +1095,73 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 		    interp, ret, DB_RETOK_STD(ret), "repmgr_start");
 	}
 error:
+	return (result);
+}
+
+/*
+ * tcl_RepMgrStat --
+ *	Call DB_ENV->repmgr_stat().
+ *
+ * PUBLIC: int tcl_RepMgrStat
+ * PUBLIC:     __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *));
+ */
+int
+tcl_RepMgrStat(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;
+{
+	DB_REPMGR_STAT *sp;
+	Tcl_Obj *res;
+	u_int32_t flag;
+	int result, ret;
+	char *arg;
+
+	flag = 0;
+	result = TCL_OK;
+
+	if (objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, NULL);
+		return (TCL_ERROR);
+	}
+	if (objc == 3) {
+		arg = Tcl_GetStringFromObj(objv[2], NULL);
+		if (strcmp(arg, "-clear") == 0)
+			flag = DB_STAT_CLEAR;
+		else {
+			Tcl_SetResult(interp,
+			    "db stat: unknown arg", TCL_STATIC);
+			return (TCL_ERROR);
+		}
+	}
+
+	_debug_check();
+	ret = dbenv->repmgr_stat(dbenv, &sp, flag);
+	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+	    "repmgr stat");
+	if (result == TCL_ERROR)
+		return (result);
+
+	/*
+	 * Have our stats, now construct the name value
+	 * list pairs and free up the memory.
+	 */
+	res = Tcl_NewObj();
+#ifdef HAVE_STATISTICS
+	/*
+	 * MAKE_STAT_* assumes 'res' and 'error' label.
+	 */
+	MAKE_STAT_LIST("Acknowledgement failures", sp->st_perm_failed);
+	MAKE_STAT_LIST("Messages delayed", sp->st_msgs_queued);
+	MAKE_STAT_LIST("Messages discarded", sp->st_msgs_dropped);
+	MAKE_STAT_LIST("Connections dropped", sp->st_connection_drop);
+	MAKE_STAT_LIST("Failed re-connects", sp->st_connect_fail);
+#endif
+
+	Tcl_SetObjResult(interp, res);
+error:
+	__os_ufree(dbenv, sp);
 	return (result);
 }
 #endif

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep055.tcl,v 1.11 2006/12/07 19:37:44 carol Exp $
+# $Id: rep055.tcl,v 1.14 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep055
 # TEST	Test of internal initialization and log archiving.
@@ -61,7 +61,7 @@ proc rep055_sub { method niter tnum recargs opts largs } {
 	global passwd
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
@@ -102,6 +102,12 @@ proc rep055_sub { method niter tnum recargs opts largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$masterenv test force noarchive_timeout
 
 	# Run rep_test in the master (and update client).
 	puts "\tRep$tnum.a: Running rep_test in replicated env."

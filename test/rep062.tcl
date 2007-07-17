@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006 Oracle.  All rights reserved.
+# Copyright (c) 2006,2007 Oracle.  All rights reserved.
 #
-# $Id: rep062.tcl,v 1.8 2006/12/07 19:37:44 carol Exp $
+# $Id: rep062.tcl,v 1.13 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep062
 # TEST	Test of internal initialization where client has a different
@@ -68,14 +68,15 @@ proc rep062_sub { method tnum logset recargs largs } {
 	global testdir
 	global util_path
 	global passwd
+	global has_crypto
 	global encrypt
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set masterdir $testdir/MASTERDIR
 	set clientdir $testdir/CLIENTDIR
 
@@ -117,17 +118,20 @@ proc rep062_sub { method tnum logset recargs largs } {
 
 	foreach p $pairlist {
 		env_cleanup $testdir
+		# Extract values from the list.
+		set encryptenv [lindex [lindex $p 0] 0]
+		set encryptmsg "clear"
+		if { $has_crypto == 0 && $encryptenv == 1 } {
+			continue
+		}
+		if { $encryptenv == 1 } {
+			set encryptmsg "encrypted"
+		}
 		replsetup $testdir/MSGQUEUEDIR
 
 		file mkdir $masterdir
 		file mkdir $clientdir
 
-		# Extract values from the list.
-		set encryptenv [lindex [lindex $p 0] 0]
-		set encryptmsg "clear"
-		if { $encryptenv == 1 } {
-			set encryptmsg "encrypted"
-		}
 		set method1 [lindex [lindex $p 1] 0]
 		set method2 [lindex [lindex $p 2] 0]
 		set flags1 [lindex [lindex $p 1] 1]
@@ -168,6 +172,12 @@ proc rep062_sub { method tnum logset recargs largs } {
 		# Bring the client online by processing the startup messages.
 		set envlist "{$masterenv 1} {$clientenv 2}"
 		process_msgs $envlist
+
+		# Clobber replication's 30-second anti-archive timer, which will have
+		# been started by client sync-up internal init, so that we can do a
+		# log_archive in a moment.
+		#
+		$masterenv test force noarchive_timeout
 
 		# Open two databases on the master - one to test different
 		# methods, one to advance the log, forcing internal

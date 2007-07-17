@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: Environment.java,v 12.17 2006/11/01 00:53:29 bostic Exp $
+ * $Id: Environment.java,v 12.22 2007/07/06 00:22:54 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -197,9 +197,9 @@ public class Environment {
             master ? DbConstants.DB_REP_MASTER : DbConstants.DB_REP_CLIENT);
     }
 
-    public int electReplicationMaster(int nsites, int nvotes)
+    public void electReplicationMaster(int nsites, int nvotes)
         throws DatabaseException {
-        return dbenv.rep_elect(nsites, nvotes, 0 /* unused flags */);
+        dbenv.rep_elect(nsites, nvotes, 0 /* unused flags */);
     }
 
     public void flushReplication()
@@ -212,16 +212,13 @@ public class Environment {
                                                        DatabaseEntry rec,
                                                        int envid)
         throws DatabaseException {
-
-        final DbEnv.RepProcessMessage wrappedID = new DbEnv.RepProcessMessage();
-        wrappedID.envid = envid;
         // Create a new entry so that rec isn't overwritten
         final DatabaseEntry cdata =
             new DatabaseEntry(rec.getData(), rec.getOffset(), rec.getSize());
         final LogSequenceNumber lsn = new LogSequenceNumber();
         final int ret =
-            dbenv.rep_process_message(control, cdata, wrappedID, lsn);
-        return ReplicationStatus.getStatus(ret, cdata, wrappedID.envid, lsn);
+            dbenv.rep_process_message(control, cdata, envid, lsn);
+        return ReplicationStatus.getStatus(ret, cdata, envid, lsn);
     }
 
     public void setReplicationConfig(ReplicationConfig config, boolean onoff)
@@ -277,15 +274,17 @@ public class Environment {
         return dbenv.log_stat(StatsConfig.checkNull(config).getFlags());
     }
 
-	public ReplicationHostAddress[] getReplicationSiteList()
-	    throws DatabaseException {
-		return dbenv.repmgr_site_list();
-	}
-
     public ReplicationStats getReplicationStats(StatsConfig config)
         throws DatabaseException {
 
         return dbenv.rep_stat(StatsConfig.checkNull(config).getFlags());
+    }
+
+    public ReplicationManagerStats getReplicationManagerStats(
+        StatsConfig config)
+        throws DatabaseException {
+
+        return dbenv.repmgr_stat(StatsConfig.checkNull(config).getFlags());
     }
 
     public LockStats getLockStats(StatsConfig config)

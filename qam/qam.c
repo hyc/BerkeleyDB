@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam.c,v 12.45 2007/01/04 19:40:35 bostic Exp $
+ * $Id: qam.c,v 12.51 2007/05/17 17:18:03 bostic Exp $
  */
 
 #include "db_config.h"
@@ -490,7 +490,7 @@ __qam_append(dbc, key, data)
 		ret = t_ret;
 
 	/* Return the record number to the user. */
-	if (ret == 0)
+	if (ret == 0 && key != NULL)
 		ret = __db_retcopy(dbp->dbenv, key,
 		    &recno, sizeof(recno), &dbc->rkey->data, &dbc->rkey->ulen);
 
@@ -611,7 +611,6 @@ __qamc_del(dbc)
 	 * our position while we have the record locked.
 	 * If it's pointing at the deleted record then lock
 	 * the metapage and check again as lower numbered
-recheck:
 	 * record may have been inserted.
 	 */
 	if (cp->recno == meta->first_recno) {
@@ -683,7 +682,6 @@ __qamc_get(dbc, key, data, flags, pgnop)
 	lock_mode = F_ISSET(dbc, DBC_RMW) ? DB_LOCK_WRITE : DB_LOCK_READ;
 	meta_mode = DB_LOCK_READ;
 	meta = NULL;
-	inorder = F_ISSET(dbp, DB_AM_INORDER);
 	*pgnop = 0;
 	pg = NULL;
 	retrying = t_ret = wait = with_delete = 0;
@@ -697,6 +695,7 @@ __qamc_get(dbc, key, data, flags, pgnop)
 		flags = DB_FIRST;
 		meta_mode = lock_mode = DB_LOCK_WRITE;
 	}
+	inorder = F_ISSET(dbp, DB_AM_INORDER) && with_delete;
 
 	DEBUG_LREAD(dbc, dbc->txn, "qamc_get",
 	    flags == DB_SET || flags == DB_SET_RANGE ? key : NULL, NULL, flags);
@@ -896,7 +895,7 @@ retry:	/* Update the record number. */
 
 	/* Lock the record. */
 	if (((ret = __db_lget(dbc, LCK_COUPLE, cp->recno, lock_mode,
-	    (with_delete && !retrying) ?
+	    (with_delete && !inorder && !retrying) ?
 	    DB_LOCK_NOWAIT | DB_LOCK_RECORD : DB_LOCK_RECORD,
 	    &lock)) == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) &&
 	    with_delete) {
@@ -904,7 +903,8 @@ retry:	/* Update the record number. */
 		if (DBC_LOGGING(dbc))
 			(void)__log_printf(dbenv,
 			    dbc->txn, "Queue S: %x %d %d %d",
-			    dbc->locker, cp->recno, first, meta->first_recno);
+			    dbc->locker ? dbc->locker->id : 0,
+			    cp->recno, first, meta->first_recno);
 #endif
 		first = 0;
 		if ((ret =
@@ -919,12 +919,18 @@ retry:	/* Update the record number. */
 
 	/*
 	 * In the DB_FIRST or DB_LAST cases we must wait and then start over
-	 * since the first/last may have moved while we slept.
-	 * We release our locks and try again.
+	 * since the first/last may have moved while we slept.  If we are
+	 * reading in order and the first record was not there, we can skip it
+	 * as it must have been aborted was was skipped by a non-queue insert
+	 * or we could not have gotten its lock.  If we have the wrong
+	 * record we release our locks and try again.
 	 */
 	switch (flags) {
 	default:
-		if ((!inorder && with_delete) || !is_first)
+		if (inorder) {
+			if (first != cp->recno)
+				break;
+		} else if (with_delete || !is_first)
 			break;
 		/* FALLTHROUGH */
 	case DB_SET:
@@ -1159,7 +1165,8 @@ release_retry:	/* Release locks and retry, if possible. */
 		if (DBC_LOGGING(dbc))
 			(void)__log_printf(dbenv,
 			    dbc->txn, "Queue D: %x %d %d %d",
-			    dbc->locker, cp->recno, first, meta->first_recno);
+			    dbc->locker ? dbc->locker->id : 0,
+			    cp->recno, first, meta->first_recno);
 #endif
 		/*
 		 * See if we deleted the "first" record.  If
@@ -1294,7 +1301,8 @@ __qam_consume(dbc, meta, first)
 #ifdef QDEBUG
 			if (DBC_LOGGING(dbc))
 				(void)__log_printf(dbp->dbenv, dbc->txn,
-				    "Queue R: %x %d %d %d", dbc->locker,
+				    "Queue R: %x %d %d %d",
+				    dbc->locker ? dbc->locker->id : 0,
 				    cp->pgno, first, meta->first_recno);
 #endif
 			if ((ret = __qam_fput(dbp,
@@ -1367,8 +1375,9 @@ __qam_consume(dbc, meta, first)
 #ifdef QDEBUG
 		if (DBC_LOGGING(dbc))
 			(void)__log_printf(dbp->dbenv, dbc->txn,
-			    "Queue M: %x %d %d %d", dbc->locker, cp->recno,
-			    first, meta->first_recno);
+			    "Queue M: %x %d %d %d",
+			    dbc->locker ? dbc->locker->id : 0,
+			    cp->recno, first, meta->first_recno);
 #endif
 		if (DBC_LOGGING(dbc)) {
 			if ((ret = __qam_incfirst_log(dbp,

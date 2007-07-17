@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: hash_meta.c,v 12.10 2006/11/29 21:23:17 ubell Exp $
+ * $Id: hash_meta.c,v 12.11 2007/05/17 15:15:38 bostic Exp $
  */
 
 #include "db_config.h"

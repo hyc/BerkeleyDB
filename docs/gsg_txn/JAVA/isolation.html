@@ -270,7 +270,7 @@ try {
     myEnvConfig.setInitializeLocking(true);
     myEnvConfig.setInitializeLogging(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -279,7 +279,7 @@ try {
     dbConfig.setType(DatabaseType.BTREE);
     dbConfig.setReadUncommitted(true);      // Enable uncommitted reads.
     myDatabase = myEnv.openDatabase(null,              // txn handle
-                                    &quot;sampleDatabase&quot;,  // db file name
+                                    "sampleDatabase",  // db file name
                                     null,              // db name
                                     dbConfig);
     TransactionConfig txnConfig = new TransactionConfig();
@@ -319,7 +319,7 @@ try {
     txn = myEnv.beginTransaction(null, null);
 
     DatabaseEntry theKey =
-        new DatabaseEntry((new String(&quot;theKey&quot;)).getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry((new String("theKey")).getBytes("UTF-8"));
     DatabaseEntry theData = new DatabaseEntry();
 
     myDb.get(txn, theKey, theData, LockMode.READ_UNCOMMITTED);
@@ -427,7 +427,7 @@ try {
     myEnvConfig.setInitializeLocking(true);
     myEnvConfig.setInitializeLogging(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -440,15 +440,15 @@ try {
     dbConfig.setType(DatabaseType.BTREE);
 
     myDatabase = myEnv.openDatabase(null,              // txn handle
-                                    &quot;sampleDatabase&quot;,  // db file name
+                                    "sampleDatabase",  // db file name
                                     null,              // db name
                                     dbConfig);
-    String keyString = &quot;thekey&quot;;
-    String dataString = &quot;thedata&quot;;
+    String keyString = "thekey";
+    String dataString = "thedata";
     DatabaseEntry key = 
-        new DatabaseEntry(keyString.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(keyString.getBytes("UTF-8"));
     DatabaseEntry data = 
-        new DatabaseEntry(dataString.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(dataString.getBytes("UTF-8"));
 
     TransactionConfig txnConfig = new TransactionConfig();
 
@@ -492,7 +492,7 @@ try {
     txn = myEnv.beginTransaction(null, null);
 
     DatabaseEntry theKey =
-        new DatabaseEntry((new String(&quot;theKey&quot;)).getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry((new String("theKey")).getBytes("UTF-8"));
     DatabaseEntry theData = new DatabaseEntry();
 
     myDb.get(txn, theKey, theData, LockMode.READ_COMMITTED);
@@ -553,7 +553,7 @@ try {
           <p>
                     If the cache becomes full of page copies before old
                     copies can be discarded, additional I/O will occur as
-                    pages are written to temporary &quot;freezer&quot; files on disk.
+                    pages are written to temporary "freezer" files on disk.
                     This can substantially reduce throughput, and should be
                     avoided if possible by configuring a large cache and
                     keeping snapshot isolation transactions short.
@@ -742,7 +742,7 @@ try {
     myEnvConfig.setTransactional(true);
     <b class="userinput"><tt>myEnvConfig.setMultiversion(true);</tt></b>
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -750,7 +750,7 @@ try {
     dbConfig.setTransactional(true);
     dbConfig.setType(DatabaseType.BTREE);
     myDatabase = myEnv.openDatabase(null,               // txn handle
-                                    &quot;sampleDatabase&quot;,   // db file name
+                                    "sampleDatabase",   // db file name
                                     null,             // db name
                                     dbConfig);
 

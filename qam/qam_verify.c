@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam_verify.c,v 12.12 2006/11/29 21:23:21 ubell Exp $
+ * $Id: qam_verify.c,v 12.13 2007/05/17 15:15:50 bostic Exp $
  */
 
 #include "db_config.h"

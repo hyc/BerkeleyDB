@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep050.tcl,v 12.13 2006/12/07 19:37:44 carol Exp $
+# $Id: rep050.tcl,v 12.16 2007/05/17 19:33:06 bostic Exp $
 #
 # TEST	rep050
 # TEST	Replication and delay syncing clients - change master test.
@@ -43,7 +43,7 @@ proc rep050 { method { niter 10 } { tnum "050" } args } {
 				continue
 			}
 			puts "Rep$tnum ($r):\
-			    Replication and ($method) delayed syncup."
+			    Replication and ($method) delayed sync-up."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client 0 logs are [lindex $l 1]"
 			puts "Rep$tnum: Delay Client 1 logs are [lindex $l 2]"
@@ -58,12 +58,12 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set orig_tdir $testdir
 
@@ -100,7 +100,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 	set dc3_txnargs [adjust_txnargs $dc3_logtype]
 
 	#
-	# XXX rep050 delayed syncup but change master:
+	# XXX rep050 delayed sync-up but change master:
 	# while client is delayed.
 	# while client is in the middle of delayed sync.
 

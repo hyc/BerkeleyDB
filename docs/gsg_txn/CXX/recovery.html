@@ -141,7 +141,7 @@
         <p>
                 For example:
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -158,7 +158,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle
                           DB_RECOVER;      // Run normal recovery
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -232,7 +232,7 @@ int main(void)
         <p>
                 For example:
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -249,7 +249,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle
                           <b class="userinput"><tt>DB_RECOVER_FATAL;   // Run catastrophic recovery</tt></b>
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {

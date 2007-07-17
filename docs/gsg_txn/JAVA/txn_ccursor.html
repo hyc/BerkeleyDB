@@ -109,7 +109,7 @@ try {
     myEnvConfig.setInitializeLocking(true);
     myEnvConfig.setInitializeLogging(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -118,7 +118,7 @@ try {
     dbConfig.setType(DatabaseType.BTREE);
     dbConfig.setReadUncommitted(true);      // Enable uncommitted reads.
     myDatabase = myEnv.openDatabase(null,              // txn handle
-                                    &quot;sampleDatabase&quot;,  // db file name
+                                    "sampleDatabase",  // db file name
                                     null,              // db name
                                     dbConfig);
 

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006 Oracle.  All rights reserved.
+ * Copyright (c) 2006,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_sel.c,v 1.30 2006/12/29 01:12:50 alanb Exp $
+ * $Id: repmgr_sel.c,v 1.36 2007/06/11 18:29:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -16,7 +16,6 @@ static int dispatch_phase_completion __P((DB_ENV *, REPMGR_CONNECTION *));
 static int notify_handshake __P((DB_ENV *, REPMGR_CONNECTION *));
 static int record_ack __P((DB_ENV *, REPMGR_SITE *, DB_REPMGR_ACK *));
 static int __repmgr_try_one __P((DB_ENV *, u_int));
-
 
 /*
  * PUBLIC: void *__repmgr_select_thread __P((void *));
@@ -201,7 +200,7 @@ __repmgr_first_try_connections(dbenv)
 
 /*
  * Makes a best-effort attempt to connect to the indicated site.  Returns a
- * non-zero error indication only for disastrous failures.  For retryable
+ * non-zero error indication only for disastrous failures.  For re-tryable
  * errors, we will have scheduled another attempt, and that can be considered
  * success enough.
  */
@@ -295,6 +294,7 @@ __repmgr_connect_site(dbenv, eid)
 #endif
 		break;
 	default:
+		STAT(db_rep->region->mstat.st_connect_fail++);
 		return (
 		    __repmgr_schedule_connection_attempt(dbenv, eid, FALSE));
 	}
@@ -430,7 +430,6 @@ __repmgr_send_handshake(dbenv, conn)
 	DB_ASSERT(dbenv, sizeof(u_int32_t) >= sizeof(int));
 
 	buffer.version = DB_REPMGR_VERSION;
-	/* TODO: using network byte order is pointless if we only do it here. */
 	buffer.priority = htonl((u_int32_t)rep->priority);
 	buffer.port = my_addr->port;
 	cntrl.data = &buffer;
@@ -476,6 +475,8 @@ __repmgr_read_from_site(dbenv, conn)
 				    conn->eid, buffer);
 				__db_err(dbenv, ret,
 				    "can't read from %s", buffer);
+				STAT(dbenv->rep_handle->
+				    region->mstat.st_connection_drop++);
 				return (DB_REP_UNAVAIL);
 			}
 		}
@@ -488,6 +489,8 @@ __repmgr_read_from_site(dbenv, conn)
 			(void)__repmgr_format_eid_loc(dbenv->rep_handle,
 			    conn->eid, buffer);
 			__db_errx(dbenv, "EOF on connection from %s", buffer);
+			STAT(dbenv->rep_handle->
+			    region->mstat.st_connection_drop++);
 			return (DB_REP_UNAVAIL);
 		}
 	}
@@ -544,10 +547,6 @@ dispatch_phase_completion(dbenv, conn)
 			 * the total memory needed, rounding up for the start of
 			 * each DBT, to ensure possible alignment requirements.
 			 */
-			/*
-			 * TODO: Keith says we don't need to mess with this: put
-			 * the burden on base replication code.
-			 */
 			memsize = (size_t)
 			    DB_ALIGN(sizeof(REPMGR_MESSAGE), MEM_ALIGN);
 			control_offset = memsize;
@@ -591,14 +590,6 @@ dispatch_phase_completion(dbenv, conn)
 			conn->input.repmgr_msg.cntrl.size = control_size;
 			conn->input.repmgr_msg.rec.size = rec_size;
 
-			/*
-			 * TODO: consider allocating space for ack's just once
-			 * (lazily?), or even providing static space for it in
-			 * the conn structure itself, thus avoiding a bit of
-			 * thrashing in the memory pool.  If we do that, then of
-			 * course we must get rid of the corresponding call to
-			 * free(), below.
-			 */
 			dbt = &conn->input.repmgr_msg.cntrl;
 			dbt->size = control_size;
 			if ((ret = __os_malloc(dbenv, control_size,
@@ -785,8 +776,7 @@ notify_handshake(dbenv, conn)
 	 * getting in touch with another site might finally provide sufficient
 	 * connectivity to find out.  But just do this once, because otherwise
 	 * we get messages while the subsequent rep_start operations are going
-	 * on, and rep tosses them in that case.  (TODO: this may need further
-	 * refinement.)
+	 * on, and rep tosses them in that case.
 	 */
 	if (db_rep->master_eid == DB_EID_INVALID && !db_rep->done_one) {
 		db_rep->done_one = TRUE;
@@ -822,16 +812,6 @@ record_ack(dbenv, site, ack)
 	    (u_long)ack->lsn.offset, (u_long)ack->generation,
 	    __repmgr_format_site_loc(site, buffer)));
 
-	/*
-	 * TODO: what about future ones?  Ideally, you'd like to wake up any
-	 * waiting send() threads and have them return DB_REP_OUTDATED or
-	 * something.  But a mechanism to do that would be messy, and it almost
-	 * seems not worth it, since (1) this almost can't happen; and (2) if we
-	 * just ignore it, eventually the send() calls will time out (or not),
-	 * and as long as we don't mistakenly ack something.  The only advantage
-	 * to doing something is more timely failure notification to the
-	 * application, in (what I think is) an extremely rare situation.
-	 */
 	if (ack->generation == db_rep->generation &&
 	    log_compare(&ack->lsn, &site->max_ack) == 1) {
 		memcpy(&site->max_ack, &ack->lsn, sizeof(DB_LSN));
@@ -862,6 +842,8 @@ __repmgr_write_some(dbenv, conn)
 				return (0);
 			else {
 				__db_err(dbenv, ret, "writing data");
+				STAT(dbenv->rep_handle->
+				    region->mstat.st_connection_drop++);
 				return (DB_REP_UNAVAIL);
 			}
 		}

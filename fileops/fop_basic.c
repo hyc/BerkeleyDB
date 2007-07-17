@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: fop_basic.c,v 12.23 2007/01/17 15:15:47 margo Exp $
+ * $Id: fop_basic.c,v 12.25 2007/05/17 15:15:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -177,7 +177,7 @@ err:	if (real_name != NULL)
  *
  * PUBLIC: int __fop_write __P((DB_ENV *,
  * PUBLIC:     DB_TXN *, const char *, APPNAME, DB_FH *, u_int32_t, db_pgno_t,
- * PUBLIC:     u_int32_t, u_int8_t *, u_int32_t, u_int32_t, u_int32_t));
+ * PUBLIC:     u_int32_t, void *, u_int32_t, u_int32_t, u_int32_t));
  */
 int
 __fop_write(dbenv,
@@ -190,7 +190,7 @@ __fop_write(dbenv,
 	u_int32_t pgsize;
 	db_pgno_t pageno;
 	u_int32_t off;
-	u_int8_t *buf;
+	void *buf;
 	u_int32_t size, istmp, flags;
 {
 	DB_LSN lsn;

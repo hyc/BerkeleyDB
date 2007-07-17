@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam_open.c,v 12.14 2006/11/29 21:23:21 ubell Exp $
+ * $Id: qam_open.c,v 12.17 2007/05/17 15:15:50 bostic Exp $
  */
 
 #include "db_config.h"
@@ -103,7 +103,7 @@ __qam_open(dbp, txn, name, base_pgno, mode, flags)
 	if (mode == 0)
 		mode = __db_omode("rw-rw----");
 	t->mode = mode;
-	t->re_pad = qmeta->re_pad;
+	t->re_pad = (int)qmeta->re_pad;
 	t->re_len = qmeta->re_len;
 	t->rec_page = qmeta->rec_page;
 
@@ -253,7 +253,7 @@ __qam_init_meta(dbp, meta)
 		meta->crypto_magic = meta->dbmeta.magic;
 	}
 	meta->dbmeta.type = P_QAMMETA;
-	meta->re_pad = t->re_pad;
+	meta->re_pad = (u_int32_t)t->re_pad;
 	meta->re_len = t->re_len;
 	meta->rec_page = CALC_QAM_RECNO_PER_PAGE(dbp);
 	meta->cur_recno = 1;
@@ -277,12 +277,6 @@ __qam_init_meta(dbp, meta)
  * __qam_new_file --
  * Create the necessary pages to begin a new queue database file.
  *
- * This code appears more complex than it is because of the two cases (named
- * and unnamed).  The way to read the code is that for each page being created,
- * there are three parts: 1) a "get page" chunk (which either uses malloc'd
- * memory or calls __memp_fget), 2) the initialization, and 3) the "put page"
- * chunk which either does a fop write or an __memp_fput.
- *
  * PUBLIC: int __qam_new_file __P((DB *, DB_TXN *, DB_FH *, const char *));
  */
 int
@@ -292,61 +286,62 @@ __qam_new_file(dbp, txn, fhp, name)
 	DB_FH *fhp;
 	const char *name;
 {
-	QMETA *meta;
+	DBT pdbt;
 	DB_ENV *dbenv;
 	DB_MPOOLFILE *mpf;
 	DB_PGINFO pginfo;
-	DBT pdbt;
+	QMETA *meta;
 	db_pgno_t pgno;
-	int ret;
-	void *buf;
+	int ret, t_ret;
 
-	dbenv = dbp->dbenv;
-	mpf = dbp->mpf;
-	buf = NULL;
-	meta = NULL;
-
-	/* Build meta-data page. */
-
+	/*
+	 * Build meta-data page.
+	 *
+	 * This code appears more complex than it is because of the two cases
+	 * (named and unnamed).
+	 *
+	 * For each page being created, there are three parts: 1) a "get page"
+	 * chunk (which either uses malloc'd memory or calls __memp_fget), 2)
+	 * the initialization, and 3) the "put page" chunk which either does a
+	 * fop write or an __memp_fput.
+	 */
 	if (F_ISSET(dbp, DB_AM_INMEM)) {
+		mpf = dbp->mpf;
 		pgno = PGNO_BASE_MD;
-		ret = __memp_fget(mpf, &pgno, txn,
-		    DB_MPOOL_CREATE | DB_MPOOL_DIRTY, &meta);
-	} else {
-		ret = __os_calloc(dbenv, 1, dbp->pgsize, &buf);
-		meta = (QMETA *)buf;
-	}
-	if (ret != 0)
-		return (ret);
+		if ((ret = __memp_fget(mpf, &pgno, txn,
+		    DB_MPOOL_CREATE | DB_MPOOL_DIRTY, &meta)) != 0)
+			return (ret);
 
-	if ((ret = __qam_init_meta(dbp, meta)) != 0)
-		goto err;
+		if ((ret = __qam_init_meta(dbp, meta)) != 0)
+			goto err1;
 
-	if (F_ISSET(dbp, DB_AM_INMEM)) {
 		if ((ret = __db_log_page(dbp,
 		    txn, &meta->dbmeta.lsn, pgno, (PAGE *)meta)) != 0)
-			goto err;
-		ret = __memp_fput(mpf, meta, dbp->priority);
+			goto err1;
+err1:		if ((t_ret =
+		    __memp_fput(mpf, meta, dbp->priority)) != 0 && ret == 0)
+			ret = t_ret;
 	} else {
+		dbenv = dbp->dbenv;
+		if ((ret = __os_calloc(dbenv, 1, dbp->pgsize, &meta)) != 0)
+			return (ret);
+
+		if ((ret = __qam_init_meta(dbp, meta)) != 0)
+			goto err2;
+
 		pginfo.db_pagesize = dbp->pgsize;
 		pginfo.flags =
 		    F_ISSET(dbp, (DB_AM_CHKSUM | DB_AM_ENCRYPT | DB_AM_SWAP));
 		pginfo.type = DB_QUEUE;
-		pdbt.data = &pginfo;
-		pdbt.size = sizeof(pginfo);
+		DB_SET_DBT(pdbt, &pginfo, sizeof(pginfo));
 		if ((ret = __db_pgout(dbenv, PGNO_BASE_MD, meta, &pdbt)) != 0)
-			goto err;
+			goto err2;
 		ret = __fop_write(dbenv, txn, name,
-		    DB_APP_DATA, fhp, dbp->pgsize, 0, 0, buf, dbp->pgsize, 1,
+		    DB_APP_DATA, fhp, dbp->pgsize, 0, 0, meta, dbp->pgsize, 1,
 		    F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0);
-	}
-	if (ret != 0)
-		goto err;
-	meta = NULL;
 
-err:	if (name != NULL)
-		__os_free(dbenv, buf);
-	else if (meta != NULL)
-		(void)__memp_fput(mpf, meta, dbp->priority);
+err2:		__os_free(dbenv, meta);
+	}
+
 	return (ret);
 }

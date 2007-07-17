@@ -95,7 +95,7 @@ try {
     myEnvConfig.setInitializeLogging(true);
     myEnvConfig.setTransactional(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     // Open the database.
@@ -103,15 +103,15 @@ try {
     dbConfig.setTransactional(true);
     dbConfig.setType(DatabaseType.BTREE);
     myDatabase = myEnv.openDatabase(null,              // txn handle
-                                    &quot;sampleDatabase&quot;,  // db file name
+                                    "sampleDatabase",  // db file name
                                     null,              // db name
                                     dbConfig);
-    String keyString = &quot;thekey&quot;;
-    String dataString = &quot;thedata&quot;;
+    String keyString = "thekey";
+    String dataString = "thedata";
     DatabaseEntry key = 
-        new DatabaseEntry(keyString.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(keyString.getBytes("UTF-8"));
     DatabaseEntry data = 
-        new DatabaseEntry(dataString.getBytes(&quot;UTF-8&quot;));
+        new DatabaseEntry(dataString.getBytes("UTF-8"));
 
     // Perform the write. Because the database was opened to 
     // support transactions, this write is performed using auto commit.

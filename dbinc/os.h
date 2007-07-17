@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
+ * $Id: os.h,v 12.25 2007/05/17 15:15:05 bostic Exp $
  */
 
 #ifndef _DB_OS_H_

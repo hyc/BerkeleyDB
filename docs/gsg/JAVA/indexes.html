@@ -52,6 +52,15 @@
         </a>
             </span>
           </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="keyCreator.html#multikeys">Working with Multiple Keys</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
           <dt>
             <span class="sect1">
               <a href="secondaryProps.html">Secondary Database Properties</a>
@@ -128,7 +137,7 @@
     people such as names, addresses, phone numbers, and so forth.
     While your application may frequently want to query a person by user
     ID (that is, by the information stored in the key), it may also on occasion
-    want to location people by, say, their name.
+    want to locate people by, say, their name.
   </p>
       <p>
     Rather than iterate through all of the records in your database, examining
@@ -318,7 +327,7 @@ mySecConfig.setSortedDuplicates(true);
 Database myDb = null;
 SecondaryDatabase mySecDb = null;
 try {
-    String dbName = &quot;myPrimaryDatabase&quot;;
+    String dbName = "myPrimaryDatabase";
 
     myDb = new Database(dbName, null, myDbConfig);
 
@@ -335,7 +344,7 @@ try {
     mySecConfig.setKeyCreator(keyCreator);
 
     // Perform the actual open
-    String secDbName = &quot;mySecondaryDatabase&quot;;
+    String secDbName = "mySecondaryDatabase";
     mySecDb = new SecondaryDatabase(secDbName, null, myDb, mySecConfig); 
 } catch (DatabaseException de) {
     // Exception handling goes here ...

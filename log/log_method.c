@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: log_method.c,v 12.12 2006/11/16 16:44:58 bostic Exp $
+ * $Id: log_method.c,v 12.13 2007/05/17 15:15:44 bostic Exp $
  */
 
 #include "db_config.h"

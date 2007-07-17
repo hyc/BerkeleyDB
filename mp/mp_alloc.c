@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mp_alloc.c,v 12.23 2006/11/14 21:21:25 ubell Exp $
+ * $Id: mp_alloc.c,v 12.33 2007/06/01 18:32:44 bostic Exp $
  */
 
 #include "db_config.h"
@@ -37,7 +37,6 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	MPOOL *c_mp;
 	MPOOLFILE *bh_mfp;
 	size_t freed_space;
-	db_mutex_t mutex;
 	u_int32_t buckets, buffers, high_priority, priority;
 	u_int32_t put_counter, total_buckets;
 	int aggressive, alloc_freeze, giveup, got_oldest, ret;
@@ -53,7 +52,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	aggressive = alloc_freeze = giveup = got_oldest = 0;
 	hp_tmp = NULL;
 
-	c_mp->stat.st_alloc++;
+	STAT(c_mp->stat.st_alloc++);
 
 	/*
 	 * If we're allocating a buffer, and the one we're discarding is the
@@ -105,6 +104,7 @@ found:		if (offsetp != NULL)
 		 * We're not holding the region locked here, these statistics
 		 * can't be trusted.
 		 */
+#ifdef HAVE_STATISTICS
 		total_buckets += buckets;
 		if (total_buckets != 0) {
 			if (total_buckets > c_mp->stat.st_alloc_max_buckets)
@@ -116,6 +116,7 @@ found:		if (offsetp != NULL)
 				c_mp->stat.st_alloc_max_pages = buffers;
 			c_mp->stat.st_alloc_pages += buffers;
 		}
+#endif
 		return (0);
 	} else if (giveup || c_mp->stat.st_pages == 0) {
 		MPOOL_REGION_UNLOCK(dbenv, infop);
@@ -152,33 +153,14 @@ found:		if (offsetp != NULL)
 		}
 
 		/*
-		 * Skip empty buckets.
-		 *
-		 * We can check for empty buckets before locking as we
-		 * only care if the pointer is zero or non-zero.
-		 */
-		if (SH_TAILQ_FIRST(&hp->hash_bucket, __bh) == NULL)
-			continue;
-		/*
-		 * Skip buckets that only have pinned pages.
-		 * 
-		 * Again we are doing this without locking. If we misread
-		 * the number we might improperly skip a bucket but this is
-		 * not fatal.
-		 */
-		if (hp->hash_priority == UINT32_MAX)
-			continue;
-
-		/*
 		 * The failure mode is when there are too many buffers we can't
-		 * write or there's not enough memory in the system.  We don't
-		 * have a way to know that allocation has no way to succeed.
-		 * We fail if there were no pages returned to the cache after
-		 * we've been trying for a relatively long time.
+		 * write or there's not enough memory in the system to support
+		 * the number of pinned buffers.
 		 *
-		 * Get aggressive if we've tried to flush the number of hash
-		 * buckets as are in the system and have not found any more
-		 * space.  Aggressive means:
+		 * Get aggressive if we've reviewed the entire cache without
+		 * freeing 3 times the needed space.  (The code resets the
+		 * counter when we free 3 times the needed space.)  Aggressive
+		 * means:
 		 *
 		 * a: set a flag to attempt to flush high priority buffers as
 		 *    well as other buffers.
@@ -195,11 +177,15 @@ found:		if (offsetp != NULL)
 		 * Always try to allocate memory too, in case some other thread
 		 * returns its memory to the region.
 		 *
+		 * We don't have any way to know an allocation has no way to
+		 * succeed.  Fail if no pages are returned to the cache after
+		 * we've been trying for a relatively long time.
+		 *
 		 * !!!
 		 * This test ignores pathological cases like no buffers in the
-		 * system -- that shouldn't be possible.
+		 * system -- we check for that early on, so it isn't possible.
 		 */
-		if ((++buckets % c_mp->htab_buckets) == 0) {
+		if (buckets++ == c_mp->htab_buckets) {
 			if (freed_space > 0)
 				goto alloc;
 			MPOOL_REGION_UNLOCK(dbenv, infop);
@@ -215,7 +201,7 @@ found:		if (offsetp != NULL)
 			case 5:
 			case 6:
 				(void)__memp_sync_int(
-				    dbenv, NULL, 0, DB_SYNC_ALLOC, NULL);
+				    dbenv, NULL, 0, DB_SYNC_ALLOC, NULL, NULL);
 
 				__os_sleep(dbenv, 1, 0);
 				break;
@@ -229,6 +215,24 @@ found:		if (offsetp != NULL)
 			MPOOL_REGION_LOCK(dbenv, infop);
 			goto alloc;
 		}
+
+		/*
+		 * Skip empty buckets.
+		 *
+		 * We can check for empty buckets before locking as we
+		 * only care if the pointer is zero or non-zero.
+		 */
+		if (SH_TAILQ_FIRST(&hp->hash_bucket, __bh) == NULL)
+			continue;
+		/*
+		 * Skip buckets that only have pinned pages.
+		 *
+		 * Again we are doing this without locking. If we misread
+		 * the number we might improperly skip a bucket but this is
+		 * not fatal.
+		 */
+		if (hp->hash_priority == UINT32_MAX)
+			continue;
 
 		if (!aggressive) {
 			/* Adjust if the bucket has not been reset. */
@@ -263,8 +267,7 @@ found:		if (offsetp != NULL)
 
 		/* Unlock the region and lock the hash bucket. */
 		MPOOL_REGION_UNLOCK(dbenv, infop);
-		mutex = hp->mtx_hash;
-		MUTEX_LOCK(dbenv, mutex);
+		MUTEX_LOCK(dbenv, hp->mtx_hash);
 
 		/* Remember the priority of the buffer we're looking for. */
 		priority = hp->hash_priority;
@@ -330,10 +333,15 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			++bhp->ref;
 			ret = __memp_bhwrite(dbmp, hp, bh_mfp, bhp, 0);
 			--bhp->ref;
+#ifdef HAVE_STATISTICS
 			if (ret == 0)
 				++c_mp->stat.st_rw_evict;
-		} else
+#endif
+		}
+#ifdef HAVE_STATISTICS
+		else
 			++c_mp->stat.st_ro_evict;
+#endif
 
 		/*
 		 * Freeze this buffer, if necessary.  That is, if the buffer
@@ -392,13 +400,13 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			++bhp->ref;
 			if ((ret = __memp_bh_thaw(dbmp, infop, hp,
 			    bhp, NULL)) != 0) {
-				MUTEX_UNLOCK(dbenv, mutex);
+				MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 				return (ret);
 			}
 			alloc_freeze = 0;
 			goto this_hb;
 		} else if (alloc_freeze) {
-			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0)
+			if ((ret = __memp_bhfree(dbmp, infop, hp, bhp, 0)) != 0)
 				return (ret);
 			MVCC_MPROTECT(bhp->buf, bh_mfp->stat.st_pagesize,
 			    PROT_READ | PROT_WRITE | PROT_EXEC);
@@ -418,13 +426,13 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			continue;
 		} else if (mfp != NULL &&
 		    mfp->stat.st_pagesize == bh_mfp->stat.st_pagesize) {
-			if ((ret = __memp_bhfree(dbmp, hp, bhp, 0)) != 0)
+			if ((ret = __memp_bhfree(dbmp, infop, hp, bhp, 0)) != 0)
 				return (ret);
 			p = bhp;
 			goto found;
 		} else {
-			freed_space += __env_alloc_sizeof(bhp);
-			if ((ret = __memp_bhfree(dbmp,
+			freed_space += sizeof(*bhp) + bh_mfp->stat.st_pagesize;
+			if ((ret = __memp_bhfree(dbmp, infop,
 			    hp, bhp, BH_FREE_FREEMEM)) != 0)
 				return (ret);
 		}
@@ -438,7 +446,7 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 		 * hash bucket lock has already been discarded.
 		 */
 		if (0) {
-next_hb:		MUTEX_UNLOCK(dbenv, mutex);
+next_hb:		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 		}
 		MPOOL_REGION_LOCK(dbenv, infop);
 
@@ -535,7 +543,9 @@ __memp_check_order(dbenv, hp)
 	DB_MPOOL_HASH *hp;
 {
 	BH *bhp, *first_bhp, *tbhp;
-	u_int32_t priority, last_priority;
+	u_int32_t dirty, priority, last_priority;
+
+	dirty = 0;
 
 	/*
 	 * Assumes the hash bucket is locked.
@@ -545,6 +555,8 @@ __memp_check_order(dbenv, hp)
 	    bhp != NULL; bhp = SH_TAILQ_NEXT(bhp, hq, __bh)) {
 		DB_ASSERT(dbenv, !SH_CHAIN_HASNEXT(bhp, vc));
 
+		if (F_ISSET(bhp, BH_DIRTY))
+			dirty++;
 		priority = BH_PRIORITY(bhp);
 		DB_ASSERT(dbenv, (bhp == first_bhp) ?
 		    priority == last_priority : priority >= last_priority);
@@ -566,5 +578,6 @@ __memp_check_order(dbenv, hp)
 			DB_ASSERT(dbenv, bhp->pgno != tbhp->pgno ||
 			    bhp->mf_offset != tbhp->mf_offset);
 	}
+	DB_ASSERT(dbenv, dirty == hp->hash_page_dirty);
 }
 #endif

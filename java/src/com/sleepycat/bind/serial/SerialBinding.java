@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: SerialBinding.java,v 12.6 2006/11/01 00:53:24 bostic Exp $
+ * $Id: SerialBinding.java,v 12.7 2007/05/04 00:28:24 mark Exp $
  */
 
 package com.sleepycat.bind.serial;
@@ -92,7 +92,7 @@ public class SerialBinding extends SerialBase implements EntryBinding {
      */
     public ClassLoader getClassLoader() {
 
-        return null;
+        return Thread.currentThread().getContextClassLoader();
     }
 
     /**

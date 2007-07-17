@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: repmgr_msg.c,v 1.27 2006/12/29 01:12:50 alanb Exp $
+ * $Id: repmgr_msg.c,v 1.36 2007/06/11 18:29:34 alanb Exp $
  */
 
 #include "db_config.h"
@@ -74,35 +74,19 @@ process_message(dbenv, control, rec, eid)
 	generation = db_rep->generation;
 
 	switch (ret =
-	    __rep_process_message(dbenv, control, rec, &eid, &permlsn)) {
-	case DB_REP_NEWSITE:
-		return (handle_newsite(dbenv, rec));
-
-	case DB_REP_NEWMASTER:
-		db_rep->found_master = TRUE;
-		/* Check if it's us. */
-		if ((db_rep->master_eid = eid) == SELF_EID) {
-			if ((ret = __repmgr_become_master(dbenv)) != 0)
-				return (ret);
-		} else {
-			/*
-			 * Since we have no further need for 'eid' throughout
-			 * the remainder of this function, it's (relatively)
-			 * safe to pass its address directly to the
-			 * application.  If that were not the case, we could
-			 * instead copy it into a scratch variable.
-			 */
-			RPRINT(dbenv,
-			    (dbenv, "firing NEWMASTER (%d) event", eid));
-			DB_EVENT(dbenv, DB_EVENT_REP_NEWMASTER, &eid);
-			if ((ret = __repmgr_stash_generation(dbenv)) != 0)
-				return (ret);
+	    __rep_process_message(dbenv, control, rec, eid, &permlsn)) {
+	case 0:
+		if (db_rep->takeover_pending) {
+			db_rep->takeover_pending = FALSE;
+			return (__repmgr_become_master(dbenv));
 		}
 		break;
 
+	case DB_REP_NEWSITE:
+		return (handle_newsite(dbenv, rec));
+
 	case DB_REP_HOLDELECTION:
 		LOCK_MUTEX(db_rep->mutex);
-		db_rep->master_eid = DB_EID_INVALID;
 		ret = __repmgr_init_election(dbenv, ELECT_ELECTION);
 		UNLOCK_MUTEX(db_rep->mutex);
 		if (ret != 0)
@@ -110,9 +94,10 @@ process_message(dbenv, control, rec, eid)
 		break;
 
 	case DB_REP_DUPMASTER:
+		if ((ret = __repmgr_repstart(dbenv, DB_REP_CLIENT)) != 0)
+			return (ret);
 		LOCK_MUTEX(db_rep->mutex);
-		db_rep->master_eid = DB_EID_INVALID;
-		ret = __repmgr_init_election(dbenv, ELECT_REPSTART);
+		ret = __repmgr_init_election(dbenv, ELECT_ELECTION);
 		UNLOCK_MUTEX(db_rep->mutex);
 		if (ret != 0)
 			return (ret);
@@ -135,14 +120,65 @@ process_message(dbenv, control, rec, eid)
 
 	case DB_REP_NOTPERM: /* FALLTHROUGH */
 	case DB_REP_IGNORE: /* FALLTHROUGH */
-	case DB_LOCK_DEADLOCK: /* FALLTHROUGH */
-	case 0:
+	case DB_LOCK_DEADLOCK:
 		break;
+
 	default:
 		__db_err(dbenv, ret, "DB_ENV->rep_process_message");
 		return (ret);
 	}
 	return (0);
+}
+
+/*
+ * Handle replication-related events.  Returns only 0 or DB_EVENT_NOT_HANDLED;
+ * no other error returns are tolerated.
+ *
+ * PUBLIC: int __repmgr_handle_event __P((DB_ENV *, u_int32_t, void *));
+ */
+int
+__repmgr_handle_event(dbenv, event, info)
+	DB_ENV *dbenv;
+	u_int32_t event;
+	void *info;
+{
+	DB_REP *db_rep;
+
+	db_rep = dbenv->rep_handle;
+
+	if (db_rep->selector == NULL) {
+		/* Repmgr is not in use, so all events go to application. */
+		return (DB_EVENT_NOT_HANDLED);
+	}
+
+	switch (event) {
+	case DB_EVENT_REP_ELECTED:
+		DB_ASSERT(dbenv, info == NULL);
+
+		db_rep->found_master = TRUE;
+		db_rep->takeover_pending = TRUE;
+
+		/*
+		 * The application doesn't really need to see this, because the
+		 * purpose of this event is to tell the winning site that it
+		 * should call rep_start(MASTER), and in repmgr we do that
+		 * automatically.  Still, they could conceivably be curious, and
+		 * it doesn't hurt anything to let them know.
+		 */
+		break;
+	case DB_EVENT_REP_NEWMASTER:
+		DB_ASSERT(dbenv, info != NULL);
+
+		db_rep->found_master = TRUE;
+		db_rep->master_eid = *(int *)info;
+		__repmgr_stash_generation(dbenv);
+
+		/* Application still needs to see this. */
+		break;
+	default:
+		break;
+	}
+	return (DB_EVENT_NOT_HANDLED);
 }
 
 /*
@@ -252,22 +288,6 @@ handle_newsite(dbenv, rec)
 		    "NEWSITE info from %s was already known",
 		    __repmgr_format_site_loc(site, buffer)));
 		/*
-		 * TODO: test this.  Is this really how it works?  When
-		 * a site comes back on-line, do we really get NEWSITE?
-		 * Or is that return code reserved for only the first
-		 * time a site joins a group?
-		 */
-
-		/*
-		 * TODO: it seems like it might be a good idea to move
-		 * this site's retry up to the beginning of the queue,
-		 * and try it now, on the theory that if it's
-		 * generating a NEWSITE, it might have woken up.  Does
-		 * that pose a problem for my assumption of time-ordered
-		 * retry list?  I guess not, if we can reorder items.
-		 */
-
-		/*
 		 * In case we already know about this site only because it
 		 * first connected to us, we may not yet have had a chance to
 		 * look up its addresses.  Even though we don't need them just
@@ -285,12 +305,7 @@ handle_newsite(dbenv, rec)
 		}
 
 		ret = 0;
-		if (site->state == SITE_IDLE) {
-			/*
-			 * TODO: yank the retry object up to the front
-			 * of the queue, after marking it as due now
-			 */
-		} else
+		if (site->state == SITE_CONNECTED)
 			goto unlock; /* Nothing to do. */
 	} else {
 		if (ret != 0)
@@ -310,19 +325,17 @@ unlock: UNLOCK_MUTEX(db_rep->mutex);
 }
 
 /*
- * PUBLIC: int __repmgr_stash_generation __P((DB_ENV *));
+ * PUBLIC: void __repmgr_stash_generation __P((DB_ENV *));
  */
-int
+void
 __repmgr_stash_generation(dbenv)
 	DB_ENV *dbenv;
 {
-	DB_REP_STAT *statp;
-	int ret;
+	DB_REP *db_rep;
+	REP *rep;
 
-	if ((ret = __rep_stat_pp(dbenv, &statp, 0)) != 0)
-		return (ret);
-	dbenv->rep_handle->generation = statp->st_gen;
+	db_rep = dbenv->rep_handle;
+	rep = db_rep->region;
 
-	__os_ufree(dbenv, statp);
-	return (0);
+	db_rep->generation = rep->gen;
 }

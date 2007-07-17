@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2000,2006 Oracle.  All rights reserved.
+# Copyright (c) 2000,2007 Oracle.  All rights reserved.
 #
-# $Id: testparams.tcl,v 12.88 2007/01/23 20:19:09 carol Exp $
+# $Id: testparams.tcl,v 12.104 2007/07/12 16:26:08 carol Exp $
 
 source ./include.tcl
 global is_freebsd_test
@@ -20,13 +20,13 @@ set test_names(compact) [list test111 test112 test113 test114 test115 test117]
 set test_names(dead)    [list dead001 dead002 dead003 dead004 dead005 dead006 \
     dead007]
 set test_names(elect)	[list rep002 rep005 rep016 rep020 rep022 rep026 \
-    rep063 rep067]
+    rep063 rep067 rep069 rep076]
 set test_names(env)	[list env001 env002 env003 env004 env005 env006 \
     env007 env008 env009 env010 env011 env012 env013 env014 env015]
 set test_names(fop)	[list fop001 fop002 fop003 fop004 fop005 fop006 \
     fop007 fop008]
 set test_names(init)	[list rep029 rep030 rep031 rep033 rep037 rep038 rep039\
-    rep055 rep057 rep060 rep061 rep062 rep070]
+    rep055 rep057 rep060 rep061 rep062 rep070 rep072]
 set test_names(inmemdb)	[list fop007 fop008 rep056 rep057 sdb013 sdb014 \
     sdb015 sdb016 sdb017 sdb018 sdb019 sdb020]
 set test_names(lock)    [list lock001 lock002 lock003 lock004 lock005 lock006]
@@ -43,8 +43,8 @@ set test_names(rep)	[list rep001 rep002 rep003 rep005 rep006 rep007 \
     rep028 rep029 rep030 rep031 rep032 rep033 rep034 rep035 rep036 rep037 \
     rep038 rep039 rep040 rep041 rep042 rep043 rep044 rep045 rep046 rep047 \
     rep048 rep049 rep050 rep051 rep052 rep053 rep054 rep055 rep056 rep057 \
-    rep058 rep060 rep061 rep062 rep063 rep064 rep065 rep066 rep067 rep068 \
-    rep070]
+    rep058 rep060 rep061 rep062 rep063 rep064 rep066 rep067 rep068 \
+    rep069 rep070 rep071 rep072 rep073 rep074 rep075 rep076 rep077 ]
 set test_names(rpc)	[list rpc001 rpc002 rpc003 rpc004 rpc005 rpc006]
 set test_names(rsrc)	[list rsrc001 rsrc002 rsrc003 rsrc004]
 set test_names(sdb)	[list sdb001 sdb002 sdb003 sdb004 sdb005 sdb006 \
@@ -132,6 +132,7 @@ if { $one_test != "ALL" } {
 }
 
 source $test_path/archive.tcl
+source $test_path/backup.tcl
 source $test_path/byteorder.tcl
 source $test_path/dbm.tcl
 source $test_path/foputils.tcl
@@ -141,6 +142,7 @@ source $test_path/logtrack.tcl
 source $test_path/ndbm.tcl
 source $test_path/parallel.tcl
 source $test_path/reputils.tcl
+source $test_path/reputilsnoenv.tcl
 source $test_path/sdbutils.tcl
 source $test_path/shelltest.tcl
 source $test_path/sijointest.tcl
@@ -236,6 +238,16 @@ set parms(rep065} {3}
 set parms(rep066) {10 "066"}
 set parms(rep067) ""
 set parms(rep068) {"068"}
+set parms(rep069) {200 "069"}
+set parms(rep070) {200 "070"}
+set parms(rep071) { 10 "071"}
+set parms(rep072) {200 "072"}
+set parms(rep073) {200 "073"}
+set parms(rep074) {"074"}
+set parms(rep075) {"075"}
+set parms(rep076) ""
+set parms(rep077) {"077"}
+set parms(rep078) {"078"}
 set parms(subdb001) ""
 set parms(subdb002) 10000
 set parms(subdb003) 1000
@@ -433,4 +445,5 @@ set shelltest_list {
 	{ scr030	chk.build }
 	{ scr031	chk.xa }
 	{ scr032	chk.rpc }
+	{ scr033	chk.codegen }
 }

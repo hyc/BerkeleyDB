@@ -1,20 +1,14 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: env_alloc.c,v 12.14 2006/11/08 22:35:58 bostic Exp $
+ * $Id: env_alloc.c,v 12.17 2007/05/22 18:35:39 ubell Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-
-#ifdef HAVE_STATISTICS
-#define	STAT(a)	a
-#else
-#define	STAT(a)
-#endif
 
 /*
  * Implement shared memory region allocation.  The initial list is a single
@@ -389,29 +383,6 @@ __env_alloc_free(infop, ptr)
 	else
 		SH_TAILQ_INSERT_BEFORE(&head->sizeq,
 		    elp_tmp, elp, sizeq, __alloc_element);
-}
-
-/*
- * __env_alloc_sizeof --
- *	Return the size of a alloc'd piece of memory.
- *
- * !!!
- * Note that this is from an internal standpoint -- it includes not only
- * the size of the memory being used, but also the extra alignment bytes
- * in front and, #ifdef DIAGNOSTIC, the guard byte at the end.
- *
- * PUBLIC: size_t __env_alloc_sizeof __P((void *));
- */
-size_t
-__env_alloc_sizeof(ptr)
-	void *ptr;
-{
-	ALLOC_ELEMENT *elp;
-	u_int8_t *p;
-
-	p = ptr;
-	elp = (ALLOC_ELEMENT *)(p - sizeof(ALLOC_ELEMENT));
-	return ((size_t)elp->ulen);
 }
 
 #ifdef HAVE_STATISTICS

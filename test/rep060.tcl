@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep060.tcl,v 12.10 2006/12/07 19:37:44 carol Exp $
+# $Id: rep060.tcl,v 12.13 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep060
 # TEST	Test of normally running clients and internal initialization.
@@ -72,12 +72,12 @@ proc rep060 { method { niter 200 } { tnum "060" } args } {
 proc rep060_sub { method niter tnum logset recargs opt largs } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -111,6 +111,23 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 
+	# Open a client
+	puts "\tRep$tnum.a: Open client."
+	repladd 2
+	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
+	    $c_logargs -log_max $log_max -errpfx CLIENT $verbargs \
+	    -home $clientdir -rep_transport \[list 2 replsend\]"
+	set clientenv [eval $cl_envcmd $recargs -rep_client]
+
+	# Bring the client online by processing the startup messages.
+	set envlist "{$masterenv 1} {$clientenv 2}"
+	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init.
+	#
+	$masterenv test force noarchive_timeout
+
 	# Set a low limit so that there are lots of reps between
 	# master and client.  This allows greater control over
 	# the test.
@@ -127,11 +144,12 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 	    -create -mode 0644} $largs $omethod $dbname]
 	error_check_good dbopen [is_valid_db $db] TRUE
 
-	# Put some data into the database
-	puts "\tRep$tnum.a: Run rep_test in master env."
+	# Put some data into the database, running the master up past
+	# log file 10, discarding messages to the client so that it will
+	# be forced to request them as a gap.
+	#
+	puts "\tRep$tnum.c: Run rep_test in master env."
 	set start 0
-	eval rep_test $method $masterenv $db $niter $start $start 0 0 $largs
-	incr start $niter
 
 	set stop 0
 	set endlog 10
@@ -140,6 +158,7 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 		eval rep_test $method \
 		    $masterenv $db $niter $start $start 0 0 $largs
 		incr start $niter
+		replclear 2
 
 		if { $m_logtype != "in-memory" } {
 			set res \
@@ -152,16 +171,13 @@ proc rep060_sub { method niter tnum logset recargs opt largs } {
 		}
 	}
 
-	# Open a client
-	puts "\tRep$tnum.c: Open client."
-	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -log_max $log_max -errpfx CLIENT $verbargs \
-	    -home $clientdir -rep_transport \[list 2 replsend\]"
-	set clientenv [eval $cl_envcmd $recargs -rep_client]
+	# Do one more set of txns at the master, replicating log records
+	# normally, to give the client a chance to notice how many messages
+	# it is missing.
+	#
+	eval rep_test $method $masterenv $db $niter $start $start 0 0 $largs
+	incr start $niter
 
-	# Bring the client online by processing the startup messages.
-	set envlist "{$masterenv 1} {$clientenv 2}"
 	set stop 0
 	set client_endlog 5
 	set last_client_log 0

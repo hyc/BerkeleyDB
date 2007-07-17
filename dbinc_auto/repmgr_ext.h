@@ -18,7 +18,8 @@ int __repmgr_stop_threads __P((DB_ENV *));
 int __repmgr_set_local_site __P((DB_ENV *, const char *, u_int, u_int32_t));
 int __repmgr_add_remote_site __P((DB_ENV *, const char *, u_int, int *, u_int32_t));
 void *__repmgr_msg_thread __P((void *));
-int __repmgr_stash_generation __P((DB_ENV *));
+int __repmgr_handle_event __P((DB_ENV *, u_int32_t, void *));
+void __repmgr_stash_generation __P((DB_ENV *));
 int __repmgr_send __P((DB_ENV *, const DBT *, const DBT *, const DB_LSN *, int, u_int32_t));
 int __repmgr_send_one __P((DB_ENV *, REPMGR_CONNECTION *, u_int, const DBT *, const DBT *));
 int __repmgr_is_permanent __P((DB_ENV *, const DB_LSN *));
@@ -61,8 +62,39 @@ int __repmgr_connect_site __P((DB_ENV *, u_int eid));
 int __repmgr_send_handshake __P((DB_ENV *, REPMGR_CONNECTION *));
 int __repmgr_read_from_site __P((DB_ENV *, REPMGR_CONNECTION *));
 int __repmgr_write_some __P((DB_ENV *, REPMGR_CONNECTION *));
+int __repmgr_stat_pp __P((DB_ENV *, DB_REPMGR_STAT **, u_int32_t));
+int __repmgr_stat_print_pp __P((DB_ENV *, u_int32_t));
 int __repmgr_site_list __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
-int __repmgr_print_stats __P((DB_ENV *));
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_close __P((DB_ENV *));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_add_remote_site __P((DB_ENV *, const char *, u_int, int *, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_get_ack_policy __P((DB_ENV *, int *));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_set_ack_policy __P((DB_ENV *, int));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_set_local_site __P((DB_ENV *, const char *, u_int, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_site_list __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_start __P((DB_ENV *, int, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_stat_pp __P((DB_ENV *, DB_REPMGR_STAT **, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_stat_print_pp __P((DB_ENV *, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_handle_event __P((DB_ENV *, u_int32_t, void *));
+#endif
 int __repmgr_schedule_connection_attempt __P((DB_ENV *, u_int, int));
 void __repmgr_reset_for_reading __P((REPMGR_CONNECTION *));
 int __repmgr_new_connection __P((DB_ENV *, REPMGR_CONNECTION **, socket_t, u_int32_t));
@@ -78,6 +110,7 @@ void __repmgr_thread_failure __P((DB_ENV *, int));
 char *__repmgr_format_eid_loc __P((DB_REP *, int, char *));
 char *__repmgr_format_site_loc __P((REPMGR_SITE *, char *));
 void __repmgr_timespec_diff_now __P((DB_ENV *, db_timespec *, db_timespec *));
+int __repmgr_repstart __P((DB_ENV *, u_int32_t));
 int __repmgr_wsa_init __P((DB_ENV *));
 
 #if defined(__cplusplus)

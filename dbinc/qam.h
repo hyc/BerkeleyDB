@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam.h,v 12.12 2006/11/30 18:33:29 ubell Exp $
+ * $Id: qam.h,v 12.14 2007/05/17 17:22:36 bostic Exp $
  */
 
 #ifndef	_DB_QAM_H_
@@ -161,7 +161,7 @@ typedef enum {
 	QAM_NAME_REMOVE
 } qam_name_op;
 
-#define	__qam_fget(dbp, pgnoaddr, lsnp, flags, addrp) 			\
+#define	__qam_fget(dbp, pgnoaddr, lsnp, flags, addrp)			\
 	__qam_fprobe(dbp, *pgnoaddr,					\
 	    lsnp, addrp, QAM_PROBE_GET, DB_PRIORITY_UNCHANGED, flags)
 

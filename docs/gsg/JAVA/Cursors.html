@@ -131,7 +131,7 @@ Database myDatabase = null;
 Cursor myCursor = null;
 
 try {
-    myDatabase = new Database(&quot;myDB&quot;, null, null);
+    myDatabase = new Database("myDB", null, null);
 
     myCursor = myDatabase.openCursor(null, null);
 } catch (FileNotFoundException fnfe) {
@@ -167,7 +167,7 @@ try {
             myDatabase.close();
         }
     } catch(DatabaseException dbe) {
-        System.err.println(&quot;Error in close: &quot; + dbe.toString());
+        System.err.println("Error in close: " + dbe.toString());
     }
 } </pre>
       </div>

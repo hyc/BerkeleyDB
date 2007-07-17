@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mp_fset.c,v 12.19 2006/11/30 19:05:26 bostic Exp $
+ * $Id: mp_fset.c,v 12.23 2007/06/05 11:55:28 mjc Exp $
  */
 
 #include "db_config.h"
@@ -30,20 +30,17 @@ __memp_dirty(dbmfp, addrp, txn, priority, flags)
 {
 	BH *bhp;
 	DB_ENV *dbenv;
-	DB_MPOOL *dbmp;
 	DB_MPOOL_HASH *hp;
 	DB_TXN *ancestor;
 #ifdef DIAG_MVCC
 	MPOOLFILE *mfp;
 #endif
-	MPOOL *c_mp;
-	u_int32_t n_cache;
+	REGINFO *infop;
 	int ret;
 	db_pgno_t pgno;
 	void *pgaddr;
 
 	dbenv = dbmfp->dbenv;
-	dbmp = dbenv->mp_handle;
 	pgaddr = *(void **)addrp;
 
 	/* Convert the page address to a buffer header. */
@@ -95,13 +92,10 @@ __memp_dirty(dbmfp, addrp, txn, priority, flags)
 		return (0);
 	}
 
-	n_cache = NCACHE(dbmp->reginfo[0].primary,
-	    bhp->mf_offset, bhp->pgno);
-	c_mp = dbmp->reginfo[n_cache].primary;
-	hp = R_ADDR(&dbmp->reginfo[n_cache], c_mp->htab);
-	hp = &hp[NBUCKET(c_mp, bhp->mf_offset, bhp->pgno)];
+	MP_GET_BUCKET(dbmfp, pgno, &infop, hp, ret);
+	if (ret != 0)
+		return (ret);
 
-	MUTEX_LOCK(dbenv, hp->mtx_hash);
 	/* Set/clear the page bits. */
 	if (!F_ISSET(bhp, BH_DIRTY)) {
 		++hp->hash_page_dirty;
@@ -110,7 +104,7 @@ __memp_dirty(dbmfp, addrp, txn, priority, flags)
 	MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 
 #ifdef DIAG_MVCC
-	mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
+	mfp = R_ADDR(dbenv->mp_handle->reginfo, bhp->mf_offset);
 	MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, PROT_READ | PROT_WRITE);
 #endif
 	return (0);

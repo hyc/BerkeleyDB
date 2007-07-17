@@ -127,7 +127,7 @@
 
 ...
 
-char *description = &quot;Grocery bill.&quot;;
+char *description = "Grocery bill.";
 DBT key, data;
 DB *my_database;
 int ret;
@@ -150,7 +150,7 @@ data.size = strlen(description) +1;
 ret = my_database-&gt;put(my_database, NULL, &amp;key, &amp;data, DB_NOOVERWRITE);
 if (ret == DB_KEYEXIST) {
     my_database-&gt;err(my_database, ret, 
-      &quot;Put failed because key %f already exists&quot;, money);
+      "Put failed because key %f already exists", money);
 }</pre>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -206,7 +206,7 @@ if (ret == DB_KEYEXIST) {
 DBT key, data;
 DB *my_database;
 float money;
-char *description[DESCRIPTION_SIZE + 1];
+char description[DESCRIPTION_SIZE + 1];
 
 /* Database open omitted for clarity */
 
@@ -217,11 +217,11 @@ memset(&amp;key, 0, sizeof(DBT));
 memset(&amp;data, 0, sizeof(DBT));
 
 key.data = &amp;money;
-key.ulen = sizeof(float);
+key.size = sizeof(float);
 
-data.set_data(&amp;description);
-data.set_ulen(DESCRIPTION_SIZE + 1);
-data.set_flags(DB_DBT_USERMEM);
+data.data = description;
+data.ulen = DESCRIPTION_SIZE + 1;
+data.flags = DB_DBT_USERMEM;
 my_database-&gt;get(my_database, NULL, &amp;key, &amp;data, 0);
 
 /* 

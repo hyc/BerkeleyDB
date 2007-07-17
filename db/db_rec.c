@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_rec.c,v 12.39 2007/01/11 21:32:59 bostic Exp $
+ * $Id: db_rec.c,v 12.44 2007/06/27 18:01:59 ubell Exp $
  */
 
 #include "db_config.h"
@@ -43,7 +43,6 @@ __db_addrem_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, modified, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_addrem_print);
 	REC_INTRO(__db_addrem_read, 1, 1);
 
@@ -112,7 +111,6 @@ __db_big_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, modified, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_big_print);
 	REC_INTRO(__db_big_read, 1, 0);
 
@@ -252,7 +250,6 @@ __db_ovref_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_ovref_print);
 	REC_INTRO(__db_ovref_read, 1, 0);
 
@@ -339,7 +336,6 @@ __db_noop_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_noop_print);
 	REC_INTRO(__db_noop_read, 0, 0);
 
@@ -511,6 +507,19 @@ __db_pg_alloc_recover(dbenv, dbtp, lsnp, op, info)
 	    (IS_ZERO_LSN(argp->page_lsn) && IS_INIT_LSN(LSN(pagep))))
 		cmp_p = 0;
 
+#ifndef HAVE_FTRUNCATE
+	/*
+	 * If this page was put on the limbo list and then taken off
+	 * the free list it will have INIT_LSN.  If we are aborting
+	 * this operation then we need to initialize the page with
+	 * the next pointer as recorded in the log as its current
+	 * next pointer may be from its last trip through limbo on
+	 * a previous archival restore.
+	 */
+	if (IS_INIT_LSN(LSN(pagep)) && IS_INIT_LSN(argp->page_lsn))
+		cmp_n = 0;
+#endif
+
 	CHECK_LSN(dbenv, op, cmp_p, &LSN(pagep), &argp->page_lsn);
 	/*
 	 * Another special case we have to handle is if we ended up with a
@@ -557,7 +566,6 @@ do_truncate:
 	if ((pagep == NULL || IS_ZERO_LSN(LSN(pagep))) &&
 	    IS_ZERO_LSN(argp->page_lsn) && DB_UNDO(op)) {
 #ifdef HAVE_FTRUNCATE
-		COMPQUIET(info, NULL);
 		/* Discard the page. */
 		if (pagep != NULL) {
 			if ((ret = __memp_fput(mpf,
@@ -797,7 +805,7 @@ trunc:			if ((ret = __memp_ftruncate(mpf,
 			goto out;
 		if (lp != NULL) {
 			pos = 0;
-			if (!is_meta && nelem != 0) {
+			if (!is_meta) {
 				__db_freelist_pos(argp->pgno, lp, nelem, &pos);
 
 				DB_ASSERT(dbenv, argp->pgno == lp[pos]);
@@ -805,7 +813,7 @@ trunc:			if ((ret = __memp_ftruncate(mpf,
 				    argp->meta_pgno == lp[pos - 1]);
 			}
 
-			if (nelem != 0 && pos != nelem)
+			if (pos < nelem)
 				memmove(&lp[pos], &lp[pos + 1],
 				    ((nelem - pos) - 1) * sizeof(*lp));
 
@@ -852,7 +860,6 @@ __db_pg_free_recover(dbenv, dbtp, lsnp, op, info)
 	__db_pg_free_args *argp;
 	int ret;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_pg_free_print);
 	REC_INTRO(__db_pg_free_read, 1, 0);
 
@@ -911,7 +918,6 @@ __db_pg_new_recover(dbenv, dbtp, lsnp, op, info)
 	    __db_add_limbo(dbenv, info, argp->fileid, argp->pgno, 1)) == 0)
 		*lsnp = argp->prev_lsn;
 
-
 done:
 out:
 	REC_CLOSE;
@@ -946,7 +952,6 @@ __db_pg_freedata_recover(dbenv, dbtp, lsnp, op, info)
 	__db_pg_freedata_args *argp;
 	int ret;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_pg_freedata_print);
 	REC_INTRO(__db_pg_freedata_read, 1, 0);
 
@@ -1053,7 +1058,8 @@ __db_pg_prepare_recover(dbenv, dbtp, lsnp, op, info)
 		    argp->pgno, PGNO_INVALID, PGNO_INVALID, 0, P_INVALID);
 		ZERO_LSN(pagep->lsn);
 		ret = __db_add_limbo(dbenv, info, argp->fileid, argp->pgno, 1);
-		if ((t_ret = __memp_fput(mpf, pagep, file_dbp->priority)) != 0 && ret == 0)
+		if ((t_ret = __memp_fput(
+		    mpf, pagep, file_dbp->priority)) != 0 && ret == 0)
 			ret = t_ret;
 	}
 
@@ -1094,7 +1100,6 @@ __db_pg_init_recover(dbenv, dbtp, lsnp, op, info)
 	PAGE *pagep;
 	int cmp_n, cmp_p, ret, type;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_pg_init_print);
 	REC_INTRO(__db_pg_init_read, 1, 0);
 
@@ -1179,7 +1184,6 @@ __db_pg_sort_recover(dbenv, dbtp, lsnp, op, info)
 	struct pglist *pglist, *lp;
 	int ret;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_pg_sort_print);
 	REC_INTRO(__db_pg_sort_read, 1, 1);
 
@@ -1200,7 +1204,8 @@ __db_pg_sort_recover(dbenv, dbtp, lsnp, op, info)
 					NEXT_PGNO(meta) = PGNO_INVALID;
 					LSN(meta) = *lsnp;
 				}
-				if ((ret = __memp_fput(mpf, meta, file_dbp->priority)) != 0)
+				if ((ret = __memp_fput(
+				    mpf, meta, file_dbp->priority)) != 0)
 					goto out;
 				meta = NULL;
 			} else if (ret != DB_PAGE_NOTFOUND)
@@ -1643,7 +1648,6 @@ __db_pg_free_42_recover(dbenv, dbtp, lsnp, op, info)
 	__db_pg_free_42_args *argp;
 	int ret;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_pg_free_42_print);
 	REC_INTRO(__db_pg_free_42_read, 1, 0);
 
@@ -1676,7 +1680,6 @@ __db_pg_freedata_42_recover(dbenv, dbtp, lsnp, op, info)
 	__db_pg_freedata_42_args *argp;
 	int ret;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_pg_freedata_42_print);
 	REC_INTRO(__db_pg_freedata_42_read, 1, 0);
 
@@ -1711,7 +1714,6 @@ __db_relink_42_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, modified, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__db_relink_42_print);
 	REC_INTRO(__db_relink_42_read, 1, 0);
 

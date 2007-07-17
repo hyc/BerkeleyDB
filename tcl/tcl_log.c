@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_log.c,v 12.12 2006/11/01 00:53:51 bostic Exp $
+ * $Id: tcl_log.c,v 12.14 2007/05/17 15:15:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -369,6 +369,7 @@ tcl_LogStat(interp, objc, objv, envp)
 	/*
 	 * MAKE_STAT_LIST assumes 'res' and 'error' label.
 	 */
+#ifdef HAVE_STATISTICS
 	MAKE_STAT_LIST("Magic", sp->st_magic);
 	MAKE_STAT_LIST("Log file Version", sp->st_version);
 	MAKE_STAT_LIST("Region size", sp->st_regsize);
@@ -394,6 +395,7 @@ tcl_LogStat(interp, objc, objv, envp)
 	MAKE_STAT_LIST("Min commits in a log flush", sp->st_mincommitperflush);
 	MAKE_STAT_LIST("Number of region lock waits", sp->st_region_wait);
 	MAKE_STAT_LIST("Number of region lock nowaits", sp->st_region_nowait);
+#endif
 	Tcl_SetObjResult(interp, res);
 error:
 	__os_ufree(envp, sp);

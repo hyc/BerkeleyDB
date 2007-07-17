@@ -304,7 +304,7 @@
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;pthread.h&gt;
 #include &lt;stdlib.h&gt;
-#include &quot;db.h&quot;     
+#include "db.h"     
 
 void *checkpoint_thread(void *);
 
@@ -314,7 +314,7 @@ main(void)
     int ret;
     u_int32_t env_flags;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
     pthread_t ptid;
 
     envp = NULL;
@@ -322,7 +322,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -338,7 +338,7 @@ main(void)
     /* Open the environment. */
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -348,7 +348,7 @@ main(void)
     if ((ret = pthread_create( 
         &amp;ptid, NULL, checkpoint_thread, (void *)envp)) != 0) { 
             fprintf(stderr, 
-                &quot;txnapp: failed spawning checkpoint thread: %s\n&quot;, 
+                "txnapp: failed spawning checkpoint thread: %s\n", 
                 strerror(ret)); 
             goto err;
     }
@@ -372,7 +372,7 @@ checkpoint_thread(void *arg) {
     /* Checkpoint once a minute. */ 
     for (;; sleep(60)) 
         if ((ret = dbenv-&gt;txn_checkpoint(dbenv, 0, 0, 0)) != 0) { 
-            dbenv-&gt;err(dbenv, ret, &quot;checkpoint thread&quot;); 
+            dbenv-&gt;err(dbenv, ret, "checkpoint thread"); 
             exit (1); 
         }
 

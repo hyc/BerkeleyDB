@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam_files.c,v 12.21 2007/01/17 15:15:47 margo Exp $
+ * $Id: qam_files.c,v 12.31 2007/06/08 17:34:56 bostic Exp $
  */
 
 #include "db_config.h"
@@ -462,25 +462,17 @@ int
 __qam_sync(dbp)
 	DB *dbp;
 {
-	DB_ENV *dbenv;
-	DB_MPOOLFILE *mpf;
-
-	dbenv = dbp->dbenv;
-	mpf = dbp->mpf;
-
+	int ret;
 	/*
-	 * We need to flush all extent files.  There is no easy way to find
-	 * all the extents for this queue which are currently open. For now
-	 * just flush the whole cache.  An alternative would be to have a
-	 * call into the cache layer that would flush all of the queue extent
-	 * files it has open (there's a flag when we open a queue extent file,
-	 * so the cache layer can identify them).
+	 * We can't easily identify the extent files associated with a specific
+	 * Queue file, so flush all Queue extent files.
 	 */
-
-	if (((QUEUE *)dbp->q_internal)->page_ext == 0)
-		return (__memp_fsync(mpf));
-	else
-		return (__memp_sync(dbenv, NULL));
+	if ((ret = __memp_fsync(dbp->mpf)) != 0)
+		return (ret);
+	if (((QUEUE *)dbp->q_internal)->page_ext != 0)
+		return (__memp_sync_int(
+		    dbp->dbenv, NULL, 0, DB_SYNC_QUEUE_EXTENT, NULL, NULL));
+	return (0);
 }
 
 /*
@@ -488,7 +480,7 @@ __qam_sync(dbp)
  *	Another thread may close the handle so this should only
  *	be used single threaded or with care.
  *
- * PUBLIC: int __qam_gen_filelist __P(( DB *, QUEUE_FILELIST **));
+ * PUBLIC: int __qam_gen_filelist __P((DB *, QUEUE_FILELIST **));
  */
 int
 __qam_gen_filelist(dbp, filelistp)
@@ -542,6 +534,9 @@ __qam_gen_filelist(dbp, filelistp)
 	else
 		extent_cnt =
 		    (current + (UINT32_MAX - first)) / rec_extent + 4;
+
+	if (extent_cnt == 0)
+		return (0);
 	if ((ret = __os_calloc(dbenv,
 	    extent_cnt, sizeof(QUEUE_FILELIST), filelistp)) != 0)
 		return (ret);
@@ -692,7 +687,8 @@ __qam_exid(dbp, fidp, exnum)
  *
  * PUBLIC: int __qam_nameop __P((DB *, DB_TXN *, const char *, qam_name_op));
  */
-int __qam_nameop(dbp, txn, newname, op)
+int
+__qam_nameop(dbp, txn, newname, op)
 	DB *dbp;
 	DB_TXN *txn;
 	const char *newname;

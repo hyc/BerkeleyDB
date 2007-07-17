@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: VerboseConfig.java,v 12.2 2006/11/01 00:53:30 bostic Exp $
+ * $Id: VerboseConfig.java,v 12.4 2007/07/06 00:22:54 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -28,7 +28,7 @@ public final class VerboseConfig {
         new VerboseConfig("WAITSFOR", DbConstants.DB_VERB_WAITSFOR);
 
     /* Package */
-    public int getInternalFlag() {
+    int getInternalFlag() {
         return verboseFlag;
     }
     /* For toString */

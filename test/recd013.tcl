@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2000,2006 Oracle.  All rights reserved.
+# Copyright (c) 2000,2007 Oracle.  All rights reserved.
 #
-# $Id: recd013.tcl,v 12.5 2006/11/01 00:53:54 bostic Exp $
+# $Id: recd013.tcl,v 12.6 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	recd013
 # TEST	Test of cursor adjustment on child transaction aborts. [#2373]

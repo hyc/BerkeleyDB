@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep019.tcl,v 12.12 2006/12/07 19:35:19 carol Exp $
+# $Id: rep019.tcl,v 12.14 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  rep019
 # TEST	Replication and multiple clients at same LSN.
@@ -44,12 +44,12 @@ proc rep019_sub { method nclients tnum recargs largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set orig_tdir $testdir
 	env_cleanup $testdir
 

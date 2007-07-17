@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: si003.tcl,v 12.9 2006/11/01 00:53:59 bostic Exp $
+# $Id: si003.tcl,v 12.10 2007/05/17 15:15:56 bostic Exp $
 #
 # TEST	si003
 # TEST	si001 with secondaries created and closed mid-test

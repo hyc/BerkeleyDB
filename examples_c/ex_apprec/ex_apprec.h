@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: ex_apprec.h,v 12.4 2006/11/01 00:52:51 bostic Exp $
+ * $Id: ex_apprec.h,v 12.5 2007/05/17 15:15:13 bostic Exp $
  */
 
 #ifndef _EX_APPREC_H_

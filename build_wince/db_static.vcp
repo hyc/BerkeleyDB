@@ -224,10 +224,6 @@ SOURCE=..\btree\btree_auto.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\clib\strcasecmp.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\clib\strdup.c
 # End Source File
 # Begin Source File
@@ -688,6 +684,10 @@ SOURCE=..\mp\mp_register.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\mp\mp_resize.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\mp\mp_stat.c
 # End Source File
 # Begin Source File
@@ -765,10 +765,6 @@ SOURCE=..\os\os_uid.c
 # Begin Source File
 
 SOURCE=..\os_windows\ce_ctime.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\os_windows\ce_getcwd.c
 # End Source File
 # Begin Source File
 
@@ -905,6 +901,10 @@ SOURCE=..\qam\qam_verify.c
 # Begin Source File
 
 SOURCE=..\rep\rep_stub.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\repmgr\repmgr_stub.c
 # End Source File
 # Begin Source File
 

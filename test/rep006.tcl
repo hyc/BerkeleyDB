@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003,2006 Oracle.  All rights reserved.
+# Copyright (c) 2003,2007 Oracle.  All rights reserved.
 #
-# $Id: rep006.tcl,v 12.13 2006/12/07 19:35:19 carol Exp $
+# $Id: rep006.tcl,v 12.15 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  rep006
 # TEST	Replication and non-rep env handles.
@@ -49,12 +49,12 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global is_hp_test
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR

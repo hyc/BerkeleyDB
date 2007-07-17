@@ -1,14 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: env_region.c,v 12.31 2006/12/08 16:19:23 bostic Exp $
+ * $Id: env_region.c,v 12.35 2007/06/05 13:25:26 ubell Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
+#include "dbinc/mp.h"
 
 static void __env_des_destroy __P((DB_ENV *, REGION *));
 static int  __env_des_get __P((DB_ENV *, REGINFO *, REGINFO *, REGION **));
@@ -313,7 +314,7 @@ creation:
 	 * so we allocate 25% more.
 	 */
 	memset(&tregion, 0, sizeof(tregion));
-	nregions = dbenv->mp_ncache + 10;
+	nregions = __memp_max_regions(dbenv) + 10;
 	s = nregions * sizeof(REGION);
 	s += dbenv->passwd_len;
 	s += (dbenv->thr_max + dbenv->thr_max / 4) *
@@ -394,6 +395,7 @@ creation:
 	renv->cipher_off = renv->thread_off = renv->rep_off = INVALID_ROFF;
 	renv->flags = 0;
 	renv->op_timestamp = renv->rep_timestamp = 0;
+	renv->mtx_regenv = MUTEX_INVALID;
 
 	/*
 	 * Get the underlying REGION structure for this environment.  Note,

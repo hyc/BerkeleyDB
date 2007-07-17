@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: recd020.tcl,v 12.5 2006/11/01 00:53:54 bostic Exp $
+# $Id: recd020.tcl,v 12.6 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	recd020
 # TEST	Test creation of intermediate directories -- an

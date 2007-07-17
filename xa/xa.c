@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1998,2007 Oracle.  All rights reserved.
  *
- * $Id: xa.c,v 12.13 2006/11/01 00:54:23 bostic Exp $
+ * $Id: xa.c,v 12.15 2007/06/29 00:25:02 margo Exp $
  */
 
 #include "db_config.h"
@@ -334,7 +334,8 @@ __db_xa_start(xid, rmid, arg_flags)
 		/* Now, fill in the global transaction structure. */
 		if (__xa_get_txn(dbenv, &txnp, 1) != 0)
 			return (XAER_RMERR);
-		__txn_continue(dbenv, txnp, td);
+		if (__txn_continue(dbenv, txnp, td) != 0)
+			return (XAER_RMERR);
 		td->xa_status = TXN_XA_STARTED;
 	} else {
 		if (__xa_get_txn(dbenv, &txnp, 1) != 0)
@@ -449,7 +450,8 @@ __db_xa_prepare(xid, rmid, arg_flags)
 	/* Now, fill in the global transaction structure. */
 	if (__xa_get_txn(dbenv, &txnp, 0) != 0)
 		return (XAER_PROTO);
-	__txn_continue(dbenv, txnp, td);
+	if (__txn_continue(dbenv, txnp, td) != 0)
+		return (XAER_RMERR);
 
 	if (txnp->prepare(txnp, (u_int8_t *)xid->data) != 0)
 		return (XAER_RMERR);
@@ -516,7 +518,8 @@ __db_xa_commit(xid, rmid, arg_flags)
 	/* Now, fill in the global transaction structure. */
 	if (__xa_get_txn(dbenv, &txnp, 0) != 0)
 		return (XAER_RMERR);
-	__txn_continue(dbenv, txnp, td);
+	if (__txn_continue(dbenv, txnp, td) != 0)
+		return (XAER_RMERR);
 
 	if (txnp->commit(txnp, 0) != 0)
 		return (XAER_RMERR);
@@ -609,7 +612,8 @@ __db_xa_rollback(xid, rmid, arg_flags)
 	/* Now, fill in the global transaction structure. */
 	if (__xa_get_txn(dbenv, &txnp, 0) != 0)
 		return (XAER_RMERR);
-	__txn_continue(dbenv, txnp, td);
+	if (__txn_continue(dbenv, txnp, td) != 0)
+		return (XAER_RMERR);
 	if (txnp->abort(txnp) != 0)
 		return (XAER_RMERR);
 

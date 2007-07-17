@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: rsrc003.tcl,v 12.5 2006/11/01 00:53:58 bostic Exp $
+# $Id: rsrc003.tcl,v 12.6 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	rsrc003
 # TEST	Recno backing file test.  Try different patterns of adding

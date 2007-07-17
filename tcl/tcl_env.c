@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_env.c,v 12.34 2006/11/29 20:09:07 bostic Exp $
+ * $Id: tcl_env.c,v 12.40 2007/06/21 22:28:47 sue Exp $
  */
 
 #include "db_config.h"
@@ -75,6 +75,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"rep_elect",
 		"rep_flush",
 		"rep_get_config",
+		"rep_lease",
 		"rep_limit",
 		"rep_process_message",
 		"rep_request",
@@ -83,6 +84,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"rep_sync",
 		"rep_transport",
 		"repmgr",
+		"repmgr_stat",
 		"rpcid",
 		"set_flags",
 		"test",
@@ -97,6 +99,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"dbremove",
 		"dbrename",
 		"get_cachesize",
+		"get_cache_max",
 		"get_data_dirs",
 		"get_encrypt_flags",
 		"get_errpfx",
@@ -123,6 +126,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"get_tx_max",
 		"get_tx_timestamp",
 		"get_verbose",
+		"resize_cache",
 		"set_data_dir",
 		"txn",
 		"txn_checkpoint",
@@ -160,6 +164,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVREPELECT,
 		ENVREPFLUSH,
 		ENVREPGETCONFIG,
+		ENVREPLEASE,
 		ENVREPLIMIT,
 		ENVREPPROCMESS,
 		ENVREPREQUEST,
@@ -168,6 +173,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVREPSYNC,
 		ENVREPTRANSPORT,
 		ENVREPMGR,
+		ENVREPMGRSTAT,
 		ENVRPCID,
 		ENVSETFLAGS,
 		ENVTEST,
@@ -182,6 +188,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVDBREMOVE,
 		ENVDBRENAME,
 		ENVGETCACHESIZE,
+		ENVGETCACHEMAX,
 		ENVGETDATADIRS,
 		ENVGETENCRYPTFLAGS,
 		ENVGETERRPFX,
@@ -208,28 +215,27 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVGETTXMAX,
 		ENVGETTXTIMESTAMP,
 		ENVGETVERBOSE,
+		ENVRESIZECACHE,
 		ENVSETDATADIR,
 		ENVTXN,
 		ENVTXNCKP
 	};
 	DBTCL_INFO *envip;
 	DB_ENV *dbenv;
-	Tcl_Obj *myobjv[3], *res;
+	Tcl_Obj **listobjv, *myobjv[3], *res;
 	db_timeout_t timeout;
 	size_t size;
 	time_t timeval;
 	u_int32_t bytes, gbytes, value;
 	long shm_key;
-	int cmdindex, i, intvalue, ncache, result, ret;
+	int cmdindex, i, intvalue, listobjc, ncache, result, ret;
 	const char *strval, **dirs;
 	char *strarg, newname[MSG_SIZE];
 #ifdef CONFIG_TEST
 	DBTCL_INFO *logcip;
 	DB_LOGC *logc;
-	Tcl_Obj **repobjv;
 	u_int32_t lockid;
 	long newval, otherval;
-	int repobjc;
 #endif
 
 	Tcl_ResetResult(interp);
@@ -424,6 +430,17 @@ env_Cmd(clientData, interp, objc, objv)
 		}
 		result = tcl_RepGetConfig(interp, dbenv, objv[2]);
 		break;
+	case ENVREPLEASE:
+		if (objc != 3) {
+			Tcl_WrongNumArgs(interp, 2, objv, NULL);
+			return (TCL_ERROR);
+		}
+		result = Tcl_ListObjGetElements(interp, objv[2],
+		    &listobjc, &listobjv);
+		if (result == TCL_OK)
+			result = tcl_RepLease(interp,
+			    listobjc, listobjv, dbenv);
+		break;
 	case ENVREPLIMIT:
 		result = tcl_RepLimit(interp, objc, objv, dbenv);
 		break;
@@ -448,13 +465,16 @@ env_Cmd(clientData, interp, objc, objv)
 			return (TCL_ERROR);
 		}
 		result = Tcl_ListObjGetElements(interp, objv[2],
-		    &repobjc, &repobjv);
+		    &listobjc, &listobjv);
 		if (result == TCL_OK)
 			result = tcl_RepTransport(interp,
-			    repobjc, repobjv, dbenv, envip);
+			    listobjc, listobjv, dbenv, envip);
 		break;
 	case ENVREPMGR:
 		result = tcl_RepMgr(interp, objc, objv, dbenv);
+		break;
+	case ENVREPMGRSTAT:
+		result = tcl_RepMgrStat(interp, objc, objv, dbenv);
 		break;
 	case ENVRPCID:
 		/*
@@ -589,6 +609,19 @@ env_Cmd(clientData, interp, objc, objv)
 			myobjv[1] = Tcl_NewLongObj((long)bytes);
 			myobjv[2] = Tcl_NewLongObj((long)ncache);
 			res = Tcl_NewListObj(3, myobjv);
+		}
+		break;
+	case ENVGETCACHEMAX:
+		if (objc != 2) {
+			Tcl_WrongNumArgs(interp, 1, objv, NULL);
+			return (TCL_ERROR);
+		}
+		ret = dbenv->get_cache_max(dbenv, &gbytes, &bytes);
+		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "env get_cache_max")) == TCL_OK) {
+			myobjv[0] = Tcl_NewLongObj((long)gbytes);
+			myobjv[1] = Tcl_NewLongObj((long)bytes);
+			res = Tcl_NewListObj(2, myobjv);
 		}
 		break;
 	case ENVGETDATADIRS:
@@ -816,6 +849,26 @@ env_Cmd(clientData, interp, objc, objv)
 		break;
 	case ENVGETVERBOSE:
 		result = env_GetVerbose(interp, objc, objv, dbenv);
+		break;
+	case ENVRESIZECACHE:
+		if ((result = Tcl_ListObjGetElements(
+		    interp, objv[2], &listobjc, &listobjv)) != TCL_OK)
+			break;
+		if (objc != 3 || listobjc != 2) {
+			Tcl_WrongNumArgs(interp, 2, objv,
+			    "?-resize_cache {gbytes bytes}?");
+			result = TCL_ERROR;
+			break;
+		}
+		result = _GetUInt32(interp, listobjv[0], &gbytes);
+		if (result != TCL_OK)
+			break;
+		result = _GetUInt32(interp, listobjv[1], &bytes);
+		if (result != TCL_OK)
+			break;
+		ret = dbenv->set_cachesize(dbenv, gbytes, bytes, 0);
+		result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "resize_cache");
 		break;
 	case ENVSETDATADIR:
 		/*
@@ -1602,9 +1655,20 @@ tcl_EnvSetFlags(interp, dbenv, which, onoff)
 }
 
 /*
- * PUBLIC: int tcl_EnvTest __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DB_ENV *));
- *
  * tcl_EnvTest --
+ *	The "$env test ..." command is a sort of catch-all for any sort of
+ * desired test hook manipulation.  The "abort", "check" and "copy" subcommands
+ * all set one or another certain location in the DB_ENV handle to a specific
+ * value.  (In the case of "check", the value is an integer passed in with the
+ * command itself.  For the other two, the "value" is a predefined enum
+ * constant, specified by name.)
+ *	The "$env test force ..." subcommand invokes other, more arbitrary
+ * manipulations.
+ *	Although these functions may not all seem closely related, putting them
+ * all under the name "test" has the aesthetic appeal of keeping the rest of the
+ * API clean.
+ *
+ * PUBLIC: int tcl_EnvTest __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DB_ENV *));
  */
 int
 tcl_EnvTest(interp, objc, objv, dbenv)
@@ -1617,12 +1681,14 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 		"abort",
 		"check",
 		"copy",
+		"force",
 		NULL
 	};
 	enum envtestcmd {
 		ENVTEST_ABORT,
 		ENVTEST_CHECK,
-		ENVTEST_COPY
+		ENVTEST_COPY,
+		ENVTEST_FORCE
 	};
 	static const char *envtestat[] = {
 		"electinit",
@@ -1653,13 +1719,21 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 		ENVTEST_RECYCLE,
 		ENVTEST_SUBDB_LOCKS
 	};
+	static const char *envtestforce[] = {
+		"noarchive_timeout",
+		NULL
+	};
+	enum envtestforce {
+		ENVTEST_NOARCHIVE_TIMEOUT
+	};
 	int *loc, optindex, result, testval;
 
 	result = TCL_OK;
 	loc = NULL;
 
 	if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "abort|copy location");
+		Tcl_WrongNumArgs(interp,
+		    2, objv, "abort|check|copy|force <args>");
 		return (TCL_ERROR);
 	}
 
@@ -1685,6 +1759,19 @@ tcl_EnvTest(interp, objc, objv, dbenv)
 	case ENVTEST_COPY:
 		loc = &dbenv->test_copy;
 		break;
+	case ENVTEST_FORCE:
+		if (Tcl_GetIndexFromObj(interp, objv[3], envtestforce, "arg",
+			TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[3]);
+			return (result);
+		}
+		/*
+		 * In the future we might add more, and then we'd use a switch
+		 * statement.
+		 */
+		DB_ASSERT(dbenv,
+		    (enum envtestforce)optindex == ENVTEST_NOARCHIVE_TIMEOUT);
+		return (tcl_RepNoarchiveTimeout(interp, dbenv));
 	default:
 		Tcl_SetResult(interp, "Illegal store location", TCL_STATIC);
 		return (TCL_ERROR);

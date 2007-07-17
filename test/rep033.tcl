@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep033.tcl,v 12.13 2006/12/07 19:37:44 carol Exp $
+# $Id: rep033.tcl,v 12.17 2007/06/19 03:33:16 moshen Exp $
 #
 # TEST	rep033
 # TEST	Test of internal initialization with rename and remove of dbs.
@@ -23,6 +23,14 @@ proc rep033 { method { niter 200 } { tnum "033" } args } {
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
 		return "ALL"
+	}
+
+	# This test depends on manipulating logs, so can not be run with
+	# in-memory logging.
+	global mixed_mode_logging
+	if { $mixed_mode_logging > 0 } {
+		puts "Rep$tnum: Skipping for mixed-mode logging."
+		return
 	}
 
 	set args [convert_args $method $args]
@@ -49,12 +57,12 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -92,6 +100,12 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$masterenv test force noarchive_timeout
 
 	puts "\tRep$tnum.a: Create several databases on master."
 	set oflags " -env $masterenv $method -create -auto_commit "

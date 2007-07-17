@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003,2006 Oracle.  All rights reserved.
+# Copyright (c) 2003,2007 Oracle.  All rights reserved.
 #
-# $Id: rep017.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
+# $Id: rep017.tcl,v 12.15 2007/06/21 20:09:57 carol Exp $
 #
 # TEST	rep017
 # TEST	Concurrency with checkpoints.
@@ -52,14 +52,13 @@ proc rep017 { method { niter 10 } { tnum "017" } args } {
 proc rep017_sub { method niter tnum logset recargs largs } {
 	source ./include.tcl
 	global perm_response_list
-	global is_repchild
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 
@@ -128,12 +127,7 @@ proc rep017_sub { method niter tnum logset recargs largs } {
 	# for now.  It's run in the background so the parent can
 	# test for whether we're checkpointing at the same time.
 	#
-	# Since the child is processing messages, we want to
-	# set is_repchild here so that any messages we generate
-	# will be seen by the child process.
-	#
 	puts "\tRep$tnum.c: Fork child process on client."
-	set is_repchild 1
 	set pid [exec $tclsh_path $test_path/wrap.tcl \
 	    rep017script.tcl $testdir/repscript.log \
 	    $masterdir $clientdir &]
@@ -145,6 +139,15 @@ proc rep017_sub { method niter tnum logset recargs largs } {
 	# later than the last LSN when the master took the checkpoint, we've
 	# begin the checkpoint.  By test design, we should not finish the
 	# checkpoint until this process has at least had a chance to run.
+	# 
+	# In order to do this, we have handles open on the message
+	# queue from both this process and its child.  This is not 
+	# normally legal behavior for an application using Berkeley DB, 
+	# but this test depends on the parent process doing things while
+	# the child is pausing in the middle of the checkpoint.  We are
+	# very careful to control which process is handling which 
+	# messages.
+
  	puts "\tRep$tnum.d: Test whether client is in checkpoint."
 	while { 1 } {
 		set client_off \
@@ -199,7 +202,6 @@ proc rep017_sub { method niter tnum logset recargs largs } {
 	puts "\tRep$tnum.f: Waiting for child ..."
 	# Watch until the checkpoint is done.
 	watch_procs $pid 5
-	set is_repchild 0
 
 	# Verify that the checkpoint is now complete on the client and
 	# that all later messages have been applied.

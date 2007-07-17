@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: RepConfigInfo.h,v 1.3 2006/11/01 00:52:59 bostic Exp $
+ * $Id: RepConfigInfo.h,v 1.5 2007/05/17 17:32:00 bostic Exp $
  */
 #include <db_cxx.h>
 
@@ -32,4 +32,3 @@ public:
 	// used to store a set of optional other hosts.
 	REP_HOST_INFO *other_hosts;
 };
-

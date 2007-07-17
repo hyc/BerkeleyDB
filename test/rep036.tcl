@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep036.tcl,v 12.11 2006/12/07 19:37:44 carol Exp $
+# $Id: rep036.tcl,v 12.13 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep036
 # TEST	Multiple master processes writing to the database.
@@ -43,12 +43,12 @@ proc rep036 { method { niter 200 } { tnum "036" } args } {
 proc rep036_sub { method niter tnum envargs logset args } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -91,7 +91,7 @@ proc rep036_sub { method niter tnum envargs logset args } {
 #	# Commented out, as are two more sections below - see [#15049].
 #       set dpid [eval {exec $util_path/db_deadlock} \
 #	    -a o -v -t 2.0 -h $masterdir >& $testdir/dd.parent.out &]
-				    
+				 
 	# Set up master database.
 	set testfile "rep$tnum.db"
 	set omethod [convert_method $method]
@@ -166,7 +166,7 @@ proc rep036_sub { method niter tnum envargs logset args } {
 
 #	# We are done with the deadlock detector.
 #	error_check_good kill_deadlock_detector [tclkill $dpid] ""
-		
+
 	puts "\tRep$tnum.c: Verify logs and databases"
 	# Check that master and client logs and dbs are identical.
 	# Logs first ...

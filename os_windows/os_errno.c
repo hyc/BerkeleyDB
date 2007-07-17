@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: os_errno.c,v 12.12 2007/01/22 06:12:19 alexg Exp $
+ * $Id: os_errno.c,v 12.14 2007/05/17 15:15:49 bostic Exp $
  */
 
 #include "db_config.h"
@@ -41,11 +41,14 @@ __os_get_errno()
 	return (errno);
 }
 
+#ifdef HAVE_REPLICATION_THREADS
 /*
  * __os_get_neterr --
  *	Return the last networking error or EAGAIN if the last error is zero.
  *
+ * PUBLIC: #ifdef HAVE_REPLICATION_THREADS
  * PUBLIC: int __os_get_neterr __P((void));
+ * PUBLIC: #endif
  */
 int
 __os_get_neterr()
@@ -58,6 +61,7 @@ __os_get_neterr()
 		WSASetLastError(err = ERROR_RETRY);
 	return (err);
 }
+#endif
 
 /*
  * __os_get_syserr --

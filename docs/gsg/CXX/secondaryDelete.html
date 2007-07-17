@@ -92,7 +92,7 @@ Db my_index(NULL, 0);    // Secondary
 
 // Open the primary
 my_database.open(NULL,       // Transaction pointer
-                 &quot;my_db.db&quot;, // On-disk file that holds the database.
+                 "my_db.db", // On-disk file that holds the database.
                 NULL,        // Optional logical database name
                 DB_BTREE,    // Database access method
                 DB_CREATE,   // Open flags
@@ -104,7 +104,7 @@ my_index.set_flags(DB_DUPSORT);
 
 // Open the secondary
 my_index.open(NULL,              // Transaction pointer
-              &quot;my_secondary.db&quot;, // On-disk file that holds the database.
+              "my_secondary.db", // On-disk file that holds the database.
               NULL,              // Optional logical database name
               DB_BTREE,          // Database access method
               DB_CREATE,         // Open flags.
@@ -118,7 +118,7 @@ my_database.associate(NULL,          // Txn id
                       0);            // Flags 
 
 // Name to delete
-char *search_name = &quot;John Doe&quot;;
+char *search_name = "John Doe";
 
 // Get a search key
 Dbt key(search_name, strlen(search_name) + 1);

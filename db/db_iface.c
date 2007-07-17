@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_iface.c,v 12.57 2007/01/31 16:14:36 margo Exp $
+ * $Id: db_iface.c,v 12.68 2007/06/14 19:00:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -528,6 +528,42 @@ __db_del_arg(dbp, key, flags)
 }
 
 /*
+ * __db_exists --
+ *	DB->exists implementation.
+ *
+ * PUBLIC: int __db_exists __P((DB *, DB_TXN *, DBT *, u_int32_t));
+ */
+int
+__db_exists(dbp, txn, key, flags)
+	DB *dbp;
+	DB_TXN *txn;
+	DBT *key;
+	u_int32_t flags;
+{
+	DBT data;
+	int ret;
+
+	/*
+	 * Most flag checking is done in the DB->get call, we only check for
+	 * specific incompatibilities here.  This saves making __get_arg
+	 * aware of the exist method's API constraints.
+	 */
+	if ((ret = __db_fchk(dbp->dbenv, "DB->exists", flags,
+	    DB_READ_COMMITTED | DB_READ_UNCOMMITTED | DB_RMW)) != 0)
+		return (ret);
+
+	/*
+	 * Configure a data DBT that returns no bytes so there's no copy
+	 * of the data.
+	 */
+	memset(&data, 0, sizeof(data));
+	data.dlen = 0;
+	data.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
+
+	return (dbp->get(dbp, txn, key, &data, flags));
+}
+
+/*
  * db_fd_pp --
  *	DB->fd pre/post processing.
  *
@@ -599,7 +635,7 @@ __db_get_pp(dbp, txn, key, data, flags)
 	DB_ENV *dbenv;
 	DB_THREAD_INFO *ip;
 	u_int32_t mode;
-	int handle_check, ret, t_ret, txn_local;
+	int handle_check, ignore_lease, ret, t_ret, txn_local;
 
 	dbenv = dbp->dbenv;
 	mode = 0;
@@ -608,6 +644,9 @@ __db_get_pp(dbp, txn, key, data, flags)
 	PANIC_CHECK(dbenv);
 	STRIP_AUTO_COMMIT(flags);
 	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->get");
+
+	ignore_lease = LF_ISSET(DB_IGNORE_LEASE);
+	LF_CLR(DB_IGNORE_LEASE);
 
 	if ((ret = __db_get_arg(dbp, key, data, flags)) != 0)
 		return (ret);
@@ -640,6 +679,12 @@ __db_get_pp(dbp, txn, key, data, flags)
 		goto err;
 
 	ret = __db_get(dbp, txn, key, data, flags);
+	/*
+	 * Check for master leases.
+	 */
+	if (ret == 0 && IS_REP_MASTER(dbenv) && IS_USING_LEASES(dbenv) &&
+	    !ignore_lease)
+		ret = __rep_lease_check(dbenv, 1);
 
 err:	if (txn_local &&
 	    (t_ret = __db_txn_auto_resolve(dbenv, txn, 0, ret)) && ret == 0)
@@ -1297,12 +1342,15 @@ __db_pget_pp(dbp, txn, skey, pkey, data, flags)
 {
 	DB_ENV *dbenv;
 	DB_THREAD_INFO *ip;
-	int handle_check, ret, t_ret;
+	int handle_check, ignore_lease, ret, t_ret;
 
 	dbenv = dbp->dbenv;
 
 	PANIC_CHECK(dbenv);
 	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->pget");
+
+	ignore_lease = LF_ISSET(DB_IGNORE_LEASE);
+	LF_CLR(DB_IGNORE_LEASE);
 
 	if ((ret = __db_pget_arg(dbp, pkey, flags)) != 0 ||
 	    (ret = __db_get_arg(dbp, skey, data, flags)) != 0) {
@@ -1321,6 +1369,12 @@ __db_pget_pp(dbp, txn, skey, pkey, data, flags)
 	}
 
 	ret = __db_pget(dbp, txn, skey, pkey, data, flags);
+	/*
+	 * Check for master leases.
+	 */
+	if (ret == 0 && IS_REP_MASTER(dbenv) && IS_USING_LEASES(dbenv) &&
+	    !ignore_lease)
+		ret = __rep_lease_check(dbenv, 1);
 
 err:	/* Release replication block. */
 	if (handle_check && (t_ret = __env_db_rep_exit(dbenv)) != 0 && ret == 0)
@@ -1564,14 +1618,29 @@ __db_put_arg(dbp, key, data, flags)
 err:		return (__db_ferr(dbenv, "DB->put", 0));
 	}
 
-	/* Check for invalid key/data flags. */
-	if ((ret = __dbt_ferr(dbp, "key", key, returnkey)) != 0)
+	/*
+	 * Check for invalid key/data flags.  The key may reasonably be NULL
+	 * if DB_APPEND is set and the application doesn't care about the
+	 * returned key.
+	 */
+	if (((returnkey && key != NULL) || !returnkey) &&
+	    (ret = __dbt_ferr(dbp, "key", key, returnkey)) != 0)
 		return (ret);
 	if ((ret = __dbt_ferr(dbp, "data", data, 0)) != 0)
 		return (ret);
 
-	/* Keys shouldn't have partial flags during a put. */
-	if (F_ISSET(key, DB_DBT_PARTIAL))
+	/*
+	 * The key parameter should not be NULL or have the "partial" flag set
+	 * in a put call unless the user doesn't care about a key value we'd
+	 * return.  The user tells us they don't care about the returned key by
+	 * setting the key parameter to NULL or configuring the key DBT to not
+	 * return any information.  (Returned keys from a put are always record
+	 * numbers, and returning part of a record number  doesn't make sense:
+	 * only accept a partial return if the length returned is 0.)
+	 */
+	if ((returnkey &&
+	    key != NULL && F_ISSET(key, DB_DBT_PARTIAL) && key->dlen != 0) ||
+	    (!returnkey && F_ISSET(key, DB_DBT_PARTIAL)))
 		return (__db_ferr(dbenv, "key DBT", 0));
 
 	/* Check for partial puts in the presence of duplicates. */
@@ -1627,6 +1696,11 @@ __db_compact_pp(dbp, txn, start, stop, c_data, flags, end)
 	if (DB_IS_READONLY(dbp))
 		return (__db_rdonly(dbenv, "DB->compact"));
 
+	if (start != NULL && (ret = __dbt_usercopy(dbenv, start)) != 0)
+		return (ret);
+	if (stop != NULL && (ret = __dbt_usercopy(dbenv, stop)) != 0)
+		return (ret);
+
 	ENV_ENTER(dbenv, ip);
 
 	/* Check for replication block. */
@@ -1662,6 +1736,7 @@ err:		ret = __dbh_am_chk(dbp, DB_OK_BTREE);
 		ret = t_ret;
 
 	ENV_LEAVE(dbenv, ip);
+	__dbt_userfree(dbenv, start, stop, NULL);
 	return (ret);
 }
 
@@ -1926,7 +2001,7 @@ __dbc_get_pp(dbc, key, data, flags)
 {
 	DB *dbp;
 	DB_ENV *dbenv;
-	int ret;
+	int ignore_lease, ret;
 	DB_THREAD_INFO *ip;
 
 	dbp = dbc->dbp;
@@ -1934,6 +2009,8 @@ __dbc_get_pp(dbc, key, data, flags)
 
 	PANIC_CHECK(dbenv);
 
+	ignore_lease = LF_ISSET(DB_IGNORE_LEASE);
+	LF_CLR(DB_IGNORE_LEASE);
 	if ((ret = __dbc_get_arg(dbc, key, data, flags)) != 0)
 		return (ret);
 
@@ -1942,6 +2019,13 @@ __dbc_get_pp(dbc, key, data, flags)
 	DEBUG_LREAD(dbc, dbc->txn, "DBcursor->get",
 	    flags == DB_SET || flags == DB_SET_RANGE ? key : NULL, NULL, flags);
 	ret = __dbc_get(dbc, key, data, flags);
+
+	/*
+	 * Check for master leases.
+	 */
+	if (ret == 0 && IS_REP_MASTER(dbenv) && IS_USING_LEASES(dbenv) &&
+	    !ignore_lease)
+		ret = __rep_lease_check(dbenv, 1);
 
 	ENV_LEAVE(dbenv, ip);
 	__dbt_userfree(dbenv, key, NULL, data);
@@ -2169,19 +2253,28 @@ __dbc_pget_pp(dbc, skey, pkey, data, flags)
 	DB *dbp;
 	DB_ENV *dbenv;
 	DB_THREAD_INFO *ip;
-	int ret;
+	int ignore_lease, ret;
 
 	dbp = dbc->dbp;
 	dbenv = dbp->dbenv;
 
 	PANIC_CHECK(dbenv);
 
+	ignore_lease = LF_ISSET(DB_IGNORE_LEASE);
+	LF_CLR(DB_IGNORE_LEASE);
 	if ((ret = __dbc_pget_arg(dbc, pkey, flags)) != 0 ||
 	    (ret = __dbc_get_arg(dbc, skey, data, flags)) != 0)
 		return (ret);
 
 	ENV_ENTER(dbenv, ip);
 	ret = __dbc_pget(dbc, skey, pkey, data, flags);
+	/*
+	 * Check for master leases.
+	 */
+	if (ret == 0 && IS_REP_MASTER(dbenv) && IS_USING_LEASES(dbenv) &&
+	    !ignore_lease)
+		ret = __rep_lease_check(dbenv, 1);
+
 	ENV_LEAVE(dbenv, ip);
 
 	__dbt_userfree(dbenv, skey, pkey, data);
@@ -2352,7 +2445,7 @@ __dbc_put_arg(dbc, key, data, flags)
 		case DB_RECNO:		/* Only with mutable record numbers. */
 			if (!F_ISSET(dbp, DB_AM_RENUMBER))
 				goto err;
-			key_flags = 1;
+			key_flags = key == NULL ? 0 : 1;
 			break;
 		case DB_UNKNOWN:
 		default:
@@ -2380,25 +2473,27 @@ __dbc_put_arg(dbc, key, data, flags)
 err:		return (__db_ferr(dbenv, "DBcursor->put", 0));
 	}
 
-	/* Check for invalid key/data flags. */
+	/*
+	 * Check for invalid key/data flags.  The key may reasonably be NULL
+	 * if DB_AFTER or DB_BEFORE is set and the application doesn't care
+	 * about the returned key, or if the DB_CURRENT flag is set.
+	 */
 	if (key_flags && (ret = __dbt_ferr(dbp, "key", key, 0)) != 0)
 		return (ret);
 	if ((ret = __dbt_ferr(dbp, "data", data, 0)) != 0)
 		return (ret);
 
-	/* Keys shouldn't have partial flags during a put. */
-	if (key_flags && F_ISSET(key, DB_DBT_PARTIAL))
-		return (__db_ferr(dbenv, "key DBT", 0));
-
 	/*
-	 * Data should only have a partial flag if overwriting the
-	 * current entry.
+	 * The key parameter should not be NULL or have the "partial" flag set
+	 * in a put call unless the user doesn't care about a key value we'd
+	 * return.  The user tells us they don't care about the returned key by
+	 * setting the key parameter to NULL or configuring the key DBT to not
+	 * return any information.  (Returned keys from a put are always record
+	 * numbers, and returning part of a record number  doesn't make sense:
+	 * only accept a partial return if the length returned is 0.)
 	 */
-	if (F_ISSET(data, DB_DBT_PARTIAL) && flags != DB_CURRENT) {
-		__db_errx(dbenv,
-    "partial put on a cursor only valid when overwriting the current entry");
-		return (EINVAL);
-	}
+	if (key_flags && F_ISSET(key, DB_DBT_PARTIAL) && key->dlen != 0)
+		return (__db_ferr(dbenv, "key DBT", 0));
 
 	/*
 	 * The cursor must be initialized for anything other than DB_KEYFIRST

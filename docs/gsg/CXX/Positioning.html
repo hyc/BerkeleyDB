@@ -73,9 +73,9 @@ try {
         // can never be reached. 
     }
 } catch(DbException &amp;e) {
-        my_database.err(e.get_errno(), &quot;Error!&quot;);
+        my_database.err(e.get_errno(), "Error!");
 } catch(std::exception &amp;e) {
-        my_database.errx(&quot;Error! %s&quot;, e.what());
+        my_database.errx("Error! %s", e.what());
 }
 
 // Cursors must be closed
@@ -114,9 +114,9 @@ try {
         // can never be reached. 
     }
 } catch(DbException &amp;e) {
-        my_database.err(e.get_errno(), &quot;Error!&quot;);
+        my_database.err(e.get_errno(), "Error!");
 } catch(std::exception &amp;e) {
-        my_database.errx(&quot;Error! %s&quot;, e.what());
+        my_database.errx("Error! %s", e.what());
 }
 
 // Cursors must be closed
@@ -196,7 +196,7 @@ my_database.close(0);</pre>
               <p>
             <span>Identical to 
                 <tt class="literal">DB_SET</tt>
-                <tt class="methodname">Cursor.getSearchKey()</tt>
+                
             unless you are using the BTree access. In this case, the cursor
             moves</span>
             
@@ -330,8 +330,8 @@ try {
     my_database.cursor(NULL, &amp;cursorp, 0);
 
     // Search criteria
-    char *search_key = &quot;Alaska&quot;;
-    char *search_data = &quot;Fa&quot;;
+    char *search_key = "Alaska";
+    char *search_data = "Fa";
 
     // Set up our DBTs
     Dbt key(search_key, strlen(search_key) + 1);
@@ -345,9 +345,9 @@ try {
         // Do something with the data
     }
 } catch(DbException &amp;e) {
-        my_database.err(e.get_errno(), &quot;Error!&quot;);
+        my_database.err(e.get_errno(), "Error!");
 } catch(std::exception &amp;e) {
-        my_database.errx(&quot;Error! %s&quot;, e.what());
+        my_database.errx("Error! %s", e.what());
 }
 
 // Close the cursor
@@ -453,7 +453,7 @@ Arizona/Florence</pre>
           and you then call 
                  
                 <span>
-                     
+                         
                     <tt class="methodname">Dbc::get()</tt> 
                     with <tt class="literal">DB_PREV_NODUP</tt>,
                 </span> 
@@ -521,7 +521,7 @@ Arizona/Florence</pre>
 
 ...
 
-char *search_key = &quot;Al&quot;;
+char *search_key = "Al";
 
 Db my_database(NULL, 0);
 Dbc *cursorp;
@@ -540,14 +540,14 @@ try {
     // key and data begin with the correct strings.
     int ret = cursorp-&gt;get(&amp;key, &amp;data, DB_SET);
     while (ret != DB_NOTFOUND) {
-        std::cout &lt;&lt; &quot;key: &quot; &lt;&lt; (char *)key.get_data() 
-                  &lt;&lt; &quot;data: &quot; &lt;&lt; (char *)data.get_data()&lt;&lt; std::endl;
+        std::cout &lt;&lt; "key: " &lt;&lt; (char *)key.get_data() 
+                  &lt;&lt; "data: " &lt;&lt; (char *)data.get_data()&lt;&lt; std::endl;
         ret = cursorp-&gt;get(&amp;key, &amp;data, DB_NEXT_DUP);
     }
 } catch(DbException &amp;e) {
-        my_database.err(e.get_errno(), &quot;Error!&quot;);
+        my_database.err(e.get_errno(), "Error!");
 } catch(std::exception &amp;e) {
-        my_database.errx(&quot;Error! %s&quot;, e.what());
+        my_database.errx("Error! %s", e.what());
 }
 
 // Close the cursor

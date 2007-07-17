@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: env007.tcl,v 12.15 2006/11/01 00:53:53 bostic Exp $
+# $Id: env007.tcl,v 12.16 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	env007
 # TEST	Test DB_CONFIG config file options for berkdb env.

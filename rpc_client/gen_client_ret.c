@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: gen_client_ret.c,v 12.10 2006/11/01 00:53:47 bostic Exp $
+ * $Id: gen_client_ret.c,v 12.12 2007/05/23 15:18:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -417,7 +417,7 @@ __dbcl_db_open_ret(dbp, txn, name, subdb, type, flags, mode, replyp)
 		 * __db_set_lorder checks that it is called before
 		 * the open flag is set.
 		 */
-		(void)__db_set_lorder(dbp, replyp->lorder);
+		(void)__db_set_lorder(dbp, (int)replyp->lorder);
 
 		/*
 		 * Explicitly set DB_AM_OPEN_CALLED since open is now

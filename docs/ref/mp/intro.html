@@ -1,5 +1,5 @@
-<!--$Id: intro.so,v 10.25 2006/12/27 15:27:35 bostic Exp $-->
-<!--Copyright 1997,2006 Oracle.  All rights reserved.-->
+<!--$Id: intro.so,v 10.26 2007/04/05 20:54:56 bostic Exp $-->
+<!--Copyright (c) 1997,2007 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
 <head>
@@ -32,10 +32,9 @@ they may be marked <b>dirty</b>, which causes them to be written to
 the underlying file before being discarded from the pool.  If there is
 insufficient room to bring a new page in the pool, a page is selected
 to be discarded from the pool using a least-recently-used algorithm.
-Pages in files may also be explicitly marked clean or dirty using the
-UNREF==memp_fset method.  All dirty pages in the pool from the file may be
-flushed using the <a href="../../api_c/memp_fsync.html">DB_MPOOLFILE-&gt;sync</a> method.  When the file handle is no
-longer in use, it should be closed using the <a href="../../api_c/memp_fclose.html">DB_MPOOLFILE-&gt;close</a> method.</p>
+All dirty pages in the pool from the file may be flushed using the
+<a href="../../api_c/memp_fsync.html">DB_MPOOLFILE-&gt;sync</a> method.  When the file handle is no longer in use, it
+should be closed using the <a href="../../api_c/memp_fclose.html">DB_MPOOLFILE-&gt;close</a> method.</p>
 <p>There are additional configuration interfaces that apply when opening
 a new file in the memory pool:</p>
 <p><ul type=disc>
@@ -67,7 +66,7 @@ database systems, and which allows the memory pool to be flushed up to
 a specified log sequence number (<a href="../../api_c/lsn_class.html">DB_LSN</a>).
 <li>The entire pool may be discarded using the <a href="../../api_c/env_remove.html">DB_ENV-&gt;remove</a> method.
 </ul>
-<!--$Id: m4.methods,v 1.10 2006/11/30 19:06:50 bostic Exp $-->
+<!--$Id: m4.methods,v 1.11 2007/07/06 00:22:53 mjc Exp $-->
 <table border=1 align=center>
 <tr><th>Memory Pools and Related Methods</th><th>Description</th></tr>
 <!--Db::mpf--><tr><td><a href="../../api_c/db_get_mpf.html">DB-&gt;get_mpf</a></td><td>Return <a href="../../api_c/db_class.html">DB</a>'s underlying <a href="../../api_c/mempfile_class.html">DB_MPOOLFILE</a> handle</td></tr>
@@ -78,6 +77,7 @@ a specified log sequence number (<a href="../../api_c/lsn_class.html">DB_LSN</a>
 <tr><th>Memory Pool Configuration</th><th><br></th></tr>
 <!--DbEnv::memp_register--><tr><td><a href="../../api_c/memp_register.html">DB_ENV-&gt;memp_register</a></td><td>Register input/output functions for a file in a memory pool</td></tr>
 <!--DbEnv::set_cachesize--><tr><td><a href="../../api_c/env_set_cachesize.html">DB_ENV-&gt;set_cachesize</a></td><td>Set the environment cache size</td></tr>
+<!--DbEnv::set_cache_max--><tr><td><a href="../../api_c/env_set_cache_max.html">DB_ENV-&gt;set_cache_max</a></td><td>Set the maximum cache size</td></tr>
 <!--DbEnv::set_mp_max_openfd--><tr><td><a href="../../api_c/memp_openfd.html">DB_ENV-&gt;set_mp_max_openfd</a></td><td>Set the maximum number of open file descriptors</td></tr>
 <!--DbEnv::set_mp_max_write--><tr><td><a href="../../api_c/memp_maxwrite.html">DB_ENV-&gt;set_mp_max_write</a></td><td>Set the maximum number of sequential disk writes</td></tr>
 <!--DbEnv::set_mp_mmapsize--><tr><td><a href="../../api_c/env_set_mp_mmapsize.html">DB_ENV-&gt;set_mp_mmapsize</a></td><td>Set maximum mapped-in database file size</td></tr>
@@ -101,6 +101,6 @@ a specified log sequence number (<a href="../../api_c/lsn_class.html">DB_LSN</a>
 </table>
 <table width="100%"><tr><td><br></td><td align=right><a href="../log/limits.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../mp/config.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
-<p><font size=1>Copyright (c) 1996,2006 Oracle.  All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996,2007 Oracle.  All rights reserved.</font>
 </body>
 </html>

@@ -98,7 +98,9 @@ int __os_qnx_shmname __P((DB_ENV *, const char *, char **));
 time_t time __P((time_t *));
 #endif
 int __os_is_winnt __P((void));
+#ifdef HAVE_REPLICATION_THREADS
 int __os_get_neterr __P((void));
+#endif
 int __os_mkdir __P((DB_ENV *, const char *, int));
 
 #if defined(__cplusplus)

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: txn_stat.c,v 12.21 2006/12/13 01:25:40 ubell Exp $
+ * $Id: txn_stat.c,v 12.23 2007/06/22 18:27:51 bostic Exp $
  */
 
 #include "db_config.h"
@@ -167,7 +167,7 @@ __txn_stat_print_pp(dbenv, flags)
 	ENV_REQUIRES_CONFIG(dbenv,
 	    dbenv->tx_handle, "DB_ENV->txn_stat_print", DB_INIT_TXN);
 
-	if ((ret = __db_fchk(dbenv, "DB_ENV->txn_stat",
+	if ((ret = __db_fchk(dbenv, "DB_ENV->txn_stat_print",
 	    flags, DB_STAT_ALL | DB_STAT_CLEAR)) != 0)
 		return (ret);
 

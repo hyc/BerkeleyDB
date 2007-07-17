@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: log.c,v 12.48 2007/01/03 16:42:42 ubell Exp $
+ * $Id: log.c,v 12.54 2007/06/04 21:30:51 sue Exp $
  */
 
 #include "db_config.h"
@@ -790,19 +790,21 @@ __log_env_refresh(dbenv)
 		ret = t_ret;
 
 	/* We may have opened files as part of XA; if so, close them. */
-	if ((t_ret = __dbreg_close_files(dbenv)) != 0 && ret == 0)
+	if ((t_ret = __dbreg_close_files(dbenv, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/*
 	 * After we close the files, check for any unlogged closes left in
-	 * the shared memory queue.  If we find any, we need to panic the
-	 * region.  Note, just set "ret" -- a panic overrides any previously
-	 * set error return.
+	 * the shared memory queue.  If we find any, try to log it, otherwise
+	 * return the error.  We cannot say the environment was closed
+	 * cleanly.
 	 */
 	MUTEX_LOCK(dbenv, lp->mtx_filelist);
 	SH_TAILQ_FOREACH(fnp, &lp->fq, q, __fname)
-		if (F_ISSET(fnp, DB_FNAME_NOTLOGGED))
-			ret = __db_panic(dbenv, EINVAL);
+		if (F_ISSET(fnp, DB_FNAME_NOTLOGGED) &&
+		    (t_ret = __dbreg_close_id_int(
+		    dbenv, fnp, DBREG_CLOSE, 1)) != 0)
+			ret = t_ret;
 	MUTEX_UNLOCK(dbenv, lp->mtx_filelist);
 
 	/*
@@ -1475,14 +1477,23 @@ __log_get_oldversion(dbenv, ver)
 	DB_LOG *dblp;
 	DB_LOGC *logc;
 	DB_LSN lsn;
+	LOG *lp;
 	u_int32_t firstfnum, fnum, lastver, oldver;
 	int ret, t_ret;
 
 	dblp = dbenv->lg_handle;
+	lp = dblp->reginfo.primary;
 
 	logc = NULL;
 	ret = 0;
 	oldver = DB_LOGVERSION;
+	/*
+	 * If we're in-memory logs we're always the current version.
+	 */
+	if (lp->db_log_inmemory) {
+		*ver = oldver;
+		return (0);
+	}
 	memset(&rec, 0, sizeof(rec));
 	if ((ret = __log_cursor(dbenv, &logc)) != 0)
 		goto err;

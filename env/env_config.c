@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: env_config.c,v 12.71 2006/11/29 20:08:44 bostic Exp $
+ * $Id: env_config.c,v 12.73 2007/05/17 15:15:11 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,11 +14,7 @@
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 
-#undef	CONFIG_SLOTS
-#define	CONFIG_SLOTS	10
-
 static int __config_parse __P((DB_ENV *, char *, int));
-static int __config_split __P((char *, char *[CONFIG_SLOTS]));
 
 /*
  * __env_read_db_config --
@@ -109,6 +105,9 @@ __env_read_db_config(dbenv)
 		return (f(dbenv, (u_int32_t)__v));			\
 	}								\
 } while (0)
+
+#undef	CONFIG_SLOTS
+#define	CONFIG_SLOTS	10
 
 /*
  * __config_parse --
@@ -356,8 +355,10 @@ format:		__db_errx(dbenv,
  * __config_split --
  *	Split lines into white-space separated fields, returning the count of
  *	fields.
+ *
+ * PUBLIC: int __config_split __P((char *, char *[]));
  */
-static int
+int
 __config_split(input, argv)
 	char *input, *argv[CONFIG_SLOTS];
 {

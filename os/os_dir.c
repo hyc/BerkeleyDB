@@ -1,31 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os_dir.c,v 12.10 2006/11/01 00:53:39 bostic Exp $
+ * $Id: os_dir.c,v 12.12 2007/05/17 15:15:46 bostic Exp $
  */
 
 #include "db_config.h"
 
+#define	__INCLUDE_DIRECTORY	1
 #include "db_int.h"
-
-#if HAVE_DIRENT_H
-# include <dirent.h>
-# define NAMLEN(dirent) strlen((dirent)->d_name)
-#else
-# define dirent direct
-# define NAMLEN(dirent) (dirent)->d_namlen
-# if HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
-# if HAVE_SYS_DIR_H
-#  include <sys/dir.h>
-# endif
-# if HAVE_NDIR_H
-#  include <ndir.h>
-# endif
-#endif
 
 /*
  * __os_dirlist --

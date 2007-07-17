@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: hash_stub.c,v 12.10 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_stub.c,v 12.12 2007/05/17 15:15:38 bostic Exp $
  */
 
 #ifndef HAVE_HASH
@@ -77,6 +77,40 @@ __ham_31_hash(dbp, real_name, flags, fhp, h, dirtyp)
 
 int
 __ham_31_hashmeta(dbp, real_name, flags, fhp, h, dirtyp)
+	DB *dbp;
+	char *real_name;
+	u_int32_t flags;
+	DB_FH *fhp;
+	PAGE *h;
+	int *dirtyp;
+{
+	COMPQUIET(real_name, NULL);
+	COMPQUIET(flags, 0);
+	COMPQUIET(fhp, NULL);
+	COMPQUIET(h, NULL);
+	COMPQUIET(dirtyp, NULL);
+	return (__db_no_hash_am(dbp->dbenv));
+}
+
+int
+__ham_46_hash(dbp, real_name, flags, fhp, h, dirtyp)
+	DB *dbp;
+	char *real_name;
+	u_int32_t flags;
+	DB_FH *fhp;
+	PAGE *h;
+	int *dirtyp;
+{
+	COMPQUIET(real_name, NULL);
+	COMPQUIET(flags, 0);
+	COMPQUIET(fhp, NULL);
+	COMPQUIET(h, NULL);
+	COMPQUIET(dirtyp, NULL);
+	return (__db_no_hash_am(dbp->dbenv));
+}
+
+int
+__ham_46_hashmeta(dbp, real_name, flags, fhp, h, dirtyp)
 	DB *dbp;
 	char *real_name;
 	u_int32_t flags;

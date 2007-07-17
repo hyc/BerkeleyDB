@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: DatabaseConfig.java,v 12.8 2006/11/14 03:32:34 alexg Exp $
+ * $Id: DatabaseConfig.java,v 12.10 2007/06/28 14:23:36 mjc Exp $
  */
 
 package com.sleepycat.db;
@@ -40,6 +40,7 @@ public class DatabaseConfig implements Cloneable {
     private java.io.OutputStream messageStream = null;
     private int pageSize = 0;
     private String password = null;
+    private CacheFilePriority priority = null;
     private int queueExtentSize = 0;
     private int recordDelimiter = 0;
     private int recordLength = 0;
@@ -313,6 +314,14 @@ public class DatabaseConfig implements Cloneable {
         return panicHandler;
     }
 
+    public void setPriority(final CacheFilePriority priority) {
+        this.priority = priority;
+    }
+
+    public CacheFilePriority getPriority() {
+        return priority;
+    }
+
     public void setQueueExtentSize(final int queueExtentSize) {
         this.queueExtentSize = queueExtentSize;
     }
@@ -559,6 +568,8 @@ public class DatabaseConfig implements Cloneable {
             db.set_pagesize(pageSize);
         if (password != oldConfig.password && db.getPrivateDbEnv())
             db.set_encrypt(password, DbConstants.DB_ENCRYPT_AES);
+        if (priority != oldConfig.priority)
+            db.set_priority(priority.getFlag());
         if (queueExtentSize != oldConfig.queueExtentSize)
             db.set_q_extentsize(queueExtentSize);
         if (recordDelimiter != oldConfig.recordDelimiter)
@@ -636,6 +647,7 @@ public class DatabaseConfig implements Cloneable {
         messageStream = db.get_message_stream();
         // Not available by design
         password = ((dbFlags & DbConstants.DB_ENCRYPT) != 0) ? "" : null;
+        priority = CacheFilePriority.fromFlag(db.get_priority());
         if (type == DatabaseType.QUEUE) {
             queueExtentSize = db.get_q_extentsize();
         }

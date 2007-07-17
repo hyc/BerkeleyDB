@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: update.tcl,v 12.4 2006/11/01 00:54:03 bostic Exp $
+# $Id: update.tcl,v 12.5 2007/05/17 15:15:56 bostic Exp $
 
 source ./include.tcl
 global update_dir

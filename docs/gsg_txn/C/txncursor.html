@@ -48,7 +48,7 @@
       <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -57,7 +57,7 @@ main(void)
     DBC *cursorp;
     DB_TXN *txn = NULL;
     int ret, c_ret;
-    char *replacementString = &quot;new string&quot;;
+    char *replacementString = "new string";
 
     ...
     /* environment and db handle creation omitted */
@@ -67,14 +67,14 @@ main(void)
     txn = NULL;
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Transaction begin failed.&quot;);
+        envp-&gt;err(envp, ret, "Transaction begin failed.");
         goto err;
     }
 
     /* Get the cursor, supply the txn handle at that time */
     ret = dbp-&gt;cursor(dbp, txn, &amp;cursorp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Cursor open failed.&quot;);
+        envp-&gt;err(envp, ret, "Cursor open failed.");
         txn-&gt;abort(txn);
         goto err;
     }
@@ -86,14 +86,14 @@ main(void)
     /* Prepare the DBTs */
     memset(&amp;key, 0, sizeof(DBT));
     memset(&amp;data, 0, sizeof(DBT));
-    while (cursor-&gt;c_get(&amp;key, &amp;data, DB_NEXT) == 0) {
+    while (cursor-&gt;get(&amp;key, &amp;data, DB_NEXT) == 0) {
         data-&gt;data = (void *)replacementString;
         data-&gt;size = (strlen(replacementString) + 1) * sizeof(char);
-        c_ret = cursor-&gt;c_put(cursor, &amp;key, &amp;data, DB_CURRENT);
+        c_ret = cursor-&gt;put(cursor, &amp;key, &amp;data, DB_CURRENT);
         if (c_ret != 0) {
             /* abort the transaction and goto error */ 
-            envp-&gt;err(envp, ret, &quot;Cursor put failed.&quot;);
-            cursorp-&gt;c_close(cursorp);
+            envp-&gt;err(envp, ret, "Cursor put failed.");
+            cursorp-&gt;close(cursorp);
             cursorp = NULL;
             txn-&gt;abort(txn);
             goto err;
@@ -104,15 +104,15 @@ main(void)
      * Commit the transaction. Note that the transaction handle
      * can no longer be used.
      */ 
-    ret = cursorp-&gt;c_close(cursorp);
+    ret = cursorp-&gt;close(cursorp);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Cursor close failed.&quot;);
+        envp-&gt;err(envp, ret, "Cursor close failed.");
         txn-&gt;abort(txn);
         goto err;
     }
     ret = txn-&gt;commit(txn, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Transaction commit failed.&quot;);
+        envp-&gt;err(envp, ret, "Transaction commit failed.");
         goto err;
     }
 

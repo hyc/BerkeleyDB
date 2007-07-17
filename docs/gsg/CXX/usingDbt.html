@@ -127,7 +127,7 @@
 
 ...
 
-char *description = &quot;Grocery bill.&quot;;
+char *description = "Grocery bill.";
 float money = 122.45;
 
 Db my_database(NULL, 0);
@@ -138,7 +138,7 @@ Dbt data(description, strlen(description) + 1);
 
 int ret = my_database.put(NULL, &amp;key, &amp;data, DB_NOOVERWRITE);
 if (ret == DB_KEYEXIST) {
-    my_database.err(ret, &quot;Put failed because key %f already exists&quot;, money);
+    my_database.err(ret, "Put failed because key %f already exists", money);
 }</pre>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -192,7 +192,7 @@ if (ret == DB_KEYEXIST) {
 ...
 
 float money;
-char *description[DESCRIPTION_SIZE + 1];
+char description[DESCRIPTION_SIZE + 1];
 
 Db my_database(NULL, 0);
 // Database open omitted for clarity 
@@ -202,9 +202,9 @@ money = 122.45;
 Dbt key, data;
 
 key.set_data(&amp;money);
-key.set_ulen(sizeof(float));
+key.set_size(sizeof(float));
 
-data.set_data(&amp;description);
+data.set_data(description);
 data.set_ulen(DESCRIPTION_SIZE + 1);
 data.set_flags(DB_DBT_USERMEM);
 

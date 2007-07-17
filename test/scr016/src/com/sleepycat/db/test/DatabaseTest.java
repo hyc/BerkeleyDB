@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
  */
 
@@ -43,7 +43,7 @@ public class DatabaseTest {
     public static final String DATABASETEST_DBNAME  =       "databasetest.db";
 
     private static int itemcount;	// count the number of items in the database
-    
+ 
     @BeforeClass public static void ClassInit() {
 	    TestUtils.loadConfig(null);
         TestUtils.check_file_removed(TestUtils.getDBFileName(DATABASETEST_DBNAME), true, true);

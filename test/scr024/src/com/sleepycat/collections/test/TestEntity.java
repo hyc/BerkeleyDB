@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: TestEntity.java,v 12.4 2006/11/01 00:54:12 bostic Exp $
+ * $Id: TestEntity.java,v 12.5 2007/05/04 00:28:29 mark Exp $
  */
 
 package com.sleepycat.collections.test;

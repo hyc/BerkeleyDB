@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: lock_region.c,v 12.16 2006/11/29 20:08:47 bostic Exp $
+ * $Id: lock_region.c,v 12.18 2007/05/17 15:15:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -94,6 +94,10 @@ __lock_open(dbenv, create_ok)
 	/* Set remaining pointers into region. */
 	lt->conflicts = R_ADDR(&lt->reginfo, region->conf_off);
 	lt->obj_tab = R_ADDR(&lt->reginfo, region->obj_off);
+	lt->obj_stat = R_ADDR(&lt->reginfo, region->stat_off);
+#ifdef HAVE_FINE_GRAINED_LOCK_MANAGER
+	lt->obj_mtx = R_ADDR(&lt->reginfo, region->mtx_off);
+#endif
 	lt->locker_tab = R_ADDR(&lt->reginfo, region->locker_off);
 
 	dbenv->lk_handle = lt;
@@ -139,8 +143,9 @@ __lock_open(dbenv, create_ok)
 
 err:	dbenv->lk_handle = NULL;
 	if (lt->reginfo.addr != NULL) {
-		if (region_locked)
+		if (region_locked) {
 			LOCK_SYSTEM_UNLOCK(dbenv);
+		}
 		(void)__env_region_detach(dbenv, &lt->reginfo, 0);
 	}
 
@@ -162,6 +167,9 @@ __lock_region_init(dbenv, lt)
 	DB_LOCKER *lidp;
 	DB_LOCKOBJ *op;
 	DB_LOCKREGION *region;
+#ifdef HAVE_FINE_GRAINED_LOCK_MANAGER
+	db_mutex_t *mtxp;
+#endif
 	u_int32_t i;
 	u_int8_t *addr;
 	int lk_modes, ret;
@@ -219,6 +227,35 @@ __lock_region_init(dbenv, lt)
 		goto mem_err;
 	__db_hashinit(addr, region->object_t_size);
 	region->obj_off = R_OFFSET(&lt->reginfo, addr);
+	/* Allocate room for the object hash stats table and initialize it. */
+	if ((ret = __env_alloc(&lt->reginfo,
+	    region->object_t_size * sizeof(DB_LOCK_HSTAT), &addr)) != 0)
+		goto mem_err;
+	memset(addr, 0, region->object_t_size * sizeof(DB_LOCK_HSTAT));
+	region->stat_off = R_OFFSET(&lt->reginfo, addr);
+#ifdef HAVE_FINE_GRAINED_LOCK_MANAGER
+	if ((ret = __env_alloc(&lt->reginfo,
+	    region->object_t_size * sizeof(db_mutex_t), &mtxp)) != 0)
+		goto mem_err;
+	region->mtx_off = R_OFFSET(&lt->reginfo, mtxp);
+	for (i = 0; i < region->object_t_size; i++) {
+		if ((ret = __mutex_alloc(
+		    dbenv, MTX_LOCK_REGION, 0, &mtxp[i])) != 0)
+			return (ret);
+	}
+	if ((ret = __mutex_alloc(
+	    dbenv, MTX_LOCK_REGION, 0, &region->mtx_objs)) != 0)
+		return (ret);
+
+	if ((ret = __mutex_alloc(
+	    dbenv, MTX_LOCK_REGION, 0, &region->mtx_locks)) != 0)
+		return (ret);
+
+	if ((ret = __mutex_alloc(
+	    dbenv, MTX_LOCK_REGION, 0, &region->mtx_lockers)) != 0)
+		return (ret);
+
+#endif
 
 	/* Allocate room for the locker hash table and initialize it. */
 	if ((ret = __env_alloc(&lt->reginfo,
@@ -248,6 +285,7 @@ __lock_region_init(dbenv, lt)
 			goto mem_err;
 		SH_TAILQ_INSERT_HEAD(
 		    &region->free_objs, op, links, __db_lockobj);
+		op->generation = 0;
 	}
 
 	/* Initialize lockers onto a free list.  */
@@ -348,7 +386,11 @@ u_int32_t
 __lock_region_mutex_count(dbenv)
 	DB_ENV *dbenv;
 {
+#ifdef HAVE_FINE_GRAINED_LOCK_MANAGER
+	return (dbenv->lk_max + __db_tablesize(dbenv->lk_max_objects) + 3);
+#else
 	return (dbenv->lk_max);
+#endif
 }
 
 /*
@@ -370,6 +412,8 @@ __lock_region_size(dbenv)
 	retval += __env_alloc_size((size_t)(dbenv->lk_modes * dbenv->lk_modes));
 	retval += __env_alloc_size(
 	    __db_tablesize(dbenv->lk_max_objects) * (sizeof(DB_HASHTAB)));
+	retval += __env_alloc_size(
+	    __db_tablesize(dbenv->lk_max_objects) * (sizeof(DB_LOCK_HSTAT)));
 	retval += __env_alloc_size(
 	    __db_tablesize(dbenv->lk_max_lockers) * (sizeof(DB_HASHTAB)));
 	retval += __env_alloc_size(sizeof(struct __db_lock)) * dbenv->lk_max;

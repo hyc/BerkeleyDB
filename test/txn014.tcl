@@ -1,23 +1,23 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2006 Oracle.  All rights reserved.
+# Copyright (c) 2005,2007 Oracle.  All rights reserved.
 #
-# $Id: txn014.tcl,v 12.1 2007/01/23 20:19:09 carol Exp $
+# $Id: txn014.tcl,v 12.3 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	txn014
 # TEST	Test of parent and child txns working on the same database.
-# TEST	A txn that will become a parent create a database. 
-# TEST	A txn that will not become a parent creates another database. 
+# TEST	A txn that will become a parent create a database.
+# TEST	A txn that will not become a parent creates another database.
 # TEST	Start a child txn of the 1st txn.
-# TEST  Verify that the parent txn is disabled while child is open. 
+# TEST  Verify that the parent txn is disabled while child is open.
 # TEST	1. Child reads contents with child handle (should succeed).
 # TEST	2. Child reads contents with parent handle (should succeed).
-# TEST  Verify that the non-parent txn can read from its database, 
+# TEST  Verify that the non-parent txn can read from its database,
 # TEST	and that the child txn cannot.
-# TEST	Return to the child txn. 
+# TEST	Return to the child txn.
 # TEST	3. Child writes with child handle (should succeed).
 # TEST	4. Child writes with parent handle (should succeed).
-# TEST	
+# TEST
 # TEST	Commit the child, verify that the parent can write again.
 # TEST	Check contents of database with a second child.
 proc txn014 { } {
@@ -41,27 +41,27 @@ proc txn014 { } {
 	error_check_good env [is_valid_env $env] TRUE
 
 	# Open a database with parent txn and populate.  We populate
-	# before starting up the child txn, because the only allowed 
+	# before starting up the child txn, because the only allowed
 	# Berkeley DB calls for a parent txn are beginning child txns,
-	# committing, or aborting. 
+	# committing, or aborting.
 
 	puts "\tTxn$tnum.b: Start parent txn and open database."
 	set parent [$env txn]
 	error_check_good parent_begin [is_valid_txn $parent $env] TRUE
 	set db [berkdb_open_noerr \
 	    -env $env -txn $parent -create $method $parentfile]
-	populate $db $method $parent $nentries 0 0 
+	populate $db $method $parent $nentries 0 0
 
 	puts "\tTxn$tnum.c: Start non-parent txn and open database."
 	set nonparent [$env txn]
 	error_check_good nonparent_begin [is_valid_txn $nonparent $env] TRUE
 	set db2 [berkdb_open_noerr \
 	    -env $env -txn $nonparent -create $method $nonparentfile]
-	populate $db2 $method $nonparent $nentries 0 0 
+	populate $db2 $method $nonparent $nentries 0 0
 
 	# Start child txn and open database.  Parent txn is not yet
-	# committed, but the child should be able to read what's there. 
-	# The child txn should also be able to use the parent txn. 
+	# committed, but the child should be able to read what's there.
+	# The child txn should also be able to use the parent txn.
 
 	puts "\tTxn$tnum.d: Start child txn."
 	set child [$env txn -parent $parent]
@@ -77,9 +77,9 @@ proc txn014 { } {
 
 	puts "\tTxn$tnum.g: Read database with child txn/child handle,"
 	puts "\tTxn$tnum.g:     and with child txn/parent handle."
-	set did [open $dict] 
-	set count 0 
-	while { [gets $did str] != -1 && $count < $nentries } { 
+	set did [open $dict]
+	set count 0
+	while { [gets $did str] != -1 && $count < $nentries } {
 		set key $str
 
 		# First use child's handle.
@@ -90,7 +90,7 @@ proc txn014 { } {
 		# Have the child use the parent's handle.
 		set ret [$db get -txn $child $key]
 		error_check_good \
-		    get $ret [list [list $key [pad_data $method $str]]]	
+		    get $ret [list [list $key [pad_data $method $str]]]
 		incr count
 	}
 	close $did
@@ -103,34 +103,34 @@ proc txn014 { } {
 	# Check the return against $key, because $str has gone on to
 	# the next item in the wordlist.
 	error_check_good \
-	    np_get $ret [list [list $key [pad_data $method $key]]]	
+	    np_get $ret [list [list $key [pad_data $method $key]]]
 	catch {$db2 get -txn $child $key} ret
 	error_check_good \
 	    child_np_get [is_substr $ret "is still active"] 1
 
 	# The child should also be able to update the database, using
-	# either handle. 
+	# either handle.
 	puts "\tTxn$tnum.i: Write to database with child txn & child handle."
-	populate $childdb $method $child $nentries 0 0 
+	populate $childdb $method $child $nentries 0 0
 	puts "\tTxn$tnum.j: Write to database with child txn & parent handle."
-	populate $db $method $child $nentries 0 0 
-	
+	populate $db $method $child $nentries 0 0
+
 	puts "\tTxn$tnum.k: Commit child, freeing parent."
 	error_check_good child_commit [$child commit] 0
 	error_check_good childdb_close [$childdb close] 0
 
 	puts "\tTxn$tnum.l: Add more entries to db using parent txn."
 	set nentries [expr $nentries * 2]
-	populate $db $method $parent $nentries 0 0 
+	populate $db $method $parent $nentries 0 0
 
 	puts "\tTxn$tnum.m: Start new child txn and read database."
 	set child2 [$env txn -parent $parent]
 	set child2db \
 	    [berkdb_open_noerr -env $env -txn $child2 $method $parentfile]
 
-	set did [open $dict] 
-	set count 0 
-	while { [gets $did str] != -1 && $count < $nentries } { 
+	set did [open $dict]
+	set count 0
+	while { [gets $did str] != -1 && $count < $nentries } {
 		set key $str
 		set ret [$child2db get -txn $child2 $key]
 		error_check_good \

@@ -275,7 +275,7 @@
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -283,14 +283,14 @@ main(void)
     int ret, ret_c;
     u_int32_t db_flags, env_flags;
     DB_ENV *envp;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
 
     envp = NULL;
 
     /* Create the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -312,7 +312,7 @@ main(void)
      */
      ret = envp-&gt;set_lg_bsize(envp, 5 * 1024 * 1024);
      if (ret != 0) {
-        fprintf(stderr, &quot;Error setting log buffer size: %s\n&quot;,
+        fprintf(stderr, "Error setting log buffer size: %s\n",
             db_strerror(ret));
         goto err;
      }
@@ -335,7 +335,7 @@ main(void)
     /* Open the environment as normal */
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -358,7 +358,7 @@ err:
     if (envp != NULL) {
         ret_c = envp-&gt;close(envp, 0);
         if (ret_c != 0) {
-            fprintf(stderr, &quot;environment close failed: %s\n&quot;,
+            fprintf(stderr, "environment close failed: %s\n",
                 db_strerror(ret_c));
             ret = ret_c;
         }
@@ -400,7 +400,7 @@ err:
                 large enough that no transaction will ever span the entire
                 buffer. You must also avoid a state where the in-memory
                 buffer is full and no space can be freed because a
-                transaction that started the first log &quot;file&quot; is still
+                transaction that started the first log "file" is still
                 active.
             </p>
         <p>

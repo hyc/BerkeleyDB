@@ -86,7 +86,7 @@
                 configuring a transaction to perform uncommitted reads in
                 general, see <a href="isolation.html#dirtyreads">Reading Uncommitted Data</a>.
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -105,9 +105,9 @@ int main(void)
                          DB_READ_UNCOMMITTED;  // Enable uncommitted reads
 
     Db *dbp = NULL;
-    const char *file_name = &quot;mydb.db&quot;;
+    const char *file_name = "mydb.db";
 
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     Dbc *cursorp = NULL;

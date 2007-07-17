@@ -2,9 +2,9 @@
 #
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: gen_rec.awk,v 12.24 2007/01/17 15:15:45 margo Exp $
+# $Id: gen_rec.awk,v 12.28 2007/06/13 19:01:29 bostic Exp $
 #
 
 # This awk script generates all the log, print, and read routines for the DB
@@ -181,7 +181,7 @@ BEGIN {
 		if (is_duplicate)
 			printf("#define\tDB_%s\t%d\n", \
 			    dup_funcname, dup_rectype) >> HFILE
-			
+
 	}
 
 	# Structure declaration.
@@ -592,6 +592,7 @@ function log_function()
 			printf("\t\t\tif (rlsnp != ret_lsnp)\n") >> CFILE;
 			printf("\t\t\t\t *ret_lsnp = *rlsnp;\n") >> CFILE;
 			printf("\t\t}\n\t} else {\n") >> CFILE;
+			printf("\t\tret = 0;\n") >> CFILE;
 			printf("#ifdef DIAGNOSTIC\n") >> CFILE;
 
 			# Add the debug bit if we are logging a ND record.
@@ -609,11 +610,10 @@ function log_function()
 			printf("logrec.data, &rectype, sizeof(rectype));\n\n") \
 			    >> CFILE;
 			# Output the log record.
-			printf("\t\tret = __log_put(dbenv,\n") >> CFILE;
-			printf("\t\t    rlsnp, (DBT *)&logrec, ") >> CFILE;
+			printf("\t\tif (!IS_REP_CLIENT(dbenv))\n") >> CFILE;
+			printf("\t\t\tret = __log_put(dbenv,\n") >> CFILE;
+			printf("\t\t\t    rlsnp, (DBT *)&logrec, ") >> CFILE;
 			printf("flags | DB_LOG_NOCOPY);\n") >> CFILE;
-			printf("#else\n") >> CFILE;
-			printf("\t\tret = 0;\n") >> CFILE;
 			printf("#endif\n") >> CFILE;
 			# Add a ND record to the txn list.
 			printf("\t\tSTAILQ_INSERT_HEAD(&txnp") >> CFILE;
@@ -1080,10 +1080,10 @@ function log_funcdecl(name, withtype)
 function log_callint(fname)
 {
 	if (has_dbp == 1) {
-		printf("\n{\n\treturn(%s_log(dbp, txnp, ret_lsnp, flags", \
+		printf("\n{\n\treturn (%s_log(dbp, txnp, ret_lsnp, flags", \
 		    internal_name) >> CFILE;
 	} else {
-		printf("\n{\n\treturn(%s_log(dbenv, txnp, ret_lsnp, flags", \
+		printf("\n{\n\treturn (%s_log(dbenv, txnp, ret_lsnp, flags", \
 		    internal_name) >> CFILE;
 	}
 

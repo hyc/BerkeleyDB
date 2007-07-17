@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: lock_method.c,v 12.15 2006/11/16 16:44:58 bostic Exp $
+ * $Id: lock_method.c,v 12.17 2007/05/17 15:15:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -131,9 +131,9 @@ __lock_get_lk_detect(dbenv, lk_detectp)
 
 	if (LOCKING_ON(dbenv)) {
 		lt = dbenv->lk_handle;
-		LOCK_SYSTEM_LOCK(dbenv);
+		LOCK_REGION_LOCK(dbenv);
 		*lk_detectp = ((DB_LOCKREGION *)lt->reginfo.primary)->detect;
-		LOCK_SYSTEM_UNLOCK(dbenv);
+		LOCK_REGION_UNLOCK(dbenv);
 	} else
 		*lk_detectp = dbenv->lk_detect;
 	return (0);
@@ -178,7 +178,7 @@ __lock_set_lk_detect(dbenv, lk_detect)
 	if (LOCKING_ON(dbenv)) {
 		lt = dbenv->lk_handle;
 		region = lt->reginfo.primary;
-		LOCK_SYSTEM_LOCK(dbenv);
+		LOCK_REGION_LOCK(dbenv);
 		/*
 		 * Check for incompatible automatic deadlock detection requests.
 		 * There are scenarios where changing the detector configuration
@@ -197,7 +197,7 @@ __lock_set_lk_detect(dbenv, lk_detect)
 		} else
 			if (region->detect == DB_LOCK_NORUN)
 				region->detect = lk_detect;
-		LOCK_SYSTEM_UNLOCK(dbenv);
+		LOCK_REGION_UNLOCK(dbenv);
 	} else
 		dbenv->lk_detect = lk_detect;
 
@@ -336,7 +336,7 @@ __lock_get_env_timeout(dbenv, timeoutp, flag)
 	if (LOCKING_ON(dbenv)) {
 		lt = dbenv->lk_handle;
 		region = lt->reginfo.primary;
-		LOCK_SYSTEM_LOCK(dbenv);
+		LOCK_REGION_LOCK(dbenv);
 		switch (flag) {
 		case DB_SET_LOCK_TIMEOUT:
 			*timeoutp = region->lk_timeout;
@@ -348,7 +348,7 @@ __lock_get_env_timeout(dbenv, timeoutp, flag)
 			ret = 1;
 			break;
 		}
-		LOCK_SYSTEM_UNLOCK(dbenv);
+		LOCK_REGION_UNLOCK(dbenv);
 	} else
 		switch (flag) {
 		case DB_SET_LOCK_TIMEOUT:
@@ -391,7 +391,7 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 	if (LOCKING_ON(dbenv)) {
 		lt = dbenv->lk_handle;
 		region = lt->reginfo.primary;
-		LOCK_SYSTEM_LOCK(dbenv);
+		LOCK_REGION_LOCK(dbenv);
 		switch (flags) {
 		case DB_SET_LOCK_TIMEOUT:
 			region->lk_timeout = timeout;
@@ -403,7 +403,7 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 			ret = 1;
 			break;
 		}
-		LOCK_SYSTEM_UNLOCK(dbenv);
+		LOCK_REGION_UNLOCK(dbenv);
 	} else
 		switch (flags) {
 		case DB_SET_LOCK_TIMEOUT:

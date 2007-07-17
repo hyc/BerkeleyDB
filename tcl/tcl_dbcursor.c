@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_dbcursor.c,v 12.15 2006/11/01 00:53:51 bostic Exp $
+ * $Id: tcl_dbcursor.c,v 12.17 2007/05/17 15:15:54 bostic Exp $
  */
 
 #include "db_config.h"
@@ -382,6 +382,7 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 		"-key_buf_size",
 		"-multi",
 		"-multi_key",
+		"-nolease",
 		"-read_committed",
 		"-read_uncommitted",
 #endif
@@ -411,6 +412,7 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 		DBCGET_KEY_BUF_SIZE,
 		DBCGET_MULTI,
 		DBCGET_MULTI_KEY,
+		DBCGET_NOLEASE,
 		DBCGET_READ_COMMITTED,
 		DBCGET_READ_UNCOMMITTED,
 #endif
@@ -483,7 +485,8 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 		i++;
 
 #define	FLAG_CHECK2_STDARG	\
-	(DB_RMW | DB_MULTIPLE | DB_MULTIPLE_KEY | DB_READ_UNCOMMITTED)
+	(DB_RMW | DB_MULTIPLE | DB_MULTIPLE_KEY | DB_IGNORE_LEASE | \
+	DB_READ_UNCOMMITTED)
 
 		switch ((enum dbcgetopts)optindex) {
 #ifdef CONFIG_TEST
@@ -520,6 +523,9 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 			if (result != TCL_OK)
 				goto out;
 			i++;
+			break;
+		case DBCGET_NOLEASE:
+			flag |= DB_IGNORE_LEASE;
 			break;
 		case DBCGET_READ_COMMITTED:
 			flag |= DB_READ_COMMITTED;

@@ -179,7 +179,7 @@
                     If a cursor is used to put the duplicate record to the database,
                     then the new record is placed in the duplicate set according to the
                     flags that are provided on the 
-                        <tt class="methodname">DBC-&gt;c_put()</tt>
+                        <tt class="methodname">DBC-&gt;put()</tt>
                         
                     method. The relevant flags are:
                 </p>
@@ -194,7 +194,7 @@
                         The data
                         <span>
                             provided on the call to
-                            <tt class="methodname">DBC-&gt;c_put()</tt>
+                            <tt class="methodname">DBC-&gt;put()</tt>
                             
                         </span>
                         is placed into the database
@@ -204,7 +204,7 @@
                         
                         <span>
                         to
-                            <tt class="methodname">DBC-&gt;c_put()</tt>
+                            <tt class="methodname">DBC-&gt;put()</tt>
                             
                         </span>
 
@@ -242,7 +242,7 @@
                             If the key 
                             <span>
                                 provided on the call to
-                                <tt class="methodname">DBC-&gt;c_put()</tt>
+                                <tt class="methodname">DBC-&gt;put()</tt>
                                 
                             </span>
                             already exists in the
@@ -329,15 +329,15 @@
 DB *dbp;
 FILE *error_file_pointer;
 int ret;
-char *program_name = &quot;my_prog&quot;;
-char *file_name = &quot;mydb.db&quot;;
+char *program_name = "my_prog";
+char *file_name = "mydb.db";
 
 /* Variable assignments omitted for brevity */
 
 /* Initialize the DB handle */
 ret = db_create(&amp;dbp, NULL, 0);
 if (ret != 0) {
-    fprintf(error_file_pointer, &quot;%s: %s\n&quot;, program_name,
+    fprintf(error_file_pointer, "%s: %s\n", program_name,
         db_strerror(ret));
     return(ret);
 }
@@ -351,7 +351,7 @@ dbp-&gt;set_errpfx(dbp, program_name);
  */
 ret = dbp-&gt;set_flags(dbp, DB_DUPSORT);
 if (ret != 0) {
-    dbp-&gt;err(dbp, ret, &quot;Attempt to set DUPSORT flag failed.&quot;);
+    dbp-&gt;err(dbp, ret, "Attempt to set DUPSORT flag failed.");
     dbp-&gt;close(dbp, 0);
     return(ret);
 }
@@ -365,7 +365,7 @@ ret = dbp-&gt;open(dbp,        /* Pointer to the database */
                 DB_CREATE,  /* Open flags */
                 0);         /* File mode. Using defaults */
 if (ret != 0) {
-    dbp-&gt;err(dbp, ret, &quot;Database '%s' open failed.&quot;, file_name);
+    dbp-&gt;err(dbp, ret, "Database '%s' open failed.", file_name);
     dbp-&gt;close(dbp, 0);
     return(ret);
 } </pre>
@@ -537,7 +537,7 @@ int ret;
 /* Create a database */
 ret = db_create(&amp;dbp, NULL, 0);
 if (ret != 0) {
-        fprintf(stderr, &quot;%s: %s\n&quot;, &quot;my_program&quot;,
+        fprintf(stderr, "%s: %s\n", "my_program",
           db_strerror(ret));
         return(-1);
 }

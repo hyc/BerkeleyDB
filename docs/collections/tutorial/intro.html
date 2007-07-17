@@ -63,20 +63,20 @@
         </dl>
       </div>
       <p>
-        The  Java Collections API is a Java framework that extends
+        The DB Java Collections API is a Java framework that extends
         the well known 
-        <a href="http://java.sun.com/j2se/1.3/docs/guide/collections/" target="_top">Java Collections</a>
+        <a href="http://java.sun.com/j2se/1.5.0/docs/guide/collections/" target="_top">Java Collections</a>
         design pattern such that collections can now be
         stored, updated and queried in a transactional manner. The
-         Java Collections API is a layer on top of DB.
+        DB Java Collections API is a layer on top of DB.
     </p>
       <p>
-        Together the  Java Collections API and Berkeley DB  provide an
+        Together the DB Java Collections API and Berkeley DB  provide an
         embedded data management solution with all the benefits of a full
         transactional storage and the simplicity of a well known Java API.
         Java programmers who need fast, scalable, transactional data
         management for their projects can quickly adopt and deploy the 
-         Java Collections API with confidence.
+        DB Java Collections API with confidence.
     </p>
       <p>
         This framework was first known as 
@@ -107,7 +107,7 @@
         
          
 
-        The  Java Collections API is a layer on top of 
+        The DB Java Collections API is a layer on top of 
 
         <span>that
         thin JNI mapping of the C API to Berkeley DB.</span>
@@ -170,7 +170,7 @@
             </li>
             <li>
               <p>
-                The  Java Collections API insulates the application
+                The DB Java Collections API insulates the application
                 from minor differences in the use of the Berkeley DB Data Store,
                 Concurrent Data Store, and Transactional Data Store products.
                 This allows for development with one and deployment with another
@@ -180,17 +180,17 @@
           </ul>
         </div>
         <p>
-        Note that the  Java Collections API does not support caching
+        Note that the DB Java Collections API does not support caching
         of programming language objects nor does it keep track of their stored
-        status. This is in contrast to &quot;persistent object&quot; approaches such
+        status. This is in contrast to "persistent object" approaches such
         as those defined by 
         <a href="http://www.odmg.org/" target="_top">ODMG</a>
         and JDO
         (<a href="http://www.jcp.org/en/jsr/detail?id=12" target="_top">JSR 12</a>).
         Such approaches have benefits but also require sophisticated object
-        caching. For simplicity the  Java Collections API treats data
+        caching. For simplicity the DB Java Collections API treats data
         objects by value, not by reference, and does not perform object
-        caching of any kind. Since the  Java Collections API is a thin
+        caching of any kind. Since the DB Java Collections API is a thin
         layer, its reliability and performance characteristics are roughly
         equivalent to those of Berkeley DB, and database tuning is
         accomplished in the same way as for any Berkeley DB database.

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
  */
 
@@ -109,7 +109,7 @@ public class AppendRecnoTest implements RecordNumberAppender {
 
     	    if(itemcount > EXPECTED_ENTRIES.length)
     	        TestUtils.ERR("More entries in recno DB than expected.");
-    	        
+    	     
 
     	    if(gotString.compareTo(EXPECTED_ENTRIES[itemcount-1]) != 0)
     	        TestUtils.DEBUGOUT(3, "Recno - stored data mismatch. Expected: " + EXPECTED_ENTRIES[itemcount-1] + " received: " + gotString);

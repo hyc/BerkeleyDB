@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: cxx_mpool.cpp,v 12.8 2006/11/30 19:05:15 bostic Exp $
+ * $Id: cxx_mpool.cpp,v 12.10 2007/06/28 13:02:50 mjc Exp $
  */
 
 #include "db_config.h"
@@ -106,6 +106,8 @@ DB_MPOOLFILE_METHOD(get_ftype, (int *ftypep),
     (mpf, ftypep), DB_RETOK_STD)
 DB_MPOOLFILE_METHOD(set_ftype, (int ftype),
     (mpf, ftype), DB_RETOK_STD)
+DB_MPOOLFILE_METHOD(get_last_pgno, (db_pgno_t *pgnop),
+    (mpf, pgnop), DB_RETOK_STD)
 DB_MPOOLFILE_METHOD(get_lsn_offset, (int32_t *offsetp),
     (mpf, offsetp), DB_RETOK_STD)
 DB_MPOOLFILE_METHOD(set_lsn_offset, (int32_t offset),

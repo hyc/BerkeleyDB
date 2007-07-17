@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: hash_method.c,v 12.6 2006/11/01 00:53:22 bostic Exp $
+ * $Id: hash_method.c,v 12.7 2007/05/17 15:15:38 bostic Exp $
  */
 
 #include "db_config.h"

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep022.tcl,v 12.12 2006/12/07 19:35:19 carol Exp $
+# $Id: rep022.tcl,v 12.16 2007/06/08 15:10:05 sue Exp $
 #
 # TEST  rep022
 # TEST	Replication elections - test election generation numbers
@@ -52,12 +52,12 @@ proc rep022 { method args } {
 proc rep022_sub { method nclients tnum logset largs } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	set qdir $testdir/MSGQUEUEDIR
@@ -81,6 +81,7 @@ proc rep022_sub { method nclients tnum logset largs } {
 	set envlist {}
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 $verbargs \
+	    -event rep_event \
 	    -home $masterdir $m_txnargs $m_logargs -rep_master \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
@@ -91,7 +92,7 @@ proc rep022_sub { method nclients tnum logset largs } {
 		set envid [expr $i + 2]
 		repladd $envid
 		set env_cmd($i) "berkdb_env_noerr -create $verbargs \
-		    -errpfx CLIENT.$i \
+		    -errpfx CLIENT.$i -event rep_event \
 		    -home $clientdir($i) $c_txnargs($i) $c_logargs($i) \
 		    -rep_client -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i)]
@@ -148,6 +149,9 @@ proc rep022_sub { method nclients tnum logset largs } {
 	# Now close and reopen 2 with recovery.  Update the
 	# list of all client envs with the new information.
 	#
+	replclear 5
+	replclear 6
+	error_check_good flush [$clientenv(2) log_flush] 0
 	error_check_good clientenv_close(2) [$clientenv(2) close] 0
 	set clientenv(2) [eval $env_cmd(2) -recover]
 	set origlist [lreplace $origlist 2 2 "$clientenv(2) 4"]

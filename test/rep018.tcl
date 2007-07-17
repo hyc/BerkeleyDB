@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003,2006 Oracle.  All rights reserved.
+# Copyright (c) 2003,2007 Oracle.  All rights reserved.
 #
-# $Id: rep018.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
+# $Id: rep018.tcl,v 12.14 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep018
 # TEST	Replication with dbremove.
@@ -47,12 +47,12 @@ proc rep018 { method { niter 10 } { tnum "018" } args } {
 proc rep018_sub { method niter tnum logset recargs largs } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 	set omethod [convert_method $method]
 
@@ -91,6 +91,12 @@ proc rep018_sub { method niter tnum logset recargs largs } {
 
 	# Bring the client online.
 	process_msgs "{$masterenv 1} {$clientenv 2}"
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# db_remove in a moment.
+	#
+	$masterenv test force noarchive_timeout
 
 	puts "\tRep$tnum.b: Open database on master, propagate to client."
 	set dbname rep$tnum.db

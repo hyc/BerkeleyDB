@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: cxx_dbc.cpp,v 12.7 2006/11/01 00:52:27 bostic Exp $
+ * $Id: cxx_dbc.cpp,v 12.10 2007/06/26 16:58:17 bostic Exp $
  */
 
 #include "db_config.h"
@@ -116,3 +116,6 @@ int Dbc::pget(Dbt* key, Dbt *pkey, Dbt *data, u_int32_t _flags)
 
 DBC_METHOD(put, (Dbt* key, Dbt *data, u_int32_t _flags),
     (dbc, key, data, _flags), DB_RETOK_DBCPUT)
+DBC_METHOD(get_priority, (DB_CACHE_PRIORITY *priorityp),
+    (dbc, priorityp), DB_RETOK_STD)
+DBC_METHOD(set_priority, (DB_CACHE_PRIORITY pri), (dbc, pri), DB_RETOK_STD)

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: tcl_internal.c,v 12.20 2006/12/18 19:08:52 alanb Exp $
+ * $Id: tcl_internal.c,v 12.24 2007/05/17 17:18:05 bostic Exp $
  */
 
 #include "db_config.h"
@@ -511,7 +511,7 @@ _EventFunc(dbenv, event, info)
 	void *info;
 {
 #define	TCLDB_EVENTITEMS 2	/* Event name and any info */
-#define	TCLDB_SENDEVENT 2
+#define	TCLDB_SENDEVENT 3	/* Event Tcl proc, env name, event objects. */
 	DBTCL_INFO *ip;
 	Tcl_Interp *interp;
 	Tcl_Obj *event_o, *origobj;
@@ -523,6 +523,7 @@ _EventFunc(dbenv, event, info)
 	if (ip->i_event == NULL)
 		return;
 	objv[0] = ip->i_event;
+	objv[1] = NewStringObj(ip->i_name, strlen(ip->i_name));
 
 	/*
 	 * Most events don't have additional info.  Assume none
@@ -540,6 +541,9 @@ _EventFunc(dbenv, event, info)
 		break;
 	case DB_EVENT_REP_CLIENT:
 		myobjv[0] = NewStringObj("rep_client", strlen("rep_client"));
+		break;
+	case DB_EVENT_REP_ELECTED:
+		myobjv[0] = NewStringObj("elected", strlen("elected"));
 		break;
 	case DB_EVENT_REP_MASTER:
 		myobjv[0] = NewStringObj("rep_master", strlen("rep_master"));
@@ -571,7 +575,7 @@ _EventFunc(dbenv, event, info)
 
 	event_o = Tcl_NewListObj(myobjc, myobjv);
 	Tcl_IncrRefCount(event_o);
-	objv[1] = event_o;
+	objv[2] = event_o;
 
 	/*
 	 * We really want to return the original result to the
@@ -698,7 +702,7 @@ _GetFlagsList(interp, flags, fnp)
 
 	newlist = Tcl_NewObj();
 
-	/* 
+	/*
 	 * If the Berkeley DB library wasn't compiled with statistics, then
 	 * we may get a NULL reference.
 	 */

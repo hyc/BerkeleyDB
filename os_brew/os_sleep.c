@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2005 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os_sleep.c,v 1.6 2007/02/01 13:15:31 bostic Exp $
+ * $Id: os_sleep.c,v 1.7 2007/05/17 15:15:47 bostic Exp $
  */
 
 #include "db_config.h"

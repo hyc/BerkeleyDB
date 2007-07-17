@@ -530,6 +530,20 @@ __db_db_get_pagesize_4006__SVCSUFFIX__(msg, req)
 	return (&reply);
 }
 
+__db_get_priority_reply *
+__db_db_get_priority_4006__SVCSUFFIX__(msg, req)
+	__db_get_priority_msg *msg;
+	struct svc_req *req;
+{
+	static __db_get_priority_reply reply; /* must be static */
+	COMPQUIET(req, NULL);
+
+	__db_get_priority_proc(msg->dbpcl_id,
+	    &reply);
+
+	return (&reply);
+}
+
 __db_get_q_extentsize_reply *
 __db_db_get_q_extentsize_4006__SVCSUFFIX__(msg, req)
 	__db_get_q_extentsize_msg *msg;
@@ -866,6 +880,21 @@ __db_db_set_pagesize_4006__SVCSUFFIX__(msg, req)
 	return (&reply);
 }
 
+__db_set_priority_reply *
+__db_db_set_priority_4006__SVCSUFFIX__(msg, req)
+	__db_set_priority_msg *msg;
+	struct svc_req *req;
+{
+	static __db_set_priority_reply reply; /* must be static */
+	COMPQUIET(req, NULL);
+
+	__db_set_priority_proc(msg->dbpcl_id,
+	    msg->priority,
+	    &reply);
+
+	return (&reply);
+}
+
 __db_set_q_extentsize_reply *
 __db_db_set_q_extentsize_4006__SVCSUFFIX__(msg, req)
 	__db_set_q_extentsize_msg *msg;
@@ -1076,6 +1105,20 @@ __db_dbc_get_4006__SVCSUFFIX__(msg, req)
 	return (&reply);
 }
 
+__dbc_get_priority_reply *
+__db_dbc_get_priority_4006__SVCSUFFIX__(msg, req)
+	__dbc_get_priority_msg *msg;
+	struct svc_req *req;
+{
+	static __dbc_get_priority_reply reply; /* must be static */
+	COMPQUIET(req, NULL);
+
+	__dbc_get_priority_proc(msg->dbccl_id,
+	    &reply);
+
+	return (&reply);
+}
+
 __dbc_pget_reply *
 __db_dbc_pget_4006__SVCSUFFIX__(msg, req)
 	__dbc_pget_msg *msg;
@@ -1151,6 +1194,21 @@ __db_dbc_put_4006__SVCSUFFIX__(msg, req)
 	    msg->flags,
 	    &reply,
 	    &__dbc_put_free);
+	return (&reply);
+}
+
+__dbc_set_priority_reply *
+__db_dbc_set_priority_4006__SVCSUFFIX__(msg, req)
+	__dbc_set_priority_msg *msg;
+	struct svc_req *req;
+{
+	static __dbc_set_priority_reply reply; /* must be static */
+	COMPQUIET(req, NULL);
+
+	__dbc_set_priority_proc(msg->dbccl_id,
+	    msg->priority,
+	    &reply);
+
 	return (&reply);
 }
 

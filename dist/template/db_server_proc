@@ -810,6 +810,28 @@ __db_get_pagesize_proc(dbpcl_id, replyp)
 	return;
 }
 
+/* BEGIN __db_get_priority_proc */
+void
+__db_get_priority_proc(dbpcl_id, replyp)
+	unsigned int dbpcl_id;
+	__db_get_priority_reply *replyp;
+/* END __db_get_priority_proc */
+{
+	int ret;
+	DB * dbp;
+	ct_entry *dbp_ctp;
+
+	ACTIVATE_CTP(dbp_ctp, dbpcl_id, CT_DB);
+	dbp = (DB *)dbp_ctp->ct_anyp;
+
+	/*
+	 * XXX Code goes here
+	 */
+
+	replyp->status = ret;
+	return;
+}
+
 /* BEGIN __db_get_q_extentsize_proc */
 void
 __db_get_q_extentsize_proc(dbpcl_id, replyp)
@@ -1304,6 +1326,29 @@ __db_set_pagesize_proc(dbpcl_id, pagesize, replyp)
 	return;
 }
 
+/* BEGIN __db_set_priority_proc */
+void
+__db_set_priority_proc(dbpcl_id, priority, replyp)
+	unsigned int dbpcl_id;
+	u_int32_t priority;
+	__db_set_priority_reply *replyp;
+/* END __db_set_priority_proc */
+{
+	int ret;
+	DB * dbp;
+	ct_entry *dbp_ctp;
+
+	ACTIVATE_CTP(dbp_ctp, dbpcl_id, CT_DB);
+	dbp = (DB *)dbp_ctp->ct_anyp;
+
+	/*
+	 * XXX Code goes here
+	 */
+
+	replyp->status = ret;
+	return;
+}
+
 /* BEGIN __db_set_q_extentsize_proc */
 void
 __db_set_q_extentsize_proc(dbpcl_id, extentsize, replyp)
@@ -1608,6 +1653,28 @@ __dbc_get_proc(dbccl_id, keydlen, keydoff,
 	return;
 }
 
+/* BEGIN __dbc_get_priority_proc */
+void
+__dbc_get_priority_proc(dbccl_id, replyp)
+	unsigned int dbccl_id;
+	__dbc_get_priority_reply *replyp;
+/* END __dbc_get_priority_proc */
+{
+	int ret;
+	DBC * dbc;
+	ct_entry *dbc_ctp;
+
+	ACTIVATE_CTP(dbc_ctp, dbccl_id, CT_CURSOR);
+	dbc = (DBC *)dbc_ctp->ct_anyp;
+
+	/*
+	 * XXX Code goes here
+	 */
+
+	replyp->status = ret;
+	return;
+}
+
 /* BEGIN __dbc_pget_proc */
 void
 __dbc_pget_proc(dbccl_id, skeydlen, skeydoff,
@@ -1678,6 +1745,29 @@ __dbc_put_proc(dbccl_id, keydlen, keydoff,
 	__dbc_put_reply *replyp;
 	int * freep;
 /* END __dbc_put_proc */
+{
+	int ret;
+	DBC * dbc;
+	ct_entry *dbc_ctp;
+
+	ACTIVATE_CTP(dbc_ctp, dbccl_id, CT_CURSOR);
+	dbc = (DBC *)dbc_ctp->ct_anyp;
+
+	/*
+	 * XXX Code goes here
+	 */
+
+	replyp->status = ret;
+	return;
+}
+
+/* BEGIN __dbc_set_priority_proc */
+void
+__dbc_set_priority_proc(dbccl_id, priority, replyp)
+	unsigned int dbccl_id;
+	u_int32_t priority;
+	__dbc_set_priority_reply *replyp;
+/* END __dbc_set_priority_proc */
 {
 	int ret;
 	DBC * dbc;

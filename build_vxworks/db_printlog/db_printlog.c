@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_printlog.c,v 12.22 2006/11/01 00:52:36 bostic Exp $
+ * $Id: db_printlog.c,v 12.25 2007/06/01 15:36:50 sue Exp $
  */
 
 #include "db_config.h"
@@ -19,7 +19,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 int db_printlog_env_init_print __P((DB_ENV *, u_int32_t,
@@ -72,7 +72,7 @@ db_printlog_main(argc, argv)
 	int (**dtab) __P((DB_ENV *, DBT *, DB_LSN *, db_recops, void *));
 	char *home, *passwd;
 
-	if ((progname = strrchr(argv[0], '/')) == NULL)
+	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
 	else
 		++progname;
@@ -358,7 +358,11 @@ db_printlog_env_init_print(dbenv, version, dtabp, dtabsizep)
 	/*
 	 * There are no log record/recovery differences between
 	 * 4.4 and 4.5.  The log version changed due to checksum.
+	 * There are no log recovery differences between
+	 * 4.5 and 4.6.  The name of the rep_gen in txn_checkpoint
+	 * changed (to spare, since we don't use it anymore).
 	 */
+	case DB_LOGVERSION_46:
 	case DB_LOGVERSION_45:
 	case DB_LOGVERSION_44:
 		ret = 0;

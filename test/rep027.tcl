@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep027.tcl,v 12.11 2006/12/07 19:35:19 carol Exp $
+# $Id: rep027.tcl,v 12.13 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep027
 # TEST	Replication and secondary indexes.
@@ -58,12 +58,12 @@ proc rep027_sub { method niter tnum logset recargs largs } {
 	source ./include.tcl
 	global verbose_check_secondaries
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set omethod [convert_method $method]
 	env_cleanup $testdir
 

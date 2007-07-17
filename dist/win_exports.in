@@ -1,4 +1,4 @@
-# $Id: win_exports.in,v 12.22 2006/11/30 16:37:55 bostic Exp $
+# $Id: win_exports.in,v 12.26 2007/06/29 14:11:26 alexg Exp $
 
 # Standard interfaces.
 	db_create
@@ -39,6 +39,8 @@
 	__db_ndbm_rdonly
 	__db_ndbm_store
 	__db_panic
+	__db_win32_mutex_lock
+	__db_win32_mutex_unlock
 	__ham_func2
 	__ham_func3
 	__ham_func4
@@ -50,6 +52,7 @@
 	__os_dirfree
 	__os_dirlist
 	__os_free
+	__os_fsync
 	__os_get_syserr
 	__os_getenv
 	__os_ioinfo
@@ -60,6 +63,7 @@
 	__os_posix_err
 	__os_read
 	__os_realloc
+	__os_rename
 	__os_strdup
 	__os_umalloc
 	__os_unlink
@@ -82,6 +86,7 @@
 	__bam_root_read
 	__bam_rsplit_read
 	__bam_split_read
+	__config_split
 	__crdel_inmem_create_read
 	__crdel_inmem_remove_read
 	__crdel_inmem_rename_read

@@ -105,7 +105,7 @@ try {
     // transactional, the open is automatically wrapped in a transaction.
     //      - myEnv is the environment handle.
     //      - myDb is the primary database handle.
-    String secDbName = &quot;mySecondaryDatabase&quot;;
+    String secDbName = "mySecondaryDatabase";
     mySecDb = myEnv.openSecondary(null, secDbName, null, myDb, mySecConfig);
 } catch (DatabaseException de) {
     // Exception handling goes here ...

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep041.tcl,v 12.15 2006/12/07 19:37:44 carol Exp $
+# $Id: rep041.tcl,v 12.18 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep041
 # TEST  Turn replication on and off at run-time.
@@ -68,12 +68,12 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -121,7 +121,7 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 	    transport_noop [$masterenv rep_transport {1 replnoop}] 0
 	error_check_good rep_on [$masterenv rep_start -master] 0
 
-	# If master is on-dish, archive.
+	# If master is on-disk, archive.
 	if { $m_logtype != "in-memory" } {
 		puts "\tRep$tnum.c: Run log_archive - some logs should be removed."
 		set res [eval exec $util_path/db_archive -l -h $masterdir]

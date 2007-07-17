@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: bt_compact.c,v 12.57 2006/12/15 21:10:37 ubell Exp $
+ * $Id: bt_compact.c,v 12.62 2007/05/17 15:14:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -44,7 +44,7 @@ static int __bam_truncate_internal __P((DB *, DB_TXN *, DB_COMPACT *));
 	do {								\
 		save_data = *c_data;					\
 		ret = __db_retcopy(dbenv,				\
-		     &save_start, end->data, end->size,			\
+		     &save_start, current.data, current.size,		\
 		     &save_start.data, &save_start.ulen);		\
 	} while (0)
 
@@ -59,9 +59,9 @@ static int __bam_truncate_internal __P((DB *, DB_TXN *, DB_COMPACT *));
 		      save_data.compact_pages_free;			\
 		c_data->compact_levels = save_data.compact_levels;	\
 		c_data->compact_truncate = save_data.compact_truncate;	\
-		ret = __db_retcopy(dbenv, end,				\
+		ret = __db_retcopy(dbenv, &current,			\
 		     save_start.data, save_start.size,			\
-		     &end->data, &end->ulen);				\
+		     &current.data, &current.ulen);			\
 	} while (0)
 /*
  * __bam_compact -- compact a btree.
@@ -82,37 +82,38 @@ __bam_compact(dbp, txn, start, stop, c_data, flags, end)
 	DBC *dbc;
 	DB_COMPACT save_data;
 	DB_ENV *dbenv;
-	db_pgno_t last_pgno;
-	struct pglist *list;
-	u_int32_t factor, nelems, truncated;
+	u_int32_t factor;
 	int deadlock, done, ret, span, t_ret, txn_local;
+
+#ifdef HAVE_FTRUNCATE
+	struct pglist *list;
+	db_pgno_t last_pgno;
+	u_int32_t nelems, truncated;
+#endif
 
 	dbenv = dbp->dbenv;
 
 	memset(&current, 0, sizeof(current));
 	memset(&save_start, 0, sizeof(save_start));
 	dbc = NULL;
-	deadlock = 0;
-	done = 0;
 	factor = 0;
-	ret = 0;
-	span = 0;
-	truncated = 0;
+	deadlock = done = ret = span = 0;
+
+#ifdef HAVE_FTRUNCATE
+	list = NULL;
 	last_pgno = 0;
+	nelems = truncated = 0;
+#endif
 
 	/*
-	 * We pass "end" to the internal routine, indicating where
-	 * that routine should begin its work and expecting that it
-	 * will return to us the last key that it processed.
+	 * We pass "current" to the internal routine, indicating where that
+	 * routine should begin its work and expecting that it will return to
+	 * us the last key that it processed.
 	 */
-	if (end == NULL)
-		end = &current;
 	if (start != NULL && (ret = __db_retcopy(dbenv,
-	     end, start->data, start->size, &end->data, &end->ulen)) != 0)
+	     &current, start->data, start->size,
+	     &current.data, &current.ulen)) != 0)
 		return (ret);
-
-	list = NULL;
-	nelems = 0;
 
 	if (IS_DB_AUTO_COMMIT(dbp, txn))
 		txn_local = 1;
@@ -200,7 +201,7 @@ no_free:
 		if ((ret = __db_cursor(dbp, txn, &dbc, 0)) != 0)
 			goto err;
 
-		if ((ret = __bam_compact_int(dbc, end, stop, factor,
+		if ((ret = __bam_compact_int(dbc, &current, stop, factor,
 		     &span, c_data, &done)) == DB_LOCK_DEADLOCK && txn_local) {
 			/*
 			 * We retry on deadlock.  Cancel the statistics
@@ -224,6 +225,9 @@ err:		if (txn_local && txn != NULL) {
 		}
 	} while (ret == 0 && !done);
 
+	if (ret == 0 && end != NULL)
+		ret = __db_retcopy(dbenv, end, current.data, current.size,
+		    &end->data, &end->ulen);
 	if (current.data != NULL)
 		__os_free(dbenv, current.data);
 	if (save_start.data != NULL)
@@ -2059,7 +2063,7 @@ __bam_truncate_overflow(dbc, pgno, pg_lock, c_data)
 
 	if (page != NULL &&
 	    (t_ret = __memp_fput(
-	        dbp->mpf, page, dbc->priority)) != 0 && ret == 0)
+		dbp->mpf, page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
@@ -2392,14 +2396,14 @@ __bam_free_freelist(dbp, txn)
 		/*
 		 * We must not timeout the lock or we will not free the list.
 		 * We ignore errors from txn_begin as there is little that
-		 * the application can do with the error and we want to 
+		 * the application can do with the error and we want to
 		 * get the lock and free the list if at all possible.
 		 */
 		if (__txn_begin(dbp->dbenv, NULL, &txn, 0) == 0) {
 			(void)__lock_set_timeout(dbp->dbenv,
-			    txn->txnid, 0, DB_SET_TXN_TIMEOUT);
+			    txn->locker, 0, DB_SET_TXN_TIMEOUT);
 			(void)__lock_set_timeout(dbp->dbenv,
-			    txn->txnid, 0, DB_SET_LOCK_TIMEOUT);
+			    txn->locker, 0, DB_SET_LOCK_TIMEOUT);
 			auto_commit = 1;
 		}
 		/* Get a cursor so we can call __db_lget. */

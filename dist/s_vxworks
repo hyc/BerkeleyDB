@@ -1,5 +1,5 @@
 #!/bin/sh -
-#	$Id: s_vxworks,v 12.16 2006/10/26 19:33:01 bostic Exp $
+#	$Id: s_vxworks,v 12.19 2007/05/24 13:16:50 bostic Exp $
 #
 # Build the VxWorks files.
 
@@ -104,7 +104,7 @@ check_config()
 	egrep '^#undef' config.hin | awk '{print $2}' | sort > $s
 	(egrep '#undef' $1 | awk '{print $3}'
 	 egrep '^#define' $1 | awk '{print $2}') | sort > $t
-	cmp $s $t || {
+	cmp $s $t > /dev/null || {
 		echo "config.hin and $1 differ"
 		echo "<<< config.hin >>> $1"
 		diff $s $t
@@ -193,12 +193,14 @@ ENDOFSEDTEXT
 		echo "s/^\($k(\)/$1_\1/g"
 	done
 
-	# There is a special case the rules above don't catch:
+	# There are special cases the rules above don't catch:
+	#	a feedback function used as an argument to dbenv->set_feedback
+	#	a print_app_record function used as an argument to
+	#	    dbenv->set_app_dispatch.
 	#	a txn_compare function used as an argument to qsort(3).
-	#	a print_app_record function used as argument to
-	#	    dbenv->set_app_dispatch).
-	echo "s/, txn_compare);/, db_stat_txn_compare);/"
+	echo "s/, feedback);/, db_recover_feedback);/"
 	echo "s/, print_app_record)) /, db_printlog_print_app_record)) /"
+	echo "s/, txn_compare);/, db_stat_txn_compare);/"
 
 	# We convert the ex_access sample into dbdemo for VxWorks.
 	echo 's/progname = "ex_access";/progname = "dbdemo";/'
@@ -248,7 +250,7 @@ util_one()
 			i="\$(PRJ_DIR)/../../$i"
 		fi
 		o="<BEGIN> FILE_$i"
-		
+
 		echo "${o}_dependDone"
 		echo "FALSE"
 		echo "<END>"

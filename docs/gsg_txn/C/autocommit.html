@@ -91,7 +91,7 @@
       <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -101,10 +101,10 @@ main(void)
     DB *dbp;
     DB_ENV *envp;
     DBT key, data;
-    const char *db_home_dir = &quot;/tmp/myEnvironment&quot;;
-    const char *file_name = &quot;mydb.db&quot;;
-    const char *keystr =&quot;thekey&quot;;
-    const char *datastr = &quot;thedata&quot;;
+    const char *db_home_dir = "/tmp/myEnvironment";
+    const char *file_name = "mydb.db";
+    const char *keystr ="thekey";
+    const char *datastr = "thedata";
     
     dbp = NULL;
     envp = NULL;
@@ -112,7 +112,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -126,7 +126,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -134,7 +134,7 @@ main(void)
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database creation failed&quot;);
+        envp-&gt;err(envp, ret, "Database creation failed");
         goto err;
     }
 
@@ -151,7 +151,7 @@ main(void)
                     db_flags,   /* Open flags */
                     0);         /* File mode. Using defaults */
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database '%s' open failed&quot;,
+        envp-&gt;err(envp, ret, "Database '%s' open failed",
             file_name);
         goto err;
     }
@@ -172,7 +172,7 @@ main(void)
      */
     ret = dbp-&gt;put(dbp, NULL, &amp;key, &amp;data, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database put failed.&quot;);
+        envp-&gt;err(envp, ret, "Database put failed.");
         goto err;
     }
 
@@ -181,7 +181,7 @@ err:
     if (dbp != NULL) {
         ret_c = dbp-&gt;close(dbp, 0);
         if (ret_c != 0) {
-            envp-&gt;err(envp, ret_c, &quot;Database close failed.&quot;);
+            envp-&gt;err(envp, ret_c, "Database close failed.");
             ret = ret_c
         }
     }
@@ -191,7 +191,7 @@ err:
     if (envp != NULL) {
         ret_c = envp-&gt;close(envp, 0);
         if (ret_c != 0) {
-            fprintf(stderr, &quot;environment close failed: %s\n&quot;,
+            fprintf(stderr, "environment close failed: %s\n",
                 db_strerror(ret_c));
             ret = ret_c;
         }

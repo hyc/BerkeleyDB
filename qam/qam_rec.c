@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: qam_rec.c,v 12.23 2006/12/27 21:26:04 margo Exp $
+ * $Id: qam_rec.c,v 12.26 2007/05/17 15:15:50 bostic Exp $
  */
 
 #include "db_config.h"
@@ -191,8 +191,7 @@ __qam_mvptr_recover(dbenv, dbtp, lsnp, op, info)
 	if ((ret = __db_lget(dbc,
 	    LCK_ROLLBACK, metapg,  DB_LOCK_WRITE, 0, &lock)) != 0)
 		goto done;
-	if ((ret = __memp_fget(mpf, &metapg, NULL,
-	    0, &meta)) != 0) {
+	if ((ret = __memp_fget(mpf, &metapg, NULL, 0, &meta)) != 0) {
 		if (DB_REDO(op)) {
 			if ((ret = __memp_fget(mpf, &metapg, NULL,
 			    DB_MPOOL_CREATE, &meta)) != 0) {
@@ -320,7 +319,6 @@ __qam_del_recover(dbenv, dbtp, lsnp, op, info)
 	db_pgno_t metapg;
 	int cmp_n, ret, t_ret;
 
-	COMPQUIET(info, NULL);
 	COMPQUIET(pagep, NULL);
 	REC_PRINT(__qam_del_print);
 	REC_INTRO(__qam_del_read, 1, 1);
@@ -429,7 +427,6 @@ __qam_delext_recover(dbenv, dbtp, lsnp, op, info)
 	db_pgno_t metapg;
 	int cmp_n, ret, t_ret;
 
-	COMPQUIET(info, NULL);
 	COMPQUIET(pagep, NULL);
 	REC_PRINT(__qam_delext_print);
 	REC_INTRO(__qam_delext_read, 1, 1);
@@ -543,7 +540,6 @@ __qam_add_recover(dbenv, dbtp, lsnp, op, info)
 	db_pgno_t metapg;
 	int cmp_n, ret;
 
-	COMPQUIET(info, NULL);
 	COMPQUIET(pagep, NULL);
 	REC_PRINT(__qam_add_print);
 	REC_INTRO(__qam_add_read, 1, 1);

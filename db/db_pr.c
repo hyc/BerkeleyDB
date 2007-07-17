@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_pr.c,v 12.33 2006/11/29 21:23:12 ubell Exp $
+ * $Id: db_pr.c,v 12.38 2007/07/02 16:58:02 alexg Exp $
  */
 
 #include "db_config.h"
@@ -98,7 +98,6 @@ __db_dumptree(dbp, txn, op, name)
 
 static const FN __db_flags_fn[] = {
 	{ DB_AM_CHKSUM,			"checksumming" },
-	{ DB_AM_CL_WRITER,		"client replica writer" },
 	{ DB_AM_COMPENSATE,		"created by compensating transaction" },
 	{ DB_AM_CREATED,		"database created" },
 	{ DB_AM_CREATED_MSTR,		"encompassing file created" },
@@ -236,7 +235,7 @@ __db_prtree(dbp, txn, flags)
 	 * Find out the page number of the last page in the database, then
 	 * dump each page.
 	 */
-	if ((ret = __memp_last_pgno(mpf, &last)) != 0)
+	if ((ret = __memp_get_last_pgno(mpf, &last)) != 0)
 		return (ret);
 	for (i = 0; i <= last; ++i) {
 		if ((ret = __memp_fget(mpf, &i, txn, 0, &h)) != 0)
@@ -497,7 +496,7 @@ __db_prpage(dbp, h, flags)
 	if ((s = __db_pagetype_to_string(TYPE(h))) == NULL) {
 		__db_msg(dbenv, "ILLEGAL PAGE TYPE: page: %lu type: %lu",
 		    (u_long)h->pgno, (u_long)TYPE(h));
-		return (1);
+		return (EINVAL);
 	}
 
 	/*
@@ -598,6 +597,7 @@ __db_prpage(dbp, h, flags)
 		}
 		deleted = 0;
 		switch (TYPE(h)) {
+		case P_HASH_UNSORTED:
 		case P_HASH:
 		case P_IBTREE:
 		case P_IRECNO:
@@ -620,6 +620,7 @@ __db_prpage(dbp, h, flags)
 		__db_msgadd(
 		    dbenv, &mb, "[%03lu] %4lu ", (u_long)i, (u_long)inp[i]);
 		switch (TYPE(h)) {
+		case P_HASH_UNSORTED:
 		case P_HASH:
 			hk = sp;
 			switch (HPAGE_PTYPE(hk)) {
@@ -893,6 +894,9 @@ __db_pagetype_to_string(type)
 		break;
 	case P_LDUP:
 		s = "duplicate";
+		break;
+	case P_HASH_UNSORTED:
+		s = "hash unsorted";
 		break;
 	case P_HASH:
 		s = "hash";

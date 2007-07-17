@@ -77,7 +77,7 @@
     /* Get the transaction */
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, 0);
     if (ret != 0) {
-            envp-&gt;err(envp, ret, &quot;txn_begin failed&quot;);
+            envp-&gt;err(envp, ret, "txn_begin failed");
             return (EXIT_FAILURE);
     }
     ...

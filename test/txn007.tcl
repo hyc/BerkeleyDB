@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: txn007.tcl,v 12.5 2006/11/01 00:54:03 bostic Exp $
+# $Id: txn007.tcl,v 12.6 2007/05/17 15:15:56 bostic Exp $
 #
 #TEST	txn007
 #TEST	Test of DB_TXN_WRITE_NOSYNC

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: util_arg.c,v 12.5 2006/11/01 00:52:22 bostic Exp $
+ * $Id: util_arg.c,v 12.6 2007/05/17 15:14:55 bostic Exp $
  */
 
 #include "db_config.h"

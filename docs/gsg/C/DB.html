@@ -158,7 +158,7 @@ flags = DB_CREATE;    /* If the database does not exist,
 /* open the database */
 ret = dbp-&gt;open(dbp,        /* DB structure pointer */
                 NULL,       /* Transaction pointer */
-                &quot;my_db.db&quot;, /* On-disk file that holds the database. */
+                "my_db.db", /* On-disk file that holds the database. */
                 NULL,       /* Optional logical database name */
                 DB_BTREE,   /* Database access method */
                 flags,      /* Open flags */

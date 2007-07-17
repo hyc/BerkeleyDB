@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -35,7 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db.c,v 12.51 2006/12/19 20:42:54 ubell Exp $
+ * $Id: db.c,v 12.70 2007/06/13 18:57:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -55,9 +55,9 @@
 static int __db_disassociate __P((DB *));
 
 #ifdef CONFIG_TEST
-static void __db_makecopy __P((DB_ENV *, const char *, const char *));
-static int  __db_testdocopy __P((DB_ENV *, const char *));
-static int  __qam_testdocopy __P((DB *, const char *));
+static int __db_makecopy __P((DB_ENV *, const char *, const char *));
+static int __db_testdocopy __P((DB_ENV *, const char *));
+static int __qam_testdocopy __P((DB *, const char *));
 #endif
 
 /*
@@ -519,7 +519,9 @@ __db_env_mpool(dbp, fname, flags)
 	u_int32_t clear_len;
 
 	dbenv = dbp->dbenv;
-	lsn_off = 0;
+
+	/* The LSN is the first entry on a DB page, byte offset 0. */
+	lsn_off = F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LSN_OFF_NOTSET : 0;
 
 	/* It's possible that this database is already open. */
 	if (F_ISSET(dbp, DB_AM_OPEN_CALLED))
@@ -739,6 +741,7 @@ __db_refresh(dbp, txn, flags, deferred_closep, reuse)
 	DBC *dbc;
 	DB_ENV *dbenv;
 	DB_LOCKREQ lreq;
+	DB_LOCKER *locker;
 	REGENV *renv;
 	REGINFO *infop;
 	u_int32_t save_flags;
@@ -752,6 +755,13 @@ __db_refresh(dbp, txn, flags, deferred_closep, reuse)
 		renv = infop->primary;
 	else
 		renv = NULL;
+
+	/*
+	 * If this dbp is not completely open, avoid trapping by trying to
+	 * sync without an mpool file.
+	 */
+	if (dbp->mpf == NULL)
+		LF_SET(DB_NOSYNC);
 
 	/* If never opened, or not currently open, it's easy. */
 	if (!F_ISSET(dbp, DB_AM_OPEN_CALLED))
@@ -836,17 +846,17 @@ __db_refresh(dbp, txn, flags, deferred_closep, reuse)
 
 never_opened:
 	/*
-	 * At this point, we haven't done anything to render the DB
-	 * handle unusable, at least by a transaction abort.  Take the
-	 * opportunity now to log the file close.  If this log fails
-	 * and we're in a transaction, we have to bail out of the attempted
-	 * close; we'll need a dbp in order to successfully abort the
-	 * transaction, and we can't conjure a new one up because we haven't
-	 * gotten out the dbreg_register record that represents the close.
-	 * In this case, we put off actually closing the dbp until we've
-	 * performed the abort.
+	 * At this point, we haven't done anything to render the DB handle
+	 * unusable, at least by a transaction abort.  Take the opportunity
+	 * now to log the file close if we have initialized the logging
+	 * information.  If this log fails and we're in a transaction,
+	 * we have to bail out of the attempted close; we'll need a dbp in
+	 * order to successfully abort the transaction, and we can't conjure
+	 * a new one up because we haven't gotten out the dbreg_register
+	 * record that represents the close.  In this case, we put off
+	 * actually closing the dbp until we've performed the abort.
 	 */
-	if (!reuse && LOGGING_ON(dbp->dbenv)) {
+	if (!reuse && LOGGING_ON(dbp->dbenv) && dbp->log_filename != NULL) {
 		/*
 		 * Discard the log file id, if any.  We want to log the close
 		 * if and only if this is not a recovery dbp or a client dbp,
@@ -854,9 +864,13 @@ never_opened:
 		 */
 		DB_ASSERT(dbenv, renv != NULL);
 		if (F_ISSET(dbp, DB_AM_RECOVER) || IS_REP_CLIENT(dbenv) ||
-		    dbp->timestamp != renv->rep_timestamp)
-			t_ret = __dbreg_revoke_id(dbp, 0, DB_LOGFILEID_INVALID);
-		else {
+		    dbp->timestamp != renv->rep_timestamp) {
+			if ((t_ret = __dbreg_revoke_id(dbp,
+			    0, DB_LOGFILEID_INVALID)) == 0 && ret == 0)
+				ret = t_ret;
+			if ((t_ret = __dbreg_teardown(dbp)) != 0 && ret == 0)
+				ret = t_ret;
+		} else {
 			if ((t_ret = __dbreg_close_id(dbp,
 			    txn, DBREG_CLOSE)) != 0 && txn != NULL) {
 				/*
@@ -891,12 +905,6 @@ never_opened:
 			 */
 		}
 
-		if (ret == 0)
-			ret = t_ret;
-
-		/* Discard the log FNAME. */
-		if ((t_ret = __dbreg_teardown(dbp)) != 0 && ret == 0)
-			ret = t_ret;
 	}
 
 	/* Close any handle we've been holding since the open.  */
@@ -974,21 +982,25 @@ never_opened:
 	 * access-method specific data.
 	 */
 
-	if (!reuse && dbp->lid != DB_LOCK_INVALIDID) {
+	if (!reuse && dbp->locker != NULL) {
 		/* We may have pending trade operations on this dbp. */
+		if (txn == NULL)
+			txn = dbp->cur_txn;
 		if (IS_REAL_TXN(txn))
-			__txn_remlock(dbenv, txn, &dbp->handle_lock, dbp->lid);
+			__txn_remlock(dbenv,
+			     txn, &dbp->handle_lock, dbp->locker);
 
 		/* We may be holding the handle lock; release it. */
 		lreq.op = DB_LOCK_PUT_ALL;
 		lreq.obj = NULL;
 		if ((t_ret = __lock_vec(dbenv,
-		    dbp->lid, 0, &lreq, 1, NULL)) != 0 && ret == 0)
+		    dbp->locker, 0, &lreq, 1, NULL)) != 0 && ret == 0)
 			ret = t_ret;
 
-		if ((t_ret = __lock_id_free(dbenv, dbp->lid)) != 0 && ret == 0)
+		if ((t_ret =
+		     __lock_id_free(dbenv, dbp->locker)) != 0 && ret == 0)
 			ret = t_ret;
-		dbp->lid = DB_LOCK_INVALIDID;
+		dbp->locker = NULL;
 		LOCK_INIT(dbp->handle_lock);
 	}
 
@@ -998,10 +1010,13 @@ never_opened:
 	 */
 	if (LOCKING_ON(dbenv) &&
 	    F_ISSET(dbp, DB_AM_INMEM) && !dbp->preserve_fid &&
-	    *(u_int32_t *)dbp->fileid != DB_LOCK_INVALIDID &&
-	    (t_ret = __lock_id_free(dbenv, *(u_int32_t *)dbp->fileid)) != 0 &&
-	    ret == 0)
-		ret = t_ret;
+	    *(u_int32_t *)dbp->fileid != DB_LOCK_INVALIDID) {
+		if ((t_ret = __lock_getlocker(dbenv->lk_handle,
+		     *(u_int32_t *)dbp->fileid, 0, &locker)) == 0)
+			t_ret = __lock_id_free(dbenv, locker);
+		if (ret == 0)
+			ret = t_ret;
+	}
 
 	if (reuse) {
 		/*
@@ -1040,7 +1055,10 @@ never_opened:
 
 	dbp->type = DB_UNKNOWN;
 
-	/* Discard the thread mutex. */
+	/*
+	 * The thread mutex may have been invalidated in __dbreg_close_id if the
+	 * fname refcount did not go to 0. If not, discard the thread mutex.
+	 */
 	if ((t_ret = __mutex_free(dbenv, &dbp->mutex)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -1071,8 +1089,9 @@ never_opened:
 	memset(dbp->fileid, 0, sizeof(dbp->fileid));
 	dbp->adj_fileid = 0;
 	dbp->meta_pgno = 0;
-	dbp->cur_lid = DB_LOCK_INVALIDID;
-	dbp->associate_lid = DB_LOCK_INVALIDID;
+	dbp->cur_locker = NULL;
+	dbp->cur_txn = NULL;
+	dbp->associate_locker = NULL;
 	dbp->cl_id = 0;
 	dbp->open_flags = 0;
 
@@ -1089,6 +1108,45 @@ never_opened:
 	/* Reset flags to whatever the user configured. */
 	dbp->flags = dbp->orig_flags;
 
+	return (ret);
+}
+
+/*
+ * __db_disassociate --
+ *	Destroy the association between a given secondary and its primary.
+ */
+static int
+__db_disassociate(sdbp)
+	DB *sdbp;
+{
+	DBC *dbc;
+	int ret, t_ret;
+
+	ret = 0;
+
+	sdbp->s_callback = NULL;
+	sdbp->s_primary = NULL;
+	sdbp->get = sdbp->stored_get;
+	sdbp->close = sdbp->stored_close;
+
+	/*
+	 * Complain, but proceed, if we have any active cursors.  (We're in
+	 * the middle of a close, so there's really no turning back.)
+	 */
+	if (sdbp->s_refcnt != 1 ||
+	    TAILQ_FIRST(&sdbp->active_queue) != NULL ||
+	    TAILQ_FIRST(&sdbp->join_queue) != NULL) {
+		__db_errx(sdbp->dbenv,
+    "Closing a primary DB while a secondary DB has active cursors is unsafe");
+		ret = EINVAL;
+	}
+	sdbp->s_refcnt = 0;
+
+	while ((dbc = TAILQ_FIRST(&sdbp->free_queue)) != NULL)
+		if ((t_ret = __dbc_destroy(dbc)) != 0 && ret == 0)
+			ret = t_ret;
+
+	F_CLR(sdbp, DB_AM_SECONDARY);
 	return (ret);
 }
 
@@ -1132,10 +1190,10 @@ __db_log_page(dbp, txn, lsn, pgno, page)
  * PUBLIC:     const char *, DB_TXN *, char **));
  */
 #undef	BACKUP_PREFIX
-#define	BACKUP_PREFIX	"__db"
+#define	BACKUP_PREFIX	"__db."
 
-#undef	MAX_LSN_TO_TEXT
-#define	MAX_LSN_TO_TEXT	17
+#undef	MAX_INT_TO_HEX
+#define	MAX_INT_TO_HEX	8
 
 int
 __db_backup_name(dbenv, name, txn, backup)
@@ -1144,34 +1202,29 @@ __db_backup_name(dbenv, name, txn, backup)
 	DB_TXN *txn;
 	char **backup;
 {
-	DB_LSN lsn;
+	u_int32_t id;
 	size_t len;
 	int ret;
 	char *p, *retp;
+
+	*backup = NULL;
 
 	/*
 	 * Part of the name may be a full path, so we need to make sure that
 	 * we allocate enough space for it, even in the case where we don't
 	 * use the entire filename for the backup name.
 	 */
-	len = strlen(name) + strlen(BACKUP_PREFIX) + 1 + MAX_LSN_TO_TEXT;
+	len = strlen(name) + strlen(BACKUP_PREFIX) + 2 * MAX_INT_TO_HEX + 1;
 	if ((ret = __os_malloc(dbenv, len, &retp)) != 0)
 		return (ret);
 
 	/*
-	 * Create the name.  Backup file names are in one of three forms:
-	 *
-	 *	In a transactional env: __db.LSN(8).LSN(8)
-	 * and
-	 *	In VXWORKS (where we want 8.3 support)
-	 * and
-	 *	in any other non-transactional env: __db.FILENAME
-	 *
-	 * If the transaction doesn't have a current LSN, we write a dummy
-	 * log record to force it, so we ensure all tmp names are unique.
+	 * Create the name.  Backup file names are in one of 2 forms: in a
+	 * transactional env "__db.TXNID.ID", where ID is a random number,
+	 * and in any other env "__db.FILENAME".
 	 *
 	 * In addition, the name passed may contain an env-relative path.
-	 * In that case, put the __db. in the right place (in the last
+	 * In that case, put the "__db." in the right place (in the last
 	 * component of the pathname).
 	 *
 	 * There are four cases here:
@@ -1181,100 +1234,24 @@ __db_backup_name(dbenv, name, txn, backup)
 	 *	4. multi-component path + transaction
 	 */
 	p = __db_rpath(name);
-	if (!IS_REAL_TXN(txn)) {
-#ifdef HAVE_VXWORKS
-	    { int i, n;
-		/* On VxWorks we must support 8.3 names. */
-		if (p == NULL)				/* Case 1. */
-			n = snprintf(retp,
-			    len, "%s%.4s.tmp", BACKUP_PREFIX, name);
-		else				/* Case 3. */
-			n = snprintf(retp, len, "%.*s%s%.4s.tmp",
-			    (int)(p - name) + 1, name, BACKUP_PREFIX, p + 1);
-
-		/*
-		 * Overwrite "." in the characters copied from the name.
-		 * If we backup 8 characters from the end, we're guaranteed
-		 * to a) include the four bytes we copied from the name
-		 * and b) not run off the beginning of the string.
-		 */
-		for (i = 0, p = (retp + n) - 8; i < 4; p++, i++)
-			if (*p == '.')
-				*p = '_';
-	    }
-#else
-		if (p == NULL)				/* Case 1. */
-			snprintf(retp, len, "%s.%s", BACKUP_PREFIX, name);
-		else					/* Case 3. */
-			snprintf(retp, len, "%.*s%s.%s",
-			    (int)(p - name) + 1, name, BACKUP_PREFIX, p + 1);
-#endif
-	} else {
-		lsn = ((TXN_DETAIL *)txn->td)->last_lsn;
-		if (IS_ZERO_LSN(lsn)) {
-			/*
-			 * Write dummy log record.   The two choices for dummy
-			 * log records are __db_noop_log and __db_debug_log;
-			 * unfortunately __db_noop_log requires a valid dbp,
-			 * and we aren't guaranteed to be able to pass one in
-			 * here.
-			 */
-			if ((ret = __db_debug_log(dbenv,
-			    txn, &lsn, 0, NULL, 0, NULL, NULL, 0)) != 0) {
-				__os_free(dbenv, retp);
-				return (ret);
-			}
-		}
-
+	if (IS_REAL_TXN(txn)) {
+		__os_unique_id(dbenv, &id);
 		if (p == NULL)				/* Case 2. */
-			snprintf(retp, len,
-			    "%s.%x.%x", BACKUP_PREFIX, lsn.file, lsn.offset);
+			snprintf(retp, len, "%s%x.%x",
+			    BACKUP_PREFIX, txn->txnid, id);
 		else					/* Case 4. */
 			snprintf(retp, len, "%.*s%x.%x",
-			    (int)(p - name) + 1, name, lsn.file, lsn.offset);
+			    (int)(p - name) + 1, name, txn->txnid, id);
+	} else {
+		if (p == NULL)				/* Case 1. */
+			snprintf(retp, len, "%s%s", BACKUP_PREFIX, name);
+		else					/* Case 3. */
+			snprintf(retp, len, "%.*s%s%s",
+			    (int)(p - name) + 1, name, BACKUP_PREFIX, p + 1);
 	}
 
 	*backup = retp;
 	return (0);
-}
-
-/*
- * __db_disassociate --
- *	Destroy the association between a given secondary and its primary.
- */
-static int
-__db_disassociate(sdbp)
-	DB *sdbp;
-{
-	DBC *dbc;
-	int ret, t_ret;
-
-	ret = 0;
-
-	sdbp->s_callback = NULL;
-	sdbp->s_primary = NULL;
-	sdbp->get = sdbp->stored_get;
-	sdbp->close = sdbp->stored_close;
-
-	/*
-	 * Complain, but proceed, if we have any active cursors.  (We're in
-	 * the middle of a close, so there's really no turning back.)
-	 */
-	if (sdbp->s_refcnt != 1 ||
-	    TAILQ_FIRST(&sdbp->active_queue) != NULL ||
-	    TAILQ_FIRST(&sdbp->join_queue) != NULL) {
-		__db_errx(sdbp->dbenv,
-    "Closing a primary DB while a secondary DB has active cursors is unsafe");
-		ret = EINVAL;
-	}
-	sdbp->s_refcnt = 0;
-
-	while ((dbc = TAILQ_FIRST(&sdbp->free_queue)) != NULL)
-		if ((t_ret = __dbc_destroy(dbc)) != 0 && ret == 0)
-			ret = t_ret;
-
-	F_CLR(sdbp, DB_AM_SECONDARY);
-	return (ret);
 }
 
 #ifdef CONFIG_TEST
@@ -1342,7 +1319,6 @@ __qam_testdocopy(dbp, name)
 /*
  * __db_testdocopy
  *	Create a copy of all backup files and our "main" DB.
- *
  */
 static int
 __db_testdocopy(dbenv, name)
@@ -1351,145 +1327,146 @@ __db_testdocopy(dbenv, name)
 {
 	size_t len;
 	int dircnt, i, ret;
-	char *backup, *copy, *dir, **namesp, *p, *real_name;
+	char *copy, **namesp, *p, *real_name;
 
 	dircnt = 0;
-	copy = backup = NULL;
+	copy = NULL;
 	namesp = NULL;
 
-	/* Get the real backing file name. */
+	/* Create the real backing file name. */
 	if ((ret = __db_appname(dbenv,
 	    DB_APP_DATA, name, 0, NULL, &real_name)) != 0)
 		return (ret);
 
 	/*
-	 * Maximum size of file, including adding a ".afterop".
+	 * !!!
+	 * There are tests that attempt to copy non-existent files.  I'd guess
+	 * it's a testing bug, but I don't have time to figure it out.  Block
+	 * the case here.
 	 */
-	len = strlen(real_name) +
-	    strlen(BACKUP_PREFIX) + 1 + MAX_LSN_TO_TEXT + 9;
+	if (__os_exists(dbenv, real_name, NULL) != 0) {
+		__os_free(dbenv, real_name);
+		return (0);
+	}
 
+	/*
+	 * Copy the file itself.
+	 *
+	 * Allocate space for the file name, including adding an ".afterop" and
+	 * trailing nul byte.
+	 */
+	len = strlen(real_name) + sizeof(".afterop");
 	if ((ret = __os_malloc(dbenv, len, &copy)) != 0)
 		goto err;
-
-	if ((ret = __os_malloc(dbenv, len, &backup)) != 0)
-		goto err;
-
-	/*
-	 * First copy the file itself.
-	 */
 	snprintf(copy, len, "%s.afterop", real_name);
-	__db_makecopy(dbenv, real_name, copy);
-
-	if ((ret = __os_strdup(dbenv, real_name, &dir)) != 0)
+	if ((ret = __db_makecopy(dbenv, real_name, copy)) != 0)
 		goto err;
-	__os_free(dbenv, real_name);
-	real_name = NULL;
 
 	/*
-	 * Create the name.  Backup file names are of the form:
-	 *
-	 *	__db.name.0x[lsn-file].0x[lsn-offset]
-	 *
-	 * which guarantees uniqueness.  We want to look for the
-	 * backup name, followed by a '.0x' (so that if they have
-	 * files named, say, 'a' and 'abc' we won't match 'abc' when
-	 * looking for 'a'.
+	 * Get the directory path to call __os_dirlist().
 	 */
-	snprintf(backup, len, "%s.%s.0x", BACKUP_PREFIX, name);
-
-	/*
-	 * We need the directory path to do the __os_dirlist.
-	 */
-	p = __db_rpath(dir);
-	if (p != NULL)
+	if ((p = __db_rpath(real_name)) != NULL)
 		*p = '\0';
-	ret = __os_dirlist(dbenv, dir, &namesp, &dircnt);
-#if DIAGNOSTIC
-	/*
-	 * XXX
-	 * To get the memory guard code to work because it uses strlen and we
-	 * just moved the end of the string somewhere sooner.  This causes the
-	 * guard code to fail because it looks at one byte past the end of the
-	 * string.
-	 */
-	*p = '/';
-#endif
-	__os_free(dbenv, dir);
-	if (ret != 0)
+	if ((ret = __os_dirlist(dbenv, real_name, &namesp, &dircnt)) != 0)
 		goto err;
-	for (i = 0; i < dircnt; i++) {
-		/*
-		 * Need to check if it is a backup file for this.
-		 * No idea what namesp[i] may be or how long, so
-		 * must use strncmp and not memcmp.  We don't want
-		 * to use strcmp either because we are only matching
-		 * the first part of the real file's name.  We don't
-		 * know its LSN's.
-		 */
-		if (strncmp(namesp[i], backup, strlen(backup)) == 0) {
-			if ((ret = __db_appname(dbenv, DB_APP_DATA,
-			    namesp[i], 0, NULL, &real_name)) != 0)
-				goto err;
 
-			/*
-			 * This should not happen.  Check that old
-			 * .afterop files aren't around.
-			 * If so, just move on.
-			 */
-			if (strstr(real_name, ".afterop") != NULL) {
-				__os_free(dbenv, real_name);
-				real_name = NULL;
-				continue;
-			}
-			snprintf(copy, len, "%s.afterop", real_name);
-			__db_makecopy(dbenv, real_name, copy);
+	/*
+	 * Walk the directory looking for backup files.  Backup file names in
+	 * transactional environments are of the form:
+	 *
+	 *	BACKUP_PREFIX.TXNID.ID
+	 */
+	for (i = 0; i < dircnt; i++) {
+		/* Check for a related backup file name. */
+		if (strncmp(
+		    namesp[i], BACKUP_PREFIX, sizeof(BACKUP_PREFIX) - 1) != 0)
+			continue;
+		p = namesp[i] + sizeof(BACKUP_PREFIX);
+		p += strspn(p, "0123456789ABCDEFabcdef");
+		if (*p != '.')
+			continue;
+		++p;
+		p += strspn(p, "0123456789ABCDEFabcdef");
+		if (*p != '\0')
+			continue;
+
+		/*
+		 * Copy the backup file.
+		 *
+		 * Allocate space for the file name, including adding a
+		 * ".afterop" and trailing nul byte.
+		 */
+		if (real_name != NULL) {
 			__os_free(dbenv, real_name);
 			real_name = NULL;
 		}
+		if ((ret = __db_appname(
+		    dbenv, DB_APP_DATA, namesp[i], 0, NULL, &real_name)) != 0)
+			goto err;
+		if (copy != NULL) {
+			__os_free(dbenv, copy);
+			copy = NULL;
+		}
+		len = strlen(real_name) + sizeof(".afterop");
+		if ((ret = __os_malloc(dbenv, len, &copy)) != 0)
+			goto err;
+		snprintf(copy, len, "%s.afterop", real_name);
+		if ((ret = __db_makecopy(dbenv, real_name, copy)) != 0)
+			goto err;
 	}
 
-err:	if (backup != NULL)
-		__os_free(dbenv, backup);
+err:	if (namesp != NULL)
+		__os_dirfree(dbenv, namesp, dircnt);
 	if (copy != NULL)
 		__os_free(dbenv, copy);
-	if (namesp != NULL)
-		__os_dirfree(dbenv, namesp, dircnt);
 	if (real_name != NULL)
 		__os_free(dbenv, real_name);
 	return (ret);
 }
 
-static void
+static int
 __db_makecopy(dbenv, src, dest)
 	DB_ENV *dbenv;
 	const char *src, *dest;
 {
 	DB_FH *rfhp, *wfhp;
 	size_t rcnt, wcnt;
+	int ret;
 	char *buf;
 
 	rfhp = wfhp = NULL;
 
-	if (__os_malloc(dbenv, 1024, &buf) != 0)
-		return;
-
-	if (__os_open(dbenv, src, 0,
-	    DB_OSO_RDONLY, __db_omode(OWNER_RW), &rfhp) != 0)
-		goto err;
-	if (__os_open(dbenv, dest, 0,
-	    DB_OSO_CREATE | DB_OSO_TRUNC, __db_omode(OWNER_RW), &wfhp) != 0)
+	if ((ret = __os_malloc(dbenv, 64 * 1024, &buf)) != 0)
 		goto err;
 
-	for (;;)
-		if (__os_read(dbenv, rfhp, buf, 1024, &rcnt) < 0 || rcnt == 0 ||
-		    __os_write(dbenv, wfhp, buf, rcnt, &wcnt) < 0)
+	if ((ret = __os_open(dbenv, src, 0,
+	    DB_OSO_RDONLY, __db_omode(OWNER_RW), &rfhp)) != 0)
+		goto err;
+	if ((ret = __os_open(dbenv, dest, 0,
+	    DB_OSO_CREATE | DB_OSO_TRUNC, __db_omode(OWNER_RW), &wfhp)) != 0)
+		goto err;
+
+	for (;;) {
+		if ((ret =
+		    __os_read(dbenv, rfhp, buf, sizeof(buf), &rcnt)) != 0)
+			goto err;
+		if (rcnt == 0)
 			break;
+		if ((ret =
+		    __os_write(dbenv, wfhp, buf, sizeof(buf), &wcnt)) != 0)
+			goto err;
+	}
 
-err:	if (buf != NULL)
+	if (0) {
+err:		__db_err(dbenv, ret, "__db_makecopy: %s -> %s", src, dest);
+	}
+
+	if (buf != NULL)
 		__os_free(dbenv, buf);
 	if (rfhp != NULL)
 		(void)__os_closehandle(dbenv, rfhp);
 	if (wfhp != NULL)
 		(void)__os_closehandle(dbenv, wfhp);
+	return (ret);
 }
 #endif

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: RepQuoteExample.java,v 1.14 2006/12/18 19:08:56 alanb Exp $
+ * $Id: RepQuoteExample.java,v 1.17 2007/05/17 18:17:19 bostic Exp $
  */
 
 package db.repquote;
@@ -72,7 +72,7 @@ import db.repquote.RepConfig;
  * </ul>
  */
 
-public class RepQuoteExample implements EventHandler
+public class RepQuoteExample
 {
     private RepConfig appConfig;
     private RepQuoteEnvironment dbenv;
@@ -226,7 +226,7 @@ public class RepQuoteExample implements EventHandler
          envConfig.setCacheSize(RepConfig.CACHESIZE);
         envConfig.setTxnNoSync(true);
 
-        envConfig.setEventHandler(this);
+        envConfig.setEventHandler(new RepQuoteEventHandler());
         envConfig.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
 
         envConfig.setAllowCreate(true);
@@ -354,24 +354,6 @@ public class RepQuoteExample implements EventHandler
         dbenv.close();
     }
 
-    public int handleEvent(EventType event)
-    {
-        int ret = 0;
-        if (event == EventType.REP_MASTER)
-            dbenv.setIsMaster(true);
-        else if (event == EventType.REP_CLIENT)
-            dbenv.setIsMaster(false);
-        else if (event == EventType.REP_NEW_MASTER ||
-                 event == EventType.REP_PERM_FAILED ||
-                 event == EventType.REP_STARTUPDONE) {
-            // ignored for now.
-        } else {
-            System.err.println("Unknown event callback received.\n");
-            ret = 1;
-        }
-        return ret;
-    }
-
     /*
      * void return type since error conditions are propogated
      * via exceptions.
@@ -398,6 +380,22 @@ public class RepQuoteExample implements EventHandler
 
         }
         dbc.close();
+    }
+
+    /*
+     * Implemention of EventHandler interface to handle the Berkeley DB events
+     * we are interested in receiving.
+     */
+    private /* internal */
+    class RepQuoteEventHandler extends EventHandlerAdapter {
+        public void handleRepClientEvent()
+	{
+	    dbenv.setIsMaster(false);
+	}
+        public void handleRepMasterEvent()
+	{
+	    dbenv.setIsMaster(true);
+	}
     }
 } // end class
 

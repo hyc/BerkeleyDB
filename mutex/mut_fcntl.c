@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mut_fcntl.c,v 12.22 2006/11/29 20:08:50 bostic Exp $
+ * $Id: mut_fcntl.c,v 12.23 2007/05/17 15:15:45 bostic Exp $
  */
 
 #include "db_config.h"

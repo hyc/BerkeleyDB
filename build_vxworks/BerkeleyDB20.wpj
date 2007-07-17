@@ -2751,6 +2751,24 @@ mp_register.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../mp/mp_resize.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../mp/mp_resize.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../mp/mp_resize.c_objects
+mp_resize.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../mp/mp_resize.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../mp/mp_stat.c_dependDone
 TRUE
 <END>
@@ -3741,6 +3759,24 @@ rep_elect.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../rep/rep_lease.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../rep/rep_lease.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../rep/rep_lease.c_objects
+rep_lease.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../rep/rep_lease.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../rep/rep_log.c_dependDone
 TRUE
 <END>
@@ -3864,6 +3900,24 @@ rep_verify.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../rep/rep_verify.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../repmgr/repmgr_stub.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../repmgr/repmgr_stub.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../repmgr/repmgr_stub.c_objects
+repmgr_stub.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../repmgr/repmgr_stub.c_tool
 C/C++ compiler
 <END>
 
@@ -4241,6 +4295,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../mp/mp_mvcc.c \
 	$(PRJ_DIR)/../mp/mp_region.c \
 	$(PRJ_DIR)/../mp/mp_register.c \
+	$(PRJ_DIR)/../mp/mp_resize.c \
 	$(PRJ_DIR)/../mp/mp_stat.c \
 	$(PRJ_DIR)/../mp/mp_sync.c \
 	$(PRJ_DIR)/../mp/mp_trickle.c \
@@ -4296,6 +4351,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../rep/rep_auto.c \
 	$(PRJ_DIR)/../rep/rep_backup.c \
 	$(PRJ_DIR)/../rep/rep_elect.c \
+	$(PRJ_DIR)/../rep/rep_lease.c \
 	$(PRJ_DIR)/../rep/rep_log.c \
 	$(PRJ_DIR)/../rep/rep_method.c \
 	$(PRJ_DIR)/../rep/rep_record.c \
@@ -4303,6 +4359,7 @@ $(PRJ_DIR)/../btree/bt_compact.c \
 	$(PRJ_DIR)/../rep/rep_stat.c \
 	$(PRJ_DIR)/../rep/rep_util.c \
 	$(PRJ_DIR)/../rep/rep_verify.c \
+	$(PRJ_DIR)/../repmgr/repmgr_stub.c \
 	$(PRJ_DIR)/../txn/txn.c \
 	$(PRJ_DIR)/../txn/txn_auto.c \
 	$(PRJ_DIR)/../txn/txn_chkpt.c \

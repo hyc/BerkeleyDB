@@ -157,12 +157,12 @@ import com.sleepycat.db.Database;
 // Database opens omitted for clarity.
 // Databases must NOT be opened read-only.
 
-String aKey = &quot;myFirstKey&quot;;
-String aData = &quot;myFirstData&quot;;
+String aKey = "myFirstKey";
+String aData = "myFirstData";
 
 try {
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));
-    DatabaseEntry theData = new DatabaseEntry(aData.getBytes(&quot;UTF-8&quot;));
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));
+    DatabaseEntry theData = new DatabaseEntry(aData.getBytes("UTF-8"));
     myDatabase.put(null, theKey, theData);
 } catch (Exception e) {
     // Exception handling goes here
@@ -232,13 +232,13 @@ Database myDatabase = null;
 // Database opens omitted for clarity.
 // Database may be opened read-only.  
   
-String aKey = &quot;myFirstKey&quot;;
+String aKey = "myFirstKey";
 
 try {
     // Create a pair of DatabaseEntry objects. theKey
     // is used to perform the search. theData is used
     // to store the data returned by the get() operation.
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));
     DatabaseEntry theData = new DatabaseEntry();
     
     // Perform the get.
@@ -247,11 +247,11 @@ try {
 
         // Recreate the data String.
         byte[] retData = theData.getData();
-        String foundData = new String(retData, &quot;UTF-8&quot;);
-        System.out.println(&quot;For key: '&quot; + aKey + &quot;' found data: '&quot; + 
-                            foundData + &quot;'.&quot;);
+        String foundData = new String(retData, "UTF-8");
+        System.out.println("For key: '" + aKey + "' found data: '" + 
+                            foundData + "'.");
     } else {
-        System.out.println(&quot;No record found for key '&quot; + aKey + &quot;'.&quot;);
+        System.out.println("No record found for key '" + aKey + "'.");
     } 
 } catch (Exception e) {
     // Exception handling goes here
@@ -298,8 +298,8 @@ Database myDatabase = null;
 // Database can NOT be opened read-only.  
   
 try {
-    String aKey = &quot;myFirstKey&quot;;
-    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes(&quot;UTF-8&quot;));
+    String aKey = "myFirstKey";
+    DatabaseEntry theKey = new DatabaseEntry(aKey.getBytes("UTF-8"));
     
     // Perform the deletion. All records that use this key are
     // deleted.

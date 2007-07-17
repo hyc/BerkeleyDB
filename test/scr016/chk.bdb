@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.bdb,v 1.1 2006/10/11 23:46:12 alexg Exp $
+# $Id: chk.bdb,v 1.2 2007/05/17 18:17:21 bostic Exp $
 #
 # Run the DB Java API test suite.
 # Alternatively supply the class name for an individual test
@@ -45,7 +45,7 @@ export DB_LIB_DIR
 
 # Build the tests.
 
-make clean 
+make clean
 
 [ -f ./dbtest.jar ] || (make dbtest.jar) || {
 	echo 'FAIL: unable to find or build dbtest.jar'
@@ -55,10 +55,10 @@ make clean
 # Run the tests.
 
 
-if [ -n "$1" ] 
+if [ -n "$1" ]
 then
     echo "Running: $1"
-    java -Xcheck:jni -Djava.library.path=$DB_LIB_DIR -cp "$REQUIRED_JARS$CP_SEP$DB_JAR$CP_SEP./dbtest.jar" org.junit.runner.JUnitCore $1 
+    java -Xcheck:jni -Djava.library.path=$DB_LIB_DIR -cp "$REQUIRED_JARS$CP_SEP$DB_JAR$CP_SEP./dbtest.jar" org.junit.runner.JUnitCore $1
 
 else
 

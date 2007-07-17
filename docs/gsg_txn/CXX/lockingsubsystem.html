@@ -160,7 +160,7 @@
                 For example, to configure the maximum number of locks that your
                 environment can use:
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -174,7 +174,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle.
                           DB_INIT_TXN;     // Initialize transactions
                                                                                                                                   
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -185,7 +185,7 @@ int main(void)
         myEnv.open(envHome.c_str(), env_flags, 0);
 
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error opening database environment: &quot;
+        std::cerr &lt;&lt; "Error opening database environment: "
                   &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
         return (EXIT_FAILURE);
@@ -194,7 +194,7 @@ int main(void)
     try {
         myEnv.close(0);
     } catch(DbException &amp;e) {
-        std::cerr &lt;&lt; &quot;Error closing database environment: &quot;
+        std::cerr &lt;&lt; "Error closing database environment: "
                 &lt;&lt; envHome &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
         return (EXIT_FAILURE);
@@ -333,7 +333,7 @@ int main(void)
                 checks the lock table for deadlocks every time a lock
                 request is blocked:
             </p>
-        <pre class="programlisting">#include &quot;db_cxx.h&quot;
+        <pre class="programlisting">#include "db_cxx.h"
 
 ...
                                                                                                                                   
@@ -347,7 +347,7 @@ int main(void)
                           DB_THREAD     |  // Free-thread the env handle
                           DB_INIT_TXN;     // Initialize transactions
 
-    std::string envHome(&quot;/export1/testEnv&quot;);
+    std::string envHome("/export1/testEnv");
     DbEnv myEnv(0);
 
     try {
@@ -459,20 +459,20 @@ while (retry_count &lt; MAX_DEADLOCK_RETRIES) {
             retry_count++;
             // If we've retried too many times, log it and exit
             if (retry_count &gt;= MAX_DEADLOCK_RETRIES) {
-                    envp-&gt;errx(&quot;Exceeded retry limit. Giving up.&quot;);
+                    envp-&gt;errx("Exceeded retry limit. Giving up.");
                     return (EXIT_FAILURE);
             }
         } catch (DbException &amp;ae) {
-            envp-&gt;err(ae.get_errno(), &quot;txn abort failed.&quot;);
+            envp-&gt;err(ae.get_errno(), "txn abort failed.");
             return (EXIT_FAILURE);    
         }
     } catch (DbException &amp;e) {
         try {
             // For a generic error, log it and abort.
-            envp-&gt;err(e.get_errno(), &quot;Error putting data.&quot;);
+            envp-&gt;err(e.get_errno(), "Error putting data.");
             txn-&gt;abort();
         } catch (DbException &amp;ae) {
-            envp-&gt;err(ae.get_errno(), &quot;txn abort failed.&quot;);
+            envp-&gt;err(ae.get_errno(), "txn abort failed.");
             return (EXIT_FAILURE);    
         }
     }

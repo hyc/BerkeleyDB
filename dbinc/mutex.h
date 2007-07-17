@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: mutex.h,v 12.24 2006/11/01 00:52:41 bostic Exp $
+ * $Id: mutex.h,v 12.28 2007/05/17 15:15:05 bostic Exp $
  */
 
 #ifndef _DB_MUTEX_H_
@@ -43,43 +43,40 @@ extern "C" {
 #define	MTX_MPOOL_REGION	18
 #define	MTX_MUTEX_REGION	19
 #define	MTX_MUTEX_TEST		20
-#define	MTX_REP_DATABASE	21
-#define	MTX_REP_REGION		22
-#define	MTX_SEQUENCE		23
-#define	MTX_TWISTER		24
-#define	MTX_TXN_ACTIVE		25
-#define	MTX_TXN_CHKPT		26
-#define	MTX_TXN_COMMIT		27
-#define	MTX_TXN_MVCC		28
-#define	MTX_TXN_REGION		29
+#define	MTX_REP_CKP		21
+#define	MTX_REP_DATABASE	22
+#define	MTX_REP_EVENT		23
+#define	MTX_REP_REGION		24
+#define	MTX_SEQUENCE		25
+#define	MTX_TWISTER		26
+#define	MTX_TXN_ACTIVE		27
+#define	MTX_TXN_CHKPT		28
+#define	MTX_TXN_COMMIT		29
+#define	MTX_TXN_MVCC		30
+#define	MTX_TXN_REGION		31
 
-#define	MTX_MAX_ENTRY		29
+#define	MTX_MAX_ENTRY		31
 
 /* Redirect mutex calls to the correct functions. */
-#if defined(HAVE_MUTEX_PTHREADS) ||					\
+#if !defined(HAVE_MUTEX_HYBRID) && (					\
+    defined(HAVE_MUTEX_PTHREADS) ||					\
     defined(HAVE_MUTEX_SOLARIS_LWP) ||					\
-    defined(HAVE_MUTEX_UI_THREADS)
+    defined(HAVE_MUTEX_UI_THREADS))
 #define	__mutex_init(a, b, c)		__db_pthread_mutex_init(a, b, c)
 #define	__mutex_lock(a, b)		__db_pthread_mutex_lock(a, b)
 #define	__mutex_unlock(a, b)		__db_pthread_mutex_unlock(a, b)
 #define	__mutex_destroy(a, b)		__db_pthread_mutex_destroy(a, b)
-#endif
-
-#if defined(HAVE_MUTEX_WIN32) || defined(HAVE_MUTEX_WIN32_GCC)
+#elif defined(HAVE_MUTEX_WIN32) || defined(HAVE_MUTEX_WIN32_GCC)
 #define	__mutex_init(a, b, c)		__db_win32_mutex_init(a, b, c)
 #define	__mutex_lock(a, b)		__db_win32_mutex_lock(a, b)
 #define	__mutex_unlock(a, b)		__db_win32_mutex_unlock(a, b)
 #define	__mutex_destroy(a, b)		__db_win32_mutex_destroy(a, b)
-#endif
-
-#if defined(HAVE_MUTEX_FCNTL)
+#elif defined(HAVE_MUTEX_FCNTL)
 #define	__mutex_init(a, b, c)		__db_fcntl_mutex_init(a, b, c)
 #define	__mutex_lock(a, b)		__db_fcntl_mutex_lock(a, b)
 #define	__mutex_unlock(a, b)		__db_fcntl_mutex_unlock(a, b)
 #define	__mutex_destroy(a, b)		__db_fcntl_mutex_destroy(a, b)
-#endif
-
-#ifndef __mutex_init			/* Test-and-set is the default */
+#else
 #define	__mutex_init(a, b, c)		__db_tas_mutex_init(a, b, c)
 #define	__mutex_lock(a, b)		__db_tas_mutex_lock(a, b)
 #define	__mutex_unlock(a, b)		__db_tas_mutex_unlock(a, b)

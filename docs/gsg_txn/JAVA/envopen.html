@@ -69,7 +69,7 @@ try {
     myEnvConfig.setInitializeLogging(true);
     myEnvConfig.setTransactional(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
 } catch (DatabaseException de) {
@@ -111,7 +111,7 @@ try {
     myEnvConfig.setInitializeLogging(true);
     myEnvConfig.setTransactional(true);
 
-    myEnv = new Environment(new File(&quot;/my/env/home&quot;),
+    myEnv = new Environment(new File("/my/env/home"),
                               myEnvConfig);
 
     <b class="userinput"><tt>// Open the database.
@@ -119,7 +119,7 @@ try {
     dbConfig.setTransactional(true);
     dbConfig.setType(DatabaseType.BTREE);
     myDatabase = myEnv.openDatabase(null,               // txn handle
-                                    &quot;sampleDatabase&quot;,   // db file name
+                                    "sampleDatabase",   // db file name
                                     null,             // db name
                                     dbConfig);</tt></b>
 } catch (DatabaseException de) {

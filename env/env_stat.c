@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: env_stat.c,v 12.45 2007/01/11 21:33:03 bostic Exp $
+ * $Id: env_stat.c,v 12.49 2007/05/17 17:17:59 bostic Exp $
  */
 
 #include "db_config.h"
@@ -115,9 +115,10 @@ __env_stat_print(dbenv, flags)
 			return (ret);
 	}
 
+#ifdef HAVE_MUTEX_SUPPORT
 	/*
 	 * Dump the mutexes last.  If DB_STAT_CLEAR is set this will
-	 * clear out the mutex counters and we want to see them in 
+	 * clear out the mutex counters and we want to see them in
 	 * the context of the other subsystems first.
 	 */
 	if (MUTEX_ON(dbenv)) {
@@ -125,6 +126,7 @@ __env_stat_print(dbenv, flags)
 		if ((ret = __mutex_stat_print(dbenv, flags)) != 0)
 			return (ret);
 	}
+#endif
 
 	return (0);
 }
@@ -154,6 +156,13 @@ __env_print_stats(dbenv, flags)
 	STAT_LONG("Panic value", renv->panic);
 	__db_msg(dbenv, "%d.%d.%d\tEnvironment version",
 	    renv->majver, renv->minver, renv->patchver);
+	STAT_LONG("Btree version", DB_BTREEVERSION);
+	STAT_LONG("Hash version", DB_HASHVERSION);
+	STAT_LONG("Lock version", DB_LOCKVERSION);
+	STAT_LONG("Log version", DB_LOGVERSION);
+	STAT_LONG("Queue version", DB_QAMVERSION);
+	STAT_LONG("Sequence version", DB_SEQUENCE_VERSION);
+	STAT_LONG("Txn version", DB_TXNVERSION);
 	__db_msg(dbenv,
 	    "%.24s\tCreation time", __db_ctime(&renv->timestamp, time_buf));
 	STAT_HEX("Environment ID", renv->envid);

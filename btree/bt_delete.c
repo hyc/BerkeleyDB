@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_delete.c,v 12.23 2006/11/29 21:23:10 ubell Exp $
+ * $Id: bt_delete.c,v 12.25 2007/05/17 15:14:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -625,7 +625,7 @@ __bam_pupdate(dbc, lpg)
 		if ((ret = __bam_ditem(dbc, epg->page, epg->indx)) != 0)
 			return (ret);
 		epg->indx--;
-		if ((ret = __bam_pinsert(dbc, epg,
+		if ((ret = __bam_pinsert(dbc, epg, 0,
 		    lpg, epg[1].page, BPI_NORECNUM)) != 0) {
 			if (ret == DB_NEEDSPLIT) {
 				/* This should not happen. */

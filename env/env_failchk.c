@@ -1,17 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: env_failchk.c,v 12.31 2006/11/01 00:52:48 bostic Exp $
+ * $Id: env_failchk.c,v 12.33 2007/06/06 15:34:41 bostic Exp $
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
+#ifndef HAVE_SIMPLE_THREAD_TYPE
 #include "dbinc/db_page.h"
-#include "dbinc/db_am.h"
 #include "dbinc/hash.h"			/* Needed for call to __ham_func5. */
+#endif
 #include "dbinc/lock.h"
 #include "dbinc/txn.h"
 

@@ -42,7 +42,7 @@
         
         
         <span>
-            <span><tt class="methodname">DBC-&gt;c_del()</tt>.</span>
+            <span><tt class="methodname">DBC-&gt;del()</tt>.</span>
             
             
         </span>
@@ -57,31 +57,31 @@
 DB *dbp;
 DBC *cursorp;
 DBT key, data;
-char *key1str = &quot;My first string&quot;;
+char *key1str = "My first string";
 int ret;
+
+/* Database open omitted */
+
+/* Initialize our DBTs. */
+memset(&amp;key, 0, sizeof(DBT));
+memset(&amp;data, 0, sizeof(DBT));
 
 /* Set up our DBTs */
 key.data = key1str;
 key.size = strlen(key1str) + 1;
 
-/* Database open omitted */
-
 /* Get the cursor */
 dbp-&gt;cursor(dbp, NULL, &amp;cursorp, 0);
 
-/* Initialize our DBTs. */
-memset(&amp;key, 0, sizeof(DBT));
-memset(&amp;data, 0, sizeof(DBT));
-                                                                                                                               
 /* Iterate over the database, deleting each record in turn. */
-while ((ret = cursorp-&gt;c_get(cursorp, &amp;key,
+while ((ret = cursorp-&gt;get(cursorp, &amp;key,
                &amp;data, DB_SET)) == 0) {
-    cursorp-&gt;c_del(cursorp, 0);
+    cursorp-&gt;del(cursorp, 0);
 }
 
 /* Cursors must be closed */
 if (cursorp != NULL)
-    cursorp-&gt;c_close(cursorp); 
+    cursorp-&gt;close(cursorp); 
 
 if (dbp != NULL)
     dbp-&gt;close(dbp, 0);</pre>

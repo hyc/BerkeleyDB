@@ -59,7 +59,7 @@ int __log_flush __P((DB_ENV *, const DB_LSN *));
 int __log_flush_int __P((DB_LOG *, const DB_LSN *, int));
 int __log_file_pp __P((DB_ENV *, const DB_LSN *, char *, size_t));
 int __log_name __P((DB_LOG *, u_int32_t, char **, DB_FH **, u_int32_t));
-int __log_rep_put __P((DB_ENV *, DB_LSN *, const DBT *));
+int __log_rep_put __P((DB_ENV *, DB_LSN *, const DBT *, u_int32_t));
 int __log_stat_pp __P((DB_ENV *, DB_LOG_STAT **, u_int32_t));
 int __log_stat_print_pp __P((DB_ENV *, u_int32_t));
 int __log_stat_print __P((DB_ENV *, u_int32_t));

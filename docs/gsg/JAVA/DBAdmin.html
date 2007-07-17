@@ -67,10 +67,10 @@
 ...
 myDatabase.close();
 try {
-    myDatabase.rename(&quot;mydb.db&quot;,     // Database file to rename
+    myDatabase.rename("mydb.db",     // Database file to rename
                       null,          // Database to rename. Not used so
                                      // the entire file is renamed.
-                      &quot;newdb.db&quot;,    // New name to use.
+                      "newdb.db",    // New name to use.
                       null);         // DatabaseConfig object. 
                                      // None provided.
 } catch (FileNotFoundException fnfe) {
@@ -94,8 +94,8 @@ try {
                    true);                         // If true, then the 
                                                   // number of records 
                                                   // deleted are counted.
-System.out.println(&quot;Discarded &quot; + numDiscarded +
-                   &quot; records from database &quot; + 
+System.out.println("Discarded " + numDiscarded +
+                   " records from database " + 
                    myDatabase.getDatabaseName()); </pre>
           </li>
         </ul>

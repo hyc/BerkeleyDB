@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_load.c,v 12.20 2006/11/01 00:52:35 bostic Exp $
+ * $Id: db_load.c,v 12.23 2007/05/17 17:17:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -14,7 +14,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 typedef struct {			/* XXX: Globals. */
@@ -71,7 +71,7 @@ main(argc, argv)
 	int ch, existed, exitval, ret;
 	char **clist, **clp;
 
-	if ((progname = strrchr(argv[0], '/')) == NULL)
+	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
 	else
 		++progname;
@@ -845,7 +845,7 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp)
 		if (name[0] == '\0')
 			goto badfmt;
 
-		/* 
+		/*
 		 * The only values that may be zero-length are database names.
 		 * In the original Berkeley DB code it was possible to create
 		 * zero-length database names, and the db_load code was then

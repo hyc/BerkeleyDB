@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep066.tcl,v 12.7 2006/12/07 19:37:44 carol Exp $
+# $Id: rep066.tcl,v 12.10 2007/05/24 20:20:42 alanb Exp $
 #
 # TEST	rep066
 # TEST	Replication and dead log handles.
@@ -56,12 +56,12 @@ proc rep066 { method { niter 10 } { tnum "066" } args } {
 proc rep066_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -149,6 +149,12 @@ proc rep066_sub { method niter tnum logset recargs largs } {
 	error_check_good flush [$2ndenv log_flush] 0
 	set lf2 [stat_field $2ndenv log_stat "Times log flushed to disk"]
 	error_check_bad log_flush $lf $lf2
+
+	# The detection of dead log handle is based on a 1-second resolution
+	# timestamp comparison.  Now that we've established the threatening
+	# source of the dead handle in $2ndenv, wait a moment to make sure that
+	# the fresh handle that we're about to create gets a later timestamp.
+	tclsleep 1
 
 	# Resolve the txn and close the database
 	error_check_good commit [$txn commit] 0

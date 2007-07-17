@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004,2006 Oracle.  All rights reserved.
+# Copyright (c) 2004,2007 Oracle.  All rights reserved.
 #
-# $Id: rep030.tcl,v 12.19 2006/12/07 19:35:19 carol Exp $
+# $Id: rep030.tcl,v 12.24 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep030
 # TEST	Test of internal initialization multiple files and pagesizes.
@@ -65,12 +65,12 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	global testdir
 	global util_path
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -102,23 +102,16 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	#
 	# Run internal init using a data directory
 	#
+	file mkdir $masterdir/data
+	file mkdir $masterdir/data2
+	file mkdir $clientdir/data
+	file mkdir $clientdir/data2
+	#
+	# Set it twice to test duplicates data_dirs as well
+	# as multiple, different data dirs
+	#
+	set data_diropts " -data_dir data -data_dir data -data_dir data2"
 
-	#
-	# !!! - SR 14578 opening with recovery blows away data_dir.
-	#
-	if { $recargs != "-recover" } {
-		file mkdir $masterdir/data
-		file mkdir $masterdir/data2
-		file mkdir $clientdir/data
-		file mkdir $clientdir/data2
-		#
-		# Set it twice to test duplicates data_dirs as well
-		# as multiple, different data dirs
-		#
-		set data_diropts " -data_dir data -data_dir data -data_dir data2"
-	} else {
-		set data_diropts ""
-	}
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
 	    $m_logargs -log_max $log_max -errpfx MASTER \
@@ -137,6 +130,12 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# log_archive in a moment.
+	#
+	$masterenv test force noarchive_timeout
 
 	# Run rep_test in the master (and update client).
 	set startpgsz 512

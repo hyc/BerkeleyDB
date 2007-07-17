@@ -201,7 +201,7 @@ import com.sleepycat.db.SecondaryDatabase;</tt></b>
 public class SampleDatabase
 {
     ...
-<b class="userinput"><tt>    private static final String SUPPLIER_CITY_INDEX = &quot;supplier_city_index&quot;;
+<b class="userinput"><tt>    private static final String SUPPLIER_CITY_INDEX = "supplier_city_index";
     ...
     private SecondaryDatabase supplierByCityDb;
     ...</tt></b>
@@ -357,7 +357,7 @@ public class SampleDatabase
 	base class is used because the database record uses the serial
 	format for both its key and its value. The abstract methods of this
 	class have key and value parameters of type 
-    <a href="http://java.sun.com/j2se/1.3/docs/api/java/lang/Object.html" target="_top">Object</a>
+    <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/lang/Object.html" target="_top">Object</a>
     
 	which are automatically converted to and from the raw record data
 	by the base class.

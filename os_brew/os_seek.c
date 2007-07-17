@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2005 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: os_seek.c,v 1.3 2006/11/01 00:53:41 bostic Exp $
+ * $Id: os_seek.c,v 1.4 2007/05/17 15:15:47 bostic Exp $
  */
 
 #include "db_config.h"

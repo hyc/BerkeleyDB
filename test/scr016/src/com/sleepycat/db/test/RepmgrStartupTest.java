@@ -25,7 +25,7 @@ import java.io.FileNotFoundException;
 
 import com.sleepycat.db.*;
 
-public class RepmgrStartupTest implements EventHandler
+public class RepmgrStartupTest extends EventHandlerAdapter
 {
     static String address = "localhost";
     static int    port = 4242;
@@ -34,7 +34,7 @@ public class RepmgrStartupTest implements EventHandler
     File homedir;
     EnvironmentConfig envConfig;
     Environment dbenv;
-    
+ 
     @BeforeClass public static void ClassInit() {
 	    TestUtils.loadConfig(null);
     }
@@ -89,7 +89,7 @@ public class RepmgrStartupTest implements EventHandler
         throws Exception {
 	    try {
             File homedir = new File(homedirName);
-            
+         
             if (homedir.exists()) {
                 // The following will fail if the directory contains sub-dirs.
                 if (homedir.isDirectory()) {
@@ -104,7 +104,7 @@ public class RepmgrStartupTest implements EventHandler
         }
     }
 
-    
+ 
     @Test (timeout=3000) public void startMaster()
     {
         try {
@@ -116,7 +116,7 @@ public class RepmgrStartupTest implements EventHandler
         try {
             java.lang.Thread.sleep(1000);
         }catch(InterruptedException ie) {}
-        
+     
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -125,7 +125,7 @@ public class RepmgrStartupTest implements EventHandler
             fail("Unexpected database exception came during shutdown." + dbe);
         }
     }
-    
+ 
     @Test (timeout=3000) public void startClient()
     {
         try {
@@ -137,7 +137,7 @@ public class RepmgrStartupTest implements EventHandler
         try {
             java.lang.Thread.sleep(1000);
         }catch(InterruptedException ie) {}
-        
+     
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -158,7 +158,7 @@ public class RepmgrStartupTest implements EventHandler
         try {
             java.lang.Thread.sleep(1000);
         }catch(InterruptedException ie) {}
-        
+     
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -186,7 +186,7 @@ public class RepmgrStartupTest implements EventHandler
              */
             java.lang.Thread.sleep(12000);
         }catch(InterruptedException ie) {}
-        
+     
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -196,20 +196,15 @@ public class RepmgrStartupTest implements EventHandler
         }
     }
 
-    public int handleEvent(EventType event)
-    {
-        int ret = 0;
-        if (event == EventType.REP_MASTER) {
-            TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
-        } else if (event == EventType.REP_CLIENT) {
-            TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");            
-        } else if (event == EventType.REP_NEW_MASTER) {
-            TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
-        } else {
-            fail("Unknown event callback received: " + event.toString());
-            ret = 1;
-        }
-        return ret;
+    public void handleRepMasterEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
     }
 
+    public void handleRepClientEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");         
+    }
+
+    public void handleRepNewMasterEvent() {
+        TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
+    }
 }

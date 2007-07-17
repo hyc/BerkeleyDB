@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: bt_cursor.c,v 12.27 2006/11/29 21:23:09 ubell Exp $
+ * $Id: bt_cursor.c,v 12.29 2007/05/17 15:14:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -2184,8 +2184,7 @@ __bamc_next(dbc, initial_move, deleted_okay)
 		 * NUM_ENT, we may have incremented indx before the test.
 		 */
 		if (cp->indx >= NUM_ENT(cp->page)) {
-			if ((pgno
-			    = NEXT_PGNO(cp->page)) == PGNO_INVALID)
+			if ((pgno = NEXT_PGNO(cp->page)) == PGNO_INVALID)
 				return (DB_NOTFOUND);
 
 			ACQUIRE_CUR(dbc, lock_mode, pgno, 0, ret);

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1997,2007 Oracle.  All rights reserved.
  *
- * $Id: AccessExample.java,v 12.5 2006/11/01 00:53:00 bostic Exp $
+ * $Id: AccessExample.java,v 12.6 2007/05/17 15:15:32 bostic Exp $
  */
 
 package collections.access;

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: os_map.c,v 12.14 2007/01/30 07:00:39 mjc Exp $
+ * $Id: os_map.c,v 12.18 2007/05/17 17:18:02 bostic Exp $
  */
 
 #include "db_config.h"
@@ -222,10 +222,19 @@ __os_map(dbenv, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	int ret, use_pagefile;
 	_TCHAR *tpath, shmem_name[DB_MAXPATHLEN];
 	void *pMemory;
+	unsigned __int64 len64;
 
 	ret = 0;
 	if (infop != NULL)
 		infop->wnt_handle = NULL;
+
+	/*
+	 * On 64 bit systems, len is already a 64 bit value.
+	 * On 32 bit systems len is a 32 bit value.
+	 * Always convert to a 64 bit value, so that the high order
+	 * DWORD can be simply extracted on 64 bit platforms.
+	 */
+	len64 = len;
 
 	use_pagefile = is_region && is_system;
 
@@ -281,12 +290,12 @@ __os_map(dbenv, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 		if (hMemory == NULL && F_ISSET(infop, REGION_CREATE_OK))
 			hMemory = CreateFileMapping((HANDLE)-1, 0,
 			    is_rdonly ? PAGE_READONLY : PAGE_READWRITE,
-			    (DWORD)(len >> 32), (DWORD)len, shmem_name);
+			    (DWORD)(len64 >> 32), (DWORD)len64, shmem_name);
 #endif
 	} else {
 		hMemory = CreateFileMapping(fhp->handle, 0,
 		    is_rdonly ? PAGE_READONLY : PAGE_READWRITE,
-		    (DWORD)(len >> 32), (DWORD)len, NULL);
+		    (DWORD)(len64 >> 32), (DWORD)len64, NULL);
 #ifdef DB_WINCE
 		/*
 		 * WinCE automatically closes the handle passed in.

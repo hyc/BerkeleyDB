@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996,2006 Oracle.  All rights reserved.
+# Copyright (c) 1996,2007 Oracle.  All rights reserved.
 #
-# $Id: txn003.tcl,v 12.7 2007/01/04 19:20:50 carol Exp $
+# $Id: txn003.tcl,v 12.9 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	txn003
 # TEST	Test abort/commit/prepare of txns with outstanding child txns.
@@ -211,8 +211,8 @@ proc txn003_body { env_cmd testfile dir key newdata2 msg op } {
 		    [is_substr $ret "transaction already prepared"] 1
 		error_check_good txn:prep_abort [$txn abort] 0
 	} elseif { $op == "begin" } {
-		# As of the 4.6 release, we allow new txns to be created 
-		# while prepared but not committed txns exist, so this 
+		# As of the 4.6 release, we allow new txns to be created
+		# while prepared but not committed txns exist, so this
 		# should succeed.
 		set txn2 [$env txn]
 		error_check_good txn:begin_abort [$txn abort] 0

@@ -11,7 +11,7 @@ int __txn_begin __P((DB_ENV *, DB_TXN *, DB_TXN **, u_int32_t));
 int __txn_xa_begin __P((DB_ENV *, DB_TXN *));
 int __txn_recycle_id __P((DB_ENV *));
 int __txn_compensate_begin __P((DB_ENV *, DB_TXN **));
-void __txn_continue __P((DB_ENV *, DB_TXN *, TXN_DETAIL *));
+int __txn_continue __P((DB_ENV *, DB_TXN *, TXN_DETAIL *));
 int __txn_commit __P((DB_TXN *, u_int32_t));
 int __txn_abort __P((DB_TXN *));
 int __txn_discard_int __P((DB_TXN *, u_int32_t flags));
@@ -84,9 +84,11 @@ int  __txn_stat_print __P((DB_ENV *, u_int32_t));
 int __txn_closeevent __P((DB_ENV *, DB_TXN *, DB *));
 int __txn_remevent __P((DB_ENV *, DB_TXN *, const char *, u_int8_t *, int));
 void __txn_remrem __P((DB_ENV *, DB_TXN *, const char *));
-int __txn_lockevent __P((DB_ENV *, DB_TXN *, DB *, DB_LOCK *, u_int32_t));
-void __txn_remlock __P((DB_ENV *, DB_TXN *, DB_LOCK *, u_int32_t));
+int __txn_lockevent __P((DB_ENV *, DB_TXN *, DB *, DB_LOCK *, DB_LOCKER *));
+void __txn_remlock __P((DB_ENV *, DB_TXN *, DB_LOCK *, DB_LOCKER *));
 int __txn_doevents __P((DB_ENV *, DB_TXN *, int, int));
+int __txn_record_fname __P((DB_ENV *, DB_TXN *, FNAME *));
+int __txn_dref_fname __P((DB_ENV *, DB_TXN *));
 
 #if defined(__cplusplus)
 }

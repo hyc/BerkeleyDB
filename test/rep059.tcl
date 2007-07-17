@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2006 Oracle.  All rights reserved.
+# Copyright (c) 2005,2007 Oracle.  All rights reserved.
 #
-# $Id: rep059.tcl,v 1.10 2006/12/07 19:37:44 carol Exp $
+# $Id: rep059.tcl,v 1.12 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep059
 # TEST
@@ -16,12 +16,12 @@
 proc rep059 { method { tnum "059" } args } {
 	source ./include.tcl
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set orig_tdir $testdir
 
 	if { $is_windows9x_test == 1 } {

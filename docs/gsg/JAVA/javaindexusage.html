@@ -110,7 +110,7 @@ public class ItemNameKeyCreator implements SecondaryKeyCreator {
                 (Inventory) theBinding.entryToObject(dataEntry);
             // Get the item name and use that as the key
             String theItem = inventoryItem.getItemName();
-            resultEntry.setData(theItem.getBytes(&quot;UTF-8&quot;));
+            resultEntry.setData(theItem.getBytes("UTF-8"));
         } catch (IOException willNeverOccur) {}
 
         return true;
@@ -170,10 +170,10 @@ public class MyDbs {
     private Database classCatalogDb = null;
     <b class="userinput"><tt>private SecondaryDatabase itemNameIndexDb = null;</tt></b>
 
-    private String vendordb = &quot;VendorDB.db&quot;;
-    private String inventorydb = &quot;InventoryDB.db&quot;;
-    private String classcatalogdb = &quot;ClassCatalogDB.db&quot;;
-    <b class="userinput"><tt>private String itemnameindexdb = &quot;ItemNameIndexDB.db&quot;;</tt></b>
+    private String vendordb = "VendorDB.db";
+    private String inventorydb = "InventoryDB.db";
+    private String classcatalogdb = "ClassCatalogDB.db";
+    <b class="userinput"><tt>private String itemnameindexdb = "ItemNameIndexDB.db";</tt></b>
 
     // Needed for object serialization
     private StoredClassCatalog classCatalog;
@@ -197,8 +197,8 @@ public class MyDbs {
 
         myDbConfig.setErrorStream(System.err);
         <b class="userinput"><tt>mySecConfig.setErrorStream(System.err);</tt></b>
-        myDbConfig.setErrorPrefix(&quot;MyDbs&quot;);
-        <b class="userinput"><tt>mySecConfig.setErrorPrefix(&quot;MyDbs&quot;);</tt></b>
+        myDbConfig.setErrorPrefix("MyDbs");
+        <b class="userinput"><tt>mySecConfig.setErrorPrefix("MyDbs");</tt></b>
         myDbConfig.setType(DatabaseType.BTREE);
         <b class="userinput"><tt>mySecConfig.setType(DatabaseType.BTREE);</tt></b>
         myDbConfig.setAllowCreate(true);
@@ -207,24 +207,24 @@ public class MyDbs {
         // Now open, or create and open, our databases
         // Open the vendors and inventory databases
         try {
-            vendordb = databasesHome + &quot;/&quot; + vendordb;
+            vendordb = databasesHome + "/" + vendordb;
             vendorDb = new Database(vendordb,
                                     null,
                                     myDbConfig);
 
-            inventorydb = databasesHome + &quot;/&quot; + inventorydb;
+            inventorydb = databasesHome + "/" + inventorydb;
             inventoryDb = new Database(inventorydb,
                                         null,
                                         myDbConfig);
 
             // Open the class catalog db. This is used to
             // optimize class serialization.
-            classcatalogdb = databasesHome + &quot;/&quot; + classcatalogdb;
+            classcatalogdb = databasesHome + "/" + classcatalogdb;
             classCatalogDb = new Database(classcatalogdb,
                                           null,
                                           myDbConfig);
         } catch(FileNotFoundException fnfe) {
-            System.err.println(&quot;MyDbs: &quot; + fnfe.toString());
+            System.err.println("MyDbs: " + fnfe.toString());
             System.exit(-1);
         }
 
@@ -252,13 +252,13 @@ public class MyDbs {
         mySecConfig.setKeyCreator(keyCreator);
         // Now open it
         try {
-            itemnameindexdb = databasesHome + &quot;/&quot; + itemnameindexdb;
+            itemnameindexdb = databasesHome + "/" + itemnameindexdb;
             itemNameIndexDb = new SecondaryDatabase(itemnameindexdb,
                                                     null,
                                                     inventoryDb,
                                                     mySecConfig);
         } catch(FileNotFoundException fnfe) {
-            System.err.println(&quot;MyDbs: &quot; + fnfe.toString());
+            System.err.println("MyDbs: " + fnfe.toString());
             System.exit(-1);
         }</tt></b>
     }
@@ -295,7 +295,7 @@ public class MyDbs {
             }
 
         } catch(DatabaseException dbe) {
-            System.err.println(&quot;Error closing MyDbs: &quot; +
+            System.err.println("Error closing MyDbs: " +
                                 dbe.toString());
             System.exit(-1);
         }
@@ -374,7 +374,7 @@ import com.sleepycat.db.OperationStatus;
           <a id="java_index17"></a>
           <pre class="programlisting">    public class ExampleDatabaseRead {
 
-    private static String myDbsPath = &quot;./&quot;;
+    private static String myDbsPath = "./";
 
     // Encapsulates the database environment and databases.
     private static MyDbs myDbs = new MyDbs();
@@ -421,7 +421,7 @@ import com.sleepycat.db.OperationStatus;
             // searchKey is the key that we want to find in the
             // secondary db.
             DatabaseEntry searchKey =
-                new DatabaseEntry(locateItem.getBytes(&quot;UTF-8&quot;));
+                new DatabaseEntry(locateItem.getBytes("UTF-8"));
 
             // foundKey and foundData are populated from the primary
             // entry that is associated with the secondary db key.
@@ -447,7 +447,7 @@ import com.sleepycat.db.OperationStatus;
                     foundData, LockMode.DEFAULT);
             }
         } catch (Exception e) {
-            System.err.println(&quot;Error on inventory secondary cursor:&quot;);
+            System.err.println("Error on inventory secondary cursor:");
             System.err.println(e.toString());
             e.printStackTrace();
         } finally {

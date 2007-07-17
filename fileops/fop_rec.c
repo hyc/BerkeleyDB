@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2001,2007 Oracle.  All rights reserved.
  *
- * $Id: fop_rec.c,v 12.16 2007/01/17 15:15:47 margo Exp $
+ * $Id: fop_rec.c,v 12.18 2007/05/17 15:15:37 bostic Exp $
  */
 
 #include "db_config.h"
@@ -68,8 +68,8 @@ __fop_create_recover(dbenv, dbtp, lsnp, op, info)
 	char *real_name;
 	int ret;
 
-	real_name = NULL;
 	COMPQUIET(info, NULL);
+	real_name = NULL;
 	REC_PRINT(__fop_create_print);
 	REC_NOOP_INTRO(__fop_create_read);
 
@@ -114,8 +114,8 @@ __fop_remove_recover(dbenv, dbtp, lsnp, op, info)
 	char *real_name;
 	int ret;
 
-	real_name = NULL;
 	COMPQUIET(info, NULL);
+	real_name = NULL;
 	REC_PRINT(__fop_remove_print);
 	REC_NOOP_INTRO(__fop_remove_read);
 

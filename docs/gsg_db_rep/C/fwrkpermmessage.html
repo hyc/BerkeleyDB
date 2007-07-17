@@ -111,7 +111,7 @@
               <p>
                     No permanent message acknowledgments are required. If
                     this policy is selected, permanent message handling is
-                    essentially &quot;turned off.&quot; That is, the master will
+                    essentially "turned off." That is, the master will
                     never wait for replica acknowledgments. In this case,
                     transaction log data is either flushed or not strictly
                     depending on the type of commit that is being performed
@@ -306,7 +306,7 @@
      * Create and configure the environment handle.
      */
     if ((ret = db_env_create(&amp;dbenv, 0)) != 0 ) {
-        fprintf(stderr, &quot;Error creating handles: %s\n&quot;,
+        fprintf(stderr, "Error creating handles: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -324,7 +324,7 @@
     dbenv-&gt;rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);</tt></b>
 
     /* Collect the command line options */
-    while ((ch = getopt(argc, argv, &quot;h:<b class="userinput"><tt>m:o:p:</tt></b>&quot;)) != EOF)
+    while ((ch = getopt(argc, argv, "h:<b class="userinput"><tt>m:o:p:</tt></b>")) != EOF)
 
     ... </pre>
       </div>

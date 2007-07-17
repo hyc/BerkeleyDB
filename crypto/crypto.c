@@ -1,12 +1,12 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield
  * -- astubble@rice.edu
  *
- * $Id: crypto.c,v 12.17 2006/11/16 19:49:56 bostic Exp $
+ * $Id: crypto.c,v 12.20 2007/05/17 15:14:55 bostic Exp $
  */
 
 #include "db_config.h"
@@ -201,10 +201,10 @@ __crypto_algsetup(dbenv, db_cipher, alg, do_init)
 		ret = __aes_setup(dbenv, db_cipher);
 		break;
 	default:
-		__db_panic(dbenv, EINVAL);
-		/* NOTREACHED */
+		ret = __db_panic(dbenv, EINVAL);
+		break;
 	}
-	if (do_init)
+	if (ret == 0 && do_init)
 		ret = db_cipher->init(dbenv, db_cipher);
 	return (ret);
 }
@@ -384,9 +384,7 @@ __crypto_set_passwd(dbenv_src, dbenv_dest)
 	REGENV *renv;
 	REGINFO *infop;
 	char *sh_passwd;
-	int ret;
 
-	ret = 0;
 	infop = dbenv_src->reginfo;
 	renv = infop->primary;
 

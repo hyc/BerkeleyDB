@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999,2006 Oracle.  All rights reserved.
+# Copyright (c) 1999,2007 Oracle.  All rights reserved.
 #
-# $Id: sdb002.tcl,v 12.4 2006/11/01 00:53:58 bostic Exp $
+# $Id: sdb002.tcl,v 12.5 2007/05/17 15:15:55 bostic Exp $
 #
 # TEST	sdb002
 # TEST	Tests basic subdb functionality

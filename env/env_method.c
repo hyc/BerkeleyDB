@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1999,2007 Oracle.  All rights reserved.
  *
- * $Id: env_method.c,v 12.64 2006/12/13 16:06:48 bostic Exp $
+ * $Id: env_method.c,v 12.69 2007/05/17 15:15:11 bostic Exp $
  */
 
 #include "db_config.h"
@@ -51,10 +51,6 @@ static int  __env_set_thread_id_string __P((DB_ENV *,
 static int  __env_set_thread_count __P((DB_ENV *, u_int32_t));
 static int  __env_set_rpc_server
 		__P((DB_ENV *, void *, const char *, long, long, u_int32_t));
-
-#ifndef HAVE_REPLICATION_THREADS
-static int __db_norepmgr __P((DB_ENV *));
-#endif
 
 /*
  * db_env_create --
@@ -171,6 +167,7 @@ __env_init(dbenv)
 	dbenv->failchk = __env_failchk_pp;
 	dbenv->fileid_reset = __env_fileid_reset_pp;
 	dbenv->get_cachesize = __memp_get_cachesize;
+	dbenv->get_cache_max = __memp_get_cache_max;
 	dbenv->get_data_dirs = __env_get_data_dirs;
 	dbenv->get_encrypt_flags = __env_get_encrypt_flags;
 	dbenv->get_errfile = __env_get_errfile;
@@ -248,6 +245,7 @@ __env_init(dbenv)
 	dbenv->rep_get_timeout = __rep_get_timeout;
 	dbenv->rep_process_message = __rep_process_message;
 	dbenv->rep_set_config = __rep_set_config;
+	dbenv->rep_set_lease = __rep_set_lease;
 	dbenv->rep_set_limit = __rep_set_limit;
 	dbenv->rep_set_nsites = __rep_set_nsites;
 	dbenv->rep_set_priority = __rep_set_priority;
@@ -257,27 +255,18 @@ __env_init(dbenv)
 	dbenv->rep_stat = __rep_stat_pp;
 	dbenv->rep_stat_print = __rep_stat_print_pp;
 	dbenv->rep_sync = __rep_sync;
-#ifdef HAVE_REPLICATION_THREADS
 	dbenv->repmgr_add_remote_site = __repmgr_add_remote_site;
 	dbenv->repmgr_get_ack_policy = __repmgr_get_ack_policy;
 	dbenv->repmgr_set_ack_policy = __repmgr_set_ack_policy;
 	dbenv->repmgr_set_local_site = __repmgr_set_local_site;
 	dbenv->repmgr_site_list = __repmgr_site_list;
 	dbenv->repmgr_start = __repmgr_start;
-#else /* !HAVE_REPLICATION_THREADS */
-	dbenv->repmgr_add_remote_site = (int (*)(DB_ENV *,
-	    const char *, u_int, int *, u_int32_t))__db_norepmgr;
-	dbenv->repmgr_get_ack_policy = (int (*)(DB_ENV *, int *))__db_norepmgr;
-	dbenv->repmgr_set_ack_policy = (int (*)(DB_ENV *, int))__db_norepmgr;
-	dbenv->repmgr_set_local_site =
-	    (int (*)(DB_ENV *, const char *, u_int, u_int32_t))__db_norepmgr;
-	dbenv->repmgr_site_list =
-	    (int (*)(DB_ENV *, u_int *, DB_REPMGR_SITE **))__db_norepmgr;
-	dbenv->repmgr_start = (int (*)(DB_ENV *, int, u_int32_t))__db_norepmgr;
-#endif /* HAVE_REPLICATION_THREADS */
+	dbenv->repmgr_stat = __repmgr_stat_pp;
+	dbenv->repmgr_stat_print = __repmgr_stat_print_pp;
 	dbenv->set_alloc = __env_set_alloc;
 	dbenv->set_app_dispatch = __env_set_app_dispatch;
 	dbenv->set_cachesize = __memp_set_cachesize;
+	dbenv->set_cache_max = __memp_set_cache_max;
 	dbenv->set_data_dir = __env_set_data_dir;
 	dbenv->set_encrypt = __env_set_encrypt;
 	dbenv->set_errcall = __env_set_errcall;
@@ -565,7 +554,7 @@ __env_map_flags(dbenv, inflagsp, outflagsp)
 		{ DB_TXN_WRITE_NOSYNC,	DB_ENV_TXN_WRITE_NOSYNC },
 		{ DB_YIELDCPU,		DB_ENV_YIELDCPU }
 	};
-	
+
 	u_int i;
 
 	COMPQUIET(dbenv, NULL);
@@ -1217,18 +1206,3 @@ __env_set_rpc_server(dbenv, cl, host, tsec, ssec, flags)
 	__db_errx(dbenv, "Berkeley DB was not configured for RPC support");
 	return (DB_OPNOTSUP);
 }
-
-#ifndef HAVE_REPLICATION_THREADS
-/*
- * __db_norepmgr --
- *	Error when a Berkeley DB build doesn't include the replication manager.
- */
-static int
-__db_norepmgr(dbenv)
-	DB_ENV *dbenv;
-{
-	__db_errx(dbenv,
-    "Berkeley DB library build did not include replication manager support");
-	return (DB_OPNOTSUP);
-}
-#endif

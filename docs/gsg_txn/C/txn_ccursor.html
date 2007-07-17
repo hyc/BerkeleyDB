@@ -89,7 +89,7 @@
         <pre class="programlisting">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
-#include &quot;db.h&quot;
+#include "db.h"
 
 int
 main(void)
@@ -99,7 +99,7 @@ main(void)
     DB_ENV *envp;
     DB_TXN *txn;
     int ret, c_ret;
-    char *replacementString = &quot;new string&quot;;
+    char *replacementString = "new string";
 
     dbp = NULL;
     envp = NULL;
@@ -108,7 +108,7 @@ main(void)
     /* Open the environment */
     ret = db_env_create(&amp;envp, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error creating environment handle: %s\n&quot;,
+        fprintf(stderr, "Error creating environment handle: %s\n",
             db_strerror(ret));
         return (EXIT_FAILURE);
     }
@@ -122,7 +122,7 @@ main(void)
 
     ret = envp-&gt;open(envp, db_home_dir, env_flags, 0);
     if (ret != 0) {
-        fprintf(stderr, &quot;Error opening environment: %s\n&quot;,
+        fprintf(stderr, "Error opening environment: %s\n",
             db_strerror(ret));
         goto err;
     }
@@ -130,7 +130,7 @@ main(void)
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database creation failed&quot;);
+        envp-&gt;err(envp, ret, "Database creation failed");
         goto err;
     }
 
@@ -147,7 +147,7 @@ main(void)
                     db_flags,   /* Open flags */
                     0);         /* File mode. Using defaults */
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Database '%s' open failed&quot;,
+        envp-&gt;err(envp, ret, "Database '%s' open failed",
             file_name);
         goto err;
     }
@@ -156,7 +156,7 @@ main(void)
     /* Note that this is a degree 3 transaction */
     ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, 0);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Transaction begin failed.&quot;);
+        envp-&gt;err(envp, ret, "Transaction begin failed.");
         goto err;
     }
 
@@ -164,7 +164,7 @@ main(void)
     /* Cause the cursor to perform uncommitted reads */
     ret = dbp-&gt;cursor(dbp, txn, &amp;cursorp, DB_READ_UNCOMMITTED);
     if (ret != 0) {
-        envp-&gt;err(envp, ret, &quot;Cursor open failed.&quot;);
+        envp-&gt;err(envp, ret, "Cursor open failed.");
         txn-&gt;abort(txn);
         goto err;
     }

@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2004,2007 Oracle.  All rights reserved.
  *
- * $Id: rep_log.c,v 12.55 2007/01/27 03:22:07 alanb Exp $
+ * $Id: rep_log.c,v 12.64 2007/06/21 16:32:24 alanb Exp $
  */
 
 #include "db_config.h"
@@ -27,14 +27,14 @@ __rep_allreq(dbenv, rp, eid)
 	int eid;
 {
 	DB_LOGC *logc;
-	DB_LSN oldfilelsn;
+	DB_LSN log_end, oldfilelsn;
 	DB_REP *db_rep;
 	DBT data_dbt, newfiledbt;
 	REP *rep;
 	REP_BULK bulk;
 	REP_THROTTLE repth;
 	uintptr_t bulkoff;
-	u_int32_t bulkflags, flags, use_bulk, version;
+	u_int32_t bulkflags, end_flag, flags, use_bulk, version;
 	int ret, t_ret;
 
 	ret = 0;
@@ -66,6 +66,18 @@ __rep_allreq(dbenv, rp, eid)
 	repth.type = REP_LOG;
 	repth.data_dbt = &data_dbt;
 	REP_SYSTEM_UNLOCK(dbenv);
+
+	/*
+	 * Get the LSN of the end of the log, so that in our reading loop
+	 * (below), we can recognize when we get there, and set the
+	 * REPCTL_LOG_END flag.
+	 */
+	if ((ret = __logc_get(logc, &log_end, &data_dbt, DB_LAST)) != 0) {
+		if (ret == DB_NOTFOUND && F_ISSET(rep, REP_F_MASTER))
+			ret = 0;
+		goto err;
+	}
+
 	flags = IS_ZERO_LSN(rp->lsn) ||
 	    IS_INIT_LSN(rp->lsn) ?  DB_FIRST : DB_SET;
 	/*
@@ -116,8 +128,8 @@ __rep_allreq(dbenv, rp, eid)
 	 * Or if we're not using throttling, or we are using bulk, we stop
 	 * when we reach the end (i.e. ret != 0).
 	 */
-	for (;
-	    ret == 0 && repth.type != REP_LOG_MORE;
+	for (end_flag = 0;
+	    ret == 0 && repth.type != REP_LOG_MORE && end_flag == 0;
 	    ret = __logc_get(logc, &repth.lsn, &data_dbt, DB_NEXT)) {
 		/*
 		 * If we just changed log files, we need to send the
@@ -132,6 +144,18 @@ __rep_allreq(dbenv, rp, eid)
 			(void)__rep_send_message(dbenv,
 			    eid, REP_NEWFILE, &oldfilelsn, &newfiledbt, 0, 0);
 		}
+
+		/*
+		 * Mark the end of the ALL_REQ response to show that the
+		 * receiving client should now be "caught up" with the
+		 * replication group.  If we're the master, then our log end is
+		 * certainly authoritative.  If we're another client, only if we
+		 * ourselves have reached STARTUPDONE.
+		 */
+		end_flag = (LOG_COMPARE(&repth.lsn, &log_end) >= 0 &&
+		    (F_ISSET(rep, REP_F_MASTER) ||
+		    rep->stat.st_startup_complete)) ?
+		    REPCTL_LOG_END : 0;
 		/*
 		 * If we are configured for bulk, try to send this as a bulk
 		 * request.  If not configured, or it is too big for bulk
@@ -139,9 +163,10 @@ __rep_allreq(dbenv, rp, eid)
 		 */
 		if (use_bulk)
 			ret = __rep_bulk_message(dbenv, &bulk, &repth,
-			    &repth.lsn, &data_dbt, REPCTL_RESEND);
+			    &repth.lsn, &data_dbt, (REPCTL_RESEND | end_flag));
 		if (!use_bulk || ret == DB_REP_BULKOVF)
-			ret = __rep_send_throttle(dbenv, eid, &repth, 0);
+			ret = __rep_send_throttle(dbenv,
+			    eid, &repth, 0, end_flag);
 		if (ret != 0)
 			break;
 		/*
@@ -152,14 +177,14 @@ __rep_allreq(dbenv, rp, eid)
 		oldfilelsn.offset += logc->len;
 	}
 
-	if (ret == DB_NOTFOUND)
+	if (ret == DB_NOTFOUND || ret == DB_REP_UNAVAIL)
 		ret = 0;
 	/*
 	 * We're done, force out whatever remains in the bulk buffer and
 	 * free it.
 	 */
 	if (use_bulk && (t_ret = __rep_bulk_free(dbenv, &bulk,
-	    REPCTL_RESEND)) != 0 && ret == 0)
+	    (REPCTL_RESEND | end_flag))) != 0 && ret == 0)
 		ret = t_ret;
 err:
 	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
@@ -228,9 +253,7 @@ __rep_log(dbenv, rp, rec, savetime, ret_lsnp)
 		goto out;
 	}
 	if (rp->rectype == REP_LOG_MORE) {
-		REP_SYSTEM_LOCK(dbenv);
 		master = rep->master_id;
-		REP_SYSTEM_UNLOCK(dbenv);
 
 		/*
 		 * Keep the cycle from stalling: In case we got the LOG_MORE out
@@ -242,9 +265,8 @@ __rep_log(dbenv, rp, rec, savetime, ret_lsnp)
 		 * ask to resume from what we need.  The upshot is we need the
 		 * max of lp->lsn and the lsn from the message.
 		 */
-		LOG_SYSTEM_LOCK(dbenv);
-		lsn = lp->lsn;
-		LOG_SYSTEM_UNLOCK(dbenv);
+		MUTEX_LOCK(dbenv, rep->mtx_clientdb);
+		lsn = lp->ready_lsn;
 		if (LOG_COMPARE(&rp->lsn, &lsn) > 0)
 			lsn = rp->lsn;
 
@@ -258,7 +280,6 @@ __rep_log(dbenv, rp, rec, savetime, ret_lsnp)
 		 * we'll re-negotiate where the end of the log is and
 		 * try to bring ourselves up to date again anyway.
 		 */
-		MUTEX_LOCK(dbenv, rep->mtx_clientdb);
 		if (master == DB_EID_INVALID) {
 			ret = 0;
 			MUTEX_UNLOCK(dbenv, rep->mtx_clientdb);
@@ -266,7 +287,7 @@ __rep_log(dbenv, rp, rec, savetime, ret_lsnp)
 		}
 		/*
 		 * If we're waiting for records, set the wait_recs
-		 * high so that we avoid rerequesting too soon and
+		 * high so that we avoid re-requesting too soon and
 		 * end up with multiple data streams.
 		 */
 		if (IS_ZERO_LSN(lp->waiting_lsn))
@@ -456,9 +477,13 @@ __rep_logreq(dbenv, rp, rec, eid)
 			ret = __rep_bulk_message(dbenv, &bulk, &repth,
 			    &repth.lsn, &data_dbt, REPCTL_RESEND);
 		if (!use_bulk || ret == DB_REP_BULKOVF)
-			ret = __rep_send_throttle(dbenv, eid, &repth, 0);
-		if (ret != 0)
+			ret = __rep_send_throttle(dbenv, eid, &repth, 0, 0);
+		if (ret != 0) {
+			/* Ignore send failure, except to break the loop. */
+			if (ret == DB_REP_UNAVAIL)
+				ret = 0;
 			break;
+		}
 		/*
 		 * If we are about to change files, then we'll need the
 		 * last LSN in the previous file.  Save it here.
@@ -508,11 +533,8 @@ __rep_loggap_req(dbenv, rep, lsnp, gapflags)
 	lp = dblp->reginfo.primary;
 	if (FLD_ISSET(gapflags, REP_GAP_FORCE))
 		next_lsn = *lsnp;
-	else {
-		LOG_SYSTEM_LOCK(dbenv);
-		next_lsn = lp->lsn;
-		LOG_SYSTEM_UNLOCK(dbenv);
-	}
+	else
+		next_lsn = lp->ready_lsn;
 	ctlflags = flags = 0;
 	type = REP_LOG_REQ;
 
@@ -557,7 +579,7 @@ __rep_loggap_req(dbenv, rep, lsnp, gapflags)
 		max_lsn_dbtp = &max_lsn_dbt;
 		/*
 		 * Gap requests are "new" and can go anywhere, unless
-		 * this is already a rerequest.
+		 * this is already a re-request.
 		 */
 		if (FLD_ISSET(gapflags, REP_GAP_REREQUEST))
 			flags = DB_REP_REREQUEST;
@@ -567,12 +589,12 @@ __rep_loggap_req(dbenv, rep, lsnp, gapflags)
 		max_lsn_dbtp = NULL;
 		lp->max_wait_lsn = next_lsn;
 		/*
-		 * If we're dropping to singletons, this is a rerequest.
+		 * If we're dropping to singletons, this is a re-request.
 		 */
 		flags = DB_REP_REREQUEST;
 	}
 	if (rep->master_id != DB_EID_INVALID) {
-		rep->stat.st_log_requested++;
+		STAT(rep->stat.st_log_requested++);
 		if (F_ISSET(rep, REP_F_RECOVER_LOG))
 			ctlflags = REPCTL_INIT;
 		(void)__rep_send_message(dbenv, rep->master_id,
@@ -607,10 +629,11 @@ __rep_logready(dbenv, rep, savetime, last_lsnp)
 		REP_SYSTEM_LOCK(dbenv);
 		ZERO_LSN(rep->first_lsn);
 
-		DB_ASSERT(dbenv, rep->originfo != NULL);
-		__os_free(dbenv, rep->originfo);
-		rep->originfo = NULL;
-		
+		if (rep->originfo != NULL) {
+			__os_free(dbenv, rep->originfo);
+			rep->originfo = NULL;
+		}
+
 		F_CLR(rep, REP_F_RECOVER_LOG);
 		REP_SYSTEM_UNLOCK(dbenv);
 	} else {

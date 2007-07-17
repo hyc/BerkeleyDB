@@ -78,13 +78,13 @@
             <p>
             You cannot use <tt class="literal">DB_GET_BOTH</tt> and related flags with
                 
-                <tt class="methodname">DB::c_get()</tt>
+                <tt class="methodname">Db::get()</tt>
             and a secondary database. Instead, you must use 
                 
-                <span><tt class="methodname">DB::c_pget()</tt>.</span>
+                <span><tt class="methodname">Db::pget()</tt>.</span>
             Also, in that case the primary and secondary key given on the call to 
                 
-                <tt class="methodname">DB::c_pget()</tt>
+                <tt class="methodname">Db::pget()</tt>
             must match the secondary key and associated primary record key in
             order for that primary record to be returned as a result of the
             call.
@@ -119,7 +119,7 @@ my_index.cursor(NULL, &amp;cursorp, 0);
 
 
 // Name to delete
-char *search_name = &quot;John Doe&quot;; 
+char *search_name = "John Doe"; 
 
 // Instantiate Dbts as normal
 Dbt key(search_name, strlen(search_name) + 1);

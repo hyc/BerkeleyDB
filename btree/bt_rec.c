@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: bt_rec.c,v 12.25 2006/11/29 21:23:10 ubell Exp $
+ * $Id: bt_rec.c,v 12.28 2007/05/17 17:17:40 bostic Exp $
  */
 
 #include "db_config.h"
@@ -43,7 +43,6 @@ __bam_split_recover(dbenv, dbtp, lsnp, op, info)
 	u_int32_t ptype;
 	int cmp, l_update, p_update, r_update, rc, ret, rootsplit, t_ret;
 
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_split_print);
 
 	mpf = NULL;
@@ -143,7 +142,8 @@ do_left:	if (lp != NULL) {
 			REC_DIRTY(mpf, file_dbp->priority, &lp);
 			memcpy(lp, _lp, file_dbp->pgsize);
 			lp->lsn = *lsnp;
-			if ((ret = __memp_fput(mpf, lp, file_dbp->priority)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, lp, file_dbp->priority)) != 0)
 				goto out;
 			lp = NULL;
 		}
@@ -152,7 +152,8 @@ do_left:	if (lp != NULL) {
 			REC_DIRTY(mpf, file_dbp->priority, &rp);
 			memcpy(rp, _rp, file_dbp->pgsize);
 			rp->lsn = *lsnp;
-			if ((ret = __memp_fput(mpf, rp, file_dbp->priority)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, rp, file_dbp->priority)) != 0)
 				goto out;
 			rp = NULL;
 		}
@@ -179,7 +180,8 @@ do_left:	if (lp != NULL) {
 			    __bam_total(file_dbp, _rp) : 0);
 
 			pp->lsn = *lsnp;
-			if ((ret = __memp_fput(mpf, pp, file_dbp->priority)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, pp, file_dbp->priority)) != 0)
 				goto out;
 			pp = NULL;
 		}
@@ -233,7 +235,8 @@ check_next:	/*
 		if (LOG_COMPARE(lsnp, &LSN(pp)) == 0) {
 			REC_DIRTY(mpf, file_dbp->priority, &pp);
 			memcpy(pp, argp->pg.data, argp->pg.size);
-			if ((ret = __memp_fput(mpf, pp, file_dbp->priority)) != 0)
+			if ((ret =
+			    __memp_fput(mpf, pp, file_dbp->priority)) != 0)
 				goto out;
 			pp = NULL;
 		}
@@ -346,7 +349,6 @@ __bam_rsplit_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_rsplit_print);
 	REC_INTRO(__bam_rsplit_read, 1, 1);
 
@@ -463,7 +465,6 @@ __bam_adj_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_adj_print);
 	REC_INTRO(__bam_adj_read, 1, 1);
 
@@ -537,7 +538,6 @@ __bam_cadjust_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_cadjust_print);
 	REC_INTRO(__bam_cadjust_read, 1, 0);
 
@@ -626,7 +626,6 @@ __bam_cdel_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_cdel_print);
 	REC_INTRO(__bam_cdel_read, 1, 0);
 
@@ -704,7 +703,6 @@ __bam_repl_recover(dbenv, dbtp, lsnp, op, info)
 	u_int8_t *p;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_repl_print);
 	REC_INTRO(__bam_repl_read, 1, 1);
 
@@ -814,7 +812,6 @@ __bam_root_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	meta = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_root_print);
 	REC_INTRO(__bam_root_read, 0, 0);
 
@@ -879,7 +876,6 @@ __bam_curadj_recover(dbenv, dbtp, lsnp, op, info)
 	DB_MPOOLFILE *mpf;
 	int ret;
 
-	COMPQUIET(info, NULL);
 	COMPQUIET(mpf, NULL);
 
 	REC_PRINT(__bam_curadj_print);
@@ -941,7 +937,6 @@ __bam_rcuradj_recover(dbenv, dbtp, lsnp, op, info)
 	DB_MPOOLFILE *mpf;
 	int ret, t_ret;
 
-	COMPQUIET(info, NULL);
 	COMPQUIET(mpf, NULL);
 	rdbc = NULL;
 
@@ -1026,7 +1021,6 @@ __bam_relink_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_relink_print);
 	REC_INTRO(__bam_relink_read, 1, 0);
 
@@ -1141,8 +1135,6 @@ __bam_merge_recover(dbenv, dbtp, lsnp, op, info)
 	u_int32_t size;
 	u_int8_t *bp;
 	int cmp_n, cmp_p, i, ret;
-
-	COMPQUIET(info, NULL);
 
 	REC_PRINT(__bam_merge_print);
 	REC_INTRO(__bam_merge_read, 1, 1);
@@ -1327,8 +1319,6 @@ __bam_pgno_recover(dbenv, dbtp, lsnp, op, info)
 	db_pgno_t *pgnop;
 	int cmp_n, cmp_p, ret;
 
-	COMPQUIET(info, NULL);
-
 	REC_PRINT(__bam_pgno_print);
 	REC_INTRO(__bam_pgno_read, 1, 0);
 
@@ -1417,7 +1407,6 @@ __bam_relink_43_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_n, cmp_p, modified, ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__bam_relink_43_print);
 	REC_INTRO(__bam_relink_43_read, 1, 0);
 

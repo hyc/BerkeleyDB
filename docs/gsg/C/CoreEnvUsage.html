@@ -73,7 +73,7 @@ int ret;                  /* function return value */
 */
 ret = db_env_create(&amp;myEnv, 0);
 if (ret != 0) {
-    fprintf(stderr, &quot;Error creating env handle: %s\n&quot;, db_strerror(ret));
+    fprintf(stderr, "Error creating env handle: %s\n", db_strerror(ret));
     return -1;
 }
 
@@ -83,11 +83,11 @@ env_flags = DB_CREATE |    /* If the environment does not exist,
             DB_INIT_MPOOL; /* Initialize the in-memory cache. */
 
 ret = myEnv-&gt;open(myEnv,   /* DB_ENV ptr */
-  &quot;/export1/testEnv&quot;,      /* env home directory */
+  "/export1/testEnv",      /* env home directory */
   env_flags,               /* Open flags */
   0);                      /* File mode (default) */
 if (ret != 0) {
-    fprintf(stderr, &quot;Environment open failed: %s&quot;, db_strerror(ret));
+    fprintf(stderr, "Environment open failed: %s", db_strerror(ret));
     return -1;
 } </pre>
       <p>
@@ -112,7 +112,7 @@ db_flags = DB_CREATE;    /* If the database does not exist,
 /* open the database */
 ret = dbp-&gt;open(dbp,        /* DB structure pointer */
                 NULL,       /* Transaction pointer */
-                &quot;my_db.db&quot;, /* On-disk file that holds the database. */
+                "my_db.db", /* On-disk file that holds the database. */
                 NULL,       /* Optional logical database name */
                 DB_BTREE,   /* Database access method */
                 db_flags,   /* Open flags */

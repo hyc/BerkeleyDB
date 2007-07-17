@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: RangeCursor.java,v 1.4 2006/11/01 00:53:32 bostic Exp $
+ * $Id: RangeCursor.java,v 1.6 2007/05/17 18:17:20 bostic Exp $
  */
 
 package com.sleepycat.util.keyrange;

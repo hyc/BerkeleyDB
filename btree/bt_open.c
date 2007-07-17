@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_open.c,v 12.16 2006/12/14 23:00:23 ubell Exp $
+ * $Id: bt_open.c,v 12.18 2007/05/17 15:14:46 bostic Exp $
  */
 
 #include "db_config.h"
@@ -576,7 +576,7 @@ __bam_new_subdb(mdbp, dbp, txn)
 #if !defined(DEBUG_WOP)
 	    txn != NULL &&
 #endif
-	
+
 	    (ret = __bam_root_log(mdbp, txn, &meta->dbmeta.lsn, 0,
 	    meta->dbmeta.pgno, root->pgno, &meta->dbmeta.lsn)) != 0)
 		goto err;

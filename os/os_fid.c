@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: os_fid.c,v 12.13 2006/11/09 14:23:16 bostic Exp $
+ * $Id: os_fid.c,v 12.17 2007/05/17 17:18:02 bostic Exp $
  */
 
 #include "db_config.h"
@@ -33,13 +33,13 @@ __os_fileid(dbenv, fname, unique_okay, fidp)
 	int ret;
 
 	/*
-	 * The structure of a fileid on a POSIX/UNIX system is: ino(4) dev(4)
-	 * time(4) pid(4) extra(4).
+	 * The structure of a fileid on a POSIX/UNIX system is:
+	 *
+	 *	ino[4] dev[4] unique-ID[4] serial-counter[4] empty[4].
 	 *
 	 * For real files, which have a backing inode and device, the first
-	 * 16 bytes are filled in and the extra bytes are left 0.  For
-	 * temporary files, the inode and device fields are left blank and
-	 * the extra four bytes are filled in with a random value.
+	 * 8 bytes are filled in and the following bytes are left 0.  For
+	 * temporary files, the following 12 bytes are filled in.
 	 *
 	 * Clear the buffer.
 	 */
@@ -89,7 +89,7 @@ __os_fileid(dbenv, fname, unique_okay, fidp)
 		*fidp++ = *p++;
 #else
 	 /*
-	  * Use the file name. 
+	  * Use the file name.
 	  *
 	  * XXX
 	  * Cast the first argument, the BREW ARM compiler is unhappy if
@@ -124,7 +124,7 @@ __os_fileid(dbenv, fname, unique_okay, fidp)
 		 * base 2.
 		 */
 		if (DB_GLOBAL(fid_serial) == 0) {
-			dbenv->thread_id(dbenv, &pid, NULL);
+			__os_id(dbenv, &pid, NULL);
 			DB_GLOBAL(fid_serial) = (u_int32_t)pid;
 		} else
 			DB_GLOBAL(fid_serial) += 100000;

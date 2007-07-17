@@ -331,11 +331,11 @@ public class CheckPointer extends Thread
                 myEnv.checkpoint(cpc);
                 sleep(60000);
             } catch (DatabaseException de) {
-                System.err.println(&quot;Checkpoint error: &quot; +
+                System.err.println("Checkpoint error: " +
                     de.toString());
             } catch (InterruptedException e) {
                 // Should never get here
-                System.err.println(&quot;got interrupted exception&quot;);
+                System.err.println("got interrupted exception");
             }
         }
     }
@@ -360,13 +360,13 @@ import java.io.FileNotFoundException;
 
 public class TryCheckPoint {
 
-    private static String myEnvPath = &quot;./&quot;;
+    private static String myEnvPath = "./";
 
     private static Environment myEnv = null;
 
 
     private static void usage() {
-        System.out.println(&quot;TxnGuide [-h &lt;env directory&gt;]&quot;);
+        System.out.println("TxnGuide [-h &lt;env directory&gt;]");
         System.exit(-1);
     }
 
@@ -394,17 +394,17 @@ public class TryCheckPoint {
             cp.join();
 
         } catch (Exception e) {
-            System.err.println(&quot;TryCheckPoint: &quot; + e.toString());
+            System.err.println("TryCheckPoint: " + e.toString());
             e.printStackTrace();
         } finally {
             closeEnv();
         }
-        System.out.println(&quot;All done.&quot;);
+        System.out.println("All done.");
     }
 
     // Open an environment and databases
     private static void openEnv() throws DatabaseException {
-        System.out.println(&quot;opening env&quot;);
+        System.out.println("opening env");
 
         // Set up the environment.
         EnvironmentConfig myEnvConfig = new EnvironmentConfig();
@@ -425,19 +425,19 @@ public class TryCheckPoint {
             // Skipping the database opens and closes for brevity
 
         } catch (FileNotFoundException fnfe) {
-            System.err.println(&quot;openEnv: &quot; + fnfe.toString());
+            System.err.println("openEnv: " + fnfe.toString());
             System.exit(-1);
         }
     }
 
     // Close the environment and databases
     private static void closeEnv() {
-        System.out.println(&quot;Closing env&quot;);
+        System.out.println("Closing env");
         if (myEnv != null ) {
             try {
                 myEnv.close();
             } catch (DatabaseException e) {
-                System.err.println(&quot;closeEnv: &quot; + e.toString());
+                System.err.println("closeEnv: " + e.toString());
                 e.printStackTrace();
             }
         }
@@ -447,7 +447,7 @@ public class TryCheckPoint {
 
     private static void parseArgs(String args[]) {
         for(int i = 0; i &lt; args.length; ++i) {
-            if (args[i].startsWith(&quot;-&quot;)) {
+            if (args[i].startsWith("-")) {
                 switch(args[i].charAt(1)) {
                     case 'h':
                         myEnvPath = new String(args[++i]);

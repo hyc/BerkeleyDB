@@ -1,5 +1,5 @@
-<!--$Id: elect.so,v 1.25 2006/11/30 21:19:37 bostic Exp $-->
-<!--Copyright 1997,2006 Oracle.  All rights reserved.-->
+<!--$Id: elect.so,v 1.27 2007/04/05 20:37:29 bostic Exp $-->
+<!--Copyright (c) 1997,2007 Oracle.  All rights reserved.-->
 <!--See the file LICENSE for redistribution information.-->
 <html>
 <head>
@@ -54,11 +54,8 @@ on B: priority 0, nsites 2</pre></blockquote>
 <a href="../../api_c/rep_start.html">DB_ENV-&gt;rep_start</a> method, and applications should be careful not to do so.
 Applications should only configure themselves as the master environment
 if they are the only possible master, or if they have won an election.
-An application can only know it has won an election if the
-<a href="../../api_c/rep_elect.html">DB_ENV-&gt;rep_elect</a> method returns success and the local database environment's
-ID as the new master environment ID, or if the <a href="../../api_c/rep_message.html">DB_ENV-&gt;rep_process_message</a> method
-returns <a href="../../api_c/rep_message.html#DB_REP_NEWMASTER">DB_REP_NEWMASTER</a> and the local database environment's
-ID as the new master environment ID.</p>
+An application knows it has won an election when it receives the
+<a href="../../api_c/env_event_notify.html#DB_EVENT_REP_ELECTED">DB_EVENT_REP_ELECTED</a> event.</p>
 <p>Normally, when a master failure is detected it is desired that an
 election finish quickly so the application can continue to service
 updates.  Also, participating sites are already up and can participate.
@@ -149,6 +146,6 @@ based on configuration information supplied to the
 <a href="../../api_c/rep_priority.html">DB_ENV-&gt;rep_set_priority</a> method and the <a href="../../api_c/rep_nsites.html">DB_ENV-&gt;rep_set_nsites</a> method.</p>
 <table width="100%"><tr><td><br></td><td align=right><a href="../rep/newsite.html"><img src="../../images/prev.gif" alt="Prev"></a><a href="../toc.html"><img src="../../images/ref.gif" alt="Ref"></a><a href="../rep/mastersync.html"><img src="../../images/next.gif" alt="Next"></a>
 </td></tr></table>
-<p><font size=1>Copyright (c) 1996,2006 Oracle.  All rights reserved.</font>
+<p><font size=1>Copyright (c) 1996,2007 Oracle.  All rights reserved.</font>
 </body>
 </html>

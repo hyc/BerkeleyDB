@@ -328,12 +328,12 @@ try {
     myDbConfig.setSortedDuplicates(true);
 
    // Open the database
-   myDb = new Database(&quot;mydb.db&quot;, null, myDbConfig);
+   myDb = new Database("mydb.db", null, myDbConfig);
 } catch(DatabaseException dbe) {
-    System.err.println(&quot;MyDbs: &quot; + dbe.toString());
+    System.err.println("MyDbs: " + dbe.toString());
     System.exit(-1);
 } catch(FileNotFoundException fnfe) {
-    System.err.println(&quot;MyDbs: &quot; + fnfe.toString());
+    System.err.println("MyDbs: " + fnfe.toString());
     System.exit(-1);
 } </pre>
         </div>
@@ -508,7 +508,7 @@ try {
 
     // Open the database that you will use to store your data
     myDbConfig.setSortedDuplicates(true);
-    myDatabase = new Database(&quot;myDb&quot;, null, myDbConfig);
+    myDatabase = new Database("myDb", null, myDbConfig);
 } catch (DatabaseException dbe) {
     // Exception handling goes here
 } catch (FileNotFoundException fnfe) {

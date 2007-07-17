@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Static Library" 0x0104
 
-CFG=db_small - Win32 Debug
+CFG=db_small - Win32 Debug x86
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,18 +13,22 @@ CFG=db_small - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "db_small.mak" CFG="db_small - Win32 Debug"
+!MESSAGE NMAKE /f "db_small.mak" CFG="db_small - Win32 Debug x86"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "db_small - Win32 Release" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_small - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_small - Win32 ASCII Release" (based on "Win32 (x86) Static Library")
-!MESSAGE "db_small - Win32 ASCII Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 Release x86" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 Debug x86" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 ASCII Release x86" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 ASCII Debug x86" (based on "Win32 (x86) Static Library")
 !MESSAGE "db_small - x64 Debug AMD64" (based on "Win32 (x86) Static Library")
 !MESSAGE "db_small - x64 Release AMD64" (based on "Win32 (x86) Static Library")
 !MESSAGE "db_small - x64 Debug IA64" (based on "Win32 (x86) Static Library")
 !MESSAGE "db_small - x64 Release IA64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 Debug AMD64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 Release AMD64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 Debug IA64" (based on "Win32 (x86) Static Library")
+!MESSAGE "db_small - Win32 Release IA64" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -34,7 +38,7 @@ CFG=db_small - Win32 Debug
 CPP=cl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "db_small - Win32 Release"
+!IF  "$(CFG)" == "db_small - Win32 Release x86"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -57,7 +61,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Release/libdb_small46s.lib"
 # ADD LIB32 /nologo /out:"Release/libdb_small46s.lib"
 
-!ELSEIF  "$(CFG)" == "db_small - Win32 Debug"
+!ELSEIF  "$(CFG)" == "db_small - Win32 Debug x86"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -80,7 +84,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Debug/libdb_small46sd.lib"
 # ADD LIB32 /nologo /out:"Debug/libdb_small46sd.lib"
 
-!ELSEIF  "$(CFG)" == "db_small - Win32 ASCII Release"
+!ELSEIF  "$(CFG)" == "db_small - Win32 ASCII Release x86"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -103,7 +107,7 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Release_ASCII/libdb_small46s.lib"
 # ADD LIB32 /nologo /out:"Release_ASCII/libdb_small46s.lib"
 
-!ELSEIF  "$(CFG)" == "db_small - Win32 ASCII Debug"
+!ELSEIF  "$(CFG)" == "db_small - Win32 ASCII Debug x86"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -218,18 +222,114 @@ LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo /out:"Release_IA64/libdb_small46s.lib"
 # ADD LIB32 /nologo /out:"Release_IA64/libdb_small46s.lib"
 
+!ELSEIF  "$(CFG)" == "db_small - Win32 Debug AMD64"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "Debug_AMD64"
+# PROP BASE Intermediate_Dir "Debug/db_small"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Debug_AMD64"
+# PROP Intermediate_Dir "Debug_AMD64/db_small"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MDd /W3 /EHsc /Z7 /Od /I "." /I ".." /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD CPP /nologo /MDd /W3 /EHsc /Z7 /Od /I "." /I ".." /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /Wp64 /c
+# ADD BASE RSC /l 0xc09
+# ADD RSC /l 0xc09
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo /out:"Debug_AMD64/libdb_small46sd.lib"
+# ADD LIB32 /nologo /out:"Debug_AMD64/libdb_small46sd.lib"
+
+!ELSEIF  "$(CFG)" == "db_small - Win32 Release AMD64"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Release_AMD64"
+# PROP BASE Intermediate_Dir "Release_AMD64/db_small"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release_AMD64"
+# PROP Intermediate_Dir "Release_AMD64/db_small"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MD /W3 /EHsc /O2 /I "." /I ".." /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD CPP /nologo /MD /W3 /EHsc /O2 /I "." /I ".." /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD BASE RSC /l 0xc09
+# ADD RSC /l 0xc09
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo /out:"Release_AMD64/libdb_small46s.lib"
+# ADD LIB32 /nologo /out:"Release_AMD64/libdb_small46s.lib"
+
+!ELSEIF  "$(CFG)" == "db_small - Win32 Debug IA64"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "Debug_IA64"
+# PROP BASE Intermediate_Dir "Debug_IA64/db_small"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Debug_IA64"
+# PROP Intermediate_Dir "Debug_IA64/db_small"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MDd /W3 /EHsc /Z7 /Od /I "." /I ".." /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD CPP /nologo /MDd /W3 /EHsc /Z7 /Od /I "." /I ".." /D "DIAGNOSTIC" /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD BASE RSC /l 0xc09
+# ADD RSC /l 0xc09
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo /out:"Debug_IA64/libdb_small46sd.lib"
+# ADD LIB32 /nologo /out:"Debug_IA64/libdb_small46sd.lib"
+
+!ELSEIF  "$(CFG)" == "db_small - Win32 Release IA64"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Release_IA64"
+# PROP BASE Intermediate_Dir "Release_IA64/db_small"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release_IA64"
+# PROP Intermediate_Dir "Release_IA64/db_small"
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MD /W3 /EHsc /O2 /I "." /I ".." /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD CPP /nologo /MD /W3 /EHsc /O2 /I "." /I ".." /D "UNICODE" /D "_UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_SMALLBUILD" /Wp64 /FD /c
+# ADD BASE RSC /l 0xc09
+# ADD RSC /l 0xc09
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo /out:"Release_IA64/libdb_small46s.lib"
+# ADD LIB32 /nologo /out:"Release_IA64/libdb_small46s.lib"
+
 !ENDIF 
 
 # Begin Target
 
-# Name "db_small - Win32 Release"
-# Name "db_small - Win32 Debug"
-# Name "db_small - Win32 ASCII Release"
-# Name "db_small - Win32 ASCII Debug"
+# Name "db_small - Win32 Release x86"
+# Name "db_small - Win32 Debug x86"
+# Name "db_small - Win32 ASCII Release x86"
+# Name "db_small - Win32 ASCII Debug x86"
 # Name "db_small - x64 Debug AMD64"
 # Name "db_small - x64 Release AMD64"
 # Name "db_small - x64 Debug IA64"
 # Name "db_small - x64 Release IA64"
+# Name "db_small - Win32 Debug AMD64"
+# Name "db_small - Win32 Release AMD64"
+# Name "db_small - Win32 Debug IA64"
+# Name "db_small - Win32 Release IA64"
 # Begin Source File
 
 SOURCE=..\btree\bt_compact.c
@@ -305,10 +405,6 @@ SOURCE=..\btree\btree_auto.c
 # Begin Source File
 
 SOURCE=..\clib\ctime.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\clib\strcasecmp.c
 # End Source File
 # Begin Source File
 
@@ -736,6 +832,10 @@ SOURCE=..\mp\mp_register.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\mp\mp_resize.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\mp\mp_stat.c
 # End Source File
 # Begin Source File
@@ -905,6 +1005,10 @@ SOURCE=..\qam\qam_stub.c
 # Begin Source File
 
 SOURCE=..\rep\rep_stub.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\repmgr\repmgr_stub.c
 # End Source File
 # Begin Source File
 

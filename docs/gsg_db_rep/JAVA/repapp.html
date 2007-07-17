@@ -9,7 +9,7 @@
     <link rel="home" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="previous" href="simpleprogramlisting.html" title="Program Listing" />
-    <link rel="next" href="repmgr_init_example_c.html" title="Adding the Replication Framework to&#10;                    &#10;                    &#10;            " />
+    <link rel="next" href="repmgr_init_example_c.html" title="Adding the Replication Framework to&#10;                    &#10;                    SimpleTxn&#10;            " />
   </head>
   <body>
     <div class="navheader">
@@ -64,7 +64,7 @@
             <span class="sect1">
               <a href="repmgr_init_example_c.html">Adding the Replication Framework to
                     
-                    
+                    SimpleTxn
             </a>
             </span>
           </dt>
@@ -318,17 +318,17 @@ import com.sleepycat.db.ReplicationHostAddress;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 
 ...
-    String progname = &quot;example_replication&quot;;
-    String envHome = &quot;TESTDIR&quot;;
+    String progname = "example_replication";
+    String envHome = "TESTDIR";
     int cachesize = 10 * 1024 * 1024;
 
     Environment dbenv;
     ReplicationHostAddress thisHost;
-    String listenHost = &quot;mymachine.sleepycat.com&quot;;
+    String listenHost = "mymachine.sleepycat.com";
     int listenPort = 8080;
 
     ReplicationHostAddress otherReplica;
-    String otherHost = &quot;anothermachine.sleepycat.com&quot;;
+    String otherHost = "anothermachine.sleepycat.com";
     int otherPort = 8081;
 
 
@@ -381,9 +381,9 @@ try {
     try {
         dbenv = new Environment(envHome, envConfig);
     } catch(FileNotFoundException e) {
-        System.err.println(&quot;FileNotFound exception: &quot; + e.toString());
+        System.err.println("FileNotFound exception: " + e.toString());
         System.err.println(
-            &quot;Ensure that the environment directory is pre-created.&quot;);
+            "Ensure that the environment directory is pre-created.");
     }
 
     // Start the replication framework such that it has three threads.
@@ -541,7 +541,7 @@ try {
                            of duplicate masters, because once a master is
                            selected, the environment that loses the election will
                            have to roll back any transactions committed
-                           until it is in sync with the &quot;real&quot; master.
+                           until it is in sync with the "real" master.
                    </p>
                   </td>
                 </tr>
@@ -696,7 +696,7 @@ try {
           </td>
           <td width="40%" align="right" valign="top"> Adding the Replication Framework to
                     
-                    
+                    SimpleTxn
             </td>
         </tr>
       </table>

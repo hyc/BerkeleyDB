@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2000,2007 Oracle.  All rights reserved.
  *
- * $Id: StoredList.java,v 12.5 2006/11/01 00:53:27 bostic Exp $
+ * $Id: StoredList.java,v 12.6 2007/05/04 00:28:25 mark Exp $
  */
 
 package com.sleepycat.collections;
@@ -551,7 +551,9 @@ public class StoredList extends StoredCollection implements List {
             if (i2.hasNext()) return false;
             return true;
         } finally {
-            i1.close();
+	    if (i1 != null) {
+		i1.close();
+	    }
             StoredIterator.close(i2);
         }
     }

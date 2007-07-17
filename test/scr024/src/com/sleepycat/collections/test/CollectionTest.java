@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
- * $Id: CollectionTest.java,v 12.7 2006/11/01 00:54:11 bostic Exp $
+ * $Id: CollectionTest.java,v 12.8 2007/05/04 00:28:29 mark Exp $
  */
 
 package com.sleepycat.collections.test;
@@ -252,7 +252,7 @@ public class CollectionTest extends TestCase {
                     (testStoredIterator ? "-storedIter" : "") +
                     ((maxKey != DEFAULT_MAX_KEY) ? ("-maxKey-" + maxKey) : "");
     }
-
+    
     public void tearDown()
         throws Exception {
 
@@ -276,11 +276,13 @@ public class CollectionTest extends TestCase {
                     DbCompat.NESTED_TRANSACTIONS);
             TransactionRunner nullRunner = new NullTransactionRunner(env);
             readRunner = nullRunner;
-            writeIterRunner = normalRunner;
             if (isAutoCommit) {
                 writeRunner = nullRunner;
+                writeIterRunner = testStoredIterator ? normalRunner
+                                                     : nullRunner;
             } else {
                 writeRunner = normalRunner;
+                writeIterRunner = normalRunner;
             }
 
             store = testStore.open(env, "unindexed.db");
@@ -414,7 +416,7 @@ public class CollectionTest extends TestCase {
         // create primary list
         if (testStore.hasRecNumAccess()) {
             if (isEntityBinding) {
-                ilist = new StoredList(store, entityBinding,
+                ilist = new StoredList(store, entityBinding, 
                                        testStore.getKeyAssigner());
             } else {
                 ilist = new StoredList(store, valueBinding,

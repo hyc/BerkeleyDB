@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005-2006 Oracle.  All rights reserved.
+ * Copyright (c) 2005,2007 Oracle.  All rights reserved.
  *
- * $Id: clock.h,v 12.1 2006/11/29 20:08:40 bostic Exp $
+ * $Id: clock.h,v 12.5 2007/05/17 17:22:36 bostic Exp $
  */
 /*
  * Copyright (c) 1982, 1986, 1993
@@ -68,7 +68,7 @@ typedef struct {
 	    ((tvp)->tv_nsec cmp (uvp)->tv_nsec) :			\
 	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 #undef timespecadd
-#define timespecadd(vvp, uvp)						\
+#define	timespecadd(vvp, uvp)						\
 	do {								\
 		(vvp)->tv_sec += (uvp)->tv_sec;				\
 		(vvp)->tv_nsec += (uvp)->tv_nsec;			\
@@ -78,7 +78,7 @@ typedef struct {
 		}							\
 	} while (0)
 #undef timespecsub
-#define timespecsub(vvp, uvp)						\
+#define	timespecsub(vvp, uvp)						\
 	do {								\
 		(vvp)->tv_sec -= (uvp)->tv_sec;				\
 		(vvp)->tv_nsec -= (uvp)->tv_nsec;			\
@@ -92,6 +92,14 @@ typedef struct {
 	do {								\
 		(vvp)->tv_sec = (time_t)((t) / 1000000);		\
 		(vvp)->tv_nsec = (long)(((t) % 1000000) * 1000);	\
+	} while (0)
+
+#define	DB_TIMESPEC_TO_TIMEOUT(t, vvp)					\
+	do {								\
+		t = (u_long)((vvp)->tv_sec * 1000000);			\
+		t += (u_long)((vvp)->tv_nsec / 1000);			\
+		/* Add in 1 usec for lost nsec precision. */		\
+		t++;							\
 	} while (0)
 
 #if defined(__cplusplus)

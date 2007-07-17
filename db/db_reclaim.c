@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_reclaim.c,v 12.10 2006/11/29 21:23:12 ubell Exp $
+ * $Id: db_reclaim.c,v 12.11 2007/05/17 15:14:56 bostic Exp $
  */
 
 #include "db_config.h"

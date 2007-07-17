@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: bt_search.c,v 12.26 2006/11/29 21:23:10 ubell Exp $
+ * $Id: bt_search.c,v 12.30 2007/05/17 17:17:40 bostic Exp $
  */
 
 #include "db_config.h"
@@ -235,9 +235,8 @@ __bam_search(dbc, root_pgno, key, flags, slevel, recnop, exactp)
 		 * page, they're an index per page item.  If we find an exact
 		 * match on a leaf page, we're done.
 		 */
-		for (base = 0,
-		    lim = NUM_ENT(h) / (db_indx_t)adjust; lim != 0; lim >>= 1) {
-			indx = base + ((lim >> 1) * adjust);
+		DB_BINARY_SEARCH_FOR(base, lim, h, adjust) {
+			DB_BINARY_SEARCH_INCR(indx, base, lim, adjust);
 			if ((ret = __bam_cmp(dbp, dbc->txn, key,
 			     h, indx, func, &cmp)) != 0)
 				goto err;
@@ -251,10 +250,9 @@ __bam_search(dbc, root_pgno, key, flags, slevel, recnop, exactp)
 				}
 				goto next;
 			}
-			if (cmp > 0) {
-				base = indx + adjust;
-				--lim;
-			}
+			if (cmp > 0)
+				DB_BINARY_SEARCH_SHIFT_BASE(indx, base,
+				    lim, adjust);
 		}
 
 		/*
@@ -439,7 +437,8 @@ next:		if (recnop != NULL)
 			 * edge, then drop the subtree.
 			 */
 			if (!LF_ISSET(SR_DEL | SR_NEXT)) {
-				if ((ret = __memp_fput(mpf, h, dbc->priority)) != 0)
+				if ((ret =
+				    __memp_fput(mpf, h, dbc->priority)) != 0)
 					goto err;
 				goto lock_next;
 			}

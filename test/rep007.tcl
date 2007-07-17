@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001,2006 Oracle.  All rights reserved.
+# Copyright (c) 2001,2007 Oracle.  All rights reserved.
 #
-# $Id: rep007.tcl,v 12.14 2006/12/11 17:44:35 sue Exp $
+# $Id: rep007.tcl,v 12.16 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST  	rep007
 # TEST	Replication and bad LSNs
@@ -49,12 +49,12 @@ proc rep007 { method { niter 10 } { tnum "007" } args } {
 proc rep007_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	env_cleanup $testdir
 
 	set orig_tdir $testdir

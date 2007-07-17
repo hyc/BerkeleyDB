@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: lock_timer.c,v 12.9 2006/11/29 20:08:47 bostic Exp $
+ * $Id: lock_timer.c,v 12.13 2007/05/17 15:15:43 bostic Exp $
  */
 
 #include "db_config.h"
@@ -19,21 +19,23 @@
  * this transaction expires or the amount of time a lock for this transaction
  * is permitted to wait.
  *
- * PUBLIC: int __lock_set_timeout __P(( DB_ENV *,
- * PUBLIC:      u_int32_t, db_timeout_t, u_int32_t));
+ * PUBLIC: int __lock_set_timeout __P((DB_ENV *,
+ * PUBLIC:      DB_LOCKER *, db_timeout_t, u_int32_t));
  */
 int
 __lock_set_timeout(dbenv, locker, timeout, op)
 	DB_ENV *dbenv;
-	u_int32_t locker;
+	DB_LOCKER *locker;
 	db_timeout_t timeout;
 	u_int32_t op;
 {
 	int ret;
 
-	LOCK_SYSTEM_LOCK(dbenv);
+	if (locker == NULL)
+		return (0);
+	LOCK_REGION_LOCK(dbenv);
 	ret = __lock_set_timeout_internal(dbenv, locker, timeout, op);
-	LOCK_SYSTEM_UNLOCK(dbenv);
+	LOCK_REGION_UNLOCK(dbenv);
 	return (ret);
 }
 
@@ -46,29 +48,17 @@ __lock_set_timeout(dbenv, locker, timeout, op)
  * for this transaction is permitted to wait.
  *
  * PUBLIC: int __lock_set_timeout_internal
- * PUBLIC:     __P((DB_ENV *, u_int32_t, db_timeout_t, u_int32_t));
+ * PUBLIC:     __P((DB_ENV *, DB_LOCKER *, db_timeout_t, u_int32_t));
  */
 int
-__lock_set_timeout_internal(dbenv, locker, timeout, op)
+__lock_set_timeout_internal(dbenv, sh_locker, timeout, op)
 	DB_ENV *dbenv;
-	u_int32_t locker;
+	DB_LOCKER *sh_locker;
 	db_timeout_t timeout;
 	u_int32_t op;
 {
-	DB_LOCKER *sh_locker;
 	DB_LOCKREGION *region;
-	DB_LOCKTAB *lt;
-	u_int32_t locker_ndx;
-	int ret;
-
-	lt = dbenv->lk_handle;
-	region = lt->reginfo.primary;
-
-	LOCKER_LOCK(lt, region, locker, locker_ndx);
-	ret = __lock_getlocker(lt, locker, locker_ndx, 1, &sh_locker);
-
-	if (ret != 0)
-		return (ret);
+	region = dbenv->lk_handle->reginfo.primary;
 
 	if (op == DB_SET_TXN_TIMEOUT) {
 		if (timeout == 0)
@@ -99,58 +89,40 @@ __lock_set_timeout_internal(dbenv, locker, timeout, op)
  * return EINVAL if the parent does not exist or did not
  * have a current txn timeout set.
  *
- * PUBLIC: int __lock_inherit_timeout __P(( DB_ENV *, u_int32_t, u_int32_t));
+ * PUBLIC: int __lock_inherit_timeout __P((DB_ENV *, DB_LOCKER *, DB_LOCKER *));
  */
 int
 __lock_inherit_timeout(dbenv, parent, locker)
 	DB_ENV *dbenv;
-	u_int32_t parent, locker;
+	DB_LOCKER *parent, *locker;
 {
-	DB_LOCKER *parent_locker, *sh_locker;
-	DB_LOCKREGION *region;
-	DB_LOCKTAB *lt;
-	u_int32_t locker_ndx;
 	int ret;
 
-	lt = dbenv->lk_handle;
-	region = lt->reginfo.primary;
 	ret = 0;
-	LOCK_SYSTEM_LOCK(dbenv);
-
-	/* If the parent does not exist, we are done. */
-	LOCKER_LOCK(lt, region, parent, locker_ndx);
-	if ((ret = __lock_getlocker(lt,
-	    parent, locker_ndx, 0, &parent_locker)) != 0)
-		goto err;
+	LOCK_REGION_LOCK(dbenv);
 
 	/*
 	 * If the parent is not there yet, thats ok.  If it
 	 * does not have any timouts set, then avoid creating
 	 * the child locker at this point.
 	 */
-	if (parent_locker == NULL ||
-	    (timespecisset(&parent_locker->tx_expire) &&
-	    !F_ISSET(parent_locker, DB_LOCKER_TIMEOUT))) {
+	if (parent == NULL ||
+	    (timespecisset(&parent->tx_expire) &&
+	    !F_ISSET(parent, DB_LOCKER_TIMEOUT))) {
 		ret = EINVAL;
-		goto done;
+		goto err;
 	}
 
-	LOCKER_LOCK(lt, region, locker, locker_ndx);
-	if ((ret = __lock_getlocker(lt,
-	    locker, locker_ndx, 1, &sh_locker)) != 0)
-		goto err;
+	locker->tx_expire = parent->tx_expire;
 
-	sh_locker->tx_expire = parent_locker->tx_expire;
-
-	if (F_ISSET(parent_locker, DB_LOCKER_TIMEOUT)) {
-		sh_locker->lk_timeout = parent_locker->lk_timeout;
-		F_SET(sh_locker, DB_LOCKER_TIMEOUT);
-		if (!timespecisset(&parent_locker->tx_expire))
+	if (F_ISSET(parent, DB_LOCKER_TIMEOUT)) {
+		locker->lk_timeout = parent->lk_timeout;
+		F_SET(locker, DB_LOCKER_TIMEOUT);
+		if (!timespecisset(&parent->tx_expire))
 			ret = EINVAL;
 	}
 
-done:
-err:	LOCK_SYSTEM_UNLOCK(dbenv);
+err:	LOCK_REGION_UNLOCK(dbenv);
 	return (ret);
 }
 

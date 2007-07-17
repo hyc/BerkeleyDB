@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: crdel_rec.c,v 12.17 2006/11/29 21:23:11 ubell Exp $
+ * $Id: crdel_rec.c,v 12.21 2007/06/13 18:21:30 ubell Exp $
  */
 
 #include "db_config.h"
@@ -39,7 +39,6 @@ __crdel_metasub_recover(dbenv, dbtp, lsnp, op, info)
 	int cmp_p, ret, t_ret;
 
 	pagep = NULL;
-	COMPQUIET(info, NULL);
 	REC_PRINT(__crdel_metasub_print);
 	REC_INTRO(__crdel_metasub_read, 0, 0);
 
@@ -72,8 +71,8 @@ __crdel_metasub_recover(dbenv, dbtp, lsnp, op, info)
 		 */
 		if (F_ISSET(file_dbp, DB_AM_INMEM) &&
 		    argp->pgno == PGNO_BASE_MD &&
-		    (ret = __db_meta_setup(file_dbp->dbenv,
-		    file_dbp, file_dbp->dname, (DBMETA *)pagep, 0, 1)) != 0)
+		    (ret = __db_meta_setup(file_dbp->dbenv, file_dbp,
+		    file_dbp->dname, (DBMETA *)pagep, 0, DB_CHK_META)) != 0)
 			goto out;
 	} else if (DB_UNDO(op)) {
 		/*
@@ -196,9 +195,8 @@ __crdel_inmem_create_recover(dbenv, dbtp, lsnp, op, info)
 
 out:	if (dbp != NULL) {
 		t_ret = 0;
-		if (DB_UNDO(op))
-			t_ret = __db_refresh(dbp, NULL, DB_NOSYNC, NULL, 0);
-		else if (do_close || ret != 0)
+
+		if (do_close || ret != 0)
 			t_ret = __db_close(dbp, NULL, DB_NOSYNC);
 		if (t_ret != 0 && ret == 0)
 			ret = t_ret;

@@ -155,7 +155,7 @@
                         handles. Recovery should be single threaded because when
                         recovery is run against an environment, it is
                         deleted and then recreated. This will cause all
-                        other processes and threads to &quot;fail&quot; when they
+                        other processes and threads to "fail" when they
                         attempt operations against the newly recovered
                         environment. If all threads run recovery
                         when they start up, then it is likely that some
@@ -258,7 +258,7 @@
             <div></div>
           </div>
           <p>
-                    One way to handle multi-process recovery is for every process to &quot;register&quot; its environment. In
+                    One way to handle multi-process recovery is for every process to "register" its environment. In
                     doing so, the process gains the ability to see if any other applications are using the
                     environment and, if so, whether they have suffered an abnormal termination. If an abnormal
                     termination is detected, the process runs recovery; otherwise, it does not.

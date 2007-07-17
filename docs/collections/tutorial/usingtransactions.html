@@ -46,7 +46,7 @@
     DB transactional applications have standard
 	transactional characteristics: recoverability, atomicity and
 	integrity (this is sometimes also referred to generically as <span class="emphasis"><em>ACID
-    properties</em></span>). The  Java Collections API provides these
+    properties</em></span>). The DB Java Collections API provides these
 	transactional capabilities using a <span class="emphasis"><em>transaction-per-thread</em></span>
 	model. Once a transaction is begun, it is implicitly associated
 	with the current thread until it is committed or aborted. This
@@ -65,13 +65,13 @@
             Since the Java collections API is used for data access, there
             is no way to pass a transaction object to methods such
             as 
-            <a href="http://java.sun.com/j2se/1.3/docs/api/java/util/Map.html#put" target="_top">Map.put</a>.
+            <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#put" target="_top">Map.put</a>.
         </p>
           </li>
         </ul>
       </div>
       <p>
-    The  Java Collections API provides two transaction APIs. The
+    The DB Java Collections API provides two transaction APIs. The
 	lower-level API is the 
     <a href="../../java/com/sleepycat/collections/CurrentTransaction.html" target="_top">CurrentTransaction</a>
     

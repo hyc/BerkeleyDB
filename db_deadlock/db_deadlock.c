@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_deadlock.c,v 12.15 2006/12/13 22:04:45 ubell Exp $
+ * $Id: db_deadlock.c,v 12.18 2007/05/17 17:17:42 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 int main __P((int, char *[]));
@@ -35,7 +35,7 @@ main(argc, argv)
 	int rejected, ch, exitval, ret, verbose;
 	char *home, *logfile, *passwd, *str, time_buf[CTIME_BUFLEN];
 
-	if ((progname = strrchr(argv[0], '/')) == NULL)
+	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
 	else
 		++progname;
@@ -174,7 +174,7 @@ main(argc, argv)
 			dbenv->err(dbenv, ret, "DB_ENV->lock_detect");
 			goto shutdown;
 		}
-		if (verbose) 
+		if (verbose)
 			dbenv->errx(dbenv, "rejected %d locks", rejected);
 
 		/* Make a pass every "secs" secs and "usecs" usecs. */

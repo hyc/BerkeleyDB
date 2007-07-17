@@ -81,7 +81,7 @@ Db my_index(&amp;envp, 0);    // Secondary
 
 // Open the secondary
 my_index.open(NULL,              // Transaction pointer
-              &quot;my_secondary.db&quot;, // On-disk file that holds the database.
+              "my_secondary.db", // On-disk file that holds the database.
               NULL,              // Optional logical database name
               DB_BTREE,          // Database access method
               DB_AUTO_COMMIT,    // Open flags.

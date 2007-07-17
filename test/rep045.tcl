@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2006 Oracle.  All rights reserved.
+# Copyright (c) 2005,2007 Oracle.  All rights reserved.
 #
-# $Id: rep045.tcl,v 12.14 2006/12/07 19:37:44 carol Exp $
+# $Id: rep045.tcl,v 12.17 2007/05/17 18:17:21 bostic Exp $
 #
 # TEST	rep045
 # TEST
@@ -53,12 +53,12 @@ proc rep045_sub { method tnum logset largs } {
 	source ./include.tcl
 	set orig_tdir $testdir
 	global rep_verbose
- 
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {rep on} "
 	}
- 
+
 	set masterdir $testdir/MASTERDIR
 	set clientdir0 $testdir/CLIENTDIR0
 	set clientdir1 $testdir/CLIENTDIR1
@@ -111,6 +111,12 @@ proc rep045_sub { method tnum logset largs } {
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$menv 1} {$cenv0 2} {$cenv1 3}"
 	process_msgs $envlist
+
+	# Clobber replication's 30-second anti-archive timer, which will have
+	# been started by client sync-up internal init, so that we can do a
+	# db_remove in a moment.
+	#
+	$menv test force noarchive_timeout
 
 	puts "\tRep$tnum.a: Initialize version database."
 	# Set up variables so we cycle through version numbers 1

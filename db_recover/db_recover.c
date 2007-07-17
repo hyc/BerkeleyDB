@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_recover.c,v 12.12 2006/11/01 00:52:37 bostic Exp $
+ * $Id: db_recover.c,v 12.14 2007/05/17 15:15:03 bostic Exp $
  */
 
 #include "db_config.h"
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996,2006 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996,2007 Oracle.  All rights reserved.\n";
 #endif
 
 void feedback __P((DB_ENV *, int, int));
@@ -37,7 +37,7 @@ main(argc, argv)
 	int ch, exitval, fatal_recover, ret, retain_env, set_feedback, verbose;
 	char *home, *passwd;
 
-	if ((progname = strrchr(argv[0], '/')) == NULL)
+	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
 	else
 		++progname;

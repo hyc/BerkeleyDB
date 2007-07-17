@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
- * 
- * Copyright (c) 2002,2006 Oracle.  All rights reserved.
+ *
+ * Copyright (c) 2002,2007 Oracle.  All rights reserved.
  *
  */
 
@@ -91,7 +91,7 @@ public class HashCompareTest {
 		i = 0;
 		Cursor dbc;
 		dbc = db.openCursor(null, CursorConfig.DEFAULT);
-		while (dbc.getNext(key, data, LockMode.DEFAULT) == 
+		while (dbc.getNext(key, data, LockMode.DEFAULT) ==
 		    OperationStatus.SUCCESS) {
 			++i;
 		}

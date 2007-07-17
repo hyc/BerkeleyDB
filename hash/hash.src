@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2006 Oracle.  All rights reserved.
+ * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: hash.src,v 12.7 2006/11/01 00:53:21 bostic Exp $
+ * $Id: hash.src,v 12.8 2007/05/17 15:15:38 bostic Exp $
  */
 /*
  * Copyright (c) 1995, 1996

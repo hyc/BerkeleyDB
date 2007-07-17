@@ -90,7 +90,7 @@
 DB *dbp, *sdbp;    /* Primary and secondary DB handles */
 DBT key;           /* DBTs used for the delete */
 int ret;           /* Function return value */
-char *search_name = &quot;John Doe&quot;; /* Name to delete */
+char *search_name = "John Doe"; /* Name to delete */
 
 /* Primary */
 ret = db_create(&amp;dbp, NULL, 0);
@@ -113,7 +113,7 @@ if (ret != 0) {
 /* open the primary database */
 ret = dbp-&gt;open(dbp,        /* DB structure pointer */
                 NULL,       /* Transaction pointer */
-                &quot;my_db.db&quot;, /* On-disk file that holds the database.
+                "my_db.db", /* On-disk file that holds the database.
                              * Required. */
                 NULL,       /* Optional logical database name */
                 DB_BTREE,   /* Database access method */
@@ -126,7 +126,7 @@ if (ret != 0) {
 /* open the secondary database */
 ret = sdbp-&gt;open(sdbp,          /* DB structure pointer */
                  NULL,          /* Transaction pointer */
-                 &quot;my_secdb.db&quot;, /* On-disk file that holds the database.
+                 "my_secdb.db", /* On-disk file that holds the database.
                                  * Required. */
                  NULL,          /* Optional logical database name */
                  DB_BTREE,      /* Database access method */
