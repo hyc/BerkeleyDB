@@ -202,10 +202,10 @@ typedef struct __db_reg_env {
 	time_t	  op_timestamp;		/* Timestamp for operations. */
 	time_t	  rep_timestamp;	/* Timestamp for rep db handles. */
 
-	size_t	pad;			/* Guarantee that following memory is
-					 * size_t aligned.  This is necessary
-					 * because we're going to store the
-					 * allocation region information there.
+	uintmax_t unused;		/* The ALLOC_LAYOUT structure follows
+					 * the REGENV structure in memory and
+					 * contains uintmax_t fields.  Force
+					 * proper alignment of that structure.
 					 */
 } REGENV;
 

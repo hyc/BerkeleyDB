@@ -282,7 +282,7 @@ public class DatabaseConfig implements Cloneable {
         return mode;
     }
 
-    public void setMultiversion(final boolean Multiversion) {
+    public void setMultiversion(final boolean multiversion) {
         this.multiversion = multiversion;
     }
 

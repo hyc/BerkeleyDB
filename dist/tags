@@ -1810,7 +1810,7 @@ MUTEX_FIELDS	../dbinc/mutex_int.h	22
 MUTEX_INIT	../dbinc/mutex_int.h	/^#define	MUTEX_INIT(x)	0$/
 MUTEX_INVALID	../dbinc/mutex.h	21
 MUTEX_LOCK	../dbinc/mutex.h	/^#define	MUTEX_LOCK(dbenv, mutex) do {					\\$/
-MUTEX_MEMBAR	../dbinc/mutex_int.h	/^#define	MUTEX_MEMBAR()	membar_enter();$/
+MUTEX_MEMBAR	../dbinc/mutex_int.h	/^#define	MUTEX_MEMBAR(x)	membar_enter();$/
 MUTEX_ON	../dbinc/db_int.in	/^#define	MUTEX_ON(dbenv)		((dbenv)->mutex_handle !=/
 MUTEX_PAUSE	../dbinc/mutex_int.h	301
 MUTEX_SET	../dbinc/mutex_int.h	/^#define	MUTEX_SET(x)	(!_check_lock(x, 0, 1))$/

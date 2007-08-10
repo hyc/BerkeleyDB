@@ -258,8 +258,8 @@ __rep_walk_dir(dbenv, dir, fp, origfp, fileszp, filelenp, filecntp)
 	rfp = NULL;
 	if (fp != NULL)
 		rfp = *fp;
-	RPRINT(dbenv, (dbenv,
-	    "Walk_dir: Dir %s has %d files", dir, cnt));
+	RPRINT(dbenv, (dbenv, "Walk_dir: Dir %s has %d files",
+	    (dir == NULL) ? "INMEM" : dir, cnt));
 	first_file = 1;
 	for (i = 0; i < cnt; i++) {
 		RPRINT(dbenv, (dbenv,

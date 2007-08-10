@@ -4,7 +4,7 @@
  *
  * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db_int.h,v 1.35 2007/07/17 14:50:17 bostic Exp $
+ * $Id: db_int.in,v 12.58 2007/05/30 14:06:39 bostic Exp $
  */
 
 #ifndef _DB_INT_H_

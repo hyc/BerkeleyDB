@@ -58,6 +58,8 @@ ctags $flags $files 2>/dev/null
 chmod 444 $f
 
 for i in test_perf test_rep test_server; do
+	test -d ../$i || continue
+
 	f=../$i/tags
 	echo "Building $f"
 	(cd ../$i && ctags $flags *.[ch] 2>/dev/null)

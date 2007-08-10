@@ -1,14 +1,30 @@
-<!--$Id: 4.6.html,v 1.34 2007/07/17 14:50:20 bostic Exp $-->
+<!--$Id: 4.6.html,v 1.35 2007/08/07 14:48:41 bostic Exp $-->
 <html>
 <head>
-<title>The Berkeley DB Package: DB 4.6.18 Change Log</title>
+<title>The Berkeley DB Package: DB 4.6.19 Change Log</title>
 <meta name="description" content="Berkeley DB: A database programmatic toolkit.">
 <meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btree,hash,hashing,transaction,transactions,locking,logging,access method,access methods">
 </head>
 <body bgcolor=white>
 
+<h3 align=center>Berkeley DB 4.6.19 Change Log</h3>
+<h4>Patches:</h4>
+<ol>
+
+<li>Fix a bug where a client in a two-site replication group could
+become master, after failure of the existing master, even if the client
+had priority 0. [#15388]
+<li>Fix a bug where 32-bit builds on 64-bit machines could immediately
+core dump because of a misaligned access. [#15643]
+<li>Fix a bug where attempts to configure a database for MVCC in the
+Java API were silently ignored. [#15644]
+<li>Fix a bug where database environments configured for replication and
+verbose output could drop core. [#15651]
+
+</ol>
 <h3 align=center>Berkeley DB 4.6.18 Change Log</h3>
-<h3>Database or Log File On-Disk Format Changes:</h3>
+
+<h4>Database or Log File On-Disk Format Changes:</h4>
 <ol>
 
 <li>The on-disk log format has changed.
@@ -21,7 +37,7 @@ improvements. Note that databases created using the 4.6 release may not
 be usable with earlier Berkeley DB releases.
 
 </ol>
-<h3>New Features:</h3>
+<h4>New Features:</h4>
 <ol>
 
 <li>Add support for a cursor DB_PREV_DUP flag, which moves the cursor
@@ -39,7 +55,7 @@ prepared, but unresolved, transactions are still pending.  [#14754]
 <li>Significant performance improvements in the Hash access method. [#15017]
 
 </ol>
-<h3>Database Environment Changes:</h3>
+<h4>Database Environment Changes:</h4>
 <ol>
 
 <li>Add support to close open file handles in the case of catastrophic
@@ -108,11 +124,11 @@ in multiple steps, that is, applying additional logs to the same
 databases.  [#15557]
 
 </ol>
-<h3>Concurrent Data Store Changes:</h3>
+<h4>Concurrent Data Store Changes:</h4>
 
 None.
 
-<h3>General Access Method Changes:</h3>
+<h4>General Access Method Changes:</h4>
 <ol>
 
 <li>Add a feature where applications can specify a custom comparison
@@ -147,11 +163,11 @@ failure in a database environment configured for in-memory logging.
 [#15459]
 
 </ol>
-<h3>Btree Access Method Changes:</h3>
+<h4>Btree Access Method Changes:</h4>
 
 None.
 
-<h3>Hash Access Method Changes:</h3>
+<h4>Hash Access Method Changes:</h4>
 <ol>
 
 <li>Change the internal format of Hash database pages, storing items in
@@ -161,7 +177,7 @@ upgrade.  (However, upgrading existing databases can offer significant
 performance improvements.) [#15017]
 
 </ol>
-<h3>Queue Access Method Changes:</h3>
+<h4>Queue Access Method Changes:</h4>
 <ol>
 
 <li>Fix a bug which could cause a Queue extent file to be incorrectly
@@ -170,15 +186,15 @@ updated by another thread (which was using random access operations).
 [#9101]
 
 </ol>
-<h3>Recno Access Method Changes:</h3>
+<h4>Recno Access Method Changes:</h4>
 
 None.
 
-<h3>C++-specific API Changes:</h3>
+<h4>C++-specific API Changes:</h4>
 
 None.
 
-<h3>Java-specific API Changes:</h3>
+<h4>Java-specific API Changes:</h4>
 <ol>
 
 <li>Add a feature where an exception is thrown by the Java API, the
@@ -193,7 +209,7 @@ Java replication APIs. [#15223]
 <li>Add transaction.commitWriteNoSync to the Java API. [#15376]
 
 </ol>
-<h3>Java collections and bind API Changes:</h3>
+<h4>Java collections and bind API Changes:</h4>
 <ol>
 
 <li>Change SerialBinding to use the current thread's context class
@@ -223,15 +239,15 @@ the following are true: many Environment objects are opened and closed,
 and the CurrentTransaction or TransactionRunner class is used.  [#15444]
 
 </ol>
-<h3>Tcl-specific API Changes:</h3>
+<h4>Tcl-specific API Changes:</h4>
 
 None.
 
-<h3>RPC-specific Client/Server Changes:</h3>
+<h4>RPC-specific Client/Server Changes:</h4>
 
 None.
 
-<h3>Replication Changes:</h3>
+<h4>Replication Changes:</h4>
 <ol>
 
 <li>Fix a bug where transactions could be rolled-back if an existing
@@ -294,11 +310,11 @@ requiring ongoing transactions at the master.  [#15542]
 Manager failure. [#15552]
 
 </ol>
-<h3>XA Resource Manager Changes:</h3>
+<h4>XA Resource Manager Changes:</h4>
 
 None.
 
-<h3>Locking Subsystem Changes:</h3>
+<h4>Locking Subsystem Changes:</h4>
 <ol>
 
 <li>Change the DB_ENV-&gt;lock_detect method to return the number of
@@ -306,11 +322,11 @@ transactions timed out in addition to those were rejected due to
 deadlock. [#15281]
 
 </ol>
-<h3>Logging Subsystem Changes:</h3>
+<h4>Logging Subsystem Changes:</h4>
 
 None.
 
-<h3>Memory Pool Subsystem Changes:</h3>
+<h4>Memory Pool Subsystem Changes:</h4>
 <ol>
 
 <li>Fix a bug that could cause a checkpoint to hang if a database was
@@ -321,7 +337,7 @@ core dump. [#15137]
 <li>Fix MVCC statistics counts for private database environments. [#15218]
 
 </ol>
-<h3>Transaction Subsystem Changes:</h3>
+<h4>Transaction Subsystem Changes:</h4>
 <ol>
 
 <li>Fix a bug where creating a database with the DB_TXN_NOTDURABLE flag
@@ -330,7 +346,7 @@ set would still write a log record. [#15386]
 during the checkpoint. [#14710]
 
 </ol>
-<h3>Utility Changes:</h3>
+<h4>Utility Changes:</h4>
 <ol>
 
 <li>Fix a bug that prevented db_load from handling subdatabase names
@@ -340,7 +356,7 @@ the log file numbers in the backup directory when both the -u and -D flags
 were specified.  [#15395]
 
 </ol>
-<h3>Configuration, Documentation, Portability and Build Changes:</h3>
+<h4>Configuration, Documentation, Portability and Build Changes:</h4>
 <ol>
 
 <li>Berkeley DB no longer supports process-shared database environments

@@ -184,8 +184,11 @@ __repmgr_elect_main(dbenv)
 		switch (to_do) {
 		case ELECT_ELECTION:
 			nsites = __repmgr_get_nsites(db_rep);
-
-			nvotes = ELECTION_MAJORITY(nsites);
+			/*
+			 * With only 2 sites in the group, even a single failure
+			 * could make it impossible to get a majority.
+			 */
+			nvotes = nsites == 2 ? 1 : ELECTION_MAJORITY(nsites);
 
 			/*
 			 * If we're doing an election because we noticed that
@@ -195,21 +198,8 @@ __repmgr_elect_main(dbenv)
 			 * But note that we shouldn't allow this to affect
 			 * nvotes calculation.
 			 */
-			if (failure_recovery) {
+			if (failure_recovery)
 				nsites--;
-
-				if (nsites == 1) {
-					/*
-					 * We've just lost the only other site
-					 * in the group, so there's no point in
-					 * holding an election.
-					 */
-					if ((ret = __repmgr_become_master(
-					    dbenv)) != 0)
-						return (ret);
-					break;
-				}
-			}
 
 			switch (ret = __rep_elect(dbenv,
 			    (int)nsites, (int)nvotes, 0)) {

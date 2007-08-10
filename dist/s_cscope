@@ -9,9 +9,9 @@ cat srcfiles.in |
 sed -e '/^#/d' \
     -e '/^$/d' \
     -e 's/^/..\//' \
+    -e '/\/csv_local.c/d' \
     -e '/\/db_server_clnt.c/d' \
     -e '/\/db_server_svc.c/d' \
     -e '/\/db_server_xdr.c/d' \
-    -e '/\/csv_local.c/d' \
     -e '/\/gen_db_server.c/d' |
-awk '{print $1}') | cscope -bkUu  -i-
+awk '{print $1}') | cscope -bkUu  -i- 2>&1 | sed '/cannot find file/d'

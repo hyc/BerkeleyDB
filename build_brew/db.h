@@ -4,7 +4,7 @@
  *
  * Copyright (c) 1996,2007 Oracle.  All rights reserved.
  *
- * $Id: db.h,v 1.79 2007/07/17 14:50:17 bostic Exp $
+ * $Id: db.in,v 12.158 2007/06/28 14:23:35 mjc Exp $
  *
  * db.h include file layout:
  *	General.
@@ -36,8 +36,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	6
-#define	DB_VERSION_PATCH	18
-#define	DB_VERSION_STRING	"Berkeley DB 4.6.18: (July 17, 2007)"
+#define	DB_VERSION_PATCH	19
+#define	DB_VERSION_STRING	"Berkeley DB 4.6.19: (August 10, 2007)"
 
 /*
  * !!!
