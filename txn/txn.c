@@ -1321,8 +1321,21 @@ __txn_end(txn, is_commit)
 	if (td->nlog_dbs != 0 && (ret = __txn_dref_fname(dbenv, txn)) != 0)
 		return (__db_panic(dbenv, ret));
 
-	TXN_SYSTEM_LOCK(dbenv);
+	if (td->mvcc_ref != 0 && IS_MAX_LSN(td->visible_lsn)) {
+		DB_ASSERT(dbenv, !is_commit);
 
+		/*
+		 * In the abort path, we need to make sure that the versions
+		 * become visible to future transactions.  We need to set
+		 * visible_lsn before setting td->status to ensure safe reads
+		 * of visible_lsn in __memp_fget.
+		 */
+		if ((ret = __log_current_lsn(dbenv, &td->visible_lsn,
+		    NULL, NULL)) != 0)
+			return (__db_panic(dbenv, ret));
+	}
+
+	TXN_SYSTEM_LOCK(dbenv);
 	td->status = is_commit ? TXN_COMMITTED : TXN_ABORTED;
 	SH_TAILQ_REMOVE(&region->active_txn, td, links, __txn_detail);
 	if (F_ISSET(td, TXN_DTL_RESTORED)) {
@@ -1338,10 +1351,7 @@ __txn_end(txn, is_commit)
 	if (txn->parent != NULL) {
 		ptd = txn->parent->td;
 		SH_TAILQ_REMOVE(&ptd->kids, td, klinks, __txn_detail);
-	} else if ((mvcc_mtx = td->mvcc_mtx) != MUTEX_INVALID ||
-	    td->mvcc_ref != 0) {
-		if (IS_MAX_LSN(td->visible_lsn))
-			td->visible_lsn = td->last_lsn;
+	} else if ((mvcc_mtx = td->mvcc_mtx) != MUTEX_INVALID) {
 		MUTEX_LOCK(dbenv, mvcc_mtx);
 		if (td->mvcc_ref != 0) {
 			SH_TAILQ_INSERT_HEAD(&region->mvcc_txn,

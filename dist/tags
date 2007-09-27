@@ -44,11 +44,13 @@ BH_FROZEN	../dbinc/mp.h	492
 BH_FROZEN_ALLOC	../dbinc/mp.h	18
 BH_FROZEN_PAGE	../dbinc/mp.h	17
 BH_LOCKED	../dbinc/mp.h	493
-BH_OBSOLETE	../dbinc/mp.h	/^#define	BH_OBSOLETE(bhp, old_lsn)	((SH_CHAIN_HASNE/
+BH_OBSOLETE	../dbinc/mp.h	/^#define	BH_OBSOLETE(bhp, old_lsn, vlsn)	(SH_CHAIN_/
 BH_OWNED_BY	../dbinc/mp.h	/^#define	BH_OWNED_BY(dbenv, bhp, txn)	((txn) != NUL/
 BH_OWNER	../dbinc/mp.h	/^#define	BH_OWNER(dbenv, bhp)						\\$/
 BH_PRIORITY	../dbinc/mp.h	/^#define	BH_PRIORITY(bhp)						\\$/
+BH_THAWED	../dbinc/mp.h	495
 BH_TRASH	../dbinc/mp.h	494
+BH_VISIBLE	../dbinc/mp.h	/^#define	BH_VISIBLE(dbenv, bhp, read_lsnp, vlsn)			/
 BINTERNAL_PSIZE	../dbinc/db_page.h	/^#define	BINTERNAL_PSIZE(len)						\\$/
 BINTERNAL_SIZE	../dbinc/db_page.h	/^#define	BINTERNAL_SIZE(len)						\\$/
 BITEM_PSIZE	../dbinc/db_page.h	/^#define	BITEM_PSIZE(bk)							\\$/
@@ -1764,7 +1766,7 @@ MP_NOT_DURABLE	../dbinc/mp.h	467
 MP_OPEN_CALLED	../dbinc/db.in	872
 MP_READONLY	../dbinc/db.in	873
 MP_TEMP	../dbinc/mp.h	468
-MP_TRUNC_RECOVER	../dbinc/mp.h	625
+MP_TRUNC_RECOVER	../dbinc/mp.h	640
 MSG_SIZE	../dbinc/tcl_db.h	16
 MS_PER_NS	../dbinc/db_int.in	125
 MS_PER_SEC	../dbinc/db_int.in	126
@@ -2450,7 +2452,7 @@ US_PER_MS	../dbinc/db_int.in	123
 US_PER_SEC	../dbinc/db_int.in	124
 VERIFY_FLAGS	../db/db_vrfy.c	57
 VISIBLE_LSN	../dbinc/mp.h	/^#define	VISIBLE_LSN(dbenv, bhp)						\\$/
-VM_PAGESIZE	../dbinc/mp.h	567
+VM_PAGESIZE	../dbinc/mp.h	582
 VRFY_CHILDINFO	../dbinc/db_int.in	703
 VRFY_DBINFO	../dbinc/db_int.in	704
 VRFY_DUPS_UNSORTED	../dbinc/db_verify.h	180

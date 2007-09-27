@@ -529,6 +529,9 @@ __memp_bhfree(dbmp, infop, hp, bhp, flags)
 	u_int32_t flags;
 {
 	DB_ENV *dbenv;
+#ifdef DIAGNOSTIC
+	DB_LSN vlsn;
+#endif
 	MPOOL *c_mp;
 	MPOOLFILE *mfp;
 	BH *next_bhp, *prev_bhp;
@@ -548,15 +551,14 @@ __memp_bhfree(dbmp, infop, hp, bhp, flags)
 	pagesize = mfp->stat.st_pagesize;
 #endif
 
-	DB_ASSERT(dbenv, bhp->ref == 0);
+	DB_ASSERT(dbenv, bhp->ref == 0 && !F_ISSET(bhp, BH_FROZEN));
 	DB_ASSERT(dbenv, LF_ISSET(BH_FREE_UNLOCKED) ||
 	    SH_CHAIN_SINGLETON(bhp, vc) ||
 	    (SH_CHAIN_HASNEXT(bhp, vc) &&
-	    F_ISSET(SH_CHAIN_NEXT(bhp, vc, __bh), BH_FROZEN) &&
-	    bhp->td_off == INVALID_ROFF) ||
+	    SH_CHAIN_NEXTP(bhp, vc, __bh)->td_off == bhp->td_off) ||
 	    (SH_CHAIN_HASPREV(bhp, vc) ?
 	    IS_MAX_LSN(*VISIBLE_LSN(dbenv, bhp)) :
-	    BH_OBSOLETE(bhp, hp->old_reader)));
+	    BH_OBSOLETE(bhp, hp->old_reader, vlsn)));
 
 	/*
 	 * Delete the buffer header from the hash bucket queue or the

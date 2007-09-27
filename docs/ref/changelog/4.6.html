@@ -1,12 +1,32 @@
-<!--$Id: 4.6.html,v 1.35 2007/08/07 14:48:41 bostic Exp $-->
+<!--$Id: 4.6.html,v 1.38 2007/09/27 15:30:04 bostic Exp $-->
 <html>
 <head>
-<title>The Berkeley DB Package: DB 4.6.19 Change Log</title>
+<title>The Berkeley DB Package: DB 4.6.21 Change Log</title>
 <meta name="description" content="Berkeley DB: A database programmatic toolkit.">
 <meta name="keywords" content="embedded,database,programmatic,toolkit,b+tree,btree,hash,hashing,transaction,transactions,locking,logging,access method,access methods">
 </head>
 <body bgcolor=white>
 
+<h3 align=center>Berkeley DB 4.6.21 Change Log</h3>
+<h4>Patches:</h4>
+<ol>
+
+<li>Fix a bug where mutex contention in database environments configured
+for hybrid mutex support could result in performance degradation.
+[#15646]
+<li>Fix a bug where closing a database handle after aborting a
+transaction which included a failed open of that database handle could
+result in application failure. [#15650]
+<li>Fix multiple MVCC bugs including a race which <b>could result in
+incorrect data being returned</b> to the application. [#15653]
+<li>Fix a bug where a database store into a Hash database could
+self-deadlock in a database environment configured for the Berkeley DB
+Concurrent Data Store product and with a free-threaded DB_ENV or DB
+handle. [#15718]
+<li>Fix an installation bug where Berkeley DB's PHP header file was not
+installed in the correct place.
+
+</ol>
 <h3 align=center>Berkeley DB 4.6.19 Change Log</h3>
 <h4>Patches:</h4>
 <ol>
@@ -50,6 +70,7 @@ handle. [#11886]
 Wireless (BREW). [#14562]
 <li>Port Berkeley DB to WinCE. [#15312]
 <li>Port Berkeley DB to S60. [#15371]
+<li>Add a key_exists method to the DB handle. [#15374]
 <li>Applications may now begin processing new transactions while previously
 prepared, but unresolved, transactions are still pending.  [#14754]
 <li>Significant performance improvements in the Hash access method. [#15017]
@@ -175,6 +196,9 @@ sorted order.  There are no externally visible changes, and hash
 databases using historic on-page formats do not require an explicit
 upgrade.  (However, upgrading existing databases can offer significant
 performance improvements.) [#15017]
+<li>Fix a bug preventing LSNs from being reset on hash databases when
+the databases were configured with a non-standard hash function.
+[#15567]
 
 </ol>
 <h4>Queue Access Method Changes:</h4>
@@ -295,6 +319,9 @@ be presented to the application after the corresponding
 DB_EVENT_REP_NEWMASTER event, even in the face of extreme scheduling
 anomalies. [#15265]
 <li>Fix minor memory leaks in the replication manager. [#15239] [#15256]
+<li>Fix a bug which caused the replication manager to lose track of a
+failed connection, resulting in the inability to accept a replacement
+connection. [#15311]
 <li>Fix a bug where a client starting an election when the rest of the
 replication group already had an established master could confuse
 replication management at the other client sites, leading to failure to

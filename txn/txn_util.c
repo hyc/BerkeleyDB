@@ -312,8 +312,10 @@ dofree:
 				__os_free(dbenv, e->u.r.fileid);
 			__os_free(dbenv, e->u.r.name);
 			break;
-		case TXN_CLOSE:
 		case TXN_TRADE:
+			if (opcode == TXN_ABORT)
+				e->u.t.dbp->cur_txn = NULL;
+		case TXN_CLOSE:
 		case TXN_TRADED:
 		default:
 			break;

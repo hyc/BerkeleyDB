@@ -1815,8 +1815,9 @@ __ham_split_page(dbc, obucket, nbucket)
 			 * cursors for the second etc pages within a bucket.
 			 */
 			if (PGNO(temp_pagep) != bucket_pgno) {
-				if ((ret = __db_cursor(
-				    dbp, dbc->txn, &tmp_dbc, 0)) != 0)
+				if ((ret = __db_cursor_int(dbp, dbc->txn, 
+				    dbp->type, PGNO_INVALID, 0, 
+				    DB_LOCK_INVALIDID, &tmp_dbc)) != 0)
 					goto err;
 				hcp = (HASH_CURSOR*)tmp_dbc->internal;
 				hcp->pgno = PGNO(*pp);

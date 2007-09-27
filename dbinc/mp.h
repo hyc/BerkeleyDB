@@ -492,6 +492,7 @@ struct __bh {
 #define	BH_FROZEN	0x020		/* Frozen buffer: allocate & re-read. */
 #define	BH_LOCKED	0x040		/* Page is locked (I/O in progress). */
 #define	BH_TRASH	0x080		/* Page is garbage. */
+#define	BH_THAWED	0x100		/* Page was thawed. */
 	u_int16_t	flags;
 
 	u_int32_t	priority;	/* LRU priority. */
@@ -553,11 +554,25 @@ struct __bh_frozen_a {
 #define	VISIBLE_LSN(dbenv, bhp)						\
     (&BH_OWNER(dbenv, bhp)->visible_lsn)
 
-#define	BH_OBSOLETE(bhp, old_lsn)	((SH_CHAIN_HASNEXT(bhp, vc) ?	\
-	LOG_COMPARE(&(old_lsn), VISIBLE_LSN(dbenv,			\
-	SH_CHAIN_NEXTP(bhp, vc, __bh))) :				\
-	(bhp->td_off == INVALID_ROFF ? 1 :				\
-	LOG_COMPARE(&(old_lsn), VISIBLE_LSN(dbenv, bhp)))) > 0)
+/*
+ * Make a copy of the buffer's visible LSN, one field at a time.  We rely on the
+ * 32-bit operations being atomic.  The visible_lsn starts at MAX_LSN and is
+ * set during commit or abort to the current LSN.
+ *
+ * If we race with a commit / abort, we may see either the file or the offset
+ * still at UINT32_MAX, so vlsn is guaranteed to be in the future.  That's OK,
+ * since we had to take the log region lock to allocate the read LSN so we were
+ * never going to see this buffer anyway.
+ */
+#define	BH_VISIBLE(dbenv, bhp, read_lsnp, vlsn)				\
+    (bhp->td_off == INVALID_ROFF ||					\
+    ((vlsn).file = VISIBLE_LSN(dbenv, bhp)->file,			\
+    (vlsn).offset = VISIBLE_LSN(dbenv, bhp)->offset,			\
+    LOG_COMPARE((read_lsnp), &(vlsn)) >= 0))
+
+#define	BH_OBSOLETE(bhp, old_lsn, vlsn)	(SH_CHAIN_HASNEXT(bhp, vc) ?	\
+    BH_VISIBLE(dbenv, SH_CHAIN_NEXTP(bhp, vc, __bh), &(old_lsn), vlsn) :\
+    BH_VISIBLE(dbenv, bhp, &(old_lsn), vlsn))
 
 #define	MVCC_SKIP_CURADJ(dbc, pgno)					\
     (dbc->txn != NULL && F_ISSET(dbc->txn, TXN_SNAPSHOT) &&		\

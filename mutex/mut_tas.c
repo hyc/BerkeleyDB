@@ -177,6 +177,9 @@ relock:
 
 	/* Wait for the lock to become available. */
 #ifdef HAVE_MUTEX_HYBRID
+	__os_yield(dbenv);
+	if (!F_ISSET(mutexp, DB_MUTEX_LOCKED))
+		goto loop;
 	if ((ret = __db_pthread_mutex_lock(dbenv, mutex)) != 0)
 		return (ret);
 #else

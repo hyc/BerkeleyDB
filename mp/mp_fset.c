@@ -36,12 +36,13 @@ __memp_dirty(dbmfp, addrp, txn, priority, flags)
 	MPOOLFILE *mfp;
 #endif
 	REGINFO *infop;
-	int ret;
+	int mvcc, ret;
 	db_pgno_t pgno;
 	void *pgaddr;
 
 	dbenv = dbmfp->dbenv;
 	pgaddr = *(void **)addrp;
+	mvcc = dbmfp->mfp->multiversion;
 
 	/* Convert the page address to a buffer header. */
 	bhp = (BH *)((u_int8_t *)pgaddr - SSZA(BH, buf));
@@ -62,9 +63,9 @@ __memp_dirty(dbmfp, addrp, txn, priority, flags)
 	    ancestor = ancestor->parent)
 		;
 
-	if (dbmfp->mfp->multiversion &&
-	    txn != NULL && !BH_OWNED_BY(dbenv, bhp, ancestor)) {
-		if ((ret = __memp_fget(dbmfp,
+	if (mvcc && txn != NULL &&
+	    (!BH_OWNED_BY(dbenv, bhp, ancestor) || SH_CHAIN_HASNEXT(bhp, vc))) {
+slow:		if ((ret = __memp_fget(dbmfp,
 		    &pgno, txn, flags, addrp)) != 0) {
 			if (ret != DB_LOCK_DEADLOCK)
 				__db_errx(dbenv,
@@ -95,6 +96,12 @@ __memp_dirty(dbmfp, addrp, txn, priority, flags)
 	MP_GET_BUCKET(dbmfp, pgno, &infop, hp, ret);
 	if (ret != 0)
 		return (ret);
+
+	/* Need to recheck in case we raced with a freeze operation. */
+	if (mvcc && txn != NULL && SH_CHAIN_HASNEXT(bhp, vc)) {
+		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
+		goto slow;
+	}
 
 	/* Set/clear the page bits. */
 	if (!F_ISSET(bhp, BH_DIRTY)) {

@@ -118,6 +118,7 @@ __memp_merge_buckets(dbmp, new_nbuckets, old_bucket, new_bucket)
 {
 	BH *alloc_bhp, *bhp, *current_bhp, *new_bhp, *next_bhp;
 	DB_ENV *dbenv;
+	DB_LSN vlsn;
 	DB_MPOOL_HASH *new_hp, *old_hp;
 	MPOOL *mp, *new_mp, *old_mp;
 	MPOOLFILE *mfp;
@@ -192,10 +193,10 @@ retry:	MUTEX_LOCK(dbenv, old_hp->mtx_hash);
 			__os_yield(dbenv);
 			goto retry;
 		} else if (bucket == new_bucket && F_ISSET(bhp, BH_FROZEN)) {
-			if (BH_OBSOLETE(bhp, old_hp->old_reader))
+			++bhp->ref;
+			if (BH_OBSOLETE(bhp, old_hp->old_reader, vlsn))
 				alloc_bhp = NULL;
 			else {
-				++bhp->ref;
 				mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
 				MUTEX_UNLOCK(dbenv, old_hp->mtx_hash);
 				if ((ret = __memp_alloc(dbmp,

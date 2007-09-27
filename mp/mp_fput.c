@@ -124,13 +124,12 @@ __memp_fput(dbmfp, pgaddr, priority)
 	/* Note the activity so allocation won't decide to quit. */
 	++c_mp->put_counter;
 
-	/*
-	 * Mark the file dirty.  Check for a dirty bit on the buffer as well
-	 * as the dirty flag because the buffer might have been marked dirty
-	 * in the DB_MPOOLFILE->set method.
-	 */
-	if (F_ISSET(bhp, BH_DIRTY))
+	/* Mark the file dirty. */
+	if (F_ISSET(bhp, BH_DIRTY)) {
 		mfp->file_written = 1;
+
+		DB_ASSERT(dbenv, !SH_CHAIN_HASNEXT(bhp, vc));
+	}
 
 	/*
 	 * If more than one reference to the page or a reference other than a
@@ -289,7 +288,7 @@ __memp_reset_lru(dbenv, infop)
 		 */
 		if ((tbhp =
 		    SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) != NULL)
-			hp->hash_priority = tbhp->priority;
+			hp->hash_priority = BH_PRIORITY(tbhp);
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 	}
 	c_mp->lru_reset = 0;

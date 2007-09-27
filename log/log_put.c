@@ -162,10 +162,13 @@ __log_put(dbenv, lsnp, udbt, flags)
 
 	/*
 	 * Assign the return LSN before dropping the region lock.  Necessary
-	 * in case the lsn is a begin_lsn from a TXN_DETAIL structure passed
-	 * in by the logging routines.
+	 * in case the lsn is a begin_lsn from a TXN_DETAIL structure passed in
+	 * by the logging routines.  We use atomic 32-bit operations because
+	 * during commit this will be a TXN_DETAIL visible_lsn field, and MVCC
+	 * relies on reading the fields atomically.
 	 */
-	*lsnp = lsn;
+	lsnp->file = lsn.file;
+	lsnp->offset = lsn.offset;
 
 	if (IS_REP_MASTER(dbenv)) {
 		/*

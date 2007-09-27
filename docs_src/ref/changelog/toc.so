@@ -7,7 +7,7 @@ m4_ref_title(Upgrading m4_db Applications,
 m4_bulletbegin
 
 m4_bullet([dnl
-m4_link(4.6, [4.6.19])])
+m4_link(4.6, [4.6.21])])
 
 m4_bullet([dnl
 m4_link(4.5.20, [4.5.20])])

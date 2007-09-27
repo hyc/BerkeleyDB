@@ -274,8 +274,8 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 
 	/*
 	 * For now, keep things simple and have one file per page size per
-	 * cache.  Concurrency will be suboptimal, but debugging should be
-	 * simpler.
+	 * hash bucket.  This improves concurrency but can mean lots of files
+	 * if there is lots of freezing.
 	 */
 	ncache = (u_int32_t)(infop - dbmp->reginfo);
 	nbucket = (u_int32_t)(hp - (DB_MPOOL_HASH *)R_ADDR(infop, c_mp->htab));
@@ -354,12 +354,22 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 	frozen_bhp->priority = UINT32_MAX;
 	((BH_FROZEN_PAGE *)frozen_bhp)->spgno = newpgno;
 
-	bhp->td_off = INVALID_ROFF;
+	/*
+	 * We're about to add the frozen buffer header to the version chain, so
+	 * we have temporarily created another buffer for the owning
+	 * transaction.
+	 */
+	if (frozen_bhp->td_off != INVALID_ROFF &&
+	    (ret = __txn_add_buffer(dbenv, BH_OWNER(dbenv, frozen_bhp))) != 0) {
+		(void)__db_panic(dbenv, ret);
+		goto err;
+	}
 
 	/*
 	 * Add the frozen buffer to the version chain and update the hash
-	 * bucket if this is the head revision.  __memp_alloc will remove it by
-	 * calling __memp_bhfree on the old version of the buffer.
+	 * bucket if this is the head revision.  The original buffer will be
+	 * freed by __memp_alloc calling __memp_bhfree (assuming no other
+	 * thread has blocked waiting for it while we were freezing).
 	 */
 	SH_CHAIN_INSERT_AFTER(bhp, frozen_bhp, vc, __bh);
 	if (!SH_CHAIN_HASNEXT(frozen_bhp, vc)) {
@@ -441,11 +451,15 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	BH *next_bhp;
 	DB_ENV *dbenv;
 	DB_FH *fhp;
+#ifdef DIAGNOSTIC
+	DB_LSN vlsn;
+#endif
 	MPOOL *c_mp;
 	MPOOLFILE *bh_mfp;
 	db_pgno_t *freelist, *ppgno, freepgno, maxpgno, spgno;
 	size_t nio;
 	u_int32_t listsize, magic, nbucket, ncache, ntrunc, nfree, pagesize;
+	u_int32_t priority;
 #ifdef HAVE_FTRUNCATE
 	int i;
 #endif
@@ -464,7 +478,7 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	DB_ASSERT(dbenv, F_ISSET(frozen_bhp, BH_FROZEN));
 	DB_ASSERT(dbenv, !F_ISSET(frozen_bhp, BH_LOCKED));
 	DB_ASSERT(dbenv, alloc_bhp != NULL ||
-	    BH_OBSOLETE(frozen_bhp, hp->old_reader));
+	    BH_OBSOLETE(frozen_bhp, hp->old_reader, vlsn));
 
 	spgno = ((BH_FROZEN_PAGE *)frozen_bhp)->spgno;
 
@@ -483,8 +497,8 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 
 	/*
 	 * For now, keep things simple and have one file per page size per
-	 * cache.  Concurrency will be suboptimal, but debugging should be
-	 * simpler.
+	 * hash bucket.  This improves concurrency but can mean lots of files
+	 * if there is lots of freezing.
 	 */
 	ncache = (u_int32_t)(infop - dbmp->reginfo);
 	nbucket = (u_int32_t)(hp - (DB_MPOOL_HASH *)R_ADDR(infop, c_mp->htab));
@@ -534,7 +548,7 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 			goto err;
 		nfree = 0;
 		while (freepgno != 0) {
-			if (nfree == listsize) {
+			if (nfree == listsize - 1) {
 				listsize *= 2;
 				if ((ret = __os_realloc(dbenv,
 				    listsize * sizeof(db_pgno_t),
@@ -608,16 +622,19 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	 * another cache lookup to find out where the new page should live.
 	 */
 	if (alloc_bhp != NULL) {
+		alloc_bhp->priority = c_mp->lru_count;
+
 		SH_CHAIN_INSERT_AFTER(frozen_bhp, alloc_bhp, vc, __bh);
 		if (!SH_CHAIN_HASNEXT(alloc_bhp, vc)) {
 			SH_TAILQ_INSERT_BEFORE(&hp->hash_bucket,
 			    frozen_bhp, alloc_bhp, hq, __bh);
 			SH_TAILQ_REMOVE(&hp->hash_bucket, frozen_bhp, hq, __bh);
 		}
-	}
-
-	reorder = (alloc_bhp == NULL) &&
-	    BH_PRIORITY(frozen_bhp) == frozen_bhp->priority;
+		priority = BH_PRIORITY(alloc_bhp);
+		reorder = (priority == alloc_bhp->priority ||
+		    priority == frozen_bhp->priority);
+	} else
+		reorder = BH_PRIORITY(frozen_bhp) == frozen_bhp->priority;
 	if ((next_bhp = SH_CHAIN_NEXT(frozen_bhp, vc, __bh)) == NULL) {
 		if ((next_bhp = SH_CHAIN_PREV(frozen_bhp, vc, __bh)) != NULL)
 			SH_TAILQ_INSERT_BEFORE(&hp->hash_bucket, frozen_bhp,
@@ -641,17 +658,24 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	if (--frozen_bhp->ref == 0) {
 		MUTEX_UNLOCK(dbenv, hp->mtx_hash);
 
-		if (alloc_bhp == NULL && frozen_bhp->td_off != INVALID_ROFF)
-			ret = __txn_remove_buffer(dbenv,
-			    BH_OWNER(dbenv, frozen_bhp), MUTEX_INVALID);
+		if (alloc_bhp == NULL && frozen_bhp->td_off != INVALID_ROFF &&
+		    (ret = __txn_remove_buffer(dbenv,
+		    BH_OWNER(dbenv, frozen_bhp), MUTEX_INVALID)) != 0) {
+			(void)__db_panic(dbenv, ret);
+			goto err;
+		}
 
+		/*
+		 * We need to be careful in the error case, because our caller
+		 * will attempt to free frozen_bhp.
+		 */
 		MPOOL_REGION_LOCK(dbenv, infop);
 		SH_TAILQ_INSERT_TAIL(&c_mp->free_frozen, frozen_bhp, hq);
 		MPOOL_REGION_UNLOCK(dbenv, infop);
 		MUTEX_LOCK(dbenv, hp->mtx_hash);
 	} else {
-		DB_ASSERT(dbenv, alloc_bhp != NULL);
-		F_CLR(frozen_bhp, BH_FROZEN | BH_LOCKED);
+		F_SET(frozen_bhp, BH_THAWED);
+		F_CLR(frozen_bhp, BH_LOCKED);
 	}
 
 #ifdef HAVE_STATISTICS

@@ -33,6 +33,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	BH *bhp, *oldest_bhp, *tbhp;
 	BH_FROZEN_PAGE *frozen_bhp;
 	DB_ENV *dbenv;
+	DB_LSN vlsn;
 	DB_MPOOL_HASH *dbht, *hp, *hp_end, *hp_tmp;
 	MPOOL *c_mp;
 	MPOOLFILE *bh_mfp;
@@ -313,12 +314,13 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 			if (F_ISSET(bhp, BH_FROZEN) &&
 			    !F_ISSET(oldest_bhp, BH_FROZEN))
 				bhp = oldest_bhp;
-			else if (BH_OBSOLETE(oldest_bhp, hp->old_reader))
+			else if (BH_OBSOLETE(oldest_bhp, hp->old_reader, vlsn))
 				bhp = oldest_bhp;
 			else if (!got_oldest &&
 			    __txn_oldest_reader(dbenv, &hp->old_reader) == 0) {
 				got_oldest = 1;
-				if (BH_OBSOLETE(oldest_bhp, hp->old_reader))
+				if (BH_OBSOLETE(
+				    oldest_bhp, hp->old_reader, vlsn))
 					bhp = oldest_bhp;
 			}
 		}
@@ -350,13 +352,13 @@ this_hb:	if ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) == NULL)
 		 */
 		if (ret == 0 && bh_mfp->multiversion) {
 			if (!got_oldest && !SH_CHAIN_HASPREV(bhp, vc) &&
-			    !BH_OBSOLETE(bhp, hp->old_reader)) {
+			    !BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
 				(void)__txn_oldest_reader(dbenv,
 				    &hp->old_reader);
 				got_oldest = 1;
 			}
 			if (SH_CHAIN_HASPREV(bhp, vc) ||
-			    !BH_OBSOLETE(bhp, hp->old_reader)) {
+			    !BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
 				/*
 				 * Before freezing, double-check that we have
 				 * an up-to-date old_reader LSN.

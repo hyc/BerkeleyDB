@@ -473,13 +473,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.6.19"
+#define PACKAGE_STRING "Berkeley DB 4.6.21"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.6.19"
+#define PACKAGE_TARNAME "db-4.6.21"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.6.19"
+#define PACKAGE_VERSION "4.6.21"
 
 /* The size of `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
