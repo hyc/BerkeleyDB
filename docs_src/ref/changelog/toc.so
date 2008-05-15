@@ -1,10 +1,13 @@
-m4_comment([$Id: toc.so,v 1.7 2007/07/17 14:50:20 bostic Exp $])
+m4_comment([$Id: toc.so,v 1.32 2008/05/15 21:13:24 carol Exp $])
 
 m4_ref_title(Upgrading m4_db Applications,
     m4_db Release Change Logs,,
     upgrade/process, upgrade.2.0/intro)
 
 m4_bulletbegin
+
+m4_bullet([dnl
+m4_link(4.7, [4.7.25])])
 
 m4_bullet([dnl
 m4_link(4.6, [4.6.21])])
