@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: Store.java,v 1.5 2008/02/18 14:48:11 mark Exp $
+ * $Id$
  */
 
 package com.sleepycat.persist.impl;

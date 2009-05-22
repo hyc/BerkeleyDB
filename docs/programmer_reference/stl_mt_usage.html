@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Using dbstl in multithreaded application</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_txn_usage.html" title="Using transactions in dbstl" />
+    <link rel="next" href="stl_primitive_rw.html" title="Store and Retrieve data of primitive types" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Using dbstl in multithreaded application</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_txn_usage.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_primitive_rw.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_mt_usage"></a>Using dbstl in multithreaded application</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+The WorkerThread class of dbstl test suite is good example code to demonstrate
+how to use dbstl in multi-threaded applications.
+Follow the following steps to make use of dbstl in multithreaded applications.
+</p>
+      <div class="orderedlist">
+        <ol type="1">
+          <li>
+            <p>
+Define the right platform when building dbstl.
+
+Internally dbstl put some thread local information in thread local storage(tls), 
+and uses a tls modifier rather than the thread library API to make use of tls. The tls
+modifiers on different platform are different, so we use a platform name macro
+to declare the right tls modifier for that platform. 
+
+</p>
+            <p>
+The configure script will normally detect platform type and define the right macro for
+you, so you don't need to do anything. In case the configure script can't detect this,
+there will be a warning message output, and you need to define the platform macro in your
+application.
+
+</p>
+            <p>
+Specifically, if you are using HP Tru64 operating system and not a gcc compiler, you should
+#define HPTru64 before the #include'ing any dbstl container header files. 
+
+If you are using other platforms which are not recognized by the configure script but which
+have thread local storage functionalities, #define TLS_MODIFIER to your platform's thread
+local storage modifier in your application's Makefile or IDE settings, or #define it before
+#include'ing any dbstl container header files; 
+
+Otherwise, if your platform has no concept of thread local storage, you have to
+#define SINGLE_THREADED in the Makefile or IDE settings, or #define it before
+#include'ing any dbstl container header files; so that you can only 
+use dbstl in one single thread within one memory address space.
+
+</p>
+          </li>
+          <li>
+            <p>
+Do proper initializations in a single thread.
+Call dbstl::dbstl_startup() function in a single thread mutual exclusively before using dbstl.
+Some initialization must be done in a single thread before multiple threads use dbstl. If dbstl 
+is used in only a single thread, this function does not need to be called.
+
+</p>
+            <p>
+You must make sure the callback functions are registered to the singleton of DbstlElemTraits
+before any retrieval of the function pointers, and certain isolation may be required among 
+multiple threads. The best way is to register all callback funciton pointers into the singleton
+in a single thread before making use of the containers.
+</p>
+            <p>
+You must also set all containers' cursor open flags, auto commit transaction begin/commit flags in a single thread.
+</p>
+          </li>
+          <li>
+            <p>
+You can share or not share environment and/or database handles. 
+If you do share, remember to register the handles you 
+are using in each and every thread which did not call dbstl::open_db/dbstl::open_env for 
+that handle but is using the handles directly or the containers owning the handles. 
+
+Note that the get/set functions of the data members of containers are not 
+mutex-protected, because they are supposed to be set only once at container object
+initialiation. Do your own protection if you have to modify them after initialization phase.
+
+</p>
+          </li>
+          <li>
+            <p>
+You can share a container object in multiple threads, remember to register
+Db/DbEnv handles, though. You can't share an iterator or transaction among multiple threads.
+
+</p>
+          </li>
+          <li>
+            <p>
+
+Set directdb_get parameter of container's begin() method to true, which is the
+default behavior. 
+The reason is a rare situation may happen: Given db_vector_iterator i1 and 
+i2, they are used in the same iteration and they always point to the 
+same element in the iteration, then we call *i1 = new_value; then we 
+want to use *i2 and we think *i2 equals to new_value--------at this time 
+point, if directdb_get is not set to true, *i2 will give you the old 
+value, which is wrong; while setting directdb_get to true will guarantee 
+any time of access to the pointed key/data pair is got by reading 
+directly from database, not using the iterator/cursor cached key/data 
+pair values. 
+</p>
+          </li>
+          <li>
+            <p>
+When used in CDS databases, you should use const iterators or read-only 
+non-iterators for read only iterations, otherwise, when multiple threads tries 
+to open read-write iterators at the same time, as there can be only one write cursor open at any moment, 
+the concurrency is greatly degraded.  And it is always a good practice to
+use read-only iterators where possible because there are some internal optimizations to
+make it faster.
+In order to create a readonly iterator, either use a "const" reference to the
+container object then call begin via the const reference, and declare a 
+db_vector::const_iterator type of iterator to hold the return value of begin;
+Or if you are using a non-const container object, simply call its non-const version 
+of begin() method and pass a "true" value to the "readonly" parameter.
+
+</p>
+          </li>
+          <li>
+            <p>  
+
+You should use transactions or CDS or using DS with the locking 
+subsystem started by specifying DB_INIT_LOCK in DbEnv::open function.
+
+</p>
+          </li>
+          <li>
+            <p>  
+You can do portable synchronization by calling the following functions, which are global 
+functions in the "dbstl" name space:
+
+db_mutex_t alloc_mutex() ;
+int lock_mutex(db_mutex_t);
+int unlock_mutex(db_mutex_t);
+void free_mutex(db_mutex_t);
+
+They use an internal dbstl environment's mutex functionality to synchronize, so the synchronization
+is portable across all platforms supporting Berkeley DB.
+</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_txn_usage.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_primitive_rw.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Using transactions in dbstl </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Store and Retrieve data of primitive types </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

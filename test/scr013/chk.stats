@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.stats,v 12.3 2007/04/20 18:29:00 bostic Exp $
+# $Id$
 #
 # Check to make sure all of the stat structure members are included in
 # all of the possible formats.

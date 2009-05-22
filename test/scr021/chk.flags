@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.flags,v 12.4 2007/11/18 20:47:29 bostic Exp $
+# $Id$
 #
 # Check flag name-spaces.
 

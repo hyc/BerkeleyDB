@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Store and Retrieve data of primitive types</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_mt_usage.html" title="Using dbstl in multithreaded application" />
+    <link rel="next" href="stl_complex_rw.html" title="Store and Retrieve data or objects of complex types" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Store and Retrieve data of primitive types </th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_mt_usage.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_complex_rw.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_primitive_rw"></a>Store and Retrieve data of primitive types </h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="stl_primitive_rw.html#id1592189">
+Storing Simple Primitive Types
+</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_primitive_rw.html#id1592145">
+Storing Strings
+</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p>
+Primitive types means int, long, double, char, char*, wchar_t*, etc. We will 
+address this topic in two parts, first is how to store simple primitive types 
+of data, like that of int, long, char, etc; Second is how to store strings.
+</p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592189"></a>
+Storing Simple Primitive Types
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+If you want to store primitive types, you need one more type parameter
+for the container class templates, e.g. when you store int data into a db_vector, you need 
+this type of container: db_vector&lt;int, ElementHolder&lt;int&gt; &gt;; ;
+When you want to store double data with int keys, use this type: 
+db_map&lt;int, int, ElementHolder&lt;double&gt; &gt;;;
+When you want to store a char* string with long keys, use this type:
+db_map&lt;long, char*, ElementHolder&lt;char*&gt; &gt;.
+
+There is example code to use this feature in TestVector::test_primitive
+of dbstl test suite.
+</p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592145"></a>
+Storing Strings
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+For char* and wchar_t* strings, if you modify the retrieved string partially or
+totally, do call _DB_STL_StoreElement() to store the change before iterator
+movement or container::operator[] or iterator::operator*/-&gt; call, 
+because after these calls, the modified change is lost. 
+On the other hand if you store the new value entirely, like this :
+*itr = new_char_star_string; then you don't need to call _DB_STL_StoreElement.
+
+</p>
+        <p>
+Note that you are allowed to pass a NULL pointer to the container of char* type 
+or a std::string with no contents at all, and in this case an empty string of
+zero length will be inserted to the database. 
+
+</p>
+        <p>
+The returned string(first character address, like native char*/wchar_t* strings
+) lives no longer than the next iterator movement call or container::operator[]
+or iterator::operator*/-&gt; call; And do call _DB_STL_StoreElement to store changed 
+string contents before calling next container::operator[] or iterator::operator*/-&gt; call;
+
+</p>
+        <p>
+Use a db_map::value_type::second_type or db_map::datatype_wrap to hold reference for 
+operator[] return value and use that reference to use the value multiply.
+
+The *itr is of type ElementHolder&lt;char *&gt;, which can be automatically converted
+to char * pointer because it has a type conversion operator, so wherever an auto conversion
+is done by the compiler, the conversion operator is called. This can avoid almost
+all explicit conversions except two use cases: 
+</p>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+			The *itr is used as a "..." parameter
+like this: printf("this is the special case %s", *itr); This compiles but causes
+errors, you should write like this: printf("this is the special case %s", (char *)*itr);
+
+		</p>
+            </li>
+            <li>
+              <p>
+For some old compilers like gcc3.4.6, if the *itr is used in the ? : operator as 
+one of the two oprands separated by : , so if we have expr ? *itr : var where 
+var is the same type as itr's value_type, this
+expression won't compile because the compiler thinks *itr is of different type to var,
+and it won't do an auto conversion. At least this is true for gcc3.4.6. MS VC8 and
+gcc4.1.2 does not have this problem.
+</p>
+            </li>
+          </ol>
+        </div>
+        <p>
+If you use a std::string or std::wstring as the data type for dbstl containers,
+e.g. db_vector&lt;string&gt;, db_map&lt;string, wstring&gt;, the string's content rather than
+the string object itself is stored, so that string persistence is maintained, and
+you are allowed to store an empty string, which is also true for char*/wchar_t* 
+strings, as detailed above.
+
+</p>
+        <p>
+There is example code to use this feature in TestAssoc::test_char_star_string_storage
+and TestAssoc::test_storing_std_strings methods of dbstl test suite.
+
+
+</p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_mt_usage.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_complex_rw.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Using dbstl in multithreaded application </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Store and Retrieve data or objects of complex types </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

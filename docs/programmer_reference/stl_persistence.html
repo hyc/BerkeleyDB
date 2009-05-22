@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Dbstl Persistence</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_complex_rw.html" title="Store and Retrieve data or objects of complex types" />
+    <link rel="next" href="section2.html" title="Change Persistence" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Dbstl Persistence</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_complex_rw.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="section2.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_persistence"></a>Dbstl Persistence</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="section">
+              <a href="stl_persistence.html#section1"> Direct Database Get</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="section">
+              <a href="section2.html"> Change Persistence </a>
+            </span>
+          </dt>
+          <dt>
+            <span class="section">
+              <a href="section3.html">Object Life Time and Persistence </a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <div class="section" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="section1"></a> Direct Database Get</h2>
+            </div>
+          </div>
+        </div>
+        <p>
+Each container's begin() method has a parameter "directdb_get", meaning whether directly
+read from database whenever the created iterator is used like this *itr or itr-&gt;member.
+If directdb_get is true(the default), then the iterator's operator* will always retrieve current 
+fresh data from db, thus if you call 
+
+</p>
+        <p>
+</p>
+        <pre class="programlisting">
+
+*itr.datamember=new-value; 
+*itr.datamember2=new-value2; 
+
+</pre>
+        <p>
+</p>
+        <p>
+then the assignment to datamember is lost because the second assignment will use db's
+current key/data pair from database to assign to the iterator. 
+
+</p>
+        <p>
+A correct alternative is like this:
+</p>
+        <p>
+</p>
+        <pre class="programlisting">
+
+container::value_type &amp;ref = *itr;
+ref.datamember=new-value;
+ref.datamember2=new-value2;
+...// more member function calls and datamember assignments
+ref._DB_STL_StoreElement();
+
+</pre>
+        <p>
+</p>
+        <p>
+The above code won't lose the new-value of the ref.datamember.
+</p>
+        <p>
+If you have two iterators to go through the container like this:
+
+</p>
+        <pre class="programlisting">
+
+for (itr1 = v.begin(), itr2 = v.begin(); itr1 != v.end(); ++itr1, ++itr2) {
+	*itr1 = new_value;
+	print(*itr2); // line 1
+}
+	
+</pre>
+        <p>
+	</p>
+        <p>
+then the directdb_get parameter of begin() function must be set to true in the v.begin() calls otherwise line 1
+prints the old value of *itr1. 
+
+	</p>
+        <p>
+Alternatively, you can set directdb_get to false and call itr2-&gt;refresh() immediately 
+before line 1 , so that itr2's cached value is refreshed. The iterator::refresh() 
+methods is designed this purpose, though this still can't completely replace direct database get, 
+so the easiest way is to simply use the default true value of directdb_get.
+
+	</p>
+        <p>
+If directdb_get is false, a few of the tests in dbstl's test kit will fail,
+because in the few algorithms of C++ STL the above special case happens, so
+by default directdb_get parameter in container::begin() methods is true. If your 
+use case do not have such bizzar usage of iterators, you can set it to false
+to make iterator read operation faster.
+	</p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_complex_rw.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="section2.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Store and Retrieve data or objects of complex types  </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top">  Change Persistence </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

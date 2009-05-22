@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
  *
- * $Id: mp_method.c,v 12.61 2008/03/13 15:21:21 mbrey Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -440,7 +440,7 @@ __memp_set_mp_mmapsize(dbenv, mp_mmapsize)
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->get_mp_max_mmapsize", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->set_mp_max_mmapsize", DB_INIT_MPOOL);
 
 	if (MPOOL_ON(env)) {
 		dbmp = env->mp_handle;
@@ -452,6 +452,90 @@ __memp_set_mp_mmapsize(dbenv, mp_mmapsize)
 		ENV_LEAVE(env, ip);
 	} else
 		dbenv->mp_mmapsize = mp_mmapsize;
+	return (0);
+}
+
+/*
+ * PUBLIC: int __memp_get_mp_pagesize __P((DB_ENV *, u_int32_t *));
+ */
+int
+__memp_get_mp_pagesize(dbenv, mp_pagesizep)
+	DB_ENV *dbenv;
+	u_int32_t *mp_pagesizep;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_NOT_CONFIGURED(env,
+	    env->mp_handle, "DB_ENV->get_mp_max_pagesize", DB_INIT_MPOOL);
+
+	*mp_pagesizep = dbenv->mp_pagesize;
+	return (0);
+}
+
+/*
+ * __memp_set_mp_pagesize --
+ *	DB_ENV->set_mp_pagesize.
+ *
+ * PUBLIC: int __memp_set_mp_pagesize __P((DB_ENV *, u_int32_t));
+ */
+int
+__memp_set_mp_pagesize(dbenv, mp_pagesize)
+	DB_ENV *dbenv;
+	u_int32_t mp_pagesize;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_NOT_CONFIGURED(env,
+	    env->mp_handle, "DB_ENV->get_mp_max_mmapsize", DB_INIT_MPOOL);
+	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mp_pagesize");
+
+	dbenv->mp_pagesize = mp_pagesize;
+	return (0);
+}
+
+/*
+ * PUBLIC: int __memp_get_mp_tablesize __P((DB_ENV *, u_int32_t *));
+ */
+int
+__memp_get_mp_tablesize(dbenv, mp_tablesizep)
+	DB_ENV *dbenv;
+	u_int32_t *mp_tablesizep;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_NOT_CONFIGURED(env,
+	    env->mp_handle, "DB_ENV->get_mp_max_tablesize", DB_INIT_MPOOL);
+
+	*mp_tablesizep = dbenv->mp_tablesize;
+	return (0);
+}
+
+/*
+ * __memp_set_mp_tablesize --
+ *	DB_ENV->set_mp_tablesize.
+ *
+ * PUBLIC: int __memp_set_mp_tablesize __P((DB_ENV *, u_int32_t));
+ */
+int
+__memp_set_mp_tablesize(dbenv, mp_tablesize)
+	DB_ENV *dbenv;
+	u_int32_t mp_tablesize;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_NOT_CONFIGURED(env,
+	    env->mp_handle, "DB_ENV->get_mp_max_mmapsize", DB_INIT_MPOOL);
+	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mp_tablesize");
+
+	dbenv->mp_tablesize = mp_tablesize;
 	return (0);
 }
 
@@ -634,8 +718,11 @@ fsop:	/*
 	}
 
 	/* Delete the memory we no longer need. */
-err:	if (p != NULL)
-		__memp_free(&dbmp->reginfo[0], NULL, p);
+err:	if (p != NULL) {
+		MPOOL_REGION_LOCK(env, &dbmp->reginfo[0]);
+		__memp_free(&dbmp->reginfo[0], p);
+		MPOOL_REGION_UNLOCK(env, &dbmp->reginfo[0]);
+	}
 
 	/* If we have buckets locked, unlock them when done moving files. */
 	if (locked == 1) {
@@ -668,6 +755,7 @@ __memp_ftruncate(dbmfp, ip, pgno, flags)
 
 	env = dbmfp->env;
 	mfp = dbmfp->mfp;
+	ret = 0;
 
 	MUTEX_LOCK(env, mfp->mutex);
 	last_pgno = mfp->last_pgno;
@@ -682,6 +770,8 @@ __memp_ftruncate(dbmfp, ip, pgno, flags)
 
 	pg = pgno;
 	do {
+		if (mfp->block_cnt == 0)
+			break;
 		if ((ret = __memp_fget(dbmfp, &pg,
 		    ip, NULL, DB_MPOOL_FREE, &pagep)) != 0)
 			return (ret);
@@ -798,7 +888,7 @@ __memp_free_freelist(dbmfp)
 	DB_ASSERT(env, mfp->free_size != 0);
 
 	MPOOL_SYSTEM_LOCK(env);
-	__memp_free(dbmp->reginfo, NULL, R_ADDR(dbmp->reginfo, mfp->free_list));
+	__memp_free(dbmp->reginfo, R_ADDR(dbmp->reginfo, mfp->free_list));
 	MPOOL_SYSTEM_UNLOCK(env);
 
 	mfp->free_cnt = 0;
@@ -876,7 +966,7 @@ __memp_extend_freelist(dbmfp, count, listp)
 		memcpy(retp, *listp, mfp->free_cnt * sizeof(db_pgno_t));
 
 		MPOOL_SYSTEM_LOCK(env);
-		__memp_free(dbmp->reginfo, NULL, *listp);
+		__memp_free(dbmp->reginfo, *listp);
 		MPOOL_SYSTEM_UNLOCK(env);
 	}
 

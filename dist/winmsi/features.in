@@ -1,4 +1,4 @@
-# $Id: features.in,v 1.5 2005/04/15 19:03:35 philipr Exp $
+# $Id$
 # Lists features that can be installed on Windows,
 # and their dependencies.
 

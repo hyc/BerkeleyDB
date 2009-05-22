@@ -1,0 +1,22 @@
+There are two test programs in this subdirectory.
+
+1. db_repsite.cpp is a small, self-contained utility program, which is
+   used by some of the repmgr Tcl tests.
+
+   Building on Unix: It is not built by default; you have to "make" it
+   explicitly.  One reason for this is that it is written in C++, and
+   so it will only work if DB is configured with C++ support.
+
+   This program works on Windows too.  There is an MSVC "project" file
+   for it (db_repsite.dsp), but this project is not initially included
+   in the Berkeley DB "solution" container.  In order to build
+   db_repsite on Windows you need to add this project file to the
+   "solution".  From the Solution Explorer, right-click on the
+   Berkeley DB solution, and choose Add ... -> Existing Project.
+   Navigate to the ./build_windows/ subdirectory and find the
+   db_repsite.dsp file.
+
+
+2. db_reptest (composed of db_reptest.c combined with all the other
+   source files in this subdirectory) is a replication stress test.
+   It exercises replication via the repmgr API.

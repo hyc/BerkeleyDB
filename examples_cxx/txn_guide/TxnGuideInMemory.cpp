@@ -15,9 +15,10 @@ typedef HANDLE thread_t;
 #define thread_create(thrp, attr, func, arg)                               \
     (((*(thrp) = CreateThread(NULL, 0,                                     \
         (LPTHREAD_START_ROUTINE)(func), (arg), 0, NULL)) == NULL) ? -1 : 0)
-#define thread_join(thr, statusp)                                          \
+#define	thread_join(thr, statusp)                                          \
     ((WaitForSingleObject((thr), INFINITE) == WAIT_OBJECT_0) &&            \
-    GetExitCodeThread((thr), (LPDWORD)(statusp)) ? 0 : -1)
+    ((statusp == NULL) ? 0 : 						   \
+    (GetExitCodeThread((thr), (LPDWORD)(statusp)) ? 0 : -1)))
 
 typedef HANDLE mutex_t;
 #define mutex_init(m, attr)                                                \

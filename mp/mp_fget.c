@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
  *
- * $Id: mp_fget.c,v 12.53 2008/04/28 02:59:57 alexg Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -116,11 +116,12 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 	MPOOL *c_mp;
 	MPOOLFILE *mfp;
 	PIN_LIST *list, *lp;
+	REGENV *renv;
 	REGINFO *infop, *t_infop, *reginfo;
 	TXN_DETAIL *td;
 	roff_t list_off, mf_offset;
-	u_int32_t pinmax, st_hsearch;
-	int b_incr, b_locked, dirty, edit, extending, first;
+	u_int32_t bucket, pinmax, st_hsearch;
+	int b_incr, b_lock, h_locked, dirty, edit, extending;
 	int makecopy, mvcc, need_free, ret;
 
 	*(void **)addrp = NULL;
@@ -138,7 +139,7 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 	read_lsnp = NULL;
 	td = NULL;
 	hp = NULL;
-	b_incr = b_locked = extending = makecopy = ret = 0;
+	b_incr = b_lock = h_locked = extending = makecopy = ret = 0;
 
 	if (LF_ISSET(DB_MPOOL_DIRTY)) {
 		if (F_ISSET(dbmfp, MP_READONLY)) {
@@ -152,7 +153,7 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 			return (ret);
 	}
 
-	dirty = LF_ISSET(DB_MPOOL_DIRTY);
+	dirty = LF_ISSET(DB_MPOOL_DIRTY | DB_MPOOL_FREE);
 	edit = LF_ISSET(DB_MPOOL_EDIT);
 	LF_CLR(DB_MPOOL_DIRTY | DB_MPOOL_EDIT);
 
@@ -192,7 +193,6 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 		 * If always creating a page, skip the first search
 		 * of the hash bucket.
 		 */
-		state = FIRST_MISS;
 		goto alloc;
 	case DB_MPOOL_CREATE:
 	default:
@@ -229,19 +229,24 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 		return (0);
 	}
 
-retry:	/*
+	/*
 	 * Determine the cache and hash bucket where this page lives and get
 	 * local pointers to them.  Reset on each pass through this code, the
 	 * page number can change.
 	 */
-	MP_GET_BUCKET(env, mfp, *pgnoaddr, &infop, hp, ret);
+	MP_GET_BUCKET(env, mfp, *pgnoaddr, &infop, hp, bucket, ret);
 	if (ret != 0)
 		return (ret);
 	c_mp = infop->primary;
 
+	if (0) {
+		/* if we search again, get an exclusive lock. */
+retry:		MUTEX_LOCK(env, hp->mtx_hash);
+	}
+
 	/* Search the hash chain for the page. */
 	st_hsearch = 0;
-	b_locked = 1;
+	h_locked = 1;
 	SH_TAILQ_FOREACH(bhp, &hp->hash_bucket, hq, __bh) {
 		++st_hsearch;
 		if (bhp->pgno != *pgnoaddr || bhp->mf_offset != mf_offset)
@@ -265,65 +270,36 @@ retry:	/*
 		}
 
 		/*
-		 * Increment the reference count.  We may discard the hash
-		 * bucket lock as we evaluate and/or read the buffer, so we
-		 * need to ensure it doesn't move and its contents remain
-		 * unchanged.
+		 * Increment the reference count.  This signals that the
+		 * buffer may not be discarded.  We must drop the hash
+		 * mutex before we lock the buffer mutex.
 		 */
-		if (bhp->ref == UINT16_MAX) {
+		if (BH_REFCOUNT(bhp) == UINT16_MAX) {
 			__db_errx(env,
 			    "%s: page %lu: reference count overflow",
 			    __memp_fn(dbmfp), (u_long)bhp->pgno);
 			ret = __env_panic(env, EINVAL);
 			goto err;
 		}
-		++bhp->ref;
+		atomic_inc(env, &bhp->ref);
 		b_incr = 1;
 
 		/*
-		 * BH_LOCKED --
-		 * I/O is in progress or sync is waiting on the buffer to write
-		 * it.  Because we've incremented the buffer reference count,
-		 * we know the buffer can't move.  Unlock the bucket lock, wait
-		 * for the buffer to become available, re-acquire the bucket.
+		 * Lock the buffer. If the page is being read in or modified it
+		 * will be exclusively locked and we will block.
 		 */
-		for (first = 1; F_ISSET(bhp, BH_LOCKED) &&
-		    !F_ISSET(env->dbenv, DB_ENV_NOLOCKING); first = 0) {
-			/*
-			 * If someone is trying to sync this buffer and the
-			 * buffer is hot, they may never get in.  Give up and
-			 * try again.
-			 */
-			if (!first && bhp->ref_sync != 0) {
-				--bhp->ref;
-				MUTEX_UNLOCK(env, hp->mtx_hash);
-				bhp = frozen_bhp = NULL;
-				b_incr = b_locked = 0;
-				__os_yield(env, 0, 1);
-				goto retry;
-			}
-
-			/*
-			 * If we're the first thread waiting on I/O, set the
-			 * flag so the thread doing I/O knows to wake us up,
-			 * and lock the mutex.
-			 */
-			if (!F_ISSET(hp, IO_WAITER)) {
-				F_SET(hp, IO_WAITER);
-				MUTEX_LOCK(env, hp->mtx_io);
-			}
-			STAT(++hp->hash_io_wait);
-
-			/* Release the hash bucket lock. */
-			MUTEX_UNLOCK(env, hp->mtx_hash);
-
-			/* Wait for I/O to finish. */
-			MUTEX_LOCK(env, hp->mtx_io);
-			MUTEX_UNLOCK(env, hp->mtx_io);
-
-			/* Re-acquire the hash bucket lock. */
-			MUTEX_LOCK(env, hp->mtx_hash);
-		}
+		MUTEX_UNLOCK(env, hp->mtx_hash);
+		h_locked = 0;
+		if (dirty || edit || F_ISSET(bhp, BH_TRASH)) {
+			MUTEX_LOCK(env, bhp->mtx_buf);
+			F_SET(bhp, BH_EXCLUSIVE);
+		} else if (LF_ISSET(DB_MPOOL_TRY)) {
+			if ((ret =
+			    MUTEX_TRY_READLOCK(env, bhp->mtx_buf)) != 0)
+				goto err;
+		} else
+			MUTEX_READLOCK(env, bhp->mtx_buf);
+		b_lock = 1;
 
 		/*
 		 * If the buffer was frozen before we waited for any I/O to
@@ -332,12 +308,16 @@ retry:	/*
 		 * search again.
 		 */
 		if (frozen_bhp != NULL && F_ISSET(frozen_bhp, BH_THAWED)) {
-thawed:			need_free = (--frozen_bhp->ref == 0);
+thawed:			need_free = (atomic_dec(env, &frozen_bhp->ref) == 0);
 			b_incr = 0;
-			MUTEX_UNLOCK(env, hp->mtx_hash);
+			MUTEX_UNLOCK(env, bhp->mtx_buf);
+			b_lock = 0;
 			MPOOL_REGION_LOCK(env, infop);
 			if (alloc_bhp != NULL) {
-				__memp_free(infop, mfp, alloc_bhp);
+				if ((ret = __memp_bhfree(dbmp, infop, NULL,
+				     NULL, alloc_bhp,
+				     BH_FREE_FREEMEM | BH_FREE_UNLOCKED)) != 0)
+					goto err;
 				alloc_bhp = NULL;
 			}
 			if (need_free)
@@ -354,9 +334,11 @@ thawed:			need_free = (--frozen_bhp->ref == 0);
 		 */
 		if (SH_CHAIN_HASNEXT(bhp, vc) &&
 		    SH_CHAIN_NEXTP(bhp, vc, __bh)->td_off == bhp->td_off) {
-			--bhp->ref;
+			DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) != 0);
+			atomic_dec(env, &bhp->ref);
 			b_incr = 0;
-			MUTEX_UNLOCK(env, hp->mtx_hash);
+			MUTEX_UNLOCK(env, bhp->mtx_buf);
+			b_lock = 0;
 			bhp = frozen_bhp = NULL;
 			goto retry;
 		} else if (dirty && SH_CHAIN_HASNEXT(bhp, vc)) {
@@ -364,9 +346,7 @@ thawed:			need_free = (--frozen_bhp->ref == 0);
 			goto err;
 		}
 
-#ifdef HAVE_STATISTICS
-		++mfp->stat.st_cache_hit;
-#endif
+		STAT(++mfp->stat.st_cache_hit);
 		break;
 	}
 
@@ -416,37 +396,46 @@ thawed:			need_free = (--frozen_bhp->ref == 0);
 		 * complain and get out.
 		 */
 		if (flags == DB_MPOOL_FREE) {
-			if (--bhp->ref == 0) {
-				if (F_ISSET(bhp, BH_DIRTY)) {
-					--hp->hash_page_dirty;
-					F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
-				}
-				/*
-				 * In a multiversion database, this page could
-				 * be requested again so we have to leave it in
-				 * cache for now.  It should *not* ever be
-				 * requested again for modification without an
-				 * intervening DB_MPOOL_CREATE or DB_MPOOL_NEW.
-				 *
-				 * Mark it with BH_FREED so we don't reuse the
-				 * data when the page is resurrected.
-				 */
-				if (mvcc && (F_ISSET(bhp, BH_FROZEN) ||
-				    !SH_CHAIN_SINGLETON(bhp, vc) ||
-				    bhp->td_off == INVALID_ROFF ||
-				    !IS_MAX_LSN(*VISIBLE_LSN(env, bhp)))) {
-					F_SET(bhp, BH_FREED);
-					MUTEX_UNLOCK(env, hp->mtx_hash);
-					return (0);
-				}
-				return (__memp_bhfree(
-				    dbmp, infop, hp, bhp, BH_FREE_FREEMEM));
+			MUTEX_LOCK(env, hp->mtx_hash);
+			h_locked = 1;
+			if (F_ISSET(bhp, BH_DIRTY)) {
+				F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+				DB_ASSERT(env,
+				   atomic_read(&hp->hash_page_dirty) > 0);
+				atomic_dec(env, &hp->hash_page_dirty);
 			}
-			__db_errx(env,
-			    "File %s: freeing pinned buffer for page %lu",
-				__memp_fns(dbmp, mfp), (u_long)*pgnoaddr);
-			ret = __env_panic(env, EINVAL);
-			goto err;
+
+			/*
+			 * If the ref count is not 1 then someone may
+			 * be peeking at the buffer.  We cannot free
+			 * it until they determine that its not what
+			 * they want.
+			 *
+			 * In a multiversion database, this page could
+			 * be requested again so we have to leave it in
+			 * cache for now.  It should *not* ever be
+			 * requested again for modification without an
+			 * intervening DB_MPOOL_CREATE or DB_MPOOL_NEW.
+			 *
+			 * Mark it with BH_FREED so we don't reuse the
+			 * data when the page is resurrected.
+			 */
+			if (BH_REFCOUNT(bhp) != 1 ||
+			    (mvcc && (F_ISSET(bhp, BH_FROZEN) ||
+			    !SH_CHAIN_SINGLETON(bhp, vc) ||
+			    bhp->td_off == INVALID_ROFF ||
+			    !IS_MAX_LSN(*VISIBLE_LSN(env, bhp))))) {
+				F_SET(bhp, BH_FREED);
+				MUTEX_UNLOCK(env, hp->mtx_hash);
+				h_locked = 0;
+				DB_ASSERT(env, b_incr);
+				atomic_dec(env, &bhp->ref);
+				F_CLR(bhp, BH_EXCLUSIVE);
+				MUTEX_UNLOCK(env, bhp->mtx_buf);
+				return (0);
+			}
+			return (__memp_bhfree(dbmp,
+			    infop, mfp, hp, bhp, BH_FREE_FREEMEM));
 		}
 
 		if (mvcc) {
@@ -470,13 +459,18 @@ thawed:			need_free = (--frozen_bhp->ref == 0);
 			 * that we've seen a buffer older than the oldest
 			 * snapshot read LSN.
 			 */
-reuse:			if ((makecopy || frozen_bhp != NULL) && (oldest_bhp =
+reuse:			if (makecopy || frozen_bhp != NULL) {
+				MUTEX_LOCK(env, hp->mtx_hash);
+				h_locked = 1;
+			}
+			if ((makecopy || frozen_bhp != NULL) && (oldest_bhp =
 			    SH_CHAIN_PREV(bhp, vc, __bh)) != NULL) {
 				while (SH_CHAIN_HASPREV(oldest_bhp, vc))
 					oldest_bhp = SH_CHAIN_PREVP(oldest_bhp,
 					    vc, __bh);
 
-				if (oldest_bhp->ref == 0 && !BH_OBSOLETE(
+				if (BH_REFCOUNT(oldest_bhp) == 0 &&
+				    !BH_OBSOLETE(
 				    oldest_bhp, hp->old_reader, vlsn) &&
 				    (ret = __txn_oldest_reader(env,
 				    &hp->old_reader)) != 0)
@@ -484,24 +478,33 @@ reuse:			if ((makecopy || frozen_bhp != NULL) && (oldest_bhp =
 
 				if (BH_OBSOLETE(
 				    oldest_bhp, hp->old_reader, vlsn) &&
-				    oldest_bhp->ref == 0) {
+				    BH_REFCOUNT(oldest_bhp) == 0) {
+					DB_ASSERT(env,
+					    !F_ISSET(oldest_bhp, BH_DIRTY));
+					atomic_inc(env, &oldest_bhp->ref);
 					if (F_ISSET(oldest_bhp, BH_FROZEN)) {
-						++oldest_bhp->ref;
+						MUTEX_UNLOCK(env, hp->mtx_hash);
+						h_locked = 0;
 						if ((ret = __memp_bh_thaw(dbmp,
 						    infop, hp, oldest_bhp,
 						    NULL)) != 0)
 							goto err;
 						goto reuse;
-					} else if ((ret = __memp_bhfree(dbmp,
-					    infop, hp, oldest_bhp,
+					}
+					if ((ret = __memp_bhfree(dbmp,
+					    infop, mfp, hp, oldest_bhp,
 					    BH_FREE_REUSE)) != 0)
 						goto err;
 					alloc_bhp = oldest_bhp;
+					h_locked = 0;
 				}
 
 				DB_ASSERT(env, alloc_bhp == NULL ||
 				    !F_ISSET(alloc_bhp, BH_FROZEN));
 			}
+			if (h_locked)
+				MUTEX_UNLOCK(env, hp->mtx_hash);
+			h_locked = 0;
 		}
 
 		/* We found the buffer or we're ready to copy -- we're done. */
@@ -515,13 +518,14 @@ reuse:			if ((makecopy || frozen_bhp != NULL) && (oldest_bhp =
 		 * if the page exists, and allocate structures so we can add
 		 * the page to the buffer pool.
 		 */
-		MUTEX_UNLOCK(env, hp->mtx_hash);
-		b_locked = 0;
+		if (h_locked)
+			MUTEX_UNLOCK(env, hp->mtx_hash);
+		h_locked = 0;
 
 		/*
 		 * The buffer is not in the pool, so we don't need to free it.
 		 */
-		if (flags == DB_MPOOL_FREE)
+		if (LF_ISSET(DB_MPOOL_FREE))
 			return (0);
 
 alloc:		/*
@@ -529,7 +533,7 @@ alloc:		/*
 		 * If neither DB_MPOOL_CREATE or DB_MPOOL_NEW is set, then
 		 * it's an error to try and get a page past the end of file.
 		 */
-		DB_ASSERT(env, !b_locked);
+		DB_ASSERT(env, !h_locked);
 		MUTEX_LOCK(env, mfp->mutex);
 		switch (flags) {
 		case DB_MPOOL_NEW:
@@ -562,18 +566,26 @@ alloc:		/*
 
 		/*
 		 * !!!
-		 * In the DB_MPOOL_NEW code path, infop and c_mp have
+		 * In the DB_MPOOL_NEW code path, hp, infop and c_mp have
 		 * not yet been initialized.
 		 */
-		MP_GET_REGION(dbmfp, *pgnoaddr, &infop, ret);
-		if (ret != 0)
-			goto err;
-		c_mp = infop->primary;
+		if (hp == NULL) {
+			MP_GET_BUCKET(env,
+			    mfp, *pgnoaddr, &infop, hp, bucket, ret);
+			if (ret != 0)
+				goto err;
+			MUTEX_UNLOCK(env, hp->mtx_hash);
+			c_mp = infop->primary;
+		}
 
 		/* Allocate a new buffer header and data space. */
 		if ((ret =
 		    __memp_alloc(dbmp, infop, mfp, 0, NULL, &alloc_bhp)) != 0)
 			goto err;
+
+		/* Initialize enough so we can call __memp_bhfree. */
+		alloc_bhp->flags = 0;
+		atomic_init(&alloc_bhp->ref, 1);
 #ifdef DIAGNOSTIC
 		if ((uintptr_t)alloc_bhp->buf & (sizeof(size_t) - 1)) {
 			__db_errx(env,
@@ -626,11 +638,10 @@ alloc:		/*
 				 */
 				MUTEX_UNLOCK(env, mfp->mutex);
 
-				MPOOL_REGION_LOCK(env, infop);
-				__memp_free(infop, mfp, alloc_bhp);
-				c_mp->stat.st_pages--;
-				MPOOL_REGION_UNLOCK(env, infop);
-
+				if ((ret = __memp_bhfree(dbmp,
+				     infop, NULL, NULL, alloc_bhp,
+				     BH_FREE_FREEMEM | BH_FREE_UNLOCKED)) != 0)
+					goto err;
 				alloc_bhp = NULL;
 				goto alloc;
 			}
@@ -654,11 +665,8 @@ alloc:		/*
 		 * If we're doing copy-on-write, we will already have the
 		 * buffer header.  In that case, we don't need to search again.
 		 */
-		if (bhp != NULL) {
-			MUTEX_LOCK(env, hp->mtx_hash);
-			b_locked = 1;
+		if (bhp != NULL)
 			break;
-		}
 		DB_ASSERT(env, frozen_bhp == NULL);
 		goto retry;
 	case SECOND_FOUND:
@@ -675,21 +683,17 @@ alloc:		/*
 		 * insert the new page in the version chain similar to when
 		 * we copy on write.
 		 */
-		if (extending && F_ISSET(bhp, BH_FREED))
+		if (extending && mvcc && F_ISSET(bhp, BH_FREED))
 			makecopy = 1;
 		if (makecopy || frozen_bhp != NULL)
 			break;
 
-		/* Free the allocated memory, we no longer need it.  Since we
-		 * can't acquire the region lock while holding the hash bucket
-		 * lock, we have to release the hash bucket and re-acquire it.
-		 * That's OK, because we have the buffer pinned down.
+		/*
+		 * Free the allocated memory, we no longer need it.
 		 */
-		MUTEX_UNLOCK(env, hp->mtx_hash);
-		MPOOL_REGION_LOCK(env, infop);
-		__memp_free(infop, mfp, alloc_bhp);
-		c_mp->stat.st_pages--;
-		MPOOL_REGION_UNLOCK(env, infop);
+		if ((ret = __memp_bhfree(dbmp, infop, NULL,
+		     NULL, alloc_bhp, BH_FREE_FREEMEM | BH_FREE_UNLOCKED)) != 0)
+			goto err;
 		alloc_bhp = NULL;
 
 		/*
@@ -701,14 +705,21 @@ alloc:		/*
 		 * another one.
 		 */
 		if (flags == DB_MPOOL_NEW) {
-			--bhp->ref;
-			b_incr = b_locked = 0;
+			DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) != 0);
+			if (F_ISSET(bhp, BH_FREED)) {
+				F_CLR(bhp, BH_FREED);
+				break;
+			}
+			atomic_dec(env, &bhp->ref);
+			b_incr = h_locked = 0;
+			if (F_ISSET(bhp, BH_EXCLUSIVE))
+				F_CLR(bhp, BH_EXCLUSIVE);
+			MUTEX_UNLOCK(env, bhp->mtx_buf);
+			b_lock = 0;
 			bhp = NULL;
 			goto alloc;
 		}
 
-		/* We can use the page -- get the bucket lock. */
-		MUTEX_LOCK(env, hp->mtx_hash);
 		break;
 	case SECOND_MISS:
 		/*
@@ -719,32 +730,43 @@ alloc:		/*
 		bhp = alloc_bhp;
 		alloc_bhp = NULL;
 
+		/*lint --e{668} (flexelint: bhp cannot be NULL). */
 		/*
 		 * Initialize all the BH and hash bucket fields so we can call
 		 * __memp_bhfree if an error occurs.
 		 *
-		 * Append the buffer to the tail of the bucket list and update
-		 * the hash bucket's priority.
+		 * Append the buffer to the tail of the bucket list.
 		 */
-		/*lint --e{668} (flexelint: bhp cannot be NULL). */
-#ifdef DIAG_MVCC
-		memset(bhp, 0, SSZ(BH, align_off));
-#else
-		memset(bhp, 0, sizeof(BH));
-#endif
-		bhp->ref = 1;
-		b_incr = 1;
 		bhp->priority = UINT32_MAX;
 		bhp->pgno = *pgnoaddr;
 		bhp->mf_offset = mf_offset;
-		SH_TAILQ_INSERT_TAIL(&hp->hash_bucket, bhp, hq);
+		bhp->bucket = bucket;
+		bhp->region = (int)(infop - dbmp->reginfo);
+		bhp->td_off = INVALID_ROFF;
 		SH_CHAIN_INIT(bhp, vc);
+
+		/*
+		 * Reference the buffer and lock exclusive.  We either
+		 * need to read the buffer or create it from scratch
+		 * and don't want anyone looking at it till we do.
+		 */
+		DB_ASSERT(env, h_locked);
+		MUTEX_LOCK(env, bhp->mtx_buf);
+		F_SET(bhp, BH_EXCLUSIVE);
+		b_incr = 1;
+		b_lock = 1;
 
 		/* We created a new page, it starts dirty. */
 		if (extending) {
-			++hp->hash_page_dirty;
+			atomic_inc(env, &hp->hash_page_dirty);
+			MUTEX_REQUIRED(env, bhp->mtx_buf);
 			F_SET(bhp, BH_DIRTY | BH_DIRTY_CREATE);
 		}
+
+		MUTEX_REQUIRED(env, hp->mtx_hash);
+		SH_TAILQ_INSERT_HEAD(&hp->hash_bucket, bhp, hq, __bh);
+		MUTEX_UNLOCK(env, hp->mtx_hash);
+		h_locked = 0;
 
 		/*
 		 * If we created the page, zero it out.  If we didn't create
@@ -777,8 +799,10 @@ alloc:		/*
 #endif
 			}
 
-			if (flags == DB_MPOOL_CREATE && mfp->ftype != 0)
-				F_SET(bhp, BH_CALLPGIN);
+			if (flags == DB_MPOOL_CREATE && mfp->ftype != 0 &&
+			    (ret = __memp_pg(dbmfp,
+			    bhp->pgno, bhp->buf, 1)) != 0)
+				goto err;
 
 			STAT(++mfp->stat.st_page_create);
 		} else {
@@ -786,14 +810,15 @@ alloc:		/*
 			STAT(++mfp->stat.st_cache_miss);
 		}
 
+		makecopy = mvcc && dirty && !extending;
+
 		/* Increment buffer count referenced by MPOOLFILE. */
 		MUTEX_LOCK(env, mfp->mutex);
 		++mfp->block_cnt;
 		MUTEX_UNLOCK(env, mfp->mutex);
 	}
 
-	DB_ASSERT(env, bhp != NULL);
-	DB_ASSERT(env, bhp->ref != 0);
+	DB_ASSERT(env, bhp != NULL && BH_REFCOUNT(bhp) != 0 && b_lock);
 
 	/* We've got a buffer header we're re-instantiating. */
 	if (frozen_bhp != NULL) {
@@ -805,95 +830,95 @@ alloc:		/*
 		 */
 		if (F_ISSET(frozen_bhp, BH_THAWED))
 			goto thawed;
-		else {
-			if ((ret = __memp_bh_thaw(dbmp, infop, hp,
-			    frozen_bhp, alloc_bhp)) != 0)
-				goto err;
-			bhp = alloc_bhp;
-		}
+
+		if ((ret = __memp_bh_thaw(dbmp, infop, hp,
+		    frozen_bhp, alloc_bhp)) != 0)
+			goto err;
+		MUTEX_UNLOCK(env, frozen_bhp->mtx_buf);
+		bhp = alloc_bhp;
 
 		frozen_bhp = alloc_bhp = NULL;
-
-		/*
-		 * If we're updating a buffer that was frozen, we have to go
-		 * through all of that again to allocate another buffer to hold
-		 * the new copy.
-		 */
-		if (makecopy) {
-			MUTEX_UNLOCK(env, hp->mtx_hash);
-			b_locked = 0;
-			goto alloc;
-		}
 	}
 
 	/*
 	 * BH_TRASH --
 	 * The buffer we found may need to be filled from the disk.
 	 *
-	 * It's possible for the read function to fail, which means we fail as
-	 * well.  Note, the __memp_pgread() function discards and reacquires
-	 * the hash lock, so the buffer must be pinned down so that it cannot
-	 * move and its contents are unchanged.  Discard the buffer on failure
-	 * unless another thread is waiting on our I/O to complete.  It's OK to
-	 * leave the buffer around, as the waiting thread will see the BH_TRASH
-	 * flag set, and will also attempt to discard it.  If there's a waiter,
+	 * It's possible for the read function to fail, which means we fail
+	 * as well.  Discard the buffer on failure unless another thread
+	 * is waiting on our I/O to complete.  It's OK to leave the buffer
+	 * around, as the waiting thread will see the BH_TRASH flag set,
+	 * and will also attempt to discard it.  If there's a waiter,
 	 * we need to decrement our reference count.
 	 */
 	if (F_ISSET(bhp, BH_TRASH) &&
 	    (ret = __memp_pgread(dbmfp,
-	    hp, bhp, LF_ISSET(DB_MPOOL_CREATE) ? 1 : 0)) != 0)
+	    bhp, LF_ISSET(DB_MPOOL_CREATE) ? 1 : 0)) != 0)
 		goto err;
 
-	/*
-	 * BH_CALLPGIN --
-	 * The buffer was processed for being written to disk, and now has
-	 * to be re-converted for use.
-	 */
-	if (F_ISSET(bhp, BH_CALLPGIN)) {
-		MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize,
-		    PROT_READ | PROT_WRITE);
-		if ((ret = __memp_pg(dbmfp, bhp, 1)) != 0)
-			goto err;
-		F_CLR(bhp, BH_CALLPGIN);
-	}
-
 	/* Copy-on-write. */
-	if (makecopy && state != SECOND_MISS) {
-		DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
-		DB_ASSERT(env, bhp != NULL);
-		DB_ASSERT(env, alloc_bhp != NULL);
-		DB_ASSERT(env, alloc_bhp != bhp);
+	if (makecopy) {
+		/*
+		 * If we read a page from disk that we want to modify, we now
+		 * need to make copy, so we now need to allocate another buffer
+		 * to hold the new copy.
+		 */
+		if (alloc_bhp == NULL)
+			goto alloc;
 
-		if (bhp->ref == 1)
+		DB_ASSERT(env, bhp != NULL && alloc_bhp != bhp);
+
+		if (BH_REFCOUNT(bhp) == 1)
 			MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize,
 			    PROT_READ);
 
-		alloc_bhp->ref = 1;
-		alloc_bhp->ref_sync = 0;
-		alloc_bhp->flags = F_ISSET(bhp, BH_DIRTY | BH_DIRTY_CREATE);
-		F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+		atomic_init(&alloc_bhp->ref, 1);
+		MUTEX_LOCK(env, alloc_bhp->mtx_buf);
 		alloc_bhp->priority = bhp->priority;
 		alloc_bhp->pgno = bhp->pgno;
+		alloc_bhp->bucket = bhp->bucket;
+		alloc_bhp->region = bhp->region;
 		alloc_bhp->mf_offset = bhp->mf_offset;
 		alloc_bhp->td_off = INVALID_ROFF;
 		if (txn != NULL &&
 		    (ret = __memp_bh_settxn(dbmp, mfp, alloc_bhp, td)) != 0)
 			goto err;
+		MVCC_MPROTECT(alloc_bhp->buf, mfp->stat.st_pagesize,
+		    PROT_READ | PROT_WRITE);
 		if (extending) {
 			memset(alloc_bhp->buf, 0, mfp->stat.st_pagesize);
 			F_SET(alloc_bhp, BH_DIRTY_CREATE);
 		} else
 			memcpy(alloc_bhp->buf, bhp->buf, mfp->stat.st_pagesize);
+		MVCC_MPROTECT(alloc_bhp->buf, mfp->stat.st_pagesize, 0);
 
+		if (h_locked == 0)
+			MUTEX_LOCK(env, hp->mtx_hash);
+		MUTEX_REQUIRED(env, hp->mtx_hash);
+		h_locked = 1;
+
+		alloc_bhp->flags = BH_EXCLUSIVE |
+		    F_ISSET(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+		F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+		DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
 		SH_CHAIN_INSERT_AFTER(bhp, alloc_bhp, vc, __bh);
 		SH_TAILQ_INSERT_BEFORE(&hp->hash_bucket,
 		    bhp, alloc_bhp, hq, __bh);
 		SH_TAILQ_REMOVE(&hp->hash_bucket, bhp, hq, __bh);
-		if (--bhp->ref == 0) {
+		MUTEX_UNLOCK(env, hp->mtx_hash);
+		h_locked = 0;
+		DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) > 0);
+		if (atomic_dec(env, &bhp->ref) == 0) {
 			bhp->priority = c_mp->lru_count;
 			MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, 0);
 		}
+		F_CLR(bhp, BH_EXCLUSIVE);
+		MUTEX_UNLOCK(env, bhp->mtx_buf);
+
 		bhp = alloc_bhp;
+		DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
+		b_incr = 1;
+		b_lock = 1;
 
 		if (alloc_bhp != oldest_bhp) {
 			MUTEX_LOCK(env, mfp->mutex);
@@ -906,27 +931,23 @@ alloc:		/*
 	    (ret = __memp_bh_settxn(dbmp, mfp, bhp, td)) != 0)
 		goto err;
 
-	if ((dirty || edit || extending) && !F_ISSET(bhp, BH_DIRTY)) {
-		DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
-		++hp->hash_page_dirty;
-		F_SET(bhp, BH_DIRTY);
-	}
-
-	/*
-	 * If we're the only reference, update buffer priority.  We may be
-	 * about to release the hash bucket lock, and everything should be
-	 * correct, first.  (We've already done this work if we created the
-	 * buffer, so there is no need to do it again.)
-	 */
-	if (state != SECOND_MISS && bhp->ref == 1) {
-		bhp->priority = UINT32_MAX;
-		if (SH_CHAIN_SINGLETON(bhp, vc)) {
-			if (bhp != SH_TAILQ_LAST(&hp->hash_bucket, hq, __bh)) {
-				SH_TAILQ_REMOVE(&hp->hash_bucket,
-				    bhp, hq, __bh);
-				SH_TAILQ_INSERT_TAIL(&hp->hash_bucket, bhp, hq);
-			}
+	if ((dirty || edit || extending)) {
+		if (!F_ISSET(bhp, BH_DIRTY)) {
+#ifdef DIAGNOSTIC
+			MUTEX_LOCK(env, hp->mtx_hash);
+#endif
+			DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
+			atomic_inc(env, &hp->hash_page_dirty);
+			MUTEX_REQUIRED(env, bhp->mtx_buf);
+			F_SET(bhp, BH_DIRTY);
+#ifdef DIAGNOSTIC
+			MUTEX_UNLOCK(env, hp->mtx_hash);
+#endif
 		}
+	} else if (F_ISSET(bhp, BH_EXCLUSIVE)) {
+		F_CLR(bhp, BH_EXCLUSIVE);
+		MUTEX_UNLOCK(env, bhp->mtx_buf);
+		MUTEX_READLOCK(env, bhp->mtx_buf);
 	}
 
 	MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, PROT_READ |
@@ -934,6 +955,7 @@ alloc:		/*
 	    PROT_WRITE : 0));
 
 #ifdef DIAGNOSTIC
+	MUTEX_LOCK(env, hp->mtx_hash);
 	{
 	BH *next_bhp = SH_CHAIN_NEXT(bhp, vc, __bh);
 
@@ -946,11 +968,12 @@ alloc:		/*
 	    (next_bhp == NULL || F_ISSET(next_bhp, BH_FROZEN) ||
 	    (next_bhp->td_off != INVALID_ROFF &&
 	    (BH_OWNER(env, next_bhp)->status != TXN_COMMITTED ||
+	    IS_ZERO_LSN(BH_OWNER(env, next_bhp)->last_lsn) ||
 	    !BH_VISIBLE(env, next_bhp, read_lsnp, vlsn))))));
 	}
+	MUTEX_UNLOCK(env, hp->mtx_hash);
 #endif
 
-	MUTEX_UNLOCK(env, hp->mtx_hash);
 	/*
 	 * Record this pin for this thread.  Holding the page pinned
 	 * without recording the pin is ok since we do not recover from
@@ -960,9 +983,13 @@ alloc:		/*
 		reginfo = env->reginfo;
 		if (ip->dbth_pincount == ip->dbth_pinmax) {
 			pinmax = ip->dbth_pinmax;
+			renv = reginfo->primary;
+			MUTEX_LOCK(env, renv->mtx_regenv);
 			if ((ret = __env_alloc(reginfo,
-			    2 * pinmax * sizeof(PIN_LIST), &list)) != 0)
+			    2 * pinmax * sizeof(PIN_LIST), &list)) != 0) {
+				MUTEX_UNLOCK(env, renv->mtx_regenv);
 				goto err;
+			}
 
 			memcpy(list, R_ADDR(reginfo, ip->dbth_pinlist),
 			    pinmax * sizeof(PIN_LIST));
@@ -973,6 +1000,7 @@ alloc:		/*
 			ip->dbth_pinlist = list_off;
 			if (list != ip->dbth_pinarray)
 				__env_alloc_free(reginfo, list);
+			MUTEX_UNLOCK(env, renv->mtx_regenv);
 		}
 		list = R_ADDR(reginfo, ip->dbth_pinlist);
 		for (lp = list; lp < &list[ip->dbth_pinmax]; lp++)
@@ -999,35 +1027,32 @@ alloc:		/*
 #endif
 
 	DB_ASSERT(env, alloc_bhp == NULL);
+	DB_ASSERT(env, !(dirty || edit || extending) ||
+	    atomic_read(&hp->hash_page_dirty) > 0);
+	DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
 
 	*(void **)addrp = bhp->buf;
 	return (0);
 
 err:	/*
 	 * Discard our reference.  If we're the only reference, discard the
-	 * the buffer entirely.  If we held a reference to a buffer, we are
-	 * also still holding the hash bucket mutex.
+	 * the buffer entirely.
 	 */
-	if (b_incr || frozen_bhp != NULL) {
-		if (!b_locked) {
-			MUTEX_LOCK(env, hp->mtx_hash);
-			b_locked = 1;
-		}
-		if (frozen_bhp != NULL)
-			--frozen_bhp->ref;
-		if (b_incr && bhp != frozen_bhp)
-			--bhp->ref;
-	}
-	if (b_locked)
+	if (frozen_bhp != NULL)
+		atomic_dec(env, &frozen_bhp->ref);
+	if (b_incr && bhp != frozen_bhp)
+		atomic_dec(env, &bhp->ref);
+
+	if (b_lock)
+		MUTEX_UNLOCK(env, bhp->mtx_buf);
+
+	if (h_locked)
 		MUTEX_UNLOCK(env, hp->mtx_hash);
 
 	/* If alloc_bhp is set, free the memory. */
-	if (alloc_bhp != NULL) {
-		MPOOL_REGION_LOCK(env, infop);
-		__memp_free(infop, mfp, alloc_bhp);
-		c_mp->stat.st_pages--;
-		MPOOL_REGION_UNLOCK(env, infop);
-	}
+	if (alloc_bhp != NULL)
+		(void)__memp_bhfree(dbmp, infop, NULL,
+		     NULL, alloc_bhp, BH_FREE_FREEMEM | BH_FREE_UNLOCKED);
 
 	return (ret);
 }

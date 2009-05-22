@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.build,v 12.10 2007/05/21 13:14:20 bostic Exp $
+# $Id$
 #
 # Build a program that calls the run-time API configuration functions.
 

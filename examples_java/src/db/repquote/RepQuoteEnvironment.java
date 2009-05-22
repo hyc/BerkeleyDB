@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1997-2009 Oracle.  All rights reserved.
  *
- * $Id: RepQuoteEnvironment.java,v 1.6 2008/01/08 20:58:32 bostic Exp $
+ * $Id$
  */
 
 package db.repquote;
@@ -17,6 +17,9 @@ import com.sleepycat.db.*;
  */
 public class RepQuoteEnvironment extends Environment
 {
+    private boolean appointedClientInit;
+    private boolean appFinished;
+    private boolean inClientSync;
     private boolean isMaster;
 
     public RepQuoteEnvironment(final java.io.File host,
@@ -24,14 +27,40 @@ public class RepQuoteEnvironment extends Environment
         throws DatabaseException, java.io.FileNotFoundException
     {
         super(host, config);
+        appointedClientInit = false;
+        appFinished = false;
+        inClientSync = false;
         isMaster = false;
     }
 
+    boolean getAppointedClientInit()
+    {
+        return appointedClientInit;
+    }
+    public void setAppointedClientInit(boolean appointedClientInit)
+    {
+        this.appointedClientInit = appointedClientInit;
+    }
+    boolean getAppFinished()
+    {
+        return appFinished;
+    }
+    public void setAppFinished(boolean appFinished)
+    {
+        this.appFinished = appFinished;
+    }
+    boolean getInClientSync()
+    {
+        return inClientSync;
+    }
+    public void setInClientSync(boolean inClientSync)
+    {
+        this.inClientSync = inClientSync;
+    }
     boolean getIsMaster()
     {
         return isMaster;
     }
-
     public void setIsMaster(boolean isMaster)
     {
         this.isMaster = isMaster;

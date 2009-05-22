@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Using transactions in dbstl</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_db_advanced_usage.html" title="Using Advanced Berkeley DB Features with Dbstl" />
+    <link rel="next" href="stl_mt_usage.html" title="Using dbstl in multithreaded application" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Using transactions in dbstl</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_db_advanced_usage.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_mt_usage.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_txn_usage"></a>Using transactions in dbstl</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+Using transactions
+
+When using transactions, you must call dbstl::begin_txn/commit_txn/abort_txn global functions
+rather than the DB C/C++ transaction API, to begin/commit/abort a transaction, 
+
+</p>
+      <p>
+You can configure a container to
+be auto commit by setting DB_AUTOCOMMIT flag to the environment or database handle,
+just like how you do it using C/C++ API. In this case any auto commit method 
+of a container definitely forms an independent transaction if the container is 
+configured to be auto commit AND there is no external transaction created; If there
+is external transaction started, it will be part of that transaction.
+
+</p>
+      <p>
+You can configure the flag used when creating and committing an auto commit transaction 
+inside an dbstl container method, by calling db_container::set_txn_begin_flags()
+and db_container::set_commit_flags().
+
+</p>
+      <p>
+
+Before transaction commit/abort, the 
+cursors opened in this transaction context will be automatically closed, and 
+the iterators opened within this transaction context are not supposed to be 
+used after the transaction commit/abort. 
+</p>
+      <p>
+You can use nested transactions explicitly and externally, by calling 
+dbstl::begin_txn() in a context already having a transaction. But you can not
+choose which transaction is the parent transaction, the parent transaction
+is definitely the one most recently created and unresolved one.
+</p>
+      <p>
+It is also OK to use explicit transactions to a container configured to be 
+auto commit and in this case this auto commit method is part of the external 
+transaction, this semantic is identical to that of Berkeley DB C/C++ API.
+</p>
+      <p>
+You can't share transactions or iterators among multiple threads; 
+
+</p>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_db_advanced_usage.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_mt_usage.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Using Advanced Berkeley DB Features with Dbstl </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Using dbstl in multithreaded application</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

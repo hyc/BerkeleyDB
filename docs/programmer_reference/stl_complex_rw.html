@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Store and Retrieve data or objects of complex types</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_primitive_rw.html" title="Store and Retrieve data of primitive types" />
+    <link rel="next" href="stl_persistence.html" title="Dbstl Persistence" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Store and Retrieve data or objects of complex types </th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_primitive_rw.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_persistence.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_complex_rw"></a>Store and Retrieve data or objects of complex types </h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="stl_complex_rw.html#id1592077">
+Storing Varying Length Objects
+</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_complex_rw.html#id1591849">
+Storing Arbitrary Sequences.
+
+</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_complex_rw.html#id1592519">Notes
+	</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592077"></a>
+Storing Varying Length Objects
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+
+If you have a structure like this: 
+</p>
+        <pre class="programlisting">
+
+class SMSMsg
+{
+public:
+	size_t mysize;
+	time_t when;
+	size_t szmsg;
+	int to;
+	char msg[1];
+};
+
+</pre>
+        <p>
+And the msg is a varying length string, and you want to store it into 
+a db_vector container, you can't simply use a db_vector&lt;SMSMsg&gt; without any
+configurations to store this type of objects because internally dbstl by default 
+uses sizeof operator to get the size of an object and uses memcpy to copy
+objects, which is not suitable for this usecase.
+
+There is example code to use this feature in TestAssoc::test_arbitrary_object_storage
+method of dbstl test suite.
+</p>
+        <p>
+There are currently two ways to store this kind of objects:
+</p>
+        <p>
+1. Register callback functions into dbstl to measure object size, and do marshal/un-marshal.
+
+</p>
+        <p>
+You need to register the three function callbacks of these types:
+</p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+typedef void (*ElemRstoreFunct)(T&amp; dest, const void *srcdata);
+	</p>
+              <p>
+Your callback of this type should update dest using data in srcdata, i.e. unmarshalling. 
+srcdata contains the chunk of memory that an object of type T resides in, which
+was marshalled by the ElemCopyFunct type of function below.
+By default we use dest = *((T*)srcdata); to do the assignment, assuming the chunk of
+memory is just the memory layout of the object.
+
+	</p>
+            </li>
+            <li>
+              <p>
+typedef size_t (*ElemSizeFunct)(const T&amp; elem);
+</p>
+              <p>
+Your callback of this type should measure the size in bytes of object elem's 
+parts to be stored, and return it.
+By default we use sizeof(elem) to calculate.
+
+</p>
+            </li>
+            <li>
+              <p>
+typedef void (*ElemCopyFunct)(void *dest, const T&amp;elem);
+</p>
+              <p>
+Your callback of this type should arrange all data of elem to be stored into
+the chunk of memory refered by dest. That memory is big enough because it
+is computed calling your registered size function in item b.
+By default we use memcpy(dest, &amp;elem, sizeof(elem)); to copy.
+
+</p>
+            </li>
+          </ul>
+        </div>
+        <p>
+If any of the three types of callbacks are not registered, the default version
+is used. You need to call 
+DbstlElemTraits&lt;T&gt;::instance()-&gt;set_size_function()/set_copy_function()/
+set_restore_function() to register these callbacks.
+
+</p>
+        <p>
+This technique can be used to store objects of varying length and/or objects
+which don't reside in a consecutive chunk of memory, e.g. objects containing
+a pointer which refers another object or a string, etc. And if you use this
+technique, you can use the container/iterator in exactly the same way as
+the plain objects which reside on consecutive chunk of memory and are of identical size.
+</p>
+        <p>
+2. Use a DbstlDbt wrapper object 
+
+</p>
+        <p>
+In this case, when you want to store into db_vector, you need a 
+db_vector&lt;DbstlDbt&gt; container. 
+
+DbstlDbt derives from DB C++ API's Dbt class, but it can manage its referenced 
+memory properly and release it upon destruction, the memory it references is 
+supposed to be allocated via malloc/relloc functions.
+</p>
+        <p>
+Note that this way is not the best way, it exists only as an ultimate way to store 
+any chunk of bytes, since it falls back to the old way to store objects --- by packing an
+object into a Dbt object and pass the Dbt wrapper object to Berkeley DB API. When you are
+storing some raw bytes of no type, e.g. a bitmap, you may choose to use this 
+way to store the bytes.
+ 
+</p>
+        <p>
+Say you want to store an SMSMsg object into a db_vector&lt;SMSMsg&gt; container, 
+here is what you need to do:
+</p>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>	
+Wrap the SMSMsg object into a DbstlDbt object.
+
+</li>
+            <li>	
+Store the DbstlDbt object into db_vector&lt;DbstlDbt&gt; container. 
+			
+</li>
+            <li>	
+When reading from the 
+container, you are storing/retrieving a DbstlDbt object, whose "data" field points
+to the SMSMsg object located in a consecutive chunk of memory. So you have to
+unmalshal this chunk of memory into an SMSMsg object by yourself. 
+
+</li>
+            <li>	
+The memory referenced by DbstlDbt::data will
+be free'ed automatically, don't free them by yourself.
+</li>
+          </ol>
+        </div>
+        <p>
+Do not use ElementHolder when you want to store objects of a class, otherwise you
+can't access the members of the object via (*iter).member or iter-&gt;member expressions.
+In this case don't specify the second type parameter at all, and thus the default
+ElementRef&lt;ddt&gt; will be used. 
+</p>
+        <p>
+ElementRef inherits from ddt, so you can use the above 
+expressions to access the stored objects' members, and use *iter just as if it is 
+the object you stored(actually it is ElementRef&lt;ddt&gt; object, whose "base class" part
+is the object you stored). There are a few data members and member functions in 
+ElementRef, which all start with "_DB_STL_" to avoid name clashes, thus do not 
+use names prefixing "_DB_STL" in your
+classes whose instances may be stored into dbstl containers, in
+case members in your class clashes with those of ElementRef.
+</p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1591849"></a>
+Storing Arbitrary Sequences.
+
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+You are able to store other types of sequence structured just like a char* string or 
+wchar_t* string. 
+
+</p>
+        <p>
+For example, you have a type RGB:
+
+struct RGB{char r, g, b, bright;}; 
+
+and an array of RGB objects : RGB rgbs[32]; 
+and you want to store an array into one key/data pair of a db_map container.
+
+</p>
+        <p>
+Following is what you need to do:
+</p>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+Use a db_map&lt;int, RGB *, ElementHolder&lt;RGB *&gt; &gt; type of container.
+</li>
+            <li>
+Define two functions of type 
+<p>
+typedef size_t (*SequenceLenFunct)(const RGB*); and 
+
+</p><p>
+A SequenceLenFunct function is a function that returns the number of objects
+in the sequence. It is called when inserting into or reading from the database, 
+so there must be enough information in the sequence itself to enable 
+SequenceLenFunct function to tell how many objects are in the sequence. 
+The char* and wchar_t* strings uses a '\0' special character to do this,
+I will use a RGB(0, 0, 0, 0) to denote the end of the sequence.
+
+</p><p>
+typedef void (*SequenceCopyFunct)(RGB*dest, const RGB*src); 
+</p><p>
+SequenceCopyFunct is a function that copies objects from sequence src into
+memory chunk dest. The objects will reside on the consecutive memory chunk
+refered by dest and dest is large enough because we called the SequenceLenFunct
+function and optionally ElemSizeFunct function to determine the size in bytes of
+an instance of the sequence base type, but not needed in this example because RGB
+is a simple fixed length type to get needed memory size.
+</p></li>
+            <li>
+Call DbstlElemTraits&lt;RGB&gt;::set_sequence_len_function()/set_sequence_copy_function()
+to register them as callbacks. 
+</li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592519"></a>Notes
+	</h3>
+            </div>
+          </div>
+        </div>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+Note the get and set functions of this class are not
+protected by any mutices, so when you are using multiple threads to
+access the function pointers, you must make sure the callback functions are registered to
+the singleton of this class before any retrieval of the callback function pointers, and
+certain isolation may be required among multiple threads. The best way is to register
+all callback funciton pointers in a single thread before making use of the any containers.
+</p>
+            </li>
+            <li>
+              <p>
+If an object in this sequence is not of identical sizes, or
+is not located in a consecutive chunk of memory, I also need to register the 
+DbstlElemTraits&lt;RGB&gt;::ElemSizeFunct type of function to measure one 
+object size. And if this size function is set, it will also be used when
+allocating memory space.
+
+There is example code to use this feature in TestAssoc::test_arbitray_sequence_storage of 
+dbstl test suite.
+
+</p>
+            </li>
+            <li>
+              <p>
+A consequence of this capability of dbstl is that user can't store any pointer 
+value itself directly, dbstl will think it is a sequence head pointer, user needs to 
+convert pointer into long type and store it into a long type of container. And
+please note that storing pointer values is meaningless if the stored data is
+to be used across different runs of your application.
+
+</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_primitive_rw.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_persistence.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Store and Retrieve data of primitive types  </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Dbstl Persistence</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

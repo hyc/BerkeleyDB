@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2000-2009 Oracle.  All rights reserved.
  *
- * $Id: SerialBinding.java,v 12.9 2008/02/07 17:12:25 mark Exp $
+ * $Id$
  */
 
 package com.sleepycat.bind.serial;

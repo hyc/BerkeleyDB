@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Chapter 6.  The db_multimap Class</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
+    <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
+    <link rel="prev" href="stldb_mapoperator_ueq.html" title="operator!=" />
+    <link rel="next" href="stldb_multimapdb_multimap.html" title="db_multimap" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Chapter 6. 
+ The db_multimap Class</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stldb_mapoperator_ueq.html">Prev</a> </td>
+          <th width="60%" align="center"> </th>
+          <td width="20%" align="right"> <a accesskey="n" href="stldb_multimapdb_multimap.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="chapter" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title"><a id="db_multimap"></a>Chapter 6. 
+ The db_multimap Class</h2>
+          </div>
+        </div>
+      </div>
+      <p>This class is the combination of std::multimap and hash_multimap. </p>
+      <p>By setting database handles as DB_BTREE or DB_HASH type respectively, you will be using an equivalent of std::multimap or hash_multimap respectively. Database(dbp) and environment(penv) handle requirement: The dbp handle must meet the following requirement: 1. Database type should be DB_BTREE or DB_HASH. 2. Either DB_DUP or DB_DUPSORT flag must be set. Note that so far Berkeley DB does not allow DB_DUPSORT be set and the database is storing identical key/data pairs, i.e. we can't store two (1, 2), (1, 2) pairs into a database D with DB_DUPSORT flag set, but only can do so with DB_DUP flag set; But we can store a (1, 2) pair and a (1, 3) pair into D with DB_DUPSORT flag set. So if your data set allows DB_DUPSORT flag, you should set it to gain a lot of performance promotion. 3. No DB_RECNUM flag set. 4. No DB_TRUNCATE specified in database open flags. 5. DB_THREAD must be set if you are sharing the database handle across multiple threads directly, or indirectly by sharing the container object across multiple threads. </p>
+      <h4><a id="id1562640"></a>
+See Also
+</h4>
+      <p> </p>
+      <p><a class="link" href="db_container.html" title="Chapter 3.  The db_container Class">db_container</a>
+ <a class="link" href="db_map.html" title="Chapter 5.  The db_map Class">db_map</a>
+ </p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="db_multimap_class"></a> db_multimap</h2>
+            </div>
+          </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1563053"></a>
+Class Template Parameters</h3>
+              </div>
+            </div>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1563065"></a>
+kdt</h4>
+                </div>
+              </div>
+            </div>
+            <p>The key data type. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1563093"></a>
+ddt</h4>
+                </div>
+              </div>
+            </div>
+            <p>The data data type. <a class="link" href="db_multimap.html" title="Chapter 6.  The db_multimap Class">db_multimap</a>
+ stores key/data pairs. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1563292"></a>
+value_type_sub</h4>
+                </div>
+              </div>
+            </div>
+            <p>Do not specify anything if ddt type is a class/struct type; Otherwise, specify ElementHolder&lt;ddt&gt; to it. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1563228"></a>
+iterator_t</h4>
+                </div>
+              </div>
+            </div>
+            <p>Never specify anything to this type parameter. It is only used internally. </p>
+          </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1563094"></a>
+Group</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+<a class="xref" href="dbstl_containers.html" title="Chapter 2.  The dbstl_containers Class">
+ The dbstl_containers Class</a>
+</p>
+          <p>
+</p>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1562937"></a>
+  Public Members</h3>
+              </div>
+            </div>
+          </div>
+          <div class="informaltable">
+            <table border="1" width="80%">
+              <colgroup>
+                <col />
+                <col />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapdb_multimap.html" title="db_multimap">
+db_multimap
+</a>
+</td>
+                  <td>
+   </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapdstr_db_multimap.html" title="~db_multimap">
+~db_multimap
+</a>
+</td>
+                  <td>
+   </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapinsert.html" title="insert">
+insert
+</a>
+</td>
+                  <td>
+   <p>Range insertion. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimaperase.html" title="erase">
+erase
+</a>
+</td>
+                  <td>
+   <p>Erase elements by key. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapequal_range.html" title="equal_range">
+equal_range
+</a>
+</td>
+                  <td>
+   <p>Find the range within which all keys equal to specified key x. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapequal_range_N.html" title="equal_range_N">
+equal_range_N
+</a>
+</td>
+                  <td>
+   <p>Find equal range and number of key/data pairs in the range. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapcount.html" title="count">
+count
+</a>
+</td>
+                  <td>
+   <p>Count the number of key/data pairs having specified key x. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapupper_bound.html" title="upper_bound">
+upper_bound
+</a>
+</td>
+                  <td>
+   <p>Find the least key greater than x. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapoperator_assign.html" title="operator=">
+operator=
+</a>
+</td>
+                  <td>
+   <p>Container content assignment operator. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapswap.html" title="swap">
+swap
+</a>
+</td>
+                  <td>
+   <p>Swap content with another multimap container. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapoperator_eq.html" title="operator==">
+operator==
+</a>
+</td>
+                  <td>
+   <p>Returns whether the two containers have identical content. </p>        </td>
+                </tr>
+                <tr>
+                  <td>
+<a class="xref" href="stldb_multimapoperator_ueq.html" title="operator!=">
+operator!=
+</a>
+</td>
+                  <td>
+   <p>Container unequality comparison operator. </p>        </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stldb_mapoperator_ueq.html">Prev</a> </td>
+          <td width="20%" align="center"> </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stldb_multimapdb_multimap.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">
+operator!=
+ </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> 
+db_multimap
+</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

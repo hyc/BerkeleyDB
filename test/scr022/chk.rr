@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.rr,v 12.2 2008/05/07 12:47:06 bschmeck Exp $
+# $Id$
 
 d=../..
 

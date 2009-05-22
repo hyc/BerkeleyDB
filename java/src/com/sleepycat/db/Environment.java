@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: Environment.java,v 12.26 2008/04/02 13:43:38 bschmeck Exp $
+ * $Id$
  */
 
 package com.sleepycat.db;
@@ -884,13 +884,13 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     }
 
     /**
-    Set the network timeout applied to the specified timeout type.
+    Sets the timeout applied to the specified timeout type.
     This method may be called at any time during the life of the application.
     @param type
-    The type of timeout to retrieve.
+    The type of timeout to set.
     <p>
     @param replicationTimeout
-    The time in milliseconds of the desired timeout.
+    The time in microseconds of the desired timeout.
     **/
     public void setReplicationTimeout(
         final ReplicationTimeoutType type, final int replicationTimeout)
@@ -900,12 +900,12 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     }
 
     /**
-    Get the network timeout applied to the specified timeout type.
+    Gets the timeout applied to the specified timeout type.
     @param type
     The type of timeout to retrieve.
     <p>
     @return
-    The network timeout applied to the specified timout type.
+    The timeout applied to the specified timout type, in microseconds.
     <p>
     <p>
 @throws DatabaseException if a failure occurs.

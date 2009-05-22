@@ -242,7 +242,7 @@ __db_addrem_log(dbp, txnp, ret_lsnp, flags,
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, pagelsn) != 0))
+			    __log_check_page_lsn(env, dbp, pagelsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, pagelsn);
@@ -523,7 +523,7 @@ __db_big_log(dbp, txnp, ret_lsnp, flags,
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(pagelsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, pagelsn) != 0))
+			    __log_check_page_lsn(env, dbp, pagelsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, pagelsn);
@@ -535,7 +535,7 @@ __db_big_log(dbp, txnp, ret_lsnp, flags,
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(prevlsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, prevlsn) != 0))
+			    __log_check_page_lsn(env, dbp, prevlsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, prevlsn);
@@ -547,7 +547,7 @@ __db_big_log(dbp, txnp, ret_lsnp, flags,
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(nextlsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, nextlsn) != 0))
+			    __log_check_page_lsn(env, dbp, nextlsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, nextlsn);
@@ -778,7 +778,7 @@ __db_ovref_log(dbp, txnp, ret_lsnp, flags, pgno, adjust, lsn)
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, lsn) != 0))
+			    __log_check_page_lsn(env, dbp, lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, lsn);
@@ -995,8 +995,6 @@ __db_debug_log(env, txnp, ret_lsnp, flags,
 	ret = 0;
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE)) {
-		if (txnp == NULL)
-			return (0);
 		if (txnp == NULL)
 			return (0);
 		is_durable = 0;
@@ -1314,7 +1312,7 @@ __db_noop_log(dbp, txnp, ret_lsnp, flags, pgno, prevlsn)
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(prevlsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, prevlsn) != 0))
+			    __log_check_page_lsn(env, dbp, prevlsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, prevlsn);
@@ -1629,7 +1627,7 @@ __db_pg_alloc_log(dbp, txnp, ret_lsnp, flags, meta_lsn, meta_pgno, page_lsn, pgn
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(meta_lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, meta_lsn) != 0))
+			    __log_check_page_lsn(env, dbp, meta_lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, meta_lsn);
@@ -1645,7 +1643,7 @@ __db_pg_alloc_log(dbp, txnp, ret_lsnp, flags, meta_lsn, meta_pgno, page_lsn, pgn
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(page_lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, page_lsn) != 0))
+			    __log_check_page_lsn(env, dbp, page_lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, page_lsn);
@@ -1983,7 +1981,7 @@ __db_pg_free_log(dbp, txnp, ret_lsnp, flags, pgno, meta_lsn, meta_pgno, header, 
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(meta_lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, meta_lsn) != 0))
+			    __log_check_page_lsn(env, dbp, meta_lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, meta_lsn);
@@ -2122,8 +2120,6 @@ __db_cksum_log(env, txnp, ret_lsnp, flags)
 	ret = 0;
 
 	if (LF_ISSET(DB_LOG_NOT_DURABLE)) {
-		if (txnp == NULL)
-			return (0);
 		if (txnp == NULL)
 			return (0);
 		is_durable = 0;
@@ -2516,7 +2512,7 @@ __db_pg_freedata_log(dbp, txnp, ret_lsnp, flags, pgno, meta_lsn, meta_pgno, head
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(meta_lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, meta_lsn) != 0))
+			    __log_check_page_lsn(env, dbp, meta_lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, meta_lsn);
@@ -3059,7 +3055,7 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(meta_lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, meta_lsn) != 0))
+			    __log_check_page_lsn(env, dbp, meta_lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, meta_lsn);
@@ -3075,7 +3071,7 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 		if (txnp != NULL) {
 			LOG *lp = env->lg_handle->reginfo.primary;
 			if (LOG_COMPARE(last_lsn, &lp->lsn) >= 0 && (ret =
-			    __log_check_page_lsn(env, dbp, last_lsn) != 0))
+			    __log_check_page_lsn(env, dbp, last_lsn)) != 0)
 				return (ret);
 		}
 		LOGCOPY_FROMLSN(env, bp, last_lsn);

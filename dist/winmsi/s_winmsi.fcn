@@ -1,4 +1,4 @@
-#	$Id: s_winmsi.fcn,v 1.15 2008/04/17 01:59:10 alexg Exp $
+#	$Id$
 #
 # The common functions used by the s_winmsi scripts (both
 # for core DB and DB/XML).
@@ -16,6 +16,7 @@
 #   PRODUCT_MINOR        - e.g. "1", (for release 4.1.25) from dist/RELEASE
 #   PRODUCT_PATCH        - e.g. "25", (for release 4.1.25) from dist/RELEASE
 #   PRODUCT_MAJMIN       - e.g. "41", (for release 4.1.25) from dist/RELEASE
+#   PRODUCT_MSVC_VERSION - e.g. "71" for Visual Studio 7, "80" for VS 8
 #   PRODUCT_STAGE        - the staging directory for temp files and builds
 #   PRODUCT_LICENSEDIR   - the tree containing LICENSE and README
 #   PRODUCT_SUB_BLDDIR  - top of the subproduct build e.g. "dbxml-2.0.1/dbxml"
@@ -957,6 +958,7 @@ CleanInputFile() {
         -e 's:\${PRODUCT_MINOR}:'"${PRODUCT_MINOR}":g \
         -e 's:\${PRODUCT_PATCH}:'"${PRODUCT_PATCH}":g \
         -e 's:\${PRODUCT_MAJMIN}:'"${PRODUCT_MAJMIN}":g \
+        -e 's:\${PRODUCT_MSVC_VERSION}:'"${PRODUCT_MSVC_VERSION}":g \
         -e 's:\${PRODUCT_STAGE}:'"${PRODUCT_STAGE}":g \
 	-e 's:\${PRODUCT_SHARED_WINMSIDIR}:'"${PRODUCT_SHARED_WINMSIDIR}":g \
         -e 's/^[\r \t]*$//' \
@@ -1194,7 +1196,7 @@ CreateDbPerl() {
 
     Progress "building perl"
     cd ../perl/BerkeleyDB
-    BERKELEYDB_INCLUDE="$insdir/installed_include" BERKELEYDB_LIB="$insdir/lib" \
+    BERKELEYDB_INCLUDE="$insdir/include" BERKELEYDB_LIB="$insdir/lib" \
          perl Makefile.PL >>$ERRORLOG   || exit 1
     make >>$ERRORLOG
     cd $here
@@ -1207,10 +1209,11 @@ CreateWindowsSystem() {
     local here=`pwd`
     Progress "Copy Window system files..."
     cd "${PRODUCT_SUB_BLDDIR}"
-    cp -f $SYSTEMROOT/system32/msvcr71.dll  build_windows/Release/ || exit 1
-    cp -f $SYSTEMROOT/system32/msvcp71.dll  build_windows/Release/ || exit 1
-    cp -f $SYSTEMROOT/system32/msvcr71.dll build_windows/Debug/ || exit 1
-    cp -f $SYSTEMROOT/system32/msvcp71.dll build_windows/Debug/ || exit 1
+
+    cp -f $SYSTEMROOT/system32/msvcr$PRODUCT_MSVC_VERSION.dll  build_windows/Release/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcp$PRODUCT_MSVC_VERSION.dll  build_windows/Release/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcr$PRODUCT_MSVC_VERSION.dll build_windows/Debug/ || exit 1
+    cp -f $SYSTEMROOT/system32/msvcp$PRODUCT_MSVC_VERSION.dll build_windows/Debug/ || exit 1
     cd $here
 }
 

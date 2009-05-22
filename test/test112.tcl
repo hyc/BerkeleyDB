@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005,2008 Oracle.  All rights reserved.
+# Copyright (c) 2005-2009 Oracle.  All rights reserved.
 #
-# $Id: test112.tcl,v 12.14 2008/01/08 20:58:53 bostic Exp $
+# $Id$
 #
 # TEST	test112
 # TEST	Test database compaction with a deep tree.
@@ -36,6 +36,11 @@ proc test112 { method {nentries 80000} {tnum "112"} args } {
 
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
+	if  { [is_partition_callback $args] == 1 } {
+		set nodump 1
+	} else {
+		set nodump 0
+	}
 
 	# If we are using an env, then testfile should just be the db name.
 	# Otherwise it is the test directory and the name.
@@ -135,14 +140,17 @@ proc test112 { method {nentries 80000} {tnum "112"} args } {
 	puts "\tTest$tnum.d: Compact database."
 	set ret [$db compact -freespace]
 	error_check_good db_sync [$db sync] 0
-	error_check_good verify_dir [verify_dir $testdir] 0
+	error_check_good verify_dir [ verify_dir $testdir "" 0 0 $nodump] 0
 
 	set size2 [file size $filename]
 	set free2 [stat_field $db stat "Pages on freelist"]
 
 	# The on-disk file size should be significantly smaller.
+#### We should look at the partitioned files #####
+if { [is_partitioned $args] == 0 } {
 	set reduction .80
 	error_check_good file_size [expr [expr $size1 * $reduction] > $size2] 1
+}
 
 	# Pages should be freed for all methods except maybe
 	# record-based non-queue methods.  Even with recno, the
@@ -219,12 +227,15 @@ proc test112 { method {nentries 80000} {tnum "112"} args } {
 	puts "\tTest$tnum.i: Compact database again."
 	set ret [$db compact -freespace]
 	error_check_good db_sync [$db sync] 0
-	error_check_good verify_dir [verify_dir $testdir] 0
+	error_check_good verify_dir [ verify_dir $testdir "" 0 0 $nodump] 0
 
 	set size4 [file size $filename]
 	set free4 [stat_field $db stat "Pages on freelist"]
 
+#### We should look at the partitioned files #####
+if { [is_partitioned $args] == 0 } {
 	error_check_good file_size [expr [expr $size3 * $reduction] > $size4] 1
+}
 	if { [is_record_based $method] == 1 } {
 		error_check_good pages_freed [expr $free4 >= $free3] 1
 	} else {

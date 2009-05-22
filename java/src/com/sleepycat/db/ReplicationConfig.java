@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: ReplicationConfig.java,v 12.13 2008/04/23 17:20:53 bschmeck Exp $
+ * $Id$
  */
 
 package com.sleepycat.db;
@@ -30,6 +30,13 @@ public final class ReplicationConfig implements Cloneable {
     **/
     public static final ReplicationConfig DELAYCLIENT =
       new ReplicationConfig("DELAYCLIENT", DbConstants.DB_REP_CONF_DELAYCLIENT);
+
+    /**
+    The client should keep all replication related information in memory
+    (defaults to off).
+    **/
+    public static final ReplicationConfig INMEM =
+      new ReplicationConfig("INMEM", DbConstants.DB_REP_CONF_INMEM);
 
     /**
     The replication master should not automatically re-initialize outdated
@@ -78,6 +85,8 @@ public final class ReplicationConfig implements Cloneable {
             return BULK;
         case DbConstants.DB_REP_CONF_DELAYCLIENT:
             return DELAYCLIENT;
+        case DbConstants.DB_REP_CONF_INMEM:
+            return INMEM;
         case DbConstants.DB_REP_CONF_NOAUTOINIT:
             return NOAUTOINIT;
         case DbConstants.DB_REP_CONF_NOWAIT:

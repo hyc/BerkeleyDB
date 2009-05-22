@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Dbstl Miscellaneous Notes</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_memory_mgmt.html" title="Dbstl Memory Management" />
+    <link rel="next" href="stl_known_issues.html" title="Dbstl Known Issues" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Dbstl Miscellaneous Notes</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_memory_mgmt.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_known_issues.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_misc"></a>Dbstl Miscellaneous Notes</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="stl_misc.html#id1592268">
+Special notes about trivial methods
+		
+	</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_misc.html#id1592089">
+
+Updating Keys in db_set/db_multiset
+
+	</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_misc.html#id1592190">
+Using Correct Container and Iterator Public Types
+
+	</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592268"></a>
+Special notes about trivial methods
+		
+	</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+There are also some methods which are meaningless in dbstl but they 
+are still kept there doing nothing, to keep consistent to C++ STL 
+specifications, such as 
+
+	</p>
+        <p>
+db_vecter::reserve(), db_vector::max_size(), db_vector::capacity, 
+db_map::reserve(), 
+db_map::max_size(), etc;
+
+	</p>
+        <p>
+Note that db_vector&lt;&gt;::max_size() and db_map&lt;&gt;::max_size() returns 2^30, it is
+not because Berkeley DB can only hold that much, but to conform to some
+compiler's overflow rules---if we set bigger numbers like 2^32 or 2^31, some
+compilers complains that the number is overflown. 
+
+	</p>
+        <p>
+See the Berkeley DB 
+documentation for database limitations, in which you will know how much
+data a database can store.
+ 
+	</p>
+        <p>
+There are also some read-only functions---you set the configuration via Berkeley DB API, and you can 
+get them via the container's methods, so as to keep consistent with C++ STL 
+containers, e.g. 
+	</p>
+        <p>
+db_map::key_comp(), 
+db_map::value_comp(), 
+db_map:;hash_funct(), 
+db_map::key_eq(), etc. 
+
+	</p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592089"></a>
+
+Updating Keys in db_set/db_multiset
+
+	</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+According to stl specification it is not allowed to mutate a set's keys, and in
+dbstl you may do so cautiously---There is a limitation when doing so,
+take db_set as an example, in db_set&lt;&gt;, we have iterator itr sitting on a valid
+key K0 now, then we execute this statement: *itr = value; This statement
+will invalidate the itr, making it sit on an invalid position, you need to 
+move it to next element like this: ++itr or itr++, so that it now sits on the
+least key K greater than K0, and K may be a new key you want to store into the 
+db_set via the assignments, meaning your updates may get lost. 
+
+	</p>
+        <p>
+Also, in the following loop:
+
+	</p>
+        <pre class="programlisting">
+		
+for (itr = myset.begin(), i = 0; itr != myset.end(); ++itr, i++) {
+	*itr = array[i];
+	// cout&lt;&lt;*itr; This is not allowed because itr is now sitting on an invalid key.
+}
+	
+</pre>
+        <p>
+</p>
+        <p>
+The loop may go more times than the number of elements in myset because itr's position
+is not uni-directional, it always goes to the least key greater than K0.
+	</p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592190"></a>
+Using Correct Container and Iterator Public Types
+
+	</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+There are all public types defined by the c++ stl specification in dbstl, and there are more. One thing to note
+is the "value_type". dbstl defines the value_type of each iterator and container class to be the raw type without
+the ElementRef/ElementHolder wrapper, so this type of variable can't be used to store data into database; And
+there is a "value_type_wrap" type for each container and iterator type, with the raw type wrapped by the 
+ElementRef/ElementHolder.
+
+	</p>
+        <p>
+For example, when we have type int_vector_t defined as db_vector&lt;int, ElementHolder&lt;int&gt; &gt;,  its value_type is
+int, its value_type_wrap is ElementHolder&lt;int&gt;, and its reference and pointer types are ElementHolder&lt;int&gt;&amp; and
+ElementHolder&lt;int&gt;* respectively. And if you need to store data, you need the value_type_wrap to make use of
+the wrapper to store data into database.
+
+	</p>
+        <p>
+The reason we leave value_type as the raw type is that we want the existing algorithms in stl library to work
+with dbstl, and we have seen that without doing so, a few algorithms will fail.
+
+	</p>
+        <p>
+You need to use the same type as the return type of data element retrieval functions to hold its value in order
+to properly manipulate the data element. For example, when calling db_vector&lt;T&gt;::operator[], we check out that the
+return type for this function is db_vector&lt;T&gt;::datatype_wrap, then we must hold its return value using an object
+of type db_vector&lt;T&gt;::datatype_wrap refelem = vctr[3];
+
+	</p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_memory_mgmt.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_known_issues.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Dbstl Memory Management </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Dbstl Known Issues</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

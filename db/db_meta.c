@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -38,7 +38,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: db_meta.c,v 12.58 2008/05/07 12:27:32 bschmeck Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -49,6 +49,7 @@
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 #include "dbinc/db_am.h"
+#include "dbinc/hash.h"
 
 static void __db_init_meta __P((DB *, void *, db_pgno_t, u_int32_t));
 #ifdef HAVE_FTRUNCATE
@@ -89,12 +90,13 @@ __db_init_meta(dbp, p, pgno, pgtype)
  * __db_new --
  *	Get a new page, preferably from the freelist.
  *
- * PUBLIC: int __db_new __P((DBC *, u_int32_t, PAGE **));
+ * PUBLIC: int __db_new __P((DBC *, u_int32_t, DB_LOCK *, PAGE **));
  */
 int
-__db_new(dbc, type, pagepp)
+__db_new(dbc, type, lockp, pagepp)
 	DBC *dbc;
 	u_int32_t type;
+	DB_LOCK *lockp;
 	PAGE **pagepp;
 {
 	DB *dbp;
@@ -105,7 +107,7 @@ __db_new(dbc, type, pagepp)
 	ENV *env;
 	PAGE *h;
 	db_pgno_t last, *list, pgno, newnext;
-	int extend, ret, t_ret;
+	int extend, hash, ret, t_ret;
 
 	meta = NULL;
 	dbp = dbc->dbp;
@@ -113,14 +115,31 @@ __db_new(dbc, type, pagepp)
 	mpf = dbp->mpf;
 	h = NULL;
 	newnext = PGNO_INVALID;
+	if (lockp != NULL)
+		LOCK_INIT(*lockp);
 
-	pgno = PGNO_BASE_MD;
-	if ((ret = __db_lget(dbc,
-	    LCK_ALWAYS, pgno, DB_LOCK_WRITE, 0, &metalock)) != 0)
-		goto err;
-	if ((ret = __memp_fget(mpf, &pgno, dbc->thread_info, dbc->txn,
-	    DB_MPOOL_DIRTY, &meta)) != 0)
-		goto err;
+	hash = 0;
+	ret = 0;
+	LOCK_INIT(metalock);
+
+#ifdef HAVE_HASH
+	if (dbp->type == DB_HASH) {
+		if ((ret = __ham_return_meta(dbc, DB_MPOOL_DIRTY, &meta)) != 0)
+			goto err;
+		if (meta != NULL)
+			hash = 1;
+	}
+#endif
+	if (meta == NULL) {
+		pgno = PGNO_BASE_MD;
+		if ((ret = __db_lget(dbc,
+		    LCK_ALWAYS, pgno, DB_LOCK_WRITE, 0, &metalock)) != 0)
+			goto err;
+		if ((ret = __memp_fget(mpf, &pgno, dbc->thread_info, dbc->txn,
+		    DB_MPOOL_DIRTY, &meta)) != 0)
+			goto err;
+	}
+
 	last = meta->last_pgno;
 	if (meta->free == PGNO_INVALID) {
 		if (FLD_ISSET(type, P_DONTEXTEND)) {
@@ -132,6 +151,16 @@ __db_new(dbc, type, pagepp)
 		extend = 1;
 	} else {
 		pgno = meta->free;
+		/*
+		 * Lock the new page.  Do this here because we must do it
+		 * before getting the page and the caller may need the lock
+		 * to keep readers from seeing the page before the transaction
+		 * commits.  We can do this becasue no one will hold a free
+		 * page locked.
+		 */
+		if (lockp != NULL && (ret =
+		     __db_lget(dbc, 0, pgno, DB_LOCK_WRITE, 0, lockp)) != 0)
+			goto err;
 		if ((ret = __memp_fget(mpf, &pgno, dbc->thread_info, dbc->txn,
 		    DB_MPOOL_DIRTY, &h)) != 0)
 			goto err;
@@ -173,6 +202,9 @@ __db_new(dbc, type, pagepp)
 	meta->free = newnext;
 
 	if (extend == 1) {
+		if (lockp != NULL && (ret =
+		     __db_lget(dbc, 0, pgno, DB_LOCK_WRITE, 0, lockp)) != 0)
+			goto err;
 		if ((ret = __memp_fget(mpf, &pgno, dbc->thread_info, dbc->txn,
 		    DB_MPOOL_NEW, &h)) != 0)
 			goto err;
@@ -183,7 +215,8 @@ __db_new(dbc, type, pagepp)
 	}
 	LSN(h) = LSN(meta);
 
-	ret = __memp_fput(mpf, dbc->thread_info, meta, dbc->priority);
+	if (hash == 0)
+		ret = __memp_fput(mpf, dbc->thread_info, meta, dbc->priority);
 	meta = NULL;
 	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
 		ret = t_ret;
@@ -221,29 +254,16 @@ __db_new(dbc, type, pagepp)
 	COMPQUIET(list, NULL);
 #endif
 
-	/*
-	 * If dirty reads are enabled and we are in a transaction, we could
-	 * abort this allocation after the page(s) pointing to this
-	 * one have their locks downgraded.  This would permit dirty readers
-	 * to access this page which is ok, but they must be off the
-	 * page when we abort.  We never lock overflow pages or off page
-	 * duplicate trees.
-	 */
-	if (type != P_OVERFLOW && !F_ISSET(dbc, DBC_OPD) &&
-	     F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) && dbc->txn != NULL) {
-		if ((ret = __db_lget(dbc, 0,
-		    h->pgno, DB_LOCK_WWRITE, 0, &metalock)) != 0)
-			goto err;
-	}
-
 	*pagepp = h;
 	return (0);
 
 err:	if (h != NULL)
 		(void)__memp_fput(mpf, dbc->thread_info, h, dbc->priority);
-	if (meta != NULL)
+	if (meta != NULL && hash == 0)
 		(void)__memp_fput(mpf, dbc->thread_info, meta, dbc->priority);
 	(void)__TLPUT(dbc, metalock);
+	if (lockp != NULL)
+		(void)__LPUT(dbc, *lockp);
 	return (ret);
 }
 
@@ -267,7 +287,7 @@ __db_free(dbc, h)
 	PAGE *prev;
 	db_pgno_t last_pgno, next_pgno, pgno, prev_pgno;
 	u_int32_t lflag;
-	int ret, t_ret;
+	int hash, ret, t_ret;
 #ifdef HAVE_FTRUNCATE
 	db_pgno_t *list, *lp;
 	u_int32_t nelem, position, start;
@@ -279,6 +299,7 @@ __db_free(dbc, h)
 	prev_pgno = PGNO_INVALID;
 	meta = NULL;
 	prev = NULL;
+	LOCK_INIT(metalock);
 #ifdef HAVE_FTRUNCATE
 	lp = NULL;
 	nelem = 0;
@@ -295,20 +316,38 @@ __db_free(dbc, h)
 	 * fail, then we need to put the page with which we were called
 	 * back because our caller assumes we take care of it.
 	 */
-	pgno = PGNO_BASE_MD;
-	if ((ret = __db_lget(dbc,
-	    LCK_ALWAYS, pgno, DB_LOCK_WRITE, 0, &metalock)) != 0)
-		goto err;
+	hash = 0;
 
-	/* If we support truncate, we might not dirty the meta page. */
-	if ((ret = __memp_fget(mpf, &pgno, dbc->thread_info, dbc->txn,
+	pgno = PGNO_BASE_MD;
+#ifdef HAVE_HASH
+	if (dbp->type == DB_HASH) {
+		if ((ret = __ham_return_meta(dbc,
 #ifdef HAVE_FTRUNCATE
-	    0,
+		    0,
 #else
-	    DB_MPOOL_DIRTY,
+		    DB_MPOOL_DIRTY,
 #endif
-	    &meta)) != 0)
-		goto err1;
+		&meta)) != 0)
+			goto err;
+		if (meta != NULL)
+			hash = 1;
+	}
+#endif
+	if (meta == NULL) {
+		if ((ret = __db_lget(dbc,
+		    LCK_ALWAYS, pgno, DB_LOCK_WRITE, 0, &metalock)) != 0)
+			goto err;
+
+		/* If we support truncate, we might not dirty the meta page. */
+		if ((ret = __memp_fget(mpf, &pgno, dbc->thread_info, dbc->txn,
+#ifdef HAVE_FTRUNCATE
+		    0,
+#else
+		    DB_MPOOL_DIRTY,
+#endif
+		    &meta)) != 0)
+			goto err1;
+	}
 
 	last_pgno = meta->last_pgno;
 	next_pgno = meta->free;
@@ -372,6 +411,13 @@ __db_free(dbc, h)
 
 no_sort:
 	if (prev_pgno == PGNO_INVALID) {
+#ifdef HAVE_HASH
+		if (hash) {
+			if ((ret =
+			    __ham_return_meta(dbc, DB_MPOOL_DIRTY, &meta)) != 0)
+				goto err1;
+		} else
+#endif
 		if ((ret = __memp_dirty(mpf,
 		    &meta, dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
 			goto err1;
@@ -498,7 +544,7 @@ logged:
 	}
 
 	/* Discard the metadata or previous page. */
-err1:	if (meta != NULL && (t_ret = __memp_fput(mpf,
+err1:	if (hash == 0 && meta != NULL && (t_ret = __memp_fput(mpf,
 	    dbc->thread_info, (PAGE *)meta, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
@@ -1015,11 +1061,10 @@ __db_lget(dbc, action, pgno, mode, lkflags, lockp)
 		action = 0;
 	else if (dbc->txn == NULL || action == LCK_COUPLE_ALWAYS)
 		action = LCK_COUPLE;
-	else if (F_ISSET(dbc,
-	    DBC_READ_COMMITTED) && lockp->mode == DB_LOCK_READ)
+	else if (F_ISSET(dbc, DBC_READ_COMMITTED | DBC_WAS_READ_COMMITTED) &&
+	    lockp->mode == DB_LOCK_READ)
 		action = LCK_COUPLE;
-	else if (F_ISSET(dbc,
-	    DBC_READ_UNCOMMITTED) && lockp->mode == DB_LOCK_READ_UNCOMMITTED)
+	else if (lockp->mode == DB_LOCK_READ_UNCOMMITTED)
 		action = LCK_COUPLE;
 	else if (F_ISSET(dbc->dbp,
 	    DB_AM_READ_UNCOMMITTED) && lockp->mode == DB_LOCK_WRITE)
@@ -1097,11 +1142,10 @@ __db_lput(dbc, lockp)
 		action = LCK_DOWNGRADE;
 	else if (dbc->txn == NULL)
 		action = LCK_COUPLE;
-	else if (F_ISSET(dbc,
-	    DBC_READ_COMMITTED) && lockp->mode == DB_LOCK_READ)
+	else if (F_ISSET(dbc, DBC_READ_COMMITTED | DBC_WAS_READ_COMMITTED) &&
+	    lockp->mode == DB_LOCK_READ)
 		action = LCK_COUPLE;
-	else if (F_ISSET(dbc,
-	    DBC_READ_UNCOMMITTED) && lockp->mode == DB_LOCK_READ_UNCOMMITTED)
+	else if (lockp->mode == DB_LOCK_READ_UNCOMMITTED)
 		action = LCK_COUPLE;
 	else
 		action = 0;

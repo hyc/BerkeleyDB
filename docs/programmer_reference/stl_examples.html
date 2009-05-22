@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Dbstl Examples</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_usecase.html" title="Dbstl Typical Use Case" />
+    <link rel="next" href="stl_db_usage.html" title="Use Berkeley DB correctly with dbstl" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Dbstl Examples</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_usecase.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_db_usage.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_examples"></a>Dbstl Examples</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+As dbstl is so much like C++ STL, after a few optional Berkeley DB 
+specific configurations, you only need to use it like C++ STL. And to turn to
+dbstl in existing code that uses C++ STL, you need to simply replace class name from 
+vector to db_vector, map to db_map, etc.
+
+There are several example programs demonstrating typical use of dbstl
+in $db/examples_stl directory.
+</p>
+      <p>
+The typical procedures of using dbstl is: 
+</p>
+      <div class="orderedlist">
+        <ol type="1">
+          <li>
+Optionally create and open your own Berkeley DB database 
+environment handles and database handles, and do necessary configurations.
+If this step is not done, dbstl will create a private and anonymous database and environemnt
+internally.
+</li>
+          <li>
+Optionally pass environment/database handles to the constructors of dbstl 
+containers to create a dbstl container object. If you didn't create any db/dbenv
+handles, you can create a dbstl container with no db/dbenv handles specified,
+and an internal anonymous database will be created and you have no data persistence
+guarantees.
+</li>
+          <li>
+Some dbstl specific configurations. For example, if you are storing complex class types, 
+you need to register some callback functions; And you can optionally set the cursor open flags,
+internal autocommit transaction's begin/commit flags, etc.
+</li>
+          <li>
+Use these containers and their iterators to access Berkeley DB in the way
+ you use C++ STL containers/iterators. 
+</li>
+          <li>
+Some dbstl and Berkeley DB specific calls, like 
+transaction begin/commit/abort, handle registration, etc. 
+</li>
+          <li>
+When everything is done, you don't need to close any Berkeley DB related
+handles---they are closed by dbstl automatically at the right time. 
+
+</li>
+        </ol>
+      </div>
+      <p>
+</p>
+      <p>
+Following are two snippets of example code from dbstl/examples/ex_access_stl.cpp, there are a 
+lot more example code in dbstl/examples/ and dbstl/test directories. See the explanations
+below the code snippets.
+
+</p>
+      <pre class="programlisting">
+
+//////////////// Code Snippet 1 ////////////////
+db_vector&lt;int, ElementHolder&lt;int&gt; &gt; vctr(100);
+for (int i = 0; i &lt; 100; i++)
+	vctr[i] = i;
+
+for (int i = 0; i &lt; 100; i++) {
+	cout&lt;&lt;"\nvctr["&lt;&lt;i&lt;&lt;"] : "&lt;&lt;vctr[i];
+	vctr[i] = vctr[i] * vctr[i];
+	cout&lt;&lt;"\nvctr["&lt;&lt;i&lt;&lt;"] squre : "&lt;&lt;vctr[i];
+}
+
+//////////////// Code Snippet 2 ////////////////
+typedef db_map&lt;char *, const char *, ElementHolder&lt;const char *&gt; &gt; strmap_t2;
+strmap_t2 strmap;
+char str[2], str2[2];
+str[1] = str2[1] = '\0';
+for (char c = 0; c &lt; 26; c++) {
+	str[0] = c + 'a';
+	str2[0] = 'z' - c;
+	strmap[str] = str2;
+}
+for (strmap_t2::iterator itr = strmap.begin(); itr != strmap.end(); ++itr)
+cout&lt;&lt;endl&lt;&lt;itr-&gt;first&lt;&lt;" : "&lt;&lt;itr-&gt;second;
+
+using namespace dbstl;
+dbstl::db_map&lt;char, int&gt; v;
+v['i'] = 1;
+cout&lt;&lt;v['i'];
+
+
+dbstl::db_map&lt;char *, char *&gt; name_addr_map;
+// The strings rather than the memory pointers are stored into DB.
+name_addr_map["Alex"] = "Sydney Australia";
+name_addr_map["David"] = "Shenzhen China";
+cout&lt;&lt;"Alex's address:"&lt;&lt;name_addr_map["Alex"];
+
+dbstl::db_vector&lt;Person&gt; vi; // Some callback configurations follow.
+// The strings and objects are stored into DB rather than pointers.
+
+Person obj("David Zhao", "Oracle", new Office("Boston", "USA"));
+vi.push_back(obj); // More person storage.
+for (int I = 0; I &lt; vi.size(); I++)
+    cout&lt;&lt;vi[I];
+
+	    
+</pre>
+      <p>
+</p>
+      <p>
+The first snippet initializes a db_vector container of 100 elements, with an in-memory 
+anonymous database internally created by dbstl. The only difference with C++ stl is
+we here need one more type parameter ElementHolder&lt;int&gt;. The ElementHolder class template
+should be used for every type of dbstl container that will store C++ primitive data types 
+like int, float, char *, wchar_t *, etc, but should not be used for class types, reasons 
+are explained below.
+
+In the second code snippet, by this assignment: strmap[str] = str2; you are storing a string
+pair (str, str2) rather than the pointers into the underlying database, amazing isn't it?
+
+You can see the rest of the code is the same as C++ stl containers in both snippets, and 
+this way you are storing data into a Berkeley DB database. If you create your own database  
+with backing files on disk, your data or objects can persist and be restored when the 
+program runs again.
+</p>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_usecase.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_db_usage.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Dbstl Typical Use Case </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Use Berkeley DB correctly with dbstl</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

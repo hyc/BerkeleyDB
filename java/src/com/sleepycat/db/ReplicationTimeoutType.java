@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: ReplicationTimeoutType.java,v 12.10 2008/04/28 23:32:00 sarette Exp $
+ * $Id$
  */
 
 package com.sleepycat.db;

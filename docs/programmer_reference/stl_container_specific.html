@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Dbstl Container Specific Notes</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="section3.html" title="Object Life Time and Persistence" />
+    <link rel="next" href="stl_efficienct_use.html" title="Use Dbstl Efficiently" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Dbstl Container Specific Notes</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="section3.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_efficienct_use.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_container_specific"></a>Dbstl Container Specific Notes</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="stl_container_specific.html#id1592151">db_vector Specific Notes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_container_specific.html#id1592795">Associative Container Specific Notes</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592151"></a>db_vector Specific Notes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+You must share the same database handle among all threads of the same process to 
+create container objects backed by the same database, and thus set DB_THREAD
+to all database open calls.
+
+		</li>
+            <li>
+              <p>
+set DB_RENUMBER flag to the db handle if you want db_vector&lt;&gt; to work
+like std::vector or std::deque; Don't set DB_RENUMBER if you want db_vector&lt;&gt; to work
+like std::list so that it is faster. 
+</p>
+              <p>
+For example, to construct a queue/stack object, you only need a db_vector&lt;&gt; object 
+whose database handle is not set the DB_RENUMBER. Of course if the db handle has DB_RENUMBER 
+it still works for this kind of scenario, but it is not as fast. 
+</p>
+              <p>
+db_vector will not check whether DB_RENUMBER is set or not, if you didn't set it 
+and expect db_vector&lt;&gt; to work like std::vector&lt;&gt;/std::deque&lt;&gt;, you will get wrong 
+results in its operator[], because the indices are not maintained any more.
+</p>
+              <p>
+There is example code to use this feature in TestVector::test_queue_stack method 
+of dbstl test suite.
+</p>
+            </li>
+            <li>
+              <p>
+Just as std::vector, 
+inserting/deleting in the middle of the sequence is slower than doing 
+the same action at the end of the sequence because the underlying 
+DB_RECNO type of db with DB_RENUMBER flag set works slow when 
+inserting/deleting in middle or head --- it has to update all those 
+records's index after the inserted/deleted one. If you don't need to 
+keep the index renumbered on insert/delete, you can use db_map instead. 
+
+</p>
+              <p>
+db_vector also contains methods of std::list and std::deque, 
+including std::list&lt;&gt;'s unique methods including remove, remove_if, unique,
+merge, sort, reverse, and splice, with identical semantics/behaviors,
+though pushing/deleting front is slow for std::deque equivalent 
+when there are quite a lot of elements in the database.
+</p>
+            </li>
+            <li>
+6. You can use std::queue, std::priority_queue and std::stack container adapters, they 
+work with db_vector even without DB_RENUMBER set.
+
+		</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1592795"></a>Associative Container Specific Notes</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+		db_map contains the 
+union of method set of std::map and hash_map, but there are some methods 
+that can only be called on containers backed by DB_BTREE or DB_HASH 
+databases, so you can call db_map&lt;&gt;::is_hash to figure out what type of 
+db it is backed, and avoid calling unsupported methods, doing so will 
+cause an InvalidFunctionCall exception. 
+
+	</p>
+        <p>
+DB_BTREE specific methods: upper_bound(), lower_bound(), key_comp(), 
+value_comp(); DB_HASH specific methods: key_eq(), hash_funct().
+	</p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="section3.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_efficienct_use.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Object Life Time and Persistence  </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Use Dbstl Efficiently</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

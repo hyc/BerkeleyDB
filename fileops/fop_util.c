@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2001-2009 Oracle.  All rights reserved.
  *
- * $Id: fop_util.c,v 12.65 2008/05/07 12:27:34 bschmeck Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -24,10 +24,9 @@ static int __fop_inmem_dummy __P((DB *, DB_TXN *, const char *, u_int8_t *));
 static int __fop_inmem_read_meta __P((DB *, DB_TXN *, const char *, u_int32_t));
 static int __fop_inmem_swap __P((DB *, DB *, DB_TXN *,
 	       const char *, const char *, const char *, DB_LOCKER *));
-static int __fop_ondisk_dummy __P((DB *,
-	       DB_TXN *, const char *, u_int8_t *, u_int32_t));
+static int __fop_ondisk_dummy __P((DB *, DB_TXN *, const char *, u_int8_t *));
 static int __fop_ondisk_swap __P((DB *, DB *, DB_TXN *,
-	     const char *, const char *, const char *, DB_LOCKER *, u_int32_t));
+	     const char *, const char *, const char *, DB_LOCKER *));
 
 /*
  * Acquire the environment meta-data lock.  The parameters are the
@@ -255,7 +254,7 @@ __fop_file_setup(dbp, ip, txn, name, mode, flags, retidp)
 	else {
 		/* Get the real backing file name. */
 		if ((ret = __db_appname(env,
-		    DB_APP_DATA, name, 0, NULL, &real_name)) != 0)
+		    DB_APP_DATA, name, &dbp->dirname, &real_name)) != 0)
 			goto err;
 
 		/* Fill in the default file mode. */
@@ -367,8 +366,8 @@ reopen:		if (!F_ISSET(dbp, DB_AM_INMEM) && (ret =
 
 			/* Case 4: This is a valid file. */
 			if (ret == 0)
-				ret = __db_meta_setup(env, dbp,
-				    real_name, (DBMETA *)mbuf, flags, 1);
+				ret = __db_meta_setup(env, dbp, real_name,
+				    (DBMETA *)mbuf, flags, DB_CHK_META);
 
 		}
 
@@ -550,8 +549,8 @@ create:	if (txn != NULL && IS_REP_CLIENT(env) &&
 		if (TXN_ON(env) && txn != NULL &&
 		    (ret = __txn_begin(env, NULL, txn, &stxn, 0)) != 0)
 			goto err;
-		if ((ret = __fop_create(env,
-		    stxn, &fhp, tmpname, DB_APP_DATA, mode, dflags)) != 0) {
+		if ((ret = __fop_create(env, stxn, &fhp,
+		    tmpname, &dbp->dirname, DB_APP_DATA, mode, dflags)) != 0) {
 			/*
 			 * If no transactions, there is a race on creating the
 			 * backup file, as the backup file name is the same for
@@ -571,7 +570,7 @@ create:	if (txn != NULL && IS_REP_CLIENT(env) &&
 
 creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 		if ((ret = __db_appname(env,
-		    DB_APP_DATA, tmpname, 0, NULL, &real_tmpname)) != 0)
+		    DB_APP_DATA, tmpname, &dbp->dirname, &real_tmpname)) != 0)
 			goto err;
 
 		/* Set the pagesize if it isn't yet set. */
@@ -616,8 +615,8 @@ creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 		 * Someone managed to create the file; remove our temp
 		 * and try to open the file that now exists.
 		 */
-		(void)__fop_remove(env,
-		    NULL, dbp->fileid, tmpname, DB_APP_DATA, dflags);
+		(void)__fop_remove(env, NULL,
+		    dbp->fileid, tmpname, &dbp->dirname, DB_APP_DATA, dflags);
 		(void)__ENV_LPUT(env, dbp->handle_lock);
 		LOCK_INIT(dbp->handle_lock);
 
@@ -631,10 +630,13 @@ creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 	}
 
 	if (name != NULL && (ret = __fop_lock_handle(env,
-	    dbp, locker, DB_LOCK_WRITE, &elock, NOWAIT_FLAG(txn))) != 0)
+	    dbp, locker, DB_LOCK_WRITE, NULL, NOWAIT_FLAG(txn))) != 0)
 		goto err;
-	if (tmpname != NULL && tmpname != name && (ret = __fop_rename(env,
-	    stxn, tmpname, name, dbp->fileid, DB_APP_DATA, 1, dflags)) != 0)
+	if (tmpname != NULL &&
+	    tmpname != name && (ret = __fop_rename(env, stxn, tmpname,
+	    name, &dbp->dirname, dbp->fileid, DB_APP_DATA, 1, dflags)) != 0)
+		goto err;
+	if ((ret = __ENV_LPUT(env, elock)) != 0)
 		goto err;
 
 	if (stxn != NULL) {
@@ -657,7 +659,7 @@ err:		CLOSE_HANDLE(dbp, fhp);
 			(void)__txn_abort(stxn);
 		if (tmp_created && txn == NULL)
 			(void)__fop_remove(env,
-			    NULL, NULL, tmpname, DB_APP_DATA, dflags);
+			    NULL, NULL, tmpname, NULL, DB_APP_DATA, dflags);
 		if (txn == NULL)
 			(void)__ENV_LPUT(env, dbp->handle_lock);
 		(void)__ENV_LPUT(env, elock);
@@ -1084,7 +1086,8 @@ __fop_read_meta(env, name, buf, size, fhp, errok, nbytesp)
 	if (nr != size) {
 		if (!errok)
 			__db_errx(env,
-			    "%s: unexpected file type or format", name);
+			    "fop_read_meta: %s: unexpected file type or format",
+			    name);
 		ret = EINVAL;
 	}
 
@@ -1099,14 +1102,13 @@ err:
  * remove).
  *
  * PUBLIC: int __fop_dummy __P((DB *,
- * PUBLIC:     DB_TXN *, const char *, const char *, u_int32_t));
+ * PUBLIC:     DB_TXN *, const char *, const char *));
  */
 int
-__fop_dummy(dbp, txn, old, new, flags)
+__fop_dummy(dbp, txn, old, new)
 	DB *dbp;
 	DB_TXN *txn;
 	const char *old, *new;
-	u_int32_t flags;
 {
 	DB *tmpdbp;
 	DB_TXN *stxn;
@@ -1137,19 +1139,20 @@ __fop_dummy(dbp, txn, old, new, flags)
 	/* Create a dummy dbp handle. */
 	if ((ret = __db_create_internal(&tmpdbp, env, 0)) != 0)
 		goto err;
-
+	if (F_ISSET(dbp, DB_AM_NOT_DURABLE) &&
+		(ret = __db_set_flags(tmpdbp, DB_TXN_NOT_DURABLE)) != 0)
+		goto err;
 	memset(mbuf, 0, sizeof(mbuf));
 	ret = F_ISSET(dbp, DB_AM_INMEM) ?
 	    __fop_inmem_dummy(tmpdbp, stxn, back, mbuf) :
-	    __fop_ondisk_dummy(tmpdbp, stxn, back, mbuf, flags);
+	    __fop_ondisk_dummy(tmpdbp, stxn, back, mbuf);
 
 	if (ret != 0)
 		goto err;
 
 	ret = F_ISSET(dbp, DB_AM_INMEM) ?
 	    __fop_inmem_swap(dbp, tmpdbp, stxn, old, new, back, txn->locker) :
-	    __fop_ondisk_swap(dbp,
-		tmpdbp, stxn, old, new, back, txn->locker, flags);
+	    __fop_ondisk_swap(dbp, tmpdbp, stxn, old, new, back, txn->locker);
 	stxn = NULL;
 	if (ret != 0)
 		goto err;
@@ -1194,13 +1197,12 @@ __fop_dbrename(dbp, old, new)
 	} else {
 		/* Get full names. */
 		if ((ret = __db_appname(env,
-		    DB_APP_DATA, new, 0, NULL, &real_new)) != 0)
+		    DB_APP_DATA, old, &dbp->dirname, &real_old)) != 0)
 			goto err;
 
 		if ((ret = __db_appname(env,
-		    DB_APP_DATA, old, 0, NULL, &real_old)) != 0)
+		    DB_APP_DATA, new, &dbp->dirname, &real_new)) != 0)
 			goto err;
-
 	}
 
 	/*
@@ -1333,7 +1335,7 @@ __fop_inmem_read_meta(dbp, txn, name, flags)
 	pgno  = PGNO_BASE_MD;
 	if ((ret = __memp_fget(dbp->mpf, &pgno, ip, txn, 0, &metap)) != 0)
 		return (ret);
-	ret = __db_meta_setup(dbp->env, dbp, name, metap, flags, 1);
+	ret = __db_meta_setup(dbp->env, dbp, name, metap, flags, DB_CHK_META);
 
 	if ((t_ret =
 	    __memp_fput(dbp->mpf, ip, metap, dbp->priority)) && ret == 0)
@@ -1343,12 +1345,11 @@ __fop_inmem_read_meta(dbp, txn, name, flags)
 }
 
 static int
-__fop_ondisk_dummy(dbp, txn, name, mbuf, flags)
+__fop_ondisk_dummy(dbp, txn, name, mbuf)
 	DB *dbp;
 	DB_TXN *txn;
 	const char *name;
 	u_int8_t *mbuf;
-	u_int32_t flags;
 {
 	ENV *env;
 	int ret;
@@ -1360,11 +1361,11 @@ __fop_ondisk_dummy(dbp, txn, name, mbuf, flags)
 	dflags = F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0;
 
 	if ((ret = __db_appname(env,
-	    DB_APP_DATA, name, flags, NULL, &realname)) != 0)
+	    DB_APP_DATA, name, &dbp->dirname, &realname)) != 0)
 		goto err;
 
 	if ((ret = __fop_create(env,
-	    txn, NULL, name, DB_APP_DATA, 0, dflags)) != 0)
+	    txn, NULL, name, &dbp->dirname, DB_APP_DATA, 0, dflags)) != 0)
 		goto err;
 
 	if ((ret =
@@ -1372,7 +1373,7 @@ __fop_ondisk_dummy(dbp, txn, name, mbuf, flags)
 		goto err;
 
 	((DBMETA *)mbuf)->magic = DB_RENAMEMAGIC;
-	if ((ret = __fop_write(env, txn, name,
+	if ((ret = __fop_write(env, txn, name, dbp->dirname,
 	    DB_APP_DATA, NULL, 0, 0, 0, mbuf, DBMETASIZE, 1, dflags)) != 0)
 		goto err;
 
@@ -1429,12 +1430,11 @@ err:	return (ret);
 }
 
 static int
-__fop_ondisk_swap(dbp, tmpdbp, txn, old, new, back, locker, flags)
+__fop_ondisk_swap(dbp, tmpdbp, txn, old, new, back, locker)
 	DB *dbp, *tmpdbp;
 	DB_TXN *txn;
 	const char *old, *new, *back;
 	DB_LOCKER *locker;
-	u_int32_t flags;
 {
 	DBT fiddbt, namedbt, tmpdbt;
 	DB_FH *fhp;
@@ -1456,8 +1456,8 @@ __fop_ondisk_swap(dbp, tmpdbp, txn, old, new, back, locker, flags)
 	fhp = NULL;
 	dflags = F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0;
 
-	if ((ret =
-	    __db_appname(env, DB_APP_DATA, new, 0, NULL, &realnew)) != 0)
+	if ((ret = __db_appname(env,
+	    DB_APP_DATA, new, &dbp->dirname, &realnew)) != 0)
 		goto err;
 
 	/* Now, lock the name space while we initialize this file. */
@@ -1474,7 +1474,7 @@ retry:	GET_ENVLOCK(env, locker, &elock);
 		if ((ret = __fop_read_meta(env,
 		    realnew, mbuf, sizeof(mbuf), fhp, 0, NULL)) != 0 ||
 		    (ret = __db_meta_setup(env,
-		    tmpdbp, realnew, (DBMETA *)mbuf, 0, 1)) != 0) {
+		    tmpdbp, realnew, (DBMETA *)mbuf, 0, DB_CHK_META)) != 0) {
 			ret = EEXIST;
 			goto err;
 		}
@@ -1552,11 +1552,11 @@ retry:	GET_ENVLOCK(env, locker, &elock);
 	 * While we have the namespace locked, do the renames and then
 	 * swap for the handle lock.
 	 */
-	if ((ret = __fop_rename(env,
-	    txn, old, new, dbp->fileid, DB_APP_DATA, 1, dflags)) != 0)
+	if ((ret = __fop_rename(env, txn,
+	    old, new, &dbp->dirname, dbp->fileid, DB_APP_DATA, 1, dflags)) != 0)
 		goto err;
-	if ((ret = __fop_rename(env,
-	    txn, back, old, tmpdbp->fileid, DB_APP_DATA, 0, dflags)) != 0)
+	if ((ret = __fop_rename(env, txn, back, old,
+	    &dbp->dirname, tmpdbp->fileid, DB_APP_DATA, 0, dflags)) != 0)
 		goto err;
 	if ((ret = __fop_lock_handle(env,
 	    tmpdbp, locker, DB_LOCK_WRITE, &elock, NOWAIT_FLAG(txn))) != 0)
@@ -1584,13 +1584,13 @@ retry:	GET_ENVLOCK(env, locker, &elock);
 	tmpdbt.size = DB_FILE_ID_LEN;
 	DB_INIT_DBT(namedbt, old, strlen(old) + 1);
 	if ((t_ret = __fop_file_remove_log(env,
-	    parent, &lsn, 0, &fiddbt, &tmpdbt, &namedbt,
+	    parent, &lsn, dflags, &fiddbt, &tmpdbt, &namedbt,
 	    (u_int32_t)DB_APP_DATA, child_txnid)) != 0 && ret == 0)
 		ret = t_ret;
 
 	/* This is a delayed delete of the dummy file. */
 	if ((ret = __db_appname(env,
-	    DB_APP_DATA, old, flags, NULL, &realold)) != 0)
+	    DB_APP_DATA, old, &dbp->dirname, &realold)) != 0)
 		goto err;
 
 	if ((ret = __txn_remevent(env, parent, realold, NULL, 0)) != 0)

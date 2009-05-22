@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
  *
- * $Id: db_rec.c,v 12.53 2008/03/12 20:33:03 mbrey Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -54,6 +54,7 @@ __db_addrem_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->pagelsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	if ((cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_ADD_DUP) ||
 	    (cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_REM_DUP)) {
 		/* Need to redo an add, or undo a delete. */
@@ -130,6 +131,7 @@ __db_big_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->pagelsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	if ((cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_ADD_BIG) ||
 	    (cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_REM_BIG)) {
 		/* We are either redo-ing an add, or undoing a delete. */
@@ -151,6 +153,20 @@ __db_big_recover(env, dbtp, lsnp, op, info)
 		 */
 		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
 		modified = 1;
+	} else if (cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_APPEND_BIG) {
+		/* We are redoing an append. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		memcpy((u_int8_t *)pagep + P_OVERHEAD(file_dbp) +
+		    OV_LEN(pagep), argp->dbt.data, argp->dbt.size);
+		OV_LEN(pagep) += argp->dbt.size;
+		modified = 1;
+	} else if (cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_APPEND_BIG) {
+		/* We are undoing an append. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		OV_LEN(pagep) -= argp->dbt.size;
+		memset((u_int8_t *)pagep + P_OVERHEAD(file_dbp) +
+		    OV_LEN(pagep), 0, argp->dbt.size);
+		modified = 1;
 	}
 	if (modified)
 		LSN(pagep) = DB_REDO(op) ? *lsnp : argp->pagelsn;
@@ -161,10 +177,11 @@ __db_big_recover(env, dbtp, lsnp, op, info)
 		goto out;
 
 	/*
-	 * We only delete a whole chain of overflow.
-	 * Each page is handled individually
+	 * We only delete a whole chain of overflow items, and appends only
+	 * apply to a single page.  Adding a page is the only case that
+	 * needs to update the chain.
 	 */
-	if (argp->opcode == DB_REM_BIG)
+	if (argp->opcode != DB_ADD_BIG)
 		goto done;
 
 	/* Now check the previous page. */
@@ -175,6 +192,7 @@ ppage:	if (argp->prev_pgno != PGNO_INVALID) {
 		cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 		cmp_p = LOG_COMPARE(&LSN(pagep), &argp->prevlsn);
 		CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->prevlsn);
+		CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 
 		if (cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_ADD_BIG) {
 			/* Redo add, undo delete. */
@@ -205,6 +223,7 @@ npage:	if (argp->next_pgno != PGNO_INVALID) {
 		cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 		cmp_p = LOG_COMPARE(&LSN(pagep), &argp->nextlsn);
 		CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->nextlsn);
+		CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 		if (cmp_p == 0 && DB_REDO(op)) {
 			REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
 			PREV_PGNO(pagep) = PGNO_INVALID;
@@ -351,6 +370,7 @@ __db_noop_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->prevlsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->prevlsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	if (cmp_p == 0 && DB_REDO(op)) {
 		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
 		LSN(pagep) = *lsnp;
@@ -418,6 +438,7 @@ __db_pg_alloc_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(meta));
 	cmp_p = LOG_COMPARE(&LSN(meta), &argp->meta_lsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(meta), &argp->meta_lsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(meta), lsnp);
 	if (cmp_p == 0 && DB_REDO(op)) {
 		/* Need to redo update described. */
 		REC_DIRTY(mpf, ip, file_dbp->priority, &meta);
@@ -455,7 +476,7 @@ __db_pg_alloc_recover(env, dbtp, lsnp, op, info)
 			    __memp_extend_freelist(mpf, nelem + 1, &list)) != 0)
 				goto out;
 			if (nelem != 0)
-				memmove(list + 1, list, nelem * sizeof(list));
+				memmove(list + 1, list, nelem * sizeof(*list));
 			*list = argp->pgno;
 		}
 	}
@@ -503,6 +524,7 @@ __db_pg_alloc_recover(env, dbtp, lsnp, op, info)
 		cmp_p = 0;
 
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->page_lsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	/*
 	 * Another special case we have to handle is if we ended up with a
 	 * page of all 0's which can happen if we abort between allocating a
@@ -619,6 +641,7 @@ __db_pg_free_recover_int(env, ip, argp, file_dbp, lsnp, mpf, op, data)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(meta));
 	cmp_p = LOG_COMPARE(&LSN(meta), &argp->meta_lsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(meta), &argp->meta_lsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(meta), lsnp);
 
 	/*
 	 * Fix up the metadata page.  If we're redoing or undoing the operation
@@ -689,6 +712,7 @@ check_meta:
 		cmp_p = 0;
 
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &copy_lsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	if (DB_REDO(op) &&
 	    (cmp_p == 0 ||
 	    (IS_ZERO_LSN(copy_lsn) &&
@@ -947,6 +971,7 @@ __db_pg_init_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &copy_lsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &copy_lsn);
+	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
 		if (TYPE(pagep) == P_HASH)
@@ -1070,8 +1095,6 @@ __db_pg_sort_recover(env, dbtp, lsnp, op, info)
 			if ((ret = __memp_fget(mpf, &argp->last_free,
 			    ip, NULL, DB_MPOOL_EDIT, &meta)) == 0) {
 				if (LOG_COMPARE(&LSN(meta), lsnp) == 0) {
-					REC_DIRTY(mpf,
-					    ip, dbc->priority, &pagep);
 					NEXT_PGNO(meta) = pglist->pgno;
 					LSN(meta) = argp->last_lsn;
 				}

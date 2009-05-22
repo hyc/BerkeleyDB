@@ -67,7 +67,7 @@ struct __db_repmgr_sites {
 #define	DbTxn __db_txn
 
 /* Suppress a compilation warning for an unused symbol */
-void *unused = SWIG_JavaThrowException;
+void *unused = (void *)SWIG_JavaThrowException;
 %}
 
 struct Db;		typedef struct Db DB;
@@ -85,7 +85,7 @@ struct DbTxn;	typedef struct DbTxn DB_TXN;
 %newobject Db::join(DBC **curslist, u_int32_t flags);
 %newobject Db::dup(u_int32_t flags);
 %newobject DbEnv::lock_get(u_int32_t locker,
-	u_int32_t flags, const DBT *object, db_lockmode_t lock_mode);
+	u_int32_t flags, DBT *object, db_lockmode_t lock_mode);
 %newobject DbEnv::log_cursor(u_int32_t flags);
 
 struct Db
@@ -347,8 +347,8 @@ struct Db
 	}
 
 	JAVA_EXCEPT(DB_RETOK_DBPUT, DB2JDBENV)
-	int put(DB_TXN *txnid, DBT *key, DBT *data, u_int32_t flags) {
-		return self->put(self, txnid, key, data, flags);
+	int put(DB_TXN *txnid, DBT *key, DBT *db_put_data, u_int32_t flags) {
+		return self->put(self, txnid, key, db_put_data, flags);
 	}
 
 	JAVA_EXCEPT(DB_RETOK_STD, NULL)
@@ -533,6 +533,13 @@ struct Dbc
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DBC2JDBENV)
+	int cmp(DBC *odbc, u_int32_t flags) {
+		int result = 0;
+		errno = self->cmp(self, odbc, &result, flags);
+		return result;
+	}
+
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DBC2JDBENV)
 	db_recno_t count(u_int32_t flags) {
 		db_recno_t count = 0;
 		errno = self->count(self, &count, flags);
@@ -569,8 +576,8 @@ struct Dbc
 	}
 
 	JAVA_EXCEPT(DB_RETOK_DBCPUT, DBC2JDBENV)
-	int put(DBT* key, DBT *data, u_int32_t flags) {
-		return self->put(self, key, data, flags);
+	int put(DBT* key, DBT *db_put_data, u_int32_t flags) {
+		return self->put(self, key, db_put_data, flags);
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DBC2JDBENV)
@@ -905,7 +912,7 @@ struct DbEnv
 	}
 
 	DB_LOCK *lock_get(u_int32_t locker,
-	    u_int32_t flags, const DBT *object, db_lockmode_t lock_mode) {
+	    u_int32_t flags, DBT *object, db_lockmode_t lock_mode) {
 		DB_LOCK *lock = NULL;
 		if ((errno = __os_malloc(self->env, sizeof (DB_LOCK), &lock)) == 0)
 			errno = self->lock_get(self, locker, flags, object,
@@ -1225,7 +1232,7 @@ struct DbEnv
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
 	DB_PREPLIST *txn_recover(int count, u_int32_t flags) {
 		DB_PREPLIST *preplist;
-		long retcount;
+		u_int32_t retcount;
 
 		/* Add a NULL element to terminate the array. */
 		if ((errno = __os_malloc(self->env,
@@ -1410,7 +1417,7 @@ struct DbEnv
 		return sites;
 	}
 
-	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
+	JAVA_EXCEPT(DB_RETOK_REPMGR_START, JDBENV)
 	db_ret_t repmgr_start(int nthreads, u_int32_t flags) {
 		return self->repmgr_start(self, nthreads, flags);
 	}

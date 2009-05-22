@@ -1,5 +1,5 @@
 /*
- * $Id: b_uname.c,v 1.9 2008/03/13 20:47:06 mbrey Exp $
+ * $Id$
  */
 
 #include "bench.h"

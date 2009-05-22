@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Use Berkeley DB correctly with dbstl</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
+    <link rel="prev" href="stl_examples.html" title="Dbstl Examples" />
+    <link rel="next" href="stl_db_advanced_usage.html" title="Using Advanced Berkeley DB Features with Dbstl" />
+  </head>
+  <body>
+    <div class="navheader">
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Use Berkeley DB correctly with dbstl</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="stl_examples.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_db_advanced_usage.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="stl_db_usage"></a>Use Berkeley DB correctly with dbstl</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="stl_db_usage.html#id1591768">
+Registering Database and Environment Handles
+</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_db_usage.html#id1591634">
+		Truncate Requirement
+	</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_db_usage.html#id1591720">
+	Auto Commit Support
+</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_db_usage.html#id1591734">
+	Database and Environment Identity Checks
+</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="stl_db_usage.html#id1591729">
+Products, Constructors and Configurations
+</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1591768"></a>
+Registering Database and Environment Handles
+</h3>
+            </div>
+          </div>
+        </div>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+If you share environment or database handles among multiple threads,
+specify DB_THREAD in the open call; 
+</li>
+            <li>
+If you create/open environment/database handles by yourself without calling the helper 
+function dbstl::open_db/dbstl::open_env, remember that your environment and 
+database handles should be 
+<div class="orderedlist"><ol type="1"><li>
+		Allocated in the heap via "new" operator;
+	</li><li>
+		Created with DB_CXX_NO_EXCEPTIONS flag;
+		
+	</li><li>
+Registered to dbstl via dbstl::register_db/dbstl::register_dbenv in
+each thread directly or indirectly using them, including sharing 
+handles directly or sharing containers across threads; 
+	</li></ol></div></li>
+            <li>
+If you opened the database or
+environment handle via open_db/open_env functions, the thread creating the handles
+should not call register_db/register_env again because they have already registered
+in the open_db/open_env functions. Other threads should register each handle they use though.
+</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1591634"></a>
+		Truncate Requirement
+	</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+Some Berkeley DB operations require no open cursors on the db handle. 
+When used in multithreaded mode, dbstl will only try to close those open 
+cursor handles in the current thread, ignoring those opened in other 
+threads on the same db handle. Because accessing the same Dbc* cursor in 
+multithreads requires external synchronized access, it is unreasonable to have 
+dbstl synchronized with user code; 
+
+</p>
+        <p>
+Only quite a few operations have such reqirements, including all 
+containers' clear() and swap() methods, and all versions of 
+assign() functions in db_vector. Because these methods all need to 
+remove all key/data pairs in the database. 
+
+</p>
+        <p>
+There are two ways in these methods to do the remove-all:
+
+</p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+By default, is to truncate the database, which requries all cursors 
+closed, as said above, it is user's responsibility to close cursors 
+opened in other threads before performing such operations, otherwise the 
+operation will fail. 
+
+</li>
+            <li>
+Alternatively, user can specify the last default parameter to false, to avoid truncate
+but delete the key/data pairs one by one, which does not require all cursors 
+to be closed but the remove-all operation won't finish until it is able to 
+remove all key/data pairs some of which may be locked by other cursors.
+</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1591720"></a>
+	Auto Commit Support
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+
+dbstl supports auto commit operations in its containers. When you create a Db or DbEnv object with 
+DB_AUTO_COMMIT specified in DbEnv::open or Db::open, the dbstl container 
+created using the Db/DbEnv handles will support auto commit. 
+</p>
+        <p>
+
+But only a subset of all a container's methods can be 
+auto commit because many of them require an iterator/cursor opened and passed in, 
+or returns an iterator/cursor, and in these cases, the operation has to be in a 
+external transactional context, can't support auto commit. 
+
+The dbstl API documentation will document a method as supporting auto commit transactions if it does.
+</p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1591734"></a>
+	Database and Environment Identity Checks
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+In container member functions involving another container, 
+e.g. db_vector::swap(self&amp; v2), the database handles of this container and v2
+should not belong to the same database, and if any one of them are in a transactional
+environment, they should be in the same transactional environment.
+
+For example, db_vector::swap(self&amp; v2) is an auto commit method, it expects v2 to 
+be in the same transactional environment as this container, because it internally begins a txn, 
+thinking this transaction can be used by both v2 and this container. If this container and the v2
+container have different environments and any one of them are using transactions,
+an exception will be thrown. This is checked in every such member function. 
+
+If this container and v2 both don't use transactions, it is allowed that their databases are
+opened in two different environments, which won't harm in any way.
+</p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1591729"></a>
+Products, Constructors and Configurations
+</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+You are allowed to use dbstl with Berkeley DB DS/CDS/TDS/HA 
+products, and make full configurations to them. dbstl is supposed to be 
+an interface to Berkeley DB core, so all needed configurations are done 
+via Berkeley DB's create/open/set_flags/set_*** APIs, such as the key 
+compare function, hash function, the DB_AUTOCOMMIT flag, etc. 
+
+</p>
+        <p>
+As a result, the constructors of 
+dbstl containers are different from those of C++ STL because no 
+configurations are supposed to be done via the constructors---there are 
+no allocators needed; key compare/hash functions are set via Berkeley DB 
+APIs---dbstl containers' constructors accepts already opened and 
+well configured env/db handles, and provide functions to retrieve some 
+of the configuration such as key_compare/hash function, which only exist 
+to conform to C++ STL specifications.  
+
+</p>
+        <p>
+The constructors will verify that the handles passed to them are well 
+configured, with no banned setting, and with all required setting. 
+If the handles are not well configured, an exception 
+InvalidArgumentException will be thrown. 
+
+</p>
+        <p>
+You can also pass no database or environment handles to the container constructors
+at all, in which case an internal anonymous database will be created, 
+and you don't have data persistence at all.
+</p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="stl_examples.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="stl.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_db_advanced_usage.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Dbstl Examples </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Using Advanced Berkeley DB Features with Dbstl</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

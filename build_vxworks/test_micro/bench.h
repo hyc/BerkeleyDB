@@ -1,5 +1,5 @@
 /*
- * $Id: bench.h,v 1.24 2008/02/04 14:13:05 bostic Exp $
+ * $Id$
  */
 #ifndef _BENCH_H_
 #define	_BENCH_H_
@@ -165,7 +165,7 @@ typedef struct {
 #endif
 #endif /* !DB_TIMEOUT_TO_TIMESPEC */
 
-db_timespec __start_time, __end_time;
+extern db_timespec __start_time, __end_time;
 
 #define	TIMER_GET(tm) do {						\
 	tm = __end_time;						\
@@ -193,6 +193,7 @@ int  b_curwalk __P((int, char *[]));
 int  b_del __P((int, char *[]));
 int  b_get __P((int, char *[]));
 int  b_inmem __P((int, char *[]));
+int  b_latch __P((int, char *[]));
 int  b_load __P((int, char *[]));
 int  b_open __P((int, char *[]));
 int  b_put __P((int, char *[]));
@@ -207,5 +208,6 @@ int  b_util_have_hash __P((void));
 int  b_util_have_queue __P((void));
 int  b_util_unlink __P((char *));
 int  b_workload __P((int, char *[]));
+u_int32_t part_callback __P((DB *, DBT *));
 
 #endif /* !_BENCH_H_ */

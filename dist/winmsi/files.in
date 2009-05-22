@@ -1,4 +1,4 @@
-# $Id: files.in,v 1.13 2008/04/17 01:59:10 alexg Exp $
+# $Id$
 # Lists files needed to install particular
 # features in Windows.  Feature names must be
 # listed in features.in .
@@ -14,10 +14,10 @@ DCoreAPI	build_windows/Debug/libdb${PRODUCT_MAJMIN}d.dll	/bin/debug/
 DCoreAPI	build_windows/Debug/libdb${PRODUCT_MAJMIN}d.pdb		/bin/debug/
 CoreAPI		build_windows/Release/libdb${PRODUCT_MAJMIN}.lib	/lib/
 DCoreAPI	build_windows/Debug/libdb${PRODUCT_MAJMIN}d.lib	/lib/
-CoreAPI		build_windows/Release/msvcr71.dll		/bin/
-DCoreAPI	build_windows/Debug/msvcr71.dll		/bin/debug/
-CoreAPI		build_windows/Release/msvcp71.dll		/bin/
-DCoreAPI	build_windows/Debug/msvcp71.dll		/bin/debug/
+CoreAPI		build_windows/Release/msvcr${PRODUCT_MSVC_VERSION}.dll		/bin/
+DCoreAPI	build_windows/Debug/msvcr${PRODUCT_MSVC_VERSION}.dll		/bin/debug/
+CoreAPI		build_windows/Release/msvcp${PRODUCT_MSVC_VERSION}.dll		/bin/
+DCoreAPI	build_windows/Debug/msvcp${PRODUCT_MSVC_VERSION}.dll		/bin/debug/
 
 # After the build process, we create an installed_include directory
 # housing all the needed include files, for user convenience
@@ -57,35 +57,21 @@ CoreTools	build_windows/Release/db_stat.exe		/bin/	db_sta~1.exe
 CoreTools	build_windows/Release/db_upgrade.exe	/bin/	db_upg~1.exe
 CoreTools	build_windows/Release/db_verify.exe	/bin/	db_ver~1.exe
 
-CoreEx		build_windows/Debug/ex_access.exe		/bin/debug/	ex_acc~1.exe
-CoreEx		build_windows/Debug/ex_access.pdb		/bin/debug/	ex_acc~1.pdb
-CoreEx		build_windows/Debug/ex_btrec.exe		/bin/debug/	ex_btr~1.exe
-CoreEx		build_windows/Debug/ex_btrec.pdb		/bin/debug/	ex_btr~1.pdb
-CoreEx		build_windows/Debug/ex_env.exe		/bin/debug/	ex_env.exe
-CoreEx		build_windows/Debug/ex_env.pdb		/bin/debug/	ex_env.pdb
-CoreEx		build_windows/Debug/ex_lock.exe		/bin/debug/	ex_loc~1.exe
-CoreEx		build_windows/Debug/ex_lock.pdb		/bin/debug/	ex_loc~1.pdb
-CoreEx		build_windows/Debug/ex_mpool.pdb		/bin/debug/	ex_mpo~1.pdb
-CoreEx		build_windows/Debug/ex_mpool.exe		/bin/debug/	ex_mpo~1.exe
-CoreEx		build_windows/Debug/ex_rep_base.exe	/bin/debug/	ex_rep~1.exe
-CoreEx		build_windows/Debug/ex_rep_base.pdb	/bin/debug/	ex_rep~1.pdb
-CoreEx		build_windows/Debug/ex_rep_mgr.exe	/bin/debug/	ex_rep~2.exe
-CoreEx		build_windows/Debug/ex_rep_mgr.pdb	/bin/debug/	ex_rep~2.pdb
-CoreEx		build_windows/Debug/ex_tpcb.exe		/bin/debug/	ex_tpcb.exe
-CoreEx		build_windows/Debug/ex_tpcb.pdb		/bin/debug/	ex_tpcb.pdb
+CoreEx		build_windows/Release/ex_access.exe		/bin/	ex_acc~1.exe
+CoreEx		build_windows/Release/ex_btrec.exe		/bin/	ex_btr~1.exe
+CoreEx		build_windows/Release/ex_env.exe		/bin/	ex_env.exe
+CoreEx		build_windows/Release/ex_lock.exe		/bin/	ex_loc~1.exe
+CoreEx		build_windows/Release/ex_mpool.exe		/bin/	ex_mpo~1.exe
+CoreEx		build_windows/Release/ex_rep_base.exe	/bin/	ex_rep~1.exe
+CoreEx		build_windows/Release/ex_rep_mgr.exe	/bin/	ex_rep~2.exe
+CoreEx		build_windows/Release/ex_tpcb.exe		/bin/	ex_tpcb.exe
 
-CoreEx		build_windows/Debug/excxx_access.exe	/bin/debug/	excxx_ac.exe
-CoreEx		build_windows/Debug/excxx_access.pdb	/bin/debug/	excxx_ac.pdb
-CoreEx		build_windows/Debug/excxx_btrec.exe	/bin/debug/	excxx_bt.exe
-CoreEx		build_windows/Debug/excxx_btrec.pdb	/bin/debug/	excxx_bt.pdb
-CoreEx		build_windows/Debug/excxx_env.exe		/bin/debug/	excxx_en.exe
-CoreEx		build_windows/Debug/excxx_env.pdb		/bin/debug/	excxx_en.pdb
-CoreEx		build_windows/Debug/excxx_lock.exe	/bin/debug/	excxx_lk.exe
-CoreEx		build_windows/Debug/excxx_lock.pdb	/bin/debug/	excxx_lk.pdb
-CoreEx		build_windows/Debug/excxx_mpool.exe	/bin/debug/	excxx_mp.exe
-CoreEx		build_windows/Debug/excxx_mpool.pdb	/bin/debug/	excxx_mp.pdb
-CoreEx		build_windows/Debug/excxx_tpcb.exe	/bin/debug/	excxx_tp.exe
-CoreEx		build_windows/Debug/excxx_tpcb.pdb	/bin/debug/	excxx_tp.pdb
+CoreEx		build_windows/Release/excxx_access.exe	/bin/	excxx_ac.exe
+CoreEx		build_windows/Release/excxx_btrec.exe	/bin/	excxx_bt.exe
+CoreEx		build_windows/Release/excxx_env.exe		/bin/	excxx_en.exe
+CoreEx		build_windows/Release/excxx_lock.exe	/bin/	excxx_lk.exe
+CoreEx		build_windows/Release/excxx_mpool.exe	/bin/	excxx_mp.exe
+CoreEx		build_windows/Release/excxx_tpcb.exe	/bin/	excxx_tp.exe
 
 Docs		${PRODUCT_STAGE}/docs/			/docs/
 

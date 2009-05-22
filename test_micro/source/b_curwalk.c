@@ -1,5 +1,5 @@
 /*
- * $Id: b_curwalk.c,v 1.12 2008/02/05 20:43:41 bostic Exp $
+ * $Id$
  */
 #include "bench.h"
 

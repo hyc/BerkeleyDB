@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
  *
- * $Id: crdel_rec.c,v 12.28 2008/02/18 04:46:42 mjc Exp $
+ * $Id$
  */
 
 #include "db_config.h"

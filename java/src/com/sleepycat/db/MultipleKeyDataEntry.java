@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: MultipleKeyDataEntry.java,v 12.8 2008/01/17 05:04:53 mjc Exp $
+ * $Id$
  */
 
 package com.sleepycat.db;
@@ -108,4 +108,24 @@ public class MultipleKeyDataEntry extends MultipleEntry {
 
         return true;
     }
+    public boolean append(final DatabaseEntry key, final DatabaseEntry data)
+        throws DatabaseException {
+        if (this.append_internal(key.data, key.offset, key.size) != true)
+		return (false);
+        return(this.append_internal(data.data, data.offset, data.size));
+    }
+
+    public boolean append(final byte[] key, final byte[] data)
+        throws DatabaseException {
+        return (this.append_internal(data, 0, data.length));
+    }
+
+    public boolean append(final byte[] newkey, int koff, int klen,
+                          final byte[] newdata, int doff, int dlen)
+        throws DatabaseException {
+	if (this.append_internal(newkey, koff, klen) != true)
+	    return (false);
+        return (this.append_internal(newdata, doff, dlen));
+    }
 }
+

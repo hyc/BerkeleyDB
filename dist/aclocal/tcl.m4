@@ -1,4 +1,4 @@
-# $Id: tcl.m4,v 12.2 2005/06/28 20:45:25 gmf Exp $
+# $Id$
 
 # The SC_* macros in this file are from the unix/tcl.m4 files in the Tcl
 # 8.3.0 distribution, with some minor changes.  For this reason, license
@@ -124,7 +124,7 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 
 # Optional Tcl API.
 AC_DEFUN(AM_TCL_LOAD, [
-	if test `$LIBTOOL_PROG --config | grep build_libtool_libs | grep no` 2>/dev/null; then
+	if test "$enable_shared" != "yes"; then
 		AC_MSG_ERROR([Tcl requires shared libraries])
 	fi
 

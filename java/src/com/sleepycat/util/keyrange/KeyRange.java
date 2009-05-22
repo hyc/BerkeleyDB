@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: KeyRange.java,v 1.6 2008/02/19 19:41:51 mark Exp $
+ * $Id$
  */
 
 package com.sleepycat.util.keyrange;

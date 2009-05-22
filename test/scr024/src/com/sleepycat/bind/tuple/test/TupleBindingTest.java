@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: TupleBindingTest.java,v 12.9 2008/02/07 17:12:30 mark Exp $
+ * $Id$
  */
 
 package com.sleepycat.bind.tuple.test;

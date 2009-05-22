@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.method,v 12.7 2008/05/07 12:47:43 bschmeck Exp $
+# $Id$
 #
 # Check that DB doesn't call DB or DB_ENV methods internally.
 
@@ -77,7 +77,7 @@ sed \
     -e '/^test_erlang\//d' \
     -e '/^test_perf\//d' \
     -e '/^test_purify\//d' \
-    -e '/^test_rep\//d' \
+    -e '/^test_repmgr\//d' \
     -e '/^test_server\//d' \
     -e '/^test_thread\//d' \
     -e '/^test_vxworks\//d' \

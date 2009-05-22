@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2001-2009 Oracle.  All rights reserved.
  *
- * $Id: txn_util.c,v 12.25 2008/01/31 18:40:48 bostic Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -359,8 +359,11 @@ __txn_record_fname(env, txn, fname)
 	if (td->nlog_slots <= td->nlog_dbs) {
 		TXN_SYSTEM_LOCK(env);
 		if ((ret = __env_alloc(&mgr->reginfo,
-		    sizeof(roff_t) * (td->nlog_slots << 1), &np)) != 0)
+		    sizeof(roff_t) * (td->nlog_slots << 1), &np)) != 0) {
+			TXN_SYSTEM_UNLOCK(env);
 			return (ret);
+		}
+
 		memcpy(np, ldbs, td->nlog_dbs * sizeof(roff_t));
 		if (td->nlog_slots > TXN_NSLOTS)
 			__env_alloc_free(&mgr->reginfo, ldbs);

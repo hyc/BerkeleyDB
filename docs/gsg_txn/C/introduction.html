@@ -5,10 +5,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Chapter 1. Introduction</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
-    <meta name="generator" content="DocBook XSL Stylesheets V1.62.4" />
-    <link rel="home" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
     <link rel="up" href="index.html" title="Getting Started with Berkeley DB Transaction Processing" />
-    <link rel="previous" href="preface.html" title="Preface" />
+    <link rel="prev" href="preface.html" title="Preface" />
     <link rel="next" href="recovery-intro.html" title="Recoverability" />
   </head>
   <body>
@@ -32,7 +32,6 @@
             <h2 class="title"><a id="introduction"></a>Chapter 1. Introduction</h2>
           </div>
         </div>
-        <div></div>
       </div>
       <div class="toc">
         <p>
@@ -59,7 +58,7 @@
               <dt>
                 <span class="sect2">
                   <a href="introduction.html#multithread-intro">Multi-threaded 
-        and Multi-process
+        <span>and Multi-process</span>
         Applications</a>
                 </span>
               </dt>
@@ -79,7 +78,11 @@
       </div>
       <p>
     This book provides a thorough introduction and discussion on transactions as
-    used with Berkeley DB (DB).  It begins by offering a general overview to
+    used with Berkeley DB (DB). 
+    
+     
+        
+    It begins by offering a general overview to
     transactions, the guarantees they provide, and the general application
     infrastructure required to obtain full transactional protection for your
     data. 
@@ -94,7 +97,7 @@
       <p>
     You should understand the concepts from the
         <span>
-                <i class="citetitle">Getting Started with Berkeley DB</i>
+                <em class="citetitle">Getting Started with Berkeley DB</em>
         </span>
         
         
@@ -107,7 +110,27 @@
               <h2 class="title" style="clear: both"><a id="txnintro"></a>Transaction Benefits</h2>
             </div>
           </div>
-          <div></div>
+        </div>
+        <div class="toc">
+          <dl>
+            <dt>
+              <span class="sect2">
+                <a href="introduction.html#sysfailure">A Note on System Failure</a>
+              </span>
+            </dt>
+            <dt>
+              <span class="sect2">
+                <a href="introduction.html#apireq">Application Requirements</a>
+              </span>
+            </dt>
+            <dt>
+              <span class="sect2">
+                <a href="introduction.html#multithread-intro">Multi-threaded 
+        <span>and Multi-process</span>
+        Applications</a>
+              </span>
+            </dt>
+          </dl>
         </div>
         <p>
         Transactions offer your application's data protection from
@@ -118,7 +141,7 @@
           <ul type="disc">
             <li>
               <p>
-                <span class="bold"><b>A</b></span>tomicity
+                <span class="bold"><strong>A</strong></span>tomicity
             </p>
               <p>
                 Multiple database operations are treated as a single unit of
@@ -138,7 +161,7 @@
             </li>
             <li>
               <p>
-                <span class="bold"><b>C</b></span>onsistency
+                <span class="bold"><strong>C</strong></span>onsistency
             </p>
               <p>
                 Your databases will never see a partially completed
@@ -157,7 +180,7 @@
             </li>
             <li>
               <p>
-                <span class="bold"><b>I</b></span>solation
+                <span class="bold"><strong>I</strong></span>solation
             </p>
               <p>
                 While a transaction is in progress, your databases will appear
@@ -169,19 +192,19 @@
                 Note, however, that isolation guarantees can be 
                 
                  relaxed from the default setting.   See 
-                <a href="isolation.html">Isolation</a>
+                <a class="xref" href="isolation.html" title="Isolation">Isolation</a>
                 for more information.
             </p>
             </li>
             <li>
               <p>
-                <span class="bold"><b>D</b></span>urability
+                <span class="bold"><strong>D</strong></span>urability
             </p>
               <p>
                 Once committed to your databases, your modifications will
                 persist even in the event of an application or system failure.
                 Note that like isolation, your durability guarantee can be
-                relaxed. See <a href="usingtxns.html#nodurabletxn">Non-Durable Transactions</a>
+                relaxed. See <a class="xref" href="usingtxns.html#nodurabletxn" title="Non-Durable Transactions">Non-Durable Transactions</a>
                 for more information.
             </p>
             </li>
@@ -194,7 +217,6 @@
                 <h3 class="title"><a id="sysfailure"></a>A Note on System Failure</h3>
               </div>
             </div>
-            <div></div>
           </div>
           <p>
             From time to time this manual mentions that transactions protect your data against 'system or application 
@@ -255,7 +277,6 @@
                 <h3 class="title"><a id="apireq"></a>Application Requirements</h3>
               </div>
             </div>
-            <div></div>
           </div>
           <p>
             In order to use transactions, your application has certain
@@ -274,14 +295,8 @@
                     applications.
                 </p>
                 <p>
-                    Environments are optional for non-transactional
-                    applications that use the base API, but they are required for transactional
-                    applications. (Of course, applications that use the
-                    DPL always require the DPL.)
-                </p>
-                <p>
                     Environment usage is described in detail in 
-                    <a href="usingtxns.html">Transaction Basics</a>.
+                    <a class="xref" href="usingtxns.html" title="Chapter 3. Transaction Basics">Transaction Basics</a>.
                 </p>
               </li>
               <li>
@@ -303,7 +318,7 @@
                     The logging subsystem is required for recovery purposes, but
                     its usage also means your application may require a
                     little more administrative effort than it does when logging
-                    is not in use. See <a href="filemanagement.html">Managing DB Files</a> for more information.
+                    is not in use. See <a class="xref" href="filemanagement.html" title="Chapter 5. Managing DB Files">Managing DB Files</a> for more information.
                 </p>
               </li>
               <li>
@@ -326,16 +341,16 @@
                     objects. They should normally be short-lived, and their usage is 
                     reasonably simple. To complete a transaction and save
                     the work it performed, you 
-                    call its <tt class="methodname">commit()</tt> method. To
+                    call its <code class="methodname">commit()</code> method. To
                     complete a transaction and discard its work, you call its
-                    <tt class="methodname">abort()</tt> method.
+                    <code class="methodname">abort()</code> method.
                 </p>
                 <p>
                     In addition, it is possible to use auto commit if you want
                     to transactional protect a single write operation. Auto
                     commit allows a transaction to be used without 
                     obtaining an explicit transaction handle. See 
-                    <a href="autocommit.html">Auto Commit</a>
+                    <a class="xref" href="autocommit.html" title="Auto Commit">Auto Commit</a>
                     for information on how to use auto commit.
                 </p>
               </li>
@@ -372,7 +387,7 @@
                     time multiple threads are used on a single resource,
                     the potential for lock contention arises. In turn, lock
                     contention can lead to deadlocks. See
-                    <a href="blocking_deadlocks.html">Locks, Blocks, and Deadlocks</a>
+                    <a class="xref" href="blocking_deadlocks.html" title="Locks, Blocks, and Deadlocks">Locks, Blocks, and Deadlocks</a>
                     for more information.
                 </p>
                 <p>
@@ -387,7 +402,7 @@
                     manage deadlocks. Still, deadlock management is so
                     frequently a characteristic of transactional
                     applications that we discuss it in this
-                    book. See <a href="txnconcurrency.html">Concurrency</a>
+                    book. See <a class="xref" href="txnconcurrency.html" title="Chapter 4. Concurrency">Concurrency</a>
                     for more information.
                 </p>
               </li>
@@ -403,7 +418,6 @@
         Applications</h3>
               </div>
             </div>
-            <div></div>
           </div>
           <p>
             DB is designed to support multi-threaded  <span>and
@@ -437,7 +451,7 @@
         </p>
           <p>
             For more information on concurrency, on managing isolation
-            levels, and on deadlock detection, see <a href="txnconcurrency.html">Concurrency</a>.
+            levels, and on deadlock detection, see <a class="xref" href="txnconcurrency.html" title="Chapter 4. Concurrency">Concurrency</a>.
         </p>
         </div>
       </div>
@@ -447,9 +461,7 @@
       <table width="100%" summary="Navigation footer">
         <tr>
           <td width="40%" align="left"><a accesskey="p" href="preface.html">Prev</a> </td>
-          <td width="20%" align="center">
-            <a accesskey="u" href="index.html">Up</a>
-          </td>
+          <td width="20%" align="center"> </td>
           <td width="40%" align="right"> <a accesskey="n" href="recovery-intro.html">Next</a></td>
         </tr>
         <tr>

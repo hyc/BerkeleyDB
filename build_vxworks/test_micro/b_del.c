@@ -1,5 +1,5 @@
 /*
- * $Id: b_del.c,v 1.15 2008/01/31 17:01:22 bostic Exp $
+ * $Id$
  */
 #include "bench.h"
 

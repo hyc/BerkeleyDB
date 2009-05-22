@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
  *
- * $Id: env_alloc.c,v 12.22 2008/01/27 18:02:31 bostic Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -212,6 +212,9 @@ __env_alloc(infop, len, retp)
 #endif
 	env = infop->env;
 	*(void **)retp = NULL;
+#ifdef HAVE_MUTEX_SUPPORT
+	MUTEX_REQUIRED(env, infop->mtx_alloc);
+#endif
 
 	/*
 	 * In a heap-backed environment, we call malloc for additional space.
@@ -371,6 +374,10 @@ __env_alloc_free(infop, ptr)
 		__os_free(env, p);
 		return;
 	}
+
+#ifdef HAVE_MUTEX_SUPPORT
+	MUTEX_REQUIRED(env, infop->mtx_alloc);
+#endif
 
 	head = infop->addr;
 	STAT((++head->freed));

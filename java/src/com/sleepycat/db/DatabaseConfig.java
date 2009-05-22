@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2002-2009 Oracle.  All rights reserved.
  *
- * $Id: DatabaseConfig.java,v 12.18 2008/04/02 13:43:38 bschmeck Exp $
+ * $Id$
  */
 
 package com.sleepycat.db;
@@ -73,7 +73,6 @@ public class DatabaseConfig implements Cloneable {
     private boolean transactional = false;
     private boolean transactionNotDurable = false;
     private boolean truncate = false;
-    private boolean xaCreate = false;
 
     private java.util.Comparator btreeComparator = null;
     private BtreePrefixCalculator btreePrefixCalculator = null;
@@ -1919,43 +1918,11 @@ database has been opened.
         return type;
     }
 
-    /**
-    Configure the database to be accessed via applications running under
-    an X/Open conformant Transaction Manager.
-    <p>
-    The database will be opened in the environment specified by the
-    OPENINFO parameter of the GROUPS section of the ubbconfig file.
-    <p>
-    @param xaCreate
-    If true, configure the database to be accessed via applications
-    running under an X/Open conformant Transaction Manager.
-    */
-    public void setXACreate(final boolean xaCreate) {
-        this.xaCreate = xaCreate;
-    }
-
-    /**
-Return true if the database has been configured to be accessed via applications
-    running under an X/Open conformant Transaction Manager.
-<p>
-This method may be called at any time during the life of the application.
-<p>
-@return
-True if the database has been configured to be accessed via applications
-    running under an X/Open conformant Transaction Manager.
-    */
-    public boolean getXACreate() {
-        return xaCreate;
-    }
-
     /* package */
     Db createDatabase(final DbEnv dbenv)
         throws DatabaseException {
 
-        int createFlags = 0;
-
-        createFlags |= xaCreate ? DbConstants.DB_XA_CREATE : 0;
-        return new Db(dbenv, createFlags);
+        return new Db(dbenv, 0);
     }
 
     /* package */

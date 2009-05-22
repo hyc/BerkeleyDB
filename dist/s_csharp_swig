@@ -1,0 +1,42 @@
+#!/bin/sh -
+#       $Id$
+#
+# Run SWIG to generate the C# APIs
+
+t=/tmp/__db_a
+trap 'rm -f $t ; exit 0' 0
+trap 'rm -f $t ; exit 1' 1 2 3 13 15
+
+SWIG=swig
+SWIG_DIR=../libdb_csharp
+SWIG_FILE=$SWIG_DIR/db.i
+
+NAMESPACE="BerkeleyDB.Internal"
+CSHARP_SRCDIR=../csharp/Internal
+
+die() {
+	echo "$@" >&2
+	exit 1
+}
+
+[ -f $SWIG_FILE ] || die "Must be run from the dist directory"
+
+for api in csharp ; do
+	echo "Building $api API"
+	swig_args="-outdir $CSHARP_SRCDIR -namespace $NAMESPACE -dllimport libname $args"
+
+	$SWIG -Wall -$api $swig_args -I$SWIG_DIR \
+	    -o ../libdb_$api/db_${api}_wrap.c $SWIG_FILE || exit $?
+done
+
+cd $CSHARP_SRCDIR
+[ -f DB.cs ] || exit 1
+
+for f in *.cs ; do
+    # SWIG v1.3 always puts quotes around the imported DLL name.  We're using a
+    # constant, not a string, because the DLL name changes based on Visual
+    # Studio's configuration.  Use sed to remove the quotes.
+    chmod 666 $f
+    sed 's/DllImport(\"libname\"/DllImport(libname/' < $f > $t
+    cp $t $f
+done

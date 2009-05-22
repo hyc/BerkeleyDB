@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2001-2009 Oracle.  All rights reserved.
  *
- * $Id: db_rename.c,v 12.31 2008/01/08 20:58:10 bostic Exp $
+ * $Id$
  */
 
 #include "db_config.h"
@@ -266,17 +266,18 @@ __db_rename_int(dbp, ip, txn, name, subdb, newname)
 		old = (char *)subdb;
 		real_name = (char *)subdb;
 	} else {
-		if ((ret = __db_appname(env,
-		    DB_APP_DATA, name, 0, NULL, &real_name)) != 0)
+		if ((ret = __db_appname(env, DB_APP_DATA,
+		    name, &dbp->dirname, &real_name)) != 0)
 			goto err;
 		old = (char *)name;
 	}
+	DB_ASSERT(env, old != NULL);
 
 	if ((ret = __fop_remove_setup(dbp, txn, real_name, 0)) != 0)
 		goto err;
 
 	if (dbp->db_am_rename != NULL &&
-	    (ret = dbp->db_am_rename(dbp, txn, name, subdb, newname)) != 0)
+	    (ret = dbp->db_am_rename(dbp, ip, txn, name, subdb, newname)) != 0)
 		goto err;
 
 	/*
@@ -288,7 +289,7 @@ __db_rename_int(dbp, ip, txn, name, subdb, newname)
 	 * taken care of in the fop layer.
 	 */
 	if (IS_REAL_TXN(txn)) {
-		if ((ret = __fop_dummy(dbp, txn, old, newname, 0)) != 0)
+		if ((ret = __fop_dummy(dbp, txn, old, newname)) != 0)
 			goto err;
 	} else {
 		if ((ret = __fop_dbrename(dbp, old, newname)) != 0)

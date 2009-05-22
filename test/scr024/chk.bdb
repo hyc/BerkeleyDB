@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-# $Id: chk.bdb,v 12.1 2006/09/12 00:37:26 alexg Exp $
+# $Id$
 #
 # Run the collections/bind test suite.
 

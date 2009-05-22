@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2008 Oracle.  All rights reserved.
+ * Copyright (c) 1997-2009 Oracle.  All rights reserved.
  *
- * $Id: os_alloc.c,v 12.18 2008/04/11 00:46:48 alexg Exp $
+ * $Id$
  */
 
 #include "db_config.h"

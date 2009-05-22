@@ -1,5 +1,5 @@
 @echo off
-::	$Id: winbuild.bat,v 1.8 2008/04/17 01:59:10 alexg Exp $
+::	$Id$
 ::	Helper script to build Berkeley DB libraries and executables
 ::	using MSDEV
 ::
