@@ -1988,7 +1988,6 @@ __bamc_compress_get_multiple_key(dbc, data, flags)
 		memcpy(writekey, cp->currentKey->data, cp->currentKey->size);
 		memcpy(writedata, cp->currentData->data, cp->currentData->size);
 	}
-	DB_MULTIPLE_WRITE_END(mptr, data);
 
 	if (ret == DB_NOTFOUND)
 		ret = 0;
@@ -2044,7 +2043,6 @@ __bamc_compress_get_multiple(dbc, key, data, flags)
 
 		memcpy(writedata, cp->currentData->data, cp->currentData->size);
 	}
-	DB_MULTIPLE_WRITE_END(mptr, data);
 
 	if (ret == DB_NOTFOUND)
 		ret = 0;
@@ -2629,7 +2627,7 @@ __bamc_compress_count(dbc, countp)
 		key = cp->currentKey;
 
 	/* Duplicate the cursor */
-	if ((ret = dbc->dup(dbc, &dbc_n, 0)) != 0)
+	if ((ret = __dbc_dup(dbc, &dbc_n, 0)) != 0)
 		return (ret);
 
 	/* We don't care about preserving the cursor's position on error */
@@ -2652,7 +2650,7 @@ __bamc_compress_count(dbc, countp)
 	*countp = count;
 
  err:
-	if ((t_ret = dbc_n->close(dbc_n)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc_n)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -2833,6 +2831,11 @@ __bam_compress_salvage(dbp, vdp, handle, callback, key, data)
 	compcursor = (u_int8_t*)data->data;
 	compend = compcursor + data->size;
 
+	if (data->size == 0) {
+		ret = DB_VERIFY_FATAL;
+		goto unknown_data;
+	}
+	
 	/* Unmarshal the first data */
 	size = __db_decompress_count_int(compcursor);
 	if (size == 0xFF || compcursor + size > compend) {
@@ -2947,7 +2950,7 @@ __bam_compress_count(dbc, nkeysp, ndatap)
 	t = (BTREE *)dbp->bt_internal;
 
 	/* Duplicate the cursor */
-	if ((ret = dbc->dup(dbc, &dbc_n, 0)) != 0)
+	if ((ret = __dbc_dup(dbc, &dbc_n, 0)) != 0)
 		return (ret);
 
 	/* We don't care about preserving the cursor's position on error */
@@ -3003,7 +3006,7 @@ err:
 	if (ret == DB_NOTFOUND)
 		ret = 0;
 
-	if ((t_ret = dbc_n->close(dbc_n)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc_n)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (ret == 0) {

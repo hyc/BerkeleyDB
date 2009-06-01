@@ -1050,7 +1050,7 @@ __bam_repl_recover(env, dbtp, lsnp, op, info)
 			bi = GET_BINTERNAL(file_dbp, pagep, argp->indx);
 			dp = &bi->unused;
 			len = bi->len +
-			     SSZ(BINTERNAL, data) - SSZ(BINTERNAL, unused);
+			     SSZA(BINTERNAL, data) - SSZ(BINTERNAL, unused);
 		} else  {
 			bk = GET_BKEYDATA(file_dbp, pagep, argp->indx);
 			dp = bk->data;
@@ -1087,7 +1087,7 @@ __bam_repl_recover(env, dbtp, lsnp, op, info)
 			bi = GET_BINTERNAL(file_dbp, pagep, argp->indx);
 			dp = &bi->unused;
 			len = bi->len +
-			     SSZ(BINTERNAL, data) - SSZ(BINTERNAL, unused);
+			     SSZA(BINTERNAL, data) - SSZ(BINTERNAL, unused);
 		} else  {
 			bk = GET_BKEYDATA(file_dbp, pagep, argp->indx);
 			dp = bk->data;

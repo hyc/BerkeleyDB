@@ -37,14 +37,14 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_primitive_rw.html#id1592189">
+              <a href="stl_primitive_rw.html#id1593778">
 Storing Simple Primitive Types
 </a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_primitive_rw.html#id1592145">
+              <a href="stl_primitive_rw.html#id1594323">
 Storing Strings
 </a>
             </span>
@@ -60,7 +60,7 @@ of data, like that of int, long, char, etc; Second is how to store strings.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592189"></a>
+              <h3 class="title"><a id="id1593778"></a>
 Storing Simple Primitive Types
 </h3>
             </div>
@@ -69,12 +69,30 @@ Storing Simple Primitive Types
         <p>
 If you want to store primitive types, you need one more type parameter
 for the container class templates, e.g. when you store int data into a db_vector, you need 
-this type of container: db_vector&lt;int, ElementHolder&lt;int&gt; &gt;; ;
+this type of container: 
+</p>
+        <pre class="programlisting">
+db_vector&lt;int, ElementHolder&lt;int&gt; &gt;;
+</pre>
+        <p>
 When you want to store double data with int keys, use this type: 
-db_map&lt;int, int, ElementHolder&lt;double&gt; &gt;;;
+</p>
+        <pre class="programlisting">
+db_map&lt;int, int, ElementHolder&lt;double&gt; &gt;;
+</pre>
+        <p>
 When you want to store a char* string with long keys, use this type:
-db_map&lt;long, char*, ElementHolder&lt;char*&gt; &gt;.
-
+</p>
+        <pre class="programlisting">
+db_map&lt;long, char*, ElementHolder&lt;char*&gt; &gt;;
+</pre>
+        <p>
+Or this type for const char* strings:
+</p>
+        <pre class="programlisting">
+db_map&lt;long, const char*, ElementHolder&lt;const char*&gt; &gt;.
+</pre>
+        <p>
 There is example code to use this feature in TestVector::test_primitive
 of dbstl test suite.
 </p>
@@ -83,7 +101,7 @@ of dbstl test suite.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592145"></a>
+              <h3 class="title"><a id="id1594323"></a>
 Storing Strings
 </h3>
             </div>
@@ -113,10 +131,10 @@ string contents before calling next container::operator[] or iterator::operator*
 </p>
         <p>
 Use a db_map::value_type::second_type or db_map::datatype_wrap to hold reference for 
-operator[] return value and use that reference to use the value multiply.
+operator[] return value and use that reference to use the value repetitively.
 
 The *itr is of type ElementHolder&lt;char *&gt;, which can be automatically converted
-to char * pointer because it has a type conversion operator, so wherever an auto conversion
+to char * pointer because it has a type conversion operator. So wherever an auto conversion
 is done by the compiler, the conversion operator is called. This can avoid almost
 all explicit conversions except two use cases: 
 </p>
@@ -125,19 +143,30 @@ all explicit conversions except two use cases:
             <li>
               <p>
 			The *itr is used as a "..." parameter
-like this: printf("this is the special case %s", *itr); This compiles but causes
-errors, you should write like this: printf("this is the special case %s", (char *)*itr);
+like this: 
+</p>
+              <pre class="programlisting">
+printf("this is the special case %s", *itr); 
 
+</pre>
+              <p>
+This compiles but causes
+errors, you should write like this: 
+</p>
+              <pre class="programlisting">
+printf("this is the special case %s", (char *)*itr);
+
+</pre>
+              <p>
 		</p>
             </li>
             <li>
               <p>
-For some old compilers like gcc3.4.6, if the *itr is used in the ? : operator as 
-one of the two oprands separated by : , so if we have expr ? *itr : var where 
+For some old compilers like gcc3.4.6, the *itr is used in the ? : operator as 
+one of the two oprands separated by : . So if we have this expression "expr ? *itr : var" where 
 var is the same type as itr's value_type, this
 expression won't compile because the compiler thinks *itr is of different type to var,
-and it won't do an auto conversion. At least this is true for gcc3.4.6. MS VC8 and
-gcc4.1.2 does not have this problem.
+and it won't do an auto conversion. At least this is true for gcc3.4.6.
 </p>
             </li>
           </ol>

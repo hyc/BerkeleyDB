@@ -301,8 +301,6 @@ public class RepQuoteExampleGSG <strong class="userinput"><code> implements Even
         {
             if (db == null) {
                 DatabaseConfig dbconf = new DatabaseConfig();
-                // Set page size small so page allocation is cheap.
-                dbconf.setPageSize(512);
                 dbconf.setType(DatabaseType.BTREE);
                 <strong class="userinput"><code>if (dbenv.getIsMaster()) {
                     dbconf.setAllowCreate(true);
@@ -551,7 +549,7 @@ QUOTESERVER&gt; </pre>
 QUOTESERVER&gt; </pre>
         <p>
         Then, go to either the master or the replica to see the updated
-        database:
+        database. On the master:
 </p>
         <pre class="programlisting">QUOTESERVER&gt; 
         Symbol  Price
@@ -570,7 +568,7 @@ QUOTESERVER&gt; </pre>
 QUOTESERVER (read-only)&gt; </pre>
         <p>
         Finally, to quit the applications, simply type
-        <code class="literal">quit</code> at both prompts:
+        <code class="literal">quit</code> at both prompts. On the replica:
 </p>
         <pre class="programlisting">QUOTESERVER (read-only)&gt; quit
 &gt; </pre>

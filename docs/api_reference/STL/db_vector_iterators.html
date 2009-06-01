@@ -3,20 +3,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 11.  The db_vector_iterators Class</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <title>Chapter 11.  iterator classes for db_vector</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="prev" href="stldb_base_iteratoris_directdb_get.html" title="is_directdb_get" />
-    <link rel="next" href="db_vector_base_iterator.html" title="Chapter 12.  The db_vector_base_iterator Class" />
+    <link rel="next" href="db_vector_base_iterator.html" title="Chapter 12.  db_vector_base_iterator" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 11. 
- The db_vector_iterators Class</th>
+ iterator classes for db_vector  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_base_iteratoris_directdb_get.html">Prev</a> </td>
@@ -31,92 +31,67 @@
         <div>
           <div>
             <h2 class="title"><a id="db_vector_iterators"></a>Chapter 11. 
- The db_vector_iterators Class</h2>
+ iterator classes for db_vector  </h2>
           </div>
         </div>
       </div>
+      <h2><a id="id1562607"></a>Iterator classes for db_vector.</h2>
       <p>
 Iterator classes for db_vector.</p>
-      <p><a class="link" href="db_vector.html" title="Chapter 4.  The db_vector Class">db_vector</a>
- has two iterator classes --- <a class="link" href="db_vector_base_iterator.html" title="Chapter 12.  The db_vector_base_iterator Class">db_vector_base_iterator</a>
- and <a class="link" href="db_vector_iterator.html" title="Chapter 13.  The db_vector_iterator Class">db_vector_iterator</a>
+      <p><a class="link" href="db_vector.html" title="Chapter 4.  db_vector">db_vector</a>
+ has two iterator classes --- <a class="link" href="db_vector_base_iterator.html" title="Chapter 12.  db_vector_base_iterator">db_vector_base_iterator</a>
+ and <a class="link" href="db_vector_iterator.html" title="Chapter 13.  db_vector_iterator">db_vector_iterator</a>
 . </p>
-      <p>The differences between the two classes are that the <a class="link" href="db_vector_base_iterator.html" title="Chapter 12.  The db_vector_base_iterator Class">db_vector_base_iterator</a>
- can only be used to read its referenced value, so it is intended as db_vector's const iterator; While the other class allows both read and write access. If your access pattern is readonly, it is strongly recommended that you use the const iterator because it is faster and more efficient. The two classes have identical behaviors to std::vector::const_iterator and std::vector::iterator respectively. Note that the common public member function behaviors are described in the <a class="link" href="db_base_iterator.html" title="Chapter 10.  The db_base_iterator Class">db_base_iterator</a>
+      <p>The differences between the two classes are that the <a class="link" href="db_vector_base_iterator.html" title="Chapter 12.  db_vector_base_iterator">db_vector_base_iterator</a>
+ can only be used to read its referenced value, so it is intended as db_vector's const iterator; While the other class allows both read and write access. If your access pattern is readonly, it is strongly recommended that you use the const iterator because it is faster and more efficient. The two classes have identical behaviors to std::vector::const_iterator and std::vector::iterator respectively. Note that the common public member function behaviors are described in the <a class="link" href="db_base_iterator.html" title="Chapter 10.  db_base_iterator">db_base_iterator</a>
  section. </p>
-      <h4><a id="id1567884"></a>
+      <h4><a id="id1563193"></a>
 See Also
 </h4>
       <p> </p>
-      <p><a class="link" href="db_base_iterator.html" title="Chapter 10.  The db_base_iterator Class">db_base_iterator</a>
+      <p><a class="link" href="db_base_iterator.html" title="Chapter 10.  db_base_iterator">db_base_iterator</a>
  </p>
-      <div class="sect1" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h2 class="title" style="clear: both"><a id="db_vector_iterators_class"></a> db_vector_iterators</h2>
-            </div>
-          </div>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1567972"></a>
-Group</h3>
-              </div>
-            </div>
-          </div>
-          <p>
-<a class="xref" href="dbstl_iterators.html" title="Chapter 9.  The dbstl_iterators Class">
- The dbstl_iterators Class</a>
-</p>
-          <p>
-</p>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1568066"></a>
-  Public Members</h3>
-              </div>
-            </div>
-          </div>
-          <div class="informaltable">
-            <table border="1" width="80%">
-              <colgroup>
-                <col />
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-<a class="link" href="db_vector_base_iterator.html" title="Chapter 12.  The db_vector_base_iterator Class">
+      <h4><a id="id1563565"></a> Public Members </h4>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+<a class="link" href="db_vector_base_iterator.html" title="Chapter 12.  db_vector_base_iterator">
 db_vector_base_iterator</a>
 </td>
-                  <td>
+              <td>
 db_vector_base_iterator</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="db_vector_iterator.html" title="Chapter 13.  The db_vector_iterator Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="db_vector_iterator.html" title="Chapter 13.  db_vector_iterator">
 db_vector_iterator</a>
 </td>
-                  <td>
+              <td>
 db_vector_iterator</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <h4><a id="id1563701"></a>
+Group</h4>
+      <p>
+<a class="xref" href="dbstl_iterators.html" title="Chapter 9.  dbstl iterator classes">
+ dbstl iterator classes  </a>
+</p>
+      <p>
+</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -134,7 +109,7 @@ is_directdb_get
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> Chapter 12. 
- The db_vector_base_iterator Class</td>
+ db_vector_base_iterator  </td>
         </tr>
       </table>
     </div>

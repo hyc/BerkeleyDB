@@ -12,13 +12,13 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import com.sleepycat.db.Database;
-import com.sleepycat.db.DeadlockException;
-import com.sleepycat.db.Environment;
-import com.sleepycat.db.TransactionConfig;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.collections.TransactionRunner;
 import com.sleepycat.collections.TransactionWorker;
+import com.sleepycat.db.Database;
+import com.sleepycat.db.Environment;
+import com.sleepycat.db.DeadlockException;
+import com.sleepycat.db.TransactionConfig;
 import com.sleepycat.util.ExceptionUnwrapper;
 import com.sleepycat.util.test.TestEnv;
 
@@ -38,9 +38,7 @@ public class SecondaryDeadlockTest extends TestCase {
     private static final int N_ITERS = 20;
     private static final int MAX_RETRIES = 1000;
 
-    public static void main(String[] args)
-        throws Exception {
-
+    public static void main(String[] args) {
         junit.framework.TestResult tr =
             junit.textui.TestRunner.run(suite());
         if (tr.errorCount() > 0 ||
@@ -51,9 +49,7 @@ public class SecondaryDeadlockTest extends TestCase {
         }
     }
 
-    public static Test suite()
-        throws Exception {
-
+    public static Test suite() {
         TestSuite suite = new TestSuite(SecondaryDeadlockTest.class);
         return suite;
     }
@@ -70,6 +66,7 @@ public class SecondaryDeadlockTest extends TestCase {
         super(name);
     }
 
+    @Override
     public void setUp()
         throws Exception {
 
@@ -86,6 +83,7 @@ public class SecondaryDeadlockTest extends TestCase {
                                        true);
     }
 
+    @Override
     public void tearDown() {
 
         if (index != null) {
@@ -141,12 +139,12 @@ public class SecondaryDeadlockTest extends TestCase {
                     /* The TransactionRunner performs retries. */
                     for (int i = 0; i < N_ITERS; i +=1 ) {
                         runner.run(new TransactionWorker() {
-                            public void doWork() throws Exception {
+                            public void doWork() {
                                 assertEquals(null, storeMap.put(N_ONE, N_101));
                             }
                         });
                         runner.run(new TransactionWorker() {
-                            public void doWork() throws Exception {
+                            public void doWork() {
                                 assertEquals(N_101, storeMap.remove(N_ONE));
                             }
                         });

@@ -47,13 +47,9 @@ additional information.  The linker rearranges symbols and strips out
 the overhead, and the resulting application is much smaller than the
 library.   There is also a Visual C++ optimization to "Minimize size"
 that will reduce the library size by a few percent.</p>
-      <p>A Visual C++ project file called <code class="filename">db_small.dsp</code>  is provided for
-this small memory configuration, but is not included in the workspace
-by default.  To build, open Visual Studio and go to the <span class="emphasis"><em>File</em></span>
-menu.  Choose <span class="emphasis"><em>Open Workspace</em></span>, change <span class="emphasis"><em>Files of Type</em></span>
-to <span class="emphasis"><em>Projects (.dsp)</em></span> and open <span class="emphasis"><em>db_small.dsp</em></span>.</p>
-      <p>The project supports two configurations - <span class="emphasis"><em>Release</em></span> and
-<span class="emphasis"><em>Debug</em></span>.  During a build (F7), static libraries are created in
+      <p>A Visual C++ project file called <code class="filename">db_small</code> is
+provided for this small memory configuration.
+During a build, static libraries are created in
 <code class="filename">Release</code> or <code class="filename">Debug</code>, respectively.  The library name is
 <code class="filename">libdb_small48sd.lib</code> for the debug build, or
 <code class="filename">libdb_small48s.lib</code> for the release build.</p>

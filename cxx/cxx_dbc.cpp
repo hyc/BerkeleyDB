@@ -46,8 +46,8 @@ Dbc::~Dbc()
 }
 
 DBC_METHOD(close, (void), (dbc), DB_RETOK_STD)
-DBC_METHOD(cmp, (Dbc *other_cursor, int *result, u_int32_t flags),
-    (dbc, other_cursor, result, flags), DB_RETOK_STD)
+DBC_METHOD(cmp, (Dbc *other_cursor, int *result, u_int32_t _flags),
+    (dbc, other_cursor, result, _flags), DB_RETOK_STD)
 DBC_METHOD(count, (db_recno_t *countp, u_int32_t _flags),
     (dbc, countp, _flags), DB_RETOK_STD)
 DBC_METHOD(del, (u_int32_t _flags),

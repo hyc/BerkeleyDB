@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>DB_ENV-&gt;repmgr_start()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
@@ -98,9 +98,9 @@ DB_ENV-&gt;repmgr_start(DB_ENV *env, int nthreads, u_int32_t flags);  </pre>
          Applications with special needs (for example, applications using
          network protocols not supported by the Berkeley DB Replication
          Manager), must perform additional configuration and call other
-         Berkeley DB base replication API methods.  For more information on building
-         base replication API applications, please see the 
-         <a href="../../programmer_reference/rep_base_meth.html" class="olink">Base Replication API</a> section in the 
+         Berkeley DB replication Base API methods.  For more information on building
+         Base API applications, please see the 
+         <a href="../../programmer_reference/rep_base_meth.html" class="olink">Base API Methods</a> section in the 
          <em class="citetitle">Berkeley DB Programmer's Reference Guide</em>.
     </p>
       <p>
@@ -137,7 +137,7 @@ flag set.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1699910"></a>Parameters</h3>
+              <h3 class="title"><a id="id1704659"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ flag set.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1699914"></a>flags</h4>
+                <h4 class="title"><a id="id1704824"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -189,7 +189,7 @@ flag set.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1700129"></a>nthreads</h4>
+                <h4 class="title"><a id="id1704950"></a>nthreads</h4>
               </div>
             </div>
           </div>
@@ -205,7 +205,7 @@ flag set.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1700288"></a>Errors</h3>
+              <h3 class="title"><a id="id1705109"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -221,7 +221,7 @@ flag set.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1700268"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1704928"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -229,7 +229,7 @@ flag set.
                 If the database environment was not already opened or was
 opened without the <code class="literal">DB_THREAD</code> flag set; a local
                 site has not already been configured, this method is called
-                from a base replication API application; or if an invalid
+                from a Base API application; or if an invalid
                 flag value or parameter was specified.
             </p>
         </div>
@@ -238,7 +238,7 @@ opened without the <code class="literal">DB_THREAD</code> flag set; a local
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1700168"></a>Class</h3>
+              <h3 class="title"><a id="id1704959"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -250,7 +250,7 @@ opened without the <code class="literal">DB_THREAD</code> flag set; a local
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1699546"></a>See Also</h3>
+              <h3 class="title"><a id="id1705085"></a>See Also</h3>
             </div>
           </div>
         </div>

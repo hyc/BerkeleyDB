@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.sleepycat.db.DatabaseEntry;
+import com.sleepycat.persist.model.EntityModel;
 import com.sleepycat.persist.raw.RawObject;
 
 /**
@@ -60,7 +61,7 @@ public class ObjectArrayFormat extends Format {
     @Override
     public Format getComponentType() {
         return (useComponentFormat != null) ?
-            useComponentFormat : componentFormat  ;
+            useComponentFormat : componentFormat;
     }
 
     @Override
@@ -71,7 +72,7 @@ public class ObjectArrayFormat extends Format {
     }
 
     @Override
-    void initialize(Catalog catalog, int initVersion) {
+    void initialize(Catalog catalog, EntityModel model, int initVersion) {
         /* Set the component format for a new (never initialized) format. */
         if (componentFormat == null) {
             Class cls = getType().getComponentType();

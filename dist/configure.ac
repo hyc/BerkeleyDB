@@ -157,7 +157,7 @@ LIBSO_LIBS="$LIBS"
 # Don't override anything if it's already set from the environment.
 optimize_debug="-O"
 case "$host_os" in
-aix4.3.*|aix5*)
+aix4.3.*|aix[[56]]*)
 	case "$host_os" in
 	aix4.3.*)
 		CPPFLAGS="$CPPFLAGS -D_LINUX_SOURCE_COMPAT";;

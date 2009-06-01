@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Base replication API</title>
+    <title>Base API Methods</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Base replication API</th>
+          <th colspan="3" align="center">Base API Methods</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep_mgr_meth.html">Prev</a> </td>
@@ -31,11 +31,11 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="rep_base_meth"></a>Base replication API</h2>
+            <h2 class="title" style="clear: both"><a id="rep_base_meth"></a>Base API Methods</h2>
           </div>
         </div>
       </div>
-      <p>Applications which use the Base replication API use the following
+      <p>Base API applications use the following
 Berkeley DB methods.</p>
       <div class="variablelist">
         <dl>
@@ -76,8 +76,8 @@ Berkeley DB methods.</p>
             administrative functions (for example, the protocol for dealing
             with lost messages), and permitting new clients to join an
             active replication group.  This method should only be called
-            after the environment has been configured as a replication
-            master or client via <a href="../api_reference/C/repstart.html" class="olink">DB_ENV-&gt;rep_start()</a>.
+            after the replication system's communications infrastructure
+ has been configured via <a href="../api_reference/C/reptransport.html" class="olink">DB_ENV-&gt;rep_set_transport()</a>.
         </p>
           </dd>
           <dt>
@@ -107,12 +107,12 @@ Berkeley DB methods.</p>
           </dd>
           <dt>
             <span class="term">
-              <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a>
+              <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a>
             </span>
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a> method configures the local site's priority for
+            The <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a> method configures the local site's priority for
             the purpose of elections.
         </p>
           </dd>
@@ -161,8 +161,8 @@ Berkeley DB methods.</p>
           </dd>
         </dl>
       </div>
-      <p>In addition to the methods previously described, applications which use
-the Base replication API may also call the following methods, as needed:
+      <p>In addition to the methods previously described, Base API applications 
+may also call the following methods, as needed:
 <a href="../api_reference/C/repstat.html" class="olink">DB_ENV-&gt;rep_stat()</a>, <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> and <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>.</p>
     </div>
     <div class="navfooter">

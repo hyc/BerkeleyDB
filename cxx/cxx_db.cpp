@@ -94,7 +94,10 @@ Db::Db(DbEnv *dbenv, u_int32_t flags)
 ,	associate_callback_(0)
 ,       associate_foreign_callback_(0)
 ,	bt_compare_callback_(0)
+,	bt_compress_callback_(0)
+,	bt_decompress_callback_(0)
 ,	bt_prefix_callback_(0)
+,	db_partition_callback_(0)
 ,	dup_compare_callback_(0)
 ,	feedback_callback_(0)
 ,	h_compare_callback_(0)
@@ -499,6 +502,48 @@ DB_GET_CALLBACK(get_bt_compare, bt_compare,
 DB_SET_CALLBACK(set_bt_compare, bt_compare,
     (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
 
+DB_CALLBACK_C_INTERCEPT(bt_compress,
+    int, (DB *cthis, const DBT *data1, const DBT *data2, const DBT *data3,
+    const DBT *data4, DBT *data5), return,
+    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2),
+    Dbt::get_const_Dbt(data3), Dbt::get_const_Dbt(data4), Dbt::get_Dbt(data5)))
+
+DB_CALLBACK_C_INTERCEPT(bt_decompress,
+    int, (DB *cthis, const DBT *data1, const DBT *data2, DBT *data3,
+    DBT *data4, DBT *data5), return,
+    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2),
+    Dbt::get_Dbt(data3), Dbt::get_Dbt(data4), Dbt::get_Dbt(data5)))
+
+// The {g|s}et_bt_compress methods don't fit into the standard macro templates
+// since they take two callback functions.
+int Db::get_bt_compress(
+    int (**bt_compress)
+    (Db *, const Dbt *, const Dbt *, const Dbt *, const Dbt *, Dbt *),
+    int (**bt_decompress)
+    (Db *, const Dbt *, const Dbt *, Dbt *, Dbt *, Dbt *))
+{
+	if (bt_compress != NULL)
+		*(bt_compress) = bt_compress_callback_;
+	if (bt_decompress != NULL)
+		*(bt_decompress) = bt_decompress_callback_;
+	return 0;
+}
+
+int Db::set_bt_compress(
+    int (*bt_compress)
+    (Db *, const Dbt *, const Dbt *, const Dbt *, const Dbt *, Dbt *),
+    int (*bt_decompress)(Db *, const Dbt *, const Dbt *, Dbt *, Dbt *, Dbt *))
+{
+	DB *cthis = unwrap(this);
+
+	bt_compress_callback_ = bt_compress;
+	bt_decompress_callback_ = bt_decompress;
+	return ((*(cthis->set_bt_compress))(cthis, 
+	    (bt_compress ? _db_bt_compress_intercept_c : NULL),
+	    (bt_decompress ? _db_bt_decompress_intercept_c : NULL)));
+
+}
+
 DB_CALLBACK_C_INTERCEPT(bt_prefix,
     size_t, (DB *cthis, const DBT *data1, const DBT *data2),
     return,
@@ -632,6 +677,38 @@ DB_METHOD(get_pagesize, (u_int32_t *db_pagesizep),
     (db, db_pagesizep), DB_RETOK_STD)
 DB_METHOD(set_pagesize, (u_int32_t db_pagesize),
     (db, db_pagesize), DB_RETOK_STD)
+
+DB_CALLBACK_C_INTERCEPT(db_partition,
+    u_int32_t, (DB *cthis, DBT *key),
+    return, (cxxthis, Dbt::get_Dbt(key)))
+
+// set_partition and get_partition_callback do not fit into the macro 
+// templates, since there is an additional argument in the API calls.
+int Db::set_partition(u_int32_t parts, Dbt *keys, 
+    u_int32_t (*arg)(Db *cxxthis, Dbt *key))
+{
+	DB *cthis = unwrap(this);
+
+	db_partition_callback_ = arg;
+	return ((*(cthis->set_partition))(cthis, parts, keys,
+	    arg ? _db_db_partition_intercept_c : NULL));
+}
+
+int Db::get_partition_callback(u_int32_t *parts, 
+    u_int32_t (**argp)(Db *cxxthis, Dbt *key))
+{
+	DB *cthis = unwrap(this);
+	if (argp != NULL)
+		*(argp) = db_partition_callback_;
+	if (parts != NULL)
+		(cthis->get_partition_callback)(cthis, parts, NULL);
+	return 0;
+}
+
+DB_METHOD(set_partition_dirs, (const char **dirp), (db, dirp), DB_RETOK_STD)
+DB_METHOD(get_partition_dirs, (const char ***dirpp), (db, dirpp), DB_RETOK_STD)
+DB_METHOD(get_partition_keys, (u_int32_t *parts, Dbt **keys),
+    (db, parts, (DBT **)keys), DB_RETOK_STD)
 DB_METHOD(get_priority, (DB_CACHE_PRIORITY *priorityp),
     (db, priorityp), DB_RETOK_STD)
 DB_METHOD(set_priority, (DB_CACHE_PRIORITY priority),
@@ -652,6 +729,8 @@ DB_METHOD(get_re_source, (const char **re_source),
     (db, re_source), DB_RETOK_STD)
 DB_METHOD(set_re_source, (const char *re_source),
     (db, re_source), DB_RETOK_STD)
+DB_METHOD(sort_multiple, (Dbt *key, Dbt *data, u_int32_t flags),
+    (db, key, data, flags), DB_RETOK_STD)
 DB_METHOD(get_q_extentsize, (u_int32_t *extentsizep),
     (db, extentsizep), DB_RETOK_STD)
 DB_METHOD(set_q_extentsize, (u_int32_t extentsize),
@@ -699,6 +778,9 @@ DB_METHOD(get_cachesize, (u_int32_t *gbytesp, u_int32_t *bytesp, int *ncachep),
     (db, gbytesp, bytesp, ncachep), DB_RETOK_STD)
 DB_METHOD(set_cachesize, (u_int32_t gbytes, u_int32_t bytes, int ncache),
     (db, gbytes, bytes, ncache), DB_RETOK_STD)
+
+DB_METHOD(get_create_dir, (const char **dirp), (db, dirp), DB_RETOK_STD)
+DB_METHOD(set_create_dir, (const char *dir), (db, dir), DB_RETOK_STD)
 
 int Db::set_paniccall(void (*callback)(DbEnv *, int))
 {

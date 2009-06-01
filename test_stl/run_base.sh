@@ -5,21 +5,21 @@ prog=$1
 mkdir -p ./dbenv
 rm -rf dbenv/*
 echo "Auto commit btree transaction tests:"
-$prog -s b -m t -t a  -T 200 -k 50 -l 100 -c 33554432 -n $2
+$prog -s b -m t -t a  -T 200 -k 50 -l 100 -c 33554432 -n $2 >/dev/null
 echo "Transaction btree tests:"
-$prog -s b -m t -t e  -T 200 -k 50 -l 100 -c 33554432 -n $2
+$prog -s b -m t -t e  -T 200 -k 50 -l 100 -c 33554432 -n $2 >/dev/null
 echo "CDS btree tests:"
-$prog -s b -m c -T 200 -k 50 -l 100 -c 33554432 -n $2 
+$prog -s b -m c -T 200 -k 50 -l 100 -c 33554432 -n $2  >/dev/null
 echo "DS btree tests:"
-$prog -s b -T 200 -k 50 -l 100 -c 33554432 -n $2 
+$prog -s b -T 200 -k 50 -l 100 -c 33554432 -n $2  >/dev/null
 echo "Auto commit hash transaction tests:"
-$prog -s h -m t -t a  -T 200 -k 50 -l 100 -c 33554432 -n $2
+$prog -s h -m t -t a  -T 200 -k 50 -l 100 -c 33554432 -n $2 >/dev/null
 echo "Transaction hash tests:"
-$prog -s h -m t -t e  -T 200 -k 50 -l 100 -c 33554432 -n $2
+$prog -s h -m t -t e  -T 200 -k 50 -l 100 -c 33554432 -n $2 >/dev/null
 echo "CDS hash tests:"
-$prog -s h -m c -T 200 -k 50 -l 100 -c 33554432 -n $2
+$prog -s h -m c -T 200 -k 50 -l 100 -c 33554432 -n $2 >/dev/null
 echo "DS hash tests:"
-$prog -s h -T 200 -k 50 -l 100 -c 33554432 -n $2 
+$prog -s h -T 200 -k 50 -l 100 -c 33554432 -n $2  >/dev/null
 }
 
 run_mt()

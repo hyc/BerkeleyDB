@@ -98,7 +98,7 @@
                                           <span class="emphasis"><em>can</em></span> open
                                           replicas with read-only
                                           databases, so long as you are
-                                          prepared to closed and then reopen
+                                          prepared to close and then reopen
                                           the handle in the event the
                                           client becomes a master.
                                   </p>
@@ -162,7 +162,7 @@ ret = 0;
 /* 
  * Remember that for this to work, an APP_DATA struct would have first
  * had to been set to the environment handle's app_private data
- * member. (dbenv is presumable declared and opened in another part of
+ * member. (dbenv is presumably declared and opened in another part of
  * the code.)
  */
 app_data = dbenv-&gt;app_private;

@@ -334,7 +334,6 @@ struct __db_mpool_hash {
 
 	DB_LSN		old_reader;	/* Oldest snapshot reader (cached). */
 
-#define	IO_WAITER	0x001		/* Thread is waiting on page. */
 	u_int32_t	flags;
 };
 
@@ -552,10 +551,6 @@ struct __bh_frozen_a {
 #define	BH_OWNED_BY(env, bhp, txn)	((txn) != NULL &&		\
     (bhp)->td_off != INVALID_ROFF &&					\
     (txn)->td == BH_OWNER(env, bhp))
-
-#define	BH_PRIORITY(bhp)						\
-    (SH_CHAIN_SINGLETON(bhp, vc) ? (bhp)->priority :			\
-     __memp_bh_priority(bhp))
 
 #define	VISIBLE_LSN(env, bhp)						\
     (&BH_OWNER(env, bhp)->visible_lsn)

@@ -11,7 +11,9 @@ package com.sleepycat.persist.raw;
 import java.util.List;
 import java.util.Map;
 
+import com.sleepycat.persist.model.ClassMetadata;
 import com.sleepycat.persist.model.Entity;
+import com.sleepycat.persist.model.EntityMetadata;
 import com.sleepycat.persist.model.Persistent;
 
 /**
@@ -45,6 +47,11 @@ public interface RawType {
      * @see Persistent#version
      */
     int getVersion();
+
+    /**
+     * Returns the internal unique ID for this type.
+     */
+    int getId();
 
     /**
      * Returns whether this is a {@link <a
@@ -132,4 +139,21 @@ public interface RawType {
      * an array type).
      */
     RawType getSuperType();
+
+    /**
+     * Returns the original model class metadata used to create this class, or
+     * null if this is not a model class.
+     */
+    ClassMetadata getClassMetadata();
+
+    /**
+     * Returns the original model entity metadata used to create this class, or
+     * null if this is not an entity class.
+     */
+    EntityMetadata getEntityMetadata();
+
+    /**
+     * Returns an XML representation of the raw type.
+     */
+    String toString();
 }

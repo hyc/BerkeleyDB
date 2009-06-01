@@ -34,7 +34,6 @@ public interface DbConstants
     int DB_ENCRYPT = 0x00000001;
     int DB_ENCRYPT_AES = 0x00000001;
     int DB_EXCL = 0x00000040;
-    int DB_FAILCHK = 0x00000020;
     int DB_FAST_STAT = 0x00000001;
     int DB_FIRST = 7;
     int DB_FLUSH = 0x00000001;
@@ -47,7 +46,6 @@ public interface DbConstants
     int DB_GET_BOTH = 8;
     int DB_GET_BOTH_RANGE = 10;
     int DB_GET_RECNO = 11;
-    int DB_GID_SIZE = 128;
     int DB_HASH = 2;
     int DB_IGNORE_LEASE = 0x00002000;
     int DB_IMMUTABLE_KEY = 0x00000002;
@@ -183,7 +181,6 @@ public interface DbConstants
     int DB_SET = 27;
     int DB_SET_LOCK_TIMEOUT = 0x00000001;
     int DB_SET_RANGE = 28;
-    int DB_SET_REG_TIMEOUT = 0x00000004;
     int DB_SET_RECNO = 29;
     int DB_SET_TXN_TIMEOUT = 0x00000002;
     int DB_SNAPSHOT = 0x00000200;
@@ -226,7 +223,7 @@ public interface DbConstants
     int DB_VERIFY = 0x00000002;
     int DB_VERSION_MAJOR = 4;
     int DB_VERSION_MINOR = 8;
-    int DB_VERSION_PATCH = 9;
+    int DB_VERSION_PATCH = 11;
     int DB_WRITECURSOR = 0x00000008;
     int DB_YIELDCPU = 0x00010000;
 }

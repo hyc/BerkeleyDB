@@ -367,7 +367,7 @@ public:
 	// the two cursors. For recno databases, we use the recno to do less
 	// than and greater than comparison. So we can get a reliable knowledge
 	// of the relative position of two iterators from the return value.
-	virtual int compare(const self *csr2) const{
+	int compare(const self *csr2) const{
 		int res, ret;
 
 		BDBOP(((DBC *)csr_)->cmp((DBC *)csr_, (DBC *)csr2->csr_,
@@ -437,6 +437,7 @@ public:
 	inline bool set_bulk_buffer(u_int32_t sz)
 	{
 		if (bulk_retrieval_ && sz) {
+			normalize_bulk_bufsize(sz);
 			bulk_retrieval_ = sz;
 			return true;
 		}
@@ -453,7 +454,9 @@ public:
 	inline void enlarge_dbt(Dbt &d, u_int32_t sz)
 	{
 		void *p;
-		dbstl_assert((p = DbstlReAlloc(d.get_data(), sz)) != NULL);
+
+		p = DbstlReAlloc(d.get_data(), sz);
+		dbstl_assert(p != NULL);
 		d.set_ulen(sz);
 		d.set_data(p);
 		d.set_size(sz);
@@ -466,7 +469,7 @@ public:
 	{
 		int ret = 0;
 		Dbt &k = key_buf_, &d = data_buf_;
-		u_int32_t sz, getflags = 0, pgsz;
+		u_int32_t sz, getflags = 0, bulk_bufsz;
 
 		if (csr_ == NULL)
 			return INVALID_ITERATOR_CURSOR;
@@ -477,11 +480,22 @@ public:
 		// Berkeley DB cursor flags are not bitwise set, so we can't
 		// use bit operations here.
 		//
-		if (this->bulk_retrieval_ != 0 && flag != DB_PREV &&
-		    flag != DB_PREV_DUP && flag != DB_PREV_NODUP &&
-		    flag != DB_LAST && flag != DB_JOIN_ITEM &&
-		    flag != DB_GET_RECNO && flag != DB_SET_RECNO)
-			getflags |= DB_MULTIPLE_KEY;
+		if (this->bulk_retrieval_ != 0)
+			switch (flag) {
+			case DB_PREV:
+			case DB_PREV_DUP:
+			case DB_PREV_NODUP:
+			case DB_LAST:
+			case DB_JOIN_ITEM:
+			case DB_GET_RECNO:
+			case DB_SET_RECNO: 
+				break;
+			default:
+				getflags |= DB_MULTIPLE_KEY;
+				if (data_buf_.get_ulen() != bulk_retrieval_)
+					enlarge_dbt(data_buf_, bulk_retrieval_);
+				break;
+			}
 
 		if (this->rmw_get_)
 			getflags |= DB_RMW;
@@ -515,12 +529,15 @@ retry:		ret = csr_->get(&k, &d, flag | getflags);
 				limit_buf_size_after_use();
 			}
 		} else if (ret == DB_BUFFER_SMALL) {
-			if ((sz = d.get_size()) > 0) {
+			// Either the key or data DBTs might trigger a
+			// DB_KEYSMALL return. Only enlarge the DBT if it 
+			// is actually too small. 
+			if (((sz = d.get_size()) > 0) && (sz > d.get_ulen()))
 				enlarge_dbt(d, sz);
-			}
-			if ((sz = k.get_size()) > 0) {
+
+			if (((sz = k.get_size()) > 0) && (sz > k.get_ulen()))
 				enlarge_dbt(k, sz);
-			}
+
 			goto retry;
 		} else {
 			if (ret == DB_NOTFOUND) {
@@ -531,9 +548,11 @@ retry:		ret = csr_->get(&k, &d, flag | getflags);
 			    (getflags & DB_MULTIPLE_KEY)){
 				BDBOP(((DBC*)csr_)->dbp->
 				    get_pagesize(((DBC*)csr_)->
-				    dbp, &pgsz), ret);
-				if (pgsz > d.get_ulen()) {// buf size error
-					enlarge_dbt(d, pgsz);
+				    dbp, &bulk_bufsz), ret);
+				if (bulk_bufsz > d.get_ulen()) {// buf size error
+					normalize_bulk_bufsize(bulk_bufsz);
+					bulk_retrieval_ = bulk_bufsz;
+					enlarge_dbt(d, bulk_bufsz);
 					goto retry;
 				} else
 					throw_bdb_exception(
@@ -775,6 +794,23 @@ retry:		ret = csr_->get(&k1.get_dbt(), &d1, flag);
 		return ret;
 	}
 
+	// Make sure the bulk buffer is large enough, and a multiple of 1KB. 
+	// This function may be called prior to cursor initialization, it is 
+	// not possible to verify that the buffer size is a multiple of the 
+	// page size here.
+	u_int32_t normalize_bulk_bufsize(u_int32_t &bulksz)
+	{
+		if (bulksz == 0)
+			return 0;
+
+		while (bulksz < 16 * sizeof(data_dt))
+			bulksz *= 2;
+
+		bulksz = bulksz + 1024 - bulksz % 1024;
+
+		return bulksz;
+	}
+
 	////////////////////////////////////////////////////////////////////
 	//
 	// Begin public constructors and destructor.
@@ -785,16 +821,18 @@ retry:		ret = csr_->get(&k1.get_dbt(), &d1, flag);
 	{
 		u_int32_t bulksz = sizeof(data_dt); // non-bulk
 		rmw_get_ = brmw1;
-		this->bulk_retrieval_ = b_bulk_retrieval;
+		this->bulk_retrieval_ = 
+		    normalize_bulk_bufsize(b_bulk_retrieval);
 		recno_itr_ = NULL;
 		multi_itr_ = NULL;
 
-		if (b_bulk_retrieval) {
-
-			if (bulksz < b_bulk_retrieval)
-				bulksz = b_bulk_retrieval;
-			while (bulksz < 16 * sizeof(data_dt))
-				bulksz *= 2;
+		if (bulk_retrieval_) {
+			if (bulksz <= bulk_retrieval_)
+				bulksz = bulk_retrieval_;
+			else {
+				normalize_bulk_bufsize(bulksz);
+				bulk_retrieval_ = bulksz;
+			}
 		}
 		key_buf_.set_data(DbstlMalloc(sizeof(key_dt)));
 		key_buf_.set_ulen(sizeof(key_dt));
@@ -868,7 +906,7 @@ retry:		ret = csr_->get(&k1.get_dbt(), &d1, flag);
 
 	////////////////////////////////////////////////////////////////////
 
-	inline const DbCursor<key_dt, data_dt>& operator=
+	const DbCursor<key_dt, data_dt>& operator=
 	    (const DbCursor<key_dt, data_dt>& dbc)
 	{
 		void *pk;
@@ -935,7 +973,7 @@ retry:		ret = csr_->get(&k1.get_dbt(), &d1, flag);
 	// from database, and then read from the bulk buffer. Quit if no
 	// more data in database.
 	//
-	inline int next(int flag = DB_NEXT)
+	int next(int flag = DB_NEXT)
 	{
 		Dbt k, d;
 		db_recno_t recno;
@@ -976,7 +1014,7 @@ retry:		if (bulk_retrieval_) {
 
 	// Move Dbc*cursor to first element. If doing bulk read, read data
 	// from bulk buffer.
-	inline int first()
+	int first()
 	{
 		Dbt k, d;
 		db_recno_t recno;
@@ -1158,7 +1196,7 @@ public:
 		return ndx;
 	}
 
-	virtual int compare(const self *csr2) const{
+	inline int compare(const self *csr2) const{
 		index_type i1, i2;
 
 		i1 = this->get_current_index();

@@ -48,15 +48,15 @@ in performance to memory structures.
 </p></li><li><p>
 You want full concurrency support to access C++ STL style containers. Few (if any)
 existing C++ STL implementations supports reading/writing to the same 
-container concurrently --I tried hard to find one such implementation but 
-eventually failed-- they only support accessing different containers of 
+container concurrently,
+almost all of them only support accessing different containers of 
 the same type concurrently. 
 
 </p></li><li><p>
 You want to have object persistence in your application, and store objects
 in a database, and use the objects across different runs of your application. 
 dbstl is capable of storing complicated objects which is not located on a continous
-chunk of memory space, with some user configurations.
+memory chunk, with the help of some user configurations and callbacks.
 
 </p></li></ul></div></div>
     <div class="navfooter">

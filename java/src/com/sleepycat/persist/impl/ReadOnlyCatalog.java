@@ -52,7 +52,7 @@ class ReadOnlyCatalog implements Catalog {
         }
     }
 
-    public Format getFormat(Class cls) {
+    public Format getFormat(Class cls, boolean checkEntitySubclassIndexes) {
         Format format = formatMap.get(cls.getName());
         if (format == null) {
             throw new IllegalArgumentException

@@ -115,7 +115,7 @@ abstract class CollectionProxy<E>
         if (!format.isArray() ||
             format.getComponentType().getId() != Format.ID_OBJECT) {
             throw new IllegalStateException
-                ("Collection proxy 'elements' field must by an Object array");
+                ("Collection proxy 'elements' field must be an Object array");
         }
         return rawObj.getElements();
     }

@@ -109,7 +109,8 @@ typedef struct stock_dbs {
     DB *inventory_dbp; /* Database containing inventory information */
     DB *vendor_dbp;    /* Database containing vendor information */
 
-    char *db_home_dir;       /* Directory containing the database files */
+    char *db_home_dir;       /* Directory containing the database 
+                              * files */
     char *inventory_db_name; /* Name of the inventory database */
     char *vendor_db_name;    /* Name of the vendor database */
 } STOCK_DBS; </pre>
@@ -121,7 +122,8 @@ typedef struct stock_dbs {
     DB *inventory_dbp; /* Database containing inventory information */
     DB *vendor_dbp;    /* Database containing vendor information */
     <strong class="userinput"><code>DB *itemname_sdbp; /* Index based on the item name index */</code></strong>
-    char *db_home_dir;       /* Directory containing the database files */
+    char *db_home_dir;       /* Directory containing the database 
+                              * files */
     <strong class="userinput"><code>char *itemname_db_name;  /* Itemname secondary database */</code></strong>
     char *inventory_db_name; /* Name of the inventory database */
     char *vendor_db_name;    /* Name of the vendor database */

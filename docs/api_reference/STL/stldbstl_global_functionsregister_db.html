@@ -4,10 +4,10 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>register_db</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="up" href="dbstl_global_functions.html" title="Chapter 1.  The dbstl_global_functions Class" />
+    <link rel="up" href="dbstl_global_functions.html" title="Chapter 1.  dbstl global public functions" />
     <link rel="prev" href="stldbstl_global_functionsset_current_txn_handle.html" title="set_current_txn_handle" />
     <link rel="next" href="stldbstl_global_functionsregister_db_env.html" title="register_db_env" />
   </head>
@@ -22,7 +22,7 @@ register_db
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldbstl_global_functionsset_current_txn_handle.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 1. 
- The dbstl_global_functions Class</th>
+ dbstl global public functions  </th>
           <td width="20%" align="right"> <a accesskey="n" href="stldbstl_global_functionsregister_db_env.html">Next</a></td>
         </tr>
       </table>
@@ -62,7 +62,7 @@ Function Details</h3>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551436"></a>
+                <h4 class="title"><a id="id1547724"></a>
 Parameters</h4>
               </div>
             </div>
@@ -71,39 +71,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1551558"></a>
- pdb1 </h5>
-                </div>
-              </div>
-            </div>
-            <p>The database handle to register into dbstl for current thread. </p>
-          </div>
-        </div>
-        <pre class="programlisting">
- void register_db(Db *pdb1)
- </pre>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage"></div>
-          <p>Register a Db handle "pdb1". </p>
-          <p>This handle and handles opened in it will be closed by ResourceManager
-, so application code must not try to close or delete it. Users can do enough configuration before opening the Db then register it via this function. All database handles should be registered via this function in each thread using the handle. The only exception is the database handle opened by <a class="link" href="stldbstl_global_functionsopen_db.html" title="open_db">dbstl::open_db</a>
- should not be registered in the thread of the <a class="link" href="stldbstl_global_functionsopen_db.html" title="open_db">dbstl::open_db</a>
- call. </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1551471"></a>
-Parameters</h4>
-              </div>
-            </div>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1551751"></a>
+                  <h5 class="title"><a id="id1547758"></a>
  pdb1 </h5>
                 </div>
               </div>
@@ -116,13 +84,13 @@ Parameters</h4>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1551804"></a>
+              <h3 class="title"><a id="id1547361"></a>
 Class</h3>
             </div>
           </div>
         </div>
         <p>
-  <a class="link" href="dbstl_global_functions.html" title="Chapter 1.  The dbstl_global_functions Class">
+  <a class="link" href="dbstl_global_functions.html" title="Chapter 1.  dbstl global public functions">
   dbstl_global_functions</a>
      </p>
       </div>

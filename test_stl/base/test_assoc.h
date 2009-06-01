@@ -30,9 +30,6 @@ static int hcmp_def(Db *pdb, const Dbt *dbt1, const Dbt *dbt2)
 	int ret = memcmp(dbt1->get_data(), dbt2->get_data(), sz1 < sz2 ? sz1 : sz2);
 	ret = (ret == 0) ? (sz1 - sz2) : ret;
 
-	dbstl_assert((ret == 0) == (*dbt1 == *dbt2));
-	dbstl_assert((ret == 0) == (*((DBT *)dbt1) == *((DBT *)dbt2)));
-
 	return ret;
 }
 
@@ -156,7 +153,7 @@ TestAssoc::~TestAssoc()
 
 TestAssoc::TestAssoc(void *param1)
 {
-	dbstl_assert(param1 != NULL);
+	check_expr(param1 != NULL);
 	TestParam *param = (TestParam*)param1;
 	TestParam *ptp = param;
 
@@ -234,26 +231,26 @@ void TestAssoc::test_map_member_functions()
 		dm_int_t::iterator itr;
 
 		citr = dm1.find(i);
-		dbstl_assert(citr->second == dm1.find(i)->second);
+		check_expr(citr->second == dm1.find(i)->second);
 		itr = citr;
-		dbstl_assert(*citr == *itr);
+		check_expr(*citr == *itr);
 		itr->second = i * 2 + 1;
 		citr1 = itr;
-		dbstl_assert(*citr == *itr);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(citr->second == dm1.find(i)->second);
+		check_expr(*citr == *itr);
+		check_expr(*citr == *citr1);
+		check_expr(citr->second == dm1.find(i)->second);
 	}
 
 	for (i = 0; i < n; i++) {
 		dm_int_t::const_iterator citr = dm1.find(i);
-		dbstl_assert(citr->second == dm1.find(i)->second);
+		check_expr(citr->second == dm1.find(i)->second);
 		dm_int_t::iterator itr = citr;
-		dbstl_assert(*citr == *itr);
+		check_expr(*citr == *itr);
 		itr->second = i * 2 + 1;
 		dm_int_t::const_iterator citr1 = itr;
-		dbstl_assert(*citr == *itr);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(citr->second == dm1.find(i)->second);
+		check_expr(*citr == *itr);
+		check_expr(*citr == *citr1);
+		check_expr(citr->second == dm1.find(i)->second);
 	}
 
 	for (i = 0; i < n; i++) {
@@ -261,32 +258,32 @@ void TestAssoc::test_map_member_functions()
 		dm_int_t::const_iterator citr, citr1;
 
 		ncitr = cnstdm1.find(i);
-		dbstl_assert(ncitr->second == cnstdm1.find(i)->second);
+		check_expr(ncitr->second == cnstdm1.find(i)->second);
 		citr = ncitr;
-		dbstl_assert(*citr == *ncitr);
+		check_expr(*citr == *ncitr);
 		//*ncitr = i * 2 + 1;
 		citr1 = ncitr;
 		ncitr1 = citr1;
-		dbstl_assert(*citr == *ncitr);
-		dbstl_assert(*citr == *ncitr1);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(citr->second == cnstdm1.find(i)->second);
+		check_expr(*citr == *ncitr);
+		check_expr(*citr == *ncitr1);
+		check_expr(*citr == *citr1);
+		check_expr(citr->second == cnstdm1.find(i)->second);
 	}
 
 	for (i = 0; i < n; i++) {
 
 		dm_int_t::iterator ncitr = cnstdm1.find(i);
-		dbstl_assert(ncitr->second == cnstdm1.find(i)->second);
+		check_expr(ncitr->second == cnstdm1.find(i)->second);
 		dm_int_t::const_iterator citr = ncitr;
-		dbstl_assert(*citr == *ncitr);
+		check_expr(*citr == *ncitr);
 		//*itr = i * 2 + 1;
 		dm_int_t::const_iterator citr1 = ncitr;
 		dm_int_t::iterator ncitr1 = citr1;
 
-		dbstl_assert(*citr == *ncitr);
-		dbstl_assert(*citr == *ncitr1);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(citr->second == cnstdm1.find(i)->second);
+		check_expr(*citr == *ncitr);
+		check_expr(*citr == *ncitr1);
+		check_expr(*citr == *citr1);
+		check_expr(citr->second == cnstdm1.find(i)->second);
 	}
 
 	if (dm1.is_hash() == false)
@@ -302,7 +299,7 @@ void TestAssoc::test_map_member_functions()
 		map<ptint, ptint>::iterator sitr = ssimple_map.end();
 		for (sitr--, --ncitr; ncitr != ncrend; ncitr--, sitr--) {
 			ncitr.refresh(true); // not needed because by default we are using direct db get, only for test purpose.
-			dbstl_assert(*sitr == *ncitr);
+			check_expr(*sitr == *ncitr);
 		}
 		ncitr.close_cursor();
 
@@ -315,45 +312,45 @@ void TestAssoc::test_map_member_functions()
 		sitr = ssimple_map.end();
 		for (sitr--, --citr; citr!= crend; sitr--, citr--) {
 			citr.refresh(true); // not needed because by default we are using direct db get, only for test purpose.
-			dbstl_assert(*sitr == *citr);
+			check_expr(*sitr == *citr);
 		}
 
 		for (sitr2 = --ssimple_map.begin(), citr = crend; citr != cnstdm1.end();) {
 			citr++;
 			sitr2++;
-			dbstl_assert(*sitr2 == *citr);
+			check_expr(*sitr2 == *citr);
 		}
 
 		simple_map.insert(simple_map.begin(), *ssimple_map.begin());
-		dbstl_assert(*simple_map.begin() == *ssimple_map.begin());
+		check_expr(*simple_map.begin() == *ssimple_map.begin());
 		crend = --cnstdm1.begin();
 		--(--crend);
 		++crend;
-		dbstl_assert(*crend == *cnstdm1.begin());
+		check_expr(*crend == *cnstdm1.begin());
 		citr.close_cursor();
 
 		simple_map.clear();
 		simple_map.insert(cnstdm1.begin(), cnstdm1.end());
 		rsitr = ssimple_map.rbegin();
 		for (dm_int_t::reverse_iterator itrr1 = simple_map.rbegin(); itrr1 != simple_map.rend(); ++itrr1, ++rsitr)
-			dbstl_assert(*itrr1 == *rsitr);
+			check_expr(*itrr1 == *rsitr);
 
 		const dm_int_t &csimple_map = simple_map;
 		rsitr = ssimple_map.rbegin();
 		for (dm_int_t::const_reverse_iterator citrr1 = csimple_map.rbegin(); citrr1 != csimple_map.rend(); ++citrr1, ++rsitr)
-			dbstl_assert((citrr1->first == rsitr->first) && (citrr1->second == rsitr->second));
+			check_expr((citrr1->first == rsitr->first) && (citrr1->second == rsitr->second));
 
 		for (sitr = ssimple_map.begin(); sitr != ssimple_map.end(); ++sitr)
-			dbstl_assert(csimple_map[sitr->first] == sitr->second);
+			check_expr(csimple_map[sitr->first] == sitr->second);
 
 		simple_map.erase(simple_map.end());
-		dbstl_assert(simple_map.size() == ssimple_map.size());
-		dbstl_assert(csimple_map.find(123) == csimple_map.end());
+		check_expr(simple_map.size() == ssimple_map.size());
+		check_expr(csimple_map.find(123) == csimple_map.end());
 
-		dbstl_assert(*csimple_map.lower_bound(1) == *ssimple_map.lower_bound(1));
-		dbstl_assert(*csimple_map.upper_bound(5) == *ssimple_map.upper_bound(5));
+		check_expr(*csimple_map.lower_bound(1) == *ssimple_map.lower_bound(1));
+		check_expr(*csimple_map.upper_bound(5) == *ssimple_map.upper_bound(5));
 		pair<dm_int_t::const_iterator, dm_int_t::const_iterator> cnsteqrg = csimple_map.equal_range(3);
-		dbstl_assert(cnsteqrg.first->first == 3 && cnsteqrg.second->first == ssimple_map.equal_range(3).second->first);
+		check_expr(cnsteqrg.first->first == 3 && cnsteqrg.second->first == ssimple_map.equal_range(3).second->first);
 
 	}
 	dm1.clear();
@@ -374,7 +371,7 @@ void TestAssoc::test_map_member_functions()
 		dm1.erase(itr, itr1);
 		ssimple_map.erase(sitr, sitr1);
 		pprint(dm1, "dm1 after erasing range: ");
-		dbstl_assert(is_equal(dm1, ssimple_map));
+		check_expr(is_equal(dm1, ssimple_map));
 		dm1.clear();
 		ssimple_map.clear();
 	}
@@ -383,13 +380,13 @@ void TestAssoc::test_map_member_functions()
 		ssimple_map.insert(make_pair(ptint(i), ptint(i)));
 	}
 	for (i = 0; i < 10; i++)
-		dbstl_assert(simple_map[i] == ssimple_map[i]);
+		check_expr(simple_map[i] == ssimple_map[i]);
 
 	dm1.clear();
 	// db_map<>::empty
-	dbstl_assert(dm1.empty());
+	check_expr(dm1.empty());
 	fill(dm1, m1, i = 3, n = 5);
-	dbstl_assert(!dm1.empty());
+	check_expr(!dm1.empty());
 	
 	dm_int_t::iterator dmi, dmi2;
 	m_int_t::iterator mi;
@@ -402,8 +399,8 @@ void TestAssoc::test_map_member_functions()
 	// db_map<>::find, count
 	for (dmi = dm1.begin(), mi = m1.begin(), i = 3; dmi != dm1.end() && 
 	    mi !=m1.end(); dmi++, mi++, i++) {
-		// dbstl_assert both contain
-		dbstl_assert((dm1.find(i) != dm1.end()) && 
+		// check_expr both contain
+		check_expr((dm1.find(i) != dm1.end()) && 
 		    (m1.find(i) != m1.end()));
 		
 		pair<dm_int_t::iterator, dm_int_t::iterator> erp = 
@@ -412,35 +409,35 @@ void TestAssoc::test_map_member_functions()
 		dm_int_t::iterator jj;
 		for (jj = erp.first, jc = 0; 
 		    jj != erp.second; jj++, jc++)
-		    dbstl_assert((*jj).second == ptint(i));
-		dbstl_assert(jc == 1);
+		    check_expr((*jj).second == ptint(i));
+		check_expr(jc == 1);
 		if (i < 7 && !dm1.is_hash()) {// 7 is last element
-			dbstl_assert((*(dm1.upper_bound(i))).second == i + 1);
-			dbstl_assert((*(dm1.lower_bound(i))).second == i);
+			check_expr((*(dm1.upper_bound(i))).second == i + 1);
+			check_expr((*(dm1.lower_bound(i))).second == i);
 		}
 		else if (i == 7 && !dm1.is_hash()) {
-			dbstl_assert(dm1.upper_bound(i) == dm1.end());
-			dbstl_assert((*(dm1.lower_bound(i))).second == i);
+			check_expr(dm1.upper_bound(i) == dm1.end());
+			check_expr((*(dm1.lower_bound(i))).second == i);
 		} else if (!dm1.is_hash())
-			dbstl_assert(false);
+			check_expr(false);
 
-		dbstl_assert(dm1.count(i) == 1);
-		dbstl_assert(dm1.count(-i) == 0);
-		dbstl_assert((ptmp = dm1[i]) == (itmp = m1[i]));
+		check_expr(dm1.count(i) == 1);
+		check_expr(dm1.count(-i) == 0);
+		check_expr((ptmp = dm1[i]) == (itmp = m1[i]));
 
 		// order of elements in hash can not be expected
 		if (!dm1.is_hash()) 
-			dbstl_assert((*dmi).second == (*mi).second);
+			check_expr((*dmi).second == (*mi).second);
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmi != dm1.end(); mi--, i--) {
-				// dbstl_assert both contains
-				dbstl_assert((*(dm1.find(i))).second == i);
-				dbstl_assert((ptmp = dm1[i]) == (itmp = m1[i]));
+				// check_expr both contains
+				check_expr((*(dm1.find(i))).second == i);
+				check_expr((ptmp = dm1[i]) == (itmp = m1[i]));
 				// order of elements in hash can not be 
 				// expected
 				if (!dm1.is_hash()) 
-					dbstl_assert((*dmi).second == (*mi).second);
+					check_expr((*dmi).second == (*mi).second);
 				if (i % 2)
 					dmi--;
 				else 
@@ -452,21 +449,21 @@ void TestAssoc::test_map_member_functions()
 	}
 	for (dmri = dm1.rbegin(), mri = m1.rbegin(), i = 3; 
 	    dmri != dm1.rend() && mri != m1.rend(); dmri++, mri++, i++) {
-		dbstl_assert((dm1.find(i) != dm1.end()) && 
-		    (m1.find(i) != m1.end()));// dbstl_assert both contain
+		check_expr((dm1.find(i) != dm1.end()) && 
+		    (m1.find(i) != m1.end()));// check_expr both contain
 
-		dbstl_assert(dm1[i] == m1[i]);	
+		check_expr(dm1[i] == m1[i]);	
 		if (!dm1.is_hash())
-			dbstl_assert((*dmri).second == (*mri).second);
+			check_expr((*dmri).second == (*mri).second);
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmri != dm1.rend(); mri--, i--) {
-				// dbstl_assert both contain
-				dbstl_assert((*(dm1.find(i))).second == i);
+				// check_expr both contain
+				check_expr((*(dm1.find(i))).second == i);
 				// order of elements in hash can not be expected
 				if (!dm1.is_hash()) 
-					dbstl_assert((*dmri).second == (*mri).second);
-				dbstl_assert((ptmp = dm1[i]) == (itmp = m1[i]));
+					check_expr((*dmri).second == (*mri).second);
+				check_expr((ptmp = dm1[i]) == (itmp = m1[i]));
 				if (i % 2)
 					dmri--;
 				else
@@ -481,11 +478,11 @@ void TestAssoc::test_map_member_functions()
 	for (dmi = dm1.begin(), mi = m1.begin(), i = 3; dmi != dm1.end() && 
 	    mi !=m1.end(); ++dmi, mi++)
 		i++;
-	dbstl_assert(i == 3 + n);// i must have been incremented to 8
+	check_expr(i == 3 + n);// i must have been incremented to 8
 	for (dmri = dm1.rbegin(), mri = m1.rbegin(), i = 3; 
 	    dmri != dm1.rend() && mri !=m1.rend(); ++dmri, mri++)
 		i++;
-	dbstl_assert(i == 3 + n);// i must have been incremented to 8
+	check_expr(i == 3 + n);// i must have been incremented to 8
 		
 	
 	if (EXPLICIT_TXN)
@@ -508,7 +505,7 @@ void TestAssoc::test_map_member_functions()
 		commit_txn(penv);
 	if (EXPLICIT_TXN)
 		begin_txn(0, penv);
-	dbstl_assert(dm3 == dm2);
+	check_expr(dm3 == dm2);
 	if (EXPLICIT_TXN)
 		commit_txn(penv);
 	if (!TEST_AUTOCOMMIT)
@@ -518,12 +515,12 @@ void TestAssoc::test_map_member_functions()
 		commit_txn(penv);
 	if (EXPLICIT_TXN)
 		begin_txn(0, penv);
-	dbstl_assert(dm3 == dm1);
+	check_expr(dm3 == dm1);
 	// this test case should be fine for hash because hash config is 
 	// identical in dm1 and dm2
 	for (dmi = dm1.begin(), dmi2 = dm2.begin(); dmi != dm1.end() && 
 	    dmi2 != dm2.end(); ++dmi, dmi2++)
-		dbstl_assert(*dmi == *dmi2);
+		check_expr(*dmi == *dmi2);
 	int arr1[] = {33, 44, 55, 66, 77};
 	
 	for (dmi = dm1.begin(), i = 0; dmi != dm1.end(); dmi++, i++)
@@ -531,29 +528,29 @@ void TestAssoc::test_map_member_functions()
 
 	for (dmi = dm1.begin(), dmi2 = dm2.begin(), i = 0; 
 		dmi != dm1.end() && dmi2 != dm2.end(); dmi++, i++, dmi2++) {
-		dbstl_assert((*dmi).second == tpint(arr1[i]));
+		check_expr((*dmi).second == tpint(arr1[i]));
 		dmi2->second = dmi->second;
-		dbstl_assert(*dmi == *dmi2);
+		check_expr(*dmi == *dmi2);
 	}
 	// db_map<>::insert(const value_type&). the range insert is already 
 	// tested in fill
 	//
 	pair<dm_int_t::iterator, bool> res = 
 	    dm1.insert(make_pair(3, tpint(33)));
-	dbstl_assert((*(res.first)).first == 3 && res.second == false);
+	check_expr((*(res.first)).first == 3 && res.second == false);
 	// we don't know which value is assigned to key 3 on hash
 	if (!dm1.is_hash()) 
-		dbstl_assert((*(res.first)).second == 33);
+		check_expr((*(res.first)).second == 33);
 
 	// db_map<>::count, insert, erase, find
-	dbstl_assert(dm1.count(3) == 1);
-	dbstl_assert(dm1.size() == (size_t)n);// n is 5
-	dbstl_assert(dm1.count(9) == 0);
+	check_expr(dm1.count(3) == 1);
+	check_expr(dm1.size() == (size_t)n);// n is 5
+	check_expr(dm1.count(9) == 0);
 	res = dm1.insert(make_pair(9, tpint(99)));
-	dbstl_assert((*(res.first)).second == 99 && (*(res.first)).first == 9 && 
+	check_expr((*(res.first)).second == 99 && (*(res.first)).first == 9 && 
 	    res.second == true);
-	dbstl_assert(dm1.count(9) == 1);
-	dbstl_assert(dm1.size() == (size_t)n + 1);
+	check_expr(dm1.count(9) == 1);
+	check_expr(dm1.size() == (size_t)n + 1);
 
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
@@ -566,14 +563,14 @@ void TestAssoc::test_map_member_functions()
 	if (EXPLICIT_TXN)
 		begin_txn(0, penv);
 
-	dbstl_assert(dm1.size() == (size_t)n);
-	dbstl_assert(dm1.count(9) == 0);
+	check_expr(dm1.size() == (size_t)n);
+	check_expr(dm1.count(9) == 0);
 	dm1.erase(dm1.find(3));
-	dbstl_assert(dm1.size() == (size_t)n - 1);
-	dbstl_assert(dm1.count(3) == 0);
+	check_expr(dm1.size() == (size_t)n - 1);
+	check_expr(dm1.count(3) == 0);
 	dm2.erase(dm2.begin(), dm2.end());
-	dbstl_assert(dm2.size() == 0);
-	dbstl_assert(dm2.empty());
+	check_expr(dm2.size() == 0);
+	check_expr(dm2.empty());
 
 	dmi = dm1.begin();
 	dmi++;
@@ -582,28 +579,26 @@ void TestAssoc::test_map_member_functions()
 	dmi2++;
 	
 	if (dm1.is_hash()) {
-		dbstl_assert(dm1.key_eq()(3, 4) == false);
-		dbstl_assert(dm1.key_eq()(3, 3) == true);
-		dbstl_assert(dm1.bucket_count() != 0);
+		check_expr(dm1.key_eq()(3, 4) == false);
+		check_expr(dm1.key_eq()(3, 3) == true);
+		check_expr(dm1.bucket_count() != 0);
 	} else
-		dbstl_assert(dm1.key_comp()(3, 4));
+		check_expr(dm1.key_comp()(3, 4));
 
 	if (dm1.is_hash()) {
-		dm1.get_db_handle()->set_h_compare(&hcmp_def);
-		dbstl_assert(dm1.key_eq()(3, 4) == false);
-		dbstl_assert(dm1.key_eq()(3, 3) == true);
+		check_expr(dm1.key_eq()(3, 4) == false);
+		check_expr(dm1.key_eq()(3, 3) == true);
 	} else {
-		dm1.get_db_handle()->set_bt_compare(hcmp_def);
-		dbstl_assert(dm1.key_comp()(3, 4));
+		check_expr(dm1.key_comp()(3, 4));
 	}
 
-	dbstl_assert(dm1.value_comp()(*dmi, *dmi2));
+	check_expr(dm1.value_comp()(*dmi, *dmi2));
 	if (dm1.is_hash())
 		cout<<"hash value for key = 3 is: "
 		    <<dm1.hash_funct()(3);
 
 	dm2.insert(dmi, dmi2);// 2 recs inserted, [dmi, dmi2)
-	dbstl_assert(dm2.size() == 2);
+	check_expr(dm2.size() == 2);
 	for (dmi = dm1.begin(); dmi != dm1.end(); dmi++)
 		cout<<'\t'<<dmi->first<<'\t'<<dmi->second<<endl;
 	if (EXPLICIT_TXN)
@@ -619,7 +614,7 @@ void TestAssoc::test_map_member_functions()
 	if (EXPLICIT_TXN)
 		begin_txn(0, penv);
 	size_t dm1sz, dm2sz;
-	dbstl_assert((dm1sz = dm1.size()) == 2 && 
+	check_expr((dm1sz = dm1.size()) == 2 && 
 	    (dm2sz = dm2.size()) == (size_t)n - 1);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
@@ -642,9 +637,9 @@ void TestAssoc::test_map_member_functions()
 		m1[i - 1] = m1[i];
 	}
 	if (!dm1.is_hash())
-		dbstl_assert (is_equal(dm1, m1));
+		check_expr (is_equal(dm1, m1));
 	dm1[421] = 421;
-	dbstl_assert(dm1.count(421) == 1);
+	check_expr(dm1.count(421) == 1);
 	m1[421] = 421;
 	int j;
 	for (i = 0; i < 100; i++) {
@@ -656,16 +651,16 @@ void TestAssoc::test_map_member_functions()
 		m1[i] = ((ptint)dm1[i]).v;
 #endif
 	}
-	dbstl_assert(dm1.size() == m1.size());
+	check_expr(dm1.size() == m1.size());
 	if (!dm1.is_hash())
-		dbstl_assert (is_equal(dm1, m1));
+		check_expr (is_equal(dm1, m1));
 
 	for (i = 0; i < 99; i++) {
 		dm1[i] = dm1[i + 1];
 		m1[i] = m1[i + 1];
 	}
 	if (!dm1.is_hash())
-		dbstl_assert (is_equal(dm1, m1));
+		check_expr (is_equal(dm1, m1));
 	dm1.clear();
 	m1.clear();
 	if (EXPLICIT_TXN)
@@ -701,12 +696,12 @@ void TestAssoc::test_map_std_functions()
 	//find
 	ptint tgt(12);
 	mpos = find(dm1.begin(), dm1.end(), make_pair(tgt, tgt));
-	dbstl_assert(mpos != dm1.end() && ((mpos->second) == tgt));
+	check_expr(mpos != dm1.end() && ((mpos->second) == tgt));
 	mpos = find(++(dm1.begin() ++), --(dm1.end() --), make_pair(tgt, tgt));
-	dbstl_assert(mpos != dm1.end() && ((mpos->second) == tgt));
+	check_expr(mpos != dm1.end() && ((mpos->second) == tgt));
 	tgt = -123;
 	mpos = find(dm1.begin(), dm1.end(), make_pair(tgt, tgt));
-	dbstl_assert(mpos == dm1.end());
+	check_expr(mpos == dm1.end());
 	pair<int, int>* subseq3 = new pair<int, int>[3];
 	subseq3[0] = make_pair(8, 8);
 	subseq3[1] = make_pair(9, 9);
@@ -720,57 +715,57 @@ void TestAssoc::test_map_std_functions()
 	if (!dm1.is_hash()) {
 #ifdef WIN32
 		mpos = find_end(dm1.begin(), dm1.end(), dm1.begin(), ++(dm1.begin()) );
-		dbstl_assert(mpos == dm1.begin());
+		check_expr(mpos == dm1.begin());
 		mpos = find_end(dm1.begin(), dm1.end(), mpos2 = ++(++(dm1.begin()++)), 
 		    --(--(dm1.end()--)));
-		dbstl_assert(mpos == mpos2);
+		check_expr(mpos == mpos2);
 
 		mpos = find_end(++dm1.begin(), dm1.end(), subseq3, subseq3 + 3);
-		dbstl_assert(mpos == ++(++(dm1.begin())));
+		check_expr(mpos == ++(++(dm1.begin())));
 #endif
 		// find_first_of
 		mpos = find_first_of(dm1.begin(), dm1.end(), dm1.begin(), 
 		    ++dm1.begin());
-		dbstl_assert(mpos == dm1.begin());
+		check_expr(mpos == dm1.begin());
 
 		mpos = find_first_of(++dm1.begin(), --dm1.end(),
 		    subseq4, subseq4 + 4);
-		dbstl_assert(mpos == ++(++dm1.begin()));
+		check_expr(mpos == ++(++dm1.begin()));
 		mpos = find_first_of(--(--dm1.end()), dm1.end(), 
 		    subseq4, subseq4 + 4);
-		dbstl_assert(mpos == dm1.end());
+		check_expr(mpos == dm1.end());
 		
 		// mismatch
 		
 		pair<dm_int_t::iterator , pair<int, int>*> resmm2 = mismatch(dm1.begin(),
 		    ++(++(++dm1.begin())), subseq3);
-		dbstl_assert(resmm2.first == dm1.begin() && resmm2.second == subseq3);
+		check_expr(resmm2.first == dm1.begin() && resmm2.second == subseq3);
 	
 		//search
 		mpos = search(dm1.begin(), dm1.end(), dm1.begin(), ++dm1.begin());
-		dbstl_assert(mpos == dm1.begin());
+		check_expr(mpos == dm1.begin());
 		mpos = search(++dm1.begin(), dm1.end(), subseq3, subseq3 + 3);
-		dbstl_assert(mpos == ++(++dm1.begin()));
+		check_expr(mpos == ++(++dm1.begin()));
 		//equal
 		mpos2 = dm1.begin();
 		mpos2.move_to(8);
-		dbstl_assert (equal(dm1.begin(), mpos2, subseq3) == false);
+		check_expr (equal(dm1.begin(), mpos2, subseq3) == false);
 		mpos = mpos2; mpos.move_to(11);
-		dbstl_assert(equal(mpos2, mpos, subseq3) == true);
+		check_expr(equal(mpos2, mpos, subseq3) == true);
 		mpos.move_to(10);
-		dbstl_assert(equal(mpos2, mpos, subseq3) == true);
+		check_expr(equal(mpos2, mpos, subseq3) == true);
 	}
 	delete [] subseq4;
 	delete [] subseq3;
 	//find_if
 	mpos = find_if(dm1.begin(), dm1.end(), is2digits_pair);
-	dbstl_assert(ptint(mpos->second) == 10);
+	check_expr(ptint(mpos->second) == 10);
 
 	// count_if
 	oddcnt = count_if(dm1.begin(), dm1.end(), is_odd_pair);
-	dbstl_assert(oddcnt == 4);
+	check_expr(oddcnt == 4);
 	oddcnt = count_if(dm1.begin(), dm1.begin(), is_odd_pair);
-	dbstl_assert(oddcnt == 0);
+	check_expr(oddcnt == 0);
 	
 
 	if ( EXPLICIT_TXN) 
@@ -808,7 +803,7 @@ void TestAssoc::test_hot_dbclose()
 	dm1.set_db_handle(dbp3 = dbstl::open_db(penv, "db_map.db", 
 	    dbtype, DB_CREATE | dboflags, 0));
 	if (!dm1.is_hash())
-		dbstl_assert (is_equal(dm1, m1));
+		check_expr (is_equal(dm1, m1));
 	dm1.clear();
 	if (EXPLICIT_TXN)
 		commit_txn(penv);
@@ -854,7 +849,7 @@ void TestAssoc::test_arbitrary_object_storage()
 		db_map<int, DbstlDbt>::data_type_wrap msgref = msgmap[i];
 		psmsmsg = (SMSMsg *)msgref.get_data();
 		
-		dbstl_assert(memcmp(smsmsgs[i], psmsmsg, 
+		check_expr(memcmp(smsmsgs[i], psmsmsg, 
 		    smsmsgs[i]->mysize) == 0);
 	}
 
@@ -893,7 +888,7 @@ void TestAssoc::test_arbitrary_object_storage()
 	SMSMsg2 tmpmsg2;
 	for (i = 0; i < 10; i++) {
 		tmpmsg2 = msgmap2[i];
-		dbstl_assert(smsmsgs2[i] == tmpmsg2);
+		check_expr(smsmsgs2[i] == tmpmsg2);
 	}
 	for (db_map<int, SMSMsg2>::iterator msgitr = msgmap2.begin(ReadModifyWriteOption::
 	    read_modify_write()); msgitr != msgmap2.end(); msgitr++) {
@@ -937,7 +932,7 @@ void TestAssoc::test_storing_std_strings()
 	    ++ii) {
 		cout << (*ii).first << ": " << (*ii).second << endl;
 		// assert key/data pair set equal
-		dbstl_assert((spmap.count(ii->first) == 1) && (spmap[ii->first] == ii->second));
+		check_expr((spmap.count(ii->first) == 1) && (spmap[ii->first] == ii->second));
 	} 
 	if (EXPLICIT_TXN)
 		commit_txn(penv);
@@ -948,7 +943,7 @@ void TestAssoc::test_storing_std_strings()
 		strvctor[i] = "abc";
 		sstrvctor[i] = strvctor[i];
 	}
-	dbstl_assert(is_equal(strvctor, sstrvctor));
+	check_expr(is_equal(strvctor, sstrvctor));
 }
 
 void TestAssoc::test_secondary_containers()
@@ -978,7 +973,7 @@ void TestAssoc::test_secondary_containers()
 		basemsgs.insert(make_pair(i, tmpmsg));
 
 	}
-	dbstl_assert(basemsgs.size() == 10);
+	check_expr(basemsgs.size() == 10);
 	// check retrieved data is identical to those fed in
 	sec_mmap_t::iterator itrsec;
 	for (itrsec = secmmap.begin(ReadModifyWriteOption::no_read_modify_write(), true);
@@ -987,25 +982,25 @@ void TestAssoc::test_secondary_containers()
 	}
 	for (bsitr1 = bsmsgs.begin(), bsitr2 = bsmsgs2.begin(); 
 	    bsitr1 != bsmsgs.end() && bsitr2 != bsmsgs2.end(); bsitr1++, bsitr2++) {
-		dbstl_assert(*bsitr1 == *bsitr2);
+		check_expr(*bsitr1 == *bsitr2);
 	}
-	dbstl_assert(bsitr1 == bsmsgs.end() && bsitr2 == bsmsgs2.end());
+	check_expr(bsitr1 == bsmsgs.end() && bsitr2 == bsmsgs2.end());
 
 	// search using sec index, check the retrieved data is expected
 	// and exists in bsmsgs
-	dbstl_assert(secmmap.size() == 10);
+	check_expr(secmmap.size() == 10);
 	pair<sec_mmap_t::iterator, sec_mmap_t::iterator> secrg = 
 	    secmmap.equal_range(98);
 
 	for (itrsec = secrg.first; itrsec != secrg.second; itrsec++) {
-		dbstl_assert(itrsec->second.to == 98 && 
+		check_expr(itrsec->second.to == 98 && 
 		    bsmsgs.count(itrsec->second) > 0);
 	}
 	// delete via sec db
 	size_t nersd = secmmap.erase(98);
-	dbstl_assert(10 - nersd == basemsgs.size());
+	check_expr(10 - nersd == basemsgs.size());
 	secrg = secmmap.equal_range(98);
-	dbstl_assert(secrg.first == secrg.second);
+	check_expr(secrg.first == secrg.second);
 
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
@@ -1023,7 +1018,7 @@ void TestAssoc::test_mmap_member_functions()
 	
 	dmm1.clear();
 	// db_multimap<>::empty
-	dbstl_assert(dmm1.empty());
+	check_expr(dmm1.empty());
 	{
 	size_t sz0, szeq1, szeq2;
 
@@ -1031,7 +1026,7 @@ void TestAssoc::test_mmap_member_functions()
 	const dmm_int_t &cdmm1 = dmm1;
 	dmm_int_t dmmn(NULL, penv);
 	dmmn.insert(cdmm1.begin(), cdmm1.end());
-	dbstl_assert(!(dmmn != cdmm1));
+	check_expr(!(dmmn != cdmm1));
 
 	pair<dmm_int_t::const_iterator, dmm_int_t::const_iterator> cnstrg, ceqrgend;
 	pair<dmm_int_t::iterator, dmm_int_t::iterator> nceqrg, eqrgend;
@@ -1042,58 +1037,58 @@ void TestAssoc::test_mmap_member_functions()
 		dmm_int_t::const_iterator cmmitr;
 		dmm_int_t::iterator mmitr;
 		for (sz0 = 0, cmmitr = cnstrg.first, mmitr = nceqrg.first; mmitr != nceqrg.second; mmitr++, cmmitr++, sz0++)
-			dbstl_assert(*cmmitr == *mmitr);
-		dbstl_assert(cmmitr == cnstrg.second);
+			check_expr(*cmmitr == *mmitr);
+		check_expr(cmmitr == cnstrg.second);
 		if (i < 7)
-			dbstl_assert(*(cdmm1.upper_bound(i)) == *(dmm1.upper_bound(i)));
+			check_expr(*(cdmm1.upper_bound(i)) == *(dmm1.upper_bound(i)));
 		cnstrg = cdmm1.equal_range_N(i, szeq1);
 		nceqrg = dmm1.equal_range_N(i, szeq2);
-		dbstl_assert(szeq1 == szeq2 && szeq2 == sz0);
+		check_expr(szeq1 == szeq2 && szeq2 == sz0);
 	}
 	eqrgend = dmm1.equal_range(65535);
-	dbstl_assert(eqrgend.first == dmm1.end() && eqrgend.second == dmm1.end());
+	check_expr(eqrgend.first == dmm1.end() && eqrgend.second == dmm1.end());
 	eqrgend = dmm1.equal_range_N(65535, szeq1);
-	dbstl_assert(eqrgend.first == dmm1.end() && eqrgend.second == dmm1.end() && szeq1 == 0);
+	check_expr(eqrgend.first == dmm1.end() && eqrgend.second == dmm1.end() && szeq1 == 0);
 	ceqrgend = cdmm1.equal_range(65535);
-	dbstl_assert(ceqrgend.first == cdmm1.end() && ceqrgend.second == cdmm1.end());
+	check_expr(ceqrgend.first == cdmm1.end() && ceqrgend.second == cdmm1.end());
 	ceqrgend = cdmm1.equal_range_N(65535, szeq1);
-	dbstl_assert(ceqrgend.first == cdmm1.end() && ceqrgend.second == cdmm1.end() && szeq1 == 0);
+	check_expr(ceqrgend.first == cdmm1.end() && ceqrgend.second == cdmm1.end() && szeq1 == 0);
 	if (!dmm1.is_hash()) {
 		eqrgend = dmm1.equal_range(2);
-		dbstl_assert((((eqrgend.first))->first == 3) && ((eqrgend.second))->first == 3);
+		check_expr((((eqrgend.first))->first == 3) && ((eqrgend.second))->first == 3);
 		ceqrgend = cdmm1.equal_range(2);
-		dbstl_assert(((ceqrgend.first))->first == 3 && ((ceqrgend.second))->first == 3);
+		check_expr(((ceqrgend.first))->first == 3 && ((ceqrgend.second))->first == 3);
 		eqrgend = dmm1.equal_range_N(2, szeq1);
-		dbstl_assert((eqrgend.first)->first == 3 && ((eqrgend.second))->first == 3 && szeq1 == 0);
+		check_expr((eqrgend.first)->first == 3 && ((eqrgend.second))->first == 3 && szeq1 == 0);
 		ceqrgend = cdmm1.equal_range_N(2, szeq1);
-		dbstl_assert((ceqrgend.first)->first == 3 && ((ceqrgend.second))->first == 3 && szeq1 == 0);
+		check_expr((ceqrgend.first)->first == 3 && ((ceqrgend.second))->first == 3 && szeq1 == 0);
 
-		dbstl_assert(((dmm1.upper_bound(2)))->first == 3);
-		dbstl_assert(((cdmm1.upper_bound(2)))->first == 3);
-		dbstl_assert(dmm1.upper_bound(65535) == dmm1.end());
-		dbstl_assert(cdmm1.upper_bound(65535) == cdmm1.end());
-		dbstl_assert(dmm1.lower_bound(65535) == dmm1.end());
-		dbstl_assert(cdmm1.lower_bound(65535) == cdmm1.end());
-		dbstl_assert(dmm1.count(65535) == 0);
-		dbstl_assert(dmm1.find(65535) == dmm1.end());
-		dbstl_assert(cdmm1.find(65535) == cdmm1.end());
+		check_expr(((dmm1.upper_bound(2)))->first == 3);
+		check_expr(((cdmm1.upper_bound(2)))->first == 3);
+		check_expr(dmm1.upper_bound(65535) == dmm1.end());
+		check_expr(cdmm1.upper_bound(65535) == cdmm1.end());
+		check_expr(dmm1.lower_bound(65535) == dmm1.end());
+		check_expr(cdmm1.lower_bound(65535) == cdmm1.end());
+		check_expr(dmm1.count(65535) == 0);
+		check_expr(dmm1.find(65535) == dmm1.end());
+		check_expr(cdmm1.find(65535) == cdmm1.end());
 
 		dmm_int_t tmpdmm0(dmm1);
 		dmm1.erase(dmm1.end());
-		dbstl_assert(dmm1 == tmpdmm0);
+		check_expr(dmm1 == tmpdmm0);
 		nceqrg = tmpdmm0.equal_range(5);
 	
 		for (dmm_int_t::iterator itr0 = nceqrg.first; itr0 != nceqrg.second; ++itr0)
 			itr0->second *= 2;
-		dbstl_assert(tmpdmm0 != dmm1);
+		check_expr(tmpdmm0 != dmm1);
 		tmpdmm0.insert(dmm1.begin(), ++(++dmm1.begin()));
-		dbstl_assert(tmpdmm0 != dmm1);
+		check_expr(tmpdmm0 != dmm1);
 	}
 	dmm1.clear();
 	mm1.clear();
 	}
 	fill(dmm1, mm1, i = 3, n = 5, 4);
-	dbstl_assert(!dmm1.empty());
+	check_expr(!dmm1.empty());
 
 	typedef multimap<int, int> mm_int_t;
 	dmm_int_t::iterator dmmi, dmmi2;
@@ -1106,8 +1101,8 @@ void TestAssoc::test_mmap_member_functions()
 	for (dmmi = dmm1.begin(), mmi = mm1.begin(), i = 3; 
 	    dmmi != dmm1.end() && 
 	    mmi !=mm1.end(); dmmi++, mmi++, i++) {
-		// dbstl_assert both contain
-		dbstl_assert((*(dmm1.find(i))).second == i);
+		// check_expr both contain
+		check_expr((*(dmm1.find(i))).second == i);
 		
 		pair<dmm_int_t::iterator, dmm_int_t::iterator> erp1 = 
 		    dmm1.equal_range(i);
@@ -1115,30 +1110,30 @@ void TestAssoc::test_mmap_member_functions()
 		dmm_int_t::iterator jj;
 		for (jj = erp1.first, jc = 0; 
 		    jj != erp1.second; jj++, jc++)
-			dbstl_assert((*jj).second == ptint(i));
+			check_expr((*jj).second == ptint(i));
 		
-		dbstl_assert((size_t)jc == g_count[i]); // g_count[i] duplicates
+		check_expr((size_t)jc == g_count[i]); // g_count[i] duplicates
 		if (i < 7 && !dmm1.is_hash()) {// 7 is last element
-			dbstl_assert((*(dmm1.upper_bound(i))).second == i + 1);
-			dbstl_assert((*(dmm1.lower_bound(i))).second == i);
+			check_expr((*(dmm1.upper_bound(i))).second == i + 1);
+			check_expr((*(dmm1.lower_bound(i))).second == i);
 		}
 		else if (i == 7 && !dmm1.is_hash()) {
-			dbstl_assert(dmm1.upper_bound(i) == dmm1.end());
-			dbstl_assert((*(dmm1.lower_bound(i))).second == i);
+			check_expr(dmm1.upper_bound(i) == dmm1.end());
+			check_expr((*(dmm1.lower_bound(i))).second == i);
 		} else if (!dmm1.is_hash())
-			dbstl_assert(false);
+			check_expr(false);
 
-		dbstl_assert(dmm1.count(i) == g_count[i]);
-		dbstl_assert(dmm1.count(-i) == 0);
+		check_expr(dmm1.count(i) == g_count[i]);
+		check_expr(dmm1.count(-i) == 0);
 		if (!dmm1.is_hash())
-			dbstl_assert((*dmmi).second == (*mmi).second);
+			check_expr((*dmmi).second == (*mmi).second);
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmmi != dmm1.end(); mmi--, i--) {
-				// dbstl_assert both contains
-				dbstl_assert((*(dmm1.find(i))).second == i);
+				// check_expr both contains
+				check_expr((*(dmm1.find(i))).second == i);
 				if (!dmm1.is_hash())
-					dbstl_assert((*dmmi).second == (*mmi).second);
+					check_expr((*dmmi).second == (*mmi).second);
 				if (i % 2)
 					dmmi--;
 				else 
@@ -1150,17 +1145,17 @@ void TestAssoc::test_mmap_member_functions()
 	}
 	for (dmmri = dmm1.rbegin(), mmri = mm1.rbegin(), i = 3; 
 	    dmmri != dmm1.rend() && mmri !=mm1.rend(); dmmri++, mmri++, i++) {
-		dbstl_assert((dmm1.find(i) != dmm1.end()) && 
-		    (mm1.find(i) != mm1.end()));// dbstl_assert both contain
+		check_expr((dmm1.find(i) != dmm1.end()) && 
+		    (mm1.find(i) != mm1.end()));// check_expr both contain
 		if (dmm1.is_hash() == false)
-			dbstl_assert((*dmmri).second == (*mmri).second);
+			check_expr((*dmmri).second == (*mmri).second);
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmmri != dmm1.rend() && mmri != mm1.rend(); i--) {
-				// dbstl_assert both contain
-				dbstl_assert((*(dmm1.find(i))).second == i);
+				// check_expr both contain
+				check_expr((*(dmm1.find(i))).second == i);
 				if (!dmm1.is_hash())
-					dbstl_assert((*dmmri).second == (*mmri).second);
+					check_expr((*dmmri).second == (*mmri).second);
 				if (i % 2)
 					dmmri--;
 				else
@@ -1177,11 +1172,11 @@ void TestAssoc::test_mmap_member_functions()
 	    dmmi != dmm1.end() && 
 	    mmi !=mm1.end(); ++dmmi, mmi++)
 		i++;
-	dbstl_assert((size_t)i == 3 + g_sum(3, 8));
+	check_expr((size_t)i == 3 + g_sum(3, 8));
 	for (dmmri = dmm1.rbegin(), mmri = mm1.rbegin(), i = 3; 
 	    dmmri != dmm1.rend() && mmri !=mm1.rend(); ++dmmri, mmri++)
 		i++;
-	dbstl_assert((size_t)i == 3 + g_sum(3, 8));
+	check_expr((size_t)i == 3 + g_sum(3, 8));
 	
 	dmm_int_t dmm2(dmmdb2, penv);
 	dmm2.clear();
@@ -1199,7 +1194,7 @@ void TestAssoc::test_mmap_member_functions()
 
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
-	dbstl_assert(dmm3 == dmm2);
+	check_expr(dmm3 == dmm2);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
 
@@ -1211,11 +1206,11 @@ void TestAssoc::test_mmap_member_functions()
 
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
-	dbstl_assert(dmm3 == dmm1);
+	check_expr(dmm3 == dmm1);
 
 	for (dmmi = dmm1.begin(), dmmi2 = dmm2.begin(); dmmi != dmm1.end() && 
 	    dmmi2 != dmm2.end(); ++dmmi, dmmi2++)
-		dbstl_assert(*dmmi == *dmmi2);
+		check_expr(*dmmi == *dmmi2);
 
 	// content of dmm1 and dmm2 are changed since now
 	int arr1[] = {33, 44, 55, 66, 77};
@@ -1226,42 +1221,42 @@ void TestAssoc::test_mmap_member_functions()
 	for (dmmi = dmm1.begin(), dmmi2 = dmm2.begin(), i = 0; 
 	    dmmi != dmm1.end() && dmmi2 != dmm2.end(); 
 	    dmmi++, i++, dmmi2++) {
-		dbstl_assert((*dmmi).second == tpint(arr1[i % 5]));
+		check_expr((*dmmi).second == tpint(arr1[i % 5]));
 		dmmi2->second = dmmi->second;
-		dbstl_assert(*dmmi == *dmmi2);
+		check_expr(*dmmi == *dmmi2);
 	}
 
 	// db_multimap<>::insert(const value_type&). the range insert is already 
 	// tested in fill
 	//
 	dmm_int_t::iterator iitr = dmm1.insert(make_pair(3, tpint(33)));
-	dbstl_assert(iitr->first == 3);
+	check_expr(iitr->first == 3);
 	// the returned iitr points to any rec with key==3, not necessarily 
 	// the newly inserted rec, so not sure of the value on hash
 	if (dmm1.is_hash() == false)
-		dbstl_assert(iitr->second == 33);
+		check_expr(iitr->second == 33);
 
 	dmm1.clear();
 	mm1.clear();
 	fill(dmm1, mm1, i = 3, n = 5, 4);
 	// db_multimap<>::count, insert, erase, find
 	size_t sizet1;
-	dbstl_assert(dmm1.count(3) == g_count[3]);
-	dbstl_assert(dmm1.size() == (sizet1 = g_sum(3, 8)));// sum of recs from 3 to 8
-	dbstl_assert(dmm1.count(9) == 0);
+	check_expr(dmm1.count(3) == g_count[3]);
+	check_expr(dmm1.size() == (sizet1 = g_sum(3, 8)));// sum of recs from 3 to 8
+	check_expr(dmm1.count(9) == 0);
 	dmm_int_t::iterator iitr2 = dmm1.insert(make_pair(9, tpint(99)));
-	dbstl_assert(iitr2->first == 9 && iitr2->second == 99);
-	dbstl_assert(dmm1.count(9) == 1);
-	dbstl_assert(dmm1.size() == sizet1 + 1);
+	check_expr(iitr2->first == 9 && iitr2->second == 99);
+	check_expr(dmm1.count(9) == 1);
+	check_expr(dmm1.size() == sizet1 + 1);
 	dmm1.erase(9);
-	dbstl_assert(dmm1.size() == (sizet1 = g_sum(3, 8)));
-	dbstl_assert(dmm1.count(9) == 0);
+	check_expr(dmm1.size() == (sizet1 = g_sum(3, 8)));
+	check_expr(dmm1.count(9) == 0);
 	dmm1.erase(dmm1.find(3));
-	dbstl_assert(dmm1.size() == g_sum(3, 8) - 1);
-	dbstl_assert(dmm1.count(3) == (g_count[3] - 1 > 0 ? g_count[3] - 1 : 0));
+	check_expr(dmm1.size() == g_sum(3, 8) - 1);
+	check_expr(dmm1.count(3) == (g_count[3] - 1 > 0 ? g_count[3] - 1 : 0));
 	dmm2.erase(dmm2.begin(), dmm2.end());
-	dbstl_assert(dmm2.size() == 0);
-	dbstl_assert(dmm2.empty());
+	check_expr(dmm2.size() == 0);
+	check_expr(dmm2.empty());
 
 	dmmi = dmm1.begin();
 	dmmi++;
@@ -1270,7 +1265,7 @@ void TestAssoc::test_mmap_member_functions()
 	dmmi2++;
 	size_t sizet2;
 	dmm2.insert(dmmi, dmmi2);// 2 recs inserted, [dmi, dmi2)
-	dbstl_assert((sizet2 = dmm2.size()) == 2);
+	check_expr((sizet2 = dmm2.size()) == 2);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
 
@@ -1285,7 +1280,7 @@ void TestAssoc::test_mmap_member_functions()
 		dbstl::begin_txn(0, penv);
 
 	size_t dmm1sz, dmm2sz;
-	dbstl_assert((dmm1sz = dmm1.size()) == 2 && (dmm2sz = 
+	check_expr((dmm1sz = dmm1.size()) == 2 && (dmm2sz = 
 	    dmm2.size()) == sizet1 - 1);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
@@ -1322,8 +1317,8 @@ void TestAssoc::test_mmap_member_functions()
 		eqrgmm = mm4.equal_range(i);
 		for (dmmitr = eqrgdmm.first, mmitr = eqrgmm.first; dmmitr != 
 		    eqrgdmm.second && mmitr != eqrgmm.second; dmmitr++, mmitr++)
-			dbstl_assert(*dmmitr == *mmitr);
-		dbstl_assert((dmmitr == eqrgdmm.second) && (mmitr == eqrgmm.second));
+			check_expr(*dmmitr == *mmitr);
+		check_expr((dmmitr == eqrgdmm.second) && (mmitr == eqrgmm.second));
 	}
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
@@ -1349,30 +1344,30 @@ void TestAssoc::test_set_member_functions()
 	for (i = 0; i < n; i++) {
 		dms_int_t::const_iterator citr, citr1;
 		citr = dms1.find(i);
-		dbstl_assert(*citr == *dms1.find(i));
+		check_expr(*citr == *dms1.find(i));
 		dms_int_t::iterator itr = citr;
-		dbstl_assert(*citr == *itr);
+		check_expr(*citr == *itr);
 		*itr = i;
 		itr = dms1.find(i);
 		citr = itr;
 		citr1 = itr;
-		dbstl_assert(*citr == *itr);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == *dms1.find(i));
+		check_expr(*citr == *itr);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == *dms1.find(i));
 	}
 
 	for (i = 0; i < n; i++) {
 		dms_int_t::const_iterator citr = dms1.find(i);
-		dbstl_assert(*citr == *dms1.find(i));
+		check_expr(*citr == *dms1.find(i));
 		dms_int_t::iterator itr = citr;
-		dbstl_assert(*citr == *itr);
+		check_expr(*citr == *itr);
 		*itr = i;
 		itr = dms1.find(i);
 		citr = itr;
 		dms_int_t::const_iterator citr1 = itr;
-		dbstl_assert(*citr == *itr);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == *dms1.find(i));
+		check_expr(*citr == *itr);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == *dms1.find(i));
 	}
 
 	for (i = 0; i < n; i++) {
@@ -1380,32 +1375,32 @@ void TestAssoc::test_set_member_functions()
 		dms_int_t::const_iterator citr, citr1;
 
 		ncitr = cnstdms1.find(i);
-		dbstl_assert(*ncitr == *cnstdms1.find(i));
+		check_expr(*ncitr == *cnstdms1.find(i));
 		citr = ncitr;
-		dbstl_assert(*citr == *ncitr);
+		check_expr(*citr == *ncitr);
 		//*ncitr = i * 2 + 1;
 		citr1 = ncitr;
 		ncitr1 = citr1;
-		dbstl_assert(*citr == *ncitr);
-		dbstl_assert(*citr == *ncitr1);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == *cnstdms1.find(i));
+		check_expr(*citr == *ncitr);
+		check_expr(*citr == *ncitr1);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == *cnstdms1.find(i));
 	}
 
 	for (i = 0; i < n; i++) {
 
 		dms_int_t::iterator ncitr = cnstdms1.find(i);
-		dbstl_assert(*ncitr == *cnstdms1.find(i));
+		check_expr(*ncitr == *cnstdms1.find(i));
 		dms_int_t::const_iterator citr = ncitr;
-		dbstl_assert(*citr == *ncitr);
+		check_expr(*citr == *ncitr);
 		//*itr = i * 2 + 1;
 		dms_int_t::const_iterator citr1 = ncitr;
 		dms_int_t::iterator ncitr1 = citr1;
 
-		dbstl_assert(*citr == *ncitr);
-		dbstl_assert(*citr == *ncitr1);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == *cnstdms1.find(i));
+		check_expr(*citr == *ncitr);
+		check_expr(*citr == *ncitr1);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == *cnstdms1.find(i));
 	}
 
 	if (dms1.is_hash() == false)
@@ -1424,9 +1419,9 @@ void TestAssoc::test_set_member_functions()
 		dms_int_t::const_iterator citr = dms1.end(), citr2 = --dms1.begin(), itr2;
 		set<ptint>::const_iterator scitr = ms1.end(), scitr2 = --ms1.begin();		
 		for (citr--, scitr--; citr != citr2; --citr, --scitr) {
-			dbstl_assert(*citr == *scitr);
+			check_expr(*citr == *scitr);
 		}
-		dbstl_assert(scitr == scitr2);
+		check_expr(scitr == scitr2);
 
 		db_set<ptype<int> > dmspt;
 		dmspt.insert(cnstdms1.begin(), cnstdms1.end());
@@ -1436,27 +1431,27 @@ void TestAssoc::test_set_member_functions()
 
 		for (itrpt = dmspt.begin(), citr = dms1.begin(); itrpt != dmspt.end(); ++itrpt, ++citr) {
 			itrpt.refresh(true);
-			dbstl_assert(itrpt->v == *citr);
+			check_expr(itrpt->v == *citr);
 		}
 
 		for (itrpt2 = dmspt.begin(), itr2 = dms1.begin(); itrpt2 != dmspt.end(); ++itrpt2, ++itr2) {
 			itrpt2.refresh(true);
-			dbstl_assert(itrpt2->v == *itr2);
+			check_expr(itrpt2->v == *itr2);
 		}
 
 		dms_int_t dmstmp(dms1);
-		dbstl_assert(dms1 == dmstmp);
+		check_expr(dms1 == dmstmp);
 		dms1.insert(dms1.begin(), 101);
-		dbstl_assert(dms1 != dmstmp);
+		check_expr(dms1 != dmstmp);
 
 		ms1.clear();
 		dms1.clear();
 	}
 	dms1.clear();
 	// db_map<>::empty
-	dbstl_assert(dms1.empty());
+	check_expr(dms1.empty());
 	fill(dms1, ms1, i = 3, n = 5);
-	dbstl_assert(!dms1.empty());
+	check_expr(!dms1.empty());
 
 	typedef set<int> ms_int_t;
 	dms_int_t::iterator dmsi, dmsi2;
@@ -1467,8 +1462,8 @@ void TestAssoc::test_set_member_functions()
 	// db_set<>::find, count
 	for (dmsi = dms1.begin(), msi = ms1.begin(), i = 3; dmsi != dms1.end() && 
 	    msi !=ms1.end(); dmsi++, msi++, i++) {
-		// dbstl_assert both contain
-		dbstl_assert(*(dms1.find(i)) == i);
+		// check_expr both contain
+		check_expr(*(dms1.find(i)) == i);
 		
 		pair<dms_int_t::iterator, dms_int_t::iterator> erp = 
 		    dms1.equal_range(i);
@@ -1476,32 +1471,32 @@ void TestAssoc::test_set_member_functions()
 		dms_int_t::iterator jj;
 		for (jj = erp.first, jc = 0; 
 		    jj != erp.second; jj++, jc++)
-		    dbstl_assert((*jj) == ptint(i));
-		dbstl_assert(jc == 1);
+		    check_expr((*jj) == ptint(i));
+		check_expr(jc == 1);
 		if (i < 7 && !dms1.is_hash()) {// 7 is last element
-			dbstl_assert((*(dms1.upper_bound(i))) == i + 1);
-			dbstl_assert((*(dms1.lower_bound(i))) == i);
+			check_expr((*(dms1.upper_bound(i))) == i + 1);
+			check_expr((*(dms1.lower_bound(i))) == i);
 		}
 		else if (i == 7 && !dms1.is_hash()) {
-			dbstl_assert(dms1.upper_bound(i) == dms1.end());
-			dbstl_assert((*(dms1.lower_bound(i))) == i);
+			check_expr(dms1.upper_bound(i) == dms1.end());
+			check_expr((*(dms1.lower_bound(i))) == i);
 		} else if (!dms1.is_hash())
-			dbstl_assert(false);
+			check_expr(false);
 
-		dbstl_assert(dms1.count(i) == 1);
-		dbstl_assert(dms1.count(-i) == 0);
+		check_expr(dms1.count(i) == 1);
+		check_expr(dms1.count(-i) == 0);
 		if (!dms1.is_hash()) {
-			dbstl_assert((*dmsi) == (*msi));
-			dbstl_assert((*dmsi) == (*msi));
+			check_expr((*dmsi) == (*msi));
+			check_expr((*dmsi) == (*msi));
 		}
 		if (i == 3 + n - 1) {// last element
 			if (!dms1.is_hash()) 
-				dbstl_assert((*dmsi) == (*msi));
+				check_expr((*dmsi) == (*msi));
 			for (; dmsi != dms1.end() && (*dmsi) == (*msi); i--) {
-				// dbstl_assert both contains
+				// check_expr both contains
 				if (!dms1.is_hash()) 
-					dbstl_assert((*dmsi) == (*msi));
-				dbstl_assert((*(dms1.find(i)) == i));
+					check_expr((*dmsi) == (*msi));
+				check_expr((*(dms1.find(i)) == i));
 				
 				if (i % 2)
 					dmsi--;
@@ -1515,17 +1510,17 @@ void TestAssoc::test_set_member_functions()
 	}
 	for (dmsri = dms1.rbegin(), msri = ms1.rbegin(), i = 3; 
 	    dmsri != dms1.rend() && msri != ms1.rend(); dmsri++, msri++, i++) {
-		dbstl_assert((*(dms1.find(i)) == i));
+		check_expr((*(dms1.find(i)) == i));
 		if (!dms1.is_hash()) 
-			dbstl_assert((*dmsri) == (*msri));
+			check_expr((*dmsri) == (*msri));
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmsri != dms1.rend() && msri != ms1.rend(); i--) {
-				// dbstl_assert both contain
-				dbstl_assert((dms1.find(i) != dms1.end()) && 
+				// check_expr both contain
+				check_expr((dms1.find(i) != dms1.end()) && 
 				    (ms1.find(i) != ms1.end()));
 				if (!dms1.is_hash()) 
-					dbstl_assert((*dmsri) == (*msri));
+					check_expr((*dmsri) == (*msri));
 
 				if (i % 2)
 					dmsri--;
@@ -1542,12 +1537,12 @@ void TestAssoc::test_set_member_functions()
 	for (dmsi = dms1.begin(), msi = ms1.begin(), i = 3; dmsi != dms1.end() && 
 	    msi !=ms1.end(); ++dmsi, msi++)
 		i++;
-	dbstl_assert(i == 3 + n);
+	check_expr(i == 3 + n);
 
 	for (dmsri = dms1.rbegin(), msri = ms1.rbegin(), i = 3; 
 	    dmsri != dms1.rend() && msri !=ms1.rend(); ++dmsri, msri++)
 		i++;
-	dbstl_assert(i == 3 + n);
+	check_expr(i == 3 + n);
 	
 	dms_int_t dms2(dmsdb2, penv);
 	dms2.clear();
@@ -1564,7 +1559,7 @@ void TestAssoc::test_set_member_functions()
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
 
-	dbstl_assert(dms3 == dms2);
+	check_expr(dms3 == dms2);
 	dms3 = dms1;
 	if (!TEST_AUTOCOMMIT)
 		dbstl::commit_txn(penv);
@@ -1572,11 +1567,11 @@ void TestAssoc::test_set_member_functions()
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
 
-	dbstl_assert(dms3 == dms1);
+	check_expr(dms3 == dms1);
 
 	for (dmsi = dms1.begin(), dmsi2 = dms2.begin(); dmsi != dms1.end() && 
 	    dmsi2 != dms2.end(); ++dmsi, dmsi2++)
-		dbstl_assert(*dmsi == *dmsi2);
+		check_expr(*dmsi == *dmsi2);
 	
 	/* !!!XXX 
 	set keys are not supposed to be mutated, so this is an extra functionality, just like 
@@ -1595,14 +1590,14 @@ void TestAssoc::test_set_member_functions()
 		pprint(dms1, "dms1 after iterator assignment : \n");
 		for (dmsi = dms1.begin(), dmsi2 = dms2.begin(), i = 0; 
 			dmsi != dms1.end() && dmsi2 != dms2.end(); dmsi++, i++, dmsi2++) {
-			dbstl_assert((*dmsi) == tpint(arr1[i]));
+			check_expr((*dmsi) == tpint(arr1[i]));
 			*dmsi2 = *dmsi;
-			// dbstl_assert(*dmsi == *dmsi2); dmsi2 is invalidated by the assignment, so can't compare here.
+			// check_expr(*dmsi == *dmsi2); dmsi2 is invalidated by the assignment, so can't compare here.
 		}
 		// Compare here.
 		for (dmsi = dms1.begin(), dmsi2 = dms2.begin(), i = 0; 
 		    dmsi != dms1.end() && dmsi2 != dms2.end(); dmsi++, i++, dmsi2++)
-			dbstl_assert(*dmsi2 == *dmsi);
+			check_expr(*dmsi2 == *dmsi);
 	}
 
 	dms1.clear();
@@ -1613,25 +1608,25 @@ void TestAssoc::test_set_member_functions()
 	//
 	pair<dms_int_t::iterator, bool> ress = 
 	    dms1.insert(tpint(3));
-	dbstl_assert((*(ress.first)) == 3 && ress.second == false);
+	check_expr((*(ress.first)) == 3 && ress.second == false);
 
 	// db_set<>::count, insert, erase, find
-	dbstl_assert(dms1.count(3) == 1);
-	dbstl_assert(dms1.size() == (size_t)n);// n is 5
-	dbstl_assert(dms1.count(9) == 0);
+	check_expr(dms1.count(3) == 1);
+	check_expr(dms1.size() == (size_t)n);// n is 5
+	check_expr(dms1.count(9) == 0);
 	ress = dms1.insert(tpint(9));
-	dbstl_assert((*(ress.first)) == 9 && ress.second == true);
-	dbstl_assert(dms1.count(9) == 1);
-	dbstl_assert(dms1.size() == (size_t)n + 1);
+	check_expr((*(ress.first)) == 9 && ress.second == true);
+	check_expr(dms1.count(9) == 1);
+	check_expr(dms1.size() == (size_t)n + 1);
 	dms1.erase(9);
-	dbstl_assert(dms1.size() == (size_t)n);
-	dbstl_assert(dms1.count(9) == 0);
+	check_expr(dms1.size() == (size_t)n);
+	check_expr(dms1.count(9) == 0);
 	dms1.erase(dms1.find(3));
-	dbstl_assert(dms1.size() == (size_t)n - 1);
-	dbstl_assert(dms1.count(3) == 0);
+	check_expr(dms1.size() == (size_t)n - 1);
+	check_expr(dms1.count(3) == 0);
 	dms2.erase(dms2.begin(), dms2.end());
-	dbstl_assert(dms2.size() == 0);
-	dbstl_assert(dms2.empty());
+	check_expr(dms2.size() == 0);
+	check_expr(dms2.empty());
 
 	dmsi = dms1.begin();
 	dmsi++;
@@ -1639,7 +1634,7 @@ void TestAssoc::test_set_member_functions()
 	dmsi2++;
 	dmsi2++;
 	dms2.insert(dmsi, dmsi2);// 2 recs inserted, [dmsi, dmsi2)
-	dbstl_assert(dms2.size() == 2);
+	check_expr(dms2.size() == 2);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
 	
@@ -1652,7 +1647,7 @@ void TestAssoc::test_set_member_functions()
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
 	size_t dms1sz, dms2sz;
-	dbstl_assert((dms1sz = dms1.size()) == 2 && (dms2sz = dms2.size()) == (size_t)n - 1);
+	check_expr((dms1sz = dms1.size()) == 2 && (dms2sz = dms2.size()) == (size_t)n - 1);
 	dms1.clear();
 	dms2.clear();
 	dms3.clear();
@@ -1676,16 +1671,16 @@ void TestAssoc::test_mset_member_functions()
 
 	dmms1.clear();
 	// db_multiset<>::empty
-	dbstl_assert(dmms1.empty());
+	check_expr(dmms1.empty());
 	fill(dmms1, mms1, i = 3, n = 5, 4);
-	dbstl_assert(!dmms1.empty());
+	check_expr(!dmms1.empty());
 	dmms_int_t tmpmms0;
 	const dmms_int_t &cnstmms = dmms1;
 	dmms_int_t tmpmms1;
 	tmpmms1.insert(dmms1.begin(), dmms1.end());
 	tmpmms0.insert(cnstmms.begin(), cnstmms.end());
 	tmpmms0.insert(tmpmms0.begin(), *(--tmpmms0.end()));
-	dbstl_assert(tmpmms0 != tmpmms1);
+	check_expr(tmpmms0 != tmpmms1);
 
 	typedef multiset<int> mms_int_t;
 	dmms_int_t::iterator dmmsi, dmmsi2;
@@ -1697,8 +1692,8 @@ void TestAssoc::test_mset_member_functions()
 	for (dmmsi = dmms1.begin(), mmsi = mms1.begin(), i = 3; 
 	    dmmsi != dmms1.end() && 
 	    mmsi !=mms1.end(); dmmsi++, mmsi++, i++) {
-		// dbstl_assert both contain
-		dbstl_assert((*(dmms1.find(i))) == i);
+		// check_expr both contain
+		check_expr((*(dmms1.find(i))) == i);
 		
 		pair<dmms_int_t::iterator, dmms_int_t::iterator> erp1 = 
 		    dmms1.equal_range(i);
@@ -1711,30 +1706,30 @@ void TestAssoc::test_mset_member_functions()
 				jj == erp1.second;// cmp again to debug it
 				dmms1.get_db_handle()->stat_print(DB_STAT_ALL);
 			}
-			dbstl_assert((*jj) == ptint(i));
+			check_expr((*jj) == ptint(i));
 		}
-		dbstl_assert((size_t)jc == g_count[i]); // g_count[i] duplicates
+		check_expr((size_t)jc == g_count[i]); // g_count[i] duplicates
 		if (i < 7 && !dmms1.is_hash()) {// 7 is last element
-			dbstl_assert((*(dmms1.upper_bound(i))) == i + 1);
-			dbstl_assert((*(dmms1.lower_bound(i))) == i);
+			check_expr((*(dmms1.upper_bound(i))) == i + 1);
+			check_expr((*(dmms1.lower_bound(i))) == i);
 		}
 		else if (i == 7 && !dmms1.is_hash()) {
-			dbstl_assert(dmms1.upper_bound(i) == dmms1.end());
-			dbstl_assert((*(dmms1.lower_bound(i))) == i);
+			check_expr(dmms1.upper_bound(i) == dmms1.end());
+			check_expr((*(dmms1.lower_bound(i))) == i);
 		} else if (!dmms1.is_hash())
-			dbstl_assert(false);
+			check_expr(false);
 
-		dbstl_assert(dmms1.count(i) == g_count[i]);
-		dbstl_assert(dmms1.count(-i) == 0);
+		check_expr(dmms1.count(i) == g_count[i]);
+		check_expr(dmms1.count(-i) == 0);
 		if (!dmms1.is_hash())
-			dbstl_assert((*dmmsi) == (*mmsi));
+			check_expr((*dmmsi) == (*mmsi));
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmmsi != dmms1.end(); mmsi--, i--) {
-				// dbstl_assert both contains
-				dbstl_assert((*(dmms1.find(i))) == i);
+				// check_expr both contains
+				check_expr((*(dmms1.find(i))) == i);
 				if (!dmms1.is_hash())
-					dbstl_assert((*dmmsi) == (*mmsi));
+					check_expr((*dmmsi) == (*mmsi));
 				if (i % 2)
 					dmmsi--;
 				else 
@@ -1746,17 +1741,17 @@ void TestAssoc::test_mset_member_functions()
 	}
 	for (dmmsri = dmms1.rbegin(), mmsri = mms1.rbegin(), i = 3; 
 	    dmmsri != dmms1.rend() && mmsri !=mms1.rend(); dmmsri++, mmsri++, i++) {
-		dbstl_assert((dmms1.find(i) != dmms1.end()) && 
-		    (mms1.find(i) != mms1.end()));// dbstl_assert both contain
+		check_expr((dmms1.find(i) != dmms1.end()) && 
+		    (mms1.find(i) != mms1.end()));// check_expr both contain
 		if (dmms1.is_hash() == false)
-			dbstl_assert((*dmmsri) == (*mmsri));
+			check_expr((*dmmsri) == (*mmsri));
 		if (i == 3 + n - 1) {// last element
 			
 			for (; dmmsri != dmms1.rend() && mmsri != mms1.rend(); i--) {
-				// dbstl_assert both contain
-				dbstl_assert((*(dmms1.find(i))) == i);
+				// check_expr both contain
+				check_expr((*(dmms1.find(i))) == i);
 				if (!dmms1.is_hash())
-					dbstl_assert((*dmmsri) == (*mmsri));
+					check_expr((*dmmsri) == (*mmsri));
 				if (i % 2)
 					dmmsri--;
 				else
@@ -1772,11 +1767,11 @@ void TestAssoc::test_mset_member_functions()
 	    dmmsi != dmms1.end() && 
 	    mmsi !=mms1.end(); ++dmmsi, mmsi++)
 		i++;
-	dbstl_assert((size_t)i == 3 + g_sum(3, 8));
+	check_expr((size_t)i == 3 + g_sum(3, 8));
 	for (dmmsri = dmms1.rbegin(), mmsri = mms1.rbegin(), i = 3; 
 	    dmmsri != dmms1.rend() && mmsri !=mms1.rend(); ++dmmsri, mmsri++)
 		i++;
-	dbstl_assert((size_t)i == 3 + g_sum(3, 8));
+	check_expr((size_t)i == 3 + g_sum(3, 8));
 	
 	
 		
@@ -1802,7 +1797,7 @@ void TestAssoc::test_mset_member_functions()
 	for (dmms_int_t::iterator itr = dmms3.begin(); itr != dmms3.end(); ++itr)
 		cout<<"\t"<<*itr;
 
-	dbstl_assert(dmms3 == dmms2);
+	check_expr(dmms3 == dmms2);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
 	
@@ -1814,11 +1809,11 @@ void TestAssoc::test_mset_member_functions()
 
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
-	dbstl_assert(dmms3 == dmms1);
+	check_expr(dmms3 == dmms1);
 
 	for (dmmsi = dmms1.begin(), dmmsi2 = dmms2.begin(); dmmsi != dmms1.end() && 
 	    dmmsi2 != dmms2.end(); ++dmmsi, dmmsi2++)
-		dbstl_assert(*dmmsi == *dmmsi2);
+		check_expr(*dmmsi == *dmmsi2);
 
 	// content of dmms1 and dmms2 are changed since now
 	// int arr11[] = {33, 44, 55, 66, 77};
@@ -1827,28 +1822,28 @@ void TestAssoc::test_mset_member_functions()
 	// tested in fill
 	//
 	dmms_int_t::iterator iitrms = dmms1.insert(ptint (3));
-	dbstl_assert(*iitrms == 3);
+	check_expr(*iitrms == 3);
 	 
 	dmms1.clear();
 	mms1.clear();
 	fill(dmms1, mms1, i = 3, n = 5, 4);
 	// db_multiset<>::count, insert, erase, find
-	dbstl_assert(dmms1.count(3) == g_count[3]);
-	dbstl_assert(dmms1.size() == (sizet1 = g_sum(3, 8)));// sum of recs from 3 to 8
-	dbstl_assert(dmms1.count(9) == 0);
+	check_expr(dmms1.count(3) == g_count[3]);
+	check_expr(dmms1.size() == (sizet1 = g_sum(3, 8)));// sum of recs from 3 to 8
+	check_expr(dmms1.count(9) == 0);
 	dmms_int_t::iterator iitrms2 = dmms1.insert(ptint (9));
-	dbstl_assert(*iitrms2 == 9);
-	dbstl_assert(dmms1.count(9) == 1);
-	dbstl_assert(dmms1.size() == sizet1 + 1);
+	check_expr(*iitrms2 == 9);
+	check_expr(dmms1.count(9) == 1);
+	check_expr(dmms1.size() == sizet1 + 1);
 	dmms1.erase(9);
-	dbstl_assert(dmms1.size() == g_sum(3, 8));
-	dbstl_assert(dmms1.count(9) == 0);
+	check_expr(dmms1.size() == g_sum(3, 8));
+	check_expr(dmms1.count(9) == 0);
 	dmms1.erase(dmms1.find(3));
-	dbstl_assert(dmms1.size() == g_sum(3, 8) - 1);
-	dbstl_assert(dmms1.count(3) == (g_count[3] - 1 > 0 ? g_count[3] - 1 : 0));
+	check_expr(dmms1.size() == g_sum(3, 8) - 1);
+	check_expr(dmms1.count(3) == (g_count[3] - 1 > 0 ? g_count[3] - 1 : 0));
 	dmms2.erase(dmms2.begin(), dmms2.end());
-	dbstl_assert(dmms2.size() == 0);
-	dbstl_assert(dmms2.empty());
+	check_expr(dmms2.size() == 0);
+	check_expr(dmms2.empty());
 
 	dmmsi = dmms1.begin();
 	dmmsi++;
@@ -1857,7 +1852,7 @@ void TestAssoc::test_mset_member_functions()
 	dmmsi2++;
 	dmms2.insert(dmmsi, dmmsi2);// 2 recs inserted, [dmi, dmi2)
 	size_t sssz;
-	dbstl_assert((sssz = dmms2.size()) == 2);
+	check_expr((sssz = dmms2.size()) == 2);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
 	
@@ -1870,7 +1865,7 @@ void TestAssoc::test_mset_member_functions()
 	if (EXPLICIT_TXN)
 		dbstl::begin_txn(0, penv);
 	size_t dmms1sz, dmms2sz;
-	dbstl_assert((dmms1sz = dmms1.size()) == 2 && (dmms2sz = dmms2.size()) == sizet1 - 1);
+	check_expr((dmms1sz = dmms1.size()) == 2 && (dmms2sz = dmms2.size()) == sizet1 - 1);
 
 	dmms1.clear();
 	dmms2.clear();
@@ -1915,8 +1910,8 @@ void TestAssoc::test_char_star_string_storage()
 		db_vector<DbstlDbt>::value_type_wrap elemref = strv[i];
 		strvdbts.push_back(elemref);
 		printf("\n%s\n%s",  (char*)(strvdbts[i].get_data()), strsv[i].c_str());
-		dbstl_assert(strcmp((char*)(elemref.get_data()), strsv[i].c_str()) == 0);
-		dbstl_assert(strcmp((char*)(strvdbts[i].get_data()), strsv[i].c_str()) == 0);
+		check_expr(strcmp((char*)(elemref.get_data()), strsv[i].c_str()) == 0);
+		check_expr(strcmp((char*)(strvdbts[i].get_data()), strsv[i].c_str()) == 0);
 	}
 	strv.clear();
 	
@@ -1953,14 +1948,14 @@ void TestAssoc::test_char_star_string_storage()
 	vts = cstr4;
 	vts._DB_STL_StoreElement();
 	cout<<"\n\nstrmap[1]: "<<strmap[1];
-	dbstl_assert(_tcscmp(strmap[1], cstr4) == 0);
+	check_expr(_tcscmp(strmap[1], cstr4) == 0);
 	vts[0] = _T('H');// itis wrong to do it this way
 	vts._DB_STL_StoreElement();
-	dbstl_assert(_tcscmp(strmap[1], _T("Hello world")) == 0);
+	check_expr(_tcscmp(strmap[1], _T("Hello world")) == 0);
 	TCHAR *strbase = vts._DB_STL_value();
 	strbase[6] = _T('W');
 	vts._DB_STL_StoreElement();
-	dbstl_assert(_tcscmp(strmap[1], _T("Hello World")) == 0);
+	check_expr(_tcscmp(strmap[1], _T("Hello World")) == 0);
 	strmap.clear();
 
 	typedef db_map<const char *, const char *, ElementHolder<const char *> > cstrpairs_t;
@@ -1974,7 +1969,7 @@ void TestAssoc::test_char_star_string_storage()
 	for (ciitr = strpairs.begin(), iitr = strpairs.begin(); iitr != strpairs.end(); ++iitr, ++ciitr) {
 		cout<<"\n"<<iitr->first<<"\t"<<iitr->second;
 		cout<<"\n"<<ciitr->first<<"\t"<<ciitr->second;
-		dbstl_assert(strcmp(ciitr->first, iitr->first) == 0 && strcmp(ciitr->second, iitr->second) == 0);
+		check_expr(strcmp(ciitr->first, iitr->first) == 0 && strcmp(ciitr->second, iitr->second) == 0);
 	}
 
 	typedef db_map<char *, char *, ElementHolder<char *> > strpairs_t;
@@ -1994,19 +1989,19 @@ void TestAssoc::test_char_star_string_storage()
 	strpairs_t::const_iterator citr;
 	
 	for (itr = strpairs2.begin(); itr != strpairs2.end(); ++itr) {
-		dbstl_assert(strcmp(strpairs2[itr->first], itr->second) == 0);
-		dbstl_assert(string(itr->second) == sstrpairs2[string(itr->first)]);
+		check_expr(strcmp(strpairs2[itr->first], itr->second) == 0);
+		check_expr(string(itr->second) == sstrpairs2[string(itr->first)]);
 		strpairs_t::value_type_wrap::second_type&secref = itr->second;
 		std::reverse((char *)secref, (char *)secref + strlen(secref));
 		secref._DB_STL_StoreElement();
 		std::reverse(sstrpairs2[itr->first].begin(), sstrpairs2[itr->first].end());
 	}
 
-	dbstl_assert(strpairs2.size() == sstrpairs2.size());
+	check_expr(strpairs2.size() == sstrpairs2.size());
 	for (citr = strpairs2.begin(ReadModifyWriteOption::no_read_modify_write(), 
 		true, BulkRetrievalOption::bulk_retrieval()); citr != strpairs2.end(); ++citr) {
-		dbstl_assert(strcmp(strpairs2[citr->first], citr->second) == 0);
-		dbstl_assert(string(citr->second) == sstrpairs2[string(citr->first)]);
+		check_expr(strcmp(strpairs2[citr->first], citr->second) == 0);
+		check_expr(string(citr->second) == sstrpairs2[string(citr->first)]);
 	}
 
 	
@@ -2025,7 +2020,7 @@ void TestAssoc::test_char_star_string_storage()
 		// will refer to an invalid pointer when i changes.
 	}
 	for (i = 0; i < 10; i++) {
-		dbstl_assert(strcmp(csvct[i], scsvct[i]) == 0);
+		check_expr(strcmp(csvct[i], scsvct[i]) == 0);
 		cout<<endl<<(const char *)(csvct[i]);
 	}
 
@@ -2041,7 +2036,7 @@ void TestAssoc::test_char_star_string_storage()
 		// will refer to an invalid pointer when i changes.
 	}
 	for (i = 0; i < 10; i++) {
-		dbstl_assert(wcscmp(wcsvct[i], wscsvct[i]) == 0);
+		check_expr(wcscmp(wcsvct[i], wscsvct[i]) == 0);
 
 	}
 	
@@ -2110,7 +2105,7 @@ void TestAssoc::test_arbitray_sequence_storage()
 	for (i = 0; i < 10; i++) {
 		rgbmap_t::value_type_wrap::second_type rgbelem = rgbsmap[i];
 		prgb1 = rgbelem;
-		dbstl_assert(memcmp(prgb1, prgb2 = srgbsmap[i], 
+		check_expr(memcmp(prgb1, prgb2 = srgbsmap[i], 
 		    (n = (int)rgblen(srgbsmap[i])) * sizeof(RGBB)) == 0);
 		for (j = 0; j < n - 1; j++) {
 			prgb1[j].r_ = 256 - prgb1[j].r_;
@@ -2127,7 +2122,7 @@ void TestAssoc::test_arbitray_sequence_storage()
 	for (i = 0; i < 10; i++) {
 		rgbmap_t::value_type_wrap::second_type rgbelem = rgbsmap[i];
 		prgb1 = rgbelem;// Can't use rgbsmap[i] here because container::operator[] is an temporary value.;
-		dbstl_assert(memcmp(prgb1, prgb2 = srgbsmap[i], 
+		check_expr(memcmp(prgb1, prgb2 = srgbsmap[i], 
 		    sizeof(RGBB) * rgblen(srgbsmap[i])) == 0);
 	}
 	
@@ -2139,7 +2134,7 @@ void TestAssoc::test_arbitray_sequence_storage()
 		rgbmap_t::value_type_wrap::second_type rgbelem2 = (*rmitr).second;
 		prgb1 = (*rmitr).second;
 		srmitr = srgbsmap.find(rmitr->first);
-		dbstl_assert(memcmp(prgb1, prgb2 = srmitr->second, 
+		check_expr(memcmp(prgb1, prgb2 = srmitr->second, 
 		    sizeof(RGBB) * rgblen(srmitr->second)) == 0);
 		rmitr.refresh();
 	}
@@ -2185,8 +2180,8 @@ void TestAssoc::test_bulk_retrieval_read()
 	    smsitr != smsmap.end(); i++) {
 		// The order may be different, so if the two key set are 
 		// identical, it is right.
-		dbstl_assert((ssmsmap.count(smsitr->first) == 1)); 
-		dbstl_assert((smsitr->second == ssmsmap[smsitr->first]));
+		check_expr((ssmsmap.count(smsitr->first) == 1)); 
+		check_expr((smsitr->second == ssmsmap[smsitr->first]));
 		if (i % 2)
 			smsitr++;
 		else 
@@ -2221,7 +2216,7 @@ void TestAssoc::test_bulk_retrieval_read()
 	    true, BulkRetrievalOption::bulk_retrieval(64 * 1024)), 
 	    sitrv = svctsms.begin(), i = 0; itrv != vctsms.end();
 	    ++itrv, ++sitrv, ++i) {
-		dbstl_assert(*itrv == *sitrv);
+		check_expr(*itrv == *sitrv);
 		if (i % 100 == 0)
 			itrv.set_bulk_buffer((u_int32_t)(itrv.get_bulk_bufsize() * 1.1));
 	}
@@ -2280,7 +2275,7 @@ commit_abort:
 			
 			for (int kk = 3; kk < 6; kk++) {
 				keystr = const_cast<char*>(kstrs[kk].c_str());
-				dbstl_assert(smap.count(keystr) == 0);
+				check_expr(smap.count(keystr) == 0);
 			}
 
 			txn2 = begin_txn(0, penv);// nest txn2 into txn1
@@ -2296,9 +2291,9 @@ commit_abort:
 			for (int kk = 6; kk < 12; kk++) {
 				keystr = const_cast<char*>(kstrs[kk].c_str());
 				if (kk < 9)
-					dbstl_assert((sizet1 = smap.count(keystr)) > 0);
+					check_expr((sizet1 = smap.count(keystr)) > 0);
 				if (kk >= 9)
-					dbstl_assert(smap.count(keystr) == 0);
+					check_expr(smap.count(keystr) == 0);
 			}
 
 			break;
@@ -2315,7 +2310,7 @@ commit_abort:
 			abort_txn(penv);// abort txn2;
 			for (int kk = 15; kk < 19; kk++) {
 				keystr = const_cast<char*>(kstrs[kk].c_str());
-				dbstl_assert(smap.count(keystr) == 0);
+				check_expr(smap.count(keystr) == 0);
 			}
 			txn2 = begin_txn(0, penv);
 			_DB_STL_TEST_SET_TXN_NAME(txn2);
@@ -2329,7 +2324,7 @@ commit_abort:
 			commit_txn(penv, txn2);
 			for (int kk = 19; kk < 22; kk++) {
 				keystr = const_cast<char*>(kstrs[kk].c_str());
-				dbstl_assert(smap.count(keystr) > 0);
+				check_expr(smap.count(keystr) > 0);
 			}
 			txn2 = begin_txn(0, penv);
 			_DB_STL_TEST_SET_TXN_NAME(txn2);
@@ -2343,7 +2338,7 @@ commit_abort:
 			abort_txn(penv, txn2);
 			for (int kk = 22; kk < 24; kk++) {
 				keystr = const_cast<char*>(kstrs[kk].c_str());
-				dbstl_assert(smap.count(keystr) == 0);
+				check_expr(smap.count(keystr) == 0);
 			}
 			
 			break;
@@ -2379,9 +2374,9 @@ commit_abort:
 			keystr = const_cast<char*>(kstrs[kk].c_str());
 			sizet1 = smap.count(keystr);
 			if (idxset.count(kk) > 0) {
-				dbstl_assert(sizet1 > 0);
+				check_expr(sizet1 > 0);
 			} else {
-				dbstl_assert(sizet1 == 0);
+				check_expr(sizet1 == 0);
 			}
 		}
 
@@ -2394,7 +2389,7 @@ commit_abort:
 	if (commit_or_abort != 0){
 		abort_txn(penv, txn1);// non could have been inserted
 		begin_txn(0, penv);// put this call in a txnal context
-		dbstl_assert((sizet1 = smap.size()) == 0);
+		check_expr((sizet1 = smap.size()) == 0);
 		commit_txn(penv);
 	}
 	 
@@ -2449,17 +2444,17 @@ void TestAssoc::test_etc()
 
 	ptint_vector vctr;
 	vctr.set_all_flags(1, 1, 1);
-	dbstl_assert(vctr.get_commit_flags() == 1);
-	dbstl_assert(vctr.get_cursor_open_flags() == 1);
-	dbstl_assert(vctr.get_db_open_flags() & DB_CREATE);
-	dbstl_assert(vctr.get_txn_begin_flags() == 1);
+	check_expr(vctr.get_commit_flags() == 1);
+	check_expr(vctr.get_cursor_open_flags() == 1);
+	check_expr(vctr.get_db_open_flags() & DB_CREATE);
+	check_expr(vctr.get_txn_begin_flags() == 1);
 	vctr.get_db_set_flags();
 	vctr.set_commit_flags(2);
-	dbstl_assert(vctr.get_commit_flags() == 2);
+	check_expr(vctr.get_commit_flags() == 2);
 	vctr.set_cursor_open_flags(2);
-	dbstl_assert(vctr.get_cursor_open_flags() == 2);
+	check_expr(vctr.get_cursor_open_flags() == 2);
 	vctr.set_txn_begin_flags(2);
-	dbstl_assert(vctr.get_txn_begin_flags() == 2);
+	check_expr(vctr.get_txn_begin_flags() == 2);
 
 
 }

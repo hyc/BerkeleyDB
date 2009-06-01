@@ -38,22 +38,22 @@ import com.sleepycat.db.DatabaseEntry;
  * this class can be used with any stored collection.</li>
  * </ol>
  */
-public class SortedFloatBinding extends TupleBinding {
+public class SortedFloatBinding extends TupleBinding<Float> {
 
     /* javadoc is inherited */
-    public Object entryToObject(TupleInput input) {
+    public Float entryToObject(TupleInput input) {
 
-        return new Float(input.readSortedFloat());
+        return input.readSortedFloat();
     }
 
     /* javadoc is inherited */
-    public void objectToEntry(Object object, TupleOutput output) {
+    public void objectToEntry(Float object, TupleOutput output) {
 
-        output.writeSortedFloat(((Number) object).floatValue());
+        output.writeSortedFloat(object);
     }
 
     /* javadoc is inherited */
-    protected TupleOutput getTupleOutput(Object object) {
+    protected TupleOutput getTupleOutput(Float object) {
 
         return FloatBinding.sizedOutput();
     }

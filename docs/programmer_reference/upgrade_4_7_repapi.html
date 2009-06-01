@@ -34,8 +34,8 @@
         </div>
       </div>
       <p>The Berkeley DB base replication API <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a>, <a href="../api_reference/C/repget_nsites.html" class="olink">DB_ENV-&gt;rep_get_nsites()</a>
-<a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_nsites()</a>, <a href="../api_reference/C/repget_priority.html" class="olink">DB_ENV-&gt;rep_get_priority()</a> and
-<a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a> methods now take arguments of type u_int32_t
+<a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a>, <a href="../api_reference/C/repget_priority.html" class="olink">DB_ENV-&gt;rep_get_priority()</a> and
+<a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a> methods now take arguments of type u_int32_t
 rather than int.  Applications may need to change the types of
 arguments to these methods, or cast arguments to these methods to
 avoid compiler warnings.</p>

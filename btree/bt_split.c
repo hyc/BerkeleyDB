@@ -213,6 +213,7 @@ __bam_root(dbc, cp)
 	lp = rp = NULL;
 	LOCK_INIT(llock);
 	LOCK_INIT(rlock);
+	COMPQUIET(log_dbt.data, NULL);
 
 	/* Yeah, right. */
 	if (cp->page->level >= MAXBTREELEVEL) {

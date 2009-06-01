@@ -112,7 +112,7 @@ for (char c = 0; c &lt; 26; c++) {
 	strmap[str] = str2;
 }
 for (strmap_t2::iterator itr = strmap.begin(); itr != strmap.end(); ++itr)
-cout&lt;&lt;endl&lt;&lt;itr-&gt;first&lt;&lt;" : "&lt;&lt;itr-&gt;second;
+	cout&lt;&lt;endl&lt;&lt;itr-&gt;first&lt;&lt;" : "&lt;&lt;itr-&gt;second;
 
 using namespace dbstl;
 dbstl::db_map&lt;char, int&gt; v;
@@ -126,13 +126,15 @@ name_addr_map["Alex"] = "Sydney Australia";
 name_addr_map["David"] = "Shenzhen China";
 cout&lt;&lt;"Alex's address:"&lt;&lt;name_addr_map["Alex"];
 
-dbstl::db_vector&lt;Person&gt; vi; // Some callback configurations follow.
-// The strings and objects are stored into DB rather than pointers.
+dbstl::db_vector&lt;Person&gt; vi; 
+// Some callback configurations follow here.
+
+// The strings and objects rather than pointers are stored into DB .
 
 Person obj("David Zhao", "Oracle", new Office("Boston", "USA"));
 vi.push_back(obj); // More person storage.
 for (int I = 0; I &lt; vi.size(); I++)
-    cout&lt;&lt;vi[I];
+	cout&lt;&lt;vi[I];
 
 	    
 </pre>
@@ -140,7 +142,7 @@ for (int I = 0; I &lt; vi.size(); I++)
 </p>
       <p>
 The first snippet initializes a db_vector container of 100 elements, with an in-memory 
-anonymous database internally created by dbstl. The only difference with C++ stl is
+anonymous database internally created by dbstl. The only difference with C++ STL is
 we here need one more type parameter ElementHolder&lt;int&gt;. The ElementHolder class template
 should be used for every type of dbstl container that will store C++ primitive data types 
 like int, float, char *, wchar_t *, etc, but should not be used for class types, reasons 
@@ -149,7 +151,7 @@ are explained below.
 In the second code snippet, by this assignment: strmap[str] = str2; you are storing a string
 pair (str, str2) rather than the pointers into the underlying database, amazing isn't it?
 
-You can see the rest of the code is the same as C++ stl containers in both snippets, and 
+You can see the rest of the code is the same as C++ STL containers in both snippets, and 
 this way you are storing data into a Berkeley DB database. If you create your own database  
 with backing files on disk, your data or objects can persist and be restored when the 
 program runs again.

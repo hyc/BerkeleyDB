@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>DbEnv::rep_set_config()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="rep.html" title="Chapter 11.  Replication Methods" />
@@ -84,7 +84,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1699488"></a>Parameters</h3>
+              <h3 class="title"><a id="id1703920"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1699554"></a>onoff</h4>
+                <h4 class="title"><a id="id1703930"></a>onoff</h4>
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@ Otherwise, it is turned on. All configuration flags are turned off by default.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1699713"></a>which</h4>
+                <h4 class="title"><a id="id1703643"></a>which</h4>
               </div>
             </div>
           </div>
@@ -223,7 +223,7 @@ Otherwise, it is turned on. All configuration flags are turned off by default.
                             </p>
               </li>
               <li>
-                <p>
+                <p><a id="config_DB_REPMGR_CONF_2SITE_STRICT"></a>
                                 <code class="literal">DB_REPMGR_CONF_2SITE_STRICT</code>
                             </p>
                 <p>
@@ -242,7 +242,7 @@ Otherwise, it is turned on. All configuration flags are turned off by default.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1699644"></a>Errors</h3>
+              <h3 class="title"><a id="id1704088"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -260,14 +260,14 @@ Otherwise, it is turned on. All configuration flags are turned off by default.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1700002"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1704376"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
                 If setting in-memory replication after the database environment is already
                 opened; if setting master leases after replication is started; if setting
-                the 2-site strict majority rule for a base replication API application;
+                the 2-site strict majority rule for a Base API application;
                 or if an invalid flag value or parameter was specified.
             </p>
         </div>
@@ -276,7 +276,7 @@ Otherwise, it is turned on. All configuration flags are turned off by default.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1699761"></a>Class</h3>
+              <h3 class="title"><a id="id1703975"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -288,7 +288,7 @@ Otherwise, it is turned on. All configuration flags are turned off by default.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1699545"></a>See Also</h3>
+              <h3 class="title"><a id="id1703924"></a>See Also</h3>
             </div>
           </div>
         </div>

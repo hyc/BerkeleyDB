@@ -232,9 +232,9 @@ public class PrimaryIndex<PK,E> extends BasicIndex<PK,E> {
      */
     public PrimaryIndex(Database database,
                         Class<PK> keyClass,
-                        EntryBinding keyBinding,
+                        EntryBinding<PK> keyBinding,
                         Class<E> entityClass,
-                        EntityBinding entityBinding)
+                        EntityBinding<E> entityBinding)
         throws DatabaseException {
 
         super(database, keyClass, keyBinding,
@@ -272,7 +272,7 @@ public class PrimaryIndex<PK,E> extends BasicIndex<PK,E> {
      *
      * @return the key binding.
      */
-    public EntryBinding getKeyBinding() {
+    public EntryBinding<PK> getKeyBinding() {
         return keyBinding;
     }
 
@@ -290,7 +290,7 @@ public class PrimaryIndex<PK,E> extends BasicIndex<PK,E> {
      *
      * @return the entity binding.
      */
-    public EntityBinding getEntityBinding() {
+    public EntityBinding<E> getEntityBinding() {
         return entityBinding;
     }
 

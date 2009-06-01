@@ -128,7 +128,8 @@ abstract class RawAbstractInput extends AbstractInput {
         if (o instanceof RawObject) {
             format = (Format) ((RawObject) o).getType();
         } else {
-            format = catalog.getFormat(o.getClass());
+            format = catalog.getFormat(o.getClass(),
+                                       false /*checkEntitySubclassIndexes*/);
             if (!format.isSimple() || format.isEnum()) {
                 throw new IllegalArgumentException
                     ("Not a RawObject or a non-enum simple type: " +

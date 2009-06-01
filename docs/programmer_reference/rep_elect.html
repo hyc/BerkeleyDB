@@ -35,8 +35,11 @@
           </div>
         </div>
       </div>
-      <p>When using the Base replication API, it is the responsibility of the
-application to initiate elections if desired.  It is never dangerous
+      <p>Replication Manager automatically conducts elections when necessary,
+based on configuration information supplied to the
+<a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a> method.</p>
+      <p>It is the responsibility of a Base API application
+to initiate elections if desired.  It is never dangerous
 to hold an election, as the Berkeley DB election process ensures there is
 never more than a single master database environment.  Clients should
 initiate an election whenever they lose contact with the master
@@ -143,10 +146,10 @@ external tie-breaker, it may be able to determine whether it is safe
 to declare itself master.  Otherwise it must choose between providing
 availability of a writable master (at the risk of duplicate masters),
 or strict protection against duplicate masters (but no master when a
-failure occurs).  Users of the Base replication API can accomplish
+failure occurs).   Replication Manager offers this choice via the
+<a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a> method.  Base API applications can accomplish
 this by judicious setting of the nvotes and nsites parameters to the
-<a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> method.  Replication Manager offers this choice via the
-<a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a> method.</p>
+<a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> method. </p>
       <p>It is possible for a less-preferred database environment to win an
 election if a number of systems crash at the same time.  Because an
 election winner is declared as soon as enough environments participate
@@ -174,9 +177,6 @@ and reconfigure itself as a client using the <a href="../api_reference/C/repstar
 the <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> method.</li>
         </ol>
       </div>
-      <p>Replication Manager automatically conducts elections when necessary,
-based on configuration information supplied to the
-<a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a> method.</p>
     </div>
     <div class="navfooter">
       <hr />

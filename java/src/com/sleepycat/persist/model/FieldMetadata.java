@@ -78,4 +78,10 @@ public class FieldMetadata implements Serializable {
                ClassMetadata.hashCode(className) +
                ClassMetadata.hashCode(declaringClassName);
     }
+
+    @Override
+    public String toString() {
+        return "[FieldMetadata name: " + name + " className: " + className +
+               " declaringClassName: " + declaringClassName + ']';
+    }
 }

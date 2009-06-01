@@ -76,6 +76,7 @@ class _exported db_set_base_iterator : public
 protected:
 	typedef db_set_base_iterator<kdt> self;
 	typedef db_map_base_iterator<kdt, kdt, _DB_STL_set_value<kdt> > base;
+	using db_base_iterator<kdt>::replace_current_key;
 public:
 	
 	typedef kdt key_type;
@@ -179,7 +180,7 @@ public:
 	/// Post-decrement. 
 	/// \return This iterator after decremented.
 	/// \sa db_map_base_iterator::operator--()
-	inline 	self& operator--() 
+	inline self& operator--() 
 	{
 		this->prev();
 		
@@ -220,10 +221,12 @@ public:
 	/// or ElementRef object.
 	inline reference operator*()  
 	{ 
+		int ret;
 
 		if (this->directdb_get_) {
-			dbstl_assert(this->pcsr_->get_current_key(
-			    this->curpair_base_.first) == 0);
+			ret = this->pcsr_->get_current_key(
+			    this->curpair_base_.first);
+			dbstl_assert(ret == 0);
 		// curpair_base_.second is a _DB_STL_set_value<kdt> object, 
 		// not used at all. Since const iterators can't be used to 
 		// write, so this is not a problem.
@@ -245,11 +248,12 @@ public:
 	/// address of ElementHolder or ElementRef object.
 	inline pointer operator->() const
 	{
+		int ret;
 
 		if (this->directdb_get_) {
-			dbstl_assert(this->pcsr_->get_current_key(
-			    this->curpair_base_.first) == 0);
-			
+			ret = this->pcsr_->get_current_key(
+			    this->curpair_base_.first);
+			dbstl_assert(ret == 0);
 		}
 
 		return &(this->curpair_base_.first);
@@ -516,7 +520,7 @@ protected:
 	friend class db_multimap<kdt, _DB_STL_set_value<kdt>, 
 	    ElementRef<kdt>, self>;
 	
-	virtual void delete_me() 
+	virtual void delete_me() const
 	{
 		delete this;
 	}
@@ -1523,7 +1527,7 @@ private:
 		
 	}
 
-	virtual const char* verify_config(Db*dbp, DbEnv* envp)
+	virtual const char* verify_config(Db*dbp, DbEnv* envp) const
 	{
 		DBTYPE dbtype;
 		u_int32_t oflags, sflags;

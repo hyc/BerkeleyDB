@@ -69,7 +69,7 @@ TestVector::~TestVector()
 
 TestVector::TestVector(void *param1)
 {
-	dbstl_assert(param1 != NULL);
+	check_expr(param1 != NULL);
 	TestParam *param = (TestParam*)param1;
 	TestParam *ptp = param;
 	penv = param->dbenv;
@@ -115,26 +115,26 @@ void TestVector::test_member_functions()
 	for (i = 0; i < n; i++) {
 		ptint_vector::const_iterator citr, citr1;
 		citr = vi.begin() + i;
-		dbstl_assert(*citr == vi[i]);
+		check_expr(*citr == vi[i]);
 		itr = citr;
-		dbstl_assert(*citr == *itr);
+		check_expr(*citr == *itr);
 		*itr = i * 2 + 1;
 		citr1 = itr;
-		dbstl_assert(*citr == *itr);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == vi[i]);
+		check_expr(*citr == *itr);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == vi[i]);
 	}
 
 	for (i = 0; i < n; i++) {
 		ptint_vector::const_iterator citr = vi.begin() + i;
-		dbstl_assert(*citr == vi[i]);
+		check_expr(*citr == vi[i]);
 		itr = citr;
-		dbstl_assert(*citr == *itr);
+		check_expr(*citr == *itr);
 		*itr = i * 2 + 1;
 		ptint_vector::const_iterator citr1 = itr;
-		dbstl_assert(*citr == *itr);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == vi[i]);
+		check_expr(*citr == *itr);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == vi[i]);
 	}
 
 	for (i = 0; i < n; i++) {
@@ -142,32 +142,32 @@ void TestVector::test_member_functions()
 		ptint_vector::const_iterator citr, citr1;
 
 		ncitr = cnstvi.begin() + i;
-		dbstl_assert(*ncitr == cnstvi[i]);
+		check_expr(*ncitr == cnstvi[i]);
 		citr = ncitr;
-		dbstl_assert(*citr == *ncitr);
+		check_expr(*citr == *ncitr);
 		//*ncitr = i * 2 + 1;
 		citr1 = ncitr;
 		ncitr1 = citr1;
-		dbstl_assert(*citr == *ncitr);
-		dbstl_assert(*citr == *ncitr1);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == cnstvi[i]);
+		check_expr(*citr == *ncitr);
+		check_expr(*citr == *ncitr1);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == cnstvi[i]);
 	}
 
 	for (i = 0; i < n; i++) {
 
 		ptint_vector::iterator ncitr = cnstvi.begin() + i;
-		dbstl_assert(*ncitr == cnstvi[i]);
+		check_expr(*ncitr == cnstvi[i]);
 		ptint_vector::const_iterator citr = ncitr;
-		dbstl_assert(*citr == *ncitr);
+		check_expr(*citr == *ncitr);
 		//*itr = i * 2 + 1;
 		ptint_vector::const_iterator citr1 = ncitr;
 		ptint_vector::iterator ncitr1 = citr1;
 
-		dbstl_assert(*citr == *ncitr);
-		dbstl_assert(*citr == *ncitr1);
-		dbstl_assert(*citr == *citr1);
-		dbstl_assert(*citr == cnstvi[i]);
+		check_expr(*citr == *ncitr);
+		check_expr(*citr == *ncitr1);
+		check_expr(*citr == *citr1);
+		check_expr(*citr == cnstvi[i]);
 	}
 
 	{
@@ -195,7 +195,7 @@ void TestVector::test_member_functions()
 		(*ncsitr)--;
 		++(*ncsitr);
 		--(*ncsitr);
-		dbstl_assert(*ncsitr == *ncitr);
+		check_expr(*ncsitr == *ncitr);
 
 		*ncitr &= 0x9874abcd;
 		*ncitr |= 0x12345678;
@@ -204,7 +204,7 @@ void TestVector::test_member_functions()
 		*ncsitr |= 0x12345678;
 		*ncsitr ^= 0x11223344;
 		ncitr.refresh(true);
-		dbstl_assert(*ncsitr == *ncitr);
+		check_expr(*ncsitr == *ncitr);
 
 		vi.clear();
 		svi.clear();
@@ -216,71 +216,71 @@ void TestVector::test_member_functions()
 		db_vector<ptype<int> >::const_iterator citr2;
 		vector<int>::const_iterator csitr2;
 
-		dbstl_assert(ctmpvi.back() == svi.back());
-		dbstl_assert(ctmpvi.at(0) == svi.at(0));
+		check_expr(ctmpvi.back() == svi.back());
+		check_expr(ctmpvi.at(0) == svi.at(0));
 		critr = tmpvi.rbegin();//XXXXXXXXX modify db_reverse_iterator, use twin type
 		for (i = n - 1, crsitr = svi.rbegin(); critr != tmpvi.rend(); ++critr, ++crsitr, i--) {
-			dbstl_assert(crsitr < crsitr + 1);
-			dbstl_assert(critr < critr + 1);
-			dbstl_assert(critr <= critr + 1);
+			check_expr(crsitr < crsitr + 1);
+			check_expr(critr < critr + 1);
+			check_expr(critr <= critr + 1);
 			
 				
-			dbstl_assert(critr > critr - 1);
-			dbstl_assert(critr >= critr - 1);
+			check_expr(critr > critr - 1);
+			check_expr(critr >= critr - 1);
 			if (i > 0) {
 				ptype<int> tmpv1 = critr[1];
 				int tmpv2 = crsitr[1];
-				dbstl_assert(tmpv1 == tmpv2);
+				check_expr(tmpv1 == tmpv2);
 			}
 		
-			dbstl_assert(critr <= 2 + critr);
+			check_expr(critr <= 2 + critr);
 			//if (i < n - 2)
-			dbstl_assert(critr >= -2 + critr);
-			dbstl_assert(*critr == *crsitr);	
+			check_expr(critr >= -2 + critr);
+			check_expr(*critr == *crsitr);	
 		}
 
 		for (critr = ctmpvi.rbegin(), crsitr = svi.rbegin(), i = 0; critr != ctmpvi.rend(); critr += 3, crsitr += 3, i++) {
-			dbstl_assert(*critr == *crsitr);
+			check_expr(*critr == *crsitr);
 			if (i > 0) {
 				critr -= 2;
 				crsitr -= 2;
 			}
-			dbstl_assert(*critr == *crsitr);
+			check_expr(*critr == *crsitr);
 		}
 
 		for (citr2 = tmpvi.begin(), csitr2 = svi.begin(), i = 0; citr2 != tmpvi.rend(); ++citr2, ++csitr2, i++) {
-			dbstl_assert(citr2 < citr2 + 1);
-			dbstl_assert(citr2 <= citr2 + 1);	
-			dbstl_assert(citr2 > citr2 - 1);
-			dbstl_assert(citr2 >= citr2 - 1);
-			dbstl_assert(citr2 <= 2 + citr2);
+			check_expr(citr2 < citr2 + 1);
+			check_expr(citr2 <= citr2 + 1);	
+			check_expr(citr2 > citr2 - 1);
+			check_expr(citr2 >= citr2 - 1);
+			check_expr(citr2 <= 2 + citr2);
 
 			if (i > 1)
-				dbstl_assert(citr2 >= -2 + citr2);
-			dbstl_assert(*citr2 == *csitr2);
+				check_expr(citr2 >= -2 + citr2);
+			check_expr(*citr2 == *csitr2);
 			if (i < n - 1)
-				dbstl_assert(citr2[1] == csitr2[1]);
+				check_expr(citr2[1] == csitr2[1]);
 		}
 
 		for (citr2 = ctmpvi.begin(), csitr2 = svi.begin(), i = 0; citr2 != ctmpvi.rend(); citr2 += 3, csitr2 += 3, i++) {
 			citr2.refresh(true);
-			dbstl_assert(*citr2 == *csitr2);
+			check_expr(*citr2 == *csitr2);
 			if (i > 0) {
 				citr2 -= 2;
 				csitr2 -= 2;
 			}
-			dbstl_assert(*citr2 == *csitr2);
-			dbstl_assert(citr2->v == *csitr2);
+			check_expr(*citr2 == *csitr2);
+			check_expr(citr2->v == *csitr2);
 		}
 		citr2 = ctmpvi.begin() + 2;
 		csitr2 = svi.begin() + 2;
-		dbstl_assert(*citr2 == *csitr2);
+		check_expr(*citr2 == *csitr2);
 		citr2--;
 		csitr2--;
-		dbstl_assert(*citr2 == *csitr2);
+		check_expr(*citr2 == *csitr2);
 		--citr2;
 		--csitr2;
-		dbstl_assert(*citr2 == *csitr2);
+		check_expr(*citr2 == *csitr2);
 
 		db_vector<ptype<int> > tmpvi2;
 		vector<int> tmpsvi2;
@@ -288,38 +288,38 @@ void TestVector::test_member_functions()
 		//tmpsvi2.insert(svi.begin(), svi.begin() + 1, svi.end() - 1); c++ stl does  not support this
 		for (i = 1; i < (int)tmpvi.size() - 1; i++)
 			tmpsvi2.push_back(tmpvi[i]);
-		dbstl_assert(is_equal(tmpvi2, tmpsvi2));
+		check_expr(is_equal(tmpvi2, tmpsvi2));
 
 		tmpvi2.clear(false);
 		tmpsvi2.clear();
 
 		tmpvi2.insert(tmpvi2.end(), tmpvi.begin(), tmpvi.end());
 		tmpsvi2.insert(tmpsvi2.end(), svi.begin(), svi.end());
-		dbstl_assert(is_equal(tmpvi2, tmpsvi2));
+		check_expr(is_equal(tmpvi2, tmpsvi2));
 
 		tmpvi2.insert(tmpvi2.end() - 3, tmpvi.begin() + 2, tmpvi.end() - 1);
 		tmpsvi2.insert(tmpsvi2.end() - 3, svi.begin() + 2, svi.end() - 1);
-		dbstl_assert(is_equal(tmpvi2, tmpsvi2));
+		check_expr(is_equal(tmpvi2, tmpsvi2));
 
 		db_vector<char, ElementHolder<char> > charvec(n);
 		for (i = 0; i < n; i++)
 			charvec[i] = (char)i;
 		db_vector<char, ElementHolder<char> > charvec3(charvec);
 		const db_vector<char, ElementHolder<char> > &ccharvec3 = charvec3;
-		dbstl_assert(ctmpvi == charvec);
+		check_expr(ctmpvi == charvec);
 		charvec[n / 2] *= 2;
-		dbstl_assert(ctmpvi != charvec);
+		check_expr(ctmpvi != charvec);
 		charvec.push_back(127);
-		dbstl_assert(ctmpvi != charvec);
+		check_expr(ctmpvi != charvec);
 		charvec.resize(charvec.size());
 		charvec.assign(ccharvec3.begin(), ccharvec3.end());
-		dbstl_assert(charvec == ccharvec3);
+		check_expr(charvec == ccharvec3);
 		charvec.clear(false);
 		charvec.insert(charvec.begin(), ccharvec3.begin(), ccharvec3.end());
 		charvec.insert(charvec.begin(), 113);
 		db_vector<char, ElementHolder<char> > charvec2(5);
 		charvec2.assign(charvec.begin(), charvec.end(), false);
-		dbstl_assert((charvec2 != charvec) == false);
+		check_expr((charvec2 != charvec) == false);
 
 		db_vector<string> tmpvi3, tmpvi4;
 		db_vector<char *, ElementHolder<char *> > tmpvi5, tmpvi6;
@@ -348,8 +348,8 @@ doagain:
 			tmpvi3.sort();
 			tmpsvi3.sort();
 		}
-		dbstl_assert(is_equal(tmpvi3, tmpsvi3));
-		dbstl_assert(is_equal(tmpvi5, tmpsvi3));
+		check_expr(is_equal(tmpvi3, tmpsvi3));
+		check_expr(is_equal(tmpvi5, tmpsvi3));
 
 		// unique
 		if (exec_cnt == 0) {
@@ -361,8 +361,8 @@ doagain:
 			tmpvi3.unique();
 			tmpsvi3.unique();
 		}
-		dbstl_assert(is_equal(tmpvi3,tmpsvi3));
-		dbstl_assert(is_equal(tmpvi5, tmpsvi3));
+		check_expr(is_equal(tmpvi3,tmpsvi3));
+		check_expr(is_equal(tmpvi5, tmpsvi3));
 
 		// merge
 		for (i = 0; i < 64; i++) {
@@ -389,8 +389,8 @@ doagain:
 			tmpvi3.merge(tmpvi4);
 			tmpsvi3.merge(tmpsvi4);
 		}
-		dbstl_assert(is_equal(tmpvi3, tmpsvi3));
-		dbstl_assert(is_equal(tmpvi5, tmpsvi3));
+		check_expr(is_equal(tmpvi3, tmpsvi3));
+		check_expr(is_equal(tmpvi5, tmpsvi3));
 
 		exec_cnt++;
 		if (exec_cnt == 1) {
@@ -410,7 +410,7 @@ doagain:
 	// tested: push_back, operator!= , db_vector::size, 
 	fill(vi, svi, 0, n);
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	ptint tmp;
 
 	// tested functions: 
@@ -432,7 +432,7 @@ doagain:
 		sitr = sitr1;
 	}
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	size_t ii;
 	for(itr1 = vi.begin(), sitr1 = svi.begin(), ii = 0; 
 		ii < svi.size(); ii++) {
@@ -440,7 +440,7 @@ doagain:
 		sitr1[ii] = 2 * sitr1[ii];
 	}
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	//itr.close_cursor();
 	if ( EXPLICIT_TXN) {
 		
@@ -465,7 +465,7 @@ doagain:
 		dbstl::begin_txn(0, penv);
 	}
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 
 	for(ritr1 = vi.rbegin(), ritr = ritr1, rsitr1 = svi.rbegin(), 
 	    rsitr = rsitr1, i = 0; 
@@ -480,7 +480,7 @@ doagain:
 	}
 
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	if (EXPLICIT_TXN){
 		dbstl::commit_txn(penv);
 		dbstl::begin_txn(0, penv);
@@ -499,7 +499,7 @@ doagain:
 
 	itr.close_cursor();
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	if (EXPLICIT_TXN) {
 		
 		dbstl::commit_txn(penv);
@@ -515,7 +515,7 @@ doagain:
 
 	}
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	if (EXPLICIT_TXN)
 		dbstl::commit_txn(penv);
 	if (!TEST_AUTOCOMMIT)
@@ -524,7 +524,7 @@ doagain:
 	// testing pop_back and back()
 	ptint t;
 	for (i = n - 1; i >= 0; i--) {
-		dbstl_assert(ptint(vi.back()) == svi[i]);
+		check_expr(ptint(vi.back()) == svi[i]);
 		vi.pop_back();
 	}
 
@@ -537,7 +537,7 @@ doagain:
 	pprint(vi, "inserted by push_front");
 	for (i = 0; i < n; i++) {
 		pprint(vi, "pop front :");
-		dbstl_assert(ptint(vi.front()) == lvi.front());
+		check_expr(ptint(vi.front()) == lvi.front());
 		vi.pop_front();
 		lvi.pop_front();
 	}
@@ -551,7 +551,7 @@ doagain:
 	cout<<"front test\n";
 	for (i = 0, itr = vi.begin(); i < n; i++) {
 		pprint(vi);
-		dbstl_assert(ptint(vi.front()) == svi[i]); 
+		check_expr(ptint(vi.front()) == svi[i]); 
 		if (i % 2) // try both
 			itr = vi.erase(itr);
 		else {
@@ -578,7 +578,7 @@ doagain:
 		if (i % 2 == 0) {
 			ptint_vector::iterator::reference itrref = (*itr);
 			t = itrref;
-			dbstl_assert( t == *sitr);
+			check_expr( t == *sitr);
 			itrref = (t) * 3;
 			(*sitr) = 3 * (*sitr);
 			itrref._DB_STL_StoreElement();
@@ -588,7 +588,7 @@ doagain:
 		} else {
 			ptint_vector::reference itrref = vi[i];
 			t = itrref;
-			dbstl_assert(t == svi[i]);
+			check_expr(t == svi[i]);
 			itrref = t * 3;
 			svi[i] = 3 * svi[i];
 			itrref._DB_STL_StoreElement();
@@ -596,30 +596,30 @@ doagain:
 
 	}
 	pprint(vi);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	
 	ptint_vector vi2(db2, penv);
 	vi2.clear();
 	
 	vi2.insert(vi2.end(), 1024);
 	svi2.insert(svi2.end(), 1024);
-	dbstl_assert(is_equal(vi2, svi2) == true);
+	check_expr(is_equal(vi2, svi2) == true);
 	if ( EXPLICIT_TXN) 
 		dbstl::commit_txn(penv);
 	if (!TEST_AUTOCOMMIT)
 		dbstl::begin_txn(0, penv);
 	pprint(vi, "vi before swapping: ");
 	fill(vi2, svi2, 6, 9);
-	dbstl_assert(vi != vi2);
+	check_expr(vi != vi2);
 	pprint(vi, "vi before swapping2:");
 	pprint(vi2, "vi2 before swapping: ");
 	vi.swap(vi2);
-	dbstl_assert(vi != vi2);
+	check_expr(vi != vi2);
 	svi.swap(svi2);
 	pprint(vi, "vi:");
 	pprint(vi2, "vi2:");
-	dbstl_assert(is_equal(vi, svi) == true);
-	dbstl_assert(is_equal(vi2, svi2) == true);
+	check_expr(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi2, svi2) == true);
 	if (!TEST_AUTOCOMMIT)
 		dbstl::commit_txn(penv);
 	if (EXPLICIT_TXN)
@@ -633,37 +633,37 @@ doagain:
 	svi.insert(svi.begin() + 3, 10101);
 	vi.insert(vi.end(), (size_t)10, ptint (987));
 	svi.insert(svi.end(), 10, 987);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	vi.insert(vi.end(), vi2.begin() + 3, vi2.end());
 	svi.insert(svi.end(), svi2.begin() + 3, svi2.end());
 	pprint(vi, "\nvi after inserting a range and 10 identical numbers");
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 
 	vi.assign(vi2.begin(), vi2.end());
 	svi.assign(svi2.begin(), svi2.end());
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	
 	vi.assign(vi2.begin(), vi2.end());
 	svi.assign(svi2.begin(), svi2.end());
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	pprint(vi, "vi before assigning");
 
 	vi.assign(vi2.begin() + 1, vi2.begin() + 3);
 	svi.assign(svi2.begin() + 1, svi2.begin() + 3);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	vi.assign((size_t)10, ptint (141));
 	svi.assign(10, 141);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 
 	vi.insert(vi.begin(), vi2.begin(), vi2.end());
 	svi.insert(svi.begin(), svi2.begin(), svi2.end());
 
 	vi.resize(vi.size() / 2);
 	svi.resize(svi.size() / 2);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 	vi.resize(vi.size() * 4);
 	svi.resize(svi.size() * 4);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 
 	for (int ui = 0; ui < (int)svi.size(); ui++) {
 		svi[ui] = ui;
@@ -677,7 +677,7 @@ doagain:
 	pprint(vi, "vi before erasing range: ");
 	vi.erase(itr, itr1);
 	svi.erase(sitr, sitr1);
-	dbstl_assert(is_equal(vi, svi) == true);
+	check_expr(is_equal(vi, svi) == true);
 
 	vi.clear();
 	svi.clear();
@@ -716,18 +716,18 @@ void TestVector::test_list_specific_member_functions()
 	vi.remove(8);
 	slvi.remove(8);
 	pprint(vi, "vi after remove(8): ");
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 	vi.remove_if(is7);
 	slvi.remove_if(is7);
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 
 	vi.reverse();
 	slvi.reverse();
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 
 	vi.sort();
 	slvi.sort();
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 
 	vi.push_back(100);
 	slvi.push_back(100);
@@ -737,7 +737,7 @@ void TestVector::test_list_specific_member_functions()
 	vi.unique();
 	slvi.unique();
 	pprint(vi, "vi after vi.unique():");
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 	
 	ptint_vector vi3(db3, penv);
 	list<ptint> slvi3;
@@ -748,9 +748,9 @@ void TestVector::test_list_specific_member_functions()
 
 	vi.merge(vi3);
 	slvi.merge(slvi3);
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 	pprint(vi3, "vi3 after merge:");
-	dbstl_assert(is_equal(vi3, slvi3));
+	check_expr(is_equal(vi3, slvi3));
 
 	vi3.clear();
 	slvi3.clear();
@@ -769,9 +769,9 @@ void TestVector::test_list_specific_member_functions()
 	vi.splice(vi.begin() + 6, vi3, vi3.begin() + 4);
 	slvi.splice(slitr2, slvi3, slitr);
 	pprint(vi, "vi after splice :");
-	dbstl_assert(is_equal(vi, slvi));
+	check_expr(is_equal(vi, slvi));
 	pprint(vi3, "vi3 after splice :");
-	dbstl_assert(is_equal(vi3, slvi3));
+	check_expr(is_equal(vi3, slvi3));
 
 	slitr = slvi3.begin();
 	std::advance(slitr, 5);
@@ -779,31 +779,31 @@ void TestVector::test_list_specific_member_functions()
 	slvi.splice(slvi.begin(), slvi3, slitr, slvi3.end());
 	pprint(vi, "vi after splice :");
 	pprint(vi3, "vi3 after splice :");
-	dbstl_assert(is_equal(vi, slvi));
-	dbstl_assert(is_equal(vi3, slvi3));
+	check_expr(is_equal(vi, slvi));
+	check_expr(is_equal(vi3, slvi3));
 
 	vi.splice(vi.end(), vi3);
 	slvi.splice(slvi.end(), slvi3);
 	pprint(vi, "vi after splice :");
 	pprint(vi3, "vi3 after splice :");
-	dbstl_assert(is_equal(vi, slvi));
-	dbstl_assert(is_equal(vi3, slvi3));
+	check_expr(is_equal(vi, slvi));
+	check_expr(is_equal(vi3, slvi3));
 	
 	vi.clear();
 	vi3.clear();
 
-	dbstl_assert(!(vi < vi3));
+	check_expr(!(vi < vi3));
 	fill(vi, svi, 1, 10);
 	
 	fill(vi3, svi3, 1, 10);
-	dbstl_assert(!(vi < vi3));
+	check_expr(!(vi < vi3));
 	vi.push_front(0);
-	dbstl_assert((vi < vi3));
+	check_expr((vi < vi3));
 	vi3.push_front(0);
 	vi.push_back(10);
-	dbstl_assert((vi3 < vi));
+	check_expr((vi3 < vi));
 	vi.erase(vi.begin());
-	dbstl_assert((vi3 < vi));
+	check_expr((vi3 < vi));
 
 	if ( EXPLICIT_TXN) 
 		dbstl::commit_txn(penv);
@@ -850,7 +850,7 @@ void TestVector::test_std_functions()
 	vector<int>::difference_type ssi = svi.rend() - svi.rbegin();
 	ptint_vector::difference_type si;
 	si = vi.rend() - vi.rbegin();
-	dbstl_assert(ssi == si);
+	check_expr(ssi == si);
 	vector<int>::reverse_iterator sj = svi.rbegin() + 3;
 	cout<<"si, sj ="<<si<<'\t'<<*sj;
 
@@ -858,12 +858,12 @@ void TestVector::test_std_functions()
 	ptint tgt(12);
 	ptint_vector::iterator vpos = 
 	    find(vi.begin(), vi.end(), tgt);
-	dbstl_assert(vpos != vi.end() && (ptint(*vpos) == tgt));
+	check_expr(vpos != vi.end() && (ptint(*vpos) == tgt));
 	vpos = find(vi.begin() + 3, vi.begin() + 7, tgt);
-	dbstl_assert(vpos != vi.end() && (ptint(*vpos) == tgt));
+	check_expr(vpos != vi.end() && (ptint(*vpos) == tgt));
 	tgt = -123;
 	vpos = find(vi.begin(), vi.end(), tgt);
-	dbstl_assert(vpos == vi.end());
+	check_expr(vpos == vi.end());
 	
 	// find_end
 	int subseq[] = {8, 9, 10};
@@ -878,66 +878,66 @@ void TestVector::test_std_functions()
 	// only runs on WIN32.
 	pprint(vi, "vi before find_end(): ");
 	vpos = find_end(vi.begin(), vi.end(), vi.begin(), vi.begin() + 1);
-	dbstl_assert(vpos == vi.begin());
+	check_expr(vpos == vi.begin());
 	vpos = find_end(vi.begin(), vi.end(), vi.begin() + 3, 
 	    vi.begin() + 5);
-	dbstl_assert(vpos == vi.begin() + 3);
+	check_expr(vpos == vi.begin() + 3);
 	vpos = find_end(vi.begin() + 1, vi.end(), subseq, subseq + 3);
-	dbstl_assert(vpos == vi.begin() + 2);
+	check_expr(vpos == vi.begin() + 2);
 #endif
 	//search
 	vpos = search(vi.begin(), vi.end(), vi.begin(), vi.begin() + 1);
-	dbstl_assert(vpos == vi.begin());
+	check_expr(vpos == vi.begin());
 	vpos = search(vi.begin(), vi.end(), vi.begin() + 3, vi.begin() + 5);
-	dbstl_assert(vpos == vi.begin() + 3);
+	check_expr(vpos == vi.begin() + 3);
 	vpos = search(vi.begin() + 1, vi.end(), subseq, subseq + 3);
-	dbstl_assert(vpos == vi.begin() + 2);
+	check_expr(vpos == vi.begin() + 2);
 
 	// find_first_of
 	vpos = find_first_of(vi.begin(), vi.end(), vi.begin(), 
 	    vi.begin() + 1);
-	dbstl_assert(vpos == vi.begin());
+	check_expr(vpos == vi.begin());
 	vpos = find_first_of(vi.begin() + 2, vi.begin() + 6, 
 	    vi.begin() + 4, vi.begin() + 5);
-	dbstl_assert(vpos == vi.begin() + 4);
+	check_expr(vpos == vi.begin() + 4);
 	int subseq2[] = {9, 8, 10, 11};
 	vpos = find_first_of(vi.begin() + 1, vi.begin() + 7, 
 	    subseq2, subseq2 + 4);
-	dbstl_assert(vpos == vi.begin() + 2);
+	check_expr(vpos == vi.begin() + 2);
 	vpos = find_first_of(vi.begin() + 6, vi.end(), 
 	    subseq2, subseq2 + 4);
-	dbstl_assert(vpos == vi.end());
+	check_expr(vpos == vi.end());
 
 	//find_if
 	vpos = find_if(vi.begin(), vi.end(), is2digits);
-	dbstl_assert(ptint(*vpos) == 10);
+	check_expr(ptint(*vpos) == 10);
 	vpos = find_if(vi.begin() + 5, vi.begin() + 8, is2digits);
-	dbstl_assert(ptint(*vpos) == 11);
+	check_expr(ptint(*vpos) == 11);
 	vpos = find_if(vi.begin() + 1, vi.begin() + 3, is2digits);
-	dbstl_assert(vpos == vi.begin() + 3);
+	check_expr(vpos == vi.begin() + 3);
 
 	// count_if
 	ptint_vector::difference_type oddcnt = 
 	    count_if(vi.begin(), vi.end(), is_odd);
-	dbstl_assert(oddcnt == 4);
+	check_expr(oddcnt == 4);
 	oddcnt = count_if(vi.begin(), vi.begin() + 5, is_odd);
-	dbstl_assert(oddcnt == 2);
+	check_expr(oddcnt == 2);
 	oddcnt = count_if(vi.begin(), vi.begin(), is_odd);
-	dbstl_assert(oddcnt == 0);
+	check_expr(oddcnt == 0);
 	
 	// mismatch
 	pair<intvec_t::iterator , int*> resmm = mismatch(vi.begin(),
 	    vi.begin() + 3, subseq);
-	dbstl_assert(resmm.first == vi.begin() && resmm.second == subseq);
+	check_expr(resmm.first == vi.begin() && resmm.second == subseq);
 	resmm = mismatch(vi.begin() + 2, vi.begin() + 5, subseq);
-	dbstl_assert(resmm.first == vi.begin() + 5 && resmm.second == subseq + 3);
+	check_expr(resmm.first == vi.begin() + 5 && resmm.second == subseq + 3);
 	resmm = mismatch(vi.begin() + 2, vi.begin() + 4, subseq);
-	dbstl_assert(resmm.first == vi.begin() + 4 && resmm.second == subseq + 2);
+	check_expr(resmm.first == vi.begin() + 4 && resmm.second == subseq + 2);
 
 	//equal
-	dbstl_assert (equal(vi.begin(), vi.begin() + 3, subseq) == false);
-	dbstl_assert(equal(vi.begin() + 2, vi.begin() + 5, subseq) == true);
-	dbstl_assert(equal(vi.begin() + 2, vi.begin() + 4, subseq) == true);
+	check_expr (equal(vi.begin(), vi.begin() + 3, subseq) == false);
+	check_expr(equal(vi.begin() + 2, vi.begin() + 5, subseq) == true);
+	check_expr(equal(vi.begin() + 2, vi.begin() + 4, subseq) == true);
 	if ( EXPLICIT_TXN) {
 		dbstl::commit_txn(penv);
 		dbstl::begin_txn(0, penv);
@@ -950,30 +950,30 @@ void TestVector::test_std_functions()
 	// vi2 should be 0, 6, 7, 8,4
 	int vi22[] = { 0, 6, 7, 8,4};
 	pprint(vi2, "\nvi2 after copying");
-	dbstl_assert(equal(vi2.begin(), vi2.end(), vi22) == true);
-	dbstl_assert(is_equal(vi, svi));
+	check_expr(equal(vi2.begin(), vi2.end(), vi22) == true);
+	check_expr(is_equal(vi, svi));
 
 	// copy_backward
 	copy_backward(vi.begin(), vi.begin() + 3, vi.begin() + 8);
 	copy_backward(svi.begin(), svi.begin() + 3, svi.begin() + 8);
 	pprint(vi);// should be 6,7,8,9,10,6,7,8,14
-	dbstl_assert(is_equal(vi, svi));
+	check_expr(is_equal(vi, svi));
 	
 	copy_backward(vi.begin(), vi.begin() + 4, vi.begin() + 6);
 	copy_backward(svi.begin(), svi.begin() + 4, svi.begin() + 6);
 	pprint(vi);// should be 6,7, 6,7, 8, 9, 7, 8, 14
-	dbstl_assert(is_equal(vi, svi));
+	check_expr(is_equal(vi, svi));
 	copy_backward(vi.begin() + 7, vi.end(), vi.begin() + 5);
 	copy_backward(svi.begin() + 7, svi.end(), svi.begin() + 5);
 	pprint(vi);//should be 6,7,6,8,14,8,14,8,14
-	dbstl_assert(is_equal(vi, svi)); //here the dbstl_assert fails but I think 
+	check_expr(is_equal(vi, svi)); //here the check_expr fails but I think 
 	//the values in vi are right, those in svi are wrong
 	
 
 	// swap_ranges
 	swap_ranges(vi.begin() + 3, vi.begin() + 7, vi.begin() + 4);
 	swap_ranges(svi.begin() + 3, svi.begin() + 7, svi.begin() + 4);
-	dbstl_assert(is_equal(vi, svi));
+	check_expr(is_equal(vi, svi));
 
 	/* 
 	 * std::swap can only swap data of same type, so following tests 
@@ -985,53 +985,53 @@ void TestVector::test_std_functions()
 	spvi2.insert(spvi2.begin(), svi2.begin(), svi2.end());
 	swap_ranges(vi.begin() + 3, vi.begin() + 5, spvi.begin() + 6);
 	swap_ranges(spvi.begin() + 3, spvi.begin() + 5, vi.begin() + 6);
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	swap_ranges(spvi.begin() + 3, spvi.begin() + 7, vi.begin() + 5);
 	//swap back
 	swap_ranges(spvi.begin() + 3, spvi.begin() + 7, vi.begin() + 5);
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	transform(vi2.begin(), vi2.end(), vi.begin() + 2,
 	    vi.begin() + 4, addup);
 	transform(spvi2.begin(), spvi2.end(), spvi.begin() + 2, 
 	    spvi.begin() + 4, addup);
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	replace(vi.begin(), vi.end(), 8, 88);
 	replace(spvi.begin(), spvi.end(), 8, 88);
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	generate(vi.begin(), vi.begin() + 2, randint);
 	generate(spvi.begin(), spvi.begin() + 2, randint);
 	pprint(vi);
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	remove(vi.begin(), vi.end(), -999);
 	remove(spvi.begin(), spvi.end(), -999);
 	pprint(vi, "\nafter remove");
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	reverse(vi.begin(), vi.end());
 	reverse(spvi.begin(), spvi.end());
 	pprint(vi, "\nafter reverse");
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	rotate(vi.begin() + 1, vi.begin() + 5, vi.end());
 	rotate(spvi.begin() + 1, spvi.begin() + 5, spvi.end());
 	pprint(vi, "\n after rotate");
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	separator<ptint> part;
 	part.mid = 11;
 	partition(vi.begin(), vi.end(), part);
 	partition(spvi.begin(), spvi.end(), part);
 	pprint(vi, "\nafter partition");
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	sort(vi.begin(), vi.end());
 	sort(spvi.begin(), spvi.end());
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	random_shuffle(vi.begin(), vi.end());
 	random_shuffle(spvi.begin(), spvi.end());	
@@ -1039,7 +1039,7 @@ void TestVector::test_std_functions()
 	sort(vi.begin(), vi.end());
 	sort(spvi.begin(), spvi.end());
 	pprint(vi, "\nvi after sort");
-	dbstl_assert(is_equal(vi, spvi));
+	check_expr(is_equal(vi, spvi));
 
 	random_shuffle(vi2.begin(), vi2.end());
 	random_shuffle(spvi2.begin(), spvi2.end());
@@ -1053,7 +1053,7 @@ void TestVector::test_std_functions()
 	sort(vi2.begin(), vi2.end());
 	sort(spvi2.begin(), spvi2.end());
 #endif
-	dbstl_assert(is_equal(vi2, spvi2)); 
+	check_expr(is_equal(vi2, spvi2)); 
 
 	random_shuffle(vi2.begin(), vi2.end());
 	random_shuffle(spvi2.begin(), spvi2.end());
@@ -1061,7 +1061,7 @@ void TestVector::test_std_functions()
 	sort(vi2.begin(), vi2.end());
 	sort(spvi2.begin(), spvi2.end());
 	pprint(vi2);
-	dbstl_assert(is_equal(vi2, spvi2)); 
+	check_expr(is_equal(vi2, spvi2)); 
 
 	vi3.clear();
 	vi3.insert(vi3.begin(), (size_t)100, ptint(0));
@@ -1070,7 +1070,7 @@ void TestVector::test_std_functions()
 	merge(spvi.begin(), spvi.end(), spvi2.begin(), spvi2.end(), 
 	    spvi3.begin());
 	pprint(vi3, "\n vi3 after merge vi1 with vi2:");
-	dbstl_assert(is_equal(vi3, spvi3));
+	check_expr(is_equal(vi3, spvi3));
 
 	spvi3.clear();
 	vi3.clear();
@@ -1092,10 +1092,10 @@ void TestVector::test_std_functions()
 	inplace_merge(spvi3.begin(), spvi3.begin() + (spvi.end() - 
 	    spvi.begin()), spvi3.end());
 #endif
-	dbstl_assert(is_equal(vi3, spvi3));
+	check_expr(is_equal(vi3, spvi3));
 	make_heap(vi3.begin(), vi3.end());
 	make_heap(spvi3.begin(), spvi3.end());
-	dbstl_assert(is_equal(vi3, spvi3));
+	check_expr(is_equal(vi3, spvi3));
 	cout<<endl<<"pop_heap test"<<endl;
 	
 	int r ;
@@ -1119,7 +1119,7 @@ void TestVector::test_std_functions()
 		push_heap(vi3.begin(), vi3.end());
 		spvi3.push_back(ptint(r));
 		push_heap(spvi3.begin(), spvi3.end());
-		dbstl_assert(is_equal(vi3, spvi3));
+		check_expr(is_equal(vi3, spvi3));
 	}
 	
 	vi.clear();
@@ -1142,13 +1142,13 @@ void TestVector::test_primitive()
 	db_vector<int, ElementHolder<int> > ivi(db, penv);
 	vector<int> spvi4;
 	fill(ivi, spvi4);
-	dbstl_assert(is_equal(ivi, spvi4));
+	check_expr(is_equal(ivi, spvi4));
 	ivi.clear(false);
 
 	db_vector<int, ElementHolder<int> > ivi2(db, penv);
 	vector<int> spvi5;
 	fill(ivi2, spvi5);
-	dbstl_assert(is_equal(ivi2, spvi5));
+	check_expr(is_equal(ivi2, spvi5));
 	size_t vsz = ivi2.size();
 	for (i = 0; i < (int)vsz - 1; i++) {
 		ivi2[i] += 3;
@@ -1161,13 +1161,13 @@ void TestVector::test_primitive()
 		spvi5[i] <<= 2;
 		spvi5[i] = (~spvi5[i] | spvi5[i] & spvi5[i + 1] ^ (2 * (-spvi5[i + 1]) + spvi5[i]) * 3) / (spvi5[i] * spvi5[i + 1] + 1);
 	}
-	dbstl_assert(is_equal(ivi2, spvi5));
+	check_expr(is_equal(ivi2, spvi5));
 	ivi2.clear(false);
 
 	db_vector<ptype<int> > ivi3(db, penv);
 	vector<int> spvi6;
 	fill(ivi3, spvi6);
-	dbstl_assert(is_equal(ivi3, spvi6));
+	check_expr(is_equal(ivi3, spvi6));
 	ivi3.clear(false);
 	
 	typedef db_vector<double, ElementHolder<double> > dbl_vct_t;
@@ -1177,7 +1177,7 @@ void TestVector::test_primitive()
 		dvi.push_back(i * 3.14);
 		dsvi.push_back(i * 3.14);
 	}
-	dbstl_assert(is_equal(dvi, dsvi));
+	check_expr(is_equal(dvi, dsvi));
 
 	dbl_vct_t::iterator ditr;
 	vector<double>::iterator sditr;
@@ -1187,7 +1187,7 @@ void TestVector::test_primitive()
 		*sditr *= 2;
 	}
 
-	dbstl_assert(is_equal(dvi, dsvi));
+	check_expr(is_equal(dvi, dsvi));
 
 	for (i = 0; i < 9; i++) {
 		dvi[i] /= (-dvi[i] / 3 + 2 * dvi[i + 1]) / (1 + dvi[i]) + 1;
@@ -1200,7 +1200,7 @@ void TestVector::test_primitive()
 		cout<<dsvi[i]<<"  ";
 	for (i = 0; i < 10; i++) {
 		cout<<i<<"\t";
-		dbstl_assert((int)(dvi[i] * 100000) == (int)(dsvi[i] * 100000));
+		check_expr((int)(dvi[i] * 100000) == (int)(dsvi[i] * 100000));
 	}
 
 	if ( EXPLICIT_TXN) 
@@ -1224,25 +1224,25 @@ void TestVector::test_queue_stack()
 	quev.clear();
 	std::queue<ptint, intvec_t> intq(quev);
 	std::queue<ptint> sintq;
-	dbstl_assert(intq.empty());
-	dbstl_assert(intq.size() == 0);
+	check_expr(intq.empty());
+	check_expr(intq.size() == 0);
 	for (i = 0; i < 100; i++) {
 		intq.push(ptint(i));
 		sintq.push(i);
-		dbstl_assert(intq.front() == 0);
-		dbstl_assert(intq.back() == i);
+		check_expr(intq.front() == 0);
+		check_expr(intq.back() == i);
 	}
-	dbstl_assert(intq.size() == 100);
+	check_expr(intq.size() == 100);
 	for (i = 0; i < 100; i++) {
-		dbstl_assert(intq.front() == i);
-		dbstl_assert(intq.back() == 99);
-		dbstl_assert(intq.front() == sintq.front());
-		dbstl_assert(sintq.back() == intq.back());
+		check_expr(intq.front() == i);
+		check_expr(intq.back() == 99);
+		check_expr(intq.front() == sintq.front());
+		check_expr(sintq.back() == intq.back());
 		sintq.pop();
 		intq.pop();	
 	}
-	dbstl_assert(intq.size() == 0);
-	dbstl_assert(intq.empty());
+	check_expr(intq.size() == 0);
+	check_expr(intq.empty());
 	quev.clear();
 
 	// std::priority_queue test
@@ -1255,8 +1255,8 @@ void TestVector::test_queue_stack()
 	std::priority_queue<ptint, vector<ptint>, ptintless_ft> 
 	    sintpq(ptintless, squev);
 
-	dbstl_assert(intpq.empty());
-	dbstl_assert(intpq.size() == 0);
+	check_expr(intpq.empty());
+	check_expr(intpq.size() == 0);
 	ptint tmppq, tmppq1;
 	set<ptint> ptintset;
 	for (i = 0; i < 100; i++) {
@@ -1271,8 +1271,8 @@ void TestVector::test_queue_stack()
 		}
 
 	}
-	dbstl_assert(intpq.empty() == false);
-	dbstl_assert(intpq.size() == 100);
+	check_expr(intpq.empty() == false);
+	check_expr(intpq.size() == 100);
 	for (i = 0; i < 100; i++) {
 		tmppq = intpq.top();
 		tmppq1 = sintpq.top();
@@ -1280,39 +1280,39 @@ void TestVector::test_queue_stack()
 			tmppq = intpq.top();
 		}
 		if (i < 98)
-			dbstl_assert(tmppq == tmppq1);
+			check_expr(tmppq == tmppq1);
 		if (i == 97)
 			intpq.pop();
 		else
 			intpq.pop();
 		sintpq.pop();
 	}
-	dbstl_assert(intpq.empty());
-	dbstl_assert(intpq.size() == 0);
+	check_expr(intpq.empty());
+	check_expr(intpq.size() == 0);
 
 
 	// std::stack test
 	cout<<"\n_testing db_vector working with std::stack\n";
 	std::stack<ptint, intvec_t> intstk(quev);
 	std::stack<ptint> sintstk;
-	dbstl_assert(intstk.size() == 0);
-	dbstl_assert(intstk.empty());
+	check_expr(intstk.size() == 0);
+	check_expr(intstk.empty());
 	for (i = 0; i < 100; i++) {
 		intstk.push(ptint(i));
 		sintstk.push(ptint(i));
-		dbstl_assert(intstk.top() == i);
-		dbstl_assert(intstk.size() == (size_t)i + 1);
+		check_expr(intstk.top() == i);
+		check_expr(intstk.size() == (size_t)i + 1);
 	}
 	
 	for (i = 99; i >= 0; i--) {
-		dbstl_assert(intstk.top() == ptint(i));
-		dbstl_assert(intstk.top() == sintstk.top());
+		check_expr(intstk.top() == ptint(i));
+		check_expr(intstk.top() == sintstk.top());
 		sintstk.pop();
 		intstk.pop();
-		dbstl_assert(intstk.size() == (size_t)i);
+		check_expr(intstk.size() == (size_t)i);
 	}
-	dbstl_assert(intstk.size() == 0);
-	dbstl_assert(intstk.empty());
+	check_expr(intstk.size() == 0);
+	check_expr(intstk.empty());
 	
 	// Vector with no handles specified. 
 	ptint_vector simple_vct(10);
@@ -1321,7 +1321,7 @@ void TestVector::test_queue_stack()
 		simple_vct[i] = ptint(i);
 		ssvct[i] = ptint(i);
 	}
-	dbstl_assert(is_equal(simple_vct, ssvct));
+	check_expr(is_equal(simple_vct, ssvct));
 
 	if ( EXPLICIT_TXN)
 		dbstl::commit_txn(penv);

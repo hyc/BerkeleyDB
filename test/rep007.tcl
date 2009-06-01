@@ -92,7 +92,6 @@ proc rep007_sub { method niter tnum logset recargs largs } {
 
 	env_cleanup $testdir
 
-	set orig_tdir $testdir
 	set omethod [convert_method $method]
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -156,6 +155,11 @@ proc rep007_sub { method niter tnum logset recargs largs } {
 	rep_verify $masterdir $masterenv $clientdir2 $cl2env 0 1 1
 
 	puts "\tRep$tnum.b: Close client 1 and make master changes."
+	# Flush the log so that we don't lose any changes, since we'll be
+	# relying on having a good log when we run recovery when we open it
+	# later.
+	# 
+	$clientenv log_flush
 	error_check_good client_close [$clientenv close] 0
 
 	# Change master and propagate changes to client 2.
@@ -197,6 +201,7 @@ proc rep007_sub { method niter tnum logset recargs largs } {
 	rep_verify $masterdir $masterenv $clientdir2 $cl2env 0 1 1
 
 	puts "\tRep$tnum.c: Close master, reopen client as master."
+	$masterenv log_flush
 	error_check_good master_close [$masterenv close] 0
 	set newmasterenv [eval $cl_envcmd $recargs -rep_master]
 
@@ -256,6 +261,5 @@ proc rep007_sub { method niter tnum logset recargs largs } {
 	error_check_good newclientenv_close [$newclientenv close] 0
 	error_check_good cl2_close [$cl2env close] 0
 	replclose $testdir/MSGQUEUEDIR
-	set testdir $orig_tdir
 	return
 }

@@ -100,8 +100,11 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <PropertyGroup>
-    <PreBuildEvent>copy /B "$(SolutionDir)Win32\Debug\libdb48d.dll" "$(TargetDir)"
-copy /B "$(SolutionDir)Win32\Debug\libdb_csharp48d.dll" "$(TargetDir)"
+    <PreBuildEvent>IF $(ConfigurationName) == Debug SET LIBEXT=d
+IF $(ConfigurationName) == Release SET LIBEXT
+
+copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb48%25LIBEXT%25.dll" "$(TargetDir)"
+copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb_csharp48%25LIBEXT%25.dll" "$(TargetDir)"
 copy "$(ProjectDir)AllTestData.xml" "$(TargetDir)"</PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>

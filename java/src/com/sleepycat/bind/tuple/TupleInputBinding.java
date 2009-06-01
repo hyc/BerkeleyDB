@@ -23,7 +23,7 @@ import com.sleepycat.db.DatabaseEntry;
  *
  * @author Mark Hayes
  */
-public class TupleInputBinding implements EntryBinding {
+public class TupleInputBinding implements EntryBinding<TupleInput> {
 
     /**
      * Creates a tuple input binding.
@@ -32,14 +32,14 @@ public class TupleInputBinding implements EntryBinding {
     }
 
     // javadoc is inherited
-    public Object entryToObject(DatabaseEntry entry) {
+    public TupleInput entryToObject(DatabaseEntry entry) {
 
         return TupleBinding.entryToInput(entry);
     }
 
     // javadoc is inherited
-    public void objectToEntry(Object object, DatabaseEntry entry) {
+    public void objectToEntry(TupleInput object, DatabaseEntry entry) {
 
-        TupleBinding.inputToEntry((TupleInput) object, entry);
+        TupleBinding.inputToEntry(object, entry);
     }
 }

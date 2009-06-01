@@ -838,14 +838,21 @@ __ham_salvage(dbp, vdp, pgno, h, handle, callback, flags)
 		if (!LF_ISSET(DB_AGGRESSIVE) && i >= NUM_ENT(h))
 			break;
 
-		/* Verify the current item. */
+		/* 
+		 * Verify the current item. If we're beyond NUM_ENT errors are
+		 * expected and ignored.
+		 */
 		ret = __db_vrfy_inpitem(dbp,
 		    h, pgno, i, 0, flags, &himark, NULL);
 		/* If this returned a fatality, it's time to break. */
-		if (ret == DB_VERIFY_FATAL)
+		if (ret == DB_VERIFY_FATAL) {
+			if (i >= NUM_ENT(h))
+				ret = 0;
 			break;
-
-		if (ret == 0) {
+		} else if (ret != 0 && i >= NUM_ENT(h)) {
+			/* Not a reportable error, but don't salvage the item. */
+			ret = 0;
+		} else if (ret == 0) {
 			/* Set len to total entry length. */
 			len = LEN_HITEM(dbp, h, dbp->pgsize, i);
 			hk = P_ENTRY(dbp, h, i);

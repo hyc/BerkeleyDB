@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Chapter 4.  The Dbt Handle</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ API Reference" />
@@ -475,7 +475,7 @@ public:
         <div class="titlepage">
           <div>
             <div>
-              <h2 class="title" style="clear: both"><a id="dbtlist"></a>DBT and Bulk Get Methods</h2>
+              <h2 class="title" style="clear: both"><a id="dbtlist"></a>DBT and Bulk Operations</h2>
             </div>
           </div>
         </div>
@@ -483,7 +483,7 @@ public:
           <table border="1" width="80%">
             <thead>
               <tr>
-                <th>DBT and Bulk Get Operations</th>
+                <th>DBT and Bulk Operations</th>
                 <th>Description</th>
               </tr>
             </thead>
@@ -498,19 +498,43 @@ public:
                 <td>
                   <a class="xref" href="dbmultipledataiterator.html" title="DbMultipleDataIterator">DbMultipleDataIterator</a>
                 </td>
-                <td>Next bulk get retrieval</td>
+                <td>Bulk retrieval iterator for data items</td>
               </tr>
               <tr>
                 <td>
                   <a class="xref" href="dbmultiplekeydataiterator.html" title="DbMultipleKeyDataIterator">DbMultipleKeyDataIterator</a>
                 </td>
-                <td>Next bulk get retrieval</td>
+                <td>Bulk retrieval iterator for key/data pairs</td>
               </tr>
               <tr>
                 <td>
                   <a class="xref" href="dbmultiplerecnodataiterator.html" title="DbMultipleRecnoDataIterator">DbMultipleRecnoDataIterator</a>
                 </td>
-                <td>Next bulk get retrieval</td>
+                <td>Bulk retrieval iterator for record number / data item pairs</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbmultiplebuilder.html" title="DbMultipleBuilder">DbMultipleBuilder</a>
+                </td>
+                <td>Base class for bulk buffer building</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbmultipledatabuilder.html" title="DbMultipleDataBuilder">DbMultipleDataBuilder</a>
+                </td>
+                <td>Bulk buffer builder for data items</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbmultiplekeydatabuilder.html" title="DbMultipleKeyDataBuilder">DbMultipleKeyDataBuilder</a>
+                </td>
+                <td>Bulk buffer builder for key/data pairs</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a>
+                </td>
+                <td>Bulk buffer builder for record number / data pairs</td>
               </tr>
             </tbody>
           </table>

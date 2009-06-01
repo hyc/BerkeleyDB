@@ -461,9 +461,7 @@ final class DataView implements Cloneable {
     private void returnPrimaryKeyAndValue(DatabaseEntry keyThang,
                                           DatabaseEntry valueThang,
                                           Object[] retPrimaryKey,
-                                          Object[] retValue)
-        throws DatabaseException {
-
+                                          Object[] retValue) {
         // Requires: if retPrimaryKey, primary key binding (no index).
         // Requires: if retValue, value or entity binding
 
@@ -540,9 +538,7 @@ final class DataView implements Cloneable {
      * would be changed via an entity binding.
      */
     void useValue(Object value, DatabaseEntry valueThang,
-                  DatabaseEntry checkKeyThang)
-        throws DatabaseException {
-
+                  DatabaseEntry checkKeyThang) {
         if (value != null) {
             if (valueBinding != null) {
                 valueBinding.objectToEntry(value, valueThang);

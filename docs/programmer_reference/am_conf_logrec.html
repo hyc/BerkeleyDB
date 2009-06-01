@@ -85,7 +85,7 @@ recno_build(dbp)
 	u_int32_t len;
 	int ret;
 	char buf[1024];
-&lt;para /&gt;
+
 	/* Insert records into the database. */
 	memset(&amp;key, 0, sizeof(DBT));
 	memset(&amp;data, 0, sizeof(DBT));
@@ -96,12 +96,12 @@ recno_build(dbp)
 			break;
 		if ((len = strlen(buf)) &lt;= 1)
 			continue;
-&lt;para /&gt;
+
 		key.data = &amp;recno;
 		key.size = sizeof(recno);
 		data.data = buf;
 		data.size = len - 1;
-&lt;para /&gt;
+
 		switch (ret = dbp-&gt;put(dbp, NULL, &amp;key, &amp;data, 0)) {
 		case 0:
 			break;
@@ -111,24 +111,25 @@ recno_build(dbp)
 		}
 	}
 	printf("\n");
-&lt;para /&gt;
+
 	/* Acquire a cursor for the database. */
 	if ((ret = dbp-&gt;cursor(dbp, NULL, &amp;dbcp, 0)) != 0) {
 		dbp-&gt;err(dbp, ret, "DB-&gt;cursor");
 		return (1);
 	}
-&lt;para /&gt;
+
 	/* Re-initialize the key/data pair. */
 	memset(&amp;key, 0, sizeof(key));
 	memset(&amp;data, 0, sizeof(data));
-&lt;para /&gt;
+
 	/* Walk through the database and print out the key/data pairs. */
 	while ((ret = dbcp-&gt;c_get(dbcp, &amp;key, &amp;data, DB_NEXT)) == 0)
 		printf("%lu : %.*s\n",
-		    *(u_long *)key.data, (int)data.size, (char *)data.data);
+               *(u_long *)key.data, (int)data.size, 
+               (char *)data.data);
 	if (ret != DB_NOTFOUND)
 		dbp-&gt;err(dbp, ret, "DBcursor-&gt;get");
-&lt;para /&gt;
+
 	/* Close the cursor. */
 	if ((ret = dbcp-&gt;c_close(dbcp)) != 0) {
 		dbp-&gt;err(dbp, ret, "DBcursor-&gt;close");

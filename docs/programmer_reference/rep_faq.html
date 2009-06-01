@@ -50,7 +50,7 @@
     
             In general this protocol is left entirely to the application.
             Note, there is no reason not to use the communications channels
-            the application establishes for replication support to forward
+            a Base API application establishes for replication support to forward
             database update messages to the master, since Berkeley DB does
             not require those channels to be used exclusively for
             replication messages.  Replication Manager does not currently
@@ -160,7 +160,7 @@
         If the number of network connections is a problem in the
         multiprocess model, and inter-process communication on the system
         is inexpensive enough, an alternative is have a single process
-        which communicates between the master the each client, and whenever
+        which communicates between the master and each client, and whenever
         a process' <span class="bold"><strong>send</strong></span> function is
         called, the process passes the message to the communications
         process which is responsible for forwarding the message to the

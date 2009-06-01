@@ -36,8 +36,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	8
-#define	DB_VERSION_PATCH	9
-#define	DB_VERSION_STRING	"Berkeley DB 4.8.9: (May 22, 2009)"
+#define	DB_VERSION_PATCH	11
+#define	DB_VERSION_STRING	"Berkeley DB 4.8.11: (June  1, 2009)"
 
 /*
  * !!!
@@ -1004,8 +1004,10 @@ struct __db_rep_stat {
 	u_int32_t st_max_lease_sec;	/* Maximum lease timestamp seconds. */
 	u_int32_t st_max_lease_usec;	/* Maximum lease timestamp useconds. */
 
-	/* Statistics only used by the test system. */
+	/* Undocumented statistics only used by the test system. */
+#ifdef	CONFIG_TEST
 	u_int32_t st_filefail_cleanups;	/* # of FILE_FAIL cleanups done. */
+#endif
 #endif
 };
 
@@ -1405,7 +1407,8 @@ struct __db {
 	int  (*get_bt_compare)
 		__P((DB *, int (**)(DB *, const DBT *, const DBT *)));
 	int  (*get_bt_compress) __P((DB *,
-		int (**)(DB *, const DBT *, const DBT *, const DBT *, const DBT *, DBT *),
+		int (**)(DB *, 
+		const DBT *, const DBT *, const DBT *, const DBT *, DBT *),
 		int (**)(DB *, const DBT *, const DBT *, DBT *, DBT *, DBT *)));
 	int  (*get_bt_minkey) __P((DB *, u_int32_t *));
 	int  (*get_bt_prefix)
@@ -1577,8 +1580,28 @@ struct __db {
 };
 
 /*
- * Macros for bulk get.  These are only intended for the C API.
- * For C++, use DbMultiple*Iterator.
+ * Macros for bulk operations.  These are only intended for the C API.
+ * For C++, use DbMultiple*Iterator or DbMultiple*Builder.
+ *
+ * Bulk operations store multiple entries into a single DBT structure. The
+ * following macros assist with creating and reading these Multiple DBTs.
+ *
+ * The basic layout for single data items is:
+ *
+ * -------------------------------------------------------------------------
+ * | data1 | ... | dataN | ..... |-1 | dNLen | dNOff | ... | d1Len | d1Off |
+ * -------------------------------------------------------------------------
+ *
+ * For the DB_MULTIPLE_KEY* macros, the items are in key/data pairs, so data1
+ * would be a key, and data2 its corresponding value (N is always even).
+ *
+ * For the DB_MULTIPLE_RECNO* macros, the record number is stored along with
+ * the len/off pair in the "header" section, and the list is zero terminated
+ * (since -1 is a valid record number):
+ *
+ * --------------------------------------------------------------------------
+ * | d1 |..| dN |..| 0 | dNLen | dNOff | recnoN |..| d1Len | d1Off | recno1 |
+ * --------------------------------------------------------------------------
  */
 #define	DB_MULTIPLE_INIT(pointer, dbt)					\
 	(pointer = (u_int8_t *)(dbt)->data +				\
@@ -1635,27 +1658,22 @@ struct __db {
 		(dbt)->flags |= DB_DBT_BULK;				\
 		pointer = (u_int8_t *)(dbt)->data +			\
 		    (dbt)->ulen - sizeof(u_int32_t);			\
-		*(u_int32_t *)(pointer) = 0;				\
-	} while (0)
-
-#define DB_MULTIPLE_WRITE_END(pointer, dbt)				\
-	do {								\
-		if ((pointer) != NULL) {				\
-			*(u_int32_t *)(pointer) = (u_int32_t)-1;	\
-			pointer = NULL;					\
-		}							\
+		*(u_int32_t *)(pointer) = (u_int32_t)-1;		\
 	} while (0)
 
 #define DB_MULTIPLE_RESERVE_NEXT(pointer, dbt, writedata, writedlen)	\
 	do {								\
 		u_int32_t *__p = (u_int32_t *)(pointer);		\
-		if ((u_int8_t *)(dbt)->data + *__p + (writedlen) >	\
+		u_int32_t __off = ((pointer) ==	(u_int8_t *)(dbt)->data +\
+		    (dbt)->ulen - sizeof(u_int32_t)) ?  0 : __p[1] + __p[2];\
+		if ((u_int8_t *)(dbt)->data + __off + (writedlen) >	\
 		    (u_int8_t *)(__p - 2))				\
 			writedata = NULL;				\
 		else {							\
-			writedata = (u_int8_t *)(dbt)->data + *__p;	\
+			writedata = (u_int8_t *)(dbt)->data + __off;	\
+			__p[0] = __off;					\
 			__p[-1] = (writedlen);				\
-			__p[-2] = *__p + (writedlen);			\
+			__p[-2] = (u_int32_t)-1;			\
 			pointer = __p - 2;				\
 		}							\
 	} while (0)
@@ -1666,7 +1684,7 @@ struct __db {
 		DB_MULTIPLE_RESERVE_NEXT((pointer), (dbt),		\
 		    __destd, (writedlen));				\
 		if (__destd == NULL)					\
-			DB_MULTIPLE_WRITE_END((pointer), (dbt));	\
+			pointer = NULL;					\
 		else							\
 			memcpy(__destd, (writedata), (writedlen));	\
 	} while (0)
@@ -1674,18 +1692,22 @@ struct __db {
 #define DB_MULTIPLE_KEY_RESERVE_NEXT(pointer, dbt, writekey, writeklen, writedata, writedlen) \
 	do {								\
 		u_int32_t *__p = (u_int32_t *)(pointer);		\
-		if (((u_int8_t *)(dbt)->data + *__p) + (writeklen) +	\
+		u_int32_t __off = ((pointer) == (u_int8_t *)(dbt)->data +\
+		    (dbt)->ulen - sizeof(u_int32_t)) ?  0 : __p[1] + __p[2];\
+		if ((u_int8_t *)(dbt)->data + __off + (writeklen) +	\
 		    (writedlen) > (u_int8_t *)(__p - 4)) {		\
 			writekey = NULL;				\
 			writedata = NULL;				\
 		} else {						\
-			writekey = (u_int8_t *)(dbt)->data + *__p;	\
+			writekey = (u_int8_t *)(dbt)->data + __off;	\
+			__p[0] = __off;					\
 			__p[-1] = (writeklen);				\
-			__p[-2] = *__p + (writeklen);			\
 			__p -= 2;					\
-			writedata = (u_int8_t *)(dbt)->data + *__p;	\
+			__off += (writeklen);				\
+			writedata = (u_int8_t *)(dbt)->data + __off;	\
+			__p[0] = __off;					\
 			__p[-1] = (writedlen);				\
-			__p[-2] = *__p + (writedlen);			\
+			__p[-2] = (u_int32_t)-1;			\
 			pointer = __p - 2;				\
 		}							\
 	} while (0)
@@ -1696,7 +1718,7 @@ struct __db {
 		DB_MULTIPLE_KEY_RESERVE_NEXT((pointer), (dbt),		\
 		    __destk, (writeklen), __destd, (writedlen));	\
 		if (__destk == NULL)					\
-			DB_MULTIPLE_WRITE_END((pointer), (dbt));	\
+			pointer = NULL;					\
 		else {							\
 			memcpy(__destk, (writekey), (writeklen));	\
 			if (__destd != NULL)				\
@@ -1705,30 +1727,28 @@ struct __db {
 	} while (0)
 
 #define DB_MULTIPLE_RECNO_WRITE_INIT(pointer, dbt)			\
-    DB_MULTIPLE_WRITE_INIT(pointer, dbt)
-
-#define DB_MULTIPLE_RECNO_WRITE_END(pointer, dbt)			\
 	do {								\
-		if ((pointer) != NULL) {				\
-			*(u_int32_t *)(pointer) = 0;			\
-			pointer = NULL;					\
-		}							\
+		(dbt)->flags |= DB_DBT_BULK;				\
+		pointer = (u_int8_t *)(dbt)->data +			\
+		    (dbt)->ulen - sizeof(u_int32_t);			\
+		*(u_int32_t *)(pointer) = 0;				\
 	} while (0)
 
 #define DB_MULTIPLE_RECNO_RESERVE_NEXT(pointer, dbt, recno, writedata, writedlen) \
 	do {								\
 		u_int32_t *__p = (u_int32_t *)(pointer);		\
-		u_int32_t __off = ((pointer) ==	(u_int8_t *)(dbt)->data +\
-		    (dbt)->ulen - sizeof(u_int32_t)) ? 0 : __p[1] + __p[2];\
+		u_int32_t __off = ((pointer) == (u_int8_t *)(dbt)->data +\
+		    (dbt)->ulen - sizeof(u_int32_t)) ? 0 : __p[1] + __p[2]; \
 		if (((u_int8_t *)(dbt)->data + __off) + (writedlen) >	\
 		    (u_int8_t *)(__p - 3))				\
 			writedata = NULL;				\
 		else {							\
 			writedata = (u_int8_t *)(dbt)->data + __off;	\
-			*__p-- = (u_int32_t)(recno);			\
-			*__p-- = __off;					\
-			*__p-- = (writedlen);				\
-			pointer = __p;					\
+			__p[0] = (u_int32_t)(recno);			\
+			__p[-1] = __off;				\
+			__p[-2] = (writedlen);				\
+			__p[-3] = 0;					\
+			pointer = __p - 3;				\
 		}							\
 	} while (0)
 
@@ -1738,7 +1758,7 @@ struct __db {
 		DB_MULTIPLE_RECNO_RESERVE_NEXT((pointer), (dbt),	\
 		    (recno), __destd, (writedlen));			\
 		if (__destd == NULL)					\
-			DB_MULTIPLE_RECNO_WRITE_END((pointer), (dbt));	\
+			pointer = NULL;					\
 		else if ((writedlen) != 0)				\
 			memcpy(__destd, (writedata), (writedlen));	\
 	} while (0)

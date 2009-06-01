@@ -37,22 +37,12 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_efficienct_use.html#id1592258">
-Use Iterators Efficiently
-
-</a>
+              <a href="stl_efficienct_use.html#id1594285">Use Iterators Efficiently</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_efficienct_use.html#id1593006">Use Containers Efficiently</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="stl_efficienct_use.html#id1592785">
-All Other Ways to Efficiently Use Berkeley DB
-</a>
+              <a href="stl_efficienct_use.html#id1595162">Use Containers Efficiently</a>
             </span>
           </dt>
         </dl>
@@ -61,10 +51,7 @@ All Other Ways to Efficiently Use Berkeley DB
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592258"></a>
-Use Iterators Efficiently
-
-</h3>
+              <h3 class="title"><a id="id1594285"></a>Use Iterators Efficiently</h3>
             </div>
           </div>
         </div>
@@ -72,80 +59,83 @@ Use Iterators Efficiently
           <ul type="disc">
             <li>
               <p>
-			Close an Iterator's Cursor As Soon As Possible</p>
+Close an Iterator's Cursor As Soon As Possible
+    </p>
               <p>
-Each iterator has an open cursor associated with it, so when finish 
-using the iterator, it is a good habit to explicitly close its cursor, 
-which can potentially make the performance better because of enhanced concurrency, 
-although dbstl will close it when the iterator is destructed. 
-And if the cursor is closed, this iterator can't be used any more. 
-</p>
+Each iterator has an open cursor associated with it, so when you are
+finished using the iterator, it is a good habit to explicitly close
+its cursor, which can potentially improve performance because of
+enhanced concurrency.  Dbstl will close it when the iterator is
+destroyed, but you can close it in advance of this.  If the cursor
+is closed, the associated iterator can't be used any more.
+    </p>
               <p>
-In some functions of a container class, an iterator is used to access
+In some functions of container classes, an iterator is used to access
 the database, and its cursor is internally created by 
 dbstl, so if you want to specify a non-zero flag for Db::cursor call, 
 you need to call the container's set_cursor_open_flag() function to do so. 
-
-</p>
+    </p>
             </li>
             <li>
               <p>
 Use Const Iterators Where Applicable
-</p>
+    </p>
               <p>
-If your data access pattern is read only, you are strongly recommended to use a const
-iterator. In order to create a const iterator, you must use a const reference to the 
-container object, i.e. we have db_vector&lt;int&gt; intv(10); We must use a 
-const db_vector&lt;int&gt;&amp; intv_ref = intv; reference to invoke the const begin/end functions:
-intv_ref.begin() will give you a const iterator, you can only use a const iterator to read
-its referenced data element, not updating it. But you have a lot of performance gains while
-you use this iterator, e.g. via *itr or itr-&gt;member. 
-Also, intv_ref[i] will also give you a lot of performance gain, and it is a read only value ---
-you can't use its return value to update that element.
-
-</p>
+If your data access is read only, you are strongly recommended to use
+a const iterator. In order to create a const iterator, you must use a
+const reference to the container object.  For example, supposed we
+have db_vector&lt;int&gt; intv(10); We must use a const
+db_vector&lt;int&gt;&amp; intv_ref = intv; reference to invoke the
+const begin/end functions: intv_ref.begin() will give you a const
+iterator.  You can use a const iterator only to read its referenced
+data elements, not updating them.  However, you should have better
+performance with this iterator, e.g. via iterator::operator* or
+iterator::operator-&gt;member.  
+Also, using array indices like intv_ref[i] will
+also perform better, and it is read only too.
+    </p>
               <p>
-All functions in dbstl's containers which return an iterator or data element reference have 
-two versions---one returns a const iterator/reference, the other returns an iterator/reference. 
-If your access pattern is read only, do use the versions returning const iterators/references.
-
-</p>
+All functions in dbstl's containers which return an iterator or data
+element reference have two versions---one returns a const
+iterator/reference, the other returns an iterator/reference.  If your
+access is read only, choose the versions returning const
+iterators/references.
+    </p>
               <p>
-Remember that you can only use a const reference to a container object to call the const versions 
-of operator* and operator[].
-
-</p>
+Remember that you can only use a const reference to a container object
+to call the const versions of operator* and operator[].
+    </p>
               <p>
-You can also use the non-const object or its non-const reference to create a read only iterator 
-by passing "true" to the "readonly" parameter in container's begin() method, so that you
-still have some potential concurrency gains.
-
-</p>
+You can also use the non-const container object or its non-const 
+reference to create a read only iterator by passing "true" to the 
+"readonly" parameter in container's begin() method.
+   </p>
             </li>
             <li>
               <p>
-	Use pre-increment/pre-decrement rather than post-increment/post-decrement where possible
-</p>
+Use pre-increment/pre-decrement rather than
+post-increment/post-decrement where possible
+    </p>
               <p>
-This is because ++itr avoids two iterator copy constructions, and it is true when you 
-are using c++ standard stl iterators too.
+Pre-increment operations are more efficient because ++iterator avoids
+two iterator copy constructions. This is true when you are using c++
+standard stl iterators too.
 
-</p>
+    </p>
             </li>
             <li>
               <p>
 Use Bulk Retrieval in Iterators
-</p>
+    </p>
               <p>
-If your access pattern is going through the whole database read only, or reading a 
-continuous part of it, bulk retrieval can be very useful because it returns a bunch of 
-key/data pairs in one database call. But beware that you can only read the returned 
-data, you can't update it. And if you did a bulk retrieval and read the data, and some 
-other thread of control updated the data in the database, it means you are reading old 
-data unless you are doing a serializable isolation, which means other thread of control 
-can't write the data you are reading, they only can do so when your transaction commits/aborts.
-
-</p>
+If your access pattern is going through the whole database read only,
+or reading a continuous range of it, bulk retrieval can be very useful
+because it returns a bunch of key/data pairs in one database call. But
+beware that you can only read the returned data, you can't update
+it. If you do a bulk retrieval and read the data, and some other
+thread of control updates the data in the database, it means you are
+reading old data unless you are using a serializable transaction.
+    </p>
             </li>
           </ul>
         </div>
@@ -154,7 +144,7 @@ can't write the data you are reading, they only can do so when your transaction 
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1593006"></a>Use Containers Efficiently</h3>
+              <h3 class="title"><a id="id1595162"></a>Use Containers Efficiently</h3>
             </div>
           </div>
         </div>
@@ -162,88 +152,84 @@ can't write the data you are reading, they only can do so when your transaction 
           <ul type="disc">
             <li>
               <p>
-Avoid using container methods that return references because they are a little 
-more expensive.</p>
+Avoid using container methods that return references,
+because they are a little more expensive.
+    </p>
               <p>
-To implement the reference semantics, dbstl has to wrap up the 
-data element in current key/data pair and there has to be two cursor copy constructions 
-and two Berkeley DB cursor duplications for each such a call. These methods including 
-the non-const versions of these functions: 
-</p>
+To implement reference semantics, dbstl has to wrap up the data
+element with the current key/data pair, and must invoke two iterator
+copy constructions and two Berkeley DB cursor duplications for each
+such a call. This is true of non-const versions of these
+functions:
+      </p>
               <div class="itemizedlist">
                 <ul type="circle">
                   <li>
-		db_vector&lt;T&gt;::operator[]()
-		</li>
+db_vector&lt;T&gt;::operator[]()
+        </li>
                   <li>
 db_vector&lt;T&gt;::front()
-		</li>
+        </li>
                   <li>
 db_vector&lt;T&gt;::back()
-		</li>
+        </li>
                   <li>
 db_vector&lt;T&gt;::at()
-		</li>
+        </li>
                   <li>
 db_map&lt;&gt;::operator[]() 
-</li>
+        </li>
                 </ul>
               </div>
               <p>
-</p>
+    </p>
               <p>
-There are alternatives for these functions, mainly by using iterators explicitly.
-</p>
-              <p>
-</p>
+There are alternatives to these functions, mainly through explicit use of iterators.
+    </p>
             </li>
             <li>
               <p>
 Use const container where possible.
-</p>
+    </p>
               <p>
-The const versions of above functions don't have the overhead, and also, using const 
-containers and iterators can bring more performance for other reasons. In order to do so, 
-you need to define a const container reference to an existing container and then use this 
-reference to call the methods. e.g. We have a db_vector&lt;int&gt; container int_vec, then we 
-define a const referenece to int_vec: db_vector&lt;int&gt;&amp; int_vec_ref; Then we use 
-int_vec_ref.begin() to create a const iterator citr. We now can use int_vec_ref to call 
-the const versions of member functions of the container, and use citr to access the 
-data read only. By using int_vec_ref and citr, we can gain better performance. 
-
+The const versions of the functions listed above have less overhead
+than their non-const counterparts.  Using const containers and
+iterators can bring more performance when you call the const version
+of the overloaded container/iterator methods. To do so,
+you define a const container reference to an existing
+container, and then use this reference to call the methods.  For
+example, if we have a db_vector&lt;int&gt; container int_vec, then we
+can define a const reference to int_vec: 
 </p>
+              <pre class="programlisting">
+const db_vector&lt;int&gt;&amp; int_vec_ref; 
+
+</pre>
               <p>
-It is also OK to call the non-const versions of container functions that return non-const iterators,
-and then assign these return values to const iterator objects, but be careful that if you are
-using Berkeley DB concurrent data store(CDS), you must set the "readonly" parameter of each container
-method that returns an iterator. This is because each iterator
-corresponds to a Berkeley DB cursor, you need to specify that the returned iterator will
-be read only (each container method returning an iterator or a pair of iterators has a 
-"readonly" parameter), so that the underlying cursor is read only; Otherwise, the cursor is a
-write cursor, and the performance will be degraded. If you are not using CDS, but TDS or DS or HA,
-there is no distinction of read only cursor and write cursor, and you don't need to specify the "readonly"
-parameter at all.
-
-
-</p>
+Then we use int_vec_ref.begin() to create a const
+iterator citr. We now can use int_vec_ref to call the const versions
+of member functions of the container, and use citr to access the data
+read only. By using int_vec_ref and citr, we can gain better
+performance.
+    </p>
+              <p>
+It is OK to call the non-const versions of container functions that
+return non-const iterators, and then assign these return values to
+const iterator objects, but be careful that if you are using Berkeley
+DB concurrent data store(CDS), you must set the "readonly" parameter
+of each container method that returns an iterator to true. This is because
+each iterator corresponds to a Berkeley DB cursor, and you need to
+specify that the returned iterator will be read only (each container
+method returning an iterator or a pair of iterators has a "readonly"
+parameter), so that the underlying cursor is read only; Otherwise, the
+cursor will be a writeable cursor, and the performance will be
+degraded somewhat. If you are not using CDS, but TDS or DS or HA,
+there is no distinction of read only cursor and write cursor, and you
+don't need to specify the "readonly" parameter at all.
+    </p>
             </li>
           </ul>
         </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="id1592785"></a>
-All Other Ways to Efficiently Use Berkeley DB
-</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-Since dbstl is based on Berkeley DB, any such measures can definitely bring better performance.
-
-</p>
       </div>
     </div>
     <div class="navfooter">

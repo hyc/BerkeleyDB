@@ -39,39 +39,39 @@
                     master without noticing it. This is because normally a
                     replicated application only knows that a master has
                     gone missing when update activity causes messages to be
-                    passed between the master and clients.
+                    passed between the master and replicas.
             </p>
       <p>
                     To guard against this, you can configure a heartbeat.
                     The heartbeat must be configured for both the master
-                    and each of the clients.
+                    and each of the replicas.
             </p>
       <p>
                     On the master, you configure the application to send a
                     heartbeat on a defined interval when it is otherwise
                     idle. Do this by using the
                     <span>
-                            <code class="literal">DB_REP_HEARTBEAT_SEND</code> flag
-                            with the
+                            <code class="literal">DB_REP_HEARTBEAT_SEND</code> value
+                            to the <code class="literal">which</code> parameter of the
                             
                             <code class="methodname">DbEnv::rep_set_timeout()</code>
                             method.
                     </span>
                 
                 You must also provide the method a value representing the frequency of
-                the heartbeat. Note that the heartbeat is sent only if the
+                the heartbeat in microseconds. Note that the heartbeat is sent only if the
                 system is idle.
             </p>
       <p>
-                    On the client, you configure the application to listen
+                    On the replica, you configure the application to listen
                     for a heartbeat. The time that you configure here is
-                    the amount of time the client will wait for some
+                    the amount of time the replica will wait for some
                     message from the master (either the heartbeat or some
                     other message) before concluding that the connection is
                     lost. You do this using the 
                     <span>
-                            <code class="literal">DB_REP_HEARTBEAT_MONITOR</code> flag
-                            with the
+                            <code class="literal">DB_REP_HEARTBEAT_MONITOR</code> value
+                            to the <code class="literal">which</code> parameter of the 
                             
                             <code class="methodname">DbEnv::rep_set_timeout()</code>
                             method and a timeout value in microseconds.

@@ -356,41 +356,6 @@ db.h and db_cxx.h header files.
         </p>
           </li>
           <li>
-            <p><a id="build_unix_conf.--tls-option"></a>
-            <span class="bold"><strong>--tls-option=TLS_OPTION</strong></span>
-        </p>
-            <p>
-	   The STL API uses thread local storage(TLS) features, which are available on almost all
-	   thread library implementations. Here the TLS_OPTION can be one of the following:
-		</p>
-            <div class="itemizedlist">
-              <ul type="circle">
-                <li>
-                  <p>
-            <span class="bold"><strong>NO_TLSMODIFIER_IN_DEFINITION</strong></span>
-			</p>
-                  <p>
-		Some compilers does not allow the TLS modifier to appear at the TLS variable definition, like Intel C++ compiler;
-		But some other compilers requires it be there, like some new versions of gcc; Others are neutral to both options. 
-		We by default have the TLS modifier at both the TLS variable declaration and definition, and you should set this option
-		if you are using some compiler like the Intel C++ compiler.
-			</p>
-                </li>
-                <li>
-                  <p>
-            <span class="bold"><strong>TLS_SINGLE_THREADED</strong></span>
-			</p>
-                  <p>
-		This option disables the TLS features, thus you can only make use of the STL API in a single thread. You only have to
-		set this option if your compiler and/or thread library does not have TLS features.
-			</p>
-                </li>
-              </ul>
-            </div>
-            <p>
-        </p>
-          </li>
-          <li>
             <p><a id="build_unix_conf.--with-mutex"></a>
             <span class="bold"><strong>--with-mutex=MUTEX</strong></span>
         </p>

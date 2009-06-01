@@ -202,7 +202,7 @@
           </div>
         </div>
         <p>
-                You can configure your application to read data that has been modified but not yet
+                Berkeley DB allows you to configure your application to read data that has been modified but not yet
                 committed by another transaction; that is, dirty data.  When you do this, you 
                 may see a performance benefit by allowing your
                 application to not have to block waiting for write locks. On the other hand, the data that your
@@ -242,8 +242,6 @@
                                 <code class="methodname">EntityStore.setPrimaryConfig()</code>
                                 method.)
                                 </span>
-
-                                
                             </span>
                     </p>
             </li>
@@ -252,17 +250,11 @@
                             
                             <span>
                                 Specify that you want to use uncommitted reads when you 
-                                    <span>
-                                        create a transaction or open the cursor.
-                                    </span>
-                                    
-                                    To do this, you use the <code class="methodname">setReadUncommitted()</code>
-                                    <span>
-                                    method on the relevant configuration object
-                                        (<code class="classname">TransactionConfig</code> or
-                                            <code class="classname">CursorConfig</code>).
-                                    </span>
-                                    
+                                create a transaction or open the cursor.
+                                To do this, you use the <code class="methodname">setReadUncommitted()</code>
+                                method on the relevant configuration object
+                                (<code class="classname">TransactionConfig</code> or
+                                <code class="classname">CursorConfig</code>).
                             </span>
 
                     </p>

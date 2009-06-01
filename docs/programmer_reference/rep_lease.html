@@ -71,7 +71,13 @@ that it holds a valid collection of lease grants from clients
 before returning data to the application.  By holding leases,
 Berkeley DB provides several guarantees to the application:</p>
       <div class="orderedlist">
-        <p>The rollback guarantee also depends on the <a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> flag.
+        <ol type="1">
+          <li>Authoritative reads: A guarantee that the data being read by the
+application is the current value.</li>
+          <li>Durability from rollback: A guarantee that the data being written or read by the
+application is permanent across a majority of client sites and will
+never be rolled back.
+<p>The rollback guarantee also depends on the <a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> flag.
 The guarantee is effective as long as there isn't total
 replication group failure while clients have granted leases
 but are holding the updates in their cache.
@@ -79,28 +85,21 @@ The application must weigh the performance impact of synchronous
 transactions against the risk of total replication group failure.
 If clients grant a lease while holding updated data in cache,
 and total failure occurs, then the data is no longer present
-on the clients and rollback can occur if the master also crashes.</p>
-        <p>The guarantee that data will not be rolled back applies only
+on the clients and rollback can occur if the master also crashes.</p><p>The guarantee that data will not be rolled back applies only
 to data successfully committed on a master.
 Data read on a client, or read while ignoring leases
-can be rolled back.</p>
-        <p>The read authority is only on the master.  Read operations on a client
-always ignore leases and consequently, that operation can return stale data.</p>
-        <p>Leases remove the possibility of a duplicate master situation that
-forces the current master to downgrade to a client.  However, it is
-still possible that old masters with expired leases can discover a later
-master and return <a href="../api_reference/C/repmessage.html#repmsg_DB_REP_DUPMASTER" class="olink">DB_REP_DUPMASTER</a> to the application.</p>
-        <ol type="1">
-          <li>Authoritative reads: A guarantee that the data being read by the
-application is the current value.</li>
-          <li>Durability from rollback: A guarantee that the data being written or read by the
-application is permanent across a majority of client sites and will
-never be rolled back.</li>
+can be rolled back.</p></li>
           <li>Freshness: A guarantee that the data being read by the application
 on the <span class="emphasis"><em>master</em></span> is up-to-date and has not been
-modified or removed during the read.</li>
+modified or removed during the read.
+<p>The read authority is only on the master.  Read operations on a client
+always ignore leases and consequently, these operations can return stale data.</p></li>
           <li>Master viability: A guarantee that a current master with valid
-leases cannot encounter a duplicate master situation.</li>
+leases cannot encounter a duplicate master situation.
+<p>Leases remove the possibility of a duplicate master situation that
+forces the current master to downgrade to a client.  However, it is
+still possible that old masters with expired leases can discover a later
+master and return <a href="../api_reference/C/repmessage.html#repmsg_DB_REP_DUPMASTER" class="olink">DB_REP_DUPMASTER</a> to the application.</p></li>
         </ol>
       </div>
       <p>There are several requirements of the application using leases:</p>
@@ -108,13 +107,13 @@ leases cannot encounter a duplicate master situation.</li>
         <ol type="1">
           <li>Replication Manager applications must configure a majority (or larger)
 acknowledgement policy via the <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a> method.  Base API
-users must implement and enforce such a policy on their own.</li>
-          <li>Base API users must return an error from the send callback function when
+applications must implement and enforce such a policy on their own.</li>
+          <li>Base API applications must return an error from the send callback function when
 the majority acknowledgement policy is not met for permanent records
 marked with <a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a>.  Note that the Replication Manager
 automatically fulfills this requirement.</li>
           <li>Applications must set the number of sites in the group using the
-<a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_nsites()</a> method before starting replication and cannot
+<a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a> method before starting replication and cannot
 change it during operation.</li>
           <li>Using leases in a replication group is all or none.  Behavior is
 undefined when some sites configure leases and others do not.

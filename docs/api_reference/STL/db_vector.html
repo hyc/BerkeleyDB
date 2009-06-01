@@ -3,25 +3,25 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 4.  The db_vector Class</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <title>Chapter 4.  db_vector</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="prev" href="stldb_containerdstr_db_container.html" title="~db_container" />
-    <link rel="next" href="stldb_vectorbegin.html" title="begin" />
+    <link rel="next" href="stldb_vectorend.html" title="end" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 4. 
- The db_vector Class</th>
+ db_vector  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_containerdstr_db_container.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
-          <td width="20%" align="right"> <a accesskey="n" href="stldb_vectorbegin.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="stldb_vectorend.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -31,428 +31,595 @@
         <div>
           <div>
             <h2 class="title"><a id="db_vector"></a>Chapter 4. 
- The db_vector Class</h2>
+ db_vector  </h2>
           </div>
         </div>
       </div>
-      <p>The <a class="link" href="db_vector.html" title="Chapter 4.  The db_vector Class">db_vector</a>
+      <h2><a id="id1550336"></a>db_vector</h2>
+      <p>The <a class="link" href="db_vector.html" title="Chapter 4.  db_vector">db_vector</a>
  class has the union set of public member functions as std::vector, std::deque and std::list, and each method has identical default semantics to that in the std equivalent containers. </p>
       <p>The difference is that the data is maintained using a Berkeley DB database as well as some Berkeley DB related extensions. </p>
-      <h4><a id="id1553399"></a>
+      <h4><a id="id1549893"></a>
 See Also
 </h4>
       <p> </p>
-      <p><a class="link" href="db_container.html" title="Chapter 3.  The db_container Class">db_container</a>
+      <p><a class="link" href="db_container.html" title="Chapter 3.  db_container">db_container</a>
  <a class="link" href="stldb_containerdb_container.html" title="db_container">db_container(Db*, DbEnv*)</a>
  <a class="link" href="stldb_containerdb_container.html" title="db_container">db_container(const db_container&amp;)</a>
  </p>
-      <div class="sect1" lang="en" xml:lang="en">
+      <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h2 class="title" style="clear: both"><a id="db_vector_class"></a> db_vector</h2>
-            </div>
-          </div>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1554485"></a>
+              <h3 class="title"><a id="id1550414"></a>
 Class Template Parameters</h3>
-              </div>
             </div>
           </div>
-          <div class="sect3" lang="en" xml:lang="en">
-            <div class="titlepage">
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
               <div>
-                <div>
-                  <h4 class="title"><a id="id1554724"></a>
+                <h4 class="title"><a id="id1550204"></a>
 T</h4>
-                </div>
               </div>
             </div>
-            <p>The type of data to store. </p>
           </div>
-          <div class="sect3" lang="en" xml:lang="en">
-            <div class="titlepage">
+          <p>The type of data to store. </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
               <div>
-                <div>
-                  <h4 class="title"><a id="id1554480"></a>
+                <h4 class="title"><a id="id1550553"></a>
 value_type_sub</h4>
-                </div>
               </div>
             </div>
-            <p>If T is a class/struct type, do not specify anything for this parameter; Otherwise, specify ElementHolder&lt;T&gt; to it. Database(dbp) and environment(penv) handle requirement(applies for all constructors of this class template): dbp must meet the following requirement: 1. dbp must be a DB_RECNO type of database handle. 2. DB_THREAD must be set to dbp's open flags. 3. An optional flag DB_RENUMBER is required if the container object is supposed to be a std::vector or std::deque equivalent; Not required if it is a std::list equivalent. But dbstl will not check whether DB_RENUMBER is set to this database handle. Setting DB_RENUMBER will cause the index values of all elements in the underlying databse to be maintained consecutive and in order, which involves potentially a lot of work because many indices may be updated. See the <a class="link" href="stldb_containerdb_container.html" title="db_container">db_container(Db*, DbEnv*)</a>
+          </div>
+          <p>If T is a class/struct type, do not specify anything for this parameter; Otherwise, specify ElementHolder&lt;T&gt; to it. Database(dbp) and environment(penv) handle requirement(applies for all constructors of this class template): dbp must meet the following requirement: 1. dbp must be a DB_RECNO type of database handle. 2. DB_THREAD must be set to dbp's open flags. 3. An optional flag DB_RENUMBER is required if the container object is supposed to be a std::vector or std::deque equivalent; Not required if it is a std::list equivalent. But dbstl will not check whether DB_RENUMBER is set to this database handle. Setting DB_RENUMBER will cause the index values of all elements in the underlying databse to be maintained consecutive and in order, which involves potentially a lot of work because many indices may be updated. See the <a class="link" href="stldb_containerdb_container.html" title="db_container">db_container(Db*, DbEnv*)</a>
  for more information about the two parameters. </p>
-          </div>
         </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1554650"></a>
-Group</h3>
-              </div>
-            </div>
-          </div>
-          <p>
-<a class="xref" href="dbstl_containers.html" title="Chapter 2.  The dbstl_containers Class">
- The dbstl_containers Class</a>
-</p>
-          <p>
-</p>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1554685"></a>
-  Public Members</h3>
-              </div>
-            </div>
-          </div>
-          <div class="informaltable">
-            <table border="1" width="80%">
-              <colgroup>
-                <col />
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-<a class="xref" href="stldb_vectorbegin.html" title="begin">
+      </div>
+      <h4><a id="id1550554"></a> Public Members </h4>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+<a class="xref" href="db_vector.html#stldb_vectorbegin" title="begin">
 begin
 </a>
 </td>
-                  <td>
+              <td>
    <p>Create a read-write or read-only iterator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorend.html" title="end">
 end
 </a>
 </td>
-                  <td>
+              <td>
    <p>Create an open boundary iterator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorrbegin.html" title="rbegin">
 rbegin
 </a>
 </td>
-                  <td>
+              <td>
    <p>Create a reverse iterator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorrend.html" title="rend">
 rend
 </a>
 </td>
-                  <td>
+              <td>
    <p>Create an open boundary iterator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectormax_size.html" title="max_size">
 max_size
 </a>
 </td>
-                  <td>
+              <td>
    <p>Get max size. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorcapacity.html" title="capacity">
 capacity
 </a>
 </td>
-                  <td>
+              <td>
    <p>Get capacity. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectoroperator_sqbrk.html" title="operator[]">
 operator[]
 </a>
 </td>
-                  <td>
+              <td>
    <p>Index operator, can act as both a left value and a right value. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorat.html" title="at">
 at
 </a>
 </td>
-                  <td>
+              <td>
    <p>Index function. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorfront.html" title="front">
 front
 </a>
 </td>
-                  <td>
+              <td>
    <p>Return a reference to the first element. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorback.html" title="back">
 back
 </a>
 </td>
-                  <td>
+              <td>
    <p>Return a reference to the last element. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectoroperator_eq.html" title="operator==">
 operator==
 </a>
 </td>
-                  <td>
+              <td>
    <p>Container equality comparison operator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectoroperator_ueq.html" title="operator!=">
 operator!=
 </a>
 </td>
-                  <td>
+              <td>
    <p>Container in-equality comparison operator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectoroperator_lt.html" title="operator&lt;">
 operator&lt;
 </a>
 </td>
-                  <td>
+              <td>
    <p>Container less than comparison operator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorassign.html" title="assign">
 assign
 </a>
 </td>
-                  <td>
+              <td>
    <p>Assign a range [first, last) to this container. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorpush_front.html" title="push_front">
 push_front
 </a>
 </td>
-                  <td>
+              <td>
    <p>Push an element x into the vector from front. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorpop_front.html" title="pop_front">
 pop_front
 </a>
 </td>
-                  <td>
+              <td>
    <p>Pop out the front element from the vector. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorinsert.html" title="insert">
 insert
 </a>
 </td>
-                  <td>
+              <td>
    <p>Insert x before position pos. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorerase.html" title="erase">
 erase
 </a>
 </td>
-                  <td>
+              <td>
    <p>Erase element at position pos. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorremove.html" title="remove">
 remove
 </a>
 </td>
-                  <td>
+              <td>
    <p>Remove all elements whose values are "value" from the list. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorremove_if.html" title="remove_if">
 remove_if
 </a>
 </td>
-                  <td>
+              <td>
    <p>Remove all elements making "pred" return true. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectormerge.html" title="merge">
 merge
 </a>
 </td>
-                  <td>
+              <td>
    <p>Merge content with another container. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorunique.html" title="unique">
 unique
 </a>
 </td>
-                  <td>
+              <td>
    <p>Remove consecutive duplicate values from this list. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorsort.html" title="sort">
 sort
 </a>
 </td>
-                  <td>
+              <td>
    <p>Sort this list. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorreverse.html" title="reverse">
 reverse
 </a>
 </td>
-                  <td>
+              <td>
    <p>Reverse this list. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorsplice.html" title="splice">
 splice
 </a>
 </td>
-                  <td>
+              <td>
    <p>Moves elements from list x into this list. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorsize.html" title="size">
 size
 </a>
 </td>
-                  <td>
+              <td>
    <div class="simplesect" lang="en" xml:lang="en"><div class="titlepage"></div><p>Return the number of elements in this container. </p></div><p>
 </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorempty.html" title="empty">
 empty
 </a>
 </td>
-                  <td>
+              <td>
    <p>Returns whether this container is empty. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectordb_vector.html" title="db_vector">
 db_vector
 </a>
 </td>
-                  <td>
+              <td>
    <p>Constructor. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectordstr_db_vector.html" title="~db_vector">
 ~db_vector
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectoroperator_assign.html" title="operator=">
 operator=
 </a>
 </td>
-                  <td>
+              <td>
    <p>Container assignment operator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorresize.html" title="resize">
 resize
 </a>
 </td>
-                  <td>
+              <td>
    <p>Resize this container to specified size n, insert values t if need to enlarge the container. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorreserve.html" title="reserve">
 reserve
 </a>
 </td>
-                  <td>
+              <td>
    <p>Reserve space. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorpush_back.html" title="push_back">
 push_back
 </a>
 </td>
-                  <td>
+              <td>
    <p>Push back an element into the vector. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorpop_back.html" title="pop_back">
 pop_back
 </a>
 </td>
-                  <td>
+              <td>
    <p>Pop out last element from the vector. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorswap.html" title="swap">
 swap
 </a>
 </td>
-                  <td>
+              <td>
    <p>Swap content with another vector vec. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_vectorclear.html" title="clear">
 clear
 </a>
 </td>
-                  <td>
+              <td>
    <p>Remove all elements of the vector, make it an empty vector. </p>        </td>
-                </tr>
-              </tbody>
-            </table>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h4><a id="id1551168"></a>
+Group</h4>
+      <p>
+<a class="xref" href="dbstl_containers.html" title="Chapter 2.  dbstl container classes">
+ dbstl container classes  </a>
+</p>
+      <p>
+</p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="stldb_vectorbegin"></a>
+begin
+</h2>
+            </div>
           </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="func_details"></a>
+Function Details</h3>
+              </div>
+            </div>
+          </div>
+          <pre class="programlisting">
+iterator begin(ReadModifyWriteOption rmw=
+    ReadModifyWriteOption::no_read_modify_write(), bool readonly=false,
+    BulkRetrievalOption bulk_read=BulkRetrievalOption::no_bulk_retrieval(),
+    bool directdb_get=true)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+            <p>Create a read-write or read-only iterator. </p>
+            <p>We allow users to create a readonly iterator here so that they don't have to use a const container to create a const_iterator. But using const_iterator is faster. The flags set via db_container::set_cursor_oflags() is used as the cursor open flags. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1549659"></a>
+Parameters</h4>
+                </div>
+              </div>
+            </div>
+            <div class="sect4" lang="en" xml:lang="en">
+              <div class="titlepage">
+                <div>
+                  <div>
+                    <h5 class="title"><a id="id1550622"></a>
+ directdb_get </h5>
+                  </div>
+                </div>
+              </div>
+              <p>Whether always read key/data pair from backing db rather than using the value cached in the iterator. The current key/data pair is cached in the iterator and always kept updated on iterator movement, but in some extreme conditions, errors can happen if you use cached key/data pairs without always refreshing them from database. By default we are always reading from database when we are accessing the data the iterator sits on, except when we are doing bulk retrievals. But your application can gain extra performance promotion if you can set this flag to false. </p>
+            </div>
+            <div class="sect4" lang="en" xml:lang="en">
+              <div class="titlepage">
+                <div>
+                  <div>
+                    <h5 class="title"><a id="id1550429"></a>
+ readonly </h5>
+                  </div>
+                </div>
+              </div>
+              <p>Whether the iterator is created as a readonly iterator. Read only iterators can not update its underlying key/data pair. </p>
+            </div>
+            <div class="sect4" lang="en" xml:lang="en">
+              <div class="titlepage">
+                <div>
+                  <div>
+                    <h5 class="title"><a id="id1550310"></a>
+ bulk_read </h5>
+                  </div>
+                </div>
+              </div>
+              <p>Whether read database key/data pairs in bulk, by specifying DB_MULTIPLE_KEY flag to underlying cursor's Dbc::get function. Only readonly iterators can do bulk retrieval, if iterator is not read only, this parameter is ignored. Bulk retrieval can accelerate reading speed because each database read operation will read many key/data pairs, thus saved many database read operations. The default bulk buffer size is 32KB, you can set your desired bulk buffer size by specifying BulkRetrievalOpt::bulk_retrieval(your_bulk_buffer_size); If you don't want bulk retrieval, set BulkRetrievalItrOpt::no_bulk_retrieval() as the real parameter. </p>
+            </div>
+            <div class="sect4" lang="en" xml:lang="en">
+              <div class="titlepage">
+                <div>
+                  <div>
+                    <h5 class="title"><a id="id1550369"></a>
+ rmw </h5>
+                  </div>
+                </div>
+              </div>
+              <p>Whether this iterator will open a Berkeley DB cursor with DB_RMW flag set. If the iterator is used to read a key/data pair, then update it and store back to db, it is good to set the DB_RMW flag, by specifying RMWItrOpt::read_modify_write() If you don't want to set the DB_RMW flag, specify RMWItrOpt::no_read_modify_write(), which is the default behavior. </p>
+            </div>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1550623"></a>
+Return Value</h4>
+                </div>
+              </div>
+            </div>
+            <p>The created iterator. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1550924"></a>
+See Also</h4>
+                </div>
+              </div>
+            </div>
+            <p>
+    </p>
+            <p>db_container::set_cursor_oflags(); </p>
+            <p>   </p>
+          </div>
+          <pre class="programlisting">
+const_iterator begin(BulkRetrievalOption bulkretrieval=
+    (BulkRetrievalOption::no_bulk_retrieval()),
+    bool directdb_get=true) const
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+            <p>Create a const iterator. </p>
+            <p>The created iterator can only be used to read its referenced data element. Can only be called when using a const reference to the contaienr object. The parameters have identical meanings and usage to those of the other non-const begin function. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1550351"></a>
+Parameters</h4>
+                </div>
+              </div>
+            </div>
+            <div class="sect4" lang="en" xml:lang="en">
+              <div class="titlepage">
+                <div>
+                  <div>
+                    <h5 class="title"><a id="id1550877"></a>
+ directdb_get </h5>
+                  </div>
+                </div>
+              </div>
+              <p>Same as that of begin(ReadModifyWrite, bool, BulkRetrievalOption, bool); </p>
+            </div>
+            <div class="sect4" lang="en" xml:lang="en">
+              <div class="titlepage">
+                <div>
+                  <div>
+                    <h5 class="title"><a id="id1551379"></a>
+ bulkretrieval </h5>
+                  </div>
+                </div>
+              </div>
+              <p>Same as that of begin(ReadModifyWrite, bool, BulkRetrievalOption, bool); </p>
+            </div>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1551207"></a>
+Return Value</h4>
+                </div>
+              </div>
+            </div>
+            <p>The created const iterator. </p>
+          </div>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage">
+              <div>
+                <div>
+                  <h4 class="title"><a id="id1551375"></a>
+See Also</h4>
+                </div>
+              </div>
+            </div>
+            <p>
+    </p>
+            <p>begin(ReadModifyWrite, bool, BulkRetrievalOption, bool); </p>
+            <p>   </p>
+          </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1551033"></a>
+Class</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+  <a class="link" href="db_vector.html" title="Chapter 4.  db_vector">
+  db_vector</a>
+     </p>
         </div>
       </div>
     </div>
@@ -462,7 +629,7 @@ clear
         <tr>
           <td width="40%" align="left"><a accesskey="p" href="stldb_containerdstr_db_container.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
-          <td width="40%" align="right"> <a accesskey="n" href="stldb_vectorbegin.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="stldb_vectorend.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">
@@ -472,7 +639,7 @@ clear
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> 
-begin
+end
 </td>
         </tr>
       </table>

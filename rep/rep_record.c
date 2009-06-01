@@ -623,7 +623,9 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 			if (F_ISSET(rep, REP_F_READY_API | REP_F_READY_OP)) {
 				RPRINT(env, DB_VERB_REP_MSGS, (env,
     "FILE_FAIL is cleaning up old internal init"));
+#ifdef	CONFIG_TEST
 				STAT(rep->stat.st_filefail_cleanups++);
+#endif
 				ret = __rep_init_cleanup(env, rep, DB_FORCE);
 				F_CLR(rep,
 				    REP_F_ABBREVIATED | REP_F_RECOVER_MASK);

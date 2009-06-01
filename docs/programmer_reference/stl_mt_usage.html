@@ -34,40 +34,33 @@
         </div>
       </div>
       <p>
-The WorkerThread class of dbstl test suite is good example code to demonstrate
-how to use dbstl in multi-threaded applications.
 Follow the following steps to make use of dbstl in multithreaded applications.
 </p>
       <div class="orderedlist">
         <ol type="1">
           <li>
             <p>
-Define the right platform when building dbstl.
-
-Internally dbstl put some thread local information in thread local storage(tls), 
-and uses a tls modifier rather than the thread library API to make use of tls. The tls
-modifiers on different platform are different, so we use a platform name macro
-to declare the right tls modifier for that platform. 
-
-</p>
-            <p>
-The configure script will normally detect platform type and define the right macro for
-you, so you don't need to do anything. In case the configure script can't detect this,
-there will be a warning message output, and you need to define the platform macro in your
-application.
+Define the right platform when building dbstl. You rarely have to do this except when you are 
+using some uncommon platforms. The configure script first detects the right thread local storage (TLS)
+modifier to use, and if no appropriate ones, and the platform supports pthread TLS API, the pthread
+TLS API is used.
 
 </p>
             <p>
 Specifically, if you are using HP Tru64 operating system and not a gcc compiler, you should
 #define HPTru64 before the #include'ing any dbstl container header files. 
 
-If you are using other platforms which are not recognized by the configure script but which
+</p>
+            <p>
+If you are using other platforms which do not have pthread TLS API, and are not recognized by the configure script, but which
 have thread local storage functionalities, #define TLS_MODIFIER to your platform's thread
 local storage modifier in your application's Makefile or IDE settings, or #define it before
 #include'ing any dbstl container header files; 
 
-Otherwise, if your platform has no concept of thread local storage, you have to
-#define SINGLE_THREADED in the Makefile or IDE settings, or #define it before
+</p>
+            <p>
+Otherwise, if your platform has no concept of thread local storage at all, you have to
+#define STL_SINGLE_THREADED in the Makefile or IDE settings, or #define it before
 #include'ing any dbstl container header files; so that you can only 
 use dbstl in one single thread within one memory address space.
 
@@ -96,8 +89,10 @@ You must also set all containers' cursor open flags, auto commit transaction beg
 You can share or not share environment and/or database handles. 
 If you do share, remember to register the handles you 
 are using in each and every thread which did not call dbstl::open_db/dbstl::open_env for 
-that handle but is using the handles directly or the containers owning the handles. 
+that handle but is using the handles directly or indirectly by using the containers owning the handles. 
 
+</p>
+            <p>
 Note that the get/set functions of the data members of containers are not 
 mutex-protected, because they are supposed to be set only once at container object
 initialiation. Do your own protection if you have to modify them after initialization phase.
@@ -117,12 +112,12 @@ Db/DbEnv handles, though. You can't share an iterator or transaction among multi
 Set directdb_get parameter of container's begin() method to true, which is the
 default behavior. 
 The reason is a rare situation may happen: Given db_vector_iterator i1 and 
-i2, they are used in the same iteration and they always point to the 
+i2, they are used in the same iteration and they always reference the 
 same element in the iteration, then we call *i1 = new_value; then we 
 want to use *i2 and we think *i2 equals to new_value--------at this time 
 point, if directdb_get is not set to true, *i2 will give you the old 
 value, which is wrong; while setting directdb_get to true will guarantee 
-any time of access to the pointed key/data pair is got by reading 
+any time of access to the referenced key/data pair is got by reading 
 directly from database, not using the iterator/cursor cached key/data 
 pair values. 
 </p>
@@ -130,11 +125,13 @@ pair values.
           <li>
             <p>
 When used in CDS databases, you should use const iterators or read-only 
-non-iterators for read only iterations, otherwise, when multiple threads tries 
+non-const iterators for read only iterations. Otherwise, when multiple threads tries 
 to open read-write iterators at the same time, as there can be only one write cursor open at any moment, 
 the concurrency is greatly degraded.  And it is always a good practice to
 use read-only iterators where possible because there are some internal optimizations to
 make it faster.
+</p>
+            <p>
 In order to create a readonly iterator, either use a "const" reference to the
 container object then call begin via the const reference, and declare a 
 db_vector::const_iterator type of iterator to hold the return value of begin;
@@ -153,20 +150,28 @@ subsystem started by specifying DB_INIT_LOCK in DbEnv::open function.
           </li>
           <li>
             <p>  
-You can do portable synchronization by calling the following functions, which are global 
+You can do portable thread synchronization within the same process by calling the following functions, which are global 
 functions in the "dbstl" name space:
-
+</p>
+            <pre class="programlisting">
 db_mutex_t alloc_mutex() ;
 int lock_mutex(db_mutex_t);
 int unlock_mutex(db_mutex_t);
 void free_mutex(db_mutex_t);
-
+</pre>
+            <p>
+</p>
+            <p>
 They use an internal dbstl environment's mutex functionality to synchronize, so the synchronization
 is portable across all platforms supporting Berkeley DB.
 </p>
           </li>
         </ol>
       </div>
+      <p>  
+The WorkerThread class of dbstl test suite is good example code to demonstrate
+how to use dbstl in multi-threaded applications.
+</p>
     </div>
     <div class="navfooter">
       <hr />

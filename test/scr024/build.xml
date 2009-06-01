@@ -5,7 +5,6 @@
   <property name="db.jar" location="${db}/build_unix/db.jar"/>
   <property name="test.src" location="src"/>
   <property name="examples.src" location="${db}/examples_java/src"/>
-  <property name="testserialdir" value="testserial"/>
   <property name="clover.initstring" location="reports/clover.db"/>
   <property name="clover.excludes" value="**/test/** collections/** db/** com/sleepycat/db/**"/>
   <!--
@@ -20,8 +19,10 @@
     <delete dir="tmp"/>
     <delete dir="reports"/>
     <delete dir="original"/>
+    <delete dir="evolved"/>
     <delete dir="testevolvedir"/>
-    <delete dir="testserial"/>
+    <delete dir="testserialdir"/>
+    <delete dir="testenhancedir"/>
   </target>
 
   <target name="init">
@@ -42,6 +43,11 @@
     <path refid="clover.classpath"/>
   </path>
 
+  <path id="enhanced.classpath">
+    <pathelement location="${db.jar}"/>
+    <pathelement location="testenhancedir"/>
+  </path>
+
   <target name="build" depends="init">
     <echo message="Using db.jar: ${db.jar}"/>
     <javac destdir="classes" debug="on" source="1.5" target="1.5">
@@ -54,9 +60,9 @@
     <property name="testserialpath"
               value="com/sleepycat/collections/test/serial/TestSerial"/>
     <copy file="${test.src}/${testserialpath}.java.original"
-          tofile="${testserialdir}/${testserialpath}.java"/>
-    <javac destdir="${testserialdir}" debug="on" source="1.5" target="1.5"
-           includeAntRuntime="true" srcdir="${testserialdir}">
+          tofile="testserialdir/${testserialpath}.java"/>
+    <javac destdir="testserialdir" debug="on" source="1.5" target="1.5"
+           includeAntRuntime="true" srcdir="testserialdir">
       <include name="${testserialpath}.java"/>
       <classpath refid="classpath"/>
     </javac>
@@ -101,7 +107,7 @@
     <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
            showoutput="on">
       <jvmarg value="-ea"/>
-      <classpath path="${testserialdir}"/> <!-- Must be first -->
+      <classpath path="testserialdir"/> <!-- Must be first -->
       <classpath refid="classpath"/>
       <sysproperty key="testdestdir" value="./tmp"/>
       <sysproperty key="longtest" value="${longtest}"/>
@@ -140,9 +146,95 @@
         <fileset dir="classes" includes="**/*Test.class"/>
       </batchtest>
     </junit>
-  </target>
 
-  <target name="testevolve" depends="build">
+    <!-- Run the persist tests with -javaagent to enhance classes as they are
+         loaded.  In this, and the following two tests with enhanced classes,
+         set the expectEnhanced system property to cause the test to fail if
+         classes are not enhanced.  -->
+    <echo message="Run persist tests with -javaagent"/>
+    <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
+           showoutput="on">
+      <jvmarg value="-ea"/>
+      <jvmarg value="-javaagent:${db.jar}=enhance:-v,com.sleepycat.persist"/>
+      <classpath refid="classpath"/>
+      <sysproperty key="testdestdir" value="./tmp"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <sysproperty key="expectEnhanced" value="true"/>
+      <formatter type="plain" usefile="false"/>
+      <formatter type="xml"/>
+      <batchtest todir="reports" unless="testcase">
+        <fileset dir="classes"
+                 includes="com/sleepycat/persist/**/*Test.class"/>
+      </batchtest>
+    </junit>
+
+    <!-- Enhance persist test classes by rewriting the class files with the
+         enhancer ant task, and run the persist tests again.  Compile
+         ClassEnhancerTask here.  It is not compiled into db.jar because that
+         would create a primary build dependency on the Ant libraries. -->
+    <echo message="Run persist tests with ClassEnhancer ant task"/>
+    <delete dir="testenhancedir"/>
+    <mkdir dir="testenhancedir"/>
+    <copy todir="testenhancedir">
+      <fileset dir="classes" includes="com/sleepycat/persist/**/*.class"/>
+    </copy>
+    <javac destdir="testenhancedir" debug="on" source="1.5" target="1.5"
+           includeAntRuntime="true" srcdir="${db}/java/src">
+      <include name="com/sleepycat/persist/model/ClassEnhancerTask.java"/>
+      <classpath refid="classpath"/>
+    </javac>
+    <taskdef name="enhancer"
+             classname="com.sleepycat.persist.model.ClassEnhancerTask">
+      <classpath refid="enhanced.classpath"/>
+    </taskdef>
+    <enhancer verbose="on">
+      <fileset dir="testenhancedir"/>
+    </enhancer>
+    <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
+           showoutput="on">
+      <jvmarg value="-ea"/>
+      <classpath refid="enhanced.classpath"/>
+      <classpath refid="classpath"/>
+      <sysproperty key="testdestdir" value="./tmp"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <sysproperty key="expectEnhanced" value="true"/>
+      <formatter type="plain" usefile="false"/>
+      <formatter type="xml"/>
+      <batchtest todir="reports" unless="testcase">
+        <fileset dir="classes"
+                 includes="com/sleepycat/persist/**/*Test.class"/>
+      </batchtest>
+    </junit>
+
+    <!-- Enhance persist test classes by rewriting the class files with the
+         ClassEnhancer main program, and run the persist tests again. -->
+    <echo message="Run persist tests with ClassEnhancer main program"/>
+    <delete dir="testenhancedir"/>
+    <mkdir dir="testenhancedir"/>
+    <copy todir="testenhancedir">
+      <fileset dir="classes" includes="com/sleepycat/persist/**/*.class"/>
+    </copy>
+    <java fork="yes" failonerror="true"
+          classname="com.sleepycat.persist.model.ClassEnhancer">
+      <arg line="-v testenhancedir"/>
+      <classpath refid="classpath"/>
+    </java>
+    <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
+           showoutput="on">
+      <jvmarg value="-ea"/>
+      <classpath refid="enhanced.classpath"/>
+      <classpath refid="classpath"/>
+      <sysproperty key="testdestdir" value="./tmp"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <sysproperty key="expectEnhanced" value="true"/>
+      <formatter type="plain" usefile="false"/>
+      <formatter type="xml"/>
+      <batchtest todir="reports" unless="testcase">
+        <fileset dir="classes"
+                 includes="com/sleepycat/persist/**/*Test.class"/>
+      </batchtest>
+    </junit>
+
   </target>
 
   <!-- examples runs all examples, but does not include access_example because
@@ -321,4 +413,3 @@
   </target>
 
 </project>
-

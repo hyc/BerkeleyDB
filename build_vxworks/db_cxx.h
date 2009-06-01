@@ -203,10 +203,15 @@ public:
 	    db_malloc_fcn_type *, db_realloc_fcn_type *, db_free_fcn_type *);
 	virtual int get_append_recno(int (**)(Db *, Dbt *, db_recno_t));
 	virtual int get_bt_compare(int (**)(Db *, const Dbt *, const Dbt *));
+	virtual int get_bt_compress(
+	    int (**)(
+	    Db *, const Dbt *, const Dbt *, const Dbt *, const Dbt *, Dbt *),
+	    int (**)(Db *, const Dbt *, const Dbt *, Dbt *, Dbt *, Dbt *));
 	virtual int get_bt_minkey(u_int32_t *);
 	virtual int get_bt_prefix(size_t (**)(Db *, const Dbt *, const Dbt *));
 	virtual int get_byteswapped(int *);
 	virtual int get_cachesize(u_int32_t *, u_int32_t *, int *);
+	virtual int get_create_dir(const char **);
 	virtual int get_dbname(const char **, const char **);
 	virtual int get_dup_compare(int (**)(Db *, const Dbt *, const Dbt *));
 	virtual int get_encrypt_flags(u_int32_t *);
@@ -226,6 +231,10 @@ public:
 	virtual int get_multiple();
 	virtual int get_open_flags(u_int32_t *);
 	virtual int get_pagesize(u_int32_t *);
+	virtual int get_partition_callback(
+	    u_int32_t *, u_int32_t (**)(Db *, Dbt *key));
+	virtual int get_partition_dirs(const char ***);
+	virtual int get_partition_keys(u_int32_t *, Dbt **);
 	virtual int get_priority(DB_CACHE_PRIORITY *);
 	virtual int get_q_extentsize(u_int32_t *);
 	virtual int get_re_delim(int *);
@@ -249,10 +258,15 @@ public:
 	virtual int set_append_recno(int (*)(Db *, Dbt *, db_recno_t));
 	virtual int set_bt_compare(bt_compare_fcn_type); /*deprecated*/
 	virtual int set_bt_compare(int (*)(Db *, const Dbt *, const Dbt *));
+	virtual int set_bt_compress(
+	    int (*)
+	    (Db *, const Dbt *, const Dbt *, const Dbt *, const Dbt *, Dbt *),
+	    int (*)(Db *, const Dbt *, const Dbt *, Dbt *, Dbt *, Dbt *));
 	virtual int set_bt_minkey(u_int32_t);
 	virtual int set_bt_prefix(bt_prefix_fcn_type); /*deprecated*/
 	virtual int set_bt_prefix(size_t (*)(Db *, const Dbt *, const Dbt *));
 	virtual int set_cachesize(u_int32_t, u_int32_t, int);
+	virtual int set_create_dir(const char *);
 	virtual int set_dup_compare(dup_compare_fcn_type); /*deprecated*/
 	virtual int set_dup_compare(int (*)(Db *, const Dbt *, const Dbt *));
 	virtual int set_encrypt(const char *, u_int32_t);
@@ -273,12 +287,16 @@ public:
 	virtual void set_msgfile(FILE *);
 	virtual int set_pagesize(u_int32_t);
 	virtual int set_paniccall(void (*)(DbEnv *, int));
+	virtual int set_partition(
+	    u_int32_t, Dbt *, u_int32_t (*)(Db *, Dbt *));
+	virtual int set_partition_dirs(const char **);
 	virtual int set_priority(DB_CACHE_PRIORITY);
 	virtual int set_q_extentsize(u_int32_t);
 	virtual int set_re_delim(int);
 	virtual int set_re_len(u_int32_t);
 	virtual int set_re_pad(int);
 	virtual int set_re_source(const char *);
+	virtual int sort_multiple(Dbt *, Dbt *, u_int32_t);
 	virtual int stat(DbTxn *, void *sp, u_int32_t flags);
 	virtual int stat_print(u_int32_t flags);
 	virtual int sync(u_int32_t flags);
@@ -356,7 +374,12 @@ public:
 	int (*associate_foreign_callback_)
 	    (Db *, const Dbt *, Dbt *, const Dbt *, int *);
 	int (*bt_compare_callback_)(Db *, const Dbt *, const Dbt *);
+	int (*bt_compress_callback_)(
+	    Db *, const Dbt *, const Dbt *, const Dbt *, const Dbt *, Dbt *);
+	int (*bt_decompress_callback_)(
+	    Db *, const Dbt *, const Dbt *, Dbt *, Dbt *, Dbt *);
 	size_t (*bt_prefix_callback_)(Db *, const Dbt *, const Dbt *);
+	u_int32_t (*db_partition_callback_)(Db *, Dbt *);
 	int (*dup_compare_callback_)(Db *, const Dbt *, const Dbt *);
 	void (*feedback_callback_)(Db *, int, int);
 	int (*h_compare_callback_)(Db *, const Dbt *, const Dbt *);
@@ -423,6 +446,7 @@ public:
 
 	// These methods match those in the C interface.
 	//
+	virtual int add_data_dir(const char *);
 	virtual int cdsgroup_begin(DbTxn **tid);
 	virtual int close(u_int32_t);
 	virtual int dbremove(DbTxn *txn, const char *name, const char *subdb,
@@ -449,6 +473,8 @@ public:
 	virtual int set_cachesize(u_int32_t, u_int32_t, int);
 	virtual int get_cache_max(u_int32_t *, u_int32_t *);
 	virtual int set_cache_max(u_int32_t, u_int32_t);
+	virtual int get_create_dir(const char **);
+	virtual int set_create_dir(const char *);
 	virtual int get_data_dirs(const char ***);
 	virtual int set_data_dir(const char *);
 	virtual int get_encrypt_flags(u_int32_t *);
@@ -502,6 +528,10 @@ public:
 	virtual int set_mp_max_openfd(int);
 	virtual int get_mp_max_write(int *, db_timeout_t *);
 	virtual int set_mp_max_write(int, db_timeout_t);
+	virtual int get_mp_pagesize(u_int32_t *);
+	virtual int set_mp_pagesize(u_int32_t);
+	virtual int get_mp_tablesize(u_int32_t *);
+	virtual int set_mp_tablesize(u_int32_t);
 	virtual void get_msgcall(void (**)(const DbEnv *, const char *));
 	virtual void set_msgcall(void (*)(const DbEnv *, const char *));
 	virtual void get_msgfile(FILE **);
@@ -1113,7 +1143,7 @@ private:
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 //
-// multiple key/data/reco iterator classes
+// multiple key/data/recno iterator classes
 //
 
 // DbMultipleIterator is a shared private base class for the three types
@@ -1147,6 +1177,51 @@ class _exported DbMultipleDataIterator : private DbMultipleIterator
 public:
 	DbMultipleDataIterator(const Dbt &dbt) : DbMultipleIterator(dbt) {}
 	bool next(Dbt &data);
+};
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+//
+// multiple key/data/recno builder classes
+//
+
+// DbMultipleBuilder is a shared private base class for the three types
+// of bulk buffer builders;  it should never be instantiated directly,
+// but it handles the functionality shared by its subclasses.
+class _exported DbMultipleBuilder
+{
+public:
+	DbMultipleBuilder(Dbt &dbt);
+protected:
+	Dbt &dbt_;
+	void *p_;
+};
+
+class _exported DbMultipleDataBuilder : DbMultipleBuilder
+{
+public:
+	DbMultipleDataBuilder(Dbt &dbt) : DbMultipleBuilder(dbt) {}
+	bool append(void *dbuf, size_t dlen);
+	bool reserve(void *&ddest, size_t dlen);
+};
+
+class _exported DbMultipleKeyDataBuilder : DbMultipleBuilder
+{
+public:
+	DbMultipleKeyDataBuilder(Dbt &dbt) : DbMultipleBuilder(dbt) {}
+	bool append(void *kbuf, size_t klen, void *dbuf, size_t dlen);
+	bool reserve(void *&kdest, size_t klen, void *&ddest, size_t dlen);
+};
+
+class _exported DbMultipleRecnoDataBuilder
+{
+public:
+	DbMultipleRecnoDataBuilder(Dbt &dbt);
+	bool append(db_recno_t recno, void *dbuf, size_t dlen);
+	bool reserve(db_recno_t recno, void *&ddest, size_t dlen);
+protected:
+	Dbt &dbt_;
+	void *p_;
 };
 
 ////////////////////////////////////////////////////////////////

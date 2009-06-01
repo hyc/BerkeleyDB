@@ -8,7 +8,7 @@
 
 START_NS(dbstl)
 
-using std::cout;
+using std::cerr;
 
 // Internally used only.
 void _exported throw_bdb_exception(const char *caller, int err_ret);
@@ -199,7 +199,7 @@ public:
 	    DbstlException(errmsg)
 	{
 #ifdef DEBUG
-		cout<<errmsg;
+		cerr<<errmsg;
 #endif
 	}
 
@@ -207,7 +207,7 @@ public:
 	    DbstlException(argtype, arg, 0)
 	{
 #ifdef DEBUG
-		cout<<"\nInvalid argument exception: "<<argtype<<"\t"<<arg;
+		cerr<<"\nInvalid argument exception: "<<argtype<<"\t"<<arg;
 #endif
 	}
 
@@ -232,7 +232,7 @@ public:
 	explicit InvalidFunctionCall(const char *str) : DbstlException(str)
 	{
 #ifdef DEBUG
-		cout<<"\nInvalid function call: "<<str;
+		cerr<<"\nInvalid function call: "<<str;
 #endif
 	}
 

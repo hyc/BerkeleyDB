@@ -32,8 +32,7 @@ import com.sleepycat.db.Environment;
  *
  * <p>Note that a composite key class is a flat container for one or more
  * simple type fields.  All non-transient instance fields in the composite key
- * class are key fields, and the composite key class may not have superclasses
- * containing non-transient instance fields.</p>
+ * class are key fields, and its superclass must be {@code Object}.</p>
  *
  * <p>For example:</p>
  * <pre class="code">

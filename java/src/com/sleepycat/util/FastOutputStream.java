@@ -123,18 +123,20 @@ public class FastOutputStream extends OutputStream {
         len = 0;
     }
 
-    public void write(int b) throws IOException {
+    @Override
+    public void write(int b) {
 
         writeFast(b);
     }
 
-    public void write(byte[] fromBuf) throws IOException {
+    @Override
+    public void write(byte[] fromBuf) {
 
         writeFast(fromBuf);
     }
 
-    public void write(byte[] fromBuf, int offset, int length)
-        throws IOException {
+    @Override
+    public void write(byte[] fromBuf, int offset, int length) {
 
         writeFast(fromBuf, offset, length);
     }
@@ -144,6 +146,7 @@ public class FastOutputStream extends OutputStream {
         out.write(buf, 0, len);
     }
 
+    @Override
     public String toString() {
 
         return new String(buf, 0, len);

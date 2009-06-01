@@ -9,7 +9,7 @@
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="rep.html" title="Chapter 11.  Berkeley DB Replication" />
     <link rel="prev" href="rep_app.html" title="Building replicated applications" />
-    <link rel="next" href="rep_base_meth.html" title="Base replication API" />
+    <link rel="next" href="rep_base_meth.html" title="Base API Methods" />
   </head>
   <body>
     <div class="navheader">
@@ -41,17 +41,17 @@ methods to configure Replication Manager, and then start it by calling
 <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>.  Once this initialization is complete, the
 application rarely needs to call any of these methods.  (A prime
 example of an exception to this rule would be the <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> method,
-if the application is doing <a class="xref" href="rep_mastersync.html" title="Synchronizing with a master">Synchronizing with a master</a>.)</p>
+if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" title="Delaying client synchronization">Delaying client synchronization</a>.)</p>
       <div class="variablelist">
         <dl>
           <dt>
             <span class="term">
-              <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_local_site()</a>
+              <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a>
             </span>
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_local_site()</a> method configures the TCP/IP address of
+            The <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a> method configures the TCP/IP address of
             the local site, by specifying the port number on which it is to
             listen for incoming connection requests.  This method must be
             called exactly once before calling <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>.
@@ -59,12 +59,12 @@ if the application is doing <a class="xref" href="rep_mastersync.html" title="Sy
           </dd>
           <dt>
             <span class="term">
-              <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_remote_site()</a>
+              <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a>
             </span>
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_remote_site()</a> method adds a remote site to the list
+            The <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a> method adds a remote site to the list
             of sites initially known by the local site.  The remote site is
             specified in terms of a TCP/IP network address: host name and
             port number.  This method may be called as many times as
@@ -86,18 +86,18 @@ if the application is doing <a class="xref" href="rep_mastersync.html" title="Sy
             behavior of the master with respect to acknowledgements for
             "permanent" messages, which implements the application's
             requirements for <a class="xref" href="rep_trans.html" title="Transactional guarantees">Transactional guarantees</a>.  The current implementation
-            requires all sites in the replication group configure the same
+            requires all sites in the replication group to configure the same
             acknowledgement policy.
         </p>
           </dd>
           <dt>
             <span class="term">
-              <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_nsites()</a>
+              <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a>
             </span>
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_nsites()</a> method tells Replication Manager the total
+            The <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a> method tells Replication Manager the total
             number of sites in the replication group.  This is usually
             necessary for proper operation of elections, and for counting
             message acknowledgements (depending on the acknowledgement
@@ -106,12 +106,12 @@ if the application is doing <a class="xref" href="rep_mastersync.html" title="Sy
           </dd>
           <dt>
             <span class="term">
-              <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a>
+              <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a>
             </span>
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a> method configures the local site's priority
+            The <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a> method configures the local site's priority
             for the purpose of elections.
         </p>
           </dd>
@@ -182,7 +182,7 @@ applications may also call the following methods, as needed:
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Base replication API</td>
+          <td width="40%" align="right" valign="top"> Base API Methods</td>
         </tr>
       </table>
     </div>

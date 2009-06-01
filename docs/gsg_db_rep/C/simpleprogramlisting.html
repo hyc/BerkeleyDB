@@ -113,7 +113,7 @@
                         include statements. 
                     </p>
         <pre class="programlisting">/*
- * File: simple_txn.c
+ * File: ex_rep_gsg_simple.c
  */
 
 #include &lt;stdlib.h&gt;
@@ -137,7 +137,7 @@ extern int getopt(int, char * const *, const char *);
         <pre class="programlisting">#define CACHESIZE   (10 * 1024 * 1024)
 #define DATABASE    "quote.db"
 
-const char *progname = "simple_txn";  </pre>
+const char *progname = "ex_rep_gsg_simple";  </pre>
         <p>
                 Then we perform a couple of forward declarations. The first
                 of these, <code class="function">create_env()</code> and
@@ -156,8 +156,7 @@ const char *progname = "simple_txn";  </pre>
                 used to display a database record once it has been retrieved from the
                 database.
             </p>
-        <pre class="programlisting">
-int create_env(const char *, DB_ENV **);
+        <pre class="programlisting">int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
 int doloop (DB_ENV *);
 int print_stocks(DBC *);  </pre>
@@ -303,7 +302,7 @@ create_env(const char *progname, DB_ENV **dbenvp)
                         applications. The open flags that we use are those
                         normally used for a transactional application.
                 </p>
-        <pre class="programlisting"> int
+        <pre class="programlisting">int
 env_init(DB_ENV *dbenv, const char *home)
 {
     u_int32_t flags;
@@ -502,10 +501,7 @@ doloop(DB_ENV *dbenv)
                         please see the <em class="citetitle">Getting Started with Berkeley DB</em>
                         guide.
                     </p>
-        <pre class="programlisting">/*
- * A function that takes a cursor and displays the entire
- * contents of the database to which the cursor belongs.
- */
+        <pre class="programlisting">/* Displays all stock quote information in the database. */
 int
 print_stocks(DB *dbp)
 {

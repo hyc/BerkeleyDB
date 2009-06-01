@@ -514,6 +514,9 @@
 /* Define to 1 if building on VxWorks. */
 /* #undef HAVE_VXWORKS */
 
+/* Define to 1 if the C++ wstring class is available. */
+/* #undef HAVE_WSTRING */
+
 /* Define to 1 if you have the `yield' function. */
 /* #undef HAVE_YIELD */
 

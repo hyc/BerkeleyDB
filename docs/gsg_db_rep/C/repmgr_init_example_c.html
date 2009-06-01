@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Adding the Replication Manager to simple_txn</title>
+    <title>Adding the Replication Manager to ex_rep_gsg_simple</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
@@ -16,7 +16,8 @@
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Adding the Replication Manager to
-                    <span>simple_txn</span>
+                    <span>ex_rep_gsg_simple</span>
+                    
                     
             </th>
         </tr>
@@ -33,7 +34,8 @@
         <div>
           <div>
             <h2 class="title" style="clear: both"><a id="repmgr_init_example_c"></a>Adding the Replication Manager to
-                    <span>simple_txn</span>
+                    <span>ex_rep_gsg_simple</span>
+                    
                     
             </h2>
           </div>
@@ -42,8 +44,9 @@
       <p>
                     We now use the methods described above to add partial
                     support to the 
-                    <code class="literal">simple_txn</code> 
-                     
+                    <span>ex_rep_gsg_simple</span>
+                    
+                    
                     example that we presented in 
                     <a class="xref" href="txnapp.html" title="Chapter 2. Transactional Application">Transactional Application</a>.
                     That is, in this section we will:
@@ -88,10 +91,10 @@
             </p>
       <p>
                     To begin, we copy the 
-                    <code class="literal">simple_txn</code> 
-                     
+                    <span>ex_rep_gsg_simple</span>
+                    
                     code to a new file called
-                    <code class="literal">rep_mgr_gsg.c</code>.
+                    <code class="literal">ex_rep_gsg_repmgr.c</code>.
 
                     <span>
                     We then make the corresponding change to the program name.
@@ -100,7 +103,7 @@
                     
             </p>
       <pre class="programlisting">/*
- <strong class="userinput"><code>* File: rep_mgr_gsg.c</code></strong>
+ <strong class="userinput"><code>* File: ex_rep_gsg_repmgr.c</code></strong>
  */
 
 #include &lt;stdlib.h&gt;
@@ -118,7 +121,7 @@ extern int getopt(int, char * const *, const char *);
 #define CACHESIZE   (10 * 1024 * 1024)
 #define DATABASE    "quote.db"
 
-const char *progname = <strong class="userinput"><code>"rep_mgr_gsg";</code></strong>
+const char *progname = <strong class="userinput"><code>"ex_rep_gsg_repmgr";</code></strong>
 
 int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
@@ -165,20 +168,21 @@ int print_stocks(DBC *); </pre>
 static void
 usage()
 {
-    fprintf(stderr, "usage: %s ", progname);
-    fprintf(stderr, "-h home <strong class="userinput"><code>-l host:port [-r host:port]</code></strong>\n");
-    <strong class="userinput"><code>fprintf(stderr, "\t\t[-p priority]\n");</code></strong>
-    fprintf(stderr, "where:\n");
-    fprintf(stderr, "\t-h identifies the environment home directory\n");
-    <strong class="userinput"><code>fprintf(stderr, "\t-r identifies another site participating in "); 
-    fprintf(stderr, "this replication group\n");
-    fprintf(stderr, "\t-l identifies the host and port used by this ");
-    fprintf(stderr, "site (required).\n");
-    fprintf(stderr, "\t-n identifies the number of sites in this ");
-    fprintf(stderr, "replication group (required).\n");
-    fprintf(stderr, "\t-p identifies the election priority used by ");
-    fprintf(stderr, "this replica.\n");</code></strong>
-    exit(EXIT_FAILURE);
+  fprintf(stderr, "usage: %s ", progname);
+  fprintf(stderr, "-h home <strong class="userinput"><code>-l host:port -n nsites</code></strong>\n");
+  <strong class="userinput"><code>fprintf(stderr, "\t\t[-r host:port][-p priority]\n");
+  fprintf(stderr, "where:\n");
+  fprintf(stderr, "\t-h identifies the environment home directory ");
+  fprintf(stderr, "(required).\n");
+  fprintf(stderr, "\t-l identifies the host and port used by this ");
+  fprintf(stderr, "site (required).\n");
+  fprintf(stderr, "\t-n identifies the number of sites in this ");
+  fprintf(stderr, "replication group (required).\n");
+  fprintf(stderr, "\t-r identifies another site participating in ");
+  fprintf(stderr, "this replication group\n");
+  fprintf(stderr, "\t-p identifies the election priority used by ");
+  fprintf(stderr, "this replica.\n");</code></strong>
+  exit(EXIT_FAILURE);
 } </pre>
       <p>
         Now we can begin working on our <code class="literal">main()</code> function.
@@ -225,7 +229,7 @@ main(int argc, char *argv[])
         configure the application's election priority if necessary.
 </p>
       <pre class="programlisting">    /* Collect the command line options */
-    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>m:o:p:</code></strong>")) != EOF)
+    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>l:n:p:r:</code></strong>")) != EOF)
         switch (ch) {
         case 'h':
             home = optarg;
@@ -238,12 +242,24 @@ main(int argc, char *argv[])
                 goto err;
             }
             port = (unsigned short)atoi(portstr);
-            if (dbenv-&gt;repmgr_set_local_site(dbenv, host, port, 0) != 0) {
+            if (dbenv-&gt;repmgr_set_local_site(dbenv, host, port, 0) 
+                                                              != 0) {
                 fprintf(stderr,
                     "Could not set local address %s.\n", host);
                 goto err;
             }
             local_is_set = 1;
+            break;
+        /* Set the number of sites in this replication group */
+        case 'n':
+            totalsites = atoi(optarg);
+            if ((ret = dbenv-&gt;rep_set_nsites(dbenv, totalsites)) 
+              != 0)
+                dbenv-&gt;err(dbenv, ret, "set_nsites");
+            break;
+        /* Set this replica's election priority */
+        case 'p':
+            dbenv-&gt;rep_set_priority(dbenv, atoi(optarg));
             break;
         /* Identify another site in the replication group */
         case 'r':
@@ -259,17 +275,7 @@ main(int argc, char *argv[])
                     "Could not add site %s.\n", host);
                 goto err;
             }
-            break;
-        /* Set the number of sites in this replication group */
-        case 'n':
-            totalsites = atoi(optarg);
-            if ((ret = dbenv-&gt;rep_set_nsites(dbenv, totalsites)) != 0)
-                dbenv-&gt;err(dbenv, ret, "set_nsites");
-            break;
-        /* Set this replica's election priority */
-        case 'p':
-            dbenv-&gt;rep_set_priority(dbenv, atoi(optarg));
-            break; </code></strong>
+            break;</code></strong>
         case '?':
         default:
             usage();
@@ -328,7 +334,7 @@ err: if (dbenv != NULL)
             our environment for threaded usage. For this reason, we also
             need the <code class="literal">DB_THREAD</code> flag.
     </p>
-      <pre class="programlisting"> int
+      <pre class="programlisting">int
 env_init(DB_ENV *dbenv, const char *home)
 {
     u_int32_t flags;
@@ -341,10 +347,10 @@ env_init(DB_ENV *dbenv, const char *home)
             DB_INIT_LOCK | 
             DB_INIT_LOG | 
             DB_INIT_MPOOL |
+            <strong class="userinput"><code>DB_INIT_REP |</code></strong>
             DB_INIT_TXN | 
-            <strong class="userinput"><code>DB_INIT_REP |
-            DB_THREAD |</code></strong>
-            DB_RECOVER;
+            DB_RECOVER <strong class="userinput"><code>|
+            DB_THREAD;</code></strong>
     if ((ret = dbenv-&gt;open(dbenv, home, flags, 0)) != 0)
         dbenv-&gt;err(dbenv, ret, "can't open environment");
     return (ret);

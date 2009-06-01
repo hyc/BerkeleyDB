@@ -36,7 +36,7 @@ final class StoredMapEntry extends MapEntryParameter {
             if (coll.view.dupsAllowed) {
                 throw new IllegalStateException("May not insert duplicates");
             }
-            oldValue = coll.put(getKey(), newValue);
+            oldValue = coll.putKeyValue(getKey(), newValue);
         }
         setValueInternal(newValue);
         return oldValue;

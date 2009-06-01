@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>berkdb open</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB TCL API Reference" />
     <link rel="up" href="tclapi.html" title="Chapter 1.  Berkeley DB Tcl APIs" />
@@ -559,12 +559,12 @@
                  transaction protected because it involves filesystem operations that
                  are not part of the Berkeley DB transaction methodology.</strong></span>
                  For this reason, if a temporary database is used to hold the records,
-                 it is possible to lose the contents of the <span class="bold"><strong>-file</strong></span> file, for example, if the system crashes
+                 it is possible to lose the contents of the <span class="bold"><strong>-source</strong></span> file, for example, if the system crashes
                  at the right instant.  If a file is used to hold the database, that
                  is, a filename was specified as the <span class="bold"><strong>file</strong></span> argument to <span class="bold"><strong>berkdb
                  open</strong></span>, normal database recovery on that file can be used to
                  prevent information loss, although it is still possible that the
-                 contents of <span class="bold"><strong>-source</strong></span> will be lost if
+                 contents of <span class="bold"><strong>-source</strong></span> file will be lost if
                  the system crashes.
             </p>
             <p>
@@ -578,7 +578,7 @@
                  write the changes to the backing source file using either the
                  <span class="emphasis"><em>db</em></span> <span class="bold"><strong>close</strong></span> or
                  <span class="emphasis"><em>db</em></span> <span class="bold"><strong>sync</strong></span> commands
-                 will fail, of course. Specify the <span class="bold"><strong>-nosync</strong></span> argument to the <span class="emphasis"><em>db</em></span>
+                 will fail, of course. Specifying the <span class="bold"><strong>-nosync</strong></span> argument to the <span class="emphasis"><em>db</em></span>
                  <span class="bold"><strong>close</strong></span> command will stop it from
                  attempting to write the changes to the backing file; instead, they
                  will be silently discarded.

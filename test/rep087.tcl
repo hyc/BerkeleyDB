@@ -18,12 +18,15 @@ proc rep087 { method { niter 200 } { tnum "087" } args } {
 		return
 	}
 
-	# Run for btree and queue only.
+	# Run for btree and queue only.  Since this is a NIMDB test, 
+	# explicitly exclude queueext. 
 	if { $checking_valid_methods } {
 		set test_methods {}
 		foreach method $valid_methods {
 			if { [is_btree $method] == 1 || [is_queue $method] == 1 } {
-				lappend test_methods $method
+				if { [is_queueext $method] == 0 } {	
+					lappend test_methods $method
+				}
 			}
 		}
 		return $test_methods

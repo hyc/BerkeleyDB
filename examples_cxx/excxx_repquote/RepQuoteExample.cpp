@@ -93,7 +93,7 @@ typedef struct {
 	bool is_master;
 } APP_DATA;
 
-static void log(char *);
+static void log(const char *);
 void *checkpoint_thread (void *);
 void *log_archive_thread (void *);
 
@@ -413,7 +413,7 @@ void RepQuoteExample::prompt() {
 	cout << "> " << flush;
 }
 
-void log(char *msg) {
+void log(const char *msg) {
 	cerr << msg << endl;
 }
 

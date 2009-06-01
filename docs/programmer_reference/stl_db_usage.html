@@ -37,35 +37,35 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_db_usage.html#id1591768">
+              <a href="stl_db_usage.html#id1593742">
 Registering Database and Environment Handles
 </a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_db_usage.html#id1591634">
+              <a href="stl_db_usage.html#id1593792">
 		Truncate Requirement
 	</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_db_usage.html#id1591720">
+              <a href="stl_db_usage.html#id1593605">
 	Auto Commit Support
 </a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_db_usage.html#id1591734">
+              <a href="stl_db_usage.html#id1593693">
 	Database and Environment Identity Checks
 </a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_db_usage.html#id1591729">
+              <a href="stl_db_usage.html#id1593702">
 Products, Constructors and Configurations
 </a>
             </span>
@@ -76,7 +76,7 @@ Products, Constructors and Configurations
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1591768"></a>
+              <h3 class="title"><a id="id1593742"></a>
 Registering Database and Environment Handles
 </h3>
             </div>
@@ -115,7 +115,7 @@ in the open_db/open_env functions. Other threads should register each handle the
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1591634"></a>
+              <h3 class="title"><a id="id1593792"></a>
 		Truncate Requirement
 	</h3>
             </div>
@@ -163,7 +163,7 @@ remove all key/data pairs some of which may be locked by other cursors.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1591720"></a>
+              <h3 class="title"><a id="id1593605"></a>
 	Auto Commit Support
 </h3>
             </div>
@@ -171,7 +171,7 @@ remove all key/data pairs some of which may be locked by other cursors.
         </div>
         <p>
 
-dbstl supports auto commit operations in its containers. When you create a Db or DbEnv object with 
+Dbstl supports auto commit operations in its containers. When you create a Db or DbEnv object with 
 DB_AUTO_COMMIT specified in DbEnv::open or Db::open, the dbstl container 
 created using the Db/DbEnv handles will support auto commit. 
 </p>
@@ -179,7 +179,7 @@ created using the Db/DbEnv handles will support auto commit.
 
 But only a subset of all a container's methods can be 
 auto commit because many of them require an iterator/cursor opened and passed in, 
-or returns an iterator/cursor, and in these cases, the operation has to be in a 
+or returns an iterator/cursor, and in these cases, the operation has to be in an
 external transactional context, can't support auto commit. 
 
 The dbstl API documentation will document a method as supporting auto commit transactions if it does.
@@ -189,7 +189,7 @@ The dbstl API documentation will document a method as supporting auto commit tra
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1591734"></a>
+              <h3 class="title"><a id="id1593693"></a>
 	Database and Environment Identity Checks
 </h3>
             </div>
@@ -215,7 +215,7 @@ opened in two different environments, which won't harm in any way.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1591729"></a>
+              <h3 class="title"><a id="id1593702"></a>
 Products, Constructors and Configurations
 </h3>
             </div>
@@ -226,7 +226,7 @@ You are allowed to use dbstl with Berkeley DB DS/CDS/TDS/HA
 products, and make full configurations to them. dbstl is supposed to be 
 an interface to Berkeley DB core, so all needed configurations are done 
 via Berkeley DB's create/open/set_flags/set_*** APIs, such as the key 
-compare function, hash function, the DB_AUTOCOMMIT flag, etc. 
+compare function, hash function, the DB_AUTO_COMMIT flag, etc. 
 
 </p>
         <p>
@@ -234,7 +234,7 @@ As a result, the constructors of
 dbstl containers are different from those of C++ STL because no 
 configurations are supposed to be done via the constructors---there are 
 no allocators needed; key compare/hash functions are set via Berkeley DB 
-APIs---dbstl containers' constructors accepts already opened and 
+APIs---dbstl containers' constructors accept already opened and 
 well configured env/db handles, and provide functions to retrieve some 
 of the configuration such as key_compare/hash function, which only exist 
 to conform to C++ STL specifications.  

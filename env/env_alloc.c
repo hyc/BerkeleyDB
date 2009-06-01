@@ -76,9 +76,10 @@ typedef struct __alloc_element {
 
 	/*
 	 * The "len" field is the total length of the chunk, not the size
-	 * available to the caller.
+	 * available to the caller.  Use a uintmax_t to guarantee that the
+	 * size of this struct will be aligned correctly.
 	 */
-	size_t len;				/* Chunk length */
+	uintmax_t len;				/* Chunk length */
 
 	/*
 	 * The "ulen" field is the length returned to the caller.
@@ -222,15 +223,18 @@ __env_alloc(infop, len, retp)
 	 *
 	 * In a heap-backed environment, memory is laid out as follows:
 	 *
-	 * { size_t total-length } { user-memory } { guard-byte }
+	 * { uintmax_t total-length } { user-memory } { guard-byte }
 	 */
 	if (F_ISSET(env, ENV_PRIVATE)) {
 		/* Check if we're over the limit. */
 		if (infop->allocated >= infop->max_alloc)
 			return (ENOMEM);
 
-		/* We need an additional size_t to hold the length. */
-		len += sizeof(size_t);
+		/*
+		 * We need an additional uintmax_t to hold the length (and
+		 * keep the buffer aligned on 32-bit systems).
+		 */
+		len += sizeof(uintmax_t);
 
 #ifdef DIAGNOSTIC
 		/* Plus one byte for the guard byte. */
@@ -241,11 +245,11 @@ __env_alloc(infop, len, retp)
 			return (ret);
 		infop->allocated += len;
 
-		*(size_t *)p = len;
+		*(uintmax_t *)p = len;
 #ifdef DIAGNOSTIC
 		p[len - 1] = GUARD_BYTE;
 #endif
-		*(void **)retp = p + sizeof(size_t);
+		*(void **)retp = p + sizeof(uintmax_t);
 		return (0);
 	}
 
@@ -359,8 +363,8 @@ __env_alloc_free(infop, ptr)
 	/* In a private region, we call free. */
 	if (F_ISSET(env, ENV_PRIVATE)) {
 		/* Find the start of the memory chunk and its length. */
-		p = (u_int8_t *)((size_t *)ptr - 1);
-		len = *(size_t *)p;
+		p = (u_int8_t *)((uintmax_t *)ptr - 1);
+		len = (size_t)*(uintmax_t *)p;
 
 		infop->allocated -= len;
 

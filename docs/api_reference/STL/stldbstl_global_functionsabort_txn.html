@@ -4,10 +4,10 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>abort_txn</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="up" href="dbstl_global_functions.html" title="Chapter 1.  The dbstl_global_functions Class" />
+    <link rel="up" href="dbstl_global_functions.html" title="Chapter 1.  dbstl global public functions" />
     <link rel="prev" href="stldbstl_global_functionscommit_txn.html" title="commit_txn" />
     <link rel="next" href="stldbstl_global_functionscurrent_txn.html" title="current_txn" />
   </head>
@@ -22,7 +22,7 @@ abort_txn
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldbstl_global_functionscommit_txn.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 1. 
- The dbstl_global_functions Class</th>
+ dbstl global public functions  </th>
           <td width="20%" align="right"> <a accesskey="n" href="stldbstl_global_functionscurrent_txn.html">Next</a></td>
         </tr>
       </table>
@@ -59,7 +59,7 @@ Function Details</h3>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551122"></a>
+                <h4 class="title"><a id="id1547525"></a>
 Parameters</h4>
               </div>
             </div>
@@ -68,7 +68,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1550968"></a>
+                  <h5 class="title"><a id="id1547433"></a>
  env </h5>
                 </div>
               </div>
@@ -80,7 +80,7 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551217"></a>
+                <h4 class="title"><a id="id1547619"></a>
 See Also</h4>
               </div>
             </div>
@@ -104,7 +104,7 @@ See Also</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1550824"></a>
+                <h4 class="title"><a id="id1547407"></a>
 Parameters</h4>
               </div>
             </div>
@@ -113,7 +113,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1550976"></a>
+                  <h5 class="title"><a id="id1547450"></a>
  txn </h5>
                 </div>
               </div>
@@ -124,7 +124,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1549273"></a>
+                  <h5 class="title"><a id="id1547506"></a>
  env </h5>
                 </div>
               </div>
@@ -136,7 +136,7 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551070"></a>
+                <h4 class="title"><a id="id1547669"></a>
 See Also</h4>
               </div>
             </div>
@@ -144,106 +144,6 @@ See Also</h4>
           <p>
     </p>
           <p><a class="link" href="stldbstl_global_functionsabort_txn.html" title="abort_txn">abort_txn(DbEnv *)</a>
-; </p>
-          <p>   </p>
-        </div>
-        <pre class="programlisting">
- void abort_txn(DbEnv *env,
-    DbTxn *txn)
- </pre>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage"></div>
-          <p>Abort specified transaction "txn" and all its child transactions. </p>
-          <p>That is, "txn" can be a parent transaction of a nested transaction group. </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1549774"></a>
-Parameters</h4>
-              </div>
-            </div>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1551312"></a>
- txn </h5>
-                </div>
-              </div>
-            </div>
-            <p>The transaction to abort, can be a parent transaction of a nested transaction group, all child transactions of it will be aborted. </p>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1549314"></a>
- env </h5>
-                </div>
-              </div>
-            </div>
-            <p>The environment where txn is started from. </p>
-          </div>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1550828"></a>
-See Also</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-    </p>
-          <p><a class="link" href="stldbstl_global_functionsabort_txn.html" title="abort_txn">abort_txn(DbEnv *)</a>
-; </p>
-          <p>   </p>
-        </div>
-        <pre class="programlisting">
- void abort_txn(DbEnv *env)
- </pre>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage"></div>
-          <p>Abort current transaction of environment "env". </p>
-          <p>This function is called by dbstl user to abort an outside explicit transaction. </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1550674"></a>
-Parameters</h4>
-              </div>
-            </div>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1551169"></a>
- env </h5>
-                </div>
-              </div>
-            </div>
-            <p>The environment whose current transaction is to be aborted. </p>
-          </div>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1550799"></a>
-See Also</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-    </p>
-          <p><a class="link" href="stldbstl_global_functionsabort_txn.html" title="abort_txn">abort_txn(DbEnv *, DbTxn *)</a>
 ; </p>
           <p>   </p>
         </div>
@@ -252,7 +152,7 @@ See Also</h4>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1551321"></a>
+              <h3 class="title"><a id="id1547512"></a>
 Group: Transaction control global functions.</h3>
             </div>
           </div>
@@ -264,13 +164,13 @@ Group: Transaction control global functions.</h3>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1550565"></a>
+              <h3 class="title"><a id="id1547667"></a>
 Class</h3>
             </div>
           </div>
         </div>
         <p>
-  <a class="link" href="dbstl_global_functions.html" title="Chapter 1.  The dbstl_global_functions Class">
+  <a class="link" href="dbstl_global_functions.html" title="Chapter 1.  dbstl global public functions">
   dbstl_global_functions</a>
      </p>
       </div>

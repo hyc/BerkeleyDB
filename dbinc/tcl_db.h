@@ -208,8 +208,8 @@ extern DBTCL_GLOBAL __dbtcl_global;
  * returned by DB.
  */
 #define	MAKE_STAT_STRLIST(s,s1) do {					\
-	result = _SetListElem(interp, res, (s), strlen(s),		\
-	    (s1), strlen(s1));						\
+	result = _SetListElem(interp, res, (s), (u_int32_t)strlen(s),	\
+	    (s1), (u_int32_t)strlen(s1));				\
 	if (result != TCL_OK)						\
 		goto error;						\
 } while (0)

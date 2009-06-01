@@ -1791,7 +1791,12 @@ __bam_getbothc(dbc, data)
  * __bam_getlte --
  *	Search for the largest entry <= key/data - used by compression.
  *
- * Only works for a primary cursor, with no duplicates or sorted duplicates.
+ *	data == NULL indicates the DB_SET_LTE flag
+ *	data != NULL indicates the DB_GET_BOTH_LTE flag
+ *
+ *	Only works for a primary cursor - not an OPD cursor. Handles the
+ *	OPD manipulation as well - no need to return to the caller to
+ *	perform more OPD movements.
  */
 static int
 __bam_getlte(dbc, key, data)
@@ -1836,9 +1841,6 @@ __bam_getlte(dbc, key, data)
 		goto end;
 	}
 
-	if (data == NULL)
-		goto end;
-
 	if (__bam_isopd(dbc, &pgno)) {
 		/*
 		 * We want to do unusual things with off-page duplicates, so
@@ -1848,8 +1850,8 @@ __bam_getlte(dbc, key, data)
 			goto end;
 
 		/* Search for the correct duplicate */
-		ret = __bamc_search(
-		    cp->opd, PGNO_INVALID, data, DB_SET_RANGE, &exact);
+		ret = __bamc_search(cp->opd, PGNO_INVALID, data,
+			data == NULL ? DB_FIRST : DB_SET_RANGE, &exact);
 		if (ret == DB_NOTFOUND)
 			goto find_last_dup;
 		if (ret != 0)
@@ -1868,11 +1870,15 @@ __bam_getlte(dbc, key, data)
 			if (ret != 0)
 				goto end;
 
-			/* Check if we're still on the correct data */
-			if ((ret = __bam_cmp(dbc, data, ocp->page,
-			    ocp->indx, dbp->dup_compare, &exact)) != 0)
-				goto end;
-			exact = (exact == 0);
+			if (data != NULL) {
+				/* Check if we're still on the correct data */
+				if ((ret = __bam_cmp(
+					    dbc, data, ocp->page, ocp->indx,
+					    dbp->dup_compare, &exact)) != 0)
+					goto end;
+				exact = (exact == 0);
+			} else
+				exact = 1;
 		}
 
 		if (exact == 0) {
@@ -1885,7 +1891,7 @@ __bam_getlte(dbc, key, data)
 				ret = __bam_get_prev(dbc);
 			}
 		}
-	} else {
+	} else if(data != NULL) {
 		/*
 		 * If we got an exact match with on-page duplicates, we need to
 		 * search in them.

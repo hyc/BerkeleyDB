@@ -16,30 +16,6 @@
 static int __pgno_cmp __P((const void *, const void *));
 
 /*
- * __memp_bh_priority --
- *	Get the the aggregate priority of a chain of buffer headers.
- *
- * PUBLIC: u_int32_t __memp_bh_priority __P((BH *));
- */
-u_int32_t
-__memp_bh_priority(bhp)
-	BH *bhp;
-{
-	u_int32_t priority;
-
-	while (SH_CHAIN_HASNEXT(bhp, vc))
-		bhp = SH_CHAIN_NEXT(bhp, vc, __bh);
-
-	priority = bhp->priority;
-
-	while ((bhp = SH_CHAIN_PREV(bhp, vc, __bh)) != NULL)
-		if (bhp->priority < priority)
-			priority = bhp->priority;
-
-	return (priority);
-}
-
-/*
  * __memp_bh_settxn --
  *	Set the transaction that owns the given buffer.
  *

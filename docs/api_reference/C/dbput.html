@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>DB-&gt;put()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
@@ -62,7 +62,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1638545"></a>Parameters</h3>
+              <h3 class="title"><a id="id1641949"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -70,7 +70,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638579"></a>flags</h4>
+                <h4 class="title"><a id="id1641957"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -141,6 +141,35 @@ DB-&gt;put(DB *db,
 	         This enforcement of uniqueness of keys applies only to the primary key.  The behavior of insertions into secondary databases is not affected by the DB_NOOVERWRITE flag.  In particular, the insertion of a record that would result in the creation of a duplicate key in a secondary database that allows duplicates would not be prevented by the use of this flag.
             </p>
               </li>
+              <li>
+                <p>
+                  <code class="literal"><a id="put_DB_MULTIPLE"></a>DB_MULTIPLE</code>
+            </p>
+                <p>Put multiple data items using keys from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers and data values from the buffer to which the <span class="bold"><strong>data</strong></span> parameter refers.
+            </p>
+                <p>To put records in bulk with the btree or hash access methods, construct bulk buffers in the <span class="bold"><strong>key</strong></span> and <span class="bold"><strong>data</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_WRITE_INIT.html" title="DB_MULTIPLE_WRITE_INIT">DB_MULTIPLE_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_WRITE_NEXT.html" title="DB_MULTIPLE_WRITE_NEXT">the section called “DB_MULTIPLE_WRITE_NEXT”</a>.  To put records in bulk with the recno or hash access methods, construct bulk buffers in the <span class="bold"><strong>data</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> as before, but construct the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_NEXT.html" title="DB_MULTIPLE_RECNO_WRITE_NEXT">DB_MULTIPLE_RECNO_WRITE_NEXT</a> with a data size of zero.</p>
+                <p>A successful bulk operation is logically equivalent to a loop through each key/data pair, performing a <a class="xref" href="dbput.html" title="DB-&gt;put()">DB-&gt;put()</a> for each one.</p>
+                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
+
+	    </p>
+                <p>The <code class="literal">DB_MULTIPLE</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
+                <p>
+            </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal"><a id="put_DB_MULTIPLE_KEY"></a>DB_MULTIPLE_KEY</code>
+            </p>
+                <p>Put multiple data items using keys and data from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers.
+            </p>
+                <p>To put records in bulk with the btree or hash access methods, construct a single bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_WRITE_INIT.html" title="DB_MULTIPLE_WRITE_INIT">DB_MULTIPLE_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_KEY_WRITE_NEXT.html" title="DB_MULTIPLE_KEY_WRITE_NEXT">the section called “DB_MULTIPLE_KEY_WRITE_NEXT”</a>.  To put records in bulk with the recno or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_NEXT.html" title="DB_MULTIPLE_RECNO_WRITE_NEXT">DB_MULTIPLE_RECNO_WRITE_NEXT</a>.</p>
+                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
+
+            </p>
+                <p>The <code class="literal">DB_MULTIPLE_KEY</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
+                <p>
+            </p>
+              </li>
             </ul>
           </div>
         </div>
@@ -148,7 +177,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638741"></a>data</h4>
+                <h4 class="title"><a id="id1642104"></a>data</h4>
               </div>
             </div>
           </div>
@@ -160,7 +189,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638641"></a>key</h4>
+                <h4 class="title"><a id="id1642089"></a>key</h4>
               </div>
             </div>
           </div>
@@ -172,7 +201,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638833"></a>txnid</h4>
+                <h4 class="title"><a id="id1642185"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -193,7 +222,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1638570"></a>Errors</h3>
+              <h3 class="title"><a id="id1642071"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -209,7 +238,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638842"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id1642388"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -243,7 +272,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638874"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1642396"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -256,7 +285,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638976"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1642393"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -269,7 +298,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638662"></a> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1642864"></a> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -289,7 +318,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638743"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1642300"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -301,7 +330,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638608"></a>EACCES</h4>
+                <h4 class="title"><a id="id1642023"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -313,7 +342,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638731"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1642491"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -329,7 +358,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1638993"></a>ENOSPC</h4>
+                <h4 class="title"><a id="id1641929"></a>ENOSPC</h4>
               </div>
             </div>
           </div>
@@ -342,7 +371,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1638612"></a>Class</h3>
+              <h3 class="title"><a id="id1642249"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -354,7 +383,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1638619"></a>See Also</h3>
+              <h3 class="title"><a id="id1642049"></a>See Also</h3>
             </div>
           </div>
         </div>

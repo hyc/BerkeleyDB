@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>DB-&gt;cursor()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="dbc.html" title="Chapter 3.  The DBcursor Handle" />
@@ -58,7 +58,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1650703"></a>Parameters</h3>
+              <h3 class="title"><a id="id1654167"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1650564"></a>cursorp</h4>
+                <h4 class="title"><a id="id1654089"></a>cursorp</h4>
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1650568"></a>flags</h4>
+                <h4 class="title"><a id="id1654452"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -90,6 +90,21 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
+              <li>
+                <p>
+                  <code class="literal"><a id="cursor_DB_BULK"></a>DB_BULK</code>
+            </p>
+                <p>
+		 Configure a cursor to optimize for bulk operations.  Each
+		 successive operation on a cursor configured with this flag
+		 attempts to continue on the same database page as the previous
+		 operation, falling back to a search if a different page is
+		 required.  This avoids searching if there is a high degree of
+		 locality between cursor operations.  This flag is currently
+		 only effective with the btree access method: for other access
+		 methods it is ignored.
+            </p>
+              </li>
               <li>
                 <p>
                   <code class="literal"><a id="cursor_DB_READ_COMMITTED"></a>DB_READ_COMMITTED</code>
@@ -152,7 +167,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1650906"></a>txnid</h4>
+                <h4 class="title"><a id="id1654408"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -178,7 +193,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1650778"></a>Errors</h3>
+              <h3 class="title"><a id="id1654435"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -194,7 +209,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1628154"></a> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1631202"></a> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -213,7 +228,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1650880"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1654616"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -225,7 +240,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1651079"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1631218"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -238,7 +253,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1651024"></a>Class</h3>
+              <h3 class="title"><a id="id1654461"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -250,7 +265,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1650994"></a>See Also</h3>
+              <h3 class="title"><a id="id1654678"></a>See Also</h3>
             </div>
           </div>
         </div>

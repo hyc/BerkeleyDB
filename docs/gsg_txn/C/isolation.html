@@ -202,7 +202,7 @@
           </div>
         </div>
         <p>
-                You can configure your application to read data that has been modified but not yet
+                Berkeley DB allows you to configure your application to read data that has been modified but not yet
                 committed by another transaction; that is, dirty data.  When you do this, you 
                 may see a performance benefit by allowing your
                 application to not have to block waiting for write locks. On the other hand, the data that your
@@ -240,10 +240,7 @@
                             <span>
                                 Specify <code class="literal">DB_READ_UNCOMMITTED</code>
                                 when you create the transaction, 
-                                    <span>
-                                        open the cursor, or read a record from the database.
-                                    </span>
-                                    
+                                open the cursor, or read a record from the database.
                             </span>
                             
 

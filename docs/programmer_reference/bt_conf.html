@@ -352,8 +352,15 @@ err:	/* Close the cursor. */
     compression, call the <a href="../api_reference/C/dbset_bt_compress.html" class="olink">DB-&gt;set_bt_compress()</a> method and specify custom
     compression and decompression functions.  If <a href="../api_reference/C/dbset_bt_compress.html" class="olink">DB-&gt;set_bt_compress()</a> is
     called with NULL compression and decompression functions, Berkeley DB
-    will use its default functions instead.
+    will use its default compression functions.
 </p>
+        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+          <h3 class="title">Note</h3>
+          <p>
+        Compression only works with the Btree access method, and then only
+        so long as your database is not configured for unsorted duplicates.
+    </p>
+        </div>
         <p>
     The default compression function performs prefix compression on each
     key added to the database.  This means that, for a key
@@ -446,17 +453,14 @@ err:	/* Close the cursor. */
         compressed data cannot fit in the buffer, the compression function
         should store the amount of space needed in <a href="../api_reference/C/dbt.html" class="olink">DBT</a>'s
         <code class="literal">size</code> field and then return 
-        <code class="literal">DB_BUFFER_SMALL</code>. Multiple compressed key/data 
-        pairs will likely be written to the same buffer and the compression 
-        function should take steps to ensure it does not overwrite data.  
+        <code class="literal">DB_BUFFER_SMALL</code>. The application should then
+        attempt to store the record again. On the second attempt, the
+        compressed data buffer will be sized correctly by Berkeley DB.
     </p>
           <p>
-        ???Where does this initial buffer come from? Is it automagically
-        created by DB? What does the "Multiple compressed key/data pairs
-        ...." sentence mean, exactly? If ulen indicates the total size of
-        the compressed data buffer, then how can my custom callback know
-        how much of that buffer is available and where I should put
-        marshalled data in the buffer???
+        Multiple compressed key/data pairs will likely be written to the
+        same buffer and the compression function should take steps to
+        ensure it does not overwrite data.  
     </p>
           <p>
         The decompression function will likewise be passed five <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structures: 
@@ -491,22 +495,160 @@ err:	/* Close the cursor. */
         in one buffer.
     </p>
           <p>
-        ???Why is the compression of one record dependent upon the
-        compression of the preceding record? While this appears to be true
-        of the default compression scheme, I can think of no reason why it
-        must be true for custom compression schemes. Some clarification
-        seems in order here, remembering that this description is most
-        likely of interest for the fellow writing custom
-        compression/decompression.
-    </p>
-          <p>
         For example, the following code fragments illustrate the use of custom
-        compression routines by simulating compression using inverse
-        permutation:
+        compression routines. This code is actually a much simplified
+        example of the default compression provided by Berkeley DB. It does
+        simple prefix compression on the key part of the data.
     </p>
-          <pre class="programlisting">
-        ???Still developing this example???
-        </pre>
+          <pre class="programlisting">int compress(DB *dbp, const DBT *prevKey, const DBT *prevData, 
+        const DBT *key, const DBT *data, DBT *dest)
+{
+    u_int8_t *dest_data_ptr;
+    const u_int8_t *key_data, *prevKey_data;
+    size_t len, prefix, suffix;
+
+    key_data = (const u_int8_t*)key-&gt;data;
+    prevKey_data = (const u_int8_t*)prevKey-&gt;data;
+    len = key-&gt;size &gt; prevKey-&gt;size ? prevKey-&gt;size : key-&gt;size;
+    for (; len-- &amp;&amp; *key_data == *prevKey_data; ++key_data, 
+                                                ++prevKey_data)
+        continue;
+
+    prefix = (size_t)(key_data - (u_int8_t*)key-&gt;data);
+    suffix = key-&gt;size - prefix;
+
+    /* Check that we have enough space in dest */
+    dest-&gt;size = (u_int32_t)(__db_compress_count_int(prefix) +
+        __db_compress_count_int(suffix) +
+        __db_compress_count_int(data-&gt;size) + suffix + data-&gt;size);
+    if (dest-&gt;size &gt; dest-&gt;ulen)
+        return (DB_BUFFER_SMALL);
+
+    /* prefix length */
+    dest_data_ptr = (u_int8_t*)dest-&gt;data;
+    dest_data_ptr += __db_compress_int(dest_data_ptr, prefix);
+
+    /* suffix length */
+    dest_data_ptr += __db_compress_int(dest_data_ptr, suffix);
+
+    /* data length */
+    dest_data_ptr += __db_compress_int(dest_data_ptr, data-&gt;size);
+
+    /* suffix */
+    memcpy(dest_data_ptr, key_data, suffix);
+    dest_data_ptr += suffix;
+
+    /* data */
+    memcpy(dest_data_ptr, data-&gt;data, data-&gt;size);
+
+    return (0);
+} </pre>
+          <p>
+    The corresponding decompression routine, then, is:
+</p>
+          <pre class="programlisting">int decompress(DB *dbp, const DBT *prevKey, const DBT *prevData, 
+    DBT *compressed, DBT *destKey, DBT *destData)
+{
+    u_int8_t *comp_data, *dest_data;
+    u_int32_t prefix, suffix, size;
+
+    /* Unmarshal prefix, suffix and data length */
+    comp_data = (u_int8_t*)compressed-&gt;data;
+    size = __db_decompress_count_int(comp_data);
+    if (size &gt; compressed-&gt;size)
+        return (EINVAL);
+    comp_data += __db_decompress_int32(comp_data, &amp;prefix);
+
+    size += __db_decompress_count_int(comp_data);
+    if (size &gt; compressed-&gt;size)
+        return (EINVAL);
+    comp_data += __db_decompress_int32(comp_data, &amp;suffix);
+
+    size += __db_decompress_count_int(comp_data);
+    if (size &gt; compressed-&gt;size)
+        return (EINVAL);
+    comp_data += __db_decompress_int32(comp_data, &amp;destData-&gt;size);
+
+    /* Check destination lengths */
+    destKey-&gt;size = prefix + suffix;
+    if (destKey-&gt;size &gt; destKey-&gt;ulen || 
+            destData-&gt;size &gt; destData-&gt;ulen)
+        return (DB_BUFFER_SMALL);
+
+    /* Write the prefix */
+    if (prefix &gt; prevKey-&gt;size)
+        return (EINVAL);
+    dest_data = (u_int8_t*)destKey-&gt;data;
+    memcpy(dest_data, prevKey-&gt;data, prefix);
+    dest_data += prefix;
+
+    /* Write the suffix */
+    size += suffix;
+    if (size &gt; compressed-&gt;size)
+        return (EINVAL);
+    memcpy(dest_data, comp_data, suffix);
+    comp_data += suffix;
+
+    /* Write the data */
+    size += destData-&gt;size;
+    if (size &gt; compressed-&gt;size)
+        return (EINVAL);
+    memcpy(destData-&gt;data, comp_data, destData-&gt;size);
+    comp_data += destData-&gt;size;
+
+    /* Return bytes read */
+    compressed-&gt;size = 
+        (u_int32_t)(comp_data - (u_int8_t*)compressed-&gt;data);
+    return (0);
+} </pre>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="id1585197"></a>Programmer Notes</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+        As you use compression with your databases, be aware of the
+        following:
+    </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                Compression works by placing key/data pairs from a single
+                database page into a single block of compressed data. This is true
+                whether you use DB's default compression, or you write
+                your own compression. Because all of key/data data is
+                placed in a single block of memory, you cannot decompress
+                data unless you have decompressed everything that came
+                before it in the block. That is, you cannot decompress item
+                <span class="emphasis"><em>n</em></span> in the data block, unless you also
+                decompress items <span class="emphasis"><em>0</em></span> through
+                <span class="emphasis"><em>n-1</em></span>.
+            </p>
+              </li>
+              <li>
+                <p>
+                If you increase the minimum number of key/data pairs placed
+                on a Btree leaf page (using <a href="../api_reference/C/dbset_bt_minkey.html" class="olink">DB-&gt;set_bt_minkey()</a>), you will
+                decrease your seek times on a compressed database. However,
+                this will also decrease the effectiveness of the
+                compression.
+            </p>
+              </li>
+              <li>
+                <p>
+                Compressed databases are fastest if bulk load is used to
+                add data to them. See 
+                <a class="xref" href="am_misc_bulk.html" title="Retrieving and updating records in bulk">Retrieving and updating records in bulk</a>
+                for information on using bulk load.
+            </p>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

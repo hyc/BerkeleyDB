@@ -15,7 +15,7 @@ static void __os_guard __P((ENV *));
 
 typedef union {
 	size_t size;
-	double align;
+	uintmax_t align;
 } db_allocinfo_t;
 #endif
 

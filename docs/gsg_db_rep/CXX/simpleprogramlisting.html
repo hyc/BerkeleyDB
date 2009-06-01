@@ -45,7 +45,7 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="simpleprogramlisting.html#repmgr_cxx">Class: RepMgrGSG</a>
+              <a href="simpleprogramlisting.html#repmgr_cxx">Class: excxx_repquote_gsg_simple</a>
             </span>
           </dt>
           <dt>
@@ -60,19 +60,19 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="simpleprogramlisting.html#repmgr_init_cxx">Method: RepMgrGSG::init()</a>
+              <a href="simpleprogramlisting.html#repmgr_init_cxx">Method: SimpleTxn::init()</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="simpleprogramlisting.html#doloop_cxx">Method: RepMgrGSG::doloop()</a>
+              <a href="simpleprogramlisting.html#doloop_cxx">Method: SimpleTxn::doloop()</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
               <a href="simpleprogramlisting.html#printstocks_c">
                             
-                            <span>Method: RepMgrGSG::print_stocks()</span>
+                            <span>Method: SimpleTxn::print_stocks()</span>
                             
                     </a>
             </span>
@@ -167,17 +167,17 @@ RepConfigInfo::~RepConfigInfo()
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="repmgr_cxx"></a>Class: RepMgrGSG</h3>
+              <h3 class="title"><a id="repmgr_cxx"></a>Class: excxx_repquote_gsg_simple</h3>
             </div>
           </div>
         </div>
         <p>
                             Our transactional example will 
                             instantiate a class,
-                            <code class="classname">RepMgrGSG</code>, that performs
+                            <code class="classname">SimpleTxn</code>, that performs
                             all our work for us. Before we implement our
                             <code class="function">main()</code> function, we show
-                            the <code class="classname">RepMgrGSG</code> class
+                            the <code class="classname">SimpleTxn</code> class
                             declaration.
                     </p>
         <p>
@@ -199,12 +199,7 @@ using std::flush;
 #define CACHESIZE   (10 * 1024 * 1024)
 #define DATABASE    "quote.db"
 
-const char *progname = "SimpleTxn"; 
-
-#define CACHESIZE   (10 * 1024 * 1024)
-#define DATABASE    "quote.db"
-
-const char *progname = "SimpleTxn";
+const char *progname = "excxx_reqquote_gsg_simple"; 
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -219,13 +214,13 @@ extern "C" {
 #include &lt;errno.h&gt;
 #endif  </pre>
         <p>
-        And then we define our <code class="classname">RepMgrGSG</code> class:
+        And then we define our <code class="classname">SimpleTxn</code> class:
 </p>
-        <pre class="programlisting">class RepMgrGSG
+        <pre class="programlisting">class SimpleTxn
 {
 public:
     // Constructor.
-    RepMgrGSG();
+    SimpleTxn();
     // Initialization method. Creates and opens our environment handle.
     int init(RepConfigInfo* config);
     // The doloop is where all the work is performed.
@@ -235,8 +230,8 @@ public:
 
 private:
     // disable copy constructor.
-    RepMgrGSG(const RepMgrGSG &amp;);
-    void operator = (const RepMgrGSG &amp;);
+    SimpleTxn(const SimpleTxn &amp;);
+    void operator = (const SimpleTxn &amp;);
 
     // internal data members.
     RepConfigInfo   *app_config;
@@ -248,7 +243,7 @@ private:
 };  </pre>
         <p>
             Note that we show the implementation of the various
-            <code class="classname">RepMgrGSG</code> methods later in this section.
+            <code class="classname">SimpleTxn</code> methods later in this section.
     </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -286,7 +281,7 @@ private:
                             Now we provide our <code class="function">main()</code>
                             function. This is a trivial function whose only
                             job is to collect command line information,
-                            then instantiate a <code class="classname">RepMgrGSG</code>
+                            then instantiate a <code class="classname">SimpleTxn</code>
                             object, run it, then terminate it.
                     </p>
         <p>
@@ -322,17 +317,17 @@ private:
     if (config.home == NULL)
         usage();  </pre>
         <p>
-        Now we instantiate and initialize our <code class="classname">RepMgrGSG</code>
+        Now we instantiate and initialize our <code class="classname">SimpleTxn</code>
         class, which is what is responsible for doing all our real work.
-        The <code class="methodname">RepMgrGSG::init()</code> method creates and
+        The <code class="methodname">SimpleTxn::init()</code> method creates and
         opens our environment handle.
 </p>
-        <pre class="programlisting">    RepMgrGSG runner;
+        <pre class="programlisting">    SimpleTxn runner;
     try {
         if((ret = runner.init(&amp;config)) != 0)
             goto err;  </pre>
         <p>
-            Then we call the <code class="methodname">RepMgrGSG::doloop()</code>
+            Then we call the <code class="methodname">SimpleTxn::doloop()</code>
             method, which is where the actual transactional work is
             performed for this application.
     </p>
@@ -354,12 +349,12 @@ err:
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="repmgr_init_cxx"></a>Method: RepMgrGSG::init()</h3>
+              <h3 class="title"><a id="repmgr_init_cxx"></a>Method: SimpleTxn::init()</h3>
             </div>
           </div>
         </div>
         <p>
-                        The <code class="methodname">RepMgrGSG::init()</code>
+                        The <code class="methodname">SimpleTxn::init()</code>
                         method is used to create and open our environment handle.
                         For readers familiar with writing transactional
                         DB applications, there should be no surprises
@@ -371,7 +366,7 @@ err:
                         implementation, which is only used to initialize a
                         few variables:
                 </p>
-        <pre class="programlisting">RepMgrGSG::RepMgrGSG() : app_config(0), dbenv(0)
+        <pre class="programlisting">SimpleTxn::SimpleTxn() : app_config(0), dbenv(0)
 {
 }  </pre>
         <p>
@@ -381,7 +376,7 @@ err:
         our transactional commits to become non-durable, which is something
         that we are doing only because of the nature of our example.
 </p>
-        <pre class="programlisting">int RepMgrGSG::init(RepConfigInfo *config)
+        <pre class="programlisting">int SimpleTxn::init(RepConfigInfo *config)
 {
     int ret = 0;
 
@@ -417,12 +412,12 @@ err:
     return ret;
 }  </pre>
         <p>
-        Finally, we present the <code class="methodname">RepMgrGSG::terminate()</code>
+        Finally, we present the <code class="methodname">SimpleTxn::terminate()</code>
         method here. All this does is close the environment handle. Again,
         there should be no surprises here, but we provide the
         implementation for the sake of completeness anyway.
 </p>
-        <pre class="programlisting">int RepMgrGSG::terminate()
+        <pre class="programlisting">int SimpleTxn::terminate()
 {
     try {
         dbenv.close(0);
@@ -436,7 +431,7 @@ err:
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="doloop_cxx"></a>Method: RepMgrGSG::doloop()</h3>
+              <h3 class="title"><a id="doloop_cxx"></a>Method: SimpleTxn::doloop()</h3>
             </div>
           </div>
         </div>
@@ -461,7 +456,7 @@ err:
                         and return codes. We also initialize all of this.
                     </p>
         <pre class="programlisting">#define BUFSIZE 1024
-int RepMgrGSG::doloop()
+int SimpleTxn::doloop()
 {
     Db *dbp;
     Dbt key, data;
@@ -587,7 +582,7 @@ int RepMgrGSG::doloop()
             <div>
               <h3 class="title"><a id="printstocks_c"></a>
                             
-                            <span>Method: RepMgrGSG::print_stocks()</span>
+                            <span>Method: SimpleTxn::print_stocks()</span>
                             
                     </h3>
             </div>
@@ -609,7 +604,7 @@ int RepMgrGSG::doloop()
                         please see the <em class="citetitle">Getting Started with Berkeley DB</em>
                         guide.
                     </p>
-        <pre class="programlisting">int RepMgrGSG::print_stocks(Db *dbp)
+        <pre class="programlisting">int SimpleTxn::print_stocks(Db *dbp)
 {
     Dbc *dbc;
     Dbt key, data;

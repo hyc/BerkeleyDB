@@ -37,12 +37,12 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_container_specific.html#id1592151">db_vector Specific Notes</a>
+              <a href="stl_container_specific.html#id1594121">db_vector Specific Notes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_container_specific.html#id1592795">Associative Container Specific Notes</a>
+              <a href="stl_container_specific.html#id1595098">Associative Container Specific Notes</a>
             </span>
           </dt>
         </dl>
@@ -51,62 +51,60 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592151"></a>db_vector Specific Notes</h3>
+              <h3 class="title"><a id="id1594121"></a>db_vector Specific Notes</h3>
             </div>
           </div>
         </div>
         <div class="itemizedlist">
           <ul type="disc">
             <li>
-You must share the same database handle among all threads of the same process to 
-create container objects backed by the same database, and thus set DB_THREAD
-to all database open calls.
-
-		</li>
-            <li>
               <p>
-set DB_RENUMBER flag to the db handle if you want db_vector&lt;&gt; to work
-like std::vector or std::deque; Don't set DB_RENUMBER if you want db_vector&lt;&gt; to work
-like std::list so that it is faster. 
+Set DB_RENUMBER flag in the database handle if you want
+db_vector&lt;&gt; to work like std::vector or std::deque.  Don't set
+DB_RENUMBER if you want db_vector&lt;&gt; to work like std::list so
+that it is faster.
 </p>
               <p>
-For example, to construct a queue/stack object, you only need a db_vector&lt;&gt; object 
-whose database handle is not set the DB_RENUMBER. Of course if the db handle has DB_RENUMBER 
-it still works for this kind of scenario, but it is not as fast. 
+For example, to construct a fast std::queue/std::stack object, 
+you only need a db_vector&lt;&gt; 
+object whose database handle does not have DB_RENUMBER set. 
+Of course, if the database handle has DB_RENUMBER set, it
+still works for this kind of scenario, but it is not as fast.
 </p>
               <p>
-db_vector will not check whether DB_RENUMBER is set or not, if you didn't set it 
-and expect db_vector&lt;&gt; to work like std::vector&lt;&gt;/std::deque&lt;&gt;, you will get wrong 
-results in its operator[], because the indices are not maintained any more.
+Db_vector will not check whether DB_RENUMBER is set.  If you don't set
+it, db_vector&lt;&gt; won't work like
+std::vector&lt;&gt;/std::deque&lt;&gt; with regard to operator[],
+because the indices are not maintained in that case.
 </p>
               <p>
-There is example code to use this feature in TestVector::test_queue_stack method 
-of dbstl test suite.
+There is example code showing how to use this feature in
+TestVector::test_queue_stack method of dbstl test suite.
 </p>
             </li>
             <li>
               <p>
-Just as std::vector, 
-inserting/deleting in the middle of the sequence is slower than doing 
-the same action at the end of the sequence because the underlying 
-DB_RECNO type of db with DB_RENUMBER flag set works slow when 
-inserting/deleting in middle or head --- it has to update all those 
-records's index after the inserted/deleted one. If you don't need to 
-keep the index renumbered on insert/delete, you can use db_map instead. 
+Just as in std::vector, inserting/deleting in the middle of a
+db_vector is slower than doing the same action at the end of the
+sequence because the underlying DB_RECNO type of db (with DB_RENUMBER
+flag set) is relatively slow when inserting/deleting in middle or head
+--- it has to update the index numbers of all the records following
+the inserted/deleted one. If you don't need to keep the index
+ordered on insert/delete, you can use db_map instead.
 
 </p>
               <p>
-db_vector also contains methods of std::list and std::deque, 
-including std::list&lt;&gt;'s unique methods including remove, remove_if, unique,
+Db_vector also contains methods of std::list and std::deque, 
+including std::list&lt;&gt;'s unique methods remove, remove_if, unique,
 merge, sort, reverse, and splice, with identical semantics/behaviors,
-though pushing/deleting front is slow for std::deque equivalent 
+although pushing/deleting at the head is slower than std::deque equivalent 
 when there are quite a lot of elements in the database.
 </p>
             </li>
             <li>
-6. You can use std::queue, std::priority_queue and std::stack container adapters, they 
-work with db_vector even without DB_RENUMBER set.
-
+You can use std::queue, std::priority_queue and std::stack container
+adapters with db_vector; they work with db_vector even without 
+DB_RENUMBER set.
 		</li>
           </ul>
         </div>
@@ -115,16 +113,16 @@ work with db_vector even without DB_RENUMBER set.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592795"></a>Associative Container Specific Notes</h3>
+              <h3 class="title"><a id="id1595098"></a>Associative Container Specific Notes</h3>
             </div>
           </div>
         </div>
         <p>
-		db_map contains the 
+		Db_map contains the 
 union of method set of std::map and hash_map, but there are some methods 
 that can only be called on containers backed by DB_BTREE or DB_HASH 
-databases, so you can call db_map&lt;&gt;::is_hash to figure out what type of 
-db it is backed, and avoid calling unsupported methods, doing so will 
+databases. You can call db_map&lt;&gt;::is_hash to figure out the type of 
+the backing database, and avoid calling unsupported methods; doing so will 
 cause an InvalidFunctionCall exception. 
 
 	</p>

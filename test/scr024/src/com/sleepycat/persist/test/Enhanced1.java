@@ -142,6 +142,14 @@ class Enhanced1 implements Enhanced {
         }
     }
 
+    public void bdbWriteCompositeKeyFields(EntityOutput output,
+                                           Format[] formats) {
+    }
+
+    public void bdbReadCompositeKeyFields(EntityInput input,
+                                          Format[] formats) {
+    }
+
     public boolean bdbNullifyKeyField(Object o,
                                       int field,
                                       int superLevel,

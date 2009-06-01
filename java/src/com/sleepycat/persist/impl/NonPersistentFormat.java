@@ -11,6 +11,8 @@ package com.sleepycat.persist.impl;
 import java.lang.reflect.Array;
 import java.util.Map;
 
+import com.sleepycat.persist.model.EntityModel;
+
 /**
  * Format for a non-persistent class that is only used for declared field
  * types and arrays.  Currently used only for Object and interface types.
@@ -26,7 +28,7 @@ class NonPersistentFormat extends Format {
     }
 
     @Override
-    void initialize(Catalog catalog, int initVersion) {
+    void initialize(Catalog catalog, EntityModel model, int initVersion) {
     }
 
     @Override

@@ -11,7 +11,7 @@ External software requirements:
     Apache Ant 7.0 or later.
     http://ant.apache.org/bindownload.cgi
 
-    JUnit 3.8.1 or later.
+    JUnit 3.8.1 or 3.8.2 (later versions do not currently work)
     http://prdownloads.sourceforge.net/junit/junit3.8.1.zip?download
 
 The bin directories of both Java and Ant must be in your executable path.  The

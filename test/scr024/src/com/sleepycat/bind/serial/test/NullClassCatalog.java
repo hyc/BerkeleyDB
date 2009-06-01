@@ -11,7 +11,6 @@ package com.sleepycat.bind.serial.test;
 import java.io.ObjectStreamClass;
 import java.math.BigInteger;
 
-import com.sleepycat.db.DatabaseException;
 import com.sleepycat.bind.serial.ClassCatalog;
 
 /**
@@ -25,19 +24,14 @@ class NullClassCatalog implements ClassCatalog {
 
     private long id = Long.MAX_VALUE;
 
-    public void close()
-        throws DatabaseException {
+    public void close() {
     }
 
-    public byte[] getClassID(ObjectStreamClass classFormat)
-        throws DatabaseException {
-
+    public byte[] getClassID(ObjectStreamClass classFormat) {
         return BigInteger.valueOf(id--).toByteArray();
     }
 
-    public ObjectStreamClass getClassFormat(byte[] classID)
-        throws DatabaseException, ClassNotFoundException {
-
+    public ObjectStreamClass getClassFormat(byte[] classID) {
         return null; // ObjectInput not supported
     }
 }

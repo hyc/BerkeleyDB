@@ -53,20 +53,32 @@ abstract class EvolveCase {
                            boolean oldTypesExist) {
     }
 
+    /**
+     * @throws DatabaseException from subclasses.
+     */
     void writeObjects(EntityStore store)
         throws DatabaseException {
     }
 
+    /**
+     * @throws DatabaseException from subclasses.
+     */
     void readObjects(EntityStore store, boolean doUpdate)
         throws DatabaseException {
     }
 
+    /**
+     * @throws DatabaseException from subclasses.
+     */
     void readRawObjects(RawStore store,
                         boolean expectEvolved,
                         boolean expectUpdated)
         throws DatabaseException {
     }
 
+    /**
+     * @throws DatabaseException from subclasses.
+     */
     void copyRawObjects(RawStore rawStore, EntityStore newStore)
         throws DatabaseException {
     }
@@ -181,7 +193,7 @@ abstract class EvolveCase {
         TestCase.assertNotNull(all);
 
         assert names.length == versions.length;
-        TestCase.assertEquals(names.length, all.size());
+        TestCase.assertEquals(all.toString(), names.length, all.size());
 
         Iterator<RawType> iter = all.iterator();
         for (int i = 0; i < names.length; i += 1) {

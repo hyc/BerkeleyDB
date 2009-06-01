@@ -121,16 +121,25 @@ proc t83_test { db nitems env txnenv args} {
 
 	puts "\tTest083.c: Verifying ranges..."
 
-	# Wild guess.
-	if { $nitems < 500 || [is_partitioned $args] } {
-		set tol 0.3
+	# Wild guess.  "Tolerance" tests how close the key is to 
+	# its expected position.  "Sumtol" tests the sum of the 
+	# "less than", "equal to", and "more than", which is 
+	# expected to be around 1.  
+
+	if { [is_compressed $args] == 1 } {
+		set tolerance 0.5
+		set sumtol 0.3
+	} elseif { $nitems < 500 || [is_partitioned $args] } {
+		set tolerance 0.3
+		set sumtol 0.05
 	} elseif { $nitems > 500 } {
-		set tol 0.2
+		set tolerance 0.2
+		set sumtol 0.05
 	}
 
 	for { set i 0 } { $i < $nitems } \
 	    { incr i [expr $nitems / [berkdb random_int 3 16]] } {
-		puts "\t\t...key $i"
+		puts -nonewline "\t\t...key $i"
 		error_check_bad key0 [llength [set dbt [$dbc get -first]]] 0
 
 		for { set j 0 } { $j < $i } { incr j } {
@@ -139,18 +148,18 @@ proc t83_test { db nitems env txnenv args} {
 		}
 
 		set ranges [$db keyrange [lindex [lindex $dbt 0] 0]]
-
-		# puts $ranges
+		#puts "ranges is $ranges"
 		error_check_good howmanyranges [llength $ranges] 3
 
 		set lessthan [lindex $ranges 0]
 		set morethan [lindex $ranges 2]
 
+		puts -nonewline " ... sum of ranges"
 		set rangesum [expr $lessthan + [lindex $ranges 1] + $morethan]
+		roughly_equal $rangesum 1 $sumtol
 
-		roughly_equal $rangesum 1 0.05
-
-		roughly_equal $lessthan [expr $i * 1.0 / $nitems] $tol
+		puts "... position of key."
+		roughly_equal $lessthan [expr $i * 1.0 / $nitems] $tolerance
 
 	}
 
@@ -161,6 +170,5 @@ proc t83_test { db nitems env txnenv args} {
 }
 
 proc roughly_equal { a b tol } {
-	error_check_good "$a =~ $b" \
-	    [expr abs($a - $b) < $tol] 1
+	error_check_good "$a =~ $b" [expr abs($a - $b) < $tol] 1
 }

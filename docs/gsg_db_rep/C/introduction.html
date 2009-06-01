@@ -86,7 +86,7 @@
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="apioverview.html#repapioverview">Replication API Overview</a>
+                  <a href="apioverview.html#repapioverview">Replication Base API Overview</a>
                 </span>
               </dt>
             </dl>
@@ -220,7 +220,7 @@
         <p>
             Note that all replication applications must first be
             transactional applications. The data that the master transmits
-            its replicas are log records that are generated as records are
+            to its replicas are log records that are generated as records are
             updated. Upon transactional commit, the master transmits a
             transaction record which tells the replicas to commit the
             records they previously received from the master. In order for
@@ -304,7 +304,7 @@
                 method. Unlike non-replication applications, you cannot place your 
                 databases in a subdirectory below these locations. You should
                 also not use full path names for your databases or
-                environments as these are likely to break as to replicated
+                environments as these are likely to break when they are replicated
                 to other machines.
             </p>
         </div>

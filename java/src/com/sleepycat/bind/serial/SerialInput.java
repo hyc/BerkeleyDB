@@ -29,6 +29,8 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * ClassCatalog} must be supplied, however, to stored shared class
  * descriptions.</p>
  *
+ * @see <a href="SerialBinding.html#evolution">Class Evolution</a>
+ *
  * @author Mark Hayes
  */
 public class SerialInput extends ObjectInputStream {

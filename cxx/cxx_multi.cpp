@@ -64,3 +64,60 @@ bool DbMultipleRecnoDataIterator::next(db_recno_t &recno, Dbt &data)
 	}
 	return (p_ != 0);
 }
+
+
+DbMultipleBuilder::DbMultipleBuilder(Dbt &dbt) : dbt_(dbt)
+{
+	DB_MULTIPLE_WRITE_INIT(p_, dbt_.get_DBT());
+}
+
+
+bool DbMultipleDataBuilder::append(void *dbuf, size_t dlen)
+{
+	DB_MULTIPLE_WRITE_NEXT(p_, dbt_.get_DBT(), dbuf, dlen);
+	return (p_ != 0);
+}
+
+bool DbMultipleDataBuilder::reserve(void *&ddest, size_t dlen)
+{
+	DB_MULTIPLE_RESERVE_NEXT(p_, dbt_.get_DBT(), ddest, dlen);
+	return (ddest != 0);
+}
+
+bool DbMultipleKeyDataBuilder::append(
+    void *kbuf, size_t klen, void *dbuf, size_t dlen)
+{
+	DB_MULTIPLE_KEY_WRITE_NEXT(p_, dbt_.get_DBT(),
+	    kbuf, klen, dbuf, dlen);
+	return (p_ != 0);
+}
+
+bool DbMultipleKeyDataBuilder::reserve(
+     void *&kdest, size_t klen, void *&ddest, size_t dlen)
+{
+	DB_MULTIPLE_KEY_RESERVE_NEXT(p_, dbt_.get_DBT(),
+	    kdest, klen, ddest, dlen);
+	return (kdest != 0 && ddest != 0);
+}
+
+
+DbMultipleRecnoDataBuilder::DbMultipleRecnoDataBuilder(Dbt &dbt) : dbt_(dbt)
+{
+	DB_MULTIPLE_RECNO_WRITE_INIT(p_, dbt_.get_DBT());
+}
+
+bool DbMultipleRecnoDataBuilder::append(
+    db_recno_t recno, void *dbuf, size_t dlen)
+{
+	DB_MULTIPLE_RECNO_WRITE_NEXT(p_, dbt_.get_DBT(),
+	    recno, dbuf, dlen);
+	return (p_ != 0);
+}
+
+bool DbMultipleRecnoDataBuilder::reserve(
+    db_recno_t recno, void *&ddest, size_t dlen)
+{
+	DB_MULTIPLE_RECNO_RESERVE_NEXT(p_, dbt_.get_DBT(),
+	    recno, ddest, dlen);
+	return (ddest != 0);
+}

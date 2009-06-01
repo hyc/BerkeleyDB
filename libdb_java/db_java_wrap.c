@@ -1635,19 +1635,20 @@ Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1lock_1vec(JNIEnv *jenv,
 			    "DbEnv.lock_vec list entry is null", NULL, jdbenv);
 			goto err;
 		}
-		op = (*jenv)->GetIntField(jenv, jlockreq, lockreq_op_fid);
+		op = (db_lockop_t)(*jenv)->GetIntField(
+                    jenv, jlockreq, lockreq_op_fid);
 		prereq->op = op;
 
 		switch (op) {
 		case DB_LOCK_GET_TIMEOUT:
 			/* Needed: mode, timeout, obj.  Returned: lock. */
-			prereq->op = (*jenv)->GetIntField(jenv, jlockreq,
-			    lockreq_timeout_fid);
+			prereq->op = (db_lockop_t)(*jenv)->GetIntField(
+			    jenv, jlockreq, lockreq_timeout_fid);
 			/* FALLTHROUGH */
 		case DB_LOCK_GET:
 			/* Needed: mode, obj.  Returned: lock. */
-			prereq->mode = (*jenv)->GetIntField(jenv, jlockreq,
-			    lockreq_modeflag_fid);
+			prereq->mode = (db_lockmode_t)(*jenv)->GetIntField(
+			    jenv, jlockreq, lockreq_modeflag_fid);
 			jobj = (*jenv)->GetObjectField(jenv, jlockreq,
 			    lockreq_obj_fid);
 			if ((err = __dbj_dbt_copyin(jenv,

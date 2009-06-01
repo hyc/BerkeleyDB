@@ -199,6 +199,8 @@ class BasicCursor<V> implements EntityCursor<V> {
         cursor.close();
     }
 
+
+
     void checkInitialized()
         throws IllegalStateException {
 

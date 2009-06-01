@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Berkeley DB C API Reference</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="next" href="preface.html" title="Preface" />
@@ -27,7 +27,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h1 class="title"><a id="id1628036"></a>Berkeley DB C API Reference</h1>
+            <h1 class="title"><a id="id1631173"></a>Berkeley DB C API Reference</h1>
           </div>
           <div class="navtable">
             <table border="1" width="80%">
@@ -421,6 +421,54 @@
                 <tr>
                   <td>
                     <a class="xref" href="DB_MULTIPLE_RECNO_NEXT.html" title="DB_MULTIPLE_RECNO_NEXT">DB_MULTIPLE_RECNO_NEXT</a>
+                  </td>
+                  <td>Next bulk get retrieval</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_WRITE_INIT.html" title="DB_MULTIPLE_WRITE_INIT">DB_MULTIPLE_WRITE_INIT</a>
+                  </td>
+                  <td>Initialize bulk get retrieval</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_WRITE_NEXT.html" title="DB_MULTIPLE_WRITE_NEXT">DB_MULTIPLE_WRITE_NEXT</a>
+                  </td>
+                  <td>Append a data item to a bulk buffer</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_RESERVE_NEXT.html" title="DB_MULTIPLE_RESERVE_NEXT">DB_MULTIPLE_RESERVE_NEXT</a>
+                  </td>
+                  <td>Reserve space for a data item in a bulk buffer</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_KEY_WRITE_NEXT.html" title="DB_MULTIPLE_KEY_WRITE_NEXT">DB_MULTIPLE_KEY_WRITE_NEXT</a>
+                  </td>
+                  <td>Append a key / data pair to a bulk buffer</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_KEY_RESERVE_NEXT.html" title="DB_MULTIPLE_KEY_RESERVE_NEXT">DB_MULTIPLE_KEY_RESERVE_NEXT</a>
+                  </td>
+                  <td>Reserve space for a key / data pair in a bulk buffer</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a>
+                  </td>
+                  <td>Initialize bulk get retrieval</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_NEXT.html" title="DB_MULTIPLE_RECNO_WRITE_NEXT">DB_MULTIPLE_RECNO_WRITE_NEXT</a>
+                  </td>
+                  <td>Append a record number / data pair to a bulk buffer</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="DB_MULTIPLE_RECNO_RESERVE_NEXT.html" title="DB_MULTIPLE_RECNO_RESERVE_NEXT">DB_MULTIPLE_RECNO_RESERVE_NEXT</a>
                   </td>
                   <td>Next bulk get retrieval</td>
                 </tr>
@@ -1028,7 +1076,7 @@
                   <td>
                     <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a>
                   </td>
-                  <td>Configure an environment for replication</td>
+                  <td>Start replication</td>
                 </tr>
                 <tr>
                   <td>
@@ -1471,7 +1519,7 @@
           </div>
           <div>
             <div class="legalnotice">
-              <a id="id1628219"></a>
+              <a id="id1631356"></a>
               <p class="legalnotice-title">
                 <b>Legal Notice</b>
               </p>
@@ -1502,7 +1550,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">5/21/2009</p>
+            <p class="pubdate">6/1/2009</p>
           </div>
         </div>
         <hr />

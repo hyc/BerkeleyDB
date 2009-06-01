@@ -728,8 +728,8 @@ for (i = 0; i < count; i++) {						\
 	_SetInfoData(ip, p->txn);					\
 	(void)Tcl_CreateObjCommand(interp, newname,			\
 	    (Tcl_ObjCmdProc *)txn_Cmd, (ClientData)p->txn, NULL);	\
-	result = _SetListElem(interp, res, newname, strlen(newname),	\
-	    p->gid, DB_GID_SIZE);					\
+	result = _SetListElem(interp, res, newname,			\
+	    (u_int32_t)strlen(newname), p->gid, DB_GID_SIZE);		\
 	if (result != TCL_OK)						\
 		goto error;						\
 }

@@ -63,7 +63,6 @@ int __memp_free_freelist __P((DB_MPOOLFILE *));
 int __memp_get_freelist __P(( DB_MPOOLFILE *, u_int32_t *, db_pgno_t **));
 int __memp_extend_freelist __P(( DB_MPOOLFILE *, u_int32_t , db_pgno_t **));
 void __memp_set_last_pgno __P((DB_MPOOLFILE *, db_pgno_t));
-u_int32_t __memp_bh_priority __P((BH *));
 int __memp_bh_settxn __P((DB_MPOOL *, MPOOLFILE *mfp, BH *, void *));
 int __memp_skip_curadj __P((DBC *, db_pgno_t));
 int __memp_bh_freeze __P((DB_MPOOL *, REGINFO *, DB_MPOOL_HASH *, BH *, int *));

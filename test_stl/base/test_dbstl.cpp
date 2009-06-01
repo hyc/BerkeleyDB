@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 			close_all_dbs();
 			//close_db_env(penv);
 			close_all_db_envs();
-			cout<<"\n\nOne round of dbstl test is run to completion successfully!\n\n";
+			cerr<<"\n\nOne round of dbstl test is run to completion successfully!\n\n";
 		}
 	}
 	else {

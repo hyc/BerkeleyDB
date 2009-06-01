@@ -17,6 +17,7 @@
         <tr>
           <th colspan="3" align="center">Adding the Replication Manager to
                     
+                    
                     <span>SimpleTxn</span>
             </th>
         </tr>
@@ -34,6 +35,7 @@
           <div>
             <h2 class="title" style="clear: both"><a id="repmgr_init_example_c"></a>Adding the Replication Manager to
                     
+                    
                     <span>SimpleTxn</span>
             </h2>
           </div>
@@ -42,8 +44,9 @@
       <p>
                     We now use the methods described above to add partial
                     support to the 
-                     
-                    <code class="literal">SimpleTxn</code> 
+                    
+                    
+                    <span>SimpleTxn</span>
                     example that we presented in 
                     <a class="xref" href="txnapp.html" title="Chapter 2. Transactional Application">Transactional Application</a>.
                     That is, in this section we will:
@@ -93,7 +96,7 @@
                 for our simple transactional example.
             </p>
       <p>
-        We begin by changing our package name and then importing a few new
+        We begin by importing a few new
         classes. <code class="classname">java.util.Vector</code> is used to
         organize a list of "other host" definitions (that is, the host and
         port information for the other replication participants known to
@@ -101,7 +104,7 @@
         individual host and port information, as well as replication
         startup policy information.
 </p>
-      <pre class="programlisting"><strong class="userinput"><code>package db.repquote;
+      <pre class="programlisting"><strong class="userinput"><code>package db.repquote_gsg;
 
 import java.util.Vector;
 
@@ -224,7 +227,7 @@ public class RepConfig
         the program's name. <span>(This, of course, means that we copy our 
 <code class="classname">SimpleTxn</code> code to a file named <code class="literal">RepQuoteExampleGSG.java</code>.)</span>
 </p>
-      <pre class="programlisting">package <strong class="userinput"><code>db.repquote</code></strong>;
+      <pre class="programlisting">package db.repquote_gsg;
                             
 import java.io.FileNotFoundException;
 import java.io.BufferedReader;
@@ -299,7 +302,7 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
     {
         System.err.println("usage: " + repConfig.progname);
         System.err.println("-h home<strong class="userinput"><code>[-r host:port][-l host:port]" +
-            "[-f host:port][-n nsites][-p priority]</code></strong>");
+            "[-n nsites][-p priority]</code></strong>");
 
         System.err.println(<strong class="userinput"><code>"\t -l host:port (required; l stands for local)\n" +
              "\t -r host:port (optional; r stands for replica; any " +
@@ -360,6 +363,9 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
             } else if (argv[i].compareTo("-n") == 0) {
                 i++;
                 config.totalSites = Integer.parseInt(argv[i]);
+           } else if (argv[i].compareTo("-p") == 0) {
+                i++;
+                config.priority = Integer.parseInt(argv[i]);
             } else if (argv[i].compareTo("-r") == 0) {
                 i++;
                 String[] words = argv[i].split(":");
@@ -376,9 +382,6 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
                     usage();
                 }
                 config.addOtherHost(words[0], tmpPort, isPeer);
-           } else if (argv[i].compareTo("-p") == 0) {
-                i++;
-                config.priority = Integer.parseInt(argv[i]);
             }</code></strong> else {
                 System.err.println("Unrecognized option: " + argv[i]);
                 usage();

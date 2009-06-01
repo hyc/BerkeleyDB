@@ -202,10 +202,13 @@ public:
 
 	/**
 	Iterator assignment operator.
-	Iterator assignment will cause the underlying cursor to be duplicated
-	to make sure each iterator owns one unique cursor. The cached key/data
-	is also copied. The left value iterator points to the same key/data 
-	pair as the the right value after the assignment.
+	Iterator assignment will cause the underlying cursor of the right iterator
+	to be duplicated to the left iterator after its previous cursor is closed,
+	to make sure each iterator owns one unique cursor. The key/data cached 
+	in the right iterator is copied to the left iterator. Consequently, 
+	the left iterator points to the same key/data pair in the database 
+	as the the right value after the assignment, and have identical cached
+	key/data pair.
 	\param bi The other iterator to assign with.
 	\return The iterator bi's reference.
 	*/

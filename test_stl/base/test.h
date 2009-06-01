@@ -32,6 +32,11 @@ using namespace dbstl;
 /////////////////////////////////////////////////////////////////////////
 ///////////////////////// Macro and typedef definitions ///////////
 
+#define check_expr(expression) do {			\
+	if (!(expression)) {				\
+		FailedAssertionException ex(__FILE__, __LINE__, #expression);\
+		throw ex; } } while (0)
+
 #define TEST_PRIMITIVE
 #ifndef TEST_PRIMITIVE
 typedef ptype<int>  ptint;
@@ -366,8 +371,8 @@ public:
 			rd = -rd;
 		str.clear();
 
-		dbstl_assert(shortest > 0 && longest < BUFLEN);
-		dbstl_assert(dbt.get_flags() & DB_DBT_USERMEM);// USER PROVIDE MEM
+		check_expr(shortest > 0 && longest < BUFLEN);
+		check_expr(dbt.get_flags() & DB_DBT_USERMEM);// USER PROVIDE MEM
 		size_t len = (u_int32_t)(rd % longest);
 		if (len < shortest)
 			len = shortest;
@@ -384,7 +389,7 @@ public:
 		if (dbt.get_ulen() < (len + 1)) {
 			free(dbt.get_data());
 			dbt.set_data(DbstlMalloc(len + 1));
-			dbstl_assert(dbt.get_data() != NULL);
+			check_expr(dbt.get_data() != NULL);
 		}
 		memcpy(dbt.get_data(), (void*)(buf + start), len + 1);
 		dbt.set_size(u_int32_t(len + 1));// store the '\0' at the end

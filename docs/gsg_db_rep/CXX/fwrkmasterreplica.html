@@ -110,8 +110,8 @@
                           Note that these events are raised whenever the state is established. 
                           For example, when the current environment becomes a client —
                           including at application startup — the
-                          <code class="literal">DB_EVENT_REP_MASTER</code> event is raised. Also, when an
-                          election is held and a client is elected to be a master, the
+                          <code class="literal">DB_EVENT_REP_CLIENT</code> event is raised. Also, when an
+                          election is held and a replica is elected to be a master, the
                           <code class="literal">DB_EVENT_REP_MASTER</code> event is raised on the newly elected master and the
                           <code class="literal">DB_EVENT_REP_NEWMASTER</code> is raised on the other replicas.
                   </p>
@@ -177,9 +177,9 @@
         <p>
                           Note that these events are raised whenever the
                           state is established. That is, when the current
-                          environment becomes a client, and that includes
+                          environment becomes a replica, and that includes
                           at application startup, the event is raised.
-                          Also, when an election is held and a client is elected to be a
+                          Also, when an election is held and a replica is elected to be a
                           master, then the event occurs.
                   </p>
         <p>
@@ -231,8 +231,8 @@ dbenv-&gt;set_event_notify(event_callback); </pre>
         implementation can be fairly trivial. 
 </p>
         <pre class="programlisting">/*
- * A callback used to determine whether the local environment is a replica
- * or a master. This is called by the replication framework
+ * A callback used to determine whether the local environment is a 
+ * replica or a master. This is called by the Replication Manager
  * when the local environment changes state.
  */
 void *

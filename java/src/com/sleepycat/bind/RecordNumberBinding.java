@@ -29,9 +29,9 @@ public class RecordNumberBinding implements EntryBinding {
     }
 
     // javadoc is inherited
-    public Object entryToObject(DatabaseEntry entry) {
+    public Long entryToObject(DatabaseEntry entry) {
 
-        return new Long(entryToRecordNumber(entry));
+        return Long.valueOf(entryToRecordNumber(entry));
     }
 
     // javadoc is inherited

@@ -91,6 +91,7 @@ class _exported db_map_base_iterator : public
 protected:
 	typedef db_map_base_iterator<kdt, ddt, csrddt> self;
 	typedef db_base_iterator<ddt> base;
+	using base::replace_current_key;
 public:
 	typedef kdt key_type;
 	typedef ddt data_type;
@@ -442,7 +443,8 @@ public:
 	{
 		bool ret = this->pcsr_->set_bulk_buffer(sz);
 		if (ret)
-			this->bulk_retrieval_ = sz;
+			this->bulk_retrieval_ = 
+			    this->pcsr_->get_bulk_bufsize();
 		return ret;
 	}
 
@@ -452,7 +454,7 @@ public:
 	/// \sa db_base_iterator::get_bulk_bufsize()
 	u_int32_t get_bulk_bufsize()
 	{
-		assert(this->bulk_retrieval_ == pcsr_->get_bulk_bufsize());
+		this->bulk_retrieval_ = pcsr_->get_bulk_bufsize();
 		return this->bulk_retrieval_;
 	}
 	//@}
@@ -722,6 +724,8 @@ class _exported db_map_iterator : public
 protected:
 	typedef db_map_iterator<kdt, ddt, value_type_sub> self;
 	typedef typename value_type_sub::content_type realddt;
+	using db_base_iterator<typename value_type_sub::content_type>::
+	    replace_current_key;
 public:
 	typedef kdt key_type;
 	typedef ddt data_type;
@@ -1258,8 +1262,9 @@ public:
 			kdt k1 = kk1, k2 = kk2;
 			int ret;
 
-			dbstl_assert(pdb != NULL && pdb->get_type(&dbtype) 
-			    == 0);
+			dbstl_assert(pdb != NULL);
+			ret = pdb->get_type(&dbtype);
+			dbstl_assert(ret == 0);
 			if (dbtype != DB_HASH) {
 				THROW(InvalidFunctionCall, (
 				    "db_map<>::key_equal"));
@@ -3342,7 +3347,7 @@ private:
 		
 	}
 	
-	virtual const char* verify_config(Db*dbp, DbEnv* envp)
+	virtual const char* verify_config(Db*dbp, DbEnv* envp) const
 	{
 		DBTYPE dbtype;
 		u_int32_t oflags, sflags;

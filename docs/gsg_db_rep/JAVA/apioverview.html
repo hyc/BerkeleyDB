@@ -42,7 +42,7 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="apioverview.html#repapioverview">Replication API Overview</a>
+              <a href="apioverview.html#repapioverview">Replication Base API Overview</a>
             </span>
           </dt>
         </dl>
@@ -58,7 +58,7 @@
       <p>
                 If for some reason the Replication Manager
                 does not meet your application's technical requirements,
-                you will have to use the replication APIs available
+                you will have to use the Replication Base APIs available
                 through the Berkeley DB  library to write your own custom
                 replication framework. 
             </p>
@@ -144,29 +144,28 @@
         <p>
                     If your application has technical requirements that do
                     not conform to the implementation provided by the
-                    replication framework, you must write a custom
-                    replication framework using the DB replication APIs
-                    directly. See the next section for introductory
-                    details.
+                    Replication Manager, you must write implement replication
+                    using the DB Replication Base APIs. See
+                    the next section for introductory details.
                 </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="repapioverview"></a>Replication API Overview</h3>
+              <h3 class="title"><a id="repapioverview"></a>Replication Base API Overview</h3>
             </div>
           </div>
         </div>
         <p>
-                    The replication API is a series of Berkeley DB library
+                    The Replication Base API is a series of Berkeley DB library
                     classes and methods that you can use to build your own
                     replication infrastructure. You should use the
-                    replication API only if the Replication Manager does not meet your
+                    Base API only if the Replication Manager does not meet your
                     application's technical requirements.
                 </p>
         <p>
-                    To make use of the replication API, you must write your
+                    To make use of the Base API, you must write your
                     own networking code. This frees you from the technical
                     constraints imposed by the Replication Manager. For example, by
                     writing your own framework, you can:
@@ -199,7 +198,7 @@
         </div>
         <p>
                         For information on writing a replicated application
-                        using the Berkeley DB replication APIs, see the
+                        using the Berkeley DB Replication Base APIs, see the
                         <em class="citetitle">Berkeley DB Programmer's Reference Guide</em>.
                 </p>
       </div>

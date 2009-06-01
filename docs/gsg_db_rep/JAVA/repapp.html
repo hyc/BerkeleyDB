@@ -63,6 +63,7 @@
             <span class="sect1">
               <a href="repmgr_init_example_c.html">Adding the Replication Manager to
                     
+                    
                     <span>SimpleTxn</span>
             </a>
             </span>
@@ -166,11 +167,10 @@
                                     are using the Replication Manager.
                             </p>
             <p>
-                                    Configuring the Replication Manager 
-                                    entails setting its replication
-                                    priority, setting the TCP/IP address
+                                    Configuring the Replication Manager entails setting the replication
+                                    environment's priority, setting the TCP/IP address
                                     that this replication environment will use for
-                                    incoming replication messages, identify
+                                    incoming replication messages, identifying
                                     TCP/IP addresses of other replication
                                     environments, setting the number of
                                     replication environments in the
@@ -307,7 +307,7 @@
             </p>
         <p>
                     You stop replication by closing your environment
-                    cleanly, as is normal for an DB application.
+                    cleanly in the same way you would for any DB application.
             </p>
         <p>
                 For example, the following code fragment initializes, then
@@ -357,8 +357,8 @@ try {
     envConfig.setCacheSize(cachesize);
     envConfig.setTxnNoSync(true);
 
-    // Identify the local replication site. This is the local hostname and 
-    // port that this replication participant will use to receive 
+    // Identify the local replication site. This is the local hostname 
+    // and  port that this replication participant will use to receive
     // incoming replication messages. Note that this can be
     // performed only once for the application. It is required.
     thisHost = new ReplicationHostAddress(listenHost, listenPort);
@@ -403,7 +403,7 @@ try {
             "Ensure that the environment directory is pre-created.");
     }
 
-    // Start the replication framework such that it has three threads.
+    // Start the replication manager such that it has three threads.
     dbenv.replicationManagerStart(3,
         ReplicationManagerStartPolicy.REP_ELECTION);
 
@@ -502,7 +502,7 @@ try {
                 <p>
                                     As always, the environment participating in the election with the most
                                     up-to-date log files is selected as
-                                    master. If an environment with better log files
+                                    master. If an environment with more recent log files
                                     has not yet joined the replication
                                     group, it may not become the master.
                             </p>
@@ -537,7 +537,7 @@ try {
                   </td>
                   <td>
                    <p>
-                   The application starts up and declares itself to be a master
+                   The application starts up and declares the environment to be a master
                    without calling for an election. It is an error for more
                    than one environment to start up using this flag, or for
                    an environment
@@ -569,11 +569,11 @@ try {
                   <td>
                           <p>
                                   The application starts up and declares
-                                  itself to be a replica without calling for
-                                  an election. Note that the application
+                                  the environment to be a replica without calling for
+                                  an election. Note that the environment
                                   can still become a master if a subsequent
                                   application starts up, calls for an
-                                  election, and this application is elected
+                                  election, and this environment is elected
                                   master.
                           </p>
                   </td>
@@ -688,6 +688,7 @@ try {
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> Adding the Replication Manager to
+                    
                     
                     <span>SimpleTxn</span>
             </td>

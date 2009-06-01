@@ -34,30 +34,32 @@
         </div>
       </div>
       <p>
-1. Three algorithm functions of gcc's  C++ STL library does not work with 
-dbstl, which are find_end, inplace_merge and stable_sort; 
+Three algorithm functions of gcc's  C++ STL test suite do not work with 
+dbstl.  They are find_end, inplace_merge and stable_sort.
 
 </p>
       <p>
-The reason for incompatibility of find_end is that it assumes the data an iterator
-refers to is located at a shared place (owned by its container), which is 
-part of the C++ STL standard specification, but which is not true in dbstl because
-each iterator of a dbstl container caches its referenced value.
+The reason for the incompatibility of find_end is that it assumes the
+data an iterator refers to is located at a shared place (owned by its
+container), which is part of the C++ STL standard specification, but
+which is not true in dbstl because each iterator of a dbstl container
+caches its referenced value.
 
 </p>
       <p>
-So please do not apply find_end on dbstl container/iterator if you are using gcc's stl 
-library. 
-
+So please do not apply find_end on dbstl container/iterator if you are
+using gcc's stl library.
 </p>
       <p>
-The reason for incompatibility of inplace_merge and stable_sort is that the
-implementation of them on gcc requires the value_type of a container be default
-constructible, which is not required by the C++ STL standard specification, and also
-not true for dbstl's value type wrappers like ElementHolder. 
+The reason for incompatibility of inplace_merge and stable_sort is
+that the implementations of them on gcc require that the value_type of
+a container be default constructible, which is not required by the C++
+STL standard specification, and also not true for dbstl's value type
+wrappers like ElementHolder.
 </p>
       <p>
-These issues does not exist on any function of Microsoft Visual C++'s C++ STL library.
+These issues does not exist on any function of Microsoft Visual C++'s
+C++ STL library.
 </p>
     </div>
     <div class="navfooter">

@@ -675,8 +675,7 @@ err:	dbp->p_internal = part;
 
 /*
  * __partition_get_callback --
- *	Set the partition callback function.  This routine must be called
- * prior to opening a partition database that requires a function.
+ *	Get the partition callback function.
  * PUBLIC: int __partition_get_callback __P((DB *,
  * PUBLIC:	 u_int32_t *, u_int32_t (**callback)(DB *, DBT *key)));
  */
@@ -688,14 +687,18 @@ __partition_get_callback(dbp, parts, callback)
 {
 	DB_PARTITION *part;
 
-	*parts = 0;
-	*callback = NULL;
+	if (parts != NULL)
+		*parts = 0;
+	if (callback != NULL)
+		*callback = NULL;
 	if ((part = dbp->p_internal) == NULL || !F_ISSET(part, PART_CALLBACK)) {
 		__db_errx(dbp->env, "Database is not partitioned by callback.");
 		return (EINVAL);
 	}
-	*parts = part->nparts;
-	*callback = part->callback;
+	if (parts != NULL)
+		*parts = part->nparts;
+	if (callback != NULL)
+		*callback = part->callback;
 
 	return (0);
 }

@@ -173,6 +173,18 @@ class RawAccessor implements Accessor {
         }
     }
 
+    public void writeCompositeKeyFields(Object o, EntityOutput output) {
+        for (int i = 0; i < nonKeyFields.size(); i += 1) {
+            writeField(o, nonKeyFields.get(i), output);
+        }
+    }
+
+    public void readCompositeKeyFields(Object o, EntityInput input) {
+        for (int i = 0; i < nonKeyFields.size(); i += 1) {
+            readField(o, nonKeyFields.get(i), input);
+        }
+    }
+
     public Object getField(Object o,
                            int field,
                            int superLevel,

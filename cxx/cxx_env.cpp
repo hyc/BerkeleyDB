@@ -753,6 +753,10 @@ DBENV_METHOD(set_mp_max_write, (int maxwrite, db_timeout_t maxwrite_sleep),
     (dbenv, maxwrite, maxwrite_sleep))
 DBENV_METHOD(get_mp_mmapsize, (size_t *mmapsizep), (dbenv, mmapsizep))
 DBENV_METHOD(set_mp_mmapsize, (size_t mmapsize), (dbenv, mmapsize))
+DBENV_METHOD(get_mp_pagesize, (u_int32_t *pagesizep), (dbenv, pagesizep))
+DBENV_METHOD(set_mp_pagesize, (u_int32_t pagesize), (dbenv, pagesize))
+DBENV_METHOD(get_mp_tablesize, (u_int32_t *tablesizep), (dbenv, tablesizep))
+DBENV_METHOD(set_mp_tablesize, (u_int32_t tablesize), (dbenv, tablesize))
 DBENV_METHOD_VOID(get_msgfile, (FILE **msgfilep), (dbenv, msgfilep))
 DBENV_METHOD_VOID(set_msgfile, (FILE *msgfile), (dbenv, msgfile))
 DBENV_METHOD(get_tmp_dir, (const char **tmp_dirp), (dbenv, tmp_dirp))
@@ -787,6 +791,8 @@ DBENV_METHOD(get_cache_max, (u_int32_t *gbytesp, u_int32_t *bytesp),
     (dbenv, gbytesp, bytesp))
 DBENV_METHOD(set_cache_max, (u_int32_t gbytes, u_int32_t bytes),
     (dbenv, gbytes, bytes))
+DBENV_METHOD(get_create_dir, (const char **dirp), (dbenv, dirp))
+DBENV_METHOD(set_create_dir, (const char *dir), (dbenv, dir))
 
 void DbEnv::get_errcall(void (**argp)(const DbEnv *, const char *, const char *))
 {
@@ -1010,6 +1016,8 @@ int DbEnv::set_thread_id_string(
 
 	return (ret);
 }
+
+DBENV_METHOD(add_data_dir, (const char *dir), (dbenv, dir))
 
 int DbEnv::cdsgroup_begin(DbTxn **tid)
 {

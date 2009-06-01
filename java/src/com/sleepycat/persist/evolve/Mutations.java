@@ -144,6 +144,7 @@ public class Mutations implements Serializable {
     }
 
     private static class Key extends Mutation {
+        static final long serialVersionUID = 2793516787097085621L;
 
         Key(String className, int classVersion, String fieldName) {
             super(className, classVersion, fieldName);

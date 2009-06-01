@@ -8,7 +8,7 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="rep.html" title="Chapter 11.  Berkeley DB Replication" />
-    <link rel="prev" href="rep_base_meth.html" title="Base replication API" />
+    <link rel="prev" href="rep_base_meth.html" title="Base API Methods" />
     <link rel="next" href="rep_newsite.html" title="Connecting to a new site" />
   </head>
   <body>
@@ -37,8 +37,8 @@
       </div>
       <p>Replication Manager provides a built-in communications
 infrastructure.</p>
-      <p>For applications that use the Base replication API, which must provide
-their own communications infrastructure, it is typically written with one
+      <p>Base API applications must provide
+their own communications infrastructure, which is typically written with one
 or more threads of control looping on one or more communication
 channels, receiving and sending messages.  These threads accept messages
 from remote environments for the local database environment, and accept
@@ -69,7 +69,8 @@ not be processed by the message sender.  In all cases, the application's
 transport media or software must ensure that <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> is
 never called with a message intended for a different database
 environment or a broadcast message sent from the same environment on
-which <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> method is
+which <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> will be called.
+The <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> method is
 free-threaded; it is safe to deliver any number of messages
 simultaneously, and from any arbitrary thread or process in the Berkeley DB
 environment.</p>
@@ -181,7 +182,7 @@ environment.</p>
           <td width="40%" align="right"> <a accesskey="n" href="rep_newsite.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Base replication API </td>
+          <td width="40%" align="left" valign="top">Base API Methods </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

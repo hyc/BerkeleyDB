@@ -50,39 +50,51 @@ public:
       <p>
 	</p>
       <p>
-dbstl is an interface to Berkeley DB, so it is used to store data persistently, which is
-different from c++ stl. The difference of their aims has an implication to object lifetime: when
-you store an object A of type ID into C++ stl vector V via V.push_back(A), if proper copy constructor is provided 
-in A's class type, the copy of A, call it B, and everything in B, such as an another object C
-pointed to by B's data member B.c_ptr_, will be stored in V and alive as long as B is still
-in V and V is alive, and B will be destructed when V is destructed or B is no longer in V.
+Dbstl is an interface to Berkeley DB, so it is used to store data
+persistently.  This is really a different purpose from that of regular
+c++ STL. This difference in their aims has an implication to object
+lifetime: In standard STL, when you store an object A of type ID into
+C++ stl vector V via V.push_back(A), if a proper copy constructor is
+provided in A's class type, then the copy of A (call it B) and
+everything in B, such as another object C pointed to by B's data
+member B.c_ptr, will be stored in V and will live as long as B is
+still in V and V is alive. B will be destroyed when V is destroyed
+or B is erased from V.
+	</p>
+      <p>
+This is not true for dbstl, which will copy A's data and store it into
+the underlying database. The copy is by default a shallow copy, but
+users can register their object marshalling and unmarshalling
+functions via the DbstlElemTraits class template. So if A is passed
+to a db_vector container dv via dV.push_back(A), then we will copy A's
+data using the registered functions, and store the chunk of bytes into
+the underlying database. So A will be valid, even if the container is
+destroyed, because it is stored into the database.
+
+If the copy is simply a shallow copy, and A is later destroyed, then
+the pointer stored in the database will become invalid, and the next
+time we use the retrieved object, we would be using an invalid
+pointer, thus there will be errors. The way to avoid this is to store
+the referred object C rather than the pointer member A.c_ptr itself,
+by registering the right marshalling/unmarshalling function with
+DbstlElemTraits.
 
 	</p>
       <p>
-But this is not true for dbstl, which will copy A's data and store it into
-underlying database. The copy is by default a shallow copy, but users can register their object 
-marshalling and unmarshalling manipulator via the DbstlElemTraits class template. So if A
-is passed to db_vector container dv via dV.push_back(A), we will copy A's data using the 
-registered functions, and store the chunk of bytes into Berkeley DB database. So 
-A will be valid even if the container is destructed, because it is stored into the database. 
-
-But if the copy is simply a shallow copy, and A is later destructed, then the pointer stored in the 
-database will become invalid and next time we use the retrieved object, we are using an invalid pointer, thus
-there will be errors. The way to avoid this is to store the pointed object C rather than the pointer member
-A.c_ptr_ itself, by registering the right marshalling/unmarshalling function into DbstlElemTraits.
+In the above example, the class ID has a data member Name, which will
+refer to a memory address of the actual characters in the string. If
+we simply shallow copy an object id of class ID to store it, then the
+stored data idd will be invalid when id is destroyed. This is because
+idd and id refer to a common memory address which is the base address
+of the memory space storing all characters in the string, and this
+memory space is released when id is destroyed.  So idd will be
+refering an invalid address, and the next time we retrieve idd and use
+it, there will be memory corruption.
 
 	</p>
       <p>
-In the above example, the class ID has a data member Name, which will refer to a memory address 
-of the actual characters in the string. If we simply shallow copy an object id of class ID to store it, the stored
-data idd will be invalid when id is destructed. This is because idd and id refer to a common memory address which is the
-base address of the memory space storing all characters in the string, and this memory space is released when
-id is destructed, so idd will be refering an invalid address, and the next time we retrieve idd and use it, there
-will be memory corruptions.
-
-	</p>
-      <p>
-The right way to store id is to write a marshall/unmarshal function pair like this:
+The right way to store id is to write a marshall/unmarshal function
+pair like this:
 	</p>
       <p>
 </p>
@@ -104,7 +116,8 @@ void restore_id(ID&amp; dest, const void *srcdata)
 
 size_t size_id(const ID&amp; elem)
 {
-	return sizeof(elem.Score) + elem.Name.size() + 1;// store the '\0' char.
+	return sizeof(elem.Score) + elem.Name.size() + 
+	    1;// store the '\0' char.
 }
 
 </pre>
@@ -126,7 +139,7 @@ DbstlElemTraits&lt;ID&gt;::instance()-&gt;set_restore_function(restore_id);
       <p>
 	</p>
       <p>
-This way, the actual data of instances of ID are stored, thus the data will persist even if the container itself
+This way, the actual data of instances of ID are stored, thus the data will persist even if the container itself is destroyed.
 	</p>
     </div>
     <div class="navfooter">
@@ -140,7 +153,7 @@ This way, the actual data of instances of ID are stored, thus the data will pers
           <td width="40%" align="right"> <a accesskey="n" href="stl_container_specific.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top"> Change Persistence  </td>
+          <td width="40%" align="left" valign="top">Change Persistence </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

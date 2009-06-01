@@ -7,8 +7,6 @@
  */
 package com.sleepycat.persist.test;
 
-import java.io.IOException;
-
 import junit.framework.Test;
 
 import com.sleepycat.util.test.SharedTestUtils;
@@ -29,14 +27,13 @@ public class EvolveTestInit extends EvolveTestBase {
         return getSuite(EvolveTestInit.class);
     }
 
+    @Override
     boolean useEvolvedClass() {
         return false;
     }
 
     @Override
-    public void setUp()
-        throws IOException {
-
+    public void setUp() {
         envHome = getTestInitHome(false /*evolved*/);
         envHome.mkdirs();
         SharedTestUtils.emptyDir(envHome);

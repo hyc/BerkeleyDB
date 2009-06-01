@@ -311,8 +311,10 @@ public class CurrentTransaction {
      * Opens a cursor for a given database, dup'ing an existing CDB cursor if
      * one is open for the current thread.
      */
-    Cursor openCursor(Database db, CursorConfig cursorConfig,
-                      boolean writeCursor, Transaction txn)
+    Cursor openCursor(Database db,
+                      CursorConfig cursorConfig,
+                      boolean writeCursor,
+                      Transaction txn)
         throws DatabaseException {
 
         if (cdbMode) {
@@ -443,9 +445,7 @@ public class CurrentTransaction {
      * Returns true if a CDB cursor is open and therefore a Database write
      * operation should not be attempted since a self-deadlock may result.
      */
-    boolean isCDBCursorOpen(Database db)
-        throws DatabaseException {
-
+    boolean isCDBCursorOpen(Database db) {
         if (cdbMode) {
             WeakHashMap cdbCursorsMap = (WeakHashMap) localCdbCursors.get();
             if (cdbCursorsMap != null) {

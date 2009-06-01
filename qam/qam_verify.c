@@ -281,7 +281,7 @@ begin:	for (; pgno <= stop; pgno += pg_ext) {
 	}
 
 err:
-	if ((t_ret = dbc->close(dbc)) != 0 && ret == 0)
+	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return ret;

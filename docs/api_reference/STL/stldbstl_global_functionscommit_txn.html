@@ -4,10 +4,10 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>commit_txn</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="up" href="dbstl_global_functions.html" title="Chapter 1.  The dbstl_global_functions Class" />
+    <link rel="up" href="dbstl_global_functions.html" title="Chapter 1.  dbstl global public functions" />
     <link rel="prev" href="stldbstl_global_functionsbegin_txn.html" title="begin_txn" />
     <link rel="next" href="stldbstl_global_functionsabort_txn.html" title="abort_txn" />
   </head>
@@ -22,7 +22,7 @@ commit_txn
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldbstl_global_functionsbegin_txn.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 1. 
- The dbstl_global_functions Class</th>
+ dbstl global public functions  </th>
           <td width="20%" align="right"> <a accesskey="n" href="stldbstl_global_functionsabort_txn.html">Next</a></td>
         </tr>
       </table>
@@ -60,7 +60,7 @@ Function Details</h3>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1550805"></a>
+                <h4 class="title"><a id="id1547283"></a>
 Parameters</h4>
               </div>
             </div>
@@ -69,7 +69,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1550889"></a>
+                  <h5 class="title"><a id="id1547364"></a>
  flags </h5>
                 </div>
               </div>
@@ -80,7 +80,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1550884"></a>
+                  <h5 class="title"><a id="id1547318"></a>
  env </h5>
                 </div>
               </div>
@@ -92,7 +92,7 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551076"></a>
+                <h4 class="title"><a id="id1545989"></a>
 See Also</h4>
               </div>
             </div>
@@ -116,7 +116,7 @@ See Also</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1550714"></a>
+                <h4 class="title"><a id="id1546301"></a>
 Parameters</h4>
               </div>
             </div>
@@ -125,7 +125,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1550912"></a>
+                  <h5 class="title"><a id="id1547244"></a>
  txn </h5>
                 </div>
               </div>
@@ -136,7 +136,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1549316"></a>
+                  <h5 class="title"><a id="id1547266"></a>
  flags </h5>
                 </div>
               </div>
@@ -147,7 +147,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1551090"></a>
+                  <h5 class="title"><a id="id1547241"></a>
  env </h5>
                 </div>
               </div>
@@ -159,7 +159,7 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1549964"></a>
+                <h4 class="title"><a id="id1546185"></a>
 See Also</h4>
               </div>
             </div>
@@ -167,129 +167,6 @@ See Also</h4>
           <p>
     </p>
           <p><a class="link" href="stldbstl_global_functionscommit_txn.html" title="commit_txn">commit_txn(DbEnv *, u_int32_t)</a>
-; </p>
-          <p>   </p>
-        </div>
-        <pre class="programlisting">
- void commit_txn(DbEnv *env, DbTxn *txn,
-    u_int32_t flags=0)
- </pre>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage"></div>
-          <p>Commit a specified transaction and all its child transactions. </p>
-          <p></p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1550905"></a>
-Parameters</h4>
-              </div>
-            </div>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1549856"></a>
- txn </h5>
-                </div>
-              </div>
-            </div>
-            <p>The transaction to commit, can be a parent transaction of a nested transaction group, all un-aborted child transactions of it will be committed. </p>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1550822"></a>
- flags </h5>
-                </div>
-              </div>
-            </div>
-            <p>It is passed to each DbTxn::commit() call. </p>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1551195"></a>
- env </h5>
-                </div>
-              </div>
-            </div>
-            <p>The environment where txn is started from. </p>
-          </div>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1550296"></a>
-See Also</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-    </p>
-          <p><a class="link" href="stldbstl_global_functionscommit_txn.html" title="commit_txn">commit_txn(DbEnv *, u_int32_t)</a>
-; </p>
-          <p>   </p>
-        </div>
-        <pre class="programlisting">
- void commit_txn(DbEnv *env,
-    u_int32_t flags=0)
- </pre>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage"></div>
-          <p>Commit current transaction opened in the environment "env". </p>
-          <p>This function is called by user to commit an external explicit transaction. </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1549727"></a>
-Parameters</h4>
-              </div>
-            </div>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1551173"></a>
- flags </h5>
-                </div>
-              </div>
-            </div>
-            <p>It is set to DbTxn::commit() funcion. </p>
-          </div>
-          <div class="sect4" lang="en" xml:lang="en">
-            <div class="titlepage">
-              <div>
-                <div>
-                  <h5 class="title"><a id="id1551246"></a>
- env </h5>
-                </div>
-              </div>
-            </div>
-            <p>The environment whose current transaction is to be committed. </p>
-          </div>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1550959"></a>
-See Also</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-    </p>
-          <p><a class="link" href="stldbstl_global_functionscommit_txn.html" title="commit_txn">commit_txn(DbEnv *, DbTxn *, u_int32_t)</a>
 ; </p>
           <p>   </p>
         </div>
@@ -298,7 +175,7 @@ See Also</h4>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1550806"></a>
+              <h3 class="title"><a id="id1546942"></a>
 Group: Transaction control global functions.</h3>
             </div>
           </div>
@@ -310,13 +187,13 @@ Group: Transaction control global functions.</h3>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1550888"></a>
+              <h3 class="title"><a id="id1546392"></a>
 Class</h3>
             </div>
           </div>
         </div>
         <p>
-  <a class="link" href="dbstl_global_functions.html" title="Chapter 1.  The dbstl_global_functions Class">
+  <a class="link" href="dbstl_global_functions.html" title="Chapter 1.  dbstl global public functions">
   dbstl_global_functions</a>
      </p>
       </div>

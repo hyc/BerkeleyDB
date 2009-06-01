@@ -9,6 +9,7 @@
 package com.sleepycat.util.test;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.sleepycat.compat.DbCompat;
@@ -63,8 +64,8 @@ public class TestEnv {
         }
     }
 
-    private String name;
-    private EnvironmentConfig config;
+    private final String name;
+    private final EnvironmentConfig config;
 
     protected TestEnv(String name, EnvironmentConfig config) {
 
@@ -119,22 +120,19 @@ public class TestEnv {
 
     /**
      * Is overridden in XACollectionTest.
+     * @throws FileNotFoundException from DB core.
      */
     protected Environment newEnvironment(File dir, EnvironmentConfig config)
-        throws DatabaseException, IOException {
+        throws DatabaseException, FileNotFoundException {
 
         return new Environment(dir, config);
     }
 
-    public File getDirectory(String testName)
-        throws IOException {
-
+    public File getDirectory(String testName) {
         return getDirectory(testName, true);
     }
 
-    public File getDirectory(String testName, boolean create)
-        throws IOException {
-
+    public File getDirectory(String testName, boolean create) {
         if (create) {
             return SharedTestUtils.getNewDir(testName);
         } else {

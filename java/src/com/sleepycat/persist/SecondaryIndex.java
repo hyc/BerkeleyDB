@@ -8,7 +8,6 @@
 
 package com.sleepycat.persist;
 
-import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.SortedMap;
 
@@ -805,7 +804,7 @@ public class SecondaryIndex<SK,PK,E> extends BasicIndex<SK,E> {
                           Database keysDatabase,
                           PrimaryIndex<PK,E> primaryIndex,
                           Class<SK> secondaryKeyClass,
-                          EntryBinding secondaryKeyBinding)
+                          EntryBinding<SK> secondaryKeyBinding)
         throws DatabaseException {
 
         super(database, secondaryKeyClass, secondaryKeyBinding,
@@ -860,7 +859,7 @@ public class SecondaryIndex<SK,PK,E> extends BasicIndex<SK,E> {
      *
      * @return the key binding.
      */
-    public EntryBinding getKeyBinding() {
+    public EntryBinding<SK> getKeyBinding() {
         return keyBinding;
     }
 
@@ -892,14 +891,16 @@ public class SecondaryIndex<SK,PK,E> extends BasicIndex<SK,E> {
                 config.setReadOnly(true);
                 config.setAllowCreate(false);
                 config.setExclusiveCreate(false);   
-                try {
-                    keysDb = DbCompat.openDatabase
-                        (db.getEnvironment(), null/*txn*/,
-                         DbCompat.getDatabaseFile(secDb),
-                         secDb.getDatabaseName(),
-                         config);
-                } catch (FileNotFoundException e) {
-                    throw new DatabaseException(e);
+                keysDb = DbCompat.openDatabase
+                    (db.getEnvironment(), null/*txn*/,
+                     DbCompat.getDatabaseFile(secDb),
+                     secDb.getDatabaseName(),
+                     config);
+                if (keysDb == null) {
+                    throw new IllegalStateException
+                        ("Could not open existing DB, file: " + 
+                         DbCompat.getDatabaseFile(secDb) + " name: " +
+                         secDb.getDatabaseName());
                 }
             }
             keysIndex = new KeysIndex<SK,PK>

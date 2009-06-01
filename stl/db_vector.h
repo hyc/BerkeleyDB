@@ -68,6 +68,7 @@ protected:
 	// typedef's can't be put after where it is used.
 	typedef db_vector_base_iterator<T> self;
 	typedef db_recno_t index_type;
+	using db_base_iterator<T>::replace_current_key;
 public:
 	////////////////////////////////////////////////////////////////////
 	// 
@@ -343,7 +344,7 @@ public:
 	/// \sa db_base_iterator::operator=
 	/// \param itr The right value of the assignment.
 	/// \return This iterator's reference.
-	virtual const self& operator=(const self&itr)
+	inline const self& operator=(const self&itr)
 	{
 		ASSIGNMENT_PREDCOND(itr)
 		base::operator=(itr);
@@ -535,9 +536,11 @@ public:
 	inline void move_to(index_type n) const
 	{
 		T d;
+		int ret;
 
 		this->itr_status_ = pcsr_->move_to(n + 1);
-		dbstl_assert(pcsr_->get_current_data(d) == 0);
+		ret = pcsr_->get_current_data(d);
+		dbstl_assert(ret == 0);
 		if (this->itr_status_ == 0) 
 			update_cur_pair();
 	}
@@ -587,7 +590,7 @@ public:
 	/// \sa db_base_iterator::get_bulk_bufsize()
 	u_int32_t get_bulk_bufsize()
 	{
-		assert(this->bulk_retrieval_ == pcsr_->get_bulk_bufsize());
+		this->bulk_retrieval_ = pcsr_->get_bulk_bufsize();
 		return this->bulk_retrieval_;
 	}
 	//@}
@@ -759,6 +762,7 @@ class _exported db_vector_iterator :
 protected:
 	typedef db_vector_iterator<T, value_type_sub> self;
 	typedef db_recno_t index_type;
+	using db_base_iterator<T>::replace_current_key;
 public:
 	typedef T value_type;
 	typedef ptrdiff_t difference_type;
@@ -883,7 +887,7 @@ public:
 	/// \param itr The right value of the assignment.
 	/// \return This iterator's reference.
 	/// \sa db_base_iterator::operator=(const self&)
-	virtual const self& operator=(const self&itr)
+	inline const self& operator=(const self&itr)
 	{
 		ASSIGNMENT_PREDCOND(itr)
 		base::operator=(itr);

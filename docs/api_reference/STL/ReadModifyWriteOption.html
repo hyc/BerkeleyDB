@@ -3,25 +3,25 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 28.  The ReadModifyWriteOption Class</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <title>Chapter 28.  ReadModifyWriteOption</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="prev" href="stlBulkRetrievalOptionno_bulk_retrieval.html" title="no_bulk_retrieval" />
-    <link rel="next" href="stlReadModifyWriteOptionoperator_assign.html" title="operator=" />
+    <link rel="next" href="stlReadModifyWriteOptionoperator_eq.html" title="operator==" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 28. 
- The ReadModifyWriteOption Class</th>
+ ReadModifyWriteOption  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stlBulkRetrievalOptionno_bulk_retrieval.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
-          <td width="20%" align="right"> <a accesskey="n" href="stlReadModifyWriteOptionoperator_assign.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="stlReadModifyWriteOptionoperator_eq.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -31,97 +31,114 @@
         <div>
           <div>
             <h2 class="title"><a id="ReadModifyWriteOption"></a>Chapter 28. 
- The ReadModifyWriteOption Class</h2>
+ ReadModifyWriteOption  </h2>
           </div>
         </div>
       </div>
+      <h2><a id="id1579856"></a>ReadModifyWriteOption</h2>
       <p>Read-modify-write cursor configuration helper class. </p>
       <p>Used by each begin() function of all containers. </p>
-      <div class="sect1" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h2 class="title" style="clear: both"><a id="ReadModifyWriteOption_class"></a> ReadModifyWriteOption</h2>
-            </div>
-          </div>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1584497"></a>
-Group</h3>
-              </div>
-            </div>
-          </div>
-          <p>
-<a class="xref" href="dbstl_helper_classes.html" title="Chapter 21.  The dbstl_helper_classes Class">
- The dbstl_helper_classes Class</a>
-</p>
-          <p>
-</p>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1584870"></a>
-  Public Members</h3>
-              </div>
-            </div>
-          </div>
-          <div class="informaltable">
-            <table border="1" width="80%">
-              <colgroup>
-                <col />
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-<a class="xref" href="stlReadModifyWriteOptionoperator_assign.html" title="operator=">
+      <h4><a id="id1579507"></a> Public Members </h4>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+<a class="xref" href="ReadModifyWriteOption.html#stlReadModifyWriteOptionoperator_assign" title="operator=">
 operator=
 </a>
 </td>
-                  <td>
+              <td>
    <p>Assignment operator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stlReadModifyWriteOptionoperator_eq.html" title="operator==">
 operator==
 </a>
 </td>
-                  <td>
+              <td>
    <p>Equality comparison. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stlReadModifyWriteOptionread_modify_write.html" title="read_modify_write">
 read_modify_write
 </a>
 </td>
-                  <td>
+              <td>
    <p>Call this function to tell the container's begin() function that you need a read-modify-write iterator. </p>        </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stlReadModifyWriteOptionno_read_modify_write.html" title="no_read_modify_write">
 no_read_modify_write
 </a>
 </td>
-                  <td>
+              <td>
    <p>Call this function to tell the container's begin() function that you do not need a read-modify-write iterator. </p>        </td>
-                </tr>
-              </tbody>
-            </table>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h4><a id="id1580482"></a>
+Group</h4>
+      <p>
+<a class="xref" href="dbstl_helper_classes.html" title="Chapter 21.  dbstl helper classes">
+ dbstl helper classes  </a>
+</p>
+      <p>
+</p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="stlReadModifyWriteOptionoperator_assign"></a>
+operator=
+</h2>
+            </div>
           </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="func_details"></a>
+Function Details</h3>
+              </div>
+            </div>
+          </div>
+          <pre class="programlisting">
+void operator=(ReadModifyWriteOption::Option rmw1)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+            <p>Assignment operator. </p>
+          </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1580627"></a>
+Class</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+  <a class="link" href="ReadModifyWriteOption.html" title="Chapter 28.  ReadModifyWriteOption">
+  ReadModifyWriteOption</a>
+     </p>
         </div>
       </div>
     </div>
@@ -131,7 +148,7 @@ no_read_modify_write
         <tr>
           <td width="40%" align="left"><a accesskey="p" href="stlBulkRetrievalOptionno_bulk_retrieval.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
-          <td width="40%" align="right"> <a accesskey="n" href="stlReadModifyWriteOptionoperator_assign.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="stlReadModifyWriteOptionoperator_eq.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">
@@ -141,7 +158,7 @@ no_bulk_retrieval
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> 
-operator=
+operator==
 </td>
         </tr>
       </table>

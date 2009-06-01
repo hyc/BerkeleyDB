@@ -37,13 +37,12 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_memory_mgmt.html#id1592845">Rule of Thumb</a>
+              <a href="stl_memory_mgmt.html#id1594296">Rule of Thumb</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_memory_mgmt.html#id1592685">
-		Type Specific Notes</a>
+              <a href="stl_memory_mgmt.html#id1595133">Type Specific Notes</a>
             </span>
           </dt>
         </dl>
@@ -52,13 +51,14 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592845"></a>Rule of Thumb</h3>
+              <h3 class="title"><a id="id1594296"></a>Rule of Thumb</h3>
             </div>
           </div>
         </div>
         <p>
-When using dbstl, you need to make sure memory allocated in heap is released after use. 
-The rule of thumb is:</p>
+When using dbstl, you need to make sure memory allocated in heap is
+released after use.  The rule of thumb is:
+    </p>
         <div class="itemizedlist">
           <ul type="disc">
             <li>
@@ -66,20 +66,19 @@ dbstl will free/delete any memory chunks it allocated, i.e. memory
 allocated by dbstl code;
 	</li>
             <li>
-		You are responsible for any memory chunks that are directly allocated by your code. 
+You are responsible for any memory chunks that are directly allocated by your code. 
 	</li>
           </ul>
         </div>
         <p>
-		This rule always applies, with
-		no exception so far.</p>
+This rule always applies, with no exception so far.
+    </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1592685"></a>
-		Type Specific Notes</h3>
+              <h3 class="title"><a id="id1595133"></a>Type Specific Notes</h3>
             </div>
           </div>
         </div>
@@ -87,69 +86,76 @@ allocated by dbstl code;
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1592877"></a>
-DbEnv/Db
-</h4>
+                <h4 class="title"><a id="id1595126"></a>DbEnv/Db</h4>
               </div>
             </div>
           </div>
           <p>
-
-When you open an DbEnv/Db object via dbstl::open_env/dbstl::open_db, you don't need to delete that object; 
-If you new'ed that object and opened it without dbstl::open_env/dbstl::open_db function, you need to delete the object. 
-</p>
+When you open a DbEnv/Db object via dbstl::open_env/dbstl::open_db,
+you don't need to delete that object; If you new'ed that object and
+opened it without dbstl::open_env/dbstl::open_db function, you need to
+delete the object.
+    </p>
           <p>
-Note that you must new the Db or DbEnv object, allocating it on the heap; You can't allocate it on stack, otherwise,
-the order of destruction is uncontrollable, making dbstl unable to work properly.
-
-</p>
+Note that you must new the Db or DbEnv object, allocating it on the
+heap. You can't allocate it on stack, otherwise, the order of
+destruction is uncontrollable, making dbstl unable to work properly.
+    </p>
           <p>
-Also note that you can call dbstl_exit() before the entire process exits, to release any memory allocated by dbstl that
-have to live during the entire process lifetime. Not releasing them won't make much difference since the process is about to
-exit, all allocated memory on heap is returned to the operating system anyway. The only difference is that your memory leak 
-checker won't report memory leaks. 
-
-</p>
+You can call dbstl_exit() before the process exits, to release any
+memory allocated by dbstl that has to live during the entire process
+lifetime. Releasing the memory explicitly won't make much difference,
+since the process is about to exit, and all allocated memory on the
+heap is going to be returned to the operating system anyway. The only
+real difference is that your memory leak checker won't report false
+memory leaks.
+    </p>
           <p>
-dbstl_exit() will release any memory chunks allocated on heap, and close any databases and environments registered to 
-dbstl and shared across the process, so please pay attention to the next paragraph.  
-
-</p>
+Dbstl_exit() will release any memory allocated by dbstl on the heap,
+and do other things that will be done even this function is not called, 
+including closing any databases and environments registered to dbstl and
+shared across the process.
+    </p>
           <p>
-If you are calling dbstl_exit() function and your DbEnv or Db objects are new'ed by your code, note that the dbstl_exit()
-function should be called before deleting the DbEnv or Db objects because they need to be closed before being deleted. 
-Or you can call dbstl::close_env() or dbstl::close_db() function before deleting the DbEnv or Db objects to explicitly 
-close the databases or environments before deleting them, then you can then delete Db/DbEnv objects before calling dbstl_exit().
-
-</p>
+If you are calling the dbstl_exit() function, and your DbEnv or Db
+objects are new'ed by your code, the dbstl_exit() function should be
+called before deleting the DbEnv or Db objects, because they need to
+be closed before being deleted.  Alternatively, you can call
+dbstl::close_env() or dbstl::close_db() function before deleting the
+DbEnv or Db objects, to explicitly close the databases or environments,
+so that you can call dbstl_exit() after these handles are deleted.
+    </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1592997"></a>
-		DbstlDbt</h4>
+                <h4 class="title"><a id="id1595127"></a>DbstlDbt</h4>
               </div>
             </div>
           </div>
           <p>
-Only when you need to store raw bytes, e.g. a bitmap, do you have to store/retrieve data by using the DbstlDbt helper class. Although
-you also can do so simply by using Dbt class, Dbt class will definitely cause memory leaks, so use Dbt's child class
-DbstlDbt instead.
-
-</p>
+Only when you need to store raw bytes, e.g. a bitmap, do you have to
+store/retrieve data by using the DbstlDbt helper class. Although you
+also can do so simply by using the Berkeley DB Dbt class, the DbstlDbt
+class offers more convenient memory management behavior.
+    </p>
           <p>
-When you are storing DbstlDbt objects, e.g. db_vector&lt;DbstlDbt&gt;, you MUST allocate memory via malloc function, and
-don't free the object's referenced memory -- it will be automatically free'ed by the DbstlDbt object owning it.
-
-</p>
+When you are storing DbstlDbt objects, e.g. db_vector&lt;DbstlDbt&gt;,
+you MUST allocate heap memory explicitly via the malloc function,
+for the DbstlDbt object to
+reference, but you don't need to free the memory--it will be
+automatically freed by the DbstlDbt object that owns it by calling
+free() function of standard C library .
+    </p>
           <p>
-However, it is extremely rare that you have to store DbstlDbt objects --- dbstl support storing any type of objects or 
-primitive data, it is quite rare that you have to store raw bytes via DbstlDbt objects while using dbstl. 
-There are two examples of storing DbstlDbt objects in the test in function TestAssoc::test_arbitrary_object_storage() and
+However, because dbstl supports storing any type of object or
+primitive data, it is rare that you would have to store data via
+DbstlDbt objects while using dbstl.  There are two examples of storing
+DbstlDbt objects in the test in function
+TestAssoc::test_arbitrary_object_storage() and
 TestAssoc::test_char_star_string_storage().
-
-</p>
+    </p>
         </div>
       </div>
     </div>

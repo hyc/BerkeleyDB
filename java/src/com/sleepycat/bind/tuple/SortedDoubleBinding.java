@@ -38,22 +38,22 @@ import com.sleepycat.db.DatabaseEntry;
  * this class can be used with any stored collection.</li>
  * </ol>
  */
-public class SortedDoubleBinding extends TupleBinding {
+public class SortedDoubleBinding extends TupleBinding<Double> {
 
     /* javadoc is inherited */
-    public Object entryToObject(TupleInput input) {
+    public Double entryToObject(TupleInput input) {
 
-        return new Double(input.readSortedDouble());
+        return input.readSortedDouble();
     }
 
     /* javadoc is inherited */
-    public void objectToEntry(Object object, TupleOutput output) {
+    public void objectToEntry(Double object, TupleOutput output) {
 
-        output.writeSortedDouble(((Number) object).doubleValue());
+        output.writeSortedDouble(object);
     }
 
     /* javadoc is inherited */
-    protected TupleOutput getTupleOutput(Object object) {
+    protected TupleOutput getTupleOutput(Double object) {
 
         return DoubleBinding.sizedOutput();
     }

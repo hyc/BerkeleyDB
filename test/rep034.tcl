@@ -303,7 +303,22 @@ proc rep034_sub { method niter tnum logset largs } {
 	$clientenv rep_request 400 400
 	set envlist "{$masterenv 1} {$clientenv 2} {$client2env 3}"
 
+	# Here we're expecting that the master isn't generating any new log
+	# records, which is normally the case since we're not generating any new
+	# transactions there.  This is important, because otherwise the client
+	# could notice its log gap and request the missing records, resulting in
+	# STARTUPDONE before we're ready for it.  When debug_rop is on, just
+	# scanning the data-dir during UPDATE_REQ processing (which, remember,
+	# now happens just to check for potential NIMDB re-materialization)
+	# generates log records, as we open each file we find to see if it's a
+	# database.  So, filter out LOG messages (simulating them being "lost")
+	# temporarily.
+	# 
+	if {[is_substr [berkdb getconfig] "debug_rop"]} {
+		$masterenv rep_transport {1 rep034_send_nolog}
+	}
 	while {[rep034_proc_msgs_once $masterenv $clientenv $client2env] > 0} {}
+	$masterenv rep_transport {1 replsend}
 
 	error_check_good not_from_undone_c2c_client \
 	    [stat_field $clientenv rep_stat "Startup complete"] 0
@@ -362,4 +377,17 @@ proc rep034_send { control rec fromid toid flags lsn } {
 		set rep034_got_allreq true
 	}
 	return [replsend $control $rec $fromid $toid $flags $lsn]
+}
+
+# Another slightly different wrapper for replsend.  This one simulates losing
+# any broadcast LOG messages from the master.
+# 
+proc rep034_send_nolog { control rec fromid toid flags lsn } {
+	if {[berkdb msgtype $control] eq "log" &&
+	    $fromid == 1 && $toid == -1} {
+		set result 0
+	} else {
+		set result [replsend $control $rec $fromid $toid $flags $lsn]
+	}
+	return $result
 }

@@ -3,25 +3,25 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 14.  The db_map_iterators Class</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <title>Chapter 14.  iterator classes for db_map and db_multimap</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="prev" href="stldb_vector_iteratorrefresh.html" title="refresh" />
-    <link rel="next" href="stldb_map_iteratorsassign_second0.html" title="assign_second0" />
+    <link rel="next" href="stldb_map_iteratorsassign_second.html" title="assign_second" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 14. 
- The db_map_iterators Class</th>
+ iterator classes for db_map and db_multimap  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_vector_iteratorrefresh.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
-          <td width="20%" align="right"> <a accesskey="n" href="stldb_map_iteratorsassign_second0.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="stldb_map_iteratorsassign_second.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -31,126 +31,157 @@
         <div>
           <div>
             <h2 class="title"><a id="db_map_iterators"></a>Chapter 14. 
- The db_map_iterators Class</h2>
+ iterator classes for db_map and db_multimap  </h2>
           </div>
         </div>
       </div>
+      <h2><a id="id1567454"></a>Iterator classes for db_map and db_multimap.</h2>
       <p>
 Iterator classes for db_map and db_multimap.</p>
-      <p><a class="link" href="db_map.html" title="Chapter 5.  The db_map Class">db_map</a>
- has two iterator class templates -- <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  The db_map_base_iterator Class">db_map_base_iterator</a>
- and <a class="link" href="db_map_iterator.html" title="Chapter 16.  The db_map_iterator Class">db_map_iterator</a>
+      <p><a class="link" href="db_map.html" title="Chapter 5.  db_map">db_map</a>
+ has two iterator class templates -- <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  db_map_base_iterator">db_map_base_iterator</a>
+ and <a class="link" href="db_map_iterator.html" title="Chapter 16.  db_map_iterator">db_map_iterator</a>
 . </p>
-      <p>They are the const iterator class and iterator class for <a class="link" href="db_map.html" title="Chapter 5.  The db_map Class">db_map</a>
- and <a class="link" href="db_multimap.html" title="Chapter 6.  The db_multimap Class">db_multimap</a>
-. <a class="link" href="db_map_iterator.html" title="Chapter 16.  The db_map_iterator Class">db_map_iterator</a>
- inherits from <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  The db_map_base_iterator Class">db_map_base_iterator</a>
+      <p>They are the const iterator class and iterator class for <a class="link" href="db_map.html" title="Chapter 5.  db_map">db_map</a>
+ and <a class="link" href="db_multimap.html" title="Chapter 6.  db_multimap">db_multimap</a>
+. <a class="link" href="db_map_iterator.html" title="Chapter 16.  db_map_iterator">db_map_iterator</a>
+ inherits from <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  db_map_base_iterator">db_map_base_iterator</a>
 .</p>
-      <p>The two classes have identical behaviors to std::map::const_iterator and std::map::iterator respectively. Note that the common public member function behaviors are described in the <a class="link" href="db_base_iterator.html" title="Chapter 10.  The db_base_iterator Class">db_base_iterator</a>
+      <p>The two classes have identical behaviors to std::map::const_iterator and std::map::iterator respectively. Note that the common public member function behaviors are described in the <a class="link" href="db_base_iterator.html" title="Chapter 10.  db_base_iterator">db_base_iterator</a>
  section.</p>
-      <p>The differences between the two classes are that the <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  The db_map_base_iterator Class">db_map_base_iterator</a>
- can only be used to read its referenced value, while <a class="link" href="db_map_iterator.html" title="Chapter 16.  The db_map_iterator Class">db_map_iterator</a>
+      <p>The differences between the two classes are that the <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  db_map_base_iterator">db_map_base_iterator</a>
+ can only be used to read its referenced value, while <a class="link" href="db_map_iterator.html" title="Chapter 16.  db_map_iterator">db_map_iterator</a>
  allows both read and write access. If your access pattern is readonly, it is strongly recommended that you use the const iterator because it is faster and more efficient. </p>
-      <div class="sect1" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h2 class="title" style="clear: both"><a id="db_map_iterators_class"></a> db_map_iterators</h2>
-            </div>
-          </div>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1571850"></a>
-Group</h3>
-              </div>
-            </div>
-          </div>
-          <p>
-<a class="xref" href="dbstl_iterators.html" title="Chapter 9.  The dbstl_iterators Class">
- The dbstl_iterators Class</a>
-</p>
-          <p>
-</p>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1571968"></a>
-  Public Members</h3>
-              </div>
-            </div>
-          </div>
-          <div class="informaltable">
-            <table border="1" width="80%">
-              <colgroup>
-                <col />
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-<a class="xref" href="stldb_map_iteratorsassign_second0.html" title="assign_second0">
+      <h4><a id="id1567304"></a> Public Members </h4>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+<a class="xref" href="db_map_iterators.html#stldb_map_iteratorsassign_second0" title="assign_second0">
 assign_second0
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_map_iteratorsassign_second.html" title="assign_second">
 assign_second
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stldb_map_iteratorshash_default.html" title="hash_default">
 hash_default
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="db_map_base_iterator.html" title="Chapter 15.  The db_map_base_iterator Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="db_map_base_iterator.html" title="Chapter 15.  db_map_base_iterator">
 db_map_base_iterator</a>
 </td>
-                  <td>
+              <td>
 db_map_base_iterator</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="db_map_iterator.html" title="Chapter 16.  The db_map_iterator Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="db_map_iterator.html" title="Chapter 16.  db_map_iterator">
 db_map_iterator</a>
 </td>
-                  <td>
+              <td>
 db_map_iterator</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="assign_internal_use_only.html" title="Chapter 40.  The assign_internal_use_only Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="assign_internal_use_only.html" title="Chapter 40.  Assign functions used internally only">
 Assign functions used internally only.</a>
 </td>
-                  <td>
+              <td>
 Assign functions used internally only.</td>
-                </tr>
-              </tbody>
-            </table>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h4><a id="id1567727"></a>
+Group</h4>
+      <p>
+<a class="xref" href="dbstl_iterators.html" title="Chapter 9.  dbstl iterator classes">
+ dbstl iterator classes  </a>
+</p>
+      <p>
+</p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="stldb_map_iteratorsassign_second0"></a>
+assign_second0
+</h2>
+            </div>
           </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="func_details"></a>
+Function Details</h3>
+              </div>
+            </div>
+          </div>
+          <pre class="programlisting">
+void assign_second0(pair&lt; kdt, ddt &gt; &amp;v,
+    const datadt &amp;d)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+          <pre class="programlisting">
+void assign_second0(pair&lt; kdt, ddt &gt; &amp;v,
+    const _DB_STL_set_value&lt; kdt &gt; &amp;)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+          <pre class="programlisting">
+void assign_second0(pair&lt; kdt, value_type_sub &gt; &amp;v,
+    const datadt &amp;d)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1567693"></a>
+Class</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+  <a class="link" href="db_map_iterators.html" title="Chapter 14.  iterator classes for db_map and db_multimap">
+  db_map_iterators</a>
+     </p>
         </div>
       </div>
     </div>
@@ -160,7 +191,7 @@ Assign functions used internally only.</td>
         <tr>
           <td width="40%" align="left"><a accesskey="p" href="stldb_vector_iteratorrefresh.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
-          <td width="40%" align="right"> <a accesskey="n" href="stldb_map_iteratorsassign_second0.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="stldb_map_iteratorsassign_second.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">
@@ -170,7 +201,7 @@ refresh
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> 
-assign_second0
+assign_second
 </td>
         </tr>
       </table>

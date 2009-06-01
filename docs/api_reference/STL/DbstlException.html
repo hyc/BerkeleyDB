@@ -3,25 +3,25 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 30.  The DbstlException Class</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <title>Chapter 30.  DbstlException</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="prev" href="Exception_classes_group.html" title="Chapter 29.  The Exception_classes_group Class" />
-    <link rel="next" href="stlDbstlExceptionDbstlException.html" title="DbstlException" />
+    <link rel="prev" href="Exception_classes_group.html" title="Chapter 29.  dbstl exception classes" />
+    <link rel="next" href="stlDbstlExceptionoperator_assign.html" title="operator=" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 30. 
- The DbstlException Class</th>
+ DbstlException  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="Exception_classes_group.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
-          <td width="20%" align="right"> <a accesskey="n" href="stlDbstlExceptionDbstlException.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="stlDbstlExceptionoperator_assign.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -31,88 +31,130 @@
         <div>
           <div>
             <h2 class="title"><a id="DbstlException"></a>Chapter 30. 
- The DbstlException Class</h2>
+ DbstlException  </h2>
           </div>
         </div>
       </div>
+      <h2><a id="id1580861"></a>DbstlException</h2>
       <p>Base class of all dbstl exception classes. </p>
       <p>It is derived from Berkeley DB C++ API DbException class to maintain consistency with all Berkeley DB exceptions. </p>
-      <div class="sect1" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h2 class="title" style="clear: both"><a id="DbstlException_class"></a> DbstlException</h2>
-            </div>
-          </div>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1585625"></a>
-Group</h3>
-              </div>
-            </div>
-          </div>
-          <p>
-<a class="xref" href="Exception_classes_group.html" title="Chapter 29.  The Exception_classes_group Class">
- The Exception_classes_group Class</a>
-</p>
-          <p>
-</p>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1585206"></a>
-  Public Members</h3>
-              </div>
-            </div>
-          </div>
-          <div class="informaltable">
-            <table border="1" width="80%">
-              <colgroup>
-                <col />
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-<a class="xref" href="stlDbstlExceptionDbstlException.html" title="DbstlException">
+      <h4><a id="id1581102"></a> Public Members </h4>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+<a class="xref" href="DbstlException.html#stlDbstlExceptionDbstlException" title="DbstlException">
 DbstlException
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stlDbstlExceptionoperator_assign.html" title="operator=">
 operator=
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-                <tr>
-                  <td>
+            </tr>
+            <tr>
+              <td>
 <a class="xref" href="stlDbstlExceptiondstr_DbstlException.html" title="~DbstlException">
 ~DbstlException
 </a>
 </td>
-                  <td>
+              <td>
    </td>
-                </tr>
-              </tbody>
-            </table>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h4><a id="id1581070"></a>
+Group</h4>
+      <p>
+<a class="xref" href="Exception_classes_group.html" title="Chapter 29.  dbstl exception classes">
+ dbstl exception classes  </a>
+</p>
+      <p>
+</p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="stlDbstlExceptionDbstlException"></a>
+DbstlException
+</h2>
+            </div>
           </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="func_details"></a>
+Function Details</h3>
+              </div>
+            </div>
+          </div>
+          <pre class="programlisting">
+DbstlException(const char *msg)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+          <pre class="programlisting">
+DbstlException(const char *msg,
+    int err)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+          <pre class="programlisting">
+DbstlException(const DbstlException &amp;ex)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+          <pre class="programlisting">
+DbstlException(int err)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+          <pre class="programlisting">
+DbstlException(const char *prefix, const char *msg,
+    int err)
+ </pre>
+          <div class="sect3" lang="en" xml:lang="en">
+            <div class="titlepage"></div>
+          </div>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id1581112"></a>
+Class</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+  <a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">
+  DbstlException</a>
+     </p>
         </div>
       </div>
     </div>
@@ -122,16 +164,16 @@ operator=
         <tr>
           <td width="40%" align="left"><a accesskey="p" href="Exception_classes_group.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
-          <td width="40%" align="right"> <a accesskey="n" href="stlDbstlExceptionDbstlException.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="stlDbstlExceptionoperator_assign.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Chapter 29. 
- The Exception_classes_group Class </td>
+ dbstl exception classes   </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> 
-DbstlException
+operator=
 </td>
         </tr>
       </table>

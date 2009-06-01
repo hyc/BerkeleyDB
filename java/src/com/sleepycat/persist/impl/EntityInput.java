@@ -20,7 +20,6 @@ import java.math.BigInteger;
  */
 public interface EntityInput {
 
-
     /**
      * Returns the Catalog associated with this input.
      */

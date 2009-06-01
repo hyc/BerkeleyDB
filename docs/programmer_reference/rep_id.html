@@ -44,7 +44,11 @@ sites: A, B and C, site A might assign the identifiers 1 and 2 to sites
 B and C respectively, while site B might assign the identifiers 301 and
 302 to sites A and C respectively.  Note that it is not wrong to have
 global identifiers, it is just not a requirement.</p>
-      <p>It is the responsibility of the application to label each incoming
+      <p>
+    Replication Manager assigns and manages environment IDs on behalf of
+    the application.
+</p>
+      <p>It is the responsibility of a Base API application to label each incoming
 replication message passed to <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> method with the appropriate
 identifier.  Subsequently, Berkeley DB will label outgoing messages to the
 <span class="bold"><strong>send</strong></span> function with those same identifiers.</p>
@@ -77,10 +81,6 @@ identifiers are intended for application use, as follows:</p>
           </dd>
         </dl>
       </div>
-      <p>
-    Replication Manager assigns and manages environment IDs on behalf of
-    the application.
-</p>
     </div>
     <div class="navfooter">
       <hr />

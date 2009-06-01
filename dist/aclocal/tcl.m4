@@ -104,14 +104,12 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 	# If the DB Tcl library isn't loaded with the Tcl spec and library
 	# flags on AIX, the resulting libdb_tcl-X.Y.so.0 will drop core at
 	# load time. [#4843]  Furthermore, with Tcl 8.3, the link flags
-	# given by the Tcl spec are insufficient for our use.  [#5779]
+	# given by the Tcl spec are insufficient for our use.  [#5779],[#17109]
 	#
 	case "$host_os" in
-	aix4.[[2-9]].*)
+	aix*)
 		LIBTSO_LIBS="$LIBTSO_LIBS $TCL_LIB_SPEC $TCL_LIB_FLAG"
 		LIBTSO_LIBS="$LIBTSO_LIBS -L$TCL_EXEC_PREFIX/lib -ltcl$TCL_VERSION";;
-	aix*)
-		LIBTSO_LIBS="$LIBTSO_LIBS $TCL_LIB_SPEC $TCL_LIB_FLAG";;
 	esac
 	AC_SUBST(TCL_BIN_DIR)
 	AC_SUBST(TCL_INCLUDE_SPEC)

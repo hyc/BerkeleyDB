@@ -79,7 +79,7 @@
                           
                   </p>
       <pre class="programlisting">/*
- * File: rep_mgr_gsg.c
+ * File: ex_rep_gsg_repmgr.c
  */
 
 #include &lt;stdlib.h&gt;
@@ -100,7 +100,7 @@ extern int getopt(int, char * const *, const char *);
 #define DATABASE    "quote.db"
 <strong class="userinput"><code>#define SLEEPTIME 3</code></strong>
 
-const char *progname = "rep_mgr_gsg";
+const char *progname = "ex_rep_gsg_repmgr";
 
 <strong class="userinput"><code>typedef struct {
     int is_master;
@@ -149,52 +149,59 @@ main(int argc, char *argv[])
 
     /* Default priority is 100 */
     dbenv-&gt;rep_set_priority(dbenv, 100);
+    /* Permanent messages require at least one ack */
+    dbenv-&gt;repmgr_set_ack_policy(dbenv, DB_REPMGR_ACKS_ONE);
+    /* Give 500 microseconds to receive the ack */
+    dbenv-&gt;rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);
 
     /* Collect the command line options */
-    while ((ch = getopt(argc, argv, "h:m:o:p:")) != EOF)
+    while ((ch = getopt(argc, argv, "h:l:m:p:r:")) != EOF)
         switch (ch) {
         case 'h':
             home = optarg;
             break;
         /* Set the host and port used by this environment */
-        case 'm':
+        case 'l':
             host = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
                 fprintf(stderr, "Bad host specification.\n");
                 goto err;
             }
             port = (unsigned short)atoi(portstr);
-            if (dbenv-&gt;repmgr_set_local_site(dbenv, host, port, 0) != 0) {
+            if (dbenv-&gt;repmgr_set_local_site(dbenv, host, port, 0)
+                                                              != 0) {
                 fprintf(stderr,
                     "Could not set local address %s.\n", host);
                 goto err;
             }
             local_is_set = 1;
             break;
+        /* Set the number of sites in this replication group */
+        case 'n':
+            totalsites = atoi(optarg);
+            if ((ret = dbenv-&gt;rep_set_nsites(dbenv, totalsites))
+              != 0)
+                dbenv-&gt;err(dbenv, ret, "set_nsites");
+            break;
+        /* Set this replica's election priority */
+        case 'p':
+            dbenv-&gt;rep_set_priority(dbenv, atoi(optarg));
+            break;
         /* Identify another site in the replication group */
-        case 'o':
+        case 'r':
             host = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
                 fprintf(stderr, "Bad host specification.\n");
                 goto err;
             }
             port = (unsigned short)atoi(portstr);
-            if (dbenv-&gt;repmgr_add_remote_site(dbenv, host, port, 0, 0) != 0) {
+            if (dbenv-&gt;repmgr_add_remote_site(dbenv, host, port,
+                                                 NULL, 0) != 0) {
                 fprintf(stderr,
                     "Could not add site %s.\n", host);
                 goto err;
             }
             break;
-        /* Set the number of sites in this replication group */
-        case 'n':
-            totalsites = atoi(optarg);
-            if ((ret = dbenv-&gt;rep_set_nsites(dbenv, totalsites)) != 0)
-                dbenv-&gt;err(dbenv, ret, "set_nsites");
-            break;
-        /* Set this replica's election priority */
-        case 'p':
-            dbenv-&gt;rep_set_priority(dbenv, atoi(optarg));
-            break; 
         case '?':
         default:
             usage();
@@ -264,10 +271,10 @@ env_init(DB_ENV *dbenv, const char *home)
             DB_INIT_LOCK |
             DB_INIT_LOG |
             DB_INIT_MPOOL |
-            DB_INIT_TXN |
             DB_INIT_REP |
-            DB_THREAD |
-            DB_RECOVER;
+            DB_INIT_TXN |
+            DB_RECOVER |
+            DB_THREAD;
     if ((ret = dbenv-&gt;open(dbenv, home, flags, 0)) != 0)
         dbenv-&gt;err(dbenv, ret, "can't open environment");
     return (ret);
@@ -282,8 +289,8 @@ env_init(DB_ENV *dbenv, const char *home)
       <pre class="programlisting">
         <strong class="userinput">
           <code>/*
- * A callback used to determine whether the local environment is a replica
- * or a master. This is called by the replication framework
+ * A callback used to determine whether the local environment is a 
+ * replica or a master. This is called by the Replication Manager
  * when the local replication environment changes state.
  */
 void *
@@ -359,10 +366,6 @@ doloop(DB_ENV *dbenv)
         if (dbp == NULL) {
             if ((ret = db_create(&amp;dbp, dbenv, 0)) != 0)
                 return (ret);
-
-            /* Set page size small so page allocation is cheap. */
-            if ((ret = dbp-&gt;set_pagesize(dbp, 512)) != 0)
-                goto err;
 
             <strong class="userinput"><code>flags = DB_AUTO_COMMIT;
             if (app_data-&gt;is_master)
@@ -541,7 +544,8 @@ err:    if (dbp != NULL)
                 the master.
         </p>
         <pre class="programlisting">&gt; mkdir env1
-&gt; ./rep_mgr_gsg -h env1 -n 2 -l localhost:8080 -r localhost:8081 -p 10
+&gt; ./ex_rep_gsg_repmgr -h env1 -n 2 -l localhost:8080 \
+-r localhost:8081 -p 10
 No stock database yet available.
 No stock database yet available.  </pre>
         <p>
@@ -552,7 +556,8 @@ No stock database yet available.  </pre>
         port of the other replication process:
 </p>
         <pre class="programlisting">&gt; mkdir env2
-&gt; ./rep_mgr_gsg -h env2 -n 2 -l localhost:8081 -r localhost:8080 -p 20</pre>
+&gt; ./ex_rep_gsg_repmgr -h env2 -n 2 -l localhost:8081 \
+-r localhost:8080 -p 20</pre>
         <p>
         After a short pause, the second process should display the master
         prompt:
@@ -599,7 +604,7 @@ QUOTESERVER&gt; </pre>
 QUOTESERVER&gt; </pre>
         <p>
         Then, go to either the master or the replica to see the updated
-        database:
+        database. On the master:
 </p>
         <pre class="programlisting">QUOTESERVER&gt; 
         Symbol  Price
@@ -618,7 +623,7 @@ QUOTESERVER&gt; </pre>
 QUOTESERVER (read-only)&gt; </pre>
         <p>
         Finally, to quit the applications, simply type
-        <code class="literal">quit</code> at both prompts:
+        <code class="literal">quit</code> at both prompts. On the replica:
 </p>
         <pre class="programlisting">QUOTESERVER (read-only)&gt; quit
 &gt; </pre>

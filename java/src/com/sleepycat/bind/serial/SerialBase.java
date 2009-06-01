@@ -21,6 +21,10 @@ import com.sleepycat.util.FastOutputStream;
  * #setSerialBufferSize} method may be used to control the initial size of the
  * buffer, and the {@link #getSerialOutput} method may be overridden by
  * subclasses to take over creation of the FastOutputStream object.</p>
+ *
+ * @see <a href="SerialBinding.html#evolution">Class Evolution</a>
+ *
+ * @author Mark Hayes
  */
 public class SerialBase {
 

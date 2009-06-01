@@ -303,7 +303,7 @@ compare_int(DB *dbp, const DBT *a, const DBT *b)                            \n\
  return (ai - bi);                                                          \n\
 }                                                                           \n\
                                                                             \n\
-static int                                                                  \n\
+int                                                                         \n\
 compare_long(DB *dbp, const DBT *a, const DBT *b)                           \n\
 {                                                                           \n\
  long ai, bi;                                                               \n\
@@ -318,7 +318,7 @@ compare_long(DB *dbp, const DBT *a, const DBT *b)                           \n\
 "A generic function for creating and opening a database";
 
 	static char *generic_create_db_function =
-"static int                                                                 \n\
+"int                                                                        \n\
 create_database(DB_ENV *envp,                                               \n\
  char *db_name,                                                             \n\
  DB **dbpp,                                                                 \n\

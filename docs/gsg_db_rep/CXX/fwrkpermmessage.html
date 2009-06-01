@@ -8,7 +8,7 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
-    <link rel="prev" href="repmgr_init_example_c.html" title="Adding the Replication Manager to SimpleTxn" />
+    <link rel="prev" href="repmgr_init_example_c.html" title="Adding the Replication Manager to RepMgr" />
     <link rel="next" href="electiontimes.html" title="Managing Election Times" />
   </head>
   <body>
@@ -63,7 +63,7 @@
                DB's replication code decides if it must flush its
                transaction logs to disk depending on whether it receives
                sufficient permanent message acknowledgments from the
-               participating replica. More importantly, the thread 
+               participating replicas. More importantly, the thread 
                performing the transaction commit blocks
                until it either receives enough acknowledgments, or the
                acknowledgment timeout expires.
@@ -172,7 +172,7 @@
                     
                 </p>
               <p>
-                    All environments must acknowledge the message within
+                    All replicas must acknowledge the message within
                     the timeout period. This
                     policy should be selected only if your replication
                     group has a small number of replicas, and those replicas
@@ -180,7 +180,7 @@
                 </p>
               <p>
                         When this flag is used, the actual number of
-                        environments  that must respond is
+                        replicas that must respond is
                         determined by the value set for
                         
                         <span><code class="methodname">DbEnv::rep_set_nsites()</code>.</span>
@@ -217,9 +217,9 @@
           </ul>
         </div>
         <p>
-        By default, a quorum of sites must must acknowledge a permanent
+        By default, a quorum of electable peers must must acknowledge a permanent
         message in order for it considered to have been successfully
-        transmitted. The actual number of environments that must respond is
+        transmitted. The actual number of replicas that must respond is
         calculated using the value set with
                         
                         <span><code class="methodname">DbEnv::rep_set_nsites()</code>.</span>
@@ -251,7 +251,7 @@
                         
                         <code class="methodname">DbEnv::rep_set_timeout()</code>
                         method. When you do this, you provide the 
-                        <code class="literal">DB_REP_ACK_TIMEOUT</code> flag to
+                        <code class="literal">DB_REP_ACK_TIMEOUT</code> value to
                         the <code class="literal">which</code> parameter, and the
                         timeout value in microseconds to the
                         <code class="literal">timeout</code> parameter.
@@ -360,7 +360,8 @@
         <tr>
           <td width="40%" align="left" valign="top">Adding the Replication Manager to
                     
-                    <span>SimpleTxn</span>
+                    <span>RepMgr</span>
+                    
              </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>

@@ -188,7 +188,7 @@ maintained.  Reliability can be increased by providing separate power
 supplies for the systems and placing them in separate physical locations.</p>
       <p>If the connection between the two machines fails (or just some number
 of messages are lost), and subsequently the master crashes, it is
-possible to lose committed transactions.  Again, because transactional
+possible to lose committed transactions.  Again, transactional
 durability is not being maintained.  Reliability can be improved in a
 couple of ways:</p>
       <div class="orderedlist">
@@ -215,8 +215,8 @@ couple of ways:</p>
 messages).  Some systems may want to ensure clients never return
 out-of-date information, that is, once a transaction commit returns
 success on the master, no client will return old information to a
-read-only query. Some of the following changes may be used to address
-these issues:</p>
+read-only query. Some of the following changes to a Base API application
+may be used to address these issues:</p>
       <div class="orderedlist">
         <ol type="1">
           <li>

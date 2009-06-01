@@ -603,4 +603,6 @@ public interface EntityCursor<V> extends ForwardCursor<V> {
      */
     void close()
         throws DatabaseException;
+
+
 }

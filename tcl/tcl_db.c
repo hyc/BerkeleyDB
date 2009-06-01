@@ -1038,7 +1038,6 @@ tcl_DbPut(interp, objc, objv, dbp)
 				    dtmp, 0);
 				DB_ASSERT(dbp->env, ptr != NULL);
 			}
-			DB_MULTIPLE_WRITE_END(ptr, &data);
 		} else {
 			DB_MULTIPLE_WRITE_INIT(ptr, &key);
 			for (i = 0; i < elemc; i++) {
@@ -1047,7 +1046,6 @@ tcl_DbPut(interp, objc, objv, dbp)
 				    &key, ktmp, (u_int32_t)klen);
 				DB_ASSERT(dbp->env, ptr != NULL);
 			}
-			DB_MULTIPLE_WRITE_END(ptr, &key);
 		}
 		DB_MULTIPLE_WRITE_INIT(ptr, &data);
 		for (i = 0; i < elemc; i++) {
@@ -1056,7 +1054,6 @@ tcl_DbPut(interp, objc, objv, dbp)
 			    &data, dtmp, (u_int32_t)dlen);
 			DB_ASSERT(dbp->env, ptr != NULL);
 		}
-		DB_MULTIPLE_WRITE_END(ptr, &data);
 	} else if (multiflag == DB_MULTIPLE_KEY) {
 		/*
 		 * To work out how big a buffer is needed, we first need to
@@ -1087,7 +1084,6 @@ tcl_DbPut(interp, objc, objv, dbp)
 				    recno, dtmp, (u_int32_t)dlen);
 				DB_ASSERT(dbp->env, ptr != NULL);
 			}
-			DB_MULTIPLE_RECNO_WRITE_END(ptr, &key);
 		} else {
 			DB_MULTIPLE_WRITE_INIT(ptr, &key);
 			for (i = 0; i + 1 < elemc; i += 2) {
@@ -1099,7 +1095,6 @@ tcl_DbPut(interp, objc, objv, dbp)
 				    dtmp, (u_int32_t)dlen);
 				DB_ASSERT(dbp->env, ptr != NULL);
 			}
-			DB_MULTIPLE_WRITE_END(ptr, &key);
 		}
 	} else if (type == DB_QUEUE || type == DB_RECNO) {
 		/*
@@ -1710,7 +1705,7 @@ tcl_DbGet(interp, objc, objv, dbp, ispget)
 			goto out1;
 		}
 		key.data = prefix;
-		key.size = strlen(prefix);
+		key.size = (u_int32_t)strlen(prefix);
 		/*
 		 * If they give us an empty pattern string
 		 * (i.e. -glob *), go through entire DB.
@@ -2001,7 +1996,6 @@ tcl_DbDelete(interp, objc, objv, dbp)
 					    &key, recno, dtmp, 0);
 					DB_ASSERT(dbp->env, ptr != NULL);
 				}
-				DB_MULTIPLE_RECNO_WRITE_END(ptr, &key);
 			} else {
 				DB_MULTIPLE_WRITE_INIT(ptr, &key);
 				for (j = 0; j < elemc; j++) {
@@ -2011,7 +2005,6 @@ tcl_DbDelete(interp, objc, objv, dbp)
 					    &key, ktmp, (u_int32_t)klen);
 					DB_ASSERT(dbp->env, ptr != NULL);
 				}
-				DB_MULTIPLE_WRITE_END(ptr, &key);
 			}
 		} else if (multiflag == DB_MULTIPLE_KEY) {
 			/*
@@ -2048,7 +2041,6 @@ tcl_DbDelete(interp, objc, objv, dbp)
 					    &key, recno, dtmp, (u_int32_t)dlen);
 					DB_ASSERT(dbp->env, ptr != NULL);
 				}
-				DB_MULTIPLE_RECNO_WRITE_END(ptr, &key);
 			} else {
 				DB_MULTIPLE_WRITE_INIT(ptr, &key);
 				for (j = 0; j + 1 < elemc; j += 2) {
@@ -2061,7 +2053,6 @@ tcl_DbDelete(interp, objc, objv, dbp)
 					    dtmp, (u_int32_t)dlen);
 					DB_ASSERT(dbp->env, ptr != NULL);
 				}
-				DB_MULTIPLE_WRITE_END(ptr, &key);
 			}
 		} else if (type == DB_RECNO || type == DB_QUEUE) {
 			result = _GetUInt32(interp, objv[i++], &recno);
@@ -2118,7 +2109,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 			goto out;
 		}
 		key.data = prefix;
-		key.size = strlen(prefix);
+		key.size = (u_int32_t)strlen(prefix);
 		if (strlen(prefix) == 0)
 			flag = DB_FIRST;
 		else
@@ -2540,7 +2531,7 @@ tcl_second_call(dbp, pkey, data, skey)
 
 		memset(tskey, 0, sizeof(DBT));
 		tskey->data = databuf;
-		tskey->size = len;
+		tskey->size = (u_int32_t)len;
 		F_SET(tskey, DB_DBT_APPMALLOC);
 	}
 

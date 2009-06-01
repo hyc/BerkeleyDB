@@ -17,6 +17,7 @@ import com.sleepycat.bind.tuple.TupleOutput;
 /**
  * @author Mark Hayes
  */
+@SuppressWarnings("serial")
 public class MarshalledObject
     implements Serializable, MarshalledTupleKeyEntity {
 

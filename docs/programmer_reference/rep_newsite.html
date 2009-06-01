@@ -40,7 +40,7 @@ is for the client member to join.  Berkeley DB will perform an
 internal initialization from the master to the client automatically
 and will run recovery on the client to bring it up to date
 with the master.</p>
-      <p>For applications that use the Base replication API, connecting to a
+      <p>For Base API applications, connecting to a
 new site in the replication group happens whenever the
 <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> method returns <a href="../api_reference/C/repmessage.html#repmsg_DB_REP_NEWSITE" class="olink">DB_REP_NEWSITE</a>.  The application
 should assign the new site a local environment ID number, and all future
@@ -63,8 +63,8 @@ If no additional information was provided for Berkeley DB to forward to the
 existing members of the group, the <span class="bold"><strong>data</strong></span> field of the <span class="bold"><strong>rec</strong></span>
 parameter passed to the <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> method will be NULL after
 <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> returns <a href="../api_reference/C/repmessage.html#repmsg_DB_REP_NEWSITE" class="olink">DB_REP_NEWSITE</a>.</p>
-      <p>Replication Manager automatically distributes contact information using
-the mechanisms previously described.</p>
+      <p>Replication Manager automatically distributes contact information
+using the mechanisms previously described.</p>
     </div>
     <div class="navfooter">
       <hr />

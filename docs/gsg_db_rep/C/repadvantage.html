@@ -45,24 +45,20 @@
             replication in your DB application are:
         </p>
       <div class="itemizedlist">
-        <div class="itemizedlist">
-          <ul type="circle">
-            <li>
-              <p>
-                                   Improved application reliability.
-                           </p>
-              <p>
-                                   By spreading your data across multiple
-                                   machines, you can ensure that your
-                                   application's data continues to be
-                                   available even in the event of a
-                                   hardware failure on any given machine in
-                                   the replication group.
-                           </p>
-            </li>
-          </ul>
-        </div>
         <ul type="disc">
+          <li>
+            <p>
+                    Improve application reliability.
+                </p>
+            <p>
+                    By spreading your data across multiple
+                    machines, you can ensure that your
+                    application's data continues to be
+                    available even in the event of a
+                    hardware failure on any given machine in
+                    the replication group.
+                </p>
+          </li>
           <li>
             <p>
                     Improve read performance.
@@ -77,10 +73,10 @@
                     improving application data read responsiveness.
                 </p>
             <p>
-                        Additionally, depending on how you partition your
-                        data across your replicas, any given replica may
-                        only need to cache part of your data, decreasing
-                        cache misses and reducing I/O on the client.
+                    Additionally, depending on the portion of your data
+                    that you read on a given replica, that replica may need
+                    to cache part of your data, decreasing cache misses and
+                    reducing I/O on the replica.
                 </p>
           </li>
           <li>
@@ -115,7 +111,7 @@
             <p>
                     Note that it is possible to cause DB's replication
                     implementation to wait to hear from one or
-                    more replica's as to whether they have successfully
+                    more replicas as to whether they have successfully
                     saved the write before continuing. However, in this
                     case you might be trading performance for a even
                     higher durability guarantee (see below).

@@ -618,6 +618,7 @@ StlTpcbExample::txn(DefrecMap *accounts_map, DefrecMap *branches_map,
 			cout << "Transaction A=" << (long)account
 			     << " B=" << (long)branch
 			     << " T=" << (long)teller << " failed\n";
+		return (DB_LOCK_DEADLOCK);
 	} catch(...) {
 		dbstl::abort_txn(this);
 		throw;

@@ -69,7 +69,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="rep_base_meth.html">Base replication API</a>
+              <a href="rep_base_meth.html">Base API Methods</a>
             </span>
           </dt>
           <dt>
@@ -91,27 +91,27 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#id1603742">One replication process and multiple subordinate processes</a>
+                  <a href="rep_mgrmulti.html#id1606097">One replication process and multiple subordinate processes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#id1603721">Persistence of network address configuration</a>
+                  <a href="rep_mgrmulti.html#id1606306">Persistence of network address configuration</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#id1603799">Programming considerations</a>
+                  <a href="rep_mgrmulti.html#id1606376">Programming considerations</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#id1604002">Handling failure</a>
+                  <a href="rep_mgrmulti.html#id1606009">Handling failure</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#id1604131">Other miscellaneous rules</a>
+                  <a href="rep_mgrmulti.html#id1606548">Other miscellaneous rules</a>
                 </span>
               </dt>
             </dl>
@@ -130,22 +130,22 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mastersync.html#id1604441">Delaying client synchronization</a>
+                  <a href="rep_mastersync.html#rep_delay_sync">Delaying client synchronization</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mastersync.html#id1604482">Client-to-client synchronization</a>
+                  <a href="rep_mastersync.html#rep_c2c_sync">Client-to-client synchronization</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mastersync.html#id1604608">Blocked client operations</a>
+                  <a href="rep_mastersync.html#id1607010">Blocked client operations</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mastersync.html#id1604489">Clients too far out-of-date to synchronize</a>
+                  <a href="rep_mastersync.html#id1606963">Clients too far out-of-date to synchronize</a>
                 </span>
               </dt>
             </dl>
@@ -244,7 +244,7 @@ This of course means that only a single process may update data.)</p>
 uses POSIX 1003.1 style networking and thread support.  (On Windows
 systems, it uses standard Windows thread support.)  As a result, it is
 not as portable as the rest of the Berkeley DB library itself.</p>
-        <p>The alternative is to use the lower-level "Base" replication API.  This
+        <p>The alternative is to use the lower-level replication "Base APIs".  This
 approach affords more flexibility, but requires the application to
 provide some critical components:</p>
         <div class="orderedlist">
@@ -267,8 +267,7 @@ the sole discretion of the application.</li>
         <p>(Note that Replication Manager does not provide wire security for
 replication messages.)</p>
         <p>The following pages present various programming considerations, many of
-which are directly relevant only for applications which use the Base
-replication API.  However, even when using Replication Manager it is
+which are directly relevant only for Base API applications.  However, even when using Replication Manager it is
 important to understand the concepts.</p>
         <p>Finally, the Berkeley DB replication implementation has one other additional
 feature to increase application reliability.  Replication in Berkeley DB is
@@ -291,21 +290,21 @@ replication clients.</p>
             <tbody>
               <tr>
                 <td>
-                  <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_remote_site()</a>
+                  <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a>
                 </td>
-                <td>Specify the replication manager's remote sites</td>
+                <td>Specify the Replication Manager's remote sites</td>
               </tr>
               <tr>
                 <td>
                   <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a>
                 </td>
-                <td>Specify the replication manager's client acknowledgement policy</td>
+                <td>Specify the Replication Manager's client acknowledgement policy</td>
               </tr>
               <tr>
                 <td>
-                  <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_local_site()</a>
+                  <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a>
                 </td>
-                <td>Specify the replication manager's local site</td>
+                <td>Specify the Replication Manager's local site</td>
               </tr>
               <tr>
                 <td>
@@ -317,18 +316,24 @@ replication clients.</p>
                 <td>
                   <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>
                 </td>
-                <td>Start the replication manager</td>
+                <td>Start the Replication Manager</td>
               </tr>
               <tr>
                 <td>
                   <a href="../api_reference/C/repmgrstat.html" class="olink">DB_ENV-&gt;repmgr_stat()</a>
                 </td>
-                <td>Replication manager statistics</td>
+                <td>Replication Manager statistics</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../api_reference/C/repmgrstat_print.html" class="olink">DB_ENV-&gt;repmgr_stat_print()</a>
+                </td>
+                <td>Print Replication Manager statistics</td>
               </tr>
               <tr>
                 <td>
                   <span class="emphasis">
-                    <em>Base Replication API</em>
+                    <em>Base API Methods</em>
                   </span>
                 </td>
                 <td> </td>
@@ -347,9 +352,15 @@ replication clients.</p>
               </tr>
               <tr>
                 <td>
+                  <a href="../api_reference/C/reptransport.html" class="olink">DB_ENV-&gt;rep_set_transport()</a>
+                </td>
+                <td>Configure replication transport callback</td>
+              </tr>
+              <tr>
+                <td>
                   <a href="../api_reference/C/repstart.html" class="olink">DB_ENV-&gt;rep_start()</a>
                 </td>
-                <td>Configure an environment for replication</td>
+                <td>Start replication</td>
               </tr>
               <tr>
                 <td>
@@ -367,6 +378,12 @@ replication clients.</p>
               </tr>
               <tr>
                 <td>
+                  <a href="../api_reference/C/repstat_print.html" class="olink">DB_ENV-&gt;rep_stat_print()</a>
+                </td>
+                <td>Print replication statistics</td>
+              </tr>
+              <tr>
+                <td>
                   <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a>
                 </td>
                 <td>Replication synchronization</td>
@@ -381,15 +398,15 @@ replication clients.</p>
               </tr>
               <tr>
                 <td>
-                  <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>
-                </td>
-                <td>Configure the replication subsystem</td>
-              </tr>
-              <tr>
-                <td>
                   <a href="../api_reference/C/repclockskew.html" class="olink">DB_ENV-&gt;rep_set_clockskew()</a>
                 </td>
                 <td>Configure master lease clock adjustment</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>
+                </td>
+                <td>Configure the replication subsystem</td>
               </tr>
               <tr>
                 <td>
@@ -399,13 +416,13 @@ replication clients.</p>
               </tr>
               <tr>
                 <td>
-                  <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_nsites()</a>
+                  <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a>
                 </td>
                 <td>Configure replication group site count</td>
               </tr>
               <tr>
                 <td>
-                  <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_priority()</a>
+                  <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a>
                 </td>
                 <td>Configure replication site priority</td>
               </tr>
@@ -420,12 +437,6 @@ replication clients.</p>
                   <a href="../api_reference/C/repset_timeout.html" class="olink">DB_ENV-&gt;rep_set_timeout()</a>
                 </td>
                 <td>Configure replication timeouts</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/reptransport.html" class="olink">DB_ENV-&gt;rep_set_transport()</a>
-                </td>
-                <td>Configure replication transport callback</td>
               </tr>
             </tbody>
           </table>

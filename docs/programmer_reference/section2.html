@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center"> Change Persistence </th>
+          <th colspan="3" align="center">Change Persistence</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stl_persistence.html">Prev</a> </td>
@@ -29,34 +29,36 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="section2"></a> Change Persistence </h2>
+            <h2 class="title" style="clear: both"><a id="section2"></a>Change Persistence</h2>
           </div>
         </div>
       </div>
       <p>
-When you modified the data an iterator points to by 
-*itr.member_function_call() or *itr.data_member = new_value, you should 
-call itr-&gt;_DB_STL_StoreElement() to store the change, otherwise the change 
-is lost after the iterator is moved to other elements; 
+If you modify the object to which an iterator refers by
+(*iterator).member_function_call() or (*itr).data_member = new_value,
+you should call itr-&gt;_DB_STL_StoreElement() to store the change,
+otherwise the change would be lost after the iterator moves on to
+other elements.
 
 	</p>
       <p>
-If you are storing
-a sequence and you modified some part of it, you should also call this function
-before the iterator moves. 
-
+If you are storing a sequence, and you modified some part of it, you
+should also call this function before the iterator moves.
 	</p>
       <p>
-And in both occasions, if you specified "directdb_get"
-to true(this is the default value), you should call _DB_STL_StoreElement()
-after the change and before the next iterator movement OR *itr/itr-&gt; calls otherwise
-the change is also lost.
-
+And in both cases, if you
+specified <span class="bold"><strong>directdb_get</strong></span> as true (this
+is the default value), you should call _DB_STL_StoreElement() after
+the change and before the next iterator movement OR the next
+dereferencing of the iterator by the star or arrow operators, i.e.
+iterator::operator* or iterator::operator-&gt;,
+otherwise the change is also lost.
 	</p>
       <p>
-If you update the element like this: *itr = new_element; , you never have to call
-_DB_STL_StoreElement(), the change is always stored to datbase. 
-
+If you update the element by assigning to a dereferenced iterator like 
+this: <span class="bold"><strong>*itr = new_element;</strong></span> then you never
+have to call _DB_STL_StoreElement(), the change is stored to the
+database automatically.
 	</p>
     </div>
     <div class="navfooter">

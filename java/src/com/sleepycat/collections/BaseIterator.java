@@ -13,20 +13,23 @@ import java.util.ListIterator;
 /**
  * Common interface for BlockIterator and StoredIterator.
  */
-interface BaseIterator extends ListIterator {
+interface BaseIterator<E> extends ListIterator<E> {
 
     /**
+     * @hidden
      * Duplicate a cursor.  Called by StoredCollections.iterator.
      */
-    ListIterator dup();
+    ListIterator<E> dup();
 
     /**
+     * @hidden
      * Returns whether the given data is the current iterator data.  Called by
      * StoredMapEntry.setValue.
      */
     boolean isCurrentData(Object currentData);
 
     /**
+     * @hidden
      * Initializes a list iterator at the given index.  Called by
      * StoredList.iterator(int).
      */

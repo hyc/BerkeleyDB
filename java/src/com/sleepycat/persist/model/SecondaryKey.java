@@ -60,6 +60,10 @@ import com.sleepycat.persist.StoreConfig;
  * <a href="PrimaryKey.html#keyTypes">primary key type</a>}.  The {@link <a
  * href="PrimaryKey.html#sortOrder">key sort order</a>} is also the same.</p>
  *
+ * <p>For a secondary key field with a collection type, a type parameter must
+ * be used to specify the element type.  For example {@code Collection<String>}
+ * is allowed but {@code Collection} is not.</p>
+ *
  * @author Mark Hayes
  */
 @Documented @Retention(RUNTIME) @Target(FIELD)

@@ -55,7 +55,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">5/21/2009</p>
+            <p class="pubdate">6/1/2009</p>
           </div>
         </div>
         <div></div>
@@ -302,7 +302,7 @@
                     In addition to these, if you are writing a replicated application (see
                     <i class="citetitle">Berkeley DB Getting Started with Replicated Applications</i> for an introduction to writing replicated
                     applications), there is internal replication information that is normally kept
-                    on-disk.  You can cause this information to be kept in-memory only if you are
+                    on-disk.  You can cause this information to be kept in-memory if you are
                     willing to accept some limitations in how your replicated application operates.
                     See <a href="index.html#in-mem-rep">In-Memory Replicated Applications</a> for more information.
                 </p>
@@ -1033,37 +1033,58 @@ err:
             </p>
         <p>
                 There are many internal resources used by the DB replication subsystem which are
-                by default backed by disk. These internal resources help the DB subsystem remain
-                stable in its operations, and help to guarantee the success of elections. While a
-                complete description of these resources is beyond the scope of this article, you
-                should know that you can cause all of these resources to be held entirely in-memory.
-                But you do so with some small chance of operational errors in your replicated
-                application.
+                by default backed by disk.  These internal resources help the DB subsystem
+                ensure election accuracy. While a complete description of these resources is beyond
+                the scope of this article, you should know that you can cause all of these resources
+                to be held entirely in-memory.  But you do so with some small chance of operational
+                errors in your replicated application.
             </p>
         <p>
-                If you cause a replicated application to keep it's internal replication resources
+                If you cause a replicated application to keep its internal replication resources
                 in-memory, you run a small risk that elections will fail or be unable to complete.
                 However, calling additional elections should eventually yield a winner.
             </p>
         <p>
-                In addition, it is possible that the wrong site might win an election, which could
-                result in the loss of data. This is because of the general loss of durability
-                guarantees which occur when applications run entirely in-memory.
-                ??????Can I get some more information on this scenario??????
+                In addition, there is a slight possibility that the wrong site might win an
+                election, which could result in the loss of data. This can happen if you have a site
+                that is repeatedly crashing and trying to come back up. A site like this  might be
+                repeatedly sending out election information, and the repeated messages might confuse
+                other sites.  For replication applications that are not in-memory, these extra
+                messages would be ignored by other sites because they would also contain some state
+                information that allows other sites to know which election messages are relevant.
+                But strictly in-memory replicated applications cannot maintain this state
+                information, and so some other sites might become confused. The result might be that
+                the wrong site could be elected master due to the inconsistent information that is
+                available to them.
+            </p>
+        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+          <h3 class="title">Note</h3>
+          <p>
+                    This is very much a corner case that you probably will never see in your
+                    production systems, especially if your sites are all stable and well-behaved.
+                </p>
+        </div>
+        <p>
+                If an election is won by the wrong site (site A), then some other site (site B) probably has
+                more recent log files than the winner does. But since the wrong site A won the
+                election, site B will sync with the new master. This will cause site B (and
+                therefore, your entire replication group) to lose any log files it contains that are
+                more recent than the files contained by site A.
             </p>
         <p>
-                When running an in-memory replicated application, many times the desire is for the
-                master to run in-memory and the clients to commit data to disk. This helps to
-                improve write through-put on the master by avoid disk I/O. Instead, the master
-                simply "commits to the network," and then eliminates its message
-                ackowledgement expectations so that it is no longer waiting for clients to respond
-                to the commit.
+                Also, when running an in-memory replicated application, it is often-times desireable for
+                the master to run in-memory and the clients to commit data to disk. This helps to
+                improve write through-put on the master by avoiding disk I/O. Instead, the master
+                simply "commits to the network," and then eliminates its message ackowledgement
+                expectations so that it is no longer waiting for clients to respond to the commit.
             </p>
         <p>
-                If you are running masters that are configured to run entirely in-memory, you should
-                never allow your sites to appoint themselves masters again immediately after
-                crashing or rebooting. Doing so results in a slighter higher risk of your clients
-                crashing, than if you allow some other site to become the master. 
+                If you are running a master that is configured to run with internal
+                replication resources in-memory, you should never allow that site to
+                appoint itself master again immediately after crashing or rebooting.
+                Doing so results in a slightly higher risk of your client sites
+                crashing. To determine your next master, you should either hold an
+                election or appoint a different site to be master.
             </p>
         <p>
                 In order to cause a replication site to run entire in-memory, do all of the things

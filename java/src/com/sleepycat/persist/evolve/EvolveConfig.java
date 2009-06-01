@@ -35,10 +35,25 @@ public class EvolveConfig implements Cloneable {
 
     /**
      * Returns a shallow copy of the configuration.
+     *
+     * @deprecated As of JE 4.0.13, replaced by {@link
+     * EvolveConfig#clone()}.</p>
      */
     public EvolveConfig cloneConfig() {
         try {
-            return (EvolveConfig) clone();
+            return (EvolveConfig) super.clone();
+        } catch (CloneNotSupportedException cannotHappen) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns a shallow copy of the configuration.
+     */
+    @Override
+    public EvolveConfig clone() {
+        try {
+            return (EvolveConfig) super.clone();
         } catch (CloneNotSupportedException cannotHappen) {
             return null;
         }

@@ -13,6 +13,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.sleepycat.persist.model.EntityModel;
 import com.sleepycat.persist.raw.RawObject;
 
 /**
@@ -53,9 +54,15 @@ public class PrimitiveArrayFormat extends Format {
     }
 
     @Override
-    void initialize(Catalog catalog, int initVersion) {
+    void initialize(Catalog catalog, EntityModel model, int initVersion) {
+
+        /*
+         * getExistingType is allowed (to support raw mode) because primitive
+         * arrays are always available in Java.
+         */
         componentFormat = (SimpleFormat)
-            catalog.getFormat(getType().getComponentType());
+            catalog.getFormat(getExistingType().getComponentType(),
+                              false /*checkEntitySubclassIndexes*/);
     }
 
     @Override

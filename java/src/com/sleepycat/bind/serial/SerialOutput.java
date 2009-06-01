@@ -35,6 +35,8 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
  * embedded into the stream.  This identifier is then used by {@link
  * SerialInput} to load the class format to deserialize the object.</p>
  *
+ * @see <a href="SerialBinding.html#evolution">Class Evolution</a>
+ *
  * @author Mark Hayes
  */
 public class SerialOutput extends ObjectOutputStream {

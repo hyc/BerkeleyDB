@@ -35,8 +35,10 @@ public class JoinTest extends TxnTestCase {
 
     private static final int N_RECORDS = 5;
 
+    static protected Class<?> testClass = JoinTest.class;
+
     public static Test suite() {
-        return txnTestSuite(JoinTest.class, null, null);
+        return txnTestSuite(testClass, null, null);
     }
 
     private EntityStore store;

@@ -259,7 +259,7 @@ writerThread(void *args)
                 try {
                     dbstl::abort_txn(envp);
                 } catch (DbException ex1) {
-                    cout<<ex1.what();
+			std::cout<<ex1.what();
                 }
 
                 // Now we decide if we want to retry the operation.

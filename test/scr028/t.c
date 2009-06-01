@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+/* added to get clean compile on linux blade server else pread undefined */
+#ifdef __linux__
+#define __USE_UNIX98
+#endif
 #include <unistd.h>
 
 #include "db.h"

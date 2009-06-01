@@ -63,7 +63,7 @@
                DB's replication code decides if it must flush its
                transaction logs to disk depending on whether it receives
                sufficient permanent message acknowledgments from the
-               participating replica. More importantly, the thread 
+               participating replicas. More importantly, the thread 
                performing the transaction commit blocks
                until it either receives enough acknowledgments, or the
                acknowledgment timeout expires.
@@ -178,7 +178,7 @@
                     <code class="literal">ReplicationManagerAckPolicy.ALL</code>
                 </p>
               <p>
-                    All environments must acknowledge the message within
+                    All replicas must acknowledge the message within
                     the timeout period. This
                     policy should be selected only if your replication
                     group has a small number of replicas, and those replicas
@@ -186,7 +186,7 @@
                 </p>
               <p>
                         When this flag is used, the actual number of
-                        environments  that must respond is
+                        replicas that must respond is
                         determined by the value set for
                         
                         
@@ -223,9 +223,9 @@
           </ul>
         </div>
         <p>
-        By default, a quorum of sites must must acknowledge a permanent
+        By default, a quorum of electable peers must must acknowledge a permanent
         message in order for it considered to have been successfully
-        transmitted. The actual number of environments that must respond is
+        transmitted. The actual number of replicas that must respond is
         calculated using the value set with
                         
                         
@@ -345,6 +345,7 @@
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Adding the Replication Manager to
+                    
                     
                     <span>SimpleTxn</span>
              </td>

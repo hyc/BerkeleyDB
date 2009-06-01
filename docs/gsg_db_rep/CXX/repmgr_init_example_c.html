@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Adding the Replication Manager to SimpleTxn</title>
+    <title>Adding the Replication Manager to RepMgr</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
@@ -17,7 +17,8 @@
         <tr>
           <th colspan="3" align="center">Adding the Replication Manager to
                     
-                    <span>SimpleTxn</span>
+                    <span>RepMgr</span>
+                    
             </th>
         </tr>
         <tr>
@@ -34,7 +35,8 @@
           <div>
             <h2 class="title" style="clear: both"><a id="repmgr_init_example_c"></a>Adding the Replication Manager to
                     
-                    <span>SimpleTxn</span>
+                    <span>RepMgr</span>
+                    
             </h2>
           </div>
         </div>
@@ -42,8 +44,9 @@
       <p>
                     We now use the methods described above to add partial
                     support to the 
-                     
-                    <code class="literal">SimpleTxn</code> 
+                    
+                    <span>RepMgr</span>
+                    
                     example that we presented in 
                     <a class="xref" href="txnapp.html" title="Chapter 2. Transactional Application">Transactional Application</a>.
                     That is, in this section we will:
@@ -88,8 +91,8 @@
             </p>
       <p>
                     To begin, we copy the 
-                     
-                    <code class="literal">SimpleTxn</code> 
+                    
+                    <span>SimpleTxn</span>
                     code to a new file called
                     <code class="literal">RepMgrGSG.cpp</code>.
 
@@ -158,9 +161,7 @@ public:
         which is used to create <code class="literal">RepHostInfoObj</code> instances and add them to
         the chain of "other" hosts.
 </p>
-      <pre class="programlisting">
-        <strong class="userinput">
-          <code>RepConfigInfo::addOtherHost(char* host, int port)
+      <pre class="programlisting">RepConfigInfo::addOtherHost(char* host, int port)
 {
     REP_HOST_INFO *newinfo;
     newinfo = (REP_HOST_INFO*)malloc(sizeof(REP_HOST_INFO));
@@ -173,9 +174,7 @@ public:
         newinfo-&gt;next = other_hosts;
         other_hosts = newinfo;
     }
-} </code>
-        </strong>
-      </pre>
+}</pre>
       <p>
         Having done that, we update our class destructor to release the <code class="literal">RepHostInfoObj</code>
         chain of objects at class destruction time.
@@ -315,7 +314,7 @@ static void usage()
         configure the application's election priority if necessary.
 </p>
       <pre class="programlisting">    // Extract the command line parameters
-    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>m:n:o:p:</code></strong>")) != EOF) {
+    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>l:n:p:r:</code></strong>")) != EOF) {
         switch (ch) {
         case 'h':
             config.home = optarg;
@@ -332,6 +331,9 @@ static void usage()
         case 'n':
             config.totalsites = atoi(optarg);
             break;
+        case 'p':
+            config.priority = atoi(optarg);
+            break;
         case 'r':
             tmphost = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -340,9 +342,6 @@ static void usage()
             }
             tmpport = (unsigned short)atoi(portstr);
             config.addOtherHost(tmphost, tmpport);
-            break;
-        case 'p':
-            config.priority = atoi(optarg);
             break;</code></strong>
         case '?':
         default:
@@ -454,18 +453,18 @@ individually in turn:
     try {
         dbenv.open(app_config-&gt;home, 
             DB_CREATE | 
-            DB_RECOVER |
-            <strong class="userinput"><code>DB_THREAD | 
-            DB_INIT_REP |</code></strong>
             DB_INIT_LOCK | 
-            DB_INIT_LOG |
-            DB_INIT_MPOOL | 
-            DB_INIT_TXN, 
+            DB_INIT_LOG | 
+            DB_INIT_MPOOL |
+            <strong class="userinput"><code>DB_INIT_REP |</code></strong>
+            DB_INIT_TXN | 
+            DB_RECOVER <strong class="userinput"><code>|
+            DB_THREAD;</code></strong>
             0);
     } catch(DbException dbe) {
         cerr  &lt;&lt; "Caught an exception during DB environment open." &lt;&lt; endl
-              &lt;&lt; "Ensure that the home directory is created prior to starting"
-              &lt;&lt; " the application." &lt;&lt; endl;
+              &lt;&lt; "Ensure that the home directory is created prior to "
+              &lt;&lt; "starting the application." &lt;&lt; endl;
         ret = ENOENT;
         goto err;
     }</pre>

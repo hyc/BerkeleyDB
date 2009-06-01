@@ -4,10 +4,10 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>operator=</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="up" href="db_base_iterator.html" title="Chapter 10.  The db_base_iterator Class" />
+    <link rel="up" href="db_base_iterator.html" title="Chapter 10.  db_base_iterator" />
     <link rel="prev" href="stldb_base_iteratordb_base_iterator.html" title="db_base_iterator" />
     <link rel="next" href="stldb_base_iteratordstr_db_base_iterator.html" title="~db_base_iterator" />
   </head>
@@ -22,7 +22,7 @@ operator=
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_base_iteratordb_base_iterator.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 10. 
- The db_base_iterator Class</th>
+ db_base_iterator  </th>
           <td width="20%" align="right"> <a accesskey="n" href="stldb_base_iteratordstr_db_base_iterator.html">Next</a></td>
         </tr>
       </table>
@@ -53,13 +53,13 @@ const self&amp; operator=(const self &amp;bi)
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage"></div>
           <p>Iterator assignment operator. </p>
-          <p>Iterator assignment will cause the underlying cursor to be duplicated to make sure each iterator owns one unique cursor. The cached key/data is also copied. The left value iterator points to the same key/data pair as the the right value after the assignment. </p>
+          <p>Iterator assignment will cause the underlying cursor of the right iterator to be duplicated to the left iterator after its previous cursor is closed, to make sure each iterator owns one unique cursor. The key/data cached in the right iterator is copied to the left iterator. Consequently, the left iterator points to the same key/data pair in the database as the the right value after the assignment, and have identical cached key/data pair. </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1567536"></a>
+                <h4 class="title"><a id="id1563126"></a>
 Parameters</h4>
               </div>
             </div>
@@ -68,7 +68,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1567820"></a>
+                  <h5 class="title"><a id="id1563314"></a>
  bi </h5>
                 </div>
               </div>
@@ -80,7 +80,7 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1567774"></a>
+                <h4 class="title"><a id="id1563406"></a>
 Return Value</h4>
               </div>
             </div>
@@ -92,13 +92,13 @@ Return Value</h4>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1567250"></a>
+              <h3 class="title"><a id="id1563407"></a>
 Class</h3>
             </div>
           </div>
         </div>
         <p>
-  <a class="link" href="db_base_iterator.html" title="Chapter 10.  The db_base_iterator Class">
+  <a class="link" href="db_base_iterator.html" title="Chapter 10.  db_base_iterator">
   db_base_iterator</a>
      </p>
       </div>

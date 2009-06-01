@@ -129,6 +129,16 @@ public interface Enhanced {
                              int superLevel);
 
     /**
+     * @see Accessor#writeCompositeKeyFields
+     */
+    void bdbWriteCompositeKeyFields(EntityOutput output, Format[] formats);
+
+    /**
+     * @see Accessor#readCompositeKeyFields
+     */
+    void bdbReadCompositeKeyFields(EntityInput input, Format[] formats);
+
+    /**
      * @see Accessor#getField
      */
     Object bdbGetField(Object o,

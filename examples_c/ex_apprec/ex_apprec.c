@@ -6,6 +6,8 @@
  * $Id$
  */
 
+#include "db_config.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -16,7 +18,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "db_config.h"
 #include "db.h"
 #include "db_int.h"
 #include "dbinc/db_swap.h"

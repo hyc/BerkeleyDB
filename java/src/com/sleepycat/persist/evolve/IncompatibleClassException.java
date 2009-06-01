@@ -21,7 +21,9 @@ package com.sleepycat.persist.evolve;
  */
 public class IncompatibleClassException extends RuntimeException {
 
-    public IncompatibleClassException(String msg) {
-        super(msg);
+    private static final long serialVersionUID = 2103957824L;
+
+    public IncompatibleClassException(String message) {
+        super(message);
     }
 }

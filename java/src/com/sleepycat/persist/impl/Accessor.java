@@ -179,6 +179,26 @@ interface Accessor {
                           int superLevel);
 
     /**
+     * Writes all composite key field values to the given EntityOutput, writing
+     * in declared field number order.
+     *
+     * @param o the composite key object whose fields are to be written.
+     *
+     * @param output the output data to write to.
+     */
+    void writeCompositeKeyFields(Object o, EntityOutput output);
+
+    /**
+     * Reads all composite key field values from the given EntityInput,
+     * reading in declared field number order.
+     *
+     * @param o the composite key object whose fields are to be read.
+     *
+     * @param input the input data to read from.
+     */
+    void readCompositeKeyFields(Object o, EntityInput input);
+
+    /**
      * Returns the value of a given field, representing primitives as primitive
      * wrapper objects.
      *

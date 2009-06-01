@@ -34,15 +34,13 @@
         </div>
       </div>
       <p>
-Using transactions
-
 When using transactions, you must call dbstl::begin_txn/commit_txn/abort_txn global functions
-rather than the DB C/C++ transaction API, to begin/commit/abort a transaction, 
+rather than the DB C/C++ transaction API, to begin/commit/abort a transaction. 
 
 </p>
       <p>
 You can configure a container to
-be auto commit by setting DB_AUTOCOMMIT flag to the environment or database handle,
+be auto commit by setting DB_AUTO_COMMIT flag to the environment or database handle,
 just like how you do it using C/C++ API. In this case any auto commit method 
 of a container definitely forms an independent transaction if the container is 
 configured to be auto commit AND there is no external transaction created; If there

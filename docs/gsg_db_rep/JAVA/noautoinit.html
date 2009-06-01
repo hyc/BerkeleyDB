@@ -34,19 +34,23 @@
         </div>
       </div>
       <p>
-                    As stated in the previous section, when a replication replica is synchronizing
-                    with its master, it will block all DB operations until the synchronization
-                    is completed. You can turn off this behavior (see <a class="xref" href="manageblock.html" title="Managing Blocking Operations">Managing Blocking Operations</a>), but for replicas that have been out of touch
-                    from their master for a very long time, this may not be enough.
+                    As stated in the previous section, when a replication
+                    replica is synchronizing with its master, it will block
+                    DB operations at some points during this process
+                    until the synchronization is completed. You can turn
+                    off this behavior (see <a class="xref" href="manageblock.html" title="Managing Blocking Operations">Managing Blocking Operations</a>), but for replicas
+                    that have been out of touch from their master for a
+                    very long time, this may not be enough.
+
             </p>
       <p>
                     If a replica has been out of touch from its master long enough, it may find that
                     it is not possible to perform synchronization. When this happens, by default the
-                    master and replica internally decided to completely re-initialize the replica.
+                    master and replica internally decide to completely re-initialize the replica.
                     This re-initialization involves discarding the replica's current database(s) and
                     transferring new ones to it from the master. Depending on the size of the master's
                     databases, this can take a long time, during which time the replica will be
-                    complete non-responsive when it comes to performing database operations.
+                    completely non-responsive when it comes to performing database operations.
             </p>
       <p>
                 It is possible that there is a time of the day when it is better to perform a replica

@@ -61,7 +61,7 @@
           </div>
         </div>
         <p>
-                        When a environment calls for an election, it will wait
+                        When an environment calls for an election, it will wait
                         some amount of time for the other replicas in the
                         replication group to respond. The amount of time
                         that the environment will wait before declaring the
@@ -104,7 +104,7 @@
                             <span><code class="methodname">DbEnv::rep_set_timeout()</code>.</span>
                             To do so, specify the
                             <code class="literal">DB_REP_ELECTION_TIMEOUT</code>
-                            flag to the <code class="literal">which</code> parameter and then a
+                            value to the <code class="literal">which</code> parameter and then a
                             timeout value in microseconds to the
                             <code class="literal">timeout</code> parameter.
                     </p>
@@ -129,7 +129,7 @@
                             <span><code class="methodname">DbEnv::rep_set_timeout()</code>.</span>
                             To do so, specify the
                             <code class="literal">DB_REP_ELECTION_RETRY</code>
-                            flag to the <code class="literal">which</code> parameter and then a
+                            value to the <code class="literal">which</code> parameter and then a
                             retry value in microseconds to the
                             <code class="literal">timeout</code> parameter.
                     </p>
@@ -137,7 +137,7 @@
                         Note that this <span>flag</span>
                          is only
                         valid when you are using the Replication Manager. If you are
-                        using the base APIs, then this
+                        using the Base APIs, then this
                         <span>flag</span>
                          is
                         ignored.

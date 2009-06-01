@@ -39,22 +39,22 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="rep_mastersync.html#id1604441">Delaying client synchronization</a>
+              <a href="rep_mastersync.html#rep_delay_sync">Delaying client synchronization</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_mastersync.html#id1604482">Client-to-client synchronization</a>
+              <a href="rep_mastersync.html#rep_c2c_sync">Client-to-client synchronization</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_mastersync.html#id1604608">Blocked client operations</a>
+              <a href="rep_mastersync.html#id1607010">Blocked client operations</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_mastersync.html#id1604489">Clients too far out-of-date to synchronize</a>
+              <a href="rep_mastersync.html#id1606963">Clients too far out-of-date to synchronize</a>
             </span>
           </dt>
         </dl>
@@ -68,7 +68,7 @@ controls an application can use to reduce the synchronization burden.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1604441"></a>Delaying client synchronization</h3>
+              <h3 class="title"><a id="rep_delay_sync"></a>Delaying client synchronization</h3>
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ using the <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1604482"></a>Client-to-client synchronization</h3>
+              <h3 class="title"><a id="rep_c2c_sync"></a>Client-to-client synchronization</h3>
             </div>
           </div>
         </div>
@@ -115,15 +115,15 @@ flag.  The application may continue trying to find another client to
 service the request, or it may give up and simply send it to the master
 (that is, the environment ID explicitly specified to the transport
 function).</p>
-        <p>Applications written to the Base replication API have complete freedom
-in choosing where to send these <a href="../api_reference/C/reptransport.html#transport_DB_REP_ANYWHERE" class="olink">DB_REP_ANYWHERE</a> requests, and
-in deciding how to handle <a href="../api_reference/C/reptransport.html#transport_DB_REP_REREQUEST" class="olink">DB_REP_REREQUEST</a>.</p>
         <p>Replication Manager allows an application to designate one remote site
 (called its "peer") to receive client-to-client requests, via the
-flags parameter to the <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_remote_site()</a> method.  Replication
+flags parameter to the <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a> method.  Replication
 Manager will always first try to send requests marked with the
 <a href="../api_reference/C/reptransport.html#transport_DB_REP_ANYWHERE" class="olink">DB_REP_ANYWHERE</a> flag to its peer, if available.  However, it
 will always send a <a href="../api_reference/C/reptransport.html#transport_DB_REP_REREQUEST" class="olink">DB_REP_REREQUEST</a> to the master site.</p>
+        <p>Base API applications have complete freedom
+in choosing where to send these <a href="../api_reference/C/reptransport.html#transport_DB_REP_ANYWHERE" class="olink">DB_REP_ANYWHERE</a> requests, and
+in deciding how to handle <a href="../api_reference/C/reptransport.html#transport_DB_REP_REREQUEST" class="olink">DB_REP_REREQUEST</a>.</p>
         <p>The delayed synchronization and client-to-client synchronization
 features allow applications to do load balancing within replication
 groups.  For example, consider a replication group with 5 sites, A, B,
@@ -142,12 +142,13 @@ the election.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1604608"></a>Blocked client operations</h3>
+              <h3 class="title"><a id="id1607010"></a>Blocked client operations</h3>
             </div>
           </div>
         </div>
         <p>Clients in the process of synchronizing with the master block access to
-Berkeley DB operations.  By default, most Berkeley DB methods will block until
+Berkeley DB operations during some parts of that process.  
+By default, most Berkeley DB methods will block until
 client synchronization is complete, and then the method call proceeds.</p>
         <p>Client applications which cannot wait and would prefer an immediate
 error return instead of blocking, should call the
@@ -160,7 +161,7 @@ currently synchronizing with the master.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1604489"></a>Clients too far out-of-date to synchronize</h3>
+              <h3 class="title"><a id="id1606963"></a>Clients too far out-of-date to synchronize</h3>
             </div>
           </div>
         </div>

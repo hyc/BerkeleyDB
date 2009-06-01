@@ -16,6 +16,8 @@ package com.sleepycat.util;
 public class RuntimeExceptionWrapper extends RuntimeException
     implements ExceptionWrapper {
 
+    private static final long serialVersionUID = 1106961350L;
+
     private Throwable e;
 
     public RuntimeExceptionWrapper(Throwable e) {
@@ -32,6 +34,7 @@ public class RuntimeExceptionWrapper extends RuntimeException
         return e;
     }
 
+    @Override
     public Throwable getCause() {
 
         return e;

@@ -116,9 +116,8 @@ struct __vrfy_dbinfo {
 #define	SALVAGE_PRINTHEADER	0x02	/* Print the unknown-key header. */
 #define	SALVAGE_PRINTFOOTER	0x04	/* Print the unknown-key footer. */
 #define	SALVAGE_HASSUBDBS	0x08	/* There are subdatabases to salvage. */
-#define	SALVAGE_ISPART		0x10	/* Slavaging a partition db. */
-#define	VRFY_LEAFCHAIN_BROKEN	0x20	/* Lost one or more Btree leaf pgs. */
-#define	VRFY_QMETA_SET		0x40    /* We've seen a QUEUE meta page and
+#define	VRFY_LEAFCHAIN_BROKEN	0x10	/* Lost one or more Btree leaf pgs. */
+#define	VRFY_QMETA_SET		0x20    /* We've seen a QUEUE meta page and
 					   set things up for it. */
 	u_int32_t	flags;
 }; /* VRFY_DBINFO */

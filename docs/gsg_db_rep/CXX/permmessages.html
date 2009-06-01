@@ -55,7 +55,7 @@
         </dl>
       </div>
       <p>
-                Messages received by a replica may be marked with an
+                Messages received by a replica may be marked with 
                 special flag that indicates the message is permanent. 
                 Custom replicated applications will receive notification of
                 this flag via the <code class="literal">DB_REP_ISPERM</code> return value
@@ -159,7 +159,7 @@
                         the machines that are hosting its replicas.
                     </p>
         <p>
-                            At the other end of the extreme, there is a
+                            At the other extreme, there is a
                             class of applications that use replication
                             purely to improve read performance. This sort
                             of application might choose to use synchronous
@@ -195,8 +195,8 @@
                         That said, it is important to remember that
                         managing permanent messages involves a fair amount
                         of network traffic. The messages must be sent to
-                        the replicas and the replicas must then acknowledge
-                        the message. This represents a performance overhead
+                        the replicas and the replicas must acknowledge
+                        them. This represents a performance overhead
                         that can be worsened by congested networks or
                         outright outages.
                     </p>
@@ -283,16 +283,20 @@
                                            quorum. A quorum is reached when
                                            acknowledgments are received from the
                                            minimum number of electable
-                                           replicas needed to ensure that
+                                           peers needed to ensure that
                                            the record remains durable if
                                            an election is held. 
+                                   </p>
+              <p>
+                                       An <span class="emphasis"><em>electable peer</em></span> is any other
+                                       site that potentially can be elected master.
                                    </p>
               <p>
                                            The goal here is to be
                                            absolutely sure the record is
                                            durable. The master wants to
                                            hear from enough electable
-                                           replicas that they have
+                                           peer that they have
                                            committed the record so that if
                                            an election is held, the master
                                            knows the record will exist even
@@ -315,15 +319,12 @@
             </li>
             <li>
               <p>
-                                      Require an acknowledgment from an electable peer.
-                                      That is, any other site that
-                                      potentially can be elected master.
+                                      Require an acknowledgment from at least one electable peer.
                                    </p>
             </li>
             <li>
               <p>
-                                           Require acknowledgments from
-                                           all peers.
+                                           Require acknowledgments from all electable peers.
                                    </p>
             </li>
           </ul>
@@ -342,10 +343,10 @@
                         needs, or if you want your application to take more
                         corrective action than simply flushing log buffers
                         in the event of an unsuccessful commit, then you
-                        must use write a custom replication implementation. 
+                        must use implement replication using the Base APIs.
                    </p>
         <p>
-                        For custom replication implementation, messages are
+                        When using the Base APIs, messages are
                         sent from the master to its replica using a
                         <code class="function">send()</code> callback that you
                         implement.  Note, however, that DB's replication 

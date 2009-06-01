@@ -3,20 +3,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 29.  The Exception_classes_group Class</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <title>Chapter 29.  dbstl exception classes</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="prev" href="stlReadModifyWriteOptionno_read_modify_write.html" title="no_read_modify_write" />
-    <link rel="next" href="DbstlException.html" title="Chapter 30.  The DbstlException Class" />
+    <link rel="next" href="DbstlException.html" title="Chapter 30.  DbstlException" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 29. 
- The Exception_classes_group Class</th>
+ dbstl exception classes  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stlReadModifyWriteOptionno_read_modify_write.html">Prev</a> </td>
@@ -31,147 +31,122 @@
         <div>
           <div>
             <h2 class="title"><a id="Exception_classes_group"></a>Chapter 29. 
- The Exception_classes_group Class</h2>
+ dbstl exception classes  </h2>
           </div>
         </div>
       </div>
+      <h2><a id="id1580514"></a>dbstl exception classes</h2>
       <p>
 dbstl exception classes</p>
       <p>dbstl throws several types of exceptions on several kinds of errors, the exception classes form a class hiarachy. </p>
-      <p>First, there is the <a class="link" href="DbstlException.html" title="Chapter 30.  The DbstlException Class">DbstlException</a>
-, which is the base class for all types of dbstl specific concrete exception classes. <a class="link" href="DbstlException.html" title="Chapter 30.  The DbstlException Class">DbstlException</a>
+      <p>First, there is the <a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">DbstlException</a>
+, which is the base class for all types of dbstl specific concrete exception classes. <a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">DbstlException</a>
  inherits from the class DbException of Berkeley DB C++ API. Since DbException class inherits from C++ STL exception base class std::exception, you can make use of all Berkeley DB C++ and dbstl API exceptions in the same way you use the C++ std::exception class.</p>
-      <p>Besides exceptions of <a class="link" href="DbstlException.html" title="Chapter 30.  The DbstlException Class">DbstlException</a>
+      <p>Besides exceptions of <a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">DbstlException</a>
  and its subclasses, dbstl may also throw exceptions of DbException and its subclasses, which happens when a Berkeley DB call failed. So you should use the same way you catch Berkeley DB C++ API exceptions when you want to catch exceptions throw by Berkeley DB operations.</p>
       <p>When an exception occurs, dbstl initialize an local exception object on the stack and throws the exception object, so you should catch an exception like this:</p>
       <p>try { dbstl operations } catch(DbstlException ex){ Exception handling throw ex; // Optionally throw ex again } </p>
-      <div class="sect1" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h2 class="title" style="clear: both"><a id="Exception_classes_group_class"></a> Exception_classes_group</h2>
-            </div>
-          </div>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1584542"></a>
-Group</h3>
-              </div>
-            </div>
-          </div>
-          <p>
-None</p>
-        </div>
-        <div class="sect2" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h3 class="title"><a id="id1585107"></a>
-  Public Members</h3>
-              </div>
-            </div>
-          </div>
-          <div class="informaltable">
-            <table border="1" width="80%">
-              <colgroup>
-                <col />
-                <col />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-<a class="link" href="DbstlException.html" title="Chapter 30.  The DbstlException Class">
+      <h4><a id="id1580371"></a> Public Members </h4>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+<a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">
 DbstlException</a>
 </td>
-                  <td>
+              <td>
 DbstlException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="NotEnoughMemoryException.html" title="Chapter 35.  The NotEnoughMemoryException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="NotEnoughMemoryException.html" title="Chapter 35.  NotEnoughMemoryException">
 NotEnoughMemoryException</a>
 </td>
-                  <td>
+              <td>
 NotEnoughMemoryException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="InvalidIteratorException.html" title="Chapter 37.  The InvalidIteratorException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="InvalidIteratorException.html" title="Chapter 37.  InvalidIteratorException">
 InvalidIteratorException</a>
 </td>
-                  <td>
+              <td>
 InvalidIteratorException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="InvalidCursorException.html" title="Chapter 33.  The InvalidCursorException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="InvalidCursorException.html" title="Chapter 33.  InvalidCursorException">
 InvalidCursorException</a>
 </td>
-                  <td>
+              <td>
 InvalidCursorException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="InvalidDbtException.html" title="Chapter 31.  The InvalidDbtException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="InvalidDbtException.html" title="Chapter 31.  InvalidDbtException">
 InvalidDbtException</a>
 </td>
-                  <td>
+              <td>
 InvalidDbtException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="FailedAssertionException.html" title="Chapter 32.  The FailedAssertionException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="FailedAssertionException.html" title="Chapter 32.  FailedAssertionException">
 FailedAssertionException</a>
 </td>
-                  <td>
+              <td>
 FailedAssertionException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="NoSuchKeyException.html" title="Chapter 34.  The NoSuchKeyException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="NoSuchKeyException.html" title="Chapter 34.  NoSuchKeyException">
 NoSuchKeyException</a>
 </td>
-                  <td>
+              <td>
 NoSuchKeyException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="InvalidArgumentException.html" title="Chapter 39.  The InvalidArgumentException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="InvalidArgumentException.html" title="Chapter 39.  InvalidArgumentException">
 InvalidArgumentException</a>
 </td>
-                  <td>
+              <td>
 InvalidArgumentException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="NotSupportedException.html" title="Chapter 36.  The NotSupportedException Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="NotSupportedException.html" title="Chapter 36.  NotSupportedException">
 NotSupportedException</a>
 </td>
-                  <td>
+              <td>
 NotSupportedException</td>
-                </tr>
-                <tr>
-                  <td>
-<a class="link" href="InvalidFunctionCall.html" title="Chapter 38.  The InvalidFunctionCall Class">
+            </tr>
+            <tr>
+              <td>
+<a class="link" href="InvalidFunctionCall.html" title="Chapter 38.  InvalidFunctionCall">
 InvalidFunctionCall</a>
 </td>
-                  <td>
+              <td>
 InvalidFunctionCall</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <h4><a id="id1580989"></a>
+Group</h4>
+      <p>
+None</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -189,7 +164,7 @@ no_read_modify_write
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> Chapter 30. 
- The DbstlException Class</td>
+ DbstlException  </td>
         </tr>
       </table>
     </div>

@@ -219,9 +219,11 @@ __rep_internal_init(env, abbrev)
 	else {
 		F_CLR(rep, REP_F_RECOVER_VERIFY);
 		F_SET(rep, REP_F_RECOVER_UPDATE);
-		if (abbrev)
+		if (abbrev) {
+			RPRINT(env, DB_VERB_REP_SYNC, (env,
+			 "send UPDATE_REQ, merely to check for NIMDB refresh"));
 			F_SET(rep, REP_F_ABBREVIATED);
-		else
+		} else
 			F_CLR(rep, REP_F_ABBREVIATED);
 		ZERO_LSN(rep->first_lsn);
 		ZERO_LSN(rep->ckp_lsn);

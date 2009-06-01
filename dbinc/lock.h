@@ -84,7 +84,7 @@ typedef struct __db_lockregion {
 	u_int32_t	lock_id;	/* Current lock(er) id to allocate. */
 	u_int32_t	cur_maxid;	/* Current max lock(er) id. */
 	u_int32_t	nlockers;	/* Current number of lockers. */
-	u_int32_t	nmodes;		/* Number of modes in conflict table. */
+	int		nmodes;		/* Number of modes in conflict table. */
 	DB_LOCK_STAT	stat;		/* stats about locking. */
 } DB_LOCKREGION;
 

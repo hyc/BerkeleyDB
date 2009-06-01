@@ -166,7 +166,7 @@ writerThread(void *args)
 {
     int j, thread_num;
     int max_retries = 20;   // Max retry on a deadlock
-    char *key_strings[] = {"key 1", "key 2", "key 3", "key 4",
+    const char *key_strings[] = {"key 1", "key 2", "key 3", "key 4",
                            "key 5", "key 6", "key 7", "key 8",
                            "key 9", "key 10"};
 
@@ -211,7 +211,7 @@ writerThread(void *args)
                 // Perform the database write for this transaction.
                 for (j = 0; j < 10; j++) {
                     Dbt key, value;
-                    key.set_data(key_strings[j]);
+                    key.set_data((void *)key_strings[j]);
                     key.set_size((u_int32_t)strlen(key_strings[j]) + 1);
 
                     int payload = rand() + i;

@@ -232,7 +232,7 @@ __ham_metagroup_42_recover(env, dbtp, lsnp, op, info)
 {
 	COMPQUIET(dbtp, NULL);
 	COMPQUIET(lsnp, NULL);
-	COMPQUIET(op, 0);
+	COMPQUIET(op, (db_recops)0);
 	COMPQUIET(info, NULL);
 	return (__db_no_hash_am(env));
 }
@@ -256,7 +256,7 @@ __ham_groupalloc_42_recover(env, dbtp, lsnp, op, info)
 {
 	COMPQUIET(dbtp, NULL);
 	COMPQUIET(lsnp, NULL);
-	COMPQUIET(op, 0);
+	COMPQUIET(op, (db_recops)0);
 	COMPQUIET(info, NULL);
 	return (__db_no_hash_am(env));
 }

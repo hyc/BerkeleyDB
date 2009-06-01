@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>DB-&gt;del()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
@@ -67,7 +67,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1630953"></a>Parameters</h3>
+              <h3 class="title"><a id="id1634089"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -75,7 +75,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631214"></a>flags</h4>
+                <h4 class="title"><a id="id1634350"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -95,6 +95,35 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
 		deleted item is exactly at the head when deleted.
             </p>
               </li>
+              <li>
+                <p>
+                  <code class="literal"><a id="del_DB_MULTIPLE"></a>DB_MULTIPLE</code>
+            </p>
+                <p>Delete multiple data items using keys from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers.
+            </p>
+                <p>To delete records in bulk by key with the btree or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_WRITE_INIT.html" title="DB_MULTIPLE_WRITE_INIT">DB_MULTIPLE_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_WRITE_NEXT.html" title="DB_MULTIPLE_WRITE_NEXT">the section called “DB_MULTIPLE_WRITE_NEXT”</a>.  To delete records in bulk by record number, construct the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_NEXT.html" title="DB_MULTIPLE_RECNO_WRITE_NEXT">DB_MULTIPLE_RECNO_WRITE_NEXT</a> with a data size of zero.</p>
+                <p>A successful bulk delete operation is logically equivalent to a loop through each key/data pair, performing a <a class="xref" href="dbdel.html" title="DB-&gt;del()">DB-&gt;del()</a> for each one.</p>
+                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
+
+	    </p>
+                <p>The <code class="literal">DB_MULTIPLE</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
+                <p>
+            </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal"><a id="del_DB_MULTIPLE_KEY"></a>DB_MULTIPLE_KEY</code>
+            </p>
+                <p>Delete multiple data items using keys and data from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers.
+            </p>
+                <p>To delete records in bulk with the btree or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_WRITE_INIT.html" title="DB_MULTIPLE_WRITE_INIT">DB_MULTIPLE_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_KEY_WRITE_NEXT.html" title="DB_MULTIPLE_KEY_WRITE_NEXT">the section called “DB_MULTIPLE_KEY_WRITE_NEXT”</a>.  To delete records in bulk with the recno or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> using <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_NEXT.html" title="DB_MULTIPLE_RECNO_WRITE_NEXT">DB_MULTIPLE_RECNO_WRITE_NEXT</a>.</p>
+                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
+
+            </p>
+                <p>The <code class="literal">DB_MULTIPLE_KEY</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
+                <p>
+            </p>
+              </li>
             </ul>
           </div>
         </div>
@@ -102,7 +131,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631198"></a>key</h4>
+                <h4 class="title"><a id="id1634772"></a>key</h4>
               </div>
             </div>
           </div>
@@ -114,7 +143,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631222"></a>txnid</h4>
+                <h4 class="title"><a id="id1634947"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -135,7 +164,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631428"></a>Errors</h3>
+              <h3 class="title"><a id="id1634565"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -151,7 +180,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631329"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id1634723"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -185,7 +214,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631566"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1634673"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -198,7 +227,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631397"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1634727"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -211,7 +240,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631587"></a> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1635166"></a> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -230,7 +259,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631312"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1634317"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -242,7 +271,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631711"></a>DB_SECONDARY_BAD</h4>
+                <h4 class="title"><a id="id1635016"></a>DB_SECONDARY_BAD</h4>
               </div>
             </div>
           </div>
@@ -254,7 +283,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631368"></a>EACCES</h4>
+                <h4 class="title"><a id="id1635174"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -266,7 +295,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631341"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1634577"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -279,7 +308,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631206"></a>Class</h3>
+              <h3 class="title"><a id="id1634342"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -291,7 +320,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631590"></a>See Also</h3>
+              <h3 class="title"><a id="id1634347"></a>See Also</h3>
             </div>
           </div>
         </div>

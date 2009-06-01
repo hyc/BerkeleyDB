@@ -59,13 +59,19 @@ TlsWrapper<T>::TlsWrapper()
 
 int ResourceManager::global_lock(db_mutex_t dbcontainer_mtx)
 {
-	dbstl_assert(mtx_env_->mutex_lock(dbcontainer_mtx) == 0);
+	int ret;
+
+	ret = mtx_env_->mutex_lock(dbcontainer_mtx);
+	dbstl_assert(ret == 0);
 	return 0;
 }
 
 int ResourceManager::global_unlock(db_mutex_t dbcontainer_mtx)
 {
-	dbstl_assert(mtx_env_->mutex_unlock(dbcontainer_mtx) == 0);
+	int ret;
+
+	ret = mtx_env_->mutex_unlock(dbcontainer_mtx);
+	dbstl_assert(ret == 0);
 	return 0;
 }
 
@@ -472,8 +478,10 @@ int ResourceManager::open_cursor(DbCursorBase *dcbcsr,
 		dcbcsr->set_owner_txn(ptxn);
 	}
 
-	if (pdb->get_env() != NULL)
-		dbstl_assert((pdb->get_env()->get_open_flags(&oflags)) == 0);
+	if (pdb->get_env() != NULL){
+		ret = pdb->get_env()->get_open_flags(&oflags);
+		dbstl_assert(ret == 0);
+	}
 
 	// Call Dbc->cursor only if there is no active open cursor in the
 	// current thread, otherwise duplicate one from the existing cursor

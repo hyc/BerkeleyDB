@@ -53,24 +53,23 @@ extern "C" {
 #define	MTX_MPOOL_FILE_BUCKET	16
 #define	MTX_MPOOL_HANDLE	17
 #define	MTX_MPOOL_HASH_BUCKET	18
-#define	MTX_MPOOL_IO		19
-#define	MTX_MPOOL_REGION	20
-#define	MTX_MUTEX_REGION	21
-#define	MTX_MUTEX_TEST		22
-#define	MTX_REP_CHKPT		23
-#define	MTX_REP_DATABASE	24
-#define	MTX_REP_EVENT		25
-#define	MTX_REP_REGION		26
-#define	MTX_REPMGR		27
-#define	MTX_SEQUENCE		28
-#define	MTX_TWISTER		29
-#define	MTX_TXN_ACTIVE		30
-#define	MTX_TXN_CHKPT		31
-#define	MTX_TXN_COMMIT		32
-#define	MTX_TXN_MVCC		33
-#define	MTX_TXN_REGION		34
+#define	MTX_MPOOL_REGION	19
+#define	MTX_MUTEX_REGION	20
+#define	MTX_MUTEX_TEST		21
+#define	MTX_REP_CHKPT		22
+#define	MTX_REP_DATABASE	23
+#define	MTX_REP_EVENT		24
+#define	MTX_REP_REGION		25
+#define	MTX_REPMGR		26
+#define	MTX_SEQUENCE		27
+#define	MTX_TWISTER		28
+#define	MTX_TXN_ACTIVE		29
+#define	MTX_TXN_CHKPT		30
+#define	MTX_TXN_COMMIT		31
+#define	MTX_TXN_MVCC		32
+#define	MTX_TXN_REGION		33
 
-#define	MTX_MAX_ENTRY		34
+#define	MTX_MAX_ENTRY		33
 
 /* Redirect mutex calls to the correct functions. */
 #if !defined(HAVE_MUTEX_HYBRID) && (					\

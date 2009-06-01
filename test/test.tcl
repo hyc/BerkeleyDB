@@ -441,7 +441,7 @@ proc check_output { file } {
 		^Verifying\s.*|
 		^\t*\.\.\.dbc->get.*$|
 		^\t*\.\.\.dbc->put.*$|
-		^\t*\.\.\.key\s\d*$|
+		^\t*\.\.\.key\s\d.*$|
 		^\t*\.\.\.Skipping\sdbc.*|
 		^\t*and\s\d*\sduplicate\sduplicates\.$|
 		^\t*About\sto\srun\srecovery\s.*complete$|

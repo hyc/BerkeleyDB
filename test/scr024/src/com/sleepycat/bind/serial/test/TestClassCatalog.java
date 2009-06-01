@@ -19,20 +19,17 @@ import com.sleepycat.db.DatabaseException;
  */
 public class TestClassCatalog implements ClassCatalog {
 
-    private HashMap idToDescMap = new HashMap();
-    private HashMap nameToIdMap = new HashMap();
+    private final HashMap idToDescMap = new HashMap();
+    private final HashMap nameToIdMap = new HashMap();
     private int nextId = 1;
 
     public TestClassCatalog() {
     }
 
-    public void close()
-        throws DatabaseException {
+    public void close() {
     }
 
-    public synchronized byte[] getClassID(ObjectStreamClass desc)
-        throws DatabaseException {
-
+    public synchronized byte[] getClassID(ObjectStreamClass desc) {
         String className = desc.getName();
         byte[] id = (byte[]) nameToIdMap.get(className);
         if (id == null) {

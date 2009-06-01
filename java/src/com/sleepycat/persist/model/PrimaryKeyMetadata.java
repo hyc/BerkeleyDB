@@ -8,7 +8,6 @@
 
 package com.sleepycat.persist.model;
 
-
 /**
  * The metadata for a primary key field.  A primary key may be specified with
  * the {@link PrimaryKey} annotation.

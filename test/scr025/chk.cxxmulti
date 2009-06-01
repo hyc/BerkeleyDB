@@ -10,6 +10,8 @@ TEST_CXX_SRCDIR=../test/scr025  # must be a relative directory
 LIBS="-L.. -ldb -ldb_cxx"
 CXXFLAGS="-I.. -I../../dbinc"
 
+[ `uname` = "Linux" ] && LIBS="$LIBS -lpthread"
+
 # Test must be run from a local build directory, not from a test
 # directory.
 cd ..

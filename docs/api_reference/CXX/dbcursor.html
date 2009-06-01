@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Db::cursor()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="dbc.html" title="Chapter 3.  The Dbc Handle" />
@@ -60,7 +60,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1651703"></a>Parameters</h3>
+              <h3 class="title"><a id="id1655238"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652055"></a>cursorp</h4>
+                <h4 class="title"><a id="id1655214"></a>cursorp</h4>
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652062"></a>flags</h4>
+                <h4 class="title"><a id="id1655222"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -92,6 +92,21 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
+              <li>
+                <p>
+                  <code class="literal"><a id="cursor_DB_BULK"></a>DB_BULK</code>
+            </p>
+                <p>
+		 Configure a cursor to optimize for bulk operations.  Each
+		 successive operation on a cursor configured with this flag
+		 attempts to continue on the same database page as the previous
+		 operation, falling back to a search if a different page is
+		 required.  This avoids searching if there is a high degree of
+		 locality between cursor operations.  This flag is currently
+		 only effective with the btree access method: for other access
+		 methods it is ignored.
+            </p>
+              </li>
               <li>
                 <p>
                   <code class="literal"><a id="cursor_DB_READ_COMMITTED"></a>DB_READ_COMMITTED</code>
@@ -154,7 +169,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652288"></a>txnid</h4>
+                <h4 class="title"><a id="id1655447"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -180,7 +195,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652354"></a>Errors</h3>
+              <h3 class="title"><a id="id1655640"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -198,7 +213,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1627841"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1655430"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -222,7 +237,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652271"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1655313"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -241,7 +256,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652587"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1655314"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -254,7 +269,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652405"></a>Class</h3>
+              <h3 class="title"><a id="id1655590"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -266,7 +281,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652334"></a>See Also</h3>
+              <h3 class="title"><a id="id1655600"></a>See Also</h3>
             </div>
           </div>
         </div>

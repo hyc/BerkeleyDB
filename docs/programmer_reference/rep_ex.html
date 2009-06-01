@@ -43,7 +43,7 @@ stores this information into a replicated database; either master or
 clients can display the contents of the database, given an empty input
 line.</p>
       <p>There are two versions of the application: ex_rep_mgr uses Replication
-Manager, while ex_rep_base uses the Base replication API.  This is
+Manager, while ex_rep_base uses the replication Base API.  This is
 intended to demonstrate that, while the basic function of the
 application is the same in either case, the replication support
 infrastructure differs markedly.</p>
@@ -74,7 +74,7 @@ noted. They are as follows:</p>
               </span>
             </span>
           </dt>
-          <dd>Listen on port "port" of host "host" for incoming connections.</dd>
+          <dd>Listen on local host "host" at port "port" for incoming connections.</dd>
           <dt>
             <span class="term">
               <span class="bold">
@@ -98,7 +98,7 @@ noted. They are as follows:</p>
               </span>
             </span>
           </dt>
-          <dd>Attempt to connect to another member of the replication group which is
+          <dd>Attempt to connect to a remote member of the replication group which is
 listening on host "host" at port "port".  Members of a replication group
 should be able to find all other members of a replication group so long
 as they are in contact with at least one other member of the replication
@@ -110,7 +110,7 @@ group.  Any number of these may be specified. </dd>
               </span>
             </span>
           </dt>
-          <dd>Attempt to connect as a remote peer to another member of the replication group which is listening on host "host" at port "port".  At most, one of these may be specified (ex_rep_mgr only.)</dd>
+          <dd>Attempt to connect as a remote peer to a remote member of the replication group which is listening on host "host" at port "port".  At most, one of these may be specified.  See <a class="xref" href="rep_mastersync.html#rep_c2c_sync" title="Client-to-client synchronization">Client-to-client synchronization</a> for more information (ex_rep_mgr only.)</dd>
           <dt>
             <span class="term">
               <span class="bold">
@@ -143,7 +143,7 @@ group.  Any number of these may be specified. </dd>
               </span>
             </span>
           </dt>
-          <dd>Set the election priority.  See <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> for more
+          <dd>Set the election priority.  See <a class="xref" href="rep_elect.html" title="Elections">Elections</a> for more
 information.</dd>
           <dt>
             <span class="term">

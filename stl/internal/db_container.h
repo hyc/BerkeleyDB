@@ -165,9 +165,8 @@ public:
 
 	/**
 	This constructor is not directly called by the user, but invoked by
-	constructors of concrete container classes. The meaning and usage
-	of constructors of child classes with the same signature remains the
-	same, they will point to this piece of document.
+	constructors of concrete container classes. The statement about the
+	parameters applies to constructors of all container classes.
 	\param dbp Database handle. dbp is supposed to be opened inside envp.
 	Each dbstl container is backed by a Berkeley DB database, so dbstl 
 	will create an internal anonymous database if dbp is NULL. 
@@ -235,12 +234,13 @@ public:
 
 	/** Set the flags required by the Berkeley DB functions 
 	DbEnv::txn_begin(), DbTxn::commit() and DbEnv::cursor(). These flags
-	will only be set to the auto commit transactions of this container's
-	auto commit member functions, or to the Dbc::cursor call of
-	this container's iterator. By default the three flags are all zero.
-	You can set the three in one call here, or set them one by one using
-	the other three set functions. And the corresponding get functions
-	returns the flags actually used.
+	will be set to this container's auto commit member functions when 
+	auto commit transaction is used, except that cursor_oflags is set to 
+	the Dbc::cursor when creating an iterator for this container.
+	By default the three flags are all zero.
+	You can also set the values of the flags individually by using the 
+	appropriate set functions in this class. The corresponding get 
+	functions return the flags actually used.
 	\param txn_begin_flags Flags to be set to DbEnv::txn_begin().
 	\param commit_flags Flags to be set to DbTxn::commit().
 	\param cursor_open_flags Flags to be set to Db::cursor().

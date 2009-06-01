@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Db::get()</title>
-    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The Db Handle" />
@@ -106,7 +106,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632367"></a>Parameters</h3>
+              <h3 class="title"><a id="id1635041"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632422"></a>data</h4>
+                <h4 class="title"><a id="id1635361"></a>data</h4>
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632552"></a>flags</h4>
+                <h4 class="title"><a id="id1635492"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -273,7 +273,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
                  <a class="xref" href="dbassociate.html" title="Db::associate()">Db::associate()</a>  method.
             </p>
                 <p>
-                 See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Get Methods">DBT and Bulk Get Methods</a>
+                 See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a>
                  for more information on working with bulk get.
             </p>
               </li>
@@ -323,7 +323,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632838"></a>key</h4>
+                <h4 class="title"><a id="id1635505"></a>key</h4>
               </div>
             </div>
           </div>
@@ -335,7 +335,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632566"></a>pkey</h4>
+                <h4 class="title"><a id="id1635876"></a>pkey</h4>
               </div>
             </div>
           </div>
@@ -348,7 +348,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632449"></a>txnid</h4>
+                <h4 class="title"><a id="id1636012"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -369,7 +369,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632481"></a>Errors</h3>
+              <h3 class="title"><a id="id1635766"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -387,7 +387,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633026"></a><span>DbMemoryException or </span>DB_BUFFER_SMALL</h4>
+                <h4 class="title"><a id="id1635559"></a><span>DbMemoryException or </span>DB_BUFFER_SMALL</h4>
               </div>
             </div>
           </div>
@@ -406,7 +406,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632223"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1635824"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -426,7 +426,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632650"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1635917"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -446,7 +446,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632878"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1635826"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -467,7 +467,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633158"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1635841"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -491,7 +491,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633173"></a>DB_REP_LEASE_EXPIRED</h4>
+                <h4 class="title"><a id="id1636093"></a>DB_REP_LEASE_EXPIRED</h4>
               </div>
             </div>
           </div>
@@ -503,7 +503,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633189"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1636108"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -522,7 +522,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633277"></a>DB_SECONDARY_BAD</h4>
+                <h4 class="title"><a id="id1636124"></a>DB_SECONDARY_BAD</h4>
               </div>
             </div>
           </div>
@@ -534,7 +534,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632698"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1636142"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -557,7 +557,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633176"></a>Class</h3>
+              <h3 class="title"><a id="id1635948"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -569,7 +569,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632418"></a>See Also</h3>
+              <h3 class="title"><a id="id1635769"></a>See Also</h3>
             </div>
           </div>
         </div>

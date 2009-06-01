@@ -114,6 +114,7 @@ LIBJSO_LIBS=	@LIBJSO_LIBS@ @LIBSO_LIBS@
 SWIGCFLAGS=	@SWIGCFLAGS@
 
 JAR=		@JAR@
+JAVA=		env CLASSPATH="$(CLASSPATH)" @JAVA@
 JAVAC=		env CLASSPATH="$(CLASSPATH)" @JAVAC@
 JAVACFLAGS=	@JAVACFLAGS@
 JAVA_CLASSTOP=	./classes
@@ -121,6 +122,7 @@ JAVA_EXCLASSTOP=./classes.ex
 JAVA_SRCDIR=	$(srcdir)/java/src
 JAVA_EXDIR=	$(srcdir)/examples_java/src
 JAVA_SLEEPYCAT=	$(srcdir)/java/src/com/sleepycat
+JAVA_MANIFEST=	$(srcdir)/java/jarManifestEntries
 
 libj_jarfile=	db.jar
 libj_exjarfile=	dbexamples.jar
@@ -451,6 +453,8 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/persist/PrimaryKeyValueAdapter.java \
 	$(JAVA_SLEEPYCAT)/persist/SecondaryIndex.java \
 	$(JAVA_SLEEPYCAT)/persist/StoreConfig.java \
+	$(JAVA_SLEEPYCAT)/persist/StoreExistsException.java \
+	$(JAVA_SLEEPYCAT)/persist/StoreNotFoundException.java \
 	$(JAVA_SLEEPYCAT)/persist/SubIndex.java \
 	$(JAVA_SLEEPYCAT)/persist/SubIndexCursor.java \
 	$(JAVA_SLEEPYCAT)/persist/ValueAdapter.java \
@@ -473,6 +477,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/persist/impl/Catalog.java \
 	$(JAVA_SLEEPYCAT)/persist/impl/CollectionProxy.java \
 	$(JAVA_SLEEPYCAT)/persist/impl/ComplexFormat.java \
+	$(JAVA_SLEEPYCAT)/persist/impl/ComparatorCatalog.java \
 	$(JAVA_SLEEPYCAT)/persist/impl/CompositeKeyFormat.java \
 	$(JAVA_SLEEPYCAT)/persist/impl/ConverterReader.java \
 	$(JAVA_SLEEPYCAT)/persist/impl/Enhanced.java \
@@ -522,6 +527,8 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/persist/model/FieldMetadata.java \
 	$(JAVA_SLEEPYCAT)/persist/model/KeyField.java \
 	$(JAVA_SLEEPYCAT)/persist/model/ModelInternal.java \
+	$(JAVA_SLEEPYCAT)/persist/model/NotPersistent.java \
+	$(JAVA_SLEEPYCAT)/persist/model/NotTransient.java \
 	$(JAVA_SLEEPYCAT)/persist/model/Persistent.java \
 	$(JAVA_SLEEPYCAT)/persist/model/PersistentProxy.java \
 	$(JAVA_SLEEPYCAT)/persist/model/PrimaryKey.java \
@@ -819,7 +826,10 @@ $(libj_jarfile): $(JAVA_DBSRCS)
 	   ($(MKDIR) -p $(JAVA_CLASSTOP) && \
 	   $(CHMOD) $(dmode) $(JAVA_CLASSTOP))
 	$(JAVAC) -d $(JAVA_CLASSTOP) $(JAVACFLAGS) $(JAVA_DBSRCS)
-	cd $(JAVA_CLASSTOP) && $(JAR) cf ../$(libj_jarfile) ./com/sleepycat
+	$(JAVA) -classpath $(JAVA_CLASSTOP) \
+	    com.sleepycat.persist.model.ClassEnhancer $(JAVA_CLASSTOP)
+	cd $(JAVA_CLASSTOP) && \
+	     $(JAR) cfm ../$(libj_jarfile) ../$(JAVA_MANIFEST) ./com/sleepycat
 
 $(libj_exjarfile): $(libj_jarfile) $(JAVA_EXSRCS)
 	@test -d $(JAVA_EXCLASSTOP) || \
@@ -980,8 +990,8 @@ uninstall_utilities:
 		$(RM) $$i $$i.exe; \
 	done)
 
-DOCLIST=api_c api_cxx api_tcl articles collections gsg gsg_db_rep \
-	gsg_txn images index.html java license ref utility porting
+DOCLIST=api_reference articles collections csharp gsg gsg_db_rep \
+	gsg_txn index.html java license porting programmer_reference
 
 install_docs:
 	@echo "Installing documentation: $(DESTDIR)$(docdir) ..."
@@ -1332,7 +1342,7 @@ ex_tpcb: ex_tpcb@o@ $(DEF_LIB)
 
 gettingstarted_common@o@: \
     $(srcdir)/examples_c/getting_started/gettingstarted_common.c
-	$(CC) -I $(srcdir)/examples_c/getting_started $(CFLAGS) $?
+	$(CC) -I$(srcdir)/examples_c/getting_started $(CFLAGS) $?
 example_database_load@o@: \
     $(srcdir)/examples_c/getting_started/example_database_load.c
 	$(CC) $(CFLAGS) $?

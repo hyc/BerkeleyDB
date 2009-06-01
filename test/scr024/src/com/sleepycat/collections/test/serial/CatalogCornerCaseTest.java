@@ -24,9 +24,7 @@ import com.sleepycat.util.test.TestEnv;
  */
 public class CatalogCornerCaseTest extends TestCase {
 
-    public static void main(String[] args)
-        throws Exception {
-
+    public static void main(String[] args) {
         junit.framework.TestResult tr =
             junit.textui.TestRunner.run(suite());
         if (tr.errorCount() > 0 ||
@@ -37,9 +35,7 @@ public class CatalogCornerCaseTest extends TestCase {
         }
     }
 
-    public static Test suite()
-        throws Exception {
-
+    public static Test suite() {
         return new TestSuite(CatalogCornerCaseTest.class);
     }
 
@@ -50,6 +46,7 @@ public class CatalogCornerCaseTest extends TestCase {
         super(name);
     }
 
+    @Override
     public void setUp()
         throws Exception {
 
@@ -57,6 +54,7 @@ public class CatalogCornerCaseTest extends TestCase {
         env = TestEnv.BDB.open(getName());
     }
 
+    @Override
     public void tearDown() {
 
         try {

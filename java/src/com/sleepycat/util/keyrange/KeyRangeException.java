@@ -15,6 +15,8 @@ package com.sleepycat.util.keyrange;
  */
 public class KeyRangeException extends IllegalArgumentException {
 
+    private static final long serialVersionUID = 1048575489L;
+
     /**
      * Creates a key range exception.
      */

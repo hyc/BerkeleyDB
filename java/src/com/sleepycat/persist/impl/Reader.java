@@ -10,6 +10,8 @@ package com.sleepycat.persist.impl;
 
 import java.io.Serializable;
 
+import com.sleepycat.persist.model.EntityModel;
+
 /**
  * Interface to the "read object" methods of the Format class.  For the
  * latest version format, the Format object provides the implementation of
@@ -21,7 +23,10 @@ import java.io.Serializable;
  */
 interface Reader extends Serializable {
 
-    void initializeReader(Catalog catalog, int initVersion, Format oldFormat);
+    void initializeReader(Catalog catalog,
+                          EntityModel model,
+                          int initVersion,
+                          Format oldFormat);
 
     Object newInstance(EntityInput input, boolean rawAccess);
 

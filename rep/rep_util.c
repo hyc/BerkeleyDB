@@ -564,7 +564,6 @@ __rep_new_master(env, cntrl, eid)
 	int eid;
 {
 	DBT dbt;
-	DB_ENV *dbenv;
 	DB_LOG *dblp;
 	DB_LOGC *logc;
 	DB_LSN first_lsn, lsn;
@@ -578,7 +577,6 @@ __rep_new_master(env, cntrl, eid)
 	u_int32_t unused;
 	int change, do_req, lockout, ret, t_ret;
 
-	dbenv = env->dbenv;
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
 	dblp = env->lg_handle;

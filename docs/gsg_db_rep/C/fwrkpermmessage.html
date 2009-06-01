@@ -8,7 +8,7 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
-    <link rel="prev" href="repmgr_init_example_c.html" title="Adding the Replication Manager to simple_txn" />
+    <link rel="prev" href="repmgr_init_example_c.html" title="Adding the Replication Manager to ex_rep_gsg_simple" />
     <link rel="next" href="electiontimes.html" title="Managing Election Times" />
   </head>
   <body>
@@ -48,7 +48,7 @@
           <dt>
             <span class="sect2">
               <a href="fwrkpermmessage.html#perm2fmwrkexample">Adding a Permanent Message Policy to 
-                            <span>rep_mgr_gsg</span>
+                            <span>ex_rep_gsg_repmgr</span>
                             
                             
                     </a>
@@ -63,7 +63,7 @@
                DB's replication code decides if it must flush its
                transaction logs to disk depending on whether it receives
                sufficient permanent message acknowledgments from the
-               participating replica. More importantly, the thread 
+               participating replicas. More importantly, the thread 
                performing the transaction commit blocks
                until it either receives enough acknowledgments, or the
                acknowledgment timeout expires.
@@ -176,7 +176,7 @@
                     
                 </p>
               <p>
-                    All environments must acknowledge the message within
+                    All replicas must acknowledge the message within
                     the timeout period. This
                     policy should be selected only if your replication
                     group has a small number of replicas, and those replicas
@@ -184,7 +184,7 @@
                 </p>
               <p>
                         When this flag is used, the actual number of
-                        environments  that must respond is
+                        replicas that must respond is
                         determined by the value set for
                         <span><code class="methodname">DB_ENV-&gt;rep_set_nsites()</code>.</span>
                         
@@ -221,9 +221,9 @@
           </ul>
         </div>
         <p>
-        By default, a quorum of sites must must acknowledge a permanent
+        By default, a quorum of electable peers must must acknowledge a permanent
         message in order for it considered to have been successfully
-        transmitted. The actual number of environments that must respond is
+        transmitted. The actual number of replicas that must respond is
         calculated using the value set with
                         <span><code class="methodname">DB_ENV-&gt;rep_set_nsites()</code>.</span>
                         
@@ -255,7 +255,7 @@
                         <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code>
                         
                         method. When you do this, you provide the 
-                        <code class="literal">DB_REP_ACK_TIMEOUT</code> flag to
+                        <code class="literal">DB_REP_ACK_TIMEOUT</code> value to
                         the <code class="literal">which</code> parameter, and the
                         timeout value in microseconds to the
                         <code class="literal">timeout</code> parameter.
@@ -274,7 +274,7 @@
           <div>
             <div>
               <h3 class="title"><a id="perm2fmwrkexample"></a>Adding a Permanent Message Policy to 
-                            <span>rep_mgr_gsg</span>
+                            <span>ex_rep_gsg_repmgr</span>
                             
                             
                     </h3>
@@ -283,7 +283,7 @@
         </div>
         <p>
                         For illustration purposes, we will now update 
-                        <code class="literal">rep_mgr_gsg</code>
+                        <code class="literal">ex_rep_gsg_repmgr</code>
                         
                         
                         such that it requires only one acknowledgment from
@@ -303,19 +303,8 @@
                         our environment handle anyway, so it is a good
                         place to put it.
                     </p>
-        <pre class="programlisting">    /*      
-     * Create and configure the environment handle.
-     */
-    if ((ret = db_env_create(&amp;dbenv, 0)) != 0 ) {
-        fprintf(stderr, "Error creating handles: %s\n",
-            db_strerror(ret));
+        <pre class="programlisting">    if ((ret = create_env(progname, &amp;dbenv)) != 0)
         goto err;
-    }
-    
-    dbenv-&gt;set_errfile(dbenv, stderr);
-    dbenv-&gt;set_errpfx(dbenv, progname);
-
-    (void)dbenv-&gt;set_cachesize(dbenv, 0, CACHESIZE, 0);
 
     /* Default priority is 100 */
     dbenv-&gt;rep_set_priority(dbenv, 100);
@@ -325,7 +314,7 @@
     dbenv-&gt;rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);</code></strong>
 
     /* Collect the command line options */
-    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>m:o:p:</code></strong>")) != EOF)
+    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>l:n:p:r:</code></strong>")) != EOF)
 
     ... </pre>
       </div>
@@ -342,7 +331,8 @@
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Adding the Replication Manager to
-                    <span>simple_txn</span>
+                    <span>ex_rep_gsg_simple</span>
+                    
                     
              </td>
           <td width="20%" align="center">

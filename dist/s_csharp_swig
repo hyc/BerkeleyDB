@@ -20,10 +20,11 @@ die() {
 }
 
 [ -f $SWIG_FILE ] || die "Must be run from the dist directory"
+DIST_DIR=`pwd`
 
 for api in csharp ; do
 	echo "Building $api API"
-	swig_args="-outdir $CSHARP_SRCDIR -namespace $NAMESPACE -dllimport libname $args"
+	swig_args="-outdir $CSHARP_SRCDIR -namespace $NAMESPACE -dllimport libname -DSWIG_CSHARP_NO_EXCEPTION_HELPER $args"
 
 	$SWIG -Wall -$api $swig_args -I$SWIG_DIR \
 	    -o ../libdb_$api/db_${api}_wrap.c $SWIG_FILE || exit $?
@@ -40,3 +41,19 @@ for f in *.cs ; do
     sed 's/DllImport(\"libname\"/DllImport(libname/' < $f > $t
     cp $t $f
 done
+
+cd $DIST_DIR
+
+cd $SWIG_DIR
+# db_config.h must be the first #include, move it to the top of the file.
+(
+      echo '#include "db_config.h"'
+      sed '/#include "db_config.h"/d' < db_csharp_wrap.c
+) > $t && cp $t db_csharp_wrap.c
+
+# The following might become redundant with newer swig versions.
+# builds usually already define _CRT_SECURE_NO_DEPRECATE
+(
+      sed -e '/# define _CRT_SECURE_NO_DEPRECATE/i\
+# undef _CRT_SECURE_NO_DEPRECATE' < db_csharp_wrap.c
+) > $t && cp $t db_csharp_wrap.c

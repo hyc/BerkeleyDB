@@ -77,12 +77,12 @@ least half of the sites in the replication group, it is impossible for
 there to be two masters.  If the master can no longer contact a
 sufficient number of systems, it should reconfigure itself as a client,
 and hold an election.  Replication Manager does not currently
-implement such a feature, so this technique is only available to
-applications which use the Base replication API.</p>
+implement such a feature, so this technique is only available to Base API
+applications.</p>
       <p>There is another tool applications can use to minimize the damage in
 the case of a network partition.  By specifying an <span class="bold"><strong>nsites</strong></span>
 argument to <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> that is larger than the actual number of
-database environments in the replication group, applications can keep
+database environments in the replication group, Base API applications can keep
 systems from declaring themselves the master unless they can talk to
 a large percentage of the sites in the system.  For example, if there
 are 20 database environments in the replication group, and an argument
@@ -90,7 +90,7 @@ of 30 is specified to the <a href="../api_reference/C/repelect.html" class="olin
 to be able to talk to at least 16 of the sites to declare itself the
 master.</p>
       <p>Replication Manager uses the value of <span class="bold"><strong>nsites</strong></span> (configured by
-the <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_nsites()</a> method) for elections as well as in calculating how
+the <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a> method) for elections as well as in calculating how
 many acknowledgements to wait for when sending a
 <a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a> message.  So this technique may be useful here
 as well, unless the application uses the <a href="../api_reference/C/repmgrset_ack_policy.html#ackspolicy_DB_REPMGR_ACKS_ALL" class="olink">DB_REPMGR_ACKS_ALL</a> or
@@ -107,12 +107,16 @@ argument of 1 to the other.  That way, one of the systems could win
 elections even when partitioned, while the other one could not.  This
 would allow one of the systems to continue accepting write
 queries after the partition.</p>
-      <p>In a 2-site group, Replication Manager reacts to the loss of
+      <p>In a 2-site group, Replication Manager by default reacts to the loss of
 communication with the master by assuming the master has crashed: the
 surviving client simply declares itself to be master.  Thus it avoids
 the problem of the survivor never being able to get enough votes to
 prevail.  But it does leave the group vulnerable to the risk of
-multiple masters, if both sites are running but cannot communicate.</p>
+multiple masters, if both sites are running but cannot communicate.
+If this risk of multiple masters is unacceptable, there is a
+configuration option to observe a strict majority rule that
+prevents the survivor from taking over. See the <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a> method
+<a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_2SITE_STRICT" class="olink">DB_REPMGR_CONF_2SITE_STRICT</a> flag for more information.</p>
       <p>These scenarios stress the importance of good network infrastructure in
 Berkeley DB replicated environments.  When replicating database environments
 over sufficiently lossy networking, the best solution may well be to

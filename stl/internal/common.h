@@ -21,7 +21,7 @@
 //
 #if !defined(DEBUG) && !defined(_DEBUG)
 #undef dbstl_assert
-#define dbstl_assert(expression) (expression)
+#define dbstl_assert(expression)
 #else
 #undef dbstl_assert
 #define dbstl_assert(expression) do {			\
@@ -63,13 +63,10 @@
 #define TLS_MODIFIER __declspec(__thread)
 #elif defined(HAVE_TLS)
 #define TLS_MODIFIER __thread
-#elif defined(SINGLE_THREADED)
+#elif defined(TLS_SINGLE_THREADED)
 #define TLS_MODIFIER 
 #else
-#error "No appropriate platform type macro defined. \n\
-#define SINGLE_THREADED if you want to only use dbstl in a single\n\
-thread, and thread local storage functionality will not be available, \n\
-dbstl can only be used in a single thread. \n"
+#error "No appropriate TLS modifier defined."
 #endif
 #endif // !TLS_MODIFIER
 #endif // HAVE_PTHREAD_TLS

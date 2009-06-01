@@ -1169,7 +1169,6 @@
 #define	__memp_get_freelist __memp_get_freelist@DB_VERSION_UNIQUE_NAME@
 #define	__memp_extend_freelist __memp_extend_freelist@DB_VERSION_UNIQUE_NAME@
 #define	__memp_set_last_pgno __memp_set_last_pgno@DB_VERSION_UNIQUE_NAME@
-#define	__memp_bh_priority __memp_bh_priority@DB_VERSION_UNIQUE_NAME@
 #define	__memp_bh_settxn __memp_bh_settxn@DB_VERSION_UNIQUE_NAME@
 #define	__memp_skip_curadj __memp_skip_curadj@DB_VERSION_UNIQUE_NAME@
 #define	__memp_bh_freeze __memp_bh_freeze@DB_VERSION_UNIQUE_NAME@

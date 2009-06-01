@@ -516,6 +516,9 @@
 /* Define to 1 if building VxWorks. */
 /* #undef HAVE_VXWORKS */
 
+/* Define to 1 if the C++ wstring class is available. */
+/* #undef HAVE_WSTRING */
+
 /* Define to 1 if you have the `yield' function. */
 /* #undef HAVE_YIELD */
 
@@ -532,13 +535,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.8.9"
+#define PACKAGE_STRING "Berkeley DB 4.8.11"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.8.9"
+#define PACKAGE_TARNAME "db-4.8.11"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.8.9"
+#define PACKAGE_VERSION "4.8.11"
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1

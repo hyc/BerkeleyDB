@@ -568,7 +568,7 @@ For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
     <p>
-    @param key the key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
+    @param keys the set of keys {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
     <p>
     @return
     The method will return {@link com.sleepycat.db.OperationStatus#NOTFOUND OperationStatus.NOTFOUND} if the
@@ -859,7 +859,7 @@ must be specified.
 <p>
 @param data the set of data {@link com.sleepycat.db.MultipleEntry MultipleEntry} stored.
 <p>
-@param overwrite, if this flag is true and any of the keys already exist in the database, they will be replaced. Otherwise a KEYEXIST error will be returned.
+@param overwrite if this flag is true and any of the keys already exist in the database, they will be replaced. Otherwise a KEYEXIST error will be returned.
 <p>
 @return
 If any of the key/data pairs already appear in the database, this method will
@@ -898,7 +898,7 @@ must be specified.
 <p>
 @param key the key and data sets {@link com.sleepycat.db.MultipleEntry MultipleEntry} operated on.
 <p>
-@param overwrite, if this flag is true and any of the keys already exist in the database, they will be replaced. Otherwise a KEYEXIST error will be returned.
+@param overwrite if this flag is true and any of the keys already exist in the database, they will be replaced. Otherwise a KEYEXIST error will be returned.
 <p>
 @return
 If any of the key/data pairs already appear in the database, this method will

@@ -52,7 +52,7 @@
                           function that our original transaction
                           application used 
                           
-                          <span>(see <a class="xref" href="simpleprogramlisting.html#doloop_cxx" title="Method: RepMgrGSG::doloop()">Method: RepMgrGSG::doloop()</a>)</span>
+                          <span>(see <a class="xref" href="simpleprogramlisting.html#doloop_cxx" title="Method: SimpleTxn::doloop()">Method: SimpleTxn::doloop()</a>)</span>
                           
                           to fully support our replicated application. 
                   </p>
@@ -187,8 +187,8 @@ RepMgrGSG::RepMgrGSG() : app_config(0), dbenv(0)
       <pre class="programlisting">
         <strong class="userinput">
           <code>/*
- * A callback used to determine whether the local environment is a replica
- * or a master. This is called by the replication framework
+ * A callback used to determine whether the local environment is a 
+ * replica or a master. This is called by the Replication Manager
  * when the local replication environment changes state.
  */
 void RepMgrGSG::event_callback(DbEnv *dbenv, u_int32_t which, void *info)
@@ -246,10 +246,6 @@ int RepMgrGSG::doloop()
         if (dbp == 0) {
             dbp = new Db(&amp;dbenv, 0);
 
-            // Set page size small so page allocation is cheap.
-            if ((ret = dbp-&gt;set_pagesize(512)) != 0)
-                goto err;
-
             try {
                 dbp-&gt;open(NULL, DATABASE, NULL, DB_BTREE,
                     <strong class="userinput"><code>app_data.is_master ? DB_CREATE | DB_AUTO_COMMIT :
@@ -276,7 +272,8 @@ int RepMgrGSG::doloop()
                  * and synced, and no DB will be available until then.
                  */
                 if (dbe.get_errno() == ENOENT) {
-                    cout &lt;&lt; "No stock db available yet - retrying." &lt;&lt; endl;
+                    cout &lt;&lt; "No stock db available yet - "
+                         &lt;&lt; "retrying." &lt;&lt; endl;
                     try {
                         dbp-&gt;close(0);
                     } catch (DbException dbe2) {
@@ -312,9 +309,9 @@ int RepMgrGSG::doloop()
             <span>method</span> 
             (which has not
             required a modification since we first introduced it in 
-            <a class="xref" href="simpleprogramlisting.html#printstocks_c" title="Method: RepMgrGSG::print_stocks()">
+            <a class="xref" href="simpleprogramlisting.html#printstocks_c" title="Method: SimpleTxn::print_stocks()">
                             
-                            <span>Method: RepMgrGSG::print_stocks()</span>
+                            <span>Method: SimpleTxn::print_stocks()</span>
                             
                     </a>).
     </p>
@@ -400,9 +397,9 @@ err:    if (dbp != 0)
 
         is unmodified from when we
         originally introduced it. For details on that function, see
-        <a class="xref" href="simpleprogramlisting.html#printstocks_c" title="Method: RepMgrGSG::print_stocks()">
+        <a class="xref" href="simpleprogramlisting.html#printstocks_c" title="Method: SimpleTxn::print_stocks()">
                             
-                            <span>Method: RepMgrGSG::print_stocks()</span>
+                            <span>Method: SimpleTxn::print_stocks()</span>
                             
                     </a>.
 </p>
@@ -497,7 +494,7 @@ QUOTESERVER&gt; </pre>
 QUOTESERVER&gt; </pre>
         <p>
         Then, go to either the master or the replica to see the updated
-        database:
+        database. On the master:
 </p>
         <pre class="programlisting">QUOTESERVER&gt; 
         Symbol  Price
@@ -516,7 +513,7 @@ QUOTESERVER&gt; </pre>
 QUOTESERVER (read-only)&gt; </pre>
         <p>
         Finally, to quit the applications, simply type
-        <code class="literal">quit</code> at both prompts:
+        <code class="literal">quit</code> at both prompts. On the replica:
 </p>
         <pre class="programlisting">QUOTESERVER (read-only)&gt; quit
 &gt; </pre>

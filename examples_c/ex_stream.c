@@ -38,8 +38,9 @@ main(argc, argv)
 	DB *dbp;
 	DBC *dbcp;
 	DBT key, data;
+	DBTYPE db_type;
 	int ch, chunk_sz, chunk_off, data_sz, i, ret, rflag;
-	int db_type, page_sz;
+	int page_sz;
 	char *database, *buf;
 	const char *progname = "ex_stream";		/* Program name. */
 

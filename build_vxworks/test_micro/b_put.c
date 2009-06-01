@@ -16,8 +16,8 @@ b_put(int argc, char *argv[])
 	DBTYPE type;
 	DBT key, data;
 	db_recno_t recno;
-	u_int32_t cachesize;
-	int ch, dsize, i, count, secondaries;
+	u_int32_t cachesize, dsize;
+	int ch, i, count, secondaries;
 	char *ts, buf[64];
 
 	second = NULL;
@@ -37,7 +37,7 @@ b_put(int argc, char *argv[])
 			count = atoi(optarg);
 			break;
 		case 'd':
-			dsize = atoi(optarg);
+			dsize = (u_int32_t)atoi(optarg);
 			break;
 		case 's':
 			secondaries = atoi(optarg);
@@ -103,7 +103,7 @@ b_put(int argc, char *argv[])
 	 */
 	DB_BENCH_ASSERT(db_create(&dbp, dbenv, 0) == 0);
 	if (type == DB_QUEUE)
-		DB_BENCH_ASSERT(dbp->set_re_len(dbp, (u_int32_t)dsize) == 0);
+		DB_BENCH_ASSERT(dbp->set_re_len(dbp, dsize) == 0);
 #if DB_VERSION_MAJOR >= 4 && DB_VERSION_MINOR >= 1
 	DB_BENCH_ASSERT(
 	    dbp->open(dbp, NULL, TESTFILE, NULL, type, DB_CREATE, 0666) == 0);

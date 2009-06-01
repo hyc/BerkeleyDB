@@ -18,6 +18,8 @@ import java.io.IOException;
 public class IOExceptionWrapper
     extends IOException implements ExceptionWrapper {
 
+    private static final long serialVersionUID = 753416466L;
+
     private Throwable e;
 
     public IOExceptionWrapper(Throwable e) {
@@ -34,6 +36,7 @@ public class IOExceptionWrapper
         return e;
     }
 
+    @Override
     public Throwable getCause() {
 
         return e;

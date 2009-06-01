@@ -29,6 +29,8 @@ import com.sleepycat.db.DatabaseException;
  * {@link SerialOutput} or any of the serial bindings, the use of the catalog
  * is transparent to the application.</p>
  *
+ * @see <a href="SerialBinding.html#evolution">Class Evolution</a>
+ *
  * @author Mark Hayes
  */
 public interface ClassCatalog {

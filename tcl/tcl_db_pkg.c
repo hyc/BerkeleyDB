@@ -4372,7 +4372,7 @@ tcl_set_partition_dirs(interp, dbp, obj)
 	DB *dbp;
 	Tcl_Obj *obj;
 {
-	const char **dp, **dirs;
+	char **dp, **dirs;
 	Tcl_Obj **obj_list;
 	u_int32_t i, count;
 	int ret;
@@ -4388,7 +4388,7 @@ tcl_set_partition_dirs(interp, dbp, obj)
 	for (i = 0; i < count; i++, dp++)
 		*dp = Tcl_GetStringFromObj(obj_list[i], NULL);
 
-	if ((ret = dbp->set_partition_dirs(dbp, dirs)) != 0)
+	if ((ret = dbp->set_partition_dirs(dbp, (const char **)dirs)) != 0)
 		return (ret);
 
 	__os_free(NULL, dirs);

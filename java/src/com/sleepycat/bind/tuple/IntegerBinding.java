@@ -25,24 +25,24 @@ import com.sleepycat.db.DatabaseEntry;
  * TupleBinding#getPrimitiveBinding} method.</li>
  * </ol>
  */
-public class IntegerBinding extends TupleBinding {
+public class IntegerBinding extends TupleBinding<Integer> {
 
     private static final int INT_SIZE = 4;
 
     // javadoc is inherited
-    public Object entryToObject(TupleInput input) {
+    public Integer entryToObject(TupleInput input) {
 
-        return new Integer(input.readInt());
+        return input.readInt();
     }
 
     // javadoc is inherited
-    public void objectToEntry(Object object, TupleOutput output) {
+    public void objectToEntry(Integer object, TupleOutput output) {
 
-        output.writeInt(((Number) object).intValue());
+        output.writeInt(object);
     }
 
     // javadoc is inherited
-    protected TupleOutput getTupleOutput(Object object) {
+    protected TupleOutput getTupleOutput(Integer object) {
 
         return sizedOutput();
     }

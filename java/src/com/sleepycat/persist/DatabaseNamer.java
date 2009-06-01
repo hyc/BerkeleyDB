@@ -9,7 +9,6 @@
 package com.sleepycat.persist;
 
 import com.sleepycat.db.Database; // for javadoc
-import com.sleepycat.persist.impl.Store;
 
 /**
  * Determines the file names to use for primary and secondary databases.

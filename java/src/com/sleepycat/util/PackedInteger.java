@@ -13,7 +13,10 @@ package com.sleepycat.util;
  *
  * <p>Note that packed integers are not sorted naturally for a byte-by-byte
  * comparison because they have a preceding length and are little endian;
- * therefore, they are typically not used for keys.</p>
+ * therefore, they are typically not used for keys.  However, it so happens
+ * that packed integers in the range {@code 0} to {@code 630} (inclusive) are
+ * sorted correctly in a byte-by-byte comparison, and this may be useful for
+ * some applications.</p>
  *
  * <p>Values in the inclusive range [-119,119] are stored in a single byte.
  * For values outside that range, the first byte stores the sign and the number

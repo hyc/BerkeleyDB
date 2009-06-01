@@ -79,37 +79,6 @@ public abstract class StoredContainer implements Cloneable {
     }
 
     /**
-     * Returns whether read-uncommitted is allowed for this container.
-     * For the JE product, read-uncommitted is always allowed; for the DB
-     * product, read-uncommitted is allowed if it was configured for the
-     * underlying database for this container.
-     * Even when read-uncommitted is allowed it must specifically be enabled by
-     * calling one of the {@link StoredCollections} methods.
-     * This method does not exist in the standard {@link java.util.Map} or
-     * {@link java.util.Collection} interfaces.
-     *
-     * @return whether read-uncommitted is allowed.
-     *
-     * @deprecated This method is deprecated with no replacement in this class.
-     * In the DB product, <code>DatabaseConfig.getReadUncommitted</code> may be
-     * called.
-     */
-    public final boolean isDirtyReadAllowed() {
-
-        return view.readUncommittedAllowed;
-    }
-
-    /**
-     * @deprecated This method has been replaced by {@link #getCursorConfig}.
-     * <code>CursorConfig.isReadUncommitted</code> may be called to determine
-     * whether dirty-read is enabled.
-     */
-    public final boolean isDirtyRead() {
-
-        return view.cursorConfig.getReadUncommitted();
-    }
-
-    /**
      * Returns whether the databases underlying this container are
      * transactional.
      * Even in a transactional environment, a database will be transactional
@@ -285,7 +254,7 @@ public abstract class StoredContainer implements Cloneable {
         }
     }
 
-    Object get(Object key) {
+    Object getValue(Object key) {
 
         DataCursor cursor = null;
         try {
@@ -303,7 +272,7 @@ public abstract class StoredContainer implements Cloneable {
         }
     }
 
-    Object put(final Object key, final Object value) {
+    Object putKeyValue(final Object key, final Object value) {
 
         DataCursor cursor = null;
         boolean doAutoCommit = beginAutoCommit();
