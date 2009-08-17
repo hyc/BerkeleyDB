@@ -1766,7 +1766,6 @@ next:	if ((ret = __memp_fget(mpf, &argp->npgno, ip, NULL, 0, &pagep)) != 0) {
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->nlsn);
 	CHECK_LSN(file_dbp->env, op, cmp_p, &LSN(pagep), &argp->nlsn);
-	CHECK_ABORT(file_dbp->env, op, cmp_n, &LSN(pagep), lsnp);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
 		/* Need to truncate the page. */

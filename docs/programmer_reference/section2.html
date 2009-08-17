@@ -35,8 +35,8 @@
       </div>
       <p>
 If you modify the object to which an iterator refers by
-(*iterator).member_function_call() or (*itr).data_member = new_value,
-you should call itr-&gt;_DB_STL_StoreElement() to store the change,
+(*iterator).member_function_call() or (*iterator).data_member = new_value,
+you should call iterator-&gt;_DB_STL_StoreElement() to store the change,
 otherwise the change would be lost after the iterator moves on to
 other elements.
 
@@ -56,7 +56,7 @@ otherwise the change is also lost.
 	</p>
       <p>
 If you update the element by assigning to a dereferenced iterator like 
-this: <span class="bold"><strong>*itr = new_element;</strong></span> then you never
+this: <span class="bold"><strong>*iterator = new_element;</strong></span> then you never
 have to call _DB_STL_StoreElement(), the change is stored to the
 database automatically.
 	</p>

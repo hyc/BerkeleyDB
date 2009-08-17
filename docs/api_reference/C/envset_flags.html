@@ -64,7 +64,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670314"></a>Parameters</h3>
+              <h3 class="title"><a id="id1669002"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1670336"></a>flags</h4>
+                <h4 class="title"><a id="id1669087"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -109,8 +109,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_CDB_ALLDB"></a>DB_CDB_ALLDB</code>
+                <p><a id="set_flags_DB_CDB_ALLDB"></a>
+                  <code class="literal">DB_CDB_ALLDB</code>
             </p>
                 <p>
                  If set, Berkeley DB Concurrent Data Store applications will perform
@@ -134,8 +134,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_DIRECT_DB"></a>DB_DIRECT_DB</code>
+                <p><a id="set_flags_DB_DIRECT_DB"></a>
+                  <code class="literal">DB_DIRECT_DB</code>
             </p>
                 <p>
                  Turn off system buffering of Berkeley DB database files to avoid
@@ -157,8 +157,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_DSYNC_DB"></a>DB_DSYNC_DB</code>
+                <p><a id="set_flags_DB_DSYNC_DB"></a>
+                  <code class="literal">DB_DSYNC_DB</code>
             </p>
                 <p>
                  Configure Berkeley DB to flush database writes to the backing disk
@@ -191,8 +191,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_MULTIVERSION"></a>DB_MULTIVERSION</code>
+                <p><a id="set_flags_DB_MULTIVERSION"></a>
+                  <code class="literal">DB_MULTIVERSION</code>
             </p>
                 <p>
                  If set, all databases in the environment will be opened as if
@@ -215,8 +215,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_NOLOCKING"></a>DB_NOLOCKING</code>
+                <p><a id="set_flags_DB_NOLOCKING"></a>
+                  <code class="literal">DB_NOLOCKING</code>
             </p>
                 <p>
                  If set, Berkeley DB will grant all requested mutual exclusion mutexes
@@ -235,8 +235,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_NOMMAP"></a>DB_NOMMAP</code>
+                <p><a id="set_flags_DB_NOMMAP"></a>
+                  <code class="literal">DB_NOMMAP</code>
             </p>
                 <p>
                  If set, Berkeley DB will copy read-only database files into the local
@@ -260,8 +260,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_NOPANIC"></a>DB_NOPANIC</code>
+                <p><a id="set_flags_DB_NOPANIC"></a>
+                  <code class="literal">DB_NOPANIC</code>
             </p>
                 <p>
                  If set, Berkeley DB will ignore any panic state in the database
@@ -282,8 +282,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_OVERWRITE"></a>DB_OVERWRITE</code>
+                <p><a id="set_flags_DB_OVERWRITE"></a>
+                  <code class="literal">DB_OVERWRITE</code>
             </p>
                 <p>
                  Overwrite files stored in encrypted formats before deleting them. 
@@ -305,8 +305,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_PANIC_ENVIRONMENT"></a>DB_PANIC_ENVIRONMENT</code>
+                <p><a id="set_flags_DB_PANIC_ENVIRONMENT"></a>
+                  <code class="literal">DB_PANIC_ENVIRONMENT</code>
             </p>
                 <p>
                  If set, Berkeley DB will set the panic state for the database
@@ -325,8 +325,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_REGION_INIT"></a>DB_REGION_INIT</code>
+                <p><a id="set_flags_DB_REGION_INIT"></a>
+                  <code class="literal">DB_REGION_INIT</code>
             </p>
                 <p>
                  In some applications, the expense of page-faulting the underlying
@@ -417,8 +417,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_TXN_NOWAIT"></a>DB_TXN_NOWAIT</code>
+                <p><a id="set_flags_DB_TXN_NOWAIT"></a>
+                  <code class="literal">DB_TXN_NOWAIT</code>
             </p>
                 <p>
                  If set and a lock is unavailable for any Berkeley DB operation
@@ -443,8 +443,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_TXN_SNAPSHOT"></a>DB_TXN_SNAPSHOT</code>
+                <p><a id="set_flags_DB_TXN_SNAPSHOT"></a>
+                  <code class="literal">DB_TXN_SNAPSHOT</code>
             </p>
                 <p>
                  If set, all transactions in the environment will be started as if
@@ -469,8 +469,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_TXN_WRITE_NOSYNC"></a>DB_TXN_WRITE_NOSYNC</code>
+                <p><a id="set_flags_DB_TXN_WRITE_NOSYNC"></a>
+                  <code class="literal">DB_TXN_WRITE_NOSYNC</code>
             </p>
                 <p>
                  If set, Berkeley DB will write, but will not synchronously flush, the
@@ -498,8 +498,8 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_flags_DB_YIELDCPU"></a>DB_YIELDCPU</code>
+                <p><a id="set_flags_DB_YIELDCPU"></a>
+                  <code class="literal">DB_YIELDCPU</code>
             </p>
                 <p>
                  If set, Berkeley DB will yield the processor immediately after each
@@ -528,7 +528,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1670812"></a>onoff</h4>
+                <h4 class="title"><a id="id1670520"></a>onoff</h4>
               </div>
             </div>
           </div>
@@ -542,7 +542,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670618"></a>Errors</h3>
+              <h3 class="title"><a id="id1669666"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -558,7 +558,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1671090"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1668822"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -571,7 +571,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1671650"></a>Class</h3>
+              <h3 class="title"><a id="id1670497"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -583,7 +583,7 @@ DB_ENV-&gt;set_flags(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670592"></a>See Also</h3>
+              <h3 class="title"><a id="id1669777"></a>See Also</h3>
             </div>
           </div>
         </div>

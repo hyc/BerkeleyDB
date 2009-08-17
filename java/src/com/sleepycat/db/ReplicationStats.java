@@ -368,12 +368,6 @@ public class ReplicationStats {
         return st_max_lease_usec;
     }
 
-    private int st_filefail_cleanups;
-    /** TODO */
-    public int getFilefailCleanups() {
-        return st_filefail_cleanups;
-    }
-
     /**
     For convenience, the ReplicationStats class has a toString method
     that lists all the data fields.
@@ -436,7 +430,6 @@ public class ReplicationStats {
             + "\n  st_election_usec=" + st_election_usec
             + "\n  st_max_lease_sec=" + st_max_lease_sec
             + "\n  st_max_lease_usec=" + st_max_lease_usec
-            + "\n  st_filefail_cleanups=" + st_filefail_cleanups
             ;
     }
 }

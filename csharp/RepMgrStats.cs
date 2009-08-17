@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,22 +21,22 @@ namespace BerkeleyDB {
         /// <summary>
         /// Existing connections dropped. 
         /// </summary>
-        public long DroppedConnections { get { return st.st_connection_drop; } }
+        public ulong DroppedConnections { get { return st.st_connection_drop; } }
         /// <summary>
         /// # msgs discarded due to excessive queue length.
         /// </summary>
-        public long DroppedMessages { get { return st.st_msgs_dropped; } }
+        public ulong DroppedMessages { get { return st.st_msgs_dropped; } }
         /// <summary>
         /// Failed new connection attempts. 
         /// </summary>
-        public long FailedConnections { get { return st.st_connect_fail; } }
+        public ulong FailedConnections { get { return st.st_connect_fail; } }
         /// <summary>
         /// # of insufficiently ack'ed msgs. 
         /// </summary>
-        public long FailedMessages { get { return st.st_perm_failed; } }
+        public ulong FailedMessages { get { return st.st_perm_failed; } }
         /// <summary>
         /// # msgs queued for network delay. 
         /// </summary>
-        public long QueuedMessages { get { return st.st_msgs_queued; } }
+        public ulong QueuedMessages { get { return st.st_msgs_queued; } }
     }
 }

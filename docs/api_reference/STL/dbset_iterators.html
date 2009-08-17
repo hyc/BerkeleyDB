@@ -3,20 +3,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 17.  iterator classes for db_set and db_multiset</title>
+    <title>Chapter 17.  Iterator Classes for db_set and db_multiset</title>
     <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="prev" href="stldb_map_iteratoroperator_assign.html" title="operator=" />
-    <link rel="next" href="db_set_base_iterator.html" title="Chapter 18.  db_set_base_iterator" />
+    <link rel="next" href="db_set_base_iterator.html" title="Chapter 18.  Db_set_base_iterator" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 17. 
- iterator classes for db_set and db_multiset  </th>
+ Iterator Classes for db_set and db_multiset  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_map_iteratoroperator_assign.html">Prev</a> </td>
@@ -31,33 +31,30 @@
         <div>
           <div>
             <h2 class="title"><a id="dbset_iterators"></a>Chapter 17. 
- iterator classes for db_set and db_multiset  </h2>
+ Iterator Classes for db_set and db_multiset  </h2>
           </div>
         </div>
       </div>
-      <h2><a id="id1570041"></a>Iterator classes for db_set and db_multiset.</h2>
-      <p>
-Iterator classes for db_set and db_multiset.</p>
-      <p><a class="link" href="db_set_base_iterator.html" title="Chapter 18.  db_set_base_iterator">db_set_base_iterator</a>
- and <a class="link" href="db_set_iterator.html" title="Chapter 19.  db_set_iterator">db_set_iterator</a>
- are the const iterator and iterator class for <a class="link" href="db_set.html" title="Chapter 7.  db_set">db_set</a>
- and <a class="link" href="db_multiset.html" title="Chapter 8.  db_multiset">db_multiset</a>
+      <p><a class="link" href="db_set_base_iterator.html" title="Chapter 18.  Db_set_base_iterator">db_set_base_iterator</a>
+ and <a class="link" href="db_set_iterator.html" title="Chapter 19.  Db_set_iterator">db_set_iterator</a>
+ are the const iterator and iterator class for <a class="link" href="db_set.html" title="Chapter 7.  Db_set">db_set</a>
+ and <a class="link" href="db_multiset.html" title="Chapter 8.  Db_multiset">db_multiset</a>
 . </p>
       <p>They have identical behaviors to std::set::const_iterator and std::set::iterator respectively.</p>
-      <p>The difference between the two classes is that the <a class="link" href="db_set_base_iterator.html" title="Chapter 18.  db_set_base_iterator">db_set_base_iterator</a>
- can only be used to read its referenced value, while <a class="link" href="db_set_iterator.html" title="Chapter 19.  db_set_iterator">db_set_iterator</a>
+      <p>The difference between the two classes is that the <a class="link" href="db_set_base_iterator.html" title="Chapter 18.  Db_set_base_iterator">db_set_base_iterator</a>
+ can only be used to read its referenced value, while <a class="link" href="db_set_iterator.html" title="Chapter 19.  Db_set_iterator">db_set_iterator</a>
  allows both read and write access. If the access pattern is readonly, it is strongly recommended that you use the const iterator because it is faster and more efficient.</p>
-      <p>The two classes inherit several functions from <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  db_map_base_iterator">db_map_base_iterator</a>
- and <a class="link" href="db_map_iterator.html" title="Chapter 16.  db_map_iterator">db_map_iterator</a>
+      <p>The two classes inherit several functions from <a class="link" href="db_map_base_iterator.html" title="Chapter 15.  Db_map_base_iterator">db_map_base_iterator</a>
+ and <a class="link" href="db_map_iterator.html" title="Chapter 16.  Db_map_iterator">db_map_iterator</a>
  respectively. </p>
-      <h4><a id="id1570081"></a>
+      <h4><a id="id1564749"></a>
 See Also
 </h4>
       <p> </p>
-      <p><a class="link" href="db_map_base_iterator.html" title="Chapter 15.  db_map_base_iterator">db_map_base_iterator</a>
- <a class="link" href="db_map_iterator.html" title="Chapter 16.  db_map_iterator">db_map_iterator</a>
+      <p><a class="link" href="db_map_base_iterator.html" title="Chapter 15.  Db_map_base_iterator">db_map_base_iterator</a>
+ <a class="link" href="db_map_iterator.html" title="Chapter 16.  Db_map_iterator">db_map_iterator</a>
  </p>
-      <h4><a id="id1570058"></a> Public Members </h4>
+      <h4><a id="id1565255"></a> Public Members </h4>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -73,7 +70,7 @@ See Also
           <tbody>
             <tr>
               <td>
-<a class="link" href="db_set_base_iterator.html" title="Chapter 18.  db_set_base_iterator">
+<a class="link" href="db_set_base_iterator.html" title="Chapter 18.  Db_set_base_iterator">
 db_set_base_iterator</a>
 </td>
               <td>
@@ -81,7 +78,7 @@ db_set_base_iterator</td>
             </tr>
             <tr>
               <td>
-<a class="link" href="db_set_iterator.html" title="Chapter 19.  db_set_iterator">
+<a class="link" href="db_set_iterator.html" title="Chapter 19.  Db_set_iterator">
 db_set_iterator</a>
 </td>
               <td>
@@ -90,11 +87,11 @@ db_set_iterator</td>
           </tbody>
         </table>
       </div>
-      <h4><a id="id1570360"></a>
+      <h4><a id="id1565004"></a>
 Group</h4>
       <p>
-<a class="xref" href="dbstl_iterators.html" title="Chapter 9.  dbstl iterator classes">
- dbstl iterator classes  </a>
+<a class="xref" href="dbstl_iterators.html" title="Chapter 9.  Dbstl Iterator Classes">
+ Dbstl Iterator Classes  </a>
 </p>
       <p>
 </p>
@@ -115,7 +112,7 @@ operator=
             <a accesskey="h" href="index.html">Home</a>
           </td>
           <td width="40%" align="right" valign="top"> Chapter 18. 
- db_set_base_iterator  </td>
+ Db_set_base_iterator  </td>
         </tr>
       </table>
     </div>

@@ -1,3 +1,11 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 // test_dbstl.cpp : A test program which tests all container's all methods, 
 // by verify the result is identical to expected value, or by doing paralell 
 // operations with corresponding container of STL and verify the result of 

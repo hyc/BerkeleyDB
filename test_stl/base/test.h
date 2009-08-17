@@ -1,3 +1,11 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 #ifndef _DB_STL_TEST_H__
 #define _DB_STL_TEST_H__
 
@@ -20,9 +28,9 @@
 #include "db_int.h"
 
 #define DB_STL_HAVE_DB_TIMESPEC 1
-#include "db_map.h"
-#include "db_set.h"
-#include "db_vector.h"
+#include "dbstl_map.h"
+#include "dbstl_set.h"
+#include "dbstl_vector.h"
 
 #include "ptype.h"
 

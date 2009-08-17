@@ -58,7 +58,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1654167"></a>Parameters</h3>
+              <h3 class="title"><a id="id1653041"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654089"></a>cursorp</h4>
+                <h4 class="title"><a id="id1652851"></a>cursorp</h4>
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654452"></a>flags</h4>
+                <h4 class="title"><a id="id1653036"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -91,8 +91,8 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_BULK"></a>DB_BULK</code>
+                <p><a id="cursor_DB_BULK"></a>
+                  <code class="literal">DB_BULK</code>
             </p>
                 <p>
 		 Configure a cursor to optimize for bulk operations.  Each
@@ -106,8 +106,8 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_READ_COMMITTED"></a>DB_READ_COMMITTED</code>
+                <p><a id="cursor_DB_READ_COMMITTED"></a>
+                  <code class="literal">DB_READ_COMMITTED</code>
             </p>
                 <p>
                  Configure a transactional cursor to have degree 2 isolation.  This
@@ -117,8 +117,8 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_READ_UNCOMMITTED"></a>DB_READ_UNCOMMITTED</code>
+                <p><a id="cursor_DB_READ_UNCOMMITTED"></a>
+                  <code class="literal">DB_READ_UNCOMMITTED</code>
             </p>
                 <p>
                  Configure a transactional cursor to have degree 1 isolation.  Read
@@ -129,8 +129,8 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_WRITECURSOR"></a>DB_WRITECURSOR</code>
+                <p><a id="cursor_DB_WRITECURSOR"></a>
+                  <code class="literal">DB_WRITECURSOR</code>
             </p>
                 <p>
                  Specify that the cursor will be used to update the database.  The
@@ -139,8 +139,8 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_TXN_SNAPSHOT"></a>DB_TXN_SNAPSHOT</code>
+                <p><a id="cursor_DB_TXN_SNAPSHOT"></a>
+                  <code class="literal">DB_TXN_SNAPSHOT</code>
             </p>
                 <p>
                  Configure a transactional cursor to operate with read-only <a href="../../programmer_reference/transapp_read.html" class="olink">snapshot isolation</a>.  For
@@ -167,7 +167,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654408"></a>txnid</h4>
+                <h4 class="title"><a id="id1653325"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -193,7 +193,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1654435"></a>Errors</h3>
+              <h3 class="title"><a id="id1653042"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -209,7 +209,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631202"></a> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1653488"></a> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -228,7 +228,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654616"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1653609"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631218"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1653202"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -253,7 +253,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1654461"></a>Class</h3>
+              <h3 class="title"><a id="id1653616"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -265,7 +265,7 @@ DB-&gt;cursor(DB *db, DB_TXN *txnid, DBC **cursorp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1654678"></a>See Also</h3>
+              <h3 class="title"><a id="id1653391"></a>See Also</h3>
             </div>
           </div>
         </div>

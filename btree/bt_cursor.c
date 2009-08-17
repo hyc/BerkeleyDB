@@ -2568,6 +2568,7 @@ __bamc_search(dbc, root_pgno, key, flags, exactp)
 	u_int32_t sflags;
 	int bulk, cmp, ret, t_ret;
 
+	COMPQUIET(cmp, 0);
 	dbp = dbc->dbp;
 	cp = (BTREE_CURSOR *)dbc->internal;
 	t = dbp->bt_internal;

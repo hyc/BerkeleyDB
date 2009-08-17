@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -94,7 +100,37 @@ namespace ex_repquote
 			bool isPeer;
 			uint tmpPort = 0;
 
-			/*  Extract the command line parameters. */
+            /*
+             * RepQuoteExample is meant to be run from build_windows\AnyCPU, in
+             * either the Debug or Release directory. The required core
+             * libraries, however, are in either build_windows\Win32 or
+             * build_windows\x64, depending upon the platform.  That location
+             * needs to be added to the PATH environment variable for the
+             * P/Invoke calls to work.
+             */
+            try {
+                String pwd = Environment.CurrentDirectory;
+                pwd = Path.Combine(pwd, "..");
+                pwd = Path.Combine(pwd, "..");
+                if (IntPtr.Size == 4)
+                    pwd = Path.Combine(pwd, "Win32");
+                else
+                    pwd = Path.Combine(pwd, "x64");
+#if DEBUG
+                pwd = Path.Combine(pwd, "Debug");
+#else
+                pwd = Path.Combine(pwd, "Release");
+#endif
+                pwd += ";" + Environment.GetEnvironmentVariable("PATH");
+                Environment.SetEnvironmentVariable("PATH", pwd);
+            } catch (Exception e) {
+                Console.WriteLine(
+                    "Unable to set the PATH environment variable.");
+                Console.WriteLine(e.Message);
+                return;
+            }
+            
+            /*  Extract the command line parameters. */
 			for (int i = 0; i < args.Length; i++)
 			{
 				isPeer = false;
@@ -332,9 +368,6 @@ namespace ex_repquote
 				Console.WriteLine("Fail to open environment: " + e.Message);
 				return 1;
 			}
-		        
-			if (config.startPolicy == StartPolicy.CLIENT)
-				dbenv.AppointedClientInit = true;
 
 			
 			/* The following base replication features may also be useful to your
@@ -390,21 +423,13 @@ namespace ex_repquote
 					BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
 					dbConfig.Env = dbenv.env;
 
-					if (dbenv.IsMaster || dbenv.AppointedClientInit) 
+					if (dbenv.IsMaster) 
 					{
 						/*
 						 * Open database allowing create only if this is a master
-						 * database or if we are starting up an appointed client.
-						 * After an appointed client has started up, the master
-						 * database has been replicated to the client database
-						 * and the client database should no longer be opened
-						 * allowing create.
-						 *
-						 * If the database is a client participating in an 
-						 * election, it cannot be opened allowing create unless it
-						 * becomes the master.  In this case, the code needs to 
-						 * poll attempts to open without allowing create until the
-						 * election is over.
+						 * database.  A client database uses polling to attempt
+						 * to open the database, without creating it, until the
+						 * open succeeds.
 						 *
 						 * This polling logic for allowing create can be 
 						 * simplified under some circumstances.  For example, if
@@ -414,9 +439,7 @@ namespace ex_repquote
 							dbConfig.Creation = CreatePolicy.IF_NEEDED;
 					}
 
-					/* Cannot open client allowing create and transactional. */
-					if (!dbenv.AppointedClientInit)
-						dbConfig.AutoCommit = true;
+					dbConfig.AutoCommit = true;
 
 					try 
 					{
@@ -676,7 +699,6 @@ namespace ex_repquote
 					break;
 				case NotificationEvent.REP_STARTUPDONE:
 					dbenv.InClientSync = false;
-					dbenv.AppointedClientInit = false;
 					break;
 				/*
 				 * Did not get enough acks to guarantee transaction

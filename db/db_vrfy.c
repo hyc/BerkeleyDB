@@ -2751,7 +2751,11 @@ __db_salvage(dbp, vdp, meta_pgno, handle, callback, flags)
 	/* Salvage every page in pgset. */
 	while ((ret = __db_vrfy_pgset_next(pgsc, &p)) == 0) {
 		if (dbp->type == DB_QUEUE) {
+#ifdef HAVE_QUEUE
 			ret = __qam_fget(dbc, &p, 0, &subpg);
+#else
+			ret = __db_no_queue_am(env);
+#endif
 			/* Don't report an error for pages not found in a queue.
 			 * The pgset is a best guess, it doesn't know about
 			 * deleted extents which leads to this error.
@@ -2771,7 +2775,11 @@ __db_salvage(dbp, vdp, meta_pgno, handle, callback, flags)
 			err_ret = ret;
 
 		if (dbp->type == DB_QUEUE)
+#ifdef HAVE_QUEUE
 			ret = __qam_fput(dbc, p, subpg, dbp->priority);
+#else
+			ret = __db_no_queue_am(env);
+#endif
 		else
 			ret = __memp_fput(mpf,
 			    vdp->thread_info, subpg, dbp->priority);
@@ -2824,8 +2832,10 @@ __db_meta2pgset(dbp, vdp, pgno, flags, pgset)
 		ret = __ham_meta2pgset(dbp, vdp, (HMETA *)h, flags, pgset);
 		break;
 	case P_QAMMETA:
+#ifdef HAVE_QUEUE
 		ret = __qam_meta2pgset(dbp, vdp, pgset);
 		break;
+#endif
 	default:
 		ret = DB_VERIFY_BAD;
 		break;

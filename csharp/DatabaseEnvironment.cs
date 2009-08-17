@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -63,24 +69,18 @@ namespace BerkeleyDB {
                 DatabaseEntry.fromDBT(control),
                 DatabaseEntry.fromDBT(rec), dblsn, envid, flags);
         }
-        private static void doThreadID(IntPtr env, ref int pid, ref uint tid) {
+        private static void doThreadID(IntPtr env, IntPtr pid, IntPtr tid) {
             DB_ENV dbenv = new DB_ENV(env, false);
             DbThreadID id = dbenv.api2_internal.threadIDHandler();
 
             /* 
              * Sometimes the library doesn't care about either pid or tid 
              * (usually tid) and will pass NULL instead of a valid pointer.
-             * There's no good way to detect this, C# values types can't be
-             * null, so just try to set and ignore any NullReference errors
-             * that crop up.
              */
-            try {
-                pid = id.processID;
-            } catch (NullReferenceException) { }
-
-            try {
-                tid = id.threadID;
-            } catch (NullReferenceException) { }
+            if (pid != IntPtr.Zero)
+                Marshal.WriteInt32(pid, id.processID);
+            if (tid != IntPtr.Zero)
+                Marshal.WriteInt32(tid, (int)id.threadID);
         }
         private static string doThreadName(IntPtr env,
             int pid, uint tid, ref string buf) {
@@ -1357,10 +1357,7 @@ namespace BerkeleyDB {
         /// The status of the sites currently known by the replication manager. 
         /// </summary>
         public RepMgrSite[] RepMgrRemoteSites {
-            get {
-                uint nsites = 0;
-                return dbenv.repmgr_site_list(ref nsites);
-            }
+            get { return dbenv.repmgr_site_list(); }
         }
         /// <summary>
         /// If true, the replication master will not automatically re-initialize
@@ -2434,8 +2431,8 @@ namespace BerkeleyDB {
         public RepProcMsgResult RepProcessMessage(
             DatabaseEntry control, DatabaseEntry rec, int envid) {
             DB_LSN dblsn = new DB_LSN();
-            int ret = dbenv.rep_process_message(DatabaseEntry.getDBT(control),
-                DatabaseEntry.getDBT(rec), envid, dblsn);
+            int ret = dbenv.rep_process_message(control,
+                rec, envid, dblsn);
             LSN lsnp = new LSN(dblsn.file, dblsn.offset);
             RepProcMsgResult result = new RepProcMsgResult(ret, lsnp);
             if (result.Result == RepProcMsgResult.ProcMsgResult.ERROR)
@@ -2485,7 +2482,7 @@ namespace BerkeleyDB {
         /// </param>
         public void RepStartClient(DatabaseEntry cdata) {
             dbenv.rep_start(
-                DatabaseEntry.getDBT(cdata), DbConstants.DB_REP_CLIENT);
+                cdata, DbConstants.DB_REP_CLIENT);
         }
         /// <summary>
         /// Configure the database environment as a master in a group of
@@ -2529,7 +2526,7 @@ namespace BerkeleyDB {
         /// </param>
         public void RepStartMaster(DatabaseEntry cdata) {
             dbenv.rep_start(
-                DatabaseEntry.getDBT(cdata), DbConstants.DB_REP_MASTER);
+                cdata, DbConstants.DB_REP_MASTER);
         }
 
         /// <summary>
@@ -2876,10 +2873,7 @@ namespace BerkeleyDB {
         /// <paramref name="logSeqNum"/>.
         /// </returns>
         public string LogFile(LSN logSeqNum) {
-            string fil = "";
-
-            dbenv.log_file(LSN.getDB_LSN(logSeqNum), fil, 100);
-            return fil;
+            return dbenv.log_file(LSN.getDB_LSN(logSeqNum));
         }
 
         /// <summary>
@@ -2914,7 +2908,7 @@ namespace BerkeleyDB {
             DB_LSN lsn = new DB_LSN();
 
             dbenv.log_put(lsn,
-                DatabaseEntry.getDBT(dbt), flush ? DbConstants.DB_FLUSH : 0);
+                dbt, flush ? DbConstants.DB_FLUSH : 0);
             return new LSN(lsn.file, lsn.offset);
         }
 

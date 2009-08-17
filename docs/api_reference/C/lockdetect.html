@@ -65,7 +65,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1678114"></a>Parameters</h3>
+              <h3 class="title"><a id="id1676532"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1678069"></a>rejected</h4>
+                <h4 class="title"><a id="id1676513"></a>rejected</h4>
               </div>
             </div>
           </div>
@@ -87,7 +87,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1678105"></a>atype</h4>
+                <h4 class="title"><a id="id1676807"></a>atype</h4>
               </div>
             </div>
           </div>
@@ -99,8 +99,8 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_DEFAULT"></a>DB_LOCK_DEFAULT</code>
+                <p><a id="detect_DB_LOCK_DEFAULT"></a>
+                  <code class="literal">DB_LOCK_DEFAULT</code>
             </p>
                 <p>
                  Use whatever lock policy was specified when the database environment
@@ -109,8 +109,8 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_EXPIRE"></a>DB_LOCK_EXPIRE</code>
+                <p><a id="detect_DB_LOCK_EXPIRE"></a>
+                  <code class="literal">DB_LOCK_EXPIRE</code>
             </p>
                 <p>
                  Reject lock requests which have timed out.  No other deadlock
@@ -118,56 +118,56 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_MAXLOCKS"></a>DB_LOCK_MAXLOCKS</code>
+                <p><a id="detect_DB_LOCK_MAXLOCKS"></a>
+                  <code class="literal">DB_LOCK_MAXLOCKS</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the most locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_MAXWRITE"></a>DB_LOCK_MAXWRITE</code>
+                <p><a id="detect_DB_LOCK_MAXWRITE"></a>
+                  <code class="literal">DB_LOCK_MAXWRITE</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the most write locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_MINLOCKS"></a>DB_LOCK_MINLOCKS</code>
+                <p><a id="detect_DB_LOCK_MINLOCKS"></a>
+                  <code class="literal">DB_LOCK_MINLOCKS</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the fewest locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_MINWRITE"></a>DB_LOCK_MINWRITE</code>
+                <p><a id="detect_DB_LOCK_MINWRITE"></a>
+                  <code class="literal">DB_LOCK_MINWRITE</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the fewest write locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_OLDEST"></a>DB_LOCK_OLDEST</code>
+                <p><a id="detect_DB_LOCK_OLDEST"></a>
+                  <code class="literal">DB_LOCK_OLDEST</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the oldest lock.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_RANDOM"></a>DB_LOCK_RANDOM</code>
+                <p><a id="detect_DB_LOCK_RANDOM"></a>
+                  <code class="literal">DB_LOCK_RANDOM</code>
             </p>
                 <p>
                 Reject the lock request for a random locker ID.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="detect_DB_LOCK_YOUNGEST"></a>DB_LOCK_YOUNGEST</code>
+                <p><a id="detect_DB_LOCK_YOUNGEST"></a>
+                  <code class="literal">DB_LOCK_YOUNGEST</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the youngest lock.
@@ -180,7 +180,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1678304"></a>flags</h4>
+                <h4 class="title"><a id="id1676822"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -194,7 +194,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1678115"></a>Errors</h3>
+              <h3 class="title"><a id="id1676983"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1678382"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1676706"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -223,7 +223,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1678321"></a>Class</h3>
+              <h3 class="title"><a id="id1676707"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -235,7 +235,7 @@ DB_ENV-&gt;lock_detect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1677973"></a>See Also</h3>
+              <h3 class="title"><a id="id1676611"></a>See Also</h3>
             </div>
           </div>
         </div>

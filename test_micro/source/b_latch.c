@@ -9,8 +9,6 @@
 #include "bench.h"
 
 #ifdef _POSIX_THREADS
-#include <pthread.h>
-
 typedef struct {
 	pthread_t	id;
 	DB_ENV		*dbenv;
@@ -195,6 +193,7 @@ b_latch(argc, argv)
 
 	DB_BENCH_ASSERT(dbenv->mutex_free(dbenv, mutex) == 0);
 	DB_BENCH_ASSERT(dbenv->close(dbenv, 0) == 0);
+	COMPQUIET(contended, 0);
 
 	return (0);
 }

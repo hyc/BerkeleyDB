@@ -60,7 +60,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655238"></a>Parameters</h3>
+              <h3 class="title"><a id="id1654007"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1655214"></a>cursorp</h4>
+                <h4 class="title"><a id="id1654518"></a>cursorp</h4>
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1655222"></a>flags</h4>
+                <h4 class="title"><a id="id1654741"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -93,8 +93,8 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_BULK"></a>DB_BULK</code>
+                <p><a id="cursor_DB_BULK"></a>
+                  <code class="literal">DB_BULK</code>
             </p>
                 <p>
 		 Configure a cursor to optimize for bulk operations.  Each
@@ -108,8 +108,8 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_READ_COMMITTED"></a>DB_READ_COMMITTED</code>
+                <p><a id="cursor_DB_READ_COMMITTED"></a>
+                  <code class="literal">DB_READ_COMMITTED</code>
             </p>
                 <p>
                  Configure a transactional cursor to have degree 2 isolation.  This
@@ -119,8 +119,8 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_READ_UNCOMMITTED"></a>DB_READ_UNCOMMITTED</code>
+                <p><a id="cursor_DB_READ_UNCOMMITTED"></a>
+                  <code class="literal">DB_READ_UNCOMMITTED</code>
             </p>
                 <p>
                  Configure a transactional cursor to have degree 1 isolation.  Read
@@ -131,8 +131,8 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_WRITECURSOR"></a>DB_WRITECURSOR</code>
+                <p><a id="cursor_DB_WRITECURSOR"></a>
+                  <code class="literal">DB_WRITECURSOR</code>
             </p>
                 <p>
                  Specify that the cursor will be used to update the database.  The
@@ -141,8 +141,8 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="cursor_DB_TXN_SNAPSHOT"></a>DB_TXN_SNAPSHOT</code>
+                <p><a id="cursor_DB_TXN_SNAPSHOT"></a>
+                  <code class="literal">DB_TXN_SNAPSHOT</code>
             </p>
                 <p>
                  Configure a transactional cursor to operate with read-only <a href="../../programmer_reference/transapp_read.html" class="olink">snapshot isolation</a>.  For
@@ -169,7 +169,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1655447"></a>txnid</h4>
+                <h4 class="title"><a id="id1654901"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -195,7 +195,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655640"></a>Errors</h3>
+              <h3 class="title"><a id="id1654976"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
                          The <code class="methodname">Db::cursor()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -213,7 +213,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1655430"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1654514"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -223,9 +223,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -237,7 +235,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1655313"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1654706"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -245,9 +243,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -256,7 +252,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1655314"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1654912"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -269,7 +265,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655590"></a>Class</h3>
+              <h3 class="title"><a id="id1654829"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -281,7 +277,7 @@ Db::cursor(DbTxn *txnid, Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655600"></a>See Also</h3>
+              <h3 class="title"><a id="id1654806"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -186,6 +192,47 @@ namespace BerkeleyDB {
         /// </para>
         /// </remarks>
         public EntryComparisonDelegate DuplicateCompare;
+
+	internal bool compressionIsSet;
+        private BTreeCompressDelegate compressFunc;
+        /// <summary>
+        /// The compression function used to store key/data pairs in the
+        /// database.
+        /// </summary>
+        public BTreeCompressDelegate Compress { get { return compressFunc; } }
+        private BTreeDecompressDelegate decompressFunc;
+        /// <summary>
+        /// The decompression function used to retrieve key/data pairs from the
+        /// database.
+        /// </summary>
+        public BTreeDecompressDelegate Decompress {
+            get { return decompressFunc; }
+        }
+        /// <summary>
+        /// Enable compression of the key/data pairs stored in the database,
+        /// using the default compression and decompression functions.
+        /// </summary>
+        /// <remarks>
+        /// The default functions perform prefix compression on keys, and prefix
+        /// compression on data items for duplicate keys.
+        /// </remarks>
+        public void SetCompression() {
+            compressionIsSet = true;
+            compressFunc = null;
+            decompressFunc = null;
+        }
+        /// <summary>
+        /// Enable compression of the key/data pairs stored in the database,
+        /// using the specified compression and decompression functions.
+        /// </summary>
+        /// <param name="compression">The compression function</param>
+        /// <param name="decompression">The decompression function</param>
+        public void SetCompression(BTreeCompressDelegate compression,
+            BTreeDecompressDelegate decompression) {
+            compressionIsSet = true;
+            compressFunc = compression;
+            decompressFunc = decompression;
+        }
 
         internal bool minkeysIsSet;
         private uint minKeys;

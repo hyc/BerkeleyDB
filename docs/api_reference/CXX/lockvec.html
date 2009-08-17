@@ -70,7 +70,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1682931"></a>Parameters</h3>
+              <h3 class="title"><a id="id1683549"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -78,7 +78,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684164"></a>elistp</h4>
+                <h4 class="title"><a id="id1683308"></a>elistp</h4>
               </div>
             </div>
           </div>
@@ -92,7 +92,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1683873"></a>flags</h4>
+                <h4 class="title"><a id="id1683333"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -121,7 +121,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684255"></a>locker</h4>
+                <h4 class="title"><a id="id1683737"></a>locker</h4>
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684409"></a>list</h4>
+                <h4 class="title"><a id="id1683465"></a>list</h4>
               </div>
             </div>
           </div>
@@ -156,8 +156,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                 <code class="literal"><a id="vec_op"></a>lockop_t op;</code>
+                <p><a id="vec_op"></a>
+                 <code class="literal">lockop_t op;</code>
             </p>
                 <p>
                  The operation to be performed, which must be set to one of the
@@ -166,8 +166,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                 <div class="itemizedlist">
                   <ul type="circle">
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_GET"></a>DB_LOCK_GET</code>
+                      <p><a id="vec_DB_LOCK_GET"></a>
+                  <code class="literal">DB_LOCK_GET</code>
             </p>
                       <p>
                  Get the lock defined by the values of the <span class="bold"><strong>mode</strong></span> and <span class="bold"><strong>obj</strong></span>
@@ -182,8 +182,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_GET_TIMEOUT"></a>DB_LOCK_GET_TIMEOUT</code>
+                      <p><a id="vec_DB_LOCK_GET_TIMEOUT"></a>
+                  <code class="literal">DB_LOCK_GET_TIMEOUT</code>
             </p>
                       <p>
                  Identical to DB_LOCK_GET except that the value in the <span class="bold"><strong>timeout</strong></span> structure field overrides any
@@ -192,8 +192,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_PUT"></a>DB_LOCK_PUT</code>
+                      <p><a id="vec_DB_LOCK_PUT"></a>
+                  <code class="literal">DB_LOCK_PUT</code>
             </p>
                       <p>
                  The lock to which the <span class="bold"><strong>lock</strong></span> structure
@@ -202,8 +202,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_PUT_ALL"></a>DB_LOCK_PUT_ALL</code>
+                      <p><a id="vec_DB_LOCK_PUT_ALL"></a>
+                  <code class="literal">DB_LOCK_PUT_ALL</code>
             </p>
                       <p>
                  All locks held by the specified <span class="bold"><strong>locker</strong></span> are released.  The <span class="bold"><strong>lock</strong></span>, <span class="bold"><strong>mode</strong></span>,
@@ -215,8 +215,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_PUT_OBJ"></a>DB_LOCK_PUT_OBJ</code>
+                      <p><a id="vec_DB_LOCK_PUT_OBJ"></a>
+                  <code class="literal">DB_LOCK_PUT_OBJ</code>
             </p>
                       <p>
                  All locks held on <span class="bold"><strong>obj</strong></span> are released. 
@@ -229,8 +229,8 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_TIMEOUT"></a>DB_LOCK_TIMEOUT</code>
+                      <p><a id="vec_DB_LOCK_TIMEOUT"></a>
+                  <code class="literal">DB_LOCK_TIMEOUT</code>
             </p>
                       <p>
                  Cause the specified <span class="bold"><strong>locker</strong></span> to timeout
@@ -245,16 +245,16 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                 </div>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="vec_lock"></a>DB_LOCK lock;</code>
+                <p><a id="vec_lock"></a>
+                  <code class="literal">DB_LOCK lock;</code>
             </p>
                 <p>
                 A lock reference.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="vec_mode"></a>const lockmode_t mode;</code>
+                <p><a id="vec_mode"></a>
+                  <code class="literal">const lockmode_t mode;</code>
             </p>
                 <p>
                  The lock mode, used as an index into the environment's lock conflict
@@ -264,40 +264,40 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                 <div class="itemizedlist">
                   <ul type="circle">
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_READ"></a>DB_LOCK_READ</code>
+                      <p><a id="vec_DB_LOCK_READ"></a>
+                  <code class="literal">DB_LOCK_READ</code>
             </p>
                       <p>
                 read (shared)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_WRITE"></a>DB_LOCK_WRITE</code>
+                      <p><a id="vec_DB_LOCK_WRITE"></a>
+                  <code class="literal">DB_LOCK_WRITE</code>
             </p>
                       <p>
                 write (exclusive)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_IWRITE"></a>DB_LOCK_IWRITE</code>
+                      <p><a id="vec_DB_LOCK_IWRITE"></a>
+                  <code class="literal">DB_LOCK_IWRITE</code>
             </p>
                       <p>
                 intention to write (shared)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_IREAD"></a>DB_LOCK_IREAD</code>
+                      <p><a id="vec_DB_LOCK_IREAD"></a>
+                  <code class="literal">DB_LOCK_IREAD</code>
             </p>
                       <p>
                 intention to read (shared)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_IWR"></a>DB_LOCK_IWR</code>
+                      <p><a id="vec_DB_LOCK_IWR"></a>
+                  <code class="literal">DB_LOCK_IWR</code>
             </p>
                       <p>
                 intention to read and write (shared)
@@ -341,7 +341,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1683943"></a>nlist</h4>
+                <h4 class="title"><a id="id1684322"></a>nlist</h4>
               </div>
             </div>
           </div>
@@ -355,7 +355,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1684134"></a>Errors</h3>
+              <h3 class="title"><a id="id1683622"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -363,7 +363,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                          The <code class="methodname">DbEnv::lock_vec()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -373,7 +373,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684461"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1683821"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -382,9 +382,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -393,7 +391,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684801"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1683653"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -402,9 +400,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -413,7 +409,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684593"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1683682"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -423,9 +419,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
                 before the wait-time expired.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -434,7 +428,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684264"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1683630"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -446,7 +440,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1684426"></a>ENOMEM</h4>
+                <h4 class="title"><a id="id1684076"></a>ENOMEM</h4>
               </div>
             </div>
           </div>
@@ -459,7 +453,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1684196"></a>Class</h3>
+              <h3 class="title"><a id="id1683330"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -472,7 +466,7 @@ DbEnv::lock_vec(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1682934"></a>See Also</h3>
+              <h3 class="title"><a id="id1683306"></a>See Also</h3>
             </div>
           </div>
         </div>

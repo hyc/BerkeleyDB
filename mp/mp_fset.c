@@ -76,11 +76,11 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 	if (mvcc && txn != NULL && flags == DB_MPOOL_DIRTY &&
 	    (!BH_OWNED_BY(env, bhp, ancestor) || SH_CHAIN_HASNEXT(bhp, vc))) {
 		atomic_inc(env, &bhp->ref);
+		*(void **)addrp = NULL;
 		if ((ret = __memp_fput(dbmfp, ip, pgaddr, priority)) != 0) {
 			__db_errx(env,
 			    "%s: error releasing a read-only page",
 			    __memp_fn(dbmfp));
-			*(void **)addrp = NULL;
 			atomic_dec(env, &bhp->ref);
 			return (ret);
 		}
@@ -90,7 +90,6 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 				__db_errx(env,
 				    "%s: error getting a page for writing",
 				    __memp_fn(dbmfp));
-			*(void **)addrp = pgaddr;
 			atomic_dec(env, &bhp->ref);
 			return (ret);
 		}

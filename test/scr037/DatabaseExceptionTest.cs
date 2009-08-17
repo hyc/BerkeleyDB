@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -107,6 +113,19 @@ namespace CsharpAPITest
 			}
 		}
 
+		[Test]
+		public void TestLeaseExpiredException()
+		{
+			try
+			{
+				DatabaseException.ThrowException(ErrorCodes.DB_REP_LEASE_EXPIRED);
+			}
+			catch (LeaseExpiredException e)
+			{
+				Assert.AreEqual(ErrorCodes.DB_REP_LEASE_EXPIRED, e.ErrorCode);
+			}
+		}
+		
 		[Test]
 		public void TestLockNotGrantedException()
 		{

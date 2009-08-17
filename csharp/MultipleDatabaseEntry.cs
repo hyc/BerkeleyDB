@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,7 +39,7 @@ namespace BerkeleyDB {
             uint pos = ulen - 4;
             int off = BitConverter.ToInt32(data, (int)pos);
             for (int i = 0;
-                off > 0; off = BitConverter.ToInt32(data, (int)pos), i++) {
+                off >= 0; off = BitConverter.ToInt32(data, (int)pos), i++) {
                 pos -= 4;
                 int sz = BitConverter.ToInt32(data, (int)pos);
                 byte[] arr = new byte[sz];

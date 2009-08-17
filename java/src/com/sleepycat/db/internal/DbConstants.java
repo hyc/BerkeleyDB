@@ -14,6 +14,7 @@ public interface DbConstants
     int DB_AUTO_COMMIT = 0x00000100;
     int DB_BEFORE = 3;
     int DB_BTREE = 1;
+    int DB_BUFFER_SMALL = -30999;
     int DB_CDB_ALLDB = 0x00000040;
     int DB_CHKSUM = 0x00000008;
     int DB_CONSUME = 4;
@@ -223,7 +224,7 @@ public interface DbConstants
     int DB_VERIFY = 0x00000002;
     int DB_VERSION_MAJOR = 4;
     int DB_VERSION_MINOR = 8;
-    int DB_VERSION_PATCH = 11;
+    int DB_VERSION_PATCH = 24;
     int DB_WRITECURSOR = 0x00000008;
     int DB_YIELDCPU = 0x00010000;
 }

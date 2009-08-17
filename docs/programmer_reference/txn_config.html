@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="txn.html" title="Chapter 17.  The Transaction Subsystem" />
-    <link rel="prev" href="txn.html" title="Chapter 17.  The Transaction Subsystem" />
+    <link rel="up" href="txn.html" title="Chapter 18.  The Transaction Subsystem" />
+    <link rel="prev" href="txn.html" title="Chapter 18.  The Transaction Subsystem" />
     <link rel="next" href="txn_limits.html" title="Transaction limits" />
   </head>
   <body>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="txn.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 17. 
+          <th width="60%" align="center">Chapter 18. 
 		The Transaction Subsystem
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="txn_limits.html">Next</a></td>
@@ -40,7 +40,7 @@ transactions supported by the Berkeley DB environment by calling the
 <a href="../api_reference/C/envset_tx_max.html" class="olink">DB_ENV-&gt;set_tx_max()</a> method.  This will also set the size of the
 underlying transaction subsystem's region.  When the number of
 outstanding transactions is reached, additional calls to
-<a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> will fail until some active transactions complete.</p>
+<a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> will fail until some active transactions complete.</p>
       <p>The application can limit how long a transaction runs or blocks on
 contested resources.
 The <a href="../api_reference/C/envset_timeout.html" class="olink">DB_ENV-&gt;set_timeout()</a> method specifies the length of the timeout.
@@ -74,7 +74,7 @@ redone.</p>
           <td width="40%" align="right"> <a accesskey="n" href="txn_limits.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 17. 
+          <td width="40%" align="left" valign="top">Chapter 18. 
 		The Transaction Subsystem
          </td>
           <td width="20%" align="center">

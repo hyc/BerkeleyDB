@@ -1041,7 +1041,7 @@ __db_key_range_pp(dbp, txn, key, kr, flags)
 			ret = __part_key_range(dbc, key, kr, flags);
 		else
 #endif
-		ret = __bam_key_range(dbc, key, kr, flags);
+			ret = __bam_key_range(dbc, key, kr, flags);
 
 		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 			ret = t_ret;
@@ -2675,7 +2675,8 @@ err:		return (__db_ferr(env, "DBcursor->put", 0));
 	 * DB_KEYLAST or zero: return EINVAL for an invalid cursor, otherwise 0.
 	 */
 	if (!IS_INITIALIZED(dbc) && flags != 0 && flags != DB_KEYFIRST &&
-	    flags != DB_KEYLAST && flags != DB_NODUPDATA)
+	    flags != DB_KEYLAST && flags != DB_NODUPDATA &&
+	    flags != DB_OVERWRITE_DUP)
 		return (__db_curinval(env));
 
 	return (0);

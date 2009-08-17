@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="upgrade_4_2_toc.html" title="Chapter 38. Upgrading Berkeley DB 4.1 applications to Berkeley DB 4.2" />
+    <link rel="up" href="upgrade_4_2_toc.html" title="Chapter 39. Upgrading Berkeley DB 4.1 applications to Berkeley DB 4.2" />
     <link rel="prev" href="upgrade_4_2_verify.html" title="Release 4.2: DB-&gt;verify" />
     <link rel="next" href="upgrade_4_2_repinit.html" title="Release 4.2: Replication" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="upgrade_4_2_verify.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 38. Upgrading Berkeley DB 4.1 applications to Berkeley DB 4.2</th>
+          <th width="60%" align="center">Chapter 39. Upgrading Berkeley DB 4.1 applications to Berkeley DB 4.2</th>
           <td width="20%" align="right"> <a accesskey="n" href="upgrade_4_2_repinit.html">Next</a></td>
         </tr>
       </table>
@@ -34,7 +34,7 @@
         </div>
       </div>
       <p>
-    In previous releases, configuring lock or transaction timeout values or calling the <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>
+    In previous releases, configuring lock or transaction timeout values or calling the <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>
     method with the <a href="../api_reference/C/txnbegin.html#txnbegin_DB_TXN_NOWAIT" class="olink">DB_TXN_NOWAIT</a> flag caused database operation methods to return 
     <a class="link" href="program_errorret.html#program_errorret.DB_LOCK_NOTGRANTED">DB_LOCK_NOTGRANTED</a>, 
     or throw a 

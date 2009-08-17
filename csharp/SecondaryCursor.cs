@@ -1,4 +1,10 @@
-﻿using System;
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -39,8 +45,7 @@ namespace BerkeleyDB {
             DatabaseEntry data, uint flags, LockingInfo info) {
             flags |= (info == null) ? 0 : info.flags;
             try {
-                dbc.pget(DatabaseEntry.getDBT(key), DatabaseEntry.getDBT(pkey),
-                    DatabaseEntry.getDBT(data), flags);
+                dbc.pget(key, pkey, data, flags);
                 Current = new KeyValuePair<DatabaseEntry,
                     KeyValuePair<DatabaseEntry, DatabaseEntry>>(key,
                     new KeyValuePair<DatabaseEntry, DatabaseEntry>(pkey, data));

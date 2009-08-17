@@ -123,7 +123,9 @@ struct __key_range;		typedef struct __key_range DB_KEY_RANGE;
 %typemap(cstype) u_int8_t * "byte[,]"
 %typemap(imtype) u_int8_t * "byte[,]"
 %typemap(csin) u_int8_t * "$csinput"
-	
+
+%typemap(cstype) DBT * "DatabaseEntry"
+%typemap(csin, post="      GC.KeepAlive($csinput);") DBT * "$csclassname.getCPtr(DatabaseEntry.getDBT($csinput))"
 
 %typemap(csfinalize) DB, DB_ENV, DB_SEQUENCE ""
 %typemap(csdestruct, methodname="Dispose", methodmodifiers="public") DB, DB_ENV, DB_SEQUENCE %{ {
@@ -183,6 +185,9 @@ struct __key_range;		typedef struct __key_range DB_KEY_RANGE;
 %typemap(csout) int log_compare{
 		return $imcall;
 }
+%typemap(csout) int log_file{
+		return $imcall;
+}
 
 %typemap(csout) int open {
 	int ret;
@@ -217,7 +222,7 @@ struct __key_range;		typedef struct __key_range DB_KEY_RANGE;
 	return ret;
 }
 
-%typemap(csout) DB_REPMGR_SITE *repmgr_site_list(u_int *countp, int *err) {
+%typemap(csout) DB_REPMGR_SITE *repmgr_site_list(u_int *countp, u_int *sizep, int *err) {
 	IntPtr cPtr = $imcall;
 	if (cPtr == IntPtr.Zero)
 		return new RepMgrSite[] { null };
@@ -233,9 +238,10 @@ struct __key_range;		typedef struct __key_range DB_KEY_RANGE;
 	for (int i = 0; i < countp; i++) {
 		/*
 		 * We're copying data out of an array of countp DB_REPMGR_SITE
-		 * structures.  sizeof(DB_REPMGR_SITE) = 16.
+		 * structures, whose size varies between 32- and 64-bit
+		 * platforms.  
 		 */
-		IntPtr val = new IntPtr(cPtr.ToInt32() + i * 16);
+		IntPtr val = new IntPtr((IntPtr.Size == 4 ? cPtr.ToInt32() : cPtr.ToInt64()) + i * sizep);
 		ret[i] = new RepMgrSite(new DB_REPMGR_SITE(val, false));
 	}
 	libdb_csharp.__os_ufree(this, cPtr);
@@ -264,7 +270,7 @@ struct __key_range;		typedef struct __key_range DB_KEY_RANGE;
 %typemap(csout) void *rep_stat(u_int32_t flags, int *err) {
 	return $imcall;
 }
-%typemap(csout) void *txn_stat(u_int32_t flags, int *err) {
+%typemap(csout) void *txn_stat(u_int32_t flags, uint *size, int *err) {
 	return $imcall;
 }
 
@@ -493,6 +499,16 @@ typedef struct __db
 		return self->set_bt_compare(self, callback);
 	}
 	
+	%typemap(cstype) int (*)(DB *dbp, const DBT *prevKey, const DBT *prevData, const DBT *key, const DBT *data, DBT *dest) "BDB_CompressDelegate"
+	%typemap(imtype) int (*)(DB *dbp, const DBT *prevKey, const DBT *prevData, const DBT *key, const DBT *data, DBT *dest) "BDB_CompressDelegate"
+	%typemap(csin) int (*compress)(DB *dbp, const DBT *prevKey, const DBT *prevData, const DBT *key, const DBT *data, DBT *dest) "compress"
+	%typemap(cstype) int (*)(DB *dbp, const DBT *prevKey, const DBT *prevData, DBT *compressed, DBT *destKey, DBT *destData) "BDB_DecompressDelegate"
+	%typemap(imtype) int (*)(DB *dbp, const DBT *prevKey, const DBT *prevData, DBT *compressed, DBT *destKey, DBT *destData) "BDB_DecompressDelegate"
+	%typemap(csin) int (*decompress)(DB *dbp, const DBT *prevKey, const DBT *prevData, DBT *compressed, DBT *destKey, DBT *destData) "decompress"
+	int set_bt_compress(int (*compress)(DB *dbp, const DBT *prevKey, const DBT *prevData, const DBT *key, const DBT *data, DBT *dest), int (*decompress)(DB *dbp, const DBT *prevKey, const DBT *prevData, DBT *compressed, DBT *destKey, DBT *destData)) {
+		return self->set_bt_compress(self, compress, decompress);
+	}
+
 	int get_bt_minkey(u_int32_t *bt_minkey) {
 		return self->get_bt_minkey(self, bt_minkey);
 	}
@@ -725,6 +741,13 @@ typedef struct __dbc
 }
 } DBC;
 
+%typemap(cscode) DBT %{
+	internal IntPtr dataPtr {
+		get {
+			return $imclassname.DBT_data_get(swigCPtr);
+		}
+	}
+%}
 typedef struct __dbt
 {
 	u_int32_t dlen;
@@ -855,7 +878,23 @@ typedef struct __dbtxn
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
-
+	internal string log_file(DB_LSN dblsn) {
+		int err = 0;
+		int len = 100;
+		IntPtr namep;
+		while (true) {
+			namep = Marshal.AllocHGlobal(len);
+			err = log_file(dblsn, namep, (uint)len);
+			if (err != DbConstants.DB_BUFFER_SMALL)
+				break;
+			Marshal.FreeHGlobal(namep);
+			len *= 2;
+		}
+		DatabaseException.ThrowException(err);
+		string ret = Marshal.PtrToStringAnsi(namep);
+		Marshal.FreeHGlobal(namep);
+		return ret;
+	}
 	internal LogStatStruct log_stat(uint flags) {
 		int err = 0;
 		IntPtr ptr = log_stat(flags, ref err);
@@ -892,9 +931,11 @@ typedef struct __dbtxn
 		libdb_csharp.__os_ufree(null, ptr);
 		return ret;
 	}
-	internal RepMgrSite[] repmgr_site_list(ref uint count) {
+	internal RepMgrSite[] repmgr_site_list() {
+		uint count = 0;
 		int err = 0;
-		RepMgrSite[] ret = repmgr_site_list(ref count, ref err);
+		uint size = 0;
+		RepMgrSite[] ret = repmgr_site_list(ref count, ref size, ref err);
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
@@ -922,13 +963,13 @@ typedef struct __dbtxn
 	}
 	internal PreparedTransaction[] txn_recover(uint count, uint flags) {
 		int err = 0;
-		IntPtr prepp = Marshal.AllocHGlobal((int)(count * (4 + DbConstants.DB_GID_SIZE)));
+		IntPtr prepp = Marshal.AllocHGlobal((int)(count * (IntPtr.Size + DbConstants.DB_GID_SIZE)));
 		uint sz = 0;
 		err = txn_recover(prepp, count, ref sz, flags);
 		DatabaseException.ThrowException(err);
 		PreparedTransaction[] ret = new PreparedTransaction[sz];
 		for (int i = 0; i < sz; i++) {
-			IntPtr cPtr = new IntPtr(prepp.ToInt32() + i * (4 + DbConstants.DB_GID_SIZE));
+			IntPtr cPtr = new IntPtr((IntPtr.Size == 4 ? prepp.ToInt32() : prepp.ToInt64()) + i * (IntPtr.Size + DbConstants.DB_GID_SIZE));
 			DB_PREPLIST prep = new DB_PREPLIST(cPtr, false);
 			ret[i] = new PreparedTransaction(prep);
 		}
@@ -937,7 +978,9 @@ typedef struct __dbtxn
 	}
 	internal TxnStatStruct txn_stat(uint flags) {
 		int err = 0;
-		IntPtr ptr = txn_stat(flags, ref err);
+		uint size = 0;
+		int offset = Marshal.SizeOf(typeof(DB_TXN_ACTIVE));
+		IntPtr ptr = txn_stat(flags, ref size, ref err);
 		DatabaseException.ThrowException(err);
 	        TxnStatStruct ret = new TxnStatStruct();
 		ret.st = (TransactionStatStruct)Marshal.PtrToStructure(ptr, typeof(TransactionStatStruct));
@@ -946,12 +989,12 @@ typedef struct __dbtxn
         	ret.st_txnnames = new string[ret.st.st_nactive];
 
 	        for (int i = 0; i < ret.st.st_nactive; i++) {
-        	    IntPtr activep = new IntPtr(ret.st.st_txnarray.ToInt32() + i * 220);
+        	    IntPtr activep = new IntPtr((IntPtr.Size == 4 ? ret.st.st_txnarray.ToInt32() : ret.st.st_txnarray.ToInt64()) + i * size);
 	            ret.st_txnarray[i] = (DB_TXN_ACTIVE)Marshal.PtrToStructure(activep, typeof(DB_TXN_ACTIVE));
         	    ret.st_txngids[i] = new byte[DbConstants.DB_GID_SIZE];
-	            IntPtr gidp = new IntPtr(activep.ToInt32() + 40);
+	            IntPtr gidp = new IntPtr((IntPtr.Size == 4 ? activep.ToInt32() : activep.ToInt64()) + offset);
         	    Marshal.Copy(gidp, ret.st_txngids[i], 0, (int)DbConstants.DB_GID_SIZE);
-	            IntPtr namep = new IntPtr(activep.ToInt32() + 40 + DbConstants.DB_GID_SIZE);
+	            IntPtr namep = new IntPtr((IntPtr.Size == 4 ? gidp.ToInt32() : gidp.ToInt64()) + DbConstants.DB_GID_SIZE);
         	    ret.st_txnnames[i] = Marshal.PtrToStringAnsi(namep);
 	        }
         	libdb_csharp.__os_ufree(null, ptr);
@@ -1105,8 +1148,14 @@ typedef struct __dbenv
 	%typemap(imtype) char ** "ref string"
 	%typemap(csin) char ** "ref $csinput"
 
+	%typemap(cstype) char *namep "IntPtr"
+	%typemap(imtype) char *namep "IntPtr"
+	%csmethodmodifiers log_file "private"
 	int log_file(const DB_LSN *lsn, char *namep, size_t len) {
-		return self->log_file(self, lsn, namep, len);
+		int ret = self->log_file(self, lsn, namep, len);
+		if (ret == EINVAL)
+			return DB_BUFFER_SMALL;
+		return ret;
 	}
 	
 	int log_flush(const DB_LSN *lsn) {
@@ -1265,10 +1314,11 @@ typedef struct __dbenv
 	%typemap(cstype) DB_REPMGR_SITE * "RepMgrSite[]"
 	%typemap(imtype) DB_REPMGR_SITE * "IntPtr"
 	%csmethodmodifiers repmgr_site_list "private"
-	DB_REPMGR_SITE *repmgr_site_list(u_int *countp, int *err) {
+	DB_REPMGR_SITE *repmgr_site_list(u_int *countp, u_int32_t *sizep, int *err) {
 		DB_REPMGR_SITE *listp = NULL;
 	
 		*err = self->repmgr_site_list(self, countp, &listp);
+		*sizep = sizeof(DB_REPMGR_SITE);
 		return listp;
 	}
 
@@ -1755,9 +1805,10 @@ typedef struct __dbenv
 
 	%csmethodmodifiers txn_stat "private"		
 	%typemap(cstype, out="IntPtr") void * "IntPtr"
-	void *txn_stat(u_int32_t flags, int *err) {
+	void *txn_stat(u_int32_t flags, u_int32_t *size, int *err) {
 		DB_TXN_STAT *ret;
 		*err = self->txn_stat(self, &ret, flags);
+		*size = sizeof(DB_TXN_ACTIVE);
 		return (void *)ret;
 	}
 
@@ -1810,7 +1861,7 @@ typedef struct __db_preplist {
 	%typemap(csvarout) u_int8_t gid[DB_GID_SIZE] %{
         get {
           byte[] ret = new byte[DbConstants.DB_GID_SIZE];
-	  IntPtr cPtr = new IntPtr(swigCPtr.Handle.ToInt32() + 4);
+	  IntPtr cPtr = new IntPtr(swigCPtr.Handle.ToInt32() + IntPtr.Size);
 	  Marshal.Copy(cPtr, ret, 0, ret.Length);
 	  return ret;
         }

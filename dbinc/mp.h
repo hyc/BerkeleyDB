@@ -545,6 +545,10 @@ struct __bh_frozen_a {
     (F_ISSET((BH *)((u_int8_t *)					\
     (p) - SSZA(BH, buf)), BH_DIRTY|BH_EXCLUSIVE) == (BH_DIRTY|BH_EXCLUSIVE))
 
+#define IS_VERSION(dbp, p)						\
+    (!F_ISSET(dbp->mpf->mfp, MP_CAN_MMAP) &&				\
+    SH_CHAIN_HASPREV((BH *)((u_int8_t *)(p) - SSZA(BH, buf)), vc))
+
 #define	BH_OWNER(env, bhp)						\
     ((TXN_DETAIL *)R_ADDR(&env->tx_handle->reginfo, bhp->td_off))
 

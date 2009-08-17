@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2008 Oracle.  All rights reserved.
+# Copyright (c) 2008-2009 Oracle.  All rights reserved.
 #
 # TEST	rep084
 # TEST  Abbreviated internal init for named in-memory databases (NIMDBs).

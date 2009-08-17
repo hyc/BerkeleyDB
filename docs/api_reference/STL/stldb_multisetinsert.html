@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="up" href="db_multiset.html" title="Chapter 8.  db_multiset" />
+    <link rel="up" href="db_multiset.html" title="Chapter 8.  Db_multiset" />
     <link rel="prev" href="stldb_multisetdstr_db_multiset.html" title="~db_multiset" />
     <link rel="next" href="stldb_multiseterase.html" title="erase" />
   </head>
@@ -22,7 +22,7 @@ insert
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_multisetdstr_db_multiset.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 8. 
- db_multiset  </th>
+ Db_multiset  </th>
           <td width="20%" align="right"> <a accesskey="n" href="stldb_multiseterase.html">Next</a></td>
         </tr>
       </table>
@@ -59,7 +59,7 @@ iterator insert(const value_type &amp;x)
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561948"></a>
+                <h4 class="title"><a id="id1557047"></a>
 Parameters</h4>
               </div>
             </div>
@@ -68,7 +68,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1561965"></a>
+                  <h5 class="title"><a id="id1557117"></a>
  x </h5>
                 </div>
               </div>
@@ -80,12 +80,13 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561663"></a>
+                <h4 class="title"><a id="id1557105"></a>
 Return Value</h4>
               </div>
             </div>
           </div>
-          <p>An iterator sitting on the newly inserted key, or an invalid one if the key x existed. </p>
+          <p>An iterator positioned on the newly inserted key. If the key x already exists, an invalid iterator equal to that returned by <a class="link" href="stldb_mapend.html" title="end">end()</a>
+ function is returned. </p>
         </div>
         <pre class="programlisting">
 iterator insert(iterator position,
@@ -100,7 +101,7 @@ iterator insert(iterator position,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561981"></a>
+                <h4 class="title"><a id="id1557100"></a>
 Parameters</h4>
               </div>
             </div>
@@ -109,7 +110,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1561737"></a>
+                  <h5 class="title"><a id="id1557007"></a>
  x </h5>
                 </div>
               </div>
@@ -120,7 +121,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1562089"></a>
+                  <h5 class="title"><a id="id1557244"></a>
  position </h5>
                 </div>
               </div>
@@ -132,12 +133,13 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561643"></a>
+                <h4 class="title"><a id="id1557211"></a>
 Return Value</h4>
               </div>
             </div>
           </div>
-          <p>An iterator sitting on the newly inserted key, or an invalid one if the key x existed. </p>
+          <p>An iterator positioned on the newly inserted key. If the key x already exists, an invalid iterator equal to that returned by <a class="link" href="stldb_mapend.html" title="end">end()</a>
+ function is returned. </p>
         </div>
         <pre class="programlisting">
 void insert(InputIterator first,
@@ -152,7 +154,7 @@ void insert(InputIterator first,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561916"></a>
+                <h4 class="title"><a id="id1556959"></a>
 Parameters</h4>
               </div>
             </div>
@@ -161,7 +163,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1561977"></a>
+                  <h5 class="title"><a id="id1556818"></a>
  last </h5>
                 </div>
               </div>
@@ -172,7 +174,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1562006"></a>
+                  <h5 class="title"><a id="id1557207"></a>
  first </h5>
                 </div>
               </div>
@@ -194,7 +196,7 @@ void insert(db_set_iterator&lt; kdt, value_type_sub &gt; &amp;first,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561517"></a>
+                <h4 class="title"><a id="id1557114"></a>
 Parameters</h4>
               </div>
             </div>
@@ -203,7 +205,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1562086"></a>
+                  <h5 class="title"><a id="id1557267"></a>
  last </h5>
                 </div>
               </div>
@@ -214,7 +216,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1561966"></a>
+                  <h5 class="title"><a id="id1557288"></a>
  first </h5>
                 </div>
               </div>
@@ -235,7 +237,7 @@ void insert(db_set_base_iterator&lt; kdt &gt; &amp;first,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1561668"></a>
+                <h4 class="title"><a id="id1557318"></a>
 Parameters</h4>
               </div>
             </div>
@@ -244,7 +246,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1562164"></a>
+                  <h5 class="title"><a id="id1557268"></a>
  last </h5>
                 </div>
               </div>
@@ -255,7 +257,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1561548"></a>
+                  <h5 class="title"><a id="id1557249"></a>
  first </h5>
                 </div>
               </div>
@@ -268,7 +270,7 @@ Parameters</h4>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1562132"></a>
+              <h3 class="title"><a id="id1557269"></a>
 Group: Insert Functions</h3>
             </div>
           </div>
@@ -284,13 +286,13 @@ Group: Insert Functions</h3>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1562186"></a>
+              <h3 class="title"><a id="id1556813"></a>
 Class</h3>
             </div>
           </div>
         </div>
         <p>
-  <a class="link" href="db_multiset.html" title="Chapter 8.  db_multiset">
+  <a class="link" href="db_multiset.html" title="Chapter 8.  Db_multiset">
   db_multiset</a>
      </p>
       </div>

@@ -6,6 +6,9 @@
  * $Id$
  */
 
+#include <cstdlib>
+#include <cstring>
+
 #include "RepConfigInfo.h"
 
 RepConfigInfo::RepConfigInfo()

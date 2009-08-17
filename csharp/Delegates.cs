@@ -1,4 +1,11 @@
-﻿using System;
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
+using System;
+using System.Collections.Generic;
 
 namespace BerkeleyDB {
     
@@ -9,6 +16,35 @@ namespace BerkeleyDB {
     /// <param name="data">The data to be stored.</param>
     /// <param name="recno">The generated record number.</param>
     public delegate void AppendRecordDelegate(DatabaseEntry data, uint recno);
+    /// <summary>
+    /// A function to store a compressed key/data pair into a supplied buffer.
+    /// </summary>
+    /// <param name="prevKey">The key immediately preceding the application supplied key.</param>
+    /// <param name="prevData">The data associated with prevKey.</param>
+    /// <param name="key">The application supplied key.</param>
+    /// <param name="data">The application supplied data. </param>
+    /// <param name="dest">The compressed data to be stored in the
+    /// database.</param>
+    /// <param name="size">The number of compressed bytes written to
+    /// <paramref name="dest"/>, or the required size of
+    /// <paramref name="dest"/>, if too small.</param>
+    /// <returns>True on success, false if dest is too small to contain the
+    /// compressed data.  All other errors should throw an exception.</returns>
+    public delegate bool BTreeCompressDelegate(DatabaseEntry prevKey,
+        DatabaseEntry prevData, DatabaseEntry key,
+        DatabaseEntry data, ref byte[] dest, out int size);
+    /// <summary>
+    /// A function to decompress a key/data pair from a supplied buffer.
+    /// </summary>
+    /// <param name="prevKey">The key immediately preceding the key being decompressed.</param>
+    /// <param name="prevData">The data associated with prevKey.</param>
+    /// <param name="compressed">The data stored in the tree, that is, the compressed data.</param>
+    /// <param name="bytesRead">The number of bytes read from <paramref name="compressed"/>.</param>
+    /// <returns>Two new DatabaseEntry objects representing the decompressed
+    /// key/data pair.</returns>
+    public delegate KeyValuePair<DatabaseEntry, DatabaseEntry>
+        BTreeDecompressDelegate(DatabaseEntry prevKey,
+        DatabaseEntry prevData, byte[] compressed, out uint bytesRead);
     /// <summary>
     /// The application-specified feedback function called to report Berkeley DB
     /// operation progress.

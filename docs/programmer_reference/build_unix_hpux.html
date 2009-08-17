@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="build_unix.html" title="Chapter 26.  Building Berkeley DB for UNIX/POSIX" />
+    <link rel="up" href="build_unix.html" title="Chapter 27.  Building Berkeley DB for UNIX/POSIX" />
     <link rel="prev" href="build_unix_freebsd.html" title="FreeBSD" />
     <link rel="next" href="build_unix_irix.html" title="IRIX" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_freebsd.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 26. 
+          <th width="60%" align="center">Chapter 27. 
 		Building Berkeley DB for UNIX/POSIX
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_irix.html">Next</a></td>
@@ -113,6 +113,20 @@ path specified by the SHLIB_PATH environment variable.  To work around
 this, specify the "+s" flag to ld when linking, or run the following
 command on the executable that is not working:</p>
             <pre class="programlisting">chatr +s enable -l /full/path/to/libdb-3.2.sl ...</pre>
+          </li>
+          <li>
+            <span class="bold">
+              <strong>When building for an IA64 processor, I see
+either bus errors or compiler warnings about converting between unaligned
+types (#4232). How can I resolve them?</strong>
+            </span>
+            <p>Berkeley DB requires that data types containing members with different 
+sizes be aligned in a consistent way. The HP-UX compiler does not provide 
+this alignment property by default.</p>
+            <p>The compiler can be made to generate adequately aligned data by passing
+the +u1 option to the compiler. See the HP documentation about the 
+<a class="ulink" href="http://docs.hp.com/en/10946/options.htm#opt+u" target="_top">+u1 flag</a>
+for more information.</p>
           </li>
           <li>
             <span class="bold">

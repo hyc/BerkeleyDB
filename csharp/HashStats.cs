@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,11 +25,11 @@ namespace BerkeleyDB {
         /// <summary>
         /// Bytes free on big item pages. 
         /// </summary>
-        public long BigPagesFreeBytes { get { return st.hash_big_bfree; } }
+        public ulong BigPagesFreeBytes { get { return st.hash_big_bfree; } }
         /// <summary>
         /// Bytes free on bucket pages. 
         /// </summary>
-        public long BucketPagesFreeBytes { get { return st.hash_bfree; } }
+        public ulong BucketPagesFreeBytes { get { return st.hash_bfree; } }
         /// <summary>
         /// Number of dup pages. 
         /// </summary>
@@ -31,7 +37,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Bytes free on duplicate pages. 
         /// </summary>
-        public long DuplicatePagesFreeBytes { get { return st.hash_dup_free; } }
+        public ulong DuplicatePagesFreeBytes { get { return st.hash_dup_free; } }
         /// <summary>
         /// Fill factor specified at create. 
         /// </summary>
@@ -67,7 +73,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Bytes free on ovfl pages. 
         /// </summary>
-        public long OverflowPagesFreeBytes { get { return st.hash_ovfl_free; } }
+        public ulong OverflowPagesFreeBytes { get { return st.hash_ovfl_free; } }
         /// <summary>
         /// Page count. 
         /// </summary>

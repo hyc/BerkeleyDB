@@ -27,7 +27,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h1 class="title"><a id="id1631173"></a>Berkeley DB C API Reference</h1>
+            <h1 class="title"><a id="id1629862"></a>Berkeley DB C API Reference</h1>
           </div>
           <div class="navtable">
             <table border="1" width="80%">
@@ -428,7 +428,7 @@
                   <td>
                     <a class="xref" href="DB_MULTIPLE_WRITE_INIT.html" title="DB_MULTIPLE_WRITE_INIT">DB_MULTIPLE_WRITE_INIT</a>
                   </td>
-                  <td>Initialize bulk get retrieval</td>
+                  <td>Initialize a bulk buffer to hold key/data pairs</td>
                 </tr>
                 <tr>
                   <td>
@@ -458,7 +458,7 @@
                   <td>
                     <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a>
                   </td>
-                  <td>Initialize bulk get retrieval</td>
+                  <td>Initialize a bulk buffer to hold recno/data pairs</td>
                 </tr>
                 <tr>
                   <td>
@@ -470,7 +470,7 @@
                   <td>
                     <a class="xref" href="DB_MULTIPLE_RECNO_RESERVE_NEXT.html" title="DB_MULTIPLE_RECNO_RESERVE_NEXT">DB_MULTIPLE_RECNO_RESERVE_NEXT</a>
                   </td>
-                  <td>Next bulk get retrieval</td>
+                  <td>Reserve space for a record number / data pair in a bulk buffer</td>
                 </tr>
                 <tr>
                   <td>
@@ -1312,12 +1312,6 @@
                 </tr>
                 <tr>
                   <td>
-                    <a class="xref" href="db_codegen.html" title="db_codegen">db_codegen</a>
-                  </td>
-                  <td>Code generation utility</td>
-                </tr>
-                <tr>
-                  <td>
                     <a class="xref" href="db_deadlock.html" title="db_deadlock">db_deadlock</a>
                   </td>
                   <td>Deadlock detection utility</td>
@@ -1519,7 +1513,7 @@
           </div>
           <div>
             <div class="legalnotice">
-              <a id="id1631356"></a>
+              <a id="id1630045"></a>
               <p class="legalnotice-title">
                 <b>Legal Notice</b>
               </p>
@@ -1550,7 +1544,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">6/1/2009</p>
+            <p class="pubdate">8/14/2009</p>
           </div>
         </div>
         <hr />

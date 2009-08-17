@@ -37,16 +37,16 @@
       </div>
       <pre class="programlisting">#include &lt;db.h&gt;
 
-DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno, 
+DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt,
     void *ddest, size_t dlen); </pre>
       <p>
-	    Reserves space for a record number / data pair in a bulk buffer.
+	    Reserves space for a data item in a bulk buffer.
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1660324"></a>Parameters</h3>
+              <h3 class="title"><a id="id1659086"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -54,7 +54,7 @@ DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1660549"></a>pointer</h4>
+                <h4 class="title"><a id="id1658793"></a>pointer</h4>
               </div>
             </div>
           </div>
@@ -68,23 +68,7 @@ DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1660669"></a>recno</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                         The record number to be copied into the bulk buffer.
-                     </p>
-          <p>
-		         This parameter is set to 0 if the data item does not
-			 fit in the buffer.
-                     </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1660661"></a>ddest</h4>
+                <h4 class="title"><a id="id1659288"></a>ddest</h4>
               </div>
             </div>
           </div>
@@ -102,12 +86,12 @@ DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1660511"></a>dlen</h4>
+                <h4 class="title"><a id="id1659295"></a>dlen</h4>
               </div>
             </div>
           </div>
           <p>
-                         The number of bytes to be reserved.
+                         The number of bytes to be reserved for the data item.
                      </p>
         </div>
       </div>
@@ -115,7 +99,7 @@ DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1660521"></a>Class</h3>
+              <h3 class="title"><a id="id1658940"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -127,7 +111,7 @@ DB_MULTIPLE_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1660619"></a>See Also</h3>
+              <h3 class="title"><a id="id1659113"></a>See Also</h3>
             </div>
           </div>
         </div>

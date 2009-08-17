@@ -240,6 +240,17 @@ f=../build_wince/clib_port.h
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
 
+# Build the Windows dbstl_common.h.
+cat <<ENDOFSEDTEXT > $s
+s/@WSTRING_decl@/#define	HAVE_WSTRING	1/
+s/@TLS_decl@/#define	TLS_DECL_MODIFIER	__declspec(thread)/
+s/@TLS_defn@/#define	TLS_DEFN_MODIFIER	__declspec(thread)/
+ENDOFSEDTEXT
+sed -f $s ../stl/dbstl_common.in > $t
+f=../build_windows/dbstl_common.h
+cmp $t $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $t $f && chmod 444 $f)
+
 # Copy in errno.h.
 f=../build_wince/errno.h
 cmp errno.h $f > /dev/null 2>&1 ||

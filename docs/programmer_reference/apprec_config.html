@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="apprec.html" title="Chapter 12.  Application Specific Logging and Recovery" />
+    <link rel="up" href="apprec.html" title="Chapter 13.  Application Specific Logging and Recovery" />
     <link rel="prev" href="apprec_auto.html" title="Automatically generated functions" />
-    <link rel="next" href="program.html" title="Chapter 13.  Programmer Notes" />
+    <link rel="next" href="program.html" title="Chapter 14.  Programmer Notes" />
   </head>
   <body>
     <div class="navheader">
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="apprec_auto.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 12. 
+          <th width="60%" align="center">Chapter 13. 
 		Application Specific Logging and Recovery
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="program.html">Next</a></td>
@@ -70,7 +70,7 @@ functions as follows:</p>
         <ol type="1">
           <li>When the application starts, call the <a href="../api_reference/C/envset_app_dispatch.html" class="olink">DB_ENV-&gt;set_app_dispatch()</a>
 with your dispatch function.</li>
-          <li>Issue a <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> call before any operations you want to be
+          <li>Issue a <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> call before any operations you want to be
 transaction-protected.</li>
           <li>Before accessing any data, issue the appropriate lock call to lock the
 data (either for reading or writing).</li>
@@ -98,7 +98,8 @@ the details.</p>
 have been applied to the data.  The function will be called with the
 "op" parameter set to <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_ABORT" class="olink">DB_TXN_ABORT</a> when a transaction that wrote
 the log record aborts, with <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_FORWARD_ROLL" class="olink">DB_TXN_FORWARD_ROLL</a> and
-<a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_BACKWARD_ROLL" class="olink">DB_TXN_BACKWARD_ROLL</a> on a replicated client.</p>
+<a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_BACKWARD_ROLL" class="olink">DB_TXN_BACKWARD_ROLL</a> during recovery, and with <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_APPLY" class="olink">DB_TXN_APPLY</a> 
+on a replicated client.</p>
       <p>The actions for <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_ABORT" class="olink">DB_TXN_ABORT</a> and <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_BACKWARD_ROLL" class="olink">DB_TXN_BACKWARD_ROLL</a>
 should generally be the same, and the actions for
 <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_FORWARD_ROLL" class="olink">DB_TXN_FORWARD_ROLL</a> and <a href="../api_reference/C/envset_app_dispatch.html#set_app_dispatch_DB_TXN_APPLY" class="olink">DB_TXN_APPLY</a> should generally
@@ -159,7 +160,7 @@ to allow the periodic removal of database environment log files.</p>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 13. 
+          <td width="40%" align="right" valign="top"> Chapter 14. 
 		Programmer Notes
         </td>
         </tr>

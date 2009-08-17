@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -14,6 +20,35 @@ namespace ex_btrec {
             string dbName;
             string wordFile;
 
+            /*
+             * ex_btrec is meant to be run from build_windows\AnyCPU, in either
+             * the Debug or Release directory. The required core libraries,
+             * however, are in either build_windows\Win32 or build_windows\x64,
+             * depending upon the platform.  That location needs to be added to
+             * the PATH environment variable for the P/Invoke calls to work.
+             */
+            try {
+                String pwd = Environment.CurrentDirectory;
+                pwd = Path.Combine(pwd, "..");
+                pwd = Path.Combine(pwd, "..");
+                if (IntPtr.Size == 4)
+                    pwd = Path.Combine(pwd, "Win32");
+                else
+                    pwd = Path.Combine(pwd, "x64");
+#if DEBUG
+                pwd = Path.Combine(pwd, "Debug");
+#else
+                pwd = Path.Combine(pwd, "Release");
+#endif
+                pwd += ";" + Environment.GetEnvironmentVariable("PATH");
+                Environment.SetEnvironmentVariable("PATH", pwd);
+            } catch (Exception e) {
+                Console.WriteLine(
+                    "Unable to set the PATH environment variable.");
+                Console.WriteLine(e.Message);
+                return;
+            }
+            
             try {
                 dbFileName = args[0];
                 dbName = args[1];

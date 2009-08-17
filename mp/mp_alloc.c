@@ -39,7 +39,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	u_int32_t buckets, buffers, high_priority, priority, priority_saved;
 	u_int32_t put_counter, total_buckets;
 	int aggressive, alloc_freeze, b_lock, froze, giveup, got_oldest;
-	int h_locked, ret;
+	int h_locked, need_free, ret;
 	u_int8_t *endp;
 	void *p;
 
@@ -270,6 +270,8 @@ retry_search:	bhp = NULL;
 			    mvcc_bhp != NULL;
 			    oldest_bhp = mvcc_bhp,
 			    mvcc_bhp = SH_CHAIN_PREV(mvcc_bhp, vc, __bh)) {
+				DB_ASSERT(env, mvcc_bhp !=
+				    SH_CHAIN_PREV(mvcc_bhp, vc, __bh));
 				if (BH_REFCOUNT(mvcc_bhp) == 0 &&
 				    !F_ISSET(mvcc_bhp, BH_FROZEN) &&
 				    (aggressive ||
@@ -435,19 +437,33 @@ this_buffer:	buffers++;
 			 * Before freezing, double-check that we have an
 			 * up-to-date old_reader LSN.
 			 */
-			if (!got_oldest &&
+			if (!got_oldest && SH_CHAIN_HASNEXT(bhp, vc) &&
 			    !BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
 				(void)__txn_oldest_reader(env,
 				    &hp->old_reader);
 				got_oldest = 1;
 			}
-			if (!BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
-				if (!aggressive || BH_REFCOUNT(bhp) != 1 ||
-				    F_ISSET(bhp, BH_FROZEN))
+			if ((SH_CHAIN_HASPREV(bhp, vc) &&
+			    !SH_CHAIN_HASNEXT(bhp, vc)) ||
+			    !BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
+				if (!aggressive ||
+				    F_ISSET(bhp, BH_DIRTY | BH_FROZEN))
 					goto next_hb;
-				ret = __memp_bh_freeze(dbmp,
-				    infop, hp, bhp, &alloc_freeze);
-				froze = 1;
+				if ((ret = __memp_bh_freeze(dbmp,
+				    infop, hp, bhp, &alloc_freeze)) == 0)
+					froze = 1;
+				else if (ret == EBUSY || ret == EIO ||
+				    ret == ENOMEM || ret == ENOSPC)
+					ret = 0;
+				else {
+					DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
+					atomic_dec(env, &bhp->ref);
+					DB_ASSERT(env, b_lock);
+					F_CLR(bhp, BH_EXCLUSIVE);
+					MUTEX_UNLOCK(env, bhp->mtx_buf);
+					DB_ASSERT(env, !h_locked);
+					return (ret);
+				}
 			}
 		}
 
@@ -464,16 +480,16 @@ this_buffer:	buffers++;
 		 * by raising its priority.
 		 */
 		MUTEX_LOCK(env, hp->mtx_hash);
+		h_locked = 1;
 		if (ret != 0 && (aggressive || bhp->priority < c_mp->lru_count))
 			bhp->priority = c_mp->lru_count +
 			     c_mp->stat.st_pages / MPOOL_PRI_DIRTY;
-		if (ret != 0 ||
-		    BH_REFCOUNT(bhp) != 1 || F_ISSET(bhp, BH_DIRTY) ||
-		    (!froze && !SH_CHAIN_SINGLETON(bhp, vc) &&
-		    !BH_OBSOLETE(bhp, hp->old_reader, vlsn))) {
-			MUTEX_UNLOCK(env, hp->mtx_hash);
+		if (ret != 0 || BH_REFCOUNT(bhp) != 1 ||
+		    F_ISSET(bhp, BH_DIRTY) || (!froze &&
+		    ((SH_CHAIN_HASPREV(bhp, vc) &&
+		    !SH_CHAIN_HASNEXT(bhp, vc)) ||
+		    !BH_OBSOLETE(bhp, hp->old_reader, vlsn))))
 			goto next_hb;
-		}
 
 		/*
 		 * If the buffer is frozen, thaw it and look for another one
@@ -481,19 +497,32 @@ this_buffer:	buffers++;
 		 * mark bhp BH_FROZEN.)
 		 */
 		if (F_ISSET(bhp, BH_FROZEN)) {
-			MUTEX_UNLOCK(env, hp->mtx_hash);
 			DB_ASSERT(env, BH_OBSOLETE(bhp, hp->old_reader, vlsn) ||
 			    SH_CHAIN_SINGLETON(bhp, vc));
 			DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
-			ret = __memp_bh_thaw(dbmp, infop, hp, bhp, NULL);
-			F_CLR(bhp, BH_EXCLUSIVE);
-			MUTEX_UNLOCK(env, bhp->mtx_buf);
-			if (ret != 0)
-				return (ret);
-			b_lock = 0;
-			alloc_freeze = 0;
-			MUTEX_READLOCK(env, hp->mtx_hash);
-			h_locked = 1;
+			if (!F_ISSET(bhp, BH_THAWED)) {
+				/*
+				 * This call releases the hash bucket mutex.
+				 * We're going to retry the search, so we need
+				 * to re-lock it.
+				 */
+				if ((ret = __memp_bh_thaw(dbmp,
+				    infop, hp, bhp, NULL)) != 0)
+					return (ret);
+				MUTEX_READLOCK(env, hp->mtx_hash);
+			} else {
+				need_free = (atomic_dec(env, &bhp->ref) == 0);
+				F_CLR(bhp, BH_EXCLUSIVE);
+				MUTEX_UNLOCK(env, bhp->mtx_buf);
+				if (need_free) {
+					MPOOL_REGION_LOCK(env, infop);
+					SH_TAILQ_INSERT_TAIL(&c_mp->free_frozen,
+					    bhp, hq);
+					MPOOL_REGION_UNLOCK(env, infop);
+				}
+			}
+			bhp = NULL;
+			b_lock = alloc_freeze = 0;
 			goto retry_search;
 		}
 
@@ -507,6 +536,9 @@ this_buffer:	buffers++;
 			if ((ret = __memp_bhfree(dbmp,
 			     infop, bh_mfp, hp, bhp, 0)) != 0)
 				return (ret);
+			b_lock = 0;
+			h_locked = 0;
+
 			MVCC_MPROTECT(bhp->buf, bh_mfp->stat.st_pagesize,
 			    PROT_READ | PROT_WRITE | PROT_EXEC);
 
@@ -522,8 +554,12 @@ this_buffer:	buffers++;
 				    (BH *)frozen_bhp, hq);
 				frozen_bhp++;
 			}
+			MPOOL_REGION_UNLOCK(env, infop);
+
 			alloc_freeze = 0;
-			continue;
+			MUTEX_READLOCK(env, hp->mtx_hash);
+			h_locked = 1;
+			goto retry_search;
 		}
 
 		/*

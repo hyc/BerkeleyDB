@@ -1269,8 +1269,9 @@ __bamc_compress_merge_delete(dbc, stream, countp)
 
 #ifdef DIAGNOSTIC
 				/* Check that the stream is sorted */
-				DB_ASSERT(env, __db_compare_both(dbp, &ikey,
-					&idata, &pikey, &pidata) >= 0);
+				DB_ASSERT(env, moreStream == 0 ||
+				    __db_compare_both(dbp, &ikey, &idata,
+				    &pikey, &pidata) >= 0);
 #endif
 
 				/*
@@ -1480,8 +1481,9 @@ __bamc_compress_merge_delete_dups(dbc, stream, countp)
 
 #ifdef DIAGNOSTIC
 				/* Check that the stream is sorted */
-				DB_ASSERT(env, __db_compare_both(
-				    dbp, &ikey, NULL, &pikey, NULL) >= 0);
+				DB_ASSERT(env, moreStream == 0 ||
+				    __db_compare_both(dbp, &ikey, NULL,
+				    &pikey, NULL) >= 0);
 #endif
 
 				/* Check that !nextExists || ikey <= nextk */

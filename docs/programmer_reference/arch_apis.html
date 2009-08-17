@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="arch.html" title="Chapter 7.  Berkeley DB Architecture" />
+    <link rel="up" href="arch.html" title="Chapter 8.  Berkeley DB Architecture" />
     <link rel="prev" href="arch_progmodel.html" title="Programming model" />
     <link rel="next" href="arch_script.html" title="Scripting languages" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="arch_progmodel.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7. 
+          <th width="60%" align="center">Chapter 8. 
 		Berkeley DB Architecture
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="arch_script.html">Next</a></td>
@@ -39,27 +39,27 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="arch_apis.html#id1595623">C</a>
+              <a href="arch_apis.html#id1603278">C</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="arch_apis.html#id1595491">C++</a>
+              <a href="arch_apis.html#id1603318">C++</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="arch_apis.html#id1595666">STL</a>
+              <a href="arch_apis.html#id1603161">STL</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="arch_apis.html#id1595615">Java</a>
+              <a href="arch_apis.html#id1603049">Java</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="arch_apis.html#id1594358">Dbm/Ndbm, Hsearch</a>
+              <a href="arch_apis.html#id1603019">Dbm/Ndbm, Hsearch</a>
             </span>
           </dt>
         </dl>
@@ -76,7 +76,7 @@ database environment.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1595623"></a>C</h3>
+              <h3 class="title"><a id="id1603278"></a>C</h3>
             </div>
           </div>
         </div>
@@ -88,7 +88,7 @@ single include file:</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1595491"></a>C++</h3>
+              <h3 class="title"><a id="id1603318"></a>C++</h3>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ can be disabled at runtime.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1595666"></a>STL</h3>
+              <h3 class="title"><a id="id1603161"></a>STL</h3>
             </div>
           </div>
         </div>
@@ -128,17 +128,17 @@ of Berkeley DB can still be utilized via dbstl with little performance overhead,
 
 </p>
         <p>
-dbstl container/iterator class templates reside in header files db_vector.h, db_map.h and db_set.h.
+dbstl container/iterator class templates reside in header files dbstl_vector.h, dbstl_map.h and dbstl_set.h.
 
-Among them, db_vector.h contains dbstl::db_vector and its iterators;
-db_map.h contains dbstl::db_map, dbstl::db_multimap and their iterators; db_set.h contains dbstl::db_set and dbstl::db_multiset and their iterators. You should
+Among them, dbstl_vector.h contains dbstl::db_vector and its iterators;
+dbstl_map.h contains dbstl::db_map, dbstl::db_multimap and their iterators; dbstl_set.h contains dbstl::db_set and dbstl::db_multiset and their iterators. You should
 include needed header file(s) to use the container/iterator. Note that we don't use the file name with no extention --- To use dbstl::db_vector, you should do this:
 </p>
-        <pre class="programlisting">#include "db_vector.h"</pre>
+        <pre class="programlisting">#include "dbstl_vector.h"</pre>
         <p>
 rather than this:
 </p>
-        <pre class="programlisting">#include "db_vector"</pre>
+        <pre class="programlisting">#include "dbstl_vector"</pre>
         <p>
 And these header files reside in "stl" directory inside Berkeley DB source root directory. If you have installed
 Berkeley DB, they are also available in the "include" directory in the directory where Berkeley DB is installed.
@@ -163,7 +163,7 @@ While making use of dbstl, you will probably want to create environment or datab
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1595615"></a>Java</h3>
+              <h3 class="title"><a id="id1603049"></a>Java</h3>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ that has a close method.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1594358"></a>Dbm/Ndbm, Hsearch</h3>
+              <h3 class="title"><a id="id1603019"></a>Dbm/Ndbm, Hsearch</h3>
             </div>
           </div>
         </div>

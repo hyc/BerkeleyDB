@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="upgrade_4_1_toc.html" title="Chapter 37. Upgrading Berkeley DB 4.0 applications to Berkeley DB 4.1" />
+    <link rel="up" href="upgrade_4_1_toc.html" title="Chapter 38. Upgrading Berkeley DB 4.0 applications to Berkeley DB 4.1" />
     <link rel="prev" href="upgrade_4_1_excl.html" title="Release 4.1: DB_EXCL" />
     <link rel="next" href="upgrade_4_1_log_register.html" title="Release 4.1: DB_ENV-&gt;log_register" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="upgrade_4_1_excl.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 37. Upgrading Berkeley DB 4.0 applications to Berkeley DB 4.1</th>
+          <th width="60%" align="center">Chapter 38. Upgrading Berkeley DB 4.0 applications to Berkeley DB 4.1</th>
           <td width="20%" align="right"> <a accesskey="n" href="upgrade_4_1_log_register.html">Next</a></td>
         </tr>
       </table>
@@ -49,7 +49,7 @@ serve as a secondary index, where again there was no way to group the
 creation of both databases in a single atomic operation.</p>
       <p>In the 4.1 release of Berkeley DB, this is no longer the case.  The
 <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a> and <a href="../api_reference/C/dbassociate.html" class="olink">DB-&gt;associate()</a> methods now take a <a href="../api_reference/C/txn.html" class="olink">TXN</a>
-handle returned by <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> as an optional argument.  New
+handle returned by <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> as an optional argument.  New
 <a href="../api_reference/C/envdbremove.html" class="olink">DB_ENV-&gt;dbremove()</a> and <a href="../api_reference/C/envdbrename.html" class="olink">DB_ENV-&gt;dbrename()</a> methods taking a
 <a href="../api_reference/C/txn.html" class="olink">TXN</a> handle as an optional argument have been added.</p>
       <p>To upgrade, applications must add a <a href="../api_reference/C/txn.html" class="olink">TXN</a> parameter in the

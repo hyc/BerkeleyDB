@@ -54,7 +54,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1685927"></a>Parameters</h3>
+              <h3 class="title"><a id="id1684593"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -62,7 +62,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1685729"></a>data</h4>
+                <h4 class="title"><a id="id1684600"></a>data</h4>
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1685994"></a>flags</h4>
+                <h4 class="title"><a id="id1684748"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -94,16 +94,16 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="get_DB_CURRENT"></a>DB_CURRENT</code>
+                <p><a id="get_DB_CURRENT"></a>
+                  <code class="literal">DB_CURRENT</code>
             </p>
                 <p>
                  Return the log record to which the log currently refers.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="get_DB_FIRST"></a>DB_FIRST</code>
+                <p><a id="get_DB_FIRST"></a>
+                  <code class="literal">DB_FIRST</code>
             </p>
                 <p>
                  The first record from any of the log files found in the log directory
@@ -118,8 +118,8 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                 <code class="literal"><a id="get_DB_LAST"></a>DB_LAST</code>
+                <p><a id="get_DB_LAST"></a>
+                 <code class="literal">DB_LAST</code>
             </p>
                 <p>
                  The last record in the log is returned in the <span class="bold"><strong>data</strong></span> parameter. The <span class="bold"><strong>lsn</strong></span> parameter is overwritten with the 
@@ -131,8 +131,8 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                 <code class="literal"><a id="get_DB_NEXT"></a>DB_NEXT</code>
+                <p><a id="get_DB_NEXT"></a>
+                 <code class="literal">DB_NEXT</code>
             </p>
                 <p>
                  The current log position is advanced to the next record in the log,
@@ -151,8 +151,8 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                 <code class="literal"><a id="get_DB_PREV"></a>DB_PREV</code>
+                <p><a id="get_DB_PREV"></a>
+                 <code class="literal">DB_PREV</code>
             </p>
                 <p>
                  The current log position is advanced to the previous record in the
@@ -171,8 +171,8 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                 <code class="literal"><a id="get_DB_SET"></a>DB_SET</code>
+                <p><a id="get_DB_SET"></a>
+                 <code class="literal">DB_SET</code>
             </p>
                 <p>
                  Retrieve the record specified by the <span class="bold"><strong>lsn</strong></span> parameter.
@@ -185,7 +185,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1686072"></a>lsn</h4>
+                <h4 class="title"><a id="id1684831"></a>lsn</h4>
               </div>
             </div>
           </div>
@@ -204,7 +204,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1686082"></a>Errors</h3>
+              <h3 class="title"><a id="id1685011"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1685940"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1684988"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -237,7 +237,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1685923"></a>Class</h3>
+              <h3 class="title"><a id="id1684965"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -251,7 +251,7 @@ DB_LOGC-&gt;get(DB_LOGC *logc, DB_LSN *lsn, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1686104"></a>See Also</h3>
+              <h3 class="title"><a id="id1684903"></a>See Also</h3>
             </div>
           </div>
         </div>

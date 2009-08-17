@@ -159,6 +159,9 @@ _DeleteInfo(p)
 	if (p->i_hashproc != NULL) {
 		Tcl_DecrRefCount(p->i_hashproc);
 	}
+	if (p->i_part_callback != NULL) {
+		Tcl_DecrRefCount(p->i_part_callback);
+	}
 	if (p->i_second_call != NULL) {
 		Tcl_DecrRefCount(p->i_second_call);
 	}

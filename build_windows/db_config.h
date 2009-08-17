@@ -342,14 +342,8 @@
 /* Define to 1 if you have the `pstat_getdynamic' function. */
 /* #undef HAVE_PSTAT_GETDYNAMIC */
 
-/* Define to 1 if you have the <pthread.h> header file. */
-/* #undef HAVE_PTHREAD_H */
-
 /* Define to 1 if you have the `pthread_self' function. */
 /* #undef HAVE_PTHREAD_SELF */
-
-/* Define to 1 if using pthread_get/set_specific for TLS. */
-/* #undef HAVE_PTHREAD_TLS */
 
 /* Define to 1 if you have the `pthread_yield' function. */
 /* #undef HAVE_PTHREAD_YIELD */
@@ -512,9 +506,6 @@
 /* Define to 1 if you have the `time' function. */
 #define HAVE_TIME 1
 
-/* Define to 1 if compiler supports Thread Local Storage. */
-#define HAVE_TLS 1
-
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
 
@@ -535,9 +526,6 @@
 /* Define to 1 if building VxWorks. */
 /* #undef HAVE_VXWORKS */
 
-/* Define to 1 if the C++ wstring class is available. */
-#define HAVE_WSTRING 1
-
 /* Define to 1 if you have the `yield' function. */
 /* #undef HAVE_YIELD */
 
@@ -554,13 +542,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.8.11"
+#define PACKAGE_STRING "Berkeley DB 4.8.24"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.8.11"
+#define PACKAGE_TARNAME "db-4.8.24"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.8.11"
+#define PACKAGE_VERSION "4.8.24"
 
 /* The size of a `char', as computed by sizeof. */
 /* #undef SIZEOF_CHAR */

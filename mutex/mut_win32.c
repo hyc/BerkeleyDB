@@ -86,6 +86,7 @@ __db_win32_mutex_lock_int(env, mutex, wait)
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
+	DB_THREAD_INFO *ip;
 	HANDLE event;
 	u_int32_t nspins;
 	int ms, ret;
@@ -114,6 +115,14 @@ __db_win32_mutex_lock_int(env, mutex, wait)
 	ms = 50;
 	ret = 0;
 
+	/*
+	 * Only check the thread state once, by initializing the thread
+	 * control block pointer to null.  If it is not the failchk
+	 * thread, then ip will have a valid value subsequent times
+	 * in the loop.
+	 */
+	ip = NULL;
+
 loop:	/* Attempt to acquire the mutex mutex_tas_spins times, if waiting. */
 	for (nspins =
 	    mtxregion->stat.st_mutex_tas_spins; nspins > 0; --nspins) {
@@ -123,9 +132,13 @@ loop:	/* Attempt to acquire the mutex mutex_tas_spins times, if waiting. */
 		 */
 		if (MUTEXP_IS_BUSY(mutexp) || !MUTEXP_ACQUIRE(mutexp)) {
 			if (F_ISSET(dbenv, DB_ENV_FAILCHK) &&
-			    dbenv->is_alive(dbenv,
-			    mutexp->pid, mutexp->tid, 0) == 0)
-				return (DB_RUNRECOVERY);
+			    ip == NULL && dbenv->is_alive(dbenv,
+			    mutexp->pid, mutexp->tid, 0) == 0) {
+				ret = __env_set_state(env, &ip, THREAD_VERIFY);
+				if (ret != 0 ||
+				    ip->dbth_state == THREAD_FAILCHK)
+					return (DB_RUNRECOVERY);
+			}
 			if (!wait)
 				return (DB_LOCK_NOTGRANTED);
 			/*

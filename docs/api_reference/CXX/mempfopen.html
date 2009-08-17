@@ -56,7 +56,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1695350"></a>Parameters</h3>
+              <h3 class="title"><a id="id1693849"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1695499"></a>file</h4>
+                <h4 class="title"><a id="id1694463"></a>file</h4>
               </div>
             </div>
           </div>
@@ -86,7 +86,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1695651"></a>flags</h4>
+                <h4 class="title"><a id="id1694689"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -98,8 +98,8 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                     <code class="literal"><a id="mempopen_DB_CREATE"></a>DB_CREATE</code>
+                <p><a id="mempopen_DB_CREATE"></a>
+                                     <code class="literal">DB_CREATE</code>
                                 </p>
                 <p>
                                         Create any underlying files, as necessary. If the database do not already exist
@@ -108,8 +108,8 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
                                 </p>
               </li>
               <li>
-                <p>
-                                     <code class="literal"><a id="mempopen_DB_EXCL"></a>DB_DIRECT</code>
+                <p><a id="mempopen_DB_EXCL"></a>
+                                     <code class="literal">DB_DIRECT</code>
                                 </p>
                 <p>
                                         If set and supported by the system, turn off system buffering of the file to
@@ -128,8 +128,8 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
                                 </p>
               </li>
               <li>
-                <p>
-                                     <code class="literal"><a id="mempopen_DB_NOMMAP"></a>DB_NOMMAP</code>
+                <p><a id="mempopen_DB_NOMMAP"></a>
+                                     <code class="literal">DB_NOMMAP</code>
                                 </p>
                 <p>
                                         Always copy this file into the local cache instead of potentially mapping it
@@ -139,8 +139,8 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
                                 </p>
               </li>
               <li>
-                <p>
-                                         <code class="literal"><a id="mempopen_DB_ODDFILESIZE"></a>DB_ODDFILESIZE</code>
+                <p><a id="mempopen_DB_ODDFILESIZE"></a>
+                                         <code class="literal">DB_ODDFILESIZE</code>
                                 </p>
                 <p>
                                         Attempts to open files which are not a multiple of the page size in length will
@@ -149,8 +149,8 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
                                 </p>
               </li>
               <li>
-                <p>
-                                         <code class="literal"><a id="mempopen_DB_RDONLY"></a>DB_RDONLY</code>
+                <p><a id="mempopen_DB_RDONLY"></a>
+                                         <code class="literal">DB_RDONLY</code>
                                 </p>
                 <p>
                                         Open any underlying files for reading only. Any attempt to modify
@@ -165,7 +165,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1695881"></a>mode</h4>
+                <h4 class="title"><a id="id1694888"></a>mode</h4>
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1695708"></a>pagesize</h4>
+                <h4 class="title"><a id="id1694924"></a>pagesize</h4>
               </div>
             </div>
           </div>
@@ -206,7 +206,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1695628"></a>Errors</h3>
+              <h3 class="title"><a id="id1694904"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
                          The <code class="methodname">DbMpoolFile::open()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -224,7 +224,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1695946"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1694748"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1695824"></a>ENOMEM</h4>
+                <h4 class="title"><a id="id1695258"></a>ENOMEM</h4>
               </div>
             </div>
           </div>
@@ -253,7 +253,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1695424"></a>Class</h3>
+              <h3 class="title"><a id="id1694596"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -265,7 +265,7 @@ DbMpoolFile::open(const char *file, u_int32_t flags, int mode, size_t pagesize);
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1695494"></a>See Also</h3>
+              <h3 class="title"><a id="id1694691"></a>See Also</h3>
             </div>
           </div>
         </div>

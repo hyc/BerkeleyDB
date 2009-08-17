@@ -7713,12 +7713,12 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultiple">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of one database page in
-            <see cref="P:BerkeleyDB.Cursor.CurrentMultiple"/>. MoveNextDuplicate will return false
-            if the next key/data pair of the database is not a duplicate data
-            record for the current key/data pair.
+            <see cref="P:BerkeleyDB.Cursor.CurrentMultiple"/>. MoveNextDuplicateMultiple will return
+            false if the next key/data pair of the database is not a duplicate
+            data record for the current key/data pair.
             </summary>
             <returns>
             True if the cursor was positioned successfully, false otherwise.
@@ -7727,13 +7727,13 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultiple(System.Int32)">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, then move cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of
             <paramref name="BufferSize"/> in <see cref="P:BerkeleyDB.Cursor.CurrentMultiple"/>.
-            MoveNextDuplicate will return false if the next key/data pair of the
-            database is not a duplicate data record for the current key/data
-            pair.
+            MoveNextDuplicateMultiple will return false if the next key/data
+            pair of the database is not a duplicate data record for the current
+            key/data pair.
             </summary>
             <param name="BufferSize">
             The size of a buffer to fill with duplicate data items.  Must be at
@@ -7747,12 +7747,12 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultiple(BerkeleyDB.LockingInfo)">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of one database page in
-            <see cref="P:BerkeleyDB.Cursor.CurrentMultiple"/>. MoveNextDuplicate will return false
-            if the next key/data pair of the database is not a duplicate data
-            record for the current key/data pair.
+            <see cref="P:BerkeleyDB.Cursor.CurrentMultiple"/>. MoveNextDuplicateMultiple will return
+            false if the next key/data pair of the database is not a duplicate
+            data record for the current key/data pair.
             </summary>
             <param name="info">The locking behavior to use.</param>
             <returns>
@@ -7762,13 +7762,13 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultiple(System.Int32,BerkeleyDB.LockingInfo)">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of
             <paramref name="BufferSize"/> in <see cref="P:BerkeleyDB.Cursor.CurrentMultiple"/>.
-            MoveNextDuplicate will return false if the next key/data pair of the
-            database is not a duplicate data record for the current key/data
-            pair.
+            MoveNextDuplicateMultiple will return false if the next key/data
+            pair of the database is not a duplicate data record for the current
+            key/data pair.
             </summary>
             <param name="BufferSize">
             The size of a buffer to fill with duplicate data items.  Must be at
@@ -7783,12 +7783,12 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultipleKey">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of one database page in
-            <see cref="P:BerkeleyDB.Cursor.CurrentMultipleKey"/>. MoveNextDuplicate will return
-            false if the next key/data pair of the database is not a duplicate
-            data record for the current key/data pair.
+            <see cref="P:BerkeleyDB.Cursor.CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey will
+            return false if the next key/data pair of the database is not a
+            duplicate data record for the current key/data pair.
             </summary>
             <returns>
             True if the cursor was positioned successfully, false otherwise.
@@ -7797,13 +7797,13 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultipleKey(System.Int32)">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of
             <paramref name="BufferSize"/> in <see cref="P:BerkeleyDB.Cursor.CurrentMultipleKey"/>.
-            MoveNextDuplicate will return false if the next key/data pair of the
-            database is not a duplicate data record for the current key/data
-            pair.
+            MoveNextDuplicateMultipleKey will return false if the next key/data
+            pair of the database is not a duplicate data record for the current
+            key/data pair.
             </summary>
             <param name="BufferSize">
             The size of a buffer to fill with key/data pairs.  Must be at least
@@ -7816,12 +7816,12 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultipleKey(BerkeleyDB.LockingInfo)">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of one database page in
-            <see cref="P:BerkeleyDB.Cursor.CurrentMultipleKey"/>. MoveNextDuplicate will return
-            false if the next key/data pair of the database is not a duplicate
-            data record for the current key/data pair.
+            <see cref="P:BerkeleyDB.Cursor.CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey will
+            return false if the next key/data pair of the database is not a
+            duplicate data record for the current key/data pair.
             </summary>
             <param name="info">The locking behavior to use.</param>
             <returns>
@@ -7831,13 +7831,13 @@
         <member name="M:BerkeleyDB.Cursor.MoveNextDuplicateMultipleKey(System.Int32,BerkeleyDB.LockingInfo)">
             <summary>
             If the next key/data pair of the database is a duplicate data record
-            for the current key/data pair, the move cursor to the next key/data
+            for the current key/data pair, move the cursor to the next key/data
             pair in the database, and store that pair and as many duplicate data
             items that can fit in a buffer the size of
             <paramref name="BufferSize"/> in <see cref="P:BerkeleyDB.Cursor.CurrentMultipleKey"/>.
-            MoveNextDuplicate will return false if the next key/data pair of the
-            database is not a duplicate data record for the current key/data
-            pair.
+            MoveNextDuplicateMultipleKey will return false if the next key/data
+            pair of the database is not a duplicate data record for the current
+            key/data pair.
             </summary>
             <param name="BufferSize">
             The size of a buffer to fill with key/data pairs.  Must be at least
@@ -9274,9 +9274,39 @@
             </para>
             </remarks>
         </member>
+        <member name="M:BerkeleyDB.BTreeDatabaseConfig.SetCompression">
+            <summary>
+            Enable compression of the key/data pairs stored in the database,
+            using the default compression and decompression functions.
+            </summary>
+            <remarks>
+            The default functions perform prefix compression on keys, and prefix
+            compression on data items for duplicate keys.
+            </remarks>
+        </member>
+        <member name="M:BerkeleyDB.BTreeDatabaseConfig.SetCompression(BerkeleyDB.BTreeCompressDelegate,BerkeleyDB.BTreeDecompressDelegate)">
+            <summary>
+            Enable compression of the key/data pairs stored in the database,
+            using the specified compression and decompression functions.
+            </summary>
+            <param name="compression">The compression function</param>
+            <param name="decompression">The decompression function</param>
+        </member>
         <member name="M:BerkeleyDB.BTreeDatabaseConfig.#ctor">
             <summary>
             Create a new BTreeDatabaseConfig object
+            </summary>
+        </member>
+        <member name="P:BerkeleyDB.BTreeDatabaseConfig.Compress">
+            <summary>
+            The compression function used to store key/data pairs in the
+            database.
+            </summary>
+        </member>
+        <member name="P:BerkeleyDB.BTreeDatabaseConfig.Decompress">
+            <summary>
+            The decompression function used to retrieve key/data pairs from the
+            database.
             </summary>
         </member>
         <member name="P:BerkeleyDB.BTreeDatabaseConfig.MinKeysPerPage">
@@ -9646,6 +9676,11 @@
             Number of hash buckets. 
             </summary>
         </member>
+        <member name="P:BerkeleyDB.MPoolStats.PageSize">
+            <summary>
+            Assumed page size.
+            </summary>
+        </member>
         <member name="P:BerkeleyDB.MPoolStats.HashChainSearches">
             <summary>
             Total hash chain searches. 
@@ -9734,6 +9769,11 @@
         <member name="P:BerkeleyDB.MPoolStats.BlockedOperations">
             <summary>
             Thread waited on buffer I/O. 
+            </summary>
+        </member>
+        <member name="P:BerkeleyDB.MPoolStats.SyncInterrupted">
+            <summary>
+            Number of times sync interrupted.
             </summary>
         </member>
         <member name="P:BerkeleyDB.MPoolStats.RegionSize">
@@ -11080,6 +11120,18 @@
             application with a key currently stored in the tree. 
             </summary>
         </member>
+        <member name="P:BerkeleyDB.BTreeDatabase.Compress">
+            <summary>
+            The compression function used to store key/data pairs in the
+            database.
+            </summary>
+        </member>
+        <member name="P:BerkeleyDB.BTreeDatabase.Decompress">
+            <summary>
+            The decompression function used to retrieve key/data pairs from the
+            database.
+            </summary>
+        </member>
         <member name="P:BerkeleyDB.BTreeDatabase.DupCompare">
             <summary>
             The duplicate data item comparison function.
@@ -12225,6 +12277,33 @@
             </summary>
             <param name="data">The data to be stored.</param>
             <param name="recno">The generated record number.</param>
+        </member>
+        <member name="T:BerkeleyDB.BTreeCompressDelegate">
+            <summary>
+            A function to store a compressed key/data pair into a supplied buffer.
+            </summary>
+            <param name="prevKey">The key immediately preceding the application supplied key.</param>
+            <param name="prevData">The data associated with prevKey.</param>
+            <param name="key">The application supplied key.</param>
+            <param name="data">The application supplied data. </param>
+            <param name="dest">The compressed data to be stored in the
+            database.</param>
+            <param name="size">The number of compressed bytes written to
+            <paramref name="dest"/>, or the required size of
+            <paramref name="dest"/>, if too small.</param>
+            <returns>True on success, false if dest is too small to contain the
+            compressed data.  All other errors should throw an exception.</returns>
+        </member>
+        <member name="T:BerkeleyDB.BTreeDecompressDelegate">
+            <summary>
+            A function to decompress a key/data pair from a supplied buffer.
+            </summary>
+            <param name="prevKey">The key immediately preceding the key being decompressed.</param>
+            <param name="prevData">The data associated with prevKey.</param>
+            <param name="compressed">The data stored in the tree, that is, the compressed data.</param>
+            <param name="bytesRead">The number of bytes read from <paramref name="compressed"/>.</param>
+            <returns>Two new DatabaseEntry objects representing the decompressed
+            key/data pair.</returns>
         </member>
         <member name="T:BerkeleyDB.DatabaseFeedbackDelegate">
             <summary>

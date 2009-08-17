@@ -3,24 +3,24 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 6. Standard Template Library API</title>
+    <title>Chapter 7. Standard Template Library API</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="prev" href="java_faq.html" title="Java FAQ" />
-    <link rel="next" href="stl.html#stl_intro_stdcompat" title="Standard Compatible" />
+    <link rel="prev" href="csharp.html" title="Chapter 6. C# API" />
+    <link rel="next" href="stl_usecase.html" title="Dbstl typical use cases" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 6. Standard Template Library API</th>
+          <th colspan="3" align="center">Chapter 7. Standard Template Library API</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="java_faq.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="csharp.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
-          <td width="20%" align="right"> <a accesskey="n" href="stl.html#stl_intro_stdcompat">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="stl_usecase.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -29,7 +29,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="stl"></a>Chapter 6. Standard Template Library API</h2>
+            <h2 class="title"><a id="stl"></a>Chapter 7. Standard Template Library API</h2>
           </div>
         </div>
       </div>
@@ -40,82 +40,92 @@
         <dl>
           <dt>
             <span class="sect1">
-              <a href="stl.html#stl_intro">Dbstl Introduction</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="stl_usecase.html">Dbstl Typical Use Case</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="stl_examples.html">Dbstl Examples</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="stl_db_usage.html">Use Berkeley DB correctly with dbstl</a>
+              <a href="stl.html#stl_intro">Dbstl introduction</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_db_usage.html#id1593742">
-Registering Database and Environment Handles
-</a>
+                  <a href="stl.html#stl_intro_stdcompat">Standards compatible</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_db_usage.html#id1593792">
-		Truncate Requirement
-	</a>
+                  <a href="stl.html#stl_intro_performance">Performance overhead</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_db_usage.html#id1593605">
-	Auto Commit Support
-</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="stl_db_usage.html#id1593693">
-	Database and Environment Identity Checks
-</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="stl_db_usage.html#id1593702">
-Products, Constructors and Configurations
-</a>
+                  <a href="stl.html#stl_intro_portability">Portability</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="stl_db_advanced_usage.html">Using Advanced Berkeley DB Features with Dbstl</a>
+              <a href="stl_usecase.html">Dbstl typical use cases</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="stl_examples.html">Dbstl examples</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="stl_db_usage.html">Berkeley DB configuration</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_db_advanced_usage.html#id1593590">
-Using Bulk Retrieval And the DB_RMW Flag
-</a>
+                  <a href="stl_db_usage.html#id1599152">Registering database and environment handles</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_db_advanced_usage.html#id1593712">
-Using Secondary Index Database And Secondary Containers
-</a>
+                  <a href="stl_db_usage.html#id1599398">Truncate requirements</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_db_usage.html#id1598767">Auto commit support</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_db_usage.html#id1599197">Database and environment identity checks</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_db_usage.html#id1599339">Products, constructors and configurations</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="stl_db_advanced_usage.html">Using advanced Berkeley DB features with dbstl</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_db_advanced_usage.html#id1598858">Using bulk retrieval iterators</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_db_advanced_usage.html#id1599585">Using the DB_RMW flag</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_db_advanced_usage.html#id1599667">Using secondary index database and secondary containers</a>
                 </span>
               </dt>
             </dl>
@@ -127,28 +137,19 @@ Using Secondary Index Database And Secondary Containers
           </dt>
           <dt>
             <span class="sect1">
-              <a href="stl_mt_usage.html">Using dbstl in multithreaded application</a>
+              <a href="stl_mt_usage.html">Using dbstl in multithreaded applications</a>
             </span>
           </dt>
           <dt>
             <span class="sect1">
-              <a href="stl_primitive_rw.html">Store and Retrieve data of primitive types </a>
+              <a href="stl_primitive_rw.html">Working with primitive types </a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_primitive_rw.html#id1593778">
-Storing Simple Primitive Types
-</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="stl_primitive_rw.html#id1594323">
-Storing Strings
-</a>
+                  <a href="stl_primitive_rw.html#id1599278">Storing strings</a>
                 </span>
               </dt>
             </dl>
@@ -162,115 +163,124 @@ Storing Strings
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_complex_rw.html#id1594224">
-Storing Varying Length Objects
-</a>
+                  <a href="stl_complex_rw.html#id1600512">Storing varying length objects</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_complex_rw.html#id1594465">
-Storing Arbitrary Sequences.
-
-</a>
+                  <a href="stl_complex_rw.html#id1601013">Storing arbitrary sequences</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_complex_rw.html#id1594604">Notes
-	</a>
+                  <a href="stl_complex_rw.html#id1601305">Notes</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="stl_persistence.html">Dbstl Persistence</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="stl_container_specific.html">Dbstl Container Specific Notes</a>
+              <a href="stl_persistence.html">Dbstl persistence</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_container_specific.html#id1594121">db_vector Specific Notes</a>
+                  <a href="stl_persistence.html#directdbget">Direct database get</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_container_specific.html#id1595098">Associative Container Specific Notes</a>
+                  <a href="stl_persistence.html#chg_persistence">Change persistence</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_persistence.html#obj_life_persistence">Object life time and persistence </a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="stl_efficienct_use.html">Use Dbstl Efficiently</a>
+              <a href="stl_container_specific.html">Dbstl container specific notes</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_efficienct_use.html#id1594285">Use Iterators Efficiently</a>
+                  <a href="stl_container_specific.html#id1601572">db_vector specific notes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_efficienct_use.html#id1595162">Use Containers Efficiently</a>
+                  <a href="stl_container_specific.html#id1602231">Associative container specific notes</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="stl_memory_mgmt.html">Dbstl Memory Management</a>
+              <a href="stl_efficienct_use.html">Using dbstl efficiently</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_memory_mgmt.html#id1594296">Rule of Thumb</a>
+                  <a href="stl_efficienct_use.html#id1601933">Using iterators efficiently</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_memory_mgmt.html#id1595133">Type Specific Notes</a>
+                  <a href="stl_efficienct_use.html#id1602272">Using containers efficiently</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="stl_misc.html">Dbstl Miscellaneous Notes</a>
+              <a href="stl_memory_mgmt.html">Dbstl memory management</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="stl_misc.html#id1593452">
-Special notes about trivial methods
-	</a>
+                  <a href="stl_memory_mgmt.html#id1602014">Freeing memory</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="stl_misc.html#id1593865">
-Using Correct Container and Iterator Public Types
-	</a>
+                  <a href="stl_memory_mgmt.html#id1602042">Type specific notes</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="stl_known_issues.html">Dbstl Known Issues</a>
+              <a href="stl_misc.html">Dbstl miscellaneous notes</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_misc.html#id1601971">Special notes about trivial methods</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="stl_misc.html#id1602358">Using correct container and iterator public types</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="stl_known_issues.html">Dbstl known issues</a>
             </span>
           </dt>
         </dl>
@@ -279,123 +289,171 @@ Using Correct Container and Iterator Public Types
         <div class="titlepage">
           <div>
             <div>
-              <h2 class="title" style="clear: both"><a id="stl_intro"></a>Dbstl Introduction</h2>
+              <h2 class="title" style="clear: both"><a id="stl_intro"></a>Dbstl introduction</h2>
             </div>
           </div>
         </div>
         <div class="toc">
           <dl>
             <dt>
-              <span class="section">
-                <a href="stl.html#stl_intro_easy2use">Easy to Use</a>
+              <span class="sect2">
+                <a href="stl.html#stl_intro_stdcompat">Standards compatible</a>
               </span>
             </dt>
             <dt>
-              <span class="section">
-                <a href="stl.html#stl_intro_stdcompat">Standard Compatible</a>
+              <span class="sect2">
+                <a href="stl.html#stl_intro_performance">Performance overhead</a>
               </span>
             </dt>
             <dt>
-              <span class="section">
-                <a href="stl.html#stl_intro_performance">Performance Overhead</a>
-              </span>
-            </dt>
-            <dt>
-              <span class="section">
+              <span class="sect2">
                 <a href="stl.html#stl_intro_portability">Portability</a>
               </span>
             </dt>
           </dl>
         </div>
-        <div class="section" lang="en" xml:lang="en">
+        <p>
+    Dbstl is a C++ STL style API that provides for Berkeley DB usage.  It
+    allows for the storage and retrieval of data/objects of any type using
+    Berkeley DB databases, but with an interface that mimics that of C++
+    STL containers. Dbstl provides access to all of the functionality of
+    Berkeley DB available via this STL-style API.
+</p>
+        <p>
+    With proper configuration, dbstl is able to store/retrieve any complex
+    data types. There is no need to perform repetitive marshalling and
+    unmarshalling of data. Dbstl also properly manages the life-cycle of
+    all Berkeley DB structures and objects.
+</p>
+        <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h2 class="title" style="clear: both"><a id="stl_intro_easy2use"></a>Easy to Use</h2>
+                <h3 class="title"><a id="stl_intro_stdcompat"></a>Standards compatible</h3>
               </div>
             </div>
           </div>
           <p>
-Dbstl is an C++ STL style API for Berkeley DB core edition. 
-With it, you can store data/objects of any type into or retrieve them from
-Berkeley DB databases as if you are using C++ STL containers.
-
-The full functionality of Berkeley DB can still be utilized via dbstl, e.g. you can use 
-all transactional functionality of Berkeley DB. 
-</p>
-          <p>
-With proper configurations, dbstl is able to store/retrieve any complex data types, 
-so a lot of repetitive marshal/un-marshal work is saved. 
-And you don't have to do housekeeping of various Berkeley DB structures/objects---
-their lifetime is managed by dbstl properly.
+    Dbstl is composed of many container and iterator class templates. These
+    containers and iterators correspond exactly to each container and
+    iterator available in the C++ STL API, including identical sets of
+    methods. This allows existing algorithms, functions and
+    container-adapters for C++ STL to use dbstl containers through its
+    standard iterators. This means that existing STL code can manipulate
+    Berkeley DB databases. As a result, existing C++ STL code can very
+    easily use dbstl to gain persistence and transaction guarantees. 
 </p>
         </div>
-        <div class="section" lang="en" xml:lang="en">
+        <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h2 class="title" style="clear: both"><a id="stl_intro_stdcompat"></a>Standard Compatible</h2>
+                <h3 class="title"><a id="stl_intro_performance"></a>Performance overhead</h3>
               </div>
             </div>
           </div>
           <p>
-Dbstl is composed of many container and iterator class 
-templates. The containers/iterators correspond to each and every 
-container/iterator of C++ STL, and all of them have identical set of methods 
-and each method has identical meanings/semantics to its counterpart in 
-C++ STL, so that existing algorithms/functions/container-adapters
-of C++ STL can use or manipulate dbstl containers via its standard iterators 
-and users can make use of existing code of STL to manipulate Berkeley DB 
-databases and access Berkeley DB in a much easier way. 
-And users' existing code which uses STL can very easily turn to use dbstl to
-gain persistence guarantees. 
+    Because dbstl uses C++ template technologies, its performance overhead
+    is minimal.
+</p>
+          <p>
+    The dbstl API performs almost equally to the C API, as measured by two
+    different implementations of the TPC-B benchmark:
+    <code class="literal">ex_tpcb</code> and <code class="literal">exstl_tpcb</code>.  
 </p>
         </div>
-        <div class="section" lang="en" xml:lang="en">
+        <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h2 class="title" style="clear: both"><a id="stl_intro_performance"></a>Performance Overhead</h2>
+                <h3 class="title"><a id="stl_intro_portability"></a>Portability</h3>
               </div>
             </div>
           </div>
           <p>
-The performance overhead of dbstl API is trivial, because we use C++ template features, making
-the code very efficient. 
+    The degree to which dbstl is portable to a new platform is determined
+    by whether Berkeley DB is available on the platform, as well as whether
+    an appropriate C++ compiler is available on the platform.
 </p>
           <p>
-You can have a quantative report about the performance of dbstl API compared to DB C API by comparing
-the performance of the TPCB test program exstl_tpcb and ex_tpcb, which use DB STL API and DB C API respectively. 
+    For information on porting Berkeley DB to new platforms, see the
+    <em class="citetitle">Berkeley DB Porting Guide</em>.
 </p>
-        </div>
-        <div class="section" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h2 class="title" style="clear: both"><a id="stl_intro_portability"></a>Portability</h2>
-              </div>
-            </div>
+          <p>
+    Almost all the advanced C++ template features are used in dbstl, including:
+</p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                member function templates
+            </p>
+              </li>
+              <li>
+                <p>
+                member function template overloads
+            </p>
+              </li>
+              <li>
+                <p>
+                partial specialization
+            </p>
+              </li>
+              <li>
+                <p>
+                default template parameters.
+            </p>
+              </li>
+            </ul>
           </div>
           <p>
-	The portability of dbstl depends on the portability of Berkeley DB, as well as the C++ compiler. 
-</p>
+        For this reason, you need a standards-compatible C++ compiler to
+        build dbstl. As of this writing, the following compilers are known
+        to build dbstl successfully:
+    </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                MSVC8
+            </p>
+              </li>
+              <li>
+                <p>
+                gcc3.4.4 and above
+            </p>
+              </li>
+              <li>
+                <p>
+                Intel C++ 9 and above
+            </p>
+              </li>
+            </ul>
+          </div>
           <p>
-Almost all advanced C++ template features are used in dbstl, including member function 
-template, member function template overload and partial specialization and default template 
-parameter. 
-
-</p>
+        For *nix platforms, if you can successfully configure your Berkeley
+        DB build script with <code class="literal">--enable-stl</code>, then you
+        should be able to successfully build dbstl library and application 
+	code using it.
+    </p>
           <p>
-Thus you need a C++ standard compatible compiler to build dbstl. So far the MSVC8, 
-gcc3.4.4 or above, intel c++ 9 or above are tested to be able to build dbstl successfully. 
-For *nix platforms, you are recommended to use gcc to build dbstl, 
-because native compilers may not 
-be able to build it. If you have set --enable-stl to the configure script and no errors are reported, you C++
-compiler should be able to build dbstl API successfully.
-</p>
-          <p>
-	Dbstl is also tested to pass the test suites of MS stl test suite and SGI STL test suite.
-</p>
+        Besides its own test suite, dbstl has also been tested against, 
+	and passes, the following test suites:
+    </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                MS STL test suite
+            </p>
+              </li>
+              <li>
+                <p>
+                SGI STL test suite
+            </p>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -403,16 +461,16 @@ compiler should be able to build dbstl API successfully.
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="java_faq.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="csharp.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
-          <td width="40%" align="right"> <a accesskey="n" href="stl.html#stl_intro_stdcompat">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="stl_usecase.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Java FAQ </td>
+          <td width="40%" align="left" valign="top">Chapter 6. C# API </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Standard Compatible</td>
+          <td width="40%" align="right" valign="top"> Dbstl typical use cases</td>
         </tr>
       </table>
     </div>

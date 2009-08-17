@@ -630,6 +630,15 @@
             <ul type="disc">
               <li>
                 <p>
+                            Never have more than one active transaction at
+                            a time in a thread. A common cause of this is
+                            for a thread to be using auto-commit for one
+                            operation while an explicit transaction is in
+                            use in that thread at the same time.
+                        </p>
+              </li>
+              <li>
+                <p>
                             Make sure all threads access data in the same
                             order as all other threads. So long as threads
                             lock database pages
@@ -638,10 +647,14 @@
                             block, however).
                         </p>
                 <p>
-                            Be aware that if you are using secondary databases (indices), it is not possible to obtain
-                            locks in a consistent order because you cannot predict the order in which locks are obtained
-                            in secondary databases. If you are writing a concurrent application and you are using
-                            secondary databases, you must be prepared to handle deadlocks.
+                            Be aware that if you are using secondary
+                            databases (indexes), it is not possible to
+                            obtain locks in a consistent order because you
+                            cannot predict the order in which locks are
+                            obtained in secondary databases. If you are
+                            writing a concurrent application and you are
+                            using secondary databases, you must be prepared
+                            to handle deadlocks.
                         </p>
               </li>
               <li>

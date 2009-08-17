@@ -72,6 +72,7 @@ __bam_truncate(dbc, countp)
 #ifdef HAVE_COMPRESSION
 	u_int32_t comp_count;
 
+	comp_count = 0;
 	if (DB_IS_COMPRESSED(dbc->dbp) &&
 	    (ret = __bam_compress_count(dbc, NULL, &comp_count)) != 0)
 		return (ret);

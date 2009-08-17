@@ -1476,7 +1476,9 @@ __rep_remove_file(env, uid, name, type, flags)
 		ret = __db_inmem_remove(dbp, NULL, name);
 	} else
 		ret = __fop_remove(env, NULL, uid, name, NULL, DB_APP_DATA, 0);
+#ifdef HAVE_QUEUE
 out:
+#endif
 	if (dbp != NULL &&
 	    (t_ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0 && ret == 0)
 		ret = t_ret;

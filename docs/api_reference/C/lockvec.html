@@ -68,7 +68,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680154"></a>Parameters</h3>
+              <h3 class="title"><a id="id1679175"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680185"></a>elistp</h4>
+                <h4 class="title"><a id="id1679210"></a>elistp</h4>
               </div>
             </div>
           </div>
@@ -90,7 +90,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680188"></a>flags</h4>
+                <h4 class="title"><a id="id1679257"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -119,7 +119,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680508"></a>locker</h4>
+                <h4 class="title"><a id="id1678887"></a>locker</h4>
               </div>
             </div>
           </div>
@@ -133,7 +133,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680649"></a>list</h4>
+                <h4 class="title"><a id="id1678160"></a>list</h4>
               </div>
             </div>
           </div>
@@ -154,8 +154,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                 <code class="literal"><a id="vec_op"></a>lockop_t op;</code>
+                <p><a id="vec_op"></a>
+                 <code class="literal">lockop_t op;</code>
             </p>
                 <p>
                  The operation to be performed, which must be set to one of the
@@ -164,8 +164,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
                 <div class="itemizedlist">
                   <ul type="circle">
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_GET"></a>DB_LOCK_GET</code>
+                      <p><a id="vec_DB_LOCK_GET"></a>
+                  <code class="literal">DB_LOCK_GET</code>
             </p>
                       <p>
                  Get the lock defined by the values of the <span class="bold"><strong>mode</strong></span> and <span class="bold"><strong>obj</strong></span>
@@ -180,8 +180,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_GET_TIMEOUT"></a>DB_LOCK_GET_TIMEOUT</code>
+                      <p><a id="vec_DB_LOCK_GET_TIMEOUT"></a>
+                  <code class="literal">DB_LOCK_GET_TIMEOUT</code>
             </p>
                       <p>
                  Identical to DB_LOCK_GET except that the value in the <span class="bold"><strong>timeout</strong></span> structure field overrides any
@@ -190,8 +190,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_PUT"></a>DB_LOCK_PUT</code>
+                      <p><a id="vec_DB_LOCK_PUT"></a>
+                  <code class="literal">DB_LOCK_PUT</code>
             </p>
                       <p>
                  The lock to which the <span class="bold"><strong>lock</strong></span> structure
@@ -200,8 +200,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_PUT_ALL"></a>DB_LOCK_PUT_ALL</code>
+                      <p><a id="vec_DB_LOCK_PUT_ALL"></a>
+                  <code class="literal">DB_LOCK_PUT_ALL</code>
             </p>
                       <p>
                  All locks held by the specified <span class="bold"><strong>locker</strong></span> are released.  The <span class="bold"><strong>lock</strong></span>, <span class="bold"><strong>mode</strong></span>,
@@ -213,8 +213,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_PUT_OBJ"></a>DB_LOCK_PUT_OBJ</code>
+                      <p><a id="vec_DB_LOCK_PUT_OBJ"></a>
+                  <code class="literal">DB_LOCK_PUT_OBJ</code>
             </p>
                       <p>
                  All locks held on <span class="bold"><strong>obj</strong></span> are released. 
@@ -227,8 +227,8 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_TIMEOUT"></a>DB_LOCK_TIMEOUT</code>
+                      <p><a id="vec_DB_LOCK_TIMEOUT"></a>
+                  <code class="literal">DB_LOCK_TIMEOUT</code>
             </p>
                       <p>
                  Cause the specified <span class="bold"><strong>locker</strong></span> to timeout
@@ -243,16 +243,16 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
                 </div>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="vec_lock"></a>DB_LOCK lock;</code>
+                <p><a id="vec_lock"></a>
+                  <code class="literal">DB_LOCK lock;</code>
             </p>
                 <p>
                 A lock reference.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="vec_mode"></a>const lockmode_t mode;</code>
+                <p><a id="vec_mode"></a>
+                  <code class="literal">const lockmode_t mode;</code>
             </p>
                 <p>
                  The lock mode, used as an index into the environment's lock conflict
@@ -262,40 +262,40 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
                 <div class="itemizedlist">
                   <ul type="circle">
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_READ"></a>DB_LOCK_READ</code>
+                      <p><a id="vec_DB_LOCK_READ"></a>
+                  <code class="literal">DB_LOCK_READ</code>
             </p>
                       <p>
                 read (shared)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_WRITE"></a>DB_LOCK_WRITE</code>
+                      <p><a id="vec_DB_LOCK_WRITE"></a>
+                  <code class="literal">DB_LOCK_WRITE</code>
             </p>
                       <p>
                 write (exclusive)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_IWRITE"></a>DB_LOCK_IWRITE</code>
+                      <p><a id="vec_DB_LOCK_IWRITE"></a>
+                  <code class="literal">DB_LOCK_IWRITE</code>
             </p>
                       <p>
                 intention to write (shared)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_IREAD"></a>DB_LOCK_IREAD</code>
+                      <p><a id="vec_DB_LOCK_IREAD"></a>
+                  <code class="literal">DB_LOCK_IREAD</code>
             </p>
                       <p>
                 intention to read (shared)
             </p>
                     </li>
                     <li>
-                      <p>
-                  <code class="literal"><a id="vec_DB_LOCK_IWR"></a>DB_LOCK_IWR</code>
+                      <p><a id="vec_DB_LOCK_IWR"></a>
+                  <code class="literal">DB_LOCK_IWR</code>
             </p>
                       <p>
                 intention to read and write (shared)
@@ -339,7 +339,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1681097"></a>nlist</h4>
+                <h4 class="title"><a id="id1679635"></a>nlist</h4>
               </div>
             </div>
           </div>
@@ -353,7 +353,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680982"></a>Errors</h3>
+              <h3 class="title"><a id="id1679994"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -369,7 +369,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680691"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1679480"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -382,7 +382,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1681092"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1679866"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -395,7 +395,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680124"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1679588"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -409,7 +409,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680197"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1679987"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -421,7 +421,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680873"></a>ENOMEM</h4>
+                <h4 class="title"><a id="id1679954"></a>ENOMEM</h4>
               </div>
             </div>
           </div>
@@ -434,7 +434,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680120"></a>Class</h3>
+              <h3 class="title"><a id="id1679207"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -447,7 +447,7 @@ DB_ENV-&gt;lock_vec(DB_ENV *env, u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680145"></a>See Also</h3>
+              <h3 class="title"><a id="id1679236"></a>See Also</h3>
             </div>
           </div>
         </div>

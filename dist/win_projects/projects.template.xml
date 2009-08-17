@@ -627,21 +627,21 @@
     <options><nowp64/></options>
     <preprocessor config="all">DB_CREATE_DLL;_UNICODE;UNICODE</preprocessor>
     <files>
-      <file name="stl/db_exception.h"/>
-      <file name="stl/db_map.h"/>
-      <file name="stl/db_set.h"/>
-      <file name="stl/db_utility.h"/>
-      <file name="stl/db_vector.h"/>
-      <file name="stl/internal/common.h"/>
-      <file name="stl/internal/db_base_iterator.h"/>
-      <file name="stl/internal/db_container.cpp"/>
-      <file name="stl/internal/db_container.h"/>
-      <file name="stl/internal/dbc.h"/>
-      <file name="stl/internal/dbt.h"/>
-      <file name="stl/internal/element_ref.h"/>
-      <file name="stl/internal/inner_utility.h"/>
-      <file name="stl/internal/resource_manager.cpp"/>
-      <file name="stl/internal/resource_manager.h"/>
+      <file name="stl/dbstl_exception.h"/>
+      <file name="stl/dbstl_map.h"/>
+      <file name="stl/dbstl_set.h"/>
+      <file name="stl/dbstl_utility.h"/>
+      <file name="stl/dbstl_vector.h"/>
+      <file name="stl/dbstl_common.h"/>
+      <file name="stl/dbstl_base_iterator.h"/>
+      <file name="stl/dbstl_container.cpp"/>
+      <file name="stl/dbstl_container.h"/>
+      <file name="stl/dbstl_dbc.h"/>
+      <file name="stl/dbstl_dbt.h"/>
+      <file name="stl/dbstl_element_ref.h"/>
+      <file name="stl/dbstl_inner_utility.h"/>
+      <file name="stl/dbstl_resource_manager.cpp"/>
+      <file name="stl/dbstl_resource_manager.h"/>
     </files>
   </project>
   <project name="db_stl_static" guid="284CC198-0C66-11DE-8C30-0800200C9A66">

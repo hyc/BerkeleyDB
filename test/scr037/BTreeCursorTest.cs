@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -298,6 +304,607 @@ namespace CsharpAPITest
 		}
 
 		[Test]
+		public void TestMoveFirstMultipleAndMultipleKey()
+		{
+			testName = "TestMoveFirstMultipleAndMultipleKey";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> pair;
+			MultipleKeyDatabaseEntry multiPair;
+			int cnt;
+			int[] size = new int[2];
+			size[0] = 0;
+			size[1] = 1024;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			for (int i = 0; i < 2; i++) {
+				cnt = 0;
+				if (size[i] == 0)
+					cursor.MoveFirstMultiple();
+				else
+					cursor.MoveFirstMultiple(size[i]);
+				pair = cursor.CurrentMultiple;
+				foreach (DatabaseEntry dbt in pair.Value)
+					cnt++;
+				Assert.AreEqual(1, cnt);
+			}
+
+			for (int i = 0; i < 2; i++) {
+				cnt = 0;
+				if (size[i] == 0)
+					cursor.MoveFirstMultipleKey();
+				else
+					cursor.MoveFirstMultipleKey(size[i]);
+				multiPair = cursor.CurrentMultipleKey;
+				foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                                    dbt in multiPair)
+					cnt++;
+				Assert.Less(1, cnt);
+			}
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveMultiple()
+		{
+			testName = "TestMoveMultiple";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> pair;
+			int cnt;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			// Move cursor to pairs with exact 99 as its key.
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			cursor.MoveMultiple(key, true);
+			pair = cursor.CurrentMultiple;
+			Assert.AreEqual(99, BitConverter.ToInt32(pair.Key.Data, 0));
+			foreach (DatabaseEntry dbt in pair.Value) 
+				cnt++;
+			Assert.AreEqual(2, cnt);
+
+			// Move cursor to pairs with the smallest key larger than 100.
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)100));
+			cursor.MoveMultiple(key, false);
+			pair = cursor.CurrentMultiple;
+			Assert.AreEqual(101, BitConverter.ToInt32(pair.Key.Data, 0));
+			foreach (DatabaseEntry dbt in pair.Value)
+				cnt++;
+			Assert.AreEqual(1, cnt);
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveMultipleKey()
+		{
+			testName = "TestMoveMultipleKey";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key;
+			MultipleKeyDatabaseEntry mulPair; ;
+			int cnt;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			/*
+                         * Bulk retrieve key/value pair from the pair whose key 
+                         * is exact 99.
+                         */                          
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			cursor.MoveMultipleKey(key, true);
+			mulPair = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry>
+                            pair in mulPair) {
+				Assert.GreaterOrEqual(3, 
+                                    BitConverter.ToInt32(pair.Key.Data, 0) - 98);
+				cnt++;
+			}
+			Assert.AreEqual(3, cnt);
+
+			/*
+			 * Bulk retrieve key/value pair from the pair whose key 
+			 * is the smallest one larger than 100.
+			 */
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)100));
+			cursor.MoveMultipleKey(key, false);
+			mulPair = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            pair in mulPair) {
+				Assert.AreEqual(101, 
+                                    BitConverter.ToInt32(pair.Key.Data, 0));
+				cnt++;
+			}
+			Assert.LessOrEqual(1, cnt);
+
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)100));
+			cursor.MoveMultipleKey(key, false, 1024);
+			mulPair = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            pair in mulPair) {
+				Assert.AreEqual(101, 
+                                    BitConverter.ToInt32(pair.Key.Data, 0));
+				Assert.AreEqual(101, 
+                                    BitConverter.ToInt32(pair.Value.Data, 0));
+				cnt++;
+			}
+			Assert.LessOrEqual(1, cnt);
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveMultipleKeyWithRecno()
+		{
+			testName = "TestMoveMultipleKeyWithRecno";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			MultipleKeyDatabaseEntry multiDBT;
+			int cnt;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.UseRecordNumbers = true;
+			dbConfig.Creation = CreatePolicy.IF_NEEDED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			cnt = 0;
+			cursor.MoveMultipleKey(98);
+			multiDBT = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            pair in multiDBT)
+				cnt++;
+			Assert.AreEqual(3, cnt);
+
+			cnt = 0;
+			cursor.MoveMultipleKey(98, 1024);
+			multiDBT = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            pair in multiDBT)
+				cnt++;
+			Assert.AreEqual(3, cnt);
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveMultiplePairs()
+		{
+			testName = "TestMoveMultiplePairs";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			MultipleKeyDatabaseEntry multiKeyDBTs1, multiKeyDBTs2;
+			int cnt;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.SORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			/*
+                         * Bulk retrieve pairs from the pair whose key/data 
+                         * is exact 99/99.
+                         */                          
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			data = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+			cursor.MoveMultipleKey(pair, true);
+			multiKeyDBTs1 = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            p in multiKeyDBTs1)
+				cnt++;
+			Assert.AreEqual(3, cnt);
+
+			// Bulk retrieve pairs from the pair whose key is exact 99.
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			data = new DatabaseEntry(BitConverter.GetBytes((int)98));
+			cursor.MoveMultipleKey(pair, true);
+			multiKeyDBTs2 = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            dbts in multiKeyDBTs2)
+				cnt++;
+			Assert.AreEqual(3, cnt);
+
+			/*
+                         * Bulk retrieve pairs from the pair whose key is 
+                         * exact 99 in buffer size of 1024k.
+                         */                          
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			data = new DatabaseEntry(BitConverter.GetBytes((int)102));
+			cursor.MoveMultipleKey(pair, true, 1024);
+			multiKeyDBTs2 = cursor.CurrentMultipleKey;
+			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> 
+                            dbts in multiKeyDBTs2)
+				cnt++;
+			Assert.AreEqual(3, cnt);
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveMultiplePairWithKey()
+		{
+			testName = "TestMoveMultiplePairWithKey";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> mulPair;
+			int cnt;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			/*
+                         * Move the cursor to pairs with exact 99 as its key 
+                         * and 99 as its data.
+                         */                          
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			data = new DatabaseEntry(BitConverter.GetBytes((int)99));
+			pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+			cursor.MoveMultiple(pair, true);
+			mulPair = cursor.CurrentMultiple;
+			Assert.AreEqual(99, BitConverter.ToInt32(mulPair.Key.Data, 0));
+			foreach (DatabaseEntry dbt in mulPair.Value) {
+				Assert.AreEqual(99, BitConverter.ToInt32(dbt.Data, 0));
+				cnt++;
+			}
+			Assert.AreEqual(1, cnt);
+
+			// Move cursor to pairs with the smallest key larger than 100.
+			cnt = 0;
+			key = new DatabaseEntry(BitConverter.GetBytes((int)100));
+			data = new DatabaseEntry(BitConverter.GetBytes((int)100));
+			cursor.MoveMultiple(pair, false);
+			mulPair = cursor.CurrentMultiple;
+			Assert.AreEqual(99, BitConverter.ToInt32(mulPair.Key.Data, 0));
+			foreach (DatabaseEntry dbt in mulPair.Value) {
+				Assert.GreaterOrEqual(1, 
+                                   BitConverter.ToInt32(dbt.Data, 0) - 99);
+				cnt++;
+			}
+			Assert.AreEqual(1, cnt);
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveMultipleWithRecno()
+		{
+			testName = "TestMoveMultipleWithRecno";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> pair;
+			int cnt;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.PageSize = 1024;
+			dbConfig.UseRecordNumbers = true;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			// Move cursor to the No.100 record.
+			cnt = 0;
+			cursor.MoveMultiple(100);
+			pair = cursor.CurrentMultiple;
+			Assert.AreEqual(100, BitConverter.ToInt32(pair.Key.Data, 0));
+			foreach (DatabaseEntry dbt in pair.Value) 
+				cnt++;
+			Assert.AreEqual(1, cnt);
+
+			// Move cursor to the No.100 record with buffer size of 1024k.
+			cnt = 0;
+			cursor.MoveMultiple(100, 1024);
+			pair = cursor.CurrentMultiple;
+			Assert.AreEqual(100, BitConverter.ToInt32(pair.Key.Data, 0));
+			foreach (DatabaseEntry dbt in pair.Value)
+				cnt++;
+			Assert.AreEqual(1, cnt);
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveNextDuplicateMultipleAndMultipleKey()
+		{
+			testName = "TestMoveNextDuplicateMultipleAndMultipleKey";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> pairs;
+			MultipleKeyDatabaseEntry multiPair;
+			int cnt;
+			int[] size = new int[2];
+			size[0] = 0;
+			size[1] = 1024;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.SORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			key = new DatabaseEntry(BitConverter.GetBytes(99));
+			data = new DatabaseEntry(BitConverter.GetBytes(99));
+			pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+
+			for (int j = 0; j < 2; j++) {
+				for (int i = 0; i < 2; i++) {
+					cnt = 0;
+					cursor.Move(pair, true);
+					if (j == 0) {
+						if (size[i] == 0)
+							Assert.IsTrue(cursor.MoveNextDuplicateMultiple());
+						else
+							Assert.IsTrue(cursor.MoveNextDuplicateMultiple(size[i]));
+						pairs = cursor.CurrentMultiple;
+						foreach (DatabaseEntry dbt in pairs.Value) {
+							Assert.AreEqual(100, BitConverter.ToInt32(dbt.Data, 0));
+							cnt++;
+						}
+						Assert.AreEqual(1, cnt);
+					} else {
+						if (size[i] == 0)
+							Assert.IsTrue(cursor.MoveNextDuplicateMultipleKey());
+						else
+							Assert.IsTrue(cursor.MoveNextDuplicateMultipleKey(size[i]));
+						multiPair = cursor.CurrentMultipleKey;
+						foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> p in multiPair) {
+							Assert.AreEqual(100, BitConverter.ToInt32(p.Value.Data, 0));
+							cnt++;
+						}
+						Assert.AreEqual(1, cnt);
+					}
+				}
+			}
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestMoveNextUniqueMultipleAndMultipleKey()
+		{
+			testName = "TestMoveNextUniqueMultipleAndMultipleKey";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> pairs;
+			MultipleKeyDatabaseEntry multiPair;
+			int cnt;
+			int[] size = new int[2];
+			size[0] = 0;
+			size[1] = 1024;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			key = new DatabaseEntry(BitConverter.GetBytes(99));
+			data = new DatabaseEntry(BitConverter.GetBytes(99));
+			pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+
+			for (int j = 0; j < 2; j++) {
+				for (int i = 0; i < 2; i++) {
+					cnt = 0;
+					cursor.Move(pair, true);
+					if (j == 0) {
+						if (size[i] == 0)
+							Assert.IsTrue(cursor.MoveNextUniqueMultiple());
+						else
+							Assert.IsTrue(cursor.MoveNextUniqueMultiple(size[i]));
+						pairs = cursor.CurrentMultiple;
+						foreach (DatabaseEntry dbt in pairs.Value) {
+							Assert.AreEqual(101,  BitConverter.ToInt32(dbt.Data, 0));
+							cnt++;
+						}
+						Assert.AreEqual(1, cnt);
+					} else {
+						if (size[i] == 0)
+							Assert.IsTrue(cursor.MoveNextUniqueMultipleKey());
+						else
+							Assert.IsTrue(cursor.MoveNextUniqueMultipleKey(size[i]));
+						multiPair = cursor.CurrentMultipleKey;
+						foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> p in multiPair) {
+							Assert.AreEqual(101, BitConverter.ToInt32(p.Value.Data, 0));
+							cnt++;
+						}
+						Assert.AreEqual(1, cnt);
+					}
+				}
+			}
+
+			cursor.Close();
+			db.Close();
+		}
+
+		[Test]
+		public void TestRefreshMultipleAndMultipleKey()
+		{
+			testName = "TestRefreshMultipleAndMultipleKey";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			BTreeDatabase db;
+			BTreeCursor cursor;
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> pairs;
+			MultipleKeyDatabaseEntry multiPair;
+			int cnt;
+			int[] size = new int[2];
+			size[0] = 0;
+			size[1] = 1024;
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
+			dbConfig.Creation = CreatePolicy.ALWAYS;
+			dbConfig.Duplicates = DuplicatesPolicy.SORTED;
+			dbConfig.PageSize = 1024;
+			GetMultipleDB(btreeDBFileName, dbConfig, out db, out cursor);
+
+			key = new DatabaseEntry(BitConverter.GetBytes(99));
+			data = new DatabaseEntry(BitConverter.GetBytes(99));
+			pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+
+			for (int j = 0; j < 2; j++) {
+				for (int i = 0; i < 2; i++) {
+					cnt = 0;
+					cursor.Move(pair, true);
+					if (j == 0) {
+						if (size[i] == 0)
+							Assert.IsTrue(cursor.RefreshMultiple());
+						else
+							Assert.IsTrue(cursor.RefreshMultiple(size[i]));
+						pairs = cursor.CurrentMultiple;
+						foreach (DatabaseEntry dbt in pairs.Value)
+							cnt++;
+						Assert.AreEqual(2, cnt);
+					} else {
+						if (size[i] == 0)
+							Assert.IsTrue(cursor.RefreshMultipleKey());
+						else
+							Assert.IsTrue(cursor.RefreshMultipleKey(size[i]));
+						multiPair = cursor.CurrentMultipleKey;
+						foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> p in multiPair)
+							cnt++;
+						Assert.AreEqual(3, cnt);
+					}
+				}
+			}
+
+			cursor.Close();
+			db.Close();
+		}
+
+		private void GetMultipleDB(string dbFileName, BTreeDatabaseConfig dbConfig,
+		    out BTreeDatabase db, out BTreeCursor cursor)
+		{
+			db = BTreeDatabase.Open(dbFileName, dbConfig);
+			cursor = db.Cursor();
+
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			DatabaseEntry key, data;
+			for (int i = 1; i < 100; i++) {
+				key = new DatabaseEntry(BitConverter.GetBytes(i));
+				data = new DatabaseEntry(BitConverter.GetBytes(i));
+				pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+				cursor.Add(pair);
+			}
+
+			if (dbConfig.UseRecordNumbers == true) {
+				byte[] bytes = new byte[512];
+				for (int i = 0; i < 512; i++)
+					bytes[i] = (byte)i;
+				key = new DatabaseEntry(BitConverter.GetBytes(100));
+				data = new DatabaseEntry(bytes);
+				pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+				cursor.Add(pair);
+			} else {
+				if (dbConfig.Duplicates == DuplicatesPolicy.UNSORTED || 
+				    dbConfig.Duplicates == DuplicatesPolicy.SORTED) {
+					key = new DatabaseEntry(BitConverter.GetBytes(99));
+					data = new DatabaseEntry(BitConverter.GetBytes(100));
+					pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+					cursor.Add(pair);
+				}
+
+				key = new DatabaseEntry(BitConverter.GetBytes(101));
+				data = new DatabaseEntry(BitConverter.GetBytes(101));
+				pair = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+				cursor.Add(pair);
+			}
+		}
+
+		[Test]
 		public void TestInsertBefore()
 		{
 			BTreeDatabase db;
@@ -394,7 +1001,6 @@ namespace CsharpAPITest
 			cursor.Close();
 			db.Close();
 		}
-
 
 		[Test]
 		public void TestRecnoWithRMW()
@@ -582,4 +1188,5 @@ namespace CsharpAPITest
 
 	}
 }
+
 

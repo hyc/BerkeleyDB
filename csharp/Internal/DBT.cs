@@ -39,6 +39,12 @@ internal class DBT : IDisposable {
     }
   }
 
+	internal IntPtr dataPtr {
+		get {
+			return libdb_csharpPINVOKE.DBT_data_get(swigCPtr);
+		}
+	}
+
   internal uint dlen {
     set {
       libdb_csharpPINVOKE.DBT_dlen_set(swigCPtr, value);

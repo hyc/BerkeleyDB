@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -101,6 +107,158 @@ namespace CsharpAPITest
 				Assert.Less(compactedFileSize, fileSize);
 			}
 		}
+		
+                [Test]
+                public void TestCompression() {
+                        testName = "TestCompression";
+                        testHome = testFixtureHome + "/" + testName;
+                        string btreeDBName = testHome + "/" + testName + ".db";
+
+                        Configuration.ClearDir(testHome);
+
+                        BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
+                        cfg.Creation = CreatePolicy.ALWAYS;
+                        cfg.SetCompression(compress, decompress);
+                        BTreeDatabase db = BTreeDatabase.Open(btreeDBName, cfg);
+                        DatabaseEntry key, data;
+                        char[] keyData = { 'A', 'A', 'A', 'A' };
+                        byte[] dataData = new byte[20];
+                        Random generator = new Random();
+                        int i;
+                        for (i = 0; i < 20000; i++) {
+                                // Write random data
+                                key = new DatabaseEntry(ASCIIEncoding.ASCII.GetBytes(keyData));
+                                generator.NextBytes(dataData);
+                                data = new DatabaseEntry(dataData);
+                                db.Put(key, data);
+
+                                // Bump the key. Rollover from Z to A if necessary
+                                int j = keyData.Length;
+                                do {
+                                        j--;
+                                        if (keyData[j]++ == 'Z')
+                                                keyData[j] = 'A';
+                                } while (keyData[j] == 'A');
+                       }
+                        db.Close();
+                }
+
+                bool compress(DatabaseEntry prevKey, DatabaseEntry prevData, 
+                    DatabaseEntry key, DatabaseEntry data, ref byte[] dest, out int size) {
+                        /* 
+                         * Just a dummy function that doesn't do any compression.  It just
+                         * writes the 5 byte key and 20 byte data to the buffer.
+                         */
+                        size = key.Data.Length + data.Data.Length;
+                        if (size > dest.Length)
+                                return false;
+                        key.Data.CopyTo(dest, 0);
+                        data.Data.CopyTo(dest, key.Data.Length);
+                        return true;
+                }
+
+                KeyValuePair<DatabaseEntry, DatabaseEntry> decompress(
+                    DatabaseEntry prevKey, DatabaseEntry prevData, byte[] compressed, out uint bytesRead) {
+                        byte[] keyData = new byte[4];
+                        byte[] dataData = new byte[20];
+                        Array.ConstrainedCopy(compressed, 0, keyData, 0, 4);
+                        Array.ConstrainedCopy(compressed, 4, dataData, 0, 20);
+                        DatabaseEntry key = new DatabaseEntry(keyData);
+                        DatabaseEntry data = new DatabaseEntry(dataData);
+                        bytesRead = (uint)(key.Data.Length + data.Data.Length);
+                        return new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
+                }
+
+                [Test]
+                public void TestCompressionDefault() {
+                        testName = "TestCompressionDefault";
+                        testHome = testFixtureHome + "/" + testName;
+                        string btreeDBName = testHome + "/" + testName + ".db";
+
+                        Configuration.ClearDir(testHome);
+
+                        BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
+                        cfg.Creation = CreatePolicy.ALWAYS;
+                        BTreeDatabase db = BTreeDatabase.Open(btreeDBName, cfg);
+                        DatabaseEntry key, data;
+                        char[] keyData = { 'A', 'A', 'A', 'A' };
+                        byte[] dataData = new byte[20];
+                        Random generator = new Random();
+                        int i;
+                        for (i = 0; i < 20000; i++) {
+                                // Write random data
+                                key = new DatabaseEntry(ASCIIEncoding.ASCII.GetBytes(keyData));
+                                generator.NextBytes(dataData);
+                                data = new DatabaseEntry(dataData);
+                                db.Put(key, data);
+
+                                // Bump the key. Rollover from Z to A if necessary
+                                int j = keyData.Length;
+                                do {
+                                        j--;
+                                        if (keyData[j]++ == 'Z')
+                                                keyData[j] = 'A';
+                                } while (keyData[j] == 'A');
+                        }
+                        db.Close();
+
+                        FileInfo dbInfo = new FileInfo(btreeDBName);
+                        long uncompressedSize = dbInfo.Length;
+                        Configuration.ClearDir(testHome);
+
+                        cfg = new BTreeDatabaseConfig();
+                        cfg.Creation = CreatePolicy.ALWAYS;
+                        cfg.SetCompression();
+                        db = BTreeDatabase.Open(btreeDBName, cfg);
+                        keyData = new char[]{ 'A', 'A', 'A', 'A' };
+                        for (i = 0; i < 20000; i++) {
+                                // Write random data
+                                key = new DatabaseEntry(ASCIIEncoding.ASCII.GetBytes(keyData));
+                                generator.NextBytes(dataData);
+                                data = new DatabaseEntry(dataData);
+                                db.Put(key, data);
+
+                                // Bump the key. Rollover from Z to A if necessary
+                                int j = keyData.Length;
+                                do {
+                                        j--;
+                                        if (keyData[j]++ == 'Z')
+                                                keyData[j] = 'A';
+                                } while (keyData[j] == 'A');
+                        }
+                        Cursor dbc = db.Cursor();
+                        foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> kvp in dbc) 
+                                i--;
+                        dbc.Close();
+                        Assert.AreEqual(i, 0);
+                        db.Close();
+
+                        dbInfo = new FileInfo(btreeDBName);
+                        Assert.Less(dbInfo.Length, uncompressedSize);
+                        Console.WriteLine("Uncompressed: {0}", uncompressedSize);
+                        Console.WriteLine("Compressed: {0}", dbInfo.Length);
+                        
+                        Configuration.ClearDir(testHome);
+
+                        cfg = new BTreeDatabaseConfig();
+                        cfg.Creation = CreatePolicy.ALWAYS;
+                        cfg.SetCompression();
+                        db = BTreeDatabase.Open(btreeDBName, cfg);
+                        for (i = 1023; i < 1124; i++){
+                                key = new DatabaseEntry(BitConverter.GetBytes(i));
+                                data = new DatabaseEntry(BitConverter.GetBytes(i + 3));
+                                db.Put(key, data);
+                        }
+                        dbc = db.Cursor();
+                        foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> kvp in dbc){ 
+                                int keyInt = BitConverter.ToInt32(kvp.Key.Data, 0);
+                                int dataInt = BitConverter.ToInt32(kvp.Value.Data, 0);
+                                Assert.AreEqual(3, dataInt - keyInt);
+                        }
+                        dbc.Close();
+
+                        db.Close();    
+                }
 
 		[Test, ExpectedException(typeof(AccessViolationException))]
 		public void TestClose()
@@ -585,93 +743,191 @@ namespace CsharpAPITest
 			}
 		}
 
-        [Test]
-        public void TestGetMultiple() {
-            testName = "TestGetMultiple";
-            testHome = testFixtureHome + "/" + testName;
-            string btreeDBFileName = testHome + "/" +
-                testName + ".db";
-            string btreeDBName =
-                Path.GetFileNameWithoutExtension(btreeDBFileName);
+		[Test]
+		public void TestGetBothMultiple()
+		{
+			testName = "TestGetBothMultiple";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			string btreeDBName = testName;
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp;
+			int cnt;
 
-            Configuration.ClearDir(testHome);
+			Configuration.ClearDir(testHome);
 
 			BTreeDatabaseConfig btreeDBConfig =
 			    new BTreeDatabaseConfig();
 			btreeDBConfig.Creation = CreatePolicy.ALWAYS;
 			btreeDBConfig.Duplicates = DuplicatesPolicy.UNSORTED;
-            using (BTreeDatabase btreeDB = GetMultipleDB(
-                btreeDBFileName, btreeDBName, btreeDBConfig)) {
-                DatabaseEntry key = new DatabaseEntry(BitConverter.GetBytes(10));
-                KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = btreeDB.GetMultiple(key);
-                int cnt = 0;
-                foreach (DatabaseEntry dbt in kvp.Value)
-                    cnt++;
-                Assert.AreEqual(cnt, 10);
-            }
-        }
+			btreeDBConfig.PageSize = 1024;
+			using (BTreeDatabase btreeDB = GetMultipleDB(
+			    btreeDBFileName, btreeDBName, btreeDBConfig)) {
+				key = new DatabaseEntry(BitConverter.GetBytes(100));
+				data = new DatabaseEntry(BitConverter.GetBytes(100));
 
-        [Test]
-        public void TestGetBothMultiple() {
-            testName = "TestGetMultiple";
-            testHome = testFixtureHome + "/" + testName;
-            string btreeDBFileName = testHome + "/" +
-                testName + ".db";
-            string btreeDBName =
-                Path.GetFileNameWithoutExtension(btreeDBFileName);
+				kvp = btreeDB.GetBothMultiple(key, data);
+				cnt = 0;
+				foreach (DatabaseEntry dbt in kvp.Value)
+					cnt++;
+				Assert.AreEqual(cnt, 10);
 
-            Configuration.ClearDir(testHome);
+				kvp = btreeDB.GetBothMultiple(key, data, 1024);
+				cnt = 0;
+				foreach (DatabaseEntry dbt in kvp.Value)
+					cnt++;
+				Assert.AreEqual(cnt, 10);
+			}
+		}
+		
+		[Test]
+		public void TestGetMultiple() 
+		{
+			testName = "TestGetMultiple";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			string btreeDBName = testName;
 
-            BTreeDatabaseConfig btreeDBConfig =
-                new BTreeDatabaseConfig();
-            btreeDBConfig.Creation = CreatePolicy.ALWAYS;
-            btreeDBConfig.Duplicates = DuplicatesPolicy.UNSORTED;
-            using (BTreeDatabase btreeDB = GetMultipleDB(
-                btreeDBFileName, btreeDBName, btreeDBConfig)) {
-                DatabaseEntry key = new DatabaseEntry(BitConverter.GetBytes(100));
-                DatabaseEntry data = new DatabaseEntry(BitConverter.GetBytes(100));
-                KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = btreeDB.GetBothMultiple(key, data);
-                int cnt = 0;
-                foreach (DatabaseEntry dbt in kvp.Value)
-                    cnt++;
-                Assert.AreEqual(cnt, 10);
-            }
-        }
+			Configuration.ClearDir(testHome);
 
-        [Test]
-        public void TestGetMultipleByRecno() {
-            testName = "TestGetMultiple";
-            testHome = testFixtureHome + "/" + testName;
-            string btreeDBFileName = testHome + "/" +
-                testName + ".db";
-            string btreeDBName =
-                Path.GetFileNameWithoutExtension(btreeDBFileName);
+			BTreeDatabaseConfig btreeDBConfig =
+			    new BTreeDatabaseConfig();
+			btreeDBConfig.Creation = CreatePolicy.ALWAYS;
+			btreeDBConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			btreeDBConfig.PageSize = 512;
+			
+			using (BTreeDatabase btreeDB = GetMultipleDB(
+			    btreeDBFileName, btreeDBName, btreeDBConfig)) {
+				DatabaseEntry key = new DatabaseEntry(
+                                    BitConverter.GetBytes(10));
+				KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = 
+                                    btreeDB.GetMultiple(key, 1024);
+				int cnt = 0;
+				foreach (DatabaseEntry dbt in kvp.Value)
+					cnt++;
+				Assert.AreEqual(cnt, 10);
 
-            Configuration.ClearDir(testHome);
+				key = new DatabaseEntry(
+                                    BitConverter.GetBytes(102));
+				kvp = btreeDB.GetMultiple(key, 1024);
+				cnt = 0;
+				foreach (DatabaseEntry dbt in kvp.Value)
+					cnt++;
+				Assert.AreEqual(cnt, 1);
+			}
+		}
 
-            BTreeDatabaseConfig btreeDBConfig =
-                new BTreeDatabaseConfig();
-            btreeDBConfig.Creation = CreatePolicy.ALWAYS;
-            btreeDBConfig.Duplicates = DuplicatesPolicy.NONE;
-            btreeDBConfig.UseRecordNumbers = true;
-            using (BTreeDatabase btreeDB = GetMultipleDB(
-                btreeDBFileName, btreeDBName, btreeDBConfig)) {
-                int recno = 44;
-                KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = btreeDB.GetMultiple((uint)recno);
-                int cnt = 0;
-                int kdata = BitConverter.ToInt32(kvp.Key.Data, 0);
-                Assert.AreEqual(kdata, recno);
-                foreach (DatabaseEntry dbt in kvp.Value) {
-                    cnt++;
-                    int ddata = BitConverter.ToInt32(dbt.Data, 0);
-                    Assert.AreEqual(ddata, recno);
-                }
-                Assert.AreEqual(cnt, 1);
-            }
-        }
+
+		[Test]
+		public void TestGetMultipleByRecno()
+		{
+			testName = "TestGetMultipleByRecno";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			string btreeDBName =
+			    Path.GetFileNameWithoutExtension(btreeDBFileName);
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig btreeDBConfig =
+			    new BTreeDatabaseConfig();
+			btreeDBConfig.Creation = CreatePolicy.ALWAYS;
+			btreeDBConfig.Duplicates = DuplicatesPolicy.NONE;
+			btreeDBConfig.UseRecordNumbers = true;
+			using (BTreeDatabase btreeDB = GetMultipleDB(
+			    btreeDBFileName, btreeDBName, btreeDBConfig)) {
+				int recno = 44;
+				KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = 
+                                    btreeDB.GetMultiple((uint)recno);
+				int cnt = 0;
+				int kdata = BitConverter.ToInt32(kvp.Key.Data, 0);
+				Assert.AreEqual(kdata, recno);
+				foreach (DatabaseEntry dbt in kvp.Value) {
+					cnt++;
+					int ddata = BitConverter.ToInt32(dbt.Data, 0);
+					Assert.AreEqual(ddata, recno);
+				}
+				Assert.AreEqual(cnt, 1);
+			}
+		}
+
+		[Test]
+		public void TestGetMultipleByRecnoInSize()
+		{
+			testName = "TestGetMultipleByRecnoInSize";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			string btreeDBName =
+			    Path.GetFileNameWithoutExtension(btreeDBFileName);
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig btreeDBConfig =
+			    new BTreeDatabaseConfig();
+			btreeDBConfig.Creation = CreatePolicy.ALWAYS;
+			btreeDBConfig.Duplicates = DuplicatesPolicy.NONE;
+			btreeDBConfig.UseRecordNumbers = true;
+			btreeDBConfig.PageSize = 512;
+			using (BTreeDatabase btreeDB = GetMultipleDB(
+			    btreeDBFileName, btreeDBName, btreeDBConfig)) {
+				int recno = 100;
+				int bufferSize = 1024;
+				KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = 
+                                    btreeDB.GetMultiple((uint)recno, bufferSize);
+				int cnt = 0;
+				int kdata = BitConverter.ToInt32(kvp.Key.Data, 0);
+				Assert.AreEqual(kdata, recno);
+				foreach (DatabaseEntry dbt in kvp.Value) {
+					cnt++;
+					Assert.AreEqual(dbt.Data.Length, 111);
+				}
+				Assert.AreEqual(1, cnt);
+			}
+		}
+
+		[Test]
+		public void TestGetMultipleInSize()
+		{
+			testName = "TestGetMultipleInSize";
+			testHome = testFixtureHome + "/" + testName;
+			string btreeDBFileName = testHome + "/" +
+			    testName + ".db";
+			string btreeDBName =
+			    Path.GetFileNameWithoutExtension(btreeDBFileName);
+
+			Configuration.ClearDir(testHome);
+
+			BTreeDatabaseConfig btreeDBConfig =
+			    new BTreeDatabaseConfig();
+			btreeDBConfig.Creation = CreatePolicy.ALWAYS;
+			btreeDBConfig.Duplicates = DuplicatesPolicy.UNSORTED;
+			btreeDBConfig.PageSize = 1024;
+			using (BTreeDatabase btreeDB = GetMultipleDB(
+			    btreeDBFileName, btreeDBName, btreeDBConfig)) {
+
+				int num = 101;
+				DatabaseEntry key = new DatabaseEntry(
+                                    BitConverter.GetBytes(num));
+				int bufferSize = 10240;
+				KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> kvp = 
+                                    btreeDB.GetMultiple(key, bufferSize);
+				int cnt = 0;
+				foreach (DatabaseEntry dbt in kvp.Value) {
+					cnt++;
+					Assert.AreEqual(BitConverter.ToInt32(
+                                            dbt.Data, 0), num);
+					num++;
+				}
+				Assert.AreEqual(cnt, 923);
+			}
+		}
         
-        [Test]
-        public void TestGetWithTxn()
+		[Test]
+		public void TestGetWithTxn()
 		{
 			testName = "TestGetWithTxn";
 			testHome = testFixtureHome + "/" + testName;
@@ -1918,46 +2174,80 @@ namespace CsharpAPITest
 			}
 		}
 
-        private BTreeDatabase GetMultipleDB(
-            string filename, string dbname, BTreeDatabaseConfig cfg) {
-            BTreeDatabase ret;
-            DatabaseEntry data, key;
+                private BTreeDatabase GetMultipleDB(
+                    string filename, string dbname, BTreeDatabaseConfig cfg) {
+                        BTreeDatabase ret;
+                        DatabaseEntry data, key;
+ 
+                        ret = BTreeDatabase.Open(filename, dbname, cfg);
+                        key = null;
+                        if (cfg.UseRecordNumbers) {
+                                /* 
+                                 * Dups aren't allowed with record numbers, so
+                                 * we have to put different data.  Also, record
+                                 * numbers start at 1, so we do too, which makes 
+                                 * checking results easier.
+                                 */
+                                for (int i = 1; i < 100; i++) {
+                                        key = new DatabaseEntry(
+                                            BitConverter.GetBytes(i));
+                                        data = new DatabaseEntry(
+                                            BitConverter.GetBytes(i));
+                                        ret.Put(key, data);
+                                }
 
-            ret = BTreeDatabase.Open(filename, dbname, cfg);
-            key = null;
-            if (cfg.UseRecordNumbers) {
-                /* 
-                 * Dups aren't allowed with record numbers, so we have to put
-                 * different data.  Also, record numbers start at 1, so we do 
-                 * too, which makes checking results easier.
-                 */
-                for (int i = 1; i < 100; i++) {
-                    key = new DatabaseEntry(BitConverter.GetBytes(i));
-                    data = new DatabaseEntry(BitConverter.GetBytes(i));
-                    ret.Put(key, data);
-                }
-            } else {
-                for (int i = 0; i < 100; i++) {
-                    if (i % 10 == 0)
-                        key = new DatabaseEntry(BitConverter.GetBytes(i));
-                    data = new DatabaseEntry(BitConverter.GetBytes(i));
-                    /* Don't put nulls into the db. */
-                    Assert.IsFalse(key == null);
-                    Assert.IsFalse(data == null);
-                    ret.Put(key, data);
-                }
-                if (cfg.Duplicates == DuplicatesPolicy.UNSORTED) {
-                    /* Add in duplicate duplicates to check GetBothMultiple */
-                    key = new DatabaseEntry(BitConverter.GetBytes(100));
-                    data = new DatabaseEntry(BitConverter.GetBytes(100));
-                    for (int i = 0; i < 10; i++)
-                        ret.Put(key, data);
-                }
-            }
-            return ret;
-        }
+                                key = new DatabaseEntry(
+                                    BitConverter.GetBytes(100));
+                                data = new DatabaseEntry();
+                                data.Data = new byte[111];
+                                for (int i = 0; i < 111; i++)
+                                        data.Data[i] = (byte)i;
+                                        ret.Put(key, data);
+                        } else {
+                                for (int i = 0; i < 100; i++) {
+                                        if (i % 10 == 0)
+                                        key = new DatabaseEntry(
+                                            BitConverter.GetBytes(i));
+                                        data = new DatabaseEntry(
+                                            BitConverter.GetBytes(i));
+                                        /* Don't put nulls into the db. */
+                                        Assert.IsFalse(key == null);
+                                        Assert.IsFalse(data == null);
+                                        ret.Put(key, data);
+                                }
+                                
+                                if (cfg.Duplicates == DuplicatesPolicy.UNSORTED) {
+                                        /* Add in duplicates to check GetBothMultiple */
+                                        key = new DatabaseEntry(
+                                            BitConverter.GetBytes(100));
+                                        data = new DatabaseEntry(
+                                            BitConverter.GetBytes(100));
+                                        for (int i = 0; i < 10; i++)
+                                                ret.Put(key, data);
 
-        
+                                        /*
+                                         * Add duplicates to check GetMultiple 
+                                         * with given buffer size. 
+                                         */
+                                        for (int i = 101; i < 1024; i++) {
+                                                key = new DatabaseEntry(
+                                                    BitConverter.GetBytes(101));
+                                                data = new DatabaseEntry(
+                                                    BitConverter.GetBytes(i));
+                                                ret.Put(key, data);
+                                        }
+
+                                        key = new DatabaseEntry(
+                                            BitConverter.GetBytes(102));
+                                        data = new DatabaseEntry();
+                                        data.Data = new byte[112];
+                                        for (int i = 0; i < 112; i++)
+			                     data.Data[i] = (byte)i;
+                                        ret.Put(key, data);
+                                }
+                        }
+	               return ret;	
+                }
 
 		public static void Confirm(XmlElement xmlElem,
 		    BTreeDatabase btreeDB, bool compulsory)
@@ -1985,3 +2275,4 @@ namespace CsharpAPITest
 		}
 	}
 }
+

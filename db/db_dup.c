@@ -14,36 +14,24 @@
 #include "dbinc/db_am.h"
 
 /*
- * __db_ditem --
- *	Remove an item from a page.
+ * __db_ditem_nolog --
+ *	Remove an item from a page without affecting its recoverability.
  *
- * PUBLIC:  int __db_ditem __P((DBC *, PAGE *, u_int32_t, u_int32_t));
+ * PUBLIC:  int __db_ditem_nolog __P((DBC *, PAGE *, u_int32_t, u_int32_t));
  */
 int
-__db_ditem(dbc, pagep, indx, nbytes)
+__db_ditem_nolog(dbc, pagep, indx, nbytes)
 	DBC *dbc;
 	PAGE *pagep;
 	u_int32_t indx, nbytes;
 {
 	DB *dbp;
-	DBT ldbt;
 	db_indx_t cnt, *inp, offset;
-	int ret;
 	u_int8_t *from;
 
 	dbp = dbc->dbp;
 	DB_ASSERT(dbp->env, IS_DIRTY(pagep));
 	DB_ASSERT(dbp->env, indx < NUM_ENT(pagep));
-
-	if (DBC_LOGGING(dbc)) {
-		ldbt.data = P_ENTRY(dbp, pagep, indx);
-		ldbt.size = nbytes;
-		if ((ret = __db_addrem_log(dbp, dbc->txn,
-		    &LSN(pagep), 0, DB_REM_DUP, PGNO(pagep),
-		    (u_int32_t)indx, nbytes, &ldbt, NULL, &LSN(pagep))) != 0)
-			return (ret);
-	} else
-		LSN_NOT_LOGGED(LSN(pagep));
 
 	/*
 	 * If there's only a single item on the page, we don't have to
@@ -78,6 +66,37 @@ __db_ditem(dbc, pagep, indx, nbytes)
 		    sizeof(db_indx_t) * (NUM_ENT(pagep) - indx));
 
 	return (0);
+}
+
+/*
+ * __db_ditem --
+ *	Remove an item from a page, logging it if enabled.
+ *
+ * PUBLIC:  int __db_ditem __P((DBC *, PAGE *, u_int32_t, u_int32_t));
+ */
+int
+__db_ditem(dbc, pagep, indx, nbytes)
+	DBC *dbc;
+	PAGE *pagep;
+	u_int32_t indx, nbytes;
+{
+	DB *dbp;
+	DBT ldbt;
+	int ret;
+
+	dbp = dbc->dbp;
+
+	if (DBC_LOGGING(dbc)) {
+		ldbt.data = P_ENTRY(dbp, pagep, indx);
+		ldbt.size = nbytes;
+		if ((ret = __db_addrem_log(dbp, dbc->txn,
+		    &LSN(pagep), 0, DB_REM_DUP, PGNO(pagep),
+		    (u_int32_t)indx, nbytes, &ldbt, NULL, &LSN(pagep))) != 0)
+			return (ret);
+	} else
+		LSN_NOT_LOGGED(LSN(pagep));
+
+	return (__db_ditem_nolog(dbc, pagep, indx, nbytes));
 }
 
 /*

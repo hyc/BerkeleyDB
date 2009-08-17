@@ -1,3 +1,11 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 #include "test.h"
 
 // tests containers in multiple threads, this thread class 

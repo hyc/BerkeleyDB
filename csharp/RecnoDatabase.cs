@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -414,10 +420,10 @@ namespace BerkeleyDB {
                 end = new DatabaseEntry();
 
             db.compact(Transaction.getDB_TXN(txn),
-                DatabaseEntry.getDBT(cdata.start),
-                DatabaseEntry.getDBT(cdata.stop),
+                cdata.start,
+                cdata.stop,
                 CompactConfig.getDB_COMPACT(cdata),
-                cdata.flags, DatabaseEntry.getDBT(end));
+                cdata.flags, end);
             return new CompactData(CompactConfig.getDB_COMPACT(cdata), end);
         }
 

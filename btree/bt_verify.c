@@ -2418,12 +2418,27 @@ __bam_salvage(dbp, vdp, pgno, pgtype, h, handle, callback, key, flags)
 				 * getting a data item.
 				 */
 				if (i % P_INDX == 0) {
-					if ((ret = __os_realloc(env,
-					    dbt.size, &repldbt.data)) != 0)
-						goto err;
-					memcpy(repldbt.data, dbt.data,
-					    dbt.size);
-					repldbt.size = dbt.size;
+					if (t_ret == 0) {
+						if ((t_ret = __os_realloc(env,
+						        dbt.size,
+							&repldbt.data)) != 0) {
+							if (ret == 0)
+								ret = t_ret;
+							goto err;
+						}
+						memcpy(repldbt.data,
+						    dbt.data, dbt.size);
+						repldbt.size = dbt.size;
+					} else {
+						if (__os_realloc(env,
+						    unknown_key.size,
+						    &repldbt.data) != 0)
+							goto err;
+						memcpy(repldbt.data,
+						    unknown_key.data,
+						    unknown_key.size);
+						repldbt.size = unknown_key.size;
+					}
 				}
 
 			}

@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,19 +25,19 @@ namespace BerkeleyDB {
         /// <summary>
         /// Lock conflicts w/ subsequent wait 
         /// </summary>
-        public long LockConflictsWait { get { return st.st_lock_wait; } }
+        public ulong LockConflictsWait { get { return st.st_lock_wait; } }
         /// <summary>
         /// Lock conflicts w/o subsequent wait 
         /// </summary>
-        public long LockConflictsNoWait { get { return st.st_lock_nowait; } }
+        public ulong LockConflictsNoWait { get { return st.st_lock_nowait; } }
         /// <summary>
         /// Number of lock deadlocks. 
         /// </summary>
-        public long LockDeadlocks { get { return st.st_ndeadlocks; } }
+        public ulong LockDeadlocks { get { return st.st_ndeadlocks; } }
         /// <summary>
         /// Number of lock downgrades. 
         /// </summary>
-        public long LockDowngrades { get { return st.st_ndowngrade; } }
+        public ulong LockDowngrades { get { return st.st_ndowngrade; } }
         /// <summary>
         /// Number of lock modes. 
         /// </summary>
@@ -39,15 +45,15 @@ namespace BerkeleyDB {
         /// <summary>
         /// Number of lock puts. 
         /// </summary>
-        public long LockPuts { get { return st.st_nreleases; } }
+        public ulong LockPuts { get { return st.st_nreleases; } }
         /// <summary>
         /// Number of lock gets. 
         /// </summary>
-        public long LockRequests { get { return st.st_nrequests; } }
+        public ulong LockRequests { get { return st.st_nrequests; } }
         /// <summary>
         /// Number of lock steals so far. 
         /// </summary>
-        public long LockSteals { get { return st.st_locksteals; } }
+        public ulong LockSteals { get { return st.st_locksteals; } }
         /// <summary>
         /// Lock timeout. 
         /// </summary>
@@ -55,19 +61,19 @@ namespace BerkeleyDB {
         /// <summary>
         /// Number of lock timeouts. 
         /// </summary>
-        public long LockTimeouts { get { return st.st_nlocktimeouts; } }
+        public ulong LockTimeouts { get { return st.st_nlocktimeouts; } }
         /// <summary>
         /// Number of lock upgrades. 
         /// </summary>
-        public long LockUpgrades { get { return st.st_nupgrade; } }
+        public ulong LockUpgrades { get { return st.st_nupgrade; } }
         /// <summary>
         /// Locker lock granted without wait. 
         /// </summary>
-        public long LockerNoWait { get { return st.st_lockers_nowait; } }
+        public ulong LockerNoWait { get { return st.st_lockers_nowait; } }
         /// <summary>
         /// Locker lock granted after wait. 
         /// </summary>
-        public long LockerWait { get { return st.st_lockers_wait; } }
+        public ulong LockerWait { get { return st.st_lockers_wait; } }
         /// <summary>
         /// Current number of lockers. 
         /// </summary>
@@ -83,7 +89,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Maximum number steals in any partition. 
         /// </summary>
-        public long MaxLockSteals { get { return st.st_maxlsteals; } }
+        public ulong MaxLockSteals { get { return st.st_maxlsteals; } }
         /// <summary>
         /// Maximum number of lockers so far. 
         /// </summary>
@@ -107,7 +113,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Maximum number of steals in any partition. 
         /// </summary>
-        public long MaxObjectSteals { get { return st.st_maxosteals; } }
+        public ulong MaxObjectSteals { get { return st.st_maxosteals; } }
         /// <summary>
         /// Maximum number of objects so far. 
         /// </summary>
@@ -119,11 +125,11 @@ namespace BerkeleyDB {
         /// <summary>
         /// Max partition lock granted without wait. 
         /// </summary>
-        public long MaxPartitionLockNoWait { get { return st.st_part_max_nowait; } }
+        public ulong MaxPartitionLockNoWait { get { return st.st_part_max_nowait; } }
         /// <summary>
         /// Max partition lock granted after wait. 
         /// </summary>
-        public long MaxPartitionLockWait { get { return st.st_part_max_wait; } }
+        public ulong MaxPartitionLockWait { get { return st.st_part_max_wait; } }
         /// <summary>
         /// Current maximum unused ID. 
         /// </summary>
@@ -139,15 +145,15 @@ namespace BerkeleyDB {
         /// <summary>
         /// Object lock granted without wait. 
         /// </summary>
-        public long ObjectNoWait { get { return st.st_objs_nowait; } }
+        public ulong ObjectNoWait { get { return st.st_objs_nowait; } }
         /// <summary>
         /// Number of objects steals so far. 
         /// </summary>
-        public long ObjectSteals { get { return st.st_objectsteals; } }
+        public ulong ObjectSteals { get { return st.st_objectsteals; } }
         /// <summary>
         /// Object lock granted after wait. 
         /// </summary>
-        public long ObjectWait { get { return st.st_objs_wait; } }
+        public ulong ObjectWait { get { return st.st_objs_wait; } }
         /// <summary>
         /// Current number of objects. 
         /// </summary>
@@ -155,23 +161,23 @@ namespace BerkeleyDB {
         /// <summary>
         /// Partition lock granted without wait. 
         /// </summary>
-        public long PartitionLockNoWait { get { return st.st_part_nowait; } }
+        public ulong PartitionLockNoWait { get { return st.st_part_nowait; } }
         /// <summary>
         /// Partition lock granted after wait. 
         /// </summary>
-        public long PartitionLockWait { get { return st.st_part_wait; } }
+        public ulong PartitionLockWait { get { return st.st_part_wait; } }
         /// <summary>
         /// Region lock granted without wait. 
         /// </summary>
-        public long RegionNoWait { get { return st.st_region_nowait; } }
+        public ulong RegionNoWait { get { return st.st_region_nowait; } }
         /// <summary>
         /// Region size. 
         /// </summary>
-        public uint RegionSize { get { return st.st_regsize; } }
+        public ulong RegionSize { get { return (ulong)st.st_regsize.ToInt64(); } }
         /// <summary>
         /// Region lock granted after wait. 
         /// </summary>
-        public long RegionWait { get { return st.st_region_wait; } }
+        public ulong RegionWait { get { return st.st_region_wait; } }
         /// <summary>
         /// Transaction timeout. 
         /// </summary>
@@ -179,7 +185,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Number of transaction timeouts. 
         /// </summary>
-        public long TxnTimeouts { get { return st.st_ntxntimeouts; } }
+        public ulong TxnTimeouts { get { return st.st_ntxntimeouts; } }
         
     }
 }

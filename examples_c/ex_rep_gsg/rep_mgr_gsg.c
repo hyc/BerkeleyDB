@@ -16,8 +16,6 @@
  *
  */
 
-#include <sys/types.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -27,44 +25,64 @@
 
 #include <db.h>
 
-const char *progname = "ex_rep_gsg_repmgr";
-
 #ifdef _WIN32
 extern int getopt(int, char * const *, const char *);
 #endif
 
+#define	CACHESIZE (10 * 1024 * 1024)
+#define	DATABASE "quote.db"
+#define	SLEEPTIME 3
+
 typedef struct {
     int is_master;
 } APP_DATA;
+
+const char *progname = "ex_rep_gsg_repmgr";
 
 int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
 int doloop (DB_ENV *);
 int print_stocks(DB *);
 static void event_callback(DB_ENV *, u_int32_t, void *);
-void usage(const char *);
 
-#define	CACHESIZE (10 * 1024 * 1024)
-#define	DATABASE "quote.db"
-#define	SLEEPTIME 3
+/* Usage function */
+static void
+usage()
+{
+    fprintf(stderr, "usage: %s ", progname);
+    fprintf(stderr, "-h home -l host:port -n nsites\n");
+    fprintf(stderr, "\t\t[-r host:port][-p priority]\n");
+    fprintf(stderr, "where:\n");
+    fprintf(stderr, "\t-h identifies the environment home directory ");
+    fprintf(stderr, "(required).\n");
+    fprintf(stderr, "\t-l identifies the host and port used by this ");
+    fprintf(stderr, "site (required).\n");
+    fprintf(stderr, "\t-n identifies the number of sites in this ");
+    fprintf(stderr, "replication group (required).\n");
+    fprintf(stderr, "\t-r identifies another site participating in "); 
+    fprintf(stderr, "this replication group\n");
+    fprintf(stderr, "\t-p identifies the election priority used by ");
+    fprintf(stderr, "this replica.\n");
+    exit(EXIT_FAILURE);
+} 
 
 int
 main(int argc, char *argv[])
 {
     DB_ENV *dbenv;
-    APP_DATA my_app_data;
     extern char *optarg;
     const char *home;
     char ch, *host, *portstr;
     int local_is_set, ret, totalsites;
     u_int16_t port;
+    /* Used to track whether this is a replica or a master. */
+    APP_DATA my_app_data;
 
     dbenv = NULL;
     ret = local_is_set = totalsites = 0;
     home = NULL;
 
-    /* By default, assume this site is not a master. */
-    my_app_data.is_master = 0;
+    my_app_data.is_master = 0;  /* Assume that we start as a replica */
 
     if ((ret = create_env(progname, &dbenv)) != 0)
 	goto err;
@@ -74,6 +92,10 @@ main(int argc, char *argv[])
 
     /* Default priority is 100. */
     dbenv->rep_set_priority(dbenv, 100);
+    /* Permanent messages require at least one ack. */
+    dbenv->repmgr_set_ack_policy(dbenv, DB_REPMGR_ACKS_ONE);
+    /* Give 500 microseconds to receive the ack. */
+    dbenv->rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);
 
     /* Collect the command line options. */
     while ((ch = getopt(argc, argv, "h:l:n:p:r:")) != EOF)
@@ -122,21 +144,18 @@ main(int argc, char *argv[])
 	    break;
 	case '?':
 	default:
-	    usage(progname);
+	    usage();
 	}
 
     /* Error check command line. */
-    if (home == NULL || !local_is_set)
-	usage(progname);
+    if (home == NULL || !local_is_set || !totalsites)
+	usage();
 
     if ((ret = env_init(dbenv, home)) != 0)
 	goto err;
 
     if ((ret = dbenv->repmgr_start(dbenv, 3, DB_REP_ELECTION)) != 0)
 	goto err;
-
-    /* Sleep to give ourselves time to find a master. */
-    sleep(5);
 
     if ((ret = doloop(dbenv)) != 0) {
 	dbenv->err(dbenv, ret, "Application failed");
@@ -181,14 +200,24 @@ env_init(DB_ENV *dbenv, const char *home)
     (void)dbenv->set_cachesize(dbenv, 0, CACHESIZE, 0);
     (void)dbenv->set_flags(dbenv, DB_TXN_NOSYNC, 1);
 
-    flags = DB_CREATE | DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL |
-	DB_INIT_REP | DB_INIT_TXN | DB_RECOVER | DB_THREAD;
+    flags = DB_CREATE |
+	DB_INIT_LOCK | 
+	DB_INIT_LOG |
+	DB_INIT_MPOOL |
+	DB_INIT_REP |
+	DB_INIT_TXN |
+	DB_RECOVER |
+	DB_THREAD;
     if ((ret = dbenv->open(dbenv, home, flags, 0)) != 0)
 	dbenv->err(dbenv, ret, "can't open environment");
     return (ret);
 }
 
-/* Handle replication events of interest to this application. */
+/*
+ * A callback used to determine whether the local environment is a
+ * replica or a master. This is called by the Replication Manager
+ * when the local environment changes state.
+ */
 static void
 event_callback(DB_ENV *dbenv, u_int32_t which, void *info)
 {
@@ -279,6 +308,7 @@ doloop(DB_ENV *dbenv)
 	    case DB_REP_HANDLE_DEAD:
 		(void)dbp->close(dbp, DB_NOSYNC);
 		dbp = NULL;
+                dbenv->errx(dbenv, "Got a dead replication handle");
 		continue;
 	    default:
 		dbp->err(dbp, ret, "Error traversing data");
@@ -369,24 +399,5 @@ print_stocks(DB *dbp)
     default:
 	return (ret);
     }
-}
-
-/*
- * The supported flags are:
- * -h home directory (required)
- * -l host:port (required; l stands for local)
- * -r host:port (optional; r stands for remote; any number of these
- *    may be specified)
- * -n nsites (optional; number of sites in replication group; defaults
- *    to 0 to try to dynamically compute nsites)
- * -p priority (optional; defaults to 100)
- */
-void
-usage(const char *progname)
-{
-    fprintf(stderr, "usage: %s ", progname);
-    fprintf(stderr, "-h home -l host:port [-r host:port]%s",
-	"[-n nsites][-p priority]\n");
-    exit(EXIT_FAILURE);
 }
 

@@ -53,13 +53,13 @@ ElementRef(iterator_type *pitr=NULL)
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage"></div>
           <p>Constructor. </p>
-          <p>This constructor can optionally accept an iterator to associate its wrapped element with the underlying key/data pair in the database. If no iterator is specified, this object is only a wrapper and can't access the database. </p>
+          <p>If the pitr parameter is NULL or the default value is used, the object created is a simple wrapper and not connected to a container. If a valid iterator parameter is passed in, the wrapped element will be associated with the matching key/data pair in the underlying container. </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1576196"></a>
+                <h4 class="title"><a id="id1568632"></a>
 Parameters</h4>
               </div>
             </div>
@@ -68,7 +68,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1576358"></a>
+                  <h5 class="title"><a id="id1570476"></a>
  pitr </h5>
                 </div>
               </div>
@@ -82,14 +82,14 @@ ElementRef(const ddt &amp;dt)
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage"></div>
           <p>Constructor. </p>
-          <p>This constructor initializes an <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
- wrapper without an iterator, thus it can only be used to wrap data element in memory, can't access database. </p>
+          <p>Initializes an <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+ wrapper without an iterator. It can only be used to wrap a data element in memory, it can't access an unerlying database. </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1576083"></a>
+                <h4 class="title"><a id="id1570556"></a>
 Parameters</h4>
               </div>
             </div>
@@ -98,7 +98,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1576616"></a>
+                  <h5 class="title"><a id="id1570213"></a>
  dt </h5>
                 </div>
               </div>
@@ -112,14 +112,13 @@ ElementRef(const self &amp;other)
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage"></div>
           <p>Copy constructor. </p>
-          <p>This constructor initializes an <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
- instance from an existing one, copying its wrapped element, and if the "other" object has a valid iterator, the constructor will duplicate the iterator and thus the underlying cursor, so that the new instance can access the database. </p>
+          <p>The constructor takes a "deep" copy. The created object will be identical to, but independent from the original object. </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1575900"></a>
+                <h4 class="title"><a id="id1570260"></a>
 Parameters</h4>
               </div>
             </div>
@@ -128,7 +127,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1576651"></a>
+                  <h5 class="title"><a id="id1570373"></a>
  other </h5>
                 </div>
               </div>
@@ -141,7 +140,7 @@ Parameters</h4>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1576629"></a>
+              <h3 class="title"><a id="id1570341"></a>
 Class</h3>
             </div>
           </div>

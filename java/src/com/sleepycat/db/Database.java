@@ -1221,6 +1221,65 @@ The new name of the database or file.
     }
 
     /**
+    Sorts a DatabaseEntry with multiple matching key/data pairs.
+    <p>
+    If specified, the application specific btree comparison and duplicate 
+    comparison functions will be used.
+    <p>
+    @param entries
+    A MultipleKeyDataEntry that contains matching pairs of key/data items,
+    the sorted entries will be returned in the original entries object.
+    */
+    public static void sortMultipleKeyData(MultipleKeyDataEntry entries)
+        throws DatabaseException {
+        Database.sortMultiple(entries, null);
+    }
+
+    /**
+    Sorts a DatabaseEntry with multiple key or data pairs.
+    <p>
+    If specified, the application specific btree comparison function will be
+    used.
+    <p>
+    @param entries
+    A MultipleDataEntry that contains multiple key or data items,
+    the sorted entries will be returned in the original entries object.
+    */
+    public static void sortMultipleKeyOrData(MultipleDataEntry entries)
+        throws DatabaseException {
+        Database.sortMultiple(entries, null);
+    }
+
+    /**
+    Sorts two DatabaseEntry objects with multiple key and data pairs.
+    <p>
+    If specified, the application specific btree comparison and duplicate 
+    comparison functions will be used.
+    <p>
+    The key and data parameters must contain "pairs" of items. That is the n-th
+    entry in keys corresponds to the n-th entry in datas.
+    @param keys
+    A MultipleDataEntry that contains multiple key items, the sorted entries
+    will be returned in the original entries object.
+    @param datas
+    A MultipleDataEntry that contains multiple data items, the sorted entries
+    will be returned in the original entries object.
+    */
+    public static void sortMultipleKeyAndData(
+        MultipleDataEntry keys, MultipleDataEntry datas)
+        throws DatabaseException {
+        Database.sortMultiple(keys, datas);
+    }
+
+    private static void sortMultiple(MultipleEntry keys, MultipleEntry datas)
+        throws DatabaseException {
+        final Db db = DatabaseConfig.DEFAULT.createDatabase(null);
+        db.sort_multiple(keys, datas);
+        db.close(0);
+    }
+    	
+
+    /**
     Flush any cached information to disk.
     <p>
     If the database is in memory only, this method has no effect and

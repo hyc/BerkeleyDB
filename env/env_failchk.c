@@ -54,6 +54,7 @@ __env_failchk_pp(dbenv, flags)
 		return (__db_ferr(env, "DB_ENV->failchk", 0));
 
 	ENV_ENTER(env, ip);
+	FAILCHK_THREAD(env, ip);	/* mark as failchk thread */
 	ret = __env_failchk_int(dbenv);
 	ENV_LEAVE(env, ip);
 	return (ret);
@@ -354,13 +355,19 @@ __env_set_state(env, ipp, state)
 #endif
 	}
 
-#ifdef DIAGNOSTIC
-	/* A check to ensure the thread of control has been registered. */
+	/*
+	 * If ipp is not null,  return the thread control block if found.
+	 * Check to ensure the thread of control has been registered.
+	 */
 	if (state == THREAD_VERIFY) {
 		DB_ASSERT(env, ip != NULL && ip->dbth_state != THREAD_OUT);
+		if (ipp != NULL) {
+			if (ip == NULL) /* The control block wasnt found */
+				return (EINVAL);
+			*ipp = ip;
+		}
 		return (0);
 	}
-#endif
 
 	*ipp = NULL;
 	ret = 0;

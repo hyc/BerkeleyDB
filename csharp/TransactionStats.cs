@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -25,7 +31,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Number of aborted transactions 
         /// </summary>
-        public long Aborted { get { return st.st_naborts; } }
+        public ulong Aborted { get { return st.st_naborts; } }
         /// <summary>
         /// Number of active transactions 
         /// </summary>
@@ -33,11 +39,11 @@ namespace BerkeleyDB {
         /// <summary>
         /// Number of begun transactions 
         /// </summary>
-        public long Begun { get { return st.st_nbegins; } }
+        public ulong Begun { get { return st.st_nbegins; } }
         /// <summary>
         /// Number of committed transactions 
         /// </summary>
-        public long Committed { get { return st.st_ncommits; } }
+        public ulong Committed { get { return st.st_ncommits; } }
         /// <summary>
         /// LSN of the last checkpoint 
         /// </summary>
@@ -65,15 +71,15 @@ namespace BerkeleyDB {
         /// <summary>
         /// Region lock granted without wait. 
         /// </summary>
-        public long RegionLockNoWait { get { return st.st_region_nowait; } }
+        public ulong RegionLockNoWait { get { return st.st_region_nowait; } }
         /// <summary>
         /// Region size. 
         /// </summary>
-        public uint RegionSize { get { return st.st_regsize; } }
+        public ulong RegionSize { get { return (ulong)st.st_regsize.ToInt64(); } }
         /// <summary>
         /// Region lock granted after wait. 
         /// </summary>
-        public long RegionLockWait { get { return st.st_region_wait; } }
+        public ulong RegionLockWait { get { return st.st_region_wait; } }
         /// <summary>
         /// Number of restored transactions after recovery.
         /// </summary>

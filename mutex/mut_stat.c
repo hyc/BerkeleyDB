@@ -432,6 +432,7 @@ __mutex_print_id(alloc_id)
 	case MTX_MPOOL_REGION:		return ("mpool region");
 	case MTX_MUTEX_REGION:		return ("mutex region");
 	case MTX_MUTEX_TEST:		return ("mutex test");
+	case MTX_REPMGR:		return ("replication manager");
 	case MTX_REP_CHKPT:		return ("replication checkpoint");
 	case MTX_REP_DATABASE:		return ("replication database");
 	case MTX_REP_EVENT:		return ("replication event");

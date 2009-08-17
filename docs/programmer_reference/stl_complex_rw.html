@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
-    <link rel="prev" href="stl_primitive_rw.html" title="Store and Retrieve data of primitive types" />
-    <link rel="next" href="stl_persistence.html" title="Dbstl Persistence" />
+    <link rel="up" href="stl.html" title="Chapter 7. Standard Template Library API" />
+    <link rel="prev" href="stl_primitive_rw.html" title="Working with primitive types" />
+    <link rel="next" href="stl_persistence.html" title="Dbstl persistence" />
   </head>
   <body>
     <div class="navheader">
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stl_primitive_rw.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <th width="60%" align="center">Chapter 7. Standard Template Library API</th>
           <td width="20%" align="right"> <a accesskey="n" href="stl_persistence.html">Next</a></td>
         </tr>
       </table>
@@ -37,23 +37,17 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_complex_rw.html#id1594224">
-Storing Varying Length Objects
-</a>
+              <a href="stl_complex_rw.html#id1600512">Storing varying length objects</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_complex_rw.html#id1594465">
-Storing Arbitrary Sequences.
-
-</a>
+              <a href="stl_complex_rw.html#id1601013">Storing arbitrary sequences</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="stl_complex_rw.html#id1594604">Notes
-	</a>
+              <a href="stl_complex_rw.html#id1601305">Notes</a>
             </span>
           </dt>
         </dl>
@@ -62,19 +56,14 @@ Storing Arbitrary Sequences.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1594224"></a>
-Storing Varying Length Objects
-</h3>
+              <h3 class="title"><a id="id1600512"></a>Storing varying length objects</h3>
             </div>
           </div>
         </div>
         <p>
-
-If you have a structure like this: 
+    A structure like this: 
 </p>
-        <pre class="programlisting">
-
-class SMSMsg
+        <pre class="programlisting">class SMSMsg
 {
 public:
 	size_t mysize;
@@ -82,229 +71,277 @@ public:
 	size_t szmsg;
 	int to;
 	char msg[1];
-};
-
-</pre>
+};  </pre>
         <p>
-And the msg is a varying length string, and you want to store it into 
-a db_vector container, you can't simply use a db_vector&lt;SMSMsg&gt; without any
-configurations to store this type of objects because internally dbstl by default 
-uses sizeof operator to get the size of an object and uses memcpy to copy
-objects, which is not suitable for this usecase.
-
-There is example code to use this feature in TestAssoc::test_arbitrary_object_storage
-method of dbstl test suite.
+    with a varying length string in <code class="literal">msg</code> cannot simply be
+    stored in a <code class="literal">db_vector&lt;SMSMsg&gt;</code> without some
+    configuration on your part. This is because, by default, dbstl uses the
+    <span class="bold"><strong>sizeof()</strong></span> operator to get the size of
+    an object and then <code class="function">memcpy()</code> to copy the object. This
+    process is not suitable for this use-case as it will fail to capture the
+    variable length string contained in <code class="literal">msg</code>.
 </p>
         <p>
-There are currently two ways to store this kind of objects:
-</p>
-        <p>
-1. Register callback functions into dbstl to measure object size, and do marshal/un-marshal.
-
-</p>
-        <p>
-You need to register the three function callbacks of these types:
-</p>
-        <div class="itemizedlist">
-          <ul type="disc">
-            <li>
-              <p>
-typedef void (*ElemRstoreFunct)(T&amp; dest, const void *srcdata);
-	</p>
-              <p>
-Your callback of this type should update dest using data in srcdata, i.e. unmarshalling. 
-srcdata contains the chunk of memory that an object of type T resides in, which
-was marshalled by the ElemCopyFunct type of function below.
-By default we use dest = *((T*)srcdata); to do the assignment, assuming the chunk of
-memory is just the memory layout of the object.
-
-	</p>
-            </li>
-            <li>
-              <p>
-typedef size_t (*ElemSizeFunct)(const T&amp; elem);
-</p>
-              <p>
-Your callback of this type should measure the size in bytes of object elem's 
-parts to be stored, and return the size.
-By default we use sizeof(elem) to calculate.
-
-</p>
-            </li>
-            <li>
-              <p>
-typedef void (*ElemCopyFunct)(void *dest, const T&amp;elem);
-</p>
-              <p>
-Your callback of this type should arrange all data of elem to be stored into
-the chunk of memory refered by dest. That memory is big enough because it
-is computed calling your registered size function in above item.
-By default we use memcpy(dest, &amp;elem, sizeof(elem)); to copy.
-
-</p>
-            </li>
-          </ul>
-        </div>
-        <p>
-If any of the three types of callbacks are not registered, the default version
-is used. You need to call 
-DbstlElemTraits&lt;T&gt;::instance()-&gt;set_size_function()/set_copy_function()/
-set_restore_function() to register these callbacks. And you will use SMSMsg as the
-real type parameter for the type parameter T.
-
-</p>
-        <p>
-This technique can be used to store objects of varying length and/or objects
-which don't reside in a continous memory chunk, e.g. objects containing
-a pointer which refers another object or a string, etc. And if you use this
-technique, you can use the container/iterator in exactly the same way as
-the plain objects which reside on consecutive chunk of memory and are of identical size.
-</p>
-        <p>
-2. Use a DbstlDbt wrapper object 
-
-</p>
-        <p>
-In this case, when you want to store into db_vector, you need a 
-db_vector&lt;DbstlDbt&gt; container. 
-
-DbstlDbt derives from DB C++ API's Dbt class, but it can manage its referenced 
-memory properly and release it upon destruction, the memory it references is 
-supposed to be allocated via malloc/relloc functions.
-</p>
-        <p>
-Note that this way is not the best way, it exists only as an ultimate way to store 
-any chunk of bytes, since it falls back to the old way to store objects --- by packing an
-object into a Dbt object and pass the Dbt wrapper object to Berkeley DB API. When you are
-storing some raw bytes of no type, e.g. a bitmap, you may choose to use this 
-way to store the bytes.
- 
-</p>
-        <p>
-Say you want to store an SMSMsg object into a db_vector&lt;SMSMsg&gt; container, 
-here is what you need to do:
+    There are currently two ways to store these kind of objects:
 </p>
         <div class="orderedlist">
           <ol type="1">
-            <li>	
-Wrap the SMSMsg object into a DbstlDbt object.
-
-</li>
-            <li>	
-Store the DbstlDbt object into db_vector&lt;DbstlDbt&gt; container. 
-			
-</li>
-            <li>	
-When reading from the 
-container, you are storing/retrieving a DbstlDbt object, whose "data" field points
-to the SMSMsg object located in a consecutive chunk of memory. So you have to
-unmalshal this chunk of memory into an SMSMsg object by yourself. 
-
-</li>
-            <li>	
-The memory referenced by DbstlDbt::data will
-be free'ed automatically, don't free them by yourself.
-</li>
+            <li>
+              <p>
+             Register callback functions with dbstl that are used to measure an object's size,
+             and then marshal/unmarshal the object.
+        </p>
+            </li>
+            <li>
+              <p>
+            Use a <code class="classname">DbstlDbt</code> wrapper object.
+        </p>
+            </li>
           </ol>
         </div>
-        <p>
-Do not use ElementHolder when you want to store objects of a class, otherwise you
-can't access the members of the object via (*iter).member or iter-&gt;member expressions.
-In this case don't specify the second type parameter at all, and thus the default
-ElementRef&lt;ddt&gt; will be used. 
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="id1600651"></a>Storing by marshaling objects</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+        One way to store an object that contains variable-sized fields is
+        to marshall all of the object's data into a single contiguous area
+        in memory, and then store the contents of that buffer. This means that upon retrieval, the 
+        contents of the buffer must be unmarshalled. To do these things,
+        you must register three callback functions:
+    </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+        <code class="function">typedef void (*ElemRstoreFunct)(T&amp; dest, const void *srcdata);</code>
+	</p>
+                <p>
+        This callback is used to unmarshal an object, updating <span class="bold"><strong>dest</strong></span>
+        using data found in <span class="bold"><strong>srcdata</strong></span>.  The data in
+        <span class="bold"><strong>srcdata </strong></span> contains the chunk of memory into which the
+        object was originally marshalled.  The default unmarshalling function simply performs a cast
+        (for example, <code class="literal">dest = *((T*)srcdata)</code>), which assumes the  
+        <span class="bold"><strong>srcdata</strong></span> simply points to the memory layout of the object.
+	</p>
+              </li>
+              <li>
+                <p>
+        <code class="function">typedef size_t (*ElemSizeFunct)(const T&amp; elem);</code>
+    </p>
+                <p>
+        This callback returns the size in bytes needed to store the  
+        <span class="bold"><strong>elem</strong></span> object. By default this function
+        simply uses <span class="bold"><strong>sizeof(elem)</strong></span> to determine 
+        the size of <span class="bold"><strong>elem</strong></span>.
+    </p>
+              </li>
+              <li>
+                <p>
+        <code class="function">typedef void (*ElemCopyFunct)(void *dest, const T&amp;elem);</code>
+    </p>
+                <p>
+        This callback is used to arrange all data contained by <span class="bold"><strong>elem</strong></span>
+        into the chunk of memory to which <span class="bold"><strong>dest</strong></span> refers.  The size of
+        <span class="bold"><strong>dest</strong></span> is set by the <code class="function">ElemSizeFunct</code>
+        function, discussed above.  The default marshalling function simply uses
+        <code class="function">memcpy()</code> to copy <span class="bold"><strong>elem</strong></span> to 
+        <span class="bold"><strong>dest</strong></span>.
+    </p>
+              </li>
+            </ul>
+          </div>
+          <p>
+    The <code class="function">DbstlElemTraits&lt;SMSMsg&gt;::instance()-&gt;set_size_function()</code>,
+    <code class="function">set_copy_function()</code> and <code class="function">set_restore_function()</code> methods
+    are used to register these callback functions.  If a callback is not registered, its
+    default function is used.
 </p>
-        <p>
-ElementRef inherits from ddt, so you can use the above 
-expressions to access the stored objects' members, and use *iter just as if it is 
-the object you stored(actually it is ElementRef&lt;ddt&gt; object, whose "base class" part
-is the object you stored). There are a few data members and member functions in 
-ElementRef, which all start with "_DB_STL_" to avoid name clashes, thus do not 
-use names prefixing "_DB_STL_" in your
-classes whose instances may be stored into dbstl containers, in
-case members in your class clashes with those of ElementRef.
+          <p>
+    By providing non-default implementations of the callbacks described here, you can store objects
+    of varying length and/or objects which do not reside in a continuous memory chunk — for
+    example, objects containing a pointer which refers another object, or a string, and so forth.
+    As a result, containers/iterators can manage variable length objects in the same as they would
+    manage objects that reside in continuous chunks of memory and are of identical size.
 </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="id1600819"></a>Using a <code class="classname">DbstlDbt</code> wrapper object</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+    To use a <code class="classname">DbstlDbt</code> wrapper object to store objects of variable length, a
+    <code class="literal">db_vector&lt;DbstlDbt&gt;</code> container is used to store complex objects in a
+    <code class="classname">db_vector</code>. <code class="classname">DbstlDbt</code> derives from DB C++ API's
+    <code class="classname">Dbt</code>class, but can manage its referenced memory properly and release it
+    upon destruction. The memory referenced by <code class="classname">DbstlDbt</code> objects is required
+    to be allocated using the <code class="function">malloc()</code>/<code class="function">realloc()</code> functions
+    from the standard C library.
+</p>
+          <p>
+    Note that the use of <code class="classname">DbstlDbt</code> wrapper class is not ideal. It exists only
+    to allow raw bytes of no specific type to be stored in a container. 
+</p>
+          <p>
+    To store an <code class="classname">SMSMsg</code> object into a <code class="literal">db_vector&lt;DbstlDbt&gt;</code>
+    container using a <code class="classname">DbstlDbt</code> object:
+</p>
+          <div class="orderedlist">
+            <ol type="1">
+              <li>	
+    Wrap the <code class="classname">SMSMSg</code> object into a <code class="classname">DbstlDbt</code> object, 
+    then marshal the SMSMsg object properly into the memory chunk referenced by 
+    <code class="methodname">DbstlDbt::data</code>.
+</li>
+              <li>	
+    Store the <code class="classname">DbstlDbt</code> object into a <code class="literal">db_vector&lt;DbstlDbt&gt;</code> 
+    container.  The bytes in the memory chunk referenced by the <code class="classname">DbstlDbt</code> object's
+    <span class="bold"><strong>data</strong></span> member are stored in the
+    <code class="literal">db_vector&lt;DbstlDbt&gt;</code> container.
+</li>
+              <li>	
+    Reading from the container returns a <code class="classname">DbstlDbt</code> object whose 
+    <span class="bold"><strong>data</strong></span> field points to the <code class="classname">SMSMsg</code> object 
+    located in a continuous chunk of memory. The application needs to perform its own unmarshalling.
+</li>
+              <li>	
+    The memory referenced by <code class="literal">DbstlDbt::data</code> is freed automatically, 
+    and so the application should not attempt to free the memory.
+</li>
+            </ol>
+          </div>
+          <p>
+    <code class="classname">ElementHolder</code> should not be used to store objects of a class because it
+    doesn't support access to object members using <span class="bold"><strong>(*iter).member</strong></span>
+    or  <span class="bold"><strong>iter-&gt;member</strong></span> expressions. In this case,  the default
+    <code class="literal">ElementRef&lt;ddt&gt;</code> is used automatically.
+</p>
+          <p>
+    <code class="classname">ElementRef</code> inherits from <code class="classname">ddt</code>, which allows
+    <span class="bold"><strong>*iter</strong></span> to return the object stored in the container.
+    (Technically it is an <code class="classname">ElementRef&lt;ddt&gt; object</code>, whose "base class"
+    part is the object you stored). There are a few data members and member functions in
+    <code class="classname">ElementRef</code>, which all start with <code class="literal">_DB_STL_</code>.  To avoid
+    potential name clashes, applications should not use names prefixing <code class="literal">_DB_STL_</code>
+    in classes whose instances may be stored into dbstl containers.
+</p>
+          <p>
+    Example code demonstrating this feature can be found in the
+    <code class="methodname">TestAssoc::test_arbitrary_object_storage</code> method, which can be located
+    in the dbstl test suite.
+</p>
+        </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1594465"></a>
-Storing Arbitrary Sequences.
-
-</h3>
+              <h3 class="title"><a id="id1601013"></a>Storing arbitrary sequences</h3>
             </div>
           </div>
         </div>
         <p>
-A sequence is a group of related objects, like an array, a string, etc. With proper callback functions
-registered, you can store sequences of any structure, e.g. arraies, linked-lists, etc, into Berkeley DB via dbstl, 
-and each object can be complex objects, i.e. objects not located on a continous memory chunk.
-Though when retrieved from the database, e.g. the sequence cached in iterators or got via container calls 
-reside in the same memory chunk as that generated by the sequence copy function when storing the sequence.
+    A sequence is a group of related objects, such as an array, a string, and so forth. 
+    You can store sequences of any structure using dbstl, so long as you implement and register the
+    proper callback functions. By using these callbacks, each object in the sequence can be a
+    complex object with data members that are all not stored in a continuous memory chunk.
 </p>
         <p>
-For example, you have a type RGB:
-
-struct RGB{char r, g, b, bright;}; 
-
-and an array of RGB objects : RGB rgbs[32]; 
-and you want to store an array into one key/data pair of a db_map container.
-
+    Note that when using these callbacks, when you retrieve a stored sequence from the database, the
+    entire sequence will reside in a single continuous block of memory with the same layout as that
+    constructed by your sequence copy function.
 </p>
         <p>
-Following is what you need to do:
+    For example, given a type RGB:
+</p>
+        <pre class="programlisting">
+struct RGB{char r, g, b, bright;};  </pre>
+        <p>
+    and an array of RGB objects, the following steps describe how to store an array into one
+    key/data pair of a <code class="classname">db_map</code> container.
 </p>
         <div class="orderedlist">
           <ol type="1">
             <li>
-Use a db_map&lt;int, RGB *, ElementHolder&lt;RGB *&gt; &gt; type of container.
+    Use a <code class="classname">db_map&lt;int, RGB *, ElementHolder&lt;RGB *&gt; &gt;</code> container.
 </li>
             <li>
-Define two functions of type 
-<p>
-typedef size_t (*SequenceLenFunct)(const RGB*); and 
-
-</p><p>
-A SequenceLenFunct function is a function that returns the number of objects
-in the sequence. It is called when inserting into or reading from the database, 
-so there must be enough information in the sequence itself to enable 
-SequenceLenFunct function to tell how many objects are in the sequence. 
-The char* and wchar_t* strings uses a '\0' special character to do this,
-I will use a RGB(0, 0, 0, 0) to denote the end of the sequence. Note that it is not
-required to use a trailing object with special value, i.e. '\0' or RGB(0, 0, 0, 0) in 
-the sequence, as long as your SequenceLenFunct function can figure out the length of
-the sequence, it is OK.
-
-</p><p>
-typedef void (*SequenceCopyFunct)(RGB*dest, const RGB*src); 
-</p><p>
-SequenceCopyFunct is a function that copies objects from sequence src into
-memory chunk dest. It knows exactly the structure of the sequence src, thus knows how to copy all of them
-to the dest memory chunk. And if the objects in the sequence do not reside in a continous memory chunk, this function
-will also need to marshal each of them into the dest memory chunk.
-
-</p><p>
-The objects will reside on the continous memory chunk
-refered by dest and dest is large enough because we called the SequenceLenFunct
-function to figure out the number of elements in the sequence, and optionally called
-ElemSizeFunct function to determine the size in bytes of each 
-instance of the sequence, thus we know the entire size of memory chunk for the sequence. 
-Though the ElemSizeFunct function is not needed in this example because RGB
-is a simple fixed length type, sizeof operator is sufficient.
-</p></li>
+              <p>
+        Define two functions. The first returns the number of objects in a sequence, the second that
+        copies objects from a sequence to a defined destination in memory:
+    </p>
+              <pre class="programlisting">typedef size_t (*SequenceLenFunct)(const RGB*);  </pre>
+              <p>
+    and
+</p>
+              <pre class="programlisting"> typedef void (*SequenceCopyFunct)(RGB*dest, const RGB*src);  </pre>
+            </li>
             <li>
 Call DbstlElemTraits&lt;RGB&gt;::set_sequence_len_function()/set_sequence_copy_function()
 to register them as callbacks. 
 </li>
           </ol>
         </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="id1601137"></a>The <code class="function">SequenceLenFunct</code> function</h4>
+              </div>
+            </div>
+          </div>
+          <pre class="programlisting">typedef size_t (*SequenceLenFunct)(const RGB*);  </pre>
+          <p>
+    A <code class="function">SequenceLenFunct</code> function returns the number of objects in a sequence. It
+    is called when inserting into or reading from the database, so there must be enough information
+    in the sequence itself to enable the <code class="function">SequenceLenFunct</code> function to tell how many
+    objects the sequence contains.  The <code class="literal">char*</code> and <code class="literal">wchar_t*</code>
+    strings use a <code class="literal">'\0'</code> special character to do this. For example, RGB(0, 0, 0, 0)
+    could be used to denote the end of the sequence.  Note that for your implementation of this 
+    callback, you are not required to use a
+    trailing object with a special value like <code class="literal">'\0'</code> or 
+    <code class="literal">RGB(0, 0, 0, 0)</code> to denote the end of the sequence. You are free to use
+    what mechanism you want in your 
+    <code class="function">SequenceLenFunct</code> function implementation to figure out the length of the sequence.
+</p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="id1601134"></a>The <code class="function">SequenceCopyFunct</code> function</h4>
+              </div>
+            </div>
+          </div>
+          <pre class="programlisting"> typedef void (*SequenceCopyFunct)(RGB*dest, const RGB*src); </pre>
+          <p>
+    <code class="function">SequenceCopyFunct</code> copies objects from the sequence 
+    <span class="bold"><strong>src</strong></span> into memory chunk <span class="bold"><strong>dest</strong></span>. 
+    If the objects in the sequence do not reside in a continuous memory chunk, this function must
+    marshal each object in the sequence into the <span class="bold"><strong>dest</strong></span> memory chunk.
+</p>
+          <p>
+    The sequence objects will reside in the continuous memory chunk referred to by <span class="bold"><strong>dest</strong></span>, which has been sized by <code class="classname">SequenceLenFunct</code>
+    and <code class="classname">ElemSizeFunct</code> if available (which is when objects in the sequence are
+    of varying lengths). <code class="classname">ElemSizeFunct</code> function is not needed in this example
+    because <span class="bold"><strong>RGB</strong></span> is a simple fixed length type, the
+    <code class="literal">sizeof()</code> operator is sufficient to return the size of the sequence.
+</p>
+        </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1594604"></a>Notes
-	</h3>
+              <h3 class="title"><a id="id1601305"></a>Notes</h3>
             </div>
           </div>
         </div>
@@ -312,36 +349,36 @@ to register them as callbacks.
           <ul type="disc">
             <li>
               <p>
-Note the get and set functions of this class are not
-protected by any mutices, so when you are using multiple threads to
-access the function pointers, you must make sure the callback functions are registered to
-the singleton of this class before any retrieval of the callback function pointers, and
-certain isolation may be required among multiple threads. The best way is to register
-all callback funciton pointers in a single thread before making use of the any containers.
-</p>
+            The get and set functions of this class are not protected by any mutexes.  When using
+            multiple threads to access the function pointers, the callback functions must be
+            registered to the singleton of this class before any retrieval of the callback function
+            pointers. Isolation may also be required among multiple threads. The best way is to
+            register all callback function pointers in a single thread before making use of the any
+            containers.
+        </p>
             </li>
             <li>
               <p>
-If an object in a sequence is not of identical sizes, or
-is not located in a consecutive chunk of memory, you also need to register the 
-DbstlElemTraits&lt;RGB&gt;::ElemSizeFunct type of function to measure each 
-object size. And if this size function is set, it will also be used when
-allocating memory space.
-
-There is example code to use this feature in TestAssoc::test_arbitray_sequence_storage of 
-dbstl test suite.
-
-</p>
+            If objects in a sequence are not of identical sizes, or are not located in a consecutive
+            chunk of memory, you also need to implement and register the
+            <code class="function">DbstlElemTraits&lt;&gt;::ElemSizeFunct</code> callback function to measure
+            the size of each object. When this function is registered, it is also used when
+            allocating memory space.
+        </p>
+              <p>
+            There is example code demonstrating the use this feature in 
+            <code class="methodname">TestAssoc::test_arbitray_sequence_storage()</code>, which is available
+            in the dbstl test suite.
+        </p>
             </li>
             <li>
               <p>
-A consequence of this capability of dbstl is that user can't store any pointer 
-value itself directly, since dbstl will think it is a sequence head pointer. You need to 
-convert pointer into long type and store it into a long type of container. And
-please note that storing pointer values is meaningless if the stored data is
-to be used across different runs of your application.
-
-</p>
+            A consequence of this dbstl feature is that you can not store a pointer value directly
+            because dbstl will think it is a sequence head pointer. Instead, you need to convert the
+            pointer into a <code class="literal">long</code> and then store it into a <code class="literal">long</code>
+            container. And please note that pointer values are probably meaningless if the stored
+            value is to be used across different application run times.
+        </p>
             </li>
           </ul>
         </div>
@@ -358,11 +395,11 @@ to be used across different runs of your application.
           <td width="40%" align="right"> <a accesskey="n" href="stl_persistence.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Store and Retrieve data of primitive types  </td>
+          <td width="40%" align="left" valign="top">Working with primitive types  </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Dbstl Persistence</td>
+          <td width="40%" align="right" valign="top"> Dbstl persistence</td>
         </tr>
       </table>
     </div>

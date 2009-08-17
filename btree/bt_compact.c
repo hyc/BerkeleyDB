@@ -69,7 +69,7 @@ static int __bam_truncate_internal __P((DB *,
 	} while (0)
 
 /*
- * __bam_compact -- compact a btree.
+ e __bam_compact -- compact a btree.
  *
  * PUBLIC: int __bam_compact __P((DB *, DB_THREAD_INFO *, DB_TXN *,
  * PUBLIC:     DBT *, DBT *, DB_COMPACT *, u_int32_t, DBT *));
@@ -88,7 +88,7 @@ __bam_compact(dbp, ip, txn, start, stop, c_data, flags, end)
 	DBT current, save_start;
 	DB_COMPACT save_data;
 	ENV *env;
-	u_int32_t factor;
+	u_int32_t factor, retry;
 	int deadlock, have_freelist, isdone, ret, span, t_ret, txn_local;
 
 #ifdef HAVE_FTRUNCATE
@@ -104,6 +104,7 @@ __bam_compact(dbp, ip, txn, start, stop, c_data, flags, end)
 	dbc = NULL;
 	factor = 0;
 	have_freelist = deadlock = isdone = ret = span = 0;
+	ret = retry = 0;
 
 #ifdef HAVE_FTRUNCATE
 	list = NULL;
@@ -221,6 +222,18 @@ no_free:
 			c_data->compact_deadlock++;
 			RESTORE_START;
 		}
+		/*
+		 * If we could not get a lock while holding an internal
+		 * node latched, commit the current local transaction otherwise
+		 * report a deadlock.
+		 */
+		if (ret == DB_LOCK_NOTGRANTED) {
+			if (txn_local || retry++ < 5)
+				ret = 0;
+			else
+				ret = DB_LOCK_DEADLOCK;
+		} else
+			retry = 0;
 
 		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 			ret = t_ret;
@@ -844,16 +857,22 @@ retry:	pg = NULL;
 		 * If we merged the parent, then we nolonger span.
 		 * Otherwise if we tried to merge the parent but would
 		 * block on one of the other leaf pages try again.
+		 * If we did not merge any records of the parent,
+		 * exit to commit any local transactions and try again.
 		 */
 		if (merged || ret == DB_LOCK_NOTGRANTED) {
 			if (merged)
 				pgs_done++;
+			else
+				goto done;
 			if (cp->csp->page == NULL)
 				goto deleted;
 			npgno = PGNO(pg);
 			next_recno = cp->recno;
 			goto next_page;
 		}
+		if (ret != 0)
+			goto err1;
 		PTRACE(dbc, "SMerge", PGNO(cp->csp->page), start, 0);
 
 		/* if we remove the next page, then we need its next locked */
@@ -2664,19 +2683,22 @@ __bam_savekey(dbc, next, start)
 	BOVERFLOW *bo;
 	BTREE_CURSOR *cp;
 	DB *dbp;
+	DB_LOCK lock;
 	ENV *env;
 	PAGE *pg;
 	RINTERNAL *ri;
 	db_indx_t indx, top;
-	db_pgno_t pgno;
+	db_pgno_t pgno, saved_pgno;
 	int ret, t_ret;
 	u_int32_t len;
 	u_int8_t *data;
+	int level;
 
 	dbp = dbc->dbp;
 	env = dbp->env;
 	cp = (BTREE_CURSOR *)dbc->internal;
 	pg = cp->csp->page;
+	ret = 0;
 
 	if (dbc->dbtype == DB_RECNO) {
 		if (next)
@@ -2688,9 +2710,12 @@ __bam_savekey(dbc, next, start)
 		     sizeof(cp->recno), &start->data, &start->ulen));
 
 	}
+	
 	bi = GET_BINTERNAL(dbp, pg, NUM_ENT(pg) - 1);
 	data = bi->data;
 	len = bi->len;
+	LOCK_INIT(lock);
+	saved_pgno = PGNO_INVALID;
 	/* If there is single record on the page it may have an empty key. */
 	while (len == 0) {
 		/*
@@ -2700,11 +2725,18 @@ __bam_savekey(dbc, next, start)
 		if (NUM_ENT(pg) == 0)
 			goto no_key;
 		pgno = bi->pgno;
+		level = LEVEL(pg);
 		if (pg != cp->csp->page &&
 		    (ret = __memp_fput(dbp->mpf,
 			 dbc->thread_info, pg, dbc->priority)) != 0) {
 			pg = NULL;
 			goto err;
+		}
+		if (level - 1 == LEAFLEVEL) {
+			TRY_LOCK(dbc, pgno, saved_pgno,
+			    lock, DB_LOCK_READ, retry);
+			if (ret != 0)
+				goto err;
 		}
 		if ((ret = __memp_fget(dbp->mpf, &pgno,
 		     dbc->thread_info, dbc->txn, 0, &pg)) != 0)
@@ -2745,6 +2777,8 @@ err:	if (pg != NULL && pg != cp->csp->page &&
 		 pg, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
+
+retry:	return (DB_LOCK_NOTGRANTED);
 }
 
 /*
@@ -2825,8 +2859,11 @@ new_txn:
 		sflag = CS_NEXT | CS_GETRECNO;
 		/* Grab info about the page and drop the stack. */
 		if (pgno != cp->root && (ret = __bam_savekey(dbc,
-		    pgno <= c_data->compact_truncate, &start)) != 0)
+		    pgno <= c_data->compact_truncate, &start)) != 0) {
+		    	if (ret == DB_LOCK_NOTGRANTED)
+				continue;
 			goto err;
+		}
 
 		if ((ret = __bam_stkrel(dbc, STK_NOLOCK)) != 0)
 			goto err;

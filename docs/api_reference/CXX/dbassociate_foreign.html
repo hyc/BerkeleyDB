@@ -76,7 +76,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631926"></a>Parameters</h3>
+              <h3 class="title"><a id="id1630702"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1630406"></a>callback</h4>
+                <h4 class="title"><a id="id1630727"></a>callback</h4>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631051"></a>flags</h4>
+                <h4 class="title"><a id="id1631371"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -175,8 +175,8 @@ DB::associate_foreign(Db *secondary,,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                     <code class="literal"><a id="associate_foreign_DB_FOREIGN_ABORT"></a>DB_FOREIGN_ABORT</code>
+                <p><a id="associate_foreign_DB_FOREIGN_ABORT"></a>
+                     <code class="literal">DB_FOREIGN_ABORT</code>
                    </p>
                 <p>
               Abort the deletion of a key in the foreign database and return DB_FOREIGN_CONFLICT
@@ -185,8 +185,8 @@ DB::associate_foreign(Db *secondary,,
             </p>
               </li>
               <li>
-                <p>
-                     <code class="literal"><a id="associate_foreign_DB_FOREIGN_CASCADE"></a>DB_FOREIGN_CASCADE</code>
+                <p><a id="associate_foreign_DB_FOREIGN_CASCADE"></a>
+                     <code class="literal">DB_FOREIGN_CASCADE</code>
                    </p>
                 <p>
               The deletion of a key in the foreign database will also delete that key from the
@@ -194,8 +194,8 @@ DB::associate_foreign(Db *secondary,,
             </p>
               </li>
               <li>
-                <p>
-                     <code class="literal"><a id="associate_foreign_DB_FOREIGN_NULLIFY"></a>DB_FOREIGN_NULLIFY</code>
+                <p><a id="associate_foreign_DB_FOREIGN_NULLIFY"></a>
+                     <code class="literal">DB_FOREIGN_NULLIFY</code>
                    </p>
                 <p>
               The deletion of a key in the foreign database will call the nullification function
@@ -209,7 +209,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1630848"></a>secondary</h4>
+                <h4 class="title"><a id="id1630111"></a>secondary</h4>
               </div>
             </div>
           </div>
@@ -224,7 +224,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631772"></a>Errors</h3>
+              <h3 class="title"><a id="id1630410"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -232,7 +232,7 @@ DB::associate_foreign(Db *secondary,,
                         The <code class="methodname">Db::associate_foreign()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -242,7 +242,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632286"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1630563"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -252,9 +252,7 @@ DB::associate_foreign(Db *secondary,,
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -266,7 +264,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1630982"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1629586"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -274,9 +272,7 @@ DB::associate_foreign(Db *secondary,,
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -285,7 +281,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632302"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1630241"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -302,7 +298,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632313"></a>Class</h3>
+              <h3 class="title"><a id="id1631278"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -314,7 +310,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632361"></a>See Also</h3>
+              <h3 class="title"><a id="id1630873"></a>See Also</h3>
             </div>
           </div>
         </div>

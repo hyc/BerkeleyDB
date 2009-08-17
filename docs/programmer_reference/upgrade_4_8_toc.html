@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 44. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</title>
+    <title>Chapter 45. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 44. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</th>
+          <th colspan="3" align="center">Chapter 45. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="changelog_4_7.html">Prev</a> </td>
@@ -29,7 +29,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="upgrade_4_8_toc"></a>Chapter 44. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</h2>
+            <h2 class="title"><a id="upgrade_4_8_toc"></a>Chapter 45. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</h2>
           </div>
         </div>
       </div>
@@ -55,165 +55,182 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="upgrade_4_8_disk.html">Release 4.8: upgrade requirements</a>
+              <a href="upgrade_4_8_fcntl.html">Release 4.8: Dropped Support for fcntl System Calls</a>
             </span>
           </dt>
           <dt>
             <span class="sect1">
-              <a href="changelog_4_8.html">Berkeley DB 4.8.11 Change Log</a>
+              <a href="upgrade_4_8_disk.html">Release 4.8: Upgrade Requirements</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="changelog_4_8.html">Berkeley DB 4.8.24 Change Log</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647465">
+                  <a href="changelog_4_8.html#id1655207">
+Changes between 4.8.21 and 4.8.24:</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_4_8.html#id1655245">
+Changes between 4.7 and 4.8.21:</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_4_8.html#id1655390">
 Database or Log File On-Disk Format Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647457">
+                  <a href="changelog_4_8.html#id1655202">
 New Features:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647710">
+                  <a href="changelog_4_8.html#id1655458">
 Database Environment Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647721">
+                  <a href="changelog_4_8.html#id1655519">
 Concurrent Data Store Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647757">
+                  <a href="changelog_4_8.html#id1655524">
 General Access Method Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647817">
+                  <a href="changelog_4_8.html#id1655222">
 Btree Access Method Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647793">
+                  <a href="changelog_4_8.html#id1655602">
 Hash Access Method Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647844">
+                  <a href="changelog_4_8.html#id1655658">
 Queue Access Method Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647911">
+                  <a href="changelog_4_8.html#id1655707">
 Recno Access Method Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647960">
+                  <a href="changelog_4_8.html#id1655742">
 C-specific API Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647986">
+                  <a href="changelog_4_8.html#id1655771">
 C++-specific API Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648000">
+                  <a href="changelog_4_8.html#id1655786">
 Java-specific API Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648023">
+                  <a href="changelog_4_8.html#id1655805">
 
  Direct Persistence Layer (DPL), Bindings and Collections API:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1647507">
+                  <a href="changelog_4_8.html#id1655220">
 
  Tcl-specific API Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648088">
+                  <a href="changelog_4_8.html#id1655889">
 RPC-specific Client/Server Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648135">
+                  <a href="changelog_4_8.html#id1655910">
 Replication Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648239">
+                  <a href="changelog_4_8.html#id1655895">
 XA Resource Manager Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648120">
+                  <a href="changelog_4_8.html#id1655962">
 Locking Subsystem Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648247">
+                  <a href="changelog_4_8.html#id1656025">
 Logging Subsystem Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648421">
+                  <a href="changelog_4_8.html#id1656187">
 Memory Pool Subsystem Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648485">
+                  <a href="changelog_4_8.html#id1656227">
 Mutex Subsystem Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648494">
+                  <a href="changelog_4_8.html#id1656308">
 Test Suite Changes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648520">
+                  <a href="changelog_4_8.html#id1656354">
 Transaction Subsystem Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648642">
+                  <a href="changelog_4_8.html#id1656455">
 Utility Changes:</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_4_8.html#id1648637">
+                  <a href="changelog_4_8.html#id1656473">
 Configuration, Documentation, Sample Application, Portability and Build Changes:</a>
                 </span>
               </dt>

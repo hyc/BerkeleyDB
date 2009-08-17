@@ -388,10 +388,11 @@ __bam_adjust(dbc, adjust)
 	for (epg = cp->sp; epg <= cp->csp; ++epg) {
 		h = epg->page;
 		if (TYPE(h) == P_IBTREE || TYPE(h) == P_IRECNO) {
-			if ((ret = __memp_dirty(mpf, &h,
-			    dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
-				return (ret);
+			ret = __memp_dirty(mpf, &h,
+			    dbc->thread_info, dbc->txn, dbc->priority, 0);
 			epg->page = h;
+			if (ret != 0)
+				return (ret);
 			if (DBC_LOGGING(dbc)) {
 				if ((ret = __bam_cadjust_log(dbp, dbc->txn,
 				    &LSN(h), 0, PGNO(h), &LSN(h),

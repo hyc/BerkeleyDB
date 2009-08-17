@@ -39,9 +39,11 @@ import com.sleepycat.persist.PrimaryIndex;
  * <ul>
  * <li>Any of the {@link <a href="Entity.html#simpleTypes">simple
  * types</a>}.</li>
- * <li>A composite key class containing one or more simple type fields.</li>
+ * <li>An enum type.</p>
+ * <li>A composite key class containing one or more simple type or enum
+ * fields.</li>
  * </ul>
- * <p>Enum types and array types are not allowed.</p>
+ * <p>Array types are not allowed.</p>
  *
  * <p>When using a composite key class, each field of the composite key class
  * must be annotated with {@link KeyField} to identify the storage order and

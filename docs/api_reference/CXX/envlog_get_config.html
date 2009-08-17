@@ -64,7 +64,7 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1685898"></a>Parameters</h3>
+              <h3 class="title"><a id="id1684488"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1686553"></a>which</h4>
+                <h4 class="title"><a id="id1685805"></a>which</h4>
               </div>
             </div>
           </div>
@@ -83,8 +83,8 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_DIRECT"></a>DB_LOG_DIRECT</code>
+                <p><a id="log_get_config_DB_LOG_DIRECT"></a>
+                  <code class="literal">DB_LOG_DIRECT</code>
             </p>
                 <p>
                      System buffering is turned off for Berkeley DB log files to avoid double
@@ -92,8 +92,8 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_DSYNC"></a>DB_LOG_DSYNC</code>
+                <p><a id="log_get_config_DB_LOG_DSYNC"></a>
+                  <code class="literal">DB_LOG_DSYNC</code>
             </p>
                 <p>
                  Berkeley DB is configured to flush log writes to the backing disk before
@@ -102,8 +102,8 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_AUTO_REMOVE"></a>DB_LOG_AUTO_REMOVE</code>
+                <p><a id="log_get_config_DB_LOG_AUTO_REMOVE"></a>
+                  <code class="literal">DB_LOG_AUTO_REMOVE</code>
             </p>
                 <p>
                  Berkeley DB automatically removes log files that are no
@@ -111,8 +111,8 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_IN_MEMORY"></a>DB_LOG_IN_MEMORY</code>
+                <p><a id="log_get_config_DB_LOG_IN_MEMORY"></a>
+                  <code class="literal">DB_LOG_IN_MEMORY</code>
             </p>
                 <p>
                  Transaction logs are maintained in memory rather than on disk.  This
@@ -121,8 +121,8 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_ZERO"></a>DB_LOG_ZERO</code>
+                <p><a id="log_get_config_DB_LOG_ZERO"></a>
+                  <code class="literal">DB_LOG_ZERO</code>
             </p>
                 <p>
                  All pages of a log file are zeroed when that log file is created. 
@@ -135,7 +135,7 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1686750"></a>onoffp</h4>
+                <h4 class="title"><a id="id1686208"></a>onoffp</h4>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1686614"></a>Class</h3>
+              <h3 class="title"><a id="id1686224"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -165,7 +165,7 @@ DbEnv::log_get_config(u_int32_t which, int *onoffp)</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1686899"></a>See Also</h3>
+              <h3 class="title"><a id="id1685980"></a>See Also</h3>
             </div>
           </div>
         </div>

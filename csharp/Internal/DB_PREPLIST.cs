@@ -56,7 +56,7 @@ internal class DB_PREPLIST : IDisposable {
     } 
         get {
           byte[] ret = new byte[DbConstants.DB_GID_SIZE];
-	  IntPtr cPtr = new IntPtr(swigCPtr.Handle.ToInt32() + 4);
+	  IntPtr cPtr = new IntPtr(swigCPtr.Handle.ToInt32() + IntPtr.Size);
 	  Marshal.Copy(cPtr, ret, 0, ret.Length);
 	  return ret;
         }

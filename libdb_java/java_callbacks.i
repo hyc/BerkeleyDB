@@ -568,6 +568,134 @@ static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 	return __dbj_am_compare(db, dbt1, dbt2, bt_compare_method);
 }
 
+#define DBT_COPYOUT(num)						\
+	if (dbt##num->app_data != NULL)					\
+		jdbt##num = ((DBT_LOCKED *)dbt##num->app_data)->jdbt;	\
+	else {								\
+		if ((jdbt##num = (*jenv)->NewObject(			\
+		    jenv, dbt_class, dbt_construct)) == NULL) {		\
+			ret = ENOMEM; /* An exception is pending */	\
+			goto err;					\
+		}							\
+		__dbj_dbt_copyout(jenv, dbt##num, &jdbtarr##num, jdbt##num);\
+		if (jdbtarr##num == NULL) {				\
+			ret = ENOMEM; /* An exception is pending */	\
+			goto err;					\
+		}							\
+	}
+
+#define DBT_COPIED_FREE(num)						\
+	if (dbt##num->app_data == NULL) {				\
+		(*jenv)->DeleteLocalRef(jenv, jdbtarr##num);		\
+		(*jenv)->DeleteLocalRef(jenv, jdbt##num);		\
+	}
+
+#define DBT_COPYIN_DATA(num)						\
+	ret = __dbj_dbt_copyin(jenv, &lresult, NULL, jdbt##num, 0);	\
+	memset(dbt##num, 0, sizeof (DBT));				\
+	if (ret == 0 && lresult.dbt.size != 0) {			\
+		/* If there's data, we need to take a copy of it.  */	\
+		dbt##num->size = lresult.dbt.size;			\
+		if ((ret = __os_umalloc(				\
+		    NULL, dbt##num->size, &dbt##num->data)) != 0)	\
+			goto err;					\
+		if ((ret = __dbj_dbt_memcopy(&lresult.dbt, 0,		\
+		    dbt##num->data, dbt##num->size,			\
+		    DB_USERCOPY_GETDATA)) != 0)				\
+			goto err;					\
+		__dbj_dbt_release(jenv, jdbt##num, &lresult.dbt, &lresult);\
+		(*jenv)->DeleteLocalRef(jenv, lresult.jarr);		\
+		F_SET(dbt##num, DB_DBT_APPMALLOC);			\
+	}
+
+static int __dbj_bt_compress(DB *db, const DBT *dbt1, const DBT *dbt2,
+    const DBT *dbt3, const DBT *dbt4, DBT *dbt5)
+{
+	int detach;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdb = (jobject)DB_INTERNAL(db);
+	jobject jdbt1, jdbt2, jdbt3, jdbt4, jdbt5;
+	jbyteArray jdbtarr1, jdbtarr2, jdbtarr3, jdbtarr4, jdbtarr5;
+	DBT_LOCKED lresult;
+	int ret;
+
+	if (jdb == NULL) {
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYOUT(1)
+	DBT_COPYOUT(2)
+	DBT_COPYOUT(3)
+	DBT_COPYOUT(4)
+	DBT_COPYOUT(5)
+
+	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
+	    bt_compress_method, jdbt1, jdbt2, jdbt3, jdbt4, jdbt5);
+
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYIN_DATA(5)
+
+err:	DBT_COPIED_FREE(1)
+	DBT_COPIED_FREE(2)
+	DBT_COPIED_FREE(3)
+	DBT_COPIED_FREE(4)
+	DBT_COPIED_FREE(5)
+	if (detach)
+		__dbj_detach();
+	return (ret);
+}
+
+static int __dbj_bt_decompress(DB *db, const DBT *dbt1, const DBT *dbt2,
+    DBT *dbt3, DBT *dbt4, DBT *dbt5)
+{
+	int detach;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdb = (jobject)DB_INTERNAL(db);
+	jobject jdbt1, jdbt2, jdbt3, jdbt4, jdbt5;
+	jbyteArray jdbtarr1, jdbtarr2, jdbtarr3, jdbtarr4, jdbtarr5;
+	DBT_LOCKED lresult;
+	int ret;
+
+	if (jdb == NULL) {
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYOUT(1)
+	DBT_COPYOUT(2)
+	DBT_COPYOUT(3)
+	DBT_COPYOUT(4)
+	DBT_COPYOUT(5)
+
+	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
+	    bt_decompress_method, jdbt1, jdbt2, jdbt3, jdbt4, jdbt5);
+
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYIN_DATA(3)
+	DBT_COPYIN_DATA(4)
+	DBT_COPYIN_DATA(5)
+
+err:	DBT_COPIED_FREE(1)
+	DBT_COPIED_FREE(2)
+	DBT_COPIED_FREE(3)
+	DBT_COPIED_FREE(4)
+	DBT_COPIED_FREE(5)
+	if (detach)
+		__dbj_detach();
+	return (ret);
+}
+
 static size_t __dbj_bt_prefix(DB *db, const DBT *dbt1, const DBT *dbt2)
 {
 	int detach;
@@ -712,6 +840,33 @@ static u_int32_t __dbj_h_hash(DB *db, const void *data, u_int32_t len)
 		__dbj_detach();
 	return (ret);
 }
+
+static u_int32_t __dbj_partition(DB *db, DBT *dbt1)
+{
+	int detach, ret;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdb = (jobject)DB_INTERNAL(db);
+	jobject jdbt1;
+	jbyteArray jdbtarr1;
+	DBT_LOCKED lresult;
+
+	DBT_COPYOUT(1)
+
+	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
+	    partition_method, jdbt1);
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYIN_DATA(1)
+err:	DBT_COPIED_FREE(1)
+
+	if (detach)
+		__dbj_detach();
+	return (ret);
+}
 %}
 
 JAVA_CALLBACK(void (*db_errcall_fcn)(const DB_ENV *,
@@ -753,6 +908,13 @@ JAVA_CALLBACK(int (*db_append_recno_fcn)(DB *, DBT *, db_recno_t),
     com.sleepycat.db.RecordNumberAppender, append_recno)
 JAVA_CALLBACK(int (*bt_compare_fcn)(DB *, const DBT *, const DBT *),
     java.util.Comparator, bt_compare)
+JAVA_CALLBACK(int (*bt_compress_fcn)(DB *, const DBT *, const DBT *,
+    const DBT *, const DBT *, DBT *), 
+    com.sleepycat.db.BtreeCompressor, bt_compress)
+JAVA_CALLBACK(int (*bt_decompress_fcn)(DB *, const DBT *, const DBT *,
+    DBT *, DBT *, DBT *), com.sleepycat.db.BtreeCompressor, bt_decompress)
+JAVA_CALLBACK(u_int32_t (*db_partition_fcn)(DB *, DBT *),
+    com.sleepycat.db.PartitionHandler, partition)
 JAVA_CALLBACK(size_t (*bt_prefix_fcn)(DB *, const DBT *, const DBT *),
     com.sleepycat.db.BtreePrefixCalculator, bt_prefix)
 JAVA_CALLBACK(int (*dup_compare_fcn)(DB *, const DBT *, const DBT *),

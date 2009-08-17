@@ -63,7 +63,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1641923"></a>Parameters</h3>
+              <h3 class="title"><a id="id1640753"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1641914"></a>flags</h4>
+                <h4 class="title"><a id="id1641061"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -104,8 +104,8 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_NODUPDATA"></a>DB_NODUPDATA</code>
+                <p><a id="put_DB_NODUPDATA"></a>
+                  <code class="literal">DB_NODUPDATA</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, enter the new
@@ -124,8 +124,8 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_NOOVERWRITE"></a>DB_NOOVERWRITE</code>
+                <p><a id="put_DB_NOOVERWRITE"></a>
+                  <code class="literal">DB_NOOVERWRITE</code>
             </p>
                 <p>
                  Enter the new key/data pair only if the key does not already appear in
@@ -139,37 +139,105 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
                  if DB_NOOVERWRITE is set and the key already appears in the database.
             </p>
                 <p>
-	         This enforcement of uniqueness of keys applies only to the primary key.  The behavior of insertions into secondary databases is not affected by the DB_NOOVERWRITE flag.  In particular, the insertion of a record that would result in the creation of a duplicate key in a secondary database that allows duplicates would not be prevented by the use of this flag.
+
+                This enforcement of uniqueness of keys applies only to the primary key.  The
+                behavior of insertions into secondary databases is not affected by the
+                DB_NOOVERWRITE flag.  In particular, the insertion of a record that would result in
+                the creation of a duplicate key in a secondary database that allows duplicates would
+                not be prevented by the use of this flag.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_MULTIPLE"></a>DB_MULTIPLE</code>
+                <p><a id="put_DB_MULTIPLE"></a>
+                  <code class="literal">DB_MULTIPLE</code>
             </p>
-                <p>Put multiple data items using keys from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers and data values from the buffer to which the <span class="bold"><strong>data</strong></span> parameter refers.
-            </p>
-                <p>To put records in bulk with the btree or hash access methods, construct bulk buffers in the <span class="bold"><strong>key</strong></span> and <span class="bold"><strong>data</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultipledatabuilder.html" title="DbMultipleDataBuilder">DbMultipleDataBuilder</a>.  To put records in bulk with the recno or hash access methods, construct bulk buffers in the <span class="bold"><strong>data</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> as before, but construct the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a> with a data size of zero.</p>
-                <p>A successful bulk operation is logically equivalent to a loop through each key/data pair, performing a <a class="xref" href="dbput.html" title="Db::put()">Db::put()</a> for each one.</p>
-                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
-
-	    </p>
-                <p>The <code class="literal">DB_MULTIPLE</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
                 <p>
+                Put multiple data items using keys from the buffer to which the <span class="bold"><strong>key</strong></span> parameter refers and data values from the buffer to
+                which the <span class="bold"><strong>data</strong></span> parameter refers.
+            </p>
+                <p>
+                To put records in bulk with the btree or hash access methods, construct bulk buffers
+                in the <span class="bold"><strong>key</strong></span> and 
+                <span class="bold"><strong>data</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultipledatabuilder.html" title="DbMultipleDataBuilder">DbMultipleDataBuilder</a>.  To
+                put records in bulk with the recno or queue access methods, construct bulk buffers
+                in the <span class="bold"><strong>data</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a>
+                as before, but construct the <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a> 
+                with a data size of zero.
+            </p>
+                <p>
+                A successful bulk operation is logically equivalent to a loop through each key/data
+                pair, performing a <a class="xref" href="dbput.html" title="Db::put()">Db::put()</a> for each one.
+            </p>
+                <p>
+                See <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on
+                working with bulk updates.
+            </p>
+                <p>
+                The <code class="literal">DB_MULTIPLE</code> flag may only be used alone, or with the
+                <code class="literal">DB_OVERWRITE_DUP</code> option.
             </p>
               </li>
               <li>
+                <p><a id="put_DB_MULTIPLE_KEY"></a>
+                  <code class="literal">DB_MULTIPLE_KEY</code>
+            </p>
                 <p>
-                  <code class="literal"><a id="put_DB_MULTIPLE_KEY"></a>DB_MULTIPLE_KEY</code>
+                Put multiple data items using keys and data from the buffer to which the 
+                <span class="bold"><strong>key</strong></span> parameter refers.
             </p>
-                <p>Put multiple data items using keys and data from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers.
+                <p>
+                To put records in bulk with the btree or hash access methods, construct a bulk
+                buffer in the <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultiplekeydatabuilder.html" title="DbMultipleKeyDataBuilder">DbMultipleKeyDataBuilder</a>.  
+                To put records in bulk with the recno or queue access methods, construct a bulk
+                buffer in the <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a>.
             </p>
-                <p>To put records in bulk with the btree or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultiplekeydatabuilder.html" title="DbMultipleKeyDataBuilder">DbMultipleKeyDataBuilder</a>.  To put records in bulk with the recno or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a>.</p>
-                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
+                <p>
+                See <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on
+                working with bulk updates.
+            </p>
+                <p>
+                The <code class="literal">DB_MULTIPLE_KEY</code> flag may only be used alone, or with the
+                <code class="literal">DB_OVERWRITE_DUP</code> option.
+            </p>
+              </li>
+              <li>
+                <p><a id="put_DB_OVERWRITE_DUP"></a>
+                     <code class="literal">DB_OVERWRITE_DUP</code>
+                 </p>
+                <p>
+                     Ignore duplicate records when overwriting records in a database configured for
+                     sorted duplicates.
+                 </p>
+                <p>
+                     Normally, if a database is configured for sorted duplicates, an attempt to
+                     put a record that compares identically to a record already existing in the
+                     database will fail. Using this flag causes the put to silently proceed, without
+                     failure.
+                 </p>
+                <p>
+                     This flag is extremely useful when performing bulk puts (using the
+                     <code class="literal">DB_MULTIPLE</code> or <code class="literal">DB_MULTIPLE_KEY</code> flags). 
+                     Depending on the number of records you are writing to the database with a bulk
+                     put, you may not want the operation to fail in the event that a
+                     duplicate record is encountered. Using this flag along with the
+                     <code class="literal">DB_MULTIPLE</code> or <code class="literal">DB_MULTIPLE_KEY</code> flags
+                     allows the bulk put to complete, even if a duplicate record is encountered.
 
-            </p>
-                <p>The <code class="literal">DB_MULTIPLE_KEY</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
+                 </p>
                 <p>
-            </p>
+                     This flag is also useful if you are using a custom comparison function that compares only
+                     part of the data portion of a record. In this case, two records can compare
+                     equally when, in fact, they are not equal. This flag allows the put to
+                     complete, even if your custom comparison routine claims the two records are
+                     equal.
+                 </p>
               </li>
             </ul>
           </div>
@@ -178,7 +246,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642172"></a>data</h4>
+                <h4 class="title"><a id="id1641388"></a>data</h4>
               </div>
             </div>
           </div>
@@ -190,7 +258,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642161"></a>key</h4>
+                <h4 class="title"><a id="id1641132"></a>key</h4>
               </div>
             </div>
           </div>
@@ -202,7 +270,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642255"></a>txnid</h4>
+                <h4 class="title"><a id="id1641546"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -223,7 +291,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1641926"></a>Errors</h3>
+              <h3 class="title"><a id="id1641614"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -231,7 +299,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
                          The <code class="methodname">Db::put()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -241,7 +309,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642465"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id1641357"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -275,7 +343,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642788"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1641033"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -284,9 +352,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -295,7 +361,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642476"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1641809"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -304,9 +370,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -315,7 +379,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642422"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1640728"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -325,9 +389,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -340,7 +402,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642070"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1641765"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -348,9 +410,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -359,7 +419,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642785"></a>EACCES</h4>
+                <h4 class="title"><a id="id1641780"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -371,7 +431,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642816"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1641853"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -387,7 +447,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1642380"></a>ENOSPC</h4>
+                <h4 class="title"><a id="id1641661"></a>ENOSPC</h4>
               </div>
             </div>
           </div>
@@ -400,7 +460,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1641913"></a>Class</h3>
+              <h3 class="title"><a id="id1641246"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -412,7 +472,7 @@ Db::put(DbTxn *txnid, Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1642105"></a>See Also</h3>
+              <h3 class="title"><a id="id1641236"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -330,14 +330,8 @@
 /* Define to 1 if you have the `pstat_getdynamic' function. */
 /* #undef HAVE_PSTAT_GETDYNAMIC */
 
-/* Define to 1 if you have the <pthread.h> header file. */
-/* #undef HAVE_PTHREAD_H */
-
 /* Define to 1 if you have the `pthread_self' function. */
 /* #undef HAVE_PTHREAD_SELF */
-
-/* Define to 1 if using pthread_get/set_specific for TLS. */
-/* #undef HAVE_PTHREAD_TLS */
 
 /* Define to 1 if you have the `pthread_yield' function. */
 /* #undef HAVE_PTHREAD_YIELD */
@@ -388,7 +382,7 @@
 #define HAVE_SETUID 1
 
 /* Define to 1 to configure Berkeley DB to use shared, read/write latches. */
-/* #undef HAVE_SHARED_LATCHES */
+#define HAVE_SHARED_LATCHES 1
 
 /* Define to 1 if shmctl/SHM_LOCK locks down shared memory segments. */
 /* #undef HAVE_SHMCTL_SHM_LOCK */
@@ -494,9 +488,6 @@
 /* Define to 1 if you have the `time' function. */
 #define HAVE_TIME 1
 
-/* Define to 1 if compiler supports Thread Local Storage. */
-/* #undef HAVE_TLS */
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
@@ -515,9 +506,6 @@
 /* Define to 1 if building on VxWorks. */
 /* #undef HAVE_VXWORKS */
 
-/* Define to 1 if the C++ wstring class is available. */
-/* #undef HAVE_WSTRING */
-
 /* Define to 1 if you have the `yield' function. */
 /* #undef HAVE_YIELD */
 
@@ -534,13 +522,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.8.11"
+#define PACKAGE_STRING "Berkeley DB 4.8.24"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.8.11"
+#define PACKAGE_TARNAME "db-4.8.24"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.8.11"
+#define PACKAGE_VERSION "4.8.24"
 
 /* The size of `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1

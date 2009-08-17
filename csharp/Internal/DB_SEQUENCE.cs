@@ -69,12 +69,16 @@ internal class DB_SEQUENCE : IDisposable {
     return ret;
   }
 
-  internal int get_key(DBT key) {
+  internal int get_key(DatabaseEntry key) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_SEQUENCE_get_key(swigCPtr, DBT.getCPtr(key));
+		ret = libdb_csharpPINVOKE.DB_SEQUENCE_get_key(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(key)));
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+    }
+  }
 
   internal int initial_value(Int64 value) {
 		int ret;
@@ -83,14 +87,18 @@ internal class DB_SEQUENCE : IDisposable {
 		return ret;
 }
 
-  internal int open(DB_TXN txn, DBT key, uint flags) {
+  internal int open(DB_TXN txn, DatabaseEntry key, uint flags) {
+    try {
 	int ret;
-	ret = libdb_csharpPINVOKE.DB_SEQUENCE_open(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), flags);
+	ret = libdb_csharpPINVOKE.DB_SEQUENCE_open(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), flags);
 	if (ret != 0)
 		close(0);
 	DatabaseException.ThrowException(ret);
 	return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+    }
+  }
 
   internal int remove(DB_TXN txn, uint flags) {
 	int ret;

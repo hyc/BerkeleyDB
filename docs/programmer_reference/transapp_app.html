@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 10.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_fail.html" title="Handling failure in Transactional Data Store applications" />
     <link rel="next" href="transapp_env_open.html" title="Opening the environment" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_fail.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 10. 
+          <th width="60%" align="center">Chapter 11. 
 		Berkeley DB Transactional Data Store Applications
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_env_open.html">Next</a></td>
@@ -35,57 +35,68 @@
           </div>
         </div>
       </div>
-      <p>When building Transactional Data Store applications, the architecture
-decisions involve application startup (running recovery) and handling
-system or application failure.  For details on performing recovery,
-see the <a class="xref" href="transapp_recovery.html" title="Recovery procedures">Recovery procedures</a>.</p>
-      <p>Recovery in a database environment is a single-threaded procedure, that
-is, one thread of control or process must complete database environment
-recovery before any other thread of control or process operates in the
-Berkeley DB environment.  It may simplify matters that Berkeley DB serializes
-recovery and creation of a new database environment.</p>
-      <p>Performing recovery first marks any existing database environment as
-"failed" and then removes it, causing threads of control running in the
-database environment to fail and return to the application.  This
-feature allows applications to recover environments without concern for
-threads of control that might still be running in the removed
-environment.  The subsequent re-creation of the database environment is
-serialized, so multiple threads of control attempting to create a
-database environment will serialize behind a single creating thread.</p>
-      <p>One consideration in removing (as part of recovering) a database
-environment which may be in use by another thread, is the type of mutex
-being used by the Berkeley DB library.  In the case of database environment
-failure when using test-and-set mutexes, threads of control waiting on
-a mutex when the environment is marked "failed" will quickly notice the
-failure and will return an error from the Berkeley DB API.  In the case of
-environment failure when using blocking mutexes, where the underlying
-system mutex implementation does not unblock mutex waiters after the
-thread of control holding the mutex dies, threads waiting on a mutex
-when an environment is recovered might hang forever.  Applications
-blocked on events (for example, an application blocked on a network
-socket, or a GUI event) may also fail to notice environment recovery
-within a reasonable amount of time.  Systems with such mutex
-implementations are rare, but do exist; applications on such systems
-should use an application architecture where the thread recovering the
-database environment can explicitly terminate any process using the
-failed environment, or configure Berkeley DB for test-and-set mutexes, or
-incorporate some form of long-running timer or watchdog process to wake
-or kill blocked processes should they block for too long.</p>
-      <p>Regardless, it makes little sense for multiple threads of control to
-simultaneously attempt recovery of a database environment, since the
-last one to run will remove all database environments created by the
-threads of control that ran before it.  However, for some applications,
-it may make sense for applications to have a single thread of control
-that performs recovery and then removes the database environment, after
-which the application launches a number of processes, any of which will
-create the database environment and continue forward.</p>
-      <p>There are three common ways to architect Berkeley DB Transactional Data Store
-applications.  The one chosen is usually based on whether or not the
-application is comprised of a single process or group of processes
-descended from a single process (for example, a server started when the
-system first boots), or if the application is comprised of unrelated
-processes (for example, processes started by web connections or users
-logged into the system).</p>
+      <p>
+    When building Transactional Data Store applications, the architecture
+    decisions involve application startup (running recovery) and handling
+    system or application failure.  For details on performing recovery, see
+    the <a class="xref" href="transapp_recovery.html" title="Recovery procedures">Recovery procedures</a>.
+</p>
+      <p>
+    Recovery in a database environment is a single-threaded procedure, that
+    is, one thread of control or process must complete database environment
+    recovery before any other thread of control or process operates in the
+    Berkeley DB environment.
+</p>
+      <p>
+    Performing recovery first marks any existing database environment as
+    "failed" and then removes it, causing threads of control running in the
+    database environment to fail and return to the application.  This
+    feature allows applications to recover environments without concern for
+    threads of control that might still be running in the removed
+    environment.  The subsequent re-creation of the database environment is
+    serialized, so multiple threads of control attempting to create a
+    database environment will serialize behind a single creating thread.
+</p>
+      <p>
+    One consideration in removing (as part of recovering) a database
+    environment which may be in use by another thread, is the type of mutex
+    being used by the Berkeley DB library.  In the case of database
+    environment failure when using test-and-set mutexes, threads of control
+    waiting on a mutex when the environment is marked "failed" will quickly
+    notice the failure and will return an error from the Berkeley DB API.
+    In the case of environment failure when using blocking mutexes, where
+    the underlying system mutex implementation does not unblock mutex
+    waiters after the thread of control holding the mutex dies, threads
+    waiting on a mutex when an environment is recovered might hang forever.
+    Applications blocked on events (for example, an application blocked on
+    a network socket, or a GUI event) may also fail to notice environment
+    recovery within a reasonable amount of time.  Systems with such mutex
+    implementations are rare, but do exist; applications on such systems
+    should use an application architecture where the thread recovering the
+    database environment can explicitly terminate any process using the
+    failed environment, or configure Berkeley DB for test-and-set mutexes,
+    or incorporate some form of long-running timer or watchdog process to
+    wake or kill blocked processes should they block for too long.
+</p>
+      <p>
+    Regardless, it makes little sense for multiple threads of control to
+    simultaneously attempt recovery of a database environment, since the
+    last one to run will remove all database environments created by the
+    threads of control that ran before it.  However, for some applications,
+    it may make sense for applications to have a single thread of control
+    that performs recovery and then removes the database environment, after
+    which the application launches a number of processes, any of which will
+    create the database environment and continue forward.
+</p>
+      <p>
+    There are three common ways to architect Berkeley DB Transactional Data
+    Store applications.  The one chosen is usually based on whether or not
+    the application is comprised of a single process or group of processes
+    descended from a single process (for example, a server started when the
+    system first boots), or if the application is comprised of unrelated
+    processes (for example, processes started by web connections or users
+    logged into the system).
+</p>
       <div class="orderedlist">
         <ol type="1">
           <li>
@@ -97,14 +108,14 @@ logged into the system).</p>
             <p>
             When this process starts, it runs recovery on the database
             environment and then opens its databases.  The application can
-            subsequently create new threads of control as it chooses.
-            Those threads of control can either share already open Berkeley
-            DB <a href="../api_reference/C/env.html" class="olink">DB_ENV</a> and <a href="../api_reference/C/db.html" class="olink">DB</a> handles, or create their own.  In this
-            architecture, databases are rarely opened or closed when more
-            than a single thread of control is running; that is, they are
-            opened when only a single thread is running, and closed after
-            all threads but one have exited.  The last thread of control to
-            exit closes the databases and the database environment.
+            subsequently create new threads as it chooses.  Those threads
+            can either share already open Berkeley DB <a href="../api_reference/C/env.html" class="olink">DB_ENV</a> and <a href="../api_reference/C/db.html" class="olink">DB</a>
+            handles, or create their own.  In this architecture, databases
+            are rarely opened or closed when more than a single thread of
+            control is running; that is, they are opened when only a single
+            thread is running, and closed after all threads but one have
+            exited.  The last thread of control to exit closes the
+            databases and the database environment.
         </p>
             <p>
             This architecture is simplest to implement because thread
@@ -123,7 +134,7 @@ logged into the system).</p>
             recovery and re-creating the database environment.  Once these
             actions have been taken, other threads of control can continue
             (as long as all existing Berkeley DB handles are first
-            discarded), or restarted.
+            discarded).
         </p>
           </li>
           <li>
@@ -229,23 +240,25 @@ logged into the system).</p>
             <a href="../api_reference/C/envopen.html#envopen_DB_RECOVER" class="olink">DB_RECOVER</a> will be ignored.
         </p>
             <p>
-	  Prior to the actual recovery beginning, the <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_REG_PANIC" class="olink">DB_EVENT_REG_PANIC</a> event is
-	  set for the environment.
-	  Processes in the application using the <a href="../api_reference/C/envevent_notify.html" class="olink">DB_ENV-&gt;set_event_notify()</a> method will be
-	  notified when they do their next operations in the environment.  Processes
- 	  receiving this event should exit the environment.   Also, the
-	  <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_REG_ALIVE" class="olink">DB_EVENT_REG_ALIVE</a> event will be triggered if other processes are
-	  attached to the environment.   Only the process doing the recovery will
-	  receive this event notification.  The event_info parameter of the
-	  <a href="../api_reference/C/envevent_notify.html" class="olink">DB_ENV-&gt;set_event_notify()</a> callback will contain the process identifier of the
- 	  process still attached.  The process doing the recovery can then signal
-	  the attached process or perform some other operation prior to recovery
-	  (i.e. kill the attached process). 
+      Prior to the actual recovery beginning, the <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_REG_PANIC" class="olink">DB_EVENT_REG_PANIC</a>
+      event is set for the environment.  Processes in the application using
+      the <a href="../api_reference/C/envevent_notify.html" class="olink">DB_ENV-&gt;set_event_notify()</a> method will be notified when they do their next
+      operations in the environment.  Processes receiving this event should
+      exit the environment.   Also, the <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_REG_ALIVE" class="olink">DB_EVENT_REG_ALIVE</a> event will be
+      triggered if there are other processes currently attached to the
+      environment.   Only the process doing the recovery will receive this
+      event notification. It will receive this notification once for each
+      process still attached to the environment. The parameter of the
+      <a href="../api_reference/C/envevent_notify.html" class="olink">DB_ENV-&gt;set_event_notify()</a> callback will contain the process identifier of the
+      process still attached.  The process doing the recovery can then
+      signal the attached process or perform some other operation prior to
+      recovery (i.e. kill the attached process). 
 	</p>
             <p>
-	  The <a href="../api_reference/C/envset_timeout.html" class="olink">DB_ENV-&gt;set_timeout()</a> method's <a href="../api_reference/C/envset_timeout.html#set_timeout_DB_SET_REG_TIMEOUT" class="olink">DB_SET_REG_TIMEOUT</a> flag can be set to establish a wait
-	  period before starting recovery.  This creates a window of time for other
-	  processes to receive the DB_EVENT_REG_PANIC event and exit the environment.
+      The <a href="../api_reference/C/envset_timeout.html" class="olink">DB_ENV-&gt;set_timeout()</a> method's <a href="../api_reference/C/envset_timeout.html#set_timeout_DB_SET_REG_TIMEOUT" class="olink">DB_SET_REG_TIMEOUT</a> flag can be set to
+      establish a wait period before starting recovery.  This creates a
+      window of time for other processes to receive the DB_EVENT_REG_PANIC
+      event and exit the environment.
 	</p>
             <p>
             There are three additional requirements for the <a href="../api_reference/C/envopen.html#envopen_DB_REGISTER" class="olink">DB_REGISTER</a>

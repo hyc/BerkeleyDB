@@ -82,7 +82,7 @@ DB-&gt;set_bt_compress(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644403"></a>Parameters</h3>
+              <h3 class="title"><a id="id1643149"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ DB-&gt;set_bt_compress(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1644352"></a>bt_compress_fcn</h4>
+                <h4 class="title"><a id="id1643216"></a>bt_compress_fcn</h4>
               </div>
             </div>
           </div>
@@ -180,7 +180,6 @@ DB-&gt;set_bt_compress(DB *db,
                         <span class="bold"><strong>dest-&gt;ulen</strong></span>),
                     </span>
                    
-                   ),
                    the function should identify the required buffer size in 
                    <span class="bold"><strong>dest-&gt;size</strong></span> 
                     
@@ -191,7 +190,7 @@ DB-&gt;set_bt_compress(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1644579"></a>bt_decompress_fcn</h4>
+                <h4 class="title"><a id="id1643380"></a>bt_decompress_fcn</h4>
               </div>
             </div>
           </div>
@@ -277,6 +276,26 @@ DB-&gt;set_bt_compress(DB *db,
                    The <span class="bold"><strong>bt_decompress_fcn</strong></span>
                    function must return 0 on success and a non-zero value
                    on failure.
+                   If the decompressed data cannot fit in
+                   <span class="bold"><strong>key-&gt;data</strong></span> 
+                    
+                   or
+                   <span class="bold"><strong>data-&gt;data</strong></span> 
+                    
+                   (the size of which is
+                   <span>
+                       available in the <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>'s
+                        <span class="bold"><strong>ulen</strong></span> field),
+                    </span>
+                   
+                   the function should identify the required buffer size 
+                   <span>
+                       using the <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>'s
+                        <span class="bold"><strong>size</strong></span> 
+                        field
+                    </span>
+                   
+                   and return <code class="literal">DB_BUFFER_SMALL</code>.
            </p>
         </div>
       </div>
@@ -284,7 +303,7 @@ DB-&gt;set_bt_compress(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644832"></a>Errors</h3>
+              <h3 class="title"><a id="id1643321"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -300,7 +319,7 @@ DB-&gt;set_bt_compress(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1645032"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1643552"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -314,7 +333,7 @@ DB-&gt;set_bt_compress(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1645070"></a>Class</h3>
+              <h3 class="title"><a id="id1643711"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -326,7 +345,7 @@ DB-&gt;set_bt_compress(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644851"></a>See Also</h3>
+              <h3 class="title"><a id="id1643210"></a>See Also</h3>
             </div>
           </div>
         </div>

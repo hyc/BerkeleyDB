@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -25,7 +31,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Log records currently queued. 
         /// </summary>
-        public long CurrentQueuedLogRecords { get { return st.st_log_queued; } }
+        public ulong CurrentQueuedLogRecords { get { return st.st_log_queued; } }
         /// <summary>
         /// Site completed client sync-up. 
         /// </summary>
@@ -69,31 +75,31 @@ namespace BerkeleyDB {
         /// <summary>
         /// Bulk buffer fills. 
         /// </summary>
-        public long BulkBufferFills { get { return st.st_bulk_fills; } }
+        public ulong BulkBufferFills { get { return st.st_bulk_fills; } }
         /// <summary>
         /// Bulk buffer overflows. 
         /// </summary>
-        public long BulkBufferOverflows { get { return st.st_bulk_overflows; } }
+        public ulong BulkBufferOverflows { get { return st.st_bulk_overflows; } }
         /// <summary>
         /// Bulk records stored. 
         /// </summary>
-        public long BulkRecordsStored { get { return st.st_bulk_records; } }
+        public ulong BulkRecordsStored { get { return st.st_bulk_records; } }
         /// <summary>
         /// Transfers of bulk buffers. 
         /// </summary>
-        public long BulkBufferTransfers { get { return st.st_bulk_transfers; } }
+        public ulong BulkBufferTransfers { get { return st.st_bulk_transfers; } }
         /// <summary>
         /// Number of forced rerequests. 
         /// </summary>
-        public long ForcedRerequests { get { return st.st_client_rerequests; } }
+        public ulong ForcedRerequests { get { return st.st_client_rerequests; } }
         /// <summary>
         /// Number of client service requests received by this client.
         /// </summary>
-        public long ClientServiceRequests { get { return st.st_client_svc_req; } }
+        public ulong ClientServiceRequests { get { return st.st_client_svc_req; } }
         /// <summary>
         /// Number of client service requests missing on this client.
         /// </summary>
-        public long ClientServiceRequestsMissing { get { return st.st_client_svc_miss; } }
+        public ulong ClientServiceRequestsMissing { get { return st.st_client_svc_miss; } }
         /// <summary>
         /// Current generation number. 
         /// </summary>
@@ -105,23 +111,23 @@ namespace BerkeleyDB {
         /// <summary>
         /// Log records received multiply. 
         /// </summary>
-        public long DuplicateLogRecords { get { return st.st_log_duplicated; } }
+        public ulong DuplicateLogRecords { get { return st.st_log_duplicated; } }
         /// <summary>
         /// Max. log records queued at once. 
         /// </summary>
-        public long MaxQueuedLogRecords { get { return st.st_log_queued_max; } }
+        public ulong MaxQueuedLogRecords { get { return st.st_log_queued_max; } }
         /// <summary>
         /// Total # of log recs. ever queued. 
         /// </summary>
-        public long QueuedLogRecords { get { return st.st_log_queued_total; } }
+        public ulong QueuedLogRecords { get { return st.st_log_queued_total; } }
         /// <summary>
         /// Log records received and put. 
         /// </summary>
-        public long ReceivedLogRecords { get { return st.st_log_records; } }
+        public ulong ReceivedLogRecords { get { return st.st_log_records; } }
         /// <summary>
         /// Log recs. missed and requested. 
         /// </summary>
-        public long MissedLogRecords { get { return st.st_log_requested; } }
+        public ulong MissedLogRecords { get { return st.st_log_requested; } }
         /// <summary>
         /// Env. ID of the current master. 
         /// </summary>
@@ -129,31 +135,31 @@ namespace BerkeleyDB {
         /// <summary>
         /// # of times we've switched masters. 
         /// </summary>
-        public uint MasterChanges { get { return st.st_master_changes; } }
+        public ulong MasterChanges { get { return st.st_master_changes; } }
         /// <summary>
         /// Messages with a bad generation #. 
         /// </summary>
-        public uint BadGenerationMessages { get { return st.st_msgs_badgen; } }
+        public ulong BadGenerationMessages { get { return st.st_msgs_badgen; } }
         /// <summary>
         /// Messages received and processed. 
         /// </summary>
-        public uint ReceivedMessages { get { return st.st_msgs_processed; } }
+        public ulong ReceivedMessages { get { return st.st_msgs_processed; } }
         /// <summary>
         /// Messages ignored because this site was a client in recovery.
         /// </summary>
-        public uint IgnoredMessages { get { return st.st_msgs_recover; } }
+        public ulong IgnoredMessages { get { return st.st_msgs_recover; } }
         /// <summary>
         /// # of failed message sends. 
         /// </summary>
-        public long FailedMessageSends { get { return st.st_msgs_send_failures; } }
+        public ulong FailedMessageSends { get { return st.st_msgs_send_failures; } }
         /// <summary>
         /// # of successful message sends. 
         /// </summary>
-        public long MessagesSent { get { return st.st_msgs_sent; } }
+        public ulong MessagesSent { get { return st.st_msgs_sent; } }
         /// <summary>
         /// # of NEWSITE msgs. received. 
         /// </summary>
-        public long NewSiteMessages { get { return st.st_newsites; } }
+        public ulong NewSiteMessages { get { return st.st_newsites; } }
         /// <summary>
         /// Current number of sites we will assume during elections.
         /// </summary>        
@@ -161,41 +167,41 @@ namespace BerkeleyDB {
         /// <summary>
         /// # of times we were throttled. 
         /// </summary>
-        public long Throttled { get { return st.st_nthrottles; } }
+        public ulong Throttled { get { return st.st_nthrottles; } }
         /// <summary>
         /// # of times we detected and returned an OUTDATED condition.
         /// </summary>
-        public long Outdated { get { return st.st_outdated; } }
+        public ulong Outdated { get { return st.st_outdated; } }
         /// <summary>
         /// Pages received multiply. 
         /// </summary>
-        public long DuplicatePages { get { return st.st_pg_duplicated; } }
+        public ulong DuplicatePages { get { return st.st_pg_duplicated; } }
         /// <summary>
         /// Pages received and stored. 
         /// </summary>
-        public long ReceivedPages { get { return st.st_pg_records; } }
+        public ulong ReceivedPages { get { return st.st_pg_records; } }
         /// <summary>
         /// Pages missed and requested. 
         /// </summary>
-        public long MissedPages { get { return st.st_pg_requested; } }
+        public ulong MissedPages { get { return st.st_pg_requested; } }
         /// <summary>
         /// # of transactions applied. 
         /// </summary>
-        public long AppliedTransactions { get { return st.st_txns_applied; } }
+        public ulong AppliedTransactions { get { return st.st_txns_applied; } }
         /// <summary>
         /// # of STARTSYNC msgs delayed. 
         /// </summary>
-        public long StartSyncMessagesDelayed { get { return st.st_startsync_delayed; } }
+        public ulong StartSyncMessagesDelayed { get { return st.st_startsync_delayed; } }
 
         /* Elections generally. */
         /// <summary>
         /// # of elections held. 
         /// </summary>
-        public long Elections { get { return st.st_elections; } }
+        public ulong Elections { get { return st.st_elections; } }
         /// <summary>
         /// # of elections won by this site. 
         /// </summary>
-        public long ElectionsWon { get { return st.st_elections_won; } }
+        public ulong ElectionsWon { get { return st.st_elections_won; } }
 
         /* Statistics about an in-progress election. */
         /// <summary>

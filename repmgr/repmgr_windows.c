@@ -738,9 +738,6 @@ finish_connecting(env, conn, events)
 	eid = (u_int)conn->eid;
 	site = SITE_FROM_EID(eid);
 
-	conn->state = CONN_CONNECTED;
-	__os_gettime(env, &site->last_rcvd_timestamp, 1);
-
 	if ((ret = events->iErrorCode[FD_CONNECT_BIT]) != 0) {
 /*		t_ret = FormatMessage( */
 /*		    FORMAT_MESSAGE_IGNORE_INSERTS | */
@@ -753,6 +750,9 @@ finish_connecting(env, conn, events)
 		__db_err(env, ret, "connecting");
 		goto err;
 	}
+
+	conn->state = CONN_CONNECTED;
+	__os_gettime(env, &site->last_rcvd_timestamp, 1);
 
 	if (WSAEventSelect(conn->fd, conn->event_object, FD_READ | FD_CLOSE) ==
 	    SOCKET_ERROR) {

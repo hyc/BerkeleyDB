@@ -20,9 +20,6 @@
 #include "dbinc/log.h"
 #include "dbinc/mp.h"
 #include "dbinc/partition.h"
-#ifdef HAVE_MUTEX_SUPPORT
-#include "dbinc/mutex_int.h"
-#endif
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 

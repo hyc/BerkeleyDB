@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 17.  The Transaction Subsystem</title>
+    <title>Chapter 18.  The Transaction Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 17. 
+          <th colspan="3" align="center">Chapter 18. 
 		The Transaction Subsystem
         </th>
         </tr>
@@ -31,7 +31,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="txn"></a>Chapter 17. 
+            <h2 class="title"><a id="txn"></a>Chapter 18. 
 		The Transaction Subsystem
         </h2>
           </div>
@@ -61,17 +61,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="txn_limits.html#id1616895">Transaction IDs</a>
+                  <a href="txn_limits.html#id1624656">Transaction IDs</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="txn_limits.html#id1617012">Cursors</a>
+                  <a href="txn_limits.html#id1624657">Cursors</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="txn_limits.html#id1617261">Multiple Threads of Control</a>
+                  <a href="txn_limits.html#id1624798">Multiple Threads of Control</a>
                 </span>
               </dt>
             </dl>
@@ -97,14 +97,14 @@ be protected if they are logged and locked appropriately.</p>
 that enabling transactions automatically enables logging, but does not
 enable locking because a single thread of control that needed atomicity
 and recoverability would not require it.</p>
-        <p>The <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> function starts a transaction, returning an opaque
-handle to a transaction.  If the parent parameter to <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> is
+        <p>The <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> function starts a transaction, returning an opaque
+handle to a transaction.  If the parent parameter to <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> is
 non-NULL, the new transaction is a child of the designated parent
 transaction.</p>
         <p>The <a href="../api_reference/C/txnabort.html" class="olink">DB_TXN-&gt;abort()</a> function ends the designated transaction and causes
 all updates performed by the transaction to be undone.  The end result is
 that the database is left in a state identical to the state that existed
-prior to the <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>.  If the aborting transaction has any child
+prior to the <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>.  If the aborting transaction has any child
 transactions associated with it (even ones that have already been
 committed), they are also aborted.  Any transactions that are unresolved
 (neither committed nor aborted) when the application or system fails
@@ -198,7 +198,7 @@ transaction subsystem.  It is the programmatic interface used by the
             <tbody>
               <tr>
                 <td>
-                  <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>
+                  <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>
                 </td>
                 <td>Begin a transaction</td>
               </tr>

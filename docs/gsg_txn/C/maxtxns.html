@@ -50,22 +50,28 @@
       <div class="itemizedlist">
         <ul type="disc">
           <li>
-            <p>
-                    Configure the maximum number of simultaneous
+            <span>
+                <p>
+                    
+                    <span>
+                        Configure 
+                    </span>
+                        
+                    the maximum number of simultaneous
                     transactions needed by your application. 
                     In general, you should not need to do this unless you
                     use deeply nested transactions or you have many threads all
                     of which have active transactions. In addition, you may
-                    need to a higher maximum number of transactions if you
+                    need to configure a higher maximum number of transactions if you
                     are using snapshot isolation. See
                     <a class="xref" href="isolation.html#sisolation_maxtxn" title="Snapshot Isolation Transactional Requirements">Snapshot Isolation Transactional Requirements</a>
                     for details.
                 </p>
-            <p>
+                <p>
                     By default, your application can support 20 active
                     transactions. 
                 </p>
-            <p>
+                <p>
                     You can set the maximum number of simultaneous
                     transactions supported by your application using
                     <span>
@@ -77,17 +83,18 @@
                     </span>
                     
                 </p>
-            <p>
+                <p>
                     If your application has exceeded this maximum value,
                     then any attempt to begin a new transaction will fail.
                 </p>
-            <p>
+                <p>
                     This value can also be set using the
                     <code class="literal">DB_CONFIG</code> file's
                     <code class="literal">set_tx_max</code> parameter. Remember that
                     the <code class="literal">DB_CONFIG</code> must reside in your
                     environment home directory.
                 </p>
+</span>
           </li>
           <li>
             <span>

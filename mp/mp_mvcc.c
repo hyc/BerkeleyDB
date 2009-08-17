@@ -134,25 +134,22 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 	DB_FH *fhp;
 	ENV *env;
 	MPOOL *c_mp;
-	MPOOLFILE *bh_mfp;
+	MPOOLFILE *mfp;
 	db_mutex_t mutex;
 	db_pgno_t maxpgno, newpgno, nextfree;
 	size_t nio;
-	int h_locked, ret, t_ret;
+	int created, h_locked, ret, t_ret;
 	u_int32_t magic, nbucket, ncache, pagesize;
 	char filename[100], *real_name;
 
 	env = dbmp->env;
 	c_mp = infop->primary;
-	h_locked = ret = 0;
+	created = h_locked = ret = 0;
 	/* Find the associated MPOOLFILE. */
-	bh_mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
-	pagesize = bh_mfp->stat.st_pagesize;
+	mfp = R_ADDR(dbmp->reginfo, bhp->mf_offset);
+	pagesize = mfp->stat.st_pagesize;
 	real_name = NULL;
 	fhp = NULL;
-
-	DB_ASSERT(env, BH_REFCOUNT(bhp) == 1 && F_ISSET(bhp, BH_EXCLUSIVE));
-	DB_ASSERT(env, !F_ISSET(bhp, BH_DIRTY | BH_FROZEN));
 
 	MVCC_MPROTECT(bhp->buf, pagesize, PROT_READ | PROT_WRITE);
 
@@ -202,9 +199,17 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 
 	MUTEX_LOCK(env, hp->mtx_hash);
 	h_locked = 1;
+	DB_ASSERT(env, F_ISSET(bhp, BH_EXCLUSIVE) && !F_ISSET(bhp, BH_FROZEN));
+
+	if (BH_REFCOUNT(bhp) > 1 || F_ISSET(bhp, BH_DIRTY)) {
+		ret = EBUSY;
+		goto err;
+	}
+
 	if ((ret = __os_open(env, real_name, pagesize,
 	    DB_OSO_CREATE | DB_OSO_EXCL, env->db_mode, &fhp)) == 0) {
 		/* We're creating the file -- initialize the metadata page. */
+		created = 1;
 		magic = DB_FREEZER_MAGIC;
 		maxpgno = newpgno = 0;
 		if ((ret = __os_write(env, fhp,
@@ -253,6 +258,11 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 	/* Write the buffer to the allocated page. */
 	if ((ret = __os_io(env, DB_IO_WRITE, fhp, newpgno, pagesize, 0,
 	    pagesize, bhp->buf, &nio)) != 0)
+		goto err;
+
+	ret = __os_closehandle(env, fhp);
+	fhp = NULL;
+	if (ret != 0)
 		goto err;
 
 	/*
@@ -306,14 +316,23 @@ __memp_bh_freeze(dbmp, infop, hp, bhp, need_frozenp)
 	 * Increment the file's block count -- freeing the original buffer will
 	 * decrement it.
 	 */
-	MUTEX_LOCK(env, bh_mfp->mutex);
-	++bh_mfp->block_cnt;
-	MUTEX_UNLOCK(env, bh_mfp->mutex);
+	MUTEX_LOCK(env, mfp->mutex);
+	++mfp->block_cnt;
+	MUTEX_UNLOCK(env, mfp->mutex);
 
 	STAT(++hp->hash_frozen);
 
 	if (0) {
-err:		if (h_locked)
+err:		if (fhp != NULL &&
+		    (t_ret = __os_closehandle(env, fhp)) != 0 && ret == 0)
+			ret = t_ret;
+		if (created) {
+			DB_ASSERT(env, h_locked);
+			if ((t_ret = __os_unlink(env, real_name, 0)) != 0 &&
+			    ret == 0)
+				ret = t_ret;
+		}
+		if (h_locked)
 			MUTEX_UNLOCK(env, hp->mtx_hash);
 		if (ret == 0)
 			ret = EIO;
@@ -326,10 +345,7 @@ err:		if (h_locked)
 	}
 	if (real_name != NULL)
 		__os_free(env, real_name);
-	if (fhp != NULL &&
-	    (t_ret = __os_closehandle(env, fhp)) != 0 && ret == 0)
-		ret = t_ret;
-	if (ret != 0 && ret != ENOMEM)
+	if (ret != 0 && ret != EBUSY && ret != ENOMEM)
 		__db_err(env, ret, "__memp_bh_freeze");
 
 	return (ret);
@@ -349,9 +365,9 @@ __pgno_cmp(a, b)
 
 /*
  * __memp_bh_thaw --
- *	Free a buffer header in temporary storage.  optionally restore the
+ *	Free a buffer header in temporary storage.  Optionally restore the
  *	buffer (if alloc_bhp != NULL).  This function should be
- *	called with the hash bucket locked and will return with it locked.
+ *	called with the hash bucket locked and will return with it unlocked.
  *
  * PUBLIC: int __memp_bh_thaw __P((DB_MPOOL *, REGINFO *,
  * PUBLIC:	DB_MPOOL_HASH *, BH *, BH *));
@@ -363,14 +379,13 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	DB_MPOOL_HASH *hp;
 	BH *frozen_bhp, *alloc_bhp;
 {
-	BH *next_bhp;
 	DB_FH *fhp;
 	ENV *env;
 #ifdef DIAGNOSTIC
 	DB_LSN vlsn;
 #endif
 	MPOOL *c_mp;
-	MPOOLFILE *bh_mfp;
+	MPOOLFILE *mfp;
 	db_mutex_t mutex;
 	db_pgno_t *freelist, *ppgno, freepgno, maxpgno, spgno;
 	size_t nio;
@@ -384,16 +399,23 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	env = dbmp->env;
 	fhp = NULL;
 	c_mp = infop->primary;
-	bh_mfp = R_ADDR(dbmp->reginfo, frozen_bhp->mf_offset);
+	mfp = R_ADDR(dbmp->reginfo, frozen_bhp->mf_offset);
 	freelist = NULL;
-	pagesize = bh_mfp->stat.st_pagesize;
-	h_locked = ret = 0;
+	pagesize = mfp->stat.st_pagesize;
+	ret = 0;
 	real_name = NULL;
 
-	DB_ASSERT(env, F_ISSET(frozen_bhp, BH_FROZEN));
+	MUTEX_REQUIRED(env, hp->mtx_hash);
+	DB_ASSERT(env, F_ISSET(frozen_bhp, BH_EXCLUSIVE) || alloc_bhp == NULL);
+	h_locked = 1;
+
+	DB_ASSERT(env, F_ISSET(frozen_bhp, BH_FROZEN) &&
+	    !F_ISSET(frozen_bhp, BH_THAWED));
 	DB_ASSERT(env, alloc_bhp != NULL ||
 	    SH_CHAIN_SINGLETON(frozen_bhp, vc) ||
-	    BH_OBSOLETE(frozen_bhp, hp->old_reader, vlsn));
+	    (SH_CHAIN_HASNEXT(frozen_bhp, vc) &&
+	    BH_OBSOLETE(frozen_bhp, hp->old_reader, vlsn)));
+	DB_ASSERT(env, alloc_bhp == NULL || !F_ISSET(alloc_bhp, BH_FROZEN));
 
 	spgno = ((BH_FROZEN_PAGE *)frozen_bhp)->spgno;
 
@@ -427,9 +449,6 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	    real_name, pagesize, 0, env->db_mode, &fhp)) != 0)
 		goto err;
 
-	MUTEX_LOCK(env, hp->mtx_hash);
-	h_locked = 1;
-
 	/*
 	 * Read the first free page number -- we're about to free the page
 	 * after we we read it.
@@ -446,9 +465,12 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	}
 
 	/* Read the buffer from the frozen page. */
-	if (alloc_bhp != NULL && ((ret = __os_io(env, DB_IO_READ, fhp,
-	    spgno, pagesize, 0, pagesize, alloc_bhp->buf, &nio)) != 0))
-		goto err;
+	if (alloc_bhp != NULL) {
+		DB_ASSERT(env, !F_ISSET(frozen_bhp, BH_FREED));
+		if ((ret = __os_io(env, DB_IO_READ, fhp,
+		    spgno, pagesize, 0, pagesize, alloc_bhp->buf, &nio)) != 0)
+			goto err;
+	}
 
 	/*
 	 * Free the page from the file.  If it's the last page, truncate.
@@ -518,12 +540,20 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 		}
 #endif
 	}
-	if (needfree &&
-	    ((ret = __os_seek(env, fhp, spgno, pagesize, 0)) != 0 || (ret =
-	    __os_write(env, fhp, &freepgno, sizeof(db_pgno_t), &nio)) != 0 ||
-	    (ret = __os_seek(env, fhp, 0, 0, sizeof(u_int32_t))) != 0 || (ret =
-	    __os_write(env, fhp, &spgno, sizeof(db_pgno_t), &nio)) != 0))
-		goto err;
+	if (needfree) {
+		if ((ret = __os_seek(env, fhp, spgno, pagesize, 0)) != 0 ||
+		    (ret = __os_write(env, fhp,
+		    &freepgno, sizeof(db_pgno_t), &nio)) != 0 ||
+	    	    (ret = __os_seek(env, fhp, 0, 0, sizeof(u_int32_t))) != 0 ||
+		    (ret = __os_write(env, fhp,
+		    &spgno, sizeof(db_pgno_t), &nio)) != 0)
+			goto err;
+
+		ret = __os_closehandle(env, fhp);
+		fhp = NULL;
+		if (ret != 0)
+			goto err;
+	}
 
 	/*
 	 * Add the thawed buffer (if any) to the version chain.  We can't
@@ -533,50 +563,48 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	 * we're about to free frozen_bhp, and without it we would need to do
 	 * another cache lookup to find out where the new page should live.
 	 */
+	MUTEX_REQUIRED(env, hp->mtx_hash);
 	if (alloc_bhp != NULL) {
 		alloc_bhp->priority = c_mp->lru_count;
 
 		SH_CHAIN_INSERT_AFTER(frozen_bhp, alloc_bhp, vc, __bh);
 		if (!SH_CHAIN_HASNEXT(alloc_bhp, vc)) {
-			SH_TAILQ_INSERT_BEFORE(&hp->hash_bucket,
-			    frozen_bhp, alloc_bhp, hq, __bh);
+			SH_TAILQ_INSERT_BEFORE(&hp->hash_bucket, frozen_bhp,
+			    alloc_bhp, hq, __bh);
 			SH_TAILQ_REMOVE(&hp->hash_bucket, frozen_bhp, hq, __bh);
 		}
-	}
-
-	if ((next_bhp = SH_CHAIN_NEXT(frozen_bhp, vc, __bh)) == NULL) {
-		if ((next_bhp = SH_CHAIN_PREV(frozen_bhp, vc, __bh)) != NULL)
+	} else if (!SH_CHAIN_HASNEXT(frozen_bhp, vc)) {
+		if (SH_CHAIN_HASPREV(frozen_bhp, vc))
 			SH_TAILQ_INSERT_BEFORE(&hp->hash_bucket, frozen_bhp,
-			    next_bhp, hq, __bh);
+			    SH_CHAIN_PREV(frozen_bhp, vc, __bh), hq, __bh);
 		SH_TAILQ_REMOVE(&hp->hash_bucket, frozen_bhp, hq, __bh);
 	}
 	SH_CHAIN_REMOVE(frozen_bhp, vc, __bh);
-	MUTEX_UNLOCK(env, hp->mtx_hash);
-	h_locked = 0;
+
+	if (alloc_bhp == NULL && frozen_bhp->td_off != INVALID_ROFF &&
+	    (ret = __txn_remove_buffer(env,
+	    BH_OWNER(env, frozen_bhp), MUTEX_INVALID)) != 0) {
+		(void)__env_panic(env, ret);
+		goto err;
+	}
+	frozen_bhp->td_off = INVALID_ROFF;
 
 	/*
 	 * If other threads are waiting for this buffer as well, they will have
 	 * incremented the reference count and will be waiting on the mutex.
 	 * For that reason, we can't unconditionally free the memory here.
 	 */
-	if (atomic_dec(env, &frozen_bhp->ref) == 0) {
-		if (alloc_bhp == NULL && frozen_bhp->td_off != INVALID_ROFF &&
-		    (ret = __txn_remove_buffer(env,
-		    BH_OWNER(env, frozen_bhp), MUTEX_INVALID)) != 0) {
-			(void)__env_panic(env, ret);
-			goto err;
-		}
-		frozen_bhp->td_off = INVALID_ROFF;
-
-		/*
-		 * We need to be careful in the error case, because our caller
-		 * will attempt to free frozen_bhp.
-		 */
+	needfree = (atomic_dec(env, &frozen_bhp->ref) == 0);
+	if (!needfree)
+		F_SET(frozen_bhp, BH_THAWED);
+	MUTEX_UNLOCK(env, hp->mtx_hash);
+	if (F_ISSET(frozen_bhp, BH_EXCLUSIVE))
+		MUTEX_UNLOCK(env, frozen_bhp->mtx_buf);
+	h_locked = 0;
+	if (needfree) {
 		MPOOL_REGION_LOCK(env, infop);
 		SH_TAILQ_INSERT_TAIL(&c_mp->free_frozen, frozen_bhp, hq);
 		MPOOL_REGION_UNLOCK(env, infop);
-	} else {
-		F_SET(frozen_bhp, BH_THAWED);
 	}
 
 #ifdef HAVE_STATISTICS

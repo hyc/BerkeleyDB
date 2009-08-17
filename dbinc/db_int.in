@@ -450,12 +450,18 @@ typedef enum {
 	}								\
 } while (0)
 
+#define	FAILCHK_THREAD(env, ip) do {					\
+	if ((ip) != NULL)						\
+		(ip)->dbth_state = THREAD_FAILCHK;			\
+} while (0)
+
 #define	ENV_GET_THREAD_INFO(env, ip) ENV_ENTER(env, ip)
 
 #ifdef DIAGNOSTIC
 #define	ENV_LEAVE(env, ip) do {						\
 	if ((ip) != NULL) {						\
-		DB_ASSERT(env, (ip)->dbth_state == THREAD_ACTIVE);	\
+		DB_ASSERT(env, ((ip)->dbth_state == THREAD_ACTIVE  ||	\
+		    (ip)->dbth_state == THREAD_FAILCHK));		\
 		(ip)->dbth_state = THREAD_OUT;				\
 	}								\
 } while (0)
@@ -490,10 +496,9 @@ typedef enum {
 	THREAD_OUT,
 	THREAD_ACTIVE,
 	THREAD_BLOCKED,
-	THREAD_BLOCKED_DEAD
-#ifdef DIAGNOSTIC
-	, THREAD_VERIFY
-#endif
+	THREAD_BLOCKED_DEAD,
+	THREAD_FAILCHK,
+	THREAD_VERIFY
 } DB_THREAD_STATE;
 
 typedef struct __pin_list {

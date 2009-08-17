@@ -464,6 +464,7 @@ if test "$db_cv_stl" = "yes"; then
 	if test "$enable_shared" = "yes"; then
 		DEFAULT_LIB_STL="\$(libstlso_target)"
 	fi
+	ADDITIONAL_INCS="dbstl_common.h dbstl_set.h dbstl_vector.h dbstl_exception.h dbstl_map.h dbstl_utility.h dbstl_dbc.h dbstl_dbt.h dbstl_base_iterator.h dbstl_container.h dbstl_element_ref.h dbstl_inner_utility.h dbstl_resource_manager.h $ADDITIONAL_INCS"
 	INSTALL_LIBS="$INSTALL_LIBS $DEFAULT_LIB_STL"
 	if test "$enable_static" = "yes"; then
 		INSTALL_LIBS="$INSTALL_LIBS \$(libstl)"
@@ -890,6 +891,11 @@ if test "$db_cv_compat185" = "yes"; then
 		db_185.h:$srcdir/../dbinc/db_185.in:$srcdir/../dbinc_auto/ext_185_prot.in
 		db185_int.h:$srcdir/../db185/db185_int.in:$srcdir/../dbinc_auto/ext_185_prot.in"
 	fi
+fi
+
+if test "$db_cv_stl" = "yes"; then
+	CREATE_LIST="$CREATE_LIST
+	dbstl_common.h:$srcdir/../stl/dbstl_common.in"
 fi
 
 AC_CONFIG_FILES($CREATE_LIST)

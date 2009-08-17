@@ -160,8 +160,8 @@ skip_alloc:
 		pgno = cp->stream_curr_pgno;
 		curoff = cp->stream_off;
 	} else {
-		cp->stream_start_pgno = pgno;
-		curoff = 0;
+		cp->stream_start_pgno = cp->stream_curr_pgno = pgno;
+		cp->stream_off = curoff = 0;
 	}
 
 	/*
@@ -334,13 +334,17 @@ __db_poff(dbc, dbt, pgnop)
 		memcpy((u_int8_t *)pagep + P_OVERHEAD(dbp), p, pagespace);
 
 		/*
-		 * If this is the first entry, update the user's info.
-		 * Otherwise, update the entry on the last page filled
-		 * in and release that page.
+		 * If this is the first entry, update the user's info and
+		 * initialize the cursor to allow for streaming of subsequent
+		 * updates.  Otherwise, update the entry on the last page
+		 * filled in and release that page.
 		 */
-		if (lastp == NULL)
+		if (lastp == NULL) {
 			*pgnop = PGNO(pagep);
-		else {
+			dbc->internal->stream_start_pgno =
+			    dbc->internal->stream_curr_pgno = *pgnop;
+			dbc->internal->stream_off = 0;
+		} else {
 			lastp->next_pgno = PGNO(pagep);
 			pagep->prev_pgno = PGNO(lastp);
 			if ((ret = __memp_fput(mpf,
@@ -450,8 +454,9 @@ __db_doff(dbc, pgno)
 
 		if ((ret = __memp_dirty(mpf, &pagep,
 		    dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0) {
-			(void)__memp_fput(mpf,
-			    dbc->thread_info, pagep, dbc->priority);
+			if (pagep != NULL)
+				(void)__memp_fput(mpf,
+				    dbc->thread_info, pagep, dbc->priority);
 			return (ret);
 		}
 

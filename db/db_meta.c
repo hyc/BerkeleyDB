@@ -155,7 +155,7 @@ __db_new(dbc, type, lockp, pagepp)
 		 * Lock the new page.  Do this here because we must do it
 		 * before getting the page and the caller may need the lock
 		 * to keep readers from seeing the page before the transaction
-		 * commits.  We can do this becasue no one will hold a free
+		 * commits.  We can do this because no one will hold a free
 		 * page locked.
 		 */
 		if (lockp != NULL && (ret =
@@ -515,8 +515,8 @@ logged:
 			goto err1;
 		h = NULL;
 		/* Give the page back to the OS. */
-		if ((ret =
-		    __memp_ftruncate(mpf, dbc->thread_info, last_pgno, 0)) != 0)
+		if ((ret = __memp_ftruncate(mpf, dbc->txn, dbc->thread_info,
+		    last_pgno, 0)) != 0)
 			goto err1;
 		DB_ASSERT(dbp->env, meta->pgno == PGNO_BASE_MD);
 		meta->last_pgno--;
@@ -709,7 +709,7 @@ __db_pg_truncate(dbc, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
 	}
 
 	if (pgno != *last_pgno) {
-		if ((ret = __memp_ftruncate(mpf, dbc->thread_info,
+		if ((ret = __memp_ftruncate(mpf, dbc->txn, dbc->thread_info,
 		    pgno + 1, in_recovery ? MP_TRUNC_RECOVER : 0)) != 0)
 			goto err;
 		if (c_data)
@@ -931,8 +931,8 @@ __db_truncate_freelist(dbc, meta, h, list, start, nelem)
 	    dbc->thread_info, h, DB_PRIORITY_VERY_LOW)) != 0)
 		goto err;
 	h = NULL;
-	if ((ret =
-	    __memp_ftruncate(mpf, dbc->thread_info, list[start], 0)) != 0)
+	if ((ret = __memp_ftruncate(mpf, dbc->txn, dbc->thread_info,
+	    list[start], 0)) != 0)
 		goto err;
 	meta->last_pgno = list[start] - 1;
 

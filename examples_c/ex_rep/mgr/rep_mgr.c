@@ -60,10 +60,8 @@ main(argc, argv)
 	/* Perform repmgr-specific setup based on command line options. */
 	if (setup_info.role == MASTER)
 		start_policy = DB_REP_MASTER;
-	else if (setup_info.role == CLIENT) {
-		my_app_data.shared_data.appointed_client_init = 1;
+	else if (setup_info.role == CLIENT)
 		start_policy = DB_REP_CLIENT;
-	}
 	if ((ret = dbenv->repmgr_set_local_site(dbenv, setup_info.self.host,
 	    setup_info.self.port, 0)) != 0) {
 		fprintf(stderr, "Could not set listen address (%d).\n", ret);
@@ -198,7 +196,6 @@ event_callback(dbenv, which, info)
 
 	case DB_EVENT_REP_STARTUPDONE:
 		shared->in_client_sync = 0;
-		shared->appointed_client_init = 0;
 		break;
 
 	default:

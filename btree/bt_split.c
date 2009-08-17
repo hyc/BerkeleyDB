@@ -128,6 +128,7 @@ retry:		if ((ret = (dbc->dbtype == DB_BTREE ?
 				*root_pgnop = root_pgno;
 		} else if (root_pgnop != NULL)
 			*root_pgnop = cp->csp[-1].page->pgno;
+
 		/*
 		 * Split the page if it still needs it (it's possible another
 		 * thread of control has already split the page).  If we are
@@ -142,7 +143,7 @@ retry:		if ((ret = (dbc->dbtype == DB_BTREE ?
 		}
 
 		/*
-		 * /We need to try to lock the next page so we can update
+		 * We need to try to lock the next page so we can update
 		 * its PREV.
 		 */
 		if (dbc->dbtype == DB_BTREE && ISLEAF(cp->csp->page) &&
@@ -161,7 +162,7 @@ retry:		if ((ret = (dbc->dbtype == DB_BTREE ?
 		case 0:
 no_split:		/* Once we've split the leaf page, we're done. */
 			if (level == LEAFLEVEL)
-				goto ret;
+				goto done;
 
 			/* Switch directions. */
 			if (dir == UP)
@@ -184,7 +185,7 @@ no_split:		/* Once we've split the leaf page, we're done. */
 
 err:	if (root_pgnop != NULL)
 		*root_pgnop = cp->root;
-ret:	(void)__LPUT(dbc, metalock);
+done:	(void)__LPUT(dbc, metalock);
 	(void)__TLPUT(dbc, next_lock);
 	return (ret);
 }
@@ -296,7 +297,7 @@ __bam_root(dbc, cp)
 	ret = __bam_ca_split(dbc, cp->page->pgno, lp->pgno, rp->pgno, split, 1);
 
 	/* Success or error: release pages and locks. */
-err:	if ((t_ret = __memp_fput(mpf,
+err:	if (cp->page != NULL && (t_ret = __memp_fput(mpf,
 	     dbc->thread_info, cp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	cp->page = NULL;
@@ -411,6 +412,16 @@ __bam_page(dbc, pp, cp)
 		goto err;
 
 	/*
+	 * Prepare to fix up the previous pointer of any leaf page following
+	 * the split page.  Our caller has already write locked the page so
+	 * we can get it without deadlocking on the parent latch.
+	 */
+	if (ISLEAF(cp->page) && NEXT_PGNO(cp->page) != PGNO_INVALID &&
+	    (ret = __memp_fget(mpf, &NEXT_PGNO(cp->page),
+	    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &tp)) != 0)
+		goto err;
+
+	/*
 	 * Fix up the page numbers we didn't have before.  We have to do this
 	 * before calling __bam_pinsert because it may copy a page number onto
 	 * the parent page and it takes the page number from its page argument.
@@ -423,19 +434,6 @@ __bam_page(dbc, pp, cp)
 	/* Actually update the parent page. */
 	if ((ret = __bam_pinsert(dbc, pp, split, lp, rp, BPI_NOLOGGING)) != 0)
 		goto err;
-	/*
-	 * Fix up the previous pointer of any leaf page following the split
-	 * page.
-	 * Our caller has already write locked the page so we can get it without
-	 * deadlocking on the parent latch.
-	 */
-	if (ISLEAF(cp->page) && NEXT_PGNO(cp->page) != PGNO_INVALID) {
-		if ((ret = __memp_fget(mpf, &NEXT_PGNO(cp->page),
-		    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &tp)) != 0)
-			goto err;
-		/* Fix up the next-page link. */
-		PREV_PGNO(tp) = PGNO(rp);
-	}
 
 	bc = (BTREE_CURSOR *)dbc->internal;
 	/* Log the change. */
@@ -459,8 +457,17 @@ __bam_page(dbc, pp, cp)
 		    &LSN(alloc_rp), (u_int32_t)NUM_ENT(lp),
 		    tp == NULL ? 0 : PGNO(tp), tp == NULL ? &log_lsn : &LSN(tp),
 		    PGNO(pp->page), &LSN(pp->page), pp->indx,
-		    &log_dbt, NULL, &rentry, opflags)) != 0)
+		    &log_dbt, NULL, &rentry, opflags)) != 0) {
+			/*
+			 * Undo the update to the parent page, which has not
+			 * been logged yet. This must succeed.
+			 */
+			t_ret = __db_ditem_nolog(dbc, pp->page,
+			    pp->indx + 1, rentry.size);
+			DB_ASSERT(dbp->env, t_ret == 0);
+
 			goto err;
+		}
 
 	} else
 		LSN_NOT_LOGGED(LSN(cp->page));
@@ -470,8 +477,11 @@ __bam_page(dbc, pp, cp)
 	LSN(lp) = LSN(cp->page);
 	LSN(rp) = LSN(cp->page);
 	LSN(pp->page) = LSN(cp->page);
-	if (tp != NULL)
+	if (tp != NULL) {
+		/* Log record has been written; now it is safe to update next page. */
+		PREV_PGNO(tp) = PGNO(rp);
 		LSN(tp) = LSN(cp->page);
+	}
 
 	/*
 	 * Copy the left and right pages into place.  There are two paths
@@ -1286,6 +1296,7 @@ __bam_copy(dbp, pp, cp, nxt, stop)
 		cinp[off] = HOFFSET(cp) -= nbytes;
 		if (off == 0 && nxt != 0 && TYPE(pp) == P_IBTREE) {
 			internal.len = 0;
+			UMRW_SET(internal.unused);
 			internal.type = B_KEYDATA;
 			internal.pgno = GET_BINTERNAL(dbp, pp, nxt)->pgno;
 			internal.nrecs = GET_BINTERNAL(dbp, pp, nxt)->nrecs;

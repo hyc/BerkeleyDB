@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 10.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_app.html" title="Architecting Transactional Data Store applications" />
     <link rel="next" href="transapp_data_open.html" title="Opening the databases" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_app.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 10. 
+          <th width="60%" align="center">Chapter 11. 
 		Berkeley DB Transactional Data Store Applications
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_data_open.html">Next</a></td>
@@ -48,7 +48,7 @@
     within the environment.  Once the databases are opened, the application
     makes changes to the databases inside of transactions.  Each set of
     changes that entails a unit of work should be surrounded by the
-    appropriate <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>, <a href="../api_reference/C/txncommit.html" class="olink">DB_TXN-&gt;commit()</a> and <a href="../api_reference/C/txnabort.html" class="olink">DB_TXN-&gt;abort()</a> calls.  The Berkeley
+    appropriate <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>, <a href="../api_reference/C/txncommit.html" class="olink">DB_TXN-&gt;commit()</a> and <a href="../api_reference/C/txnabort.html" class="olink">DB_TXN-&gt;abort()</a> calls.  The Berkeley
     DB access methods will make the appropriate calls into the Lock, Log
     and Memory Pool subsystems in order to guarantee transaction semantics.
     When the application is ready to exit, all outstanding transactions

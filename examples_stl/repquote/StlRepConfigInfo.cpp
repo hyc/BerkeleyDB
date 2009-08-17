@@ -1,12 +1,14 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2001-2009 Oracle.  All rights reserved.
  *
  * $Id$
  */
 
 #include "StlRepConfigInfo.h"
+
+#include <cstdlib>
 
 RepConfigInfo::RepConfigInfo()
 {
@@ -17,6 +19,8 @@ RepConfigInfo::RepConfigInfo()
 	priority = 100;
 	verbose = false;
 	other_hosts = NULL;
+	ack_policy = DB_REPMGR_ACKS_QUORUM;
+	bulk = false;
 }
 
 RepConfigInfo::~RepConfigInfo()
@@ -26,7 +30,7 @@ RepConfigInfo::~RepConfigInfo()
 		REP_HOST_INFO *CurItem = other_hosts;
 		while (CurItem->next != NULL)
 		{
-			REP_HOST_INFO *TmpItem = CurItem;
+			REP_HOST_INFO *TmpItem = CurItem->next;
 			free(CurItem);
 			CurItem = TmpItem;
 		}

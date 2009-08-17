@@ -46,15 +46,17 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
     </p>
       <p>
          The database environment's limit on open file descriptors to flush
-         dirty pages may also be configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
+         dirty pages may also be configured using the environment's 
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
          syntax of the entry in that file is a single line with the string
          "set_max_openfd", one or more whitespace characters, and the number of
-         open file descriptors. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
+         open file descriptors. Because the 
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
          read when the database environment is opened, it will silently
          overrule configuration done before that time.
     </p>
       <p>
-         The <a class="xref" href="mempset_mp_max_write.html" title="DbEnv::set_mp_max_write()">DbEnv::set_mp_max_write()</a> 
+         The <a class="xref" href="mempset_mp_max_openfd.html" title="DbEnv::set_mp_max_openfd()">DbEnv::set_mp_max_openfd()</a> 
          method configures a database environment, not only operations
          performed using the specified <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a>  handle.
     </p>
@@ -72,7 +74,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1693825"></a>Parameters</h3>
+              <h3 class="title"><a id="id1692963"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -80,7 +82,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1693994"></a>maxopenfd</h4>
+                <h4 class="title"><a id="id1693069"></a>maxopenfd</h4>
               </div>
             </div>
           </div>
@@ -94,7 +96,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1693995"></a>Errors</h3>
+              <h3 class="title"><a id="id1693221"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -102,7 +104,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
                          The <code class="methodname">DbEnv::set_mp_max_openfd()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -112,7 +114,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1694025"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1693321"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -125,7 +127,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1693839"></a>Class</h3>
+              <h3 class="title"><a id="id1693070"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -137,7 +139,7 @@ DbEnv::set_mp_max_openfd(int maxopenfd); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1693910"></a>See Also</h3>
+              <h3 class="title"><a id="id1693181"></a>See Also</h3>
             </div>
           </div>
         </div>

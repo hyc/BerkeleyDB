@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,8 +15,8 @@ namespace BerkeleyDB {
     /// </summary>
     public class BaseDatabase : IDisposable {
         internal DB db;
-        protected DatabaseEnvironment env;
-        protected bool isOpen;
+        protected internal DatabaseEnvironment env;
+        protected internal bool isOpen;
         private DBTCopyDelegate CopyDelegate;
         private EntryComparisonDelegate dupCompareHandler;
         private DatabaseFeedbackDelegate feedbackHandler;
@@ -652,7 +658,7 @@ namespace BerkeleyDB {
         /// created by the application or was later deleted.
         /// </exception>
         public void Delete(DatabaseEntry key, Transaction txn) {
-            db.del(Transaction.getDB_TXN(txn), DatabaseEntry.getDBT(key), 0);
+            db.del(Transaction.getDB_TXN(txn), key, 0);
         }
 
         /// <summary>
@@ -756,7 +762,7 @@ namespace BerkeleyDB {
              */
             try {
                 db.exists(Transaction.getDB_TXN(txn),
-                    DatabaseEntry.getDBT(key), (info == null) ? 0 : info.flags);
+                    key, (info == null) ? 0 : info.flags);
                 return true;
             } catch (NotFoundException) {
                 return false;
@@ -896,8 +902,7 @@ namespace BerkeleyDB {
             if (data == null)
                 data = new DatabaseEntry();
             flags |= info == null ? 0 : info.flags;
-            db.get(Transaction.getDB_TXN(txn),
-                DatabaseEntry.getDBT(key), DatabaseEntry.getDBT(data), flags);
+            db.get(Transaction.getDB_TXN(txn), key, data, flags);
             return new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
         }
 

@@ -8,7 +8,7 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="prev" href="stlDbstlDbtfree_mem.html" title="free_mem" />
+    <link rel="prev" href="stlDbstlDbtoperator_assign.html" title="operator=" />
     <link rel="next" href="stlDbstlElemTraitseq.html" title="eq" />
   </head>
   <body>
@@ -19,7 +19,7 @@
  DbstlElemTraits  </th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="stlDbstlDbtfree_mem.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="stlDbstlDbtoperator_assign.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
           <td width="20%" align="right"> <a accesskey="n" href="stlDbstlElemTraitseq.html">Next</a></td>
         </tr>
@@ -35,7 +35,6 @@
           </div>
         </div>
       </div>
-      <h2><a id="id1577334"></a>DbstlElemTraits</h2>
       <p>This class is used to register callbacks to manipulate an object of a complex type. </p>
       <p>These callbacks are used by dbstl at runtime to manipulate the object.</p>
       <p>A complex type is a type whose members are not located in a contiguous chunk of memory. For example, the following class A is a complex type because for any instance a of class A, a.b_ points to another object of type B, and dbstl treats the object that a.b_ points to as part of the data of the instance a. Hence, if the user needs to store a.b_ into a dbstl container, the user needs to register an appropriate callback to de-reference and store the object referenced by a.b. Similarly, the user also needs to register callbacks to marshall an array as well as to count the number of elements in such an array.</p>
@@ -46,7 +45,7 @@
       <p>The callbacks need not be set to every type explicitly. . dbstl will check if a needed callback function of this type is provided. If one is available, dbstl will use the registered callback. If the appropriate callback is not provided, dbstl will use reasonable defaults to do the job.</p>
       <p>For returning the size of an object, the default behavior is to use the sizeof() operator; For marshalling and unmarshalling, dbstl uses memcpy, so the default behavior is sufficient for simple types whose data reside in a contiguous chunk of memory; Dbstl uses uses &gt;, == and &lt; for comparison operations; For char* and wchar_t * strings, dbstl already provides the appropriate callbacks, so you do not need to register them. In general, if the default behavior is adequate, you don't need to register the corresponding callback.</p>
       <p>If you have registered proper callbacks, the DbstlElemTraits&lt;T&gt; can also be used as the char_traits&lt;T&gt; class for std::basic_string&lt;T, char_traits&lt;T&gt; &gt;, and you can enable your class T to form a basic_string&lt;T, DbstlElemTraits&lt;T&gt;&gt;, and use basic_string's functionality and the algorithms to manipulate it. </p>
-      <h4><a id="id1577318"></a> Public Members </h4>
+      <h4><a id="id1571004"></a> Public Members </h4>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -369,11 +368,11 @@ DbstlElemTraits
           </tbody>
         </table>
       </div>
-      <h4><a id="id1577805"></a>
+      <h4><a id="id1571302"></a>
 Group</h4>
       <p>
-<a class="xref" href="dbstl_helper_classes.html" title="Chapter 21.  dbstl helper classes">
- dbstl helper classes  </a>
+<a class="xref" href="dbstl_helper_classes.html" title="Chapter 21.  Dbstl Helper Classes">
+ Dbstl Helper Classes  </a>
 </p>
       <p>
 </p>
@@ -417,7 +416,7 @@ static T* assign(T *seq, size_t cnt,
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1577741"></a>
+                <h3 class="title"><a id="id1571712"></a>
 Group: Interface compatible with std::string's char_traits.</h3>
               </div>
             </div>
@@ -428,7 +427,7 @@ Group: Interface compatible with std::string's char_traits.</h3>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1578197"></a>
+                <h3 class="title"><a id="id1571756"></a>
 Class</h3>
               </div>
             </div>
@@ -444,13 +443,13 @@ Class</h3>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="stlDbstlDbtfree_mem.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="stlDbstlDbtoperator_assign.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
           <td width="40%" align="right"> <a accesskey="n" href="stlDbstlElemTraitseq.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">
-free_mem
+operator=
  </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>

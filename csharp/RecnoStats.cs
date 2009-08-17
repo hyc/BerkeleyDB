@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -83,18 +89,18 @@ namespace BerkeleyDB {
         /// <summary>
         /// Bytes free in internal pages. 
         /// </summary>
-        public long InternalPagesFreeBytes { get { return st.bt_int_pgfree; } }
+        public ulong InternalPagesFreeBytes { get { return st.bt_int_pgfree; } }
         /// <summary>
         /// Bytes free in leaf pages. 
         /// </summary>
-        public long LeafPagesFreeBytes { get { return st.bt_leaf_pgfree; } }
+        public ulong LeafPagesFreeBytes { get { return st.bt_leaf_pgfree; } }
         /// <summary>
         /// Bytes free in duplicate pages. 
         /// </summary>
-        public long DuplicatePagesFreeBytes { get { return st.bt_dup_pgfree; } }
+        public ulong DuplicatePagesFreeBytes { get { return st.bt_dup_pgfree; } }
         /// <summary>
         /// Bytes free in overflow pages. 
         /// </summary>
-        public long OverflowPagesFreeBytes { get { return st.bt_over_pgfree; } }
+        public ulong OverflowPagesFreeBytes { get { return st.bt_over_pgfree; } }
     }
 }

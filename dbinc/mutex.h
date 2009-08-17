@@ -13,6 +13,10 @@
 /* The inlined trylock calls need access to the details of mutexes. */
 #define	LOAD_ACTUAL_MUTEX_CODE
 #include "dbinc/mutex_int.h"
+
+#ifndef HAVE_SHARED_LATCHES
+ #error "Shared latches are required in DB 4.8 and above"
+#endif
 #endif
 
 #if defined(__cplusplus)
@@ -221,6 +225,8 @@ static inline int __db_pthread_mutex_tryreadlock(ENV *env, db_mutex_t mutex)
 #define	MUTEX_READLOCK(env, mutex)	(mutex) = (mutex)
 #define	MUTEX_TRY_READLOCK(env, mutex)	(mutex) = (mutex)
 #define	MUTEX_UNLOCK(env, mutex)	(mutex) = (mutex)
+#define	MUTEX_REQUIRED(env, mutex)	(mutex) = (mutex)
+#define	MUTEX_REQUIRED_READ(env, mutex)	(mutex) = (mutex)
 #endif
 
 /*

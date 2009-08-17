@@ -197,6 +197,10 @@ retry:	MUTEX_LOCK(env, old_hp->mtx_hash);
 			goto retry;
 		} else if (bucket == new_bucket && F_ISSET(bhp, BH_FROZEN)) {
 			atomic_inc(env, &bhp->ref);
+			/*
+			 * We need to drop the hash bucket mutex to avoid
+			 * self-blocking when we allocate a new buffer.
+			 */
 			MUTEX_UNLOCK(env, old_hp->mtx_hash);
 			MUTEX_LOCK(env, bhp->mtx_buf);
 			F_SET(bhp, BH_EXCLUSIVE);
@@ -208,9 +212,19 @@ retry:	MUTEX_LOCK(env, old_hp->mtx_hash);
 				    old_infop, mfp, 0, NULL, &alloc_bhp)) != 0)
 					goto err;
 			}
-			if ((ret = __memp_bh_thaw(dbmp,
-			    old_infop, old_hp, bhp, alloc_bhp)) != 0)
-				goto err;
+			/*
+			 * But we need to lock the hash bucket again before
+			 * thawing the buffer.  The call to __memp_bh_thaw
+			 * will unlock the hash bucket mutex.
+			 */
+			MUTEX_LOCK(env, old_hp->mtx_hash);
+			if (F_ISSET(bhp, BH_THAWED)) {
+				ret = __memp_bhfree(dbmp, old_infop, NULL, NULL,
+				    alloc_bhp,
+				    BH_FREE_FREEMEM | BH_FREE_UNLOCKED);
+			} else
+				ret = __memp_bh_thaw(dbmp,
+				    old_infop, old_hp, bhp, alloc_bhp);
 
 			/*
 			 * We've dropped the mutex in order to thaw, so we need

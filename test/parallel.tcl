@@ -1,3 +1,7 @@
+# See the file LICENSE for redistribution information.
+#
+# Copyright (c) 1996-2009 Oracle.  All rights reserved.
+#
 # Code to load up the tests in to the Queue database
 # $Id$
 proc load_queue { file  {dbdir RUNQUEUE} nitems } {

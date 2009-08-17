@@ -1,3 +1,10 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ * $Id$
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;

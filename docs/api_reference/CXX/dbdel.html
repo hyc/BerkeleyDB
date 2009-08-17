@@ -69,7 +69,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632996"></a>Parameters</h3>
+              <h3 class="title"><a id="id1632296"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -77,7 +77,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633904"></a>flags</h4>
+                <h4 class="title"><a id="id1632997"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -98,32 +98,60 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="del_DB_MULTIPLE"></a>DB_MULTIPLE</code>
+                <p><a id="del_DB_MULTIPLE"></a>
+                  <code class="literal">DB_MULTIPLE</code>
             </p>
-                <p>Delete multiple data items using keys from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers.
-            </p>
-                <p>To delete records in bulk by key with the btree or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultipledatabuilder.html" title="DbMultipleDataBuilder">DbMultipleDataBuilder</a>.  To delete records in bulk by record number, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a> with a data size of zero.</p>
-                <p>A successful bulk delete operation is logically equivalent to a loop through each key/data pair, performing a <a class="xref" href="dbdel.html" title="Db::del()">Db::del()</a> for each one.</p>
-                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
-
-	    </p>
-                <p>The <code class="literal">DB_MULTIPLE</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
                 <p>
+                Delete multiple data items using keys from the buffer to which the 
+                <span class="bold"><strong>key</strong></span> parameter refers.
+            </p>
+                <p>
+                To delete records in bulk by key with the btree or hash access methods, construct a
+                bulk buffer in the <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultipledatabuilder.html" title="DbMultipleDataBuilder">DbMultipleDataBuilder</a>.  
+                To delete records in bulk by record number, construct a bulk buffer in the 
+                <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a> 
+                with a data size of zero.
+            </p>
+                <p>
+                A successful bulk delete operation is logically equivalent to a loop through each
+                key/data pair, performing a <a class="xref" href="dbdel.html" title="Db::del()">Db::del()</a> for each one.
+            </p>
+                <p>
+                See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on
+                working with bulk updates.
+            </p>
+                <p>
+                The <code class="literal">DB_MULTIPLE</code> flag may only be used alone.
             </p>
               </li>
               <li>
+                <p><a id="del_DB_MULTIPLE_KEY"></a>
+                  <code class="literal">DB_MULTIPLE_KEY</code>
+            </p>
                 <p>
-                  <code class="literal"><a id="del_DB_MULTIPLE_KEY"></a>DB_MULTIPLE_KEY</code>
+                Delete multiple data items using keys and data from the buffer to which the 
+                <span class="bold"><strong>key</strong></span> parameter refers.
             </p>
-                <p>Delete multiple data items using keys and data from buffer to which the <span class="bold"><strong>key</strong></span> parameter refers.
-            </p>
-                <p>To delete records in bulk with the btree or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultiplekeydatabuilder.html" title="DbMultipleKeyDataBuilder">DbMultipleKeyDataBuilder</a>.  To delete records in bulk with the recno or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a>.</p>
-                <p>See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on working with bulk updates.
-
-            </p>
-                <p>The <code class="literal">DB_MULTIPLE_KEY</code> flag may only be used alone, or with the <code class="literal">DB_OVERWRITE_DUP</code> option.</p>
                 <p>
+                To delete records in bulk with the btree or hash access methods, construct a bulk
+                buffer in the <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultiplekeydatabuilder.html" title="DbMultipleKeyDataBuilder">DbMultipleKeyDataBuilder</a>.  
+                To delete records in bulk with the recno or hash access methods, construct a bulk
+                buffer in the <span class="bold"><strong>key</strong></span> 
+                <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a> using 
+                <a class="xref" href="dbmultiplerecnodatabuilder.html" title="DbMultipleRecnoDataBuilder">DbMultipleRecnoDataBuilder</a>.
+            </p>
+                <p>
+                See the <a class="xref" href="dbt.html#dbtlist" title="DBT and Bulk Operations">DBT and Bulk Operations</a> for more information on
+                working with bulk updates.
+            </p>
+                <p>
+                The <code class="literal">DB_MULTIPLE_KEY</code> flag may only be used alone.
             </p>
               </li>
             </ul>
@@ -133,7 +161,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1634198"></a>key</h4>
+                <h4 class="title"><a id="id1633276"></a>key</h4>
               </div>
             </div>
           </div>
@@ -145,7 +173,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1634347"></a>txnid</h4>
+                <h4 class="title"><a id="id1633359"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -166,7 +194,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1634020"></a>Errors</h3>
+              <h3 class="title"><a id="id1632582"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -174,7 +202,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
             The <code class="methodname">Db::del()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -184,7 +212,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1634281"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id1633442"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -218,7 +246,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633924"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1633083"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -227,9 +255,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -238,7 +264,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633480"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1633338"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -247,9 +273,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -258,7 +282,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1634421"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1633525"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -268,9 +292,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -282,7 +304,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1634550"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1633620"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -290,9 +312,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -301,7 +321,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633937"></a>DB_SECONDARY_BAD</h4>
+                <h4 class="title"><a id="id1633445"></a>DB_SECONDARY_BAD</h4>
               </div>
             </div>
           </div>
@@ -313,7 +333,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1634566"></a>EACCES</h4>
+                <h4 class="title"><a id="id1633139"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -325,7 +345,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633965"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1633616"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -338,7 +358,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633302"></a>Class</h3>
+              <h3 class="title"><a id="id1633297"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -350,7 +370,7 @@ Db::del(DbTxn *txnid, Dbt *key, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633900"></a>See Also</h3>
+              <h3 class="title"><a id="id1633063"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -17,7 +17,6 @@ import com.sleepycat.db.*;
  */
 public class RepQuoteEnvironment extends Environment
 {
-    private boolean appointedClientInit;
     private boolean appFinished;
     private boolean inClientSync;
     private boolean isMaster;
@@ -27,20 +26,11 @@ public class RepQuoteEnvironment extends Environment
         throws DatabaseException, java.io.FileNotFoundException
     {
         super(host, config);
-        appointedClientInit = false;
         appFinished = false;
         inClientSync = false;
         isMaster = false;
     }
 
-    boolean getAppointedClientInit()
-    {
-        return appointedClientInit;
-    }
-    public void setAppointedClientInit(boolean appointedClientInit)
-    {
-        this.appointedClientInit = appointedClientInit;
-    }
     boolean getAppFinished()
     {
         return appFinished;

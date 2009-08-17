@@ -201,7 +201,6 @@ struct __epg {
 #define	BTD_UPDATE	0x0001		/* Update parents. */
 #define	BTD_RELINK	0x0002		/* Relink leaf pages. */
 
-#define	BTREE_DEBUG
 /*
  * TRY_LOCK
  *	When holding a stack we have pages latched but not locked so
@@ -218,7 +217,7 @@ struct __epg {
 
 #ifdef BTREE_DEBUG
 #define	TRY_LOCK2(dbc, ndbc, pgno,					\
-    saved_pgno, saved_lock, lock_mode, label) do{			\
+    saved_pgno, saved_lock, lock_mode, label) do {			\
 	static int BTcount = 0;						\
 	if ((pgno) != (saved_pgno) &&					\
 	    ((BTcount++ % 5) == 0 ||					\
@@ -247,7 +246,7 @@ struct __epg {
 } while (0)
 #else
 #define	TRY_LOCK2(dbc, ndbc, pgno,					\
-    saved_pgno, saved_lock, lock_mode, label) do{			\
+    saved_pgno, saved_lock, lock_mode, label) do {			\
 	if ((pgno) != (saved_pgno) &&					\
 	    (ret = __db_lget(dbc, LCK_COUPLE_ALWAYS, pgno,		\
 	    lock_mode, DB_LOCK_NOWAIT, &(saved_lock))) != 0) {		\

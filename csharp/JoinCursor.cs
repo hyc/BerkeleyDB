@@ -1,4 +1,10 @@
-﻿using System;
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -168,8 +174,7 @@ namespace BerkeleyDB {
             flags |= (info == null) ? 0 : info.flags;
 
             try {
-                ret = dbc.get(DatabaseEntry.getDBT(key),
-                    DatabaseEntry.getDBT(data), flags);
+                ret = dbc.get(key, data, flags);
                 Current = 
                     new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
                 return true;

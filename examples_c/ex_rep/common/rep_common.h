@@ -32,7 +32,6 @@ typedef struct {
 	int is_master;
 	int app_finished;
 	int in_client_sync;
-	int appointed_client_init;
 } SHARED_DATA;
 
 /* Arguments for support threads. */

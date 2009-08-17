@@ -134,6 +134,7 @@
 #define	__db_txnlist_lsnget __db_txnlist_lsnget@DB_VERSION_UNIQUE_NAME@
 #define	__db_txnlist_lsninit __db_txnlist_lsninit@DB_VERSION_UNIQUE_NAME@
 #define	__db_txnlist_print __db_txnlist_print@DB_VERSION_UNIQUE_NAME@
+#define	__db_ditem_nolog __db_ditem_nolog@DB_VERSION_UNIQUE_NAME@
 #define	__db_ditem __db_ditem@DB_VERSION_UNIQUE_NAME@
 #define	__db_pitem_nolog __db_pitem_nolog@DB_VERSION_UNIQUE_NAME@
 #define	__db_pitem __db_pitem@DB_VERSION_UNIQUE_NAME@

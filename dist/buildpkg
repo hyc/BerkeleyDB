@@ -8,16 +8,8 @@
 # Otherwise, use the standard X.X.X format.
 VERSION=${1:-${DB_VERSION_MAJOR}.${DB_VERSION_MINOR}.${DB_VERSION_PATCH}}
 
-# Find GNU tar
-for TAR in tar gtar ; do
-	if $TAR --version | grep GNU > /dev/null ; then
-		break
-	fi
-done
-if ! $TAR --version | grep GNU > /dev/null ; then
-	echo "GNU tar was not found"
-	exit 1
-fi
+# Use "ustar" as the archiver
+TAR=ustar
 
 # Set root directory where we do the work, can be anywhere.
 D=`pwd`/../release
@@ -38,9 +30,9 @@ cd $R/dist && sh s_javadoc
 cd $R && rm -rf build_brew_x build_s60_x
 cd $R && rm -rf java/src/com/sleepycat/xa
 cd $R && rm -rf rpc_* dbinc/db_server_int.h dbinc_auto/rpc*.h
-cd $R && rm -rf test/TODO test/upgrade test/scr036
-cd $R && rm -rf test_erlang test_perf test_purify
-cd $R && rm -rf test_rep test_server test_stl/ms_examples test_stl/stlport
+cd $R && rm -rf test/TODO test/upgrade test/scr036 test_erlang
+cd $R && rm -rf test_perf test_purify test_repmgr
+cd $R && rm -rf test_server test_stl/ms_examples test_stl/stlport
 cd $R && rm -rf test_vxworks
 cd $R && find . -name '.hg*' | xargs rm -f
 cd $R && find . -name 'tags' | xargs rm -f
@@ -67,7 +59,8 @@ cd $R && find . -name 'tags' | xargs rm -f
 # Fix permissions
 cd $R && find . -type d | xargs chmod 775
 cd $R && find . -type f | xargs chmod 444
-cd $R && chmod 664 build_windows/*.dsp
+cd $R && chmod 664 build_windows/*.dsp build_windows/*vcproj
+cd $R && chmod 664 csharp/doc/libdb_dotnet*.XML
 cd $R/dist && sh s_perm
 
 # Check for file names differing only in case.
@@ -75,7 +68,7 @@ cd $R && find . | sort -f | uniq -ic | sed '/1 /d'
 
 # Create the crypto tar archive release.
 T="$D/db-$VERSION.tar.gz"
-cd $D && $TAR czf $T --format=v7 --owner=100 --group=100 db-$VERSION
+cd $D && $TAR czf $T -find db-$VERSION -chown 100 -chgrp 100
 chmod 444 $T
 
 # Create the non-crypto tree.
@@ -89,7 +82,7 @@ cd $RNC/dist && sh s_perm
 
 # Create the non-crypto tar archive release.
 T="$D/db-$VERSION.NC.tar.gz"
-cd $RNC/.. && $TAR czf $T --format=v7 --owner=100 --group=100 db-$VERSION.NC
+cd $RNC/.. && $TAR czf $T -find db-$VERSION.NC -chown 100 -chgrp 100
 chmod 444 $T
 
 t=__tmp

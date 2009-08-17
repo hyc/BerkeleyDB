@@ -206,8 +206,10 @@ __rep_internal_init(env, abbrev)
 
 	rep = env->rep_handle->region;
 	REP_SYSTEM_LOCK(env);
+#ifdef HAVE_STATISTICS
 	if (!abbrev)
-		STAT(rep->stat.st_outdated++);
+		rep->stat.st_outdated++;
+#endif
 
 	/*
 	 * What we call "abbreviated internal init" is really just NIMDB

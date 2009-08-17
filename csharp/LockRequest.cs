@@ -1,4 +1,10 @@
-﻿using System;
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
+using System;
 using System.Collections.Generic;
 using System.Text;
 using BerkeleyDB.Internal;
@@ -23,8 +29,8 @@ namespace BerkeleyDB {
         }
 
         internal DatabaseEntry Obj {
-            get { return DatabaseEntry.fromDBT(lockreq.obj); }
-            set { lockreq.obj = DatabaseEntry.getDBT(value); }
+            get { return lockreq.obj; }
+            set { lockreq.obj = value; }
         }
 
         internal uint timeout {

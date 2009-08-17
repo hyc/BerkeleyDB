@@ -65,7 +65,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670002"></a>Parameters</h3>
+              <h3 class="title"><a id="id1669195"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1670100"></a>tx_recover</h4>
+                <h4 class="title"><a id="id1669408"></a>tx_recover</h4>
               </div>
             </div>
           </div>
@@ -122,8 +122,8 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
                 <div class="itemizedlist">
                   <ul type="circle">
                     <li>
-                      <p>
-                                          <code class="literal"><a id="set_app_dispatch_DB_TXN_BACKWARD_ROLL"></a>DB_TXN_BACKWARD_ROLL</code>
+                      <p><a id="set_app_dispatch_DB_TXN_BACKWARD_ROLL"></a>
+                                          <code class="literal">DB_TXN_BACKWARD_ROLL</code>
                                      </p>
                       <p>
                                          The log is being read backward to determine which transactions have
@@ -132,8 +132,8 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
                                     </p>
                     </li>
                     <li>
-                      <p>
-                                          <code class="literal"><a id="set_app_dispatch_DB_TXN_FORWARD_ROLL"></a>DB_TXN_FORWARD_ROLL</code>
+                      <p><a id="set_app_dispatch_DB_TXN_FORWARD_ROLL"></a>
+                                          <code class="literal">DB_TXN_FORWARD_ROLL</code>
                                     </p>
                       <p>
                                          The log is being played forward; redo the operation described by the
@@ -141,8 +141,8 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
                                     </p>
                     </li>
                     <li>
-                      <p>
-                                          <code class="literal"><a id="set_app_dispatch_DB_TXN_ABORT"></a>DB_TXN_ABORT</code>
+                      <p><a id="set_app_dispatch_DB_TXN_ABORT"></a>
+                                          <code class="literal">DB_TXN_ABORT</code>
                                     </p>
                       <p>
                                          The log is being read backward during a transaction abort; undo the
@@ -150,8 +150,8 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
                                     </p>
                     </li>
                     <li>
-                      <p>
-                                          <code class="literal"><a id="set_app_dispatch_DB_TXN_APPLY"></a>DB_TXN_APPLY</code>
+                      <p><a id="set_app_dispatch_DB_TXN_APPLY"></a>
+                                          <code class="literal">DB_TXN_APPLY</code>
                                     </p>
                       <p>
                                          The log is being applied on a replica site; redo the operation
@@ -159,8 +159,8 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
                                     </p>
                     </li>
                     <li>
-                      <p>
-                                          <code class="literal"><a id="set_app_dispatch_DB_TXN_PRINT"></a>DB_TXN_PRINT</code>
+                      <p><a id="set_app_dispatch_DB_TXN_PRINT"></a>
+                                          <code class="literal">DB_TXN_PRINT</code>
                                     </p>
                       <p>
                                          The log is being printed for debugging purposes; print the contents of
@@ -194,7 +194,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670378"></a>Errors</h3>
+              <h3 class="title"><a id="id1669685"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -202,7 +202,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
                          The <code class="methodname">DbEnv::set_app_dispatch()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -212,7 +212,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1670391"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1669959"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -226,7 +226,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670486"></a>Class</h3>
+              <h3 class="title"><a id="id1669555"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -238,7 +238,7 @@ DbEnv::set_app_dispatch(int (*tx_recover)(DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670265"></a>See Also</h3>
+              <h3 class="title"><a id="id1669445"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -346,7 +346,6 @@ static jfieldID rep_stat_st_election_sec_fid;
 static jfieldID rep_stat_st_election_usec_fid;
 static jfieldID rep_stat_st_max_lease_sec_fid;
 static jfieldID rep_stat_st_max_lease_usec_fid;
-static jfieldID rep_stat_st_filefail_cleanups_fid;
 static jfieldID repmgr_stat_st_perm_failed_fid;
 static jfieldID repmgr_stat_st_msgs_queued_fid;
 static jfieldID repmgr_stat_st_msgs_dropped_fid;
@@ -418,10 +417,11 @@ static jmethodID rep_perm_failed_event_notify_method;
 static jmethodID rep_startup_done_event_notify_method;
 static jmethodID write_failed_event_notify_method;
 
-static jmethodID append_recno_method, bt_compare_method, bt_prefix_method;
+static jmethodID append_recno_method, bt_compare_method, bt_compress_method;
+static jmethodID bt_decompress_method, bt_prefix_method;
 static jmethodID db_feedback_method, dup_compare_method;
 static jmethodID foreignkey_nullify_method, h_compare_method, h_hash_method;
-static jmethodID seckey_create_method;
+static jmethodID partition_method, seckey_create_method;
 
 static jmethodID outputstream_write_method;
 
@@ -756,7 +756,6 @@ const struct {
 	{ &rep_stat_st_election_usec_fid, &rep_stat_class, "st_election_usec", "I" },
 	{ &rep_stat_st_max_lease_sec_fid, &rep_stat_class, "st_max_lease_sec", "I" },
 	{ &rep_stat_st_max_lease_usec_fid, &rep_stat_class, "st_max_lease_usec", "I" },
-	{ &rep_stat_st_filefail_cleanups_fid, &rep_stat_class, "st_filefail_cleanups", "I" },
 	{ &repmgr_stat_st_perm_failed_fid, &repmgr_stat_class, "st_perm_failed", "J" },
 	{ &repmgr_stat_st_msgs_queued_fid, &repmgr_stat_class, "st_msgs_queued", "J" },
 	{ &repmgr_stat_st_msgs_dropped_fid, &repmgr_stat_class, "st_msgs_dropped", "J" },
@@ -907,6 +906,14 @@ const struct {
 	    "(L" DB_PKG "DatabaseEntry;I)V" },
 	{ &bt_compare_method, &db_class, "handle_bt_compare",
 	    "([B[B)I" },
+	{ &bt_compress_method, &db_class, "handle_bt_compress",
+	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;)I" },
+	{ &bt_decompress_method, &db_class, "handle_bt_decompress",
+	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;)I" },
 	{ &bt_prefix_method, &db_class, "handle_bt_prefix",
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)I" },
 	{ &db_feedback_method, &db_class, "handle_db_feedback", "(II)V" },
@@ -918,6 +925,8 @@ const struct {
 	{ &h_compare_method, &db_class, "handle_h_compare",
 	    "([B[B)I" },
 	{ &h_hash_method, &db_class, "handle_h_hash", "([BI)I" },
+	{ &partition_method, &db_class, "handle_partition", 
+            "(L" DB_PKG "DatabaseEntry;)I" },
 	{ &seckey_create_method, &db_class, "handle_seckey_create",
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)[L"
 	    DB_PKG "DatabaseEntry;" },

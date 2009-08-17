@@ -121,8 +121,8 @@ class BulkAccessNIOExample {
 
         ByteBuffer rawData = ByteBuffer.allocateDirect(1024*1024);
         bulk_data.setDataNIO(rawData);
-        bulk_data.setUserBuffer(1024 * 1024, true);
-
+	bulk_data.setUserBuffer(1024 * 1024, true);
+	
         // Walk through the table, printing the key/data pairs.
         //
         while (cursor.getNext(foo, bulk_data, null) == OperationStatus.SUCCESS) {
@@ -156,11 +156,10 @@ class BulkAccessNIOExample {
                 ByteBuffer newBuf = ByteBuffer.allocateDirect(data.length);
                 newBuf.position(0);
                 newBuf.put(data, 0, data.length);
+                newBuf.position(0);
                 setDataNIO(newBuf);
-                setSize(data.length);
             } else {
                 setData(data);
-                setSize(data.length);
             }
         }
 

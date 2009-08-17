@@ -612,6 +612,9 @@ public class TransactionTest extends TestCase {
 
         class MyEnv extends Environment {
 
+            /**
+             * @throws FileNotFoundException from DB core.
+             */
             MyEnv(File home, EnvironmentConfig config)
                 throws DatabaseException, FileNotFoundException {
 

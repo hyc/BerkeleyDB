@@ -85,6 +85,15 @@
             <a class="xref" href="txncursor.html" title="Transactional Cursors">Transactional Cursors</a> for details on using
             transactional cursors.
         </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+                Never have more than one active transaction in your thread
+                at a time. This is especially a problem if you mix an
+                explicit transaction with another operation that uses auto
+                commit. Doing so can result in undetectable deadlocks.
+            </p>
+      </div>
       <p>
             For example, the following uses auto commit to perform the database write operation:
         </p>

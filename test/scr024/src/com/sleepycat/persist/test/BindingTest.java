@@ -107,6 +107,9 @@ public class BindingTest extends TestCase {
         dataEntry = null;
     }
 
+    /**
+     * @throws FileNotFoundException from DB core.
+     */
     private void open()
         throws FileNotFoundException, DatabaseException {
 

@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 27.  Building Berkeley DB for Windows</title>
+    <title>Chapter 28.  Building Berkeley DB for Windows</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 27. 
+          <th colspan="3" align="center">Chapter 28. 
 		Building Berkeley DB for Windows
         </th>
         </tr>
@@ -31,7 +31,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="build_win"></a>Chapter 27. 
+            <h2 class="title"><a id="build_win"></a>Chapter 28. 
 		Building Berkeley DB for Windows
         </h2>
           </div>
@@ -51,27 +51,27 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#id1623752">Visual C++ .NET 2008</a>
+                  <a href="build_win.html#id1631005">Visual C++ .NET 2008</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#id1620324">Visual C++ .NET 2005</a>
+                  <a href="build_win.html#id1631557">Visual C++ .NET 2005</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#id1623538">Visual C++ .NET or Visual C++ .NET 2003</a>
+                  <a href="build_win.html#id1630889">Visual C++ .NET or Visual C++ .NET 2003</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#id1623652">Visual C++ 6.0</a>
+                  <a href="build_win.html#id1630973">Visual C++ 6.0</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#id1623993">Build results</a>
+                  <a href="build_win.html#id1631877">Build results</a>
                 </span>
               </dt>
             </dl>
@@ -85,12 +85,12 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="win_build64.html#id1623978">x64 build with Visual Studio 2005 or newer</a>
+                  <a href="win_build64.html#id1631360">x64 build with Visual Studio 2005 or newer</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="win_build64.html#id1623602">x64 build with Visual Studio .NET 2003 or earlier</a>
+                  <a href="win_build64.html#id1632062">x64 build with Visual Studio .NET 2003 or earlier</a>
                 </span>
               </dt>
             </dl>
@@ -119,12 +119,26 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_java.html#id1623672">Building Java with Visual C++ .NET or above</a>
+                  <a href="build_win_java.html#id1631870">Building Java with Visual C++ .NET or above</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_java.html#id1624476">Building Java with Visual C++ 6.0</a>
+                  <a href="build_win_java.html#id1632362">Building Java with Visual C++ 6.0</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="build_win_csharp.html">Building the C# API</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="build_win_csharp.html#id1632470">Building C# with Visual Studio 2005</a>
                 </span>
               </dt>
             </dl>
@@ -138,12 +152,12 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_tcl.html#id1624370">Building Tcl with Visual C++ .NET or above</a>
+                  <a href="build_win_tcl.html#id1632177">Building Tcl with Visual C++ .NET or above</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_tcl.html#id1624490">Building Tcl with Visual C++ 6.0</a>
+                  <a href="build_win_tcl.html#id1632318">Building Tcl with Visual C++ 6.0</a>
                 </span>
               </dt>
             </dl>
@@ -167,12 +181,12 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_test.html#id1624766">Building the software needed by the tests</a>
+                  <a href="build_win_test.html#id1632773">Building the software needed by the tests</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_test.html#id1624886">Running the test suite under Windows</a>
+                  <a href="build_win_test.html#id1632857">Running the test suite under Windows</a>
                 </span>
               </dt>
             </dl>
@@ -246,27 +260,27 @@
           <dl>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#id1623752">Visual C++ .NET 2008</a>
+                <a href="build_win.html#id1631005">Visual C++ .NET 2008</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#id1620324">Visual C++ .NET 2005</a>
+                <a href="build_win.html#id1631557">Visual C++ .NET 2005</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#id1623538">Visual C++ .NET or Visual C++ .NET 2003</a>
+                <a href="build_win.html#id1630889">Visual C++ .NET or Visual C++ .NET 2003</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#id1623652">Visual C++ 6.0</a>
+                <a href="build_win.html#id1630973">Visual C++ 6.0</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#id1623993">Build results</a>
+                <a href="build_win.html#id1631877">Build results</a>
               </span>
             </dt>
           </dl>
@@ -275,7 +289,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1623752"></a>Visual C++ .NET 2008</h3>
+                <h3 class="title"><a id="id1631005"></a>Visual C++ .NET 2008</h3>
               </div>
             </div>
           </div>
@@ -300,7 +314,7 @@ Solution.</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1620324"></a>Visual C++ .NET 2005</h3>
+                <h3 class="title"><a id="id1631557"></a>Visual C++ .NET 2005</h3>
               </div>
             </div>
           </div>
@@ -321,7 +335,7 @@ the tool bar (usually Win32 or x64).</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1623538"></a>Visual C++ .NET or Visual C++ .NET 2003</h3>
+                <h3 class="title"><a id="id1630889"></a>Visual C++ .NET or Visual C++ .NET 2003</h3>
               </div>
             </div>
           </div>
@@ -348,7 +362,7 @@ tool bar (Debug or Release).</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1623652"></a>Visual C++ 6.0</h3>
+                <h3 class="title"><a id="id1630973"></a>Visual C++ 6.0</h3>
               </div>
             </div>
           </div>
@@ -368,7 +382,7 @@ to the build_all project (Debug or Release).  Then click OK.</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="id1623993"></a>Build results</h3>
+                <h3 class="title"><a id="id1631877"></a>Build results</h3>
               </div>
             </div>
           </div>

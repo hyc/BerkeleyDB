@@ -505,6 +505,7 @@ __db_del(dbp, ip, txn, key, flags)
 	u_int32_t cursor_flags, f_init, f_next;
 	int ret, t_ret;
 
+	COMPQUIET(bulk_ptr, NULL);
 	/* Allocate a cursor. */
 	cursor_flags = DB_WRITELOCK;
 	if (LF_ISSET(DB_MULTIPLE | DB_MULTIPLE_KEY))

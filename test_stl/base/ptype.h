@@ -1,8 +1,16 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 #ifndef _DB_STL_PTYPE_H
 #define _DB_STL_PTYPE_H
 
-#include "internal/common.h"
-#include "internal/element_ref.h"
+#include "dbstl_common.h"
+#include "dbstl_element_ref.h"
 #include <iostream>
 
 using std::istream;

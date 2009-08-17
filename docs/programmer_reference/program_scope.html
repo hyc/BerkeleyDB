@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="program.html" title="Chapter 13.  Programmer Notes" />
+    <link rel="up" href="program.html" title="Chapter 14.  Programmer Notes" />
     <link rel="prev" href="program_mt.html" title="Multithreaded applications" />
     <link rel="next" href="program_namespace.html" title="Name spaces" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="program_mt.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 13. 
+          <th width="60%" align="center">Chapter 14. 
 		Programmer Notes
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="program_namespace.html">Next</a></td>
@@ -67,7 +67,7 @@ lists those handles, their scope, and whether they are free-threaded
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/txn.html" class="olink">TXN</a> handle, created by the <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> method, refers to a
+            The <a href="../api_reference/C/txn.html" class="olink">TXN</a> handle, created by the <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> method, refers to a
             single transaction.  The handle is not free-threaded.
             Transactions may span threads, but only serially, that is, the
             application must serialize access to the <a href="../api_reference/C/txn.html" class="olink">TXN</a> handles.  In the
@@ -82,7 +82,7 @@ lists those handles, their scope, and whether they are free-threaded
             return.  In addition, parent transactions may not issue any
             Berkeley DB operations while they have active child
             transactions (child transactions that have not yet been
-            committed or aborted) except for <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>, <a href="../api_reference/C/txnabort.html" class="olink">DB_TXN-&gt;abort()</a> and
+            committed or aborted) except for <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>, <a href="../api_reference/C/txnabort.html" class="olink">DB_TXN-&gt;abort()</a> and
             <a href="../api_reference/C/txncommit.html" class="olink">DB_TXN-&gt;commit()</a>.
         </p>
           </dd>

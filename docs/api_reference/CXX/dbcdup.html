@@ -59,7 +59,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656669"></a>Parameters</h3>
+              <h3 class="title"><a id="id1655369"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -67,7 +67,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1656808"></a>cursorp</h4>
+                <h4 class="title"><a id="id1655716"></a>cursorp</h4>
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1656775"></a>flags</h4>
+                <h4 class="title"><a id="id1655784"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -92,8 +92,8 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="dup_DB_POSITION"></a>DB_POSITION</code>
+                <p><a id="dup_DB_POSITION"></a>
+                  <code class="literal">DB_POSITION</code>
             </p>
                 <p>
                  The newly created cursor is initialized to refer to the same position
@@ -113,7 +113,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656912"></a>Errors</h3>
+              <h3 class="title"><a id="id1655785"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
                          The <code class="methodname">Dbc::dup()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -131,7 +131,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1656393"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1655769"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -141,9 +141,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -155,7 +153,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1656394"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1656241"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -163,9 +161,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -174,7 +170,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1656904"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1656179"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -187,7 +183,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656951"></a>Class</h3>
+              <h3 class="title"><a id="id1656238"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -199,7 +195,7 @@ Dbc::dup(Dbc **cursorp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656754"></a>See Also</h3>
+              <h3 class="title"><a id="id1656073"></a>See Also</h3>
             </div>
           </div>
         </div>

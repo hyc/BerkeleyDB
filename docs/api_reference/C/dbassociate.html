@@ -71,7 +71,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632110"></a>Parameters</h3>
+              <h3 class="title"><a id="id1630374"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632063"></a>callback</h4>
+                <h4 class="title"><a id="id1630800"></a>callback</h4>
               </div>
             </div>
           </div>
@@ -157,8 +157,8 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                  <code class="literal"><a id="associate_DB_DBT_APPMALLOC"></a>DB_DBT_APPMALLOC</code>
+                <p><a id="associate_DB_DBT_APPMALLOC"></a>
+                                  <code class="literal">DB_DBT_APPMALLOC</code>
                             </p>
                 <p>
                                  If the callback function needs to allocate memory for the <span class="bold"><strong>result</strong></span> data field (rather than simply pointing
@@ -170,8 +170,8 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
                             </p>
               </li>
               <li>
-                <p>
-                                  <code class="literal"><a id="associate_DB_DBT_MULTIPLE"></a>DB_DBT_MULTIPLE</code>
+                <p><a id="associate_DB_DBT_MULTIPLE"></a>
+                                  <code class="literal">DB_DBT_MULTIPLE</code>
                             </p>
                 <p>
                                  To return multiple secondary keys, DB_DBT_MULTIPLE should be set in
@@ -214,8 +214,8 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                  <code class="literal"><a id="associate_DB_DONOTINDEX"></a>DB_DONOTINDEX</code>
+                <p><a id="associate_DB_DONOTINDEX"></a>
+                                  <code class="literal">DB_DONOTINDEX</code>
                             </p>
                 <p>
                                  If any key/data pair in the primary yields a null secondary key and
@@ -247,7 +247,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632417"></a>flags</h4>
+                <h4 class="title"><a id="id1631564"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -259,8 +259,8 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                      <code class="literal"><a id="associate_DB_CREATE"></a>DB_CREATE</code>
+                <p><a id="associate_DB_CREATE"></a>
+                      <code class="literal">DB_CREATE</code>
                     </p>
                 <p>
                          If the secondary database is empty, walk through the primary and
@@ -287,8 +287,8 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
                     </p>
               </li>
               <li>
-                <p>
-                        <code class="literal"><a id="associate_DB_IMMUTABLE_KEY"></a>DB_IMMUTABLE_KEY</code>
+                <p><a id="associate_DB_IMMUTABLE_KEY"></a>
+                        <code class="literal">DB_IMMUTABLE_KEY</code>
                     </p>
                 <p>
                         Specifies the secondary key is immutable. 
@@ -315,7 +315,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632458"></a>primary</h4>
+                <h4 class="title"><a id="id1631142"></a>primary</h4>
               </div>
             </div>
           </div>
@@ -328,7 +328,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632489"></a>secondary</h4>
+                <h4 class="title"><a id="id1631155"></a>secondary</h4>
               </div>
             </div>
           </div>
@@ -351,7 +351,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632369"></a>txnid</h4>
+                <h4 class="title"><a id="id1630947"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -372,7 +372,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632886"></a>Errors</h3>
+              <h3 class="title"><a id="id1630942"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -388,7 +388,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632825"></a> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1631648"></a> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -407,7 +407,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632537"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1631128"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -419,7 +419,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632301"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1631205"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -435,7 +435,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632298"></a>Class</h3>
+              <h3 class="title"><a id="id1630512"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -447,7 +447,7 @@ DB-&gt;associate(DB *primary, DB_TXN *txnid, DB *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1632363"></a>See Also</h3>
+              <h3 class="title"><a id="id1630831"></a>See Also</h3>
             </div>
           </div>
         </div>

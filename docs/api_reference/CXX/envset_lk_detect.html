@@ -79,7 +79,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680553"></a>Parameters</h3>
+              <h3 class="title"><a id="id1679906"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680437"></a>detect</h4>
+                <h4 class="title"><a id="id1679910"></a>detect</h4>
               </div>
             </div>
           </div>
@@ -99,8 +99,8 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_DEFAULT"></a>DB_LOCK_DEFAULT</code>
+                <p><a id="set_lk_detect_DB_LOCK_DEFAULT"></a>
+                  <code class="literal">DB_LOCK_DEFAULT</code>
             </p>
                 <p>
                  Use whatever lock policy was specified when the database environment
@@ -109,8 +109,8 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_EXPIRE"></a>DB_LOCK_EXPIRE</code>
+                <p><a id="set_lk_detect_DB_LOCK_EXPIRE"></a>
+                  <code class="literal">DB_LOCK_EXPIRE</code>
             </p>
                 <p>
                  Reject lock requests which have timed out.  No other deadlock
@@ -118,56 +118,56 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MAXLOCKS"></a>DB_LOCK_MAXLOCKS</code>
+                <p><a id="set_lk_detect_DB_LOCK_MAXLOCKS"></a>
+                  <code class="literal">DB_LOCK_MAXLOCKS</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the most locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MAXWRITE"></a>DB_LOCK_MAXWRITE</code>
+                <p><a id="set_lk_detect_DB_LOCK_MAXWRITE"></a>
+                  <code class="literal">DB_LOCK_MAXWRITE</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the most write locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MINLOCKS"></a>DB_LOCK_MINLOCKS</code>
+                <p><a id="set_lk_detect_DB_LOCK_MINLOCKS"></a>
+                  <code class="literal">DB_LOCK_MINLOCKS</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the fewest locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MINWRITE"></a>DB_LOCK_MINWRITE</code>
+                <p><a id="set_lk_detect_DB_LOCK_MINWRITE"></a>
+                  <code class="literal">DB_LOCK_MINWRITE</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the fewest write locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_OLDEST"></a>DB_LOCK_OLDEST</code>
+                <p><a id="set_lk_detect_DB_LOCK_OLDEST"></a>
+                  <code class="literal">DB_LOCK_OLDEST</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the oldest lock.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_RANDOM"></a>DB_LOCK_RANDOM</code>
+                <p><a id="set_lk_detect_DB_LOCK_RANDOM"></a>
+                  <code class="literal">DB_LOCK_RANDOM</code>
             </p>
                 <p>
                 Reject the lock request for a random locker ID.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_YOUNGEST"></a>DB_LOCK_YOUNGEST</code>
+                <p><a id="set_lk_detect_DB_LOCK_YOUNGEST"></a>
+                  <code class="literal">DB_LOCK_YOUNGEST</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the youngest lock.
@@ -181,7 +181,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680728"></a>Errors</h3>
+              <h3 class="title"><a id="id1680070"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -189,7 +189,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
                          The <code class="methodname">DbEnv::set_lk_detect()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -199,7 +199,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1680632"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1680238"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -212,7 +212,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680438"></a>Class</h3>
+              <h3 class="title"><a id="id1680329"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -225,7 +225,7 @@ DbEnv::set_lk_detect(u_int32_t detect); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1680895"></a>See Also</h3>
+              <h3 class="title"><a id="id1680314"></a>See Also</h3>
             </div>
           </div>
         </div>

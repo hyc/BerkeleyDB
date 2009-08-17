@@ -156,21 +156,29 @@ lock_it:	if ((ret = __db_lget(dbc, 0, pg, lock_mode, 0, &lock)) != 0)
 				goto done;
 			if ((ret = __memp_dirty(mpf, &h, dbc->thread_info,
 			    dbc->txn, dbc->priority, 0)) != 0) {
-				(void)__memp_fput(mpf,
-				    dbc->thread_info, h, dbc->priority);
+				if (h != NULL)
+					(void)__memp_fput(mpf,
+					    dbc->thread_info, h, dbc->priority);
 				return (ret);
 			}
 		} else {
 			/* Try to lock the page without waiting first. */
 			if ((ret = __db_lget(dbc,
-			    0, pg, lock_mode, DB_LOCK_NOWAIT, &lock)) == 0 &&
-			    (lock_mode == DB_LOCK_READ ||
-			    (ret = __memp_dirty(mpf, &h, dbc->thread_info,
-			    dbc->txn, dbc->priority, 0)) == 0))
+			    0, pg, lock_mode, DB_LOCK_NOWAIT, &lock)) == 0) {
+				if (lock_mode == DB_LOCK_WRITE && (ret =
+				    __memp_dirty(mpf, &h, dbc->thread_info,
+				    dbc->txn, dbc->priority, 0)) != 0) {
+					if (h != NULL)
+						(void)__memp_fput(mpf,
+						    dbc->thread_info, h,
+						    dbc->priority);
+					return (ret);
+				}
 				goto done;
+			}
 
 			t_ret = __memp_fput(mpf,
-			     dbc->thread_info, h, dbc->priority);
+			    dbc->thread_info, h, dbc->priority);
 
 			if (ret == DB_LOCK_DEADLOCK ||
 			    ret == DB_LOCK_NOTGRANTED)
@@ -308,7 +316,7 @@ retry:	if ((ret = __bam_get_root(dbc, root_pgno, slevel, flags, &stack)) != 0)
 	 * collapses while we are trying to lock the root.
 	 */
 	if (!LF_ISSET(SR_START) && LEVEL(h) < slevel)
-		return (0);
+		goto done;
 
 	BT_STK_CLR(cp);
 
@@ -406,7 +414,10 @@ retry:	if ((ret = __bam_get_root(dbc, root_pgno, slevel, flags, &stack)) != 0)
 				if ((t_ret = __memp_fput(mpf, dbc->thread_info,
 				     h, dbc->priority)) != 0 && ret == 0)
 					ret = t_ret;
-				return (ret);
+				h = NULL;
+				if (ret != 0)
+					goto err;
+				goto done;
 			}
 			if (LF_ISSET(SR_NEXT)) {
 get_next:			/*
@@ -478,7 +489,7 @@ get_next:			/*
 			BT_STK_ENTER(env, cp, h, base, lock, lock_mode, ret);
 			if (ret != 0)
 				goto err;
-			return (0);
+			goto done;
 		}
 
 		/*
@@ -510,7 +521,10 @@ next:		if (recnop != NULL)
 				if ((t_ret = __memp_fput(mpf, dbc->thread_info,
 				    h, dbc->priority)) != 0 && ret == 0)
 					ret = t_ret;
-				return (ret);
+				h = NULL;
+				if (ret != 0)
+					goto err;
+				goto done;
 			}
 			BT_STK_NUMPUSH(env, cp, h, indx, ret);
 			(void)__memp_fput(mpf,
@@ -523,7 +537,7 @@ next:		if (recnop != NULL)
 				    cp, h, indx, lock, lock_mode, ret);
 				if (ret != 0)
 					goto err;
-				return (0);
+				goto done;
 			}
 			if (LF_ISSET(SR_DEL) && NUM_ENT(h) > 1) {
 				/*
@@ -665,7 +679,7 @@ lock_next:		h = NULL;
 				    ret == 0)
 					ret = t_ret;
 				/*
-				 * If we blocked at a differnt level release
+				 * If we blocked at a different level release
 				 * the previous saved lock.
 				 */
 				if ((t_ret = __LPUT(dbc, saved_lock)) != 0 &&
@@ -834,6 +848,10 @@ found:	*exactp = 1;
 
 	cp->csp->lock = lock;
 	DB_ASSERT(env, parent_h == NULL);
+
+done:	if ((ret = __LPUT(dbc, saved_lock)) != 0)
+		return (ret);
+
 	return (0);
 
 err:	if (ret == 0)

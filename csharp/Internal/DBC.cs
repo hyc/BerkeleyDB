@@ -83,26 +83,42 @@ internal class DBC : IDisposable {
     return ret;
   }
 
-  internal int get(DBT key, DBT data, uint flags) {
+  internal int get(DatabaseEntry key, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DBC_get(swigCPtr, DBT.getCPtr(key), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DBC_get(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(key)), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+      GC.KeepAlive(data);
+    }
+  }
 
-  internal int pget(DBT key, DBT pkey, DBT data, uint flags) {
+  internal int pget(DatabaseEntry key, DatabaseEntry pkey, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DBC_pget(swigCPtr, DBT.getCPtr(key), DBT.getCPtr(pkey), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DBC_pget(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(key)), DBT.getCPtr(DatabaseEntry.getDBT(pkey)), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+      GC.KeepAlive(pkey);
+      GC.KeepAlive(data);
+    }
+  }
 
-  internal int put(DBT key, DBT data, uint flags) {
+  internal int put(DatabaseEntry key, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DBC_put(swigCPtr, DBT.getCPtr(key), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DBC_put(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(key)), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+      GC.KeepAlive(data);
+    }
+  }
 
   internal int set_priority(uint priority) {
 		int ret;

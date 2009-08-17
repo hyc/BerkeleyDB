@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,9 +67,11 @@ namespace CsharpAPITest
 			// Open an environment.
 			DatabaseEnvironmentConfig envConfig =
 			    new DatabaseEnvironmentConfig();
+			envConfig.AutoCommit = true;
 			envConfig.Create = true;
 			envConfig.UseMPool = true;
 			envConfig.UseLogging = true;
+			envConfig.UseTxns = true;
 			DatabaseEnvironment env = DatabaseEnvironment.Open(
 			    testHome, envConfig);
 
@@ -110,9 +118,11 @@ namespace CsharpAPITest
 			// Open an environment.
 			DatabaseEnvironmentConfig envConfig =
 			    new DatabaseEnvironmentConfig();
+			envConfig.AutoCommit = true;
 			envConfig.Create = true;
 			envConfig.UseMPool = true;
 			envConfig.UseLogging = true;
+			envConfig.UseTxns = true;
 			DatabaseEnvironment env = DatabaseEnvironment.Open(
 			    testHome, envConfig);
 
@@ -718,7 +728,7 @@ namespace CsharpAPITest
 			Assert.AreNotEqual(0, stats.RegionSize);
 			Assert.AreEqual(0, stats.RegionWait);
 			Assert.AreEqual(10, stats.TASSpins);
-			long regionNoWait = stats.RegionNoWait;
+			ulong regionNoWait = stats.RegionNoWait;
 
 			BTreeDatabaseConfig dbCfg = new BTreeDatabaseConfig();
 			dbCfg.Creation = CreatePolicy.IF_NEEDED;

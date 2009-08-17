@@ -6,6 +6,9 @@
  * $Id$
  */
 
+#include <cstdlib>
+#include <cstring>
+
 #include <iostream>
 
 #include <db_cxx.h>

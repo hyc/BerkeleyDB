@@ -1,8 +1,16 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2008-2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 // File txn_guide_stl.cpp
 #include <iostream>
 #include <db_cxx.h>
 
-#include "db_map.h"
+#include "dbstl_map.h"
 
 #ifdef _WIN32
 #include <windows.h>

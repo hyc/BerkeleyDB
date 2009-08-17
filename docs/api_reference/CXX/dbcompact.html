@@ -59,7 +59,7 @@ Db::compact(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633160"></a>Parameters</h3>
+              <h3 class="title"><a id="id1632000"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -67,7 +67,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632901"></a>txnid</h4>
+                <h4 class="title"><a id="id1632332"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633377"></a>start</h4>
+                <h4 class="title"><a id="id1632516"></a>start</h4>
               </div>
             </div>
           </div>
@@ -114,7 +114,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633015"></a>stop</h4>
+                <h4 class="title"><a id="id1632206"></a>stop</h4>
               </div>
             </div>
           </div>
@@ -130,7 +130,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633085"></a>c_data</h4>
+                <h4 class="title"><a id="id1632623"></a>c_data</h4>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633005"></a>flags</h4>
+                <h4 class="title"><a id="id1632340"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -251,8 +251,8 @@ Db::compact(DbTxn *txnid,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                 <code class="literal"><a id="compact_DB_FREELIST_ONLY"></a>DB_FREELIST_ONLY</code>
+                <p><a id="compact_DB_FREELIST_ONLY"></a>
+                                 <code class="literal">DB_FREELIST_ONLY</code>
                            </p>
                 <p>
                                 Do no page compaction, only returning pages to the filesystem that are
@@ -261,8 +261,8 @@ Db::compact(DbTxn *txnid,
                            </p>
               </li>
               <li>
-                <p>
-                                 <code class="literal"><a id="compact_DB_FREE_SPACE"></a>DB_FREE_SPACE</code>
+                <p><a id="compact_DB_FREE_SPACE"></a>
+                                 <code class="literal">DB_FREE_SPACE</code>
                            </p>
                 <p>
                                 Return pages to the filesystem when possible. If this flag is not
@@ -285,7 +285,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633172"></a>end</h4>
+                <h4 class="title"><a id="id1632162"></a>end</h4>
               </div>
             </div>
           </div>
@@ -301,7 +301,7 @@ Db::compact(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633168"></a>Errors</h3>
+              <h3 class="title"><a id="id1632253"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -309,7 +309,7 @@ Db::compact(DbTxn *txnid,
                          The <code class="methodname">Db::compact()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -319,7 +319,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633527"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1632934"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -328,9 +328,7 @@ Db::compact(DbTxn *txnid,
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -339,7 +337,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632894"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1632308"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -348,9 +346,7 @@ Db::compact(DbTxn *txnid,
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -359,7 +355,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633341"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1632564"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -369,9 +365,7 @@ Db::compact(DbTxn *txnid,
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -383,7 +377,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633494"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1632705"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -391,9 +385,7 @@ Db::compact(DbTxn *txnid,
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -402,7 +394,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633845"></a>EACCES</h4>
+                <h4 class="title"><a id="id1632648"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -414,7 +406,7 @@ Db::compact(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1633290"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1632646"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -427,7 +419,7 @@ Db::compact(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633560"></a>Class</h3>
+              <h3 class="title"><a id="id1632962"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -439,7 +431,7 @@ Db::compact(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1633238"></a>See Also</h3>
+              <h3 class="title"><a id="id1632265"></a>See Also</h3>
             </div>
           </div>
         </div>

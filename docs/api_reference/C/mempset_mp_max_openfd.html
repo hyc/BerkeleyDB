@@ -46,15 +46,17 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
     </p>
       <p>
          The database environment's limit on open file descriptors to flush
-         dirty pages may also be configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
+         dirty pages may also be configured using the environment's 
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
          syntax of the entry in that file is a single line with the string
          "set_max_openfd", one or more whitespace characters, and the number of
-         open file descriptors. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
+         open file descriptors. Because the 
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
          read when the database environment is opened, it will silently
          overrule configuration done before that time.
     </p>
       <p>
-         The <a class="xref" href="mempset_mp_max_write.html" title="DB_ENV-&gt;set_mp_max_write()">DB_ENV-&gt;set_mp_max_write()</a> 
+         The <a class="xref" href="mempset_mp_max_openfd.html" title="DB_ENV-&gt;set_mp_max_openfd()">DB_ENV-&gt;set_mp_max_openfd()</a> 
          method configures a database environment, not only operations
          performed using the specified <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
     </p>
@@ -70,7 +72,7 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1689969"></a>Parameters</h3>
+              <h3 class="title"><a id="id1688582"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -78,7 +80,7 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1689820"></a>maxopenfd</h4>
+                <h4 class="title"><a id="id1688626"></a>maxopenfd</h4>
               </div>
             </div>
           </div>
@@ -92,7 +94,7 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1689833"></a>Errors</h3>
+              <h3 class="title"><a id="id1688583"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -108,7 +110,7 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1689853"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1688736"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -121,7 +123,7 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1689738"></a>Class</h3>
+              <h3 class="title"><a id="id1688742"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -133,7 +135,7 @@ DB_ENV-&gt;set_mp_max_openfd(DB_ENV *env, int maxopenfd);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1690013"></a>See Also</h3>
+              <h3 class="title"><a id="id1687700"></a>See Also</h3>
             </div>
           </div>
         </div>

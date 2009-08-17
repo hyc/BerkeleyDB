@@ -249,7 +249,6 @@ proc run_std { { testname ALL } args } {
 	{"partition"		"partition"}
 	{"compression"		"compressed"}
 	{"replication manager" 	"repmgr"}
-	{"repmgr multi-process"	"multi_repmgr"}
 	}
 
 	# If this is run_std only, run each rep test for a single

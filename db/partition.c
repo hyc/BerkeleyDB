@@ -687,18 +687,14 @@ __partition_get_callback(dbp, parts, callback)
 {
 	DB_PARTITION *part;
 
+	part = dbp->p_internal;
+	/* Only return populated results if partitioned using callbacks. */
+	if (part != NULL && !F_ISSET(part, PART_CALLBACK))
+		part = NULL;
 	if (parts != NULL)
-		*parts = 0;
+		*parts = (part != NULL ? part->nparts : 0);
 	if (callback != NULL)
-		*callback = NULL;
-	if ((part = dbp->p_internal) == NULL || !F_ISSET(part, PART_CALLBACK)) {
-		__db_errx(dbp->env, "Database is not partitioned by callback.");
-		return (EINVAL);
-	}
-	if (parts != NULL)
-		*parts = part->nparts;
-	if (callback != NULL)
-		*callback = part->callback;
+		*callback = (part != NULL ? part->callback : NULL);
 
 	return (0);
 }
@@ -716,15 +712,14 @@ __partition_get_keys(dbp, parts, keys)
 {
 	DB_PARTITION *part;
 
-	*keys = NULL;
-	*parts = 0;
-	if ((part = dbp->p_internal) == NULL || !F_ISSET(part, PART_RANGE)) {
-		__db_errx(dbp->env, "Database is not partitioned by range.");
-		return (EINVAL);
-	}
-
-	*parts = part->nparts;
-	*keys = &part->keys[1];
+	part = dbp->p_internal;
+	/* Only return populated results if partitioned using ranges. */
+	if (part != NULL && !F_ISSET(part, PART_RANGE))
+		part = NULL;
+	if (parts != NULL)
+		*parts = (part != NULL ? part->nparts : 0);
+	if (keys != NULL)
+		*keys = (part != NULL ? &part->keys[1] : NULL);
 
 	return (0);
 }
@@ -745,10 +740,12 @@ __partition_get_dirs(dbp, dirpp)
 	int ret;
 
 	env = dbp->env;
-	part = dbp->p_internal;
+	if ((part = dbp->p_internal) == NULL) {
+		*dirpp = NULL;
+		return (0);
+	}
 	if (!F_ISSET(dbp, DB_AM_OPEN_CALLED)) {
-		if (part != NULL)
-			*dirpp = part->dirs;
+		*dirpp = part->dirs;
 		return (0);
 	}
 
@@ -1820,10 +1817,16 @@ __part_verify(dbp, vdp, fname, handle, callback, flags)
 	dbc = NULL;
 	ip = vdp->thread_info;
 
-	if (dbp->type == DB_BTREE ?
-	    (ret = __bam_open(dbp, ip, NULL, fname, PGNO_BASE_MD, flags)) :
-	    (ret = __ham_open(dbp, ip, NULL, fname, PGNO_BASE_MD, flags)) != 0)
+	if (dbp->type == DB_BTREE) { 
+		if ((ret = __bam_open(dbp, ip, 
+		    NULL, fname, PGNO_BASE_MD, flags)) != 0)
+			goto err;
+	}
+#ifdef HAVE_HASH
+	else if ((ret = __ham_open(dbp, ip, 
+	    NULL, fname, PGNO_BASE_MD, flags)) != 0)
 		goto err;
+#endif
 
 	/*
 	 * Initalize partition db handles and get the names. Set DB_RDWRMASTER

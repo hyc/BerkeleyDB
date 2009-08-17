@@ -62,7 +62,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1658684"></a>Parameters</h3>
+              <h3 class="title"><a id="id1657996"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -70,7 +70,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1658633"></a>data</h4>
+                <h4 class="title"><a id="id1658002"></a>data</h4>
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1658829"></a>flags</h4>
+                <h4 class="title"><a id="id1658136"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -94,8 +94,8 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_AFTER"></a>DB_AFTER</code>
+                <p><a id="put_DB_AFTER"></a>
+                  <code class="literal">DB_AFTER</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, insert the data
@@ -127,8 +127,8 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_BEFORE"></a>DB_BEFORE</code>
+                <p><a id="put_DB_BEFORE"></a>
+                  <code class="literal">DB_BEFORE</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, insert the data
@@ -160,8 +160,8 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_CURRENT"></a>DB_CURRENT</code>
+                <p><a id="put_DB_CURRENT"></a>
+                  <code class="literal">DB_CURRENT</code>
             </p>
                 <p>
                  Overwrite the data of the key/data pair to which the cursor refers
@@ -173,8 +173,8 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_KEYFIRST"></a>DB_KEYFIRST</code>
+                <p><a id="put_DB_KEYFIRST"></a>
+                  <code class="literal">DB_KEYFIRST</code>
             </p>
                 <p>
                  Insert the specified key/data pair into the database.
@@ -189,8 +189,8 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_KEYLAST"></a>DB_KEYLAST</code>
+                <p><a id="put_DB_KEYLAST"></a>
+                  <code class="literal">DB_KEYLAST</code>
             </p>
                 <p>
                  Insert the specified key/data pair into the database.
@@ -205,8 +205,8 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_NODUPDATA"></a>DB_NODUPDATA</code>
+                <p><a id="put_DB_NODUPDATA"></a>
+                  <code class="literal">DB_NODUPDATA</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, insert the specified
@@ -230,7 +230,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1659096"></a>key</h4>
+                <h4 class="title"><a id="id1658404"></a>key</h4>
               </div>
             </div>
           </div>
@@ -243,7 +243,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1659112"></a>Errors</h3>
+              <h3 class="title"><a id="id1658441"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -251,7 +251,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
                          The <code class="methodname">Dbc::put()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -275,7 +275,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1658849"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id1658337"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -309,7 +309,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1659308"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1658614"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -318,9 +318,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -329,7 +327,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1658940"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1658113"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -338,9 +336,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -349,7 +345,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1659120"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1658185"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -359,9 +355,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -373,7 +367,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1658750"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1658585"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -381,9 +375,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -392,7 +384,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1658832"></a>EACCES</h4>
+                <h4 class="title"><a id="id1658478"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -404,7 +396,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1659288"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1658570"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -426,7 +418,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1659390"></a>EPERM</h4>
+                <h4 class="title"><a id="id1658038"></a>EPERM</h4>
               </div>
             </div>
           </div>
@@ -441,7 +433,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1658908"></a>Class</h3>
+              <h3 class="title"><a id="id1658420"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -453,7 +445,7 @@ Dbc::put(Dbt *key, Dbt *data, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1658988"></a>See Also</h3>
+              <h3 class="title"><a id="id1657949"></a>See Also</h3>
             </div>
           </div>
         </div>

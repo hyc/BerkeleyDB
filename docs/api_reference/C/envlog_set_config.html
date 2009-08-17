@@ -64,7 +64,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1683429"></a>Parameters</h3>
+              <h3 class="title"><a id="id1680893"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1683260"></a>flags</h4>
+                <h4 class="title"><a id="id1682029"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -84,8 +84,8 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_DIRECT"></a>DB_LOG_DIRECT</code>
+                <p><a id="log_set_config_DB_LOG_DIRECT"></a>
+                  <code class="literal">DB_LOG_DIRECT</code>
             </p>
                 <p>
                  Turn off system buffering of Berkeley DB log files to avoid double
@@ -107,8 +107,8 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_DSYNC"></a>DB_LOG_DSYNC</code>
+                <p><a id="log_set_config_DB_LOG_DSYNC"></a>
+                  <code class="literal">DB_LOG_DSYNC</code>
             </p>
                 <p>
                  Configure Berkeley DB to flush log writes to the backing disk before
@@ -138,8 +138,8 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_AUTO_REMOVE"></a>DB_LOG_AUTO_REMOVE</code>
+                <p><a id="log_set_config_DB_LOG_AUTO_REMOVE"></a>
+                  <code class="literal">DB_LOG_AUTO_REMOVE</code>
             </p>
                 <p>
                  If set, Berkeley DB will automatically remove log files that are no
@@ -166,8 +166,8 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="log_set_config_DB_LOG_IN_MEMORY"></a>DB_LOG_IN_MEMORY</code>
+                <p><a id="log_set_config_DB_LOG_IN_MEMORY"></a>
+                  <code class="literal">DB_LOG_IN_MEMORY</code>
             </p>
                 <p>
                  If set, maintain transaction logs in memory rather than on disk.  This
@@ -213,9 +213,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
             </p>
                 <p>
                 Calling <code class="methodname">DB_ENV-&gt;log_set_config()</code> with the
-                <code class="literal">DB_LOG_ZERO</code> flag affects
-                 the database environment, including all threads of control accessing
-                 the database environment.
+                <code class="literal">DB_LOG_ZERO</code> flag affects only the current environment handle.
             </p>
                 <p>
                 The <code class="literal">DB_LOG_ZERO</code> flag may be used to configure Berkeley DB at any time.
@@ -228,7 +226,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1683800"></a>onoff</h4>
+                <h4 class="title"><a id="id1682318"></a>onoff</h4>
               </div>
             </div>
           </div>
@@ -242,7 +240,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1683866"></a>Errors</h3>
+              <h3 class="title"><a id="id1682572"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -258,7 +256,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1683473"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1682586"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -271,7 +269,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1683556"></a>Class</h3>
+              <h3 class="title"><a id="id1682483"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -283,7 +281,7 @@ DB_ENV-&gt;log_set_config(DB_ENV *dbenv, u_int32_t flags, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1683574"></a>See Also</h3>
+              <h3 class="title"><a id="id1682310"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -431,13 +431,13 @@ err:	/* Close the cursor. */
             <ul type="disc">
               <li>
                 <p>
-                The key and data being stored in the tree.
+                The key and data immediately preceeding the key/data pair
+                that is being stored.
             </p>
               </li>
               <li>
                 <p>
-                The key and data immediately preceeding the key/data pair
-                that is being stored.
+                The key and data being stored in the tree.
             </p>
               </li>
               <li>
@@ -453,9 +453,9 @@ err:	/* Close the cursor. */
         compressed data cannot fit in the buffer, the compression function
         should store the amount of space needed in <a href="../api_reference/C/dbt.html" class="olink">DBT</a>'s
         <code class="literal">size</code> field and then return 
-        <code class="literal">DB_BUFFER_SMALL</code>. The application should then
-        attempt to store the record again. On the second attempt, the
-        compressed data buffer will be sized correctly by Berkeley DB.
+        <code class="literal">DB_BUFFER_SMALL</code>. Berkeley DB will subsequently
+        re-call the compression function with the required amount of space
+        allocated in the compression data buffer.
     </p>
           <p>
         Multiple compressed key/data pairs will likely be written to the
@@ -463,40 +463,8 @@ err:	/* Close the cursor. */
         ensure it does not overwrite data.  
     </p>
           <p>
-        The decompression function will likewise be passed five <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structures: 
-    </p>
-          <div class="itemizedlist">
-            <ul type="disc">
-              <li>
-                <p>
-                One to store the decompressed key and another one for the
-                decompressed data.
-            </p>
-              </li>
-              <li>
-                <p>
-                The key and data <a href="../api_reference/C/dbt.html" class="olink">DBT</a>s immediately preceding the
-                decompressed key and data.
-            </p>
-              </li>
-              <li>
-                <p>
-                The compressed data from the database.
-            </p>
-              </li>
-            </ul>
-          </div>
-          <p>
-        Because the compression of <code class="literal">record X</code> relies upon
-        <code class="literal">record X-1</code>, the decompression function can be
-        called repeatedly to linearally decompress a set of records stored
-        in the compressed buffer.  It is the decompression function's
-        responsibility to manage multiple compressed key/data pairs stored
-        in one buffer.
-    </p>
-          <p>
-        For example, the following code fragments illustrate the use of custom
-        compression routines. This code is actually a much simplified
+        For example, the following code fragments illustrate the use of a custom
+        compression routine. This code is actually a much simplified
         example of the default compression provided by Berkeley DB. It does
         simple prefix compression on the key part of the data.
     </p>
@@ -544,7 +512,48 @@ err:	/* Close the cursor. */
     return (0);
 } </pre>
           <p>
-    The corresponding decompression routine, then, is:
+        The corresponding decompression function is likewise passed five <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structures: 
+    </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                The key and data <a href="../api_reference/C/dbt.html" class="olink">DBT</a>s immediately preceding the
+                decompressed key and data.
+            </p>
+              </li>
+              <li>
+                <p>
+                The compressed data from the database.
+            </p>
+              </li>
+              <li>
+                <p>
+                One to store the decompressed key and another one for the
+                decompressed data.
+            </p>
+              </li>
+            </ul>
+          </div>
+          <p>
+        Because the compression of <code class="literal">record X</code> relies upon
+        <code class="literal">record X-1</code>, the decompression function can be
+        called repeatedly to linearally decompress a set of records stored
+        in the compressed buffer.  
+    </p>
+          <p>
+        The total size of the buffer available to store the decompressed data is
+        identified in the destination <a href="../api_reference/C/dbt.html" class="olink">DBT</a>'s <code class="literal">ulen</code> field.  If the
+        decompressed data cannot fit in the buffer, the decompression function
+        should store the amount of space needed in the destination <a href="../api_reference/C/dbt.html" class="olink">DBT</a>'s
+        <code class="literal">size</code> field and then return 
+        <code class="literal">DB_BUFFER_SMALL</code>. Berkeley DB will subsequently
+        re-call the decompression function with the required amount of space
+        allocated in the decompression data buffer.
+    </p>
+          <p>
+    For example, the decompression routine that corresponds to the
+    example compression routine provided above is:
 </p>
           <pre class="programlisting">int decompress(DB *dbp, const DBT *prevKey, const DBT *prevData, 
     DBT *compressed, DBT *destKey, DBT *destData)
@@ -606,7 +615,7 @@ err:	/* Close the cursor. */
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1585197"></a>Programmer Notes</h4>
+                <h4 class="title"><a id="id1589916"></a>Programmer Notes</h4>
               </div>
             </div>
           </div>

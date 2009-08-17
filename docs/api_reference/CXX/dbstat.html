@@ -60,7 +60,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652651"></a>Parameters</h3>
+              <h3 class="title"><a id="id1651782"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652557"></a>flags</h4>
+                <h4 class="title"><a id="id1651859"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -79,8 +79,8 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="stat_DB_FAST_STAT"></a>DB_FAST_STAT</code>
+                <p><a id="stat_DB_FAST_STAT"></a>
+                  <code class="literal">DB_FAST_STAT</code>
             </p>
                 <p>
                  Return only the values which do not require traversal of the database.
@@ -90,8 +90,8 @@ Db::stat(void *sp, u_int32_t flags); </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="stat_DB_READ_COMMITTED"></a>DB_READ_COMMITTED</code>
+                <p><a id="stat_DB_READ_COMMITTED"></a>
+                  <code class="literal">DB_READ_COMMITTED</code>
             </p>
                 <p>
                  Database items read during a transactional call will have degree 2
@@ -101,8 +101,8 @@ Db::stat(void *sp, u_int32_t flags); </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="stat_DB_READ_UNCOMMITTED"></a>DB_READ_UNCOMMITTED</code>
+                <p><a id="stat_DB_READ_UNCOMMITTED"></a>
+                  <code class="literal">DB_READ_UNCOMMITTED</code>
             </p>
                 <p>
                  Database items read during a transactional call will have degree 1
@@ -119,7 +119,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652889"></a>txnid</h4>
+                <h4 class="title"><a id="id1651818"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -140,7 +140,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652749"></a>Statistical Structure</h3>
+              <h3 class="title"><a id="id1651860"></a>Statistical Structure</h3>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652765"></a>Hash Statistics</h4>
+                <h4 class="title"><a id="id1651739"></a>Hash Statistics</h4>
               </div>
             </div>
           </div>
@@ -339,7 +339,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652817"></a>Btree and Recno Statistics</h4>
+                <h4 class="title"><a id="id1652193"></a>Btree and Recno Statistics</h4>
               </div>
             </div>
           </div>
@@ -553,7 +553,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1652957"></a>Queue Statistics</h4>
+                <h4 class="title"><a id="id1652257"></a>Queue Statistics</h4>
               </div>
             </div>
           </div>
@@ -678,7 +678,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1653310"></a>Errors</h3>
+              <h3 class="title"><a id="id1652547"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -686,7 +686,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
                          The <code class="methodname">Db::stat()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -696,7 +696,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1653710"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1652496"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -706,9 +706,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -720,7 +718,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1653386"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1652706"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -728,9 +726,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -739,7 +735,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1653781"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1652304"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -752,7 +748,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652555"></a>Class</h3>
+              <h3 class="title"><a id="id1651816"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -764,7 +760,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1652669"></a>See Also</h3>
+              <h3 class="title"><a id="id1651857"></a>See Also</h3>
             </div>
           </div>
         </div>

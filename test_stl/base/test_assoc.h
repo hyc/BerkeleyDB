@@ -1,3 +1,11 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 #include "test.h"
 // This function tests all member functions in the four assocative 
 // containers and their iterators. The containers are db_map,

@@ -48,7 +48,7 @@ internal class DB_ENV : IDisposable {
 	}
 	internal DB_LOCK lock_get(uint locker, uint flags, DBT arg2, db_lockmode_t mode) {
 		int err = 0;
-		DB_LOCK ret = lock_get(locker, flags, arg2, mode, ref err);
+		DB_LOCK ret = lock_get(locker, flags, DatabaseEntry.fromDBT(arg2), mode, ref err);
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
@@ -67,7 +67,23 @@ internal class DB_ENV : IDisposable {
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
-
+	internal string log_file(DB_LSN dblsn) {
+		int err = 0;
+		int len = 100;
+		IntPtr namep;
+		while (true) {
+			namep = Marshal.AllocHGlobal(len);
+			err = log_file(dblsn, namep, (uint)len);
+			if (err != DbConstants.DB_BUFFER_SMALL)
+				break;
+			Marshal.FreeHGlobal(namep);
+			len *= 2;
+		}
+		DatabaseException.ThrowException(err);
+		string ret = Marshal.PtrToStringAnsi(namep);
+		Marshal.FreeHGlobal(namep);
+		return ret;
+	}
 	internal LogStatStruct log_stat(uint flags) {
 		int err = 0;
 		IntPtr ptr = log_stat(flags, ref err);
@@ -104,9 +120,11 @@ internal class DB_ENV : IDisposable {
 		libdb_csharp.__os_ufree(null, ptr);
 		return ret;
 	}
-	internal RepMgrSite[] repmgr_site_list(ref uint count) {
+	internal RepMgrSite[] repmgr_site_list() {
+		uint count = 0;
 		int err = 0;
-		RepMgrSite[] ret = repmgr_site_list(ref count, ref err);
+		uint size = 0;
+		RepMgrSite[] ret = repmgr_site_list(ref count, ref size, ref err);
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
@@ -134,13 +152,13 @@ internal class DB_ENV : IDisposable {
 	}
 	internal PreparedTransaction[] txn_recover(uint count, uint flags) {
 		int err = 0;
-		IntPtr prepp = Marshal.AllocHGlobal((int)(count * (4 + DbConstants.DB_GID_SIZE)));
+		IntPtr prepp = Marshal.AllocHGlobal((int)(count * (IntPtr.Size + DbConstants.DB_GID_SIZE)));
 		uint sz = 0;
 		err = txn_recover(prepp, count, ref sz, flags);
 		DatabaseException.ThrowException(err);
 		PreparedTransaction[] ret = new PreparedTransaction[sz];
 		for (int i = 0; i < sz; i++) {
-			IntPtr cPtr = new IntPtr(prepp.ToInt32() + i * (4 + DbConstants.DB_GID_SIZE));
+			IntPtr cPtr = new IntPtr((IntPtr.Size == 4 ? prepp.ToInt32() : prepp.ToInt64()) + i * (IntPtr.Size + DbConstants.DB_GID_SIZE));
 			DB_PREPLIST prep = new DB_PREPLIST(cPtr, false);
 			ret[i] = new PreparedTransaction(prep);
 		}
@@ -149,7 +167,9 @@ internal class DB_ENV : IDisposable {
 	}
 	internal TxnStatStruct txn_stat(uint flags) {
 		int err = 0;
-		IntPtr ptr = txn_stat(flags, ref err);
+		uint size = 0;
+		int offset = Marshal.SizeOf(typeof(DB_TXN_ACTIVE));
+		IntPtr ptr = txn_stat(flags, ref size, ref err);
 		DatabaseException.ThrowException(err);
 	        TxnStatStruct ret = new TxnStatStruct();
 		ret.st = (TransactionStatStruct)Marshal.PtrToStructure(ptr, typeof(TransactionStatStruct));
@@ -158,12 +178,12 @@ internal class DB_ENV : IDisposable {
         	ret.st_txnnames = new string[ret.st.st_nactive];
 
 	        for (int i = 0; i < ret.st.st_nactive; i++) {
-        	    IntPtr activep = new IntPtr(ret.st.st_txnarray.ToInt32() + i * 220);
+        	    IntPtr activep = new IntPtr((IntPtr.Size == 4 ? ret.st.st_txnarray.ToInt32() : ret.st.st_txnarray.ToInt64()) + i * size);
 	            ret.st_txnarray[i] = (DB_TXN_ACTIVE)Marshal.PtrToStructure(activep, typeof(DB_TXN_ACTIVE));
         	    ret.st_txngids[i] = new byte[DbConstants.DB_GID_SIZE];
-	            IntPtr gidp = new IntPtr(activep.ToInt32() + 40);
+	            IntPtr gidp = new IntPtr((IntPtr.Size == 4 ? activep.ToInt32() : activep.ToInt64()) + offset);
         	    Marshal.Copy(gidp, ret.st_txngids[i], 0, (int)DbConstants.DB_GID_SIZE);
-	            IntPtr namep = new IntPtr(activep.ToInt32() + 40 + DbConstants.DB_GID_SIZE);
+	            IntPtr namep = new IntPtr((IntPtr.Size == 4 ? gidp.ToInt32() : gidp.ToInt64()) + DbConstants.DB_GID_SIZE);
         	    ret.st_txnnames[i] = Marshal.PtrToStringAnsi(namep);
 	        }
         	libdb_csharp.__os_ufree(null, ptr);
@@ -248,9 +268,13 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
-  private DB_LOCK lock_get(uint locker, uint flags, DBT arg2, db_lockmode_t mode, ref int err) {
-    DB_LOCK ret = new DB_LOCK(libdb_csharpPINVOKE.DB_ENV_lock_get(swigCPtr, locker, flags, DBT.getCPtr(arg2), (int)mode, ref err), true);
-    return ret;
+  private DB_LOCK lock_get(uint locker, uint flags, DatabaseEntry arg2, db_lockmode_t mode, ref int err) {
+    try {
+      DB_LOCK ret = new DB_LOCK(libdb_csharpPINVOKE.DB_ENV_lock_get(swigCPtr, locker, flags, DBT.getCPtr(DatabaseEntry.getDBT(arg2)), (int)mode, ref err), true);
+      return ret;
+    } finally {
+      GC.KeepAlive(arg2);
+    }
   }
 
   internal int lock_id(ref uint id) {
@@ -307,11 +331,8 @@ internal class DB_ENV : IDisposable {
 	return ret;
 }
 
-  internal int log_file(DB_LSN lsn, string namep, uint len) {
-		int ret;
-		ret = libdb_csharpPINVOKE.DB_ENV_log_file(swigCPtr, DB_LSN.getCPtr(lsn), namep, len);
-		DatabaseException.ThrowException(ret);
-		return ret;
+  private int log_file(DB_LSN lsn, IntPtr namep, uint len) {
+		return libdb_csharpPINVOKE.DB_ENV_log_file(swigCPtr, DB_LSN.getCPtr(lsn), namep, len);
 }
 
   internal int log_flush(DB_LSN lsn) {
@@ -321,12 +342,16 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
-  internal int log_put(DB_LSN lsn, DBT data, uint flags) {
+  internal int log_put(DB_LSN lsn, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_ENV_log_put(swigCPtr, DB_LSN.getCPtr(lsn), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DB_ENV_log_put(swigCPtr, DB_LSN.getCPtr(lsn), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(data);
+    }
+  }
 
   internal int log_get_config(uint which, ref int onoff) {
 		int ret;
@@ -543,8 +568,8 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
-  private RepMgrSite[] repmgr_site_list(ref uint countp, ref int err) {
-	IntPtr cPtr = libdb_csharpPINVOKE.DB_ENV_repmgr_site_list(swigCPtr, ref countp, ref err);
+  private RepMgrSite[] repmgr_site_list(ref uint countp, ref uint sizep, ref int err) {
+	IntPtr cPtr = libdb_csharpPINVOKE.DB_ENV_repmgr_site_list(swigCPtr, ref countp, ref sizep, ref err);
 	if (cPtr == IntPtr.Zero)
 		return new RepMgrSite[] { null };
 	/*
@@ -559,9 +584,10 @@ internal class DB_ENV : IDisposable {
 	for (int i = 0; i < countp; i++) {
 		/*
 		 * We're copying data out of an array of countp DB_REPMGR_SITE
-		 * structures.  sizeof(DB_REPMGR_SITE) = 16.
+		 * structures, whose size varies between 32- and 64-bit
+		 * platforms.  
 		 */
-		IntPtr val = new IntPtr(cPtr.ToInt32() + i * 16);
+		IntPtr val = new IntPtr((IntPtr.Size == 4 ? cPtr.ToInt32() : cPtr.ToInt64()) + i * sizep);
 		ret[i] = new RepMgrSite(new DB_REPMGR_SITE(val, false));
 	}
 	libdb_csharp.__os_ufree(this, cPtr);
@@ -593,19 +619,28 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
-  internal int rep_process_message(DBT control, DBT rec, int envid, DB_LSN ret_lsnp) {
+  internal int rep_process_message(DatabaseEntry control, DatabaseEntry rec, int envid, DB_LSN ret_lsnp) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_ENV_rep_process_message(swigCPtr, DBT.getCPtr(control), DBT.getCPtr(rec), envid, DB_LSN.getCPtr(ret_lsnp));
+		ret = libdb_csharpPINVOKE.DB_ENV_rep_process_message(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(control)), DBT.getCPtr(DatabaseEntry.getDBT(rec)), envid, DB_LSN.getCPtr(ret_lsnp));
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(control);
+      GC.KeepAlive(rec);
+    }
+  }
 
-  internal int rep_start(DBT cdata, uint flags) {
+  internal int rep_start(DatabaseEntry cdata, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_ENV_rep_start(swigCPtr, DBT.getCPtr(cdata), flags);
+		ret = libdb_csharpPINVOKE.DB_ENV_rep_start(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(cdata)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(cdata);
+    }
+  }
 
   private IntPtr rep_stat(uint flags, ref int err) {
 	return libdb_csharpPINVOKE.DB_ENV_rep_stat(swigCPtr, flags, ref err);
@@ -1182,8 +1217,8 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
-  private IntPtr txn_stat(uint flags, ref int err) {
-	return libdb_csharpPINVOKE.DB_ENV_txn_stat(swigCPtr, flags, ref err);
+  private IntPtr txn_stat(uint flags, ref uint size, ref int err) {
+	return libdb_csharpPINVOKE.DB_ENV_txn_stat(swigCPtr, flags, ref size, ref err);
 }
 
   internal int txn_stat_print(uint flags) {

@@ -61,7 +61,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1668149"></a>Parameters</h3>
+              <h3 class="title"><a id="id1666849"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -69,7 +69,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1668104"></a>db_home</h4>
+                <h4 class="title"><a id="id1667513"></a>db_home</h4>
               </div>
             </div>
           </div>
@@ -90,7 +90,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1667836"></a>flags</h4>
+                <h4 class="title"><a id="id1666909"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -169,8 +169,8 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
                                 </p>
               </li>
               <li>
-                <p>
-                                         <code class="literal"><a id="open_DB_INIT_REP"></a>DB_INIT_REP</code>
+                <p><a id="open_DB_INIT_REP"></a>
+                                         <code class="literal">DB_INIT_REP</code>
                                 </p>
                 <p>
                                         Initialize the replication subsystem. This subsystem should be used whenever an
@@ -285,16 +285,16 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                         <code class="literal"><a id="open_DB_CREATE"></a>DB_CREATE</code>
+                <p><a id="open_DB_CREATE"></a>
+                                         <code class="literal">DB_CREATE</code>
                                 </p>
                 <p>
                                         Cause Berkeley DB subsystems to create any underlying files, as necessary.
                                 </p>
               </li>
               <li>
-                <p>
-                                         <code class="literal"><a id="open_DB_LOCKDOWN"></a>DB_LOCKDOWN</code>
+                <p><a id="open_DB_LOCKDOWN"></a>
+                                         <code class="literal">DB_LOCKDOWN</code>
                                 </p>
                 <p>
                                         Lock shared Berkeley DB environment files and memory-mapped databases into
@@ -334,8 +334,8 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
 				</p>
               </li>
               <li>
-                <p>
-                                         <code class="literal"><a id="open_DB_PRIVATE"></a>DB_PRIVATE</code>
+                <p><a id="open_DB_PRIVATE"></a>
+                                         <code class="literal">DB_PRIVATE</code>
                                 </p>
                 <p>
                                         Allocate region memory from the heap instead of from memory backed by the
@@ -426,7 +426,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1668266"></a>mode</h4>
+                <h4 class="title"><a id="id1667994"></a>mode</h4>
               </div>
             </div>
           </div>
@@ -451,7 +451,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1669022"></a>Errors</h3>
+              <h3 class="title"><a id="id1668473"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -459,7 +459,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
                          The <code class="methodname">DbEnv::open()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -469,7 +469,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1669116"></a>DB_RUNRECOVERY</h4>
+                <h4 class="title"><a id="id1668272"></a>DB_RUNRECOVERY</h4>
               </div>
             </div>
           </div>
@@ -483,7 +483,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1667677"></a>DB_VERSION_MISMATCH</h4>
+                <h4 class="title"><a id="id1668094"></a>DB_VERSION_MISMATCH</h4>
               </div>
             </div>
           </div>
@@ -496,7 +496,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1668528"></a>EAGAIN</h4>
+                <h4 class="title"><a id="id1667958"></a>EAGAIN</h4>
               </div>
             </div>
           </div>
@@ -508,7 +508,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1668442"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1667829"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -523,7 +523,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1668699"></a>ENOSPC</h4>
+                <h4 class="title"><a id="id1667810"></a>ENOSPC</h4>
               </div>
             </div>
           </div>
@@ -540,7 +540,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1669275"></a>ENOENT</h4>
+                <h4 class="title"><a id="id1668102"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -553,7 +553,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1667539"></a>Class</h3>
+              <h3 class="title"><a id="id1668637"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -565,7 +565,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1668100"></a>See Also</h3>
+              <h3 class="title"><a id="id1667520"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -60,7 +60,7 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1665305"></a>Parameters</h3>
+              <h3 class="title"><a id="id1664288"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1665519"></a>which</h4>
+                <h4 class="title"><a id="id1664296"></a>which</h4>
               </div>
             </div>
           </div>
@@ -79,16 +79,16 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_DEADLOCK"></a>DB_VERB_DEADLOCK</code>
+                <p><a id="set_verbose_DB_VERB_DEADLOCK"></a>
+                  <code class="literal">DB_VERB_DEADLOCK</code>
             </p>
                 <p>
                  Display additional information when doing deadlock detection.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_FILEOPS"></a>DB_VERB_FILEOPS</code>
+                <p><a id="set_verbose_DB_VERB_FILEOPS"></a>
+                  <code class="literal">DB_VERB_FILEOPS</code>
             </p>
                 <p>
                  Display additional information when performing filesystem operations
@@ -96,8 +96,8 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_FILEOPS_ALL"></a>DB_VERB_FILEOPS_ALL</code>
+                <p><a id="set_verbose_DB_VERB_FILEOPS_ALL"></a>
+                  <code class="literal">DB_VERB_FILEOPS_ALL</code>
             </p>
                 <p>
                  Display additional information when performing all filesystem
@@ -106,16 +106,16 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_RECOVERY"></a>DB_VERB_RECOVERY</code>
+                <p><a id="set_verbose_DB_VERB_RECOVERY"></a>
+                  <code class="literal">DB_VERB_RECOVERY</code>
             </p>
                 <p>
                  Display additional information when performing recovery.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REGISTER"></a>DB_VERB_REGISTER</code>
+                <p><a id="set_verbose_DB_VERB_REGISTER"></a>
+                  <code class="literal">DB_VERB_REGISTER</code>
             </p>
                 <p>
                  Display additional information concerning support for the 
@@ -125,8 +125,8 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REPLICATION"></a>DB_VERB_REPLICATION</code>
+                <p><a id="set_verbose_DB_VERB_REPLICATION"></a>
+                  <code class="literal">DB_VERB_REPLICATION</code>
             </p>
                 <p>
                  Display all detailed information about replication. This includes the
@@ -135,24 +135,24 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REP_ELECT"></a>DB_VERB_REP_ELECT</code>
+                <p><a id="set_verbose_DB_VERB_REP_ELECT"></a>
+                  <code class="literal">DB_VERB_REP_ELECT</code>
             </p>
                 <p>
                  Display detailed information about replication elections.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REP_LEASE"></a>DB_VERB_REP_LEASE</code>
+                <p><a id="set_verbose_DB_VERB_REP_LEASE"></a>
+                  <code class="literal">DB_VERB_REP_LEASE</code>
             </p>
                 <p>
                  Display detailed information about replication master leases.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REP_MISC"></a>DB_VERB_REP_MISC</code>
+                <p><a id="set_verbose_DB_VERB_REP_MISC"></a>
+                  <code class="literal">DB_VERB_REP_MISC</code>
             </p>
                 <p>
                  Display detailed information about general replication processing not
@@ -160,24 +160,24 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REP_MSGS"></a>DB_VERB_REP_MSGS</code>
+                <p><a id="set_verbose_DB_VERB_REP_MSGS"></a>
+                  <code class="literal">DB_VERB_REP_MSGS</code>
             </p>
                 <p>
                  Display detailed information about replication message processing.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REP_SYNC"></a>DB_VERB_REP_SYNC</code>
+                <p><a id="set_verbose_DB_VERB_REP_SYNC"></a>
+                  <code class="literal">DB_VERB_REP_SYNC</code>
             </p>
                 <p>
                  Display detailed information about replication client synchronization.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REPMGR_CONNFAIL"></a>DB_VERB_REPMGR_CONNFAIL</code>
+                <p><a id="set_verbose_DB_VERB_REPMGR_CONNFAIL"></a>
+                  <code class="literal">DB_VERB_REPMGR_CONNFAIL</code>
             </p>
                 <p>
                  Display detailed information about Replication Manager connection
@@ -185,8 +185,8 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_REPMGR_MISC"></a>DB_VERB_REPMGR_MISC</code>
+                <p><a id="set_verbose_DB_VERB_REPMGR_MISC"></a>
+                  <code class="literal">DB_VERB_REPMGR_MISC</code>
             </p>
                 <p>
                  Display detailed information about general Replication Manager
@@ -194,8 +194,8 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_verbose_DB_VERB_WAITSFOR"></a>DB_VERB_WAITSFOR</code>
+                <p><a id="set_verbose_DB_VERB_WAITSFOR"></a>
+                  <code class="literal">DB_VERB_WAITSFOR</code>
             </p>
                 <p>
                  Display the waits-for table when doing deadlock detection.
@@ -208,7 +208,7 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1666082"></a>onoffp</h4>
+                <h4 class="title"><a id="id1664541"></a>onoffp</h4>
               </div>
             </div>
           </div>
@@ -222,7 +222,7 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1665716"></a>Class</h3>
+              <h3 class="title"><a id="id1664486"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ DB_ENV-&gt;get_verbose(DB_ENV *dbenv, u_int32_t which, int *onoffp);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1665900"></a>See Also</h3>
+              <h3 class="title"><a id="id1664516"></a>See Also</h3>
             </div>
           </div>
         </div>

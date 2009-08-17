@@ -367,10 +367,12 @@
             <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
               <h3 class="title">Note</h3>
               <p>
-                Try not to use absolute path names for your 
-                environment's files. Under certain recovery scenarios, absolute path names can
-                render your environment unrecoverable. This occurs if you are attempting to recover 
-                you environment on a system that does not support the absolute path name that you used.
+                Try not to use absolute path names for your environment's
+                files. Under certain recovery scenarios, absolute path
+                names can render your environment unrecoverable. This
+                occurs if you are attempting to recover your environment on
+                a system that does not support the absolute path name that
+                you used.
             </p>
             </div>
           </div>
@@ -570,6 +572,10 @@
                 <code class="classname">com.sleepycat.db.ErrorHandler</code>
                 interface.
             </p>
+                <p>
+                This is the recommended way to get error messages from
+                DB.
+            </p>
               </li>
               <li>
                 <p>
@@ -609,7 +615,7 @@
                 When DB dynamically obtains memory, it uses memory outside of the JVM. Normally the amount of memory
                 that DB obtains is trivial, a few bytes here and there, so you might not notice it. However, if 
                 heap or system memory is used to back your region files, then this can represent a significant amount of
-                memory being used by DB above and beyond the memory required by the JCM process. As a result, the
+                memory being used by DB above and beyond the memory required by the JVM process. As a result, the
                 JVM process may appear to be using more memory than you told the process it could use.
             </p>
           </div>

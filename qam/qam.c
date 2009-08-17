@@ -343,7 +343,7 @@ recheck:
 	if (opcode & QAM_SETFIRST)
 		meta->first_recno = new_first;
 
-done:	if ((t_ret = __memp_fput(mpf,
+done:	if (meta != NULL && (t_ret = __memp_fput(mpf,
 	    dbc->thread_info, meta, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 

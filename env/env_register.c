@@ -353,7 +353,7 @@ kill_all:	/*
 			    dbenv, flags, orig_flags, 0)) != 0)
 				goto sig_proc;
 			if ((t_ret =
-			    __env_set_state(env, &ip, THREAD_ACTIVE)) != 0 &&
+			    __env_set_state(env, &ip, THREAD_FAILCHK)) != 0 &&
 			    ret == 0)
 				ret = t_ret;
 			if ((t_ret =

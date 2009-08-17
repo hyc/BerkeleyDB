@@ -57,7 +57,7 @@ int __memp_set_mp_pagesize __P((DB_ENV *, u_int32_t));
 int __memp_get_mp_tablesize __P((DB_ENV *, u_int32_t *));
 int __memp_set_mp_tablesize __P((DB_ENV *, u_int32_t));
 int __memp_nameop __P((ENV *, u_int8_t *, const char *, const char *, const char *, int));
-int __memp_ftruncate __P((DB_MPOOLFILE *, DB_THREAD_INFO *, db_pgno_t, u_int32_t));
+int __memp_ftruncate __P((DB_MPOOLFILE *, DB_TXN *, DB_THREAD_INFO *, db_pgno_t, u_int32_t));
 int __memp_alloc_freelist __P((DB_MPOOLFILE *, u_int32_t, db_pgno_t **));
 int __memp_free_freelist __P((DB_MPOOLFILE *));
 int __memp_get_freelist __P(( DB_MPOOLFILE *, u_int32_t *, db_pgno_t **));

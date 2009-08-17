@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 12.  Application Specific Logging and Recovery</title>
+    <title>Chapter 13.  Application Specific Logging and Recovery</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 12. 
+          <th colspan="3" align="center">Chapter 13. 
 		Application Specific Logging and Recovery
         </th>
         </tr>
@@ -31,7 +31,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="apprec"></a>Chapter 12. 
+            <h2 class="title"><a id="apprec"></a>Chapter 13. 
 		Application Specific Logging and Recovery
         </h2>
           </div>
@@ -80,7 +80,7 @@ will need application-specific logging and recovery functions.</p>
 on data stored in plain text files accessed using the POSIX read and
 write system calls.  The read and write operations for which transaction
 protection is desired will be bracketed by calls to the standard Berkeley DB
-transactional interfaces, <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a> and <a href="../api_reference/C/txncommit.html" class="olink">DB_TXN-&gt;commit()</a>, and
+transactional interfaces, <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a> and <a href="../api_reference/C/txncommit.html" class="olink">DB_TXN-&gt;commit()</a>, and
 the transaction's locker ID will be used to acquire relevant read and
 write locks.</p>
         <p>Before data is accessed, the application must make a call to the lock

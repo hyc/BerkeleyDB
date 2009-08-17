@@ -306,12 +306,13 @@ __bam_iitem(dbc, key, data, op, flags)
 			return (__db_space_err(dbp));
 	}
 
-	if ((ret = __memp_dirty(mpf, &h,
-	     dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
-		return (ret);
+	ret = __memp_dirty(mpf, &h,
+	     dbc->thread_info, dbc->txn, dbc->priority, 0);
 	if (cp->csp->page == cp->page)
 		cp->csp->page = h;
 	cp->page = h;
+	if (ret != 0)
+		return (ret);
 
 	/*
 	 * The code breaks it up into five cases:

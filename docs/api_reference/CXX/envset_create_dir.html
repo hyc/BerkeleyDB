@@ -43,17 +43,19 @@ DbEnv::set_create_dir(const char *dir); </pre>
          Sets the path of a directory to be used as the location to create the access
          method database files.  When the
          <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>  function is used to
-	 create a file it will be created relative to this path.  
+	     create a file it will be created relative to this path.  
     </p>
       <p>
          If no database directories are specified, database files will be created
          either by absolute paths or relative to the environment home
-         directory.
-	 See <a href="../../programmer_reference/env_naming.html" class="olink">Berkeley DB File Naming</a> for more information.
+         directory.  See 
+         <a href="../../programmer_reference/env_naming.html" class="olink">Berkeley DB File Naming</a> 
+         for more information.
     </p>
       <p>
-         The database environment's create directorie may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
+         The database environment's create directory may also be configured
+         using the environment's 
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
          syntax of the entry in that file is a single line with the string
          "set_create_dir", one or more whitespace characters, and the directory
          name.
@@ -80,7 +82,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670689"></a>Parameters</h3>
+              <h3 class="title"><a id="id1669929"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -88,7 +90,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1670730"></a>dir</h4>
+                <h4 class="title"><a id="id1670042"></a>dir</h4>
               </div>
             </div>
           </div>
@@ -108,7 +110,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670725"></a>Errors</h3>
+              <h3 class="title"><a id="id1670036"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -116,7 +118,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
                          The <code class="methodname">DbEnv::set_create_dir()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -126,7 +128,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1670777"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1670090"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -140,7 +142,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670782"></a>Class</h3>
+              <h3 class="title"><a id="id1670095"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -152,7 +154,7 @@ DbEnv::set_create_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1670830"></a>See Also</h3>
+              <h3 class="title"><a id="id1670192"></a>See Also</h3>
             </div>
           </div>
         </div>

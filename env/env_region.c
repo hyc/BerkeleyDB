@@ -1200,9 +1200,6 @@ __env_sys_detach(env, infop, destroy)
 	REGINFO *infop;
 	int destroy;
 {
-	REGION *rp;
-
-	rp = infop->rp;
 
 	/* If a region is private, free the memory. */
 	if (F_ISSET(env, ENV_PRIVATE)) {

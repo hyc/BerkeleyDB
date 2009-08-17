@@ -501,6 +501,10 @@ AC_TRY_COMPILE(,[
 fi
 
 # UNIX fcntl system call mutexes.
+# Note that fcntl mutexes are no longer supported in 4.8.  This code has been
+# left in place in case there is some system that we are not aware of that uses
+# fcntl mutexes, in which case additional work will be required for DB 4.8 in
+# order to support shared latches.
 if test "$db_cv_mutex" = no; then
 	db_cv_mutex=UNIX/fcntl
 AC_TRY_LINK([
@@ -656,7 +660,7 @@ esac
 # Configure the remaining special cases.
 case "$db_cv_mutex" in
 UNIX/fcntl)		AC_MSG_WARN(
-			    [NO FAST MUTEXES FOUND FOR THIS COMPILER/ARCHITECTURE.])
+			    [NO SHARED LATCH IMPLEMENTATION FOUND FOR THIS PLATFORM.])
 			ADDITIONAL_OBJS="mut_fcntl${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_FCNTL)
 			AH_TEMPLATE(HAVE_MUTEX_FCNTL,
@@ -677,10 +681,17 @@ disabled)
 	# Test to see if mutexes have been found by checking the list of
 	# additional objects for a mutex implementation.
 	case "$ADDITIONAL_OBJS" in
-	*mut_fcntl*|*mut_pthread*|*mut_tas*|*mut_win32*)
+	*mut_pthread*|*mut_tas*|*mut_win32*)
 		AC_DEFINE(HAVE_MUTEX_SUPPORT)
 		AH_TEMPLATE(HAVE_MUTEX_SUPPORT,
-	    [Define to 1 if the Berkeley DB library should support mutexes.]);;
+	    [Define to 1 if the Berkeley DB library should support mutexes.])
+
+		# Shared latches are required in 4.8, and are implemented using
+		# mutexes if we don't have a native implementation.
+		# This macro may be removed in a future release.
+		AH_TEMPLATE(HAVE_SHARED_LATCHES,
+	    [Define to 1 to configure Berkeley DB to use read/write latches.])
+		AC_DEFINE(HAVE_SHARED_LATCHES);;
 	*)
 		AC_MSG_ERROR([Unable to find a mutex implementation]);;
 	esac
@@ -692,17 +703,6 @@ if test "$hybrid" = pthread/tas; then
 	AC_DEFINE(HAVE_MUTEX_HYBRID)
 	AH_TEMPLATE(HAVE_MUTEX_HYBRID,
 	    [Define to 1 to use test-and-set mutexes with blocking mutexes.])
-fi
-
-# Test to see if shared mutexes are available, if not manually overridden.
-# In particular, our fcntl mutex implementation does not support shared latches.
-AH_TEMPLATE(HAVE_SHARED_LATCHES,
-    [Define to 1 to configure Berkeley DB to use shared, read/write latches.])
-if test "$db_cv_shared_latches" = "yes"; then
-	case "$ADDITIONAL_OBJS" in
-	*mut_pthread*|*mut_tas*|*mut_win32*)
-		AC_DEFINE(HAVE_SHARED_LATCHES);;
-	esac
 fi
 
 # The mutex selection may require specific declarations -- we fill in most of
@@ -735,7 +735,7 @@ UI/threads*)
 	db_threadid_t_decl="typedef thread_t db_threadid_t;"
 	AC_HAVE_LIBRARY(thread, LIBSO_LIBS="$LIBSO_LIBS -lthread");;
 *)
-	AC_CHECK_HEADERS(pthread.h)
+	AC_CHECK_HEADER(pthread.h, [ac_cv_header_pthread_h=yes])
 	if test "$ac_cv_header_pthread_h" = "yes" ; then
 		thread_h_decl="#include <pthread.h>"
 		db_threadid_t_decl="typedef pthread_t db_threadid_t;"

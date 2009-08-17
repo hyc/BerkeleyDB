@@ -15,14 +15,16 @@ fi])
 
 AC_DEFUN(AC_CXX_WSTRING, [
 AC_MSG_CHECKING(whether C++ supports the wstring class)
+AC_SUBST(WSTRING_decl)
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <string>
 	using std::wstring;],
 	[wstring ws; ws.find_first_of(ws);]),
-	[AC_DEFINE(HAVE_WSTRING)
-	 AH_TEMPLATE(HAVE_WSTRING, [Define to 1 if the C++ wstring class is available.])
-	 AC_MSG_RESULT(yes)], AC_MSG_RESULT(no))
+	[WSTRING_decl="#define	HAVE_WSTRING 1" ;
+	 AC_MSG_RESULT(yes)],
+	[WSTRING_decl="#undef	HAVE_WSTRING" ;
+	 AC_MSG_RESULT(no)])
 AC_LANG_RESTORE
 ])
 
@@ -227,7 +229,7 @@ public:
 	} 
 }; 
 
-}; // dbstl_configure_test
+} // dbstl_configure_test
 
 using namespace dbstl_configure_test;], [
 	char cc = 'a';

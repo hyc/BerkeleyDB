@@ -1,4 +1,10 @@
-﻿using System;
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
+using System;
 using System.Collections.Generic;
 using System.Text;
 using BerkeleyDB.Internal;
@@ -49,7 +55,7 @@ namespace BerkeleyDB {
             if (cfg.cacheSzIsSet)
                 seq.set_cachesize(cfg.CacheSize);
             seq.open(Transaction.getDB_TXN(txn),
-                DatabaseEntry.getDBT(cfg.key), cfg.openFlags);
+                cfg.key, cfg.openFlags);
             isOpen = true;
         }
 
@@ -160,7 +166,7 @@ namespace BerkeleyDB {
         public DatabaseEntry Key {
             get {
                 DatabaseEntry ret = new DatabaseEntry();
-                seq.get_key(DatabaseEntry.getDBT(ret));
+                seq.get_key(ret);
                 return ret;
             }
         }

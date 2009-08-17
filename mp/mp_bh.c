@@ -205,8 +205,8 @@ __memp_pgread(dbmfp, bhp, can_create)
 	mfp = dbmfp->mfp;
 	pagesize = mfp->stat.st_pagesize;
 
-	/* We should never be called with a dirty or a locked buffer. */
-	DB_ASSERT(env, !F_ISSET(bhp, BH_DIRTY_CREATE));
+	/* We should never be called with a dirty or unlocked buffer. */
+	DB_ASSERT(env, !F_ISSET(bhp, BH_DIRTY_CREATE | BH_FROZEN));
 	DB_ASSERT(env, can_create || !F_ISSET(bhp, BH_DIRTY));
 	DB_ASSERT(env, F_ISSET(bhp, BH_EXCLUSIVE));
 
@@ -302,8 +302,8 @@ __memp_pgwrite(env, dbmfp, hp, bhp)
 	ret = 0;
 	buf = NULL;
 
-	/* We should never be called with a trash buffer. */
-	DB_ASSERT(env, !F_ISSET(bhp, BH_TRASH));
+	/* We should never be called with a frozen or trashed buffer. */
+	DB_ASSERT(env, !F_ISSET(bhp, BH_FROZEN | BH_TRASH));
 
 	/*
 	 * It's possible that the underlying file doesn't exist, either
@@ -437,7 +437,7 @@ file_dead:
 		/* put the page back if necessary. */
 		if ((ret != 0 || BH_REFCOUNT(bhp) > 1) &&
 		    F_ISSET(bhp, BH_TRASH)) {
-			ret = __memp_pg(dbmfp, bhp->pgno, buf, 1);
+			ret = __memp_pg(dbmfp, bhp->pgno, bhp->buf, 1);
 			F_CLR(bhp, BH_TRASH);
 		}
 		MUTEX_UNLOCK(env, hp->mtx_hash);
@@ -549,12 +549,11 @@ __memp_bhfree(dbmp, infop, mfp, hp, bhp, flags)
 	DB_ASSERT(env, BH_REFCOUNT(bhp) == 1 &&
 	    !F_ISSET(bhp, BH_DIRTY | BH_FROZEN));
 	DB_ASSERT(env, LF_ISSET(BH_FREE_UNLOCKED) ||
-	    SH_CHAIN_SINGLETON(bhp, vc) ||
-	    (SH_CHAIN_HASNEXT(bhp, vc) &&
-	    SH_CHAIN_NEXTP(bhp, vc, __bh)->td_off == bhp->td_off) ||
+	    SH_CHAIN_SINGLETON(bhp, vc) || (SH_CHAIN_HASNEXT(bhp, vc) &&
+	    (SH_CHAIN_NEXTP(bhp, vc, __bh)->td_off == bhp->td_off ||
 	    bhp->td_off == INVALID_ROFF ||
 	    IS_MAX_LSN(*VISIBLE_LSN(env, bhp)) ||
-	    BH_OBSOLETE(bhp, hp->old_reader, vlsn));
+	    BH_OBSOLETE(bhp, hp->old_reader, vlsn))));
 
 	/*
 	 * Delete the buffer header from the hash bucket queue or the

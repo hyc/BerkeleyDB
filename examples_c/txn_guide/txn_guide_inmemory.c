@@ -1,3 +1,11 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2005-2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 /* File: txn_guide_inmemory.c */
 
 /* We assume an ANSI-compatible compiler */

@@ -89,13 +89,13 @@ proc rsrc003 { } {
 
 			# Get the last record from the text file
 			set oid [open $testdir/rsrc.txt]
+			fconfigure $oid -translation binary
 			set laststr ""
 			while { [gets $oid str] != -1 } {
 				append str \12
 				set laststr $str
 			}
 			close $oid
-			set data [sanitize_record $data]
 			error_check_good getlast $data $laststr
 
 			set ret [eval {$db put} $txn {$key $data}]
@@ -111,6 +111,7 @@ proc rsrc003 { } {
 			puts -nonewline "\tRsrc003.b: "
 			puts "Append some records in tree and verify in file."
 			set oid [open $testdir/check.txt a]
+			fconfigure $oid -translation binary
 			for {set i 1} {$i < 10} {incr i} {
 				set rec [chop_data -frecno [replicate \
 				    "This is New Record $i" $repl]]
@@ -129,6 +130,7 @@ proc rsrc003 { } {
 
 			puts "\tRsrc003.c: Append by record number"
 			set oid [open $testdir/check.txt a]
+			fconfigure $oid -translation binary
 			for {set i 1} {$i < 10} {incr i} {
 				set rec [chop_data -frecno [replicate \
 				    "New Record (set 2) $i" $repl]]
@@ -152,6 +154,7 @@ proc rsrc003 { } {
 			set db [eval {berkdb_open -create -mode 0644 -recno \
 			    -len $reclen -source $testdir/rsrc.txt} $testfile]
 			set oid [open $testdir/check.txt a]
+			fconfigure $oid -translation binary
 			for {set i 1} {$i < 10} {incr i} {
 				set rec [chop_data -frecno [replicate \
 				    "New Record (set 3) $i" $repl]]

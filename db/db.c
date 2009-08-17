@@ -1345,7 +1345,7 @@ __db_testcopy(env, dbp, name)
 		return (__part_testdocopy(dbp, name));
 	else
 #endif
-	return (__db_testdocopy(env, name));
+		return (__db_testdocopy(env, name));
 }
 
 static int

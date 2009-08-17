@@ -91,17 +91,6 @@ case "$enableval" in
 yes) AC_MSG_RESULT(no);;
 esac
 
-AC_MSG_CHECKING(if --disable-shared_latches option specified)
-AC_ARG_ENABLE(shared_latches,
-	[AC_HELP_STRING([--disable-shared_latches],
-	    [Do not build with shared, read/write latches.])],,
-	    enableval="yes")
-db_cv_shared_latches="$enableval"
-case "$enableval" in
- no) AC_MSG_RESULT(yes);;
-yes) AC_MSG_RESULT(no);;
-esac
-
 AC_MSG_CHECKING(if --disable-statistics option specified)
 AC_ARG_ENABLE(statistics,
 	AC_HELP_STRING([--disable-statistics],

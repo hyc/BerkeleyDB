@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -197,7 +203,7 @@ namespace BerkeleyDB {
             flags |= (info == null) ? 0 : info.flags;
 
             try {
-                dbc.get(DatabaseEntry.getDBT(key), DatabaseEntry.getDBT(data), flags);
+                dbc.get(key, data, flags);
                 Current = new KeyValuePair<DatabaseEntry, DatabaseEntry>(key, data);
                 return true;
             } catch (NotFoundException) {
@@ -244,8 +250,7 @@ namespace BerkeleyDB {
                 }
 
                 try {
-                    dbc.get(DatabaseEntry.getDBT(key),
-                        DatabaseEntry.getDBT(data), flags);
+                    dbc.get(key, data, flags);
                     if (isMultKey)
                         CurrentMultipleKey =
                             new MultipleKeyDatabaseEntry(dbtype, data);
@@ -282,7 +287,7 @@ namespace BerkeleyDB {
         /// <param name="flags">Modify the behavior of put</param>
         protected void Put(DatabaseEntry key, DatabaseEntry data, uint flags) {
             int ret;
-            ret = dbc.put(DatabaseEntry.getDBT(key), DatabaseEntry.getDBT(data), flags);
+            ret = dbc.put(key, data, flags);
         }
         #endregion Internal API
 
@@ -1347,12 +1352,12 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultiple"/>. MoveNextDuplicate will return false
-        /// if the next key/data pair of the database is not a duplicate data
-        /// record for the current key/data pair.
+        /// <see cref="CurrentMultiple"/>. MoveNextDuplicateMultiple will return
+        /// false if the next key/data pair of the database is not a duplicate
+        /// data record for the current key/data pair.
         /// </summary>
         /// <returns>
         /// True if the cursor was positioned successfully, false otherwise.
@@ -1362,13 +1367,13 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, then move cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultiple"/>.
-        /// MoveNextDuplicate will return false if the next key/data pair of the
-        /// database is not a duplicate data record for the current key/data
-        /// pair.
+        /// MoveNextDuplicateMultiple will return false if the next key/data
+        /// pair of the database is not a duplicate data record for the current
+        /// key/data pair.
         /// </summary>
         /// <param name="BufferSize">
         /// The size of a buffer to fill with duplicate data items.  Must be at
@@ -1383,12 +1388,12 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultiple"/>. MoveNextDuplicate will return false
-        /// if the next key/data pair of the database is not a duplicate data
-        /// record for the current key/data pair.
+        /// <see cref="CurrentMultiple"/>. MoveNextDuplicateMultiple will return
+        /// false if the next key/data pair of the database is not a duplicate
+        /// data record for the current key/data pair.
         /// </summary>
         /// <param name="info">The locking behavior to use.</param>
         /// <returns>
@@ -1399,13 +1404,13 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultiple"/>.
-        /// MoveNextDuplicate will return false if the next key/data pair of the
-        /// database is not a duplicate data record for the current key/data
-        /// pair.
+        /// MoveNextDuplicateMultiple will return false if the next key/data
+        /// pair of the database is not a duplicate data record for the current
+        /// key/data pair.
         /// </summary>
         /// <param name="BufferSize">
         /// The size of a buffer to fill with duplicate data items.  Must be at
@@ -1427,12 +1432,12 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicate will return
-        /// false if the next key/data pair of the database is not a duplicate
-        /// data record for the current key/data pair.
+        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey will
+        /// return false if the next key/data pair of the database is not a
+        /// duplicate data record for the current key/data pair.
         /// </summary>
         /// <returns>
         /// True if the cursor was positioned successfully, false otherwise.
@@ -1442,13 +1447,13 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextDuplicate will return false if the next key/data pair of the
-        /// database is not a duplicate data record for the current key/data
-        /// pair.
+        /// MoveNextDuplicateMultipleKey will return false if the next key/data
+        /// pair of the database is not a duplicate data record for the current
+        /// key/data pair.
         /// </summary>
         /// <param name="BufferSize">
         /// The size of a buffer to fill with key/data pairs.  Must be at least
@@ -1462,12 +1467,12 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicate will return
-        /// false if the next key/data pair of the database is not a duplicate
-        /// data record for the current key/data pair.
+        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey will
+        /// return false if the next key/data pair of the database is not a
+        /// duplicate data record for the current key/data pair.
         /// </summary>
         /// <param name="info">The locking behavior to use.</param>
         /// <returns>
@@ -1478,13 +1483,13 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If the next key/data pair of the database is a duplicate data record
-        /// for the current key/data pair, the move cursor to the next key/data
+        /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextDuplicate will return false if the next key/data pair of the
-        /// database is not a duplicate data record for the current key/data
-        /// pair.
+        /// MoveNextDuplicateMultipleKey will return false if the next key/data
+        /// pair of the database is not a duplicate data record for the current
+        /// key/data pair.
         /// </summary>
         /// <param name="BufferSize">
         /// The size of a buffer to fill with key/data pairs.  Must be at least

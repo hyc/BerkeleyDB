@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2008-2009 Oracle.  All rights reserved.
  *
  * $Id$
  */
@@ -14,8 +14,8 @@
 #include <string.h>
 #include <utility>
 
-#include "db_map.h"
-#include "db_vector.h"
+#include "dbstl_map.h"
+#include "dbstl_vector.h"
 
 using namespace std;
 using namespace dbstl;
@@ -89,30 +89,6 @@ void AccessExample::run()
 	char buf[1024], rbuf[1024];
 	char *p, *t;
 	u_int32_t len;
-
-	db_vector<int, ElementHolder<int> > vctr(100);
-	for (int i = 0; i < 100; i++)
-		vctr[i] = i;
-
-	for (int i = 0; i < 100; i++) {
-		cout<<"\nvctr["<<i<<"] : "<<vctr[i];
-		vctr[i] = vctr[i] * vctr[i];
-		cout<<"\nvctr["<<i<<"] squre : "<<vctr[i];
-	}
-
-	typedef db_map<char *, const char *, ElementHolder<const char *> > strmap_t2;
-	strmap_t2 strmap;
-	char str[2], str2[2];
-	const char *pstr2;
-	str[1] = str2[1] = '\0';
-	for (char c = 0; c < 26; c++) {
-		str[0] = c + 'a';
-		str2[0] = 'z' - c;
-		pstr2 = str2;
-		strmap[str] = pstr2;
-	}
-	for (strmap_t2::iterator itr = strmap.begin(); itr != strmap.end(); ++itr)
-		cout<<endl<<itr->first<<" : "<<itr->second;
 
 	for (;;) {
 		// Acquire user input string as key.

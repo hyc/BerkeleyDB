@@ -1,4 +1,8 @@
-/*
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 1999-2009 Oracle.  All rights reserved.
+ *
  * Standalone mutex tester for Berkeley DB mutexes.
  *
  * $Id$

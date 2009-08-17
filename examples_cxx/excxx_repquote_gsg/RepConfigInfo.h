@@ -6,6 +6,9 @@
  * $Id$
  */
 
+#include <cstdlib>
+#include <cstring>
+
 #include <db_cxx.h>
 
 // Chainable struct used to store host information.

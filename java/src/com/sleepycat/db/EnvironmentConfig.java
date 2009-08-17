@@ -93,6 +93,7 @@ public class EnvironmentConfig implements Cloneable {
     private int cacheCount = 0;
     private long cacheSize = 0L;
     private long cacheMax = 0L;
+    private java.io.File createDir = null;
     private java.util.Vector dataDirs = new java.util.Vector();
     private int envid = 0;
     private String errorPrefix = null;
@@ -116,6 +117,9 @@ public class EnvironmentConfig implements Cloneable {
     private int mutexIncrement = 0;
     private int mutexTestAndSetSpins = 0;
     private long mmapSize = 0L;
+    private int mpPageSize = 0;
+    private int mpTableSize = 0;
+    private int partitionLocks = 0;
     private String password = null;
     private int replicationClockskewFast = 0;
     private int replicationClockskewSlow = 0;
@@ -410,6 +414,26 @@ True if the Concurrent Data Store applications are configured to
     */
     public boolean getCDBLockAllDatabases() {
         return cdbLockAllDatabases;
+    }
+
+    /**
+    Sets the path of a directory to be used as the location to create the
+access method database files. When the open function is used to create a file
+it will be created relative to this path.
+    */
+    public void setCreateDir(java.io.File dir) {
+        createDir = dir;
+    }
+
+    /**
+    Returns the path of a directory to be used as the location to create the
+access method database files.
+@return
+The path of a directory to be used as the location to create the access method 
+database files.
+    */
+    public java.io.File getCreateDir() {
+        return createDir;
     }
 
     /**
@@ -1403,9 +1427,23 @@ The handler for application-specific log records.
     */
     public void replicationManagerAddRemoteSite(
         final ReplicationHostAddress repmgrRemoteAddr, boolean isPeer) 
-	throws DatabaseException
+        throws DatabaseException
     {
         this.repmgrRemoteSites.put(repmgrRemoteAddr, new Boolean(isPeer));
+    }
+
+    /**
+    Set the number of lock table partitions in the Berkeley DB environment.
+    */
+    public void setLockPartitions(final int partitions) {
+        this.partitionLocks = partitions;
+    }
+
+    /**
+    Returns the number of lock table partitions in the Berkeley DB environment.
+    */
+    public int getLockPartitions() {
+        return this.partitionLocks;
     }
 
     /**
@@ -1930,6 +1968,20 @@ The an OutputStream for displaying informational messages.
         return mmapSize;
     }
 
+    public void setCachePageSize(final int mpPageSize) {
+        this.mpPageSize = mpPageSize;
+    }
+    public int getCachePageSize() {
+        return mpPageSize;
+    }
+
+    public void setCacheTableSize(final int mpTableSize) {
+        this.mpTableSize = mpTableSize;
+    }
+    public int getCacheTableSize() {
+        return mpTableSize;
+    }
+
     /**
     Configure the database environment to use a specific mode when
     creating underlying files and shared memory segments.
@@ -2228,9 +2280,9 @@ True if the database environment is configured to only be accessed
     {@link Environment#setReplicationTimeout} method and the number of sites in
     the replication group via the (@link #setReplicationNumSites} method.  These
     methods may be called in any order.  For a description of the clock skew
-    values, see <a href="{@docRoot}/../ref/rep/clock_skew.html">Clock skew</a>.
+    values, see <a href="{@docRoot}/../programmer_reference/rep_clock_skew.html">Clock skew</a>.
     For a description of master leases, see
-    <a href="{@docRoot}/../ref/rep/lease.html">Master leases</a>.
+    <a href="{@docRoot}/../programmer_reference/rep_lease.html">Master leases</a>.
     <p>
     These arguments can be used to express either raw measurements of a clock
     timing experiment or a percentage across machines.  For instance a group of
@@ -2240,12 +2292,12 @@ True if the database environment is configured to only be accessed
     <p>
     The database environment's replication subsystem may also be configured using
     the environment's
-    <a href="{@docRoot}/../ref/env/db_config.html#DB_CONFIG">DB_CONFIG</a> file.
+    <a href="{@docRoot}/../programmer_reference/env_db_config.html#DB_CONFIG">DB_CONFIG</a> file.
     The syntax of the entry in that file is a single line with the string
     "rep_set_clockskew", one or more whitespace characters, and the clockskew
     specified in two parts: the replicationClockskewFast and the replicationClockskewSlow.  For example,
     "rep_set_clockskew 102 100".  Because the
-    <a href="{@docRoot}/../ref/env/db_config.html#DB_CONFIG">DB_CONFIG</a> file is
+    <a href="{@docRoot}/../programmer_reference/env_db_config.html#DB_CONFIG">DB_CONFIG</a> file is
     read when the database environment is opened, it will silently overrule
     configuration done before that time.
     <p>
@@ -2451,7 +2503,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     recovery flag is specified, a {@link RunRecoveryException} will be thrown.
     If recovery does not need to be run, the recovery flags will be ignored.
     See
-    <a href="{@docRoot}/../ref/transapp/app.html" target="_top">Architecting
+    <a href="{@docRoot}/../programmer_reference/transapp_app.html" target="_top">Architecting
     Transactional Data Store applications</a>) for more information.
     <p>
     @param register
@@ -3965,7 +4017,7 @@ True if the system has been configured to yield the processor
         if (offFlags != 0)
             dbenv.set_flags(offFlags, false);
 
-	/* Log flags */
+        /* Log flags */
         if (directLogIO != oldConfig.directLogIO)
             dbenv.log_set_config(DbConstants.DB_LOG_DIRECT, directLogIO);
 
@@ -4077,6 +4129,9 @@ True if the system has been configured to yield the processor
             dbenv.set_cachesize(cacheSize, cacheCount);
         if (cacheMax != oldConfig.cacheMax)
             dbenv.set_cache_max(cacheMax);
+        if (createDir != oldConfig.createDir)
+            dbenv.set_create_dir(createDir.toString());
+
         for (final java.util.Enumeration e = dataDirs.elements();
             e.hasMoreElements();) {
             final java.io.File dir = (java.io.File)e.nextElement();
@@ -4093,6 +4148,8 @@ True if the system has been configured to yield the processor
             dbenv.set_lk_max_lockers(maxLockers);
         if (maxLockObjects != oldConfig.maxLockObjects)
             dbenv.set_lk_max_objects(maxLockObjects);
+        if (partitionLocks != oldConfig.partitionLocks)
+            dbenv.set_lk_partitions(partitionLocks);
         if (maxLogFileSize != oldConfig.maxLogFileSize)
             dbenv.set_lg_max(maxLogFileSize);
         if (logBufferSize != oldConfig.logBufferSize)
@@ -4113,6 +4170,10 @@ True if the system has been configured to yield the processor
             dbenv.set_message_stream(messageStream);
         if (mmapSize != oldConfig.mmapSize)
             dbenv.set_mp_mmapsize(mmapSize);
+        if (mpPageSize != oldConfig.mpPageSize)
+            dbenv.set_mp_pagesize(mpPageSize);
+        if (mpTableSize != oldConfig.mpTableSize)
+            dbenv.set_mp_tablesize(mpTableSize);
         if (password != null)
             dbenv.set_encrypt(password, DbConstants.DB_ENCRYPT_AES);
         if (replicationClockskewFast != oldConfig.replicationClockskewFast ||
@@ -4156,12 +4217,12 @@ True if the system has been configured to yield the processor
             dbenv.repmgr_set_local_site(
                 repmgrLocalSiteAddr.host, repmgrLocalSiteAddr.port, 0);
         }
-	java.util.Iterator elems = repmgrRemoteSites.entrySet().iterator();
-	while (elems.hasNext()){
-	    java.util.Map.Entry ent = (java.util.Map.Entry)elems.next();
-	    ReplicationHostAddress nextAddr = 
-		(ReplicationHostAddress)ent.getKey();
-	    Boolean isPeer = (Boolean)ent.getValue();
+        java.util.Iterator elems = repmgrRemoteSites.entrySet().iterator();
+        while (elems.hasNext()){
+            java.util.Map.Entry ent = (java.util.Map.Entry)elems.next();
+            ReplicationHostAddress nextAddr = 
+                (ReplicationHostAddress)ent.getKey();
+            Boolean isPeer = (Boolean)ent.getValue();
             dbenv.repmgr_add_remote_site(nextAddr.host, nextAddr.port,
                 isPeer ? DbConstants.DB_REPMGR_PEER : 0);
         }
@@ -4210,7 +4271,7 @@ True if the system has been configured to yield the processor
         txnWriteNoSync = ((envFlags & DbConstants.DB_TXN_WRITE_NOSYNC) != 0);
         yieldCPU = ((envFlags & DbConstants.DB_YIELDCPU) != 0);
 
-	/* Log flags */
+        /* Log flags */
         if (initializeLogging) {
             directLogIO = dbenv.log_get_config(DbConstants.DB_LOG_DIRECT);
             dsyncLog = dbenv.log_get_config(DbConstants.DB_LOG_DSYNC);
@@ -4254,8 +4315,13 @@ True if the system has been configured to yield the processor
             maxOpenFiles = dbenv.get_mp_max_openfd();
             maxWrite = dbenv.get_mp_max_write();
             maxWriteSleep = dbenv.get_mp_max_write_sleep();
+            mpPageSize = dbenv.get_mp_pagesize();
+            mpTableSize = dbenv.get_mp_tablesize();
         }
 
+        String createDirStr = dbenv.get_create_dir();
+        if (createDirStr != null)
+            createDir = new java.io.File(createDirStr);
         String[] dataDirArray = dbenv.get_data_dirs();
         if (dataDirArray == null)
             dataDirArray = new String[0];
@@ -4274,6 +4340,7 @@ True if the system has been configured to yield the processor
             maxLocks = dbenv.get_lk_max_locks();
             maxLockers = dbenv.get_lk_max_lockers();
             maxLockObjects = dbenv.get_lk_max_objects();
+            partitionLocks = dbenv.get_lk_partitions();
             txnTimeout = dbenv.get_timeout(DbConstants.DB_SET_TXN_TIMEOUT);
         } else {
             lockConflicts = null;

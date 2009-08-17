@@ -73,7 +73,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631278"></a>Parameters</h3>
+              <h3 class="title"><a id="id1629636"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -81,7 +81,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631236"></a>callback</h4>
+                <h4 class="title"><a id="id1630403"></a>callback</h4>
               </div>
             </div>
           </div>
@@ -159,8 +159,8 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                  <code class="literal"><a id="associate_DB_DBT_APPMALLOC"></a>DB_DBT_APPMALLOC</code>
+                <p><a id="associate_DB_DBT_APPMALLOC"></a>
+                                  <code class="literal">DB_DBT_APPMALLOC</code>
                             </p>
                 <p>
                                  If the callback function needs to allocate memory for the <span class="bold"><strong>result</strong></span> data field (rather than simply pointing
@@ -172,8 +172,8 @@ Db::associate(DbTxn *txnid, Db *secondary,
                             </p>
               </li>
               <li>
-                <p>
-                                  <code class="literal"><a id="associate_DB_DBT_MULTIPLE"></a>DB_DBT_MULTIPLE</code>
+                <p><a id="associate_DB_DBT_MULTIPLE"></a>
+                                  <code class="literal">DB_DBT_MULTIPLE</code>
                             </p>
                 <p>
                                  To return multiple secondary keys, DB_DBT_MULTIPLE should be set in
@@ -216,8 +216,8 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                                  <code class="literal"><a id="associate_DB_DONOTINDEX"></a>DB_DONOTINDEX</code>
+                <p><a id="associate_DB_DONOTINDEX"></a>
+                                  <code class="literal">DB_DONOTINDEX</code>
                             </p>
                 <p>
                                  If any key/data pair in the primary yields a null secondary key and
@@ -249,7 +249,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631635"></a>flags</h4>
+                <h4 class="title"><a id="id1631225"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -261,8 +261,8 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                      <code class="literal"><a id="associate_DB_CREATE"></a>DB_CREATE</code>
+                <p><a id="associate_DB_CREATE"></a>
+                      <code class="literal">DB_CREATE</code>
                     </p>
                 <p>
                          If the secondary database is empty, walk through the primary and
@@ -289,8 +289,8 @@ Db::associate(DbTxn *txnid, Db *secondary,
                     </p>
               </li>
               <li>
-                <p>
-                        <code class="literal"><a id="associate_DB_IMMUTABLE_KEY"></a>DB_IMMUTABLE_KEY</code>
+                <p><a id="associate_DB_IMMUTABLE_KEY"></a>
+                        <code class="literal">DB_IMMUTABLE_KEY</code>
                     </p>
                 <p>
                         Specifies the secondary key is immutable. 
@@ -317,7 +317,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632116"></a>secondary</h4>
+                <h4 class="title"><a id="id1630670"></a>secondary</h4>
               </div>
             </div>
           </div>
@@ -340,7 +340,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631628"></a>txnid</h4>
+                <h4 class="title"><a id="id1631059"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -361,7 +361,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631234"></a>Errors</h3>
+              <h3 class="title"><a id="id1630797"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -369,7 +369,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
                          The <code class="methodname">Db::associate()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -379,7 +379,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631141"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1630717"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -389,9 +389,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -403,7 +401,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1632079"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1630813"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -411,9 +409,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -422,7 +418,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1631567"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1630735"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -438,7 +434,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631269"></a>Class</h3>
+              <h3 class="title"><a id="id1630323"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -450,7 +446,7 @@ Db::associate(DbTxn *txnid, Db *secondary,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1631758"></a>See Also</h3>
+              <h3 class="title"><a id="id1630436"></a>See Also</h3>
             </div>
           </div>
         </div>

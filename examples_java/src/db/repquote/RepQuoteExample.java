@@ -308,9 +308,6 @@ public class RepQuoteExample
             ret = 1;
         }
         
-        if (appConfig.startPolicy == ReplicationManagerStartPolicy.REP_CLIENT)
-            dbenv.setAppointedClientInit(true);
-
         if (appConfig.bulk)
             dbenv.setReplicationConfig(ReplicationConfig.BULK, true);
 
@@ -375,20 +372,12 @@ public class RepQuoteExample
             if (db == null) {
                 DatabaseConfig dbconf = new DatabaseConfig();
                 dbconf.setType(DatabaseType.BTREE);
-                if (dbenv.getIsMaster() || dbenv.getAppointedClientInit()) {
+                if (dbenv.getIsMaster()) {
                     /*
                      * Open database allowing create only if this is a master
-                     * database or if we are starting up an appointed client.
-                     * After an appointed client has started up, the master
-                     * database has been replicated to the client database
-                     * and the client database should no longer be opened
-                     * allowing create.
-                     *
-                     * If the database is a client participating in an 
-                     * election, it cannot be opened allowing create unless it
-                     * becomes the master.  In this case, the code needs to 
-                     * poll attempts to open without allowing create until the
-                     * election is over.
+                     * database.  A client database uses polling to attempt
+                     * to open the database without allowing create until
+                     * it is successful.
                      *
                      * This polling logic for allowing create can be 
                      * simplified under some circumstances.  For example, if
@@ -397,9 +386,7 @@ public class RepQuoteExample
                      */
                     dbconf.setAllowCreate(true);
                 }
-                /* Cannot open client allowing create and transactional. */
-                if (!dbenv.getAppointedClientInit())
-                    dbconf.setTransactional(true);
+                dbconf.setTransactional(true);
 
                 try {
                     db = dbenv.openDatabase
@@ -574,7 +561,6 @@ public class RepQuoteExample
         public void handleRepStartupDoneEvent()
         {
             dbenv.setInClientSync(false);
-            dbenv.setAppointedClientInit(false);
         }
     }
 } /* End RepQuoteEventHandler class. */

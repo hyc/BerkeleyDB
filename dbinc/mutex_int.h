@@ -375,7 +375,7 @@ typedef LONG volatile tsl_t;
 #endif
 #endif
 #ifdef HAVE_MUTEX_WIN32_GCC
-#define	MUTEX_PAUSE		asm volatile ("rep; nop" : : );
+#define	MUTEX_PAUSE		__asm__ volatile ("rep; nop" : : );
 #endif
 #endif
 #endif
@@ -391,7 +391,7 @@ typedef unsigned char tsl_t;
 #define	MUTEX_SET(tsl) ({						\
 	register tsl_t *__l = (tsl);					\
 	int __r;							\
-	    asm volatile("tas  %1; \n					\
+	    __asm__ volatile("tas  %1; \n				\
 			  seq  %0"					\
 		: "=dm" (__r), "=m" (*__l)				\
 		: "1" (*__l)						\
@@ -421,7 +421,7 @@ static inline int
 MUTEX_SET(tsl_t *tsl) {
 	register tsl_t *__l = tsl;
 	register tsl_t __r;
-	asm volatile(
+	__asm__ volatile(
 		"1:	ldl_l	%0,%2\n"
 		"	blbs	%0,2f\n"
 		"	or	$31,1,%0\n"
@@ -441,7 +441,7 @@ MUTEX_SET(tsl_t *tsl) {
  */
 static inline int
 MUTEX_UNSET(tsl_t *tsl) {
-	asm volatile("	mb\n");
+	__asm__ volatile("	mb\n");
 	return *tsl = 0;
 }
 
@@ -476,7 +476,7 @@ typedef unsigned char tsl_t;
 /* gcc/arm: 0 is clear, 1 is set. */
 #define	MUTEX_SET(tsl) ({						\
 	int __r;							\
-	asm volatile(							\
+	__asm__ volatile(						\
 		"swpb	%0, %1, [%2]\n\t"				\
 		"eor	%0, %0, #1\n\t"					\
 	    : "=&r" (__r)						\
@@ -507,7 +507,7 @@ typedef u_int32_t tsl_t;
 #define	MUTEX_SET(tsl) ({						\
 	register tsl_t *__l = (tsl);					\
 	int __r;							\
-	asm volatile("ldcws 0(%1),%0" : "=r" (__r) : "r" (__l));	\
+	__asm__ volatile("ldcws 0(%1),%0" : "=r" (__r) : "r" (__l));	\
 	__r & 1;							\
 })
 
@@ -527,7 +527,7 @@ typedef volatile unsigned char tsl_t;
 #define	MUTEX_SET(tsl) ({						\
 	register tsl_t *__l = (tsl);					\
 	long __r;							\
-	asm volatile("xchg1 %0=%1,%2" :					\
+	__asm__ volatile("xchg1 %0=%1,%2" :				\
 		     "=r"(__r), "+m"(*__l) : "r"(1));			\
 	__r ^ 1;							\
 })
@@ -581,7 +581,7 @@ typedef u_int32_t tsl_t;
 static inline int
 MUTEX_SET(int *tsl)  {
 	int __r;
-	asm volatile (
+	__asm__ volatile (
 "0:                             \n\t"
 "       lwarx   %0,0,%1         \n\t"
 "       cmpwi   %0,0            \n\t"
@@ -601,7 +601,7 @@ MUTEX_SET(int *tsl)  {
 
 static inline int
 MUTEX_UNSET(tsl_t *tsl) {
-	 asm volatile("sync" : : : "memory");
+	 __asm__ volatile("sync" : : : "memory");
 	 return *tsl = 0;
 }
 #define	MUTEX_INIT(tsl)		MUTEX_UNSET(tsl)
@@ -637,7 +637,7 @@ static inline int
 MUTEX_SET(tsl_t *tsl) {							\
 	register tsl_t *__l = (tsl);					\
 	int __r;							\
-  asm volatile(								\
+  __asm__ volatile(							\
        "    la    1,%1\n"						\
        "    lhi   0,1\n"						\
        "    l     %0,%1\n"						\
@@ -708,7 +708,7 @@ typedef unsigned char tsl_t;
 #define	MUTEX_SET(tsl) ({						\
 	register tsl_t *__l = (tsl);					\
 	register tsl_t __r;						\
-	asm volatile							\
+	__asm__ volatile						\
 	    ("ldstub [%1],%0; stbar"					\
 	    : "=r"( __r) : "r" (__l));					\
 	!__r;								\
@@ -717,9 +717,11 @@ typedef unsigned char tsl_t;
 #define	MUTEX_UNSET(tsl)	(*(tsl) = 0, MUTEX_MEMBAR(tsl))
 #define	MUTEX_INIT(tsl)         (MUTEX_UNSET(tsl), 0)
 #define	MUTEX_MEMBAR(x)	\
-	({ asm volatile ("membar #StoreStore|#StoreLoad|#LoadStore"); })
-#define	MEMBAR_ENTER()	({ asm volatile ("membar #StoreStore|#StoreLoad"); })
-#define	MEMBAR_EXIT()	({ asm volatile ("membar #StoreStore|#LoadStore"); })
+	({ __asm__ volatile ("membar #StoreStore|#StoreLoad|#LoadStore"); })
+#define	MEMBAR_ENTER() \
+	({ __asm__ volatile ("membar #StoreStore|#StoreLoad"); })
+#define	MEMBAR_EXIT() \
+	({ __asm__ volatile ("membar #StoreStore|#LoadStore"); })
 #endif
 #endif
 
@@ -753,7 +755,7 @@ static inline int
 MUTEX_SET(tsl_t *tsl) {
        register tsl_t *__l = tsl;
        register tsl_t __r, __t;
-       asm volatile(
+       __asm__ volatile(
 	       "       .set push           \n"
 	       "       .set mips2          \n"
 	       "       .set noreorder      \n"
@@ -775,7 +777,7 @@ MUTEX_SET(tsl_t *tsl) {
 
 static inline void
 MUTEX_UNSET(tsl_t *tsl) {
-	__asm__ __volatile__(
+	__asm__ volatile(
 	       "       .set noreorder      \n"
 	       "       sync                \n"
 	       "       sw      $0, %0      \n"
@@ -800,7 +802,7 @@ typedef volatile unsigned char tsl_t;
 /* gcc/x86: 0 is clear, 1 is set. */
 #define	MUTEX_SET(tsl) ({						\
 	tsl_t __r;							\
-	asm volatile("movb $1, %b0\n\t"					\
+	__asm__ volatile("movb $1, %b0\n\t"				\
 		"xchgb %b0,%1"						\
 	    : "=&q" (__r)						\
 	    : "m" (*(tsl_t *)(tsl))					\
@@ -817,10 +819,10 @@ typedef volatile unsigned char tsl_t;
  */
 #if defined(HAVE_MUTEX_X86_GCC_ASSEMBLY)
 #define	MUTEX_MEMBAR(addr)						\
-    ({ asm volatile ("lock; addl $0, %0" ::"m" (addr): "memory"); 1; })
+    ({ __asm__ volatile ("lock; addl $0, %0" ::"m" (addr): "memory"); 1; })
 #else
 #define	MUTEX_MEMBAR(addr)						\
-    ({ asm volatile ("mfence" ::: "memory"); 1; })
+    ({ __asm__ volatile ("mfence" ::: "memory"); 1; })
 #endif
 
 /*
@@ -832,7 +834,7 @@ typedef volatile unsigned char tsl_t;
  * instruction does not affect the correctness of programs on existing
  * platforms, and it improves performance on Pentium 4 processor platforms."
  */
-#define	MUTEX_PAUSE		asm volatile ("rep; nop" : : );
+#define	MUTEX_PAUSE		__asm__ volatile ("rep; nop" : : );
 #endif
 #endif
 
@@ -877,7 +879,7 @@ typedef volatile unsigned char tsl_t;
  */
 #if !defined(HAVE_ATOMIC_SUPPORT) && defined(HAVE_MUTEX_SUPPORT) && \
     !defined(MAX_ATOMIC_MUTEXES)
-#define	MAX_ATOMIC_MUTEXES	8
+#define	MAX_ATOMIC_MUTEXES	1
 #endif
 
 /*
@@ -1000,7 +1002,8 @@ struct __db_mutex_t {			/* Mutex. */
 #ifdef HAVE_MUTEX_SUPPORT
 #define	MUTEX_IS_OWNED(env, mutex)					\
 	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
-	    F_ISSET(MUTEXP_SET(env->mutex_handle, mutex), DB_MUTEX_LOCKED))
+	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
+	F_ISSET(MUTEXP_SET(env->mutex_handle, mutex), DB_MUTEX_LOCKED))
 #else
 #define	MUTEX_IS_OWNED(env, mutex)	0
 #endif
@@ -1022,6 +1025,7 @@ struct __db_mutex_t {			/* Mutex. */
 
 #define	MUTEX_IS_BUSY(env, mutex)					\
 	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
+	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
 	MUTEXP_IS_BUSY(MUTEXP_SET(env->mutex_handle, mutex)))
 
 #define	MUTEX_REQUIRED(env, mutex)					\

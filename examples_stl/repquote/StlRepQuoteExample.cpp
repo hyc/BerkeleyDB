@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001,2008 Oracle.  All rights reserved.
+ * Copyright (c) 2001-2009 Oracle.  All rights reserved.
  *
  * $Id$
  */
@@ -38,7 +38,7 @@
 
 #include <db_cxx.h>
 #include "StlRepConfigInfo.h"
-#include "db_map.h"
+#include "dbstl_map.h"
 
 using std::cout;
 using std::cin;
@@ -88,7 +88,6 @@ typedef void* thread_exit_status_t;
 
 // Struct used to store information in Db app_private field.
 typedef struct {
-	bool appointed_client_init;
 	bool app_finished;
 	bool in_client_sync;
 	bool is_master;
@@ -127,8 +126,13 @@ private:
 	void print_stocks();
 	void prompt();
 	bool open_db(bool creating);
-	void close_db(){ delete strmap; dbstl::close_db(dbp); dbp = NULL; }
-	void close_db(Db *);// Close an unregistered Db handle.
+	void close_db(){ 
+		delete strmap; 
+		strmap = NULL; 
+		dbstl::close_db(dbp); 
+		dbp = NULL; 
+	}
+	static void close_db(Db *&);// Close an unregistered Db handle.
 };
 
 bool RepQuoteExample::open_db(bool creating)
@@ -139,9 +143,8 @@ bool RepQuoteExample::open_db(bool creating)
 		return true;
 
 	dbp = new Db(cur_env, DB_CXX_NO_EXCEPTIONS);
-	dbp->set_pagesize(512);
 
-	u_int32_t flags = DB_AUTO_COMMIT;
+	u_int32_t flags = DB_AUTO_COMMIT | DB_THREAD;
 	if (creating)
 		flags |= DB_CREATE;
 
@@ -153,25 +156,29 @@ bool RepQuoteExample::open_db(bool creating)
 			delete strmap;
 		strmap = new str_map_t(dbp, cur_env);
 		return (true);
-	default:
-		if (ret == ENOENT && !creating) {
-			log("\nStock DB does not yet exist\n");
-			break;
-		}
-		// DB_REP_LOCKOUT will fall through. 
 	case DB_LOCK_DEADLOCK: // Fall through
 	case DB_REP_HANDLE_DEAD:
-		log("\nFailed to open stock db, please retry last operation\n");
-		close_db(dbp);
-		return (false);
-	
+		log("\nFailed to open stock db.");
+		break;
+	default:
+		if (ret == DB_REP_LOCKOUT)
+			break; // Fall through
+		else if (ret == ENOENT && !creating) 
+			log("\nStock DB does not yet exist\n");
+		else {
+			DbException ex(ret);
+			throw ex;
+		}
 	} // switch
 
-	return false;
-
+	// (All retryable errors fall through to here.)
+	// 
+	log("\nPlease retry the operation");
+	close_db(dbp);
+	return (false);
 }
 
-void RepQuoteExample::close_db(Db *dbp) 
+void RepQuoteExample::close_db(Db *&dbp) 
 {
 	if (dbp) {
 		try {
@@ -188,7 +195,6 @@ void RepQuoteExample::close_db(Db *dbp)
 }
 
 RepQuoteExample::RepQuoteExample() : app_config(0), cur_env(NULL) {
-	app_data.appointed_client_init = 0;
 	app_data.app_finished = 0;
 	app_data.in_client_sync = 0;
 	app_data.is_master = 0; // assume I start out as client
@@ -199,9 +205,6 @@ RepQuoteExample::RepQuoteExample() : app_config(0), cur_env(NULL) {
 
 void RepQuoteExample::init(RepConfigInfo *config) {
 	app_config = config;
-
-	if (app_config->start_policy == DB_REP_CLIENT)
-		app_data.appointed_client_init = 1;
 
 	cur_env->set_app_private(&app_data);
 	cur_env->set_errfile(stderr);
@@ -395,24 +398,16 @@ void RepQuoteExample::doloop() {
 		// DB operation.
 		//
 		// Open database with DB_CREATE only if this is a master
-		// database or if we are starting up an appointed client.
-		// After an appointed client has started up, the master
-		// database has been replicated to the client database
-		// and the client database should no longer be opened
-		// with DB_CREATE.
-		//
-		// If the database is a client participating in an election,
-		// it cannot be opened with DB_CREATE unless it becomes the
-		// master.  In this case, the code needs to poll attempts
-		// to open without DB_CREATE until the election is over.
+		// database.  A client database uses polling to attempt
+		// to open the database without DB_CREATE until it is
+		// successful.
 		//
 		// This DB_CREATE polling logic can be simplified under
-		// some circumstances. For example, if the application can
+		// some circumstances.  For example, if the application can
 		// be sure a database is already there, it would never need
 		// to open it with DB_CREATE.
 		//
-		if (!open_db(app_data.is_master ||
-		    app_data.appointed_client_init))
+		if (!open_db(app_data.is_master))
 			continue;
 
 		try {
@@ -473,7 +468,6 @@ void RepQuoteExample::event_callback(DbEnv* dbenv, u_int32_t which, void *info)
 
 	case DB_EVENT_REP_STARTUPDONE:
 		app->in_client_sync = 0;
-		app->appointed_client_init = 0;
 		break;
 	case DB_EVENT_REP_NEWMASTER:
 		app->in_client_sync = 1;

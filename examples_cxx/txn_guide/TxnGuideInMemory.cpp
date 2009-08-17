@@ -1,5 +1,15 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2005-2009 Oracle.  All rights reserved.
+ *
+ * $Id$ 
+ */
+
 // File TxnGuideInMemory.cpp
 
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <db_cxx.h>
 

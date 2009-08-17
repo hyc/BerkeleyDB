@@ -9,7 +9,6 @@ package com.sleepycat.persist.test;
 
 import junit.framework.TestCase;
 
-import com.sleepycat.db.DatabaseException;
 import com.sleepycat.compat.DbCompat;
 import com.sleepycat.db.Environment;
 

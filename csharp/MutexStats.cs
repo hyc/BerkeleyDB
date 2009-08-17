@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,15 +41,15 @@ namespace BerkeleyDB {
         /// <summary>
         /// Region lock granted without wait. 
         /// </summary>
-        public long RegionNoWait { get { return st.st_region_nowait; } }
+        public ulong RegionNoWait { get { return st.st_region_nowait; } }
         /// <summary>
         /// Region size. 
         /// </summary>
-        public uint RegionSize { get { return st.st_regsize; } }
+        public ulong RegionSize { get { return (ulong)st.st_regsize.ToInt64(); } }
         /// <summary>
         /// Region lock granted after wait. 
         /// </summary>
-        public long RegionWait { get { return st.st_region_wait; } }
+        public ulong RegionWait { get { return st.st_region_wait; } }
         /// <summary>
         /// Mutex test-and-set spins 
         /// </summary>

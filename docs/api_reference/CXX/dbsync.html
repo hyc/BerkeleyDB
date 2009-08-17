@@ -73,7 +73,7 @@ Db::sync(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1653833"></a>Parameters</h3>
+              <h3 class="title"><a id="id1653256"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -81,7 +81,7 @@ Db::sync(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1653888"></a>flags</h4>
+                <h4 class="title"><a id="id1653220"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -95,7 +95,7 @@ Db::sync(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1653887"></a>Errors</h3>
+              <h3 class="title"><a id="id1653204"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -103,7 +103,7 @@ Db::sync(u_int32_t flags);</pre>
                          The <code class="methodname">Db::sync()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -113,7 +113,7 @@ Db::sync(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654059"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1653126"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -123,9 +123,7 @@ Db::sync(u_int32_t flags);</pre>
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -137,7 +135,7 @@ Db::sync(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654090"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1653208"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -145,9 +143,7 @@ Db::sync(u_int32_t flags);</pre>
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -156,7 +152,7 @@ Db::sync(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1654152"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1653384"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -169,7 +165,7 @@ Db::sync(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1654101"></a>Class</h3>
+              <h3 class="title"><a id="id1653248"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -181,7 +177,7 @@ Db::sync(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1653936"></a>See Also</h3>
+              <h3 class="title"><a id="id1653130"></a>See Also</h3>
             </div>
           </div>
         </div>

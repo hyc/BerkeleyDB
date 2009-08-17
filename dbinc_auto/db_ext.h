@@ -138,6 +138,7 @@ int __db_txnlist_lsnadd __P((ENV *, DB_TXNHEAD *, DB_LSN *));
 int __db_txnlist_lsnget __P((ENV *, DB_TXNHEAD *, DB_LSN *, u_int32_t));
 int __db_txnlist_lsninit __P((ENV *, DB_TXNHEAD *, DB_LSN *));
 void __db_txnlist_print __P((DB_TXNHEAD *));
+int __db_ditem_nolog __P((DBC *, PAGE *, u_int32_t, u_int32_t));
 int __db_ditem __P((DBC *, PAGE *, u_int32_t, u_int32_t));
 int __db_pitem_nolog __P((DBC *, PAGE *, u_int32_t, u_int32_t, DBT *, DBT *));
 int __db_pitem __P((DBC *, PAGE *, u_int32_t, u_int32_t, DBT *, DBT *));

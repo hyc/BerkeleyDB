@@ -306,6 +306,9 @@ public abstract class EvolveTestBase extends TestCase {
         /* Do not delete log files so they can be used by 2nd phase of test. */
     }
 
+    /**
+     * @throws FileNotFoundException from DB core.
+     */
     void openEnv()
         throws FileNotFoundException, DatabaseException {
 

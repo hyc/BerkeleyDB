@@ -198,6 +198,9 @@ class libdb_csharpPINVOKE {
   [DllImport(libname, EntryPoint="CSharp_DB_set_bt_compare")]
   public static extern int DB_set_bt_compare(HandleRef jarg1, BDB_CompareDelegate jarg2);
 
+  [DllImport(libname, EntryPoint="CSharp_DB_set_bt_compress")]
+  public static extern int DB_set_bt_compress(HandleRef jarg1, BDB_CompressDelegate jarg2, BDB_DecompressDelegate jarg3);
+
   [DllImport(libname, EntryPoint="CSharp_DB_get_bt_minkey")]
   public static extern int DB_get_bt_minkey(HandleRef jarg1, ref uint jarg2);
 
@@ -523,7 +526,7 @@ class libdb_csharpPINVOKE {
   public static extern IntPtr DB_ENV_log_archive(HandleRef jarg1, uint jarg2, ref int jarg3, ref int jarg4);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_log_file")]
-  public static extern int DB_ENV_log_file(HandleRef jarg1, HandleRef jarg2, string jarg3, uint jarg4);
+  public static extern int DB_ENV_log_file(HandleRef jarg1, HandleRef jarg2, IntPtr jarg3, uint jarg4);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_log_flush")]
   public static extern int DB_ENV_log_flush(HandleRef jarg1, HandleRef jarg2);
@@ -625,7 +628,7 @@ class libdb_csharpPINVOKE {
   public static extern int DB_ENV_repmgr_set_local_site(HandleRef jarg1, string jarg2, uint jarg3, uint jarg4);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_repmgr_site_list")]
-  public static extern IntPtr DB_ENV_repmgr_site_list(HandleRef jarg1, ref uint jarg2, ref int jarg3);
+  public static extern IntPtr DB_ENV_repmgr_site_list(HandleRef jarg1, ref uint jarg2, ref uint jarg3, ref int jarg4);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_repmgr_start")]
   public static extern int DB_ENV_repmgr_start(HandleRef jarg1, int jarg2, uint jarg3);
@@ -892,7 +895,7 @@ class libdb_csharpPINVOKE {
   public static extern int DB_ENV_txn_recover(HandleRef jarg1, IntPtr jarg2, uint jarg3, ref uint jarg4, uint jarg5);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_txn_stat")]
-  public static extern IntPtr DB_ENV_txn_stat(HandleRef jarg1, uint jarg2, ref int jarg3);
+  public static extern IntPtr DB_ENV_txn_stat(HandleRef jarg1, uint jarg2, ref uint jarg3, ref int jarg4);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_txn_stat_print")]
   public static extern int DB_ENV_txn_stat_print(HandleRef jarg1, uint jarg2);

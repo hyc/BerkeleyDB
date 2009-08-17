@@ -3,23 +3,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Store and Retrieve data of primitive types</title>
+    <title>Working with primitive types</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="stl.html" title="Chapter 6. Standard Template Library API" />
-    <link rel="prev" href="stl_mt_usage.html" title="Using dbstl in multithreaded application" />
+    <link rel="up" href="stl.html" title="Chapter 7. Standard Template Library API" />
+    <link rel="prev" href="stl_mt_usage.html" title="Using dbstl in multithreaded applications" />
     <link rel="next" href="stl_complex_rw.html" title="Store and Retrieve data or objects of complex types" />
   </head>
   <body>
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Store and Retrieve data of primitive types </th>
+          <th colspan="3" align="center">Working with primitive types </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stl_mt_usage.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 6. Standard Template Library API</th>
+          <th width="60%" align="center">Chapter 7. Standard Template Library API</th>
           <td width="20%" align="right"> <a accesskey="n" href="stl_complex_rw.html">Next</a></td>
         </tr>
       </table>
@@ -29,7 +29,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="stl_primitive_rw"></a>Store and Retrieve data of primitive types </h2>
+            <h2 class="title" style="clear: both"><a id="stl_primitive_rw"></a>Working with primitive types </h2>
           </div>
         </div>
       </div>
@@ -37,153 +37,126 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="stl_primitive_rw.html#id1593778">
-Storing Simple Primitive Types
-</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="stl_primitive_rw.html#id1594323">
-Storing Strings
-</a>
+              <a href="stl_primitive_rw.html#id1599278">Storing strings</a>
             </span>
           </dt>
         </dl>
       </div>
       <p>
-Primitive types means int, long, double, char, char*, wchar_t*, etc. We will 
-address this topic in two parts, first is how to store simple primitive types 
-of data, like that of int, long, char, etc; Second is how to store strings.
+    To store simple primitive types such as <code class="literal">int</code>,
+    <code class="literal">long</code>, <code class="literal">double</code>, and so forth, an
+    additional type parameter for the container class
+    templates is needed.  For example, to store an <code class="literal">int</code>
+    in a <code class="classname">db_vector</code>, use this container class:
+</p>
+      <pre class="programlisting">db_vector&lt;int, ElementHolder&lt;int&gt; &gt;;</pre>
+      <p>
+    To map integers to doubles, use this:
+</p>
+      <pre class="programlisting">db_map&lt;int, double, ElementHolder&lt;double&gt; &gt;;</pre>
+      <p>
+    To store a <code class="literal">char*</code> string with <code class="literal">long</code> keys, 
+    use this:
+</p>
+      <pre class="programlisting">db_map&lt;long, char*, ElementHolder&lt;char*&gt; &gt;;</pre>
+      <p>
+    Use this for <code class="literal">const char*</code> strings:
+</p>
+      <pre class="programlisting">db_map&lt;long, const char*, ElementHolder&lt;const char*&gt; &gt;;</pre>
+      <p>
+    To map one const string to another, use this type:
+</p>
+      <pre class="programlisting">db_map&lt;const char*, const char*, ElementHolder&lt;const char*&gt; &gt;;</pre>
+      <p>
+    The <code class="methodname">TestVector::test_primitive()</code> method demonstrates more of these examples. You can find this method implemented in the dbstl test suite.
 </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1593778"></a>
-Storing Simple Primitive Types
-</h3>
+              <h3 class="title"><a id="id1599278"></a>Storing strings</h3>
             </div>
           </div>
         </div>
         <p>
-If you want to store primitive types, you need one more type parameter
-for the container class templates, e.g. when you store int data into a db_vector, you need 
-this type of container: 
+    For <code class="literal">char*</code> and <code class="literal">wchar_t*</code> strings,
+    <code class="methodname">_DB_STL_StoreElement()</code> must be called
+    following partial or total modifications before iterator movement,
+    <code class="literal">container::operator[]</code> or
+    <code class="literal">iterator::operator*/-&gt;</code> calls.  Without the
+    <code class="methodname">_DB_STL_StoreElement()</code> call, the modified
+    change will be lost. If storing an new value like this: 
 </p>
-        <pre class="programlisting">
-db_vector&lt;int, ElementHolder&lt;int&gt; &gt;;
-</pre>
+        <pre class="programlisting">*iterator = new_char_star_string;</pre>
         <p>
-When you want to store double data with int keys, use this type: 
+    the call to <code class="methodname">_DB_STL_StoreElement()</code> is not needed.
 </p>
-        <pre class="programlisting">
-db_map&lt;int, int, ElementHolder&lt;double&gt; &gt;;
-</pre>
         <p>
-When you want to store a char* string with long keys, use this type:
+    Note that passing a NULL pointer to a container of
+    <code class="literal">char*</code> type or passing a
+    <code class="classname">std::string</code> with no contents at all will insert
+    an empty string of zero length into the database.
 </p>
-        <pre class="programlisting">
-db_map&lt;long, char*, ElementHolder&lt;char*&gt; &gt;;
-</pre>
         <p>
-Or this type for const char* strings:
+    The string returned from a container will not live beyond the next
+    iterator movement call, <code class="literal">container::operator[]</code> or
+    <code class="literal">iterator::operator*/-&gt;</code> call.
 </p>
-        <pre class="programlisting">
-db_map&lt;long, const char*, ElementHolder&lt;const char*&gt; &gt;.
-</pre>
         <p>
-There is example code to use this feature in TestVector::test_primitive
-of dbstl test suite.
-</p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="id1594323"></a>
-Storing Strings
-</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-For char* and wchar_t* strings, if you modify the retrieved string partially or
-totally, do call _DB_STL_StoreElement() to store the change before iterator
-movement or container::operator[] or iterator::operator*/-&gt; call, 
-because after these calls, the modified change is lost. 
-On the other hand if you store the new value entirely, like this :
-*itr = new_char_star_string; then you don't need to call _DB_STL_StoreElement.
 
-</p>
-        <p>
-Note that you are allowed to pass a NULL pointer to the container of char* type 
-or a std::string with no contents at all, and in this case an empty string of
-zero length will be inserted to the database. 
+    A <span class="bold"><strong>db_map::value_type::second_type</strong></span> or
+    <span class="bold"><strong>db_map::datatype_wrap</strong></span> should be used
+    to hold a reference to a <code class="literal">container::operator[]</code>
+    return value. Then the reference should be used for repeated 
+    references to that value. The *iterator is of type 
+    <code class="literal">ElementHolder&lt;char *&gt;</code>, which can be automatically converted to a
+    <code class="literal">char *</code> pointer using its type conversion operator.
+    Wherever an auto conversion is done by the compiler, the conversion
+    operator of <code class="literal">ElementHolder&lt;T&gt;</code> is called.  This
+    avoids almost all explicit conversions, except for two use cases: 
 
-</p>
-        <p>
-The returned string(first character address, like native char*/wchar_t* strings
-) lives no longer than the next iterator movement call or container::operator[]
-or iterator::operator*/-&gt; call; And do call _DB_STL_StoreElement to store changed 
-string contents before calling next container::operator[] or iterator::operator*/-&gt; call;
-
-</p>
-        <p>
-Use a db_map::value_type::second_type or db_map::datatype_wrap to hold reference for 
-operator[] return value and use that reference to use the value repetitively.
-
-The *itr is of type ElementHolder&lt;char *&gt;, which can be automatically converted
-to char * pointer because it has a type conversion operator. So wherever an auto conversion
-is done by the compiler, the conversion operator is called. This can avoid almost
-all explicit conversions except two use cases: 
 </p>
         <div class="orderedlist">
           <ol type="1">
             <li>
               <p>
-			The *itr is used as a "..." parameter
-like this: 
-</p>
-              <pre class="programlisting">
-printf("this is the special case %s", *itr); 
-
-</pre>
+            The *iterator is used as a "..." parameter like this: 
+        </p>
+              <pre class="programlisting">printf("this is the special case %s", *iterator);</pre>
               <p>
-This compiles but causes
-errors, you should write like this: 
-</p>
-              <pre class="programlisting">
-printf("this is the special case %s", (char *)*itr);
-
-</pre>
-              <p>
-		</p>
+            This compiles but causes errors.  Instead, an explicit cast
+            should be used:
+        </p>
+              <pre class="programlisting">printf("this is the special case %s", (char *)*iterator);</pre>
             </li>
             <li>
               <p>
-For some old compilers like gcc3.4.6, the *itr is used in the ? : operator as 
-one of the two oprands separated by : . So if we have this expression "expr ? *itr : var" where 
-var is the same type as itr's value_type, this
-expression won't compile because the compiler thinks *itr is of different type to var,
-and it won't do an auto conversion. At least this is true for gcc3.4.6.
-</p>
+                For some old compilers, such as gcc3.4.6, the *iterator cannot be 
+                used with the ternary <code class="literal">?</code> operator, like
+                this:
+            </p>
+              <pre class="programlisting">expr ? *iterator : var</pre>
+              <p>
+                Even when <span class="bold"><strong>var</strong></span> is the same
+                type as the iterator's <code class="literal">value_type</code>, the
+                compiler fails to perform an auto conversion.
+            </p>
             </li>
           </ol>
         </div>
         <p>
-If you use a std::string or std::wstring as the data type for dbstl containers,
-e.g. db_vector&lt;string&gt;, db_map&lt;string, wstring&gt;, the string's content rather than
-the string object itself is stored, so that string persistence is maintained, and
-you are allowed to store an empty string, which is also true for char*/wchar_t* 
-strings, as detailed above.
-
+    When using <code class="classname">std::string</code> or
+    <code class="classname">std::wstring</code> as the data type for dbstl
+    containers — that is, <code class="classname">db_vector&lt;string&gt;</code>,
+    and <code class="classname">db_map&lt;string, wstring&gt;</code> — the
+    string's content rather than the string object itself is stored in order
+    to maintain persistence.
 </p>
         <p>
-There is example code to use this feature in TestAssoc::test_char_star_string_storage
-and TestAssoc::test_storing_std_strings methods of dbstl test suite.
-
-
+    You can find example code demonstrating string storage in the
+    <code class="methodname">TestAssoc::test_char_star_string_storage()</code> and 
+    <code class="methodname">TestAssoc::test_storing_std_strings()</code>
+    methods. These are available in the dbstl test suite.
 </p>
       </div>
     </div>
@@ -198,7 +171,7 @@ and TestAssoc::test_storing_std_strings methods of dbstl test suite.
           <td width="40%" align="right"> <a accesskey="n" href="stl_complex_rw.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Using dbstl in multithreaded application </td>
+          <td width="40%" align="left" valign="top">Using dbstl in multithreaded applications </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

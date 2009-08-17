@@ -94,7 +94,7 @@ class BulkAccessExample {
 
         for (;;) {
             String line = askForLine(reader, System.out, "input> ");
-            if (line == null)
+            if (line == null || (line.compareToIgnoreCase("end") == 0))
                 break;
 
             String reversed = (new StringBuffer(line)).reverse().toString();

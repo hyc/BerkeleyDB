@@ -60,7 +60,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1657304"></a>Parameters</h3>
+              <h3 class="title"><a id="id1656159"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657326"></a>data</h4>
+                <h4 class="title"><a id="id1656111"></a>data</h4>
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657409"></a>flags</h4>
+                <h4 class="title"><a id="id1656303"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -92,8 +92,8 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_AFTER"></a>DB_AFTER</code>
+                <p><a id="put_DB_AFTER"></a>
+                  <code class="literal">DB_AFTER</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, insert the data
@@ -125,8 +125,8 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_BEFORE"></a>DB_BEFORE</code>
+                <p><a id="put_DB_BEFORE"></a>
+                  <code class="literal">DB_BEFORE</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, insert the data
@@ -158,8 +158,8 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_CURRENT"></a>DB_CURRENT</code>
+                <p><a id="put_DB_CURRENT"></a>
+                  <code class="literal">DB_CURRENT</code>
             </p>
                 <p>
                  Overwrite the data of the key/data pair to which the cursor refers
@@ -171,8 +171,8 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_KEYFIRST"></a>DB_KEYFIRST</code>
+                <p><a id="put_DB_KEYFIRST"></a>
+                  <code class="literal">DB_KEYFIRST</code>
             </p>
                 <p>
                  Insert the specified key/data pair into the database.
@@ -187,8 +187,8 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_KEYLAST"></a>DB_KEYLAST</code>
+                <p><a id="put_DB_KEYLAST"></a>
+                  <code class="literal">DB_KEYLAST</code>
             </p>
                 <p>
                  Insert the specified key/data pair into the database.
@@ -203,8 +203,8 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="put_DB_NODUPDATA"></a>DB_NODUPDATA</code>
+                <p><a id="put_DB_NODUPDATA"></a>
+                  <code class="literal">DB_NODUPDATA</code>
             </p>
                 <p>
                  In the case of the Btree and Hash access methods, insert the specified
@@ -228,7 +228,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657677"></a>key</h4>
+                <h4 class="title"><a id="id1656454"></a>key</h4>
               </div>
             </div>
           </div>
@@ -241,7 +241,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1657324"></a>Errors</h3>
+              <h3 class="title"><a id="id1656467"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -271,7 +271,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657405"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id1656649"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -305,7 +305,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657886"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1656418"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -318,7 +318,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657342"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1656605"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -331,7 +331,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657414"></a> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1656374"></a> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -350,7 +350,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657350"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1656230"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -362,7 +362,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657277"></a>EACCES</h4>
+                <h4 class="title"><a id="id1656693"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -374,7 +374,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657507"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1656697"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -396,7 +396,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1657339"></a>EPERM</h4>
+                <h4 class="title"><a id="id1656414"></a>EPERM</h4>
               </div>
             </div>
           </div>
@@ -411,7 +411,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1657488"></a>Class</h3>
+              <h3 class="title"><a id="id1656629"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -423,7 +423,7 @@ DBcursor-&gt;put(DBC *DBcursor, DBT *key, DBT *data, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1657569"></a>See Also</h3>
+              <h3 class="title"><a id="id1656387"></a>See Also</h3>
             </div>
           </div>
         </div>

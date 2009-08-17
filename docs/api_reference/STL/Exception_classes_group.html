@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 29.  dbstl exception classes</title>
+    <title>Chapter 29.  Dbstl Exception Classes</title>
     <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
@@ -16,7 +16,7 @@
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 29. 
- dbstl exception classes  </th>
+ Dbstl Exception Classes  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stlReadModifyWriteOptionno_read_modify_write.html">Prev</a> </td>
@@ -31,13 +31,10 @@
         <div>
           <div>
             <h2 class="title"><a id="Exception_classes_group"></a>Chapter 29. 
- dbstl exception classes  </h2>
+ Dbstl Exception Classes  </h2>
           </div>
         </div>
       </div>
-      <h2><a id="id1580514"></a>dbstl exception classes</h2>
-      <p>
-dbstl exception classes</p>
       <p>dbstl throws several types of exceptions on several kinds of errors, the exception classes form a class hiarachy. </p>
       <p>First, there is the <a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">DbstlException</a>
 , which is the base class for all types of dbstl specific concrete exception classes. <a class="link" href="DbstlException.html" title="Chapter 30.  DbstlException">DbstlException</a>
@@ -46,7 +43,7 @@ dbstl exception classes</p>
  and its subclasses, dbstl may also throw exceptions of DbException and its subclasses, which happens when a Berkeley DB call failed. So you should use the same way you catch Berkeley DB C++ API exceptions when you want to catch exceptions throw by Berkeley DB operations.</p>
       <p>When an exception occurs, dbstl initialize an local exception object on the stack and throws the exception object, so you should catch an exception like this:</p>
       <p>try { dbstl operations } catch(DbstlException ex){ Exception handling throw ex; // Optionally throw ex again } </p>
-      <h4><a id="id1580371"></a> Public Members </h4>
+      <h4><a id="id1574255"></a> Public Members </h4>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -143,7 +140,7 @@ InvalidFunctionCall</td>
           </tbody>
         </table>
       </div>
-      <h4><a id="id1580989"></a>
+      <h4><a id="id1574782"></a>
 Group</h4>
       <p>
 None</p>

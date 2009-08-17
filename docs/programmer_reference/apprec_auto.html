@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="apprec.html" title="Chapter 12.  Application Specific Logging and Recovery" />
+    <link rel="up" href="apprec.html" title="Chapter 13.  Application Specific Logging and Recovery" />
     <link rel="prev" href="apprec_def.html" title="Defining application-specific log records" />
     <link rel="next" href="apprec_config.html" title="Application configuration" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="apprec_def.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 12. 
+          <th width="60%" align="center">Chapter 13. 
 		Application Specific Logging and Recovery
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="apprec_config.html">Next</a></td>
@@ -162,7 +162,7 @@ failure.  The log function takes the following parameters:</p>
                 <span class="term">txnid</span>
               </dt>
               <dd>The transaction identifier for the transaction handle returned by
-<a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>.</dd>
+<a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>.</dd>
               <dt>
                 <span class="term">lsnp</span>
               </dt>

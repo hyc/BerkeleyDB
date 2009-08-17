@@ -101,7 +101,7 @@ Db::key_range(DbTxn *txnid
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1640285"></a>Parameters</h3>
+              <h3 class="title"><a id="id1639167"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -109,7 +109,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640250"></a>key</h4>
+                <h4 class="title"><a id="id1638754"></a>key</h4>
               </div>
             </div>
           </div>
@@ -121,7 +121,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640487"></a>key_range</h4>
+                <h4 class="title"><a id="id1638709"></a>key_range</h4>
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640373"></a>txnid</h4>
+                <h4 class="title"><a id="id1639515"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -160,7 +160,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640374"></a>flags</h4>
+                <h4 class="title"><a id="id1638658"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@ Db::key_range(DbTxn *txnid
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1640400"></a>Errors</h3>
+              <h3 class="title"><a id="id1639629"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@ Db::key_range(DbTxn *txnid
                          The <code class="methodname">Db::key_range()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -192,7 +192,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1639895"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1639039"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -201,9 +201,7 @@ Db::key_range(DbTxn *txnid
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -212,7 +210,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640598"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1638710"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -221,9 +219,7 @@ Db::key_range(DbTxn *txnid
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -232,7 +228,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1639896"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id1639770"></a><span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -242,9 +238,7 @@ Db::key_range(DbTxn *txnid
                 handles opened in the replication environment. Once this occurs, an attempt to use
                 such a handle will 
                 <span>
-                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">
-                DbRepHandleDeadException
-        </a> (if
+                    throw a <a class="xref" href="dbrephandledead.html" title="DbRepHandleDeadException">DbRepHandleDeadException</a> (if
                     your application is configured to throw exceptions), or 
                 </span>
                 return <code class="literal">DB_REP_HANDLE_DEAD</code>.
@@ -256,7 +250,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640257"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id1638755"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -264,9 +258,7 @@ Db::key_range(DbTxn *txnid
                 The operation was blocked by client/master synchronization.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_REP_LOCKOUT</code> is returned.
             </p>
@@ -275,7 +267,7 @@ Db::key_range(DbTxn *txnid
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1640308"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1639797"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -289,7 +281,7 @@ Db::key_range(DbTxn *txnid
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1640728"></a>Class</h3>
+              <h3 class="title"><a id="id1638602"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -301,7 +293,7 @@ Db::key_range(DbTxn *txnid
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1640376"></a>See Also</h3>
+              <h3 class="title"><a id="id1639358"></a>See Also</h3>
             </div>
           </div>
         </div>

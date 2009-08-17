@@ -232,6 +232,7 @@ __db_pthread_mutex_lock(env, mutex)
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
+	DB_THREAD_INFO *ip;
 	int ret;
 
 	dbenv = env->dbenv;
@@ -263,9 +264,27 @@ __db_pthread_mutex_lock(env, mutex)
 			RET_SET_PTHREAD_TRYLOCK(mutexp, ret);
 			if (ret != EBUSY)
 				break;
-		    if (dbenv->is_alive(dbenv,
-			mutexp->pid, mutexp->tid, 0) == 0)
-				return (DB_RUNRECOVERY);
+			if (dbenv->is_alive(dbenv,
+			    mutexp->pid, mutexp->tid, 0) == 0) {
+				ret = __env_set_state(env, &ip, THREAD_VERIFY);
+				if (ret != 0 ||
+				    ip->dbth_state == THREAD_FAILCHK)
+					return (DB_RUNRECOVERY);
+				else {
+					/*
+					 * Some thread other than the true
+					 * FAILCHK thread in this process is
+					 * asking for the mutex held by the
+					 * dead process/thread.  We will
+					 * block here until someone else
+					 * does the cleanup.  Same behavior
+					 * as if we hadnt gone down the 'if
+					 * DB_ENV_FAILCHK' path to start with.
+					 */
+					RET_SET_PTHREAD_LOCK(mutexp, ret);
+					break;
+				}
+			}
 		}
 	} else
 		RET_SET_PTHREAD_LOCK(mutexp, ret);
@@ -446,6 +465,7 @@ __db_pthread_mutex_unlock(env, mutex)
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
+	DB_THREAD_INFO *ip;
 	int ret;
 #if defined(MUTEX_DIAG) && defined(HAVE_MUTEX_HYBRID)
 	int waiters;
@@ -476,8 +496,28 @@ __db_pthread_mutex_unlock(env, mutex)
 			    &mutexp->u.m.mutex)), ret);
 			while (ret == EBUSY) {
 				if (dbenv->is_alive(dbenv,
-				    mutexp->pid, mutexp->tid, 0) == 0)
-					return (DB_RUNRECOVERY);
+				    mutexp->pid, mutexp->tid, 0) == 0 ) {
+					ret = __env_set_state(
+					    env, &ip, THREAD_VERIFY);
+					if (ret != 0 ||
+					   ip->dbth_state == THREAD_FAILCHK)
+						return (DB_RUNRECOVERY);
+					else {
+						/*
+						 * We are not the true
+						 * failchk thread, so go
+						 * ahead and block on mutex
+						 * until someone else does the
+						 * cleanup.  This is the same
+						 * behavior we would get if we
+						 * hadnt gone down the 'if
+						 * DB_ENV_FAILCHK' path.
+						 */
+						RET_SET((pthread_mutex_lock(
+						    &mutexp->u.m.mutex)), ret);
+						break;
+					}
+				}
 
 				RET_SET((pthread_mutex_trylock(
 				    &mutexp->u.m.mutex)), ret);
@@ -543,7 +583,8 @@ __db_pthread_mutex_destroy(env, mutex)
 {
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
-	int ret, t_ret;
+	DB_THREAD_INFO *ip;
+	int ret, t_ret, failchk_thread;
 
 	if (!MUTEX_ON(env))
 		return (0);
@@ -552,15 +593,23 @@ __db_pthread_mutex_destroy(env, mutex)
 	mutexp = MUTEXP_SET(mtxmgr, mutex);
 
 	ret = 0;
+	failchk_thread = FALSE;
+	/* Get information to determine if we are really the failchk thread. */
+	if (F_ISSET(env->dbenv, DB_ENV_FAILCHK)) {
+		ret = __env_set_state(env, &ip, THREAD_VERIFY);
+		if (ip != NULL && ip->dbth_state == THREAD_FAILCHK)
+			failchk_thread = TRUE;
+	}
+		
 #ifndef HAVE_MUTEX_HYBRID
 	if (F_ISSET(mutexp, DB_MUTEX_SHARED)) {
 #if defined(HAVE_SHARED_LATCHES)
 		/*
 		 * If there were dead processes waiting on the condition
-		 * we may not be able to destroy it.
-		 * XXX What operating system resources might this leak?
+		 * we may not be able to destroy it.  Let failchk thread skip
+		 * this.  XXX What operating system resources might this leak?
 		 */
-		if (!F_ISSET(env->dbenv, DB_ENV_FAILCHK))
+		if (!failchk_thread)
 			RET_SET(
 			    (pthread_rwlock_destroy(&mutexp->u.rwlock)), ret);
 		/* For rwlocks, we're done - must not destroy rest of union */
@@ -571,15 +620,16 @@ __db_pthread_mutex_destroy(env, mutex)
 	if (F_ISSET(mutexp, DB_MUTEX_SELF_BLOCK)) {
 		/*
 		 * If there were dead processes waiting on the condition
-		 * we may not be able to destroy it.
+		 * we may not be able to destroy it.  Let failchk thread 
+		 * skip this. 
 		 */
-		if (!F_ISSET(env->dbenv, DB_ENV_FAILCHK))
+		if (!failchk_thread)
 			RET_SET((pthread_cond_destroy(&mutexp->u.m.cond)), ret);
 		if (ret != 0)
 			__db_err(env, ret, "unable to destroy cond");
 	}
 	RET_SET((pthread_mutex_destroy(&mutexp->u.m.mutex)), t_ret);
-	if (t_ret != 0 && !F_ISSET(env->dbenv, DB_ENV_FAILCHK)) {
+	if (t_ret != 0 && !failchk_thread) {
 		__db_err(env, t_ret, "unable to destroy mutex");
 		if (ret == 0)
 			ret = t_ret;

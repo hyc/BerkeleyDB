@@ -191,7 +191,7 @@ __txn_findlastckp(env, lsnp, max_lsn)
 	while ((ret = __logc_get(logc, &lsn, &dbt, DB_PREV)) == 0) {
 		if (dbt.size < sizeof(u_int32_t))
 			continue;
-		LOGCOPY_32(env, dbt.data, &rectype);
+		LOGCOPY_32(env, &rectype, dbt.data);
 		if (rectype == DB___txn_ckp) {
 			*lsnp = lsn;
 			break;

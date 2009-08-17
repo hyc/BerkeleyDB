@@ -2063,6 +2063,244 @@ proc basic_repmgr_test { method niter tnum inmemdb inmemlog peer bulk \
 }
 
 #
+# This is the basis for simple repmgr election test cases.  It opens three
+# clients of different priorities and makes sure repmgr elects the
+# expected master.  Then it shuts the master down and makes sure repmgr
+# elects the expected remaining client master.  Then it makes sure the former
+# master can join as a client.  The following parameters control 
+# runtime options:
+#     niter    - number of records to process
+#     inmemrep - put replication files in-memory (0, 1)
+#
+proc basic_repmgr_election_test { method niter tnum inmemrep largs } {
+	global rep_verbose
+	global testdir
+	global verbose_type
+	set nsites 3
+
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {$verbose_type on} "
+	}
+
+	env_cleanup $testdir
+	set ports [available_ports $nsites]
+
+	set clientdir $testdir/CLIENTDIR
+	set clientdir2 $testdir/CLIENTDIR2
+	set clientdir3 $testdir/CLIENTDIR3
+
+	file mkdir $clientdir
+	file mkdir $clientdir2
+	file mkdir $clientdir3
+
+	# Determine in-memory replication argument for environments.
+	if { $inmemrep } {
+		set repmemarg "-rep_inmem_files "
+	} else {
+		set repmemarg ""
+	}
+
+	# Use different connection retry timeout values to handle any
+	# collisions from starting sites at the same time by retrying
+	# at different times.
+
+	puts "\tRepmgr$tnum.a: Start three clients."
+
+	# Open first client
+	set cl_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx CLIENT -home $clientdir -txn -rep -thread $repmemarg"
+	set clientenv [eval $cl_envcmd]
+	$clientenv repmgr -ack all -nsites $nsites -pri 100 \
+	    -timeout {conn_retry 20000000} \
+	    -local [list localhost [lindex $ports 0]] \
+	    -remote [list localhost [lindex $ports 1]] \
+	    -remote [list localhost [lindex $ports 2]] \
+	    -start elect
+
+	# Open second client
+	set cl2_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread $repmemarg"
+	set clientenv2 [eval $cl2_envcmd]
+	$clientenv2 repmgr -ack all -nsites $nsites -pri 30 \
+	    -timeout {conn_retry 10000000} \
+	    -local [list localhost [lindex $ports 1]] \
+	    -remote [list localhost [lindex $ports 0]] \
+	    -remote [list localhost [lindex $ports 2]] \
+	    -start elect
+
+	# Open third client
+	set cl3_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx CLIENT3 -home $clientdir3 -txn -rep -thread $repmemarg"
+	set clientenv3 [eval $cl3_envcmd]
+	$clientenv3 repmgr -ack all -nsites $nsites -pri 20 \
+	    -timeout {conn_retry 5000000} \
+	    -local [list localhost [lindex $ports 2]] \
+	    -remote [list localhost [lindex $ports 0]] \
+	    -remote [list localhost [lindex $ports 1]] \
+	    -start elect
+
+	puts "\tRepmgr$tnum.b: Elect first client master."
+	await_expected_master $clientenv
+	set masterenv $clientenv
+	set masterdir $clientdir
+	await_startup_done $clientenv2
+	await_startup_done $clientenv3
+
+	#
+	# Use of -ack all guarantees replication complete before repmgr send
+	# function returns and rep_test finishes.
+	#
+	puts "\tRepmgr$tnum.c: Run some transactions at master."
+	eval rep_test $method $masterenv NULL $niter 0 0 0 $largs
+
+	puts "\tRepmgr$tnum.d: Verify client database contents."
+	rep_verify $masterdir $masterenv $clientdir2 $clientenv2 1 1 1
+	rep_verify $masterdir $masterenv $clientdir3 $clientenv3 1 1 1
+
+	puts "\tRepmgr$tnum.e: Shut down master, elect second client master."
+	error_check_good client_close [$clientenv close] 0
+	await_expected_master $clientenv2
+	set masterenv $clientenv2
+	await_startup_done $clientenv3
+
+	puts "\tRepmgr$tnum.f: Restart former master as client."
+	# Open -recover to clear env region, including startup_done value.
+	set clientenv [eval $cl_envcmd -recover]
+	$clientenv repmgr -ack all -nsites $nsites -pri 100 \
+	    -timeout {conn_retry 20000000} \
+	    -local [list localhost [lindex $ports 0]] \
+	    -remote [list localhost [lindex $ports 1]] \
+	    -remote [list localhost [lindex $ports 2]] \
+	    -start client
+	await_startup_done $clientenv
+
+	puts "\tRepmgr$tnum.g: Run some transactions at new master."
+	eval rep_test $method $masterenv NULL $niter $niter 0 0 $largs
+
+	puts "\tRepmgr$tnum.h: Verify client database contents."
+	set masterdir $clientdir2
+	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
+	rep_verify $masterdir $masterenv $clientdir3 $clientenv3 1 1 1
+
+	# For in-memory replication, verify replication files not there.
+	if { $inmemrep } {
+		puts "\tRepmgr$tnum.i: Verify no replication files on disk."
+		no_rep_files_on_disk $clientdir
+		no_rep_files_on_disk $clientdir2
+		no_rep_files_on_disk $clientdir3
+	}
+
+	error_check_good client3_close [$clientenv3 close] 0
+	error_check_good client_close [$clientenv close] 0
+	error_check_good client2_close [$clientenv2 close] 0
+}
+
+#
+# This is the basis for simple repmgr internal init test cases.  It starts
+# an appointed master and two clients, processing transactions between each
+# additional site.  Then it verifies all expected transactions are 
+# replicated.  The following parameters control runtime options:
+#     niter    - number of records to process
+#     inmemrep - put replication files in-memory (0, 1)
+#
+proc basic_repmgr_init_test { method niter tnum inmemrep largs } {
+	global rep_verbose
+	global testdir
+	global verbose_type
+	set nsites 3
+
+	set verbargs ""
+	if { $rep_verbose == 1 } {
+		set verbargs " -verbose {$verbose_type on} "
+	}
+
+	env_cleanup $testdir
+	set ports [available_ports $nsites]
+
+	set masterdir $testdir/MASTERDIR
+	set clientdir $testdir/CLIENTDIR
+	set clientdir2 $testdir/CLIENTDIR2
+
+	file mkdir $masterdir
+	file mkdir $clientdir
+	file mkdir $clientdir2
+
+	# Determine in-memory replication argument for environments.
+	if { $inmemrep } {
+		set repmemarg "-rep_inmem_files "
+	} else {
+		set repmemarg ""
+	}
+
+	# Use different connection retry timeout values to handle any
+	# collisions from starting sites at the same time by retrying
+	# at different times.
+
+	# Open a master.
+	puts "\tRepmgr$tnum.a: Start a master."
+	set ma_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx MASTER -home $masterdir -txn -rep -thread $repmemarg"
+	set masterenv [eval $ma_envcmd]
+	$masterenv repmgr -ack all -nsites $nsites \
+	    -timeout {conn_retry 20000000} \
+	    -local [list localhost [lindex $ports 0]] \
+	    -start master
+
+	puts "\tRepmgr$tnum.b: Run some transactions at master."
+	eval rep_test $method $masterenv NULL $niter 0 0 0 $largs
+
+	# Open first client
+	puts "\tRepmgr$tnum.c: Start first client."
+	set cl_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx CLIENT -home $clientdir -txn -rep -thread $repmemarg"
+	set clientenv [eval $cl_envcmd]
+	$clientenv repmgr -ack all -nsites $nsites \
+	    -timeout {conn_retry 10000000} \
+	    -local [list localhost [lindex $ports 1]] \
+	    -remote [list localhost [lindex $ports 0]] \
+	    -remote [list localhost [lindex $ports 2]] \
+	    -start client
+	await_startup_done $clientenv
+
+	#
+	# Use of -ack all guarantees replication complete before repmgr send
+	# function returns and rep_test finishes.
+	#
+	puts "\tRepmgr$tnum.d: Run some more transactions at master."
+	eval rep_test $method $masterenv NULL $niter $niter 0 0 $largs
+
+	# Open second client
+	puts "\tRepmgr$tnum.e: Start second client."
+	set cl_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread $repmemarg"
+	set clientenv2 [eval $cl_envcmd]
+	$clientenv2 repmgr -ack all -nsites $nsites \
+	    -timeout {conn_retry 5000000} \
+	    -local [list localhost [lindex $ports 2]] \
+	    -remote [list localhost [lindex $ports 0]] \
+	    -remote [list localhost [lindex $ports 1]] \
+	    -start client
+	await_startup_done $clientenv2
+
+	puts "\tRepmgr$tnum.f: Verifying client database contents."
+	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
+	rep_verify $masterdir $masterenv $clientdir2 $clientenv2 1 1 1
+
+	# For in-memory replication, verify replication files not there.
+	if { $inmemrep } {
+		puts "\tRepmgr$tnum.g: Verify no replication files on disk."
+		no_rep_files_on_disk $masterdir
+		no_rep_files_on_disk $clientdir
+		no_rep_files_on_disk $clientdir2
+	}
+
+	error_check_good client2_close [$clientenv2 close] 0
+	error_check_good client_close [$clientenv close] 0
+	error_check_good masterenv_close [$masterenv close] 0
+}
+
+#
 # Verify that no replication files are present in a given directory.
 # This checks for the gen, egen, internal init, temp db and page db
 # files.

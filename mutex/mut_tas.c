@@ -76,12 +76,13 @@ __db_tas_mutex_lock_int(env, mutex, nowait)
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
+	DB_THREAD_INFO *ip;
 	u_int32_t nspins;
-#ifdef HAVE_MUTEX_HYBRID
 	int ret;
-#else
+#ifndef HAVE_MUTEX_HYBRID
 	u_long ms, max_ms;
 #endif
+
 	dbenv = env->dbenv;
 
 	if (!MUTEX_ON(env) || F_ISSET(dbenv, DB_ENV_NOLOCKING))
@@ -110,6 +111,14 @@ __db_tas_mutex_lock_int(env, mutex, nowait)
 	max_ms = F_ISSET(mutexp, DB_MUTEX_LOGICAL_LOCK) ? 10 : 25;
 #endif
 
+	 /*
+	 * Only check the thread state once, by initializing the thread
+	 * control block pointer to null.  If it is not the failchk
+	 * thread, then ip will have a valid value subsequent times
+	 * in the loop.
+	 */
+	ip = NULL;
+
 loop:	/* Attempt to acquire the resource for N spins. */
 	for (nspins =
 	    mtxregion->stat.st_mutex_tas_spins; nspins > 0; --nspins) {
@@ -130,9 +139,13 @@ loop:	/* Attempt to acquire the resource for N spins. */
 		 */
 		if (MUTEXP_IS_BUSY(mutexp) || !MUTEXP_ACQUIRE(mutexp)) {
 			if (F_ISSET(dbenv, DB_ENV_FAILCHK) &&
-				dbenv->is_alive(dbenv,
-				mutexp->pid, mutexp->tid, 0) == 0)
+			    ip == NULL && dbenv->is_alive(dbenv,
+			    mutexp->pid, mutexp->tid, 0) == 0) {
+				ret = __env_set_state(env, &ip, THREAD_VERIFY);
+				if (ret != 0 ||
+				    ip->dbth_state == THREAD_FAILCHK)
 					return (DB_RUNRECOVERY);
+			}
 			if (nowait)
 				return (DB_LOCK_NOTGRANTED);
 			/*
@@ -272,11 +285,11 @@ __db_tas_mutex_readlock_int(env, mutex, nowait)
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
+	DB_THREAD_INFO *ip;
 	int lock;
 	u_int32_t nspins;
-#ifdef HAVE_MUTEX_HYBRID
-	int	ret;
-#else
+	int ret;
+#ifndef HAVE_MUTEX_HYBRID
 	u_long ms, max_ms;
 #endif
 	dbenv = env->dbenv;
@@ -307,6 +320,13 @@ __db_tas_mutex_readlock_int(env, mutex, nowait)
 	ms = 1;
 	max_ms = F_ISSET(mutexp, DB_MUTEX_LOGICAL_LOCK) ? 10 : 25;
 #endif
+	/*
+	 * Only check the thread state once, by initializing the thread
+	 * control block pointer to null.  If it is not the failchk
+	 * thread, then ip will have a valid value subsequent times
+	 * in the loop.
+	 */
+	ip = NULL;
 
 loop:	/* Attempt to acquire the resource for N spins. */
 	for (nspins =
@@ -316,9 +336,13 @@ loop:	/* Attempt to acquire the resource for N spins. */
 		    !atomic_compare_exchange(env,
 			&mutexp->sharecount, lock, lock + 1)) {
 			if (F_ISSET(dbenv, DB_ENV_FAILCHK) &&
-			    dbenv->is_alive(dbenv,
-			    mutexp->pid, mutexp->tid, 0) == 0)
-				return (DB_RUNRECOVERY);
+			    ip == NULL && dbenv->is_alive(dbenv,
+			    mutexp->pid, mutexp->tid, 0) == 0) {
+				ret = __env_set_state(env, &ip, THREAD_VERIFY);
+				if (ret != 0 ||
+				    ip->dbth_state == THREAD_FAILCHK)
+					return (DB_RUNRECOVERY);
+			}
 			if (nowait)
 				return (DB_LOCK_NOTGRANTED);
 			/*

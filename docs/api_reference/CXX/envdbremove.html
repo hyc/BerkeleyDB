@@ -71,7 +71,7 @@ DbEnv::dbremove(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1664186"></a>Parameters</h3>
+              <h3 class="title"><a id="id1663493"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1664206"></a>database</h4>
+                <h4 class="title"><a id="id1663513"></a>database</h4>
               </div>
             </div>
           </div>
@@ -92,7 +92,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1664190"></a>file</h4>
+                <h4 class="title"><a id="id1663497"></a>file</h4>
               </div>
             </div>
           </div>
@@ -105,7 +105,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1664160"></a>txnid</h4>
+                <h4 class="title"><a id="id1663397"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1664090"></a>flags</h4>
+                <h4 class="title"><a id="id1663467"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ DbEnv::dbremove(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1664187"></a>Environment Variables</h3>
+              <h3 class="title"><a id="id1663699"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@ DbEnv::dbremove(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1664407"></a>Errors</h3>
+              <h3 class="title"><a id="id1663714"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ DbEnv::dbremove(DbTxn *txnid,
                          The <code class="methodname">DbEnv::dbremove()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -187,7 +187,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1663854"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id1663517"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -196,9 +196,7 @@ DbEnv::dbremove(DbTxn *txnid,
                 a deadlock.
             </p>
           <p>
-                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">
-                DbDeadlockException
-        </a> is thrown if
+                <a class="xref" href="dbdeadlock.html" title="DbDeadlockException">DbDeadlockException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_DEADLOCK</code> is returned.
             </p>
@@ -207,7 +205,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1663998"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id1663844"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -216,9 +214,7 @@ DbEnv::dbremove(DbTxn *txnid,
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
           <p>
-                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">
-                DbLockNotGrantedException
-        </a> is thrown if
+                <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
                 your Berkeley DB API is configured to throw exceptions.
                 Otherwise, <code class="literal">DB_LOCK_NOTGRANTED</code> is returned.
             </p>
@@ -227,7 +223,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1664203"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1663514"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -240,7 +236,7 @@ DbEnv::dbremove(DbTxn *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1664499"></a>ENOENT</h4>
+                <h4 class="title"><a id="id1663580"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -253,7 +249,7 @@ DbEnv::dbremove(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1664327"></a>Class</h3>
+              <h3 class="title"><a id="id1663917"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -265,7 +261,7 @@ DbEnv::dbremove(DbTxn *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1664610"></a>See Also</h3>
+              <h3 class="title"><a id="id1663634"></a>See Also</h3>
             </div>
           </div>
         </div>

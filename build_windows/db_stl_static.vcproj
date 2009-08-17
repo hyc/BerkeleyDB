@@ -62,21 +62,21 @@
   </Configurations>
   <References/>
   <Files>
-    <File RelativePath="..\stl\db_exception.h"/>
-    <File RelativePath="..\stl\db_map.h"/>
-    <File RelativePath="..\stl\db_set.h"/>
-    <File RelativePath="..\stl\db_utility.h"/>
-    <File RelativePath="..\stl\db_vector.h"/>
-    <File RelativePath="..\stl\internal\common.h"/>
-    <File RelativePath="..\stl\internal\db_base_iterator.h"/>
-    <File RelativePath="..\stl\internal\db_container.cpp"/>
-    <File RelativePath="..\stl\internal\db_container.h"/>
-    <File RelativePath="..\stl\internal\dbc.h"/>
-    <File RelativePath="..\stl\internal\dbt.h"/>
-    <File RelativePath="..\stl\internal\element_ref.h"/>
-    <File RelativePath="..\stl\internal\inner_utility.h"/>
-    <File RelativePath="..\stl\internal\resource_manager.cpp"/>
-    <File RelativePath="..\stl\internal\resource_manager.h"/>
+    <File RelativePath="..\stl\dbstl_exception.h"/>
+    <File RelativePath="..\stl\dbstl_map.h"/>
+    <File RelativePath="..\stl\dbstl_set.h"/>
+    <File RelativePath="..\stl\dbstl_utility.h"/>
+    <File RelativePath="..\stl\dbstl_vector.h"/>
+    <File RelativePath="..\stl\dbstl_common.h"/>
+    <File RelativePath="..\stl\dbstl_base_iterator.h"/>
+    <File RelativePath="..\stl\dbstl_container.cpp"/>
+    <File RelativePath="..\stl\dbstl_container.h"/>
+    <File RelativePath="..\stl\dbstl_dbc.h"/>
+    <File RelativePath="..\stl\dbstl_dbt.h"/>
+    <File RelativePath="..\stl\dbstl_element_ref.h"/>
+    <File RelativePath="..\stl\dbstl_inner_utility.h"/>
+    <File RelativePath="..\stl\dbstl_resource_manager.cpp"/>
+    <File RelativePath="..\stl\dbstl_resource_manager.h"/>
   </Files>
   <Globals/>
 </VisualStudioProject>

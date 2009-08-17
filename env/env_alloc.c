@@ -100,7 +100,7 @@ typedef struct __alloc_element {
 #define	SET_QUEUE_FOR_SIZE(head, q, i, len) do {			\
 	for (i = 0; i < DB_SIZE_Q_COUNT; ++i) {				\
 		q = &(head)->sizeq[i];					\
-		if ((len) <= (size_t)1024 << i)				\
+		if ((len) <= (u_int64_t)1024 << i)			\
 			break;						\
 	}								\
 } while (0)
@@ -394,7 +394,7 @@ __env_alloc_free(infop, ptr)
 	DB_ASSERT(env, p[elp->ulen] == GUARD_BYTE);
 
 	/* Trash the memory chunk. */
-	memset(p, CLEAR_BYTE, elp->len - sizeof(ALLOC_ELEMENT));
+	memset(p, CLEAR_BYTE, (size_t)elp->len - sizeof(ALLOC_ELEMENT));
 #endif
 
 	/* Mark the memory as no longer in use. */

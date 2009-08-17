@@ -3,12 +3,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 22.  ElementRef and ElementHolder wappers</title>
+    <title>Chapter 22.  ElementRef and ElementHolder Wappers</title>
     <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="prev" href="dbstl_helper_classes.html" title="Chapter 21.  dbstl helper classes" />
+    <link rel="prev" href="dbstl_helper_classes.html" title="Chapter 21.  Dbstl Helper Classes" />
     <link rel="next" href="ElementHolder.html" title="Chapter 23.  ElementHolder" />
   </head>
   <body>
@@ -16,7 +16,7 @@
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 22. 
- ElementRef and ElementHolder wappers  </th>
+ ElementRef and ElementHolder Wappers  </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="dbstl_helper_classes.html">Prev</a> </td>
@@ -31,35 +31,28 @@
         <div>
           <div>
             <h2 class="title"><a id="Element_wrappers"></a>Chapter 22. 
- ElementRef and ElementHolder wappers  </h2>
+ ElementRef and ElementHolder Wappers  </h2>
           </div>
         </div>
       </div>
-      <h2><a id="id1573517"></a>ElementRef and ElementHolder wappers.</h2>
-      <p>
-ElementRef and ElementHolder wappers.</p>
-      <p><a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+      <p>An <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
  and <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
- are the data element pointed to by an iterator, each iterator object has an <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+ object represents the reference to the data element referenced by an iterator. </p>
+      <p>Each iterator object has an <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
  or <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
- object to hold( store) the current data element that the iterator points to. </p>
-      <p>They not only hold current data element, but also references the underlying position in the database by refering to the iterator which sits on the key/data pair, so that they can also be used to update the data element that the iterator points to.</p>
-      <p>Thus the two classes are used as the stored data, for example, used in iterator::operator*(), as its return type, that is, iterator::reference is ElementRef&lt;ddt&gt;&amp; or ElementHolder&lt;ddt&gt;&amp;. Using one of the two types of return type enables *itr to act both as a left value and a right value. This is also true for container::operator[].</p>
-      <p>The difference between <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+ object that stores the data element that the iterator points to.</p>
+      <p>The <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
+ class is used to store primitive types into STL containers.</p>
+      <p>The <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+ class is used to store other types into STL containers.</p>
+      <p>The <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
  and <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
- is that <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
- derives from type ddt but <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
- has a data member of type ddt to store the data element.</p>
-      <p>Deriving from type ddt will enable <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
- users to access the members of the object stored in the container, such that operator*() has full std iterator semantics.</p>
-      <p>But for primitive types, we can't derive from them, so users have to use the <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
- wrapper template which stores the primitive type values, and you need to specify the element wrapper type explicitly like this: <a class="link" href="db_vector.html" title="Chapter 4.  db_vector">db_vector</a>
-&lt;int, ElementHolder&lt;int&gt; &gt;, because by default the element wrapper type is <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
-.</p>
-      <p>And in order not to clash with ddt type members, all members in <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
- template are prefixed with _DB_STL_ string, and the rest of dbstl does not know that there are actually two element wrapper classes---they are using the same set of method names, thus the two class templates have identical public method names and methods of the same name have identical behaviors.</p>
-      <p>An object of the classes corresponds to one iterator, to allow assgining value to the key/data pair that an iterator points to if it associates an iterator, and thus associates a key/data pair in the database. In most occasions the iterator "owns" the ElementRef/ElementHolder wrapper object, except this situation: in order to support methods like db_vector&lt;&gt;:operator[] and db_map&lt;&gt;::operator[], which return data element references, the ElementRef/ElementHolder wrapper object has to "own" the iterator. </p>
-      <h4><a id="id1573616"></a> Public Members </h4>
+ classes have identical interfaces, and are treated the same by other STL classes. Since the <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+ class inherits from the template data class, all methods have a _DB_STL_ prefix to avoid name clashes.</p>
+      <p>An <a class="link" href="ElementRef.html" title="Chapter 24.  ElementRef">ElementRef</a>
+ or <a class="link" href="ElementHolder.html" title="Chapter 23.  ElementHolder">ElementHolder</a>
+ class corresponds to a single iterator instance. An Element object is generally owned by an iterator object. The ownership relationship is swapped in some specific situations, specifically for the dereference and array index operator. </p>
+      <h4><a id="id1568376"></a> Public Members </h4>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -92,11 +85,11 @@ ElementHolder</td>
           </tbody>
         </table>
       </div>
-      <h4><a id="id1574187"></a>
+      <h4><a id="id1568813"></a>
 Group</h4>
       <p>
-<a class="xref" href="dbstl_helper_classes.html" title="Chapter 21.  dbstl helper classes">
- dbstl helper classes  </a>
+<a class="xref" href="dbstl_helper_classes.html" title="Chapter 21.  Dbstl Helper Classes">
+ Dbstl Helper Classes  </a>
 </p>
       <p>
 </p>
@@ -111,7 +104,7 @@ Group</h4>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Chapter 21. 
- dbstl helper classes   </td>
+ Dbstl Helper Classes   </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

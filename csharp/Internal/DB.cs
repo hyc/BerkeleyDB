@@ -115,12 +115,18 @@ internal class DB : IDisposable {
 		return ret;
 }
 
-  internal int compact(DB_TXN txn, DBT start, DBT stop, DB_COMPACT cdata, uint flags, DBT end) {
+  internal int compact(DB_TXN txn, DatabaseEntry start, DatabaseEntry stop, DB_COMPACT cdata, uint flags, DatabaseEntry end) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_compact(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(start), DBT.getCPtr(stop), DB_COMPACT.getCPtr(cdata), flags, DBT.getCPtr(end));
+		ret = libdb_csharpPINVOKE.DB_compact(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(start)), DBT.getCPtr(DatabaseEntry.getDBT(stop)), DB_COMPACT.getCPtr(cdata), flags, DBT.getCPtr(DatabaseEntry.getDBT(end)));
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(start);
+      GC.KeepAlive(stop);
+      GC.KeepAlive(end);
+    }
+  }
 
   private DBC cursor(DB_TXN txn, uint flags, ref int err) {
     IntPtr cPtr = libdb_csharpPINVOKE.DB_cursor(swigCPtr, DB_TXN.getCPtr(txn), flags, ref err);
@@ -128,12 +134,16 @@ internal class DB : IDisposable {
     return ret;
   }
 
-  internal int del(DB_TXN txn, DBT key, uint flags) {
+  internal int del(DB_TXN txn, DatabaseEntry key, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_del(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), flags);
+		ret = libdb_csharpPINVOKE.DB_del(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+    }
+  }
 
   internal DB_ENV env() {
     IntPtr cPtr = libdb_csharpPINVOKE.DB_env(swigCPtr);
@@ -141,19 +151,28 @@ internal class DB : IDisposable {
     return ret;
   }
 
-  internal int exists(DB_TXN txn, DBT key, uint flags) {
+  internal int exists(DB_TXN txn, DatabaseEntry key, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_exists(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), flags);
+		ret = libdb_csharpPINVOKE.DB_exists(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+    }
+  }
 
-  internal int get(DB_TXN txn, DBT key, DBT data, uint flags) {
+  internal int get(DB_TXN txn, DatabaseEntry key, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_get(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DB_get(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+      GC.KeepAlive(data);
+    }
+  }
 
   internal int get_byteswapped(ref int isswapped) {
 		int ret;
@@ -200,12 +219,16 @@ internal class DB : IDisposable {
     return ret;
   }
 
-  internal int key_range(DB_TXN txn, DBT key, DB_KEY_RANGE range, uint flags) {
+  internal int key_range(DB_TXN txn, DatabaseEntry key, DB_KEY_RANGE range, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_key_range(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), DB_KEY_RANGE.getCPtr(range), flags);
+		ret = libdb_csharpPINVOKE.DB_key_range(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), DB_KEY_RANGE.getCPtr(range), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+    }
+  }
 
   internal int open(DB_TXN txn, string file, string database, DBTYPE type, uint flags, int mode) {
 	int ret;
@@ -216,19 +239,30 @@ internal class DB : IDisposable {
 	return ret;
 }
 
-  internal int pget(DB_TXN txn, DBT key, DBT pkey, DBT data, uint flags) {
+  internal int pget(DB_TXN txn, DatabaseEntry key, DatabaseEntry pkey, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_pget(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), DBT.getCPtr(pkey), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DB_pget(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), DBT.getCPtr(DatabaseEntry.getDBT(pkey)), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+      GC.KeepAlive(pkey);
+      GC.KeepAlive(data);
+    }
+  }
 
-  internal int put(DB_TXN txn, DBT key, DBT data, uint flags) {
+  internal int put(DB_TXN txn, DatabaseEntry key, DatabaseEntry data, uint flags) {
+    try {
 		int ret;
-		ret = libdb_csharpPINVOKE.DB_put(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(key), DBT.getCPtr(data), flags);
+		ret = libdb_csharpPINVOKE.DB_put(swigCPtr, DB_TXN.getCPtr(txn), DBT.getCPtr(DatabaseEntry.getDBT(key)), DBT.getCPtr(DatabaseEntry.getDBT(data)), flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
-}
+} finally {
+      GC.KeepAlive(key);
+      GC.KeepAlive(data);
+    }
+  }
 
   internal int remove(string file, string database, uint flags) {
 	int ret;
@@ -264,6 +298,13 @@ internal class DB : IDisposable {
   internal int set_bt_compare(BDB_CompareDelegate callback) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_set_bt_compare(swigCPtr, callback);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int set_bt_compress(BDB_CompressDelegate compress, BDB_DecompressDelegate decompress) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_set_bt_compress(swigCPtr, compress, decompress);
 		DatabaseException.ThrowException(ret);
 		return ret;
 }

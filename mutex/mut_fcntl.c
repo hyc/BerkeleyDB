@@ -44,6 +44,7 @@ __db_fcntl_mutex_lock_int(env, mutex, wait)
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
+	DB_THREAD_INFO *ip;
 	struct flock k_lock;
 	int locked, ms, ret;
 
@@ -69,6 +70,14 @@ __db_fcntl_mutex_lock_int(env, mutex, wait)
 	k_lock.l_start = mutex;
 	k_lock.l_len = 1;
 
+	/*
+	 * Only check the thread state once, by initializing the thread
+	 * control block pointer to null.  If it is not the failchk
+	 * thread, then ip will have a valid value subsequent times
+	 * in the loop.
+	 */
+	ip = NULL;
+
 	for (locked = 0;;) {
 		/*
 		 * Wait for the lock to become available; wait 1ms initially,
@@ -76,9 +85,13 @@ __db_fcntl_mutex_lock_int(env, mutex, wait)
 		 */
 		for (ms = 1; F_ISSET(mutexp, DB_MUTEX_LOCKED);) {
 			if (F_ISSET(dbenv, DB_ENV_FAILCHK) &&
-			    dbenv->is_alive(dbenv,
-			    mutexp->pid, mutexp->tid, 0) == 0)
-				return (DB_RUNRECOVERY);
+			    ip == NULL && dbenv->is_alive(dbenv,
+			    mutexp->pid, mutexp->tid, 0) == 0) {
+				ret = __env_set_state(env, &ip, THREAD_VERIFY);
+				if (ret != 0 ||
+				    ip->dbth_state == THREAD_FAILCHK)
+					return (DB_RUNRECOVERY);
+			}
 			if (!wait)
 				return (DB_LOCK_NOTGRANTED);
 			__os_yield(NULL, 0, ms * US_PER_MS);

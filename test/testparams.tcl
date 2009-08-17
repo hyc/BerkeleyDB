@@ -503,6 +503,7 @@ set shelltest_list {
 	{ scr028	chk.rtc }
 	{ scr029	chk.get }
 	{ scr030	chk.build }
+	{ scr031	chk.copy }
 	{ scr032	chk.rpc }
 	{ scr033	chk.codegen }
 	{ scr034	chk.mtx }

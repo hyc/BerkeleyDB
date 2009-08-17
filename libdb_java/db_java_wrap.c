@@ -483,7 +483,6 @@ static jfieldID rep_stat_st_election_sec_fid;
 static jfieldID rep_stat_st_election_usec_fid;
 static jfieldID rep_stat_st_max_lease_sec_fid;
 static jfieldID rep_stat_st_max_lease_usec_fid;
-static jfieldID rep_stat_st_filefail_cleanups_fid;
 static jfieldID repmgr_stat_st_perm_failed_fid;
 static jfieldID repmgr_stat_st_msgs_queued_fid;
 static jfieldID repmgr_stat_st_msgs_dropped_fid;
@@ -555,10 +554,11 @@ static jmethodID rep_perm_failed_event_notify_method;
 static jmethodID rep_startup_done_event_notify_method;
 static jmethodID write_failed_event_notify_method;
 
-static jmethodID append_recno_method, bt_compare_method, bt_prefix_method;
+static jmethodID append_recno_method, bt_compare_method, bt_compress_method;
+static jmethodID bt_decompress_method, bt_prefix_method;
 static jmethodID db_feedback_method, dup_compare_method;
 static jmethodID foreignkey_nullify_method, h_compare_method, h_hash_method;
-static jmethodID seckey_create_method;
+static jmethodID partition_method, seckey_create_method;
 
 static jmethodID outputstream_write_method;
 
@@ -893,7 +893,6 @@ const struct {
 	{ &rep_stat_st_election_usec_fid, &rep_stat_class, "st_election_usec", "I" },
 	{ &rep_stat_st_max_lease_sec_fid, &rep_stat_class, "st_max_lease_sec", "I" },
 	{ &rep_stat_st_max_lease_usec_fid, &rep_stat_class, "st_max_lease_usec", "I" },
-	{ &rep_stat_st_filefail_cleanups_fid, &rep_stat_class, "st_filefail_cleanups", "I" },
 	{ &repmgr_stat_st_perm_failed_fid, &repmgr_stat_class, "st_perm_failed", "J" },
 	{ &repmgr_stat_st_msgs_queued_fid, &repmgr_stat_class, "st_msgs_queued", "J" },
 	{ &repmgr_stat_st_msgs_dropped_fid, &repmgr_stat_class, "st_msgs_dropped", "J" },
@@ -1044,6 +1043,14 @@ const struct {
 	    "(L" DB_PKG "DatabaseEntry;I)V" },
 	{ &bt_compare_method, &db_class, "handle_bt_compare",
 	    "([B[B)I" },
+	{ &bt_compress_method, &db_class, "handle_bt_compress",
+	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;)I" },
+	{ &bt_decompress_method, &db_class, "handle_bt_decompress",
+	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;L" DB_PKG "DatabaseEntry;L" DB_PKG
+	    "DatabaseEntry;)I" },
 	{ &bt_prefix_method, &db_class, "handle_bt_prefix",
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)I" },
 	{ &db_feedback_method, &db_class, "handle_db_feedback", "(II)V" },
@@ -1055,6 +1062,8 @@ const struct {
 	{ &h_compare_method, &db_class, "handle_h_compare",
 	    "([B[B)I" },
 	{ &h_hash_method, &db_class, "handle_h_hash", "([BI)I" },
+	{ &partition_method, &db_class, "handle_partition", 
+            "(L" DB_PKG "DatabaseEntry;)I" },
 	{ &seckey_create_method, &db_class, "handle_seckey_create",
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)[L"
 	    DB_PKG "DatabaseEntry;" },
@@ -2368,6 +2377,134 @@ static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 	return __dbj_am_compare(db, dbt1, dbt2, bt_compare_method);
 }
 
+#define DBT_COPYOUT(num)						\
+	if (dbt##num->app_data != NULL)					\
+		jdbt##num = ((DBT_LOCKED *)dbt##num->app_data)->jdbt;	\
+	else {								\
+		if ((jdbt##num = (*jenv)->NewObject(			\
+		    jenv, dbt_class, dbt_construct)) == NULL) {		\
+			ret = ENOMEM; /* An exception is pending */	\
+			goto err;					\
+		}							\
+		__dbj_dbt_copyout(jenv, dbt##num, &jdbtarr##num, jdbt##num);\
+		if (jdbtarr##num == NULL) {				\
+			ret = ENOMEM; /* An exception is pending */	\
+			goto err;					\
+		}							\
+	}
+
+#define DBT_COPIED_FREE(num)						\
+	if (dbt##num->app_data == NULL) {				\
+		(*jenv)->DeleteLocalRef(jenv, jdbtarr##num);		\
+		(*jenv)->DeleteLocalRef(jenv, jdbt##num);		\
+	}
+
+#define DBT_COPYIN_DATA(num)						\
+	ret = __dbj_dbt_copyin(jenv, &lresult, NULL, jdbt##num, 0);	\
+	memset(dbt##num, 0, sizeof (DBT));				\
+	if (ret == 0 && lresult.dbt.size != 0) {			\
+		/* If there's data, we need to take a copy of it.  */	\
+		dbt##num->size = lresult.dbt.size;			\
+		if ((ret = __os_umalloc(				\
+		    NULL, dbt##num->size, &dbt##num->data)) != 0)	\
+			goto err;					\
+		if ((ret = __dbj_dbt_memcopy(&lresult.dbt, 0,		\
+		    dbt##num->data, dbt##num->size,			\
+		    DB_USERCOPY_GETDATA)) != 0)				\
+			goto err;					\
+		__dbj_dbt_release(jenv, jdbt##num, &lresult.dbt, &lresult);\
+		(*jenv)->DeleteLocalRef(jenv, lresult.jarr);		\
+		F_SET(dbt##num, DB_DBT_APPMALLOC);			\
+	}
+
+static int __dbj_bt_compress(DB *db, const DBT *dbt1, const DBT *dbt2,
+    const DBT *dbt3, const DBT *dbt4, DBT *dbt5)
+{
+	int detach;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdb = (jobject)DB_INTERNAL(db);
+	jobject jdbt1, jdbt2, jdbt3, jdbt4, jdbt5;
+	jbyteArray jdbtarr1, jdbtarr2, jdbtarr3, jdbtarr4, jdbtarr5;
+	DBT_LOCKED lresult;
+	int ret;
+
+	if (jdb == NULL) {
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYOUT(1)
+	DBT_COPYOUT(2)
+	DBT_COPYOUT(3)
+	DBT_COPYOUT(4)
+	DBT_COPYOUT(5)
+
+	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
+	    bt_compress_method, jdbt1, jdbt2, jdbt3, jdbt4, jdbt5);
+
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYIN_DATA(5)
+
+err:	DBT_COPIED_FREE(1)
+	DBT_COPIED_FREE(2)
+	DBT_COPIED_FREE(3)
+	DBT_COPIED_FREE(4)
+	DBT_COPIED_FREE(5)
+	if (detach)
+		__dbj_detach();
+	return (ret);
+}
+
+static int __dbj_bt_decompress(DB *db, const DBT *dbt1, const DBT *dbt2,
+    DBT *dbt3, DBT *dbt4, DBT *dbt5)
+{
+	int detach;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdb = (jobject)DB_INTERNAL(db);
+	jobject jdbt1, jdbt2, jdbt3, jdbt4, jdbt5;
+	jbyteArray jdbtarr1, jdbtarr2, jdbtarr3, jdbtarr4, jdbtarr5;
+	DBT_LOCKED lresult;
+	int ret;
+
+	if (jdb == NULL) {
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYOUT(1)
+	DBT_COPYOUT(2)
+	DBT_COPYOUT(3)
+	DBT_COPYOUT(4)
+	DBT_COPYOUT(5)
+
+	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
+	    bt_decompress_method, jdbt1, jdbt2, jdbt3, jdbt4, jdbt5);
+
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYIN_DATA(3)
+	DBT_COPYIN_DATA(4)
+	DBT_COPYIN_DATA(5)
+
+err:	DBT_COPIED_FREE(1)
+	DBT_COPIED_FREE(2)
+	DBT_COPIED_FREE(3)
+	DBT_COPIED_FREE(4)
+	DBT_COPIED_FREE(5)
+	if (detach)
+		__dbj_detach();
+	return (ret);
+}
+
 static size_t __dbj_bt_prefix(DB *db, const DBT *dbt1, const DBT *dbt2)
 {
 	int detach;
@@ -2507,6 +2644,33 @@ static u_int32_t __dbj_h_hash(DB *db, const void *data, u_int32_t len)
 	    h_hash_method, jarr, len);
 
 	(*jenv)->DeleteLocalRef(jenv, jarr);
+
+	if (detach)
+		__dbj_detach();
+	return (ret);
+}
+
+static u_int32_t __dbj_partition(DB *db, DBT *dbt1)
+{
+	int detach, ret;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdb = (jobject)DB_INTERNAL(db);
+	jobject jdbt1;
+	jbyteArray jdbtarr1;
+	DBT_LOCKED lresult;
+
+	DBT_COPYOUT(1)
+
+	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
+	    partition_method, jdbt1);
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	DBT_COPYIN_DATA(1)
+err:	DBT_COPIED_FREE(1)
 
 	if (detach)
 		__dbj_detach();
@@ -2663,6 +2827,11 @@ SWIGINTERN u_int32_t Db_get_cachesize_ncache(struct Db *self){
 		errno = self->get_cachesize(self, NULL, NULL, &ret);
 		return ret;
 	}
+SWIGINTERN char const *Db_get_create_dir(struct Db *self){
+		const char *ret;
+		errno = self->get_create_dir(self, &ret);
+		return ret;
+	}
 SWIGINTERN char const *Db_get_filename(struct Db *self){
 		const char *ret = NULL;
 		errno = self->get_dbname(self, &ret, NULL);
@@ -2725,6 +2894,24 @@ SWIGINTERN int Db_get_re_delim(struct Db *self){
 SWIGINTERN DB_CACHE_PRIORITY Db_get_priority(struct Db *self){
 		DB_CACHE_PRIORITY ret;
 		errno = self->get_priority(self, &ret);
+		return ret;
+	}
+SWIGINTERN char const **Db_get_partition_dirs(struct Db *self){
+		const char **ret;
+		errno = self->get_partition_dirs(self, &ret);
+		return ret;
+	}
+SWIGINTERN DBT *Db_get_partition_keys(struct Db *self){
+		DBT *ret = NULL;
+		errno = self->get_partition_keys(self, NULL, &ret);
+		return ret;
+	}
+SWIGINTERN int Db_get_partition_parts(struct Db *self){
+		int ret = 0;
+		errno = self->get_partition_keys(self, &ret, NULL);
+                /* If not partitioned by range, check by callback. */
+		if (ret == 0)
+			errno = self->get_partition_callback(self, &ret, NULL);
 		return ret;
 	}
 SWIGINTERN u_int32_t Db_get_re_len(struct Db *self){
@@ -2791,6 +2978,10 @@ SWIGINTERN db_ret_t Db_set_bt_compare(struct Db *self,int (*bt_compare_fcn)(DB *
 SWIGINTERN db_ret_t Db_set_bt_minkey(struct Db *self,u_int32_t bt_minkey){
 		return self->set_bt_minkey(self, bt_minkey);
 	}
+SWIGINTERN db_ret_t Db_set_bt_compress(struct Db *self,int (*bt_compress_fcn)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *),int (*bt_decompress_fcn)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *)){
+		return self->set_bt_compress(
+		    self, bt_compress_fcn, bt_decompress_fcn);
+	}
 SWIGINTERN db_ret_t Db_set_bt_prefix(struct Db *self,size_t (*bt_prefix_fcn)(DB *,DBT const *,DBT const *)){
 		return self->set_bt_prefix(self, bt_prefix_fcn);
 	}
@@ -2798,6 +2989,9 @@ SWIGINTERN db_ret_t Db_set_cachesize(struct Db *self,jlong bytes,int ncache){
 		return self->set_cachesize(self,
 		    (u_int32_t)(bytes / GIGABYTE),
 		    (u_int32_t)(bytes % GIGABYTE), ncache);
+	}
+SWIGINTERN db_ret_t Db_set_create_dir(struct Db *self,char const *dir){
+		return self->set_create_dir(self, dir);
 	}
 SWIGINTERN db_ret_t Db_set_dup_compare(struct Db *self,int (*dup_compare_fcn)(DB *,DBT const *,DBT const *)){
 		return self->set_dup_compare(self, dup_compare_fcn);
@@ -2829,6 +3023,12 @@ SWIGINTERN db_ret_t Db_set_lorder(struct Db *self,int lorder){
 SWIGINTERN db_ret_t Db_set_pagesize(struct Db *self,u_int32_t pagesize){
 		return self->set_pagesize(self, pagesize);
 	}
+SWIGINTERN db_ret_t Db_set_partition(struct Db *self,u_int32_t parts,DBT *keys,u_int32_t (*db_partition_fcn)(DB *,DBT *)){
+		return self->set_partition(self, parts, keys, db_partition_fcn);
+	}
+SWIGINTERN db_ret_t Db_set_partition_dirs(struct Db *self,char const **dirp){
+		return self->set_partition_dirs(self, dirp);
+	}
 SWIGINTERN db_ret_t Db_set_priority(struct Db *self,DB_CACHE_PRIORITY priority){
 		return self->set_priority(self, priority);
 	}
@@ -2846,6 +3046,9 @@ SWIGINTERN db_ret_t Db_set_re_source(struct Db *self,char *source){
 	}
 SWIGINTERN db_ret_t Db_set_q_extentsize(struct Db *self,u_int32_t extentsize){
 		return self->set_q_extentsize(self, extentsize);
+	}
+SWIGINTERN db_ret_t Db_sort_multiple(struct Db *self,DBT *key,DBT *data){
+		return self->sort_multiple(self, key, data, 0);
 	}
 SWIGINTERN void *Db_stat(struct Db *self,DB_TXN *txnid,u_int32_t flags){
 		void *statp = NULL;
@@ -3014,6 +3217,9 @@ SWIGINTERN db_ret_t DbEnv_set_cache_max(struct DbEnv *self,jlong bytes){
 		    (u_int32_t)(bytes / GIGABYTE),
 		    (u_int32_t)(bytes % GIGABYTE));
 	}
+SWIGINTERN db_ret_t DbEnv_set_create_dir(struct DbEnv *self,char const *dir){
+		return self->set_create_dir(self, dir);
+	}
 SWIGINTERN db_ret_t DbEnv_set_data_dir(struct DbEnv *self,char const *dir){
 		return self->set_data_dir(self, dir);
 	}
@@ -3040,6 +3246,12 @@ SWIGINTERN db_ret_t DbEnv_set_mp_max_write(struct DbEnv *self,int maxwrite,db_ti
 	}
 SWIGINTERN db_ret_t DbEnv_set_mp_mmapsize(struct DbEnv *self,size_t mp_mmapsize){
 		return self->set_mp_mmapsize(self, mp_mmapsize);
+	}
+SWIGINTERN db_ret_t DbEnv_set_mp_pagesize(struct DbEnv *self,size_t mp_pagesize){
+		return self->set_mp_pagesize(self, mp_pagesize);
+	}
+SWIGINTERN db_ret_t DbEnv_set_mp_tablesize(struct DbEnv *self,size_t mp_tablesize){
+		return self->set_mp_tablesize(self, mp_tablesize);
 	}
 SWIGINTERN void DbEnv_set_msgcall(struct DbEnv *self,void (*db_msgcall_fcn)(DB_ENV const *,char const *)){
 		self->set_msgcall(self, db_msgcall_fcn);
@@ -3101,6 +3313,11 @@ SWIGINTERN u_int32_t DbEnv_get_lk_max_objects(struct DbEnv *self){
 		errno = self->get_lk_max_objects(self, &ret);
 		return ret;
 	}
+SWIGINTERN u_int32_t DbEnv_get_lk_partitions(struct DbEnv *self){
+		u_int32_t ret;
+		errno = self->get_lk_partitions(self, &ret);
+		return ret;
+	}
 SWIGINTERN int DbEnv_lock_detect(struct DbEnv *self,u_int32_t flags,u_int32_t atype){
 		int aborted;
 		errno = self->lock_detect(self, flags, atype, &aborted);
@@ -3144,6 +3361,9 @@ SWIGINTERN db_ret_t DbEnv_set_lk_max_locks(struct DbEnv *self,u_int32_t max){
 	}
 SWIGINTERN db_ret_t DbEnv_set_lk_max_objects(struct DbEnv *self,u_int32_t max){
 		return self->set_lk_max_objects(self, max);
+	}
+SWIGINTERN db_ret_t DbEnv_set_lk_partitions(struct DbEnv *self,u_int32_t partitions){
+		return self->set_lk_partitions(self, partitions);
 	}
 SWIGINTERN u_int32_t DbEnv_get_lg_bsize(struct DbEnv *self){
 		u_int32_t ret;
@@ -3240,6 +3460,11 @@ SWIGINTERN jlong DbEnv_get_cache_max(struct DbEnv *self){
 		errno = self->get_cache_max(self, &gbytes, &bytes);
 		return (jlong)gbytes * GIGABYTE + bytes;
 	}
+SWIGINTERN char const *DbEnv_get_create_dir(struct DbEnv *self){
+		const char *ret;
+		errno = self->get_create_dir(self, &ret);
+		return ret;
+	}
 SWIGINTERN int DbEnv_get_mp_max_openfd(struct DbEnv *self){
 		int ret;
 		errno = self->get_mp_max_openfd(self, &ret);
@@ -3262,6 +3487,16 @@ SWIGINTERN size_t DbEnv_get_mp_mmapsize(struct DbEnv *self){
 		errno = self->get_mp_mmapsize(self, &ret);
 		return ret;
 	}
+SWIGINTERN int DbEnv_get_mp_pagesize(struct DbEnv *self){
+		int ret;
+		errno = self->get_mp_pagesize(self, &ret);
+		return ret;
+	}
+SWIGINTERN int DbEnv_get_mp_tablesize(struct DbEnv *self){
+		int ret;
+		errno = self->get_mp_tablesize(self, &ret);
+		return ret;
+	}
 SWIGINTERN DB_MPOOL_STAT *DbEnv_memp_stat(struct DbEnv *self,u_int32_t flags){
 		DB_MPOOL_STAT *mp_stat = NULL;
 		errno = self->memp_stat(self, &mp_stat, NULL, flags);
@@ -3271,6 +3506,9 @@ SWIGINTERN DB_MPOOL_FSTAT **DbEnv_memp_fstat(struct DbEnv *self,u_int32_t flags)
 		DB_MPOOL_FSTAT **mp_fstat = NULL;
 		errno = self->memp_stat(self, NULL, &mp_fstat, flags);
 		return mp_fstat;
+	}
+SWIGINTERN db_ret_t DbEnv_memp_sync(struct DbEnv *self,DB_LSN *lsn){
+		return self->memp_sync(self, lsn);
 	}
 SWIGINTERN int DbEnv_memp_trickle(struct DbEnv *self,int percent){
 		int ret;
@@ -3304,7 +3542,7 @@ SWIGINTERN db_ret_t DbEnv_mutex_set_increment(struct DbEnv *self,u_int32_t incre
 		return self->mutex_set_increment(self, increment);
 	}
 SWIGINTERN db_ret_t DbEnv_mutex_set_max(struct DbEnv *self,u_int32_t mutex_max){
-		return self->mutex_set_increment(self, mutex_max);
+		return self->mutex_set_max(self, mutex_max);
 	}
 SWIGINTERN db_ret_t DbEnv_mutex_set_tas_spins(struct DbEnv *self,u_int32_t tas_spins){
 		return self->mutex_set_tas_spins(self, tas_spins);
@@ -4084,6 +4322,32 @@ SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1cach
 }
 
 
+SWIGEXPORT jstring JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1create_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  struct Db *arg1 = (struct Db *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (char *)Db_get_create_dir(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, DB2JDBENV);
+  }
+  
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jstring JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1filename(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   struct Db *arg1 = (struct Db *) 0 ;
@@ -4413,6 +4677,100 @@ SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1prio
   
   errno = 0;
   result = (DB_CACHE_PRIORITY)Db_get_priority(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, DB2JDBENV);
+  }
+  
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jobjectArray JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1partition_1dirs(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jobjectArray jresult = 0 ;
+  struct Db *arg1 = (struct Db *) 0 ;
+  char **result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (char **)Db_get_partition_dirs(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, DB2JDBENV);
+  }
+  
+  {
+    if (result != NULL) {
+      /*@SWIG:../libdb_java/java_typemaps.i,367,STRING_ARRAY_OUT@*/	int i, len;
+      
+      len = 0;
+      while (result[len] != NULL)
+      len++;
+      if ((jresult = (*jenv)->NewObjectArray(jenv, (jsize)len, string_class,
+            NULL)) == NULL)
+      return 0; /* an exception is pending */
+      for (i = 0; i < len; i++) {
+        jstring str = (*jenv)->NewStringUTF(jenv, result[i]);
+        (*jenv)->SetObjectArrayElement(jenv, jresult, (jsize)i, str);
+      }
+      /*@SWIG@*/
+    }
+  }
+  return jresult;
+}
+
+
+SWIGEXPORT jobject JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1partition_1keys(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jobject jresult = 0 ;
+  struct Db *arg1 = (struct Db *) 0 ;
+  DBT *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (DBT *)Db_get_partition_keys(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, DB2JDBENV);
+  }
+  
+  jresult = (jobject)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1get_1partition_1parts(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  struct Db *arg1 = (struct Db *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (int)Db_get_partition_parts(arg1);
   if (!DB_RETOK_STD(errno)) {
     __dbj_throw(jenv, errno, NULL, NULL, DB2JDBENV);
   }
@@ -4991,6 +5349,36 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1bt_1
 }
 
 
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1bt_1compress(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jboolean jarg2, jboolean jarg3) {
+  struct Db *arg1 = (struct Db *) 0 ;
+  int (*arg2)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *) = (int (*)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *)) 0 ;
+  int (*arg3)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *) = (int (*)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *)) 0 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  arg2 = (jarg2 == JNI_TRUE) ? __dbj_bt_compress : NULL;
+  
+  
+  arg3 = (jarg3 == JNI_TRUE) ? __dbj_bt_decompress : NULL;
+  
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)Db_set_bt_compress(arg1,arg2,arg3);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
+  }
+  
+}
+
+
 SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1bt_1prefix(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jboolean jarg2) {
   struct Db *arg1 = (struct Db *) 0 ;
   size_t (*arg2)(DB *,DBT const *,DBT const *) = (size_t (*)(DB *,DBT const *,DBT const *)) 0 ;
@@ -5040,6 +5428,35 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1cach
     __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
   }
   
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1create_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  struct Db *arg1 = (struct Db *) 0 ;
+  char *arg2 = (char *) 0 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return ;
+  }
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)Db_set_create_dir(arg1,(char const *)arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
+  }
+  
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
 }
 
 
@@ -5298,6 +5715,65 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1page
 }
 
 
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1partition(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jobject jarg3, jboolean jarg4) {
+  struct Db *arg1 = (struct Db *) 0 ;
+  u_int32_t arg2 ;
+  DBT *arg3 = (DBT *) 0 ;
+  u_int32_t (*arg4)(DB *,DBT *) = (u_int32_t (*)(DB *,DBT *)) 0 ;
+  DBT_LOCKED ldbt3 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  
+  if (__dbj_dbt_copyin(jenv, &ldbt3, &arg3, jarg3, 0) != 0) {
+    return ; /* An exception will be pending. */
+  }
+  
+  arg4 = (jarg4 == JNI_TRUE) ? __dbj_partition : NULL;
+  
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)Db_set_partition(arg1,arg2,arg3,arg4);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
+  }
+  
+  __dbj_dbt_release(jenv, jarg3, arg3, &ldbt3); 
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1partition_1dirs(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jobjectArray jarg2) {
+  struct Db *arg1 = (struct Db *) 0 ;
+  char **arg2 = (char **) 0 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  arg2 = *(char ***)&jarg2; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)Db_set_partition_dirs(arg1,(char const **)arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
+  }
+  
+}
+
+
 SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1priority(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   struct Db *arg1 = (struct Db *) 0 ;
   DB_CACHE_PRIORITY arg2 ;
@@ -5444,6 +5920,42 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1q_1e
     __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
   }
   
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1sort_1multiple(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jobject jarg2, jobject jarg3) {
+  struct Db *arg1 = (struct Db *) 0 ;
+  DBT *arg2 = (DBT *) 0 ;
+  DBT *arg3 = (DBT *) 0 ;
+  DBT_LOCKED ldbt2 ;
+  DBT_LOCKED ldbt3 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct Db **)&jarg1; 
+  
+  if (__dbj_dbt_copyin(jenv, &ldbt2, &arg2, jarg2, 0) != 0) {
+    return ; /* An exception will be pending. */
+  }
+  
+  if (__dbj_dbt_copyin(jenv, &ldbt3, &arg3, jarg3, 0) != 0) {
+    return ; /* An exception will be pending. */
+  }
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)Db_sort_multiple(arg1,arg2,arg3);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, DB2JDBENV);
+  }
+  
+  __dbj_dbt_release(jenv, jarg2, arg2, &ldbt2); 
+  __dbj_dbt_release(jenv, jarg3, arg3, &ldbt3); 
 }
 
 
@@ -6627,6 +7139,35 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1c
 }
 
 
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1create_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  char *arg2 = (char *) 0 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return ;
+  }
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)DbEnv_set_create_dir(arg1,(char const *)arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, JDBENV);
+  }
+  
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
+}
+
+
 SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1data_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -6855,6 +7396,54 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1m
   }
   
   result = (db_ret_t)DbEnv_set_mp_mmapsize(arg1,arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, JDBENV);
+  }
+  
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1mp_1pagesize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  size_t arg2 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  arg2 = (size_t)jarg2; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)DbEnv_set_mp_pagesize(arg1,arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, JDBENV);
+  }
+  
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1mp_1tablesize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  size_t arg2 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  arg2 = (size_t)jarg2; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)DbEnv_set_mp_tablesize(arg1,arg2);
   if (!DB_RETOK_STD(result)) {
     __dbj_throw(jenv, result, NULL, NULL, JDBENV);
   }
@@ -7298,6 +7887,32 @@ SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1l
 }
 
 
+SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1lk_1partitions(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  u_int32_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (u_int32_t)DbEnv_get_lk_partitions(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
+  }
+  
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1lock_1detect(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3) {
   jint jresult = 0 ;
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
@@ -7609,6 +8224,30 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1l
   }
   
   result = (db_ret_t)DbEnv_set_lk_max_objects(arg1,arg2);
+  if (!DB_RETOK_STD(result)) {
+    __dbj_throw(jenv, result, NULL, NULL, JDBENV);
+  }
+  
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1lk_1partitions(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  u_int32_t arg2 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  result = (db_ret_t)DbEnv_set_lk_partitions(arg1,arg2);
   if (!DB_RETOK_STD(result)) {
     __dbj_throw(jenv, result, NULL, NULL, JDBENV);
   }
@@ -8352,6 +8991,32 @@ SWIGEXPORT jlong JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1
 }
 
 
+SWIGEXPORT jstring JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1create_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (char *)DbEnv_get_create_dir(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
+  }
+  
+  if(result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1mp_1max_1openfd(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
@@ -8456,6 +9121,58 @@ SWIGEXPORT jlong JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1
 }
 
 
+SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1mp_1pagesize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (int)DbEnv_get_mp_pagesize(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
+  }
+  
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jint JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1get_1mp_1tablesize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return 0;
+  }
+  
+  errno = 0;
+  result = (int)DbEnv_get_mp_tablesize(arg1);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
+  }
+  
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT jobject JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1memp_1stat(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   jobject jresult = 0 ;
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
@@ -8537,6 +9254,54 @@ SWIGEXPORT jobjectArray JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv
     __os_ufree(NULL, result);
   }
   return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1memp_1sync(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jobject jarg2) {
+  struct DbEnv *arg1 = (struct DbEnv *) 0 ;
+  DB_LSN *arg2 = (DB_LSN *) 0 ;
+  DB_LSN lsn2 ;
+  db_ret_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(struct DbEnv **)&jarg1; 
+  
+  if (jarg2 == NULL) {
+    arg2 = NULL;
+  } else {
+    arg2 = &lsn2;
+    arg2->file = (*jenv)->GetIntField(jenv, jarg2, dblsn_file_fid);
+    arg2->offset = (*jenv)->GetIntField(jenv, jarg2,
+      dblsn_offset_fid);
+  }
+  
+  
+  if (jarg1 == 0) {
+    __dbj_throw(jenv, EINVAL, "call on closed handle", NULL, NULL);
+    return ;
+  }
+  
+  if (arg2 == NULL) {
+    __dbj_throw(jenv, EINVAL, "null LogSequenceNumber", NULL, NULL);
+    return ;
+  }
+  
+  
+  errno = 0;
+  result = (db_ret_t)DbEnv_memp_sync(arg1,arg2);
+  if (!DB_RETOK_STD(errno)) {
+    __dbj_throw(jenv, errno, NULL, NULL, JDBENV);
+  }
+  
+  
+  if (jarg2 != NULL) {
+    (*jenv)->SetIntField(jenv, jarg2, dblsn_file_fid, arg2->file);
+    (*jenv)->SetIntField(jenv, jarg2,
+      dblsn_offset_fid, arg2->offset);
+  }
+  
 }
 
 

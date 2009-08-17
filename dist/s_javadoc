@@ -2,6 +2,8 @@
 #
 # Build the HTML documentation for the Java API.
 
+. RELEASE
+
 # Save the absolute path of the target Berkeley DB documents directory.
 DB_HOME=`dirname $0`/..
 

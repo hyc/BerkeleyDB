@@ -17,7 +17,7 @@ static int code_indent_level = 0;
 static FILE *header_file; /* stream for generated include file */
 static FILE *code_file;   /* stream for generated bdb code */
 
-#define SEPARATE_HEADER (header_file != code_file)
+#define	SEPARATE_HEADER (header_file != code_file)
 
 void generate_test(FILE *tfile, char *hfilename);
 void generate_verification(FILE *vfile, char *hfilename);
@@ -41,61 +41,6 @@ static void pr_code(char *, ...);
 static void pr_code_comment(char *, ...);
 
 /*
- * Generate is the sole entry point to this module.  It orchestrates
- * the generation of the C code for the storage layer and for the
- * smoke test.
- */
-void generate(hfile, cfile, tfile, vfile, hfilename)
-	FILE *hfile, *cfile, *tfile, *vfile;
-	char *hfilename;
-{
-	static char *header_intro_comment = 
-"Header file for a Berkeley DB implementation                               \n\
-generated from SQL DDL by db_sql";
-
-	static char *include_stmts =
-"#include <sys/types.h>                                                     \n\
-#include <sys/stat.h>                                                       \n\
-#include <assert.h>                                                         \n\
-#include <errno.h>                                                          \n\
-#include <stdlib.h>                                                         \n\
-#include <string.h>                                                         \n\
-#include \"db.h\"                                                           \n\
-\n";
-
-	header_file = hfile;
-	code_file = cfile;
-
-	check_constraints();
-
-	if (SEPARATE_HEADER)
-		pr_header_comment(header_intro_comment);
-
-	pr_header(include_stmts);
-
-	if (SEPARATE_HEADER)
-		pr_code("#include \"%s\"\n\n", hfilename);
-
-	generate_config_defines();
-	generate_schema_structs();
-        generate_iteration_callback_typedefs();
-        generate_environment();
-	generate_db_creation_functions();
-        generate_db_removal_functions();
-	generate_insertion_functions();
-	generate_fetch_functions();
-	generate_deletion_functions();
-	generate_full_iterations();
-	generate_index_functions();
-	generate_initialization();
-
-	if (tfile != NULL)
-		generate_test(tfile, hfilename);
-	if (vfile != NULL)
-		generate_verification(vfile, hfilename);
-}
-
-/*
  * Emit a printf-formatted string into the main code file
  */
 static void
@@ -105,7 +50,7 @@ pr_code(char *fmt, ...)
 	char *s;
 	static int enable_indent = 1;
 
-	s = prepare_string(fmt, 
+	s = prepare_string(fmt,
 	    enable_indent ? code_indent_level : 0,
 	    0);
 
@@ -149,7 +94,7 @@ pr_header(char *fmt, ...)
 	char *s;
 	static int enable_indent = 1;
 
-	s = prepare_string(fmt, 
+	s = prepare_string(fmt,
 	    enable_indent ? header_indent_level : 0,
 	    0);
 
@@ -159,7 +104,7 @@ pr_header(char *fmt, ...)
 
 	/*
 	 * if the last char emitted was a newline, enable indentation
-	 * for the next time 
+	 * for the next time
 	 */
 	if (s[strlen(s) - 1] == '\n')
 		enable_indent = 1;
@@ -209,15 +154,15 @@ int create_%s_env(DB_ENV **envpp)                                           \n\
 {                                                                           \n\
  int ret, flags;                                                            \n\
  char *env_name = \"./%s\";                                                 \n\
-                                                                            \n\
+									    \n\
  if ((ret = db_env_create(envpp, 0)) != 0) {                                \n\
   fprintf(stderr, \"db_env_create: %%s\", db_strerror(ret));                \n\
   return 1;                                                                 \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  (*envpp)->set_errfile(*envpp, stderr);                                     \n\
  flags = DB_CREATE | DB_INIT_MPOOL;                                         \n\
-                                                                            \n\
+									    \n\
 ";
 	static char *create_env_function_template_part2 =
 "                                                                           \n\
@@ -227,13 +172,13 @@ int create_%s_env(DB_ENV **envpp)                                           \n\
  }                                                                          \n\
  return 0;                                                                  \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
 	static char *set_cachesize_template =
 " (*envpp)->set_cachesize(*envpp,                                           \n\
  %s_CACHE_SIZE_GIGA,                                                        \n\
  %s_CACHE_SIZE_BYTES, 1);                                                   \n\
-                                                                            \n\
+									    \n\
 ";
 
 	pr_code(create_env_function_template_part1,
@@ -245,7 +190,7 @@ int create_%s_env(DB_ENV **envpp)                                           \n\
 		    upcase_env_name(&the_schema.environment),
 		    upcase_env_name(&the_schema.environment));
 	}
-		
+
 	pr_code(create_env_function_template_part2);
 
 	if (SEPARATE_HEADER) {
@@ -270,12 +215,11 @@ db_create_enter_entop(ENTITY *e)
  return create_database(envp, \"%s.db\", dbpp,                              \n\
   DB_CREATE, %s, 0, %s);                                                    \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
 	pr_code(create_db_template, e->name, e->name, e->dbtype,
 	    (strcmp(e->dbtype, "DB_BTREE") == 0 ?
 		custom_comparator_for_type(e->primary_key->type) : "NULL"));
-
 
 	if (SEPARATE_HEADER)
 		pr_header(
@@ -297,24 +241,24 @@ with Data Storage' manual.";
 compare_int(DB *dbp, const DBT *a, const DBT *b)                            \n\
 {                                                                           \n\
  int ai, bi;                                                                \n\
-                                                                            \n\
+									    \n\
  memcpy(&ai, a->data, sizeof(int));                                         \n\
  memcpy(&bi, b->data, sizeof(int));                                         \n\
  return (ai - bi);                                                          \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 int                                                                         \n\
 compare_long(DB *dbp, const DBT *a, const DBT *b)                           \n\
 {                                                                           \n\
  long ai, bi;                                                               \n\
-                                                                            \n\
+									    \n\
  memcpy(&ai, a->data, sizeof(long));                                        \n\
  memcpy(&bi, b->data, sizeof(long));                                        \n\
  return (ai - bi);                                                          \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
-        static char *create_db_function_comment =
+	static char *create_db_function_comment =
 "A generic function for creating and opening a database";
 
 	static char *generic_create_db_function =
@@ -329,18 +273,18 @@ create_database(DB_ENV *envp,                                               \n\
 {                                                                           \n\
  int ret;                                                                   \n\
  FILE *errfilep;                                                            \n\
-                                                                            \n\
+									    \n\
  if ((ret = db_create(dbpp, envp, 0)) != 0) {                               \n\
   envp->err(envp, ret, \"db_create\");                                      \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  if (moreflags != 0)                                                        \n\
   (*dbpp)->set_flags(*dbpp, moreflags);                                     \n\
-                                                                            \n\
+									    \n\
  if (comparator != NULL)                                                    \n\
   (*dbpp)->set_bt_compare(*dbpp, comparator);                               \n\
-                                                                            \n\
+									    \n\
  envp->get_errfile(envp, &errfilep);                                        \n\
  (*dbpp)->set_errfile(*dbpp, errfilep);                                     \n\
  if ((ret = (*dbpp)->open(*dbpp, NULL, db_name,                             \n\
@@ -348,15 +292,15 @@ create_database(DB_ENV *envp,                                               \n\
   (*dbpp)->err(*dbpp, ret, \"DB->open: %%s\", db_name);                     \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  return 0;                                                                  \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
 
-        pr_code_comment(comparator_function_comment);
-        pr_code(comparator_functions);
-        pr_code_comment(create_db_function_comment);
+	pr_code_comment(comparator_function_comment);
+	pr_code(comparator_functions);
+	pr_code_comment(create_db_function_comment);
 	pr_code(generic_create_db_function);
 
 	pr_header_comment("Database creation/initialization functions");
@@ -365,7 +309,6 @@ create_database(DB_ENV *envp,                                               \n\
 	    NULL);
 }
 
-
 /*
  * This entity operation function is called by the entity iterator
  * when generating the db removal functions.
@@ -373,18 +316,18 @@ create_database(DB_ENV *envp,                                               \n\
 static void
 db_remove_enter_entop(ENTITY *e)
 {
-	static char *remove_db_template = 
+	static char *remove_db_template =
 "                                                                           \n\
 int remove_%s_database(DB_ENV *envp)                                        \n\
 {                                                                           \n\
  return envp->dbremove(envp, NULL, \"%s.db\", NULL, 0);                     \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
 	pr_code(remove_db_template, e->name, e->name);
 
 	if (SEPARATE_HEADER)
-	        pr_header("int remove_%s_database(DB_ENV *envp);\n\n",
+		pr_header("int remove_%s_database(DB_ENV *envp);\n\n",
 		    e->name);
 }
 
@@ -405,8 +348,8 @@ generate_db_removal_functions() {
 static void
 array_dim_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 {
-        COMPQUIET(first, 0);
-        COMPQUIET(last, 0);
+	COMPQUIET(first, 0);
+	COMPQUIET(last, 0);
 
 	if (is_array(a->type))
 		pr_header("#define %s %d\n", array_dim_name(e, a),
@@ -423,13 +366,13 @@ static void
 structs_enter_entop(ENTITY *e)
 {
 	pr_header("typedef struct _%s_data {\n", e->name);
-        header_indent_level++;
+	header_indent_level++;
 }
 
 static void
 structs_exit_entop(ENTITY *e)
 {
-        header_indent_level--;
+	header_indent_level--;
 	pr_header("} %s_data;\n\n", e->name);
 	pr_header("%s_data %s_data_specimen;\n\n", e->name, e->name);
 }
@@ -437,8 +380,8 @@ structs_exit_entop(ENTITY *e)
 static void
 structs_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 {
-        COMPQUIET(first, 0);
-        COMPQUIET(last, 0);
+	COMPQUIET(first, 0);
+	COMPQUIET(last, 0);
 	pr_header("%s\t%s;\n", a->type->c_type, decl_name(e, a));
 }
 
@@ -456,7 +399,7 @@ serialized_length_enter_entop(ENTITY *e)
 static void
 serialized_length_exit_entop(ENTITY *e)
 {
-        COMPQUIET(e, NULL);
+	COMPQUIET(e, NULL);
 	pr_header(")\n\n");
 }
 
@@ -481,7 +424,7 @@ generate_schema_structs()
 {
 	pr_header_comment("Array size constants.");
 
-        /* Emit the array dimension definitions. */
+	/* Emit the array dimension definitions. */
 	iterate_over_entities(NULL,
 	    NULL,
 	    &array_dim_attrop);
@@ -518,10 +461,10 @@ int serialize_%s_data(%s_data *%sp, char *buffer)                           \n\
 {                                                                           \n\
  size_t len;                                                                \n\
  char *p;                                                                   \n\
-                                                                            \n\
+									    \n\
  memset(buffer, 0, %s);                                                     \n\
  p = buffer;                                                                \n\
-                                                                            \n\
+									    \n\
 ";
 	pr_code(header_template, e->name, e->name, e->name,
 	    serialized_length_name(e));
@@ -530,8 +473,8 @@ int serialize_%s_data(%s_data *%sp, char *buffer)                           \n\
 static void
 serialize_function_exit_entop(ENTITY *e)
 {
-        COMPQUIET(e, NULL);
-        code_indent_level--;
+	COMPQUIET(e, NULL);
+	code_indent_level--;
 	pr_code(
 "                                                                           \n\
  return p - buffer;                                                         \n\
@@ -542,13 +485,13 @@ serialize_function_exit_entop(ENTITY *e)
 static void
 serialize_function_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 {
-        static char *copy_strlen_template =
+	static char *copy_strlen_template =
 "                                                                           \n\
 len = strlen(%sp->%s) + 1;                                                  \n\
 assert(len <= %s);                                                          \n\
 memcpy(p, %sp->%s, len);                                                    \n\
 p += len;                                                                   \n\
-                                                                            \n\
+									    \n\
 ";
 
 	COMPQUIET(first, 0);
@@ -581,7 +524,7 @@ deserialize_function_enter_entop(ENTITY *e)
 void deserialize_%s_data(char *buffer, %s_data *%sp)                        \n\
 {                                                                           \n\
  size_t len;                                                                \n\
-                                                                            \n\
+									    \n\
  memset(%sp, 0, sizeof(*%sp));                                              \n\
 ";
 	pr_code(header_template, e->name, e->name, e->name,
@@ -592,7 +535,7 @@ void deserialize_%s_data(char *buffer, %s_data *%sp)                        \n\
 static void
 deserialize_function_exit_entop(ENTITY *e)
 {
-        COMPQUIET(e, NULL);
+	COMPQUIET(e, NULL);
 	code_indent_level--;
 	pr_code("}\n\n");
 }
@@ -607,7 +550,7 @@ len = strlen(buffer) + 1;                                                   \n\
 assert(len <= %s);                                                          \n\
 memcpy(%sp->%s, buffer, len);                                               \n\
 buffer += len;                                                              \n\
-                                                                            \n\
+									    \n\
 ";
 
 	COMPQUIET(first, 0);
@@ -634,7 +577,7 @@ buffer += len;                                                              \n\
 static void
 insert_struct_function_enter_entop(ENTITY *e)
 {
-	static char *function_template = 
+	static char *function_template =
 "                                                                           \n\
 int %s_insert_struct( DB *dbp, %s_data *%sp)                                \n\
 {                                                                           \n\
@@ -642,33 +585,33 @@ int %s_insert_struct( DB *dbp, %s_data *%sp)                                \n\
  char serialized_data[%s];                                                  \n\
  int ret, serialized_size;                                                  \n\
  %s %s%s_key = %sp->%s;                                                     \n\
-								            \n\
+									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
-								            \n\
+									    \n\
  key_dbt.data = %s%s_key;                                                   \n\
  key_dbt.size = %s(%s_key)%s;                                               \n\
-								            \n\
+									    \n\
  serialized_size = serialize_%s_data(%sp, serialized_data);                 \n\
-								            \n\
+									    \n\
  data_dbt.data = serialized_data;                                           \n\
  data_dbt.size = serialized_size;                                           \n\
-								            \n\
+									    \n\
  if ((ret = dbp->put(dbp, NULL, &key_dbt, &data_dbt, 0)) != 0) {            \n\
   dbp->err(dbp, ret, \"Inserting key %%d\", %s_key);                        \n\
   return -1;                                                                \n\
  }                                                                          \n\
  return 0;                                                                  \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
 	pr_code(function_template, e->name, e->name, e->name,
 	    serialized_length_name(e),
 	    e->primary_key->type->c_type,
 	    is_array(e->primary_key->type)? "*" : "",
-	    e->name, 
 	    e->name,
-	    e->primary_key->name, 
+	    e->name,
+	    e->primary_key->name,
 	    is_array(e->primary_key->type) ? "" : "&",
 	    e->name,
 	    is_string(e->primary_key->type) ? "strlen" : "sizeof",
@@ -689,20 +632,20 @@ int %s_insert_struct( DB *dbp, %s_data *%sp)                                \n\
 static void
 insert_fields_list_args_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 {
-        /*
-         * This is an extra attribute operation called by
-         * insert_fields_enter_entop to produce the arguments to the
-         * function it defines.
-         */
-        COMPQUIET(e, NULL);
-        COMPQUIET(first, 0);
+	/*
+	 * This is an extra attribute operation called by
+	 * insert_fields_enter_entop to produce the arguments to the
+	 * function it defines.
+	 */
+	COMPQUIET(e, NULL);
+	COMPQUIET(first, 0);
 
 	if (SEPARATE_HEADER) {
-                pr_header("%s %s%s", a->type->c_type,
+		pr_header("%s %s%s", a->type->c_type,
 		    is_array(a->type)? "*" : "",
 		    a->name);
-                if (!last) pr_header(",\n");
-        }
+		if (!last) pr_header(",\n");
+	}
 }
 
 /*
@@ -717,12 +660,12 @@ insert_fields_declare_args_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 	COMPQUIET(e, NULL);
 	COMPQUIET(first, 0);
 
-	pr_code("%s %s%s", a->type->c_type, 
+	pr_code("%s %s%s", a->type->c_type,
 	    is_array(a->type)? "*" : "",
 	    a->name);
 	if (!last)
 	       pr_code(",\n");
-	else 
+	else
 	       pr_code(")\n");
 }
 
@@ -733,12 +676,12 @@ insert_fields_function_enter_entop(ENTITY *e)
 		pr_header("int %s_insert_fields(DB * dbp,\n", e->name);
 	pr_code("int %s_insert_fields(DB *dbp,\n", e->name);
 	code_indent_level+=3; /* push them way over */
-        header_indent_level+=3;
+	header_indent_level+=3;
 	iterate_over_attributes(e, &insert_fields_list_args_attrop);
 	if (SEPARATE_HEADER)
 		pr_header(");\n\n");
 	code_indent_level-=2; /* drop back to +1 */
-        header_indent_level -= 3;
+	header_indent_level -= 3;
 	iterate_over_attributes(e, &insert_fields_declare_args_attrop);
 	code_indent_level--;
 	pr_code("{\n");
@@ -761,7 +704,7 @@ insert_fields_function_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 	COMPQUIET(last, 0);
 
 	if (is_string(a->type)) {
-		pr_code("assert(strlen(%s) < %s);\n", a->name, 
+		pr_code("assert(strlen(%s) < %s);\n", a->name,
 		    array_dim_name(e, a));
 		pr_code("strncpy(data.%s, %s, %s);\n",
 		    a->name, a->name, array_dim_name(e, a));
@@ -787,8 +730,8 @@ generate_insertion_functions()
 	    &deserialize_function_attrop);
 
 	/* Generate the struct insertion functions for each entity. */
-        if (SEPARATE_HEADER)
-                pr_header_comment(
+	if (SEPARATE_HEADER)
+		pr_header_comment(
 "Functions for inserting records by providing                               \n\
 the full corresponding data structure"
 			);
@@ -798,8 +741,8 @@ the full corresponding data structure"
 	    NULL);
 
 	/* Generate the field insertion functions for each entity. */
-        if (SEPARATE_HEADER)
-                pr_header_comment(
+	if (SEPARATE_HEADER)
+		pr_header_comment(
 "Functions for inserting records by providing                               \n\
 each field value as a separate argument"
 			);
@@ -817,7 +760,7 @@ each field value as a separate argument"
 static void
 fetch_function_enter_entop(ENTITY *e)
 {
-	static char *header_template = 
+	static char *header_template =
 "                                                                           \n\
 int get_%s_data(DB *dbp,                                                    \n\
  %s %s%s_key,                                                               \n\
@@ -826,26 +769,26 @@ int get_%s_data(DB *dbp,                                                    \n\
  DBT key_dbt, data_dbt;                                                     \n\
  int ret;                                                                   \n\
  %s %scanonical_key = %s_key;                                               \n\
-                                                                            \n\
+									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
-                                                                            \n\
+									    \n\
  key_dbt.data = %scanonical_key;                                            \n\
  key_dbt.size = %s(canonical_key)%s;                                        \n\
-                                                                            \n\
+									    \n\
  if ((ret = dbp->get(dbp, NULL, &key_dbt, &data_dbt, 0)) != 0) {            \n\
   dbp->err(dbp, ret, \"Retrieving key %%d\", %s_key);                       \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  assert(data_dbt.size <= %s);                                               \n\
-                                                                            \n\
+									    \n\
  deserialize_%s_data(data_dbt.data, data);                                  \n\
  return 0;                                                                  \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
-	pr_code(header_template, e->name, 
+	pr_code(header_template, e->name,
 	    e->primary_key->type->c_type,
 	    is_array(e->primary_key->type) ? "*" : "",
 	    e->name, e->name, e->primary_key->type->c_type,
@@ -868,14 +811,13 @@ int get_%s_data(DB *dbp,                                                    \n\
 static void
 generate_fetch_functions()
 {
-        if (SEPARATE_HEADER)
-                pr_header_comment("Functions for retrieving records by key");
+	if (SEPARATE_HEADER)
+		pr_header_comment("Functions for retrieving records by key");
 
- 	iterate_over_entities(&fetch_function_enter_entop,
+	iterate_over_entities(&fetch_function_enter_entop,
 	    NULL,
 	    NULL);
 }
-
 
 /*
  * This next group of entity and attribute operation functions are
@@ -892,20 +834,20 @@ int delete_%s_key(DB *dbp, %s %s%s_key)                                     \n\
  DBT key_dbt;                                                               \n\
  int ret;                                                                   \n\
  %s %scanonical_key = %s_key;                                               \n\
-                                                                            \n\
+									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
-                                                                            \n\
+									    \n\
  key_dbt.data = %scanonical_key;                                            \n\
  key_dbt.size = %s(canonical_key)%s;                                        \n\
-                                                                            \n\
+									    \n\
  if ((ret = dbp->del(dbp, NULL, &key_dbt, 0)) != 0) {                       \n\
   dbp->err(dbp, ret, \"deleting key %%d\", %s_key);                         \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  return 0;                                                                  \n\
 }                                                                           \n\
-                                                                            \n\
+									    \n\
 ";
 	pr_code(header_template, e->name, e->primary_key->type->c_type,
 	    is_array(e->primary_key->type) ? "*" : "",
@@ -927,10 +869,10 @@ int delete_%s_key(DB *dbp, %s %s%s_key)                                     \n\
 static void
 generate_deletion_functions()
 {
-        if (SEPARATE_HEADER)
-                pr_header_comment("Functions for deleting records by key");
+	if (SEPARATE_HEADER)
+		pr_header_comment("Functions for deleting records by key");
 
- 	iterate_over_entities(&deletion_function_enter_entop,
+	iterate_over_entities(&deletion_function_enter_entop,
 	    NULL,
 	    NULL);
 }
@@ -955,7 +897,6 @@ declare_database_pointers_enter_entop(ENTITY *e)
 {
 	pr_code("DB *%s_dbp = NULL;\n", e->name);
 }
-
 
 /*
  * This index operation function is called by the attribute iterator when
@@ -1004,7 +945,7 @@ create_secondary_idxop(DB_INDEX *idx)
 if (create_%s_secondary(%s_envp, %s_dbp, &%s_dbp) != 0)                     \n\
  goto exit_error;                                                           \n\
 ",
-	    idx->name, the_schema.environment.name, 
+	    idx->name, the_schema.environment.name,
 	    idx->primary->name, idx->name);
 }
 
@@ -1018,21 +959,21 @@ int %s_callback(DB *dbp,                                                    \n\
  const DBT *data_dbt,                                                       \n\
  DBT *secondary_key_dbt)                                                    \n\
 {                                                                           \n\
-                                                                            \n\
+									    \n\
  int ret;                                                                   \n\
  %s_data deserialized_data;                                                 \n\
-                                                                            \n\
+									    \n\
  deserialize_%s_data(data_dbt->data, &deserialized_data);                   \n\
-                                                                            \n\
+									    \n\
  memset(secondary_key_dbt, 0, sizeof(*secondary_key_dbt));                  \n\
  secondary_key_dbt->size = %s(deserialized_data.%s)%s;                      \n\
  secondary_key_dbt->data = malloc(secondary_key_dbt->size);                 \n\
  memcpy(secondary_key_dbt->data, %sdeserialized_data.%s,                    \n\
   secondary_key_dbt->size);                                                 \n\
-                                                                            \n\
+									    \n\
  /* tell the caller to free memory referenced by secondary_key_dbt */       \n\
  secondary_key_dbt->flags = DB_DBT_APPMALLOC;                               \n\
-                                                                            \n\
+									    \n\
  return 0;                                                                  \n\
 }                                                                           \n\
 ";
@@ -1041,7 +982,7 @@ int %s_callback(DB *dbp,                                                    \n\
 	    idx->name, idx->primary->name,
 	    idx->primary->name,
 	    is_string(idx->attribute->type) ? "strlen" : "sizeof",
-	    idx->attribute->name, 
+	    idx->attribute->name,
 	    is_string(idx->attribute->type) ? " + 1" : "",
 	    is_array(idx->attribute->type) ? "" : "&",
 	    idx->attribute->name);
@@ -1058,11 +999,11 @@ int create_%s_secondary(DB_ENV *envp,                                       \n\
 {                                                                           \n\
  int ret;                                                                   \n\
  char * secondary_name = \"%s.db\";                                         \n\
-                                                                            \n\
+									    \n\
  if ((ret = create_database(envp, secondary_name, secondary_dbpp,           \n\
   DB_CREATE, %s, DB_DUPSORT, %s)) != 0)                               \n\
  return ret;                                                                \n\
-                                                                            \n\
+									    \n\
  if ((ret = primary_dbp->associate(primary_dbp, NULL, *secondary_dbpp,      \n\
   &%s_callback, DB_CREATE)) != 0) {                                         \n\
   (*secondary_dbpp)->err(*secondary_dbpp, ret,                              \n\
@@ -1074,8 +1015,8 @@ int create_%s_secondary(DB_ENV *envp,                                       \n\
 ";
 
 	pr_code(index_creation_function_template,
-	    idx->name, idx->name, 
-            idx->dbtype,
+	    idx->name, idx->name,
+	    idx->dbtype,
 	    custom_comparator_for_type(idx->attribute->type),
 	    idx->name);
 
@@ -1104,7 +1045,7 @@ int remove_%s_index(DB_ENV *envp)                                           \n\
 static void
 generate_index_query_iteration(DB_INDEX *idx)
 {
-        static char *query_iteration_template = 
+	static char *query_iteration_template =
 "                                                                           \n\
 int %s_query_iteration(DB *secondary_dbp,                                   \n\
  %s %s%s_key,                                                               \n\
@@ -1115,41 +1056,41 @@ int %s_query_iteration(DB *secondary_dbp,                                   \n\
  DBC *cursorp;                                                              \n\
  %s_data deserialized_data;                                                 \n\
  int ret;                                                                   \n\
-                                                                            \n\
+									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
-                                                                            \n\
+									    \n\
  if ((ret = secondary_dbp->cursor(secondary_dbp, NULL, &cursorp, 0)) != 0) {\n\
   secondary_dbp->err(secondary_dbp, ret, \"creating cursor\");              \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  key_dbt.data = %s%s_key;                                                   \n\
  key_dbt.size = %s(%s_key)%s;                                               \n\
-                                                                            \n\
+									    \n\
  for (ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_SET);             \n\
   ret == 0;                                                                 \n\
   ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_NEXT_DUP)) {          \n\
   deserialize_%s_data(data_dbt.data, &deserialized_data);                   \n\
   (*user_func)(user_data, &deserialized_data);                              \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  if (ret != DB_NOTFOUND) {                                                  \n\
   secondary_dbp->err(secondary_dbp, ret, \"Querying secondary\");           \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  cursorp->close(cursorp);                                                   \n\
-                                                                            \n\
+									    \n\
  return 0;                                                                  \n\
 }                                                                           \n\
 ";
-        pr_code(query_iteration_template,
-	    idx->name, idx->attribute->type->c_type, 
+	pr_code(query_iteration_template,
+	    idx->name, idx->attribute->type->c_type,
 	    is_array(idx->attribute->type) ? "*" : "",
 	    idx->name, idx->primary->name, idx->primary->name,
 	    is_array(idx->attribute->type) ? "" : "&",
-	    idx->name, 
+	    idx->name,
 	    is_string(idx->attribute->type) ? "strlen" : "sizeof",
 	    idx->name,
 	    is_string(idx->attribute->type) ? " + 1" : "",
@@ -1177,7 +1118,7 @@ index_function_idxop(DB_INDEX *idx)
 
 static void
 generate_index_functions() {
-        if (SEPARATE_HEADER)
+	if (SEPARATE_HEADER)
 		pr_header_comment("Index creation and removal functions");
 	iterate_over_indexes(&index_function_idxop);
 }
@@ -1200,9 +1141,9 @@ generate_iteration_callback_typedefs()
 "These typedefs are prototypes for the user-written                         \n\
 iteration callback functions, which are invoked during                      \n\
 full iteration and secondary index queries"
-            );
+	    );
 
-        iterate_over_entities(&generate_iteration_callback_typedef_enter_entop,
+	iterate_over_entities(&generate_iteration_callback_typedef_enter_entop,
 	    NULL,
 	    NULL);
 }
@@ -1220,33 +1161,33 @@ int %s_full_iteration(DB *dbp,                                              \n\
  DBC *cursorp;                                                              \n\
  %s_data deserialized_data;                                                 \n\
  int ret;                                                                   \n\
-                                                                            \n\
+									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
-                                                                            \n\
+									    \n\
  if ((ret = dbp->cursor(dbp, NULL, &cursorp, 0)) != 0) {                    \n\
   dbp->err(dbp, ret, \"creating cursor\");                                  \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
- while((ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_NEXT)) == 0) {  \n\
+									    \n\
+ while ((ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_NEXT)) == 0) {  \n\
   deserialize_%s_data(data_dbt.data, &deserialized_data);                   \n\
   (*user_func)(user_data, &deserialized_data);                              \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  if (ret != DB_NOTFOUND) {                                                  \n\
   dbp->err(dbp, ret, \"Full iteration\");                                   \n\
   cursorp->close(cursorp);                                                  \n\
   return ret;                                                               \n\
  }                                                                          \n\
-                                                                            \n\
+									    \n\
  cursorp->close(cursorp);                                                   \n\
-                                                                            \n\
+									    \n\
  return 0;                                                                  \n\
 }                                                                           \n\
 ";
 
-        pr_code(full_iteration_template,
+	pr_code(full_iteration_template,
 	    e->name, e->name, e->name, e->name);
 
 	if (SEPARATE_HEADER)
@@ -1260,12 +1201,12 @@ int %s_full_iteration(DB *dbp,                                              \n\
 static void
 generate_full_iterations()
 {
-        if (SEPARATE_HEADER)
-                pr_header_comment(
+	if (SEPARATE_HEADER)
+		pr_header_comment(
 "Functions for doing iterations over                                        \n\
 an entire primary database");
 
-        iterate_over_entities(&generate_full_iteration_enter_entop,
+	iterate_over_entities(&generate_full_iteration_enter_entop,
 	    NULL,
 	    NULL);
 
@@ -1283,9 +1224,9 @@ the global environment and database pointers declared                       \n\
 below.  You may bypass this function and use your own                       \n\
 environment and database pointers, if you wish.");
 
-		pr_header("int initialize_%s_environment();\n", 
+		pr_header("int initialize_%s_environment();\n",
 		    the_schema.environment.name);
-        }
+	}
 	pr_header("\nextern DB_ENV * %s_envp;\n", the_schema.environment.name);
 	iterate_over_entities(&declare_extern_database_pointers_enter_entop,
 	    NULL,
@@ -1299,7 +1240,7 @@ environment and database pointers, if you wish.");
 	iterate_over_indexes(&declare_extern_secondary_pointers_idxop);
 
 	iterate_over_indexes(&declare_secondary_pointers_idxop);
-	
+
 	pr_code(
 "                                                                           \n\
 int initialize_%s_environment()                                             \n\
@@ -1334,23 +1275,77 @@ return -1;                                                                  \n\
 static void
 check_pk_constraint_enter_entop(ENTITY *e)
 {
-        if (e->primary_key == NULL) {
-                fprintf(stderr, 
-                    "The table \"%s\" (defined near line %d) lacks a \
+	if (e->primary_key == NULL) {
+		fprintf(stderr,
+		    "The table \"%s\" (defined near line %d) lacks a \
 primary key, which is not allowed.  All tables must have a designated \
-primary key.\n", 
+primary key.\n",
 		    e->name, e->line_number);
-                exit(1);
-        }
+		exit(1);
+	}
 }
 
 static void
 check_constraints()
 {
-        iterate_over_entities(&check_pk_constraint_enter_entop,
+	iterate_over_entities(&check_pk_constraint_enter_entop,
 	    NULL, NULL);
 }
 
+/*
+ * Generate is the sole entry point to this module.  It orchestrates
+ * the generation of the C code for the storage layer and for the
+ * smoke test.
+ */
+void generate(hfile, cfile, tfile, vfile, hfilename)
+	FILE *hfile, *cfile, *tfile, *vfile;
+	char *hfilename;
+{
+	static char *header_intro_comment =
+"Header file for a Berkeley DB implementation                               \n\
+generated from SQL DDL by db_sql";
+
+	static char *include_stmts =
+"#include <sys/types.h>                                                     \n\
+#include <sys/stat.h>                                                       \n\
+#include <assert.h>                                                         \n\
+#include <errno.h>                                                          \n\
+#include <stdlib.h>                                                         \n\
+#include <string.h>                                                         \n\
+#include \"db.h\"                                                           \n\
+\n";
+
+	header_file = hfile;
+	code_file = cfile;
+
+	check_constraints();
+
+	if (SEPARATE_HEADER)
+		pr_header_comment(header_intro_comment);
+
+	pr_header(include_stmts);
+
+	if (SEPARATE_HEADER)
+		pr_code("#include \"%s\"\n\n", hfilename);
+
+	generate_config_defines();
+	generate_schema_structs();
+	generate_iteration_callback_typedefs();
+	generate_environment();
+	generate_db_creation_functions();
+	generate_db_removal_functions();
+	generate_insertion_functions();
+	generate_fetch_functions();
+	generate_deletion_functions();
+	generate_full_iterations();
+	generate_index_functions();
+	generate_initialization();
+
+	if (tfile != NULL)
+		generate_test(tfile, hfilename);
+	if (vfile != NULL)
+		generate_verification(vfile, hfilename);
+}
 
 /*
   This is a little emacs-lisp keybinding to help with the

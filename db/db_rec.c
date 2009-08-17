@@ -524,7 +524,6 @@ __db_pg_alloc_recover(env, dbtp, lsnp, op, info)
 		cmp_p = 0;
 
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->page_lsn);
-	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	/*
 	 * Another special case we have to handle is if we ended up with a
 	 * page of all 0's which can happen if we abort between allocating a
@@ -577,7 +576,7 @@ do_truncate:
 		}
 		/* Give the page back to the OS. */
 		if (meta->last_pgno <= argp->pgno && (ret = __memp_ftruncate(
-		    mpf, ip, argp->pgno, MP_TRUNC_RECOVER)) != 0)
+		    mpf, NULL, ip, argp->pgno, MP_TRUNC_RECOVER)) != 0)
 			goto out;
 	}
 
@@ -712,7 +711,6 @@ check_meta:
 		cmp_p = 0;
 
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &copy_lsn);
-	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 	if (DB_REDO(op) &&
 	    (cmp_p == 0 ||
 	    (IS_ZERO_LSN(copy_lsn) &&
@@ -728,7 +726,7 @@ check_meta:
 			    pagep, DB_PRIORITY_VERY_LOW)) != 0)
 				goto out;
 			pagep = NULL;
-trunc:			if ((ret = __memp_ftruncate(mpf, ip,
+trunc:			if ((ret = __memp_ftruncate(mpf, NULL, ip,
 			    argp->pgno, MP_TRUNC_RECOVER)) != 0)
 				goto out;
 		} else if (argp->last_pgno == argp->pgno) {

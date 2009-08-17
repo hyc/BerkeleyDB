@@ -51,30 +51,30 @@ order, so we would have to do extra bookkeeping to make sure that
 everything was closed in the proper order.  The best word of advice is
 to always do a close() for any matching open() call.  Specifically, the
 Berkeley DB package requires that you explicitly call close on each individual
-<a class="ulink" href="../../java/com/sleepycat/db/Database.html" target="_top">Database</a> and
-<a class="ulink" href="../../java/com/sleepycat/db/Cursor.html" target="_top">Cursor</a> object that you opened.  Your database
+<a class="ulink" href="../java/com/sleepycat/db/Database.html" target="_top">Database</a> and
+<a class="ulink" href="../java/com/sleepycat/db/Cursor.html" target="_top">Cursor</a> object that you opened.  Your database
 activity may not be synchronized to disk unless you do so.</li>
           <li>Some methods in the Java API have no return type, and throw a
-<a class="ulink" href="../../java/com/sleepycat/db/DatabaseException.html" target="_top">DatabaseException</a> when an severe error
+<a class="ulink" href="../java/com/sleepycat/db/DatabaseException.html" target="_top">DatabaseException</a> when an severe error
 arises.  There are some notable methods that do have a return value, and
 can also throw an exception.  The "get" methods in
-<a class="ulink" href="../../java/com/sleepycat/db/Database.html" target="_top">Database</a> and
-<a class="ulink" href="../../java/com/sleepycat/db/Cursor.html" target="_top">Cursor</a> both return 0 when a get
+<a class="ulink" href="../java/com/sleepycat/db/Database.html" target="_top">Database</a> and
+<a class="ulink" href="../java/com/sleepycat/db/Cursor.html" target="_top">Cursor</a> both return 0 when a get
 succeeds, <a class="link" href="program_errorret.html#program_errorret.DB_NOTFOUND">DB_NOTFOUND</a> when the key is not found, and throw an
 error when there is a severe error.  This approach allows the programmer
 to check for typical data-driven errors by watching return values
 without special casing exceptions.
-<p>An object of type <a class="ulink" href="../../java/com/sleepycat/db/MemoryException.html" target="_top">MemoryException</a> is
-thrown when a Dbt is too small to hold the corresponding key or data item.</p><p>An object of type <a class="ulink" href="../../java/com/sleepycat/db/DeadlockException.html" target="_top">DeadlockException</a> is
-thrown when a deadlock would occur.</p><p>An object of type <a class="ulink" href="../../java/com/sleepycat/db/RunRecoveryException.html" target="_top">RunRecoveryException</a>, a
-subclass of <a class="ulink" href="../../java/com/sleepycat/db/DatabaseException.html" target="_top">DatabaseException</a>, is thrown when
+<p>An object of type <a class="ulink" href="../java/com/sleepycat/db/MemoryException.html" target="_top">MemoryException</a> is
+thrown when a Dbt is too small to hold the corresponding key or data item.</p><p>An object of type <a class="ulink" href="../java/com/sleepycat/db/DeadlockException.html" target="_top">DeadlockException</a> is
+thrown when a deadlock would occur.</p><p>An object of type <a class="ulink" href="../java/com/sleepycat/db/RunRecoveryException.html" target="_top">RunRecoveryException</a>, a
+subclass of <a class="ulink" href="../java/com/sleepycat/db/DatabaseException.html" target="_top">DatabaseException</a>, is thrown when
 there is an error that requires a recovery of the database using <a href="../api_reference/C/db_recover.html" class="olink">db_recover utility</a>.</p><p>An object of type <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/lang/IllegalArgumentException.html" target="_top">IllegalArgumentException</a>
 a standard Java Language exception, is thrown when there is an error in
 method arguments.</p><p>An object of type <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/lang/OutOfMemoryError.html" target="_top">OutOfMemoryError</a> is thrown
 when the system cannot provide enough memory to complete the operation
 (the ENOMEM system error on UNIX).</p></li>
           <li>If there are embedded nulls in the <span class="bold"><strong>curslist</strong></span> argument for
-<a class="ulink" href="../../java/com/sleepycat/db/Database.html#pathsubst(join(com.sleepycat.db.Cursor__BRACKETS__, com.sleepycat.db.JoinConfig), ' ', '%20')" target="_top">Database.join(com.sleepycat.db.Cursor__BRACKETS__, com.sleepycat.db.JoinConfig)</a>,
+<a class="ulink" href="../java/com/sleepycat/db/Database.html#join(com.sleepycat.db.Cursor[], com.sleepycat.db.JoinConfig)" target="_top">Database.join(com.sleepycat.db.Cursor[], com.sleepycat.db.JoinConfig)</a>,
 they will be treated as the end of the list of cursors, even if you
 may have allocated a longer array.  Fill in all the cursors in your
 array unless you intend to cut it short.</li>

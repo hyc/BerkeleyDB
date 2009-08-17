@@ -614,8 +614,9 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 				M_16_SWAP(inp[i]);
 		}
 		break;
-	case P_OVERFLOW:
 	case P_INVALID:
+	case P_OVERFLOW:
+	case P_QAMDATA:
 		/* Nothing to do. */
 		break;
 	default:
@@ -675,11 +676,12 @@ __db_pageswap(dbp, pp, len, pdata, pgin)
 
 	case P_INVALID:
 	case P_OVERFLOW:
+	case P_QAMDATA:
 		/*
-		 * We may have been passed an invalid page, or an overflow page
-		 * where fields like hoffset have a special meaning.  In that
-		 * case, no swapping of the page data is required, just the
-		 * fields in the page header.
+		 * We may have been passed an invalid page, or a queue data
+		 * page, or an overflow page where fields like hoffset have a
+		 * special meaning.  In that case, no swapping of the page data
+		 * is required, just the fields in the page header.
 		 */
 		pdata = NULL;
 		break;

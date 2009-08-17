@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -31,11 +37,11 @@ namespace BerkeleyDB {
         /// <summary>
         /// Sequence lock granted w/o wait. 
         /// </summary>
-        public long LockWait { get { return st.st_wait; } }
+        public ulong LockWait { get { return st.st_wait; } }
         /// <summary>
         /// Sequence lock granted after wait. 
         /// </summary>
-        public long LockNoWait { get { return st.st_nowait; } }
+        public ulong LockNoWait { get { return st.st_nowait; } }
         /// <summary>
         /// Maximum value. 
         /// </summary>

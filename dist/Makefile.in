@@ -142,11 +142,11 @@ libjso_g=	$(libjso_base)-$(LIBVERSION)_g@JMODSUFFIX@
 TCL_INCLUDE_SPEC=	@TCL_INCLUDE_SPEC@
 LIBTSO_LIBS=	@LIBTSO_LIBS@ @LIBSO_LIBS@
 libtso_base=	libdb_tcl
-libtso=		$(libtso_base)-$(LIBVERSION)@MODSUFFIX@
+libtso=		$(libtso_base)-$(LIBVERSION)@LIBTSO_MODSUFFIX@
 libtso_static=	$(libtso_base)-$(LIBVERSION).a
 libtso_target=	$(libtso_base)-$(LIBVERSION).la
-libtso_default=	$(libtso_base)@MODSUFFIX@
-libtso_major=	$(libtso_base)-$(LIBMAJOR)@MODSUFFIX@
+libtso_default=	$(libtso_base)@LIBTSO_MODSUFFIX@
+libtso_major=	$(libtso_base)-$(LIBMAJOR)@LIBTSO_MODSUFFIX@
 
 ##################################################
 # db_dump185 UTILITY
@@ -329,6 +329,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/collections/TransactionWorker.java \
 	$(JAVA_SLEEPYCAT)/collections/TupleSerialFactory.java \
 	$(JAVA_SLEEPYCAT)/compat/DbCompat.java \
+	$(JAVA_SLEEPYCAT)/db/BtreeCompressor.java \
 	$(JAVA_SLEEPYCAT)/db/BtreePrefixCalculator.java \
 	$(JAVA_SLEEPYCAT)/db/BtreeStats.java \
 	$(JAVA_SLEEPYCAT)/db/CacheFile.java \
@@ -385,6 +386,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/MutexStats.java \
 	$(JAVA_SLEEPYCAT)/db/OperationStatus.java \
 	$(JAVA_SLEEPYCAT)/db/PanicHandler.java \
+	$(JAVA_SLEEPYCAT)/db/PartitionHandler.java \
 	$(JAVA_SLEEPYCAT)/db/PreparedTransaction.java \
 	$(JAVA_SLEEPYCAT)/db/QueueStats.java \
 	$(JAVA_SLEEPYCAT)/db/RecordNumberAppender.java \
@@ -647,7 +649,6 @@ JAVA_EXSRCS=\
 	$(JAVA_EXDIR)/db/GettingStarted/MyDbs.java \
 	$(JAVA_EXDIR)/db/GettingStarted/Vendor.java \
 	$(JAVA_EXDIR)/db/LockExample.java \
-	$(JAVA_EXDIR)/db/RPCExample.java \
 	$(JAVA_EXDIR)/db/SequenceExample.java \
 	$(JAVA_EXDIR)/db/TpcbExample.java \
 	$(JAVA_EXDIR)/db/repquote/RepConfig.java \
@@ -677,7 +678,7 @@ JAVA_EXSRCS=\
 	$(JAVA_EXDIR)/persist/txn/TxnGuideDPL.java 
 
 STL_OBJS=\
-	resource_manager@o@ db_container@o@
+	dbstl_container@o@ dbstl_resource_manager@o@
 
 TCL_OBJS=\
 	tcl_compat@o@ tcl_db@o@ tcl_db_pkg@o@ tcl_dbcursor@o@ tcl_env@o@ \
@@ -940,8 +941,13 @@ install_include:
 	    ($(MKDIR) -p $(DESTDIR)$(includedir) && \
 	    $(CHMOD) $(dmode) $(DESTDIR)$(includedir))
 	@cd $(DESTDIR)$(includedir) && $(RM) $(INCDOT)
-	@$(CP) -p $(INCDOT) $(DESTDIR)$(includedir)
-	@cd $(DESTDIR)$(includedir) && $(CHMOD) $(fmode) $(INCDOT)
+	@for f in $(INCDOT); do \
+	    for d in . $(srcdir)/stl ; do \
+	        test -f $$d/$$f && \
+	            $(CP) -p $$d/$$f $(DESTDIR)$(includedir) ; \
+	    done ; \
+	    $(CHMOD) $(fmode) $(DESTDIR)$(includedir)/$$f ; \
+	done
 
 uninstall_include:
 	@cd $(DESTDIR)$(includedir) && $(RM) $(INCDOT)
@@ -2040,9 +2046,9 @@ db_java_wrap@o@: $(srcdir)/libdb_java/db_java_wrap.c
 ##################################################
 # STL API build rules.
 ##################################################
-db_container@o@: $(srcdir)/stl/internal/db_container.cpp
+dbstl_container@o@: $(srcdir)/stl/dbstl_container.cpp
 	$(CXX) $(STLFLAGS) $?
-resource_manager@o@: $(srcdir)/stl/internal/resource_manager.cpp
+dbstl_resource_manager@o@: $(srcdir)/stl/dbstl_resource_manager.cpp
 	$(CXX) $(STLFLAGS) $?
 
 ##################################################

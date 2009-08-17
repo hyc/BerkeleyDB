@@ -340,8 +340,11 @@ __bam_read_root(dbp, ip, txn, base_pgno, flags)
 
 		t->bt_meta = base_pgno;
 		t->bt_root = meta->root;
-		if (PGNO(meta) == PGNO_BASE_MD && !F_ISSET(dbp, DB_AM_RECOVER))
+#ifndef HAVE_FTRUNCATE
+		if (PGNO(meta) == PGNO_BASE_MD &&
+		    !F_ISSET(dbp, DB_AM_RECOVER) && !IS_VERSION(dbp, meta))
 			__memp_set_last_pgno(mpf, meta->dbmeta.last_pgno);
+#endif
 	} else {
 		DB_ASSERT(dbp->env,
 		    IS_RECOVERING(dbp->env) || F_ISSET(dbp, DB_AM_RECOVER));

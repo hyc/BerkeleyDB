@@ -1608,6 +1608,7 @@ static int yy_find_reduce_action(
 static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    sqlite3ParserARG_FETCH;
    yypParser->yyidx--;
+   yypMinor = yypMinor; /* quiet the compiler */
 #ifndef NDEBUG
    if( yyTraceFILE ){
      fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
@@ -3068,6 +3069,7 @@ static void yy_syntax_error(
   sqlite3ParserARG_FETCH;
 #define TOKEN (yyminor.yy0)
 
+  yymajor = yymajor;	/* quiet the compiler */
   assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
   sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
   pParse->parseError = 1;

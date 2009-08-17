@@ -737,12 +737,13 @@ err:	if (p != NULL) {
  * __memp_ftruncate __
  *	Truncate the file.
  *
- * PUBLIC: int __memp_ftruncate __P((DB_MPOOLFILE *,
+ * PUBLIC: int __memp_ftruncate __P((DB_MPOOLFILE *, DB_TXN *,
  * PUBLIC:     DB_THREAD_INFO *, db_pgno_t, u_int32_t));
  */
 int
-__memp_ftruncate(dbmfp, ip, pgno, flags)
+__memp_ftruncate(dbmfp, txn, ip, pgno, flags)
 	DB_MPOOLFILE *dbmfp;
+	DB_TXN *txn;
 	DB_THREAD_INFO *ip;
 	db_pgno_t pgno;
 	u_int32_t flags;
@@ -773,7 +774,7 @@ __memp_ftruncate(dbmfp, ip, pgno, flags)
 		if (mfp->block_cnt == 0)
 			break;
 		if ((ret = __memp_fget(dbmfp, &pg,
-		    ip, NULL, DB_MPOOL_FREE, &pagep)) != 0)
+		    ip, txn, DB_MPOOL_FREE, &pagep)) != 0)
 			return (ret);
 	} while (pg++ < last_pgno);
 

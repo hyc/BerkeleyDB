@@ -39,8 +39,6 @@ namespace BerkeleyDB.Internal {
         internal const uint DB_ENCRYPT = 0x00000001;
         internal const uint DB_ENCRYPT_AES = 0x00000001;
         internal const uint DB_EVENT_PANIC = 1;
-        internal const uint DB_EVENT_REG_ALIVE = 2;
-        internal const uint DB_EVENT_REG_PANIC = 3;
         internal const uint DB_EVENT_REP_CLIENT = 4;
         internal const uint DB_EVENT_REP_ELECTED = 5;
         internal const uint DB_EVENT_REP_MASTER = 6;
@@ -49,7 +47,6 @@ namespace BerkeleyDB.Internal {
         internal const uint DB_EVENT_REP_STARTUPDONE = 9;
         internal const uint DB_EVENT_WRITE_FAILED = 10;
         internal const uint DB_EXCL = 0x00000040;
-        internal const uint DB_FAILCHK = 0x00000020;
         internal const uint DB_FAST_STAT = 0x00000001;
         internal const uint DB_FIRST = 7;
         internal const uint DB_FLUSH = 0x00000001;
@@ -215,7 +212,6 @@ namespace BerkeleyDB.Internal {
         internal const uint DB_SET = 27;
         internal const uint DB_SET_LOCK_TIMEOUT = 0x00000001;
         internal const uint DB_SET_RANGE = 28;
-        internal const uint DB_SET_REG_TIMEOUT = 0x00000004;
         internal const uint DB_SET_RECNO = 29;
         internal const uint DB_SET_TXN_TIMEOUT = 0x00000002;
         internal const uint DB_SNAPSHOT = 0x00000200;
@@ -269,9 +265,9 @@ namespace BerkeleyDB.Internal {
         internal const uint DB_VERSION_MINOR = 8;
         internal const string DB_VERSION_MINOR_STR = "8";
         internal const int DB_VERSION_MISMATCH = -30971;
-        internal const uint DB_VERSION_PATCH = 5;
-        internal const string DB_VERSION_PATCH_STR = "5";
-        internal const string DB_VERSION_STRING = "Berkeley DB 4.8.5: May 7 2009 ";
+        internal const uint DB_VERSION_PATCH = 24;
+        internal const string DB_VERSION_PATCH_STR = "24";
+        internal const string DB_VERSION_STRING = "Berkeley DB 4.8.24: August 14 2009 ";
         internal const uint DB_WRITECURSOR = 0x00000008;
         internal const uint DB_YIELDCPU = 0x00010000;
         internal const uint DB_USERCOPY_GETDATA = 0x00000001;

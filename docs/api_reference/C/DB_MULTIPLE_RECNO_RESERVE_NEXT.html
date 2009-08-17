@@ -37,28 +37,16 @@
       </div>
       <pre class="programlisting">#include &lt;db.h&gt;
 
-DB_MULTIPLE_RECNO_RESERVE_NEXT(void *pointer, DBT *data, 
-     void *retdata, size_t retdlen); </pre>
+DB_MULTIPLE_RECNO_RESERVE_NEXT(void *pointer, DBT *dbt, db_recno_t recno, 
+    void *ddest, size_t dlen); </pre>
       <p>
-        If either of the 
-        <a class="link" href="dbcget.html#dbcget_DB_MULTIPLE">DB_MULTIPLE</a>
-        or
-        <a class="link" href="dbcget.html#dbcget_DB_MULTIPLE_KEY">DB_MULTIPLE_KEY</a>
-        flags were specified to the <a class="xref" href="dbget.html" title="DB-&gt;get()">DB-&gt;get()</a> or 
-        <a class="xref" href="dbcget.html" title="DBcursor-&gt;get()">DBcursor-&gt;get()</a> methods, the data 
-        <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> returned by those interfaces will 
-        refer to a buffer that is filled with data. Access to that data is through the 
-        DB_MULTIPLE_* macros.
-    </p>
-      <p>
-        Returns the next <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> in the bulk
-        retrieval set.
+	    Reserves space for a record number / data pair in a bulk buffer.
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1660486"></a>Parameters</h3>
+              <h3 class="title"><a id="id1659360"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -66,67 +54,60 @@ DB_MULTIPLE_RECNO_RESERVE_NEXT(void *pointer, DBT *data,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1661265"></a>pointer</h4>
+                <h4 class="title"><a id="id1659790"></a>pointer</h4>
               </div>
             </div>
           </div>
           <p>
-                        The <span class="bold"><strong>pointer</strong></span> parameter is a variable 
-                        that must have been initialized by a call to 
-                        <a class="xref" href="DB_MULTIPLE_INIT.html" title="DB_MULTIPLE_INIT">DB_MULTIPLE_INIT</a>.
-                     </p>
-          <p>
-                         This parameter is set to NULL if there are no more key/data pairs in
-                         the returned set.
+			The <span class="bold"><strong>pointer</strong></span> parameter
+			is a variable that must have been initialized by a call
+			to <a class="xref" href="DB_MULTIPLE_RECNO_WRITE_INIT.html" title="DB_MULTIPLE_RECNO_WRITE_INIT">DB_MULTIPLE_RECNO_WRITE_INIT</a>.
                      </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1661059"></a>data</h4>
+                <h4 class="title"><a id="id1659642"></a>recno</h4>
               </div>
             </div>
           </div>
           <p>
-                        The <span class="bold"><strong>data</strong></span> parameter is a 
-                        <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> structure returned from a
-                        successful call to <a class="xref" href="dbget.html" title="DB-&gt;get()">DB-&gt;get()</a> or
-                        <a class="xref" href="dbcget.html" title="DBcursor-&gt;get()">DBcursor-&gt;get()</a> for which he 
-                        <a class="link" href="dbcget.html#dbcget_DB_MULTIPLE">DB_MULTIPLE</a>
-                        flag was specified.
+                         The record number to be copied into the bulk buffer.
                      </p>
           <p>
-                         The <span class="bold"><strong>data</strong></span> parameter must have been initialized by 
-                         a call to <a class="xref" href="DB_MULTIPLE_INIT.html" title="DB_MULTIPLE_INIT">DB_MULTIPLE_INIT</a>.
+		         This parameter is set to 0 if the data item does not
+			 fit in the buffer.
                      </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1661164"></a>retdata</h4>
+                <h4 class="title"><a id="id1659882"></a>ddest</h4>
               </div>
             </div>
           </div>
           <p>
-                        The <span class="bold"><strong>retdata</strong></span> is set
-                        to the next data element in the returned set.
+			The <span class="bold"><strong>ddest</strong></span> parameter is
+			set to the location reserved in the bulk buffer for the
+			data item.
+                     </p>
+          <p>
+		         This parameter is set to NULL if the data item does not
+			 fit in the buffer.
                      </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1661060"></a>retdlen</h4>
+                <h4 class="title"><a id="id1659666"></a>dlen</h4>
               </div>
             </div>
           </div>
           <p>
-                        The <span class="bold"><strong>retdlen</strong></span> parameter is set to
-                        the length, in bytes, of that data element. When used with the Queue and
-                        Recno access methods, <span class="bold"><strong>retdata</strong></span> parameter
-                        will be set to NULL for deleted records. 
+                         The number of bytes to be reserved.
                      </p>
         </div>
       </div>
@@ -134,7 +115,7 @@ DB_MULTIPLE_RECNO_RESERVE_NEXT(void *pointer, DBT *data,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1661469"></a>Class</h3>
+              <h3 class="title"><a id="id1660279"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -146,7 +127,7 @@ DB_MULTIPLE_RECNO_RESERVE_NEXT(void *pointer, DBT *data,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1661491"></a>See Also</h3>
+              <h3 class="title"><a id="id1659644"></a>See Also</h3>
             </div>
           </div>
         </div>

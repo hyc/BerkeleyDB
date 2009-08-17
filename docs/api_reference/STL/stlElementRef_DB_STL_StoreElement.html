@@ -52,27 +52,17 @@ void _DB_STL_StoreElement()
  </pre>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage"></div>
-          <p>Store data element changes. </p>
-          <p>This method should be called after this object is modified by calling methods of ddt or directly modifying its data members. Otherwise the changes is gone without going into database.</p>
-          <p>When db_base_iterator's directdb_get_ member is true, you should call this function after they make changes to ddt's data member and before they call the next operator* or operator-&gt; otherwise the change is lost; If the change is done via ElementHolder&lt;&gt;::operator=(), you don't need to call this function. </p>
+          <p>Function to store the data element. </p>
+          <p>The user needs to call this method after modifying the underlying object, so that the version stored in the container can be updated.</p>
+          <p>When db_base_iterator's directdb_get_ member is true, this function must be called after modifying the data member and before any subsequent container iterator dereference operations. If this step is not carried out any changes will be lost.</p>
+          <p>If the data element is changed via ElementHolder&lt;&gt;::operator=(), you don't need to call this function. </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1576723"></a>
-Group: Element value read and write functions.</h3>
-            </div>
-          </div>
-        </div>
-        <p>Functions to store or get refered element value. </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="id1576761"></a>
+              <h3 class="title"><a id="id1570415"></a>
 Class</h3>
             </div>
           </div>

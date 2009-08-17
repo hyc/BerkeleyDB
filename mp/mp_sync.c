@@ -487,6 +487,7 @@ __memp_sync_int(env, dbmfp, trickle_max, flags, wrote_totalp, interruptedp)
 		atomic_inc(env, &bhp->ref);
 		MUTEX_UNLOCK(env, mutex);
 		MUTEX_READLOCK(env, bhp->mtx_buf);
+		DB_ASSERT(env, !F_ISSET(bhp, BH_EXCLUSIVE));
 
 		/*
 		 * When swapping the hash bucket mutex for the buffer mutex,

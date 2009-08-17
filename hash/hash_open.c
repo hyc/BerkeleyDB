@@ -110,10 +110,12 @@ __ham_open(dbp, ip, txn, name, base_pgno, flags)
 			F_SET(dbp, DB_AM_DUPSORT);
 		if (F_ISSET(&hcp->hdr->dbmeta, DB_HASH_SUBDB))
 			F_SET(dbp, DB_AM_SUBDB);
+#ifndef HAVE_FTRUNCATE
 		if (PGNO(hcp->hdr) == PGNO_BASE_MD &&
-		     !F_ISSET(dbp, DB_AM_RECOVER))
+		    !F_ISSET(dbp, DB_AM_RECOVER) && !IS_VERSION(dbp, hcp->hdr))
 			__memp_set_last_pgno(dbp->mpf,
 			    hcp->hdr->dbmeta.last_pgno);
+#endif
 	} else if (!IS_RECOVERING(env) && !F_ISSET(dbp, DB_AM_RECOVER)) {
 		__db_errx(env,
 		    "%s: Invalid hash meta page %lu", name, (u_long)base_pgno);

@@ -284,7 +284,6 @@ static int __dbj_fill_rep_stat(JNIEnv *jnienv,
 	JAVADB_STAT_INT(jnienv, jobj, rep_stat_st_election_usec_fid, statp, st_election_usec);
 	JAVADB_STAT_INT(jnienv, jobj, rep_stat_st_max_lease_sec_fid, statp, st_max_lease_sec);
 	JAVADB_STAT_INT(jnienv, jobj, rep_stat_st_max_lease_usec_fid, statp, st_max_lease_usec);
-	JAVADB_STAT_INT(jnienv, jobj, rep_stat_st_filefail_cleanups_fid, statp, st_filefail_cleanups);
 	return (0);
 }
 static int __dbj_fill_repmgr_stat(JNIEnv *jnienv,

@@ -68,8 +68,6 @@ main(argc, argv)
 
 	if (setup_info.role == MASTER)
 		master_eid = SELF_EID;
-	else if (setup_info.role == CLIENT)
-		my_app_data.shared_data.appointed_client_init = 1;
 
 	myaddr = strdup(setup_info.self.host);
 	myport = setup_info.self.port;
@@ -241,7 +239,6 @@ event_callback(dbenv, which, info)
 
 	case DB_EVENT_REP_STARTUPDONE:
 		shared->in_client_sync = 0;
-		shared->appointed_client_init = 0;
 		break;
 
 	default:

@@ -77,7 +77,7 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1676769"></a>Parameters</h3>
+              <h3 class="title"><a id="id1675541"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1676696"></a>detect</h4>
+                <h4 class="title"><a id="id1675473"></a>detect</h4>
               </div>
             </div>
           </div>
@@ -97,8 +97,8 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_DEFAULT"></a>DB_LOCK_DEFAULT</code>
+                <p><a id="set_lk_detect_DB_LOCK_DEFAULT"></a>
+                  <code class="literal">DB_LOCK_DEFAULT</code>
             </p>
                 <p>
                  Use whatever lock policy was specified when the database environment
@@ -107,8 +107,8 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_EXPIRE"></a>DB_LOCK_EXPIRE</code>
+                <p><a id="set_lk_detect_DB_LOCK_EXPIRE"></a>
+                  <code class="literal">DB_LOCK_EXPIRE</code>
             </p>
                 <p>
                  Reject lock requests which have timed out.  No other deadlock
@@ -116,56 +116,56 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MAXLOCKS"></a>DB_LOCK_MAXLOCKS</code>
+                <p><a id="set_lk_detect_DB_LOCK_MAXLOCKS"></a>
+                  <code class="literal">DB_LOCK_MAXLOCKS</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the most locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MAXWRITE"></a>DB_LOCK_MAXWRITE</code>
+                <p><a id="set_lk_detect_DB_LOCK_MAXWRITE"></a>
+                  <code class="literal">DB_LOCK_MAXWRITE</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the most write locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MINLOCKS"></a>DB_LOCK_MINLOCKS</code>
+                <p><a id="set_lk_detect_DB_LOCK_MINLOCKS"></a>
+                  <code class="literal">DB_LOCK_MINLOCKS</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the fewest locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_MINWRITE"></a>DB_LOCK_MINWRITE</code>
+                <p><a id="set_lk_detect_DB_LOCK_MINWRITE"></a>
+                  <code class="literal">DB_LOCK_MINWRITE</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the fewest write locks.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_OLDEST"></a>DB_LOCK_OLDEST</code>
+                <p><a id="set_lk_detect_DB_LOCK_OLDEST"></a>
+                  <code class="literal">DB_LOCK_OLDEST</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the oldest lock.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_RANDOM"></a>DB_LOCK_RANDOM</code>
+                <p><a id="set_lk_detect_DB_LOCK_RANDOM"></a>
+                  <code class="literal">DB_LOCK_RANDOM</code>
             </p>
                 <p>
                 Reject the lock request for a random locker ID.
             </p>
               </li>
               <li>
-                <p>
-                  <code class="literal"><a id="set_lk_detect_DB_LOCK_YOUNGEST"></a>DB_LOCK_YOUNGEST</code>
+                <p><a id="set_lk_detect_DB_LOCK_YOUNGEST"></a>
+                  <code class="literal">DB_LOCK_YOUNGEST</code>
             </p>
                 <p>
                  Reject the lock request for the locker ID with the youngest lock.
@@ -179,7 +179,7 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1676849"></a>Errors</h3>
+              <h3 class="title"><a id="id1675623"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -195,7 +195,7 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1676997"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1675840"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1676898"></a>Class</h3>
+              <h3 class="title"><a id="id1675804"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -221,7 +221,7 @@ DB_ENV-&gt;set_lk_detect(DB_ENV *dbenv, u_int32_t detect);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1676893"></a>See Also</h3>
+              <h3 class="title"><a id="id1675229"></a>See Also</h3>
             </div>
           </div>
         </div>

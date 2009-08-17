@@ -75,7 +75,7 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		ret = __db_open(tdbp, ip, txn, fname, dname, DB_UNKNOWN,
 		     flags &  ~(DB_TRUNCATE|DB_CREATE), mode, meta_pgno);
 		if (ret == 0)
-			ret = __memp_ftruncate(tdbp->mpf, ip, 0, 0);
+			ret = __memp_ftruncate(tdbp->mpf, txn, ip, 0, 0);
 		(void)__db_close(tdbp, txn, DB_NOSYNC);
 		if (ret != 0 && ret != ENOENT)
 			goto err;

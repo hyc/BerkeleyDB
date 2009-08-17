@@ -39,6 +39,7 @@ public class DatabaseConfig implements Cloneable {
     private int btMinKey = 0;
     private int byteOrder = 0;
     private long cacheSize = 0L;
+    private java.io.File createDir = null;
     private int cacheCount = 0;
     private java.io.OutputStream errorStream = null;
     private String errorPrefix = null;
@@ -46,6 +47,9 @@ public class DatabaseConfig implements Cloneable {
     private int hashNumElements = 0;
     private java.io.OutputStream messageStream = null;
     private int pageSize = 0;
+    private java.io.File[] partitionDirs = null;
+    private DatabaseEntry partitionKeys = null;
+    private int partitionParts = 0;
     private String password = null;
     private CacheFilePriority priority = null;
     private int queueExtentSize = 0;
@@ -74,12 +78,15 @@ public class DatabaseConfig implements Cloneable {
     private boolean transactionNotDurable = false;
     private boolean truncate = false;
 
+    /* Callbacks */
     private java.util.Comparator btreeComparator = null;
+    private BtreeCompressor btreeCompressor = null;
     private BtreePrefixCalculator btreePrefixCalculator = null;
     private java.util.Comparator duplicateComparator = null;
     private FeedbackHandler feedbackHandler = null;
     private ErrorHandler errorHandler = null;
     private MessageHandler messageHandler = null;
+    private PartitionHandler partitionHandler = null;
     private java.util.Comparator hashComparator = null;
     private Hasher hasher = null;
     private RecordNumberAppender recnoAppender = null;
@@ -252,10 +259,24 @@ database has been opened.
     }
 
     /**
+    Set the Btree compression callbacks.
+    */
+    public void setBtreeCompressor(final BtreeCompressor btreeCompressor) {
+    	this.btreeCompressor = btreeCompressor;
+    }
+
+    /**
+    Get the Btree compression callbacks.
+    */
+    public BtreeCompressor getBtreeCompressor() {
+        return btreeCompressor;
+    }
+
+    /**
     Set the Btree prefix callback.  The prefix callback is used to determine
     the amount by which keys stored on the Btree internal pages can be
     safely truncated without losing their uniqueness.  See the
-    <a href="{@docRoot}/../ref/am_conf/bt_prefix.html" target="_top">Btree prefix
+    <a href="{@docRoot}/../programmer_reference/bt_conf.html#am_conf_bt_prefix" target="_top">Btree prefix
     comparison</a> section of the Berkeley DB Reference Guide for more
     details about how this works.  The usefulness of this is data-dependent,
     but can produce significantly reduced tree sizes and search times in
@@ -329,6 +350,33 @@ The size of the shared memory buffer pool, that is, the cache.
     */
     public long getCacheSize() {
         return cacheSize;
+    }
+
+    /**
+Specify which directory a database should be created in or looked for.
+<p>
+@param createDir
+The directory will be used to create or locate the database file specified in
+the openDatabase method call. The directory must be one of the directories
+in the environment list specified by EnvironmentConfig.addDataDirectory.
+<p>
+<p>
+@throws DatabaseException if a failure occurs.
+    */
+    public void setCreateDir(final java.io.File createDir) {
+        this.createDir = createDir;
+    }
+
+    /**
+Return the directory a database will/has been created in or looked for.
+<p>
+This method may be called at any time during the life of the application.
+<p>
+@return
+The directory a database will/has been created in or looked for.
+    */
+    public java.io.File getCreateDir() {
+        return this.createDir;
     }
 
     /**
@@ -1115,6 +1163,107 @@ The function to be called if the database environment panics.
     */
     public PanicHandler getPanicHandler() {
         return panicHandler;
+    }
+
+    /**
+    Enable or disable database partitioning, and set the callback that will
+be used for the partitioning.
+<p>
+This method may only be called before opening a database.
+<p>
+@param parts
+The number of partitions that will be created.
+<p>
+@param partitionHandler
+The function to be called to determine which partition a key resides in.
+    */
+    public void setPartitionByCallback(int parts, 
+        final PartitionHandler partitionHandler) {
+        this.partitionParts = parts;
+        this.partitionHandler = partitionHandler;
+    }
+
+    /**
+    Enable or disable database partitioning, and set key ranges that will be
+    used for the partitioning.
+<p>
+This method may only be called before opening a database.
+<p>
+@param parts
+The number of partitions that will be created.
+<p>
+@param keys
+A MultipleDatabaseEntry that contains the boundary keys for partitioning.
+    */
+    public void setPartitionByRange(int parts, MultipleDataEntry keys) {
+        this.partitionParts = parts;
+        this.partitionKeys = keys;
+    }
+
+    /**
+Return the function to be called to determine which partition a key resides in.
+<p>
+This method may be called at any time during the life of the application.
+<p>
+@return
+The function to be called to determine which partition a key resides in.
+    */
+    public PartitionHandler getPartitionHandler() {
+        return partitionHandler;
+    }
+
+    /**
+Return the number of partitions the database is configured for.
+<p>
+This method may be called at any time during the life of the application.
+<p>
+@return
+The number of partitions the database is configured for.
+    */
+    public int getPartitionParts() {
+        return partitionParts;
+    }
+
+    /**
+Return the array of keys the database is configured to partition with.
+<p>
+This method may be called at any time during the life of the application.
+<p>
+@return
+The array of keys the database is configured to partition with.
+    */
+    public DatabaseEntry getPartitionKeys() {
+        return partitionKeys;
+    }
+
+    /**
+Specify the array of directories the database extents should be created in or
+looked for. If the number of directories is less than the number of partitions,
+the directories will be used in a round robin fasion.
+<p>
+This method may only be called before the database is opened.
+<p>
+@param dirs
+The array of directories the database extents should be created in or looked
+for.
+    */
+    public void setPartitionDirs(final java.io.File[] dirs) {
+    	partitionDirs = dirs;
+    }
+
+    /**
+Return the array of directories the database extents should be created in or
+looked for. If the number of directories is less than the number of partitions,
+the directories will be used in a round robin fasion.
+<p>
+This method may be called at any time during the life of the application.
+<p>
+@return
+The array of directories the database extents should be created in or looked
+for.
+    */
+    public java.io.File[] getPartitionDirs() {
+    	return partitionDirs;
     }
 
     /**
@@ -1994,6 +2143,9 @@ database has been opened.
         if ((cacheSize != oldConfig.cacheSize ||
             cacheCount != oldConfig.cacheCount) && db.getPrivateDbEnv())
             db.set_cachesize(cacheSize, cacheCount);
+        if (createDir != oldConfig.createDir && createDir != null &&
+            !createDir.equals(oldConfig.createDir))
+            db.set_create_dir(createDir.toString());
         if (errorStream != oldConfig.errorStream)
             db.set_error_stream(errorStream);
         if (errorPrefix != oldConfig.errorPrefix)
@@ -2006,6 +2158,14 @@ database has been opened.
             db.set_message_stream(messageStream);
         if (pageSize != oldConfig.pageSize)
             db.set_pagesize(pageSize);
+
+        if (partitionDirs != null &&
+            partitionDirs != oldConfig.partitionDirs) {
+            String[] partitionDirArray = new String[partitionDirs.length];
+            for (int i = 0; i < partitionDirArray.length; i++)
+                partitionDirArray[i] = partitionDirs[i].toString();
+            db.set_partition_dirs(partitionDirArray);
+        }
         if (password != oldConfig.password && db.getPrivateDbEnv())
             db.set_encrypt(password, DbConstants.DB_ENCRYPT_AES);
         if (priority != oldConfig.priority)
@@ -2024,6 +2184,8 @@ database has been opened.
 
         if (btreeComparator != oldConfig.btreeComparator)
             db.set_bt_compare(btreeComparator);
+        if (btreeCompressor != oldConfig.btreeCompressor)
+            db.set_bt_compress(btreeCompressor, btreeCompressor);
         if (btreePrefixCalculator != oldConfig.btreePrefixCalculator)
             db.set_bt_prefix(btreePrefixCalculator);
         if (duplicateComparator != oldConfig.duplicateComparator)
@@ -2038,6 +2200,10 @@ database has been opened.
             db.set_h_hash(hasher);
         if (messageHandler != oldConfig.messageHandler)
             db.set_msgcall(messageHandler);
+        if (partitionHandler != oldConfig.partitionHandler ||
+            partitionKeys != oldConfig.partitionKeys ||
+            partitionParts != oldConfig.partitionParts)
+            db.set_partition(partitionParts, partitionKeys, partitionHandler);
         if (recnoAppender != oldConfig.recnoAppender)
             db.set_append_recno(recnoAppender);
         if (panicHandler != oldConfig.panicHandler)
@@ -2101,8 +2267,18 @@ database has been opened.
                 new java.io.File(db.get_re_source());
         }
         transactional = db.get_transactional();
+        createDir = (db.get_create_dir() == null) ? null:
+            new java.io.File(db.get_create_dir());
+
+        String[] partitionDirArray = db.get_partition_dirs();
+        if (partitionDirArray == null)
+            partitionDirArray = new String[0];
+        partitionDirs = new java.io.File[partitionDirArray.length];
+        for (int i = 0; i < partitionDirArray.length; i++)
+            partitionDirs[i] = new java.io.File(partitionDirArray[i]);
 
         btreeComparator = db.get_bt_compare();
+        btreeCompressor = db.get_bt_compress();
         btreePrefixCalculator = db.get_bt_prefix();
         duplicateComparator = db.get_dup_compare();
         feedbackHandler = db.get_feedback();
@@ -2110,6 +2286,9 @@ database has been opened.
         hashComparator = db.get_h_compare();
         hasher = db.get_h_hash();
         messageHandler = db.get_msgcall();
+        partitionParts = db.get_partition_parts();
+        partitionKeys = db.get_partition_keys();
+        partitionHandler = db.get_partition_callback();
         recnoAppender = db.get_append_recno();
         panicHandler = db.get_paniccall();
     }

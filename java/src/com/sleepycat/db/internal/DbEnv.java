@@ -322,6 +322,8 @@ public class DbEnv {
 
   public void set_cache_max(long bytes) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_cache_max(swigCPtr, this, bytes); }
 
+  public void set_create_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_create_dir(swigCPtr, this, dir); }
+
   public void set_data_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_data_dir(swigCPtr, this, dir); }
 
   public void set_intermediate_dir_mode(String mode) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_intermediate_dir_mode(swigCPtr, this, mode); }
@@ -341,6 +343,10 @@ public class DbEnv {
   public void set_mp_max_write(int maxwrite, long maxwrite_sleep) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_mp_max_write(swigCPtr, this, maxwrite, maxwrite_sleep); }
 
   public void set_mp_mmapsize(long mp_mmapsize) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_mp_mmapsize(swigCPtr, this, mp_mmapsize); }
+
+  public void set_mp_pagesize(long mp_pagesize) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_mp_pagesize(swigCPtr, this, mp_pagesize); }
+
+  public void set_mp_tablesize(long mp_tablesize) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_mp_tablesize(swigCPtr, this, mp_tablesize); }
 
   public void set_msgcall(com.sleepycat.db.MessageHandler db_msgcall_fcn) /* no exception */ {
     db_javaJNI.DbEnv_set_msgcall(swigCPtr, this,  (message_handler = db_msgcall_fcn) != null );
@@ -376,6 +382,8 @@ public class DbEnv {
 
   public int get_lk_max_objects() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_lk_max_objects(swigCPtr, this); }
 
+  public int get_lk_partitions() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_lk_partitions(swigCPtr, this); }
+
   public int lock_detect(int flags, int atype) throws com.sleepycat.db.DatabaseException {
     return db_javaJNI.DbEnv_lock_detect(swigCPtr, this, flags, atype);
   }
@@ -402,6 +410,8 @@ public class DbEnv {
   public void set_lk_max_locks(int max) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_lk_max_locks(swigCPtr, this, max); }
 
   public void set_lk_max_objects(int max) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_lk_max_objects(swigCPtr, this, max); }
+
+  public void set_lk_partitions(int partitions) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_lk_partitions(swigCPtr, this, partitions); }
 
   public int get_lg_bsize() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_lg_bsize(swigCPtr, this); }
 
@@ -466,6 +476,10 @@ public class DbEnv {
     return db_javaJNI.DbEnv_get_cache_max(swigCPtr, this);
   }
 
+  public String get_create_dir() throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.DbEnv_get_create_dir(swigCPtr, this);
+  }
+
   public int get_mp_max_openfd() throws com.sleepycat.db.DatabaseException {
     return db_javaJNI.DbEnv_get_mp_max_openfd(swigCPtr, this);
   }
@@ -478,9 +492,19 @@ public class DbEnv {
 
   public long get_mp_mmapsize() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_mp_mmapsize(swigCPtr, this); }
 
+  public int get_mp_pagesize() throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.DbEnv_get_mp_pagesize(swigCPtr, this);
+  }
+
+  public int get_mp_tablesize() throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.DbEnv_get_mp_tablesize(swigCPtr, this);
+  }
+
   public com.sleepycat.db.CacheStats memp_stat(int flags) throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_memp_stat(swigCPtr, this, flags); }
 
   public com.sleepycat.db.CacheFileStats[] memp_fstat(int flags) throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_memp_fstat(swigCPtr, this, flags); }
+
+  public void memp_sync(com.sleepycat.db.LogSequenceNumber lsn) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_memp_sync(swigCPtr, this, lsn); }
 
   public int memp_trickle(int percent) throws com.sleepycat.db.DatabaseException {
     return db_javaJNI.DbEnv_memp_trickle(swigCPtr, this, percent);

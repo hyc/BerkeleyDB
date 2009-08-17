@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ */
+
 #include <sys/types.h>
 
 #include <ctype.h>

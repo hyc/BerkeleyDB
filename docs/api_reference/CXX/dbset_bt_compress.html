@@ -87,7 +87,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644454"></a>Parameters</h3>
+              <h3 class="title"><a id="id1643665"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1644459"></a>bt_compress_fcn</h4>
+                <h4 class="title"><a id="id1643670"></a>bt_compress_fcn</h4>
               </div>
             </div>
           </div>
@@ -185,7 +185,6 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
                         returned by
                         <span class="bold"><strong>dest-&gt;get_ulen()</strong></span>),
                     </span>
-                   <span class="bold"><strong>dest-&gt;get_ulen()</strong></span>),
                    the function should identify the required buffer size in 
                     
                    <span class="bold"><strong>dest-&gt;set_size()</strong></span> 
@@ -196,7 +195,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1644691"></a>bt_decompress_fcn</h4>
+                <h4 class="title"><a id="id1644084"></a>bt_decompress_fcn</h4>
               </div>
             </div>
           </div>
@@ -282,6 +281,26 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
                    The <span class="bold"><strong>bt_decompress_fcn</strong></span>
                    function must return 0 on success and a non-zero value
                    on failure.
+                   If the decompressed data cannot fit in
+                    
+                   <span class="bold"><strong>key-&gt;set_data()</strong></span> 
+                   or
+                    
+                   <span class="bold"><strong>data-&gt;set_data()</strong></span> 
+                   (the size of which is
+                   
+                   <span>
+                       returned by the <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a>'s
+                        <span class="bold"><strong>get_ulen()</strong></span> method),
+                    </span>
+                   the function should identify the required buffer size 
+                   
+                   <span>
+                       using the <a class="link" href="dbt.html" title="Chapter 4.  The Dbt Handle">Dbt</a>'s
+                        <span class="bold"><strong>set_size()</strong></span> 
+                        method
+                    </span>
+                   and return <code class="literal">DB_BUFFER_SMALL</code>.
            </p>
         </div>
       </div>
@@ -289,7 +308,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644844"></a>Errors</h3>
+              <h3 class="title"><a id="id1644331"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -297,7 +316,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
                         The <code class="methodname">Db::set_bt_compress()</code> <span>
             
             <span>
-                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6.  The DbException Class">DbException</a> 
+                method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
                 exception, encapsulating one of the following non-zero errors, or return one
                 of the following non-zero errors:
             </span>
@@ -307,7 +326,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1645164"></a>EINVAL</h4>
+                <h4 class="title"><a id="id1644419"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -321,7 +340,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644460"></a>Class</h3>
+              <h3 class="title"><a id="id1644054"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -333,7 +352,7 @@ Db::set_bt_compress(bt_compress_fcn_type bt_compress_fcn,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1644598"></a>See Also</h3>
+              <h3 class="title"><a id="id1643820"></a>See Also</h3>
             </div>
           </div>
         </div>

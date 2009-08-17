@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,19 +29,19 @@ namespace BerkeleyDB {
         /// <summary>
         /// Pages created in the cache. 
         /// </summary>
-        public long PagesCreatedInCache { get { return st.st_page_create; } }
+        public ulong PagesCreatedInCache { get { return st.st_page_create; } }
         /// <summary>
         /// Pages found in the cache. 
         /// </summary>
-        public long PagesInCache { get { return st.st_cache_hit; } }
+        public ulong PagesInCache { get { return st.st_cache_hit; } }
         /// <summary>
         /// Pages not found in the cache. 
         /// </summary>
-        public long PagesNotInCache { get { return st.st_cache_miss; } }
+        public ulong PagesNotInCache { get { return st.st_cache_miss; } }
         /// <summary>
         /// Pages read in. 
         /// </summary>
-        public long PagesRead { get { return st.st_page_in; } }
+        public ulong PagesRead { get { return st.st_page_in; } }
         /// <summary>
         /// Page size. 
         /// </summary>
@@ -43,6 +49,6 @@ namespace BerkeleyDB {
         /// <summary>
         /// Pages written out. 
         /// </summary>
-        public long PagesWritten { get { return st.st_page_out; } }
+        public ulong PagesWritten { get { return st.st_page_out; } }
     }
 }

@@ -13,7 +13,11 @@ namespace BerkeleyDB.Internal {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int BDB_CompareDelegate(IntPtr db, IntPtr dbt1, IntPtr dbt2);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int BDB_CompressDelegate(IntPtr db, IntPtr prevKey, IntPtr prevData, IntPtr key, IntPtr data, IntPtr dest);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void BDB_DbFeedbackDelegate(IntPtr db, int opcode, int percent);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int BDB_DecompressDelegate(IntPtr db, IntPtr prevKey, IntPtr prevData, IntPtr compressed, IntPtr destKey, IntPtr destData);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void BDB_EnvFeedbackDelegate(IntPtr db, int opcode, int percent);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -29,7 +33,7 @@ namespace BerkeleyDB.Internal {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int BDB_RepTransportDelegate(IntPtr dbenv, IntPtr control, IntPtr rec, IntPtr lsnp, int envid, uint flags);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void BDB_ThreadIDDelegate(IntPtr dbenv, ref int pid, ref uint tid);
+    internal delegate void BDB_ThreadIDDelegate(IntPtr dbenv, IntPtr pid, IntPtr tid);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate string BDB_ThreadNameDelegate(IntPtr dbenv, int pid, uint tid, ref string buf);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

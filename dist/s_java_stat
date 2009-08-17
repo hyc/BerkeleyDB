@@ -26,6 +26,7 @@ jclass()
 	cat > $s <<EOF
 /struct __db_$1 {/,/^}/{
 	/__db_$1/d
+	/CONFIG_TEST/,/#endif/d
 	/;/!d
 	/^}/d
 	/db_threadid_t/d
@@ -127,6 +128,7 @@ jclass_jni()
 	cat > $s <<EOF
 /struct __db_$1 {/,/^}/{
 	/__db_$1/d
+	/CONFIG_TEST/,/#endif/d
 	/;/!d
 	/^}/d
 	/db_threadid_t/d
@@ -173,6 +175,7 @@ jni_fieldid_decls()
 	cat > $s <<EOF
 /struct __db_$1 {/,/^}/{
 	/__db_$1/d
+	/CONFIG_TEST/,/#endif/d
 	/;/!d
 	/^}/d
 	/db_threadid_t/d
@@ -215,6 +218,7 @@ jni_fieldids()
 	cat > $s <<EOF
 /struct __db_$1 {/,/^}/{
 	/__db_$1/d
+	/CONFIG_TEST/,/#endif/d
 	/;/!d
 	/^}/d
 	/db_threadid_t/d
@@ -258,6 +262,7 @@ jclass_toString()
 	cat > $s <<EOF
 /struct __db_$1 {/,/^}/{
 	/__db_$1/d
+	/CONFIG_TEST/,/#endif/d
 	/;/!d
 	/^}/d
 	/db_threadid_t/d

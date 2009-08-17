@@ -1,5 +1,12 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using BerkeleyDB.Internal;
 
@@ -9,11 +16,15 @@ namespace BerkeleyDB {
     /// representation of a sorted, balanced tree structure. 
     /// </summary>
     public class BTreeDatabase : Database {
+        private BTreeCompressDelegate compressHandler;
+        private BTreeDecompressDelegate decompressHandler;
         private EntryComparisonDelegate compareHandler, prefixCompareHandler;
         private EntryComparisonDelegate dupCompareHandler;
         private BDB_CompareDelegate doCompareRef;
         private BDB_CompareDelegate doPrefixCompareRef;
         private BDB_CompareDelegate doDupCompareRef;
+        private BDB_CompressDelegate doCompressRef;
+        private BDB_DecompressDelegate doDecompressRef;
 
         #region Constructors
         private BTreeDatabase(DatabaseEnvironment env, uint flags)
@@ -40,6 +51,20 @@ namespace BerkeleyDB {
 
             if (cfg.minkeysIsSet)
                 db.set_bt_minkey(cfg.MinKeysPerPage);
+                
+            if (cfg.compressionIsSet) {
+                Compress = cfg.Compress;
+                Decompress = cfg.Decompress;
+                if (Compress == null)
+                    doCompressRef = null;
+                else
+                    doCompressRef = new BDB_CompressDelegate(doCompress);
+                if (Decompress == null)
+                    doDecompressRef = null;
+                else
+                    doDecompressRef = new BDB_DecompressDelegate(doDecompress);
+                db.set_bt_compress(doCompressRef, doDecompressRef);
+            }
         }
 
         /// <summary>
@@ -218,6 +243,60 @@ namespace BerkeleyDB {
             return btdb.Compare(
                 DatabaseEntry.fromDBT(dbt1), DatabaseEntry.fromDBT(dbt2));
         }
+        private static int doCompress(IntPtr dbp, IntPtr prevKeyp,
+            IntPtr prevDatap, IntPtr keyp, IntPtr datap, IntPtr destp) {
+            DB db = new DB(dbp, false);
+            DatabaseEntry prevKey =
+                DatabaseEntry.fromDBT(new DBT(prevKeyp, false));
+            DatabaseEntry prevData =
+                DatabaseEntry.fromDBT(new DBT(prevDatap, false));
+            DatabaseEntry key = DatabaseEntry.fromDBT(new DBT(keyp, false));
+            DatabaseEntry data = DatabaseEntry.fromDBT(new DBT(datap, false));
+            DBT dest = new DBT(destp, false);
+            BTreeDatabase btdb = (BTreeDatabase)(db.api_internal);
+            byte[] arr = new byte[(int)dest.ulen];
+            int len;
+            try {
+                if (btdb.Compress(prevKey, prevData, key, data, ref arr, out len)) {
+                    Marshal.Copy(arr, 0, dest.dataPtr, len);
+                    dest.size = (uint)len;
+                    return 0;
+                } else {
+                    return DbConstants.DB_BUFFER_SMALL;
+                }
+            } catch (Exception) {
+                return -1;
+            }
+        }
+        private static int doDecompress(IntPtr dbp, IntPtr prevKeyp,
+            IntPtr prevDatap, IntPtr cmpp, IntPtr destKeyp, IntPtr destDatap) {
+            DB db = new DB(dbp, false);
+            DatabaseEntry prevKey =
+                DatabaseEntry.fromDBT(new DBT(prevKeyp, false));
+            DatabaseEntry prevData =
+                DatabaseEntry.fromDBT(new DBT(prevDatap, false));
+            DBT compressed = new DBT(cmpp, false);
+            DBT destKey = new DBT(destKeyp, false);
+            DBT destData = new DBT(destDatap, false);
+            BTreeDatabase btdb = (BTreeDatabase)(db.api_internal);
+            uint size;
+            try {
+                KeyValuePair<DatabaseEntry, DatabaseEntry> kvp = btdb.Decompress(prevKey, prevData, compressed.data, out size);
+                int keylen = kvp.Key.Data.Length;
+                int datalen = kvp.Value.Data.Length;
+                destKey.size = (uint)keylen;
+                destData.size = (uint)datalen;
+                if (keylen > destKey.ulen ||
+                    datalen > destData.ulen)
+                    return DbConstants.DB_BUFFER_SMALL;
+                Marshal.Copy(kvp.Key.Data, 0, destKey.dataPtr, keylen);
+                Marshal.Copy(kvp.Value.Data, 0, destData.dataPtr, datalen);
+                compressed.size = size;
+                return 0;
+            } catch (Exception) {
+                return -1;
+            }
+        }
         private static int doDupCompare(
             IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p) {
             DB db = new DB(dbp, false);
@@ -258,6 +337,24 @@ namespace BerkeleyDB {
                 }
                 compareHandler = value;
             }
+        }
+
+        /// <summary>
+        /// The compression function used to store key/data pairs in the
+        /// database.
+        /// </summary>
+        public BTreeCompressDelegate Compress {
+            get { return compressHandler; }
+            private set { compressHandler = value; }
+        }
+
+        /// <summary>
+        /// The decompression function used to retrieve key/data pairs from the
+        /// database.
+        /// </summary>
+        public BTreeDecompressDelegate Decompress {
+            get { return decompressHandler; }
+            private set { decompressHandler = value; }
         }
 
         /// <summary>
@@ -405,11 +502,8 @@ namespace BerkeleyDB {
             if (cdata.returnEnd)
                 end = new DatabaseEntry();
 
-            db.compact(Transaction.getDB_TXN(txn),
-                DatabaseEntry.getDBT(cdata.start),
-                DatabaseEntry.getDBT(cdata.stop),
-                CompactConfig.getDB_COMPACT(cdata),
-                cdata.flags, DatabaseEntry.getDBT(end));
+            db.compact(Transaction.getDB_TXN(txn), cdata.start, cdata.stop,
+                CompactConfig.getDB_COMPACT(cdata), cdata.flags, end);
             return new CompactData(CompactConfig.getDB_COMPACT(cdata), end);
         }
 
@@ -658,8 +752,7 @@ namespace BerkeleyDB {
         /// </returns>
         public KeyRange KeyRange(DatabaseEntry key, Transaction txn) {
             DB_KEY_RANGE range = new DB_KEY_RANGE();
-            db.key_range(Transaction.getDB_TXN(txn),
-                DatabaseEntry.getDBT(key), range, 0);
+            db.key_range(Transaction.getDB_TXN(txn), key, range, 0);
             return new KeyRange(range);
         }
 

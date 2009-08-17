@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -641,8 +647,7 @@ namespace BerkeleyDB {
         /// <param name="flags">Flags to pass to DB->put</param>
         protected void Put(DatabaseEntry key,
             DatabaseEntry data, Transaction txn, uint flags) {
-            db.put(Transaction.getDB_TXN(txn),
-                DatabaseEntry.getDBT(key), DatabaseEntry.getDBT(data), flags);
+            db.put(Transaction.getDB_TXN(txn), key, data, flags);
         }
 
         /// <summary>

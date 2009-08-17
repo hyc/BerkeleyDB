@@ -94,6 +94,7 @@ fi
 
 # Choose the MS runtime libraries to use.
 if [ -e "/cygdrive/c/Program Files/Microsoft Visual Studio 8/Common7/Tools/vsvars32.bat" ]; then
+    MSVC_ROOT_DIR="/cygdrive/c/Program Files/Microsoft Visual Studio 8/"
     PRODUCT_MSVC_VERSION=80
 fi
 
@@ -124,7 +125,8 @@ if [ "$OPT_USEBUILD" = '' ]; then
         ${PRODUCT_SUB_BLDDIR}/installed_include \
         ${PRODUCT_SUB_BLDDIR}/dbinc/* \
         ${PRODUCT_SUB_BLDDIR}/dbinc_auto/* \
-        ${PRODUCT_SUB_BLDDIR}/build_windows/*.h
+        ${PRODUCT_SUB_BLDDIR}/build_windows/*.h \
+        ${PRODUCT_SUB_BLDDIR}/stl/*.h
     CreateDbPerl
 fi
 

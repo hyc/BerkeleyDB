@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="apiReference.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ Standard Template Library API Reference" />
-    <link rel="up" href="db_vector.html" title="Chapter 4.  db_vector" />
+    <link rel="up" href="db_vector.html" title="Chapter 4.  Db_vector" />
     <link rel="prev" href="stldb_vectorcapacity.html" title="capacity" />
     <link rel="next" href="stldb_vectorat.html" title="at" />
   </head>
@@ -22,7 +22,7 @@ operator[]
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="stldb_vectorcapacity.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 4. 
- db_vector  </th>
+ Db_vector  </th>
           <td width="20%" align="right"> <a accesskey="n" href="stldb_vectorat.html">Next</a></td>
         </tr>
       </table>
@@ -59,7 +59,7 @@ reference operator[](index_type n)
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551738"></a>
+                <h4 class="title"><a id="id1546954"></a>
 Parameters</h4>
               </div>
             </div>
@@ -68,7 +68,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1551779"></a>
+                  <h5 class="title"><a id="id1546947"></a>
  n </h5>
                 </div>
               </div>
@@ -80,26 +80,12 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551864"></a>
+                <h4 class="title"><a id="id1547031"></a>
 Return Value</h4>
               </div>
             </div>
           </div>
           <p>The reference to the element at specified position. </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1551788"></a>
-See Also</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-    </p>
-          <p><a class="ulink" href="http://www.cplusplus.com/reference/stl/vector/operator" target="_top">http://www.cplusplus.com/reference/stl/vector/operator</a>[].html </p>
-          <p>   </p>
         </div>
         <pre class="programlisting">
 const_reference operator[](index_type n) const
@@ -113,7 +99,7 @@ const_reference operator[](index_type n) const
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551737"></a>
+                <h4 class="title"><a id="id1547028"></a>
 Parameters</h4>
               </div>
             </div>
@@ -122,7 +108,7 @@ Parameters</h4>
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="id1551816"></a>
+                  <h5 class="title"><a id="id1546981"></a>
  n </h5>
                 </div>
               </div>
@@ -134,39 +120,25 @@ Parameters</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id1551698"></a>
+                <h4 class="title"><a id="id1546924"></a>
 Return Value</h4>
               </div>
             </div>
           </div>
           <p>The const reference to the element at specified position. </p>
         </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="id1551794"></a>
-See Also</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-    </p>
-          <p><a class="ulink" href="http://www.cplusplus.com/reference/stl/vector/operator" target="_top">http://www.cplusplus.com/reference/stl/vector/operator</a>[].html </p>
-          <p>   </p>
-        </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1550435"></a>
+              <h3 class="title"><a id="id1546925"></a>
 Group: Element access functions.</h3>
             </div>
           </div>
         </div>
         <p>The operator[] and <a class="link" href="stldb_vectorat.html" title="at">at()</a>
- only come from std::vector and std::deque, If you are using <a class="link" href="db_vector.html" title="Chapter 4.  db_vector">db_vector</a>
+ only come from std::vector and std::deque, If you are using <a class="link" href="db_vector.html" title="Chapter 4.  Db_vector">db_vector</a>
  as std::list, you don't have to set DB_RENUMBER flag to the backing database handle, and you get better performance, but at the same time you can't use these functions.</p>
         <p>Otherwise if you have set the DB_RENUMBER flag to the backing database handle, you can use this function though it is an std::list equivalent. </p>
       </div>
@@ -174,13 +146,13 @@ Group: Element access functions.</h3>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1551944"></a>
+              <h3 class="title"><a id="id1546820"></a>
 Class</h3>
             </div>
           </div>
         </div>
         <p>
-  <a class="link" href="db_vector.html" title="Chapter 4.  db_vector">
+  <a class="link" href="db_vector.html" title="Chapter 4.  Db_vector">
   db_vector</a>
      </p>
       </div>

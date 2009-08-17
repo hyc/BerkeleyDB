@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -67,7 +73,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Overflow writes to the log. 
         /// </summary>
-        public long OverflowWrites { get { return st.st_wcount_fill; } }
+        public ulong OverflowWrites { get { return st.st_wcount_fill; } }
         /// <summary>
         /// Log file permissions mode. 
         /// </summary>
@@ -75,31 +81,31 @@ namespace BerkeleyDB {
         /// <summary>
         /// Total I/O reads from the log. 
         /// </summary>
-        public long Reads { get { return st.st_rcount; } }
+        public ulong Reads { get { return st.st_rcount; } }
         /// <summary>
         /// Records entered into the log. 
         /// </summary>
-        public long Records { get { return st.st_record; } }
+        public ulong Records { get { return st.st_record; } }
         /// <summary>
         /// Region lock granted without wait. 
         /// </summary>
-        public long RegionLockNoWait { get { return st.st_region_nowait; } }
+        public ulong RegionLockNoWait { get { return st.st_region_nowait; } }
         /// <summary>
         /// Region lock granted after wait. 
         /// </summary>
-        public long RegionLockWait { get { return st.st_region_wait; } }
+        public ulong RegionLockWait { get { return st.st_region_wait; } }
         /// <summary>
         /// Region size. 
         /// </summary>
-        public uint RegionSize { get { return st.st_regsize; } }
+        public ulong RegionSize { get { return (ulong)st.st_regsize.ToInt64(); } }
         /// <summary>
         /// Total syncs to the log. 
         /// </summary>
-        public long Syncs { get { return st.st_scount; } }
+        public ulong Syncs { get { return st.st_scount; } }
         /// <summary>
         /// Total I/O writes to the log. 
         /// </summary>
-        public long Writes { get { return st.st_wcount; } }
+        public ulong Writes { get { return st.st_wcount; } }
         /// <summary>
         /// Log file version number. 
         /// </summary>

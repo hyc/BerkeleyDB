@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 10.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_cursor.html" title="Transactional cursors" />
     <link rel="next" href="transapp_admin.html" title="Environment infrastructure" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_cursor.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 10. 
+          <th width="60%" align="center">Chapter 11. 
 		Berkeley DB Transactional Data Store Applications
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_admin.html">Next</a></td>
@@ -39,7 +39,7 @@
 allow an application to decompose a large or long-running transaction
 into smaller units that may be independently aborted.</p>
       <p>Normally, when beginning a transaction, the application will pass a NULL
-value for the parent argument to <a href="../api_reference/C/txnbegin.html" class="olink">DB_TXN-&gt;begin()</a>.  If, however, the
+value for the parent argument to <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>.  If, however, the
 parent argument is a <a href="../api_reference/C/txn.html" class="olink">TXN</a> handle, the newly created transaction
 will be treated as a nested transaction within the parent.  Transactions
 may nest arbitrarily deeply.  For the purposes of this discussion,

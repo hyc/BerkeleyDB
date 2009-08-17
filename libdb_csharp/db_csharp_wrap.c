@@ -237,6 +237,9 @@ SWIGINTERN int DB_set_append_recno(DB *self,int (*callback)(DB *,DBT *,db_recno_
 SWIGINTERN int DB_set_bt_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *)){
 		return self->set_bt_compare(self, callback);
 	}
+SWIGINTERN int DB_set_bt_compress(DB *self,int (*compress)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *),int (*decompress)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *)){
+		return self->set_bt_compress(self, compress, decompress);
+	}
 SWIGINTERN int DB_get_bt_minkey(DB *self,u_int32_t *bt_minkey){
 		return self->get_bt_minkey(self, bt_minkey);
 	}
@@ -521,7 +524,10 @@ SWIGINTERN char **DB_ENV_log_archive(DB_ENV *self,u_int32_t flags,int *err,int *
 		return list;
 	}
 SWIGINTERN int DB_ENV_log_file(DB_ENV *self,DB_LSN const *lsn,char *namep,size_t len){
-		return self->log_file(self, lsn, namep, len);
+		int ret = self->log_file(self, lsn, namep, len);
+		if (ret == EINVAL)
+			return DB_BUFFER_SMALL;
+		return ret;
 	}
 SWIGINTERN int DB_ENV_log_flush(DB_ENV *self,DB_LSN const *lsn){
 		return self->log_flush(self, lsn);
@@ -639,10 +645,11 @@ SWIGINTERN int DB_ENV_repmgr_get_ack_policy(DB_ENV *self,int *ack_policy){
 SWIGINTERN int DB_ENV_repmgr_set_local_site(DB_ENV *self,char const *host,u_int port,u_int32_t flags){
 		return self->repmgr_set_local_site(self, host, port, flags);
 	}
-SWIGINTERN DB_REPMGR_SITE *DB_ENV_repmgr_site_list(DB_ENV *self,u_int *countp,int *err){
+SWIGINTERN DB_REPMGR_SITE *DB_ENV_repmgr_site_list(DB_ENV *self,u_int *countp,u_int32_t *sizep,int *err){
 		DB_REPMGR_SITE *listp = NULL;
 	
 		*err = self->repmgr_site_list(self, countp, &listp);
+		*sizep = sizeof(DB_REPMGR_SITE);
 		return listp;
 	}
 SWIGINTERN int DB_ENV_repmgr_start(DB_ENV *self,int nthreads,u_int32_t flags){
@@ -1036,9 +1043,10 @@ SWIGINTERN int DB_ENV_txn_checkpoint(DB_ENV *self,u_int32_t kbyte,u_int32_t min,
 SWIGINTERN int DB_ENV_txn_recover(DB_ENV *self,DB_PREPLIST preplist[],u_int32_t count,u_int32_t *retp,u_int32_t flags){
 		return self->txn_recover(self, preplist, count, retp, flags);
 	}
-SWIGINTERN void *DB_ENV_txn_stat(DB_ENV *self,u_int32_t flags,int *err){
+SWIGINTERN void *DB_ENV_txn_stat(DB_ENV *self,u_int32_t flags,u_int32_t *size,int *err){
 		DB_TXN_STAT *ret;
 		*err = self->txn_stat(self, &ret, flags);
+		*size = sizeof(DB_TXN_ACTIVE);
 		return (void *)ret;
 	}
 SWIGINTERN int DB_ENV_txn_stat_print(DB_ENV *self,u_int32_t flags){
@@ -1864,6 +1872,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_bt_compare(void * jarg1, void * jarg2) 
   arg1 = (DB *)jarg1; 
   arg2 = (int (*)(DB *,DBT const *,DBT const *))jarg2; 
   result = (int)DB_set_bt_compare(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_bt_compress(void * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  int (*arg2)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *) = (int (*)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *)) 0 ;
+  int (*arg3)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *) = (int (*)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *)) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (int (*)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *))jarg2; 
+  arg3 = (int (*)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *))jarg3; 
+  result = (int)DB_set_bt_compress(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
@@ -3874,17 +3898,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_repmgr_set_local_site(void * jarg1, cha
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_DB_ENV_repmgr_site_list(void * jarg1, void * jarg2, void * jarg3) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_DB_ENV_repmgr_site_list(void * jarg1, void * jarg2, void * jarg3, void * jarg4) {
   void * jresult ;
   DB_ENV *arg1 = (DB_ENV *) 0 ;
   u_int *arg2 = (u_int *) 0 ;
-  int *arg3 = (int *) 0 ;
+  u_int32_t *arg3 = (u_int32_t *) 0 ;
+  int *arg4 = (int *) 0 ;
   DB_REPMGR_SITE *result = 0 ;
   
   arg1 = (DB_ENV *)jarg1; 
   arg2 = (u_int *)jarg2; 
-  arg3 = (int *)jarg3; 
-  result = (DB_REPMGR_SITE *)DB_ENV_repmgr_site_list(arg1,arg2,arg3);
+  arg3 = (u_int32_t *)jarg3; 
+  arg4 = (int *)jarg4; 
+  result = (DB_REPMGR_SITE *)DB_ENV_repmgr_site_list(arg1,arg2,arg3,arg4);
   jresult = (void *)result; 
   return jresult;
 }
@@ -5202,17 +5228,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_txn_recover(void * jarg1, void * jarg2,
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_DB_ENV_txn_stat(void * jarg1, unsigned long jarg2, void * jarg3) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_DB_ENV_txn_stat(void * jarg1, unsigned long jarg2, void * jarg3, void * jarg4) {
   void * jresult ;
   DB_ENV *arg1 = (DB_ENV *) 0 ;
   u_int32_t arg2 ;
-  int *arg3 = (int *) 0 ;
+  u_int32_t *arg3 = (u_int32_t *) 0 ;
+  int *arg4 = (int *) 0 ;
   void *result = 0 ;
   
   arg1 = (DB_ENV *)jarg1; 
   arg2 = (u_int32_t)jarg2; 
-  arg3 = (int *)jarg3; 
-  result = (void *)DB_ENV_txn_stat(arg1,arg2,arg3);
+  arg3 = (u_int32_t *)jarg3; 
+  arg4 = (int *)jarg4; 
+  result = (void *)DB_ENV_txn_stat(arg1,arg2,arg3,arg4);
   jresult = (void *)result; 
   return jresult;
 }

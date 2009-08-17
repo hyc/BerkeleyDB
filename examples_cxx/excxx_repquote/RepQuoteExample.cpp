@@ -32,6 +32,9 @@
  * -v (optional; v stands for verbose)
  */
 
+#include <cstdlib>
+#include <cstring>
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -87,7 +90,6 @@ typedef void* thread_exit_status_t;
 
 // Struct used to store information in Db app_private field.
 typedef struct {
-	bool appointed_client_init;
 	bool app_finished;
 	bool in_client_sync;
 	bool is_master;
@@ -248,7 +250,6 @@ public:
 };
 
 RepQuoteExample::RepQuoteExample() : app_config(0), cur_env(0) {
-	app_data.appointed_client_init = 0;
 	app_data.app_finished = 0;
 	app_data.in_client_sync = 0;
 	app_data.is_master = 0; // assume I start out as client
@@ -256,9 +257,6 @@ RepQuoteExample::RepQuoteExample() : app_config(0), cur_env(0) {
 
 void RepQuoteExample::init(RepConfigInfo *config) {
 	app_config = config;
-
-	if (app_config->start_policy == DB_REP_CLIENT)
-		app_data.appointed_client_init = 1;
 
 	cur_env.set_app_private(&app_data);
 	cur_env.set_errfile(stderr);
@@ -455,24 +453,16 @@ void RepQuoteExample::doloop() {
 		// DB operation.
 		//
 		// Open database with DB_CREATE only if this is a master
-		// database or if we are starting up an appointed client.
-		// After an appointed client has started up, the master
-		// database has been replicated to the client database
-		// and the client database should no longer be opened
-		// with DB_CREATE.
-		//
-		// If the database is a client participating in an election,
-		// it cannot be opened with DB_CREATE unless it becomes the
-		// master.  In this case, the code needs to poll attempts
-		// to open without DB_CREATE until the election is over.
+		// database.  A client database uses polling to attempt
+		// to open the database without DB_CREATE until it is
+		// successful.
 		//
 		// This DB_CREATE polling logic can be simplified under
-		// some circumstances. For example, if the application can
+		// some circumstances.  For example, if the application can
 		// be sure a database is already there, it would never need
 		// to open it with DB_CREATE.
 		//
-		if (!dbh.ensure_open(app_data.is_master || 
-		    app_data.appointed_client_init))
+		if (!dbh.ensure_open(app_data.is_master))
 			continue;
 
 		try {
@@ -540,7 +530,6 @@ void RepQuoteExample::event_callback(DbEnv* dbenv, u_int32_t which, void *info)
 		break;
 	case DB_EVENT_REP_STARTUPDONE:
 		app->in_client_sync = 0;
-		app->appointed_client_init = 0;
 		break;
 	default:
 		dbenv->errx("ignoring event %d", which);

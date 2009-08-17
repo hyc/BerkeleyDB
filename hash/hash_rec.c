@@ -111,7 +111,6 @@ __ham_insdel_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->pagelsn);
-	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 
 	/*
 	 * Two possible things going on:
@@ -549,7 +548,6 @@ __ham_copypage_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->pagelsn);
-	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
 		/* Need to redo update described. */
@@ -697,7 +695,6 @@ __ham_metagroup_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->pagelsn);
-	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
 		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
@@ -709,8 +706,8 @@ __ham_metagroup_recover(env, dbtp, lsnp, op, info)
 			    ip, pagep, DB_PRIORITY_VERY_LOW)) != 0)
 				goto out;
 			pagep = NULL;
-			if ((ret =
-			    __memp_ftruncate(mpf, ip, argp->pgno, 0)) != 0)
+			if ((ret = __memp_ftruncate(mpf, NULL, ip,
+			    argp->pgno, 0)) != 0)
 				goto out;
 		} else {
 			/*
@@ -929,7 +926,7 @@ __ham_groupalloc_recover(env, dbtp, lsnp, op, info)
 			if ((ret = __memp_fput(mpf, ip,
 			    pagep, DB_PRIORITY_VERY_LOW)) != 0)
 				goto out;
-			if ((ret = __memp_ftruncate(mpf,
+			if ((ret = __memp_ftruncate(mpf, NULL,
 			     ip, argp->start_pgno, 0)) != 0)
 				goto out;
 		}
@@ -1299,7 +1296,6 @@ __ham_metagroup_42_recover(env, dbtp, lsnp, op, info)
 	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
 	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->pagelsn);
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->pagelsn);
-	CHECK_ABORT(env, op, cmp_n, &LSN(pagep), lsnp);
 
 	if (cmp_p == 0 && DB_REDO(op)) {
 		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
@@ -1324,7 +1320,6 @@ do_meta:
 	cmp_n = LOG_COMPARE(lsnp, &hcp->hdr->dbmeta.lsn);
 	cmp_p = LOG_COMPARE(&hcp->hdr->dbmeta.lsn, &argp->metalsn);
 	CHECK_LSN(env, op, cmp_p, &hcp->hdr->dbmeta.lsn, &argp->metalsn);
-	CHECK_ABORT(env, op, cmp_n, &hcp->hdr->dbmeta.lsn, lsnp);
 	if (cmp_p == 0 && DB_REDO(op)) {
 		/* Redo the actual updating of bucket counts. */
 		REC_DIRTY(mpf, ip, dbc->priority, &hcp->hdr);

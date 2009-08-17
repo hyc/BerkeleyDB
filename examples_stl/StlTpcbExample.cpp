@@ -15,8 +15,8 @@
 
 #include <iostream>
 
-#include "db_vector.h"
-#include "db_map.h"
+#include "dbstl_vector.h"
+#include "dbstl_map.h"
 
 using std::cout;
 using std::cerr;

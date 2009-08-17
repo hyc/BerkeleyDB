@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="rep.html" title="Chapter 11.  Berkeley DB Replication" />
+    <link rel="up" href="rep.html" title="Chapter 12.  Berkeley DB Replication" />
     <link rel="prev" href="rep_mgrmulti.html" title="Running Replication Manager in multiple processes" />
     <link rel="next" href="rep_mastersync.html" title="Synchronizing with a master" />
   </head>
@@ -19,7 +19,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep_mgrmulti.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 11. 
+          <th width="60%" align="center">Chapter 12. 
 		Berkeley DB Replication
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="rep_mastersync.html">Next</a></td>
@@ -84,7 +84,7 @@ An application knows it has won an election when it receives the
 election finish quickly so the application can continue to service
 updates.  Also, participating sites are already up and can participate.
 However, in the case of restarting a whole group after an administrative
-shut down, it is possible that a slower booting site had later logs than
+shutdown, it is possible that a slower booting site had later logs than
 any other site.  To cover that case, an application would like to give
 the election more time to ensure all sites have a chance to participate.
 Since it is intractable for a starting site to determine which case

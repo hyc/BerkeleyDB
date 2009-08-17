@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2009 Oracle.  All rights reserved.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -29,7 +35,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Maximum file size for mmap. 
         /// </summary>
-        public uint MaxMMapSize { get { return st.st_mmapsize; } }
+        public ulong MaxMMapSize { get { return (ulong)st.st_mmapsize.ToInt64(); } }
         /// <summary>
         /// Maximum number of open fd's. 
         /// </summary>
@@ -53,35 +59,35 @@ namespace BerkeleyDB {
         /// <summary>
         /// Pages found in the cache. 
         /// </summary>
-        public long PagesInCache { get { return st.st_cache_hit; } }
+        public ulong PagesInCache { get { return st.st_cache_hit; } }
         /// <summary>
         /// Pages not found in the cache. 
         /// </summary>
-        public long PagesNotInCache { get { return st.st_cache_miss; } }
+        public ulong PagesNotInCache { get { return st.st_cache_miss; } }
         /// <summary>
         /// Pages created in the cache. 
         /// </summary>
-        public long PagesCreatedInCache { get { return st.st_page_create; } }
+        public ulong PagesCreatedInCache { get { return st.st_page_create; } }
         /// <summary>
         /// Pages read in. 
         /// </summary>
-        public long PagesRead { get { return st.st_page_in; } }
+        public ulong PagesRead { get { return st.st_page_in; } }
         /// <summary>
         /// Pages written out. 
         /// </summary>
-        public long PagesWritten { get { return st.st_page_out; } }
+        public ulong PagesWritten { get { return st.st_page_out; } }
         /// <summary>
         /// Clean pages forced from the cache. 
         /// </summary>
-        public long CleanPagesEvicted { get { return st.st_ro_evict; } }
+        public ulong CleanPagesEvicted { get { return st.st_ro_evict; } }
         /// <summary>
         /// Dirty pages forced from the cache. 
         /// </summary>
-        public long DirtyPagesEvicted { get { return st.st_rw_evict; } }
+        public ulong DirtyPagesEvicted { get { return st.st_rw_evict; } }
         /// <summary>
         /// Pages written by memp_trickle. 
         /// </summary>
-        public long PagesTrickled { get { return st.st_page_trickle; } }
+        public ulong PagesTrickled { get { return st.st_page_trickle; } }
         /// <summary>
         /// Clean pages. 
         /// </summary>
@@ -95,6 +101,10 @@ namespace BerkeleyDB {
         /// </summary>
         public uint HashBuckets { get { return st.st_hash_buckets; } }
         /// <summary>
+        /// Assumed page size.
+        /// </summary>
+        public uint PageSize { get { return st.st_pagesize; } }
+        /// <summary>
         /// Total hash chain searches. 
         /// </summary>
         public uint HashChainSearches { get { return st.st_hash_searches; } }
@@ -105,71 +115,75 @@ namespace BerkeleyDB {
         /// <summary>
         /// Total hash entries searched. 
         /// </summary>
-        public long HashEntriesSearched { get { return st.st_hash_examined; } }
+        public ulong HashEntriesSearched { get { return st.st_hash_examined; } }
         /// <summary>
         /// Hash lock granted with nowait. 
         /// </summary>
-        public long HashLockNoWait { get { return st.st_hash_nowait; } }
+        public ulong HashLockNoWait { get { return st.st_hash_nowait; } }
         /// <summary>
         /// Hash lock granted after wait. 
         /// </summary>
-        public long HashLockWait { get { return st.st_hash_wait; } }
+        public ulong HashLockWait { get { return st.st_hash_wait; } }
         /// <summary>
         /// Max hash lock granted with nowait. 
         /// </summary>
-        public long MaxHashLockNoWait { get { return st.st_hash_max_nowait; } }
+        public ulong MaxHashLockNoWait { get { return st.st_hash_max_nowait; } }
         /// <summary>
         /// Max hash lock granted after wait. 
         /// </summary>
-        public long MaxHashLockWait { get { return st.st_hash_max_wait; } }
+        public ulong MaxHashLockWait { get { return st.st_hash_max_wait; } }
         /// <summary>
         /// Region lock granted with nowait. 
         /// </summary>
-        public long RegionLockNoWait { get { return st.st_region_nowait; } }
+        public ulong RegionLockNoWait { get { return st.st_region_nowait; } }
         /// <summary>
         /// Region lock granted after wait. 
         /// </summary>
-        public long RegionLockWait { get { return st.st_region_wait; } }
+        public ulong RegionLockWait { get { return st.st_region_wait; } }
         /// <summary>
         /// Buffers frozen. 
         /// </summary>
-        public long FrozenBuffers { get { return st.st_mvcc_frozen; } }
+        public ulong FrozenBuffers { get { return st.st_mvcc_frozen; } }
         /// <summary>
         /// Buffers thawed. 
         /// </summary>
-        public long ThawedBuffers { get { return st.st_mvcc_thawed; } }
+        public ulong ThawedBuffers { get { return st.st_mvcc_thawed; } }
         /// <summary>
         /// Frozen buffers freed. 
         /// </summary>
-        public long FrozenBuffersFreed { get { return st.st_mvcc_freed; } }
+        public ulong FrozenBuffersFreed { get { return st.st_mvcc_freed; } }
         /// <summary>
         /// Number of page allocations. 
         /// </summary>
-        public long PageAllocations { get { return st.st_alloc; } }
+        public ulong PageAllocations { get { return st.st_alloc; } }
         /// <summary>
         /// Buckets checked during allocation. 
         /// </summary>
-        public long BucketsCheckedDuringAlloc { get { return st.st_alloc_buckets; } }
+        public ulong BucketsCheckedDuringAlloc { get { return st.st_alloc_buckets; } }
         /// <summary>
         /// Max checked during allocation. 
         /// </summary>
-        public long MaxBucketsCheckedDuringAlloc { get { return st.st_alloc_max_buckets; } }
+        public ulong MaxBucketsCheckedDuringAlloc { get { return st.st_alloc_max_buckets; } }
         /// <summary>
         /// Pages checked during allocation. 
         /// </summary>
-        public long PagesCheckedDuringAlloc { get { return st.st_alloc_pages; } }
+        public ulong PagesCheckedDuringAlloc { get { return st.st_alloc_pages; } }
         /// <summary>
         /// Max checked during allocation. 
         /// </summary>
-        public long MaxPagesCheckedDuringAlloc { get { return st.st_alloc_max_pages; } }
+        public ulong MaxPagesCheckedDuringAlloc { get { return st.st_alloc_max_pages; } }
         /// <summary>
         /// Thread waited on buffer I/O. 
         /// </summary>
-        public long BlockedOperations { get { return st.st_io_wait; } }
+        public ulong BlockedOperations { get { return st.st_io_wait; } }
+        /// <summary>
+        /// Number of times sync interrupted.
+        /// </summary>
+        public ulong SyncInterrupted { get { return st.st_sync_interrupted; } }
         /// <summary>
         /// Region size. 
         /// </summary>
-        public uint RegionSize { get { return st.st_regsize; } }
+        public ulong RegionSize { get { return (ulong)st.st_regsize.ToInt64(); } }
         /// <summary>
         /// Stats for files open in the memory pool
         /// </summary>

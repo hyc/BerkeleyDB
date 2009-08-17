@@ -389,28 +389,17 @@ doloop(dbenv, shared_data)
 			flags = DB_AUTO_COMMIT;
 			/*
 			 * Open database with DB_CREATE only if this is
-			 * a master database or if we are starting up
-			 * an appointed client.  After an appointed
-			 * client has started up, the master database
-			 * has been replicated to the client database
-			 * and the client database should no longer
-			 * be opened with DB_CREATE.
-			 *
-			 * If the database is a client participating
-			 * in an election, it cannot be opened with
-			 * DB_CREATE unless it becomes the master.  In
-			 * this case, the code needs to poll attempts
-			 * to open without DB_CREATE until the election
-			 * is over.
+			 * a master database.  A client database uses
+			 * polling to attempt to open the database without
+			 * DB_CREATE until it is successful. 
 			 *
 			 * This DB_CREATE polling logic can be simplified
-			 * under some circumstances. For example, if the
+			 * under some circumstances.  For example, if the
 			 * application can be sure a database is already
 			 * there, it would never need to open it with
 			 * DB_CREATE.
 			 */
-			if (shared_data->is_master ||
-			    shared_data->appointed_client_init)
+			if (shared_data->is_master)
 				flags |= DB_CREATE;
 			if ((ret = dbp->open(dbp,
 			    NULL, DATABASE, NULL, DB_BTREE, flags, 0)) != 0) {

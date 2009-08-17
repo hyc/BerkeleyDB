@@ -69,13 +69,13 @@ internal class DB_LOCKREQ : IDisposable {
     } 
   }
 
-  internal DBT obj {
+  internal DatabaseEntry obj {
     set {
-      libdb_csharpPINVOKE.DB_LOCKREQ_obj_set(swigCPtr, DBT.getCPtr(value));
+      libdb_csharpPINVOKE.DB_LOCKREQ_obj_set(swigCPtr, DBT.getCPtr(DatabaseEntry.getDBT(value)));
     } 
     get {
       IntPtr cPtr = libdb_csharpPINVOKE.DB_LOCKREQ_obj_get(swigCPtr);
-      DBT ret = (cPtr == IntPtr.Zero) ? null : new DBT(cPtr, false);
+      DatabaseEntry ret = (cPtr == IntPtr.Zero) ? null : DatabaseEntry.fromDBT(new DBT(cPtr, false));
       return ret;
     } 
   }
