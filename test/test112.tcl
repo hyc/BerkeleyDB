@@ -138,9 +138,26 @@ proc test112 { method {nentries 80000} {tnum "112"} args } {
 	dump_file $db "" $t1
 
 	puts "\tTest$tnum.d: Compact database."
-	set ret [$db compact -freespace]
-	error_check_good db_sync [$db sync] 0
-	error_check_good verify_dir [ verify_dir $testdir "" 0 0 $nodump] 0
+	for {set commit 0} {$commit <= $txnenv} {incr commit} {
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
+		set ret [eval $db compact $txn -freespace]
+		if { $txnenv == 1 } {
+			if { $commit == 0 } {
+				puts "\tTest$tnum.d: Aborting."
+				error_check_good txn_abort [$t abort] 0
+			} else {
+				puts "\tTest$tnum.d: Committing."
+				error_check_good txn_commit [$t commit] 0
+			}
+		}
+		error_check_good db_sync [$db sync] 0
+		error_check_good verify_dir \
+		    [ verify_dir $testdir "" 0 0 $nodump] 0
+	}
 
 	set size2 [file size $filename]
 	set free2 [stat_field $db stat "Pages on freelist"]
@@ -225,9 +242,26 @@ if { [is_partitioned $args] == 0 } {
 	}
 
 	puts "\tTest$tnum.i: Compact database again."
-	set ret [$db compact -freespace]
-	error_check_good db_sync [$db sync] 0
-	error_check_good verify_dir [ verify_dir $testdir "" 0 0 $nodump] 0
+	for {set commit 0} {$commit <= $txnenv} {incr commit} {
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
+		set ret [eval $db compact $txn -freespace]
+		if { $txnenv == 1 } {
+			if { $commit == 0 } {
+				puts "\tTest$tnum.d: Aborting."
+				error_check_good txn_abort [$t abort] 0 
+			} else {
+				puts "\tTest$tnum.d: Committing."
+				error_check_good txn_commit [$t commit] 0
+			}
+		}
+		error_check_good db_sync [$db sync] 0
+		error_check_good verify_dir \
+		    [ verify_dir $testdir "" 0 0 $nodump] 0
+	}
 
 	set size4 [file size $filename]
 	set free4 [stat_field $db stat "Pages on freelist"]

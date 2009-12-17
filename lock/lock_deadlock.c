@@ -432,9 +432,11 @@ skip:		LOCK_DD(env, region);
 							++*rejectp;
 						continue;
 					}
-					if (!timespecisset(&min_timeout) ||
+					if (timespecisset(
+					    &lockerp->lk_expire) &&
+					    (!timespecisset(&min_timeout) ||
 					    timespeccmp(&min_timeout,
-					    &lockerp->lk_expire, >))
+					    &lockerp->lk_expire, >)))
 						min_timeout =
 						    lockerp->lk_expire;
 				}
@@ -605,9 +607,10 @@ again:		memset(bitmap, 0, count * sizeof(u_int32_t) * nentries);
 						++*rejectp;
 					continue;
 				}
-				if (!timespecisset(&min_timeout) ||
+				if (timespecisset(&lockerp->lk_expire) &&
+				    (!timespecisset(&min_timeout) ||
 				    timespeccmp(
-				    &min_timeout, &lockerp->lk_expire, >))
+				    &min_timeout, &lockerp->lk_expire, >)))
 					min_timeout = lockerp->lk_expire;
 			}
 

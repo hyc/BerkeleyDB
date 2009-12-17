@@ -579,8 +579,8 @@ struct __bh_frozen_a {
     BH_VISIBLE(env, SH_CHAIN_NEXTP(bhp, vc, __bh), &(old_lsn), vlsn) :\
     BH_VISIBLE(env, bhp, &(old_lsn), vlsn))
 
-#define	MVCC_SKIP_CURADJ(dbc, pgno)					\
-    (dbc->txn != NULL && F_ISSET(dbc->txn, TXN_SNAPSHOT) &&		\
+#define	MVCC_SKIP_CURADJ(dbc, pgno) (dbc->txn != NULL &&		\
+    F_ISSET(dbc->txn, TXN_SNAPSHOT) && MULTIVERSION(dbc->dbp) &&	\
     dbc->txn->td != NULL && __memp_skip_curadj(dbc, pgno))
 
 #if defined(DIAG_MVCC) && defined(HAVE_MPROTECT)

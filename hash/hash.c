@@ -1442,6 +1442,7 @@ __ham_dup_return(dbc, val, flags)
 				if ((ret = __db_moff(dbc, val, pgno, tlen,
 				    dbp->dup_compare, &cmp)) != 0)
 					return (ret);
+				cmp = -cmp;
 			} else {
 				/*
 				 * We do not zero tmp_val since the comparison
@@ -1454,6 +1455,10 @@ __ham_dup_return(dbc, val, flags)
 				    __bam_defcmp(dbp, &tmp_val, val) :
 				    dbp->dup_compare(dbp, &tmp_val, val);
 			}
+			
+			if (cmp > 0 && flags == DB_GET_BOTH_RANGE && 
+			    F_ISSET(dbp, DB_AM_DUPSORT))
+				cmp = 0;
 		}
 
 		if (cmp != 0)

@@ -562,6 +562,7 @@ __db_exists(dbp, txn, key, flags)
 	 * specific incompatibilities here.  This saves making __get_arg
 	 * aware of the exist method's API constraints.
 	 */
+	STRIP_AUTO_COMMIT(flags);	
 	if ((ret = __db_fchk(dbp->env, "DB->exists", flags,
 	    DB_READ_COMMITTED | DB_READ_UNCOMMITTED | DB_RMW)) != 0)
 		return (ret);

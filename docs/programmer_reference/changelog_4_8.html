@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Berkeley DB 4.8.24 Change Log</title>
+    <title>Berkeley DB 4.8.26 Change Log</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -15,7 +15,7 @@
     <div class="navheader">
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Berkeley DB 4.8.24 Change Log</th>
+          <th colspan="3" align="center">Berkeley DB 4.8.26 Change Log</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="upgrade_4_8_disk.html">Prev</a> </td>
@@ -29,7 +29,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="changelog_4_8"></a>Berkeley DB 4.8.24 Change Log</h2>
+            <h2 class="title" style="clear: both"><a id="changelog_4_8"></a>Berkeley DB 4.8.26 Change Log</h2>
           </div>
         </div>
       </div>
@@ -37,165 +37,177 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655207">
+              <a href="changelog_4_8.html#id1655375">
+Changes between 4.8.24 and 4.8.26:</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_4_8.html#id1655417">
+Known bugs in 4.8 </a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_4_8.html#id1655616">
 Changes between 4.8.21 and 4.8.24:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655245">
+              <a href="changelog_4_8.html#id1655551">
 Changes between 4.7 and 4.8.21:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655390">
+              <a href="changelog_4_8.html#id1655659">
 Database or Log File On-Disk Format Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655202">
+              <a href="changelog_4_8.html#id1655462">
 New Features:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655458">
+              <a href="changelog_4_8.html#id1655752">
 Database Environment Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655519">
+              <a href="changelog_4_8.html#id1655792">
 Concurrent Data Store Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655524">
+              <a href="changelog_4_8.html#id1655786">
 General Access Method Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655222">
+              <a href="changelog_4_8.html#id1655845">
 Btree Access Method Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655602">
+              <a href="changelog_4_8.html#id1655838">
 Hash Access Method Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655658">
+              <a href="changelog_4_8.html#id1655894">
 Queue Access Method Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655707">
+              <a href="changelog_4_8.html#id1655916">
 Recno Access Method Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655742">
+              <a href="changelog_4_8.html#id1655988">
 C-specific API Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655771">
+              <a href="changelog_4_8.html#id1656004">
 C++-specific API Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655786">
+              <a href="changelog_4_8.html#id1656053">
 Java-specific API Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655805">
+              <a href="changelog_4_8.html#id1656072">
 
  Direct Persistence Layer (DPL), Bindings and Collections API:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655220">
+              <a href="changelog_4_8.html#id1656000">
 
  Tcl-specific API Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655889">
+              <a href="changelog_4_8.html#id1656229">
 RPC-specific Client/Server Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655910">
+              <a href="changelog_4_8.html#id1656236">
 Replication Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655895">
+              <a href="changelog_4_8.html#id1656289">
 XA Resource Manager Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1655962">
+              <a href="changelog_4_8.html#id1656460">
 Locking Subsystem Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656025">
+              <a href="changelog_4_8.html#id1656508">
 Logging Subsystem Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656187">
+              <a href="changelog_4_8.html#id1656478">
 Memory Pool Subsystem Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656227">
+              <a href="changelog_4_8.html#id1656565">
 Mutex Subsystem Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656308">
+              <a href="changelog_4_8.html#id1656601">
 Test Suite Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656354">
+              <a href="changelog_4_8.html#id1656650">
 Transaction Subsystem Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656455">
+              <a href="changelog_4_8.html#id1656718">
 Utility Changes:</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_4_8.html#id1656473">
+              <a href="changelog_4_8.html#id1656760">
 Configuration, Documentation, Sample Application, Portability and Build Changes:</a>
             </span>
           </dt>
@@ -205,7 +217,100 @@ Configuration, Documentation, Sample Application, Portability and Build Changes:
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655207"></a>
+              <h3 class="title"><a id="id1655375"></a>
+Changes between 4.8.24 and 4.8.26:</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+Fixed a bug where the truncate log record could be too large when freeing too many pages during a compact. [#17313]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where the deadlock detector might not run properly. [#17555]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed three bugs related to properly detecting thread local storage for DbStl. [#17609]  [#18001] [#18038]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that prevented some of our example code from running correctly in a Windows environment. [#17627]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where a "unable to allocate space from buffer cache" error was improperly generated. [#17630]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where DB-&gt;exists() did not accept the DB_AUTO_COMMIT flag. [#17687]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where DB_TXN_SNAPSHOT was not getting ignored when DB_MULTIVERSION not set. [#17706]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that prevented callback based partitioning through the Java API. [#17735]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a replication bug where log files were not automatically removed from the client side. [#17899]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where code generated from db_sql stored the key in both the data and key DBTs. [#17925]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that prevented a sequence from closing properly after the EntityStore closed. [#17951]   
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where gets fail if the DB_GET_BOTH_FLAG is specified in a hash, sorted duplicates database.[#17997]   
+</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1655417"></a>
+Known bugs in 4.8 </h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+Sharing logs across mixed-endian systems does not work.[#18032]   
+</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id1655616"></a>
 Changes between 4.8.21 and 4.8.24:</h3>
             </div>
           </div>
@@ -256,7 +361,7 @@ Fixed an incorrect representation of log system configuration info. [#17532]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655245"></a>
+              <h3 class="title"><a id="id1655551"></a>
 Changes between 4.7 and 4.8.21:</h3>
             </div>
           </div>
@@ -266,7 +371,7 @@ Changes between 4.7 and 4.8.21:</h3>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655390"></a>
+              <h3 class="title"><a id="id1655659"></a>
 Database or Log File On-Disk Format Changes:</h3>
             </div>
           </div>
@@ -285,7 +390,7 @@ The log file format changed in 4.8.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655202"></a>
+              <h3 class="title"><a id="id1655462"></a>
 New Features:</h3>
             </div>
           </div>
@@ -386,7 +491,7 @@ Berkeley DB now has the ability to compare two cursors for equality. [#16811]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655458"></a>
+              <h3 class="title"><a id="id1655752"></a>
 Database Environment Changes:</h3>
             </div>
           </div>
@@ -413,7 +518,7 @@ Fixed a bug that could cause a trap if an environment open failed and failchk th
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655519"></a>
+              <h3 class="title"><a id="id1655792"></a>
 Concurrent Data Store Changes:</h3>
             </div>
           </div>
@@ -426,7 +531,7 @@ None.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655524"></a>
+              <h3 class="title"><a id="id1655786"></a>
 General Access Method Changes:</h3>
             </div>
           </div>
@@ -524,7 +629,7 @@ DB_TRUNCATE flag. [#17191]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655222"></a>
+              <h3 class="title"><a id="id1655845"></a>
 Btree Access Method Changes:</h3>
             </div>
           </div>
@@ -563,7 +668,7 @@ it rather than returning DB_KEYEXIST. [#16803]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655602"></a>
+              <h3 class="title"><a id="id1655838"></a>
 Hash Access Method Changes:</h3>
             </div>
           </div>
@@ -591,7 +696,7 @@ Fixed a bug to now return the expected buffer size on a DB_BUFFER_SMALL conditio
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655658"></a>
+              <h3 class="title"><a id="id1655894"></a>
 Queue Access Method Changes:</h3>
             </div>
           </div>
@@ -636,7 +741,7 @@ Added the DB_CONSUME flag to DB-&gt;del and DBC-&gt;del to force adjustment of t
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655707"></a>
+              <h3 class="title"><a id="id1655916"></a>
 Recno Access Method Changes:</h3>
             </div>
           </div>
@@ -670,7 +775,7 @@ Fixed a bug to now disallow passing DB_DUP and DB_RECNUM together to __db_set_fl
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655742"></a>
+              <h3 class="title"><a id="id1655988"></a>
 C-specific API Changes:</h3>
             </div>
           </div>
@@ -689,7 +794,7 @@ Add get functions for each set functions of DB and DB_ENV structures which didn'
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655771"></a>
+              <h3 class="title"><a id="id1656004"></a>
 C++-specific API Changes:</h3>
             </div>
           </div>
@@ -721,7 +826,7 @@ Fixed a memory leak when using nested transactions.[#16956]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655786"></a>
+              <h3 class="title"><a id="id1656053"></a>
 Java-specific API Changes:</h3>
             </div>
           </div>
@@ -762,7 +867,7 @@ Fixed a bug so that position(), limit() and capacity() of ByteBuffers are obeyed
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655805"></a>
+              <h3 class="title"><a id="id1656072"></a>
 
  Direct Persistence Layer (DPL), Bindings and Collections API:</h3>
             </div>
@@ -919,7 +1024,7 @@ javadoc. [#17233]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655220"></a>
+              <h3 class="title"><a id="id1656000"></a>
 
  Tcl-specific API Changes:</h3>
             </div>
@@ -941,7 +1046,7 @@ The mutex API is now available when using Tcl. [#16342]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655889"></a>
+              <h3 class="title"><a id="id1656229"></a>
 RPC-specific Client/Server Changes:</h3>
             </div>
           </div>
@@ -962,7 +1067,7 @@ RPC support has been removed from Berkeley DB. [#16785]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655910"></a>
+              <h3 class="title"><a id="id1656236"></a>
 Replication Changes:</h3>
             </div>
           </div>
@@ -1192,7 +1297,7 @@ given was smaller than number of sites that actually exists. [#16825]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655895"></a>
+              <h3 class="title"><a id="id1656289"></a>
 XA Resource Manager Changes:</h3>
             </div>
           </div>
@@ -1212,7 +1317,7 @@ The XA Resource Manager has been removed from Berkeley DB. [#6459]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1655962"></a>
+              <h3 class="title"><a id="id1656460"></a>
 Locking Subsystem Changes:</h3>
             </div>
           </div>
@@ -1271,7 +1376,7 @@ Fixed a bug so that DB_STAT_CLEAR now restores the value of st_partitions. [#167
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656025"></a>
+              <h3 class="title"><a id="id1656508"></a>
 Logging Subsystem Changes:</h3>
             </div>
           </div>
@@ -1311,7 +1416,7 @@ databases in that interim step. [#17203]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656187"></a>
+              <h3 class="title"><a id="id1656478"></a>
 Memory Pool Subsystem Changes:</h3>
             </div>
           </div>
@@ -1344,7 +1449,7 @@ Fixed a possible race condition between dirtying and freeing a buffer that could
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656227"></a>
+              <h3 class="title"><a id="id1656565"></a>
 Mutex Subsystem Changes:</h3>
             </div>
           </div>
@@ -1417,7 +1522,7 @@ or contact Oracle for support. [#17470]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656308"></a>
+              <h3 class="title"><a id="id1656601"></a>
 Test Suite Changes</h3>
             </div>
           </div>
@@ -1501,7 +1606,7 @@ incoming messages to trigger rerequest.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656354"></a>
+              <h3 class="title"><a id="id1656650"></a>
 Transaction Subsystem Changes:</h3>
             </div>
           </div>
@@ -1549,7 +1654,7 @@ Fixed a mutex leak in some corner cases. [#16665]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656455"></a>
+              <h3 class="title"><a id="id1656718"></a>
 Utility Changes:</h3>
             </div>
           </div>
@@ -1599,7 +1704,7 @@ Fixed a bug that would cause db_hotbackup to fail if a database file was removed
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id1656473"></a>
+              <h3 class="title"><a id="id1656760"></a>
 Configuration, Documentation, Sample Application, Portability and Build Changes:</h3>
             </div>
           </div>

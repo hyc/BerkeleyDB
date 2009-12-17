@@ -1054,7 +1054,7 @@ __rep_apply(env, ip, rp, rec, ret_lsnp, is_dupp, last_lsnp)
 	REP *rep;
 	db_timespec msg_time, max_ts;
 	u_int32_t gen, rectype;
-	int cmp, event, master, ret, set_apply, t_ret;
+	int cmp, event, master, newfile_seen, ret, set_apply, t_ret;
 
 	COMPQUIET(gen, 0);
 	COMPQUIET(master, DB_EID_INVALID);
@@ -1082,6 +1082,7 @@ __rep_apply(env, ip, rp, rec, ret_lsnp, is_dupp, last_lsnp)
 	}
 	dbp = db_rep->rep_db;
 	lp = dblp->reginfo.primary;
+	newfile_seen = 0;
 	REP_SYSTEM_LOCK(env);
 	if (F_ISSET(rep, REP_F_RECOVER_LOG) &&
 	    LOG_COMPARE(&lp->ready_lsn, &rep->first_lsn) < 0)
@@ -1137,6 +1138,8 @@ __rep_apply(env, ip, rp, rec, ret_lsnp, is_dupp, last_lsnp)
 		RPRINT(env, DB_VERB_REP_MISC, (env,
 		    "rep_apply: Set apply_th %d", rep->apply_th));
 		REP_SYSTEM_UNLOCK(env);
+		if (rp->rectype == REP_NEWFILE)
+			newfile_seen = 1;
 		if ((ret = __rep_process_rec(env, ip,
 		    rp, rec, &max_ts, &max_lsn)) != 0)
 			goto err;
@@ -1168,6 +1171,8 @@ gap_check:
 			rp = (__rep_control_args *)control_dbt.data;
 			timespecset(&msg_time, rp->msg_sec, rp->msg_nsec);
 			rec = &rec_dbt;
+			if (rp->rectype == REP_NEWFILE)
+				newfile_seen = 1;
 			if ((ret = __rep_process_rec(env, ip,
 			    rp, rec, &max_ts, &max_lsn)) != 0)
 				goto err;
@@ -1412,7 +1417,8 @@ err:	/*
 			goto out;
 		}
 	}
-	if (ret == 0 && rp->rectype == REP_NEWFILE && lp->db_log_autoremove)
+	if ((ret == 0 || ret == DB_REP_ISPERM) &&
+	    newfile_seen && lp->db_log_autoremove)
 		__log_autoremove(env);
 	if (control_dbt.data != NULL)
 		__os_ufree(env, control_dbt.data);

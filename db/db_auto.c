@@ -2861,24 +2861,24 @@ __db_pg_init_log(dbp, txnp, ret_lsnp, flags, pgno, header, data)
 }
 
 /*
- * PUBLIC: int __db_pg_sort_read __P((ENV *, DB **, void *, void *,
- * PUBLIC:     __db_pg_sort_args **));
+ * PUBLIC: int __db_pg_sort_44_read __P((ENV *, DB **, void *,
+ * PUBLIC:     void *, __db_pg_sort_44_args **));
  */
 int
-__db_pg_sort_read(env, dbpp, td, recbuf, argpp)
+__db_pg_sort_44_read(env, dbpp, td, recbuf, argpp)
 	ENV *env;
 	DB **dbpp;
 	void *td;
 	void *recbuf;
-	__db_pg_sort_args **argpp;
+	__db_pg_sort_44_args **argpp;
 {
-	__db_pg_sort_args *argp;
+	__db_pg_sort_44_args *argp;
 	u_int32_t uinttmp;
 	u_int8_t *bp;
 	int ret;
 
 	if ((ret = __os_malloc(env,
-	    sizeof(__db_pg_sort_args) + sizeof(DB_TXN), &argp)) != 0)
+	    sizeof(__db_pg_sort_44_args) + sizeof(DB_TXN), &argp)) != 0)
 		return (ret);
 	bp = recbuf;
 	argp->txnp = (DB_TXN *)&argp[1];
@@ -2932,13 +2932,88 @@ __db_pg_sort_read(env, dbpp, td, recbuf, argpp)
 }
 
 /*
- * PUBLIC: int __db_pg_sort_log __P((DB *, DB_TXN *, DB_LSN *,
- * PUBLIC:     u_int32_t, db_pgno_t, DB_LSN *, db_pgno_t, DB_LSN *, db_pgno_t,
- * PUBLIC:     const DBT *));
+ * PUBLIC: int __db_pg_trunc_read __P((ENV *, DB **, void *, void *,
+ * PUBLIC:     __db_pg_trunc_args **));
  */
 int
-__db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn, last_pgno,
-    list)
+__db_pg_trunc_read(env, dbpp, td, recbuf, argpp)
+	ENV *env;
+	DB **dbpp;
+	void *td;
+	void *recbuf;
+	__db_pg_trunc_args **argpp;
+{
+	__db_pg_trunc_args *argp;
+	u_int32_t uinttmp;
+	u_int8_t *bp;
+	int ret;
+
+	if ((ret = __os_malloc(env,
+	    sizeof(__db_pg_trunc_args) + sizeof(DB_TXN), &argp)) != 0)
+		return (ret);
+	bp = recbuf;
+	argp->txnp = (DB_TXN *)&argp[1];
+	memset(argp->txnp, 0, sizeof(DB_TXN));
+
+	argp->txnp->td = td;
+	LOGCOPY_32(env, &argp->type, bp);
+	bp += sizeof(argp->type);
+
+	LOGCOPY_32(env, &argp->txnp->txnid, bp);
+	bp += sizeof(argp->txnp->txnid);
+
+	LOGCOPY_TOLSN(env, &argp->prev_lsn, bp);
+	bp += sizeof(DB_LSN);
+
+	LOGCOPY_32(env, &uinttmp, bp);
+	argp->fileid = (int32_t)uinttmp;
+	bp += sizeof(uinttmp);
+	if (dbpp != NULL) {
+		*dbpp = NULL;
+		ret = __dbreg_id_to_db(
+		    env, argp->txnp, dbpp, argp->fileid, 1);
+	}
+
+	LOGCOPY_32(env, &uinttmp, bp);
+	argp->meta = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	LOGCOPY_TOLSN(env, &argp->meta_lsn, bp);
+	bp += sizeof(DB_LSN);
+
+	LOGCOPY_32(env, &uinttmp, bp);
+	argp->last_free = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	LOGCOPY_TOLSN(env, &argp->last_lsn, bp);
+	bp += sizeof(DB_LSN);
+
+	LOGCOPY_32(env, &uinttmp, bp);
+	argp->next_free = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	LOGCOPY_32(env, &uinttmp, bp);
+	argp->last_pgno = (db_pgno_t)uinttmp;
+	bp += sizeof(uinttmp);
+
+	memset(&argp->list, 0, sizeof(argp->list));
+	LOGCOPY_32(env,&argp->list.size, bp);
+	bp += sizeof(u_int32_t);
+	argp->list.data = bp;
+	bp += argp->list.size;
+
+	*argpp = argp;
+	return (ret);
+}
+
+/*
+ * PUBLIC: int __db_pg_trunc_log __P((DB *, DB_TXN *, DB_LSN *,
+ * PUBLIC:     u_int32_t, db_pgno_t, DB_LSN *, db_pgno_t, DB_LSN *, db_pgno_t,
+ * PUBLIC:     db_pgno_t, const DBT *));
+ */
+int
+__db_pg_trunc_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn, next_free,
+    last_pgno, list)
 	DB *dbp;
 	DB_TXN *txnp;
 	DB_LSN *ret_lsnp;
@@ -2947,6 +3022,7 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 	DB_LSN * meta_lsn;
 	db_pgno_t last_free;
 	DB_LSN * last_lsn;
+	db_pgno_t next_free;
 	db_pgno_t last_pgno;
 	const DBT *list;
 {
@@ -2963,7 +3039,7 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 
 	env = dbp->env;
 	rlsnp = ret_lsnp;
-	rectype = DB___db_pg_sort;
+	rectype = DB___db_pg_trunc;
 	npad = 0;
 	ret = 0;
 
@@ -3004,6 +3080,7 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 	    + sizeof(*meta_lsn)
 	    + sizeof(u_int32_t)
 	    + sizeof(*last_lsn)
+	    + sizeof(u_int32_t)
 	    + sizeof(u_int32_t)
 	    + sizeof(u_int32_t) + (list == NULL ? 0 : list->size);
 	if (CRYPTO_ON(env)) {
@@ -3079,6 +3156,10 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 		memset(bp, 0, sizeof(*last_lsn));
 	bp += sizeof(*last_lsn);
 
+	uinttmp = (u_int32_t)next_free;
+	LOGCOPY_32(env,bp, &uinttmp);
+	bp += sizeof(uinttmp);
+
 	uinttmp = (u_int32_t)last_pgno;
 	LOGCOPY_32(env,bp, &uinttmp);
 	bp += sizeof(uinttmp);
@@ -3126,7 +3207,7 @@ __db_pg_sort_log(dbp, txnp, ret_lsnp, flags, meta, meta_lsn, last_free, last_lsn
 
 #ifdef LOG_DIAGNOSTIC
 	if (ret != 0)
-		(void)__db_pg_sort_print(env,
+		(void)__db_pg_trunc_print(env,
 		    (DBT *)&logrec, ret_lsnp, DB_TXN_PRINT, NULL);
 #endif
 
@@ -3180,7 +3261,7 @@ __db_init_recover(env, dtabp)
 	    __db_pg_init_recover, DB___db_pg_init)) != 0)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,
-	    __db_pg_sort_recover, DB___db_pg_sort)) != 0)
+	    __db_pg_trunc_recover, DB___db_pg_trunc)) != 0)
 		return (ret);
 	return (0);
 }

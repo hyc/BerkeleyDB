@@ -166,8 +166,30 @@ proc test115 { method {nentries 10000} {tnum "115"} args } {
 		}
 
 		puts "\tTest$tnum.d: Compact and verify database."
-		set ret [$db compact -freespace]
-		error_check_good db_sync [$db sync] 0
+		for {set commit 0} {$commit <= $txnenv} {incr commit} {
+			if { $txnenv == 1 } {
+				set t [$env txn]
+				error_check_good txn [is_valid_txn $t $env] TRUE
+				set txn "-txn $t"
+			}
+			set ret [eval $db compact $txn -freespace]
+			if { $txnenv == 1 } {
+				if { $commit == 0 } {
+					puts "\tTest$tnum.d: Aborting."
+					error_check_good txn_abort [$t abort] 0
+				} else {
+					puts "\tTest$tnum.d: Committing."
+					error_check_good txn_commit [$t commit] 0
+				}
+			}
+			error_check_good db_sync [$db sync] 0
+			if { [catch {eval \
+			    {berkdb dbverify -btcompare test093_cmp1}\
+			    $envargs $encargs {$testfile}} res] } {
+				puts "FAIL: Verification failed with $res"
+			}
+
+		}
 
 		set size2 [file size $filename]
 		set free2 [stat_field $db stat "Pages on freelist"]
@@ -188,11 +210,6 @@ if { [is_partitioned $args] == 0 } {
 		error_check_good \
 		    file_size [expr [expr $size1 * $reduction] > $size2] 1
 }
-		if { [catch {eval {berkdb dbverify -btcompare test093_cmp1}\
-		    $envargs $encargs {$testfile}} res] } {
-			puts "FAIL: Verification failed with $res"
-		}
-
 		puts "\tTest$tnum.e: Contents are the same after compaction."
 		if { $txnenv == 1 } {
 			set t [$env txn]
@@ -269,11 +286,28 @@ if { [is_partitioned $args] == 0 } {
 		}
 
 		puts "\tTest$tnum.i: Compact and verify database again."
-		set ret [$db compact -freespace]
-		error_check_good db_sync [$db sync] 0
-		if { [catch {eval {berkdb dbverify -btcompare test093_cmp1}\
-		    $envargs $encargs {$testfile}} res] } {
-			puts "FAIL: Verification failed with $res"
+		for {set commit 0} {$commit <= $txnenv} {incr commit} {
+			if { $txnenv == 1 } {
+				set t [$env txn]
+				error_check_good txn [is_valid_txn $t $env] TRUE
+				set txn "-txn $t"
+			}
+			set ret [eval $db compact $txn -freespace]
+			if { $txnenv == 1 } {
+				if { $commit == 0 } {
+					puts "\tTest$tnum.d: Aborting."
+					error_check_good txn_abort [$t abort] 0
+				} else {
+					puts "\tTest$tnum.d: Committing."
+					error_check_good txn_commit [$t commit] 0
+				}
+			}
+			error_check_good db_sync [$db sync] 0
+			if { [catch {eval \
+			    {berkdb dbverify -btcompare test093_cmp1}\
+			    $envargs $encargs {$testfile}} res] } {
+				puts "FAIL: Verification failed with $res"
+			}
 		}
 
 		set size4 [file size $filename]

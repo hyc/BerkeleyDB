@@ -1575,6 +1575,14 @@ retry:	GET_ENVLOCK(env, locker, &elock);
 	ret = __txn_commit(txn, 0);
 	txn = NULL;
 
+	/*
+	 * If the new name is available because it was previously renamed
+	 * remove it from the remove list.
+	 */
+	if (F_ISSET(tmpdbp, DB_AM_IN_RENAME))
+		__txn_remrem(env, parent, realnew);
+
+
 	/* Now log the child information in the parent. */
 	memset(&fiddbt, 0, sizeof(fiddbt));
 	fiddbt.data = dbp->fileid;

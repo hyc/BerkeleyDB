@@ -5729,7 +5729,7 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_Db_1set_1part
   arg1 = *(struct Db **)&jarg1; 
   arg2 = (u_int32_t)jarg2; 
   
-  if (__dbj_dbt_copyin(jenv, &ldbt3, &arg3, jarg3, 0) != 0) {
+  if (__dbj_dbt_copyin(jenv, &ldbt3, &arg3, jarg3, 1) != 0) {
     return ; /* An exception will be pending. */
   }
   

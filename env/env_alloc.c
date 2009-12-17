@@ -457,7 +457,7 @@ __env_size_insert(head, elp)
 
 	/* Find the correct slot in the size queue. */
 	SH_TAILQ_FOREACH(elp_tmp, q, sizeq, __alloc_element)
-		if (elp->len <= elp_tmp->len)
+		if (elp->len >= elp_tmp->len)
 			break;
 	if (elp_tmp == NULL)
 		SH_TAILQ_INSERT_TAIL(q, elp, sizeq);

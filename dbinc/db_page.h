@@ -661,7 +661,7 @@ typedef struct _rinternal {
 	(RINTERNAL_SIZE + sizeof(db_indx_t))
 
 typedef struct __pglist {
-	db_pgno_t pgno;
+	db_pgno_t pgno, next_pgno;
 	DB_LSN lsn;
 } db_pglist_t;
 

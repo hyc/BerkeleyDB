@@ -14,7 +14,7 @@ BEGIN	pg_free	43	50
 BEGIN	cksum	42	51
 BEGIN	pg_freedata	43	52
 BEGIN	pg_init	43	60
-BEGIN	pg_sort	44	61
+BEGIN	pg_trunc	49	66
 PREFIX	__dbreg
 BEGIN	register	42	2
 PREFIX	__bam

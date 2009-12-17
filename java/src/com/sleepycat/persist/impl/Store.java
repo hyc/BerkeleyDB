@@ -885,6 +885,15 @@ public class Store {
                 firstException = e;
             }
         }
+		for (Sequence seq : sequenceMap.values()) {
+			try {
+				seq.close();
+			} catch (DatabaseException e) {
+				if (firstException == null) {
+					firstException = e;
+				}
+			}
+		}		
         firstException = closeDb(sequenceDb, firstException);
         for (SecondaryIndex index : secIndexMap.values()) {
             firstException = closeDb(index.getDatabase(), firstException);

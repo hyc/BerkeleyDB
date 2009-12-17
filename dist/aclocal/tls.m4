@@ -12,15 +12,19 @@ AC_DEFUN([AX_TLS], [
   AC_LANG_CPLUSPLUS
   ax_tls_keywords="__thread __declspec(thread) __declspec(__thread)"
   for ax_tls_decl_keyword in $ax_tls_keywords ""; do
-      for ax_tls_defn_keyword in "" $ax_tls_keywords; do
+      for ax_tls_defn_keyword in $ax_tls_keywords ""; do
           test -z "$ax_tls_decl_keyword" &&
               test -z "$ax_tls_defn_keyword" && continue
-          AC_TRY_COMPILE([class TLSClass {
-              public: static ] $ax_tls_decl_keyword [ int tlsvar;
+          AC_TRY_COMPILE([template <typename T>class TLSClass {
+              public: static ] $ax_tls_decl_keyword [ T *tlsvar;
               };
-              $ax_tls_defn_keyword int TLSClass::tlsvar = 0;
+              class TLSClass2 {
+              public: static ] $ax_tls_decl_keyword [int tlsvar;
+              };
+              template<typename T> ] $ax_tls_defn_keyword [ T* TLSClass<T>::tlsvar = NULL;]
+              $ax_tls_defn_keyword [int TLSClass2::tlsvar = 1; 
               static $ax_tls_decl_keyword int x = 0;],
-              [TLSClass::tlsvar = 1;],
+              [TLSClass<int>::tlsvar = NULL; TLSClass2::tlsvar = 1;],
               [ac_cv_tls=modifier ; break])
       done
       test "$ac_cv_tls" = none || break

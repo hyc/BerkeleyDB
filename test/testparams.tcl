@@ -377,7 +377,7 @@ set parms(test028) ""
 set parms(test029) 10000
 set parms(test030) 10000
 set parms(test031) {10000 5 "031"}
-set parms(test032) {10000 5 "032"}
+set parms(test032) {10000 5 "032" 0}
 set parms(test033) {10000 5 "033"}
 set parms(test034) 10000
 set parms(test035) 10000

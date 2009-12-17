@@ -1562,6 +1562,12 @@ proc run_envmethod { method test {display 0} {run 1} {outfile stdout} \
 		}
 	}
 
+	set sindex [lsearch -exact $largs "-log_max"]
+	if { $sindex >= 0 } {
+		append envargs " -log_max 200000 "
+		set largs [lreplace $largs $sindex $sindex]
+	}
+
 	# Test for -thread option and pass to berkdb_env open.  Leave in
 	# $largs because -thread can also be passed to an individual
 	# test as an arg.  Double the number of lockers because a threaded
@@ -1625,6 +1631,27 @@ proc run_envmethod { method test {display 0} {run 1} {outfile stdout} \
 			}
 		}
 		set is_envmethod 0
+	}
+}
+
+proc run_compact { method } {
+	source ./include.tcl
+	for {set tnum 111} {$tnum <= 115} {incr tnum} {
+		run_envmethod $method test$tnum 0 1 stdout -log_max
+
+		puts "\tTest$tnum: Test Recovery"
+		set env1 [eval  berkdb env -create -txn \
+		    -recover_fatal -home $testdir]
+		error_check_good env_close [$env1 close] 0
+		error_check_good verify_dir \
+		    [verify_dir $testdir "" 0 0 1 ] 0
+		puts "\tTest$tnum: Remove db and test Recovery"
+		exec sh -c "rm -f $testdir/*.db"
+		set env1 [eval  berkdb env -create -txn \
+		    -recover_fatal -home $testdir]
+		error_check_good env_close [$env1 close] 0
+		error_check_good verify_dir \
+		    [verify_dir $testdir "" 0 0 1 ] 0
 	}
 }
 

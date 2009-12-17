@@ -123,7 +123,8 @@
 	__db_pg_freedata_42_read
 	__db_pg_freedata_read
 	__db_pg_init_read
-	__db_pg_sort_read
+	__db_pg_sort_44_read
+	__db_pg_trunc_read
 	__db_pgin
 	__db_pgout
 	__db_pr_callback

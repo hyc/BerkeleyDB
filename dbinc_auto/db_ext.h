@@ -67,8 +67,9 @@ int __db_pg_freedata_read __P((ENV *, DB **, void *, void *, __db_pg_freedata_ar
 int __db_pg_freedata_log __P((DB *, DB_TXN *, DB_LSN *, u_int32_t, db_pgno_t, DB_LSN *, db_pgno_t, const DBT *, db_pgno_t, db_pgno_t, const DBT *));
 int __db_pg_init_read __P((ENV *, DB **, void *, void *, __db_pg_init_args **));
 int __db_pg_init_log __P((DB *, DB_TXN *, DB_LSN *, u_int32_t, db_pgno_t, const DBT *, const DBT *));
-int __db_pg_sort_read __P((ENV *, DB **, void *, void *, __db_pg_sort_args **));
-int __db_pg_sort_log __P((DB *, DB_TXN *, DB_LSN *, u_int32_t, db_pgno_t, DB_LSN *, db_pgno_t, DB_LSN *, db_pgno_t, const DBT *));
+int __db_pg_sort_44_read __P((ENV *, DB **, void *, void *, __db_pg_sort_44_args **));
+int __db_pg_trunc_read __P((ENV *, DB **, void *, void *, __db_pg_trunc_args **));
+int __db_pg_trunc_log __P((DB *, DB_TXN *, DB_LSN *, u_int32_t, db_pgno_t, DB_LSN *, db_pgno_t, DB_LSN *, db_pgno_t, db_pgno_t, const DBT *));
 int __db_init_recover __P((ENV *, DB_DISTAB *));
 int __db_addrem_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_big_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
@@ -84,7 +85,8 @@ int __db_cksum_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_freedata_42_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_freedata_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_init_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
-int __db_pg_sort_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+int __db_pg_sort_44_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+int __db_pg_trunc_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_init_print __P((ENV *, DB_DISTAB *));
 int __dbc_close __P((DBC *));
 int __dbc_destroy __P((DBC *));
@@ -180,8 +182,9 @@ int __db_free __P((DBC *, PAGE *));
 #ifdef HAVE_FTRUNCATE
 void __db_freelist_pos __P((db_pgno_t, db_pgno_t *, u_int32_t, u_int32_t *));
 #endif
+void __db_freelist_sort __P((db_pglist_t *, u_int32_t));
 #ifdef HAVE_FTRUNCATE
-int __db_pg_truncate __P((DBC *, DB_TXN *, db_pglist_t *list, DB_COMPACT *, u_int32_t *, db_pgno_t *, DB_LSN *, int));
+int __db_pg_truncate __P((DBC *, DB_TXN *, db_pglist_t *, DB_COMPACT *, u_int32_t *,  db_pgno_t , db_pgno_t *, DB_LSN *, int));
 #endif
 #ifdef HAVE_FTRUNCATE
 int __db_free_truncate __P((DB *, DB_THREAD_INFO *, DB_TXN *, u_int32_t, DB_COMPACT *, db_pglist_t **, u_int32_t *, db_pgno_t *));
@@ -238,7 +241,8 @@ int __db_pg_free_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_freedata_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_cksum_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_init_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
-int __db_pg_sort_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+int __db_pg_trunc_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+int __db_pg_sort_44_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_alloc_42_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_free_42_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_pg_freedata_42_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));

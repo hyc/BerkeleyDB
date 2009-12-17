@@ -938,6 +938,11 @@ __env_init_rec(env, version)
 	case DB_LOGVERSION:
 		ret = 0;
 		break;
+	case DB_LOGVERSION_48:
+		if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+		    __db_pg_sort_44_recover, DB___db_pg_sort_44)) != 0)
+			goto err;
+		break;
 	case DB_LOGVERSION_47:
 		ret = __env_init_rec_47(env);
 		break;
@@ -1076,6 +1081,9 @@ __env_init_rec_47(env)
 
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __bam_split_42_recover, DB___bam_split_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_pg_sort_44_recover, DB___db_pg_sort_44)) != 0)
 		goto err;
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __fop_create_42_recover, DB___fop_create_42)) != 0)

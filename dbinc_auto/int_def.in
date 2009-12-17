@@ -63,8 +63,9 @@
 #define	__db_pg_freedata_log __db_pg_freedata_log@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_init_read __db_pg_init_read@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_init_log __db_pg_init_log@DB_VERSION_UNIQUE_NAME@
-#define	__db_pg_sort_read __db_pg_sort_read@DB_VERSION_UNIQUE_NAME@
-#define	__db_pg_sort_log __db_pg_sort_log@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_sort_44_read __db_pg_sort_44_read@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_trunc_read __db_pg_trunc_read@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_trunc_log __db_pg_trunc_log@DB_VERSION_UNIQUE_NAME@
 #define	__db_init_recover __db_init_recover@DB_VERSION_UNIQUE_NAME@
 #define	__db_addrem_print __db_addrem_print@DB_VERSION_UNIQUE_NAME@
 #define	__db_big_print __db_big_print@DB_VERSION_UNIQUE_NAME@
@@ -80,7 +81,8 @@
 #define	__db_pg_freedata_42_print __db_pg_freedata_42_print@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_freedata_print __db_pg_freedata_print@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_init_print __db_pg_init_print@DB_VERSION_UNIQUE_NAME@
-#define	__db_pg_sort_print __db_pg_sort_print@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_sort_44_print __db_pg_sort_44_print@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_trunc_print __db_pg_trunc_print@DB_VERSION_UNIQUE_NAME@
 #define	__db_init_print __db_init_print@DB_VERSION_UNIQUE_NAME@
 #define	__dbc_close __dbc_close@DB_VERSION_UNIQUE_NAME@
 #define	__dbc_destroy __dbc_destroy@DB_VERSION_UNIQUE_NAME@
@@ -176,6 +178,7 @@
 #ifdef HAVE_FTRUNCATE
 #define	__db_freelist_pos __db_freelist_pos@DB_VERSION_UNIQUE_NAME@
 #endif
+#define	__db_freelist_sort __db_freelist_sort@DB_VERSION_UNIQUE_NAME@
 #ifdef HAVE_FTRUNCATE
 #define	__db_pg_truncate __db_pg_truncate@DB_VERSION_UNIQUE_NAME@
 #endif
@@ -234,7 +237,8 @@
 #define	__db_pg_freedata_recover __db_pg_freedata_recover@DB_VERSION_UNIQUE_NAME@
 #define	__db_cksum_recover __db_cksum_recover@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_init_recover __db_pg_init_recover@DB_VERSION_UNIQUE_NAME@
-#define	__db_pg_sort_recover __db_pg_sort_recover@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_trunc_recover __db_pg_trunc_recover@DB_VERSION_UNIQUE_NAME@
+#define	__db_pg_sort_44_recover __db_pg_sort_44_recover@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_alloc_42_recover __db_pg_alloc_42_recover@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_free_42_recover __db_pg_free_42_recover@DB_VERSION_UNIQUE_NAME@
 #define	__db_pg_freedata_42_recover __db_pg_freedata_42_recover@DB_VERSION_UNIQUE_NAME@

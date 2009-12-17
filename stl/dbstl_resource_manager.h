@@ -133,11 +133,12 @@ public:
 		pthread_setspecific(tls_key_, objp);
 	}
 
+	// Friend declarations don't work portably, so we have to declare 
+	// tls_key_ public.
+	static pthread_key_t tls_key_;
 private:
 	TlsWrapper();
 
-	static pthread_key_t tls_key_;
-	friend void tls_init_once(void);
 }; // TlsWrapper<>
 
 #else

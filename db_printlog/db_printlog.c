@@ -359,6 +359,11 @@ env_init_print(env, version, dtabp)
 	 * 4.5 and 4.6.  The name of the rep_gen in txn_checkpoint
 	 * changed (to spare, since we don't use it anymore).
 	 */
+	case DB_LOGVERSION_48:
+		if ((ret = __db_add_recovery_int(env, dtabp,
+		    __db_pg_sort_44_print, DB___db_pg_sort_44)) != 0)
+			goto err;
+		break;
 	case DB_LOGVERSION_47:
 	case DB_LOGVERSION_46:
 	case DB_LOGVERSION_45:
@@ -487,6 +492,12 @@ env_init_print_47(env, dtabp)
 
 	if ((ret = __db_add_recovery_int(env, dtabp,
 	   __bam_split_42_print, DB___bam_split_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __db_pg_sort_44_print, DB___db_pg_sort_44)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __db_pg_sort_44_print, DB___db_pg_sort_44)) != 0)
 		goto err;
 	if ((ret = __db_add_recovery_int(env, dtabp,
 	    __fop_create_42_print, DB___fop_create_42)) != 0)

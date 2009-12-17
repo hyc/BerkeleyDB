@@ -406,13 +406,13 @@ serialized_length_exit_entop(ENTITY *e)
 static void
 serialized_length_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 {
-	if (!first)
-		pr_header("\t");
-
-	pr_header("sizeof(%s_data_specimen.%s)", e->name, a->name);
-
-	if (!last)
-		pr_header(" + \\\n");
+	static char *sizeof_template = "%ssizeof(%s_data_specimen.%s)";
+	
+	if (strcmp(e->primary_key->name, a->name) == 0)
+		pr_header("%s0", first ? "" : " + \\\n\t");
+	else 
+		pr_header(sizeof_template, first ? "" : " + \\\n\t",
+		    e->name, a->name);
 }
 
 /*
@@ -457,17 +457,35 @@ serialize_function_enter_entop(ENTITY *e)
 {
 	static char *header_template =
 "                                                                           \n\
-int serialize_%s_data(%s_data *%sp, char *buffer)                           \n\
+int serialize_%s_data(%s_data *%sp,					    \n\
+ char *buffer,								    \n\
+ DBT *key_dbt,								    \n\
+ DBT *data_dbt)                                                             \n\
 {                                                                           \n\
  size_t len;                                                                \n\
  char *p;                                                                   \n\
 									    \n\
  memset(buffer, 0, %s);                                                     \n\
  p = buffer;                                                                \n\
-									    \n\
-";
-	pr_code(header_template, e->name, e->name, e->name,
-	    serialized_length_name(e));
+ 									    \n\
+ key_dbt->data = %s%sp->%s;						    \n\
+ key_dbt->size = ";
+	pr_code(header_template, e->name, e->name, e->name,  
+	    serialized_length_name(e),
+	    is_array(e->primary_key->type) ? "" : "&",
+	    e->name, e->primary_key->name);
+	
+	if (is_array(e->primary_key->type) &&
+	    !is_string((e->primary_key->type)))
+		pr_code(array_dim_name(e, e->primary_key));
+	else 
+		pr_code("%s(%sp->%s)%s", 
+		    is_string(e->primary_key->type) ? "strlen" : "sizeof",
+		    e->name, e->primary_key->name,
+		    is_string(e->primary_key->type) ? "+ 1" : "");
+	
+	pr_code(";\n");
+	    
 	code_indent_level++;
 }
 static void
@@ -477,7 +495,8 @@ serialize_function_exit_entop(ENTITY *e)
 	code_indent_level--;
 	pr_code(
 "                                                                           \n\
- return p - buffer;                                                         \n\
+ data_dbt->data = buffer;						    \n\
+ data_dbt->size = p - buffer;						    \n\
 }                                                                           \n\
 "
 		);
@@ -497,17 +516,23 @@ p += len;                                                                   \n\
 	COMPQUIET(first, 0);
 	COMPQUIET(last, 0);
 
-	/* For strings, we store only the length calculated by strlen. */
-	if (is_string(a->type)) {
-		pr_code(copy_strlen_template,
-		    e->name, a->name,
-		    array_dim_name(e, a),
-		    e->name, a->name);
-	} else {
-		pr_code("memcpy(p, %s%sp->%s, sizeof(%sp->%s));\n",
-		    is_array(a->type) ? "" : "&",
-		    e->name, a->name, e->name, a->name);
-		pr_code("p += sizeof(%sp->%s);\n", e->name, a->name);
+	/* Primary key is not stored in data. */
+	if (strcmp(e->primary_key->name, a->name) != 0) {
+		/* 
+		 * For strings, we store only the length calculated by 
+		 * strlen.
+		 */ 		 
+		if (is_string(a->type)) {
+			pr_code(copy_strlen_template,
+			    e->name, a->name,
+			    array_dim_name(e, a),
+			    e->name, a->name);
+		} else {
+			pr_code("memcpy(p, %s%sp->%s, sizeof(%sp->%s));\n",
+			    is_array(a->type) ? "" : "&",
+			    e->name, a->name, e->name, a->name);
+			pr_code("p += sizeof(%sp->%s);\n", e->name, a->name);
+		}
 	}
 }
 
@@ -520,12 +545,11 @@ static void
 deserialize_function_enter_entop(ENTITY *e)
 {
 	static char *header_template =
-"                                                                           \n\
+"									    \n\
 void deserialize_%s_data(char *buffer, %s_data *%sp)                        \n\
 {                                                                           \n\
  size_t len;                                                                \n\
 									    \n\
- memset(%sp, 0, sizeof(*%sp));                                              \n\
 ";
 	pr_code(header_template, e->name, e->name, e->name,
 	    e->name, e->name);
@@ -545,8 +569,7 @@ deserialize_function_attrop(ENTITY *e, ATTRIBUTE *a, int first, int last)
 {
 	/* strings are stored with null termination in the buffer */
 	static char *copy_strlen_template =
-"                                                                           \n\
-len = strlen(buffer) + 1;                                                   \n\
+"len = strlen(buffer) + 1;                                                  \n\
 assert(len <= %s);                                                          \n\
 memcpy(%sp->%s, buffer, len);                                               \n\
 buffer += len;                                                              \n\
@@ -556,16 +579,19 @@ buffer += len;                                                              \n\
 	COMPQUIET(first, 0);
 	COMPQUIET(last, 0);
 
-	if (is_string(a->type)) {
-		pr_code (copy_strlen_template,
-		    array_dim_name(e, a),
-		    e->name, a->name);
-	} else {
-
-		pr_code("memcpy(%s%sp->%s, buffer, sizeof(%sp->%s));\n",
-		    is_array(a->type)? "" : "&",
-		    e->name, a->name, e->name, a->name);
-		pr_code("buffer += sizeof(%sp->%s);\n", e->name, a->name);
+	if (strcmp(e->primary_key->name, a->name) != 0) {
+		if (is_string(a->type)) {
+			pr_code (copy_strlen_template,
+			    array_dim_name(e, a),
+			    e->name, a->name);
+		} else {
+			pr_code(
+			    "memcpy(%s%sp->%s, buffer, sizeof(%sp->%s));\n",
+			    is_array(a->type)? "" : "&",
+			    e->name, a->name, e->name, a->name);
+			pr_code("buffer += sizeof(%sp->%s);\n\n", 
+			    e->name, a->name);
+		}
 	}
 }
 
@@ -583,44 +609,37 @@ int %s_insert_struct( DB *dbp, %s_data *%sp)                                \n\
 {                                                                           \n\
  DBT key_dbt, data_dbt;                                                     \n\
  char serialized_data[%s];                                                  \n\
- int ret, serialized_size;                                                  \n\
+ int ret;                                                                   \n\
  %s %s%s_key = %sp->%s;                                                     \n\
 									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
 									    \n\
- key_dbt.data = %s%s_key;                                                   \n\
- key_dbt.size = %s(%s_key)%s;                                               \n\
-									    \n\
- serialized_size = serialize_%s_data(%sp, serialized_data);                 \n\
-									    \n\
- data_dbt.data = serialized_data;                                           \n\
- data_dbt.size = serialized_size;                                           \n\
+ serialize_%s_data(%sp, serialized_data, &key_dbt, &data_dbt);              \n\
 									    \n\
  if ((ret = dbp->put(dbp, NULL, &key_dbt, &data_dbt, 0)) != 0) {            \n\
-  dbp->err(dbp, ret, \"Inserting key %%d\", %s_key);                        \n\
+  dbp->err(dbp, ret, \"Inserting key %s\", %s_key);                         \n\
   return -1;                                                                \n\
  }                                                                          \n\
  return 0;                                                                  \n\
 }                                                                           \n\
 									    \n\
 ";
-	pr_code(function_template, e->name, e->name, e->name,
-	    serialized_length_name(e),
-	    e->primary_key->type->c_type,
+	pr_code(function_template, e->name,  
+	    e->name, e->name, 
+	    serialized_length_name(e),   
+	    e->primary_key->type->c_type,  
 	    is_array(e->primary_key->type)? "*" : "",
 	    e->name,
 	    e->name,
 	    e->primary_key->name,
-	    is_array(e->primary_key->type) ? "" : "&",
-	    e->name,
-	    is_string(e->primary_key->type) ? "strlen" : "sizeof",
-	    e->name,
-	    is_string(e->primary_key->type) ? " + 1" : "",
-	    e->name, e->name, e->name);
+	    e->name, e->name,
+	    is_array(e->primary_key->type) ? "%s" : "%d",
+	    e->name);
 
 	if (SEPARATE_HEADER)
-		pr_header("int %s_insert_struct(DB *dbp, %s_data *%sp);\n\n",
+		pr_header(
+"int %s_insert_struct(DB *dbp, %s_data *%sp);\n\n",
 		    e->name, e->name, e->name);
 }
 
@@ -772,33 +791,52 @@ int get_%s_data(DB *dbp,                                                    \n\
 									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
+ memset(data, 0, sizeof(%s_data));					    \n\
 									    \n\
  key_dbt.data = %scanonical_key;                                            \n\
- key_dbt.size = %s(canonical_key)%s;                                        \n\
-									    \n\
+ key_dbt.size = ";
+
+	static char *function_template =					
+" 									    \n\
  if ((ret = dbp->get(dbp, NULL, &key_dbt, &data_dbt, 0)) != 0) {            \n\
-  dbp->err(dbp, ret, \"Retrieving key %%d\", %s_key);                       \n\
+  dbp->err(dbp, ret, \"Retrieving key %s\", %s_key);                        \n\
   return ret;                                                               \n\
  }                                                                          \n\
 									    \n\
  assert(data_dbt.size <= %s);                                               \n\
-									    \n\
+ memcpy(&data->%s, key_dbt.data, sizeof(data->%s));			    \n\
  deserialize_%s_data(data_dbt.data, data);                                  \n\
  return 0;                                                                  \n\
 }                                                                           \n\
 									    \n\
 ";
-	pr_code(header_template, e->name,
+	pr_code(header_template, e->name, 
 	    e->primary_key->type->c_type,
 	    is_array(e->primary_key->type) ? "*" : "",
-	    e->name, e->name, e->primary_key->type->c_type,
+	    e->name, 
+	    e->name, 
+	    e->primary_key->type->c_type,
 	    is_array(e->primary_key->type) ? "*" : "",
 	    e->name,
-	    is_array(e->primary_key->type) ? "" : "&",
-	    is_string(e->primary_key->type) ? "strlen" : "sizeof",
-	    is_string(e->primary_key->type) ? " + 1" : "",
-	    e->name, serialized_length_name(e),
-	    e->name);
+	    e->name, 
+	    is_array(e->primary_key->type) ? "" : "&"); 
+	    
+	if (is_array(e->primary_key->type) && !is_string(e->primary_key->type))
+		pr_code(array_dim_name(e, e->primary_key));
+	else 
+		pr_code("%s(canonical_key)%s", 
+		    is_string(e->primary_key->type) ? "strlen" : "sizeof",             
+		    is_string(e->primary_key->type) ? " + 1" : "");
+	
+	pr_code(";\n");
+	    
+	pr_code(function_template, 
+	    is_array(e->primary_key->type) ? "%s" : "%d",
+	    e->name,
+	    serialized_length_name(e),   
+	    e->primary_key->name, 
+	    e->primary_key->name,
+	    e->name); 
 
 	if (SEPARATE_HEADER)
 		pr_header(
@@ -838,10 +876,12 @@ int delete_%s_key(DB *dbp, %s %s%s_key)                                     \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
 									    \n\
  key_dbt.data = %scanonical_key;                                            \n\
- key_dbt.size = %s(canonical_key)%s;                                        \n\
-									    \n\
- if ((ret = dbp->del(dbp, NULL, &key_dbt, 0)) != 0) {                       \n\
-  dbp->err(dbp, ret, \"deleting key %%d\", %s_key);                         \n\
+ key_dbt.size = ";
+
+	static char *method_template =
+"									    \n\
+  if ((ret = dbp->del(dbp, NULL, &key_dbt, 0)) != 0) {                      \n\
+  dbp->err(dbp, ret, \"deleting key %s\", %s_key);                          \n\
   return ret;                                                               \n\
  }                                                                          \n\
 									    \n\
@@ -854,9 +894,19 @@ int delete_%s_key(DB *dbp, %s %s%s_key)                                     \n\
 	    e->name, e->primary_key->type->c_type,
 	    is_array(e->primary_key->type) ? "*" : "",
 	    e->name,
-	    is_array(e->primary_key->type) ? "" : "&",
-	    is_string(e->primary_key->type) ? "strlen" : "sizeof",
-	    is_string(e->primary_key->type) ? " + 1" : "",
+	    is_array(e->primary_key->type) ? "" : "&");
+	    
+	if (is_array(e->primary_key->type) && !is_string(e->primary_key->type))
+		pr_code(array_dim_name(e, e->primary_key));
+	else 
+		pr_code("%s(canonical_key)%s",	
+		    is_string(e->primary_key->type) ? "strlen" : "sizeof",
+		    is_string(e->primary_key->type) ? " + 1" : "");
+	
+	pr_code(";\n");
+	
+	pr_code(method_template,    
+	    is_array(e->primary_key->type) ? "%s" : "%d",
 	    e->name);
 
 	if (SEPARATE_HEADER)
@@ -958,14 +1008,14 @@ int %s_callback(DB *dbp,                                                    \n\
  const DBT *key_dbt,                                                        \n\
  const DBT *data_dbt,                                                       \n\
  DBT *secondary_key_dbt)                                                    \n\
-{                                                                           \n\
-									    \n\
+{									    \n\
  int ret;                                                                   \n\
  %s_data deserialized_data;                                                 \n\
 									    \n\
+ memcpy(&deserialized_data.%s, key_dbt->data, key_dbt->size);               \n\
  deserialize_%s_data(data_dbt->data, &deserialized_data);                   \n\
 									    \n\
- memset(secondary_key_dbt, 0, sizeof(*secondary_key_dbt));                  \n\
+ memset(secondary_key_dbt, 0, sizeof(DBT));                  		    \n\
  secondary_key_dbt->size = %s(deserialized_data.%s)%s;                      \n\
  secondary_key_dbt->data = malloc(secondary_key_dbt->size);                 \n\
  memcpy(secondary_key_dbt->data, %sdeserialized_data.%s,                    \n\
@@ -980,6 +1030,7 @@ int %s_callback(DB *dbp,                                                    \n\
 
 	pr_code(secondary_key_callback_template,
 	    idx->name, idx->primary->name,
+	    idx->primary->primary_key->name,
 	    idx->primary->name,
 	    is_string(idx->attribute->type) ? "strlen" : "sizeof",
 	    idx->attribute->name,
@@ -987,6 +1038,7 @@ int %s_callback(DB *dbp,                                                    \n\
 	    is_array(idx->attribute->type) ? "" : "&",
 	    idx->attribute->name);
 }
+
 
 static void
 generate_index_creation_function(DB_INDEX *idx)
@@ -1001,7 +1053,7 @@ int create_%s_secondary(DB_ENV *envp,                                       \n\
  char * secondary_name = \"%s.db\";                                         \n\
 									    \n\
  if ((ret = create_database(envp, secondary_name, secondary_dbpp,           \n\
-  DB_CREATE, %s, DB_DUPSORT, %s)) != 0)                               \n\
+  DB_CREATE, %s, DB_DUPSORT, %s)) != 0)                                     \n\
  return ret;                                                                \n\
 									    \n\
  if ((ret = primary_dbp->associate(primary_dbp, NULL, *secondary_dbpp,      \n\
@@ -1052,12 +1104,14 @@ int %s_query_iteration(DB *secondary_dbp,                                   \n\
  %s_iteration_callback user_func,                                           \n\
  void *user_data)                                                           \n\
 {                                                                           \n\
- DBT key_dbt, data_dbt;                                                     \n\
+ DBT key_dbt, pkey_dbt, data_dbt;					    \n\
  DBC *cursorp;                                                              \n\
  %s_data deserialized_data;                                                 \n\
- int ret;                                                                   \n\
+ int ret;								    \n\
+ int flag = DB_SET;                     				    \n\
 									    \n\
  memset(&key_dbt, 0, sizeof(key_dbt));                                      \n\
+ memset(&pkey_dbt, 0, sizeof(pkey_dbt)); 				    \n\
  memset(&data_dbt, 0, sizeof(data_dbt));                                    \n\
 									    \n\
  if ((ret = secondary_dbp->cursor(secondary_dbp, NULL, &cursorp, 0)) != 0) {\n\
@@ -1067,12 +1121,14 @@ int %s_query_iteration(DB *secondary_dbp,                                   \n\
 									    \n\
  key_dbt.data = %s%s_key;                                                   \n\
  key_dbt.size = %s(%s_key)%s;                                               \n\
-									    \n\
- for (ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_SET);             \n\
-  ret == 0;                                                                 \n\
-  ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_NEXT_DUP)) {          \n\
+ 									    \n\
+ while((ret = cursorp->pget(cursorp, &key_dbt, &pkey_dbt, &data_dbt, flag)) \n\
+  == 0) {								    \n\
+  memcpy(&deserialized_data.%s, pkey_dbt.data, sizeof(deserialized_data.%s));\n\
   deserialize_%s_data(data_dbt.data, &deserialized_data);                   \n\
   (*user_func)(user_data, &deserialized_data);                              \n\
+  if (flag == DB_SET)							    \n\
+   flag = DB_NEXT_DUP;						    	    \n\
  }                                                                          \n\
 									    \n\
  if (ret != DB_NOTFOUND) {                                                  \n\
@@ -1092,8 +1148,9 @@ int %s_query_iteration(DB *secondary_dbp,                                   \n\
 	    is_array(idx->attribute->type) ? "" : "&",
 	    idx->name,
 	    is_string(idx->attribute->type) ? "strlen" : "sizeof",
-	    idx->name,
+	    idx->name, 
 	    is_string(idx->attribute->type) ? " + 1" : "",
+	    idx->primary->primary_key->name, idx->primary->primary_key->name,
 	    idx->primary->name);
 
 	if (SEPARATE_HEADER)
@@ -1170,7 +1227,8 @@ int %s_full_iteration(DB *dbp,                                              \n\
   return ret;                                                               \n\
  }                                                                          \n\
 									    \n\
- while ((ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_NEXT)) == 0) {  \n\
+ while ((ret = cursorp->get(cursorp, &key_dbt, &data_dbt, DB_NEXT)) == 0) { \n\
+  memcpy(&deserialized_data.%s, key_dbt.data, sizeof(deserialized_data.%s));\n\
   deserialize_%s_data(data_dbt.data, &deserialized_data);                   \n\
   (*user_func)(user_data, &deserialized_data);                              \n\
  }                                                                          \n\
@@ -1188,7 +1246,10 @@ int %s_full_iteration(DB *dbp,                                              \n\
 ";
 
 	pr_code(full_iteration_template,
-	    e->name, e->name, e->name, e->name);
+	    e->name, e->name, e->name, 
+	    e->primary_key->name,
+	    e->primary_key->name,
+	    e->name);
 
 	if (SEPARATE_HEADER)
 		pr_header(

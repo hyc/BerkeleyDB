@@ -451,6 +451,10 @@ void ResourceManager::set_global_callbacks()
 ResourceManager* ResourceManager::instance()
 {
 	ResourceManager *pinst = NULL;
+#ifdef HAVE_PTHREAD_TLS
+	// Initialize the tls key.
+	pthread_once(&once_control_, tls_init_once<ResourceManager>);
+#endif
 
 	if ((pinst = TlsWrapper<ResourceManager>::get_tls_obj()) == NULL){
 		TlsWrapper<ResourceManager>::set_tls_obj(

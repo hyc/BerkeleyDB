@@ -41,8 +41,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	8
-#define	DB_VERSION_PATCH	24
-#define	DB_VERSION_STRING	"Berkeley DB 4.8.24: (August 14, 2009)"
+#define	DB_VERSION_PATCH	26
+#define	DB_VERSION_STRING	"Berkeley DB 4.8.26: (December 18, 2009)"
 
 /*
  * !!!
@@ -405,7 +405,7 @@ struct __db_lockreq {
 /*******************************************************
  * Logging.
  *******************************************************/
-#define	DB_LOGVERSION	15		/* Current log version. */
+#define	DB_LOGVERSION	16		/* Current log version. */
 #define DB_LOGVERSION_LATCHING 15	/* Log version using latching. */
 #define	DB_LOGCHKSUM	12		/* Check sum headers. */
 #define	DB_LOGOLDVER	8		/* Oldest log version supported. */

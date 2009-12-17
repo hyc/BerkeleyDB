@@ -257,13 +257,13 @@ static void __dbj_dbt_release(
 		return $null; /* An exception will be pending. */
 	}%}
 
-/* Special cases for DBTs that may be null: DbEnv.rep_start and Db.compact */
+/* Special cases for DBTs that may be null: DbEnv.rep_start, Db.compact Db.set_partition */
 %typemap(in) DBT *data_or_null (DBT_LOCKED ldbt) %{
 	if (__dbj_dbt_copyin(jenv, &ldbt, &$1, $input, 1) != 0) {
 		return $null; /* An exception will be pending. */
 	}%}
 
-%apply DBT *data_or_null {DBT *cdata, DBT *start, DBT *stop, DBT *end, DBT *db_put_data};
+%apply DBT *data_or_null {DBT *cdata, DBT *start, DBT *stop, DBT *end, DBT *db_put_data, DBT *keys};
 
 %typemap(freearg) DBT * %{ __dbj_dbt_release(jenv, $input, $1, &ldbt$argnum); %}
 

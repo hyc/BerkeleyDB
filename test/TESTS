@@ -2418,7 +2418,8 @@ test032
 	self as key and "ndups" duplicates.   For the data field, prepend the
 	letters of the alphabet in a random order so we force the duplicate
 	sorting code to do something.  By setting ndups large, we can make
-	this an off-page test.
+	this an off-page test. By setting overflow to be 1, we can make
+	this an overflow test.
 
 	Test the DB_GET_BOTH functionality by retrieving each dup in the file
 	explicitly.  Test the DB_GET_BOTH_RANGE functionality by retrieving
@@ -2439,8 +2440,11 @@ test033
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test034
-	test032 with off-page duplicates
-	DB_GET_BOTH, DB_GET_BOTH_RANGE functionality with off-page duplicates.
+	test032 with off-page or overflow case with non-duplicates
+	and duplicates.
+
+	DB_GET_BOTH, DB_GET_BOTH_RANGE functionality with off-page 
+	or overflow case within non-duplicates and duplicates.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test035

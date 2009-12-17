@@ -46,6 +46,7 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/lock.h"
+#include "dbinc/log.h"
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 #include "dbinc/db_am.h"
@@ -53,7 +54,6 @@
 
 static void __db_init_meta __P((DB *, void *, db_pgno_t, u_int32_t));
 #ifdef HAVE_FTRUNCATE
-static void __db_freelist_sort __P((db_pglist_t *, u_int32_t));
 static int  __db_pglistcmp __P((const void *, const void *));
 static int  __db_truncate_freelist __P((DBC *, DBMETA *,
       PAGE *, db_pgno_t *, u_int32_t, u_int32_t));
@@ -616,8 +616,9 @@ __db_pglistcmp(a, b)
 
 /*
  * __db_freelist_sort -- sort a list of free pages.
+ * PUBLIC: void __db_freelist_sort __P((db_pglist_t *, u_int32_t));
  */
-static void
+void
 __db_freelist_sort(list, nelems)
 	db_pglist_t *list;
 	u_int32_t nelems;
@@ -630,47 +631,37 @@ __db_freelist_sort(list, nelems)
  *
  * PUBLIC: #ifdef HAVE_FTRUNCATE
  * PUBLIC: int __db_pg_truncate __P((DBC *, DB_TXN *,
- * PUBLIC:    db_pglist_t *list, DB_COMPACT *, u_int32_t *, db_pgno_t *,
- * PUBLIC:    DB_LSN *, int));
+ * PUBLIC:    db_pglist_t *, DB_COMPACT *, u_int32_t *, 
+ * PUBLIC:    db_pgno_t , db_pgno_t *, DB_LSN *, int));
  * PUBLIC: #endif
  */
 int
-__db_pg_truncate(dbc, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
+__db_pg_truncate(dbc, txn,
+    list, c_data, nelemp, free_pgno, last_pgno, lsnp, in_recovery)
 	DBC *dbc;
 	DB_TXN *txn;
 	db_pglist_t *list;
 	DB_COMPACT *c_data;
 	u_int32_t *nelemp;
-	db_pgno_t *last_pgno;
+	db_pgno_t free_pgno, *last_pgno;
 	DB_LSN *lsnp;
 	int in_recovery;
 {
 	DB *dbp;
+	DBT ddbt;
+	DB_LSN null_lsn;
 	DB_MPOOLFILE *mpf;
 	PAGE *h;
-	db_pglist_t *lp;
-	db_pgno_t pgno;
-	u_int32_t nelems;
-	int ret;
+	db_pglist_t *lp, *slp;
+	db_pgno_t lpgno, pgno;
+	u_int32_t elems, log_size, tpoint;
+	int last, ret;
 
 	ret = 0;
 
 	dbp = dbc->dbp;
 	mpf = dbp->mpf;
-	nelems = *nelemp;
-	/* Sort the list */
-	__db_freelist_sort(list, nelems);
-
-	/* Find the truncation point. */
-	pgno = *last_pgno;
-	lp = &list[nelems - 1];
-	while (nelems != 0) {
-		if (lp->pgno != pgno)
-			break;
-		pgno--;
-		nelems--;
-		lp--;
-	}
+	elems = tpoint = *nelemp;
 
 	/*
 	 * Figure out what (if any) pages can be truncated immediately and
@@ -678,9 +669,54 @@ __db_pg_truncate(dbc, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
 	 * memp_ftruncate below.  We also use this to avoid ever putting
 	 * these pages on the freelist, which we are about to relink.
 	 */
-	for (lp = list; lp < &list[nelems]; lp++) {
-		if ((ret = __memp_fget(
-		    mpf, &lp->pgno, dbc->thread_info, txn, 0, &h)) != 0) {
+	pgno = *last_pgno;
+	lp = &list[elems - 1];
+	last = 1;
+	while (tpoint != 0) {
+		if (lp->pgno != pgno)
+			break;
+		pgno--;
+		tpoint--;
+		lp--;
+	}
+
+	lp = list;
+	slp = &list[elems];
+	/*
+	 * Log the sorted list.  Don't overflow the log file.  
+	 */
+again:	if (DBC_LOGGING(dbc)) {
+		last = 1;
+		lpgno = *last_pgno;
+		ddbt.size = elems * sizeof(*lp);
+		ddbt.data = lp;
+		log_size = ((LOG *)dbc->env->
+		    lg_handle->reginfo.primary)->log_size;
+		if (ddbt.size > log_size / 2) {
+			elems = (log_size / 2) / sizeof(*lp);
+			ddbt.size = elems * sizeof(*lp);
+			ddbt.data  = lp;
+			last = 0;
+			/*
+			 * If we stoped before the truncation point
+			 * then we need to truncate to here.
+			 */
+			if (lp + elems < &list[tpoint])
+				lpgno = lp[elems - 1].pgno;
+		}
+		slp = &lp[elems];
+
+		ZERO_LSN(null_lsn);
+		if ((ret = __db_pg_trunc_log(dbp, dbc->txn,
+		     lsnp, last == 1 ? DB_FLUSH : 0, PGNO_BASE_MD, lsnp,
+		     PGNO_INVALID, &null_lsn, free_pgno, lpgno, &ddbt)) != 0)
+			goto err;
+	} else if (!in_recovery)
+		LSN_NOT_LOGGED(*lsnp);
+
+	for (; lp < slp && lp < &list[tpoint]; lp++) {
+		if ((ret = __memp_fget(mpf, &lp->pgno, dbc->thread_info,
+		    txn, !in_recovery ? DB_MPOOL_DIRTY : 0, &h)) != 0) {
 			/* Page may have been truncated later. */
 			if (in_recovery && ret == DB_PAGE_NOTFOUND) {
 				ret = 0;
@@ -688,24 +724,39 @@ __db_pg_truncate(dbc, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
 			}
 			goto err;
 		}
-		if (!in_recovery || LOG_COMPARE(&LSN(h), &lp->lsn) == 0) {
-			if ((ret = __memp_dirty(mpf, &h,
-			    dbc->thread_info, txn, dbp->priority, 0)) != 0) {
-				(void)__memp_fput(mpf,
-				    dbc->thread_info, h, dbp->priority);
-				goto err;
-			}
-			if (lp == &list[nelems - 1])
-				NEXT_PGNO(h) = PGNO_INVALID;
-			else
-				NEXT_PGNO(h) = lp[1].pgno;
-			DB_ASSERT(mpf->env, NEXT_PGNO(h) < *last_pgno);
-
-			LSN(h) = *lsnp;
+		if (in_recovery) {
+			if (LOG_COMPARE(&LSN(h), &lp->lsn) == 0) {
+				if ((ret = __memp_dirty(mpf, &h,
+				    dbc->thread_info,
+				    txn, dbp->priority, 0)) != 0) {
+					(void)__memp_fput(mpf,
+					    dbc->thread_info, h, dbp->priority);
+					goto err;
+				}
+			} else 
+				goto skip;
 		}
-		if ((ret = __memp_fput(mpf,
+
+		if (lp == &list[tpoint - 1])
+			NEXT_PGNO(h) = PGNO_INVALID;
+		else
+			NEXT_PGNO(h) = lp[1].pgno;
+		DB_ASSERT(mpf->env, NEXT_PGNO(h) < *last_pgno);
+
+		LSN(h) = *lsnp;
+skip:		if ((ret = __memp_fput(mpf,
 		    dbc->thread_info, h, dbp->priority)) != 0)
 			goto err;
+	}
+
+	/*
+	 * If we did not log everyting try again.  We start from slp and
+	 * try to go to the end of the list.
+	 */
+	if (last == 0) {
+		elems = (u_int32_t)(&list[*nelemp] - slp);
+		lp = slp;
+		goto again;
 	}
 
 	if (pgno != *last_pgno) {
@@ -716,7 +767,7 @@ __db_pg_truncate(dbc, txn, list, c_data, nelemp, last_pgno, lsnp, in_recovery)
 			c_data->compact_pages_truncated += *last_pgno - pgno;
 		*last_pgno = pgno;
 	}
-	*nelemp = nelems;
+	*nelemp = tpoint;
 
 err:	return (ret);
 }
@@ -744,9 +795,7 @@ __db_free_truncate(dbp, ip, txn, flags, c_data, listp, nelemp, last_pgnop)
 {
 	DBC *dbc;
 	DBMETA *meta;
-	DBT ddbt;
 	DB_LOCK metalock;
-	DB_LSN null_lsn;
 	DB_MPOOLFILE *mpf;
 	ENV *env;
 	PAGE *h;
@@ -803,6 +852,7 @@ __db_free_truncate(dbp, ip, txn, flags, c_data, listp, nelemp, last_pgnop)
 			goto err;
 
 		lp->pgno = pgno;
+		lp->next_pgno = NEXT_PGNO(h);
 		lp->lsn = LSN(h);
 		pgno = NEXT_PGNO(h);
 		if ((ret = __memp_fput(mpf,
@@ -816,20 +866,11 @@ __db_free_truncate(dbp, ip, txn, flags, c_data, listp, nelemp, last_pgnop)
 	    &meta, dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
 		goto err;
 
-	/* Log the current state of the free list */
-	if (DBC_LOGGING(dbc)) {
-		ddbt.data = list;
-		ddbt.size = nelems * sizeof(*lp);
-		ZERO_LSN(null_lsn);
-		if ((ret = __db_pg_sort_log(dbp,
-		     dbc->txn, &LSN(meta), DB_FLUSH, PGNO_BASE_MD, &LSN(meta),
-		     PGNO_INVALID, &null_lsn, meta->last_pgno, &ddbt)) != 0)
-			goto err;
-	} else
-		LSN_NOT_LOGGED(LSN(meta));
+	/* Sort the list */
+	__db_freelist_sort(list, nelems);
 
 	if ((ret = __db_pg_truncate(dbc, txn, list, c_data,
-	    &nelems, &meta->last_pgno, &LSN(meta), 0)) != 0)
+	    &nelems, meta->free, &meta->last_pgno, &LSN(meta), 0)) != 0)
 		goto err;
 
 	if (nelems == 0)
@@ -879,9 +920,10 @@ __db_truncate_freelist(dbc, meta, h, list, start, nelem)
 	DB_LSN null_lsn;
 	DB_MPOOLFILE *mpf;
 	PAGE *last_free, *pg;
-	db_pgno_t *lp;
+	db_pgno_t *lp, free_pgno, lpgno;
 	db_pglist_t *plist, *pp;
-	int ret;
+	u_int32_t elem, log_size;
+	int last, ret;
 
 	dbp = dbc->dbp;
 	mpf = dbp->mpf;
@@ -905,23 +947,42 @@ __db_truncate_freelist(dbc, meta, h, list, start, nelem)
 			     dbc->thread_info, dbc->txn, 0, &pg)) != 0)
 				goto err;
 			pp->lsn = LSN(pg);
+			pp->next_pgno = NEXT_PGNO(pg);
 			if ((ret = __memp_fput(mpf,
 			    dbc->thread_info, pg, DB_PRIORITY_VERY_LOW)) != 0)
 				goto err;
 			pp++;
 		}
-		ddbt.data = plist;
-		ddbt.size = (nelem - start) * sizeof(*pp);
 		ZERO_LSN(null_lsn);
-		if (last_free != NULL) {
-			if ((ret = __db_pg_sort_log(dbp, dbc->txn, &LSN(meta),
+		pp = plist;
+		elem = nelem - start;
+		log_size = ((LOG *)dbc->env->
+		    lg_handle->reginfo.primary)->log_size;
+again:		ddbt.data = pp;
+		free_pgno = pp->pgno;
+		lpgno = meta->last_pgno;
+		ddbt.size = elem * sizeof(*pp);
+		if (ddbt.size > log_size / 2) {
+			elem = (log_size / 2) / (u_int32_t)sizeof(*pp);
+			ddbt.size = elem * sizeof(*pp);
+			pp += elem;
+			elem = (nelem - start) - (u_int32_t)(pp - plist);
+			lpgno = pp[-1].pgno;
+			last = 0;
+		} else
+			last = 1;
+		if (last_free != NULL && last == 1) {
+			if ((ret = __db_pg_trunc_log(dbp, dbc->txn, &LSN(meta),
 			     DB_FLUSH, PGNO(meta), &LSN(meta), PGNO(last_free),
-			     &LSN(last_free), meta->last_pgno, &ddbt)) != 0)
+			     &LSN(last_free), free_pgno, lpgno, &ddbt)) != 0)
 				goto err;
-		} else if ((ret = __db_pg_sort_log(dbp, dbc->txn,
-		     &LSN(meta), DB_FLUSH, PGNO(meta), &LSN(meta),
-		     PGNO_INVALID, &null_lsn, meta->last_pgno, &ddbt)) != 0)
+		} else if ((ret = __db_pg_trunc_log(dbp, dbc->txn,
+		     &LSN(meta), last == 1 ? DB_FLUSH : 0,
+		     PGNO(meta), &LSN(meta), PGNO_INVALID,
+		     &null_lsn, free_pgno, lpgno, &ddbt)) != 0)
 			goto err;
+		if (last == 0)
+			goto again;
 	} else
 		LSN_NOT_LOGGED(LSN(meta));
 	if (last_free != NULL)
