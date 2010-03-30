@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006-2009 Oracle.  All rights reserved.
+ * Copyright (c) 2006, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -544,7 +544,7 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 		if ((ret = __os_seek(env, fhp, spgno, pagesize, 0)) != 0 ||
 		    (ret = __os_write(env, fhp,
 		    &freepgno, sizeof(db_pgno_t), &nio)) != 0 ||
-	    	    (ret = __os_seek(env, fhp, 0, 0, sizeof(u_int32_t))) != 0 ||
+		    (ret = __os_seek(env, fhp, 0, 0, sizeof(u_int32_t))) != 0 ||
 		    (ret = __os_write(env, fhp,
 		    &spgno, sizeof(db_pgno_t), &nio)) != 0)
 			goto err;

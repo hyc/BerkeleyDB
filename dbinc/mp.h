@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -363,6 +363,7 @@ struct __mpoolfile {
 	db_mutex_t mutex;		/* MPOOLFILE mutex. */
 
 	/* Protected by MPOOLFILE mutex. */
+	u_int32_t revision;		/* Bumped on any movement subdbs. */
 	u_int32_t mpf_cnt;		/* Ref count: DB_MPOOLFILEs. */
 	u_int32_t block_cnt;		/* Ref count: blocks in cache. */
 	db_pgno_t last_pgno;		/* Last page in the file. */
@@ -541,13 +542,12 @@ struct __bh_frozen_a {
 };
 
 #define	MULTIVERSION(dbp)	((dbp)->mpf->mfp->multiversion)
+#define	IS_PINNED(p)							\
+    (BH_REFCOUNT((BH *)((u_int8_t *)					\
+    (p) - SSZA(BH, buf))) > 0)
 #define	IS_DIRTY(p)							\
     (F_ISSET((BH *)((u_int8_t *)					\
     (p) - SSZA(BH, buf)), BH_DIRTY|BH_EXCLUSIVE) == (BH_DIRTY|BH_EXCLUSIVE))
-
-#define IS_VERSION(dbp, p)						\
-    (!F_ISSET(dbp->mpf->mfp, MP_CAN_MMAP) &&				\
-    SH_CHAIN_HASPREV((BH *)((u_int8_t *)(p) - SSZA(BH, buf)), vc))
 
 #define	BH_OWNER(env, bhp)						\
     ((TXN_DETAIL *)R_ADDR(&env->tx_handle->reginfo, bhp->td_off))

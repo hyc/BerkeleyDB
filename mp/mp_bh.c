@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -207,7 +207,8 @@ __memp_pgread(dbmfp, bhp, can_create)
 
 	/* We should never be called with a dirty or unlocked buffer. */
 	DB_ASSERT(env, !F_ISSET(bhp, BH_DIRTY_CREATE | BH_FROZEN));
-	DB_ASSERT(env, can_create || !F_ISSET(bhp, BH_DIRTY));
+	DB_ASSERT(env, can_create ||
+	    F_ISSET(bhp, BH_TRASH) || !F_ISSET(bhp, BH_DIRTY));
 	DB_ASSERT(env, F_ISSET(bhp, BH_EXCLUSIVE));
 
 	/* Mark the buffer as in transistion. */
@@ -254,13 +255,9 @@ __memp_pgread(dbmfp, bhp, can_create)
 		if (len < pagesize)
 			memset(bhp->buf + len, CLEAR_BYTE, pagesize - len);
 #endif
-#ifdef HAVE_STATISTICS
-		++mfp->stat.st_page_create;
+		STAT_INC(env, mpool, page_create, mfp->stat.st_page_create);
 	} else
-		++mfp->stat.st_page_in;
-#else
-	}
-#endif
+		STAT_INC(env, mpool, page_in, mfp->stat.st_page_in);
 
 	/* Call any pgin function. */
 	ret = mfp->ftype == 0 ? 0 : __memp_pg(dbmfp, bhp->pgno, bhp->buf, 1);
@@ -364,7 +361,7 @@ __memp_pgwrite(env, dbmfp, hp, bhp)
 		if (!lp->db_log_inmemory &&
 		    LOG_COMPARE(&lp->s_lsn, &LSN(bhp->buf)) <= 0) {
 			MUTEX_LOCK(env, lp->mtx_flush);
-			DB_ASSERT(env,
+			DB_ASSERT(env, F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||
 			    LOG_COMPARE(&lp->s_lsn, &LSN(bhp->buf)) > 0);
 			MUTEX_UNLOCK(env, lp->mtx_flush);
 		}
@@ -630,7 +627,7 @@ no_hp:	MVCC_MPROTECT(bhp->buf, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
 	 */
 	MUTEX_LOCK(env, mfp->mutex);
 	if (--mfp->block_cnt == 0 && mfp->mpf_cnt == 0) {
-		if ((t_ret = __memp_mf_discard(dbmp, mfp)) != 0 && ret == 0)
+		if ((t_ret = __memp_mf_discard(dbmp, mfp, 0)) != 0 && ret == 0)
 			ret = t_ret;
 	} else
 		MUTEX_UNLOCK(env, mfp->mutex);

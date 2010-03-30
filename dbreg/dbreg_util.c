@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1997, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,7 +12,6 @@
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
 #include "dbinc/fop.h"
-#include "dbinc/log.h"
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 
@@ -136,7 +135,7 @@ __dbreg_log_files(env, opcode)
 		 */
 		if ((ret = __dbreg_register_log(env, NULL, &r_unused,
 		    F_ISSET(fnp, DB_FNAME_DURABLE) ? 0 : DB_LOG_NOT_DURABLE,
-		    opcode,
+		    opcode | F_ISSET(fnp, DB_FNAME_DBREG_MASK),
 		    dbtp, &fid_dbt, fnp->id, fnp->s_type, fnp->meta_pgno,
 		    TXN_INVALID)) != 0)
 			break;
@@ -606,6 +605,7 @@ retry_inmem:
 		memcpy(dbp->fileid, uid, DB_FILE_ID_LEN);
 		dbp->meta_pgno = meta_pgno;
 	}
+
 	if (opcode == DBREG_PREOPEN) {
 		dbp->type = ftype;
 		if ((ret = __dbreg_setup(dbp, name, NULL, id)) != 0)
@@ -673,25 +673,24 @@ err:		if (cstat == TXN_UNEXPECTED)
 			CLR_INMEM(dbp);
 
 		/*
-		 * If it exists neither on disk nor in memory
-		 * record that the open failed in the txnlist.
+		 * Record that the open failed in the txnlist.
+		 * If this is a failed open inside a transaction
+		 * then we may have crashed without writing the
+		 * corresponding close, record the open so recovery
+		 * will write a close record with its checkpoint.
 		 */
-		if (id != TXN_INVALID && (ret = __db_txnlist_update(env,
-		    info, id, TXN_UNEXPECTED, NULL, &ret_stat, 1)) != 0)
-			goto not_right;
-		
-		/*
-		 * If this is file is missing then we may have crashed
-		 * without writing the corresponding close, record
-		 * the open so recovery will write a close record
-		 * with its checkpoint.
-		 */
-		if ((opcode == DBREG_CHKPNT || opcode == DBREG_OPEN) &&
-		    dbp->log_filename == NULL &&
-		    (ret = __dbreg_setup(dbp, name, NULL, id)) != 0)
-			return (ret);
-		ret = __dbreg_assign_id(dbp, ndx, 1);
-		return (ret);
+		if (id != TXN_INVALID) {
+			if ((ret = __db_txnlist_update(env, info,
+			    id, TXN_UNEXPECTED, NULL, &ret_stat, 1)) != 0)
+				goto not_right;
+			if (opcode == DBREG_OPEN) {
+				if (dbp->log_filename == NULL && (ret =
+				    __dbreg_setup(dbp, name, NULL, id)) != 0)
+					return (ret);
+				ret = __dbreg_assign_id(dbp, ndx, 1);
+				return (ret);
+			}
+		}
 	}
 not_right:
 	if ((t_ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0)
@@ -712,7 +711,6 @@ __dbreg_check_master(env, uid, name)
 	DB *dbp;
 	int ret;
 
-	ret = 0;
 	if ((ret = __db_create_internal(&dbp, env, 0)) != 0)
 		return (ret);
 	F_SET(dbp, DB_AM_RECOVER);
@@ -758,7 +756,7 @@ __dbreg_lazy_id(dbp)
 
 	env = dbp->env;
 
-	DB_ASSERT(env, IS_REP_MASTER(env));
+	DB_ASSERT(env, IS_REP_MASTER(env) || F_ISSET(dbp, DB_AM_NOT_DURABLE));
 
 	env = dbp->env;
 	dblp = env->lg_handle;

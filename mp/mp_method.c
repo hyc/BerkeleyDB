@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -113,6 +113,8 @@ __memp_set_cachesize(dbenv, gbytes, bytes, arg_ncache)
 	u_int ncache;
 
 	env = dbenv->env;
+	ENV_NOT_CONFIGURED(env,
+	    env->mp_handle, "DB_ENV->set_cachesize", DB_INIT_MPOOL);
 
 	/* Normalize the cache count. */
 	ncache = arg_ncache <= 0 ? 1 : (u_int)arg_ncache;

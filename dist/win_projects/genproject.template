@@ -181,10 +181,11 @@ declare function local:makeLibraryDirectory($lib,$platform,$config)
 };
 
 (: The simple thing is to add all libraries for all projects :)
+(: Add an unconditional "../lib" to the end :)
 declare function local:addLibraryDirectories($project,$platform,$config)
 {
-  attribute{"AdditionalLibraryDirectories"}{string-join(for $dep in $project/depends
-   return local:makeLibraryDirectory(doc($projectList)/projects/library[@name=$dep],$platform,$config),";")}
+  attribute{"AdditionalLibraryDirectories"}{string-join((for $dep in $project/depends
+   return local:makeLibraryDirectory(doc($projectList)/projects/library[@name=$dep],$platform,$config),"../lib"),";")}
 };
 
 (: The simple thing is to add all libraries for all projects :)
@@ -207,6 +208,23 @@ local:indent(6),<Tool>
      else let $ev := doc($projectList)/projects/event[@name="postbuild" and @type=$project/type]
            return if (not(empty($ev))) then 
 	              (attribute{"CommandLine"}{replace($ev/command[@config=$config],"@pname@",if (not(empty($project/@output))) then $project/@output else $project/@name)},
+           	      attribute{"Description"}{$ev/description})
+           else ()
+    }
+</Tool>
+};
+
+(: look for project-specific tool, then a type-specific event :)
+declare function local:generatePreBuildEvent($project, $config)
+{
+local:indent(6),<Tool>
+    {attribute{"Name"}{"VCPreBuildEventTool"}}
+    {if (not(empty($project/event[@name="prebuild"]))) then
+           (attribute{"CommandLine"}{$project/event[@name="prebuild"]/command[contains(@config,$config)]},
+           attribute{"Description"}{$project/event[@name="prebuild"]/description})
+     else let $ev := doc($projectList)/projects/event[@name="prebuild" and @type=$project/type]
+           return if (not(empty($ev))) then 
+	              (attribute{"CommandLine"}{replace($ev/command[contains(@config,$config)],"@pname@",if (not(empty($project/@output))) then $project/@output else $project/@name)},
            	      attribute{"Description"}{$ev/description})
            else ()
     }
@@ -285,7 +303,6 @@ local:indent(6),<Tool>
 
 declare function local:generateConfigBoilerplate($config)
 {
-local:indent(6),<Tool Name="VCPreBuildEventTool"/>,
 local:indent(6),<Tool Name="VCPreLinkEventTool"/>,
 local:indent(6),<Tool Name="VCResourceCompilerTool"/>,
 local:indent(6),<Tool Name="VCXMLDataGeneratorTool"/>,
@@ -312,6 +329,7 @@ local:indent(4),<Configuration>
     {local:generateConfigBoilerplate($config)}
     {local:generateConfigCompiler($project, $platform, $config,xs:boolean("false"))}
     {local:generateConfigLinkerAndMidl($project, $platform, $config)}
+    {local:generatePreBuildEvent($project,if (local:isDebug($config)) then "Debug" else "Release")}
     {local:generatePostBuildEvent($project,if (local:isDebug($config)) then "Debug" else "Release")}
     {local:generateCustomBuildTool($project,if (local:isDebug($config)) then "Debug" else "Release")}
   </Configuration>

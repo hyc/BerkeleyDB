@@ -141,6 +141,16 @@ __dbc_close(dbc)
 			memset(&opd->mylock, 0, sizeof(opd->mylock));
 	}
 
+	/*
+	 * Remove this cursor's locker ID from its family.
+	 */
+	if (F_ISSET(dbc, DBC_OWN_LID) && F_ISSET(dbc, DBC_FAMILY)) {
+		if ((t_ret = __lock_familyremove(env->lk_handle,
+		    dbc->lref)) != 0 && ret == 0)
+			ret = t_ret;
+		F_CLR(dbc, DBC_FAMILY);
+	}
+
 	if ((txn = dbc->txn) != NULL)
 		txn->cursors--;
 
@@ -150,7 +160,6 @@ __dbc_close(dbc)
 		if (txn != NULL)
 			txn->cursors--;
 		TAILQ_INSERT_TAIL(&dbp->free_queue, opd, links);
-		opd = NULL;
 	}
 	TAILQ_INSERT_TAIL(&dbp->free_queue, dbc, links);
 	MUTEX_UNLOCK(env, dbp->mutex);
@@ -1443,7 +1452,7 @@ __dbc_put_secondaries(dbc,
 	env = dbp->env;
 	fdbc = sdbc = NULL;
 	sdbp = NULL;
-	ret = t_ret = 0;
+	t_ret = 0;
 	rmw = FLD_ISSET(*put_statep, DBC_PUT_RMW) ? DB_RMW : 0;
 
 	/*
@@ -1714,7 +1723,7 @@ __dbc_put_primary(dbc, key, data, flags)
 
 	dbp = dbc->dbp;
 	env = dbp->env;
-	ret = t_ret = s_count = 0;
+	t_ret = 0;
 	put_state = 0;
 	sdbp = NULL;
 	pdbc = dbc_n = NULL;
@@ -3272,7 +3281,7 @@ __db_s_next(sdbpp, txn)
 	 */
 	if (closeme == NULL)
 		ret = 0;
-	else 
+	else
 		ret = __db_close(closeme, txn, 0);
 
 	return (ret);
@@ -3444,15 +3453,15 @@ __db_check_skeyset(sdbp, skeyp)
 	DB *sdbp;
 	DBT *skeyp;
 {
-	DBT *firstkey, *lastkey, *key1, *key2;
+	DBT *first_key, *last_key, *key1, *key2;
 	ENV *env;
 
 	env = sdbp->env;
 
-	firstkey = (DBT *)skeyp->data;
-	lastkey = firstkey + skeyp->size;
-	for (key1 = firstkey; key1 < lastkey; key1++)
-		for (key2 = key1 + 1; key2 < lastkey; key2++)
+	first_key = (DBT *)skeyp->data;
+	last_key = first_key + skeyp->size;
+	for (key1 = first_key; key1 < last_key; key1++)
+		for (key2 = key1 + 1; key2 < last_key; key2++)
 			DB_ASSERT(env,
 			    ((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
 			    key1, key2) != 0);

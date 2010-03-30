@@ -13,7 +13,6 @@
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
-#include "dbinc/log.h"
 #include "dbinc/db_am.h"
 
 typedef struct __txn_event TXN_EVENT;

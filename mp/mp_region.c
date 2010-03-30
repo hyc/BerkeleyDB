@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -559,6 +559,9 @@ not_priv:
 		infop->mtx_alloc = MUTEX_INVALID;
 		__memp_free(infop, R_ADDR(infop, mp->regids));
 
+		/* Discard all the MPOOLFILEs. */
+		if ((t_ret = __memp_discard_all_mpfs(env, mp)) != 0 && ret == 0)
+			ret = t_ret;
 		/* Discard the File table. */
 		__memp_free(infop, R_ADDR(infop, mp->ftab));
 

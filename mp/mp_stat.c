@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,7 +11,6 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
-#include "dbinc/log.h"
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 
@@ -661,6 +660,7 @@ __memp_print_files(env, mfp, argp, countp, flags)
 	__mutex_print_debug_single(env, "Mutex", mfp->mutex, flags);
 
 	MUTEX_LOCK(env, mfp->mutex);
+	STAT_ULONG("Revision count", mfp->revision);
 	STAT_ULONG("Reference count", mfp->mpf_cnt);
 	STAT_ULONG("Block count", mfp->block_cnt);
 	STAT_ULONG("Last page number", mfp->last_pgno);
@@ -802,9 +802,10 @@ __memp_print_bh(env, dbmp, prefix, bhp, fmap)
 	    F_ISSET(bhp, BH_FROZEN) ? 0 : (u_long)LSN(bhp->buf).file,
 	    F_ISSET(bhp, BH_FROZEN) ? 0 : (u_long)LSN(bhp->buf).offset);
 	if (bhp->td_off != INVALID_ROFF)
-		__db_msgadd(env, &mb, " (@%lu/%lu)",
+		__db_msgadd(env, &mb, " (@%lu/%lu 0x%x)",
 		    (u_long)VISIBLE_LSN(env, bhp)->file,
-		    (u_long)VISIBLE_LSN(env, bhp)->offset);
+		    (u_long)VISIBLE_LSN(env, bhp)->offset,
+		    BH_OWNER(env, bhp)->txnid);
 	__db_msgadd(env, &mb, ", %#08lx, %lu",
 	    (u_long)R_OFFSET(dbmp->reginfo, bhp), (u_long)bhp->priority);
 	__db_prflags(env, &mb, bhp->flags, fn, " (", ")");

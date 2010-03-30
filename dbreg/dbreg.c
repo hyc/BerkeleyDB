@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -146,6 +146,17 @@ __dbreg_setup(dbp, fname, dname, create_txnid)
 		F_SET(fnp, DB_FNAME_INMEM);
 	if (F_ISSET(dbp, DB_AM_RECOVER))
 		F_SET(fnp, DB_FNAME_RECOVER);
+	/*
+	 * The DB is BIGENDed if its bytes are swapped XOR
+	 *	the machine is bigended
+	 */
+	if ((F_ISSET(dbp, DB_AM_SWAP) != 0) ^
+	    (F_ISSET(env, ENV_LITTLEENDIAN) == 0))
+		F_SET(fnp, DBREG_BIGEND);
+	if (F_ISSET(dbp, DB_AM_CHKSUM))
+		F_SET(fnp, DBREG_CHKSUM);
+	if (F_ISSET(dbp, DB_AM_ENCRYPT))
+		F_SET(fnp, DBREG_ENCRYPT);
 	fnp->txn_ref = 1;
 	fnp->mutex = dbp->mutex;
 
@@ -966,7 +977,8 @@ __dbreg_log_id(dbp, txn, id, needlock)
 	    (F_ISSET(dbp, DB_AM_INMEM) ? DBREG_REOPEN : DBREG_OPEN);
 	ret = __dbreg_register_log(env, txn, &unused,
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0,
-	    op, r_name.size == 0 ? NULL : &r_name, &fid_dbt, id,
+	    op | F_ISSET(fnp, DB_FNAME_DBREG_MASK),
+	    r_name.size == 0 ? NULL : &r_name, &fid_dbt, id,
 	    fnp->s_type, fnp->meta_pgno, fnp->create_txnid);
 
 	if (needlock)

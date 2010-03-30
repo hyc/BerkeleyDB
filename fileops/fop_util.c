@@ -15,7 +15,6 @@
 #include "dbinc/fop.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
-#include "dbinc/log.h"
 #include "dbinc/txn.h"
 
 static int __fop_set_pgsize __P((DB *, DB_FH *, const char *));
@@ -245,6 +244,13 @@ __fop_file_setup(dbp, ip, txn, name, mode, flags, retidp)
 		created_locker = 1;
 	}
 	LOCK_INIT(dbp->handle_lock);
+
+	if (txn != NULL && dbp->locker != NULL && F_ISSET(txn, TXN_INFAMILY)) {
+		if ((ret = __lock_addfamilylocker(env,
+		    txn->txnid, dbp->locker->id, 1)) != 0)
+			goto err;
+		txn = NULL;
+	}
 
 	locker = txn == NULL ? dbp->locker : txn->locker;
 
@@ -905,10 +911,14 @@ __fop_remove_setup(dbp, txn, name, flags)
 
 	/* Create locker if necessary. */
 retry:	if (LOCKING_ON(env)) {
-		if (txn != NULL)
+		if (IS_REAL_TXN(txn))
 			dbp->locker = txn->locker;
 		else if (dbp->locker == DB_LOCK_INVALIDID) {
 			if ((ret = __lock_id(env, NULL, &dbp->locker)) != 0)
+				goto err;
+			if (txn != NULL && F_ISSET(txn, TXN_INFAMILY) &&
+			    (ret = __lock_addfamilylocker(env,
+			    txn->txnid, dbp->locker->id, 1)) != 0)
 				goto err;
 		}
 	}
@@ -1206,9 +1216,10 @@ __fop_inmem_create(dbp, name, txn, flags)
 	ENV *env;
 	int ret;
 	int32_t lfid;
-	u_int32_t *p32;
+	u_int32_t dflags, *p32;
 
 	env = dbp->env;
+	dflags = F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0;
 
 	MAKE_INMEM(dbp);
 
@@ -1267,7 +1278,7 @@ __fop_inmem_create(dbp, name, txn, flags)
 		lfid = dbp->log_filename == NULL ?
 		    DB_LOGFILEID_INVALID : dbp->log_filename->id;
 		if ((ret = __crdel_inmem_create_log(env, txn,
-		    &lsn, 0, lfid, &name_dbt, &fid_dbt, dbp->pgsize)) != 0)
+		    &lsn, dflags, lfid, &name_dbt, &fid_dbt, dbp->pgsize)) != 0)
 			goto err;
 	}
 

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002-2009 Oracle.  All rights reserved.
+ * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -151,6 +151,12 @@ True if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDat
         this.btreeComparator = btreeComparator;
     }
 
+    /**
+    Return the custom Comparator used for btree keys.
+    <p>
+    @return the custom Comparator used for btree keys, or null if the default
+    comparison function will be used.
+    */
     public java.util.Comparator getBtreeComparator() {
         return btreeComparator;
     }
@@ -553,6 +559,12 @@ True if the database is configured to support read uncommitted.
         this.duplicateComparator = duplicateComparator;
     }
 
+    /**
+    Return the duplicate data item comparison callback.
+    <p>
+    @return the duplicate data item Comparator, or null if the default Comparator
+    will be used.
+    */
     public java.util.Comparator getDuplicateComparator() {
         return duplicateComparator;
     }
@@ -2272,11 +2284,13 @@ database has been opened.
 
         String[] partitionDirArray = db.get_partition_dirs();
         if (partitionDirArray == null)
-            partitionDirArray = new String[0];
-        partitionDirs = new java.io.File[partitionDirArray.length];
-        for (int i = 0; i < partitionDirArray.length; i++)
-            partitionDirs[i] = new java.io.File(partitionDirArray[i]);
-
+            partitionDirs = null;
+	else {
+	    partitionDirs = new java.io.File[partitionDirArray.length];
+	    for (int i = 0; i < partitionDirArray.length; i++)
+		partitionDirs[i] = new java.io.File(partitionDirArray[i]);
+	}
+	
         btreeComparator = db.get_bt_compare();
         btreeCompressor = db.get_bt_compress();
         btreePrefixCalculator = db.get_bt_prefix();

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -49,6 +49,7 @@ __memp_fget_pp(dbmfp, pgnoaddr, txnp, flags, addrp)
 	 * is to keep database files small.  It's sleazy as hell, but we catch
 	 * any attempt to actually write the file in memp_fput().
 	 */
+#undef	OKFLAGS
 #define	OKFLAGS		(DB_MPOOL_CREATE | DB_MPOOL_DIRTY | \
 	    DB_MPOOL_EDIT | DB_MPOOL_LAST | DB_MPOOL_NEW)
 	if (flags != 0) {
@@ -71,7 +72,7 @@ __memp_fget_pp(dbmfp, pgnoaddr, txnp, flags, addrp)
 
 	rep_blocked = 0;
 	if (txnp == NULL && IS_ENV_REPLICATED(env)) {
-		if ((ret = __op_rep_enter(env)) != 0)
+		if ((ret = __op_rep_enter(env, 0)) != 0)
 			goto err;
 		rep_blocked = 1;
 	}
@@ -223,7 +224,7 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 	    F_ISSET(mfp, MP_CAN_MMAP) && *pgnoaddr <= mfp->orig_last_pgno) {
 		*(void **)addrp = (u_int8_t *)dbmfp->addr +
 		    (*pgnoaddr * mfp->stat.st_pagesize);
-		STAT(++mfp->stat.st_map);
+		STAT_INC(env, mpool, map, mfp->stat.st_map);
 		return (0);
 	}
 
@@ -256,11 +257,11 @@ retry:		MUTEX_LOCK(env, hp->mtx_hash);
 			    !BH_OWNED_BY(env, bhp, txn) &&
 			    !BH_VISIBLE(env, bhp, read_lsnp, vlsn))
 				bhp = SH_CHAIN_PREV(bhp, vc, __bh);
-	
-			/* 
-			 * We can get a null bhp if we are looking for a 
+
+			/*
+			 * We can get a null bhp if we are looking for a
 			 * page that was created after the transaction was
-			 * started so its not visible  (i.e. page added to 
+			 * started so its not visible  (i.e. page added to
 			 * the BTREE in a subsequent txn).
 			 */
 			if (bhp == NULL) {
@@ -371,7 +372,7 @@ thawed:			need_free = (atomic_dec(env, &bhp->ref) == 0);
 			goto err;
 		}
 
-		STAT(++mfp->stat.st_cache_hit);
+		STAT_INC(env, mpool, hits, mfp->stat.st_cache_hit);
 		break;
 	}
 
@@ -380,10 +381,11 @@ thawed:			need_free = (atomic_dec(env, &bhp->ref) == 0);
 	 * Update the hash bucket search statistics -- do now because our next
 	 * search may be for a different bucket.
 	 */
-	++c_mp->stat.st_hash_searches;
+	STAT_INC(env, mpool, hash_search, c_mp->stat.st_hash_searches);
 	if (st_hsearch > c_mp->stat.st_hash_longest)
 		c_mp->stat.st_hash_longest = st_hsearch;
-	c_mp->stat.st_hash_examined += st_hsearch;
+	STAT_ADJUST(env, mpool,
+	    hash_examined, c_mp->stat.st_hash_searches, st_hsearch);
 #endif
 
 	/*
@@ -818,10 +820,11 @@ alloc:		/* Allocate a new buffer header and data space. */
 			    bhp->pgno, bhp->buf, 1)) != 0)
 				goto err;
 
-			STAT(++mfp->stat.st_page_create);
+			STAT_INC(env, mpool,
+			    page_create, mfp->stat.st_page_create);
 		} else {
 			F_SET(bhp, BH_TRASH);
-			STAT(++mfp->stat.st_cache_miss);
+			STAT_INC(env, mpool, miss, mfp->stat.st_cache_miss);
 		}
 
 		makecopy = mvcc && dirty && !extending;

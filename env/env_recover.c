@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996-2009 Oracle.  All rights reserved.
+ * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -13,14 +13,13 @@
 #include "dbinc/fop.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
-#include "dbinc/log.h"
 #include "dbinc/mp.h"
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996-2009 Oracle.  All rights reserved.\n";
+    "Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 static int	__db_log_corrupt __P((ENV *, DB_LSN *));
@@ -28,6 +27,7 @@ static int	__env_init_rec_42 __P((ENV *));
 static int	__env_init_rec_43 __P((ENV *));
 static int	__env_init_rec_46 __P((ENV *));
 static int	__env_init_rec_47 __P((ENV *));
+static int	__env_init_rec_48 __P((ENV *));
 static int	__log_earliest __P((ENV *, DB_LOGC *, int32_t *, DB_LSN *));
 
 #ifndef HAVE_BREW
@@ -934,40 +934,51 @@ __env_init_rec(env, version)
 	if ((ret = __txn_init_recover(env, &env->recover_dtab)) != 0)
 		goto err;
 
-	switch (version) {
-	case DB_LOGVERSION:
-		ret = 0;
-		break;
-	case DB_LOGVERSION_48:
-		if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-		    __db_pg_sort_44_recover, DB___db_pg_sort_44)) != 0)
-			goto err;
-		break;
-	case DB_LOGVERSION_47:
-		ret = __env_init_rec_47(env);
-		break;
+	/*
+	 * After installing all the current recovery routines, we want to
+	 * override them with older versions if we are reading a down rev
+	 * log (from a downrev replication master).  If a log record is
+	 * changed then we must use the previous version for all older
+	 * logs.  If a record is changed in multiple revisions then the
+	 * oldest revision that applies must be used.  Therefore we override
+	 * the recovery functions in reverse log version order.
+	 */
+	if (version == DB_LOGVERSION)
+		goto done;
+	if ((ret = __env_init_rec_48(env)) != 0)
+		goto err;
+	/*
+	 * Patch 2 added __db_pg_trunc but did not replace any log records
+	 * so we want to override the same functions as in the original release.
+	 */
+	if (version >= DB_LOGVERSION_48)
+		goto done;
+	if ((ret = __env_init_rec_47(env)) != 0)
+		goto err;
+	if (version == DB_LOGVERSION_47)
+		goto done;
+	if ((ret = __env_init_rec_46(env)) != 0)
+		goto err;
 	/*
 	 * There are no log record/recovery differences between 4.4 and 4.5.
 	 * The log version changed due to checksum.  There are no log recovery
 	 * differences between 4.5 and 4.6.  The name of the rep_gen in
 	 * txn_checkpoint changed (to spare, since we don't use it anymore).
 	 */
-	case DB_LOGVERSION_46:
-	case DB_LOGVERSION_45:
-	case DB_LOGVERSION_44:
-		ret = __env_init_rec_46(env);
-		break;
-	case DB_LOGVERSION_43:
-		ret = __env_init_rec_43(env);
-		break;
-	case DB_LOGVERSION_42:
-		ret = __env_init_rec_42(env);
-		break;
-	default:
+	if (version >= DB_LOGVERSION_44)
+		goto done;
+	if ((ret = __env_init_rec_43(env)) != 0)
+		goto err;
+	if (version == DB_LOGVERSION_43)
+		goto done;
+	if (version != DB_LOGVERSION_42) {
 		__db_errx(env, "Unknown version %lu", (u_long)version);
 		ret = EINVAL;
-		break;
+		goto err;
 	}
+	ret = __env_init_rec_42(env);
+
+done:
 err:	return (ret);
 }
 
@@ -977,9 +988,6 @@ __env_init_rec_42(env)
 {
 	int ret;
 
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __bam_split_42_recover, DB___bam_split_42)) != 0)
-		goto err;
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __db_relink_42_recover, DB___db_relink_42)) != 0)
 		goto err;
@@ -992,26 +1000,16 @@ __env_init_rec_42(env)
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __db_pg_freedata_42_recover, DB___db_pg_freedata_42)) != 0)
 		goto err;
+#ifdef HAVE_HASH
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __ham_metagroup_42_recover, DB___ham_metagroup_42)) != 0)
 		goto err;
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __ham_groupalloc_42_recover, DB___ham_groupalloc_42)) != 0)
 		goto err;
+#endif
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __txn_ckp_42_recover, DB___txn_ckp_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __txn_regop_42_recover, DB___txn_regop_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_create_42_recover, DB___fop_create_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_write_42_recover, DB___fop_write_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_rename_42_recover, DB___fop_rename_42)) != 0)
 		goto err;
 err:
 	return (ret);
@@ -1024,9 +1022,6 @@ __env_init_rec_43(env)
 	int ret;
 
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __bam_split_42_recover, DB___bam_split_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __bam_relink_43_recover, DB___bam_relink_43)) != 0)
 		goto err;
 	/*
@@ -1034,15 +1029,6 @@ __env_init_rec_43(env)
 	 */
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __txn_regop_42_recover, DB___txn_regop_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_create_42_recover, DB___fop_create_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_write_42_recover, DB___fop_write_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_rename_42_recover, DB___fop_rename_42)) != 0)
 		goto err;
 err:
 	return (ret);
@@ -1055,19 +1041,7 @@ __env_init_rec_46(env)
 	int ret;
 
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __bam_split_42_recover, DB___bam_split_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __bam_merge_44_recover, DB___bam_merge_44)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_create_42_recover, DB___fop_create_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_write_42_recover, DB___fop_write_42)) != 0)
-		goto err;
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_rename_42_recover, DB___fop_rename_42)) != 0)
 		goto err;
 
 err:	return (ret);
@@ -1098,6 +1072,35 @@ __env_init_rec_47(env)
 	    __fop_rename_noundo_46_recover, DB___fop_rename_noundo_46)) != 0)
 		goto err;
 
+err:
+	return (ret);
+}
+
+static int
+__env_init_rec_48(env)
+	ENV *env;
+{
+	int ret;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_pg_sort_44_recover, DB___db_pg_sort_44)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_addrem_42_recover, DB___db_addrem_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_big_42_recover, DB___db_big_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __bam_split_48_recover, DB___bam_split_48)) != 0)
+		goto err;
+#ifdef HAVE_HASH
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __ham_insdel_42_recover, DB___ham_insdel_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __ham_replace_42_recover, DB___ham_replace_42)) != 0)
+		goto err;
+#endif
 err:
 	return (ret);
 }
