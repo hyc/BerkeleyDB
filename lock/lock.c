@@ -790,23 +790,6 @@ again:	if (obj == NULL) {
 			    lt->part_array[part_id].part_stat.st_nlocks;
 #endif
 
-		/*
-		 * Allocate a mutex if we do not have a mutex backing the lock.
-		 *
-		 * Use the lock mutex to block the thread; lock the mutex
-		 * when it is allocated so that we will block when we try
-		 * to lock it again.  We will wake up when another thread
-		 * grants the lock and releases the mutex.  We leave it
-		 * locked for the next use of this lock object.
-		 */
-		if (newl->mtx_lock == MUTEX_INVALID) {
-			if ((ret = __mutex_alloc(env, MTX_LOGICAL_LOCK,
-			    DB_MUTEX_LOGICAL_LOCK | DB_MUTEX_SELF_BLOCK,
-			    &newl->mtx_lock)) != 0)
-				goto err;
-			MUTEX_LOCK(env, newl->mtx_lock);
-		}
-
 		newl->holder = R_OFFSET(&lt->reginfo, sh_locker);
 		newl->refcount = 1;
 		newl->mode = lock_mode;
@@ -825,6 +808,23 @@ again:	if (obj == NULL) {
 
 		SH_LIST_INSERT_HEAD(
 		    &sh_locker->heldby, newl, locker_links, __db_lock);
+
+		/*
+		 * Allocate a mutex if we do not have a mutex backing the lock.
+		 *
+		 * Use the lock mutex to block the thread; lock the mutex
+		 * when it is allocated so that we will block when we try
+		 * to lock it again.  We will wake up when another thread
+		 * grants the lock and releases the mutex.  We leave it
+		 * locked for the next use of this lock object.
+		 */
+		if (newl->mtx_lock == MUTEX_INVALID) {
+			if ((ret = __mutex_alloc(env, MTX_LOGICAL_LOCK,
+			    DB_MUTEX_LOGICAL_LOCK | DB_MUTEX_SELF_BLOCK,
+			    &newl->mtx_lock)) != 0)
+				goto err;
+			MUTEX_LOCK(env, newl->mtx_lock);
+		}
 		break;
 
 	case UPGRADE:

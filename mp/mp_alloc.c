@@ -28,7 +28,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	roff_t *offsetp;
 	void *retp;
 {
-	BH *bhp, *latest_bhp, *mvcc_bhp, *oldest_bhp;
+	BH *bhp, *current_bhp, *mvcc_bhp, *oldest_bhp;
 	BH_FROZEN_PAGE *frozen_bhp;
 	DB_LSN vlsn;
 	DB_MPOOL_HASH *dbht, *hp, *hp_end, *hp_saved, *hp_tmp;
@@ -38,8 +38,8 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	size_t freed_space;
 	u_int32_t buckets, buffers, high_priority, priority, priority_saved;
 	u_int32_t put_counter, total_buckets;
-	int aggressive, alloc_freeze, b_lock, froze, giveup, got_oldest;
-	int h_locked, need_free, ret;
+	int aggressive, alloc_freeze, b_lock, giveup, got_oldest;
+	int h_locked, need_free, need_freeze, obsolete, ret;
 	u_int8_t *endp;
 	void *p;
 
@@ -265,17 +265,31 @@ search:	ret = 0;
 		 * Ignore referenced buffers, we can't get rid of them.
 		 */
 retry_search:	bhp = NULL;
-		SH_TAILQ_FOREACH(latest_bhp, &hp->hash_bucket, hq, __bh) {
-			for (mvcc_bhp = oldest_bhp = latest_bhp;
+		obsolete = 0;
+		SH_TAILQ_FOREACH(current_bhp, &hp->hash_bucket, hq, __bh) {
+			if (SH_CHAIN_SINGLETON(current_bhp, vc)) {
+				if (BH_REFCOUNT(current_bhp) == 0 &&
+				    (aggressive ||
+				    current_bhp->priority < high_priority) &&
+				    (bhp == NULL ||
+				    bhp->priority > current_bhp->priority)) {
+					if (bhp != NULL)
+						atomic_dec(env, &bhp->ref);
+					bhp = current_bhp;
+					atomic_inc(env, &bhp->ref);
+				}
+				continue;
+			}
+
+			for (mvcc_bhp = oldest_bhp = current_bhp;
 			    mvcc_bhp != NULL;
 			    oldest_bhp = mvcc_bhp,
 			    mvcc_bhp = SH_CHAIN_PREV(mvcc_bhp, vc, __bh)) {
 				DB_ASSERT(env, mvcc_bhp !=
 				    SH_CHAIN_PREV(mvcc_bhp, vc, __bh));
-				if (BH_REFCOUNT(mvcc_bhp) == 0 &&
+				if (aggressive > 2 &&
+				    BH_REFCOUNT(mvcc_bhp) == 0 &&
 				    !F_ISSET(mvcc_bhp, BH_FROZEN) &&
-				    (aggressive ||
-				    mvcc_bhp->priority < high_priority) &&
 				    (bhp == NULL ||
 				    bhp->priority > mvcc_bhp->priority)) {
 					if (bhp != NULL)
@@ -284,16 +298,6 @@ retry_search:	bhp = NULL;
 					atomic_inc(env, &bhp->ref);
 				}
 			}
-
-			/*
-			 * If we don't have an MVCC chain (or a singleton
-			 * frozen buffer), or bhp is already pointing at the
-			 * oldest item, we can't do better.
-			 */
-			if (bhp == oldest_bhp ||
-			    (SH_CHAIN_SINGLETON(oldest_bhp, vc) &&
-			    !F_ISSET(oldest_bhp, BH_FROZEN)))
-				continue;
 
 			/*
 			 * oldest_bhp is the last buffer on the MVCC chain, and
@@ -305,6 +309,7 @@ retry_search:	bhp = NULL;
 			 * reader LSN and check again.
 			 */
 retry_obsolete:		if (BH_OBSOLETE(oldest_bhp, hp->old_reader, vlsn)) {
+				obsolete = 1;
 				if (bhp != NULL)
 					atomic_dec(env, &bhp->ref);
 				bhp = oldest_bhp;
@@ -431,39 +436,26 @@ this_buffer:	buffers++;
 		 * Freeze this buffer, if necessary.  That is, if the buffer
 		 * could be read by the oldest reader in the system.
 		 */
-		froze = 0;
-		if (ret == 0 && bh_mfp->multiversion) {
-			/*
-			 * Before freezing, double-check that we have an
-			 * up-to-date old_reader LSN.
-			 */
-			if (!got_oldest && SH_CHAIN_HASNEXT(bhp, vc) &&
-			    !BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
-				(void)__txn_oldest_reader(env,
-				    &hp->old_reader);
-				got_oldest = 1;
-			}
-			if ((SH_CHAIN_HASPREV(bhp, vc) &&
-			    !SH_CHAIN_HASNEXT(bhp, vc)) ||
-			    !BH_OBSOLETE(bhp, hp->old_reader, vlsn)) {
-				if (!aggressive ||
-				    F_ISSET(bhp, BH_DIRTY | BH_FROZEN))
-					goto next_hb;
-				if ((ret = __memp_bh_freeze(dbmp,
-				    infop, hp, bhp, &alloc_freeze)) == 0)
-					froze = 1;
-				else if (ret == EBUSY || ret == EIO ||
-				    ret == ENOMEM || ret == ENOSPC)
-					ret = 0;
-				else {
-					DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
-					atomic_dec(env, &bhp->ref);
-					DB_ASSERT(env, b_lock);
-					F_CLR(bhp, BH_EXCLUSIVE);
-					MUTEX_UNLOCK(env, bhp->mtx_buf);
-					DB_ASSERT(env, !h_locked);
-					return (ret);
-				}
+		need_freeze = (SH_CHAIN_HASPREV(bhp, vc) ||
+		    (SH_CHAIN_HASNEXT(bhp, vc) && !obsolete));
+		if (ret == 0 && need_freeze) {
+			if (!aggressive ||
+			    F_ISSET(bhp, BH_DIRTY | BH_FROZEN))
+				goto next_hb;
+			if ((ret = __memp_bh_freeze(dbmp,
+			    infop, hp, bhp, &alloc_freeze)) == 0)
+				need_freeze = 0;
+			else if (ret == EBUSY || ret == EIO ||
+			    ret == ENOMEM || ret == ENOSPC)
+				ret = 0;
+			else {
+				DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
+				atomic_dec(env, &bhp->ref);
+				DB_ASSERT(env, b_lock);
+				F_CLR(bhp, BH_EXCLUSIVE);
+				MUTEX_UNLOCK(env, bhp->mtx_buf);
+				DB_ASSERT(env, !h_locked);
+				return (ret);
 			}
 		}
 
@@ -484,11 +476,9 @@ this_buffer:	buffers++;
 		if (ret != 0 && (aggressive || bhp->priority < c_mp->lru_count))
 			bhp->priority = c_mp->lru_count +
 			     c_mp->stat.st_pages / MPOOL_PRI_DIRTY;
+
 		if (ret != 0 || BH_REFCOUNT(bhp) != 1 ||
-		    F_ISSET(bhp, BH_DIRTY) || (!froze &&
-		    ((SH_CHAIN_HASPREV(bhp, vc) &&
-		    !SH_CHAIN_HASNEXT(bhp, vc)) ||
-		    !BH_OBSOLETE(bhp, hp->old_reader, vlsn))))
+		    F_ISSET(bhp, BH_DIRTY) || need_freeze)
 			goto next_hb;
 
 		/*
@@ -497,8 +487,7 @@ this_buffer:	buffers++;
 		 * mark bhp BH_FROZEN.)
 		 */
 		if (F_ISSET(bhp, BH_FROZEN)) {
-			DB_ASSERT(env, BH_OBSOLETE(bhp, hp->old_reader, vlsn) ||
-			    SH_CHAIN_SINGLETON(bhp, vc));
+			DB_ASSERT(env, obsolete || SH_CHAIN_SINGLETON(bhp, vc));
 			DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
 			if (!F_ISSET(bhp, BH_THAWED)) {
 				/*

@@ -325,9 +325,13 @@ __dbreg_open_file(env, txn, argp, info)
 		 * file uid of the current file does not match that of the
 		 * previously opened file, 3) the current file is unnamed, in
 		 * which case it should never be opened during recovery.
+		 * It is also possible that the db open previously failed
+		 * because the file was missing.  Check the DB_AM_OPEN_CALLED
+		 * bit and try to open it again.
 		 */
 		if ((dbp = dbe->dbp) != NULL) {
 			if (argp->opcode == DBREG_REOPEN ||
+			    !F_ISSET(dbp, DB_AM_OPEN_CALLED) ||
 			    dbp->meta_pgno != argp->meta_pgno ||
 			    argp->name.size == 0 ||
 			    memcmp(dbp->fileid, argp->uid.data,

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999-2009 Oracle.  All rights reserved.
+ * Copyright (c) 2001, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -355,15 +355,9 @@ err:		/*
 			__txn_remlock(env,
 			    txn, &tmpdbp->handle_lock, DB_LOCK_INVALIDID);
 
-		if (txn == NULL ) {
-			if ((t_ret = __db_close(tmpdbp,
-			    txn, DB_NOSYNC)) != 0 && ret == 0)
-				ret = t_ret;
-		} else {
-			if ((t_ret = __txn_closeevent(env,
-			    txn, tmpdbp)) != 0 && ret == 0)
-				ret = t_ret;
-		}
+		if ((t_ret = __db_close(tmpdbp,
+		    txn, DB_NOSYNC)) != 0 && ret == 0)
+			ret = t_ret;
 	}
 	return (ret);
 }

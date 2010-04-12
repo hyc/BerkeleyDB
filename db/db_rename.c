@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001-2009 Oracle.  All rights reserved.
+ * Copyright (c) 2001, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -117,15 +117,9 @@ err:	if (txn_local && (t_ret =
 	 * then opened the DB handle; we're resolving the txn and then closing
 	 * closing the DB handle -- it's safer.
 	 */
-	if (txn_local || txn == NULL) {
-		if (dbp != NULL &&
-		    (t_ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0 && ret == 0)
-			ret = t_ret;
-	} else {
-		if (dbp != NULL && (t_ret =
-		     __txn_closeevent(env, txn, dbp)) != 0 && ret == 0)
-			ret = t_ret;
-	}
+	if (dbp != NULL &&
+	    (t_ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0 && ret == 0)
+		ret = t_ret;
 
 	if (handle_check && (t_ret = __env_db_rep_exit(env)) != 0 && ret == 0)
 		ret = t_ret;
@@ -208,14 +202,8 @@ __db_rename(dbp, ip, txn, name, subdb, newname)
 
 	ret = __db_rename_int(dbp, ip, txn, name, subdb, newname);
 
-	if (txn == NULL) {
-		if ((t_ret = __db_close(dbp, txn, DB_NOSYNC)) != 0 && ret == 0)
-			ret = t_ret;
-	} else {
-		if ((t_ret =
-		     __txn_closeevent(dbp->env, txn, dbp)) != 0 && ret == 0)
-			ret = t_ret;
-	}
+	if ((t_ret = __db_close(dbp, txn, DB_NOSYNC)) != 0 && ret == 0)
+		ret = t_ret;
 
 	return (ret);
 }
@@ -376,15 +364,9 @@ err:
 	    __memp_fput(mdbp->mpf, ip, meta, dbp->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
-	if (txn == NULL) {
-		if (mdbp != NULL &&
-		    (t_ret = __db_close(mdbp, txn, DB_NOSYNC)) != 0 && ret == 0)
-			ret = t_ret;
-	} else {
-		if (mdbp != NULL && (t_ret =
-		     __txn_closeevent(env, txn, mdbp)) != 0 && ret == 0)
-			ret = t_ret;
-	}
+	if (mdbp != NULL &&
+	    (t_ret = __db_close(mdbp, txn, DB_NOSYNC)) != 0 && ret == 0)
+		ret = t_ret;
 
 	return (ret);
 }

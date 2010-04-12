@@ -152,6 +152,10 @@ struct __key_range;		typedef struct __key_range DB_KEY_RANGE;
 		return $imcall;
 }
 
+%typemap(csout) int get_multiple{
+		return $imcall;
+}
+
 %typemap(csout) char **log_archive {
 	IntPtr cPtr = $imcall;
 	List<string> ret = new List<string>();

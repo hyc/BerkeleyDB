@@ -36,8 +36,8 @@ extern "C" {
  */
 #define	DB_VERSION_MAJOR	4
 #define	DB_VERSION_MINOR	8
-#define	DB_VERSION_PATCH	26
-#define	DB_VERSION_STRING	"Berkeley DB 4.8.26: (December 18, 2009)"
+#define	DB_VERSION_PATCH	30
+#define	DB_VERSION_STRING	"Berkeley DB 4.8.30: (April  9, 2010)"
 
 /*
  * !!!

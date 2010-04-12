@@ -73,11 +73,12 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if ((ret = __db_create_internal(&tdbp, dbp->env, 0)) != 0)
 			goto err;
 		ret = __db_open(tdbp, ip, txn, fname, dname, DB_UNKNOWN,
-		     flags &  ~(DB_TRUNCATE|DB_CREATE), mode, meta_pgno);
+		     DB_NOERROR | (flags &  ~(DB_TRUNCATE|DB_CREATE)),
+		     mode, meta_pgno);
 		if (ret == 0)
 			ret = __memp_ftruncate(tdbp->mpf, txn, ip, 0, 0);
 		(void)__db_close(tdbp, txn, DB_NOSYNC);
-		if (ret != 0 && ret != ENOENT)
+		if (ret != 0 && ret != ENOENT && ret != EINVAL)
 			goto err;
 		ret = 0;
 	}

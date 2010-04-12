@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000-2009 Oracle.  All rights reserved.
+ * Copyright (c) 2000, 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -3272,10 +3272,8 @@ __db_s_next(sdbpp, txn)
 	 */
 	if (closeme == NULL)
 		ret = 0;
-	else if (txn == NULL)
-		ret = __db_close(closeme, NULL, 0);
-	else
-		ret = __txn_closeevent(env, txn, closeme);
+	else 
+		ret = __db_close(closeme, txn, 0);
 
 	return (ret);
 }
@@ -3310,10 +3308,8 @@ __db_s_done(sdbp, txn)
 
 	if (doclose == 0)
 		ret = 0;
-	else if (txn == NULL)
-		ret = __db_close(sdbp, NULL, 0);
 	else
-		ret = __txn_closeevent(env, txn, sdbp);
+		ret = __db_close(sdbp, txn, 0);
 	return (ret);
 }
 

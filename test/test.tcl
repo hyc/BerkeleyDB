@@ -1564,7 +1564,7 @@ proc run_envmethod { method test {display 0} {run 1} {outfile stdout} \
 
 	set sindex [lsearch -exact $largs "-log_max"]
 	if { $sindex >= 0 } {
-		append envargs " -log_max 200000 "
+		append envargs " -log_max 100000 "
 		set largs [lreplace $largs $sindex $sindex]
 	}
 

@@ -401,9 +401,10 @@ __env_close_pp(dbenv, flags)
 	DB_THREAD_INFO *ip;
 	ENV *env;
 	int rep_check, ret, t_ret;
+	u_int32_t flags_orig;
 
 	env = dbenv->env;
-	ret = 0;
+	ret = flags_orig = 0;
 
 	/*
 	 * Validate arguments, but as a DB_ENV handle destructor, we can't
@@ -420,8 +421,17 @@ __env_close_pp(dbenv, flags)
 	if (PANIC_ISSET(env)) {
 		/* clean up from registry file */
 		if (dbenv->registry != NULL) {
+			/* 
+			 * Temporarily set no panic so we do not trigger the 
+			 * LAST_PANIC_CHECK_BEFORE_IO check in __os_physwrite
+			 * thus allowing the unregister to happen correctly.
+			 */
+			flags_orig = F_ISSET(dbenv, DB_ENV_NOPANIC);
+			F_SET(dbenv, DB_ENV_NOPANIC);
 			(void)__envreg_unregister(env, 0);
 			dbenv->registry = NULL;
+			if (!flags_orig)
+				F_CLR(dbenv, DB_ENV_NOPANIC);
 		}
 
 		/* Close all underlying file handles. */

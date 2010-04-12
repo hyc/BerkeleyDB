@@ -853,8 +853,10 @@ retry:	pg = NULL;
 				break;
 		}
 
+		if (ret != 0 && ret != DB_LOCK_NOTGRANTED)
+			goto err1;
 		/*
-		 * If we merged the parent, then we nolonger span.
+		 * If we merged the parent, then we no longer span.
 		 * Otherwise if we tried to merge the parent but would
 		 * block on one of the other leaf pages try again.
 		 * If we did not merge any records of the parent,
@@ -871,8 +873,6 @@ retry:	pg = NULL;
 			next_recno = cp->recno;
 			goto next_page;
 		}
-		if (ret != 0)
-			goto err1;
 		PTRACE(dbc, "SMerge", PGNO(cp->csp->page), start, 0);
 
 		/* if we remove the next page, then we need its next locked */

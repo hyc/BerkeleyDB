@@ -12,6 +12,12 @@
 extern "C" {
 #endif
 
+/*
+ * Temporary for the patch release, define this bit here so it
+ * does not renumber the other bits for DB->open.
+ */
+#define DB_NOERROR	0x10000000
+
 struct __db_foreign_info; \
 			typedef struct __db_foreign_info DB_FOREIGN_INFO;
 

@@ -102,6 +102,16 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 	LOCK_MUTEX(db_rep->mutex);
 
 	/*
+	 * If we're already "finished", we can't send anything.  This covers the
+	 * case where a bulk buffer is flushed at env close, or perhaps an
+	 * unexpected __repmgr_thread_failure.
+	 */ 
+	if (db_rep->finished) {
+		ret = DB_REP_UNAVAIL;
+		goto out;
+	}
+	
+	/*
 	 * Check whether we need to refresh our site address information with
 	 * more recent updates from shared memory.
 	 */
@@ -521,6 +531,9 @@ empty:
 	}
 
 	if (ret != WOULDBLOCK) {
+#ifdef EBADF
+		DB_ASSERT(env, ret != EBADF);
+#endif
 		__db_err(env, ret, "socket writing failure");
 		STAT(env->rep_handle->region->mstat.st_connection_drop++);
 		return (DB_REP_UNAVAIL);

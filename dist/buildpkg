@@ -86,10 +86,10 @@ cd $RNC/.. && $TAR czf $T -find db-$VERSION.NC -chown 100 -chgrp 100
 chmod 444 $T
 
 t=__tmp
-cd $R && awk '{print $0 "\r"}' < LICENSE > $t && rm -f LICENSE && cp $t LICENSE
-cd $R && awk '{print $0 "\r"}' < README > $t && rm -f README && cp $t README
-cd $RNC && awk '{print $0 "\r"}' < LICENSE > $t && rm -f LICENSE cp $t LICENSE
-cd $RNC && awk '{print $0 "\r"}' < README > $t && rm -f README && cp $t README
+cd $R && awk '{print $0 "\r"}' < LICENSE > $t && rm -f LICENSE && cp $t LICENSE && rm -f $t
+cd $R && awk '{print $0 "\r"}' < README > $t && rm -f README && cp $t README && rm -f $t
+cd $RNC && awk '{print $0 "\r"}' < LICENSE > $t && rm -f LICENSE && cp $t LICENSE && rm -f $t
+cd $RNC && awk '{print $0 "\r"}' < README > $t && rm -f README && cp $t README && rm -f $t
 
 # Create the crypto zip archive release.
 T="$D/db-$VERSION.zip"
