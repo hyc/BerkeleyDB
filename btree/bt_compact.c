@@ -544,12 +544,14 @@ retry:	pg = NULL;
 			}
 			pgs_done++;
 			/* Get a fresh low numbered page. */
-			if ((ret = __db_exchange_page(dbc, &pg, ncp->csp->page,
+			if ((ret = __db_exchange_page(dbc,
+			    &cp->csp->page, ncp->csp->page,
 			    PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 				goto err1;
 			if ((ret = __TLPUT(dbc, prev_lock)) != 0)
-				goto err;
+				goto err1;
 			LOCK_INIT(prev_lock);
+			pg = cp->csp->page;
 		}
 		*spanp = 0;
 		PTRACE(dbc, "SDups", PGNO(ncp->csp->page), start, 0);
@@ -709,7 +711,8 @@ retry:	pg = NULL;
 				}
 				/* Get a fresh low numbered page. */
 				pgno = PGNO(pg);
-				if ((ret = __db_exchange_page(dbc, &pg, NULL,
+				if ((ret = __db_exchange_page(dbc,
+				    &cp->csp->page, NULL,
 				    PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 					goto err1;
 				if ((ret = __TLPUT(dbc, prev_lock)) != 0)
@@ -718,6 +721,7 @@ retry:	pg = NULL;
 				if ((ret = __TLPUT(dbc, next_lock)) != 0)
 					goto err1;
 				LOCK_INIT(next_lock);
+				pg = cp->csp->page;
 				if (pgno != PGNO(pg)) {
 					pgs_done++;
 					pgno = PGNO(pg);
@@ -817,12 +821,13 @@ retry:	pg = NULL;
 			}
 			pgno = PGNO(pg);
 			/* Get a fresh low numbered page. */
-			if ((ret = __db_exchange_page(dbc, &pg,
+			if ((ret = __db_exchange_page(dbc, &cp->csp->page,
 			    npg, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 				goto err1;
 			if ((ret = __TLPUT(dbc, prev_lock)) != 0)
 				goto err1;
 			LOCK_INIT(prev_lock);
+			pg = cp->csp->page;
 			if (pgno != PGNO(pg)) {
 				pgs_done++;
 				pgno = PGNO(pg);
@@ -1087,24 +1092,25 @@ __bam_merge_records(dbc, ndbc, factor, c_data)
 	cp = (BTREE_CURSOR *)dbc->internal;
 	ncp = (BTREE_CURSOR *)ndbc->internal;
 	pg = cp->csp->page;
-	npg = ncp->csp->page;
 	memset(&hdr, 0, sizeof(hdr));
 	pind = NUM_ENT(pg);
 	n_ok = 0;
 	adjust = 0;
 	ret = 0;
-	nent = NUM_ENT(npg);
-
-	DB_ASSERT(env, nent != 0);
 
 	/* See if we want to swap out this page. */
 	if (c_data->compact_truncate != PGNO_INVALID &&
-	     PGNO(npg) > c_data->compact_truncate) {
+	     PGNO(ncp->csp->page) > c_data->compact_truncate) {
 		/* Get a fresh low numbered page. */
 		if ((ret = __db_exchange_page(ndbc,
-		    &npg, pg, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
+		   &ncp->csp->page, pg, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 			goto err;
 	}
+
+	npg = ncp->csp->page;
+	nent = NUM_ENT(npg);
+
+	DB_ASSERT(env, nent != 0);
 
 	ninp = P_INP(dbp, npg);
 
@@ -1814,14 +1820,15 @@ fits:	memset(&bi, 0, sizeof(bi));
 		    c_data->compact_truncate != PGNO_INVALID &&
 		    PGNO(npg) > c_data->compact_truncate &&
 		    ncp->csp != ncp->sp) {
-			if ((ret = __db_exchange_page(ndbc,
-			    &npg, pg, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
+			if ((ret = __db_exchange_page(ndbc, &ncp->csp->page,
+			    pg, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 				goto err;
 		}
 		if (c_data->compact_truncate != PGNO_INVALID &&
 		     PGNO(pg) > c_data->compact_truncate && cp->csp != cp->sp) {
-			if ((ret = __db_exchange_page(dbc,
-			    &pg, npg, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
+			if ((ret = __db_exchange_page(dbc, &cp->csp->page,
+			    ncp->csp->page,
+			    PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 				goto err;
 		}
 	}
@@ -2426,22 +2433,23 @@ new_txn:
 			}
 			goto err;
 		}
-		pg = cp->csp->page;
-		pgno = PGNO(pg);
+		pgno = PGNO(cp->csp->page);
 
 		if (pgno > c_data->compact_truncate) {
-			if ((ret = __db_exchange_page(dbc,
-			    &pg, NULL, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
+			if ((ret = __db_exchange_page(dbc, &cp->csp->page,
+			    NULL, PGNO_INVALID, DB_EXCH_DEFAULT)) != 0)
 				goto err;
 		}
 
+		pg = cp->csp->page;
 		if ((ret = __bam_stkrel(dbc,
-		     pgno > c_data->compact_truncate ? 0 : STK_NOLOCK)) != 0)
+		     pgno != PGNO(pg) ? 0 : STK_NOLOCK)) != 0)
 			goto err;
 
 		/* We are locking subtrees, so drop the write locks asap. */
-		if (local_txn && pgno > c_data->compact_truncate)
+		if (local_txn && pgno != PGNO(pg))
 			break;
+		/* We really break from the loop above on this condition. */
 	} while (pgno != BAM_ROOT_PGNO(dbc));
 
 	if ((ret = __LPUT(dbc, root_lock)) != 0)

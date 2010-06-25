@@ -415,6 +415,7 @@ __ham_compact_hash(dbp, ip, txn, c_data)
 	DB_COMPACT *c_data;
 {
 	DBC *dbc;
+	DB_LOCK lock;
 	HASH_CURSOR *hcp;
 	HMETA *meta;
 	PAGE *oldpage;
@@ -430,6 +431,7 @@ __ham_compact_hash(dbp, ip, txn, c_data)
 
 	oldpage = NULL;
 	dbc = NULL;
+	LOCK_INIT(lock);
 
 	if (local_txn &&
 	    (ret = __txn_begin(dbp->env, ip, NULL, &txn, 0)) != 0)
@@ -475,6 +477,9 @@ __ham_compact_hash(dbp, ip, txn, c_data)
 		 */
 		for (pgno = start_pgno;
 		    pgno < start_pgno + bucket; pgno++, free_pgno++) {
+			if ((ret = __db_lget(dbc,
+			    LCK_COUPLE, pgno, DB_LOCK_WRITE, 0, &lock)) != 0)
+				goto err;
 			if ((ret = __memp_fget(dbp->mpf, &pgno,
 			     dbc->thread_info, dbc->txn,
 			     DB_MPOOL_CREATE | DB_MPOOL_DIRTY, &oldpage)) != 0)
@@ -508,6 +513,8 @@ __ham_compact_hash(dbp, ip, txn, c_data)
 
 err:	if (oldpage != NULL && (t_ret = __memp_fput(dbp->mpf,
 	    dbc->thread_info, oldpage, dbc->priority)) != 0 && ret == 0)
+		ret = t_ret;
+	if ((t_ret = __TLPUT(dbc, lock)) != 0 && ret == 0)
 		ret = t_ret;
 	if (dbc != NULL) {
 		if ((t_ret = __ham_release_meta(dbc)) != 0 && ret == 0)

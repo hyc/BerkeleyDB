@@ -37,92 +37,97 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3377459">Database or Log File On-Disk Format Changes</a>
+              <a href="changelog_5_0.html#id3775513">Changes between 11.2.5.0.21  and 11.2.5.0.26</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379611">New Features</a>
+              <a href="changelog_5_0.html#id3775528">Database or Log File On-Disk Format Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379740">Database Environment Changes</a>
+              <a href="changelog_5_0.html#id3775560">New Features</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379472">Access Method Changes</a>
+              <a href="changelog_5_0.html#id3775538">Database Environment Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379553">Locking Subsystem Changes</a>
+              <a href="changelog_5_0.html#id3775534">Access Method Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379755">Logging Subsystem Changes</a>
+              <a href="changelog_5_0.html#id3775500">Locking Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379961">Memory Pool Subsystem Changes</a>
+              <a href="changelog_5_0.html#id3775327">Logging Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379880">Mutex Subsystem Changes</a>
+              <a href="changelog_5_0.html#id3772850">Memory Pool Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380094">Tcl-specific API Changes</a>
+              <a href="changelog_5_0.html#id3775771">Mutex Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3379905">C#-specific API Changes</a>
+              <a href="changelog_5_0.html#id3775618">Tcl-specific API Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380160">API Changes</a>
+              <a href="changelog_5_0.html#id3775501">C#-specific API Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380180">Replication Changes</a>
+              <a href="changelog_5_0.html#id3775763">API Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380161">Transaction Subsystem Changes</a>
+              <a href="changelog_5_0.html#id3776172">Replication Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380219">Utility Changes</a>
+              <a href="changelog_5_0.html#id3768149">Transaction Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380242">Example Changes</a>
+              <a href="changelog_5_0.html#id3775767">Utility Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380358">Deprecated Features</a>
+              <a href="changelog_5_0.html#id3776233">Example Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380387">Configuration, Documentation, Sample Apps, Portability and Build Changes</a>
+              <a href="changelog_5_0.html#id3776346">Deprecated Features</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_0.html#id3380424">Known Bugs</a>
+              <a href="changelog_5_0.html#id3776372">Configuration, Documentation, Sample Apps, Portability and Build Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_5_0.html#id3776406">Known Bugs</a>
             </span>
           </dt>
         </dl>
@@ -131,7 +136,105 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3377459"></a>Database or Log File On-Disk Format Changes</h3>
+              <h3 class="title"><a id="id3775513"></a>Changes between 11.2.5.0.21  and 11.2.5.0.26</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+Fixed a race condition that was causing an "unable to allocate space from the buffer cache" error.  The error can only be triggered when multiple mpool regions are used and there is a periodic gathering and clearing of statistics. This also fixes a second bug where if you compile without statistics and explicitly set the mpool default pagesize, other environment handles to that environment would not see the correct mpool default pagesize.  [#18386]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that might cause recovery to fail if processed part of the log that had previously been recoverd and a database which was not present was opened in the log and not closed. [#18459]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug which could occur when using bulk transfer with Replication Manager.  When closing a DB_ENV handle, any remaining bulk buffer contents are flushed, and Replication Manager could have tried to send the resulting messages even though its connections had already been closed, leading in rare circumstances to spurious EBADF error reports, or possibly even arbitrary memory corruption.  [#18469]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug in C# HasMultiple() that this function always throws exceptions when there are multiple databases in a single db file. [#18483]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed the '--enable-dbm' argument to configure. [#18497]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug in the Java API where populating a SecondaryDatabase on open could lead to an OutOfMemoryException. [#18529]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where DB SQL reports "The database disk image is malformed" in "group by" operations. [#18531]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that prevented the same process from reconnecting to the database when DB_REGISTER is being used. [#18535]
+</p>
+            </li>
+            <li>
+              <p>
+Fix a race between opening and closing SQL databases from multiple threads that could lead to the error "DB_REGISTER limits processes to one open DB_ENV handle per environment". [#18538]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed some bugs that could cause a panic or a DB_RUN_RECOVERY error if the sync of the transaction log failed. [#18588]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug which would occur when recovery checkpoint was not written because the cache ran out of space attempting to flush the mpool cache. The environment was recovered and all database where made available, but some databases were incorrectly closed. This would cause a subsequent recovery to fail on its backward pass with the error "PANIC: No such file or directory". [#18590]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that segementation fault would occur if DB-&gt;set_partition_dirs was called before DB-&gt;set_partition. [#18591]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that the error of "unknown path" would occur if putting duplicate records to duplicated sorted hash database with DB_OVERWRITE_DUP.[#18607]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug where DatabaseConfig.getUnsortedDuplicates() returned true when the datbase had been configured for sorted duplicates.  [#18612]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that could cause recovery to fail with the error "DB_LOGC-&gt;get: log record LSN %u/%u: checksum mismatch" if the last log file was nearly full and ended with a partially written log record which was smaller than a checkpoint record. It now erases the invalid partial record before switching to the new log file. [#18651]
+</p>
+            </li>
+            <li>
+              <p>
+Initialize DatabaseConfig.pageSize so that it can be queried from Java. [#18691]
+</p>
+            </li>
+            <li>
+              <p>
+Fixed a bug that might cause an aborting transaction to fail if it aborted while a DB-&gt;compact of the same HASH database was compacting the dynamic hash table [#18695]
+</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="id3775528"></a>Database or Log File On-Disk Format Changes</h3>
             </div>
           </div>
         </div>
@@ -149,7 +252,7 @@ The log file format changed in 11gR2.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379611"></a>New Features</h3>
+              <h3 class="title"><a id="id3775560"></a>New Features</h3>
             </div>
           </div>
         </div>
@@ -262,7 +365,7 @@ Removed support for the configuration option --with-mutex=UNIX/fcntl as of versi
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379740"></a>Database Environment Changes</h3>
+              <h3 class="title"><a id="id3775538"></a>Database Environment Changes</h3>
             </div>
           </div>
         </div>
@@ -290,7 +393,7 @@ Fixd a race condition in an internal directory-scanning function that returns th
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379472"></a>Access Method Changes</h3>
+              <h3 class="title"><a id="id3775534"></a>Access Method Changes</h3>
             </div>
           </div>
         </div>
@@ -388,7 +491,7 @@ Fixed a bug that might cause a trap reading unitialized memory when backing out 
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379553"></a>Locking Subsystem Changes</h3>
+              <h3 class="title"><a id="id3775500"></a>Locking Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -416,7 +519,7 @@ Fixed a bug that could cause a segmentation fault if the lock manager ran out of
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379755"></a>Logging Subsystem Changes</h3>
+              <h3 class="title"><a id="id3775327"></a>Logging Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -434,7 +537,7 @@ Limited the size of a log record generated by freeing pages from a database, so 
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379961"></a>Memory Pool Subsystem Changes</h3>
+              <h3 class="title"><a id="id3772850"></a>Memory Pool Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -482,7 +585,7 @@ Fixed a bug to ensure single-version or obsolete buffers were selected over any 
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379880"></a>Mutex Subsystem Changes</h3>
+              <h3 class="title"><a id="id3775771"></a>Mutex Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -498,6 +601,11 @@ Fixed a bug on HP-UX when specifying --with-mutex=HP/msem_init during configure.
 Fixed a race condition which could cause unnecessary retrying of btree searches when several threads simulatenously attempted to get a shared latch. [#18078]
 </p>
             </li>
+            <li>
+              <p>
+Exclusive Transactions have been implemented for the SQL API.  See the documentation for details on the behavior of this feature.  [#17822]
+</p>
+            </li>
           </ol>
         </div>
       </div>
@@ -505,7 +613,7 @@ Fixed a race condition which could cause unnecessary retrying of btree searches 
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380094"></a>Tcl-specific API Changes</h3>
+              <h3 class="title"><a id="id3775618"></a>Tcl-specific API Changes</h3>
             </div>
           </div>
         </div>
@@ -523,7 +631,7 @@ Fixed a bug in Tcl API to prevent a segmentation fault from occurring when the g
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3379905"></a>C#-specific API Changes</h3>
+              <h3 class="title"><a id="id3775501"></a>C#-specific API Changes</h3>
             </div>
           </div>
         </div>
@@ -546,7 +654,7 @@ Fixed a bug in the C# API to make DB_COMPACT consistent with __db_compact in teh
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380160"></a>API Changes</h3>
+              <h3 class="title"><a id="id3775763"></a>API Changes</h3>
             </div>
           </div>
         </div>
@@ -569,7 +677,7 @@ Fixed the parser to allow configuration API flags set in the DB_CONFIG file to a
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380180"></a>Replication Changes</h3>
+              <h3 class="title"><a id="id3776172"></a>Replication Changes</h3>
             </div>
           </div>
         </div>
@@ -677,7 +785,7 @@ The default thread stack size is no longer overridden by default for Berkeley DB
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380161"></a>Transaction Subsystem Changes</h3>
+              <h3 class="title"><a id="id3768149"></a>Transaction Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -705,7 +813,7 @@ Removed a memory leak during recovery related to a deleted database [#18273]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380219"></a>Utility Changes</h3>
+              <h3 class="title"><a id="id3775767"></a>Utility Changes</h3>
             </div>
           </div>
         </div>
@@ -743,7 +851,7 @@ Fixed a bug in the db_sql_codegen utility where the primary key is stored in bot
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380242"></a>Example Changes</h3>
+              <h3 class="title"><a id="id3776233"></a>Example Changes</h3>
             </div>
           </div>
         </div>
@@ -791,7 +899,7 @@ Added a new Stl example to demo advanced feature usage. The Stl test cases refer
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380358"></a>Deprecated Features</h3>
+              <h3 class="title"><a id="id3776346"></a>Deprecated Features</h3>
             </div>
           </div>
         </div>
@@ -809,7 +917,7 @@ The configuration options --disable-cryptography and --enable-cryptoraphy are be
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380387"></a>Configuration, Documentation, Sample Apps, Portability and Build Changes</h3>
+              <h3 class="title"><a id="id3776372"></a>Configuration, Documentation, Sample Apps, Portability and Build Changes</h3>
             </div>
           </div>
         </div>
@@ -867,7 +975,7 @@ Adding new configuration option, --with-cryptography={yes|no|ipp}. Using --with-
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3380424"></a>Known Bugs</h3>
+              <h3 class="title"><a id="id3776406"></a>Known Bugs</h3>
             </div>
           </div>
         </div>

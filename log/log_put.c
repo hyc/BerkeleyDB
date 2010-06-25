@@ -480,8 +480,11 @@ __log_flush_commit(env, lsnp, flags)
 {
 	DB_LOG *dblp;
 	DB_LSN flush_lsn;
+	HDR hdr;
 	LOG *lp;
-	int ret;
+	int ret, t_ret;
+	size_t nr, nw;
+	u_int8_t *buffer;
 
 	dblp = env->lg_handle;
 	lp = dblp->reginfo.primary;
@@ -512,7 +515,10 @@ __log_flush_commit(env, lsnp, flags)
 	if (ret == 0 || !LF_ISSET(DB_LOG_COMMIT))
 		return (ret);
 
-	if (flush_lsn.file != lp->lsn.file || flush_lsn.offset < lp->w_off)
+	if (LF_ISSET(DB_FLUSH) ? 
+	    flush_lsn.file != lp->s_lsn.file ||
+	    flush_lsn.offset < lp->s_lsn.offset :
+	    flush_lsn.file != lp->lsn.file || flush_lsn.offset < lp->w_off)
 		return (0);
 
 	/*
@@ -525,9 +531,45 @@ __log_flush_commit(env, lsnp, flags)
 	 * interesting part of the buffer may have actually made it out to
 	 * disk before there was a failure, we can't know for sure.
 	 */
-	if (__txn_force_abort(env,
-	    dblp->bufp + flush_lsn.offset - lp->w_off) == 0)
-		(void)__log_flush_int(dblp, &flush_lsn, 0);
+	if (flush_lsn.offset > lp->w_off) {
+		if ((t_ret = __txn_force_abort(env,
+		     dblp->bufp + flush_lsn.offset - lp->w_off)) != 0)
+		     	return (__env_panic(env, t_ret));
+	} else {
+		/*
+		 * The buffer was written, but its not on disk, we
+		 * must read it back and force things from a commit
+		 * state to an abort state.  Lots of things could fail
+		 * here and we will be left with a commit record but
+		 * a panic return.
+		 */
+		 if (
+		    (t_ret = __os_seek(env,
+		    dblp->lfhp, 0, 0, flush_lsn.offset)) != 0 ||
+		    (t_ret = __os_read(env, dblp->lfhp, &hdr,
+		    HDR_NORMAL_SZ, &nr)) != 0 || nr != HDR_NORMAL_SZ)
+			return (__env_panic(env, t_ret == 0 ? EIO : t_ret));
+		if (LOG_SWAPPED(env))
+			__log_hdrswap(&hdr, CRYPTO_ON(env));
+		if ((t_ret = __os_malloc(env, hdr.len, &buffer)) != 0 ||
+		    (t_ret = __os_seek(env,
+		    dblp->lfhp, 0, 0, flush_lsn.offset)) != 0 ||
+		    (t_ret = __os_read(env, dblp->lfhp, buffer,
+		    hdr.len, &nr)) != 0 || nr != hdr.len ||
+		    (t_ret = __txn_force_abort(env, buffer)) != 0 ||
+		    (t_ret = __os_seek(env,
+		    dblp->lfhp, 0, 0, flush_lsn.offset)) != 0 ||
+		    (t_ret = __os_write(env, dblp->lfhp, buffer,
+		    nr, &nw)) != 0 || nw != nr)
+			return (__env_panic(env, t_ret == 0 ? EIO : t_ret));
+		__os_free(env, buffer);
+	}
+ 	/*
+ 	 * Try to flush the log again, if the disk just bounced then we
+ 	 * want to be sure it does not go away again before we write the
+ 	 * abort record.
+ 	 */
+ 	(void)__log_flush_int(dblp, &flush_lsn, 0);
 
 	return (ret);
 }
@@ -1041,8 +1083,8 @@ flush:	MUTEX_LOCK(env, lp->mtx_flush);
 		MUTEX_UNLOCK(env, lp->mtx_flush);
 		if (release)
 			LOG_SYSTEM_LOCK(env);
-		ret = __env_panic(env, ret);
-		return (ret);
+		lp->in_flush--;
+		goto done;
 	}
 
 	/*
@@ -1687,7 +1729,7 @@ __log_put_record_int(env, dbp, txnp, ret_lsnp,
 {
 	DBT *data, *dbt, *header, logrec;
 	DB_LOG_RECSPEC *sp;
-	DB_LSN *lsnp, null_lsn, *pagelsn, *rlsnp;
+	DB_LSN *lsnp, lsn, null_lsn, *pagelsn, *rlsnp;
 	DB_TXNLOGREC *lr;
 	LOG *lp;
 	PAGE *pghdrstart;
@@ -1704,7 +1746,17 @@ __log_put_record_int(env, dbp, txnp, ret_lsnp,
 	COMPQUIET(pghdrstart, NULL);
 	COMPQUIET(header, NULL);
 
-	rlsnp = ret_lsnp;
+	/*
+	 * rlsnp will be stored into while holding the log system lock.
+	 * If this is a commit record then ret_lsnp will be the address of
+	 * the transaction detail visible_lsn field.  If not then this
+	 * may be the lsn of a page and we do not want to set it if
+	 * the log_put fails after writing the record (due to an I/O error).
+	 */
+	if (LF_ISSET(DB_LOG_COMMIT))
+		rlsnp = ret_lsnp;
+	else
+		rlsnp = &lsn;
 	npad = 0;
 	ret = 0;
 	data = NULL;
@@ -1908,10 +1960,10 @@ __log_put_record_int(env, dbp, txnp, ret_lsnp,
 
 	if (is_durable || txnp == NULL) {
 		if ((ret = __log_put(env, rlsnp,(DBT *)&logrec,
-		    flags | DB_LOG_NOCOPY)) == 0 && txnp != NULL) {
-			*lsnp = *rlsnp;
-			if (rlsnp != ret_lsnp)
-				 *ret_lsnp = *rlsnp;
+		    flags | DB_LOG_NOCOPY)) == 0) {
+			if (txnp != NULL)
+				*lsnp = *rlsnp;
+			*ret_lsnp = *rlsnp;
 		}
 	} else {
 		ret = 0;

@@ -1069,8 +1069,9 @@ __db_pg_free_recover(env, dbtp, lsnp, op, info)
 	REC_PRINT(__db_pg_free_print);
 	REC_INTRO(__db_pg_free_read, ip, 0);
 
-	ret = __db_pg_free_recover_int(env, ip,
-	     (__db_pg_freedata_args *)argp, file_dbp, lsnp, mpf, op, 0);
+	if ((ret = __db_pg_free_recover_int(env, ip,
+	     (__db_pg_freedata_args *)argp, file_dbp, lsnp, mpf, op, 0)) != 0)
+	     	goto out;
 
 done:	*lsnp = argp->prev_lsn;
 out:
@@ -1103,8 +1104,9 @@ __db_pg_freedata_recover(env, dbtp, lsnp, op, info)
 	REC_PRINT(__db_pg_freedata_print);
 	REC_INTRO(__db_pg_freedata_read, ip, 0);
 
-	ret = __db_pg_free_recover_int(env,
-	    ip, argp, file_dbp, lsnp, mpf, op, 1);
+	if ((ret = __db_pg_free_recover_int(env,
+	    ip, argp, file_dbp, lsnp, mpf, op, 1)) != 0)
+	    	goto out;
 
 done:	*lsnp = argp->prev_lsn;
 out:

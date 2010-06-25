@@ -75,11 +75,6 @@ BuildProduct
 StageRuntimeComponents
 
 #
-# Copy dependent system libraries to build for packaging
-#
-CreateWindowsSystem
-
-#
 # Build the license file as rtf
 #
 CreateLicenseRtf ../LICENSE License.rtf

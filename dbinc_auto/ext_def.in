@@ -31,7 +31,7 @@
 #define	db_full_version db_full_version@DB_VERSION_UNIQUE_NAME@
 #define	log_compare log_compare@DB_VERSION_UNIQUE_NAME@
 #define	db_sequence_create db_sequence_create@DB_VERSION_UNIQUE_NAME@
-#ifdef HAVE_DBM
+#if DB_DBM_HSEARCH != 0
 #define	__db_ndbm_clearerr __db_ndbm_clearerr@DB_VERSION_UNIQUE_NAME@
 #define	__db_ndbm_close __db_ndbm_close@DB_VERSION_UNIQUE_NAME@
 #define	__db_ndbm_delete __db_ndbm_delete@DB_VERSION_UNIQUE_NAME@

@@ -41,7 +41,7 @@ __bam_split_recover(env, dbtp, lsnp, op, info)
 	DB_MPOOLFILE *mpf;
 	PAGE *_lp, *lp, *np, *pp, *_rp, *rp, *sp;
 	db_pgno_t pgno, parent_pgno;
-	u_int32_t opflags, ptype, size;
+	u_int32_t opflags, size;
 	int cmp, l_update, p_update, r_update, ret, rootsplit, t_ret;
 
 	ip = ((DB_TXNHEAD *)info)->thread_info;
@@ -179,20 +179,20 @@ redo:	if (DB_REDO(op)) {
 		rp = NULL;
 		/*
 		 * If the parent page is wrong, update it.
-		 * Initialize the page.  If it is a root page update
-		 * the record counts if needed and put the first record in.
+		 * For recno the insert into an existing parent
+		 * was logged separately.
+		 * If it is a root page update initialize the page and
+		 * update the record counts if needed.  
 		 * Then insert the record for the right hand child page.
 		 */
 		if (p_update) {
 			REC_DIRTY(mpf, ip, file_dbp->priority, &pp);
-			if (opflags & SPL_RECNO)
-				ptype = P_IRECNO;
-			else
-				ptype = P_IBTREE;
 
 			if (rootsplit) {
 				P_INIT(pp, file_dbp->pgsize, pgno, PGNO_INVALID,
-				    PGNO_INVALID, _lp->level + 1, ptype);
+				    PGNO_INVALID, _lp->level + 1,
+				    (opflags & SPL_RECNO) ?
+				    P_IRECNO : P_IBTREE);
 				if (opflags & SPL_NRECS) {
 					RE_NREC_SET(pp,
 					    __bam_total(file_dbp, _lp) +
@@ -203,11 +203,12 @@ redo:	if (DB_REDO(op)) {
 				    &argp->pentry, NULL)) != 0)
 					goto out;
 
-			}
+			} else if (opflags & SPL_NRECS)
+				goto recno;
 			if ((ret = __db_pitem_nolog(dbc, pp, argp->pindx + 1,
 			    argp->rentry.size, &argp->rentry, NULL)) != 0)
 				goto out;
-			pp->lsn = *lsnp;
+recno:			pp->lsn = *lsnp;
 		}
 
 check_next:	/*
@@ -281,6 +282,7 @@ check_next:	/*
 
 		/*
 		 * Next we can update the parent removing the new index.
+		 * If this has record numbers, then we log this separately.
 		 */
 		if (pp != NULL) {
 			DB_ASSERT(env, !rootsplit);
@@ -288,16 +290,15 @@ check_next:	/*
 			CHECK_ABORT(env, op, cmp, &LSN(pp), lsnp);
 			if (cmp == 0) {
 				REC_DIRTY(mpf, ip, file_dbp->priority, &pp);
-				if (opflags & SPL_RECNO)
-					size = RINTERNAL_SIZE;
-				else
+				if ((opflags & SPL_NRECS) == 0) {
 					size  = BINTERNAL_SIZE(
 					    GET_BINTERNAL(file_dbp,
 					    pp, argp->pindx + 1)->len);
 
-				if ((ret = __db_ditem(dbc, pp,
-				    argp->pindx + 1, size)) != 0)
-					goto out;
+					if ((ret = __db_ditem(dbc, pp,
+					    argp->pindx + 1, size)) != 0)
+						goto out;
+				}
 				pp->lsn = argp->plsn;
 			}
 		}

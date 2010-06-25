@@ -1338,7 +1338,7 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 int sqlite3BtreeClose(Btree *p)
 {
 	BtShared *pBt;
-	int need_close, ret, rc, t_rc, t_ret;
+	int ret, rc, t_rc, t_ret;
 	sqlite3_mutex *mutexOpen;
 
 	log_msg(LOG_VERBOSE, "sqlite3BtreeClose(%p)", p);
@@ -1378,15 +1378,21 @@ int sqlite3BtreeClose(Btree *p)
 #endif
 	}
 
-	sqlite3_mutex_enter(pBt->mutex);
-	need_close = (--pBt->nRef == 0);
-	sqlite3_mutex_leave(pBt->mutex);
+	/*
+	 * #18538 -- another thread may be attempting to open this BtShared at
+	 * the same time that we are closing it.
+	 *
+	 * To avoid a race, we need to hold the open mutex until the
+	 * environment is closed.  Otherwise, the opening thread might open its
+	 * handle before this one is completely closed, and DB_REGISTER doesn't
+	 * support that.
+	 */
+	mutexOpen = sqlite3MutexAlloc(OPEN_MUTEX(pBt->dbStorage));
+	sqlite3_mutex_enter(mutexOpen);
 
-	if (need_close) {
+	if (--pBt->nRef == 0) {
 		if (pBt->dbStorage == DB_STORE_NAMED) {
 			/* Remove it from the linked list of shared envs. */
-			mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
-			sqlite3_mutex_enter(mutexOpen);
 			assert(pBt == g_shared_btrees || pBt->pPrevDb != NULL);
 			if (pBt == g_shared_btrees)
 				g_shared_btrees = pBt->pNextDb;
@@ -1394,7 +1400,6 @@ int sqlite3BtreeClose(Btree *p)
 				pBt->pPrevDb->pNextDb = pBt->pNextDb;
 			if (pBt->pNextDb != NULL)
 				pBt->pNextDb->pPrevDb = pBt->pPrevDb;
-			sqlite3_mutex_leave(mutexOpen);
 		}
 
 		/*
@@ -1434,6 +1439,8 @@ int sqlite3BtreeClose(Btree *p)
 
 		btreeFreeSharedBtree(pBt);
 	}
+
+	sqlite3_mutex_leave(mutexOpen);
 
 done:	sqlite3_free(p);
 	return MAP_ERR(rc, ret);
@@ -2926,6 +2933,11 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes)
 	int rc;
 	log_msg(LOG_VERBOSE, "sqlite3BtreeNext(%p, %p)", pCur, pRes);
 
+	if (pDbc != NULL && pCur->eState == CURSOR_INVALID) {
+		*pRes = 1;
+		return SQLITE_OK;
+	}
+
 	if (pDbc == NULL &&
 	    (rc = btreeRestoreCursorPosition(pCur, 0)) != SQLITE_OK)
 		return rc;
@@ -2949,7 +2961,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes)
 	int rc;
 	log_msg(LOG_VERBOSE, "sqlite3BtreePrevious(%p, %p)", pCur, pRes);
 
-	if (pCur->eState == CURSOR_INVALID) {
+	if (pDbc != NULL && pCur->eState == CURSOR_INVALID) {
 		*pRes = 1;
 		return SQLITE_OK;
 	}

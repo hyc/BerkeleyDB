@@ -144,6 +144,9 @@ struct __mpool {
 
 	/* Configuration information: protected by the region lock. */
 	u_int32_t max_nreg;		/* Maximum number of regions. */
+	u_int32_t gbytes;		/* Number of gigabytes in cache. */
+	u_int32_t bytes;		/* Number of bytes in cache. */
+	u_int32_t pagesize;		/* Default page size. */
 	size_t    mp_mmapsize;		/* Maximum file size for mmap. */
 	int       mp_maxopenfd;		/* Maximum open file descriptors. */
 	int       mp_maxwrite;		/* Maximum buffers to write. */
@@ -183,11 +186,15 @@ struct __mpool {
 	u_int32_t lru_count;		/* Counter for buffer LRU. */
 	int32_t   lru_reset;		/* Hash bucket lru reset point. */
 
+	 /*
+	  * The pages field keeps track of the number of pages in the cache
+	  * and is protected by the region lock.  It is accessed for reading
+	  * without the lock to return statistics.
+	  */
+	u_int32_t pages;		/* Number of pages in the cache. */
+
 	/*
-	 * The stat fields are generally not thread protected, and cannot be
-	 * trusted.  Note that st_pages is an exception, and is always updated
-	 * inside a region lock (although it is sometimes read outside of the
-	 * region lock).
+	 * The stat fields are not thread protected, and cannot be trusted.
 	 */
 	DB_MPOOL_STAT stat;		/* Per-cache mpool statistics. */
 
@@ -452,6 +459,7 @@ struct __mpoolfile {
 
 	roff_t	  fileid_off;		/* File ID string location. */
 
+	u_int32_t pagesize;		/* Underlying pagesize. */
 	roff_t	  pgcookie_len;		/* Pgin/pgout cookie length. */
 	roff_t	  pgcookie_off;		/* Pgin/pgout cookie location. */
 
@@ -587,8 +595,8 @@ struct __bh_frozen_a {
 #define	VM_PAGESIZE 4096
 #define	MVCC_BHSIZE(mfp, sz) do {					\
 	sz += VM_PAGESIZE + sizeof(BH);					\
-	if (mfp->stat.st_pagesize < VM_PAGESIZE)			\
-		sz += VM_PAGESIZE - mfp->stat.st_pagesize;		\
+	if (mfp->pagesize < VM_PAGESIZE)				\
+		sz += VM_PAGESIZE - mfp->pagesize;			\
 } while (0)
 
 #define	MVCC_BHALIGN(p) do {						\
@@ -602,7 +610,7 @@ struct __bh_frozen_a {
 	    ((uintptr_t)__bhp->buf & (VM_PAGESIZE - 1)) == 0);		\
 	DB_ASSERT(env,							\
 	    (u_int8_t *)__bhp >= (u_int8_t *)__orig);			\
-	DB_ASSERT(env, (u_int8_t *)p + mfp->stat.st_pagesize <		\
+	DB_ASSERT(env, (u_int8_t *)p + mfp->pagesize <			\
 	    (u_int8_t *)__orig + len);					\
 	__bhp->align_off =						\
 	    (u_int16_t)((u_int8_t *)__bhp - (u_int8_t *)__orig);	\

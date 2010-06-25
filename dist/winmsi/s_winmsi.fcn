@@ -174,27 +174,32 @@ RequirePHP() {
     RequireFileInPath PATH "$PATH" php.exe
 }
 
-CreateWindowsSystem() {
-    local here=`pwd`
-    Progress "Copy Window system files..."
-    cd "${PRODUCT_BLDDIR}"
+#
+# Locate the Merge Modules for Visual Studio.  This MUST
+# change if/when the default compiler is changed to a
+# newer version.  What will change is the registry key
+# being used as well as the file name (*.msm) to match
+# the new version.
+#
+FindMergeModules() {
+    Progress "Adding redistributable Visual Studio files..."
+    tscript=cmd$$a.cmd
+    tsed=sed$$a.sed
+    rm -f $tscript $tscript.out $tsed
 
-    if [ -f "$VS80COMNTOOLS/vsvars32.bat" ]; then
-	VSTOOLS="$VS80COMNTOOLS"
-    elif [ -f  "$VS90COMNTOOLS/vsvars32.bat" ]; then
-	VSTOOLS="$VS90COMNTOOLS"
-    else
-	echo "Cannot find Visual Stdio, exiting"
-	exit
-    fi
-    echo found VS at "$VSTOOLS"
-    find "$VSTOOLS\\..\\.." -name "msvc*0.dll" -exec cp {} stage/bin \;
-    # add to group files
-    cd stage
-    find bin -name "msvc*" >> $group_runtime
-    cd ..
+    # this short script removes leading/trailing spaces and turns
+    # '\' into '\\' in the path so *nix scripting and sed work
+    echo "s/\\\\/\\\\\\\\/g;s/^[ \\t]*//;s/[ \\t]*$//" > $tsed
 
-    cd $here
+    # Query for location of VS Merge Module for CRT
+    # and return it to replace @MERGE_MODULES_LOCATION@ in db.wxs
+    echo "@echo off"                               > $tscript
+    echo "set DBROOTDIR="                         >> $tscript
+    echo "for /F \"tokens=2* skip=2\" %%a in ('reg query \"HKLM\\SOFTWARE\\Microsoft\\VisualStudio\\8.0\\Setup\\VS\" /v MSMDir') do echo  %%b >> $tscript.out" >> $tscript
+    cmd /c $tscript
+    TLOC=`sed -f $tsed < $tscript.out`
+    MERGE_MODULES_LOCATION=${TLOC}Microsoft_VC80_CRT_x86.msm
+    rm -f $tscript $tscript.out $tsed
 }
 
 BuildProduct() {
@@ -525,10 +530,13 @@ CreateMsi() {
     mkdir wix 2>/dev/null
     cd wix
 
+    FindMergeModules
+    echo "MERGE: $MERGE_MODULES_LOCATION"
+
     # copy/edit .wxs files to here
     # use pattern that is *NOT* in lib_paths.sed to keep it intact
     for i in db.wxs links_frag.wxs required_frag.wxs; do
-    	sed -e"s:@PRODUCT_NAME@:$PRODUCT_NAME:g" -e"s:@PROD_WIX_VERSION@:$PRODUCT_VERSION:g" -e"s:@PROD_DB_VERSION@:$DB_VERSION:g" -e"s:@REG_KEY_VERSION@:$REG_KEY_VERSION:g" -e"s:@REG_KEY_NAME@:$REG_KEY_NAME:g" -e"s:@PROD_WIX_VERSION_MIN@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.0:g " -e"s:@PRODUCT_MAJOR@:$PRODUCT_VERSION_MAJOR:g" -e"s:@PRODUCT_MINOR@:$PRODUCT_VERSION_MINOR:g" ${DIST_DIR}/winmsi/$i > ./$i
+    	sed -e"s:@PRODUCT_NAME@:$PRODUCT_NAME:g" -e"s:@PROD_WIX_VERSION@:$PRODUCT_VERSION:g" -e"s:@PROD_DB_VERSION@:$DB_VERSION:g" -e"s:@REG_KEY_VERSION@:$REG_KEY_VERSION:g" -e"s:@REG_KEY_NAME@:$REG_KEY_NAME:g" -e"s:@PROD_WIX_VERSION_MIN@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.0:g " -e"s:@PRODUCT_MAJOR@:$PRODUCT_VERSION_MAJOR:g" -e"s:@PRODUCT_MINOR@:$PRODUCT_VERSION_MINOR:g" -e"s/@MERGE_MODULES_LOCATION@/$MERGE_MODULES_LOCATION/g" ${DIST_DIR}/winmsi/$i > ./$i
     done
     for i in db_components.wxs; do
     	sed -e"s:@PRODUCT_NAME@:$PRODUCT_NAME:g" -e"s:@PROD_WIX_VERSION@:$PRODUCT_VERSION:g" -e"s:@PROD_WIX_VERSION_SHORT@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.$PRODUCT_VERSION_PATCH:g" -e"s:@PROD_WIX_VERSION_MIN@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.0:g" -e"s:@PRODUCT_MAJOR@:$PRODUCT_VERSION_MAJOR:g" -e"s:@PRODUCT_MINOR@:$PRODUCT_VERSION_MINOR:g" ../scripts/$i > ./$i

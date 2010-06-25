@@ -207,10 +207,7 @@ internal class DB : IDisposable {
 }
 
   internal int get_multiple() {
-		int ret;
-		ret = libdb_csharpPINVOKE.DB_get_multiple(swigCPtr);
-		DatabaseException.ThrowException(ret);
-		return ret;
+		return libdb_csharpPINVOKE.DB_get_multiple(swigCPtr);
 }
 
   internal int get_open_flags(ref uint flags) {

@@ -309,7 +309,7 @@ __db_prpage(dbp, h, flags)
 	 * by reading the value from the meta-data page, that's going to be
 	 * slow.  Reach down into the mpool region.
 	 */
-	pagesize = (u_int32_t)dbp->mpf->mfp->stat.st_pagesize;
+	pagesize = (u_int32_t)dbp->mpf->mfp->pagesize;
 	return (__db_prpage_int(dbp->env, dbp, "", h, pagesize, NULL, flags));
 }
 

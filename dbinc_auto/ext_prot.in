@@ -35,7 +35,7 @@ char *db_version __P((int *, int *, int *));
 char *db_full_version __P((int *, int *, int *, int *, int *));
 int log_compare __P((const DB_LSN *, const DB_LSN *));
 int db_sequence_create __P((DB_SEQUENCE **, DB *, u_int32_t));
-#ifdef HAVE_DBM
+#if DB_DBM_HSEARCH != 0
 int	 __db_ndbm_clearerr __P((DBM *));
 void	 __db_ndbm_close __P((DBM *));
 int	 __db_ndbm_delete __P((DBM *, datum));

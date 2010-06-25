@@ -2374,6 +2374,9 @@ err:	if (key->app_data == NULL) {
 		(*jenv)->DeleteLocalRef(jenv, jdataarr);
 		(*jenv)->DeleteLocalRef(jenv, jdata);
 	}
+	if (jskeys != NULL) {
+		(*jenv)->DeleteLocalRef(jenv, jskeys);
+	}
 
 	if (detach)
 		__dbj_detach();

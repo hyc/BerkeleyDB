@@ -56,6 +56,7 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	DB_ENV *dbenv;
 	DB_LOGC *logc;
 	DB_LSN ckp_lsn, first_lsn, last_lsn, lowlsn, lsn, stop_lsn, tlsn;
+	DB_LSN *vtrunc_ckp, *vtrunc_lsn;
 	DB_TXNHEAD *txninfo;
 	DB_TXNREGION *region;
 	REGENV *renv;
@@ -65,7 +66,7 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	double nfiles;
 	u_int32_t hi_txn, log_size, txnid;
 	int32_t low;
-	int have_rec, progress, ret, t_ret;
+	int all_recovered, have_rec, progress, ret, t_ret;
 	char *p, *pass;
 	char t1[CTIME_BUFLEN], t2[CTIME_BUFLEN], time_buf[CTIME_BUFLEN];
 
@@ -372,8 +373,10 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 		goto err;
 
 	/* If there were no transactions, then we can bail out early. */
-	if (hi_txn == 0 && max_lsn == NULL)
+	if (hi_txn == 0 && max_lsn == NULL) {
+		lsn = last_lsn;
 		goto done;
+	}
 
 	/*
 	 * Pass #2.
@@ -467,45 +470,76 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	if (max_lsn == NULL)
 		region->last_txnid = ((DB_TXNHEAD *)txninfo)->maxid;
 
-	if (dbenv->tx_timestamp != 0) {
-		/* We are going to truncate, so we'd best close the cursor. */
-		if (logc != NULL) {
-			if ((ret = __logc_close(logc)) != 0)
-				goto err;
-			logc = NULL;
-		}
-
-		/*
-		 * Flush everything to disk, we are losing the log.  It's
-		 * recovery, ignore any application max-write configuration.
-		 */
-		if ((ret = __memp_sync_int(env, NULL, 0,
-		    DB_SYNC_CACHE | DB_SYNC_SUPPRESS_WRITE, NULL, NULL)) != 0)
-			goto err;
-		region->last_ckp = ((DB_TXNHEAD *)txninfo)->ckplsn;
-		if ((ret = __log_vtruncate(env,
-		    &((DB_TXNHEAD *)txninfo)->maxlsn,
-		    &((DB_TXNHEAD *)txninfo)->ckplsn, trunclsn)) != 0)
-			goto err;
-	}
-
 done:
-	/* Take a checkpoint here to force any dirty data pages to disk. */
-	if ((ret = __txn_checkpoint(env, 0, 0,
-	    DB_CKP_INTERNAL | DB_FORCE)) != 0) {
+	/* We are going to truncate, so we'd best close the cursor. */
+	if (logc != NULL) {
+		if ((ret = __logc_close(logc)) != 0)
+			goto err;
+		logc = NULL;
+	}
+	/*
+	 * Also flush the cache before truncating the log. It's recovery,
+	 * ignore any application max-write configuration.
+	 */
+	if ((ret = __memp_sync_int(env,
+	    NULL, 0, DB_SYNC_CACHE | DB_SYNC_SUPPRESS_WRITE, NULL, NULL)) != 0)
+		goto err;
+	if (dbenv->tx_timestamp != 0) {
+		/* Run recovery up to this timestamp. */
+		region->last_ckp = ((DB_TXNHEAD *)txninfo)->ckplsn;
+		vtrunc_lsn = &((DB_TXNHEAD *)txninfo)->maxlsn;
+		vtrunc_ckp = &((DB_TXNHEAD *)txninfo)->ckplsn;
+	} else if (max_lsn != NULL) {
+		/* This is a HA client syncing to the master. */
+		if (!IS_ZERO_LSN(((DB_TXNHEAD *)txninfo)->ckplsn))
+			region->last_ckp = ((DB_TXNHEAD *)txninfo)->ckplsn;
+		else if ((ret =
+		    __txn_findlastckp(env, &region->last_ckp, max_lsn)) != 0)
+			goto err;
+		vtrunc_lsn = max_lsn;
+		vtrunc_ckp = &((DB_TXNHEAD *)txninfo)->ckplsn;
+	} else {
 		/*
-		 * If there was no space for the checkpoint we can
-		 * still bring the environment up.  No updates will
-		 * be able to commit either, but the environment can
-		 * be used read only.
+		 * The usual case: we recovered the whole (valid) log; clear
+		 * out any partial record after the recovery point.
 		 */
-		if (max_lsn == NULL && ret == ENOSPC)
-			ret = 0;
+		vtrunc_lsn = &lsn;
+		vtrunc_ckp = &region->last_ckp;
+	}
+	if ((ret = __log_vtruncate(env, vtrunc_lsn, vtrunc_ckp, trunclsn)) != 0)
+		goto err;
+
+	/*
+	 * Usually we close all files at the end of recovery, unless there are
+	 * prepared transactions or errors in the checkpoint.
+	 */
+	all_recovered = region->stat.st_nrestores == 0;
+	/*
+	 * Log a checkpoint here so subsequent recoveries can skip what's been
+	 * done; this is unnecessary for HA rep clients, as they do not write
+	 * log records.
+	 */
+	if (max_lsn == NULL && (ret = __txn_checkpoint(env,
+	    0, 0, DB_CKP_INTERNAL | DB_FORCE)) != 0) {
+		/*
+		 * If there was no space for the checkpoint or flushng db
+		 * pages we can still bring the environment up, if only for
+		 * read-only access. We must not close the open files because a
+		 * subsequent recovery might still need to redo this portion
+		 * of the log [#18590].
+		 */
+		if (max_lsn == NULL && ret == ENOSPC) {
+			if (FLD_ISSET(dbenv->verbose, DB_VERB_RECOVERY))
+				__db_msg(env,
+		    "Recovery continuing after non-fatal checkpoint error: %s",
+				    db_strerror(ret));
+			all_recovered = 0;
+		}
 		else
 			goto err;
 	}
 
-	if (region->stat.st_nrestores == 0) {
+	if (all_recovered ) {
 		/* Close all the db files that are open. */
 		if ((ret = __dbreg_close_files(env, 0)) != 0)
 			goto err;
@@ -516,20 +550,6 @@ done:
 	}
 
 	if (max_lsn != NULL) {
-		if (!IS_ZERO_LSN(((DB_TXNHEAD *)txninfo)->ckplsn))
-			region->last_ckp = ((DB_TXNHEAD *)txninfo)->ckplsn;
-		else if ((ret =
-		    __txn_findlastckp(env, &region->last_ckp, max_lsn)) != 0)
-			goto err;
-
-		/* We are going to truncate, so we'd best close the cursor. */
-		if (logc != NULL && (ret = __logc_close(logc)) != 0)
-			goto err;
-		logc = NULL;
-		if ((ret = __log_vtruncate(env,
-		    max_lsn, &((DB_TXNHEAD *)txninfo)->ckplsn, trunclsn)) != 0)
-			goto err;
-
 		/*
 		 * Now we need to open files that should be open in order for
 		 * client processing to continue.  However, since we've
@@ -565,35 +585,17 @@ done:
 		if ((ret = __env_openfiles(env, logc,
 		    txninfo, &data, &first_lsn, max_lsn, nfiles, 1)) != 0)
 			goto err;
-	} else if (region->stat.st_nrestores == 0) {
+	} else if (all_recovered) {
 		/*
-		 * If there are no prepared transactions that need resolution,
-		 * we need to reset the transaction ID space and log this fact.
+		 * If there are no transactions that need resolution, whether
+		 * because they are prepared or because recovery will need to
+		 * process them, we need to reset the transaction ID space and
+		 * log this fact.
 		 */
 		if ((ret = __txn_reset(env)) != 0)
 			goto err;
 	} else {
 		if ((ret = __txn_recycle_id(env)) != 0)
-			goto err;
-	}
-
-	/*
-	 * We must be sure to zero the tail of the log.  Otherwise a partial
-	 * record may be at the end of the log and it may never be fully
-	 * overwritten.
-	 */
-	if (max_lsn == NULL && dbenv->tx_timestamp == 0) {
-		/* We are going to truncate, so we'd best close the cursor. */
-		if (logc != NULL && (ret = __logc_close(logc)) != 0)
-			goto err;
-		logc = NULL;
-
-		/* Truncate from beyond the last record in the log. */
-		if ((ret =
-		    __log_current_lsn(env, &last_lsn, NULL, NULL)) != 0)
-			goto err;
-		if ((ret = __log_vtruncate(env,
-		    &last_lsn, &region->last_ckp, NULL)) != 0)
 			goto err;
 	}
 

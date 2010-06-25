@@ -46,9 +46,9 @@ extern "C" {
 #define	DB_VERSION_RELEASE	2
 #define	DB_VERSION_MAJOR	5
 #define	DB_VERSION_MINOR	0
-#define	DB_VERSION_PATCH	21
-#define	DB_VERSION_STRING	"Berkeley DB 5.0.21: (March 30, 2010)"
-#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.0.21: (March 30, 2010)"
+#define	DB_VERSION_PATCH	26
+#define	DB_VERSION_STRING	"Berkeley DB 5.0.26: (June 25, 2010)"
+#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.0.26: (June 25, 2010)"
 
 /*
  * !!!
@@ -2772,7 +2772,7 @@ char *db_version __P((int *, int *, int *));
 char *db_full_version __P((int *, int *, int *, int *, int *));
 int log_compare __P((const DB_LSN *, const DB_LSN *));
 int db_sequence_create __P((DB_SEQUENCE **, DB *, u_int32_t));
-#ifdef HAVE_DBM
+#if DB_DBM_HSEARCH != 0
 int	 __db_ndbm_clearerr __P((DBM *));
 void	 __db_ndbm_close __P((DBM *));
 int	 __db_ndbm_delete __P((DBM *, datum));

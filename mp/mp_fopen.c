@@ -351,7 +351,7 @@ check:	MUTEX_LOCK(env, hp->mtx_hash);
 		if ((dbmfp->clear_len != DB_CLEARLEN_NOTSET &&
 		    mfp->clear_len != DB_CLEARLEN_NOTSET &&
 		    dbmfp->clear_len != mfp->clear_len) ||
-		    (pagesize != 0 && pagesize != mfp->stat.st_pagesize) ||
+		    (pagesize != 0 && pagesize != mfp->pagesize) ||
 		    (dbmfp->lsn_offset != DB_LSN_OFF_NOTSET &&
 		    mfp->lsn_off != DB_LSN_OFF_NOTSET &&
 		    dbmfp->lsn_offset != mfp->lsn_off)) {
@@ -676,16 +676,16 @@ __memp_mpf_alloc(dbmp, dbmfp, path, pagesize, flags, retmfp)
 	memset(mfp, 0, sizeof(MPOOLFILE));
 	mfp->mpf_cnt = 1;
 	mfp->ftype = dbmfp->ftype;
-	mfp->stat.st_pagesize = pagesize;
+	mfp->pagesize = pagesize;
 	mfp->lsn_off = dbmfp->lsn_offset;
 	mfp->clear_len = dbmfp->clear_len;
 	mfp->priority = dbmfp->priority;
 	if (dbmfp->gbytes != 0 || dbmfp->bytes != 0) {
 		mfp->maxpgno = (db_pgno_t)
-		    (dbmfp->gbytes * (GIGABYTE / mfp->stat.st_pagesize));
+		    (dbmfp->gbytes * (GIGABYTE / mfp->pagesize));
 		mfp->maxpgno += (db_pgno_t)
-		    ((dbmfp->bytes + mfp->stat.st_pagesize - 1) /
-		    mfp->stat.st_pagesize);
+		    ((dbmfp->bytes + mfp->pagesize - 1) /
+		    mfp->pagesize);
 	}
 	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE))
 		mfp->no_backing_file = 1;

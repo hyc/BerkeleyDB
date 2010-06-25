@@ -1808,7 +1808,7 @@ __txn_force_abort(env, buffer)
 	DB_CIPHER *db_cipher;
 	HDR hdr, *hdrp;
 	u_int32_t offset, opcode, sum_len;
-	u_int8_t *bp, *key, chksum[DB_MAC_KEY];
+	u_int8_t *bp, *key;
 	size_t hdrsize, rec_len;
 	int ret;
 
@@ -1825,6 +1825,8 @@ __txn_force_abort(env, buffer)
 	hdrp = (HDR *)buffer;
 	memcpy(&hdr.prev, buffer + SSZ(HDR, prev), sizeof(hdr.prev));
 	memcpy(&hdr.len, buffer + SSZ(HDR, len), sizeof(hdr.len));
+	if (LOG_SWAPPED(env))
+		__log_hdrswap(&hdr, CRYPTO_ON(env));
 	rec_len = hdr.len - hdrsize;
 
 	offset = sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(DB_LSN);
@@ -1840,15 +1842,17 @@ __txn_force_abort(env, buffer)
 	}
 	bp = buffer + hdrsize + offset;
 	opcode = TXN_ABORT;
-	memcpy(bp, &opcode, sizeof(opcode));
+	LOGCOPY_32(env, bp, &opcode);
 
 	if (CRYPTO_ON(env) &&
 	    (ret = db_cipher->encrypt(env,
 	    db_cipher->data, &hdrp->iv[0], buffer + hdrsize, rec_len)) != 0)
 		return (__env_panic(env, ret));
 
-	__db_chksum(&hdr, buffer + hdrsize, rec_len, key, chksum);
-	memcpy(buffer + SSZA(HDR, chksum), chksum, sum_len);
+	__db_chksum(&hdr, buffer + hdrsize, rec_len, key, NULL);
+	if (LOG_SWAPPED(env))
+		__log_hdrswap(&hdr, CRYPTO_ON(env));
+	memcpy(buffer + SSZA(HDR, chksum), hdr.chksum, sum_len);
 
 	return (0);
 }

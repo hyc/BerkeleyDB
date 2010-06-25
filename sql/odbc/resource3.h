@@ -1,5 +1,5 @@
-#define VERSION				"0.84"
-#define VERSION_C			0,84
+#define VERSION				"0.85"
+#define VERSION_C			0,85
 #define DRIVERCONNECT                   104
 #define CONFIGDSN                       105
 #define IDC_DSNAME                      400

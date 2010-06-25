@@ -84,7 +84,7 @@ __memp_stat(env, gspp, fspp, flags)
 	MPOOL *c_mp, *mp;
 	size_t len;
 	int ret;
-	u_int32_t i, st_bytes, st_gbytes, st_hash_buckets, st_pages;
+	u_int32_t i;
 	uintmax_t tmp_wait, tmp_nowait;
 
 	dbmp = env->mp_handle;
@@ -104,9 +104,9 @@ __memp_stat(env, gspp, fspp, flags)
 		 * a per-cache basis.  Note that configuration information
 		 * may be modified at any time, and so we have to lock.
 		 */
-		sp->st_gbytes = mp->stat.st_gbytes;
-		sp->st_bytes = mp->stat.st_bytes;
-		sp->st_pagesize = mp->stat.st_pagesize;
+		sp->st_gbytes = mp->gbytes;
+		sp->st_bytes = mp->bytes;
+		sp->st_pagesize = mp->pagesize;
 		sp->st_ncache = mp->nreg;
 		sp->st_max_ncache = mp->max_nreg;
 		sp->st_regsize = dbmp->reginfo[0].rp->size;
@@ -132,7 +132,7 @@ __memp_stat(env, gspp, fspp, flags)
 			sp->st_ro_evict += c_mp->stat.st_ro_evict;
 			sp->st_rw_evict += c_mp->stat.st_rw_evict;
 			sp->st_page_trickle += c_mp->stat.st_page_trickle;
-			sp->st_pages += c_mp->stat.st_pages;
+			sp->st_pages += c_mp->pages;
 			/*
 			 * st_page_dirty	calculated by __memp_stat_hash
 			 * st_page_clean	calculated here
@@ -140,7 +140,7 @@ __memp_stat(env, gspp, fspp, flags)
 			__memp_stat_hash(
 			    &dbmp->reginfo[i], c_mp, &sp->st_page_dirty);
 			sp->st_page_clean = sp->st_pages - sp->st_page_dirty;
-			sp->st_hash_buckets += c_mp->stat.st_hash_buckets;
+			sp->st_hash_buckets += c_mp->htab_buckets;
 			sp->st_hash_searches += c_mp->stat.st_hash_searches;
 			sp->st_hash_longest += c_mp->stat.st_hash_longest;
 			sp->st_hash_examined += c_mp->stat.st_hash_examined;
@@ -170,17 +170,7 @@ __memp_stat(env, gspp, fspp, flags)
 				if (!LF_ISSET(DB_STAT_SUBSYSTEM))
 					__mutex_clear(env, c_mp->mtx_region);
 
-				MPOOL_SYSTEM_LOCK(env);
-				st_bytes = c_mp->stat.st_bytes;
-				st_gbytes = c_mp->stat.st_gbytes;
-				st_hash_buckets = c_mp->stat.st_hash_buckets;
-				st_pages = c_mp->stat.st_pages;
 				memset(&c_mp->stat, 0, sizeof(c_mp->stat));
-				c_mp->stat.st_bytes = st_bytes;
-				c_mp->stat.st_gbytes = st_gbytes;
-				c_mp->stat.st_hash_buckets = st_hash_buckets;
-				c_mp->stat.st_pages = st_pages;
-				MPOOL_SYSTEM_UNLOCK(env);
 			}
 		}
 
@@ -242,7 +232,6 @@ __memp_file_stats(env, mfp, argp, countp, flags)
 	u_int32_t flags;
 {
 	DB_MPOOL_STAT *sp;
-	u_int32_t pagesize;
 
 	COMPQUIET(env, NULL);
 	COMPQUIET(countp, NULL);
@@ -255,11 +244,10 @@ __memp_file_stats(env, mfp, argp, countp, flags)
 	sp->st_page_create += mfp->stat.st_page_create;
 	sp->st_page_in += mfp->stat.st_page_in;
 	sp->st_page_out += mfp->stat.st_page_out;
-	if (LF_ISSET(DB_STAT_CLEAR)) {
-		pagesize = mfp->stat.st_pagesize;
+	sp->st_pagesize = mfp->pagesize;
+	if (LF_ISSET(DB_STAT_CLEAR))
 		memset(&mfp->stat, 0, sizeof(mfp->stat));
-		mfp->stat.st_pagesize = pagesize;
-	}
+
 	return (0);
 }
 
@@ -308,7 +296,6 @@ __memp_get_files(env, mfp, argp, countp, flags)
 	DB_MPOOL_FSTAT **tfsp, *tstruct;
 	char *name, *tname;
 	size_t nlen;
-	u_int32_t pagesize;
 
 	if (*countp == 0)
 		return (0);
@@ -333,14 +320,15 @@ __memp_get_files(env, mfp, argp, countp, flags)
 	*tstruct = mfp->stat;
 	tstruct->file_name = tname;
 
+	/* Grab the pagesize from the mfp. */
+	tstruct->st_pagesize = mfp->pagesize;
+
 	*(DB_MPOOL_FSTAT ***)argp = tfsp;
 	(*countp)--;
 
-	if (LF_ISSET(DB_STAT_CLEAR)) {
-		pagesize = mfp->stat.st_pagesize;
+	if (LF_ISSET(DB_STAT_CLEAR))
 		memset(&mfp->stat, 0, sizeof(mfp->stat));
-		mfp->stat.st_pagesize = pagesize;
-	}
+
 	return (0);
 }
 

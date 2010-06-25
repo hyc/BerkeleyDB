@@ -157,6 +157,10 @@ struct __db_txn_token;	typedef struct __db_txn_token DB_TXN_TOKEN;
 		return $imcall;
 }
 
+%typemap(csout) int get_multiple{
+		return $imcall;
+}
+
 %typemap(csout) char **log_archive {
 	IntPtr cPtr = $imcall;
 	List<string> ret = new List<string>();

@@ -280,9 +280,9 @@ __memp_init(env, dbmp, reginfo_off, htab_buckets, max_nreg)
 	mp->htab_buckets = htab_buckets;
 #ifdef HAVE_STATISTICS
 	mp->stat.st_hash_buckets = htab_buckets;
-	mp->stat.st_pagesize = dbenv->mp_pagesize == 0 ?
-	    MPOOL_DEFAULT_PAGESIZE : dbenv->mp_pagesize;
 #endif
+	mp->pagesize = dbenv->mp_pagesize == 0 ?
+		MPOOL_DEFAULT_PAGESIZE : dbenv->mp_pagesize;
 
 	SH_TAILQ_INIT(&mp->free_frozen);
 	SH_TAILQ_INIT(&mp->alloc_frozen);
@@ -301,11 +301,11 @@ __memp_init(env, dbmp, reginfo_off, htab_buckets, max_nreg)
 	SH_TAILQ_INSERT_TAIL(&mp->free_frozen, frozen_bhp, hq);
 
 	/*
-	 * Only the environment creator knows the total cache size, fill in
-	 * those statistics now.
+	 * Only the environment creator knows the total cache size,
+	 * fill in those fields now.
 	 */
-	mp->stat.st_gbytes = dbenv->mp_gbytes;
-	mp->stat.st_bytes = dbenv->mp_bytes;
+	mp->gbytes = dbenv->mp_gbytes;
+	mp->bytes = dbenv->mp_bytes;
 	infop->mtx_alloc = mp->mtx_region;
 	return (0);
 

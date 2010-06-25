@@ -673,24 +673,25 @@ err:		if (cstat == TXN_UNEXPECTED)
 			CLR_INMEM(dbp);
 
 		/*
-		 * Record that the open failed in the txnlist.
-		 * If this is a failed open inside a transaction
-		 * then we may have crashed without writing the
-		 * corresponding close, record the open so recovery
-		 * will write a close record with its checkpoint.
+		 * If it exists neither on disk nor in memory
+		 * record that the open failed in the txnlist.
 		 */
-		if (id != TXN_INVALID) {
-			if ((ret = __db_txnlist_update(env, info,
-			    id, TXN_UNEXPECTED, NULL, &ret_stat, 1)) != 0)
-				goto not_right;
-			if (opcode == DBREG_OPEN) {
-				if (dbp->log_filename == NULL && (ret =
-				    __dbreg_setup(dbp, name, NULL, id)) != 0)
-					return (ret);
-				ret = __dbreg_assign_id(dbp, ndx, 1);
-				return (ret);
-			}
-		}
+		if (id != TXN_INVALID && (ret = __db_txnlist_update(env,
+		    info, id, TXN_UNEXPECTED, NULL, &ret_stat, 1)) != 0)
+			goto not_right;
+		
+		/*
+		 * If this is file is missing then we may have crashed
+		 * without writing the corresponding close, record
+		 * the open so recovery will write a close record
+		 * with its checkpoint.
+		 */
+		if ((opcode == DBREG_CHKPNT || opcode == DBREG_OPEN) &&
+		    dbp->log_filename == NULL &&
+		    (ret = __dbreg_setup(dbp, name, NULL, id)) != 0)
+			return (ret);
+		ret = __dbreg_assign_id(dbp, ndx, 1);
+		return (ret);
 	}
 not_right:
 	if ((t_ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0)

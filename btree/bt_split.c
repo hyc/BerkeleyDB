@@ -284,6 +284,10 @@ __bam_root(dbc, cp)
 		    PGNO(rp), &LSN(rp), (u_int32_t)NUM_ENT(lp),
 		    PGNO_INVALID, &log_lsn, PGNO(cp->page),
 		    &LSN(cp->page), 0, &log_dbt, &rootent[0], &rootent[1]);
+
+		/* On failure, restore the page. */
+		if (ret != 0)
+			memcpy(cp->page, log_dbt.data, dbp->pgsize);
 		__os_free(dbp->env, log_dbt.data);
 
 		if (ret != 0)
@@ -431,11 +435,13 @@ __bam_page(dbc, pp, cp)
 	DB_ASSERT(dbp->env, IS_DIRTY(cp->page));
 	DB_ASSERT(dbp->env, IS_DIRTY(pp->page));
 
+	bc = (BTREE_CURSOR *)dbc->internal;
+
 	/* Actually update the parent page. */
-	if ((ret = __bam_pinsert(dbc, pp, split, lp, rp, BPI_NOLOGGING)) != 0)
+	if ((ret = __bam_pinsert(dbc,
+	    pp, split, lp, rp, F_ISSET(bc, C_RECNUM) ? 0 : BPI_NOLOGGING)) != 0)
 		goto err;
 
-	bc = (BTREE_CURSOR *)dbc->internal;
 	/* Log the change. */
 	if (DBC_LOGGING(dbc)) {
 		memset(&log_dbt, 0, sizeof(log_dbt));
@@ -459,12 +465,17 @@ __bam_page(dbc, pp, cp)
 		    tp == NULL ? &log_lsn : &LSN(tp), PGNO(pp->page),
 		    &LSN(pp->page), pp->indx, &log_dbt, NULL, &rentry)) != 0) {
 			/*
-			 * Undo the update to the parent page, which has not
-			 * been logged yet. This must succeed.
+			 * If this is not RECNO then undo the update
+			 * to the parent page, which has not been
+			 * logged yet. This must succeed.  Renco
+			 * database trees are locked and therefore
+			 * the parent can be logged independently.
 			 */
-			t_ret = __db_ditem_nolog(dbc, pp->page,
-			    pp->indx + 1, rentry.size);
-			DB_ASSERT(dbp->env, t_ret == 0);
+			if (F_ISSET(bc, C_RECNUM) == 0) {
+				t_ret = __db_ditem_nolog(dbc, pp->page,
+				    pp->indx + 1, rentry.size);
+				DB_ASSERT(dbp->env, t_ret == 0);
+			}
 
 			goto err;
 		}

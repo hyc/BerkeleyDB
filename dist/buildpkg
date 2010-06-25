@@ -2,7 +2,7 @@
 # $Id: $
 #
 # Build the distribution package.
-. RELEASE || exit 1
+. ./RELEASE || exit 1
 
 # A version string can be specified on the command line (e.g., "20080219").
 # Otherwise, use the standard X.X.X format.
@@ -16,7 +16,8 @@ START_DIR=`pwd`
 D=`pwd`/../release
 R="$D/db-${VERSION}"
 RNC="$D/db-$VERSION.NC"
-DOCS=`pwd`/../../docs_books
+#DOCS=`pwd`/../../docs_books
+DOCS=`pwd`/../../docs_books-5.0
 
 if [ ! -d $DOCS ]; then
 	echo "buildpkg requires a docs_books repository at the same level as

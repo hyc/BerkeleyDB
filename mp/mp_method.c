@@ -69,6 +69,7 @@ __memp_get_cachesize(dbenv, gbytesp, bytesp, ncachep)
 	u_int32_t *gbytesp, *bytesp;
 	int *ncachep;
 {
+	DB_MPOOL *dbmp;
 	ENV *env;
 	MPOOL *mp;
 
@@ -78,22 +79,23 @@ __memp_get_cachesize(dbenv, gbytesp, bytesp, ncachep)
 	    env->mp_handle, "DB_ENV->get_cachesize", DB_INIT_MPOOL);
 
 	if (MPOOL_ON(env)) {
-		/* Cannot be set after open, no lock required to read. */
-		mp = env->mp_handle->reginfo[0].primary;
+		dbmp = env->mp_handle;
+		mp = dbmp->reginfo[0].primary;
 		if (gbytesp != NULL)
-			*gbytesp = mp->stat.st_gbytes;
+			*gbytesp = mp->gbytes;
 		if (bytesp != NULL)
-			*bytesp = mp->stat.st_bytes;
+			*bytesp = mp->bytes;
 		if (ncachep != NULL)
-			*ncachep = (int)mp->nreg;
+			*ncachep = mp->nreg;
 	} else {
 		if (gbytesp != NULL)
 			*gbytesp = dbenv->mp_gbytes;
 		if (bytesp != NULL)
 			*bytesp = dbenv->mp_bytes;
 		if (ncachep != NULL)
-			*ncachep = (int)dbenv->mp_ncache;
+			*ncachep = dbenv->mp_ncache;
 	}
+
 	return (0);
 }
 
@@ -465,14 +467,22 @@ __memp_get_mp_pagesize(dbenv, mp_pagesizep)
 	DB_ENV *dbenv;
 	u_int32_t *mp_pagesizep;
 {
+	DB_MPOOL *dbmp;
 	ENV *env;
+	MPOOL *mp;
 
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
 	    env->mp_handle, "DB_ENV->get_mp_max_pagesize", DB_INIT_MPOOL);
 
-	*mp_pagesizep = dbenv->mp_pagesize;
+	if (MPOOL_ON(env)) {
+		dbmp = env->mp_handle;
+		mp = dbmp->reginfo[0].primary;
+		*mp_pagesizep = mp->pagesize;
+	} else {
+		*mp_pagesizep = dbenv->mp_pagesize;
+	}
 	return (0);
 }
 
@@ -792,10 +802,10 @@ __memp_ftruncate(dbmfp, txn, ip, pgno, flags)
 	    !mfp->no_backing_file && pgno <= mfp->last_flushed_pgno)
 #ifdef HAVE_FTRUNCATE
 		ret = __os_truncate(env,
-		    dbmfp->fhp, pgno, mfp->stat.st_pagesize);
+		    dbmfp->fhp, pgno, mfp->pagesize);
 #else
 		ret = __db_zero_extend(env,
-		    dbmfp->fhp, pgno, mfp->last_pgno, mfp->stat.st_pagesize);
+		    dbmfp->fhp, pgno, mfp->last_pgno, mfp->pagesize);
 #endif
 
 	/*

@@ -2245,7 +2245,7 @@ database has been opened.
         reverseSplitOff = (dbFlags & DbConstants.DB_REVSPLITOFF) != 0;
         sortedDuplicates = (dbFlags & DbConstants.DB_DUPSORT) != 0;
         snapshot = (dbFlags & DbConstants.DB_SNAPSHOT) != 0;
-        unsortedDuplicates = (dbFlags & DbConstants.DB_DUP) != 0;
+        unsortedDuplicates = !sortedDuplicates && ((dbFlags & DbConstants.DB_DUP) != 0);
         transactionNotDurable = (dbFlags & DbConstants.DB_TXN_NOT_DURABLE) != 0;
 
         if (type == DatabaseType.BTREE) {
@@ -2263,6 +2263,7 @@ database has been opened.
             hashNumElements = db.get_h_nelem();
         }
         messageStream = db.get_message_stream();
+        pageSize = db.get_pagesize();
         // Not available by design
         password = ((dbFlags & DbConstants.DB_ENCRYPT) != 0) ? "" : null;
         priority = CacheFilePriority.fromFlag(db.get_priority());

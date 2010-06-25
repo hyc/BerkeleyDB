@@ -223,7 +223,7 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 	if (dbmfp->addr != NULL &&
 	    F_ISSET(mfp, MP_CAN_MMAP) && *pgnoaddr <= mfp->orig_last_pgno) {
 		*(void **)addrp = (u_int8_t *)dbmfp->addr +
-		    (*pgnoaddr * mfp->stat.st_pagesize);
+		    (*pgnoaddr * mfp->pagesize);
 		STAT_INC(env, mpool, map, mfp->stat.st_map);
 		return (0);
 	}
@@ -804,15 +804,15 @@ alloc:		/* Allocate a new buffer header and data space. */
 		 * if DB_MPOOL_CREATE is set.
 		 */
 		if (extending) {
-			MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize,
+			MVCC_MPROTECT(bhp->buf, mfp->pagesize,
 			    PROT_READ | PROT_WRITE);
 			memset(bhp->buf, 0,
 			    (mfp->clear_len == DB_CLEARLEN_NOTSET) ?
-			    mfp->stat.st_pagesize : mfp->clear_len);
+			    mfp->pagesize : mfp->clear_len);
 #if defined(DIAGNOSTIC) || defined(UMRW)
 			if (mfp->clear_len != DB_CLEARLEN_NOTSET)
 				memset(bhp->buf + mfp->clear_len, CLEAR_BYTE,
-				    mfp->stat.st_pagesize - mfp->clear_len);
+				    mfp->pagesize - mfp->clear_len);
 #endif
 
 			if (flags == DB_MPOOL_CREATE && mfp->ftype != 0 &&
@@ -911,7 +911,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		MUTEX_REQUIRED(env, bhp->mtx_buf);
 
 		if (BH_REFCOUNT(bhp) == 1)
-			MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize,
+			MVCC_MPROTECT(bhp->buf, mfp->pagesize,
 			    PROT_READ);
 
 		atomic_init(&alloc_bhp->ref, 1);
@@ -932,22 +932,22 @@ alloc:		/* Allocate a new buffer header and data space. */
 		} else if ((ret =
 		    __memp_bh_settxn(dbmp, mfp, alloc_bhp, td)) != 0)
 			goto err;
-		MVCC_MPROTECT(alloc_bhp->buf, mfp->stat.st_pagesize,
+		MVCC_MPROTECT(alloc_bhp->buf, mfp->pagesize,
 		    PROT_READ | PROT_WRITE);
 		if (extending ||
 		    F_ISSET(bhp, BH_FREED) || flags == DB_MPOOL_FREE) {
 			memset(alloc_bhp->buf, 0,
 			    (mfp->clear_len == DB_CLEARLEN_NOTSET) ?
-			    mfp->stat.st_pagesize : mfp->clear_len);
+			    mfp->pagesize : mfp->clear_len);
 #if defined(DIAGNOSTIC) || defined(UMRW)
 			if (mfp->clear_len != DB_CLEARLEN_NOTSET)
 				memset(alloc_bhp->buf + mfp->clear_len,
 				    CLEAR_BYTE,
-				    mfp->stat.st_pagesize - mfp->clear_len);
+				    mfp->pagesize - mfp->clear_len);
 #endif
 		} else
-			memcpy(alloc_bhp->buf, bhp->buf, mfp->stat.st_pagesize);
-		MVCC_MPROTECT(alloc_bhp->buf, mfp->stat.st_pagesize, 0);
+			memcpy(alloc_bhp->buf, bhp->buf, mfp->pagesize);
+		MVCC_MPROTECT(alloc_bhp->buf, mfp->pagesize, 0);
 
 		if (h_locked == 0)
 			MUTEX_LOCK(env, hp->mtx_hash);
@@ -970,7 +970,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) > 0);
 		if (atomic_dec(env, &bhp->ref) == 0) {
 			bhp->priority = c_mp->lru_count;
-			MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, 0);
+			MVCC_MPROTECT(bhp->buf, mfp->pagesize, 0);
 		}
 		F_CLR(bhp, BH_EXCLUSIVE);
 		MUTEX_UNLOCK(env, bhp->mtx_buf);
@@ -1017,7 +1017,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		if (F_ISSET(bhp, BH_FREED)) {
 			memset(bhp->buf, 0,
 			    (mfp->clear_len == DB_CLEARLEN_NOTSET) ?
-			    mfp->stat.st_pagesize : mfp->clear_len);
+			    mfp->pagesize : mfp->clear_len);
 			F_CLR(bhp, BH_FREED);
 		}
 		if (!F_ISSET(bhp, BH_DIRTY)) {
@@ -1051,7 +1051,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 #endif
 	}
 
-	MVCC_MPROTECT(bhp->buf, mfp->stat.st_pagesize, PROT_READ |
+	MVCC_MPROTECT(bhp->buf, mfp->pagesize, PROT_READ |
 	    (dirty || extending || F_ISSET(bhp, BH_DIRTY) ?
 	    PROT_WRITE : 0));
 

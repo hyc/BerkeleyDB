@@ -63,7 +63,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	 * before free-ing and re-allocating buffers.
 	 */
 	if (mfp != NULL) {
-		len = SSZA(BH, buf) + mfp->stat.st_pagesize;
+		len = SSZA(BH, buf) + mfp->pagesize;
 		/* Add space for alignment padding for MVCC diagnostics. */
 		MVCC_BHSIZE(mfp, len);
 	}
@@ -74,7 +74,7 @@ __memp_alloc(dbmp, infop, mfp, len, offsetp, retp)
 	 * Anything newer than 1/10th of the buffer pool is ignored during
 	 * allocation (unless allocation starts failing).
 	 */
-	high_priority = c_mp->lru_count - c_mp->stat.st_pages / 10;
+	high_priority = c_mp->lru_count - c_mp->pages / 10;
 
 	/*
 	 * First we try to allocate from free memory.  If that fails, scan the
@@ -100,7 +100,7 @@ alloc:	if ((ret = __env_alloc(infop, len, &p)) == 0) {
 				__env_alloc_free(infop, bhp);
 				goto search;
 			}
-			c_mp->stat.st_pages++;
+			c_mp->pages++;
 		}
 		MPOOL_REGION_UNLOCK(env, infop);
 found:		if (offsetp != NULL)
@@ -127,7 +127,7 @@ found:		if (offsetp != NULL)
 		}
 #endif
 		return (0);
-	} else if (giveup || c_mp->stat.st_pages == 0) {
+	} else if (giveup || c_mp->pages == 0) {
 		MPOOL_REGION_UNLOCK(env, infop);
 
 		__db_errx(env,
@@ -151,7 +151,7 @@ search:	ret = 0;
 	 */
 	for (;;) {
 		/* All pages have been freed, make one last try */
-		if (c_mp->stat.st_pages == 0)
+		if (c_mp->pages == 0)
 			goto alloc;
 
 		/* Check for wrap around. */
@@ -448,8 +448,7 @@ this_buffer:	buffers++;
 				if (aggressive ||
 				    bhp->priority < c_mp->lru_count)
 					bhp->priority = c_mp->lru_count +
-					     c_mp->stat.st_pages /
-					     MPOOL_PRI_DIRTY;
+					     c_mp->pages / MPOOL_PRI_DIRTY;
 
 				goto next_hb;
 			}
@@ -552,7 +551,7 @@ this_buffer:	buffers++;
 			b_lock = 0;
 			h_locked = 0;
 
-			MVCC_MPROTECT(bhp->buf, bh_mfp->stat.st_pagesize,
+			MVCC_MPROTECT(bhp->buf, bh_mfp->pagesize,
 			    PROT_READ | PROT_WRITE | PROT_EXEC);
 
 			MPOOL_REGION_LOCK(env, infop);
@@ -560,7 +559,7 @@ this_buffer:	buffers++;
 			    (BH_FROZEN_ALLOC *)bhp, links);
 			frozen_bhp = (BH_FROZEN_PAGE *)
 			    ((BH_FROZEN_ALLOC *)bhp + 1);
-			endp = (u_int8_t *)bhp->buf + bh_mfp->stat.st_pagesize;
+			endp = (u_int8_t *)bhp->buf + bh_mfp->pagesize;
 			while ((u_int8_t *)(frozen_bhp + 1) < endp) {
 				frozen_bhp->header.mtx_buf = MUTEX_INVALID;
 				SH_TAILQ_INSERT_TAIL(&c_mp->free_frozen,
@@ -581,7 +580,7 @@ this_buffer:	buffers++;
 		 * and its space and keep looking.
 		 */
 		if (mfp != NULL &&
-		    mfp->stat.st_pagesize == bh_mfp->stat.st_pagesize) {
+		    mfp->pagesize == bh_mfp->pagesize) {
 			if ((ret = __memp_bhfree(dbmp,
 			     infop, bh_mfp, hp, bhp, 0)) != 0)
 				return (ret);
@@ -589,7 +588,7 @@ this_buffer:	buffers++;
 			goto found;
 		}
 
-		freed_space += sizeof(*bhp) + bh_mfp->stat.st_pagesize;
+		freed_space += sizeof(*bhp) + bh_mfp->pagesize;
 		if ((ret =
 		    __memp_bhfree(dbmp, infop,
 			 bh_mfp, hp, bhp, BH_FREE_FREEMEM)) != 0)

@@ -49,7 +49,7 @@
  *
  * This package provides dbm and ndbm compatible interfaces to DB.
  *
- * EXTERN: #ifdef HAVE_DBM
+ * EXTERN: #if DB_DBM_HSEARCH != 0
  * EXTERN: int	 __db_ndbm_clearerr __P((DBM *));
  * EXTERN: void	 __db_ndbm_close __P((DBM *));
  * EXTERN: int	 __db_ndbm_delete __P((DBM *, datum));

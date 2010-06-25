@@ -45,6 +45,20 @@ r=`egrep crypto/crypto.c $f | awk 'BEGIN { FS="\t*" } { print $2 }'`
  echo 'w' &&
  echo 'q') | ed $f
 
+# Change out crypto/crypto.c for common/crypto_stub.c, remove all other
+# references to crypto files.
+f=win_projects/projects.template.xml
+chmod 664 $f
+(echo '/crypto\/crypto\.c/' &&
+ echo 'c' &&
+ echo '      <file name="common/crypto_stub.c"/>' &&
+ echo '.' &&
+ echo 'g/"crypto\//d' &&
+ echo "s/\$/ $r/" &&
+ echo ',' &&
+ echo 'w' &&
+ echo 'q') | ed $f
+
  sh ./s_windows
  sh ./s_windows_dsp
 

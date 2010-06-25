@@ -2005,6 +2005,38 @@ namespace CsharpAPITest
 			StatsInTxn(testHome, testName, true);
 		}
 
+        [Test]
+        public void TestMultipleDBSingleFile()
+        {
+            testName = "TestMultipleDBSingleFile";
+            testHome = testFixtureHome + "/" + testName;
+            string btreeDBName = testHome + "/" + testName + ".db";
+
+            Configuration.ClearDir(testHome);
+
+            string dbName = "test";
+
+            /* Create and initialize database object, open the database. */
+            BTreeDatabaseConfig btreeDBconfig = new BTreeDatabaseConfig();
+            btreeDBconfig.Creation = CreatePolicy.IF_NEEDED;
+            btreeDBconfig.ErrorPrefix = testName;
+            btreeDBconfig.UseRecordNumbers = true;
+
+            BTreeDatabase btreeDB = BTreeDatabase.Open(btreeDBName, dbName,
+                btreeDBconfig);
+            btreeDB.Close();
+            btreeDB = BTreeDatabase.Open(btreeDBName, dbName + "2",
+                btreeDBconfig);
+            btreeDB.Close();
+
+            BTreeDatabaseConfig dbcfg = new BTreeDatabaseConfig();
+            dbcfg.ReadOnly = true;
+            BTreeDatabase newDb = BTreeDatabase.Open(btreeDBName, dbcfg);
+            Boolean val = newDb.HasMultiple;
+            Assert.IsTrue(val);
+            newDb.Close();
+        }
+
 		public void StatsInTxn(string home, string name, bool ifIsolation)
 		{
 			DatabaseEnvironmentConfig envConfig =

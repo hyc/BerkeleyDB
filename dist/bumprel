@@ -42,7 +42,7 @@ cd $R/dist &&\
      echo "/^DB_VERSION_PATCH/s/=.*/=$PATCH/" &&\
      echo w &&\
      echo q) | ed RELEASE > /dev/null
-VERSION=`sh -c '. RELEASE; echo $DB_VERSION'`
+VERSION=`sh -c '. ./RELEASE; echo $DB_VERSION'`
 echo "Berkeley DB release $VERSION."
 
 # Build auto-generated files.

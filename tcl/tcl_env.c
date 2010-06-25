@@ -140,6 +140,7 @@ env_Cmd(clientData, interp, objc, objv)
 		"get_mp_max_openfd",
 		"get_mp_max_write",
 		"get_mp_mmapsize",
+		"get_mp_pagesize",
 		"get_open_flags",
 		"get_shm_key",
 		"get_tas_spins",
@@ -249,6 +250,7 @@ env_Cmd(clientData, interp, objc, objv)
 		ENVGETMPMAXOPENFD,
 		ENVGETMPMAXWRITE,
 		ENVGETMPMMAPSIZE,
+		ENVGETMPPAGESIZE,
 		ENVGETOPENFLAG,
 		ENVGETSHMKEY,
 		ENVGETTASSPINS,
@@ -936,6 +938,16 @@ env_Cmd(clientData, interp, objc, objv)
 		    "env get_mp_mmapsize")) == TCL_OK)
 			res = Tcl_NewLongObj((long)size);
 		break;
+	case ENVGETMPPAGESIZE:
+		if (objc != 2) {
+			Tcl_WrongNumArgs(interp, 1, objv, NULL);
+			return (TCL_ERROR);
+		}
+		ret = dbenv->get_mp_pagesize(dbenv, &value);
+		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "env get_mp_mmapsize")) == TCL_OK)
+			res = Tcl_NewLongObj((long)value);
+		break;
 	case ENVGETOPENFLAG:
 		result = env_GetOpenFlag(interp, objc, objv, dbenv);
 		break;
@@ -996,10 +1008,16 @@ env_Cmd(clientData, interp, objc, objv)
 		result = env_GetVerbose(interp, objc, objv, dbenv);
 		break;
 	case ENVRESIZECACHE:
+		if (objc != 3) {
+			Tcl_WrongNumArgs(interp, 2, objv,
+			    "?-resize_cache {gbytes bytes}?");
+			result = TCL_ERROR;
+			break;
+		}
 		if ((result = Tcl_ListObjGetElements(
 		    interp, objv[2], &listobjc, &listobjv)) != TCL_OK)
 			break;
-		if (objc != 3 || listobjc != 2) {
+		if (listobjc != 2) {
 			Tcl_WrongNumArgs(interp, 2, objv,
 			    "?-resize_cache {gbytes bytes}?");
 			result = TCL_ERROR;

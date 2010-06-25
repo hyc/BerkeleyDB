@@ -164,13 +164,13 @@ bad:		__db_errx(env, "May not specify both keys and a callback.");
 		return (EINVAL);
 	}
 
-	if ((part = dbp->p_internal) == NULL) {
-		if ((ret = __partition_init(dbp,
-		    keys != NULL ?
-		    DBMETA_PART_RANGE : DBMETA_PART_CALLBACK)) != 0)
-			return (ret);
-		part = dbp->p_internal;
-	} else if ((part->keys != NULL && callback != NULL) ||
+	if ((ret = __partition_init(dbp,
+	    keys != NULL ?
+	    DBMETA_PART_RANGE : DBMETA_PART_CALLBACK)) != 0)
+		return (ret);
+	part = dbp->p_internal;
+	
+	if ((part->keys != NULL && callback != NULL) ||
 	    (part->callback != NULL && keys != NULL))
 		goto bad;
 

@@ -972,7 +972,7 @@ if test "$qnx_build" = "yes"; then
 fi
 
 # The DBM API can be disabled.
-if test "$db_cv_build_dbm" = "yes"; then
+if test "$db_cv_dbm" = "yes"; then
 	AC_DEFINE(HAVE_DBM)
 	AH_TEMPLATE(HAVE_DBM, [Define to 1 if building the DBM API.])
 	ADDITIONAL_OBJS="$ADDITIONAL_OBJS dbm${o} hsearch${o}"

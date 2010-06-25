@@ -225,6 +225,7 @@ __ham_add_dup(dbc, nval, flags, pgnop)
 		case DB_KEYFIRST:
 		case DB_KEYLAST:
 		case DB_NODUPDATA:
+		case DB_OVERWRITE_DUP:
 			hcp->dup_tlen += (db_indx_t)DUP_SIZE(nval->size);
 			hcp->dup_len = nval->size;
 			break;

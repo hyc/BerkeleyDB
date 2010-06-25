@@ -1,5 +1,73 @@
 = Berkeley DB 11gR2 Changelog =
 
+== Changes between 11.2.5.0.21  and 11.2.5.0.26 ==
+
+Fixed a race condition that was causing an "unable to allocate space
+from the buffer cache" error.  The error can only be triggered when
+multiple mpool regions are used and there is a periodic gathering and
+clearing of statistics. This also fixes a second bug where if you
+compile without statistics and explicitly set the mpool default pagesize,
+other environment handles to that environment would not see the correct
+mpool default pagesize.  [#18386]
+
+Fixed a bug that might cause recovery to fail if processed part of the log
+that had previously been recoverd and a database which was not present
+was opened in the log and not closed. [#18459]
+
+Fixed a bug which could occur when using bulk transfer with Replication
+Manager.  When closing a DB_ENV handle, any remaining bulk buffer
+contents are flushed, and Replication Manager could have tried to send
+the resulting messages even though its connections had already been
+closed, leading in rare circumstances to spurious EBADF error reports,
+or possibly even arbitrary memory corruption.  [#18469]
+
+Fixed a bug in C# HasMultiple() that this function always throws exceptions
+when there are multiple databases in a single db file. [#18483]
+
+Fixed the '--enable-dbm' argument to configure. [#18497]
+
+Fixed a bug in the Java API where populating a SecondaryDatabase on open
+could lead to an OutOfMemoryException. [#18529]
+
+Fixed a bug where DB SQL reports "The database disk image is malformed" 
+in "group by" operations. [#18531]
+
+Fixed a bug that prevented the same process from reconnecting to the  
+database when DB_REGISTER is being used. [#18535] 
+
+Fix a race between opening and closing SQL databases from multiple threads
+that could lead to the error "DB_REGISTER limits processes to one open DB_ENV
+handle per environment". [#18538] 
+
+Fixed some bugs that could cause a panic or a DB_RUN_RECOVERY error if the sync
+of the transaction log failed. [#18588]
+
+Fixed a bug which would occur when recovery checkpoint was not written because 
+the cache ran out of space attempting to flush the mpool cache. The environment
+was recovered and all database where made available, but some databases were
+incorrectly closed. This would cause a subsequent recovery to fail on its
+backward pass with the error "PANIC: No such file or directory". [#18590]
+
+Fixed a bug that segementation fault would occur if DB->set_partition_dirs was
+called before DB->set_partition. [#18591]
+
+Fixed a bug that the error of "unknown path" would occur if putting duplicate
+records to duplicated sorted hash database with DB_OVERWRITE_DUP.[#18607]
+
+Fixed a bug where DatabaseConfig.getUnsortedDuplicates() returned true when the
+datbase had been configured for sorted duplicates.  [#18612]
+
+Fixed a bug that could cause recovery to fail with the error
+"DB_LOGC->get: log record LSN %u/%u: checksum mismatch" if the last log file
+was nearly full and ended with a partially written log record which was smaller
+than a checkpoint record. It now erases the invalid partial record before
+switching to the new log file. [#18651]
+
+Initialize DatabaseConfig.pageSize so that it can be queried from Java. [#18691]
+
+Fixed a bug that might cause an aborting transaction to fail if it aborted while
+a DB->compact of the same HASH database was compacting the dynamic hash table [#18695]
+
 == Database or Log File On-Disk Format Changes ==
 
 The log file format changed in 11gR2.
@@ -149,6 +217,7 @@ create a database and the DB_TRUNCATE flag was specified.  [#18373]
 
 Fixed a bug that might cause a trap reading unitialized memory when
 backing out a merge of a duplicate tree leaf page during DB->compact.  [#18461]
+
 == Locking Subsystem Changes ==
 
 Fixed a bug to ensure deadlock detection works even when there are blocked 
@@ -198,6 +267,9 @@ when initializing the first mutex. [#17489]
 Fixed a race condition which could cause unnecessary retrying of btree searches
 when several threads simulatenously attempted to get a shared latch. [#18078]
 
+
+Exclusive Transactions have been implemented for the SQL API.  See the 
+documentation for details on the behavior of this feature.  [#17822]
 
 == Tcl-specific API Changes ==
 

@@ -721,6 +721,9 @@ __repmgr_read_from_site(env, conn)
 			case WOULDBLOCK:
 				return (0);
 			default:
+#ifdef EBADF
+				DB_ASSERT(env, ret != EBADF);
+#endif
 				(void)__repmgr_format_eid_loc(env->rep_handle,
 				    conn->eid, buffer);
 				__db_err(env, ret,

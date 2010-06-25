@@ -274,15 +274,11 @@ AC_ARG_ENABLE(test,
 AC_MSG_RESULT($db_cv_test)
 
 AC_MSG_CHECKING(if --enable-dbm option specified)
-AC_ARG_ENABLE(build_dbm,
+AC_ARG_ENABLE(dbm,
 	[AC_HELP_STRING([--enable-dbm],
 			[Configure to enable the historic dbm interface.])],
-	[db_cv_build_dbm="$enable_dbm"], enableval="$db_cv_test")
-db_cv_build_dbm="$enableval"
-case "$enableval" in
- no) AC_MSG_RESULT(yes);;
-yes) AC_MSG_RESULT(no);;
-esac
+	[db_cv_dbm="$enable_dbm"], [db_cv_dbm="$db_cv_test"])
+AC_MSG_RESULT($db_cv_dbm)
 
 AC_MSG_CHECKING(if --enable-dtrace option specified)
 AC_ARG_ENABLE(dtrace,

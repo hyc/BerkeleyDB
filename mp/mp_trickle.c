@@ -78,7 +78,7 @@ __memp_trickle(env, pct, nwrotep)
 	 */
 	for (ret = 0, i = dirty = total = 0; i < mp->nreg; ++i) {
 		c_mp = dbmp->reginfo[i].primary;
-		total += c_mp->stat.st_pages;
+		total += c_mp->pages;
 		__memp_stat_hash(&dbmp->reginfo[i], c_mp, &dtmp);
 		dirty += dtmp;
 	}
