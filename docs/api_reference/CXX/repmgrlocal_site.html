@@ -49,6 +49,19 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
          method is called.
     </p>
       <p>
+         The database environment's replication subsystem may also be configured using the
+         environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
+         syntax of the entry in that file is a single line with the string "repmgr_set_local_site",
+         one or more whitespace characters, and the
+	 <span class="bold"><strong>host</strong></span> and
+	 <span class="bold"><strong>port</strong></span>
+         parameters specified as a string and an integer respectively.
+	 For example, "repmgr_set_local_site example.com 49200".
+         Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read
+         when the database environment is opened, it will silently overrule configuration done
+         before that time.
+    </p>
+      <p>
          The <code class="methodname">DbEnv::repmgr_set_local_site()</code> <span>
             
             <span>
@@ -62,7 +75,7 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3697443"></a>Parameters</h3>
+              <h3 class="title"><a id="id4034939"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -70,7 +83,7 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3696758"></a>host</h4>
+                <h4 class="title"><a id="id4035117"></a>host</h4>
               </div>
             </div>
           </div>
@@ -82,7 +95,7 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3697381"></a>port</h4>
+                <h4 class="title"><a id="id4035248"></a>port</h4>
               </div>
             </div>
           </div>
@@ -94,7 +107,7 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3697648"></a>flags</h4>
+                <h4 class="title"><a id="id4035255"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -108,7 +121,7 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3697506"></a>Errors</h3>
+              <h3 class="title"><a id="id4035048"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -127,7 +140,7 @@ repmgr_set_local_site(const char * host, u_int16_t port, u_int32_t flags); </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3697683"></a>EINVAL</h4>
+                <h4 class="title"><a id="id4035290"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -145,7 +158,7 @@ method;
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3697277"></a>Class</h3>
+              <h3 class="title"><a id="id4034720"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -157,7 +170,7 @@ method;
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3697538"></a>See Also</h3>
+              <h3 class="title"><a id="id4034738"></a>See Also</h3>
             </div>
           </div>
         </div>
