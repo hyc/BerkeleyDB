@@ -441,6 +441,7 @@ retry:	pg = NULL;
 				if ((ret = __TLPUT(dbc, next_lock)) != 0)
 					goto err;
 				LOCK_INIT(next_lock);
+				saved_pgno = PGNO_INVALID;
 				goto next_no_release;
 			}
 		}
@@ -605,7 +606,7 @@ retry:	pg = NULL;
 		 * If we did not merge any records of the parent,
 		 * exit to commit any local transactions and try again.
 		 */
-		if (merged || ret == DB_LOCK_NOTGRANTED) {
+		if (merged || (pgs_done > 0 && ret == DB_LOCK_NOTGRANTED)) {
 			if (merged)
 				pgs_done++;
 			else
@@ -642,6 +643,7 @@ retry:	pg = NULL;
 		if ((ret = __TLPUT(dbc, nnext_lock)) != 0)
 			goto err1;
 		LOCK_INIT(nnext_lock);
+		nnext_pgno = PGNO_INVALID;
 
 		/* If we did not bump to the next page something did not fit. */
 		if (npgno != NEXT_PGNO(pg)) {
@@ -718,9 +720,11 @@ retry:	pg = NULL;
 				if ((ret = __TLPUT(dbc, prev_lock)) != 0)
 					goto err1;
 				LOCK_INIT(prev_lock);
+				prev_pgno = PGNO_INVALID;
 				if ((ret = __TLPUT(dbc, next_lock)) != 0)
 					goto err1;
 				LOCK_INIT(next_lock);
+				saved_pgno = PGNO_INVALID;
 				pg = cp->csp->page;
 				if (pgno != PGNO(pg)) {
 					pgs_done++;
@@ -768,10 +772,18 @@ retry:	pg = NULL;
 			if ((ret = __memp_fput(dbmp, dbc->thread_info,
 			     cp->csp->page, dbc->priority)) != 0)
 				goto err1;
-			pg = NULL;
+			pg = cp->csp->page = NULL;
+			if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) &&
+				(ret = __db_lget(dbc, 0, ppgno,
+				DB_LOCK_WRITE, 0, &epg->lock)) != 0)
+					goto err1;
 			if ((ret = __memp_fget(dbmp, &ppgno, dbc->thread_info,
 			    dbc->txn, DB_MPOOL_DIRTY, &ppg)) != 0)
 				goto err1;
+			if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) &&
+				(ret = __db_lget(dbc, 0, pgno,
+				DB_LOCK_WRITE, 0, &cp->csp->lock)) != 0)
+					goto err1;
 			if ((ret = __memp_fget(dbmp, &pgno, dbc->thread_info,
 			    dbc->txn, DB_MPOOL_DIRTY, &pg)) != 0)
 				goto err1;
@@ -827,6 +839,7 @@ retry:	pg = NULL;
 			if ((ret = __TLPUT(dbc, prev_lock)) != 0)
 				goto err1;
 			LOCK_INIT(prev_lock);
+			prev_pgno = PGNO_INVALID;
 			pg = cp->csp->page;
 			if (pgno != PGNO(pg)) {
 				pgs_done++;
@@ -874,6 +887,7 @@ retry:	pg = NULL;
 		if ((ret = __TLPUT(dbc, nnext_lock)) != 0)
 			goto err1;
 		LOCK_INIT(nnext_lock);
+		nnext_pgno = PGNO_INVALID;
 
 		/*
 		 * __bam_merge could have freed our stack if it
@@ -930,7 +944,8 @@ next_no_release:
 		 * If we are at the end of this parent commit the
 		 * transaction so we don't tie things up.
 		 */
-		if (pgs_done != 0 && do_commit && !F_ISSET(dbc, DBC_OPD)) {
+		if (do_commit && !F_ISSET(dbc, DBC_OPD) &&
+		   (dbp->mpf->mfp->multiversion != 0 || pgs_done != 0)) {
 deleted:		if (ndbc != NULL &&
 			     ((ret = __bam_stkrel(ndbc, 0)) != 0 ||
 			     (ret = __dbc_close(ndbc)) != 0))
@@ -2267,6 +2282,7 @@ __bam_savekey(dbc, next, start)
 			pg = NULL;
 			goto err;
 		}
+		pg = NULL;
 		if (level - 1 == LEAFLEVEL) {
 			TRY_LOCK(dbc, pgno, saved_pgno,
 			    lock, DB_LOCK_READ, retry);
@@ -2412,6 +2428,7 @@ new_txn:
 			goto err;
 		}
 
+		/* We only got read locks so we can drop them. */
 		if ((ret = __bam_stkrel(dbc, STK_NOLOCK)) != 0)
 			goto err;
 		if (pgno == BAM_ROOT_PGNO(dbc))
@@ -2477,7 +2494,8 @@ again:	if (F_ISSET(dbp, DB_AM_SUBDB) &&
 		if (local_txn &&
 		    (ret = __txn_begin(dbp->env, ip, NULL, &txn, 0)) != 0)
 			goto err;
-		if ((ret = __db_cursor(dbp, ip, txn, &dbc, 0)) != 0)
+		if (dbc == NULL &&
+		    (ret = __db_cursor(dbp, ip, txn, &dbc, 0)) != 0)
 			goto err;
 		if ((ret = __db_lget(dbc,
 		     0, bt->bt_meta, DB_LOCK_WRITE, 0, &meta_lock)) != 0)
@@ -2493,6 +2511,7 @@ again:	if (F_ISSET(dbp, DB_AM_SUBDB) &&
 			if (local_txn) {
 				if ((ret = __dbc_close(dbc)) != 0)
 					goto err;
+				dbc = NULL;
 				if ((ret = __txn_abort(txn)) != 0)
 					goto err;
 			} else {

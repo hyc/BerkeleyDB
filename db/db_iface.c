@@ -288,10 +288,12 @@ __db_cursor_pp(dbp, txn, dbcp, flags)
 
 	/* Check for replication block. */
 	rep_blocked = 0;
-	if (txn == NULL && IS_ENV_REPLICATED(env)) {
-		if ((ret = __op_rep_enter(env, 0)) != 0)
-			goto err;
-		rep_blocked = 1;
+	if (IS_ENV_REPLICATED(env)) {
+		if (txn == NULL) {
+			if ((ret = __op_rep_enter(env, 0)) != 0)
+				goto err;
+			rep_blocked = 1;
+		}
 		renv = env->reginfo->primary;
 		if (dbp->timestamp != renv->rep_timestamp) {
 			__db_errx(env, "%s %s",
@@ -1111,16 +1113,10 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	ENV_ENTER(env, ip);
 
 	/*
-	 * Save the file and database names and flags.  We do this here
-	 * because we don't pass all of the flags down into the actual
-	 * DB->open method call, we strip DB_AUTO_COMMIT at this layer.
+	 * Save the flags.  We do this here because we don't pass all of the
+	 * flags down into the actual DB->open method call, we strip
+	 * DB_AUTO_COMMIT at this layer.
 	 */
-	if ((fname != NULL &&
-	    (ret = __os_strdup(env, fname, &dbp->fname)) != 0))
-		goto err;
-	if ((dname != NULL &&
-	    (ret = __os_strdup(env, dname, &dbp->dname)) != 0))
-		goto err;
 	dbp->open_flags = flags;
 
 	/* Save the current DB handle flags for refresh. */

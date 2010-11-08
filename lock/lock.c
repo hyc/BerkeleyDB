@@ -1890,3 +1890,83 @@ __lock_trade(env, lock, new_locker)
 
 	return (0);
 }
+
+/*
+ * __lock_change --
+ *
+ * PUBLIC: int __lock_change __P((ENV *, DB_LOCK *, DB_LOCK *));
+ *
+ * Change a lock to a different object.  This is used when we move a 
+ * metadata page to change the handle lock.  We know that the new lock
+ * has replaced the old lock so we just delete that lock.
+ */
+int
+__lock_change(env, old_lock, new_lock)
+	ENV *env;
+	DB_LOCK *old_lock, *new_lock;
+{
+	struct __db_lock *lp, *old_lp;
+	DB_LOCKOBJ *old_obj, *new_obj;
+	DB_LOCKTAB *lt;
+	DB_LOCKREGION *region;
+	u_int32_t old_part, new_part;
+	int ret;
+
+	lt = env->lk_handle;
+	region = lt->reginfo.primary;
+	
+	old_lp = R_ADDR(&lt->reginfo, old_lock->off);
+	DB_ASSERT(env, old_lp->gen == old_lock->gen);
+	old_obj = (DB_LOCKOBJ *)((u_int8_t *)old_lp + old_lp->obj);
+
+	lp = R_ADDR(&lt->reginfo, new_lock->off);
+	DB_ASSERT(env, lp->gen == new_lock->gen);
+	new_obj = (DB_LOCKOBJ *)((u_int8_t *)lp + lp->obj);
+
+	/* Don't deadlock on partition mutexes, order the latches. */
+	LOCK_SYSTEM_LOCK(lt, region);
+	old_part =  LOCK_PART(region, old_obj->indx);
+	new_part =  LOCK_PART(region, new_obj->indx);
+
+	if (old_part == new_part)
+		MUTEX_LOCK_PARTITION(lt, region, old_part);
+	else if (new_obj->indx < old_obj->indx) {
+		MUTEX_LOCK_PARTITION(lt, region, new_part);
+		MUTEX_LOCK_PARTITION(lt, region, old_part);
+	} else  {
+		MUTEX_LOCK_PARTITION(lt, region, old_part);
+		MUTEX_LOCK_PARTITION(lt, region, new_part);
+	}
+
+	for (lp = SH_TAILQ_FIRST(&old_obj->waiters, __db_lock);
+	    lp != NULL;
+	    lp = SH_TAILQ_FIRST(&old_obj->waiters, __db_lock)) {
+		SH_TAILQ_REMOVE(&old_obj->waiters, lp, links, __db_lock);
+		SH_TAILQ_INSERT_TAIL(&new_obj->waiters, lp, links);
+		lp->indx = new_obj->indx;
+		lp->obj = (roff_t)SH_PTR_TO_OFF(lp, new_obj);
+	}
+
+	for (lp = SH_TAILQ_FIRST(&old_obj->holders, __db_lock);
+	    lp != NULL;
+	    lp = SH_TAILQ_FIRST(&old_obj->holders, __db_lock)) {
+		SH_TAILQ_REMOVE(&old_obj->holders, lp, links, __db_lock);
+	    	if (lp == old_lp)
+			continue;
+		SH_TAILQ_INSERT_TAIL(&new_obj->holders, lp, links);
+		lp->indx = new_obj->indx;
+		lp->obj = (roff_t)SH_PTR_TO_OFF(lp, new_obj);
+	}
+
+	/* Put the lock back in and call put so the object goes away too. */
+	SH_TAILQ_INSERT_TAIL(&old_obj->holders, old_lp, links);
+	ret = __lock_put_internal(lt, old_lp, old_obj->indx,
+	     DB_LOCK_UNLINK | DB_LOCK_FREE | DB_LOCK_NOPROMOTE);
+
+	MUTEX_UNLOCK_PARTITION(lt, region, new_part);
+	if (new_part != old_part)
+		MUTEX_UNLOCK_PARTITION(lt, region, old_part);
+	LOCK_SYSTEM_UNLOCK(lt, region);
+
+	return (ret);
+}

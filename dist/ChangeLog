@@ -1,6 +1,11 @@
 = Berkeley DB 11gR2 Changelog =
 
-== Changes between 11.2.5.0.21  and 11.2.5.0.26 ==
+== Changes between 11.2.5.0.26  and 11.2.5.0.32 ==
+
+Added Visual Studio 2010 support. Users can find Visual Studio 2010 solutions
+and projects on build_windows. [#18889]
+
+Fixed a leak of log file ids when a database is closed before the end of a transaction that references it. [#15957]
 
 Fixed a race condition that was causing an "unable to allocate space
 from the buffer cache" error.  The error can only be triggered when
@@ -10,8 +15,59 @@ compile without statistics and explicitly set the mpool default pagesize,
 other environment handles to that environment would not see the correct
 mpool default pagesize.  [#18386]
 
+Fix failure to flush pages to disk. [#18760]
+
+Fix a general I/O problem on Windows where system doesn't always return 
+ENOENT when file is missing. [#18762]
+
+Fixed locking bugs: [#18789]
+* Db->compact of BTREE with MVCC could return an unpinned page.
+* RECNO would fail to lock the next page when splitting a leaf page.
+
+Don't await ack if message not sent due to queue limit exceeded. [#18682]
+
+Fixed a bug that could cause data to not be returned in a HASH database that
+was one of multiple databases in a file and it was opened prior to running
+DB->compact on that database in another thread of control [#18824]
+
+Return HANDLE_DEAD on cursor creation that names a specific txn after client 
+callback. [#18862]
+
+Remove parting_shot rep_start(CLIENT) in election thread because it can 
+occasionally conflict with rep_start(MASTER) in another thread. [#18946]
+
+Fixed a bug that would cause handle locks to be left referencing the wrong metadata page if DB->compact moved the metadata page of a sub-database. [#18944]
+
+Fixed a bug that might cause an update to a HASH database to fail with an "unpinned page returned" error if it first gets an I/O error while logging. [#18985]
+
+Fixed a bug that failed to dirty a page when DB->compact moved records within a hash bucket [#18994]
+
+Fixed a bug in page allocation where if a non-transactional update was being done, then we release the metadata page lock too early possibly leading to the corruption of the in memory page list used by DB->compact. [#19036]
+
+A log write failure on a replication master will now cause a panic since the transaction may be committed on some clients. [#19054]
+
+Removed the possibility that checkpoints will overlap in the log, decreasing the time to recover [#19062]
+
+Fixed a bug that could leave a hash bucket overflow page not linked to the bucket if the unlink of that page aborted. [#19001]
+
+Fixed a bug that would leave the next page pointer of a hash bucket that was removed pointing to an invalid page. [#19004]
+
+Fixed several bugs that could cause an update running with MVCC to get the wrong version of a page or improperly update the metadata last page number. [#19063]
+
+Fixed a bug where an error during an update to a hash database with DB_NOOVERWRITE set could return DB_KEYEXIST rather than the correct error. [#19077]
+
+Fixed a bug where an updater supporting DB_READ_UNCOMMITED might downgrade its lock too soon if there was an error during the update [#19155]
+
+Fixed a bug that could cause the wrong page number to be on a root or metadata page if DB->compact moved the page and the operation was later rolled forward [#19167]
+
+Fixed a bug that could cause the close of a secondary index database to fail if the transaction doing the open aborted [#19169]
+
+The database open code will no longer log the open and close of the master database in a file when opening a sub database in that file [#19071]
+
+== Changes between 11.2.5.0.21  and 11.2.5.0.26 ==
+
 Fixed a bug that might cause recovery to fail if processed part of the log
-that had previously been recoverd and a database which was not present
+that had previously been recovered and a database which was not present
 was opened in the log and not closed. [#18459]
 
 Fixed a bug which could occur when using bulk transfer with Replication
@@ -68,12 +124,15 @@ Initialize DatabaseConfig.pageSize so that it can be queried from Java. [#18691]
 Fixed a bug that might cause an aborting transaction to fail if it aborted while
 a DB->compact of the same HASH database was compacting the dynamic hash table [#18695]
 
-== Database or Log File On-Disk Format Changes ==
 
-The log file format changed in 11gR2.
+== Changes between 4.8 and 11.2.5.0.21 ==
+
+=== Database or Log File On-Disk Format Changes ===
+
+The log file format changed in 11.2.5.0.21
 
 
-== New Features ==
+=== New Features ===
 
 Replication Manager sites can specify one or more possible client-to-client 
 peers. [#14776]
@@ -140,7 +199,7 @@ as of version 4.8. If Berkeley DB was configured to use this type of
 mutex in an earlier release, switch to a different mutex type or contact 
 Oracle for support. [#18361]
 
-== Database Environment Changes ==
+=== Database Environment Changes ===
 
 Fixed a bug to reflect the correct configuration of the logging subsystem 
 when the  DB_ENV->log_set_config method is called with the DB_LOG_ZERO flag 
@@ -155,7 +214,7 @@ Fixd a race condition in an internal directory-scanning function
 that returns the ENOENT ("No such file or directory") error, if a file
 is removed just before a call to stat() or its eqivalent. [#17850]
 
-== Access Method Changes ==
+=== Access Method Changes ===
 
 Fixed a bug to prevent a page in the hash database from carrying the wrong 
 header information when a group allocation is rolled forward by 
@@ -218,7 +277,7 @@ create a database and the DB_TRUNCATE flag was specified.  [#18373]
 Fixed a bug that might cause a trap reading unitialized memory when
 backing out a merge of a duplicate tree leaf page during DB->compact.  [#18461]
 
-== Locking Subsystem Changes ==
+=== Locking Subsystem Changes ===
 
 Fixed a bug to ensure deadlock detection works even when there are blocked 
 transactions, configured with and without timeouts. [#17555]
@@ -229,12 +288,12 @@ transaction does not lock pages. [#17930]
 Fixed a bug that could cause a segmentation fault if the lock manager 
 ran out of mutexes [#18428]
 
-== Logging Subsystem Changes ==
+=== Logging Subsystem Changes ===
 
 Limited the size of a log record generated by freeing pages from a database, 
 so that it fits in the log file size. [#17313] 
 
-== Memory Pool Subsystem Changes ==
+=== Memory Pool Subsystem Changes ===
 
 Fixed a bug to ensure mulitple versions of a buffer are not created when 
 MVCC is not set. [#17495]
@@ -258,7 +317,7 @@ Enabled set_mp_pagesize to be specified in the DB_CONFIG file. [#18015]
 Fixed a bug to ensure single-version or obsolete buffers were selected
 over any intermediate version. [#18114]
 
-== Mutex Subsystem Changes ==
+=== Mutex Subsystem Changes ===
 
 Fixed a bug on HP-UX when specifying --with-mutex=HP/msem_init during configure.
 It would generate the error "TAS: mutex not appropriately aligned" at runtime,
@@ -271,14 +330,14 @@ when several threads simulatenously attempted to get a shared latch. [#18078]
 Exclusive Transactions have been implemented for the SQL API.  See the 
 documentation for details on the behavior of this feature.  [#17822]
 
-== Tcl-specific API Changes ==
+=== Tcl-specific API Changes ===
 
 Fixed a bug in Tcl API to prevent a segmentation fault from occurring when 
 the get_dbname method is called to get the db name and the db handle is 
 opened without providing either the filename or dbname. [#18037]
 
 
-== C#-specific API Changes ==
+=== C#-specific API Changes ===
 
 Fixed a bug in C# to prevent a System.AccessViolationException from occurring
 on Windows7 when trying to open new database. [#18422]
@@ -286,7 +345,7 @@ on Windows7 when trying to open new database. [#18422]
 Fixed a bug in the C# API to make DB_COMPACT consistent with __db_compact
 in teh C API. [#18246]
 
-==  API Changes ==
+===  API Changes ===
 
 Added the dbstl_thread_exit method to release thread specific 
 resouces on thread exit. [#17595]
@@ -297,7 +356,7 @@ been removed. It is replaced by DB_REP_CONF_AUTOINIT. However,
 replication's default behavior remains the same.  [#17795]
 
 
-== Replication Changes ==
+=== Replication Changes ===
 
 Fixed bug where a not-in-sync client could service a peer request. [#18279]
 
@@ -361,7 +420,7 @@ The default thread stack size is no longer overridden by default for
 Berkeley DB threads. [#18383]
 
 
-== Transaction Subsystem Changes ==
+=== Transaction Subsystem Changes ===
 
 Fixed a bug that caused transactions to deadlock on the mutex in the 
 sequence object. [#17731] 
@@ -372,7 +431,7 @@ sub-transactions. [#18154]
 
 Removed a memory leak during recovery related to a deleted database [#18273]
 
-== Utility Changes ==
+=== Utility Changes ===
 
 Fixed compiler warnings in the db_sql_codegen utility. [#17503]
 
@@ -388,7 +447,7 @@ completed. [#17545]
 Fixed a bug in the db_sql_codegen utility where the primary key is stored in
 both key and data fields. Removed it from the data field. [#17925]
 
-== Example Changes ==
+=== Example Changes ===
 
 Fixed a bug that causes the ex_txn C# example to hang. [#17376]
 
@@ -406,12 +465,12 @@ Added a new Stl example to demo advanced feature usage. The Stl test cases
 referred earlier are replaced by these new examples in the Stl reference 
 document. [#18175] 
 
-== Deprecated Features ==
+=== Deprecated Features ===
 
 The configuration options --disable-cryptography and 
 --enable-cryptoraphy are being deprecated. [#18110] 
 
-== Configuration, Documentation, Sample Apps, Portability and Build Changes ==
+=== Configuration, Documentation, Sample Apps, Portability and Build Changes ===
 
 Remove build files for Windows Visual Studio 6.0. [#16848]
 
@@ -488,6 +547,5 @@ The BTree prefix comparison function behaves slightly differently in the
 C API vs the C# API.  In the C# API it returns a signed int and in the C API
 it returns an unsigned int.  This can be a problem if the application
 needs to save more than 2^31 bytes.
-
 
 

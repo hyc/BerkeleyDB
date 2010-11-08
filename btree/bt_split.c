@@ -146,7 +146,7 @@ retry:		if ((ret = (dbc->dbtype == DB_BTREE ?
 		 * We need to try to lock the next page so we can update
 		 * its PREV.
 		 */
-		if (dbc->dbtype == DB_BTREE && ISLEAF(cp->csp->page) &&
+		if (ISLEAF(cp->csp->page) &&
 		    (pgno = NEXT_PGNO(cp->csp->page)) != PGNO_INVALID) {
 			TRY_LOCK(dbc, pgno,
 			     next_pgno, next_lock, DB_LOCK_WRITE, retry);

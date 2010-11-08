@@ -83,7 +83,7 @@ int __ham_merge_pages __P((DBC *, u_int32_t, u_int32_t, DB_COMPACT *));
 int __ham_split_page __P((DBC *, u_int32_t, u_int32_t));
 int __ham_add_el __P((DBC *, const DBT *, const DBT *, u_int32_t));
 int __ham_copypair __P((DBC *, PAGE *, u_int32_t, PAGE *, db_indx_t *, int));
-int __ham_add_ovflpage __P((DBC *, PAGE *, int, PAGE **));
+int __ham_add_ovflpage __P((DBC *, PAGE **));
 int __ham_get_cpage __P((DBC *, db_lockmode_t));
 int __ham_next_cpage __P((DBC *, db_pgno_t));
 int __ham_lock_bucket __P((DBC *, db_lockmode_t));

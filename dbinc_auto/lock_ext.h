@@ -16,6 +16,7 @@ int  __lock_put __P((ENV *, DB_LOCK *));
 int __lock_downgrade __P((ENV *, DB_LOCK *, db_lockmode_t, u_int32_t));
 int __lock_locker_same_family __P((ENV *, DB_LOCKER *, DB_LOCKER *, int *));
 int __lock_promote __P((DB_LOCKTAB *, DB_LOCKOBJ *, int *, u_int32_t));
+int __lock_change __P((ENV *, DB_LOCK *, DB_LOCK *));
 int __lock_detect_pp __P((DB_ENV *, u_int32_t, u_int32_t, int *));
 int __lock_detect __P((ENV *, u_int32_t, int *));
 int __lock_failchk __P((ENV *));

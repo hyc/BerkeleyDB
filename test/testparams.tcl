@@ -17,7 +17,8 @@ set subs {bigfile dead env fop lock log memp multi_repmgr mutex plat recd rep \
 	repmgr rpc rsrc sdb sdbtest sec si test txn}
 
 set test_names(bigfile)	[list bigfile001 bigfile002]
-set test_names(compact) [list test111 test112 test113 test114 test115 test117]
+set test_names(compact) [list test111 \
+    test112 test113 test114 test115 test117]
 set test_names(dead)    [list dead001 dead002 dead003 dead004 dead005 dead006 \
     dead007 dead008 dead009 dead010 dead011]
 set test_names(elect)	[list rep002 rep005 rep016 rep020 rep022 rep026 \

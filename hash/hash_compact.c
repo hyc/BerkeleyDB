@@ -164,12 +164,15 @@ err:		if (hcp->page != NULL &&
 		hcp->page = NULL;
 		hcp->pgno = pgno = PGNO_INVALID;
 		/*
-		 * If we are in a transaction and we updated something
+		 * If we are in an auto-transaction and we updated something
 		 * return to the caller to commit this transaction to
 		 * avoid holding locks. Otherwise process the next bucket.
 		 * We can drop the lock if we did not do anything.
+		 * We always must commit the txn if we are in MVCC
+		 * as we have dirtied the hash buckets.
 		 */
-		if (ret == 0 && (pgs_done == 0 || dbc->txn == NULL))
+		if (ret == 0 && dbp->mpf->mfp->multiversion == 0 &&
+		    (pgs_done == 0 || dbc->txn == NULL))
 			ret = __LPUT(dbc, hcp->lock);
 		else if (LF_ISSET(DB_AUTO_COMMIT)) {
 			if (ret == 0)
@@ -303,8 +306,8 @@ __ham_copy_data(dbc, pg, c_data, pgs_donep)
 	while (origpgno != NEXT_PGNO(pg) &&
 	    (origpgno = NEXT_PGNO(pg)) != PGNO_INVALID) {
 
-		if ((ret = __memp_fget(mpf, &NEXT_PGNO(pg),
-		    dbc->thread_info, dbc->txn, 0, &nextpage)) != 0)
+		if ((ret = __memp_fget(mpf, &NEXT_PGNO(pg), dbc->thread_info,
+		    dbc->txn, DB_MPOOL_DIRTY, &nextpage)) != 0)
 			break;
 
 		c_data->compact_pages_examine++;

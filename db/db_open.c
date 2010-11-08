@@ -107,6 +107,14 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 	/* Fill in the type. */
 	dbp->type = type;
 
+	/* Save the file and database names. */
+	if ((fname != NULL &&
+	    (ret = __os_strdup(env, fname, &dbp->fname)) != 0))
+		goto err;
+	if ((dname != NULL &&
+	    (ret = __os_strdup(env, dname, &dbp->dname)) != 0))
+		goto err;
+
 	/*
 	 * If both fname and subname are NULL, it's always a create, so make
 	 * sure that we have both DB_CREATE and a type specified.  It would
@@ -176,6 +184,14 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if ((ret = __fop_file_setup(dbp, ip,
 		    txn, fname, mode, flags, &id)) != 0)
 			return (ret);
+		/*
+		 * If we are creating the first sub-db then this is the
+		 * call to create the master db and we tried to open it
+		 * read-only.  The create will force it to be read/write
+		 * So clear the RDONLY flag if we just created it.
+		 */
+		 if (!F_ISSET(dbp, DB_AM_RDONLY))
+		 	LF_CLR(DB_RDONLY);
 	} else {
 		if (dbp->p_internal != NULL) {
 			__db_errx(env,
@@ -632,10 +648,12 @@ bad_format:
  * PUBLIC: int __db_reopen __P((DBC *));
  */
 int
-__db_reopen(dbc)
-	DBC *dbc;
+__db_reopen(arg_dbc)
+	DBC *arg_dbc;
 {
 	BTREE *bt;
+	DBC *dbc;
+	DB_TXN *txn;
 	HASH *ht;
 	DB *dbp, *mdbp;
 	DB_LOCK meta_lock, new_lock, old_lock;
@@ -643,15 +661,29 @@ __db_reopen(dbc)
 	db_pgno_t newpgno, oldpgno;
 	int ret, t_ret;
 
+	dbc = arg_dbc;
 	dbp = dbc->dbp;
 	old_page = new_page = NULL;
-	LOCK_INIT(meta_lock);
-	LOCK_INIT(new_lock);
-	LOCK_INIT(old_lock);
 	mdbp = NULL;
 
 	COMPQUIET(bt, NULL);
 	COMPQUIET(ht, NULL);
+
+	/*
+	 * This must be done in the context of a transaction.  If the
+	 * requester does not have a transaction, create one.
+	 */
+
+	if (TXN_ON(dbp->env) && (txn = dbc->txn) == NULL) {
+		if ((ret = __txn_begin(dbp->env,
+		     dbc->thread_info, NULL, &txn, 0)) != 0)
+			return (ret);
+		if ((ret = __db_cursor(dbp,
+		     dbc->thread_info, txn, &dbc, 0)) != 0) {
+			(void)__txn_abort(txn);
+			return (ret);
+		}
+	}
 
 	/*
 	 * Lock the master meta data page so we don't block holding
@@ -675,7 +707,8 @@ __db_reopen(dbc)
 		goto err;
 
 	if ((ret = __memp_fget(dbp->mpf, &oldpgno,
-	    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &old_page)) != 0)
+	    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &old_page)) != 0 &&
+	    ret != DB_PAGE_NOTFOUND)
 		goto err;
 
 	if ((ret = __db_master_open(dbp,
@@ -712,20 +745,22 @@ done:	if (dbp->type == DB_HASH)
 	else
 		bt->revision = dbp->mpf->mfp->revision;
 
-err:	if ((t_ret = __LPUT(dbc, old_lock)) != 0 && ret == 0)
-		ret = t_ret;
-	if ((t_ret = __LPUT(dbc, new_lock)) != 0 && ret == 0)
-		ret = t_ret;
-	if ((t_ret = __LPUT(dbc, meta_lock)) != 0 && ret == 0)
-		ret = t_ret;
-	if (old_page != NULL && (t_ret = __memp_fput(dbp->mpf,
+err:	if (old_page != NULL && (t_ret = __memp_fput(dbp->mpf,
 	    dbc->thread_info, old_page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if (new_page != NULL && (t_ret = __memp_fput(dbp->mpf,
 	    dbc->thread_info, new_page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
+
 	if (mdbp != NULL &&
 	    (t_ret = __db_close(mdbp, dbc->txn, DB_NOSYNC)) != 0 && ret == 0)
 		ret = t_ret;
+
+	if (dbc != arg_dbc) {
+		if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
+			ret = t_ret;
+		if ((t_ret = __txn_commit(txn, 0)) != 0 && ret == 0)
+			ret = t_ret;
+	}
 	return (ret);
 }

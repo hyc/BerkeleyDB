@@ -423,20 +423,22 @@ struct __cursor {
 	    __db_lget(dbc, 0, __root, lock_mode, 0, &(lock))) != 0)	\
 		break;							\
 	if ((ret = __memp_fget((dbc)->dbp->mpf, &__root,		\
-	     (dbc)->thread_info, dbc->txn, get_mode, &page)) != 0)	\
+	     (dbc)->thread_info, dbc->txn, get_mode, &page)) == 0) {	\
+		if (__root == root_pgno)				\
+			break;						\
+		if (F_ISSET(dbc, DBC_OPD) ||				\
+		    !F_ISSET((dbc)->dbp, DB_AM_SUBDB) ||		\
+		     (__t->bt_root == __root &&				\
+		     __rev == (dbc)->dbp->mpf->mfp->revision)) {	\
+			root_pgno = __root;				\
+			break;						\
+		}							\
+		if ((ret = __memp_fput((dbc)->dbp->mpf, 		\
+		     (dbc)->thread_info, page, (dbc)->priority)) != 0)	\
+			break;						\
+	} else if (ret != DB_PAGE_NOTFOUND)				\
 		break;							\
-	if (__root == root_pgno)					\
-		break;							\
-	if (F_ISSET(dbc, DBC_OPD) || !F_ISSET((dbc)->dbp, DB_AM_SUBDB) || \
-	     (__t->bt_root == __root &&					\
-	     __rev == (dbc)->dbp->mpf->mfp->revision)) {		\
-	     	root_pgno = __root;					\
-	     	break;							\
-	}								\
 	if ((ret = __LPUT(dbc, lock)) != 0)				\
-		break;							\
-	if ((ret = __memp_fput((dbc)->dbp->mpf, 			\
-	     (dbc)->thread_info, page, (dbc)->priority)) != 0)		\
 		break;							\
 	if ((ret = __db_reopen(dbc)) != 0)				\
 		break;							\

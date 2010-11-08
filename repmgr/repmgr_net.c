@@ -391,6 +391,15 @@ __repmgr_send_broadcast(env, type, control, rec, nsitesp, npeersp)
 			nsites++;
 			if (site->priority > 0)
 				npeers++;
+		} else if (ret == DB_TIMEOUT) {
+			/*
+			 * Couldn't send because of a full output queue.
+			 * Incrementing counters would be wrong, but it's
+			 * otherwise OK in the sense that the connection isn't
+			 * definitively known to be broken, and rep protocol
+			 * always allows us to drop a message if we have to.
+			 */ 
+			ret = 0;
 		} else if (ret == DB_REP_UNAVAIL) {
 			if ((ret = __repmgr_bust_connection(env, conn)) != 0)
 				return (ret);
@@ -429,9 +438,13 @@ __repmgr_send_one(env, conn, msg_type, control, rec, blockable)
 	int blockable;
 {
 	struct sending_msg msg;
+	int ret;
 
 	setup_sending_msg(&msg, msg_type, control, rec);
-	return (__repmgr_send_internal(env, conn, &msg, blockable));
+	if ((ret = __repmgr_send_internal(env, conn, &msg, blockable))
+	    == DB_TIMEOUT && !blockable)
+		ret = 0;
+	return (ret);
 }
 
 /*
@@ -513,7 +526,7 @@ __repmgr_send_internal(env, conn, msg, blockable)
 			    "queue limit exceeded"));
 			STAT(env->rep_handle->
 			    region->mstat.st_msgs_dropped++);
-			return (blockable ? DB_TIMEOUT : 0);
+			return (DB_TIMEOUT);
 		}
 	}
 empty:

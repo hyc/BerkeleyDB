@@ -17,7 +17,6 @@ static int __repmgr_elect __P((ENV *,
 	u_int32_t, u_int32_t, db_timespec *));
 static int __repmgr_elect_main __P((ENV *, REPMGR_RUNNABLE *));
 static void *__repmgr_elect_thread __P((void *));
-static int __repmgr_parting_repstart __P((ENV *));
 
 /*
  * Starts an election thread.
@@ -216,11 +215,8 @@ __repmgr_elect_main(env, th)
 		 * that got the failure becomes the chosen one that will remain
 		 * to avenge the failure.
 		 */
-		if (db_rep->preferred_elect_thr != th) {
-			/* Do one final rep_start if necessary. */
-			ret = __repmgr_parting_repstart(env);
+		if (db_rep->preferred_elect_thr != th)
 			goto unlock;
-		}
 
 		timespecclear(&wait_til);
 		__os_gettime(env, &now, 1);
@@ -347,54 +343,6 @@ unlock:
 	UNLOCK_MUTEX(db_rep->mutex);
 out:
 #endif
-	return (ret);
-}
-
-/*
- * Assumes that the mutex is held.  Drops it if calling rep_start, but then
- * reacquires it before returning.
- */
-static int
-__repmgr_parting_repstart(env)
-	ENV *env;
-{
-	DB_REP *db_rep;
-	db_timespec now, target;
-	db_timeout_t response_time;
-	int ret;
-
-	db_rep = env->rep_handle;
-
-	/*
-	 * Normally we alternate calls to rep_elect() and rep_start().  But when
-	 * we get an explicit stimulus to initiate or join an election, that
-	 * takes priority; so it's occasionally possible that we could skip a
-	 * rep_start().
-	 *
-	 * Usually that doesn't matter, but if it happens repeatedly at start-up
-	 * time, before we've managed to propagate our cdata to the whole group,
-	 * then it's important to do a rep_start() at least occasionally.  So,
-	 * do a rep_start() if it has been a while since we've done one.
-	 *
-	 * The definition of "a while" is somewhat arbitrary: the retry_wait
-	 * plus the response_time.  If it's been more than that long since the
-	 * last rep_start(), then we'll do another one here now.
-	 */
-	target = db_rep->repstart_time;
-	TIMESPEC_ADD_DB_TIMEOUT(&target, db_rep->election_retry_wait);
-	response_time = __repmgr_compute_response_time(env);
-	TIMESPEC_ADD_DB_TIMEOUT(&target, response_time);
-	__os_gettime(env, &now, 1);
-
-	if (timespeccmp(&now, &target, <))
-		return (0);
-
-	db_rep->new_connection = FALSE;
-	UNLOCK_MUTEX(db_rep->mutex);
-	ret = __repmgr_repstart(env, DB_REP_CLIENT);
-	LOCK_MUTEX(db_rep->mutex);
-	if (ret == 0)
-		__os_gettime(env, &db_rep->repstart_time, 1);
 	return (ret);
 }
 

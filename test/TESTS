@@ -3285,6 +3285,16 @@ test125
 	5. Two cursors in the same spot.  Delete through one.  
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test130
+	Test moving of subdatabase metadata pages.
+
+	Populate num_db sub-database. Open multiple handles on each.
+	Remove a high proportion of entries.
+	Dump and save contents.  Compact the database, dump again,
+	and make sure we still have the same contents.
+	Make sure handles and cursors still work after compaction.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 txn001
 	Begin, commit, abort testing.
 

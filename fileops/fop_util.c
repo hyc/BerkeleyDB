@@ -139,7 +139,8 @@ __fop_lock_handle(env, dbp, locker, mode, elockp, flags)
 		if ((ret = __lock_vec(env,
 		    locker, flags, reqs, 2, &ereq)) == 0) {
 			dbp->handle_lock = reqs[1].lock;
-			LOCK_INIT(*elockp);
+			if (elockp != &dbp->handle_lock)
+				LOCK_INIT(*elockp);
 		} else if (ereq != reqs)
 			LOCK_INIT(*elockp);
 	}
@@ -500,6 +501,12 @@ reopen:		if (!F_ISSET(dbp, DB_AM_INMEM) && (ret =
 #endif
 		goto err;
 	LF_SET(DB_CREATE);
+	/*
+	 * If we were trying to open a non-existent master database
+	 * readonly clear that here.
+	 */
+	LF_CLR(DB_RDONLY);
+	F_CLR(dbp, DB_AM_RDONLY);
 	ret = 0;
 
 	/*
@@ -738,13 +745,15 @@ __fop_subdb_setup(dbp, ip, txn, mname, name, mode, flags)
 	DB *mdbp;
 	ENV *env;
 	db_lockmode_t lkmode;
+	u_int32_t mflags;
 	int ret, t_ret;
 
 	mdbp = NULL;
 	env = dbp->env;
 
-	if ((ret = __db_master_open(dbp,
-	    ip, txn, mname, flags, mode, &mdbp)) != 0)
+	mflags = flags | DB_RDONLY;
+retry:	if ((ret = __db_master_open(dbp,
+	    ip, txn, mname, mflags, mode, &mdbp)) != 0)
 		return (ret);
 	/*
 	 * If we created this file, then we need to set the DISCARD flag so
@@ -768,8 +777,16 @@ __fop_subdb_setup(dbp, ip, txn, mname, name, mode, flags)
 	F_SET(dbp, DB_AM_SUBDB);
 
 	if (name != NULL && (ret = __db_master_update(mdbp, dbp,
-	    ip, txn, name, dbp->type, MU_OPEN, NULL, flags)) != 0)
+	    ip, txn, name, dbp->type, MU_OPEN, NULL, flags)) != 0) {
+	    	if (ret == EBADF && F_ISSET(mdbp, DB_AM_RDONLY)) {
+			/* We need to reopen the master R/W to do the create. */
+			if ((ret = __db_close(mdbp, txn, 0)) != 0)
+				goto err;
+			FLD_CLR(mflags, DB_RDONLY);
+			goto retry;
+		}
 		goto err;
+	}
 
 	/*
 	 * Hijack the master's locker ID as well, so that our locks don't

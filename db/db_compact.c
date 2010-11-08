@@ -13,6 +13,7 @@
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
 #include "dbinc/lock.h"
+#include "dbinc/fop.h"
 #include "dbinc/mp.h"
 #include "dbinc/txn.h"
 #ifdef HAVE_FTRUNCATE
@@ -423,7 +424,8 @@ __db_exchange_page(dbc, pgp, opg, newpgno, flags)
 		    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &newpage)) != 0)
 			return (ret);
 	} else if ((ret = __db_new(dbc, P_DONTEXTEND | TYPE(*pgp),
-	     TYPE(*pgp) == P_LBTREE ? &lock : NULL, &newpage)) != 0)
+	     STD_LOCKING(dbc) && TYPE(*pgp) != P_OVERFLOW ? &lock : NULL,
+	     &newpage)) != 0)
 		return (ret);
 
 	/*
@@ -1003,6 +1005,7 @@ __db_move_metadata(dbc, metap, c_data)
 {
 	BTREE *bt;
 	DB *dbp, *mdbp;
+	DB_LOCK handle_lock;
 	HASH *ht;
 	int ret, t_ret;
 
@@ -1034,6 +1037,38 @@ __db_move_metadata(dbc, metap, c_data)
 		bt = dbp->bt_internal;
 		bt->bt_meta = dbp->meta_pgno;
 		bt->revision = ++dbp->mpf->mfp->revision;
+	}
+
+	/*
+	 * The handle lock for subdb's depends on the metadata page number:
+	 * swap the old one for the new one.
+	 */
+	if (STD_LOCKING(dbc)) {
+		/*
+		 * If this dbp is still in an opening transaction we need to
+		 * change its lock in the event.
+		 */
+		if (dbp->cur_txn != NULL)
+			__txn_remlock(dbp->env,
+			    dbp->cur_txn, &dbp->handle_lock, DB_LOCK_INVALIDID);
+
+		handle_lock = dbp->handle_lock;
+		if ((ret = __fop_lock_handle(dbp->env, dbp,
+		    dbp->cur_locker != NULL ? dbp->cur_locker : dbp->locker,
+		    dbp->cur_txn != NULL ? DB_LOCK_WRITE : DB_LOCK_READ,
+		    NULL, 0)) != 0)
+			goto err;
+
+		/* Move all the other handles to the new lock. */
+		if ((ret = __lock_change(dbp->env,
+		    &handle_lock, &dbp->handle_lock)) != 0)
+			goto err;
+
+		/* Reregister the event. */
+		if (dbp->cur_txn != NULL &&
+		    (ret = __txn_lockevent(dbp->env, dbp->cur_txn, dbp,
+		    &dbp->handle_lock, dbp->locker)) != 0)
+		    	goto err;
 	}
 
 err:	if ((t_ret = __db_close(mdbp, dbc->txn, DB_NOSYNC)) != 0 && ret == 0)

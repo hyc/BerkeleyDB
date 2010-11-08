@@ -1018,6 +1018,7 @@
 #define	__lock_downgrade __lock_downgrade@DB_VERSION_UNIQUE_NAME@
 #define	__lock_locker_same_family __lock_locker_same_family@DB_VERSION_UNIQUE_NAME@
 #define	__lock_promote __lock_promote@DB_VERSION_UNIQUE_NAME@
+#define	__lock_change __lock_change@DB_VERSION_UNIQUE_NAME@
 #define	__lock_detect_pp __lock_detect_pp@DB_VERSION_UNIQUE_NAME@
 #define	__lock_detect __lock_detect@DB_VERSION_UNIQUE_NAME@
 #define	__lock_failchk __lock_failchk@DB_VERSION_UNIQUE_NAME@

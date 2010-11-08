@@ -11,7 +11,10 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/log.h"
+#include "dbinc/lock.h"
+#include "dbinc/fop.h"
 #include "dbinc/mp.h"
+#include "dbinc/btree.h"
 #include "dbinc/hash.h"
 
 static int __db_pg_free_recover_int __P((ENV *, DB_THREAD_INFO *,
@@ -2337,20 +2340,30 @@ __db_merge_recover(env, dbtp, lsnp, op, info)
 	void *info;
 {
 	__db_merge_args *argp;
+	BTREE *bt;
 	DB_THREAD_INFO *ip;
 	BKEYDATA *bk;
 	DB *file_dbp;
 	DBC *dbc;
+	DB_LOCK handle_lock;
+	DB_LOCKREQ request;
 	DB_MPOOLFILE *mpf;
+	HASH *h;
 	PAGE *pagep;
 	db_indx_t indx, *ninp, *pinp;
 	u_int32_t size;
 	u_int8_t *bp;
-	int cmp_n, cmp_p, i, ret;
+	int cmp_n, cmp_p, i, ret, t_ret;
 
 	ip = ((DB_TXNHEAD *)info)->thread_info;
 	REC_PRINT(__db_merge_print);
-	REC_INTRO(__db_merge_read, ip, 1);
+	REC_INTRO(__db_merge_read, ip, op != DB_TXN_APPLY);
+
+	/* Allocate our own cursor without DB_RECOVER as we need a locker. */
+	if (op == DB_TXN_APPLY && (ret = __db_cursor_int(file_dbp, ip, NULL,
+	    DB_QUEUE, PGNO_INVALID, 0, NULL, &dbc)) != 0)
+		goto out;
+	F_SET(dbc, DBC_RECOVER);
 
 	if ((ret = __memp_fget(mpf, &argp->pgno, ip, NULL, 0, &pagep)) != 0) {
 		if (ret != DB_PAGE_NOTFOUND) {
@@ -2372,6 +2385,11 @@ __db_merge_recover(env, dbtp, lsnp, op, info)
 		DB_ASSERT(env, !argp->pg_copy || NUM_ENT(pagep) == 0);
 		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
 		if (argp->pg_copy) {
+			if (argp->data.size == 0) {
+				memcpy(pagep, argp->hdr.data, argp->hdr.size);
+				pagep->pgno = argp->pgno;
+				goto do_lsn;
+			}
 			P_INIT(pagep, file_dbp->pgsize, pagep->pgno,
 			     PREV_PGNO(argp->hdr.data),
 			     NEXT_PGNO(argp->hdr.data),
@@ -2397,7 +2415,55 @@ __db_merge_recover(env, dbtp, lsnp, op, info)
 			HOFFSET(pagep) -= argp->data.size;
 			NUM_ENT(pagep) += i;
 		}
-		pagep->lsn = *lsnp;
+do_lsn:		pagep->lsn = *lsnp;
+		if (op == DB_TXN_APPLY) {
+			/*
+			 * If applying to an active system we must bump
+			 * the revision number so that the db will get
+			 * reopened.  We also need to move the handle
+			 * locks.  Note that the dbp will not have a
+			 * locker in a replication client apply thread.
+			 */
+			if (file_dbp->type == DB_HASH) {
+				h = file_dbp->h_internal;
+				if (argp->npgno == file_dbp->meta_pgno)
+					file_dbp->mpf->mfp->revision++;
+			} else {
+				bt = file_dbp->bt_internal;
+				if (argp->npgno == bt->bt_meta ||
+				    argp->npgno == bt->bt_root)
+				    	file_dbp->mpf->mfp->revision++;
+			}
+			if (argp->npgno == file_dbp->meta_pgno) {
+				F_CLR(file_dbp, DB_AM_RECOVER);
+				if ((ret = __fop_lock_handle(file_dbp->env,
+				    file_dbp, dbc->locker, DB_LOCK_READ,
+				    NULL, 0)) != 0)
+					goto err;
+				handle_lock = file_dbp->handle_lock;
+
+				file_dbp->meta_pgno = argp->pgno;
+				if ((ret = __fop_lock_handle(file_dbp->env,
+				    file_dbp, dbc->locker, DB_LOCK_READ,
+				    NULL, 0)) != 0)
+					goto err;
+
+				/* Move the other handles to the new lock. */
+				ret = __lock_change(file_dbp->env, 
+				    &handle_lock, &file_dbp->handle_lock);
+				
+err:				memset(&request, 0, sizeof (request));
+				request.op = DB_LOCK_PUT_ALL;
+				if ((t_ret = __lock_vec(
+				    file_dbp->env, dbc->locker,
+				    0, &request, 1, NULL)) != 0 && ret == 0)
+				    	ret = t_ret;
+				F_SET(file_dbp, DB_AM_RECOVER);
+				if (ret != 0)
+					goto out;
+			}
+		}
+
 	} else if (cmp_n == 0 && !DB_REDO(op)) {
 		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
 		if (TYPE(pagep) == P_OVERFLOW) {
@@ -2502,6 +2568,36 @@ next:	if ((ret = __memp_fget(mpf, &argp->npgno, ip, NULL, 0, &pagep)) != 0) {
 			}
 		}
 		pagep->lsn = argp->nlsn;
+		if (op == DB_TXN_ABORT) {
+			/*
+			 * If we are undoing a meta/root page move we must
+			 * bump the revision number and put the handle
+			 * locks back to their original state.
+			 */
+			if (file_dbp->type == DB_HASH) {
+				h = file_dbp->h_internal;
+				if (argp->pgno == file_dbp->meta_pgno)
+					file_dbp->mpf->mfp->revision++;
+			} else {
+				bt = file_dbp->bt_internal;
+				if (argp->pgno == bt->bt_meta ||
+				    argp->pgno == bt->bt_root)
+					file_dbp->mpf->mfp->revision++;
+			}
+			if (argp->pgno == file_dbp->meta_pgno) {
+				file_dbp->meta_pgno = argp->npgno;
+				handle_lock = file_dbp->handle_lock;
+				if ((ret = __fop_lock_handle(file_dbp->env,
+				    file_dbp, file_dbp->locker, DB_LOCK_READ,
+				    NULL, 0)) != 0)
+					goto out;
+
+				/* Move the other handles to the new lock. */
+				if ((ret = __lock_change(file_dbp->env,
+				    &handle_lock, &file_dbp->handle_lock)) != 0)
+					goto out;
+			}
+		}
 	}
 
 	if ((ret = __memp_fput(mpf,

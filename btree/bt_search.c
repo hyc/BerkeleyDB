@@ -565,6 +565,7 @@ next:		if (recnop != NULL)
 			LOCK_INIT(lock);
 			get_mode = DB_MPOOL_DIRTY;
 			lock_mode = DB_LOCK_WRITE;
+			getlock = 1;
 			goto lock_next;
 		} else {
 			/*
@@ -714,20 +715,52 @@ lock_next:		h = NULL;
 				 * the lock on it while we reget the root
 				 * latch because allocation is one place
 				 * we lock while holding a latch.
-				 * Noone can have a free page locked, so
-				 * check for that case.  We do this by
-				 * checking the level, since it will be 0
-				 * if free and we might as well see if this
-				 * page moved and drop the lock in that case.
+				 * We want to hold the lock but must ensure
+				 * that the page is not free or cannot become
+				 * free.  If we are at the LEAF level we can
+				 * hold on to the lock if the page is still
+				 * of the right type.  Otherwise we need to
+				 * besure this page cannot move to an off page
+				 * duplicate tree (which are not locked) and
+				 * masquerade as the page we want.
+				 */
+
+				/*
+				 * If the page is not at leaf level
+				 * then see if OPD trees are around.
+				 * If the page could appear as an
+				 * interior offpage duplicate node
+				 * at the right level the it will
+				 * not be locked and subsequently be
+				 * freed. If there are multiple
+				 * databases in the file then they
+				 * could have OPDs.
+				 */
+				if (level - 1 > LEAFLEVEL &&
+				    (F_ISSET(dbp, DB_AM_SUBDB) ||
+				    (dbp->type == DB_BTREE &&
+				    F_ISSET(dbp, DB_AM_DUPSORT))))
+				    	goto drop_lock;
+
+				/*
+				 * Take a look at the page.  If it got 
+				 * freed it could be very gone.
 				 */
 				if ((ret = __memp_fget(mpf, &pg,
-				     dbc->thread_info,
-				     dbc->txn, get_mode, &h)) != 0 &&
+				     dbc->thread_info, dbc->txn, 0, &h)) != 0 &&
 				     ret != DB_PAGE_NOTFOUND)
 					goto err;
 
-				if (ret != 0 || LEVEL(h) != level - 1) {
-					ret = __LPUT(dbc, saved_lock);
+				/*
+				 * Check for right level and page type.
+				 */
+				if (ret != 0 || LEVEL(h) != level - 1 ||
+				    (LEVEL(h) == LEAFLEVEL ?
+				    TYPE(h) != (dbc->dbtype == DB_BTREE ?
+				    P_LBTREE : P_LRECNO) :
+				    TYPE(h) != (dbc->dbtype == DB_BTREE ?
+				    P_IBTREE : P_IRECNO))) {
+drop_lock:				ret = __LPUT(dbc, saved_lock);
 					if (ret != 0)
 						goto err;
 					pg = root_pgno;
@@ -927,7 +960,9 @@ __bam_stkrel(dbc, flags)
 		 */
 		if (LF_ISSET(STK_PGONLY))
 			continue;
-		if (LF_ISSET(STK_NOLOCK)) {
+		if (LF_ISSET(STK_NOLOCK) &&
+		    (epg->lock.mode == DB_LOCK_READ ||
+		    mpf->mfp->multiversion == 0)) {
 			if ((t_ret = __LPUT(dbc, epg->lock)) != 0 && ret == 0)
 				ret = t_ret;
 		} else

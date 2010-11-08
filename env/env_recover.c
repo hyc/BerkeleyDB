@@ -490,6 +490,13 @@ done:
 		vtrunc_lsn = &((DB_TXNHEAD *)txninfo)->maxlsn;
 		vtrunc_ckp = &((DB_TXNHEAD *)txninfo)->ckplsn;
 	} else if (max_lsn != NULL) {
+		/*
+		 * Flush everything to disk, we are losing the log.  It's
+		 * recovery, ignore any application max-write configuration.
+		 */
+		if ((ret = __memp_sync_int(env, NULL, 0,
+		    DB_SYNC_CACHE | DB_SYNC_SUPPRESS_WRITE, NULL, NULL)) != 0)
+			goto err;
 		/* This is a HA client syncing to the master. */
 		if (!IS_ZERO_LSN(((DB_TXNHEAD *)txninfo)->ckplsn))
 			region->last_ckp = ((DB_TXNHEAD *)txninfo)->ckplsn;

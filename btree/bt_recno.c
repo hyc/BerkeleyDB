@@ -181,6 +181,8 @@ __ram_append(dbc, key, data)
 		ret = __db_retcopy(dbc->env, key, &cp->recno,
 		    sizeof(cp->recno), &dbc->rkey->data, &dbc->rkey->ulen);
 
+	if (ret != 0)
+		F_SET(dbc, DBC_ERROR);
 	return (ret);
 }
 
@@ -331,7 +333,9 @@ retry:	if ((ret = __bam_rsearch(dbc, &cp->recno, SR_DELETE, 1, &exact)) != 0)
 
 	t->re_modified = 1;
 
-err:	if (stack && (t_ret = __bam_stkrel(dbc, STK_CLRDBC)) != 0 && ret == 0)
+err:	if (ret != 0)
+		F_SET(dbc, DBC_ERROR);
+	if (stack && (t_ret = __bam_stkrel(dbc, STK_CLRDBC)) != 0 && ret == 0)
 		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, next_lock)) != 0 && ret == 0)
 		ret = t_ret;
@@ -755,6 +759,8 @@ split:	if ((ret = __bam_rsearch(dbc, &cp->recno, SR_INSERT, 1, &exact)) != 0)
 	/* The cursor was reset, no further delete adjustment is necessary. */
 err:	CD_CLR(cp);
 
+	if (ret != 0)
+		F_SET(dbc, DBC_ERROR);
 	return (ret);
 }
 

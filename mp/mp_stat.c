@@ -244,7 +244,6 @@ __memp_file_stats(env, mfp, argp, countp, flags)
 	sp->st_page_create += mfp->stat.st_page_create;
 	sp->st_page_in += mfp->stat.st_page_in;
 	sp->st_page_out += mfp->stat.st_page_out;
-	sp->st_pagesize = mfp->pagesize;
 	if (LF_ISSET(DB_STAT_CLEAR))
 		memset(&mfp->stat, 0, sizeof(mfp->stat));
 

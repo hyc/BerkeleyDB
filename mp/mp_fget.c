@@ -679,6 +679,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 				 * and we're holding the mfp locked.
 				 */
 				MUTEX_UNLOCK(env, mfp->mutex);
+				hp = NULL;
 				goto newpg;
 			}
 		}
@@ -735,6 +736,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 			MUTEX_UNLOCK(env, bhp->mtx_buf);
 			b_lock = 0;
 			bhp = NULL;
+			hp = NULL;
 			goto newpg;
 		}
 
@@ -903,6 +905,8 @@ alloc:		/* Allocate a new buffer header and data space. */
 			goto reuse;
 
 		DB_ASSERT(env, bhp != NULL && alloc_bhp != bhp);
+		DB_ASSERT(env, bhp->td_off == INVALID_ROFF ||
+		    !IS_MAX_LSN(*VISIBLE_LSN(env, bhp)));
 		DB_ASSERT(env, txn != NULL ||
 		    (F_ISSET(bhp, BH_FROZEN) && F_ISSET(bhp, BH_FREED)));
 		DB_ASSERT(env, (extending || flags == DB_MPOOL_FREE ||

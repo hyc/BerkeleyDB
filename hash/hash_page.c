@@ -1278,10 +1278,6 @@ __ham_del_pair(dbc, flags, ppg)
 			n_lsn = NULL;
 		}
 
-		NEXT_PGNO(p_pagep) = NEXT_PGNO(p);
-		if (n_pagep != NULL)
-			PREV_PGNO(n_pagep) = PGNO(p_pagep);
-
 		if (DBC_LOGGING(dbc)) {
 			if ((ret = __ham_newpage_log(dbp, dbc->txn,
 			    &new_lsn, 0, DELOVFL, PREV_PGNO(p), &LSN(p_pagep),
@@ -1295,6 +1291,10 @@ __ham_del_pair(dbc, flags, ppg)
 		if (n_pagep)
 			LSN(n_pagep) = new_lsn;
 		LSN(p) = new_lsn;
+
+		NEXT_PGNO(p_pagep) = NEXT_PGNO(p);
+		if (n_pagep != NULL)
+			PREV_PGNO(n_pagep) = PGNO(p_pagep);
 
 		if (NEXT_PGNO(p) == PGNO_INVALID) {
 			/*
@@ -1825,6 +1825,10 @@ __ham_merge_pages(dbc, tobucket, frombucket, c_data)
 	    0, from_pgno, DB_LOCK_WRITE, 0, &firstlock)) != 0)
 		goto err;
 next_page:
+	/*
+	 * from_pagep is the starting point in the bucket at which records
+	 * are moved to the new bucket.
+	 */
 	if (from_pagep == NULL &&
 	    (ret = __memp_fget(mpf, &from_pgno, dbc->thread_info,
 	    dbc->txn, DB_MPOOL_CREATE | DB_MPOOL_DIRTY, &from_pagep)) != 0)
@@ -1855,9 +1859,15 @@ next_page:
 		while (P_FREESPACE(dbp, to_pagep) < len) {
 			to_pgno = NEXT_PGNO(to_pagep);
 			if (to_pgno == PGNO_INVALID) {
-				if ((ret = __ham_add_ovflpage(dbc,
-				     to_pagep, 1, &to_pagep)) != 0)
+				next_pagep = to_pagep;
+				if ((ret =
+				     __ham_add_ovflpage(dbc, &next_pagep)) != 0)
 					goto err;
+				if ((ret = __memp_fput(mpf, dbc->thread_info,
+				    to_pagep, dbc->priority)) != 0)
+				    	goto err;
+				to_pagep = next_pagep;
+				next_pagep = NULL;
 				if (c_data != NULL &&
 				    c_data->compact_pages_free > 0)
 					c_data->compact_pages_free--;
@@ -1985,6 +1995,11 @@ next_page:
 	if (check_trunc && from_pgno > c_data->compact_truncate)
 		goto next_page;
 
+	/*
+	 * first_pgno will be the first page of a list that gets
+	 * relinked to the new bucket. last_pagep will point at the
+	 * last page of the linked list.
+	 */
 	first_pgno = from_pgno;
 	last_pagep = NULL;
 	while (from_pgno != PGNO_INVALID) {
@@ -2021,6 +2036,14 @@ next_page:
 		if (last_pagep == NULL)
 			last_pagep = first_pagep;
 		DB_ASSERT(dbp->env, last_pagep != NULL);
+		/*
+		 * At the point we have:
+		 *	to_pagep -- the page that we are linking to.
+		 *	first_pagep -- the page that is first in the list.
+		 *	last_pagep -- the page that is the last in the list.
+		 *	prev_pagep -- the page that points at first_pagep.
+		 *	next_pagep -- the next page after the list.
+		 */
 		if (DBC_LOGGING(dbc)) {
 			if ((ret = __db_relink_log(dbp, dbc->txn,
 			    &LSN(to_pagep), 0, NEXT_PGNO(to_pagep),
@@ -2049,6 +2072,12 @@ next_page:
 			    PGNO_INVALID, PGNO(last_pagep),
 			    &LSN(last_pagep), PGNO_INVALID, NULL)) != 0)
 					goto err;
+			if (prev_pagep != NULL &&
+			    (ret = __db_relink_log(dbp, dbc->txn,
+			    &LSN(prev_pagep), 0, NEXT_PGNO(prev_pagep),
+			    NEXT_PGNO(last_pagep), PGNO(prev_pagep),
+			    &LSN(prev_pagep), PGNO_INVALID, NULL)) != 0)
+			    	goto err;
 		} else {
 			LSN_NOT_LOGGED(LSN(to_pagep));
 			LSN_NOT_LOGGED(LSN(first_pagep));
@@ -2056,6 +2085,8 @@ next_page:
 			if (next_pagep != NULL)
 				LSN_NOT_LOGGED(LSN(to_pagep));
 		}
+		if (prev_pagep != NULL)
+			NEXT_PGNO(prev_pagep) = NEXT_PGNO(last_pagep);
 		NEXT_PGNO(last_pagep) = NEXT_PGNO(to_pagep);
 		NEXT_PGNO(to_pagep) = first_pgno;
 		PREV_PGNO(first_pagep) = to_pgno;
@@ -2133,7 +2164,7 @@ __ham_split_page(dbc, obucket, nbucket)
 	DB_MPOOLFILE *mpf;
 	ENV *env;
 	HASH_CURSOR *hcp, *cp;
-	PAGE **pp, *old_pagep, *temp_pagep, *new_pagep;
+	PAGE **pp, *old_pagep, *temp_pagep, *new_pagep, *next_pagep;
 	db_indx_t n, dest_indx;
 	db_pgno_t bucket_pgno, npgno, next_pgno;
 	u_int32_t big_len, len;
@@ -2228,9 +2259,14 @@ __ham_split_page(dbc, obucket, nbucket)
 				} else
 					LSN_NOT_LOGGED(new_lsn);
 				LSN(*pp) = new_lsn;
+				next_pagep = *pp;
 				if ((ret =
-				    __ham_add_ovflpage(dbc, *pp, 1, pp)) != 0)
+				    __ham_add_ovflpage(dbc, &next_pagep)) != 0)
 					goto err;
+				if ((ret = __memp_fput(mpf,
+				    dbc->thread_info, *pp, dbc->priority)) != 0)
+				    	goto err;
+				*pp = next_pagep;
 			}
 
 			dest_indx = NDX_INVALID;
@@ -2424,6 +2460,7 @@ __ham_add_el(dbc, key, val, type)
 	DB_MPOOLFILE *mpf;
 	HASH_CURSOR *hcp;
 	HOFFPAGE doff, koff;
+	PAGE *new_pagep;
 	db_pgno_t next_pgno, pgno;
 	u_int32_t data_size, data_type, key_size, key_type;
 	u_int32_t pages, pagespace, pairsize;
@@ -2473,9 +2510,16 @@ __ham_add_el(dbc, key, val, type)
 		if ((ret = __memp_dirty(mpf, &hcp->page,
 		    dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
 			return (ret);
-		if ((ret = __ham_add_ovflpage(dbc,
-		    (PAGE *)hcp->page, 1, (PAGE **)&hcp->page)) != 0)
+		new_pagep = hcp->page;
+		if ((ret = __ham_add_ovflpage(dbc, &new_pagep)) != 0)
 			return (ret);
+		if ((ret = __memp_fput(mpf,
+		    dbc->thread_info, hcp->page, dbc->priority)) != 0) {
+			(void)__memp_fput(mpf,
+			    dbc->thread_info, new_pagep, dbc->priority);
+			return (ret);
+		}
+		hcp->page = new_pagep;
 		hcp->pgno = PGNO(hcp->page);
 	}
 
@@ -2713,23 +2757,23 @@ __ham_copypair(dbc, src_page, src_ndx, dest_page, dest_indx, log)
  * Returns:
  *	0 on success: pp points to new page; !0 on error, pp not valid.
  *
- * PUBLIC: int __ham_add_ovflpage __P((DBC *, PAGE *, int, PAGE **));
+ * PUBLIC: int __ham_add_ovflpage __P((DBC *, PAGE **));
  */
 int
-__ham_add_ovflpage(dbc, pagep, release, pp)
+__ham_add_ovflpage(dbc, pp)
 	DBC *dbc;
-	PAGE *pagep;
-	int release;
 	PAGE **pp;
 {
 	DB *dbp;
 	DB_LSN new_lsn;
 	DB_MPOOLFILE *mpf;
-	PAGE *new_pagep;
+	PAGE *new_pagep, *pagep;
 	int ret;
 
 	dbp = dbc->dbp;
 	mpf = dbp->mpf;
+	pagep = *pp;
+	*pp = NULL;
 
 	DB_ASSERT(dbp->env, IS_DIRTY(pagep));
 
@@ -2741,7 +2785,7 @@ __ham_add_ovflpage(dbc, pagep, release, pp)
 		    PUTOVFL, PGNO(pagep), &LSN(pagep), PGNO(new_pagep),
 		    &LSN(new_pagep), PGNO_INVALID, NULL)) != 0) {
 			(void)__memp_fput(mpf,
-			    dbc->thread_info, pagep, dbc->priority);
+			    dbc->thread_info, new_pagep, dbc->priority);
 			return (ret);
 		}
 	} else
@@ -2753,11 +2797,8 @@ __ham_add_ovflpage(dbc, pagep, release, pp)
 
 	PREV_PGNO(new_pagep) = PGNO(pagep);
 
-	if (release)
-		ret = __memp_fput(mpf, dbc->thread_info, pagep, dbc->priority);
-
 	*pp = new_pagep;
-	return (ret);
+	return (0);
 }
 
 /*

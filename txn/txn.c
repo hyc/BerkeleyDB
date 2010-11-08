@@ -693,7 +693,7 @@ __txn_commit(txn, flags)
 			 * release the locks below.
 			 */
 			if ((ret =
-			    __txn_doevents(env, txn, TXN_PREPARE, 1)) != 0)
+			    __txn_doevents(env, txn, TXN_COMMIT, 1)) != 0)
 				goto err;
 
 			memset(&request, 0, sizeof(request));
@@ -1492,6 +1492,7 @@ __txn_end(txn, is_commit)
 	    txn, is_commit ? TXN_COMMIT : TXN_ABORT, 0)) != 0)
 		return (__env_panic(env, ret));
 
+
 	/*
 	 * Release the locks.
 	 *
@@ -1517,7 +1518,8 @@ __txn_end(txn, is_commit)
 
 	/* End the transaction. */
 	td = txn->td;
-	if (td->nlog_dbs != 0 && (ret = __txn_dref_fname(env, txn)) != 0)
+	if (td->nlog_dbs != 0 &&
+	     (ret = __txn_dref_fname(env, txn)) != 0 && ret != EIO)
 		return (__env_panic(env, ret));
 
 	if (td->mvcc_ref != 0 && IS_MAX_LSN(td->visible_lsn)) {

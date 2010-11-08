@@ -521,6 +521,11 @@ __log_flush_commit(env, lsnp, flags)
 	    flush_lsn.file != lp->lsn.file || flush_lsn.offset < lp->w_off)
 		return (0);
 
+	if (IS_REP_MASTER(env)) {
+		__db_err(env, ret, "Write failed on MASTER commit.");
+		return (__env_panic(env, ret));
+	}
+
 	/*
 	 * Else, make sure that the commit record does not get out after we
 	 * abort the transaction.  Do this by overwriting the commit record

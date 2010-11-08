@@ -2865,7 +2865,7 @@ __bamc_physdel(dbc)
 	if (delete_page) {
 		if ((ret = __db_ret(dbc, cp->page, 0, &key,
 		    &dbc->my_rkey.data, &dbc->my_rkey.ulen)) != 0)
-			return (ret);
+			goto err;
 	}
 
 	/*
@@ -2885,35 +2885,35 @@ __bamc_physdel(dbc)
 	 */
 	if ((ret = __memp_dirty(dbp->mpf,
 	    &cp->page, dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
-		return (ret);
+		goto err;
 	if (TYPE(cp->page) == P_LBTREE) {
 		if ((ret = __bam_ditem(dbc, cp->page, cp->indx)) != 0)
-			return (ret);
+			goto err;
 		if (!empty_page)
 			if ((ret = __bam_ca_di(dbc,
 			    PGNO(cp->page), cp->indx, -1)) != 0)
-				return (ret);
+				goto err;
 	}
 	if ((ret = __bam_ditem(dbc, cp->page, cp->indx)) != 0)
-		return (ret);
+		goto err;
 
 	/* Clear the deleted flag, the item is gone. */
 	F_CLR(cp, C_DELETED);
 
 	if (!empty_page)
 		if ((ret = __bam_ca_di(dbc, PGNO(cp->page), cp->indx, -1)) != 0)
-			return (ret);
+			goto err;
 
 	/*
 	 * Need to downgrade write locks here or non-txn locks will get stuck.
 	 */
 	if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED)) {
 		if ((ret = __TLPUT(dbc, cp->lock)) != 0)
-			return (ret);
+			goto err;
 		cp->lock_mode = DB_LOCK_WWRITE;
 		if (cp->page != NULL &&
 		    (ret = __memp_shared(dbp->mpf, cp->page)) != 0)
-			return (ret);
+			goto err;
 	}
 	/* If we're not going to try and delete the page, we're done. */
 	if (!delete_page)
@@ -2949,7 +2949,9 @@ __bamc_physdel(dbc)
 	else
 		(void)__bam_stkrel(dbc, 0);
 
-err:	(void)__TLPUT(dbc, prev_lock);
+err:	if (ret != 0)
+		F_SET(dbc, DBC_ERROR);
+	(void)__TLPUT(dbc, prev_lock);
 	(void)__TLPUT(dbc, next_lock);
 	return (ret);
 }

@@ -93,6 +93,7 @@ __ham_open(dbp, ip, txn, name, base_pgno, flags)
 	hcp = (HASH_CURSOR *)dbc->internal;
 	hashp = dbp->h_internal;
 	hashp->meta_pgno = base_pgno;
+	hashp->revision = dbp->mpf->mfp->revision;
 	if ((ret = __ham_get_meta(dbc)) != 0)
 		goto err;
 

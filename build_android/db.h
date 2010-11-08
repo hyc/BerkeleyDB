@@ -46,9 +46,9 @@ extern "C" {
 #define	DB_VERSION_RELEASE	2
 #define	DB_VERSION_MAJOR	5
 #define	DB_VERSION_MINOR	0
-#define	DB_VERSION_PATCH	26
-#define	DB_VERSION_STRING	"Berkeley DB 5.0.26: (June 25, 2010)"
-#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.0.26: (June 25, 2010)"
+#define	DB_VERSION_PATCH	32
+#define	DB_VERSION_STRING	"Berkeley DB 5.0.32: (October 25, 2010)"
+#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.0.32: (October 25, 2010)"
 
 /*
  * !!!
@@ -1948,21 +1948,22 @@ struct __dbc {
 #define	DBC_DONTLOCK		0x00004	/* Don't lock on this cursor. */
 #define	DBC_DOWNREV		0x00008	/* Down rev replication master. */
 #define	DBC_DUPLICATE		0x00010	/* Create a duplicate cursor. */
-#define	DBC_FAMILY		0x00020 /* Part of a locker family. */
-#define	DBC_FROM_DB_GET		0x00040 /* Called from the DB->get() method. */
-#define	DBC_MULTIPLE		0x00080	/* Return Multiple data. */
-#define	DBC_MULTIPLE_KEY	0x00100	/* Return Multiple keys and data. */
-#define	DBC_OPD			0x00200	/* Cursor references off-page dups. */
-#define	DBC_OWN_LID		0x00400	/* Free lock id on destroy. */
-#define	DBC_PARTITIONED		0x00800	/* Cursor for a partitioned db. */
-#define	DBC_READ_COMMITTED	0x01000	/* Cursor has degree 2 isolation. */
-#define	DBC_READ_UNCOMMITTED	0x02000	/* Cursor has degree 1 isolation. */
-#define	DBC_RECOVER		0x04000	/* Recovery cursor; don't log/lock. */
-#define	DBC_RMW			0x08000	/* Acquire write flag in read op. */
-#define	DBC_TRANSIENT		0x10000	/* Cursor is transient. */
-#define	DBC_WAS_READ_COMMITTED	0x20000	/* Cursor holds a read commited lock. */
-#define	DBC_WRITECURSOR		0x40000	/* Cursor may be used to write (CDB). */
-#define	DBC_WRITER		0x80000	/* Cursor immediately writing (CDB). */
+#define	DBC_ERROR		0x00020	/* Error in this request. */
+#define	DBC_FAMILY		0x00040 /* Part of a locker family. */
+#define	DBC_FROM_DB_GET		0x00080 /* Called from the DB->get() method. */
+#define	DBC_MULTIPLE		0x00100	/* Return Multiple data. */
+#define	DBC_MULTIPLE_KEY	0x00200	/* Return Multiple keys and data. */
+#define	DBC_OPD			0x00400	/* Cursor references off-page dups. */
+#define	DBC_OWN_LID		0x00800	/* Free lock id on destroy. */
+#define	DBC_PARTITIONED		0x01000	/* Cursor for a partitioned db. */
+#define	DBC_READ_COMMITTED	0x02000	/* Cursor has degree 2 isolation. */
+#define	DBC_READ_UNCOMMITTED	0x04000	/* Cursor has degree 1 isolation. */
+#define	DBC_RECOVER		0x08000	/* Recovery cursor; don't log/lock. */
+#define	DBC_RMW			0x10000	/* Acquire write flag in read op. */
+#define	DBC_TRANSIENT		0x20000	/* Cursor is transient. */
+#define	DBC_WAS_READ_COMMITTED	0x40000	/* Cursor holds a read commited lock. */
+#define	DBC_WRITECURSOR		0x80000	/* Cursor may be used to write (CDB). */
+#define	DBC_WRITER	       0x100000	/* Cursor immediately writing (CDB). */
 	u_int32_t flags;
 };
 

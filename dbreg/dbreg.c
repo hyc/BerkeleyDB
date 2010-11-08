@@ -539,8 +539,7 @@ __dbreg_revoke_id_int(env, fnp, have_lock, push, force_id)
 	 * remove this id from the dbentry table and push it onto the
 	 * free list.
 	 */
-	if (!F_ISSET(fnp, DB_FNAME_CLOSED) &&
-	    (ret = __dbreg_rem_dbentry(dblp, id)) == 0 && push)
+	if ((ret = __dbreg_rem_dbentry(dblp, id)) == 0 && push)
 		ret = __dbreg_push_id(env, id);
 
 	if (!have_lock)
@@ -592,8 +591,7 @@ __dbreg_close_id(dbp, txn, op)
 	if (fnp->txn_ref > 1) {
 		MUTEX_LOCK(env, dbp->mutex);
 		if (fnp->txn_ref > 1) {
-			if (!F_ISSET(fnp, DB_FNAME_CLOSED) &&
-			    (t_ret = __dbreg_rem_dbentry(
+			if ((t_ret = __dbreg_rem_dbentry(
 			    env->lg_handle, fnp->id)) != 0 && ret == 0)
 				ret = t_ret;
 

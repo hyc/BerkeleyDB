@@ -110,8 +110,8 @@ __db_master_open(subdbp, ip, txn, name, flags, mode, dbpp)
 	 */
 	LF_CLR(DB_EXCL);
 	LF_SET(DB_RDWRMASTER);
-	if ((ret = __db_open(dbp, ip,
-	    txn, name, NULL, DB_BTREE, flags, mode, PGNO_BASE_MD)) != 0)
+	if ((ret = __db_open(dbp, ip, txn,
+	    name, NULL, DB_BTREE, flags, mode, PGNO_BASE_MD)) != 0)
 		goto err;
 
 	/*
@@ -174,7 +174,8 @@ __db_master_update(mdbp, sdbp, ip, txn, subdb, type, action, newname, flags)
 	 *
 	 * Might we modify the master database?  If so, we'll need to lock.
 	 */
-	modify = (action != MU_OPEN || LF_ISSET(DB_CREATE)) ? 1 : 0;
+	modify = (!F_ISSET(mdbp, DB_AM_RDONLY) &&
+	    (action != MU_OPEN || LF_ISSET(DB_CREATE))) ? 1 : 0;
 
 	if ((ret = __db_cursor(mdbp, ip, txn, &dbc,
 	    (CDB_LOCKING(env) && modify) ? DB_WRITECURSOR : 0)) != 0)
@@ -332,6 +333,10 @@ __db_master_update(mdbp, sdbp, ip, txn, subdb, type, action, newname, flags)
 		}
 
 		/* Create a subdatabase. */
+		if (F_ISSET(mdbp, DB_AM_RDONLY)) {
+			ret = EBADF;
+			goto err;
+		}
 		if ((ret = __db_new(dbc,
 		    type == DB_HASH ? P_HASHMETA : P_BTREEMETA, NULL, &p)) != 0)
 			goto err;
@@ -693,16 +698,6 @@ __db_close(dbp, txn, flags)
 	env = dbp->env;
 	deferred_close = 0;
 
-	/*
-	 * Validate arguments, but as a DB handle destructor, we can't fail.
-	 *
-	 * Check for consistent transaction usage -- ignore errors.  Only
-	 * internal callers specify transactions, so it's a serious problem
-	 * if we get error messages.
-	 */
-	if (txn != NULL)
-		(void)__db_check_txn(dbp, txn, DB_LOCK_INVALIDID, 0);
-
 	/* Refresh the structure and close any underlying resources. */
 	ret = __db_refresh(dbp, txn, flags, &deferred_close, 0);
 
@@ -800,6 +795,8 @@ __db_refresh(dbp, txn, flags, deferred_closep, reuse)
 		if ((t_ret = __db_disassociate(sdbp)) != 0 && ret == 0)
 			ret = t_ret;
 	}
+	if (F_ISSET(dbp, DB_AM_SECONDARY))
+		LIST_REMOVE(dbp, s_links);
 
 	/*
 	 * Disassociate ourself from any databases using us as a foreign key
@@ -886,6 +883,7 @@ __db_refresh(dbp, txn, flags, deferred_closep, reuse)
 		ret = t_ret;
 
 never_opened:
+	MUTEX_LOCK(env, env->mtx_dblist);
 	/*
 	 * At this point, we haven't done anything to render the DB handle
 	 * unusable, at least by a transaction abort.  Take the opportunity
@@ -914,6 +912,7 @@ never_opened:
 		} else {
 			if ((t_ret = __dbreg_close_id(dbp,
 			    txn, DBREG_CLOSE)) != 0 && txn != NULL) {
+				MUTEX_UNLOCK(env, env->mtx_dblist);
 				/*
 				 * We're in a txn and the attempt to log the
 				 * close failed;  let the txn subsystem know
@@ -965,7 +964,6 @@ never_opened:
 	 * blindly call the underlying TAILQ_REMOVE macro.  Explicitly reset
 	 * the field values to NULL so that we can't call TAILQ_REMOVE twice.
 	 */
-	MUTEX_LOCK(env, env->mtx_dblist);
 	if (!reuse &&
 	    (dbp->dblistlinks.tqe_next != NULL ||
 	    dbp->dblistlinks.tqe_prev != NULL)) {
