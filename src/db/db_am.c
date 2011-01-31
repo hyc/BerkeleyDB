@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -520,6 +520,8 @@ __db_put(dbp, ip, txn, key, data, flags)
 		ret = __dbc_put(dbc, key, data, flags);
 
 err:	/* Close the cursor. */
+	if (!DB_RETOK_DBPUT(ret))
+		F_SET(dbc, DBC_ERROR);
 	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -708,6 +710,8 @@ next:	if (ret == 0 && LF_ISSET(DB_MULTIPLE | DB_MULTIPLE_KEY)) {
 		goto bulk_next;
 	}
 err:	/* Discard the cursor. */
+	if (!DB_RETOK_DBDEL(ret))
+		F_SET(dbc, DBC_ERROR);
 	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -811,6 +815,8 @@ __db_associate(dbp, ip, txn, sdbp, callback, flags)
 			ret = 0;
 		}
 
+		if (ret != 0)
+			F_SET(sdbc, DBC_ERROR);
 		if ((t_ret = __dbc_close(sdbc)) != 0 && ret == 0)
 			ret = t_ret;
 
@@ -955,6 +961,15 @@ __db_secondary_close(sdbp, flags)
 	ENV *env;
 	int doclose;
 
+	/*
+	 * If the opening trasaction is rolled back then the db handle
+	 * will have already been refreshed, we just need to call
+	 * __db_close to free the data.
+	 */
+	if (!F_ISSET(sdbp, DB_AM_OPEN_CALLED)) {
+		doclose = 1;
+		goto done;
+	}
 	doclose = 0;
 	primary = sdbp->s_primary;
 	env = primary->env;
@@ -981,7 +996,7 @@ __db_secondary_close(sdbp, flags)
 	 * sdbp->close is this function;  call the real one explicitly if
 	 * need be.
 	 */
-	return (doclose ? __db_close(sdbp, NULL, flags) : 0);
+done:	return (doclose ? __db_close(sdbp, NULL, flags) : 0);
 }
 
 /*

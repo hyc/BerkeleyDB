@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -520,6 +520,11 @@ __log_flush_commit(env, lsnp, flags)
 	    flush_lsn.offset < lp->s_lsn.offset :
 	    flush_lsn.file != lp->lsn.file || flush_lsn.offset < lp->w_off)
 		return (0);
+
+	if (IS_REP_MASTER(env)) {
+		__db_err(env, ret, "Write failed on MASTER commit.");
+		return (__env_panic(env, ret));
+	}
 
 	/*
 	 * Else, make sure that the commit record does not get out after we

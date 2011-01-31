@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -944,7 +944,9 @@ next_no_release:
 		 * If we are at the end of this parent commit the
 		 * transaction so we don't tie things up.
 		 */
-		if (pgs_done != 0 && do_commit && !F_ISSET(dbc, DBC_OPD)) {
+		if (do_commit && !F_ISSET(dbc, DBC_OPD) &&
+		   (atomic_read(&dbp->mpf->mfp->multiversion) != 0 ||
+		   pgs_done != 0)) {
 deleted:		if (ndbc != NULL &&
 			     ((ret = __bam_stkrel(ndbc, 0)) != 0 ||
 			     (ret = __dbc_close(ndbc)) != 0))
@@ -2286,6 +2288,7 @@ __bam_savekey(dbc, next, start)
 			pg = NULL;
 			goto err;
 		}
+		pg = NULL;
 		if (level - 1 == LEAFLEVEL) {
 			TRY_LOCK(dbc, pgno, saved_pgno,
 			    lock, DB_LOCK_READ, retry);
@@ -2435,6 +2438,7 @@ new_txn:
 			goto err;
 		}
 
+		/* We only got read locks so we can drop them. */
 		if ((ret = __bam_stkrel(dbc, STK_NOLOCK)) != 0)
 			goto err;
 		if (pgno == BAM_ROOT_PGNO(dbc))
@@ -2540,10 +2544,10 @@ again:	if (F_ISSET(dbp, DB_AM_SUBDB) &&
 		}
 		if (PGNO(meta) > c_data->compact_truncate) {
 			dbmeta = (DBMETA *)meta;
-			if ((ret = __db_move_metadata(dbc,
-			    &dbmeta, c_data)) != 0)
-				goto err;
+			ret = __db_move_metadata(dbc, &dbmeta, c_data);
 			meta = (BTMETA *)dbmeta;
+			if (ret != 0)
+				goto err;
 		}
 		if (bt->bt_root > c_data->compact_truncate) {
 			if ((ret = __db_lget(dbc, 0,

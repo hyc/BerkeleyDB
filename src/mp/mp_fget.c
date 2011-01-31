@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -137,7 +137,7 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 	dbmp = env->mp_handle;
 
 	mfp = dbmfp->mfp;
-	mvcc = mfp->multiversion && (txn != NULL);
+	mvcc = atomic_read(&mfp->multiversion) && (txn != NULL);
 	mf_offset = R_OFFSET(dbmp->reginfo, mfp);
 	alloc_bhp = bhp = oldest_bhp = NULL;
 	read_lsnp = NULL;
@@ -689,6 +689,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 				 * and we're holding the mfp locked.
 				 */
 				MUTEX_UNLOCK(env, mfp->mutex);
+				hp = NULL;
 				goto newpg;
 			}
 		}
@@ -745,6 +746,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 			MUTEX_UNLOCK(env, bhp->mtx_buf);
 			b_lock = 0;
 			bhp = NULL;
+			hp = NULL;
 			goto newpg;
 		}
 
@@ -915,6 +917,9 @@ alloc:		/* Allocate a new buffer header and data space. */
 			goto reuse;
 
 		DB_ASSERT(env, bhp != NULL && alloc_bhp != bhp);
+		DB_ASSERT(env, bhp->td_off == INVALID_ROFF ||
+		    !IS_MAX_LSN(*VISIBLE_LSN(env, bhp)) ||
+		    (F_ISSET(bhp, BH_FREED) && F_ISSET(bhp, BH_FROZEN)));
 		DB_ASSERT(env, txn != NULL ||
 		    (F_ISSET(bhp, BH_FROZEN) && F_ISSET(bhp, BH_FREED)));
 		DB_ASSERT(env, (extending || flags == DB_MPOOL_FREE ||
@@ -1078,7 +1083,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 	{
 	BH *next_bhp = SH_CHAIN_NEXT(bhp, vc, __bh);
 
-	DB_ASSERT(env, !mfp->multiversion || read_lsnp != NULL ||
+	DB_ASSERT(env, !atomic_read(&mfp->multiversion) || read_lsnp != NULL ||
 	    next_bhp == NULL);
 	DB_ASSERT(env, !mvcc || read_lsnp == NULL ||
 	    bhp->td_off == INVALID_ROFF || BH_OWNED_BY(env, bhp, txn) ||

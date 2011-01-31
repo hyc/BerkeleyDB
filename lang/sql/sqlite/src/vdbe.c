@@ -3480,6 +3480,7 @@ case OP_IsUnique: {        /* jump, in3 */
   Mem *aMx;
   UnpackedRecord r;                  /* B-Tree index search key */
   i64 R;                             /* Rowid stored in register P3 */
+  i64 rowid;                         /* Rowid found */
 
   pIn3 = &aMem[pOp->p3];
   aMx = &aMem[pOp->p4.i];
@@ -3509,8 +3510,8 @@ case OP_IsUnique: {        /* jump, in3 */
   if( pCrsr!=0 ){
     /* Populate the index search key. */
     r.pKeyInfo = pCx->pKeyInfo;
-    r.nField = nField + 1;
-    r.flags = UNPACKED_PREFIX_SEARCH;
+    r.nField = nField;
+    r.flags = UNPACKED_PREFIX_MATCH;
     r.aMem = aMx;
 
     /* Extract the value of R from register P3. */
@@ -3521,10 +3522,14 @@ case OP_IsUnique: {        /* jump, in3 */
     ** to P2. Otherwise, copy the rowid of the conflicting record to
     ** register P3 and fall through to the next instruction.  */
     rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &pCx->seekResult);
-    if( (r.flags & UNPACKED_PREFIX_SEARCH) || r.rowid==R ){
+    if( rc != SQLITE_OK || pCx->seekResult != 0 ){
       pc = pOp->p2 - 1;
-    }else{
-      pIn3->u.i = r.rowid;
+    }else{ 
+      rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);
+      if (rc == SQLITE_OK && rowid == R)
+        pc = pOp->p2 - 1;
+      else
+        pIn3->u.i = rowid;
     }
   }
   break;

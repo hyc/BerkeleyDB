@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -45,7 +45,7 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 
 	env = dbmfp->env;
 	dbmp = env->mp_handle;
-	mvcc = dbmfp->mfp->multiversion;
+	mvcc = atomic_read(&dbmfp->mfp->multiversion);
 
 	/* Convert the page address to a buffer header. */
 	pgaddr = *(void **)addrp;
@@ -95,8 +95,12 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 		}
 		atomic_dec(env, &bhp->ref);
 
-		DB_ASSERT(env,
-		    flags == DB_MPOOL_DIRTY && *(void **)addrp != pgaddr);
+		/*
+		 * If the MVCC handle count hasn't changed, we should get a
+		 * different version of the page.
+		 */
+		DB_ASSERT(env, *(void **)addrp != pgaddr ||
+		    mvcc != atomic_read(&dbmfp->mfp->multiversion));
 
 		pgaddr = *(void **)addrp;
 		bhp = (BH *)((u_int8_t *)pgaddr - SSZA(BH, buf));

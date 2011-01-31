@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -465,7 +465,7 @@ have_mfp:
 	}
 
 	if (LF_ISSET(DB_MULTIVERSION)) {
-		++mfp->multiversion;
+		atomic_inc(env, &mfp->multiversion);
 		F_SET(dbmfp, MP_MULTIVERSION);
 	}
 
@@ -887,7 +887,7 @@ __memp_fclose(dbmfp, flags)
 	if (!LF_ISSET(DB_MPOOL_NOLOCK))
 		MUTEX_LOCK(env, mfp->mutex);
 	if (F_ISSET(dbmfp, MP_MULTIVERSION))
-		--mfp->multiversion;
+		atomic_dec(env, &mfp->multiversion);
 	if (--mfp->mpf_cnt == 0 || LF_ISSET(DB_MPOOL_DISCARD)) {
 		if (LF_ISSET(DB_MPOOL_DISCARD) ||
 		    F_ISSET(mfp, MP_TEMP) || mfp->unlink_on_close) {

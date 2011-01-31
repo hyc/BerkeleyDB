@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id: env_method.c,v dabaaeb7d839 2010/08/03 17:28:53 mike $
  */

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -71,6 +71,7 @@ __ham_open(dbp, ip, txn, name, base_pgno, flags)
 	u_int32_t flags;
 {
 	DBC *dbc;
+	DBMETA *dbmeta;
 	ENV *env;
 	HASH *hashp;
 	HASH_CURSOR *hcp;
@@ -98,22 +99,24 @@ __ham_open(dbp, ip, txn, name, base_pgno, flags)
 		goto err;
 
 	/* Initialize the hdr structure.  */
-	if (hcp->hdr->dbmeta.magic == DB_HASHMAGIC) {
+	dbmeta = &hcp->hdr->dbmeta;
+	if (dbmeta->magic == DB_HASHMAGIC) {
 		/* File exists, verify the data in the header. */
 		if (hashp->h_hash == NULL)
-			hashp->h_hash = hcp->hdr->dbmeta.version < 5
+			hashp->h_hash = dbmeta->version < 5
 			? __ham_func4 : __ham_func5;
 		hashp->h_nelem = hcp->hdr->nelem;
-		if (F_ISSET(&hcp->hdr->dbmeta, DB_HASH_DUP))
+		if (F_ISSET(dbmeta, DB_HASH_DUP))
 			F_SET(dbp, DB_AM_DUP);
-		if (F_ISSET(&hcp->hdr->dbmeta, DB_HASH_DUPSORT))
+		if (F_ISSET(dbmeta, DB_HASH_DUPSORT))
 			F_SET(dbp, DB_AM_DUPSORT);
-		if (F_ISSET(&hcp->hdr->dbmeta, DB_HASH_SUBDB))
+		if (F_ISSET(dbmeta, DB_HASH_SUBDB))
 			F_SET(dbp, DB_AM_SUBDB);
 		if (PGNO(hcp->hdr) == PGNO_BASE_MD &&
-		     !F_ISSET(dbp, DB_AM_RECOVER))
-			__memp_set_last_pgno(dbp->mpf,
-			    hcp->hdr->dbmeta.last_pgno);
+		    !F_ISSET(dbp, DB_AM_RECOVER) &&
+		    (txn == NULL || !F_ISSET(txn, TXN_SNAPSHOT)) && (ret =
+		    __memp_set_last_pgno(dbp->mpf, dbmeta->last_pgno)) != 0)
+		    	goto err;
 	} else if (!IS_RECOVERING(env) && !F_ISSET(dbp, DB_AM_RECOVER)) {
 		__db_errx(env,
 		    "%s: Invalid hash meta page %lu", name, (u_long)base_pgno);

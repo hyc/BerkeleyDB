@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1046,12 +1046,22 @@ __memp_extend_freelist(dbmfp, count, listp)
 /*
  * __memp_set_last_pgno -- set the last page of the file
  *
- * PUBLIC: void __memp_set_last_pgno __P((DB_MPOOLFILE *, db_pgno_t));
+ * PUBLIC: int __memp_set_last_pgno __P((DB_MPOOLFILE *, db_pgno_t));
  */
-void
+int
 __memp_set_last_pgno(dbmfp, pgno)
 	DB_MPOOLFILE *dbmfp;
 	db_pgno_t pgno;
 {
-	dbmfp->mfp->last_pgno = pgno;
+	MPOOLFILE *mfp;
+
+	mfp = dbmfp->mfp;
+
+	if (mfp->mpf_cnt == 1) {
+		MUTEX_LOCK(dbmfp->env, mfp->mutex);
+		if (mfp->mpf_cnt == 1) 
+			dbmfp->mfp->last_pgno = pgno;
+		MUTEX_UNLOCK(dbmfp->env, mfp->mutex);
+	}
+	return (0);
 }

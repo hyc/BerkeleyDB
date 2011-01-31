@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -1160,7 +1160,7 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 			    (__os_mkdir(NULL, pBt->dir_name, 0777) == 0);
 #ifdef BDBSQL_FILE_PER_TABLE
 			createdDir =
-			    (__os_mkdir(NULL, pBt->short_name, 0777) == 0);
+			    (__os_mkdir(NULL, pBt->full_name, 0777) == 0);
 #endif
 		}
 
@@ -6138,11 +6138,11 @@ static int btreeReopenPrivateEnvironment(Btree *p)
 	/* Reuse envDirNameBuf. */
 	memset(envDirNameBuf, 0, BT_MAX_PATH);
 	sqlite3_snprintf(sizeof envDirNameBuf, envDirNameBuf,
-	    "../%s", pBt->short_name);
-	pDbEnv->set_data_dir(pDbEnv, envDirNameBuf);
+	    "%s/..", pBt->full_name);
+	pDbEnv->add_data_dir(pDbEnv, envDirNameBuf);
 	pDbEnv->set_create_dir(pDbEnv, envDirNameBuf);
 #else
-	pDbEnv->set_data_dir(pDbEnv, "..");
+	pDbEnv->add_data_dir(pDbEnv, "..");
 #endif
 	/*
 	 * by definition this function is only called

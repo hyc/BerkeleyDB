@@ -7729,7 +7729,7 @@ SQLITE_PRIVATE   void sqlite3VdbeNoopComment(Vdbe*, const char*, ...);
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <db.h>
@@ -7807,7 +7807,7 @@ SQLITE_PRIVATE int *sqlite3PagerStats(Pager*);
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 typedef struct PgHdr PgHdr;
@@ -8935,7 +8935,6 @@ struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
   u16 flags;          /* Boolean settings.  UNPACKED_... below */
-  i64 rowid;          /* Used by UNPACKED_PREFIX_SEARCH */
   Mem *aMem;          /* Values */
 };
 
@@ -8947,7 +8946,6 @@ struct UnpackedRecord {
 #define UNPACKED_IGNORE_ROWID  0x0004  /* Ignore trailing rowid on key1 */
 #define UNPACKED_INCRKEY       0x0008  /* Make this key an epsilon larger */
 #define UNPACKED_PREFIX_MATCH  0x0010  /* A prefix match is considered OK */
-#define UNPACKED_PREFIX_SEARCH 0x0020  /* A prefix match is considered OK */
 
 /*
 ** Each SQL index is represented in memory by an
@@ -31733,7 +31731,7 @@ bitvec_end:
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 
@@ -32178,7 +32176,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, u8 iBatch, sqlite3_int64 i
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /************** Include btreeInt.h in the middle of pager.c ******************/
@@ -32186,7 +32184,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, u8 iBatch, sqlite3_int64 i
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 
@@ -33137,7 +33135,7 @@ SQLITE_API void sqlite3_get_pager_stats(sqlite3_int64 *totalBytesOut,
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WAL)
@@ -33149,7 +33147,7 @@ SQLITE_PRIVATE int sqlite3WalTrace = 0;
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -33217,7 +33215,7 @@ SQLITE_PRIVATE void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pArray, Btree 
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -34369,7 +34367,7 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 			    (__os_mkdir(NULL, pBt->dir_name, 0777) == 0);
 #ifdef BDBSQL_FILE_PER_TABLE
 			createdDir =
-			    (__os_mkdir(NULL, pBt->short_name, 0777) == 0);
+			    (__os_mkdir(NULL, pBt->full_name, 0777) == 0);
 #endif
 		}
 
@@ -39347,11 +39345,11 @@ static int btreeReopenPrivateEnvironment(Btree *p)
 	/* Reuse envDirNameBuf. */
 	memset(envDirNameBuf, 0, BT_MAX_PATH);
 	sqlite3_snprintf(sizeof envDirNameBuf, envDirNameBuf,
-	    "../%s", pBt->short_name);
-	pDbEnv->set_data_dir(pDbEnv, envDirNameBuf);
+	    "%s/..", pBt->full_name);
+	pDbEnv->add_data_dir(pDbEnv, envDirNameBuf);
 	pDbEnv->set_create_dir(pDbEnv, envDirNameBuf);
 #else
-	pDbEnv->set_data_dir(pDbEnv, "..");
+	pDbEnv->add_data_dir(pDbEnv, "..");
 #endif
 	/*
 	 * by definition this function is only called
@@ -39650,7 +39648,7 @@ int btreeHasFileLock(Btree *p, int iswrite)
 /*-
 * See the file LICENSE for redistribution information.
 *
-* Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+* Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
 */
 /*
 ** This file contains the implementation of the sqlite3_backup_XXX()
@@ -40778,7 +40776,7 @@ done:	return MAP_ERR(rc, ret);
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -40880,7 +40878,7 @@ SQLITE_PRIVATE void sqlite3CodecGetKey(sqlite3 *db, int backend, void **keyp, in
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -40938,7 +40936,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -45108,18 +45106,6 @@ SQLITE_PRIVATE int sqlite3VdbeRecordCompare(
         rc = -rc;
       }
     
-      /* If the PREFIX_SEARCH flag is set and all fields except the final
-      ** rowid field were equal, then clear the PREFIX_SEARCH flag and set 
-      ** pPKey2->rowid to the value of the rowid field in (pKey1, nKey1).
-      ** This is used by the OP_IsUnique opcode.
-      */
-      if( (pPKey2->flags & UNPACKED_PREFIX_SEARCH) && i==(pPKey2->nField-1) ){
-        assert( idx1==szHdr1 && rc );
-        assert( mem1.flags & MEM_Int );
-        pPKey2->flags &= ~UNPACKED_PREFIX_SEARCH;
-        pPKey2->rowid = mem1.u.i;
-      }
-    
       return rc;
     }
     i++;
@@ -47613,6 +47599,7 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
       Mem *aMx;
       UnpackedRecord r;                  /* B-Tree index search key */
       i64 R;                             /* Rowid stored in register P3 */
+      i64 rowid;                         /* Rowid found */
     } bc;
     struct OP_NotExists_stack_vars {
       VdbeCursor *pC;
@@ -50801,6 +50788,7 @@ case OP_IsUnique: {        /* jump, in3 */
   Mem *aMx;
   UnpackedRecord r;                  /* B-Tree index search key */
   i64 R;                             /* Rowid stored in register P3 */
+  i64 rowid;                         /* Rowid found */
 #endif /* local variables moved into u.bc */
 
   pIn3 = &aMem[pOp->p3];
@@ -50831,8 +50819,8 @@ case OP_IsUnique: {        /* jump, in3 */
   if( u.bc.pCrsr!=0 ){
     /* Populate the index search key. */
     u.bc.r.pKeyInfo = u.bc.pCx->pKeyInfo;
-    u.bc.r.nField = u.bc.nField + 1;
-    u.bc.r.flags = UNPACKED_PREFIX_SEARCH;
+    u.bc.r.nField = u.bc.nField;
+    u.bc.r.flags = UNPACKED_PREFIX_MATCH;
     u.bc.r.aMem = u.bc.aMx;
 
     /* Extract the value of u.bc.R from register P3. */
@@ -50840,13 +50828,17 @@ case OP_IsUnique: {        /* jump, in3 */
     u.bc.R = pIn3->u.i;
 
     /* Search the B-Tree index. If no conflicting record is found, jump
-    ** to P2. Otherwise, copy the rowid of the conflicting record to
+    ** to P2. Otherwise, copy the u.bc.rowid of the conflicting record to
     ** register P3 and fall through to the next instruction.  */
     rc = sqlite3BtreeMovetoUnpacked(u.bc.pCrsr, &u.bc.r, 0, 0, &u.bc.pCx->seekResult);
-    if( (u.bc.r.flags & UNPACKED_PREFIX_SEARCH) || u.bc.r.rowid==u.bc.R ){
+    if( rc != SQLITE_OK || u.bc.pCx->seekResult != 0 ){
       pc = pOp->p2 - 1;
     }else{
-      pIn3->u.i = u.bc.r.rowid;
+      rc = sqlite3VdbeIdxRowid(db, u.bc.pCrsr, &u.bc.rowid);
+      if (rc == SQLITE_OK && u.bc.rowid == u.bc.R)
+        pc = pOp->p2 - 1;
+      else
+        pIn3->u.i = u.bc.rowid;
     }
   }
   break;
@@ -80768,7 +80760,7 @@ static void updateVirtualTable(
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*

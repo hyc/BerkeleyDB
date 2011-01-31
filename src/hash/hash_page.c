@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -2323,7 +2323,10 @@ __ham_split_page(dbc, obucket, nbucket)
 					    cp->indx == n) {
 						cp->pgno = PGNO(*pp);
 						cp->indx = dest_indx;
-						cp->bucket = nbucket;
+						if (cp->pgno == PGNO(old_pagep))
+							cp->bucket = obucket;
+						else
+							cp->bucket = nbucket;
 						found = 1;
 					}
 				}

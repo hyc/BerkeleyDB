@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -403,6 +403,7 @@ __dbc_del(dbc, flags)
 	env = dbp->env;
 
 	CDB_LOCKING_INIT(env, dbc);
+	F_CLR(dbc, DBC_ERROR);
 
 	/*
 	 * If we're a secondary index, and DB_UPDATE_SECONDARY isn't set
@@ -443,6 +444,8 @@ __dbc_del(dbc, flags)
 
 done:	CDB_LOCKING_DONE(env, dbc);
 
+	if (!DB_RETOK_DBCDEL(ret))
+		F_SET(dbc, DBC_ERROR);
 	return (ret);
 }
 
@@ -492,12 +495,9 @@ __dbc_idel(dbc, flags)
 	 * to explicitly downgrade this lock.  The closed cursor
 	 * may only have had a read lock.
 	 */
-	if (F_ISSET(dbp, DB_AM_READ_UNCOMMITTED) &&
+	if (ret == 0 && F_ISSET(dbp, DB_AM_READ_UNCOMMITTED) &&
 	    dbc->internal->lock_mode == DB_LOCK_WRITE) {
-		if ((t_ret =
-		    __TLPUT(dbc, dbc->internal->lock)) != 0 && ret == 0)
-			ret = t_ret;
-		if (t_ret == 0)
+		if ((ret = __TLPUT(dbc, dbc->internal->lock)) == 0)
 			dbc->internal->lock_mode = DB_LOCK_WWRITE;
 		if (dbc->internal->page != NULL && (t_ret =
 		    __memp_shared(dbp->mpf, dbc->internal->page)) != 0 &&
@@ -534,6 +534,7 @@ __dbc_bulk_del(dbc, key, flags)
 	DB_ASSERT(env, DB_IS_COMPRESSED(dbc->dbp));
 
 	CDB_LOCKING_INIT(env, dbc);
+	F_CLR(dbc, DBC_ERROR);
 
 	ret = __bamc_compress_bulk_del(dbc, key, flags);
 
@@ -749,6 +750,7 @@ __dbc_get(dbc, key, data, flags)
 	DBT *key, *data;
 	u_int32_t flags;
 {
+	F_CLR(dbc, DBC_ERROR);
 #ifdef HAVE_PARTITION
 	if (F_ISSET(dbc, DBC_PARTITIONED))
 		return (__partc_get(dbc, key, data, flags));
@@ -1984,6 +1986,7 @@ __dbc_put(dbc, key, data, flags)
 
 	dbp = dbc->dbp;
 	ret = 0;
+	F_CLR(dbc, DBC_ERROR);
 
 	/*
 	 * Putting to secondary indices is forbidden;  when we need to
@@ -2141,6 +2144,8 @@ __dbc_iput(dbc, key, data, flags)
 
 done:
 err:	/* Cleanup and cursor resolution. */
+	if (dbc_n != NULL && !DB_RETOK_DBCPUT(ret))
+		F_SET(dbc_n, DBC_ERROR);
 	if ((t_ret = __dbc_cleanup(dbc, dbc_n, ret)) != 0 && ret == 0)
 		ret = t_ret;
 	return (ret);
@@ -2395,18 +2400,10 @@ __dbc_cleanup(dbc, dbc_n, failed)
 	 * to explicitly downgrade this lock.  The closed cursor
 	 * may only have had a read lock.
 	 */
-	if (F_ISSET(dbp, DB_AM_READ_UNCOMMITTED) &&
-	    dbc->internal->lock_mode == DB_LOCK_WRITE) {
-		if ((t_ret =
-		    __TLPUT(dbc, dbc->internal->lock)) != 0 && ret == 0)
-			ret = t_ret;
-		if (t_ret == 0)
-			dbc->internal->lock_mode = DB_LOCK_WWRITE;
-		if (dbc->internal->page != NULL && (t_ret =
-		    __memp_shared(dbp->mpf, dbc->internal->page)) != 0 &&
-		    ret == 0)
-			ret = t_ret;
-	}
+	if (ret == 0 && failed == 0 && F_ISSET(dbp, DB_AM_READ_UNCOMMITTED) &&
+	    dbc->internal->lock_mode == DB_LOCK_WRITE &&
+	    (ret = __TLPUT(dbc, dbc->internal->lock)) == 0)
+		dbc->internal->lock_mode = DB_LOCK_WWRITE;
 
 done:
 	if (F_ISSET(dbc, DBC_OPD))

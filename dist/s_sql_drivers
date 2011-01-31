@@ -90,7 +90,11 @@ rm -rf $JDBC_DIR/debian $ODBC_DIR/*ming* $ODBC_DIR/README.* $ODBC_DIR/*mak
 # Patch the JDBC and ODBC build files for autoconf, so the Berkeley DB library
 # can be added to the link command.
 mv $JDBC_DIR/Makefile.in $JDBC_DIR/Makefile.in.tmp
-cat $JDBC_DIR/Makefile.in.tmp | sed -e '/^LIBS=/s/$/ @BDB_LIB@/' > $JDBC_DIR/Makefile.in
+# 1. Define BDB_LIB for Makefile
+# 2. Add LD_LIBRARY_PATH for runing native/mkconst in JDBC configuration
+cat $JDBC_DIR/Makefile.in.tmp | \
+        sed -e '/native\/mkconst > SQLite\/Constants.java/ i \\t\LD_LIBRARY_PATH=\"\$\$LD_LIBRARY_PATH:\$(PWD)\/..\/.libs\" \\' \
+            -e '/^LIBS=/s/$/ @BDB_LIB@/' > $JDBC_DIR/Makefile.in
 rm -f $JDBC_DIR/Makefile.in.tmp
 
 # Generate the resource3.h file needed by ODBC on Windows.

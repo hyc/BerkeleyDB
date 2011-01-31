@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1513,6 +1513,18 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 	if ((ret = __get_filereg_info(lvh, &(argp->uid), &fregp)) != 0 &&
 	    ret != DB_NOTFOUND)
 		goto err;
+	
+	/*
+	 * When DBREG_CLOSE, we should remove the fileuid-filename mapping
+	 * from filereg because the file can be opened again with a different
+	 * fileuid after closed.
+	 */
+	if (ret == 0 && IS_DBREG_CLOSE(opcode)) {
+		if ((ret = __db_del(lvh->fileregs, lvh->ip, NULL,
+		    &(argp->uid), 0)) != 0)
+			goto err;
+	}
+
 	/*
 	 * If this db file is seen for the 1st time, store filereg and
 	 * filelife info. Since we will do a end-to-begin scan before the
@@ -1558,7 +1570,19 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 			    (u_long)lsnp->file, (u_long)lsnp->offset,
 			    __lv_dbreg_str(opcode), dbfname);
 		}
-		if ((ret = __put_filereg_info(lvh, &freg)) != 0)
+
+		/* 
+		 * PREOPEN is only generated when openning an in-memory db.
+		 * Because we need to log the fileid we're allocating, but we
+		 * don't have all the details yet, we are preopening the
+		 * database and will actually complete the open later. So
+		 * PREOPEN is not a real open, and the log should be ignored
+		 * in log_verify.
+		 * If fileuid is in a CLOSE operation there is no need to
+		 * record it.
+		 */
+		if ((opcode != DBREG_PREOPEN) && !IS_DBREG_CLOSE(opcode) &&
+		    (ret = __put_filereg_info(lvh, &freg)) != 0)
 			goto err;
 
 		/* Store filelife info unless it's a CLOSE dbreg operation. */
@@ -1567,6 +1591,7 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 			flife.dbregid = argp->fileid;
 			flife.lsn = *lsnp;
 			flife.dbtype = argp->ftype;
+			flife.meta_pgno = argp->meta_pgno;
 			memcpy(flife.fileid, argp->uid.data, argp->uid.size);
 			if ((ret = __put_filelife(lvh, &flife)) != 0)
 				goto err;
@@ -1581,7 +1606,7 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 	 * remove dbregid from fregp if we are closing the file.
 	 */
 	if ((ret = __add_dbregid(lvh, fregp, argp->fileid,
-	    opcode, *lsnp, argp->ftype, &ret2)) != 0)
+	    opcode, *lsnp, argp->ftype, argp->meta_pgno, &ret2)) != 0)
 		goto err;
 	ret = ret2;
 	if (ret != 0 && ret != 1 && ret != 2 && ret != -1)
@@ -1600,7 +1625,7 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 			ret = DB_LOG_VERIFY_BAD;
 			ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
 		}
-		if ((ret = __put_filereg_info(lvh, fregp)) != 0)
+		if ((!rmv_dblife) && (ret = __put_filereg_info(lvh, fregp)) != 0)
 			goto err;
 	}
 
@@ -2740,7 +2765,11 @@ __ham_groupalloc_verify(env, dbtp, lsnp, notused2, lvhp)
 {
 	__ham_groupalloc_args *argp;
 	DB_LOG_VRFY_INFO *lvh;
-	int ret;
+	VRFY_FILELIFE *pflife;
+	int ret;	
+
+	ret = 0;
+	pflife = NULL;
 
 	notused2 = DB_TXN_LOG_VERIFY;
 	lvh = (DB_LOG_VRFY_INFO *)lvhp;
@@ -2757,12 +2786,17 @@ __ham_groupalloc_verify(env, dbtp, lsnp, notused2, lvhp)
 	 * hash sub database so it will always be on the master database's
 	 * fileid.
 	 */
-	if (argp->fileid != PGNO_BASE_MD) {
+
+	if ((ret = __get_filelife(lvh, argp->fileid, &pflife)) != 0)
+		goto err;	
+
+	if (pflife->meta_pgno != PGNO_BASE_MD) {
 		__db_errx(lvh->dbenv->env,
 		    "[%lu][%lu] __ham_groupalloc should apply only to the "
 		    "master database with meta page number 0, current meta "
 		    "page number is %d.",
-		    (u_long)lsnp->file, (u_long)lsnp->offset, argp->fileid);
+		    (u_long)lsnp->file, (u_long)lsnp->offset,
+		     pflife->meta_pgno);
 		ret = DB_LOG_VERIFY_BAD;
 		ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
 	}
@@ -2770,6 +2804,8 @@ __ham_groupalloc_verify(env, dbtp, lsnp, notused2, lvhp)
 out:
 
 err:
+	if (pflife != NULL)
+	    __os_free(lvh->dbenv->env, pflife);
 
 	__os_free(env, argp);
 	return (ret);
@@ -3302,6 +3338,7 @@ __txn_ckp_verify(env, dbtp, lsnp, notused2, lvhp)
 	struct __ckp_verify_params cvp;
 	VRFY_TIMESTAMP_INFO tsinfo;
 	char timebuf[CTIME_BUFLEN];
+	time_t ckp_time, lastckp_time;
 
 	lastckp = NULL;
 	notused2 = DB_TXN_LOG_VERIFY;
@@ -3332,13 +3369,14 @@ __txn_ckp_verify(env, dbtp, lsnp, notused2, lvhp)
 		goto out;/* We are done, exit. */
 	}
 	lvh->nckp++;
+	ckp_time = (time_t)argp->timestamp;
 	__db_msg(env,
 	    "[%lu][%lu] Checkpoint record, ckp_lsn: [%lu][%lu], "
 	    "timestamp: %s. Total checkpoint: %u",
 	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (u_long)argp->ckp_lsn.file,
 	    (u_long)argp->ckp_lsn.offset,
-	    __os_ctime((time_t *)&(argp->timestamp), timebuf), lvh->nckp);
+	    __os_ctime(&ckp_time, timebuf), lvh->nckp);
 
 	if ((ret = __lv_on_timestamp(lvh, lsnp,
 	    argp->timestamp, DB___txn_ckp)) != 0)
@@ -3365,14 +3403,15 @@ __txn_ckp_verify(env, dbtp, lsnp, notused2, lvhp)
 	 * Checkpoint are generally not performed quite often, so we see this
 	 * as an error, but in txn commits we see it as a warning.
 	 */
+	lastckp_time = (time_t)lastckp->timestamp;
 	if (argp->timestamp < lastckp->timestamp) {
 		__db_errx(env,
 		    "[%lu][%lu] Last known checkpoint [%lu, %lu] has a "
 		    "timestamp %s smaller than this checkpoint timestamp %s.",
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		    (u_long)lastckp->lsn.file, (u_long)lastckp->lsn.offset,
-		    __os_ctime((time_t *)(&(lastckp->timestamp)), timebuf),
-		    __os_ctime((time_t *)(&(argp->timestamp)), timebuf));
+		    __os_ctime(&lastckp_time, timebuf),
+		    __os_ctime(&ckp_time, timebuf));
 		ret = DB_LOG_VERIFY_BAD;
 		ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
 	}

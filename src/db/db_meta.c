@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -107,7 +107,7 @@ __db_new(dbc, type, lockp, pagepp)
 	ENV *env;
 	PAGE *h;
 	db_pgno_t last, *list, pgno, newnext;
-	int extend, hash, ret, t_ret;
+	int extend, hash, ret;
 
 	meta = NULL;
 	dbp = dbc->dbp;
@@ -223,13 +223,10 @@ __db_new(dbc, type, lockp, pagepp)
 	}
 	LSN(h) = LSN(meta);
 
-	if (hash == 0)
-		ret = __memp_fput(mpf, dbc->thread_info, meta, dbc->priority);
+	if (hash == 0 && (ret = __memp_fput(mpf,
+	    dbc->thread_info, meta, dbc->priority)) != 0)
+	    	goto err;
 	meta = NULL;
-	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
-		ret = t_ret;
-	if (ret != 0)
-		goto err;
 
 	switch (type) {
 		case P_BTREEMETA:
@@ -262,6 +259,8 @@ __db_new(dbc, type, lockp, pagepp)
 	COMPQUIET(list, NULL);
 #endif
 
+	if ((ret = __TLPUT(dbc, metalock)) != 0)
+		return (ret);
 	*pagepp = h;
 	PERFMON6(env, alloc, new, dbp->fname, dbp->dname, pgno, type, h, 0);
 	return (0);
@@ -516,7 +515,8 @@ logged:
 		 * using MVCC then this version may stick around and we
 		 * might have to make a copy.
 		 */
-		if (mpf->mfp->multiversion && (ret = __memp_dirty(mpf,
+		if (atomic_read(&mpf->mfp->multiversion) &&
+		    (ret = __memp_dirty(mpf,
 		    &h, dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0)
 			goto err1;
 		LSN(h) = *lsnp;
@@ -1233,7 +1233,8 @@ __db_lget(dbc, action, pgno, mode, lkflags, lockp)
 	 * Hold on to the previous read lock only if we are in full isolation.
 	 * COUPLE_ALWAYS indicates we are holding an interior node which need
 	 *	not be isolated.
-	 * Downgrade write locks if we are supporting dirty readers.
+	 * Downgrade write locks if we are supporting dirty readers and the
+	 * update did not have an error.
 	 */
 	if ((action != LCK_COUPLE && action != LCK_COUPLE_ALWAYS) ||
 	    !LOCK_ISSET(*lockp))
@@ -1245,8 +1246,8 @@ __db_lget(dbc, action, pgno, mode, lkflags, lockp)
 		action = LCK_COUPLE;
 	else if (lockp->mode == DB_LOCK_READ_UNCOMMITTED)
 		action = LCK_COUPLE;
-	else if (F_ISSET(dbc->dbp,
-	    DB_AM_READ_UNCOMMITTED) && lockp->mode == DB_LOCK_WRITE)
+	else if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) && 
+	     !F_ISSET(dbc, DBC_ERROR) && lockp->mode == DB_LOCK_WRITE)
 		action = LCK_DOWNGRADE;
 	else
 		action = 0;
@@ -1385,10 +1386,11 @@ __db_lput(dbc, lockp)
 	/*
 	 * Transactional locking.
 	 * Hold on to the read locks only if we are in full isolation.
-	 * Downgrade write locks if we are supporting dirty readers.
+	 * Downgrade write locks if we are supporting dirty readers unless
+	 * there was an error.
 	 */
-	if (F_ISSET(dbc->dbp,
-	    DB_AM_READ_UNCOMMITTED) && lockp->mode == DB_LOCK_WRITE)
+	if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) &&
+	    !F_ISSET(dbc, DBC_ERROR) && lockp->mode == DB_LOCK_WRITE)
 		action = LCK_DOWNGRADE;
 	else if (dbc->txn == NULL)
 		action = LCK_COUPLE;

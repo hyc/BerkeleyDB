@@ -282,10 +282,10 @@ namespace BerkeleyDB.Internal {
         internal const uint DB_VERSION_MINOR = 1;
         internal const string DB_VERSION_MINOR_STR = "1";
         internal const int DB_VERSION_MISMATCH = -30969;
-        internal const uint DB_VERSION_PATCH = 19;
-        internal const string DB_VERSION_PATCH_STR = "19";
-        internal const string DB_VERSION_STRING = "Berkeley DB 5.1.19: August 27 2010 ";
-        internal const string DB_VERSION_FULL_STRING = "Berkeley DB 11g Release 2 library version 11.2.5.1.19: August 27 2010 ";
+        internal const uint DB_VERSION_PATCH = 25;
+        internal const string DB_VERSION_PATCH_STR = "25";
+        internal const string DB_VERSION_STRING = "Berkeley DB 5.1.25: January 28 2011 ";
+        internal const string DB_VERSION_FULL_STRING = "Berkeley DB 11g Release 2 library version 11.2.5.1.25: January 28 2011 ";
         internal const uint DB_WRITECURSOR = 0x00000008;
         internal const uint DB_YIELDCPU = 0x00080000;
         internal const uint DB_USERCOPY_GETDATA = 0x00000001;

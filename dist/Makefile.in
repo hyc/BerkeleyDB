@@ -856,7 +856,7 @@ $(libsql_version): $(SQL_OBJS)
 
 # Shared SQL library.
 $(libsqlso_target): $(SQL_OBJS)
-	$(SOLINK) $(SOFLAGS) $(LDFLAGS) -o $@ $(SQL_OBJS)
+	$(SOLINK) $(SOFLAGS) $(LDFLAGS) -o $@ $(SQL_OBJS) $(LIBCSO_LIBS)
 	$(RM) $(libsql)
 	$(LN) -s .libs/$(libsql_version) $(libsql)
 
@@ -880,7 +880,8 @@ $(libsqlite): $(SQL_OBJS)
 	$(RANLIB) $@
 
 $(libsqliteso_target): $(SQL_OBJS)
-	$(SOLINK) $(SOFLAGS) $(LDFLAGS) -version-info "8:6:8" -o $@ $(SQL_OBJS)
+	$(SOLINK) $(SOFLAGS) $(LDFLAGS) -version-info "8:6:8" -o $@ \
+		$(SQL_OBJS) $(LIBCSO_LIBS)
 
 sqlite3: shell@o@ $(DEF_LIB_SQLITE)
 	$(CCLINK) -o $@ $(LDFLAGS) shell@o@ $(DEF_LIB_SQLITE) @SQL_LIBS@ $(LIBS)

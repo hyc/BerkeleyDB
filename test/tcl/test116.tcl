@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005, 2010 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2005, 2011 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -13,6 +13,7 @@ proc test116 { method {tnum "116"} args } {
 	source ./include.tcl
 	global util_path
 	global passwd
+	global has_crypto
 
 	set orig_tdir $testdir
 	puts "Test$tnum ($method): Test lsn_reset."
@@ -53,13 +54,20 @@ proc test116 { method {tnum "116"} args } {
 		if { [is_substr [$env get_open_flags] "-thread"] } {
 			append envargs " -thread "
 		}
-		if { [is_substr $args "-encrypt"] } {
-			append envargs " -encryptaes $passwd "
+		# We only have to check for encryption flags in 
+		# releases that include encryption (and we'll get
+		# in trouble if we try it on releases that don't). 
+		if { $has_crypto } {
+			if { [is_substr $args "-encrypt"] } {
+				append envargs " -encryptaes $passwd "
+			}
+			if { [is_substr \
+			    [$env get_encrypt_flags] "-encryptaes"] } {
+				append envargs " -encryptaes $passwd "
+				append resetargs " -encrypt "
+			}
 		}
-		if { [is_substr [$env get_encrypt_flags] "-encryptaes"] } {
-			append envargs " -encryptaes $passwd "
-			append resetargs " -encrypt "
-		}
+
 		set txn ""
 		set txnenv [is_txnenv $env]
 		if { $txnenv == 1 } {

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -184,6 +184,14 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if ((ret = __fop_file_setup(dbp, ip,
 		    txn, fname, mode, flags, &id)) != 0)
 			return (ret);
+		/*
+		 * If we are creating the first sub-db then this is the
+		 * call to create the master db and we tried to open it
+		 * read-only.  The create will force it to be read/write
+		 * So clear the RDONLY flag if we just created it.
+		 */
+		if (!F_ISSET(dbp, DB_AM_RDONLY))
+		 	LF_CLR(DB_RDONLY);
 	} else {
 		if (dbp->p_internal != NULL) {
 			__db_errx(env,

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -234,7 +234,9 @@ __hamc_close(dbc, root_pgno, rmroot)
 		}
 	}
 
-out:	if (hcp->page != NULL && (t_ret = __memp_fput(mpf,
+out:	if (ret != 0)
+		F_SET(dbc, DBC_ERROR);
+	if (hcp->page != NULL && (t_ret = __memp_fput(mpf,
 	    dbc->thread_info, hcp->page, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 	if (gotmeta != 0 && (t_ret = __ham_release_meta(dbc)) != 0 && ret == 0)
@@ -1118,7 +1120,7 @@ __hamc_put(dbc, key, data, flags, pgnop)
 
 			ret = __ham_add_el(dbc, key, myval, H_KEYDATA);
 			goto done;
-		} else if (flags == DB_NOOVERWRITE &&
+		} else if (ret == 0 && flags == DB_NOOVERWRITE &&
 		    !F_ISSET(hcp, H_DELETED)) {
 			if (*pgnop == PGNO_INVALID)
 				ret = DB_KEYEXIST;

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  * $Id$
  */
 
@@ -164,12 +164,16 @@ err:		if (hcp->page != NULL &&
 		hcp->page = NULL;
 		hcp->pgno = pgno = PGNO_INVALID;
 		/*
-		 * If we are in a transaction and we updated something
+		 * If we are in an auto-transaction and we updated something
 		 * return to the caller to commit this transaction to
 		 * avoid holding locks. Otherwise process the next bucket.
 		 * We can drop the lock if we did not do anything.
+		 * We always must commit the txn if we are in MVCC
+		 * as we have dirtied the hash buckets.
 		 */
-		if (ret == 0 && (pgs_done == 0 || dbc->txn == NULL))
+		if (ret == 0 &&
+		    atomic_read(&dbp->mpf->mfp->multiversion) == 0 &&
+		    (pgs_done == 0 || dbc->txn == NULL))
 			ret = __LPUT(dbc, hcp->lock);
 		else if (LF_ISSET(DB_AUTO_COMMIT)) {
 			if (ret == 0)

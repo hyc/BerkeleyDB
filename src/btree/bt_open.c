@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -332,6 +332,12 @@ __bam_read_root(dbp, ip, txn, base_pgno, flags)
 	 *
 	 * Otherwise, we'd better be in recovery or abort, in which case the
 	 * metadata page will be created/initialized elsewhere.
+	 *
+	 * Ignore the last_pgno on the metadata page for snapshot transactions:
+	 * we may be reading an old version of the page, and we've already
+	 * set last_pgno from the file size.  The only time this would matter
+	 * is if we don't have ftruncate and there are some free pages at the
+	 * end of the file: we could end up with holes.
 	 */
 	if (meta->dbmeta.magic == DB_BTREEMAGIC) {
 		t->bt_minkey = meta->minkey;
@@ -341,8 +347,11 @@ __bam_read_root(dbp, ip, txn, base_pgno, flags)
 		t->bt_meta = base_pgno;
 		t->bt_root = meta->root;
 		t->revision = dbp->mpf->mfp->revision;
-		if (PGNO(meta) == PGNO_BASE_MD && !F_ISSET(dbp, DB_AM_RECOVER))
-			__memp_set_last_pgno(mpf, meta->dbmeta.last_pgno);
+		if (PGNO(meta) == PGNO_BASE_MD &&
+		    !F_ISSET(dbp, DB_AM_RECOVER) &&
+		    (txn == NULL || !F_ISSET(txn, TXN_SNAPSHOT)) && (ret =
+		    __memp_set_last_pgno(mpf, meta->dbmeta.last_pgno)) != 0)
+		    	goto err;
 	} else {
 		DB_ASSERT(dbp->env,
 		    IS_RECOVERING(dbp->env) || F_ISSET(dbp, DB_AM_RECOVER));

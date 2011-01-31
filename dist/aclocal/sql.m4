@@ -90,7 +90,8 @@ if test "$db_cv_jdbc" != "no"; then
   fi
 
   if test ! -d $jdbc_path; then
-    echo "Cannot find jdbc source in $jdbc_path; please check that path or use --with-jdbc to specify the source directory"
+    echo "Cannot find jdbc source in $jdbc_path."
+    echo "Please check that path or use --with-jdbc to specify the source directory"
     exit 1
   fi
   jdbc_dir=`cd $jdbc_path && /bin/pwd`
@@ -107,8 +108,14 @@ if test "$db_cv_jdbc" != "no"; then
   test "$enable_shared" != "" && jdbc_args="$jdbc_args --enable-shared=$enable_shared"
   test "$enable_static" != "" && jdbc_args="$jdbc_args --enable-static=$enable_static"
 
-  jdbc_flags="$jdbc_flags CFLAGS=\"-I.. -I../src/dbinc -DHAVE_SQLITE3_MALLOC -DHAVE_ERRNO_H $CFLAGS\""
-  jdbc_flags="$jdbc_flags CPPFLAGS=\"-I.. $CPPFLAGS\""
+  # 1. The build directory is build_unix/jdbc, so the include paths are relative
+  #    to that.
+  # 2. The JDBC driver does not accept CPPFLAGS. So we move the CPPFLAGS options
+  #    into CFLAGS for the JDBC driver.
+  jdbc_flags="$jdbc_flags CFLAGS=\"-I.. -I../../src/dbinc -I../sql \
+    -DHAVE_ERRNO_H -D_HAVE_SQLITE_CONFIG_H -DHAVE_SQLITE3_MALLOC \
+    $CFLAGS $CPPFLAGS\""
+  # Set LDFLAGS for JDBC driver
   test "$LDFLAGS" != "" && jdbc_flags="$jdbc_flags LDFLAGS=\"$LDFLAGS\""
 
   # Copy ../lang/sql/jdbc to build_unix/

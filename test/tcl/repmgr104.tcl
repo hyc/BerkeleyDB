@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2010 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2011 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr104
 # TEST Repmgr site address discovery via NEWSITE

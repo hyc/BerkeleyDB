@@ -1,12 +1,51 @@
 = Berkeley DB 5.1 Changelog =
 
-== Database or Log File On-Disk Format Changes == 
+== Changes between 11.2.5.1.19 and 11.2.5.1.25 ==
+
+Fixed a leak of log file ids when a database is closed before the end of a transaction that references it. [#15957]
+
+Fixed a bug in page allocation where if a non-transactional update was being done, then we release the metadata page lock too early possibly leading to the corruption of the in-memory page list used by DB->compact. [#19036]
+
+A log write failure on a replication master will now cause a panic since the transaction may be committed on some clients. [#19054]
+
+Removed the possibility that checkpoints will overlap in the log, decreasing the time to recover. [#19062]
+
+Fixed several bugs that could cause an update running with MVCC to get the wrong version of a page or improperly update the metadata last page number. [#19063]
+
+The database open code will no longer log the open and close of the master database in a file when opening a sub database in that file [#19071]
+
+Fixed a bug where an error during an update to a hash database with DB_NOOVERWRITE set could return DB_KEYEXIST rather than the correct error. [#19077]
+
+Fixed a bug where an updater supporting DB_READ_UNCOMMITED might downgrade its lock too soon if there was an error during the update. [#19155]
+
+Fixed a bug that could cause the wrong page number to be on a root or metadata page if DB->compact moved the page and the operation was later rolled forward. [#19167]
+
+Fixed a bug that could cause the close of a secondary index database to fail if the transaction doing the open aborted. [#19169]
+
+Changed SQL API library build on *nix to link with libpthreads when necessary. [#19098]
+
+Fixed a JDBC error where building would fail on Solaris without the flag "-D_HAVE_SQLITE_CONFIG_H". [#19189]
+
+Fixed some bugs in log_verify when there are in-memory database logs and subdb logs. [#19157]
+
+Fixed a bug that would return DB_NOTFOUND while searching for an existing item using
+a cursor on a non-sorted duplicate btree database. [#19210]
+
+Fixed a JDBC bug that the configure can not deal with CPPFLAGS. [#19234]
+
+Fixed a bug in the SQL API that would cause a constraint violation when updating the primary key with the same value. [#18976]
+
+Fixed a bug in the SQL BDBSQL_FILE_PER_TABLE option, to allow absolute path names. [#19190]
+
+== Changes between 11.2.5.0 and 11.2.5.1.19 ==
+
+=== Database or Log File On-Disk Format Changes === 
 
 The database file format was unchanged in 11gR2 library version 11.2.5.1.
 
 The log file format was unchanged in 11gR2 library version 11.2.5.1.
 
-== New Features ==
+=== New Features ===
 
 Added Performance event monitoring support for DTrace and SystemTap which can 
 be enabled during configuration. Static probes have been defined where 
@@ -66,7 +105,7 @@ BDB SQL [#18672]
 
 Added an encryption implementation to the SQL API [#18683]
 
-== Database Environment Changes ==
+=== Database Environment Changes ===
 
 Fixed failchk behavior on QNX. [#17403]
 
@@ -86,7 +125,7 @@ was nearly full and ended with a partially written log record which was smaller
 than a checkpoint record. It now erases the invalid partial record before
 switching to the new log file. [#18651]
 
-== Access Method Changes ==
+=== Access Method Changes ===
 
 Fixed a bug such that segementation fault does not occur if 
 DB->set_partition_dirs is called before DB->set_partition. [#18591]
@@ -112,8 +151,8 @@ database with MVCC and the HASH table was contracted and then
 extended. [#18785]
 
 Fixed locking bugs: [#18789]
-  The Db->compact method of BTREE with MVCC would return an unpinned page.
-  The RECNO option would fail to lock the next page when splitting a leaf page.
+* The Db->compact method of BTREE with MVCC would return an unpinned page.
+* The RECNO option would fail to lock the next page when splitting a leaf page.
 
 Fixed a bug that could cause data to not be returned in a HASH database that
 was one of multiple databases in a file and was opened prior to running
@@ -127,15 +166,17 @@ first item in a HASH database is larger than the user supplied buffer. [#18829]
 
 Fixed a bug that would cause handle locks to be left referencing the wrong
 metadata page if DB->compact moved the metadata page of a sub-database. [#18944]
-== API Changes ==
+
+
+=== API Changes ===
 
 Fixed various items uncovered by extending DB_CONFIG support: [#18720] 
-  - Added missing set_cache_max method, and fixed name of log_set_config 
+* Added missing set_cache_max method, and fixed name of log_set_config 
 (was set_log_config).  
-  - Added new DB_ENV->repmgr_get_local_site method. 
-  - Fixed a bug which could fail to allocate enough mutexes when specifying a 
+* Added new DB_ENV->repmgr_get_local_site method. 
+* Fixed a bug which could fail to allocate enough mutexes when specifying a 
 maximum cache size.
-  - Fixed a bug that could allocate multiple caches when a small cache size 
+* Fixed a bug that could allocate multiple caches when a small cache size 
 was specified.
 
 Fixed a leak when aborting a transaction containing a DB->close. [#18951]
@@ -155,13 +196,13 @@ Fixed a bug that might cause an update to a HASH database to fail with an
 "unpinned page returned" error if it first gets an I/O error while 
 logging. [#18985]
 
-Fixed a bug that could leave a hash bucket overflow page not liked to the 
+Fixed a bug that could leave a hash bucket overflow page not linked to the 
 bucket if the unlink of that page aborted. [#19001]
 
 Fixed a bug that would leave the next page pointer of a hash bucket that 
 was removed pointing to an invalid page [#19004]
 
-== SQL-Specific API Changes ==
+=== SQL-Specific API Changes ===
 
 Allowed SQL applications to attach to the same database multiple times unless
 shared cache mode is explicitly requested. [#18340]
@@ -196,11 +237,11 @@ allocated for the index key in the SQL API.[#18783]
 Fixed a bug causing a segfault when releasing a savepoint that was already 
 released. [#18784]
 
-== Tcl-Specific API Changes ==
+=== Tcl-Specific API Changes ===
 
 Changed to link tcl8.5 by default on Windows[#18244]
 
-== Java-Specific API Changes ==
+=== Java-Specific API Changes ===
 
 Fixed a bug where getAllowPopulate and getImmutableSecondaryKey method  always 
 returned false for SecondaryConfig objects returned by 
@@ -237,7 +278,7 @@ Added LEASE_TIMEOUT field to the ReplicationTimeoutType class
 that enables configuring the amount of time a client grants its 
 Master Lease to a master. [#18867]
 	
-== C#-Specific API Changes ==
+=== C#-Specific API Changes ===
 
 Fixed a bug in BTree prefix comparison method such that there is no problem 
 when the application needs to save a number larger than or equal to
@@ -256,7 +297,7 @@ Fixed a bug that use leading to the error:
 when applications used different transactional handles in the 
 associate and open methods in a secondary database. [#18873]  
 
-== Direct Persistence Layer (DPL), Bindings and Collections API ==
+=== Direct Persistence Layer (DPL), Bindings and Collections API ===
 
 All setter methods in the DPL |StoreConfig| and |EvolveConfig| now
 return |this| rather than having a |void| return type. This change
@@ -266,7 +307,10 @@ Improve performance of |StoredCollection.removeAll|. This method
 no longer iterates over all records in the stored collection. [#17727]
 
 Several new tuple formats and binding classes have been added in
-the |com.sleepycat.bind.tuple| package:
+the |com.sleepycat.bind.tuple| package. See the |com.sleepycat.bind.tuple| 
+package description for an
+overview of the new bindings and a comparative description of all
+tuple bindings. The new tuple formats are: [#18379]
 * Packed integer formats have been added that support default
 natural sorting. These are intended to replace the old
 unsorted packed integer formats.
@@ -275,9 +319,6 @@ supports default natural sorting. The other format is
 unsorted, but has other advantages: trailing zeros after the
 decimal place are preserved, and a more compact, faster
 serialization format is used.
-See the |com.sleepycat.bind.tuple| package description for an
-overview of the new bindings and a comparative description of all
-tuple bindings. [#18379]
 
 The following classes are now certified to be serializable. [#18738]
 * com.sleepycat.persist.IndexNotAvailableException
@@ -287,7 +328,7 @@ The following classes are now certified to be serializable. [#18738]
 * com.sleepycat.persist.evolve.IncompatibleClassException
 
 
-== Replication Changes ==
+=== Replication Changes ===
 
 Replication Manager now uses the standard system implementation of
 getaddrinfo() when running on Windows, which means that it can support
@@ -331,12 +372,14 @@ Fixed a bug which would cause failure if client env attempted to
 perform sync-up recovery to a point in the log that happened to fall
 exactly on a log file boundary.  [#18907]
 	
-== Locking Subsystem Changes ==
+
+=== Locking Subsystem Changes ===
 
 Moved the wait mutex from the lock structure to the locker structure,
 reducing the number of mutexes required in the system. [#18685]
 
-== Memory Pool Subsystem Changes ==
+
+=== Memory Pool Subsystem Changes ===
 
 Fixed a race condition that was causing the error:  "Unable to allocate space
 from the buffer cache".  The error can only be triggered when
@@ -353,7 +396,7 @@ Changed memory pool allocation so that the EIO error is returned rather
 than the ENOMEM error when the memory cannot be allocated because 
 dirty pages cannot be written. [#18740]
 
-== Mutex Subsystem Changes ==
+=== Mutex Subsystem Changes ===
 
 Fixed problems with the printed statistics for DB_MUTEX_SHARED latches.
 The DB_STAT_CLEAR flag (as specified by db_stat -Z) did not clear the counts
@@ -362,7 +405,7 @@ able to get the latch without waiting. Also, the ownership state of a
 test-and-set latch (not a hybrid one) was always displayed as not owned, even
 when it was held. [#17585] [#18743]
 
-== Transaction Subsystem Changes ==
+=== Transaction Subsystem Changes ===
 
 Fixed bugs that could caused PANIC or DB_RUNRECOVERY errors
 when the synchronization of the transaction log failed.  [#18588]
@@ -371,7 +414,9 @@ Fix javadoc to note the exception to the rule that a transaction
 handle may not be accessed after commit() operaton (getCommitToken() is
 allowed). [#18730]
 
-== Utility Changes ==
+Removed the possibility that checkpoints will overlap in the log, decreasing the time to recover [#19062]
+
+=== Utility Changes ===
 
 Modified the db_printlog and db_dump -da so that they use the same formatting.  
 The db_logprint utility now uses the message stream. Both db_dump -da and 
@@ -385,7 +430,7 @@ db_printlog utility. [#18694]
 Fixed a bug in db_hotbackup that would cause a trap if the -D flag is used
 and the DB_CONFIG file does not specify a log directory. [#18841]
 
-== Configuration, Documentation, Sample Apps, Portability, and Build Changes ==
+=== Configuration, Documentation, Sample Apps, Portability, and Build Changes ===
 
 Added support and documentation for iPhone OS. [#18223]
 
@@ -416,12 +461,12 @@ Fix build conflicts in log verify with other configurations. [#18658]
 Upgraded Berkeley DB SQL to SQLite version 3.7.0 [#18857]
 
 
-== Example Changes ==
+=== Example Changes ===
 
 Renamed examples/c/bench_001 to examples/c/ex_bulk.  [#18537]
 
 
-== Miscellaneous Bug Fixes ==
+=== Miscellaneous Bug Fixes ===
 
 Provided a functionality on the Windows platform to choose a default
 page size based on the underlying file system sector size. [#16538]
@@ -437,7 +482,7 @@ environment-wide basis (DB_CDB_ALLDB.)  [#18571]
 
 Fixed temporary file naming with negative process IDs (e.g., VxWorks). [#18975]
 
-== Deprecated Features ==
+=== Deprecated Features ===
 
 [#18871] Removed the mod_db4 PHP/Apache wrapper. It only supported Apache 1.3
 and has not been actively supported. Use php_db4 instead.

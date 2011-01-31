@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1302,16 +1302,17 @@ err:
 
 /*
  * PUBLIC: int __add_dbregid __P((DB_LOG_VRFY_INFO *, VRFY_FILEREG_INFO *,
- * PUBLIC:     int32_t, u_int32_t, DB_LSN, DBTYPE, int *));
+ * PUBLIC:     int32_t, u_int32_t, DB_LSN, DBTYPE, db_pgno_t, int *));
  */
 int
-__add_dbregid(lvh, freg, dbregid, opcode, lsn, dbtype, addp)
+__add_dbregid(lvh, freg, dbregid, opcode, lsn, dbtype, meta_pgno, addp)
 	DB_LOG_VRFY_INFO *lvh;
 	VRFY_FILEREG_INFO *freg;
 	int32_t dbregid;
 	u_int32_t opcode;
 	DB_LSN lsn;
 	DBTYPE dbtype;
+	db_pgno_t meta_pgno;
 	int *addp;
 {
 	int inarray, ret, tret;
@@ -1330,9 +1331,10 @@ __add_dbregid(lvh, freg, dbregid, opcode, lsn, dbtype, addp)
 				}
 				tret = 0;
 				inarray = 1;
-				break;
 			} else
-				tret = -1;/* Gonna remove 1 dbregid. */
+				/* Found the dbregid; gonna remove it. */
+				tret = -1;
+			break;
 		}
 	}
 
@@ -1343,7 +1345,7 @@ __add_dbregid(lvh, freg, dbregid, opcode, lsn, dbtype, addp)
 	 * Remove closed dbregid. dbregid can be recycled, not unique to a db
 	 * file, it's dynamically allocated for each db handle.
 	 */
-	if (tret == -1 && freg->regcnt > 0) {
+	if (tret == -1) {
 		for (j = i; j < freg->regcnt - 1; j++)
 			freg->dbregids[j] = freg->dbregids[j + 1];
 		freg->regcnt--;
@@ -1362,6 +1364,7 @@ __add_dbregid(lvh, freg, dbregid, opcode, lsn, dbtype, addp)
 		flife.lifetime = opcode;
 		flife.dbtype = dbtype;
 		flife.lsn = lsn;
+		flife.meta_pgno = meta_pgno;
 		if ((ret = __put_filelife(lvh, &flife)) != 0)
 			goto err;
 	}
@@ -1906,7 +1909,6 @@ __set_logvrfy_dbfuid(lvinfo)
 	int ret;
 	const char *p;
 	DBT key, data;
-	VRFY_FILEREG_INFO *fregp;
 	size_t buflen;
 
 	p = NULL;
@@ -1921,12 +1923,9 @@ __set_logvrfy_dbfuid(lvinfo)
 
 	BDBOP2(lvinfo->dbenv, __db_get(lvinfo->fnameuid, lvinfo->ip, NULL,
 	    &key, &data, 0), "__set_logvrfy_dbfuid");
-	if ((ret = __lv_unpack_filereg(&data, &fregp)) != 0)
-		goto err;
-	memcpy(lvinfo->target_dbid, fregp->fileid.data, DB_FILE_ID_LEN);
-	if ((ret = __free_filereg_info(fregp)) != 0)
-		goto err;
-err:
+
+	memcpy(lvinfo->target_dbid, data.data, DB_FILE_ID_LEN);
+
 	return (ret);
 }
 

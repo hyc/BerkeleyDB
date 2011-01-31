@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -237,7 +237,8 @@ __txn_remlock(env, txn, lock, locker)
 		} else {						\
 			e->op = TXN_TRADED;				\
 			e->u.t.dbp->cur_locker = e->u.t.locker;		\
-			e->u.t.dbp->cur_txn = NULL;			\
+			if (opcode != TXN_PREPARE)			\
+				e->u.t.dbp->cur_txn = NULL;		\
 		}							\
 	} else if (t_ret == DB_NOTFOUND)				\
 		t_ret = 0;						\
@@ -440,7 +441,8 @@ __txn_dref_fname(env, txn)
 	ptd = txn->parent != NULL ? txn->parent->td : NULL;
 
 	np = R_ADDR(&mgr->reginfo, td->log_dbs);
-	for (i = 0; i < td->nlog_dbs; i++, np++) {
+	np += td->nlog_dbs - 1;
+	for (i = 0; i < td->nlog_dbs; i++, np--) {
 		fname = R_ADDR(&dblp->reginfo, *np);
 		MUTEX_LOCK(env, fname->mutex);
 		if (ptd != NULL) {
@@ -456,7 +458,7 @@ __txn_dref_fname(env, txn)
 			fname->txn_ref--;
 			MUTEX_UNLOCK(env, fname->mutex);
 		}
-		if (ret != 0)
+		if (ret != 0 && ret != EIO)
 			break;
 	}
 

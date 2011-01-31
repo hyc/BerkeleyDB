@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -442,7 +442,7 @@ struct __mpoolfile {
 	int32_t	  file_written;		/* File was written. */
 	int32_t	  no_backing_file;	/* Never open a backing file. */
 	int32_t	  unlink_on_close;	/* Unlink file on last close. */
-	int32_t	  multiversion;		/* Number of DB_MULTIVERSION handles. */
+	db_atomic_t	  multiversion;	/* Number of DB_MULTIVERSION handles. */
 
 	/*
 	 * We do not protect the statistics in "stat" because of the cost of
@@ -555,7 +555,7 @@ struct __bh_frozen_a {
 	SH_TAILQ_ENTRY links;
 };
 
-#define	MULTIVERSION(dbp)	((dbp)->mpf->mfp->multiversion)
+#define	MULTIVERSION(dbp)	atomic_read(&(dbp)->mpf->mfp->multiversion)
 #define	IS_PINNED(p)							\
     (BH_REFCOUNT((BH *)((u_int8_t *)					\
     (p) - SSZA(BH, buf))) > 0)

@@ -124,6 +124,7 @@ DOCSRCS = \
 all:	sqlite.jar libsqlite_jni.la
 
 SQLite/Constants.java:	native/mkconst VERSION
+	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(PWD)/../.libs" \
 	native/mkconst > SQLite/Constants.java
 
 $(CLASSES) $(PRIVATE_CLASSES):	SQLite/Constants.java

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -2386,6 +2386,7 @@ __db_merge_recover(env, dbtp, lsnp, op, info)
 		if (argp->pg_copy) {
 			if (argp->data.size == 0) {
 				memcpy(pagep, argp->hdr.data, argp->hdr.size);
+				pagep->pgno = argp->pgno;
 				goto do_lsn;
 			}
 			P_INIT(pagep, file_dbp->pgsize, pagep->pgno,

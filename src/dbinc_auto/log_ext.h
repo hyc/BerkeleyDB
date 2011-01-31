@@ -174,7 +174,7 @@ int __del_filelife __P((const DB_LOG_VRFY_INFO *, int32_t));
 int __put_filelife __P((const DB_LOG_VRFY_INFO *, VRFY_FILELIFE *));
 int __get_filelife __P((const DB_LOG_VRFY_INFO *, int32_t, VRFY_FILELIFE **));
 int __get_filereg_by_dbregid __P((const DB_LOG_VRFY_INFO *, int32_t, VRFY_FILEREG_INFO **));
-int __add_dbregid __P((DB_LOG_VRFY_INFO *, VRFY_FILEREG_INFO *, int32_t, u_int32_t, DB_LSN, DBTYPE, int *));
+int __add_dbregid __P((DB_LOG_VRFY_INFO *, VRFY_FILEREG_INFO *, int32_t, u_int32_t, DB_LSN, DBTYPE, db_pgno_t, int *));
 int __get_filereg_info __P((const DB_LOG_VRFY_INFO *, const DBT *, VRFY_FILEREG_INFO **));
 int __free_filereg_info __P((VRFY_FILEREG_INFO *));
 int __get_ckp_info __P((const DB_LOG_VRFY_INFO *, DB_LSN, VRFY_CKP_INFO **));

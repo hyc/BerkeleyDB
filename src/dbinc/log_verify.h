@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -116,6 +116,7 @@ struct __lv_filelife {
 	int32_t dbregid;	/* The primary key. */
 	DBTYPE dbtype;		/* The database type. */
 	u_int32_t lifetime;	/* DBREG_OPEN, DBREG_CHKPNT, DBREG_CLOSE */
+	db_pgno_t meta_pgno;	/* The meta_pgno; */
 	u_int8_t fileid[DB_FILE_ID_LEN];
 	DB_LSN lsn;		/* The lsn of log updating lifetime. */
 };

@@ -417,8 +417,8 @@ fi
 
 # Optional Java API / JDBC.
 if test "$db_cv_java" = "yes" -o "$db_cv_jdbc" = "yes"; then
-	# Java requires shared libraries.
-	if test "$enable_shared" = "no"; then
+	# BDB Java API requires shared libraries.
+	if test "$db_cv_java" = "yes" -a "$enable_shared" = "no"; then
 		AC_MSG_ERROR([Java requires shared libraries])
 	fi
 
