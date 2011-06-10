@@ -1,6 +1,6 @@
 =head1 NAME
 
-BerkeleyDB - Perl extension for Berkeley DB version 2, 3 or 4
+BerkeleyDB - Perl extension for Berkeley DB version 2, 3, 4 or 5
 
 =head1 SYNOPSIS
 
@@ -20,6 +20,8 @@ BerkeleyDB - Perl extension for Berkeley DB version 2, 3 or 4
   $db  = tie @array, 'BerkeleyDB::Queue', [OPTIONS] ;
   $db  = new BerkeleyDB::Queue [OPTIONS] ;
 
+  $db  = new BerkeleyDB::Heap [OPTIONS] ;
+
   $db  = new BerkeleyDB::Unknown [OPTIONS] ;
 
   $status = BerkeleyDB::db_remove [OPTIONS]
@@ -34,6 +36,7 @@ BerkeleyDB - Perl extension for Berkeley DB version 2, 3 or 4
 
   $env = $db->Env()
   $status = $db->db_get()
+  $status = $db->db_exists() ;
   $status = $db->db_put() ;
   $status = $db->db_del() ;
   $status = $db->db_sync() ;
@@ -71,9 +74,10 @@ BerkeleyDB - Perl extension for Berkeley DB version 2, 3 or 4
 
   $status = $env->txn_checkpoint()
   $hash_ref = $env->txn_stat()
-  $status = $env->setmutexlocks()
+  $status = $env->set_mutexlocks()
   $status = $env->set_flags()
   $status = $env->set_timeout()
+  $status = $env->lock_detect()
   $status = $env->lsn_reset()
 
   $txn = $env->txn_begin() ;
@@ -550,6 +554,10 @@ TODO.
 
 
 =item B<BerkeleyDB::Queue>
+
+TODO.
+
+=item B<BerkeleyDB::Heap>
 
 TODO.
 
@@ -1279,6 +1287,31 @@ and this
                 [ -Pad             => byte,]
 
 
+=head1 BerkeleyDB::Heap
+
+Equivalent to calling B<db_create> followed by B<DB-E<gt>open> with
+type B<DB_HEAP> in Berkeley DB 5.2.x or greater. This database format
+isn't available if you use an older version of Berkeley DB.
+
+One form of constructor is supported:
+
+    $db = new BerkeleyDB::Heap
+                [ -Filename      => "filename", ]
+                [ -Subname       => "sub-database name", ]
+                [ -Flags         => flags,]
+                [ -Property      => flags,]
+                [ -Mode          => number,]
+                [ -Cachesize     => number,]
+                [ -Lorder        => number,]
+                [ -Pagesize      => number,]
+                [ -Env           => $env,]
+                [ -Txn           => $txn,]
+                [ -Encrypt       => { Password => "string",
+	                              Flags    => number }, ],
+                # BerkeleyDB::Heap specific
+                [ -HeapSize      => number, ]
+                [ -HeapSizeGb    => number, ]
+
 =head1 BerkeleyDB::Unknown
 
 This class is used to open an existing database. 
@@ -1436,6 +1469,11 @@ The variant C<db_pget> allows you to query a secondary database:
 using the key C<$skey> in the secondary db to lookup C<$pkey> and C<$value>
 from the primary db.
 
+=head2 $status = $db->db_exists($key [, $flags])
+
+This method checks for the existence of the given key (C<$key>), but
+does not read the value. If the key is not found, B<db_exists> will
+return B<DB_NOTFOUND>. Requires BDB 4.6 or better.
 
 =head2 $status = $db->db_put($key, $value [, $flags])
 

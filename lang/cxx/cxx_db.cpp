@@ -655,6 +655,10 @@ DB_METHOD(get_flags, (u_int32_t *flagsp), (db, flagsp),
     DB_RETOK_STD)
 DB_METHOD(set_flags, (u_int32_t flags), (db, flags),
     DB_RETOK_STD)
+DB_METHOD(get_heapsize, (u_int32_t *gbytesp, u_int32_t *bytesp),
+    (db, gbytesp, bytesp), DB_RETOK_STD)
+DB_METHOD(set_heapsize, (u_int32_t gbytes, u_int32_t bytes),
+    (db, gbytes, bytes, 0), DB_RETOK_STD)
 DB_METHOD(set_h_compare, (h_compare_fcn_type func),
     (db, func), DB_RETOK_STD)
 DB_METHOD(get_h_ffactor, (u_int32_t *h_ffactorp),

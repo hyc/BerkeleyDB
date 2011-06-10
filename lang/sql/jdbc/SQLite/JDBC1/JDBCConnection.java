@@ -179,7 +179,7 @@ public class JDBCConnection
 
     /* non-standard */
     public SQLite.Database getSQLiteDatabase() {
-	return (SQLite.Database) db;
+	return db;
     }
   
     public Statement createStatement() {

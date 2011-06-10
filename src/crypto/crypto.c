@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield
  * -- astubble@rice.edu
@@ -41,12 +41,13 @@ __crypto_region_init(env)
 		if (!CRYPTO_ON(env))
 			return (0);
 		if (!F_ISSET(infop, REGION_CREATE)) {
-			__db_errx(env,
-    "Joining non-encrypted environment with encryption key");
+			__db_errx(env, DB_STR("0172",
+    "Joining non-encrypted environment with encryption key"));
 			return (EINVAL);
 		}
 		if (F_ISSET(db_cipher, CIPHER_ANY)) {
-			__db_errx(env, "Encryption algorithm not supplied");
+			__db_errx(env, DB_STR("0173",
+			    "Encryption algorithm not supplied"));
 			return (EINVAL);
 		}
 		/*
@@ -75,21 +76,21 @@ __crypto_region_init(env)
 		renv->cipher_off = R_OFFSET(infop, cipher);
 	} else {
 		if (!CRYPTO_ON(env)) {
-			__db_errx(env,
-		    "Encrypted environment: no encryption key supplied");
+			__db_errx(env, DB_STR("0174",
+		    "Encrypted environment: no encryption key supplied"));
 			return (EINVAL);
 		}
 		cipher = R_ADDR(infop, renv->cipher_off);
 		sh_passwd = R_ADDR(infop, cipher->passwd);
 		if ((cipher->passwd_len != dbenv->passwd_len) ||
 		    memcmp(dbenv->passwd, sh_passwd, cipher->passwd_len) != 0) {
-			__db_errx(env, "Invalid password");
+			__db_errx(env, DB_STR("0175", "Invalid password"));
 			return (EPERM);
 		}
 		if (!F_ISSET(db_cipher, CIPHER_ANY) &&
 		    db_cipher->alg != cipher->flags) {
-			__db_errx(env,
-    "Environment encrypted using a different algorithm");
+			__db_errx(env, DB_STR("0176",
+    "Environment encrypted using a different algorithm"));
 			return (EINVAL);
 		}
 		if (F_ISSET(db_cipher, CIPHER_ANY))
@@ -203,7 +204,8 @@ __crypto_algsetup(env, db_cipher, alg, do_init)
 
 	ret = 0;
 	if (!CRYPTO_ON(env)) {
-		__db_errx(env, "No cipher structure given");
+		__db_errx(env, DB_STR("0177",
+		    "No cipher structure given"));
 		return (EINVAL);
 	}
 	F_CLR(db_cipher, CIPHER_ANY);
@@ -293,8 +295,8 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 		db_cipher = env->crypto_handle;
 		if (!F_ISSET(dbp, DB_AM_ENCRYPT)) {
 			if (!CRYPTO_ON(env)) {
-				__db_errx(env,
-    "Encrypted database: no encryption flag specified");
+				__db_errx(env, DB_STR("0178",
+    "Encrypted database: no encryption flag specified"));
 				return (EINVAL);
 			}
 			/*
@@ -312,8 +314,8 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 		DB_ASSERT(env, CRYPTO_ON(env));
 		if (!F_ISSET(db_cipher, CIPHER_ANY) &&
 		    meta->encrypt_alg != db_cipher->alg) {
-			__db_errx(env,
-			    "Database encrypted using a different algorithm");
+			__db_errx(env, DB_STR("0179",
+			    "Database encrypted using a different algorithm"));
 			return (EINVAL);
 		}
 		DB_ASSERT(env, F_ISSET(dbp, DB_AM_CHKSUM));
@@ -336,7 +338,8 @@ alg_retry:
 				return (ret);
 			if (((BTMETA *)meta)->crypto_magic !=
 			    meta->magic) {
-				__db_errx(env, "Invalid password");
+				__db_errx(env, DB_STR("0180",
+				    "Invalid password"));
 				return (EINVAL);
 			}
 			/*
@@ -374,8 +377,8 @@ alg_retry:
 		 * Therefore, asking for encryption with a database that
 		 * was not encrypted is an error.
 		 */
-		__db_errx(env,
-		    "Unencrypted database with a supplied encryption key");
+		__db_errx(env, DB_STR("0181",
+		    "Unencrypted database with a supplied encryption key"));
 		return (EINVAL);
 	}
 	return (ret);

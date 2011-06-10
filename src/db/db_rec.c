@@ -262,11 +262,11 @@ __db_big_recover(env, dbtp, lsnp, op, info)
 	 * apply to a single page.  Adding a page is the only case that
 	 * needs to update the chain.
 	 */
-	if (opcode != DB_ADD_BIG)
+ppage:	if (opcode != DB_ADD_BIG)
 		goto done;
 
 	/* Now check the previous page. */
-ppage:	if (argp->prev_pgno != PGNO_INVALID) {
+	if (argp->prev_pgno != PGNO_INVALID) {
 		REC_FGET(mpf, ip, argp->prev_pgno, &pagep, npage);
 		modified = 0;
 
@@ -418,11 +418,11 @@ __db_big_42_recover(env, dbtp, lsnp, op, info)
 	 * apply to a single page.  Adding a page is the only case that
 	 * needs to update the chain.
 	 */
-	if (argp->opcode != DB_ADD_BIG)
+ppage:	if (argp->opcode != DB_ADD_BIG)
 		goto done;
 
 	/* Now check the previous page. */
-ppage:	if (argp->prev_pgno != PGNO_INVALID) {
+	if (argp->prev_pgno != PGNO_INVALID) {
 		REC_FGET(mpf, ip, argp->prev_pgno, &pagep, npage);
 		modified = 0;
 
@@ -946,8 +946,13 @@ check_meta:
 		cmp_p = 0;
 
 	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &copy_lsn);
+	/*
+	 * We need to check that the page could have the current LSN
+	 * which was copied before it was truncated in addition to
+	 * the usual of having the previous LSN.
+	 */
 	if (DB_REDO(op) &&
-	    (cmp_p == 0 ||
+	    (cmp_p == 0 || cmp_n == 0 ||
 	    (IS_ZERO_LSN(copy_lsn) &&
 	    LOG_COMPARE(&LSN(pagep), &argp->meta_lsn) <= 0))) {
 		/* Need to redo the deallocation. */
@@ -970,7 +975,7 @@ trunc:			if ((ret = __memp_ftruncate(mpf, NULL, ip,
 			P_INIT(pagep, 0, PGNO_INVALID,
 			    PGNO_INVALID, PGNO_INVALID, 0, P_INVALID);
 			ZERO_LSN(pagep->lsn);
-		} else {
+		} else if (cmp_p == 0 || IS_ZERO_LSN(LSN(pagep))) {
 			REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
 			P_INIT(pagep, file_dbp->pgsize,
 			    argp->pgno, PGNO_INVALID, argp->next, 0, P_INVALID);
@@ -1150,8 +1155,8 @@ __db_cksum_recover(env, dbtp, lsnp, op, info)
 	if (F_ISSET(env, ENV_RECOVER_FATAL))
 		ret = 0;
 	else {
-		__db_errx(env,
-		    "Checksum failure requires catastrophic recovery");
+		__db_errx(env, DB_STR("0642",
+		    "Checksum failure requires catastrophic recovery"));
 		ret = __env_panic(env, DB_RUNRECOVERY);
 	}
 
@@ -1848,8 +1853,8 @@ do_truncate:
 	 */
 	if ((pagep == NULL || IS_ZERO_LSN(LSN(pagep))) &&
 	    IS_ZERO_LSN(argp->page_lsn) && DB_UNDO(op)) {
-no_rollback:	__db_errx(env,
-"Cannot replicate prepared transactions from master running release 4.2 ");
+no_rollback:	__db_errx(env, DB_STR("0643",
+"Cannot replicate prepared transactions from master running release 4.2 "));
 		ret = __env_panic(env, EINVAL);
 	}
 
@@ -2348,6 +2353,7 @@ __db_merge_recover(env, dbtp, lsnp, op, info)
 	DB_LOCK handle_lock;
 	DB_LOCKREQ request;
 	DB_MPOOLFILE *mpf;
+	HASH *ht;
 	PAGE *pagep;
 	db_indx_t indx, *ninp, *pinp;
 	u_int32_t size;
@@ -2430,7 +2436,7 @@ do_lsn:		pagep->lsn = *lsnp;
 				bt = file_dbp->bt_internal;
 				if (argp->npgno == bt->bt_meta ||
 				    argp->npgno == bt->bt_root)
-				    	file_dbp->mpf->mfp->revision++;
+					file_dbp->mpf->mfp->revision++;
 			}
 			if (argp->npgno == file_dbp->meta_pgno) {
 				F_CLR(file_dbp, DB_AM_RECOVER);
@@ -2447,15 +2453,15 @@ do_lsn:		pagep->lsn = *lsnp;
 					goto err;
 
 				/* Move the other handles to the new lock. */
-				ret = __lock_change(file_dbp->env, 
+				ret = __lock_change(file_dbp->env,
 				    &handle_lock, &file_dbp->handle_lock);
-				
-err:				memset(&request, 0, sizeof (request));
+
+err:				memset(&request, 0, sizeof(request));
 				request.op = DB_LOCK_PUT_ALL;
 				if ((t_ret = __lock_vec(
 				    file_dbp->env, dbc->locker,
 				    0, &request, 1, NULL)) != 0 && ret == 0)
-				    	ret = t_ret;
+					ret = t_ret;
 				F_SET(file_dbp, DB_AM_RECOVER);
 				if (ret != 0)
 					goto out;
@@ -2569,20 +2575,37 @@ next:	if ((ret = __memp_fget(mpf, &argp->npgno, ip, NULL, 0, &pagep)) != 0) {
 		if (op == DB_TXN_ABORT) {
 			/*
 			 * If we are undoing a meta/root page move we must
-			 * bump the revision number and put the handle
-			 * locks back to their original state.
+			 * bump the revision number. Put the handle
+			 * locks back to their original state if we
+			 * moved the metadata page.
 			 */
+			i = 0;
 			if (file_dbp->type == DB_HASH) {
-				if (argp->pgno == file_dbp->meta_pgno)
+				ht = file_dbp->h_internal;
+				if (argp->pgno == ht->meta_pgno) {
+					ht->meta_pgno = argp->npgno;
 					file_dbp->mpf->mfp->revision++;
+					i = 1;
+				}
 			} else {
 				bt = file_dbp->bt_internal;
-				if (argp->pgno == bt->bt_meta ||
-				    argp->pgno == bt->bt_root)
+				if (argp->pgno == bt->bt_meta) {
 					file_dbp->mpf->mfp->revision++;
+					bt->bt_meta = argp->npgno;
+					i = 1;
+				} else if (argp->pgno == bt->bt_root) {
+					file_dbp->mpf->mfp->revision++;
+					bt->bt_root = argp->npgno;
+				}
 			}
-			if (argp->pgno == file_dbp->meta_pgno) {
+			if (argp->pgno == file_dbp->meta_pgno) 
 				file_dbp->meta_pgno = argp->npgno;
+
+			/*
+			 * If we detected a metadata page above, move
+			 * the handle locks to the new page.
+			 */
+			if (i == 1) {
 				handle_lock = file_dbp->handle_lock;
 				if ((ret = __fop_lock_handle(file_dbp->env,
 				    file_dbp, file_dbp->locker, DB_LOCK_READ,

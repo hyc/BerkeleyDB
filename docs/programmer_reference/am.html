@@ -12,7 +12,10 @@
     <link rel="next" href="am_opensub.html" title="Opening multiple databases in a single file" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 3. 
@@ -56,17 +59,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_opensub.html#idp50593360">Configuring databases sharing a file</a>
+                  <a href="am_opensub.html#id3882996">Configuring databases sharing a file</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_opensub.html#idp50628832">Caching databases sharing a file</a>
+                  <a href="am_opensub.html#id3883008">Caching databases sharing a file</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_opensub.html#idp50629528">Locking in databases based on sharing a file</a>
+                  <a href="am_opensub.html#id3883020">Locking in databases based on sharing a file</a>
                 </span>
               </dt>
             </dl>
@@ -149,7 +152,7 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_second.html#idp50703760">Error Handling With Secondary Indexes</a>
+                  <a href="am_second.html#id3884591">Error Handling With Secondary Indexes</a>
                 </span>
               </dt>
             </dl>
@@ -219,332 +222,7 @@ version upgrade (<a href="../api_reference/C/dbupgrade.html" class="olink">DB-&g
 (<a href="../api_reference/C/dbverify.html" class="olink">DB-&gt;verify()</a>), flushing to a backing file (<a href="../api_reference/C/dbsync.html" class="olink">DB-&gt;sync()</a>),
 and association of secondary indices (<a href="../api_reference/C/dbassociate.html" class="olink">DB-&gt;associate()</a>).  Database
 handles are eventually closed using <a href="../api_reference/C/dbclose.html" class="olink">DB-&gt;close()</a>.</p>
-      <div class="informaltable">
-        <table border="1" width="80%">
-          <colgroup>
-            <col />
-            <col />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Database Operations</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbcreate.html" class="olink">db_create()</a>
-              </td>
-              <td>Create a database handle</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbassociate.html" class="olink">DB-&gt;associate()</a>
-              </td>
-              <td>Associate a secondary index</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbassociate_foreign.html" class="olink">DB-&gt;associate_foreign()</a>
-              </td>
-              <td>Associate a foreign index</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbclose.html" class="olink">DB-&gt;close()</a>
-              </td>
-              <td>Close a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbcompact.html" class="olink">DB-&gt;compact()</a>
-              </td>
-              <td>Compact a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbcursor.html" class="olink">DB-&gt;cursor()</a>
-              </td>
-              <td>Create a cursor</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>
-              </td>
-              <td>Delete items from a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dberr.html" class="olink">DB-&gt;err()</a>
-              </td>
-              <td>Error message</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbexists.html" class="olink">DB-&gt;existis()</a>
-              </td>
-              <td>Return if an item appears in a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbfd.html" class="olink">DB-&gt;fd()</a>
-              </td>
-              <td>Return a file descriptor from a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>
-              </td>
-              <td>Get items from a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbget_byteswapped.html" class="olink">DB-&gt;get_byteswapped()</a>
-              </td>
-              <td>Return if the underlying database is in host order</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbget_type.html" class="olink">DB-&gt;get_type()</a>
-              </td>
-              <td>Return the database type</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a>
-              </td>
-              <td>Perform a database join on cursors</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbkey_range.html" class="olink">DB-&gt;key_range()</a>
-              </td>
-              <td>Return estimate of key location</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a>
-              </td>
-              <td>Open a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>
-              </td>
-              <td>Store items into a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbremove.html" class="olink">DB-&gt;remove()</a>
-              </td>
-              <td>Remove a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbrename.html" class="olink">DB-&gt;rename()</a>
-              </td>
-              <td>Rename a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_priority.html" class="olink">DB-&gt;set_priority()</a>
-              </td>
-              <td>Set cache page priority</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbstat.html" class="olink">DB-&gt;stat()</a>
-              </td>
-              <td>Database statistics</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbsync.html" class="olink">DB-&gt;sync()</a>
-              </td>
-              <td>Flush a database to stable storage</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbtruncate.html" class="olink">DB-&gt;truncate()</a>
-              </td>
-              <td>Empty a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbupgrade.html" class="olink">DB-&gt;upgrade()</a>
-              </td>
-              <td>Upgrade a database</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbverify.html" class="olink">DB-&gt;verify()</a>
-              </td>
-              <td>Verify/salvage a database</td>
-            </tr>
-            <tr>
-              <td>Database Configuration</td>
-              <td> </td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_alloc.html" class="olink">DB-&gt;set_alloc()</a>
-              </td>
-              <td>Set local space allocation functions</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_cachesize.html" class="olink">DB-&gt;set_cachesize()</a>
-              </td>
-              <td>Set the database cache size</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_dup_compare.html" class="olink">DB-&gt;set_dup_compare()</a>
-              </td>
-              <td>Set a duplicate comparison function</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_encrypt.html" class="olink">DB-&gt;set_encrypt()</a>
-              </td>
-              <td>Set the database cryptographic key</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_errcall.html" class="olink">DB-&gt;set_errcall()</a>
-              </td>
-              <td>Set error and informational message callback</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_errfile.html" class="olink">DB-&gt;set_errfile()</a>
-              </td>
-              <td>Set error and informational message FILE</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_errpfx.html" class="olink">DB-&gt;set_errpfx()</a>
-              </td>
-              <td>Set error message prefix</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_feedback.html" class="olink">DB-&gt;set_feedback()</a>
-              </td>
-              <td>Set feedback callback</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_flags.html" class="olink">DB-&gt;set_flags()</a>
-              </td>
-              <td>General database configuration</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_lorder.html" class="olink">DB-&gt;set_lorder()</a>
-              </td>
-              <td>Set the database byte order</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_pagesize.html" class="olink">DB-&gt;set_pagesize()</a>
-              </td>
-              <td>Set the underlying database page size</td>
-            </tr>
-            <tr>
-              <td>Btree/Recno Configuration</td>
-              <td> </td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_append_recno.html" class="olink">DB-&gt;set_append_recno()</a>
-              </td>
-              <td>Set record append callback</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_bt_compare.html" class="olink">DB-&gt;set_bt_compare()</a>
-              </td>
-              <td>Set a Btree comparison function</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_bt_minkey.html" class="olink">DB-&gt;set_bt_minkey()</a>
-              </td>
-              <td>Set the minimum number of keys per Btree page</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_bt_prefix.html" class="olink">DB-&gt;set_bt_prefix()</a>
-              </td>
-              <td>Set a Btree prefix comparison function</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_re_delim.html" class="olink">DB-&gt;set_re_delim()</a>
-              </td>
-              <td>Set the variable-length record delimiter</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_re_len.html" class="olink">DB-&gt;set_re_len()</a>
-              </td>
-              <td>Set the fixed-length record length</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_re_pad.html" class="olink">DB-&gt;set_re_pad()</a>
-              </td>
-              <td>Set the fixed-length record pad byte</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_re_source.html" class="olink">DB-&gt;set_re_source()</a>
-              </td>
-              <td>Set the backing Recno text file</td>
-            </tr>
-            <tr>
-              <td>Hash Configuration</td>
-              <td> </td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_h_compare.html" class="olink">DB-&gt;set_h_compare()</a>
-              </td>
-              <td>Set a Hash comparison function</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_h_ffactor.html" class="olink">DB-&gt;set_h_ffactor()</a>
-              </td>
-              <td>Set the Hash table density</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_h_hash.html" class="olink">DB-&gt;set_h_hash()</a>
-              </td>
-              <td>Set a hashing function</td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_h_nelem.html" class="olink">DB-&gt;set_h_nelem()</a>
-              </td>
-              <td>Set the Hash table size</td>
-            </tr>
-            <tr>
-              <td>Queue Configuration</td>
-              <td> </td>
-            </tr>
-            <tr>
-              <td>
-                <a href="../api_reference/C/dbset_q_extentsize.html" class="olink">DB-&gt;set_q_extentsize()</a>
-              </td>
-              <td>Set Queue database extent size</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <p>For more information on the access method operations supported by the database handle, see the <a href="../api_reference/C/db.html#dblist" class="olink">Database and Related Methods</a> section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em> </p>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -553,31 +231,44 @@ handles are eventually closed using <a href="../api_reference/C/dbclose.html" cl
             </div>
           </div>
         </div>
-        <p>The <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a> method opens a database, and takes five arguments:</p>
+        <p>
+        The <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a> method opens a database, and takes five arguments:
+    </p>
         <div class="variablelist">
           <dl>
             <dt>
               <span class="term">file</span>
             </dt>
-            <dd>The name of the file to be opened.</dd>
+            <dd>
+                The name of the file to be opened.
+            </dd>
             <dt>
               <span class="term">database</span>
             </dt>
-            <dd>An optional database name.</dd>
+            <dd>
+                An optional database name.
+            </dd>
             <dt>
               <span class="term">type</span>
             </dt>
-            <dd>The type of database to open.  This value will be one of the four access
-methods Berkeley DB supports: DB_BTREE, DB_HASH, DB_QUEUE or DB_RECNO, or the
-special value DB_UNKNOWN, which allows you to open an existing file
-without knowing its type.</dd>
+            <dd>
+                The type of database to open.  This value will be one of
+                the five access methods Berkeley DB supports: DB_BTREE,
+                DB_HASH, DB_HEAP, DB_QUEUE or DB_RECNO, or the special
+                value DB_UNKNOWN, which allows you to open an existing file
+                without knowing its type.
+            </dd>
             <dt>
               <span class="term">mode</span>
             </dt>
-            <dd>The permissions to give to any created file.</dd>
+            <dd>
+                The permissions to give to any created file.
+            </dd>
           </dl>
         </div>
-        <p>There are a few flags that you can set to customize open:</p>
+        <p>
+        There are a few flags that you can set to customize open:
+    </p>
         <div class="variablelist">
           <dl>
             <dt>
@@ -585,42 +276,55 @@ without knowing its type.</dd>
                 <a href="../api_reference/C/dbopen.html#open_DB_CREATE" class="olink">DB_CREATE</a>
               </span>
             </dt>
-            <dd>Create the underlying database and any necessary physical files.</dd>
+            <dd>
+                Create the underlying database and any necessary physical files.
+            </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbopen.html#open_DB_NOMMAP" class="olink">DB_NOMMAP</a>
               </span>
             </dt>
-            <dd>Do not map this database into process memory.</dd>
+            <dd>
+                Do not map this database into process memory.
+            </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbopen.html#dbopen_DB_RDONLY" class="olink">DB_RDONLY</a>
               </span>
             </dt>
-            <dd>Treat the data base as read-only.</dd>
+            <dd>
+                Treat the data base as read-only.
+            </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbopen.html#open_DB_THREAD" class="olink">DB_THREAD</a>
               </span>
             </dt>
-            <dd>The returned handle is free-threaded, that is, it can be used
-simultaneously by multiple threads within the process.</dd>
+            <dd>
+                The returned handle is free-threaded, that is, it can be
+                used simultaneously by multiple threads within the process.
+            </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbopen.html#open_DB_TRUNCATE" class="olink">DB_TRUNCATE</a>
               </span>
             </dt>
-            <dd>Physically truncate the underlying database file, discarding all
-databases it contained. Underlying filesystem primitives are used to
-implement this flag. For this reason it is only applicable to the
-physical file and cannot be used to discard individual databases from
-within physical files.</dd>
+            <dd>
+                Physically truncate the underlying database file,
+                discarding all databases it contained. Underlying
+                filesystem primitives are used to implement this flag. For
+                this reason it is only applicable to the physical file and
+                cannot be used to discard individual databases from within
+                physical files.
+            </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbset_feedback.html#set_feedback_DB_UPGRADE" class="olink">DB_UPGRADE</a>
               </span>
             </dt>
-            <dd>Upgrade the database format as necessary.</dd>
+            <dd>
+                Upgrade the database format as necessary.
+            </dd>
           </dl>
         </div>
       </div>

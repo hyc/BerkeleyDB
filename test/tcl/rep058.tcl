@@ -16,6 +16,7 @@ proc rep058 { method { tnum "058" } args } {
 
 	source ./include.tcl
 	global repfiles_in_memory
+	global env_private
 
 	# There should be no difference with methods.  Just use btree.
 	if { $checking_valid_methods } {
@@ -34,7 +35,12 @@ proc rep058 { method { tnum "058" } args } {
 	if { $repfiles_in_memory } {
 		set msg2 "and in-memory replication files"
 	}
-	
+
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	foreach r $test_recopts {
 		foreach l $logsets {
 			set logindex [lsearch -exact $l "in-memory"]
@@ -45,7 +51,7 @@ proc rep058 { method { tnum "058" } args } {
 			}
 
 			puts "Rep$tnum ($method $r): Replication with \
-			    pre-created databases $msg2."
+			    pre-created databases $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep058_sub $method $tnum $l $r $args
@@ -56,6 +62,7 @@ proc rep058 { method { tnum "058" } args } {
 proc rep058_sub { method tnum logset recargs largs } {
 	source ./include.tcl
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -67,6 +74,11 @@ proc rep058_sub { method tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set orig_tdir $testdir
@@ -96,6 +108,7 @@ proc rep058_sub { method tnum logset recargs largs } {
 	repladd 1
 	set envcmd(M) "berkdb_env_noerr -create $m_txnargs \
 	    $m_logargs -lock_detect default $verbargs $repmemargs \
+	    $privargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set menv [eval $envcmd(M) $recargs]
 
@@ -103,6 +116,7 @@ proc rep058_sub { method tnum logset recargs largs } {
 	repladd 2
 	set envcmd(C) "berkdb_env_noerr -create $c_txnargs \
 	    $c_logargs -lock_detect default $verbargs $repmemargs \
+	    $privargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set cenv [eval $envcmd(C) $recargs]
 	error_check_good client_env [is_valid_env $cenv] TRUE

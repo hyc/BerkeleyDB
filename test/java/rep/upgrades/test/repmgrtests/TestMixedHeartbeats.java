@@ -25,7 +25,7 @@ public class TestMixedHeartbeats extends AbstractUpgTest {
 
     public interface Ops {
         public void setConfig(Config c);
-        public void joinExistingClient(int site, boolean configMaster, boolean useHB)
+        public void joinExistingClient(int site, boolean useHB)
             throws Exception;
         public void becomeMaster(int site) throws Exception;
         public MyStats getStats(int site) throws Exception;
@@ -93,7 +93,7 @@ public class TestMixedHeartbeats extends AbstractUpgTest {
         oldGroup.createMaster(0, false);
         oldGroup.establishClient(1, true);
 
-        currentGroup.joinExistingClient(1, true, true);
+        currentGroup.joinExistingClient(1, true);
 
         // Even though the v1 site clearly cannot be sending heartbeats,
         // the v2 site should be smart enough not to consider that an
@@ -110,7 +110,6 @@ public class TestMixedHeartbeats extends AbstractUpgTest {
         // Shut down master, verify that client takes over.
         //
         oldGroup.shutDown(0);
-        System.out.println("will call becomeMaster");
         currentGroup.becomeMaster(1);
         s1 = currentGroup.getStats(1);
         assertEquals(initialCount+1, s1.elections);
@@ -124,7 +123,7 @@ public class TestMixedHeartbeats extends AbstractUpgTest {
         // 
         oldGroup.remove(0);
         currentGroup.checkpoint(0);
-        currentGroup.joinExistingClient(0, true, true);
+        currentGroup.joinExistingClient(0, true);
 
         // Now site 1 is master, and site 0 has rejoined as a client, both running
         // 4.7 (or higher).  Pause again; heartbeats should be flowing, and there

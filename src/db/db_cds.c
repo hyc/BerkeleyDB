@@ -20,6 +20,7 @@ static int __cdsgroup_discard __P((DB_TXN *txn, u_int32_t flags));
 static u_int32_t __cdsgroup_id __P((DB_TXN *txn));
 static int __cdsgroup_notsup __P((ENV *env, const char *meth));
 static int __cdsgroup_prepare __P((DB_TXN *txn, u_int8_t *gid));
+static int __cdsgroup_get_name __P((DB_TXN *txn, const char **namep));
 static int __cdsgroup_set_name __P((DB_TXN *txn, const char *name));
 static int __cdsgroup_set_timeout
     __P((DB_TXN *txn, db_timeout_t timeout, u_int32_t flags));
@@ -33,7 +34,8 @@ __cdsgroup_notsup(env, meth)
 	ENV *env;
 	const char *meth;
 {
-	__db_errx(env, "CDS groups do not support %s", meth);
+	__db_errx(env, DB_STR_A("0687", "CDS groups do not support %s", "%s"),
+	    meth);
 	return (DB_OPNOTSUP);
 }
 
@@ -59,7 +61,7 @@ __cdsgroup_commit(txn, flags)
 
 	/* Check for live cursors. */
 	if (txn->cursors != 0) {
-		__db_errx(env, "CDS group has active cursors");
+		__db_errx(env, DB_STR("0688", "CDS group has active cursors"));
 		return (EINVAL);
 	}
 
@@ -97,6 +99,14 @@ static int __cdsgroup_prepare(txn, gid)
 {
 	COMPQUIET(gid, NULL);
 	return (__cdsgroup_notsup(txn->mgrp->env, "prepare"));
+}
+
+static int __cdsgroup_get_name(txn, namep)
+	DB_TXN *txn;
+	const char **namep;
+{
+	COMPQUIET(namep, NULL);
+	return (__cdsgroup_notsup(txn->mgrp->env, "get_name"));
 }
 
 static int __cdsgroup_set_name(txn, name)
@@ -148,6 +158,7 @@ __cdsgroup_begin(env, txnpp)
 	txn->discard = __cdsgroup_discard;
 	txn->id = __cdsgroup_id;
 	txn->prepare = __cdsgroup_prepare;
+	txn->get_name = __cdsgroup_get_name;
 	txn->set_name = __cdsgroup_set_name;
 	txn->set_timeout = __cdsgroup_set_timeout;
 

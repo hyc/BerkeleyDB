@@ -23,7 +23,7 @@ __bam_split_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_split", __bam_split_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_split", __bam_split_desc, info));
 }
 
 /*
@@ -40,7 +40,7 @@ __bam_split_48_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_split_48", __bam_split_48_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_split_48", __bam_split_48_desc, info));
 }
 
 /*
@@ -57,7 +57,7 @@ __bam_split_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_split_42", __bam_split_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_split_42", __bam_split_42_desc, info));
 }
 
 /*
@@ -74,7 +74,7 @@ __bam_rsplit_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_rsplit", __bam_rsplit_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_rsplit", __bam_rsplit_desc, info));
 }
 
 /*
@@ -91,7 +91,7 @@ __bam_adj_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_adj", __bam_adj_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_adj", __bam_adj_desc, info));
 }
 
 /*
@@ -108,7 +108,7 @@ __bam_cadjust_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_cadjust", __bam_cadjust_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_cadjust", __bam_cadjust_desc, info));
 }
 
 /*
@@ -125,7 +125,7 @@ __bam_cdel_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_cdel", __bam_cdel_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_cdel", __bam_cdel_desc, info));
 }
 
 /*
@@ -142,7 +142,7 @@ __bam_repl_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_repl", __bam_repl_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_repl", __bam_repl_desc, info));
 }
 
 /*
@@ -159,7 +159,7 @@ __bam_irep_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_irep", __bam_irep_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_irep", __bam_irep_desc, info));
 }
 
 /*
@@ -176,7 +176,7 @@ __bam_root_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_root", __bam_root_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_root", __bam_root_desc, info));
 }
 
 /*
@@ -193,7 +193,7 @@ __bam_curadj_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_curadj", __bam_curadj_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_curadj", __bam_curadj_desc, info));
 }
 
 /*
@@ -210,7 +210,7 @@ __bam_rcuradj_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_rcuradj", __bam_rcuradj_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_rcuradj", __bam_rcuradj_desc, info));
 }
 
 /*
@@ -227,7 +227,7 @@ __bam_relink_43_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_relink_43", __bam_relink_43_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_relink_43", __bam_relink_43_desc, info));
 }
 
 /*
@@ -244,7 +244,7 @@ __bam_merge_44_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__bam_merge_44", __bam_merge_44_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__bam_merge_44", __bam_merge_44_desc, info));
 }
 
 /*

@@ -1,8 +1,18 @@
 package SQLite.JDBC2y;
 
-import java.sql.*;
 import java.math.BigDecimal;
-import java.util.*;
+import java.sql.Array;
+import java.sql.BatchUpdateException;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.ParameterMetaData;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Map;
 
 class BatchArg {
     String arg;
@@ -37,9 +47,10 @@ public class JDBCPreparedStatement extends JDBCStatement
     }
 
     private String fixup(String sql) {
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder(sql.length());
 	boolean inq = false;
 	int nparm = 0;
+	int iscreate = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
 	    if (c == '\'') {
@@ -69,7 +80,24 @@ public class JDBCPreparedStatement extends JDBCStatement
 		}
 	    } else if (c == ';') {
 		if (!inq) {
-		    break;
+		    if (iscreate < 0) {
+			int ii = 0;
+			while (sb.charAt(ii) == ' ' ||
+			       sb.charAt(ii) == '\t' ||
+			       sb.charAt(ii) == '\n' ||
+			       sb.charAt(ii) == '\r') {
+			    ++ii;
+			}
+			String t = sb.substring(ii, ii + 6);
+			if (t.compareToIgnoreCase("create") == 0) {
+			    iscreate = 1;
+			} else {
+			    iscreate = 0;
+			}
+		    }
+		    if (iscreate == 0) {
+			break;
+		    }
 		}
 		sb.append(c);
 	    } else if (c == '%') {
@@ -91,7 +119,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (!conn.db.is3()) {
 	    return sql;
 	}
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder(sql.length());
 	int parm = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
@@ -386,8 +414,12 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (batch == null) {
 	    batch = new ArrayList<BatchArg>(args.length);
 	}
-	for (int i = 0; i < args.length; i++) {
-	    batch.add(new BatchArg(args[i], blobs[i]));
+	if (args.length == 0) {
+	    batch.add(new BatchArg(null, false));
+	} else {
+	    for (int i = 0; i < args.length; i++) {
+		batch.add(new BatchArg(args[i], blobs[i]));
+	    }
 	}
     }
 
@@ -395,7 +427,12 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (batch == null) {
 	    return new int[0];
 	}
-	int[] ret = new int[batch.size() / args.length];
+	int[] ret;
+	if (args.length == 0) {
+	    ret = new int[batch.size()];
+	} else {
+	    ret = new int[batch.size() / args.length];
+	}
 	for (int i = 0; i < ret.length; i++) {
 	    ret[i] = EXECUTE_FAILED;
 	}
@@ -403,8 +440,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	int index = 0;
 	for (int i = 0; i < ret.length; i++) {
 	    for (int k = 0; k < args.length; k++) {
-		BatchArg b = (BatchArg) batch.get(index++);
-
+		BatchArg b = batch.get(index++);
 		args[k] = b.arg;
 		blobs[k] = b.blob;
 	    }

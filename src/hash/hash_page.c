@@ -86,7 +86,8 @@ __ham_item(dbc, mode, pgnop)
 	hcp = (HASH_CURSOR *)dbc->internal;
 
 	if (F_ISSET(hcp, H_DELETED)) {
-		__db_errx(dbp->env, "Attempt to return a deleted item");
+		__db_errx(dbp->env, DB_STR("1132",
+		    "Attempt to return a deleted item"));
 		return (EINVAL);
 	}
 	F_CLR(hcp, H_OK | H_NOMORE);
@@ -158,9 +159,11 @@ __ham_item_reset(dbc)
 	hcp = (HASH_CURSOR *)dbc->internal;
 
 	ret = 0;
-	if (hcp->page != NULL)
+	if (hcp->page != NULL) {
 		ret = __memp_fput(mpf,
 		    dbc->thread_info, hcp->page, dbc->priority);
+		hcp->page = NULL;
+	}
 
 	if ((t_ret = __ham_item_init(dbc)) != 0 && ret == 0)
 		ret = t_ret;
@@ -1865,7 +1868,7 @@ next_page:
 					goto err;
 				if ((ret = __memp_fput(mpf, dbc->thread_info,
 				    to_pagep, dbc->priority)) != 0)
-				    	goto err;
+					goto err;
 				to_pagep = next_pagep;
 				next_pagep = NULL;
 				if (c_data != NULL &&
@@ -2078,7 +2081,7 @@ next_page:
 			    &LSN(prev_pagep), 0, NEXT_PGNO(prev_pagep),
 			    NEXT_PGNO(last_pagep), PGNO(prev_pagep),
 			    &LSN(prev_pagep), PGNO_INVALID, NULL)) != 0)
-			    	goto err;
+				goto err;
 		} else {
 			LSN_NOT_LOGGED(LSN(to_pagep));
 			LSN_NOT_LOGGED(LSN(first_pagep));
@@ -2266,7 +2269,7 @@ __ham_split_page(dbc, obucket, nbucket)
 					goto err;
 				if ((ret = __memp_fput(mpf,
 				    dbc->thread_info, *pp, dbc->priority)) != 0)
-				    	goto err;
+					goto err;
 				*pp = next_pagep;
 			}
 

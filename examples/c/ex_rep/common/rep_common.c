@@ -37,7 +37,8 @@ common_rep_setup(dbenv, argc, argv, setup_info)
 	char ch, *portstr;
 	int ack_policy, got_self, is_repmgr, maxsites, priority, ret;
 
-	got_self = is_repmgr = maxsites = ret = site.peer = 0;
+	got_self = is_repmgr = maxsites = ret = 0;
+	site.peer = site.creator = 0;
 
 	priority = 100;
 	ack_policy = DB_REPMGR_ACKS_QUORUM;
@@ -52,7 +53,7 @@ common_rep_setup(dbenv, argc, argv, setup_info)
 	 * whether or not a command line option is specified are after
 	 * this while/switch statement.
 	 */
-	while ((ch = getopt(argc, argv, "a:bCh:l:Mn:p:R:r:v")) != EOF) {
+	while ((ch = getopt(argc, argv, "a:bCh:L:l:Mn:p:R:r:v")) != EOF) {
 		switch (ch) {
 		case 'a':
 			if (!is_repmgr)
@@ -82,6 +83,10 @@ common_rep_setup(dbenv, argc, argv, setup_info)
 		case 'h':
 			setup_info->home = optarg;
 			break;
+		case 'L':
+			if (!is_repmgr)
+				usage(is_repmgr, setup_info->progname);
+			setup_info->self.creator = 1; /* FALLTHROUGH */
 		case 'l':
 			setup_info->self.host = strtok(optarg, ":");
 			if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -96,15 +101,16 @@ common_rep_setup(dbenv, argc, argv, setup_info)
 			setup_info->role = MASTER;
 			break;
 		case 'n':
+			if (is_repmgr)
+				usage(is_repmgr, setup_info->progname);
 			setup_info->nsites = atoi(optarg);
 			/*
-			 * For repmgr, set the total number of sites in the
-			 * replication group.  This is used by repmgr internal
-			 * election processing.  For base replication, nsites
+			 * For repmgr, using group membership, we cannot
+			 * set this any more. For base replication, nsites
 			 * is simply passed back to main for use in its
 			 * communications and election processing.
 			 */
-			if (is_repmgr && setup_info->nsites > 0 &&
+			if (setup_info->nsites > 0 &&
 			    (ret = dbenv->rep_set_nsites(dbenv,
 			    setup_info->nsites)) != 0) {
 				dbenv->err(dbenv, ret,
@@ -529,10 +535,12 @@ env_init(dbenv, home)
  * -C or -M start up as client or master (optional for repmgr, required
  *      for base example)
  * -h home directory (required)
- * -l host:port (required; l stands for local)
- * -n nsites (optional; number of sites in replication group; defaults to 0
- *	in which case we try to dynamically compute the number of sites in
- *	the replication group)
+ * -l host:port (required for base example; 
+ *      required for repmgr unless -L is specified; l stands for local)
+ * -L host:port (optional; repmgr only, local site will be the group creator)
+ * -n nsites (optional; base example only, number of sites in replication group;
+ *      defaults to 0 in which case we try to dynamically compute the
+ *      number of sites in the replication group)
  * -p priority (optional: defaults to 100)
  * -r host:port (optional; r stands for remote; any number of these may be
  *	specified)
@@ -546,9 +554,9 @@ usage(is_repmgr, progname)
 {
 	fprintf(stderr, "usage: %s ", progname);
 	if (is_repmgr)
-		fprintf(stderr, "[-CM]-h home -l host:port[-r host:port]%s%s",
-		    "[-R host:port][-a all|quorum][-b][-n nsites]",
-		    "[-p priority][-v]\n");
+		fprintf(stderr, "[-CM]-h home -l|-L host:port %s%s\n",
+		    "[-r host:port][-R host:port][-a all|quorum]",
+		    "[-b][-p priority][-v]");
 	else
 		fprintf(stderr, "-CM -h home -l host:port[-r host:port]%s",
 		    "[-b][-n nsites][-p priority][-v]\n");

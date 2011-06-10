@@ -21,6 +21,12 @@ proc test130 { method {nentries 10000} {num_db 3} {tnum "130"} args } {
 		return
 	}
 
+	# Heap cannot have subdatabases
+	if { [is_heap $method] == 1 } {
+		puts "Skipping test$tnum for method $method."
+		return
+	}
+
 	# If a page size was specified, find out what it is.  Pages
 	# might not be freed in the case of really large pages (64K)
 	# but we still want to run this test just to make sure

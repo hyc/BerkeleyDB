@@ -19,7 +19,7 @@ namespace CsharpAPITest
 	{
 
 		[TestFixtureSetUp]
-		public void SetUpTestFixture()
+		public override void SetUpTestFixture()
 		{
 			testFixtureName = "QueueDatabaseConfigTest";
 			base.SetUpTestfixture();

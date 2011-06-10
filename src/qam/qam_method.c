@@ -124,7 +124,8 @@ __qam_set_extentsize(dbp, extentsize)
 	DB_ILLEGAL_AFTER_OPEN(dbp, "DB->set_extentsize");
 
 	if (extentsize < 1) {
-		__db_errx(dbp->env, "Extent size must be at least 1");
+		__db_errx(dbp->env, DB_STR("1140",
+		    "Extent size must be at least 1"));
 		return (EINVAL);
 	}
 
@@ -314,8 +315,8 @@ __qam_rr(dbp, ip, txn, name, subdb, newname, op)
 	ret = 0;
 
 	if (subdb != NULL && name != NULL) {
-		__db_errx(env,
-		    "Queue does not support multiple databases per file");
+		__db_errx(env, DB_STR("1141",
+		    "Queue does not support multiple databases per file"));
 		return (EINVAL);
 	}
 

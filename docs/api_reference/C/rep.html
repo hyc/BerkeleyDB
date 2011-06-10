@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="prev" href="mutexunlock.html" title="DB_ENV-&gt;mutex_unlock()" />
-    <link rel="next" href="repelect.html" title="DB_ENV-&gt;rep_elect()" />
+    <link rel="next" href="db_site.html" title="The DB_SITE Handle" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 10. 
@@ -22,7 +25,7 @@
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="mutexunlock.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
-          <td width="20%" align="right"> <a accesskey="n" href="repelect.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="db_site.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -63,6 +66,12 @@
             the case, this is noted in the following method
             descriptions.
         </p>
+      <p>
+            Finally, Replication Manager applications use the 
+            <a class="link" href="db_site.html" title="The DB_SITE Handle">DB_SITE</a> class to manage
+            and configure replication sites. This handle is not used in any
+            way by Base API applications.
+        </p>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -82,17 +91,61 @@
             <tbody>
               <tr>
                 <td>
-                  <a class="xref" href="repmgrremote_site.html" title="DB_ENV-&gt;repmgr_add_remote_site()">DB_ENV-&gt;repmgr_add_remote_site()</a>
+                  <a class="xref" href="dbchannel_close.html" title="DB_CHANNEL-&gt;close()">DB_CHANNEL-&gt;close()</a>
                 </td>
-                <td>Specify the Replication Manager's remote sites</td>
+                <td>Closes a DB_CHANNEL handle</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbchannel_send_msg.html" title="DB_CHANNEL-&gt;send_msg()">DB_CHANNEL-&gt;send_msg()</a>
+                </td>
+                <td>Sends an asynchronous message on a DB_CHANNEL</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbchannel_send_request.html" title="DB_CHANNEL-&gt;send_request()">DB_CHANNEL-&gt;send_request()</a>
+                </td>
+                <td>Sends a synchronous message on a DB_CHANNEL</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbchannel_set_timeout.html" title="DB_CHANNEL-&gt;set_timeout()">DB_CHANNEL-&gt;set_timeout()</a>
+                </td>
+                <td>Sets the default timeout for the DB_CHANNEL</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="repmgr_channel.html" title="DB_ENV-&gt;repmgr_channel()">DB_ENV-&gt;repmgr_channel()</a>
+                </td>
+                <td>Creates a DB_CHANNEL handle</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="repmgr_local_site.html" title="DB_ENV-&gt;repmgr_local_site()">DB_ENV-&gt;repmgr_local_site()</a>
+                </td>
+                <td>Returns a DB_SITE handle for the local site</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()">DB_ENV-&gt;repmgr_msg_dispatch()</a>
+                </td>
+                <td>Creates a DB_CHANNEL handle</td>
               </tr>
               <tr>
                 <td><a class="xref" href="repmgrset_ack_policy.html" title="DB_ENV-&gt;repmgr_set_ack_policy()">DB_ENV-&gt;repmgr_set_ack_policy()</a>, <a class="xref" href="repmgrget_ack_policy.html" title="DB_ENV-&gt;repmgr_get_ack_policy()">DB_ENV-&gt;repmgr_get_ack_policy()</a></td>
                 <td>Specify the Replication Manager's client acknowledgement policy</td>
               </tr>
               <tr>
-                <td><a class="xref" href="repmgrlocal_site.html" title="DB_ENV-&gt;repmgr_set_local_site()">DB_ENV-&gt;repmgr_set_local_site()</a>, <a class="xref" href="repmgrget_local_site.html" title="DB_ENV-&gt;repmgr_get_local_site()">DB_ENV-&gt;repmgr_get_local_site()</a></td>
-                <td>Specify the Replication Manager's local site</td>
+                <td>
+                  <a class="xref" href="repmgr_site.html" title="DB_ENV-&gt;repmgr_site()">DB_ENV-&gt;repmgr_site()</a>
+                </td>
+                <td>Creates a DB_SITE handle</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="repmgr_site_by_eid.html" title="DB_ENV-&gt;repmgr_site_by_eid()">DB_ENV-&gt;repmgr_site_by_eid()</a>
+                </td>
+                <td>Creates a DB_SITE handle given an EID value</td>
               </tr>
               <tr>
                 <td>
@@ -188,6 +241,34 @@
                 </td>
               </tr>
               <tr>
+                <td>
+                  <a class="xref" href="dbsite_close.html" title="DB_SITE-&gt;close()">DB_SITE-&gt;close()</a>
+                </td>
+                <td>Closes the DB_SITE handle</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbsite_get_address.html" title="DB_SITE-&gt;get_address()">DB_SITE-&gt;get_address()</a>
+                </td>
+                <td>Returns a site's network address</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbsite_get_eid.html" title="DB_SITE-&gt;get_eid()">DB_SITE-&gt;get_eid()</a>
+                </td>
+                <td>Returns a site's Environment ID</td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="xref" href="dbsite_remove.html" title="DB_SITE-&gt;remove()">DB_SITE-&gt;remove()</a>
+                </td>
+                <td>Removes the site from the replication group</td>
+              </tr>
+              <tr>
+                <td><a class="xref" href="dbsite_set_config.html" title="DB_SITE-&gt;set_config()">DB_SITE-&gt;set_config()</a>, <a class="xref" href="dbsite_get_config.html" title="DB_SITE-&gt;get_config()">DB_SITE-&gt;get_config()</a></td>
+                <td>Configure a DB_SITE handle</td>
+              </tr>
+              <tr>
                 <td><a class="xref" href="repclockskew.html" title="DB_ENV-&gt;rep_set_clockskew()">DB_ENV-&gt;rep_set_clockskew()</a>, <a class="xref" href="repget_clockskew.html" title="DB_ENV-&gt;rep_get_clockskew()">DB_ENV-&gt;rep_get_clockskew()</a></td>
                 <td>Configure master lease clock adjustment</td>
               </tr>
@@ -239,14 +320,14 @@
         <tr>
           <td width="40%" align="left"><a accesskey="p" href="mutexunlock.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
-          <td width="40%" align="right"> <a accesskey="n" href="repelect.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="db_site.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DB_ENV-&gt;mutex_unlock() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DB_ENV-&gt;rep_elect()</td>
+          <td width="40%" align="right" valign="top"> The DB_SITE Handle</td>
         </tr>
       </table>
     </div>

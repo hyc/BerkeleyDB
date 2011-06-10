@@ -9,7 +9,7 @@
 #ifndef _DB_REP_H_
 #define	_DB_REP_H_
 
-#include "dbinc_auto/rep_auto.h"
+#include "dbinc_auto/rep_automsg.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -18,6 +18,7 @@ extern "C" {
 /*
  * Names of client temp databases.
  */
+#define	REPFILEPREFIX	"__db.rep"
 #define	REPDBNAME	"__db.rep.db"
 #define	REPPAGENAME     "__db.reppg.db"
 
@@ -29,6 +30,7 @@ extern "C" {
  */
 #define	REPSYSDBNAME	"__db.rep.system"
 #define	REPLSNHIST	"__db.lsn.history"
+#define	REPMEMBERSHIP	"__db.membership"
 #define	REPSYSDBPGSZ	1024
 
 /* Current version of commit token format, and LSN history database format. */
@@ -118,6 +120,8 @@ extern "C" {
 #define	DB_LOGVERSION_48	15
 #define	DB_LOGVERSION_48p2	16
 #define	DB_LOGVERSION_50	17
+#define	DB_LOGVERSION_51	17
+#define	DB_LOGVERSION_52	18
 #define	DB_LOGVERSION_MIN	DB_LOGVERSION_44
 #define	DB_REPVERSION_INVALID	0
 #define	DB_REPVERSION_44	3
@@ -126,7 +130,9 @@ extern "C" {
 #define	DB_REPVERSION_47	5
 #define	DB_REPVERSION_48	5
 #define	DB_REPVERSION_50	5
-#define	DB_REPVERSION		DB_REPVERSION_50
+#define	DB_REPVERSION_51	5
+#define	DB_REPVERSION_52	6
+#define	DB_REPVERSION		DB_REPVERSION_52
 #define	DB_REPVERSION_MIN	DB_REPVERSION_44
 
 /*
@@ -191,7 +197,7 @@ extern "C" {
 #define	REP_INITNAME	"__db.rep.init"
 #define	REP_INITVERSION_46	1
 #define	REP_INITVERSION_47	2
-#define	REP_INITVERSION		2
+#define	REP_INITVERSION		3
 
 /*
  * Database types for __rep_client_dbinit
@@ -248,13 +254,14 @@ typedef struct {
 	u_int32_t priority;
 	u_int32_t tiebreaker;
 	u_int32_t ctlflags;
+	u_int32_t data_gen;
 } VOTE1_CONTENT;
 
 /*
  * REP --
  * Shared replication structure.
  */
-typedef struct __rep {
+typedef struct __rep { /* SHARED */
 	db_mutex_t	mtx_region;	/* Region mutex. */
 	db_mutex_t	mtx_clientdb;	/* Client database mutex. */
 	db_mutex_t	mtx_ckp;	/* Checkpoint mutex. */
@@ -271,6 +278,7 @@ typedef struct __rep {
 	u_int32_t	egen;		/* Replication election generation. */
 	u_int32_t	spent_egen;	/* Egen satisfied by rep_elect call. */
 	u_int32_t	gen;		/* Replication generation number. */
+	u_int32_t	mgen;		/* Master gen seen by client. */
 	u_int32_t	asites;		/* Space allocated for sites. */
 	u_int32_t	nsites;		/* Number of sites in group. */
 	u_int32_t	nvotes;		/* Number of votes needed. */
@@ -347,6 +355,7 @@ typedef struct __rep {
 	int		winner;		/* Current winner EID. */
 	u_int32_t	w_priority;	/* Winner priority. */
 	u_int32_t	w_gen;		/* Winner generation. */
+	u_int32_t	w_datagen;	/* Winner data generation. */
 	DB_LSN		w_lsn;		/* Winner LSN. */
 	u_int32_t	w_tiebreaker;	/* Winner tiebreaking value. */
 	u_int32_t	votes;		/* Number of votes for this site. */
@@ -375,11 +384,10 @@ typedef struct __rep {
 	 * Replication Framework (repmgr) shared config information.
 	 */
 	db_mutex_t	mtx_repmgr;	/* Region mutex. */
-	SITEADDR	my_addr;	/* SITEADDR of local site. */
-
-	roff_t		siteinfo_off;	/* Offset of remote site info region. */
+	roff_t		siteinfo_off;	/* Offset of site array region. */
 	u_int		site_cnt;	/* Array slots in use. */
 	u_int		site_max;	/* Total array slots allocated. */
+	int		self_eid;	/* Where to find the local site. */
 	u_int		siteinfo_seq;	/* Number of updates to this info. */
 
 	pid_t		listener;
@@ -405,12 +413,13 @@ typedef struct __rep {
 	/* Configuration. */
 #define	REP_C_2SITE_STRICT	0x00001		/* Don't cheat on elections. */
 #define	REP_C_AUTOINIT		0x00002		/* Auto initialization. */
-#define	REP_C_BULK		0x00004		/* Bulk transfer. */
-#define	REP_C_DELAYCLIENT	0x00008		/* Delay client sync-up. */
-#define	REP_C_ELECTIONS		0x00010		/* Repmgr to use elections. */
-#define	REP_C_INMEM		0x00020		/* In-memory replication. */
-#define	REP_C_LEASE		0x00040		/* Leases configured. */
-#define	REP_C_NOWAIT		0x00080		/* Immediate error return. */
+#define	REP_C_AUTOROLLBACK	0x00004		/* Discard client txns: sync. */
+#define	REP_C_BULK		0x00008		/* Bulk transfer. */
+#define	REP_C_DELAYCLIENT	0x00010		/* Delay client sync-up. */
+#define	REP_C_ELECTIONS		0x00020		/* Repmgr to use elections. */
+#define	REP_C_INMEM		0x00040		/* In-memory replication. */
+#define	REP_C_LEASE		0x00080		/* Leases configured. */
+#define	REP_C_NOWAIT		0x00100		/* Immediate error return. */
 	u_int32_t	config;		/* Configuration flags. */
 
 	/* Election. */
@@ -431,7 +440,7 @@ typedef struct __rep {
 	/* See above for enumerated sync states. */
 	repsync_t	sync_state;	/* Recovery/synchronization flags. */
 
-	/* 
+	/*
 	 * When adding a new flag value, consider whether it should be
 	 * cleared in rep_start() when starting as a master or a client.
 	 */
@@ -449,10 +458,11 @@ typedef struct __rep {
 #define	REP_F_NIMDBS_LOADED	0x00000800	/* NIMDBs are materialized. */
 #define	REP_F_SKIPPED_APPLY	0x00001000	/* Skipped applying a record. */
 #define	REP_F_START_CALLED	0x00002000	/* Rep_start called. */
+#define	REP_F_SYS_DB_OP		0x00004000	/* Operation in progress. */
 	u_int32_t	flags;
 } REP;
 
-/* Information about a thread waiting in txn_applied(). */ 
+/* Information about a thread waiting in txn_applied(). */
 typedef enum {
 	AWAIT_GEN,		/* Client's gen is behind token gen. */
 	AWAIT_HISTORY,		/* Haven't received master's LSN db update. */
@@ -547,8 +557,13 @@ do {									\
  * replication is running recovery or because it's a handle entirely owned by
  * the replication code (replication opens its own databases to track state).
  */
+#define REP_FLAGS_SET(env)						\
+	((env)->rep_handle->region->flags != 0 ||			\
+	(env)->rep_handle->region->elect_flags != 0 ||			\
+	(env)->rep_handle->region->lockout_flags != 0)
+
 #define	IS_ENV_REPLICATED(env)						\
-	(REP_ON(env) && (env)->rep_handle->region->flags != 0)
+	(REP_ON(env) && REP_FLAGS_SET(env))
 
 /*
  * Update the temporary log archive block timer.
@@ -567,7 +582,7 @@ do {									\
  * forgetting to do so.  This macro should be used while holding the rep system
  * mutex (unless we know we're single-threaded for some other reason, like at
  * region create time).
- */ 
+ */
 #define	SET_GEN(g) do {							\
 	rep->gen = (g);							\
 	ZERO_LSN(rep->gen_base_lsn);					\
@@ -581,6 +596,13 @@ do {									\
 #define	REP_GAP_FORCE		0x001	/* Force a request for a gap. */
 #define	REP_GAP_REREQUEST	0x002	/* Gap request is a forced rerequest. */
 					/* REREQUEST is a superset of FORCE. */
+
+/*
+ * Flags indicating what kind of record we want to back up to, in the log.
+ */
+#define	REP_REC_COMMIT		0x001 	/* Most recent commit record. */
+#define	REP_REC_PERM		0x002	/* Most recent perm record. */
+					/* PERM is a superset of COMMIT. */
 
 /*
  * Basic pre/post-amble processing.
@@ -598,18 +620,18 @@ do {									\
 } while (0)
 
 /*
- * Macro to safely access curinfo and its internal DBT pointers from 
+ * Macro to safely access curinfo and its internal DBT pointers from
  * any process.  This should always be used to access curinfo.  If
  * the internal DBT pointers are to be used, mtx_clientdb must be held
  * between the time of this call and the use of the pointers.
  *
- * The current file information (curinfo) is stored in shared region 
+ * The current file information (curinfo) is stored in shared region
  * memory and accessed via an offset.  It contains two DBTs that themselves
  * point to allocated data.  __rep_nextfile() manages this information in a
- * single chunk of shared memory.  
+ * single chunk of shared memory.
  *
- * If different processes access curinfo, they may have different shared 
- * region addresses.  This means that curinfo and its pointers to DBT data 
+ * If different processes access curinfo, they may have different shared
+ * region addresses.  This means that curinfo and its pointers to DBT data
  * must be recalculated for each process starting with the offset.
  */
 #define GET_CURINFO(rep, infop, curinfo)				\
@@ -728,6 +750,7 @@ struct __db_rep {
 	 */
 	u_int		nthreads;	/* Msg processing threads. */
 	u_int		athreads;	/* Space allocated for msg threads. */
+	u_int		non_rep_th;	/* Threads in GMDB or channel msgs. */
 	u_int		aelect_threads; /* Space allocated for elect threads. */
 	u_int32_t	init_policy;
 	int		perm_policy;
@@ -740,15 +763,14 @@ struct __db_rep {
 
 	/* Thread synchronization. */
 	REPMGR_RUNNABLE *selector, **messengers, **elect_threads;
-	REPMGR_RUNNABLE	*preferred_elect_thr, *rereq_thread;
+	REPMGR_RUNNABLE	*preferred_elect_thr;
 	db_timespec	repstart_time;
 	mgr_mutex_t	*mutex;
-	cond_var_t	msg_avail, check_election, check_rereq;
+	cond_var_t	check_election, gmdb_idle, msg_avail;
+	waiter_t	ack_waiters; /* For threads awaiting PERM acks. */
 #ifdef DB_WIN32
-	ACK_WAITERS_TABLE *waiters;
 	HANDLE		signaler;
 #else
-	pthread_cond_t	ack_condition;
 	int		read_pipe, write_pipe;
 #endif
 
@@ -756,6 +778,7 @@ struct __db_rep {
 	REPMGR_SITE	*sites;		/* Array of known sites. */
 	u_int		site_cnt;	/* Array slots in use. */
 	u_int		site_max;	/* Total array slots allocated. */
+	int		self_eid;	/* Where to find the local site. */
 	u_int		siteinfo_seq;	/* Last known update to this list. */
 
 	/*
@@ -770,13 +793,55 @@ struct __db_rep {
 	} input_queue;
 
 	socket_t	listen_fd;
-	repmgr_netaddr_t my_addr;
 	db_timespec	last_bcast;	/* Time of last broadcast msg. */
 
 	int		finished; /* Repmgr threads should shut down. */
 	int		new_connection;	  /* Since last master seek attempt. */
 	int		takeover_pending; /* We've been elected master. */
+	int		mgr_started;
+	int		gmdb_busy;
+	int		client_intent;	/* Will relinquish master role. */
+	int		gmdb_dirty;
+	int		have_gmdb;
+	int		seen_repmsg;
 
+	/*
+	 * Flag to show what kind of transaction is currently in progress.
+	 * Primary means we're doing the first (critical) phase of a membership
+	 * DB update, where we care about perm failures.  In the secondary phase
+	 * we don't care.  Usually the value is "none", when normal user
+	 * transactions are happening.  We need to use this global flag because
+	 * we don't have a more proper direct channel to communicate information
+	 * between the originator of a transaction and the replication send()
+	 * function that has to wait for acks and decide what to do about them.
+	 */ 
+	enum { none, gmdb_primary, gmdb_secondary } active_gmdb_update;
+	int		limbo_resolution_needed;
+
+	/*
+	 * GMDB update sequence count.  On creation we write version 1; so, once
+	 * repmgr has started and tried to read, a 0 here can be taken to mean
+	 * that the DB doesn't exist yet.
+	 */
+	u_int32_t	membership_version;
+	u_int32_t	member_version_gen;
+
+	/* LSN of GMDB txn that got a perm failure. */
+	DB_LSN		limbo_failure;
+	/* EID whose membership status is therefore unresolved */
+	int		limbo_victim;
+	/* LSN of a later txn that achieves perm success. */
+	DB_LSN		durable_lsn;
+	DB		*gmdb;	/* Membership database handle. */
+	/*
+	 * Membership list restored from init file after crash during internal init.
+	 */
+	u_int8_t	*restored_list;
+	size_t		restored_list_length;
+
+	/* Application's message dispatch call-back function. */
+	void  (*msg_dispatch) __P((DB_ENV *, DB_CHANNEL *,
+		DBT *, u_int32_t, u_int32_t));
 #endif  /* HAVE_REPLICATION_THREADS */
 };
 
@@ -927,7 +992,8 @@ typedef struct {
 	u_int32_t	flags;		/* log_put flag value. */
 } REP_OLD_CONTROL;
 
-#define	LEASE_REFRESH_RETRIES	3	/* Number of times to retry refresh. */
+#define	LEASE_REFRESH_MIN	30	/* Minimum number of refresh retries. */
+#define	LEASE_REFRESH_USEC	50000	/* Microseconds between refresh tries. */
 
 /* Master granted lease information. */
 typedef struct __rep_lease_entry {
@@ -975,13 +1041,13 @@ typedef struct {
 /* Bulk processing information. */
 /*
  * !!!
- * We use a uintptr_t for the offset.  We'd really like to use a ptrdiff_t
+ * We use a roff_t for the offset.  We'd really like to use a ptrdiff_t
  * since that really is what it is.  But ptrdiff_t is not portable and
  * doesn't exist everywhere.
  */
 typedef struct {
 	u_int8_t	*addr;		/* Address of bulk buffer. */
-	uintptr_t	*offp;		/* Ptr to current offset into buffer. */
+	roff_t		*offp;		/* Ptr to current offset into buffer. */
 	u_int32_t	len;		/* Bulk buffer length. */
 	u_int32_t	type;		/* Item type in buffer (log, page). */
 	DB_LSN		lsn;		/* First LSN in buffer. */

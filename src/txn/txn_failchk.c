@@ -57,8 +57,8 @@ retry:	TXN_SYSTEM_LOCK(env);
 
 		if (F_ISSET(td, TXN_DTL_INMEMORY)) {
 			TXN_SYSTEM_UNLOCK(env);
-			return (__db_failed(env,
-			     "Transaction has in memory logs",
+			return (__db_failed(env, DB_STR("4501",
+			    "Transaction has in memory logs"),
 			     td->pid, td->tid));
 		}
 
@@ -66,34 +66,32 @@ retry:	TXN_SYSTEM_LOCK(env);
 		TXN_SYSTEM_UNLOCK(env);
 		if ((ret = __os_calloc(env, 1, sizeof(DB_TXN), &txn)) != 0)
 			return (ret);
-		if ((ret = __txn_continue(env, txn, td)) != 0)
+		if ((ret = __txn_continue(env, txn, td, NULL, 1)) != 0)
 			return (ret);
-		F_SET(txn, TXN_MALLOC);
 		SH_TAILQ_FOREACH(ktd, &td->kids, klinks, __txn_detail) {
 			if (F_ISSET(ktd, TXN_DTL_INMEMORY))
-				return (__db_failed(env,
-				     "Transaction has in memory logs",
+				return (__db_failed(env, DB_STR("4502",
+				    "Transaction has in memory logs"),
 				     td->pid, td->tid));
 			if ((ret =
 			    __os_calloc(env, 1, sizeof(DB_TXN), &ktxn)) != 0)
 				return (ret);
-			if ((ret = __txn_continue(env, ktxn, ktd)) != 0)
+			if ((ret =
+			    __txn_continue(env, ktxn, ktd, NULL, 1)) != 0)
 				return (ret);
-			F_SET(ktxn, TXN_MALLOC);
 			ktxn->parent = txn;
 			ktxn->mgrp = txn->mgrp;
-			TAILQ_INSERT_TAIL(&mgr->txn_chain, ktxn, links);
 			TAILQ_INSERT_HEAD(&txn->kids, ktxn, klinks);
 		}
-		TAILQ_INSERT_TAIL(&mgr->txn_chain, txn, links);
 		pid = td->pid;
 		tid = td->tid;
 		(void)dbenv->thread_id_string(dbenv, pid, tid, buf);
-		__db_msg(env,
-		    "Aborting txn %#lx: %s", (u_long)txn->txnid, buf);
+		__db_msg(env, DB_STR_A("4503",
+		    "Aborting txn %#lx: %s", "%#lx %s"),
+		    (u_long)txn->txnid, buf);
 		if ((ret = __txn_abort(txn)) != 0)
-			return (__db_failed(env,
-			     "Transaction abort failed", pid, tid));
+			return (__db_failed(env, DB_STR("4504",
+			    "Transaction abort failed"), pid, tid));
 		goto retry;
 	}
 

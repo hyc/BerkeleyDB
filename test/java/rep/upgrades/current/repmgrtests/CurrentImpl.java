@@ -11,11 +11,13 @@ import com.sleepycat.db.CheckpointConfig;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
+import com.sleepycat.db.ReplicationConfig;
 import com.sleepycat.db.ReplicationHostAddress;
 import com.sleepycat.db.ReplicationManagerAckPolicy;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.ReplicationManagerStats;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerSiteInfo;
 import com.sleepycat.db.ReplicationStats;
 import com.sleepycat.db.StatsConfig;
@@ -27,13 +29,14 @@ import java.io.File;
 public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.Ops {
     private Config config;
     private Environment[] envs = new Environment[2];
-    private Environment client;
+    private MyEventHandler[] monitors = new MyEventHandler[2];
 
     class MyEventHandler extends EventHandlerAdapter {
         private boolean done = false;
         private boolean panic = false;
         private int permFailCount = 0;
         private int newmasterCount = 0;
+        private boolean connTryFailed = false;
 		
         @Override
             synchronized public void handleRepStartupDoneEvent() {
@@ -60,6 +63,12 @@ public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.
             notifyAll();
         }
 
+        @Override
+            synchronized public void handleRepConnectTryFailedEvent() {
+                connTryFailed = true;
+                notifyAll();
+            }
+
         synchronized public int getNewmasterCount() {
             return newmasterCount;
         }
@@ -84,6 +93,15 @@ public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.
                     throw new Exception("aborted by panic in DB");
             }
         }
+
+        synchronized void awaitConnTryFailed() throws Exception {
+            for (;;) {
+                if (connTryFailed) { break; }
+                wait();
+                if (panic)
+                    throw new Exception("aborted by panic in DB");
+            }
+        }
 		
         synchronized void await() throws Exception {
             while (!done) { wait(); }
@@ -94,20 +112,27 @@ public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.
 
     public void setConfig(Config c) { config = c; }
 
-    public void joinExistingClient(int site, boolean configMaster, boolean useHB) throws Exception {
-        EnvironmentConfig ec = makeBasicConfig(2);
+    public void joinExistingClient(int site, boolean useHB) throws Exception {
+        EnvironmentConfig ec = makeBasicConfig();
 
         int p = config.getMyPort(site);
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", p));
-        if (configMaster) {
-            p = config.getOtherPort(site);
-            ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", p), false);
-        }
+        ReplicationManagerSiteConfig dbsite = new ReplicationManagerSiteConfig("localhost", p);
+        dbsite.setLocalSite(true);
+        dbsite.setLegacy(true);
+        ec.addReplicationManagerSite(dbsite);
+
+        p = config.getOtherPort(site);
+        dbsite = new ReplicationManagerSiteConfig("localhost", p);
+        dbsite.setLegacy(true);
+        ec.addReplicationManagerSite(dbsite);
+
         MyEventHandler monitor = new MyEventHandler();
+        monitors[site] = monitor;
         ec.setEventHandler(monitor);
         File clientDir = new File(config.getBaseDir(), "dir" + site);
         assertTrue(clientDir.exists());
-        client = new Environment(clientDir, ec);
+        Environment client = new Environment(clientDir, ec);
+        client.setReplicationConfig(ReplicationConfig.STRICT_2SITE, false);
 
         if (useHB) {
             client.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_SEND,
@@ -138,10 +163,11 @@ public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.
     public void checkpoint(int site) throws Exception {
         assertNull(envs[site]);
 
-        EnvironmentConfig ec = makeBasicConfig(2);
+        EnvironmentConfig ec = makeBasicConfig();
         File dir = new File(config.getBaseDir(), "dir" + site);
         assertTrue(dir.exists());
         Environment e = new Environment(dir, ec);
+        e.setReplicationConfig(ReplicationConfig.STRICT_2SITE, false);
         CheckpointConfig cc = new CheckpointConfig();
         cc.setForce(true);
         e.checkpoint(cc);
@@ -177,23 +203,62 @@ public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.
         envs[siteId] = null;
     }
 
-    // Actually, this is now a bit weird, since we'd never even have
-    // returned from the call to mon.await() above if we didn't get connected.
-    // 
-    public void verifyConnect(int site) throws Exception {
-        for (int i=0; i<10; i++) {
-            // check it
-            ReplicationManagerSiteInfo[] si = envs[site].getReplicationManagerSiteList();
-            if (si.length > 0) {
-                System.out.println("connected to " + si[0].addr + " as EID " + si[0].eid);
-                return;
-            }
-            Thread.sleep(1000);
-        }
-        fail("was not connected to anyone within 10 seconds");
+    public void restart(int siteId) throws Exception {
+        EnvironmentConfig ec = makeBasicConfig();
+
+        int p = config.getMyPort(siteId);
+        ReplicationManagerSiteConfig dbsite = new ReplicationManagerSiteConfig("localhost", p);
+        dbsite.setLocalSite(true);
+        dbsite.setLegacy(true);
+        ec.addReplicationManagerSite(dbsite);
+
+        p = config.getOtherPort(siteId);
+        dbsite = new ReplicationManagerSiteConfig("localhost", p);
+        dbsite.setLegacy(true);
+        ec.addReplicationManagerSite(dbsite);
+
+        MyEventHandler monitor = new MyEventHandler();
+        ec.setEventHandler(monitor);
+        File clientDir = new File(config.getBaseDir(), "dir" + siteId);
+        assertTrue(clientDir.exists());
+        Environment client = new Environment(clientDir, ec);
+        client.setReplicationConfig(ReplicationConfig.STRICT_2SITE, false);
+
+        envs[siteId] = client;
+        monitors[siteId] = monitor;
+        // we want to make sure we don't retry from here after the
+        // initial failure, because we want to make the old master
+        // connect to us.
+        client.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY,
+                                     Integer.MAX_VALUE);
+        client.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_CLIENT);
     }
 
-    private EnvironmentConfig makeBasicConfig(int nsites) {
+    public void awaitConnFailure(int site) throws Exception {
+        monitors[site].awaitConnTryFailed();
+    }
+
+    public void verifyConnect(int site) throws Exception {
+        int port = config.getOtherPort(site);
+        int pollLimit = 10;
+        for (int i=0; i<pollLimit; i++) {
+            ReplicationManagerSiteInfo[] si = envs[site].getReplicationManagerSiteList();
+            ReplicationManagerSiteInfo inf = null;
+            for (ReplicationManagerSiteInfo in : si) {
+                ReplicationHostAddress addr = in.addr;
+                if (addr.port == port) {
+                    inf = in;
+                    break;
+                }
+            }
+            assertNotNull("other port not in site list", inf);
+            if (inf.isConnected()) { return; }
+            Thread.sleep(1000);
+        }
+        fail("was not connected to remote site within " + pollLimit + " seconds");
+    }
+
+    private EnvironmentConfig makeBasicConfig() {
         EnvironmentConfig ec = new EnvironmentConfig();
         ec.setAllowCreate(true);
         ec.setInitializeCache(true);
@@ -204,8 +269,6 @@ public class CurrentImpl implements TestMixedHeartbeats.Ops, TestReverseConnect.
         ec.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
         ec.setRunRecovery(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(nsites);
-//         ec.setErrorPrefix(... something? ...);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);

@@ -77,7 +77,11 @@ foreach {tn same_db shared_cache} [list \
     #sqlthread parent {puts STARTING..}
     set needToClose 0
     if {![info exists ::DB]} {
-      set ::DB [sqlthread open test.db]
+      set key ""
+      if {[sqlite -has-codec]} {
+        set key "xyzzy"
+      }
+      set ::DB [sqlthread open test.db $key]
       #sqlthread parent "puts \"OPEN $::DB\""
       set needToClose 1
     }

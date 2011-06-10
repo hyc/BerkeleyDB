@@ -18,6 +18,9 @@ b_del(int argc, char *argv[])
 	DBC *dbc;
 	DBT key, data;
 	DBTYPE type;
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	DB_HEAP_RID rid;
+#endif
 	db_recno_t recno;
 	u_int32_t cachesize;
 	int ch, i, count, ret, use_cursor;
@@ -43,10 +46,23 @@ b_del(int argc, char *argv[])
 				type = DB_BTREE;
 				break;
 			case 'H': case 'h':
-				if (b_util_have_hash())
-					return (0);
-				ts = "Hash";
-				type = DB_HASH;
+				if (optarg[1] == 'E' || optarg[1] == 'e') {
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+					if (b_util_have_heap())
+						return (0);
+					ts = "Heap";
+					type = DB_HEAP;
+#else
+					fprintf(stderr,
+				"b_curwalk: Heap is not supported! \n");
+					return (EXIT_SUCCESS);
+#endif
+				} else {
+					if (b_util_have_hash())
+						return (0);
+					ts = "Hash";
+					type = DB_HASH;
+				}
 				break;
 			case 'Q': case 'q':
 				if (b_util_have_queue())
@@ -79,6 +95,14 @@ b_del(int argc, char *argv[])
 	DB_BENCH_ASSERT(dbp->set_cachesize(dbp, 0, cachesize, 0) == 0);
 	dbp->set_errfile(dbp, stderr);
 
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	/* Need a cursor if using Heap. */
+	if (type == DB_HEAP && !use_cursor) {
+		printf("Heap databases require the -w flag.\n");
+		return (-1);
+	}
+#endif
+
 	/* Set record length for Queue. */
 	if (type == DB_QUEUE)
 		DB_BENCH_ASSERT(dbp->set_re_len(dbp, 20) == 0);
@@ -104,6 +128,12 @@ b_del(int argc, char *argv[])
 		key.data = buf;
 		key.size = 10;
 		break;
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	case DB_HEAP:
+		key.data = &rid;
+		key.size = sizeof(rid);
+		break;
+#endif
 	case DB_QUEUE:
 	case DB_RECNO:
 		key.data = &recno;
@@ -121,6 +151,12 @@ b_del(int argc, char *argv[])
 			DB_BENCH_ASSERT(
 			    dbp->put(dbp, NULL, &key, &data, 0) == 0);
 		}
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	else if (type == DB_HEAP)
+		for (i = 0; i < count; i++)
+			DB_BENCH_ASSERT(
+			    dbp->put(dbp, NULL, &key, &data, DB_APPEND) == 0);
+#endif
 	else
 		for (i = 0, recno = 1; i < count; ++i, ++recno)
 			DB_BENCH_ASSERT(

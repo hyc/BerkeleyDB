@@ -18,10 +18,12 @@ b_curwalk -c 10000 -d 10 -t btree -w 100
 b_curwalk -c 10000 -d 10 -t hash -w 100
 b_curwalk -c 100000 -p -t btree -w 100
 b_curwalk -c 100000 -p -t hash -w 100
+b_curwalk -c 100000 -p -t heap -w 100
 b_curwalk -c 100000 -p -t queue -w 100
 b_curwalk -c 100000 -p -t recno -w 100
 b_curwalk -c 100000 -t btree -w 100
 b_curwalk -c 100000 -t hash -w 100
+b_curwalk -c 100000 -t heap -w 100
 b_curwalk -c 100000 -t queue -w 100
 b_curwalk -c 100000 -t recno -w 100
 
@@ -31,11 +33,13 @@ b_del -c 100000 -t queue
 b_del -c 100000 -t recno
 b_del -w -c 100000 -t btree
 b_del -w -c 100000 -t hash
+b_del -w -c 100000 -t heap
 b_del -w -c 100000 -t queue
 b_del -w -c 100000 -t recno
 
 b_get -c 1000000 -t btree
 b_get -c 1000000 -t hash
+b_get -c 1000000 -t heap
 b_get -c 1000000 -t queue
 b_get -c 1000000 -t recno
 
@@ -48,8 +52,9 @@ b_inmem -d 32 -k 8 -o 1000000 -P 32768 txn-write
 b_inmem -d 32 -k 8 -o 1000000 -P 32768 txn-write-nosync
 b_inmem -d 32 -k 8 -o 1000000 -P 32768 write
 
-b_load -c 100000 -t hash
 b_load -c 1000000 -t btree
+b_load -c 100000 -t hash
+b_load -c 1000000 -t heap
 b_load -c 1000000 -t queue
 b_load -c 1000000 -t recno
 b_load -d -c 1000000 -t btree
@@ -57,10 +62,12 @@ b_load -d -c 1000000 -t hash
 
 b_open -c 10000 -d -t btree
 b_open -c 10000 -d -t hash
+b_open -c 10000 -d -t heap
 b_open -c 10000 -d -t queue
 b_open -c 10000 -d -t recno
 b_open -c 10000 -f -t btree
 b_open -c 10000 -f -t hash
+b_open -c 10000 -f -t heap
 b_open -c 10000 -f -t queue
 b_open -c 10000 -f -t recno
 b_open -c 10000 -fd -t btree
@@ -68,18 +75,22 @@ b_open -c 10000 -fd -t hash
 b_open -c 10000 -fd -t recno
 b_open -c 10000 -t btree
 b_open -c 10000 -t hash
+b_open -c 10000 -t heap
 b_open -c 10000 -t queue
 b_open -c 10000 -t recno
 
 b_put -c 100000 -d 204800 -t btree
 b_put -c 100000 -d 204800 -t hash
+b_put -c 100000 -d 204800 -t heap
 b_put -c 100000 -d 204800 -t recno
 b_put -c 1000000 -s 10 -t btree
 b_put -c 1000000 -s 10 -t hash
+b_put -c 1000000 -s 10 -t heap
 b_put -c 1000000 -s 10 -t queue
 b_put -c 1000000 -s 10 -t recno
 b_put -c 1000000 -t btree
 b_put -c 1000000 -t hash
+b_put -c 1000000 -t heap
 b_put -c 1000000 -t queue
 b_put -c 1000000 -t recno
 

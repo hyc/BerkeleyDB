@@ -7,19 +7,22 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="program.html" title="Chapter 14.  Programmer Notes" />
+    <link rel="up" href="program.html" title="Chapter 15.  Programmer Notes" />
     <link rel="prev" href="program_cache.html" title="Disk drive caches" />
     <link rel="next" href="program_compatible.html" title="Compatibility with historic UNIX interfaces" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Copying or moving databases</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="program_cache.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 14. 
+          <th width="60%" align="center">Chapter 15. 
 		Programmer Notes
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="program_compatible.html">Next</a></td>
@@ -48,8 +51,8 @@ be copied or moved into a transactional database environment without
 resetting the LSNs.  The database's LSNs may be reset in one of three
 ways: the application can call the <a href="../api_reference/C/envlsn_reset.html" class="olink">DB_ENV-&gt;lsn_reset()</a> method to reset the
 LSNs in place, or a system administrator can reset the LSNs in place
-using the <span class="bold"><strong>-r</strong></span> option to the <a href="../api_reference/C/db_load.html" class="olink">db_load utility</a>, or by
-dumping and reloading the database (using the <a href="../api_reference/C/db_dump.html" class="olink">db_dump utility</a> and the <a href="../api_reference/C/db_load.html" class="olink">db_load utility</a>).</p>
+using the <span class="bold"><strong>-r</strong></span> option to the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility, or by
+dumping and reloading the database (using the <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility and the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility).</p>
       <p>Because system file identification information (for example, filenames,
 device and inode numbers, volume and file IDs, and so on) are not
 necessarily unique or maintained across system reboots, each Berkeley DB
@@ -85,8 +88,8 @@ time.</li>
           <li>
     Create a new file that will have a new bytestring.  The simplest way to
     create a new file that will have a new bytestring is to call the
-    <a href="../api_reference/C/db_dump.html" class="olink">db_dump utility</a> to dump out the contents of the database and then use the
-    <a href="../api_reference/C/db_load.html" class="olink">db_load utility</a> to load the dumped output into a new file.  This allows you
+    <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility to dump out the contents of the database and then use the
+    <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility to load the dumped output into a new file.  This allows you
     to access both the original and copy of the database at the same time.
 </li>
           <li>
@@ -94,7 +97,7 @@ time.</li>
     the database by other means, and then reset the bytestring in the
     copied database to a new bytestring.  There are two ways to reset the
     bytestring in the copy: the application can call the <a href="../api_reference/C/envfileid_reset.html" class="olink">DB_ENV-&gt;fileid_reset()</a>
-    method, or a system administrator can use the <span class="bold"><strong>-r</strong></span> option to the <a href="../api_reference/C/db_load.html" class="olink">db_load utility</a>.  This allows you
+    method, or a system administrator can use the <span class="bold"><strong>-r</strong></span> option to the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.  This allows you
     to access both the original and copy of the database at the same time.
 </li>
         </ol>

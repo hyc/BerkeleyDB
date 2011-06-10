@@ -12,7 +12,10 @@
     <link rel="next" href="transapp_faq.html" title="Transaction FAQ" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Transaction throughput</th>
@@ -136,7 +139,7 @@ Elapsed time: 16.641934 seconds
 transaction can dramatically affect the transaction throughput.  The
 test run used 256, which is a reasonable size log write.  Your log
 writes may be different.  To determine your average log write size, use
-the <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a> to display your log statistics.</p>
+the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility to display your log statistics.</p>
       <p>As a quick sanity check, the average seek time is 9.4 msec for this
 particular disk, and the average latency is 4.17 msec.  That results in
 a minimum requirement for a data transfer to the disk of 13.57 msec, or

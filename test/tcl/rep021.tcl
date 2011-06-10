@@ -17,6 +17,7 @@ proc rep021 { method { nclients 3 } { tnum "021" } args } {
 
 	source ./include.tcl
 	global repfiles_in_memory
+	global env_private
 
 	# Run for all access methods.
 	if { $checking_valid_methods } {
@@ -44,6 +45,11 @@ proc rep021 { method { nclients 3 } { tnum "021" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets [expr $nclients + 1]]
 
@@ -56,8 +62,8 @@ proc rep021 { method { nclients 3 } { tnum "021" } args } {
 				    for in-memory logs with -recover."
 				continue
 			}
-			puts "Rep$tnum ($method $r): Replication\
-			    and $nclients recovered clients in sync $msg2."
+			puts "Rep$tnum ($method $r): Replication and\
+			    $nclients recovered clients in sync $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			for { set i 0 } { $i < $nclients } { incr i } {
 				puts "Rep$tnum: Client $i logs are\
@@ -72,6 +78,7 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 	global testdir
 	global util_path
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -83,6 +90,11 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set orig_tdir $testdir
@@ -141,7 +153,7 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 	# For the 2nd group, just have 1 master and 1 client.
 	repladd 10
 	set ma2_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
-	    $m_logargs -home $masterdir2 $repmemargs \
+	    $m_logargs -home $masterdir2 $repmemargs $privargs \
 	    -rep_master -rep_transport \[list 10 replsend\]"
 	set menv2 [eval $ma2_envcmd $recargs]
 
@@ -155,7 +167,7 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 	set id2 11
 	repladd $id2
 	set cl2_envcmd "berkdb_env_noerr -create $c_txnargs($id2) $verbargs \
-	    $c_logargs($id2) -home $clientdir2 $repmemargs \
+	    $c_logargs($id2) -home $clientdir2 $repmemargs $privargs \
 	    -rep_client -rep_transport \[list $id2 replsend\]"
 	set clenv2 [eval $cl2_envcmd $recargs]
 
@@ -213,7 +225,7 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
-	    $m_logargs -home $masterdir $repmemargs \
+	    $m_logargs -home $masterdir $repmemargs $privargs \
 	    -rep_master -rep_transport \[list 1 replsend\]"
 	set menv [eval $ma_envcmd $recargs]
 
@@ -227,7 +239,7 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 		repladd $id($i)
 		set cl_envcmd($i) "berkdb_env_noerr -create $c_txnargs($i) \
 		    $c_logargs($i) -home $clientdir($i) $repmemargs \
-		    $verbargs \
+		    $verbargs $privargs \
 		    -rep_client -rep_transport \[list $id($i) replsend\]"
 		set clenv($i) [eval $cl_envcmd($i) $recargs]
 	}
@@ -262,7 +274,7 @@ proc rep021_sub { method nclients tnum logset recargs largs } {
 	set id($i) [expr 2 + $i]
 	repladd $id($i)
 	set cl_envcmd($i) "berkdb_env_noerr -create -txn nosync \
-	    -home $clientdir($i) $verbargs $repmemargs \
+	    -home $clientdir($i) $verbargs $repmemargs $privargs \
 	    -rep_client -rep_transport \[list $id($i) replsend\]"
 	set clenv($i) [eval $cl_envcmd($i) $recargs]
 	#

@@ -18,6 +18,7 @@ proc rep077 { method { tnum "077"} args} {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -43,9 +44,14 @@ proc rep077 { method { tnum "077"} args} {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	foreach l $logsets {
 		puts "Rep$tnum ($method): Recovered client\
-		    getting immediate log records $msg $msg2."
+		    getting immediate log records $msg $msg2 $msg3."
 		puts "Rep$tnum: Master logs are [lindex $l 0]"
 		puts "Rep$tnum: Client logs are [lindex $l 1]"
 		rep077_sub $method $tnum $l $args
@@ -56,6 +62,7 @@ proc rep077_sub { method tnum logset largs} {
 	global testdir
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -67,6 +74,11 @@ proc rep077_sub { method tnum logset largs} {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set niter 5
@@ -92,7 +104,7 @@ proc rep077_sub { method tnum logset largs} {
 	# Open a master.
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create \
-	    $verbargs $repmemargs \
+	    $verbargs $repmemargs $privargs \
 	    -home $masterdir -errpfx MASTER -txn nosync -rep_master \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
@@ -102,7 +114,7 @@ proc rep077_sub { method tnum logset largs} {
 	# Open a client
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create \
-	    $verbargs $repmemargs \
+	    $verbargs $repmemargs $privargs \
 	    -home $clientdir -errpfx CLIENT -txn nosync -rep_client \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C)]

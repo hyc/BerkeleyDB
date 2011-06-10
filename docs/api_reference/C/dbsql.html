@@ -12,7 +12,10 @@
     <link rel="next" href="db_stat.html" title="db_stat" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">dbsql</th>
@@ -37,9 +40,15 @@
       </div>
       <pre class="programlisting">dbsql [OPTIONS] FILENAME SQL </pre>
       <p>
-	dbsql is a command line tool that provides access to the Berkeley DB SQL interface. To build this tool, run the configure script with the <code class="literal">--enable-sql </code>option when you are building the Berkeley DB SQL interface. 
-	For more information on building this tool, see <a href="../../installation/build_unix.html#build_unix_intro" class="olink">"Building for UNIX/POSIX"</a>.
- 
+    <code class="literal">dbsql</code> is a command line tool that provides access to the Berkeley DB
+    SQL interface. 
+</p>
+      <p>
+    To build this tool, run the configure script with the
+    <code class="literal">--enable-sql </code>option when you are building the
+    Berkeley DB SQL interface.  For more information on building this tool,
+    see 
+    <a href="../../installation/build_unix.html#build_unix_intro" class="olink">"Building for UNIX/POSIX"</a>.
  </p>
       <p>FILENAME is the name of a Berkeley DB database file created with the SQL interface. A new database is created
 if the file does not exist.
@@ -161,33 +170,71 @@ if the file does not exist.
           </li>
         </ul>
       </div>
-      <p> The dbsql executable provides the same interface as the sqlite3 executable that is part of SQLite. For more information on how to use dbsql see the <a class="ulink" href="http://www.sqlite.org/sqlite.html" target="_top">SQLite Documentation page.</a> </p>
+      <p>
+            The <code class="literal">dbsql</code> executable provides the same interface as the <code class="literal">sqlite3</code>
+            executable that is part of SQLite. For more information on how
+            to use dbsql see the 
+            <a class="ulink" href="http://www.sqlite.org/sqlite.html" target="_top">SQLite Documentation page.</a> 
+        </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="dbsql_command_feature"></a>Command Line Features Unique to dbsql
- </h3>
+              <h3 class="title"><a id="dbsql_command_feature"></a>Command Line Features Unique to dbsql</h3>
             </div>
           </div>
         </div>
-        <p>This section describes pre-defined query statements that can be executed from the dbsql command line.
- </p>
-        <table class="simplelist" border="0" summary="Simple list">
-          <tr>
-            <td><span class="bold"><strong>.stat ?ITEM?</strong></span>  
- 
-    <p>Prints statistics</p>
-    <p>If <span class="bold"><strong>ITEM</strong></span> is <span class="emphasis"><em>:env:</em></span>, then this command prints statistics for the Berkeley DB environment using the <a class="xref" href="envstat.html" title="DB_ENV-&gt;stat_print()">DB_ENV-&gt;stat_print()</a>. </p>
-    <pre class="programlisting">dbsql&gt; .stat :env:</pre>
-    <p>If <span class="bold"><strong>ITEM</strong></span> is the name of a table or index, then this command prints statistics for the table or index using the <a class="xref" href="dbstat_print.html" title="DB-&gt;stat_print()">DB-&gt;stat_print()</a>. </p>
-    <pre class="programlisting">dbsql&gt; .stat example</pre>
-    <p>If <span class="bold"><strong>ITEM</strong></span> is not specified, then this command prints statistics for the Berkeley DB environment followed by statistics for all tables and indexes within the database. 
-</p>
-<pre class="programlisting">dbsql&gt; .stat </pre>
-    </td>
-          </tr>
-        </table>
+        <p>
+        This section describes pre-defined query statements that can be
+        executed from the <code class="literal">dbsql</code> command line. These queries take the form
+        of:
+    </p>
+        <pre class="programlisting"> .stat <span class="emphasis"><em>ITEM</em></span></pre>
+        <p>
+        where <code class="literal">ITEM</code> is an optional parameter that indicates
+        what statistics to print.  If <code class="literal">ITEM</code> is not
+        specified, then this command prints statistics for the Berkeley DB
+        environment, followed by statistics for all tables and indexes
+        within the database. 
+     </p>
+        <p>
+        If <code class="literal">ITEM</code> is the name of a table or index, then this
+        command prints statistics for the table or index using the 
+        <a class="xref" href="dbstat_print.html" title="DB-&gt;stat_print()">DB-&gt;stat_print()</a> 
+        
+            method.
+    </p>
+        <p>
+        Otherwise, <code class="literal">ITEM</code> can be one of several keywords.
+        They are:
+    </p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+                <code class="literal">:env:</code>
+            </p>
+              <pre class="programlisting">dbsql&gt; .stat :env:</pre>
+              <p>
+                Causes this command to print statistics for the Berkeley DB
+                environment using the 
+                <a class="xref" href="envstat.html" title="DB_ENV-&gt;stat_print()">DB_ENV-&gt;stat_print()</a>. 
+                
+                method.
+            </p>
+            </li>
+            <li>
+              <p>
+                <code class="literal">:rep:</code>
+            </p>
+              <pre class="programlisting">dbsql&gt; .stat :rep:</pre>
+              <p>
+                Causes this command to print a summary of replication
+                statistics.
+            </p>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
     <div class="navfooter">

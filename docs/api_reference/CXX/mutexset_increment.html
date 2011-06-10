@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="mutex.html" title="Chapter 10.  Mutex Methods" />
     <link rel="prev" href="mutexset_align.html" title="DbEnv::mutex_set_align()" />
-    <link rel="next" href="mutexset_max.html" title="DbEnv::mutex_set_max()" />
+    <link rel="next" href="mutexset_init.html" title="DbEnv::mutex_set_init()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::mutex_set_increment()</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 10. 
                 Mutex Methods 
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="mutexset_max.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="mutexset_init.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -53,7 +56,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
     </p>
       <p>
          The database environment's number of additional mutexes may also be
-         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
+         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file. The
          syntax of the entry in that file is a single line with the string
          "mutex_set_increment", one or more whitespace characters, and the
          number of additional mutexes. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
@@ -87,7 +90,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53874064"></a>Parameters</h3>
+              <h3 class="title"><a id="id3653364"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -95,7 +98,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53874448"></a>increment</h4>
+                <h4 class="title"><a id="id3653374"></a>increment</h4>
               </div>
             </div>
           </div>
@@ -109,7 +112,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53863736"></a>Errors</h3>
+              <h3 class="title"><a id="id3653200"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -127,7 +130,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53883208"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3653520"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -141,7 +144,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53884536"></a>Class</h3>
+              <h3 class="title"><a id="id3653542"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -153,7 +156,7 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53867856"></a>See Also</h3>
+              <h3 class="title"><a id="id3653265"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -170,14 +173,14 @@ DbEnv::mutex_set_increment(u_int32_t increment); </pre>
           <td width="20%" align="center">
             <a accesskey="u" href="mutex.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="mutexset_max.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="mutexset_init.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DbEnv::mutex_set_align() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DbEnv::mutex_set_max()</td>
+          <td width="40%" align="right" valign="top"> DbEnv::mutex_set_init()</td>
         </tr>
       </table>
     </div>

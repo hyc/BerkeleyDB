@@ -1,6 +1,6 @@
 got data: data
-get using bad key: DB_NOTFOUND: No matching key/data pair found
+get using bad key: BDB0073 DB_NOTFOUND: No matching key/data pair found
 truncating data...
 truncate returns 1
-after truncate get: DB_NOTFOUND: No matching key/data pair found
+after truncate get: BDB0073 DB_NOTFOUND: No matching key/data pair found
 finished test

@@ -27,7 +27,9 @@
 #define	REGISTRY_EXCL_UNLOCK(env)					\
 	REGISTRY_UNLOCK(env, 1)
 
-static  int __envreg_add __P((ENV *, int *, u_int32_t));
+static	int __envreg_add __P((ENV *, int *, u_int32_t));
+static	int __envreg_pid_compare __P((const void *, const void *));
+static	int __envreg_create_active_pid __P((ENV *, char *));
 
 /*
  * Support for portable, multi-process database environment locking, based on
@@ -134,7 +136,8 @@ __envreg_register(env, need_recoveryp, flags)
 	pp = NULL;
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-		__db_msg(env, "%lu: register environment", (u_long)pid);
+		__db_msg(env, DB_STR_A("1524",
+	"%lu: register environment", "%lu"), (u_long)pid);
 
 	/* Build the path name and open the registry file. */
 	if ((ret = __db_appname(env,
@@ -165,12 +168,13 @@ __envreg_register(env, need_recoveryp, flags)
 		goto err;
 	if (mbytes == 0 && bytes == 0) {
 		if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-			__db_msg(env, "%lu: creating %s", (u_long)pid, pp);
+			__db_msg(env, DB_STR_A("1525",
+			    "%lu: creating %s", "%lu %s"), (u_long)pid, pp);
 		*need_recoveryp = 1;
 	}
 
 	/* Register this process. */
-	if ((ret = __envreg_add(env, need_recoveryp, flags) != 0))
+	if ((ret = __envreg_add(env, need_recoveryp, flags)) != 0)
 		goto err;
 
 	/*
@@ -232,7 +236,8 @@ __envreg_add(env, need_recoveryp, flags)
 	snprintf(pid_buf, sizeof(pid_buf), PID_FMT, (u_long)pid);
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-		__db_msg(env, "%lu: adding self to registry", (u_long)pid);
+		__db_msg(env, DB_STR_A("1526",
+		    "%lu: adding self to registry", "%lu"), (u_long)pid);
 
 #if DB_ENVREG_KILL_ALL
 	if (0) {
@@ -270,7 +275,8 @@ kill_all:	/*
 
 		if (PID_ISEMPTY(buf)) {
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-				__db_msg(env, "%02u: EMPTY", lcnt);
+				__db_msg(env, DB_STR_A("1527",
+				    "%02u: EMPTY", "%02u"), lcnt);
 			continue;
 		}
 
@@ -281,8 +287,8 @@ kill_all:	/*
 		 * that restriction.
 		 */
 		if (memcmp(buf, pid_buf, PID_LEN) == 0) {
-			__db_errx(env,
-    "DB_REGISTER limits processes to one open DB_ENV handle per environment");
+			__db_errx(env, DB_STR("1528",
+"DB_REGISTER limits processes to one open DB_ENV handle per environment"));
 			return (EINVAL);
 		}
 
@@ -298,7 +304,8 @@ kill_all:	/*
 			(void)kill(pid, SIGKILL);
 
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-				__db_msg(env, "%02u: %s: KILLED", lcnt, p);
+				__db_msg(env, DB_STR_A("1529",
+				    "%02u: %s: KILLED", "%02u %s"), lcnt, p);
 			continue;
 		}
 #endif
@@ -308,7 +315,8 @@ kill_all:	/*
 				return (ret);
 
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-				__db_msg(env, "%02u: %s: FAILED", lcnt, p);
+				__db_msg(env, DB_STR_A("1530",
+				    "%02u: %s: FAILED", "%02u %s"), lcnt, p);
 
 			need_recovery = 1;
 			dead = pos;
@@ -319,7 +327,8 @@ kill_all:	/*
 #endif
 		} else
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-				__db_msg(env, "%02u: %s: LOCKED", lcnt, p);
+				__db_msg(env, DB_STR_A("1531",
+				    "%02u: %s: LOCKED", "%02u %s"), lcnt, p);
 	}
 
 	/*
@@ -333,10 +342,16 @@ kill_all:	/*
 		if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
 			__db_msg(env, "%lu: recovery required", (u_long)pid);
 
-		if (LF_ISSET(DB_FAILCHK)) {
+		if (LF_ISSET(DB_FAILCHK) || LF_ISSET(DB_FAILCHK_ISALIVE)) {
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
 				__db_msg(env,
 				    "%lu: performing failchk", (u_long)pid);
+
+			if (LF_ISSET(DB_FAILCHK_ISALIVE))
+				if ((ret = __envreg_create_active_pid(
+				    env, pid_buf)) != 0)
+					goto sig_proc;
+
 			/* The environment will already exist, so we do not
 			 * want DB_CREATE set, nor do we want any recovery at
 			 * this point.  No need to put values back as flags is
@@ -359,6 +374,14 @@ kill_all:	/*
 			if ((t_ret =
 			    __env_failchk_int(dbenv)) != 0 && ret == 0)
 				ret = t_ret;
+
+			/* Free active pid array if used. */
+			if (LF_ISSET(DB_FAILCHK_ISALIVE)) {
+				DB_GLOBAL(num_active_pids) = 0;
+				DB_GLOBAL(size_active_pids) = 0;
+				__os_free( env, DB_GLOBAL(active_pids));
+			}
+
 			/* Detach from environment and deregister thread. */
 			if ((t_ret =
 			    __env_refresh(dbenv, orig_flags, 0)) != 0 &&
@@ -446,9 +469,10 @@ add:	if ((ret = __os_seek(env, dbenv->registry, 0, 0, 0)) != 0)
 		pos = (off_t)lcnt * PID_LEN;
 		if (REGISTRY_LOCK(env, pos, 1) == 0) {
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-				__db_msg(env,
+				__db_msg(env, DB_STR_A("1532",
 				    "%lu: locking slot %02u at offset %lu",
-				    (u_long)pid, lcnt, (u_long)pos);
+				    "%lu %02u %lu"), (u_long)pid, lcnt,
+				    (u_long)pos);
 
 			if ((ret = __os_seek(env,
 			    dbenv->registry, 0, 0, (u_int32_t)pos)) != 0 ||
@@ -542,16 +566,165 @@ __envreg_xunlock(env)
 	int ret;
 
 	dbenv = env->dbenv;
-
 	dbenv->thread_id(dbenv, &pid, NULL);
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-		__db_msg(env,
-		    "%lu: recovery completed, unlocking", (u_long)pid);
+		__db_msg(env, DB_STR_A("1533",
+		    "%lu: recovery completed, unlocking", "%lu"), (u_long)pid);
 
 	if ((ret = REGISTRY_EXCL_UNLOCK(env)) == 0)
 		return (ret);
 
-	__db_err(env, ret, "%s: exclusive file unlock", REGISTER_FILE);
+	__db_err(env, ret, DB_STR_A("1534",
+	    "%s: exclusive file unlock", "%s"), REGISTER_FILE);
 	return (__env_panic(env, ret));
+}
+
+/*
+ * __envreg_pid_compare --
+ *	Compare routine for qsort and bsearch calls.
+ *	returns neg if key is less than membr, 0 if equal and
+ *	pos if key is greater than membr.
+ */
+static int
+__envreg_pid_compare(key, membr)
+	const void *key;
+	const void *membr;
+{
+	return ( *(pid_t*)key - *(pid_t*)membr );
+}
+
+/*
+ * __envreg_isalive --
+ *	Default isalive function that uses contents of an array of active pids
+ *	gotten from the db_register file to determine if process is still
+ *	alive.
+ *
+ * PUBLIC: int __envreg_isalive
+ * PUBLIC:   __P((DB_ENV *, pid_t, db_threadid_t, u_int32_t));
+ */
+int
+__envreg_isalive(dbenv, pid, tid, flags )
+	DB_ENV *dbenv;
+	pid_t pid;
+	db_threadid_t tid;
+	u_int32_t flags;
+{
+	/* in this case we really do not care about tid, simply for lint */
+	COMPQUIET(tid, 0);
+
+	/* if is not an expected value then return early */
+	if (!((flags == 0) || (flags == DB_MUTEX_PROCESS_ONLY)))
+		return (EINVAL);
+
+	if (DB_GLOBAL(active_pids) == NULL ||
+	    DB_GLOBAL(num_active_pids) == 0 || dbenv == NULL)
+		return (0);
+	/*
+	 * bsearch returns a pointer to an entry in active_pids if a match
+	 * is found on pid, else no match found it returns NULL.   This
+	 * routine will return a 1 if a match is found, else a 0.
+	 */
+	if (bsearch(&pid, DB_GLOBAL(active_pids), DB_GLOBAL(num_active_pids),
+	    sizeof(pid_t), __envreg_pid_compare))
+		return 1;
+
+	return (0);
+}
+
+/*
+ * __envreg_create_active_pid --
+ *	Create array of pids, if need more room in array then double size.
+ *	Only add active pids from DB_REGISTER file into array.
+ */
+static int
+__envreg_create_active_pid(env, my_pid)
+	ENV *env;
+	char *my_pid;
+{
+	DB_ENV *dbenv;
+	char buf[PID_LEN + 10];
+	int    ret;
+	off_t  pos;
+	pid_t  pid, *tmparray;
+	size_t tmpsize, nr;
+	u_int lcnt;
+
+	dbenv = env->dbenv;
+	pos = 0;
+	ret = 0;
+
+	/*
+	 * Walk through DB_REGISTER file, we grab pid entries that are locked
+	 * as those represent processes that are still alive.   Ignore empty
+	 * slots, or those that are unlocked.
+	 */
+	if ((ret = __os_seek(env, dbenv->registry, 0, 0, 0)) != 0)
+		return (ret);
+	for (lcnt = 0;; ++lcnt) {
+		if ((ret = __os_read(
+		    env, dbenv->registry, buf, PID_LEN, &nr)) != 0)
+			return (ret);
+
+		/* all done is read nothing, or get a partial record */
+		if (nr == 0 || nr != PID_LEN)
+			break;
+		if (PID_ISEMPTY(buf))
+			continue;
+
+		pos = (off_t)lcnt * PID_LEN;
+		if (REGISTRY_LOCK(env, pos, 1) == 0) {
+			/* got lock, so process died. Do not add to array */
+			if ((ret = REGISTRY_UNLOCK(env, pos)) != 0)
+				return (ret);
+		} else {
+			/* first, check to make sure we have room in arrary */
+			if (DB_GLOBAL(num_active_pids) + 1 >
+			    DB_GLOBAL(size_active_pids)) {
+				tmpsize =
+				   DB_GLOBAL(size_active_pids) * sizeof(pid_t);
+
+				/* start with 512, then double if must grow */
+				tmpsize = tmpsize>0 ? tmpsize*2 : 512;
+				if ((ret = __os_malloc
+				    (env, tmpsize, &tmparray )) != 0)
+					return (ret);
+
+				/* if array exists, then copy and free */
+				if (DB_GLOBAL(active_pids)) {
+					memcpy( tmparray,
+					    DB_GLOBAL(active_pids),
+					    DB_GLOBAL(num_active_pids) *
+					    sizeof(pid_t));
+					__os_free( env, DB_GLOBAL(active_pids));
+				}
+
+				DB_GLOBAL(active_pids) = tmparray;
+				DB_GLOBAL(size_active_pids) = tmpsize;
+
+				/*
+				 * The process getting here has not been added
+				 * to the DB_REGISTER file yet, so include it
+				 * as the first item in array
+				 */
+				if (DB_GLOBAL(num_active_pids) == 0) {
+					pid = (pid_t)strtoul(my_pid, NULL, 10);
+					DB_GLOBAL(active_pids)
+					   [DB_GLOBAL(num_active_pids)++] = pid;
+				}
+			}
+
+			/* insert into array */
+			pid = (pid_t)strtoul(buf, NULL, 10);
+			DB_GLOBAL(active_pids)
+			    [DB_GLOBAL(num_active_pids)++] = pid;
+
+		}
+
+	}
+
+	/* lets sort the array to allow for binary search in isalive func */
+	qsort(DB_GLOBAL(active_pids), DB_GLOBAL(num_active_pids),
+	    sizeof(pid_t), __envreg_pid_compare);
+	return (ret);
 }

@@ -244,10 +244,17 @@ tcl_LockStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Region size", sp->st_regsize);
 	MAKE_STAT_LIST("Last allocated locker ID", sp->st_id);
 	MAKE_STAT_LIST("Current maximum unused locker ID", sp->st_cur_maxid);
+	MAKE_STAT_LIST("Initial locks", sp->st_initlocks);
+	MAKE_STAT_LIST("Allocated locks", sp->st_locks);
 	MAKE_STAT_LIST("Maximum locks", sp->st_maxlocks);
+	MAKE_STAT_LIST("Initial lockers", sp->st_initlockers);
+	MAKE_STAT_LIST("Allocated lockers", sp->st_lockers);
 	MAKE_STAT_LIST("Maximum lockers", sp->st_maxlockers);
+	MAKE_STAT_LIST("Initial objects", sp->st_initobjects);
+	MAKE_STAT_LIST("Allocated objects", sp->st_objects);
 	MAKE_STAT_LIST("Maximum objects", sp->st_maxobjects);
 	MAKE_STAT_LIST("Lock modes", sp->st_nmodes);
+	MAKE_STAT_LIST("Size of object hash table", sp->st_tablesize);
 	MAKE_STAT_LIST("Number of lock table partitions", sp->st_partitions);
 	MAKE_STAT_LIST("Current number of locks", sp->st_nlocks);
 	MAKE_STAT_LIST("Maximum number of locks so far", sp->st_maxnlocks);
@@ -302,6 +309,85 @@ tcl_LockStat(interp, objc, objv, dbenv)
 error:
 	__os_ufree(dbenv->env, sp);
 	return (result);
+}
+
+/*
+ * tcl_LockStatPrint --
+ *
+ * PUBLIC: int tcl_LockStatPrint __P((Tcl_Interp *, int,
+ * PUBLIC:    Tcl_Obj * CONST*, DB_ENV *));
+ */
+int
+tcl_LockStatPrint(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{
+	static const char *lkstatprtopts[] = {
+		"-all",
+		"-clear",
+		"-lk_conf",
+		"-lk_lockers",
+		"-lk_objects",
+		"-lk_params",
+		 NULL
+	};
+	enum lkstatprtopts {
+		LKSTATPRTALL,
+		LKSTATPRTCLEAR,
+		LKSTATPRTCONF,
+		LKSTATPRTLOCKERS,
+		LKSTATPRTOBJECTS,
+		LKSTATPRTPARAMS
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], lkstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum lkstatprtopts)optindex) {
+		case LKSTATPRTALL:
+			flag |= DB_STAT_ALL;
+			break;
+		case LKSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		case LKSTATPRTCONF:
+			flag |= DB_STAT_LOCK_CONF;
+			break;
+		case LKSTATPRTLOCKERS:
+			flag |= DB_STAT_LOCK_LOCKERS;
+			break;
+		case LKSTATPRTOBJECTS:
+			flag |= DB_STAT_LOCK_OBJECTS;
+			break;
+		case LKSTATPRTPARAMS:
+			flag |= DB_STAT_LOCK_PARAMS;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = dbenv->lock_stat_print(dbenv, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv lock_stat_print");
+error:
+	return (result);	
+
 }
 
 /*
@@ -451,6 +537,7 @@ tcl_LockVec(interp, objc, objv, dbenv)
 	result = TCL_OK;
 	memset(newname, 0, MSG_SIZE);
 	memset(&list, 0, sizeof(DB_LOCKREQ));
+	memset(&obj, 0, sizeof(DBT));
 	flag = 0;
 	freeobj = 0;
 	otmp = NULL;

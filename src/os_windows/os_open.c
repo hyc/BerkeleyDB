@@ -27,6 +27,7 @@ __os_open(env, name, page_size, flags, mode, fhpp)
 #ifndef DB_WINCE
 	DWORD cluster_size, sector_size, free_clusters, total_clusters;
 	_TCHAR *drive, dbuf[4]; /* <letter><colon><slash><nul> */
+
 #endif
 	int access, attr, createflag, nrepeat, ret, share;
 	_TCHAR *tname;
@@ -37,7 +38,8 @@ __os_open(env, name, page_size, flags, mode, fhpp)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: open %s", name);
+		__db_msg(env, DB_STR_A("0025", "fileops: open %s",
+		    "%s"), name);
 
 #undef	OKFLAGS
 #define	OKFLAGS								\
@@ -84,7 +86,7 @@ __os_open(env, name, page_size, flags, mode, fhpp)
 	 * _chmod (partial emulation) function after file creation, although
 	 * this leaves us with an obvious race.  However, these efforts are
 	 * largely meaningless on FAT, the most common file system, which
-	 * only has a "readable" and "writeable" flag, applying to all users.
+	 * only has a "readable" and "writable" flag, applying to all users.
 	 */
 	access = GENERIC_READ;
 	if (!LF_ISSET(DB_OSO_RDONLY))

@@ -246,7 +246,7 @@ proc rep069_sub { method niter tnum logset largs } {
 		set id [expr $i + 1]
 		set fd [open $testdir/ELECTION_RESULT.$id r]
 		while { [gets $fd str] != -1 } {
-			if { [is_substr $str "Unable to elect a master"] == 1 } {
+			if { [is_substr $str "Too few remote sites"] == 1 } {
 				set none_electable 1
 				break
 			}

@@ -18,7 +18,7 @@ proc test114 { method {nentries 10000} {tnum "114"} args } {
 	global alphabet
 
 	# Compaction is an option for btree, recno, and hash databases.
-	if { [is_queue $method] == 1 } {
+        if { [is_queue $method] == 1 || [is_heap $method] == 1 } {
 		puts "Skipping compaction test$tnum for method $method."
 		return
 	}
@@ -53,6 +53,7 @@ proc test114 { method {nentries 10000} {tnum "114"} args } {
 	if { $eindex == -1 } {
 		set basename $testdir/test$tnum
 		set env NULL
+		append args " -cachesize { 0 500000 0 }"
 	} else {
 		set basename test$tnum
 		incr eindex

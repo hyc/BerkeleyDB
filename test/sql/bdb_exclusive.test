@@ -13,48 +13,10 @@
 
 set testdir [file dirname $argv0]/../../lang/sql/sqlite/test
 
-source $testdir/tester.tcl
+source $testdir/../../../../test/sql/bdb_util.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
 
 sqlite3 db test.db -fullmutex 1
-
-set excl_thread_procs { 
-  proc execsql {sql} {
-    enter_db_mutex $::DB 
-    set rc SQLITE_OK
-    set err [catch {
-      set ::STMT [sqlite3_prepare_v2 $::DB $sql -1 dummy_tail]
-    } msg]
-
-    if {$err == 0} {
-      while {[set rc [sqlite3_step $::STMT]] eq "SQLITE_ROW"} {}
-      set rc [sqlite3_finalize $::STMT]
-    } else {
-      if {[lindex $msg 0]=="(6)"} {
-        set rc SQLITE_LOCKED
-      } else {
-        set rc SQLITE_ERROR
-      }
-    }
-
-    if {[string first locked [sqlite3_errmsg $::DB]]>=0} {
-      set rc SQLITE_LOCKED
-    }
-    if {$rc ne "SQLITE_OK" && $rc ne "SQLITE_LOCKED"} {
-      set errtxt "$rc - [sqlite3_errmsg $::DB] (debug1)"
-    }
-    leave_db_mutex $::DB
-    set rc
-  }
-
-  proc do_test {name script result} {
-    set res [eval $script]
-    if {$res ne $result} {
-      error "$name failed: expected \"$result\" got \"$res\""
-    }
-    set res
-  }
-}
 
 do_test bdb_exclusive.1.0 {
    db eval { 
@@ -66,7 +28,11 @@ do_test bdb_exclusive.1.0 {
 # Create deadlock between an exclusive and non-exclusive 
 # transactions
 set exclusive_test2 {
-  set ::DB [sqlthread open test.db]
+  set key ""
+  if {[sqlite -has-codec]} {
+    set key "xyzzy"
+  }
+  set ::DB [sqlthread open test.db $key]
   set rc [
     for {set i 0} {$i < 100} {incr i} {
       do_test e1.$i {
@@ -88,7 +54,11 @@ set exclusive_test2 {
 }
 
 set nonexclusive_test2 {
-  set ::DB [sqlthread open test.db]
+  set key ""
+  if {[sqlite -has-codec]} {
+    set key "xyzzy"
+  }
+  set ::DB [sqlthread open test.db $key]
   set rc [
     for {set i 0} {$i < 100} {incr i} {
       do_test n1.$i {
@@ -124,7 +94,11 @@ set nonexclusive_test2 {
 # Check that deadlock cannot occur between two exclusive
 # transactions
 set exclusive1_test3 {
-  set ::DB [sqlthread open test.db]
+  set key ""
+  if {[sqlite -has-codec]} {
+    set key "xyzzy"
+  }
+  set ::DB [sqlthread open test.db $key]
   set rc [
     for {set i 0} {$i < 100} {incr i} {
       do_test 1e1.$i {
@@ -146,7 +120,11 @@ set exclusive1_test3 {
 }
 
 set exclusive2_test3 {
-  set ::DB [sqlthread open test.db]
+  set key ""
+  if {[sqlite -has-codec]} {
+    set key "xyzzy"
+  }
+  set ::DB [sqlthread open test.db $key]
   set rc [
     for {set i 0} {$i < 100} {incr i} {
       do_test 2e1.$i {
@@ -170,8 +148,8 @@ set exclusive2_test3 {
 # Start the exclusive and non-exclusive threads
 #
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test2
-thread_spawn finished(1) "" $excl_thread_procs $nonexclusive_test2
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test2
+thread_spawn finished(1) "" $bdb_thread_procs $nonexclusive_test2
   
 for {set i 0} {$i < 2} {incr i} {
   if {![info exists finished($i)]} {
@@ -185,8 +163,8 @@ for {set i 0} {$i < 2} {incr i} {
 # Start the two exclusive threads
 #
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive1_test3
-thread_spawn finished(1) "" $excl_thread_procs $exclusive2_test3
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive1_test3
+thread_spawn finished(1) "" $bdb_thread_procs $exclusive2_test3
   
 for {set i 0} {$i < 2} {incr i} {
   if {![info exists finished($i)]} {

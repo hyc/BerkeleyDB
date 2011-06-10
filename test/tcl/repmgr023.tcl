@@ -15,6 +15,12 @@ proc repmgr023 { { niter 50 } { tnum 023 } args } {
 		return
 	}
 
+	# QNX does not support fork() in a multi-threaded environment.
+	if { $is_qnx_test } {
+		puts "Skipping repmgr$tnum on QNX."
+		return
+	}
+
 	set method "btree"
 	set args [convert_args $method $args]
 
@@ -59,7 +65,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_A \
 	    -home $dira"
 	set enva [eval $cmda]
-	$enva repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$enva repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $porta] -start master
 
 	set cmdb "berkdb_env_noerr -create -txn nosync \
@@ -67,7 +73,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_B \
 	    -home $dirb"
 	set envb [eval $cmdb]
-	$envb repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$envb repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $portb] -start client \
 	    -remote [list localhost $porta]
 	puts "\tRepmgr$tnum.a: wait for client B to sync with master."
@@ -78,7 +84,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_C \
 	    -home $dirc"
 	set envc [eval $cmdc]
-	$envc repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$envc repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $portc] -start client \
 	    -remote [list localhost $porta]
 	puts "\tRepmgr$tnum.b: wait for client C to sync with master."
@@ -110,6 +116,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 
 		puts "\tRepmgr$tnum.f: Run db_archive on master."
 		$enva log_flush
+		$enva test force noarchive_timeout
 		set res [eval exec $util_path/db_archive -d -h $dira]
 		set first_master_log [get_logfile $enva first]
 		if { $first_master_log > $last_client_log } {
@@ -120,7 +127,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 	puts "\tRepmgr$tnum.g: Restart client."
 	set envc [eval $cmdc -recover -event]
 	$envc rep_config {autoinit off}
-	$envc repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$envc repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $portc] -start client \
 	    -remote [list localhost $porta]
 
@@ -168,7 +175,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 	# 
 	puts "\tRepmgr$tnum.i: Shut down master, client C should sync up."
 	$enva close
-	await_startup_done $envc
+	await_startup_done $envc 40
 
 	$envc close
 	$envb close

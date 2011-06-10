@@ -35,9 +35,9 @@ __memp_bh_settxn(dbmp, mfp, bhp, vtd)
 	td = (TXN_DETAIL *)vtd;
 
 	if (td == NULL) {
-		__db_errx(env,
-		      "%s: non-transactional update to a multiversion file",
-		    __memp_fns(dbmp, mfp));
+		__db_errx(env, DB_STR_A("3002",
+		    "%s: non-transactional update to a multiversion file",
+		    "%s"), __memp_fns(dbmp, mfp));
 		return (EINVAL);
 	}
 
@@ -565,7 +565,7 @@ __memp_bh_thaw(dbmp, infop, hp, frozen_bhp, alloc_bhp)
 	 */
 	MUTEX_REQUIRED(env, hp->mtx_hash);
 	if (alloc_bhp != NULL) {
-		alloc_bhp->priority = c_mp->lru_count;
+		alloc_bhp->priority = c_mp->lru_priority;
 
 		SH_CHAIN_INSERT_AFTER(frozen_bhp, alloc_bhp, vc, __bh);
 		if (!SH_CHAIN_HASNEXT(alloc_bhp, vc)) {

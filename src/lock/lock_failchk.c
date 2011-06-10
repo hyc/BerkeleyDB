@@ -58,7 +58,9 @@ retry:	LOCK_LOCKERS(env, lrp);
 				continue;
 
 			/* If the locker is still alive, it's not a problem. */
-			if (dbenv->is_alive(dbenv, lip->pid, lip->tid, 0))
+			if (dbenv->is_alive(dbenv, lip->pid, lip->tid,
+			    F_ISSET(lip, DB_LOCKER_HANDLE_LOCKER) ?
+			    DB_MUTEX_PROCESS_ONLY : 0))
 				continue;
 
 			/*
@@ -68,8 +70,8 @@ retry:	LOCK_LOCKERS(env, lrp);
 			 * interrupted with only 1-of-N pages modified.
 			 */
 			if (lip->id < TXN_MINIMUM && lip->nwrites != 0) {
-				ret = __db_failed(env,
-				     "locker has write locks",
+				ret = __db_failed(env, DB_STR_A("2052",
+				    "locker has write locks", ""),
 				     lip->pid, lip->tid);
 				break;
 			}
@@ -78,9 +80,10 @@ retry:	LOCK_LOCKERS(env, lrp);
 			 * Discard the locker and its read locks.
 			 */
 			if (!SH_LIST_EMPTY(&lip->heldby)) {
-				__db_msg(env,
+				__db_msg(env, DB_STR_A("2053",
 				    "Freeing read locks for locker %#lx: %s",
-				    (u_long)lip->id, dbenv->thread_id_string(
+				    "%#lx %s"), (u_long)lip->id,
+				    dbenv->thread_id_string(
 				    dbenv, lip->pid, lip->tid, buf));
 				UNLOCK_LOCKERS(env, lrp);
 				memset(&request, 0, sizeof(request));

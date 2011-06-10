@@ -48,6 +48,9 @@ proc env017_log_stat { } {
 		{ "Log file mode"	    st_mode }
 		{ "Log record cache size"	    st_lg_bsize }
 		{ "Current log file size"	    st_lg_size }
+		{ "Initial fileid allocation"	    st_fileid_init }
+		{ "Current fileids in use"	    st_nfileid }
+		{ "Maximum fileids ever used"	    st_maxnfileid }
 		{ "Log file records written"	    st_record }
 		{ "Mbytes written"	    st_w_mbytes }
 		{ "Bytes written (over Mb)"	    st_w_bytes }
@@ -69,6 +72,7 @@ proc env017_log_stat { } {
 		{ "Number of region lock nowaits"	    st_region_nowait }
 	}
 	set doc_list [list st_magic st_version st_mode st_lg_bsize st_lg_size \
+	    st_fileid_init st_nfileid st_maxnfileid \
 	    st_record st_w_mbytes st_w_bytes st_wc_mbytes st_wc_bytes \
 	    st_wcount st_wcount_fill st_rcount st_scount st_cur_file \
 	    st_cur_offset st_disk_file st_disk_offset st_maxcommitperflush \
@@ -87,11 +91,18 @@ proc env017_lock_stat { } {
 		{ "Region size"	    st_regsize }
 		{ "Last allocated locker ID"	    st_id }
 		{ "Current maximum unused locker ID"	    st_cur_maxid }
+		{ "Initial locks"	    st_initlocks }
+		{ "Allocated locks"	    st_locks }
 		{ "Maximum locks"	    st_maxlocks }
+		{ "Initial lockers"	    st_initlockers }
+		{ "Allocated lockers"	    st_lockers }
 		{ "Maximum lockers"	    st_maxlockers }
+		{ "Initial objects"	    st_initobjects }
+		{ "Allocated objects"	    st_objects }
 		{ "Maximum objects"	    st_maxobjects }
 		{ "Lock modes"	    st_nmodes }
 		{ "Number of lock table partitions"	    st_partitions }
+		{ "Size of object hash table"	st_tablesize }
 		{ "Current number of locks"	    st_nlocks }
 		{ "Maximum number of locks so far"	    st_maxnlocks }
 		{ "Maximum number of locks in any hash bucket"
@@ -137,8 +148,11 @@ proc env017_lock_stat { } {
 		{ "Maximum number nowaits on any lock partition mutex"
 		    st_part_max_nowait }
 	}
-	set doc_list [list st_id st_cur_maxid st_nmodes st_maxlocks \
-	    st_maxlockers st_maxobjects st_partitions st_nlocks st_maxnlocks \
+	set doc_list [list st_id st_cur_maxid st_nmodes \
+	    st_initlocks st_initlockers st_initobjects \
+	    st_locks st_lockers st_objects \
+	    st_maxlocks st_maxlockers st_maxobjects \
+	    st_partitions st_tablesize st_nlocks st_maxnlocks \
 	    st_maxhlocks st_locksteals st_maxlsteals st_nlockers \
 	    st_maxnlockers st_nobjects st_maxnobjects st_maxhobjects \
 	    st_objectsteals st_maxosteals st_nrequests st_nreleases st_nupgrade\
@@ -163,6 +177,7 @@ proc env017_txn_stat { } {
 		{ "Time of last checkpoint"	    st_time_ckp }
 		{ "Last txn ID allocated"	    st_last_txnid }
 		{ "Maximum txns"	    st_maxtxns }
+		{ "Initial txns"	    st_inittxns }
 		{ "Number aborted txns"	    st_naborts }
 		{ "Number txns begun"	    st_nbegins }
 		{ "Number committed txns"	    st_ncommits }
@@ -175,9 +190,9 @@ proc env017_txn_stat { } {
 		{ "Number of region lock nowaits"	    st_region_nowait }
 	}
 	set doc_list [list  st_last_ckp st_time_ckp st_last_txnid st_maxtxns \
-	    st_nactive st_nsnapshot st_maxnactive st_maxnsnapshot st_nbegins \
-	    st_naborts st_ncommits st_nrestores st_regsize st_region_wait \
-	    st_region_nowait ]
+	    st_inittxns st_nactive st_nsnapshot st_maxnactive st_maxnsnapshot \
+	    st_nbegins st_naborts st_ncommits st_nrestores st_regsize \
+	    st_region_wait st_region_nowait ]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -191,17 +206,21 @@ proc env017_mutex_stat { } {
 	set map_list {
 		{ "Mutex align"	    st_mutex_align }
 		{ "Mutex TAS spins"	    st_mutex_tas_spins }
+		{ "Initial mutex count"	st_mutex_init }
 		{ "Mutex count"	    st_mutex_cnt }
+		{ "Mutex max"	st_mutex_max }
 		{ "Free mutexes"	    st_mutex_free }
 		{ "Mutexes in use"	    st_mutex_inuse }
 		{ "Max in use"	    st_mutex_inuse_max }
 		{ "Mutex region size"	    st_regsize }
+		{ "Mutex region max"	    st_regmax }
 		{ "Number of region waits"	    st_region_wait }
 		{ "Number of region no waits"	    st_region_nowait }
 	}
-	set doc_list [list st_mutex_align st_mutex_tas_spins st_mutex_cnt \
-	    st_mutex_free st_mutex_inuse st_mutex_inuse_max st_regsize \
-	    st_region_wait st_region_nowait ]
+	set doc_list [list st_mutex_align st_mutex_tas_spins st_mutex_init \
+	    st_mutex_cnt st_mutex_max st_mutex_free st_mutex_inuse \
+	    st_mutex_inuse_max st_regsize st_regmax st_region_wait \
+	    st_region_nowait ]
 
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
@@ -231,6 +250,10 @@ proc env017_rep_stat { } {
 		{ "Generation number"	    st_gen }
 		{ "Election generation number"	    st_egen }
 		{ "Startup complete"	    st_startup_complete }
+		{ "Lease messages sent"		st_lease_sends }
+		{ "Lease checks"		st_lease_chk }
+		{ "Lease check invalid"		st_lease_chk_misses }
+		{ "Lease check refresh"		st_lease_chk_refresh }
 		{ "Duplicate log records received"	    st_log_duplicated }
 		{ "Current log records queued"	    st_log_queued }
 		{ "Maximum log records queued"	    st_log_queued_max }
@@ -259,6 +282,7 @@ proc env017_rep_stat { } {
 		{ "Election phase"	    st_election_status }
 		{ "Election winner"	    st_election_cur_winner }
 		{ "Election generation number"	    st_election_gen }
+		{ "Election data generation number"	    st_election_datagen }
 		{ "Election max LSN"	    st_election_lsn }
 		{ "Election sites"	    st_election_nsites }
 		{ "Election nvotes"	    st_election_nvotes }
@@ -276,11 +300,13 @@ proc env017_rep_stat { } {
 	set doc_list [list st_bulk_fills st_bulk_overflows st_bulk_records \
 	    st_bulk_transfers st_client_rerequests st_client_svc_miss \
 	    st_client_svc_req st_dupmasters st_egen st_election_cur_winner \
-	    st_election_gen st_election_lsn st_election_nsites \
+	    st_election_gen st_election_datagen st_election_lsn st_election_nsites \
 	    st_election_nvotes st_election_priority st_election_sec \
 	    st_election_status st_election_tiebreaker st_election_usec \
 	    st_election_votes st_elections st_elections_won st_env_id \
-	    st_env_priority st_filefail_cleanups st_gen st_log_duplicated \
+	    st_env_priority st_filefail_cleanups st_gen st_lease_sends \
+	    st_lease_chk st_lease_chk_misses st_lease_chk_refresh \
+	    st_log_duplicated \
 	    st_log_queued st_log_queued_max st_log_queued_total st_log_records \
 	    st_log_requested st_master st_master_changes st_max_lease_sec \
 	    st_max_lease_usec st_max_perm_lsn st_msgs_badgen st_msgs_processed\
@@ -327,6 +353,7 @@ proc env017_mpool_stat { } {
 		{ "Number of caches"	    st_ncache }
 		{ "Maximum number of caches"	    st_max_ncache }
 		{ "Region size"	    st_regsize }
+		{ "Region max"	    st_regmax }
 		{ "Maximum memory-mapped file size"	    st_mmapsize }
 		{ "Maximum open file descriptors"	    st_maxopenfd }
 		{ "Maximum sequential buffer writes"	    st_maxwrite }
@@ -344,6 +371,7 @@ proc env017_mpool_stat { } {
 		{ "Cached clean pages"	    st_page_clean }
 		{ "Cached dirty pages"	    st_page_dirty }
 		{ "Hash buckets"	    st_hash_buckets }
+		{ "Mutexes for hash buckets"	    st_hash_mutexes }
 		{ "Default pagesize"	    st_pagesize }
 		{ "Hash lookups"	    st_hash_searches }
 		{ "Longest hash chain found"	    st_hash_longest }
@@ -369,11 +397,11 @@ proc env017_mpool_stat { } {
 		{ "Number of syncs interrupted"		st_sync_interrupted}
 	}
 	set doc_list [list st_gbytes st_bytes st_ncache st_max_ncache \
-	    st_regsize st_mmapsize st_maxopenfd st_maxwrite st_maxwrite_sleep \
-	    st_map st_cache_hit st_cache_miss st_page_create st_page_in \
-	    st_page_out st_ro_evict st_rw_evict st_page_trickle st_pages \
-	    st_page_clean st_page_dirty st_hash_buckets st_pagesize \
-	    st_hash_searches \
+	    st_regsize st_regmax st_mmapsize st_maxopenfd st_maxwrite \
+	    st_maxwrite_sleep st_map st_cache_hit st_cache_miss \
+	    st_page_create st_page_in st_page_out st_ro_evict st_rw_evict \
+	    st_page_trickle st_pages st_page_clean st_page_dirty \
+	    st_hash_buckets st_hash_mutexes st_pagesize st_hash_searches \
 	    st_hash_longest st_hash_examined st_hash_nowait st_hash_wait \
 	    st_hash_max_nowait st_hash_max_wait st_region_wait \
 	    st_region_nowait st_mvcc_frozen st_mvcc_thawed st_mvcc_freed \
@@ -535,12 +563,45 @@ proc env017_compact_stat { } {
 proc env017_stat_check { map_list doc_list check_type stat_method \
      {envargs {}} } {
 	source ./include.tcl
-	env_cleanup $testdir
-	set env [eval berkdb_env_noerr $envargs -home $testdir]	
-	error_check_good is_valid_env [is_valid_env $env] TRUE
-	set stat_list [$env $stat_method]
-	env017_do_check $map_list $stat_list $doc_list $check_type 
-	error_check_good "$env close" [$env close] 0
+	set extopts {
+		{""}
+		{"-thread"}
+		{"-private" {"mutex_stat" "requires.*mutex.*subsystem"}}
+		{"-thread -private"}
+	}
+
+	foreach extopt $extopts {
+		set extarg [lindex $extopt 0]
+		set failmsg ""
+		set fail 0
+		if {[llength $extopt] > 1} {
+			set len [llength $extopt]
+			for {set i 1} {$i < $len} {incr i} {
+				set item [lindex $extopt $i]
+				set stat [lindex $item 0]
+				if {$stat == $stat_method} {
+					set failmsg [lindex $item 1]
+					set fail 1
+					break
+				}
+			}
+		}
+
+		env_cleanup $testdir
+		puts "\tEnv017: Check DB_ENV->$stat_method ($envargs $extarg)"
+		set env [eval berkdb_env_noerr $extarg $envargs -home $testdir]
+		error_check_good is_valid_env [is_valid_env $env] TRUE
+		if {$fail == 0} {
+			set stat_list [$env $stat_method]
+			env017_do_check \
+			    $map_list $stat_list $doc_list $check_type
+		} else {
+			set ret [catch {eval $env $stat_method} res]
+			error_check_bad $stat_method $ret 0
+			error_check_bad chk_err [regexp $failmsg $res] 0
+		}
+		error_check_good "$env close" [$env close] 0
+	}
 }
 
 # This is common proc for db stat.

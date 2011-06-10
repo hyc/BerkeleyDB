@@ -5,7 +5,7 @@
     <ProjectGuid>{4696FB1E-1E5F-40B9-BD8C-A54D3BDA00F6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
-    <AssemblyName>libdb_dotnet51</AssemblyName>
+    <AssemblyName>libdb_dotnet52</AssemblyName>
     <RootNamespace>BerkeleyDB</RootNamespace>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -38,7 +38,7 @@
     <OutputPath>..\..\..\build_windows\AnyCPU\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>doc\libdb_dotnet51.XML</DocumentationFile>
+    <DocumentationFile>doc\libdb_dotnet52.XML</DocumentationFile>
     <NoWarn>419</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -46,7 +46,7 @@
     <Optimize>true</Optimize>
     <OutputPath>..\..\..\build_windows\AnyCPU\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <DocumentationFile>doc\libdb_dotnet51.XML</DocumentationFile>
+    <DocumentationFile>doc\libdb_dotnet52.XML</DocumentationFile>
     <NoWarn>419</NoWarn>
   </PropertyGroup>
   <ItemGroup>
@@ -70,11 +70,15 @@
     <Compile Include="CompactData.cs"/>
     <Compile Include="MultipleKeyDatabaseEntry.cs"/>
     <Compile Include="DatabaseEntry.cs"/>
+    <Compile Include="DbChannel.cs"/>
+    <Compile Include="DbSite.cs"/>
+    <Compile Include="DbSiteConfig.cs"/>
     <Compile Include="DbThreadID.cs"/>
     <Compile Include="DeadlockPolicy.cs"/>
     <Compile Include="Enums.cs"/>
     <Compile Include="ErrorCodes.cs"/>
     <Compile Include="HashStats.cs"/>
+    <Compile Include="Internal\DB_CHANNEL.cs"/>
     <Compile Include="Internal\DB_LOCKREQ.cs"/>
     <Compile Include="Internal\DB_PREPLIST.cs"/>
     <Compile Include="Internal\DB_REPMGR_SITE.cs"/>
@@ -127,6 +131,10 @@
     <Compile Include="DatabaseType.cs"/>
     <Compile Include="HashDatabase.cs"/>
     <Compile Include="HashDatabaseConfig.cs"/>
+    <Compile Include="HeapDatabase.cs"/>
+    <Compile Include="HeapDatabaseConfig.cs"/>
+    <Compile Include="HeapRecordId.cs"/>
+    <Compile Include="HeapStats.cs"/>
     <Compile Include="Internal\DB.cs"/>
     <Compile Include="Internal\DBC.cs"/>
     <Compile Include="Internal\DbConstants.cs"/>
@@ -139,6 +147,7 @@
     <Compile Include="Internal\db_lockmode_t.cs"/>
     <Compile Include="Internal\DB_LSN.cs"/>
     <Compile Include="Internal\db_recops.cs"/>
+    <Compile Include="Internal\DB_SITE.cs"/>
     <Compile Include="Internal\DB_TXN.cs"/>
     <Compile Include="Internal\DB_TXN_TOKEN.cs"/>
     <Compile Include="Internal\Delegates.cs"/>

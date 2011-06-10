@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -34,7 +34,7 @@ public class QueueStats extends DatabaseStats {
 
     private int qs_metaflags;
     /**
-    The metadata flags.
+    Reports internal flags. For internal use only.
     */
     public int getMetaFlags() {
         return qs_metaflags;

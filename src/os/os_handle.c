@@ -161,7 +161,8 @@ __os_openhandle(env, name, flags, mode, fhpp)
 		if ((fcntl_flags = fcntl(fhp->fd, F_GETFD)) == -1 ||
 		    fcntl(fhp->fd, F_SETFD, fcntl_flags | FD_CLOEXEC) == -1) {
 			ret = __os_get_syserr();
-			__db_syserr(env, ret, "fcntl(F_SETFD)");
+			__db_syserr(env, ret, DB_STR("0162",
+			    "fcntl(F_SETFD)"));
 			ret = __os_posix_err(ret);
 			goto err;
 		}
@@ -204,7 +205,8 @@ __os_closehandle(env, fhp)
 		dbenv = env->dbenv;
 		if (fhp->name != NULL && FLD_ISSET(
 		    dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-			__db_msg(env, "fileops: close %s", fhp->name);
+			__db_msg(env, DB_STR_A("0163",
+			    "fileops: close %s", "%s"), fhp->name);
 
 		if (F_ISSET(fhp, DB_FH_ENVLINK)) {
 			/*
@@ -224,7 +226,7 @@ __os_closehandle(env, fhp)
 		else
 			RETRY_CHK((close(fhp->fd)), ret);
 		if (ret != 0) {
-			__db_syserr(env, ret, "close");
+			__db_syserr(env, ret, DB_STR("0164", "close"));
 			ret = __os_posix_err(ret);
 		}
 	}

@@ -36,7 +36,7 @@ proc repmgr105_sub { config } {
 	file mkdir $testdir/C
 
 	puts "\tRepmgr$tnum.a: Start master, write some data."
-	make_dbconfig $masterdir {{rep_set_nsites 4}}
+	make_dbconfig $masterdir {}
 	set cmds {
 		"home $masterdir"
 		"local $mport"
@@ -55,7 +55,7 @@ proc repmgr105_sub { config } {
 	# Windows.  Since it's really only client C that's under test here, this
 	# detail doesn't matter.
 	# 
-	make_dbconfig $testdir/A {{rep_set_nsites 4}}
+	make_dbconfig $testdir/A {}
 	set a [open_site_prog [list \
 			       "home $testdir/A" \
 			       "local $portA" \
@@ -67,7 +67,7 @@ proc repmgr105_sub { config } {
 	await_startup_done $env
 	$env close
 
-	make_dbconfig $testdir/B {{rep_set_nsites 4}}
+	make_dbconfig $testdir/B {}
 	set b [open_site_prog [list  \
 			       "home $testdir/B" \
 			       "local $portB" \
@@ -87,7 +87,7 @@ proc repmgr105_sub { config } {
 	# configuration information appropriately for each test variant.
 	#
 	puts "\tRepmgr$tnum.c: Start client under test."
-	make_dbconfig $testdir/C {{rep_set_nsites 4}}
+	make_dbconfig $testdir/C {}
 
 	set c2 [list \
 		    "home $testdir/C" \

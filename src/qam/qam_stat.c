@@ -222,6 +222,8 @@ __qam_stat_print(dbc, flags)
 	    "Underlying database extent size", (u_long)sp->qs_extentsize);
 	__db_dl(env,
 	    "Number of records in the database", (u_long)sp->qs_nkeys);
+	__db_dl(env,
+	    "Number of data items in the database", (u_long)sp->qs_ndata);
 	__db_dl(env, "Number of database pages", (u_long)sp->qs_pages);
 	__db_dl_pct(env,
 	    "Number of bytes free in database pages",

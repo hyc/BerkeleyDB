@@ -3,6 +3,9 @@
 # Take a comma-separated list of page numbers and spit out all the
 # log records that affect those page numbers.
 
+BEGIN {
+	INDX = -1
+}
 NR == 1 {
 	npages = 0
 	while ((ndx = index(PGNO, ",")) != 0) {
@@ -23,7 +26,8 @@ NR == 1 {
 	rec = $0
 }
 /^	/{
-	rec = sprintf("%s\n%s", rec, $0);
+	if (length(rec) + length($0) < 2040)
+		rec = sprintf("%s\n%s", rec, $0);
 }
 /pgno/{
 	for (i = 0; i <= npages; i++)
@@ -39,6 +43,11 @@ NR == 1 {
 	for (i = 0; i <= npages; i++)
 		if ($2 == pgno[i])
 			printme = 1
+}
+/indx/{
+	if (printme == 1 && INDX != -1)
+		if(INDX != $2)
+			printme = 0;
 }
 
 END {

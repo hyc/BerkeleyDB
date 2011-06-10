@@ -27,8 +27,8 @@ static int
 __db_norep(env)
 	ENV *env;
 {
-	__db_errx(env,
-	    "library build did not include support for replication");
+	__db_errx(env, DB_STR("3581",
+	    "library build did not include support for replication"));
 	return (DB_OPNOTSUP);
 }
 
@@ -60,11 +60,12 @@ __env_db_rep_exit(env)
 }
 
 int
-__op_rep_enter(env, local_nowait)
+__op_rep_enter(env, local_nowait, obey_user)
 	ENV *env;
-	int local_nowait;
+	int local_nowait, obey_user;
 {
 	COMPQUIET(local_nowait, 0);
+	COMPQUIET(obey_user, 0);
 	return (__db_norep(env));
 }
 
@@ -182,7 +183,7 @@ __rep_set_clockskew(dbenv, fast_clock, slow_clock)
 }
 
 int
-__rep_set_nsites(dbenv, n)
+__rep_set_nsites_pp(dbenv, n)
 	DB_ENV *dbenv;
 	u_int32_t n;
 {

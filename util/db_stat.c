@@ -56,8 +56,11 @@ main(argc, argv)
 	db = home = passwd = subdb = NULL;
 
 	while ((ch = getopt(argc,
-	    argv, "C:cd:Eefgh:L:lM:mNP:R:rs:tVxX:Z")) != EOF)
+	    argv, "aC:cd:Eefgh:L:lM:mNP:R:rs:tVxX:Z")) != EOF)
 		switch (ch) {
+		case 'a':
+			LF_SET(DB_STAT_ALLOC);
+			break;
 		case 'C': case 'c':
 			if (ttype != T_NOTSET && ttype != T_LOCK)
 				goto argcombo;
@@ -149,7 +152,8 @@ main(argc, argv)
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5005",
+				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
 				return (EXIT_FAILURE);
 			}
@@ -176,9 +180,9 @@ main(argc, argv)
 			break;
 		case 't':
 			if (ttype != T_NOTSET) {
-argcombo:			fprintf(stderr,
+argcombo:			fprintf(stderr, DB_STR_A("5006",
 				    "%s: illegal option combination\n",
-				    progname);
+				    "%s\n"), progname);
 				return (usage());
 			}
 			ttype = T_TXN;
@@ -226,6 +230,9 @@ argcombo:			fprintf(stderr,
 	case T_NOTSET:
 		return (usage());
 	}
+
+	if (LF_ISSET(DB_STAT_ALL | DB_STAT_ALLOC) == DB_STAT_ALLOC)
+		return (usage());
 
 	/* Handle possible interruptions. */
 	__db_util_siginit();
@@ -349,7 +356,8 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 			goto err;
 		break;
 	case T_NOTSET:
-		dbenv->errx(dbenv, "Unknown statistics flag");
+		dbenv->errx(dbenv, DB_STR("5007",
+		    "Unknown statistics flag"));
 		goto err;
 	}
 
@@ -358,7 +366,7 @@ err:		exitval = 1;
 	}
 	if (dbp != NULL && (ret = dbp->close(dbp, DB_NOSYNC)) != 0) {
 		exitval = 1;
-		dbenv->err(dbenv, ret, "close");
+		dbenv->err(dbenv, ret, DB_STR("5008", "close"));
 	}
 	if (dbenv != NULL && (ret = dbenv->close(dbenv, 0)) != 0) {
 		exitval = 1;
@@ -445,8 +453,8 @@ usage()
 	fprintf(stderr, "usage: %s %s\n", progname,
 	    "-d file [-fN] [-h home] [-P password] [-s database]");
 	fprintf(stderr, "usage: %s %s\n\t%s\n", progname,
-	    "[-cEelmNrtVxZ] [-C Aclop]",
-	    "[-h home] [-L A] [-M A] [-P password] [-R A] [-X A]");
+	    "[-cEelmrtVx] [-C Aclop]",
+	    "[-h home] [-L A] [-M A] [-P password] [-R A] [-X A] [-aNZ]");
 	return (EXIT_FAILURE);
 }
 
@@ -458,9 +466,10 @@ version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		fprintf(stderr, DB_STR_A("5009",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
 		    v_major, v_minor);
 		return (EXIT_FAILURE);
 	}

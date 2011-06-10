@@ -51,6 +51,10 @@ static char *errorName(int rc){
 }
 
 /*
+** Page size and reserved size used for testing.
+*/
+static int test_pagesize = 1024;
+/*
 ** Usage:   fake_big_file  N  FILENAME
 **
 ** Write a few bytes at the N megabyte point of FILENAME.  This will

@@ -8,21 +8,24 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
-    <link rel="prev" href="dbcreate.html" title="db_create" />
-    <link rel="next" href="dbdel.html" title="DB-&gt;del()" />
+    <link rel="prev" href="dbclose.html" title="DB-&gt;close()" />
+    <link rel="next" href="db_copy.html" title="db_copy" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB-&gt;compact()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="dbcreate.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="dbclose.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 2. 
                 The DB Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="dbdel.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="db_copy.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -58,7 +61,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49648144"></a>Parameters</h3>
+              <h3 class="title"><a id="id3852655"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -66,7 +69,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49586656"></a>txnid</h4>
+                <h4 class="title"><a id="id3852769"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -97,7 +100,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49660832"></a>start</h4>
+                <h4 class="title"><a id="id3853988"></a>start</h4>
               </div>
             </div>
           </div>
@@ -116,7 +119,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49634136"></a>stop</h4>
+                <h4 class="title"><a id="id3853516"></a>stop</h4>
               </div>
             </div>
           </div>
@@ -134,7 +137,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49652960"></a>c_data</h4>
+                <h4 class="title"><a id="id3853467"></a>c_data</h4>
               </div>
             </div>
           </div>
@@ -257,7 +260,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49660960"></a>flags</h4>
+                <h4 class="title"><a id="id3853883"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -307,7 +310,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49649864"></a>end</h4>
+                <h4 class="title"><a id="id3853463"></a>end</h4>
               </div>
             </div>
           </div>
@@ -326,7 +329,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49666040"></a>Errors</h3>
+              <h3 class="title"><a id="id3854244"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -342,7 +345,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49663144"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id3853730"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -355,7 +358,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49676600"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id3853849"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -368,7 +371,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49660752"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id3854219"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -387,7 +390,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49685736"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id3854271"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -399,7 +402,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49671728"></a>EACCES</h4>
+                <h4 class="title"><a id="id3854265"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -411,7 +414,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49690760"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3853881"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -424,7 +427,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49646072"></a>Class</h3>
+              <h3 class="title"><a id="id3854340"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -436,7 +439,7 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49660560"></a>See Also</h3>
+              <h3 class="title"><a id="id3854242"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -449,18 +452,18 @@ DB-&gt;compact(DB *db, DB_TXN *txnid,
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="dbcreate.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="dbclose.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="db.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="dbdel.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="db_copy.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">db_create </td>
+          <td width="40%" align="left" valign="top">DB-&gt;close() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DB-&gt;del()</td>
+          <td width="40%" align="right" valign="top"> db_copy</td>
         </tr>
       </table>
     </div>

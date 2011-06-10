@@ -1,42 +1,41 @@
-/* Do not edit: automatically built by gen_msg.awk. */
+/* Do not edit: automatically built by gen_rec.awk. */
 
 #ifndef	__repmgr_AUTO_H
 #define	__repmgr_AUTO_H
-
-/*
- * Message sizes are simply the sum of field sizes (not
- * counting variable size parts, when DBTs are present),
- * and may be different from struct sizes due to padding.
- */
-#define	__REPMGR_HANDSHAKE_SIZE	10
-typedef struct ___repmgr_handshake_args {
-	u_int16_t	port;
-	u_int32_t	priority;
-	u_int32_t	flags;
-} __repmgr_handshake_args;
-
-#define	__REPMGR_V2HANDSHAKE_SIZE	6
-typedef struct ___repmgr_v2handshake_args {
-	u_int16_t	port;
-	u_int32_t	priority;
-} __repmgr_v2handshake_args;
-
-#define	__REPMGR_PERMLSN_SIZE	12
-typedef struct ___repmgr_permlsn_args {
-	u_int32_t	generation;
-	DB_LSN		lsn;
-} __repmgr_permlsn_args;
-
-#define	__REPMGR_VERSION_PROPOSAL_SIZE	8
-typedef struct ___repmgr_version_proposal_args {
-	u_int32_t	min;
-	u_int32_t	max;
-} __repmgr_version_proposal_args;
-
-#define	__REPMGR_VERSION_CONFIRMATION_SIZE	4
-typedef struct ___repmgr_version_confirmation_args {
+#ifdef HAVE_REPLICATION_THREADS
+#include "dbinc/log.h"
+#define	DB___repmgr_member	200
+typedef struct ___repmgr_member_args {
+	u_int32_t type;
+	DB_TXN *txnp;
+	DB_LSN prev_lsn;
 	u_int32_t	version;
-} __repmgr_version_confirmation_args;
+	u_int32_t	prev_status;
+	u_int32_t	status;
+	DBT	host;
+	u_int32_t	port;
+} __repmgr_member_args;
 
-#define	__REPMGR_MAXMSG_SIZE	12
+extern __DB_IMPORT DB_LOG_RECSPEC __repmgr_member_desc[];
+static inline int
+__repmgr_member_log(ENV *env, DB_TXN *txnp, DB_LSN *ret_lsnp, u_int32_t flags,
+    u_int32_t version, u_int32_t prev_status, u_int32_t status, const DBT *host, u_int32_t port)
+{
+	return (__log_put_record(env, NULL, txnp, ret_lsnp,
+	    flags, DB___repmgr_member, 0,
+	    sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(DB_LSN) +
+	    sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(u_int32_t) +
+	    LOG_DBT_SIZE(host) + sizeof(u_int32_t),
+	    __repmgr_member_desc,
+	    version, prev_status, status, host, port));
+}
+
+static inline int __repmgr_member_read(ENV *env, 
+    void *data, __repmgr_member_args **arg)
+{
+	*arg = NULL;
+	return (__log_read_record(env, 
+	    NULL, NULL, data, __repmgr_member_desc, sizeof(__repmgr_member_args), (void**)arg));
+}
+#endif /* HAVE_REPLICATION_THREADS */
 #endif

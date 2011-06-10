@@ -18,6 +18,7 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	if { $checking_valid_methods } {
 		return "ALL"
@@ -42,6 +43,11 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 	set msg2 "and on-disk replication files"
 	if { $repfiles_in_memory } {
 		set msg2 "and in-memory replication files"
+	}
+
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
 	}
 
 	# This test needs to set its own pagesize.
@@ -69,7 +75,8 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 				set envargs ""
 				set args $saved_args
 				puts "Rep$tnum ($method $envargs $r $c $args):\
-				    Test of internal initialization $msg $msg2."
+				    Test of internal initialization\
+				    $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep029_sub $method $niter $tnum $envargs \
@@ -85,7 +92,8 @@ proc rep029 { method { niter 200 } { tnum "029" } args } {
 				append envargs " -encryptaes $passwd "
 				append args " -encrypt "
 				puts "Rep$tnum ($method $envargs $r $c $args):\
-				    Test of internal initialization $msg $msg2."
+				    Test of internal initialization\
+				    $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep029_sub $method $niter $tnum $envargs \
@@ -101,6 +109,7 @@ proc rep029_sub { method niter tnum envargs logset recargs opts largs } {
 	global util_path
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -112,6 +121,11 @@ proc rep029_sub { method niter tnum envargs logset recargs opts largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -143,7 +157,7 @@ proc rep029_sub { method niter tnum envargs logset recargs opts largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $repmemargs \
-	    $m_logargs -log_max $log_max $envargs $verbargs \
+	    $m_logargs -log_max $log_max $envargs $verbargs $privargs \
 	    -errpfx MASTER -home $masterdir \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
@@ -151,7 +165,7 @@ proc rep029_sub { method niter tnum envargs logset recargs opts largs } {
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $repmemargs \
-	    $c_logargs -log_max $log_max $envargs $verbargs \
+	    $c_logargs -log_max $log_max $envargs $verbargs $privargs \
 	    -errpfx CLIENT -home $clientdir \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]

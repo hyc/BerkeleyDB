@@ -13,6 +13,9 @@
 #include "dbinc/btree.h"
 #include "dbinc/fop.h"
 #include "dbinc/hash.h"
+#ifdef HAVE_HEAP
+#include "dbinc/heap.h"
+#endif
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
@@ -101,7 +104,8 @@ main(argc, argv)
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5010",
+				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
 				return (EXIT_FAILURE);
 			}
@@ -231,7 +235,8 @@ main(argc, argv)
 	/* Initialize print callbacks if repflag. */
 	if (repflag &&
 	    (ret = env_init_print(env, version, &dtab)) != 0) {
-		dbenv->err(dbenv, ret, "callback: initialization");
+		dbenv->err(dbenv, ret, DB_STR("5011",
+		    "callback: initialization"));
 		goto err;
 	}
 	for (; !__db_util_interrupted(); logcflag = rflag ? DB_PREV : DB_NEXT) {
@@ -271,8 +276,8 @@ main(argc, argv)
 				version = newversion;
 				if ((ret = env_init_print(env, version,
 				    &dtab)) != 0) {
-					dbenv->err(dbenv, ret,
-					    "callback: initialization");
+					dbenv->err(dbenv, ret, DB_STR("5012",
+					    "callback: initialization"));
 					goto err;
 				}
 			}
@@ -288,7 +293,8 @@ main(argc, argv)
 		(void)fflush(stdout);
 
 		if (ret != 0) {
-			dbenv->err(dbenv, ret, "tx: dispatch");
+			dbenv->err(dbenv, ret, DB_STR("5013",
+			    "tx: dispatch"));
 			goto err;
 		}
 	}
@@ -360,14 +366,28 @@ env_init_print(env, version, dtabp)
 	if ((ret = __ham_init_print(env, dtabp)) != 0)
 		goto err;
 #endif
+#ifdef HAVE_HEAP
+	if ((ret = __heap_init_print(env, dtabp)) != 0)
+		goto err;
+#endif
 #ifdef HAVE_QUEUE
 	if ((ret = __qam_init_print(env, dtabp)) != 0)
+		goto err;
+#endif
+#ifdef HAVE_REPLICATION_THREADS
+	if ((ret = __repmgr_init_print(env, dtabp)) != 0)
 		goto err;
 #endif
 	if ((ret = __txn_init_print(env, dtabp)) != 0)
 		goto err;
 
-	if (version == DB_LOGVERSION)
+	/*
+	 * There are no log differences between 5.0 and 5.2, but 5.2
+	 * is a superset of 5.0.  Patch 2 of 4.8 added __db_pg_trunc
+	 * but didn't alter any log records so we want the same
+	 * override as 4.8
+	 */
+	if (version > DB_LOGVERSION_48p2)
 		goto done;
 	if ((ret = env_init_print_48(env, dtabp)) != 0)
 		goto err;
@@ -390,7 +410,8 @@ env_init_print(env, version, dtabp)
 	if (version == DB_LOGVERSION_43)
 		goto done;
 	if (version != DB_LOGVERSION_42) {
-		__db_errx(env, "Unknown version %lu", (u_long)version);
+		__db_errx(env, DB_STR_A("5014",
+		    "Unknown version %lu", "%lu"), (u_long)version);
 		ret = EINVAL;
 		goto err;
 	}
@@ -541,9 +562,10 @@ version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		fprintf(stderr, DB_STR_A("5015",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
 		    v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
@@ -577,9 +599,11 @@ db_printlog_print_app_record(dbenv, dbt, lsnp, op)
 	 * rectype.  We just print the entire log record in the generic
 	 * mixed-hex-and-printable format we use for binary data.
 	 */
-	printf("[%lu][%lu]application specific record: rec: %lu\n",
-	    (u_long)lsnp->file, (u_long)lsnp->offset, (u_long)rectype);
-	printf("\tdata: ");
+	printf(DB_STR_A("5016",
+	    "[%lu][%lu]application specific record: rec: %lu\n",
+	    "%lu %lu %lu"), (u_long)lsnp->file, (u_long)lsnp->offset,
+	    (u_long)rectype);
+	printf(DB_STR("5017", "\tdata: "));
 	for (i = 0; i < dbt->size; i++) {
 		ch = ((u_int8_t *)dbt->data)[i];
 		printf(isprint(ch) || ch == 0x0a ? "%c" : "%#x ", ch);

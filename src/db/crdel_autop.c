@@ -23,7 +23,7 @@ __crdel_metasub_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__crdel_metasub", __crdel_metasub_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__crdel_metasub", __crdel_metasub_desc, info));
 }
 
 /*
@@ -40,7 +40,7 @@ __crdel_inmem_create_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__crdel_inmem_create", __crdel_inmem_create_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__crdel_inmem_create", __crdel_inmem_create_desc, info));
 }
 
 /*
@@ -57,7 +57,7 @@ __crdel_inmem_rename_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__crdel_inmem_rename", __crdel_inmem_rename_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__crdel_inmem_rename", __crdel_inmem_rename_desc, info));
 }
 
 /*
@@ -74,7 +74,7 @@ __crdel_inmem_remove_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__crdel_inmem_remove", __crdel_inmem_remove_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__crdel_inmem_remove", __crdel_inmem_remove_desc, info));
 }
 
 /*

@@ -13,12 +13,9 @@
 
 #include "dbinc/atomic.h"
 /*
- * This is where we load in the actual test-and-set mutex code.
+ * This is where we load in the actual mutex declarations.
  */
 #include "dbinc/mutex_int.h"
-
-/* We don't want to run this code even in "ordinary" diagnostic mode. */
-#undef MUTEX_DIAG
 
 /*
  * Common code to get an event handle.  This is executed whenever a mutex
@@ -31,9 +28,6 @@
  * process run as a different user.
  */
 static _TCHAR hex_digits[] = _T("0123456789abcdef");
-static SECURITY_DESCRIPTOR null_sd;
-static SECURITY_ATTRIBUTES all_sa;
-static int security_initialized = 0;
 
 static __inline int get_handle(env, mutexp, eventp)
 	ENV *env;
@@ -49,20 +43,25 @@ static __inline int get_handle(env, mutexp, eventp)
 		*--p = hex_digits[id & 0xf];
 
 #ifndef DB_WINCE
-	if (!security_initialized) {
-		InitializeSecurityDescriptor(&null_sd,
+	if (DB_GLOBAL(win_sec_attr) == NULL) {
+		InitializeSecurityDescriptor(&DB_GLOBAL(win_default_sec_desc),
 		    SECURITY_DESCRIPTOR_REVISION);
-		SetSecurityDescriptorDacl(&null_sd, TRUE, 0, FALSE);
-		all_sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-		all_sa.bInheritHandle = FALSE;
-		all_sa.lpSecurityDescriptor = &null_sd;
-		security_initialized = 1;
+		SetSecurityDescriptorDacl(&DB_GLOBAL(win_default_sec_desc),
+		    TRUE, 0, FALSE);
+		DB_GLOBAL(win_default_sec_attr).nLength =
+		    sizeof(SECURITY_ATTRIBUTES);
+		DB_GLOBAL(win_default_sec_attr).bInheritHandle = FALSE;
+		DB_GLOBAL(win_default_sec_attr).lpSecurityDescriptor =
+		    &DB_GLOBAL(win_default_sec_desc);
+		DB_GLOBAL(win_sec_attr) = &DB_GLOBAL(win_default_sec_attr);
 	}
 #endif
 
-	if ((*eventp = CreateEvent(&all_sa, FALSE, FALSE, idbuf)) == NULL) {
+	if ((*eventp = CreateEvent(DB_GLOBAL(win_sec_attr),
+	    FALSE, FALSE, idbuf)) == NULL) {
 		ret = __os_get_syserr();
-		__db_syserr(env, ret, "Win32 create event failed");
+		__db_syserr(env, ret, DB_STR("2002",
+		    "Win32 create event failed"));
 	}
 
 	return (ret);
@@ -103,7 +102,7 @@ __db_win32_mutex_lock_int(env, mutex, timeout, wait)
 
 	mtxmgr = env->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 	CHECK_MTX_THREAD(env, mutexp);
 
@@ -160,10 +159,10 @@ loop:	/* Attempt to acquire the mutex mutex_tas_spins times, if waiting. */
 #ifdef DIAGNOSTIC
 		if (F_ISSET(mutexp, DB_MUTEX_LOCKED)) {
 			char buf[DB_THREADID_STRLEN];
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("2003",
 			    "Win32 lock failed: mutex already locked by %s",
-			     dbenv->thread_id_string(dbenv,
-			     mutexp->pid, mutexp->tid, buf));
+			    "%s"), dbenv->thread_id_string(dbenv,
+			    mutexp->pid, mutexp->tid, buf));
 			return (__env_panic(env, EACCES));
 		}
 #endif
@@ -182,8 +181,9 @@ loop:	/* Attempt to acquire the mutex mutex_tas_spins times, if waiting. */
 #ifdef MUTEX_DIAG
 			if (ret != WAIT_OBJECT_0) {
 				QueryPerformanceCounter(&diag_now);
-				printf("[%I64d]: Lost signal on mutex %p, "
-				    "id %d, ms %d\n",
+				printf(DB_STR_A("2004",
+				    "[%I64d]: Lost signal on mutex %p, "
+				    "id %d, ms %d\n", "%I64d %p %d %d"),
 				    diag_now.QuadPart, mutexp, mutexp->id, ms);
 			}
 #endif
@@ -227,8 +227,9 @@ loop:	/* Attempt to acquire the mutex mutex_tas_spins times, if waiting. */
 	if (event == NULL) {
 #ifdef MUTEX_DIAG
 		QueryPerformanceCounter(&diag_now);
-		printf("[%I64d]: Waiting on mutex %p, id %d\n",
-		    diag_now.QuadPart, mutexp, mutexp->id);
+		printf(DB_STR_A("2005",
+		    "[%I64d]: Waiting on mutex %p, id %d\n",
+		    "%I64d %p %d"), diag_now.QuadPart, mutexp, mutexp->id);
 #endif
 		InterlockedIncrement(&mutexp->nwaiters);
 		if ((ret = get_handle(env, mutexp, &event)) != 0)
@@ -244,7 +245,7 @@ loop:	/* Attempt to acquire the mutex mutex_tas_spins times, if waiting. */
 	PANIC_CHECK(env);
 	goto loop;
 
-err:	__db_syserr(env, ret, "Win32 lock failed");
+err:	__db_syserr(env, ret, DB_STR("2006", "Win32 lock failed"));
 	return (__env_panic(env, __os_posix_err(ret)));
 }
 
@@ -262,7 +263,7 @@ __db_win32_mutex_init(env, mutex, flags)
 {
 	DB_MUTEX *mutexp;
 
-	mutexp = MUTEXP_SET(env->mutex_handle, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 	mutexp->id = ((getpid() & 0xffff) << 16) ^ P_TO_UINT32(mutexp);
 	F_SET(mutexp, flags);
 
@@ -327,7 +328,7 @@ __db_win32_mutex_readlock_int(env, mutex, nowait)
 
 	mtxmgr = env->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 	CHECK_MTX_THREAD(env, mutexp);
 
@@ -382,8 +383,9 @@ retry:		mtx_val = atomic_read(&mutexp->sharecount);
 #ifdef MUTEX_DIAG
 			if (ret != WAIT_OBJECT_0) {
 				QueryPerformanceCounter(&diag_now);
-				printf("[%I64d]: Lost signal on mutex %p, "
-				    "id %d, ms %d\n",
+				printf(DB_STR_A("2007",
+				    "[%I64d]: Lost signal on mutex %p, "
+				    "id %d, ms %d\n", "%I64d %p %d %d"),
 				    diag_now.QuadPart, mutexp, mutexp->id, ms);
 			}
 #endif
@@ -410,8 +412,9 @@ retry:		mtx_val = atomic_read(&mutexp->sharecount);
 	if (event == NULL) {
 #ifdef MUTEX_DIAG
 		QueryPerformanceCounter(&diag_now);
-		printf("[%I64d]: Waiting on mutex %p, id %d\n",
-		    diag_now.QuadPart, mutexp, mutexp->id);
+		printf(DB_STR_A("2008",
+		    "[%I64d]: Waiting on mutex %p, id %d\n",
+		    "%I64d %p %d"), diag_now.QuadPart, mutexp, mutexp->id);
 #endif
 		InterlockedIncrement(&mutexp->nwaiters);
 		if ((ret = get_handle(env, mutexp, &event)) != 0)
@@ -427,7 +430,8 @@ retry:		mtx_val = atomic_read(&mutexp->sharecount);
 	PANIC_CHECK(env);
 	goto loop;
 
-err:	__db_syserr(env, ret, "Win32 read lock failed");
+err:	__db_syserr(env, ret, DB_STR("2009",
+	    "Win32 read lock failed"));
 	return (__env_panic(env, __os_posix_err(ret)));
 }
 
@@ -477,7 +481,6 @@ __db_win32_mutex_unlock(env, mutex)
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 	HANDLE event;
 	int ret;
 #ifdef MUTEX_DIAG
@@ -488,15 +491,14 @@ __db_win32_mutex_unlock(env, mutex)
 	if (!MUTEX_ON(env) || F_ISSET(dbenv, DB_ENV_NOLOCKING))
 		return (0);
 
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 #ifdef DIAGNOSTIC
 	if (!MUTEXP_IS_BUSY(mutexp) || !(F_ISSET(mutexp, DB_MUTEX_SHARED) ||
 	    F_ISSET(mutexp, DB_MUTEX_LOCKED))) {
-		__db_errx(env,
-		 "Win32 unlock failed: lock already unlocked: mutex %d busy %d",
-		    mutex, MUTEXP_BUSY_FIELD(mutexp));
+		__db_errx(env, DB_STR_A("2010",
+	    "Win32 unlock failed: lock already unlocked: mutex %d busy %d",
+		    "%d %d"), mutex, MUTEXP_BUSY_FIELD(mutexp));
 		return (__env_panic(env, EACCES));
 	}
 #endif
@@ -533,8 +535,9 @@ __db_win32_mutex_unlock(env, mutex)
 
 #ifdef MUTEX_DIAG
 		QueryPerformanceCounter(&diag_now);
-		printf("[%I64d]: Signalling mutex %p, id %d\n",
-		    diag_now.QuadPart, mutexp, mutexp->id);
+		printf(DB_STR_A("2011",
+		    "[%I64d]: Signalling mutex %p, id %d\n",
+		    "%I64d %p %d"), diag_now.QuadPart, mutexp, mutexp->id);
 #endif
 		if (!PulseEvent(event)) {
 			ret = __os_get_syserr();
@@ -547,7 +550,7 @@ __db_win32_mutex_unlock(env, mutex)
 
 	return (0);
 
-err:	__db_syserr(env, ret, "Win32 unlock failed");
+err:	__db_syserr(env, ret, DB_STR("2012", "Win32 unlock failed"));
 	return (__env_panic(env, __os_posix_err(ret)));
 }
 
@@ -564,3 +567,23 @@ __db_win32_mutex_destroy(env, mutex)
 {
 	return (0);
 }
+
+#ifndef DB_WINCE
+/*
+ * db_env_set_win_security
+ *
+ *	Set the SECURITY_ATTRIBUTES to be used by BDB on Windows.
+ *	It should not be called while any BDB mutexes are locked.
+ *
+ * EXTERN: #if defined(DB_WIN32) && !defined(DB_WINCE)
+ * EXTERN: int db_env_set_win_security __P((SECURITY_ATTRIBUTES *sa));
+ * EXTERN: #endif
+ */
+int
+db_env_set_win_security(sa)
+	SECURITY_ATTRIBUTES *sa;
+{
+	DB_GLOBAL(win_sec_attr) = sa;
+	return (0);
+}
+#endif

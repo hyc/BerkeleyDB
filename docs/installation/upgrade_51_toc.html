@@ -3,24 +3,27 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 8.  Upgrading Berkeley DB 11.2.5.0 applications to Berkeley DB 11.2.5.1</title>
+    <title>Chapter 10.  Upgrading Berkeley DB 11.2.5.0 applications to Berkeley DB 11.2.5.1</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
     <link rel="up" href="index.html" title="Berkeley DB Installation and Build Guide" />
-    <link rel="prev" href="build_vxworks_faq.html" title="VxWorks FAQ" />
+    <link rel="prev" href="changelog_5_2.html" title="Berkeley DB Library Version 11.2.5.2 Change Log" />
     <link rel="next" href="upgrade_11gr2_51_dpl_recompile.html" title="DPL Applications must be recompiled" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 8. 
+          <th colspan="3" align="center">Chapter 10. 
         Upgrading Berkeley DB 11.2.5.0 applications to Berkeley DB 11.2.5.1
     </th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="build_vxworks_faq.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="changelog_5_2.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
           <td width="20%" align="right"> <a accesskey="n" href="upgrade_11gr2_51_dpl_recompile.html">Next</a></td>
         </tr>
@@ -31,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="upgrade_51_toc"></a>Chapter 8. 
+            <h2 class="title"><a id="upgrade_51_toc"></a>Chapter 10. 
         Upgrading Berkeley DB 11.2.5.0 applications to Berkeley DB 11.2.5.1
     </h2>
           </div>
@@ -76,22 +79,122 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_5_1.html#idp50978088">Changes between 11.2.5.1.25 and 11.2.5.1.29</a>
+                  <a href="changelog_5_1.html#id3377749">Database or Log File On-Disk Format Changes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_5_1.html#idp50978472">Changes between 11.2.5.1.19 and 11.2.5.1.25</a>
+                  <a href="changelog_5_1.html#id3377429">New Features</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_5_1.html#idp50906136">Changes between 11.2.5.0 and 11.2.5.1.19</a>
+                  <a href="changelog_5_1.html#id3376067">Database Environment Changes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changelog_5_1.html#idp50983864">Known Bugs</a>
+                  <a href="changelog_5_1.html#id3377863">Concurrent Data Store Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3377887">Access Method Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3377998">API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378038">SQL-Specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3377813">Tcl-Specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378126">Java-Specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3377733">C#-Specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378043">Direct Persistence Layer (DPL), Bindings and Collections API</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378306">Replication Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378212">Locking Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378147">Logging Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378027">Memory Pool Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378332">Mutex Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378362">Transaction Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378137">Test Suite Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378500">Utility Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378394">Configuration, Documentation, Sample Apps, Portability, and Build Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378513">Example Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378558">Miscellaneous Bug Fixes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378514">Deprecated Features</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_5_1.html#id3378302">Known Bugs</a>
                 </span>
               </dt>
             </dl>
@@ -129,12 +232,12 @@
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="build_vxworks_faq.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="changelog_5_2.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
           <td width="40%" align="right"> <a accesskey="n" href="upgrade_11gr2_51_dpl_recompile.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">VxWorks FAQ </td>
+          <td width="40%" align="left" valign="top">Berkeley DB Library Version 11.2.5.2 Change Log </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

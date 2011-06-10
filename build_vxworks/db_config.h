@@ -63,6 +63,9 @@
 /* Define to 1 if you have the `backtrace_symbols' function. */
 /* #undef HAVE_BACKTRACE_SYMBOLS */
 
+/* Define to 1 if you have the `bsearch' function. */
+#define HAVE_BSEARCH 1
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
 
@@ -169,6 +172,9 @@
 /* Define to 1 if building Hash access method. */
 #define HAVE_HASH 1
 
+/* Define to 1 if building Heap access method. */
+#define HAVE_HEAP 1
+
 /* Define to 1 if you have the `hstrerror' function. */
 /* #undef HAVE_HSTRERROR */
 
@@ -187,8 +193,14 @@
 /* Define to 1 if you have the `isspace' function. */
 #define HAVE_ISSPACE 1
 
+/* Define to 1 if you have a localization function to support globalization. */
+/* #undef HAVE_LOCALIZATION */
+
 /* Define to 1 if you have the `localtime' function. */
 #define HAVE_LOCALTIME 1
+
+/* Define to 1 if you want to enable log checksums. */
+#define HAVE_LOG_CHECKSUM 1
 
 /* Define to 1 if you have the `memcmp' function. */
 #define HAVE_MEMCMP 1
@@ -207,6 +219,10 @@
 
 /* Define to 1 if you have the `mmap' function. */
 /* #undef HAVE_MMAP */
+
+/* Define to 1 where mmap() incrementally extends the accessible mapping as
+   the underlying file grows. */
+/* #undef HAVE_MMAP_EXTEND */
 
 /* Define to 1 if you have the `mprotect' function. */
 /* #undef HAVE_MPROTECT */
@@ -459,6 +475,9 @@
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
 
+/* Define to 1 if building without output message content. */
+/* #undef HAVE_STRIPPED_MESSAGES */
+
 /* Define to 1 if you have the `strncat' function. */
 #define HAVE_STRNCAT 1
 
@@ -549,22 +568,22 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 5.1.29"
+#define PACKAGE_STRING "Berkeley DB 5.2.28"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-5.1.29"
+#define PACKAGE_TARNAME "db-5.2.28"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL "http://www.oracle.com/technology/software/products/berkeley-db/index.html"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "5.1.29"
+#define PACKAGE_VERSION "5.2.28"
 
 /* The size of a `char', as computed by sizeof. */
 /* #undef SIZEOF_CHAR */
 
 /* The size of a `char *', as computed by sizeof. */
-/* #undef SIZEOF_CHAR_P */
+#define SIZEOF_CHAR_P 4
 
 /* The size of a `int', as computed by sizeof. */
 /* #undef SIZEOF_INT */

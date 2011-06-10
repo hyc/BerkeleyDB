@@ -75,7 +75,11 @@ __rep_update_grant(env, ts)
 	    __REP_GRANT_INFO_SIZE, &len)) != 0)
 		return (ret);
 	DB_INIT_DBT(lease_dbt, buf, len);
-	if ((master = rep->master_id) != DB_EID_INVALID)
+	/*
+	 * Don't send to the master if this site has zero priority because
+	 * our site cannot count toward the data being safe.
+	 */
+	if ((master = rep->master_id) != DB_EID_INVALID && rep->priority > 0)
 		(void)__rep_send_message(env, master, REP_LEASE_GRANT,
 		    &lp->max_perm_lsn, &lease_dbt, 0, 0);
 	return (0);
@@ -255,7 +259,7 @@ __rep_find_entry(env, rep, eid, lep)
 	infop = env->reginfo;
 	table = R_ADDR(infop, rep->lease_off);
 
-	for (i = 0; i < rep->nsites; i++) {
+	for (i = 0; i < rep->config_nsites; i++) {
 		le = &table[i];
 		/*
 		 * Find either the one that matches the client's
@@ -291,7 +295,7 @@ __rep_lease_check(env, refresh)
 	REP *rep;
 	REP_LEASE_ENTRY *le, *table;
 	db_timespec curtime;
-	int ret, tries;
+	int max_tries, ret, tries;
 	u_int32_t i, min_leases, valid_leases;
 
 	infop = env->reginfo;
@@ -303,22 +307,31 @@ __rep_lease_check(env, refresh)
 	LOG_SYSTEM_LOCK(env);
 	lease_lsn = lp->max_perm_lsn;
 	LOG_SYSTEM_UNLOCK(env);
-
+#ifdef HAVE_STATISTICS
+	rep->stat.st_lease_chk++;
+#endif
+	/*
+	 * Set the maximum number of retries to be 2x the lease timeout
+	 * so that if a site is waiting to sync, it has a chance to do so.
+	 */
+	max_tries = (int)(rep->lease_timeout / (LEASE_REFRESH_USEC / 2));
+	if (max_tries < LEASE_REFRESH_MIN)
+		max_tries = LEASE_REFRESH_MIN;
 retry:
 	REP_SYSTEM_LOCK(env);
-	min_leases = rep->nsites / 2;
+	min_leases = rep->config_nsites / 2;
 	ret = 0;
 	__os_gettime(env, &curtime, 1);
 	VPRINT(env, (env, DB_VERB_REP_LEASE,
-	"lease_check: try %d min_leases %lu curtime %lu %lu, maxLSN [%lu][%lu]",
-	    tries,
+"%s %d of %d refresh %d min_leases %lu curtime %lu %lu, maxLSN [%lu][%lu]",
+	    "lease_check: try ", tries, max_tries, refresh,
 	    (u_long)min_leases, (u_long)curtime.tv_sec,
 	    (u_long)curtime.tv_nsec,
 	    (u_long)lease_lsn.file,
 	    (u_long)lease_lsn.offset));
 	table = R_ADDR(infop, rep->lease_off);
 	for (i = 0, valid_leases = 0;
-	    i < rep->nsites && valid_leases < min_leases; i++) {
+	    i < rep->config_nsites && valid_leases < min_leases; i++) {
 		le = &table[i];
 		/*
 		 * Count this lease as valid if:
@@ -350,7 +363,10 @@ retry:
 	VPRINT(env, (env, DB_VERB_REP_LEASE, "valid %lu, min %lu",
 	    (u_long)valid_leases, (u_long)min_leases));
 	if (valid_leases < min_leases) {
-		if (!refresh || tries > LEASE_REFRESH_RETRIES)
+#ifdef HAVE_STATISTICS
+		rep->stat.st_lease_chk_misses++;
+#endif
+		if (!refresh || tries > max_tries)
 			ret = DB_REP_LEASE_EXPIRED;
 		else {
 			/*
@@ -359,7 +375,9 @@ retry:
 			 * the PERM acknowledgement.  Give the grant messages
 			 * a chance to arrive and be processed.
 			 */
-			if ((ret = __rep_lease_refresh(env)) == 0) {
+			if (((tries % 10) == 5 &&
+			    (ret = __rep_lease_refresh(env)) == 0) ||
+			    (tries % 10) != 5) {
 				/*
 				 * If we were successful sending, but
 				 * not in racing the message threads,
@@ -368,8 +386,11 @@ retry:
 				 * to run.
 				 */
 				if (tries > 0)
-					__os_yield(env, 1, 0);
+					__os_yield(env, 0, LEASE_REFRESH_USEC);
 				tries++;
+#ifdef HAVE_STATISTICS
+				rep->stat.st_lease_chk_refresh++;
+#endif
 				goto retry;
 			}
 		}
@@ -400,12 +421,7 @@ __rep_lease_refresh(env)
 	DBT rec;
 	DB_LOGC *logc;
 	DB_LSN lsn;
-	DB_REP *db_rep;
-	REP *rep;
 	int ret, t_ret;
-
-	db_rep = env->rep_handle;
-	rep = db_rep->region;
 
 	if ((ret = __log_cursor(env, &logc)) != 0)
 		return (ret);
@@ -415,7 +431,7 @@ __rep_lease_refresh(env)
 	/*
 	 * Use __rep_log_backup to find the last PERM record.
 	 */
-	if ((ret = __rep_log_backup(env, rep, logc, &lsn)) != 0) {
+	if ((ret = __rep_log_backup(env, logc, &lsn, REP_REC_PERM)) != 0) {
 		/*
 		 * If there is no PERM record, then we get DB_NOTFOUND.
 		 */
@@ -428,7 +444,7 @@ __rep_lease_refresh(env)
 		goto err;
 
 	(void)__rep_send_message(env, DB_EID_BROADCAST, REP_LOG, &lsn,
-	    &rec, REPCTL_PERM, 0);
+	    &rec, REPCTL_LEASE, 0);
 
 err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
@@ -465,7 +481,7 @@ __rep_lease_expire(env)
 		 * start_time for all leases are not in the future.  Therefore,
 		 * set the end_time to the start_time.
 		 */
-		for (i = 0; i < rep->nsites; i++) {
+		for (i = 0; i < rep->config_nsites; i++) {
 			le = &table[i];
 			le->end_time = le->start_time;
 		}

@@ -36,10 +36,10 @@ declare function local:indent($n)
 };
 
 (: is it a DLL, Application, or static library? :)
-declare function local:configurationType($projectType)
+declare function local:configurationType($projectType, $config)
 {
-  if ($projectType eq "dll") then $dllType
-  else if ($projectType eq "static_lib") then $staticType
+  if ($projectType eq "library") then 
+    if (contains($config,"Static")) then $staticType else $dllType 
   else $appType
 };
 
@@ -83,12 +83,21 @@ declare function local:addDebugInformation($config)
    if (local:isDebug($config)) then attribute{"BasicRuntimeChecks"}{"3"} else ()
 };
 
-declare function local:generateCompilerPreprocessorDefs($project, $config)
-{
-  let $generic := doc($projectList)/projects/preprocessor[@config="all" or contains($config,@config)]
-  let $proj := $project/preprocessor[@config="all" or contains(@config,$config)]
-  let $type := doc($projectList)/projects/preprocessor[@config=$project/type]
+declare function local:getProjectType($project, $config)
+{ 
+  if ($project/type eq "library") then if (contains($config,"Static")) then "static_lib"
+    else "dll"
+  else if ($project/type eq "app") then if (contains($config,"Static")) then "static_app"
+    else "app"
+  else error(QName("","dbxml"),"getProjectType:unkown project type")
+};
 
+declare function local:generateCompilerPreprocessorDefs($project, $config)
+{ 
+  let $ptype := local:getProjectType($project,$config)
+  let $generic := doc($projectList)/projects/preprocessor[@config="all" or @config=$config]
+  let $proj := $project/preprocessor[@config="all" or @config=$config or @config=$ptype]
+  let $type := doc($projectList)/projects/preprocessor[@config=$ptype]
   return string-join(($generic,$proj,$type),";")
 };
 
@@ -129,7 +138,7 @@ declare function local:makeStaticOutputFile($project, $config)
 
 declare function local:makeImportLibrary($project, $config)
 {
-  if ($project/type eq "dll") then
+  if ($project/type eq "library") then
     attribute{"ImportLibrary"}{concat("$(OutDir)/", local:getLibName($project/@name, $config),".lib")}
   else ()
 };
@@ -145,7 +154,7 @@ declare function local:makeOutputPDBFile($project, $config)
 {
   attribute{"ProgramDatabaseFile"}
   {
-    if ($project/type eq "dll") then
+    if ($project/type eq "library") then
        concat("$(OutDir)/",  local:getLibName($project/@name, $config),".pdb")
     else							    
       concat("$(OutDir)/",if (not(empty($project/@output))) then $project/@output else $project/@name,".pdb")
@@ -156,7 +165,7 @@ declare function local:makeOutputFile($project, $config)
 {
   attribute{"OutputFile"}
   {
-    if ($project/type eq "dll") then
+    if ($project/type eq "library") then
        concat("$(OutDir)/", local:getLibName($project/@name, $config), ".dll")
     else							    
       concat("$(OutDir)/",if (not(empty($project/@output))) then $project/@output else $project/@name,".exe")
@@ -346,7 +355,7 @@ local:indent(4),<Configuration>
     {attribute{"Name"}{concat($config,"|",$platform)}}
     {local:generateOutputDirectory($platform,$config,"")}
     {attribute{"IntermediateDirectory"}{concat("./$(OutDir)/",$project/@name)}}
-    {attribute{"ConfigurationType"}{local:configurationType($project/type)}}
+    {attribute{"ConfigurationType"}{local:configurationType($project/type,$config)}}
     {attribute{"UseOfMFC"}{"0"}}
     {attribute{"ATLMinimizesCRunTimeLibraryUsage"}{"FALSE"}}
     {attribute{"CharacterSet"}{local:characterSet()}}
@@ -364,9 +373,9 @@ declare function local:generateStaticConfig($project, $platform, $config)
 {
   local:indent(4),<Configuration>
     {attribute{"Name"}{concat($config,"|",$platform)}}
-    {local:generateOutputDirectory($platform,$config,"_static")}
+    {local:generateOutputDirectory($platform,$config,"")}
     {attribute{"IntermediateDirectory"}{concat("./$(OutDir)/",$project/@name)}}
-    {attribute{"ConfigurationType"}{local:configurationType($project/type)}}
+    {attribute{"ConfigurationType"}{local:configurationType($project/type,$config)}}
     {attribute{"UseOfMFC"}{"0"}}
     {attribute{"ATLMinimizesCRunTimeLibraryUsage"}{"FALSE"}}
     {attribute{"CharacterSet"}{local:characterSet()}}
@@ -450,10 +459,7 @@ declare function local:getProjects()
   doc($projectList)/projects/project[@name="@PROJECT_NAME@"]
 };
 
-for $project in local:getProjects()
-let $static := contains($project/@name,"static")
-let $proj := if ($static) then doc($projectList)/projects/project[@name=substring-before($project/@name,"_static")] else $project
-return 
+for $project in local:getProjects() return
 <VisualStudioProject
    ProjectType="Visual C++"
    Version="{$vsversion}"
@@ -465,12 +471,14 @@ return
    {local:indent(2)}<Configurations>
     {
     for $platform in local:getPlatforms($vsversion) return 
-    for $config in ("Debug","Release") return if ($static) then local:generateStaticConfig($project, $platform, $config) else local:generateConfig($project, $platform, $config)
+    for $configuration in $project/configuration
+    let $static := contains($configuration/text(),"Static") return
+    for $config in ("Debug","Release") return if ($static) then let $config := concat("Static ",$config) return local:generateStaticConfig($project, $platform, $config) else local:generateConfig($project, $platform, $config)
     }
   {local:indent(2)}</Configurations>
   {local:indent(2)}<References/>
   {local:indent(2)}<Files>
-    {local:generateFiles($proj)}
+    {local:generateFiles($project)}
   {local:indent(2)}</Files>
   {local:indent(2)}<Globals/>
 {"&#xa;"}</VisualStudioProject>

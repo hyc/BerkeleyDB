@@ -15,7 +15,9 @@ public class JDBCStatement implements java.sql.Statement {
     }
 
     public void setFetchSize(int fetchSize) throws SQLException {
-	throw new SQLException("not supported");
+	if (fetchSize != 1) {
+	    throw new SQLException("fetch size not 1");
+	}
     }
 
     public int getFetchSize() throws SQLException {
@@ -43,7 +45,7 @@ public class JDBCStatement implements java.sql.Statement {
     }
 
     public int getQueryTimeout() throws SQLException {
-	return conn.timeout;
+	return conn.timeout / 1000;
     }
 
     public ResultSet getResultSet() throws SQLException {

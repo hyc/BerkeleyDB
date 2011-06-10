@@ -1,6 +1,7 @@
 package SQLite.JDBC2z;
 
-import java.sql.*;
+import java.sql.SQLException;
+import java.sql.Types;
 
 public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 
@@ -10,10 +11,12 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	this.r = r;
     }
  
+    @Override
     public String getCatalogName(int column) throws java.sql.SQLException {
 	return null;
     }
 
+    @Override
     public String getColumnClassName(int column) throws java.sql.SQLException {
 	column--;
 	if (r != null && r.tr != null) {
@@ -41,6 +44,7 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	return null;
     }
 
+    @Override
     public int getColumnCount() throws java.sql.SQLException {
 	if (r != null && r.tr != null) {
 	    return r.tr.ncolumns;
@@ -48,10 +52,12 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	return 0;
     }
 
+    @Override
     public int getColumnDisplaySize(int column) throws java.sql.SQLException {
 	return 0;
     }
 
+    @Override
     public String getColumnLabel(int column) throws java.sql.SQLException {
 	column--;
 	String c = null;
@@ -64,6 +70,7 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	return c;
     }
 
+    @Override
     public String getColumnName(int column) throws java.sql.SQLException {
 	column--;
 	String c = null;
@@ -82,6 +89,7 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	return c;
     }
 
+    @Override
     public int getColumnType(int column) throws java.sql.SQLException {
 	column--;
 	if (r != null && r.tr != null) {
@@ -95,6 +103,7 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	throw new SQLException("bad column index");
     }
 
+    @Override
     public String getColumnTypeName(int column) throws java.sql.SQLException {
 	column--;
 	if (r != null && r.tr != null) {
@@ -121,18 +130,22 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	throw new SQLException("bad column index");
     }
 
+    @Override
     public int getPrecision(int column) throws java.sql.SQLException {
 	return 0;
     }
 
+    @Override
     public int getScale(int column) throws java.sql.SQLException {
 	return 0;
     }
 
+    @Override
     public String getSchemaName(int column) throws java.sql.SQLException {
 	return null;
     }
 
+    @Override
     public String getTableName(int column) throws java.sql.SQLException {
 	column--;
 	String c = null;
@@ -152,39 +165,48 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	return c;
     }
 
+    @Override
     public boolean isAutoIncrement(int column) throws java.sql.SQLException {
 	return false;
     }
 
+    @Override
     public boolean isCaseSensitive(int column) throws java.sql.SQLException {
 	return false;
     }
 
+    @Override
     public boolean isCurrency(int column) throws java.sql.SQLException {
 	return false;
     }
 
+    @Override
     public boolean isDefinitelyWritable(int column) 
 	throws java.sql.SQLException {
 	return true;
     }
 
+    @Override
     public int isNullable(int column) throws java.sql.SQLException {
 	return columnNullableUnknown;
     }
 
+    @Override
     public boolean isReadOnly(int column) throws java.sql.SQLException {
 	return false;
     }
 
+    @Override
     public boolean isSearchable(int column) throws java.sql.SQLException {
 	return true;
     }
 
+    @Override
     public boolean isSigned(int column) throws java.sql.SQLException {
 	return false;
     }
 
+    @Override
     public boolean isWritable(int column) throws java.sql.SQLException {
 	return true;
     }
@@ -212,10 +234,12 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 	throw new SQLException("column " + columnName + " not found");
     }
 
+    @Override
     public <T> T unwrap(java.lang.Class<T> iface) throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public boolean isWrapperFor(java.lang.Class iface) throws SQLException {
 	return false;
     }

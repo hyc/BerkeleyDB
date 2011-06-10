@@ -155,6 +155,15 @@ JAVA_TYPEMAP(DB_TXN_STAT *, com.sleepycat.db.TransactionStats, jobject)
 				    (DB_HASH_STAT *)$1);
 			break;
 
+			/* Heap stat structure */
+		case DB_HEAP:
+			$result = (*jenv)->NewObject(jenv, heap_stat_class,
+			    heap_stat_construct);
+			if ($result != NULL)
+				__dbj_fill_heap_stat(jenv, $result,
+				    (DB_HEAP_STAT *)$1);
+			break;
+
 		case DB_QUEUE:
 			$result = (*jenv)->NewObject(jenv, qam_stat_class,
 			    qam_stat_construct);

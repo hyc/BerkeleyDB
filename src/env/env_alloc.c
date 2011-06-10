@@ -132,7 +132,7 @@ __env_alloc_init(infop, size)
 	/*
 	 * The first chunk of memory is the ALLOC_LAYOUT structure.
 	 */
-	head = infop->addr;
+	head = infop->head;
 	memset(head, 0, sizeof(*head));
 	SH_TAILQ_INIT(&head->addrq);
 	for (i = 0; i < DB_SIZE_Q_COUNT; ++i)
@@ -204,6 +204,8 @@ __env_alloc(infop, len, retp)
 	ALLOC_ELEMENT *elp, *frag, *elp_tmp;
 	ALLOC_LAYOUT *head;
 	ENV *env;
+	REGION_MEM *mem;
+	REGINFO *envinfop;
 	size_t total_len;
 	u_int8_t *p;
 	u_int i;
@@ -227,40 +229,65 @@ __env_alloc(infop, len, retp)
 	 * { uintmax_t total-length } { user-memory } { guard-byte }
 	 */
 	if (F_ISSET(env, ENV_PRIVATE)) {
-		/* Check if we're over the limit. */
-		if (infop->allocated >= infop->max_alloc)
-			return (ENOMEM);
-
+		/*
+		 * If we are shared then we must track the allocation
+		 * in the main environment region.
+		 */
+		if (F_ISSET(infop, REGION_SHARED))
+			envinfop = env->reginfo;
+		else
+			envinfop = infop;
 		/*
 		 * We need an additional uintmax_t to hold the length (and
 		 * keep the buffer aligned on 32-bit systems).
 		 */
 		len += sizeof(uintmax_t);
+		if (F_ISSET(infop, REGION_TRACKED))
+			len += sizeof(REGION_MEM);
 
 #ifdef DIAGNOSTIC
 		/* Plus one byte for the guard byte. */
 		++len;
 #endif
+		/* Check if we're over the limit. */
+		if (envinfop->max_alloc != 0 &&
+		     envinfop->allocated + len > envinfop->max_alloc)
+			return (ENOMEM);
+
 		/* Allocate the space. */
 		if ((ret = __os_malloc(env, len, &p)) != 0)
 			return (ret);
 		infop->allocated += len;
+		if (infop != envinfop)
+			envinfop->allocated += len;
 
 		*(uintmax_t *)p = len;
 #ifdef DIAGNOSTIC
 		p[len - 1] = GUARD_BYTE;
 #endif
+		if (F_ISSET(infop, REGION_TRACKED)) {
+			mem = (REGION_MEM *)(p + sizeof(uintmax_t));
+			mem->next = infop->mem;
+			infop->mem = mem;
+			p += sizeof(mem);
+		}
 		*(void **)retp = p + sizeof(uintmax_t);
 		return (0);
 	}
 
-	head = infop->addr;
+	head = infop->head;
 	total_len = DB_ALLOC_SIZE(len);
 
 	/* Find the first size queue that could satisfy the request. */
+	COMPQUIET(q, NULL);
+#ifdef HAVE_MMAP_EXTEND
+retry:
+#endif
 	SET_QUEUE_FOR_SIZE(head, q, i, total_len);
 
 #ifdef HAVE_STATISTICS
+	if (i >= DB_SIZE_Q_COUNT)
+		i = DB_SIZE_Q_COUNT - 1;	
 	++head->pow2_size[i];		/* Note the size of the request. */
 #endif
 
@@ -308,11 +335,18 @@ __env_alloc(infop, len, retp)
 #endif
 
 	/*
-	 * If we don't find an element of the right size, we're done.
+	 * If we don't find an element of the right size, try to extend
+	 * the region, if not then we are done.
 	 */
 	if (elp == NULL) {
+		ret = ENOMEM;
+#ifdef HAVE_MMAP_EXTEND
+		if (infop->rp->size < infop->rp->max &&
+		     (ret = __env_region_extend(env, infop)) == 0)
+			goto retry;
+#endif
 		STAT_INC_VERB(env, mpool, fail, head->failure, len, infop->id);
-		return (ENOMEM);
+		return (ret);
 	}
 	STAT_INC_VERB(env, mpool, alloc, head->success, len, infop->id);
 
@@ -371,6 +405,8 @@ __env_alloc_free(infop, ptr)
 		len = (size_t)*(uintmax_t *)p;
 
 		infop->allocated -= len;
+		if (F_ISSET(infop, REGION_SHARED))
+			env->reginfo->allocated -= len;
 
 #ifdef DIAGNOSTIC
 		/* Check the guard byte. */
@@ -387,12 +423,12 @@ __env_alloc_free(infop, ptr)
 	MUTEX_REQUIRED(env, infop->mtx_alloc);
 #endif
 
-	head = infop->addr;
+	head = infop->head;
 
 	p = ptr;
 	elp = (ALLOC_ELEMENT *)(p - sizeof(ALLOC_ELEMENT));
 
-	STAT_INC_VERB(env, mpool, free, head->freed, infop->id, len);
+	STAT_INC_VERB(env, mpool, free, head->freed, elp->ulen, infop->id);
 
 #ifdef DIAGNOSTIC
 	/* Check the guard byte. */
@@ -445,6 +481,104 @@ __env_alloc_free(infop, ptr)
 }
 
 /*
+ * __env_alloc_extend --
+ *	Extend a previously allocated chunk at the end of a region.
+ *
+ * PUBLIC: int __env_alloc_extend __P((REGINFO *, void *, size_t *));
+ */
+int
+__env_alloc_extend(infop, ptr, lenp)
+	REGINFO *infop;
+	void *ptr;
+	size_t *lenp;
+{
+	ALLOC_ELEMENT *elp, *elp_tmp;
+	ALLOC_LAYOUT *head;
+	ENV *env;
+	SIZEQ_HEAD *q;
+	size_t len, tlen;
+	u_int8_t i, *p;
+	int ret;
+
+	env = infop->env;
+
+	DB_ASSERT(env, !F_ISSET(env, ENV_PRIVATE));
+
+#ifdef HAVE_MUTEX_SUPPORT
+	MUTEX_REQUIRED(env, infop->mtx_alloc);
+#endif
+
+	head = infop->head;
+
+	p = ptr;
+	len = *lenp;
+	elp = (ALLOC_ELEMENT *)(p - sizeof(ALLOC_ELEMENT));
+#ifdef DIAGNOSTIC
+	/* Check the guard byte. */
+	DB_ASSERT(env, p[elp->ulen] == GUARD_BYTE);
+#endif
+
+	/* See if there is anything left in the region. */
+again:	if ((elp_tmp = SH_TAILQ_NEXT(elp, addrq, __alloc_element)) != NULL &&
+	    elp_tmp->ulen == 0 &&
+	    (u_int8_t *)elp + elp->len == (u_int8_t *)elp_tmp) {
+		/*
+		 * If we're merging the current entry into a subsequent entry,
+		 * remove the subsequent entry from the addr and size queues
+		 * and merge.
+		 */
+		SH_TAILQ_REMOVE(&head->addrq, elp_tmp, addrq, __alloc_element);
+		SET_QUEUE_FOR_SIZE(head, q, i, elp_tmp->len);
+		SH_TAILQ_REMOVE(q, elp_tmp, sizeq, __alloc_element);
+		if (elp_tmp->len < len + SHALLOC_FRAGMENT) {
+			elp->len += elp_tmp->len;
+			if (elp_tmp->len < len)
+				len -= (size_t)elp_tmp->len;
+			else
+				len = 0;
+		} else {
+			tlen = (size_t)elp_tmp->len;
+			elp_tmp = (ALLOC_ELEMENT *) ((u_int8_t *)elp_tmp + len);
+			elp_tmp->len = tlen - len;
+			elp_tmp->ulen = 0;
+			elp->len += len;
+			len = 0;
+
+			/* The fragment follows the on the address queue. */
+			SH_TAILQ_INSERT_AFTER(
+			    &head->addrq, elp, elp_tmp, addrq, __alloc_element);
+
+			/* Insert the frag into the correct size queue. */
+			__env_size_insert(head, elp_tmp);
+		}
+	} else if (elp_tmp != NULL) {
+		__db_errx(env, DB_STR("1583", "block not at end of region"));
+		return (__env_panic(env, EINVAL));
+	}
+	if (len == 0)
+		goto done;
+
+	if ((ret = __env_region_extend(env, infop)) != 0) {
+		if (ret != ENOMEM)
+			return (ret);
+		goto done;
+	}
+	goto again;
+
+done:	elp->ulen = elp->len - sizeof(ALLOC_ELEMENT);
+#ifdef DIAGNOSTIC
+	elp->ulen -= sizeof(uintmax_t);
+	/* There was room for the guarrd byte in the chunk that came in. */
+	p[elp->ulen] = GUARD_BYTE;
+#endif
+	*lenp -= len;
+	infop->allocated += *lenp;
+	if (F_ISSET(infop, REGION_SHARED))
+		env->reginfo->allocated += *lenp;
+	return (0);
+}
+
+/*
  * __env_size_insert --
  *	Insert into the correct place in the size queues.
  */
@@ -470,6 +604,99 @@ __env_size_insert(head, elp)
 		SH_TAILQ_INSERT_BEFORE(q, elp_tmp, elp, sizeq, __alloc_element);
 }
 
+/*
+ * __env_region_extend --
+ *	Extend a region.
+ *
+ * PUBLIC: int __env_region_extend __P((ENV *, REGINFO *));
+ */
+int
+__env_region_extend(env, infop)
+	ENV *env;
+	REGINFO *infop;
+{
+	ALLOC_ELEMENT *elp;
+	REGION *rp;
+	int ret;
+
+	DB_ASSERT(env, !F_ISSET(env, ENV_PRIVATE));
+
+	ret = 0;
+	rp = infop->rp;
+	if (rp->size >= rp->max)
+		return (ENOMEM);
+	elp = (ALLOC_ELEMENT *)((u_int8_t *)infop->addr + rp->size);
+	if (rp->size + rp->alloc > rp->max)
+		rp->alloc = rp->max - rp->size;
+	rp->size += rp->alloc;
+	rp->size = (size_t)ALIGNP_INC(rp->size, sizeof(size_t));
+	if (infop->fhp &&
+	    (ret = __db_file_extend(env, infop->fhp, rp->size)) != 0)
+		return (ret);
+	elp->len = rp->alloc;
+	elp->ulen = 0;
+#ifdef DIAGNOSTIC
+	*(u_int8_t *)(elp+1) = GUARD_BYTE;
+#endif
+
+	SH_TAILQ_INSERT_TAIL(&((ALLOC_LAYOUT *)infop->head)->addrq, elp, addrq);
+	__env_alloc_free(infop, elp + 1);
+	if (rp->alloc < MEGABYTE)
+		rp->alloc += rp->size;
+	if (rp->alloc > MEGABYTE)
+		rp->alloc = MEGABYTE;
+	return (ret);
+}
+
+/*
+ * __env_elem_size --
+ *	Return the size of an allocated element.
+ * PUBLIC: uintmax_t __env_elem_size __P((ENV *, void *));
+ */
+uintmax_t
+__env_elem_size(env, p)
+	ENV *env;
+	void *p;
+{
+	ALLOC_ELEMENT *elp;
+	uintmax_t size;
+
+	if (F_ISSET(env, ENV_PRIVATE)) {
+		size = *((uintmax_t *)p - 1);
+		size -= sizeof(uintmax_t);
+	} else {
+		elp = (ALLOC_ELEMENT *)((u_int8_t *)p - sizeof(ALLOC_ELEMENT));
+		size = elp->ulen;
+	}
+	return (size);
+}
+
+/*
+ * __env_get_chunk --
+ *	Return the next chunk allocated in a private region.
+ * PUBLIC: void * __env_get_chunk __P((REGINFO *, void **, uintmax_t *));
+ */
+void *
+__env_get_chunk(infop, nextp, sizep)
+	REGINFO *infop;
+	void **nextp;
+	uintmax_t *sizep;
+{
+	REGION_MEM *mem;
+
+	if (infop->mem == NULL)
+		return (NULL);
+	if (*nextp == NULL)
+		*nextp = infop->mem;
+	mem = *(REGION_MEM **)nextp;
+	*nextp = mem->next;
+
+	*sizep = __env_elem_size(infop->env, mem);
+	*sizep -= sizeof(*mem);
+
+	return ((void *)(mem + 1));
+}
+
 #ifdef HAVE_STATISTICS
 /*
  * __env_alloc_print --
@@ -482,15 +709,13 @@ __env_alloc_print(infop, flags)
 	REGINFO *infop;
 	u_int32_t flags;
 {
-#ifdef __ALLOC_DISPLAY_ALLOCATION_LISTS
 	ALLOC_ELEMENT *elp;
-#endif
 	ALLOC_LAYOUT *head;
 	ENV *env;
 	u_int i;
 
 	env = infop->env;
-	head = infop->addr;
+	head = infop->head;
 
 	if (F_ISSET(env, ENV_PRIVATE))
 		return;
@@ -508,16 +733,18 @@ __env_alloc_print(infop, flags)
 		__db_msg(env, "%3dKB\t%lu",
 		    (1024 << i) / 1024, (u_long)head->pow2_size[i]);
 
-#ifdef __ALLOC_DISPLAY_ALLOCATION_LISTS
+	if (!LF_ISSET(DB_STAT_ALLOC))
+		return;
 	/*
 	 * We don't normally display the list of address/chunk pairs, a few
 	 * thousand lines of output is too voluminous for even DB_STAT_ALL.
 	 */
 	__db_msg(env,
-	    "Allocation list by address: {chunk length, user length}");
+	    "Allocation list by address, offset: {chunk length, user length}");
 	SH_TAILQ_FOREACH(elp, &head->addrq, addrq, __alloc_element)
-		__db_msg(env, "\t%#lx {%lu, %lu}",
-		    P_TO_ULONG(elp), (u_long)elp->len, (u_long)elp->ulen);
+		__db_msg(env, "\t%#lx, %lu {%lu, %lu}",
+		    P_TO_ULONG(elp), (u_long)R_OFFSET(infop, elp),
+		    (u_long)elp->len, (u_long)elp->ulen);
 
 	__db_msg(env, "Allocation free list by size: KB {chunk length}");
 	for (i = 0; i < DB_SIZE_Q_COUNT; ++i) {
@@ -526,6 +753,5 @@ __env_alloc_print(infop, flags)
 			__db_msg(env,
 			    "\t%#lx {%lu}", P_TO_ULONG(elp), (u_long)elp->len);
 	}
-#endif
 }
 #endif

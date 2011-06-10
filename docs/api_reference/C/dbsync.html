@@ -12,7 +12,10 @@
     <link rel="next" href="dbtruncate.html" title="DB-&gt;truncate()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB-&gt;sync()</th>
@@ -41,6 +44,9 @@ int
 DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
       <p>
          The <code class="methodname">DB-&gt;sync()</code> method flushes any cached information to disk.
+         This method operates on the database file level, so if the file
+         contains multiple database handles then this method will flush to
+         disk any information that is cached for any of those handles.
     </p>
       <p>
          If the database is in memory only, the <code class="methodname">DB-&gt;sync()</code> method has no
@@ -71,7 +77,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50839264"></a>Parameters</h3>
+              <h3 class="title"><a id="id3874748"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -79,7 +85,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50838784"></a>flags</h4>
+                <h4 class="title"><a id="id3874737"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -93,7 +99,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50832640"></a>Errors</h3>
+              <h3 class="title"><a id="id3873529"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -109,7 +115,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50820288"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id3874308"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -128,7 +134,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50838352"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id3874733"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -140,7 +146,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50773168"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3874899"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -153,7 +159,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50825544"></a>Class</h3>
+              <h3 class="title"><a id="id3874732"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -165,7 +171,7 @@ DB-&gt;sync(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50842848"></a>See Also</h3>
+              <h3 class="title"><a id="id3874809"></a>See Also</h3>
             </div>
           </div>
         </div>

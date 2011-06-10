@@ -19,7 +19,7 @@ proc mut001 { } {
 	puts "Mut001: Basic mutex interface testing."
 
 	# Open an env.
-	set env [berkdb_env -create -home $testdir]
+	set env [berkdb_env -create -home $testdir -private -mutex_set_incr 100]
 	
 	# Allocate, lock, unlock, and free a bunch of mutexes.
 	set nmutexes 100
@@ -65,7 +65,7 @@ proc mut001 { } {
 	set mutex_count 2000
 	set env [berkdb_env -create -home $testdir -mutex_set_max $mutex_count]
 
-	set stat_count [stat_field $env mutex_stat "Mutex count"]
+	set stat_count [stat_field $env mutex_stat "Mutex max"]
 	set get_count [$env mutex_get_max]
 	error_check_good stat_count $stat_count $mutex_count
 	error_check_good get_count $get_count $mutex_count
@@ -77,9 +77,10 @@ proc mut001 { } {
 	set mutex_incr 500
 	set mutex_count [expr $default_count + $mutex_incr]
 
-	set env [berkdb_env -create -home $testdir -mutex_set_incr $mutex_incr]
+	set env [berkdb_env -create -home $testdir \
+	    -mutex_set_max $default_count -mutex_set_incr $mutex_incr]
 
-	set stat_count [stat_field $env mutex_stat "Mutex count"]
+	set stat_count [stat_field $env mutex_stat "Mutex max"]
 	error_check_good stat_increment $stat_count $mutex_count 
 	set get_count [$env mutex_get_max]
 	error_check_good get_increment $get_count $mutex_count

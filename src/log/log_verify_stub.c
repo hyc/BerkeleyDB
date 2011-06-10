@@ -26,8 +26,8 @@ static int
 __db_log_novrfy(env)
 	ENV *env;
 {
-	__db_errx(env,
-	    "library build did not include support for log verification");
+	__db_errx(env, DB_STR("2523",
+	    "library build did not include support for log verification"));
 	return (DB_OPNOTSUP);
 }
 
@@ -36,7 +36,6 @@ __log_verify_pp(dbenv, lvconfig)
 	DB_ENV *dbenv;
 	const DB_LOG_VERIFY_CONFIG *lvconfig;
 {
-	COMPQUIET(dbenv, NULL);
 	COMPQUIET(lvconfig, NULL);
 
 	/* The dbenv is intact, callers should properly take care of it. */
@@ -48,7 +47,6 @@ __log_verify(dbenv, lvconfig)
 	DB_ENV *dbenv;
 	const DB_LOG_VERIFY_CONFIG *lvconfig;
 {
-	COMPQUIET(dbenv, NULL);
 	COMPQUIET(lvconfig, NULL);
 
 	return (__db_log_novrfy(dbenv->env));

@@ -167,7 +167,8 @@ __os_exists(env, path, isdirp)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: stat %s", path);
+		__db_msg(env, DB_STR_A("0033", "fileops: stat %s",
+		    "%s"), path);
 
 	RETRY_CHK(
 	    ((attrs = GetFileAttributes(tpath)) == (DWORD)-1 ? 1 : 0), ret);
@@ -200,7 +201,8 @@ __os_ioinfo(env, path, fhp, mbytesp, bytesp, iosizep)
 
 	RETRY_CHK((!GetFileInformationByHandle(fhp->handle, &bhfi)), ret);
 	if (ret != 0) {
-		__db_syserr(env, ret, "GetFileInformationByHandle");
+		__db_syserr(env, ret, DB_STR("0034",
+		    "GetFileInformationByHandle"));
 		return (__os_posix_err(ret));
 	}
 

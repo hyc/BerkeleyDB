@@ -74,15 +74,16 @@ __os_umalloc(env, size, storep)
 				ret = ENOMEM;
 				__os_set_errno(ENOMEM);
 			}
-			__db_err(env, ret, "malloc: %lu", (u_long)size);
+			__db_err(env, ret, DB_STR_A("0143", "malloc: %lu",
+			    "%lu"), (u_long)size);
 			return (ret);
 		}
 		return (0);
 	}
 
 	if ((*(void **)storep = dbenv->db_malloc(size)) == NULL) {
-		__db_errx(env,
-		    "user-specified malloc function returned NULL");
+		__db_errx(env, DB_STR("0144",
+		    "user-specified malloc function returned NULL"));
 		return (ENOMEM);
 	}
 
@@ -130,15 +131,16 @@ __os_urealloc(env, size, storep)
 				ret = ENOMEM;
 				__os_set_errno(ENOMEM);
 			}
-			__db_err(env, ret, "realloc: %lu", (u_long)size);
+			__db_err(env, ret, DB_STR_A("0145",
+			    "realloc: %lu", "%lu"), (u_long)size);
 			return (ret);
 		}
 		return (0);
 	}
 
 	if ((*(void **)storep = dbenv->db_realloc(ptr, size)) == NULL) {
-		__db_errx(env,
-		    "User-specified realloc function returned NULL");
+		__db_errx(env, DB_STR("0146",
+		    "User-specified realloc function returned NULL"));
 		return (ENOMEM);
 	}
 
@@ -262,7 +264,8 @@ __os_malloc(env, size, storep)
 			ret = ENOMEM;
 			__os_set_errno(ENOMEM);
 		}
-		__db_err(env, ret, "malloc: %lu", (u_long)size);
+		__db_err(env, ret, DB_STR_A("0147", "malloc: %lu", "%lu"),
+		    (u_long)size);
 		return (ret);
 	}
 
@@ -345,7 +348,8 @@ __os_realloc(env, size, storep)
 			ret = ENOMEM;
 			__os_set_errno(ENOMEM);
 		}
-		__db_err(env, ret, "realloc: %lu", (u_long)size);
+		__db_err(env, ret, DB_STR_A("0148", "realloc: %lu", "%lu"),
+		    (u_long)size);
 		return (ret);
 	}
 #ifdef DIAGNOSTIC
@@ -414,7 +418,8 @@ static void
 __os_guard(env)
 	ENV *env;
 {
-	__db_errx(env, "Guard byte incorrect during free");
+	__db_errx(env, DB_STR("0149",
+	    "Guard byte incorrect during free"));
 	__os_abort(env);
 	/* NOTREACHED */
 }

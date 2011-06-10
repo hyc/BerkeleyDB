@@ -47,6 +47,7 @@ typedef db_pgno_t Pgno;
   #define SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT 2 * 1024 * 1024
 #endif
 
+int sqlite3PagerExclusiveLock(Pager *pPager);
 sqlite3_file *sqlite3PagerFile(Pager*);
 const char *sqlite3PagerFilename(Pager *pPager);
 int sqlite3PagerGetJournalMode(Pager *pPager);

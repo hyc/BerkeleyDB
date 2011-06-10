@@ -15,28 +15,26 @@ typedef int (*HEARTBEAT_ACTION) __P((ENV *));
 static int accept_handshake __P((ENV *, REPMGR_CONNECTION *, char *));
 static int accept_v1_handshake __P((ENV *, REPMGR_CONNECTION *, char *));
 static int __repmgr_call_election __P((ENV *));
-static int __repmgr_connect __P((ENV*, socket_t *, REPMGR_SITE *));
+static int __repmgr_connector_main __P((ENV *, REPMGR_RUNNABLE *));
+static void *__repmgr_connector_thread __P((void *));
 static int dispatch_msgin __P((ENV *, REPMGR_CONNECTION *));
-static int find_version_info __P((ENV *, REPMGR_CONNECTION *, DBT *));
-static int introduce_site __P((ENV *, char *, u_int, REPMGR_SITE**, u_int32_t));
 static int __repmgr_next_timeout __P((ENV *,
     db_timespec *, HEARTBEAT_ACTION *));
-static int dispatch_phase_completion __P((ENV *, REPMGR_CONNECTION *));
+static int prepare_input __P((ENV *, REPMGR_CONNECTION *));
+static int process_own_msg __P((ENV *, REPMGR_CONNECTION *));
 static int process_parameters __P((ENV *,
-    REPMGR_CONNECTION *, char *, u_int, u_int32_t, u_int32_t));
+    REPMGR_CONNECTION *, char *, u_int, u_int32_t, int, u_int32_t));
 static int read_version_response __P((ENV *, REPMGR_CONNECTION *));
 static int record_permlsn __P((ENV *, REPMGR_CONNECTION *));
 static int __repmgr_retry_connections __P((ENV *));
-static int send_handshake __P((ENV *, REPMGR_CONNECTION *, void *, size_t));
 static int __repmgr_send_heartbeat __P((ENV *));
-static int send_v1_handshake __P((ENV *,
-    REPMGR_CONNECTION *, void *, size_t));
 static int send_version_response __P((ENV *, REPMGR_CONNECTION *));
 static int __repmgr_try_one __P((ENV *, u_int));
 
 #define	ONLY_HANDSHAKE(env, conn) do {				     \
 	if (conn->msg_type != REPMGR_HANDSHAKE) {		     \
-		__db_errx(env, "unexpected msg type %d in state %d", \
+		__db_errx(env, DB_STR_A("3613",		     \
+		    "unexpected msg type %d in state %d", "%d %d"),  \
 		    (int)conn->msg_type, conn->state);		     \
 		return (DB_REP_UNAVAIL);			     \
 	}							     \
@@ -56,11 +54,32 @@ __repmgr_select_thread(argsp)
 	args = argsp;
 	env = args->env;
 
-	if ((ret = __repmgr_select_loop(env)) != 0) {
-		__db_err(env, ret, "select loop failed");
-		__repmgr_thread_failure(env, ret);
+	if ((ret = __repmgr_select_loop(env)) == DB_DELETED)
+		ret = __repmgr_bow_out(env);
+	if (ret != 0) {
+		__db_err(env, ret, DB_STR("3614", "select loop failed"));
+		(void)__repmgr_thread_failure(env, ret);
 	}
 	return (NULL);
+}
+
+/*
+ * PUBLIC: int __repmgr_bow_out __P((ENV *));
+ */
+int
+__repmgr_bow_out(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	int ret;
+
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "Stopping repmgr threads"));
+	db_rep = env->rep_handle;
+	LOCK_MUTEX(db_rep->mutex);
+	ret = __repmgr_stop_threads(env);
+	UNLOCK_MUTEX(db_rep->mutex);
+	DB_EVENT(env, DB_EVENT_REP_LOCAL_SITE_REMOVED, NULL);
+	return (ret);
 }
 
 /*
@@ -76,9 +95,6 @@ __repmgr_accept(env)
 	socklen_t addrlen;
 	socket_t s;
 	int ret;
-#ifdef DB_WIN32
-	WSAEVENT event_obj;
-#endif
 
 	db_rep = env->rep_handle;
 	addrlen = sizeof(siaddr);
@@ -115,41 +131,24 @@ __repmgr_accept(env)
 			    "accept error %d considered innocuous", ret));
 			return (0);
 		default:
-			__db_err(env, ret, "accept error");
+			__db_err(env, ret, DB_STR("3615", "accept error"));
 			return (ret);
 		}
 	}
 	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "accepted a new connection"));
 
-	if ((ret = __repmgr_set_nonblocking(s)) != 0) {
-		__db_err(env, ret, "can't set nonblock after accept");
+	if ((ret =
+	    __repmgr_new_connection(env, &conn, s, CONN_NEGOTIATE)) != 0) {
 		(void)closesocket(s);
+		return (ret);
+	}
+	if ((ret = __repmgr_set_nonblock_conn(conn)) != 0) {
+		__db_err(env, ret, DB_STR("3616",
+		    "can't set nonblock after accept"));
+		(void)__repmgr_destroy_conn(env, conn);
 		return (ret);
 	}
 
-#ifdef DB_WIN32
-	if ((event_obj = WSACreateEvent()) == WSA_INVALID_EVENT) {
-		ret = net_errno;
-		__db_err(env, ret, "can't create WSA event");
-		(void)closesocket(s);
-		return (ret);
-	}
-	if (WSAEventSelect(s, event_obj, FD_READ|FD_CLOSE) == SOCKET_ERROR) {
-		ret = net_errno;
-		__db_err(env, ret, "can't set desired event bits");
-		(void)WSACloseEvent(event_obj);
-		(void)closesocket(s);
-		return (ret);
-	}
-#endif
-	if ((ret =
-	    __repmgr_new_connection(env, &conn, s, CONN_NEGOTIATE)) != 0) {
-#ifdef DB_WIN32
-		(void)WSACloseEvent(event_obj);
-#endif
-		(void)closesocket(s);
-		return (ret);
-	}
 	F_SET(conn, CONN_INCOMING);
 
 	/*
@@ -160,10 +159,8 @@ __repmgr_accept(env)
 	 */
 	conn->eid = -1;
 	TAILQ_INSERT_TAIL(&db_rep->connections, conn, entries);
+	conn->ref_count++;
 
-#ifdef DB_WIN32
-	conn->event_object = event_obj;
-#endif
 	return (0);
 }
 
@@ -241,7 +238,8 @@ __repmgr_next_timeout(env, deadline, action)
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
 
-	if (rep->master_id == SELF_EID && rep->heartbeat_frequency > 0) {
+	if (rep->master_id == db_rep->self_eid &&
+	    rep->heartbeat_frequency > 0) {
 		t = db_rep->last_bcast;
 		TIMESPEC_ADD_DB_TIMEOUT(&t, rep->heartbeat_frequency);
 		my_action = __repmgr_send_heartbeat;
@@ -267,14 +265,38 @@ __repmgr_next_timeout(env, deadline, action)
 	return (TRUE);
 }
 
+/*
+ * Sends a heartbeat message.
+ *
+ * repmgr also uses the heartbeat facility to manage rerequests.  We
+ * send the master's current generation and max_perm_lsn with the heartbeat
+ * message to help a client determine whether it has all master transactions.
+ * When a client receives a heartbeat message, it also checks whether it
+ * needs to rerequest anything.  Note that heartbeats must be enabled for
+ * this rerequest processing to occur.
+ */
 static int
 __repmgr_send_heartbeat(env)
 	ENV *env;
 {
+	DB_REP *db_rep;
+	REP *rep;
 	DBT control, rec;
+	__repmgr_permlsn_args permlsn;
+	u_int8_t buf[__REPMGR_PERMLSN_SIZE];
 	u_int unused1, unused2;
+	int ret;
 
-	DB_INIT_DBT(control, NULL, 0);
+	db_rep = env->rep_handle;
+	rep = db_rep->region;
+
+	permlsn.generation = rep->gen;
+	if ((ret = __rep_get_maxpermlsn(env, &permlsn.lsn)) != 0)
+		return (ret);
+	__repmgr_permlsn_marshal(env, &permlsn, buf);
+	control.data = buf;
+	control.size = __REPMGR_PERMLSN_SIZE;
+
 	DB_INIT_DBT(rec, NULL, 0);
 	return (__repmgr_send_broadcast(env,
 	    REPMGR_HEARTBEAT, &control, &rec, &unused1, &unused2));
@@ -297,8 +319,7 @@ __repmgr_master_connection(env)
 	rep = db_rep->region;
 	master_id = rep->master_id;
 
-	if (master_id == SELF_EID ||
-	    !IS_VALID_EID(master_id))
+	if (!IS_KNOWN_REMOTE_SITE(master_id))
 		return (NULL);
 	master = SITE_FROM_EID(master_id);
 	if (IS_SITE_HANDSHAKEN(master))
@@ -357,6 +378,7 @@ __repmgr_retry_connections(env)
 	ENV *env;
 {
 	DB_REP *db_rep;
+	REPMGR_SITE *site;
 	REPMGR_RETRY *retry;
 	db_timespec now;
 	u_int eid;
@@ -374,9 +396,14 @@ __repmgr_retry_connections(env)
 
 		eid = retry->eid;
 		__os_free(env, retry);
+		site = SITE_FROM_EID(eid);
+		DB_ASSERT(env, site->state == SITE_PAUSING);
 
-		if ((ret = __repmgr_try_one(env, eid)) != 0)
-			return (ret);
+		if (site->membership == SITE_PRESENT) {
+			if ((ret = __repmgr_try_one(env, eid)) != 0)
+				return (ret);
+		} else
+			site->state = SITE_IDLE;
 	}
 	return (0);
 }
@@ -392,262 +419,186 @@ __repmgr_first_try_connections(env)
 	ENV *env;
 {
 	DB_REP *db_rep;
+	REPMGR_SITE *site;
 	u_int eid;
 	int ret;
 
 	db_rep = env->rep_handle;
-	for (eid = 0; eid < db_rep->site_cnt; eid++)
-		if ((ret = __repmgr_try_one(env, eid)) != 0)
+	FOR_EACH_REMOTE_SITE_INDEX(eid) {
+		site = SITE_FROM_EID(eid);
+		/*
+		 * Normally all sites would be IDLE here.  But if a user thread
+		 * triggered an auto-start in a subordinate process, our send()
+		 * function may have found new sites when it sync'ed site
+		 * addresses, and that action causes connection attempts to be
+		 * scheduled (resulting in PAUSING state here, or conceivably
+		 * even CONNECTING or CONNECTED).
+		 */
+		if (site->state == SITE_IDLE &&
+		    site->membership == SITE_PRESENT &&
+		    (ret = __repmgr_try_one(env, eid)) != 0)
 			return (ret);
+	}
 	return (0);
 }
 
 /*
- * Makes a best-effort attempt to connect to the indicated site.  Returns a
- * non-zero error indication only for disastrous failures.  For re-tryable
- * errors, we will have scheduled another attempt, and that can be considered
- * success enough.
+ * Starts a thread to open a connection to the site at the given EID.
  */
 static int
 __repmgr_try_one(env, eid)
 	ENV *env;
 	u_int eid;
 {
-	ADDRINFO *list;
 	DB_REP *db_rep;
-	repmgr_netaddr_t *addr;
-	int ret;
-
-	db_rep = env->rep_handle;
-
-	addr = &SITE_FROM_EID(eid)->net_addr;
-	if (ADDR_LIST_FIRST(addr) == NULL) {
-		if ((ret = __repmgr_getaddr(env,
-		    addr->host, addr->port, 0, &list)) == 0) {
-			addr->address_list = list;
-			(void)ADDR_LIST_FIRST(addr);
-		} else if (ret == DB_REP_UNAVAIL)
-			return (__repmgr_schedule_connection_attempt(
-			    env, eid, FALSE));
-		else
-			return (ret);
-	}
-
-	/* Here, when we have a valid address. */
-	return (__repmgr_connect_site(env, eid));
-}
-
-/*
- * Tries to establish a connection with the site indicated by the given eid,
- * starting with the "current" element of its address list and trying as many
- * addresses as necessary until the list is exhausted.
- *
- * PUBLIC: int __repmgr_connect_site __P((ENV *, u_int eid));
- */
-int
-__repmgr_connect_site(env, eid)
-	ENV *env;
-	u_int eid;
-{
-	DB_REP *db_rep;
-	REPMGR_CONNECTION *con;
 	REPMGR_SITE *site;
-	socket_t s;
-	int state;
+	REPMGR_RUNNABLE *th;
 	int ret;
-#ifdef DB_WIN32
-	long desired_event;
-	WSAEVENT event_obj;
-#endif
 
 	db_rep = env->rep_handle;
 	site = SITE_FROM_EID(eid);
-
-	switch (ret = __repmgr_connect(env, &s, site)) {
-	case 0:
-		state = CONN_CONNECTED;
-#ifdef DB_WIN32
-		desired_event = FD_READ|FD_CLOSE;
-#endif
-		break;
-	case INPROGRESS:
-		state = CONN_CONNECTING;
-#ifdef DB_WIN32
-		desired_event = FD_CONNECT;
-#endif
-		break;
-	default:
-		STAT(db_rep->region->mstat.st_connect_fail++);
-		return (
-		    __repmgr_schedule_connection_attempt(env, eid, FALSE));
-	}
-
-#ifdef DB_WIN32
-	if ((event_obj = WSACreateEvent()) == WSA_INVALID_EVENT) {
-		ret = net_errno;
-		__db_err(env, ret, "can't create WSA event");
-		(void)closesocket(s);
-		return (ret);
-	}
-	if (WSAEventSelect(s, event_obj, desired_event) == SOCKET_ERROR) {
-		ret = net_errno;
-		__db_err(env, ret, "can't set desired event bits");
-		(void)WSACloseEvent(event_obj);
-		(void)closesocket(s);
-		return (ret);
-	}
-#endif
-
-	if ((ret = __repmgr_new_connection(env, &con, s, state)) != 0) {
-#ifdef DB_WIN32
-		(void)WSACloseEvent(event_obj);
-#endif
-		(void)closesocket(s);
-		return (ret);
-	}
-#ifdef DB_WIN32
-	con->event_object = event_obj;
-#endif
-
-	con->eid = (int)eid;
-	site->ref.conn = con;
-	site->state = SITE_CONNECTED;
-
-	if (state == CONN_CONNECTED) {
-		__os_gettime(env, &site->last_rcvd_timestamp, 1);
-		switch (ret = __repmgr_propose_version(env, con)) {
-		case 0:
-			break;
-		case DB_REP_UNAVAIL:
-			return (__repmgr_bust_connection(env, con));
-		default:
+	th = site->connector;
+	if (th == NULL) {
+		if ((ret = __os_malloc(env, sizeof(REPMGR_RUNNABLE), &th)) != 0)
 			return (ret);
-		}
+		site->connector = th;
+	} else if (th->finished) {
+		if ((ret = __repmgr_thread_join(th)) != 0)
+			return (ret);
+	} else {
+		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		  "eid %lu previous connector thread still running; will retry",
+		    (u_long)eid));
+		return (__repmgr_schedule_connection_attempt(env,
+			eid, FALSE));
 	}
 
-	return (0);
-}
+	site->state = SITE_CONNECTING;
 
-static int
-__repmgr_connect(env, socket_result, site)
-	ENV *env;
-	socket_t *socket_result;
-	REPMGR_SITE *site;
-{
-	repmgr_netaddr_t *addr;
-	ADDRINFO *ai;
-	socket_t s;
-	char *why;
-	int ret;
-	SITE_STRING_BUFFER buffer;
-
-	/*
-	 * Lint doesn't know about DB_ASSERT, so it can't tell that this
-	 * loop will always get executed at least once, giving 'why' a value.
-	 */
-	COMPQUIET(why, "");
-	addr = &site->net_addr;
-	ai = ADDR_LIST_CURRENT(addr);
-	DB_ASSERT(env, ai != NULL);
-	for (; ai != NULL; ai = ADDR_LIST_NEXT(addr)) {
-
-		if ((s = socket(ai->ai_family,
-		    ai->ai_socktype, ai->ai_protocol)) == SOCKET_ERROR) {
-			why = "can't create socket to connect";
-			continue;
-		}
-
-		if ((ret = __repmgr_set_nonblocking(s)) != 0) {
-			__db_err(env,
-			    ret, "can't make nonblock socket to connect");
-			(void)closesocket(s);
-			return (ret);
-		}
-
-		if (connect(s, ai->ai_addr, (socklen_t)ai->ai_addrlen) != 0)
-			ret = net_errno;
-
-		if (ret == 0 || ret == INPROGRESS) {
-			*socket_result = s;
-			VPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			    "init connection to %s with result %d",
-			    __repmgr_format_site_loc(site, buffer), ret));
-			return (ret);
-		}
-
-		why = "connection failed";
-		(void)closesocket(s);
+	th->run = __repmgr_connector_thread;
+	th->args.eid = (int)eid;
+	if ((ret = __repmgr_thread_start(env, th)) != 0) {
+		__os_free(env, th);
+		site->connector = NULL;
 	}
-
-	/* We've exhausted all possible addresses. */
-	ret = net_errno;
-	__db_err(env, ret, "%s to %s", why,
-	    __repmgr_format_site_loc(site, buffer));
 	return (ret);
 }
 
-/*
- * Sends a proposal for version negotiation.
- *
- * PUBLIC: int __repmgr_propose_version __P((ENV *, REPMGR_CONNECTION *));
- */
-int
-__repmgr_propose_version(env, conn)
-	ENV *env;
-	REPMGR_CONNECTION *conn;
+static void *
+__repmgr_connector_thread(argsp)
+	void *argsp;
 {
-	DB_REP *db_rep;
-	__repmgr_version_proposal_args versions;
-	repmgr_netaddr_t *my_addr;
-	size_t hostname_len, rec_length;
-	u_int8_t *buf, *p;
+	REPMGR_RUNNABLE *th;
+	ENV *env;
 	int ret;
 
+	th = argsp;
+	env = th->env;
+
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+	    "starting connector thread, eid %u", th->args.eid));
+	if ((ret = __repmgr_connector_main(env, th)) != 0) {
+		__db_err(env, ret, DB_STR("3617", "connector thread failed"));
+		(void)__repmgr_thread_failure(env, ret);
+	}
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "connector thread is exiting"));
+
+	th->finished = TRUE;
+	return (NULL);
+}
+
+static int
+__repmgr_connector_main(env, th)
+	ENV *env;
+	REPMGR_RUNNABLE *th;
+{
+	DB_REP *db_rep;
+	REPMGR_SITE *site;
+	REPMGR_CONNECTION *conn;
+	DB_REPMGR_CONN_ERR info;
+	repmgr_netaddr_t netaddr;
+	SITE_STRING_BUFFER site_string;
+	int err, ret, t_ret;
+
 	db_rep = env->rep_handle;
-	my_addr = &db_rep->my_addr;
+	ret = 0;
+
+	LOCK_MUTEX(db_rep->mutex);
+	site = SITE_FROM_EID(th->args.eid);
+	if (site->state != SITE_CONNECTING && db_rep->finished)
+		goto unlock;
 
 	/*
-	 * In repmgr wire protocol version 1, a handshake message had a rec part
-	 * that looked like this:
+	 * Drop the mutex during operations that could block.  During those
+	 * times, the site struct could move (if we had to grow the sites
+	 * array), but host wouldn't.
 	 *
-	 *  +-----------------+----+
-	 *  |  host name ...  | \0 |
-	 *  +-----------------+----+
-	 *
-	 * To ensure its own sanity, the old repmgr would write a NUL into the
-	 * last byte of a received message, and then use normal C library string
-	 * operations (e.g., * strlen, strcpy).
-	 *
-	 * Now, a version proposal has a rec part that looks like this:
-	 *
-	 *  +-----------------+----+------------------+------+
-	 *  |  host name ...  | \0 |  extra info ...  |  \0  |
-	 *  +-----------------+----+------------------+------+
-	 *
-	 * The "extra info" contains the version parameters, in marshaled form.
+	 * Also, during those times we might receive an incoming connection from
+	 * the site, which would change its state.  So, check state each time we
+	 * reacquire the mutex, and quit if the state of the world changed while
+	 * we were away.
 	 */
+	netaddr = site->net_addr;
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "connecting to %s",
+		__repmgr_format_site_loc(site, site_string)));
+	UNLOCK_MUTEX(db_rep->mutex);
 
-	hostname_len = strlen(my_addr->host);
-	rec_length = hostname_len + 1 +
-	    __REPMGR_VERSION_PROPOSAL_SIZE + 1;
-	if ((ret = __os_malloc(env, rec_length, &buf)) != 0)
+	if ((ret = __repmgr_connect(env, &netaddr, &conn, &err)) == 0) {
+		DB_EVENT(env,  DB_EVENT_REP_CONNECT_ESTD, &th->args.eid);
+		LOCK_MUTEX(db_rep->mutex);
+		if ((ret = __repmgr_set_nonblock_conn(conn)) != 0) {
+			__db_err(env, ret, DB_STR("3618",
+			    "set_nonblock in connnect thread"));
+			goto cleanup;
+		}
+		conn->type = REP_CONNECTION;
+		site = SITE_FROM_EID(th->args.eid);
+		if (site->state != SITE_CONNECTING || db_rep->finished)
+			goto cleanup;
+
+		conn->eid = (int)th->args.eid;
+		site = SITE_FROM_EID(th->args.eid);
+		site->ref.conn = conn;
+		site->state = SITE_CONNECTED;
+		__os_gettime(env, &site->last_rcvd_timestamp, 1);
+		ret = __repmgr_wake_main_thread(env);
+	} else if (ret == DB_REP_UNAVAIL) {
+		/* Retryable error while trying to connect: retry later. */
+		info.eid = th->args.eid;
+		info.error = err;
+		DB_EVENT(env, DB_EVENT_REP_CONNECT_TRY_FAILED, &info);
+		STAT(db_rep->region->mstat.st_connect_fail++);
+
+		LOCK_MUTEX(db_rep->mutex);
+		site = SITE_FROM_EID(th->args.eid);
+		if (site->state != SITE_CONNECTING || db_rep->finished) {
+			ret = 0;
+			goto unlock;
+		}
+		ret = __repmgr_schedule_connection_attempt(env,
+		    (u_int)th->args.eid, FALSE);
+	} else
 		goto out;
-	p = buf;
-	(void)strcpy((char*)p, my_addr->host);
 
-	p += hostname_len + 1;
-	versions.min = DB_REPMGR_MIN_VERSION;
-	versions.max = DB_REPMGR_VERSION;
-	__repmgr_version_proposal_marshal(env, &versions, p);
+	if (0) {
+cleanup:
+		if ((t_ret = __repmgr_destroy_conn(env, conn)) != 0 &&
+		    ret == 0)
+			ret = t_ret;
+	}
 
-	ret = send_v1_handshake(env, conn, buf, rec_length);
-	__os_free(env, buf);
+unlock:
+	UNLOCK_MUTEX(db_rep->mutex);
 out:
 	return (ret);
 }
 
-static int
-send_v1_handshake(env, conn, buf, len)
+/*
+ * PUBLIC: int __repmgr_send_v1_handshake __P((ENV *,
+ * PUBLIC:     REPMGR_CONNECTION *, void *, size_t));
+ */
+int
+__repmgr_send_v1_handshake(env, conn, buf, len)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 	void *buf;
@@ -661,8 +612,14 @@ send_v1_handshake(env, conn, buf, len)
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
-	my_addr = &db_rep->my_addr;
+	my_addr = &SITE_FROM_EID(db_rep->self_eid)->net_addr;
 
+	/*
+	 * We're about to send from a structure that has padding holes in it.
+	 * Initializing it keeps Valgrind happy, plus we really shouldn't be
+	 * sending out random garbage anyway (pro forma privacy issue).
+	 */
+	memset(&buffer, 0, sizeof(buffer));
 	buffer.version = 1;
 	buffer.priority = htonl(rep->priority);
 	buffer.port = my_addr->port;
@@ -674,13 +631,13 @@ send_v1_handshake(env, conn, buf, len)
 
 	/*
 	 * It would of course be disastrous to block the select() thread, so
-	 * pass the "blockable" argument as FALSE.  Fortunately blocking should
+	 * pass the "maxblock" argument as 0.  Fortunately blocking should
 	 * never be necessary here, because the hand-shake is always the first
 	 * thing we send.  Which is a good thing, because it would be almost as
 	 * disastrous if we allowed ourselves to drop a handshake.
 	 */
 	return (__repmgr_send_one(env,
-	    conn, REPMGR_HANDSHAKE, &cntrl, &rec, FALSE));
+	    conn, REPMGR_HANDSHAKE, &cntrl, &rec, 0));
 }
 
 /*
@@ -696,196 +653,394 @@ __repmgr_read_from_site(env, conn)
 {
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
-	SITE_STRING_BUFFER buffer;
-	size_t nr;
 	int ret;
 
 	db_rep = env->rep_handle;
+
 	/*
-	 * Keep reading pieces as long as we're making some progress, or until
-	 * we complete the current read phase.
+	 * Loop, just in case we get EINTR and need to restart the I/O.  (All
+	 * other branches return.)
 	 */
 	for (;;) {
-		if ((ret = __repmgr_readv(conn->fd,
-		    &conn->iovecs.vectors[conn->iovecs.offset],
-		    conn->iovecs.count - conn->iovecs.offset, &nr)) != 0) {
-			switch (ret) {
+		switch ((ret = __repmgr_read_conn(conn))) {
 #ifndef DB_WIN32
-			case EINTR:
-				continue;
+		case EINTR:
+			continue;
 #endif
 
 #if defined(DB_REPMGR_EAGAIN) && DB_REPMGR_EAGAIN != WOULDBLOCK
-			case DB_REPMGR_EAGAIN:
+		case DB_REPMGR_EAGAIN:
 #endif
-			case WOULDBLOCK:
-				return (0);
-			default:
-#ifdef EBADF
-				DB_ASSERT(env, ret != EBADF);
-#endif
-				(void)__repmgr_format_eid_loc(env->rep_handle,
-				    conn->eid, buffer);
-				__db_err(env, ret,
-				    "can't read from %s", buffer);
-				STAT(env->rep_handle->
-				    region->mstat.st_connection_drop++);
-				return (DB_REP_UNAVAIL);
-			}
-		}
+		case WOULDBLOCK:
+			return (0);
 
-		if (nr > 0) {
-			if (IS_VALID_EID(conn->eid)) {
-				site = SITE_FROM_EID(conn->eid);
-				__os_gettime(
-				    env, &site->last_rcvd_timestamp, 1);
-			}
-			if (__repmgr_update_consumed(&conn->iovecs, nr))
-				return (dispatch_phase_completion(env,
-					    conn));
-		} else {
-			(void)__repmgr_format_eid_loc(env->rep_handle,
-			    conn->eid, buffer);
-			__db_errx(env, "EOF on connection from %s", buffer);
+		case DB_REP_UNAVAIL:
+			/* Error 0 is understood to mean EOF. */
+			__repmgr_fire_conn_err_event(env, conn, 0);
 			STAT(env->rep_handle->
 			    region->mstat.st_connection_drop++);
+			return (DB_REP_UNAVAIL);
+
+		case 0:
+			if (IS_VALID_EID(conn->eid)) {
+				site = SITE_FROM_EID(conn->eid);
+				__os_gettime(env,
+				    &site->last_rcvd_timestamp, 1);
+			}
+			return (conn->reading_phase == SIZES_PHASE ?
+			    prepare_input(env, conn) :
+			    dispatch_msgin(env, conn));
+
+		default:
+#ifdef EBADF
+			DB_ASSERT(env, ret != EBADF);
+#endif
+			__repmgr_fire_conn_err_event(env, conn, ret);
+			STAT(db_rep->region->mstat.st_connection_drop++);
 			return (DB_REP_UNAVAIL);
 		}
 	}
 }
 
 /*
- * Handles whatever needs to be done upon the completion of a reading phase on a
- * given connection.
+ * Reads in the current input phase, as defined by the connection's IOVECS
+ * struct.
+ *
+ * Returns DB_REP_UNAVAIL for EOF.
+ *
+ * Makes no assumption about synchronization: it's up to the caller to hold
+ * mutex if necessary.
+ *
+ * PUBLIC: int __repmgr_read_conn __P((REPMGR_CONNECTION *));
+ */
+int
+__repmgr_read_conn(conn)
+	REPMGR_CONNECTION *conn;
+{
+	size_t nr;
+	int ret;
+
+	/*
+	 * Keep reading pieces as long as we're making some progress, or until
+	 * we complete the current read phase as defined in iovecs.
+	 */
+	for (;;) {
+		if ((ret = __repmgr_readv(conn->fd,
+		    &conn->iovecs.vectors[conn->iovecs.offset],
+		    conn->iovecs.count - conn->iovecs.offset, &nr)) != 0)
+			return (ret);
+
+		if (nr == 0)
+			return (DB_REP_UNAVAIL);
+
+		if (__repmgr_update_consumed(&conn->iovecs, nr)) {
+			/* We've fully read as much as we wanted. */
+			return (0);
+		}
+	}
+}
+
+/*
+ * Having finished reading the 9-byte message header, figure out what kind of
+ * message we're about to receive, and prepare input buffers accordingly.  The
+ * header includes enough information for us to figure out how much buffer space
+ * we need to allocate (though in some cases we need to do a bit of computation
+ * to arrive at the answer).
+ *
+ * Caller must hold mutex.
  */
 static int
-dispatch_phase_completion(env, conn)
+prepare_input(env, conn)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 {
 #define	MEM_ALIGN sizeof(double)
 	DBT *dbt;
-	u_int32_t control_size, rec_size;
+	__repmgr_msg_hdr_args msg_hdr;
+	REPMGR_RESPONSE *resp;
+	u_int32_t control_size, rec_size, size;
 	size_t memsize, control_offset, rec_offset;
 	void *membase;
-	int ret;
+	int ret, skip;
 
-	switch (conn->reading_phase) {
-	case SIZES_PHASE:
+	DB_ASSERT(env, conn->reading_phase == SIZES_PHASE);
+
+	/*
+	 * We can only get here after having read the full 9 bytes that we
+	 * expect, so this can't fail.
+	 */
+	ret = __repmgr_msg_hdr_unmarshal(env, &msg_hdr,
+	    conn->msg_hdr_buf, __REPMGR_MSG_HDR_SIZE, NULL);
+	DB_ASSERT(env, ret == 0);
+
+	__repmgr_iovec_init(&conn->iovecs);
+	skip = FALSE;
+
+	switch ((conn->msg_type = msg_hdr.type)) {
+	case REPMGR_HEARTBEAT:
 		/*
-		 * We've received the header: a message type and the lengths of
-		 * the two pieces of the message.  Set up buffers to read the
-		 * two pieces.  This set-up is a bit different for a
-		 * REPMGR_REP_MESSAGE, because we plan to pass it off to the msg
-		 * threads.
+		 * The underlying byte-receiving mechanism will already have
+		 * noted the fact that we got some traffic on this connection,
+		 * which is all that is needed to monitor the heartbeat.  But
+		 * we also put the heartbeat message on the message queue so
+		 * that it will perform rerequest processing.
 		 */
-		__repmgr_iovec_init(&conn->iovecs);
-		control_size = ntohl(conn->control_size_buf);
-		rec_size = ntohl(conn->rec_size_buf);
-
-		if (conn->msg_type == REPMGR_REP_MESSAGE) {
-			if (control_size == 0) {
-				__db_errx(
-				    env, "illegal size for rep msg");
+	case REPMGR_REP_MESSAGE:
+		env->rep_handle->seen_repmsg = TRUE;
+		control_size = REP_MSG_CONTROL_SIZE(msg_hdr);
+		rec_size = REP_MSG_REC_SIZE(msg_hdr);
+		if (control_size == 0) {
+			if (conn->msg_type == REPMGR_HEARTBEAT) {
+				/*
+				 * Got an old-style heartbeat without payload,
+				 * nothing to do.
+				 */
+				skip = TRUE;
+				break;
+			} else {
+				__db_errx(env, DB_STR("3619",
+				    "illegal size for rep msg"));
 				return (DB_REP_UNAVAIL);
 			}
-			/*
-			 * Allocate a block of memory large enough to hold a
-			 * DB_REPMGR_MESSAGE wrapper, plus the (one or) two DBT
-			 * data areas that it points to.  Start by calculating
-			 * the total memory needed, rounding up for the start of
-			 * each DBT, to ensure possible alignment requirements.
-			 */
-			memsize = (size_t)
-			    DB_ALIGN(sizeof(REPMGR_MESSAGE), MEM_ALIGN);
-			control_offset = memsize;
-			memsize += control_size;
-			if (rec_size > 0) {
-				memsize = (size_t)DB_ALIGN(memsize, MEM_ALIGN);
-				rec_offset = memsize;
-				memsize += rec_size;
-			} else
-				COMPQUIET(rec_offset, 0);
-			if ((ret = __os_malloc(env, memsize, &membase)) != 0)
-				return (ret);
-			conn->input.rep_message = membase;
-
-			conn->input.rep_message->originating_eid = conn->eid;
-			DB_INIT_DBT(conn->input.rep_message->control,
-			    (u_int8_t*)membase + control_offset, control_size);
-			__repmgr_add_dbt(&conn->iovecs,
-			    &conn->input.rep_message->control);
-
-			if (rec_size > 0) {
-				DB_INIT_DBT(conn->input.rep_message->rec,
-				    (rec_size > 0 ?
-					(u_int8_t*)membase + rec_offset : NULL),
-				    rec_size);
-				__repmgr_add_dbt(&conn->iovecs,
-				    &conn->input.rep_message->rec);
-			} else
-				DB_INIT_DBT(conn->input.rep_message->rec,
-				    NULL, 0);
-		} else {
-			conn->input.repmgr_msg.cntrl.size = control_size;
-			conn->input.repmgr_msg.rec.size = rec_size;
-
-			if (control_size > 0) {
-				dbt = &conn->input.repmgr_msg.cntrl;
-				if ((ret = __os_malloc(env, control_size,
-				    &dbt->data)) != 0)
-					return (ret);
-				__repmgr_add_dbt(&conn->iovecs, dbt);
-			}
-
-			if (rec_size > 0) {
-				dbt = &conn->input.repmgr_msg.rec;
-				if ((ret = __os_malloc(env, rec_size,
-				     &dbt->data)) != 0) {
-					if (control_size > 0)
-						__os_free(env,
-						    conn->input.repmgr_msg.
-						    cntrl.data);
-					return (ret);
-				}
-				__repmgr_add_dbt(&conn->iovecs, dbt);
-			}
 		}
+		/*
+		 * Allocate a block of memory large enough to hold a
+		 * DB_REPMGR_MESSAGE wrapper, plus the (one or) two DBT
+		 * data areas that it points to.  Start by calculating
+		 * the total memory needed.
+		 */
+		memsize = DB_ALIGN(sizeof(REPMGR_MESSAGE), MEM_ALIGN);
+		control_offset = memsize;
+		memsize += control_size;
+		if (rec_size > 0) {
+			memsize = DB_ALIGN(memsize, MEM_ALIGN);
+			rec_offset = memsize;
+			memsize += rec_size;
+		} else
+			COMPQUIET(rec_offset, 0);
+		if ((ret = __os_malloc(env, memsize, &membase)) != 0)
+			return (ret);
+		conn->input.rep_message = membase;
+		conn->input.rep_message->msg_hdr = msg_hdr;
+		conn->input.rep_message->v.repmsg.originating_eid = conn->eid;
 
-		conn->reading_phase = DATA_PHASE;
+		DB_INIT_DBT(conn->input.rep_message->v.repmsg.control,
+		    (u_int8_t*)membase + control_offset, control_size);
+		__repmgr_add_dbt(&conn->iovecs,
+		    &conn->input.rep_message->v.repmsg.control);
 
-		if (control_size > 0 || rec_size > 0)
-			break;
+		if (rec_size > 0) {
+			DB_INIT_DBT(conn->input.rep_message->v.repmsg.rec,
+			    (rec_size > 0 ?
+				(u_int8_t*)membase + rec_offset : NULL),
+			    rec_size);
+			__repmgr_add_dbt(&conn->iovecs,
+			    &conn->input.rep_message->v.repmsg.rec);
+		} else
+			DB_INIT_DBT(conn->input.rep_message->v.repmsg.rec,
+			    NULL, 0);
+		break;
+
+	case REPMGR_APP_MESSAGE:
+		/*
+		 * We need a buffer big enough to hold the REPMGR_MESSAGE struct
+		 * and the data that we expect to receive on the wire.  We must
+		 * extend the struct size for the variable-length DBT array at
+		 * the end.
+		 */
+		size = DB_ALIGN((size_t)(sizeof(REPMGR_MESSAGE) +
+		    APP_MSG_SEGMENT_COUNT(msg_hdr) * sizeof(DBT)),
+		    MEM_ALIGN);
+		memsize = size + APP_MSG_BUFFER_SIZE(msg_hdr);
+		if ((ret = __os_malloc(env, memsize, &membase)) != 0)
+			return (ret);
+		conn->input.rep_message = membase;
+		conn->input.rep_message->msg_hdr = msg_hdr;
+		conn->input.rep_message->v.appmsg.conn = conn;
+
+		DB_INIT_DBT(conn->input.rep_message->v.appmsg.buf,
+		    (u_int8_t*)membase + size,
+		    APP_MSG_BUFFER_SIZE(msg_hdr));
+		__repmgr_add_dbt(&conn->iovecs,
+		    &conn->input.rep_message->v.appmsg.buf);
+		break;
+
+	case REPMGR_OWN_MSG:
+		size = sizeof(REPMGR_MESSAGE) + REPMGR_OWN_BUF_SIZE(msg_hdr);
+		if ((ret = __os_malloc(env, size, &membase)) != 0)
+			return (ret);
+		conn->input.rep_message = membase;
+		conn->input.rep_message->msg_hdr = msg_hdr;
 
 		/*
-		 * However, if they're both 0, we're ready to complete
-		 * DATA_PHASE.
+		 * Save "conn" pointer in case this turns out to be a one-shot
+		 * request.  If it isn't, it won't matter.
 		 */
-		/* FALLTHROUGH */
+		/*
+		 * An OWN msg that arrives in PARAMETERS state has bypassed the
+		 * final handshake, implying that this connection is to be used
+		 * for a one-shot GMDB request.
+		 */
+		DB_ASSERT(env, REPMGR_OWN_BUF_SIZE(msg_hdr) > 0);
+		DB_INIT_DBT(conn->input.rep_message->v.gmdb_msg.request,
+		    (u_int8_t*)membase + sizeof(REPMGR_MESSAGE),
+		    REPMGR_OWN_BUF_SIZE(msg_hdr));
+		__repmgr_add_dbt(&conn->iovecs,
+		    &conn->input.rep_message->v.gmdb_msg.request);
+		break;
 
-	case DATA_PHASE:
-		return (dispatch_msgin(env, conn));
+	case REPMGR_APP_RESPONSE:
+		size = APP_RESP_BUFFER_SIZE(msg_hdr);
+		conn->cur_resp = APP_RESP_TAG(msg_hdr);
+		DB_ASSERT(env, conn->cur_resp < conn->aresp);
+		resp = &conn->responses[conn->cur_resp];
+		DB_ASSERT(env, F_ISSET(resp, RESP_IN_USE));
+
+		dbt = &resp->dbt;
+
+		/*
+		 * Prepare to read message body into either the user-supplied
+		 * buffer, or one we allocate here.
+		 */
+		ret = 0;
+		if (!F_ISSET(resp, RESP_THREAD_WAITING)) {
+			/* Caller already timed out; allocate dummy buffer. */
+			if (size > 0) {
+				memset(dbt, 0, sizeof(*dbt));
+				ret = __os_malloc(env, size, &dbt->data);
+				F_SET(resp, RESP_DUMMY_BUF);
+			} else
+				F_CLR(resp, RESP_IN_USE);
+		} else if (F_ISSET(dbt, DB_DBT_MALLOC))
+			ret = __os_umalloc(env, size, &dbt->data);
+		else if (F_ISSET(dbt, DB_DBT_REALLOC)) {
+			if (dbt->data == NULL || dbt->size < size)
+				ret = __os_urealloc(env, size, &dbt->data);
+		} else if (F_ISSET(dbt, DB_DBT_USERMEM)) {
+			/* Recipient should have checked size limit. */
+			DB_ASSERT(env, size <= dbt->ulen);
+		}
+		dbt->size = size;
+		if (ret != 0)
+			return (ret);
+
+		if (size > 0) {
+			__repmgr_add_dbt(&conn->iovecs, dbt);
+			F_SET(resp, RESP_READING);
+		} else {
+			skip = TRUE;
+			if (F_ISSET(resp, RESP_THREAD_WAITING)) {
+				F_SET(resp, RESP_COMPLETE);
+				if ((ret = __repmgr_wake_waiters(env,
+				    &conn->response_waiters)) != 0)
+					return (ret);
+			}
+		}
+		break;
+
+	case REPMGR_RESP_ERROR:
+		DB_ASSERT(env, RESP_ERROR_TAG(msg_hdr) < conn->aresp &&
+		    conn->responses != NULL);
+		resp = &conn->responses[RESP_ERROR_TAG(msg_hdr)];
+		DB_ASSERT(env, !F_ISSET(resp, RESP_READING));
+		if (F_ISSET(resp, RESP_THREAD_WAITING)) {
+			F_SET(resp, RESP_COMPLETE);
+
+			/*
+			 * DB errors are always negative, but we only send
+			 * unsigned values on the wire.
+			 */
+			resp->ret = -((int)RESP_ERROR_CODE(msg_hdr));
+			if ((ret = __repmgr_wake_waiters(env,
+			    &conn->response_waiters)) != 0)
+				return (ret);
+		} else
+			F_CLR(resp, RESP_IN_USE);
+		skip = TRUE;
+		break;
+
+	case REPMGR_HANDSHAKE:
+	case REPMGR_PERMLSN:
+		if ((ret = __repmgr_prepare_simple_input(env,
+		    conn, &msg_hdr)) != 0)
+			return (ret);
+		break;
 
 	default:
-		DB_ASSERT(env, FALSE);
+		return (__db_unknown_path(env, "prepare_input"));
 	}
+
+	if (skip) {
+		/*
+		 * We can skip the DATA_PHASE, because the current message type
+		 * only has a header, no following data.
+		 */
+		__repmgr_reset_for_reading(conn);
+	} else
+		conn->reading_phase = DATA_PHASE;
 
 	return (0);
 }
 
 /*
+ * PUBLIC: int __repmgr_prepare_simple_input __P((ENV *,
+ * PUBLIC:     REPMGR_CONNECTION *, __repmgr_msg_hdr_args *));
+ */
+int
+__repmgr_prepare_simple_input(env, conn, msg_hdr)
+	ENV *env;
+	REPMGR_CONNECTION *conn;
+	__repmgr_msg_hdr_args *msg_hdr;
+{
+	DBT *dbt;
+	u_int32_t control_size, rec_size;
+	int ret;
+
+	control_size = REP_MSG_CONTROL_SIZE(*msg_hdr);
+	rec_size = REP_MSG_REC_SIZE(*msg_hdr);
+
+	dbt = &conn->input.repmgr_msg.cntrl;
+	if ((dbt->size = control_size) > 0) {
+		if ((ret = __os_malloc(env,
+		    dbt->size, &dbt->data)) != 0)
+			return (ret);
+		__repmgr_add_dbt(&conn->iovecs, dbt);
+	}
+
+	dbt = &conn->input.repmgr_msg.rec;
+	if ((dbt->size = rec_size) > 0) {
+		if ((ret = __os_malloc(env,
+		    dbt->size, &dbt->data)) != 0) {
+			dbt = &conn->input.repmgr_msg.cntrl;
+			if (dbt->size > 0)
+				__os_free(env, dbt->data);
+			return (ret);
+		}
+		__repmgr_add_dbt(&conn->iovecs, dbt);
+	}
+	return (0);
+}
+
+/*
  * Processes an incoming message, depending on our current state.
+ *
+ * Caller must hold mutex.
  */
 static int
 dispatch_msgin(env, conn)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 {
+	DB_REP *db_rep;
+	REPMGR_SITE *site;
+	REPMGR_RUNNABLE *th;
+	REPMGR_RESPONSE *resp;
 	DBT *dbt;
 	char *hostname;
-	int given, ret;
+	int eid, ret;
 
-	given = FALSE;
+	DB_ASSERT(env, conn->reading_phase == DATA_PHASE);
+	db_rep = env->rep_handle;
 
 	switch (conn->state) {
 	case CONN_CONNECTED:
@@ -895,6 +1050,24 @@ dispatch_msgin(env, conn)
 		 * the response (which could be a dumb old V1 handshake).
 		 */
 		ONLY_HANDSHAKE(env, conn);
+
+		/*
+		 * Here is a good opportunity to clean up this site's connector
+		 * thread, because we generally come through here after making
+		 * an outgoing connection, yet we're out of the main loop, so we
+		 * don't hit this often.
+		 */
+		eid = conn->eid;
+		DB_ASSERT(env, IS_KNOWN_REMOTE_SITE(conn->eid));
+		site = SITE_FROM_EID(eid);
+		th = site->connector;
+		if (th != NULL && th->finished) {
+			if ((ret = __repmgr_thread_join(th)) != 0)
+				return (ret);
+			__os_free(env, th);
+			site->connector = NULL;
+		}
+
 		if ((ret = read_version_response(env, conn)) != 0)
 			return (ret);
 		break;
@@ -913,19 +1086,50 @@ dispatch_msgin(env, conn)
 
 	case CONN_PARAMETERS:
 		/*
-		 * We've previously agreed on a (>1) version, and are now simply
-		 * awaiting the other side's parameters handshake.
+		 * We've previously agreed on a (>1) version, so we expect
+		 * either the other side's parameters handshake, or possibly a
+		 * GMDB request on a one-shot, dedicated connection.
 		 */
-		ONLY_HANDSHAKE(env, conn);
-		dbt = &conn->input.repmgr_msg.rec;
-		hostname = dbt->data;
-		hostname[dbt->size-1] = '\0';
-		if ((ret = accept_handshake(env, conn, hostname)) != 0)
-			return (ret);
-		conn->state = CONN_READY;
+		switch (conn->msg_type) {
+		case REPMGR_HANDSHAKE:
+			dbt = &conn->input.repmgr_msg.rec;
+			hostname = dbt->data;
+			hostname[dbt->size-1] = '\0';
+			if ((ret = accept_handshake(env, conn, hostname)) != 0)
+				return (ret);
+			conn->state = CONN_READY;
+			break;
+		case REPMGR_OWN_MSG:
+			/*
+			 * GM change requests arrive in their own dedicated
+			 * connections, and when they're served the entire
+			 * connection isn't needed any more.  So the message
+			 * processing thread will do the entire job of serving
+			 * the request and finishing off the connection; so we
+			 * don't have to read it any more.  Note that normally
+			 * whenever we remove a connection from our list we
+			 * decrement the reference count; but we also increment
+			 * it whenever we pass a reference over to the message
+			 * processing threads' queue.  So in this case it's a
+			 * wash.
+			 */
+			conn->input.rep_message->v.gmdb_msg.conn = conn;
+			TAILQ_REMOVE(&db_rep->connections, conn, entries);
+			if ((ret = __repmgr_queue_put(env,
+			    conn->input.rep_message)) != 0)
+				return (ret);
+			break;
+
+		default:
+			__db_errx(env, DB_STR_A("3620",
+			    "unexpected msg type %d in PARAMETERS state", "%d"),
+			    (int)conn->msg_type);
+			return (DB_REP_UNAVAIL);
+		}
+
 		break;
 
-	case CONN_READY:	/* FALLTHROUGH */
+	case CONN_READY:
 	case CONN_CONGESTED:
 		/*
 		 * We have a complete message, so process it.  Acks and
@@ -940,14 +1144,7 @@ dispatch_msgin(env, conn)
 			break;
 
 		case REPMGR_HEARTBEAT:
-			/*
-			 * The underlying byte-receiving mechanism will already
-			 * have noted the fact that we got some traffic on this
-			 * connection.  And that's all we really have to do, so
-			 * there's nothing more needed at this point.
-			 */
-			break;
-
+		case REPMGR_APP_MESSAGE:
 		case REPMGR_REP_MESSAGE:
 			if ((ret = __repmgr_queue_put(env,
 			    conn->input.rep_message)) != 0)
@@ -956,13 +1153,53 @@ dispatch_msgin(env, conn)
 			 * The queue has taken over responsibility for the
 			 * rep_message buffer, and will free it later.
 			 */
-			given = TRUE;
+			if (conn->msg_type == REPMGR_APP_MESSAGE)
+				conn->ref_count++;
 			break;
 
+		case REPMGR_OWN_MSG:
+			/*
+			 * Since we're in one of the "ready" states we know this
+			 * isn't a one-shot request, so we are not giving
+			 * ownership of this connection over to the message
+			 * thread queue; we're going to keep reading on it
+			 * ourselves.  The message thread that processes this
+			 * request has no need for a connection anyway, since
+			 * there is no response that needs to be returned.
+			 */
+			conn->input.rep_message->v.gmdb_msg.conn = NULL;
+			if ((ret = process_own_msg(env, conn)) != 0)
+				return (ret);
+			break;
+
+		case REPMGR_APP_RESPONSE:
+			DB_ASSERT(env, conn->cur_resp < conn->aresp &&
+			    conn->responses != NULL);
+			resp = &conn->responses[conn->cur_resp];
+			DB_ASSERT(env, F_ISSET(resp, RESP_READING));
+			F_CLR(resp, RESP_READING);
+			if (F_ISSET(resp, RESP_THREAD_WAITING)) {
+				F_SET(resp, RESP_COMPLETE);
+				if ((ret = __repmgr_wake_waiters(env,
+				    &conn->response_waiters)) != 0)
+					return (ret);
+			} else {
+				/*
+				 * If the calling thread is no longer with us,
+				 * yet we're reading, it can only mean we're
+				 * reading into a dummy buffer, so free it now.
+				 */
+				DB_ASSERT(env, F_ISSET(resp, RESP_DUMMY_BUF));
+				__os_free(env, resp->dbt.data);
+				F_CLR(resp, RESP_IN_USE);
+			}
+			break;
+
+		case REPMGR_RESP_ERROR:
 		default:
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3621",
 			    "unexpected msg type rcvd in ready state: %d",
-			    (int)conn->msg_type);
+			    "%d"), (int)conn->msg_type);
 			return (DB_REP_UNAVAIL);
 		}
 		break;
@@ -974,16 +1211,121 @@ dispatch_msgin(env, conn)
 		DB_ASSERT(env, FALSE);
 	}
 
-	if (!given) {
+	switch (conn->msg_type) {
+	case REPMGR_HANDSHAKE:
+	case REPMGR_PERMLSN:
 		dbt = &conn->input.repmgr_msg.cntrl;
 		if (dbt->size > 0)
 			__os_free(env, dbt->data);
 		dbt = &conn->input.repmgr_msg.rec;
 		if (dbt->size > 0)
 			__os_free(env, dbt->data);
+		break;
+	default:
+		/*
+		 * Some messages in REPMGR_OWN_MSG format are also handled
+		 */
+		break;
 	}
 	__repmgr_reset_for_reading(conn);
 	return (0);
+}
+
+/*
+ * Process one of repmgr's "own" message types, and one that occurs on a regular
+ * (not one-shot) connection.
+ */
+static int
+process_own_msg(env, conn)
+	ENV *env;
+	REPMGR_CONNECTION *conn;
+{
+	DB_REP *db_rep;
+	DBT *dbt;
+	REPMGR_SITE *site;
+	REPMGR_MESSAGE *msg;
+	__repmgr_connect_reject_args reject;
+	__repmgr_parm_refresh_args parms;
+	int ret;
+
+	ret = 0;
+	/*
+	 * Set "msg" to point to the message struct.  If we do all necessary
+	 * processing here now, leave it set so that it can be freed.  On the
+	 * other hand, if we pass it off to the message queue for later
+	 * processing by a message thread, we want to avoid freeing the memory
+	 * here, so clear the pointer in such a case.
+	 */
+	switch (REPMGR_OWN_MSG_TYPE((msg = conn->input.rep_message)->msg_hdr)) {
+	case REPMGR_CONNECT_REJECT:
+		dbt = &msg->v.gmdb_msg.request;
+		if ((ret = __repmgr_connect_reject_unmarshal(env,
+		    &reject, dbt->data, dbt->size, NULL)) != 0)
+			return (DB_REP_UNAVAIL);
+
+		/*
+		 * If we're being rejected by someone who has more up-to-date
+		 * membership information than we do, it means we have been
+		 * removed from the group.  If we've just gotten started, we can
+		 * make one attempt at automatically rejoining; otherwise we bow
+		 * out gracefully.
+		 */
+		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+			"got rejection msg citing version %lu/%lu",
+			(u_long)reject.gen, (u_long)reject.version));
+
+		if (__repmgr_gmdb_version_cmp(env,
+		    reject.gen, reject.version) > 0) {
+			if (env->rep_handle->seen_repmsg)
+				ret = DB_DELETED;
+			else if ((ret = __repmgr_defer_op(env,
+			    REPMGR_REJOIN)) == 0)
+				ret = DB_REP_UNAVAIL;
+		} else
+			ret = DB_REP_UNAVAIL;
+		DB_ASSERT(env, ret != 0);
+		return (ret);
+
+	case REPMGR_SHARING:
+		if ((ret = __repmgr_queue_put(env, msg)) != 0)
+			return (ret);
+		/* Show that we no longer own this memory. */
+		msg = NULL;
+		break;
+
+	case REPMGR_PARM_REFRESH:
+		dbt = &conn->input.rep_message->v.gmdb_msg.request;
+		if ((ret = __repmgr_parm_refresh_unmarshal(env,
+		    &parms, dbt->data, dbt->size, NULL)) != 0)
+			return (DB_REP_UNAVAIL);
+		db_rep = env->rep_handle;
+		DB_ASSERT(env, conn->type == REP_CONNECTION &&
+		    IS_KNOWN_REMOTE_SITE(conn->eid));
+		site = SITE_FROM_EID(conn->eid);
+		site->ack_policy = (int)parms.ack_policy;
+		if (F_ISSET(&parms, ELECTABLE_SITE))
+			F_SET(site, SITE_ELECTABLE);
+		else
+			F_CLR(site, SITE_ELECTABLE);
+		F_SET(site, SITE_HAS_PRIO);
+		break;
+
+	case REPMGR_GM_FAILURE:
+	case REPMGR_GM_FORWARD:
+	case REPMGR_JOIN_REQUEST:
+	case REPMGR_JOIN_SUCCESS:
+	case REPMGR_REMOVE_REQUEST:
+	case REPMGR_RESOLVE_LIMBO:
+	default:
+		return (__db_unknown_path(env, "process_own_msg"));
+	}
+	/*
+	 * If we haven't given ownership of the msg buffer to another thread,
+	 * free it now.
+	 */
+	if (msg != NULL)
+		__os_free(env, msg);
+	return (ret);
 }
 
 /*
@@ -1005,17 +1347,17 @@ send_version_response(env, conn)
 	int ret;
 
 	db_rep = env->rep_handle;
-	my_addr = &db_rep->my_addr;
+	my_addr = &SITE_FROM_EID(db_rep->self_eid)->net_addr;
 
-	if ((ret = find_version_info(env, conn, &vi)) != 0)
+	if ((ret = __repmgr_find_version_info(env, conn, &vi)) != 0)
 		return (ret);
 	if (vi.size == 0) {
 		/* No version info, so we must be talking to a v1 site. */
 		hostname = conn->input.repmgr_msg.rec.data;
 		if ((ret = accept_v1_handshake(env, conn, hostname)) != 0)
 			return (ret);
-		if ((ret = send_v1_handshake(env, conn, my_addr->host,
-		     strlen(my_addr->host) + 1)) != 0)
+		if ((ret = __repmgr_send_v1_handshake(env,
+		    conn, my_addr->host, strlen(my_addr->host) + 1)) != 0)
 			return (ret);
 		conn->state = CONN_READY;
 	} else {
@@ -1034,15 +1376,19 @@ send_version_response(env, conn)
 			 * User must have wired up a combination of versions
 			 * exceeding what we said we'd support.
 			 */
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3622",
 			    "No available version between %lu and %lu",
-			    (u_long)versions.min, (u_long)versions.max);
+			    "%lu %lu"), (u_long)versions.min,
+			    (u_long)versions.max);
 			return (DB_REP_UNAVAIL);
 		}
 		conn->version = conf.version;
 
 		__repmgr_version_confirmation_marshal(env, &conf, buf);
-		if ((ret = send_handshake(env, conn, buf, sizeof(buf))) != 0)
+		buf[__REPMGR_VERSION_CONFIRMATION_SIZE] = '\0';
+		DB_ASSERT(env, !IS_SUBORDINATE(db_rep));
+		if ((ret = __repmgr_send_handshake(env,
+		     conn, buf, sizeof(buf), 0)) != 0)
 			return (ret);
 
 		conn->state = CONN_PARAMETERS;
@@ -1054,19 +1400,24 @@ send_version_response(env, conn)
  * Sends a version-aware handshake to the remote site, only after we've verified
  * that it is indeed version-aware.  We can send either v2 or v3 handshake,
  * depending on the connection's version.
+ *
+ * PUBLIC: int __repmgr_send_handshake __P((ENV *,
+ * PUBLIC:     REPMGR_CONNECTION *, void *, size_t, u_int32_t));
  */
-static int
-send_handshake(env, conn, opt, optlen)
+int
+__repmgr_send_handshake(env, conn, opt, optlen, flags)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 	void *opt;
 	size_t optlen;
+	u_int32_t flags;
 {
 	DB_REP *db_rep;
 	REP *rep;
 	DBT cntrl, rec;
 	__repmgr_handshake_args hs;
 	__repmgr_v2handshake_args v2hs;
+	__repmgr_v3handshake_args v3hs;
 	repmgr_netaddr_t *my_addr;
 	size_t hostname_len, rec_len;
 	void *buf;
@@ -1076,17 +1427,29 @@ send_handshake(env, conn, opt, optlen)
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
-	my_addr = &db_rep->my_addr;
+	my_addr = &SITE_FROM_EID(db_rep->self_eid)->net_addr;
 
 	/*
-	 * The cntrl part has port and priority.  The rec part has the host
-	 * name, followed by whatever optional extra data was passed to us.
+	 * The cntrl part has various parameters (varies by version).  The rec
+	 * part has the host name, followed by whatever optional extra data was
+	 * passed to us.
 	 *
-	 * Version awareness was introduced with protocol version 2.
+	 * Version awareness was introduced with protocol version 2 (so version
+	 * 1 is handled elsewhere).
 	 */
-	DB_ASSERT(env, conn->version >= 2);
-	cntrl_len = conn->version == 2 ?
-	    __REPMGR_V2HANDSHAKE_SIZE : __REPMGR_HANDSHAKE_SIZE;
+	switch (conn->version) {
+	case 2:
+		cntrl_len = __REPMGR_V2HANDSHAKE_SIZE;
+		break;
+	case 3:
+		cntrl_len = __REPMGR_V3HANDSHAKE_SIZE;
+		break;
+	case 4:
+		cntrl_len = __REPMGR_HANDSHAKE_SIZE;
+		break;
+	default:
+		return (__db_unknown_path(env, "__repmgr_send_handshake"));
+	}
 	hostname_len = strlen(my_addr->host);
 	rec_len = hostname_len + 1 +
 	    (opt == NULL ? 0 : optlen);
@@ -1095,17 +1458,32 @@ send_handshake(env, conn, opt, optlen)
 		return (ret);
 
 	cntrl.data = p = buf;
-	if (conn->version == 2) {
+	switch (conn->version) {
+	case 2:
 		/* Not allowed to use multi-process feature in v2 group. */
 		DB_ASSERT(env, !IS_SUBORDINATE(db_rep));
 		v2hs.port = my_addr->port;
 		v2hs.priority = rep->priority;
 		__repmgr_v2handshake_marshal(env, &v2hs, p);
-	} else {
+		break;
+	case 3:
+		v3hs.port = my_addr->port;
+		v3hs.priority = rep->priority;
+		v3hs.flags = flags;
+		__repmgr_v3handshake_marshal(env, &v3hs, p);
+		break;
+	case 4:
 		hs.port = my_addr->port;
-		hs.priority = rep->priority;
-		hs.flags = IS_SUBORDINATE(db_rep) ? REPMGR_SUBORDINATE : 0;
+		hs.alignment = MEM_ALIGN;
+		hs.ack_policy = (u_int32_t)rep->perm_policy;
+		hs.flags = flags;
+		if (rep->priority > 0)
+			F_SET(&hs, ELECTABLE_SITE);
 		__repmgr_handshake_marshal(env, &hs, p);
+		break;
+	default:
+		DB_ASSERT(env, FALSE);
+		break;
 	}
 	cntrl.size = cntrl_len;
 
@@ -1118,9 +1496,9 @@ send_handshake(env, conn, opt, optlen)
 	}
 	rec.size = (u_int32_t)(p - (u_int8_t*)rec.data);
 
-	/* Never block on select thread: pass blockable as FALSE. */
+	/* Never block on select thread: pass maxblock as 0. */
 	ret = __repmgr_send_one(env,
-	    conn, REPMGR_HANDSHAKE, &cntrl, &rec, FALSE);
+	    conn, REPMGR_HANDSHAKE, &cntrl, &rec, 0);
 	__os_free(env, buf);
 	return (ret);
 }
@@ -1130,12 +1508,16 @@ read_version_response(env, conn)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 {
+	DB_REP *db_rep;
 	__repmgr_version_confirmation_args conf;
 	DBT vi;
 	char *hostname;
+	u_int32_t flags;
 	int ret;
 
-	if ((ret = find_version_info(env, conn, &vi)) != 0)
+	db_rep = env->rep_handle;
+
+	if ((ret = __repmgr_find_version_info(env, conn, &vi)) != 0)
 		return (ret);
 	hostname = conn->input.repmgr_msg.rec.data;
 	if (vi.size == 0) {
@@ -1153,15 +1535,17 @@ read_version_response(env, conn)
 			 * Remote site "confirmed" a version outside of the
 			 * range we proposed.  It should never do that.
 			 */
-			__db_errx(env,
-			    "Can't support confirmed version %lu",
+			__db_errx(env, DB_STR_A("3623",
+			    "Can't support confirmed version %lu", "%lu"),
 			    (u_long)conf.version);
 			return (DB_REP_UNAVAIL);
 		}
 
 		if ((ret = accept_handshake(env, conn, hostname)) != 0)
 			return (ret);
-		if ((ret = send_handshake(env, conn, NULL, 0)) != 0)
+		flags = IS_SUBORDINATE(db_rep) ? REPMGR_SUBORDINATE : 0;
+		if ((ret = __repmgr_send_handshake(env,
+		    conn, NULL, 0, flags)) != 0)
 			return (ret);
 	}
 	conn->state = CONN_READY;
@@ -1173,9 +1557,12 @@ read_version_response(env, conn)
  * information in it.  This is the magic that lets us allows version-aware sites
  * to exchange information, and yet avoids tripping up v1 sites, which don't
  * know how to look for it.
+ *
+ * PUBLIC: int __repmgr_find_version_info __P((ENV *,
+ * PUBLIC:     REPMGR_CONNECTION *, DBT *));
  */
-static int
-find_version_info(env, conn, vi)
+int
+__repmgr_find_version_info(env, conn, vi)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 	DBT *vi;
@@ -1186,7 +1573,8 @@ find_version_info(env, conn, vi)
 
 	dbt = &conn->input.repmgr_msg.rec;
 	if (dbt->size == 0) {
-		__db_errx(env, "handshake is missing rec part");
+		__db_errx(env, DB_STR("3624",
+		    "handshake is missing rec part"));
 		return (DB_REP_UNAVAIL);
 	}
 	hostname = dbt->data;
@@ -1220,36 +1608,47 @@ accept_handshake(env, conn, hostname)
 {
 	__repmgr_handshake_args hs;
 	__repmgr_v2handshake_args hs2;
+	__repmgr_v3handshake_args hs3;
 	u_int port;
-	u_int32_t pri, flags;
+	u_int32_t ack, flags;
+	int electable;
 
-	/*
-	 * Current version is 3, and only other version that supports version
-	 * negotiation is 2.
-	 */
-	DB_ASSERT(env, conn->version == 2 || conn->version == 3);
-
-	/* Extract port and priority from cntrl. */
-	if (conn->version == 2) {
+	switch (conn->version) {
+	case 2:
 		if (__repmgr_v2handshake_unmarshal(env, &hs2,
 		    conn->input.repmgr_msg.cntrl.data,
 		    conn->input.repmgr_msg.cntrl.size, NULL) != 0)
 			return (DB_REP_UNAVAIL);
 		port = hs2.port;
-		pri = hs2.priority;
-		flags = 0;
-	} else {
+		electable = hs2.priority > 0;
+		ack = flags = 0;
+		break;
+	case 3:
+		if (__repmgr_v3handshake_unmarshal(env, &hs3,
+		   conn->input.repmgr_msg.cntrl.data,
+		   conn->input.repmgr_msg.cntrl.size, NULL) != 0)
+			return (DB_REP_UNAVAIL);
+		port = hs3.port;
+		electable = hs3.priority > 0;
+		flags = hs3.flags;
+		ack = 0;
+		break;
+	case 4:
 		if (__repmgr_handshake_unmarshal(env, &hs,
 		   conn->input.repmgr_msg.cntrl.data,
 		   conn->input.repmgr_msg.cntrl.size, NULL) != 0)
 			return (DB_REP_UNAVAIL);
 		port = hs.port;
-		pri = hs.priority;
+		electable = F_ISSET(&hs, ELECTABLE_SITE);
 		flags = hs.flags;
+		ack = hs.ack_policy;
+		break;
+	default:
+		return (__db_unknown_path(env, "accept_handshake"));
 	}
 
 	return (process_parameters(env,
-		    conn, hostname, port, pri, flags));
+	    conn, hostname, port, ack, electable, flags));
 }
 
 static int
@@ -1260,48 +1659,80 @@ accept_v1_handshake(env, conn, hostname)
 {
 	DB_REPMGR_V1_HANDSHAKE *handshake;
 	u_int32_t prio;
+	int electable;
 
 	handshake = conn->input.repmgr_msg.cntrl.data;
 	if (conn->input.repmgr_msg.cntrl.size != sizeof(*handshake) ||
 	    handshake->version != 1) {
-		__db_errx(env, "malformed V1 handshake");
+		__db_errx(env, DB_STR("3625", "malformed V1 handshake"));
 		return (DB_REP_UNAVAIL);
 	}
 
 	conn->version = 1;
 	prio = ntohl(handshake->priority);
+	electable = prio > 0;
 	return (process_parameters(env,
-		    conn, hostname, handshake->port, prio, 0));
+	    conn, hostname, handshake->port, 0, electable, 0));
 }
 
+/* Caller must hold mutex. */
 static int
-process_parameters(env, conn, host, port, priority, flags)
+process_parameters(env, conn, host, port, ack, electable, flags)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 	char *host;
 	u_int port;
-	u_int32_t priority, flags;
+	int electable;
+	u_int32_t ack, flags;
 {
 	DB_REP *db_rep;
 	REPMGR_RETRY *retry;
 	REPMGR_SITE *site;
+	__repmgr_connect_reject_args reject;
+	u_int8_t reject_buf[__REPMGR_CONNECT_REJECT_SIZE];
 	int eid, ret, sockopt;
 
 	db_rep = env->rep_handle;
 
-	if (F_ISSET(conn, CONN_INCOMING)) {
+	/* Connection state can be used to discern incoming versus outgoing. */
+	if (conn->state == CONN_CONNECTED) {
 		/*
-		 * Incoming connection: we don't yet know what site it belongs
-		 * to, so it must be on the "orphans" list.
+		 * Since we initiated this as an outgoing connection, we
+		 * obviously already know the host, port and site.  We just need
+		 * the other site's electability flag (which we'll grab below,
+		 * after the big "else" clause).
 		 */
-		DB_ASSERT(env, !IS_VALID_EID(conn->eid));
-		TAILQ_REMOVE(&db_rep->connections, conn, entries);
+		DB_ASSERT(env, IS_KNOWN_REMOTE_SITE(conn->eid));
+		site = SITE_FROM_EID(conn->eid);
+		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		    "handshake from connection to %s:%lu EID %u",
+		    site->net_addr.host,
+		    (u_long)site->net_addr.port, conn->eid));
+	} else {
+		DB_ASSERT(env, conn->state == CONN_NEGOTIATE ||
+		    conn->state == CONN_PARAMETERS);
+		/*
+		 * Incoming connection: until now we haven't known what kind of
+		 * connection we're dealing with (and in the case of a
+		 * REP_CONNECTION, what its EID is); so it must be on the
+		 * "orphans" list.  But now that we've received the parameters
+		 * we'll be able to figure all that out.
+		 */
+		if (LF_ISSET(APP_CHANNEL_CONNECTION)) {
+			conn->type = APP_CONNECTION;
+			return (0);
+		} else
+			conn->type = REP_CONNECTION;
 
 		/*
 		 * Now that we've been given the host and port, use them to find
-		 * the site (or create a new one if necessary, etc.).
+		 * the site.
 		 */
-		if ((site = __repmgr_find_site(env, host, port)) != NULL) {
+		if ((site = __repmgr_lookup_site(env, host, port)) != NULL &&
+		    site->membership == SITE_PRESENT) {
+			TAILQ_REMOVE(&db_rep->connections, conn, entries);
+			conn->ref_count--;
+
 			eid = EID_FROM_SITE(site);
 			if (LF_ISSET(REPMGR_SUBORDINATE)) {
 				/*
@@ -1318,21 +1749,25 @@ process_parameters(env, conn, host, port, priority, flags)
 				    SO_KEEPALIVE, (sockopt_t)&sockopt,
 				     sizeof(sockopt)) != 0) {
 					ret = net_errno;
-					__db_err(env, ret,
-					   "can't set KEEPALIVE socket option");
+					__db_err(env, ret, DB_STR("3626",
+				    "can't set KEEPALIVE socket option"));
 					return (ret);
 				}
 #endif
 			} else {
-				if (site->state == SITE_IDLE) {
+				DB_EVENT(env,
+				    DB_EVENT_REP_CONNECT_ESTD, &eid);
+				switch (site->state) {
+				case SITE_PAUSING:
 					RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-				"handshake from idle site %s:%u EID %u",
+				      "handshake from paused site %s:%u EID %u",
 					    host, port, eid));
 					retry = site->ref.retry;
 					TAILQ_REMOVE(&db_rep->retries,
 					    retry, entries);
 					__os_free(env, retry);
-				} else {
+					break;
+				case SITE_CONNECTED:
 					/*
 					 * We got an incoming connection for a
 					 * site we were already connected to; at
@@ -1343,12 +1778,27 @@ process_parameters(env, conn, host, port, priority, flags)
 					    host, port, eid));
 
 					/*
-					 * No need to schedule a retry for
-					 * later, since we now have a
-					 * replacement connection.
+					 * No need for site-oriented recovery,
+					 * since we now have a replacement
+					 * connection; so skip bust_connection()
+					 * and call disable_conn() directly.
 					 */
-					__repmgr_disable_connection(env,
-					     site->ref.conn);
+					if ((ret = __repmgr_disable_connection(
+					    env, site->ref.conn)) != 0)
+						return (ret);
+					break;
+				case SITE_CONNECTING:
+					RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+				  "handshake from connecting site %s:%u EID %u",
+					    host, port, eid));
+					/*
+					 * Connector thread will give up when it
+					 * sees this site's state change, so we
+					 * don't have to do anything else here.
+					 */
+					break;
+				default:
+					DB_ASSERT(env, FALSE);
 				}
 				conn->eid = eid;
 				site->state = SITE_CONNECTED;
@@ -1357,51 +1807,34 @@ process_parameters(env, conn, host, port, priority, flags)
 				    &site->last_rcvd_timestamp, 1);
 			}
 		} else {
-			if ((ret = introduce_site(env,
-			    host, port, &site, flags)) == 0)
-				RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			"handshake introduces unknown site %s:%u", host, port));
-			else if (ret != EEXIST)
-				return (ret);
-			eid = EID_FROM_SITE(site);
+			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		  "rejecting connection from unknown or provisional site %s:%u",
+			    host, port));
+			reject.version = db_rep->membership_version;
+			reject.gen = db_rep->member_version_gen;
+			__repmgr_connect_reject_marshal(env,
+			    &reject, reject_buf);
 
-			if (LF_ISSET(REPMGR_SUBORDINATE)) {
-				TAILQ_INSERT_TAIL(&site->sub_conns,
-				    conn, entries);
-#ifdef SO_KEEPALIVE
-				sockopt = 1;
-				if ((ret = setsockopt(conn->fd, SOL_SOCKET,
-				    SO_KEEPALIVE, (sockopt_t)&sockopt,
-				     sizeof(sockopt))) != 0) {
-					__db_err(env, ret,
-					   "can't set KEEPALIVE socket option");
-					return (ret);
-				}
-#endif
-			} else {
-				site->state = SITE_CONNECTED;
-				site->ref.conn = conn;
-				__os_gettime(env,
-				    &site->last_rcvd_timestamp, 1);
-			}
-			conn->eid = eid;
+			if ((ret = __repmgr_send_own_msg(env, conn,
+			    REPMGR_CONNECT_REJECT, reject_buf,
+			    __REPMGR_CONNECT_REJECT_SIZE)) != 0)
+				return (ret);
+
+			/*
+			 * Since we haven't set conn->eid, bust_connection will
+			 * not schedule a retry for this "failure", which is
+			 * exactly what we want.
+			 */
+			return (DB_REP_UNAVAIL);
 		}
-	} else {
-		/*
-		 * Since we initiated this as an outgoing connection, we
-		 * obviously already know the host, port and site.  We just need
-		 * the other site's priority.
-		 */
-		DB_ASSERT(env, IS_VALID_EID(conn->eid));
-		site = SITE_FROM_EID(conn->eid);
-		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "handshake from connection to %s:%lu EID %u",
-		    site->net_addr.host,
-		    (u_long)site->net_addr.port, conn->eid));
 	}
 
-	site->priority = priority;
+	if (electable)
+		F_SET(site, SITE_ELECTABLE);
+	else
+		F_CLR(site, SITE_ELECTABLE);
 	F_SET(site, SITE_HAS_PRIO);
+	site->ack_policy = (int)ack;
 
 	/*
 	 * If we're moping around wishing we knew who the master was, then
@@ -1419,28 +1852,6 @@ process_parameters(env, conn, host, port, priority, flags)
 	}
 
 	return (0);
-}
-
-static int
-introduce_site(env, host, port, sitep, flags)
-	ENV *env;
-	char *host;
-	u_int port;
-	REPMGR_SITE **sitep;
-	u_int32_t flags;
-{
-	int peer, state;
-
-	/*
-	 * SITE_CONNECTED means we have the main connection to the site.  But
-	 * we're here when we first learn of a site by getting a subordinate
-	 * connection, so this doesn't suffice to put us in "connected" state.
-	 */
-	state = LF_ISSET(REPMGR_SUBORDINATE) ? SITE_IDLE : SITE_CONNECTED;
-	peer = FALSE;
-
-	return (__repmgr_add_site_int(env,
-	    host, port, sitep, peer, state, FALSE));
 }
 
 static int
@@ -1469,7 +1880,7 @@ record_permlsn(env, conn)
 		ackp = conn->input.repmgr_msg.cntrl.data;
 		if (conn->input.repmgr_msg.cntrl.size != sizeof(ack) ||
 		    conn->input.repmgr_msg.rec.size != 0) {
-			__db_errx(env, "bad ack msg size");
+			__db_errx(env, DB_STR("3627", "bad ack msg size"));
 			return (DB_REP_UNAVAIL);
 		}
 	} else {
@@ -1497,7 +1908,8 @@ record_permlsn(env, conn)
 	if (ackp->generation == gen &&
 	    LOG_COMPARE(&ackp->lsn, &site->max_ack) == 1) {
 		memcpy(&site->max_ack, &ackp->lsn, sizeof(DB_LSN));
-		if ((ret = __repmgr_wake_waiting_senders(env)) != 0)
+		if ((ret = __repmgr_wake_waiters(env,
+		    &db_rep->ack_waiters)) != 0)
 			return (ret);
 	}
 	return (0);
@@ -1518,8 +1930,8 @@ __repmgr_write_some(env, conn)
 	while (!STAILQ_EMPTY(&conn->outbound_queue)) {
 		output = STAILQ_FIRST(&conn->outbound_queue);
 		msg = output->msg;
-		if ((bytes = send(conn->fd, &msg->data[output->offset],
-		    (size_t)msg->length - output->offset, 0)) == SOCKET_ERROR) {
+		if ((bytes = sendsocket(conn->fd, &msg->data[output->offset],
+		    msg->length - output->offset, 0)) == SOCKET_ERROR) {
 			switch (ret = net_errno) {
 			case WOULDBLOCK:
 #if defined(DB_REPMGR_EAGAIN) && DB_REPMGR_EAGAIN != WOULDBLOCK
@@ -1527,7 +1939,7 @@ __repmgr_write_some(env, conn)
 #endif
 				return (0);
 			default:
-				__db_err(env, ret, "writing data");
+				__repmgr_fire_conn_err_event(env, conn, ret);
 				STAT(env->rep_handle->
 				    region->mstat.st_connection_drop++);
 				return (DB_REP_UNAVAIL);
@@ -1550,25 +1962,10 @@ __repmgr_write_some(env, conn)
 			 * allowed to try waiting again.
 			 */
 			conn->state = CONN_READY;
-			if (conn->blockers > 0 &&
-			    (ret = __repmgr_signal(&conn->drained)) != 0)
+			if ((ret = __repmgr_signal(&conn->drained)) != 0)
 				return (ret);
 		}
 	}
-
-#ifdef DB_WIN32
-	/*
-	 * With the queue now empty, it's time to relinquish ownership of this
-	 * connection again, so that the next call to send() can write the
-	 * message in line, instead of posting it to the queue for us.
-	 */
-	if (WSAEventSelect(conn->fd, conn->event_object, FD_READ|FD_CLOSE)
-	    == SOCKET_ERROR) {
-		ret = net_errno;
-		__db_err(env, ret, "can't remove FD_WRITE event bit");
-		return (ret);
-	}
-#endif
 
 	return (0);
 }

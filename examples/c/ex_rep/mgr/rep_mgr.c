@@ -32,6 +32,7 @@ main(argc, argv)
 	char *argv[];
 {
 	DB_ENV *dbenv;
+	DB_SITE *dbsite;
 	SETUP_DATA setup_info;
 	repsite_t *site_list;
 	APP_DATA my_app_data;
@@ -62,19 +63,36 @@ main(argc, argv)
 		start_policy = DB_REP_MASTER;
 	else if (setup_info.role == CLIENT)
 		start_policy = DB_REP_CLIENT;
-	if ((ret = dbenv->repmgr_set_local_site(dbenv, setup_info.self.host,
-	    setup_info.self.port, 0)) != 0) {
-		fprintf(stderr, "Could not set listen address (%d).\n", ret);
+
+	/* Configure the local site. */
+	if ((ret = dbenv->repmgr_site(dbenv, setup_info.self.host,
+	    setup_info.self.port, &dbsite, 0)) != 0) {
+		dbenv->err(dbenv, ret, "Could not set local site.");
 		goto err;
 	}
+	dbsite->set_config(dbsite, DB_LOCAL_SITE, 1);
+	if (setup_info.self.creator)
+		dbsite->set_config(dbsite, DB_GROUP_CREATOR, 1);
+
+	if ((ret = dbsite->close(dbsite)) != 0) {
+		dbenv->err(dbenv, ret, "DB_SITE->close");
+		goto err;
+	}
+
+	/* Configure the remote site list. */
 	site_list = setup_info.site_list;
 	for (i = 0; i < setup_info.remotesites; i++) {
-		if ((ret = dbenv->repmgr_add_remote_site(dbenv,
-		    site_list[i].host, site_list[i].port, NULL,
-		    site_list[i].peer ? DB_REPMGR_PEER : 0)) != 0) {
-			dbenv->err(dbenv, ret,
-			    "Could not add site %s:%d", site_list[i].host,
-			    (int)site_list[i].port);
+		if ((ret = dbenv->repmgr_site(dbenv, site_list[i].host,
+		    site_list[i].port, &dbsite, 0)) != 0) {
+			dbenv->err(dbenv, ret, "Could not add site %s:%d",
+			    site_list[i].host, (int)site_list[i].port);
+			goto err;
+		}
+		dbsite->set_config(dbsite, DB_BOOTSTRAP_HELPER, 1);
+		if (site_list[i].peer)
+			dbsite->set_config(dbsite, DB_REPMGR_PEER, 1);
+		if ((ret = dbsite->close(dbsite)) != 0) {
+			dbenv->err(dbenv, ret, "DB_SITE->close");
 			goto err;
 		}
 	}

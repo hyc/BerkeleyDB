@@ -28,9 +28,9 @@ __lock_env_create(dbenv)
 	 * state or turn off mutex locking, and so we can neither check
 	 * the panic state or acquire a mutex in the DB_ENV create path.
 	 */
-	dbenv->lk_max = DB_LOCK_DEFAULT_N;
-	dbenv->lk_max_lockers = DB_LOCK_DEFAULT_N;
-	dbenv->lk_max_objects = DB_LOCK_DEFAULT_N;
+	dbenv->lk_init = 0;
+	dbenv->lk_init_lockers = 0;
+	dbenv->lk_init_objects = 0;
 
 	/*
 	 * Default to 10 partitions per cpu.  This seems to be near
@@ -198,8 +198,8 @@ __lock_set_lk_detect(dbenv, lk_detect)
 	case DB_LOCK_YOUNGEST:
 		break;
 	default:
-		__db_errx(env,
-	    "DB_ENV->set_lk_detect: unknown deadlock detection mode specified");
+		__db_errx(env, DB_STR("2043",
+    "DB_ENV->set_lk_detect: unknown deadlock detection mode specified"));
 		return (EINVAL);
 	}
 
@@ -222,8 +222,8 @@ __lock_set_lk_detect(dbenv, lk_detect)
 		if (region->detect != DB_LOCK_NORUN &&
 		    lk_detect != DB_LOCK_DEFAULT &&
 		    region->detect != lk_detect) {
-			__db_errx(env,
-	    "DB_ENV->set_lk_detect: incompatible deadlock detector mode");
+			__db_errx(env, DB_STR("2044",
+	    "DB_ENV->set_lk_detect: incompatible deadlock detector mode"));
 			ret = EINVAL;
 		} else
 			if (region->detect == DB_LOCK_NORUN)
@@ -414,6 +414,50 @@ __lock_set_lk_partitions(dbenv, lk_partitions)
 	dbenv->lk_partitions = lk_partitions;
 	return (0);
 }
+/*
+ * PUBLIC: int __lock_get_lk_tablesize __P((DB_ENV *, u_int32_t *));
+ */
+int
+__lock_get_lk_tablesize(dbenv, lk_tablesizep)
+	DB_ENV *dbenv;
+	u_int32_t *lk_tablesizep;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_NOT_CONFIGURED(env,
+	    env->lk_handle, "DB_ENV->get_lk_tablesize", DB_INIT_LOCK);
+
+	if (LOCKING_ON(env)) {
+		/* Cannot be set after open, no lock required to read. */
+		*lk_tablesizep = ((DB_LOCKREGION *)
+		    env->lk_handle->reginfo.primary)->stat.st_tablesize;
+	} else
+		*lk_tablesizep = dbenv->object_t_size;
+	return (0);
+}
+
+/*
+ * __lock_set_lk_tablesize
+ *	DB_ENV->set_lk_tablesize.
+ *
+ * PUBLIC: int __lock_set_lk_tablesize __P((DB_ENV *, u_int32_t));
+ */
+int
+__lock_set_lk_tablesize(dbenv, lk_tablesize)
+	DB_ENV *dbenv;
+	u_int32_t lk_tablesize;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_lk_tablesize");
+
+	dbenv->object_t_size = lk_tablesize;
+	return (0);
+}
 
 /*
  * __lock_set_lk_priority --
@@ -437,7 +481,7 @@ __lock_set_lk_priority(dbenv, lockid, priority)
 
 	if ((ret = __lock_getlocker(env->lk_handle, lockid, 0, &locker)) == 0)
 		locker->priority = priority;
-	return ret;
+	return (ret);
 }
 
 /*

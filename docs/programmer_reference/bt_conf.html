@@ -12,7 +12,10 @@
     <link rel="next" href="hash_conf.html" title="Hash access method specific configuration" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Btree access method specific configuration</th>
@@ -88,13 +91,13 @@ second argument.  The only fields that the routines may examine in the
 <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structures are <span class="bold"><strong>data</strong></span> and <span class="bold"><strong>size</strong></span> fields.</p>
         <p>An example routine that might be used to sort integer keys in the database
 is as follows:</p>
-        <pre class="programlisting">int
-compare_int(dbp, a, b)
-    DB *dbp;
-    const DBT *a, *b;
+        <a id="prog_am2"></a>
+        <pre class="programlisting">
+int
+compare_int(DB *dbp, const DBT *a, const DBT *b)
+    
 {
     int ai, bi;
-&lt;para /&gt;
     /*
      * Returns:
      *    &lt; 0 if a &lt; b
@@ -104,7 +107,8 @@ compare_int(dbp, a, b)
     memcpy(&amp;ai, a-&gt;data, sizeof(int));
     memcpy(&amp;bi, b-&gt;data, sizeof(int));
     return (ai - bi);
-}</pre>
+}
+</pre>
         <p>Note that the data must first be copied into memory that is appropriately
 aligned, as Berkeley DB does not guarantee any kind of alignment of the
 underlying data, including for comparison routines.  When writing
@@ -113,14 +117,15 @@ different architectures may have different integer byte orders, for which
 your code may need to compensate.</p>
         <p>An example routine that might be used to sort keys based on the first
 five bytes of the key (ignoring any subsequent bytes) is as follows:</p>
-        <pre class="programlisting">int
-compare_dbt(dbp, a, b)
-    DB *dbp;
-    const DBT *a, *b;
+        <a id="prog_am3"></a>
+        <pre class="programlisting">
+int
+compare_dbt(DB *dbp, const DBT *a, const DBT *b)
+    
 {
     int len;
     u_char *p1, *p2;
-&lt;para /&gt;
+
     /*
      * Returns:
      *    &lt; 0 if a &lt; b
@@ -131,7 +136,8 @@ compare_dbt(dbp, a, b)
         if (*p1 != *p2)
             return ((long)*p1 - (long)*p2);
     return (0);
-}</pre>
+}
+</pre>
         <p>All comparison functions must cause the keys in the database to be
 well-ordered. The most important implication of being well-ordered is
 that the key relations must be transitive, that is, if key A is less
@@ -175,10 +181,11 @@ in length), the length should be returned.  If the keys are equal up to
 the smaller of the two lengths, then the length of the smaller key plus
 1 should be returned.</p>
         <p>An example prefix comparison routine follows:</p>
-        <pre class="programlisting">u_int32_t
-compare_prefix(dbp, a, b)
-    DB *dbp;
-    const DBT *a, *b;
+        <a id="prog_am4"></a>
+        <pre class="programlisting">
+size_t
+compare_prefix(DB *dbp, const DBT *a, const DBT *b)
+   
 {
     size_t cnt, len;
     u_int8_t *p1, *p2;
@@ -198,7 +205,8 @@ compare_prefix(dbp, a, b)
     if (b-&gt;size &lt; a-&gt;size)
         return (b-&gt;size + 1);
     return (b-&gt;size);
-}</pre>
+}
+</pre>
         <p>The usefulness of this functionality is data-dependent, but in some data
 sets can produce significantly reduced tree sizes and faster search times.</p>
       </div>
@@ -263,10 +271,11 @@ a need for high write concurrency.</p>
 <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> and <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> methods.  The following is an example of
 a routine that displays the data item for a Btree database created with
 the <a href="../api_reference/C/dbset_flags.html#dbset_flags_DB_RECNUM" class="olink">DB_RECNUM</a> option.</p>
-        <pre class="programlisting">int
-rec_display(dbp, recno)
-    DB *dbp;
-    db_recno_t recno;
+        <a id="prog_am5"></a>
+        <pre class="programlisting">
+int
+rec_display(DB *dbp, db_recno_t recno)
+    
 {
     DBT key, data;
     int ret;
@@ -281,14 +290,16 @@ rec_display(dbp, recno)
     printf("data for %lu: %.*s\n",
         (u_long)recno, (int)data.size, (char *)data.data);
     return (0);
-}</pre>
+}
+</pre>
         <p>To determine a key's record number, use the <a href="../api_reference/C/dbcget.html#dbcget_DB_GET_RECNO" class="olink">DB_GET_RECNO</a> flag
 to the <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method.  The following is an example of a routine that
 displays the record number associated with a specific key.</p>
-        <pre class="programlisting">int
-recno_display(dbp, keyvalue)
-    DB *dbp;
-    char *keyvalue;
+        <a id="prog_am6"></a>
+        <pre class="programlisting">
+int
+recno_display(DB *dbp, char *keyvalue)
+    
 {
     DBC *dbcp;
     DBT key, data;
@@ -333,7 +344,8 @@ err:    /* Close the cursor. */
         dbp-&gt;err(dbp, ret, "DBC-&gt;close");
     }
     return (ret);
-}</pre>
+}
+</pre>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -377,17 +389,17 @@ err:    /* Close the cursor. */
         <p>
     For example, to configure your database for default compression:
 </p>
-        <pre class="programlisting">    DB *dbp = NULL;
+        <a id="prog_am7"></a>
+        <pre class="programlisting">
+    DB *dbp = NULL;
     DB_ENV *envp = NULL;
-    u_int32_t db_flags;
-    const char *file_name = "mydb.db";
+     u_int32_t db_flags; 
+    const char *file_name = "mydb.db"; 
     int ret;
 
 ...
     
     /* Skipping environment open to shorten this example */
-...
-
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
     if (ret != 0) {
@@ -412,7 +424,7 @@ err:    /* Close the cursor. */
         dbp-&gt;err(dbp, ret, "Database '%s' open failed",
             file_name);
         return (EXIT_FAILURE);
-    } </pre>
+    }</pre>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
@@ -468,7 +480,9 @@ err:    /* Close the cursor. */
         example of the default compression provided by Berkeley DB. It does
         simple prefix compression on the key part of the data.
     </p>
-          <pre class="programlisting">int compress(DB *dbp, const DBT *prevKey, const DBT *prevData, 
+          <a id="prog_am8"></a>
+          <pre class="programlisting">
+    int compress(DB *dbp, const DBT *prevKey, const DBT *prevData, 
         const DBT *key, const DBT *data, DBT *dest)
 {
     u_int8_t *dest_data_ptr;
@@ -555,6 +569,7 @@ err:    /* Close the cursor. */
     For example, the decompression routine that corresponds to the
     example compression routine provided above is:
 </p>
+          <a id="prog_am9"></a>
           <pre class="programlisting">int decompress(DB *dbp, const DBT *prevKey, const DBT *prevData, 
     DBT *compressed, DBT *destKey, DBT *destData)
 {
@@ -615,7 +630,7 @@ err:    /* Close the cursor. */
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50502992"></a>Programmer Notes</h4>
+                <h4 class="title"><a id="id3881949"></a>Programmer Notes</h4>
               </div>
             </div>
           </div>

@@ -155,7 +155,7 @@ b_latch(argc, argv)
 #else
 	DB_BENCH_ASSERT(dbenv->open(dbenv, TESTDIR,
 	    DB_CREATE | DB_INIT_LOCK | DB_INIT_LOG |
-	    DB_INIT_MPOOL | DB_INIT_TXN | DB_PRIVATE, 0666) == 0);
+	    DB_INIT_MPOOL | DB_INIT_TXN | DB_PRIVATE | DB_THREAD, 0666) == 0);
 #endif
 	DB_BENCH_ASSERT(dbenv->mutex_alloc(dbenv, DB_MUTEX_SELF_BLOCK,
 	    &mutex) == 0);

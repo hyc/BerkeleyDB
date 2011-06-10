@@ -63,7 +63,7 @@ proc subdb002_main { method nentries largs } {
 	set largs [split_encargs $largs encargs]
 
 	cleanup $testdir NULL
-	if { [is_queue $omethod] == 1 } {
+       if { [is_queue $omethod] == 1 || [is_heap $omethod] == 1 } {
 		set sdb002_env berkdb_env_noerr
 	} else {
 		set sdb002_env berkdb_env
@@ -91,7 +91,7 @@ proc subdb002_body { method omethod nentries largs testfile env } {
 	set t2 $testdir/t2
 	set t3 $testdir/t3
 
-	if { [is_queue $omethod] == 1 } {
+       if { [is_queue $omethod] == 1 || [is_heap $omethod] == 1 } {
 		set sdb002_open berkdb_open_noerr
 	} else {
 		set sdb002_open berkdb_open
@@ -106,9 +106,9 @@ proc subdb002_body { method omethod nentries largs testfile env } {
 	}
 
 	#
-	# If -queue method, we need to make sure that trying to
+	# If -queue or -heap method, we need to make sure that trying to
 	# create a subdb fails.
-	if { [is_queue $method] == 1 } {
+       if { [is_queue $method] == 1 || [is_heap $method] == 1 } {
 		error_check_bad dbopen $ret 0
 		puts "Subdb002: skipping remainder of test for method $method"
 		return

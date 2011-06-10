@@ -8,7 +8,7 @@
 **    May you find forgiveness for yourself and forgive others.
 **    May you share freely, never taking more than you give.
 **
-sqlite*************************************************************************
+*************************************************************************
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 */
@@ -128,7 +128,6 @@ void sqlite3Update(
   int regNew;
   int regOld = 0;
   int regRowSet = 0;     /* Rowset of rows to be updated */
-  int regRec;            /* Register used for new table record to insert */
 
   memset(&sContext, 0, sizeof(sContext));
   db = pParse->db;
@@ -286,7 +285,6 @@ void sqlite3Update(
   }
   regNew = pParse->nMem + 1;
   pParse->nMem += pTab->nCol;
-  regRec = ++pParse->nMem;
 
   /* Start the view context. */
   if( isView ){
@@ -396,7 +394,7 @@ void sqlite3Update(
         pTrigger, pChanges, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onError
     );
     for(i=0; i<pTab->nCol; i++){
-      if( aXRef[i]<0 || oldmask==0xffffffff || (oldmask & (1<<i)) ){
+      if( aXRef[i]<0 || oldmask==0xffffffff || (i<32 && (oldmask & (1<<i))) ){
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOld+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
@@ -638,6 +636,7 @@ static void updateVirtualTable(
   assert( v );
   ephemTab = pParse->nTab++;
   sqlite3VdbeAddOp2(v, OP_OpenEphemeral, ephemTab, pTab->nCol+1+(pRowid!=0));
+  sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
 
   /* fill the ephemeral table 
   */

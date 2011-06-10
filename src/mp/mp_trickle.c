@@ -61,9 +61,9 @@ __memp_trickle(env, pct, nwrotep)
 		*nwrotep = 0;
 
 	if (pct < 1 || pct > 100) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("3007",
 	    "DB_ENV->memp_trickle: %d: percent must be between 1 and 100",
-		    pct);
+		    "%d"), pct);
 		return (EINVAL);
 	}
 

@@ -62,8 +62,13 @@ __db_ferr(env, name, iscombo)
 	const char *name;
 	int iscombo;
 {
-	__db_errx(env, "illegal flag %sspecified to %s",
-	    iscombo ? "combination " : "", name);
+	if (iscombo)
+		__db_errx(env, DB_STR_A("0054",
+		    "illegal flag combination specified to %s", "%s"), name);
+	else
+		__db_errx(env, DB_STR_A("0055",
+		    "illegal flag specified to %s", "%s"), name);
+
 	return (EINVAL);
 }
 
@@ -78,9 +83,9 @@ __db_fnl(env, name)
 	const ENV *env;
 	const char *name;
 {
-	__db_errx(env,
+	__db_errx(env, DB_STR_A("0056",
     "%s: DB_READ_COMMITTED, DB_READ_UNCOMMITTED and DB_RMW require locking",
-	    name);
+	    "%s"), name);
 	return (EINVAL);
 }
 
@@ -101,8 +106,8 @@ __db_pgerr(dbp, pgno, errval)
 	 * Death, taxes, and lost data.
 	 * Guess which has occurred.
 	 */
-	__db_errx(dbp->env,
-	    "unable to create/retrieve page %lu", (u_long)pgno);
+	__db_errx(dbp->env, DB_STR_A("0057",
+	    "unable to create/retrieve page %lu", "%lu"), (u_long)pgno);
 	return (__env_panic(dbp->env, errval));
 }
 
@@ -117,7 +122,8 @@ __db_pgfmt(env, pgno)
 	ENV *env;
 	db_pgno_t pgno;
 {
-	__db_errx(env, "page %lu: illegal page type or format", (u_long)pgno);
+	__db_errx(env, DB_STR_A("0058",
+	    "page %lu: illegal page type or format", "%lu"), (u_long)pgno);
 	return (__env_panic(env, EINVAL));
 }
 
@@ -136,10 +142,16 @@ __db_assert(env, e, file, line)
 	const char *e, *file;
 	int line;
 {
-	__db_errx(env, "assert failure: %s/%d: \"%s\"", file, line, e);
+	if (DB_GLOBAL(j_assert) != NULL)
+		DB_GLOBAL(j_assert)(e, file, line);
+	else {
+		__db_errx(env, DB_STR_A("0059",
+		    "assert failure: %s/%d: \"%s\"",
+		    "%s %d %s"), file, line, e);
 
-	__os_abort(env);
-	/* NOTREACHED */
+		__os_abort(env);
+		/* NOTREACHED */
+	}
 }
 #endif
 
@@ -160,7 +172,8 @@ __env_panic_msg(env)
 
 	ret = DB_RUNRECOVERY;
 
-	__db_errx(env, "PANIC: fatal region error detected; run recovery");
+	__db_errx(env, DB_STR("0060",
+	    "PANIC: fatal region error detected; run recovery"));
 
 	if (dbenv->db_paniccall != NULL)		/* Deprecated */
 		dbenv->db_paniccall(dbenv, ret);
@@ -196,7 +209,7 @@ __env_panic(env, errval)
 	if (env != NULL) {
 		__env_panic_set(env, 1);
 
-		__db_err(env, errval, "PANIC");
+		__db_err(env, errval, DB_STR("0061", "PANIC"));
 
 		if (dbenv->db_paniccall != NULL)	/* Deprecated */
 			dbenv->db_paniccall(dbenv, errval);
@@ -246,7 +259,7 @@ db_strerror(error)
 	char *p;
 
 	if (error == 0)
-		return ("Successful return: 0");
+		return (DB_STR("0062", "Successful return: 0"));
 	if (error > 0) {
 		if ((p = strerror(error)) != NULL)
 			return (p);
@@ -262,75 +275,95 @@ db_strerror(error)
 	 */
 	switch (error) {
 	case DB_BUFFER_SMALL:
-		return
-		    ("DB_BUFFER_SMALL: User memory too small for return value");
+		return (DB_STR("0063",
+		    "DB_BUFFER_SMALL: User memory too small for return value"));
 	case DB_DONOTINDEX:
-		return ("DB_DONOTINDEX: Secondary index callback returns null");
+		return (DB_STR("0064",
+		    "DB_DONOTINDEX: Secondary index callback returns null"));
 	case DB_FOREIGN_CONFLICT:
-		return
-       ("DB_FOREIGN_CONFLICT: A foreign database constraint has been violated");
+		return (DB_STR("0065",
+       "DB_FOREIGN_CONFLICT: A foreign database constraint has been violated"));
+	case DB_HEAP_FULL:
+		return (DB_STR("0208","DB_HEAP_FULL: no free space in db"));
 	case DB_KEYEMPTY:
-		return ("DB_KEYEMPTY: Non-existent key/data pair");
+		return (DB_STR("0066",
+		    "DB_KEYEMPTY: Non-existent key/data pair"));
 	case DB_KEYEXIST:
-		return ("DB_KEYEXIST: Key/data pair already exists");
+		return (DB_STR("0067",
+		    "DB_KEYEXIST: Key/data pair already exists"));
 	case DB_LOCK_DEADLOCK:
-		return
-		    ("DB_LOCK_DEADLOCK: Locker killed to resolve a deadlock");
+		return (DB_STR("0068",
+		    "DB_LOCK_DEADLOCK: Locker killed to resolve a deadlock"));
 	case DB_LOCK_NOTGRANTED:
-		return ("DB_LOCK_NOTGRANTED: Lock not granted");
+		return (DB_STR("0069", "DB_LOCK_NOTGRANTED: Lock not granted"));
 	case DB_LOG_BUFFER_FULL:
-		return ("DB_LOG_BUFFER_FULL: In-memory log buffer is full");
+		return (DB_STR("0070",
+		    "DB_LOG_BUFFER_FULL: In-memory log buffer is full"));
 	case DB_LOG_VERIFY_BAD:
-		return ("DB_LOG_VERIFY_BAD: Log verification failed");
+		return (DB_STR("0071",
+		    "DB_LOG_VERIFY_BAD: Log verification failed"));
 	case DB_NOSERVER:
-		return ("DB_NOSERVER: Fatal error, no RPC server");
-	case DB_NOSERVER_HOME:
-		return ("DB_NOSERVER_HOME: Home unrecognized at server");
-	case DB_NOSERVER_ID:
-		return ("DB_NOSERVER_ID: Identifier unrecognized at server");
+		return (DB_STR("0072",
+    "DB_NOSERVER: No message dispatch call-back function has been configured"));
 	case DB_NOTFOUND:
-		return ("DB_NOTFOUND: No matching key/data pair found");
+		return (DB_STR("0073",
+		    "DB_NOTFOUND: No matching key/data pair found"));
 	case DB_OLD_VERSION:
-		return ("DB_OLDVERSION: Database requires a version upgrade");
+		return (DB_STR("0074",
+		    "DB_OLDVERSION: Database requires a version upgrade"));
 	case DB_PAGE_NOTFOUND:
-		return ("DB_PAGE_NOTFOUND: Requested page not found");
+		return (DB_STR("0075",
+		    "DB_PAGE_NOTFOUND: Requested page not found"));
 	case DB_REP_DUPMASTER:
-		return ("DB_REP_DUPMASTER: A second master site appeared");
+		return (DB_STR("0076",
+		    "DB_REP_DUPMASTER: A second master site appeared"));
 	case DB_REP_HANDLE_DEAD:
-		return ("DB_REP_HANDLE_DEAD: Handle is no longer valid");
+		return (DB_STR("0077",
+		    "DB_REP_HANDLE_DEAD: Handle is no longer valid"));
 	case DB_REP_HOLDELECTION:
-		return ("DB_REP_HOLDELECTION: Need to hold an election");
+		return (DB_STR("0078",
+		    "DB_REP_HOLDELECTION: Need to hold an election"));
 	case DB_REP_IGNORE:
-		return ("DB_REP_IGNORE: Replication record/operation ignored");
+		return (DB_STR("0079",
+		    "DB_REP_IGNORE: Replication record/operation ignored"));
 	case DB_REP_ISPERM:
-		return ("DB_REP_ISPERM: Permanent record written");
+		return (DB_STR("0080",
+		    "DB_REP_ISPERM: Permanent record written"));
 	case DB_REP_JOIN_FAILURE:
-		return
-	    ("DB_REP_JOIN_FAILURE: Unable to join replication group");
+		return (DB_STR("0081",
+		    "DB_REP_JOIN_FAILURE: Unable to join replication group"));
 	case DB_REP_LEASE_EXPIRED:
-		return
-	    ("DB_REP_LEASE_EXPIRED: Replication leases have expired");
+		return (DB_STR("0082",
+		    "DB_REP_LEASE_EXPIRED: Replication leases have expired"));
 	case DB_REP_LOCKOUT:
-		return
-	    ("DB_REP_LOCKOUT: Waiting for replication recovery to complete");
+		return (DB_STR("0083",
+	    "DB_REP_LOCKOUT: Waiting for replication recovery to complete"));
 	case DB_REP_NEWSITE:
-		return ("DB_REP_NEWSITE: A new site has entered the system");
+		return (DB_STR("0084",
+		    "DB_REP_NEWSITE: A new site has entered the system"));
 	case DB_REP_NOTPERM:
-		return ("DB_REP_NOTPERM: Permanent log record not written");
+		return (DB_STR("0085",
+		    "DB_REP_NOTPERM: Permanent log record not written"));
 	case DB_REP_UNAVAIL:
-		return ("DB_REP_UNAVAIL: Unable to elect a master");
+		return (DB_STR("0086",
+	    "DB_REP_UNAVAIL: Too few remote sites to complete operation"));
+	case DB_REP_WOULDROLLBACK:	/* Undocumented; C API only. */
+		return (DB_STR("0207",
+			"DB_REP_WOULDROLLBACK: Client data has diverged"));
 	case DB_RUNRECOVERY:
-		return ("DB_RUNRECOVERY: Fatal error, run database recovery");
+		return (DB_STR("0087",
+		    "DB_RUNRECOVERY: Fatal error, run database recovery"));
 	case DB_SECONDARY_BAD:
-		return
-	    ("DB_SECONDARY_BAD: Secondary index inconsistent with primary");
+		return (DB_STR("0088",
+	    "DB_SECONDARY_BAD: Secondary index inconsistent with primary"));
 	case DB_TIMEOUT:
-		return ("DB_TIMEOUT: Operation timed out");
+		return (DB_STR("0089", "DB_TIMEOUT: Operation timed out"));
 	case DB_VERIFY_BAD:
-		return ("DB_VERIFY_BAD: Database verification failed");
+		return (DB_STR("0090",
+		    "DB_VERIFY_BAD: Database verification failed"));
 	case DB_VERSION_MISMATCH:
-		return
-	    ("DB_VERSION_MISMATCH: Database environment version mismatch");
+		return (DB_STR("0091",
+	    "DB_VERSION_MISMATCH: Database environment version mismatch"));
 	default:
 		break;
 	}
@@ -360,7 +393,8 @@ __db_unknown_error(error)
 	 * and longer than any error message.
 	 */
 	(void)snprintf(DB_GLOBAL(error_buf),
-	    sizeof(DB_GLOBAL(error_buf)), "Unknown error: %d", error);
+	    sizeof(DB_GLOBAL(error_buf)), DB_STR_A("0092",
+	    "Unknown error: %d", "%d"), error);
 	return (DB_GLOBAL(error_buf));
 }
 
@@ -691,7 +725,8 @@ __db_unknown_flag(env, routine, flag)
 	char *routine;
 	u_int32_t flag;
 {
-	__db_errx(env, "%s: Unknown flag: %#x", routine, (u_int)flag);
+	__db_errx(env, DB_STR_A("0093", "%s: Unknown flag: %#x", "%s %#x"),
+	    routine, (u_int)flag);
 
 #ifdef DIAGNOSTIC
 	__os_abort(env);
@@ -711,9 +746,8 @@ __db_unknown_type(env, routine, type)
 	char *routine;
 	DBTYPE type;
 {
-	__db_errx(env,
-	    "%s: Unexpected database type: %s",
-	    routine, __db_dbtype_to_string(type));
+	__db_errx(env, DB_STR_A("0094", "%s: Unexpected database type: %s",
+	    "%s %s"), routine, __db_dbtype_to_string(type));
 
 #ifdef DIAGNOSTIC
 	__os_abort(env);
@@ -732,7 +766,8 @@ __db_unknown_path(env, routine)
 	ENV *env;
 	char *routine;
 {
-	__db_errx(env, "%s: Unexpected code path error", routine);
+	__db_errx(env, DB_STR_A("0095", "%s: Unexpected code path error",
+	    "%s"), routine);
 
 #ifdef DIAGNOSTIC
 	__os_abort(env);
@@ -777,8 +812,8 @@ __db_check_txn(dbp, txn, assoc_locker, read_op)
 	 *	a transaction handle for a non-transactional database
 	 */
 	if (!read_op && txn != NULL && F_ISSET(txn, TXN_READONLY)) {
-		__db_errx(env,
-		    "Read-only transaction cannot be used for an update");
+		__db_errx(env, DB_STR("0096",
+		    "Read-only transaction cannot be used for an update"));
 		return (EINVAL);
 	} else if (txn == NULL || F_ISSET(txn, TXN_PRIVATE)) {
 		if (dbp->cur_locker != NULL &&
@@ -786,8 +821,8 @@ __db_check_txn(dbp, txn, assoc_locker, read_op)
 			goto open_err;
 
 		if (!read_op && F_ISSET(dbp, DB_AM_TXN)) {
-			__db_errx(env,
-		    "Transaction not specified for a transactional database");
+			__db_errx(env, DB_STR("0097",
+		    "Transaction not specified for a transactional database"));
 			return (EINVAL);
 		}
 	} else if (F_ISSET(txn, TXN_FAMILY)) {
@@ -801,8 +836,8 @@ __db_check_txn(dbp, txn, assoc_locker, read_op)
 			 return (__db_not_txn_env(env));
 
 		if (!F_ISSET(dbp, DB_AM_TXN)) {
-			__db_errx(env,
-		    "Transaction specified for a non-transactional database");
+			__db_errx(env, DB_STR("0098",
+		    "Transaction specified for a non-transactional database"));
 			return (EINVAL);
 		}
 
@@ -837,8 +872,8 @@ __db_check_txn(dbp, txn, assoc_locker, read_op)
 	 */
 	if (!read_op && dbp->associate_locker != NULL &&
 	    txn != NULL && dbp->associate_locker != assoc_locker) {
-		__db_errx(env,
-	    "Operation forbidden while secondary index is being created");
+		__db_errx(env, DB_STR("0099",
+	    "Operation forbidden while secondary index is being created"));
 		return (EINVAL);
 	}
 
@@ -846,15 +881,15 @@ __db_check_txn(dbp, txn, assoc_locker, read_op)
 	 * Check the txn and dbp are from the same env.
 	 */
 	if (txn != NULL && env != txn->mgrp->env) {
-		__db_errx(env,
-	    "Transaction and database from different environments");
+		__db_errx(env, DB_STR("0100",
+		    "Transaction and database from different environments"));
 		return (EINVAL);
 	}
 
 	return (0);
 open_err:
-	__db_errx(env,
-	    "Transaction that opened the DB handle is still active");
+	__db_errx(env, DB_STR("0101",
+	    "Transaction that opened the DB handle is still active"));
 	return (EINVAL);
 }
 
@@ -874,9 +909,9 @@ __db_txn_deadlock_err(env, txn)
 	name = NULL;
 	(void)__txn_get_name(txn, &name);
 
-	__db_errx(env,
+	__db_errx(env, DB_STR_A("0102",
 	    "%s%sprevious transaction deadlock return not resolved",
-	    name == NULL ? "" : name, name == NULL ? "" : ": ");
+	    "%s %s"), name == NULL ? "" : name, name == NULL ? "" : ": ");
 
 	return (EINVAL);
 }
@@ -891,7 +926,8 @@ int
 __db_not_txn_env(env)
 	ENV *env;
 {
-	__db_errx(env, "DB environment not configured for transactions");
+	__db_errx(env, DB_STR("0103",
+	    "DB environment not configured for transactions"));
 	return (EINVAL);
 }
 
@@ -906,9 +942,9 @@ __db_rec_toobig(env, data_len, fixed_rec_len)
 	ENV *env;
 	u_int32_t data_len, fixed_rec_len;
 {
-	__db_errx(env,
+	__db_errx(env, DB_STR_A("0104",
 	    "%lu larger than database's maximum record length %lu",
-	    (u_long)data_len, (u_long)fixed_rec_len);
+	    "%lu %lu"), (u_long)data_len, (u_long)fixed_rec_len);
 	return (EINVAL);
 }
 
@@ -923,9 +959,10 @@ __db_rec_repl(env, data_size, data_dlen)
 	ENV *env;
 	u_int32_t data_size, data_dlen;
 {
-	__db_errx(env,
-	    "%s: replacement length %lu differs from replaced length %lu",
-	    "Record length error", (u_long)data_size, (u_long)data_dlen);
+	__db_errx(env, DB_STR_A("0105",
+	    "Record length error: "
+	    "replacement length %lu differs from replaced length %lu",
+	    "%lu %lu"), (u_long)data_size, (u_long)data_dlen);
 	return (EINVAL);
 }
 
@@ -971,7 +1008,8 @@ __dbc_logging(dbc)
 	 * If we're a client and not running recovery or non durably, error.
 	 */
 	if (IS_REP_CLIENT(env) && !F_ISSET(dbc->dbp, DB_AM_NOT_DURABLE)) {
-		__db_errx(env, "dbc_logging: Client update");
+		__db_errx(env, DB_STR("0106",
+		    "dbc_logging: Client update"));
 		goto err;
 	}
 
@@ -982,16 +1020,17 @@ __dbc_logging(dbc)
 	 */
 	if (IS_REP_MASTER(env) &&
 	    dbc->txn == NULL && !F_ISSET(dbc->dbp, DB_AM_NOT_DURABLE)) {
-		__db_errx(env, "Dbc_logging: Master non-txn update");
+		__db_errx(env, DB_STR("0107",
+		    "Dbc_logging: Master non-txn update"));
 		goto err;
 	}
 #endif
 
 	if (0) {
-err:		__db_errx(env, "Rep: flags 0x%lx msg_th %lu",
-		    (u_long)rep->flags, (u_long)rep->msg_th);
-		__db_errx(env, "Rep: handle %lu, opcnt %lu",
-		    (u_long)rep->handle_cnt, (u_long)rep->op_cnt);
+err:		__db_errx(env, DB_STR_A("0108", "Rep: flags 0x%lx msg_th %lu",
+		    "%lx %lu"), (u_long)rep->flags, (u_long)rep->msg_th);
+		__db_errx(env, DB_STR_A("0109", "Rep: handle %lu, opcnt %lu",
+		    "%lu %lu"), (u_long)rep->handle_cnt, (u_long)rep->op_cnt);
 		__os_abort(env);
 		/* NOTREACHED */
 	}
@@ -1012,10 +1051,11 @@ __db_check_lsn(env, lsn, prev)
 	ENV *env;
 	DB_LSN *lsn, *prev;
 {
-	__db_errx(env,
+	__db_errx(env, DB_STR_A("0110",
 	    "Log sequence error: page LSN %lu %lu; previous LSN %lu %lu",
-	    (u_long)(lsn)->file, (u_long)(lsn)->offset,
-	    (u_long)(prev)->file, (u_long)(prev)->offset);
+	    "%lu %lu %lu %lu"), (u_long)(lsn)->file,
+	    (u_long)(lsn)->offset, (u_long)(prev)->file,
+	    (u_long)(prev)->offset);
 	return (EINVAL);
 }
 
@@ -1029,7 +1069,8 @@ __db_rdonly(env, name)
 	const ENV *env;
 	const char *name;
 {
-	__db_errx(env, "%s: attempt to modify a read-only database", name);
+	__db_errx(env, DB_STR_A("0111",
+	    "%s: attempt to modify a read-only database", "%s"), name);
 	return (EACCES);
 }
 
@@ -1042,8 +1083,8 @@ int
 __db_space_err(dbp)
 	const DB *dbp;
 {
-	__db_errx(dbp->env,
-	    "%s: file limited to %lu pages",
+	__db_errx(dbp->env, DB_STR_A("0112",
+	    "%s: file limited to %lu pages", "%s %lu"),
 	    dbp->fname, (u_long)dbp->mpf->mfp->maxpgno);
 	return (ENOSPC);
 }
@@ -1067,7 +1108,7 @@ __db_failed(env, msg, pid, tid)
 
 	dbenv = env->dbenv;
 
-	__db_errx(env, "Thread/process %s failed: %s",
-	    dbenv->thread_id_string(dbenv, pid, tid, buf),  msg);
+	__db_errx(env, DB_STR_A("0113", "Thread/process %s failed: %s",
+	    "%s %s"), dbenv->thread_id_string(dbenv, pid, tid, buf),  msg);
 	return (DB_RUNRECOVERY);
 }

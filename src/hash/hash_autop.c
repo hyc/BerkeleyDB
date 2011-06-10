@@ -25,7 +25,7 @@ __ham_insdel_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_insdel", __ham_insdel_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_insdel", __ham_insdel_desc, info));
 }
 
 /*
@@ -42,7 +42,7 @@ __ham_insdel_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_insdel_42", __ham_insdel_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_insdel_42", __ham_insdel_42_desc, info));
 }
 
 /*
@@ -59,7 +59,7 @@ __ham_newpage_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_newpage", __ham_newpage_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_newpage", __ham_newpage_desc, info));
 }
 
 /*
@@ -76,7 +76,7 @@ __ham_splitdata_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_splitdata", __ham_splitdata_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_splitdata", __ham_splitdata_desc, info));
 }
 
 /*
@@ -93,7 +93,7 @@ __ham_replace_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_replace", __ham_replace_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_replace", __ham_replace_desc, info));
 }
 
 /*
@@ -110,7 +110,7 @@ __ham_replace_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_replace_42", __ham_replace_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_replace_42", __ham_replace_42_desc, info));
 }
 
 /*
@@ -127,7 +127,7 @@ __ham_copypage_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_copypage", __ham_copypage_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_copypage", __ham_copypage_desc, info));
 }
 
 /*
@@ -144,7 +144,7 @@ __ham_metagroup_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_metagroup_42", __ham_metagroup_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_metagroup_42", __ham_metagroup_42_desc, info));
 }
 
 /*
@@ -161,7 +161,7 @@ __ham_metagroup_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_metagroup", __ham_metagroup_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_metagroup", __ham_metagroup_desc, info));
 }
 
 /*
@@ -178,7 +178,7 @@ __ham_groupalloc_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_groupalloc_42", __ham_groupalloc_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_groupalloc_42", __ham_groupalloc_42_desc, info));
 }
 
 /*
@@ -195,7 +195,7 @@ __ham_groupalloc_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_groupalloc", __ham_groupalloc_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_groupalloc", __ham_groupalloc_desc, info));
 }
 
 /*
@@ -212,7 +212,7 @@ __ham_changeslot_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_changeslot", __ham_changeslot_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_changeslot", __ham_changeslot_desc, info));
 }
 
 /*
@@ -229,7 +229,7 @@ __ham_contract_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_contract", __ham_contract_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_contract", __ham_contract_desc, info));
 }
 
 /*
@@ -246,7 +246,7 @@ __ham_curadj_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_curadj", __ham_curadj_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_curadj", __ham_curadj_desc, info));
 }
 
 /*
@@ -263,7 +263,7 @@ __ham_chgpg_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__ham_chgpg", __ham_chgpg_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__ham_chgpg", __ham_chgpg_desc, info));
 }
 
 /*

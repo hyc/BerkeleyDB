@@ -21,11 +21,6 @@ namespace BerkeleyDB {
         /// <summary>
         /// Instantiate a new Sequence object.
         /// </summary>
-        /// <remarks>
-        /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation will be implicitly transaction
-        /// protected.
-        /// </remarks>
         /// <param name="cfg">Configuration parameters for the Sequence</param>
         public Sequence(SequenceConfig cfg) : this(cfg, null) { }
         /// <summary>
@@ -78,27 +73,10 @@ namespace BerkeleyDB {
         /// database and incremented (decremented) by enough to cover the delta
         /// and the next batch of cached values. 
         /// </para>
-        /// <para>
-        /// For maximum concurrency a non-zero cache size should be specified
-        /// prior to opening the sequence handle and <paramref name="NoSync"/>
-        /// should be specified for each Get method call.
-        /// </para>
-		/// <para>
+	/// <para>
         /// By default, sequence ranges do not wrap; to cause the sequence to
         /// wrap around the beginning or end of its range, set
-        /// <paramref name="SequenceConfig.Wrap"/> to true.
-        /// </para>
-        /// <para>
-        /// If <paramref name="P:BackingDatabase"/> was opened in a transaction,
-        /// calling Get may result in changes to the sequence object; these
-        /// changes will be automatically committed in a transaction internal to
-        /// the Berkeley DB library. If the thread of control calling Get has an
-        /// active transaction, which holds locks on the same database as the
-        /// one in which the sequence object is stored, it is possible for a
-        /// thread of control calling Get to self-deadlock because the active
-        /// transaction's locks conflict with the internal transaction's locks.
-        /// For this reason, it is often preferable for sequence objects to be
-        /// stored in their own database. 
+        /// <see cref="SequenceConfig.Wrap"/> to true.
         /// </para>
         /// </overloads>
         /// <param name="Delta">

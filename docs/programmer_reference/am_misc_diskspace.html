@@ -12,7 +12,10 @@
     <link rel="next" href="am_misc_db_sql.html" title="Specifying a Berkeley DB schema using SQL DDL" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Disk space requirements</th>
@@ -39,12 +42,12 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="am_misc_diskspace.html#idp50931016">Btree</a>
+              <a href="am_misc_diskspace.html#id3888153">Btree</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="am_misc_diskspace.html#idp50931080">Hash</a>
+              <a href="am_misc_diskspace.html#id3888154">Hash</a>
             </span>
           </dt>
         </dl>
@@ -69,7 +72,7 @@ variable, and the page-fill factor changes over time.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50931016"></a>Btree</h3>
+              <h3 class="title"><a id="id3888153"></a>Btree</h3>
             </div>
           </div>
         </div>
@@ -93,7 +96,7 @@ to almost 100% if the entries in the database were inserted in sorted
 order.  Obviously, the <span class="bold"><strong>page-fill-factor</strong></span> can drastically alter
 the amount of disk space required to hold any particular data set.  The
 page-fill factor of any existing database can be displayed using the
-<a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a>.</p>
+<a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility.</p>
         <p>The page-overhead for Btree databases is 26 bytes.  As an example, using
 an 8K page size, with an 85% page-fill factor, there are 6941 bytes of
 useful space on each page:</p>
@@ -118,7 +121,7 @@ multiplied by the <span class="bold"><strong>page-size</strong></span>.  In the 
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50931080"></a>Hash</h3>
+              <h3 class="title"><a id="id3888154"></a>Hash</h3>
             </div>
           </div>
         </div>

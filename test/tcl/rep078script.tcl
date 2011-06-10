@@ -106,13 +106,24 @@ while { [llength [$marker get PARENT2]] == 0 } {
 
 #
 # After we get PARENT2, do a checkpoint.
-# Then our work is done and we clean up.
 #
 puts "Write a checkpoint"
 $masterenv txn_checkpoint
 puts "Put CHILD3"
 error_check_good child2_key \
     [$marker put CHILD3 $key] 0
+
+puts "Wait for PARENT3"
+# Give the parent a chance to process messages and check leases.
+while { [llength [$marker get PARENT3]] == 0 } {
+	tclsleep 1
+}
+
+puts "Write another checkpoint"
+$masterenv txn_checkpoint -force
+puts "Put CHILD4"
+error_check_good child4_key \
+    [$marker put CHILD4 $key] 0
 
 puts "Clean up and exit"
 # Clean up the child so the parent can go forward.

@@ -38,7 +38,7 @@ __crypto_region_init(env)
 	if (ret == 0)
 		return (0);
 
-	__db_errx(env,
-"Encrypted environment: library build did not include cryptography support");
+	__db_errx(env, DB_STR("0040",
+"Encrypted environment: library build did not include cryptography support"));
 	return (DB_OPNOTSUP);
 }

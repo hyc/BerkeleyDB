@@ -90,6 +90,6 @@ __os_sleep(env, secs, usecs)
 	if (select(0, NULL, NULL, NULL, &t) == -1) {
 		ret = __os_get_syserr();
 		if (__os_posix_err(ret) != EINTR)
-			__db_syserr(env, ret, "select");
+			__db_syserr(env, ret, DB_STR("0167", "select"));
 	}
 }

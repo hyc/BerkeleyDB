@@ -1,6 +1,6 @@
 --- /dev/null
 +++ build_config.h.in
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,47 @@
 +
 +/*
 +** Build options detected by SQLite's configure script but not normally part
@@ -42,22 +42,15 @@
 +#undef SQLITE_THREADSAVE
 +#endif
 +
-+#ifndef SQLITE_THREAD_OVERRIDE_LOCK
-+#define SQLITE_THREAD_OVERRIDE_LOCK @THREADSOVERRIDELOCKS@
-+#endif
-+#if !SQLITE_THREAD_OVERRIDE_LOCK
-+#undef SQLITE_THREAD_OVERRIDE_LOCK
-+#endif
-+
 +#ifndef SQLITE_TEMP_STORE
 +#define SQLITE_TEMP_STORE @TEMP_STORE@
 +#endif
-+#if !SQLITE_THREAD_OVERRIDE_LOCK
-+#undef SQLITE_THREAD_OVERRIDE_LOCK
++#if !SQLITE_TEMP_STORE
++#undef SQLITE_TEMP_STORE
 +#endif
 --- configure
 +++ configure
-@@ -13578,7 +13578,7 @@ ac_config_headers="$ac_config_headers co
+@@ -13548,7 +13548,7 @@ ac_config_headers="$ac_config_headers co
  # Generate the output files.
  #
  
@@ -66,7 +59,7 @@
  
  cat >confcache <<\_ACEOF
  # This file is a shell script that caches the results of configure
-@@ -14432,6 +14432,7 @@ do
+@@ -14402,6 +14402,7 @@ do
      "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
      "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
      "sqlite3.pc") CONFIG_FILES="$CONFIG_FILES sqlite3.pc" ;;
@@ -76,7 +69,7 @@
  $as_echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
 --- configure.ac
 +++ configure.ac
-@@ -732,4 +732,5 @@ AC_SUBST(BUILD_CFLAGS)
+@@ -714,4 +714,5 @@ AC_SUBST(BUILD_CFLAGS)
  AC_OUTPUT([
  Makefile
  sqlite3.pc

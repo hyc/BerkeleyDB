@@ -199,7 +199,7 @@ __logc_version(logc, versionp)
 
 	env = logc->env;
 	if (IS_ZERO_LSN(logc->lsn)) {
-		__db_errx(env, "DB_LOGC->get: unset cursor");
+		__db_errx(env, DB_STR("2574", "DB_LOGC->get: unset cursor"));
 		return (EINVAL);
 	}
 	ret = 0;
@@ -264,7 +264,8 @@ __logc_get_pp(logc, alsn, dbt, flags)
 		break;
 	case DB_SET:
 		if (IS_ZERO_LSN(*alsn)) {
-			__db_errx(env, "DB_LOGC->get: invalid LSN: %lu/%lu",
+			__db_errx(env, DB_STR_A("2575",
+			    "DB_LOGC->get: invalid LSN: %lu/%lu", "%lu %lu"),
 			    (u_long)alsn->file, (u_long)alsn->offset);
 			return (EINVAL);
 		}
@@ -386,11 +387,15 @@ __logc_get_int(logc, alsn, dbt, flags)
 	LOG *lp;
 	RLOCK rlock;
 	logfile_validity status;
-	u_int32_t cnt, i, logfsz, logtype, orig_flags, version;
-	u_int8_t ch, *rp;
+	u_int32_t cnt, logfsz, orig_flags;
+	u_int8_t *rp;
 	int eof, is_hmac, need_cksum, ret;
 	size_t blen;
+#ifdef HAVE_LOG_CHECKSUM
+	u_int32_t i, logtype, version;
 	char chksumbuf[256];
+	u_int8_t ch;
+#endif
 
 	env = logc->env;
 	db_cipher = env->crypto_handle;
@@ -407,7 +412,9 @@ __logc_get_int(logc, alsn, dbt, flags)
 	 */
 	rlock = F_ISSET(logc, DB_LOG_LOCKED) ? L_ALREADY : L_NONE;
 
+#ifdef HAVE_LOG_CHECKSUM
 nextrec:
+#endif
 	nlsn = logc->lsn;
 	switch (flags) {
 	case DB_NEXT:				/* Next log record. */
@@ -596,8 +603,8 @@ nohdr:		switch (flags) {
 			 * the first record in that new file should have its
 			 * prev field set correctly.
 			 */
-			__db_errx(env,
-		"Encountered zero length records while traversing backwards");
+			__db_errx(env, DB_STR("2576",
+		"Encountered zero length records while traversing backwards"));
 			ret = __env_panic(env, DB_RUNRECOVERY);
 			goto err;
 		case DB_FIRST:
@@ -628,7 +635,7 @@ cksum:	/*
 		rlock = L_NONE;
 		LOG_SYSTEM_UNLOCK(env);
 	}
-
+#ifdef HAVE_LOG_CHECKSUM
 	/*
 	 * Checksum: there are two types of errors -- a configuration error
 	 * or a checksum mismatch.  The former is always bad.  The latter is
@@ -688,13 +695,15 @@ cksum:	/*
 			}
 			/* Type field is always the first one in the record. */
 			memcpy(&logtype, rp + hdr.size, sizeof(logtype));
-			__db_errx(env, "DB_LOGC->get: log record LSN %lu/%lu: "
+			__db_errx(env, DB_STR_A("2577",
+			    "DB_LOGC->get: log record LSN %lu/%lu: "
 			    "checksum mismatch, hdr.chksum: %s, hdr.prev: %u, "
 			    "hdr.len: %u, log type: %u. Skipping it and "
 			    "continuing with the %s one",
+			    "%lu %lu %s %u %u %u %s"),
 			    (u_long)nlsn.file, (u_long)nlsn.offset, chksumbuf,
-			    hdr.prev, hdr.len, logtype,
-			    flags == DB_NEXT ? "next" : "previous");
+			    hdr.prev, hdr.len, logtype, flags == DB_NEXT ?
+			    DB_STR_P("next") : DB_STR_P("previous"));
 			goto nextrec;
 		}
 
@@ -702,16 +711,17 @@ cksum:	/*
 			if (ret == -1)
 				ret = EIO;
 		} else if (ret == -1) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("2578",
 		    "DB_LOGC->get: log record LSN %lu/%lu: checksum mismatch",
-			    (u_long)nlsn.file, (u_long)nlsn.offset);
-			__db_errx(env,
-		    "DB_LOGC->get: catastrophic recovery may be required");
+			    "%lu %lu"), (u_long)nlsn.file, (u_long)nlsn.offset);
+			__db_errx(env, DB_STR("2579",
+		    "DB_LOGC->get: catastrophic recovery may be required"));
 			ret = __env_panic(env, DB_RUNRECOVERY);
 		}
 		logc->lsn = last_lsn;
 		goto err;
 	}
+#endif
 
 from_memory:
 	/*
@@ -1248,9 +1258,9 @@ __logc_hdrchk(logc, lsn, hdr, eofp)
 	return (0);
 
 err:	if (!F_ISSET(logc, DB_LOG_SILENT_ERR))
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2580",
 		    "DB_LOGC->get: LSN %lu/%lu: invalid log record header",
-		    (u_long)lsn->file, (u_long)lsn->offset);
+		    "%lu %lu"), (u_long)lsn->file, (u_long)lsn->offset);
 	return (EIO);
 }
 
@@ -1320,8 +1330,8 @@ __logc_io(logc, fnum, offset, p, nrp, eofp)
 	if ((ret = __os_io(env, DB_IO_READ,
 	    logc->fhp, 0, 0, offset, (u_int32_t)*nrp, p, nrp)) != 0) {
 		if (!F_ISSET(logc, DB_LOG_SILENT_ERR))
-			__db_err(env, ret,
-			    "DB_LOGC->get: LSN: %lu/%lu: read",
+			__db_err(env, ret, DB_STR_A("2581",
+			    "DB_LOGC->get: LSN: %lu/%lu: read", "%lu %lu"),
 			    (u_long)fnum, (u_long)offset);
 		return (ret);
 	}
@@ -1340,7 +1350,8 @@ __logc_shortread(logc, lsn, check_silent)
 	int check_silent;
 {
 	if (!check_silent || !F_ISSET(logc, DB_LOG_SILENT_ERR))
-		__db_errx(logc->env, "DB_LOGC->get: LSN: %lu/%lu: short read",
+		__db_errx(logc->env, DB_STR_A("2582",
+		    "DB_LOGC->get: LSN: %lu/%lu: short read", "%lu %lu"),
 		    (u_long)lsn->file, (u_long)lsn->offset);
 	return (EIO);
 }
@@ -1399,145 +1410,6 @@ __logc_set_maxrec(logc, np)
 	return (0);
 }
 
-#ifdef HAVE_REPLICATION
-/*
- * __log_rep_split --
- *	- Split a log buffer into individual records.
- *
- * This is used by a replication client to process a bulk log message from the
- * master and convert it into individual __rep_apply requests.
- *
- * PUBLIC: int __log_rep_split __P((ENV *, DB_THREAD_INFO *,
- * PUBLIC:     __rep_control_args *, DBT *, DB_LSN *, DB_LSN *));
- */
-int
-__log_rep_split(env, ip, rp, rec, ret_lsnp, last_lsnp)
-	ENV *env;
-	DB_THREAD_INFO *ip;
-	__rep_control_args *rp;
-	DBT *rec;
-	DB_LSN *ret_lsnp;
-	DB_LSN *last_lsnp;
-{
-	DBT logrec;
-	DB_LSN next_new_lsn, save_lsn, tmp_lsn;
-	__rep_control_args tmprp;
-	__rep_bulk_args b_args;
-	int is_dup, ret, save_ret;
-	u_int32_t save_flags;
-	u_int8_t *p, *ep;
-
-	memset(&logrec, 0, sizeof(logrec));
-	ZERO_LSN(next_new_lsn);
-	ZERO_LSN(save_lsn);
-	ZERO_LSN(tmp_lsn);
-	/*
-	 * We're going to be modifying the rp LSN contents so make
-	 * our own private copy to play with.
-	 */
-	memcpy(&tmprp, rp, sizeof(tmprp));
-	/*
-	 * We send the bulk buffer on a PERM record, so often we will have
-	 * DB_LOG_PERM set.  However, we only want to mark the last LSN
-	 * we have as a PERM record.  So clear it here, and when we're on
-	 * the last record below, set it.  The same applies if the sender
-	 * set REPCTL_LOG_END on this message.  We want the end of the
-	 * bulk buffer to be marked as the end.
-	 */
-	save_flags = F_ISSET(rp, REPCTL_LOG_END | REPCTL_PERM);
-	F_CLR(&tmprp, REPCTL_LOG_END | REPCTL_PERM);
-	is_dup = ret = save_ret = 0;
-	for (ep = (u_int8_t *)rec->data + rec->size, p = (u_int8_t *)rec->data;
-	    p < ep; ) {
-		/*
-		 * First thing in the buffer is the length.  Then the LSN
-		 * of this record, then the record itself.
-		 */
-		if (rp->rep_version < DB_REPVERSION_47) {
-			memcpy(&b_args.len, p, sizeof(b_args.len));
-			p += sizeof(b_args.len);
-			memcpy(&tmprp.lsn, p, sizeof(DB_LSN));
-			p += sizeof(DB_LSN);
-			logrec.data = p;
-			logrec.size = b_args.len;
-			p += b_args.len;
-		} else {
-			if ((ret = __rep_bulk_unmarshal(env,
-			    &b_args, p, rec->size, &p)) != 0)
-				return (ret);
-			tmprp.lsn = b_args.lsn;
-			logrec.data = b_args.bulkdata.data;
-			logrec.size = b_args.len;
-		}
-		VPRINT(env, (env, DB_VERB_REP_MISC,
-		    "log_rep_split: Processing LSN [%lu][%lu]",
-		    (u_long)tmprp.lsn.file, (u_long)tmprp.lsn.offset));
-		VPRINT(env, (env, DB_VERB_REP_MISC,
-    "log_rep_split: p %#lx ep %#lx logrec data %#lx, size %lu (%#lx)",
-		    P_TO_ULONG(p), P_TO_ULONG(ep), P_TO_ULONG(logrec.data),
-		    (u_long)logrec.size, (u_long)logrec.size));
-		if (p >= ep && save_flags)
-			F_SET(&tmprp, save_flags);
-		/*
-		 * A previous call to __rep_apply indicated an earlier
-		 * record is a dup and the next_new_lsn we are waiting for.
-		 * Skip log records until we catch up with next_new_lsn.
-		 */
-		if (is_dup && LOG_COMPARE(&tmprp.lsn, &next_new_lsn) < 0) {
-			VPRINT(env, (env, DB_VERB_REP_MISC,
-			    "log_split: Skip dup LSN [%lu][%lu]",
-			    (u_long)tmprp.lsn.file, (u_long)tmprp.lsn.offset));
-			continue;
-		}
-		is_dup = 0;
-		ret = __rep_apply(env, ip,
-		    &tmprp, &logrec, &tmp_lsn, &is_dup, last_lsnp);
-		VPRINT(env, (env, DB_VERB_REP_MISC,
-		    "log_split: rep_apply ret %d, dup %d, tmp_lsn [%lu][%lu]",
-		    ret, is_dup, (u_long)tmp_lsn.file, (u_long)tmp_lsn.offset));
-		if (is_dup)
-			next_new_lsn = tmp_lsn;
-		switch (ret) {
-		/*
-		 * If we received the pieces we need for running recovery,
-		 * short-circuit because recovery will truncate the log to
-		 * the LSN we want anyway.
-		 */
-		case DB_REP_LOGREADY:
-			goto out;
-		/*
-		 * If we just handled a special record, retain that information.
-		 */
-		case DB_REP_ISPERM:
-		case DB_REP_NOTPERM:
-			save_ret = ret;
-			save_lsn = tmp_lsn;
-			ret = 0;
-			break;
-		/*
-		 * Normal processing, do nothing, just continue.
-		 */
-		case 0:
-			break;
-		/*
-		 * If we get an error, then stop immediately.
-		 */
-		default:
-			goto out;
-		}
-	}
-out:
-	/*
-	 * If we finish processing successfully, set our return values
-	 * based on what we saw.
-	 */
-	if (ret == 0) {
-		ret = save_ret;
-		*ret_lsnp = save_lsn;
-	}
-	return (ret);
-}
-#endif
 /*
  * PUBLIC: int __log_read_record_pp  __P((DB_ENV *, DB **, void *, void *,
  * PUBLIC:     DB_LOG_RECSPEC *, u_int32_t, void **));

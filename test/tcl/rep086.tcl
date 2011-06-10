@@ -41,14 +41,25 @@ proc rep086 { method { tnum "086" } args } {
 proc rep086_sub { method tnum largs } {
 
 	global testdir
-	global util_path
+	global env_private
 	global rep_verbose
 	global verbose_type
-	
+
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {$verbose_type on} "
 	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
+	}
+
 	set omethod [convert_method $method]
 
 	env_cleanup $testdir
@@ -62,11 +73,12 @@ proc rep086_sub { method tnum largs } {
 	set log_buf [expr $pagesize * 2]
 	set log_max [expr $log_buf * 4]
 
-	puts "Rep$tnum ($method): Test of interrupted abbreviated internal init."
+	puts "Rep$tnum ($method):\
+	    Test of interrupted abbreviated internal init $msg3."
 	puts "\tRep$tnum.a: Create master and client."
 	repladd 1
 	set env_A_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_A \
 	    -home $dirs(A) -rep_transport \[list 1 replsend\]"
 	set envs(A) [eval $env_A_cmd -rep_master]
@@ -74,7 +86,7 @@ proc rep086_sub { method tnum largs } {
 	# Open a client
 	repladd 2
 	set env_B_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_B \
 	    -home $dirs(B) -rep_transport \[list 2 replsend\]"
 	set envs(B) [eval $env_B_cmd -rep_client]
@@ -122,9 +134,11 @@ proc rep086_sub { method tnum largs } {
 	proc_msgs_once $envlist
 
 	# Just to make sure our test is working the way we think it should,
-	# verify that we are indeed in SYNC_PAGE state.
-	# 
-	assert_rep_flag $dirs(B) SYNC_PAGE 1
+	# verify that we are indeed in SYNC_PAGE state.  We can't do this
+	# for env_private because assert_rep_flag execs a second process.
+	if { $env_private == 0 } {
+		assert_rep_flag $dirs(B) SYNC_PAGE 1
+	}
 
 	# Now, with only a partial materialization of the NIMDB, downgrade the
 	# master, which should cause client to realize its internal init is

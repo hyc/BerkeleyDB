@@ -148,7 +148,7 @@ proc rep078_sub { method tnum logset recargs largs } {
 	#
 	set envcmd(0) "berkdb_env -create $m_txnargs $m_logargs \
 	    $verbargs -errpfx MASTER -home $masterdir \
-	    -rep_lease \[list $nsites $lease_to\] \
+	    -rep_nsites $nsites -rep_lease \[list $lease_to\] \
 	    -event $repmemargs \
 	    -rep_client -rep_transport \[list 2 replsend\]"
 	set masterenv [eval $envcmd(0) $recargs]
@@ -160,20 +160,23 @@ proc rep078_sub { method tnum logset recargs largs } {
 	set crash(1) 0
 	set pri(1) 10
 	set envcmd(1) "berkdb_env -create $c_txnargs $c_logargs \
-	    $verbargs -errpfx CLIENT -home $clientdir \
-	    -rep_lease \[list $nsites $lease_to $clock_fast $clock_slow\] \
+	    $verbargs -errpfx CLIENT -home $clientdir -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to $clock_fast $clock_slow\] \
 	    -event $repmemargs \
 	    -rep_client -rep_transport \[list 3 replsend\]"
 	set clientenv [eval $envcmd(1) $recargs]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
 
+	#
+	# Make this site priority 0, unelectable.
+	#
 	repladd 4
 	set err_cmd(2) "none"
 	set crash(2) 0
-	set pri(2) 10
+	set pri(2) 0
 	set envcmd(2) "berkdb_env -create $c2_txnargs $c2_logargs \
-	    $verbargs -errpfx CLIENT2 -home $clientdir2 \
-	    -rep_lease \[list $nsites $lease_to\] \
+	    $verbargs -errpfx CLIENT2 -home $clientdir2 -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to\] \
 	    -event $repmemargs \
 	    -rep_client -rep_transport \[list 4 replsend\]"
 	set clientenv2 [eval $envcmd(2) $recargs]
@@ -181,6 +184,7 @@ proc rep078_sub { method tnum logset recargs largs } {
 
 	# Bring the clients online by processing the startup messages.
 	set envlist "{$masterenv 2} {$clientenv 3} {$clientenv2 4}"
+	set noelect_envlist "{$masterenv 2} {$clientenv2 4}"
 	process_msgs $envlist
 
 	#
@@ -191,7 +195,6 @@ proc rep078_sub { method tnum logset recargs largs } {
 	puts "\tRep$tnum.a: Run initial election."
 	set nvotes $nsites
 	set winner 0
-	setpriority pri $nsites $winner
 	set elector [berkdb random_int 0 2]
 	#
 	# Note we send in a 0 for nsites because we set nsites back
@@ -211,30 +214,27 @@ proc rep078_sub { method tnum logset recargs largs } {
 	# Process messages while we wait for the child to complete
 	# its txn so that the clients can grant leases.
 	puts "\tRep$tnum.c: Wait for child to write txn."
-	while { 1 } {
-		if { [file exists $testdir/marker.db] == 0  } {
-			tclsleep 1
-		} else {
-			set markerenv [berkdb_env -home $testdir -txn]
-			error_check_good markerenv_open \
-			    [is_valid_env $markerenv] TRUE
-			set marker [berkdb_open -unknown -env $markerenv \
-			    -auto_commit marker.db]
-			set kd [$marker get CHILD1]
-			while { [llength $kd] == 0 } {
-				process_msgs $envlist
-				tclsleep 1
-				set kd [$marker get CHILD1]
-			}
-			process_msgs $envlist
-			#
-			# Child sends us the key it used as the data
-			# of the CHILD1 key.
-			#
-			set key [lindex [lindex $kd 0] 1]
-			break
-		}
+	while { [file exists $testdir/marker.db] == 0  } {
+		tclsleep 1
 	}
+	set markerenv [berkdb_env -home $testdir -txn]
+	error_check_good markerenv_open \
+	    [is_valid_env $markerenv] TRUE
+	set marker [berkdb_open -unknown -env $markerenv \
+	    -auto_commit marker.db]
+	set kd [$marker get CHILD1]
+	while { [llength $kd] == 0 } {
+		process_msgs $envlist
+		tclsleep 1
+		set kd [$marker get CHILD1]
+	}
+	process_msgs $envlist
+	#
+	# Child sends us the key it used as the data
+	# of the CHILD1 key.
+	#
+	set key [lindex [lindex $kd 0] 1]
+
 	set masterdb [eval \
 	    {berkdb_open_noerr -env $masterenv -rdonly $testfile}]
 	error_check_good dbopen [is_valid_db $masterdb] TRUE
@@ -309,10 +309,31 @@ proc rep078_sub { method tnum logset recargs largs } {
 	puts "\tRep$tnum.h: Verify read with leases now succeeds."
 	check_leaseget $masterdb $key $uselease 0
 
+	#
+	# Now check that if the electable site is down, and only the
+	# non electable site exists, we do not get valid leases because
+	# the data is not safe.
+	#
+	puts "\tRep$tnum.i: Leases and non-electable sites only."
+	error_check_good timestamp_done \
+	    [$marker put PARENT3 [timestamp -r]] 0
+
+	set kd [$marker get CHILD4]
+	while { [llength $kd] == 0 } {
+		tclsleep 1
+		set kd [$marker get CHILD4]
+	}
+	#
+	# Only process messages to non-electable site.
+	#
+	process_msgs $noelect_envlist
+	puts "\tRep$tnum.i.0: Verify read using leases fails."
+	check_leaseget $masterdb $key $uselease REP_LEASE_EXPIRED
+
 	watch_procs $pid 5
 
 	process_msgs $envlist
-	puts "\tRep$tnum.i: Downgrade master."
+	puts "\tRep$tnum.j: Downgrade master."
 	$masterenv rep_start -client
 	process_msgs $envlist
 

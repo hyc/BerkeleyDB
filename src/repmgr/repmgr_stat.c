@@ -15,7 +15,6 @@ static int __repmgr_print_all __P((ENV *, u_int32_t));
 static int __repmgr_print_sites __P((ENV *));
 static int __repmgr_print_stats __P((ENV *, u_int32_t));
 static int __repmgr_stat __P((ENV *, DB_REPMGR_STAT **, u_int32_t));
-static int __repmgr_stat_print __P((ENV *, u_int32_t));
 
 /*
  * __repmgr_stat_pp --
@@ -105,7 +104,10 @@ __repmgr_stat_print_pp(dbenv, flags)
 	return (__repmgr_stat_print(env, flags));
 }
 
-static int
+/*
+ * PUBLIC: int __repmgr_stat_print __P((ENV *, u_int32_t));
+ */
+int
 __repmgr_stat_print(env, flags)
 	ENV *env;
 	u_int32_t flags;
@@ -251,8 +253,8 @@ __repmgr_site_list(dbenv, countp, listp)
 	DB_THREAD_INFO *ip;
 	REPMGR_SITE *site;
 	size_t array_size, total_size;
+	int eid, locked, ret;
 	u_int count, i;
-	int locked, ret;
 	char *name;
 
 	env = dbenv->env;
@@ -282,18 +284,24 @@ __repmgr_site_list(dbenv, countp, listp)
 	*countp = 0;
 	*listp = NULL;
 
-	/* First, add up how much memory we need for the host names. */
-	if ((count = db_rep->site_cnt) == 0)
-		goto err;
-
-	array_size = sizeof(DB_REPMGR_SITE) * count;
-	total_size = array_size;
-	for (i = 0; i < count; i++) {
+	/*
+	 * First, add up how much memory we need for the host names, excluding
+	 * the local site.
+	 */
+	for (i = 0, count = 0, total_size = 0; i < db_rep->site_cnt; i++) {
 		site = &db_rep->sites[i];
+
+		if ((int)i == db_rep->self_eid || site->membership == 0)
+			continue;
 
 		/* Make room for the NUL terminating byte. */
 		total_size += strlen(site->net_addr.host) + 1;
+		count++;
 	}
+	if (count == 0)
+		goto err;
+	array_size = sizeof(DB_REPMGR_SITE) * count;
+	total_size += array_size;
 
 	if ((ret = __os_umalloc(env, total_size, &status)) != 0)
 		goto err;
@@ -303,11 +311,13 @@ __repmgr_site_list(dbenv, countp, listp)
 	 * way, the caller can free the whole thing in one single operation.
 	 */
 	name = (char *)((u_int8_t *)status + array_size);
-	for (i = 0; i < count; i++) {
-		site = &db_rep->sites[i];
+	for (eid = 0, i = 0; eid < (int)db_rep->site_cnt; eid++) {
+		site = &db_rep->sites[eid];
+		if (eid == db_rep->self_eid || site->membership == 0)
+			continue;
 
 		/* If we don't have rep, we can't really know EID yet. */
-		status[i].eid = rep ? EID_FROM_SITE(site) : DB_EID_INVALID;
+		status[i].eid = rep ? eid : DB_EID_INVALID;
 
 		status[i].host = name;
 		(void)strcpy(name, site->net_addr.host);
@@ -316,7 +326,8 @@ __repmgr_site_list(dbenv, countp, listp)
 		status[i].port = site->net_addr.port;
 
 		status[i].flags = 0;
-		if (F_ISSET(site, SITE_IS_PEER))
+
+		if (FLD_ISSET(site->config, DB_REPMGR_PEER))
 			F_SET(&status[i], DB_REPMGR_ISPEER);
 
 		/*
@@ -332,6 +343,7 @@ __repmgr_site_list(dbenv, countp, listp)
 		    (site->state == SITE_CONNECTED &&
 		    IS_READY_STATE(site->ref.conn->state) ?
 		    DB_REPMGR_CONNECTED : DB_REPMGR_DISCONNECTED);
+		i++;
 	}
 
 	*countp = count;

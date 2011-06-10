@@ -20,9 +20,21 @@ proc rep081 { method { niter 200 } { tnum "081" } args } {
 	global databases_in_memory
 	global repfiles_in_memory
 
-	# Valid for all access methods.
+	# Due to the nature of the heap tcl infrastructure, this
+	# test can fail for heap, although it does not represent 
+	# real BDB failure.
 	if { $checking_valid_methods } {
-		return "ALL"
+		set test_methods {}
+		foreach method $valid_methods {
+			if { [is_heap $method] != 1 } {
+				lappend test_methods $method
+			}
+		}
+		return $test_methods
+	}
+	if { [is_heap $method] == 1 } {
+		puts "Skipping test$tnum for method $method."
+		return
 	}
 
 	set args [convert_args $method $args]

@@ -31,9 +31,17 @@ namespace BerkeleyDB {
         /// </summary>
         public uint Count { get { return st.st_mutex_cnt; } }
         /// <summary>
+        /// Mutex initial count 
+        /// </summary>
+        public uint InitCount { get { return st.st_mutex_init; } }
+        /// <summary>
         /// Mutexes in use 
         /// </summary>
         public uint InUse { get { return st.st_mutex_inuse; } }
+        /// <summary>
+        /// Mutex max count
+        /// </summary>
+        public uint Max { get { return st.st_mutex_max; } }
         /// <summary>
         /// Maximum mutexes ever in use 
         /// </summary>
@@ -42,6 +50,10 @@ namespace BerkeleyDB {
         /// Region lock granted without wait. 
         /// </summary>
         public ulong RegionNoWait { get { return st.st_region_nowait; } }
+        /// <summary>
+        /// Mutex region max size. 
+        /// </summary>
+        public ulong RegionMax { get { return (ulong)st.st_regmax.ToInt64(); } }
         /// <summary>
         /// Region size. 
         /// </summary>

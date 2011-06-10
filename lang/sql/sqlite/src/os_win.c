@@ -108,6 +108,7 @@ struct winFile {
   DWORD sectorSize;       /* Sector size of the device file is on */
   winShm *pShm;           /* Instance of shared memory on this file */
   const char *zPath;      /* Full pathname of this file */
+  int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_OS_WINCE
   WCHAR *zDeleteOnClose;  /* Name of file to delete when closing */
   HANDLE hMutex;          /* Mutex used to control access to shared lock */  
@@ -621,6 +622,42 @@ static BOOL winceLockFileEx(
 ******************************************************************************/
 
 /*
+** Some microsoft compilers lack this definition.
+*/
+#ifndef INVALID_SET_FILE_POINTER
+# define INVALID_SET_FILE_POINTER ((DWORD)-1)
+#endif
+
+/*
+** Move the current position of the file handle passed as the first 
+** argument to offset iOffset within the file. If successful, return 0. 
+** Otherwise, set pFile->lastErrno and return non-zero.
+*/
+static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
+  LONG upperBits;                 /* Most sig. 32 bits of new offset */
+  LONG lowerBits;                 /* Least sig. 32 bits of new offset */
+  DWORD dwRet;                    /* Value returned by SetFilePointer() */
+
+  upperBits = (LONG)((iOffset>>32) & 0x7fffffff);
+  lowerBits = (LONG)(iOffset & 0xffffffff);
+
+  /* API oddity: If successful, SetFilePointer() returns a dword 
+  ** containing the lower 32-bits of the new file-offset. Or, if it fails,
+  ** it returns INVALID_SET_FILE_POINTER. However according to MSDN, 
+  ** INVALID_SET_FILE_POINTER may also be a valid new offset. So to determine 
+  ** whether an error has actually occured, it is also necessary to call 
+  ** GetLastError().
+  */
+  dwRet = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
+  if( (dwRet==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR) ){
+    pFile->lastErrno = GetLastError();
+    return 1;
+  }
+
+  return 0;
+}
+
+/*
 ** Close a file.
 **
 ** It is reported that an attempt to close a handle might sometimes
@@ -663,13 +700,6 @@ static int winClose(sqlite3_file *id){
 }
 
 /*
-** Some microsoft compilers lack this definition.
-*/
-#ifndef INVALID_SET_FILE_POINTER
-# define INVALID_SET_FILE_POINTER ((DWORD)-1)
-#endif
-
-/*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
@@ -680,32 +710,27 @@ static int winRead(
   int amt,                   /* Number of bytes to read */
   sqlite3_int64 offset       /* Begin reading at this offset */
 ){
-  LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
-  LONG lowerBits = (LONG)(offset & 0xffffffff);
-  DWORD rc;
-  winFile *pFile = (winFile*)id;
-  DWORD error;
-  DWORD got;
+  winFile *pFile = (winFile*)id;  /* file handle */
+  DWORD nRead;                    /* Number of bytes actually read from file */
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
-  rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
-    pFile->lastErrno = error;
+
+  if( seekWinFile(pFile, offset) ){
     return SQLITE_FULL;
   }
-  if( !ReadFile(pFile->h, pBuf, amt, &got, 0) ){
+  if( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
     pFile->lastErrno = GetLastError();
     return SQLITE_IOERR_READ;
   }
-  if( got==(DWORD)amt ){
-    return SQLITE_OK;
-  }else{
+  if( nRead<(DWORD)amt ){
     /* Unread parts of the buffer must be zero-filled */
-    memset(&((char*)pBuf)[got], 0, amt-got);
+    memset(&((char*)pBuf)[nRead], 0, amt-nRead);
     return SQLITE_IOERR_SHORT_READ;
   }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -713,47 +738,42 @@ static int winRead(
 ** or some other error code on failure.
 */
 static int winWrite(
-  sqlite3_file *id,         /* File to write into */
-  const void *pBuf,         /* The bytes to be written */
-  int amt,                  /* Number of bytes to write */
-  sqlite3_int64 offset      /* Offset into the file to begin writing at */
+  sqlite3_file *id,               /* File to write into */
+  const void *pBuf,               /* The bytes to be written */
+  int amt,                        /* Number of bytes to write */
+  sqlite3_int64 offset            /* Offset into the file to begin writing at */
 ){
-  LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
-  LONG lowerBits = (LONG)(offset & 0xffffffff);
-  DWORD rc;
-  winFile *pFile = (winFile*)id;
-  DWORD error;
-  DWORD wrote = 0;
+  int rc;                         /* True if error has occured, else false */
+  winFile *pFile = (winFile*)id;  /* File handle */
 
-  assert( id!=0 );
+  assert( amt>0 );
+  assert( pFile );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
+
   OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
-  rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
-    pFile->lastErrno = error;
-    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
-      return SQLITE_FULL;
-    }else{
-      return SQLITE_IOERR_WRITE;
+
+  rc = seekWinFile(pFile, offset);
+  if( rc==0 ){
+    u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
+    int nRem = amt;               /* Number of bytes yet to be written */
+    DWORD nWrite;                 /* Bytes written by each WriteFile() call */
+
+    while( nRem>0 && WriteFile(pFile->h, aRem, nRem, &nWrite, 0) && nWrite>0 ){
+      aRem += nWrite;
+      nRem -= nWrite;
+    }
+    if( nRem>0 ){
+      pFile->lastErrno = GetLastError();
+      rc = 1;
     }
   }
-  assert( amt>0 );
-  while(
-     amt>0
-     && (rc = WriteFile(pFile->h, pBuf, amt, &wrote, 0))!=0
-     && wrote>0
-  ){
-    amt -= wrote;
-    pBuf = &((char*)pBuf)[wrote];
-  }
-  if( !rc || amt>(int)wrote ){
-    pFile->lastErrno = GetLastError();
+
+  if( rc ){
     if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
       return SQLITE_FULL;
-    }else{
-      return SQLITE_IOERR_WRITE;
     }
+    return SQLITE_IOERR_WRITE;
   }
   return SQLITE_OK;
 }
@@ -762,26 +782,32 @@ static int winWrite(
 ** Truncate an open file to a specified size
 */
 static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
-  LONG upperBits = (LONG)((nByte>>32) & 0x7fffffff);
-  LONG lowerBits = (LONG)(nByte & 0xffffffff);
-  DWORD dwRet;
-  winFile *pFile = (winFile*)id;
-  DWORD error;
-  int rc = SQLITE_OK;
+  winFile *pFile = (winFile*)id;  /* File handle object */
+  int rc = SQLITE_OK;             /* Return code for this function */
 
-  assert( id!=0 );
+  assert( pFile );
+
   OSTRACE(("TRUNCATE %d %lld\n", pFile->h, nByte));
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
-  dwRet = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( dwRet==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
-    pFile->lastErrno = error;
+
+  /* If the user has configured a chunk-size for this file, truncate the
+  ** file so that it consists of an integer number of chunks (i.e. the
+  ** actual file size after the operation may be larger than the requested
+  ** size).
+  */
+  if( pFile->szChunk ){
+    nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
+  }
+
+  /* SetEndOfFile() returns non-zero when successful, or zero when it fails. */
+  if( seekWinFile(pFile, nByte) ){
     rc = SQLITE_IOERR_TRUNCATE;
-  /* SetEndOfFile will fail if nByte is negative */
-  }else if( !SetEndOfFile(pFile->h) ){
+  }else if( 0==SetEndOfFile(pFile->h) ){
     pFile->lastErrno = GetLastError();
     rc = SQLITE_IOERR_TRUNCATE;
   }
-  OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc==SQLITE_OK ? "ok" : "failed"));
+
+  OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc ? "failed" : "ok"));
   return rc;
 }
 
@@ -1146,6 +1172,10 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = (int)((winFile*)id)->lastErrno;
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_CHUNK_SIZE: {
+      ((winFile*)id)->szChunk = *(int *)pArg;
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_SIZE_HINT: {
       sqlite3_int64 sz = *(sqlite3_int64*)pArg;
       SimulateIOErrorBenign(1);
@@ -1153,8 +1183,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       SimulateIOErrorBenign(0);
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SYNC_OMITTED: {
+      return SQLITE_OK;
+    }
   }
-  return SQLITE_ERROR;
+  return SQLITE_NOTFOUND;
 }
 
 /*
@@ -1181,6 +1214,14 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 }
 
 #ifndef SQLITE_OMIT_WAL
+
+/* 
+** Windows will only let you create file view mappings
+** on allocation size granularity boundaries.
+** During sqlite3_os_init() we do a GetSystemInfo()
+** to get the granularity size.
+*/
+SYSTEM_INFO winSysInfo;
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
@@ -1350,6 +1391,7 @@ static int winDelete(sqlite3_vfs *,const char*,int);
 static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   winShmNode **pp;
   winShmNode *p;
+  BOOL bRc;
   assert( winShmMutexHeld() );
   pp = &winShmNodeList;
   while( (p = *pp)!=0 ){
@@ -1357,8 +1399,14 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
       int i;
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
       for(i=0; i<p->nRegion; i++){
-        UnmapViewOfFile(p->aRegion[i].pMap);
-        CloseHandle(p->aRegion[i].hMap);
+        bRc = UnmapViewOfFile(p->aRegion[i].pMap);
+        OSTRACE(("SHM-PURGE pid-%d unmap region=%d %s\n",
+                 (int)GetCurrentProcessId(), i,
+                 bRc ? "ok" : "failed"));
+        bRc = CloseHandle(p->aRegion[i].hMap);
+        OSTRACE(("SHM-PURGE pid-%d close region=%d %s\n",
+                 (int)GetCurrentProcessId(), i,
+                 bRc ? "ok" : "failed"));
       }
       if( p->hFile.h != INVALID_HANDLE_VALUE ){
         SimulateIOErrorBenign(1);
@@ -1435,10 +1483,11 @@ static int winOpenSharedMemory(winFile *pDbFd){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
+
     rc = winOpen(pDbFd->pVfs,
                  pShmNode->zFilename,             /* Name of the file (UTF-8) */
                  (sqlite3_file*)&pShmNode->hFile,  /* File handle here */
-                 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, /* Mode flags */
+                 SQLITE_OPEN_WAL | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, /* Mode flags */
                  0);
     if( SQLITE_OK!=rc ){
       rc = SQLITE_CANTOPEN_BKPT;
@@ -1746,10 +1795,18 @@ static int winShmMap(
       hMap = CreateFileMapping(pShmNode->hFile.h, 
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
+      OSTRACE(("SHM-MAP pid-%d create region=%d nbyte=%d %s\n",
+               (int)GetCurrentProcessId(), pShmNode->nRegion, nByte,
+               hMap ? "ok" : "failed"));
       if( hMap ){
+        int iOffset = pShmNode->nRegion*szRegion;
+        int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
         pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
-            0, 0, nByte
+            0, iOffset - iOffsetShift, szRegion + iOffsetShift
         );
+        OSTRACE(("SHM-MAP pid-%d map region=%d offset=%d size=%d %s\n",
+                 (int)GetCurrentProcessId(), pShmNode->nRegion, iOffset, szRegion,
+                 pMap ? "ok" : "failed"));
       }
       if( !pMap ){
         pShmNode->lastErrno = GetLastError();
@@ -1766,8 +1823,10 @@ static int winShmMap(
 
 shmpage_out:
   if( pShmNode->nRegion>iRegion ){
+    int iOffset = iRegion*szRegion;
+    int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
     char *p = (char *)pShmNode->aRegion[iRegion].pMap;
-    *pp = (void *)&p[iRegion*szRegion];
+    *pp = (void *)&p[iOffsetShift];
   }else{
     *pp = 0;
   }
@@ -1994,9 +2053,60 @@ static int winOpen(
   int isTemp = 0;
 #endif
   winFile *pFile = (winFile*)id;
-  void *zConverted;                 /* Filename in OS encoding */
-  const char *zUtf8Name = zName;    /* Filename in UTF-8 encoding */
-  char zTmpname[MAX_PATH+1];        /* Buffer used to create temp filename */
+  void *zConverted;              /* Filename in OS encoding */
+  const char *zUtf8Name = zName; /* Filename in UTF-8 encoding */
+
+  /* If argument zPath is a NULL pointer, this function is required to open
+  ** a temporary file. Use this buffer to store the file name in.
+  */
+  char zTmpname[MAX_PATH+1];     /* Buffer used to create temp filename */
+
+  int rc = SQLITE_OK;            /* Function Return Code */
+#if !defined(NDEBUG) || SQLITE_OS_WINCE
+  int eType = flags&0xFFFFFF00;  /* Type of file to open */
+#endif
+
+  int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
+  int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
+  int isCreate     = (flags & SQLITE_OPEN_CREATE);
+#ifndef NDEBUG
+  int isReadonly   = (flags & SQLITE_OPEN_READONLY);
+#endif
+  int isReadWrite  = (flags & SQLITE_OPEN_READWRITE);
+
+#ifndef NDEBUG
+  int isOpenJournal = (isCreate && (
+        eType==SQLITE_OPEN_MASTER_JOURNAL 
+     || eType==SQLITE_OPEN_MAIN_JOURNAL 
+     || eType==SQLITE_OPEN_WAL
+  ));
+#endif
+
+  /* Check the following statements are true: 
+  **
+  **   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
+  **   (b) if CREATE is set, then READWRITE must also be set, and
+  **   (c) if EXCLUSIVE is set, then CREATE must also be set.
+  **   (d) if DELETEONCLOSE is set, then CREATE must also be set.
+  */
+  assert((isReadonly==0 || isReadWrite==0) && (isReadWrite || isReadonly));
+  assert(isCreate==0 || isReadWrite);
+  assert(isExclusive==0 || isCreate);
+  assert(isDelete==0 || isCreate);
+
+  /* The main DB, main journal, WAL file and master journal are never 
+  ** automatically deleted. Nor are they ever temporary files.  */
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
+
+  /* Assert that the upper layer has set one of the "file-type" flags. */
+  assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
+       || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+       || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
+  );
 
   assert( id!=0 );
   UNUSED_PARAMETER(pVfs);
@@ -2007,7 +2117,8 @@ static int winOpen(
   ** temporary file name to use 
   */
   if( !zUtf8Name ){
-    int rc = getTempname(MAX_PATH+1, zTmpname);
+    assert(isDelete && !isOpenJournal);
+    rc = getTempname(MAX_PATH+1, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2020,29 +2131,31 @@ static int winOpen(
     return SQLITE_NOMEM;
   }
 
-  if( flags & SQLITE_OPEN_READWRITE ){
+  if( isReadWrite ){
     dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
   }else{
     dwDesiredAccess = GENERIC_READ;
   }
+
   /* SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is 
   ** created. SQLite doesn't use it to indicate "exclusive access" 
   ** as it is usually understood.
   */
-  assert(!(flags & SQLITE_OPEN_EXCLUSIVE) || (flags & SQLITE_OPEN_CREATE));
-  if( flags & SQLITE_OPEN_EXCLUSIVE ){
+  if( isExclusive ){
     /* Creates a new file, only if it does not already exist. */
     /* If the file exists, it fails. */
     dwCreationDisposition = CREATE_NEW;
-  }else if( flags & SQLITE_OPEN_CREATE ){
+  }else if( isCreate ){
     /* Open existing file, or create if it doesn't exist */
     dwCreationDisposition = OPEN_ALWAYS;
   }else{
     /* Opens a file, only if it exists. */
     dwCreationDisposition = OPEN_EXISTING;
   }
+
   dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-  if( flags & SQLITE_OPEN_DELETEONCLOSE ){
+
+  if( isDelete ){
 #if SQLITE_OS_WINCE
     dwFlagsAndAttributes = FILE_ATTRIBUTE_HIDDEN;
     isTemp = 1;
@@ -2059,6 +2172,7 @@ static int winOpen(
 #if SQLITE_OS_WINCE
   dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
 #endif
+
   if( isNT() ){
     h = CreateFileW((WCHAR*)zConverted,
        dwDesiredAccess,
@@ -2084,26 +2198,30 @@ static int winOpen(
     );
 #endif
   }
+
   OSTRACE(("OPEN %d %s 0x%lx %s\n", 
            h, zName, dwDesiredAccess, 
            h==INVALID_HANDLE_VALUE ? "failed" : "ok"));
+
   if( h==INVALID_HANDLE_VALUE ){
     pFile->lastErrno = GetLastError();
     free(zConverted);
-    if( flags & SQLITE_OPEN_READWRITE ){
+    if( isReadWrite ){
       return winOpen(pVfs, zName, id, 
-             ((flags|SQLITE_OPEN_READONLY)&~SQLITE_OPEN_READWRITE), pOutFlags);
+             ((flags|SQLITE_OPEN_READONLY)&~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)), pOutFlags);
     }else{
       return SQLITE_CANTOPEN_BKPT;
     }
   }
+
   if( pOutFlags ){
-    if( flags & SQLITE_OPEN_READWRITE ){
+    if( isReadWrite ){
       *pOutFlags = SQLITE_OPEN_READWRITE;
     }else{
       *pOutFlags = SQLITE_OPEN_READONLY;
     }
   }
+
   memset(pFile, 0, sizeof(*pFile));
   pFile->pMethod = &winIoMethod;
   pFile->h = h;
@@ -2112,9 +2230,9 @@ static int winOpen(
   pFile->pShm = 0;
   pFile->zPath = zName;
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
+
 #if SQLITE_OS_WINCE
-  if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
-               (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)
+  if( isReadWrite && eType==SQLITE_OPEN_MAIN_DB
        && !winceCreateLock(zName, pFile)
   ){
     CloseHandle(h);
@@ -2128,8 +2246,9 @@ static int winOpen(
   {
     free(zConverted);
   }
+
   OpenCounter(+1);
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2627,7 +2746,7 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 */
 int sqlite3_os_init(void){
   static sqlite3_vfs winVfs = {
-    2,                   /* iVersion */
+    3,                   /* iVersion */
     sizeof(winFile),     /* szOsFile */
     MAX_PATH,            /* mxPathname */
     0,                   /* pNext */
@@ -2646,7 +2765,17 @@ int sqlite3_os_init(void){
     winCurrentTime,      /* xCurrentTime */
     winGetLastError,     /* xGetLastError */
     winCurrentTimeInt64, /* xCurrentTimeInt64 */
+    0,                   /* xSetSystemCall */
+    0,                   /* xGetSystemCall */
+    0,                   /* xNextSystemCall */
   };
+
+#ifndef SQLITE_OMIT_WAL
+  /* get memory map allocation granularity */
+  memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
+  GetSystemInfo(&winSysInfo);
+  assert(winSysInfo.dwAllocationGranularity > 0);
+#endif
 
   sqlite3_vfs_register(&winVfs, 1);
   return SQLITE_OK; 

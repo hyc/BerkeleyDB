@@ -15,8 +15,9 @@ a host in a replication group.
 The ReplicationHostAddress can be used to refer to the current
 site, or to a remote site in the replication group.
 <p>
-Used in the {@link com.sleepycat.db.EnvironmentConfig#replicationManagerAddRemoteSite EnvironmentConfig.replicationManagerAddRemoteSite}
-and the {@link com.sleepycat.db.EnvironmentConfig#setReplicationManagerLocalSite EnvironmentConfig.setReplicationManagerLocalSite}
+Used in the {@link com.sleepycat.db.ReplicationManagerSiteConfig#setAddress ReplicationManagerSiteConfig.setAddress}, 
+{@link com.sleepycat.db.ReplicationManagerSiteConfig#getAddress ReplicationManagerSiteConfig.getAddress}
+and the {@link com.sleepycat.db.ReplicationManagerSite#getAddress ReplicationManagerSite.getAddress}
 methods.
 **/
 public class ReplicationHostAddress {

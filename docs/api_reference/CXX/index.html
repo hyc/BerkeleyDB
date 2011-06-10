@@ -10,7 +10,10 @@
     <link rel="next" href="preface.html" title="Preface" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Berkeley DB C++ API Reference</th>
@@ -27,7 +30,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h1 class="title"><a id="idm498872"></a>Berkeley DB C++ API Reference</h1>
+            <h1 class="title"><a id="id2746466"></a>Berkeley DB C++ API Reference</h1>
           </div>
           <div class="navtable">
             <table border="1" width="80%">
@@ -58,15 +61,21 @@
                 </tr>
                 <tr>
                   <td>
-                    <a class="xref" href="dbcreate.html" title="Db">Db</a>
-                  </td>
-                  <td>Create a database handle</td>
-                </tr>
-                <tr>
-                  <td>
                     <a class="xref" href="dbcompact.html" title="Db::compact()">Db::compact()</a>
                   </td>
                   <td>Compact a database</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="db_copy.html" title="db_copy">db_copy</a>
+                  </td>
+                  <td>Copy a named database to a target directory</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbcreate.html" title="Db">Db</a>
+                  </td>
+                  <td>Create a database handle</td>
                 </tr>
                 <tr>
                   <td>
@@ -267,6 +276,10 @@
                   <td>Set/get the Hash table size</td>
                 </tr>
                 <tr>
+                  <td><a class="xref" href="dbset_heapsize.html" title="Db::set_heapsize()">Db::set_heapsize()</a>, <a class="xref" href="dbget_heapsize.html" title="Db::get_heapsize()">Db::get_heapsize()</a></td>
+                  <td>Set/get the database heap size</td>
+                </tr>
+                <tr>
                   <td><a class="xref" href="dbset_lorder.html" title="Db::set_lorder()">Db::set_lorder()</a>, <a class="xref" href="dbget_lorder.html" title="Db::get_lorder()">Db::get_lorder()</a></td>
                   <td>Set/get the database byte order</td>
                 </tr>
@@ -359,6 +372,12 @@
                     <a class="xref" href="dbverify.html" title="Db::verify()">Db::verify()</a>
                   </td>
                   <td>Verify/salvage a database</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="db_heap_rid.html" title="DbHeapRecordId">DbHeapRecordId</a>
+                  </td>
+                  <td></td>
                 </tr>
                 <tr>
                   <td>
@@ -627,6 +646,14 @@
                   <td>Set thread is-alive callback</td>
                 </tr>
                 <tr>
+                  <td><a class="xref" href="envset_memory_init.html" title="DbEnv::set_memory_init()">DbEnv::set_memory_init()</a>, <a class="xref" href="envget_memory_init.html" title="DbEnv::get_memory_init()">DbEnv::get_memory_init()</a></td>
+                  <td>Set/get initial memory allocation</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="envset_memory_max.html" title="DbEnv::set_memory_max()">DbEnv::set_memory_max()</a>, <a class="xref" href="envget_memory_max.html" title="DbEnv::get_memory_max()">DbEnv::get_memory_max()</a></td>
+                  <td>Set/get maximum memory allocation</td>
+                </tr>
+                <tr>
                   <td>
                     <a class="xref" href="envset_message_stream.html" title="DbEnv::set_message_stream()">DbEnv::set_message_stream()</a>
                   </td>
@@ -749,6 +776,10 @@
                 <tr>
                   <td><a class="xref" href="envset_lk_priority.html" title="DbEnv::set_lk_priority()">DbEnv::set_lk_priority()</a>, <a class="xref" href="envget_lk_priority.html" title="DbEnv::get_lk_priority()">DbEnv::get_lk_priority()</a></td>
                   <td>Set/get a locker's deadlock priority</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="envset_lk_tablesize.html" title="DbEnv::set_lk_tablesize()">DbEnv::set_lk_tablesize()</a>, <a class="xref" href="envget_lk_tablesize.html" title="DbEnv::get_lk_tablesize()">DbEnv::get_lk_tablesize()</a></td>
+                  <td>Set/get size of the lock object hash table</td>
                 </tr>
                 <tr>
                   <td>
@@ -1059,6 +1090,10 @@
                   <td>Configure number of additional mutexes</td>
                 </tr>
                 <tr>
+                  <td><a class="xref" href="mutexset_init.html" title="DbEnv::mutex_set_init()">DbEnv::mutex_set_init()</a>, <a class="xref" href="mutexget_init.html" title="DbEnv::mutex_get_init()">DbEnv::mutex_get_init()</a></td>
+                  <td>Configure initial number of mutexes</td>
+                </tr>
+                <tr>
                   <td><a class="xref" href="mutexset_max.html" title="DbEnv::mutex_set_max()">DbEnv::mutex_set_max()</a>, <a class="xref" href="mutexget_max.html" title="DbEnv::mutex_get_max()">DbEnv::mutex_get_max()</a></td>
                   <td>Configure total number of mutexes</td>
                 </tr>
@@ -1083,6 +1118,58 @@
                     <a class="xref" href="mutexunlock.html" title="DbEnv::mutex_unlock()">DbEnv::mutex_unlock()</a>
                   </td>
                   <td>Unlock a mutex</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbchannel_close.html" title="DbChannel::close()">DbChannel::close()</a>
+                  </td>
+                  <td>Closes a DB_CHANNEL handle</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbchannel_send_msg.html" title="DbChannel::send_msg()">DbChannel::send_msg()</a>
+                  </td>
+                  <td>Sends an asynchronous message on a DB_CHANNEL</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbchannel_send_request.html" title="DbChannel::send_request()">DbChannel::send_request()</a>
+                  </td>
+                  <td>Sends a synchronous message on a DB_CHANNEL</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbchannel_set_timeout.html" title="DbChannel::set_timeout()">DbChannel::set_timeout()</a>
+                  </td>
+                  <td>Sets the default timeout for the DB_CHANNEL</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbsite_close.html" title="DbSite::close()">DbSite::close()</a>
+                  </td>
+                  <td>Closes the DB_SITE handle</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbsite_get_address.html" title="DbSite::get_address()">DbSite::get_address()</a>
+                  </td>
+                  <td>Returns a site's network address</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbsite_get_eid.html" title="DbSite::get_eid()">DbSite::get_eid()</a>
+                  </td>
+                  <td>Returns a site's Environment ID</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbsite_remove.html" title="DbSite::remove()">DbSite::remove()</a>
+                  </td>
+                  <td>Removes the site from the replication group</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="dbsite_set_config.html" title="DbSite::set_config()">DbSite::set_config()</a>, <a class="xref" href="dbsite_get_config.html" title="DbSite::get_config()">DbSite::get_config()</a></td>
+                  <td>Configure a DB_SITE handle</td>
                 </tr>
                 <tr>
                   <td>
@@ -1156,17 +1243,37 @@
                 </tr>
                 <tr>
                   <td>
-                    <a class="xref" href="repmgrremote_site.html" title="DbEnv::repmgr_add_remote_site()">DbEnv::repmgr_add_remote_site()</a>
+                    <a class="xref" href="repmgr_channel.html" title="DbEnv::repmgr_channel()">DbEnv::repmgr_channel()</a>
                   </td>
-                  <td>Specify the Replication Manager's remote sites</td>
+                  <td>Creates a DB_CHANNEL handle</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="repmgr_local_site.html" title="DbEnv::repmgr_local_site()">DbEnv::repmgr_local_site()</a>
+                  </td>
+                  <td>Returns a DB_SITE handle for the local site</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="repmgr_msg_dispatch.html" title="DbEnv::repmgr_msg_dispatch()">DbEnv::repmgr_msg_dispatch()</a>
+                  </td>
+                  <td>Creates a DB_CHANNEL handle</td>
                 </tr>
                 <tr>
                   <td><a class="xref" href="repmgrset_ack_policy.html" title="DbEnv::repmgr_set_ack_policy()">DbEnv::repmgr_set_ack_policy()</a>, <a class="xref" href="repmgrget_ack_policy.html" title="DbEnv::repmgr_get_ack_policy()">DbEnv::repmgr_get_ack_policy()</a></td>
                   <td>Specify the Replication Manager's client acknowledgement policy</td>
                 </tr>
                 <tr>
-                  <td><a class="xref" href="repmgrlocal_site.html" title="DbEnv::repmgr_set_local_site()">DbEnv::repmgr_set_local_site()</a>, <a class="xref" href="repmgrget_local_site.html" title="DbEnv::repmgr_get_local_site()">DbEnv::repmgr_get_local_site()</a></td>
-                  <td>Specify the Replication Manager's local site</td>
+                  <td>
+                    <a class="xref" href="repmgr_site.html" title="DbEnv::repmgr_site()">DbEnv::repmgr_site()</a>
+                  </td>
+                  <td>Creates a DB_SITE handle</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="repmgr_site_by_eid.html" title="DbEnv::repmgr_site_by_eid()">DbEnv::repmgr_site_by_eid()</a>
+                  </td>
+                  <td>Creates a DB_SITE handle given an EID value</td>
                 </tr>
                 <tr>
                   <td>
@@ -1450,6 +1557,12 @@
                 </tr>
                 <tr>
                   <td>
+                    <a class="xref" href="db_tuner.html" title="db_tuner">db_tuner</a>
+                  </td>
+                  <td>Suggest a page size for optimal operation in a btree database</td>
+                </tr>
+                <tr>
+                  <td>
                     <a class="xref" href="db_upgrade.html" title="db_upgrade">db_upgrade</a>
                   </td>
                   <td>Database upgrade utility</td>
@@ -1465,6 +1578,12 @@
                     <a class="xref" href="sqlite3.html" title="sqlite3">sqlite3</a>
                   </td>
                   <td>Command line tool for wrapper library libsqlite3</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="add_data_dir_parameter.html" title="add_data_dir">add_data_dir</a>
+                  </td>
+                  <td>Sets the mutex alignment.</td>
                 </tr>
                 <tr>
                   <td>
@@ -1534,21 +1653,15 @@
                 </tr>
                 <tr>
                   <td>
-                    <a class="xref" href="repmgr_add_remote_site_parameter.html" title="repmgr_add_remote_site">repmgr_add_remote_site</a>
-                  </td>
-                  <td>Adds a new replication site to the list of known sites.</td>
-                </tr>
-                <tr>
-                  <td>
                     <a class="xref" href="repmgr_set_ack_policy_parameter.html" title="repmgr_set_ack_policy">repmgr_set_ack_policy</a>
                   </td>
                   <td>Specifies how master and client sites     will handle acknowledgment.</td>
                 </tr>
                 <tr>
                   <td>
-                    <a class="xref" href="repmgr_set_local_site_parameter.html" title="repmgr_set_local_site">repmgr_set_local_site</a>
+                    <a class="xref" href="repmgr_site_parameter.html" title="repmgr_site">repmgr_site</a>
                   </td>
-                  <td>Specifies the host identification string and port number.</td>
+                  <td>Identifies a Replication Manager host.</td>
                 </tr>
                 <tr>
                   <td>
@@ -1711,14 +1824,14 @@
           </div>
           <div>
             <div class="legalnotice">
-              <a id="idp49447896"></a>
+              <a id="id3576450"></a>
               <p class="legalnotice-title">
                 <b>Legal Notice</b>
               </p>
               <p>
         This documentation is distributed under an open source license.
         You may review the terms of this license at:
-        <a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/license/license_db.html" target="_top">http://download.oracle.com/docs/cd/E17076_02/html/license/license_db.html</a>
+        <a class="ulink" href="http://www.oracle.com/technetwork/database/berkeleydb/downloads/oslicense-093458.html" target="_top">http://www.oracle.com/technetwork/database/berkeleydb/downloads/oslicense-093458.html</a>
         
         
     </p>
@@ -1745,7 +1858,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">10/25/2011</p>
+            <p class="pubdate">6/10/2011</p>
           </div>
         </div>
         <hr />

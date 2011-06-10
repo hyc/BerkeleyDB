@@ -26,7 +26,8 @@ namespace CsharpAPITest
 		private EventWaitHandle signal;
 
 		private delegate void CursorMoveFuncDelegate(
-		    Cursor cursor, LockingInfo lockingInfo);
+		    Cursor cursor, uint kOffset, uint kLen, 
+		    uint dOffset, uint dLen, LockingInfo lockingInfo);
 		private CursorMoveFuncDelegate cursorFunc;
 
 		[TestFixtureSetUp]
@@ -124,6 +125,9 @@ namespace CsharpAPITest
 		[Test]
 		public void TestCloseResmgr()
 		{
+			testName = "TestCloseResmgr";
+			SetUpTest(true);
+
 			TestCloseResmgr_int(true);
 			TestCloseResmgr_int(false);
 		}
@@ -139,8 +143,6 @@ namespace CsharpAPITest
 			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
 
 			txn = null;
-			testName = "TestCloseResmgr";
-			SetUpTest(true);
 
 			cursorConfig = new CursorConfig();
 			// Open an environment, a database and a cursor.
@@ -407,11 +409,12 @@ namespace CsharpAPITest
 			DatabaseEntry data = new DatabaseEntry(
 			    BitConverter.GetBytes((int)0));
 			KeyValuePair<DatabaseEntry, DatabaseEntry> pair =
-			    new KeyValuePair<DatabaseEntry,DatabaseEntry>(key, data);
+			    new KeyValuePair<DatabaseEntry,DatabaseEntry>(
+			    key, data);
 			cursor.Add(pair);
 
 			// Move the cursor exactly to the specified key.
-			MoveCursor(cursor, false);
+			MoveCursor(cursor, 1, 1, 2, 2, null);
 			cursor.Close();
 			db.Close();	
 		}
@@ -439,7 +442,7 @@ namespace CsharpAPITest
 			cursor.Add(pair);
 
 			// Move the cursor exactly to the specified key/data pair.
-			MoveCursor(cursor, true);
+			MoveCursor(cursor, 1, 1, 2, 2, null);
 			cursor.Close();
 			db.Close();	
 			
@@ -472,7 +475,7 @@ namespace CsharpAPITest
 			AddOneByCursor(db, cursor);
 
 			// Move to the first record.
-			MoveCursorToFirst(cursor, null);
+			MoveCursorToFirst(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -505,7 +508,7 @@ namespace CsharpAPITest
 			AddOneByCursor(db, cursor);
 
 			// Move the cursor to the last record.
-			MoveCursorToLast(cursor, null);
+			MoveCursorToLast(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -529,7 +532,6 @@ namespace CsharpAPITest
 		{
 			BTreeDatabase db;
 			BTreeCursor cursor;
-			int cnt;
 
 			testName = "TestMoveNext";
 			SetUpTest(true);
@@ -543,12 +545,8 @@ namespace CsharpAPITest
 				    new DatabaseEntry(BitConverter.GetBytes(i)));
 
 			// Move the cursor from the first record to the fifth.
-			MoveCursorToNext(cursor, null);
+			MoveCursorToNext(cursor, 1, 1, 2, 2, null);
 
-			cnt = 0;
-			foreach (KeyValuePair<DatabaseEntry, DatabaseEntry> pair in cursor)
-				cnt++;
-			Assert.AreEqual(cnt, 5);
 			cursor.Close();
 			db.Close();
 		}
@@ -593,7 +591,7 @@ namespace CsharpAPITest
 			 * Move the cursor from one duplicate record to
 			 * another duplicate one.
 			 */ 
-			MoveCursorToNextDuplicate(cursor, null);
+			MoveCursorToNextDuplicate(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -639,7 +637,7 @@ namespace CsharpAPITest
 				     BitConverter.GetBytes(i)));
 
 			// Move to five unique records.
-			MoveCursorToNextUnique(cursor, null);
+			MoveCursorToNextUnique(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -681,7 +679,7 @@ namespace CsharpAPITest
 				AddOneByCursor(db, cursor);
 
 			// Move the cursor to previous five records
-			MoveCursorToPrev(cursor, null);
+			MoveCursorToPrev(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -721,7 +719,7 @@ namespace CsharpAPITest
 				AddOneByCursor(db, cursor);
 
 			// Move the cursor to previous duplicate records.
-			MoveCursorToPrevDuplicate(cursor, null);
+			MoveCursorToPrevDuplicate(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -762,7 +760,7 @@ namespace CsharpAPITest
 				    new DatabaseEntry(BitConverter.GetBytes(i)));
 
 			// Move the cursor to previous unique records.
-			MoveCursorToPrevUnique(cursor, null);
+			MoveCursorToPrevUnique(cursor, 1, 1, 2, 2, null);
 
 			cursor.Close();
 			db.Close();
@@ -783,6 +781,54 @@ namespace CsharpAPITest
 
 			// Read the previous unique record in write lock.
 			MoveWithRMW(testHome, testName);
+		}
+
+		[Test]
+		public void TestPartialPut() 
+		{
+			testName = "TestPartialPut";
+			SetUpTest(true);
+
+			BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
+			cfg.Creation = CreatePolicy.IF_NEEDED;
+			BTreeDatabase db = BTreeDatabase.Open(
+			    testHome + "/" + testName, cfg);
+			PopulateDb(ref db);
+
+			/*
+			 * Partially replace the first byte in the current
+			 * data with 'a', and verify that the first byte in 
+			 * the retrieved current data is 'a'.
+			 */
+			BTreeCursor cursor = db.Cursor();
+			byte[] bytes = new byte[1];
+			bytes[0] = (byte)'a';
+			DatabaseEntry data = new DatabaseEntry(bytes, 0, 1);
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			while(cursor.MoveNext()) {
+				cursor.Overwrite(data);
+				Assert.IsTrue(cursor.Refresh());
+				pair = cursor.Current;
+				Assert.AreEqual((byte)'a', pair.Value.Data[0]);
+			}
+
+			cursor.Close();
+			db.Close();
+		}
+
+		private void PopulateDb(ref BTreeDatabase db) 
+		{
+			if (db == null) {
+				BTreeDatabaseConfig cfg =
+				    new BTreeDatabaseConfig();
+				cfg.Creation = CreatePolicy.IF_NEEDED;
+				db = BTreeDatabase.Open(
+				    testHome + "/" + testName, cfg);
+			}
+			for (int i = 0; i < 100; i++)
+				db.Put(
+				    new DatabaseEntry(BitConverter.GetBytes(i)), 
+				    new DatabaseEntry(BitConverter.GetBytes(i)));
 		}
 
 		[Test]
@@ -873,7 +919,7 @@ namespace CsharpAPITest
 			GetCursorInBtreeDBWithoutEnv(testHome, testName,
 			    out db, out cursor);
 			// Write a record with cursor and Refresh the cursor.
-			MoveCursorToCurrentRec(cursor, null);
+			MoveCursorToCurrentRec(cursor, 1, 1, 2, 2, null);
 			cursor.Dispose();
 			db.Dispose();
 
@@ -882,8 +928,7 @@ namespace CsharpAPITest
 			    out db, out cursor, out txn);
 			LockingInfo lockingInfo = new LockingInfo();
 			lockingInfo.IsolationDegree = Isolation.DEGREE_ONE;
-			MoveCursorToCurrentRec(cursor, lockingInfo);
-			Assert.AreEqual(cursor.Current.Key.Data, ASCIIEncoding.ASCII.GetBytes("key"));
+			MoveCursorToCurrentRec(cursor, 1, 1, 2, 2, lockingInfo);
 			cursor.Close();
 			txn.Commit();
 			db.Close();
@@ -1278,7 +1323,7 @@ namespace CsharpAPITest
 				lck.ReadModifyWrite = true;
 
 				// Read record.
-				cursorFunc(dbc, lck);
+				cursorFunc(dbc, 1, 1, 2, 2, lck);
 
 				// Block the current thread until event is set.
 				signal.WaitOne();
@@ -1334,15 +1379,15 @@ namespace CsharpAPITest
 			 * records into database.
 			 */ 
 			Transaction txn = paramEnv.BeginTransaction();
-			for (int i = 0; i < 13; i++)
+			for (int i = 0; i < 14; i++)
 			{
 				DatabaseEntry key, data;
-				if (i == 10 || i == 11)
+				if (i == 10 || i == 11 || i == 12)
 				{
 					key = new DatabaseEntry(
 					    ASCIIEncoding.ASCII.GetBytes("key"));
 					data = new DatabaseEntry(
-					    ASCIIEncoding.ASCII.GetBytes("data"));
+					    BitConverter.GetBytes(i));
 				}
 				else
 				{
@@ -1399,32 +1444,13 @@ namespace CsharpAPITest
 		}
 
 		/*
-		 * Move the cursor to an exisiting key or key/data pair.
-		 */ 
-		public void MoveCursor(Cursor dbc, bool ifPair)
-		{
-			DatabaseEntry key, data;
-			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
-
-			key = new DatabaseEntry(
-			    BitConverter.GetBytes((int)0));
-			if (ifPair == false)
-				Assert.IsTrue(dbc.Move(key, true));
-			else
-			{
-				data = new DatabaseEntry(
-				    BitConverter.GetBytes((int)0));
-				pair = new KeyValuePair<DatabaseEntry,
-				    DatabaseEntry>(key, data);
-				Assert.IsTrue(dbc.Move(pair, true));
-			}
-		}
-
-		/*
 		 * Move the cursor to an exisiting key and key/data 
 		 * pair with LockingInfo.
 		 */
-		public void MoveCursor(Cursor dbc, LockingInfo lck)
+		public void MoveCursor(Cursor dbc,
+		    uint kOffset, uint kLen,
+		    uint dOffset, uint dLen,
+		    LockingInfo lck)
 		{
 			DatabaseEntry key, data;
 			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
@@ -1436,35 +1462,101 @@ namespace CsharpAPITest
 			pair = new KeyValuePair<DatabaseEntry,
 			    DatabaseEntry>(key, data);
 
-			// Move to an existing key.
-			Assert.IsTrue(dbc.Move(key, true, lck));
+			if (lck == null) {
+				// Move to an existing key.
+				Assert.IsTrue(dbc.Move(key, true));
 
-			// Move to an existing key/data pair.
-			Assert.IsTrue(dbc.Move(pair, true, lck));
+				// Move to an existing key/data pair.
+				Assert.IsTrue(dbc.Move(pair, true));
+
+				/* Move to an existing key, and return 
+				 * partial data.
+				 */
+				data = new DatabaseEntry(dOffset, dLen);
+				Assert.IsTrue(dbc.Move(key, data, true));
+				CheckPartial(null, 0, 0, 
+				    dbc.Current.Value, dOffset, dLen);
+
+				// Partially key match.
+				byte[] partbytes = new byte[kLen];
+				for (int i = 0; i < kLen; i++)
+				partbytes[i] = BitConverter.GetBytes(
+				    (int)1)[kOffset + i];
+				key = new DatabaseEntry(partbytes, kOffset, kLen);
+				Assert.IsTrue(dbc.Move(key, false));
+				Assert.AreEqual(kLen, dbc.Current.Key.Data.Length);
+				CheckPartial(dbc.Current.Key, kOffset, kLen,
+				    null, 0, 0);
+			} else {
+				// Move to an existing key.
+				Assert.IsTrue(dbc.Move(key, true, lck));
+
+				// Move to an existing key/data pair.
+				Assert.IsTrue(dbc.Move(pair, true, lck));
+
+				/*
+				 * Move to an existing key, and return
+				 * partial data.
+				 */
+				data = new DatabaseEntry(dOffset, dLen);
+				Assert.IsTrue(dbc.Move(key, data, true, lck));
+				CheckPartial(null, 0, 0,
+				    dbc.Current.Value, dOffset, dLen);
+
+				// Partially key match.
+				byte[] partbytes = new byte[kLen];
+				for (int i = 0; i < kLen; i++)
+					partbytes[i] = BitConverter.GetBytes(
+					    (int)1)[kOffset + i];
+				key = new DatabaseEntry(partbytes, kOffset, kLen);
+				Assert.IsTrue(dbc.Move(key, false, lck));
+				Assert.AreEqual(kLen, dbc.Current.Key.Data.Length);
+				CheckPartial(dbc.Current.Key, kOffset, kLen,
+				    null, 0, 0);
+			}
 		}
 
 		/*
 		 * Move the cursor to the first record in a nonempty 
 		 * database. The returning value should be true.
 		 */
-		public void MoveCursorToFirst(Cursor dbc, LockingInfo lck)
+		public void MoveCursorToFirst(Cursor dbc, 
+		    uint kOffset, uint kLen,
+		    uint dOffset, uint dLen, LockingInfo lck)
 		{
-			if (lck == null)
+			DatabaseEntry key = new DatabaseEntry(kOffset, kLen);
+			DatabaseEntry data = new DatabaseEntry(dOffset, dLen);
+			if (lck == null) {
 				Assert.IsTrue(dbc.MoveFirst());
-			else
+				Assert.IsTrue(dbc.MoveFirst(key, data));
+			} else {
 				Assert.IsTrue(dbc.MoveFirst(lck));
+				Assert.IsTrue(dbc.MoveFirst(key, data, lck));
+			}
+
+			CheckPartial(dbc.Current.Key, kOffset, kLen,
+			    dbc.Current.Value, dOffset, dLen);
 		}
 
 		/*
 		 * Move the cursor to last record in a nonempty 
 		 * database. The returning value should be true.
 		 */
-		public void MoveCursorToLast(Cursor dbc, LockingInfo lck)
+		public void MoveCursorToLast(Cursor dbc,
+		    uint kOffset, uint kLen,
+		    uint dOffset, uint dLen, LockingInfo lck)
 		{
-			if (lck == null)
+			DatabaseEntry key = new DatabaseEntry(kOffset, kLen);
+			DatabaseEntry data = new DatabaseEntry(dOffset, dLen);
+			if (lck == null) {
 				Assert.IsTrue(dbc.MoveLast());
-			else
+				Assert.IsTrue(dbc.MoveLast(key, data));
+			} else {
 				Assert.IsTrue(dbc.MoveLast(lck));
+				Assert.IsTrue(dbc.MoveLast(key, data, lck));
+			}
+			CheckPartial(dbc.Current.Key, kOffset, kLen,
+			    dbc.Current.Value, dOffset, dLen);
 		}
 
 		/*
@@ -1472,13 +1564,24 @@ namespace CsharpAPITest
 		 * with more than five records. The returning values of 
 		 * every move operation should be true.
 		 */ 
-		public void MoveCursorToNext(Cursor dbc, LockingInfo lck)
+		public void MoveCursorToNext(Cursor dbc,
+		    uint kOffset, uint kLen,
+		    uint dOffset, uint dLen, LockingInfo lck)
 		{
-			for (int i = 0; i < 5; i++)
-				if (lck == null)
+			DatabaseEntry key = new DatabaseEntry(kOffset, kLen);
+			DatabaseEntry data = new DatabaseEntry(dOffset, dLen);
+			for (int i = 0; i < 5; i++) {
+				if (lck == null) {
 					Assert.IsTrue(dbc.MoveNext());
-				else
+					Assert.IsTrue(dbc.MoveNext(key, data));
+				} else {
 					Assert.IsTrue(dbc.MoveNext(lck));
+					Assert.IsTrue(
+					    dbc.MoveNext(key, data, lck));
+				}
+				CheckPartial(dbc.Current.Key, kOffset, kLen,
+				    dbc.Current.Value, dOffset, dLen);
+			}
 		}
 
 		/*
@@ -1486,8 +1589,9 @@ namespace CsharpAPITest
 		 * the database which has more than 2 duplicate 
 		 * records. The returning value should be true.
 		 */ 
-		public void MoveCursorToNextDuplicate(Cursor dbc, 
-		    LockingInfo lck)
+		public void MoveCursorToNextDuplicate(Cursor dbc,
+		    uint kOffset, uint kLen,
+		    uint dOffset, uint dLen, LockingInfo lck)
 		{
 			DatabaseEntry key = new DatabaseEntry(
 			    ASCIIEncoding.ASCII.GetBytes("key"));
@@ -1497,13 +1601,13 @@ namespace CsharpAPITest
 			 * database before it move to the next duplicate 
 			 * record.
 			 */
-			if (lck == null)
-			{
+			if (lck == null) {
 				dbc.Move(key, true);
 				Assert.IsTrue(dbc.MoveNextDuplicate());
-			}
-			else
-			{
+				Assert.IsTrue(dbc.MoveNextDuplicate(
+				    new DatabaseEntry(kOffset, kLen),
+				    new DatabaseEntry(dOffset, dLen)));
+			} else {
 				/*
 				 * Both the move and move next duplicate 
 				 * operation should use LockingInfo. If any 
@@ -1512,6 +1616,9 @@ namespace CsharpAPITest
 				 */ 
 				dbc.Move(key, true, lck);
 				Assert.IsTrue(dbc.MoveNextDuplicate(lck));
+				Assert.IsTrue(dbc.MoveNextDuplicate(
+				    new DatabaseEntry(kOffset, kLen),
+				    new DatabaseEntry(dOffset, dLen), lck));
 			}
 		}
 
@@ -1519,15 +1626,25 @@ namespace CsharpAPITest
 		 * Move the cursor to next unique record in the database.
 		 * The returning value should be true.
 		 */
-		public void MoveCursorToNextUnique(Cursor dbc, 
-		    LockingInfo lck)
+		public void MoveCursorToNextUnique(Cursor dbc,
+		uint kOffset, uint kLen,
+		uint dOffset, uint dLen, LockingInfo lck)
 		{
-			for (int i = 0; i < 5; i++)
-			{
-				if (lck == null)
+			for (int i = 0; i < 5; i++) {
+				if (lck == null) {
 					Assert.IsTrue(dbc.MoveNextUnique());
-				else
+					Assert.IsTrue(dbc.MoveNextUnique(
+					    new DatabaseEntry(kOffset, kLen),
+					    new DatabaseEntry(dOffset, dLen)));
+				} else {
 					Assert.IsTrue(dbc.MoveNextUnique(lck));
+					Assert.IsTrue(dbc.MoveNextUnique(
+					    new DatabaseEntry(kOffset, kLen),
+					    new DatabaseEntry(dOffset, dLen),
+					    lck));
+				}
+				CheckPartial(dbc.Current.Key, kOffset, kLen,
+				    dbc.Current.Value, dOffset, dLen);
 			}
 		}
 
@@ -1535,22 +1652,36 @@ namespace CsharpAPITest
 		 * Move the cursor to previous record in the database.
 		 * The returning value should be true;
 		 */ 
-		public void MoveCursorToPrev(Cursor dbc, 
-		    LockingInfo lck)
+		public void MoveCursorToPrev(Cursor dbc,
+		uint kOffset, uint kLen,
+		uint dOffset, uint dLen, LockingInfo lck)
 		{
-			if (lck == null)
-			{
+			if (lck == null) {
 				dbc.MoveLast();
-				for (int i = 0; i < 5; i++)
+				for (int i = 0; i < 5; i++) {
 					Assert.IsTrue(dbc.MovePrev());
-			}
-			else
-			{
+					dbc.MoveNext();
+					Assert.IsTrue(dbc.MovePrev(
+					    new DatabaseEntry(kOffset, kLen),
+					    new DatabaseEntry(dOffset, dLen)));
+					CheckPartial(
+					    dbc.Current.Key, kOffset, kLen,
+					    dbc.Current.Value, dOffset, dLen);
+				}
+			} else {
 				dbc.MoveLast(lck);
-				for (int i = 0; i < 5; i++)
+				for (int i = 0; i < 5; i++) {
 					Assert.IsTrue(dbc.MovePrev(lck));
+					dbc.MoveNext();
+					Assert.IsTrue(dbc.MovePrev(
+					    new DatabaseEntry(kOffset, kLen),
+					    new DatabaseEntry(dOffset, dLen),
+					    lck));
+					CheckPartial(
+					    dbc.Current.Key, kOffset, kLen,
+					    dbc.Current.Value, dOffset, dLen);
+				}
 			}
-			
 		}
 
 		/*
@@ -1560,23 +1691,40 @@ namespace CsharpAPITest
 		 * value of move previous duplicate record should be 
 		 * true;
 		 */ 
-		public void MoveCursorToPrevDuplicate(Cursor dbc, 
-		    LockingInfo lck)
+		public void MoveCursorToPrevDuplicate(Cursor dbc,
+		uint kOffset, uint kLen,
+		uint dOffset, uint dLen, LockingInfo lck)
 		{
-			if (lck == null)
-			{
+			if (lck == null) {
 				dbc.Move(new DatabaseEntry(
 				    ASCIIEncoding.ASCII.GetBytes("key")), true);
 				dbc.MoveNextDuplicate();
 				Assert.IsTrue(dbc.MovePrevDuplicate());
-			}
-			else
-			{
+
 				dbc.Move(new DatabaseEntry(
-				    ASCIIEncoding.ASCII.GetBytes("key")),true, lck);
+				    ASCIIEncoding.ASCII.GetBytes("key")), true);
+				dbc.MoveNextDuplicate();
+				Assert.IsTrue(dbc.MovePrevDuplicate(
+				    new DatabaseEntry(kOffset, kLen),
+				    new DatabaseEntry(dOffset, dLen)));
+			} else {
+				dbc.Move(new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes("key")),
+				    true, lck);
 				dbc.MoveNextDuplicate(lck);
 				Assert.IsTrue(dbc.MovePrevDuplicate(lck));
+
+				dbc.Move(new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes("key")), 
+				    true, lck);
+				dbc.MoveNextDuplicate(lck);
+				Assert.IsTrue(dbc.MovePrevDuplicate(
+				    new DatabaseEntry(kOffset, kLen),
+				    new DatabaseEntry(dOffset, dLen), lck));
 			}
+
+		CheckPartial(dbc.Current.Key, kOffset, kLen,
+		    dbc.Current.Value, dOffset, dLen);
 		}
 
 		/*
@@ -1584,36 +1732,81 @@ namespace CsharpAPITest
 		 * database with more than 2 records. The returning
 		 * value should be true.
 		 */ 
-		public void MoveCursorToPrevUnique(Cursor dbc, 
-		    LockingInfo lck)
+		public void MoveCursorToPrevUnique(Cursor dbc,
+		uint kOffset, uint kLen,
+		uint dOffset, uint dLen, LockingInfo lck)
 		{
-			for (int i = 0; i < 5; i++)
-				if (lck == null)
-					dbc.MovePrevUnique();
-				else
-					dbc.MovePrevUnique(lck);
+			DatabaseEntry key = new DatabaseEntry(kOffset, kLen);
+			DatabaseEntry data = new DatabaseEntry(dOffset, dLen);
+			for (int i = 0; i < 5; i++) {
+				if (lck == null) {
+					Assert.IsTrue(dbc.MovePrevUnique());
+					Assert.IsTrue(
+					    dbc.MovePrevUnique(key, data));
+				} else {
+					Assert.IsTrue(dbc.MovePrevUnique(lck));
+					Assert.IsTrue(
+					    dbc.MovePrevUnique(key, data, lck));
+				}
+				CheckPartial(dbc.Current.Key, kOffset, kLen,
+				    dbc.Current.Value, dOffset, dLen);
+			}
 		}
 
 		/*
 		 * Move the cursor to current existing record. The returning 
 		 * value should be true.
 		 */ 
-		public void MoveCursorToCurrentRec(Cursor dbc, 
-		    LockingInfo lck)
+		public void MoveCursorToCurrentRec(Cursor dbc,
+		    uint kOffset, uint kLen,
+		    uint dOffset, uint dLen, LockingInfo lck)
 		{
+			DatabaseEntry key, data;
+
 			// Add a record to the database.
 			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
-			pair = new KeyValuePair<DatabaseEntry,DatabaseEntry>(
-			    new DatabaseEntry(ASCIIEncoding.ASCII.GetBytes("key")), 
-			    new DatabaseEntry(ASCIIEncoding.ASCII.GetBytes("key")));
+			key = new DatabaseEntry(
+			    ASCIIEncoding.ASCII.GetBytes("key"));
+			data = new DatabaseEntry(
+			    ASCIIEncoding.ASCII.GetBytes("data"));
+			pair = new KeyValuePair<DatabaseEntry,
+			    DatabaseEntry>(key, data);
 			dbc.Add(pair);
 
 			if (lck == null)
-				dbc.Refresh();
+				Assert.IsTrue(dbc.Refresh());
 			else
-				dbc.Refresh(lck);
+			Assert.IsTrue(dbc.Refresh(lck));
+			Assert.AreEqual(key.Data, dbc.Current.Key.Data);
+			Assert.AreEqual(data.Data, dbc.Current.Value.Data);
 
-			Assert.IsNotNull(dbc.Current.Key);
+			key = new DatabaseEntry(kOffset, kLen);
+			data = new DatabaseEntry(dOffset, dLen);
+			if (lck == null)
+				Assert.IsTrue(dbc.Refresh(key, data));
+			else
+				Assert.IsTrue(dbc.Refresh(key, data, lck));
+			CheckPartial(dbc.Current.Key, kOffset, kLen,
+			    dbc.Current.Value, dOffset, dLen);
+		}
+
+		public void CheckPartial(
+		    DatabaseEntry key, uint kOffset, uint kLen,
+		    DatabaseEntry data, uint dOffset, uint dLen) 
+		{
+			if (key != null) {
+			    Assert.IsTrue(key.Partial);
+			    Assert.AreEqual(kOffset, key.PartialOffset);
+			    Assert.AreEqual(kLen, key.PartialLen);
+			    Assert.AreEqual(kLen, (uint)key.Data.Length);
+			}
+
+			if (data != null) {
+			    Assert.IsTrue(data.Partial);
+			    Assert.AreEqual(dOffset, data.PartialOffset);
+			    Assert.AreEqual(dLen, data.PartialLen);
+			    Assert.AreEqual(dLen, (uint)data.Data.Length);
+			}
 		}
 	}
 }

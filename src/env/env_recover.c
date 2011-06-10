@@ -13,6 +13,7 @@
 #include "dbinc/fop.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/mp.h"
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
@@ -65,7 +66,7 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	double nfiles;
 	u_int32_t hi_txn, log_size, txnid;
 	int32_t low;
-	int all_recovered, have_rec, progress, ret, t_ret;
+	int all_recovered, progress, rectype, ret, t_ret;
 	char *p, *pass;
 	char t1[CTIME_BUFLEN], t2[CTIME_BUFLEN], time_buf[CTIME_BUFLEN];
 
@@ -76,7 +77,7 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	ckp_args = NULL;
 	hi_txn = TXN_MAXIMUM;
 	txninfo = NULL;
-	pass = "initial";
+	pass = DB_STR_P("initial");
 	ZERO_LSN(lsn);
 
 	/*
@@ -129,9 +130,9 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 			if ((p = strchr(t2, '\n')) != NULL)
 				*p = '\0';
 
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1509",
 		    "Invalid recovery timestamp %s; earliest time is %s",
-			    t1, t2);
+			    "%s %s"), t1, t2);
 			ret = EINVAL;
 			goto err;
 		}
@@ -210,36 +211,6 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	ZERO_LSN(last_lsn);
 #endif
 	memset(&data, 0, sizeof(data));
-	if ((ret = __logc_get(logc, &last_lsn, &data, DB_LAST)) != 0) {
-		if (ret == DB_NOTFOUND)
-			ret = 0;
-		else
-			__db_errx(env, "Last log record not found");
-		goto err;
-	}
-
-	do {
-		/* txnid is after rectype, which is a u_int32. */
-		LOGCOPY_32(env, &txnid,
-		    (u_int8_t *)data.data + sizeof(u_int32_t));
-
-		if (txnid != 0)
-			break;
-	} while ((ret = __logc_get(logc, &lsn, &data, DB_PREV)) == 0);
-
-	/*
-	 * There are no transactions, so there is nothing to do unless
-	 * we're recovering to an LSN.  If we are, we need to proceed since
-	 * we'll still need to do a vtruncate based on information we haven't
-	 * yet collected.
-	 */
-	if (ret == DB_NOTFOUND)
-		ret = 0;
-	else if (ret != 0)
-		goto err;
-
-	hi_txn = txnid;
-
 	/*
 	 * Pass #0
 	 * Find the LSN from which we begin OPENFILES.
@@ -259,11 +230,11 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 		if (ret == DB_NOTFOUND)
 			ret = 0;
 		else
-			__db_errx(env, "First log record not found");
+			__db_errx(env, DB_STR("1510",
+			    "First log record not found"));
 		goto err;
 	}
 	first_lsn = ckp_lsn;
-	have_rec = 1;
 
 	if (!LF_ISSET(DB_RECOVER_FATAL)) {
 		if ((ret = __txn_getckp(env, &ckp_lsn)) == 0 &&
@@ -271,15 +242,14 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 			/* We have a recent checkpoint.  This is LSN (1). */
 			if ((ret = __txn_ckp_read(env,
 			    data.data, &ckp_args)) != 0) {
-				__db_errx(env,
-			    "Invalid checkpoint record at [%ld][%ld]",
-				    (u_long)ckp_lsn.file,
+				__db_errx(env, DB_STR_A("1511",
+				    "Invalid checkpoint record at [%ld][%ld]",
+				    "%ld %ld"), (u_long)ckp_lsn.file,
 				    (u_long)ckp_lsn.offset);
 				goto err;
 			}
 			first_lsn = ckp_args->ckp_lsn;
 			__os_free(env, ckp_args);
-			have_rec = 0;
 		}
 
 		/*
@@ -302,15 +272,52 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 		 */
 		if ((dbenv->tx_timestamp != 0 || max_lsn != NULL) &&
 		    LOG_COMPARE(&lowlsn, &first_lsn) < 0) {
-			DB_ASSERT(env, have_rec == 0);
 			first_lsn = lowlsn;
 		}
 	}
 
-	/* Get the record at first_lsn if we don't have it already. */
-	if (!have_rec &&
-	    (ret = __logc_get(logc, &first_lsn, &data, DB_SET)) != 0) {
-		__db_errx(env, "Checkpoint LSN record [%ld][%ld] not found",
+	if ((ret = __logc_get(logc, &last_lsn, &data, DB_LAST)) != 0) {
+		if (ret == DB_NOTFOUND)
+			ret = 0;
+		else
+			__db_errx(env, DB_STR("1512",
+			    "Last log record not found"));
+		goto err;
+	}
+
+	rectype = 0;
+	txnid = 0;
+	do {
+		if (LOG_COMPARE(&lsn, &first_lsn) == 0)
+			break;
+		/* check if we have a recycle record. */
+		if (rectype != DB___txn_recycle)
+			LOGCOPY_32(env, &rectype, data.data);
+		/* txnid is after rectype, which is a u_int32. */
+		LOGCOPY_32(env, &txnid,
+		    (u_int8_t *)data.data + sizeof(u_int32_t));
+
+		if (txnid != 0)
+			break;
+	} while ((ret = __logc_get(logc, &lsn, &data, DB_PREV)) == 0);
+
+	/*
+	 * There are no transactions, so there is nothing to do unless
+	 * we're recovering to an LSN.  If we are, we need to proceed since
+	 * we'll still need to do a vtruncate based on information we haven't
+	 * yet collected.
+	 */
+	if (ret == DB_NOTFOUND)
+		ret = 0;
+	else if (ret != 0)
+		goto err;
+
+	hi_txn = txnid;
+
+	/* Get the record at first_lsn. */
+	if ((ret = __logc_get(logc, &first_lsn, &data, DB_SET)) != 0) {
+		__db_errx(env, DB_STR_A("1513",
+		    "Checkpoint LSN record [%ld][%ld] not found", "%ld %ld"),
 		    (u_long)first_lsn.file, (u_long)first_lsn.offset);
 		goto err;
 	}
@@ -381,10 +388,11 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	 * use it here.
 	 */
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_RECOVERY))
-		__db_msg(env, "Recovery starting from [%lu][%lu]",
+		__db_msg(env, DB_STR_A("1514",
+		    "Recovery starting from [%lu][%lu]", "%lu %lu"),
 		    (u_long)first_lsn.file, (u_long)first_lsn.offset);
 
-	pass = "backward";
+	pass = DB_STR_P("backward");
 	for (ret = __logc_get(logc, &lsn, &data, DB_LAST);
 	    ret == 0 && LOG_COMPARE(&lsn, &first_lsn) >= 0;
 	    ret = __logc_get(logc, &lsn, &data, DB_PREV)) {
@@ -423,7 +431,7 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	 * derive a real stop_lsn that tells how far the forward pass
 	 * should go.
 	 */
-	pass = "forward";
+	pass = DB_STR_P("forward");
 	stop_lsn = last_lsn;
 	if (max_lsn != NULL || dbenv->tx_timestamp != 0)
 		stop_lsn = ((DB_TXNHEAD *)txninfo)->maxlsn;
@@ -501,6 +509,9 @@ done:
 	if ((ret = __log_vtruncate(env, vtrunc_lsn, vtrunc_ckp, trunclsn)) != 0)
 		goto err;
 
+	/* If we had no txns, figure out if we need a checkpoint. */
+	if (hi_txn == 0 && __dbreg_log_nofiles(env))
+		LF_SET(DB_NO_CHECKPOINT);
 	/*
 	 * Usually we close all files at the end of recovery, unless there are
 	 * prepared transactions or errors in the checkpoint.
@@ -523,9 +534,9 @@ done:
 		 */
 		if (max_lsn == NULL && ret == ENOSPC) {
 			if (FLD_ISSET(dbenv->verbose, DB_VERB_RECOVERY))
-				__db_msg(env,
+				__db_msg(env, DB_STR_A("1515",
 		    "Recovery continuing after non-fatal checkpoint error: %s",
-				    db_strerror(ret));
+				    "%s"), db_strerror(ret));
 			all_recovered = 0;
 		}
 		else
@@ -556,7 +567,8 @@ done:
 			if (ret == DB_NOTFOUND)
 				ret = 0;
 			else
-				__db_errx(env, "First log record not found");
+				__db_errx(env, DB_STR("1516",
+				    "First log record not found"));
 			goto err;
 		}
 		if ((ret = __txn_getckp(env, &first_lsn)) == 0 &&
@@ -564,9 +576,9 @@ done:
 			/* We have a recent checkpoint.  This is LSN (1). */
 			if ((ret = __txn_ckp_read(env,
 			    data.data, &ckp_args)) != 0) {
-				__db_errx(env,
-			    "Invalid checkpoint record at [%ld][%ld]",
-				    (u_long)first_lsn.file,
+				__db_errx(env, DB_STR_A("1517",
+				    "Invalid checkpoint record at [%ld][%ld]",
+				    "%ld %ld"), (u_long)first_lsn.file,
 				    (u_long)first_lsn.offset);
 				goto err;
 			}
@@ -585,30 +597,31 @@ done:
 		 * process them, we need to reset the transaction ID space and
 		 * log this fact.
 		 */
-		if ((ret = __txn_reset(env)) != 0)
+		if ((rectype != DB___txn_recycle || hi_txn != 0) &&
+		    (ret = __txn_reset(env)) != 0)
 			goto err;
 	} else {
-		if ((ret = __txn_recycle_id(env)) != 0)
+		if ((ret = __txn_recycle_id(env, 0)) != 0)
 			goto err;
 	}
 
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_RECOVERY)) {
 		(void)time(&now);
-		__db_msg(env,
-		    "Recovery complete at %.24s", __os_ctime(&now, time_buf));
-		__db_msg(env, "%s %lx %s [%lu][%lu]",
-		    "Maximum transaction ID",
-		    (u_long)(txninfo == NULL ?
-			TXN_MINIMUM : ((DB_TXNHEAD *)txninfo)->maxid),
-		    "Recovery checkpoint",
+		__db_msg(env, DB_STR_A("1518",
+		    "Recovery complete at %.24s", "%.24s"),
+		    __os_ctime(&now, time_buf));
+		__db_msg(env, DB_STR_A("1519",
+		    "Maximum transaction ID %lx recovery checkpoint [%lu][%lu]",
+		    "%lx %lu %lu"), (u_long)(txninfo == NULL ?
+		    TXN_MINIMUM : ((DB_TXNHEAD *)txninfo)->maxid),
 		    (u_long)region->last_ckp.file,
 		    (u_long)region->last_ckp.offset);
 	}
 
 	if (0) {
-msgerr:		__db_errx(env,
+msgerr:		__db_errx(env, DB_STR_A("1520",
 		    "Recovery function for LSN %lu %lu failed on %s pass",
-		    (u_long)lsn.file, (u_long)lsn.offset, pass);
+		    "%lu %lu %s"), (u_long)lsn.file, (u_long)lsn.offset, pass);
 	}
 
 err:	if (logc != NULL && (t_ret = __logc_close(logc)) != 0 && ret == 0)
@@ -833,9 +846,9 @@ __env_openfiles(env, logc, txninfo,
 		    in_recovery ? DB_TXN_OPENFILES : DB_TXN_POPENFILES,
 		    txninfo);
 		if (ret != 0 && ret != DB_TXN_CKP) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1521",
 			    "Recovery function for LSN %lu %lu failed",
-			    (u_long)lsn.file, (u_long)lsn.offset);
+			    "%lu %lu"), (u_long)lsn.file, (u_long)lsn.offset);
 			break;
 		}
 		if ((ret = __logc_get(logc, &lsn, data, DB_NEXT)) != 0) {
@@ -858,8 +871,9 @@ __db_log_corrupt(env, lsnp)
 	ENV *env;
 	DB_LSN *lsnp;
 {
-	__db_errx(env, "Log file corrupt at LSN: [%lu][%lu]",
-	     (u_long)lsnp->file, (u_long)lsnp->offset);
+	__db_errx(env, DB_STR_A("1522",
+	    "Log file corrupt at LSN: [%lu][%lu]", "%lu %lu"),
+	    (u_long)lsnp->file, (u_long)lsnp->offset);
 	return (EINVAL);
 }
 
@@ -892,7 +906,11 @@ __env_init_rec(env, version)
 		goto err;
 	if ((ret = __ham_init_recover(env, &env->recover_dtab)) != 0)
 		goto err;
+	if ((ret = __heap_init_recover(env, &env->recover_dtab)) != 0)
+		goto err;
 	if ((ret = __qam_init_recover(env, &env->recover_dtab)) != 0)
+		goto err;
+	if ((ret = __repmgr_init_recover(env, &env->recover_dtab)) != 0)
 		goto err;
 	if ((ret = __txn_init_recover(env, &env->recover_dtab)) != 0)
 		goto err;
@@ -906,7 +924,12 @@ __env_init_rec(env, version)
 	 * oldest revision that applies must be used.  Therefore we override
 	 * the recovery functions in reverse log version order.
 	 */
-	if (version == DB_LOGVERSION)
+	/*
+	 * DB_LOGVERSION_52 is a strict superset of DB_LOGVERSION_50.
+	 * So, only check > DB_LOGVERSION_48p2.  If/When log records are
+	 * altered, the condition below will need to change.
+	 */
+	if (version > DB_LOGVERSION_48p2)
 		goto done;
 	if ((ret = __env_init_rec_48(env)) != 0)
 		goto err;
@@ -935,7 +958,8 @@ __env_init_rec(env, version)
 	if (version == DB_LOGVERSION_43)
 		goto done;
 	if (version != DB_LOGVERSION_42) {
-		__db_errx(env, "Unknown version %lu", (u_long)version);
+		__db_errx(env, DB_STR_A("1523", "Unknown version %lu",
+		    "%lu"), (u_long)version);
 		ret = EINVAL;
 		goto err;
 	}

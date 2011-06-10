@@ -33,6 +33,7 @@ static const NAMEMAP rep_ack_policies[] = {
 
 static const NAMEMAP rep_config_types[] = {
 	{"autoinit",		DB_REP_CONF_AUTOINIT},
+	{"autorollback",	DB_REP_CONF_AUTOROLLBACK},
 	{"bulk",		DB_REP_CONF_BULK},
 	{"delayclient",		DB_REP_CONF_DELAYCLIENT},
 	{"inmem",		DB_REP_CONF_INMEM},
@@ -265,8 +266,9 @@ tcl_RepGetLocalSite(interp, objc, objv, dbenv)
 	DB_ENV *dbenv;
 {
 	Tcl_Obj *myobjv[2];
+	DB_SITE *dbsite;
 	const char *host;
-	int ret;
+	int ret, t_ret;
 	u_int port;
 
 	if (objc != 2) {
@@ -274,14 +276,18 @@ tcl_RepGetLocalSite(interp, objc, objv, dbenv)
 		return (TCL_ERROR);
 	}
 
-	if ((ret = dbenv->repmgr_get_local_site(dbenv, &host, &port)) != 0)
-		return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-			"env repmgr_get_local_site"));
-	
-	myobjv[0] = NewStringObj(host, strlen(host));
-	myobjv[1] = Tcl_NewIntObj((int)port);
-	Tcl_SetObjResult(interp, Tcl_NewListObj(2, myobjv));
-	return (TCL_OK);
+	if ((ret = dbenv->repmgr_local_site(dbenv, &dbsite)) == 0) {
+		if ((ret = dbsite->get_address(dbsite, &host, &port)) == 0) {
+			myobjv[0] = NewStringObj(host, strlen(host));
+			myobjv[1] = Tcl_NewIntObj((int)port);
+			Tcl_SetObjResult(interp, Tcl_NewListObj(2, myobjv));
+		}
+		if ((t_ret = dbsite->close(dbsite)) != 0 && ret == 0)
+			ret = t_ret;
+	}
+	return (ret == 0 ? TCL_OK :
+	    _ReturnSetup(interp, ret,
+	    DB_RETOK_REPMGR_LOCALSITE(ret), "env repmgr_local_site"));
 }
 
 
@@ -437,34 +443,27 @@ tcl_RepLease(interp, objc, objv, dbenv)
 	Tcl_Obj *CONST objv[];		/* The argument objects */
 	DB_ENV *dbenv;
 {
-	u_int32_t clock_fast, clock_slow, nsites, timeout;
+	u_int32_t clock_fast, clock_slow, timeout;
 	int result, ret;
 
 	COMPQUIET(clock_fast, 0);
 	COMPQUIET(clock_slow, 0);
 
-	if (objc != 4 && objc != 2) {
-		Tcl_WrongNumArgs(interp, 1, objv, "{nsites timeout fast slow}");
+	if (objc != 3 && objc != 1) {
+		Tcl_WrongNumArgs(interp, 1, objv, "{timeout fast slow}");
 		return (TCL_ERROR);
 	}
 
-	if ((result = _GetUInt32(interp, objv[0], &nsites)) != TCL_OK)
-		return (result);
-	if ((result = _GetUInt32(interp, objv[1], &timeout)) != TCL_OK)
+	if ((result = _GetUInt32(interp, objv[0], &timeout)) != TCL_OK)
 		return (result);
 	if (objc == 4) {
-		if ((result = _GetUInt32(interp, objv[2], &clock_fast))
+		if ((result = _GetUInt32(interp, objv[1], &clock_fast))
 		    != TCL_OK)
 			return (result);
-		if ((result = _GetUInt32(interp, objv[3], &clock_slow))
+		if ((result = _GetUInt32(interp, objv[2], &clock_slow))
 		    != TCL_OK)
 			return (result);
 	}
-	ret = dbenv->rep_set_nsites(dbenv, nsites);
-	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-	    "rep_set_nsites");
-	if (result != TCL_OK)
-		return (result);
 	ret = dbenv->rep_set_timeout(dbenv, DB_REP_LEASE_TIMEOUT,
 	    (db_timeout_t)timeout);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
@@ -474,7 +473,7 @@ tcl_RepLease(interp, objc, objv, dbenv)
 	    "rep_set_config");
 	if (result != TCL_OK)
 		return (result);
-	if (objc == 4)
+	if (objc == 3)
 		ret = dbenv->rep_set_clockskew(dbenv, clock_fast, clock_slow);
 	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 	    "env rep_set_lease"));
@@ -537,6 +536,38 @@ tcl_RepLimit(interp, objc, objv, dbenv)
 
 	return (_ReturnSetup(interp,
 	    ret, DB_RETOK_STD(ret), "env set_rep_limit"));
+}
+#endif
+
+#ifdef CONFIG_TEST
+/*
+ * tcl_RepNSites --
+ *	Call DB_ENV->rep_set_nsites().
+ *
+ * PUBLIC: int tcl_RepNSites
+ * PUBLIC:     __P((Tcl_Interp *, int, Tcl_Obj * CONST *, DB_ENV *));
+ */
+int
+tcl_RepNSites(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{
+	int result, ret;
+	u_int32_t nsites;
+
+	if (objc != 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "nsites");
+		return (TCL_ERROR);
+	}
+
+	if ((result = _GetUInt32(interp, objv[2], &nsites)) != TCL_OK)
+		return (result);
+
+	_debug_check();
+	ret = dbenv->rep_set_nsites(dbenv, nsites);
+	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret), "env rep_nsites"));
 }
 #endif
 
@@ -967,6 +998,10 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Generation number", sp->st_gen);
 	MAKE_STAT_LIST("Election generation number", sp->st_egen);
 	MAKE_STAT_LIST("Startup complete", sp->st_startup_complete);
+	MAKE_WSTAT_LIST("Lease messages sent", sp->st_lease_sends);
+	MAKE_WSTAT_LIST("Lease checks", sp->st_lease_chk);
+	MAKE_WSTAT_LIST("Lease check invalid", sp->st_lease_chk_misses);
+	MAKE_WSTAT_LIST("Lease check refresh", sp->st_lease_chk_refresh);
 	MAKE_WSTAT_LIST("Duplicate log records received", sp->st_log_duplicated);
 	MAKE_WSTAT_LIST("Current log records queued", sp->st_log_queued);
 	MAKE_WSTAT_LIST("Maximum log records queued", sp->st_log_queued_max);
@@ -996,6 +1031,8 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Election phase", sp->st_election_status);
 	MAKE_STAT_LIST("Election winner", sp->st_election_cur_winner);
 	MAKE_STAT_LIST("Election generation number", sp->st_election_gen);
+	MAKE_STAT_LIST("Election data generation number", 
+	    sp->st_election_datagen);
 	MAKE_STAT_LSN("Election max LSN", &sp->st_election_lsn);
 	MAKE_STAT_LIST("Election sites", sp->st_election_nsites);
 	MAKE_STAT_LIST("Election nvotes", sp->st_election_nvotes);
@@ -1018,6 +1055,65 @@ error:
 }
 
 /*
+ * tcl_RepStatPrint --
+ *
+ * PUBLIC: int tcl_RepStatPrint __P((Tcl_Interp *, int,
+ * PUBLIC:    Tcl_Obj * CONST*, DB_ENV *));
+ */
+int
+tcl_RepStatPrint(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{	
+	static const char *repstatprtopts[] = {
+		"-all",
+		"-clear",
+		 NULL
+	};
+	enum repstatprtopts {
+		REPSTATPRTALL,
+		REPSTATPRTCLEAR
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], repstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum repstatprtopts)optindex) {
+		case REPSTATPRTALL:
+			flag |= DB_STAT_ALL;
+			break;
+		case REPSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = dbenv->rep_stat_print(dbenv, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv rep_stat_print");
+error:
+	return (result);
+
+}
+
+/*
  * tcl_RepMgr --
  *	Configure and start the Replication Manager.
  *
@@ -1035,9 +1131,9 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 		"-ack",
 		"-local",
 		"-msgth",
-		"-nsites",
 		"-pri",
 		"-remote",
+		"-remove",
 		"-start",
 		"-timeout",
 		NULL
@@ -1046,22 +1142,24 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 		RMGR_ACK,
 		RMGR_LOCAL,
 		RMGR_MSGTH,
-		RMGR_NSITES,
 		RMGR_PRI,
 		RMGR_REMOTE,
+		RMGR_REMOVE,
 		RMGR_START,
 		RMGR_TIMEOUT
 	};
 	Tcl_Obj **myobjv;
+	DB_SITE *dbsite;
 	long to;
-	int ack, i, myobjc, optindex, result, ret, totype;
-	u_int32_t msgth, remote_flag, start_flag, uintarg;
+	int ack, creator, i, j, legacy, myobjc, optindex;
+	int peer, result, ret, totype, t_ret;
+	u_int32_t msgth, start_flag, uintarg;
 	char *arg;
 
 	result = TCL_OK;
 	ack = ret = totype = 0;
 	msgth = 1;
-	remote_flag = start_flag = 0;
+	start_flag = 0;
 
 	if (objc <= 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?args?");
@@ -1110,24 +1208,48 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				i++;
 			else
 				break;
-			if (myobjc != 2) {
+			if (myobjc < 2 || myobjc > 4) {
 				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-local {host port}?");
+				    "?-local {host port [creator][legacy]}?");
 				result = TCL_ERROR;
 				break;
 			}
+			creator = legacy = 0;
+			for (j = 2; j < myobjc; j++) {
+				arg = Tcl_GetString(myobjv[j]);
+				if (strcmp(arg, "creator") == 0)
+					creator = 1;
+				else if (strcmp(arg, "legacy") == 0)
+					legacy = 1;
+				else {
+					Tcl_AddErrorInfo(interp,
+					    "local: illegal flag");
+					result = TCL_ERROR;
+					break;
+				}
+			}
+			/* The "arg" is host name, and "uintarg" is port. */
 			arg = Tcl_GetStringFromObj(myobjv[0], NULL);
 			if ((result = _GetUInt32(interp, myobjv[1], &uintarg))
 			    != TCL_OK)
 				break;
 			_debug_check();
-			/*
-			 * No flags for now.
-			 */
-			ret = dbenv->repmgr_set_local_site(dbenv,
-			    arg, uintarg, 0);
+			if ((ret = dbenv->repmgr_site(dbenv,
+			    arg, uintarg, &dbsite, 0)) == 0) {
+				ret = dbsite->set_config(dbsite,
+				    DB_LOCAL_SITE, 1);
+				if (ret == 0 && creator)
+					ret = dbsite->set_config(dbsite,
+					    DB_GROUP_CREATOR, 1);
+				if (ret == 0 && legacy)
+					ret = dbsite->set_config(dbsite,
+					    DB_LEGACY, 1);
+				if ((t_ret = dbsite->close(dbsite)) != 0 &&
+				    ret == 0)
+					ret = t_ret;
+			}
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-			    "repmgr_set_local_site");
+			    "repmgr_site");
 			break;
 		case RMGR_MSGTH:
 			if (i >= objc) {
@@ -1137,20 +1259,6 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				break;
 			}
 			result = _GetUInt32(interp, objv[i++], &msgth);
-			break;
-		case RMGR_NSITES:
-			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-nsites num_sites?");
-				result = TCL_ERROR;
-				break;
-			}
-			result = _GetUInt32(interp, objv[i++], &uintarg);
-			if (result == TCL_OK) {
-				_debug_check();
-				ret = dbenv->
-				    rep_set_nsites(dbenv, uintarg);
-			}
 			break;
 		case RMGR_PRI:
 			if (i >= objc) {
@@ -1165,6 +1273,8 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				ret = dbenv->
 				    rep_set_priority(dbenv, uintarg);
 			}
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "rep_set_priority");
 			break;
 		case RMGR_REMOTE:
 			result = Tcl_ListObjGetElements(interp, objv[i],
@@ -1173,19 +1283,23 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 				i++;
 			else
 				break;
-			if (myobjc != 2 && myobjc != 3) {
+			if (myobjc < 2 || myobjc > 4) {
 				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-remote {host port [peer]}?");
+				    "?-remote {host port [peer][legacy]}?");
 				result = TCL_ERROR;
 				break;
 			}
+
 			/*
-			 * Get the flag first so we can reuse 'arg'.
+			 * Get the flags first so we can reuse 'arg'.
 			 */
-			if (myobjc == 3) {
-				arg = Tcl_GetStringFromObj(myobjv[2], NULL);
-				if (strcmp(arg, "peer") == 0)
-					remote_flag = DB_REPMGR_PEER;
+			legacy = peer = 0;
+			for (j = 2; j < myobjc; j++) {
+				arg = Tcl_GetString(myobjv[j]);
+				if (strcmp(arg, "legacy") == 0)
+					legacy = 1;
+				else if (strcmp(arg, "peer") == 0)
+					peer = 1;
 				else {
 					Tcl_AddErrorInfo(interp,
 					    "remote: illegal flag");
@@ -1193,15 +1307,53 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 					break;
 				}
 			}
-			arg = Tcl_GetStringFromObj(myobjv[0], NULL);
+			arg = Tcl_GetString(myobjv[0]);
 			if ((result = _GetUInt32(interp, myobjv[1], &uintarg))
 			    != TCL_OK)
 				break;
 			_debug_check();
-			ret = dbenv->repmgr_add_remote_site(dbenv,
-			    arg, uintarg, NULL, remote_flag);
+
+			/* For now, all "-remote" sites become helpers. */
+			if ((ret = dbenv->repmgr_site(dbenv,
+			    arg, uintarg, &dbsite, 0)) == 0) {
+				ret = dbsite->set_config(dbsite,
+				    DB_BOOTSTRAP_HELPER, 1);
+				if (ret == 0 && legacy)
+					ret = dbsite->set_config(dbsite,
+					    DB_LEGACY, 1);
+				if (ret == 0 && peer)
+					ret = dbsite->set_config(dbsite,
+					    DB_REPMGR_PEER, 1);
+				if ((t_ret = dbsite->close(dbsite)) != 0 &&
+				    ret == 0)
+					ret = t_ret;
+			}
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-			    "repmgr_add_remote_site");
+			    "repmgr_site");
+			break;
+		case RMGR_REMOVE:
+			result = Tcl_ListObjGetElements(interp, objv[i],
+			    &myobjc, &myobjv);
+			if (result == TCL_OK)
+				i++;
+			else
+				break;
+			if (myobjc != 2) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-remove {host port}?");
+				result = TCL_ERROR;
+				break;
+			}
+			arg = Tcl_GetString(myobjv[0]);
+			if ((result = _GetUInt32(interp, myobjv[1], &uintarg))
+			    != TCL_OK)
+				break;
+			_debug_check();
+			if ((ret = dbenv->repmgr_site(dbenv,
+			    arg, uintarg, &dbsite, 0)) == 0)
+				ret = dbsite->remove(dbsite);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "repmgr_site->remove");
 			break;
 		case RMGR_START:
 			if (i >= objc) {
@@ -1410,6 +1562,65 @@ tcl_RepMgrStat(interp, objc, objv, dbenv)
 error:
 	__os_ufree(dbenv->env, sp);
 	return (result);
+}
+
+/*
+ * tcl_RepMgrStatPrint --
+ *
+ * PUBLIC: int tcl_RepMgrStatPrint __P((Tcl_Interp *, int,
+ * PUBLIC:     Tcl_Obj * CONST*, DB_ENV *));
+ */
+int
+tcl_RepMgrStatPrint(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{	
+	static const char *repmgrstatprtopts[] = {
+		"-all",
+		"-clear",
+		 NULL
+	};
+	enum repmgrstatprtopts {
+		REPMGRSTATPRTALL,
+		REPMGRSTATPRTCLEAR
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], repmgrstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum repmgrstatprtopts)optindex) {
+		case REPMGRSTATPRTALL:
+			flag |= DB_STAT_ALL;
+			break;
+		case REPMGRSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = dbenv->repmgr_stat_print(dbenv, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv repmgr_stat_print");
+error:
+	return (result);
+
 }
 
 /*

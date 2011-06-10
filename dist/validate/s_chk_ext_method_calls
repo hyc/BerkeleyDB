@@ -71,6 +71,10 @@ sed \
     -e '/dbenv->thread_id_string(/d' \
     -e '/rep_util.c:.*ret = dbenv->rep_send(/d' \
     -e '/test_mutex.c:/d' \
+    -e '/xa.c:/d' \
+    -e '/repmgr\/repmgr_net.c.*env->close()/d'\
+    -e '/repmgr\/repmgr_method.c.*DB_CHANNEL->send_request()/d' \
+    -e '/dbinc\/repmgr.h.*set_config()/d' \
     -e '/db_vrfyutil.c:.*vdp->txn->commit/d' \
 >$t
 

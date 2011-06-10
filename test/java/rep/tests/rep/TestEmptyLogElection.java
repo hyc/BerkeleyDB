@@ -13,7 +13,7 @@ import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandler;
 import com.sleepycat.db.EventHandlerAdapter;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationStats;
 import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
@@ -43,6 +43,10 @@ public class TestEmptyLogElection {
         EnvironmentConfig ec = makeBasicConfig(port1, mon);
         ec.setReplicationPriority(100);
         File dir1 = Util.mkdir("site1");
+        ReplicationManagerSiteConfig site =
+            new ReplicationManagerSiteConfig("localhost", port2);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
         Environment env1 = new Environment(dir1, ec);
         env1.setReplicationTimeout(ReplicationTimeoutType.ELECTION_TIMEOUT,
                                    500000);
@@ -52,8 +56,9 @@ public class TestEmptyLogElection {
 
         ec = makeBasicConfig(port2, mon);
         ec.setReplicationPriority(200);
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", port1),
-                                           false);
+        site = new ReplicationManagerSiteConfig("localhost", port1);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
         File dir2 = Util.mkdir("site2");
         Environment env2 = new Environment(dir2, ec);
         env2.setReplicationTimeout(ReplicationTimeoutType.ELECTION_TIMEOUT,
@@ -102,11 +107,14 @@ public class TestEmptyLogElection {
         ec.setInitializeReplication(true);
         ec.setTransactional(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(3);
         ec.setEventHandler(eh);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", port));
+        ReplicationManagerSiteConfig site =
+            new ReplicationManagerSiteConfig("localhost", port);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
         return (ec);
     }
 }

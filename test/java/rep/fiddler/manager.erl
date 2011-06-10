@@ -3,22 +3,22 @@
 %%% a test (though it could be more generally anything).
 
 -module(manager).
--export([start/1,accept_loop/1,recv_loop/1]).
+-export([start/2,accept_loop/2,recv_loop/2]).
 -import(gen_tcp, [listen/2, accept/1, recv/2, send/2]).
 -import(string, [cspan/2, substr/3]).
 
-start(Port) ->
+start(Port, Config) ->
     {ok, LSock} = listen(Port, [{packet,line},
                                 {active,false},{reuseaddr,true}]),
-    Pid = spawn(?MODULE, accept_loop, [LSock]),
+    Pid = spawn(?MODULE, accept_loop, [LSock, Config]),
     ok = gen_tcp:controlling_process(LSock, Pid).
 
-accept_loop(LSock) ->
+accept_loop(LSock, Config) ->
     {ok, Sock} = accept(LSock),
-    spawn(?MODULE, recv_loop, [Sock]),
-    accept_loop(LSock).
+    spawn(?MODULE, recv_loop, [Sock, Config]),
+    accept_loop(LSock, Config).
 
-recv_loop(Sock) ->
+recv_loop(Sock, Config) ->
     case recv(Sock, 0) of
         {ok, Msg} ->
             %%
@@ -42,6 +42,14 @@ recv_loop(Sock) ->
                 shutdown ->
                     send(Sock, "ok\r\n"),
                     halt();                     % first try is rather crude
+                {config,Real} ->
+                    send(Sock,
+                         integer_to_list(
+                           case lists:keysearch(Real, 2, Config) of
+                               {value,{Spoof,Real}} -> Spoof;
+                               false -> Real
+                           end)),
+                    send(Sock, "\r\n");
                 list ->
                     lists:foreach(fun ({Id,Path,_,_,_}) ->
                                           {From,To} = Path,
@@ -70,7 +78,7 @@ recv_loop(Sock) ->
                                   DistinctPids)
             end,
             send(Sock, "ok\r\n"),
-            recv_loop(Sock);
+            recv_loop(Sock, Config);
         {error,closed} ->
             ok
     end.

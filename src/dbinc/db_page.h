@@ -47,7 +47,10 @@ extern "C" {
 #define	P_QAMDATA	11	/* Queue data page. */
 #define	P_LDUP		12	/* Off-page duplicate leaf. */
 #define	P_HASH		13	/* Sorted hash page. */
-#define	P_PAGETYPE_MAX	14
+#define	P_HEAPMETA	14	/* Heap metadata page. */
+#define	P_HEAP		15	/* Heap data page. */
+#define	P_IHEAP		16	/* Heap internal. */
+#define	P_PAGETYPE_MAX	17
 /* Flag to __db_new */
 #define	P_DONTEXTEND	0x8000	/* Don't allocate if there are no free pages. */
 
@@ -150,6 +153,33 @@ typedef struct _hashmeta33 {
 	 */
 } HMETA33, HMETA;
 
+/************************************************************************
+ HEAP METADATA PAGE LAYOUT
+*************************************************************************/
+/*
+ * Heap Meta data page structure
+ *
+ */
+typedef struct _heapmeta {
+	DBMETA    dbmeta;		/* 00-71: Generic meta-data header. */
+
+	db_pgno_t curregion;		/* 72-75: Current region pgno. */
+	u_int32_t nregions;		/* 76-79: Number of regions. */
+	u_int32_t gbytes;		/* 80-83: GBytes for fixed size heap. */
+	u_int32_t bytes;		/* 84-87: Bytes for fixed size heap. */
+	u_int32_t region_size;		/* 88-91: Max region size. */
+	u_int32_t unused2[92];		/* 92-459: Unused space.*/
+	u_int32_t crypto_magic;		/* 460-463: Crypto magic number */
+	u_int32_t trash[3];		/* 464-475: Trash space - Do not use */
+	u_int8_t  iv[DB_IV_BYTES];	/* 476-495: Crypto IV */
+	u_int8_t  chksum[DB_MAC_KEY];	/* 496-511: Page chksum */
+
+
+	/*
+	 * Minimum page size is 512.
+	 */
+} HEAPMETA;
+		
 /************************************************************************
  QUEUE METADATA PAGE LAYOUT
  ************************************************************************/
@@ -285,6 +315,144 @@ typedef struct _db_page {
 #define	HOFFSET(p)	(((PAGE *)p)->hf_offset)
 #define	LEVEL(p)	(((PAGE *)p)->level)
 #define	TYPE(p)		(((PAGE *)p)->type)
+
+/************************************************************************
+ HEAP PAGE LAYOUT
+ ************************************************************************/
+#define HEAPPG_NORMAL	26
+#define HEAPPG_CHKSUM	48
+#define HEAPPG_SEC	64
+
+/*
+ *	+0-----------2------------4-----------6-----------7+
+ *	|                        lsn                       |
+ *	+-------------------------+------------------------+
+ *	|           pgno          |         unused0        |
+ *      +-------------+-----------+-----------+------------+
+ *	|  high_indx  | free_indx |  entries  |  hf offset |
+ *	+-------+-----+-----------+-----------+------------+
+ *	|unused2|type |  unused3  |      ...chksum...      |
+ *	+-------+-----+-----------+------------------------+
+ *	|  ...iv...   |   offset table / free space map    |
+ *	+-------------+------------------------------------+
+ *	|free->	 	F R E E A R E A                    |
+ *	+--------------------------------------------------+
+ *	|                <-- free |          item          |
+ *	+-------------------------+------------------------+
+ *	|           item          |          item          |
+ *	+-------------------------+------------------------+
+ *
+ * The page layout of both heap internal and data pages.  If not using
+ * crypto, iv will be overwritten with data.  If not using checksumming,
+ * unused3 and chksum will also be overwritten with data and data will start at
+ * 26.  Note that this layout lets us re-use a lot of the PAGE element macros
+ * defined above.
+ */
+typedef struct _heappg {
+	DB_LSN lsn;		/* 00-07: Log sequence number. */
+	db_pgno_t pgno;		/* 08-11: Current page number. */
+	u_int32_t high_pgno;	/* 12-15: Highest page in region. */
+	u_int16_t high_indx;	/* 16-17: Highest index in the offset table. */
+	db_indx_t free_indx;	/* 18-19: First available index. */
+	db_indx_t entries;	/* 20-21: Number of items on the page. */
+	db_indx_t hf_offset;	/* 22-23: High free byte page offset. */
+	u_int8_t unused2[1];	/*    24: Unused. */
+	u_int8_t type;		/*    25: Page type. */
+	u_int8_t unused3[2];    /* 26-27: Never used, just checksum alignment. */
+	u_int8_t  chksum[DB_MAC_KEY]; /* 28-47: Checksum */
+	u_int8_t  iv[DB_IV_BYTES]; /* 48-63: IV */
+} HEAPPG;
+
+/* Define first possible data page for heap, 0 is metapage, 1 is region page */
+#define FIRST_HEAP_RPAGE 1 
+#define FIRST_HEAP_DPAGE 2
+
+typedef struct __heaphdr {
+#define HEAP_RECSPLIT 0x01 /* Heap data record is split */
+#define HEAP_RECFIRST 0x02 /* First piece of a split record */
+#define HEAP_RECLAST  0x04 /* Last piece of a split record */
+	u_int8_t flags;		/* 00: Flags describing record. */
+	u_int8_t unused;	/* 01: Padding. */
+	u_int16_t size;		/* 02-03: The size of the stored data piece. */
+} HEAPHDR;
+
+typedef struct __heaphdrsplt {
+	HEAPHDR std_hdr;	/* 00-03: The standard data header */
+	u_int32_t tsize;	/* 04-07: Total record size, 1st piece only */
+	db_pgno_t nextpg;	/* 08-11: RID.pgno of the next record piece */
+	db_indx_t nextindx;	/* 12-13: RID.indx of the next record piece */
+	u_int16_t unused;	/* 14-15: Padding. */
+} HEAPSPLITHDR;
+
+#define HEAP_HDRSIZE(hdr) 					\
+	(F_ISSET((hdr), HEAP_RECSPLIT) ? sizeof(HEAPSPLITHDR) : sizeof(HEAPHDR))
+
+#define HEAPPG_SZ(dbp)			       			\
+	(F_ISSET((dbp), DB_AM_ENCRYPT) ? HEAPPG_SEC :		\
+	F_ISSET((dbp), DB_AM_CHKSUM) ? HEAPPG_CHKSUM : HEAPPG_NORMAL)
+
+/* Each byte in the bitmap describes 4 pages (2 bits per page.) */
+#define HEAP_REGION_COUNT(size) ((size - HEAPPG_SZ(dbp)) * 4)
+#define HEAP_DEFAULT_REGION_MAX	HEAP_REGION_COUNT(8 * 1024)
+#define	HEAP_REGION_SIZE(dbp)	(((HEAP*) (dbp)->heap_internal)->region_size)
+
+/* Figure out which region a given page belongs to. */
+#define HEAP_REGION_PGNO(dbp, p) 				\
+	((((p) - 1) / (HEAP_REGION_SIZE(dbp) + 1)) * 		\
+	(HEAP_REGION_SIZE(dbp) + 1) + 1)
+/* Translate a region pgno to region number */
+#define HEAP_REGION_NUM(dbp, pgno)				\
+	((((pgno) - 1) / (HEAP_REGION_SIZE((dbp)) + 1)) + 1)
+/* 
+ * Given an internal heap page and page number relative to that page, return the
+ * bits from map describing free space on the nth page.  Each byte in the map
+ * describes 4 pages. Point at the correct byte and mask the correct 2 bits.
+ */
+#define HEAP_SPACE(dbp, pg, n)					\
+	(HEAP_SPACEMAP((dbp), (pg))[(n) / 4] >> (2 * ((n) % 4)) & 3)
+      
+#define HEAP_SETSPACE(dbp, pg, n, b) do {				\
+	HEAP_SPACEMAP((dbp), (pg))[(n) / 4] &= ~(3 << (2 * ((n) % 4))); \
+	HEAP_SPACEMAP((dbp), (pg))[(n) / 4] |= ((b & 3) << (2 * ((n) % 4))); \
+} while (0)
+		
+/* Return the bitmap describing free space on heap data pages. */
+#define HEAP_SPACEMAP(dbp, pg) ((u_int8_t *)P_INP((dbp), (pg)))
+
+/* Return the offset table for a heap data page. */
+#define HEAP_OFFSETTBL(dbp, pg) P_INP((dbp), (pg))
+
+/* 
+ * Calculate the % of a page a given size occupies and translate that to the
+ * corresponding bitmap value. 
+ */
+#define HEAP_CALCSPACEBITS(dbp, sz, space) do {			\
+	(space) = 100 * (sz) / (dbp)->pgsize;			\
+	if ((space) <= HEAP_PG_FULL_PCT)			\
+		(space) = HEAP_PG_FULL;				\
+	else if ((space) <= HEAP_PG_GT66_PCT)			\
+		(space) = HEAP_PG_GT66;				\
+	else if ((space) <= HEAP_PG_GT33_PCT)			\
+		(space) = HEAP_PG_GT33;				\
+	else							\
+		(space) = HEAP_PG_LT33;				\
+} while (0)
+	
+/* Return the amount of free space on a heap data page. */
+#define HEAP_FREESPACE(dbp, p)                                  \
+	(HOFFSET(p) - HEAPPG_SZ(dbp) -				\
+	(NUM_ENT(p) == 0 ? 0 : ((HEAP_HIGHINDX(p) + 1) * sizeof(db_indx_t))))
+
+/* The maximum amount of data that can fit on an empty heap data page. */
+#define HEAP_MAXDATASIZE(dbp)					\
+	((dbp)->pgsize - HEAPPG_SZ(dbp) - sizeof(db_indx_t))
+
+#define HEAP_FREEINDX(p)	(((HEAPPG *)p)->free_indx)
+#define HEAP_HIGHINDX(p)	(((HEAPPG *)p)->high_indx)
+
+/* True if we have a page that deals with heap */
+#define HEAPTYPE(h)                                           \
+    (TYPE(h) == P_HEAPMETA || TYPE(h) == P_HEAP || TYPE(h) == P_IHEAP)
 
 /************************************************************************
  QUEUE MAIN PAGE LAYOUT

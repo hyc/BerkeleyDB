@@ -385,7 +385,12 @@ set INCLUDE {
   backup_malloc.test
   bdb_deadlock.test
   bdb_exclusive.test
+  bdb_inmem_memleak.test
   bdb_logsize.test
+  bdb_mvcc.test
+  bdb_persistent_pragma.test
+  bdb_replication.test
+  bdb_sequence.test
   between.test
   bigrow.test
   bitvec.test

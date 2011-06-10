@@ -1,6 +1,8 @@
 package SQLite;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Internal class implementing java.io.InputStream on
@@ -265,7 +267,7 @@ public class Blob {
      */
 
     public InputStream getInputStream() {
-	return (InputStream) new BlobR(this);
+	return new BlobR(this);
     }
 
     /**
@@ -274,7 +276,7 @@ public class Blob {
      */
 
     public OutputStream getOutputStream() {
-	return (OutputStream) new BlobW(this);
+	return new BlobW(this);
     }
 
     /**

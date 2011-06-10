@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -49,11 +49,11 @@ public class CacheStats {
         return st_max_ncache;
     }
 
-    private int st_mmapsize;
+    private long st_mmapsize;
     /**
     Maximum file size for mmap.
      */
-    public int getMmapSize() {
+    public long getMmapSize() {
         return st_mmapsize;
     }
 
@@ -183,14 +183,14 @@ public class CacheStats {
 
     private int st_hash_buckets;
     /**
-    Number of hash buckets in buffer hash table.
+    Number of hash buckets in the buffer hash table.
     */
     public int getHashBuckets() {
         return st_hash_buckets;
     }
 
     private int st_hash_mutexes;
-    /** TODO */
+    /** The number of hash bucket mutexes in the buffer hash table. */
     public int getHashMutexes() {
         return st_hash_mutexes;
     }
@@ -362,12 +362,18 @@ public class CacheStats {
         return st_sync_interrupted;
     }
 
-    private int st_regsize;
+    private long st_regsize;
     /**
     Individual cache size.
     */
-    public int getRegSize() {
+    public long getRegSize() {
         return st_regsize;
+    }
+
+    private long st_regmax;
+    /** The max size of the mutex region size. */
+    public long getRegmax() {
+        return st_regmax;
     }
 
     /**
@@ -419,6 +425,7 @@ public class CacheStats {
             + "\n  st_io_wait=" + st_io_wait
             + "\n  st_sync_interrupted=" + st_sync_interrupted
             + "\n  st_regsize=" + st_regsize
+            + "\n  st_regmax=" + st_regmax
             ;
     }
 }

@@ -162,15 +162,16 @@ __rep_process_message_pp(dbenv, control, rec, eid, ret_lsnp)
 	    env, rep_handle, "DB_ENV->rep_process_message", DB_INIT_REP);
 
 	if (APP_IS_REPMGR(env)) {
-		__db_errx(env, "%s %s", "DB_ENV->rep_process_message:",
-		    "cannot call from Replication Manager application");
+		__db_errx(env, DB_STR_A("3512",
+		    "%s cannot call from Replication Manager application",
+		    "%s"), "DB_ENV->rep_process_message:");
 		return (EINVAL);
 	}
 
 	/* Control argument must be non-Null. */
 	if (control == NULL || control->size == 0) {
-		__db_errx(env,
-	"DB_ENV->rep_process_message: control argument must be specified");
+		__db_errx(env, DB_STR("3513",
+	"DB_ENV->rep_process_message: control argument must be specified"));
 		return (EINVAL);
 	}
 
@@ -179,21 +180,22 @@ __rep_process_message_pp(dbenv, control, rec, eid, ret_lsnp)
 	 * replication has been started.
 	 */
 	if (!IS_REP_MASTER(env) && !IS_REP_CLIENT(env)) {
-		__db_errx(env,
-	"Environment not configured as replication master or client");
+		__db_errx(env, DB_STR("3514",
+	"Environment not configured as replication master or client"));
 		return (EINVAL);
 	}
 
 	if ((ret = __dbt_usercopy(env, control)) != 0 ||
 	    (ret = __dbt_usercopy(env, rec)) != 0) {
 		__dbt_userfree(env, control, rec, NULL);
-		__db_errx(env,
-	"DB_ENV->rep_process_message: error retrieving DBT contents");
-		return ret;
+		__db_errx(env, DB_STR("3515",
+	"DB_ENV->rep_process_message: error retrieving DBT contents"));
+		return (ret);
 	}
 
 	ret = __rep_process_message_int(env, control, rec, eid, ret_lsnp);
 
+	__dbt_userfree(env, control, rec, NULL);
 	return (ret);
 }
 
@@ -296,9 +298,11 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 	 */
 	if (rp->rep_version < DB_REPVERSION) {
 		if (rp->rep_version < DB_REPVERSION_MIN) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3516",
  "unsupported old replication message version %lu, minimum version %d",
-			    (u_long)rp->rep_version, DB_REPVERSION_MIN);
+			    "%lu %d"), (u_long)rp->rep_version,
+			    DB_REPVERSION_MIN);
+
 			ret = EINVAL;
 			goto errlock;
 		}
@@ -315,18 +319,19 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		    "Converted to record %lu with old rep version %lu",
 		    (u_long)rp->rectype, (u_long)rp->rep_version));
 	} else if (rp->rep_version > DB_REPVERSION) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("3517",
 		    "unexpected replication message version %lu, expected %d",
-		    (u_long)rp->rep_version, DB_REPVERSION);
+		    "%lu %d"), (u_long)rp->rep_version, DB_REPVERSION);
 		ret = EINVAL;
 		goto errlock;
 	}
 
 	if (rp->log_version < DB_LOGVERSION) {
 		if (rp->log_version < DB_LOGVERSION_MIN) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3518",
  "unsupported old replication log version %lu, minimum version %d",
-			    (u_long)rp->log_version, DB_LOGVERSION_MIN);
+			    "%lu %d"), (u_long)rp->log_version,
+			    DB_LOGVERSION_MIN);
 			ret = EINVAL;
 			goto errlock;
 		}
@@ -334,9 +339,9 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		    "Received record %lu with old log version %lu",
 		    (u_long)rp->rectype, (u_long)rp->log_version));
 	} else if (rp->log_version > DB_LOGVERSION) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("3519",
 		    "unexpected log record version %lu, expected %d",
-		    (u_long)rp->log_version, DB_LOGVERSION);
+		    "%lu %d"), (u_long)rp->log_version, DB_LOGVERSION);
 		ret = EINVAL;
 		goto errlock;
 	}
@@ -403,8 +408,8 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 	 */
 	if (!IS_USING_LEASES(env) &&
 	    (F_ISSET(rp, REPCTL_LEASE) || rp->rectype == REP_LEASE_GRANT)) {
-		__db_errx(env,
-		    "Inconsistent lease configuration");
+		__db_errx(env, DB_STR("3520",
+		    "Inconsistent lease configuration"));
 		RPRINT(env, (env, DB_VERB_REP_MSGS,
 		    "Client received lease message and not using leases"));
 		ret = EINVAL;
@@ -883,6 +888,7 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 			ret = __rep_fire_newmaster(env, rp->gen, eid);
 		break;
 	case REP_PAGE:
+	case REP_PAGE_FAIL:
 	case REP_PAGE_MORE:
 		/*
 		 * Handle even if we're recovering.
@@ -891,13 +897,6 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		ret = __rep_page(env, ip, eid, rp, rec);
 		if (ret == DB_REP_PAGEDONE)
 			ret = 0;
-		break;
-	case REP_PAGE_FAIL:
-		/*
-		 * Handle even if we're recovering.
-		 */
-		CLIENT_ONLY(rep, rp);
-		ret = __rep_page_fail(env, ip, eid, rp, rec);
 		break;
 	case REP_PAGE_REQ:
 		RECOVERING_SKIP;
@@ -960,7 +959,17 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		 * Handle even if we're recovering.
 		 */
 		CLIENT_ONLY(rep, rp);
-		ret = __rep_update_setup(env, eid, rp, rec, savetime);
+		if ((ret = __rep_update_setup(env,
+		    eid, rp, rec, savetime, &lsn)) == DB_REP_WOULDROLLBACK &&
+		    ret_lsnp != NULL) {
+			/*
+			 * Not for a normal internal init.  But this could
+			 * happen here if we had to ask for an UPDATE message in
+			 * order to check for materializing NIMDBs; in other
+			 * words, an "abbreviated internal init."
+			 */
+			*ret_lsnp = lsn;
+		}
 		break;
 	case REP_UPDATE_REQ:
 		/*
@@ -987,7 +996,9 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 			}
 		}
 		CLIENT_ONLY(rep, rp);
-		ret = __rep_verify(env, rp, rec, eid, savetime);
+		if ((ret = __rep_verify(env, rp, rec, eid, savetime)) ==
+		    DB_REP_WOULDROLLBACK && ret_lsnp != NULL)
+			*ret_lsnp = rp->lsn;
 		break;
 	case REP_VERIFY_FAIL:
 		/*
@@ -1015,9 +1026,9 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		ret = __rep_vote2(env, rp, rec, eid);
 		break;
 	default:
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("3521",
 	"DB_ENV->rep_process_message: unknown replication message: type %lu",
-		   (u_long)rp->rectype);
+		   "%lu"), (u_long)rp->rectype);
 		ret = EINVAL;
 		break;
 	}
@@ -1620,13 +1631,15 @@ __rep_process_txn(env, rec)
 		goto err;
 	for (lsnp = &lc.array[0], i = 0; i < lc.nlsns; i++, lsnp++) {
 		if ((ret = __logc_get(logc, lsnp, &data_dbt, DB_SET)) != 0) {
-			__db_errx(env, "failed to read the log at [%lu][%lu]",
+			__db_errx(env, DB_STR_A("3522",
+			    "failed to read the log at [%lu][%lu]", "%lu %lu"),
 			    (u_long)lsnp->file, (u_long)lsnp->offset);
 			goto err;
 		}
 		if ((ret = __db_dispatch(env, &env->recover_dtab,
 		    &data_dbt, lsnp, DB_TXN_APPLY, txninfo)) != 0) {
-			__db_errx(env, "transaction failed at [%lu][%lu]",
+			__db_errx(env, DB_STR_A("3523",
+			    "transaction failed at [%lu][%lu]", "%lu %lu"),
 			    (u_long)lsnp->file, (u_long)lsnp->offset);
 			goto err;
 		}
@@ -1732,7 +1745,8 @@ __rep_collect_txn(env, lsnp, lc)
 			goto err;
 	}
 	if (ret != 0)
-		__db_errx(env, "collect failed at: [%lu][%lu]",
+		__db_errx(env, DB_STR_A("3524",
+		    "collect failed at: [%lu][%lu]", "%lu %lu"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset);
 
 err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
@@ -1879,7 +1893,8 @@ __rep_do_ckp(env, rec, rp)
 	if (ret == 0)
 		ret = __txn_updateckp(env, &rp->lsn);
 	else {
-		__db_errx(env, "Error syncing ckp [%lu][%lu]",
+		__db_errx(env, DB_STR_A("3525",
+		    "Error syncing ckp [%lu][%lu]", "%lu %lu"),
 		    (u_long)ckp_lsn.file, (u_long)ckp_lsn.offset);
 		ret = __env_panic(env, ret);
 	}
@@ -2030,7 +2045,7 @@ __rep_process_rec(env, ip, rp, rec, ret_tsp, ret_lsnp)
 		 * right at the file boundary, we need to make sure ret_lsnp
 		 * points to a real log record, rather than the "dead space" at
 		 * the end of the file that the NEWFILE msg normally points to.
-		 */ 
+		 */
 		if (rep->sync_state == SYNC_LOG) {
 			if ((ret = __log_cursor(env, &logc)) != 0)
 				return (ret);
@@ -2123,7 +2138,8 @@ __rep_process_rec(env, ip, rp, rec, ret_tsp, ret_lsnp)
 		if (ret == 0 && !F_ISSET(env->dbenv, DB_ENV_TXN_NOSYNC))
 			ret = __log_flush(env, NULL);
 		if (ret != 0) {
-			__db_errx(env, "Error processing txn [%lu][%lu]",
+			__db_errx(env, DB_STR_A("3526",
+			    "Error processing txn [%lu][%lu]", "%lu %lu"),
 			    (u_long)rp->lsn.file, (u_long)rp->lsn.offset);
 			ret = __env_panic(env, ret);
 		}
@@ -2388,92 +2404,115 @@ __rep_skip_msg(env, rep, eid, rectype)
 
 /*
  * __rep_check_missing --
- * PUBLIC: int __rep_check_missing __P((ENV *));
+ * PUBLIC: int __rep_check_missing __P((ENV *, u_int32_t, DB_LSN *));
  *
  * Check for and request any missing client information.
  */
 int
-__rep_check_missing(env)
+__rep_check_missing(env, gen, master_perm_lsn)
 	ENV *env;
+	u_int32_t gen;
+	DB_LSN *master_perm_lsn;
 {
 	DB_LOG *dblp;
+	DB_LSN *end_lsn;
 	DB_REP *db_rep;
 	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REGINFO *infop;
 	REP *rep;
 	__rep_fileinfo_args *curinfo;
-	int do_req, has_log_gap, has_page_gap, is_valid_client, ret;
+	int do_req, has_log_gap, has_page_gap, ret;
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
 	dblp = env->lg_handle;
 	infop = env->reginfo;
-	has_log_gap = has_page_gap = is_valid_client = ret = 0;
+	has_log_gap = has_page_gap = ret = 0;
 
 	ENV_ENTER(env, ip);
+	MUTEX_LOCK(env, rep->mtx_clientdb);
 	REP_SYSTEM_LOCK(env);
-	if (F_ISSET(rep, REP_F_CLIENT) && rep->master_id != DB_EID_INVALID) {
-		is_valid_client = 1;
-		/*
-		 * Lock out message processing to prevent a major system
-		 * change, such as a role change or running recovery, from
-		 * occuring before sending out any rerequests.
-		 */
-		if (FLD_ISSET(rep->lockout_flags, REP_LOCKOUT_MSG)) {
-			REP_SYSTEM_UNLOCK(env);
-			goto out;
-		}
-		rep->msg_th++;
-	}
-	REP_SYSTEM_UNLOCK(env);
-
-	if (is_valid_client) {
-		MUTEX_LOCK(env, rep->mtx_clientdb);
-		/* Check that it is time to request missing information. */
-		if ((do_req = __rep_check_doreq(env, rep))) {
-			/* Check for interior or tail page gap. */
-			REP_SYSTEM_LOCK(env);
-			if (rep->sync_state == SYNC_PAGE &&
-			    rep->curinfo_off != INVALID_ROFF) {
-				GET_CURINFO(rep, infop, curinfo);
-				has_page_gap =
-				    rep->waiting_pg != PGNO_INVALID ||
-				    rep->ready_pg <= curinfo->max_pgno;
-			}
-			REP_SYSTEM_UNLOCK(env);
-		}
-		/*
-		 * Check for interior log gap, but cannot check for tail log
-		 * gap because we don't know the latest master log LSN.
-		 */
-		if (do_req && !has_page_gap) {
-			lp = dblp->reginfo.primary;
-			has_log_gap = !IS_ZERO_LSN(lp->waiting_lsn);
-		}
+	/*
+	 * Check if we are okay to proceed with this operation.  If not,
+	 * do not rerequest anything.
+	 */
+	if (!F_ISSET(rep, REP_F_CLIENT) || rep->master_id == DB_EID_INVALID ||
+	    gen != rep->gen || FLD_ISSET(rep->lockout_flags, REP_LOCKOUT_MSG)) {
+		REP_SYSTEM_UNLOCK(env);
 		MUTEX_UNLOCK(env, rep->mtx_clientdb);
 		/*
-		 * If it is time to send a request, only do so if we
-		 * have a log gap or a page gap, or we need to resend an
-		 * UPDATE_REQ or VERIFY_REQ, or we are in SYNC_LOG to keep
-		 * requesting to the current known end of the log.
+		 * If this client is out-of-date, ask the master to identify
+		 * itself so that this client will synchronize with the
+		 * master's later generation.
 		 */
-		do_req = do_req && (has_log_gap || has_page_gap ||
-		    rep->sync_state == SYNC_LOG ||
-		    rep->sync_state == SYNC_UPDATE ||
-		    rep->sync_state == SYNC_VERIFY);
-		/*
-		 * Determines request type from current replication
-		 * state and resends request.  The request may have
-		 * the DB_REP_ANYWHERE flag enabled if appropriate.
-		 */
-		if (do_req)
-			ret = __rep_resend_req(env, 0);
+		if (gen > rep->gen && __rep_check_doreq(env, rep))
+			(void)__rep_send_message(env,
+			    DB_EID_BROADCAST, REP_MASTER_REQ,
+			    NULL, NULL, 0, 0);
+		goto out;
+	}
 
+	/*
+	 * Prevent message lockout by counting ourself here.
+	 * Setting rep->msg_th will prevent a major system
+	 * change, such as a role change or running recovery, from
+	 * occuring before sending out any rerequests.
+	 */
+	rep->msg_th++;
+	REP_SYSTEM_UNLOCK(env);
+
+	/* Check that it is time to request missing information. */
+	if ((do_req = __rep_check_doreq(env, rep))) {
+		/* Check for interior or tail page gap. */
 		REP_SYSTEM_LOCK(env);
-		rep->msg_th--;
+		if (rep->sync_state == SYNC_PAGE &&
+		    rep->curinfo_off != INVALID_ROFF) {
+			GET_CURINFO(rep, infop, curinfo);
+			has_page_gap =
+			    rep->waiting_pg != PGNO_INVALID ||
+			    rep->ready_pg <= curinfo->max_pgno;
+		}
 		REP_SYSTEM_UNLOCK(env);
 	}
+	/* Check for interior or tail log gap. */
+	if (do_req && !has_page_gap) {
+		lp = dblp->reginfo.primary;
+		/*
+		 * The LOG_COMPARE test is <= because ready_lsn is
+		 * the next LSN we are expecting but we do not have
+		 * it yet.  If the needed LSN is at this LSN, it
+		 * means we are missing the last record we need.
+		 */
+		if (rep->sync_state == SYNC_LOG)
+			end_lsn = &rep->last_lsn;
+		else
+			end_lsn = master_perm_lsn;
+		has_log_gap = !IS_ZERO_LSN(lp->waiting_lsn) ||
+		    LOG_COMPARE(&lp->ready_lsn, end_lsn) <= 0;
+	}
+	MUTEX_UNLOCK(env, rep->mtx_clientdb);
+	/*
+	 * If it is time to send a request, only do so if we
+	 * have a log gap or a page gap, or we need to resend an
+	 * UPDATE_REQ or VERIFY_REQ, or we are in SYNC_LOG to keep
+	 * requesting to the current known end of the log.
+	 */
+	do_req = do_req && (has_log_gap || has_page_gap ||
+	    rep->sync_state == SYNC_LOG ||
+	    rep->sync_state == SYNC_UPDATE ||
+	    rep->sync_state == SYNC_VERIFY);
+	/*
+	 * Determines request type from current replication
+	 * state and resends request.  The request may have
+	 * the DB_REP_ANYWHERE flag enabled if appropriate.
+	 */
+	if (do_req)
+		ret = __rep_resend_req(env, 0);
+
+	REP_SYSTEM_LOCK(env);
+	rep->msg_th--;
+	REP_SYSTEM_UNLOCK(env);
 
 out:	ENV_LEAVE(env, ip);
 	return (ret);

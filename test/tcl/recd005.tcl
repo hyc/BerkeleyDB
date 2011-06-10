@@ -160,6 +160,17 @@ proc do_one_file { dir method env env_cmd filename num op args} {
 	# Save the initial file and open the environment and the first file
 	file copy -force $dir/$filename $dir/$filename.init
 	copy_extent_file $dir $filename init
+
+	# If method is heap, copy other files
+	if { [is_heap $method] == 1 } {
+		append filename1 $filename "1"
+		file copy -force $dir/$filename1 $dir/$filename.init1
+		copy_extent_file $dir $filename1 init
+
+		append filename2 $filename "2"
+		file copy -force $dir/$filename2 $dir/$filename.init2
+		copy_extent_file $dir $filename2 init
+	}
 	set oflags "-auto_commit -unknown -env $env"
 	set db [eval {berkdb_open} $oflags $args $filename]
 
@@ -179,6 +190,16 @@ proc do_one_file { dir method env env_cmd filename num op args} {
 	error_check_good sync:$db [$db sync] 0
 	file copy -force $dir/$filename $dir/$filename.afterop
 	copy_extent_file $dir $filename afterop
+
+	#if we are doing heap, we have more files to copy
+	if { [is_heap $method] == 1 } {
+		file copy -force $dir/$filename1 $dir/$filename.afterop1
+		copy_extent_file $dir $filename1 afterop
+
+		file copy -force $dir/$filename2 $dir/$filename.afterop2
+		copy_extent_file $dir $filename2 afterop
+	}
+
 	eval open_and_dump_file $testdir/$filename.afterop NULL \
 	    $afterop_file nop dump_file_direction "-first" "-next" $args
 	error_check_good txn_$op:$txn [$txn $op] 0
@@ -195,6 +216,15 @@ proc do_one_file { dir method env env_cmd filename num op args} {
 	    dump_file_direction "-first" "-next" $args
 	file copy -force $dir/$filename $dir/$filename.final
 	copy_extent_file $dir $filename final
+
+	#if we are doing heap, we have more files to copy
+	if { [is_heap $method] == 1 } {
+		file copy -force $dir/$filename1 $dir/$filename.final1
+		copy_extent_file $dir $filename1 final
+
+		file copy -force $dir/$filename2 $dir/$filename.final2
+		copy_extent_file $dir $filename2 final
+	}
 
 	# If this is an abort, it should match the original file.
 	# If this was a commit, then this file should match the

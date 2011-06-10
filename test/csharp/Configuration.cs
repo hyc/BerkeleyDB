@@ -404,7 +404,7 @@ namespace CsharpAPITest
 
 		public static bool ConfigReplicationHostAddress(
 		    XmlElement xmlElem, string name,
-		    ref ReplicationHostAddress address, bool compulsory)
+		    ref DbSiteConfig siteConfig, bool compulsory)
 		{
 			XmlNode xmlNode = XMLReader.GetNode(
 			    xmlElem, name);
@@ -413,9 +413,9 @@ namespace CsharpAPITest
 			else if (xmlNode == null && compulsory == true)
 				throw new ConfigNotFoundException(name);
 
-			address.Host = XMLReader.GetNode(
+			    siteConfig.Host = XMLReader.GetNode(
 			    (XmlElement)xmlNode, "Host").InnerText;
-			address.Port = uint.Parse(XMLReader.GetNode(
+			    siteConfig.Port = uint.Parse(XMLReader.GetNode(
 			    (XmlElement)xmlNode, "Port").InnerText);
 			return true;
 		}
@@ -957,7 +957,7 @@ namespace CsharpAPITest
 
 		public static void ConfirmReplicationHostAddress(
 		    XmlElement xmlElem, string name,
-		    ReplicationHostAddress address, bool compulsory)
+		    DbSiteConfig siteConfig, bool compulsory)
 		{
 			XmlNode xmlNode = XMLReader.GetNode(xmlElem, name);
 			if (xmlNode == null && compulsory == true)
@@ -969,8 +969,8 @@ namespace CsharpAPITest
 				uint port = uint.Parse(XMLReader.GetNode(
 				    (XmlElement)xmlNode, "Port").InnerText);
 
-				Assert.AreEqual(host, address.Host);
-				Assert.AreEqual(port, address.Port);
+				Assert.AreEqual(host, siteConfig.Host);
+				Assert.AreEqual(port, siteConfig.Port);
 			}
 		}
 

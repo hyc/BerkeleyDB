@@ -114,6 +114,7 @@ namespace BerkeleyDB {
 
         internal bool encryptionIsSet;
         private String encryptPwd;
+        private bool doEncrypt;
         private EncryptionAlgorithm encryptAlg;
         /// <summary>
         /// Set the password and algorithm used by the Berkeley DB library to
@@ -126,6 +127,7 @@ namespace BerkeleyDB {
         /// The algorithm used to perform encryption and decryption.
         /// </param>
         public void SetEncryption(String password, EncryptionAlgorithm alg) {
+            doEncrypt = true;
             encryptionIsSet = true;
             encryptPwd = password;
             encryptAlg = alg;
@@ -139,6 +141,26 @@ namespace BerkeleyDB {
         /// </summary>
         public EncryptionAlgorithm EncryptAlgorithm {
             get { return encryptAlg; }
+        }
+        /// <summary>
+        /// Encrypt the database using the cryptographic password specified by
+        /// <see cref="DatabaseConfig.SetEncryption">DatabaseConfig.SetEncryption</see> or
+        /// <see cref="DatabaseEnvironmentConfig.SetEncryption">DatabaseEnvironmentConfig.SetEncryption</see>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the database already exists, the value of Encrypted must be the
+        /// same as the existing database or an error will be returned.
+        /// </para>
+        /// <para>
+        /// Encrypted databases are not portable between machines of different
+        /// byte orders, that is, encrypted databases created on big-endian
+        /// machines cannot be read on little-endian machines, and vice versa. 
+        /// </para>
+        /// </remarks>
+        public bool Encrypted {
+            get { return doEncrypt; }
+            set { doEncrypt = value; }
         }
 
         /// <summary>
@@ -213,7 +235,7 @@ namespace BerkeleyDB {
             get {
                 uint ret = 0;
                 ret |= DoChecksum ? Internal.DbConstants.DB_CHKSUM : 0;
-                ret |= encryptionIsSet ? Internal.DbConstants.DB_ENCRYPT : 0;
+                ret |= Encrypted ? Internal.DbConstants.DB_ENCRYPT : 0;
                 ret |= NonDurableTxns ? Internal.DbConstants.DB_TXN_NOT_DURABLE : 0;
                 return ret;
             }

@@ -37,7 +37,9 @@ sed -e "/#undef off_t/d" \
     -e "/mutex\/tm.c:/d" \
     -e "/off_t because its size depends on/d" \
     -e "/os_ext.h/d" \
+    -e "/os.h/d" \
     -e "/os_flock.c/d" \
+    -e "/rep.h/d" \
     -e "/zerofill.c:.*stat_offset/d" \
     -e "/zerofill.c:.*write_offset/d" \
     -e "/os_map.c:.*(off_t)0))/d" \
@@ -45,6 +47,7 @@ sed -e "/#undef off_t/d" \
     -e "/os_rw.c:/d" \
     -e "/os_seek.c:.*off_t offset;/d" \
     -e "/os_seek.c:.*offset = /d" \
+    -e "/os_seek.c:.*off_t/d" \
     -e "/os_truncate.c:.*off_t offset;/d" \
     -e "/os_truncate.c:.*off_t stat_offset;/d" \
     -e "/os_truncate.c:.*offset = /d" \

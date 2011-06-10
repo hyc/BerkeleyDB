@@ -290,9 +290,9 @@ __db_dispatch(env, dtab, db, lsnp, redo, params)
 			urectype = rectype - DB_user_BEGIN;
 			if (urectype > dtab->ext_size ||
 			    dtab->ext_dispatch[urectype] == NULL) {
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("0512",
 	    "Illegal application-specific record type %lu in log",
-				    (u_long)rectype);
+				    "%lu"), (u_long)rectype);
 				return (EINVAL);
 			}
 
@@ -301,8 +301,8 @@ __db_dispatch(env, dtab, db, lsnp, redo, params)
 		} else {
 			if (rectype > dtab->int_size ||
 			    dtab->int_dispatch[rectype] == NULL) {
-				__db_errx(env,
-				    "Illegal record type %lu in log",
+				__db_errx(env, DB_STR_A("0513",
+				    "Illegal record type %lu in log", "%lu"),
 				    (u_long)rectype);
 				if (redo == DB_TXN_LOG_VERIFY)
 					lvh->unknown_logrec_cnt++;
@@ -342,9 +342,9 @@ __db_add_recovery(dbenv, dtab, func, ndx)
 
 	/* Make sure this is an application-specific record. */
 	if (ndx < DB_user_BEGIN) {
-		__db_errx(dbenv->env,
-	 "Attempting to add application-specific record with invalid type %lu",
-		    (u_long)ndx);
+		__db_errx(dbenv->env, DB_STR_A("0514",
+	"Attempting to add application-specific record with invalid type %lu",
+		    "%lu"), (u_long)ndx);
 		return (EINVAL);
 	}
 	ndx -= DB_user_BEGIN;
@@ -386,9 +386,9 @@ __db_add_recovery_int(env, dtab, func, ndx)
 	int ret;
 
 	if (ndx >= DB_user_BEGIN) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("0515",
 		    "Attempting to add internal record with invalid type %lu",
-		    (u_long)ndx);
+		    "%lu"), (u_long)ndx);
 		return (EINVAL);
 	}
 

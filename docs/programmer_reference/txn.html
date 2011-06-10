@@ -3,24 +3,27 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 18.  The Transaction Subsystem</title>
+    <title>Chapter 19.  The Transaction Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="prev" href="mp_config.html" title="Configuring the memory pool" />
+    <link rel="prev" href="mp_warm.html" title="Warming the memory pool" />
     <link rel="next" href="txn_config.html" title="Configuring transactions" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 18. 
+          <th colspan="3" align="center">Chapter 19. 
 		The Transaction Subsystem
         </th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="mp_config.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="mp_warm.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
           <td width="20%" align="right"> <a accesskey="n" href="txn_config.html">Next</a></td>
         </tr>
@@ -31,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="txn"></a>Chapter 18. 
+            <h2 class="title"><a id="txn"></a>Chapter 19. 
 		The Transaction Subsystem
         </h2>
           </div>
@@ -61,17 +64,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="txn_limits.html#idp52846304">Transaction IDs</a>
+                  <a href="txn_limits.html#id3922448">Transaction IDs</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="txn_limits.html#idp52866032">Cursors</a>
+                  <a href="txn_limits.html#id3920939">Cursors</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="txn_limits.html#idp52872176">Multiple Threads of Control</a>
+                  <a href="txn_limits.html#id3921178">Multiple Threads of Control</a>
                 </span>
               </dt>
             </dl>
@@ -139,126 +142,23 @@ recovery time will be shorter.  Often, the checkpoint interval is tuned
 for each specific application.</p>
         <p>The <a href="../api_reference/C/txnstat.html" class="olink">DB_TXN-&gt;stat()</a> method returns information about the status of the
 transaction subsystem.  It is the programmatic interface used by the
-<a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a>.</p>
+<a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility.</p>
         <p>The transaction system is closed by a call to <a href="../api_reference/C/envclose.html" class="olink">DB_ENV-&gt;close()</a>.</p>
         <p>Finally, the entire transaction system may be removed using the
 <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a> method.</p>
-        <div class="informaltable">
-          <table border="1" width="80%">
-            <colgroup>
-              <col />
-              <col />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Transaction Subsystem and Related Methods</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txncheckpoint.html" class="olink">DB_ENV-&gt;txn_checkpoint()</a>
-                </td>
-                <td>Checkpoint the transaction subsystem</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnrecover.html" class="olink">DB_TXN-&gt;recover()</a>
-                </td>
-                <td>Distributed transaction recovery</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnstat.html" class="olink">DB_TXN-&gt;stat()</a>
-                </td>
-                <td>Return transaction subsystem statistics</td>
-              </tr>
-            </tbody>
-            <tbody>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/envset_timeout.html" class="olink">DB_ENV-&gt;set_timeout()</a>
-                </td>
-                <td>Set lock and transaction timeout</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/envset_tx_max.html" class="olink">DB_ENV-&gt;set_tx_max()</a>
-                </td>
-                <td>Set maximum number of transactions</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/envset_tx_timestamp.html" class="olink">DB_ENV-&gt;set_tx_timestamp()</a>
-                </td>
-                <td>Set recovery timestamp</td>
-              </tr>
-            </tbody>
-            <tbody>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnbegin.html" class="olink">DB_ENV-&gt;txn_begin()</a>
-                </td>
-                <td>Begin a transaction</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnabort.html" class="olink">DB_TXN-&gt;abort()</a>
-                </td>
-                <td>Abort a transaction</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txncommit.html" class="olink">DB_TXN-&gt;commit()</a>
-                </td>
-                <td>Commit a transaction</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txndiscard.html" class="olink">DB_TXN-&gt;discard()</a>
-                </td>
-                <td>Discard a prepared but not resolved transaction handle</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnid.html" class="olink">DB_TXN-&gt;id()</a>
-                </td>
-                <td>Return a transaction's ID</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnprepare.html" class="olink">DB_TXN-&gt;prepare()</a>
-                </td>
-                <td>Prepare a transaction for commit</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnset_name.html" class="olink">DB_TXN-&gt;set_name()</a>
-                </td>
-                <td>Associate a string with a transaction</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/txnset_timeout.html" class="olink">DB_TXN-&gt;set_timeout()</a>
-                </td>
-                <td>Set transaction timeout</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p>For more information on the transaction subsystem methods, see the <a href="../api_reference/C/txn.html#txnlist" class="olink">Transaction Subsystem and Related Methods</a> section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em> </p>
       </div>
     </div>
     <div class="navfooter">
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="mp_config.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="mp_warm.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
           <td width="40%" align="right"> <a accesskey="n" href="txn_config.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Configuring the memory pool </td>
+          <td width="40%" align="left" valign="top">Warming the memory pool </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

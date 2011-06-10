@@ -15,6 +15,7 @@
 #ifdef DIAGNOSTIC
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
+#include "dbinc/lock.h"
 #endif
 
 /*
@@ -60,12 +61,11 @@ __memp_fget_pp(dbmfp, pgnoaddr, txnp, flags, addrp)
 		if ((ret = __db_fchk(env, "memp_fget", flags, OKFLAGS)) != 0)
 			return (ret);
 
-		switch (flags) {
-		case DB_MPOOL_DIRTY:
+		switch (FLD_CLR(flags, DB_MPOOL_DIRTY | DB_MPOOL_EDIT)) {
 		case DB_MPOOL_CREATE:
-		case DB_MPOOL_EDIT:
 		case DB_MPOOL_LAST:
 		case DB_MPOOL_NEW:
+		case 0:
 			break;
 		default:
 			return (__db_ferr(env, "memp_fget", 1));
@@ -76,7 +76,7 @@ __memp_fget_pp(dbmfp, pgnoaddr, txnp, flags, addrp)
 
 	rep_blocked = 0;
 	if (txnp == NULL && IS_ENV_REPLICATED(env)) {
-		if ((ret = __op_rep_enter(env, 0)) != 0)
+		if ((ret = __op_rep_enter(env, 0, 1)) != 0)
 			goto err;
 		rep_blocked = 1;
 	}
@@ -128,6 +128,10 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 	u_int32_t bucket, pinmax, st_hsearch;
 	int b_incr, b_lock, h_locked, dirty, extending;
 	int makecopy, mvcc, need_free, ret;
+#ifdef DIAGNOSTIC
+	DB_LOCKTAB *lt;
+	DB_LOCKER *locker;
+#endif
 
 	*(void **)addrp = NULL;
 	COMPQUIET(c_mp, NULL);
@@ -147,9 +151,9 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 
 	if (LF_ISSET(DB_MPOOL_DIRTY)) {
 		if (F_ISSET(dbmfp, MP_READONLY)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3021",
 			    "%s: dirty flag set for readonly file page",
-			    __memp_fn(dbmfp));
+			    "%s"), __memp_fn(dbmfp));
 			return (EINVAL);
 		}
 		if ((ret = __db_fcchk(env, "DB_MPOOLFILE->get",
@@ -174,7 +178,7 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 		if (F_ISSET(txn, TXN_SNAPSHOT)) {
 			read_lsnp = &td->read_lsn;
 			if (IS_MAX_LSN(*read_lsnp) &&
-			    (ret = __log_current_lsn(env, read_lsnp,
+			    (ret = __log_current_lsn_int(env, read_lsnp,
 			    NULL, NULL)) != 0)
 				return (ret);
 		}
@@ -283,9 +287,9 @@ retry:		MUTEX_LOCK(env, hp->mtx_hash);
 		 * mutex before we lock the buffer mutex.
 		 */
 		if (BH_REFCOUNT(bhp) == UINT16_MAX) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3022",
 			    "%s: page %lu: reference count overflow",
-			    __memp_fn(dbmfp), (u_long)bhp->pgno);
+			    "%s %lu"), __memp_fn(dbmfp), (u_long)bhp->pgno);
 			ret = __env_panic(env, EINVAL);
 			goto err;
 		}
@@ -451,11 +455,6 @@ freebuf:		MUTEX_LOCK(env, hp->mtx_hash);
 			 */
 			if (F_ISSET(bhp, BH_FREED))
 				goto done;
-			else if (F_ISSET(bhp, BH_FROZEN))
-				makecopy = 1;
-
-			if (makecopy)
-				break;
 			else if (BH_REFCOUNT(bhp) != 1 ||
 			    !SH_CHAIN_SINGLETON(bhp, vc)) {
 				/*
@@ -466,6 +465,16 @@ freebuf:		MUTEX_LOCK(env, hp->mtx_hash);
 				 */
 				F_SET(bhp, BH_FREED);
 				F_CLR(bhp, BH_TRASH);
+			} else if (F_ISSET(bhp, BH_FROZEN)) {
+				/*
+				 * Freeing a singleton frozen buffer: just free
+				 * it.  This call will release the hash bucket
+				 * mutex.
+				 */
+				ret =
+				    __memp_bh_thaw(dbmp, infop, hp, bhp, NULL);
+				bhp = NULL;
+				b_incr = b_lock = h_locked = 0;
 			} else {
 				ret = __memp_bhfree(dbmp, infop, mfp,
 				    hp, bhp, BH_FREE_FREEMEM);
@@ -473,12 +482,13 @@ freebuf:		MUTEX_LOCK(env, hp->mtx_hash);
 				b_incr = b_lock = h_locked = 0;
 			}
 			goto done;
-		} else if (F_ISSET(bhp, BH_FREED)) {
-revive:			DB_ASSERT(env,
+		} else if (F_ISSET(bhp, BH_FREED | BH_TRASH)) {
+revive:			DB_ASSERT(env, F_ISSET(bhp, BH_TRASH) ||
 			    flags == DB_MPOOL_CREATE || flags == DB_MPOOL_NEW);
-			makecopy = makecopy ||
-			    (mvcc && !BH_OWNED_BY(env, bhp, txn)) ||
-			    F_ISSET(bhp, BH_FROZEN);
+			if (F_ISSET(bhp, BH_FREED))
+				makecopy = makecopy ||
+				    (mvcc && !BH_OWNED_BY(env, bhp, txn)) ||
+				    F_ISSET(bhp, BH_FROZEN);
 			if (flags == DB_MPOOL_CREATE) {
 				MUTEX_LOCK(env, mfp->mutex);
 				if (*pgnoaddr > mfp->last_pgno)
@@ -586,7 +596,8 @@ newpg:		/*
 			extending = 1;
 			if (mfp->maxpgno != 0 &&
 			    mfp->last_pgno >= mfp->maxpgno) {
-				__db_errx(env, "%s: file limited to %lu pages",
+				__db_errx(env, DB_STR_A("3023",
+				    "%s: file limited to %lu pages", "%s %lu"),
 				    __memp_fn(dbmfp), (u_long)mfp->maxpgno);
 				ret = ENOSPC;
 			} else
@@ -594,7 +605,8 @@ newpg:		/*
 			break;
 		case DB_MPOOL_CREATE:
 			if (mfp->maxpgno != 0 && *pgnoaddr > mfp->maxpgno) {
-				__db_errx(env, "%s: file limited to %lu pages",
+				__db_errx(env, DB_STR_A("3024",
+				    "%s: file limited to %lu pages", "%s %lu"),
 				    __memp_fn(dbmfp), (u_long)mfp->maxpgno);
 				ret = ENOSPC;
 			} else if (!extending)
@@ -632,8 +644,8 @@ alloc:		/* Allocate a new buffer header and data space. */
 		atomic_init(&alloc_bhp->ref, 1);
 #ifdef DIAGNOSTIC
 		if ((uintptr_t)alloc_bhp->buf & (sizeof(size_t) - 1)) {
-			__db_errx(env,
-		    "DB_MPOOLFILE->get: buffer data is NOT size_t aligned");
+			__db_errx(env, DB_STR("3025",
+		    "DB_MPOOLFILE->get: buffer data is NOT size_t aligned"));
 			ret = __env_panic(env, EINVAL);
 			goto err;
 		}
@@ -702,6 +714,8 @@ alloc:		/* Allocate a new buffer header and data space. */
 		if (extending) {
 			if (*pgnoaddr > mfp->last_pgno)
 				mfp->last_pgno = *pgnoaddr;
+			else
+				extending = 0;
 			MUTEX_UNLOCK(env, mfp->mutex);
 			if (ret != 0)
 				goto err;
@@ -767,7 +781,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		 *
 		 * Append the buffer to the tail of the bucket list.
 		 */
-		bhp->priority = UINT32_MAX;
+		bhp->priority = MPOOL_LRU_REDZONE;
 		bhp->pgno = *pgnoaddr;
 		bhp->mf_offset = mf_offset;
 		bhp->bucket = bucket;
@@ -900,6 +914,8 @@ alloc:		/* Allocate a new buffer header and data space. */
 	 */
 	if (F_ISSET(bhp, BH_TRASH) &&
 	    flags != DB_MPOOL_FREE && !F_ISSET(bhp, BH_FREED)) {
+		MVCC_MPROTECT(bhp->buf, mfp->pagesize,
+		    PROT_READ | PROT_WRITE);
 		if ((ret = __memp_pgread(dbmfp,
 		    bhp, LF_ISSET(DB_MPOOL_CREATE) ? 1 : 0)) != 0)
 			goto err;
@@ -989,7 +1005,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		h_locked = 0;
 		DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) > 0);
 		if (atomic_dec(env, &bhp->ref) == 0) {
-			bhp->priority = c_mp->lru_count;
+			bhp->priority = c_mp->lru_priority;
 			MVCC_MPROTECT(bhp->buf, mfp->pagesize, 0);
 		}
 		F_CLR(bhp, BH_EXCLUSIVE);
@@ -1035,6 +1051,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 	    (flags == DB_MPOOL_CREATE || flags == DB_MPOOL_NEW))) {
 		MUTEX_REQUIRED(env, bhp->mtx_buf);
 		if (F_ISSET(bhp, BH_FREED)) {
+			DB_ASSERT(env, bhp->pgno <= mfp->last_pgno);
 			memset(bhp->buf, 0,
 			    (mfp->clear_len == DB_CLEARLEN_NOTSET) ?
 			    mfp->pagesize : mfp->clear_len);
@@ -1134,12 +1151,24 @@ alloc:		/* Allocate a new buffer header and data space. */
 		lp->b_ref = R_OFFSET(infop, bhp);
 		lp->region = (int)(infop - dbmp->reginfo);
 #ifdef DIAGNOSTIC
-		if (dirty && ip->dbth_locker != NULL && ip->dbth_check_off == 0)
-			DB_ASSERT(env, __db_has_pagelock(env, ip->dbth_locker,
-			     dbmfp, (PAGE*)bhp->buf, DB_LOCK_WRITE) == 0);
+		if (dirty && ip->dbth_locker != INVALID_ROFF &&
+		    ip->dbth_check_off == 0) {
+			lt = env->lk_handle; 
+			locker = (DB_LOCKER *)
+			    (R_ADDR(&lt->reginfo, ip->dbth_locker));
+			DB_ASSERT(env, __db_has_pagelock(env, locker, dbmfp,
+			    (PAGE*)bhp->buf, DB_LOCK_WRITE) == 0);
+		}
 #endif
 
 	}
+	/*
+	 * During recovery we can read past the end of the file.  Also
+	 * last_pgno is not versioned, so if this is an older version 
+	 * that is ok as well.
+	 */
+	DB_ASSERT(env, IS_RECOVERING(env) ||
+	     bhp->pgno <= mfp->last_pgno || !SH_CHAIN_SINGLETON(bhp, vc));
 
 #ifdef DIAGNOSTIC
 	/* Update the file's pinned reference count. */

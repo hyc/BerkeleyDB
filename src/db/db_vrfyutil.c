@@ -889,16 +889,18 @@ __db_salvage_markneeded(vdp, pgno, pgtype)
  *	Print out a DBT data element from a verification routine.
  *
  * PUBLIC: int __db_vrfy_prdbt __P((DBT *, int, const char *, void *,
- * PUBLIC:     int (*)(void *, const void *), int, VRFY_DBINFO *));
+ * PUBLIC:     int (*)(void *, const void *), int, int, VRFY_DBINFO *));
  */
 int
-__db_vrfy_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno, vdp)
+__db_vrfy_prdbt(dbtp, checkprint, prefix,
+    handle, callback, is_recno, is_heap, vdp)
 	DBT *dbtp;
 	int checkprint;
 	const char *prefix;
 	void *handle;
 	int (*callback) __P((void *, const void *));
 	int is_recno;
+	int is_heap;
 	VRFY_DBINFO *vdp;
 {
 	if (vdp != NULL) {
@@ -925,5 +927,6 @@ __db_vrfy_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno, vdp)
 			checkprint = 1;
 	}
 	return (
-	    __db_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno));
+	    __db_prdbt(dbtp, checkprint,
+	    prefix, handle, callback, is_recno, is_heap));
 }

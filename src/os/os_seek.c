@@ -40,8 +40,9 @@ __os_seek(env, fhp, pgno, pgsize, relative)
 	offset = (off_t)pgsize * pgno + relative;
 
 	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: seek %s to %lu", fhp->name, (u_long)offset);
+		__db_msg(env, DB_STR_A("0170",
+		    "fileops: seek %s to %lu", "%s %lu"),
+		    fhp->name, (u_long)offset);
 
 	if (DB_GLOBAL(j_seek) != NULL)
 		ret = DB_GLOBAL(j_seek)(fhp->fd, offset, SEEK_SET);
@@ -54,9 +55,10 @@ __os_seek(env, fhp, pgno, pgsize, relative)
 		fhp->pgno = pgno;
 		fhp->offset = relative;
 	} else {
-		__db_syserr(env, ret,
-		    "seek: %lu: (%lu * %lu) + %lu", (u_long)offset,
-		    (u_long)pgno, (u_long)pgsize, (u_long)relative);
+		__db_syserr(env, ret, DB_STR_A("0171",
+		    "seek: %lu: (%lu * %lu) + %lu", "%lu %lu %lu %lu"),
+		    (u_long)offset, (u_long)pgno, (u_long)pgsize,
+		    (u_long)relative);
 		ret = __os_posix_err(ret);
 	}
 

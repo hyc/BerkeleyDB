@@ -71,7 +71,7 @@ __env_fileid_reset(env, ip, name, encrypted)
 	DB_MPOOLFILE *mpf;
 	DB_PGINFO cookie;
 	db_pgno_t pgno;
-	int t_ret, ret;
+	int subdb, t_ret, ret;
 	size_t n;
 	char *real_name;
 	u_int8_t fileid[DB_FILE_ID_LEN], mbuf[DBMETASIZE];
@@ -106,9 +106,9 @@ __env_fileid_reset(env, ip, name, encrypted)
 
 	if (n != sizeof(mbuf)) {
 		ret = EINVAL;
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("0675",
 		    "__env_fileid_reset: %s: unexpected file type or format",
-		    real_name);
+		    "%s"), real_name);
 		goto err;
 	}
 
@@ -132,6 +132,8 @@ __env_fileid_reset(env, ip, name, encrypted)
 	    __part_fileid_reset(env, ip, name, meta->nparts, encrypted)) != 0)
 		goto err;
 
+	subdb = meta->type == P_BTREEMETA && F_ISSET(meta, BTM_SUBDB);
+
 	memcpy(meta->uid, fileid, DB_FILE_ID_LEN);
 	cookie.db_pagesize = sizeof(mbuf);
 	cookie.flags = dbp->flags;
@@ -151,8 +153,6 @@ __env_fileid_reset(env, ip, name, encrypted)
 	 * Page 0 of the file has an updated file ID, and we can open it in
 	 * the cache without connecting to a different, existing file.  Open
 	 * the file in the cache, and update the file IDs for subdatabases.
-	 * (No existing code, as far as I know, actually uses the file ID of
-	 * a subdatabase, but it's cleaner to get them all.)
 	 */
 
 	/*
@@ -161,7 +161,7 @@ __env_fileid_reset(env, ip, name, encrypted)
 	 * cursor and step through the master database, and update all of
 	 * the subdatabases' metadata pages.
 	 */
-	if (meta->type != P_BTREEMETA || !F_ISSET(meta, BTM_SUBDB))
+	if (!subdb)
 		goto err;
 
 	/*

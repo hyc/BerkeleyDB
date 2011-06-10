@@ -12,7 +12,10 @@
     <link rel="next" href="db_hotbackup.html" title="db_hotbackup" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">db_dump</th>
@@ -195,6 +198,15 @@ db_dump185 [-p] [-f output] file  </pre>
                  certainly have to be edited by hand or other means before the data is
                  ready for reload into another database
             </p>
+            <p>
+                Note that this option causes the utility to verify the
+                integrity of the database before performing the database
+                dump. If this verification fails, the utility will exit
+                with error return <code class="literal">DB_VERIFY_BAD</code> even
+                though the database is successfully dumped. If you are
+                dumping a database known to be corrupt, you can safely
+                ignore a <code class="literal">DB_VERIFY_BAD</code> error return.
+            </p>
           </li>
           <li>
             <p>
@@ -204,6 +216,15 @@ db_dump185 [-p] [-f output] file  </pre>
                  Salvage data from a possibly corrupt file.  When used on a uncorrupted
                  database, this option should return equivalent data to a normal dump,
                  but most likely in a different order.
+            </p>
+            <p>
+                Note that this option causes the utility to verify the
+                integrity of the database before performing the database
+                dump. If this verification fails, the utility will exit
+                with error return <code class="literal">DB_VERIFY_BAD</code> even
+                though the database is successfully dumped. If you are
+                dumping a database known to be corrupt, you can safely
+                ignore a <code class="literal">DB_VERIFY_BAD</code> error return.
             </p>
           </li>
           <li>
@@ -230,32 +251,33 @@ db_dump185 [-p] [-f output] file  </pre>
          functions will result in new databases that use the default hash
          function.  Although using the default hash function may not be optimal
          for the new database, it will continue to work correctly.
-    </p>
+     </p>
       <p>
          Dumping and reloading Btree databases that use user-defined prefix or
          comparison functions will result in new databases that use the default
          prefix and comparison functions. <span class="bold"><strong>In this case,
          it is quite likely that the database will be damaged beyond repair
          permitting neither record storage or retrieval.</strong></span>
-    </p>
+     </p>
       <p>
          The only available workaround for either case is to modify the sources
          for the <a class="xref" href="db_load.html" title="db_load">db_load</a> utility
          to load the database using the correct hash, prefix, and comparison
          functions.
-    </p>
+     </p>
       <p>
          The <span class="command"><strong>db_dump185</strong></span> utility
          may not be available on your system because it is not always built
          when the Berkeley DB libraries and utilities are installed.  If you
          are unable to find it, see your system administrator for further
          information.
-    </p>
+     </p>
       <p>
          The <span class="command"><strong>db_dump</strong></span> and <span class="command"><strong>db_dump185</strong></span> utility output
-         formats are documented in the <a href="../../programmer_reference/dumpload_format.html" class="olink">Dump Output Formats</a> section
-         of the Berkeley DB Reference Guide.
-    </p>
+         formats are documented in the 
+         <a href="../../programmer_reference/dumpload_format.html" class="olink">Dump Output Formats</a> 
+         section of the Berkeley DB Reference Guide.
+     </p>
       <p>
          The <span class="command"><strong>db_dump</strong></span> utility may be used with a Berkeley DB 
          environment (as described for the <span class="bold"><strong>-h</strong></span>
@@ -267,7 +289,7 @@ db_dump185 [-p] [-f output] file  </pre>
          detach from the environment and exit gracefully.  To cause <span class="command"><strong>db_dump</strong></span> to
          release all environment resources and exit cleanly, send it an
          interrupt signal (SIGINT).
-    </p>
+     </p>
       <p>
          Even when using a Berkeley DB database environment, the db_dump
          utility does not use any kind of database locking if it is invoked
@@ -275,19 +297,23 @@ db_dump185 [-p] [-f output] file  </pre>
          arguments.   If used with one of these arguments, the <span class="command"><strong>db_dump</strong></span> utility
          may only be safely run on databases that are not being modified by any
          other process; otherwise, the output may be corrupt.
-    </p>
+     </p>
       <p>
          The <span class="command"><strong>db_dump</strong></span> utility exits 0 on success, and &gt;0 if an error occurs.
-    </p>
+         Note that this utility might return <code class="literal">DB_VERIFY_BAD</code> if the
+         <code class="literal">-R</code> or <code class="literal">-r</code> command line
+         options are used. This indicates a corrupt database. However, the
+         dump may still have been successful.
+     </p>
       <p>
          The <span class="command"><strong>db_dump185</strong></span> utility
          exits 0 on success, and &gt;0 if an error occurs.
-    </p>
+     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54785904"></a>Environment Variables</h3>
+              <h3 class="title"><a id="id3945680"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -295,16 +321,16 @@ db_dump185 [-p] [-f output] file  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54786216"></a>DB_HOME</h4>
+                <h4 class="title"><a id="id3945686"></a>DB_HOME</h4>
               </div>
             </div>
           </div>
           <p>
-                          If the <span class="bold"><strong>-h</strong></span> option is not specified and
-                          the environment variable DB_HOME is set, it is used as the path of the
-                          database home, as described in the
-                          <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a> method.
-                     </p>
+                  If the <span class="bold"><strong>-h</strong></span> option is not
+                  specified and the environment variable DB_HOME is set, it
+                  is used as the path of the database home, as described in
+                  the <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a> method.
+             </p>
         </div>
       </div>
     </div>

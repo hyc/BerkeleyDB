@@ -182,6 +182,35 @@ namespace BerkeleyDB {
         /// </remarks>
         public string Dir;
 
+        private uint _initlogidcount;
+        internal bool initLogIdCountIsSet;
+        /// <summary>
+        /// The initial number of log identifier entities created by the
+        /// Berkeley DB environment
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This value is used by <see cref="DatabaseEnvironment.Open"/> to
+        /// force Berkeley DB to allocate a certain number of log identifier
+        /// objects when the environment is created. This can be useful if an
+        /// application uses a large number of log identifier objects, and
+        /// experiences performance issues with the default dynamic allocation
+        /// algorithm.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// InitLogIds will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint InitLogIdCount {
+            get { return _initlogidcount; }
+            set {
+                initLogIdCountIsSet = true;
+                _initlogidcount = value;
+            }
+        }
+
         internal bool modeIsSet;
         private int _mode;
         /// <summary>

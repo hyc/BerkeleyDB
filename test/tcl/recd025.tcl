@@ -36,6 +36,12 @@ proc recd025 { method args } {
 		return
 	}
 
+	# Skip test for heap, as heap does not have BULK ops
+	if { [is_heap $method] == 1 } {
+		puts "Recd025 skipping for heap method."
+		return
+	}
+
 	# Increase size of fixed-length records to match other methods.
         # We pick an arbitrarily larger record size to ensure that we
         # allocate several pages.

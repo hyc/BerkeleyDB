@@ -16,6 +16,7 @@ proc rep047 { method { nentries 200 } { tnum "047" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -41,6 +42,11 @@ proc rep047 { method { nentries 200 } { tnum "047" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery,
 	# and with and without cleaning.  Skip recovery with in-memory
 	# logging - it doesn't make sense.
@@ -52,8 +58,8 @@ proc rep047 { method { nentries 200 } { tnum "047" } args } {
 				    with in-memory logs."
 				continue
 			}
-			puts "Rep$tnum ($method $r):\
-			    Replication and resend bulk transfer $msg"
+			puts "Rep$tnum ($method $r): Replication\
+			    and resend bulk transfer $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			puts "Rep$tnum: Client 2 logs are [lindex $l 2]"
@@ -68,6 +74,7 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	global overflowword1 overflowword2
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -79,6 +86,11 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set overflowword1 "0"
@@ -123,6 +135,7 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	repladd 1
 	set ma_envcmd "berkdb_env -create $m_txnargs $m_logargs \
 	    $verbargs -errpfx MASTER -home $masterdir $repmemargs \
+	    $privargs \
 	    $cacheargs -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
@@ -131,6 +144,7 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	repladd 2
 	set cl_envcmd "berkdb_env -create $c_txnargs $c_logargs \
 	    $verbargs -errpfx CLIENT -home $clientdir $repmemargs \
+	    $privargs \
 	    $cacheargs -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
@@ -138,6 +152,7 @@ proc rep047_sub { method niter tnum logset recargs largs } {
 	repladd 3
 	set cl2_envcmd "berkdb_env -create $c2_txnargs $c2_logargs \
 	    $verbargs -errpfx CLIENT2 -home $clientdir2 $repmemargs \
+	    $privargs \
 	    $cacheargs -rep_client -rep_transport \[list 3 replsend\]"
 
 	# Bring the client online by processing the startup messages.

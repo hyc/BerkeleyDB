@@ -340,8 +340,8 @@ __db_join_get_pp(dbc, key, data, flags)
 	 * and causes us no headaches, so we permit it.
 	 */
 	if (F_ISSET(key, DB_DBT_PARTIAL)) {
-		__db_errx(env,
-		    "DB_DBT_PARTIAL may not be set on key during join_get");
+		__db_errx(env, DB_STR("0516",
+		    "DB_DBT_PARTIAL may not be set on key during join_get"));
 		return (EINVAL);
 	}
 
@@ -576,9 +576,9 @@ retry2:		cp = jc->j_workcurs[i];
 			jc->j_key.ulen <<= 1;
 			if ((ret = __os_realloc(env, jc->j_key.ulen,
 			    &jc->j_key.data)) != 0) {
-mem_err:			__db_errx(env,
+mem_err:			__db_errx(env, DB_STR_A("0517",
 				    "Allocation failed for join key, len = %lu",
-				    (u_long)jc->j_key.ulen);
+				    "%lu"), (u_long)jc->j_key.ulen);
 				goto err;
 			}
 			goto retry2;

@@ -37,7 +37,8 @@ static int __part_key_cmp __P((const void *, const void *));
 static inline void __part_search __P((DB *,
 		DB_PARTITION *, DBT *, u_int32_t *));
 
-static char *Alloc_err = "Partition open failed to allocate %d bytes";
+static char *Alloc_err = DB_STR_A("0644",
+    "Partition open failed to allocate %d bytes", "%d");
 
 /*
  * Allocate a partition cursor and copy flags to the partition cursor.
@@ -111,8 +112,8 @@ __partition_init(dbp, flags)
 		    F_ISSET(part, PART_CALLBACK)) ||
 		    (LF_ISSET(DBMETA_PART_CALLBACK) &&
 		    F_ISSET(part, PART_RANGE))) {
-			__db_errx(dbp->env,
-			    "Cannot specify callback and range keys.");
+			__db_errx(dbp->env, DB_STR("0645",
+			    "Cannot specify callback and range keys."));
 			return (EINVAL);
 		}
 	} else if ((ret = __os_calloc(dbp->env, 1, sizeof(*part), &part)) != 0)
@@ -151,16 +152,19 @@ __partition_set(dbp, parts, keys, callback)
 	env = dbp->dbenv->env;
 
 	if (parts < 2) {
-		__db_errx(env, "Must specify at least 2 partitions.");
+		__db_errx(env, DB_STR("0646",
+		    "Must specify at least 2 partitions."));
 		return (EINVAL);
 	}
 
 	if (keys == NULL && callback == NULL) {
-		__db_errx(env, "Must specify either keys or a callback.");
+		__db_errx(env, DB_STR("0647",
+		    "Must specify either keys or a callback."));
 		return (EINVAL);
 	}
 	if (keys != NULL && callback != NULL) {
-bad:		__db_errx(env, "May not specify both keys and a callback.");
+bad:		__db_errx(env, DB_STR("0648",
+		    "May not specify both keys and a callback."));
 		return (EINVAL);
 	}
 
@@ -230,8 +234,9 @@ __partition_set_dirs(dbp, dirp)
 			if (strcmp(*dir, dbenv->db_data_dir[i]) == 0)
 				break;
 		if (i == dbenv->data_next) {
-			__db_errx(dbp->env,
-			    "Directory not in environment list %s", *dir);
+			__db_errx(dbp->env, DB_STR_A("0649",
+			    "Directory not in environment list %s",
+			    "%s"), *dir);
 			__os_free(env, part_dirs);
 			return (EINVAL);
 		}
@@ -333,20 +338,21 @@ __partition_open(dbp, ip, txn, fname, type, flags, mode, do_open)
 #endif
 
 		(void)sprintf(sp, PART_NAME, np, part_id);
-		if ((ret = __os_strdup(env, name, &part_db->fname)) != 0)
-			goto err;
 		if (do_open) {
 			/*
 			 * Cycle through the directory names passed in,
 			 * if any.
 			 */
 			if (dirp != NULL &&
-			    (part_db->dirname = *dirp++) == NULL)
+			    (part_db->dirname = *dirp++) == NULL) {
 				part_db->dirname = *(dirp = part->dirs);
+				dirp++;
+			}
 			if ((ret = __db_open(part_db, ip, txn,
 			    name, NULL, type, flags, mode, PGNO_BASE_MD)) != 0)
 				goto err;
-		}
+		} else if ((ret = __os_strdup(env, name, &part_db->fname)) != 0)
+			goto err;
 	}
 
 	/* Get rid of the cursor used to open the database its the wrong type */
@@ -406,15 +412,15 @@ __partition_chk_meta(dbp, ip, txn, flags)
 
 	if (meta->magic != DB_HASHMAGIC &&
 	    (meta->magic != DB_BTREEMAGIC || F_ISSET(meta, BTM_RECNO))) {
-		__db_errx(env,
-		"Partitioning may only specified on BTREE and HASH databases.");
+		__db_errx(env, DB_STR("0650",
+	    "Partitioning may only specified on BTREE and HASH databases."));
 		ret = EINVAL;
 		goto err;
 	}
 	if (!FLD_ISSET(meta->metaflags,
 	    DBMETA_PART_RANGE | DBMETA_PART_CALLBACK)) {
-		__db_errx(env,
-		"Partitioning specified on a non-partitioned database.");
+		__db_errx(env, DB_STR("0651",
+		    "Partitioning specified on a non-partitioned database."));
 		ret = EINVAL;
 		goto err;
 	}
@@ -423,7 +429,8 @@ __partition_chk_meta(dbp, ip, txn, flags)
 	    FLD_ISSET(meta->metaflags, DBMETA_PART_CALLBACK)) ||
 	    (F_ISSET(part, PART_CALLBACK) &&
 	    FLD_ISSET(meta->metaflags, DBMETA_PART_RANGE))) {
-		__db_errx(env, "Incompatible partitioning specified.");
+		__db_errx(env, DB_STR("0652",
+		    "Incompatible partitioning specified."));
 		ret = EINVAL;
 		goto err;
 	}
@@ -431,40 +438,43 @@ __partition_chk_meta(dbp, ip, txn, flags)
 	if (FLD_ISSET(meta->metaflags, DBMETA_PART_CALLBACK) &&
 	     part->callback == NULL && !IS_RECOVERING(env) &&
 	     !F_ISSET(dbp, DB_AM_RECOVER) && !LF_ISSET(DB_RDWRMASTER)) {
-		__db_errx(env, "Partition callback not specified.");
+		__db_errx(env, DB_STR("0653",
+		    "Partition callback not specified."));
 		ret = EINVAL;
 		goto err;
 	}
 
 	if (F_ISSET(dbp, DB_AM_RECNUM)) {
-		__db_errx(env,
-	    "Record numbers are not supported in partitioned databases.");
+		__db_errx(env, DB_STR("0654",
+	    "Record numbers are not supported in partitioned databases."));
 		ret = EINVAL;
 		goto err;
 	}
 
 	if (part->nparts == 0) {
 		if (LF_ISSET(DB_CREATE) && meta->nparts == 0) {
-			__db_errx(env, "Zero paritions specified.");
+			__db_errx(env, DB_STR("0655",
+			    "Zero paritions specified."));
 			ret = EINVAL;
 			goto err;
 		} else
 			part->nparts = meta->nparts;
 	} else if (meta->nparts != 0 && part->nparts != meta->nparts) {
-		__db_errx(env, "Number of partitions does not match.");
+		__db_errx(env, DB_STR("0656",
+		    "Number of partitions does not match."));
 		ret = EINVAL;
 		goto err;
 	}
 
 	if (meta->magic == DB_HASHMAGIC) {
 		if (!F_ISSET(part, PART_CALLBACK)) {
-			__db_errx(env,
-			    "Hash database must specify a partition callback.");
+			__db_errx(env, DB_STR("0657",
+		    "Hash database must specify a partition callback."));
 			ret = EINVAL;
 		}
 	} else if (meta->magic != DB_BTREEMAGIC) {
-		__db_errx(env,
-		    "Partitioning only supported on BTREE nad HASH.");
+		__db_errx(env, DB_STR("0658",
+		    "Partitioning only supported on BTREE nad HASH."));
 		ret = EINVAL;
 	} else
 		ret = __partition_setup_keys(dbc, part, meta, flags);
@@ -549,18 +559,20 @@ __partition_setup_keys(dbc, part, meta, flags)
 		}
 		if (!LF_ISSET(DB_CREATE) && !F_ISSET(dbp, DB_AM_RECOVER) &&
 		    !LF_ISSET(DB_RDWRMASTER)) {
-			__db_errx(env, "No range keys found.");
+			__db_errx(env, DB_STR("0659", "No range keys found."));
 			ret = EINVAL;
 			goto err;
 		}
 	} else {
 		if (F_ISSET(part, PART_CALLBACK)) {
-			__db_errx(env, "Keys found and callback set.");
+			__db_errx(env, DB_STR("0660",
+			    "Keys found and callback set."));
 			ret = EINVAL;
 			goto err;
 		}
 		if (key.size != 0) {
-			__db_errx(env, "Partition key 0 is not empty.");
+			__db_errx(env, DB_STR("0661",
+			    "Partition key 0 is not empty."));
 			ret = EINVAL;
 			goto err;
 		}
@@ -655,8 +667,9 @@ again:		if ((ret = __dbc_get(dbc, &key, &data,
 					if (kp->data == NULL &&
 					    F_ISSET(dbp, DB_AM_RECOVER))
 						goto err;
-					__db_errx(env,
-					  "Partition key %d does not match", j);
+					__db_errx(env, DB_STR_A("0662",
+					    "Partition key %d does not match",
+					    "%d"), j);
 					ret = EINVAL;
 					goto err;
 				}
@@ -1706,8 +1719,8 @@ __part_rr(dbp, ip, txn, name, subdb, newname, flags)
 	ret = 0;
 
 	if (subdb != NULL && name != NULL) {
-		__db_errx(env,
-	    "A partitioned database can not be in a multiple databases file");
+		__db_errx(env, DB_STR("0663",
+	    "A partitioned database can not be in a multiple databases file"));
 		return (EINVAL);
 	}
 	ENV_GET_THREAD_INFO(env, ip);
@@ -1913,8 +1926,8 @@ int
 __db_no_partition(env)
 	ENV *env;
 {
-	__db_errx(env,
-	 "library build did not include support for the database partitioning");
+	__db_errx(env, DB_STR("0664",
+    "library build did not include support for the database partitioning"));
 	return (DB_OPNOTSUP);
 }
 /*

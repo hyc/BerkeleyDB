@@ -1,7 +1,7 @@
 #
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -28,7 +28,7 @@ BEGIN {
 	# Start .h file, make the entire file conditional.
 	printf("/* Do not edit: automatically built by gen_msg.awk. */\n\n") \
 	    > HFILE
-	printf("#ifndef\t%s_AUTO_H\n#define\t%s_AUTO_H\n\n", prefix, prefix) \
+	printf("#ifndef\t%s_AUTOMSG_H\n#define\t%s_AUTOMSG_H\n\n", prefix, prefix) \
 	    >> HFILE;
 	printf("/*\n") >> HFILE;
 	printf(" * Message sizes are simply the sum of field sizes (not\n") \
@@ -126,6 +126,8 @@ function type_length(type)
 		return (4);
 	if (type == "u_int16_t")
 		return (2);
+	if (type == "u_int8_t")
+		return (1);
 	printf("unknown field type: %s", type);
 	exit(1);
 }
@@ -212,6 +214,9 @@ function emit_marshal()
 			}
 			printf("\tDB_HTONS_COPYOUT(env, bp, argp->%s);\n", \
                             vars[i]) >> CFILE;
+		} else if (types[i] == "u_int8_t") {
+				printf(\
+    "\t*bp++ = argp->%s;\n", vars[i]) >> CFILE;
 		} else if (types[i] == "DB_LSN") {
 			if (version) {
 				printf("\tif (copy_only) {\n") >> CFILE;
@@ -363,6 +368,9 @@ function emit_unmarshal()
 			}
 			printf("\tDB_NTOHS_COPYIN(env, argp->%s, bp);\n", \
                             vars[i]) >> CFILE;
+		} else if (types[i] == "u_int8_t") {
+				printf(\
+    "\targp->%s = *bp++;\n", vars[i]) >> CFILE;
 		} else if (types[i] == "DB_LSN") {
 			if (version) {
 				printf("\tif (copy_only) {\n") >> CFILE;
@@ -416,8 +424,8 @@ function emit_unmarshal()
 	printf("\treturn (0);\n\n") >> CFILE;
 
 	printf("too_few:\n") >> CFILE;
-	printf("\t__db_errx(env,\n") >> CFILE;
-	printf("\t    \"Not enough input bytes to fill a %s message\");\n", \
+	printf("\t__db_errx(env, DB_STR(\"3675\",\n") >> CFILE;
+	printf("\t    \"Not enough input bytes to fill a %s message\"));\n", \
 	    base_name) >> CFILE;
 	printf("\treturn (EINVAL);\n") >> CFILE;
 	printf("}\n\n") >> CFILE;

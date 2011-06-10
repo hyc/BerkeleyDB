@@ -18,15 +18,19 @@ proc repmgr107 { } {
 	file mkdir [set mdir $testdir/MASTER]
 	file mkdir [set cdir $testdir/CLIENT]
 
+	# Using heartbeats because this test relies on the rerequest
+	# processing based on heartbeats.
+	#
 	puts "\tRepmgr$tnum.a: Set up simple master/client pair."
 	set dbconfig {
-		{rep_set_nsites 3} 
 		{rep_set_timeout DB_REP_ACK_TIMEOUT 2000000}
+		{rep_set_timeout DB_REP_HEARTBEAT_SEND 500000}
+		{rep_set_timeout DB_REP_HEARTBEAT_MONITOR 1100000}
 	}
-	make_dbconfig $mdir $dbconfig
+	make_dbconfig $mdir \
+            [linsert $dbconfig 0 [list repmgr_site localhost $mport db_local_site on]]
 	set cmds {
 		"home $mdir"
-		"local $mport"
 		"output $testdir/moutput"
 		"open_env"
 		"start master"
@@ -36,12 +40,13 @@ proc repmgr107 { } {
 	}
 	set m [open_site_prog [subst $cmds]]
 
-	make_dbconfig $cdir $dbconfig
+	make_dbconfig $cdir \
+            [linsert $dbconfig 0 \
+                 [list repmgr_site localhost $cport db_local_site on] \
+                 [list repmgr_site localhost $mport db_bootstrap_helper on]]
 	set cmds {
 		"home $cdir"
-		"local $cport"
 		"output $testdir/coutput"
-		"remote localhost $mport"
 		"open_env"
 		"start client"
 	}

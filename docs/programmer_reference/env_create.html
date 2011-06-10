@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="env.html" title="Chapter 9.  The Berkeley DB Environment" />
     <link rel="prev" href="env.html" title="Chapter 9.  The Berkeley DB Environment" />
-    <link rel="next" href="env_open.html" title="Opening databases within the environment" />
+    <link rel="next" href="env_size.html" title="Sizing a database environment" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Creating a database environment</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 9. 
 		The Berkeley DB Environment
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="env_open.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="env_size.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -97,14 +100,13 @@ application or system failure.  The latter is for applications that need
 recoverability.  There are situations in which other combinations of
 the initialization flags make sense, but they are rare.</p>
       <p>The <a href="../api_reference/C/envopen.html#envopen_DB_RECOVER" class="olink">DB_RECOVER</a> flag is specified by applications that want to perform any necessary database recovery when they start running.  That is, if there was a system or application failure the last time they ran, they want the databases to be made consistent before they start running again.  It is not an error to specify this flag when no recovery needs to be done.</p>
-      <p>The <a href="../api_reference/C/envopen.html#envopen_DB_RECOVER_FATAL" class="olink">DB_RECOVER_FATAL</a> flag is more special-purpose.  It performs catastrophic database recovery, and normally requires that some initial arrangements be made; that is, archived log files be brought back into the filesystem.  Applications should not normally specify this flag.  Instead, under these rare conditions, the <a href="../api_reference/C/db_recover.html" class="olink">db_recover utility</a> should be used.</p>
+      <p>The <a href="../api_reference/C/envopen.html#envopen_DB_RECOVER_FATAL" class="olink">DB_RECOVER_FATAL</a> flag is more special-purpose.  It performs catastrophic database recovery, and normally requires that some initial arrangements be made; that is, archived log files be brought back into the filesystem.  Applications should not normally specify this flag.  Instead, under these rare conditions, the <a href="../api_reference/C/db_recover.html" class="olink">db_recover</a> utility should be used.</p>
       <p>The following is a simple example of a function that opens a database
 environment for a transactional program.</p>
+      <a id="prog_env27"></a>
       <pre class="programlisting">DB_ENV *
-db_setup(home, data_dir, errfp, progname)
-    char *home, *data_dir, *progname;
-    FILE *errfp;
-{
+db_setup(char *home, char *data_dir, FILE *errfp, char *progname)
+    {
     DB_ENV *dbenv;
     int ret;
 
@@ -155,7 +157,7 @@ err:    (void)dbenv-&gt;close(dbenv, 0);
           <td width="20%" align="center">
             <a accesskey="u" href="env.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="env_open.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="env_size.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Chapter 9. 
@@ -164,7 +166,7 @@ err:    (void)dbenv-&gt;close(dbenv, 0);
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Opening databases within the environment</td>
+          <td width="40%" align="right" valign="top"> Sizing a database environment</td>
         </tr>
       </table>
     </div>

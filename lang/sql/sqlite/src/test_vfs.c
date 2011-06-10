@@ -26,6 +26,7 @@
 **   -default    BOOLEAN        (True to make the vfs default. Default false)
 **   -szosfile   INTEGER        (Value for sqlite3_vfs.szOsFile)
 **   -mxpathname INTEGER        (Value for sqlite3_vfs.mxPathname)
+**   -iversion   INTEGER        (Value for sqlite3_vfs.iVersion)
 */
 
 #include "sqlite3.h"
@@ -539,6 +540,7 @@ static int tvfsOpen(
   pFd->zFilename = zName;
   pFd->pVfs = pVfs;
   pFd->pReal = (sqlite3_file *)&pFd[1];
+  memset(pTestfile, 0, sizeof(TestvfsFile));
   pTestfile->pFd = pFd;
 
   /* Evaluate the Tcl script: 
@@ -1000,7 +1002,7 @@ static int testvfs_obj_cmd(
         int n;
         u8 *a = Tcl_GetByteArrayFromObj(objv[3], &n);
         int pgsz = pBuffer->pgsz;
-        if( pgsz==0 ) pgsz = 32768;
+        if( pgsz==0 ) pgsz = 65536;
         for(i=0; i*pgsz<n; i++){
           int nByte = pgsz;
           tvfsAllocPage(pBuffer, i, pgsz);
@@ -1014,7 +1016,7 @@ static int testvfs_obj_cmd(
       pObj = Tcl_NewObj();
       for(i=0; pBuffer->aPage[i]; i++){
         int pgsz = pBuffer->pgsz;
-        if( pgsz==0 ) pgsz = 32768;
+        if( pgsz==0 ) pgsz = 65536;
         Tcl_AppendObjToObj(pObj, Tcl_NewByteArrayObj(pBuffer->aPage[i], pgsz));
       }
       Tcl_SetObjResult(interp, pObj);

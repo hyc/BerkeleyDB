@@ -1,8 +1,10 @@
 package SQLite;
 
-import SQLite.*;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * SQLite SQL restore utility.
@@ -25,7 +27,7 @@ public class SQLRestore {
 	    } catch (EOFException e) {
 		line = null;
 	    } catch (IOException e) {
-		throw new SQLite.Exception("I/O error");
+		throw new SQLite.Exception("I/O error: " + e);
 	    }
 	    if (line == null) {
 		break;

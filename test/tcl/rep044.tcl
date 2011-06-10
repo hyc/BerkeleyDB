@@ -19,6 +19,7 @@ proc rep044 { method { tnum "044" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -51,10 +52,15 @@ proc rep044 { method { tnum "044" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	foreach l $logsets {
 		set logindex [lsearch -exact $l "in-memory"]
 		puts "Rep$tnum ($method): Replication with rollbacks\
-		    and open file ids $msg $msg2."
+		    and open file ids $msg $msg2 $msg3."
 		puts "Rep$tnum: Master logs are [lindex $l 0]"
 		puts "Rep$tnum: Client 0 logs are [lindex $l 1]"
 		rep044_sub $method $tnum $l $args
@@ -66,6 +72,7 @@ proc rep044_sub { method tnum logset largs } {
 	set orig_tdir $testdir
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -77,6 +84,11 @@ proc rep044_sub { method tnum logset largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set masterdir $testdir/ENV0
@@ -147,14 +159,14 @@ proc rep044_sub { method tnum logset largs } {
 		repladd 1
 		set envcmd(M0) "berkdb_env_noerr -create $m_txnargs \
 		    $m_logargs -lock_detect default $repmemargs \
-		    -errpfx ENV.M0 $verbargs \
+		    -errpfx ENV.M0 $verbargs $privargs \
 		    -home $masterdir -rep_transport \[list 1 replsend\]"
 		set menv0 [eval $envcmd(M0) -rep_master]
 
 		# Open second handle on master env.
 		set envcmd(M1) "berkdb_env_noerr $m_txnargs \
 		    $m_logargs -lock_detect default $repmemargs \
-		    -errpfx ENV.M1 $verbargs \
+		    -errpfx ENV.M1 $verbargs $privargs \
 		    -home $masterdir -rep_transport \[list 1 replsend\]"
 		set menv1 [eval $envcmd(M1)]
 		error_check_good rep_start [$menv1 rep_start -master] 0
@@ -163,7 +175,7 @@ proc rep044_sub { method tnum logset largs } {
 		repladd 2
 		set envcmd(C) "berkdb_env_noerr -create $c_txnargs \
 		    $c_logargs -errpfx ENV.C $verbargs $repmemargs \
-		    -lock_detect default \
+		    -lock_detect default $privargs \
 		    -home $clientdir -rep_transport \[list 2 replsend\]"
 		set cenv [eval $envcmd(C) -rep_client]
 

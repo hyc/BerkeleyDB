@@ -97,6 +97,7 @@ cmp $t $f > /dev/null 2>&1 ||
 
 # Build the VxWorks db_int.h.
 cat <<ENDOFSEDTEXT > $s
+s/@DB_STRUCT_ALIGN8@//
 s/@PATH_SEPARATOR@/\/\\\\\\\\/
 s/@db_int_def@//
 /#ifdef.*HAVE_SYSTEM_INCLUDE_FILES/i\\
@@ -246,6 +247,7 @@ PROGRAM_LIST="\
 	db_printlog
 	db_recover
 	db_stat
+	db_tuner
 	db_upgrade
 	db_verify
 	ex_access
@@ -261,6 +263,7 @@ FILE_LIST="\
 	util/db_printlog.c
 	util/db_recover.c
 	util/db_stat.c
+	util/db_tuner.c
 	util/db_upgrade.c
 	util/db_verify.c
 	util/db_log_verify.c

@@ -11,10 +11,8 @@ import org.junit.BeforeClass;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import junit.framework.JUnit4TestAdapter;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Vector;
@@ -29,10 +27,12 @@ public class RepmgrElectionTest extends EventHandlerAdapter implements Runnable
     File homedir;
     EnvironmentConfig envConfig;
     Environment dbenv;
+    int masterThreadIndex = -1;
+    int maxLoopWait = 30;
 
     @BeforeClass public static void ClassInit() {
-	    TestUtils.loadConfig(null);
-	    baseDirName = TestUtils.BASETEST_DBDIR + "/TESTDIR";
+        TestUtils.loadConfig(null);
+        baseDirName = TestUtils.BASETEST_DBDIR + "/TESTDIR";
     }
 
     @AfterClass public static void ClassShutdown() {
@@ -44,36 +44,77 @@ public class RepmgrElectionTest extends EventHandlerAdapter implements Runnable
 
     @After public void PerTestShutdown()
         throws Exception {
-        for(int j = 0; j < NUM_WORKER_THREADS; j++)
-        {
-            String homedirName = baseDirName+j;
-            TestUtils.removeDir(homedirName);
+        for(int j = 0; j < NUM_WORKER_THREADS; j++) {
+            TestUtils.removeDir(baseDirName + j);
         }
     }
-  
+
     private static boolean lastSiteStarted = false;
     private static int NUM_WORKER_THREADS = 5;
-    @Test(timeout=180000) public void startConductor()
+    @Test public void startConductor()
     {
-        Vector<RepmgrElectionTest> workers = new Vector<RepmgrElectionTest>(NUM_WORKER_THREADS);
-        // start the worker threads
+        Vector<RepmgrElectionTest> workers =
+          new Vector<RepmgrElectionTest>(NUM_WORKER_THREADS);
+
+        // Start the worker threads
         for (int i = 0; i < NUM_WORKER_THREADS; i++) {
-            RepmgrElectionTest worker = new RepmgrElectionTest(i);
+            RepmgrElectionTest worker;
+            worker = new RepmgrElectionTest(i, i == 0 ? -1 : 0);
             worker.run();
             workers.add(worker);
-            /*
-            while (!lastSiteStarted) {
-            try {
-            java.lang.Thread.sleep(10);
-            }catch(InterruptedException e){}
-            }
-            lastSiteStarted = false;
-            */
         }
-     
-        // stop the master - ensure the client with the highest priority is elected.
-     
-        // re-start original master. Call election ensure correct client is elected
+
+        // Ensure that the first site is master.
+        ReplicationStats rs = null;
+        try {
+            rs = workers.elementAt(0).dbenv.getReplicationStats(StatsConfig.DEFAULT);
+        } catch (DatabaseException dbe) {
+            fail("Unexpected database exception came from get replication stats." + dbe);
+        }
+
+        assertTrue(rs.getEnvId() == rs.getMaster());
+
+        // Stop the master
+        try {
+            workers.elementAt(0).dbenv.close();
+            workers.elementAt(0).dbenv = null;
+            workers.elementAt(0).envConfig = null;
+        } catch(DatabaseException dbe) {
+            fail("Unexpected database exception came during shutdown." + dbe);
+        }
+
+        // Ensure the election is completed.
+        try {
+            java.lang.Thread.sleep(5000);
+        } catch (InterruptedException ie) {} // Do nothing if interrupted.
+ 
+        // Ensure that the site with priority = 75 is selected as new master.
+        try {
+            rs = workers.elementAt(1).dbenv.getReplicationStats(StatsConfig.DEFAULT);
+        } catch (DatabaseException dbe) {
+            fail("Unexpected database exception came from get replication stats." + dbe);
+        }
+
+       assertTrue(rs.getEnvId() == rs.getMaster());
+
+        // Re-start original master using the new master as bootstrap helper.
+        RepmgrElectionTest rejoin = new RepmgrElectionTest(0, 1);
+        rejoin.run();
+        workers.remove(0);
+        workers.insertElementAt(rejoin, 0);
+ 
+        // Close all the sites and remove their environment contents.
+        for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+            try {
+                if (workers.elementAt(i).dbenv != null) {
+                    workers.elementAt(i).dbenv.close();
+                    workers.elementAt(i).dbenv = null;
+                    workers.elementAt(i).envConfig = null;
+                }
+            } catch(DatabaseException dbe) {
+                fail("Unexpected database exception came during shutdown." + dbe);
+            }
+        }
     }
 
     /*
@@ -84,35 +125,29 @@ public class RepmgrElectionTest extends EventHandlerAdapter implements Runnable
     public RepmgrElectionTest() {
         // needed to comply with JUnit, since there is also another constructor.
     }
-    RepmgrElectionTest(int threadNumber) {
+    RepmgrElectionTest(int threadNumber, int masterThreadIndex) {
         this.threadNumber = threadNumber;
+        this.masterThreadIndex = masterThreadIndex;
     }
- 
-    public void run() {
-        EnvironmentConfig envConfig;
-        Environment dbenv = null;
-        TestUtils.DEBUGOUT(1, "Creating worker: " + threadNumber);
-        try {
-            File homedir = new File(baseDirName + threadNumber);
 
-            if (homedir.exists()) {
-                // The following will fail if the directory contains sub-dirs.
-                if (homedir.isDirectory()) {
-                    File[] contents = homedir.listFiles();
-                    for (int i = 0; i < contents.length; i++)
-                        contents[i].delete();
-                }
-                homedir.delete();
-            }
+    public void run() {
+        String homedirName = baseDirName + threadNumber;
+        TestUtils.removeDir(homedirName);
+
+        try {
+            homedir = new File(homedirName);
             homedir.mkdir();
         } catch (Exception e) {
-            TestUtils.DEBUGOUT(2, "Warning: initialization had a problem creating a clean directory.\n"+e);
+            TestUtils.DEBUGOUT(2, "Warning: initialization had a problem creating a clean directory.\n" + e);
         }
         try {
-            homedir = new File(baseDirName+threadNumber);
+            homedir = new File(homedirName);
         } catch (NullPointerException npe) {
             // can't really happen :)
         }
+ 
+        TestUtils.DEBUGOUT(1, "Creating worker: " + threadNumber);
+
         envConfig = new EnvironmentConfig();
         envConfig.setErrorStream(TestUtils.getErrorStream());
         envConfig.setErrorPrefix("RepmgrElectionTest test("+threadNumber+")");
@@ -127,79 +162,83 @@ public class RepmgrElectionTest extends EventHandlerAdapter implements Runnable
         envConfig.setInitializeReplication(true);
         envConfig.setVerboseReplication(false);
 
-        ReplicationHostAddress haddr = new ReplicationHostAddress(address, basePort+threadNumber);
-        envConfig.setReplicationManagerLocalSite(haddr);
+        ReplicationManagerSiteConfig localConfig = new ReplicationManagerSiteConfig(address, basePort + threadNumber);
+        localConfig.setLocalSite(true);
+        envConfig.addReplicationManagerSite(localConfig);
+
         envConfig.setReplicationPriority(priorities[threadNumber]);
         envConfig.setEventHandler(this);
         envConfig.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
-     
-     
+
+        if (masterThreadIndex >= 0) {
+            // If we already have the master, then set it as the bootstrap helper,
+            // otherwise, set local site as new master.
+            ReplicationManagerSiteConfig remoteConfig =
+                new ReplicationManagerSiteConfig(address, basePort + masterThreadIndex);
+            remoteConfig.setBootstrapHelper(true);
+            envConfig.addReplicationManagerSite(remoteConfig);
+        }
+
         try {
             dbenv = new Environment(homedir, envConfig);
-	    
+
         } catch(FileNotFoundException e) {
             fail("Unexpected FNFE in standard environment creation." + e);
         } catch(DatabaseException dbe) {
             fail("Unexpected database exception came from environment create." + dbe);
         }
-     
+ 
         try {
-            /*
-             * If all threads are started with REP_ELECTION flag
-             * The whole system freezes, and I get:
-             * RepmgrElectionTest test(0): Waiting for handle count (1) or msg_th (0) to complete replication lockout
-             * Repeated every minute.
-             */
-	    envConfig = dbenv.getConfig();
-	    for(int existingSites = 0; existingSites < threadNumber; existingSites++)
-	    {
-		/*
-                 * This causes warnings to be produced - it seems only
-                 * able to make a connection to the master site, not other
-                 * client sites.
-                 * The documentation and code lead me to believe this is not
-                 * as expected - so leaving in here for now.
-                 */
-                ReplicationHostAddress host = new ReplicationHostAddress(
-		    address, basePort+existingSites);
-                envConfig.replicationManagerAddRemoteSite(host, false);
-	    }
-	    dbenv.setConfig(envConfig);            
-	    if(threadNumber == 0)
+            // If we do not have master, then set local site as new master.
+            if(masterThreadIndex == -1)
                 dbenv.replicationManagerStart(NUM_WORKER_THREADS, ReplicationManagerStartPolicy.REP_MASTER);
             else
                 dbenv.replicationManagerStart(NUM_WORKER_THREADS, ReplicationManagerStartPolicy.REP_CLIENT);
         } catch(DatabaseException dbe) {
             fail("Unexpected database exception came from replicationManagerStart." + dbe);
         }
+
         TestUtils.DEBUGOUT(1, "Started replication site: " + threadNumber);
         lastSiteStarted = true;
+
         try {
-            java.lang.Thread.sleep(10000);
-        }catch(InterruptedException ie) {}
-        try {
-            dbenv.close();
-            Environment.remove(homedir, false, envConfig);
-        } catch(FileNotFoundException fnfe) {
-        } catch(DatabaseException dbe) {
-            fail("Unexpected database exception came during shutdown." + dbe);
+            java.lang.Thread.sleep(1000 * (1+ threadNumber));
+        } catch (InterruptedException ie) {}
+
+        if(masterThreadIndex != -1) {
+            // Wait for "Start-up done" for each client, then add next client.
+            ReplicationStats rs = null;
+            int i = 0;
+            do {
+                try {
+                    java.lang.Thread.sleep(2000);
+                } catch (InterruptedException e) {}
+
+                try {
+                    rs = dbenv.getReplicationStats(StatsConfig.DEFAULT);
+                } catch (DatabaseException dbe) {
+                    dbe.printStackTrace();
+                    fail("Unexpected database exception came from getReplicationStats." + dbe);
+                }
+            } while (!rs.getStartupComplete() && i++ < maxLoopWait);
+            assertTrue(rs.getStartupComplete());
         }
     }
 
-    /*
-     * End worker thread implementation
-     */
-    public void handleRepMasterEvent() {
-        TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
-        TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
-    }
+        /*
+         * End worker thread implementation
+         */
+        public void handleRepMasterEvent() {
+            TestUtils.DEBUGOUT(1, "Got a REP_MASTER message");
+            TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
+        }
 
-    public void handleRepClientEvent() {
-        TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");         
-    }
+        public void handleRepClientEvent() {
+            TestUtils.DEBUGOUT(1, "Got a REP_CLIENT message");         
+        }
 
-    public void handleRepNewMasterEvent() {
-        TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
-        TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
-    }
+        public void handleRepNewMasterEvent() {
+            TestUtils.DEBUGOUT(1, "Got a REP_NEW_MASTER message");
+            TestUtils.DEBUGOUT(1, "My priority: " + priorities[threadNumber]);
+        }
 }

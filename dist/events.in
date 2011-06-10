@@ -14,7 +14,7 @@
 #	dist/bdb_provider.d
 # 	util/dtrace/dbdefs.d
 #	
-# Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011 Oracle and/or its affiliates.  All rights reserved.
 #
 
 # The alloc class covers the allocation of "on disk" database pages.
@@ -103,7 +103,7 @@ lock
 
 # Log - Transaction log 
 log
-    read(unsigned logfile, unsigned read_count);
+    read(unsigned read_count, unsigned logfile);
 
 # The mpool class monitors the allocation and management of memory,
 # including the cache.
@@ -227,12 +227,12 @@ race
 rep
     log_queued(unsigned count, DB_LSN *lsn);
     pg_duplicated(unsigned eid, unsigned pgno, unsigned file, unsigned count);
-    pg_record(unsigned eid, unsigned count);
-    pg_request(unsigned eid, unsigned count);
-    election_won(unsigned generation, unsigned count);
-    election(unsigned generation, unsigned count);
-    log_request(unsigned eid, unsigned count);
-    master_change(unsigned eid, unsigned count);
+    pg_record(unsigned count, unsigned eid);
+    pg_request(unsigned count, unsigned eid);
+    election_won(unsigned count, unsigned generation);
+    election(unsigned count, unsigned generation);
+    log_request(unsigned count, unsigned eid);
+    master_change(unsigned count, unsigned eid);
 
 # The txn category covers the basic transaction operations.
 txn
@@ -252,7 +252,7 @@ txn
     # Beginning the transaction incremented st_nbegins.
     nbegins(unsigned st_nbegins, unsigned txnid);
     # Aborting the transaction incremented st_naborts.
-    naborts(unsigned st_nbegins, unsigned txnid);
+    naborts(unsigned st_naborts, unsigned txnid);
     # Committing the transaction incremented st_ncommits.
     ncommits(unsigned st_ncommits, unsigned txnid);
     # Beginning or ending the transaction updated the number of active

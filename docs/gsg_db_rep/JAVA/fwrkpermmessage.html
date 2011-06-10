@@ -12,7 +12,10 @@
     <link rel="next" href="electiontimes.html" title="Managing Election Times" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Permanent Message Handling</th>
@@ -184,14 +187,6 @@
                     group has a small number of replicas, and those replicas
                     are on extremely reliable networks and servers.
                 </p>
-              <p>
-                        When this flag is used, the actual number of
-                        replicas that must respond is
-                        determined by the value set for
-                        
-                        
-                        <span><code class="methodname">EnvironmentConfig.setReplicationNumSites()</code>.</span>
-                </p>
             </li>
             <li>
               <p>
@@ -238,11 +233,7 @@
         <p>
         By default, a quorum of electable peers must must acknowledge a permanent
         message in order for it considered to have been successfully
-        transmitted. The actual number of replicas that must respond is
-        calculated using the value set with
-                        
-                        
-                        <span><code class="methodname">EnvironmentConfig.setReplicationNumSites()</code>.</span>
+        transmitted. 
 </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -320,20 +311,22 @@
         throws DatabaseException
     {
         int ret = 0;
-        appConfig = config;
+        repConfig = config;
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setErrorStream(System.err);
         envConfig.setErrorPrefix(RepConfig.progname);
 
-        envConfig.setReplicationManagerLocalSite(appConfig.getThisHost());
-        for (ReplicationHostAddress host = appConfig.getFirstOtherHost();
-            host != null; host = appConfig.getNextOtherHost())
-        {
-            envConfig.replicationManagerAddRemoteSite(host);
-        }
+        envConfig.addReplicationManagerSite(repConfig.getThisHost());
+        for (ReplicationHostAddress host = 
+          repConfig.getFirstOtherHost();
+          host != null; host = repConfig.getNextOtherHost()){
 
-        if (appConfig.totalSites &gt; 0)
-            envConfig.setReplicationNumSites(appConfig.totalSites);
+            ReplicationManagerSiteConfig repmgrRemoteSiteConfig =
+               new ReplicationManagerSiteConfig(host.host, host.port);
+            repmgrRemoteSiteConfig.setBootstrapHelper(true);
+            envConfig.addReplicationManagerSite(
+                repmgrRemoteSiteConfig);
+        }
         envConfig.setReplicationPriority(appConfig.priority);
 
         <strong class="userinput"><code>envConfig.setReplicationManagerAckPolicy(
@@ -358,10 +351,10 @@
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Adding the Replication Manager to
-                    
-                    
-                    <span>SimpleTxn</span>
-             </td>
+                
+                
+                <span>SimpleTxn</span>
+         </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

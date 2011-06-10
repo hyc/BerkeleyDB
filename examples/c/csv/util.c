@@ -124,7 +124,7 @@ secondary_callback(DB *db_arg, const DBT *key, const DBT *data, DBT *result)
 	switch (f->type) {
 	case STRING:
 		result->data = *(char **)faddr;
-		result->size = strlen(*(char **)faddr) + 1;
+		result->size = (u_int32_t)strlen(*(char **)faddr) + 1;
 		break;
 	case DOUBLE:
 		if ((addr = malloc(sizeof(double))) == NULL)

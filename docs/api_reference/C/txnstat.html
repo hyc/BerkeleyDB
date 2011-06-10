@@ -12,7 +12,10 @@
     <link rel="next" href="txnstat_print.html" title="DB_ENV-&gt;txn_stat_print()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;txn_stat()</th>
@@ -65,6 +68,14 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <ul type="disc">
           <li>
             <p>
+                    <span class="bold"><strong>u_int32_t st_inittxns;</strong></span>
+                </p>
+            <p>
+                    The initial number of transactions configured.
+                </p>
+          </li>
+          <li>
+            <p>
                     <span class="bold"><strong>DB_LSN st_last_ckp;</strong></span>
                 </p>
             <p>
@@ -73,48 +84,10 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>time_t st_time_ckp;</strong></span>
-                </p>
-            <p>
-                    The time the last completed checkpoint finished (as the number of
-                    seconds since the Epoch, returned by the IEEE/ANSI Std 1003.1 (POSIX)
-                    <span class="bold"><strong>time</strong></span> function).
-                </p>
-          </li>
-          <li>
-            <p>
                     <span class="bold"><strong>u_int32_t st_last_txnid;</strong></span>
                 </p>
             <p>
                     The last transaction ID allocated.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_maxtxns;</strong></span>
-                </p>
-            <p>
-                    The maximum number of active transactions configured.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_nactive;</strong></span>
-                </p>
-            <p>
-                    The number of transactions that are currently active.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_nsnapshot;</strong></span>
-                </p>
-            <p>
-                    The number of transactions on the snapshot list.  These are
-                    transactions which modified a database opened with 
-                    <a class="link" href="dbopen.html#dbopen_DB_MULTIVERSION">DB_MULTIVERSION</a>,
-                    and which have committed or aborted, but the copies of pages they
-                    created are still in the cache.
                 </p>
           </li>
           <li>
@@ -136,10 +109,10 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>uintmax_t st_nbegins;</strong></span>
+                    <span class="bold"><strong>u_int32_t st_maxtxns;</strong></span>
                 </p>
             <p>
-                    The number of transactions that have begun.
+                    The maximum number of active transactions configured.
                 </p>
           </li>
           <li>
@@ -148,6 +121,22 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
                 </p>
             <p>
                     The number of transactions that have aborted.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>u_int32_t st_nactive;</strong></span>
+                </p>
+            <p>
+                    The number of transactions that are currently active.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>uintmax_t st_nbegins;</strong></span>
+                </p>
+            <p>
+                    The number of transactions that have begun.
                 </p>
           </li>
           <li>
@@ -168,10 +157,23 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>roff_t st_regsize;</strong></span>
+                    <span class="bold"><strong>u_int32_t st_nsnapshot;</strong></span>
                 </p>
             <p>
-                    The size of the transaction region, in bytes.
+                    The number of transactions on the snapshot list.  These are
+                    transactions which modified a database opened with 
+                    <a class="link" href="dbopen.html#dbopen_DB_MULTIVERSION">DB_MULTIVERSION</a>,
+                    and which have committed or aborted, but the copies of pages they
+                    created are still in the cache.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>uintmax_t st_region_nowait;</strong></span>
+                </p>
+            <p>
+                    The number of times that a thread of control was able to obtain the
+                    transaction region mutex without waiting.
                 </p>
           </li>
           <li>
@@ -185,11 +187,20 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>uintmax_t st_region_nowait;</strong></span>
+                    <span class="bold"><strong>roff_t st_regsize;</strong></span>
                 </p>
             <p>
-                    The number of times that a thread of control was able to obtain the
-                    transaction region mutex without waiting.
+                    The region size, in bytes.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>time_t st_time_ckp;</strong></span>
+                </p>
+            <p>
+                    The time the last completed checkpoint finished (as the number of
+                    seconds since the Epoch, returned by the IEEE/ANSI Std 1003.1 (POSIX)
+                    <span class="bold"><strong>time</strong></span> function).
                 </p>
           </li>
           <li>
@@ -274,9 +285,52 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
                                 <span class="bold"><strong>u_int32_t status;</strong></span>
                             </p>
                   <p>
-                                One of the following list of constants: TXN_ABORTED, TXN_COMMITTED,
-                                TXN_PREPARED, TXN_RUNNING.
+                                Provides one of the following constants,
+                                indicating the transaction status:
                             </p>
+                  <table class="simplelist" border="0" summary="Simple list">
+                    <tr>
+                      <td>TXN_ABORTED</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_COMMITTED</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_NEED_ABORT</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_PREPARED</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_RUNNING</td>
+                    </tr>
+                  </table>
+                </li>
+                <li>
+                  <p>
+                                <span class="bold"><strong>u_int32_t xa_status;</strong></span>
+                            </p>
+                  <p>
+                                Provides one of the following constants, which indicate the
+                                XA status:
+                            </p>
+                  <table class="simplelist" border="0" summary="Simple list">
+                    <tr>
+                      <td>TXN_XA_ACTIVE</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_XA_DEADLOCKED</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_XA_IDLE</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_XA_PREPARED</td>
+                    </tr>
+                    <tr>
+                      <td>TXN_XA_ROLLEDBACK</td>
+                    </tr>
+                  </table>
                 </li>
                 <li>
                   <p>
@@ -320,7 +374,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54462504"></a>Parameters</h3>
+              <h3 class="title"><a id="id3941470"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -328,7 +382,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54533976"></a>statp</h4>
+                <h4 class="title"><a id="id3940139"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -341,7 +395,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54495912"></a>flags</h4>
+                <h4 class="title"><a id="id3941819"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -367,7 +421,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54468192"></a>Errors</h3>
+              <h3 class="title"><a id="id3941753"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -383,7 +437,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54541952"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3941758"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -396,7 +450,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54487176"></a>Class</h3>
+              <h3 class="title"><a id="id3941880"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -408,7 +462,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54554760"></a>See Also</h3>
+              <h3 class="title"><a id="id3941144"></a>See Also</h3>
             </div>
           </div>
         </div>

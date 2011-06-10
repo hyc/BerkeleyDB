@@ -16,6 +16,7 @@ proc rep024 { method { niter 1000 } { tnum "024" } args } {
 	source ./include.tcl
 	global databases_in_memory 
 	global repfiles_in_memory
+	global env_private
 
 	# Run for all access methods.
 	if { $checking_valid_methods } {
@@ -39,6 +40,11 @@ proc rep024 { method { niter 1000 } { tnum "024" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run all tests with and without recovery.
 	set envargs ""
 	foreach r $test_recopts {
@@ -49,8 +55,8 @@ proc rep024 { method { niter 1000 } { tnum "024" } args } {
 				    for in-memory logs with -recover."
 				continue
 			}
-			puts "Rep$tnum ($method $r): \
-			    Replication page allocation/verify test $msg2."
+			puts "Rep$tnum ($method $r): Replication\
+			    page allocation/verify test $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep024_sub $method $niter $tnum $envargs $l $r $args
@@ -63,6 +69,7 @@ proc rep024 { method { niter 1000 } { tnum "024" } args } {
 proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	source ./include.tcl
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -74,6 +81,11 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -98,7 +110,7 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	repladd 1
 	set env_cmd(1) "berkdb_env_noerr -create $repmemargs \
 	    -log_max 1000000 $envargs $recargs -home $masterdir \
-	    -errpfx MASTER $verbargs -txn $m_logargs \
+	    -errpfx MASTER $verbargs -txn $m_logargs $privargs \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(1) -rep_master]
 
@@ -106,7 +118,7 @@ proc rep024_sub { method niter tnum envargs logset recargs largs } {
 	repladd 2
 	set env_cmd(2) "berkdb_env_noerr -create $repmemargs \
 	    -log_max 1000000 $envargs $recargs -home $clientdir \
-	    -errpfx CLIENT $verbargs -txn $c_logargs \
+	    -errpfx CLIENT $verbargs -txn $c_logargs $privargs \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(2) -rep_client]
 
@@ -224,6 +236,8 @@ proc r24_check_pages { db method } {
 		set pages [stat_field $db stat "Number of big pages"]
 	} elseif { [is_queue $method] == 1 } {
 		set pages [stat_field $db stat "Number of pages"]
+	} elseif { [is_heap $method] == 1 } {
+		set pages  [stat_field $db stat "Number of records"]
 	} else {
 		set pages [stat_field $db stat "Overflow pages"]
 	}

@@ -100,7 +100,7 @@ public class Cursor {
     }
 
     /**
-    Return a new cursor with the same transaction and locker ID as the
+    Creates a new cursor that uses the same transaction and locker ID as the
     original cursor.
     <p>
     This is useful when an application is using locking and requires two
@@ -144,7 +144,8 @@ public class Cursor {
     }
 
     /**
-    Return the Database handle associated with this Cursor.
+    Return the Database handle associated with this Cursor. 
+    
     <p>
     @return
     The Database handle associated with this Cursor.
@@ -155,10 +156,15 @@ public class Cursor {
     }
 
     /**
-    Return a comparison of the two cursors.
+    Return a comparison of the two cursors. Two cursors are 
+    equal if and only if they are positioned 
+    on the same item in the same database.
     <p>
     @return
-    An integer representing the result of the comparison. 0 is equal, 1 
+    An integer representing the result of the 
+    comparison between this cursor and OtherCursor (another 
+    cursor handle used as the comparator). 0 indicates that this cursor and 
+    OtherCursor are positioned on the same item, 1 
     indicates this cursor is greater than OtherCursor, -1 indicates that 
     OtherCursor is greater than this cursor.
     <p>
@@ -198,7 +204,7 @@ deadlock.
     Delete the key/data pair to which the cursor refers.
     <p>
     When called on a cursor opened on a database that has been made into a
-    secondary index, this method the key/data pair from the primary database
+    secondary index, this method deletes the key/data pair from the primary database
     and all secondary indices.
     <p>
     The cursor position is unchanged after a delete, and subsequent calls
@@ -1145,7 +1151,7 @@ deadlock.
     this is not allowed.  To change the sort order of a record, delete it and
     then re-insert it.
     <p>
-    @param data - the data DatabaseEntry stored.
+    @param data the data DatabaseEntry stored.
     <br>
     @throws DeadlockException - if the operation was selected to resolve a
     deadlock.
@@ -1184,11 +1190,10 @@ deadlock.
     The priority of a page biases the replacement algorithm to be more or less
     likely to discard a page when space is needed in the buffer pool. The bias
     is temporary, and pages will eventually be discarded if they are not
-    referenced again. The DBcursor->set_priority method is only advisory, and
+    referenced again. The setPriority method is only advisory, and
     does not guarantee pages will be treated in a specific way.
     <p>
     This method may be called at any time during the life of the application.
-    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */

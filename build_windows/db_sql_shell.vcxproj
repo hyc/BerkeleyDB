@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,20 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A5DB89F0-06E5-11DF-8A39-0800200C9A66}</ProjectGuid>
+  <ProjectGuid>{A5DB89F0-06E5-11DF-8A39-0800200C9A66}</ProjectGuid>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
@@ -42,185 +37,75 @@
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    </ImportGroup>
+  <ImportGroup>
+    <Import Project="application.props"/>
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros"/>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\build_windows\$(Platform)\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./$(OutDir)db_sql_shell\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\build_windows\$(Platform)\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./$(OutDir)db_sql_shell\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\build_windows\$(Platform)\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./$(OutDir)db_sql_shell\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\build_windows\$(Platform)\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./$(OutDir)db_sql_shell\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">dbsql</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">dbsql</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">dbsql</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.exe</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">dbsql</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.exe</TargetExt>
+    <TargetName>dbsql</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../build_windows;../src;../src/dbinc;../include;../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_DEBUG;SQLITE_DEBUG;SQLITE_MEMDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)db_sql_shell.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)dbsql/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)dbsql/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <CompileAs>Default</CompileAs>
+      <AdditionalIncludeDirectories>../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_DEBUG;SQLITE_MEMDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalOptions>/machine:x86 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libdb51d.lib;libdb_sql51d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(OutDir);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-	<OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <ProgramDatabaseFile>$(OutDir)dbsql.pdb</ProgramDatabaseFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>NotSet</TargetMachine>
+      <AdditionalDependencies>libdb_sql52d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../build_windows;../src;../src/dbinc;../include;../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)db_sql_shell.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)dbsql/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)dbsql/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <AdditionalIncludeDirectories>../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalOptions>/machine:x86 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libdb51.lib;libdb_sql51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(OutDir);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-	<OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <ProgramDatabaseFile>$(OutDir)dbsql.pdb</ProgramDatabaseFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>NotSet</TargetMachine>
+      <AdditionalDependencies>libdb_sql52.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../build_windows;../src;../src/dbinc;../include;../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_DEBUG;SQLITE_DEBUG;SQLITE_MEMDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)db_sql_shell.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)dbsql/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)dbsql/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <CompileAs>Default</CompileAs>
+      <AdditionalIncludeDirectories>../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_DEBUG;SQLITE_MEMDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalOptions>/machine:x64 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libdb51d.lib;libdb_sql51d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(OutDir);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-	<OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <ProgramDatabaseFile>$(OutDir)dbsql.pdb</ProgramDatabaseFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>NotSet</TargetMachine>
+      <AdditionalDependencies>libdb_sql52d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../build_windows;../src;../src/dbinc;../include;../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)db_sql_shell.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)dbsql/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)dbsql/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <AdditionalIncludeDirectories>../lang/sql/generated;../lang/sql/adapter;../lang/sql/sqlite/src;../lang/sql/sqlite/ext/fts3;../lang/sql/sqlite/ext/rtree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalOptions>/machine:x64 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libdb51.lib;libdb_sql51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(OutDir);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-	<OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <ProgramDatabaseFile>$(OutDir)dbsql.pdb</ProgramDatabaseFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>NotSet</TargetMachine>
+      <AdditionalDependencies>libdb_sql52.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\lang\sql\sqlite\src\shell.c" />
+    <ClCompile Include="..\lang\sql\sqlite\src\shell.c"/>
   </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
   <ItemGroup>
-    <ProjectReference Include="db.vcxproj">
+    <ProjectReference Condition="exists('db.vcxproj')" Include="db.vcxproj">
       <Project>{fd045d60-abad-4a6c-9794-9bfb085fc3e7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="db_sql.vcxproj">
+    <ProjectReference Condition="exists('db_sql.vcxproj')" Include="db_sql.vcxproj">
       <Project>{4b65e600-064a-11df-8a39-0800200c9a66}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
 </Project>

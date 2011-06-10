@@ -60,7 +60,7 @@ proc repmgr013_sub { method niter tnum largs } {
 	set ma_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx MASTER -home $masterdir -txn -rep -thread"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -69,7 +69,7 @@ proc repmgr013_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -81,7 +81,7 @@ proc repmgr013_sub { method niter tnum largs } {
 	set cl2_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread"
 	set clientenv2 [eval $cl2_envcmd]
-	$clientenv2 repmgr -ack all -nsites $nsites \
+	$clientenv2 repmgr -ack all \
 	    -timeout {connection_retry 5000000} \
 	    -local [list localhost [lindex $ports 2]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -90,9 +90,9 @@ proc repmgr013_sub { method niter tnum largs } {
 	await_startup_done $clientenv2
 
 	puts "\tRepmgr$tnum.d: Verify repmgr site lists."
-	verify_sitelist $masterenv $nsites {0 0}
-	verify_sitelist $clientenv $nsites {0 0}
-	verify_sitelist $clientenv2 $nsites {0 1}
+	verify_sitelist $masterenv $nsites {}
+	verify_sitelist $clientenv $nsites {}
+	verify_sitelist $clientenv2 $nsites [list [lindex $ports 1]]
 
 	error_check_good client2_close [$clientenv2 close] 0
 	error_check_good client_close [$clientenv close] 0
@@ -100,9 +100,7 @@ proc repmgr013_sub { method niter tnum largs } {
 }
 
 # For numsites, supply the nsites value defined for the test.
-# For peervec, supply a vector of other sites of length numsites-1
-# with 0 to indicate a non-peer and 1 to indicate a peer.  The order
-# of the other sites is the same as the order in which they were created. 
+# For peervec, supply a list of ports whose sites should be considered peers.
 proc verify_sitelist { env numsites peervec } {
 	set sitelist [$env repmgr_site_list]
 
@@ -113,12 +111,13 @@ proc verify_sitelist { env numsites peervec } {
 	# the expected string values.
 	set pvind 0
 	foreach tuple $sitelist {
-		error_check_good eidchk [lindex $tuple 0] $pvind
+		error_check_good eidchk [string is integer -strict \
+					     [lindex $tuple 0]] 1
 		error_check_good hostchk [lindex $tuple 1] "localhost"
-		error_check_good portchk [string is integer -strict \
-		    [lindex $tuple 2]] 1
+		set port [lindex $tuple 2]
+		error_check_good portchk [string is integer -strict $port] 1
 		error_check_good statchk [lindex $tuple 3] connected
-		if { [lindex $peervec $pvind] == 1 } {
+		if { [lsearch $peervec $port] >= 0 } {
 			error_check_good peerchk [lindex $tuple 4] peer
 		} else {
 			error_check_good npeerchk [lindex $tuple 4] non-peer

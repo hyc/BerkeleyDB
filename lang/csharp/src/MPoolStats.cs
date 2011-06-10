@@ -189,6 +189,10 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong RegionSize { get { return (ulong)st.st_regsize.ToInt64(); } }
         /// <summary>
+        /// Individual cache max. 
+        /// </summary>
+        public ulong RegionMax { get { return (ulong)st.st_regmax.ToInt64(); } }
+        /// <summary>
         /// Stats for files open in the memory pool
         /// </summary>
         public List<MPoolFileStats> Files { get { return mempfiles; } }

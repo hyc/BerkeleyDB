@@ -105,7 +105,7 @@ public final class Constants {
     public static final int SQLITE_OPEN_READONLY = 1;
     public static final int SQLITE_OPEN_READWRITE = 2;
     public static final int SQLITE_OPEN_CREATE = 4;
-    public static final int SQLITE_STATUS_MEMORY = 0;
+    public static final int SQLITE_STATUS_MEMORY_USED = 0;
     public static final int SQLITE_STATUS_MALLOC_SIZE = 5;
     public static final int SQLITE_STATUS_PAGECACHE_USED = 1;
     public static final int SQLITE_STATUS_PAGECACHE_OVERFLOW = 2;

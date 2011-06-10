@@ -150,8 +150,9 @@ StageRuntimeComponents() functions.  That's all that should
 really need to be changed to add/rename/remove files or
 to change which group they are a part of.
 
+I'm seeing warnings when generating the package, what's wrong?
+-------------------------------------
 
-
-
-
+Warnings in "light.exe" that are documented in the WiX manual can be safely
+ignored.  Errors cannot be ignored.
 

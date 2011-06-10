@@ -26,7 +26,7 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -I${TOP}/../adapter
+TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -I${TOP}/../adapter -I${TOP}/ext/rtree
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
@@ -58,10 +58,6 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 # Should the database engine be compiled threadsafe
 #
 TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
-
-# Do threads override each others locks by default (1), or do we test (-1)
-#
-TCC += -DSQLITE_THREAD_OVERRIDE_LOCK=@THREADSOVERRIDELOCKS@
 
 # Any target libraries which libsqlite must be linked against
 # 
@@ -168,8 +164,8 @@ USE_AMALGAMATION = @USE_AMALGAMATION@
 LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
          callback.lo complete.lo ctime.lo date.lo db_encrypt.lo db_pragma.lo \
-         db_shell.lo delete.lo expr.lo fault.lo fkey.lo \
-         fts3.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
+         db_sequence.lo db_shell.lo delete.lo expr.lo fault.lo fkey.lo \
+         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
          fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo fts3_write.lo \
          func.lo global.lo hash.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
@@ -213,6 +209,7 @@ SRC = \
   $(TOP)/src/date.c \
   $(TOP)/../adapter/db_encrypt.c \
   $(TOP)/../adapter/db_pragma.c \
+  $(TOP)/../adapter/db_sequence.c \
   $(TOP)/../adapter/db_shell.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -313,6 +310,7 @@ SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3Int.h \
+  $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
@@ -362,21 +360,28 @@ TESTSRC = \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_func.c \
+  $(TOP)/src/test_fuzzer.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
   $(TOP)/src/test_intarray.c \
   $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
+  $(TOP)/src/test_multiplex.c \
   $(TOP)/src/test_mutex.c \
   $(TOP)/src/test_onefile.c \
   $(TOP)/src/test_osinst.c \
   $(TOP)/src/test_pcache.c \
+  $(TOP)/src/test_quota.c \
+  $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
+  $(TOP)/src/test_superlock.c \
+  $(TOP)/src/test_syscall.c \
   $(TOP)/src/test_stat.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_wholenumber.c \
   $(TOP)/src/test_wsd.c
 
 # Source code to the library files needed by the test fixture
@@ -386,6 +391,7 @@ TESTSRC2 = \
   $(TOP)/../adapter/backup.c \
   $(TOP)/src/bitvec.c \
   $(TOP)/../adapter/btree.c \
+  $(TOP)/../adapter/db_sequence.c \
   $(TOP)/src/build.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
@@ -417,6 +423,7 @@ TESTSRC2 = \
   $(TOP)/src/where.c \
   parse.c \
   $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
@@ -464,6 +471,8 @@ EXTHDR += \
   $(TOP)/ext/rtree/rtree.h
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
+EXTHDR += \
+  $(TOP)/ext/rtree/sqlite3rtree.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -581,6 +590,10 @@ db_encrypt.lo:	$(TOP)/../adapter/db_encrypt.c $(HDR) \
 db_pragma.lo:	$(TOP)/../adapter/db_pragma.c $(HDR) \
 		$(TOP)/../adapter/btreeInt.h
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_pragma.c
+
+db_sequence.lo:	$(TOP)/../adapter/db_sequence.c $(HDR) \
+		$(TOP)/../adapter/btreeInt.h
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_sequence.c
 
 db_shell.lo:	$(TOP)/../adapter/db_shell.c $(HDR) \
 		$(TOP)/../adapter/btreeInt.h
@@ -764,7 +777,7 @@ tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DTCLSH=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
 tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(LTCOMPILE) -DTCL_USE_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
+	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
 tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
@@ -823,6 +836,9 @@ fts2_tokenizer1.lo:	$(TOP)/ext/fts2/fts2_tokenizer1.c $(HDR) $(EXTHDR)
 
 fts3.lo:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
+
+fts3_aux.lo:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_aux.c
 
 fts3_expr.lo:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_expr.c

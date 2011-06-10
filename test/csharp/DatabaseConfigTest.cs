@@ -18,11 +18,17 @@ namespace CsharpAPITest
 	[TestFixture]
 	public class DatabaseConfigTest : CSharpTestFixture
 	{
+
+		[TestFixtureSetUp]
+		public virtual void SetUpTestFixture() {
+			testFixtureName = "DatabaseConfigTest";
+			base.SetUpTestfixture();
+		}
+
 		[Test]
 		virtual public void TestConfigWithoutEnv()
 		{
-			string testName = "TestConfigWithoutEnv";
-			string testFixtureName = "DatabaseConfigTest";
+			testName = "TestConfigWithoutEnv";
 			SetUpTest(false);
 			XmlElement xmlElem = Configuration.TestSetUp(
 			    testFixtureName, testName);

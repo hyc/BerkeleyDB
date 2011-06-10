@@ -12,7 +12,10 @@
     <link rel="next" href="envset_mp_mmapsize.html" title="DbEnv::set_mp_mmapsize()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::set_mp_max_write()</th>
@@ -46,13 +49,14 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
     </p>
       <p>
          The database environment's maximum number of sequential write
-         operations may also be configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "set_mp_max_write", one or more whitespace characters, and the maximum
-         number of sequential writes and the number of microseconds to sleep,
-         also separated by whitespace characters. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
-         read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         operations may also be configured using the environment's
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file. The syntax of the entry in that file is a single
+         line with the string "set_mp_max_write", one or more whitespace
+         characters, and the maximum number of sequential writes and the
+         number of microseconds to sleep, also separated by whitespace
+         characters. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the database
+         environment is opened, it will silently overrule configuration
+         done before that time.
     </p>
       <p>
          The <code class="methodname">DbEnv::set_mp_max_write()</code> method configures a database
@@ -73,7 +77,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53497784"></a>Parameters</h3>
+              <h3 class="title"><a id="id3646959"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -81,7 +85,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53497136"></a>maxwrite</h4>
+                <h4 class="title"><a id="id3646948"></a>maxwrite</h4>
               </div>
             </div>
           </div>
@@ -95,7 +99,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53503896"></a>maxwrite_sleep</h4>
+                <h4 class="title"><a id="id3647068"></a>maxwrite_sleep</h4>
               </div>
             </div>
           </div>
@@ -111,7 +115,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53498864"></a>Errors</h3>
+              <h3 class="title"><a id="id3646326"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -129,7 +133,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53501952"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3647036"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -142,7 +146,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53500712"></a>Class</h3>
+              <h3 class="title"><a id="id3647014"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -154,7 +158,7 @@ DbEnv::set_mp_max_write(int maxwrite, db_timeout_t maxwrite_sleep); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53496920"></a>See Also</h3>
+              <h3 class="title"><a id="id3646945"></a>See Also</h3>
             </div>
           </div>
         </div>

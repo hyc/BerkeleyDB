@@ -515,6 +515,31 @@ public class DatabaseEntry {
     }
 
     /**
+    Return whether this DatabaseEntry is configured as read only.
+    <p>
+    @return
+    Whether this DatabaseEntry is configured as read only.
+    <p>
+    @see #setReadOnly(boolean)
+    */
+    public boolean getReadOnly() {
+        return (flags & DbConstants.DB_DBT_READONLY) != 0;
+    }
+
+    /**
+    Configure this DatabaseEntry as read only.
+    <p>
+    @param readonly
+    Whether this DatabaseEntry is configured as read only.
+    */
+    public void setReadOnly(final boolean readonly) {
+        if (readonly)
+            flags |= DbConstants.DB_DBT_READONLY;
+        else
+            flags &= ~DbConstants.DB_DBT_READONLY;
+    }
+
+    /**
 Return the record number encoded in this entry's buffer.
 <p>
 This method may be called at any time during the life of the application.

@@ -312,18 +312,26 @@ next:	/*
 	 * number.  We may already have it, if not get it here.
 	 */
 	if ((nentry = NUM_ENT(pg)) != 0) {
-		next_p = 0;
 		/* Get a copy of the first recno on the page. */
 		if (dbc->dbtype == DB_RECNO) {
 			if ((ret = __db_retcopy(dbp->env, start,
 			     &cp->recno, sizeof(cp->recno),
 			     &start->data, &start->ulen)) != 0)
 				goto err;
-		} else if (start->size == 0 && (ret = __db_ret(dbc,
+		} else if (((next_p == 1 && npgno == PGNO_INVALID) ||
+		    start->size == 0) && (ret = __db_ret(dbc,
 		    pg, 0, start, &start->data, &start->ulen)) != 0)
 			goto err;
 
-		if (npgno == PGNO_INVALID) {
+		next_p = 0;
+		/*
+		 * If there is no next page we can stop unless there is
+		 * a possibility of moving this data to a lower numbered
+		 * page.
+		 */
+		if (npgno == PGNO_INVALID &&
+		    (!check_trunc || PGNO(pg) <= c_data->compact_truncate ||
+		    PGNO(pg) == BAM_ROOT_PGNO(dbc))) {
 			/* End of the tree, check its duplicates and exit. */
 			PTRACE(dbc, "GoDone", PGNO(pg), start, 0);
 			if (check_dups && (ret = __bam_compact_dups(dbc,
@@ -1098,7 +1106,7 @@ __bam_merge_records(dbc, ndbc, factor, c_data)
 	PAGE *pg, *npg;
 	db_indx_t adj, indx, nent, *ninp, pind;
 	int32_t adjust;
-	u_int32_t freespace, nksize, pfree, size;
+	u_int32_t freespace, len, nksize, pfree, size;
 	int first_dup, is_dup, next_dup, n_ok, ret;
 	size_t (*func) __P((DB *, const DBT *, const DBT *));
 
@@ -1229,7 +1237,8 @@ __bam_merge_records(dbc, ndbc, factor, c_data)
 		indx -= adj;
 	}
 	bk = GET_BKEYDATA(dbp, npg, indx);
-	if (indx != 0 && BINTERNAL_SIZE(bk->len) >= pfree) {
+	len = (B_TYPE(bk->type) != B_KEYDATA) ? BOVERFLOW_SIZE : bk->len;
+	if (indx != 0 && BINTERNAL_SIZE(len) >= pfree) {
 		if (F_ISSET(dbc, DBC_OPD)) {
 			if (dbp->dup_compare == __bam_defcmp)
 				func = __bam_defpfx;
@@ -1244,7 +1253,7 @@ __bam_merge_records(dbc, ndbc, factor, c_data)
 	while (indx != 0 && ninp[indx] == ninp[indx - adj])
 		indx -= adj;
 
-	while (indx != 0 && BINTERNAL_SIZE(bk->len) >= pfree) {
+	while (indx != 0 && BINTERNAL_SIZE(len) >= pfree) {
 		if (B_TYPE(bk->type) != B_KEYDATA)
 			goto noprefix;
 		/*
@@ -1272,6 +1281,8 @@ noprefix:
 		} while (indx != 0 &&  ninp[indx] == ninp[indx - adj]);
 
 		bk = GET_BKEYDATA(dbp, npg, indx);
+		len =
+		    (B_TYPE(bk->type) != B_KEYDATA) ? BOVERFLOW_SIZE : bk->len;
 	}
 
 	/*
@@ -1336,9 +1347,9 @@ no_check: is_dup = first_dup = next_dup = 0;
 				goto err;
 			break;
 		default:
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1022",
 			    "Unknown record format, page %lu, indx 0",
-			    (u_long)PGNO(pg));
+			    "%lu"), (u_long)PGNO(pg));
 			ret = EINVAL;
 			goto err;
 		}
@@ -2309,8 +2320,8 @@ __bam_savekey(dbc, next, start)
 			data = bk->data;
 			len = bk->len;
 			if (len == 0) {
-no_key:				__db_errx(env,
-				    "Compact cannot handle zero length key");
+no_key:				__db_errx(env, DB_STR("1023",
+				    "Compact cannot handle zero length key"));
 				ret = DB_NOTFOUND;
 				goto err;
 			}

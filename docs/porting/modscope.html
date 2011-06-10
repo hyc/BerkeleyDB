@@ -12,7 +12,10 @@
     <link rel="next" href="buildtarget.html" title="Building on the Target Platform" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">
@@ -121,13 +124,15 @@ version of these files for all platforms that Berkeley DB supports. Those
 versions of the files live in the <code class="literal">os</code> directory of the
 distribution and follow the ANSI C and POSIX 1003.1 standards. Within each
 file, there is usually one, but sometimes several functions (for example,
-the <code class="literal">os_alloc.c</code> file contains the
+the <code class="literal">os_alloc.c</code> file contains functions such as 
 <code class="literal">malloc</code>, <code class="literal">realloc</code>,
-<code class="literal">strdup</code>, and <code class="literal">free</code> functions). The following table describes the files in the os directory of the Berkeley DB distribution. 
+<code class="literal">strdup</code>, <code class="literal">free</code>). 
+The following table describes the files in the os directory of the Berkeley DB distribution along with the POSIX functions that must be ported. 
 </p>
         <div class="informaltable">
           <table border="1" width="80%">
             <colgroup>
+              <col />
               <col />
               <col />
             </colgroup>
@@ -135,12 +140,17 @@ the <code class="literal">os_alloc.c</code> file contains the
               <tr>
                 <th>
                             <p>
-                                Source file
+                               POSIX Functions 
                             </p>
                     </th>
                 <th>
                             <p>
-                                Description
+                                Internal Function Name
+                            </p>
+                    </th>
+                <th>
+                            <p>
+                               Source File 
                             </p>
                     </th>
               </tr>
@@ -149,372 +159,423 @@ the <code class="literal">os_alloc.c</code> file contains the
               <tr>
                 <td>
                             <p>
+abort() is required if diagnostic build is used or if snprintf is not provided by the platform
+					</p>
+				</td>
+                <td>
+                            <p>
+__os_abort()
+					</p>
+				</td>
+                <td>
+                        <p>
 os_abort.c
 					</p>
 				</td>
+              </tr>
+              <tr>
+                <td>
+                            <p>
+</p><p>
+freeaddrinfo()
+					</p><p>
+					</p><p>getaddrinfo(), htonl(), htons(), inet_addr(), and gethostbyname() are required for Replication Manager</p><p>
+					</p>
+				</td>
+                <td>
+                            <p>
+__os_getaddrinfo(), __os_freeaddrinfo()
+					</p>
+				</td>
+                <td>
+                      os_addrinfo.c  
+				</td>
+              </tr>
+              <tr>
+                <td>
+                    <p>
+                    malloc(), realloc(), strdup(), free(), memcpy(), memset(), strlen()
+					</p>
+					
+				</td>
+                <td>
+				__os_umalloc(), __os_urealloc(), __os_ufree(), __os_strdup(), __os_calloc(), __os_malloc(), __os_realloc(), __os_free(), __os_guard(), __ua_memcpy()
+                </td>
                 <td>
                         <p>
-abort()
+                        os_alloc.c
 					</p>
 				</td>
               </tr>
               <tr>
                 <td>
+                            
                             <p>
-os_abs.c
+clock_gettime(), time(), gettimeofday()
+					</p>
+					
+				</td>
+                <td>
+                            <p>
+__os_gettime()
 					</p>
 				</td>
                 <td>
-                        <p>
-Return if a filename is an absolute path name
-					</p>
-				</td>
+                <p>
+                os_clock.c
+				</p>
+                </td>
               </tr>
               <tr>
                 <td>
                             <p>
-os_addrinfo.c
+sysconf()
+					</p>
+				</td>
+                <td>
+                            <p>
+__os_cpu_count()
 					</p>
 				</td>
                 <td>
                         <p>
-getaddrinfo(), freeaddrinfo()
-					</p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-                            <p>
-os_alloc.c
-					</p>
-				</td>
-                <td>
-                        <p>
-malloc(), realloc(), strdup(), free()
-					</p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-                            <p>
-os_clock.c
-					</p>
-				</td>
-                <td>
-                        <p>
-clock_gettime()
-					</p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-                            <p>
-os_config.c
-					</p>
-				</td>
-                <td>
-                        <p>
-Minor run-time configuration information
-					</p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-                            <p>
 os_cpu.c
 					</p>
 				</td>
-                <td>
-                        <p>
-Return the number of CPUs
-					</p>
-				</td>
               </tr>
               <tr>
                 <td>
                             <p>
+                            ctime(), ctime_r()
+					</p>
+				</td>
+                <td>
+                            <p>
+__os_ctime()
+					</p>
+				</td>
+                <td>
+                        <p>
 os_ctime.c
-					</p>
-				</td>
-                <td>
-                        <p>
-Format a time-stamp
+
 					</p>
 				</td>
               </tr>
               <tr>
                 <td>
                             <p>
+opendir(), closdir(), readdir(), stat()
+					</p>
+				</td>
+                <td>
+                            <p>
+
+__os_dirlist(), __os_dirfree()
+					</p>
+				</td>
+                <td>
+                        <p>
 os_dir.c
 					</p>
 				</td>
-                <td>
-                        <p>
-Return a list of files for a directory
-					</p>
-				</td>
               </tr>
               <tr>
                 <td>
                             <p>
+strncpy()
+					</p>
+				</td>
+                <td>
+                            <p>
+__os_get_errno_ret_zero(), __os_get_errno(), __os_get_syserr(), __os_set_errno(), __os_strerror(), __os_posix_err()
+
+					</p>
+				</td>
+                <td>
+                        <p>
 os_errno.c
 					</p>
 				</td>
-                <td>
-                        <p>
-Library and system error translation
-					</p>
-				</td>
               </tr>
               <tr>
                 <td>
                             <p>
-os_fid.c
+fcntl() is required for DB_REGISTER
+                            </p>
+				</td>
+                <td>
+                            <p>
+__os_fdlock()
                             </p>
 				</td>
                 <td>
                         <p>
-Return a unique identifier for a file
-                            </p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-                            <p>
 os_flock.c
                             </p>
 				</td>
-                <td>
-                        <p>
-Acquire/release a lock on a byte in a file
-                            </p>
-				</td>
               </tr>
               <tr>
                 <td>
                             <p>
+fsync(), fdatasync()
+                            </p>
+				</td>
+                <td>
+                            <p>
+__vx_fsync(), __os_fsync()
+                            </p>
+				</td>
+                <td>
+                        <p>
 os_fsync.c
                             </p>
 				</td>
+              </tr>
+              <tr>
+                <td>
+                            <p>
+getenv() and strcpy() are required  when environment variables are used to configure the database
+                            </p>
+				</td>
+                <td>
+                            <p>
+__os_getenv()
+                            </p>
+				</td>
                 <td>
                         <p>
-fsync()
+						os_getenv.c
                             </p>
 				</td>
               </tr>
               <tr>
                 <td>
                             <p>
-os_getenv.c
+close(), open() 
+                            </p>
+				</td>
+                <td>
+                            <p>
+__os_openhandle(), __os_closehandle()
                             </p>
 				</td>
                 <td>
                         <p>
-Retrieve an environment variable
-                            </p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-                            <p>
 os_handle.c
                             </p>
 				</td>
-                <td>
-                        <p>
-Return a file handle
-                            </p>
-				</td>
               </tr>
               <tr>
                 <td>
                             <p>
+getpid()
+                            </p>
+                            <p>
+pthread_self() is required for replication and failchk functionality
+                            </p>
+				</td>
+                <td>
+                            <p>
+__os_id()
+                            </p>
+				</td>
+                <td>
+                        <p>
+
 os_pid.c
                             </p>
 				</td>
-                <td>
-                        <p>
-Return a unique identifier for a threa
-                            </p>
-				</td>
               </tr>
               <tr>
                 <td>
+                    <p>
+shmget(), shmdt(), shmctl(), and shmat() are required when envrionment uses share memory for regions
+</p>
+<p>munmap() is required when envrionment uses memory mapped files for regions or read-only databases
+</p>
+<p>munlock() is required when environment is configured with DB_LOCKDOWN
+                            </p>
+                            
+				</td>
+                <td>
                             <p>
+__os_attach(), __os_detach(), __os_mapfile(), __os_unmapfile(), __os_map(), __shm_mode(), __no_system_mem()
+                            </p>
+				</td>
+                <td>
+                   <p>
 os_map.c
-                            </p>
-				</td>
-                <td>
-                        <p>
-Shared memory mapping
-                            </p>
+                            </p>     
 				</td>
               </tr>
               <tr>
                 <td>
                             <p>
+mkdir(), chmod()
+                            </p>
+				</td>
+                <td>
+                            <p>
+__os_mkdir()
+                            </p>
+				</td>
+                <td>
+                        <p>
 os_mkdir.c
                             </p>
 				</td>
-                <td>
-                        <p>
-mkdir()
-                            </p>
-				</td>
               </tr>
               <tr>
                 <td>
+                    <p>
+fchmod() </p>
+<p>directio() is required when explicitly enabling DIRECTIO_ON
+                            </p>
+                            
+				</td>
+                <td>
                             <p>
+__os_open()                            
+							</p>
+				</td>
+                <td>
+                 <p>
 os_open.c
-                            </p>
-				</td>
-                <td>
-                        <p>
-Return a file handle
-                            </p>
+                            </p>       
 				</td>
               </tr>
               <tr>
                 <td>
                             <p>
-os_rename.c
+rename()
+                            </p>
+				</td>
+                <td>
+                            <p>
+__os_rename()
                             </p>
 				</td>
                 <td>
 					<p>
-Rename a file
+os_rename.c
                             </p>
 				</td>
               </tr>
               <tr>
+                <td>
+					<p>
+getuid() is required when environment variables are used to configure the database
+                            </p>
+				</td>
+                <td>
+					<p>
+__os_isroot()
+                            </p>
+				</td>
                 <td>
 					<p>
 os_root.c
                             </p>
 				</td>
-                <td>
-					<p>
-Return if application has special permissions
-                            </p>
-				</td>
               </tr>
               <tr>
                 <td>
 					<p>
-os_rpath.c
+					read(), write(), pread(), pwrite()
+
                             </p>
 				</td>
                 <td>
 					<p>
-Return last separator in a path
+__os_io(), __os_read(), __os_write(), __os_physwrite()
                             </p>
 				</td>
-              </tr>
-              <tr>
                 <td>
 					<p>
 os_rw.c
                             </p>
 				</td>
-                <td>
-					<p>
-read(), write()
-                            </p>
-				</td>
               </tr>
               <tr>
-                <td>
-					<p>
-os_seek.c
-                            </p>
-				</td>
                 <td>
 					<p>
 lseek()
                             </p>
 				</td>
-              </tr>
-              <tr>
                 <td>
 					<p>
-os_stack.c
+__os_seek()
                             </p>
 				</td>
                 <td>
 					<p>
-Output a stack trace to the message file handle
+os_seek.c
                             </p>
 				</td>
               </tr>
               <tr>
+                <td>
+					<p>
+stat(), fstat()
+                            </p>
+				</td>
+                <td>
+					<p>
+__os_exists(), __os_ioinfo()                            </p>
+				</td>
                 <td>
 					<p>
 os_stat.c
                             </p>
 				</td>
-                <td>
-					<p>
-stat()
-                            </p>
-				</td>
               </tr>
               <tr>
                 <td>
 					<p>
-os_tmpdir.c
+ftruncate() is required when using truncate
+
                             </p>
 				</td>
                 <td>
 					<p>
-Return the directory name used by the system for temporary files
+__os_truncate()                            </p>
+				</td>
+                <td>
+					<p>
+					os_truncate.c
                             </p>
 				</td>
               </tr>
               <tr>
-                <td>
-					<p>
-os_truncate.c
-                            </p>
-				</td>
-                <td>
-					<p>
-ftruncate()
-                            </p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-					<p>
-os_uid.c
-                            </p>
-				</td>
-                <td>
-					<p>
-Return unique 32-bit id
-                            </p>
-				</td>
-              </tr>
-              <tr>
-                <td>
-					<p>
-os_unlink.c
-                            </p>
-				</td>
                 <td>
 					<p>
 unlink()
                             </p>
 				</td>
-              </tr>
-              <tr>
                 <td>
 					<p>
-os.yield.c
+__os_unlink()
                             </p>
 				</td>
                 <td>
 					<p>
-yield()
+os_unlink.c
+                            </p>
+				</td>
+              </tr>
+              <tr>
+                <td>
+					<p>
+yield(), sched_yield()
+                            </p>
+				</td>
+                <td>
+					<p>
+__os_yield(), __os_sleep()                            </p>
+				</td>
+                <td>
+					<p>
+os.yield.c
                             </p>
 				</td>
               </tr>

@@ -18,7 +18,8 @@
  *
  * These pieces of information are expressed by the following flags.
  * -h home (required; h stands for home directory)
- * -l host:port (required; l stands for local)
+ * -l host:port (required unless -L is specified; l stands for local)
+ * -L host:port (optional, L means group creator)
  * -C or -M (optional; start up as client or master)
  * -r host:port (optional; r stands for remote; any number of these may be
  *	specified)
@@ -26,8 +27,6 @@
  *      be specified)
  * -a all|quorum (optional; a stands for ack policy)
  * -b (optional; b stands for bulk)
- * -n nsites (optional; number of sites in replication group; defaults to 0
- *	to try to dynamically compute nsites)
  * -p priority (optional; defaults to 100)
  * -v (optional; v stands for verbose)
  */
@@ -66,8 +65,8 @@ const char *progname = "excxx_repquote";
 #define	sleep(s)		Sleep(1000 * (s))
 
 extern "C" {
-  extern int getopt(int, char * const *, const char *);
-  extern char *optarg;
+    extern int getopt(int, char * const *, const char *);
+    extern char *optarg;
 }
 
 typedef HANDLE thread_t;
@@ -93,6 +92,7 @@ typedef struct {
 	bool app_finished;
 	bool in_client_sync;
 	bool is_master;
+	bool verbose;
 } APP_DATA;
 
 static void log(const char *);
@@ -154,17 +154,15 @@ public:
 	} catch (DbRepHandleDeadException e) {
 	} catch (DbException e) {
 		if (e.get_errno() == DB_REP_LOCKOUT) {
-		// Just fall through.
+			// Just fall through.
 		} else if (e.get_errno() == ENOENT && !creating) {
-		// Provide a bit of extra explanation.
-		// 
-		log("Stock DB does not yet exist");
+			// Provide a bit of extra explanation.
+			log("Stock DB does not yet exist");
 		} else
-		throw;
+			throw;
 	}
 
 	// (All retryable errors fall through to here.)
-	// 
 	log("please retry the operation");
 	close();
 	return (false);
@@ -253,9 +251,13 @@ RepQuoteExample::RepQuoteExample() : app_config(0), cur_env(0) {
 	app_data.app_finished = 0;
 	app_data.in_client_sync = 0;
 	app_data.is_master = 0; // assume I start out as client
+	app_data.verbose = 0;
 }
 
 void RepQuoteExample::init(RepConfigInfo *config) {
+	DbSite *dbsite;
+	int i;
+
 	app_config = config;
 
 	cur_env.set_app_private(&app_data);
@@ -270,15 +272,11 @@ void RepQuoteExample::init(RepConfigInfo *config) {
 	if (app_config->bulk)
 		cur_env.rep_set_config(DB_REP_CONF_BULK, 1);
 
-	// Set the total number of sites in the replication group.
-	// This is used by repmgr internal election processing.
-	//
-	if (app_config->totalsites > 0)
-		cur_env.rep_set_nsites(app_config->totalsites);
-
 	// Turn on debugging and informational output if requested.
-	if (app_config->verbose)
+	if (app_config->verbose) {
 		cur_env.set_verbose(DB_VERB_REPLICATION, 1);
+		app_data.verbose = 1;
+	}
 
 	// Set replication group election priority for this environment.
 	// An election first selects the site with the most recent log
@@ -327,14 +325,22 @@ void RepQuoteExample::init(RepConfigInfo *config) {
 	//   - Blocked client operations: Return immediately with an error
 	//     instead of waiting indefinitely if a client operation is
 	//     blocked by an ongoing client synchronization.
+	cur_env.repmgr_site(app_config->this_host.host,
+	    app_config->this_host.port, &dbsite, 0);
+	dbsite->set_config(DB_LOCAL_SITE, 1);
+	if (app_config->this_host.creator)
+		dbsite->set_config(DB_GROUP_CREATOR, 1);
+	dbsite->close();
 
-	cur_env.repmgr_set_local_site(app_config->this_host.host,
-	    app_config->this_host.port, 0);
-
-	for ( REP_HOST_INFO *cur = app_config->other_hosts; cur != NULL;
-		cur = cur->next) {
-		cur_env.repmgr_add_remote_site(cur->host, cur->port,
-		    NULL, cur->peer ? DB_REPMGR_PEER : 0);
+	i = 1;
+	for ( REP_HOST_INFO *cur = app_config->other_hosts;
+	    cur != NULL && i <= app_config->nrsites;
+	    cur = cur->next, i++) {
+		cur_env.repmgr_site(cur->host, cur->port, &dbsite, 0);
+		dbsite->set_config(DB_BOOTSTRAP_HELPER, 1);
+		if (cur->peer)
+			dbsite->set_config(DB_REPMGR_PEER, 1);
+		dbsite->close();
 	}
 
 	// Configure heartbeat timeouts so that repmgr monitors the
@@ -525,12 +531,65 @@ void RepQuoteExample::event_callback(DbEnv* dbenv, u_int32_t which, void *info)
 		// transaction will be flushed to the master site's
 		// local disk storage for durability.
 		//
-		log(
-    "Insufficient acknowledgements to guarantee transaction durability.");
+		if (app->verbose)
+			log(
+"EVENT: Insufficient acknowledgements to guarantee transaction durability.");
 		break;
+
 	case DB_EVENT_REP_STARTUPDONE:
 		app->in_client_sync = 0;
 		break;
+
+	case DB_EVENT_PANIC:
+		if (app->verbose)
+			log("EVENT: receive panic event");
+		break;
+
+	case DB_EVENT_REP_CONNECT_BROKEN:
+		if (app->verbose)
+			log("EVENT: connection is broken");
+		break;
+
+	case DB_EVENT_REP_DUPMASTER:
+		if (app->verbose)
+			log("EVENT: duplicate master");
+		break;
+
+	case DB_EVENT_REP_ELECTED:
+		if (app->verbose)
+			log("EVENT: election in replication group");
+		break;
+
+	case DB_EVENT_REP_CONNECT_ESTD:
+		if (app->verbose)
+			log("EVENT: establish connection");
+		break;
+
+	case DB_EVENT_REP_CONNECT_TRY_FAILED:
+		if (app->verbose)
+			log("EVENT: fail to try connection");
+		break;
+
+	case DB_EVENT_REP_INIT_DONE:
+		if (app->verbose)
+			log("EVENT: finish initialization");
+		break;
+
+	case DB_EVENT_REP_LOCAL_SITE_REMOVED:
+		if (app->verbose)
+			log("EVENT: remove local site");
+		break;
+
+	case DB_EVENT_REP_SITE_ADDED:
+		if (app->verbose)
+			log("EVENT: add site");
+		break;
+
+	case DB_EVENT_REP_SITE_REMOVED:
+		if (app->verbose)
+			log("EVENT: remote site");
+		break;
+
 	default:
 		dbenv->errx("ignoring event %d", which);
 	}
@@ -565,12 +624,14 @@ void RepQuoteExample::print_stocks(Db *dbp) {
 }
 
 static void usage() {
-	cerr << "usage: " << progname << " -h home -l host:port [-CM]"
-	    << "[-r host:port][-R host:port]" << endl
-	    << "  [-a all|quorum][-b][-n nsites][-p priority][-v]" << endl;
+	cerr << "usage: " << progname << endl << "  -h home -l|-L host:port"
+	    << "  [-C|M] [-r host:port] [-R host:port]" << endl
+	    << "  [-a all|quorum] [-b] [-p priority] [-v]" << endl;
 
 	cerr << "\t -h home (required; h stands for home directory)" << endl
-	    << "\t -l host:port (required; l stands for local)" << endl
+	    << "\t -l host:port (required unless -L is specified;"
+	    << " l stands for local)" << endl
+	    << "\t -L host:port (optional, L means group creator)" << endl
 	    << "\t -C or -M (optional; start up as client or master)" << endl
 	    << "\t -r host:port (optional; r stands for remote; any "
 	    << "number of these" << endl
@@ -580,9 +641,6 @@ static void usage() {
 	    << "\t               these may be specified)" << endl
 	    << "\t -a all|quorum (optional; a stands for ack policy)" << endl
 	    << "\t -b (optional; b stands for bulk)" << endl
-	    << "\t -n nsites (optional; number of sites in replication "
-	    << "group; defaults " << endl
-	    << "\t	    to 0 to try to dynamically compute nsites)" << endl
 	    << "\t -p priority (optional; defaults to 100)" << endl
 	    << "\t -v (optional; v stands for verbose)" << endl;
 
@@ -596,7 +654,7 @@ int main(int argc, char **argv) {
 	bool tmppeer;
 
 	// Extract the command line parameters
-	while ((ch = getopt(argc, argv, "a:bCh:l:Mn:p:R:r:v")) != EOF) {
+	while ((ch = getopt(argc, argv, "a:bCh:L:l:Mp:R:r:v")) != EOF) {
 		tmppeer = false;
 		switch (ch) {
 		case 'a':
@@ -614,6 +672,8 @@ int main(int argc, char **argv) {
 		case 'h':
 			config.home = optarg;
 			break;
+		case 'L':
+			config.this_host.creator = true; // FALLTHROUGH
 		case 'l':
 			config.this_host.host = strtok(optarg, ":");
 			if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -625,9 +685,6 @@ int main(int argc, char **argv) {
 			break;
 		case 'M':
 			config.start_policy = DB_REP_MASTER;
-			break;
-		case 'n':
-			config.totalsites = atoi(optarg);
 			break;
 		case 'p':
 			config.priority = atoi(optarg);
@@ -643,7 +700,6 @@ int main(int argc, char **argv) {
 			tmpport = (unsigned short)atoi(portstr);
 
 			config.addOtherHost(tmphost, tmpport, tmppeer);
-
 			break;
 		case 'v':
 			config.verbose = true;

@@ -8,17 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="rep.html" title="Chapter 11.  Replication Methods" />
-    <link rel="prev" href="rep.html" title="Chapter 11.  Replication Methods" />
+    <link rel="prev" href="dbsite_set_config.html" title="DbSite::set_config()" />
     <link rel="next" href="repget_clockskew.html" title="DbEnv::rep_get_clockskew()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::rep_elect()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="rep.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="dbsite_set_config.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 11. 
                 Replication Methods
         </th>
@@ -96,7 +99,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53797096"></a>How Elections are Held</h3>
+              <h3 class="title"><a id="id3656610"></a>How Elections are Held</h3>
             </div>
           </div>
         </div>
@@ -147,7 +150,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53964392"></a>Parameters</h3>
+              <h3 class="title"><a id="id3656667"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -155,7 +158,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53963744"></a>nsites</h4>
+                <h4 class="title"><a id="id3656821"></a>nsites</h4>
               </div>
             </div>
           </div>
@@ -178,7 +181,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53977208"></a>nvotes</h4>
+                <h4 class="title"><a id="id3657247"></a>nvotes</h4>
               </div>
             </div>
           </div>
@@ -196,7 +199,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53968288"></a>flags</h4>
+                <h4 class="title"><a id="id3657099"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -210,7 +213,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53946208"></a>Errors</h3>
+              <h3 class="title"><a id="id3656914"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -228,7 +231,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53979352"></a>DB_REP_UNAVAIL</h4>
+                <h4 class="title"><a id="id3656677"></a>DB_REP_UNAVAIL</h4>
               </div>
             </div>
           </div>
@@ -243,7 +246,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53977416"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3657254"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -261,7 +264,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53965904"></a>Class</h3>
+              <h3 class="title"><a id="id3657063"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -273,7 +276,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53970544"></a>See Also</h3>
+              <h3 class="title"><a id="id3657137"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -286,16 +289,14 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="rep.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="dbsite_set_config.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="repget_clockskew.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 11. 
-                Replication Methods
-         </td>
+          <td width="40%" align="left" valign="top">DbSite::set_config() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

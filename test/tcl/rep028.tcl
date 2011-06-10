@@ -18,6 +18,7 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Run for btree only.
 	if { $checking_valid_methods } {
@@ -54,6 +55,11 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	set clopts { "create" "open" }
 	foreach r $test_recopts {
@@ -66,7 +72,7 @@ proc rep028 { method { niter 100 } { tnum "028" } args } {
 			}
 			foreach c $clopts {
 				puts "Rep$tnum ($method $r $c): Replication\
-				    and non-rep env handles $msg $msg2."
+				    and non-rep env handles $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep028_sub $method $niter $tnum $l $r $c $args
@@ -80,6 +86,7 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	global is_hp_test
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -91,6 +98,11 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set omethod [convert_method $method]
@@ -119,21 +131,21 @@ proc rep028_sub { method niter tnum logset recargs clargs largs } {
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create \
 	    -log_max 1000000 -home $masterdir $verbargs $repmemargs \
-	    $m_txnargs $m_logargs -rep_master \
+	    $privargs $m_txnargs $m_logargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
 
 	# Open a client
 	repladd 2
 	set env_cmd(C) "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -home $clientdir $verbargs $repmemargs \
+	    $c_logargs -home $clientdir $verbargs $repmemargs $privargs \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
 
 	# Open 2nd non-replication handle on client env, and create
 	# a db.  Note, by not specifying any subsystem args, we
 	# do a DB_JOINENV, which is what we want.
-	set nonrepenv [eval {berkdb_env_noerr -home $clientdir}]
+	set nonrepenv [eval {berkdb_env_noerr} $privargs -home $clientdir]
 	error_check_good nonrepenv [is_valid_env $nonrepenv] TRUE
 
 	# Set up databases in-memory or on-disk.

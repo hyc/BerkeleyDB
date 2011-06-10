@@ -61,9 +61,9 @@ umask(0) ;
     ok $value eq "value" ;
     ok $db->db_del("some key") == 0 ;
     ok (($status = $db->db_get("some key", $value)) == DB_NOTFOUND) ;
-    ok $status eq $DB_errors{'DB_NOTFOUND'} ;
+    ok $status =~ $DB_errors{'DB_NOTFOUND'} ;
     ok $db->status() == DB_NOTFOUND ;
-    ok $db->status() eq $DB_errors{'DB_NOTFOUND'};
+    ok $db->status() =~ $DB_errors{'DB_NOTFOUND'};
 
     ok $db->db_sync() == 0 ;
 
@@ -71,7 +71,7 @@ umask(0) ;
     # an existing record.
 
     ok $db->db_put( 'key', 'x', DB_NOOVERWRITE) == DB_KEYEXIST ;
-    ok $db->status() eq $DB_errors{'DB_KEYEXIST'};
+    ok $db->status() =~ $DB_errors{'DB_KEYEXIST'};
     ok $db->status() == DB_KEYEXIST ;
 
     # check that the value of the key  has not been changed by the
@@ -169,7 +169,7 @@ umask(0) ;
 	    { ++ $extras }
     }
     ok $cursor->status() == DB_NOTFOUND ;
-    ok $cursor->status() eq $DB_errors{'DB_NOTFOUND'} ;
+    ok $cursor->status() =~ $DB_errors{'DB_NOTFOUND'} ;
     ok keys %copy == 0 ;
     ok $extras == 0 ;
 
@@ -186,7 +186,7 @@ umask(0) ;
 	    { ++ $extras }
     }
     ok $status == DB_NOTFOUND ;
-    ok $status eq $DB_errors{'DB_NOTFOUND'} ;
+    ok $status =~ $DB_errors{'DB_NOTFOUND'} ;
     ok $cursor->status() == $status ;
     ok $cursor->status() eq $status ;
     ok keys %copy == 0 ;

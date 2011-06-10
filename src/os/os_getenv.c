@@ -43,9 +43,9 @@ __os_getenv(env, name, bpp, buflen)
 		}
 
 		*bpp = NULL;
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("0157",
 		    "%s: buffer too small to hold environment variable %s",
-		    name, p);
+		    "%s %s"), name, p);
 		return (EINVAL);
 	}
 #else

@@ -15,7 +15,7 @@
 
 /*
  * __memp_dirty --
- *	Upgrade a page from a read-only to a writeable pointer.
+ *	Upgrade a page from a read-only to a writable pointer.
  *
  * PUBLIC: int __memp_dirty __P((DB_MPOOLFILE *, void *,
  * PUBLIC:     DB_THREAD_INFO *, DB_TXN *, DB_CACHE_PRIORITY, u_int32_t));
@@ -63,7 +63,8 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 	DB_ASSERT(env, flags == DB_MPOOL_DIRTY || flags == DB_MPOOL_EDIT);
 
 	if (F_ISSET(dbmfp, MP_READONLY)) {
-		__db_errx(env, "%s: dirty flag set for readonly file page",
+		__db_errx(env, DB_STR_A("3008",
+		    "%s: dirty flag set for readonly file page", "%s"),
 		    __memp_fn(dbmfp));
 		return (EACCES);
 	}
@@ -78,8 +79,8 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 		atomic_inc(env, &bhp->ref);
 		*(void **)addrp = NULL;
 		if ((ret = __memp_fput(dbmfp, ip, pgaddr, priority)) != 0) {
-			__db_errx(env,
-			    "%s: error releasing a read-only page",
+			__db_errx(env, DB_STR_A("3009",
+			    "%s: error releasing a read-only page", "%s"),
 			    __memp_fn(dbmfp));
 			atomic_dec(env, &bhp->ref);
 			return (ret);
@@ -87,9 +88,9 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 		if ((ret = __memp_fget(dbmfp,
 		    &pgno, ip, txn, flags, addrp)) != 0) {
 			if (ret != DB_LOCK_DEADLOCK)
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("3010",
 				    "%s: error getting a page for writing",
-				    __memp_fn(dbmfp));
+				    "%s"), __memp_fn(dbmfp));
 			atomic_dec(env, &bhp->ref);
 			return (ret);
 		}

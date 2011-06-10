@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import com.sleepycat.db.ReplicationHostAddress;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 
 public class RepConfig
 {
@@ -24,15 +25,12 @@ public class RepConfig
     // String specifying the home directory for rep files.
     public String home;
     // Stores an optional set of "other" hosts.
-    public Vector<ReplicationHostAddress> otherHosts;
+    private Vector otherHosts;
     // Priority within the replication group.
     public int priority; 
     public ReplicationManagerStartPolicy startPolicy;
     // The host address to listen to.
-    public ReplicationHostAddress thisHost;
-    // Optional parameter specifying the # of sites in the 
-    // replication group.
-    public int totalSites;
+    private ReplicationManagerSiteConfig thisHost;
 
     // Member variables used internally.
     private int currOtherHost;
@@ -43,11 +41,10 @@ public class RepConfig
         startPolicy = ReplicationManagerStartPolicy.REP_ELECTION;
         home = "";
         gotListenAddress = false;
-        totalSites = 0;
         priority = 100;
         currOtherHost = 0;
-        thisHost = new ReplicationHostAddress();
-        otherHosts = new Vector<ReplicationHostAddress>();
+        thisHost = new ReplicationManagerSiteConfig();
+        otherHosts = new Vector();
     }
 
     public java.io.File getHome()
@@ -55,19 +52,28 @@ public class RepConfig
         return new java.io.File(home);
     }
 
-    public void setThisHost(String host, int port)
+    public void setThisHost(String host, int port, boolean creator)
     {
         gotListenAddress = true;
-        thisHost.port = port;
-        thisHost.host = host;
+        thisHost.setHost(host);
+        thisHost.setPort(port);
+        thisHost.setGroupCreator(creator);
+        thisHost.setLocalSite(true);
     }
 
-    public ReplicationHostAddress getThisHost()
+    public ReplicationManagerSiteConfig getThisHost()
     {
         if (!gotListenAddress)
             System.err.println("Warning: no host specified, returning default.");
         return thisHost;
     }
+
+    public ReplicationHostAddress getThisHostAddress()
+    {
+        if (!gotListenAddress)
+              System.err.println("Warning: no host specified, returning default.");
+        return thisHost.getAddress();
+      }
 
     public boolean gotListenAddress() {
         return gotListenAddress;

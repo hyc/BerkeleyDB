@@ -140,7 +140,7 @@ unsigned long int parse_integer(s)
 
 	x = strtoul(s, &t, 0);
 	if (s == t)
-		hc_warn("unparseable integer string %s", s);
+		hc_warn("cannot parse integer string %s", s);
 
 	switch (*t) {
 	case '\0':

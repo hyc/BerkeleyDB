@@ -12,12 +12,15 @@
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/mp.h"
 #include "dbinc/partition.h"
 #include "dbinc/qam.h"
 #include "dbinc/db_verify.h"
 
 static int	 __db_bmeta __P((ENV *, DB *, BTMETA *, u_int32_t));
+static int	 __db_heapmeta __P((ENV *, DB *, HEAPMETA *, u_int32_t));
+static int	 __db_heapint __P((DB *, HEAPPG *, u_int32_t));
 static int	 __db_hmeta __P((ENV *, DB *, HMETA *, u_int32_t));
 static void	 __db_meta __P((ENV *, DB *, DBMETA *, FN const *, u_int32_t));
 static void	 __db_proff __P((ENV *, DB_MSGBUF *, void *));
@@ -160,6 +163,7 @@ __db_prdb(dbp, flags)
 	ENV *env;
 	HASH *h;
 	QUEUE *q;
+	HEAP *hp;
 
 	env = dbp->env;
 
@@ -215,6 +219,13 @@ __db_prdb(dbp, flags)
 		    (u_long)q->re_pad, (u_long)q->re_len);
 		__db_msg(env, "rec_page: %lu", (u_long)q->rec_page);
 		__db_msg(env, "page_ext: %lu", (u_long)q->page_ext);
+		break;
+	case DB_HEAP:
+		hp = dbp->heap_internal;
+		__db_msg(env, "gbytes: %lu", (u_long)hp->gbytes);
+		__db_msg(env, "bytes: %lu", (u_long)hp->bytes);
+		__db_msg(env, "curregion: %lu", (u_long)hp->curregion);
+		__db_msg(env, "maxpgno: %lu", (u_long)hp->maxpgno);
 		break;
 	case DB_UNKNOWN:
 	default:
@@ -575,6 +586,74 @@ __db_qmeta(env, dbp, h, flags)
 }
 
 /*
+ * __db_heapmeta --
+ *	Print out the heap meta-data page.
+ */
+static int
+__db_heapmeta(env, dbp, h, flags)
+	ENV *env;
+	DB *dbp;
+	HEAPMETA *h;
+	u_int32_t flags;
+{
+	__db_meta(env, dbp, (DBMETA *)h, NULL, flags);
+
+	__db_msg(env, "\tcurregion: %lu", (u_long)h->curregion);
+	__db_msg(env, "\tnregions: %lu", (u_long)h->nregions);
+	__db_msg(env, "\tgbytes: %lu", (u_long)h->gbytes);
+	__db_msg(env, "\tbytes: %lu", (u_long)h->bytes);
+
+	return (0);
+}
+
+/*
+ * __db_heapint --
+ *	Print out the heap internal-data page.
+ */
+static int
+__db_heapint(dbp, h, flags)
+	DB *dbp;
+	HEAPPG *h;
+	u_int32_t flags;
+{
+	DB_MSGBUF mb;
+	ENV *env;
+	int count, printed;
+	u_int32_t i, max;
+	u_int8_t avail;
+
+	env = dbp->env;
+	DB_MSGBUF_INIT(&mb);
+	count = printed = 0;
+	COMPQUIET(flags, 0);
+
+	__db_msgadd(env, &mb, "\thigh: %4lu\n", (u_long)h->high_pgno);
+	/* How many entries could there be on a page */
+	max = HEAP_REGION_SIZE(dbp);
+
+	for (i = 0; i < max; i++, count++) {
+		avail = HEAP_SPACE(dbp, h, i);
+		if (avail != 0) {
+			__db_msgadd(env, &mb,
+			    "%5lu:%1lu ", (u_long)i, (u_long)avail);
+			printed = 1;
+		}
+		/* We get 10 entries per line this way */
+		if (count == 9) {
+			DB_MSGBUF_FLUSH(env, &mb);
+			count = -1;
+		}
+	}
+	/* All pages were less than 33% full */
+	if (printed == 0)
+		 __db_msgadd(env, &mb,
+		    "All pages in this region less than 33 percent full");
+
+	DB_MSGBUF_FLUSH(env, &mb);
+	return (0);
+}
+
+/*
  * For printing pages from the log we may be passed the data segment
  * separate from the header, if so then it starts at HOFFSET.
  */
@@ -604,14 +683,16 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 	HOFFPAGE a_hkd;
 	QAMDATA *qp, *qep;
 	RINTERNAL *ri;
-	db_indx_t dlen, len, i, *inp;
+	HEAPHDR *hh;
+	HEAPSPLITHDR *hs;
+	db_indx_t dlen, len, i, *inp, max;
 	db_pgno_t pgno;
 	db_recno_t recno;
 	u_int32_t qlen;
 	u_int8_t *ep, *hk, *p;
 	int deleted, ret;
 	const char *s;
-	void *sp;
+	void *hdata, *sp;
 
 	/*
 	 * If we're doing recovery testing and this page is P_INVALID,
@@ -635,15 +716,17 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 	 */
 	if (!LF_ISSET(DB_PR_RECOVERYTEST) ||
 	    (TYPE(h) != P_BTREEMETA && TYPE(h) != P_HASHMETA &&
-	    TYPE(h) != P_QAMMETA && TYPE(h) != P_QAMDATA))
+	    TYPE(h) != P_QAMMETA && TYPE(h) != P_QAMDATA &&
+	    TYPE(h) != P_HEAPMETA))
 		__db_msgadd(env, mbp, " LSN [%lu][%lu]:",
 		    (u_long)LSN(h).file, (u_long)LSN(h).offset);
 
 	/*
 	 * Page level (only applicable for Btree/Recno, but we always display
-	 * it, for no particular reason.
+	 * it, for no particular reason, except for Heap.
 	 */
-	__db_msgadd(env, mbp, " level %lu", (u_long)h->level);
+	if (!HEAPTYPE(h))
+	    __db_msgadd(env, mbp, " level %lu", (u_long)h->level);
 
 	/* Record count. */
 	if (TYPE(h) == P_IBTREE || TYPE(h) == P_IRECNO ||
@@ -679,16 +762,29 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 			__db_prbytes(env, mbp, qp->data, qlen);
 		}
 		return (0);
+	case P_HEAPMETA:
+		return (__db_heapmeta(env, dbp, (HEAPMETA *)h, flags));
+	case P_IHEAP:
+		if (!LF_ISSET(DB_PR_PAGE))
+			return (0);
+		return (__db_heapint(dbp, (HEAPPG *)h, flags));
 	default:
 		break;
 	}
 
 	s = "\t";
-	if (TYPE(h) != P_IBTREE && TYPE(h) != P_IRECNO) {
+	if (!HEAPTYPE(h) && TYPE(h) != P_IBTREE && TYPE(h) != P_IRECNO) {
 		__db_msgadd(env, mbp, "%sprev: %4lu next: %4lu",
 		    s, (u_long)PREV_PGNO(h), (u_long)NEXT_PGNO(h));
 		s = " ";
 	}
+
+	if (HEAPTYPE(h)) {
+		__db_msgadd(env, mbp, "%shigh indx: %4lu free indx: %4lu", s,
+		    (u_long)HEAP_HIGHINDX(h), (u_long)HEAP_FREEINDX(h));
+		s = " ";
+	}
+
 	if (TYPE(h) == P_OVERFLOW) {
 		__db_msgadd(env, mbp,
 		    "%sref cnt: %4lu ", s, (u_long)OV_REF(h));
@@ -714,7 +810,10 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 
 	ret = 0;
 	inp = P_INP(dbp, h);
-	for (i = 0; i < NUM_ENT(h); i++) {
+	max = TYPE(h) == P_HEAP ? HEAP_HIGHINDX(h) + 1 : NUM_ENT(h);
+	for (i = 0; i < max; i++) {
+		if (TYPE(h) == P_HEAP && inp[i] == 0)
+			continue;
 		if ((uintptr_t)(P_ENTRY(dbp, h, i) - (u_int8_t *)h) <
 		    (uintptr_t)(P_OVERHEAD(dbp)) ||
 		    (size_t)(P_ENTRY(dbp, h, i) - (u_int8_t *)h) >= pagesize) {
@@ -731,6 +830,9 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 		case P_IBTREE:
 		case P_IRECNO:
 			sp = PR_ENTRY(dbp, h, i, data);
+			break;
+		case P_HEAP:
+			sp = P_ENTRY(dbp, h, i);
 			break;
 		case P_LBTREE:
 			sp = PR_ENTRY(dbp, h, i, data);
@@ -854,6 +956,21 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 				ret = EINVAL;
 				break;
 			}
+			break;
+		case P_HEAP:
+			hh = sp;
+			if (!F_ISSET(hh,HEAP_RECSPLIT))
+				hdata = (u_int8_t *)hh + sizeof(HEAPHDR);
+			else {
+				hs = sp;
+				__db_msgadd(env, mbp,
+				     "split: 0x%02x tsize: %lu next: %lu.%lu ",
+				     hh->flags, (u_long)hs->tsize,
+				     (u_long)hs->nextpg, (u_long)hs->nextindx);
+					
+				hdata = (u_int8_t *)hh + sizeof(HEAPSPLITHDR);
+			}
+			__db_prbytes(env, mbp, hdata, hh->size);
 			break;
 		default:
 type_err:		DB_MSGBUF_FLUSH(env, mbp);
@@ -1055,6 +1172,15 @@ __db_pagetype_to_string(type)
 	case P_QAMDATA:
 		s = "queue";
 		break;
+	case P_HEAPMETA:
+		s = "heap metadata";
+		break;
+	case P_HEAP:
+		s = "heap data";
+		break;
+	case P_IHEAP:
+		s = "heap internal";
+		break;
 	default:
 		/* Just return a NULL. */
 		break;
@@ -1122,12 +1248,14 @@ __db_dump(dbp, subname, callback, handle, pflag, keyflag)
 	DBC *dbcp;
 	DBT key, data;
 	DBT keyret, dataret;
+	DB_HEAP_RID rid;
 	ENV *env;
 	db_recno_t recno;
-	int is_recno, ret, t_ret;
+	int is_recno, is_heap, ret, t_ret;
 	void *pointer;
 
 	env = dbp->env;
+	is_heap = 0;
 
 	if ((ret = __db_prheader(
 	    dbp, subname, pflag, keyflag, handle, callback, NULL, 0)) != 0)
@@ -1153,27 +1281,42 @@ __db_dump(dbp, subname, callback, handle, pflag, keyflag)
 		keyret.size = sizeof(recno);
 	}
 
+	if (dbp->type == DB_HEAP) {
+		is_heap = 1;
+		key.data = &rid;
+		key.size = key.ulen = sizeof(DB_HEAP_RID);
+		key.flags = DB_DBT_USERMEM;
+	}
+		
 retry: while ((ret =
-	    __dbc_get(dbcp, &key, &data, DB_NEXT | DB_MULTIPLE_KEY)) == 0) {
+	    __dbc_get(dbcp, &key, &data,
+	    !is_heap ? DB_NEXT | DB_MULTIPLE_KEY : DB_NEXT )) == 0) {
+		if (is_heap) {
+			/* Never dump keys for HEAP */
+			if ((ret = __db_prdbt(
+			    &data, pflag, " ", handle, callback, 0, 0)) != 0)
+				goto err;
+			continue;
+		}
 		DB_MULTIPLE_INIT(pointer, &data);
 		for (;;) {
 			if (is_recno)
 				DB_MULTIPLE_RECNO_NEXT(pointer, &data,
 				    recno, dataret.data, dataret.size);
 			else
-				DB_MULTIPLE_KEY_NEXT(pointer,
-				    &data, keyret.data,
-				    keyret.size, dataret.data, dataret.size);
+				DB_MULTIPLE_KEY_NEXT(pointer, &data,
+				    keyret.data, keyret.size,
+				    dataret.data, dataret.size);
 
 			if (dataret.data == NULL)
 				break;
 
 			if ((keyflag &&
 			    (ret = __db_prdbt(&keyret, pflag, " ",
-			    handle, callback, is_recno)) != 0) ||
+			    handle, callback, is_recno, 0)) != 0) ||
 			    (ret = __db_prdbt(&dataret, pflag, " ",
-			    handle, callback, 0)) != 0)
-				goto err;
+			    handle, callback, 0, 0)) != 0)
+					goto err;
 		}
 	}
 	if (ret == DB_BUFFER_SMALL) {
@@ -1202,19 +1345,21 @@ err:	if ((t_ret = __dbc_close(dbcp)) != 0 && ret == 0)
  *	Print out a DBT data element.
  *
  * PUBLIC: int __db_prdbt __P((DBT *, int, const char *, void *,
- * PUBLIC:     int (*)(void *, const void *), int));
+ * PUBLIC:     int (*)(void *, const void *), int, int));
  */
 int
-__db_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno)
+__db_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno, is_heap)
 	DBT *dbtp;
 	int checkprint;
 	const char *prefix;
 	void *handle;
 	int (*callback) __P((void *, const void *));
 	int is_recno;
+	int is_heap;
 {
 	static const u_char hex[] = "0123456789abcdef";
 	db_recno_t recno;
+	DB_HEAP_RID rid;
 	size_t len;
 	int ret;
 #define	DBTBUFLEN	100
@@ -1237,6 +1382,30 @@ __db_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno)
 		 */
 		(void)__ua_memcpy(&recno, dbtp->data, sizeof(recno));
 		snprintf(buf, DBTBUFLEN, "%lu", (u_long)recno);
+
+		/* If we're printing data as hex, print keys as hex too. */
+		if (!checkprint) {
+			for (len = strlen(buf), p = (u_int8_t *)buf,
+			    hp = (u_int8_t *)hbuf; len-- > 0; ++p) {
+				*hp++ = hex[(u_int8_t)(*p & 0xf0) >> 4];
+				*hp++ = hex[*p & 0x0f];
+			}
+			*hp = '\0';
+			ret = callback(handle, hbuf);
+		} else
+			ret = callback(handle, buf);
+
+		if (ret != 0)
+			return (ret);
+	} else if (is_heap) {
+		/*
+		 * We're printing a heap record number, and this has to be
+		 * done in a platform-independent way.  So we use the numeral
+		 * in straight ASCII.
+		 */
+		(void)__ua_memcpy(&rid, dbtp->data, sizeof(rid));
+		snprintf(buf, DBTBUFLEN, "%lu %hu",
+		    (u_long)rid.pgno, (u_short)rid.indx);
 
 		/* If we're printing data as hex, print keys as hex too. */
 		if (!checkprint) {
@@ -1305,6 +1474,9 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 	size_t buflen;
 	char *buf;
 	int using_vdp, ret, t_ret, tmp_int;
+#ifdef HAVE_HEAP
+	u_int32_t tmp2_u_int32;
+#endif
 
 	ret = 0;
 	buf = NULL;
@@ -1360,6 +1532,9 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 		case P_HASHMETA:
 			dbtype = DB_HASH;
 			break;
+		case P_HEAPMETA:
+			dbtype = DB_HEAP;
+			break;
 		case P_QAMMETA:
 			dbtype = DB_QUEUE;
 			break;
@@ -1398,7 +1573,8 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 		if ((ret = callback(handle, buf)) != 0)
 			goto err;
 		DB_INIT_DBT(dbt, subname, strlen(subname));
-		if ((ret = __db_prdbt(&dbt, 1, NULL, handle, callback, 0)) != 0)
+		if ((ret = __db_prdbt(&dbt, 1,
+		    NULL, handle, callback, 0, 0)) != 0)
 			goto err;
 	}
 	switch (dbtype) {
@@ -1471,6 +1647,34 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 		break;
 #else
 		ret = __db_no_hash_am(env);
+		goto err;
+#endif
+	case DB_HEAP:
+#ifdef HAVE_HEAP
+		if ((ret = callback(handle, "type=heap\n")) != 0)
+			goto err;
+
+		if ((ret = __heap_get_heapsize(
+		    dbp, &tmp_u_int32, &tmp2_u_int32)) != 0) {
+			__db_err(env, ret, "DB->get_heapsize");
+			goto err;
+		}
+		if (tmp_u_int32 != 0) {
+			snprintf(buf,
+			    buflen, "heap_gbytes=%lu\n", (u_long)tmp_u_int32);
+			if ((ret = callback(handle, buf)) != 0)
+				goto err;
+		}
+
+		if (tmp2_u_int32 != 0) {
+			snprintf(buf,
+			    buflen, "heap_bytes=%lu\n", (u_long)tmp2_u_int32);
+			if ((ret = callback(handle, buf)) != 0)
+				goto err;
+		}
+		break;
+#else
+		ret = __db_no_heap_am(env);
 		goto err;
 #endif
 	case DB_QUEUE:
@@ -1615,7 +1819,7 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 	}
 
 #ifdef HAVE_PARTITION
-	if (DB_IS_PARTITIONED(dbp) &&
+	if (dbp != NULL && DB_IS_PARTITIONED(dbp) &&
 	    F_ISSET((DB_PARTITION *)dbp->p_internal, PART_RANGE)) {
 		DBT *keys;
 		u_int32_t i;
@@ -1629,7 +1833,7 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 				goto err;
 			for (i = 0; i < tmp_u_int32 - 1; i++)
 			    if ((ret = __db_prdbt(&keys[i],
-				pflag, " ", handle, callback, 0)) != 0)
+				pflag, " ", handle, callback, 0, 0)) != 0)
 					goto err;
 		}
 	}
@@ -1707,6 +1911,8 @@ __db_dbtype_to_string(type)
 		return ("recno");
 	case DB_QUEUE:
 		return ("queue");
+	case DB_HEAP:
+		return ("heap");
 	case DB_UNKNOWN:
 	default:
 		break;

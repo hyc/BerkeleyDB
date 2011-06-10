@@ -22,7 +22,8 @@ using BerkeleyDB;
  * The options to start a given replication node are:
  * 
  *   -h home (required; h stands for home directory)
- *   -l host:port (required; l stands for local)
+ *   -l host:port (required unless -L is specified; l stands for local)
+ *   -L host:port (optional, L means group creator)
  *   -C or M (optional; start up as client or master)
  *   -r host:port (optional; r stands for remote; any number of these may
  *      be specified)
@@ -30,8 +31,6 @@ using BerkeleyDB;
  *      be specified)
  *   -a all|quorum (optional; a stands for ack policy)
  *   -b (optional; b stands for bulk)
- *   -n nsites (optional; number of sites in replication group; defaults to 0
- *      to try to dynamically compute nsites)
  *   -p priority (optional; defaults to 100)
  *   -v (optional; v stands for verbose)
  * 
@@ -70,12 +69,15 @@ namespace excs_repquote
 		{
 			Console.WriteLine(
 			    "usage: " + RepConfig.progname +
-			    " -h home -l host:port [-CM][-r host:port][-R host:port]\n" +
-			    "  [-a all|quorum][-b][-n nsites][-p priority][-v]");
+			    " -h home -l|-L host:port\n" +
+			    " [-CM][-r host:port][-R host:port]\n" +
+			    " [-a all|quorum][-b][-p priority][-v]");
 
 			Console.WriteLine(
 			    "\t -h home (required; h stands for home directory)\n" +
-			    "\t -l host:port (required; l stands for local)\n" +
+			    "\t -l host:port (required unless -L is specified;" +
+			    " l stands for local)\n" +
+			    "\t -L host:port (optional, L means group creator)" +
 			    "\t -C or -M (optional; start up as client or master)\n" +
 			    "\t -r host:port (optional; r stands for remote; any number " +
 			    "of these\n" +
@@ -85,9 +87,6 @@ namespace excs_repquote
 			    "\t    these may be specified)\n" +
 			    "\t -a all|quorum (optional; a stands for ack policy)\n" +
 			    "\t -b (optional; b stands for bulk)\n" +
-			    "\t -n nsites (optional; number of sites in replication " +
-			    "group; defaults\n" +
-			    "\t    to 0 to try to dynamically compute nsites)\n" +
 			    "\t -p priority (optional; defaults to 100)\n" +
 			    "\t -v (optional; v stands for verbose)\n");
 
@@ -97,7 +96,7 @@ namespace excs_repquote
 		public static void Main(string[] args)
 		{
 			RepConfig config = new RepConfig();
-			bool isPeer;
+			bool isPeer, isCreator;
 			uint tmpPort = 0;
 
             /*
@@ -134,6 +133,7 @@ namespace excs_repquote
 			for (int i = 0; i < args.Length; i++)
 			{
 				isPeer = false;
+				isCreator = false;
 				string s = args[i];
 				if (s[0] != '-')
 					continue;
@@ -161,8 +161,11 @@ namespace excs_repquote
 						config.home = args[i];
 						break;
 					case 'l':
+					case 'L':
 						if (i == args.Length - 1)
 							usage();
+						if (args[i].Equals("-L"))
+							isCreator = true;
 						i++;
 						string[] words = args[i].Split(':');
 						if (words.Length != 2)
@@ -180,25 +183,13 @@ namespace excs_repquote
 							    "specification, could not parse port number.");
 							usage();
 						}
-						config.host.Host = words[0];
-						config.host.Port = tmpPort;
+						config.localSite.Host = words[0];
+						config.localSite.Port = tmpPort;
+						config.localSite.GroupCreator = isCreator;
+						config.localSite.LocalSite = true;
 						break;
 					case 'M':
 						config.startPolicy = StartPolicy.MASTER;
-						break;
-					case 'n':
-						if (i == args.Length - 1)
-							usage();
-						i++;
-						try 
-						{
-						    config.totalSites = uint.Parse(args[i]);
-						} catch (InvalidCastException) 
-						{
-						    Console.Error.WriteLine(
-							"Unable to parse number of total sites.");
-						    usage();
-						}
 						break;
 					case 'p':
 						if (i == args.Length - 1)
@@ -217,7 +208,7 @@ namespace excs_repquote
 					case 'R':
 						if (i == args.Length - 1)
 							usage();
-						if (args[i].Equals("R"))
+						if (args[i].Equals("-R"))
 							isPeer = true;
 						i++;
 						words = args[i].Split(':');
@@ -236,8 +227,12 @@ namespace excs_repquote
 							    "specification, could not parse port number.");
 							usage();
 						}
-						config.remote.Add(
-						    new RemoteSite(words[0], tmpPort, isPeer));
+						DbSiteConfig remoteConfig = new DbSiteConfig();
+						remoteConfig.Helper = true;
+						remoteConfig.Host = words[0];
+						remoteConfig.Port = tmpPort;
+						remoteConfig.Peer = isPeer;
+						config.remoteSites.Add(remoteConfig);
 						break;
 					case 'v':
 						config.verbose = true;
@@ -251,7 +246,7 @@ namespace excs_repquote
 			}
 
 			/* Error check command line. */
-			if (config.host.Host == null || config.home.Length == 0)
+			if (config.localSite.Host == null || config.home.Length == 0)
 				usage();
 
 			RepQuoteExample runner = null;
@@ -270,29 +265,26 @@ namespace excs_repquote
 					runner.terminate();
 			}
 		} /* End main. */
-		
+
 		public RepQuoteExample()
 		{
 			dbenv = null;
 		}
-		
+
 		public int init(RepConfig config)
 		{
 			int ret = 0;
-			
+
 			DatabaseEnvironmentConfig envConfig = new DatabaseEnvironmentConfig();
 			envConfig.ErrorPrefix = RepConfig.progname;
 			envConfig.RepSystemCfg = new ReplicationConfig();
-			envConfig.RepSystemCfg.RepMgrLocalSite = config.host;
-			for (int i = 0; i < config.remote.Count; i++)
-				envConfig.RepSystemCfg.AddRemoteSite(config.remote[i].Host, 
-				    config.remote[i].IsPeer);
 
-			if (config.totalSites > 0)
-				envConfig.RepSystemCfg.NSites = config.totalSites;
+			envConfig.RepSystemCfg.RepmgrSitesConfig.Add(config.localSite);
+			for (int i = 0; i < config.remoteSites.Count; i++)
+				envConfig.RepSystemCfg.RepmgrSitesConfig.Add(config.remoteSites[i]);
 
 			envConfig.RepSystemCfg.BulkTransfer = config.bulk;
-			
+
 			/*
 			 * Configure heartbeat timeouts so that repmgr monitors the
 			 * health of the TCP connection.  Master sites broadcast a heartbeat
@@ -338,7 +330,7 @@ namespace excs_repquote
 			 * trip message time.
 			 */
 			envConfig.RepSystemCfg.RetransmissionRequest(20000, 500000);
-			
+
 			/*
 			 * Configure deadlock detection to ensure that any deadlocks
 			 * are broken by having one of the conflicting lock requests
@@ -359,7 +351,7 @@ namespace excs_repquote
 			envConfig.UseTxns = true;
 			envConfig.Verbosity = new VerboseMessages();
 			envConfig.Verbosity.Replication = config.verbose;
-			
+
 			try 
 			{
 				dbenv = RepQuoteEnvironment.Open(config.home, envConfig);
@@ -408,10 +400,10 @@ namespace excs_repquote
 				dbenv.env.RepMgrStartClient(3, true);
 			else if (config.startPolicy == StartPolicy.MASTER)
 				dbenv.env.RepMgrStartMaster(3);
-		        
+
 			return ret;
 		}
-		
+
 		public int doloop()
 		{
 			BTreeDatabase db = null;
@@ -616,7 +608,6 @@ namespace excs_repquote
 			}
 		}
 
-
 		/*
 		 * This is a simple log archive thread.  Once per minute, it removes all but
 		 * the most recent 3 logs that are safe to remove according to a call to
@@ -675,7 +666,6 @@ namespace excs_repquote
 				}
 			}
 		}
-
 
 		
 		/*

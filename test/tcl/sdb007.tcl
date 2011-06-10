@@ -25,7 +25,7 @@ proc sdb007 { method args } {
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
 
-	if { [is_queue $method] == 1 } {
+       if { [is_queue $method] == 1 || [is_heap $method] == 1 } {
 		puts "Subdb007: skipping for method $method"
 		return
 	}

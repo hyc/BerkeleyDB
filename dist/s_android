@@ -111,6 +111,7 @@ cmp $t $f > /dev/null 2>&1 ||
 
 # Build db_int.h from dbinc/db_int.in
 cat <<ENDOFSEDTEXT > $s
+s/@DB_STRUCT_ALIGN8@//
 s/@PATH_SEPARATOR@/\//
 s/@db_int_def@//
 ENDOFSEDTEXT

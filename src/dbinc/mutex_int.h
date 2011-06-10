@@ -906,17 +906,17 @@ struct __db_mutexmgr {
  * DB_MUTEXREGION --
  *	The primary mutex data structure in the shared memory region.
  */
-typedef struct __db_mutexregion {
+typedef struct __db_mutexregion { /* SHARED */
 	/* These fields are initialized at create time and never modified. */
 	roff_t		mutex_off_alloc;/* Offset of mutex array */
 	roff_t		mutex_off;	/* Adjusted offset of mutex array */
-	size_t		mutex_size;	/* Size of the aligned mutex */
+	db_size_t	mutex_size;	/* Size of the aligned mutex */
 	roff_t		thread_off;	/* Offset of the thread area. */
 
 	db_mutex_t	mtx_region;	/* Region mutex. */
 
 	/* Protected using the region mutex. */
-	u_int32_t	mutex_next;	/* Next free mutex */
+	db_mutex_t	mutex_next;	/* Next free mutex */
 
 #if !defined(HAVE_ATOMIC_SUPPORT) && defined(HAVE_MUTEX_SUPPORT)
 	/* Mutexes for emulating atomic operations. */
@@ -927,7 +927,7 @@ typedef struct __db_mutexregion {
 } DB_MUTEXREGION;
 
 #ifdef HAVE_MUTEX_SUPPORT
-struct __db_mutex_t {			/* Mutex. */
+struct __db_mutex_t { /* SHARED */	/* Mutex. */
 #ifdef MUTEX_FIELDS
 	MUTEX_FIELDS			/* Opaque thread mutex structures. */
 #endif
@@ -986,14 +986,11 @@ struct __db_mutex_t {			/* Mutex. */
 #endif
 
 /* Macro to get a reference to a specific mutex. */
-#define	MUTEXP_SET(mtxmgr, indx)					\
-	((DB_MUTEX *)((u_int8_t *)mtxmgr->mutex_array +			\
-	    (indx) * ((DB_MUTEXREGION *)mtxmgr->reginfo.primary)->mutex_size))
-
-/* Inverse of the above: get the mutex index from a mutex pointer */
-#define	MUTEXP_GET(mtxmgr, mutexp)					\
-	(((u_int8_t *) (mutexp) - (u_int8_t *)mtxmgr->mutex_array) /	\
-	 ((DB_MUTEXREGION *)mtxmgr->reginfo.primary)->mutex_size)
+#define	MUTEXP_SET(env, indx)						\
+	(F_ISSET(env, ENV_PRIVATE) ? (DB_MUTEX *) indx :		\
+	(DB_MUTEX *)((u_int8_t *)env->mutex_handle->mutex_array +	\
+	    (indx) *							\
+	    ((DB_MUTEXREGION *)env->mutex_handle->reginfo.primary)->mutex_size))
 
 /*
  * Check that a particular mutex is exclusively held at least by someone, not
@@ -1003,7 +1000,7 @@ struct __db_mutex_t {			/* Mutex. */
 #define	MUTEX_IS_OWNED(env, mutex)					\
 	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
 	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
-	F_ISSET(MUTEXP_SET(env->mutex_handle, mutex), DB_MUTEX_LOCKED))
+	F_ISSET(MUTEXP_SET(env, mutex), DB_MUTEX_LOCKED))
 #else
 #define	MUTEX_IS_OWNED(env, mutex)	0
 #endif
@@ -1026,7 +1023,7 @@ struct __db_mutex_t {			/* Mutex. */
 #define	MUTEX_IS_BUSY(env, mutex)					\
 	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
 	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
-	MUTEXP_IS_BUSY(MUTEXP_SET(env->mutex_handle, mutex)))
+	MUTEXP_IS_BUSY(MUTEXP_SET(env, mutex)))
 
 #define	MUTEX_REQUIRED(env, mutex)					\
 	DB_ASSERT(env, MUTEX_IS_OWNED(env, mutex))

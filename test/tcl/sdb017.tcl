@@ -10,7 +10,7 @@ proc sdb017 { method args } {
 	global errorCode
 	source ./include.tcl
 
-	if { [is_queueext $method] == 1 } {
+       if { [is_queueext $method] == 1 || [is_heap $method] == 1 } {
 		puts "Subdb017: Skipping for method $method"
 		return
 	}

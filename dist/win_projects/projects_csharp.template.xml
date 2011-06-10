@@ -34,11 +34,15 @@
       <file name="CompactData.cs" />
       <file name="MultipleKeyDatabaseEntry.cs" />
       <file name="DatabaseEntry.cs" />
+      <file name="DbChannel.cs" />
+      <file name="DbSite.cs" />
+      <file name="DbSiteConfig.cs" />
       <file name="DbThreadID.cs" />
       <file name="DeadlockPolicy.cs" />
       <file name="Enums.cs" />
       <file name="ErrorCodes.cs" />
       <file name="HashStats.cs" />
+      <file name="Internal\DB_CHANNEL.cs" />
       <file name="Internal\DB_LOCKREQ.cs" />
       <file name="Internal\DB_PREPLIST.cs" />
       <file name="Internal\DB_REPMGR_SITE.cs" />
@@ -91,6 +95,10 @@
       <file name="DatabaseType.cs" />
       <file name="HashDatabase.cs" />
       <file name="HashDatabaseConfig.cs" />
+      <file name="HeapDatabase.cs" />
+      <file name="HeapDatabaseConfig.cs" />
+      <file name="HeapRecordId.cs" />
+      <file name="HeapStats.cs" />
       <file name="Internal\DB.cs" />
       <file name="Internal\DBC.cs" />
       <file name="Internal\DbConstants.cs" />
@@ -103,6 +111,7 @@
       <file name="Internal\db_lockmode_t.cs" />
       <file name="Internal\DB_LSN.cs" />
       <file name="Internal\db_recops.cs" />
+      <file name="Internal\DB_SITE.cs" />
       <file name="Internal\DB_TXN.cs" />
       <file name="Internal\DB_TXN_TOKEN.cs" />
       <file name="Internal\Delegates.cs" />
@@ -235,6 +244,8 @@
       <file name="HashCursorTest.cs" />
       <file name="HashDatabaseConfigTest.cs" />
       <file name="HashDatabaseTest.cs" />
+      <file name="HeapDatabaseConfigTest.cs" />
+      <file name="HeapDatabaseTest.cs" />
       <file name="JoinCursorTest.cs" />
       <file name="LockingConfigTest.cs" />
       <file name="LockTest.cs" SubType="Code" />

@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
     <link rel="prev" href="dbupgrade.html" title="DB-&gt;upgrade()" />
-    <link rel="next" href="dbc.html" title="Chapter 3.  The DBcursor Handle" />
+    <link rel="next" href="db_heap_rid.html" title="DB_HEAP_RID" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB-&gt;verify()</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 2. 
                 The DB Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="dbc.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="db_heap_rid.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -63,10 +66,12 @@ DB-&gt;verify(DB *db, const char *file,
          return.
     </p>
       <p>
-         The <code class="methodname">DB-&gt;verify()</code> method is the underlying method used by the <a class="link" href="db_verify.html" title="db_verify">db_verify</a> utility. See the
-         <a class="link" href="db_verify.html" title="db_verify">db_verify</a> utility
-         source code for an example of using <code class="methodname">DB-&gt;verify()</code> in a IEEE/ANSI Std
-         1003.1 (POSIX) environment.
+         The <code class="methodname">DB-&gt;verify()</code> method is the
+         underlying method used by the 
+         <a class="link" href="db_verify.html" title="db_verify">db_verify</a> utility. See the 
+         <a class="link" href="db_verify.html" title="db_verify">db_verify</a> utility source code for
+         an example of using <code class="methodname">DB-&gt;verify()</code> in a
+         IEEE/ANSI Std 1003.1 (POSIX) environment.
     </p>
       <p>
          The <code class="methodname">DB-&gt;verify()</code> method will return DB_VERIFY_BAD if a database is
@@ -84,7 +89,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50859624"></a>Parameters</h3>
+              <h3 class="title"><a id="id3875095"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -92,7 +97,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50869576"></a>file</h4>
+                <h4 class="title"><a id="id3874864"></a>file</h4>
               </div>
             </div>
           </div>
@@ -105,7 +110,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50879944"></a>database</h4>
+                <h4 class="title"><a id="id3875409"></a>database</h4>
               </div>
             </div>
           </div>
@@ -124,7 +129,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50866928"></a>outfile</h4>
+                <h4 class="title"><a id="id3875132"></a>outfile</h4>
               </div>
             </div>
           </div>
@@ -137,7 +142,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50871720"></a>flags</h4>
+                <h4 class="title"><a id="id3875207"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -257,7 +262,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50903496"></a>Environment Variables</h3>
+              <h3 class="title"><a id="id3875816"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -269,16 +274,15 @@ DB-&gt;verify(DB *db, const char *file,
         <p>
                             <code class="methodname">DB-&gt;verify()</code> is affected by any database directory specified using the
                             <a class="xref" href="envset_data_dir.html" title="DB_ENV-&gt;set_data_dir()">DB_ENV-&gt;set_data_dir()</a>
-                            method, or by setting the "set_data_dir" string in the environment's
-                            <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                            file.
+                            method, or by setting the "set_data_dir" string
+                            in the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.
                     </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50904576"></a>Errors</h3>
+              <h3 class="title"><a id="id3874866"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -294,7 +298,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50900112"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3875760"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -307,7 +311,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50899144"></a>ENOENT</h4>
+                <h4 class="title"><a id="id3875593"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -320,7 +324,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50871632"></a>Class</h3>
+              <h3 class="title"><a id="id3875615"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -332,7 +336,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50913712"></a>See Also</h3>
+              <h3 class="title"><a id="id3875890"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -349,16 +353,14 @@ DB-&gt;verify(DB *db, const char *file,
           <td width="20%" align="center">
             <a accesskey="u" href="db.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="dbc.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="db_heap_rid.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DB-&gt;upgrade() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 3. 
-                The DBcursor Handle
-        </td>
+          <td width="40%" align="right" valign="top"> DB_HEAP_RID</td>
         </tr>
       </table>
     </div>

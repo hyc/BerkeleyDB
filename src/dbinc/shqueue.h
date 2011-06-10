@@ -35,15 +35,19 @@ extern "C" {
 #endif
 
 #define	SH_PTR_TO_OFF(src, dest)					\
-	((ssize_t)(((u_int8_t *)(dest)) - ((u_int8_t *)(src))))
+	((db_ssize_t)(((u_int8_t *)(dest)) - ((u_int8_t *)(src))))
+
+#define SH_OFF_TO_PTR(base, off, type)           \
+       ((type *) (((u_int8_t *)(base)) + (db_ssize_t) (off)))
+
 
 /*
  * Shared memory chain definitions.
  */
 #define	SH_CHAIN_ENTRY							\
 struct {								\
-	ssize_t sce_next;	/* relative offset to next element */	\
-	ssize_t sce_prev;	/* relative offset of prev element */	\
+	db_ssize_t sce_next;	/* relative offset to next element */	\
+	db_ssize_t sce_prev;	/* relative offset of prev element */	\
 }
 
 #define	SH_CHAIN_INIT(elm, field)					\
@@ -103,7 +107,7 @@ struct {								\
  */
 #define	SH_LIST_HEAD(name)						\
 struct name {								\
-	ssize_t slh_first;	/* first element */			\
+	db_ssize_t slh_first;	/* first element */			\
 }
 
 #define	SH_LIST_HEAD_INITIALIZER(head)					\
@@ -111,8 +115,8 @@ struct name {								\
 
 #define	SH_LIST_ENTRY							\
 struct {								\
-	ssize_t sle_next;	/* relative offset to next element */	\
-	ssize_t sle_prev;	/* relative offset of prev element */	\
+	db_ssize_t sle_next;	/* relative offset to next element */	\
+	db_ssize_t sle_prev;	/* relative offset of prev element */	\
 }
 
 /*
@@ -141,10 +145,10 @@ struct {								\
    * between elements are relative to that point in SH_LIST structures.
    */
 #define	__SH_LIST_PREV_OFF(elm, field)					\
-	((ssize_t *)(((u_int8_t *)(elm)) + (elm)->field.sle_prev))
+	((db_ssize_t *)(((u_int8_t *)(elm)) + (elm)->field.sle_prev))
 
 #define	SH_LIST_PREV(elm, field, type)					\
-	(struct type *)((ssize_t)(elm) - (*__SH_LIST_PREV_OFF(elm, field)))
+	(struct type *)((db_ssize_t)(elm) - (*__SH_LIST_PREV_OFF(elm, field)))
 
 #define	SH_LIST_FOREACH(var, head, field, type)				\
 	for ((var) = SH_LIST_FIRST((head), type);			\
@@ -228,8 +232,8 @@ struct {								\
  */
 #define	SH_TAILQ_HEAD(name)						\
 struct name {								\
-	ssize_t stqh_first;	/* relative offset of first element */	\
-	ssize_t stqh_last;	/* relative offset of last's next */	\
+	db_ssize_t stqh_first;	/* relative offset of first element */	\
+	db_ssize_t stqh_last;	/* relative offset of last's next */	\
 }
 
 #define	SH_TAILQ_HEAD_INITIALIZER(head)					\
@@ -237,8 +241,8 @@ struct name {								\
 
 #define	SH_TAILQ_ENTRY							\
 struct {								\
-	ssize_t stqe_next;	/* relative offset of next element */	\
-	ssize_t stqe_prev;	/* relative offset of prev's next */	\
+	db_ssize_t stqe_next;	/* relative offset of next element */	\
+	db_ssize_t stqe_prev;	/* relative offset of prev's next */	\
 }
 
 /*
@@ -268,14 +272,14 @@ struct {								\
    * structures.
    */
 #define	__SH_TAILQ_PREV_OFF(elm, field)					\
-	((ssize_t *)(((u_int8_t *)(elm)) + (elm)->field.stqe_prev))
+	((db_ssize_t *)(((u_int8_t *)(elm)) + (elm)->field.stqe_prev))
 
 #define	SH_TAILQ_PREVP(elm, field, type)				\
-	(struct type *)((ssize_t)elm - (*__SH_TAILQ_PREV_OFF(elm, field)))
+	(struct type *)((db_ssize_t)elm - (*__SH_TAILQ_PREV_OFF(elm, field)))
 
 #define	SH_TAILQ_PREV(head, elm, field, type)				\
 	(((elm) == SH_TAILQ_FIRST(head, type)) ? NULL :		\
-	  (struct type *)((ssize_t)elm - (*__SH_TAILQ_PREV_OFF(elm, field))))
+	  (struct type *)((db_ssize_t)elm - (*__SH_TAILQ_PREV_OFF(elm, field))))
 
   /*
    * __SH_TAILQ_LAST_OFF is private API.  It calculates the address of
@@ -284,12 +288,12 @@ struct {								\
    * point in SH_TAILQ structures.
    */
 #define	__SH_TAILQ_LAST_OFF(head)					\
-	((ssize_t *)(((u_int8_t *)(head)) + (head)->stqh_last))
+	((db_ssize_t *)(((u_int8_t *)(head)) + (head)->stqh_last))
 
 #define	SH_TAILQ_LASTP(head, field, type)				\
-	((struct type *)((ssize_t)(head) +				\
-	 ((ssize_t)((head)->stqh_last) -				\
-	 ((ssize_t)SH_PTR_TO_OFF(SH_TAILQ_FIRST(head, type),		\
+	((struct type *)((db_ssize_t)(head) +				\
+	 ((db_ssize_t)((head)->stqh_last) -				\
+	 ((db_ssize_t)SH_PTR_TO_OFF(SH_TAILQ_FIRST(head, type),		\
 		&(SH_TAILQ_FIRSTP(head, type)->field.stqe_next))))))
 
 #define	SH_TAILQ_LAST(head, field, type)				\

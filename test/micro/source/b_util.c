@@ -24,6 +24,19 @@ b_util_have_hash()
 }
 
 int
+b_util_have_heap()
+{
+#if defined(HAVE_HEAP) ||\
+    DB_VERSION_MAJOR < 5 || DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR < 2
+	return (0);
+#else
+	fprintf(stderr,
+    "library build did not include support for the Heap access method\n");
+	return (1);
+#endif
+}
+
+int
 b_util_have_queue()
 {
 #if defined(HAVE_QUEUE) ||\

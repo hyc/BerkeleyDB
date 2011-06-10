@@ -166,8 +166,8 @@ __mutex_set_align(dbenv, align)
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mutex_align");
 
 	if (align == 0 || !POWER_OF_TWO(align)) {
-		__db_errx(env,
-    "DB_ENV->mutex_set_align: alignment value must be a non-zero power-of-two");
+		__db_errx(env, DB_STR("2018",
+"DB_ENV->mutex_set_align: alignment value must be a non-zero power-of-two"));
 		return (EINVAL);
 	}
 
@@ -218,6 +218,52 @@ __mutex_set_increment(dbenv, increment)
 }
 
 /*
+ * __mutex_get_init --
+ *	DB_ENV->mutex_get_init.
+ *
+ * PUBLIC: int __mutex_get_init __P((DB_ENV *, u_int32_t *));
+ */
+int
+__mutex_get_init(dbenv, initp)
+	DB_ENV *dbenv;
+	u_int32_t *initp;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	if (MUTEX_ON(env)) {
+		/* Cannot be set after open, no lock required to read. */
+		*initp = ((DB_MUTEXREGION *)
+		    env->mutex_handle->reginfo.primary)->stat.st_mutex_init;
+	} else
+		*initp = dbenv->mutex_cnt;
+	return (0);
+}
+
+/*
+ * __mutex_set_init --
+ *	DB_ENV->mutex_set_init.
+ *
+ * PUBLIC: int __mutex_set_init __P((DB_ENV *, u_int32_t));
+ */
+int
+__mutex_set_init(dbenv, init)
+	DB_ENV *dbenv;
+	u_int32_t init;
+{
+	ENV *env;
+
+	env = dbenv->env;
+
+	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mutex_init");
+
+	dbenv->mutex_cnt = init;
+	dbenv->mutex_inc = 0;
+	return (0);
+}
+
+/*
  * __mutex_get_max --
  *	DB_ENV->mutex_get_max.
  *
@@ -235,9 +281,9 @@ __mutex_get_max(dbenv, maxp)
 	if (MUTEX_ON(env)) {
 		/* Cannot be set after open, no lock required to read. */
 		*maxp = ((DB_MUTEXREGION *)
-		    env->mutex_handle->reginfo.primary)->stat.st_mutex_cnt;
+		    env->mutex_handle->reginfo.primary)->stat.st_mutex_max;
 	} else
-		*maxp = dbenv->mutex_cnt;
+		*maxp = dbenv->mutex_max;
 	return (0);
 }
 
@@ -258,7 +304,7 @@ __mutex_set_max(dbenv, max)
 
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mutex_max");
 
-	dbenv->mutex_cnt = max;
+	dbenv->mutex_max = max;
 	dbenv->mutex_inc = 0;
 	return (0);
 }

@@ -81,8 +81,8 @@ __memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)
 				ret = 0;
 			MUTEX_UNLOCK(env, dbmp->mutex);
 			if (ret != 0) {
-				__db_errx(env,
-				    "unable to create temporary backing file");
+				__db_errx(env, DB_STR("3014",
+			    "unable to create temporary backing file"));
 				--dbmfp->ref;
 				return (ret);
 			}
@@ -394,7 +394,8 @@ __memp_pgwrite(env, dbmfp, hp, bhp)
 	/* Write the page. */
 	if ((ret = __os_io(env, DB_IO_WRITE, dbmfp->fhp, bhp->pgno,
 	    mfp->pagesize, 0, mfp->pagesize, buf, &nw)) != 0) {
-		__db_errx(env, "%s: write failed for page %lu",
+		__db_errx(env, DB_STR_A("3015",
+		    "%s: write failed for page %lu", "%s %lu"),
 		    __memp_fn(dbmfp), (u_long)bhp->pgno);
 		goto err;
 	}
@@ -502,8 +503,9 @@ __memp_pg(dbmfp, pgno, buf, is_pgin)
 
 	return (0);
 
-err:	__db_errx(env, "%s: %s failed for page %lu",
-	    __memp_fn(dbmfp), is_pgin ? "pgin" : "pgout", (u_long)pgno);
+err:	__db_errx(env, DB_STR_A("3016",
+	    "%s: %s failed for page %lu", "%s %s %lu"), __memp_fn(dbmfp),
+	    is_pgin ? DB_STR_P("pgin") : DB_STR_P("pgout"), (u_long)pgno);
 	return (ret);
 }
 
@@ -589,7 +591,9 @@ __memp_bhfree(dbmp, infop, mfp, hp, bhp, flags)
 	 * We're going to use the memory for something else -- it had better be
 	 * accessible.
 	 */
-no_hp:	MVCC_MPROTECT(bhp->buf, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
+no_hp:	if (mfp != NULL)
+		MVCC_MPROTECT(bhp->buf,
+		    pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
 
 	/*
 	 * Discard the hash bucket's mutex, it's no longer needed, and

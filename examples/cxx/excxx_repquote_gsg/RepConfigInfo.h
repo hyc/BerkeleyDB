@@ -16,6 +16,7 @@ typedef struct RepHostInfoObj{
     char* host;
     u_int16_t port;
     RepHostInfoObj* next; // used for chaining multiple "other" hosts.
+    bool creator;
 } REP_HOST_INFO;
 
 class RepConfigInfo {
@@ -29,7 +30,7 @@ public:
     char* home;
     bool got_listen_address;
     REP_HOST_INFO this_host;
-    int totalsites;
+    int nrsites;
     int priority;
     // used to store a set of optional other hosts.
     REP_HOST_INFO *other_hosts;
@@ -41,7 +42,7 @@ RepConfigInfo::RepConfigInfo()
     start_policy = DB_REP_ELECTION;
     home = NULL;
     got_listen_address = false;
-    totalsites = 0;
+    nrsites = 0;
     priority = 100;
     other_hosts = NULL;
 }
@@ -74,4 +75,5 @@ void RepConfigInfo::addOtherHost(char* host, int port)
         newinfo->next = other_hosts;
         other_hosts = newinfo;
     }
+    nrsites++;
 }

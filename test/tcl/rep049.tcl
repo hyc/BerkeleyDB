@@ -19,6 +19,7 @@ proc rep049 { method { niter 10 } { tnum "049" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -44,6 +45,11 @@ proc rep049 { method { niter 10 } { tnum "049" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		foreach l $logsets {
@@ -53,8 +59,8 @@ proc rep049 { method { niter 10 } { tnum "049" } args } {
 				    for in-memory logs with -recover."
 				continue
 			}
-			puts "Rep$tnum ($r): Replication\
-			    and ($method) delayed sync-up $msg $msg2."
+			puts "Rep$tnum ($r): Replication and\
+			    ($method) delayed sync-up $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Swap Client logs are [lindex $l 1]"
 			puts "Rep$tnum: Delay Client logs are [lindex $l 2]"
@@ -66,9 +72,9 @@ proc rep049 { method { niter 10 } { tnum "049" } args } {
 
 proc rep049_sub { method niter tnum logset recargs largs } {
 	global testdir
-	global util_path
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -80,6 +86,11 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -115,7 +126,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $verbargs \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    $m_logargs -errpfx ENV1 -cachesize {0 4194304 3} \
 	    -home $env1dir -rep_transport \[list 1 replsend\]"
 	set env1 [eval $ma_envcmd $recargs -rep_master]
@@ -125,7 +136,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $verbargs \
-	    $repmemargs $c_logargs -errpfx ENV2 \
+	    $repmemargs $privargs $c_logargs -errpfx ENV2 \
 	    -home $env2dir -rep_transport \[list 2 replsend\]"
 	set env2 [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $env2] TRUE
@@ -133,7 +144,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 
 	repladd 3
 	set dc_envcmd "berkdb_env_noerr -create $dc_txnargs \
-	    $repmemargs $verbargs $dc_logargs -errpfx ENV3 \
+	    $repmemargs $privargs $verbargs $dc_logargs -errpfx ENV3 \
 	    -home $delaycldir -rep_transport \[list 3 replsend\]"
 	set dcenv [eval $dc_envcmd $recargs -rep_client]
 	error_check_good client2_env [is_valid_env $dcenv] TRUE
@@ -145,7 +156,7 @@ proc rep049_sub { method niter tnum logset recargs largs } {
 	# We'll do the repladd and execute this env command later.
 	#
 	set fc_envcmd "berkdb_env_noerr -create $fc_txnargs \
-	    $repmemargs $fc_logargs -errpfx ENV4 $verbargs \
+	    $repmemargs $privargs $fc_logargs -errpfx ENV4 $verbargs \
 	    -home $freshcldir -rep_transport \[list 4 replsend\]"
 
 	# Bring the clients online by processing the startup messages.

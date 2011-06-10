@@ -37,6 +37,8 @@ static int	bdb_SeqOpen __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
     DBTCL_INFO *, DB_SEQUENCE **));
 #endif
 
+static int	heap_callback __P((DB *dbp, const DBT *, const DBT *, DBT *));
+
 #ifdef CONFIG_TEST
 static int	bdb_DbUpgrade __P((Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int	bdb_DbVerify __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
@@ -198,7 +200,7 @@ berkdb_Cmd(notused, interp, objc, objv)
 	static int seq_id = 0;
 #endif
 
-	DB *dbp;
+	DB *dbp, *hrdbp, *hsdbp;
 #ifdef HAVE_64BIT_TYPES
 	DB_SEQUENCE *seq;
 #endif
@@ -206,13 +208,17 @@ berkdb_Cmd(notused, interp, objc, objv)
 	DBM *ndbmp;
 	static int ndbm_id = 0;
 #endif
-	DBTCL_INFO *ip;
+	DBTCL_INFO *ip, *hrip, *hsip;
 	DB_ENV *dbenv;
 	Tcl_Obj *res;
 	int cmdindex, result;
 	char newname[MSG_SIZE];
 
 	COMPQUIET(notused, NULL);
+	COMPQUIET(hrdbp, NULL);
+	COMPQUIET(hrip, NULL);
+	COMPQUIET(hsdbp, NULL);
+	COMPQUIET(hsip, NULL);
 
 	Tcl_ResetResult(interp);
 	memset(newname, 0, MSG_SIZE);
@@ -304,6 +310,53 @@ berkdb_Cmd(notused, interp, objc, objv)
 				/* Use ip->i_name - newname is overwritten */
 				res = NewStringObj(newname, strlen(newname));
 				_SetInfoData(ip, dbp);
+				/* 
+				 * If we are a DB_HEAP, we need to finish
+				 * setting up the DB_RECNO db which was
+				 * started in bdb_DbOpen call.
+				 */
+				if (dbp->type == DB_HEAP) {
+					snprintf(newname, 
+					    sizeof(newname), "db%d", db_id);
+					hrip = _NewInfo(interp, 
+					    NULL, newname, I_AUX);	
+					if (hrip != NULL) {
+						db_id++;
+						hrdbp = ip->hrdbp;
+						_SetInfoData(hrip, hrdbp);
+						hrdbp->api_internal = hrip;
+						hrip->hrdbp = dbp;
+						if (hrdbp->dbenv->db_errpfx 
+						    == NULL)
+							hrdbp->set_errpfx(
+							  hrdbp, hrip->i_name);
+					} else {
+						Tcl_SetResult(interp, 
+						    "Could not set up info",
+						    TCL_STATIC);
+						result = TCL_ERROR;
+					}
+					snprintf(newname, 
+					    sizeof(newname), "db%d", db_id);
+					hsip = _NewInfo(interp, 
+					    NULL, newname, I_AUX);	
+					if (hsip != NULL) {
+						db_id++;
+						hsdbp = ip->hsdbp;
+						_SetInfoData(hsip, hsdbp);
+						hsdbp->api_internal = hsip;
+						hsip->hsdbp = dbp;
+						if (hsdbp->dbenv->db_errpfx 
+						    == NULL)
+							hsdbp->set_errpfx(
+							  hsdbp, hsip->i_name);
+					} else {
+						Tcl_SetResult(interp, 
+						    "Could not set up info",
+						    TCL_STATIC);
+						result = TCL_ERROR;
+					}
+				}
 			} else
 				_DeleteInfo(ip);
 		} else {
@@ -423,10 +476,14 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		"-lock",
 		"-lock_conflict",
 		"-lock_detect",
+		"-lock_locks",
+		"-lock_lockers",
+		"-lock_objects",
 		"-lock_max_locks",
 		"-lock_max_lockers",
 		"-lock_max_objects",
 		"-lock_partitions",
+		"-lock_tablesize",
 		"-lock_timeout",
 		"-log",
 		"-log_filemode",
@@ -435,6 +492,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		"-log_max",
 		"-log_regionmax",
 		"-log_remove",
+		"-memory_max",
 		"-mpool_max_openfd",
 		"-mpool_max_write",
 		"-mpool_mmap_size",
@@ -443,6 +501,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		"-multiversion",
 		"-mutex_set_align",
 		"-mutex_set_incr",
+		"-mutex_set_init",
 		"-mutex_set_max",
 		"-mutex_set_tas_spins",
 		"-overwrite",
@@ -455,11 +514,13 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		"-rep_inmem_files",
 		"-rep_lease",
 		"-rep_master",
+		"-rep_nsites",
 		"-rep_transport",
 		"-set_intermediate_dir_mode",
 		"-snapshot",
 		"-tablesize",
 		"-thread",
+		"-thread_count",
 		"-time_notgranted",
 		"-txn_nowait",
 		"-txn_timeout",
@@ -481,6 +542,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		"-home",
 		"-log_dir",
 		"-mode",
+		"-msgfile",
 		"-private",
 		"-recover",
 		"-recover_fatal",
@@ -488,6 +550,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		"-system_mem",
 		"-tmp_dir",
 		"-txn",
+		"-txn_init",
 		"-txn_max",
 		"-use_environ",
 		"-use_environ_root",
@@ -510,10 +573,14 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		TCL_ENV_LOCK,
 		TCL_ENV_CONFLICT,
 		TCL_ENV_DETECT,
+		TCL_ENV_LOCK_LOCKS,
+		TCL_ENV_LOCK_LOCKERS,
+		TCL_ENV_LOCK_OBJECTS,
 		TCL_ENV_LOCK_MAX_LOCKS,
 		TCL_ENV_LOCK_MAX_LOCKERS,
 		TCL_ENV_LOCK_MAX_OBJECTS,
 		TCL_ENV_LOCK_PARTITIONS,
+		TCL_ENV_LOCK_TABLESIZE,
 		TCL_ENV_LOCK_TIMEOUT,
 		TCL_ENV_LOG,
 		TCL_ENV_LOG_FILEMODE,
@@ -522,6 +589,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		TCL_ENV_LOG_MAX,
 		TCL_ENV_LOG_REGIONMAX,
 		TCL_ENV_LOG_REMOVE,
+		TCL_ENV_MEMORY_MAX,
 		TCL_ENV_MPOOL_MAX_OPENFD,
 		TCL_ENV_MPOOL_MAX_WRITE,
 		TCL_ENV_MPOOL_MMAP_SIZE,
@@ -530,6 +598,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		TCL_ENV_MULTIVERSION,
 		TCL_ENV_MUTSETALIGN,
 		TCL_ENV_MUTSETINCR,
+		TCL_ENV_MUTSETINIT,
 		TCL_ENV_MUTSETMAX,
 		TCL_ENV_MUTSETTAS,
 		TCL_ENV_OVERWRITE,
@@ -542,11 +611,13 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		TCL_ENV_REP_INMEM_FILES,
 		TCL_ENV_REP_LEASE,
 		TCL_ENV_REP_MASTER,
+		TCL_ENV_REP_NSITES,
 		TCL_ENV_REP_TRANSPORT,
 		TCL_ENV_SET_INTERMEDIATE_DIR,
 		TCL_ENV_SNAPSHOT,
 		TCL_ENV_TABLESIZE,
 		TCL_ENV_THREAD,
+		TCL_ENV_THREAD_COUNT,
 		TCL_ENV_TIME_NOTGRANTED,
 		TCL_ENV_TXN_NOWAIT,
 		TCL_ENV_TXN_TIMEOUT,
@@ -568,6 +639,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		TCL_ENV_HOME,
 		TCL_ENV_LOG_DIR,
 		TCL_ENV_MODE,
+		TCL_ENV_MSGFILE,
 		TCL_ENV_PRIVATE,
 		TCL_ENV_RECOVER,
 		TCL_ENV_RECOVER_FATAL,
@@ -575,6 +647,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		TCL_ENV_SYSTEM_MEM,
 		TCL_ENV_TMP_DIR,
 		TCL_ENV_TXN,
+		TCL_ENV_TXN_INIT,
 		TCL_ENV_TXN_MAX,
 		TCL_ENV_USE_ENVIRON,
 		TCL_ENV_USE_ENVIRON_ROOT
@@ -698,7 +771,10 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			Tcl_IncrRefCount(ip->i_isalive);
 			_debug_check();
 			/* Choose an arbitrary thread count, for testing. */
-			if ((ret = dbenv->set_thread_count(dbenv, 5)) == 0)
+			ret = dbenv->get_thread_count(dbenv, &uintarg);
+			if ((ret == 0) && (uintarg == 0))
+				ret = dbenv->set_thread_count(dbenv, 5);
+			if (ret == 0)
 				ret = dbenv->set_isalive(dbenv, tcl_isalive);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "set_isalive");
@@ -797,10 +873,14 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "lock_detect");
 			break;
+		case TCL_ENV_LOCK_LOCKS:
+		case TCL_ENV_LOCK_LOCKERS:
+		case TCL_ENV_LOCK_OBJECTS:
 		case TCL_ENV_LOCK_MAX_LOCKS:
 		case TCL_ENV_LOCK_MAX_LOCKERS:
 		case TCL_ENV_LOCK_MAX_OBJECTS:
 		case TCL_ENV_LOCK_PARTITIONS:
+		case TCL_ENV_LOCK_TABLESIZE:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
 				    "?-lock_max max?");
@@ -811,6 +891,18 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			if (result == TCL_OK) {
 				_debug_check();
 				switch ((enum envopen)optindex) {
+				case TCL_ENV_LOCK_LOCKS:
+					ret = dbenv->set_memory_init(dbenv,
+					    DB_MEM_LOCK, uintarg);
+					break;
+				case TCL_ENV_LOCK_LOCKERS:
+					ret = dbenv->set_memory_init(dbenv,
+					    DB_MEM_LOCKER, uintarg);
+					break;
+				case TCL_ENV_LOCK_OBJECTS:
+					ret = dbenv->set_memory_init(dbenv,
+					    DB_MEM_LOCKOBJECT, uintarg);
+					break;
 				case TCL_ENV_LOCK_MAX_LOCKS:
 					ret = dbenv->set_lk_max_locks(dbenv,
 					    uintarg);
@@ -827,6 +919,10 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 					ret = dbenv->set_lk_partitions(dbenv,
 					    uintarg);
 					break;
+				case TCL_ENV_LOCK_TABLESIZE:
+					ret = dbenv->set_lk_tablesize(dbenv,
+					    uintarg);
+					break;
 				default:
 					break;
 				}
@@ -836,6 +932,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			break;
 		case TCL_ENV_MUTSETALIGN:
 		case TCL_ENV_MUTSETINCR:
+		case TCL_ENV_MUTSETINIT:
 		case TCL_ENV_MUTSETMAX:
 		case TCL_ENV_MUTSETTAS:
 			if (i >= objc) {
@@ -851,6 +948,9 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 				break;
 			case TCL_ENV_MUTSETINCR:
 				intarg = DBTCL_MUT_INCR;
+				break;
+			case TCL_ENV_MUTSETINIT:
+				intarg = DBTCL_MUT_INIT;
 				break;
 			case TCL_ENV_MUTSETMAX:
 				intarg = DBTCL_MUT_MAX;
@@ -990,6 +1090,30 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			    dbenv->log_set_config(dbenv, DB_LOG_AUTO_REMOVE, 1);
 			result = _ReturnSetup(interp, ret,
 			    DB_RETOK_STD(ret), "log_remove");
+			break;
+		case TCL_ENV_MEMORY_MAX:
+			result = Tcl_ListObjGetElements(interp, objv[i],
+			    &myobjc, &myobjv);
+			if (result == TCL_OK)
+				i++;
+			else
+				break;
+			if (myobjc != 2) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-memory_max {gbytes bytes}?");
+				result = TCL_ERROR;
+				break;
+			}
+			result = _GetUInt32(interp, myobjv[0], &gbytes);
+			if (result != TCL_OK)
+				break;
+			result = _GetUInt32(interp, myobjv[1], &bytes);
+			if (result != TCL_OK)
+				break;
+			_debug_check();
+			ret = dbenv->set_memory_max(dbenv, gbytes, bytes);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "memory_max");
 			break;
 		case TCL_ENV_MPOOL_MAX_OPENFD:
 			if (i >= objc) {
@@ -1137,6 +1261,23 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			rep_flags = DB_REP_MASTER;
 			FLD_SET(open_flags, DB_INIT_REP);
 			break;
+		case TCL_ENV_REP_NSITES:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-rep_nsites nsites?");
+				result = TCL_ERROR;
+				break;
+			}
+			result = _GetUInt32(interp, objv[i++], &uintarg);
+			if (result == TCL_OK) {
+				_debug_check();
+				ret = dbenv->rep_set_nsites(dbenv, uintarg);
+				result = _ReturnSetup(interp, ret,
+				    DB_RETOK_STD(ret), "rep_set_nsites");
+			}
+			if (result == TCL_OK)
+				FLD_SET(open_flags, DB_INIT_REP);
+			break;
 		case TCL_ENV_REP_INMEM_FILES:
 			result = tcl_RepInmemFiles(interp,dbenv);
 			if (result == TCL_OK)
@@ -1145,7 +1286,7 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		case TCL_ENV_REP_LEASE:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
-				    "-rep_lease {nsites timeout clockskew}");
+				    "-rep_lease {timeout clockskew}");
 				result = TCL_ERROR;
 				break;
 			}
@@ -1184,6 +1325,21 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			/* Enable DB_THREAD when specified in testing. */
 			FLD_SET(open_flags, DB_THREAD);
 			break;
+		case TCL_ENV_THREAD_COUNT:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-thread_count count?");
+				result = TCL_ERROR;
+				break;
+			}
+			result = _GetUInt32(interp, objv[i++], &uintarg);
+			if (result == TCL_OK) {
+				_debug_check();
+				ret = dbenv->set_thread_count(dbenv, uintarg);
+				result = _ReturnSetup(interp, ret,
+				    DB_RETOK_STD(ret), "set_thread_count");
+			}
+			break;
 		case TCL_ENV_TIME_NOTGRANTED:
 			FLD_SET(set_flags, DB_TIME_NOTGRANTED);
 			break;
@@ -1209,9 +1365,8 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 		case TCL_ENV_ZEROLOG:
 			if ((ret =
 			    dbenv->log_set_config(dbenv, DB_LOG_ZERO, 1)) != 0)
-				return (
-				    _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-				    "set_log_config"));
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_log_config");
 			break;
 #endif
 		case TCL_ENV_TXN:
@@ -1374,6 +1529,22 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 				    DB_RETOK_STD(ret), "shm_key");
 			}
 			break;
+		case TCL_ENV_TXN_INIT:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-txn_init init?");
+				result = TCL_ERROR;
+				break;
+			}
+			result = _GetUInt32(interp, objv[i++], &uintarg);
+			if (result == TCL_OK) {
+				_debug_check();
+				ret = dbenv->set_memory_init(dbenv,
+				    DB_MEM_TRANSACTION, uintarg);
+				result = _ReturnSetup(interp, ret,
+				    DB_RETOK_STD(ret), "txn_init");
+			}
+			break;
 		case TCL_ENV_TXN_MAX:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
@@ -1399,6 +1570,16 @@ bdb_EnvOpen(interp, objc, objv, ip, dbenvp)
 			arg = Tcl_GetStringFromObj(objv[i++], NULL);
 			tcl_EnvSetErrfile(interp, dbenv, ip, arg);
 			break;
+		case TCL_ENV_MSGFILE:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "-msgfile file");
+				result = TCL_ERROR;
+				break;
+			}
+			arg = Tcl_GetStringFromObj(objv[i++], NULL);
+			tcl_EnvSetMsgfile(interp, dbenv, ip, arg);
+			break;			
 		case TCL_ENV_ERRPFX:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
@@ -1533,6 +1714,10 @@ error:	if (result == TCL_ERROR) {
 			(void)fclose(ip->i_err);
 			ip->i_err = NULL;
 		}
+		if (ip->i_msg && ip->i_msg != stdout && ip->i_msg != stderr) {
+			(void)fclose(ip->i_msg);
+			ip->i_msg = NULL;
+		}
 		(void)__mutex_free(dbenv->env, &ip->i_mutex);
 		(void)dbenv->close(dbenv, 0);
 	}
@@ -1604,10 +1789,12 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 		"-extent",
 		"-ffactor",
 		"-hash",
+		"-heap",
 		"-inorder",
 		"-len",
 		"-maxsize",
 		"-mode",
+		"-msgfile",
 		"-multiversion",
 		"-nelem",
 		"-pad",
@@ -1663,10 +1850,12 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 		TCL_DB_EXTENT,
 		TCL_DB_FFACTOR,
 		TCL_DB_HASH,
+		TCL_DB_HEAP,
 		TCL_DB_INORDER,
 		TCL_DB_LEN,
 		TCL_DB_MAXSIZE,
 		TCL_DB_MODE,
+		TCL_DB_MSGFILE,
 		TCL_DB_MULTIVERSION,
 		TCL_DB_NELEM,
 		TCL_DB_PAD,
@@ -1688,21 +1877,25 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 	DBTYPE type;
 	DB_ENV *dbenv;
 	DB_TXN *txn;
+	DB *hrdbp, *hsdbp;
 	ENV *env;
 
 	Tcl_Obj **myobjv;
 	u_int32_t gbytes, bytes, open_flags, set_flags, uintarg;
-	int endarg, i, intarg, mode, myobjc, ncaches;
-	int optindex, result, ret, set_err, set_pfx, subdblen;
+	int endarg, encenble, i, intarg, mode, myobjc, ncaches;
+	int optindex, result, ret, set_err, set_msg, set_pfx, subdblen;
 	u_char *subdbtmp;
-	char *arg, *db, *passwd, *subdb, msg[MSG_SIZE];
+	char *arg, *db, *dbr, *passwd, *subdb, *subdbr, msg[MSG_SIZE];
+	size_t nlen;
 
 	type = DB_UNKNOWN;
-	endarg = mode = set_err = set_flags = set_pfx = 0;
+	endarg = encenble = mode = nlen = set_err = set_msg = set_flags = 0;
+	set_pfx = 0;
 	result = TCL_OK;
 	subdbtmp = NULL;
 	keys = NULL;
-	db = subdb = NULL;
+	db = dbr = passwd = subdb = subdbr = NULL;
+	hrdbp = hsdbp = NULL;
 
 	/*
 	 * XXX
@@ -2036,6 +2229,15 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 			}
 			type = DB_HASH;
 			break;
+		case TCL_DB_HEAP:
+			if (type != DB_UNKNOWN) {
+				Tcl_SetResult(interp,
+				    "Too many DB types specified", TCL_STATIC);
+				result = TCL_ERROR;
+				goto error;
+			}
+			type = DB_HEAP;
+			break;
 		case TCL_DB_RECNO:
 			if (type != DB_UNKNOWN) {
 				Tcl_SetResult(interp,
@@ -2139,6 +2341,7 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 			ret = (*dbp)->set_encrypt(*dbp, passwd, DB_ENCRYPT_AES);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "set_encrypt");
+			encenble = 1;
 			break;
 		case TCL_DB_ENCRYPT_ANY:
 			/* Make sure we have an arg to check against! */
@@ -2153,6 +2356,7 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 			ret = (*dbp)->set_encrypt(*dbp, passwd, 0);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "set_encrypt");
+			encenble = 2;
 			break;
 		case TCL_DB_COMPRESS:
 			ret = (*dbp)->set_bt_compress(*dbp, 0, 0);
@@ -2349,6 +2553,32 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 				set_err = 1;
 			}
 			break;
+		case TCL_DB_MSGFILE:
+			if (i >= objc) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "-msgfile file");
+				result = TCL_ERROR;
+				break;
+			}
+			arg = Tcl_GetStringFromObj(objv[i++], NULL);
+			/*
+			 * If the user already set one, close it.
+			 */
+			if (errip->i_msg != NULL &&
+			    errip->i_msg != stdout && errip->i_msg != stderr)
+				(void)fclose(errip->i_msg);
+			if (strcmp(arg, "/dev/stdout") == 0)
+				errip->i_msg = stdout;
+			else if (strcmp(arg, "/dev/stderr") == 0)
+				errip->i_msg = stderr;
+			else
+				errip->i_msg = fopen(arg, "a");
+			if (errip->i_msg != NULL) {
+				_debug_check();
+				(*dbp)->set_msgfile(*dbp, errip->i_msg);
+				set_msg = 1;
+			}
+			break;			
 		case TCL_DB_ERRPFX:
 			if (i >= objc) {
 				Tcl_WrongNumArgs(interp, 2, objv,
@@ -2443,12 +2673,158 @@ bdb_DbOpen(interp, objc, objv, ip, dbp)
 	/* Open the database. */
 	ret = (*dbp)->open(*dbp, txn, db, subdb, type, open_flags, mode);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db open");
+	/* 
+	 * We may have been cleanly opened with DB_UNKNOWN, and we need to know
+	 * if we opened a heap.
+	 */
+	if (ret == 0)
+		(void)(*dbp)->get_type(*dbp, &type);
+	
+	/* 
+	 * If we cleanly created a heap database, then we need to initiate the
+	 * db handle for the auxiliary recno db.   To have heap work like
+	 * the other record based am, we pass along record numbers.  The
+	 * recno db maps the record number to the actual record id used
+	 * by the heap am.   This is all done underneath the covers.  
+	 */
+	if (ret == 0 && type == DB_HEAP) {
+		/* Setup recno db mapping recno to RID. */
+		ret = db_create(&hrdbp, dbenv, 0);
+		if (ret)
+			return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "db_create heap recno db"));
+		/* Set up file name by appending a 1 and open db */
+		if (db != NULL) {
+			nlen = strlen(db);
+			if ((ret = __os_malloc(env, nlen + 2, &dbr)) != 0) {
+				Tcl_SetResult(interp, db_strerror(ret),
+				    TCL_STATIC);
+				return (0);
+			}
+			memcpy(dbr, db, nlen);
+			dbr[nlen] = '1';
+			dbr[nlen+1] = '\0';
+		}
+		if (subdb != NULL) {
+			nlen = strlen(subdb);
+			if ((ret = __os_malloc(env, nlen + 2, &subdbr)) != 0) {
+				Tcl_SetResult(interp, db_strerror(ret),
+				    TCL_STATIC);
+				return (0);
+			}
+			memcpy(subdbr, subdb, nlen);
+			subdbr[nlen] = '1';
+			subdbr[nlen+1] = '\0';
+		}
+			
+		/* 
+		 * Use same flags as heap, note: heap does not use of 
+		 * DB_AFTER/DB_BEFORE on cursor puts, but recno can.
+		 * Since we use the same set flags, use of DB_RENUMBER gets
+		 * caught above when heap db is created and heap create
+		 * fails.  So we never get this far.
+		 */
+		if (set_flags) {
+			ret = hrdbp->set_flags(hrdbp, set_flags);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    	    "set_flags");
+			if (result == TCL_ERROR)
+				goto error;
+			/*
+		 	 * If we are successful, clear the result so that the
+		 	 * return from set_flags isn't part of the result.
+		 	 */
+			Tcl_ResetResult(interp);
+		}
+		/* set up encryption if needed */
+		if (encenble && passwd != NULL) {
+			if (encenble == 1)
+				ret = hrdbp->set_encrypt(hrdbp, 
+				    passwd, DB_ENCRYPT_AES);
+			else
+				ret = hrdbp->set_encrypt(hrdbp, passwd, 0);
+		}
+		ret = hrdbp->open(hrdbp, 
+		    txn, dbr, subdbr, DB_RECNO, open_flags, mode);
+		if (ret) {
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), 
+		   	    "db open");
+			goto error;
+		}
+
+		/* Point heap's ip to recno db and do errcall (see above) */
+		ip->hrdbp = hrdbp;
+		if (dbenv == NULL)
+			hrdbp->set_errcall(hrdbp, _ErrorFunc);
+
+		/* Set up secondary db mapping RID to recno. */
+		ret = db_create(&hsdbp, dbenv, 0);
+		if (ret)
+			return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "db_create heap secondary db"));
+		/* Set up file name by appending a 2 and open db */
+		if (dbr != NULL)
+			dbr[nlen] = '2';
+		if (subdbr != NULL)
+			subdbr[nlen] = '2';
+			
+		/* 
+		 * Use same flags as heap, note: heap does not use of 
+		 * DB_AFTER/DB_BEFORE on cursor puts, but recno can.
+		 * Since we use the same set flags, use of DB_RENUMBER gets
+		 * caught above when heap db is created and heap create
+		 * fails.  So we never get this far.
+		 */
+		if (set_flags) {
+			ret = hsdbp->set_flags(hsdbp, set_flags);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    	    "set_flags");
+			if (result == TCL_ERROR)
+				goto error;
+			/*
+		 	 * If we are successful, clear the result so that the
+		 	 * return from set_flags isn't part of the result.
+		 	 */
+			Tcl_ResetResult(interp);
+		}
+		/* set up encryption if needed */
+		if (encenble) {
+			if (encenble == 1)
+				ret = hsdbp->set_encrypt(hsdbp, 
+				    passwd, DB_ENCRYPT_AES);
+			else
+				ret = hsdbp->set_encrypt(hsdbp, passwd, 0);
+		}
+		ret = hsdbp->open(hsdbp, 
+		    txn, dbr, subdbr, DB_BTREE, open_flags, mode);
+		if (ret) {
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), 
+		   	    "db open");
+			goto error;
+		}
+
+		ret = hrdbp->associate(hrdbp, txn, hsdbp, heap_callback, 0);
+		if (ret) {
+			result = _ReturnSetup(
+			    interp, ret, DB_RETOK_STD(ret), "db associate");
+			goto error;
+		}
+
+		/* Point heap's ip to recno db and do errcall (see above) */
+		ip->hsdbp = hsdbp;
+		if (dbenv == NULL)
+			hrdbp->set_errcall(hsdbp, _ErrorFunc);
+	}
 
 error:
 	if (keys != NULL)
 		__os_free(NULL, keys);
 	if (subdb)
 		__os_free(env, subdb);
+	if (subdbr != NULL)
+		__os_free(env, subdbr);
+	if (dbr)
+		__os_free(env, dbr);
 	if (result == TCL_ERROR) {
 		if (set_pfx && errip && errip->i_errpfx != NULL) {
 			(*dbp)->set_errpfx(*dbp, NULL);
@@ -2456,6 +2832,16 @@ error:
 			errip->i_errpfx = NULL;
 		}
 		(void)(*dbp)->close(*dbp, 0);
+		if (type == DB_HEAP) {
+			if (hrdbp != NULL) {
+				(void)hrdbp->close(hrdbp, 0);
+				hrdbp = NULL;
+			}
+			if (hsdbp != NULL) {
+				(void)hsdbp->close(hsdbp, 0);
+				hsdbp = NULL;
+			}
+		}
 		/*
 		 * If we opened and set up the error file in the environment
 		 * on this open, but we failed for some other reason, clean
@@ -2472,6 +2858,11 @@ error:
 			(void)fclose(errip->i_err);
 			errip->i_err = NULL;
 		}
+		if (set_msg && errip && errip->i_msg != NULL &&
+		    errip->i_msg != stdout && errip->i_msg != stderr) {
+			(void)fclose(errip->i_msg);
+			errip->i_msg = NULL;
+		}		
 		*dbp = NULL;
 	}
 	return (result);
@@ -2757,17 +3148,18 @@ bdb_DbRemove(interp, objc, objv)
 	u_int32_t enc_flag, iflags, set_flags;
 	int endarg, i, optindex, result, ret, subdblen;
 	u_char *subdbtmp;
-	char *arg, *db, msg[MSG_SIZE], *passwd, *subdb;
+	char *arg, *db, *dbr, msg[MSG_SIZE], *passwd, *subdb, *subdbr;
+	size_t nlen;
 
 	dbp = NULL;
 	dbenv = NULL;
 	txn = NULL;
 	env = NULL;
-	enc_flag = iflags = set_flags = 0;
-	endarg = 0;
+	enc_flag = iflags = set_flags = subdblen = 0;
+	endarg = nlen = 0;
 	result = TCL_OK;
 	subdbtmp = NULL;
-	db = passwd = subdb = NULL;
+	db = dbr = passwd = subdb = subdbr = NULL;
 
 	if (objc < 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?args? filename ?database?");
@@ -2896,11 +3288,13 @@ bdb_DbRemove(interp, objc, objv)
 		result = TCL_ERROR;
 		goto error;
 	}
-	if (dbenv == NULL) {
+
+
+        if (dbenv == NULL) {
 		ret = db_create(&dbp, dbenv, 0);
 		if (ret) {
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-			    "db_create");
+		    	    "db_create");
 			goto error;
 		}
 
@@ -2931,16 +3325,149 @@ bdb_DbRemove(interp, objc, objv)
 	 * The dbremove method is a destructor, NULL out the dbp.
 	 */
 	_debug_check();
-	if (dbp == NULL)
+	if (dbenv != NULL)
 		ret = dbenv->dbremove(dbenv, txn, db, subdb, iflags);
 	else
 		ret = dbp->remove(dbp, db, subdb, 0);
 
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db remove");
+
+	/* 
+	 * If the heap auxiliary databases exist, remove them too. If we have an
+	 * environment, just try the dbremove and ignore ENOENT, instead of
+	 * trying to create a path to the file.  Without an environment, we can
+	 * easily create the path.
+	 */
+
+	if ((db != NULL || subdb != NULL) && ret == 0) {
+		/* set up file name for associated recno db */
+		if (db != NULL) {
+			nlen = strlen(db);
+			if ((ret = __os_malloc(env, nlen + 2, &dbr)) != 0) {
+				Tcl_SetResult(interp,
+				    db_strerror(ret), TCL_STATIC);
+				return (0);
+			}
+			memcpy(dbr, db, nlen);
+			dbr[nlen] = '1';
+			dbr[nlen+1] = '\0';
+		}
+		if (subdb != NULL) {
+			if ((ret = __os_malloc(
+			    env, (size_t)subdblen + 2, &subdbr)) != 0) {
+				Tcl_SetResult(
+				    interp, db_strerror(ret), TCL_STATIC);
+				return (0);
+			}
+			memcpy(subdbr, subdb, (size_t)subdblen);
+			subdbr[subdblen] = '1';
+			subdbr[subdblen+1] = '\0';
+		}
+
+		if (dbenv != NULL) {
+			ret = dbenv->dbremove(dbenv, txn, dbr, subdbr, iflags);
+			if (ret == ENOENT)
+				ret = 0;
+		} else if (__os_exists(NULL, dbr, NULL) == 0) {
+			/* additional files not set up as subdbs */
+			subdb = NULL;
+			
+			ret = db_create(&dbp, dbenv, 0);
+			if (ret) {
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "db_create");
+				goto error;
+			}
+
+			/*
+			 * XXX
+			 * Remove restriction if error handling not tied to env. 
+			 *
+			 * The DB->set_err* functions overwrite the
+			 * environment. So, if we are using an env, don't
+			 * overwrite it; if not using an env, then configure
+			 * error handling.  
+			 */
+			dbp->set_errpfx(dbp, "DbRemove");
+			dbp->set_errcall(dbp, _ErrorFunc);
+			
+			if (passwd != NULL) {
+				ret = dbp->set_encrypt(dbp, passwd, enc_flag);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_encrypt");
+			}
+			if (set_flags != 0) {
+				ret = dbp->set_flags(dbp, set_flags);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_flags");
+			}
+
+			ret = dbp->remove(dbp, dbr, subdbr, 0);
+			/* if file doesnt exist, ignore error */
+			if (ret == ENOENT)
+				ret = 0;
+		
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), 
+			    "db remove associated recno");
+		}
+
+		/* remove the secondary db mapping RID to recno */
+		if (dbr != NULL)
+			dbr[nlen] = '2';
+		if (subdbr != NULL)
+			subdbr[subdblen] = '2';
+		if (dbenv != NULL) {
+			ret = dbenv->dbremove(dbenv, txn, dbr, subdbr, iflags);
+			if (ret == ENOENT)
+				ret = 0;
+		} else if (__os_exists(NULL, dbr, NULL) == 0) {
+			ret = db_create(&dbp, dbenv, 0);
+			if (ret) {
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "db_create");
+				goto error;
+			}
+
+			/*
+			 * XXX
+			 * Remove restriction if error handling not tied to env. 
+			 *
+			 * The DB->set_err* functions overwrite the
+			 * environment. So, if we are using an env, don't
+			 * overwrite it; if not using an env, then configure
+			 * error handling.  
+			 */
+			dbp->set_errpfx(dbp, "DbRemove");
+			dbp->set_errcall(dbp, _ErrorFunc);
+
+			if (passwd != NULL) {
+				ret = dbp->set_encrypt(dbp, passwd, enc_flag);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_encrypt");
+			}
+			if (set_flags != 0) {
+				ret = dbp->set_flags(dbp, set_flags);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_flags");
+			}
+
+			ret = dbp->remove(dbp, dbr, subdbr, 0);
+			/* if file doesnt exist, ignore error */
+			if (ret == ENOENT)
+				ret = 0;
+
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "db remove associated btree");
+		}
+	}
 	dbp = NULL;
 error:
 	if (subdb)
 		__os_free(env, subdb);
+	if (dbr)
+		__os_free(env, dbr);
+	if (subdbr)
+		__os_free(env, subdbr);
 	if (result == TCL_ERROR && dbp != NULL)
 		(void)dbp->close(dbp, 0);
 	return (result);
@@ -2982,16 +3509,19 @@ bdb_DbRename(interp, objc, objv)
 	u_int32_t enc_flag, iflags, set_flags;
 	int endarg, i, newlen, optindex, result, ret, subdblen;
 	u_char *subdbtmp;
-	char *arg, *db, msg[MSG_SIZE], *newname, *passwd, *subdb;
+	char *arg, *db, *dbr, msg[MSG_SIZE], *newname, *newnamer, *passwd;
+	char *subdb, *subdbr;
+	size_t nlen;
 
 	dbp = NULL;
 	dbenv = NULL;
 	txn = NULL;
 	env = NULL;
-	enc_flag = iflags = set_flags = 0;
+	enc_flag = iflags = set_flags = subdblen = 0;
+	nlen = 0;
 	result = TCL_OK;
 	endarg = 0;
-	db = newname = passwd = subdb = NULL;
+	db = dbr = newname = newnamer = passwd = subdb = subdbr = NULL;
 	subdbtmp = NULL;
 
 	if (objc < 2) {
@@ -3169,12 +3699,158 @@ bdb_DbRename(interp, objc, objv)
 	else
 		ret = dbp->rename(dbp, db, subdb, newname, 0);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "db rename");
+	/* 
+	 * If the heap auxiliary databases exist, rename them too. If we have an
+	 * environment, just try the dbrename and ignore ENOENT, instead of
+	 * trying to create a path to the file.  Without an environment, we can
+	 * easily create the path.
+	 */
+
+	if ((db != NULL || subdb != NULL) && ret == 0) {
+		/* set up file name for associated recno db */
+		if (db != NULL) {
+			nlen = strlen(db);
+			if ((ret = __os_malloc(env, nlen + 2, &dbr)) != 0) {
+				Tcl_SetResult(interp,
+				    db_strerror(ret), TCL_STATIC);
+				return (0);
+			}
+			memcpy(dbr, db, nlen);
+			dbr[nlen] = '1';
+			dbr[nlen+1] = '\0';
+		}
+		if (subdb != NULL) {
+			if ((ret = __os_malloc(
+			    env, (size_t)subdblen + 2, &subdbr)) != 0) {
+				Tcl_SetResult(
+				    interp, db_strerror(ret), TCL_STATIC);
+				return (0);
+			}
+			memcpy(subdbr, subdb, (size_t)subdblen);
+			subdbr[subdblen] = '1';
+			subdbr[subdblen+1] = '\0';
+		}
+
+		if ((ret = __os_malloc(env, 
+		    (size_t)newlen + 2, &newnamer)) != 0) {
+			Tcl_SetResult(interp, db_strerror(ret), TCL_STATIC);
+			return (0);
+		}
+		memcpy(newnamer, newname, (size_t)newlen);
+		newnamer[newlen] = '1';
+		newnamer[newlen+1] = '\0';
+	
+		if (dbenv != NULL) {
+			ret = dbenv->dbrename(dbenv,
+			    txn, dbr, subdbr, newnamer, iflags);
+			if (ret == ENOENT)
+				ret = 0;
+		} else if (__os_exists(NULL, dbr, NULL) == 0) {
+			/* additional files not set up as subdbs */
+			subdb = NULL;
+			
+			ret = db_create(&dbp, dbenv, 0);
+			if (ret) {
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "db_create");
+				goto error;
+			}
+
+			/*
+			 * XXX
+			 * Remove restriction if error handling not tied to env. 
+			 *
+			 * The DB->set_err* functions overwrite the
+			 * environment. So, if we are using an env, don't
+			 * overwrite it; if not using an env, then configure
+			 * error handling.  
+			 */
+			dbp->set_errpfx(dbp, "DbRename");
+			dbp->set_errcall(dbp, _ErrorFunc);
+			
+			if (passwd != NULL) {
+				ret = dbp->set_encrypt(dbp, passwd, enc_flag);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_encrypt");
+			}
+			if (set_flags != 0) {
+				ret = dbp->set_flags(dbp, set_flags);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_flags");
+			}
+
+			ret = dbp->rename(dbp, dbr, subdbr, newnamer, 0);
+			/* if file doesnt exist, ignore error */
+			if (ret == ENOENT)
+				ret = 0;
+		
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), 
+			    "db rename associated recno");
+		}
+
+		/* remove the secondary db mapping RID to recno */
+		if (dbr != NULL)
+			dbr[nlen] = '2';
+		if (subdbr != NULL)
+			subdbr[subdblen] = '2';
+		newnamer[newlen] = '2';
+		if (dbenv != NULL) {
+			ret = dbenv->dbrename(dbenv,
+			    txn, dbr, subdbr, newnamer, iflags);
+			if (ret == ENOENT)
+				ret = 0;
+		} else if (__os_exists(NULL, dbr, NULL) == 0) {
+			ret = db_create(&dbp, dbenv, 0);
+			if (ret) {
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "db_create");
+				goto error;
+			}
+
+			/*
+			 * XXX
+			 * Remove restriction if error handling not tied to env. 
+			 *
+			 * The DB->set_err* functions overwrite the
+			 * environment. So, if we are using an env, don't
+			 * overwrite it; if not using an env, then configure
+			 * error handling.  
+			 */
+			dbp->set_errpfx(dbp, "DbRename");
+			dbp->set_errcall(dbp, _ErrorFunc);
+
+			if (passwd != NULL) {
+				ret = dbp->set_encrypt(dbp, passwd, enc_flag);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_encrypt");
+			}
+			if (set_flags != 0) {
+				ret = dbp->set_flags(dbp, set_flags);
+				result = _ReturnSetup(interp, ret, 
+				    DB_RETOK_STD(ret), "set_flags");
+			}
+
+			ret = dbp->rename(dbp, dbr, subdbr, newnamer, 0);
+			/* if file doesnt exist, ignore error */
+			if (ret == ENOENT)
+				ret = 0;
+
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "db rename associated btree");
+		}
+	}
 	dbp = NULL;
 error:
 	if (subdb)
 		__os_free(env, subdb);
 	if (newname)
 		__os_free(env, newname);
+	if (dbr)
+		__os_free(env, dbr);
+	if (subdbr)
+		__os_free(env, subdbr);
+	if (newnamer)
+		__os_free(env, newnamer);
 	if (result == TCL_ERROR && dbp != NULL)
 		(void)dbp->close(dbp, 0);
 	return (result);
@@ -3547,6 +4223,8 @@ error:
 		(void)fclose(errf);
 	if (errpfx != NULL)
 		__os_free(dbenv->env, errpfx);
+	if (subdb != NULL)
+		__os_free(dbenv->env, subdb);
 	if (dbp)
 		(void)dbp->close(dbp, 0);
 	return (result);
@@ -3680,6 +4358,9 @@ bdb_GetConfig(interp, objc, objv)
 #ifdef HAVE_HASH
 	ADD_CONFIG_NAME("hash");
 #endif
+#ifdef HAVE_HEAP
+	ADD_CONFIG_NAME("heap");
+#endif
 #ifdef HAVE_QUEUE
 	ADD_CONFIG_NAME("queue");
 #endif
@@ -3719,6 +4400,8 @@ bdb_Handles(interp, objc, objv)
 	res = Tcl_NewListObj(0, NULL);
 
 	LIST_FOREACH(p, &__db_infohead, entries) {
+		if (p->i_type == I_AUX)
+			continue;
 		handle = NewStringObj(p->i_name, strlen(p->i_name));
 		if (Tcl_ListObjAppendElement(interp, res, handle) != TCL_OK)
 			return (TCL_ERROR);
@@ -4357,3 +5040,17 @@ tcl_set_partition_dirs(interp, dbp, obj)
 	return (0);
 }
 #endif
+
+static int
+heap_callback(dbp, key, data, seckey)
+     DB *dbp;
+     const DBT *key, *data;
+     DBT *seckey;
+{
+	COMPQUIET(dbp, NULL);
+	COMPQUIET(key, NULL);
+	memset(seckey, 0, sizeof(DBT));
+	seckey->data = data->data;
+	seckey->size = data->size;
+	return 0;
+}

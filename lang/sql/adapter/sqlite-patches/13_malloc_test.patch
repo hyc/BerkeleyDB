@@ -1,6 +1,6 @@
 --- test/malloc.test
 +++ test/malloc.test
-@@ -712,17 +712,17 @@
+@@ -713,17 +713,17 @@
  
  # After committing a transaction in persistent-journal mode, if a journal
  # size limit is configured SQLite may attempt to truncate the journal file.

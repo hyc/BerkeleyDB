@@ -224,7 +224,7 @@ __db_SHA1Update(context, data, len)
 u_int32_t i, j;	/* JHB */
 
 #ifdef VERBOSE
-    __db_SHAPrintContext(context, "before");
+    __db_SHAPrintContext(context, DB_STR_P("before"));
 #endif
     j = (context->count[0] >> 3) & 63;
     if ((context->count[0] += (u_int32_t)len << 3) < (len << 3))
@@ -241,7 +241,7 @@ u_int32_t i, j;	/* JHB */
     else i = 0;
     memcpy(&context->buffer[j], &data[i], len - i);
 #ifdef VERBOSE
-    __db_SHAPrintContext(context, "after ");
+    __db_SHAPrintContext(context, DB_STR_P("after "));
 #endif
 }
 

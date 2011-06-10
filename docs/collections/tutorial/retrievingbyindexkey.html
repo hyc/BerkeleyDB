@@ -12,7 +12,10 @@
     <link rel="next" href="Entity.html" title="Chapter 4.  Using Entity Classes" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">
@@ -62,7 +65,7 @@
 </p>
       <p>
     Using the standard Java collections API, the 
-    <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#get" target="_top">Map.get</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Map.html#get(java.lang.Object)" target="_top">Map.get</a>
     
 	method for a stored collection with duplicate keys will return only
 	the first value for a given key. To obtain all values for a given
@@ -70,7 +73,7 @@
     <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html#duplicates(java.lang.Object)" target="_top">StoredMap.duplicates</a>
     
 	method may be called. This returns a 
-    <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Collection.html" target="_top">Collection</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Collection.html" target="_top">Collection</a>
     
 	of values for the given key. If duplicate keys are not allowed, the
 	returned collection will have at most one value. If the key is not
@@ -128,10 +131,10 @@ public class Sample
     
 	method is called passing the desired key. The returned value is a
 	standard Java 
-    <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Collection.html" target="_top">Collection</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Collection.html" target="_top">Collection</a>
     
 	containing the values for the specified key. A standard Java
-	<a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Iterator.html" target="_top">Iterator</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Iterator.html" target="_top">Iterator</a>
 	
 	is then obtained for this collection and all values returned by
 	that iterator are printed.
@@ -139,9 +142,9 @@ public class Sample
       <p>
     Another technique for retrieving duplicates is to use the
 	collection returned by 
-    <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#entrySet" target="_top">Map.entrySet</a>.
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Map.html#entrySet()" target="_top">Map.entrySet</a>.
 	When duplicate keys are present, a 
-    <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Map.Entry.html" target="_top">Map.Entry</a>
     
 	object will be present in this collection for each duplicate. This
 	collection can then be iterated or a subset can be created from it,
@@ -160,19 +163,19 @@ public class Sample
 	duplicate keys — by calling
 	<code class="methodname">DatabaseConfig.setSortedDuplicates()</code> method. In that case,
 	calling 
-    <a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#put" target="_top">Map.put</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Map.html#put(K, V)" target="_top">Map.put</a>
     
 	will add duplicate keys. To remove all duplicate keys, call
-	<a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Map.html#remove" target="_top">Map.remove</a>.
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Map.html#remove(java.lang.Object)" target="_top">Map.remove</a>.
 	To remove a specific duplicate key, call 
 	<a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html#duplicates(java.lang.Object)" target="_top">StoredMap.duplicates</a>
 	
 	and then call 
-	<a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Collection.html#remove" target="_top">Collection.remove</a>
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Collection.html#remove(java.lang.Object)" target="_top">Collection.remove</a>
 	
 	using the returned collection. Duplicate
 	values may also be added to this collection using 
-	<a class="ulink" href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Collection.html#add" target="_top"> Collection.add</a>.
+    <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Collection.html#add(E)" target="_top"> Collection.add</a>.
 </p>
       <p>
     The output of the example program is shown below.

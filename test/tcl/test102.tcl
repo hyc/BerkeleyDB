@@ -11,7 +11,8 @@ proc test102 { method {nsets 1000} {tnum "102"} args } {
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
 
-	if { [is_rbtree $method] == 1 || [is_record_based $method] == 0} {
+        if { [is_rbtree $method] == 1 || 
+	     [is_heap $method] == 1 || [is_record_based $method] == 0} {
 		puts "Test$tnum skipping for method $method"
 		return
 	}

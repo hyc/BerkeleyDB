@@ -379,7 +379,7 @@ __memp_add_region(dbmp)
 	infop->type = REGION_TYPE_MPOOL;
 	infop->id = INVALID_REGION_ID;
 	infop->flags = REGION_CREATE_OK;
-	if ((ret = __env_region_attach(env, infop, reg_size)) != 0)
+	if ((ret = __env_region_attach(env, infop, reg_size, reg_size)) != 0)
 		return (ret);
 	if ((ret = __memp_init(env,
 	    dbmp, mp->nreg, mp->htab_buckets, mp->max_nreg)) != 0)
@@ -423,6 +423,7 @@ static int
 __memp_remove_region(dbmp)
 	DB_MPOOL *dbmp;
 {
+	DB_MPOOL_HASH *hp;
 	ENV *env;
 	MPOOL *mp;
 	REGINFO *infop;
@@ -437,7 +438,8 @@ __memp_remove_region(dbmp)
 	ret = 0;
 
 	if (mp->nreg == 1) {
-		__db_errx(env, "cannot remove the last cache");
+		__db_errx(env, DB_STR("3019",
+		    "cannot remove the last cache"));
 		return (EINVAL);
 	}
 
@@ -446,13 +448,22 @@ __memp_remove_region(dbmp)
 			return (ret);
 
 	/* Detach from the region then destroy it. */
-	infop = &dbmp->reginfo[--mp->nreg];
+	infop = &dbmp->reginfo[mp->nreg];
+	if (F_ISSET(env, ENV_PRIVATE)) {
+		hp = R_ADDR(infop, ((MPOOL*)infop->primary)->htab);
+		for (i = 0; i < env->dbenv->mp_mtxcount; i++)
+			if ((ret = __mutex_free(env, &hp[i].mtx_hash)) != 0)
+				return (ret);
+	}
+
 	ret = __env_region_detach(env, infop, 1);
 	if  (ret == 0) {
+		mp->nreg--;
 		cache_size -= reg_size;
 		mp->gbytes = (u_int32_t)(cache_size / GIGABYTE);
 		mp->bytes = (u_int32_t)(cache_size % GIGABYTE);
 	}
+
 	return (ret);
 }
 
@@ -484,7 +495,7 @@ __memp_map_regions(dbmp)
 		dbmp->reginfo[i].id = regids[i];
 		dbmp->reginfo[i].flags = REGION_JOIN_OK;
 		if ((ret =
-		    __env_region_attach(env, &dbmp->reginfo[i], 0)) != 0)
+		    __env_region_attach(env, &dbmp->reginfo[i], 0, 0)) != 0)
 			return (ret);
 		dbmp->reginfo[i].primary = R_ADDR(&dbmp->reginfo[i],
 		    dbmp->reginfo[i].rp->primary);
@@ -522,9 +533,9 @@ __memp_resize(dbmp, gbytes, bytes)
 	if (ncache < 1)
 		ncache = 1;
 	else if (ncache > mp->max_nreg) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("3020",
 		    "cannot resize to %lu cache regions: maximum is %lu",
-		    (u_long)ncache, (u_long)mp->max_nreg);
+		    "%lu %lu"), (u_long)ncache, (u_long)mp->max_nreg);
 		return (EINVAL);
 	}
 

@@ -62,7 +62,13 @@ proc memp002_body { flags } {
 		lappend pidlist $p
 	}
 	puts "Memp002: $procs independent processes now running"
-	watch_procs $pidlist
+	watch_procs $pidlist 30
+
+	# Check for test failure
+	set errstrings [eval findfail [glob $testdir/memp002.*.out]]
+	foreach str $errstrings {
+		puts "FAIL: error message in log file: $str"
+	}
 
 	reset_env $e
 }

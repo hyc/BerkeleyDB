@@ -12,7 +12,10 @@
     <link rel="next" href="rep_id.html" title="Replication environment IDs" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 12. 
@@ -84,6 +87,35 @@
           </dt>
           <dt>
             <span class="sect1">
+              <a href="group_membership.html">Managing Replication Manager Group Membership</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="group_membership.html#group_mem_add">Adding Sites to a Replication Group</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="group_membership.html#group_mem_remove">Removing Sites from a Replication Group</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="group_membership.html#group_mem_primordialstartup">Primordial Startups</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="group_membership.html#group_mem_upgrade">Upgrading Groups</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
               <a href="rep_mgrmulti.html">Running Replication Manager in multiple processes</a>
             </span>
           </dt>
@@ -91,27 +123,27 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#idp52055080">One replication process and multiple subordinate processes</a>
+                  <a href="rep_mgrmulti.html#id3907047">One replication process and multiple subordinate processes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#idp52029240">Persistence of network address configuration</a>
+                  <a href="rep_mgrmulti.html#id3907280">Persistence of network address configuration</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#idp52035048">Programming considerations</a>
+                  <a href="rep_mgrmulti.html#id3906990">Programming considerations</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#idp52042456">Handling failure</a>
+                  <a href="rep_mgrmulti.html#id3904808">Handling failure</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mgrmulti.html#idp52058056">Other miscellaneous rules</a>
+                  <a href="rep_mgrmulti.html#id3907368">Other miscellaneous rules</a>
                 </span>
               </dt>
             </dl>
@@ -125,22 +157,22 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="rep_replicate.html#idp52040752">One Replication Process and Multiple Subordinate Processes</a>
+                  <a href="rep_replicate.html#id3907110">One Replication Process and Multiple Subordinate Processes</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_replicate.html#idp52078696">Common Use Case</a>
+                  <a href="rep_replicate.html#id3907230">Common Use Case</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_replicate.html#idp52088560">Avoiding Rollback</a>
+                  <a href="rep_replicate.html#id3907805">Avoiding Rollback</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_replicate.html#idp52094176">When to Consider an Integrated HA Application</a>
+                  <a href="rep_replicate.html#id3907891">When to Consider an Integrated HA Application</a>
                 </span>
               </dt>
             </dl>
@@ -174,12 +206,12 @@
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mastersync.html#idp52118576">Blocked client operations</a>
+                  <a href="rep_mastersync.html#id3908299">Blocked client operations</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="rep_mastersync.html#idp52138880">Clients too far out-of-date to synchronize</a>
+                  <a href="rep_mastersync.html#id3908639">Clients too far out-of-date to synchronize</a>
                 </span>
               </dt>
             </dl>
@@ -204,6 +236,15 @@
               <a href="rep_lease.html">Master Leases</a>
             </span>
           </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="rep_lease.html#masterlease_change_groupsize">Changing Group Size</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
           <dt>
             <span class="sect1">
               <a href="rep_ryw.html">Read your writes consistency</a>
@@ -235,6 +276,30 @@
           </dt>
           <dt>
             <span class="sect1">
+              <a href="repmgr_channels.html">Using Replication Manager message channels</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="repmgr_channels.html#dbchannel_class">DB_CHANNEL</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="repmgr_channels.html#dbchannel_send">Sending messages over a message channel</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="repmgr_channels.html#dbchannel_receive">Receiving messages</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
               <a href="rep_partition.html">Network partitions</a>
             </span>
           </dt>
@@ -256,6 +321,12 @@
           <dt>
             <span class="sect1">
               <a href="rep_ex_rq.html">Ex_rep_base: putting it all together</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="rep_ex_chan.html">Ex_rep_chan: a Replication Manager
+channel example</a>
             </span>
           </dt>
         </dl>
@@ -332,172 +403,7 @@ implemented to perform database updates using a different code path than
 the standard ones.  This means operations that manage to crash the
 replication master due to a software bug will not necessarily also crash
 replication clients.</p>
-        <div class="informaltable">
-          <table border="1" width="80%">
-            <colgroup>
-              <col />
-              <col />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Replication Manager Methods</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a>
-                </td>
-                <td>Specify the Replication Manager's remote sites</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a>
-                </td>
-                <td>Specify the Replication Manager's client acknowledgement policy</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a>
-                </td>
-                <td>Specify the Replication Manager's local site</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrsite_list.html" class="olink">DB_ENV-&gt;repmgr_site_list()</a>
-                </td>
-                <td>List the sites and their status</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>
-                </td>
-                <td>Start the Replication Manager</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrstat.html" class="olink">DB_ENV-&gt;repmgr_stat()</a>
-                </td>
-                <td>Replication Manager statistics</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmgrstat_print.html" class="olink">DB_ENV-&gt;repmgr_stat_print()</a>
-                </td>
-                <td>Print Replication Manager statistics</td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="emphasis">
-                    <em>Base API Methods</em>
-                  </span>
-                </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a>
-                </td>
-                <td>Hold a replication election</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a>
-                </td>
-                <td>Process a replication message</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/reptransport.html" class="olink">DB_ENV-&gt;rep_set_transport()</a>
-                </td>
-                <td>Configure replication transport callback</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repstart.html" class="olink">DB_ENV-&gt;rep_start()</a>
-                </td>
-                <td>Start replication</td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="emphasis">
-                    <em>Additional Replication Methods</em>
-                  </span>
-                </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repstat.html" class="olink">DB_ENV-&gt;rep_stat()</a>
-                </td>
-                <td>Replication statistics</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repstat_print.html" class="olink">DB_ENV-&gt;rep_stat_print()</a>
-                </td>
-                <td>Print replication statistics</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a>
-                </td>
-                <td>Replication synchronization</td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="emphasis">
-                    <em>Replication Configuration</em>
-                  </span>
-                </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repclockskew.html" class="olink">DB_ENV-&gt;rep_set_clockskew()</a>
-                </td>
-                <td>Configure master lease clock adjustment</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>
-                </td>
-                <td>Configure the replication subsystem</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repset_limit.html" class="olink">DB_ENV-&gt;rep_set_limit()</a>
-                </td>
-                <td>Limit data sent in response to a single message</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a>
-                </td>
-                <td>Configure replication group site count</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a>
-                </td>
-                <td>Configure replication site priority</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repset_request.html" class="olink">DB_ENV-&gt;rep_set_request()</a>
-                </td>
-                <td>Configure replication client retransmission requests</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/repset_timeout.html" class="olink">DB_ENV-&gt;rep_set_timeout()</a>
-                </td>
-                <td>Configure replication timeouts</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p>For more information on the replication manager operations, see the <a href="../api_reference/C/rep.html#replist" class="olink">Replication and Related Methods</a> section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em> </p>
       </div>
     </div>
     <div class="navfooter">

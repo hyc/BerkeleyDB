@@ -40,9 +40,9 @@ public class RepmgrStartupTest extends EventHandlerAdapter
     File homedir;
     EnvironmentConfig envConfig;
     Environment dbenv;
- 
+
     @BeforeClass public static void ClassInit() {
-	    TestUtils.loadConfig(null);
+        TestUtils.loadConfig(null);
     }
 
     @AfterClass public static void ClassShutdown() {
@@ -76,8 +76,10 @@ public class RepmgrStartupTest extends EventHandlerAdapter
         envConfig.setInitializeReplication(true);
         envConfig.setVerboseReplication(false);
 
-        ReplicationHostAddress haddr = new ReplicationHostAddress(address, port);
-        envConfig.setReplicationManagerLocalSite(haddr);
+        ReplicationManagerSiteConfig localConfig =
+            new ReplicationManagerSiteConfig(address, port);
+        localConfig.setLocalSite(true);
+        envConfig.addReplicationManagerSite(localConfig);
         envConfig.setReplicationPriority(priority);
         envConfig.setEventHandler(this);
         envConfig.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
@@ -93,9 +95,9 @@ public class RepmgrStartupTest extends EventHandlerAdapter
 
     @After public void PerTestShutdown()
         throws Exception {
-	    try {
+        try {
             File homedir = new File(homedirName);
-         
+
             if (homedir.exists()) {
                 // The following will fail if the directory contains sub-dirs.
                 if (homedir.isDirectory()) {
@@ -110,7 +112,6 @@ public class RepmgrStartupTest extends EventHandlerAdapter
         }
     }
 
- 
     @Test (timeout=4000) public void startMaster()
     {
         try {
@@ -122,7 +123,7 @@ public class RepmgrStartupTest extends EventHandlerAdapter
         try {
             java.lang.Thread.sleep(1000);
         }catch(InterruptedException ie) {}
-     
+
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -131,19 +132,19 @@ public class RepmgrStartupTest extends EventHandlerAdapter
             fail("Unexpected database exception came during shutdown." + dbe);
         }
     }
- 
+
     @Test (timeout=4000) public void startClient()
     {
         try {
-            // start replication manager
+            // For group membership, if we do not set a bootstrap for REP_CLIENT,
+            // then it is expected to throw a DB_REP_UNAVAIL
             dbenv.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_CLIENT);
-        } catch(DatabaseException dbe) {
-            fail("Unexpected database exception came from replicationManagerStart." + dbe);
-        }
+            fail("Expected database exception came from replicationManagerStart.");
+        } catch(DatabaseException dbe) {}
         try {
             java.lang.Thread.sleep(1000);
         }catch(InterruptedException ie) {}
-     
+
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -156,15 +157,15 @@ public class RepmgrStartupTest extends EventHandlerAdapter
     @Test (timeout=4000) public void startElection()
     {
         try {
-            // start replication manager
+            // For group membership, if we do not set a bootstrap for REP_ELECTION,
+            // then it is expected to throw a DB_REP_UNAVAIL
             dbenv.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_ELECTION);
-        } catch(DatabaseException dbe) {
-            fail("Unexpected database exception came from replicationManagerStart." + dbe);
-        }
+            fail("Expected database exception came from replicationManagerStart.");
+        } catch(DatabaseException dbe) {}
         try {
             java.lang.Thread.sleep(1000);
         }catch(InterruptedException ie) {}
-     
+
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);
@@ -192,7 +193,7 @@ public class RepmgrStartupTest extends EventHandlerAdapter
              */
             java.lang.Thread.sleep(12000);
         }catch(InterruptedException ie) {}
-     
+
         try {
             dbenv.close();
             Environment.remove(homedir, false, envConfig);

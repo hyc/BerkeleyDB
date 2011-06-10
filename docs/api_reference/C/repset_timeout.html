@@ -12,7 +12,10 @@
     <link rel="next" href="reptransport.html" title="DB_ENV-&gt;rep_set_transport()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;rep_set_timeout()</th>
@@ -40,33 +43,35 @@
 int
 DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
       <p>
-         The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> method specifies a variety of
-         replication timeout values.
+         The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> method
+         specifies a variety of replication timeout values.
     </p>
       <p>
-         The database environment's replication subsystem may also be configured using the
-         environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string "rep_set_timeout", one or
-         more whitespace characters, and the <span class="bold"><strong>which</strong></span> parameter
-         specified as a string and the timeout specified as two parts. For example, "rep_set_timeout
-         DB_REP_CONNECTION_RETRY 15000000"  specifies the connection retry timeout for 15 seconds.
-         Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read
-         when the database environment is opened, it will silently overrule configuration done
-         before that time.
+         The database environment's replication subsystem may also be
+         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax
+         of the entry in that file is a single line with the string
+         "rep_set_timeout", one or more whitespace characters, and the
+         <span class="bold"><strong>which</strong></span> parameter specified as a
+         string and the timeout specified as two parts. For example,
+         "rep_set_timeout DB_REP_CONNECTION_RETRY 15000000"  specifies the
+         connection retry timeout for 15 seconds.  Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+         file is read when the database environment is opened, it will
+         silently overrule configuration done before that time.
     </p>
       <p>
-         The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> method configures a database
-         environment, not only operations performed using the specified 
-         <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
+         The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> method
+         configures a database environment, not only operations performed
+         using the specified <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>
+         handle.
     </p>
       <p>
-The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> method may not be
-called to set the master lease timeout after the 
-<a class="xref" href="repmgrstart.html" title="DB_ENV-&gt;repmgr_start()">DB_ENV-&gt;repmgr_start()</a> method or the
-<a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a> 
-method is called. For all other timeouts, the
-<code class="methodname">DB_ENV-&gt;rep_set_timeout()</code>
-method may be called at any time during the life of the application.
+        The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> method may not be
+        called to set the master lease timeout after the 
+        <a class="xref" href="repmgrstart.html" title="DB_ENV-&gt;repmgr_start()">DB_ENV-&gt;repmgr_start()</a> method or the
+        <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a> 
+        method is called. For all other timeouts, the
+        <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code>
+        method may be called at any time during the life of the application.
     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> <span>
@@ -80,7 +85,7 @@ method may be called at any time during the life of the application.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53880240"></a>Parameters</h3>
+              <h3 class="title"><a id="id3929848"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -88,134 +93,148 @@ method may be called at any time during the life of the application.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53880656"></a>timeout</h4>
+                <h4 class="title"><a id="id3929855"></a>timeout</h4>
               </div>
             </div>
           </div>
           <p>
-                    The <span class="bold"><strong>timeout</strong></span> parameter is the timeout value. It
-                    must be specified as an unsigned 32-bit number of microseconds, limiting the
-                    maximum timeout to roughly 71 minutes.
-                </p>
+                The <span class="bold"><strong>timeout</strong></span> parameter is the timeout value. It
+                must be specified as an unsigned 32-bit number of microseconds, limiting the
+                maximum timeout to roughly 71 minutes.
+            </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53860544"></a>which</h4>
+                <h4 class="title"><a id="id3929904"></a>which</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>which</strong></span> parameter must be set to
-                          one of the following values:
-                     </p>
+                The <span class="bold"><strong>which</strong></span> parameter must
+                be set to one of the following values:
+             </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p><a id="set_timeout_DB_REP_ACK_TIMEOUT"></a>
-                  <code class="literal">DB_REP_ACK_TIMEOUT</code>
-            </p>
+                          <code class="literal">DB_REP_ACK_TIMEOUT</code>
+                     </p>
                 <p>
-                 Configure the amount of time the Replication Manager's transport
-                 function waits to collect enough acknowledgments from replication
-                 group clients, before giving up and returning a failure indication. 
-                 The default wait time is 1 second.
-            </p>
+                         Configure the amount of time the Replication
+                         Manager's transport function waits to collect
+                         enough acknowledgments from replication group
+                         clients, before giving up and returning a failure
+                         indication.  The default wait time is 1 second.
+                    </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_CHECKPOINT_DELAY</code>
-            </p>
+                          <code class="literal">DB_REP_CHECKPOINT_DELAY</code>
+                     </p>
                 <p>
-                 Configure the amount of time a master site will delay between
-                 completing a checkpoint and writing a checkpoint record into the log.
-                 This delay allows clients to complete their own checkpoints before the
-                 master requires completion of them.  The default is 30 seconds. If all
-                 databases in the environment, and the environment's transaction log,
-                 are configured to reside in memory (never preserved to disk), then,
-                 although checkpoints are still necessary, the delay is not useful and
-                 should be set to 0.
-            </p>
+                         Configure the amount of time a master site will
+                         delay between completing a checkpoint and writing
+                         a checkpoint record into the log.  This delay
+                         allows clients to complete their own checkpoints
+                         before the master requires completion of them.
+                         The default is 30 seconds. If all databases in the
+                         environment, and the environment's transaction
+                         log, are configured to reside in memory (never
+                         preserved to disk), then, although checkpoints are
+                         still necessary, the delay is not useful and
+                         should be set to 0.
+                    </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_CONNECTION_RETRY</code>
-            </p>
+                          <code class="literal">DB_REP_CONNECTION_RETRY</code>
+                    </p>
                 <p>
-                 Configure the amount of time the Replication Manager will wait before
-                 trying to re-establish a connection to another site after a
-                 communication failure.  The default wait time is 30 seconds.
-            </p>
+                         Configure the amount of time the Replication
+                         Manager will wait before trying to re-establish a
+                         connection to another site after a communication
+                         failure.  The default wait time is 30 seconds.
+                    </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_ELECTION_TIMEOUT</code>
-            </p>
+                          <code class="literal">DB_REP_ELECTION_TIMEOUT</code>
+                     </p>
                 <p>
-                 The timeout period for an election.  The default timeout is 2 seconds.
-            </p>
+                         The timeout period for an election.  The default
+                         timeout is 2 seconds.
+                     </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_ELECTION_RETRY</code>
-            </p>
+                          <code class="literal">DB_REP_ELECTION_RETRY</code>
+                    </p>
                 <p>
-                 Configure the amount of time the Replication Manager will wait before
-                 retrying a failed election.  The default wait time is 10 seconds.
-            </p>
+                         Configure the amount of time the Replication
+                         Manager will wait before retrying a failed
+                         election.  The default wait time is 10 seconds.
+                    </p>
               </li>
               <li>
                 <p><a id="set_timeout_DB_REP_FULL_ELECTION_TIMEOUT"></a>
-                  <code class="literal">DB_REP_FULL_ELECTION_TIMEOUT</code>
-            </p>
+                          <code class="literal">DB_REP_FULL_ELECTION_TIMEOUT</code>
+                    </p>
                 <p>
-                 An optional configuration timeout period to wait for full election
-                 participation the first time the replication group finds a master. By
-                 default this option is turned off and normal election timeouts are
-                 used. (See the <a href="../../programmer_reference/rep_elect.html" class="olink">Elections</a>
-                 section in the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em> for more information.)
-            </p>
+                         An optional configuration timeout period to wait
+                         for full election participation the first time the
+                         replication group finds a master. By default this
+                         option is turned off and normal election timeouts
+                         are used. (See the 
+                         <a href="../../programmer_reference/rep_elect.html" class="olink">Elections</a>
+                         section in the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em>
+                         for more information.)
+                    </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_HEARTBEAT_MONITOR</code>
-            </p>
+                          <code class="literal">DB_REP_HEARTBEAT_MONITOR</code>
+                    </p>
                 <p>
-                 The amount of time the Replication Manager, running at a client site,
-                 waits for some message activity on the connection from the master
-                 (heartbeats or other messages) before concluding that the connection
-                 has been lost. 
-This timeout should be of longer duration than the 
-<code class="literal">DB_REP_HEARTBEAT_SEND</code> timeout to ensure that heartbeats
-are not missed.
-When 0 (the default), no monitoring is performed. 
-            </p>
+                         The amount of time the Replication Manager,
+                         running at a client site, waits for some message
+                         activity on the connection from the master
+                         (heartbeats or other messages) before concluding
+                         that the connection has been lost.  This timeout
+                         should be of longer duration than the
+                         <code class="literal">DB_REP_HEARTBEAT_SEND</code> timeout
+                         to ensure that heartbeats are not missed.  When 0
+                         (the default), no monitoring is performed. 
+                    </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_HEARTBEAT_SEND</code>
-            </p>
+                          <code class="literal">DB_REP_HEARTBEAT_SEND</code>
+                    </p>
                 <p>
-                 The frequency at which the Replication Manager, running at a master
-                 site, broadcasts a heartbeat message in an otherwise idle system. 
-                 When 0 (the default), no heartbeat messages will be sent.
-            </p>
+                         The frequency at which the Replication Manager,
+                         running at a master site, broadcasts a heartbeat
+                         message in an otherwise idle system.  When 0 (the
+                         default), no heartbeat messages will be sent.
+                    </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">DB_REP_LEASE_TIMEOUT</code>
-            </p>
+                          <code class="literal">DB_REP_LEASE_TIMEOUT</code>
+                    </p>
                 <p>
-                 Configure the amount of time a client grants its master lease to a
-                 master.  When using master leases all sites in a replication group
-                 must use the same lease timeout value.  There is no default value.  If
-                 leases are desired, this method must be called prior to calling 
-                 <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a>  method. 
-                 See also <a class="xref" href="repclockskew.html" title="DB_ENV-&gt;rep_set_clockskew()">DB_ENV-&gt;rep_set_clockskew()</a> 
-                 method, <a class="xref" href="repconfig.html" title="DB_ENV-&gt;rep_set_config()">DB_ENV-&gt;rep_set_config()</a> 
-                 method or <a href="../../programmer_reference/rep_lease.html" class="olink">Master leases</a>.
-            </p>
+                         Configure the amount of time a client grants its
+                         master lease to a master.  When using master
+                         leases all sites in a replication group must use
+                         the same lease timeout value.  There is no default
+                         value.  If leases are desired, this method must be
+                         called prior to calling 
+                         <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a>  method. 
+                         See also <a class="xref" href="repclockskew.html" title="DB_ENV-&gt;rep_set_clockskew()">DB_ENV-&gt;rep_set_clockskew()</a> 
+                         method, <a class="xref" href="repconfig.html" title="DB_ENV-&gt;rep_set_config()">DB_ENV-&gt;rep_set_config()</a> 
+                         method or <a href="../../programmer_reference/rep_lease.html" class="olink">Master leases</a>.
+                    </p>
               </li>
             </ul>
           </div>
@@ -225,23 +244,23 @@ When 0 (the default), no monitoring is performed.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53902400"></a>Errors</h3>
+              <h3 class="title"><a id="id3930216"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-                         The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> <span>
+             The <code class="methodname">DB_ENV-&gt;rep_set_timeout()</code> <span>
             <span>
                  method may fail and return one of the following non-zero errors:
             </span>
             
         </span>
-                    </p>
+        </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53895888"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3930108"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -256,7 +275,7 @@ When 0 (the default), no monitoring is performed.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53904896"></a>Class</h3>
+              <h3 class="title"><a id="id3930047"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -268,13 +287,13 @@ When 0 (the default), no monitoring is performed.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53907832"></a>See Also</h3>
+              <h3 class="title"><a id="id3930126"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a> 
-                </p>
+             <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

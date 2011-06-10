@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield,
  * -- astubble@rice.edu.
@@ -308,45 +308,48 @@ __aes_err(env, err)
 	switch (err) {
 #ifdef	HAVE_CRYPTO_IPP
 	case ippStsNullPtrErr:
-		errstr = "IPP AES NULL pointer error";
+		errstr = DB_STR("0182", "IPP AES NULL pointer error");
 		break;
 	case ippStsLengthErr:
-		errstr = "IPP AES length error";
+		errstr = DB_STR("0183", "IPP AES length error");
 		break;
 	case ippStsContextMatchErr:
-		errstr = "IPP AES context does not match operation";
+		errstr = DB_STR("0184",
+		    "IPP AES context does not match operation");
 		break;
 	case ippStsUnderRunErr:
-		errstr = "IPP AES srclen size error";
+		errstr = DB_STR("0185", "IPP AES srclen size error");
 		break;
 #else
 	case BAD_KEY_DIR:
-		errstr = "AES key direction is invalid";
+		errstr = DB_STR("0186", "AES key direction is invalid");
 		break;
 	case BAD_KEY_MAT:
-		errstr = "AES key material not of correct length";
+		errstr = DB_STR("0187",
+		    "AES key material not of correct length");
 		break;
 	case BAD_KEY_INSTANCE:
-		errstr = "AES key passwd not valid";
+		errstr = DB_STR("0188", "AES key passwd not valid");
 		break;
 	case BAD_CIPHER_MODE:
-		errstr = "AES cipher in wrong state (not initialized)";
+		errstr = DB_STR("0189",
+		    "AES cipher in wrong state (not initialized)");
 		break;
 	case BAD_BLOCK_LENGTH:
-		errstr = "AES bad block length";
+		errstr = DB_STR("0190", "AES bad block length");
 		break;
 	case BAD_CIPHER_INSTANCE:
-		errstr = "AES cipher instance is invalid";
+		errstr = DB_STR("0191", "AES cipher instance is invalid");
 		break;
 	case BAD_DATA:
-		errstr = "AES data contents are invalid";
+		errstr = DB_STR("0192", "AES data contents are invalid");
 		break;
 	case BAD_OTHER:
-		errstr = "AES unknown error";
+		errstr = DB_STR("0193", "AES unknown error");
 		break;
 #endif
 	default:
-		errstr = "AES error unrecognized";
+		errstr = DB_STR("0194", "AES error unrecognized");
 		break;
 	}
 	__db_errx(env, "%s", errstr);

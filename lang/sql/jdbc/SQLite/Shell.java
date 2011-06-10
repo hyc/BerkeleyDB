@@ -1,11 +1,14 @@
 package SQLite;
 
-import SQLite.*;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
 
 /**
- * SQLite command line shell. This is a partial reimplementaion
+ * SQLite command line shell. This is a partial reimplementation
  * of sqlite/src/shell.c and can be invoked by:<P>
  *
  * <verb>
@@ -192,7 +195,7 @@ public class Shell implements Callback {
 	    if (count++ == 0) {
 		colwidth = new int[args.length];
 		for (i = 0; i < args.length; i++) {
-		    int w, n;
+		    int w;
 		    w = cols[i].length();
 		    if (w < 10) {
 			w = 10;

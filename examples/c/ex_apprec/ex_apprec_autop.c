@@ -21,7 +21,7 @@ ex_apprec_mkdir_print(dbenv, dbtp, lsnp, notused2)
 {
 	notused2 = DB_TXN_PRINT;
 
-	return(__log_print_record(dbenv->env, dbtp, lsnp, "ex_apprec_mkdir", ex_apprec_mkdir_desc, NULL));
+	return (__log_print_record(dbenv->env, dbtp, lsnp, "ex_apprec_mkdir", ex_apprec_mkdir_desc, NULL));
 }
 
 /*

@@ -2917,7 +2917,7 @@ static void yy_reduce(
       case 195: /* expr ::= expr COLLATE ids */
 #line 782 "parse.y"
 {
-  yygotominor.yy118.pExpr = sqlite3ExprSetColl(pParse, yymsp[-2].minor.yy118.pExpr, &yymsp[0].minor.yy0);
+  yygotominor.yy118.pExpr = sqlite3ExprSetCollByToken(pParse, yymsp[-2].minor.yy118.pExpr, &yymsp[0].minor.yy0);
   yygotominor.yy118.zStart = yymsp[-2].minor.yy118.zStart;
   yygotominor.yy118.zEnd = &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n];
 }
@@ -3231,7 +3231,7 @@ static void yy_reduce(
   Expr *p = 0;
   if( yymsp[-1].minor.yy0.n>0 ){
     p = sqlite3Expr(pParse->db, TK_COLUMN, 0);
-    sqlite3ExprSetColl(pParse, p, &yymsp[-1].minor.yy0);
+    sqlite3ExprSetCollByToken(pParse, p, &yymsp[-1].minor.yy0);
   }
   yygotominor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-4].minor.yy322, p);
   sqlite3ExprListSetName(pParse,yygotominor.yy322,&yymsp[-2].minor.yy0,1);
@@ -3246,7 +3246,7 @@ static void yy_reduce(
   Expr *p = 0;
   if( yymsp[-1].minor.yy0.n>0 ){
     p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
-    sqlite3ExprSetColl(pParse, p, &yymsp[-1].minor.yy0);
+    sqlite3ExprSetCollByToken(pParse, p, &yymsp[-1].minor.yy0);
   }
   yygotominor.yy322 = sqlite3ExprListAppend(pParse,0, p);
   sqlite3ExprListSetName(pParse, yygotominor.yy322, &yymsp[-2].minor.yy0, 1);

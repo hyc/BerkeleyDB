@@ -19,6 +19,8 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 
+set testprefix wal2
+
 ifcapable !wal {finish_test ; return }
 
 proc set_tvfs_hdr {file args} {
@@ -341,12 +343,13 @@ file delete -force test.db test.db-wal test.db-journal
 do_test wal2-4.1 {
   sqlite3 db test.db
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = WAL;
     CREATE TABLE data(x);
     INSERT INTO data VALUES('need xShmOpen to see this');
     PRAGMA wal_checkpoint;
   }
-} {wal}
+} {wal 0 5 5}
 do_test wal2-4.2 {
   db close
   testvfs tvfs -noshm 1
@@ -430,13 +433,16 @@ do_test wal2-6.1.1 {
   sqlite3 db test.db
   execsql {
     Pragma Journal_Mode = Wal;
-    Pragma Locking_Mode = Exclusive;
   }
-} {wal exclusive}
+} {wal}
 do_test wal2-6.1.2 {
   execsql { PRAGMA lock_status }
 } {main unlocked temp closed}
 do_test wal2-6.1.3 {
+  execsql {
+    SELECT * FROM sqlite_master;
+    Pragma Locking_Mode = Exclusive;
+  }
   execsql {
     BEGIN;
       CREATE TABLE t1(a, b);
@@ -456,7 +462,7 @@ do_test wal2-6.1.5 {
     SELECT * FROM t1;
     PRAGMA lock_status;
   }
-} {1 2 main exclusive temp closed}
+} {1 2 main shared temp closed}
 do_test wal2-6.1.6 {
   execsql {
     INSERT INTO t1 VALUES(3, 4);
@@ -486,6 +492,7 @@ do_test wal2-6.2.2 {
 do_test wal2-6.2.3 {
   db close
   sqlite3 db test.db
+  execsql { SELECT * FROM sqlite_master }
   execsql { PRAGMA LOCKING_MODE = EXCLUSIVE }
 } {exclusive}
 do_test wal2-6.2.4 {
@@ -522,7 +529,7 @@ do_test wal2-6.2.8 {
     SELECT * FROM t1;
     pragma lock_status;
   }
-} {1 2 3 4 main exclusive temp closed}
+} {1 2 3 4 main shared temp closed}
 do_test wal2-6.2.9 {
   execsql {
     INSERT INTO t1 VALUES(5, 6);
@@ -608,9 +615,15 @@ set READMARK1_SET {
 set READMARK1_READ {
   {4 1 lock shared} {4 1 unlock shared}
 }
+set READMARK1_WRITE {
+  {4 1 lock shared} 
+    {0 1 lock exclusive} {0 1 unlock exclusive} 
+  {4 1 unlock shared}
+}
 
 foreach {tn sql res expected_locks} {
   2 {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = WAL;
     BEGIN;
       CREATE TABLE t1(x);
@@ -664,13 +677,9 @@ foreach {tn sql res expected_locks} {
 
   9 {
     SELECT * FROM t1 ORDER BY x
-  } {Arthur {Julius Henry} Karl Leonard} { }
+  } {Arthur {Julius Henry} Karl Leonard} $READMARK1_READ
 
-  10 {
-    DELETE FROM t1
-  } {} {
-    $READMARK1_READ
-  }
+  10 { DELETE FROM t1 } {} $READMARK1_WRITE
 
   11 {
     SELECT * FROM t1
@@ -700,6 +709,7 @@ tvfs delete
 do_test wal2-6.5.1 {
   sqlite3 db test.db
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = wal;
     PRAGMA locking_mode = exclusive;
     CREATE TABLE t2(a, b);
@@ -707,7 +717,7 @@ do_test wal2-6.5.1 {
     INSERT INTO t2 VALUES('I', 'II');
     PRAGMA journal_mode;
   }
-} {wal exclusive wal}
+} {wal exclusive 0 3 3 wal}
 do_test wal2-6.5.2 {
   execsql {
     PRAGMA locking_mode = normal;
@@ -718,7 +728,7 @@ do_test wal2-6.5.2 {
 } {normal exclusive I II III IV}
 do_test wal2-6.5.3 {
   execsql { PRAGMA wal_checkpoint }
-} {}
+} {0 4 4}
 db close
 
 proc lock_control {method filename handle spec} {
@@ -731,6 +741,7 @@ do_test wal2-6.6.1 {
   T script lock_control
   T filter {}
   sqlite3 db test.db -vfs T
+  execsql { SELECT * FROM sqlite_master }
   execsql { PRAGMA locking_mode = exclusive }
   execsql { INSERT INTO t2 VALUES('V', 'VI') }
 } {}
@@ -754,7 +765,7 @@ do_test wal2-6.6.2 {
   T filter {}
   execsql { INSERT INTO t2 VALUES('IX', 'X') }
 } {}
-do_test wal2-6.6.3 {
+do_test wal2-6.6.4 {
   # This time, we have successfully exited exclusive mode. So the second
   # connection can read the database.
   sqlite3 db2 test.db -vfs T
@@ -801,9 +812,9 @@ do_test wal2-8.1.2 {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(zeroblob(8188*1020));
     CREATE TABLE t2(y);
+    PRAGMA wal_checkpoint;
   }
   execsql {
-    PRAGMA wal_checkpoint;
     SELECT rootpage>=8192 FROM sqlite_master WHERE tbl_name = 't2';
   }
 } {1}
@@ -942,7 +953,6 @@ do_test wal2-10.2.2 {
   set hdr [set_tvfs_hdr $::filename] 
   lindex $hdr 0 
 } {3007000}
-breakpoint
 do_test wal2-10.2.3 { 
   lset hdr 0 3007001
   wal_fix_walindex_cksum hdr 
@@ -980,29 +990,31 @@ do_test wal2-11.1.1 {
   execsql { SELECT name FROM sqlite_master } db2
 } {t1}
 
-# Set all zeroed slots in the first hash table to invalid values.
-#
-set blob [string range [tvfs shm $::filename] 0 16383]
-set I [string range [tvfs shm $::filename] 16384 end]
-binary scan $I t* L
-set I [list]
-foreach p $L {
-  lappend I [expr $p ? $p : 400]
+if {$::tcl_version>=8.5} {
+  # Set all zeroed slots in the first hash table to invalid values.
+  #
+  set blob [string range [tvfs shm $::filename] 0 16383]
+  set I [string range [tvfs shm $::filename] 16384 end]
+  binary scan $I t* L
+  set I [list]
+  foreach p $L {
+    lappend I [expr $p ? $p : 400]
+  }
+  append blob [binary format t* $I]
+  tvfs shm $::filename $blob
+  do_test wal2-11.2 {
+    catchsql { INSERT INTO t1 VALUES(10, 11, 12) }
+  } {1 {database disk image is malformed}}
+  
+  # Fill up the hash table on the first page of shared memory with 0x55 bytes.
+  #
+  set blob [string range [tvfs shm $::filename] 0 16383]
+  append blob [string repeat [binary format c 55] 16384]
+  tvfs shm $::filename $blob
+  do_test wal2-11.3 {
+    catchsql { SELECT * FROM t1 } db2
+  } {1 {database disk image is malformed}}
 }
-append blob [binary format t* $I]
-tvfs shm $::filename $blob
-do_test wal2-11.2 {
-  catchsql { INSERT INTO t1 VALUES(10, 11, 12) }
-} {1 {database disk image is malformed}}
-
-# Fill up the hash table on the first page of shared memory with 0x55 bytes.
-#
-set blob [string range [tvfs shm $::filename] 0 16383]
-append blob [string repeat [binary format c 55] 16384]
-tvfs shm $::filename $blob
-do_test wal2-11.3 {
-  catchsql { SELECT * FROM t1 } db2
-} {1 {database disk image is malformed}}
 
 db close
 db2 close
@@ -1147,5 +1159,126 @@ if {$::tcl_platform(platform) == "unix"} {
   }
 }
 
-finish_test
+#-------------------------------------------------------------------------
+# Test that "PRAGMA checkpoint_fullsync" appears to be working.
+#
+foreach {tn sql reslist} {
+  1 { }                                 {8 0 3 0 5 0}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {8 4 3 2 5 2}
+  3 { PRAGMA checkpoint_fullfsync = 0 } {8 0 3 0 5 0}
+} {
+  faultsim_delete_and_reopen
 
+  execsql {PRAGMA auto_vacuum = 0}
+  execsql $sql
+  do_execsql_test wal2-14.$tn.1 { PRAGMA journal_mode = WAL } {wal}
+
+  set sqlite_sync_count 0
+  set sqlite_fullsync_count 0
+
+  do_execsql_test wal2-14.$tn.2 {
+    PRAGMA wal_autocheckpoint = 10;
+    CREATE TABLE t1(a, b);                -- 2 wal syncs
+    INSERT INTO t1 VALUES(1, 2);          -- 1 wal sync
+    PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
+    BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+      INSERT INTO t1 VALUES(5, 6);
+    COMMIT;                               -- 1 wal sync
+    PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
+  } {10 0 5 5 0 2 2}
+
+  do_test wal2-14.$tn.3 {
+    list $sqlite_sync_count $sqlite_fullsync_count
+  } [lrange $reslist 0 1]
+
+  set sqlite_sync_count 0
+  set sqlite_fullsync_count 0
+
+  do_test wal2-14.$tn.4 {
+    execsql { INSERT INTO t1 VALUES(7, zeroblob(12*4096)) }
+    list $sqlite_sync_count $sqlite_fullsync_count
+  } [lrange $reslist 2 3]
+
+  set sqlite_sync_count 0
+  set sqlite_fullsync_count 0
+
+  do_test wal2-14.$tn.5 {
+    execsql { PRAGMA wal_autocheckpoint = 1000 }
+    execsql { INSERT INTO t1 VALUES(9, 10) }
+    execsql { INSERT INTO t1 VALUES(11, 12) }
+    execsql { INSERT INTO t1 VALUES(13, 14) }
+    db close
+    list $sqlite_sync_count $sqlite_fullsync_count
+  } [lrange $reslist 4 5]
+}
+
+catch { db close }
+
+# PRAGMA checkpoint_fullsync
+# PRAGMA fullfsync
+# PRAGMA synchronous
+#
+foreach {tn settings commit_sync ckpt_sync} {
+  1  {0 0 off}     {0 0}  {0 0}
+  2  {0 0 normal}  {0 0}  {2 0}
+  3  {0 0 full}    {1 0}  {2 0}
+
+  4  {0 1 off}     {0 0}  {0 0}
+  5  {0 1 normal}  {0 0}  {0 2}
+  6  {0 1 full}    {0 1}  {0 2}
+
+  7  {1 0 off}     {0 0}  {0 0}
+  8  {1 0 normal}  {0 0}  {0 2}
+  9  {1 0 full}    {1 0}  {0 2}
+
+  10 {1 1 off}     {0 0}  {0 0}
+  11 {1 1 normal}  {0 0}  {0 2}
+  12 {1 1 full}    {0 1}  {0 2}
+} {
+  forcedelete test.db
+
+  testvfs tvfs -default 1
+  tvfs filter xSync
+  tvfs script xSyncCb
+  proc xSyncCb {method file fileid flags} {
+    incr ::sync($flags)
+  }
+
+  sqlite3 db test.db
+  do_execsql_test 15.$tn.1 "
+    CREATE TABLE t1(x);
+    PRAGMA journal_mode = WAL;
+    PRAGMA checkpoint_fullfsync = [lindex $settings 0];
+    PRAGMA fullfsync = [lindex $settings 1];
+    PRAGMA synchronous = [lindex $settings 2];
+  " {wal}
+
+  do_test 15.$tn.2 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { INSERT INTO t1 VALUES('abc') }
+    list $::sync(normal) $::sync(full)
+  } $commit_sync
+
+  do_test 15.$tn.3 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { INSERT INTO t1 VALUES('def') }
+    list $::sync(normal) $::sync(full)
+  } $commit_sync
+
+  do_test 15.$tn.4 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { PRAGMA wal_checkpoint }
+    list $::sync(normal) $::sync(full)
+  } $ckpt_sync
+  
+  db close
+  tvfs delete
+}
+
+
+
+finish_test

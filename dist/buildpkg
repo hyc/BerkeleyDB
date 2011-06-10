@@ -13,6 +13,7 @@ die()
 CSHARP_DOC_SRC=""
 # 0 is none, 1 is local dir, 2 is remote dir
 CSHARP_DOC_LOCATION=0
+test_run=0
 
 while [ $# -gt 0 ]
 do
@@ -36,6 +37,10 @@ do
 		fi
 		CSHARP_DOC_SRC=$1
 		CSHARP_DOC_LOCATION=2;;
+	-test)
+		echo "Doing a test run - this may contain changes that aren't\
+reflected in a tag, so the package won't be reproducible."
+		test_run=1;;
 	esac
 	shift
 done
@@ -52,8 +57,7 @@ START_DIR=`pwd`
 D=`pwd`/../release
 R="$D/db-${VERSION}"
 RNC="$D/db-$VERSION.NC"
-#DOCS=`pwd`/../../docs_books
-DOCS=`pwd`/../../docs_books-5.1
+DOCS=`pwd`/../../docs_books
 DB_ADDONS=`pwd`/../../db_addons
 
 if [ ! -d $DB_ADDONS ]; then
@@ -69,6 +73,11 @@ echo "Removed old release build from $R"
 
 # Copy the files in the current tip to $R
 hg archive $R
+
+# If doing a test run, apply any local changes to the new tree.
+if [ $test_run != 0 ]; then
+	hg diff | patch -p1 -d $R
+fi
 
 echo "Created hg archive in $R"
 
@@ -124,8 +133,14 @@ else
 fi
 
 # Pull a copy of the JDBC and ODBC libraries into the package.
+# Build the ADO.NET package, including moving the ADO.NET doc built above
+# into that package.
 # Tell the script where to look for packages.
 cd $R/dist && sh s_sql_drivers ../../../..
+# Warn if s_sql_drivers didn't move its docs.
+if [ -e "$R/docs/bdb-sql-ado" ]; then
+	echo "WARNING: ADO.NET doc is still in the non ADO.NET package."
+fi
 
 cd $START_DIR
 
@@ -182,7 +197,14 @@ cd $R && find . | sort -f | uniq -ic | sed '/1 /d'
 # Create the crypto tar archive release.
 T="$D/db-$VERSION.tar.gz"
 rm -f $T
-cd $D && $TAR czf $T -find db-$VERSION -chown 100 -chgrp 100
+cd $D || die "Can't find $D"
+# Move package files in db-$VERSION/release to current directory so that
+# regular packages won't includes generated package twice.
+if [ -d "db-$VERSION/release" ]; then
+	mv db-$VERSION/release/* .
+	rm -rf db-$VERSION/release
+fi
+$TAR czf $T -find db-$VERSION -chown 100 -chgrp 100
 chmod 444 $T
 
 # Create the non-crypto tree.

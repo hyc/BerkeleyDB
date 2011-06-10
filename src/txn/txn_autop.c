@@ -24,7 +24,7 @@ __txn_regop_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_regop_42", __txn_regop_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_regop_42", __txn_regop_42_desc, info));
 }
 
 /*
@@ -41,7 +41,7 @@ __txn_regop_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_regop", __txn_regop_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_regop", __txn_regop_desc, info));
 }
 
 /*
@@ -58,7 +58,7 @@ __txn_ckp_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_ckp_42", __txn_ckp_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_ckp_42", __txn_ckp_42_desc, info));
 }
 
 /*
@@ -75,7 +75,7 @@ __txn_ckp_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_ckp", __txn_ckp_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_ckp", __txn_ckp_desc, info));
 }
 
 /*
@@ -92,7 +92,7 @@ __txn_child_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_child", __txn_child_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_child", __txn_child_desc, info));
 }
 
 /*
@@ -109,7 +109,7 @@ __txn_xa_regop_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_xa_regop_42", __txn_xa_regop_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_xa_regop_42", __txn_xa_regop_42_desc, info));
 }
 
 /*
@@ -126,7 +126,7 @@ __txn_prepare_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_prepare", __txn_prepare_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_prepare", __txn_prepare_desc, info));
 }
 
 /*
@@ -143,7 +143,7 @@ __txn_recycle_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__txn_recycle", __txn_recycle_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__txn_recycle", __txn_recycle_desc, info));
 }
 
 /*

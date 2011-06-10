@@ -10,13 +10,11 @@
 
 #include "db_int.h"
 
-static void __repmgr_config_elect __P((ENV *,
-	u_int32_t, u_int32_t *, u_int32_t *));
 static db_timeout_t __repmgr_compute_response_time __P((ENV *));
-static int __repmgr_elect __P((ENV *,
-	u_int32_t, u_int32_t, db_timespec *));
+static int __repmgr_elect __P((ENV *, u_int32_t, db_timespec *));
 static int __repmgr_elect_main __P((ENV *, REPMGR_RUNNABLE *));
 static void *__repmgr_elect_thread __P((void *));
+static int send_membership __P((ENV *));
 
 /*
  * Starts an election thread.
@@ -101,7 +99,7 @@ __repmgr_elect_thread(argsp)
 
 	if ((ret = __repmgr_elect_main(env, th)) != 0) {
 		__db_err(env, ret, "election thread failed");
-		__repmgr_thread_failure(env, ret);
+		(void)__repmgr_thread_failure(env, ret);
 	}
 
 	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "election thread is exiting"));
@@ -124,7 +122,7 @@ __repmgr_elect_main(env, th)
 #endif
 	db_timespec failtime, now, repstart_time, target, wait_til;
 	db_timeout_t response_time;
-	u_int32_t flags, nsites, nvotes;
+	u_int32_t flags;
 	int done_repstart, ret, suppress_election;
 	enum { ELECTION, REPSTART } action;
 
@@ -156,8 +154,6 @@ __repmgr_elect_main(env, th)
 	 * first probe for a master by sending out rep_start(CLIENT) calls.
 	 */
 	if (LF_ISSET(ELECT_F_IMMED)) {
-		__repmgr_config_elect(env, flags, &nsites, &nvotes);
-
 		/*
 		 * When the election succeeds, we've successfully completed
 		 * everything we need to do.  If it fails in an unexpected way,
@@ -165,10 +161,11 @@ __repmgr_elect_main(env, th)
 		 * stay in here and do some more work is on DB_REP_UNAVAIL,
 		 * in which case we want to wait a while and retry later.
 		 */
-		if ((ret = __repmgr_elect(env, nsites, nvotes, &failtime))
-		    != DB_REP_UNAVAIL)
+		if ((ret = __repmgr_elect(env, flags, &failtime)) ==
+		    DB_REP_UNAVAIL)
+			done_repstart = FALSE;
+		else
 			goto out;
-		done_repstart = FALSE;
 	} else {
 		/*
 		 * We didn't really have an election failure, because in this
@@ -300,12 +297,11 @@ __repmgr_elect_main(env, th)
 		UNLOCK_MUTEX(db_rep->mutex);
 		if (action == ELECTION) {
 			db_rep->new_connection = FALSE;
-			__repmgr_config_elect(env, 0, &nsites, &nvotes);
-			if ((ret = __repmgr_elect(env,
-			    nsites, nvotes, &failtime)) != DB_REP_UNAVAIL)
+			if ((ret = __repmgr_elect(env, 0, &failtime)) ==
+			    DB_REP_UNAVAIL)
+				done_repstart = FALSE;
+			else
 				goto out;
-			done_repstart = FALSE;
-
 			LOCK_MUTEX(db_rep->mutex);
 			db_rep->preferred_elect_thr = th;
 		} else {
@@ -381,18 +377,20 @@ __repmgr_compute_response_time(env)
 	return (eto);
 }
 
-static void
-__repmgr_config_elect(env, flags, nsitesp, nvotesp)
+static int
+__repmgr_elect(env, flags, failtimep)
 	ENV *env;
-	u_int32_t flags, *nsitesp, *nvotesp;
+	u_int32_t flags;
+	db_timespec *failtimep;
 {
 	DB_REP *db_rep;
 	REP *rep;
 	u_int32_t invitation, nsites, nvotes;
+	int ret, t_ret;
 
 	db_rep = env->rep_handle;
-
-	nsites = __repmgr_get_nsites(db_rep);
+	nsites = db_rep->region->config_nsites;
+	DB_ASSERT(env, nsites > 0);
 
 	/*
 	 * With only 2 sites in the group, even a single failure could make it
@@ -416,8 +414,9 @@ __repmgr_config_elect(env, flags, nsitesp, nvotesp)
 		 */
 		rep = db_rep->region;
 		invitation = rep->nsites;
-		if (invitation == nsites || invitation == nsites - 1)
+		if (invitation == nsites || invitation == nsites - 1) {
 			nsites = invitation;
+		}
 	}
 	if (LF_ISSET(ELECT_F_FAST) && nsites > nvotes) {
 		/*
@@ -438,31 +437,17 @@ __repmgr_config_elect(env, flags, nsitesp, nvotesp)
 	if (IS_USING_LEASES(env))
 		nsites = 0;
 
-	*nsitesp = nsites;
-	*nvotesp = nvotes;
-}
-
-static int
-__repmgr_elect(env, nsites, nvotes, failtimep)
-	ENV *env;
-	u_int32_t nsites, nvotes;
-	db_timespec *failtimep;
-{
-	DB_REP *db_rep;
-	int ret;
-
-	db_rep = env->rep_handle;
 	switch (ret = __rep_elect_int(env, nsites, nvotes, 0)) {
 	case DB_REP_UNAVAIL:
 		__os_gettime(env, failtimep, 1);
 		DB_EVENT(env, DB_EVENT_REP_ELECTION_FAILED, NULL);
+		if ((t_ret = send_membership(env)) != 0)
+			ret = t_ret;
 		break;
 
 	case 0:
-		if (db_rep->takeover_pending) {
-			db_rep->takeover_pending = FALSE;
-			ret = __repmgr_repstart(env, DB_REP_MASTER);
-		}
+		if (db_rep->takeover_pending)
+			ret = __repmgr_claim_victory(env);
 		break;
 
 	case DB_REP_IGNORE:
@@ -470,8 +455,63 @@ __repmgr_elect(env, nsites, nvotes, failtimep)
 		break;
 
 	default:
-		__db_err(env, ret, "unexpected election failure");
+		__db_err(env, ret, DB_STR("3629",
+		    "unexpected election failure"));
 		break;
+	}
+	return (ret);
+}
+
+/*
+ * If an election fails with DB_REP_UNAVAIL, it could be because a participating
+ * site has an obsolete, too-high notion of the group size.  (This could happen
+ * if the site was down/disconnected during removal of some (other) sites.)  To
+ * remedy this, broadcast a current copy of the membership list.  Since all
+ * sites are doing this, and we always ratchet to the most up-to-date version,
+ * this should bring all sites up to date.  We only do this after a failure,
+ * during what will normally be an idle period anyway, so that we don't slow
+ * down a first election following the loss of an active master.
+ */
+static int
+send_membership(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	u_int8_t *buf;
+	size_t len;
+	int ret;
+
+	db_rep = env->rep_handle;
+	buf = NULL;
+	LOCK_MUTEX(db_rep->mutex);
+	if ((ret = __repmgr_marshal_member_list(env, &buf, &len)) != 0)
+		goto out;
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+	    "Broadcast latest membership list"));
+	ret = __repmgr_bcast_own_msg(env, REPMGR_SHARING, buf, len);
+out:
+	UNLOCK_MUTEX(db_rep->mutex);
+	if (buf != NULL)
+		__os_free(env, buf);
+	return (ret);
+}
+
+/*
+ * Becomes master after we've won an election, if we can.
+ *
+ * PUBLIC: int __repmgr_claim_victory __P((ENV *));
+ */
+int
+__repmgr_claim_victory(env)
+	ENV *env;
+{
+	int ret;
+
+	env->rep_handle->takeover_pending = FALSE;
+	if ((ret = __repmgr_become_master(env)) == DB_REP_UNAVAIL) {
+		ret = 0;
+		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		    "Won election but lost race with DUPMASTER client intent"));
 	}
 	return (ret);
 }

@@ -1,6 +1,10 @@
 package SQLite.JDBC2x;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Hashtable;
 
 public class JDBCDatabaseMetaData implements DatabaseMetaData {
@@ -512,8 +516,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 			       String tableNamePattern, String types[])
 	throws SQLException {
 	JDBCStatement s = new JDBCStatement(conn);
-	StringBuffer sb = new StringBuffer();
-	sb.append("SELECT '' AS 'TABLE_CAT', " +
+	StringBuffer sb = new StringBuffer(
+		  "SELECT '' AS 'TABLE_CAT', " +
 		  "'' AS 'TABLE_SCHEM', " +
 		  "tbl_name AS 'TABLE_NAME', " +
 		  "upper(type) AS 'TABLE_TYPE', " +
@@ -557,7 +561,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	String row[] = { "" };
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
     public ResultSet getCatalogs() throws SQLException {
@@ -567,7 +571,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	String row[] = { "" };
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
     public ResultSet getTableTypes() throws SQLException {
@@ -581,7 +585,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	row[0] = "VIEW";
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
     public ResultSet getColumns(String catalog, String schemaPattern,
@@ -589,7 +593,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 				String columnNamePattern)
 	throws SQLException {
 	if (conn.db == null) {
-	    throw new SQLException("connection closed.");
+	    throw new SQLException("connection closed");
 	}
 	JDBCStatement s = new JDBCStatement(conn);
 	JDBCResultSet rs0 = null;
@@ -597,7 +601,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s.executeQuery("PRAGMA table_info(" +
@@ -631,8 +636,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
-	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
+	if (rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable h = new Hashtable();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
 		h.put(rs0.tr.column[i], new Integer(i));
@@ -699,7 +704,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
@@ -719,7 +724,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
@@ -735,7 +740,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -762,7 +768,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0 &&
 	    rs1 != null && rs1.tr != null && rs1.tr.nrows > 0) {
 	    Hashtable h0 = new Hashtable();
@@ -852,7 +858,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
@@ -864,7 +870,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -885,7 +892,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable h0 = new Hashtable();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
@@ -1026,7 +1033,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA foreign_key_list(" +
@@ -1053,7 +1061,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    internalImportedKeys(table, null, rs0, tr);
 	}
@@ -1097,7 +1105,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		try {
 		    conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 		} catch (SQLite.Exception se) {
-		    throw new SQLException("schema reload failed");
+		    throw new
+			SQLException("schema reload failed: " + se.toString());
 		}
 		rs0 = (JDBCResultSet)
 		    (s0.executeQuery("PRAGMA foreign_key_list(" +
@@ -1277,7 +1286,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +

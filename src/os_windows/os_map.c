@@ -24,17 +24,21 @@ __os_attach(env, infop, rp)
 	REGINFO *infop;
 	REGION *rp;
 {
-	DB_FH *fhp;
 	int ret;
+	int is_sparse;
+#ifndef DB_WINCE
+	DWORD dw;
+#endif
 
+	infop->fhp = NULL;
 	/*
 	 * On Windows/9X, files that are opened by multiple processes do not
 	 * share data correctly.  For this reason, we require that DB_PRIVATE
 	 * be specified on that platform.
 	 */
 	if (!F_ISSET(env, ENV_PRIVATE) && __os_is_winnt() == 0) {
-		__db_err(env,
-		    EINVAL, "Windows 9X systems must specify DB_PRIVATE");
+		__db_err(env, EINVAL, DB_STR("0006",
+		    "Windows 9X systems must specify DB_PRIVATE"));
 		return (EINVAL);
 	}
 
@@ -45,10 +49,22 @@ __os_attach(env, infop, rp)
 	 */
 	if ((ret = __os_open(env, infop->name, 0, DB_OSO_REGION |
 	    (F_ISSET(infop, REGION_CREATE_OK) ? DB_OSO_CREATE : 0),
-	    env->db_mode, &fhp)) != 0) {
+	    env->db_mode, &infop->fhp)) != 0) {
 		__db_err(env, ret, "%s", infop->name);
 		return (ret);
 	}
+
+	is_sparse = 0;
+#ifndef DB_WINCE
+	/*
+	 * Sparse file only works for NTFS filesystem. If we failed to set it,
+	 * just ignore the error and use the normal method.
+	 */
+	if (!F_ISSET(env, ENV_SYSTEM_MEM) && (DeviceIoControl(
+	    infop->fhp->handle, FSCTL_SET_SPARSE, NULL, 0, NULL, 0,
+	    &dw, NULL)))
+		is_sparse = 1;
+#endif
 
 	/*
 	 * Map the file in.  If we're creating an in-system-memory region,
@@ -56,13 +72,25 @@ __os_attach(env, infop, rp)
 	 * calling code writes out the REGENV_REF structure to the primary
 	 * environment file.
 	 */
-	ret = __os_map(env, infop->name, infop, fhp, rp->size,
+	ret = __os_map(env, infop->name, infop, infop->fhp, rp->max,
 	   1, F_ISSET(env, ENV_SYSTEM_MEM), 0, &infop->addr);
 	if (ret == 0 && F_ISSET(env, ENV_SYSTEM_MEM))
 		rp->segid = 1;
 
-	(void)__os_closehandle(env, fhp);
+	if (ret != 0) {
+		(void)__os_closehandle(env, infop->fhp);
+		infop->fhp = NULL;
+		return (ret);
+	}
 
+	/*
+	 * If we are using sparse file, we don't need to keep the file handle
+	 * for writing or extending.
+	 */
+	if (is_sparse && infop->fhp != NULL) {
+		ret = __os_closehandle(env, infop->fhp);
+		infop->fhp = NULL;
+	}
 	return (ret);
 }
 
@@ -85,10 +113,16 @@ __os_detach(env, infop, destroy)
 		(void)CloseHandle(infop->wnt_handle);
 		infop->wnt_handle = NULL;
 	}
+	if (infop->fhp != NULL) {
+		ret = __os_closehandle(env, infop->fhp);
+		infop->fhp = NULL;
+		if (ret != 0)
+			return (ret);
+	}
 
 	ret = !UnmapViewOfFile(infop->addr) ? __os_get_syserr() : 0;
 	if (ret != 0) {
-		__db_syserr(env, ret, "UnmapViewOfFile");
+		__db_syserr(env, ret, DB_STR("0007", "UnmapViewOfFile"));
 		ret = __os_posix_err(ret);
 	}
 
@@ -129,7 +163,7 @@ __os_mapfile(env, path, fhp, len, is_rdonly, addr)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: mmap %s", path);
+		__db_msg(env, DB_STR_A("0008", "fileops: mmap %s", "%s"), path);
 	return (__os_map(env, path, NULL, fhp, len, 0, 0, is_rdonly, addr));
 #endif
 }
@@ -150,7 +184,7 @@ __os_unmapfile(env, addr, len)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: munmap");
+		__db_msg(env, DB_STR("0009", "fileops: munmap"));
 
 	return (!UnmapViewOfFile(addr) ? __os_posix_err(__os_get_syserr()) : 0);
 }
@@ -263,8 +297,9 @@ __os_map(env, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	 */
 	if (use_pagefile) {
 #ifdef DB_WINCE
-		__db_errx(env, "Unable to memory map regions using system "
-		    "memory on WinCE.");
+		__db_errx(env, DB_STR("0010",
+		    "Unable to memory map regions using system "
+		    "memory on WinCE."));
 		return (EFAULT);
 #endif
 		TO_TSTRING(env, path, tpath, ret);
@@ -327,7 +362,7 @@ __os_map(env, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 
 	if (hMemory == NULL) {
 		ret = __os_get_syserr();
-		__db_syserr(env, ret, "OpenFileMapping");
+		__db_syserr(env, ret, DB_STR("0011", "OpenFileMapping"));
 		return (__env_panic(env, __os_posix_err(ret)));
 	}
 
@@ -335,7 +370,7 @@ __os_map(env, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	    (is_rdonly ? FILE_MAP_READ : FILE_MAP_ALL_ACCESS), 0, 0, len);
 	if (pMemory == NULL) {
 		ret = __os_get_syserr();
-		__db_syserr(env, ret, "MapViewOfFile");
+		__db_syserr(env, ret, DB_STR("0012", "MapViewOfFile"));
 		return (__env_panic(env, __os_posix_err(ret)));
 	}
 

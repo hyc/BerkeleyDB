@@ -1298,6 +1298,24 @@ db_conv.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_objects
+db_copy.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../src/db/db_dispatch.c_dependDone
 TRUE
 <END>
@@ -2411,6 +2429,186 @@ hash_verify.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../src/hash/hash_verify.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_auto.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_auto.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_auto.c_objects
+heap_auto.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_auto.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_autop.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_autop.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_autop.c_objects
+heap_autop.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_autop.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap.c_objects
+heap.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_conv.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_conv.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_conv.c_objects
+heap_conv.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_conv.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_method.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_method.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_method.c_objects
+heap_method.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_method.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_open.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_open.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_open.c_objects
+heap_open.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_open.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_rec.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_rec.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_rec.c_objects
+heap_rec.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_rec.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_reclaim.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_reclaim.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_reclaim.c_objects
+heap_reclaim.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_reclaim.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stat.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stat.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stat.c_objects
+heap_stat.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stat.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_verify.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_verify.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_verify.c_objects
+heap_verify.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_verify.c_tool
 C/C++ compiler
 <END>
 
@@ -3980,21 +4178,21 @@ qam_verify.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_auto.c_dependDone
+<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_automsg.c_dependDone
 TRUE
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_auto.c_dependencies
+<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_automsg.c_dependencies
 $(PRJ_DIR)/db_config.h \
 	$(PRJ_DIR)/db_int.h \
 	$(PRJ_DIR)/db.h
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_auto.c_objects
-rep_auto.o
+<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_automsg.c_objects
+rep_automsg.o
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_auto.c_tool
+<BEGIN> FILE_$(PRJ_DIR)/../src/rep/rep_automsg.c_tool
 C/C++ compiler
 <END>
 
@@ -4196,6 +4394,24 @@ repmgr_auto.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_automsg.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_automsg.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_automsg.c_objects
+repmgr_automsg.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_automsg.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_elect.c_dependDone
 TRUE
 <END>
@@ -4304,21 +4520,21 @@ repmgr_queue.o
 C/C++ compiler
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rereq.c_dependDone
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rec.c_dependDone
 TRUE
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rereq.c_dependencies
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rec.c_dependencies
 $(PRJ_DIR)/db_config.h \
 	$(PRJ_DIR)/db_int.h \
 	$(PRJ_DIR)/db.h
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rereq.c_objects
-repmgr_rereq.o
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rec.c_objects
+repmgr_rec.o
 <END>
 
-<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rereq.c_tool
+<BEGIN> FILE_$(PRJ_DIR)/../src/repmgr/repmgr_rec.c_tool
 C/C++ compiler
 <END>
 
@@ -4556,6 +4772,42 @@ txn_util.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa.c_objects
+xa.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa_map.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa_map.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa_map.c_objects
+xa_map.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/xa/xa_map.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> PROJECT_FILES
 $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/btree/bt_compare.c \
@@ -4612,6 +4864,7 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/db/db_cds.c \
 	$(PRJ_DIR)/../src/db/db_compact.c \
 	$(PRJ_DIR)/../src/db/db_conv.c \
+	$(PRJ_DIR)/../src/db/db_copy.c \
 	$(PRJ_DIR)/../src/db/db_dispatch.c \
 	$(PRJ_DIR)/../src/db/db_dup.c \
 	$(PRJ_DIR)/../src/db/db_iface.c \
@@ -4674,6 +4927,16 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/hash/hash_stat.c \
 	$(PRJ_DIR)/../src/hash/hash_upgrade.c \
 	$(PRJ_DIR)/../src/hash/hash_verify.c \
+	$(PRJ_DIR)/../src/heap/heap_auto.c \
+	$(PRJ_DIR)/../src/heap/heap_autop.c \
+	$(PRJ_DIR)/../src/heap/heap.c \
+	$(PRJ_DIR)/../src/heap/heap_conv.c \
+	$(PRJ_DIR)/../src/heap/heap_method.c \
+	$(PRJ_DIR)/../src/heap/heap_open.c \
+	$(PRJ_DIR)/../src/heap/heap_rec.c \
+	$(PRJ_DIR)/../src/heap/heap_reclaim.c \
+	$(PRJ_DIR)/../src/heap/heap_stat.c \
+	$(PRJ_DIR)/../src/heap/heap_verify.c \
 	$(PRJ_DIR)/../src/hmac/hmac.c \
 	$(PRJ_DIR)/../src/hmac/sha1.c \
 	$(PRJ_DIR)/../src/lock/lock.c \
@@ -4761,7 +5024,7 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/qam/qam_stat.c \
 	$(PRJ_DIR)/../src/qam/qam_upgrade.c \
 	$(PRJ_DIR)/../src/qam/qam_verify.c \
-	$(PRJ_DIR)/../src/rep/rep_auto.c \
+	$(PRJ_DIR)/../src/rep/rep_automsg.c \
 	$(PRJ_DIR)/../src/rep/rep_backup.c \
 	$(PRJ_DIR)/../src/rep/rep_elect.c \
 	$(PRJ_DIR)/../src/rep/rep_lease.c \
@@ -4773,13 +5036,14 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/rep/rep_util.c \
 	$(PRJ_DIR)/../src/rep/rep_verify.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_auto.c \
+	$(PRJ_DIR)/../src/repmgr/repmgr_automsg.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_elect.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_method.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_msg.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_net.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_posix.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_queue.c \
-	$(PRJ_DIR)/../src/repmgr/repmgr_rereq.c \
+	$(PRJ_DIR)/../src/repmgr/repmgr_rec.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_sel.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_stat.c \
 	$(PRJ_DIR)/../src/repmgr/repmgr_util.c \
@@ -4792,7 +5056,9 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/txn/txn_recover.c \
 	$(PRJ_DIR)/../src/txn/txn_region.c \
 	$(PRJ_DIR)/../src/txn/txn_stat.c \
-	$(PRJ_DIR)/../src/txn/txn_util.c
+	$(PRJ_DIR)/../src/txn/txn_util.c \
+	$(PRJ_DIR)/../src/xa/xa.c \
+	$(PRJ_DIR)/../src/xa/xa_map.c
 <END>
 
 <BEGIN> userComments

@@ -36,7 +36,8 @@ __db_compare_both(db, akey, adata, bkey, bdata)
 
 	cmp = t->bt_compare(db, akey, bkey);
 	if (cmp != 0) return cmp;
-	if (!F_ISSET(db, DB_AM_DUPSORT)) return 0;
+	if (!F_ISSET(db, DB_AM_DUPSORT))
+	    return (0);
 
 	if (adata == 0) return bdata == 0 ? 0 : -1;
 	if (bdata == 0) return 1;
@@ -262,7 +263,7 @@ __db_quicksort(db, key, data, kstart, kend, dstart, dend, size)
 	if (stack != stackbuf)
 		__os_free(env, stack);
 
-	return ret;
+	return (ret);
 }
 
 #undef DB_SORT_SWAP

@@ -12,7 +12,10 @@
     <link rel="next" href="dbsync.html" title="Db::sync()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Db::stat_print()</th>
@@ -40,15 +43,16 @@
 int
 Db::stat_print(u_int32_t flags);</pre>
       <p>
-         The <code class="methodname">Db::stat_print()</code> method displays the database statistical
-         information, as described for the <code class="methodname">Db::stat()</code> method. The information
-         is printed to a specified output channel (see the 
+         The <code class="methodname">Db::stat_print()</code> method displays the
+         database statistical information, as described for the 
+         <a class="xref" href="dbstat.html" title="Db::stat()">Db::stat()</a> method.  The
+         information is printed to a specified output channel (see the 
          <a class="xref" href="envset_msgfile.html" title="DbEnv::set_msgfile()">DbEnv::set_msgfile()</a> 
          method for more information), or passed to an application callback
          function (see the 
          <a class="xref" href="envset_msgcall.html" title="DbEnv::set_msgcall()">DbEnv::set_msgcall()</a> 
          method for more information).
-    </p>
+     </p>
       <p>
              The <code class="methodname">Db::stat_print()</code> method may not be called before the 
              <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>  method is called.
@@ -63,13 +67,15 @@ Db::stat_print(u_int32_t flags);</pre>
             </span>
         </span>
     </p>
-      <p>For Berkeley DB SQL table or index statistics, see <a class="xref" href="dbsql.html#dbsql_command_feature" title="Command Line Features Unique to dbsql">Command Line Features Unique to dbsql
- </a>.</p>
+      <p>
+        For Berkeley DB SQL table or index statistics, see 
+        <a class="xref" href="dbsql.html#dbsql_command_feature" title="Command Line Features Unique to dbsql">Command Line Features Unique to dbsql</a>.
+    </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50927560"></a>Parameters</h3>
+              <h3 class="title"><a id="id3601882"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -77,35 +83,35 @@ Db::stat_print(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50927752"></a>flags</h4>
+                <h4 class="title"><a id="id3601885"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
-                          or by bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing
-                          together one or more of the following values:
-                     </p>
+                  The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
+                  or by bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing
+                  together one or more of the following values:
+             </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p><a id="stat_print_DB_FAST_STAT"></a>
-                  <code class="literal">DB_FAST_STAT</code>
-            </p>
+                          <code class="literal">DB_FAST_STAT</code>
+                     </p>
                 <p>
-                 Return only the values which do not require traversal of the database.
-                 Among other things, this flag makes it possible for applications to
-                 request key and record counts without incurring the performance
-                 penalty of traversing the entire database.
-            </p>
+                         Return only the values which do not require traversal of the database.
+                         Among other things, this flag makes it possible for applications to
+                         request key and record counts without incurring the performance
+                         penalty of traversing the entire database.
+                     </p>
               </li>
               <li>
                 <p><a id="stat_print_DB_STAT_ALL"></a>
-                  <code class="literal">DB_STAT_ALL</code>
-            </p>
+                          <code class="literal">DB_STAT_ALL</code>
+                     </p>
                 <p>
-                Display all available information.
-            </p>
+                        Display all available information.
+                     </p>
               </li>
             </ul>
           </div>
@@ -115,7 +121,7 @@ Db::stat_print(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50930960"></a>Class</h3>
+              <h3 class="title"><a id="id3601938"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -127,14 +133,13 @@ Db::stat_print(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50869232"></a>See Also</h3>
+              <h3 class="title"><a id="id3600521"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-                     
-                </p>
+                 <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+            </p>
       </div>
     </div>
     <div class="navfooter">

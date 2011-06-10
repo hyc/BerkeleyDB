@@ -11,72 +11,120 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport);SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_USRDLL" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql51d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql51d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql51d.lib" TargetMachine="3"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_API=__declspec(dllexport);SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_USRDLL" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql52d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql52d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql52d.lib" TargetMachine="3"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/>
-      <DeploymentTool RemoteDirectory="\windows"/></Configuration>
+      <DeploymentTool/></Configuration>
     <Configuration Name="Release|Pocket PC 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;NDEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql51.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql51.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql51.lib" TargetMachine="3"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;NDEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql52.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql52.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql52.lib" TargetMachine="3"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/>
-      <DeploymentTool RemoteDirectory="\windows"/></Configuration>
+      <DeploymentTool/></Configuration>
+    <Configuration Name="Static Debug|Pocket PC 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql52sd.lib"/></Configuration>
+    <Configuration Name="Static Release|Pocket PC 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql52s.lib"/></Configuration>
     <Configuration Name="Debug|Smartphone 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Debug" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport);SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_USRDLL" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql51d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql51d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql51d.lib" TargetMachine="3"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_API=__declspec(dllexport);SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_USRDLL" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql52d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql52d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql52d.lib" TargetMachine="3"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/>
-      <DeploymentTool RemoteDirectory="\windows"/></Configuration>
+      <DeploymentTool/></Configuration>
     <Configuration Name="Release|Smartphone 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;NDEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql51.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql51.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql51.lib" TargetMachine="3"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;NDEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql52.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql52.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql52.lib" TargetMachine="3"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/>
-      <DeploymentTool RemoteDirectory="\windows"/></Configuration>
+      <DeploymentTool/></Configuration>
+    <Configuration Name="Static Debug|Smartphone 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql52sd.lib"/></Configuration>
+    <Configuration Name="Static Release|Smartphone 2003 (ARMV4)" OutputDirectory="..\build_wince\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql52s.lib"/></Configuration>
     <Configuration Name="Debug|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" OutputDirectory="..\build_wince\$(PlatformName)\Debug" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport);SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_USRDLL" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql51d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql51d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql51d.lib" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_API=__declspec(dllexport);SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_USRDLL" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql52d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql52d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql52d.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/>
-      <DeploymentTool RemoteDirectory="\windows"/></Configuration>
+      <DeploymentTool/></Configuration>
     <Configuration Name="Release|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" OutputDirectory="..\build_wince\$(PlatformName)\Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;NDEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql51.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql51.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql51.lib" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;NDEBUG;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb_sql52.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql52.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql52.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/>
-      <DeploymentTool RemoteDirectory="\windows"/></Configuration>
+      <DeploymentTool/></Configuration>
+    <Configuration Name="Static Debug|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" OutputDirectory="..\build_wince\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql52sd.lib"/></Configuration>
+    <Configuration Name="Static Release|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" OutputDirectory="..\build_wince\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_wince,../src,../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql52s.lib"/></Configuration>
   </Configurations>
   <References/>
   <Files>
@@ -93,8 +141,10 @@
     <File RelativePath="..\lang\sql\sqlite\src\complete.c"/>
     <File RelativePath="..\lang\sql\sqlite\src\ctime.c"/>
     <File RelativePath="..\lang\sql\sqlite\src\date.c"/>
+    <File RelativePath="..\lang\sql\adapter\db_encrypt.c"/>
     <File RelativePath="..\lang\sql\adapter\db_pragma.c"/>
     <File RelativePath="..\lang\sql\adapter\db_shell.c"/>
+    <File RelativePath="..\lang\sql\adapter\db_sequence.c"/>
     <File RelativePath="..\lang\sql\sqlite\src\delete.c"/>
     <File RelativePath="..\lang\sql\sqlite\src\expr.c"/>
     <File RelativePath="..\lang\sql\sqlite\src\fault.c"/>

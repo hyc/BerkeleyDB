@@ -14,6 +14,7 @@ import com.sleepycat.db.ReplicationHostAddress;
 import com.sleepycat.db.ReplicationManagerAckPolicy;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationManagerSiteInfo;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 
 public class RepConfig
 {
@@ -26,12 +27,11 @@ public class RepConfig
     public ReplicationManagerAckPolicy ackPolicy;
     public boolean bulk; /* Whether bulk transfer should be performed. */
     public String home; /* The home directory for rep files. */
-    public Vector otherHosts; /* Stores an optional set of "other" hosts. */
+    private Vector otherHosts; /* Stores an optional set of "other" hosts. */
     public int priority; /* Priority within the replication group. */
     public ReplicationManagerStartPolicy startPolicy;
-    public ReplicationHostAddress thisHost; /* Host address to listen to. */
-    /* Optional value specifying the # of sites in the replication group. */
-    public int totalSites;
+    /* Local Host configuration to listen to. */
+    private ReplicationManagerSiteConfig thisHost;
     public boolean verbose;
 
     /* Member variables used internally. */
@@ -43,11 +43,10 @@ public class RepConfig
         startPolicy = ReplicationManagerStartPolicy.REP_ELECTION;
         home = "";
         gotListenAddress = false;
-        totalSites = 0;
         priority = 100;
         verbose = false;
         currOtherHost = 0;
-        thisHost = new ReplicationHostAddress();
+        thisHost = new ReplicationManagerSiteConfig();
         otherHosts = new Vector();
         ackPolicy = ReplicationManagerAckPolicy.QUORUM;
         bulk = false;
@@ -58,19 +57,28 @@ public class RepConfig
         return new java.io.File(home);
     }
 
-    public void setThisHost(String host, int port)
+    public void setThisHost(String host, int port, boolean creator)
     {
         gotListenAddress = true;
-        thisHost.port = port;
-        thisHost.host = host;
+        thisHost.setHost(host);
+        thisHost.setPort(port);
+        thisHost.setGroupCreator(creator);
+        thisHost.setLocalSite(true);
     }
 
-    public ReplicationHostAddress getThisHost()
+    public ReplicationManagerSiteConfig getThisHost()
     {
         if (!gotListenAddress)
             System.err.println("Warning: no host specified, returning default.");
         return thisHost;
     }
+
+    public ReplicationHostAddress getThisHostAddress()
+    {
+        if (!gotListenAddress)
+              System.err.println("Warning: no host specified, returning default.");
+        return thisHost.getAddress();
+      }
 
     public boolean gotListenAddress() {
         return gotListenAddress;
@@ -108,4 +116,3 @@ public class RepConfig
     }
 
 }
-

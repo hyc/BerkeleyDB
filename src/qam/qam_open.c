@@ -37,7 +37,6 @@ __qam_open(dbp, ip, txn, name, base_pgno, mode, flags)
 	u_int32_t flags;
 {
 	DBC *dbc;
-	DB_LOCK metalock;
 	DB_MPOOLFILE *mpf;
 	ENV *env;
 	QMETA *qmeta;
@@ -51,14 +50,14 @@ __qam_open(dbp, ip, txn, name, base_pgno, mode, flags)
 	qmeta = NULL;
 
 	if (name == NULL && t->page_ext != 0) {
-		__db_errx(env,
-	"Extent size may not be specified for in-memory queue database");
+		__db_errx(env, DB_STR("1134",
+	"Extent size may not be specified for in-memory queue database"));
 		return (EINVAL);
 	}
 
 	if (MULTIVERSION(dbp)) {
-		__db_errx(env,
-		    "Multiversion queue databases are not supported");
+		__db_errx(env, DB_STR("1135",
+		    "Multiversion queue databases are not supported"));
 		return (EINVAL);
 	}
 
@@ -82,15 +81,13 @@ __qam_open(dbp, ip, txn, name, base_pgno, mode, flags)
 	 * files/databases come in through the __qam_new_file interface
 	 * and queue doesn't support subdatabases.
 	 */
-	if ((ret =
-	    __db_lget(dbc, 0, base_pgno, DB_LOCK_READ, 0, &metalock)) != 0)
-		goto err;
 	if ((ret = __memp_fget(mpf, &base_pgno, ip, txn, 0, &qmeta)) != 0)
 		goto err;
 
 	/* If the magic number is incorrect, that's a fatal error. */
 	if (qmeta->dbmeta.magic != DB_QAMMAGIC) {
-		__db_errx(env, "__qam_open: %s: unexpected file type or format",
+		__db_errx(env, DB_STR_A("1136",
+		    "__qam_open: %s: unexpected file type or format", "%s"),
 		    name);
 		ret = EINVAL;
 		goto err;
@@ -114,10 +111,6 @@ __qam_open(dbp, ip, txn, name, base_pgno, mode, flags)
 
 err:	if (qmeta != NULL && (t_ret =
 	    __memp_fput(mpf, ip, qmeta, dbc->priority)) != 0 && ret == 0)
-		ret = t_ret;
-
-	/* Don't hold the meta page long term. */
-	if ((t_ret = __LPUT(dbc, metalock)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
@@ -188,16 +181,17 @@ __qam_metachk(dbp, name, qmeta)
 	switch (vers) {
 	case 1:
 	case 2:
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("1137",
 		    "%s: queue version %lu requires a version upgrade",
-		    name, (u_long)vers);
+		    "%s %lu"), name, (u_long)vers);
 		return (DB_OLD_VERSION);
 	case 3:
 	case 4:
 		break;
 	default:
-		__db_errx(env,
-		    "%s: unsupported qam version: %lu", name, (u_long)vers);
+		__db_errx(env, DB_STR_A("1138",
+		    "%s: unsupported qam version: %lu", "%s %lu"),
+		    name, (u_long)vers);
 		return (EINVAL);
 	}
 
@@ -266,9 +260,9 @@ __qam_init_meta(dbp, meta)
 
 	/* Verify that we can fit at least one record per page. */
 	if (QAM_RECNO_PER_PAGE(dbp) < 1) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("1139",
 		    "Record size of %lu too large for page size of %lu",
-		    (u_long)t->re_len, (u_long)dbp->pgsize);
+		    "%lu %lu"), (u_long)t->re_len, (u_long)dbp->pgsize);
 		return (EINVAL);
 	}
 

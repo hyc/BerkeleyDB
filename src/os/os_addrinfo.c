@@ -38,7 +38,8 @@ __os_getaddrinfo(env, nodename, port, servname, hints, res)
 	if ((ret = getaddrinfo(nodename, servname, hints, res)) == 0)
 		return (0);
 
-	__db_errx(env, "%s(%u): host lookup failed: %s",
+	__db_errx(env, DB_STR_A("0153",
+	    "%s(%u): host lookup failed: %s", "%s %u %s"),
 	    nodename == NULL ? "" : nodename, port,
 #ifdef DB_WIN32
 	    gai_strerrorA(ret));
@@ -78,8 +79,8 @@ __os_getaddrinfo(env, nodename, port, servname, hints, res)
 			if (hostaddr == NULL) {
 #ifdef DB_WIN32
 				ret = __os_get_neterr();
-				__db_syserr(env, ret,
-				    "%s(%u): host lookup failed",
+				__db_syserr(env, ret, DB_STR_A("0154",
+				    "%s(%u): host lookup failed", "%s %u"),
 				    nodename == NULL ? "" : nodename, port);
 				return (__os_posix_err(ret));
 #else
@@ -95,13 +96,15 @@ __os_getaddrinfo(env, nodename, port, servname, hints, res)
 				 * unexported symbol).
 				 */
 #ifdef HAVE_HSTRERROR
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("0155",
 				    "%s(%u): host lookup failed: %s",
+				    "%s %u %s"),
 				    nodename == NULL ? "" : nodename, port,
 				    hstrerror(h_errno));
 #else
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("0156",
 				    "%s(%u): host lookup failed: %d",
+				    "%s %u %d"),
 				    nodename == NULL ? "" : nodename, port,
 				    h_errno);
 #endif

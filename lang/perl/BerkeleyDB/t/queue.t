@@ -73,11 +73,11 @@ umask(0) ;
     ok $db->db_del(2) == 0 ;
     ok $db->db_get(2, $value) == DB_KEYEMPTY ;
     ok $db->status() == DB_KEYEMPTY ;
-    ok $db->status() eq $DB_errors{'DB_KEYEMPTY'} ;
+    ok $db->status() =~ $DB_errors{'DB_KEYEMPTY'} ;
 
     ok $db->db_get(7, $value) == DB_NOTFOUND ;
     ok $db->status() == DB_NOTFOUND ;
-    ok $db->status() eq $DB_errors{'DB_NOTFOUND'} ;
+    ok $db->status() =~ $DB_errors{'DB_NOTFOUND'} ;
 
     ok $db->db_sync() == 0 ;
 
@@ -85,7 +85,7 @@ umask(0) ;
     # an existing record.
 
     ok $db->db_put( 1, 'x', DB_NOOVERWRITE) == DB_KEYEXIST ;
-    ok $db->status() eq $DB_errors{'DB_KEYEXIST'} ;
+    ok $db->status() =~ $DB_errors{'DB_KEYEXIST'} ;
     ok $db->status() == DB_KEYEXIST ;
 
 
@@ -170,7 +170,7 @@ umask(0) ;
     }
 
     ok $cursor->status() == DB_NOTFOUND ;
-    ok $cursor->status() eq $DB_errors{'DB_NOTFOUND'} ;
+    ok $cursor->status() =~ $DB_errors{'DB_NOTFOUND'} ;
     ok keys %copy == 0 ;
     ok $extras == 0 ;
 
@@ -187,7 +187,7 @@ umask(0) ;
 	    { ++ $extras }
     }
     ok $status == DB_NOTFOUND ;
-    ok $status eq $DB_errors{'DB_NOTFOUND'} ;
+    ok $status =~ $DB_errors{'DB_NOTFOUND'} ;
     ok $cursor->status() == $status ;
     ok $cursor->status() eq $status ;
     ok keys %copy == 0 ;

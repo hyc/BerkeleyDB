@@ -14,6 +14,7 @@
 # TEST	Cleanly shutdown master env.  Restart without
 # TEST	recovery and verify leases are expired and refreshed.
 # TEST	Add a new client without leases to a group using leases.
+# TEST	Test errors if we cannot get leases before/after txn_commit.
 #
 proc rep079 { method { tnum "079" } args } {
 	source ./include.tcl
@@ -131,7 +132,7 @@ proc rep079_sub { method tnum logset largs } {
 	#
 	# This is the real env command, but we won't use it
 	# quite yet.
-	set envcmd(0) "berkdb_env -create $m_txnargs $m_logargs \
+	set envcmd(0) "berkdb_env_noerr -create $m_txnargs $m_logargs \
 	    $repmemargs $verbargs -errpfx MASTER -home $masterdir \
 	    -event \
 	    -rep_transport \[list 2 replsend\]"
@@ -143,8 +144,9 @@ proc rep079_sub { method tnum logset largs } {
 	#
 	puts "\tRep$tnum.a: Try to configure leases after rep_start."
 	set noleaseenv [eval $envcmd_err -rep_client]
+	$noleaseenv rep_nsites $nsites
 	set stat [catch {$noleaseenv rep_lease \
-	    [list $nsites $lease_to $clock_fast $clock_slow]} lease]
+	    [list $lease_to $clock_fast $clock_slow]} lease]
 	error_check_bad stat $stat 0
 	error_check_good menverror [is_substr $lease "timeout must be set"] 1
 	error_check_good close [$noleaseenv close] 0
@@ -156,8 +158,8 @@ proc rep079_sub { method tnum logset largs } {
 	# open as a client and then upgrade ourself to a master just
 	# by calling rep_start.
 	#
-	set upgenv [eval $envcmd_err -rep_client \
-	    -rep_lease \[list $nsites $lease_to $clock_fast $clock_slow\]]
+	set upgenv [eval $envcmd_err -rep_client -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to $clock_fast $clock_slow\]]
 	puts "\tRep$tnum.b: Try to upgrade a client without election."
         set stat [catch {$upgenv rep_start -master} ret]
 	error_check_bad upg_stat $stat 0
@@ -175,8 +177,8 @@ proc rep079_sub { method tnum logset largs } {
 	set err_cmd(0) "none"
 	set crash(0) 0
 	set pri(0) 100
-	set masterenv [eval $envcmd(0) -rep_client \
-	    -rep_lease \[list $nsites $lease_to $clock_fast $clock_slow\]]
+	set masterenv [eval $envcmd(0) -rep_client -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to $clock_fast $clock_slow\]]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 
 	# Open two clients.
@@ -186,8 +188,8 @@ proc rep079_sub { method tnum logset largs } {
 	set pri(1) 10
 	set envcmd(1) "berkdb_env -create $c_txnargs $c_logargs \
 	    $repmemargs $verbargs -errpfx CLIENT -home $clientdir \
-	    -event \
-	    -rep_lease \[list $nsites $lease_to $clock_fast $clock_slow\] \
+	    -event -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to $clock_fast $clock_slow\] \
 	    -rep_client -rep_transport \[list 3 replsend\]"
 	set clientenv [eval $envcmd(1)]
 	error_check_good client_env [is_valid_env $clientenv] TRUE
@@ -197,8 +199,8 @@ proc rep079_sub { method tnum logset largs } {
 	set crash(2) 0
 	set pri(2) 10
 	set envcmd(2) "berkdb_env_noerr -create $c2_txnargs $c2_logargs \
-	    $repmemargs -home $clientdir2 -event \
-	    -rep_lease \[list $nsites $lease_to $clock_fast $clock_slow\] \
+	    $repmemargs -home $clientdir2 -event -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to $clock_fast $clock_slow\] \
 	    -rep_client -rep_transport \[list 4 replsend\]"
 	set clientenv2 [eval $envcmd(2)]
 	error_check_good client_env [is_valid_env $clientenv2] TRUE
@@ -272,8 +274,8 @@ proc rep079_sub { method tnum logset largs } {
 	#
 	# We should be able to reopen the master env without running
 	# recovery and still retain our mastership. 
-	set masterenv [eval $envcmd(0) -rep_master \
-	    -rep_lease \[list $nsites $lease_to $clock_fast $clock_slow\]]
+	set masterenv [eval $envcmd(0) -rep_master -rep_nsites $nsites \
+	    -rep_lease \[list $lease_to $clock_fast $clock_slow\]]
 	error_check_good master_env [is_valid_env $masterenv] TRUE
 	set envlist "{$masterenv 2} {$clientenv 3} {$clientenv2 4}"
 
@@ -320,7 +322,28 @@ proc rep079_sub { method tnum logset largs } {
 	error_check_good stat $stat 1
 	error_check_good exp [is_substr $ret REP_LEASE_EXPIRED] 1
 
-	error_check_good mclose [$masterenv close] 0
+	#
+	# Process messages so that we refresh the leases.
+	# Then attempt a commit.  This too should fail but this time
+	# it will be the "after" check because we're not processing
+	# messages to get the commit's lease grant from the client.
+	$masterenv txn_checkpoint -force
+	process_msgs $envlist 0 NONE err
+
+	puts "\tRep$tnum.i: Check panic lease error on txn commit."
+	set txn [$masterenv txn]
+	set db [eval berkdb_open_noerr -txn $txn -env $masterenv -create \
+	    -btree -mode 0644 test.db]
+	set stat [catch {$txn commit} ret]
+	error_check_good stat $stat 1
+	error_check_good exp [is_substr $ret DB_RUNRECOVERY] 1
+	set stat [catch {$db close} ret]
+
+	#
+	# Since we panic'ed the master env, we expect non-zero.  But
+	# we need to close it to clean up the Tcl resources.
+	#
+	error_check_good mclose [catch {$masterenv close} ret] 1
 	error_check_good cclose [$clientenv close] 0
 	error_check_good c2close [$clientenv2 close] 0
 	replclose $testdir/MSGQUEUEDIR

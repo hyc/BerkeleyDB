@@ -1056,6 +1056,7 @@ __bam_rsplit_recover(env, dbtp, lsnp, op, info)
 	}
 	if ((ret = __memp_fput(mpf, ip, pagep, dbc->priority)) != 0)
 		goto out;
+	pagep = NULL;
 
 do_page:
 	/*

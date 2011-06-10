@@ -429,6 +429,8 @@ struct __cursor {
 		if (F_ISSET(dbc, DBC_OPD) ||				\
 		    !F_ISSET((dbc)->dbp, DB_AM_SUBDB) ||		\
 		     (__t->bt_root == __root &&				\
+		     (LEVEL(page) == LEAFLEVEL || TYPE(page) == 	\
+		     (dbc->dbtype == DB_BTREE ? P_IBTREE : P_IRECNO)) &&\
 		     __rev == (dbc)->dbp->mpf->mfp->revision)) {	\
 			root_pgno = __root;				\
 			break;						\

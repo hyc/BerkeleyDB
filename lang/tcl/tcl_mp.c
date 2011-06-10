@@ -363,6 +363,7 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Number of caches", sp->st_ncache);
 	MAKE_STAT_LIST("Maximum number of caches", sp->st_max_ncache);
 	MAKE_STAT_LIST("Region size", sp->st_regsize);
+	MAKE_STAT_LIST("Region max", sp->st_regmax);
 	MAKE_STAT_LIST("Maximum memory-mapped file size", sp->st_mmapsize);
 	MAKE_STAT_LIST("Maximum open file descriptors", sp->st_maxopenfd);
 	MAKE_STAT_LIST("Maximum sequential buffer writes", sp->st_maxwrite);
@@ -381,6 +382,7 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	MAKE_WSTAT_LIST("Cached clean pages", sp->st_page_clean);
 	MAKE_WSTAT_LIST("Cached dirty pages", sp->st_page_dirty);
 	MAKE_WSTAT_LIST("Hash buckets", sp->st_hash_buckets);
+	MAKE_WSTAT_LIST("Mutexes for hash buckets", sp->st_hash_mutexes);
 	MAKE_WSTAT_LIST("Default pagesize", sp->st_pagesize);
 	MAKE_WSTAT_LIST("Hash lookups", sp->st_hash_searches);
 	MAKE_WSTAT_LIST("Longest hash chain found", sp->st_hash_longest);
@@ -439,6 +441,70 @@ error:
 	if (savefsp != NULL)
 		__os_ufree(dbenv->env, savefsp);
 	return (result);
+}
+
+/*
+ * tcl_MpStatPrint --
+ *
+ * PUBLIC: int tcl_MpStatPrint __P((Tcl_Interp *, int, 
+ * PUBLIC:     Tcl_Obj * CONST*, DB_ENV *));
+ */
+int
+tcl_MpStatPrint(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{
+	static const char *mpstatprtopts[] = {
+		"-all",
+		"-clear",
+		"-hash",
+		 NULL
+	};
+	enum mpstatprtopts {
+		MPSTATPRTALL,
+		MPSTATPRTCLEAR,
+		MPSTATPRTHASH
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], mpstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum mpstatprtopts)optindex) {
+		case MPSTATPRTALL:
+			flag |= DB_STAT_ALL;
+			break;
+		case MPSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		case MPSTATPRTHASH:
+			flag |= DB_STAT_MEMP_HASH;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = dbenv->memp_stat_print(dbenv, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv memp_stat_print");
+error:
+	return (result);
+
 }
 
 /*

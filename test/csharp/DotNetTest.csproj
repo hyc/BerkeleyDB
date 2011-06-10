@@ -54,6 +54,8 @@
     <Compile Include="HashCursorTest.cs"/>
     <Compile Include="HashDatabaseConfigTest.cs"/>
     <Compile Include="HashDatabaseTest.cs"/>
+    <Compile Include="HeapDatabaseConfigTest.cs"/>
+    <Compile Include="HeapDatabaseTest.cs"/>
     <Compile Include="JoinCursorTest.cs"/>
     <Compile Include="LockingConfigTest.cs"/>
     <Compile Include="LockTest.cs"><SubType>Code</SubType></Compile>
@@ -104,8 +106,8 @@
 IF $(ConfigurationName) == Debug SET LIBEXT=d
 IF $(ConfigurationName) == Release SET LIBEXT
 
-copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb51%25LIBEXT%25.dll" "$(TargetDir)"
-copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb_csharp51%25LIBEXT%25.dll" "$(TargetDir)"
+copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb52%25LIBEXT%25.dll" "$(TargetDir)"
+copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb_csharp52%25LIBEXT%25.dll" "$(TargetDir)"
 copy "$(ProjectDir)AllTestData.xml" "$(TargetDir)"
 </PreBuildEvent>
   </PropertyGroup>

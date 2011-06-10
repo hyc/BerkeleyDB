@@ -118,9 +118,9 @@ __txn_regop_recover(env, dbtp, lsnp, op, info)
 		*lsnp = argp->prev_lsn;
 
 	if (0) {
-err:		__db_errx(env,
+err:		__db_errx(env, DB_STR_A("4514",
 		    "txnid %lx commit record found, already on commit list",
-		    (u_long)argp->txnp->txnid);
+		    "%lx"), (u_long)argp->txnp->txnid);
 		ret = EINVAL;
 	}
 	__os_free(env, argp);
@@ -211,7 +211,8 @@ __txn_prepare_recover(env, dbtp, lsnp, op, info)
 		else if ((ret = __db_txnlist_remove(env,
 		    info, argp->txnp->txnid)) != 0) {
 txn_err:		__db_errx(env,
-			    "transaction not in list %lx",
+			    DB_STR_A("4515",
+			    "transaction not in list %lx", "%lx"),
 			    (u_long)argp->txnp->txnid);
 			ret = DB_NOTFOUND;
 		} else if (IS_ZERO_LSN(headp->trunc_lsn) ||
@@ -383,8 +384,8 @@ __txn_child_recover(env, dbtp, lsnp, op, info)
 		/* Forward Roll */
 		if ((ret =
 		    __db_txnlist_remove(env, info, argp->child)) != 0)
-			__db_errx(env,
-			    "Transaction not in list %x", argp->child);
+			__db_errx(env, DB_STR_A("4516",
+			    "Transaction not in list %x", "%x"), argp->child);
 	}
 
 	if (ret == 0)
@@ -433,6 +434,7 @@ __txn_restore_txn(env, lsnp, argp)
 
 	/* Place transaction on active transaction list. */
 	SH_TAILQ_INSERT_HEAD(&region->active_txn, td, links, __txn_detail);
+	region->curtxns++;
 
 	td->txnid = argp->txnp->txnid;
 	__os_id(env->dbenv, &td->pid, &td->tid);
@@ -574,9 +576,9 @@ __txn_regop_42_recover(env, dbtp, lsnp, op, info)
 		*lsnp = argp->prev_lsn;
 
 	if (0) {
-err:		__db_errx(env,
+err:		__db_errx(env, DB_STR_A("4517",
 		    "txnid %lx commit record found, already on commit list",
-		    (u_long)argp->txnp->txnid);
+		    "%lx"), (u_long)argp->txnp->txnid);
 		ret = EINVAL;
 	}
 	__os_free(env, argp);

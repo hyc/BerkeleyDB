@@ -121,7 +121,7 @@ __log_stat_print_pp(dbenv, flags)
 	    env->lg_handle, "DB_ENV->log_stat_print", DB_INIT_LOG);
 
 	if ((ret = __db_fchk(env, "DB_ENV->log_stat_print",
-	    flags, DB_STAT_ALL | DB_STAT_CLEAR)) != 0)
+	    flags, DB_STAT_ALL | DB_STAT_ALLOC | DB_STAT_CLEAR)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
@@ -190,6 +190,9 @@ __log_print_stats(env, flags)
 	else
 		__db_msg(env, "%lu\tCurrent log file size",
 		    (u_long)sp->st_lg_size);
+	__db_dl(env, "Initial fileid allocation", (u_long)sp->st_fileid_init);
+	__db_dl(env, "Current fileids in use", (u_long)sp->st_nfileid);
+	__db_dl(env, "Maximum fileids used", (u_long)sp->st_maxnfileid);
 	__db_dl(env, "Records entered into the log", (u_long)sp->st_record);
 	__db_dlbytes(env, "Log bytes written",
 	    (u_long)0, (u_long)sp->st_w_mbytes, (u_long)sp->st_w_bytes);
@@ -210,7 +213,7 @@ __log_print_stats(env, flags)
 	__db_dl(env,
 	    "Minimum commits in a log flush", (u_long)sp->st_mincommitperflush);
 
-	__db_dlbytes(env, "Log region size",
+	__db_dlbytes(env, "Region size",
 	    (u_long)0, (u_long)0, (u_long)sp->st_regsize);
 	__db_dl_pct(env,
 	    "The number of region locks that required waiting",

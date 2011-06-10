@@ -8,17 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="configuration_reference.html" title="Appendix B. DB_CONFIG Parameter Reference" />
-    <link rel="prev" href="repmgr_set_local_site_parameter.html" title="repmgr_set_local_site" />
+    <link rel="prev" href="repmgr_site_parameter.html" title="repmgr_site" />
     <link rel="next" href="set_cache_max_parameter.html" title="set_cache_max" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">set_cachesize</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="repmgr_set_local_site_parameter.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="repmgr_site_parameter.html">Prev</a> </td>
           <th width="60%" align="center">Appendix B. DB_CONFIG Parameter Reference</th>
           <td width="20%" align="right"> <a accesskey="n" href="set_cache_max_parameter.html">Next</a></td>
         </tr>
@@ -81,13 +84,13 @@
                  parameter is ignored when resizing the cache.
             </p>
       <p>
-                 The syntax of this parameter in the
-                 <code class="literal">DB_CONFIG</code> file is a single line with
-                 the string <code class="literal">set_cachesize</code>, one or more
-                 whitespace characters, and the initial cache size
-                 specified in three parts: the gigabytes of cache, the
-                 additional bytes of cache, and the number of caches, also
-                 separated by whitespace characters.  For example:
+                 The syntax of this parameter in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a
+                 single line with the string
+                 <code class="literal">set_cachesize</code>, one or more whitespace
+                 characters, and the initial cache size specified in three
+                 parts: the gigabytes of cache, the additional bytes of
+                 cache, and the number of caches, also separated by
+                 whitespace characters.  For example:
              </p>
       <pre class="programlisting">set_cachesize 2 524288000 1</pre>
       <p>
@@ -96,23 +99,25 @@
       <p>
                 Note that this parameter is ignored unless it is specified
                 before you initially create your environment, or you
-                re-create your environment after changing it. For more
-                information, see <a href="../../bdb-sql/using_dbconfig.html#using_dbconfig.title" class="olink">the DB_CONFIG File</a>.
+                re-create your environment after changing it.
             </p>
-      <p> For more information, see <a class="xref" href="envset_cachesize.html" title="DbEnv::set_cachesize()">DbEnv::set_cachesize()</a>.</p>
+      <p>
+                For more information, see 
+                <a class="xref" href="envset_cachesize.html" title="DbEnv::set_cachesize()">DbEnv::set_cachesize()</a>.
+            </p>
     </div>
     <div class="navfooter">
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="repmgr_set_local_site_parameter.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="repmgr_site_parameter.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="configuration_reference.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="set_cache_max_parameter.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">repmgr_set_local_site </td>
+          <td width="40%" align="left" valign="top">repmgr_site </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

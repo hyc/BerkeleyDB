@@ -92,6 +92,7 @@ __lock_nomem(env, res)
 	ENV *env;
 	const char *res;
 {
-	__db_errx(env, "Lock table is out of available %s", res);
+	__db_errx(env, DB_STR_A("2055", "Lock table is out of available %s",
+	    "%s"), res);
 	return (ENOMEM);
 }

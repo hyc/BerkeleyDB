@@ -50,6 +50,9 @@ BEGIN	changeslot	50	35
 BEGIN	contract	50	37
 BEGIN	curadj	42	33
 BEGIN	chgpg	42	34
+PREFIX	__heap
+BEGIN	addrem	49	151
+BEGIN	pg_alloc	49	152
 PREFIX	__qam
 BEGIN	incfirst	42	84
 BEGIN	mvptr	42	85

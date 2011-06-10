@@ -19,6 +19,7 @@ static int  __txn_print_all __P((ENV *, u_int32_t));
 static int  __txn_print_stats __P((ENV *, u_int32_t));
 static int  __txn_stat __P((ENV *, DB_TXN_STAT **, u_int32_t));
 static char *__txn_status __P((DB_TXN_ACTIVE *));
+static char *__txn_xa_status __P((DB_TXN_ACTIVE *));
 static void __txn_gid __P((ENV *, DB_MSGBUF *, DB_TXN_ACTIVE *));
 
 /*
@@ -74,23 +75,15 @@ __txn_stat(env, statp, flags)
 	mgr = env->tx_handle;
 	region = mgr->reginfo.primary;
 
-	/*
-	 * Allocate for the maximum active transactions -- the DB_TXN_ACTIVE
-	 * struct is small and the maximum number of active transactions is
-	 * not going to be that large.  Don't have to lock anything to look
-	 * at the region's maximum active transactions value, it's read-only
-	 * and never changes after the region is created.
-	 *
-	 * The maximum active transactions isn't a hard limit, so allocate
-	 * some extra room, and don't walk off the end.
-	 */
-	maxtxn = region->maxtxns + (region->maxtxns / 10) + 10;
-	nbytes = sizeof(DB_TXN_STAT) + sizeof(DB_TXN_ACTIVE) * maxtxn;
-	if ((ret = __os_umalloc(env, nbytes, &stats)) != 0)
-		return (ret);
-
 	TXN_SYSTEM_LOCK(env);
-	memcpy(stats, &region->stat, sizeof(*stats));
+	maxtxn = region->curtxns;
+	nbytes = sizeof(DB_TXN_STAT) + sizeof(DB_TXN_ACTIVE) * maxtxn;
+	if ((ret = __os_umalloc(env, nbytes, &stats)) != 0) {
+		TXN_SYSTEM_UNLOCK(env);
+		return (ret);
+	}
+
+	memcpy(stats, &region->stat, sizeof(region->stat));
 	stats->st_last_txnid = region->last_txnid;
 	stats->st_last_ckp = region->last_ckp;
 	stats->st_time_ckp = region->time_ckp;
@@ -113,6 +106,7 @@ __txn_stat(env, statp, flags)
 		stats->st_txnarray[ndx].read_lsn = td->read_lsn;
 		stats->st_txnarray[ndx].mvcc_ref = td->mvcc_ref;
 		stats->st_txnarray[ndx].status = td->status;
+		stats->st_txnarray[ndx].xa_status = td->xa_br_status;
 		stats->st_txnarray[ndx].priority = td->priority;
 
 		if (td->status == TXN_PREPARED)
@@ -130,12 +124,13 @@ __txn_stat(env, statp, flags)
 
 	__mutex_set_wait_info(env, region->mtx_region,
 	    &stats->st_region_wait, &stats->st_region_nowait);
-	stats->st_regsize = mgr->reginfo.rp->size;
+	stats->st_regsize = (roff_t)mgr->reginfo.rp->size;
 	if (LF_ISSET(DB_STAT_CLEAR)) {
 		if (!LF_ISSET(DB_STAT_SUBSYSTEM))
 			__mutex_clear(env, region->mtx_region);
 		memset(&region->stat, 0, sizeof(region->stat));
 		region->stat.st_maxtxns = region->maxtxns;
+		region->stat.st_inittxns = region->inittxns;
 		region->stat.st_maxnactive =
 		    region->stat.st_nactive = stats->st_nactive;
 		region->stat.st_maxnsnapshot =
@@ -169,7 +164,7 @@ __txn_stat_print_pp(dbenv, flags)
 	    env->tx_handle, "DB_ENV->txn_stat_print", DB_INIT_TXN);
 
 	if ((ret = __db_fchk(env, "DB_ENV->txn_stat_print",
-	    flags, DB_STAT_ALL | DB_STAT_CLEAR)) != 0)
+	    flags, DB_STAT_ALL | DB_STAT_ALLOC | DB_STAT_CLEAR)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
@@ -244,6 +239,8 @@ __txn_print_stats(env, flags)
 	    (u_long)sp->st_last_txnid);
 	__db_dl(env, "Maximum number of active transactions configured",
 	    (u_long)sp->st_maxtxns);
+	__db_dl(env, "Initial number of transactions configured",
+	    (u_long)sp->st_inittxns);
 	__db_dl(env, "Active transactions", (u_long)sp->st_nactive);
 	__db_dl(env,
 	    "Maximum active transactions", (u_long)sp->st_maxnactive);
@@ -259,7 +256,7 @@ __txn_print_stats(env, flags)
 	__db_dl(env,
 	    "Number of transactions restored", (u_long)sp->st_nrestores);
 
-	__db_dlbytes(env, "Transaction region size",
+	__db_dlbytes(env, "Region size",
 	    (u_long)0, (u_long)0, (u_long)sp->st_regsize);
 	__db_dl_pct(env,
 	    "The number of region locks that required waiting",
@@ -272,9 +269,9 @@ __txn_print_stats(env, flags)
 	DB_MSGBUF_INIT(&mb);
 	for (i = 0; i < sp->st_nactive; ++i) {
 		txn = &sp->st_txnarray[i];
-		__db_msgadd(env, &mb,
-	    "\t%lx: %s; pid/thread %s; begin LSN: file/offset %lu/%lu",
-		    (u_long)txn->txnid, __txn_status(txn),
+		__db_msgadd(env, &mb, "\t%lx: %s; xa_status %s;"
+		    " pid/thread %s; begin LSN: file/offset %lu/%lu",
+		    (u_long)txn->txnid, __txn_status(txn), __txn_xa_status(txn),
 		    dbenv->thread_id_string(dbenv, txn->pid, txn->tid, buf),
 		    (u_long)txn->lsn.file, (u_long)txn->lsn.offset);
 		if (txn->parentid != 0)
@@ -365,6 +362,8 @@ __txn_status(txn)
 		return ("aborted");
 	case TXN_COMMITTED:
 		return ("committed");
+	case TXN_NEED_ABORT:
+		return ("need abort");
 	case TXN_PREPARED:
 		return ("prepared");
 	case TXN_RUNNING:
@@ -373,6 +372,27 @@ __txn_status(txn)
 		break;
 	}
 	return ("unknown state");
+}
+
+static char *
+__txn_xa_status(txn)
+	DB_TXN_ACTIVE *txn;
+{
+	switch (txn->xa_status) {
+	case TXN_XA_ACTIVE:
+		return ("xa active");
+	case TXN_XA_DEADLOCKED:
+		return ("xa deadlock");
+	case TXN_XA_IDLE:
+		return ("xa idle");
+	case TXN_XA_PREPARED:
+		return ("xa prepared");
+	case TXN_XA_ROLLEDBACK:
+		return ("xa rollback");
+	default:
+		break;
+	}
+	return ("no xa state");
 }
 
 static void

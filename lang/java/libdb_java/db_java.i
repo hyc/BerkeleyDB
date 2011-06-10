@@ -75,6 +75,7 @@ import java.util.Comparator;
 	private String errpfx;
 	private MessageHandler message_handler;
 	private PanicHandler panic_handler;
+	private ReplicationManagerMessageDispatch repmgr_msg_dispatch_handler;
 	private ReplicationTransport rep_transport_handler;
 	private java.io.OutputStream error_stream;
 	private java.io.OutputStream message_stream;
@@ -129,6 +130,18 @@ import java.util.Comparator;
 		event_notify_handler.handleRepClientEvent();
 	}
 
+	private final void handle_rep_connect_broken_event_notify() {
+		event_notify_handler.handleRepConnectBrokenEvent();
+	}
+
+	private final void handle_rep_connect_established_event_notify() {
+		event_notify_handler.handleRepConnectEstablishedEvent();
+	}
+
+	private final void handle_rep_connect_try_failed_event_notify() {
+		event_notify_handler.handleRepConnectTryFailedEvent();
+	}
+
 	private final void handle_rep_dupmaster_event_notify() {
 		event_notify_handler.handleRepDupmasterEvent();
 	}
@@ -140,9 +153,17 @@ import java.util.Comparator;
 	private final void handle_rep_election_failed_event_notify() {
 		event_notify_handler.handleRepElectionFailedEvent();
 	}
-	
+
+        private final void handle_rep_init_done_event_notify() {
+                event_notify_handler.handleRepInitDoneEvent();
+        }
+
 	private final void handle_rep_join_failure_event_notify() {
 		event_notify_handler.handleRepJoinFailureEvent();
+	}
+
+	private final void handle_rep_local_site_removed_event_notify() {
+		event_notify_handler.handleRepLocalSiteRemovedEvent();
 	}
 
 	private final void handle_rep_master_event_notify() {
@@ -159,6 +180,14 @@ import java.util.Comparator;
 
 	private final void handle_rep_perm_failed_event_notify() {
 		event_notify_handler.handleRepPermFailedEvent();
+	}
+
+	private final void handle_rep_site_added_event_notify() {
+		event_notify_handler.handleRepSiteAddedEvent();
+	}
+	
+	private final void handle_rep_site_removed_event_notify() {
+		event_notify_handler.handleRepSiteRemovedEvent();
 	}
 
 	private final void handle_rep_startup_done_event_notify() {
@@ -223,6 +252,14 @@ import java.util.Comparator;
 
 	private final void handle_message(String msg) {
 		message_handler.message(wrapper, msg);
+	}
+
+	private final void handle_repmgr_message_dispatch(ReplicationChannel chan, DatabaseEntry[] msgs, int flags) 
+	    throws DatabaseException {
+	        java.util.List l = java.util.Arrays.asList(msgs);
+	        java.util.Set msgSet = new java.util.HashSet(l);
+	        boolean need_response = flags == DbConstants.DB_REPMGR_NEED_RESPONSE;
+		repmgr_msg_dispatch_handler.dispatch(chan, msgSet, need_response);
 	}
 
 	public MessageHandler get_msgcall() {
@@ -632,6 +669,35 @@ import java.util.Comparator;
 	    throws DatabaseException {
 		try {
 			remove0(txn, flags);
+		} finally {
+			swigCPtr = 0;
+		}
+	}
+%}
+
+%typemap(javacode) struct DbSite %{
+        public ReplicationManagerSite wrapper;
+	public synchronized void close() throws DatabaseException {
+		try {
+			close0();
+		} finally {
+			swigCPtr = 0;
+		}
+	}
+
+	public synchronized void remove() throws DatabaseException {
+		try {
+			remove0();
+		} finally {
+			swigCPtr = 0;
+		}
+	}
+%}
+
+%typemap(javacode) struct DbChannel %{
+	public synchronized void close(int flags) throws DatabaseException {
+		try {
+			close0(flags);
 		} finally {
 			swigCPtr = 0;
 		}

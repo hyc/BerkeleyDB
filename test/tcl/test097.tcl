@@ -29,13 +29,20 @@ proc test097 { method {ndbs 500} {nentries 400} args } {
 		return
 	}
 	env_cleanup $testdir
-	set env [eval {berkdb_env -create -log_regionmax 131072 \
+	set env [eval {berkdb_env -create -log_regionmax 256000 \
 	    -pagesize 512 -cachesize { 0 1048576 1 } -txn} \
 	    -home $testdir $encargs]
 	error_check_good dbenv [is_valid_env $env] TRUE
 
 	if { [is_partitioned $args] == 1 } {
 		set ndbs [expr $ndbs / 10]
+	}
+
+	# heap opens 2 other files under the covers, so limit dbs for heap
+	if { [is_heap $method] == 1 } {
+		if { $ndbs > 325 } {
+			set ndbs 325
+		}
 	}
 
 	# Create the database and open the dictionary

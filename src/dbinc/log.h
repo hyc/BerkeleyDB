@@ -206,7 +206,7 @@ struct __log_persist {
  *	Shared log region.  One of these is allocated in shared memory,
  *	and describes the log.
  */
-struct __log {
+struct __log { /* SHARED */
 	db_mutex_t mtx_region;		/* Region mutex. */
 
 	db_mutex_t mtx_filelist;	/* Mutex guarding file name list. */
@@ -216,8 +216,8 @@ struct __log {
 	SH_TAILQ_HEAD(__fq1) fq;	/* List of file names. */
 	int32_t	fid_max;		/* Max fid allocated. */
 	roff_t	free_fid_stack;		/* Stack of free file ids. */
-	u_int	free_fids;		/* Height of free fid stack. */
-	u_int	free_fids_alloced;	/* N free fid slots allocated. */
+	u_int32_t  free_fids;		/* Height of free fid stack. */
+	u_int32_t  free_fids_alloced;	/* N free fid slots allocated. */
 
 	/*
 	 * The lsn LSN is the file offset that we're about to write and which
@@ -232,12 +232,12 @@ struct __log {
 	 * the first byte of the buffer.
 	 */
 	DB_LSN	  f_lsn;		/* LSN of first byte in the buffer. */
-	size_t	  b_off;		/* Current offset in the buffer. */
+	db_size_t b_off;		/* Current offset in the buffer. */
 	u_int32_t w_off;		/* Current write offset in the file. */
 	u_int32_t len;			/* Length of the last record. */
 
 	DB_LSN	  active_lsn;		/* Oldest active LSN in the buffer. */
-	size_t	  a_off;		/* Offset in the buffer of first active
+	db_size_t a_off;		/* Offset in the buffer of first active
 					   file. */
 
 	/*
@@ -246,7 +246,7 @@ struct __log {
 	 * rather than by the region mutex.
 	 */
 	db_mutex_t mtx_flush;		/* Mutex guarding flushing. */
-	int	   in_flush;		/* Log flush in progress. */
+	int32_t	   in_flush;	/* Log flush in progress. */
 	DB_LSN	   s_lsn;		/* LSN of the last sync. */
 
 	DB_LOG_STAT stat;		/* Log statistics. */
@@ -307,7 +307,7 @@ struct __log {
 	 * fields below are used by a master.
 	 */
 	roff_t	  bulk_buf;		/* Bulk transfer buffer in region. */
-	uintptr_t bulk_off;		/* Current offset into bulk buffer. */
+	roff_t	  bulk_off;		/* Current offset into bulk buffer. */
 	u_int32_t bulk_len;		/* Length of buffer. */
 	u_int32_t bulk_flags;		/* Bulk buffer flags. */
 	/* END fields protected by rep->mtx_clientdb. */
@@ -335,8 +335,8 @@ struct __log {
 	 * DB_LOG_AUTOREMOVE and DB_LOG_INMEMORY: not protected by a mutex,
 	 * all we care about is if they're zero or non-zero.
 	 */
-	int	  db_log_autoremove;
-	int	  db_log_inmemory;
+	int32_t	  db_log_autoremove;
+	int32_t	  db_log_inmemory;
 
 	u_int32_t ncommit;		/* Number of txns waiting to commit. */
 	DB_LSN	  t_lsn;		/* LSN of first commit */

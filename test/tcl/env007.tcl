@@ -38,16 +38,30 @@ proc env007 { } {
 	# 	    only check one args, like cachesize)
 	# 	8.  Arg used in getter
 	#
+	# The initial values for both locks and lock objects have silently
+	# enforced minimums of 50 * #cpus. These values work for up to 8 cpus.
 	set rlist {
-	{ " -txn_max " "set_tx_max" "19" "31"
+	{ " -txn_init " "set_memory_init DB_MEM_TRANSACTION" "19" "31"
+	    "Env007.a1: Txn Init" "txn_stat"
+	    "Initial txns" "0" "get_tx_init" }
+    	{ " -txn_max " "set_tx_max" "29" "51"
 	    "Env007.a1: Txn Max" "txn_stat"
 	    "Maximum txns" "0" "get_tx_max" }
+	{ " -lock_locks " "set_memory_init DB_MEM_LOCK" "12407" "12429"
+	    "Env007.a2: Lock Init" "lock_stat"
+	    "Initial locks" "0" "get_lk_init_locks" }
 	{ " -lock_max_locks " "set_lk_max_locks" "1070" "1290"
 	    "Env007.a2: Lock Max" "lock_stat"
 	    "Maximum locks" "0" "get_lk_max_locks" }
+	{ " -lock_lockers " "set_memory_init DB_MEM_LOCKER" "150" "200"
+	    "Env007.a3: Init Lockers" "lock_stat"
+	    "Initial lockers" "0" "get_lk_init_lockers" }
 	{ " -lock_max_lockers " "set_lk_max_lockers" "1500" "2000"
 	    "Env007.a3: Max Lockers" "lock_stat"
 	    "Maximum lockers" "0" "get_lk_max_lockers" }
+	{ " -lock_objects " "set_memory_init DB_MEM_LOCKOBJECT" "12405" "12408"
+	    "Env007.a4: Init Objects" "lock_stat"
+	    "Initial objects" "0" "get_lk_init_objects" }
 	{ " -lock_max_objects " "set_lk_max_objects" "1500" "2000"
 	    "Env007.a4: Max Objects" "lock_stat"
 	    "Maximum objects" "0" "get_lk_max_objects" }
@@ -70,7 +84,7 @@ proc env007 { } {
 	    "Env007.a8: Lock Timeout" "lock_stat"
 	    "Lock timeout value" "0" "get_timeout lock" }
 	{ " -log_regionmax " "set_lg_regionmax" "8388608" "4194304"
-	    "Env007.a9: Log Regionmax" "log_stat"
+	    "Env007.a9: Log Regionmax" ""
 	    "Region size" "0" "get_lg_regionmax" }
 	{ " -mpool_max_openfd " "set_mp_max_openfd" "17" "27"
 	    "Env007.a10: Mmap max openfd" "mpool_stat"
@@ -104,7 +118,7 @@ proc env007 { } {
 	    "" "" "mutex_get_incr" }
 	{" -mutex_set_max " "mutex_set_max" "2000" "2500"
 	    "Env007.a20: Mutex max" "mutex_stat"
-	    "Mutex count" "0" "mutex_get_max" }
+	    "Mutex max" "0" "mutex_get_max" }
 	{" -mutex_set_tas_spins " "mutex_set_tas_spins" "60" "85"
 	    "Env007.a21: Mutex tas spins" "mutex_stat"
 	    "Mutex TAS spins" "0" "mutex_get_tas_spins" }

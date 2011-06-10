@@ -28,7 +28,7 @@ __log_env_create(dbenv)
 	 * the panic state or acquire a mutex in the DB_ENV create path.
 	 */
 	dbenv->lg_bsize = 0;
-	dbenv->lg_regionmax = LG_BASE_REGION_SIZE;
+	dbenv->lg_regionmax = 0;
 
 	return (0);
 }
@@ -268,8 +268,9 @@ __log_set_lg_regionmax(dbenv, lg_regionmax)
 
 					/* Let's not be silly. */
 	if (lg_regionmax != 0 && lg_regionmax < LG_BASE_REGION_SIZE) {
-		__db_errx(env,
-		    "log region size must be >= %d", LG_BASE_REGION_SIZE);
+		__db_errx(env, DB_STR_A("2569",
+		    "log region size must be >= %d",
+		    "%d"), LG_BASE_REGION_SIZE);
 		return (EINVAL);
 	}
 

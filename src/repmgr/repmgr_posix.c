@@ -23,7 +23,6 @@ struct io_info {
 };
 
 static int __repmgr_conn_work __P((ENV *, REPMGR_CONNECTION *, void *));
-static int finish_connecting __P((ENV *, REPMGR_CONNECTION *));
 static int prepare_io __P((ENV *, REPMGR_CONNECTION *, void *));
 
 /*
@@ -45,8 +44,8 @@ __repmgr_thread_start(env, runnable)
 
 	attrp = &attributes;
 	if ((ret = pthread_attr_init(&attributes)) != 0) {
-		__db_err(env,
-		    ret, "pthread_attr_init in repmgr_thread_start");
+		__db_err(env, ret, DB_STR("3630",
+		    "pthread_attr_init in repmgr_thread_start"));
 		return (ret);
 	}
 
@@ -57,8 +56,8 @@ __repmgr_thread_start(env, runnable)
 		size = PTHREAD_STACK_MIN;
 #endif
 	if ((ret = pthread_attr_setstacksize(&attributes, size)) != 0) {
-		__db_err(env,
-		    ret, "pthread_attr_setstacksize in repmgr_thread_start");
+		__db_err(env, ret, DB_STR("3631",
+		    "pthread_attr_setstacksize in repmgr_thread_start"));
 		return (ret);
 	}
 #else
@@ -66,6 +65,7 @@ __repmgr_thread_start(env, runnable)
 #endif
 
 	runnable->finished = FALSE;
+	runnable->quit_requested = FALSE;
 	runnable->env = env;
 
 	return (pthread_create(&runnable->thread_id, attrp,
@@ -80,6 +80,16 @@ __repmgr_thread_join(thread)
 	REPMGR_RUNNABLE *thread;
 {
 	return (pthread_join(thread->thread_id, NULL));
+}
+
+/*
+ * PUBLIC: int __repmgr_set_nonblock_conn __P((REPMGR_CONNECTION *));
+ */
+int
+__repmgr_set_nonblock_conn(conn)
+	REPMGR_CONNECTION *conn;
+{
+	return (__repmgr_set_nonblocking(conn->fd));
 }
 
 /*
@@ -99,62 +109,85 @@ __repmgr_set_nonblocking(fd)
 }
 
 /*
- * PUBLIC: int __repmgr_wake_waiting_senders __P((ENV *));
+ * PUBLIC: int __repmgr_wake_waiters __P((ENV *, waiter_t *));
  *
- * Wake any send()-ing threads waiting for an acknowledgement.
+ * Wake any "waiter" threads (either sending threads waiting for acks, or
+ * channel users waiting for response to request).
  *
  * !!!
  * Caller must hold the db_rep->mutex, if this thread synchronization is to work
  * properly.
  */
 int
-__repmgr_wake_waiting_senders(env)
+__repmgr_wake_waiters(env, waiter)
 	ENV *env;
+	waiter_t *waiter;
 {
-	return (pthread_cond_broadcast(&env->rep_handle->ack_condition));
+	COMPQUIET(env, NULL);
+	return (pthread_cond_broadcast(waiter));
 }
 
 /*
- * PUBLIC: int __repmgr_await_ack __P((ENV *, const DB_LSN *, u_int));
+ * Waits a limited time for a condition to become true.  (If the limit is 0 we
+ * wait forever.)  All calls share just the one db_rep->mutex, but use whatever
+ * waiter_t the caller passes us.
  *
- * Waits (a limited time) for configured number of remote sites to ack the given
- * LSN.
- *
- * !!!
- * Caller must hold repmgr->mutex.
+ * PUBLIC: int __repmgr_await_cond __P((ENV *,
+ * PUBLIC:     PREDICATE, void *, db_timeout_t, waiter_t *));
  */
 int
-__repmgr_await_ack(env, lsnp, needed)
+__repmgr_await_cond(env, pred, ctx, timeout, wait_condition)
 	ENV *env;
-	const DB_LSN *lsnp;
-	u_int needed;
+	PREDICATE pred;
+	void *ctx;
+	db_timeout_t timeout;
+	waiter_t *wait_condition;
 {
 	DB_REP *db_rep;
-	REP *rep;
 	struct timespec deadline;
 	int ret, timed;
 
 	db_rep = env->rep_handle;
-	rep = db_rep->region;
-
-	if ((timed = (rep->ack_timeout > 0)))
-		__repmgr_compute_wait_deadline(env, &deadline,
-		    rep->ack_timeout);
+	if ((timed = (timeout > 0)))
+		__repmgr_compute_wait_deadline(env, &deadline, timeout);
 	else
 		COMPQUIET(deadline.tv_sec, 0);
 
-	while (!__repmgr_is_permanent(env, lsnp, needed)) {
+	while (!(*pred)(env, ctx)) {
 		if (timed)
-			ret = pthread_cond_timedwait(&db_rep->ack_condition,
+			ret = pthread_cond_timedwait(wait_condition,
 			    db_rep->mutex, &deadline);
 		else
-			ret = pthread_cond_wait(&db_rep->ack_condition,
-			    db_rep->mutex);
+			ret = pthread_cond_wait(wait_condition, db_rep->mutex);
 		if (db_rep->finished)
 			return (DB_REP_UNAVAIL);
+		if (ret == ETIMEDOUT)
+			return (DB_TIMEOUT);
 		if (ret != 0)
 			return (ret);
 	}
+	return (0);
+}
+
+/*
+ * Waits for an in-progress membership DB operation (if any) to complete.
+ *
+ * PUBLIC: int __repmgr_await_gmdbop __P((ENV *));
+ *
+ * Caller holds mutex; we drop it while waiting.
+ */
+int
+__repmgr_await_gmdbop(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	int ret;
+
+	db_rep = env->rep_handle;
+	while (db_rep->gmdb_busy)
+		if ((ret = pthread_cond_wait(&db_rep->gmdb_idle,
+		    db_rep->mutex)) != 0)
+			return (ret);
 	return (0);
 }
 
@@ -206,7 +239,8 @@ __repmgr_compute_wait_deadline(env, result, wait)
  * 5. any unexpected system resource failure
  *
  * In cases #3 and #5 we return an error code.  Caller is responsible for
- * distinguishing the remaining cases if desired.
+ * distinguishing the remaining cases if desired, though we do help with #2 by
+ * showing the connection as congested.
  *
  * !!!
  * Caller must hold repmgr->mutex.
@@ -291,6 +325,8 @@ __repmgr_env_create_pf(db_rep)
 }
 
 /*
+ * "Platform"-specific mutex creation function.
+ *
  * PUBLIC: int __repmgr_create_mutex_pf __P((mgr_mutex_t *));
  */
 int
@@ -319,7 +355,7 @@ __repmgr_init(env)
 {
 	DB_REP *db_rep;
 	struct sigaction sigact;
-	int ack_inited, elect_inited, file_desc[2], queue_inited, rereq_inited;
+	int ack_inited, elect_inited, file_desc[2], gmdb_inited, queue_inited;
 	int ret;
 
 	db_rep = env->rep_handle;
@@ -333,7 +369,8 @@ __repmgr_init(env)
 	 */
 	if (sigaction(SIGPIPE, NULL, &sigact) == -1) {
 		ret = errno;
-		__db_err(env, ret, "can't access signal handler");
+		__db_err(env, ret, DB_STR("3632",
+		    "can't access signal handler"));
 		return (ret);
 	}
 	if (sigact.sa_handler == SIG_DFL) {
@@ -341,13 +378,14 @@ __repmgr_init(env)
 		sigact.sa_flags = 0;
 		if (sigaction(SIGPIPE, &sigact, NULL) == -1) {
 			ret = errno;
-			__db_err(env, ret, "can't access signal handler");
+			__db_err(env, ret, DB_STR("3633",
+			    "can't access signal handler"));
 			return (ret);
 		}
 	}
 
-	ack_inited = elect_inited = queue_inited = rereq_inited = FALSE;
-	if ((ret = pthread_cond_init(&db_rep->ack_condition, NULL)) != 0)
+	ack_inited = elect_inited = gmdb_inited = queue_inited = FALSE;
+	if ((ret = __repmgr_init_waiters(env, &db_rep->ack_waiters)) != 0)
 		goto err;
 	ack_inited = TRUE;
 
@@ -355,9 +393,9 @@ __repmgr_init(env)
 		goto err;
 	elect_inited = TRUE;
 
-	if ((ret = pthread_cond_init(&db_rep->check_rereq, NULL)) != 0)
+	if ((ret = pthread_cond_init(&db_rep->gmdb_idle, NULL)) != 0)
 		goto err;
-	rereq_inited = TRUE;
+	gmdb_inited = TRUE;
 
 	if ((ret = pthread_cond_init(&db_rep->msg_avail, NULL)) != 0)
 		goto err;
@@ -374,12 +412,12 @@ __repmgr_init(env)
 err:
 	if (queue_inited)
 		(void)pthread_cond_destroy(&db_rep->msg_avail);
-	if (rereq_inited)
-		(void)pthread_cond_destroy(&db_rep->check_rereq);
+	if (gmdb_inited)
+		(void)pthread_cond_destroy(&db_rep->gmdb_idle);
 	if (elect_inited)
 		(void)pthread_cond_destroy(&db_rep->check_election);
 	if (ack_inited)
-		(void)pthread_cond_destroy(&db_rep->ack_condition);
+		(void)__repmgr_destroy_waiters(env, &db_rep->ack_waiters);
 	db_rep->read_pipe = db_rep->write_pipe = NO_SUCH_FILE_DESC;
 
 	return (ret);
@@ -402,7 +440,7 @@ __repmgr_deinit(env)
 
 	ret = pthread_cond_destroy(&db_rep->msg_avail);
 
-	if ((t_ret = pthread_cond_destroy(&db_rep->check_rereq)) != 0 &&
+	if ((t_ret = pthread_cond_destroy(&db_rep->gmdb_idle)) != 0 &&
 	    ret == 0)
 		ret = t_ret;
 
@@ -410,8 +448,8 @@ __repmgr_deinit(env)
 	    ret == 0)
 		ret = t_ret;
 
-	if ((t_ret = pthread_cond_destroy(&db_rep->ack_condition)) != 0 &&
-	    ret == 0)
+	if ((t_ret = __repmgr_destroy_waiters(env,
+	    &db_rep->ack_waiters)) != 0 && ret == 0)
 		ret = t_ret;
 
 	if (close(db_rep->read_pipe) == -1 && ret == 0)
@@ -421,6 +459,30 @@ __repmgr_deinit(env)
 
 	db_rep->read_pipe = db_rep->write_pipe = NO_SUCH_FILE_DESC;
 	return (ret);
+}
+
+/*
+ * PUBLIC: int __repmgr_init_waiters __P((ENV *, waiter_t *));
+ */
+int
+__repmgr_init_waiters(env, waiters)
+	ENV *env;
+	waiter_t *waiters;
+{
+	COMPQUIET(env, NULL);
+	return (pthread_cond_init(waiters, NULL));
+}
+
+/*
+ * PUBLIC: int __repmgr_destroy_waiters __P((ENV *, waiter_t *));
+ */
+int
+__repmgr_destroy_waiters(env, waiters)
+	ENV *env;
+	waiter_t *waiters;
+{
+	COMPQUIET(env, NULL);
+	return (pthread_cond_destroy(waiters));
 }
 
 /*
@@ -482,6 +544,8 @@ __repmgr_wake_msngers(env, n)
 
 /*
  * PUBLIC: int __repmgr_wake_main_thread __P((ENV*));
+ *
+ * Can be called either with or without the mutex being held.
  */
 int
 __repmgr_wake_main_thread(env)
@@ -622,7 +686,8 @@ __repmgr_select_loop(env)
 				LOCK_MUTEX(db_rep->mutex);
 				continue; /* simply retry */
 			default:
-				__db_err(env, ret, "select");
+				__db_err(env, ret, DB_STR("3634",
+				    "select"));
 				return (ret);
 			}
 		}
@@ -682,15 +747,7 @@ prepare_io(env, conn, info_)
 	info = info_;
 
 	if (conn->state == CONN_DEFUNCT)
-		return (__repmgr_cleanup_connection(env, conn));
-
-	if (conn->state == CONN_CONNECTING) {
-		FD_SET((u_int)conn->fd, info->reads);
-		FD_SET((u_int)conn->fd, info->writes);
-		if (conn->fd > info->maxfd)
-			info->maxfd = conn->fd;
-		return (0);
-	}
+		return (__repmgr_cleanup_defunct(env, conn));
 
 	if (!STAILQ_EMPTY(&conn->outbound_queue)) {
 		FD_SET((u_int)conn->fd, info->writes);
@@ -730,73 +787,13 @@ __repmgr_conn_work(env, conn, info_)
 	if (conn->state == CONN_DEFUNCT)
 		return (0);
 
-	if (conn->state == CONN_CONNECTING) {
-		if (FD_ISSET(fd, info->reads) || FD_ISSET(fd, info->writes))
-			ret = finish_connecting(env, conn);
-	} else {
-		/*
-		 * Here, the site is connected, and the FD_SET's are valid.
-		 */
-		if (FD_ISSET(fd, info->writes))
-			ret = __repmgr_write_some(env, conn);
+	if (FD_ISSET(fd, info->writes))
+		ret = __repmgr_write_some(env, conn);
 
-		if (ret == 0 && FD_ISSET(fd, info->reads))
-			ret = __repmgr_read_from_site(env, conn);
-	}
+	if (ret == 0 && FD_ISSET(fd, info->reads))
+		ret = __repmgr_read_from_site(env, conn);
 
 	if (ret == DB_REP_UNAVAIL)
 		ret = __repmgr_bust_connection(env, conn);
-	return (ret);
-}
-
-static int
-finish_connecting(env, conn)
-	ENV *env;
-	REPMGR_CONNECTION *conn;
-{
-	DB_REP *db_rep;
-	REPMGR_SITE *site;
-	socklen_t len;
-	SITE_STRING_BUFFER buffer;
-	u_int eid;
-	int error, ret;
-
-	db_rep = env->rep_handle;
-
-	DB_ASSERT(env, IS_VALID_EID(conn->eid));
-	eid = (u_int)conn->eid;
-	site = SITE_FROM_EID(eid);
-
-	len = sizeof(error);
-	if (getsockopt(
-	    conn->fd, SOL_SOCKET, SO_ERROR, (sockopt_t)&error, &len) < 0)
-		goto err_rpt;
-	if (error) {
-		errno = error;
-		goto err_rpt;
-	}
-
-	conn->state = CONN_CONNECTED;
-	__os_gettime(env, &site->last_rcvd_timestamp, 1);
-	return (__repmgr_propose_version(env, conn));
-
-err_rpt:
-	__db_err(env, errno,
-	    "connecting to %s", __repmgr_format_site_loc(site, buffer));
-
-	/* If we've exhausted the list of possible addresses, give up. */
-	if (ADDR_LIST_NEXT(&site->net_addr) == NULL) {
-		STAT(db_rep->region->mstat.st_connect_fail++);
-		return (DB_REP_UNAVAIL);
-	}
-
-	/*
-	 * Since we're immediately trying the next address in the list, simply
-	 * disable the failed connection, without the usual recovery.
-	 */
-	__repmgr_disable_connection(env, conn);
-
-	ret = __repmgr_connect_site(env, eid);
-	DB_ASSERT(env, ret != DB_REP_UNAVAIL);
 	return (ret);
 }

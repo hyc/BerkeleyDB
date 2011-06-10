@@ -110,21 +110,21 @@ static inline int __db_pthread_mutex_trylock(ENV *env, db_mutex_t mutex)
 	DB_MUTEX *mutexp;
 	if (!MUTEX_ON(env) || F_ISSET(env->dbenv, DB_ENV_NOLOCKING))
 		return (0);
-	mutexp = MUTEXP_SET(env->mutex_handle, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 #ifdef HAVE_SHARED_LATCHES
 	if (F_ISSET(mutexp, DB_MUTEX_SHARED))
 		ret = pthread_rwlock_trywrlock(&mutexp->u.rwlock);
-	    else
+	else
 #endif
-	if ((ret = pthread_mutex_trylock(&mutexp->u.m.mutex)) == 0)
-		F_SET(mutexp, DB_MUTEX_LOCKED);
+		ret = pthread_mutex_trylock(&mutexp->u.m.mutex);
 	if (ret == EBUSY)
 		ret = DB_LOCK_NOTGRANTED;
-#ifdef HAVE_STATISTICS
-	if (ret == 0)
+	else if (ret == 0) {
+		F_SET(mutexp, DB_MUTEX_LOCKED);
+		env->dbenv->thread_id(env->dbenv, &mutexp->pid, &mutexp->tid);
 		STAT_INC(env,
 		    mutex, set_nowait, mutexp->mutex_set_nowait, mutex);
-#endif
+	}
 	return (ret);
 }
 #ifdef HAVE_SHARED_LATCHES
@@ -136,7 +136,7 @@ static inline int __db_pthread_mutex_tryreadlock(ENV *env, db_mutex_t mutex)
 	DB_MUTEX *mutexp;
 	if (!MUTEX_ON(env) || F_ISSET(env->dbenv, DB_ENV_NOLOCKING))
 		return (0);
-	mutexp = MUTEXP_SET(env->mutex_handle, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 	if (F_ISSET(mutexp, DB_MUTEX_SHARED))
 		ret = pthread_rwlock_tryrdlock(&mutexp->u.rwlock);
 	else

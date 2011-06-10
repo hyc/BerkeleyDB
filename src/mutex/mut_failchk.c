@@ -28,6 +28,9 @@ __mut_failchk(env)
 	int ret;
 	char buf[DB_THREADID_STRLEN];
 
+	if (F_ISSET(env, ENV_PRIVATE))
+		return (0);
+
 	dbenv = env->dbenv;
 	mtxmgr = env->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
@@ -35,7 +38,7 @@ __mut_failchk(env)
 
 	MUTEX_SYSTEM_LOCK(env);
 	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i, ++mutexp) {
-		mutexp = MUTEXP_SET(mtxmgr, i);
+		mutexp = MUTEXP_SET(env, i);
 
 		/*
 		 * We're looking for per-process mutexes where the process
@@ -53,7 +56,8 @@ __mut_failchk(env)
 		    dbenv, mutexp->pid, 0, DB_MUTEX_PROCESS_ONLY))
 			continue;
 
-		__db_msg(env, "Freeing mutex for process: %s",
+		__db_msg(env, DB_STR_A("2017",
+		    "Freeing mutex for process: %s", "%s"),
 		    dbenv->thread_id_string(dbenv, mutexp->pid, 0, buf));
 
 		/* Unlock and free the mutex. */

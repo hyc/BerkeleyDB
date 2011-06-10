@@ -32,13 +32,19 @@
  * always exist, as we use it to synchronize on the regions, whether they are
  * in filesystem-backed memory or system memory.
  *
- * The file "__db.001" contains a REGENV structure and an array of REGION
- * structures.  Each REGION structures describes an underlying chunk of
- * shared memory.
+ * The file "__db.001" contains a REGENV structure pointing to  an
+ * array of REGION structures.  Each REGION structures describes an
+ * underlying chunk of shared memory.
  *
  *	__db.001
  *	+---------+
- *	|REGENV  |
+ *	|REGENV   |
+ *	+---------+
+ *          |
+ *         \/
+ *	+---------+   +----------+
+ *	|REGION   |-> | __db.001 |
+ *	|	  |   +----------+
  *	+---------+   +----------+
  *	|REGION   |-> | __db.002 |
  *	|	  |   +----------+
@@ -143,11 +149,12 @@ typedef enum {
 /* Reference describing system memory version of REGENV. */
 typedef struct __db_reg_env_ref {
 	roff_t	   size;		/* Region size. */
+	roff_t	   max;			/* Region max in bytes. */
 	long	   segid;		/* UNIX shmget ID, VxWorks ID. */
 } REGENV_REF;
 
 /* Per-environment region information. */
-typedef struct __db_reg_env {
+typedef struct __db_reg_env { /* SHARED */
 	/*
 	 * !!!
 	 * The magic, panic, version, envid and signature fields of the region
@@ -172,7 +179,19 @@ typedef struct __db_reg_env {
 
 	time_t	  timestamp;		/* Creation time. */
 
-	u_int32_t init_flags;		/* Flags environment initialized with.*/
+	/*
+	 * Flags saved in the init_flags field of the environment, representing
+	 * flags to DB_ENV->set_flags and DB_ENV->open that need to be set.
+	 */
+	u_int32_t init_flags;
+#define	DB_INITENV_CDB		0x0001	/* DB_INIT_CDB */
+#define	DB_INITENV_CDB_ALLDB	0x0002	/* DB_INIT_CDB_ALLDB */
+#define	DB_INITENV_LOCK		0x0004	/* DB_INIT_LOCK */
+#define	DB_INITENV_LOG		0x0008	/* DB_INIT_LOG */
+#define	DB_INITENV_MPOOL	0x0010	/* DB_INIT_MPOOL */
+#define	DB_INITENV_REP		0x0020	/* DB_INIT_REP */
+#define	DB_INITENV_TXN		0x0040	/* DB_INIT_TXN */
+
 
 	/*
 	 * The mtx_regenv mutex protects the environment reference count and
@@ -191,6 +210,9 @@ typedef struct __db_reg_env {
 
 	u_int32_t region_cnt;		/* Number of REGIONs. */
 	roff_t	  region_off;		/* Offset of region array */
+	roff_t    lt_primary;		/* Lock primary. */
+	roff_t    lg_primary;		/* Log primary. */
+	roff_t    tx_primary;		/* Txn primary. */
 
 	roff_t	  cipher_off;		/* Offset of cipher area */
 
@@ -211,20 +233,30 @@ typedef struct __db_reg_env {
 } REGENV;
 
 /* Per-region shared region information. */
-typedef struct __db_region {
+typedef struct __db_region { /* SHARED */
+	roff_t	size;			/* Region size in bytes. */
+	roff_t  max;			/* Region max in bytes. */
+	long	segid;			/* UNIX shmget(2), Win16 segment ID. */
+
 	u_int32_t	id;		/* Region id. */
 	reg_type_t	type;		/* Region type. */
 
-	roff_t	size;			/* Region size in bytes. */
-
 	roff_t	primary;		/* Primary data structure offset. */
-
-	long	segid;			/* UNIX shmget(2), Win16 segment ID. */
+	roff_t  alloc;			/* Region allocation size in bytes. */
 } REGION;
 
 /*
  * Per-process/per-attachment information about a single region.
  */
+
+/*
+ * Structure used for tracking allocations in DB_PRIVATE regions. 
+ */
+struct __db_region_mem_t;	typedef struct __db_region_mem_t REGION_MEM;
+struct __db_region_mem_t {
+	REGION_MEM *next;
+};
+
 struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 	ENV	   *env;		/* Enclosing environment. */
 	reg_type_t  type;		/* Region type. */
@@ -234,12 +266,16 @@ struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 	REGION	   *rp;			/* Shared region. */
 
 	char	   *name;		/* Region file name. */
+	DB_FH	   *fhp;		/* Region file handle */
 
 	void	   *addr;		/* Region address. */
+	void	   *head;		/* Head of the allocation struct. */
 	void	   *primary;		/* Primary data structure address. */
 
+					/* Private Memory Tracking. */
 	size_t	    max_alloc;		/* Maximum bytes allocated. */
 	size_t	    allocated;		/* Bytes allocated. */
+	REGION_MEM  *mem;		/* List of memory to free */
 
 	db_mutex_t  mtx_alloc;		/* number of mutex for allocation. */
 
@@ -250,6 +286,8 @@ struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 #define	REGION_CREATE		0x01	/* Caller created region. */
 #define	REGION_CREATE_OK	0x02	/* Caller willing to create region. */
 #define	REGION_JOIN_OK		0x04	/* Caller is looking for a match. */
+#define	REGION_SHARED		0x08	/* Region is shared. */
+#define	REGION_TRACKED		0x10	/* Region private memory is tracked. */
 	u_int32_t   flags;
 };
 
@@ -259,11 +297,11 @@ struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
  */
 #define	R_ADDR(reginfop, offset)					\
 	(F_ISSET((reginfop)->env, ENV_PRIVATE) ?			\
-	    (void *)(offset) :						\
+	    ROFF_TO_P(offset) :						\
 	    (void *)((u_int8_t *)((reginfop)->addr) + (offset)))
 #define	R_OFFSET(reginfop, p)						\
 	(F_ISSET((reginfop)->env, ENV_PRIVATE) ?			\
-	    (roff_t)(p) :						\
+	    P_TO_ROFF(p) :						\
 	    (roff_t)((u_int8_t *)(p) - (u_int8_t *)(reginfop)->addr))
 
 /*
@@ -278,6 +316,10 @@ struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 #define	PANIC_CHECK(env)						\
 	if (PANIC_ISSET(env))						\
 		return (__env_panic_msg(env));
+
+#define	PANIC_CHECK_RET(env, ret)			       		\
+	if (PANIC_ISSET(env))						\
+		ret = (__env_panic_msg(env));
 
 #if defined(__cplusplus)
 }

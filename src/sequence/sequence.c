@@ -55,6 +55,7 @@
 
 static int __seq_chk_cachesize __P((ENV *, int32_t, db_seq_t, db_seq_t));
 static int __seq_close __P((DB_SEQUENCE *, u_int32_t));
+static int __seq_close_pp __P((DB_SEQUENCE *, u_int32_t));
 static int __seq_get
 	       __P((DB_SEQUENCE *, DB_TXN *, int32_t,  db_seq_t *, u_int32_t));
 static int __seq_get_cachesize __P((DB_SEQUENCE *, int32_t *));
@@ -99,12 +100,19 @@ db_sequence_create(seqp, dbp, flags)
 		return (__db_ferr(env, "db_sequence_create", 0));
 	}
 
+	if (dbp->type == DB_HEAP) {
+		__db_errx(env, DB_STR("4016",
+		    "Heap databases may not be used with sequences."));
+		return (EINVAL);
+
+	}
+
 	/* Allocate the sequence. */
 	if ((ret = __os_calloc(env, 1, sizeof(*seq), &seq)) != 0)
 		return (ret);
 
 	seq->seq_dbp = dbp;
-	seq->close = __seq_close;
+	seq->close = __seq_close_pp;
 	seq->get = __seq_get;
 	seq->get_cachesize = __seq_get_cachesize;
 	seq->set_cachesize = __seq_set_cachesize;
@@ -167,7 +175,8 @@ __seq_open_pp(seq, txn, keyp, flags)
 		goto err;
 
 	if (keyp->size == 0) {
-		__db_errx(env, "Zero length sequence key specified");
+		__db_errx(env, DB_STR("4001",
+		    "Zero length sequence key specified"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -184,8 +193,8 @@ __seq_open_pp(seq, txn, keyp, flags)
 		goto err;
 	}
 	if (FLD_ISSET(tflags, DB_DUP)) {
-		__db_errx(env,
-	"Sequences not supported in databases configured for duplicate data");
+		__db_errx(env, DB_STR("4002",
+	"Sequences not supported in databases configured for duplicate data"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -251,7 +260,8 @@ retry:	if ((ret = __db_get(dbp, ip,
 
 		if (rp->seq_value > rp->seq_max ||
 		    rp->seq_value < rp->seq_min) {
-			__db_errx(env, "Sequence value out of range");
+			__db_errx(env, DB_STR("4003",
+			    "Sequence value out of range"));
 			ret = EINVAL;
 			goto err;
 		} else {
@@ -266,7 +276,8 @@ retry:	if ((ret = __db_get(dbp, ip,
 
 			if ((ret = __db_put(dbp, ip, txn, &seq->seq_key,
 			     &seq->seq_data, DB_NOOVERWRITE)) != 0) {
-				__db_errx(env, "Sequence create failed");
+				__db_errx(env, DB_STR("4004",
+				    "Sequence create failed"));
 				goto err;
 			}
 		}
@@ -274,7 +285,8 @@ retry:	if ((ret = __db_get(dbp, ip,
 		ret = EEXIST;
 		goto err;
 	} else if (seq->seq_data.size < sizeof(seq->seq_record)) {
-		__db_errx(env, "Bad sequence record format");
+		__db_errx(env, DB_STR("4005",
+		    "Bad sequence record format"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -331,12 +343,13 @@ oldver:		if (IS_REP_CLIENT(env) &&
 			goto oldver;
 		}
 		M_32_SWAP(rp->seq_version);
-		__db_errx(env,
-		     "Unsupported sequence version: %d", rp->seq_version);
+		__db_errx(env, DB_STR_A("4006",
+		    "Unsupported sequence version: %d", "%d"),
+		    rp->seq_version);
 		goto err;
 	}
 
-	seq->seq_last_value = rp->seq_value;
+	seq->seq_last_value = seq->seq_prev_value = rp->seq_value;
 	if (F_ISSET(rp, DB_SEQ_INC))
 		seq->seq_last_value--;
 	else
@@ -397,7 +410,8 @@ __seq_set_cachesize(seq, cachesize)
 	env = seq->seq_dbp->env;
 
 	if (cachesize < 0) {
-		__db_errx(env, "Cache size must be >= 0");
+		__db_errx(env, DB_STR("4007",
+		    "Cache size must be >= 0"));
 		return (EINVAL);
 	}
 
@@ -481,7 +495,8 @@ __seq_initial_value(seq, value)
 	rp = seq->seq_rp;
 	if (F_ISSET(rp, DB_SEQ_RANGE_SET) &&
 	     (value > rp->seq_max || value < rp->seq_min)) {
-		__db_errx(env, "Sequence value out of range");
+		__db_errx(env, DB_STR("4008",
+		    "Sequence value out of range"));
 		return (EINVAL);
 	}
 
@@ -517,20 +532,22 @@ __seq_set_range(seq, min, max)
 	DB_SEQUENCE *seq;
 	db_seq_t min, max;
 {
+	DB_SEQ_RECORD *rp;
 	ENV *env;
 
 	env = seq->seq_dbp->env;
 	SEQ_ILLEGAL_AFTER_OPEN(seq, "DB_SEQUENCE->set_range");
 
+	rp = seq->seq_rp;
 	if (min >= max) {
-		__db_errx(env,
-	    "Minimum sequence value must be less than maximum sequence value");
+		__db_errx(env, DB_STR("4009",
+    "Minimum sequence value must be less than maximum sequence value"));
 		return (EINVAL);
 	}
 
-	seq->seq_rp->seq_min = min;
-	seq->seq_rp->seq_max = max;
-	F_SET(seq->seq_rp, DB_SEQ_RANGE_SET);
+	rp->seq_min = min;
+	rp->seq_max = max;
+	F_SET(rp, DB_SEQ_RANGE_SET);
 
 	return (0);
 }
@@ -596,7 +613,8 @@ retry:	if ((ret = __db_get(dbp, ip,
 	}
 
 	if (data->size < sizeof(seq->seq_record)) {
-		__db_errx(env, "Bad sequence record format");
+		__db_errx(env, DB_STR("4010",
+		    "Bad sequence record format"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -649,7 +667,8 @@ again:	if (F_ISSET(rp, DB_SEQ_INC)) {
 			if (F_ISSET(rp, DB_SEQ_WRAP))
 				rp->seq_value = rp->seq_min;
 			else {
-overflow:			__db_errx(env, "Sequence overflow");
+overflow:			__db_errx(env, DB_STR("4011",
+				    "Sequence overflow"));
 				ret = EINVAL;
 				goto err;
 			}
@@ -683,7 +702,8 @@ overflow:			__db_errx(env, "Sequence overflow");
 	ret = __db_put(dbp, ip, txn, &seq->seq_key, &seq->seq_data, 0);
 	rp->seq_value -= adjust;
 	if (ret != 0) {
-		__db_errx(env, "Sequence update failed");
+		__db_errx(env, DB_STR("4012",
+		    "Sequence update failed"));
 		goto err;
 	}
 	seq->seq_last_value = rp->seq_value + adjust;
@@ -723,7 +743,7 @@ __seq_get(seq, txn, delta, retp, flags)
 	STRIP_AUTO_COMMIT(flags);
 	SEQ_ILLEGAL_BEFORE_OPEN(seq, "DB_SEQUENCE->get");
 
-	if (delta <= 0) {
+	if (delta < 0 || (delta == 0 && !LF_ISSET(DB_CURRENT))) {
 		__db_errx(env, "Sequence delta must be greater than 0");
 		return (EINVAL);
 	}
@@ -751,18 +771,21 @@ __seq_get(seq, txn, delta, retp, flags)
 	}
 
 	if (rp->seq_min + delta > rp->seq_max) {
-		__db_errx(env, "Sequence overflow");
+		__db_errx(env, DB_STR("4013", "Sequence overflow"));
 		ret = EINVAL;
 		goto err;
 	}
 
-	if (F_ISSET(rp, DB_SEQ_INC)) {
+	if (LF_ISSET(DB_CURRENT)) {
+		*retp = seq->seq_prev_value;
+	} else if (F_ISSET(rp, DB_SEQ_INC)) {
 		if (seq->seq_last_value + 1 - rp->seq_value < delta &&
-		   (ret = __seq_update(seq, ip, txn, delta, flags)) != 0)
+		    (ret = __seq_update(seq, ip, txn, delta, flags)) != 0)
 			goto err;
 
 		rp = seq->seq_rp;
 		*retp = rp->seq_value;
+		seq->seq_prev_value = rp->seq_value;
 		rp->seq_value += delta;
 	} else {
 		if ((rp->seq_value - seq->seq_last_value) + 1 < delta &&
@@ -771,6 +794,7 @@ __seq_get(seq, txn, delta, retp, flags)
 
 		rp = seq->seq_rp;
 		*retp = rp->seq_value;
+		seq->seq_prev_value = rp->seq_value;
 		rp->seq_value -= delta;
 	}
 
@@ -818,6 +842,26 @@ __seq_get_key(seq, key)
 	key->size = key->ulen = seq->seq_key.size;
 	key->flags = seq->seq_key.flags;
 	return (0);
+}
+
+/*
+ * __seq_close_pp --
+ *	Close a sequence pre/post processing
+ *
+ */
+static int
+__seq_close_pp(seq, flags)
+	DB_SEQUENCE *seq;
+	u_int32_t flags;
+{
+	DB_THREAD_INFO *ip;
+	int ret;
+
+	ENV_ENTER(seq->seq_dbp->env, ip);
+	ret = __seq_close(seq, flags);
+	ENV_LEAVE(seq->seq_dbp->env, ip);
+
+	return (ret);
 }
 
 /*
@@ -943,8 +987,8 @@ __seq_chk_cachesize(env, cachesize, max, min)
 	 * Assume a 2's complement machine, and simply subtract.
 	 */
 	if ((u_int32_t)cachesize > (u_int64_t)max - (u_int64_t)min) {
-		__db_errx(env,
-    "Number of items to be cached is larger than the sequence range");
+		__db_errx(env, DB_STR("4014",
+    "Number of items to be cached is larger than the sequence range"));
 		return (EINVAL);
 	}
 	return (0);
@@ -960,8 +1004,8 @@ db_sequence_create(seqp, dbp, flags)
 {
 	COMPQUIET(seqp, NULL);
 	COMPQUIET(flags, 0);
-	__db_errx(dbp->env,
-	    "library build did not include support for sequences");
+	__db_errx(dbp->env, DB_STR("4015",
+	    "library build did not include support for sequences"));
 	return (DB_OPNOTSUP);
 }
 #endif /* HAVE_64BIT_TYPES */

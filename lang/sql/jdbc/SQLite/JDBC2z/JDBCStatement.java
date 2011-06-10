@@ -1,7 +1,13 @@
 package SQLite.JDBC2z;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.Statement;
+import java.util.ArrayList;
 
 public class JDBCStatement implements java.sql.Statement {
 
@@ -18,20 +24,24 @@ public class JDBCStatement implements java.sql.Statement {
 	this.batch = null;	
     }
 
+    @Override
     public void setFetchSize(int fetchSize) throws SQLException {
 	if (fetchSize != 1) {
 	    throw new SQLException("fetch size not 1");
 	}
     }
 
+    @Override
     public int getFetchSize() throws SQLException {
 	return 1;
     }
 
+    @Override
     public int getMaxRows() throws SQLException {
 	return maxrows;
     }
 
+    @Override
     public void setMaxRows(int max) throws SQLException {
 	if (max < 0) {
 	    throw new SQLException("max must be >= 0 (was " + max + ")");
@@ -39,35 +49,47 @@ public class JDBCStatement implements java.sql.Statement {
 	maxrows = max;
     }
 
+    @Override
     public void setFetchDirection(int fetchDirection) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public int getFetchDirection() throws SQLException {
 	return ResultSet.FETCH_UNKNOWN;
     }
 
+    @Override
     public int getResultSetConcurrency() throws SQLException {
 	return ResultSet.CONCUR_READ_ONLY;
     }
 
+    @Override
     public int getResultSetType() throws SQLException {
 	return ResultSet.TYPE_SCROLL_INSENSITIVE;
     }
 
+    @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-	conn.timeout = seconds * 1000;
-	if (conn.timeout < 0) {
-	    conn.timeout = 120000;
-	} else if (conn.timeout < 1000) {
+	if (isClosed()) {
+	    throw new SQLException("can't set query timeout on " +
+				   "a closed statement");
+	} else if (seconds < 0) {
+	    throw new SQLException("can't set a query timeout of " +
+				   "less than 0 seconds");
+	} else if (seconds == 0) {
 	    conn.timeout = 5000;
+	} else {
+	    conn.timeout = seconds * 1000;
 	}
     }
 
+    @Override
     public int getQueryTimeout() throws SQLException {
-	return conn.timeout;
+	return conn.timeout / 1000;
     }
 
+    @Override
     public ResultSet getResultSet() throws SQLException {
 	return rs;
     }
@@ -128,7 +150,7 @@ public class JDBCStatement implements java.sql.Statement {
 		    }
 		    continue;
 		}
-		throw new SQLException(e.toString());
+		throw new SQLException(e);
 	    }
 	    break;
 	}
@@ -141,14 +163,17 @@ public class JDBCStatement implements java.sql.Statement {
 	return rs;
     }
 
+    @Override
     public ResultSet executeQuery(String sql) throws SQLException {
 	return executeQuery(sql, null, false);
     }
 
+    @Override
     public boolean execute(String sql) throws SQLException {
 	return executeQuery(sql) != null;
     }
 
+    @Override
     public void cancel() throws SQLException {
 	if (conn == null || conn.db == null) {
 	    throw new SQLException("stale connection");
@@ -156,13 +181,16 @@ public class JDBCStatement implements java.sql.Statement {
 	conn.db.interrupt();
     }
 
+    @Override
     public void clearWarnings() throws SQLException {
     }
 
+    @Override
     public Connection getConnection() throws SQLException {
 	return conn;
     }
 
+    @Override
     public void addBatch(String sql) throws SQLException {
 	if (batch == null) {
 	    batch = new ArrayList<String>(1);
@@ -170,6 +198,7 @@ public class JDBCStatement implements java.sql.Statement {
 	batch.add(sql);
     }
 
+    @Override
     public int[] executeBatch() throws SQLException {
 	if (batch == null) {
 	    return new int[0];
@@ -179,20 +208,25 @@ public class JDBCStatement implements java.sql.Statement {
 	    ret[i] = EXECUTE_FAILED;
 	}
 	int errs = 0;
+	Exception cause = null;
 	for (int i = 0; i < ret.length; i++) {
 	    try {
-		execute((String) batch.get(i));
+		execute(batch.get(i));
 		ret[i] = updcnt;
 	    } catch (SQLException e) {
 		++errs;
+		if (cause == null) {
+		    cause = e;
+		}
 	    }
 	}
 	if (errs > 0) {
-	    throw new BatchUpdateException("batch failed", ret);
+	    throw new BatchUpdateException("batch failed", ret, cause);
 	}
 	return ret;
     }
 
+    @Override
     public void clearBatch() throws SQLException {
 	if (batch != null) {
 	    batch.clear();
@@ -200,20 +234,24 @@ public class JDBCStatement implements java.sql.Statement {
 	}
     }
 
+    @Override
     public void close() throws SQLException {
 	clearBatch();
 	conn = null;
     }
 
+    @Override
     public int executeUpdate(String sql) throws SQLException {
 	executeQuery(sql, null, true);
 	return updcnt;
     }
 
+    @Override
     public int getMaxFieldSize() throws SQLException {
 	return 0;
     }
 
+    @Override
     public boolean getMoreResults() throws SQLException {
 	if (rs != null) {
 	    rs.close();
@@ -222,34 +260,42 @@ public class JDBCStatement implements java.sql.Statement {
 	return false;
     }
 
+    @Override
     public int getUpdateCount() throws SQLException {
 	return updcnt;
     }
 
+    @Override
     public SQLWarning getWarnings() throws SQLException {
 	return null;
     }
 
+    @Override
     public void setCursorName(String name) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setEscapeProcessing(boolean enable) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public void setMaxFieldSize(int max) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public boolean getMoreResults(int x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public ResultSet getGeneratedKeys() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public int executeUpdate(String sql, int autokeys)
 	throws SQLException {
 	if (autokeys != Statement.NO_GENERATED_KEYS) {
@@ -258,16 +304,19 @@ public class JDBCStatement implements java.sql.Statement {
 	return executeUpdate(sql);
     }
 
+    @Override
     public int executeUpdate(String sql, int colIndexes[])
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public int executeUpdate(String sql, String colIndexes[])
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public boolean execute(String sql, int autokeys)
 	throws SQLException {
 	if (autokeys != Statement.NO_GENERATED_KEYS) {
@@ -276,38 +325,46 @@ public class JDBCStatement implements java.sql.Statement {
 	return execute(sql);
     }
 
+    @Override
     public boolean execute(String sql, int colIndexes[])
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public boolean execute(String sql, String colIndexes[])
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public int getResultSetHoldability() throws SQLException {
 	return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
+    @Override
     public boolean isClosed() throws SQLException {
-	return rs == null;
+	return conn == null;
     }
 
+    @Override
     public void setPoolable(boolean yes) throws SQLException {
 	if (yes) {
 	    throw new SQLException("poolable statements not supported");
 	}
     }
 
+    @Override
     public boolean isPoolable() throws SQLException {
 	return false;
     }
 
+    @Override
     public <T> T unwrap(java.lang.Class<T> iface) throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public boolean isWrapperFor(java.lang.Class iface) throws SQLException {
 	return false;
     }

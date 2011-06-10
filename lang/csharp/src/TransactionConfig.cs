@@ -187,6 +187,35 @@ namespace BerkeleyDB {
             }
         }
 
+        private uint _inittransactioncount;
+        internal bool initTransactionCountIsSet;
+        /// <summary>
+        /// The initial number of simultaneous transactions that will be
+        /// allocated for in the Berkeley DB environment
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This value is used by <see cref="DatabaseEnvironment.Open"/> to
+        /// force Berkeley DB to allocate a certain number of transaction
+        /// objects when the environment is created. This can be useful if an
+        /// application uses a large number of transaction objects, and
+        /// experiences performance issues with the default dynamic allocation
+        /// algorithm.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// InitLockers will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint InitTransactionCount {
+            get { return _inittransactioncount; }
+            set {
+                initTransactionCountIsSet = true;
+                _inittransactioncount = value;
+            }
+        }
+
         private uint _lckTimeout;
         internal bool lockTimeoutIsSet;
         /// <summary>

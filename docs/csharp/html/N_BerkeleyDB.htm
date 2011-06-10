@@ -68,6 +68,12 @@
             Represents errors that occur during Berkley DB operations.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DatabaseType.htm">DatabaseType</a></td><td><div class="summary">
             A class representing the supported Berkeley DB access methods.
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DbChannel.htm">DbChannel</a></td><td><div class="summary">
+            A class representing a channel in Berkeley DB HA replication manager.
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DbSite.htm">DbSite</a></td><td><div class="summary">
+            A class representing a site in Berkeley DB HA replication manager.
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DbSiteConfig.htm">DbSiteConfig</a></td><td><div class="summary">
+            Configuration properties for a site in replication manager.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DbThreadID.htm">DbThreadID</a></td><td><div class="summary">
             A class representing a unique identifier for a thread of control in a
             Berkeley DB application.
@@ -93,6 +99,25 @@
             A class representing configuration parameters for
             <a href="T_BerkeleyDB_HashDatabase.htm">HashDatabase</a></div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_HashStats.htm">HashStats</a></td><td><div class="summary">
             Statistical information about a HashDatabase
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_HeapDatabase.htm">HeapDatabase</a></td><td><div class="summary">
+            A class representing a HeapDatabase.
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_HeapDatabaseConfig.htm">HeapDatabaseConfig</a></td><td><div class="summary">
+            A class representing configuration parameters for
+            <a href="T_BerkeleyDB_HeapDatabase.htm">HeapDatabase</a></div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_HeapFullException.htm">HeapFullException</a></td><td><div class="summary">
+            An attempt was made to add or update a record in a
+            <a href="T_BerkeleyDB_HeapDatabase.htm">HeapDatabase</a>. However, the size of the database was
+            constrained using <a href="M_BerkeleyDB_HeapDatabaseConfig_MaxSize.htm">MaxSize(UInt32, UInt32)</a>, and that
+            limit has been reached.
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_HeapRecordId.htm">HeapRecordId</a></td><td><div class="summary">
+             Content used for the key in a Heap database record. Berkeley DB creates
+             this value for you when you create a record in a Heap database. You
+             should never create this structure yourself; Berkeley DB must create it
+             for you.
+            
+             This structure is returned in the key DatabaseEntry parameter of the
+             method that you use to add a record to the Heap database. 
+             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_HeapStats.htm">HeapStats</a></td><td><div class="summary">
+            Statistical information about a QueueDatabase
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_JoinCursor.htm">JoinCursor</a></td><td><div class="summary">
             A class representing a join cursor, for use in performing equality or
             natural joins on secondary indices.  For information on how to organize
@@ -169,7 +194,7 @@
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_PageNotFoundException.htm">PageNotFoundException</a></td><td><div class="summary">
       </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_PreparedTransaction.htm">PreparedTransaction</a></td><td><div class="summary">
             A class representing a transaction that must be resolved by the
-            application following <a href="M_BerkeleyDB_DatabaseEnvironment_Recover.htm">Recover(UInt32, Boolean)</a>.
+            application following <a href="M_BerkeleyDB_DatabaseEnvironment_Recover.htm">Recover(Int32, Boolean)</a>.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_QueueDatabase.htm">QueueDatabase</a></td><td><div class="summary">
             A class representing a QueueDatabase. The Queue format supports fast
             access to fixed-length records accessed sequentially or by logical
@@ -286,6 +311,9 @@
             </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_ForeignKeyNullifyDelegate.htm">ForeignKeyNullifyDelegate</a></td><td><div class="summary">
       </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_HashFunctionDelegate.htm">HashFunctionDelegate</a></td><td><div class="summary">
             The application-specified hash function.
+            </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_MessageDispatchDelegate.htm">MessageDispatchDelegate</a></td><td><div class="summary">
+            Application-specific function used to handle messages sent over 
+            Replication Manager message channels. 
             </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_ReplicationTransportDelegate.htm">ReplicationTransportDelegate</a></td><td><div class="summary">
             The function used to transmit data using the replication application's
             communication infrastructure.
@@ -305,6 +333,8 @@
            
        </th><th class="nameColumn">Enumeration</th><th class="descriptionColumn">Description</th></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_ActiveTransaction_TransactionStatus.htm">ActiveTransaction<span class="languageSpecificText"><span class="cs">.</span><span class="vb">.</span><span class="cpp">::</span><span class="nu">.</span></span>TransactionStatus</a></td><td><div class="summary">
             The status of an active transaction.
+            </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_ActiveTransaction_XATransactionStatus.htm">ActiveTransaction<span class="languageSpecificText"><span class="cs">.</span><span class="vb">.</span><span class="cpp">::</span><span class="nu">.</span></span>XATransactionStatus</a></td><td><div class="summary">
+            Enum of XA transaction status.
             </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_CreatePolicy.htm">CreatePolicy</a></td><td><div class="summary">
             The policy for how to handle database creation.
             </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_Cursor_InsertLocation.htm">Cursor<span class="languageSpecificText"><span class="cs">.</span><span class="vb">.</span><span class="cpp">::</span><span class="nu">.</span></span>InsertLocation</a></td><td><div class="summary">
@@ -322,6 +352,8 @@
             Specifies an algorithm used for encryption and decryption
             </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_EnvironmentFeedbackEvent.htm">EnvironmentFeedbackEvent</a></td><td><div class="summary">
             Specifies the environment operation whose progress is being reported
+            </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_EnvironmentID.htm">EnvironmentID</a></td><td><div class="summary">
+            Special environment IDs.
             </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_ForeignKeyDeleteAction.htm">ForeignKeyDeleteAction</a></td><td><div class="summary">
             Specifies the action to take when deleting a foreign key
             </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_Isolation.htm">Isolation</a></td><td><div class="summary">

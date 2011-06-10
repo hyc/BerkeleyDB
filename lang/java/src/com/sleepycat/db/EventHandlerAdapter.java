@@ -33,6 +33,21 @@ public abstract class EventHandlerAdapter implements EventHandler {
     */
     public void handleRepClientEvent() {}
     /**
+    See {@link com.sleepycat.db.EventHandler#handleRepConnectBrokenEvent EventHandler.handleRepConnectBrokenEvent} for details of this
+    callback.
+    */
+    public void handleRepConnectBrokenEvent() {}
+    /**
+    See {@link com.sleepycat.db.EventHandler#handleRepConnectEstablishedEvent EventHandler.handleRepConnectEstablishedEvent} for details of this
+    callback.
+    */
+    public void handleRepConnectEstablishedEvent() {}
+    /**
+    See {@link com.sleepycat.db.EventHandler#handleRepConnectTryFailedEvent EventHandler.handleRepConnectTryFailedEvent} for details of this
+    callback.
+    */
+    public void handleRepConnectTryFailedEvent() {}
+    /**
     See {@link com.sleepycat.db.EventHandler#handleRepDupmasterEvent EventHandler.handleRepDupmasterEvent} for details of this
     callback.
     */
@@ -48,10 +63,20 @@ public abstract class EventHandlerAdapter implements EventHandler {
     */
     public void handleRepElectionFailedEvent() {}
     /**
+    see {@link com.sleepycat.db.EventHandler#handleRepInitDoneEvent EventHandler.handleRepInitDoneEvent}for details of this
+    callback.
+    */
+    public void handleRepInitDoneEvent() {}
+    /**
     See {@link com.sleepycat.db.EventHandler#handleRepJoinFailureEvent EventHandler.handleRepJoinFailureEvent} for details of this
     callback.
     */
     public void handleRepJoinFailureEvent() {}
+    /**
+    See {@link com.sleepycat.db.EventHandler#handleRepLocalSiteRemovedEvent EventHandler.handleRepLocalSiteRemovedEvent} for details of this
+    callback.
+    */
+    public void handleRepLocalSiteRemovedEvent() {}
     /**
     See {@link com.sleepycat.db.EventHandler#handleRepMasterEvent EventHandler.handleRepMasterEvent} for details of this
     callback.
@@ -72,6 +97,16 @@ public abstract class EventHandlerAdapter implements EventHandler {
     callback.
     */
     public void handleRepPermFailedEvent() {}
+    /**
+    See {@link com.sleepycat.db.EventHandler#handleRepSiteAddedEvent EventHandler.handleRepSiteAddedEvent} for details of this
+    callback.
+    */
+    public void handleRepSiteAddedEvent() {}
+    /**
+    See {@link com.sleepycat.db.EventHandler#handleRepSiteRemovedEvent EventHandler.handleRepSiteRemovedEvent} for details of this
+    callback.
+    */
+    public void handleRepSiteRemovedEvent() {}
     /**
     See {@link com.sleepycat.db.EventHandler#handleRepStartupDoneEvent EventHandler.handleRepStartupDoneEvent} for details of this
     callback.

@@ -14,7 +14,7 @@ hints/solaris.pl
 hints/irix_6_5.pl
 Makefile.PL
 MANIFEST
-mkconsts
+mkconsts.pl
 mkpod
 ppport.h
 README
@@ -40,6 +40,7 @@ t/examples3.t
 t/examples3.t.T
 t/filter.t
 t/hash.t
+t/heap.t
 t/join.t
 t/mldbm.t
 t/pod.t
@@ -66,5 +67,5 @@ patches/5.005_01
 patches/5.005_02
 patches/5.005_03
 patches/5.6.0
-scan
+scan.pl
 META.yml                                 Module meta-data (added by MakeMaker)

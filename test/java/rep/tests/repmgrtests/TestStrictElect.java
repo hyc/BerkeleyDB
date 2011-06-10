@@ -7,6 +7,7 @@
 
 package repmgrtests;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -18,7 +19,7 @@ import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
 import com.sleepycat.db.ReplicationConfig;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationStats;
 import com.sleepycat.db.ReplicationTimeoutType;
@@ -33,11 +34,13 @@ public class TestStrictElect {
     private int[] testPorts;
     private int masterPort;
     private int clientPort;
+    private int client2Port;
 
     @Before public void setUp() throws Exception {
-        testPorts = Util.findAvailablePorts(2);
+        testPorts = Util.findAvailablePorts(3);
         masterPort = testPorts[0];
         clientPort = testPorts[1];
+        client2Port = testPorts[2];
     }
     
     /**
@@ -46,18 +49,21 @@ public class TestStrictElect {
      */
     @Test public void liberal() throws Exception {
         EnvironmentConfig ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
-        ec.setReplicationNumSites(2);
+        ReplicationManagerSiteConfig local = new ReplicationManagerSiteConfig("localhost", masterPort);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
         File masterDir = Util.mkdir("master");
         Environment master = new Environment(masterDir, ec);
         master.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
         master.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_MASTER);
 
         ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-        ec.setReplicationNumSites(2);
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterPort),
-                                           false);
+        local = new ReplicationManagerSiteConfig("localhost", clientPort);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
+        ReplicationManagerSiteConfig remote = new ReplicationManagerSiteConfig("localhost", masterPort);
+        remote.setBootstrapHelper(true);
+        ec.addReplicationManagerSite(remote);
         MyEventHandler mon = new MyEventHandler();
         ec.setEventHandler(mon);
         File clientDir = Util.mkdir("client");
@@ -87,24 +93,26 @@ public class TestStrictElect {
     }
 
     /**
-     * Verifies that when the "strict" setting is turned on, failures
+     * Verifies that when the "strict" setting is on, failures
      * of a master leaves the group with no master: the client does
      * not take over.
      */
     @Test public void strict() throws Exception {
         EnvironmentConfig ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
-        ec.setReplicationNumSites(2);
+        ReplicationManagerSiteConfig local = new ReplicationManagerSiteConfig("localhost", masterPort);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
         File masterDir = Util.mkdir("master");
         Environment master = new Environment(masterDir, ec);
-        master.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
         master.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_MASTER);
 
         ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-        ec.setReplicationNumSites(2);
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterPort),
-                                           false);
+        local = new ReplicationManagerSiteConfig("localhost", clientPort);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
+        ReplicationManagerSiteConfig remote = new ReplicationManagerSiteConfig("localhost", masterPort);
+        remote.setBootstrapHelper(true);
+        ec.addReplicationManagerSite(remote);
         MyEventHandler mon = new MyEventHandler();
         ec.setEventHandler(mon);
         File clientDir = Util.mkdir("client");
@@ -121,8 +129,8 @@ public class TestStrictElect {
 
         Thread.sleep(3000);
         stats = client.getReplicationStats(StatsConfig.DEFAULT);
-        assertTrue(stats.getElections() == 1);
-        assertTrue(stats.getEnvId() == stats.getMaster());
+        assertEquals(1, stats.getElections());
+        assertEquals(ReplicationStats.REP_CLIENT, stats.getStatus());
 
         client.close();
     }
@@ -133,27 +141,55 @@ public class TestStrictElect {
      */
     @Test public void threeSite() throws Exception {
         EnvironmentConfig ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
-        ec.setReplicationNumSites(3);
+        ReplicationManagerSiteConfig local = new ReplicationManagerSiteConfig("localhost", masterPort);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
         File masterDir = Util.mkdir("master");
         Environment master = new Environment(masterDir, ec);
         master.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
         master.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_MASTER);
 
         ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterPort),
-                                           false);
+        local = new ReplicationManagerSiteConfig("localhost", clientPort);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
+        ReplicationManagerSiteConfig remote = new ReplicationManagerSiteConfig("localhost", masterPort);
+        remote.setBootstrapHelper(true);
+        ec.addReplicationManagerSite(remote);
         MyEventHandler mon = new MyEventHandler();
         ec.setEventHandler(mon);
-        ec.setReplicationNumSites(3);
         File clientDir = Util.mkdir("client");
         Environment client = new Environment(clientDir, ec);
+        client.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
         client.setReplicationTimeout(ReplicationTimeoutType.ELECTION_RETRY, 500000);
         client.setReplicationTimeout(ReplicationTimeoutType.ELECTION_TIMEOUT, 500000);
         client.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
 
         mon.await();
+
+        // Create, start, and sync the 3rd site, just to establish its
+        // existence (so that the rest of the group recognizes that
+        // the group size is 3); then shut it down so that the later
+        // election will fail for insufficient sites.
+        // 
+        ec = makeBasicConfig();
+        local = new ReplicationManagerSiteConfig("localhost", client2Port);
+        local.setLocalSite(true);
+        ec.addReplicationManagerSite(local);
+        remote = new ReplicationManagerSiteConfig("localhost", masterPort);
+        remote.setBootstrapHelper(true);
+        ec.addReplicationManagerSite(remote);
+        mon = new MyEventHandler();
+        ec.setEventHandler(mon);
+        clientDir = Util.mkdir("client2");
+        Environment client2 = new Environment(clientDir, ec);
+        client2.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
+        client2.setReplicationTimeout(ReplicationTimeoutType.ELECTION_RETRY, 500000);
+        client2.setReplicationTimeout(ReplicationTimeoutType.ELECTION_TIMEOUT, 500000);
+        client2.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
+
+        mon.await();
+        client2.close();
 
         // check stats, at this point there should be 0 elections
         ReplicationStats stats = client.getReplicationStats(StatsConfig.DEFAULT);

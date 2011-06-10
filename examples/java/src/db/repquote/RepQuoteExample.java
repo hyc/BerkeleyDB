@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -28,7 +28,8 @@ import db.repquote.RepConfig;
  * The options to start a given replication node are:
  * <pre>
  *   -h home (required; h stands for home directory)
- *   -l host:port (required; l stands for local)
+ *   -l host:port (required unless -L is specified; l stands for local)
+ *   -L host:port (optional, L means group creator)
  *   -C or M (optional; start up as client or master)
  *   -r host:port (optional; r stands for remote; any number of these may
  *      be specified)
@@ -36,8 +37,6 @@ import db.repquote.RepConfig;
  *      be specified)
  *   -a all|quorum (optional; a stands for ack policy)
  *   -b (optional; b stands for bulk)
- *   -n nsites (optional; number of sites in replication group; defaults to 0
- *      to try to dynamically compute nsites)
  *   -p priority (optional; defaults to 100)
  *   -v (optional; v stands for verbose)
  * </pre>
@@ -82,12 +81,15 @@ public class RepQuoteExample
     public static void usage()
     {
         System.err.println("usage: " + RepConfig.progname +
-            " -h home -l host:port [-CM][-r host:port][-R host:port]\n" +
-            "  [-a all|quorum][-b][-n nsites][-p priority][-v]");
+            " -h home -l|-L host:port [-CM]\n" +
+            " [-r host:port][-R host:port]\n" +
+            " [-a all|quorum][-b][-p priority][-v]");
 
         System.err.println(
              "\t -h home (required; h stands for home directory)\n" +
-             "\t -l host:port (required; l stands for local)\n" +
+             "\t -l host:port (required unless -L is specified;" +
+             " l stands for local)\n" +
+             "\t -L host:port (optional, L means group creator)\n" +
              "\t -C or -M (optional; start up as client or master)\n" +
              "\t -r host:port (optional; r stands for remote; any number " +
              "of these\n" +
@@ -97,9 +99,6 @@ public class RepQuoteExample
              "\t    these may be specified)\n" +
              "\t -a all|quorum (optional; a stands for ack policy)\n" +
              "\t -b (optional; b stands for bulk)\n" +
-             "\t -n nsites (optional; number of sites in replication " +
-             "group; defaults\n" +
-             "\t    to 0 to try to dynamically compute nsites)\n" +
              "\t -p priority (optional; defaults to 100)\n" +
              "\t -v (optional; v stands for verbose)\n");
 
@@ -110,14 +109,14 @@ public class RepQuoteExample
         throws Exception
     {
         RepConfig config = new RepConfig();
-        boolean isPeer;
+        boolean isCreator, isPeer;
         String tmpHost;
         int tmpPort = 0;
 
         /*  Extract the command line parameters. */
         for (int i = 0; i < argv.length; i++)
         {
-            isPeer = false;
+            isCreator = isPeer = false;
             if (argv[i].compareTo("-a") == 0) {
                 if (i == argv.length - 1)
                     usage();
@@ -136,9 +135,12 @@ public class RepQuoteExample
                 /* home - a string arg. */
                 i++;
                 config.home = argv[i];
-            } else if (argv[i].compareTo("-l") == 0) {
+            } else if (argv[i].compareTo("-l") == 0 ||
+              argv[i].compareTo("-L") == 0) {
                 if (i == argv.length - 1)
                     usage();
+                if (argv[i].compareTo("-L") == 0)
+                    isCreator = true;
                 /* "local" should be host:port. */
                 i++;
                 String[] words = argv[i].split(":");
@@ -154,21 +156,16 @@ public class RepQuoteExample
                         "could not parse port number.");
                     usage();
                 }
-                config.setThisHost(words[0], tmpPort);
+                config.setThisHost(words[0], tmpPort, isCreator);
             } else if (argv[i].compareTo("-M") == 0) {
                 config.startPolicy = ReplicationManagerStartPolicy.REP_MASTER;
-            } else if (argv[i].compareTo("-n") == 0) {
-                if (i == argv.length - 1)
-                    usage();
-                i++;
-                config.totalSites = Integer.parseInt(argv[i]);
             } else if (argv[i].compareTo("-p") == 0) {
                 if (i == argv.length - 1)
                     usage();
                 i++;
                 config.priority = Integer.parseInt(argv[i]);
             } else if (argv[i].compareTo("-R") == 0 ||
-                argv[i].compareTo("-r") == 0) {
+              argv[i].compareTo("-r") == 0) {
                 if (i == argv.length - 1)
                     usage();
                 if (argv[i].equals("-R"))
@@ -194,7 +191,6 @@ public class RepQuoteExample
                 System.err.println("Unrecognized option: " + argv[i]);
                 usage();
             }
-
         }
 
         /* Error check command line. */
@@ -237,14 +233,20 @@ public class RepQuoteExample
         envConfig.setErrorStream(System.err);
         envConfig.setErrorPrefix(RepConfig.progname);
 
-        envConfig.setReplicationManagerLocalSite(appConfig.getThisHost());
+        envConfig.addReplicationManagerSite(appConfig.getThisHost());
         for (RepRemoteHost host = appConfig.getFirstOtherHost();
             host != null; host = appConfig.getNextOtherHost()){
-            envConfig.replicationManagerAddRemoteSite(
-                host.getAddress(), host.isPeer());
+
+            ReplicationManagerSiteConfig repmgrRemoteSiteConfig =
+                new ReplicationManagerSiteConfig(host.getAddress().host,
+                host.getAddress().port);
+
+            repmgrRemoteSiteConfig.setPeer(host.isPeer());
+            repmgrRemoteSiteConfig.setBootstrapHelper(true);
+
+            envConfig.addReplicationManagerSite(
+                repmgrRemoteSiteConfig);
         }
-        if (appConfig.totalSites > 0)
-            envConfig.setReplicationNumSites(appConfig.totalSites);
 
         /* 
          * Set replication group election priority for this environment.
@@ -307,7 +309,7 @@ public class RepQuoteExample
                 "Ensure that the environment directory is pre-created.");
             ret = 1;
         }
-        
+
         if (appConfig.bulk)
             dbenv.setReplicationConfig(ReplicationConfig.BULK, true);
 
@@ -358,7 +360,7 @@ public class RepQuoteExample
 
         /* Start replication manager. */
         dbenv.replicationManagerStart(3, appConfig.startPolicy);
-        
+
         return ret;
     }
 

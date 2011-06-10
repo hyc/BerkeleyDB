@@ -218,6 +218,7 @@ namespace CsharpAPITest
 		public void TestConfigLock()
 		{
 			testName = "TestConfigLock";
+			SetUpTest(false);
 			XmlElement xmlElem = Configuration.TestSetUp(
 			    testFixtureName, testName);
 			DatabaseEnvironmentConfig cfg = 
@@ -233,6 +234,7 @@ namespace CsharpAPITest
 		public void TestConfigLog()
 		{
 			testName = "TestConfigLog";
+			SetUpTest(false);
 			XmlElement xmlElem = Configuration.TestSetUp(
 			    testFixtureName, testName);
 			DatabaseEnvironmentConfig cfg =
@@ -246,6 +248,7 @@ namespace CsharpAPITest
 		public void TestConfigMutex()
 		{
 			testName = "TestConfigMutex";
+			SetUpTest(false);
 			XmlElement xmlElem = Configuration.TestSetUp(
 			    testFixtureName, testName);
 			DatabaseEnvironmentConfig cfg =
@@ -259,6 +262,7 @@ namespace CsharpAPITest
 		public void TestConfigReplication()
 		{
 			testName = "TestConfigReplication";
+			SetUpTest(false);
 			XmlElement xmlElem = Configuration.TestSetUp(
 			    testFixtureName, testName);
 			DatabaseEnvironmentConfig cfg =

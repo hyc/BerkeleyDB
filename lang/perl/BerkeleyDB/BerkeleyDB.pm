@@ -2,7 +2,7 @@
 package BerkeleyDB;
 
 
-#     Copyright (c) 1997-2010 Paul Marquess. All rights reserved.
+#     Copyright (c) 1997-2011 Paul Marquess. All rights reserved.
 #     This program is free software; you can redistribute it and/or
 #     modify it under the same terms as Perl itself.
 #
@@ -17,7 +17,7 @@ use Carp;
 use vars qw($VERSION @ISA @EXPORT $AUTOLOAD
 		$use_XSLoader);
 
-$VERSION = '0.43';
+$VERSION = '0.47';
 
 require Exporter;
 #require DynaLoader;
@@ -55,6 +55,7 @@ BEGIN {
 	DB_ASSOC_IMMUTABLE_KEY
 	DB_AUTO_COMMIT
 	DB_BEFORE
+	DB_BOOTSTRAP_HELPER
 	DB_BTREE
 	DB_BTREEMAGIC
 	DB_BTREEOLDVER
@@ -96,6 +97,7 @@ BEGIN {
 	DB_DURABLE_UNKNOWN
 	DB_EID_BROADCAST
 	DB_EID_INVALID
+	DB_EID_MASTER
 	DB_ENCRYPT
 	DB_ENCRYPT_AES
 	DB_ENV_APPINIT
@@ -118,6 +120,7 @@ BEGIN {
 	DB_ENV_LOG_AUTOREMOVE
 	DB_ENV_LOG_INMEMORY
 	DB_ENV_MULTIVERSION
+	DB_ENV_NOFLUSH
 	DB_ENV_NOLOCKING
 	DB_ENV_NOMMAP
 	DB_ENV_NOPANIC
@@ -151,19 +154,27 @@ BEGIN {
 	DB_EVENT_REG_ALIVE
 	DB_EVENT_REG_PANIC
 	DB_EVENT_REP_CLIENT
+	DB_EVENT_REP_CONNECT_BROKEN
+	DB_EVENT_REP_CONNECT_ESTD
+	DB_EVENT_REP_CONNECT_TRY_FAILED
 	DB_EVENT_REP_DUPMASTER
 	DB_EVENT_REP_ELECTED
 	DB_EVENT_REP_ELECTION_FAILED
+	DB_EVENT_REP_INIT_DONE
 	DB_EVENT_REP_JOIN_FAILURE
+	DB_EVENT_REP_LOCAL_SITE_REMOVED
 	DB_EVENT_REP_MASTER
 	DB_EVENT_REP_MASTER_FAILURE
 	DB_EVENT_REP_NEWMASTER
 	DB_EVENT_REP_PERM_FAILED
+	DB_EVENT_REP_SITE_ADDED
+	DB_EVENT_REP_SITE_REMOVED
 	DB_EVENT_REP_STARTUPDONE
 	DB_EVENT_WRITE_FAILED
 	DB_EXCL
 	DB_EXTENT
 	DB_FAILCHK
+	DB_FAILCHK_ISALIVE
 	DB_FAST_STAT
 	DB_FCNTL_LOCKING
 	DB_FILEOPEN
@@ -186,11 +197,18 @@ BEGIN {
 	DB_GET_BOTH_RANGE
 	DB_GET_RECNO
 	DB_GID_SIZE
+	DB_GROUP_CREATOR
 	DB_HANDLE_LOCK
 	DB_HASH
 	DB_HASHMAGIC
 	DB_HASHOLDVER
 	DB_HASHVERSION
+	DB_HEAP
+	DB_HEAPMAGIC
+	DB_HEAPOLDVER
+	DB_HEAPVERSION
+	DB_HEAP_FULL
+	DB_HEAP_RID_SZ
 	DB_HOTBACKUP_IN_PROGRESS
 	DB_IGNORE_LEASE
 	DB_IMMUTABLE_KEY
@@ -199,9 +217,11 @@ BEGIN {
 	DB_INIT_LOCK
 	DB_INIT_LOG
 	DB_INIT_MPOOL
+	DB_INIT_MUTEX
 	DB_INIT_REP
 	DB_INIT_TXN
 	DB_INORDER
+	DB_INTERNAL_DB
 	DB_JAVA_CALLBACK
 	DB_JOINENV
 	DB_JOIN_ITEM
@@ -211,6 +231,8 @@ BEGIN {
 	DB_KEYFIRST
 	DB_KEYLAST
 	DB_LAST
+	DB_LEGACY
+	DB_LOCAL_SITE
 	DB_LOCKDOWN
 	DB_LOCKMAGIC
 	DB_LOCKVERSION
@@ -288,6 +310,12 @@ BEGIN {
 	DB_LOG_ZERO
 	DB_MAX_PAGES
 	DB_MAX_RECORDS
+	DB_MEM_LOCK
+	DB_MEM_LOCKER
+	DB_MEM_LOCKOBJECT
+	DB_MEM_LOGID
+	DB_MEM_THREAD
+	DB_MEM_TRANSACTION
 	DB_MPOOL_CLEAN
 	DB_MPOOL_CREATE
 	DB_MPOOL_DIRTY
@@ -322,6 +350,7 @@ BEGIN {
 	DB_NOCOPY
 	DB_NODUPDATA
 	DB_NOERROR
+	DB_NOFLUSH
 	DB_NOLOCKING
 	DB_NOMMAP
 	DB_NOORDERCHK
@@ -334,9 +363,11 @@ BEGIN {
 	DB_NOSYNC
 	DB_NOTFOUND
 	DB_NO_AUTO_COMMIT
+	DB_NO_CHECKPOINT
 	DB_ODDFILESIZE
 	DB_OK_BTREE
 	DB_OK_HASH
+	DB_OK_HEAP
 	DB_OK_QUEUE
 	DB_OK_RECNO
 	DB_OLD_VERSION
@@ -402,6 +433,7 @@ BEGIN {
 	DB_REPMGR_CONNECTED
 	DB_REPMGR_DISCONNECTED
 	DB_REPMGR_ISPEER
+	DB_REPMGR_NEED_RESPONSE
 	DB_REPMGR_PEER
 	DB_REP_ACK_TIMEOUT
 	DB_REP_ANYWHERE
@@ -479,6 +511,7 @@ BEGIN {
 	DB_SNAPSHOT
 	DB_SPARE_FLAG
 	DB_STAT_ALL
+	DB_STAT_ALLOC
 	DB_STAT_CLEAR
 	DB_STAT_LOCK_CONF
 	DB_STAT_LOCK_LOCKERS
@@ -488,6 +521,7 @@ BEGIN {
 	DB_STAT_MEMP_NOERROR
 	DB_STAT_NOERROR
 	DB_STAT_SUBSYSTEM
+	DB_STAT_SUMMARY
 	DB_ST_DUPOK
 	DB_ST_DUPSET
 	DB_ST_DUPSORT
@@ -1094,6 +1128,78 @@ sub new
 }
 
 *BerkeleyDB::Btree::TIEHASH = \&BerkeleyDB::Btree::new ;
+
+package BerkeleyDB::Heap ;
+
+use vars qw(@ISA) ;
+@ISA = qw( BerkeleyDB::Common BerkeleyDB::_tiedHash ) ;
+use UNIVERSAL ;
+use Carp ;
+
+sub new
+{
+    my $self = shift ;
+    my $got = BerkeleyDB::ParseParameters(
+		      {
+			# Generic Stuff
+			Filename 	=> undef,
+			Subname		=> undef,
+			#Flags		=> BerkeleyDB::DB_CREATE(),
+			Flags		=> 0,
+			Property	=> 0,
+			Mode		=> 0666,
+			Cachesize 	=> 0,
+			Lorder 		=> 0,
+			Pagesize 	=> 0,
+			Env		=> undef,
+			Txn		=> undef,
+			Encrypt		=> undef,
+
+			# Heap specific
+			HeapSize	=> undef,
+			HeapSizeGb	=> undef,
+		      }, @_) ;
+
+    croak("Env not of type BerkeleyDB::Env")
+        if defined $got->{Env} and ! UNIVERSAL::isa($got->{Env},'BerkeleyDB::Env');
+
+    croak("Txn not of type BerkeleyDB::Txn")
+        if defined $got->{Txn} and ! UNIVERSAL::isa($got->{Txn},'BerkeleyDB::Txn');
+
+#    if (defined $got->{HeapSize} )
+#    {
+#
+#        croak("-HeapSize needs a reference to a 2-element array")
+#            if $got->{HeapSize} !~ /ARRAY/ ||
+#
+#        croak("-HeapSize needs a reference to a 2-element array")
+#            if $got->{HeapSize} !~ /ARRAY/ ||
+#               @{ $got->{set_bt_compress} } != 2;
+#
+#        $got->{"HeapSize"} =  $got->{HeapSize}[0] 
+#            if defined $got->{HeapSize}[0];
+#
+#        $got->{"HeapSize"} =  $got->{HeapSize}[1] 
+#            if defined $got->{HeapSize}[1];
+#    }
+
+    BerkeleyDB::parseEncrypt($got);
+
+    my ($addr) = _db_open_heap($self, $got);
+    my $obj ;
+    if ($addr) {
+        $obj = bless [$addr] , $self ;
+	push @{ $obj }, $got->{Env} if $got->{Env} ;
+        $obj->Txn($got->{Txn}) 
+            if $got->{Txn} ;
+    }
+    return $obj ;
+}
+
+sub TIEHASH
+{
+    die "Tied Hash interface not supported with BerkeleyDB::Heap\n" ;
+}
 
 
 package BerkeleyDB::Recno ;

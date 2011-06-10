@@ -1,216 +1,32 @@
-/* Do not edit: automatically built by gen_msg.awk. */
+/* Do not edit: automatically built by gen_rec.awk. */
 
 #include "db_config.h"
-
 #include "db_int.h"
-#include "dbinc/db_swap.h"
+#include "dbinc/db_page.h"
+#include "dbinc/db_dispatch.h"
+#include "dbinc/db_am.h"
+#include "dbinc_auto/repmgr_auto.h"
 
+DB_LOG_RECSPEC __repmgr_member_desc[] = {
+	{LOGREC_ARG, SSZ(__repmgr_member_args, version), "version", "%lu"},
+	{LOGREC_ARG, SSZ(__repmgr_member_args, prev_status), "prev_status", "%lu"},
+	{LOGREC_ARG, SSZ(__repmgr_member_args, status), "status", "%lu"},
+	{LOGREC_DBT, SSZ(__repmgr_member_args, host), "host", ""},
+	{LOGREC_ARG, SSZ(__repmgr_member_args, port), "port", "%lu"},
+	{LOGREC_Done, 0, "", ""}
+};
 /*
- * PUBLIC: void __repmgr_handshake_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_handshake_args *, u_int8_t *));
- */
-void
-__repmgr_handshake_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_handshake_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONS_COPYOUT(env, bp, argp->port);
-	DB_HTONL_COPYOUT(env, bp, argp->priority);
-	DB_HTONL_COPYOUT(env, bp, argp->flags);
-}
-
-/*
- * PUBLIC: int __repmgr_handshake_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_handshake_args *, u_int8_t *, size_t, u_int8_t **));
+ * PUBLIC: int __repmgr_init_recover __P((ENV *, DB_DISTAB *));
  */
 int
-__repmgr_handshake_unmarshal(env, argp, bp, max, nextp)
+__repmgr_init_recover(env, dtabp)
 	ENV *env;
-	__repmgr_handshake_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
+	DB_DISTAB *dtabp;
 {
-	if (max < __REPMGR_HANDSHAKE_SIZE)
-		goto too_few;
-	DB_NTOHS_COPYIN(env, argp->port, bp);
-	DB_NTOHL_COPYIN(env, argp->priority, bp);
-	DB_NTOHL_COPYIN(env, argp->flags, bp);
+	int ret;
 
-	if (nextp != NULL)
-		*nextp = bp;
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __repmgr_member_recover, DB___repmgr_member)) != 0)
+		return (ret);
 	return (0);
-
-too_few:
-	__db_errx(env,
-	    "Not enough input bytes to fill a __repmgr_handshake message");
-	return (EINVAL);
 }
-
-/*
- * PUBLIC: void __repmgr_v2handshake_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_v2handshake_args *, u_int8_t *));
- */
-void
-__repmgr_v2handshake_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_v2handshake_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONS_COPYOUT(env, bp, argp->port);
-	DB_HTONL_COPYOUT(env, bp, argp->priority);
-}
-
-/*
- * PUBLIC: int __repmgr_v2handshake_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_v2handshake_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__repmgr_v2handshake_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_v2handshake_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_V2HANDSHAKE_SIZE)
-		goto too_few;
-	DB_NTOHS_COPYIN(env, argp->port, bp);
-	DB_NTOHL_COPYIN(env, argp->priority, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env,
-	    "Not enough input bytes to fill a __repmgr_v2handshake message");
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __repmgr_permlsn_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_permlsn_args *, u_int8_t *));
- */
-void
-__repmgr_permlsn_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_permlsn_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->generation);
-	DB_HTONL_COPYOUT(env, bp, argp->lsn.file);
-	DB_HTONL_COPYOUT(env, bp, argp->lsn.offset);
-}
-
-/*
- * PUBLIC: int __repmgr_permlsn_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_permlsn_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__repmgr_permlsn_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_permlsn_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_PERMLSN_SIZE)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->generation, bp);
-	DB_NTOHL_COPYIN(env, argp->lsn.file, bp);
-	DB_NTOHL_COPYIN(env, argp->lsn.offset, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env,
-	    "Not enough input bytes to fill a __repmgr_permlsn message");
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __repmgr_version_proposal_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_version_proposal_args *, u_int8_t *));
- */
-void
-__repmgr_version_proposal_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_version_proposal_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->min);
-	DB_HTONL_COPYOUT(env, bp, argp->max);
-}
-
-/*
- * PUBLIC: int __repmgr_version_proposal_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_version_proposal_args *, u_int8_t *, size_t,
- * PUBLIC:	 u_int8_t **));
- */
-int
-__repmgr_version_proposal_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_version_proposal_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_VERSION_PROPOSAL_SIZE)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->min, bp);
-	DB_NTOHL_COPYIN(env, argp->max, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env,
-	    "Not enough input bytes to fill a __repmgr_version_proposal message");
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __repmgr_version_confirmation_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_version_confirmation_args *, u_int8_t *));
- */
-void
-__repmgr_version_confirmation_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_version_confirmation_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->version);
-}
-
-/*
- * PUBLIC: int __repmgr_version_confirmation_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_version_confirmation_args *, u_int8_t *, size_t,
- * PUBLIC:	 u_int8_t **));
- */
-int
-__repmgr_version_confirmation_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_version_confirmation_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_VERSION_CONFIRMATION_SIZE)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->version, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env,
-	    "Not enough input bytes to fill a __repmgr_version_confirmation message");
-	return (EINVAL);
-}
-

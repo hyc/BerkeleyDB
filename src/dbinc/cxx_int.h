@@ -41,9 +41,11 @@
 	}
 
 WRAPPED_CLASS(Db, DbImp, DB)
+WRAPPED_CLASS(DbChannel, DbChannelImp, DB_CHANNEL)
 WRAPPED_CLASS(DbEnv, DbEnvImp, DB_ENV)
 WRAPPED_CLASS(DbMpoolFile, DbMpoolFileImp, DB_MPOOLFILE)
 WRAPPED_CLASS(DbSequence, DbSequenceImp, DB_SEQUENCE)
+WRAPPED_CLASS(DbSite, DbSiteImp, DB_SITE)
 WRAPPED_CLASS(DbTxn, DbTxnImp, DB_TXN)
 
 // A tristate integer value used by the DB_ERROR macro below.

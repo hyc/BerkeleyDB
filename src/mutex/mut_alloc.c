@@ -23,8 +23,6 @@ __mutex_alloc(env, alloc_id, flags, indxp)
 	u_int32_t flags;
 	db_mutex_t *indxp;
 {
-	int ret;
-
 	/* The caller may depend on us to initialize. */
 	*indxp = MUTEX_INVALID;
 
@@ -34,7 +32,7 @@ __mutex_alloc(env, alloc_id, flags, indxp)
 	 * or the environment isn't multi-process by definition, there's no
 	 * need to mutex at all.
 	 */
-	if (alloc_id != MTX_APPLICATION &&
+	if (alloc_id != MTX_APPLICATION && alloc_id != MTX_MUTEX_TEST &&
 	    (F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||
 	    (!F_ISSET(env, ENV_THREAD) &&
 	    (LF_ISSET(DB_MUTEX_PROCESS_ONLY) ||
@@ -49,35 +47,12 @@ __mutex_alloc(env, alloc_id, flags, indxp)
 	 * If we have a region in which to allocate the mutexes, lock it and
 	 * do the allocation.
 	 */
-	if (MUTEX_ON(env))
-		return (__mutex_alloc_int(env, 1, alloc_id, flags, indxp));
-
-	/*
-	 * We have to allocate some number of mutexes before we have a region
-	 * in which to allocate them.  We handle this by saving up the list of
-	 * flags and allocating them as soon as we have a handle.
-	 *
-	 * The list of mutexes to alloc is maintained in pairs: first the
-	 * alloc_id argument, second the flags passed in by the caller.
-	 */
-	if (env->mutex_iq == NULL) {
-		env->mutex_iq_max = 50;
-		if ((ret = __os_calloc(env, env->mutex_iq_max,
-		    sizeof(env->mutex_iq[0]), &env->mutex_iq)) != 0)
-			return (ret);
-	} else if (env->mutex_iq_next == env->mutex_iq_max - 1) {
-		env->mutex_iq_max *= 2;
-		if ((ret = __os_realloc(env,
-		    env->mutex_iq_max * sizeof(env->mutex_iq[0]),
-		    &env->mutex_iq)) != 0)
-			return (ret);
+	if (!MUTEX_ON(env)) {
+		__db_errx(env, DB_STR("2033",
+		    "Mutex allocated before mutex region."));
+		return (__env_panic(env, EINVAL));
 	}
-	*indxp = env->mutex_iq_next + 1;	/* Correct for MUTEX_INVALID. */
-	env->mutex_iq[env->mutex_iq_next].alloc_id = alloc_id;
-	env->mutex_iq[env->mutex_iq_next].flags = flags;
-	++env->mutex_iq_next;
-
-	return (0);
+	return (__mutex_alloc_int(env, 1, alloc_id, flags, indxp));
 }
 
 /*
@@ -98,6 +73,9 @@ __mutex_alloc_int(env, locksys, alloc_id, flags, indxp)
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
+	db_mutex_t i;
+	size_t len;
+	u_int32_t cnt;
 	int ret;
 
 	dbenv = env->dbenv;
@@ -114,15 +92,63 @@ __mutex_alloc_int(env, locksys, alloc_id, flags, indxp)
 		MUTEX_SYSTEM_LOCK(env);
 
 	if (mtxregion->mutex_next == MUTEX_INVALID) {
-		__db_errx(env,
-		    "unable to allocate memory for mutex; resize mutex region");
-		if (locksys)
-			MUTEX_SYSTEM_UNLOCK(env);
-		return (ENOMEM);
+		if (mtxregion->stat.st_mutex_max != 0 &&
+		    mtxregion->stat.st_mutex_cnt >=
+		    mtxregion->stat.st_mutex_max) {
+nomem:			__db_errx(env, DB_STR("2034",
+	    "unable to allocate memory for mutex; resize mutex region"));
+			if (locksys)
+				MUTEX_SYSTEM_UNLOCK(env);
+			return (ret == 0 ? ENOMEM : ret);
+		}
+		cnt = mtxregion->stat.st_mutex_cnt / 2;
+		if (cnt < 8)
+			cnt = 8;
+		if (mtxregion->stat.st_mutex_max != 0 &&
+		    mtxregion->stat.st_mutex_cnt + cnt >
+		    mtxregion->stat.st_mutex_max)
+			cnt = mtxregion->stat.st_mutex_max -
+			    mtxregion->stat.st_mutex_cnt;
+		if (F_ISSET(env, ENV_PRIVATE)) {
+			F_SET(&mtxmgr->reginfo, REGION_TRACKED);
+			while (__env_alloc(&mtxmgr->reginfo,
+			    (cnt * mtxregion->mutex_size) +
+			    mtxregion->stat.st_mutex_align, &i) != 0)
+				if ((cnt >> 1) == 0)
+					break;
+			F_CLR(&mtxmgr->reginfo, REGION_TRACKED);
+			i = (db_mutex_t)ALIGNP_INC(i,
+			    mtxregion->stat.st_mutex_align);
+		} else {
+			len = cnt * mtxregion->mutex_size;
+			if ((ret = __env_alloc_extend(&mtxmgr->reginfo,
+			    R_ADDR(&mtxmgr->reginfo,
+			    mtxregion->mutex_off_alloc), &len)) != 0)
+				goto nomem;
+			cnt = (u_int32_t)(len / mtxregion->mutex_size);
+			i = mtxregion->stat.st_mutex_cnt + 1;
+		}
+		if (cnt == 0)
+			goto nomem;
+		mutexp = MUTEXP_SET(env, i);
+		mtxregion->stat.st_mutex_free = cnt;
+		mtxregion->mutex_next = i;
+		mtxregion->stat.st_mutex_cnt += cnt;
+		while (--cnt > 0) {
+			mutexp->flags = 0;
+			if (F_ISSET(env, ENV_PRIVATE))
+				mutexp->mutex_next_link =
+				    (uintptr_t)(mutexp + 1);
+			else
+				mutexp->mutex_next_link = ++i;
+			mutexp++;
+		}
+		mutexp->flags = 0;
+		mutexp->mutex_next_link = MUTEX_INVALID;
 	}
 
 	*indxp = mtxregion->mutex_next;
-	mutexp = MUTEXP_SET(mtxmgr, *indxp);
+	mutexp = MUTEXP_SET(env, *indxp);
 	DB_ASSERT(env,
 	    ((uintptr_t)mutexp & (dbenv->mutex_align - 1)) == 0);
 	mtxregion->mutex_next = mutexp->mutex_next_link;
@@ -214,7 +240,7 @@ __mutex_free_int(env, locksys, indxp)
 
 	mtxmgr = env->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 	DB_ASSERT(env, F_ISSET(mutexp, DB_MUTEX_ALLOCATED));
 	F_CLR(mutexp, DB_MUTEX_ALLOCATED);
@@ -248,12 +274,10 @@ __mutex_refresh(env, mutex)
 	db_mutex_t mutex;
 {
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 	u_int32_t flags;
 	int ret;
 
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 	flags = mutexp->flags;
 	if ((ret = __mutex_destroy(env, mutex)) == 0) {
 		memset(mutexp, 0, sizeof(*mutexp));

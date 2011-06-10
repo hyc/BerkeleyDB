@@ -20,6 +20,7 @@ proc rep034 { method { niter 2 } { tnum "034" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -42,11 +43,16 @@ proc rep034 { method { niter 2 } { tnum "034" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 3]
 	foreach l $logsets {
 		puts "Rep$tnum ($method $args): Test of\
-		    startup synchronization detection $msg $msg2."
+		    startup synchronization detection $msg $msg2 $msg3."
 		puts "Rep$tnum: Master logs are [lindex $l 0]"
 		puts "Rep$tnum: Client 0 logs are [lindex $l 1]"
 		puts "Rep$tnum: Client 1 logs are [lindex $l 2]"
@@ -63,6 +69,7 @@ proc rep034_sub { method niter tnum logset largs } {
 	global testdir
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 	global rep034_got_allreq
@@ -75,6 +82,11 @@ proc rep034_sub { method niter tnum logset largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -110,7 +122,7 @@ proc rep034_sub { method niter tnum logset largs } {
 	# 
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $m_logargs \
-	    -event $verbargs -errpfx MASTER $repmemargs \
+	    -event $verbargs -errpfx MASTER $repmemargs $privargs \
 	    -home $masterdir -rep_master -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd]
 	puts "\tRep$tnum.a: Create master; add some data."
@@ -122,7 +134,7 @@ proc rep034_sub { method niter tnum logset largs } {
 	puts "\tRep$tnum.b: Bring up client; check STARTUPDONE."
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $c_logargs \
-	    -event $verbargs -errpfx CLIENT $repmemargs \
+	    -event $verbargs -errpfx CLIENT $repmemargs $privargs \
 	    -home $clientdir -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd]
 	set envlist "{$masterenv 1} {$clientenv 2}"
@@ -151,7 +163,7 @@ proc rep034_sub { method niter tnum logset largs } {
 	# of the replication transport call-back function.
 	#
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs $c2_logargs \
-	    -event $verbargs -errpfx CLIENT2 $repmemargs \
+	    -event $verbargs -errpfx CLIENT2 $repmemargs $privargs \
 	    -home $clientdir2 -rep_client -rep_transport \[list 3 rep034_send\]"
 	set client2env [eval $cl2_envcmd]
 

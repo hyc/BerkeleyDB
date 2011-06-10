@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -29,10 +29,22 @@ public class MutexStats {
         return st_mutex_tas_spins;
     }
 
+    private int st_mutex_init;
+    /** The initial number of mutexes configured. */
+    public int getMutexInit() {
+        return st_mutex_init;
+    }
+
     private int st_mutex_cnt;
     /** The total number of mutexes configured. **/
     public int getMutexCount() {
         return st_mutex_cnt;
+    }
+
+    private int st_mutex_max;
+    /** The maximum number of mutexes. */
+    public int getMutexMax() {
+        return st_mutex_max;
     }
 
     private int st_mutex_free;
@@ -71,10 +83,16 @@ public class MutexStats {
         return st_region_nowait;
     }
 
-    private int st_regsize;
+    private long st_regsize;
     /** The size of the mutex region, in bytes. **/
-    public int getRegSize() {
+    public long getRegSize() {
         return st_regsize;
+    }
+
+    private long st_regmax;
+    /** The max size of the mutex region size. */
+    public long getRegmax() {
+        return st_regmax;
     }
 
     /**
@@ -85,13 +103,16 @@ public class MutexStats {
         return "MutexStats:"
             + "\n  st_mutex_align=" + st_mutex_align
             + "\n  st_mutex_tas_spins=" + st_mutex_tas_spins
+            + "\n  st_mutex_init=" + st_mutex_init
             + "\n  st_mutex_cnt=" + st_mutex_cnt
+            + "\n  st_mutex_max=" + st_mutex_max
             + "\n  st_mutex_free=" + st_mutex_free
             + "\n  st_mutex_inuse=" + st_mutex_inuse
             + "\n  st_mutex_inuse_max=" + st_mutex_inuse_max
             + "\n  st_region_wait=" + st_region_wait
             + "\n  st_region_nowait=" + st_region_nowait
             + "\n  st_regsize=" + st_regsize
+            + "\n  st_regmax=" + st_regmax
             ;
     }
 }

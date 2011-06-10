@@ -10,7 +10,7 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/ex_java.pch" AssemblerListingLocation="$(OutDir)/ex_java/" ObjectFile="$(OutDir)/ex_java/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/ex_java.pch" AssemblerListingLocation="$(OutDir)/ex_java/" ObjectFile="$(OutDir)/ex_java/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
       <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/ex_java.exe" ProgramDatabaseFile="$(OutDir)/ex_java.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
@@ -32,7 +32,7 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/ex_java.pch" AssemblerListingLocation="$(OutDir)/ex_java/" ObjectFile="$(OutDir)/ex_java/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/ex_java.pch" AssemblerListingLocation="$(OutDir)/ex_java/" ObjectFile="$(OutDir)/ex_java/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
       <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/ex_java.exe" ProgramDatabaseFile="$(OutDir)/ex_java.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>

@@ -43,15 +43,27 @@ proc rep085 { method {niter 20} {tnum 085} args } {
 
 proc rep085_sub { method niter tnum largs } {
 	global testdir
+	global env_private
 	global rep_verbose
 	global verbose_type
 	global rep085_page_msg_count rep085_update_req_count
-	
-	puts "Rep$tnum ($method): skipping unnecessary abbreviated internal init."
+
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
+	puts "Rep$tnum ($method):\
+	    Skipping unnecessary abbreviated internal init $msg3."
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {$verbose_type on} "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -67,7 +79,7 @@ proc rep085_sub { method niter tnum largs } {
 	puts "\tRep$tnum.a: Create master"
 	repladd 1
 	set env_A_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -errpfx SITE_A -errfile /dev/stderr \
 	    -home $dirs(A) -rep_transport \[list 1 rep085_send\]"
 	set envs(A) [eval $env_A_cmd -rep_master]
@@ -79,14 +91,14 @@ proc rep085_sub { method niter tnum largs } {
 	puts "\tRep$tnum.c: Create two clients"
 	repladd 2
 	set env_B_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -errpfx SITE_B -errfile /dev/stderr \
 	    -home $dirs(B) -rep_transport \[list 2 rep085_send\]"
 	set envs(B) [eval $env_B_cmd -rep_client]
 
 	repladd 3
 	set env_C_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -errpfx SITE_C -errfile /dev/stderr \
 	    -home $dirs(C) -rep_transport \[list 3 rep085_send\]"
 	set envs(C) [eval $env_C_cmd -rep_client]
@@ -100,7 +112,9 @@ proc rep085_sub { method niter tnum largs } {
 	# that.  If there are no NIMDBs whatsoever (which is the case here),
 	# then the condition "any NIMDBs are loaded" is trivially satisfied.
 	# 
-	assert_rep_flag $dirs(C) REP_F_NIMDBS_LOADED 1
+	if { !$env_private } {
+		assert_rep_flag $dirs(C) REP_F_NIMDBS_LOADED 1
+	}
 
 	# Restart client C with recovery, which forces it to check for NIMDBs
 	# even though a full internal init is not necessary.
@@ -108,7 +122,9 @@ proc rep085_sub { method niter tnum largs } {
 	puts "\tRep$tnum.d: Bounce client C"
 	$envs(C) close
 	set envs(C) [eval $env_C_cmd -rep_client -recover]
-	assert_rep_flag $dirs(C) REP_F_NIMDBS_LOADED 0
+	if { !$env_private } {
+		assert_rep_flag $dirs(C) REP_F_NIMDBS_LOADED 0
+	}
 	set upd_before $rep085_update_req_count
 	set pg_before $rep085_page_msg_count
 	set envlist "{$envs(A) 1} {$envs(B) 2} {$envs(C) 3}"
@@ -116,7 +132,9 @@ proc rep085_sub { method niter tnum largs } {
 	error_check_good update.msg.sent \
 	    $rep085_update_req_count [incr upd_before]
 	error_check_good no.page.msg $rep085_page_msg_count $pg_before
-	assert_rep_flag $dirs(C) REP_F_NIMDBS_LOADED 1
+	if { !$env_private } {
+		assert_rep_flag $dirs(C) REP_F_NIMDBS_LOADED 1
+	}
 
 	# Switch masters, forcing client C to re-sync.  But this time it already
 	# knows it has NIMDBs, so even an UPDATE_REQ shouldn't be necessary.

@@ -21,6 +21,11 @@ proc test109 { method {tnum "109"} args } {
 		puts "Test109 skipping for partitioned $method"
 		return
 	}
+        if { [is_heap $method] } {
+	        puts "Test109 skipping for method $method."
+		return
+	}
+
 	if { $eindex == -1 } {
 		set env NULL
 	} else {

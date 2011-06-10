@@ -12,7 +12,10 @@
     <link rel="next" href="am_foreign.html" title="Foreign key indexes" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Secondary indexes</th>
@@ -39,7 +42,7 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="am_second.html#idp50703760">Error Handling With Secondary Indexes</a>
+              <a href="am_second.html#id3884591">Error Handling With Secondary Indexes</a>
             </span>
           </dt>
         </dl>
@@ -66,11 +69,14 @@ a secondary index in which the secondary key was this last name.</p>
 CREATE INDEX lname ON students(lastname);</pre>
       <p>In Berkeley DB, this would work as follows (a
 <a class="ulink" href="second.javas" target="_top">Java API example is also available</a>):</p>
+      <a id="prog_am13"></a>
       <pre class="programlisting">struct student_record {
     char student_id[4];
     char last_name[15];
     char first_name[15];
 };
+
+....
 
 void
 second()
@@ -107,10 +113,8 @@ second()
  *     key/data pair
  */
 int
-getname(secondary, pkey, pdata, skey)
-    DB *secondary;
-    const DBT *pkey, *pdata;
-    DBT *skey;
+getname(DB *secondary, const DBT *pkey, const DBT *pdata, DBT *skey)
+    
 {
     /*
      * Since the secondary key is a simple structure member of the
@@ -133,6 +137,7 @@ following:</p>
       <pre class="programlisting">INSERT INTO student
     VALUES ("WC42", "Churchill      ", "Winston        ");</pre>
       <p>and in Berkeley DB, one does:</p>
+      <a id="prog_am14"></a>
       <pre class="programlisting">struct student_record s;
 DBT data, key;
 
@@ -147,13 +152,15 @@ memcpy(&amp;s.first_name, "Winston        ", sizeof(s.first_name));
 data.data = &amp;s;
 data.size = sizeof(s);
 if ((ret = dbp-&gt;put(dbp, txn, &amp;key, &amp;data, 0)) != 0)
-    handle_error(ret);</pre>
+    handle_error(ret);
+    </pre>
       <p>Internally, a record with secondary key "Churchill" is inserted into
 the secondary database (in addition to the insertion of "WC42" into the
 primary, of course).</p>
       <p>Deletes are similar.  The SQL clause:</p>
       <pre class="programlisting">DELETE FROM student WHERE (student_id = "WC42");</pre>
       <p>looks like:</p>
+      <a id="prog_am15"></a>
       <pre class="programlisting">DBT key;
 
 memset(&amp;key, 0, sizeof(DBT));
@@ -169,6 +176,7 @@ from both the secondary index and the primary database. In
 SQL:</p>
       <pre class="programlisting">DELETE FROM lname WHERE (lastname = "Churchill      ");</pre>
       <p>In Berkeley DB:</p>
+      <a id="prog_am16"></a>
       <pre class="programlisting">DBT skey;
 
 memset(&amp;skey, 0, sizeof(DBT));
@@ -181,8 +189,9 @@ if ((ret = sdbp-&gt;del(sdbp, txn, &amp;skey, 0)) != 0)
 equivalent of:</p>
       <pre class="programlisting">SELECT * from lname WHERE (lastname = "Churchill      ");</pre>
       <p>would be:</p>
+      <a id="prog_am17"></a>
       <pre class="programlisting">DBT data, pkey, skey;
-&lt;para /&gt;
+
 memset(&amp;skey, 0, sizeof(DBT));
 memset(&amp;pkey, 0, sizeof(DBT));
 memset(&amp;data, 0, sizeof(DBT));
@@ -243,7 +252,7 @@ secondary database handles associated with it.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50703760"></a>Error Handling With Secondary Indexes</h3>
+              <h3 class="title"><a id="id3884591"></a>Error Handling With Secondary Indexes</h3>
             </div>
           </div>
         </div>

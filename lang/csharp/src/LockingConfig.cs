@@ -54,6 +54,89 @@ namespace BerkeleyDB {
             }
         }
 
+        private uint _initlockercount;
+        internal bool initLockerCountIsSet;
+        /// <summary>
+        /// The initial number of simultaneous locking entities created by the
+        /// Berkeley DB environment
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This value is used by <see cref="DatabaseEnvironment.Open"/> to
+        /// force Berkeley DB to allocate a certain number of locker objects
+        /// when the environment is created. This can be useful if an
+        /// application uses a large number of locker objects, and experiences
+        /// performance issues with the default dynamic allocation algorithm.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// InitLockers will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint InitLockerCount {
+            get { return _initlockercount; }
+            set {
+                initLockerCountIsSet = true;
+                _initlockercount = value;
+            }
+        }
+
+        private uint _initlockcount;
+        internal bool initLockCountIsSet;
+        /// <summary>
+        /// The initial number of locks created by the Berkeley DB environment
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This value is used by <see cref="DatabaseEnvironment.Open"/> to
+        /// force Berkeley DB to allocate a certain number of locks when
+        /// the environment is created. This can be useful if an application
+        /// uses a large number of locks, and experiences performance issues
+        /// with the default dynamic allocation algorithm.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// InitLocks will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint InitLockCount {
+            get { return _initlockcount; }
+            set {
+                initLockCountIsSet = true;
+                _initlockcount = value;
+            }
+        }
+
+        private uint _initlockobjectcount;
+        internal bool initLockObjectCountIsSet;
+        /// <summary>
+        /// The initial number of lock objects created by the Berkeley DB
+        /// environment
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This value is used by <see cref="DatabaseEnvironment.Open"/> to
+        /// force Berkeley DB to allocate a certain number of lock objects
+        /// when the environment is created. This can be useful if an
+        /// application uses a large number of lock objects, and experiences
+        /// performance issues with the default dynamic allocation algorithm.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// InitLockObjects will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint InitLockObjectCount {
+            get { return _initlockobjectcount; }
+            set {
+                initLockObjectCountIsSet = true;
+                _initlockobjectcount = value;
+            }
+        }
+
         private uint _maxlockers;
         internal bool maxLockersIsSet;
         /// <summary>
@@ -165,6 +248,31 @@ namespace BerkeleyDB {
             set {
                 partitionsIsSet = true;
                 _partitions = value;
+            }
+        }
+        private uint _tablesize;
+        internal bool tablesizeIsSet;
+        /// <summary>
+        /// Set the number of buckets in the lock object hash table in the
+        /// Berkeley DB environment.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The table is generally set to be close to the number of lock
+        /// objects in the system to avoid collisions and delays in processing
+        /// of lock operations.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// tablesize will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint TableSize {
+            get { return _tablesize; }
+            set {
+                tablesizeIsSet = true;
+                _tablesize = value;
             }
         }
 

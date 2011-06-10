@@ -670,7 +670,7 @@ err:	if (new_pagep != NULL)
 		(void)__memp_fput(mpf,
 			dbc->thread_info, next_pagep, dbc->priority);
 	return (ret);
-		
+
 }
 
 /*

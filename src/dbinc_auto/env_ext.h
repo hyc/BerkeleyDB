@@ -11,11 +11,17 @@ size_t __env_alloc_overhead __P((void));
 size_t __env_alloc_size __P((size_t));
 int __env_alloc __P((REGINFO *, size_t, void *));
 void __env_alloc_free __P((REGINFO *, void *));
+int __env_alloc_extend __P((REGINFO *, void *, size_t *));
+int __env_region_extend __P((ENV *, REGINFO *));
+uintmax_t __env_elem_size __P((ENV *, void *));
+void * __env_get_chunk __P((REGINFO *, void **, uintmax_t *));
 void __env_alloc_print __P((REGINFO *, u_int32_t));
 int __env_read_db_config __P((ENV *));
 int __config_split __P((char *, char *[]));
 int __env_failchk_pp __P((DB_ENV *, u_int32_t));
 int __env_failchk_int __P((DB_ENV *));
+size_t __env_thread_size __P((ENV *, size_t));
+size_t __env_thread_max __P((ENV *));
 int __env_thread_init __P((ENV *, int));
 void __env_thread_destroy __P((ENV *));
 int __env_set_state __P((ENV *, DB_THREAD_INFO **, DB_THREAD_STATE));
@@ -26,6 +32,10 @@ int __db_file_write __P((ENV *, DB_FH *, u_int32_t, u_int32_t, int));
 void __db_env_destroy __P((DB_ENV *));
 int  __env_get_alloc __P((DB_ENV *, void *(**)(size_t), void *(**)(void *, size_t), void (**)(void *)));
 int  __env_set_alloc __P((DB_ENV *, void *(*)(size_t), void *(*)(void *, size_t), void (*)(void *)));
+int  __env_get_memory_init __P((DB_ENV *, DB_MEM_CONFIG, u_int32_t *));
+int  __env_set_memory_init __P((DB_ENV *, DB_MEM_CONFIG, u_int32_t));
+int  __env_get_memory_max __P((DB_ENV *, u_int32_t *, u_int32_t *));
+int  __env_set_memory_max __P((DB_ENV *, u_int32_t, u_int32_t));
 int __env_get_encrypt_flags __P((DB_ENV *, u_int32_t *));
 int __env_set_encrypt __P((DB_ENV *, const char *, u_int32_t));
 void __env_map_flags __P((const FLAG_MAP *, u_int, u_int32_t *, u_int32_t *));
@@ -77,11 +87,13 @@ int __env_ref_increment __P((ENV *));
 int __env_ref_decrement __P((ENV *));
 int __env_detach __P((ENV *, int));
 int __env_remove_env __P((ENV *));
-int __env_region_attach __P((ENV *, REGINFO *, size_t));
+int __env_region_attach __P((ENV *, REGINFO *, size_t, size_t));
+int __env_region_share __P((ENV *, REGINFO *));
 int __env_region_detach __P((ENV *, REGINFO *, int));
 int __envreg_register __P((ENV *, int *, u_int32_t));
 int __envreg_unregister __P((ENV *, int));
 int __envreg_xunlock __P((ENV *));
+int __envreg_isalive __P((DB_ENV *, pid_t, db_threadid_t, u_int32_t));
 u_int32_t __env_struct_sig __P((void));
 int __env_stat_print_pp __P((DB_ENV *, u_int32_t));
 void __db_print_fh __P((ENV *, const char *, DB_FH *, u_int32_t));
@@ -95,19 +107,19 @@ int __db_stat_not_built __P((ENV *));
 int __repmgr_close __P((ENV *));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
-int __repmgr_add_remote_site __P((DB_ENV *, const char *, u_int, int *, u_int32_t));
-#endif
-#ifndef HAVE_REPLICATION_THREADS
 int __repmgr_get_ack_policy __P((DB_ENV *, int *));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_set_ack_policy __P((DB_ENV *, int));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
-int __repmgr_set_local_site __P((DB_ENV *, const char *, u_int, u_int32_t));
+int __repmgr_site __P((DB_ENV *, const char *, u_int, DB_SITE **, u_int32_t));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
-int __repmgr_get_local_site __P((DB_ENV *, const char **, u_int *));
+int __repmgr_site_by_eid __P((DB_ENV *, int, DB_SITE **));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_local_site __P((DB_ENV *, DB_SITE **));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_site_list __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
@@ -123,6 +135,15 @@ int __repmgr_stat_print_pp __P((DB_ENV *, u_int32_t));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_handle_event __P((ENV *, u_int32_t, void *));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_channel __P((DB_ENV *, int, DB_CHANNEL **, u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_set_msg_dispatch __P((DB_ENV *, void (*)(DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t), u_int32_t));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_init_recover __P((ENV *, DB_DISTAB *));
 #endif
 
 #if defined(__cplusplus)

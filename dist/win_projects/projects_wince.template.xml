@@ -24,29 +24,27 @@
   <preprocessor config="app">POCKETPC2003_UI_MODEL</preprocessor>
   <preprocessor config="static_lib">_LIB;</preprocessor>
   <preprocessor config="static_app"></preprocessor>
-  
-  <!-- Static libraries -->
-  <library name="db_static">
-    <libname config="Debug">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
-    <libname config="Release">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
-  </library>
-  <library name="db_sql_static">
-    <libname config="Debug">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
-    <libname config="Release">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
-  </library>
-  <library name="db_small_static">
-    <libname config="Debug">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
-    <libname config="Release">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
+ 
+  <!-- Project libraries --> 
+  <library name="db_small">
+    <libname config="Debug">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
+    <libname config="Release">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
+    <libname config="Static Debug">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
   </library>
   
-  <!-- Dynamic libraries -->
   <library name="db">
     <libname config="Debug">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
     <libname config="Release">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
+    <libname config="Static Debug">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
   </library>
+
   <library name="db_sql">
     <libname config="Debug">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
     <libname config="Release">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
+    <libname config="Static Debug">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
   </library>
   
   <!-- Project includes -->
@@ -54,33 +52,16 @@
   <include name="db_sql_src">../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src</include>
   <include name="sql_app">../lang/sql/generated</include>
   
-  <!-- Static library projects -->
-  <project name="db_static" guid="4AB4958F-8DD0-49B5-8C02-014B5637C59A">
-    <type>static_lib</type>
-    <include type="ref">all</include>
-    <preprocessor config="Debug">DIAGNOSTIC;CONFIG_TEST</preprocessor>
-  </project>
-  <project name="db_small_static" guid="6A2849DA-8F7C-4B50-BDAE-AE7752EF8213">
-    <type>static_lib</type>
-    <include type="ref">all</include>
-    <preprocessor config="all">DB_CREATE_DLL;HAVE_SMALLBUILD</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
-  </project>
-  <project name="db_sql_static" guid="BBFD891E-5E69-11DF-B248-1B8CDFD72085">
-    <type>static_lib</type>
-    <include type="ref">all</include>
-    <include type="ref">db_sql_src</include>
-    <preprocessor config="all">SQLITE_EXPORTS;SQLITE_CORE;SQLITE_OMIT_WAL;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING</preprocessor>
-    <preprocessor config="Debug">SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
-  </project>
   
-  <!-- Dynamic library projects -->
+  <!-- db library projects -->
   <project name="db" guid="CDE1C264-5E6C-11DF-AC8B-D58FDFD72085">
-    <type>dll</type>
+    <type>library</type>
+    <configuration>Static </configuration>
     <include type="ref">all</include>
     <moddef file="build_windows/libdb.def"/>
-    <preprocessor config="all">DB_CREATE_DLL</preprocessor>
+    <preprocessor config="dll">DB_CREATE_DLL</preprocessor>
     <preprocessor config="Debug">DIAGNOSTIC;CONFIG_TEST</preprocessor>
+    <preprocessor config="Static Debug">DIAGNOSTIC;</preprocessor>
     <files>
       <file name="src\btree\bt_compact.c"/>
       <file name="src\btree\bt_compare.c"/>
@@ -100,6 +81,7 @@
       <file name="src\btree\bt_stat.c"/>
       <file name="src\btree\btree_auto.c"/>
       <file name="src\btree\bt_verify.c"/>
+      <file name="src\clib\bsearch.c"/>
       <file name="src\clib\strdup.c"/>
       <file name="src\clib\strerror.c"/>
       <file name="src\clib\strsep.c"/>
@@ -131,6 +113,7 @@
       <file name="src\db\db_cds.c"/>
       <file name="src\db\db_compact.c"/>
       <file name="src\db\db_conv.c"/>
+      <file name="src\db\db_copy.c"/>
       <file name="src\db\db_dispatch.c"/>
       <file name="src\db\db_dup.c"/>
       <file name="src\db\db_iface.c"/>
@@ -191,6 +174,15 @@
       <file name="src\hash\hash_reclaim.c"/>
       <file name="src\hash\hash_stat.c"/>
       <file name="src\hash\hash_verify.c"/>
+      <file name="src/heap/heap.c"/>
+      <file name="src/heap/heap_auto.c"/>
+      <file name="src/heap/heap_conv.c"/>
+      <file name="src/heap/heap_method.c"/>
+      <file name="src/heap/heap_open.c"/>
+      <file name="src/heap/heap_rec.c"/>
+      <file name="src/heap/heap_reclaim.c"/>
+      <file name="src/heap/heap_stat.c"/>
+      <file name="src/heap/heap_verify.c"/>
       <file name="src\hmac\hmac.c"/>
       <file name="src\hmac\sha1.c"/>
       <file name="src\lock\lock.c"/>
@@ -294,10 +286,13 @@
   </project>
   
   <project name="db_small" guid="XXX-NOT-USED-XXX">
-    <type>dll</type>
+    <type>library</type>
+    <configuration>Static </configuration>
     <include type="ref">all</include>
-    <preprocessor config="all">DB_CREATE_DLL;HAVE_SMALLBUILD</preprocessor>
+    <preprocessor config="all">HAVE_SMALLBUILD</preprocessor>
+    <preprocessor config="dll">DB_CREATE_DLL</preprocessor>
     <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
+    <preprocessor config="Static Debug">DIAGNOSTIC</preprocessor>
     <files>
       <file name="src\btree\bt_compact.c"/>
       <file name="src\btree\bt_compare.c"/>
@@ -316,6 +311,7 @@
       <file name="src\btree\bt_split.c"/>
       <file name="src\btree\bt_stat.c"/>
       <file name="src\btree\btree_auto.c"/>
+      <file name="src\clib\bsearch.c"/>
       <file name="src\clib\strdup.c"/>
       <file name="src\clib\strerror.c"/>
       <file name="src\clib\strsep.c"/>
@@ -343,6 +339,7 @@
       <file name="src\db\db_cds.c"/>
       <file name="src\db\db_compact.c"/>
       <file name="src\db\db_conv.c"/>
+      <file name="src\db\db_copy.c"/>
       <file name="src\db\db_dispatch.c"/>
       <file name="src\db\db_dup.c"/>
       <file name="src\db\db_iface.c"/>
@@ -389,6 +386,7 @@
       <file name="src\fileops\fop_util.c"/>
       <file name="src\hash\hash_func.c"/>
       <file name="src\hash\hash_stub.c"/>
+      <file name="src\heap\heap_stub.c"/>
       <file name="src\hmac\hmac.c"/>
       <file name="src\hmac\sha1.c"/>
       <file name="src\lock\lock.c"/>
@@ -480,11 +478,15 @@
   </project>
   
   <project name="db_sql" guid="ACE41B30-04BB-11DF-8A39-0800200C9A66">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
+    <configuration>Static </configuration>
     <include type="ref">all</include>
     <include type="ref">db_sql_src</include>
-    <preprocessor config="all">SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_API=__declspec(dllexport)</preprocessor>
+    <preprocessor config="all">SQLITE_EXPORTS;SQLITE_CORE;SQLITE_THREADSAFE=1;BDBSQL_OMIT_SHARING;SQLITE_OMIT_WAL;SQLITE_HAS_CODEC</preprocessor>
+    <preprocessor config="dll">SQLITE_API=__declspec(dllexport)</preprocessor>
     <preprocessor config="Debug">SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
+    <preprocessor config="Static Debug">SQLITE_TEST;SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
     <files>
       <file name="lang\sql\sqlite\src\alter.c"/>
       <file name="lang\sql\sqlite\src\analyze.c"/>
@@ -499,8 +501,10 @@
       <file name="lang\sql\sqlite\src\complete.c"/>
       <file name="lang\sql\sqlite\src\ctime.c"/>
       <file name="lang\sql\sqlite\src\date.c"/>
+      <file name="lang\sql\adapter\db_encrypt.c"/>
       <file name="lang\sql\adapter\db_pragma.c"/>
       <file name="lang\sql\adapter\db_shell.c"/>
+      <file name="lang\sql\adapter\db_sequence.c"/>
       <file name="lang\sql\sqlite\src\delete.c"/>
       <file name="lang\sql\sqlite\src\expr.c"/>
       <file name="lang\sql\sqlite\src\fault.c"/>
@@ -560,6 +564,7 @@
   <!-- Applications -->
   <project name="wce_sql" guid="75DF98AA-25DF-4183-A022-024CF918480D">
     <type>app</type>
+    <configuration></configuration>
     <include type="ref">all</include>
     <include type="ref">sql_app</include>
     <files>
@@ -577,6 +582,7 @@
   
   <project name="wce_tpcb" guid="F2CE670A-ABAE-414A-9A17-8079AB58613F">
     <type>app</type>
+    <configuration></configuration>
     <include type="ref">all</include>
     <files>
       <file name="examples/cxx/wce_tpcb/TpcbExample.cpp"/>

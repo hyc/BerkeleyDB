@@ -67,6 +67,42 @@ static void __dbj_message(const DB_ENV *dbenv, const char *msg)
 		__dbj_detach();
 }
 
+static void __dbj_repmgr_msg_dispatch(DB_ENV *dbenv, DB_CHANNEL *chan, DBT *msgs, u_int32_t nmsgs, u_int32_t flags)
+{
+	int detach;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
+	jobject jdbt;
+	jobjectArray jmsgs;
+	jbyteArray jdbtarr;
+	u_int32_t i;
+
+	if (jdbenv == NULL)
+		return;
+	
+	jmsgs = (*jenv)->NewObjectArray(jenv, nmsgs, dbt_class, NULL);
+	if (jmsgs == NULL)
+		goto err;
+	for (i = 0; i < nmsgs; i++) {
+		jdbt = (*jenv)->NewObject(jenv, dbt_class, dbt_construct);
+		__dbj_dbt_copyout(jenv, &(msgs[i]), &jdbtarr, jdbt);
+		if (jdbt == NULL) {
+			/* An exception is pending. */
+			goto err;
+		}
+		(*jenv)->SetObjectArrayElement(jenv, jmsgs, i, jdbt);
+	}
+	
+	(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv, dbenv_class, repmgr_msg_dispatch_method, chan, jmsgs, flags);
+	
+	(*jenv)->DeleteLocalRef(jenv, jdbt);
+	(*jenv)->DeleteLocalRef(jenv, jdbtarr);
+	(*jenv)->DeleteLocalRef(jenv, jmsgs);
+
+err:	if (detach)
+		__dbj_detach();
+}
+
 static void __dbj_panic(DB_ENV *dbenv, int ret)
 {
 	int detach;
@@ -142,6 +178,18 @@ static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_client_event_notify_method);
 		break;
+	case DB_EVENT_REP_CONNECT_BROKEN:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_connect_broken_event_notify_method);
+		break;
+	case DB_EVENT_REP_CONNECT_ESTD:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_connect_established_event_notify_method);
+		break;
+	case DB_EVENT_REP_CONNECT_TRY_FAILED:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_connect_try_failed_event_notify_method);
+		break;
 	case DB_EVENT_REP_DUPMASTER:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_dupmaster_event_notify_method);
@@ -154,9 +202,17 @@ static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_election_failed_event_notify_method);
 		break;
+	case DB_EVENT_REP_INIT_DONE:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_init_done_event_notify_method);
+		break;
 	case DB_EVENT_REP_JOIN_FAILURE:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_join_failure_event_notify_method);
+		break;
+	case DB_EVENT_REP_LOCAL_SITE_REMOVED:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_local_site_removed_notify_method);
 		break;
 	case DB_EVENT_REP_MASTER:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
@@ -174,6 +230,14 @@ static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 	case DB_EVENT_REP_PERM_FAILED:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_perm_failed_event_notify_method);
+		break;
+	case DB_EVENT_REP_SITE_ADDED:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_site_added_event_notify_method);
+		break;
+	case DB_EVENT_REP_SITE_REMOVED:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_site_removed_event_notify_method);
 		break;
 	case DB_EVENT_REP_STARTUPDONE:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
@@ -916,6 +980,8 @@ JAVA_CALLBACK(int (*tx_recover)(DB_ENV *, DBT *, DB_LSN *, db_recops),
 JAVA_CALLBACK(int (*send)(DB_ENV *, const DBT *, const DBT *,
 			       const DB_LSN *, int, u_int32_t),
     com.sleepycat.db.ReplicationTransport, rep_transport)
+JAVA_CALLBACK(void (*dispatch)(DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t),
+    com.sleepycat.db.ReplicationManagerMessageDispatch, repmgr_msg_dispatch)
 
 /*
  * Db.associate is a special case, because the handler must be set in the

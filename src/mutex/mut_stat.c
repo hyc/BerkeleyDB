@@ -37,6 +37,9 @@ __mutex_stat_pp(dbenv, statp, flags)
 
 	env = dbenv->env;
 
+	ENV_REQUIRES_CONFIG(env,
+	    env->mutex_handle, "DB_ENV->mutex_stat", DB_INIT_MUTEX);
+
 	if ((ret = __db_fchk(env,
 	    "DB_ENV->mutex_stat", flags, DB_STAT_CLEAR)) != 0)
 		return (ret);
@@ -77,6 +80,7 @@ __mutex_stat(env, statp, flags)
 	 */
 	*stats = mtxregion->stat;
 	stats->st_regsize = mtxmgr->reginfo.rp->size;
+	stats->st_regmax = mtxmgr->reginfo.rp->max;
 	__mutex_set_wait_info(env, mtxregion->mtx_region,
 	    &stats->st_region_wait, &stats->st_region_nowait);
 	if (LF_ISSET(DB_STAT_CLEAR))
@@ -105,8 +109,11 @@ __mutex_stat_print_pp(dbenv, flags)
 
 	env = dbenv->env;
 
+	ENV_REQUIRES_CONFIG(env,
+	    env->mutex_handle, "DB_ENV->mutex_stat_print", DB_INIT_MUTEX);
+
 	if ((ret = __db_fchk(env, "DB_ENV->mutex_stat_print",
-	    flags, DB_STAT_ALL | DB_STAT_CLEAR)) != 0)
+	    flags, DB_STAT_ALL | DB_STAT_ALLOC | DB_STAT_CLEAR)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
@@ -151,23 +158,41 @@ __mutex_print_summary(env)
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
+	void *chunk;
 	db_mutex_t i;
 	u_int32_t counts[MTX_MAX_ENTRY + 2];
+	uintmax_t size;
 	int alloc_id;
 
 	mtxmgr = env->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
 	memset(counts, 0, sizeof(counts));
+	size = 0;
 
-	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i, ++mutexp) {
-		mutexp = MUTEXP_SET(mtxmgr, i);
-
+	if (F_ISSET(env, ENV_PRIVATE)) {
+		mutexp = (DB_MUTEX *)mtxmgr->mutex_array + 1;
+		chunk = NULL;
+		size = __env_elem_size(env,
+		    ROFF_TO_P(mtxregion->mutex_off_alloc));
+		size -= sizeof(*mutexp);
+	} else
+		mutexp = MUTEXP_SET(env, 1);
+	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i) {
 		if (!F_ISSET(mutexp, DB_MUTEX_ALLOCATED))
 			counts[0]++;
 		else if (mutexp->alloc_id > MTX_MAX_ENTRY)
 			counts[MTX_MAX_ENTRY + 1]++;
 		else
 			counts[mutexp->alloc_id]++;
+
+		mutexp++;
+		if (F_ISSET(env, ENV_PRIVATE) &&
+		    (size -= sizeof(*mutexp)) < sizeof(*mutexp)) {
+			mutexp =
+			    __env_get_chunk(&mtxmgr->reginfo, &chunk, &size);
+			mutexp =
+			    ALIGNP_INC(mutexp, mtxregion->stat.st_mutex_align);
+		}
 	}
 	__db_msg(env, "Mutex counts");
 	__db_msg(env, "%d\tUnallocated", counts[0]);
@@ -199,13 +224,17 @@ __mutex_print_stats(env, flags)
 
 	__db_dlbytes(env, "Mutex region size",
 	    (u_long)0, (u_long)0, (u_long)sp->st_regsize);
+	__db_dlbytes(env, "Mutex region max size",
+	    (u_long)0, (u_long)0, (u_long)sp->st_regmax);
 	__db_dl_pct(env,
 	    "The number of region locks that required waiting",
 	    (u_long)sp->st_region_wait, DB_PCT(sp->st_region_wait,
 	    sp->st_region_wait + sp->st_region_nowait), NULL);
 	STAT_ULONG("Mutex alignment", sp->st_mutex_align);
 	STAT_ULONG("Mutex test-and-set spins", sp->st_mutex_tas_spins);
+	STAT_ULONG("Mutex initial count", sp->st_mutex_init);
 	STAT_ULONG("Mutex total count", sp->st_mutex_cnt);
+	STAT_ULONG("Mutex max count", sp->st_mutex_max);
 	STAT_ULONG("Mutex free count", sp->st_mutex_free);
 	STAT_ULONG("Mutex in-use count", sp->st_mutex_inuse);
 	STAT_ULONG("Mutex maximum in-use count", sp->st_mutex_inuse_max);
@@ -237,6 +266,8 @@ __mutex_print_all(env, flags)
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
 	db_mutex_t i;
+	uintmax_t size;
+	void *chunk;
 
 	DB_MSGBUF_INIT(&mb);
 	mbp = &mb;
@@ -262,15 +293,23 @@ __mutex_print_all(env, flags)
 	 */
 	__db_msg(env, "%s", DB_GLOBAL(db_line));
 	__db_msg(env, "mutex\twait/nowait, pct wait, holder, flags");
-	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i, ++mutexp) {
-		mutexp = MUTEXP_SET(mtxmgr, i);
-
+	size = 0;
+	if (F_ISSET(env, ENV_PRIVATE)) {
+		mutexp = (DB_MUTEX *)mtxmgr->mutex_array + 1;
+		chunk = NULL;
+		size = __env_elem_size(env,
+		    ROFF_TO_P(mtxregion->mutex_off_alloc));
+		size -= sizeof(*mutexp);
+	} else
+		mutexp = MUTEXP_SET(env, 1);
+	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i) {
 		if (!F_ISSET(mutexp, DB_MUTEX_ALLOCATED))
 			continue;
 
 		__db_msgadd(env, mbp, "%5lu\t", (u_long)i);
 
-		__mutex_print_debug_stats(env, mbp, i, flags);
+		__mutex_print_debug_stats(env, mbp,
+		    F_ISSET(env, ENV_PRIVATE) ? (db_mutex_t)mutexp : i, flags);
 
 		if (mutexp->alloc_id != 0)
 			__db_msgadd(env,
@@ -279,6 +318,15 @@ __mutex_print_all(env, flags)
 		__db_prflags(env, mbp, mutexp->flags, fn, " (", ")");
 
 		DB_MSGBUF_FLUSH(env, mbp);
+
+		mutexp++;
+		if (F_ISSET(env, ENV_PRIVATE) &&
+		    (size -= sizeof(*mutexp)) < sizeof(*mutexp)) {
+			mutexp =
+			    __env_get_chunk(&mtxmgr->reginfo, &chunk, &size);
+			mutexp =
+			    ALIGNP_INC(mutexp, mtxregion->stat.st_mutex_align);
+		}
 	}
 
 	return (0);
@@ -328,7 +376,6 @@ __mutex_print_debug_stats(env, mbp, mutex, flags)
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 	u_long value;
 	char buf[DB_THREADID_STRLEN];
 #if defined(HAVE_SHARED_LATCHES) && (defined(HAVE_MUTEX_HYBRID) || \
@@ -342,8 +389,7 @@ __mutex_print_debug_stats(env, mbp, mutex, flags)
 	}
 
 	dbenv = env->dbenv;
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 	__db_msgadd(env, mbp, "[");
 	if ((value = mutexp->mutex_set_wait) < 10000000)
@@ -469,10 +515,13 @@ __mutex_set_wait_info(env, mutex, waitp, nowaitp)
 	uintmax_t *waitp, *nowaitp;
 {
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	if (mutex == MUTEX_INVALID) {
+		*waitp = 0;
+		*nowaitp = 0;
+		return;
+	}
+	mutexp = MUTEXP_SET(env, mutex);
 
 	*waitp = mutexp->mutex_set_wait;
 	*nowaitp = mutexp->mutex_set_nowait;
@@ -490,10 +539,11 @@ __mutex_clear(env, mutex)
 	db_mutex_t mutex;
 {
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	if (!MUTEX_ON(env))
+		return;
+
+	mutexp = MUTEXP_SET(env, mutex);
 
 	mutexp->mutex_set_wait = mutexp->mutex_set_nowait = 0;
 #ifdef HAVE_SHARED_LATCHES

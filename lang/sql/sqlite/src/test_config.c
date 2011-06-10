@@ -91,6 +91,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "mutex", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_MUTEX_NOOP
+  Tcl_SetVar2(interp, "sqlite_options", "mutex_noop", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "mutex_noop", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_ALTERTABLE
   Tcl_SetVar2(interp, "sqlite_options", "altertable", "0", TCL_GLOBAL_ONLY);
 #else
@@ -131,6 +137,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "autoindex", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "autoindex", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_AUTORESET
+  Tcl_SetVar2(interp, "sqlite_options", "autoreset", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "autoreset", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_AUTOVACUUM
@@ -521,6 +533,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "secure_delete", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "secure_delete", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_MULTIPLEX_EXT_OVWR
+  Tcl_SetVar2(interp, "sqlite_options", "multiplex_ext_overwrite", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "multiplex_ext_overwrite", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef YYTRACKMAXSTACKDEPTH

@@ -38,9 +38,11 @@ proc rep022 { method args } {
 		return
 	}
 
-	set msg2 "and on-disk replication files"
-	if { $repfiles_in_memory } {
-		set msg2 "and in-memory replication files"
+	# This test can't be run with replication files in memory
+	# because it depends on using recovery.
+	if { $repfiles_in_memory } { 
+		puts "Rep$tnum: Skipping for in-memory replication files."
+		return
 	}
 
 	error_check_good set_random_seed [berkdb srand $rand_init] 0
@@ -48,7 +50,7 @@ proc rep022 { method args } {
 	set logsets [create_logsets [expr $nclients + 1]]
 	foreach l $logsets {
 		puts "Rep$tnum ($method): Election generation test\
-		    with simulated network partition $msg2."
+		    with simulated network partition."
 		puts "Rep$tnum: Master logs are [lindex $l 0]"
 		for { set i 0 } { $i < $nclients } { incr i } {
 			puts "Rep$tnum: Client $i logs are\
@@ -60,18 +62,12 @@ proc rep022 { method args } {
 
 proc rep022_sub { method nclients tnum logset largs } {
 	source ./include.tcl
-	global repfiles_in_memory
 	global rep_verbose
 	global verbose_type
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {$verbose_type on} "
-	}
-
-	set repmemargs ""
-	if { $repfiles_in_memory } {
-		set repmemargs "-rep_inmem_files "
 	}
 
 	env_cleanup $testdir
@@ -97,8 +93,7 @@ proc rep022_sub { method nclients tnum logset largs } {
 	set envlist {}
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 $verbargs \
-	    -event $repmemargs \
-	    -home $masterdir $m_txnargs $m_logargs -rep_master \
+	    -event -home $masterdir $m_txnargs $m_logargs -rep_master \
 	    -errpfx MASTER -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
 	lappend envlist "$masterenv 1"
@@ -108,7 +103,7 @@ proc rep022_sub { method nclients tnum logset largs } {
 		set envid [expr $i + 2]
 		repladd $envid
 		set env_cmd($i) "berkdb_env_noerr -create $verbargs \
-		    -errpfx CLIENT.$i -event $repmemargs \
+		    -errpfx CLIENT.$i -event \
 		    -home $clientdir($i) $c_txnargs($i) $c_logargs($i) \
 		    -rep_client -rep_transport \[list $envid replsend\]"
 		set clientenv($i) [eval $env_cmd($i)]
@@ -169,7 +164,8 @@ proc rep022_sub { method nclients tnum logset largs } {
 	replclear 6
 	error_check_good flush [$clientenv(2) log_flush] 0
 	error_check_good clientenv_close(2) [$clientenv(2) close] 0
-	set clientenv(2) [eval $env_cmd(2) -recover]
+	set ret [catch {exec $util_path/db_recover -h $clientdir(2)} r]
+	set clientenv(2) [eval $env_cmd(2)]
 	set origlist [lreplace $origlist 2 2 "$clientenv(2) 4"]
 
 	# Get last LSN for client 2.
@@ -180,16 +176,17 @@ proc rep022_sub { method nclients tnum logset largs } {
 	error_check_good close_cursor [$logc close] 0
 
 	set msg "Rep$tnum.d"
-	puts "\t$msg: Close and reopen client 4 with recovery."
+	puts "\t$msg: Advance client 4's LSN beyond client 2."
 	#
-	# This forces the last LSN for client 4 up to the last
-	# LSN for client 2 so client 4 can be elected.
+	# This forces the last LSN for client 4 past the last
+	# LSN for client 2.  We want to make sure that client 2's
+	# later data, but earlier LSN beats client 4's larger LSN.
 	#
 	set lastlsn4 0
-	while { $lastlsn4 < $lastlsn2 } {
+	while { $lastlsn4 <= $lastlsn2 } {
         	error_check_good clientenv_close(4) [$clientenv(4) close] 0
-		set clientenv(4) [eval $env_cmd(4) -recover]
-		error_check_good flush [$clientenv(4) log_flush] 0
+		set ret [catch {exec $util_path/db_recover -h $clientdir(4)} r]
+		set clientenv(4) [eval $env_cmd(4)]
 		set origlist [lreplace $origlist 4 4 "$clientenv(4) 6"]
 		set logc [$clientenv(4) log_cursor]
 		error_check_good logc \
@@ -215,7 +212,7 @@ proc rep022_sub { method nclients tnum logset largs } {
 		set egen($i) [stat_field \
 		    $clientenv($i) rep_stat "Election generation number"]
 	}
-	set winner 4
+	set winner 2
 	setpriority pri $nclients $winner 2
 	set elector [berkdb random_int 2 4]
 	run_election envlist err_cmd pri crash \
@@ -230,10 +227,10 @@ proc rep022_sub { method nclients tnum logset largs } {
 		    $clientenv($i) rep_stat "Election generation number"]
 	}
 
-	# Have client 4 (currently a master) run an operation.
-	eval rep_test $method $clientenv(4) NULL $niter 0 0 0 $largs
+	# Have current master run an operation.
+	eval rep_test $method $clientenv($winner) NULL $niter 0 0 0 $largs
 
-	# Check that clients 0 and 4 get DUPMASTER messages and
+	# Check that clients 0 and 2 get DUPMASTER messages and
 	# restart them as clients.
 	#
 	puts "\tRep$tnum.f: Check for DUPMASTER"
@@ -242,15 +239,15 @@ proc rep022_sub { method nclients tnum logset largs } {
 	error_check_good is_dupmaster0 [lindex $dup 0] 1
 	error_check_good downgrade0 [$clientenv(0) rep_start -client] 0
 
-	set envlist4 [lrange $envlist 4 4]
-	process_msgs $envlist4 0 dup err
-	error_check_good is_dupmaster4 [lindex $dup 0] 1
-	error_check_good downgrade4 [$clientenv(4) rep_start -client] 0
+	set envlist2 [lrange $envlist 2 2]
+	process_msgs $envlist2 0 dup err
+	error_check_good is_dupmaster2 [lindex $dup 0] 1
+	error_check_good downgrade4 [$clientenv(2) rep_start -client] 0
 
 	# All DUPMASTER messages are now gone.
-	# We might get residual errors however because client 4
+	# We might get residual errors however because client 2
 	# responded as a master to client 0 and then became a
-	# client immediately.  Therefore client 4 might get some
+	# client immediately.  Therefore client 2 might get some
 	# "master-only" records and return EINVAL.  We want to
 	# ignore those and process records until calm is restored.
 	set err 1
@@ -272,12 +269,12 @@ proc rep022_sub { method nclients tnum logset largs } {
 	set msg "Rep$tnum.g"
 	puts "\t$msg: Run election for all clients after DUPMASTER."
 
-	# Call a new election with all participants.  Make 4 the
+	# Call a new election with all participants.  Make 2 the
 	# winner, since it should have a high enough LSN to win.
 	set nclients $orignclients
 	set nsites $nclients
 	set nvotes $nclients
-	set winner 4
+	set winner 2
 	setpriority pri $nclients $winner
 	set elector [berkdb random_int 0 [expr $nclients - 1]]
 	run_election envlist err_cmd pri crash \

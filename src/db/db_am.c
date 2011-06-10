@@ -12,6 +12,7 @@
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 #include "dbinc/partition.h"
@@ -183,6 +184,10 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 			if ((ret = __hamc_init(dbc)) != 0)
 				goto err;
 			break;
+		case DB_HEAP:
+			if ((ret = __heapc_init(dbc)) != 0)
+				goto err;
+			break;
 		case DB_QUEUE:
 			if ((ret = __qamc_init(dbc)) != 0)
 				goto err;
@@ -332,6 +337,10 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 		if ((ret = __bamc_refresh(dbc)) != 0)
 			goto err;
 		break;
+	case DB_HEAP:
+		if ((ret = __heapc_refresh(dbc)) != 0)
+			goto err;
+		break;
 	case DB_HASH:
 	case DB_QUEUE:
 		break;
@@ -351,7 +360,11 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 	if (ip != NULL) {
 		dbc->thread_info = ip;
 #ifdef DIAGNOSTIC
-		ip->dbth_locker = dbc->locker;
+		if (dbc->locker != NULL)
+			ip->dbth_locker = 
+			    R_OFFSET(&(env->lk_handle->reginfo), dbc->locker);
+		else
+			ip->dbth_locker = INVALID_ROFF;
 #endif
 	} else if (txn != NULL)
 		dbc->thread_info = txn->thread_info;
@@ -434,6 +447,10 @@ __db_put(dbp, ip, txn, key, data, flags)
 		 * access method's append function.
 		 */
 		switch (dbp->type) {
+		case DB_HEAP:
+			if ((ret = __heap_append(dbc, key, &tdata)) != 0)
+				goto err;
+			break;
 		case DB_QUEUE:
 			if ((ret = __qam_append(dbc, key, &tdata)) != 0)
 				goto err;
@@ -556,7 +573,7 @@ __db_del(dbp, ip, txn, key, flags)
 	if (LF_ISSET(DB_MULTIPLE | DB_MULTIPLE_KEY))
 		cursor_flags |= DB_CURSOR_BULK;
 	if ((ret = __db_cursor(dbp, ip, txn, &dbc, cursor_flags)) != 0)
-		goto err;
+		return (ret);
 
 	DEBUG_LWRITE(dbc, txn, "DB->del", key, NULL, flags);
 	PERFMON5(env, db, del,
@@ -1023,7 +1040,7 @@ __db_associate_foreign(fdbp, pdbp, callback, flags)
 	ret = 0;
 
 	if ((ret = __os_malloc(env, sizeof(DB_FOREIGN_INFO), &f_info)) != 0) {
-		return ret;
+		return (ret);
 	}
 	memset(f_info, 0, sizeof(DB_FOREIGN_INFO));
 

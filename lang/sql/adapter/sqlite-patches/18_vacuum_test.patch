@@ -1,6 +1,6 @@
 --- test/incrvacuum.test
 +++ test/incrvacuum.test
-@@ -444,6 +444,8 @@ while 1 {
+@@ -444,6 +444,8 @@
      list [expr {[file size test.db] / 1024}]
    } {20}
  
@@ -9,7 +9,17 @@
    do_test incrvacuum-7.${::iWrite}.3 {
      execsql {
        SELECT * FROM tbl1;
-@@ -736,8 +736,8 @@
+@@ -690,7 +692,8 @@
+ # statement when the database is empty, but doesn't execute it until
+ # after some other process has created the database.
+ #
+-db2 close
++# DBSQL does not do "db2 close" here because incrvacuum-12.2 is excluded 
++# so db2 is not opended.
+ db close
+ file delete -force test.db test.db-journal
+ sqlite3 db test.db  ;  set ::DB [sqlite3_connection_pointer db]
+@@ -736,8 +737,8 @@
      catchsql {
        PRAGMA incremental_vacuum(10);
      } db3

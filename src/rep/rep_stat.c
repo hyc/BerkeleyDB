@@ -16,7 +16,62 @@
 static int __rep_print_all __P((ENV *, u_int32_t));
 static int __rep_print_stats __P((ENV *, u_int32_t));
 static int __rep_stat __P((ENV *, DB_REP_STAT **, u_int32_t));
+static int __rep_stat_summary_print __P((ENV *));
 static const char *__rep_syncstate_to_string __P((repsync_t));
+
+/*
+ * Print the individual statistic for items that appear both in the full and
+ * the summary replication statistics output.
+ */
+#define	PRINT_LOGQUEUED(sp) do {					\
+	__db_dl(env, "Number of log records currently queued",		\
+	    (u_long)(sp)->st_log_queued);				\
+} while (0)
+
+#define	PRINT_MAXPERMLSN(sp) do {					\
+	__db_msg(env, "%lu/%lu\t%s",					\
+	    (u_long)(sp)->st_max_perm_lsn.file,				\
+	    (u_long)(sp)->st_max_perm_lsn.offset,			\
+	    (sp)->st_max_perm_lsn.file == 0 ?				\
+	    "No maximum permanent LSN" :				\
+	    "Maximum permanent LSN");					\
+} while (0)
+
+#define	PRINT_MSGSRECOVER(sp) do {					\
+	__db_dl(env, "Number of messages ignored due to pending recovery", \
+	    (u_long)(sp)->st_msgs_recover);				\
+} while (0)
+
+#define	PRINT_MSGSSENDFAILURES(sp) do {					\
+	__db_dl(env, "Number of failed message sends",			\
+	    (u_long)(sp)->st_msgs_send_failures);			\
+} while (0)
+
+#define	PRINT_STARTUPCOMPLETE(sp) do {					\
+	if ((sp)->st_startup_complete == 0)				\
+		__db_msg(env, "Startup incomplete");			\
+	else								\
+		__db_msg(env, "Startup complete");			\
+} while (0)
+
+#define	PRINT_STATUS(sp, is_client) do {				\
+	is_client = 0;							\
+	switch ((sp)->st_status) {					\
+	case DB_REP_MASTER:						\
+		__db_msg(env,						\
+		    "Environment configured as a replication master");	\
+		break;							\
+	case DB_REP_CLIENT:						\
+		__db_msg(env,						\
+		    "Environment configured as a replication client");	\
+		is_client = 1;						\
+		break;							\
+	default:							\
+		__db_msg(env,						\
+		    "Environment not configured for replication");	\
+		break;							\
+	}								\
+} while (0)
 
 /*
  * __rep_stat_pp --
@@ -98,6 +153,7 @@ __rep_stat(env, statp, flags)
 	stats->st_election_cur_winner = rep->winner;
 	stats->st_election_priority = rep->w_priority;
 	stats->st_election_gen = rep->w_gen;
+	stats->st_election_datagen = rep->w_datagen;
 	stats->st_election_lsn = rep->w_lsn;
 	stats->st_election_votes = rep->votes;
 	stats->st_election_nvotes = rep->nvotes;
@@ -181,7 +237,7 @@ __rep_stat_print_pp(dbenv, flags)
 	    env, rep_handle, "DB_ENV->rep_stat_print", DB_INIT_REP);
 
 	if ((ret = __db_fchk(env, "DB_ENV->rep_stat_print",
-	    flags, DB_STAT_ALL | DB_STAT_CLEAR)) != 0)
+	    flags, DB_STAT_ALL | DB_STAT_CLEAR | DB_STAT_SUMMARY)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
@@ -207,6 +263,9 @@ __rep_stat_print(env, flags)
 
 	orig_flags = flags;
 	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
+	if (LF_ISSET(DB_STAT_SUMMARY))
+		return (__rep_stat_summary_print(env));
+
 	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
 		ret = __rep_print_stats(env, orig_flags);
 		if (flags == 0 || ret != 0)
@@ -238,22 +297,7 @@ __rep_print_stats(env, flags)
 
 	if (LF_ISSET(DB_STAT_ALL))
 		__db_msg(env, "Default replication region information:");
-	is_client = 0;
-	switch (sp->st_status) {
-	case DB_REP_MASTER:
-		__db_msg(env,
-		    "Environment configured as a replication master");
-		break;
-	case DB_REP_CLIENT:
-		__db_msg(env,
-		    "Environment configured as a replication client");
-		is_client = 1;
-		break;
-	default:
-		__db_msg(env,
-		    "Environment not configured for replication");
-		break;
-	}
+	PRINT_STATUS(sp, is_client);
 
 	__db_msg(env, "%lu/%lu\t%s",
 	    (u_long)sp->st_next_lsn.file, (u_long)sp->st_next_lsn.offset,
@@ -263,12 +307,7 @@ __rep_print_stats(env, flags)
 	    sp->st_waiting_lsn.file == 0 ?
 	    "Not waiting for any missed log records" :
 	    "LSN of first log record we have after missed log records");
-	__db_msg(env, "%lu/%lu\t%s",
-	    (u_long)sp->st_max_perm_lsn.file,
-	    (u_long)sp->st_max_perm_lsn.offset,
-	    sp->st_max_perm_lsn.file == 0 ?
-	    "No maximum permanent LSN" :
-	    "Maximum permanent LSN");
+	PRINT_MAXPERMLSN(sp);
 
 	__db_dl(env, "Next page number expected", (u_long)sp->st_next_pg);
 	p = sp->st_waiting_pg == PGNO_INVALID ?
@@ -288,10 +327,18 @@ __rep_print_stats(env, flags)
 	__db_dl(env,
 	    "Election generation number for the current or next election",
 	    (u_long)sp->st_egen);
+	__db_dl(env, "Number of lease validity checks",
+	    (u_long)sp->st_lease_chk);
+	__db_dl(env, "Number of invalid lease validity checks",
+	    (u_long)sp->st_lease_chk_misses);
+	__db_dl(env,
+	    "Number of lease refresh attempts during lease validity checks",
+	    (u_long)sp->st_lease_chk_refresh);
+	__db_dl(env, "Number of live messages sent while using leases",
+	    (u_long)sp->st_lease_sends);
 	__db_dl(env, "Number of duplicate log records received",
 	    (u_long)sp->st_log_duplicated);
-	__db_dl(env, "Number of log records currently queued",
-	    (u_long)sp->st_log_queued);
+	PRINT_LOGQUEUED(sp);
 	__db_dl(env, "Maximum number of log records ever queued at once",
 	    (u_long)sp->st_log_queued_max);
 	__db_dl(env, "Total number of log records queued",
@@ -312,16 +359,14 @@ __rep_print_stats(env, flags)
 	    (u_long)sp->st_msgs_badgen);
 	__db_dl(env, "Number of messages received and processed",
 	    (u_long)sp->st_msgs_processed);
-	__db_dl(env, "Number of messages ignored due to pending recovery",
-	    (u_long)sp->st_msgs_recover);
-	__db_dl(env, "Number of failed message sends",
-	    (u_long)sp->st_msgs_send_failures);
+	PRINT_MSGSRECOVER(sp);
+	PRINT_MSGSSENDFAILURES(sp);
 	__db_dl(env, "Number of messages sent", (u_long)sp->st_msgs_sent);
 	__db_dl(env,
 	    "Number of new site messages received", (u_long)sp->st_newsites);
 	__db_dl(env,
-	    "Number of environments believed to be in the replication group",
-	    (u_long)sp->st_nsites);
+	    "Number of environments used in the last election",
+	    (u_long)(sp)->st_nsites);
 	__db_dl(env, "Transmission limited", (u_long)sp->st_nthrottles);
 	__db_dl(env, "Number of outdated conditions detected",
 	    (u_long)sp->st_outdated);
@@ -331,10 +376,7 @@ __rep_print_stats(env, flags)
 	    (u_long)sp->st_pg_records);
 	__db_dl(env, "Number of page records missed and requested",
 	    (u_long)sp->st_pg_requested);
-	if (sp->st_startup_complete == 0)
-		__db_msg(env, "Startup incomplete");
-	else
-		__db_msg(env, "Startup complete");
+	PRINT_STARTUPCOMPLETE(sp);
 	__db_dl(env,
 	    "Number of transactions applied", (u_long)sp->st_txns_applied);
 
@@ -361,6 +403,9 @@ __rep_print_stats(env, flags)
 		__db_dl(env,
     "Master generation number of the winner of the current or last election",
 		    (u_long)sp->st_election_gen);
+		__db_dl(env,
+    "Master data generation number of the winner of the current or last election",
+		    (u_long)sp->st_election_datagen);
 		__db_msg(env,
     "%lu/%lu\tMaximum LSN of the winner of the current or last election",
 		    (u_long)sp->st_election_lsn.file,
@@ -419,6 +464,7 @@ __rep_print_all(env, flags)
 	static const FN rep_cfn[] = {
 		{ REP_C_2SITE_STRICT,	"REP_C_2SITE_STRICT" },
 		{ REP_C_AUTOINIT,	"REP_C_AUTOINIT" },
+		{ REP_C_AUTOROLLBACK,	"REP_C_AUTOROLLBACK" },
 		{ REP_C_BULK,		"REP_C_BULK" },
 		{ REP_C_DELAYCLIENT,	"REP_C_DELAYCLIENT" },
 		{ REP_C_ELECTIONS,	"REP_C_ELECTIONS" },
@@ -526,6 +572,7 @@ __rep_print_all(env, flags)
 	STAT_LONG("Current winner", rep->winner);
 	STAT_LONG("Winner priority", rep->w_priority);
 	STAT_ULONG("Winner generation", rep->w_gen);
+	STAT_ULONG("Winner data generation", rep->w_datagen);
 	STAT_LSN("Winner LSN", &rep->w_lsn);
 	STAT_LONG("Winner tiebreaker", rep->w_tiebreaker);
 	STAT_LONG("Votes for this site", rep->votes);
@@ -581,6 +628,42 @@ __rep_syncstate_to_string(state)
 		break;
 	}
 	return ("UNKNOWN STATE");
+}
+
+/*
+ * __rep_stat_summary_print --
+ *	Print out a brief summary of replication statistics.
+ */
+static int
+__rep_stat_summary_print(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	DB_REP_STAT *sp;
+	REP *rep;
+	int is_client, ret;
+
+	db_rep = env->rep_handle;
+	rep = db_rep->region;
+	ret = 0;
+	if ((ret = __rep_stat(env, &sp, 0)) == 0) {
+		PRINT_STATUS(sp, is_client);
+		if (is_client)
+			PRINT_STARTUPCOMPLETE(sp);
+		PRINT_MAXPERMLSN(sp);
+		/*
+		 * Use the number of sites that is kept up-to-date most
+		 * frequently.  The rep_stat st_nsites is only current
+		 * as of the last election.
+		 */
+		__db_dl(env, "Number of environments in the replication group",
+		    (u_long)rep->config_nsites);
+		PRINT_MSGSSENDFAILURES(sp);
+		PRINT_MSGSRECOVER(sp);
+		PRINT_LOGQUEUED(sp);
+		__os_ufree(env, sp);
+	}
+	return (ret);
 }
 
 #else /* !HAVE_STATISTICS */

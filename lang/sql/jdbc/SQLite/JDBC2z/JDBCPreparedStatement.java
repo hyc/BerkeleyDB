@@ -1,8 +1,22 @@
 package SQLite.JDBC2z;
 
-import java.sql.*;
 import java.math.BigDecimal;
-import java.util.*;
+import java.sql.Array;
+import java.sql.BatchUpdateException;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.NClob;
+import java.sql.ParameterMetaData;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLXML;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Map;
 
 class BatchArg {
     String arg;
@@ -37,9 +51,10 @@ public class JDBCPreparedStatement extends JDBCStatement
     }
 
     private String fixup(String sql) {
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder(sql.length());
 	boolean inq = false;
 	int nparm = 0;
+	int iscreate = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
 	    if (c == '\'') {
@@ -69,7 +84,24 @@ public class JDBCPreparedStatement extends JDBCStatement
 		}
 	    } else if (c == ';') {
 		if (!inq) {
-		    break;
+		    if (iscreate < 0) {
+			int ii = 0;
+			while (sb.charAt(ii) == ' ' ||
+			       sb.charAt(ii) == '\t' ||
+			       sb.charAt(ii) == '\n' ||
+			       sb.charAt(ii) == '\r') {
+			    ++ii;
+			}
+			String t = sb.substring(ii, ii + 6);
+			if (t.compareToIgnoreCase("create") == 0) {
+			    iscreate = 1;
+			} else {
+			    iscreate = 0;
+			}
+		    }
+		    if (iscreate == 0) {
+			break;
+		    }
 		}
 		sb.append(c);
 	    } else if (c == '%') {
@@ -91,7 +123,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (!conn.db.is3()) {
 	    return sql;
 	}
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder(sql.length());
 	int parm = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
@@ -111,15 +143,18 @@ public class JDBCPreparedStatement extends JDBCStatement
 	return sb.toString();
     }
 
+    @Override
     public ResultSet executeQuery() throws SQLException {
 	return executeQuery(fixup2(sql), args, false);
     }
 
+    @Override
     public int executeUpdate() throws SQLException {
 	executeQuery(fixup2(sql), args, true);
 	return updcnt;
     }
 
+    @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -128,6 +163,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
     
+    @Override
     public void setBoolean(int parameterIndex, boolean x)
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -137,6 +173,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setByte(int parameterIndex, byte x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -145,6 +182,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setShort(int parameterIndex, short x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -153,6 +191,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setInt(int parameterIndex, int x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -161,6 +200,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setLong(int parameterIndex, long x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -169,6 +209,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setFloat(int parameterIndex, float x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -177,6 +218,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setDouble(int parameterIndex, double x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -185,6 +227,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setBigDecimal(int parameterIndex, BigDecimal x)
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -198,6 +241,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setString(int parameterIndex, String x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -210,6 +254,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setBytes(int parameterIndex, byte x[]) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -227,6 +272,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	}
     }
 
+    @Override
     public void setDate(int parameterIndex, java.sql.Date x)
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -244,6 +290,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setTime(int parameterIndex, java.sql.Time x) 
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -261,6 +308,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setTimestamp(int parameterIndex, java.sql.Timestamp x)
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -278,17 +326,20 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setAsciiStream(int parameterIndex, java.io.InputStream x,
 			       int length) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     @Deprecated
     public void setUnicodeStream(int parameterIndex, java.io.InputStream x, 
 				 int length) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setBinaryStream(int parameterIndex, java.io.InputStream x,
 				int length) throws SQLException {
 	try {
@@ -296,10 +347,11 @@ public class JDBCPreparedStatement extends JDBCStatement
 	    x.read(data, 0, length);
 	    setBytes(parameterIndex, data);
 	} catch (java.io.IOException e) {
-	    throw new SQLException("I/O failed");
+	    throw new SQLException("I/O failed", e);
 	}
     }
 
+    @Override
     public void clearParameters() throws SQLException {
 	for (int i = 0; i < args.length; i++) {
 	    args[i] = nullrepl ? "" : null;
@@ -307,6 +359,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	}
     }
 
+    @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType,
 			  int scale) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -331,6 +384,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType)
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -355,6 +409,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -378,33 +433,45 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
+    @Override
     public boolean execute() throws SQLException {
 	return executeQuery(fixup2(sql), args, false) != null;
     }
 
+    @Override
     public void addBatch() throws SQLException {
 	if (batch == null) {
 	    batch = new ArrayList<BatchArg>(args.length);
 	}
-	for (int i = 0; i < args.length; i++) {
-	    batch.add(new BatchArg(args[i], blobs[i]));
+	if (args.length == 0) {
+	    batch.add(new BatchArg(null, false));
+	} else {
+	    for (int i = 0; i < args.length; i++) {
+		batch.add(new BatchArg(args[i], blobs[i]));
+	    }
 	}
     }
 
+    @Override
     public int[] executeBatch() throws SQLException {
 	if (batch == null) {
 	    return new int[0];
 	}
-	int[] ret = new int[batch.size() / args.length];
+	int[] ret;
+	if (args.length == 0) {
+	    ret = new int[batch.size()];
+	} else {
+	    ret = new int[batch.size() / args.length];
+	}
 	for (int i = 0; i < ret.length; i++) {
 	    ret[i] = EXECUTE_FAILED;
 	}
 	int errs = 0;
 	int index = 0;
+	Exception cause = null;
 	for (int i = 0; i < ret.length; i++) {
 	    for (int k = 0; k < args.length; k++) {
-		BatchArg b = (BatchArg) batch.get(index++);
-
+		BatchArg b = batch.get(index++);
 		args[k] = b.arg;
 		blobs[k] = b.blob;
 	    }
@@ -412,14 +479,18 @@ public class JDBCPreparedStatement extends JDBCStatement
 		ret[i] = executeUpdate();
 	    } catch (SQLException e) {
 		++errs;
+		if (cause == null) {
+		    cause = e;
+		}
 	    }
 	}
 	if (errs > 0) {
-	    throw new BatchUpdateException("batch failed", ret);
+	    throw new BatchUpdateException("batch failed", ret, cause);
 	}
 	return ret;
     }
 
+    @Override
     public void clearBatch() throws SQLException {
 	if (batch != null) {
 	    batch.clear();
@@ -427,11 +498,13 @@ public class JDBCPreparedStatement extends JDBCStatement
 	}
     }
 
+    @Override
     public void close() throws SQLException {
     	clearBatch();
 	super.close();
     }
 
+    @Override
     public void setCharacterStream(int parameterIndex,
 				   java.io.Reader reader,
 				   int length) throws SQLException {
@@ -440,50 +513,60 @@ public class JDBCPreparedStatement extends JDBCStatement
 	    reader.read(data);
 	    setString(parameterIndex, new String(data));
 	} catch (java.io.IOException e) {
-	    throw new SQLException("I/O failed");
+	    throw new SQLException("I/O failed", e);
 	}
     }
 
+    @Override
     public void setRef(int i, Ref x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setBlob(int i, Blob x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setClob(int i, Clob x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setArray(int i, Array x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public ResultSetMetaData getMetaData() throws SQLException {
 	return rs.getMetaData();
     }
 
+    @Override
     public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 	throws SQLException {
 	setDate(parameterIndex, x);
     }
 
+    @Override
     public void setTime(int parameterIndex, java.sql.Time x, Calendar cal)
 	throws SQLException {
 	setTime(parameterIndex, x);
     }
 
+    @Override
     public void setTimestamp(int parameterIndex, java.sql.Timestamp x,
 			     Calendar cal) throws SQLException {
 	setTimestamp(parameterIndex, x);
     }
 
+    @Override
     public void setNull(int parameterIndex, int sqlType, String typeName)
 	throws SQLException {
 	setNull(parameterIndex, sqlType);
     }
 
+    @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
 	throw new SQLException("not supported");
     }
@@ -509,6 +592,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLException("not supported");
     }
 
+    @Override
     public void setURL(int parameterIndex, java.net.URL url)
 	throws SQLException {
 	throw new SQLException("not supported");
@@ -778,6 +862,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLException("not supported");
     }
 
+    @Override
     public void setRowId(int parameterIndex, RowId x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
@@ -786,6 +871,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNString(int parameterIndex, String value)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -796,6 +882,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNCharacterStream(int parameterIndex, java.io.Reader x,
 				    long len)
 	throws SQLException {
@@ -808,6 +895,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNClob(int parameterIndex, NClob value)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -818,6 +906,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setClob(int parameterIndex, java.io.Reader x, long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -828,6 +917,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setBlob(int parameterIndex, java.io.InputStream x, long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -838,6 +928,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNClob(int parameterIndex, java.io.Reader x, long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -848,6 +939,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setSQLXML(int parameterIndex, SQLXML xml)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -858,6 +950,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setAsciiStream(int parameterIndex, java.io.InputStream x,
 			       long len)
 	throws SQLException {
@@ -870,6 +963,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setBinaryStream(int parameterIndex, java.io.InputStream x,
 				long len)
 	throws SQLException {
@@ -882,6 +976,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setCharacterStream(int parameterIndex, java.io.Reader x,
 				   long len)
 	throws SQLException {
@@ -894,6 +989,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setAsciiStream(int parameterIndex, java.io.InputStream x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -904,6 +1000,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setBinaryStream(int parameterIndex, java.io.InputStream x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -914,6 +1011,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setCharacterStream(int parameterIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -924,6 +1022,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNCharacterStream(int parameterIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -934,6 +1033,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setClob(int parameterIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -944,6 +1044,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setBlob(int parameterIndex, java.io.InputStream x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
@@ -954,6 +1055,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNClob(int parameterIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();

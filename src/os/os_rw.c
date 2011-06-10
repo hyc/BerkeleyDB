@@ -59,9 +59,10 @@ __os_io(env, op, fhp, pgno, pgsize, relative, io_len, buf, niop)
 #endif
 		if (dbenv != NULL &&
 		    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-			__db_msg(env,
+			__db_msg(env, DB_STR_A("0130",
 			    "fileops: read %s: %lu bytes at offset %lu",
-			    fhp->name, (u_long)io_len, (u_long)offset);
+			    "%s %lu %lu"), fhp->name, (u_long)io_len,
+			    (u_long)offset);
 
 		LAST_PANIC_CHECK_BEFORE_IO(env);
 		nio = DB_GLOBAL(j_pread) != NULL ?
@@ -80,9 +81,10 @@ __os_io(env, op, fhp, pgno, pgsize, relative, io_len, buf, niop)
 #endif
 		if (dbenv != NULL &&
 		    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-			__db_msg(env,
+			__db_msg(env, DB_STR_A("0131",
 			    "fileops: write %s: %lu bytes at offset %lu",
-			    fhp->name, (u_long)io_len, (u_long)offset);
+			    "%s %lu %lu"), fhp->name, (u_long)io_len,
+			    (u_long)offset);
 
 		LAST_PANIC_CHECK_BEFORE_IO(env);
 		nio = DB_GLOBAL(j_pwrite) != NULL ?
@@ -149,15 +151,17 @@ __os_read(env, fhp, addr, len, nrp)
 	++fhp->read_count;
 #endif
 	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: read %s: %lu bytes", fhp->name, (u_long)len);
+		__db_msg(env, DB_STR_A("0132",
+		    "fileops: read %s: %lu bytes", "%s %lu"),
+		    fhp->name, (u_long)len);
 
 	if (DB_GLOBAL(j_read) != NULL) {
 		*nrp = len;
 		LAST_PANIC_CHECK_BEFORE_IO(env);
 		if (DB_GLOBAL(j_read)(fhp->fd, addr, len) != (ssize_t)len) {
 			ret = __os_get_syserr();
-			__db_syserr(env, ret, "read: %#lx, %lu",
+			__db_syserr(env, ret, DB_STR_A("0133",
+			    "read: %#lx, %lu", "%#lx %lu"),
 			    P_TO_ULONG(addr), (u_long)len);
 			ret = __os_posix_err(ret);
 		}
@@ -174,7 +178,8 @@ __os_read(env, fhp, addr, len, nrp)
 	}
 	*nrp = (size_t)(taddr - (u_int8_t *)addr);
 	if (ret != 0) {
-		__db_syserr(env, ret, "read: %#lx, %lu",
+		__db_syserr(env, ret, DB_STR_A("0134",
+		    "read: %#lx, %lu", "%#lx %lu"),
 		    P_TO_ULONG(taddr), (u_long)len - offset);
 		ret = __os_posix_err(ret);
 	}
@@ -236,8 +241,9 @@ __os_physwrite(env, fhp, addr, len, nwp)
 	++fhp->write_count;
 #endif
 	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: write %s: %lu bytes", fhp->name, (u_long)len);
+		__db_msg(env, DB_STR_A("0135",
+		    "fileops: write %s: %lu bytes", "%s %lu"),
+		    fhp->name, (u_long)len);
 
 #if defined(HAVE_FILESYSTEM_NOTZERO) && defined(DIAGNOSTIC)
 	if (__os_fs_notzero()) {
@@ -254,7 +260,8 @@ __os_physwrite(env, fhp, addr, len, nwp)
 		LAST_PANIC_CHECK_BEFORE_IO(env);
 		if (DB_GLOBAL(j_write)(fhp->fd, addr, len) != (ssize_t)len) {
 			ret = __os_get_syserr();
-			__db_syserr(env, ret, "write: %#lx, %lu",
+			__db_syserr(env, ret, DB_STR_A("0136",
+			    "write: %#lx, %lu", "%#lx %lu"),
 			    P_TO_ULONG(addr), (u_long)len);
 			ret = __os_posix_err(ret);
 
@@ -273,7 +280,8 @@ __os_physwrite(env, fhp, addr, len, nwp)
 	}
 	*nwp = len;
 	if (ret != 0) {
-		__db_syserr(env, ret, "write: %#lx, %lu",
+		__db_syserr(env, ret, DB_STR_A("0137",
+		    "write: %#lx, %lu", "%#lx %lu"),
 		    P_TO_ULONG(taddr), (u_long)len - offset);
 		ret = __os_posix_err(ret);
 

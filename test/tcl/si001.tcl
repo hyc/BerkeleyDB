@@ -160,6 +160,7 @@ proc si001 { methods {nentries 200} {tnum "001"} args } {
 				error_check_good put_overwrite($n) $ret 0
 				set data($n) [pad_data $pmethod $newd]
 			}
+
 			check_secondaries\
 			    $pdb $sdbs $nentries keys data "Si$tnum.b"
 
@@ -175,6 +176,29 @@ proc si001 { methods {nentries 200} {tnum "001"} args } {
 			}
 			check_secondaries\
 			    $pdb $sdbs $half keys data "Si$tnum.c"
+
+			# Check that the nooverwrite flags functions 
+			# properly by trying to overwrite one key that
+			# still exists and one key that has been deleted.
+			puts "\tSi$tnum.c1:\
+			    Check -nooverwrite on existing key."
+			set ret [eval {$pdb put} -nooverwrite \
+			    {$keys(1) [chop_data $pmethod "otherdata"]}]
+			set ret [$pdb get $keys(1)]
+			set got_data [lindex [lindex $ret 0] 1]
+			error_check_good got_data $got_data $data(1)
+
+			puts "\tSi$tnum.c2:\
+			    Check -nooverwrite on deleted key."
+			set ret [eval {$pdb put} -nooverwrite \
+			    {$keys([expr $n - 1]) [chop_data $pmethod "otherdata"]}]
+			set ret [$pdb get $keys([expr $n - 1])]
+			set got_data [lindex [lindex $ret 0] 1]
+			error_check_good \
+			    got_data $got_data [pad_data $pmethod "otherdata"]
+
+			# Clean up the entry for the nooverwrite test.
+			set ret [$pdb del $keys([expr $n - 1])]
 
 			# Delete half of what's left through
 			# the first secondary.
@@ -193,9 +217,10 @@ proc si001 { methods {nentries 200} {tnum "001"} args } {
 			    $pdb $sdbs $quar keys data "Si$tnum.d"
 			set left $quar
 
-			# For queue and recno only, test append, adding back
-			# a quarter of the original number of entries.
-			if { [is_record_based $pmethod] == 1 } {
+			# For queue and recno only, test append, adding
+			# back a quarter of the original number of entries.
+		        if { [is_record_based $pmethod] == 1 && 
+			     [is_heap $pmethod] == 0} {
 			 	set did [open $dict]
 				puts "\tSi$tnum.e:\
 				    Append loop: append $quar entries"

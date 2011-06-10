@@ -13,6 +13,12 @@ proc repmgr028 { { tnum 028 } } {
 		return
 	}
 
+	# QNX does not support fork() in a multi-threaded environment.
+	if { $is_qnx_test } {
+		puts "Skipping repmgr$tnum on QNX."
+		return
+	}
+
 	puts "Repmgr$tnum: Repmgr applications may choose master explicitly"
 	repmgr028_sub $tnum
 }
@@ -42,25 +48,33 @@ proc repmgr028_sub { tnum } {
 
 	set common "-create -txn $verbargs $repmemargs \
 	    -rep -thread -event"
-	set common_mgr "-nsites 2 -msgth 2 -timeout {connection_retry 3000000} \
+	set common_mgr "-msgth 2 -timeout {connection_retry 3000000} \
 	     -timeout {election_retry 3000000}"
-
+	set cmda "berkdb_env_noerr $common -errpfx SITE_A -home $dira"
+	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
+	set enva [eval $cmda]
+	eval $enva repmgr -local {[list localhost $porta]} -start master
+	set envb [eval $cmdb]
+	eval $envb repmgr -start client \
+	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	await_startup_done $envb
+	$envb close
+	$enva close
+	
 	# Create a replication group of 2 sites, configured not to use
 	# elections.  Even with this configuration, an "initial" election is
 	# allowed, so try that to make sure it works.
 	# 
 	puts "\tRepmgr$tnum.a: Start two sites."
-	set cmda "berkdb_env_noerr $common -errpfx SITE_A -home $dira"
-	set enva [eval $cmda]
+	set enva [eval $cmda -recover]
 	$enva rep_config {mgrelections off}
 	eval $enva repmgr $common_mgr \
 	    -local {[list localhost $porta]} -start elect -pri 100
 
-	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
-	set envb [eval $cmdb]
+	set envb [eval $cmdb -recover]
 	$envb rep_config {mgrelections off}
 	eval $envb repmgr $common_mgr -start elect -pri 99 \
-	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	    -local {[list localhost $portb]}
 	await_startup_done $envb
 
 	puts "\tRepmgr$tnum.b: Switch roles explicitly."
@@ -110,7 +124,7 @@ proc repmgr028_sub { tnum } {
 	set envb [eval $cmdb -recover]
 	$envb rep_config {mgrelections off}
 	eval $envb repmgr $common_mgr -start master \
-	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	    -local {[list localhost $portb]}
 	
 	# Force a checkpoint so that the client hears something from the master,
 	# which should cause the client to notice the gen number change.  Try a
@@ -134,7 +148,7 @@ proc repmgr028_sub { tnum } {
 			     > $orig_gen}
 	await_startup_done $enva
 
-	puts "\tRepmgr$tnum.e: Set master at other site, leading to dupmaster."
+	puts "\tRepmgr$tnum.f: Set master at other site, leading to dupmaster."
 	$enva repmgr -start master -msgth 0
 	tclsleep 5
 	error_check_good dupmaster_event \
@@ -156,7 +170,7 @@ proc repmgr028_sub { tnum } {
 	# other site accepts an invitation to an election even when it is not in
 	# elections mode itself.
 	#
-	puts "\tRepmgr$tnum.f: Turn on elections mode dynamically."
+	puts "\tRepmgr$tnum.g: Turn on elections mode dynamically."
 	$envb event_info -clear
 	$enva rep_config {mgr2sitestrict on}
 	$enva rep_config {mgrelections on}
@@ -183,16 +197,16 @@ proc repmgr028_sub { tnum } {
 	# Try a traditional set-up, and verify that dynamic role change is
 	# forbidden.
 	# 
-	puts "\tRepmgr$tnum.e: Start up again, elections on by default."
+	puts "\tRepmgr$tnum.h: Start up again, elections on by default."
 	set enva [eval $cmda -recover]
 	eval $enva repmgr $common_mgr \
 	    -local {[list localhost $porta]} -start master
 	set envb [eval $cmdb -recover]
 	eval $envb repmgr $common_mgr -start client \
-	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	    -local {[list localhost $portb]}
 	await_startup_done $envb
 
-	puts "\tRepmgr$tnum.f: Check that dynamic role change attempt fails."
+	puts "\tRepmgr$tnum.i: Check that dynamic role change attempt fails."
 	error_check_bad disallow_role_chg \
 	    [catch {$enva repmgr -start client -msgth 0}] 0
 	error_check_bad disallow_role_chg_b \
@@ -225,8 +239,8 @@ proc repmgr028_sub { tnum } {
 	    -local {[list localhost $porta]} -start client
 	set envb [eval $cmdb -recover]
 	eval $envb repmgr $common_mgr -start client \
-	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
-	puts "\tRepmgr$tnum.g: Pause 10 seconds, check no election held."
+	    -local {[list localhost $portb]}
+	puts "\tRepmgr$tnum.j: Pause 10 seconds, check no election held."
 	tclsleep 10
 	error_check_good no_election \
 	    [expr [stat_field $enva rep_stat "Election phase"] == 0 && \
@@ -235,5 +249,38 @@ proc repmgr028_sub { tnum } {
 	    [expr [stat_field $envb rep_stat "Election phase"] == 0 && \
 		 [stat_field $envb rep_stat "Elections held"] == 0] 1
 	$enva close
+	$envb close
+
+	# Check that "election" start policy starts an election when
+	# a site that was previously a client starts up without recovery
+	# and without finding a master.  This is another general test case 
+	# where elections mode is *NOT* turned off. 
+	#
+	puts "\tRepmgr$tnum.k: Test election start policy on client startup."
+	set enva [eval $cmda -recover]
+	eval $enva repmgr $common_mgr \
+	    -local {[list localhost $porta]} -start master
+	$enva rep_config {mgr2sitestrict on}
+	set envb [eval $cmdb -recover]
+	eval $envb repmgr $common_mgr -start client \
+	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	await_startup_done $envb
+	$envb rep_config {mgr2sitestrict on}
+	$envb close
+	$enva close
+
+	# Restart previous client with election start policy.  The
+	# 2site_strict setting will cause the election to fail, but we
+	# only care that the election was initiated.
+	#
+	set envb [eval $cmdb]
+	eval $envb repmgr $common_mgr -start elect \
+	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	puts "\tRepmgr$tnum.l: Pause 5 seconds, check election was attempted."
+	tclsleep 5
+	error_check_good startup_election \
+	    [expr [stat_field $envb rep_stat "Election phase"] != 0 || \
+		 [stat_field $envb rep_stat "Elections held"] > 0] 1
+	await_condition {[is_event_present $envb election_failed]}
 	$envb close
 }

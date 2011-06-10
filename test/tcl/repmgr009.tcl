@@ -66,7 +66,7 @@ proc repmgr009_sub { method niter tnum largs } {
 	error_check_good masterenv_close [$masterenv close] 0
 
 	puts "\tRepmgr$tnum.b: Call repmgr without open master (error)."
-	catch {$masterenv repmgr -ack all -nsites $nsites \
+	catch {$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master} res
@@ -79,7 +79,7 @@ proc repmgr009_sub { method niter tnum largs } {
 	puts "\tRepmgr$tnum.d: Start a master with repmgr."
 	repladd 1
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -88,17 +88,17 @@ proc repmgr009_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $verbargs \
 	    -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
-	catch {$clientenv repmgr -ack all -nsites $nsites \
+	catch {$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -remote [list localhost [lindex $ports 7]] \
 	    -start client} res
 	error_check_good errchk [is_substr $res \
-	    "set_local_site must be called before repmgr_start"] 1
+	    "local site must be named before calling repmgr_start"] 1
 	error_check_good client_close [$clientenv close] 0
 
 	puts "\tRepmgr$tnum.f: Start repmgr with two local sites (error)."
 	set clientenv [eval $cl_envcmd]
-	catch {$clientenv repmgr -ack all -nsites $nsites \
+	catch {$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 8]] \
 	    -local [list localhost [lindex $ports 9]] \
@@ -109,7 +109,7 @@ proc repmgr009_sub { method niter tnum largs } {
 	puts "\tRepmgr$tnum.g: Start a client."
 	repladd 2
 	set clientenv [eval $cl_envcmd -recover]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -117,12 +117,12 @@ proc repmgr009_sub { method niter tnum largs } {
 	await_startup_done $clientenv
 
 	puts "\tRepmgr$tnum.h: Start repmgr a second time (error)."
-	catch {$clientenv repmgr -ack all -nsites $nsites \
+	catch {$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
 	    -start client} res
-	error_check_good errchk [is_substr $res "must be called before"] 1
+	error_check_good errchk [is_substr $res "repmgr is already started"] 1
 
 	puts "\tRepmgr$tnum.i: Call rep_start after starting repmgr (error)."
 	catch {$clientenv rep_start -client} res
@@ -160,7 +160,7 @@ proc repmgr009_sub { method niter tnum largs } {
 	set masterenv2 [eval $ma_envcmd2]
 
 	puts "\tRepmgr$tnum.o: Call repmgr after rep_start (error)."
-	catch {$masterenv2 repmgr -ack all -nsites $nsites \
+	catch {$masterenv2 repmgr -ack all \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master} res
 	# Internal repmgr calls return EINVAL after hitting

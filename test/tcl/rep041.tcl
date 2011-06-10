@@ -191,10 +191,21 @@ proc rep041_sub { method niter tnum envargs logset recargs largs } {
 		    $method $masterenv NULL $nentries $start $start 0 $largs
 		incr start $nentries
 		process_msgs $envlist
-		# Need to delay long enough to cause client to rerequest.
-		# TBD: something similar to await_condition for current log
-		# records queued = 0 or a rerequest stat change.
-		tclsleep 1
+
+		# If there are log records queued, client is not yet caught
+		# up.  Perform innocuous rep_flush and process messages a
+		# few times to allow client rerequests to occur.  Give it
+		# more than one chance, allowing at least twice the default
+		# maximum client retransmission request time.
+		for { set j 0 } { $j < 3 } { incr j } {
+			if { [stat_field $clientenv \
+			    rep_stat "Current log records queued"] == 0 } {
+				break
+			}
+			error_check_good master_flush [$masterenv rep_flush] 0
+			process_msgs $envlist
+			tclsleep 1
+		}
 
 		puts "\tRep$tnum.g.$i: Verify that client is up to date."
 

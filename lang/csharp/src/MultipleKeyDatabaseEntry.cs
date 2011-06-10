@@ -41,8 +41,7 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
-        /// Construct a new bulk buffer for key/data pairs referring to 
-        /// <paramref name="type"/>.
+        /// Construct a new bulk buffer for key/data pairs.
         /// </summary>
         /// <param name="recno">
         /// Whether the bulk buffer is for queue/recno database

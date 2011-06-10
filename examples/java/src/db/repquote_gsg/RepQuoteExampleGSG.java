@@ -36,8 +36,9 @@ import com.sleepycat.db.LockMode;
 import com.sleepycat.db.OperationStatus;
 import com.sleepycat.db.ReplicationHandleDeadException;
 import com.sleepycat.db.ReplicationHostAddress;
-import com.sleepycat.db.ReplicationManagerStartPolicy;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerAckPolicy;
+
 import db.repquote_gsg.RepConfig;
 
 public class RepQuoteExampleGSG implements EventHandler
@@ -48,17 +49,16 @@ public class RepQuoteExampleGSG implements EventHandler
     public static void usage()
     {
         System.err.println("usage: " + RepConfig.progname);
-        System.err.println("-h home -l host:port [-r host:port]" +
-            "[-n nsites][-p priority]");
+        System.err.println("-h home -l|-L host:port " +
+            "[-r host:port][-p priority]");
 
         System.err.println("\t -h home directory (required)\n" +
-             "\t -l host:port (required; l stands for local)\n" +
+             "\t -l host:port (required unless -L is specified;" +
+             " l stands for local)\n" + 
+             "\t -L host:port (optional, L means group creator)\n" +
              "\t -r host:port (optional; r stands for remote; any " +
              "number of these\n" +
              "\t    may be specified)\n" +
-             "\t -n nsites (optional; number of sites in replication " +
-             "group; defaults\n" +
-             "\t    to 0 to try to dynamically compute nsites)\n" +
              "\t -p priority (optional; defaults to 100)\n");
 
         System.exit(1);
@@ -68,7 +68,7 @@ public class RepQuoteExampleGSG implements EventHandler
         throws Exception
     {
         RepConfig config = new RepConfig();
-        String tmpHost;
+        boolean isCreator = false;
         int tmpPort = 0;
         // Extract the command line parameters.
         for (int i = 0; i < argv.length; i++)
@@ -77,7 +77,12 @@ public class RepQuoteExampleGSG implements EventHandler
                 // home is a string arg.
                 i++;
                 config.home = argv[i];
-            } else if (argv[i].compareTo("-l") == 0) {
+            } else if (argv[i].compareTo("-l") == 0 ||
+              argv[i].compareTo("-L") == 0) {
+                if (i == argv.length - 1)
+                    usage();
+                if (argv[i].compareTo("-L") == 0)
+                    isCreator = true;
                 // "local" should be host:port.
                 i++;
                 String[] words = argv[i].split(":");
@@ -93,10 +98,7 @@ public class RepQuoteExampleGSG implements EventHandler
                         "could not parse port number.");
                     usage();
                 }
-                config.setThisHost(words[0], tmpPort);
-            } else if (argv[i].compareTo("-n") == 0) {
-                i++;
-                config.totalSites = Integer.parseInt(argv[i]);
+                config.setThisHost(words[0], tmpPort, isCreator);
             } else if (argv[i].compareTo("-p") == 0) {
                 i++;
                 config.priority = Integer.parseInt(argv[i]);
@@ -159,13 +161,17 @@ public class RepQuoteExampleGSG implements EventHandler
         envConfig.setErrorStream(System.err);
         envConfig.setErrorPrefix(RepConfig.progname);
 
-        envConfig.setReplicationManagerLocalSite(repConfig.getThisHost());
+        envConfig.addReplicationManagerSite(repConfig.getThisHost());
         for (ReplicationHostAddress host = repConfig.getFirstOtherHost();
-            host != null; host = repConfig.getNextOtherHost())
-            envConfig.replicationManagerAddRemoteSite(host, false);
+          host != null; host = repConfig.getNextOtherHost()){
 
-        if (repConfig.totalSites > 0)
-            envConfig.setReplicationNumSites(repConfig.totalSites);
+            ReplicationManagerSiteConfig repmgrRemoteSiteConfig =
+                new ReplicationManagerSiteConfig(host.host, host.port);
+            repmgrRemoteSiteConfig.setBootstrapHelper(true);
+            envConfig.addReplicationManagerSite(
+                repmgrRemoteSiteConfig);
+        }
+
         envConfig.setReplicationPriority(repConfig.priority);
 
         envConfig.setReplicationManagerAckPolicy(
@@ -308,6 +314,26 @@ public class RepQuoteExampleGSG implements EventHandler
         dbenv.setIsMaster(false);
     }
 
+    public void handleRepConnectBrokenEvent()
+    {
+        // Ignored for now.
+    }
+
+    public void handleRepConnectEstablishedEvent()
+    {
+        // Ignored for now.
+    }
+
+    public void handleRepConnectTryFailedEvent()
+    {
+        // Ignored for now.
+    }
+
+    public void handleRepInitDoneEvent()
+    {
+        // Ignored for now.
+    }
+
     public void handleRepMasterEvent()
     {
         dbenv.setIsMaster(true);
@@ -333,6 +359,21 @@ public class RepQuoteExampleGSG implements EventHandler
     public void handleRepPermFailedEvent()
     {
 	// Ignored for now.
+    }
+
+    public void handleRepLocalSiteRemovedEvent()
+    {
+        // Ignored for now.
+    }
+
+    public void handleRepSiteAddedEvent()
+    {
+        // Ignored for now.
+    }
+
+    public void handleRepSiteRemovedEvent()
+    {
+        // Ignored for now.
     }
 
     public void handleRepElectedEvent()

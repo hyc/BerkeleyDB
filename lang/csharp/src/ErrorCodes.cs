@@ -26,6 +26,10 @@ namespace BerkeleyDB {
         /// A foreign db constraint triggered. 
         ///</summary>
         public const int DB_FOREIGN_CONFLICT = DbConstants.DB_FOREIGN_CONFLICT;
+        /// <summary>
+        /// Heap database full.
+        /// </summary>
+        public const int DB_HEAP_FULL = DbConstants.DB_HEAP_FULL;
         ///<summary>
         /// Key/data deleted or never created. 
         ///</summary>
@@ -50,14 +54,6 @@ namespace BerkeleyDB {
         /// Server panic return. 
         ///</summary>
         public const int DB_NOSERVER = DbConstants.DB_NOSERVER;
-        ///<summary>
-        /// Bad home sent to server. 
-        ///</summary>
-        public const int DB_NOSERVER_HOME = DbConstants.DB_NOSERVER_HOME;
-        ///<summary>
-        /// Bad ID sent to server. 
-        ///</summary>
-        public const int DB_NOSERVER_ID = DbConstants.DB_NOSERVER_ID;
         ///<summary>
         /// Key/data pair not found (EOF). 
         ///</summary>

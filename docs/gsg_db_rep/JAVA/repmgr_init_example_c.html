@@ -12,14 +12,17 @@
     <link rel="next" href="fwrkpermmessage.html" title="Permanent Message Handling" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Adding the Replication Manager to
-                    
-                    
-                    <span>SimpleTxn</span>
-            </th>
+                
+                
+                <span xmlns="http://www.w3.org/1999/xhtml">SimpleTxn</span>
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="repapp.html">Prev</a> </td>
@@ -34,67 +37,66 @@
         <div>
           <div>
             <h2 class="title" style="clear: both"><a id="repmgr_init_example_c"></a>Adding the Replication Manager to
-                    
-                    
-                    <span>SimpleTxn</span>
-            </h2>
+                
+                
+                <span>SimpleTxn</span>
+        </h2>
           </div>
         </div>
       </div>
       <p>
-                    We now use the methods described above to add partial
-                    support to the 
-                    
-                    
-                    <span>SimpleTxn</span>
-                    example that we presented in 
-                    <a class="xref" href="txnapp.html" title="Chapter 2. Transactional Application">Transactional Application</a>.
-                    That is, in this section we will:
-            </p>
+                We now use the methods described above to add partial
+                support to the 
+                
+                
+                <span>SimpleTxn</span>
+                example that we presented in 
+                <a class="xref" href="txnapp.html" title="Chapter 2. Transactional Application">Transactional Application</a>.
+                That is, in this section we will:
+        </p>
       <div class="itemizedlist">
         <ul type="disc">
           <li>
             <p>
-                                    Enhance our command line options to
-                                    accept information of interest to a
-                                    replicated application.
-                            </p>
+                    Enhance our command line options to accept information
+                    of interest to a replicated application.
+                </p>
           </li>
           <li>
             <p>
-                                    Configure our environment handle to use
-                                    replication and the Replication Manager.
-                            </p>
+                    Configure our environment handle to use replication and
+                    the Replication Manager.
+                </p>
           </li>
           <li>
             <p>
-                                    Minimally configure the Replication Manager.
-                            </p>
+                    Minimally configure the Replication Manager.
+                </p>
           </li>
           <li>
             <p>
-                                    Start replication.
-                            </p>
+                    Start replication.
+                </p>
           </li>
         </ul>
       </div>
       <p>
-                Note that when we are done with this section, we will be
-                only partially ready to run the application. Some critical
-                pieces will be missing; specifically, we will not yet be
-                handling the differences between a master and a
-                replica. (We do that in the next chapter).
-            </p>
+            Note that when we are done with this section, we will be
+            only partially ready to run the application. Some critical
+            pieces will be missing; specifically, we will not yet be
+            handling the differences between a master and a
+            replica. (We do that in the next chapter).
+        </p>
       <p>
-                Also, note that in the following code fragments, additions
-                and changes to the code are marked in <strong class="userinput"><code>bold</code></strong>.
-            </p>
+            Also, note that in the following code fragments, additions
+            and changes to the code are marked in <strong class="userinput"><code>bold</code></strong>.
+        </p>
       <p>
-                To begin, we make some significant changes to our
-                <code class="classname">RepConfig</code> class because we will be
-                using it to maintain a lot more information that we needed
-                for our simple transactional example.
-            </p>
+            To begin, we make some significant changes to our
+            <code class="classname">RepConfig</code> class because we will be
+            using it to maintain a lot more information that we needed
+            for our simple transactional example.
+        </p>
       <p>
         We begin by importing a few new
         classes. <code class="classname">java.util.Vector</code> is used to
@@ -102,13 +104,14 @@
         port information for the other replication participants known to
         this application). We also need a couple of classes used to manage
         individual host and port information, as well as replication
-        startup policy information.
+        sites and startup policy information.
 </p>
       <pre class="programlisting"><strong class="userinput"><code>package db.repquote_gsg;
 
 import java.util.Vector;
 
 import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;</code></strong>
 
 public class RepConfig
@@ -128,16 +131,13 @@ public class RepConfig
     // member variables containing configuration information
     // String specifying the home directory for rep files.
     public String home;
-    // stores an optional set of "other" hosts.
+    // Stores an optional set of "other" hosts.
     <strong class="userinput"><code>public Vector&lt;ReplicationHostAddress&gt; otherHosts;
-    // priority within the replication group.
+    // Priority within the replication group.
     public int priority; 
     public ReplicationManagerStartPolicy startPolicy;
     // The host address to listen to.
     public ReplicationHostAddress thisHost; 
-    // Optional parameter specifying the # of sites in the 
-    // replication group.
-    public int totalSites;
 
     // member variables used internally.
     private int currOtherHost;
@@ -151,11 +151,10 @@ public class RepConfig
         <strong class="userinput"><code>startPolicy = ReplicationManagerStartPolicy.REP_ELECTION;</code></strong>
         home = "TESTDIR";
         <strong class="userinput"><code>gotListenAddress = false;
-        totalSites = 0;
         priority = 100;
         currOtherHost = 0;
-        thisHost = new ReplicationHostAddress();
-        otherHosts = new Vector()&lt;ReplicationHostAddress&gt;;</code></strong>
+        thisHost = new ReplicationManagerSiteConfig();
+        otherHosts = new Vector();</code></strong>
     } </pre>
       <p>
         Finally, we finish updating this class by providing a series of new
@@ -168,14 +167,15 @@ public class RepConfig
         return new java.io.File(home);
     }
 
-    <strong class="userinput"><code>public void setThisHost(String host, int port)
+    <strong class="userinput"><code>public void setThisHost(String host, int port, boolean creator)
     {
         gotListenAddress = true;
-        thisHost.port = port;
-        thisHost.host = host;
+        thisHost.setHost(host);
+        thisPort.setPort(port);
+        thisHost.setGroupCreator(creator);
     }
 
-    public ReplicationHostAddress getThisHost()
+    public ReplicationManagerSiteConfig getThisHost()
     {
         if (!gotListenAddress) {
             System.err.println("Warning: no host specified.");
@@ -184,14 +184,23 @@ public class RepConfig
         return thisHost;
     }
 
+    public ReplicationHostAddress getThisHostAddress()
+    {
+        if (!gotListenAddress) {
+            System.err.println("Warning: no host specified.");
+            System.err.println("Returning default.");
+        }
+        return thisHost.getAddress();
+    } 
+
     public boolean gotListenAddress() {
         return gotListenAddress;
     }
 
-    public void addOtherHost(String host, int port, boolean peer)
+    public void addOtherHost(String host, int port)
     {
         ReplicationHostAddress newInfo = 
-            new ReplicationHostAddress(host, port, peer);
+            new ReplicationHostAddress(host, port);
         otherHosts.add(newInfo);
     }
 
@@ -243,10 +252,12 @@ import com.sleepycat.db.DatabaseConfig;
 import com.sleepycat.db.DatabaseEntry;
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.DatabaseType;
-import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.LockMode;
 import com.sleepycat.db.OperationStatus;
+<strong class="userinput"><code>import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSiteConfig;</code></strong>
+
 import db.repquote.RepConfig;
 
 public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
@@ -257,36 +268,36 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
         Next we update our usage function. The application will continue to
         accept the <code class="literal">-h</code> parameter so that we can identify
         the environment home directory used by this application. However,
-        we also add the 
+        we also add the:
 </p>
       <div class="itemizedlist">
         <ul type="disc">
           <li>
             <p>
-                    <code class="literal">-l</code> parameter which allows us to
-                    identify the host and port used by this application to
-                    listen for replication messages.
-                </p>
+            <code class="literal">-l</code> parameter which allows us to identify the
+            host and port used by this application to listen for
+            replication messages. This parameter is required unless the -L
+            parameter is specified.
+        </p>
           </li>
           <li>
             <p>
-                        <code class="literal">-r</code> parameter which allows us to
-                        specify other replicas.
-                </p>
+            <code class="literal">-L</code> parameter, which allows us to identify
+            the local site as the group creator.
+        </p>
           </li>
           <li>
             <p>
-                        <code class="literal">-n</code> parameter which allows us to
-                        identify the number of sites in this replication
-                        group.
-                </p>
+            <code class="literal">-r</code> parameter which allows us to specify
+            other replicas.
+        </p>
           </li>
           <li>
             <p>
-                    <code class="literal">-p</code> option, which is used to identify
-                    this replica's priority (recall that the priority is
-                    used as a tie breaker for elections)
-                </p>
+            <code class="literal">-p</code> option, which is used to identify this
+            replica's priority (recall that the priority is used as a tie
+            breaker for elections)
+        </p>
           </li>
         </ul>
       </div>
@@ -301,19 +312,15 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
     public static void usage()
     {
         System.err.println("usage: " + repConfig.progname);
-        System.err.println("-h home<strong class="userinput"><code>[-r host:port][-l host:port]" +
-            "[-n nsites][-p priority]</code></strong>");
+        System.err.println("-h home<strong class="userinput"><code>[-r host:port][-l|-L host:port]" +
+            "[-r host:port][-p priority]</code></strong>");
 
-        System.err.println(<strong class="userinput"><code>"\t -l host:port +
-             "(required; l stands for local)\n" +
-             "\t -r host:port (optional; r stands for replica; any " +
-             "number of these may be specified)\n" +</code></strong>
-             "\t -h home directory\n" +
-             <strong class="userinput"><code>"\t -n nsites (optional; number of sites in replication " +
-             "group; defaults to 0\n" +
-             "\t    in which case we try to dynamically compute the " +
-             "number of sites in\n" +
-             "\t    the replication group)\n" +
+        System.err.println("\t -h home directory (required)\n" +
+            <strong class="userinput"><code>"\t -l host:port (required, unless -L is specified; " +
+             "l stands for local)\n" +
+             "\t -L host:port (optional;L mean group creator)\n" +
+             "\t -r host:port (optional; r stands for remote; any " +
+             "number of these may be specified)\n" +
              "\t -p priority (optional: defaults to 100)\n");</code></strong>
 
         System.exit(1);
@@ -341,16 +348,21 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
         for (int i = 0; i &lt; argv.length; i++)
         {
             if (argv[i].compareTo("-h") == 0) {
-                // home - a string arg.
+                // home is a string arg.
                 i++;
                 config.home = argv[i];
-           <strong class="userinput"><code>} else if (argv[i].compareTo("-l") == 0) {
-                // "me" should be host:port
+            <strong class="userinput"><code>} else if (argv[i].compareTo("-l") == 0) ||
+              argv[i].compareTo("-L") == 0) {
+                if (i == argv.length - 1)
+                    usage();
+                if (argv[i].compareTo("-L") == 0)
+                    isCreator = true;
+                // "local" should be host:port.
                 i++;
                 String[] words = argv[i].split(":");
                 if (words.length != 2) {
-                    System.err.println(
-                        "Invalid host specification host:port needed.");
+                   System.err.println(
+                     "Invalid host specification host:port needed.");
                     usage();
                 }
                 try {
@@ -360,20 +372,17 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
                         "could not parse port number.");
                     usage();
                 }
-                config.setThisHost(words[0], tmpPort);
-            } else if (argv[i].compareTo("-n") == 0) {
-                i++;
-                config.totalSites = Integer.parseInt(argv[i]);
-           } else if (argv[i].compareTo("-p") == 0) {
+                config.setThisHost(words[0], tmpPort, isCreator);
+            } else if (argv[i].compareTo("-p") == 0) {
                 i++;
                 config.priority = Integer.parseInt(argv[i]);
             } else if (argv[i].compareTo("-r") == 0) {
                 i++;
                 String[] words = argv[i].split(":");
                 if (words.length != 2) {
-                    System.err.println(
-                        "Invalid host specification host:port needed.");
-                    usage();
+                   System.err.println(
+                     "Invalid host specification host:port needed.");
+                   usage();
                 }
                 try {
                     tmpPort = Integer.parseInt(words[1]);
@@ -382,7 +391,7 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
                         "could not parse port number.");
                     usage();
                 }
-                config.addOtherHost(words[0], tmpPort, isPeer);
+                config.addOtherHost(words[0], tmpPort);
             }</code></strong> else {
                 System.err.println("Unrecognized option: " + argv[i]);
                 usage();
@@ -425,31 +434,37 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
         throws DatabaseException
     {
         int ret = 0;
-        appConfig = config;
+        repConfig = config;
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setErrorStream(System.err);
         envConfig.setErrorPrefix(RepConfig.progname);
 
-        <strong class="userinput"><code>envConfig.setReplicationManagerLocalSite(appConfig.getThisHost());</code></strong> </pre>
+        <strong class="userinput"><code>envConfig.addReplicationManagerSite(repConfig.getThisHost());</code></strong> </pre>
       <p>
-    And we also add code to allow us to identify "other" sites to the environment handle (that is,
-the sites that we identify using the <code class="literal">-o</code> command line
-option). To do this, we iterate over each of the "other" sites provided to
-us using the <code class="literal">-o</code> command line option, and we add each one
-individually in turn:     
+    And we also add code to allow us to identify "other" sites to the
+    environment handle (that is, the sites that we identify using the
+    <code class="literal">-o</code> command line option). To do this, we iterate over
+    each of the "other" sites provided to us using the
+    <code class="literal">-o</code> command line option, and we add each one
+    individually in turn:     
 </p>
-      <pre class="programlisting">        <strong class="userinput"><code>for (ReplicationHostAddress host = appConfig.getFirstOtherHost();
-            host != null; host = appConfig.getNextOtherHost())
-        {
-            envConfig.replicationManagerAddRemoteSite(host);
-        }</code></strong> </pre>
       <p>
-    And then we need code to allow us to identify the total number of sites
-    in this replication group, and to set the environment's priority.
+    We also add code here to set the environment's priority.
 </p>
-      <pre class="programlisting">        <strong class="userinput"><code>if (appConfig.totalSites &gt; 0)
-            envConfig.setReplicationNumSites(appConfig.totalSites);
-        envConfig.setReplicationPriority(appConfig.priority); </code></strong> </pre>
+      <pre class="programlisting">        <strong class="userinput"><code>
+        for (ReplicationHostAddress host = 
+            repConfig.getFirstOtherHost(); host != null; 
+            host = repConfig.getNextOtherHost()) {
+
+            ReplicationManagerSiteConfig repmgrRemoteSiteConfig =
+                new ReplicationManagerSiteConfig(host.host, host.port);
+            repmgrRemoteSiteConfig.setBootstrapHelper(true);
+            envConfig.addReplicationManagerSite(
+                repmgrRemoteSiteConfig);
+        }
+
+        envConfig.addReplicationPriority(repConfig.priority);
+        </code></strong> </pre>
       <p>
             
 

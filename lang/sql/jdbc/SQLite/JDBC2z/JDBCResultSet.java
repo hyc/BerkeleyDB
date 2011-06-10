@@ -1,7 +1,16 @@
 package SQLite.JDBC2z;
 
-import java.sql.*;
 import java.math.BigDecimal;
+import java.sql.NClob;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Statement;
+import java.sql.Types;
 
 public class JDBCResultSet implements java.sql.ResultSet {
 
@@ -135,11 +144,12 @@ public class JDBCResultSet implements java.sql.ResultSet {
 		throw new SQLException("cursor outside of result set");
 	    }
 	    rowbuf = new String[tr.ncolumns];
-	    System.arraycopy((String []) tr.rows.elementAt(row), 0,
+	    System.arraycopy(tr.rows.elementAt(row), 0,
 			     rowbuf, 0, tr.ncolumns);
 	}
     }
 
+    @Override
     public boolean next() throws SQLException {
 	if (tr == null) {
 	    return false;
@@ -148,11 +158,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row < tr.nrows;
     }
 
+    @Override
     public int findColumn(String columnName) throws SQLException {
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	return m.findColByName(columnName);
     }
   
+    @Override
     public int getRow() throws SQLException {
 	if (tr == null) {
 	    throw new SQLException("no rows");
@@ -160,6 +172,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row + 1;
     }
 
+    @Override
     public boolean previous() throws SQLException {
 	if (tr == null) {
 	    throw new SQLException("result set already closed.");
@@ -170,6 +183,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row >= 0;
     }
 
+    @Override
     public boolean absolute(int row) throws SQLException {
 	if (tr == null) {
 	    return false;
@@ -185,6 +199,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return true;
     }
 
+    @Override
     public boolean relative(int row) throws SQLException {
 	if (tr == null) {
 	    return false;
@@ -196,26 +211,31 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return true;
     }
 
+    @Override
     public void setFetchDirection(int dir) throws SQLException {
 	if (dir != ResultSet.FETCH_FORWARD) {
 	    throw new SQLException("only forward fetch direction supported");
 	}
     }
 
+    @Override
     public int getFetchDirection() throws SQLException {
 	return ResultSet.FETCH_FORWARD;
     }
 
+    @Override
     public void setFetchSize(int fsize) throws SQLException {
 	if (fsize != 1) {
 	    throw new SQLException("fetch size must be 1");
 	}
     }
 
+    @Override
     public int getFetchSize() throws SQLException {
 	return 1;
     }
 
+    @Override
     public String getString(int columnIndex) throws SQLException {
 	if (tr == null || columnIndex < 1 || columnIndex > tr.ncolumns) {
 	    throw new SQLException("column " + columnIndex + " not found");
@@ -225,11 +245,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return lastg;
     }
 
+    @Override
     public String getString(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getString(col);
     }
 
+    @Override
     public int getInt(int columnIndex) throws SQLException {
 	Integer i = internalGetInt(columnIndex);
 	if (i != null) {
@@ -252,21 +274,25 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public int getInt(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getInt(col);
     }
 
+    @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
 	return getInt(columnIndex) == 1 ||
 	    Boolean.parseBoolean(getString(columnIndex));
     }
 
+    @Override
     public boolean getBoolean(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getBoolean(col);
     }
 
+    @Override
     public ResultSetMetaData getMetaData() throws SQLException {
 	if (md == null) {
 	    md = new JDBCResultSetMetaData(this);
@@ -274,6 +300,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return md;
     }
 
+    @Override
     public short getShort(int columnIndex) throws SQLException {
 	Short sh = internalGetShort(columnIndex);
 	if (sh != null) {
@@ -296,11 +323,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public short getShort(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getShort(col);
     }
 
+    @Override
     public java.sql.Time getTime(int columnIndex) throws SQLException {
 	return internalGetTime(columnIndex, null);
     }
@@ -333,22 +362,26 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public java.sql.Time getTime(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getTime(col);
     }
 
+    @Override
     public java.sql.Time getTime(int columnIndex, java.util.Calendar cal)
 	throws SQLException {
 	return internalGetTime(columnIndex, cal);
     }
 
+    @Override
     public java.sql.Time getTime(String columnName, java.util.Calendar cal)
 	throws SQLException{
 	int col = findColumn(columnName);
 	return getTime(col, cal);
     }
 
+    @Override
     public java.sql.Timestamp getTimestamp(int columnIndex)
 	throws SQLException{
 	return internalGetTimestamp(columnIndex, null);
@@ -382,18 +415,21 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public java.sql.Timestamp getTimestamp(String columnName)
 	throws SQLException{
 	int col = findColumn(columnName);
 	return getTimestamp(col);
     }
 
+    @Override
     public java.sql.Timestamp getTimestamp(int columnIndex,
 					   java.util.Calendar cal)
 	throws SQLException {
 	return internalGetTimestamp(columnIndex, cal);
     }
 
+    @Override
     public java.sql.Timestamp getTimestamp(String columnName,
 					   java.util.Calendar cal)
 	throws SQLException {
@@ -401,6 +437,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return getTimestamp(col, cal);
     }
 
+    @Override
     public java.sql.Date getDate(int columnIndex) throws SQLException {
 	return internalGetDate(columnIndex, null);
     }
@@ -433,22 +470,26 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public java.sql.Date getDate(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getDate(col);
     }
 
+    @Override
     public java.sql.Date getDate(int columnIndex, java.util.Calendar cal)
 	throws SQLException{
 	return internalGetDate(columnIndex, cal);
     }
 
+    @Override
     public java.sql.Date getDate(String columnName, java.util.Calendar cal)
 	throws SQLException{
 	int col = findColumn(columnName);
 	return getDate(col, cal);
     }
 
+    @Override
     public double getDouble(int columnIndex) throws SQLException {
 	Double d = internalGetDouble(columnIndex);
 	if (d != null) {
@@ -471,11 +512,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
     
+    @Override
     public double getDouble(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getDouble(col);
     }
 
+    @Override
     public float getFloat(int columnIndex) throws SQLException {
 	Float f = internalGetFloat(columnIndex);
 	if (f != null) {
@@ -498,11 +541,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public float getFloat(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getFloat(col);
     }
 
+    @Override
     public long getLong(int columnIndex) throws SQLException {
 	Long l = internalGetLong(columnIndex);
 	if (l != null) {
@@ -525,17 +570,20 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public long getLong(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getLong(col);
     }
 
+    @Override
     @Deprecated
     public java.io.InputStream getUnicodeStream(int columnIndex)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     @Deprecated
     public java.io.InputStream getUnicodeStream(String columnName)
 	throws SQLException {
@@ -543,23 +591,27 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return getUnicodeStream(col);
     }
 
+    @Override
     public java.io.InputStream getAsciiStream(String columnName)
 	throws SQLException {
 	int col = findColumn(columnName);
 	return getAsciiStream(col);
     }
 
+    @Override
     public java.io.InputStream getAsciiStream(int columnIndex)
 	throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public BigDecimal getBigDecimal(String columnName)
 	throws SQLException {
 	int col = findColumn(columnName);
 	return getBigDecimal(col);
     }
 
+    @Override
     @Deprecated
     public BigDecimal getBigDecimal(String columnName, int scale)
 	throws SQLException {
@@ -567,16 +619,19 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return getBigDecimal(col, scale);
     }
 
+    @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     @Deprecated
     public BigDecimal getBigDecimal(int columnIndex, int scale)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public java.io.InputStream getBinaryStream(int columnIndex)
 	throws SQLException {
 	byte data[] = getBytes(columnIndex);
@@ -586,6 +641,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public java.io.InputStream getBinaryStream(String columnName)
 	throws SQLException {
 	byte data[] = getBytes(columnName);
@@ -595,15 +651,18 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public byte getByte(int columnIndex) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public byte getByte(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getByte(col);
     }
 
+    @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
 	if (tr == null || columnIndex < 1 || columnIndex > tr.ncolumns) {
 	    throw new SQLException("column " + columnIndex + " not found");
@@ -617,15 +676,18 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return ret;
     }
 
+    @Override
     public byte[] getBytes(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getBytes(col);
     }
 
+    @Override
     public String getCursorName() throws SQLException {
 	return null;
     }
 
+    @Override
     public Object getObject(int columnIndex) throws SQLException {
 	if (tr == null || columnIndex < 1 || columnIndex > tr.ncolumns) {
 	    throw new SQLException("column " + columnIndex + " not found");
@@ -664,58 +726,70 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return ret;
     }
 
+    @Override
     public Object getObject(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getObject(col);
     }
 
+    @Override
     public Object getObject(int columnIndex, java.util.Map map) 
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Object getObject(String columnName, java.util.Map map)
 	throws SQLException {
 	int col = findColumn(columnName);
 	return getObject(col, map);
     }
 
+    @Override
     public java.sql.Ref getRef(int columnIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public java.sql.Ref getRef(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getRef(col);
     }
 
+    @Override
     public java.sql.Blob getBlob(int columnIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public java.sql.Blob getBlob(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getBlob(col);
     }
 
+    @Override
     public java.sql.Clob getClob(int columnIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public java.sql.Clob getClob(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getClob(col);
     }
 
+    @Override
     public java.sql.Array getArray(int columnIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public java.sql.Array getArray(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getArray(col);
     }
 
+    @Override
     public java.io.Reader getCharacterStream(int columnIndex)
 	throws SQLException {
 	String data = getString(columnIndex);
@@ -726,6 +800,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public java.io.Reader getCharacterStream(String columnName)
 	throws SQLException {
 	String data = getString(columnName);
@@ -736,18 +811,22 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return null;
     }
 
+    @Override
     public SQLWarning getWarnings() throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public boolean wasNull() throws SQLException {
 	return lastg == null;
     }
 	
+    @Override
     public void clearWarnings() throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public boolean isFirst() throws SQLException {
 	if (tr == null) {
 	    return true;
@@ -755,6 +834,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row == 0;
     }
 
+    @Override
     public boolean isBeforeFirst() throws SQLException {
 	if (tr == null || tr.nrows <= 0) {
 	    return false;
@@ -762,6 +842,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row < 0;
     }
 
+    @Override
     public void beforeFirst() throws SQLException {
 	if (tr == null) {
 	    return;
@@ -769,6 +850,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	row = -1;
     }
 
+    @Override
     public boolean first() throws SQLException {
 	if (tr == null || tr.nrows <= 0) {
 	    return false;
@@ -777,6 +859,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return true;
     }
 
+    @Override
     public boolean isAfterLast() throws SQLException {
 	if (tr == null || tr.nrows <= 0) {
 	    return false;
@@ -784,6 +867,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row >= tr.nrows;
     }
 
+    @Override
     public void afterLast() throws SQLException {
 	if (tr == null) {
 	    return;
@@ -791,6 +875,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	row = tr.nrows;
     }
 
+    @Override
     public boolean isLast() throws SQLException {
 	if (tr == null) {
 	    return true;
@@ -798,6 +883,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return row == tr.nrows - 1;
     }
 
+    @Override
     public boolean last() throws SQLException {
 	if (tr == null || tr.nrows <= 0) {
 	    return false;
@@ -806,33 +892,39 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return true;
     }
 
+    @Override
     public int getType() throws SQLException {
 	return TYPE_SCROLL_SENSITIVE;
     }
 
+    @Override
     public int getConcurrency() throws SQLException {
 	return CONCUR_UPDATABLE;
     }
 
+    @Override
     public boolean rowUpdated() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean rowInserted() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean rowDeleted() throws SQLException {
 	return false;
     }
 
+    @Override
     public void insertRow() throws SQLException {
 	isUpdatable();
 	if (!oninsrow || rowbuf == null) {
 	    throw new SQLException("no insert data provided");
 	}
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("INSERT INTO ");
 	sb.append(SQLite.Shell.sql_quote_dbl(uptable));
 	sb.append("(");
@@ -853,7 +945,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    this.s.conn.db.exec(sb.toString(), null, rowbuf);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e);
 	}
 	tr.newrow(rowbuf);
 	rowbuf = null;
@@ -861,6 +953,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	last();
     }
 
+    @Override
     public void updateRow() throws SQLException {
 	isUpdatable();
 	if (rowbuf == null) {
@@ -875,7 +968,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	String rd[] = (String []) tr.rows.elementAt(row);
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	String args[] = new String[tr.ncolumns + pkcols.length];
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("UPDATE ");
 	sb.append(SQLite.Shell.sql_quote_dbl(uptable));
 	sb.append(" SET ");
@@ -900,12 +993,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    this.s.conn.db.exec(sb.toString(), null, args);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e);
 	}
 	System.arraycopy(rowbuf, 0, rd, 0, rowbuf.length);
 	rowbuf = null;
     }
 
+    @Override
     public void deleteRow() throws SQLException {
 	isUpdatable();
 	if (oninsrow) {
@@ -915,7 +1009,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	    throw new SQLException("no primary key on table defined");
 	}
 	fillRowbuf();
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("DELETE FROM ");
 	sb.append(SQLite.Shell.sql_quote_dbl(uptable));
 	sb.append(" WHERE ");
@@ -931,11 +1025,12 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    this.s.conn.db.exec(sb.toString(), null, args);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e);
 	}
 	rowbuf = null;
     }
 
+    @Override
     public void refreshRow() throws SQLException {
 	isUpdatable();
 	if (oninsrow) {
@@ -946,7 +1041,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	String rd[] = (String []) tr.rows.elementAt(row);
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("SELECT ");
 	for (int i = 0; i < tr.ncolumns; i++) {
 	    sb.append(SQLite.Shell.sql_quote_dbl(m.getColumnName(i + 1)));
@@ -970,19 +1065,21 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    trnew = this.s.conn.db.get_table(sb.toString(), args);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e);
 	}
 	if (trnew.nrows != 1) {
-	    throw new SQLException("wrong size of result set");
+	    throw new SQLException("wrong size of result set; expected 1, got " + trnew.nrows);
 	}
 	rowbuf = null;
 	tr.rows.setElementAt(trnew.rows.elementAt(0), row);
     }
 
+    @Override
     public void cancelRowUpdates() throws SQLException {
 	rowbuf = null;
     }
 
+    @Override
     public void moveToInsertRow() throws SQLException {
 	isUpdatable();
 	if (!oninsrow) {
@@ -991,6 +1088,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
     }
 
+    @Override
     public void moveToCurrentRow() throws SQLException {
 	if (oninsrow) {
 	    oninsrow = false;
@@ -998,6 +1096,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
     }
 
+    @Override
     public void updateNull(int colIndex) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1007,14 +1106,17 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = null;
     }
 
+    @Override
     public void updateBoolean(int colIndex, boolean b) throws SQLException {
 	updateString(colIndex, b ? "1" : "0");
     }
 
+    @Override
     public void updateByte(int colIndex, byte b) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateShort(int colIndex, short b) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1024,6 +1126,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = Short.toString(b);
     }
 
+    @Override
     public void updateInt(int colIndex, int b) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1033,6 +1136,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = Integer.toString(b);
     }
 
+    @Override
     public void updateLong(int colIndex, long b) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1042,6 +1146,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = Long.toString(b);
     }
 
+    @Override
     public void updateFloat(int colIndex, float f) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1051,6 +1156,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = Float.toString(f);
     }
 
+    @Override
     public void updateDouble(int colIndex, double f) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1060,11 +1166,13 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = Double.toString(f);
     }
 
+    @Override
     public void updateBigDecimal(int colIndex, BigDecimal f)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateString(int colIndex, String s) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1074,6 +1182,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = s;
     }
 
+    @Override
     public void updateBytes(int colIndex, byte[] s) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1087,6 +1196,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
     }
 
+    @Override
     public void updateDate(int colIndex, java.sql.Date d) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1096,6 +1206,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = d.toString();
     }
 
+    @Override
     public void updateTime(int colIndex, java.sql.Time t) throws SQLException {
 	isUpdatable();
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
@@ -1105,6 +1216,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = t.toString();
     }
 
+    @Override
     public void updateTimestamp(int colIndex, java.sql.Timestamp t)
 	throws SQLException {
 	isUpdatable();
@@ -1115,104 +1227,124 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	rowbuf[colIndex - 1] = t.toString();
     }
 
+    @Override
     public void updateAsciiStream(int colIndex, java.io.InputStream in, int s)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateBinaryStream(int colIndex, java.io.InputStream in, int s)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateCharacterStream(int colIndex, java.io.Reader in, int s)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateObject(int colIndex, Object obj) throws SQLException {
 	updateString(colIndex, obj.toString());
     }
 
+    @Override
     public void updateObject(int colIndex, Object obj, int s)
 	throws SQLException {
 	updateString(colIndex, obj.toString());
     }
 
+    @Override
     public void updateNull(String colName) throws SQLException {
 	int col = findColumn(colName);
 	updateNull(col);
     }
 
+    @Override
     public void updateBoolean(String colName, boolean b) throws SQLException {
 	int col = findColumn(colName);
 	updateBoolean(col, b);
     }
 
+    @Override
     public void updateByte(String colName, byte b) throws SQLException {
 	int col = findColumn(colName);
 	updateByte(col, b);
     }
 
+    @Override
     public void updateShort(String colName, short b) throws SQLException {
 	int col = findColumn(colName);
 	updateShort(col, b);
     }
 
+    @Override
     public void updateInt(String colName, int b) throws SQLException {
 	int col = findColumn(colName);
 	updateInt(col, b);
     }
 
+    @Override
     public void updateLong(String colName, long b) throws SQLException {
 	int col = findColumn(colName);
 	updateLong(col, b);
     }
 
+    @Override
     public void updateFloat(String colName, float f) throws SQLException {
 	int col = findColumn(colName);
 	updateFloat(col, f);
     }
 
+    @Override
     public void updateDouble(String colName, double f) throws SQLException {
 	int col = findColumn(colName);
 	updateDouble(col, f);
     }
 
+    @Override
     public void updateBigDecimal(String colName, BigDecimal f)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateBigDecimal(col, f);
     }
 
+    @Override
     public void updateString(String colName, String s) throws SQLException {
 	int col = findColumn(colName);
 	updateString(col, s);
     }
 
+    @Override
     public void updateBytes(String colName, byte[] s) throws SQLException {
 	int col = findColumn(colName);
 	updateBytes(col, s);
     }
 
+    @Override
     public void updateDate(String colName, java.sql.Date d)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateDate(col, d);
     }
 
+    @Override
     public void updateTime(String colName, java.sql.Time t)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateTime(col, t);
     }
 
+    @Override
     public void updateTimestamp(String colName, java.sql.Timestamp t)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateTimestamp(col, t);
     }
 
+    @Override
     public void updateAsciiStream(String colName, java.io.InputStream in,
 				  int s)
 	throws SQLException {
@@ -1220,6 +1352,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateAsciiStream(col, in, s);
     }
 
+    @Override
     public void updateBinaryStream(String colName, java.io.InputStream in,
 				   int s)
 	throws SQLException {
@@ -1227,6 +1360,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateBinaryStream(col, in, s);
     }
 
+    @Override
     public void updateCharacterStream(String colName, java.io.Reader in,
 				      int s)
 	throws SQLException {
@@ -1234,18 +1368,21 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateCharacterStream(col, in, s);
     }
 
+    @Override
     public void updateObject(String colName, Object obj)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateObject(col, obj);
     }
 
+    @Override
     public void updateObject(String colName, Object obj, int s)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateObject(col, obj, s);
     }
 
+    @Override
     public Statement getStatement() throws SQLException {
 	if (s == null) {
 	    throw new SQLException("stale result set");
@@ -1253,6 +1390,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return s;
     }
 
+    @Override
     public void close() throws SQLException {
 	s = null;
 	tr = null;
@@ -1262,6 +1400,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	row = -1;
     }
 
+    @Override
     public java.net.URL getURL(int colIndex) throws SQLException {
 	if (tr == null || colIndex < 1 || colIndex > tr.ncolumns) {
 	    throw new SQLException("column " + colIndex + " not found");
@@ -1280,157 +1419,188 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return url;
     }
 
+    @Override
     public java.net.URL getURL(String colName) throws SQLException {
 	int col = findColumn(colName);
 	return getURL(col);
     }
 
+    @Override
     public void updateRef(int colIndex, java.sql.Ref x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateRef(String colName, java.sql.Ref x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateRef(col, x);
     }
 
+    @Override
     public void updateBlob(int colIndex, java.sql.Blob x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateBlob(String colName, java.sql.Blob x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateBlob(col, x);
     }
 
+    @Override
     public void updateClob(int colIndex, java.sql.Clob x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateClob(String colName, java.sql.Clob x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateClob(col, x);
     }
 
+    @Override
     public void updateArray(int colIndex, java.sql.Array x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateArray(String colName, java.sql.Array x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateArray(col, x);
     }
 
+    @Override
     public RowId getRowId(int colIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public RowId getRowId(String colName) throws SQLException {
 	int col = findColumn(colName);
 	return getRowId(col);
     }
 
+    @Override
     public void updateRowId(int colIndex, RowId x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateRowId(String colName, RowId x) throws SQLException {
 	int col = findColumn(colName);
 	updateRowId(col, x);
     }
 
+    @Override
     public int getHoldability() throws SQLException {
 	return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
+    @Override
     public boolean isClosed() throws SQLException {
 	return tr == null;
     }
 
+    @Override
     public void updateNString(int colIndex, String nString)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateNString(String colName, String nString)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateNString(col, nString);
     }
 
+    @Override
     public void updateNClob(int colIndex, NClob nclob)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateNClob(String colName, NClob nclob)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateNClob(col, nclob);
     }
 
+    @Override
     public NClob getNClob(int colIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public NClob getNClob(String colName) throws SQLException {
 	int col = findColumn(colName);
 	return getNClob(col);
     }
 
+    @Override
     public SQLXML getSQLXML(int colIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public SQLXML getSQLXML(String colName) throws SQLException {
 	int col = findColumn(colName);
 	return getSQLXML(col);
     }
 
+    @Override
     public void updateSQLXML(int colIndex, SQLXML xml)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateSQLXML(String colName, SQLXML xml)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateSQLXML(col, xml);
     }
 
+    @Override
     public String getNString(int colIndex) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public String getNString(String colName) throws SQLException {
 	int col = findColumn(colName);
 	return getNString(col);
     }
 
+    @Override
     public java.io.Reader getNCharacterStream(int colIndex)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public java.io.Reader getNCharacterStream(String colName)
 	throws SQLException {
 	int col = findColumn(colName);
 	return getNCharacterStream(col);
     }
 
+    @Override
     public void updateNCharacterStream(int colIndex, java.io.Reader x,
 				       long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateNCharacterStream(String colName, java.io.Reader x,
 				       long len)
 	throws SQLException {
@@ -1438,12 +1608,14 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateNCharacterStream(col, x, len);
     }
 
+    @Override
     public void updateAsciiStream(int colIndex, java.io.InputStream x,
 				  long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateAsciiStream(String colName, java.io.InputStream x,
 				  long len)
 	throws SQLException {
@@ -1451,12 +1623,14 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateAsciiStream(col, x, len);
     }
 
+    @Override
     public void updateBinaryStream(int colIndex, java.io.InputStream x,
 				   long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateBinaryStream(String colName, java.io.InputStream x,
 				   long len)
 	throws SQLException {
@@ -1464,12 +1638,14 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateBinaryStream(col, x, len);
     }
 
+    @Override
     public void updateCharacterStream(int colIndex, java.io.Reader x,
 				   long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateCharacterStream(String colName, java.io.Reader x,
 				   long len)
 	throws SQLException {
@@ -1477,12 +1653,14 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateCharacterStream(col, x, len);
     }
 
+    @Override
     public void updateBlob(int colIndex, java.io.InputStream x,
 			   long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateBlob(String colName, java.io.InputStream x,
 			   long len)
 	throws SQLException {
@@ -1490,12 +1668,14 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateBlob(col, x, len);
     }
 
+    @Override
     public void updateClob(int colIndex, java.io.Reader x,
 			   long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateClob(String colName, java.io.Reader x,
 			   long len)
 	throws SQLException {
@@ -1503,12 +1683,14 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateClob(col, x, len);
     }
 
+    @Override
     public void updateNClob(int colIndex, java.io.Reader x,
 			    long len)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateNClob(String colName, java.io.Reader x,
 			    long len)
 	throws SQLException {
@@ -1516,87 +1698,103 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	updateNClob(col, x, len);
     }
 
+    @Override
     public void updateNCharacterStream(int colIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateNCharacterStream(String colName, java.io.Reader x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateNCharacterStream(col, x);
     }
 
+    @Override
     public void updateAsciiStream(int colIndex, java.io.InputStream x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateAsciiStream(String colName, java.io.InputStream x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateAsciiStream(col, x);
     }
 
+    @Override
     public void updateBinaryStream(int colIndex, java.io.InputStream x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateBinaryStream(String colName, java.io.InputStream x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateBinaryStream(col, x);
     }
 
+    @Override
     public void updateCharacterStream(int colIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateCharacterStream(String colName, java.io.Reader x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateCharacterStream(col, x);
     }
 
+    @Override
     public void updateBlob(int colIndex, java.io.InputStream x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateBlob(String colName, java.io.InputStream x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateBlob(col, x);
     }
 
+    @Override
     public void updateClob(int colIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateClob(String colName, java.io.Reader x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateClob(col, x);
     }
 
+    @Override
     public void updateNClob(int colIndex, java.io.Reader x)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void updateNClob(String colName, java.io.Reader x)
 	throws SQLException {
 	int col = findColumn(colName);
 	updateNClob(col, x);
     }
 
+    @Override
     public <T> T unwrap(java.lang.Class<T> iface) throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public boolean isWrapperFor(java.lang.Class iface) throws SQLException {
 	return false;
     }

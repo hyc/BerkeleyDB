@@ -18,6 +18,7 @@ int __crdel_inmem_rename_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *)
 int __crdel_inmem_remove_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __db_master_open __P((DB *, DB_THREAD_INFO *, DB_TXN *, const char *, u_int32_t, int, DB **));
 int __db_master_update __P((DB *, DB *, DB_THREAD_INFO *, DB_TXN *, const char *, DBTYPE, mu_action, const char *, u_int32_t));
+int __env_dbreg_setup __P((DB *, DB_TXN *, const char *, const char *, u_int32_t));
 int __env_setup __P((DB *, DB_TXN *, const char *, const char *, u_int32_t, u_int32_t));
 int __env_mpool __P((DB *, const char *, u_int32_t));
 int __db_close __P((DB *, DB_TXN *, u_int32_t));
@@ -216,7 +217,7 @@ void __db_prflags __P((ENV *, DB_MSGBUF *, u_int32_t, const FN *, const char *, 
 const char *__db_pagetype_to_string __P((u_int32_t));
 int __db_dump_pp __P((DB *, const char *, int (*)(void *, const void *), void *, int, int));
 int __db_dump __P((DB *, const char *, int (*)(void *, const void *), void *, int, int));
-int __db_prdbt __P((DBT *, int, const char *, void *, int (*)(void *, const void *), int));
+int __db_prdbt __P((DBT *, int, const char *, void *, int (*)(void *, const void *), int, int));
 int	__db_prheader __P((DB *, const char *, int, int, void *, int (*)(void *, const void *), VRFY_DBINFO *, db_pgno_t));
 int __db_prfooter __P((void *, int (*)(void *, const void *)));
 int  __db_pr_callback __P((void *, const void *));
@@ -304,7 +305,7 @@ int __db_salvage_getnext __P((VRFY_DBINFO *, DBC **, db_pgno_t *, u_int32_t *, i
 int __db_salvage_isdone __P((VRFY_DBINFO *, db_pgno_t));
 int __db_salvage_markdone __P((VRFY_DBINFO *, db_pgno_t));
 int __db_salvage_markneeded __P((VRFY_DBINFO *, db_pgno_t, u_int32_t));
-int __db_vrfy_prdbt __P((DBT *, int, const char *, void *, int (*)(void *, const void *), int, VRFY_DBINFO *));
+int __db_vrfy_prdbt __P((DBT *, int, const char *, void *, int (*)(void *, const void *), int, int, VRFY_DBINFO *));
 int __partition_init __P((DB *, u_int32_t));
 int __partition_set __P((DB *, u_int32_t, DBT *, u_int32_t (*callback)(DB *, DBT *key)));
 int __partition_set_dirs __P((DB *, const char **));

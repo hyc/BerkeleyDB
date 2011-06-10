@@ -17,53 +17,75 @@ using BerkeleyDB;
 namespace CsharpAPITest
 {
 	[TestFixture]
-	public class DatabaseExceptionTest
+	public class DatabaseExceptionTest : CSharpTestFixture
 	{
+		[TestFixtureSetUp]
+		public void SetUpTestFixture() {
+			testFixtureName = "DatabaseExceptionTest";
+			base.SetUpTestfixture();
+ 		}
+
 		[Test]
 		public void TestDB_REP_DUPMASTER()
 		{
+			testName = "TestDB_REP_DUPMASTER";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_DUPMASTER);
 		}
 
 		[Test]
 		public void TestDB_REP_HOLDELECTION()
 		{
+			testName = "TestDB_REP_HOLDELECTION";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_HOLDELECTION);
 		}
 
 		[Test]
 		public void TestDB_REP_IGNORE()
 		{
+			testName = "TestDB_REP_IGNORE";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_IGNORE);
 		}
 
 		[Test]
 		public void TestDB_REP_ISPERM()
 		{
+			testName = "TestDB_REP_ISPERM";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_ISPERM);
 		}
 
 		[Test]
 		public void TestDB_REP_JOIN_FAILURE()
 		{
+			testName = "TestDB_REP_JOIN_FAILURE";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_JOIN_FAILURE);
 		}
 
 		[Test]
 		public void TestDB_REP_NEWSITE()
 		{
+			testName = "TestDB_REP_NEWSITE";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_NEWSITE);
 		}
 
 		[Test]
 		public void TestDB_REP_NOTPERM()
 		{
+			testName = "TestDB_REP_NOTPERM";
+			SetUpTest(false);
 			DatabaseException.ThrowException(ErrorCodes.DB_REP_NOTPERM);
 		}
 
 		[Test]
 		public void TestDeadlockException()
 		{
+			testName = "TestDeadlockException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_LOCK_DEADLOCK);
@@ -77,6 +99,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestForeignConflictException()
 		{
+			testName = "TestForeignConflictException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_FOREIGN_CONFLICT);
@@ -90,6 +114,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestKeyEmptyException()
 		{
+			testName = "TestKeyEmptyException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_KEYEMPTY);
@@ -103,6 +129,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestKeyExistException()
 		{
+			testName = "TestKeyExistException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_KEYEXIST);
@@ -116,6 +144,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestLeaseExpiredException()
 		{
+			testName = "TestLeaseExpiredException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_REP_LEASE_EXPIRED);
@@ -129,6 +159,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestLockNotGrantedException()
 		{
+			testName = "TestLockNotGrantedException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_LOCK_NOTGRANTED);
@@ -142,6 +174,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestNotFoundException()
 		{
+			testName = "TestNotFoundException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_NOTFOUND);
@@ -155,6 +189,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestOldVersionException()
 		{
+			testName = "TestOldVersionException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_OLD_VERSION);
@@ -168,6 +204,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestPageNotFoundException()
 		{
+			testName = "TestPageNotFoundException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_PAGE_NOTFOUND);
@@ -181,6 +219,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestRunRecoveryException()
 		{
+			testName = "TestRunRecoveryException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_RUNRECOVERY);
@@ -195,6 +235,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestVerificationException()
 		{
+			testName = "TestVerificationException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_VERIFY_BAD);
@@ -208,6 +250,8 @@ namespace CsharpAPITest
 		[Test]
 		public void TestVersionMismatchException()
 		{
+			testName = "TestVersionMismatchException";
+			SetUpTest(false);
 			try
 			{
 				DatabaseException.ThrowException(ErrorCodes.DB_VERSION_MISMATCH);

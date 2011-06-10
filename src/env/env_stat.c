@@ -47,7 +47,8 @@ __env_stat_print_pp(dbenv, flags)
 	ENV_ILLEGAL_BEFORE_OPEN(env, "DB_ENV->stat_print");
 
 	if ((ret = __db_fchk(env, "DB_ENV->stat_print",
-	    flags, DB_STAT_ALL | DB_STAT_CLEAR | DB_STAT_SUBSYSTEM)) != 0)
+	    flags, DB_STAT_ALL | DB_STAT_ALLOC |
+	    DB_STAT_CLEAR | DB_STAT_SUBSYSTEM)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
@@ -114,6 +115,10 @@ __env_stat_print(env, flags)
 		__db_msg(env, "%s", DB_GLOBAL(db_line));
 		if ((ret = __rep_stat_print(env, flags)) != 0)
 			return (ret);
+#ifdef HAVE_REPLICATION_THREADS
+		if ((ret = __repmgr_stat_print(env, flags)) != 0)
+			return (ret);
+#endif
 	}
 
 	if (TXN_ON(env)) {
@@ -177,6 +182,10 @@ __env_print_stats(env, flags)
 	    "Primary region allocation and reference count mutex",
 	    renv->mtx_regenv, flags);
 	STAT_LONG("References", renv->refcnt);
+	__db_dlbytes(env, "Current region size",
+	    (u_long)0, (u_long)0, (u_long)infop->rp->size);
+	__db_dlbytes(env, "Maximum region size",
+	    (u_long)0, (u_long)0, (u_long)infop->rp->max);
 
 	return (0);
 }
@@ -308,10 +317,14 @@ __env_print_dbenv_all(env, flags)
 	STAT_ISSET("Lock conflicts", dbenv->lk_conflicts);
 	STAT_LONG("Lock modes", dbenv->lk_modes);
 	STAT_ULONG("Lock detect", dbenv->lk_detect);
+	STAT_ULONG("Lock init", dbenv->lk_init);
+	STAT_ULONG("Lock init lockers", dbenv->lk_init_lockers);
+	STAT_ULONG("Lock init objects", dbenv->lk_init_objects);
 	STAT_ULONG("Lock max", dbenv->lk_max);
 	STAT_ULONG("Lock max lockers", dbenv->lk_max_lockers);
 	STAT_ULONG("Lock max objects", dbenv->lk_max_objects);
 	STAT_ULONG("Lock partitions", dbenv->lk_partitions);
+	STAT_ULONG("Lock object hash table size", dbenv->object_t_size);
 	STAT_ULONG("Lock timeout", dbenv->lk_timeout);
 
 	STAT_ULONG("Log bsize", dbenv->lg_bsize);
@@ -329,6 +342,7 @@ __env_print_dbenv_all(env, flags)
 	STAT_ULONG("Cache number", dbenv->mp_ncache);
 	STAT_ULONG("Cache max write sleep", dbenv->mp_maxwrite_sleep);
 
+	STAT_ULONG("Txn init", dbenv->tx_init);
 	STAT_ULONG("Txn max", dbenv->tx_max);
 	STAT_ULONG("Txn timestamp", dbenv->tx_timestamp);
 	STAT_ULONG("Txn timeout", dbenv->tx_timeout);
@@ -427,9 +441,6 @@ __env_print_env_all(env, flags)
 
 	STAT_ULONG("Thread hash buckets", env->thr_nbucket);
 	STAT_ISSET("Thread hash table", env->thr_hashtab);
-
-	STAT_ULONG("Mutex initial count", env->mutex_iq_next);
-	STAT_ULONG("Mutex initial max", env->mutex_iq_max);
 
 	__mutex_print_debug_single(
 	    env, "ENV list of DB handles mutex", env->mtx_dblist, flags);
@@ -792,6 +803,7 @@ __db_print_reginfo(env, infop, s, flags)
 		{ REGION_CREATE,	"REGION_CREATE" },
 		{ REGION_CREATE_OK,	"REGION_CREATE_OK" },
 		{ REGION_JOIN_OK,	"REGION_JOIN_OK" },
+		{ REGION_SHARED,	"REGION_SHARED" },
 		{ 0,			NULL }
 	};
 
@@ -801,6 +813,7 @@ __db_print_reginfo(env, infop, s, flags)
 	STAT_ULONG("Region ID", infop->id);
 	STAT_STRING("Region name", infop->name);
 	STAT_POINTER("Region address", infop->addr);
+	STAT_POINTER("Region allocation head", infop->head);
 	STAT_POINTER("Region primary address", infop->primary);
 	STAT_ULONG("Region maximum allocation", infop->max_alloc);
 	STAT_ULONG("Region allocated", infop->allocated);
@@ -848,7 +861,8 @@ int
 __db_stat_not_built(env)
 	ENV *env;
 {
-	__db_errx(env, "Library build did not include statistics support");
+	__db_errx(env, DB_STR("1554",
+	    "Library build did not include statistics support"));
 	return (DB_OPNOTSUP);
 }
 

@@ -12,7 +12,10 @@
     <link rel="next" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Program Listing</th>
@@ -112,10 +115,12 @@
                         Our program begins with the usual assortment of
                         include statements. 
                     </p>
+        <a id="c_simpletxn1"></a>
         <pre class="programlisting">/*
  * File: ex_rep_gsg_simple.c
  */
 
+#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
 #ifndef _WIN32
@@ -134,6 +139,7 @@ extern int getopt(int, char * const *, const char *);
                 variable that is the name of our program; this is used for
                 error reporting later on.
             </p>
+        <a id="c_simpletxn2"></a>
         <pre class="programlisting">#define CACHESIZE   (10 * 1024 * 1024)
 #define DATABASE    "quote.db"
 
@@ -156,14 +162,16 @@ const char *progname = "ex_rep_gsg_simple";  </pre>
                 used to display a database record once it has been retrieved from the
                 database.
             </p>
+        <a id="c_simpletxn3"></a>
         <pre class="programlisting">int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
 int doloop (DB_ENV *);
-int print_stocks(DBC *);  </pre>
+int print_stocks(DB *);  </pre>
         <p>
                 Next we need our <code class="function">usage()</code> function,
                 which is fairly trivial at this point:
             </p>
+        <a id="c_simpletxn4"></a>
         <pre class="programlisting">/* Usage function */
 static void
 usage()
@@ -179,6 +187,7 @@ usage()
             surprises here. We begin by declaring and initializing the
             usual set of variables:
         </p>
+        <a id="c_simpletxn5"></a>
         <pre class="programlisting">int
 main(int argc, char *argv[])
 {
@@ -198,11 +207,13 @@ main(int argc, char *argv[])
         show a little later in this example.
 
     </p>
+        <a id="c_simpletxn6"></a>
         <pre class="programlisting">    if ((ret = create_env(progname, &amp;dbenv)) != 0)
             goto err; </pre>
         <p>
             Then we parse the command line arguments:
         </p>
+        <a id="c_simpletxn7"></a>
         <pre class="programlisting">    while ((ch = getopt(argc, argv, "h:")) != EOF)
         switch (ch) {
         case 'h':
@@ -221,6 +232,7 @@ main(int argc, char *argv[])
             <code class="function">env_init()</code> function which we will describe
             a little later in this chapter.
     </p>
+        <a id="c_simpletxn8"></a>
         <pre class="programlisting">    if ((ret = env_init(dbenv, home)) != 0)
             goto err; </pre>
         <p>
@@ -234,6 +246,7 @@ main(int argc, char *argv[])
         application will eventually become we do a slightly unusual thing
         here.
     </p>
+        <a id="c_simpletxn9"></a>
         <pre class="programlisting">    if ((ret = doloop(dbenv)) != 0) {
         dbenv-&gt;err(dbenv, ret, "Application failed");
         goto err;
@@ -245,6 +258,7 @@ main(int argc, char *argv[])
         will eventually behave, we cause the database close to occur in the 
         <code class="function">doloop()</code> function.
     </p>
+        <a id="c_simpletxn10"></a>
         <pre class="programlisting">err: if (dbenv != NULL)
         (void)dbenv-&gt;close(dbenv, 0);
 
@@ -267,6 +281,7 @@ main(int argc, char *argv[])
                         to manage, and all it does is create an environment
                         handle for us.
                     </p>
+        <a id="c_create_env1"></a>
         <pre class="programlisting">int
 create_env(const char *progname, DB_ENV **dbenvp)
 {
@@ -302,6 +317,7 @@ create_env(const char *progname, DB_ENV **dbenvp)
                         applications. The open flags that we use are those
                         normally used for a transactional application.
                 </p>
+        <a id="c_env_init"></a>
         <pre class="programlisting">int
 env_init(DB_ENV *dbenv, const char *home)
 {
@@ -350,6 +366,7 @@ env_init(DB_ENV *dbenv, const char *home)
                         the usual assortment of variables used for buffers
                         and return codes. We also initialize all of this.
                     </p>
+        <a id="c_doloop1"></a>
         <pre class="programlisting">#define BUFSIZE 1024
 int
 doloop(DB_ENV *dbenv)
@@ -379,6 +396,7 @@ doloop(DB_ENV *dbenv)
                     Autocommit is described in greater detail in the 
                     <em class="citetitle">Berkeley DB Getting Started with Transaction Processing</em> guide.
                 </p>
+        <a id="c_doloop2"></a>
         <pre class="programlisting">    for (;;) {
 
         if (dbp == NULL) {
@@ -415,6 +433,7 @@ doloop(DB_ENV *dbenv)
             However, in order to keep this example code as simple as
             possible, we refrain from implementing a thorough user interface.
         </p>
+        <a id="c_doloop3"></a>
         <pre class="programlisting">        printf("QUOTESERVER &gt; ");
         fflush(stdout);
 
@@ -441,6 +460,7 @@ doloop(DB_ENV *dbenv)
                 Now we assign data to the <code class="classname">DBT</code>s that
                 we will use to write the new information to the database.
             </p>
+        <a id="c_doloop4"></a>
         <pre class="programlisting">        key.data = buf;
         key.size = (u_int32_t)strlen(buf);
 
@@ -456,6 +476,7 @@ doloop(DB_ENV *dbenv)
                 DB returns <code class="literal">DB_KEYEXIST</code> — which
                 we ignore.
             </p>
+        <a id="c_doloop5"></a>
         <pre class="programlisting">        if ((ret = dbp-&gt;put(dbp, NULL, &amp;key, &amp;data, 0)) != 0)
         {
             dbp-&gt;err(dbp, ret, "DB-&gt;put");
@@ -467,6 +488,7 @@ doloop(DB_ENV *dbenv)
             Finally, we close our database before returning from the
             function.
         </p>
+        <a id="c_doloop6"></a>
         <pre class="programlisting">err:    if (dbp != NULL)
         (void)dbp-&gt;close(dbp, DB_NOSYNC);
 
@@ -501,6 +523,7 @@ doloop(DB_ENV *dbenv)
                         please see the <em class="citetitle">Getting Started with Berkeley DB</em>
                         guide.
                     </p>
+        <a id="c_printstocks1"></a>
         <pre class="programlisting">/* Displays all stock quote information in the database. */
 int
 print_stocks(DB *dbp)

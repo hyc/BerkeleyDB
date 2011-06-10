@@ -12,7 +12,10 @@
     <link rel="next" href="rep_base_meth.html" title="Base API Methods" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Replication Manager methods</th>
@@ -35,44 +38,58 @@
           </div>
         </div>
       </div>
-      <p>Applications which use the Replication Manager support generally call
-the following Berkeley DB methods.  The general pattern is to call various
-methods to configure Replication Manager, and then start it by calling
-<a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>.  Once this initialization is complete, the
-application rarely needs to call any of these methods.  (A prime
-example of an exception to this rule would be the <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> method,
-if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" title="Delaying client synchronization">Delaying client synchronization</a>.)</p>
+      <p>
+        Applications which use the Replication Manager support generally
+        call the following Berkeley DB methods.  The general pattern is to
+        call various methods to configure Replication Manager, and then
+        start it by calling <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>.  Once this initialization is
+        complete, the application rarely needs to call any of these
+        methods.  (A prime example of an exception to this rule would be
+        the <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> method, if the application is 
+        <a class="xref" href="rep_mastersync.html#rep_delay_sync" title="Delaying client synchronization">Delaying client synchronization</a>.)
+    </p>
       <div class="variablelist">
         <dl>
           <dt>
             <span class="term">
-              <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a>
+              <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a>
             </span>
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a> method configures the TCP/IP address of
-            the local site, by specifying the port number on which it is to
-            listen for incoming connection requests.  This method must be
-            called exactly once before calling <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>.
-        </p>
-          </dd>
-          <dt>
-            <span class="term">
-              <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a>
-            </span>
-          </dt>
-          <dd>
+                    The <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handle is used to configure a site that
+                    belongs to the replication group. You can obtain a <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a>
+                    handle by calling the <a href="../api_reference/C/repmgr_site.html" class="olink">DB_ENV-&gt;repmgr_site()</a> method. When you do this, you
+                    provide the TCP/IP host name and port that the replication
+                    site uses for incoming connections.
+                </p>
             <p>
-            The <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a> method adds a remote site to the list
-            of sites initially known by the local site.  The remote site is
-            specified in terms of a TCP/IP network address: host name and
-            port number.  This method may be called as many times as
-            necessary to configure all known remote sites.  Note that it is
-            usually not necessary for each site in the replication group
-            initially to know about all other sites in the group.  Sites
-            can discover each other dynamically, as described in <a class="xref" href="rep_newsite.html" title="Connecting to a new site">Connecting to a new site</a>.
-        </p>
+                    Once you have the <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handle, you use the
+                    <a href="../api_reference/C/dbsite_set_config.html" class="olink">DB_SITE-&gt;set_config()</a> method to configure the handle. One of
+                    the things you can configure about the handle is whether it
+                    is the local site (using the <code class="literal">DB_LOCAL_SITE</code>
+                    parameter). You must configure one and only one <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handle
+                    to be a local site before you start replication. 
+                </p>
+            <p>
+                    You can also optionally configure <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handles for
+                    remote sites to help Replication Manager startup more
+                    efficiently.  Note that it is usually not necessary for
+                    each site in the replication group initially to know about
+                    all other sites in the group.  Sites can discover each
+                    other dynamically, as described in 
+                    <a class="xref" href="rep_newsite.html" title="Connecting to a new site">Connecting to a new site</a>.
+                </p>
+            <p>
+                    Once you have configured your <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handles, you start
+                    replication using <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a>.
+                </p>
+            <p>
+                    When you are shutting down your application, you must 
+                    use the <a href="../api_reference/C/dbsite_close.html" class="olink">DB_SITE-&gt;close()</a> method to close
+                    all your open <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handles before you close your
+                    environment handles.
+                </p>
           </dd>
           <dt>
             <span class="term">
@@ -81,28 +98,14 @@ if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" 
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a> method configures the acknowledgement
-            policy to be used in the replication group, in other words, the
-            behavior of the master with respect to acknowledgements for
-            "permanent" messages, which implements the application's
-            requirements for <a class="xref" href="rep_trans.html" title="Transactional guarantees">Transactional guarantees</a>.  The current implementation
-            requires all sites in the replication group to configure the same
-            acknowledgement policy.
-        </p>
-          </dd>
-          <dt>
-            <span class="term">
-              <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a>
-            </span>
-          </dt>
-          <dd>
-            <p>
-            The <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a> method tells Replication Manager the total
-            number of sites in the replication group.  This is usually
-            necessary for proper operation of elections, and for counting
-            message acknowledgements (depending on the acknowledgement
-            policy).
-        </p>
+                    The <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a> method configures the acknowledgement
+                    policy to be used in the replication group, in other words, the
+                    behavior of the master with respect to acknowledgements for
+                    "permanent" messages, which implements the application's
+                    requirements for <a class="xref" href="rep_trans.html" title="Transactional guarantees">Transactional guarantees</a>.  The current implementation
+                    requires all sites in the replication group to configure the same
+                    acknowledgement policy.
+                </p>
           </dd>
           <dt>
             <span class="term">
@@ -111,9 +114,9 @@ if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" 
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a> method configures the local site's priority
-            for the purpose of elections.
-        </p>
+                    The <a href="../api_reference/C/reppriority.html" class="olink">DB_ENV-&gt;rep_set_priority()</a> method configures the local site's priority
+                    for the purpose of elections.
+                </p>
           </dd>
           <dt>
             <span class="term">
@@ -122,15 +125,15 @@ if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" 
           </dt>
           <dd>
             <p>
-            This method optionally configures various timeout values.
-            Otherwise default timeout values as specified in <a href="../api_reference/C/repset_timeout.html" class="olink">DB_ENV-&gt;rep_set_timeout()</a>
-            are used.  In particular, Replication Manager client sites can
-            be configured to monitor the health of the TCP/IP connection to
-            the master site using heartbeat messages.  If the client
-            receives no messages from the master for a certain amount of
-            time, it considers the connection to be broken, and calls for
-            an election to choose a new master.
-        </p>
+                    This method optionally configures various timeout values.
+                    Otherwise default timeout values as specified in <a href="../api_reference/C/repset_timeout.html" class="olink">DB_ENV-&gt;rep_set_timeout()</a>
+                    are used.  In particular, Replication Manager client sites can
+                    be configured to monitor the health of the TCP/IP connection to
+                    the master site using heartbeat messages.  If the client
+                    receives no messages from the master for a certain amount of
+                    time, it considers the connection to be broken, and calls for
+                    an election to choose a new master.
+                </p>
           </dd>
           <dt>
             <span class="term">
@@ -139,14 +142,14 @@ if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" 
           </dt>
           <dd>
             <p>
-            Once configured and started, Replication Manager does virtually
-            all of its work in the background, usually without the need for
-            any direct communication with the application.  However,
-            occasionally events occur which the application may be
-            interested in knowing about.  The application can request
-            notification of these events by calling the <a href="../api_reference/C/envevent_notify.html" class="olink">DB_ENV-&gt;set_event_notify()</a>
-            method.
-        </p>
+                    Once configured and started, Replication Manager does virtually
+                    all of its work in the background, usually without the need for
+                    any direct communication with the application.  However,
+                    occasionally events occur which the application may be
+                    interested in knowing about.  The application can request
+                    notification of these events by calling the <a href="../api_reference/C/envevent_notify.html" class="olink">DB_ENV-&gt;set_event_notify()</a>
+                    method.
+                </p>
           </dd>
           <dt>
             <span class="term">
@@ -155,17 +158,25 @@ if the application is <a class="xref" href="rep_mastersync.html#rep_delay_sync" 
           </dt>
           <dd>
             <p>
-            The <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method starts the replication system.  It
-            opens the listening TCP/IP socket and creates all the
-            background processing threads that will be needed.
-        </p>
+                    The <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method starts the replication system.  It
+                    opens the listening TCP/IP socket and creates all the
+                    background processing threads that will be needed.
+                </p>
           </dd>
         </dl>
       </div>
-      <p>In addition to the methods previously described, Replication Manager
-applications may also call the following methods, as needed:
-<a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>, <a href="../api_reference/C/repset_limit.html" class="olink">DB_ENV-&gt;rep_set_limit()</a>, <a href="../api_reference/C/repset_request.html" class="olink">DB_ENV-&gt;rep_set_request()</a>, 
-<a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> and <a href="../api_reference/C/repstat.html" class="olink">DB_ENV-&gt;rep_stat()</a>.</p>
+      <p>
+        In addition to the methods previously described, Replication Manager
+        applications may also call the following methods, as needed:
+        <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>, <a href="../api_reference/C/repset_limit.html" class="olink">DB_ENV-&gt;rep_set_limit()</a>, <a href="../api_reference/C/repset_request.html" class="olink">DB_ENV-&gt;rep_set_request()</a>, <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> and <a href="../api_reference/C/repstat.html" class="olink">DB_ENV-&gt;rep_stat()</a>.
+    </p>
+      <p>
+        Finally, Replication Manager applications can also make use of the
+        Replication Manager's message channels. This allows the various
+        sites in the replication group to pass messages that are tailored
+        to the application's requirements. For more information, see
+        <a class="xref" href="repmgr_channels.html" title="Using Replication Manager message channels">Using Replication Manager message channels</a>.
+    </p>
     </div>
     <div class="navfooter">
       <hr />

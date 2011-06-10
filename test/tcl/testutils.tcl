@@ -1117,6 +1117,7 @@ proc filecheck { file txn args} {
 proc cleanup { dir env { quiet 0 } } {
 	global gen_upgrade
 	global gen_dump
+	global gen_portable
 	global is_qnx_test
 	global is_je_test
 	global old_encrypt
@@ -1125,6 +1126,10 @@ proc cleanup { dir env { quiet 0 } } {
 
 	if { $gen_upgrade == 1 || $gen_dump == 1 } {
 		save_upgrade_files $dir
+	}
+
+	if { $gen_portable == 1 } {
+		save_portable_files $dir
 	}
 
 #	check_handles
@@ -1136,14 +1141,11 @@ proc cleanup { dir env { quiet 0 } } {
 			# We:
 			# - Ignore any env-related files, which are
 			# those that have __db.* or log.* if we are
-			# running in an env.  Also ignore files whose
-			# names start with REPDIR_;  these are replication
-			# subdirectories.
+			# running in an env. 
 			# - Call 'dbremove' on any databases.
 			# Remove any remaining temp files.
 			#
 			switch -glob -- $fileorig {
-			*/DIR_* -
 			*/__db.* -
 			*/log.* -
 			*/*.jdb {
@@ -1224,7 +1226,10 @@ proc cleanup { dir env { quiet 0 } } {
 			#
 			# In the HFS file system there are cases where not
 			# all files are removed on the first attempt.  If
-			# it fails, try again a few times.
+			# it fails, try again a few times.  HFS is found on
+			# Mac OS X machines only (although not all of them)
+			# so we can limit the extra delete attempts to that 
+			# platform.  
 			#
 			# This bug has been compensated for in Tcl with a fix
 			# checked into Tcl 8.4.  When Berkeley DB requires
@@ -1232,10 +1237,16 @@ proc cleanup { dir env { quiet 0 } } {
 			# it with a simple 'fileremove -f $remfiles'.
 			#
 			set count 0
-			while { [catch {eval fileremove -f $remfiles}] == 1 \
-			    && $count < 5 } {
-				incr count
+			if { $is_osx_test } {
+				while { [catch {eval fileremove -f $remfiles}] == 1 \
+				    && $count < 5 } {
+					incr count
+				}
 			}
+			# The final attempt to remove files can be for all
+			# OSes including Darwin.  Don't catch failures, we'd
+			# like to notice them.
+			eval fileremove -f $remfiles 
 		}
 
 		if { $is_je_test } {
@@ -1259,9 +1270,14 @@ proc cleanup { dir env { quiet 0 } } {
 proc log_cleanup { dir } {
 	source ./include.tcl
 	global gen_upgrade_log
+	global gen_portable
 
 	if { $gen_upgrade_log == 1 } {
 		save_upgrade_files $dir
+	}
+
+	if { $gen_portable == 1 } {
+		save_portable_files $dir
 	}
 
 	set files [glob -nocomplain $dir/log.*]
@@ -1443,6 +1459,27 @@ proc op_recover_prep { op dir env_cmd dbfile gidf cmd args} {
 	set db [eval {berkdb open -auto_commit -env $env} $args {$dbfile}]
 	error_check_good dbopen [is_valid_db $db] TRUE
 
+	# get the type, if heap must do additional prep work
+        set method [$db get_type]
+        if { [is_heap $method] == 1 } {
+		# close db so get a clean copy
+		error_check_good db_close [$db close] 0
+                
+		# make copies of other heap files
+		append dbfile1 $dbfile "1"
+		catch { file copy -force $dir/$dbfile1 $dir/$dbfile.init1 } res
+		copy_extent_file $dir $dbfile1 init
+
+		append dbfile2 $dbfile "2"
+		catch { file copy -force $dir/$dbfile2 $dir/$dbfile.init2 } res
+		copy_extent_file $dir $dbfile2 init
+
+		# reopen to put us back to starting point
+		set db [eval {berkdb open -auto_commit -env $env} \
+		    $args {$dbfile}]
+		error_check_good dbopen [is_valid_db $db] TRUE
+	}
+
 	# Dump out file contents for initial case
 	eval open_and_dump_file $dbfile $env $init_file nop \
 	    dump_file_direction "-first" "-next" $args
@@ -1558,6 +1595,17 @@ proc op_recover_prep { op dir env_cmd dbfile gidf cmd args} {
 
 	catch { file copy -force $dir/$dbfile $dir/$dbfile.afterop } res
 	copy_extent_file $dir $dbfile afterop
+
+	# If access method is heap, copy other files 
+	if { [is_heap $method] == 1 } {
+		catch { file copy -force $dir/$dbfile1 \
+		    $dir/$dbfile.afterop1 } res
+		copy_extent_file $dir $dbfile1 afterop
+
+		catch { file copy -force $dir/$dbfile2 \
+		    $dir/$dbfile.afterop2 } res
+		copy_extent_file $dir $dbfile2 afterop
+	}
 	eval open_and_dump_file $dir/$dbfile.afterop NULL \
 		$afterop_file nop dump_file_direction "-first" "-next" $args
 
@@ -1583,6 +1631,18 @@ proc op_recover_prep { op dir env_cmd dbfile gidf cmd args} {
 
 	catch { file copy -force $dir/$dbfile $dir/$dbfile.final } res
 	copy_extent_file $dir $dbfile final
+
+	# If access method is heap, copy other files 
+	if { [is_heap $method] == 1 } {
+		catch { file copy -force $dir/$dbfile1 \
+		    $dir/$dbfile.final1 } res
+		copy_extent_file $dir $dbfile1 afterop
+
+		catch { file copy -force $dir/$dbfile2 \
+		    $dir/$dbfile.final2 } res
+		copy_extent_file $dir $dbfile2 afterop
+        }
+
 	eval open_and_dump_file $dir/$dbfile.final NULL \
 	    $final_file nop dump_file_direction "-first" "-next" $args
 
@@ -2416,6 +2476,14 @@ proc convert_method { method } {
 		rrec -
 		rrecno { return "-recno" }
 
+		-heap -
+		-db_heap -
+		heap -
+		db_heap -
+		HEAP -
+		DB_HEAP {return "-heap" }
+
+
 		default { error "FAIL:[timestamp] $method: unknown method" }
 	}
 }
@@ -2585,6 +2653,16 @@ proc is_rbtree { method } {
 	}
 }
 
+proc is_heap { method } {
+	set names { -heap DB_HEAP HEAP db_heap heap}
+	if { [lsearch $names $method] >= 0 } {
+		return 1
+	} else {
+		return 0
+	}
+}
+
+
 proc is_recno { method } {
 	set names { -recno DB_RECNO RECNO db_recno rec recno}
 	if { [lsearch $names $method] >= 0 } {
@@ -2692,6 +2770,7 @@ proc is_iqueueext { method } {
 
 proc is_record_based { method } {
 	if { [is_recno $method] || [is_frecno $method] ||
+	    [is_heap $method] ||
 	    [is_rrecno $method] || [is_queue $method] } {
 		return 1
 	} else {
@@ -3112,19 +3191,38 @@ proc dumploadtest { db } {
 
 	set dbarg ""
 	set utilflag ""
+   	set keyflag "-k"
+	set heapdb 0
+
 	if { $encrypt != 0 } {
 		set dbarg "-encryptany $passwd"
 		set utilflag "-P $passwd"
 	}
 
-	# Dump/load the whole file, including all subdbs.
+	# Open original database to find dbtype.
+	set olddb [eval {berkdb_open -rdonly} $dbarg $db]
+	error_check_good olddb($db) [is_valid_db $olddb] TRUE
+    	if { [is_heap [$olddb get_type]] } {
+		set heapdb 1
+	    	set keyflag ""
+	}
+	error_check_good orig_db_close($db) [$olddb close] 0
 
-	set rval [catch {eval {exec $util_path/db_dump} $utilflag -k \
+	set dumpflags "$utilflag $keyflag"
+
+	# Dump/load the whole file, including all subdbs.
+	set rval [catch {eval {exec $util_path/db_dump} $dumpflags \
 	    $db | $util_path/db_load $utilflag $newdbname} res]
 	error_check_good db_dump/db_load($db:$res) $rval 0
 
 	# If the old file was empty, there's no new file and we're done.
 	if { [file exists $newdbname] == 0 } {
+		return 0
+	}
+    
+	# Dump/load doesn't preserve order in a heap db, don't run db_compare
+    	if { $heapdb == 1 } {
+		eval berkdb dbremove $dbarg $newdbname
 		return 0
 	}
 
@@ -3162,7 +3260,6 @@ proc dumploadtest { db } {
 		# Open the new database.
 		set newdb [eval {berkdb_open -rdonly} $dbarg $newdbname]
 		error_check_good newdb($db) [is_valid_db $newdb] TRUE
-
 		db_compare $olddb $newdb $db $newdbname
 		error_check_good new_db_close($db) [$newdb close] 0
 	}
@@ -3796,6 +3893,93 @@ proc check_log_location { env } {
 	} else {
 		error_check_bad logs_on_disk [llength $logfiles] 0
 	}
+}
+
+# Verify the logs.
+# By default, if we do not specify the directory for temporary environment,
+# the temporary databases will be in-memory, which is not good for test, 
+# Since there may be a lot of logs for verification, which makes the 
+# temporary databases very large.
+proc verify_log { {env_dir $testdir} { tmp_dir lgverify_dir } \
+    { mcachesize 10 } { cont 1 } } {
+	global encrypt
+	global passwd
+	global EXE
+	source ./include.tcl
+
+	set succ_patt {Log verification ended and SUCCEEDED}
+	if { $mcachesize == 0 } {
+		set mcachesize 10
+	}
+	set encarg ""
+	if { $encrypt != 0 } {
+		set encarg "-encryptaes $passwd"
+	}
+	set contarg ""
+	if { $cont == 1 } {
+		set contarg "-c"
+	}
+	if { $tmp_dir == ""} {
+		set tmp_dir "lgverify_dir"
+	}
+	file delete -force $tmp_dir
+	file mkdir $tmp_dir
+	puts -nonewline "Verifying log files .... "
+	set ret [catch {eval exec $util_path/db_log_verify {-C $mcachesize} \
+	    $encarg $contarg {-h $testdir} {-H $tmp_dir} >& lgvrfy.log } msg ]
+	puts "done."
+	if {$ret} {
+		puts "FAIL:db_log_verify: $msg"
+		return 1
+	} 
+
+	# Check if we could find the message for success.
+	set logf [open lgvrfy.log "r"]
+	set line {}
+	set found 0
+	while {[gets $logf line] >= 0} {
+		if {[regexp $succ_patt $line]} {
+			set found 1
+			break
+		}
+	}
+	close $logf
+	error_check_good log_verify $found 1
+	return 0
+}
+
+# This proc is to verify that all the keys in secondary
+# exist in the foreign database.
+proc verify_foreign {txn fdb sdb puterr} {
+	set fkeys {}
+	set fdbc [eval $fdb cursor $txn]
+	error_check_good check_fdbc [is_valid_cursor $fdbc $fdb] TRUE
+	for {set ret [$fdbc get -first]} {[llength $ret] > 0} \
+	    {set ret [$fdbc get -next]} {
+		lappend fkeys [lindex [lindex $ret 0] 0]
+	}
+	error_check_good close_fdbc [$fdbc close] 0
+
+	set skeys {}
+	set sdbc [eval $sdb cursor $txn]
+	error_check_good check_sdbc [is_valid_cursor $sdbc $sdb] TRUE
+	for {set ret [$sdbc get -first]} {[llength $ret] > 0} \
+	    {set ret [$sdbc get -nextnodup]} {
+		lappend skeys [lindex [lindex $ret 0] 0]
+	}
+	error_check_good close_sdbc [$sdbc close] 0
+	foreach fkey $fkeys {
+		set has_keys($fkey) 1
+	}
+	foreach skey $skeys {
+		if {![info exists has_keys($skey)]} {
+			if {$puterr} {
+				puts "FAIL: VERIFY_FOREIGN_BAD"
+			}
+			return 1
+		}
+	}
+	return 0
 }
 
 # Given the env and file name, verify that a given database is on-disk

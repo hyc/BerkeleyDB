@@ -17,6 +17,9 @@ b_load(int argc, char *argv[])
 	DB *dbp;
 	DBTYPE type;
 	DBT key, data;
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	DB_HEAP_RID rid;
+#endif
 	db_recno_t recno;
 	u_int32_t cachesize;
 	int ch, i, count, duplicate;
@@ -45,10 +48,23 @@ b_load(int argc, char *argv[])
 				type = DB_BTREE;
 				break;
 			case 'H': case 'h':
-				if (b_util_have_hash())
-					return (0);
-				ts = "Hash";
-				type = DB_HASH;
+				if (optarg[1] == 'E' || optarg[1] == 'e') {
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+					if (b_util_have_heap())
+						return (0);
+					ts = "Heap";
+					type = DB_HEAP;
+#else
+					fprintf(stderr,
+				"b_curwalk: Heap is not supported! \n");
+					return (EXIT_SUCCESS);
+#endif
+				} else {
+					if (b_util_have_hash())
+						return (0);
+					ts = "Hash";
+					type = DB_HASH;
+				}
 				break;
 			case 'Q': case 'q':
 				if (b_util_have_queue())
@@ -74,11 +90,20 @@ b_load(int argc, char *argv[])
 		return (usage());
 
 	/* Usage. */
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	if (duplicate && 
+	    (type == DB_QUEUE || type == DB_RECNO || type == DB_HEAP)) {
+		fprintf(stderr,
+	"b_load: Queue, Recno and Heap don't support duplicates\n");
+		return (usage());
+	}
+#else
 	if (duplicate && (type == DB_QUEUE || type == DB_RECNO)) {
 		fprintf(stderr,
 		    "b_load: Queue an Recno don't support duplicates\n");
 		return (usage());
 	}
+#endif
 
 #if DB_VERSION_MAJOR < 3 || DB_VERSION_MAJOR == 3 && DB_VERSION_MINOR < 1
 	/*
@@ -135,6 +160,14 @@ b_load(int argc, char *argv[])
 				DB_BENCH_ASSERT(
 				    dbp->put(dbp, NULL, &key, &data, 0) == 0);
 			}
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+		} else if (type == DB_HEAP) {
+			key.data = &rid;
+			key.size = sizeof(rid);
+			for (i = 0; i < count; ++i)
+				DB_BENCH_ASSERT(dbp->put(dbp, 
+				    NULL, &key, &data, DB_APPEND) == 0);
+#endif
 		} else {
 			key.data = &recno;
 			key.size = sizeof(recno);

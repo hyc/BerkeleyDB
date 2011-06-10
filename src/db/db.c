@@ -46,6 +46,7 @@
 #include "dbinc/btree.h"
 #include "dbinc/fop.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 #include "dbinc/partition.h"
@@ -283,7 +284,8 @@ __db_master_update(mdbp, sdbp, ip, txn, subdb, type, action, newname, flags)
 		if ((ret = __dbc_get(ndbc, &key, &ndata, DB_SET)) == 0) {
 			/* A subdb called newname exists.  Bail. */
 			ret = EEXIST;
-			__db_errx(env, "rename: database %s exists", newname);
+			__db_errx(env, DB_STR_A("0673",
+			    "rename: database %s exists", "%s"), newname);
 			goto err;
 		} else if (ret != DB_NOTFOUND)
 			goto err;
@@ -393,6 +395,48 @@ done:	/*
 }
 
 /*
+ * __env_dbreg_setup --
+ *
+ * PUBLIC: int __env_dbreg_setup __P((DB *,
+ * PUBLIC:      DB_TXN *, const char *, const char *, u_int32_t));
+ */
+int
+__env_dbreg_setup(dbp, txn, fname, dname, id)
+	DB *dbp;
+	DB_TXN *txn;
+	const char *fname, *dname;
+	u_int32_t id;
+{
+	ENV *env;
+	int ret;
+
+	env = dbp->env;
+	if (dbp->log_filename == NULL
+#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP) && !defined(DIAGNOSTIC)
+	    && (txn != NULL || F_ISSET(dbp, DB_AM_RECOVER))
+#endif
+#if !defined(DEBUG_ROP)
+	    && !F_ISSET(dbp, DB_AM_RDONLY)
+#endif
+	    ) {
+		if ((ret = __dbreg_setup(dbp,
+		    F_ISSET(dbp, DB_AM_INMEM) ? dname: fname,
+		    F_ISSET(dbp, DB_AM_INMEM) ? NULL : dname, id)) != 0)
+			return (ret);
+
+		/*
+		 * If we're actively logging and our caller isn't a
+		 * recovery function that already did so, then assign
+		 * this dbp a log fileid.
+		 */
+		if (DBENV_LOGGING(env) && !F_ISSET(dbp, DB_AM_RECOVER) &&
+		    (ret = __dbreg_new_id(dbp, txn)) != 0)
+			return (ret);
+	}
+	return (0);
+}
+
+/*
  * __env_setup --
  *	Set up the underlying environment during a db_open.
  *
@@ -417,6 +461,11 @@ __env_setup(dbp, txn, fname, dname, id, flags)
 
 	/* If we don't yet have an environment, it's time to create it. */
 	if (!F_ISSET(env, ENV_OPEN_CALLED)) {
+#if defined(HAVE_MIXED_SIZE_ADDRESSING) && (SIZEOF_CHAR_P == 8)
+		__db_errx(env, DB_STR("0701", "DB_PRIVATE is not supported by"
+		    " 64-bit applications in mixed-size-addressing mode"));
+	       return (EINVAL);
+#endif
 		/* Make sure we have at least DB_MINCACHE pages in our cache. */
 		if (dbenv->mp_gbytes == 0 &&
 		    dbenv->mp_bytes < dbp->pgsize * DB_MINPAGECACHE &&
@@ -445,28 +494,10 @@ __env_setup(dbp, txn, fname, dname, id, flags)
 	 * or a replication client, where we won't log registries, we'll
 	 * still need an FNAME struct, so LOGGING_ON is the correct macro.
 	 */
-	if (LOGGING_ON(env) && dbp->log_filename == NULL
-#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP) && !defined(DIAGNOSTIC)
-	    && (txn != NULL || F_ISSET(dbp, DB_AM_RECOVER))
-#endif
-#if !defined(DEBUG_ROP)
-	    && !F_ISSET(dbp, DB_AM_RDONLY)
-#endif
-	    ) {
-		if ((ret = __dbreg_setup(dbp,
-		    F_ISSET(dbp, DB_AM_INMEM) ? dname : fname,
-		    F_ISSET(dbp, DB_AM_INMEM) ? NULL : dname, id)) != 0)
-			return (ret);
-
-		/*
-		 * If we're actively logging and our caller isn't a
-		 * recovery function that already did so, then assign
-		 * this dbp a log fileid.
-		 */
-		if (DBENV_LOGGING(env) && !F_ISSET(dbp, DB_AM_RECOVER) &&
-		    (ret = __dbreg_new_id(dbp, txn)) != 0)
-			return (ret);
-	}
+	if (LOGGING_ON(env) &&
+	    (!F_ISSET(dbp, DB_AM_INMEM) || dname == NULL) &&
+	    (ret = __env_dbreg_setup(dbp, txn, fname, dname, id)) != 0)
+		return (ret);
 
 	/*
 	 * Insert ourselves into the ENV's dblist.  We allocate a
@@ -560,6 +591,7 @@ __env_mpool(dbp, fname, flags)
 	 */
 	switch (dbp->type) {
 	case DB_BTREE:
+	case DB_HEAP:
 	case DB_RECNO:
 		ftype = F_ISSET(dbp, DB_AM_SWAP | DB_AM_ENCRYPT | DB_AM_CHKSUM)
 		    ? DB_FTYPE_SET : DB_FTYPE_NOTSET;
@@ -1025,6 +1057,8 @@ never_opened:
 		ret = t_ret;
 	if ((t_ret = __ham_db_close(dbp)) != 0 && ret == 0)
 		ret = t_ret;
+	if ((t_ret = __heap_db_close(dbp)) != 0 && ret == 0)
+		ret = t_ret;
 	if ((t_ret = __qam_db_close(dbp, dbp->flags)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -1078,7 +1112,8 @@ never_opened:
 		 * This code is borrowed from __db_init, which does more
 		 * than we can do here.
 		 */
-		save_flags = F_ISSET(dbp, DB_AM_INMEM | DB_AM_TXN);
+		save_flags = F_ISSET(dbp, DB_AM_INMEM |
+		    DB_AM_RDONLY | DB_AM_TXN);
 
 		if ((ret = __bam_db_create(dbp)) != 0)
 			return (ret);
@@ -1184,8 +1219,8 @@ __db_disassociate(sdbp)
 	if (sdbp->s_refcnt != 1 ||
 	    TAILQ_FIRST(&sdbp->active_queue) != NULL ||
 	    TAILQ_FIRST(&sdbp->join_queue) != NULL) {
-		__db_errx(sdbp->env,
-    "Closing a primary DB while a secondary DB has active cursors is unsafe");
+		__db_errx(sdbp->env, DB_STR("0674",
+"Closing a primary DB while a secondary DB has active cursors is unsafe"));
 		ret = EINVAL;
 	}
 	sdbp->s_refcnt = 0;

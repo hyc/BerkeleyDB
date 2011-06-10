@@ -139,7 +139,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 		throw new SQLException("cursor outside of result set");
 	    }
 	    rowbuf = new String[tr.ncolumns];
-	    System.arraycopy((String []) tr.rows.elementAt(row), 0,
+	    System.arraycopy(tr.rows.elementAt(row), 0,
 			     rowbuf, 0, tr.ncolumns);
 	}
     }

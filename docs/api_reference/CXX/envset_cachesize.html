@@ -12,7 +12,10 @@
     <link rel="next" href="mempset_mp_max_openfd.html" title="DbEnv::set_mp_max_openfd()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::set_cachesize()</th>
@@ -53,7 +56,8 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
          are used as specified.  The maximum size of a single cache is 4GB on
          32-bit systems and 10TB on 64-bit systems.  (All sizes are in
          powers-of-two, that is, 256KB is 2^18 not 256,000.) For information on
-         tuning the Berkeley DB cache size, see <a href="../../programmer_reference/general_am_conf.html#am_conf_cachesize" class="olink">Selecting a cache size</a>.
+         tuning the Berkeley DB cache size, see 
+         <a href="../../programmer_reference/general_am_conf.html#am_conf_cachesize" class="olink">Selecting a cache size</a>.
     </p>
       <p>
          It is possible to specify caches to Berkeley DB large enough they
@@ -74,16 +78,16 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
 
     </p>
       <p>
-         The database environment's initial cache size may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "set_cachesize", one or more whitespace characters, and the initial
-         cache size specified in three parts: the gigabytes of cache, the
-         additional bytes of cache, and the number of caches, also separated by
-         whitespace characters.  For example, "set_cachesize 2 524288000 3"
-         would create a 2.5GB logical cache, split between three physical
-         caches. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
-         read when the database environment is opened, it will silently
+         The database environment's initial cache size may also be
+         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file. The syntax of
+         the entry in that file is a single line with the string
+         "set_cachesize", one or more whitespace characters, and the
+         initial cache size specified in three parts: the gigabytes of
+         cache, the additional bytes of cache, and the number of caches,
+         also separated by whitespace characters.  For example,
+         "set_cachesize 2 524288000 3" would create a 2.5GB logical cache,
+         split between three physical caches. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file
+         is read when the database environment is opened, it will silently
          overrule configuration done before that time.
     </p>
       <p>
@@ -108,7 +112,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53467552"></a>Parameters</h3>
+              <h3 class="title"><a id="id3646448"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -116,7 +120,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53466904"></a>gbytes</h4>
+                <h4 class="title"><a id="id3646437"></a>gbytes</h4>
               </div>
             </div>
           </div>
@@ -128,7 +132,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53449064"></a>bytes</h4>
+                <h4 class="title"><a id="id3646309"></a>bytes</h4>
               </div>
             </div>
           </div>
@@ -140,7 +144,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53451888"></a>ncache</h4>
+                <h4 class="title"><a id="id3646246"></a>ncache</h4>
               </div>
             </div>
           </div>
@@ -154,7 +158,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53473936"></a>Errors</h3>
+              <h3 class="title"><a id="id3646557"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -172,7 +176,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53482064"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3646694"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -186,7 +190,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53480512"></a>Class</h3>
+              <h3 class="title"><a id="id3646666"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -198,7 +202,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53475912"></a>See Also</h3>
+              <h3 class="title"><a id="id3646590"></a>See Also</h3>
             </div>
           </div>
         </div>

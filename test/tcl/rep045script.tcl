@@ -55,8 +55,13 @@ set dpid [exec $util_path/db_deadlock \
 # version database until the master has completed setting it up.
 set version 0
 while {[catch {eval {berkdb_open_noerr} -env $clientenv -rdonly $vfile} vdb]} {
-	puts "FAIL: vdb open failed: $vdb"
-	tclsleep 1
+	if { [is_substr $vdb DB_LOCK_DEADLOCK] == 1 } {
+		# We're deadlocked.  Just wait for the
+		# deadlock detector to break the deadlock.
+		tclsleep 1
+	} else {
+		puts "FAIL: vdb open failed: $vdb"
+	}
 }
 
 while { $version == 0 } {
@@ -83,6 +88,15 @@ while { $version == 0 } {
 	}
 }
 error_check_good close_vdb [$vdb close] 0
+
+# If the parent has gotten really far ahead, it may be done. 
+# Clean up and exit.
+if { $version == "DONE" } {
+	error_check_good kill_deadlock_detector [tclkill $dpid] ""
+	error_check_good script_client_close [$clientenv close] 0
+	return
+}
+
 if { $databases_in_memory } {
 	set dbfile [concat \"\" db.$version]
 } else {

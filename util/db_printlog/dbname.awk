@@ -73,7 +73,8 @@ NR == 1 {
 
 TXN == 1 && /txn_regop/ {printme = 1}
 /^	/{
-	rec = sprintf("%s\n%s", rec, $0);
+	if (length(rec) + length($0) < 2040)
+		rec = sprintf("%s\n%s", rec, $0);
 }
 
 END {

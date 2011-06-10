@@ -29,10 +29,12 @@ extern "C" {
 
 /* Complain about a totally zeroed page where we don't expect one. */
 #define	ZEROPG_ERR_PRINT(dbenv, pgno, str) do {				\
-	EPRINT(((dbenv), "Page %lu: %s is of inappropriate type %lu",	\
+	EPRINT(((dbenv), DB_STR_A("0501", 				\
+	    "Page %lu: %s is of inappropriate type %lu", "%lu %s %lu"),	\
 	    (u_long)(pgno), str, (u_long)P_INVALID));			\
-	EPRINT(((dbenv), "Page %lu: totally zeroed page",		\
-	    (u_long)(pgno)));						\
+	EPRINT(((dbenv), DB_STR_A("0502",				\
+	    "Page %lu: totally zeroed page",				\
+	    "%lu"), (u_long)(pgno)));					\
 } while (0)
 
 /*

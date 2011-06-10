@@ -21,6 +21,7 @@ proc rep050 { method { niter 10 } { tnum "050" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -46,6 +47,11 @@ proc rep050 { method { niter 10 } { tnum "050" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		foreach l $logsets {
@@ -55,8 +61,8 @@ proc rep050 { method { niter 10 } { tnum "050" } args } {
 				    for in-memory logs with -recover."
 				continue
 			}
-			puts "Rep$tnum ($r): Replication\
-			    and ($method) delayed sync-up $msg $msg2."
+			puts "Rep$tnum ($r): Replication and\
+			    ($method) delayed sync-up $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client 0 logs are [lindex $l 1]"
 			puts "Rep$tnum: Delay Client 1 logs are [lindex $l 2]"
@@ -72,6 +78,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 	global util_path
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -83,6 +90,11 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -128,7 +140,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -errpfx ENV1 $verbargs $repmemargs \
+	    $m_logargs -errpfx ENV1 $verbargs $repmemargs $privargs \
 	    -home $env1dir -rep_transport \[list 1 replsend\]"
 	set env1 [eval $ma_envcmd $recargs -rep_master]
 	$env1 rep_limit 0 0
@@ -136,7 +148,7 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -errpfx ENV2 $verbargs $repmemargs \
+	    $c_logargs -errpfx ENV2 $verbargs $repmemargs $privargs \
 	    -cachesize {0 2097152 2} \
 	    -home $env2dir -rep_transport \[list 2 replsend\]"
 	set env2 [eval $cl_envcmd $recargs -rep_client]
@@ -144,21 +156,21 @@ proc rep050_sub { method niter tnum logset recargs largs } {
 
 	repladd 3
 	set dc1_envcmd "berkdb_env_noerr -create $dc1_txnargs \
-	    $dc1_logargs -errpfx ENV3 $verbargs $repmemargs \
+	    $dc1_logargs -errpfx ENV3 $verbargs $repmemargs $privargs \
 	    -home $delaycldir1 -rep_transport \[list 3 replsend\]"
 	set dc1env [eval $dc1_envcmd $recargs -rep_client]
 	$dc1env rep_limit 0 0
 
 	repladd 4
 	set dc2_envcmd "berkdb_env_noerr -create $dc2_txnargs \
-	    $dc2_logargs -errpfx ENV4 $verbargs $repmemargs \
+	    $dc2_logargs -errpfx ENV4 $verbargs $repmemargs $privargs \
 	    -home $delaycldir2 -rep_transport \[list 4 replsend\]"
 	set dc2env [eval $dc2_envcmd $recargs -rep_client]
 	$dc2env rep_limit 0 0
 
 	repladd 5
 	set dc3_envcmd "berkdb_env_noerr -create $dc3_txnargs \
-	    $dc3_logargs -errpfx ENV5 $verbargs $repmemargs \
+	    $dc3_logargs -errpfx ENV5 $verbargs $repmemargs $privargs \
 	    -home $delaycldir3 -rep_transport \[list 5 replsend\]"
 
 	# Bring the clients online by processing the startup messages.

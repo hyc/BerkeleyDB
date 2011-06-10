@@ -25,6 +25,7 @@ BerkeleyDB		T_PTROBJ
 BerkeleyDB::Common	T_PTROBJ_AV
 BerkeleyDB::Hash	T_PTROBJ_AV
 BerkeleyDB::Btree	T_PTROBJ_AV
+BerkeleyDB::Heap	T_PTROBJ_AV
 BerkeleyDB::Recno	T_PTROBJ_AV
 BerkeleyDB::Queue	T_PTROBJ_AV
 BerkeleyDB::Cursor	T_PTROBJ_AV
@@ -39,6 +40,7 @@ BerkeleyDB::Raw		T_RAW
 BerkeleyDB::Common::Raw	T_RAW
 BerkeleyDB::Hash::Raw	T_RAW
 BerkeleyDB::Btree::Raw	T_RAW
+BerkeleyDB::Heap::Raw	T_RAW
 BerkeleyDB::Recno::Raw	T_RAW
 BerkeleyDB::Queue::Raw	T_RAW
 BerkeleyDB::Cursor::Raw	T_RAW
@@ -202,6 +204,7 @@ T_PTROBJ_AV
             croak(\"$var is not of type ${ntype}\")
 
 T_dbtkeydatum
+	if (! isHeapDb(db))
 	{
 	    SV* my_sv = $arg ;
 	    DBM_ckFilter(my_sv, filter_store_key, \"filter_store_key\");
@@ -218,6 +221,16 @@ T_dbtkeydatum
 	        $var.size = (int)len;
 	    }
 	}
+	else
+	{
+            SvGETMAGIC($arg) ;
+                SvUPGRADE($arg, SVt_PV); SvOOK_off($arg); SvPOK_only($arg);
+                /* SvPOK_only($arg); */
+                SvGROW($arg, DB_HEAP_RID_SZ);
+	    DBT_clear($var) ;
+	        $var.data = SvPVX($arg);
+	        $var.size = DB_HEAP_RID_SZ;
+	}
 
 T_dbtkeydatum_seq
     InputKey_seq($arg, $var)
@@ -226,7 +239,8 @@ T_dbtkeydatum_seq
 T_dbtkeydatum_btree
 	{
 	    SV* my_sv = $arg ;
-	    DBM_ckFilter(my_sv, filter_store_key, \"filter_store_key\");
+	    if (! isHeapDb(db))
+	        DBM_ckFilter(my_sv, filter_store_key, \"filter_store_key\");
 	    DBT_clear($var) ;
             SvGETMAGIC($arg) ;
 	    if (db->recno_or_queue ||
@@ -238,7 +252,7 @@ T_dbtkeydatum_btree
 	    else {
             STRLEN len;
 	        $var.data = SvPV(my_sv, len);
-	        $var.size = (int)len;
+            $var.size = (int)len;
 	    }
 	}
 
@@ -263,6 +277,8 @@ T_dbtkeydatum_btree_r
 
 T_dbtkeydatum_btree_pr
 	{
+      if(flagSet(DB_GET_BOTH))
+      {
 	    SV* my_sv = $arg ;
 	    DBM_ckFilter(my_sv, filter_store_key, \"filter_store_key\");
 	    DBT_clear($var) ;
@@ -278,6 +294,11 @@ T_dbtkeydatum_btree_pr
 	        $var.data = SvPV(my_sv, len);
 	        $var.size = (int)len;
 	    }
+      }
+      else
+      {
+       DBT_clear($var) ;
+      }
 	}
 
 T_dbtdatum

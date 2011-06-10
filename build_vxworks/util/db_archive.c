@@ -79,7 +79,8 @@ db_archive_main(argc, argv)
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5119",
+				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
 				return (EXIT_FAILURE);
 			}
@@ -189,10 +190,10 @@ db_archive_version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
-		    v_major, v_minor);
+		fprintf(stderr, DB_STR_A("5120",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname, DB_VERSION_MAJOR,
+		    DB_VERSION_MINOR, v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
 	return (0);

@@ -728,7 +728,10 @@ static int test_memdebug_settitle(
   return TCL_OK;
 }
 
-#define MALLOC_LOG_FRAMES 10 
+#define MALLOC_LOG_FRAMES  10 
+#define MALLOC_LOG_KEYINTS (                                              \
+    10 * ((sizeof(int)>=sizeof(void*)) ? 1 : sizeof(void*)/sizeof(int))   \
+)
 static Tcl_HashTable aMallocLog;
 static int mallocLogEnabled = 0;
 
@@ -745,7 +748,7 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
     Tcl_HashEntry *pEntry;
     int isNew;
 
-    int aKey[MALLOC_LOG_FRAMES];
+    int aKey[MALLOC_LOG_KEYINTS];
     unsigned int nKey = sizeof(int)*MALLOC_LOG_FRAMES;
 
     memset(aKey, 0, nKey);
@@ -781,7 +784,7 @@ static void test_memdebug_log_clear(void){
     Tcl_Free((char *)pLog);
   }
   Tcl_DeleteHashTable(&aMallocLog);
-  Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_FRAMES);
+  Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_KEYINTS);
 }
 
 static int test_memdebug_log(
@@ -804,7 +807,7 @@ static int test_memdebug_log(
         void (*xBacktrace)(int, int, void **));
     sqlite3MemdebugBacktraceCallback(test_memdebug_callback);
 #endif
-    Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_FRAMES);
+    Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_KEYINTS);
     isInit = 1;
   }
 
@@ -827,7 +830,7 @@ static int test_memdebug_log(
       Tcl_HashEntry *pEntry;
       Tcl_Obj *pRet = Tcl_NewObj();
 
-      assert(sizeof(int)==sizeof(void*));
+      assert(sizeof(Tcl_WideInt)>=sizeof(void*));
 
       for(
         pEntry=Tcl_FirstHashEntry(&aMallocLog, &search);
@@ -836,13 +839,13 @@ static int test_memdebug_log(
       ){
         Tcl_Obj *apElem[MALLOC_LOG_FRAMES+2];
         MallocLog *pLog = (MallocLog *)Tcl_GetHashValue(pEntry);
-        int *aKey = (int *)Tcl_GetHashKey(&aMallocLog, pEntry);
+        Tcl_WideInt *aKey = (Tcl_WideInt *)Tcl_GetHashKey(&aMallocLog, pEntry);
         int ii;
   
         apElem[0] = Tcl_NewIntObj(pLog->nCall);
         apElem[1] = Tcl_NewIntObj(pLog->nByte);
         for(ii=0; ii<MALLOC_LOG_FRAMES; ii++){
-          apElem[ii+2] = Tcl_NewIntObj(aKey[ii]);
+          apElem[ii+2] = Tcl_NewWideIntObj(aKey[ii]);
         }
 
         Tcl_ListObjAppendElement(interp, pRet,
@@ -1237,6 +1240,7 @@ static int test_status(
     { "SQLITE_STATUS_SCRATCH_OVERFLOW",    SQLITE_STATUS_SCRATCH_OVERFLOW    },
     { "SQLITE_STATUS_SCRATCH_SIZE",        SQLITE_STATUS_SCRATCH_SIZE        },
     { "SQLITE_STATUS_PARSER_STACK",        SQLITE_STATUS_PARSER_STACK        },
+    { "SQLITE_STATUS_MALLOC_COUNT",        SQLITE_STATUS_MALLOC_COUNT        },
   };
   Tcl_Obj *pResult;
   if( objc!=3 ){
@@ -1286,8 +1290,13 @@ static int test_db_status(
     const char *zName;
     int op;
   } aOp[] = {
-    { "SQLITE_DBSTATUS_LOOKASIDE_USED",    SQLITE_DBSTATUS_LOOKASIDE_USED   },
-    { "SQLITE_DBSTATUS_CACHE_USED",        SQLITE_DBSTATUS_CACHE_USED       },
+    { "LOOKASIDE_USED",      SQLITE_DBSTATUS_LOOKASIDE_USED      },
+    { "CACHE_USED",          SQLITE_DBSTATUS_CACHE_USED          },
+    { "SCHEMA_USED",         SQLITE_DBSTATUS_SCHEMA_USED         },
+    { "STMT_USED",           SQLITE_DBSTATUS_STMT_USED           },
+    { "LOOKASIDE_HIT",       SQLITE_DBSTATUS_LOOKASIDE_HIT       },
+    { "LOOKASIDE_MISS_SIZE", SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE },
+    { "LOOKASIDE_MISS_FULL", SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL }
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
@@ -1296,6 +1305,8 @@ static int test_db_status(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zOpName = Tcl_GetString(objv[2]);
+  if( memcmp(zOpName, "SQLITE_", 7)==0 ) zOpName += 7;
+  if( memcmp(zOpName, "DBSTATUS_", 9)==0 ) zOpName += 9;
   for(i=0; i<ArraySize(aOp); i++){
     if( strcmp(aOp[i].zName, zOpName)==0 ){
       op = aOp[i].op;

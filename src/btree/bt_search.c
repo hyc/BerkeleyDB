@@ -185,6 +185,7 @@ retry:	if (lock_mode == DB_LOCK_WRITE)
 
 			t_ret = __memp_fput(mpf,
 			    dbc->thread_info, h, dbc->priority);
+			h = NULL;
 
 			if (ret == DB_LOCK_DEADLOCK ||
 			    ret == DB_LOCK_NOTGRANTED)
@@ -222,6 +223,7 @@ retry:	if (lock_mode == DB_LOCK_WRITE)
 			/* Someone else split the root, start over. */
 			ret = __memp_fput(mpf,
 			    dbc->thread_info, h, dbc->priority);
+			h = NULL;
 			if ((t_ret = __LPUT(dbc, lock)) != 0 && ret == 0)
 				ret = t_ret;
 			if (ret != 0)
@@ -230,7 +232,7 @@ retry:	if (lock_mode == DB_LOCK_WRITE)
 		} else if (atomic_read(&mpf->mfp->multiversion) != 0 &&
 		    lock_mode == DB_LOCK_WRITE && (ret = __memp_dirty(mpf, &h,
 		    dbc->thread_info, dbc->txn, dbc->priority, 0)) != 0) {
-			(void)__memp_fput(mpf, 
+			(void)__memp_fput(mpf,
 			    dbc->thread_info, h, dbc->priority);
 			(void)__LPUT(dbc, lock);
 		}
@@ -752,10 +754,10 @@ lock_next:		h = NULL;
 				    (F_ISSET(dbp, DB_AM_SUBDB) ||
 				    (dbp->type == DB_BTREE &&
 				    F_ISSET(dbp, DB_AM_DUPSORT))))
-				    	goto drop_lock;
+					goto drop_lock;
 
 				/*
-				 * Take a look at the page.  If it got 
+				 * Take a look at the page.  If it got
 				 * freed it could be very gone.
 				 */
 				if ((ret = __memp_fget(mpf, &pg,
@@ -889,6 +891,7 @@ found:	*exactp = 1;
 		if ((t_ret = __memp_fput(mpf,
 		     dbc->thread_info, h, dbc->priority)) != 0 && ret == 0)
 			ret = t_ret;
+		h = NULL;
 	} else {
 		if (LF_ISSET(SR_DEL) && cp->csp == cp->sp)
 			cp->csp++;

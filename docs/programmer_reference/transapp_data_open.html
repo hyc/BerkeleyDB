@@ -12,7 +12,10 @@
     <link rel="next" href="transapp_put.html" title="Recoverability and deadlock handling" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Opening the databases</th>
@@ -39,8 +42,9 @@
 database environment.  Again, our <a href="../api_reference/C/db.html" class="olink">DB</a> database handles are
 declared to be free-threaded using the <a href="../api_reference/C/dbopen.html#open_DB_THREAD" class="olink">DB_THREAD</a> flag, and so
 may be used by any number of threads we subsequently create.</p>
+      <a id="prog_transapp2"></a>
       <pre class="programlisting">int
-main(int argc, char *argv)
+main(int argc, char *argv[])
 {
     extern int optind;
     DB *db_cats, *db_color, *db_fruit;
@@ -58,8 +62,9 @@ main(int argc, char *argv)
 
     env_dir_create();
     env_open(&amp;dbenv);
+    ...
 
-<span class="bold"><strong>    /* Open database: Key is fruit class; Data is specific type. */
+   /* Open database: Key is fruit class; Data is specific type. */
     if (db_open(dbenv, &amp;db_fruit, "fruit", 0))
         return (1);
 
@@ -72,12 +77,14 @@ main(int argc, char *argv)
      *    Key is a name; Data is: company name, cat breeds.
      */
     if (db_open(dbenv, &amp;db_cats, "cats", 1))
-        return (1);</strong></span>
+        return (1);
+    
+    ...    
 
     return (0);
 }
 
-<span class="bold"><strong>int
+int
 db_open(DB_ENV *dbenv, DB **dbp, char *name, int dups)
 {
     DB *db;
@@ -111,8 +118,8 @@ db_open(DB_ENV *dbenv, DB **dbp, char *name, int dups)
 
     *dbp = db;
     return (0);
-}</strong></span></pre>
-      <p>After opening the database, we can use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a> to
+}</pre>
+      <p>After opening the database, we can use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility to
 display information about a database we have created:</p>
       <pre class="programlisting">prompt&gt; db_stat -h TXNAPP -d color
 53162   Btree magic number.

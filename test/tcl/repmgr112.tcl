@@ -20,19 +20,22 @@ proc repmgr112 { } {
 
 	set masterdir $testdir/MASTERDIR
 	set clientdir $testdir/CLIENTDIR
+	set clientdir2 $testdir/CLIENTDIR2
 
 	file mkdir $masterdir
 	file mkdir $clientdir
+	file mkdir $clientdir2
 
-	set ports [available_ports 2]
+	set ports [available_ports 3]
 	set master_port [lindex $ports 0]
 	set client_port [lindex $ports 1]
+	set client2_port [lindex $ports 2]
 
 	puts "\tRepmgr$tnum.b: Set up the master (port $master_port)."
 	set master [open "| $site_prog" "r+"]
 	fconfigure $master -buffering line
 	puts $master "home $masterdir"
-	make_dbconfig $masterdir {{rep_set_nsites 3}}
+	make_dbconfig $masterdir {}
 	puts $master "output $testdir/m1output"
 	puts $master "open_env"
 	puts $master "local $master_port"
@@ -49,7 +52,7 @@ proc repmgr112 { } {
 	fconfigure $client -buffering line
 	puts $client "home $clientdir"
 	puts $client "local $client_port"
-	make_dbconfig $clientdir {{rep_set_nsites 3}}
+	make_dbconfig $clientdir {}
 	puts $client "output $testdir/coutput"
 	puts $client "open_env"
 	puts $client "remote localhost $master_port"
@@ -59,6 +62,26 @@ proc repmgr112 { } {
 	puts "\tRepmgr$tnum.d: Wait for STARTUPDONE."
 	set clientenv [berkdb_env -home $clientdir]
 	await_startup_done $clientenv
+
+	# Create a third site by starting another client, but then
+	# shut it down, so that the test runs with an out-of-service
+	# client.
+	puts "\tRepmgr$tnum.c: Set up another client (on TCP port $client2_port)."
+	set client2 [open "| $site_prog" "r+"]
+	fconfigure $client2 -buffering line
+	puts $client2 "home $clientdir2"
+	puts $client2 "local $client2_port"
+	make_dbconfig $clientdir2 {}
+	puts $client2 "output $testdir/c2output"
+	puts $client2 "open_env"
+	puts $client2 "remote localhost $master_port"
+	puts $client2 "start client"
+	error_check_match start_client2 [gets $client2] "*Successful*"
+
+	set clientenv2 [berkdb_env -home $clientdir2]
+	await_startup_done $clientenv2
+	$clientenv2 close
+	close $client2
 
 	# Here the Tcl script itself acts as the subordinate process, sharing
 	# the environment with the db_repsite main process.  Change the ack

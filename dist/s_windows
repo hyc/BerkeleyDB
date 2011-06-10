@@ -30,7 +30,7 @@ s/@int64_decl@/typedef __int64 int64_t;/
 s/@u_int64_decl@/typedef unsigned __int64 u_int64_t;/
 s/@db_seq_decl@/typedef int64_t db_seq_t;/
 s/@db_threadid_t_decl@/typedef u_int32_t db_threadid_t;/
-s/@pid_t_decl@/typedef int pid_t;/
+s/@pid_t_decl@/typedef int32_t pid_t;/
 /@u_char_decl@/{
 	i\\
 #ifndef _WINSOCKAPI_
@@ -46,14 +46,15 @@ s/@u_int_decl@/typedef unsigned int u_int;/
 /@FILE_t_decl@/d
 /@size_t_decl@/d
 /@ssize_t_decl@/{
-	i\\
+ 	i\\
 #ifdef _WIN64\\
 typedef int64_t ssize_t;\\
 #else\\
 typedef int32_t ssize_t;\\
 #endif
-	d
-}
+ 	d
+ }
+
 /@time_t_decl@/d
 /@uintmax_t_decl@/{
 	i\\
@@ -163,6 +164,7 @@ cmp $t $f > /dev/null 2>&1 ||
 
 # Build the Windows db_int.h.
 cat <<ENDOFSEDTEXT > $s
+s/@DB_STRUCT_ALIGN8@/__declspec(align(8))/
 s/@PATH_SEPARATOR@/\\\\\\\\\/:/
 s/@db_int_def@//
 ENDOFSEDTEXT
@@ -183,9 +185,9 @@ cmp $t $f > /dev/null 2>&1 ||
 # We don't fail, but we complain if the win_config.in file isn't up-to-date.
 check_config()
 {
-	egrep '^#undef' config.hin | awk '{print $2}' | sort > $s
+	egrep '^#undef' config.hin | awk '{print $2}' | sort -u > $s
 	(egrep '#undef' $1 | awk '{print $3}'
-	 egrep '^#define' $1 | awk '{print $2}') | sed '/__STDC__/d' | sort > $t
+	 egrep '^#define' $1 | awk '{print $2}') | sed '/__STDC__/d' | sort -u > $t
 	cmp $s $t > /dev/null || {
 		echo "config.hin and $1 differ"
 		echo "<<< config.hin >>> $1"

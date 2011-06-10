@@ -10,26 +10,37 @@
 
 #include "db_int.h"
 
+static REPMGR_MESSAGE *available_work __P((ENV *));
+
 /*
- * Frees not only the queue header, but also any messages that may be on it,
- * along with their data buffers.
+ * Deallocates memory used by all messages on the queue.
  *
- * PUBLIC: void __repmgr_queue_destroy __P((ENV *));
+ * PUBLIC: int __repmgr_queue_destroy __P((ENV *));
  */
-void
+int
 __repmgr_queue_destroy(env)
 	ENV *env;
 {
 	DB_REP *db_rep;
 	REPMGR_MESSAGE *m;
+	REPMGR_CONNECTION *conn;
+	int ret, t_ret;
 
 	db_rep = env->rep_handle;
 
+	ret = 0;
 	while (!STAILQ_EMPTY(&db_rep->input_queue.header)) {
 		m = STAILQ_FIRST(&db_rep->input_queue.header);
 		STAILQ_REMOVE_HEAD(&db_rep->input_queue.header, entries);
+		if (m->msg_hdr.type == REPMGR_APP_MESSAGE) {
+			if ((conn = m->v.appmsg.conn) != NULL &&
+			    (t_ret = __repmgr_decr_conn_ref(env, conn)) != 0 &&
+			    ret == 0)
+				ret = t_ret;
+		}
 		__os_free(env, m);
 	}
+	return (ret);
 }
 
 /*
@@ -40,9 +51,7 @@ __repmgr_queue_destroy(env)
  * caller hereby takes responsibility for the entire message buffer, and should
  * free it when done.
  *
- * Note that caller is NOT expected to hold the mutex.  This is asymmetric with
- * put(), because put() is expected to be called in a loop after select, where
- * it's already necessary to be holding the mutex.
+ * Caller must hold mutex.
  */
 int
 __repmgr_queue_get(env, msgp, th)
@@ -60,8 +69,7 @@ __repmgr_queue_get(env, msgp, th)
 	ret = 0;
 	db_rep = env->rep_handle;
 
-	LOCK_MUTEX(db_rep->mutex);
-	while (STAILQ_EMPTY(&db_rep->input_queue.header) &&
+	while ((m = available_work(env)) == NULL &&
 	    !db_rep->finished && !th->quit_requested) {
 #ifdef DB_WIN32
 		/*
@@ -78,14 +86,13 @@ __repmgr_queue_get(env, msgp, th)
 		wait_events[0] = db_rep->msg_avail;
 		wait_events[1] = th->quit_event;
 		UNLOCK_MUTEX(db_rep->mutex);
-
-		if ((ret = WaitForMultipleObjects(2,
-		    wait_events, FALSE, INFINITE)) == WAIT_FAILED) {
+		ret = WaitForMultipleObjects(2, wait_events, FALSE, INFINITE);
+		LOCK_MUTEX(db_rep->mutex);
+		if (ret == WAIT_FAILED) {
 			ret = GetLastError();
-			goto out;
+			goto err;
 		}
 
-		LOCK_MUTEX(db_rep->mutex);
 #else
 		if ((ret = pthread_cond_wait(&db_rep->msg_avail,
 		    db_rep->mutex)) != 0)
@@ -95,18 +102,47 @@ __repmgr_queue_get(env, msgp, th)
 	if (db_rep->finished || th->quit_requested)
 		ret = DB_REP_UNAVAIL;
 	else {
-		m = STAILQ_FIRST(&db_rep->input_queue.header);
-		STAILQ_REMOVE_HEAD(&db_rep->input_queue.header, entries);
+		STAILQ_REMOVE(&db_rep->input_queue.header,
+		    m, __repmgr_message, entries);
 		db_rep->input_queue.size--;
 		*msgp = m;
 	}
 
 err:
-	UNLOCK_MUTEX(db_rep->mutex);
-#ifdef DB_WIN32
-out:
-#endif
 	return (ret);
+}
+
+/*
+ * Gets an "available" item of work (i.e., a message) from the input queue.  If
+ * there are plenty of message threads currently available, then we simply
+ * return the first thing on the queue, regardless of what type of message it
+ * is.  But otherwise skip over any message type that may possibly turn out to
+ * be "long-running", so that we avoid starving out the important rep message
+ * processing.
+ */ 
+static REPMGR_MESSAGE *
+available_work(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	REPMGR_MESSAGE *m;
+
+	db_rep = env->rep_handle;
+	if (STAILQ_EMPTY(&db_rep->input_queue.header))
+		return (NULL);
+	/*
+	 * The "non_rep_th" field is the dynamically varying count of threads
+	 * currently processing non-replication messages (a.k.a. possibly
+	 * long-running messages, a.k.a. "deferrable").  We always ensure that
+	 * db_rep->nthreads > reserved.
+	 */ 
+	if (db_rep->nthreads > db_rep->non_rep_th + RESERVED_MSG_TH(env))
+		return (STAILQ_FIRST(&db_rep->input_queue.header));
+	STAILQ_FOREACH(m, &db_rep->input_queue.header, entries) {
+		if (!IS_DEFERRABLE(m->msg_hdr.type))
+			return (m);
+	}
+	return (NULL);
 }
 
 /*

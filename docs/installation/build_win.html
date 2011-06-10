@@ -3,24 +3,27 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 4.  Building Berkeley DB for Windows</title>
+    <title>Chapter 5.  Building Berkeley DB for Windows</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
     <link rel="up" href="index.html" title="Berkeley DB Installation and Build Guide" />
-    <link rel="prev" href="debug_printlog.html" title="Reviewing Berkeley DB log files" />
+    <link rel="prev" href="build_android_config.html" title="Configuration options" />
     <link rel="next" href="win_build64.html" title="Building Berkeley DB for 64-bit Windows" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 4. 
+          <th colspan="3" align="center">Chapter 5. 
 		Building Berkeley DB for Windows
         </th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="debug_printlog.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="build_android_config.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
           <td width="20%" align="right"> <a accesskey="n" href="win_build64.html">Next</a></td>
         </tr>
@@ -31,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="build_win"></a>Chapter 4. 
+            <h2 class="title"><a id="build_win"></a>Chapter 5. 
 		Building Berkeley DB for Windows
         </h2>
           </div>
@@ -51,22 +54,22 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#idp50286856">Visual C++ .NET 2010</a>
+                  <a href="build_win.html#id3364811">Visual C++ .NET 2010</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#idp50408472">Visual C++ .NET 2008</a>
+                  <a href="build_win.html#id3365794">Visual C++ .NET 2008</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#idp50387832">Visual C++ .NET 2005</a>
+                  <a href="build_win.html#id3365834">Visual C++ .NET 2005</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win.html#idp50413704">Build results</a>
+                  <a href="build_win.html#id3365710">Build results</a>
                 </span>
               </dt>
             </dl>
@@ -80,7 +83,7 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="win_build64.html#idp50419672">x64 build with Visual Studio 2005 or newer</a>
+                  <a href="win_build64.html#id3365969">x64 build with Visual Studio 2005 or newer</a>
                 </span>
               </dt>
             </dl>
@@ -119,18 +122,23 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_sql.html#idp50449688">Binary Compatibility With SQLite</a>
+                  <a href="build_win_sql.html#id3366478">Binary Compatibility With SQLite</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_sql.html#idp50427488">Setting Preprocessor Flags
+                  <a href="build_win_sql.html#id3365976">Setting Preprocessor Flags
    </a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_sql.html#idp50447848">Enabling Extensions</a>
+                  <a href="build_win_sql.html#id3366445">Enabling Extensions</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="build_win_sql.html#win-disablechecksums">Disabling Log Checksums</a>
                 </span>
               </dt>
               <dt>
@@ -140,17 +148,17 @@
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_sql.html#idp50458920">Using the JDBC Driver</a>
+                  <a href="build_win_sql.html#id3366276">Using the JDBC Driver</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_sql.html#idp50482120">Building the ODBC Driver</a>
+                  <a href="build_win_sql.html#id3367068">Building the ODBC Driver</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_sql.html#idp50455320"> Using the ADO.NET Driver
+                  <a href="build_win_sql.html#id3366941"> Using the ADO.NET Driver
     </a>
                 </span>
               </dt>
@@ -168,6 +176,11 @@
           </dt>
           <dt>
             <span class="sect1">
+              <a href="win_additional_options.html">Additional build options</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
               <a href="build_win_small.html">Building a small memory footprint library</a>
             </span>
           </dt>
@@ -180,12 +193,12 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_test.html#idp50534648">Building the software needed by the tests</a>
+                  <a href="build_win_test.html#id3367104">Building the software needed by the tests</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_win_test.html#idp50524944">Running the test suite under Windows</a>
+                  <a href="build_win_test.html#id3367837">Running the test suite under Windows</a>
                 </span>
               </dt>
               <dt>
@@ -264,22 +277,22 @@
           <dl>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#idp50286856">Visual C++ .NET 2010</a>
+                <a href="build_win.html#id3364811">Visual C++ .NET 2010</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#idp50408472">Visual C++ .NET 2008</a>
+                <a href="build_win.html#id3365794">Visual C++ .NET 2008</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#idp50387832">Visual C++ .NET 2005</a>
+                <a href="build_win.html#id3365834">Visual C++ .NET 2005</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="build_win.html#idp50413704">Build results</a>
+                <a href="build_win.html#id3365710">Build results</a>
               </span>
             </dt>
           </dl>
@@ -288,7 +301,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50286856"></a>Visual C++ .NET 2010</h3>
+                <h3 class="title"><a id="id3364811"></a>Visual C++ .NET 2010</h3>
               </div>
             </div>
           </div>
@@ -309,7 +322,7 @@ the tool bar (usually Win32 or x64).</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50408472"></a>Visual C++ .NET 2008</h3>
+                <h3 class="title"><a id="id3365794"></a>Visual C++ .NET 2008</h3>
               </div>
             </div>
           </div>
@@ -334,7 +347,7 @@ Solution.</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50387832"></a>Visual C++ .NET 2005</h3>
+                <h3 class="title"><a id="id3365834"></a>Visual C++ .NET 2005</h3>
               </div>
             </div>
           </div>
@@ -355,7 +368,7 @@ the tool bar (usually Win32 or x64).</li>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50413704"></a>Build results</h3>
+                <h3 class="title"><a id="id3365710"></a>Build results</h3>
               </div>
             </div>
           </div>
@@ -385,17 +398,19 @@ the tool bar (usually Win32 or x64).</li>
               </td>
             </tr>
           </table>
-          <p>When building your application during development, you should normally
-use compile options "Debug Multithreaded DLL" and link against
-<code class="filename">build_windows\Debug\libdb51d.lib</code>.  You can
-also build using a release version of the Berkeley DB libraries and tools,
-which will be placed in
-<code class="filename">build_windows\Win32\Release\libdb51.lib</code>.  When
-linking against the release build, you should compile your code with
-the "Release Multithreaded DLL" compile option.  You will also need to
-add the <code class="filename">build_windows</code> directory to the list of include
-directories of your application's project, or copy the Berkeley DB include
-files to another location.</p>
+          <p>
+        When building your application during development, you should normally
+        use compile options "Debug Multithreaded DLL" and link against
+        <code class="filename">build_windows\Debug\libdb51d.lib</code>.  You can also
+        build using a release version of the Berkeley DB libraries and tools,
+        which will be placed in
+        <code class="filename">build_windows\Win32\Release\libdb51.lib</code>.  When
+        linking against the release build, you should compile your code with
+        the "Release Multithreaded DLL" compile option.  You will also need to
+        add the <code class="filename">build_windows</code> directory to the list of
+        include directories of your application's project, or copy the Berkeley
+        DB include files to another location.
+    </p>
         </div>
       </div>
     </div>
@@ -403,12 +418,12 @@ files to another location.</p>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="debug_printlog.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="build_android_config.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
           <td width="40%" align="right"> <a accesskey="n" href="win_build64.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Reviewing Berkeley DB log files </td>
+          <td width="40%" align="left" valign="top">Configuration options </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

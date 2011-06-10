@@ -2288,8 +2288,8 @@ __bamc_compress_iput(dbc, key, data, flags)
 		if (F_ISSET(dbp, DB_AM_DUPSORT) &&
 		    ((BTREE *)dbp->bt_internal)->compress_dup_compare(
 		    dbp, cp->currentData, data) != 0) {
-			__db_errx(env,
-			    "Existing data sorts differently from put data");
+			__db_errx(env, DB_STR("1032",
+			    "Existing data sorts differently from put data"));
 			ret = EINVAL;
 			goto end;
 		}
@@ -2713,8 +2713,8 @@ __bamc_compress_cmp(dbc, other_dbc, result)
 	return (0);
 
  err:
-	__db_errx(dbc->env,
-		"Both cursors must be initialized before calling DBC->cmp.");
+	__db_errx(dbc->env, DB_STR("1033",
+	    "Both cursors must be initialized before calling DBC->cmp."));
 	return (EINVAL);
 }
 
@@ -2856,7 +2856,7 @@ __bam_compress_salvage(dbp, vdp, handle, callback, key, data)
 
 	/* Output first data (first key has already been output by our caller */
 	if ((ret = __db_vrfy_prdbt(
-	    currentData, 0, " ", handle, callback, 0, vdp)) != 0)
+	    currentData, 0, " ", handle, callback, 0, 0, vdp)) != 0)
 		goto err;
 
 	while (compcursor < compend) {
@@ -2901,10 +2901,10 @@ __bam_compress_salvage(dbp, vdp, handle, callback, key, data)
 
 		/* Output the next key/data pair */
 		if ((ret = __db_vrfy_prdbt(
-		    currentKey, 0, " ", handle, callback, 0, vdp)) != 0)
+		    currentKey, 0, " ", handle, callback, 0, 0, vdp)) != 0)
 			goto err;
 		if ((ret = __db_vrfy_prdbt(
-		    currentData, 0, " ", handle, callback, 0, vdp)) != 0)
+		    currentData, 0, " ", handle, callback, 0, 0, vdp)) != 0)
 			goto err;
 	}
 
@@ -2917,7 +2917,7 @@ __bam_compress_salvage(dbp, vdp, handle, callback, key, data)
 		DB_INIT_DBT(
 		    compressed, "UNKNOWN_DATA",	sizeof("UNKNOWN_DATA") - 1);
 		if ((t_ret = __db_vrfy_prdbt(
-		    &compressed, 0, " ", handle, callback, 0, vdp)) != 0)
+		    &compressed, 0, " ", handle, callback, 0, 0, vdp)) != 0)
 			ret = t_ret;
 	}
 

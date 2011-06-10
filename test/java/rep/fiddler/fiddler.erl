@@ -138,12 +138,12 @@
 
 start(Config) ->
     registry:start(),
-    manager:start(?MANAGER_PORT),
+    manager:start(?MANAGER_PORT, Config),
     start_up(Config, Config).
 
 start(MgrPort, Config) ->
     registry:start(),
-    manager:start(MgrPort),
+    manager:start(MgrPort, Config),
     start_up(Config, Config).
 
 %% For each pair specified in the config, spawn off a listener to
@@ -175,7 +175,15 @@ do_accept(Me, Config, LSock) ->
 
 slave(Sock, Fwd, Manager, Direction) ->
     MsgResult = (catch get_one(Sock)),
-    case path_mgr:msg(Manager, Direction, MsgResult) of
+    %% If we only have a 4-part, or 2-part, msg result, it's one of
+    %% the new types, and so there's no fiddling to be done with it.
+    MsgToSend = case MsgResult of
+                    closed -> path_mgr:msg(Manager, Direction, MsgResult);
+                    {_,_,_,_,_} -> path_mgr:msg(Manager, Direction, MsgResult);
+                    {_,_,_,_} -> MsgResult;
+                    {_,_,_} -> MsgResult
+                end,
+    case MsgToSend of
         quit ->
             ok;
         Msg ->                                  % or should I construct {ok,Msg}??
@@ -188,6 +196,13 @@ send_msg(Sock, {MsgType, ControlLength, RecLength, Control, Rec}) ->
     send(Sock, Header),
     send_piece(Sock, Control),
     send_piece(Sock, Rec);
+send_msg(Sock, {MsgType, Length, Other, Data}) ->
+    Header = <<MsgType:8, Length:32/big, Other:32/big>>,
+    send(Sock, Header),
+    send_piece(Sock, Data);
+send_msg(Sock, {MsgType, Length, Other}) ->
+    Header = <<MsgType:8, Length:32/big, Other:32/big>>,
+    send(Sock, Header);
 send_msg(_Sock, nil) ->
     ok.
 
@@ -199,15 +214,31 @@ send_piece(Sock, Piece) ->
 get_one(Sock) ->
     case recv(Sock, 9) of
         {ok, B} ->
-            <<MsgType, ControlLength:32, RecLength:32>> = B,
-            Control = get_piece(Sock, ControlLength),
-            Rec = get_piece(Sock, RecLength),
-            {MsgType, ControlLength, RecLength, Control, Rec};
+            <<MsgType, Word1:32, Word2:32>> = B,
+            case MsgType of
+                ?ACK -> tradition_msg(Sock, MsgType, Word1, Word2);
+                ?HANDSHAKE -> tradition_msg(Sock, MsgType, Word1, Word2);
+                ?REP_MESSAGE -> tradition_msg(Sock, MsgType, Word1, Word2);
+                ?HEARTBEAT -> tradition_msg(Sock, MsgType, Word1, Word2);
+                ?APP_MSG -> simple_msg(Sock, MsgType, Word1, Word2);
+                ?APP_RESPONSE -> simple_msg(Sock, MsgType, Word1, Word2);
+                ?RESP_ERROR -> {Sock, MsgType, Word1, Word2};
+                ?OWN_MSG -> simple_msg(Sock, MsgType, Word1, Word2)
+            end;
         {error, closed} ->
             throw(closed);
-        {error,enotconn} ->                     % ??? temp hack experiment
+        {error,enotconn} ->
             throw(closed)
     end.
+
+tradition_msg(Sock, MsgType, ControlLength, RecLength) ->
+    Control = get_piece(Sock, ControlLength),
+    Rec = get_piece(Sock, RecLength),
+    {MsgType, ControlLength, RecLength, Control, Rec}.
+
+simple_msg(Sock, MsgType, Length, Word2) ->
+    Msg = get_piece(Sock, Length),
+    {MsgType, Length, Word2, Msg}.
 
 get_piece(Sock, Length) ->    
     if
@@ -219,7 +250,7 @@ get_piece(Sock, Length) ->
                     Piece;
                 {error, closed} ->
                     throw(closed);
-                {error,enotconn} ->             % ??? temp hack experiment
+                {error,enotconn} ->
                     throw(closed)
             end
     end.

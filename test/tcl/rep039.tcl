@@ -84,7 +84,8 @@ proc rep039 { method { niter 200 } { tnum "039" } args } {
             Test of internal init. $i message iters. \
 	    Test $cnt of $maxtest tests $with recovery $msg $msg2."}
 	foreach r $test_recopts {
-		if { $r == "-recover" && ! $is_windows_test && ! $is_hp_test } {
+		if { $r == "-recover" && !$is_windows_test && 
+		    !$is_hp_test && !$repfiles_in_memory } {
 			set crashopts { master_change client_crash both }
 		} else {
 			set crashopts { master_change }
@@ -370,7 +371,9 @@ proc rep039_sub \
 	# Note that this doesn't work on Windows, because there you can't remove
 	# a file if anyone (including yourself) has it open.  This also does not
 	# work on HP-UX, because there you are not allowed to open a second 
-	# handle on an env. 
+	# handle on an env.  This won't work with in-memory replication files
+	# because the missing internal init file is the mechanism for cleaning
+	# up databases from the partial internal init before the client crash.
 	#
 	# Note that crashing only makes sense with "-recover".
 	#

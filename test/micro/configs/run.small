@@ -17,10 +17,12 @@ b_curwalk -c 100 -d 10 -t btree -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -d 10 -t hash -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -p -t btree -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -p -t hash -w 10 -C 524288 -P 1024
+b_curwalk -c 100 -p -t heap -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -p -t queue -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -p -t recno -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -t btree -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -t hash -w 10 -C 524288 -P 1024
+b_curwalk -c 100 -t heap -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -t queue -w 10 -C 524288 -P 1024
 b_curwalk -c 100 -t recno -w 10 -C 524288 -P 1024
 
@@ -30,11 +32,13 @@ b_del -c 100 -t queue -C 524288
 b_del -c 100 -t recno -C 524288
 b_del -w -c 100 -t btree -C 524288
 b_del -w -c 100 -t hash -C 524288
+b_del -w -c 100 -t heap -C 524288
 b_del -w -c 100 -t queue -C 524288
 b_del -w -c 100 -t recno -C 524288
 
 b_get -c 100 -t btree -C 524288
 b_get -c 100 -t hash -C 524288
+b_get -c 100 -t heap -C 524288
 b_get -c 100 -t queue -C 524288
 b_get -c 100 -t recno -C 524288
 
@@ -47,8 +51,9 @@ b_inmem -d 32 -k 8 -o 100 -P 1024 -C 524288 txn-write
 b_inmem -d 32 -k 8 -o 100 -P 1024 -C 524288 txn-write-nosync
 b_inmem -d 32 -k 8 -o 100 -P 1024 -C 524288 write
 
-b_load -c 100 -t hash -C 524288
 b_load -c 100 -t btree -C 524288
+b_load -c 100 -t hash -C 524288
+b_load -c 100 -t heap -C 524288
 b_load -c 100 -t queue -C 524288
 b_load -c 100 -t recno -C 524288
 b_load -d -c 100 -t btree -C 524288
@@ -56,10 +61,12 @@ b_load -d -c 100 -t hash -C 524288
 
 b_open -c 100 -d -t btree
 b_open -c 100 -d -t hash
+b_open -c 100 -d -t heap
 b_open -c 100 -d -t queue
 b_open -c 100 -d -t recno
 b_open -c 100 -f -t btree
 b_open -c 100 -f -t hash
+b_open -c 100 -f -t heap
 b_open -c 100 -f -t queue
 b_open -c 100 -f -t recno
 b_open -c 100 -fd -t btree
@@ -67,18 +74,23 @@ b_open -c 100 -fd -t hash
 b_open -c 100 -fd -t recno
 b_open -c 100 -t btree
 b_open -c 100 -t hash
+b_open -c 100 -t heap
 b_open -c 100 -t queue
 b_open -c 100 -t recno
 
 b_put -c 10 -d 64 -t btree -C 524288
 b_put -c 10 -d 64 -t hash -C 524288
+b_put -c 10 -d 64 -t heap -C 524288
+b_put -c 10 -d 64 -t queue -C 524288
 b_put -c 10 -d 64 -t recno -C 524288
 b_put -c 100 -s 10 -t btree -C 524288
 b_put -c 100 -s 10 -t hash -C 524288
+b_put -c 100 -s 10 -t heap -C 524288
 b_put -c 100 -s 10 -t queue -C 524288
 b_put -c 100 -s 10 -t recno -C 524288
 b_put -c 100 -t btree -C 524288
 b_put -c 100 -t hash -C 524288
+b_put -c 100 -t heap -C 524288
 b_put -c 100 -t queue -C 524288
 b_put -c 100 -t recno -C 524288
 

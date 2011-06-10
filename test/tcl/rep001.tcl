@@ -18,6 +18,7 @@ proc rep001 { method { niter 1000 } { tnum "001" } args } {
 	global has_crypto
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	source ./include.tcl
 
@@ -40,6 +41,11 @@ proc rep001 { method { niter 1000 } { tnum "001" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "and private env"
+	}
+
 	# Run tests with and without recovery.  If we're doing testing
 	# of in-memory logging, skip the combination of recovery
 	# and in-memory logging -- it doesn't make sense.
@@ -56,7 +62,7 @@ proc rep001 { method { niter 1000 } { tnum "001" } args } {
 			set envargs ""
 			set args $saved_args
 			puts -nonewline "Rep$tnum: Replication sanity test "
-			puts "($method $recopt) $msg $msg2."
+			puts "($method $recopt) $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep001_sub $method $niter $tnum $envargs $l $recopt $args
@@ -86,6 +92,7 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 	global encrypt
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -97,6 +104,11 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -125,7 +137,7 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 
 	# Open a master.
 	repladd 1
-	set env_cmd(M) "berkdb_env_noerr -create $repmemargs \
+	set env_cmd(M) "berkdb_env_noerr -create $repmemargs $privargs \
 	    -log_max 1000000 $envargs $m_logargs $recargs $verbargs \
 	    -home $masterdir -errpfx MASTER $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
@@ -133,7 +145,7 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env_noerr -create $repmemargs \
+	set env_cmd(C) "berkdb_env_noerr -create $repmemargs $privargs \
 	    -log_max 1000000 $envargs $c_logargs $recargs $verbargs \
 	    -home $clientdir -errpfx CLIENT $c_txnargs -rep_client \
 	    -rep_transport \[list 2 replsend\]"
@@ -186,7 +198,8 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 	# Throttle master so it can't send everything at once
 	$newmasterenv rep_limit 0 [expr 64 * 1024]
 	set newclientenv [eval {berkdb_env_noerr -create -recover} \
-	    $envargs $m_logargs $m_txnargs -errpfx NEWCLIENT $verbargs $repmemargs \
+	    $envargs $m_logargs $m_txnargs -errpfx NEWCLIENT $verbargs \
+	    $privargs $repmemargs \
 	    {-home $masterdir -rep_client -rep_transport [list 1 replsend]}]
 	set envlist "{$newclientenv 1} {$newmasterenv 2}"
 	process_msgs $envlist

@@ -12,12 +12,20 @@
 #include "btreeInt.h"
 #include <db.h>
 
+/*
+ * We use the following internal DB functions.
+ */
+extern int __os_dirlist(ENV *env,
+    const char *dir, int returndir, char ***namesp, int *cntp);
+extern void __os_dirfree(ENV *env, char **namesp, int cnt);
+extern int __os_unlink (ENV *, const char *, int);
+extern int __os_exists (ENV *, const char *, int *);
+extern int __os_rename(ENV *, const char *, const char *, u_int32_t);
+
 /* Forward declarations. */
 static int btreeCopyPages(sqlite3_backup *p, int *pages);
-static int btreeCleanDatabase(Btree *p);
 
-extern int __os_open(ENV *, const char *, u_int32_t, u_int32_t, int, DB_FH **);
-extern int __os_closehandle(ENV *, DB_FH *);
+static char *BACKUP_SUFFIX="-tmpBackup";
 
 /*
 ** Structure allocated for each backup operation.
@@ -27,7 +35,7 @@ struct sqlite3_backup {
 	Btree *pDest;         /* Destination b-tree file */
 	BtCursor destCur;     /* Destination cursor. */
 	char *destName;       /* Name destination db. */
-	int inDestTxn;        /* 1 for Transaction, 2 for Savepoint.*/
+	char *fullName;		  /* Full path of destination db */
 	int openDest;         /* Destination btree needs closing. */
 	int iDb;              /* Id of destination database. */
 
@@ -39,7 +47,7 @@ struct sqlite3_backup {
 	char *srcName;        /* Name source db. */
 	DB_TXN *srcTxn;
 
-	int rc;               /* Backup process error code */
+	int rc;               /* Backup process error code  */
 	int cleaned;          /* Whether the destination environment
 						   * has been cleaned. */
 	u32 lastUpdate;       /* The last update made while backup was
@@ -111,7 +119,8 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb)
 	}
 
 	if (i < 0) {
-		sqlite3Error(pErrorDb, SQLITE_ERROR, "unknown database %s", zDb);
+		sqlite3Error(pErrorDb,
+		    SQLITE_ERROR, "unknown database %s", zDb);
 		return 0;
 	}
 
@@ -136,12 +145,10 @@ sqlite3_backup *sqlite3_backup_init(sqlite3* pDestDb, const char *zDestDb,
 	sqlite3_backup *p;                    /* Value to return */
 	Parse parse;
 	DB_ENV *dbenv;
-	DB_FH *fhp;
 	int ret;
 
 	p = NULL;
 	ret = 0;
-	fhp = NULL;
 
 	if (!pDestDb || !pSrcDb)
 		return 0;
@@ -178,35 +185,8 @@ sqlite3_backup *sqlite3_backup_init(sqlite3* pDestDb, const char *zDestDb,
 
 	p->iDb = sqlite3FindDbName(pDestDb, zDestDb);
 
-	/* Test that the data file(s) is not read-only, editing the
-	 * data would also reveal this, but SQLite expects this error
-	 * before checking for other errors, such as reading an
-	 * encrypted database without a key.
-	 */
-	if (p->pDest->pBt->dbStorage == DB_STORE_NAMED) {
-		char *filename;
-
-#ifdef BDBSQL_FILE_PER_TABLE
-		p->rc = getMetaDataFileName(p->pDest->pBt->full_name, &filename);
-		if (p->rc != SQLITE_OK)
-			goto err;
-#else
-		filename = p->pDest->pBt->full_name;
-#endif
-		ret = __os_open(0, filename, 0, 0, 0, &fhp);
-#ifdef BDBSQL_FILE_PER_TABLE
-		sqlite3_free(filename);
-#endif
-		if (ret == EPERM) {
-			p->rc = SQLITE_READONLY;
-			goto err;
-		}
-		if (ret == 0)
-			(void)__os_closehandle(0, fhp);
-	}
-
-	p->srcName = sqlite3_malloc(strlen(zSrcDb) + 1);
-	p->destName = sqlite3_malloc(strlen(zDestDb) + 1);
+	p->srcName = sqlite3_malloc((int)strlen(zSrcDb) + 1);
+	p->destName = sqlite3_malloc((int)strlen(zDestDb) + 1);
 	if (0 == p->srcName || 0 == p->destName) {
 		p->rc = SQLITE_NOMEM;
 		goto err;
@@ -214,11 +194,21 @@ sqlite3_backup *sqlite3_backup_init(sqlite3* pDestDb, const char *zDestDb,
 	strncpy(p->srcName, zSrcDb, strlen(zSrcDb) + 1);
 	strncpy(p->destName, zDestDb, strlen(zDestDb) + 1);
 
+	if (p->pDest->pBt->full_name) {
+		const char *fullName = p->pDest->pBt->full_name;
+		p->fullName = sqlite3_malloc((int)strlen(fullName) + 1);
+		if (!p->fullName) {
+			p->rc = SQLITE_NOMEM;
+			goto err;
+		}
+		strncpy(p->fullName, fullName, strlen(fullName) + 1);
+	}
+
 	/*
 	 * Make sure the schema has been read in, so the keyInfo
 	 * can be retrieved for the indexes.  No-op if already read.
 	 */
-	memset(&parse, 0, sizeof parse);
+	memset(&parse, 0, sizeof(parse));
 	parse.db = p->pSrcDb;
 	p->rc = sqlite3ReadSchema(&parse);
 	if (p->rc != SQLITE_OK) {
@@ -267,6 +257,8 @@ err:	if (p != 0) {
 			sqlite3_free(p->srcName);
 		if (p->destName != 0)
 			sqlite3_free(p->destName);
+		if (p->fullName != 0)
+			sqlite3_free(p->fullName);
 		sqlite3_free(p);
 		p = NULL;
 	}
@@ -275,11 +267,147 @@ done:	sqlite3_mutex_leave(pDestDb->mutex);
 	return p;
 }
 
+static int btreeCleanupEnv(const char *home)
+{
+	DB_ENV *tmp_env;
+	int count, i, ret;
+	char **names, buf[512];
+
+	log_msg(LOG_DEBUG, "btreeCleanupEnv removing existing env.");
+	/*
+	 * If there is a directory (environment), but no
+	 * database file. Clear the environment to avoid
+	 * carrying over information from earlier sessions.
+	 */
+	if ((ret = db_env_create(&tmp_env, 0)) != 0)
+		return ret;
+
+	/* Remove log files */
+	if ((ret = __os_dirlist(tmp_env->env, home, 0, &names, &count)) != 0) {
+		(void)tmp_env->close(tmp_env, 0);
+		return ret;
+	}
+
+	for (i = 0; i < count; i++) {
+		if (strncmp(names[i], "log.", 4) != 0)
+			continue;
+		sqlite3_snprintf(sizeof(buf), buf, "%s%s%s",
+		    home, "/", names[i]);
+		/*
+		 * Use Berkeley DB __os_unlink (not sqlite3OsDelete) since
+		 * this file has always been managed by Berkeley DB.
+		 */
+		(void)__os_unlink(NULL, buf, 0);
+	}
+
+	__os_dirfree(tmp_env->env, names, count);
+
+	/*
+	 * TODO: Do we want force here? Ideally all handles
+	 * would always be closed on exit, so DB_FORCE would
+	 * not be necessary.  The world is not currently ideal.
+	 */
+	return tmp_env->remove(tmp_env, home, DB_FORCE);
+}
+
+/*
+ * Deletes all data and environment files of the given Btree.  Requires
+ * that there are no other handles using the BtShared when this function
+ * is called.
+ */
+int btreeDeleteEnvironment(Btree *p, const char *home, int rename)
+{
+	BtShared *pBt;
+	int rc, ret, iDb, storage;
+	sqlite3 *db;
+	DB_ENV *tmp_env;
+	char path[512];
+#ifdef BDBSQL_FILE_PER_TABLE
+	int numFiles;
+	char **files;
+#endif
+
+	rc = SQLITE_OK;
+	ret = 0;
+	tmp_env = NULL;
+
+	if (p != NULL) {
+		if ((rc = btreeUpdateBtShared(p, 1)) != SQLITE_OK)
+			goto err;
+		pBt = p->pBt;
+		if (pBt->nRef > 1)
+			return SQLITE_BUSY;
+
+		storage = pBt->dbStorage;
+		db = p->db;
+		for (iDb = 0; iDb < db->nDb; iDb++) {
+			if (db->aDb[iDb].pBt == p)
+				break;
+		}
+		if ((rc = sqlite3BtreeClose(p)) != SQLITE_OK)
+			goto err;
+		pBt = NULL;
+		p = NULL;
+		db->aDb[iDb].pBt = NULL;
+	}
+	if (home == NULL)
+		goto done;
+
+	ret = btreeCleanupEnv(path);
+	/* EFAULT can be returned on Windows when the file does not exist.*/
+	if (ret == ENOENT || ret == EFAULT)
+		ret = 0;
+	else if (ret != 0)
+		goto err;
+
+	if ((ret = db_env_create(&tmp_env, 0)) != 0)
+		goto err;
+
+	if (rename) {
+		if (!(ret = __os_exists(tmp_env->env, home, 0))) {
+			sqlite3_snprintf(sizeof(path), path,
+			    "%s%s", home, BACKUP_SUFFIX);
+			ret = __os_rename(tmp_env->env, home, path, 0);
+		}
+	} else {
+#ifdef BDBSQL_FILE_PER_TABLE
+		ret = __os_dirlist(tmp_env->env, home, 0, &files, &numFiles);
+		if (ret == 0) {
+			int i, ret2;
+			for (i = 0; i < numFiles; i++) {
+				sqlite3_snprintf(sizeof(path), path, "%s/%s",
+				    home, files[i]);
+				if ((ret2 = __os_unlink (tmp_env->env, path, 0))
+				    != 0)
+					ret = ret2;
+			}
+		}
+		__os_dirfree(tmp_env->env, files, numFiles);
+		if (ret == 0)
+			ret = __os_unlink(tmp_env->env, home, 0);
+
+#else
+		if (!(ret = __os_exists(tmp_env->env, home, 0)))
+			ret = __os_unlink(tmp_env->env, home, 0);
+#endif
+	}
+	/* EFAULT can be returned on Windows when the file does not exist.*/
+	if (ret == ENOENT || ret == EFAULT)
+		ret = 0;
+	else if (ret != 0)
+		goto err;
+
+err:
+done:	if (tmp_env != NULL)
+		tmp_env->close(tmp_env, 0);
+
+	return MAP_ERR(rc, ret);
+}
+
 /* Close or free all handles and commit or rollback the transaction. */
 static int backupCleanup(sqlite3_backup *p)
 {
 	int rc, rc2, ret;
-	int op;
 	void *app;
 	DB *db;
 
@@ -324,8 +452,9 @@ static int backupCleanup(sqlite3_backup *p)
 			sqlite3_free(p->tables);
 	p->tables = NULL;
 
-	p->pSrc->nBackup--;
-	if (p->pDest != NULL)
+	if (p->pSrc->nBackup)
+		p->pSrc->nBackup--;
+	if (p->pDest != NULL && p->pDest->nBackup)
 		p->pDest->nBackup--;
 	if (p->srcTxn) {
 		if (p->rc == SQLITE_DONE)
@@ -335,52 +464,60 @@ static int backupCleanup(sqlite3_backup *p)
 		rc2 = dberr2sqlite(ret);
 	}
 	p->srcTxn = 0;
-	if (rc2 != SQLITE_OK)
+	if (rc2 != SQLITE_OK && sqlite3BtreeIsInTrans(p->pDest)) {
 		rc = rc2;
-
-	if (p->inDestTxn) {
-		if (p->inDestTxn == 2) {
-			if (p->rc == SQLITE_DONE)
-				rc2 = sqlite3BtreeCommit(p->pDest);
-			else
-				rc2 = sqlite3BtreeRollback(p->pDest);
-		} else {
-			if (p->rc == SQLITE_DONE)
-				op = SAVEPOINT_RELEASE;
-			else
-				op = SAVEPOINT_ROLLBACK;
-			rc2 = sqlite3BtreeSavepoint(p->pDest, op,
-			    p->pDest->nSavepoint - 2);
-		}
+		if (p->rc == SQLITE_DONE)
+			rc2 = sqlite3BtreeCommit(p->pDest);
+		else
+			rc2 = sqlite3BtreeRollback(p->pDest);
 		if (rc2 != SQLITE_OK)
 			rc = rc2;
 	}
 
-	if (p->openDest && p->pDest &&
-	    (p->rc != SQLITE_LOCKED && p->rc != SQLITE_BUSY)) {
-		Schema *schema;
-		char *home;
+	if (p->pDest && p->openDest) {
+		char path[512];
 
-		if ((home = sqlite3Malloc(
-		    strlen(p->pDest->pBt->orig_name) + 1)) != NULL)
-			strcpy(home, p->pDest->pBt->orig_name);
-		else
-			rc = SQLITE_NOMEM;
-		schema = p->pDestDb->aDb[p->iDb].pSchema;
-		p->pDest->schema = NULL;
-		rc2 = sqlite3BtreeClose(p->pDest);
+		/*
+		 * If successfully done then delete the old backup, if
+		 * an error then delete the current database and restore
+		 * the old backup.
+		 */
+		sqlite3_snprintf(sizeof(path), path,
+		    "%s%s", p->fullName, BACKUP_SUFFIX);
+		if (p->rc == SQLITE_DONE) {
+			rc2 = btreeDeleteEnvironment(p->pDest, path, 0);
+		} else {
+			rc2 = btreeDeleteEnvironment(p->pDest, p->fullName, 0);
+			if (!__os_exists(NULL, path, 0))
+				__os_rename(NULL, path, p->fullName, 0);
+		}
 		if (rc == SQLITE_OK)
 			rc = rc2;
 		if (rc == SQLITE_OK) {
 			p->pDest = NULL;
 			p->pDestDb->aDb[p->iDb].pBt = NULL;
-			p->pDestDb->aDb[p->iDb].pSchema = schema;
 			p->openDest = 0;
-			rc = sqlite3BtreeFactory(p->pDestDb, home, 0,
-			    SQLITE_DEFAULT_CACHE_SIZE,
-			    p->pDestDb->openFlags, &p->pDest);
+			rc = sqlite3BtreeOpen(p->fullName, p->pDestDb,
+			    &p->pDest,
+			    SQLITE_DEFAULT_CACHE_SIZE | SQLITE_OPEN_MAIN_DB,
+			    p->pDestDb->openFlags);
 			p->pDestDb->aDb[p->iDb].pBt = p->pDest;
-			p->pDest->pBt->db_oflags |= DB_CREATE;
+			p->pDestDb->aDb[p->iDb].pSchema =
+			    sqlite3SchemaGet(p->pDestDb, p->pDest);
+			if (!p->pDestDb->aDb[p->iDb].pSchema)
+				p->rc = SQLITE_NOMEM;
+			if (rc == SQLITE_OK)
+				p->pDest->pBt->db_oflags |= DB_CREATE;
+			/*
+			 * Have to delete the schema here on error to avoid
+			 * assert failure.
+			 */
+			if (p->pDest == NULL &&
+			    p->pDestDb->aDb[p->iDb].pSchema != NULL) {
+				sqlite3SchemaClear(
+				    p->pDestDb->aDb[p->iDb].pSchema);
+				p->pDestDb->aDb[p->iDb].pSchema = NULL;
+			}
 #ifdef SQLITE_HAS_CODEC
 			if (rc == SQLITE_OK) {
 				if (p->iDb == 0)
@@ -393,10 +530,13 @@ static int backupCleanup(sqlite3_backup *p)
 					    p->pSrc->pBt->encrypt_pwd_len);
 			}
 #endif
-			sqlite3_free(home);
 		}
 	}
-	p->inDestTxn = 0;
+	if (p->rc != SQLITE_LOCKED && p->rc != SQLITE_BUSY) {
+		if (p->fullName != 0)
+			sqlite3_free(p->fullName);
+		p->fullName = NULL;
+	}
 	p->lastUpdate = p->pSrc->updateDuringBackup;
 	return rc;
 }
@@ -409,199 +549,11 @@ static void backupReset(sqlite3_backup *p)
 {
 	p->pSrc->nBackup++;
 	p->pDest->nBackup++;
-	p->cleaned = 0;
 	p->currentTable = 0;
 	p->nRemaining = p->nPagecount;
+	p->cleaned = 0;
 	p->rc = SQLITE_OK;
 }
-
-#ifdef SQLITE_HAS_CODEC
-/*
- * Deletes all data and environment files of the given Btree.  Requires
- * that there are no other handles using the BtShared when this function
- * is called.
- */
-int btreeDeleteEnvironment(Btree *p, char **home)
-{
-	BtShared *pBt;
-	int rc, ret, iDb;
-	DB_ENV *pEnv;
-	char *filename, *tablename, *tmp, *databaseName;
-	sqlite3 *db;
-#ifdef BDBSQL_FILE_PER_TABLE
-	DB_BTREE_STAT *stats;
-	DBC *dbc;
-	int numDb, i;
-	DBT key, data;
-	char *current;
-	char **dataDir;
-
-	dbc = NULL;
-	numDb = i = 0;
-	current = NULL;
-	memset(&key, 0, sizeof key);
-	memset(&data, 0, sizeof data);
-#endif
-	pBt = p->pBt;
-	rc = SQLITE_OK;
-	ret = 0;
-	filename = tablename = databaseName = NULL;
-	*home = NULL;
-
-	if (pBt->dbStorage != DB_STORE_NAMED)
-		return rc;
-
-	if (!p->connected) {
-		if ((rc = btreeOpenEnvironment(p, 1)) != SQLITE_OK)
-			return rc;
-	}
-	pBt = p->pBt;
-	pEnv = pBt->dbenv;
-
-	/*
-	 * Cannot delete the environment if there are other references
-	 * to it.
-	 */
-	if (pBt->nRef > 1)
-		return SQLITE_BUSY;
-
-#ifdef BDBSQL_FILE_PER_TABLE
-	/* Get the name to re-open the environment with. */
-	pEnv->get_data_dirs(pEnv, (const char ***)&dataDir);
-	/* Ignore the ../ at the beginning of the string. */
-	databaseName = sqlite3Malloc(strlen(&(dataDir[0][3])));
-	if (databaseName == NULL) {
-		rc = SQLITE_NOMEM;
-		goto err;
-	}
-	strcpy(databaseName, &(dataDir[0][3]));
-
-	if ((ret = pBt->tablesdb->stat(pBt->tablesdb,
-	    p->savepoint_txn, &stats, 0)) != 0)
-		goto err;
-
-	numDb = stats->bt_nkeys;
-#ifdef BDBSQL_OMIT_LEAKCHECK
-	free(stats);
-#else
-	sqlite3_free(stats);
-#endif
-	if ((filename = sqlite3Malloc(numDb * DBNAME_SIZE)) == 0) {
-		rc = SQLITE_NOMEM;
-		goto err;
-	}
-
-	current = filename;
-	if ((ret = pBt->tablesdb->cursor(pBt->tablesdb, p->savepoint_txn,
-	    &dbc, 0)) != 0)
-		goto err;
-	while ((ret = dbc->get(dbc, &key, &data, DB_NEXT)) == 0) {
-		memcpy(current, key.data, key.size);
-		current[key.size] = '\0';
-		current += DBNAME_SIZE;
-	}
-	if (ret != DB_NOTFOUND)
-		goto err;
-	dbc->close(dbc);
-	dbc = NULL;
-	ret = 0;
-
-	/*
-	 * Close the Btree and BtShared, but keep the environment
-	 * around.
-	 */
-	pBt->dbenv = NULL;
-	if ((rc = sqlite3BtreeClose(p)) != SQLITE_OK)
-		goto err;
-	pBt = NULL;
-	p = NULL;
-
-	current = filename;
-	for (i = 0; i < numDb; i++) {
-		if (strcmp(current, "metadb") == 0)
-			ret = pEnv->dbremove(pEnv, NULL, BDBSQL_META_DATA_TABLE,
-			    NULL, DB_FORCE);
-		else
-			ret = pEnv->dbremove(pEnv, NULL, current,
-			    NULL, DB_FORCE);
-		if (ret != 0)
-			goto err;
-		current += DBNAME_SIZE;
-	}
-
-#else
-	ret = pBt->metadb->get_dbname(pBt->metadb, (const char **)&tmp,
-	    (const char **)&tablename);
-	if (ret != 0)
-		goto err;
-	if ((filename = sqlite3Malloc(strlen(tmp) + 1)) == NULL) {
-		rc = SQLITE_NOMEM;
-		goto err;
-	}
-	strcpy(filename, tmp);
-	databaseName = filename;
-
-	/*
-	 * Close the Btree and BtShared, but keep the environment
-	 * around.
-	 */
-	pBt->dbenv = NULL;
-	db = p->db;
-	for (iDb = 0; iDb < db->nDb; iDb++) {
-		if (db->aDb[iDb].pBt == p)
-			break;
-	}
-	if ((rc = sqlite3BtreeClose(p)) != SQLITE_OK)
-		goto err;
-	pBt = NULL;
-	p = NULL;
-	db->aDb[iDb].pBt = NULL;
-
-	ret = pEnv->dbremove(pEnv, NULL, filename, NULL, DB_FORCE);
-	if (ret != 0)
-		goto err;
-
-#endif
-
-	if ((ret = pEnv->get_home(pEnv, (const char **)&tmp)) != 0)
-		goto err;
-	*home = sqlite3Malloc(strlen(tmp) + 1);
-	if (*home == NULL) {
-		rc = SQLITE_NOMEM;
-		goto err;
-	}
-	strcpy(*home, tmp);
-
-	if ((ret = pEnv->close(pEnv, 0)) != 0)
-		goto err;
-	pEnv = NULL;
-
-	if ((rc = btreeCleanupEnv(*home)) != SQLITE_OK)
-		goto err;
-
-	sqlite3_free(*home);
-	*home = databaseName;
-	databaseName = NULL;
-	goto done;
-
-err:	if (*home != NULL) {
-		sqlite3_free(*home);
-		*home = NULL;
-	}
-done:	if (databaseName != NULL)
-		sqlite3_free(databaseName);
-	if (pEnv != NULL && pBt == NULL)
-		pEnv->close(pEnv, 0);
- #ifdef BDBSQL_FILE_PER_TABLE
-	 if (filename != NULL)
-		 sqlite3_free(filename);
-	 if (dbc != NULL)
-		 dbc->close(dbc);
-#endif
-
-	return MAP_ERR(rc, ret);
-}
-#endif /* SQLITE_HAS_CODEC */
 
 /*
 ** Copy nPage pages from the source b-tree to the destination.
@@ -626,7 +578,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 	 * If the schema has not been read then an update must have
 	 * changed it, so backup will restart.
 	 */
-	memset(&parse, 0, sizeof parse);
+	memset(&parse, 0, sizeof(parse));
 	parse.db = p->pSrcDb;
 	p->rc = sqlite3ReadSchema(&parse);
 	if (p->rc != SQLITE_OK)
@@ -646,49 +598,61 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 
 	pages = nPage;
 
-#ifdef SQLITE_HAS_CODEC
-	/*
-	 * The destination database must be encrypted with the
-	 * same key as the source database.
-	 */
-	pBtDest = p->pDest->pBt;
-	/*
-	 * In the case of a temporary source database, use the
-	 * encryption of the main database.
-	 */
-	if (strcmp(p->srcName, "temp") == 0) {
-		int iDb = sqlite3FindDbName(p->pSrcDb, "main");
-		pBtSrc = p->pSrcDb->aDb[iDb].pBt->pBt;
-	} else
-		pBtSrc = p->pSrc->pBt;
-#ifdef BDBSQL_FILE_PER_TABLE
-	if (pBtDest->dbStorage == DB_STORE_NAMED &&
-	    (pBtSrc->encrypted || pBtDest->encrypted) && !p->cleaned) {
-#else
-	if (pBtDest->dbStorage == DB_STORE_NAMED &&
-	    pBtSrc->encrypted &&
-	    (!pBtDest->encrypted ||
-	    (strcmp(pBtSrc->encrypt_pwd, pBtDest->encrypt_pwd) != 0))) {
-#endif
-		char *home;
-		Schema *schema;
+	if (!p->cleaned) {
+		const char *home;
+		const char inmem[9] = ":memory:";
+		int storage;
 
-		/* Close the btree in cleanup if it was opened here. */
-		p->openDest = 1;
-		/* Deleting the schema causes problems. */
-		schema = p->pDestDb->aDb[p->iDb].pSchema;
-		p->pDest->schema = NULL;
-		p->rc = btreeDeleteEnvironment(p->pDest, &home);
+		pBtDest = p->pDest->pBt;
+		storage = p->pDest->pBt->dbStorage;
+		if (storage == DB_STORE_NAMED)
+			p->openDest = 1;
+		p->rc = btreeDeleteEnvironment(p->pDest, p->fullName, 1);
+		if (storage == DB_STORE_INMEM && strcmp(p->destName, "temp")
+		    != 0)
+			home = inmem;
+		else
+			home = p->fullName;
 		p->pDest = p->pDestDb->aDb[p->iDb].pBt;
-		p->pDestDb->aDb[p->iDb].pSchema = schema;
 		if (p->rc != SQLITE_OK)
 			goto err;
-		p->rc = sqlite3BtreeFactory(p->pDestDb, home, 0,
-		    SQLITE_DEFAULT_CACHE_SIZE,
-		    p->pDestDb->openFlags,
-		    &p->pDest);
-		sqlite3_free(home);
-		p->pDestDb->aDb[p->iDb].pBt = p->pDest;
+		/*
+		 * Call sqlite3OpenTempDatabase instead of
+		 * sqlite3BtreeOpen, because sqlite3OpenTempDatabase
+		 * automatically chooses the right flags before calling
+		 * sqlite3BtreeOpen.
+		 */
+		if (strcmp(p->destName, "temp") == 0) {
+			memset(&parse, 0, sizeof(parse));
+			parse.db = p->pDestDb;
+			p->rc = sqlite3OpenTempDatabase(&parse);
+			p->pDest = p->pDestDb->aDb[p->iDb].pBt;
+		} else {
+			p->rc = sqlite3BtreeOpen(home, p->pDestDb,
+			    &p->pDest, SQLITE_DEFAULT_CACHE_SIZE |
+			    SQLITE_OPEN_MAIN_DB, p->pDestDb->openFlags);
+			p->pDestDb->aDb[p->iDb].pBt = p->pDest;
+			if (p->rc == SQLITE_OK) {
+				p->pDestDb->aDb[p->iDb].pSchema =
+				    sqlite3SchemaGet(p->pDestDb, p->pDest);
+				if (!p->pDestDb->aDb[p->iDb].pSchema)
+					p->rc = SQLITE_NOMEM;
+			} else
+				p->pDestDb->aDb[p->iDb].pSchema = NULL;
+		}
+
+		if (p->pDest)
+			p->pDest->nBackup++;
+#ifdef SQLITE_HAS_CODEC
+		/*
+		 * In the case of a temporary source database, use the
+		 * encryption of the main database.
+		 */
+		if (strcmp(p->srcName, "temp") == 0) {
+			 int iDb = sqlite3FindDbName(p->pSrcDb, "main");
+			 pBtSrc = p->pSrcDb->aDb[iDb].pBt->pBt;
+		} else
+			 pBtSrc = p->pSrc->pBt;
 		if (p->rc == SQLITE_OK) {
 			if (p->iDb == 0)
 				p->rc = sqlite3_key(p->pDestDb,
@@ -699,36 +663,29 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 				    pBtSrc->encrypt_pwd,
 				    pBtSrc->encrypt_pwd_len);
 		}
+#endif
 		if (p->rc != SQLITE_OK)
 			goto err;
 		p->cleaned = 1;
 	}
-#endif
 
 	/*
-	 * Begin a transaction or savepoint, unfortuantely the lock on
+	 * Begin a transaction, unfortuantely the lock on
 	 * the schema has to be released to allow the sqlite_master
 	 * table to be cleared, which could allow another thread to
 	 * alter it, however accessing the backup database during
 	 * backup is already an illegal condition with undefined
 	 * results.
 	 */
-	if (!p->inDestTxn) {
-		if (!sqlite3BtreeIsInTrans(p->pDest)) {
-			if (!p->pDest->connected) {
-				p->rc = btreeOpenEnvironment(p->pDest, 1);
-				if (p->rc != SQLITE_OK)
-					goto err;
-			}
-			if ((p->rc = sqlite3BtreeBeginTrans(p->pDest, 2))
-				!= SQLITE_OK)
+	if (!sqlite3BtreeIsInTrans(p->pDest)) {
+		if (!p->pDest->connected) {
+			p->rc = btreeOpenEnvironment(p->pDest, 1);
+			if (p->rc != SQLITE_OK)
 				goto err;
-			p->inDestTxn++;
 		}
-		if ((p->rc = sqlite3BtreeBeginStmt(p->pDest,
-		    p->pDest->nSavepoint)) != SQLITE_OK)
+		if ((p->rc = sqlite3BtreeBeginTrans(p->pDest, 2))
+			!= SQLITE_OK)
 			goto err;
-		p->inDestTxn++;
 	}
 	/* Only this process should be accessing the backup environment. */
 	if (p->pDest->pBt->nRef > 1) {
@@ -760,20 +717,12 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 		p->nRemaining = p->nPagecount;
 	}
 
-	/* Delete the old contents of the backup environment. */
-	if (!p->cleaned) {
-		if ((p->rc = btreeCleanDatabase(p->pDest))
-			!= SQLITE_OK)
-			goto err;
-		p->cleaned = 1;
-	}
-
 	/* Copy the pages. */
 	p->rc = btreeCopyPages(p, &pages);
 	if (p->rc == SQLITE_DONE) {
 		p->nRemaining = 0;
 		sqlite3ResetInternalSchema(p->pDestDb, p->iDb);
-		memset(&parse, 0, sizeof parse);
+		memset(&parse, 0, sizeof(parse));
 		parse.db = p->pDestDb;
 		p->rc = sqlite3ReadSchema(&parse);
 		if (p->rc == SQLITE_OK)
@@ -868,70 +817,6 @@ int sqlite3_backup_pagecount(sqlite3_backup *p) {
 }
 
 /*
- * Deletes all the user created tables and clears the sqlite_master.
- */
-static int btreeCleanDatabase(Btree *p)
-{
-	int rc, rc2, iTable, tmp, i;
-	char *sql;
-	BtShared *pBt;
-	int *tables;
-
-	rc = rc2 = SQLITE_OK;
-	tables = NULL;
-	sql = NULL;
-	pBt = p->pBt;
-
-	if (!p->connected) {
-		if ((rc = btreeOpenEnvironment(p, 1)) != SQLITE_OK)
-			goto err;
-		/* The btreeOpenEnvironment call might have updated pBt. */
-		pBt = p->pBt;
-	}
-
-	if ((rc = btreeGetTables(p, &tables, p->savepoint_txn))
-		!= SQLITE_OK)
-		goto err;
-
-	/* Delete all data tables. */
-	i = 0;
-	while (tables[i] > -1) {
-		iTable = tables[i];
-		if (iTable > MASTER_ROOT) {
-			if (p->pBt->dbStorage != DB_STORE_NAMED) {
-				/* We do not want to remove the table
-				 * from the environment, which is what
-				 * drop table does for in memory db, we
-				 * just want to clear it of data.
-				 */
-				if ((rc = sqlite3BtreeClearTable(p, iTable, 0)
-					!= SQLITE_OK))
-					goto err;
-			} else {
-				if ((rc = sqlite3BtreeDropTable(p, iTable, &tmp)
-					!= SQLITE_OK))
-					goto err;
-			}
-		}
-		i++;
-	}
-	/* Clear the master root table, remove the lock on it first. */
-	tmp = p->schemaLockMode;
-	if ((rc = btreeLockSchema(p, LOCKMODE_NONE) != SQLITE_OK))
-		goto err;
-	rc = sqlite3BtreeClearTable(p, MASTER_ROOT, 0);
-	rc2 = btreeLockSchema(p, tmp);
-
-	if (rc == SQLITE_OK && rc2 != SQLITE_OK)
-		rc = rc2;
-
-err:	if (tables)
-		sqlite3_free(tables);
-
-	return rc;
-}
-
-/*
  * Use Bulk Get/Put to copy the given number of pages worth of
  * records from the source database to the destination database,
  * this function should be called until all tables are copied, at
@@ -958,14 +843,14 @@ static int btreeCopyPages(sqlite3_backup *p, int *pages)
 	rc = SQLITE_OK;
 	dbp = NULL;
 	copied = 0;
-	memset(&dataOut, 0, sizeof dataOut);
-	memset(&dataIn, 0, sizeof dataIn);
+	memset(&dataOut, 0, sizeof(dataOut));
+	memset(&dataIn, 0, sizeof(dataIn));
 	dataOut.flags = DB_DBT_USERMEM;
 	dataIn.flags = DB_DBT_USERMEM;
 	dataOut.data = bufOut;
-	dataOut.ulen = sizeof bufOut;
+	dataOut.ulen = sizeof(bufOut);
 	dataIn.data = bufIn;
-	dataIn.ulen = sizeof bufIn;
+	dataIn.ulen = sizeof(bufIn);
 
 	while (*pages < 0 || *pages > copied) {
 		/* No tables left to copy */
@@ -985,7 +870,7 @@ static int btreeCopyPages(sqlite3_backup *p, int *pages)
 			if (rc != SQLITE_OK)
 				goto err;
 			sqlite3BtreeGetMeta(p->pSrc, 3, &val);
-                       if (p->pSrc->db->errCode == SQLITE_BUSY) {
+		       if (p->pSrc->db->errCode == SQLITE_BUSY) {
 				rc = SQLITE_BUSY;
 				goto err;
 			}
@@ -1002,7 +887,7 @@ static int btreeCopyPages(sqlite3_backup *p, int *pages)
 			if (rc != SQLITE_OK)
 				goto err;
 			assert(dbp);
-			memset(&p->destCur, 0, sizeof p->destCur);
+			memset(&p->destCur, 0, sizeof(p->destCur));
 			/*
 			 * Open a cursor on the destination table, this will
 			 * create the table and allow the Btree to manage the
@@ -1032,8 +917,8 @@ static int btreeCopyPages(sqlite3_backup *p, int *pages)
 		 */
 		while (*pages < 0 || *pages > copied) {
 			DBT key, data;
-			memset(&key, 0, sizeof key);
-			memset(&data, 0, sizeof data);
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
 			/* Do a Bulk Get from the source table. */
 			ret = p->srcCur->get(p->srcCur, &key, &dataOut,
 			    DB_NEXT | DB_MULTIPLE_KEY);

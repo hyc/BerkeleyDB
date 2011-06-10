@@ -60,6 +60,46 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
+        /// Create a new partial DatabaseEntry object.
+        /// </summary>
+        /// <param name="offset">
+        /// The offset of the partial record being read or written by the 
+        /// application, in bytes
+        /// </param>
+        /// <param name="len">
+        /// The byte length of the partial record being read or written
+        /// by the application
+        /// </param>
+        public DatabaseEntry(uint offset, uint len)
+            : this() {
+            dbt.doff = offset;
+            dbt.dlen = len;
+            dbt.flags |= DbConstants.DB_DBT_PARTIAL;
+        }
+
+        /// <summary>
+        /// Create a new partial DatabaseEntry object, with the specified data
+        /// </summary>
+        /// <param name="data"> 
+        /// Byte array wrapped by the DatabaseEntry
+        /// </param>
+        /// <param name="offset">
+        /// The offset of the partial record being read or written by the 
+        /// application, in bytes
+        /// </param>
+        /// <param name="len">
+        /// The byte length of the partial record being read or written
+        /// by the application
+        /// </param>
+        public DatabaseEntry(byte[] data, uint offset, uint len)
+            : this() {
+            Data = data;
+            dbt.doff = offset;
+            dbt.dlen = len;
+            dbt.flags |= DbConstants.DB_DBT_PARTIAL;
+        }
+
+        /// <summary>
         /// The byte string stored in or retrieved from a database
         /// </summary>
         public byte[] Data {
@@ -74,6 +114,51 @@ namespace BerkeleyDB {
                 _data = value;
                 dbt.size = value == null ? 0 : (uint)value.Length;
             }
+        }
+
+	/// <summary>
+	/// Set this DatabaseEntry as read only - that is Berkeley DB will not
+	/// alter the entry.
+	/// </summary>
+        public bool ReadOnly {
+            get { return (flags & DbConstants.DB_DBT_READONLY) != 0; }
+            set {
+                if (value)
+                    flags |= DbConstants.DB_DBT_READONLY;
+                else
+                    flags &= ~DbConstants.DB_DBT_READONLY;
+            }
+        }
+
+        /// <summary>
+        /// Whether the DatabaseEntry is partial record.  
+        /// </summary>
+        public bool Partial {
+            get { return (dbt.flags & DbConstants.DB_DBT_PARTIAL) != 0; }
+            set {
+                if (value == true)
+                    dbt.flags |= DbConstants.DB_DBT_PARTIAL;
+                else
+                    dbt.flags &= ~DbConstants.DB_DBT_PARTIAL;
+            }
+        }
+
+        /// <summary>
+        /// The byte length of the partial record being read or written by
+        /// the application
+        /// </summary>
+        public uint PartialLen {
+            get { return dbt.dlen; }
+            set { dbt.dlen = value; }
+        }
+
+        /// <summary>
+        /// The offset of the partial record being read or written by the 
+        /// application, in bytes.
+        /// </summary>
+        public uint PartialOffset {
+            get { return dbt.doff; }
+            set { dbt.doff = value; }
         }
 
         internal byte[] UserData {

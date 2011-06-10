@@ -18,18 +18,16 @@
 
 static int	__log_init __P((ENV *, DB_LOG *));
 static int	__log_recover __P((DB_LOG *));
-static size_t	__log_region_size __P((ENV *));
 
 /*
  * __log_open --
  *	Internal version of log_open: only called from ENV->open.
  *
- * PUBLIC: int __log_open __P((ENV *, int));
+ * PUBLIC: int __log_open __P((ENV *));
  */
 int
-__log_open(env, create_ok)
+__log_open(env)
 	ENV *env;
-	int create_ok;
 {
 	DB_ENV *dbenv;
 	DB_LOG *dblp;
@@ -45,21 +43,8 @@ __log_open(env, create_ok)
 		return (ret);
 	dblp->env = env;
 
-	/* Set the default buffer size, if not otherwise configured. */
-	if (dbenv->lg_bsize == 0)
-		dbenv->lg_bsize = FLD_ISSET(dbenv->lg_flags, DB_LOG_IN_MEMORY) ?
-		    LG_BSIZE_INMEM : LG_BSIZE_DEFAULT;
-
 	/* Join/create the log region. */
-	dblp->reginfo.env = env;
-	dblp->reginfo.type = REGION_TYPE_LOG;
-	dblp->reginfo.id = INVALID_REGION_ID;
-	dblp->reginfo.flags = REGION_JOIN_OK;
-
-	if (create_ok)
-		F_SET(&dblp->reginfo, REGION_CREATE_OK);
-	if ((ret = __env_region_attach(
-	    env, &dblp->reginfo, __log_region_size(env))) != 0)
+	if ((ret = __env_region_share(env, &dblp->reginfo)) != 0)
 		goto err;
 
 	/* If we created the region, initialize it. */
@@ -68,8 +53,8 @@ __log_open(env, create_ok)
 			goto err;
 
 	/* Set the local addresses. */
-	lp = dblp->reginfo.primary =
-	    R_ADDR(&dblp->reginfo, dblp->reginfo.rp->primary);
+	lp = dblp->reginfo.primary = R_ADDR(&dblp->reginfo,
+	    ((REGENV *)env->reginfo->primary)->lg_primary);
 	dblp->bufp = R_ADDR(&dblp->reginfo, lp->buffer_off);
 
 	/*
@@ -143,7 +128,6 @@ __log_open(env, create_ok)
 			lp->bulk_len = 0;
 			lp->bulk_off = 0;
 		}
-		dblp->reginfo.mtx_alloc = lp->mtx_region;
 	} else {
 		/*
 		 * A process joining the region may have reset the log file
@@ -169,6 +153,7 @@ __log_open(env, create_ok)
 		    __log_set_config_int(dbenv, dbenv->lg_flags, 1, 0)) != 0)
 			return (ret);
 	}
+	dblp->reginfo.mtx_alloc = lp->mtx_region;
 
 	return (0);
 
@@ -213,14 +198,15 @@ __log_init(env, dblp)
 	if ((ret = __env_alloc(&dblp->reginfo,
 	    sizeof(*lp), &dblp->reginfo.primary)) != 0)
 		goto mem_err;
-	dblp->reginfo.rp->primary =
-	    R_OFFSET(&dblp->reginfo, dblp->reginfo.primary);
+
+	((REGENV *)env->reginfo->primary)->lg_primary =
+	     R_OFFSET(&dblp->reginfo, dblp->reginfo.primary);
+
 	lp = dblp->reginfo.primary;
 	memset(lp, 0, sizeof(*lp));
 
-	if ((ret =
-	    __mutex_alloc(env, MTX_LOG_REGION, 0, &lp->mtx_region)) != 0)
-		return (ret);
+	/* We share the region so we need the same mutex. */
+	lp->mtx_region = ((REGENV *)env->reginfo->primary)->mtx_regenv;
 
 	lp->fid_max = 0;
 	SH_TAILQ_INIT(&lp->fq);
@@ -253,7 +239,8 @@ __log_init(env, dblp)
 
 	/* Initialize the buffer. */
 	if ((ret = __env_alloc(&dblp->reginfo, dbenv->lg_bsize, &p)) != 0) {
-mem_err:	__db_errx( env, "unable to allocate log region memory");
+mem_err:	__db_errx( env, DB_STR("2524",
+		    "unable to allocate log region memory"));
 		return (ret);
 	}
 	lp->regionmax = dbenv->lg_regionmax;
@@ -261,6 +248,7 @@ mem_err:	__db_errx( env, "unable to allocate log region memory");
 	lp->buffer_size = dbenv->lg_bsize;
 	lp->filemode = dbenv->lg_filemode;
 	lp->log_size = lp->log_nsize = dbenv->lg_size;
+	lp->stat.st_fileid_init = dbenv->lg_fileid_init;
 
 	/* Initialize the commit Queue. */
 	SH_TAILQ_INIT(&lp->free_commits);
@@ -324,7 +312,7 @@ __log_recover(dblp)
 		return (ret);
 	if (cnt == 0) {
 		if (FLD_ISSET(dbenv->verbose, DB_VERB_RECOVERY))
-			__db_msg(env, "No log files found");
+			__db_msg(env, DB_STR("2525", "No log files found"));
 		return (0);
 	}
 
@@ -401,9 +389,9 @@ __log_recover(dblp)
 
 skipsearch:
 	if (FLD_ISSET(dbenv->verbose, DB_VERB_RECOVERY))
-		__db_msg(env,
+		__db_msg(env, DB_STR_A("2526",
 		    "Finding last valid log LSN: file: %lu offset %lu",
-		    (u_long)lp->lsn.file, (u_long)lp->lsn.offset);
+		    "%lu %lu"), (u_long)lp->lsn.file, (u_long)lp->lsn.offset);
 
 err:	if (logc != NULL)
 		(void)__logc_close(logc);
@@ -531,8 +519,8 @@ retry:	if ((ret = __os_dirlist(env, dir, 0, &names, &fcnt)) != 0) {
 				}
 				continue;
 			}
-			__db_err(
-			    env, ret, "Invalid log file: %s", names[cnt]);
+			__db_err(env, ret, DB_STR_A("2527",
+			    "Invalid log file: %s", "%s"), names[cnt]);
 			goto err;
 		}
 		switch (status) {
@@ -668,7 +656,8 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 			 * The error was a fatal read error, not just an
 			 * incompletely initialized log file.
 			 */
-			__db_err(env, ret, "ignoring log file: %s", fname);
+			__db_err(env, ret, DB_STR_A("2528",
+			    "ignoring log file: %s", "%s"), fname);
 		goto err;
 	}
 
@@ -709,12 +698,14 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 			goto err;
 		}
 		/* Check the checksum and decrypt. */
+#ifdef HAVE_LOG_CHECKSUM
 		if ((ret = __db_check_chksum(env, hdr, db_cipher,
 		    &hdr->chksum[0], (u_int8_t *)persist,
 		    hdr->len - hdrsize, is_hmac)) != 0) {
 			__db_errx(env, "log record checksum mismatch");
 			goto err;
 		}
+#endif
 
 		if ((ret = db_cipher->decrypt(env, db_cipher->data,
 		    &hdr->iv[0], (u_int8_t *)persist, hdr->len - hdrsize)) != 0)
@@ -728,8 +719,9 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 		 * old log that we can no longer read.
 		 */
 		if (persist->magic == DB_LOGMAGIC) {
-			__db_errx(env,
-			    "Ignoring log file: %s historic byte order", fname);
+			__db_errx(env, DB_STR_A("2529",
+			    "Ignoring log file: %s historic byte order",
+			    "%s"), fname);
 			status = DB_LV_OLD_UNREADABLE;
 			goto err;
 		}
@@ -739,9 +731,10 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 
 	/* Validate the header. */
 	if (persist->magic != DB_LOGMAGIC) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2530",
 		    "Ignoring log file: %s: magic number %lx, not %lx",
-		    fname, (u_long)persist->magic, (u_long)DB_LOGMAGIC);
+		    "%s %lx %lx"), fname,
+		    (u_long)persist->magic, (u_long)DB_LOGMAGIC);
 		ret = EINVAL;
 		goto err;
 	}
@@ -753,16 +746,16 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 	 */
 	if (persist->version > DB_LOGVERSION) {
 		/* This is a fatal error--the log file is newer than DB. */
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2531",
 		    "Unacceptable log file %s: unsupported log version %lu",
-		    fname, (u_long)persist->version);
+		    "%s %lu"), fname, (u_long)persist->version);
 		ret = EINVAL;
 		goto err;
 	} else if (persist->version < DB_LOGOLDVER) {
 		status = DB_LV_OLD_UNREADABLE;
 		/* This is a non-fatal error, but give some feedback. */
-		__db_errx(env,
-		    "Skipping log file %s: historic log version %lu",
+		__db_errx(env, DB_STR_A("2532",
+		    "Skipping log file %s: historic log version %lu", "%s %lu"),
 		    fname, (u_long)persist->version);
 		/*
 		 * We don't want to set persistent info based on an unreadable
@@ -782,13 +775,15 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 	if (!CRYPTO_ON(env)) {
 		if (LOG_SWAPPED(env))
 			__log_persistswap(persist);
-
+#ifdef HAVE_LOG_CHECKSUM
 		if ((ret = __db_check_chksum(env,
 		    hdr, db_cipher, &hdr->chksum[0], (u_int8_t *)persist,
 		    hdr->len - hdrsize, is_hmac)) != 0) {
-			__db_errx(env, "log record checksum mismatch");
+			__db_errx(env, DB_STR("2533",
+			    "log record checksum mismatch"));
 			goto err;
 		}
+#endif
 
 		if (LOG_SWAPPED(env))
 			__log_persistswap(persist);
@@ -987,7 +982,29 @@ __log_region_mutex_count(env)
 	 * on the group commit list.  We can't know how many that will be,
 	 * but it should be bounded by the maximum active transactions.
 	 */
-	return (env->dbenv->tx_max + 5);
+	return (env->dbenv->tx_init + 5);
+}
+
+/*
+ * __log_region_mutex_max --
+ *	Return the number of additional mutexes the log region will need.
+ *
+ * PUBLIC: u_int32_t __log_region_mutex_max __P((ENV *));
+ */
+u_int32_t
+__log_region_mutex_max(env)
+	ENV *env;
+{
+	DB_ENV *dbenv;
+	u_int32_t count;
+
+	dbenv = env->dbenv;
+
+	if ((count = dbenv->tx_max) == 0)
+		count = DEF_MAX_TXNS;
+	if (count < dbenv->tx_init)
+		return (0);
+	return (count - dbenv->tx_init);
 }
 
 /*
@@ -997,8 +1014,9 @@ __log_region_mutex_count(env)
  *	detail structures  plus some space to hold thread handles
  *	and the beginning of the alloc region and anything we
  *	need for mutex system resource recording.
+ * PUBLIC: size_t	__log_region_size __P((ENV *));
  */
-static size_t
+size_t
 __log_region_size(env)
 	ENV *env;
 {
@@ -1007,14 +1025,40 @@ __log_region_size(env)
 
 	dbenv = env->dbenv;
 
-	s = dbenv->lg_regionmax + dbenv->lg_bsize;
+	/* Set the default buffer size, if not otherwise configured. */
+	if (dbenv->lg_bsize == 0)
+		dbenv->lg_bsize = FLD_ISSET(dbenv->lg_flags, DB_LOG_IN_MEMORY) ?
+		    LG_BSIZE_INMEM : LG_BSIZE_DEFAULT;
 
-	/*
-	 * If running with replication, add in space for bulk buffer.
-	 * Allocate a megabyte and a little bit more space.
-	 */
-	if (IS_ENV_REPLICATED(env))
-		s += MEGABYTE;
+	s = dbenv->lg_bsize;
+	/* Allocate the initial fileid allocation, plus some path name space. */
+	s += dbenv->lg_fileid_init * __env_alloc_size((sizeof(FNAME)) + 16);
+
+	return (s);
+}
+/*
+ * __log_region_max --
+ *	Return the amount of extra memory to allocate for logging informaition.
+ * PUBLIC: size_t	__log_region_max __P((ENV *));
+ */
+size_t
+__log_region_max(env)
+	ENV *env;
+{
+
+	DB_ENV *dbenv;
+	size_t s;
+
+	dbenv = env->dbenv;
+	if (dbenv->lg_fileid_init == 0) {
+		if ((s = dbenv->lg_regionmax) == 0)
+			s = LG_BASE_REGION_SIZE;
+	} else if ((s = dbenv->lg_regionmax) != 0 &&
+	     s < dbenv->lg_fileid_init * (__env_alloc_size(sizeof(FNAME)) + 16))
+		s = 0;
+	else if (s != 0)
+		s -= dbenv->lg_fileid_init *
+		     (__env_alloc_size(sizeof(FNAME)) + 16);
 
 	return (s);
 }
@@ -1039,6 +1083,7 @@ __log_vtruncate(env, lsn, ckplsn, trunclsn)
 	DB_LOGC *logc;
 	LOG *lp;
 	u_int32_t bytes, len;
+	size_t offset;
 	int ret, t_ret;
 
 	/* Need to find out the length of this soon-to-be-last record. */
@@ -1069,9 +1114,13 @@ __log_vtruncate(env, lsn, ckplsn, trunclsn)
 	lp->len = len;
 	lp->lsn.offset += lp->len;
 
-	if (lp->db_log_inmemory &&
-	    (ret = __log_inmem_lsnoff(dblp, &lp->lsn, &lp->b_off)) != 0)
-		goto err;
+	offset = lp->b_off;
+	if (lp->db_log_inmemory && (ret =
+	    __log_inmem_lsnoff(dblp, &lp->lsn, &offset)) != 0) {
+			lp->b_off = (db_size_t)offset;
+			goto err;
+	}
+	lp->b_off = (db_size_t)offset;
 
 	/*
 	 * I am going to assume that the number of bytes written since
@@ -1202,8 +1251,8 @@ __log_zero(env, from_lsn)
 	lp = (LOG *)dblp->reginfo.primary;
 	DB_ASSERT(env, LOG_COMPARE(from_lsn, &lp->lsn) <= 0);
 	if (LOG_COMPARE(from_lsn, &lp->lsn) > 0) {
-		__db_errx(env,
-		    "Warning: truncating to point beyond end of log");
+		__db_errx(env, DB_STR("2534",
+		    "Warning: truncating to point beyond end of log"));
 		return (0);
 	}
 
@@ -1298,7 +1347,7 @@ __log_inmem_lsnoff(dblp, lsnp, offsetp)
 
 	SH_TAILQ_FOREACH(filestart, &lp->logfiles, links, __db_filestart)
 		if (filestart->file == lsnp->file) {
-			*offsetp =
+			*offsetp = (u_int32_t)
 			    (filestart->b_off + lsnp->offset) % lp->buffer_size;
 			return (0);
 		}
@@ -1396,6 +1445,7 @@ __log_inmem_chkspace(dblp, len)
 	ENV *env;
 	LOG *lp;
 	struct __db_filestart *filestart;
+	size_t offset;
 	int ret;
 
 	env = dblp->env;
@@ -1433,16 +1483,17 @@ __log_inmem_chkspace(dblp, len)
 
 		/* If we didn't make any progress, give up. */
 		if (LOG_COMPARE(&active_lsn, &old_active_lsn) == 0) {
-			__db_errx(env,
-      "In-memory log buffer is full (an active transaction spans the buffer)");
+			__db_errx(env, DB_STR("2535",
+"In-memory log buffer is full (an active transaction spans the buffer)"));
 			return (DB_LOG_BUFFER_FULL);
 		}
 
 		/* Make sure we're moving the region LSN forwards. */
 		if (LOG_COMPARE(&active_lsn, &lp->active_lsn) > 0) {
 			lp->active_lsn = active_lsn;
-			(void)__log_inmem_lsnoff(dblp, &active_lsn,
-			    &lp->a_off);
+			offset = lp->a_off;
+			(void)__log_inmem_lsnoff(dblp, &active_lsn, &offset);
+			lp->a_off = (db_size_t)offset;
 		}
 	}
 

@@ -49,8 +49,8 @@ namespace BerkeleyDB {
         /// The database may be of any type, but must not have been configured
         /// to support duplicate data items.
         /// </para>
-		/// <para>
-        /// If <paramref name="P:BackingDatabase"/> was opened in a transaction,
+        /// <para>
+        /// If <see cref="BackingDatabase"/> was opened in a transaction,
         /// calling Get may result in changes to the sequence object; these
         /// changes will be automatically committed in a transaction internal to
         /// the Berkeley DB library. If the thread of control calling Get has an

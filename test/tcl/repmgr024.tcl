@@ -9,8 +9,15 @@
 #
 proc repmgr024 { { niter 50 } { tnum 024 } args } {
 	source ./include.tcl
+
 	if { $is_freebsd_test == 1 } {
 		puts "Skipping replication manager test on FreeBSD platform."
+		return
+	}
+
+	# QNX does not support fork() in a multi-threaded environment.
+	if { $is_qnx_test } {
+		puts "Skipping repmgr$tnum on QNX."
 		return
 	}
 
@@ -61,7 +68,7 @@ proc repmgr024_sub { method niter tnum largs } {
 	# otherwise it will never wait when
 	# the client is closed and we want to give it a chance to
 	# wait later in the test.
-	$enva repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$enva repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $porta] -start master
 
 	set cmdb "berkdb_env_noerr -create -txn nosync \
@@ -69,7 +76,7 @@ proc repmgr024_sub { method niter tnum largs } {
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_B \
 	    -home $dirb"
 	set envb [eval $cmdb]
-	$envb repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$envb repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $portb] -start client \
 	    -remote [list localhost $porta]
 	puts "\tRepmgr$tnum.a: wait for client B to sync with master."
@@ -80,7 +87,7 @@ proc repmgr024_sub { method niter tnum largs } {
 	    -log_buffer $log_buf -log_max $log_max -errpfx SITE_C \
 	    -home $dirc"
 	set envc [eval $cmdc]
-	$envc repmgr -timeout {connection_retry 5000000} -nsites 3 \
+	$envc repmgr -timeout {connection_retry 5000000} \
 	    -local [list localhost $portc] -start client \
 	    -remote [list localhost $porta]
 	puts "\tRepmgr$tnum.b: wait for client C to sync with master."

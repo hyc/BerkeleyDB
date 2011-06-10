@@ -3,37 +3,39 @@
 #
 # Build tags files.
 
-files=`echo ../dbinc/*.h \
-	../dbinc/*.in \
-	../btree/*.[ch] \
-	../clib/*.[ch] \
-	../common/*.[ch] \
-	../crypto/*.[ch] \
-	../crypto/mersenne/*.[ch] \
-	../crypto/rijndael/*.[ch] \
-	../db/*.[ch] \
-	../db185/*.[ch] \
-	../dbm/*.[ch] \
-	../dbreg/*.[ch] \
-	../env/*.[ch] \
-	../fileops/*.[ch] \
-	../hash/*.[ch] \
-	../hmac/*.[ch] \
-	../hsearch/*.[ch] \
-	../lock/*.[ch] \
-	../log/*.[ch] \
-	../mp/*.[ch] \
-	../mutex/*.[ch] \
-	../os/*.[ch] \
-	../os_qnx/*.[ch] \
-	../qam/*.[ch] \
-	../rep/*.[ch] \
-	../repmgr/*.[ch] \
-	../sequence/*.[ch] \
-	../lang/tcl/*.[ch] \
-	../txn/*.[ch] \
-	../lang/cxx/*.cpp \
-	../lang/java/libdb_java/*.[ch] | sed 's/[^ ]*stub.c//g'`
+cd tagdir
+files=`echo ../../src/dbinc/*.h \
+	../../src/dbinc/*.in \
+	../../src/btree/*.[ch] \
+	../../src/clib/*.[ch] \
+	../../src/common/*.[ch] \
+	../../src/crypto/*.[ch] \
+	../../src/crypto/mersenne/*.[ch] \
+	../../src/crypto/rijndael/*.[ch] \
+	../../src/db/*.[ch] \
+	../../lang/db185/*.[ch] \
+	../../lang/dbm/*.[ch] \
+	../../src/dbreg/*.[ch] \
+	../../src/env/*.[ch] \
+	../../src/fileops/*.[ch] \
+	../../src/hash/*.[ch] \
+	../../src/hmac/*.[ch] \
+	../../src/hsearch/*.[ch] \
+	../../src/lock/*.[ch] \
+	../../src/log/*.[ch] \
+	../../src/mp/*.[ch] \
+	../../src/mutex/*.[ch] \
+	../../src/os/*.[ch] \
+	../../src/os_qnx/*.[ch] \
+	../../src/qam/*.[ch] \
+	../../src/rep/*.[ch] \
+	../../src/repmgr/*.[ch] \
+	../../src/sequence/*.[ch] \
+	../../lang/tcl/*.[ch] \
+	../../src/txn/*.[ch] \
+	../../src/xa/*.[ch] \
+	../../lang/cxx/*.cpp \
+	../../lang/java/libdb_java/*.[ch] | sed 's/[^ ]*stub.c//g'`
 
 f=tags
 echo "Building $f"
@@ -41,22 +43,22 @@ rm -f $f
 
 # Figure out what flags this ctags accepts.
 flags=""
-if ctags -d ../db/db.c 2>/dev/null; then
+if ctags -d ../../src/db/db.c 2>/dev/null; then
 	flags="-d $flags"
 fi
-if ctags -t ../db/db.c 2>/dev/null; then
+if ctags -t ../../src/db/db.c 2>/dev/null; then
 	flags="-t $flags"
 fi
-if ctags -w ../db/db.c 2>/dev/null; then
+if ctags -w ../../src/db/db.c 2>/dev/null; then
 	flags="-w $flags"
 fi
 
 ctags $flags $files 2>/dev/null
 
-for i in test_perf test_repmgr test_server; do
-	test -d ../$i || continue
+for i in test/perf testrrepmgr testrserver; do
+	test -d ../../$i || continue
 
-	f=../$i/tags
+	f=../../$i/tags
 	echo "Building $f"
-	(cd ../$i && ctags $flags *.[ch] 2>/dev/null)
+	(cd ../../$i && ctags $flags *.[ch] 2>/dev/null)
 done

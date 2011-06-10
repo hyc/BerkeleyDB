@@ -16,7 +16,15 @@ proc repmgr102 {  } {
 	source ./include.tcl
 	source $test_path/testutils.tcl
 
+
 	set tnum "102"
+
+	# QNX does not support fork() in a multi-threaded environment.
+	if { $is_qnx_test } {
+		puts "Skipping repmgr$tnum on QNX."
+		return
+	}
+
 	puts "Repmgr$tnum: Ensuring exactly one listener process."
 	set site_prog [setup_site_prog]
 
@@ -29,7 +37,9 @@ proc repmgr102 {  } {
 	set ports [available_ports 1]
 	set master_port [lindex $ports 0]
 
-	make_dbconfig $masterdir {{rep_set_nsites 3}}
+	make_dbconfig $masterdir \
+	    [list [list repmgr_site localhost $master_port db_local_site on] \
+	    "rep_set_config db_repmgr_conf_2site_strict off"]
 	set masterenv [berkdb_env -rep -txn -thread -home $masterdir \
 			   -isalive my_isalive -create]
 	$masterenv close
@@ -38,7 +48,6 @@ proc repmgr102 {  } {
 	set master [open "| $site_prog" "r+"]
 	fconfigure $master -buffering line
 	puts $master "home $masterdir"
-	puts $master "local $master_port"
 	puts $master "output $testdir/m1output"
 	puts $master "open_env"
 	puts $master "start master"
@@ -53,7 +62,6 @@ proc repmgr102 {  } {
 	set m2 [open "| $site_prog" "r+"]
 	fconfigure $m2 -buffering line
 	puts $m2 "home $masterdir"
-	puts $m2 "local $master_port"
 	puts $m2 "output $testdir/m2output"
 	puts $m2 "open_env"
 	puts $m2 "start master"
@@ -77,7 +85,6 @@ proc repmgr102 {  } {
 	set m2 [open "| $site_prog" "r+"]
 	fconfigure $m2 -buffering line
 	puts $m2 "home $masterdir"
-	puts $m2 "local $master_port"
 	puts $m2 "output $testdir/m2output2"
 	puts $m2 "open_env"
 	puts $m2 "start master"
@@ -91,7 +98,6 @@ proc repmgr102 {  } {
 	set master [open "| $site_prog" "r+"]
 	fconfigure $master -buffering line
 	puts $master "home $masterdir"
-	puts $master "local $master_port"
 	puts $master "output $testdir/m1output3"
 	puts $master "open_env"
 	puts $master "start master"
@@ -112,7 +118,6 @@ proc repmgr102 {  } {
 	set m2 [open "| $site_prog" "r+"]
 	fconfigure $m2 -buffering line
 	puts $m2 "home $masterdir"
-	puts $m2 "local $master_port"
 	puts $m2 "output $testdir/m2output3"
 	puts $m2 "open_env"
 	puts $m2 "start master"
@@ -128,7 +133,6 @@ proc repmgr102 {  } {
 	set m2 [open "| $site_prog" "r+"]
 	fconfigure $m2 -buffering line
 	puts $m2 "home $masterdir"
-	puts $m2 "local $master_port"
 	puts $m2 "output $testdir/m2output4"
 	puts $m2 "open_env"
 	puts $m2 "start master"

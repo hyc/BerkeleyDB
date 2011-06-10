@@ -1,5 +1,24 @@
 Revision history for Perl extension BerkeleyDB.
 
+0.47  1st June 2011
+
+        * Add support for new Heap database format.
+
+        * Changes to build with BDB 5.2
+
+0.46  18th October 2010
+
+        * Fixed bug with db_pget when the DB_GET_BOTH flag is used.
+
+0.45  17th October 2010
+
+        * Fixed bug with c_pget when the DB_GET_BOTH flag is used.
+
+0.44  2nd August 2010
+
+        * Added support for db_exists and lock_detect.
+          Thanks to Alex Lovatt for the patch.
+
 0.43  1st August 2010
 
         * Changes to build with BDB 5.1

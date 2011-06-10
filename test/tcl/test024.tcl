@@ -26,6 +26,10 @@ proc test024 { method {nentries 10000} args} {
 		puts "Test024 skipping for method HASH"
 		return
 	}
+	if { [string compare $omethod "-heap"] == 0 } {
+		puts "Test024 skipping for method HEAP"
+		return
+	}
 	if { [is_partitioned $args] } {
 		puts "Test024 skipping for partitioned $omethod"
 		return

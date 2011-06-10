@@ -12,7 +12,10 @@
     <link rel="next" href="sql_encryption.html" title="Encryption" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Berkeley DB Concepts</th>
@@ -45,10 +48,7 @@
                         Environments. The directory that is created
                         alongside your database file, and which ends with
                         the "-journal" suffix, is actually a Berkeley DB
-                        environment directory. This might be interesting to
-                        you in some administrative situations. For some
-                        minimal information on what an environment is, see 
-                        <a class="xref" href="configure.html#env-overview" title="Introduction to Environments">Introduction to Environments</a>.
+                        environment directory.
                     </p>
           </li>
           <li>
@@ -56,34 +56,35 @@
                         The Locking Subsystem
                     </p>
             <p>
-                        You can configure the maximum number of locks
-                        that can be in use at any given time when you use
-                        the BDB SQL interface. This is probably only interesting to
-                        you if you are using the BDB SQL interface in a concurrent
-                        application that is running a very large number of
-                        transactions. 
+                        The Berkeley DB library implements locking in a different
+                        way to SQLite. SQLite implements locking at a database
+                        level - any operation will take a lock on the entire
+                        database. Berkeley DB implements a scheme called page
+                        level locking. The database divides data into relatively
+                        small blocks. Each block corresponds to a page in
+                        database terms. Each block can contain multiple pieces
+                        of user information. Berkeley DB takes locks on
+                        individual pages. This allows for greater concurrency
+                        in applications, but means that applications are more
+                        likely to encounter deadlocks.
                     </p>
             <p>
-                        For information on configuring your locking
-                        subsystem, see
-                        <a class="xref" href="admin-locking.html" title="Managing the Locking Subsystem">Managing the Locking Subsystem</a>.
+                        See: 
+                        <a class="xref" href="lockingnotes.html" title="Chapter 2. Locking Notes">Locking Notes</a>
+                        for more information.
                     </p>
           </li>
           <li>
             <p>
-                        The Logging Subsystem
+                        The Journal Subsystem
                     </p>
             <p>
-                        The BDB SQL interface maintains log files in its journal
-                        directory, and you can manage various aspects of
-                        these. For the overwhelming majority of
-                        applications, there is no need to manage this. But
-                        for the sake of completeness, this topic is
-                        described in this manual.
-                    </p>
-            <p>
-                        For more information, see
-                        <a class="xref" href="admin-logfile.html" title="Administering Log Files">Administering Log Files</a>.
+                        The BDB SQL interface implements write ahead logging (WAL),
+                        it stores journal files differently to the SQLite
+                        WAL implementation. BDB SQL interface rolls over journal files
+                        when they get to a certain size (default 10MB). It is
+                        possible for the to be multiple journal files active
+                        at one time with BDB SQL interface.
                     </p>
           </li>
         </ul>

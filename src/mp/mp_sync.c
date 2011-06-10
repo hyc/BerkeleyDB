@@ -299,8 +299,8 @@ __memp_sync_int(env, dbmfp, trickle_max, flags, wrote_totalp, interruptedp)
 	db_mutex_t mutex;
 	roff_t last_mf_offset;
 	u_int32_t ar_cnt, ar_max, i, n_cache, remaining, wrote_total;
+	int32_t wrote_cnt;
 	int dirty, filecnt, maxopenfd, required_write, ret, t_ret;
-	int wrote_cnt;
 
 	dbmp = env->mp_handle;
 	mp = dbmp->reginfo[0].primary;
@@ -570,8 +570,8 @@ __memp_sync_int(env, dbmfp, trickle_max, flags, wrote_totalp, interruptedp)
 			} else {
 				if (ret == 0)
 					ret = t_ret;
-				__db_errx
-				    (env, "%s: unable to flush page: %lu",
+				__db_errx(env, DB_STR_A("3027",
+				    "%s: unable to flush page: %lu", "%s %lu"),
 				    __memp_fns(dbmp, mfp), (u_long)bhp->pgno);
 
 			}
@@ -677,7 +677,7 @@ __memp_sync_file(env, mfp, argp, countp, flags)
 	MUTEX_UNLOCK(env, mfp->mutex);
 
 	/*
-	 * Look for an already open, writeable handle (fsync doesn't
+	 * Look for an already open, writable handle (fsync doesn't
 	 * work on read-only Windows handles).
 	 */
 	dbmp = env->mp_handle;
@@ -698,8 +698,8 @@ __memp_sync_file(env, mfp, argp, countp, flags)
 	/* If we don't find a handle we can use, open one. */
 	if (dbmfp == NULL) {
 		if ((ret = __memp_mf_sync(dbmp, mfp, 1)) != 0) {
-			__db_err(env, ret,
-			    "%s: unable to flush", (char *)
+			__db_err(env, ret, DB_STR_A("3028",
+			    "%s: unable to flush", "%s"), (char *)
 			    R_ADDR(dbmp->reginfo, mfp->path_off));
 		}
 	} else

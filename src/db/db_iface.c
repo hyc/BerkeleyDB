@@ -21,7 +21,7 @@
 #include "dbinc/txn.h"
 
 static int __db_associate_arg __P((DB *, DB *,
-	       int (*)(DB *, const DBT *, const DBT *, DBT *), u_int32_t));
+    int (*)(DB *, const DBT *, const DBT *, DBT *), u_int32_t));
 static int __dbc_del_arg __P((DBC *, u_int32_t));
 static int __dbc_pget_arg __P((DBC *, DBT *, u_int32_t));
 static int __dbc_put_arg __P((DBC *, DBT *, DBT *, u_int32_t));
@@ -31,15 +31,15 @@ static int __db_del_arg __P((DB *, DBT *, u_int32_t));
 static int __db_get_arg __P((const DB *, DBT *, DBT *, u_int32_t));
 static int __db_join_arg __P((DB *, DBC **, u_int32_t));
 static int __db_open_arg __P((DB *,
-	       DB_TXN *, const char *, const char *, DBTYPE, u_int32_t));
+    DB_TXN *, const char *, const char *, DBTYPE, u_int32_t));
 static int __db_pget_arg __P((DB *, DBT *, u_int32_t));
 static int __db_put_arg __P((DB *, DBT *, DBT *, u_int32_t));
 static int __dbt_ferr __P((const DB *, const char *, const DBT *, int));
 static int __db_compact_func
     __P((DBC *, DBC *, u_int32_t *, db_pgno_t, u_int32_t, void *));
 static int __db_associate_foreign_arg __P((DB *, DB *,
-		int (*)(DB *, const DBT *, DBT *, const DBT *, int *),
-		u_int32_t));
+    int (*)(DB *, const DBT *, DBT *, const DBT *, int *),
+    u_int32_t));
 
 /*
  * These functions implement the Berkeley DB API.  They are organized in a
@@ -86,6 +86,7 @@ __db_associate_pp(dbp, txn, sdbp, callback, flags)
 	STRIP_AUTO_COMMIT(flags);
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -102,8 +103,8 @@ __db_associate_pp(dbp, txn, sdbp, callback, flags)
 	 */
 	if (TAILQ_FIRST(&sdbp->active_queue) != NULL ||
 	    TAILQ_FIRST(&sdbp->join_queue) != NULL) {
-		__db_errx(env,
-    "Databases may not become secondary indices while cursors are open");
+		__db_errx(env, DB_STR("0572",
+    "Databases may not become secondary indices while cursors are open"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -158,24 +159,30 @@ __db_associate_arg(dbp, sdbp, callback, flags)
 
 	env = dbp->env;
 
-	if (F_ISSET(sdbp, DB_AM_SECONDARY)) {
+	if (sdbp->type == DB_HEAP) {
 		__db_errx(env,
-		    "Secondary index handles may not be re-associated");
+		    "Heap databases may not be used as secondary databases");
+		return (EINVAL);
+	}
+
+	if (F_ISSET(sdbp, DB_AM_SECONDARY)) {
+		__db_errx(env, DB_STR("0573",
+		    "Secondary index handles may not be re-associated"));
 		return (EINVAL);
 	}
 	if (F_ISSET(dbp, DB_AM_SECONDARY)) {
-		__db_errx(env,
-		    "Secondary indices may not be used as primary databases");
+		__db_errx(env, DB_STR("0574",
+		    "Secondary indices may not be used as primary databases"));
 		return (EINVAL);
 	}
 	if (F_ISSET(dbp, DB_AM_DUP)) {
-		__db_errx(env,
-		    "Primary databases may not be configured with duplicates");
+		__db_errx(env, DB_STR("0575",
+		    "Primary databases may not be configured with duplicates"));
 		return (EINVAL);
 	}
 	if (F_ISSET(dbp, DB_AM_RENUMBER)) {
-		__db_errx(env,
-	    "Renumbering recno databases may not be used as primary databases");
+		__db_errx(env, DB_STR("0576",
+    "Renumbering recno databases may not be used as primary databases"));
 		return (EINVAL);
 	}
 
@@ -189,20 +196,20 @@ __db_associate_arg(dbp, sdbp, callback, flags)
 	if (dbp->env != sdbp->env &&
 	    (!F_ISSET(dbp->env, ENV_DBLOCAL) ||
 	     !F_ISSET(sdbp->env, ENV_DBLOCAL))) {
-		__db_errx(env,
-	    "The primary and secondary must be opened in the same environment");
+		__db_errx(env, DB_STR("0577",
+    "The primary and secondary must be opened in the same environment"));
 		return (EINVAL);
 	}
 	if ((DB_IS_THREADED(dbp) && !DB_IS_THREADED(sdbp)) ||
 	    (!DB_IS_THREADED(dbp) && DB_IS_THREADED(sdbp))) {
-		__db_errx(env,
-	    "The DB_THREAD setting must be the same for primary and secondary");
+		__db_errx(env, DB_STR("0578",
+    "The DB_THREAD setting must be the same for primary and secondary"));
 		return (EINVAL);
 	}
 	if (callback == NULL &&
 	    (!F_ISSET(dbp, DB_AM_RDONLY) || !F_ISSET(sdbp, DB_AM_RDONLY))) {
-		__db_errx(env,
-    "Callback function may be NULL only when database handles are read-only");
+		__db_errx(env, DB_STR("0579",
+"Callback function may be NULL only when database handles are read-only"));
 		return (EINVAL);
 	}
 
@@ -285,20 +292,21 @@ __db_cursor_pp(dbp, txn, dbcp, flags)
 	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->cursor");
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	rep_blocked = 0;
 	if (IS_ENV_REPLICATED(env)) {
 		if (!IS_REAL_TXN(txn)) {
-			if ((ret = __op_rep_enter(env, 0)) != 0)
+			if ((ret = __op_rep_enter(env, 0, 1)) != 0)
 				goto err;
 			rep_blocked = 1;
 		}
 		renv = env->reginfo->primary;
 		if (dbp->timestamp != renv->rep_timestamp) {
-			__db_errx(env, "%s %s",
-		    "replication recovery unrolled committed transactions;",
-		    "open DB and DBcursor handles must be closed");
+			__db_errx(env, DB_STR("0580",
+		    "replication recovery unrolled committed transactions;"
+		    "open DB and DBcursor handles must be closed"));
 			ret = DB_REP_HANDLE_DEAD;
 			goto err;
 		}
@@ -476,6 +484,7 @@ __db_del_pp(dbp, txn, key, flags)
 		DB_TEST_WAIT(env, env->test_check);
 #endif
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -541,8 +550,8 @@ __db_del_arg(dbp, key, flags)
 	case DB_MULTIPLE:
 	case DB_MULTIPLE_KEY:
 		if (!F_ISSET(key, DB_DBT_BULK)) {
-			__db_errx(env,
-		"DB->del with DB_MULTIPLE(_KEY) requires multiple key records");
+			__db_errx(env, DB_STR("0581",
+	    "DB->del with DB_MULTIPLE(_KEY) requires multiple key records"));
 			return (EINVAL);
 		}
 		/* FALL THROUGH */
@@ -635,8 +644,8 @@ __db_fd_pp(dbp, fdp)
 	if ((ret = __mp_xxx_fh(dbp->mpf, &fhp)) == 0) {
 		if (fhp == NULL) {
 			*fdp = -1;
-			__db_errx(env,
-			    "Database does not have a valid file handle");
+			__db_errx(env, DB_STR("0582",
+			    "Database does not have a valid file handle"));
 			ret = ENOENT;
 		} else
 			*fdp = fhp->fd;
@@ -678,10 +687,13 @@ __db_get_pp(dbp, txn, key, data, flags)
 	ignore_lease = LF_ISSET(DB_IGNORE_LEASE) ? 1 : 0;
 	LF_CLR(DB_IGNORE_LEASE);
 
-	if ((ret = __db_get_arg(dbp, key, data, flags)) != 0)
+	if ((ret = __db_get_arg(dbp, key, data, flags)) != 0) {
+		__dbt_userfree(env, key, NULL, data);
 		return (ret);
+	}
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -865,9 +877,9 @@ __db_get_arg(dbp, key, data, flags)
 	case DB_CONSUME:
 	case DB_CONSUME_WAIT:
 		if (dirty) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("0583",
 		    "%s is not supported with DB_CONSUME or DB_CONSUME_WAIT",
-			     LF_ISSET(DB_READ_UNCOMMITTED) ?
+			    "%s"), LF_ISSET(DB_READ_UNCOMMITTED) ?
 			     "DB_READ_UNCOMMITTED" : "DB_READ_COMMITTED");
 			return (EINVAL);
 		}
@@ -886,28 +898,42 @@ err:		return (__db_ferr(env, "DB->get", 0));
 	if ((ret =
 	    __dbt_ferr(dbp, "key", key, DB_RETURNS_A_KEY(dbp, flags))) != 0)
 		return (ret);
+
+	if (F_ISSET(data, DB_DBT_READONLY)) {
+		__db_errx(env, DB_STR("0584",
+		    "DB_DBT_READONLY should not be set on data DBT."));
+			return (EINVAL);
+	}
 	if ((ret = __dbt_ferr(dbp, "data", data, 1)) != 0)
 		return (ret);
 
 	if (multi) {
 		if (!F_ISSET(data, DB_DBT_USERMEM)) {
-			__db_errx(env,
-			    "DB_MULTIPLE requires DB_DBT_USERMEM be set");
+			__db_errx(env, DB_STR("0585",
+			    "DB_MULTIPLE requires DB_DBT_USERMEM be set"));
 			return (EINVAL);
 		}
 		if (F_ISSET(key, DB_DBT_PARTIAL) ||
 		    F_ISSET(data, DB_DBT_PARTIAL)) {
-			__db_errx(env,
-			    "DB_MULTIPLE does not support DB_DBT_PARTIAL");
+			__db_errx(env, DB_STR("0586",
+			    "DB_MULTIPLE does not support DB_DBT_PARTIAL"));
 			return (EINVAL);
 		}
 		if (data->ulen < 1024 ||
 		    data->ulen < dbp->pgsize || data->ulen % 1024 != 0) {
-			__db_errx(env, "%s%s",
-			    "DB_MULTIPLE buffers must be ",
-			    "aligned, at least page size and multiples of 1KB");
+			__db_errx(env, DB_STR("0587",
+			    "DB_MULTIPLE buffers must be aligned, "
+			    "at least page size and multiples of 1KB"));
 			return (EINVAL);
 		}
+	}
+
+	/* Check invalid partial key. */
+	if (F_ISSET(key, DB_DBT_PARTIAL) && !(LF_ISSET(DB_CONSUME) &&
+	    LF_ISSET(DB_CONSUME_WAIT) && LF_ISSET(DB_SET_RECNO))) {
+		__db_errx(env, DB_STR("0708",
+		    "Invalid positioning flag combined with DB_DBT_PARTIAL"));
+		return (EINVAL);
 	}
 
 	return (0);
@@ -977,16 +1003,16 @@ __db_join_arg(primary, curslist, flags)
 	}
 
 	if (curslist == NULL || curslist[0] == NULL) {
-		__db_errx(env,
-	    "At least one secondary cursor must be specified to DB->join");
+		__db_errx(env, DB_STR("0588",
+	    "At least one secondary cursor must be specified to DB->join"));
 		return (EINVAL);
 	}
 
 	txn = curslist[0]->txn;
 	for (i = 1; curslist[i] != NULL; i++)
 		if (curslist[i]->txn != txn) {
-			__db_errx(env,
-		    "All secondary cursors must share the same transaction");
+			__db_errx(env, DB_STR("0589",
+		    "All secondary cursors must share the same transaction"));
 			return (EINVAL);
 		}
 
@@ -1026,6 +1052,7 @@ __db_key_range_pp(dbp, txn, key, kr, flags)
 		return (__db_ferr(env, "DB->key_range", 0));
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -1049,8 +1076,10 @@ __db_key_range_pp(dbp, txn, key, kr, flags)
 			goto err;
 
 		/* Acquire a cursor. */
-		if ((ret = __db_cursor(dbp, ip, txn, &dbc, 0)) != 0)
+		if ((ret = __db_cursor(dbp, ip, txn, &dbc, 0)) != 0) {
+			__dbt_userfree(env, key, NULL, NULL);
 			break;
+		}
 
 		DEBUG_LWRITE(dbc, NULL, "bam_key_range", NULL, NULL, 0);
 #ifdef HAVE_PARTITION
@@ -1175,8 +1204,8 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	 */
 	if (dname == NULL && !IS_RECOVERING(env) && !LF_ISSET(DB_RDONLY) &&
 	    !LF_ISSET(DB_RDWRMASTER) && F_ISSET(dbp, DB_AM_SUBDB)) {
-		__db_errx(env,
-    "files containing multiple databases may only be opened read-only");
+		__db_errx(env, DB_STR("0590",
+    "files containing multiple databases may only be opened read-only"));
 		ret = EINVAL;
 		goto txnerr;
 	}
@@ -1255,15 +1284,16 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 
 #ifdef	HAVE_VXWORKS
 	if (LF_ISSET(DB_TRUNCATE)) {
-		__db_errx(env, "DB_TRUNCATE not supported on VxWorks");
+		__db_errx(env, DB_STR("0591",
+		    "DB_TRUNCATE not supported on VxWorks"));
 		return (DB_OPNOTSUP);
 	}
 #endif
 	switch (type) {
 	case DB_UNKNOWN:
 		if (LF_ISSET(DB_CREATE|DB_TRUNCATE)) {
-			__db_errx(env,
-	    "DB_UNKNOWN type specified with DB_CREATE or DB_TRUNCATE");
+			__db_errx(env, DB_STR("0592",
+	    "DB_UNKNOWN type specified with DB_CREATE or DB_TRUNCATE"));
 			return (EINVAL);
 		}
 		ok_flags = 0;
@@ -1277,6 +1307,9 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 #endif
 		ok_flags = DB_OK_HASH;
 		break;
+	case DB_HEAP:
+		ok_flags = DB_OK_HEAP;
+		break;
 	case DB_QUEUE:
 #ifndef HAVE_QUEUE
 		return (__db_no_queue_am(env));
@@ -1287,7 +1320,8 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 		ok_flags = DB_OK_RECNO;
 		break;
 	default:
-		__db_errx(env, "unknown type: %lu", (u_long)type);
+		__db_errx(env, DB_STR_A("0593",
+		    "unknown type: %lu", "%lu"), (u_long)type);
 		return (EINVAL);
 	}
 	if (ok_flags)
@@ -1295,7 +1329,8 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 
 	/* The environment may have been created, but never opened. */
 	if (!F_ISSET(env, ENV_DBLOCAL | ENV_OPEN_CALLED)) {
-		__db_errx(env, "database environment not yet opened");
+		__db_errx(env, DB_STR("0594",
+		    "database environment not yet opened"));
 		return (EINVAL);
 	}
 
@@ -1305,7 +1340,8 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 	 * no longer works.
 	 */
 	if (!F_ISSET(env, ENV_DBLOCAL) && !MPOOL_ON(env)) {
-		__db_errx(env, "environment did not include a memory pool");
+		__db_errx(env, DB_STR("0595",
+		    "environment did not include a memory pool"));
 		return (EINVAL);
 	}
 
@@ -1314,27 +1350,28 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 	 * environment weren't configured with them.
 	 */
 	if (LF_ISSET(DB_THREAD) && !F_ISSET(env, ENV_DBLOCAL | ENV_THREAD)) {
-		__db_errx(env, "environment not created using DB_THREAD");
+		__db_errx(env, DB_STR("0596",
+		    "environment not created using DB_THREAD"));
 		return (EINVAL);
 	}
 
 	/* DB_MULTIVERSION requires a database configured for transactions. */
 	if (LF_ISSET(DB_MULTIVERSION) && !IS_REAL_TXN(txn)) {
-		__db_errx(env,
-		    "DB_MULTIVERSION illegal without a transaction specified");
+		__db_errx(env, DB_STR("0597",
+		    "DB_MULTIVERSION illegal without a transaction specified"));
 		return (EINVAL);
 	}
 
 	if (LF_ISSET(DB_MULTIVERSION) && type == DB_QUEUE) {
-		__db_errx(env,
-		    "DB_MULTIVERSION illegal with queue databases");
+		__db_errx(env, DB_STR("0598",
+		    "DB_MULTIVERSION illegal with queue databases"));
 		return (EINVAL);
 	}
 
 	/* DB_TRUNCATE is neither transaction recoverable nor lockable. */
 	if (LF_ISSET(DB_TRUNCATE) && (LOCKING_ON(env) || txn != NULL)) {
-		__db_errx(env,
-		    "DB_TRUNCATE illegal with %s specified",
+		__db_errx(env, DB_STR_A("0599",
+		    "DB_TRUNCATE illegal with %s specified", "%s"),
 		    LOCKING_ON(env) ? "locking" : "transactions");
 		return (EINVAL);
 	}
@@ -1343,8 +1380,8 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 	if (dname != NULL) {
 		/* QAM can only be done on in-memory subdatabases. */
 		if (type == DB_QUEUE && fname != NULL) {
-			__db_errx(
-			    env, "Queue databases must be one-per-file");
+			__db_errx(env, DB_STR("0600",
+			    "Queue databases must be one-per-file"));
 			return (EINVAL);
 		}
 
@@ -1391,6 +1428,7 @@ __db_pget_pp(dbp, txn, skey, pkey, data, flags)
 	}
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -1500,14 +1538,14 @@ __db_pget_arg(dbp, pkey, flags)
 	env = dbp->env;
 
 	if (!F_ISSET(dbp, DB_AM_SECONDARY)) {
-		__db_errx(env,
-		    "DB->pget may only be used on secondary indices");
+		__db_errx(env, DB_STR("0601",
+		    "DB->pget may only be used on secondary indices"));
 		return (EINVAL);
 	}
 
 	if (LF_ISSET(DB_MULTIPLE | DB_MULTIPLE_KEY)) {
-		__db_errx(env,
-	"DB_MULTIPLE and DB_MULTIPLE_KEY may not be used on secondary indices");
+		__db_errx(env,DB_STR("0602",
+"DB_MULTIPLE and DB_MULTIPLE_KEY may not be used on secondary indices"));
 		return (EINVAL);
 	}
 
@@ -1530,11 +1568,18 @@ __db_pget_arg(dbp, pkey, flags)
 	    (ret = __dbt_ferr(dbp, "primary key", pkey, 1)) != 0)
 		return (ret);
 
+	/* Check invalid partial pkey. */
+	if (pkey != NULL && F_ISSET(pkey, DB_DBT_PARTIAL)) {
+		__db_errx(env, DB_STR("0709",
+		    "The primary key returned by pget can't be partial"));
+		return (EINVAL);
+	}
+
 	if (flags == DB_GET_BOTH) {
 		/* The pkey field can't be NULL if we're doing a DB_GET_BOTH. */
 		if (pkey == NULL) {
-			__db_errx(env,
-		    "DB_GET_BOTH on a secondary index requires a primary key");
+			__db_errx(env, DB_STR("0603",
+		    "DB_GET_BOTH on a secondary index requires a primary key"));
 			return (EINVAL);
 		}
 		if ((ret = __dbt_usercopy(env, pkey)) != 0)
@@ -1571,6 +1616,7 @@ __db_put_pp(dbp, txn, key, data, flags)
 		return (ret);
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -1628,7 +1674,8 @@ __db_put_arg(dbp, key, data, flags)
 
 	/* Check for puts on a secondary. */
 	if (F_ISSET(dbp, DB_AM_SECONDARY)) {
-		__db_errx(env, "DB->put forbidden on secondary indices");
+		__db_errx(env, DB_STR("0604",
+		    "DB->put forbidden on secondary indices"));
 		return (EINVAL);
 	}
 
@@ -1641,21 +1688,21 @@ __db_put_arg(dbp, key, data, flags)
 		case DB_OVERWRITE_DUP:
 			break;
 		default:
-			__db_errx(env,
-       "DB->put: DB_MULTIPLE(_KEY) can only be combined with DB_OVERWRITE_DUP");
+			__db_errx(env, DB_STR("0605",
+"DB->put: DB_MULTIPLE(_KEY) can only be combined with DB_OVERWRITE_DUP"));
 			return (EINVAL);
 		}
 
 		if (!F_ISSET(key, DB_DBT_BULK)) {
-			__db_errx(env,
-		   "DB->put with DB_MULTIPLE(_KEY) requires a bulk key buffer");
+			__db_errx(env, DB_STR("0606",
+	    "DB->put with DB_MULTIPLE(_KEY) requires a bulk key buffer"));
 			return (EINVAL);
 		}
 	}
 	if (LF_ISSET(DB_MULTIPLE)) {
 		if (!F_ISSET(data, DB_DBT_BULK)) {
-			__db_errx(env,
-			"DB->put with DB_MULTIPLE requires a bulk data buffer");
+			__db_errx(env, DB_STR("0607",
+		    "DB->put with DB_MULTIPLE requires a bulk data buffer"));
 			return (EINVAL);
 		}
 	}
@@ -1667,7 +1714,8 @@ __db_put_arg(dbp, key, data, flags)
 	case DB_OVERWRITE_DUP:
 		break;
 	case DB_APPEND:
-		if (dbp->type != DB_RECNO && dbp->type != DB_QUEUE)
+		if (dbp->type != DB_RECNO &&
+		    dbp->type != DB_QUEUE && dbp->type != DB_HEAP)
 			goto err;
 		returnkey = 1;
 		break;
@@ -1708,8 +1756,8 @@ err:		return (__db_ferr(env, "DB->put", 0));
 	/* Check for partial puts in the presence of duplicates. */
 	if (data != NULL && F_ISSET(data, DB_DBT_PARTIAL) &&
 	    (F_ISSET(dbp, DB_AM_DUP) || F_ISSET(key, DB_DBT_DUPOK))) {
-		__db_errx(env,
-"a partial put in the presence of duplicates requires a cursor operation");
+		__db_errx(env, DB_STR("0608",
+"a partial put in the presence of duplicates requires a cursor operation"));
 		return (EINVAL);
 	}
 
@@ -1787,10 +1835,13 @@ __db_compact_pp(dbp, txn, start, stop, c_data, flags, end)
 
 	if (start != NULL && (ret = __dbt_usercopy(env, start)) != 0)
 		return (ret);
-	if (stop != NULL && (ret = __dbt_usercopy(env, stop)) != 0)
+	if (stop != NULL && (ret = __dbt_usercopy(env, stop)) != 0) {
+		__dbt_userfree(env, start, NULL, NULL);
 		return (ret);
+	}
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -1804,9 +1855,8 @@ __db_compact_pp(dbp, txn, start, stop, c_data, flags, end)
 		if ((ret = __db_walk_cursors(dbp,
 		    NULL, __db_compact_func, &count, 0, 0, txn)) != 0) {
 			if (ret == EEXIST) {
-				__db_errx(env,
-	"DB->compact may not be called with active cursors in the transaction."
-				);
+				__db_errx(env, DB_STR("0609",
+"DB->compact may not be called with active cursors in the transaction."));
 				ret = EINVAL;
 			}
 			goto err;
@@ -1830,7 +1880,8 @@ __db_compact_pp(dbp, txn, start, stop, c_data, flags, end)
 		ret = __db_compact_int(dbp, ip,
 		    txn, start, stop, dp, flags, end);
 		break;
-
+	case DB_HEAP:
+		break;
 	default:
 		ret = __dbh_am_chk(dbp, DB_OK_BTREE);
 		break;
@@ -1906,34 +1957,34 @@ __db_associate_foreign_arg(fdbp, dbp, callback, flags)
 	env = fdbp->env;
 
 	if (F_ISSET(fdbp, DB_AM_SECONDARY)) {
-		__db_errx(env,
-		    "Secondary indices may not be used as foreign databases");
+		__db_errx(env, DB_STR("0610",
+		    "Secondary indices may not be used as foreign databases"));
 		return (EINVAL);
 	}
 	if (F_ISSET(fdbp, DB_AM_DUP)) {
-		__db_errx(env,
-		    "Foreign databases may not be configured with duplicates");
+		__db_errx(env, DB_STR("0611",
+		    "Foreign databases may not be configured with duplicates"));
 		return (EINVAL);
 	}
 	if (F_ISSET(fdbp, DB_AM_RENUMBER)) {
-		__db_errx(env,
-	    "Renumbering recno databases may not be used as foreign databases");
+		__db_errx(env, DB_STR("0612",
+    "Renumbering recno databases may not be used as foreign databases"));
 		return (EINVAL);
 	}
 	if (!F_ISSET(dbp, DB_AM_SECONDARY)) {
-		__db_errx(env,
-		    "The associating database must be a secondary index.");
+		__db_errx(env, DB_STR("0613",
+		    "The associating database must be a secondary index."));
 		return (EINVAL);
 	}
 	if (LF_ISSET(DB_FOREIGN_NULLIFY) && callback == NULL) {
-		__db_errx(env,
-		    "When specifying a delete action of nullify, a callback%s",
-		    " function needs to be configured");
+		__db_errx(env, DB_STR("0614",
+		    "When specifying a delete action of nullify, a callback "
+		    "function needs to be configured"));
 		return (EINVAL);
 	} else if (!LF_ISSET(DB_FOREIGN_NULLIFY) && callback != NULL) {
-		__db_errx(env,
-		    "When not specifying a delete action of nullify, a%s",
-		    " callback function cannot be configured");
+		__db_errx(env, DB_STR("0615",
+		    "When not specifying a delete action of nullify, a "
+		    "callback function cannot be configured"));
 		return (EINVAL);
 	}
 
@@ -2012,7 +2063,8 @@ __dbc_close_pp(dbc)
 	 * the remaining cursor close processing.
 	 */
 	if (!F_ISSET(dbc, DBC_ACTIVE)) {
-		__db_errx(env, "Closing already-closed cursor");
+		__db_errx(env, DB_STR("0616",
+		    "Closing already-closed cursor"));
 		return (EINVAL);
 	}
 
@@ -2067,13 +2119,14 @@ __dbc_cmp_pp(dbc, other_cursor, result, flags)
 		return (__db_ferr(env, "DBcursor->cmp", 0));
 
 	if (other_cursor == NULL) {
-		__db_errx(env, "DBcursor->cmp dbc pointer must not be null");
+		__db_errx(env, DB_STR("0617",
+		    "DBcursor->cmp dbc pointer must not be null"));
 		return (EINVAL);
 	}
 
 	if (dbp != odbp) {
-		__db_errx(env,
-"DBcursor->cmp both cursors must refer to the same database.");
+		__db_errx(env, DB_STR("0618",
+"DBcursor->cmp both cursors must refer to the same database."));
 		return (EINVAL);
 	}
 
@@ -2231,7 +2284,7 @@ __dbc_dup_pp(dbc, dbcp, flags)
 	ENV_ENTER(env, ip);
 	rep_blocked = 0;
 	if (dbc->txn == NULL && IS_ENV_REPLICATED(env)) {
-		if ((ret = __op_rep_enter(env, 1)) != 0)
+		if ((ret = __op_rep_enter(env, 1, 1)) != 0)
 			goto err;
 		rep_blocked = 1;
 	}
@@ -2273,8 +2326,10 @@ __dbc_get_pp(dbc, key, data, flags)
 
 	ignore_lease = LF_ISSET(DB_IGNORE_LEASE) ? 1 : 0;
 	LF_CLR(DB_IGNORE_LEASE);
-	if ((ret = __dbc_get_arg(dbc, key, data, flags)) != 0)
+	if ((ret = __dbc_get_arg(dbc, key, data, flags)) != 0) {
+		__dbt_userfree(env, key, NULL, data);
 		return (ret);
+	}
 
 	ENV_ENTER(env, ip);
 
@@ -2349,8 +2404,8 @@ __dbc_get_arg(dbc, key, data, flags)
 	case DB_CONSUME:
 	case DB_CONSUME_WAIT:
 		if (dirty) {
-			__db_errx(env,
-    "DB_READ_UNCOMMITTED is not supported with DB_CONSUME or DB_CONSUME_WAIT");
+			__db_errx(env, DB_STR("0619",
+"DB_READ_UNCOMMITTED is not supported with DB_CONSUME or DB_CONSUME_WAIT"));
 			return (EINVAL);
 		}
 		if (dbp->type != DB_QUEUE)
@@ -2408,28 +2463,41 @@ err:		__dbt_userfree(env, key, NULL, data);
 	/* Check for invalid key/data flags. */
 	if ((ret = __dbt_ferr(dbp, "key", key, 0)) != 0)
 		return (ret);
+	if (F_ISSET(data, DB_DBT_READONLY)) {
+		__db_errx(env, DB_STR("0620",
+		    "DB_DBT_READONLY should not be set on data DBT."));
+			return (EINVAL);
+	}
 	if ((ret = __dbt_ferr(dbp, "data", data, 0)) != 0)
 		return (ret);
 
 	if (multi) {
 		if (!F_ISSET(data, DB_DBT_USERMEM)) {
-			__db_errx(env,
-	    "DB_MULTIPLE/DB_MULTIPLE_KEY require DB_DBT_USERMEM be set");
+			__db_errx(env, DB_STR("0621",
+	    "DB_MULTIPLE/DB_MULTIPLE_KEY require DB_DBT_USERMEM be set"));
 			return (EINVAL);
 		}
 		if (F_ISSET(key, DB_DBT_PARTIAL) ||
 		    F_ISSET(data, DB_DBT_PARTIAL)) {
-			__db_errx(env,
-	    "DB_MULTIPLE/DB_MULTIPLE_KEY do not support DB_DBT_PARTIAL");
+			__db_errx(env, DB_STR("0622",
+	    "DB_MULTIPLE/DB_MULTIPLE_KEY do not support DB_DBT_PARTIAL"));
 			return (EINVAL);
 		}
 		if (data->ulen < 1024 ||
 		    data->ulen < dbp->pgsize || data->ulen % 1024 != 0) {
-			__db_errx(env, "%s%s",
-			    "DB_MULTIPLE/DB_MULTIPLE_KEY buffers must be ",
-			    "aligned, at least page size and multiples of 1KB");
+			__db_errx(env, DB_STR("0623",
+			    "DB_MULTIPLE/DB_MULTIPLE_KEY buffers must be "
+		    "aligned, at least page size and multiples of 1KB"));
 			return (EINVAL);
 		}
+	}
+
+	/* Check compatible flags for partial key. */
+	if (F_ISSET(key, DB_DBT_PARTIAL) && (flags == DB_GET_BOTH ||
+	    flags == DB_GET_BOTH_RANGE || flags == DB_SET)) {
+		__db_errx(env, DB_STR("0710",
+		    "Invalid positioning flag combined with DB_DBT_PARTIAL"));
+		return (EINVAL);
 	}
 
 	/*
@@ -2522,10 +2590,15 @@ __dbc_pget_pp(dbc, skey, pkey, data, flags)
 	ignore_lease = LF_ISSET(DB_IGNORE_LEASE) ? 1 : 0;
 	LF_CLR(DB_IGNORE_LEASE);
 	if ((ret = __dbc_pget_arg(dbc, pkey, flags)) != 0 ||
-	    (ret = __dbc_get_arg(dbc, skey, data, flags)) != 0)
+	    (ret = __dbc_get_arg(dbc, skey, data, flags)) != 0) {
+		__dbt_userfree(env, skey, pkey, data);
 		return (ret);
+	}
 
 	ENV_ENTER(env, ip);
+	DEBUG_LREAD(dbc, dbc->txn, "DBcursor->pget",
+	    flags == DB_SET ||
+	    flags == DB_SET_RANGE ? skey : NULL, NULL, flags);
 	ret = __dbc_pget(dbc, skey, pkey, data, flags);
 	/*
 	 * Check for master leases.
@@ -2558,14 +2631,14 @@ __dbc_pget_arg(dbc, pkey, flags)
 	env = dbp->env;
 
 	if (!F_ISSET(dbp, DB_AM_SECONDARY)) {
-		__db_errx(env,
-		    "DBcursor->pget may only be used on secondary indices");
+		__db_errx(env, DB_STR("0624",
+		    "DBcursor->pget may only be used on secondary indices"));
 		return (EINVAL);
 	}
 
 	if (LF_ISSET(DB_MULTIPLE | DB_MULTIPLE_KEY)) {
-		__db_errx(env,
-	"DB_MULTIPLE and DB_MULTIPLE_KEY may not be used on secondary indices");
+		__db_errx(env, DB_STR("0625",
+    "DB_MULTIPLE and DB_MULTIPLE_KEY may not be used on secondary indices"));
 		return (EINVAL);
 	}
 
@@ -2578,10 +2651,10 @@ __dbc_pget_arg(dbc, pkey, flags)
 	case DB_GET_BOTH_RANGE:
 		/* BOTH is "get both the primary and the secondary". */
 		if (pkey == NULL) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("0626",
 			    "%s requires both a secondary and a primary key",
-			     LF_ISSET(DB_GET_BOTH) ?
-			     "DB_GET_BOTH" : "DB_GET_BOTH_RANGE");
+			    "%s"), LF_ISSET(DB_GET_BOTH) ?
+			    "DB_GET_BOTH" : "DB_GET_BOTH_RANGE");
 			return (EINVAL);
 		}
 		if ((ret = __dbt_usercopy(env, pkey)) != 0)
@@ -2600,12 +2673,20 @@ __dbc_pget_arg(dbc, pkey, flags)
 	    (ret = __dbt_ferr(dbp, "primary key", pkey, 0)) != 0)
 		return (ret);
 
-	/* But the pkey field can't be NULL if we're doing a DB_GET_BOTH. */
-	if (pkey == NULL && (flags & DB_OPFLAGS_MASK) == DB_GET_BOTH) {
-		__db_errx(env,
-		    "DB_GET_BOTH on a secondary index requires a primary key");
+	/* Check invalid partial pkey. */
+	if (pkey != NULL && F_ISSET(pkey, DB_DBT_PARTIAL)) {
+		__db_errx(env, DB_STR("0711",
+		    "The primary key returned by pget can't be partial."));
 		return (EINVAL);
 	}
+
+	/* But the pkey field can't be NULL if we're doing a DB_GET_BOTH. */
+	if (pkey == NULL && (flags & DB_OPFLAGS_MASK) == DB_GET_BOTH) {
+		__db_errx(env, DB_STR("0627",
+		    "DB_GET_BOTH on a secondary index requires a primary key"));
+		return (EINVAL);
+	}
+
 	return (0);
 }
 
@@ -2629,8 +2710,10 @@ __dbc_put_pp(dbc, key, data, flags)
 	dbp = dbc->dbp;
 	env = dbp->env;
 
-	if ((ret = __dbc_put_arg(dbc, key, data, flags)) != 0)
+	if ((ret = __dbc_put_arg(dbc, key, data, flags)) != 0) {
+		__dbt_userfree(env, key, NULL, data);
 		return (ret);
+	}
 
 	ENV_ENTER(env, ip);
 
@@ -2676,8 +2759,8 @@ __dbc_put_arg(dbc, key, data, flags)
 		if (flags == DB_UPDATE_SECONDARY)
 			flags = 0;
 		else {
-			__db_errx(env,
-			    "DBcursor->put forbidden on secondary indices");
+			__db_errx(env, DB_STR("0628",
+			    "DBcursor->put forbidden on secondary indices"));
 			return (EINVAL);
 		}
 	}
@@ -2788,9 +2871,10 @@ __dbt_ferr(dbp, name, dbt, check_thread)
 	 * database and then specify that same DBT as a key to a primary
 	 * database, without having to clear flags.
 	 */
-	if ((ret = __db_fchk(env, name, dbt->flags, DB_DBT_APPMALLOC |
-	    DB_DBT_BULK | DB_DBT_DUPOK | DB_DBT_MALLOC | DB_DBT_REALLOC |
-	    DB_DBT_USERCOPY | DB_DBT_USERMEM | DB_DBT_PARTIAL)) != 0)
+	if ((ret = __db_fchk(env, name, dbt->flags,
+	    DB_DBT_APPMALLOC | DB_DBT_BULK | DB_DBT_DUPOK |
+	    DB_DBT_MALLOC | DB_DBT_REALLOC | DB_DBT_USERCOPY |
+	    DB_DBT_USERMEM | DB_DBT_PARTIAL | DB_DBT_READONLY)) != 0)
 		return (ret);
 	switch (F_ISSET(dbt, DB_DBT_MALLOC | DB_DBT_REALLOC |
 	    DB_DBT_USERCOPY | DB_DBT_USERMEM)) {
@@ -2805,17 +2889,18 @@ __dbt_ferr(dbp, name, dbt, check_thread)
 	}
 
 	if (F_ISSET(dbt, DB_DBT_BULK) && F_ISSET(dbt, DB_DBT_PARTIAL)) {
-		__db_errx(env,
-	      "Bulk and partial operations cannot be combined on %s DBT", name);
+		__db_errx(env, DB_STR_A("0629",
+		    "Bulk and partial operations cannot be combined on %s DBT",
+		    "%s"), name);
 		return (EINVAL);
 	}
 
 	if (check_thread && DB_IS_THREADED(dbp) &&
 	    !F_ISSET(dbt, DB_DBT_MALLOC | DB_DBT_REALLOC |
-		DB_DBT_USERCOPY | DB_DBT_USERMEM)) {
-		__db_errx(env,
+		DB_DBT_USERCOPY | DB_DBT_USERMEM | DB_DBT_READONLY)) {
+		__db_errx(env, DB_STR_A("0630",
 		    "DB_THREAD mandates memory allocation flag on %s DBT",
-		    name);
+		    "%s"), name);
 		return (EINVAL);
 	}
 	return (0);
@@ -2829,8 +2914,8 @@ static int
 __db_curinval(env)
 	const ENV *env;
 {
-	__db_errx(env,
-	    "Cursor position must be set before performing this operation");
+	__db_errx(env, DB_STR("0631",
+	    "Cursor position must be set before performing this operation"));
 	return (EINVAL);
 }
 
@@ -2853,14 +2938,14 @@ __db_txn_auto_init(env, ip, txnidp)
 	 * flag be specified in a non-transactional environment.
 	 */
 	if (*txnidp != NULL && !F_ISSET(*txnidp, TXN_FAMILY)) {
-		__db_errx(env,
-    "DB_AUTO_COMMIT may not be specified along with a transaction handle");
+		__db_errx(env, DB_STR("0632",
+    "DB_AUTO_COMMIT may not be specified along with a transaction handle"));
 		return (EINVAL);
 	}
 
 	if (!TXN_ON(env)) {
-		__db_errx(env,
-    "DB_AUTO_COMMIT may not be specified in non-transactional environment");
+		__db_errx(env, DB_STR("0633",
+    "DB_AUTO_COMMIT may not be specified in non-transactional environment"));
 		return (EINVAL);
 	}
 

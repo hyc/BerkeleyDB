@@ -376,6 +376,9 @@ tcl_LogStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Log file mode", sp->st_mode);
 	MAKE_STAT_LIST("Log record cache size", sp->st_lg_bsize);
 	MAKE_STAT_LIST("Current log file size", sp->st_lg_size);
+	MAKE_STAT_LIST("Initial fileid allocation", sp->st_fileid_init);
+	MAKE_STAT_LIST("Current fileids in use", sp->st_nfileid);
+	MAKE_STAT_LIST("Maximum fileids ever used", sp->st_maxnfileid);
 	MAKE_WSTAT_LIST("Log file records written", sp->st_record);
 	MAKE_STAT_LIST("Mbytes written", sp->st_w_mbytes);
 	MAKE_STAT_LIST("Bytes written (over Mb)", sp->st_w_bytes);
@@ -400,6 +403,64 @@ tcl_LogStat(interp, objc, objv, dbenv)
 error:
 	__os_ufree(dbenv->env, sp);
 	return (result);
+}
+
+/*
+ * tcl_LogStatPrint --
+ *
+ * PUBLIC: int tcl_LogStatPrint __P((Tcl_Interp *, int,
+ * PUBLIC:    Tcl_Obj * CONST*, DB_ENV *));
+ */
+int
+tcl_LogStatPrint(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{	static const char *logstatprtopts[] = {
+		"-all",
+		"-clear",
+		 NULL
+	};
+	enum logstatprtopts {
+		LOGSTATPRTALL,
+		LOGSTATPRTCLEAR
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], logstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum logstatprtopts)optindex) {
+		case LOGSTATPRTALL:
+			flag |= DB_STAT_ALL;
+			break;
+		case LOGSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = dbenv->log_stat_print(dbenv, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv log_stat_print");
+error:
+	return (result);
+
 }
 
 /*

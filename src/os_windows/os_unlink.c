@@ -30,7 +30,8 @@ __os_unlink(env, path, overwrite_test)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: unlink %s", path);
+		__db_msg(env, DB_STR_A("0028", "fileops: unlink %s",
+		    "%s"), path);
 
 	/* Optionally overwrite the contents of the file to enhance security. */
 	if (dbenv != NULL && overwrite_test && F_ISSET(dbenv, DB_ENV_OVERWRITE))
@@ -66,17 +67,17 @@ __os_unlink(env, path, overwrite_test)
 		else {
 			ret = __os_get_syserr();
 			if (__os_posix_err(ret) != ENOENT)
-				/* 
+				/*
 				 * System doesn't always return ENOENT when
 				 * file is missing. So we need a double check
 				 * here. Set the return value to ENOENT when
 				 * file doesn't exist.
 				 */
 				if (__os_exists(env, path, NULL) == 0)
-					__db_err(env, ret,
+					__db_err(env, ret, DB_STR_A("0029",
 					    "MoveFile: "
 					    "rename %s to temporary file",
-					    path);
+					    "%s"), path);
 				else
 					ret = ENOENT;
 		}
@@ -111,7 +112,8 @@ skipdel:
 	if ((ret != 0) && (t_ret = __os_posix_err(ret)) != ENOENT) {
 		/* Double check if the file exists. */
 		if (__os_exists(env, path, NULL) == 0) {
-			__db_syserr(env, ret, "DeleteFile: %s", path);
+			__db_syserr(env, ret, DB_STR_A("0030",
+			    "DeleteFile: %s", "%s"), path);
 			ret = t_ret;
 		} else
 			ret = ENOENT;

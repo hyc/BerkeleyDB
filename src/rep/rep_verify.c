@@ -119,7 +119,8 @@ __rep_verify(env, rp, rec, eid, savetime)
 					goto out;
 			}
 		}
-		if ((ret = __rep_log_backup(env, rep, logc, &lsn)) == 0) {
+		if ((ret = __rep_log_backup(env, logc, &lsn,
+		    REP_REC_PERM)) == 0) {
 			MUTEX_LOCK(env, rep->mtx_clientdb);
 			lp->verify_lsn = lsn;
 			__os_gettime(env, &lp->rcvd_ts, 1);
@@ -451,7 +452,7 @@ __rep_dorecovery(env, lsnp, trunclsnp)
 	DB_REP *db_rep;
 	DB_THREAD_INFO *ip;
 	REP *rep;
-	int ret, skip_rec, t_ret, update;
+	int ret, rollback, skip_rec, t_ret, update;
 	u_int32_t rectype, opcode;
 	__txn_regop_args *txnrec;
 	__txn_regop_42_args *txn42rec;
@@ -477,6 +478,7 @@ __rep_dorecovery(env, lsnp, trunclsnp)
 		skip_rec = 1;
 		update = 0;
 	}
+	rollback = 0;
 	while (update == 0 &&
 	    (ret = __logc_get(logc, &lsn, &mylog, DB_PREV)) == 0 &&
 	    LOG_COMPARE(&lsn, lsnp) > 0) {
@@ -519,8 +521,10 @@ __rep_dorecovery(env, lsnp, trunclsnp)
 				opcode = txn42rec->opcode;
 				__os_free(env, txn42rec);
 			}
-			if (opcode != TXN_ABORT)
+			if (opcode != TXN_ABORT) {
+				rollback = 1;
 				update = 1;
+			}
 		}
 	}
 	/*
@@ -545,8 +549,13 @@ __rep_dorecovery(env, lsnp, trunclsnp)
     (u_long)lsnp->file, (u_long)lsnp->offset,
     (u_long)last_ckp.file, (u_long)last_ckp.offset));
 		ret = __log_vtruncate(env, lsnp, &last_ckp, trunclsnp);
-	} else
+	} else {
+		if (rollback && !FLD_ISSET(rep->config, REP_C_AUTOROLLBACK)) {
+			ret = DB_REP_WOULDROLLBACK;
+			goto err;
+		}
 		ret = __db_apprec(env, ip, lsnp, trunclsnp, update, 0);
+	}
 
 	if (ret != 0)
 		goto err;
@@ -592,7 +601,7 @@ __rep_verify_match(env, reclsnp, savetime)
 	REGENV *renv;
 	REGINFO *infop;
 	REP *rep;
-	int done, master, ret;
+	int done, event, master, ret;
 	u_int32_t unused;
 
 	dblp = env->lg_handle;
@@ -600,6 +609,7 @@ __rep_verify_match(env, reclsnp, savetime)
 	rep = db_rep->region;
 	lp = dblp->reginfo.primary;
 	ret = 0;
+	event = 0;
 	infop = env->reginfo;
 	renv = infop->primary;
 	ENV_GET_THREAD_INFO(env, ip);
@@ -692,6 +702,8 @@ __rep_verify_match(env, reclsnp, savetime)
 
 	REP_SYSTEM_LOCK(env);
 	STAT(rep->stat.st_log_queued = 0);
+	if (IN_INTERNAL_INIT(rep))
+		event = 1;
 	CLR_RECOVERY_SETTINGS(rep);
 	FLD_CLR(rep->lockout_flags, REP_LOCKOUT_ARCHIVE | REP_LOCKOUT_MSG);
 	if (ret != 0)
@@ -729,49 +741,11 @@ __rep_verify_match(env, reclsnp, savetime)
 		(void)__rep_send_message(env,
 		    master, REP_ALL_REQ, reclsnp, NULL, 0, DB_REP_ANYWHERE);
 	}
+	if (event)
+		__rep_fire_event(env, DB_EVENT_REP_INIT_DONE, NULL);
 	if (0) {
 errunlock2:	MUTEX_UNLOCK(env, rep->mtx_clientdb);
 errunlock:	REP_SYSTEM_UNLOCK(env);
 	}
 out:	return (ret);
-}
-
-/*
- * __rep_log_backup --
- *
- * In the verify handshake, we walk backward looking for
- * identification records.  Those are the only record types
- * we verify and match on.
- *
- * PUBLIC: int __rep_log_backup __P((ENV *, REP *, DB_LOGC *, DB_LSN *));
- */
-int
-__rep_log_backup(env, rep, logc, lsn)
-	ENV *env;
-	REP *rep;
-	DB_LOGC *logc;
-	DB_LSN *lsn;
-{
-	DBT mylog;
-	u_int32_t rectype;
-	int ret;
-
-	ret = 0;
-	memset(&mylog, 0, sizeof(mylog));
-	while ((ret = __logc_get(logc, lsn, &mylog, DB_PREV)) == 0) {
-		/*
-		 * Determine what we look for based on version number.
-		 * Due to the contents of records changing between
-		 * versions we have to match based on criteria of that
-		 * particular version.
-		 */
-		LOGCOPY_32(env, &rectype, mylog.data);
-		/*
-		 * In 4.4 and beyond we match checkpoint and commit.
-		 */
-		if (rep->version >= DB_REPVERSION_44 &&
-		    (rectype == DB___txn_ckp || rectype == DB___txn_regop))
-			break;
-	}
-	return (ret);
 }

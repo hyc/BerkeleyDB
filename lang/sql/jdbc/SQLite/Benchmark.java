@@ -9,9 +9,14 @@
 
 package SQLite;
 
-import java.sql.*;
-import java.util.*;
-import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Enumeration;
+import java.util.Vector;
 
 public class Benchmark {
 
@@ -134,9 +139,7 @@ public class Benchmark {
 
 	try {
 	    Class.forName(DriverName);
-
-	    Benchmark Me =
-		new Benchmark(DBUrl, DBUser, DBPassword, initialize_dataset);
+	    new Benchmark(DBUrl, DBUser, DBPassword, initialize_dataset);
 	} catch (java.lang.Exception e) {
 	    System.out.println(e.getMessage());
 	    e.printStackTrace();
@@ -725,7 +728,7 @@ class BenchmarkThread extends Thread {
 		Query += " SET Abalance = Abalance + " + delta;
 		Query += " WHERE Aid = " + aid;
 
-		int res = Stmt.executeUpdate(Query);
+		Stmt.executeUpdate(Query);
 		Stmt.clearWarnings();
 
 		Query = "SELECT Abalance";

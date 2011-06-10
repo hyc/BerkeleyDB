@@ -369,7 +369,7 @@ DbRecord_search_field(DbField *f, char *value, OPERATOR op)
 		case STRING:
 			valuep = value;
 			cmp = field_cmp_string;
-			key.size = strlen(value);
+			key.size = (u_int32_t)strlen(value);
 			break;
 		case UNSIGNED_LONG:
 			if (strtoul_err(value, &value_ulong) != 0)

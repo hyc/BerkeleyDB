@@ -42,7 +42,9 @@ const char *progname;
 #if (DB_VERSION_MAJOR < 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR < 2))
 #define DB_STR_A(code, string, fmt)	string
 #define	PART_PREFIX	"__dbp."
+#ifndef DB_WIN32
 #include "db_copy.c"
+#endif
 #endif
 
 int
@@ -112,8 +114,7 @@ main(argc, argv)
 				    data_cnt * sizeof(*data_dir))) == NULL) {
 					fprintf(stderr, "%s: %s\n",
 					    progname, strerror(errno));
-					exitval = (EXIT_FAILURE);
-					goto clean;
+					return (EXIT_FAILURE);
 				}
 			}
 			data_dir[data_next++] = optarg;
@@ -138,8 +139,7 @@ main(argc, argv)
 				fprintf(stderr, DB_STR_A("5026",
 				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
-				exitval = (EXIT_FAILURE);
-				goto clean;
+				return (EXIT_FAILURE);
 			}
 			break;
 		case 'u':
@@ -147,23 +147,19 @@ main(argc, argv)
 			break;
 		case 'V':
 			printf("%s\n", db_version(NULL, NULL, NULL));
-			exitval = (EXIT_SUCCESS);
-			goto clean;
+			return (EXIT_SUCCESS);
 		case 'v':
 			verbose = 1;
 			break;
 		case '?':
 		default:
-			exitval = usage();
-			goto clean;
+			return (usage());
 		}
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 0) {
-		exitval = usage();
-		goto clean;
-	}
+	if (argc != 0)
+		return (usage());
 
 	/* NULL-terminate any list of data directories. */
 	if (data_dir != NULL) {
@@ -176,16 +172,14 @@ main(argc, argv)
 			fprintf(stderr, DB_STR_A("5027",
 			    "%s: cannot specify -d and -c\n", "%s\n"),
 			    progname);
-			exitval = usage();
-			goto clean;
+			return (usage());
 		}
 	}
 
 	if (db_config && (data_dir != NULL || log_dir != NULL)) {
 		fprintf(stderr, DB_STR_A("5028",
 		    "%s: cannot specify -D and -d or -l\n", "%s\n"), progname);
-		exitval = usage();
-		goto clean;
+		return (usage());
 	}
 
 	/* Handle possible interruptions. */
@@ -205,8 +199,7 @@ main(argc, argv)
 			fprintf(stderr, DB_STR_A("5029",
 		    "%s failed to get environment variable DB_HOME: %s\n",
 			    "%s %s\n"), progname, db_strerror(ret));
-			exitval = (EXIT_FAILURE);
-			goto clean;
+			return (EXIT_FAILURE);
 		}
 		/*
 		 * home set to NULL if __os_getenv failed to find DB_HOME.
@@ -216,15 +209,13 @@ main(argc, argv)
 		fprintf(stderr, DB_STR_A("5030",
 		    "%s: no source database environment specified\n",
 		    "%s\n"), progname);
-		exitval = usage();
-		goto clean;
+		return (usage());
 	}
 	if (backup_dir == NULL) {
 		fprintf(stderr, DB_STR_A("5031",
 		    "%s: no target backup directory specified\n", "%s\n"),
 		    progname);
-		exitval = usage();
-		goto clean;
+		return (usage());
 	}
 
 	if (verbose) {
@@ -469,12 +460,6 @@ err:		exitval = 1;
 
 	/* Resend any caught signal. */
 	__db_util_sigresend();
-
-clean:
-	if (data_cnt > 0)
-		free(data_dir);
-	if (passwd != NULL)
-		free(passwd);
 
 	return (exitval == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 
@@ -789,8 +774,6 @@ read_log_dir(dbenv, home, db_config, backup_dir, log_dir, copy_minp,
 	char cfpath[DB_MAXPATHLEN];
 
 	env = dbenv->env;
-	ret = 0;
-	begin = NULL;
 
 	/*
 	 * If the log directory is specified from DB_CONFIG then it is
@@ -899,15 +882,13 @@ again:	aflag = DB_ARCH_LOG;
 	/* Flush the log to get latest info. */
 	if ((ret = dbenv->log_flush(dbenv, NULL)) != 0) {
 		dbenv->err(dbenv, ret, "DB_ENV->log_flush");
-		ret = 1;
-		goto err;
+		return (1);
 	}
 		
 	/* Get a list of file names to be copied. */
 	if ((ret = dbenv->log_archive(dbenv, &names, aflag)) != 0) {
 		dbenv->err(dbenv, ret, "DB_ENV->log_archive");
-		ret = 1;
-		goto err;
+		return (1);
 	}
 	if (names == NULL)
 		goto done;
@@ -923,8 +904,7 @@ again:	aflag = DB_ARCH_LOG;
 			dbenv->errx(dbenv, DB_STR_A("5060",
 			    "%s%c%s: path too long", "%s %c %s"),
 			    logd, PATH_SEPARATOR[0], *names);
-			ret = 1;
-			goto err;
+			return (1);
 		}
 
 		/*
@@ -941,8 +921,7 @@ again:	aflag = DB_ARCH_LOG;
 				dbenv->errx(dbenv, DB_STR_A("5061",
 				    "%s%c%s: path too long", "%s %c %s"),
 				    backupd, PATH_SEPARATOR[0], *names);
-				ret = 1;
-				goto err;
+				return (1);
 			}
 			if (__os_rename(env, from, to, 1) == 0) {
 				if (verbose)
@@ -955,10 +934,8 @@ again:	aflag = DB_ARCH_LOG;
 		}
 
 		/* Copy the file. */
-		if (data_copy(dbenv, *names, logd, backupd, 1, verbose) != 0) {
-			ret = 1;
-			goto err;
-		}
+		if (data_copy(dbenv, *names, logd, backupd, 1, verbose) != 0)
+			return (1);
 
 		if (update) {
 			if (verbose)
@@ -967,15 +944,13 @@ again:	aflag = DB_ARCH_LOG;
 			if ((ret = __os_unlink(env, from, 0)) != 0) {
 				dbenv->err(dbenv, ret, DB_STR_A("5064",
 				    "unlink of %s failed", "%s"), from);
-				ret = 1;
-				goto err;
+				return (1);
 			}
 		}
 
 	}
 
 	free(begin);
-	begin = NULL;
 done:	if (update) {
 		update = 0;
 		goto again;
@@ -985,14 +960,12 @@ done:	if (update) {
 		printf(DB_STR_A("5065",
 		    "%s: lowest numbered log file copied: %d\n", "%s %d\n"),
 		    progname, *copy_minp);
-err:	if (logd != log_dir)
+	if (logd != log_dir)
 		free(logd);
 	if (backupd != backup_dir)
 		free(backupd);
-	if (begin != NULL)
-		free(begin);
 
-	return (ret);
+	return (0);
 }
 
 /*

@@ -2,7 +2,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -191,6 +191,17 @@ typedef SH_TAILQ_HEAD(__hash_head) DB_HASHTAB;
 	(void *)(((uintptr_t)(p) + (bound) - 1) & ~(((uintptr_t)(bound)) - 1))
 
 /*
+ * DB_ALIGN8 adjusts structure alignments to make sure shared structures have
+ * fixed size and filed offset on both 32bit and 64bit platforms when
+ * HAVE_MIXED_SIZE_ADDRESSING is defined.
+ */
+#ifdef HAVE_MIXED_SIZE_ADDRESSING
+#define DB_ALIGN8 __declspec(align(8))
+#else
+#define DB_ALIGN8
+#endif
+
+/*
  * Berkeley DB uses the va_copy macro from C99, not all compilers include
  * it, so add a dumb implementation compatible with pre C99 implementations.
  */
@@ -206,7 +217,7 @@ typedef SH_TAILQ_HEAD(__hash_head) DB_HASHTAB;
 #define	P_TO_ULONG(p)	((u_long)(uintptr_t)(p))
 
 /*
- * Convert a pointer to a small integral value.
+ * Convert a pointer to an integral value.
  *
  * The (u_int16_t)(uintptr_t) cast avoids warnings: the (uintptr_t) cast
  * converts the value to an integral type, and the (u_int16_t) cast converts
@@ -215,6 +226,10 @@ typedef SH_TAILQ_HEAD(__hash_head) DB_HASHTAB;
  */
 #define	P_TO_UINT32(p)	((u_int32_t)(uintptr_t)(p))
 #define	P_TO_UINT16(p)	((u_int16_t)(uintptr_t)(p))
+#define	P_TO_ROFF(p)	((roff_t)(uintptr_t)(p))
+
+/* The converse of P_TO_ROFF() above. */
+#define	ROFF_TO_P(roff)	((void *)(uintptr_t)(roff))
 
 /*
  * There are several on-page structures that are declared to have a number of
@@ -321,7 +336,7 @@ typedef struct __fn {
 #define	STAT_SET_VERB(env, cat, subcat, val, newval, id1, id2)	NOP_STATEMENT
 #endif
 
-/* 
+/*
  * These macros are used when an error condition is first noticed. They allow
  * one to be notified (via e.g. DTrace, SystemTap, ...) when an error occurs
  * deep inside DB, rather than when it is returned back through the API.
@@ -400,6 +415,45 @@ typedef struct __db_msgbuf {
 	__db_msg(env, "%lu\t%s", (u_long)(v), msg)
 
 /*
+ * The following macros are used to control how error and message strings are
+ * output by Berkeley DB. There are essentially three different controls
+ * available:
+ *  - Default behavior is to output error strings with its unique identifier.
+ *  - If HAVE_STRIPPED_MESSAGES is enabled, a unique identifier along with any
+ *    parameters to the error string will be output.
+ *  - If HAVE_LOCALIZATION is defined, and the '_()' macro is implemented, a
+ *    gettext or ICU style translation will be done.
+ *
+ * Each new string that will be output should be wrapped in a DB_STR* macro.
+ * There are three versions of this macro for different scenarions:
+ *  - DB_STR for strings that need an identifier, and don't have any argument.
+ *  - DB_STR_A for strings that need an identifier, and have argument(s).
+ *  - DB_STR_P for strings that don't need an identifier, and don't have
+ *    arguments.
+ *
+ * Error message IDs are automatically assigned by dist/s_message_id script.
+ */
+#ifdef HAVE_LOCALIZATION
+#define _(msg)	msg	/* Replace with localization function. */
+#else
+#define _(msg)	msg
+#endif
+
+#ifdef HAVE_STRIPPED_MESSAGES
+#define DB_STR_C(msg, fmt)	fmt
+#else
+#define DB_STR_C(msg, fmt)	_(msg)
+#endif
+
+#define DB_MSGID(id)		"BDB" id
+
+#define DB_STR(id, msg)		DB_MSGID(id) " " DB_STR_C(msg, "")
+
+#define DB_STR_A(id, msg, fmt)	DB_MSGID(id) " " DB_STR_C(msg, fmt)
+
+#define DB_STR_P(msg)		_(msg)
+
+/*
  * There are quite a few places in Berkeley DB where we want to initialize
  * a DBT from a string or other random pointer type, using a length typed
  * to size_t in most cases.  This macro avoids a lot of casting.  The macro
@@ -440,7 +494,9 @@ typedef struct __db_msgbuf {
 				    (ret) == DB_REP_ISPERM || \
 				    (ret) == DB_REP_NEWMASTER || \
 				    (ret) == DB_REP_NEWSITE || \
-				    (ret) == DB_REP_NOTPERM)
+				    (ret) == DB_REP_NOTPERM || \
+				    (ret) == DB_REP_WOULDROLLBACK)
+#define	DB_RETOK_REPMGR_LOCALSITE(ret)	((ret) == 0 || (ret) == DB_NOTFOUND)
 #define	DB_RETOK_REPMGR_START(ret) ((ret) == 0 || (ret) == DB_REP_IGNORE)
 #define	DB_RETOK_TXNAPPLIED(ret) ((ret) == 0 || \
 				    (ret) == DB_NOTFOUND ||		\
@@ -547,16 +603,23 @@ typedef enum {
 	if (F_ISSET((env), ENV_OPEN_CALLED))				\
 		ENV_REQUIRES_CONFIG(env, handle, i, flags)
 
+#define	ENV_ENTER_RET(env, ip, ret) do {				\
+	ret = 0;							\
+	PANIC_CHECK_RET(env, ret);					\
+ 	if (ret == 0) {							\
+		if ((env)->thr_hashtab == NULL)				\
+			ip = NULL;					\
+		else 							\
+			ret = __env_set_state(env, &(ip), THREAD_ACTIVE);\
+	}								\
+} while (0)
+
 #define	ENV_ENTER(env, ip) do {						\
 	int __ret;							\
-	PANIC_CHECK(env);						\
-	if ((env)->thr_hashtab == NULL)					\
-		ip = NULL;						\
-	else {								\
-		if ((__ret =						\
-		    __env_set_state(env, &(ip), THREAD_ACTIVE)) != 0)	\
-			return (__ret);					\
-	}								\
+	ip = NULL;							\
+	ENV_ENTER_RET(env, ip, __ret);					\
+	if (__ret != 0)							\
+		return (__ret);						\
 } while (0)
 
 #define	FAILCHK_THREAD(env, ip) do {					\
@@ -616,11 +679,17 @@ typedef struct __pin_list {
 } PIN_LIST;
 #define	PINMAX 4
 
-struct __db_thread_info {
+struct __db_thread_info { /* SHARED */
 	pid_t		dbth_pid;
 	db_threadid_t	dbth_tid;
 	DB_THREAD_STATE	dbth_state;
 	SH_TAILQ_ENTRY	dbth_links;
+	/*
+	 * The next field contains the (process local) reference to the XA
+	 * transaction currently associated with this thread of control.
+	 */
+	SH_TAILQ_HEAD(__dbth_xatxn) dbth_xatxn;
+	u_int32_t	dbth_xa_status;
 	/*
 	 * The following fields track which buffers this thread of
 	 * control has pinned in the mpool buffer cache.
@@ -630,7 +699,7 @@ struct __db_thread_info {
 	roff_t		dbth_pinlist;	/* List of pins. */
 	PIN_LIST	dbth_pinarray[PINMAX];	/* Initial array of slots. */
 #ifdef DIAGNOSTIC
-	DB_LOCKER	*dbth_locker;	/* Current locker for this thread. */
+	roff_t		dbth_locker;	/* Current locker for this thread. */
 	u_int32_t	dbth_check_off;	/* Count of number of LOCK_OFF calls. */
 #endif
 };
@@ -641,10 +710,10 @@ struct __db_thread_info {
 #define LOCK_CHECK_ON(ip) if ((ip) != NULL)				\
 	(ip)->dbth_check_off--
 
-#define LOCK_CHECK(dbc, pgno, mode, flags)				\
+#define LOCK_CHECK(dbc, pgno, mode, type)				\
 	DB_ASSERT((dbc)->dbp->env, (dbc)->locker == NULL ||		\
 	     __db_haslock((dbc)->dbp->env,				\
-	    (dbc)->locker, (dbc)->dbp->mpf, pgno, mode, flags) == 0)
+	    (dbc)->locker, (dbc)->dbp->mpf, pgno, mode, type) == 0)
 #else
 #define LOCK_CHECK_OFF(ip)	NOP_STATEMENT
 #define LOCK_CHECK_ON(ip)	NOP_STATEMENT
@@ -653,6 +722,7 @@ struct __db_thread_info {
 
 typedef struct __env_thread_info {
 	u_int32_t	thr_count;
+	u_int32_t	thr_init;
 	u_int32_t	thr_max;
 	u_int32_t	thr_nbucket;
 	roff_t		thr_hashoff;
@@ -716,14 +786,6 @@ struct __env {
 	u_int32_t	 thr_nbucket;	/* Number of hash buckets */
 	DB_HASHTAB	*thr_hashtab;	/* Hash table of DB_THREAD_INFO */
 
-	/* Mutex allocation */
-	struct {
-		int	  alloc_id;	/* Allocation ID argument */
-		u_int32_t flags;	/* Flags argument */
-	} *mutex_iq;			/* Initial mutexes queue */
-	u_int		mutex_iq_next;	/* Count of initial mutexes */
-	u_int		mutex_iq_max;	/* Maximum initial mutexes */
-
 	/*
 	 * List of open DB handles for this ENV, used for cursor
 	 * adjustment.  Must be protected for multi-threaded support.
@@ -750,13 +812,20 @@ struct __env {
 	DB_REP		*rep_handle;	/* Replication handle */
 	DB_TXNMGR	*tx_handle;	/* Txn handle */
 
+	/*
+	 * XA support.
+	 */
+	int		 xa_rmid;	/* XA Resource Manager ID */
+	int		 xa_ref;	/* XA Reference count */
+	TAILQ_ENTRY(__env) links;	/* XA environments */
+
 	/* Application callback to copy data to/from a custom data source */
 #define	DB_USERCOPY_GETDATA	0x0001
 #define	DB_USERCOPY_SETDATA	0x0002
 	int (*dbt_usercopy)
 	    __P((DBT *, u_int32_t, void *, u_int32_t, u_int32_t));
 
-	int (*log_verify_wrap) __P((ENV *, const char *, u_int32_t,  
+	int (*log_verify_wrap) __P((ENV *, const char *, u_int32_t,
 	    const char *, const char *, time_t, time_t, u_int32_t,  u_int32_t,
 	    u_int32_t, u_int32_t, int, int));
 
@@ -764,15 +833,16 @@ struct __env {
 
 #define	DB_TEST_ELECTINIT	 1	/* after __rep_elect_init */
 #define	DB_TEST_ELECTVOTE1	 2	/* after sending VOTE1 */
-#define	DB_TEST_POSTDESTROY	 3	/* after destroy op */
-#define	DB_TEST_POSTLOG		 4	/* after logging all pages */
-#define	DB_TEST_POSTLOGMETA	 5	/* after logging meta in btree */
-#define	DB_TEST_POSTOPEN	 6	/* after __os_open */
-#define	DB_TEST_POSTSYNC	 7	/* after syncing the log */
-#define	DB_TEST_PREDESTROY	 8	/* before destroy op */
-#define	DB_TEST_PREOPEN		 9	/* before __os_open */
-#define	DB_TEST_REPMGR_PERM	 10	/* repmgr perm/archiving tests */
-#define	DB_TEST_SUBDB_LOCKS	 11	/* subdb locking tests */
+#define	DB_TEST_NO_PAGES	 3	/* before sending PAGE */
+#define	DB_TEST_POSTDESTROY	 4	/* after destroy op */
+#define	DB_TEST_POSTLOG		 5	/* after logging all pages */
+#define	DB_TEST_POSTLOGMETA	 6	/* after logging meta in btree */
+#define	DB_TEST_POSTOPEN	 7	/* after __os_open */
+#define	DB_TEST_POSTSYNC	 8	/* after syncing the log */
+#define	DB_TEST_PREDESTROY	 9	/* before destroy op */
+#define	DB_TEST_PREOPEN		 10	/* before __os_open */
+#define	DB_TEST_REPMGR_PERM	 11	/* repmgr perm/archiving tests */
+#define	DB_TEST_SUBDB_LOCKS	 12	/* subdb locking tests */
 	int	test_abort;		/* Abort value for testing */
 	int	test_check;		/* Checkpoint value for testing */
 	int	test_copy;		/* Copy value for testing */
@@ -970,6 +1040,26 @@ typedef struct __dbpginfo {
 	((txn) != NULL && !F_ISSET(txn, TXN_FAMILY))
 #define	IS_SUBTRANSACTION(txn)						\
 	((txn) != NULL && (txn)->parent != NULL)
+
+/* Checks for existence of an XA transaction in access method interfaces. */
+#define	XA_CHECK_TXN(ip, txn) 						\
+	if ((ip) != NULL && (txn) == NULL) {				\
+		(txn) = SH_TAILQ_FIRST(&(ip)->dbth_xatxn, __db_txn);	\
+		DB_ASSERT(env, txn == NULL ||				\
+		    txn->xa_thr_status == TXN_XA_THREAD_ASSOCIATED);	\
+	}
+
+/* Ensure that there is no XA transaction active. */
+#define	XA_NO_TXN(ip, retval) {						\
+	DB_TXN *__txn;							\
+	retval = 0;							\
+	if ((ip) != NULL) {						\
+		__txn = SH_TAILQ_FIRST(&(ip)->dbth_xatxn, __db_txn);	\
+		if (__txn != NULL &&					\
+		    __txn->xa_thr_status == TXN_XA_THREAD_ASSOCIATED)	\
+		    	retval = EINVAL;				\
+	}								\
+}
 
 /*******************************************************
  * Crypto.

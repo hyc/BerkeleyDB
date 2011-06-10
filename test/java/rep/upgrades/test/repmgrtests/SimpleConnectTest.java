@@ -30,6 +30,8 @@ public abstract class SimpleConnectTest extends AbstractUpgTest {
     public interface Ops {
         public void setConfig(Config c);
         public void upgradeClient() throws Exception;
+        public void awaitClientConnFailure() throws Exception;
+        public void verifyClientConnect() throws Exception;
         public void shutdownClient() throws Exception;
     }
 
@@ -69,8 +71,15 @@ public abstract class SimpleConnectTest extends AbstractUpgTest {
 
         old.createGroup();
         
-        old.startMaster();
-        current.upgradeClient();
+        if (reverse) {
+            current.upgradeClient();
+            current.awaitClientConnFailure();
+            old.startMaster();
+        } else {
+            old.startMaster();
+            current.upgradeClient();
+        }
+        current.verifyClientConnect();
         
         current.shutdownClient();
         old.shutdownMaster();

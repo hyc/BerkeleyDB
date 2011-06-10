@@ -168,7 +168,8 @@ proc file_recover_create { dir env_cmd method opts dbfile cmd msg data_dir} {
 	puts "\t$msg ($opts) create with a database"
 	do_file_recover_create $dir $env_cmd $method $opts $dbfile \
 	    0 $cmd $msg $data_dir
-	if { [is_queue $method] == 1 || [is_partitioned $opts] == 1} {
+	if { [is_queue $method] == 1 || [is_partitioned $opts] == 1 ||
+	    [is_heap $method] == 1 } {
 		puts "\tSkipping subdatabase tests for method $method"
 		return
 	}
@@ -394,10 +395,12 @@ proc file_recover_delete { dir env_cmd method opts dbfile cmd msg op data_dir} {
 	puts "\t$msg $op ($opts) with a database"
 	do_file_recover_delete $dir $env_cmd $method $opts $dbfile \
 	    0 $cmd $msg $op $data_dir
-	if { [is_queue $method] == 1  || [is_partitioned $opts] == 1} {
+	if { [is_queue $method] == 1  || [is_partitioned $opts] == 1 ||
+	     [is_heap $method] == 1} {
 		puts "\tSkipping subdatabase tests for method $method"
 		return
 	}
+
 	puts "\t$msg $op ($opts) with a database and subdb"
 	do_file_recover_delete $dir $env_cmd $method $opts $dbfile \
 	    1 $cmd $msg $op $data_dir

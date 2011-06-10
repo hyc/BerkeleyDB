@@ -119,8 +119,8 @@ __txn_checkpoint(env, kbytes, minutes, flags)
 	if (IS_REP_CLIENT(env)) {
 		if (MPOOL_ON(env) &&
 		    (ret = __memp_sync(env, DB_SYNC_CHECKPOINT, NULL)) != 0) {
-			__db_err(env, ret,
-		    "txn_checkpoint: failed to flush the buffer cache");
+			__db_err(env, ret, DB_STR("4518",
+		    "txn_checkpoint: failed to flush the buffer cache"));
 			return (ret);
 		}
 		return (0);
@@ -143,7 +143,7 @@ __txn_checkpoint(env, kbytes, minutes, flags)
 	 * it are complete.  Our first guess (corrected below based on the list
 	 * of active transactions) is the last-written LSN.
 	 */
-	if ((ret = __log_current_lsn(env, &ckp_lsn, &mbytes, &bytes)) != 0)
+	if ((ret = __log_current_lsn_int(env, &ckp_lsn, &mbytes, &bytes)) != 0)
 		goto err;
 
 	if (!LF_ISSET(DB_FORCE)) {
@@ -213,16 +213,14 @@ do_ckp:
 	if (LOGGING_ON(env) && IS_REP_MASTER(env)) {
 #ifdef HAVE_REPLICATION_THREADS
 		/*
-		 * If repmgr is configured in the shared environment (which we
-		 * know if we have a local host address), but no send() function
-		 * configured for this process, assume we have a
+		 * If repmgr is configured in the shared environment, but no
+		 * send() function configured for this process, assume we have a
 		 * replication-unaware process that wants to automatically
 		 * participate in replication (i.e., sending replication
 		 * messages to clients).
 		 */
 		if (env->rep_handle->send == NULL &&
-		    F_ISSET(env, ENV_THREAD) &&
-		    env->rep_handle->region->my_addr.host != INVALID_ROFF &&
+		    F_ISSET(env, ENV_THREAD) && APP_IS_REPMGR(env) &&
 		    (ret = __repmgr_autostart(env)) != 0)
 			goto err;
 #endif
@@ -235,8 +233,8 @@ do_ckp:
 	if (MPOOL_ON(env) &&
 	    (ret = __memp_sync_int(
 		env, NULL, 0, DB_SYNC_CHECKPOINT, NULL, NULL)) != 0) {
-		__db_err(env, ret,
-		    "txn_checkpoint: failed to flush the buffer cache");
+		__db_err(env, ret, DB_STR("4519",
+		    "txn_checkpoint: failed to flush the buffer cache"));
 		goto err;
 	}
 
@@ -293,8 +291,9 @@ do_ckp:
 		if ((ret = __dbreg_log_files(env, op)) != 0 ||
 		    (ret = __txn_ckp_log(env, NULL, &ckp_lsn, logflags,
 		    &ckp_lsn, &last_ckp, (int32_t)time(NULL), id, 0)) != 0) {
-			__db_err(env, ret,
+			__db_err(env, ret, DB_STR_A("4520",
 			    "txn_checkpoint: log failed at LSN [%ld %ld]",
+			    "%ld %ld"),
 			    (long)ckp_lsn.file, (long)ckp_lsn.offset);
 			goto err;
 		}

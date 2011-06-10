@@ -9,6 +9,7 @@ package repmgrtests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -30,15 +31,15 @@ import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
 import com.sleepycat.db.ReplicationConfig;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerAckPolicy;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.VerboseConfig;
 
 /**
  * Test that a second client can be created and do internal init,
- * while the first thread is still clogged up.  Hmm, why did we think
- * this would be useful?
+ * while the first thread is still clogged up.
  */
 public class TestDrainIntInit {
     private static final String TEST_DIR_NAME = "TESTDIR";
@@ -49,7 +50,6 @@ public class TestDrainIntInit {
     private int masterPort;
     private int clientPort;
     private int clientPort2;
-    private int masterSpoofPort;
     private int mgrPort;
 
     class MyEventHandler extends EventHandlerAdapter {
@@ -100,17 +100,18 @@ public class TestDrainIntInit {
             masterPort = 6000;
             clientPort = 6001;
             clientPort2 = 6002;
-            masterSpoofPort = 7000;
             mgrPort = 8000;
             fiddler = null;
         } else {
+            String mgrPortNum = System.getenv("DB_TEST_FAKE_PORT");
+            assertNotNull("required DB_TEST_FAKE_PORT environment variable not found",
+                          mgrPortNum);
+            mgrPort = Integer.parseInt(mgrPortNum);
             PortsConfig p = new PortsConfig(3);
             masterPort = p.getRealPort(0);
-            masterSpoofPort = p.getSpoofPort(0);
             clientPort = p.getRealPort(1);
             clientPort2 = p.getRealPort(2);
-            mgrPort = p.getManagerPort();
-            fiddler = Util.startFiddler(p, getClass().getName());
+            fiddler = Util.startFiddler(p, getClass().getName(), mgrPort);
         }
     }
 
@@ -127,7 +128,19 @@ public class TestDrainIntInit {
     @Test public void drainBlockInternalInit() throws Exception {
         EnvironmentConfig ec = makeBasicConfig();
         ec.setReplicationLimit(100000000);
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
+        ReplicationManagerSiteConfig site =
+            new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort2);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+
         MyEventHandler masterMonitor = new MyEventHandler();
         ec.setEventHandler(masterMonitor);
         Environment master = new Environment(mkdir("master"), ec);
@@ -145,21 +158,30 @@ public class TestDrainIntInit {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         value.setData(data);
-        for (int i=0; i<120; i++) {
+        for (int i=0;
+             ((BtreeStats)db.getStats(null, null)).getPageCount() < 50;
+             i++)
+        {
             String k = "The record number is: " + i;
             key.setData(k.getBytes());
             db.put(null, key, value);
         }
-
-        BtreeStats stats = (BtreeStats)db.getStats(null, null);
-        assertTrue(stats.getPageCount() >= 50);
         db.close();
 
         // create client, but don't sync yet
         // 
         ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterSpoofPort), false);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort2);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
         Environment client = new Environment(mkdir("client"), ec);
         client.setReplicationConfig(ReplicationConfig.DELAYCLIENT, true);
         client.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
@@ -181,10 +203,19 @@ public class TestDrainIntInit {
         // wait til it gets stuck
         Thread.sleep(5000);     // FIXME
 
-
         ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort2));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterSpoofPort), false);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort2);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+
         MyEventHandler mon = new MyEventHandler();
         ec.setEventHandler(mon);
         long start = System.currentTimeMillis();
@@ -216,7 +247,6 @@ public class TestDrainIntInit {
         ec.setInitializeReplication(true);
         ec.setTransactional(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(3);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);

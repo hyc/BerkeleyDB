@@ -47,7 +47,10 @@ proc test044 { method {nprocs 5} {nfiles 10} {cont 0} args } {
 		puts "Test044 skipping for security"
 		return
 	}
-
+        if { [is_heap $method] } {
+		puts "Test044 skipping for method $method"
+		return
+        }
 	puts "Test044: system integration test db $method $nprocs processes \
 	    on $nfiles files"
 

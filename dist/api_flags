@@ -34,10 +34,12 @@ DbEnv.log_verify
 DbEnv.open
 	DB_CREATE			# Create as necessary
 	DB_FAILCHK			# Run failchk on open
+	DB_FAILCHK_ISALIVE		# UNDOC: failchk with isalive, for SQL
 	DB_INIT_CDB			# Concurrent Access Methods
 	DB_INIT_LOCK			# Initialize locking
 	DB_INIT_LOG			# Initialize logging
 	DB_INIT_MPOOL			# Initialize mpool
+	DB_INIT_MUTEX			# Initialize mutex
 	DB_INIT_REP			# Initialize replication
 	DB_INIT_TXN			# Initialize transactions
 	DB_LOCKDOWN			# Lock memory into physical core
@@ -56,6 +58,7 @@ DbEnv.lock_stat
 
 DbEnv.lock_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_LOCK_CONF		# Print lock conflict matrix
 	DB_STAT_LOCK_LOCKERS		# Print lockers
@@ -97,6 +100,7 @@ DbEnv.log_stat
 
 DbEnv.log_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
 
@@ -108,6 +112,7 @@ DbEnv.memp_stat
 
 DbEnv.memp_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_MEMP_HASH		# Print mpool hash buckets
 	DB_STAT_MEMP_NOERROR		# UNDOC: continue on error
@@ -126,6 +131,7 @@ DbEnv.mutex_stat
 
 DbEnv.mutex_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
 
@@ -138,6 +144,7 @@ DbEnv.rep_set_config
 	DB_REPMGR_CONF_2SITE_STRICT	# Don't cheat on election votes
 	DB_REPMGR_CONF_ELECTIONS	# Manage elections to choose master
 	DB_REP_CONF_AUTOINIT		# automatic client init
+	DB_REP_CONF_AUTOROLLBACK	# UNDOC: discard txns to sync w/ master
 	DB_REP_CONF_BULK		# Bulk transfer
 	DB_REP_CONF_DELAYCLIENT		# Delay client synchronization
 	DB_REP_CONF_INMEM		# In-memory replication
@@ -159,11 +166,14 @@ DbEnv.rep_stat
 
 DbEnv.rep_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
+	DB_STAT_SUMMARY			# UNDOC: print summary
 
-DbEnv.repmgr_add_remote_site
-	DB_REPMGR_PEER			# C2C synchronization
+# Covers both flags to the callback-setting method, and the callback itself
+DbEnv.repmgr_msg_dispatch
+	DB_REPMGR_NEED_RESPONSE		# Synchronous request message type
 
 DbEnv.repmgr_start
 	DB_REP_CLIENT			# Client
@@ -175,6 +185,7 @@ DbEnv.repmgr_stat
 
 DbEnv.repmgr_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
 
@@ -239,6 +250,7 @@ DbEnv.set_verbose
 
 DbEnv.stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
 
@@ -268,6 +280,7 @@ DbEnv.txn_stat
 
 DbEnv.txn_stat_print
 	DB_STAT_ALL			# Everything
+	DB_STAT_ALLOC			# Print allocation information
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
 
@@ -329,6 +342,13 @@ DbSequence.stat_print
 	DB_STAT_CLEAR			# Clear stats after return
 	DB_STAT_SUBSYSTEM		# Print subsystems
 
+DbSite.set_config
+	DB_BOOTSTRAP_HELPER		# Join target for new group member
+	DB_GROUP_CREATOR		# Primordial membership DB creator
+	DB_LEGACY			# Upgrading pre-5.2 group
+	DB_LOCAL_SITE			# Identifies this as the local site
+	DB_REPMGR_PEER			# C2C synchronization
+
 DbTxn.commit
 	DB_TXN_NOSYNC			# Do not sync log on commit
 	DB_TXN_SYNC			# Always sync log on commit
@@ -339,6 +359,7 @@ DbTxn.set_timeout
 
 db_create
 	DB_CXX_NO_EXCEPTIONS		# C++: return error values
+	DB_XA_CREATE			# Create a DBP for an XA database
 
 Db.associate
 	DB_AUTO_COMMIT			# UNDOC: compatibility only
@@ -414,6 +435,7 @@ Db.open
 	# The following flags aren't actually part of the Db.open method
 	# API, but they are accepted by the underlying __db_open function.
 	DB_DURABLE_UNKNOWN		# UNDOC: Durability on open
+	DB_INTERNAL_DB			# UNDOC: Open db in env dir
 	DB_NOERROR			# UNDOC: Don't raise errors.
 	DB_ODDFILESIZE			# UNDOC: Truncate file to N * pgsize
 	DB_WRITEOPEN			# UNDOC: open with write lock

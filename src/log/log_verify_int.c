@@ -31,6 +31,7 @@
 #include "dbinc/btree.h"
 #include "dbinc/fop.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
@@ -53,6 +54,7 @@ static int __lv_log_fwdscr_onrec __P((DB_LOG_VRFY_INFO *,
 static int __lv_log_mismatch __P((DB_LOG_VRFY_INFO *, DB_LSN, DBTYPE, DBTYPE));
 static int __lv_on_bam_log __P((DB_LOG_VRFY_INFO *, DB_LSN, int32_t));
 static int __lv_on_ham_log __P((DB_LOG_VRFY_INFO *, DB_LSN, int32_t));
+static int __lv_on_heap_log __P((DB_LOG_VRFY_INFO *, DB_LSN, int32_t));
 static int __lv_on_new_txn __P((DB_LOG_VRFY_INFO *, const DB_LSN *,
     const DB_TXN *, u_int32_t, int32_t, const DBT *));
 static int __lv_on_nontxn_update __P((DB_LOG_VRFY_INFO *, const DB_LSN *,
@@ -77,9 +79,10 @@ static int __lv_vrfy_for_dbfile __P((DB_LOG_VRFY_INFO *, int32_t, int *));
 
 /* Used by logs of unsupported types. */
 #define	ON_NOT_SUPPORTED(env, lvh, lsn, ltype) do {			\
-	__db_errx((env),						\
+	__db_errx((env), DB_STR_A("2536",				\
 	    "[%lu][%lu] Not supported type of log record %u.",		\
-	    (u_long)((lsn).file), (u_long)((lsn).offset), (ltype));	\
+	    "%lu %lu %u"), (u_long)((lsn).file), (u_long)((lsn).offset),\
+	    (ltype));							\
 	(lvh)->unknown_logrec_cnt++;					\
 	goto err;							\
 } while (0)
@@ -157,10 +160,11 @@ __lv_on_page_update(lvh, lsn, fileid, pgno, txnp, step)
 	if ((ret = __is_ancestor_txn(lvh, txnid, otxn, lsn, &res)) != 0)
 		ON_ERROR(lvh, DB_LOG_VERIFY_INTERR);
 	if (res) {/* The txnid is updating its active child otxn's pages. */
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2537",
 		    "[%lu][%lu] [WARNING] Parent txn %lx is updating its "
 		    "active child txn %lx's pages, or %lx aborted.",
-		    (u_long)lsn.file, (u_long)lsn.offset, (u_long)txnid,
+		    "%lu %lu %lx %lx %lx"), (u_long)lsn.file,
+		    (u_long)lsn.offset, (u_long)txnid,
 		    (u_long)otxn, (u_long)otxn);
 		*step = 0;
 		goto out;
@@ -169,9 +173,10 @@ __lv_on_page_update(lvh, lsn, fileid, pgno, txnp, step)
 	 * It's likely that the two txns are parent-child and the child
 	 * aborted, but from the log we can't figure out this fact.
 	 */
-	__db_errx(lvh->dbenv->env,
+	__db_errx(lvh->dbenv->env, DB_STR_A("2538",
 	    "[%lu][%lu] [WARNING] Txn %lx is updating txn %lx's pages.",
-	    (u_long)lsn.file, (u_long)lsn.offset, (u_long)txnid, (u_long)otxn);
+	    "%lu %lu %lx %lx"), (u_long)lsn.file, (u_long)lsn.offset,
+	    (u_long)txnid, (u_long)otxn);
 	*step = 0;
 out:
 err:
@@ -216,10 +221,10 @@ __log_vrfy_proc(lvh, lsn, prev_lsn, type, txnp, fileid, step)
 			goto out;
 	} else {/* Verifying */
 		if (F_ISSET(lvh, DB_LOG_VERIFY_VERBOSE))
-			__db_errx(lvh->dbenv->env,
+			__db_errx(lvh->dbenv->env, DB_STR_A("2539",
 			    "[%lu][%lu] Verifying log record of type %s",
-			    (u_long)lsn.file, (u_long)lsn.offset,
-			    LOGTYPE_NAME(lvh, type));
+			    "%lu %lu %s"), (u_long)lsn.file,
+			    (u_long)lsn.offset, LOGTYPE_NAME(lvh, type));
 		/*
 		 * If verifying a log range and we've passed the initial part
 		 * which may have partial txns, remove the PARTIAL bit.
@@ -293,6 +298,22 @@ __lv_on_ham_log(lvh, lsn, fileid)
 	if ((ret = __lv_dbregid_to_dbtype(lvh, fileid, &dbtype)) == 0 &&
 	    dbtype != DB_HASH)
 		ret = __lv_log_mismatch(lvh, lsn, dbtype, DB_HASH);
+	if (ret == DB_NOTFOUND && F_ISSET(lvh, DB_LOG_VERIFY_PARTIAL))
+		ret = 0;
+	return (ret);
+}
+
+static int
+__lv_on_heap_log(lvh, lsn, fileid)
+	DB_LOG_VRFY_INFO *lvh;
+	DB_LSN lsn;
+	int32_t fileid;
+{
+	int ret;
+	DBTYPE dbtype;
+	if ((ret = __lv_dbregid_to_dbtype(lvh, fileid, &dbtype)) == 0 &&
+	    dbtype != DB_HEAP)
+		ret = __lv_log_mismatch(lvh, lsn, dbtype, DB_HEAP);
 	if (ret == DB_NOTFOUND && F_ISSET(lvh, DB_LOG_VERIFY_PARTIAL))
 		ret = 0;
 	return (ret);
@@ -481,10 +502,10 @@ __lv_log_mismatch(lvh, lsn, dbtype, exp_dbtype)
 {
 	int ret;
 
-	__db_errx(lvh->dbenv->env,
+	__db_errx(lvh->dbenv->env, DB_STR_A("2540",
 	    "[%lu][%lu] Log record type does not match related database type, "
 	    "current database type: %s, expected database type according to "
-	    "the log record type: %s.",
+	    "the log record type: %s.", "%lu %lu %s %s"),
 	    (u_long)lsn.file, (u_long)lsn.offset, __lv_dbtype_str(dbtype),
 	    __lv_dbtype_str(exp_dbtype));
 	ret = DB_LOG_VERIFY_BAD;
@@ -1392,7 +1413,7 @@ __lv_dbreg_str(op)
 		p = "DBREG_REOPEN";
 		break;
 	default:
-		p = "Unknown dbreg op code";
+		p = DB_STR_P("Unknown dbreg op code");
 		break;
 	}
 
@@ -1452,7 +1473,7 @@ __lv_dbtype_str(dbtype)
 		p = "DB_QUEUE";
 		break;
 	default:
-		p = "Unknown db type";
+		p = DB_STR_P("Unknown db type");
 		break;
 	}
 
@@ -1513,7 +1534,7 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 	if ((ret = __get_filereg_info(lvh, &(argp->uid), &fregp)) != 0 &&
 	    ret != DB_NOTFOUND)
 		goto err;
-	
+
 	/*
 	 * When DBREG_CLOSE, we should remove the fileuid-filename mapping
 	 * from filereg because the file can be opened again with a different
@@ -1563,15 +1584,16 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 		if (!IS_DBREG_OPEN(opcode) &&
 		    !F_ISSET(lvh, DB_LOG_VERIFY_PARTIAL)) {
 			/* It's likely that the DBREG_OPEN is not seen.*/
-			__db_msg(env,
+			__db_msg(env, DB_STR_A("2541",
 			    "[%lu][%lu] Suspicious dbreg operation: %s, the "
 			    "database file %s's register in log region does "
 			    "not begin with an open operation.",
-			    (u_long)lsnp->file, (u_long)lsnp->offset,
+			    "%lu %lu %s %s"), (u_long)lsnp->file,
+			    (u_long)lsnp->offset,
 			    __lv_dbreg_str(opcode), dbfname);
 		}
 
-		/* 
+		/*
 		 * PREOPEN is only generated when openning an in-memory db.
 		 * Because we need to log the fileid we're allocating, but we
 		 * don't have all the details yet, we are preopening the
@@ -1618,14 +1640,16 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 		else if (ret == -1)
 			rmv_dblife = 1;/* The dbreg file id is closed. */
 		else if (ret == 2) {
-			__db_errx(env, "[%lu][%lu] Wrong dbreg operation "
+			__db_errx(env, DB_STR_A("2542",
+			    "[%lu][%lu] Wrong dbreg operation "
 			    "sequence, opening %s for id %d which is already "
-			    "open.", (u_long)lsnp->file, (u_long)lsnp->offset,
+			    "open.", "%lu %lu %s %d"),
+			    (u_long)lsnp->file, (u_long)lsnp->offset,
 			    dbfname, argp->fileid);
 			ret = DB_LOG_VERIFY_BAD;
 			ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
 		}
-		if ((!rmv_dblife) && (ret = __put_filereg_info(lvh, fregp)) != 0)
+		if (!rmv_dblife && (ret = __put_filereg_info(lvh, fregp)) != 0)
 			goto err;
 	}
 
@@ -1644,11 +1668,12 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 	    (ret = __get_filelife(lvh, argp->fileid, &pflife)) != 0) {
 		if (ret == DB_NOTFOUND) {
 			if (!F_ISSET(lvh, DB_LOG_VERIFY_PARTIAL)) {
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("2543",
 				    "[%lu][%lu] Wrong dbreg operation sequence,"
 				    "file %s with id %d is first seen of "
-				    "status: %s", (u_long)lsnp->file,
-				    (u_long)lsnp->offset, dbfname, argp->fileid,
+				    "status: %s", "%lu %lu %s %d"),
+				    (u_long)lsnp->file, (u_long)lsnp->offset,
+				    dbfname, argp->fileid,
 				    __lv_dbreg_str(opcode));
 				ret = DB_LOG_VERIFY_BAD;
 				ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
@@ -1664,10 +1689,11 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 	if (argp->ftype != pflife->dbtype) {
 		if ((ret = __lv_dbt_str(&(argp->uid), &puid)) != 0)
 			goto err;
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2544",
 		    "[%lu][%lu] The dbtype of database file %s with uid %s "
 		    " and id %d has changed from %s to %s.",
-		    (u_long)lsnp->file, (u_long)lsnp->offset, dbfname, puid,
+		    "%lu %lu %s %s %d %s %s"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, dbfname, puid,
 		    pflife->dbregid, __lv_dbtype_str(pflife->dbtype),
 		    __lv_dbtype_str(argp->ftype));
 
@@ -1679,11 +1705,11 @@ __dbreg_register_verify(env, dbtp, lsnp, notused2, lvhp)
 	if ((IS_DBREG_CLOSE(opcode) &&
 	    (pflife->lifetime != DBREG_CHKPNT) &&
 	    !IS_DBREG_OPEN(pflife->lifetime))) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2545",
 		    "[%lu][%lu] Wrong dbreg operation sequence for file %s "
 		    "with id %d, current status: %s, new status: %s",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    dbfname, pflife->dbregid,
+		    "%lu %lu %s %d %s %s"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, dbfname, pflife->dbregid,
 		    __lv_dbreg_str(pflife->lifetime),
 		    __lv_dbreg_str(opcode));
 		ret = DB_LOG_VERIFY_BAD;
@@ -2766,7 +2792,7 @@ __ham_groupalloc_verify(env, dbtp, lsnp, notused2, lvhp)
 	__ham_groupalloc_args *argp;
 	DB_LOG_VRFY_INFO *lvh;
 	VRFY_FILELIFE *pflife;
-	int ret;	
+	int ret;
 
 	ret = 0;
 	pflife = NULL;
@@ -2780,21 +2806,21 @@ __ham_groupalloc_verify(env, dbtp, lsnp, notused2, lvhp)
 
 	LOG_VRFY_PROC(lvh, *lsnp, argp, argp->fileid);
 	ON_PAGE_UPDATE4 /* No pages are locked by txns. */
-	
-	/* 
+
+	/*
 	 * The __ham_groupalloc record is only generated when creating the
 	 * hash sub database so it will always be on the master database's
 	 * fileid.
 	 */
 
 	if ((ret = __get_filelife(lvh, argp->fileid, &pflife)) != 0)
-		goto err;	
+		goto err;
 
 	if (pflife->meta_pgno != PGNO_BASE_MD) {
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2546",
 		    "[%lu][%lu] __ham_groupalloc should apply only to the "
 		    "master database with meta page number 0, current meta "
-		    "page number is %d.",
+		    "page number is %d.", "%lu %lu %d"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		     pflife->meta_pgno);
 		ret = DB_LOG_VERIFY_BAD;
@@ -2953,6 +2979,145 @@ out:
 
 err:
 
+	__os_free(env, argp);
+	return (ret);
+}
+#endif
+
+#ifdef HAVE_HEAP
+/*
+ * PUBLIC: int __heap_addrem_verify
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__heap_addrem_verify(env, dbtp, lsnp, notused2, lvhp)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops notused2;
+	void *lvhp;
+{
+	__heap_addrem_args *argp;
+	DB_LOG_VRFY_INFO *lvh;
+	int ret;
+
+	notused2 = DB_TXN_LOG_VERIFY;
+	lvh = (DB_LOG_VRFY_INFO *)lvhp;
+
+	if ((ret =
+	    __heap_addrem_read(env, NULL, NULL, dbtp->data, &argp)) != 0)
+		return (ret);
+
+	LOG_VRFY_PROC(lvh, *lsnp, argp, argp->fileid);
+	ON_PAGE_UPDATE(lvh, *lsnp, argp, argp->pgno);
+	if ((ret = __lv_on_heap_log(lvh, *lsnp, argp->fileid)) != 0)
+		goto err;
+out:
+
+err:
+	__os_free(env, argp);
+	return (ret);
+}
+
+/*
+ * PUBLIC: int __heap_pg_alloc_verify
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__heap_pg_alloc_verify(env, dbtp, lsnp, notused2, lvhp)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops notused2;
+	void *lvhp;
+{
+	__heap_pg_alloc_args *argp;
+	DB_LOG_VRFY_INFO *lvh;
+	int ret;
+
+	notused2 = DB_TXN_LOG_VERIFY;
+	lvh = (DB_LOG_VRFY_INFO *)lvhp;
+
+	if ((ret =
+	    __heap_pg_alloc_read(env, NULL, NULL, dbtp->data, &argp)) != 0)
+		return (ret);
+
+	LOG_VRFY_PROC(lvh, *lsnp, argp, argp->fileid);
+	ON_PAGE_UPDATE(lvh, *lsnp, argp, argp->pgno);
+	if ((ret = __lv_on_heap_log(lvh, *lsnp, argp->fileid)) != 0)
+		goto err;
+out:
+
+err:
+	__os_free(env, argp);
+	return (ret);	
+}
+
+/*
+ * PUBLIC: int __heap_trunc_meta_verify
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__heap_trunc_meta_verify(env, dbtp, lsnp, notused2, lvhp)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops notused2;
+	void *lvhp;
+{
+	__heap_trunc_meta_args *argp;
+	DB_LOG_VRFY_INFO *lvh;
+	int ret;
+
+	notused2 = DB_TXN_LOG_VERIFY;
+	lvh = (DB_LOG_VRFY_INFO *)lvhp;
+
+	if ((ret =
+	    __heap_trunc_meta_read(env, NULL, NULL, dbtp->data, &argp)) != 0)
+		return (ret);
+
+	LOG_VRFY_PROC(lvh, *lsnp, argp, argp->fileid);
+	ON_PAGE_UPDATE(lvh, *lsnp, argp, argp->pgno);
+	if ((ret = __lv_on_heap_log(lvh, *lsnp, argp->fileid)) != 0)
+		goto err;
+out:
+
+err:
+
+	__os_free(env, argp);
+	return (ret);	
+}
+
+/*
+ * PUBLIC: int __heap_trunc_page_verify
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__heap_trunc_page_verify(env, dbtp, lsnp, notused2, lvhp)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops notused2;
+	void *lvhp;
+{
+	__heap_trunc_page_args *argp;
+	DB_LOG_VRFY_INFO *lvh;
+	int ret;
+
+	notused2 = DB_TXN_LOG_VERIFY;
+	lvh = (DB_LOG_VRFY_INFO *)lvhp;
+
+	if ((ret =
+	    __heap_trunc_page_read(env, NULL, NULL, dbtp->data, &argp)) != 0)
+		return (ret);
+
+	LOG_VRFY_PROC(lvh, *lsnp, argp, argp->fileid);
+	ON_PAGE_UPDATE(lvh, *lsnp, argp, argp->pgno);
+	if ((ret = __lv_on_heap_log(lvh, *lsnp, argp->fileid)) != 0)
+		goto err;
+out:
+
+err:
 	__os_free(env, argp);
 	return (ret);
 }
@@ -3233,9 +3398,9 @@ __txn_regop_verify(env, dbtp, lsnp, notused2, lvhp)
 		}
 		if (ret2 != 0)
 			ret = ret2;
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2547",
 		    "[%lu][%lu] Can not find an active transaction's "
-		    "information, txnid: %lx.",
+		    "information, txnid: %lx.", "%lu %lu %lx"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		    (u_long)argp->txnp->txnid);
 		ON_ERROR(lvh, DB_LOG_VERIFY_INTERR);
@@ -3270,12 +3435,13 @@ __txn_regop_verify(env, dbtp, lsnp, notused2, lvhp)
 
 	/* Report txn stats. */
 	if (F_ISSET(lvh, DB_LOG_VERIFY_VERBOSE))
-		__db_msg(env,
+		__db_msg(env, DB_STR_A("2548",
 		    "[%lu][%lu] The number of active, committed and aborted "
 		    "child txns of txn %lx: %u, %u, %u.",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)ptvi->txnid, ptvi->nchild_active,
-		    ptvi->nchild_commit, ptvi->nchild_abort);
+		    "%lu %lu %lx %u %u %u"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)ptvi->txnid,
+		    ptvi->nchild_active, ptvi->nchild_commit,
+		    ptvi->nchild_abort);
 out:
 err:
 
@@ -3370,11 +3536,11 @@ __txn_ckp_verify(env, dbtp, lsnp, notused2, lvhp)
 	}
 	lvh->nckp++;
 	ckp_time = (time_t)argp->timestamp;
-	__db_msg(env,
+	__db_msg(env, DB_STR_A("2549",
 	    "[%lu][%lu] Checkpoint record, ckp_lsn: [%lu][%lu], "
 	    "timestamp: %s. Total checkpoint: %u",
-	    (u_long)lsnp->file, (u_long)lsnp->offset,
-	    (u_long)argp->ckp_lsn.file,
+	    "%lu %lu %lu %lu %s %u"), (u_long)lsnp->file,
+	    (u_long)lsnp->offset, (u_long)argp->ckp_lsn.file,
 	    (u_long)argp->ckp_lsn.offset,
 	    __os_ctime(&ckp_time, timebuf), lvh->nckp);
 
@@ -3388,10 +3554,10 @@ __txn_ckp_verify(env, dbtp, lsnp, notused2, lvhp)
 		goto cont;
 
 	if (LOG_COMPARE(&(argp->last_ckp), &(lastckp->lsn)) != 0) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2550",
 		    "[%lu][%lu] Last known checkpoint [%lu][%lu] not equal "
 		    "to last_ckp :[%lu][%lu]. Some checkpoint log records "
-		    "may be missing.",
+		    "may be missing.", "%lu %lu %lu %lu %lu %lu"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		    (u_long)lastckp->lsn.file, (u_long)lastckp->lsn.offset,
 		    (u_long)argp->last_ckp.file, (u_long)argp->last_ckp.offset);
@@ -3405,11 +3571,12 @@ __txn_ckp_verify(env, dbtp, lsnp, notused2, lvhp)
 	 */
 	lastckp_time = (time_t)lastckp->timestamp;
 	if (argp->timestamp < lastckp->timestamp) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2551",
 		    "[%lu][%lu] Last known checkpoint [%lu, %lu] has a "
 		    "timestamp %s smaller than this checkpoint timestamp %s.",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)lastckp->lsn.file, (u_long)lastckp->lsn.offset,
+		    "%lu %lu %lu %lu %s %s"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)lastckp->lsn.file,
+		    (u_long)lastckp->lsn.offset,
 		    __os_ctime(&lastckp_time, timebuf),
 		    __os_ctime(&ckp_time, timebuf));
 		ret = DB_LOG_VERIFY_BAD;
@@ -3457,9 +3624,10 @@ __lv_ckp_vrfy_handler(lvinfo, txninfop, param)
 	/* ckp_lsn should be less than any active txn's first lsn. */
 	if (txninfop->status == TXN_STAT_ACTIVE && LOG_COMPARE(&(cvp->ckp_lsn),
 	    &(txninfop->first_lsn)) >= 0) {
-		__db_errx(cvp->env,
+		__db_errx(cvp->env, DB_STR_A("2552",
 		    "[%lu][%lu] ckp log's ckp_lsn [%lu][%lu] greater than "
 		    "active txn %lx 's first lsn [%lu][%lu]",
+		     "%lu %lu %lu %lu %lx %lu %lu"),
 		    (u_long)cvp->lsn.file, (u_long)cvp->lsn.offset,
 		    (u_long)cvp->ckp_lsn.file, (u_long)cvp->ckp_lsn.offset,
 		    (u_long)txninfop->txnid,
@@ -3536,9 +3704,9 @@ __txn_child_verify(env, dbtp, lsnp, notused2, lvhp)
 		}
 		if (ret2 != 0)
 			ret = ret2;
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2553",
 		    "[%lu][%lu] Can not find an active transaction's "
-		    "information, txnid: %lx.",
+		    "information, txnid: %lx.", "%lu %lu %lx"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		    (u_long)argp->txnp->txnid);
 		ON_ERROR(lvh, DB_LOG_VERIFY_INTERR);
@@ -3558,8 +3726,9 @@ __txn_child_verify(env, dbtp, lsnp, notused2, lvhp)
 	 */
 	lvh->ntxn_active--;
 	if (ptvi->status != TXN_STAT_ACTIVE) {
-		__db_errx(lvh->dbenv->env, "[%lu][%lu] Parent txn %lx ended "
-		    "before child txn %lx ends.",
+		__db_errx(lvh->dbenv->env, DB_STR_A("2554",
+		    "[%lu][%lu] Parent txn %lx ended "
+		    "before child txn %lx ends.", "%lu %lu %lx %lx"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		    (u_long)argp->txnp->txnid, (u_long)argp->child);
 		ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
@@ -3580,10 +3749,11 @@ __txn_child_verify(env, dbtp, lsnp, notused2, lvhp)
 		}
 		if (ret2 != 0)
 			ret = ret2;
-		__db_errx(lvh->dbenv->env, "[%lu][%lu] Can not find an active "
+		__db_errx(lvh->dbenv->env, DB_STR_A("2555",
+		    "[%lu][%lu] Can not find an active "
 		    "transaction's information, txnid: %lx.",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)argp->child);
+		    "%lu %lu %lx"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)argp->child);
 		ON_ERROR(lvh, DB_LOG_VERIFY_INTERR);
 
 	}
@@ -3595,10 +3765,10 @@ __txn_child_verify(env, dbtp, lsnp, notused2, lvhp)
 
 	}
 	if (ptvi2->status != TXN_STAT_ACTIVE) {
-		__db_errx(lvh->dbenv->env, "[%lu][%lu] Txn %lx ended before "
-		    "it commits.",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)argp->child);
+		__db_errx(lvh->dbenv->env, DB_STR_A("2556",
+		    "[%lu][%lu] Txn %lx ended before it commits.",
+		    "%lu %lu %lx"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)argp->child);
 		ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
 	}
 	ptvi2->status = TXN_STAT_COMMIT;
@@ -3685,9 +3855,9 @@ __txn_prepare_verify(env, dbtp, lsnp, notused2, lvhp)
 		}
 		if (ret2 != 0)
 			ret = ret2;
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2557",
 		    "[%lu][%lu] Can not find an active transaction's "
-		    "information, txnid: %lx.",
+		    "information, txnid: %lx.", "%lu %lu %lx"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset,
 		    (u_long)argp->txnp->txnid);
 		ON_ERROR(lvh, DB_LOG_VERIFY_INTERR);
@@ -3709,11 +3879,11 @@ __txn_prepare_verify(env, dbtp, lsnp, notused2, lvhp)
 
 	if (!IS_ZERO_LSN(ptvi->prep_lsn)) {/* Prepared more than once. */
 
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2558",
 		    "[%lu][%lu] Multiple txn_prepare log record for "
 		    "transaction %lx, previous prepare lsn: [%lu, %lu].",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)argp->txnp->txnid,
+		    "%lu %lu %lx %lu %lu"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)argp->txnp->txnid,
 		    (u_long)ptvi->prep_lsn.file, (u_long)ptvi->prep_lsn.offset);
 	} else {
 		ptvi->prep_lsn = *lsnp;
@@ -3781,10 +3951,10 @@ __lv_on_timestamp(lvh, lsn, timestamp, logtype)
 		DB_ASSERT(lvh->dbenv->env, ltsinfo != NULL);
 		if (ltsinfo->timestamp >= timestamp &&
 		    F_ISSET(lvh, DB_LOG_VERIFY_VERBOSE)) {
-			__db_errx(lvh->dbenv->env,
+			__db_errx(lvh->dbenv->env, DB_STR_A("2559",
 			    "[%lu][%lu] [WARNING] This log record of type %s "
 			    "does not have a greater time stamp than "
-			    "[%lu, %lu] of type %s",
+			    "[%lu, %lu] of type %s", "%lu %lu %s %lu %lu %s"),
 			    (u_long)lsn->file, (u_long)lsn->offset,
 			    LOGTYPE_NAME(lvh, logtype),
 			    (u_long)ltsinfo->lsn.file,
@@ -3835,9 +4005,10 @@ __lv_on_txn_logrec(lvh, lsnp, prev_lsnp, txnp, type, dbregid)
 			 * and the DBREG_OPEN is outside the range.
 			 */
 			if (!F_ISSET(lvh, DB_LOG_VERIFY_PARTIAL))
-				__db_msg(lvh->dbenv->env,
+				__db_msg(lvh->dbenv->env, DB_STR_A("2560",
 				    "[%lu][%lu] Transaction %lx is updating a "
 				    "db file %d not registered.",
+				    "%lu %lu %lx %d"),
 				    (u_long)lsnp->file, (u_long)lsnp->offset,
 				    (u_long)txnp->txnid, dbregid);
 			goto cont;
@@ -3870,9 +4041,9 @@ cont:
 		if (ret2 != 0)
 			ret = ret2;
 
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2561",
 		    "[%lu][%lu] Can not find an active transaction's "
-		    "information, txnid: %lx.",
+		    "information, txnid: %lx.", "%lu %lu %lx"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset, (u_long)txnid);
 		ON_ERROR(lvh, DB_LOG_VERIFY_INTERR);
 	}
@@ -3887,11 +4058,11 @@ cont:
 	/* Check if prev lsn is wrong, and some log records may be missing. */
 	if (!IS_ZERO_LSN(*prev_lsnp) &&
 	    LOG_COMPARE(prev_lsnp, &(pvti->cur_lsn)) != 0) {
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2562",
 		    "[%lu][%lu] Previous record for transaction %lx is "
 		    "[%lu][%lu] and prev_lsn is [%lu][%lu].",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)pvti->txnid,
+		    "%lu %lu %lx %lu %lu %lu %lu"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)pvti->txnid,
 		    (u_long)pvti->cur_lsn.file, (u_long)pvti->cur_lsn.offset,
 		    (u_long)prev_lsnp->file, (u_long)prev_lsnp->offset);
 		ret = DB_LOG_VERIFY_BAD;
@@ -3903,9 +4074,9 @@ cont:
 	 * is the commit record.
 	 */
 	if (pvti->status == TXN_STAT_PREPARE && type != DB___txn_regop) {
-		__db_errx(lvh->dbenv->env,
+		__db_errx(lvh->dbenv->env, DB_STR_A("2563",
 		    "[%lu][%lu] Update action is performed in a "
-		    "prepared transaction %lx.",
+		    "prepared transaction %lx.", "%lu %lu %lx"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset, (u_long)txnid);
 		ret = DB_LOG_VERIFY_BAD;
 		ON_ERROR(lvh, DB_LOG_VERIFY_ERR);
@@ -3996,9 +4167,10 @@ __lv_on_new_txn (lvh, lsnp, txnp, type, dbregid, fid)
 		 */
 		} else if (vtip->nchild_active + vtip->nchild_commit +
 		    vtip->nchild_abort == 0) {
-			__db_errx(lvh->dbenv->env,
+			__db_errx(lvh->dbenv->env, DB_STR_A("2564",
 			    "[%lu][%lu] Transaction id %lx reused without "
 			    "being recycled with a __txn_recycle.",
+			    "%lu %lu %lx"),
 			    (u_long)lsnp->file, (u_long)lsnp->offset,
 			    (u_long)txnid);
 			ret = DB_LOG_VERIFY_BAD;
@@ -4091,9 +4263,9 @@ __lv_on_nontxn_update(lvh, lsnp, txnid, logtype, fileid)
 	COMPQUIET(txnid, 0);
 	if (fileid != INVAL_DBREGID) {
 		lvh->non_txnup_cnt++;
-		__db_msg(lvh->dbenv->env,
+		__db_msg(lvh->dbenv->env, DB_STR_A("2565",
 		    "[%lu][%lu] Non-transactional update, "
-		    "log type: %u, fileid: %d.",
+		    "log type: %u, fileid: %d.", "%lu %lu %u %d"),
 		    (u_long)lsnp->file, (u_long)lsnp->offset, logtype, fileid);
 	}
 
@@ -4131,9 +4303,9 @@ __lv_on_txn_aborted(lvinfo)
 		}
 		if (ret2 != 0)
 			ret = ret2;/* Use the same error msg below. */
-		__db_errx(lvinfo->dbenv->env,
+		__db_errx(lvinfo->dbenv->env, DB_STR_A("2566",
 		    "[%lu][%lu] Can not find an active transaction's "
-		    "information, txnid: %lx.",
+		    "information, txnid: %lx.", "%lu %lu %lx"),
 		    (u_long)lsn.file, (u_long)lsn.offset,
 		    (u_long)lvinfo->aborted_txnid);
 		ON_ERROR(lvinfo, DB_LOG_VERIFY_INTERR);
@@ -4149,13 +4321,13 @@ __lv_on_txn_aborted(lvinfo)
 	lvinfo->ntxn_active--;
 	/* Report txn stats. */
 	if (F_ISSET(lvinfo, DB_LOG_VERIFY_VERBOSE)) {
-		__db_msg(lvinfo->dbenv->env,
+		__db_msg(lvinfo->dbenv->env, DB_STR_A("2567",
 		    "[%lu][%lu] Txn %lx aborted after this log record.",
-		    (u_long)lvinfo->aborted_txnlsn.file,
+		    "%lu %lu %lx"), (u_long)lvinfo->aborted_txnlsn.file,
 		    (u_long)lvinfo->aborted_txnlsn.offset, (u_long)ptvi->txnid);
-		__db_msg(lvinfo->dbenv->env,
+		__db_msg(lvinfo->dbenv->env, DB_STR_A("2568",
 		    "\tThe number of active, committed and aborted child txns "
-		    "of txn %lx: %u, %u, %u.",
+		    "of txn %lx: %u, %u, %u.", "%lx %u %u %u"),
 		    (u_long)ptvi->txnid, ptvi->nchild_active,
 		    ptvi->nchild_commit, ptvi->nchild_abort);
 	}

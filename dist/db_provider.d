@@ -22,7 +22,7 @@ provider bdb {
  * 	dist/bdb_provider.d
  * 	util/dtrace/dbdefs.d
  * 	
- * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates.  All rights reserved.
  * 
  */
 
@@ -138,7 +138,7 @@ provider bdb {
     probe lock__maxnlockers(unsigned new_max_active, unsigned locker_id);
 
 /* Log - Transaction log  */
-    probe log__read(unsigned logfile, unsigned read_count);
+    probe log__read(unsigned read_count, unsigned logfile);
 
 /*
  * The mpool class monitors the allocation and management of memory,
@@ -308,12 +308,12 @@ provider bdb {
 /* The statistics counters for replication are for internal use. */
     probe rep__log_queued(unsigned count, DB_LSN *lsn);
     probe rep__pg_duplicated(unsigned eid, unsigned pgno, unsigned file, unsigned count);
-    probe rep__pg_record(unsigned eid, unsigned count);
-    probe rep__pg_request(unsigned eid, unsigned count);
-    probe rep__election_won(unsigned generation, unsigned count);
-    probe rep__election(unsigned generation, unsigned count);
-    probe rep__log_request(unsigned eid, unsigned count);
-    probe rep__master_change(unsigned eid, unsigned count);
+    probe rep__pg_record(unsigned count, unsigned eid);
+    probe rep__pg_request(unsigned count, unsigned eid);
+    probe rep__election_won(unsigned count, unsigned generation);
+    probe rep__election(unsigned count, unsigned generation);
+    probe rep__log_request(unsigned count, unsigned eid);
+    probe rep__master_change(unsigned count, unsigned eid);
 
 /* The txn category covers the basic transaction operations. */
     /* A transaction was successfully begun. */
@@ -336,7 +336,7 @@ provider bdb {
     /* Beginning the transaction incremented st_nbegins. */
     probe txn__nbegins(unsigned st_nbegins, unsigned txnid);
     /* Aborting the transaction incremented st_naborts. */
-    probe txn__naborts(unsigned st_nbegins, unsigned txnid);
+    probe txn__naborts(unsigned st_naborts, unsigned txnid);
     /* Committing the transaction incremented st_ncommits. */
     probe txn__ncommits(unsigned st_ncommits, unsigned txnid);
     /*

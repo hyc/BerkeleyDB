@@ -25,6 +25,8 @@ int __mutex_get_align __P((DB_ENV *, u_int32_t *));
 int __mutex_set_align __P((DB_ENV *, u_int32_t));
 int __mutex_get_increment __P((DB_ENV *, u_int32_t *));
 int __mutex_set_increment __P((DB_ENV *, u_int32_t));
+int __mutex_get_init __P((DB_ENV *, u_int32_t *));
+int __mutex_set_init __P((DB_ENV *, u_int32_t));
 int __mutex_get_max __P((DB_ENV *, u_int32_t *));
 int __mutex_set_max __P((DB_ENV *, u_int32_t));
 int __mutex_get_tas_spins __P((DB_ENV *, u_int32_t *));
@@ -39,9 +41,14 @@ atomic_value_t __atomic_dec __P((ENV *, db_atomic_t *));
 int atomic_compare_exchange __P((ENV *, db_atomic_t *, atomic_value_t, atomic_value_t));
 #endif
 int __db_pthread_mutex_init __P((ENV *, db_mutex_t, u_int32_t));
+#ifndef HAVE_MUTEX_HYBRID
 int __db_pthread_mutex_lock __P((ENV *, db_mutex_t, db_timeout_t));
+#endif
 #if defined(HAVE_SHARED_LATCHES)
 int __db_pthread_mutex_readlock __P((ENV *, db_mutex_t));
+#endif
+#ifdef HAVE_MUTEX_HYBRID
+int __db_hybrid_mutex_suspend __P((ENV *, db_mutex_t, db_timespec *, int));
 #endif
 int __db_pthread_mutex_unlock __P((ENV *, db_mutex_t));
 int __db_pthread_mutex_destroy __P((ENV *, db_mutex_t));

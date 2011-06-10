@@ -13,6 +13,8 @@
 
 static int __rep_chk_newfile __P((ENV *, DB_LOGC *, REP *,
     __rep_control_args *, int));
+static int __rep_log_split __P((ENV *, DB_THREAD_INFO *,
+    __rep_control_args *, DBT *, DB_LSN *, DB_LSN *));
 
 /*
  * __rep_allreq --
@@ -370,7 +372,7 @@ __rep_bulk_log(env, ip, rp, rec, savetime, ret_lsnp)
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
 
-	ret = __log_rep_split(env, ip, rp, rec, ret_lsnp, &last_lsn);
+	ret = __rep_log_split(env, ip, rp, rec, ret_lsnp, &last_lsn);
 	switch (ret) {
 	/*
 	 * We're in an internal backup and we've gotten
@@ -384,6 +386,141 @@ __rep_bulk_log(env, ip, rp, rec, savetime, ret_lsnp)
 	 */
 	default:
 		break;
+	}
+	return (ret);
+}
+
+/*
+ * __rep_log_split --
+ *	- Split a log buffer into individual records.
+ *
+ * This is used by a client to process a bulk log message from the
+ * master and convert it into individual __rep_apply requests.
+ */
+static int
+__rep_log_split(env, ip, rp, rec, ret_lsnp, last_lsnp)
+	ENV *env;
+	DB_THREAD_INFO *ip;
+	__rep_control_args *rp;
+	DBT *rec;
+	DB_LSN *ret_lsnp;
+	DB_LSN *last_lsnp;
+{
+	DBT logrec;
+	DB_LSN next_new_lsn, save_lsn, tmp_lsn;
+	__rep_control_args tmprp;
+	__rep_bulk_args b_args;
+	int is_dup, ret, save_ret;
+	u_int32_t save_flags;
+	u_int8_t *p, *ep;
+
+	memset(&logrec, 0, sizeof(logrec));
+	ZERO_LSN(next_new_lsn);
+	ZERO_LSN(save_lsn);
+	ZERO_LSN(tmp_lsn);
+	/*
+	 * We're going to be modifying the rp LSN contents so make
+	 * our own private copy to play with.
+	 */
+	memcpy(&tmprp, rp, sizeof(tmprp));
+	/*
+	 * We send the bulk buffer on a PERM record, so often we will have
+	 * DB_LOG_PERM set.  However, we only want to mark the last LSN
+	 * we have as a PERM record.  So clear it here, and when we're on
+	 * the last record below, set it.  The same applies if the sender
+	 * set REPCTL_LOG_END on this message.  We want the end of the
+	 * bulk buffer to be marked as the end.
+	 */
+	save_flags = F_ISSET(rp, REPCTL_LOG_END | REPCTL_PERM);
+	F_CLR(&tmprp, REPCTL_LOG_END | REPCTL_PERM);
+	is_dup = ret = save_ret = 0;
+	for (ep = (u_int8_t *)rec->data + rec->size, p = (u_int8_t *)rec->data;
+	    p < ep; ) {
+		/*
+		 * First thing in the buffer is the length.  Then the LSN
+		 * of this record, then the record itself.
+		 */
+		if (rp->rep_version < DB_REPVERSION_47) {
+			memcpy(&b_args.len, p, sizeof(b_args.len));
+			p += sizeof(b_args.len);
+			memcpy(&tmprp.lsn, p, sizeof(DB_LSN));
+			p += sizeof(DB_LSN);
+			logrec.data = p;
+			logrec.size = b_args.len;
+			p += b_args.len;
+		} else {
+			if ((ret = __rep_bulk_unmarshal(env,
+			    &b_args, p, rec->size, &p)) != 0)
+				return (ret);
+			tmprp.lsn = b_args.lsn;
+			logrec.data = b_args.bulkdata.data;
+			logrec.size = b_args.len;
+		}
+		VPRINT(env, (env, DB_VERB_REP_MISC,
+		    "log_rep_split: Processing LSN [%lu][%lu]",
+		    (u_long)tmprp.lsn.file, (u_long)tmprp.lsn.offset));
+		VPRINT(env, (env, DB_VERB_REP_MISC,
+    "log_rep_split: p %#lx ep %#lx logrec data %#lx, size %lu (%#lx)",
+		    P_TO_ULONG(p), P_TO_ULONG(ep), P_TO_ULONG(logrec.data),
+		    (u_long)logrec.size, (u_long)logrec.size));
+		if (p >= ep && save_flags)
+			F_SET(&tmprp, save_flags);
+		/*
+		 * A previous call to __rep_apply indicated an earlier
+		 * record is a dup and the next_new_lsn we are waiting for.
+		 * Skip log records until we catch up with next_new_lsn.
+		 */
+		if (is_dup && LOG_COMPARE(&tmprp.lsn, &next_new_lsn) < 0) {
+			VPRINT(env, (env, DB_VERB_REP_MISC,
+			    "log_split: Skip dup LSN [%lu][%lu]",
+			    (u_long)tmprp.lsn.file, (u_long)tmprp.lsn.offset));
+			continue;
+		}
+		is_dup = 0;
+		ret = __rep_apply(env, ip,
+		    &tmprp, &logrec, &tmp_lsn, &is_dup, last_lsnp);
+		VPRINT(env, (env, DB_VERB_REP_MISC,
+		    "log_split: rep_apply ret %d, dup %d, tmp_lsn [%lu][%lu]",
+		    ret, is_dup, (u_long)tmp_lsn.file, (u_long)tmp_lsn.offset));
+		if (is_dup)
+			next_new_lsn = tmp_lsn;
+		switch (ret) {
+		/*
+		 * If we received the pieces we need for running recovery,
+		 * short-circuit because recovery will truncate the log to
+		 * the LSN we want anyway.
+		 */
+		case DB_REP_LOGREADY:
+			goto out;
+		/*
+		 * If we just handled a special record, retain that information.
+		 */
+		case DB_REP_ISPERM:
+		case DB_REP_NOTPERM:
+			save_ret = ret;
+			save_lsn = tmp_lsn;
+			ret = 0;
+			break;
+		/*
+		 * Normal processing, do nothing, just continue.
+		 */
+		case 0:
+			break;
+		/*
+		 * If we get an error, then stop immediately.
+		 */
+		default:
+			goto out;
+		}
+	}
+out:
+	/*
+	 * If we finish processing successfully, set our return values
+	 * based on what we saw.
+	 */
+	if (ret == 0) {
+		ret = save_ret;
+		*ret_lsnp = save_lsn;
 	}
 	return (ret);
 }
@@ -502,9 +639,9 @@ __rep_logreq(env, rp, rec, eid)
 			 * we are the client.
 			 */
 			if (F_ISSET(rep, REP_F_MASTER)) {
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("3501",
 				    "Request for LSN [%lu][%lu] not found",
-				    (u_long)rp->lsn.file,
+				    "%lu %lu"), (u_long)rp->lsn.file,
 				    (u_long)rp->lsn.offset);
 				ret = 0;
 				goto err;
@@ -787,8 +924,9 @@ __rep_logready(env, rep, savetime, last_lsnp)
 	return (0);
 
 err:
-	__db_errx(env,
-	    "Client initialization failed.  Need to manually restore client");
+	DB_ASSERT(env, ret != DB_REP_WOULDROLLBACK);
+	__db_errx(env, DB_STR("3502",
+	    "Client initialization failed.  Need to manually restore client"));
 	return (__env_panic(env, ret));
 }
 

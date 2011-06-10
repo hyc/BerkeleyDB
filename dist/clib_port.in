@@ -163,6 +163,9 @@
 #ifndef	HAVE_ATOL
 #define	atol		__db_Catol
 #endif
+#ifndef	HAVE_BSEARCH
+#define	bsearch		__db_Cbsearch
+#endif
 #ifndef	HAVE_FCLOSE
 #define	fclose		__db_Cfclose
 #endif

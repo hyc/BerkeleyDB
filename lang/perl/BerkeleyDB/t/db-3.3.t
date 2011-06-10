@@ -139,7 +139,8 @@ umask(0);
 
     # c_pget from secondary database 
     $k = 'flag';
-    ok $s_cursor->c_pget($k, $pk, $v, DB_SET) == 0;
+    ok $s_cursor->c_pget($k, $pk, $v, DB_SET) == 0
+        or diag "$BerkeleyDB::Error\n";
     is $k, 'flag';
     is $pk, 'red';
     is $v, 'flag';
@@ -445,7 +446,8 @@ umask(0);
 
     # c_pget from secondary database 
     $k = 5;
-    ok $s_cursor->c_pget($k, $pk, $v, DB_SET) == 0;
+    ok $s_cursor->c_pget($k, $pk, $v, DB_SET) == 0
+        or diag "$BerkeleyDB::Error\n";
     is $k, 5 ;
     is $pk, 'green';
     is $v, 'house';

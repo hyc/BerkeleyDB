@@ -95,8 +95,8 @@ __lock_detect_pp(dbenv, flags, atype, rejectp)
 	case DB_LOCK_YOUNGEST:
 		break;
 	default:
-		__db_errx(env,
-	    "DB_ENV->lock_detect: unknown deadlock detection mode specified");
+		__db_errx(env, DB_STR("2048",
+	    "DB_ENV->lock_detect: unknown deadlock detection mode specified"));
 		return (EINVAL);
 	}
 
@@ -341,14 +341,14 @@ dokill:		if (killid == BAD_KILLID) {
 		 */
 		if (status != 0) {
 			if (status != DB_ALREADY_ABORTED)
-				__db_errx(env,
+				__db_errx(env, DB_STR_A("2049",
 				    "warning: unable to abort locker %lx",
-				    (u_long)idmap[killid].id);
+				    "%lx"), (u_long)idmap[killid].id);
 			else
 				region->need_dd = 1;
 		} else if (FLD_ISSET(env->dbenv->verbose, DB_VERB_DEADLOCK))
-			__db_msg(env,
-			    "Aborting locker %lx", (u_long)idmap[killid].id);
+			__db_msg(env, DB_STR_A("2050", "Aborting locker %lx",
+			    "%lx"), (u_long)idmap[killid].id);
 	}
 err:	if (copymap != NULL)
 		__os_free(env, copymap);
@@ -465,12 +465,14 @@ skip:		LOCK_DD(env, region);
 	count = region->nlockers;
 	if (count == 0) {
 		UNLOCK_LOCKERS(env, region);
+		LOCK_SYSTEM_UNLOCK(lt, region);
 		*nlockers = 0;
 		return (0);
 	}
 
 	if (FLD_ISSET(env->dbenv->verbose, DB_VERB_DEADLOCK))
-		__db_msg(env, "%lu lockers", (u_long)count);
+		__db_msg(env, DB_STR_A("2051", "%lu lockers",
+		    "%lu"), (u_long)count);
 
 	nentries = (u_int32_t)DB_ALIGN(count, 32) / 32;
 
@@ -478,12 +480,14 @@ skip:		LOCK_DD(env, region);
 	if ((ret = __os_calloc(env, (size_t)count,
 	    sizeof(u_int32_t) * nentries, &bitmap)) != 0) {
 		UNLOCK_LOCKERS(env, region);
+		LOCK_SYSTEM_UNLOCK(lt, region);
 		return (ret);
 	}
 
 	if ((ret = __os_calloc(env,
 	    sizeof(u_int32_t), nentries, &tmpmap)) != 0) {
 		UNLOCK_LOCKERS(env, region);
+		LOCK_SYSTEM_UNLOCK(lt, region);
 		__os_free(env, bitmap);
 		return (ret);
 	}
@@ -491,6 +495,7 @@ skip:		LOCK_DD(env, region);
 	if ((ret = __os_calloc(env,
 	    (size_t)count, sizeof(locker_info), &id_array)) != 0) {
 		UNLOCK_LOCKERS(env, region);
+		LOCK_SYSTEM_UNLOCK(lt, region);
 		__os_free(env, bitmap);
 		__os_free(env, tmpmap);
 		return (ret);
@@ -740,7 +745,7 @@ l_retry:	lp = SH_LIST_FIRST(&lockerp->heldby, __db_lock);
 			id_array[id].last_locker_id = lockerp->id;
 get_lock:		id_array[id].last_lock = R_OFFSET(&lt->reginfo, lp);
 			id_array[id].last_obj = lp->obj;
-			lo = (DB_LOCKOBJ *)((u_int8_t *)lp + lp->obj);
+			lo = SH_OFF_TO_PTR(lp, lp->obj, DB_LOCKOBJ);
 			id_array[id].last_ndx = lo->indx;
 			pptr = SH_DBT_PTR(&lo->lockobj);
 			if (lo->lockobj.size >= sizeof(db_pgno_t))
@@ -868,7 +873,7 @@ __dd_abort(env, info, statusp)
 		goto err;
 	if (lockerp == NULL || F_ISSET(lockerp, DB_LOCKER_INABORT)) {
 		*statusp = DB_ALREADY_ABORTED;
-		goto out;
+		goto err;
 	}
 
 	/*
@@ -890,7 +895,7 @@ __dd_abort(env, info, statusp)
 		goto done;
 	}
 
-	sh_obj = (DB_LOCKOBJ *)((u_int8_t *)lockp + lockp->obj);
+	sh_obj = SH_OFF_TO_PTR(lockp, lockp->obj, DB_LOCKOBJ);
 
 	STAT_INC_VERB(env, lock, deadlock,
 	    region->stat.st_ndeadlocks, lockerp->id, &sh_obj->lockobj);
@@ -913,8 +918,7 @@ __dd_abort(env, info, statusp)
 	MUTEX_UNLOCK(env, lockp->mtx_lock);
 
 done:	OBJECT_UNLOCK(lt, region, info->last_ndx);
-err:
-out:	UNLOCK_LOCKERS(env, region);
+err:	UNLOCK_LOCKERS(env, region);
 	LOCK_SYSTEM_UNLOCK(lt, region);
 	return (ret);
 }

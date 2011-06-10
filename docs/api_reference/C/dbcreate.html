@@ -8,21 +8,24 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
-    <link rel="prev" href="dbclose.html" title="DB-&gt;close()" />
-    <link rel="next" href="dbcompact.html" title="DB-&gt;compact()" />
+    <link rel="prev" href="db_copy.html" title="db_copy" />
+    <link rel="next" href="dbdel.html" title="DB-&gt;del()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">db_create</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="dbclose.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="db_copy.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 2. 
                 The DB Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="dbcompact.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="dbdel.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -76,7 +79,7 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49533896"></a>Parameters</h3>
+              <h3 class="title"><a id="id3854639"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,7 +87,7 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49591080"></a>dbp</h4>
+                <h4 class="title"><a id="id3854642"></a>dbp</h4>
               </div>
             </div>
           </div>
@@ -97,7 +100,7 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49626816"></a>dbenv</h4>
+                <h4 class="title"><a id="id3854523"></a>dbenv</h4>
               </div>
             </div>
           </div>
@@ -124,21 +127,37 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49655968"></a>flags</h4>
+                <h4 class="title"><a id="id3854893"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                  The <span class="bold"><strong>flags</strong></span> parameter is currently
-                  unused, and must be set to 0.
+                  The <span class="bold"><strong>flags</strong></span> parameter must be set to 0 or the following value:
              </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p><a id="dbcreate_DB_XA_CREATE"></a>
+                                <code class="literal">DB_XA_CREATE</code>
+                            </p>
+                <p>
+                                Instead of creating a standalone database, create a database intended
+                                to be accessed via applications running under an X/Open conformant
+                                Transaction Manager.  The database will be opened in the environment
+                                specified by the OPENINFO parameter of the GROUPS section of the
+                                ubbconfig file.  See the <a href="../../programmer_reference/xa_xa_intro.html" class="olink">XA Introduction</a> section in the Berkeley DB Reference Guide for
+                                more information.
+                            </p>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49626152"></a>Errors</h3>
+              <h3 class="title"><a id="id3854938"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -150,7 +169,7 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49482344"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3855022"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -163,7 +182,7 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49490848"></a>Class</h3>
+              <h3 class="title"><a id="id3854654"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -175,7 +194,7 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49648312"></a>See Also</h3>
+              <h3 class="title"><a id="id3854233"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -188,18 +207,18 @@ int db_create(DB **dbp, DB_ENV *dbenv, u_int32_t flags);  </pre>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="dbclose.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="db_copy.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="db.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="dbcompact.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="dbdel.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DB-&gt;close() </td>
+          <td width="40%" align="left" valign="top">db_copy </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DB-&gt;compact()</td>
+          <td width="40%" align="right" valign="top"> DB-&gt;del()</td>
         </tr>
       </table>
     </div>

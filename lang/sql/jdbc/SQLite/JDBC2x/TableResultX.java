@@ -1,7 +1,6 @@
 package SQLite.JDBC2x;
 
 import java.sql.Types;
-import java.util.Vector;
 
 public class TableResultX extends SQLite.TableResult {
     public int sql_type[];

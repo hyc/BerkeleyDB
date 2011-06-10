@@ -225,8 +225,8 @@ __bam_root(dbc, cp)
 
 	/* Yeah, right. */
 	if (cp->page->level >= MAXBTREELEVEL) {
-		__db_errx(dbp->env,
-		    "Too many btree levels: %d", cp->page->level);
+		__db_errx(dbp->env, DB_STR_A("1021",
+		    "Too many btree levels: %d", "%d"), cp->page->level);
 		return (ENOSPC);
 	}
 
@@ -564,7 +564,7 @@ err:	if (lp != NULL)
 		(void)__memp_fput(mpf,
 		     dbc->thread_info, pp->page, dbc->priority);
 
-	if (ret == DB_NEEDSPLIT)
+	if (ret == DB_NEEDSPLIT && atomic_read(&mpf->mfp->multiversion) == 0)
 		(void)__LPUT(dbc, pp->lock);
 	else
 		(void)__TLPUT(dbc, pp->lock);

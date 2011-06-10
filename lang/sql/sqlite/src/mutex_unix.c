@@ -99,7 +99,7 @@ static int pthreadMutexEnd(void){ return SQLITE_OK; }
 ** <li>  SQLITE_MUTEX_STATIC_MEM2
 ** <li>  SQLITE_MUTEX_STATIC_PRNG
 ** <li>  SQLITE_MUTEX_STATIC_LRU
-** <li>  SQLITE_MUTEX_STATIC_LRU2
+** <li>  SQLITE_MUTEX_STATIC_PMEM
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -235,6 +235,7 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
   */
   pthread_mutex_lock(&p->mutex);
 #if SQLITE_MUTEX_NREF
+  assert( p->nRef>0 || p->owner==0 );
   p->owner = pthread_self();
   p->nRef++;
 #endif
@@ -307,6 +308,7 @@ static void pthreadMutexLeave(sqlite3_mutex *p){
   assert( pthreadMutexHeld(p) );
 #if SQLITE_MUTEX_NREF
   p->nRef--;
+  if( p->nRef==0 ) p->owner = 0;
 #endif
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
 

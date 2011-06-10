@@ -10,7 +10,7 @@ use util ;
 
 use Test::More ;
 
-plan(skip_all => "this needs Berkeley DB 4.8.x or better\n" )
+plan(skip_all => "this needs Berkeley DB 4.8.x or better\n")
     if $BerkeleyDB::db_version < 4.8;
 
 plan tests => 58;

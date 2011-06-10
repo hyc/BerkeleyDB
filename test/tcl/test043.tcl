@@ -21,6 +21,11 @@ proc test043 { method {nentries 10000} args} {
 		return
 	}
 
+	if { [is_heap $method] == 1 } {
+		puts "Test043 skipping for method $method"
+		return
+	}
+
 	# Create the database and open the dictionary
 	set txnenv 0
 	set eindex [lsearch -exact $args "-env"]

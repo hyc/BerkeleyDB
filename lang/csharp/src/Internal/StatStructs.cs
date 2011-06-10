@@ -57,13 +57,31 @@ namespace BerkeleyDB.Internal {
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    internal struct HeapStatStruct {
+	internal uint heap_magic;		
+	internal uint heap_version;		
+	internal uint heap_metaflags;	
+	internal uint heap_nrecs;		
+	internal uint heap_pagecnt;		
+	internal uint heap_pagesize;	
+	internal uint heap_nregions;	
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     internal struct LockStatStruct {
 	internal uint st_id;		
 	internal uint st_cur_maxid;		
+	internal uint st_initlocks;		
+	internal uint st_initlockers;	
+	internal uint st_initobjects;	
+	internal uint st_locks;		
+	internal uint st_lockers;		
+	internal uint st_objects;		
 	internal uint st_maxlocks;		
 	internal uint st_maxlockers;	
 	internal uint st_maxobjects;	
 	internal uint st_partitions;	
+	internal uint st_tablesize;		
 	internal int   st_nmodes;		
 	internal uint st_nlockers;		
 	internal uint st_nlocks;		
@@ -111,6 +129,9 @@ namespace BerkeleyDB.Internal {
 	internal uint st_lg_size;		
 	internal uint st_wc_bytes;		
 	internal uint st_wc_mbytes;		
+	internal uint st_fileid_init;	
+	internal uint st_nfileid;		
+	internal uint st_maxnfileid;	
 	internal ulong st_record;		
 	internal uint st_w_bytes;		
 	internal uint st_w_mbytes;		
@@ -131,7 +152,6 @@ namespace BerkeleyDB.Internal {
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct MPoolFileStatStruct {
-	internal string file_name;		
 	internal uint st_pagesize;		
 	internal uint st_map;		
 	internal ulong st_cache_hit;	
@@ -139,6 +159,7 @@ namespace BerkeleyDB.Internal {
 	internal ulong st_page_create;	
 	internal ulong st_page_in;		
 	internal ulong st_page_out;		
+	internal string file_name;	
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -147,9 +168,9 @@ namespace BerkeleyDB.Internal {
 	internal uint st_bytes;		
 	internal uint st_ncache;		
 	internal uint st_max_ncache;	
-	internal IntPtr	  st_mmapsize;		
-	internal int   st_maxopenfd;		
-	internal int   st_maxwrite;		
+	internal IntPtr st_mmapsize;		
+	internal int st_maxopenfd;		
+	internal int st_maxwrite;		
 	internal uint st_maxwrite_sleep;	
 	internal uint st_pages;		
 	internal uint st_map;		
@@ -186,6 +207,7 @@ namespace BerkeleyDB.Internal {
 	internal ulong st_io_wait;		
 	internal ulong st_sync_interrupted;	
 	internal IntPtr	  st_regsize;		
+	internal IntPtr	  st_regmax;		
     }
 
     internal struct MempStatStruct {
@@ -198,7 +220,9 @@ namespace BerkeleyDB.Internal {
 	
 	internal uint st_mutex_align;	
 	internal uint st_mutex_tas_spins;	
+	internal uint st_mutex_init;	
 	internal uint st_mutex_cnt;		
+	internal uint st_mutex_max;		
 	internal uint st_mutex_free;	
 	internal uint st_mutex_inuse;	
 	internal uint st_mutex_inuse_max;	
@@ -207,6 +231,7 @@ namespace BerkeleyDB.Internal {
 	internal ulong st_region_wait;	
 	internal ulong st_region_nowait;	
 	internal IntPtr	  st_regsize;		
+	internal IntPtr	  st_regmax;		
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -283,7 +308,7 @@ namespace BerkeleyDB.Internal {
 	internal uint st_waiting_pg;	
 
 	internal uint st_dupmasters;	
-	internal int st_env_id;			
+	internal IntPtr st_env_id;		
 	internal uint st_env_priority;	
 	internal ulong st_bulk_fills;	
 	internal ulong st_bulk_overflows;	
@@ -294,12 +319,17 @@ namespace BerkeleyDB.Internal {
 	internal ulong st_client_svc_miss;	
 	internal uint st_gen;		
 	internal uint st_egen;		
+	internal ulong st_lease_chk;		
+	internal ulong st_lease_chk_misses;	
+	internal ulong st_lease_chk_refresh;	
+	internal ulong st_lease_sends;	
+
 	internal ulong st_log_duplicated;	
 	internal ulong st_log_queued_max;	
 	internal ulong st_log_queued_total;	
 	internal ulong st_log_records;	
 	internal ulong st_log_requested;	
-	internal int st_master;			
+	internal IntPtr st_master;		
 	internal ulong st_master_changes;	
 	internal ulong st_msgs_badgen;	
 	internal ulong st_msgs_processed;	
@@ -321,13 +351,14 @@ namespace BerkeleyDB.Internal {
 	internal ulong st_elections_won;	
 
 	
-	internal int st_election_cur_winner;	
+	internal IntPtr st_election_cur_winner;	
 	internal uint st_election_gen;	
+	internal uint st_election_datagen;	
 	internal DB_LSN_STRUCT st_election_lsn;		
 	internal uint st_election_nsites;	
 	internal uint st_election_nvotes;	
 	internal uint st_election_priority;	
-	internal int st_election_status;		
+	internal int   st_election_status;	
 	internal uint st_election_tiebreaker;
 	internal uint st_election_votes;	
 	internal uint st_election_sec;	
@@ -357,6 +388,7 @@ namespace BerkeleyDB.Internal {
 	internal DB_LSN_STRUCT	  st_last_ckp;		
 	internal long	  st_time_ckp;		
 	internal uint st_last_txnid;	
+	internal uint st_inittxns;		
 	internal uint st_maxtxns;		
 	internal ulong st_naborts;		
 	internal ulong st_nbegins;		
@@ -365,10 +397,10 @@ namespace BerkeleyDB.Internal {
 	internal uint st_nsnapshot;		
 	internal uint st_maxnactive;	
 	internal uint st_maxnsnapshot;	
-	internal IntPtr st_txnarray;	
 	internal ulong st_region_wait;	
 	internal ulong st_region_nowait;	
 	internal IntPtr	  st_regsize;		
+	internal IntPtr st_txnarray;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -377,11 +409,20 @@ namespace BerkeleyDB.Internal {
         internal uint offset;
     }
 
-internal enum DB_TXN_ACTIVE_STATUS {
+internal enum DB_TXN_XA_STATUS : uint {
+        TXN_XA_ACTIVE = 1,
+        TXN_XA_DEADLOCKED = 2,
+        TXN_XA_IDLE = 3,
+        TXN_XA_PREPARED = 4,
+        TXN_XA_ROLLEDBACK = 5,
+}
+
+internal enum DB_TXN_ACTIVE_STATUS : uint {
         TXN_ABORTED = 1,
         TXN_COMMITTED = 2,
-        TXN_PREPARED = 3,
-        TXN_RUNNING = 4,
+        TXN_NEED_ABORT = 3,
+        TXN_PREPARED = 4,
+        TXN_RUNNING = 5,
 }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -399,6 +440,8 @@ internal enum DB_TXN_ACTIVE_STATUS {
 	internal uint priority;		
 
 	internal DB_TXN_ACTIVE_STATUS status;		
+
+	internal DB_TXN_XA_STATUS xa_status;		
 
     }
 

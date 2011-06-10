@@ -45,6 +45,10 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong Committed { get { return st.st_ncommits; } }
         /// <summary>
+        /// Initial number of transactions configured. 
+        /// </summary>
+        public uint InitTxns { get { return st.st_inittxns; } }
+        /// <summary>
         /// LSN of the last checkpoint 
         /// </summary>
         public LSN LastCheckpoint { get { return lastCkp; } }

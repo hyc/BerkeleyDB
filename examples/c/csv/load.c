@@ -115,7 +115,8 @@ input_load(input_fmt ifmt_arg, u_long version_arg)
 
 		memcpy(put_line + (field_count + 2), input_line, len);
 		data.data = put_line;
-		data.size = (field_count + 2) * sizeof(u_int32_t) + len;
+		data.size = (u_int32_t)
+			((field_count + 2) * sizeof(u_int32_t) + len);
 
 		if (verbose > 1)
 			(void)entry_print(

@@ -37,9 +37,10 @@ public class JDBCPreparedStatement extends JDBCStatement
     }
 
     private String fixup(String sql) {
-	StringBuffer sb = new StringBuffer();
+	StringBuffer sb = new StringBuffer(sql.length());
 	boolean inq = false;
 	int nparm = 0;
+	int iscreate = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
 	    if (c == '\'') {
@@ -69,7 +70,24 @@ public class JDBCPreparedStatement extends JDBCStatement
 		}
 	    } else if (c == ';') {
 		if (!inq) {
-		    break;
+		    if (iscreate < 0) {
+			int ii = 0;
+			while (sb.charAt(ii) == ' ' ||
+			       sb.charAt(ii) == '\t' ||
+			       sb.charAt(ii) == '\n' ||
+			       sb.charAt(ii) == '\r') {
+			    ++ii;
+			}
+			String t = sb.substring(ii, ii + 6);
+			if (t.compareToIgnoreCase("create") == 0) {
+			    iscreate = 1;
+			} else {
+			    iscreate = 0;
+			}
+		    }
+		    if (iscreate == 0) {
+			break;
+		    }
 		}
 		sb.append(c);
 	    } else if (c == '%') {
@@ -91,7 +109,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (!conn.db.is3()) {
 	    return sql;
 	}
-	StringBuffer sb = new StringBuffer();
+	StringBuffer sb = new StringBuffer(sql.length());
 	int parm = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
@@ -295,7 +313,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	    x.read(data, 0, length);
 	    setBytes(parameterIndex, data);
 	} catch (java.io.IOException e) {
-	    throw new SQLException("I/O failed");
+	    throw new SQLException("I/O failed: " + e.toString());
 	}
     }
 
@@ -385,8 +403,12 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (batch == null) {
 	    batch = new ArrayList(args.length);
 	}
-	for (int i = 0; i < args.length; i++) {
-	    batch.add(new BatchArg(args[i], blobs[i]));
+	if (args.length == 0) {
+	    batch.add(new BatchArg(null, false));
+	} else {
+	    for (int i = 0; i < args.length; i++) {
+		batch.add(new BatchArg(args[i], blobs[i]));
+	    }
 	}
     }
 
@@ -394,7 +416,12 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (batch == null) {
 	    return new int[0];
 	}
-	int[] ret = new int[batch.size() / args.length];
+	int[] ret;
+	if (args.length == 0) {
+	    ret = new int[batch.size()];
+	} else {
+	    ret = new int[batch.size() / args.length];
+	}
 	for (int i = 0; i < ret.length; i++) {
 	    ret[i] = EXECUTE_FAILED;
 	}
@@ -402,8 +429,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	int index = 0;
 	for (int i = 0; i < ret.length; i++) {
 	    for (int k = 0; k < args.length; k++) {
-		BatchArg b = (BatchArg) batch.get(index++);
-
+		BatchArg b = batch.get(index++);
 		args[k] = b.arg;
 		blobs[k] = b.blob;
 	    }
@@ -439,7 +465,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	    reader.read(data);
 	    setString(parameterIndex, new String(data));
 	} catch (java.io.IOException e) {
-	    throw new SQLException("I/O failed");
+	    throw new SQLException("I/O failed: " + e.toString());
 	}
     }
 

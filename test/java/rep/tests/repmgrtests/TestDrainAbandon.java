@@ -1,13 +1,14 @@
 /*-
  * See the file LICENSE for redistribution information.
  * 
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package repmgrtests;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -29,7 +30,8 @@ import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
 import com.sleepycat.db.ReplicationConfig;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerAckPolicy;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.VerboseConfig;
@@ -47,13 +49,13 @@ public class TestDrainAbandon {
     private int masterPort;
     private int clientPort;
     private int client2Port;
-    private int masterSpoofPort;
+    private int client3Port;
     private int mgrPort;
 
     class MyEventHandler extends EventHandlerAdapter {
-        private boolean done = false;
-        private boolean panic = false;
-        private int permFailCount = 0;
+        private boolean done;
+        private boolean panic;
+        private boolean gotNewmaster;
 		
         @Override
             synchronized public void handleRepStartupDoneEvent() {
@@ -62,23 +64,34 @@ public class TestDrainAbandon {
             }
 
         @Override
-            synchronized public void handleRepPermFailedEvent() {
-                permFailCount++;
+            synchronized public void handleRepNewMasterEvent(int unused) {
+                gotNewmaster = true;
+                notifyAll();
             }
 
-        synchronized public int getPermFailCount() { return permFailCount; }
-		
         @Override
             synchronized public void handlePanicEvent() {
-                done = true;
                 panic = true;
                 notifyAll();
             }
 
         synchronized void await() throws Exception {
-            while (!done) { wait(); }
+            while (!done) {
+                checkPanic();
+                wait();
+            }
+        }
+
+        private void checkPanic() throws Exception {
             if (panic)
-                throw new Exception("aborted by panic in DB");
+                throw new Exception("aborted by DB panic");
+        }
+
+        synchronized void awaitNewmaster() throws Exception {
+            while (!gotNewmaster) {
+                checkPanic();
+                wait();
+            }
         }
     }
 
@@ -90,7 +103,8 @@ public class TestDrainAbandon {
         String alphabet = "abcdefghijklmnopqrstuvwxyz";
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter w = new OutputStreamWriter(baos);
-        for (int i=0; i<100; i++) { w.write(alphabet); }
+        while (baos.size() < 1000) // arbitrary min. size
+            w.write(alphabet);
         w.close();
         data = baos.toByteArray();
 
@@ -98,30 +112,51 @@ public class TestDrainAbandon {
             masterPort = 6000;
             clientPort = 6001;
             client2Port = 6002;
-            masterSpoofPort = 7000;
+            client3Port = 6003;
             mgrPort = 8000;
         } else {
-            PortsConfig p = new PortsConfig(3);
+            String mgrPortNum = System.getenv("DB_TEST_FAKE_PORT");
+            assertNotNull("required DB_TEST_FAKE_PORT environment variable not found",
+                          mgrPortNum);
+            mgrPort = Integer.parseInt(mgrPortNum);
+            PortsConfig p = new PortsConfig(4);
             masterPort = p.getRealPort(0);
-            masterSpoofPort = p.getSpoofPort(0);
             clientPort = p.getRealPort(1);
             client2Port = p.getRealPort(2);
-            mgrPort = p.getManagerPort();
+            client3Port = p.getRealPort(3);
             System.out.println("setUp: " + mgrPort + "/" + p.getFiddlerConfig());
-            Util.startFiddler(p, getClass().getName());
+            Util.startFiddler(p, getClass().getName(), mgrPort);
         }
     }
 	
     @Test public void testDraining() throws Exception {
         EnvironmentConfig masterConfig = makeBasicConfig();
         masterConfig.setReplicationLimit(100000000);
-        masterConfig.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
+        ReplicationManagerSiteConfig site =
+            new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        masterConfig.addReplicationManagerSite(site);
+
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLegacy(true);
+        masterConfig.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", client2Port);
+        site.setLegacy(true);
+        masterConfig.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", client3Port);
+        site.setLegacy(true);
+        masterConfig.addReplicationManagerSite(site);
+
         MyEventHandler masterMonitor = new MyEventHandler();
         masterConfig.setEventHandler(masterMonitor);
         Environment master = new Environment(mkdir("master"), masterConfig);
-        master.setReplicationTimeout(ReplicationTimeoutType.ACK_TIMEOUT,
-                                     30000000);
-        master.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_MASTER);
+        setTimeouts(master);
+        // Prevent connection retries, so that all connections
+        // originate from clients 
+        master.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY,
+                                     Integer.MAX_VALUE);
+        master.replicationManagerStart(2, ReplicationManagerStartPolicy.REP_MASTER);
 		
         DatabaseConfig dc = new DatabaseConfig();
         dc.setTransactional(true);
@@ -133,25 +168,39 @@ public class TestDrainAbandon {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         value.setData(data);
-        for (int i=0; i<120; i++) {
+
+        for (int i=0;
+             ((BtreeStats)db.getStats(null, null)).getPageCount() < 50;
+             i++)
+        {
             String k = "The record number is: " + i;
             key.setData(k.getBytes());
             db.put(null, key, value);
         }
 
-        BtreeStats stats = (BtreeStats)db.getStats(null, null);
-        assertTrue(stats.getPageCount() >= 50);
-
         // create client, but don't sync yet
         // 
         EnvironmentConfig ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterSpoofPort), false);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", client2Port);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", client3Port);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        MyEventHandler clientMonitor = new MyEventHandler();
+        ec.setEventHandler(clientMonitor);
         Environment client = new Environment(mkdir("client"), ec);
+        setTimeouts(client);
         client.setReplicationConfig(ReplicationConfig.DELAYCLIENT, true);
         client.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
-        Thread.sleep(2000);     // FIXME
-
+        clientMonitor.awaitNewmaster();
 
         // tell fiddler to stop reading once it sees a PAGE message
         Socket s = new Socket("localhost", mgrPort);
@@ -168,6 +217,44 @@ public class TestDrainAbandon {
         // wait til it gets stuck
         Thread.sleep(5000);     // FIXME
 
+        // Do the same for another client, because the master has 2
+        // msg processing threads.  (It's no longer possible to
+        // configure just 1.)
+        ec = makeBasicConfig();
+        site = new ReplicationManagerSiteConfig("localhost", client2Port);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", client3Port);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        clientMonitor = new MyEventHandler();
+        ec.setEventHandler(clientMonitor);
+        Environment client2 = new Environment(mkdir("client2"), ec);
+        setTimeouts(client2);
+        client2.setReplicationConfig(ReplicationConfig.DELAYCLIENT, true);
+        client2.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
+        clientMonitor.awaitNewmaster();
+
+        // tell fiddler to stop reading once it sees a PAGE message
+        String path2 = "{" + masterPort + "," + client2Port + "}";
+        w.write("{" + path2 + ",page_clog}\r\n");
+        w.flush();
+        br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        assertEquals("ok", br.readLine());
+
+        client2.syncReplication();
+
+        // wait til it gets stuck
+        Thread.sleep(5000);
+
+
         // With the connection stuck, the master cannot write out log
         // records for new "live" transactions.  Knowing we didn't
         // write the record, we should not bother waiting for an ack
@@ -181,32 +268,50 @@ public class TestDrainAbandon {
         db.put(null, key, value);
         long duration = System.currentTimeMillis() - startTime;
         assertTrue("txn duration: " + duration, duration < 29000);
+        System.out.println("txn duration: " + duration);
         db.close();
 
-        // Tell fiddler to close this connection.  That should trigger
+        // Tell fiddler to close the connections.  That should trigger
         // us to abandon the timeout.  Then create another client and
         // see that it can complete its internal init quickly.  Since
-        // we only have one thread at the master, this demonstrates
-        // that the thread was abandoned.
+        // we have limited threads at the master, this demonstrates
+        // that they were abandoned.
         //
-        String path2 = "{" + clientPort + "," + masterPort + "}"; // looks like {6001,6000}
+        path1 = "{" + clientPort + "," + masterPort + "}"; // looks like {6001,6000}
+        w.write("{" + path1 + ",shutdown}\r\n");
+        w.flush();
+        assertEquals("ok", br.readLine());
+        path2 = "{" + client2Port + "," + masterPort + "}"; // looks like {6001,6000}
         w.write("{" + path2 + ",shutdown}\r\n");
         w.flush();
         assertEquals("ok", br.readLine());
 
         ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", client2Port));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterSpoofPort), false);
-        MyEventHandler clientMonitor = new MyEventHandler();
+        site = new ReplicationManagerSiteConfig("localhost", client3Port);
+        site.setLocalSite(true);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", client2Port);
+        site.setLegacy(true);
+        ec.addReplicationManagerSite(site);
+        
+        clientMonitor = new MyEventHandler();
         ec.setEventHandler(clientMonitor);
-        Environment client2 = new Environment(mkdir("client2"), ec);
+        Environment client3 = new Environment(mkdir("client3"), ec);
+        setTimeouts(client3);
         startTime = System.currentTimeMillis();
-        client2.replicationManagerStart(2, ReplicationManagerStartPolicy.REP_CLIENT);
+        client3.replicationManagerStart(2, ReplicationManagerStartPolicy.REP_CLIENT);
         clientMonitor.await();
         duration = System.currentTimeMillis() - startTime;
         assertTrue("sync duration: " + duration, duration < 20000); // 20 seconds should be plenty
 
-        client2.close();
+        client3.close();
         master.close();
 
         w.write("shutdown\r\n");
@@ -224,12 +329,25 @@ public class TestDrainAbandon {
         ec.setInitializeReplication(true);
         ec.setTransactional(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(3);
+        /*
+         * Use ack policy NONE, so that we have no trouble/delay
+         * starting 3rd site when 2nd site hasn't yet completed sync.
+         */ 
+        ec.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.NONE);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);
     }
 	
+    private void setTimeouts(Environment e) throws Exception {
+        e.setReplicationTimeout(ReplicationTimeoutType.ACK_TIMEOUT,
+                                     30000000);
+        e.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_SEND,
+                                     2000000);
+        e.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_MONITOR,
+                                     10000000);
+    }
+
     public File mkdir(String dname) {
         File f = new File(testdir, dname);
         f.mkdir();

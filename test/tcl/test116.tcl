@@ -26,6 +26,14 @@ proc test116 { method {tnum "116"} args } {
 	set testfile A.db
 	set newtag new
 	set newfile $testfile.$newtag
+	
+	if { [is_heap $method] } {
+		set testfile1 A.db1
+		set testfile2 A.db2
+		set newfile1 $testfile1.$newtag
+		set newfile2 $testfile2.$newtag
+	}
+
 	set nentries 50
 	set filenames "A B C D E"
 
@@ -55,8 +63,9 @@ proc test116 { method {tnum "116"} args } {
 			append envargs " -thread "
 		}
 		# We only have to check for encryption flags in 
-		# releases that include encryption (and we'll get
-		# in trouble if we try it on releases that don't). 
+		# releases that include encryption, and we get
+		# in trouble when we call get_encrypt_flags on 
+		# NC releases. 
 		if { $has_crypto } {
 			if { [is_substr $args "-encrypt"] } {
 				append envargs " -encryptaes $passwd "
@@ -99,8 +108,9 @@ proc test116 { method {tnum "116"} args } {
 		error_check_good newenv [is_valid_env $newenv] TRUE
 
 		# We test with subdatabases except with the queue access
-		# method, where they are not allowed.
-		if { [is_queue $method] == 1 || [is_partitioned $args] == 1} {
+		# method and heap access method, where they are not allowed.
+		if { [is_queue $method] == 1 || \
+		     [is_partitioned $args] == 1 || [is_heap $method] == 1} {
 			set db [eval {berkdb_open} -env $env -lorder $lorder \
 			    $omethod $args -create -mode 0644 $testfile]
 			error_check_good dbopen [is_valid_db $db] TRUE
@@ -159,9 +169,14 @@ proc test116 { method {tnum "116"} args } {
 		# first copy the file within the same directory, then reset
 		# the fileid on the copy, then reset the LSNs on the copy,
 		# and only then copy the new file to the new env.  Otherwise
-		# the LSNs would get reset on the original file.
-
+		# the LSNs would get reset on the original file.  Copy
+		# auxiliary files if heap.
 		file copy -force $testdir/$testfile $testdir/$newfile
+		if { [is_heap $method] == 1 } {
+			file copy -force $testdir/$testfile1 $testdir/$newfile1
+			file copy -force $testdir/$testfile2 $testdir/$newfile2
+		}
+
 		# If we're using queue extents or partitions , we must 
 		# copy the extents/partitions to the new file name as well.
 		set extents ""
@@ -171,9 +186,21 @@ proc test116 { method {tnum "116"} args } {
 		error_check_good fileid_reset [$env id_reset $newfile] 0
 		error_check_good \
 		    lsn_reset [eval {$env lsn_reset} $resetargs {$newfile}] 0
+		if { [is_heap $method] == 1 } {
+			error_check_good fileid_reset [$env id_reset $newfile1] 0
+			error_check_good \
+			    lsn_reset [eval {$env lsn_reset} $resetargs {$newfile1}] 0
+			error_check_good fileid_reset [$env id_reset $newfile2] 0
+			error_check_good \
+			    lsn_reset [eval {$env lsn_reset} $resetargs {$newfile2}] 0
+		}
 
 		file copy -force $testdir/$newfile $newdir/$testfile
-
+		if { [is_heap $method] == 1 } {
+			file copy -force $testdir/$newfile1 $newdir/$testfile1
+        		file copy -force $testdir/$newfile2 $newdir/$testfile2
+		}      
+	
 		# If we're using queue extents, we must copy the extents
 		# to the new directory  as well.
 		if { [is_queueext $method] || [is_partitioned $args]} {
@@ -214,7 +241,8 @@ proc test116 { method {tnum "116"} args } {
 		    verify [verify_dir $newdir "\tTest$tnum.e: " 0 0 $nodump] 0
 
 		puts "\tTest$tnum.f: Open new db, check data, close db."
-		if { [is_queue $method] == 1 || [is_partitioned $args] == 1 } {
+		if { [is_queue $method] == 1 || \
+		     [is_partitioned $args] == 1 || [is_heap $method] == 1} {
 			set db [eval {berkdb_open} -env $newenv \
 			    -lorder $lorder \
 			    $omethod $args -create -mode 0644 $testfile]
@@ -261,6 +289,10 @@ proc test116 { method {tnum "116"} args } {
 			}
 		}
 		error_check_good newfile_rm [$env dbremove $newfile] 0
+		if { [is_heap $method] == 1 } {
+			error_check_good newfile1_rm [$env dbremove $newfile1] 0
+			error_check_good newfile2_rm [$env dbremove $newfile2] 0
+		}      
 		error_check_good newenv_close [$newenv close] 0
 		fileremove -f $newdir
 	}

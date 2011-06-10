@@ -12,7 +12,10 @@
     <link rel="next" href="repset_limit.html" title="DB_ENV-&gt;rep_set_limit()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;rep_set_config()</th>
@@ -45,18 +48,16 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
     </p>
       <p>
          The database environment's replication subsystem may also be
-         configured using the environment's 
-         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> 
-         file.  The syntax of the entry in that file is a single line with
-         the string "rep_set_config", one or more whitespace characters,
-         and the method <span class="bold"><strong>which</strong></span> parameter as
-         a string and optionally one or more whitespace characters, and the
+         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax
+         of the entry in that file is a single line with the string
+         "rep_set_config", one or more whitespace characters, and the
+         method <span class="bold"><strong>which</strong></span> parameter as a
+         string and optionally one or more whitespace characters, and the
          string "on" or "off".  If the optional string is omitted, the
          default is "on"; for example, "rep_set_config DB_REP_CONF_NOWAIT"
-         or "rep_set_config DB_REP_CONF_NOWAIT on". Because the
-         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> 
-         file is read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         or "rep_set_config DB_REP_CONF_NOWAIT on". Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+         file is read when the database environment is opened, it will
+         silently overrule configuration done before that time.
     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;rep_set_config()</code> method configures a database
@@ -87,7 +88,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53798912"></a>Parameters</h3>
+              <h3 class="title"><a id="id3928480"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -95,7 +96,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53738632"></a>which</h4>
+                <h4 class="title"><a id="id3927701"></a>which</h4>
               </div>
             </div>
           </div>
@@ -179,6 +180,9 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
                         This configuration flag can only be turned on before the environment
                         is opened with the <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a>
                         method. Its value cannot be changed while the environment is open.
+                        All sites in the replication
+                        group should have the same value for this
+                        configuration flag.
                     </p>
               </li>
               <li>
@@ -259,7 +263,8 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
                         <a href="../../programmer_reference/rep_elect.html" class="olink">Elections</a> 
                         section in the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em> for more information.)  
                         Both sites in the replication group should have the same value for this 
-                        configuration flag.
+                        configuration flag. This option is turned on by
+                        default.
                     </p>
               </li>
             </ul>
@@ -269,7 +274,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53810928"></a>onoff</h4>
+                <h4 class="title"><a id="id3928685"></a>onoff</h4>
               </div>
             </div>
           </div>
@@ -285,7 +290,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53805640"></a>Errors</h3>
+              <h3 class="title"><a id="id3928705"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -301,7 +306,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53815168"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3928756"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -317,7 +322,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53816168"></a>Class</h3>
+              <h3 class="title"><a id="id3928661"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -329,7 +334,7 @@ DB_ENV-&gt;rep_set_config(DB_ENV *env, u_int32_t which, int onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53818224"></a>See Also</h3>
+              <h3 class="title"><a id="id3928795"></a>See Also</h3>
             </div>
           </div>
         </div>

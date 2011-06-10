@@ -73,7 +73,8 @@ __os_getenv(env, name, bpp, buflen)
 			*bpp = NULL;
 			return (0);
 		}
-		__db_syserr(env, ret, "GetEnvironmentVariable");
+		__db_syserr(env, ret, DB_STR("0026",
+		    "GetEnvironmentVariable"));
 		return (__os_posix_err(ret));
 	}
 	if (ret > (int)sizeof(tbuf))
@@ -94,8 +95,8 @@ __os_getenv(env, name, bpp, buflen)
 
 small_buf:
 	*bpp = NULL;
-	__db_errx(env,
-	    "%s: buffer too small to hold environment variable %s",
+	__db_errx(env, DB_STR_A("0027",
+	    "%s: buffer too small to hold environment variable %s", "%s %s"),
 	    name, p);
 	return (EINVAL);
 #endif

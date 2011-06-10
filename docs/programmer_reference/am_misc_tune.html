@@ -12,7 +12,10 @@
     <link rel="next" href="am_misc_faq.html" title="Access method FAQ" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Access method tuning</th>
@@ -67,7 +70,7 @@ system's available physical memory.  Depending on the virtual memory
 and file system buffering policies of your system, and the requirements
 of other applications, the maximum cache size will be some amount
 smaller than the size of physical memory.  If you find that
-the <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a> shows that increasing the cache size improves your hit
+the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility shows that increasing the cache size improves your hit
 rate, but performance is not improving (or is getting worse), then it's
 likely you've hit other system limitations.  At this point, you should
 review the system's swapping/paging activity and limit the size of the
@@ -102,7 +105,7 @@ items that are larger than one-quarter of the page size are deemed to
 be too large).  Accessing these overflow pages requires at least one
 additional page reference over a normal access, so it is usually better
 to increase the page size than to create a database with a large number
-of overflow pages.  Use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a> (or the statistics
+of overflow pages.  Use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility (or the statistics
 returned by the <a href="../api_reference/C/dbstat.html" class="olink">DB-&gt;stat()</a> method) to review the number of overflow
 pages in the database.
 <p>The second issue is using large key/data items instead of duplicate data

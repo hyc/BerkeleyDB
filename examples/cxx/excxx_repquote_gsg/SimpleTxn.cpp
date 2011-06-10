@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include <iostream>
+#include <errno.h>
 
 #include <db_cxx.h>
 #include "SimpleConfigInfo.h"
@@ -34,8 +35,6 @@ extern "C" {
     extern int getopt(int, char * const *, const char *);
     extern char *optarg;
 }
-#else
-#include <errno.h>
 #endif
 
 class RepMgr

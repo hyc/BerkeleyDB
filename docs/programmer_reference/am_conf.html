@@ -12,7 +12,10 @@
     <link rel="next" href="am_conf_select.html" title="Selecting an access method" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 2. 
@@ -53,22 +56,27 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_conf.html#idp50378880">Btree</a>
+                  <a href="am_conf.html#id3878736">Btree</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_conf.html#idp50376696">Hash</a>
+                  <a href="am_conf.html#id3879052">Hash</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_conf.html#idp50379976">Queue</a>
+                  <a href="am_conf.html#id3879108">Heap</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_conf.html#idp50382960">Recno</a>
+                  <a href="am_conf.html#id3877002">Queue</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="am_conf.html#id3879033">Recno</a>
                 </span>
               </dt>
             </dl>
@@ -82,12 +90,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_conf_select.html#idp50382600">Hash or Btree?</a>
+                  <a href="am_conf_select.html#id3879119">Btree or Heap?</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_conf_select.html#idp50271272">Queue or Recno?</a>
+                  <a href="am_conf_select.html#id3879906">Hash or Btree?</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="am_conf_select.html#id3879303">Queue or Recno?</a>
                 </span>
               </dt>
             </dl>
@@ -191,6 +204,11 @@
           </dd>
           <dt>
             <span class="sect1">
+              <a href="heap_conf.html">Heap access method specific configuration</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
               <a href="rq_conf.html">Queue and Recno access method specific configuration</a>
             </span>
           </dt>
@@ -234,34 +252,39 @@
           <dl>
             <dt>
               <span class="sect2">
-                <a href="am_conf.html#idp50378880">Btree</a>
+                <a href="am_conf.html#id3878736">Btree</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="am_conf.html#idp50376696">Hash</a>
+                <a href="am_conf.html#id3879052">Hash</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="am_conf.html#idp50379976">Queue</a>
+                <a href="am_conf.html#id3879108">Heap</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="am_conf.html#idp50382960">Recno</a>
+                <a href="am_conf.html#id3877002">Queue</a>
+              </span>
+            </dt>
+            <dt>
+              <span class="sect2">
+                <a href="am_conf.html#id3879033">Recno</a>
               </span>
             </dt>
           </dl>
         </div>
         <p>
-        Berkeley DB currently offers four access methods: Btree, Hash, Queue and Recno.
+        Berkeley DB currently offers five access methods: Btree, Hash, Heap, Queue and Recno.
     </p>
         <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50378880"></a>Btree</h3>
+                <h3 class="title"><a id="id3878736"></a>Btree</h3>
               </div>
             </div>
           </div>
@@ -287,7 +310,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50376696"></a>Hash</h3>
+                <h3 class="title"><a id="id3879052"></a>Hash</h3>
               </div>
             </div>
           </div>
@@ -303,7 +326,26 @@
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50379976"></a>Queue</h3>
+                <h3 class="title"><a id="id3879108"></a>Heap</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+            The Heap access method stores records in a heap file. Records
+            are referenced solely by the page and offset at which they are
+            written. Because records are written in a heap file, compaction
+            is not necessary when deleting records, which allows for more
+            efficient use of space than if Btree is in use. The Heap access
+            method is intended for platforms with constrained disk space, 
+            especially if those systems are performing a great many record
+            creation and deletions.
+        </p>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="id3877002"></a>Queue</h3>
               </div>
             </div>
           </div>
@@ -319,7 +361,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp50382960"></a>Recno</h3>
+                <h3 class="title"><a id="id3879033"></a>Recno</h3>
               </div>
             </div>
           </div>

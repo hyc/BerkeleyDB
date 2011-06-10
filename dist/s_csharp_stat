@@ -8,7 +8,7 @@ msgcsharp="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */"
 
 f=../lang/csharp/src/Internal/StatStructs.cs
@@ -28,6 +28,7 @@ csclass()
     	-e 's:\tchar \*:\tinternal string :' \
 	-e 's:\tdb_pgno_t:\tinternal uint:' \
 	-e 's:\tdb_seq_t:\tinternal long:' \
+	-e 's:\tdb_size_t:\tinternal IntPtr:' \
 	-e 's:\tdb_threadid_t:\tinternal uint:' \
 	-e 's:\tdb_timeout_t:\tinternal uint:' \
 	-e 's:\tDB_LSN:\tinternal DB_LSN_STRUCT:' \
@@ -40,6 +41,7 @@ csclass()
 	-e 's:\ttime_t:\tinternal long:' \
     	-e 's:\tu_int32_t:\tinternal uint:' \
         -e 's:\tuintmax_t:\tinternal ulong:' \
+	-e 's:\tdb_ssize_t:\tinternal IntPtr:' \
 	-e "s:/\*.*\*/::" \
     	-e "/\/\*/ {
 N
@@ -67,9 +69,15 @@ EOF
 
 txn_active()
 {
-    (echo "internal enum DB_TXN_ACTIVE_STATUS {"
+    (echo "internal enum DB_TXN_XA_STATUS : uint {"
         sed -n "/struct __db_txn_active {/,/^}/p" < ../src/dbinc/db.in |
-	sed -n "/^#define/p" | awk '{print "        " $2 " = " $3 ","}'
+	sed -n "/^#define/p" | sed -n "/XA/p" | awk '{print "        " $2 " = " $3 ","}'
+	echo "}"
+	echo ) >> $t
+
+    (echo "internal enum DB_TXN_ACTIVE_STATUS : uint {"
+        sed -n "/struct __db_txn_active {/,/^}/p" < ../src/dbinc/db.in |
+	sed -n "/^#define/p" | sed -n "/XA/!p" | awk '{print "        " $2 " = " $3 ","}'
 	echo "}"
 	echo ) >> $t
 
@@ -99,6 +107,7 @@ EOF
 	    -e 's:\tsize_t:\tinternal IntPtr:' \
 	    -e 's:\ttime_t:\tinternal long:' \
 	    -e 's:\tu_int32_t status:\tinternal DB_TXN_ACTIVE_STATUS status:' \
+	    -e 's:\tu_int32_t xa_status:\tinternal DB_TXN_XA_STATUS xa_status:' \
 	    -e 's:\tu_int32_t:\tinternal uint:' \
 	    -e 's:\tuintmax_t:\tinternal ulong:' \
 	    -e "s:/\*.*\*/::"
@@ -117,6 +126,7 @@ EOF
 
 stat_class bt_stat BTreeStatStruct
 stat_class h_stat HashStatStruct
+stat_class heap_stat HeapStatStruct
 stat_class lock_stat LockStatStruct
 stat_class log_stat LogStatStruct
 stat_class mpool_fstat MPoolFileStatStruct

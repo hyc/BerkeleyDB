@@ -8,6 +8,7 @@
 #include "dbinc/btree.h"
 #include "dbinc/txn.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/qam.h"
 #include "dbinc/fop.h"
 
@@ -232,6 +233,32 @@ __ham_init_verify(env, dtabp)
 }
 
 #endif /* HAVE_HASH */
+#ifdef HAVE_HEAP
+/*
+ * PUBLIC: int __heap_init_verify __P((ENV *, DB_DISTAB *));
+ */
+int
+__heap_init_verify(env, dtabp)
+	ENV *env;
+	DB_DISTAB *dtabp;
+{
+	int ret;
+
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __heap_addrem_verify, DB___heap_addrem)) != 0)
+		return (ret);
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __heap_pg_alloc_verify, DB___heap_pg_alloc)) != 0)
+		return (ret);
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __heap_trunc_meta_verify, DB___heap_trunc_meta)) != 0)
+		return (ret);
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __heap_trunc_page_verify, DB___heap_trunc_page)) != 0)
+		return (ret);
+	return (0);
+}
+#endif /* HAVE_HEAP */
 #ifdef HAVE_QUEUE
 /*
  * PUBLIC: int __qam_init_verify __P((ENV *, DB_DISTAB *));
@@ -289,4 +316,3 @@ __txn_init_verify(env, dtabp)
 		return (ret);
 	return (0);
 }
-

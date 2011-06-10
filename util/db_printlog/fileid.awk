@@ -23,7 +23,8 @@ NR == 1 {
 	rec = $0
 }
 /^	/{
-	rec = sprintf("%s\n%s", rec, $0);
+	if (length(rec) + length($0) < 2040)
+		rec = sprintf("%s\n%s", rec, $0);
 }
 /fileid/{
 	for (i = 0; i <= nfiles; i++)

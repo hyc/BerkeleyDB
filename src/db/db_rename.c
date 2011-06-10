@@ -43,6 +43,7 @@ __env_dbrename_pp(dbenv, txn, name, subdb, newname, flags)
 	env = dbenv->env;
 	dbp = NULL;
 	txn_local = 0;
+	handle_check = 0;
 
 	ENV_ILLEGAL_BEFORE_OPEN(env, "DB_ENV->dbrename");
 
@@ -55,6 +56,9 @@ __env_dbrename_pp(dbenv, txn, name, subdb, newname, flags)
 		return (ret);
 
 	ENV_ENTER(env, ip);
+	XA_NO_TXN(ip, ret);
+	if (ret != 0)
+		goto err;
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -235,7 +239,8 @@ __db_rename_int(dbp, ip, txn, name, subdb, newname, flags)
 	DB_TEST_RECOVERY(dbp, DB_TEST_PREDESTROY, ret, name);
 
 	if (name == NULL && subdb == NULL) {
-		__db_errx(env, "Rename on temporary files invalid");
+		__db_errx(env, DB_STR("0503",
+		    "Rename on temporary files invalid"));
 		ret = EINVAL;
 		goto err;
 	}

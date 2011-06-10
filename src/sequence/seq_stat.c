@@ -193,20 +193,19 @@ __seq_print_stats(seq, flags)
 
 	if ((ret = __seq_stat(seq, &sp, flags)) != 0)
 		return (ret);
-	__db_dl_pct(env,
-	    "The number of sequence locks that required waiting",
+	__db_dl_pct(env, "The number of sequence locks that required waiting",
 	    (u_long)sp->st_wait,
 	     DB_PCT(sp->st_wait, sp->st_wait + sp->st_nowait), NULL);
 	STAT_FMT("The current sequence value",
-	    INT64_FMT, int64_t, sp->st_current);
+	    INT64_FMT, db_seq_t, sp->st_current);
 	STAT_FMT("The cached sequence value",
-	    INT64_FMT, int64_t, sp->st_value);
+	    INT64_FMT, db_seq_t, sp->st_value);
 	STAT_FMT("The last cached sequence value",
-	    INT64_FMT, int64_t, sp->st_last_value);
+	    INT64_FMT, db_seq_t, sp->st_last_value);
 	STAT_FMT("The minimum sequence value",
-	    INT64_FMT, int64_t, sp->st_value);
+	    INT64_FMT, db_seq_t, sp->st_min);
 	STAT_FMT("The maximum sequence value",
-	    INT64_FMT, int64_t, sp->st_value);
+	    INT64_FMT, db_seq_t, sp->st_max);
 	STAT_ULONG("The cache size", sp->st_cache_size);
 	__db_prflags(env, NULL,
 	    sp->st_flags, __db_seq_flags_fn, NULL, "\tSequence flags");

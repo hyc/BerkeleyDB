@@ -23,7 +23,7 @@ __db_addrem_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_addrem", __db_addrem_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_addrem", __db_addrem_desc, info));
 }
 
 /*
@@ -40,7 +40,7 @@ __db_addrem_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_addrem_42", __db_addrem_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_addrem_42", __db_addrem_42_desc, info));
 }
 
 /*
@@ -56,7 +56,7 @@ __db_big_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_big", __db_big_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_big", __db_big_desc, info));
 }
 
 /*
@@ -73,7 +73,7 @@ __db_big_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_big_42", __db_big_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_big_42", __db_big_42_desc, info));
 }
 
 /*
@@ -90,7 +90,7 @@ __db_ovref_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_ovref", __db_ovref_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_ovref", __db_ovref_desc, info));
 }
 
 /*
@@ -107,7 +107,7 @@ __db_relink_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_relink_42", __db_relink_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_relink_42", __db_relink_42_desc, info));
 }
 
 /*
@@ -124,7 +124,7 @@ __db_debug_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_debug", __db_debug_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_debug", __db_debug_desc, info));
 }
 
 /*
@@ -141,7 +141,7 @@ __db_noop_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_noop", __db_noop_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_noop", __db_noop_desc, info));
 }
 
 /*
@@ -158,7 +158,7 @@ __db_pg_alloc_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_alloc_42", __db_pg_alloc_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_alloc_42", __db_pg_alloc_42_desc, info));
 }
 
 /*
@@ -175,7 +175,7 @@ __db_pg_alloc_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_alloc", __db_pg_alloc_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_alloc", __db_pg_alloc_desc, info));
 }
 
 /*
@@ -192,7 +192,7 @@ __db_pg_free_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_free_42", __db_pg_free_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_free_42", __db_pg_free_42_desc, info));
 }
 
 /*
@@ -209,7 +209,7 @@ __db_pg_free_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_free", __db_pg_free_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_free", __db_pg_free_desc, info));
 }
 
 /*
@@ -226,7 +226,7 @@ __db_cksum_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_cksum", __db_cksum_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_cksum", __db_cksum_desc, info));
 }
 
 /*
@@ -243,7 +243,7 @@ __db_pg_freedata_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_freedata_42", __db_pg_freedata_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_freedata_42", __db_pg_freedata_42_desc, info));
 }
 
 /*
@@ -260,7 +260,7 @@ __db_pg_freedata_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_freedata", __db_pg_freedata_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_freedata", __db_pg_freedata_desc, info));
 }
 
 /*
@@ -277,7 +277,7 @@ __db_pg_init_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_init", __db_pg_init_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_init", __db_pg_init_desc, info));
 }
 
 /*
@@ -294,7 +294,7 @@ __db_pg_sort_44_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_sort_44", __db_pg_sort_44_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_sort_44", __db_pg_sort_44_desc, info));
 }
 
 /*
@@ -311,7 +311,7 @@ __db_pg_trunc_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pg_trunc", __db_pg_trunc_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pg_trunc", __db_pg_trunc_desc, info));
 }
 
 /*
@@ -328,7 +328,7 @@ __db_realloc_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_realloc", __db_realloc_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_realloc", __db_realloc_desc, info));
 }
 
 /*
@@ -345,7 +345,7 @@ __db_relink_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_relink", __db_relink_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_relink", __db_relink_desc, info));
 }
 
 /*
@@ -362,7 +362,7 @@ __db_merge_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_merge", __db_merge_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_merge", __db_merge_desc, info));
 }
 
 /*
@@ -379,7 +379,7 @@ __db_pgno_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__db_pgno", __db_pgno_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__db_pgno", __db_pgno_desc, info));
 }
 
 /*

@@ -123,6 +123,14 @@ int _rep_send_intercept_c(DB_ENV *dbenv, const DBT *cntrl, const DBT *data,
 }
 
 extern "C"
+void _message_dispatch_intercept_c(DB_ENV *dbenv, DB_CHANNEL *channel,
+    DBT *request, u_int32_t nrequest, u_int32_t cb_flags)
+{
+	DbEnv::_message_dispatch_intercept(dbenv, channel, request, nrequest,
+	    cb_flags);
+}
+
+extern "C"
 int _isalive_intercept_c(
     DB_ENV *dbenv, pid_t pid, db_threadid_t thrid, u_int32_t flags)
 {
@@ -223,6 +231,22 @@ int DbEnv::_isalive_intercept(
 	return ((*cxxenv->isalive_callback_)(cxxenv, pid, thrid, flags));
 }
 
+void DbEnv::_message_dispatch_intercept(DB_ENV *dbenv, DB_CHANNEL *dbchannel, 
+    DBT *request, u_int32_t nrequest, u_int32_t cb_flags)
+{
+	DbEnv *cxxenv = DbEnv::get_DbEnv(dbenv);
+	if (cxxenv == 0)
+		DB_ERROR(DbEnv::get_DbEnv(dbenv),
+		    "DbEnv::message_dispatch_callback", EINVAL,
+		    ON_ERROR_UNKNOWN);
+	else {
+		DbChannel *cxxchannel = (DbChannel *)dbchannel;
+		Dbt *cxxdbt = (Dbt *)request;
+		((*cxxenv->message_dispatch_callback_)(cxxenv, cxxchannel,
+		    cxxdbt, nrequest, cb_flags));
+	}
+}
+
 int DbEnv::_rep_send_intercept(DB_ENV *dbenv, const DBT *cntrl, const DBT *data,
     const DB_LSN *lsn, int id, u_int32_t flags)
 {
@@ -286,6 +310,7 @@ DbEnv::DbEnv(u_int32_t flags)
 ,	paniccall_callback_(0)
 ,	event_func_callback_(0)
 ,	rep_send_callback_(0)
+,	message_dispatch_callback_(0)
 {
 	if ((construct_error_ = initialize(0)) != 0)
 		DB_ERROR(this, "DbEnv::DbEnv", construct_error_,
@@ -303,6 +328,7 @@ DbEnv::DbEnv(DB_ENV *dbenv, u_int32_t flags)
 ,	paniccall_callback_(0)
 ,	event_func_callback_(0)
 ,	rep_send_callback_(0)
+,	message_dispatch_callback_(0)
 {
 	if ((construct_error_ = initialize(dbenv)) != 0)
 		DB_ERROR(this, "DbEnv::DbEnv", construct_error_,
@@ -763,6 +789,12 @@ DBENV_METHOD(get_lk_partitions, (u_int32_t *partitionsp), (dbenv, partitionsp))
 DBENV_METHOD(set_lk_partitions, (u_int32_t partitions), (dbenv, partitions))
 DBENV_METHOD(get_lk_priority, (u_int32_t lockerid, u_int32_t *priorityp), (dbenv, lockerid, priorityp))
 DBENV_METHOD(set_lk_priority, (u_int32_t lockerid, u_int32_t priority), (dbenv, lockerid, priority))
+DBENV_METHOD(get_lk_tablesize, (u_int32_t *tablesize), (dbenv, tablesize))
+DBENV_METHOD(set_lk_tablesize, (u_int32_t tablesize), (dbenv, tablesize))
+DBENV_METHOD(get_memory_init, (DB_MEM_CONFIG type, u_int32_t *count), (dbenv, type, count))
+DBENV_METHOD(set_memory_init, (DB_MEM_CONFIG type, u_int32_t count), (dbenv, type, count))
+DBENV_METHOD(get_memory_max, (u_int32_t *gbytes, u_int32_t *bytes), (dbenv, gbytes, bytes))
+DBENV_METHOD(set_memory_max, (u_int32_t gbytes, u_int32_t bytes), (dbenv, gbytes, bytes))
 DBENV_METHOD(get_mp_max_openfd, (int *maxopenfdp), (dbenv, maxopenfdp))
 DBENV_METHOD(set_mp_max_openfd, (int maxopenfd), (dbenv, maxopenfd))
 DBENV_METHOD(get_mp_max_write, (int *maxwritep, db_timeout_t *maxwrite_sleepp),
@@ -977,11 +1009,13 @@ DBENV_METHOD(mutex_alloc,
 DBENV_METHOD(mutex_free, (db_mutex_t mutex), (dbenv, mutex))
 DBENV_METHOD(mutex_get_align, (u_int32_t *argp), (dbenv, argp))
 DBENV_METHOD(mutex_get_increment, (u_int32_t *argp), (dbenv, argp))
+DBENV_METHOD(mutex_get_init, (u_int32_t *argp), (dbenv, argp))
 DBENV_METHOD(mutex_get_max, (u_int32_t *argp), (dbenv, argp))
 DBENV_METHOD(mutex_get_tas_spins, (u_int32_t *argp), (dbenv, argp))
 DBENV_METHOD(mutex_lock, (db_mutex_t mutex), (dbenv, mutex))
 DBENV_METHOD(mutex_set_align, (u_int32_t arg), (dbenv, arg))
 DBENV_METHOD(mutex_set_increment, (u_int32_t arg), (dbenv, arg))
+DBENV_METHOD(mutex_set_init, (u_int32_t arg), (dbenv, arg))
 DBENV_METHOD(mutex_set_max, (u_int32_t arg), (dbenv, arg))
 DBENV_METHOD(mutex_set_tas_spins, (u_int32_t arg), (dbenv, arg))
 DBENV_METHOD(mutex_stat,
@@ -1067,12 +1101,12 @@ int DbEnv::txn_begin(DbTxn *pid, DbTxn **tid, u_int32_t flags)
 DBENV_METHOD(txn_checkpoint, (u_int32_t kbyte, u_int32_t min, u_int32_t flags),
     (dbenv, kbyte, min, flags))
 
-int DbEnv::txn_recover(DbPreplist *preplist, u_int32_t count,
-    u_int32_t *retp, u_int32_t flags)
+int DbEnv::txn_recover(DbPreplist *preplist, long count,
+    long *retp, u_int32_t flags)
 {
 	DB_ENV *dbenv = unwrap(this);
 	DB_PREPLIST *c_preplist;
-	u_int32_t i;
+	long i;
 	int ret;
 
 	/*
@@ -1183,14 +1217,93 @@ DBENV_METHOD(rep_get_timeout, (int which, db_timeout_t * timeout),
     (dbenv, which, timeout))
 DBENV_METHOD(rep_set_timeout, (int which, db_timeout_t timeout),
     (dbenv, which, timeout))
-DBENV_METHOD(repmgr_add_remote_site, (const char* host, u_int16_t port,
-    int * eidp, u_int32_t flags), (dbenv, host, port, eidp, flags))
 DBENV_METHOD(repmgr_get_ack_policy, (int *policy), (dbenv, policy))
 DBENV_METHOD(repmgr_set_ack_policy, (int policy), (dbenv, policy))
-DBENV_METHOD(repmgr_get_local_site,
-    (const char** host, u_int *port), (dbenv, host, port))
-DBENV_METHOD(repmgr_set_local_site, (const char* host, u_int16_t port,
-    u_int32_t flags), (dbenv, host, port, flags))
+
+int DbEnv::repmgr_channel(int eid, DbChannel **dbchannel, u_int32_t flags)
+{
+	DB_ENV *dbenv = unwrap(this);
+	DB_CHANNEL *channel;
+	int ret;
+
+	ret = dbenv->repmgr_channel(dbenv, eid, &channel, flags);
+	if (DB_RETOK_STD(ret)) {
+		*dbchannel = new DbChannel();
+		(*dbchannel)->imp_ = channel;
+		(*dbchannel)->dbenv_ = this;
+	} else
+		DB_ERROR(this, "DbEnv::repmgr_channel", ret, error_policy());
+
+	return (ret);
+}
+
+int DbEnv::repmgr_msg_dispatch(
+    void (*arg)(DbEnv *, DbChannel *, Dbt *, u_int32_t, u_int32_t),
+    u_int32_t flags)
+{
+	DB_ENV *dbenv = unwrap(this);
+	int ret;
+
+	message_dispatch_callback_ = arg;
+	if ((ret = dbenv->repmgr_msg_dispatch(dbenv,
+	    arg == 0 ? 0 : _message_dispatch_intercept_c, flags)) != 0)
+		DB_ERROR(this, "DbEnv::repmgr_msg_dispatch", ret, error_policy());
+
+	return (ret);
+}
+
+int DbEnv::repmgr_local_site(DbSite **dbsite)
+{
+	DB_ENV *dbenv = unwrap(this);
+	DB_SITE *site;
+	int ret;
+
+	ret = dbenv->repmgr_local_site(dbenv, &site);
+	if (DB_RETOK_REPMGR_LOCALSITE(ret)) {
+		if (ret == 0) {
+			*dbsite = new DbSite();
+			(*dbsite)->imp_ = site;
+		}
+	} else
+		DB_ERROR(this, "DbEnv::repmgr_local_site", ret, error_policy());
+
+	return (ret);
+}	
+
+int DbEnv::repmgr_site(const char *host, u_int port, DbSite **dbsite,
+    u_int32_t flags)
+{
+	DB_ENV *dbenv = unwrap(this);
+	DB_SITE *site;
+	int ret;
+
+	ret = dbenv->repmgr_site(dbenv, host, port, &site, flags);
+	if (DB_RETOK_STD(ret)) {
+		*dbsite = new DbSite();
+		(*dbsite)->imp_ = site;
+	} else
+		DB_ERROR(this, "DbEnv::repmgr_site", ret, error_policy());
+
+	return (ret);
+}
+
+int DbEnv::repmgr_site_by_eid(int eid, DbSite **dbsite)
+{
+	DB_ENV *dbenv = unwrap(this);
+	DB_SITE *site;
+	int ret;
+
+	ret = dbenv->repmgr_site_by_eid(dbenv, eid, &site);
+	if (DB_RETOK_STD(ret)) {
+		*dbsite = new DbSite();
+		(*dbsite)->imp_ = site;
+	} else
+		DB_ERROR(this, "DbEnv::repmgr_site_by_eid", ret,
+		    error_policy());
+
+	return (ret);
+}
+
 DBENV_METHOD(repmgr_site_list, (u_int *countp, DB_REPMGR_SITE **listp),
     (dbenv, countp, listp))
 

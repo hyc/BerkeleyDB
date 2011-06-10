@@ -12,7 +12,10 @@
     <link rel="next" href="mempstat_print.html" title="DbEnv::memp_stat_print()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::memp_stat()</th>
@@ -254,10 +257,10 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>u_int32_t st_hash_searches;</strong></span>
+                         <span class="bold"><strong>uintmax_t st_hash_examined;</strong></span>
                 </p>
             <p>
-                        Total number of buffer hash table lookups.
+                         Total number of hash elements traversed during hash table lookups.
                 </p>
           </li>
           <li>
@@ -270,10 +273,10 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>uintmax_t st_hash_examined;</strong></span>
+                         <span class="bold"><strong>u_int32_t st_hash_mutexes;</strong></span>
                 </p>
             <p>
-                         Total number of hash elements traversed during hash table lookups.
+                    The number of hash bucket mutexes in the buffer hash table.
                 </p>
           </li>
           <li>
@@ -283,6 +286,14 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
             <p>
                          Number of times that a thread of control was able to obtain a hash
                          bucket lock without waiting.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_hash_searches;</strong></span>
+                </p>
+            <p>
+                        Total number of buffer hash table lookups.
                 </p>
           </li>
           <li>
@@ -512,7 +523,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53406464"></a>Parameters</h3>
+              <h3 class="title"><a id="id3645384"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -520,7 +531,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53405816"></a>gsp</h4>
+                <h4 class="title"><a id="id3645435"></a>gsp</h4>
               </div>
             </div>
           </div>
@@ -534,7 +545,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53409728"></a>fsp</h4>
+                <h4 class="title"><a id="id3645499"></a>fsp</h4>
               </div>
             </div>
           </div>
@@ -548,7 +559,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53410464"></a>flags</h4>
+                <h4 class="title"><a id="id3644271"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -574,7 +585,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53415640"></a>Errors</h3>
+              <h3 class="title"><a id="id3645424"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -592,7 +603,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53423784"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3645733"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -605,7 +616,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53422488"></a>Class</h3>
+              <h3 class="title"><a id="id3645711"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -617,7 +628,7 @@ DbEnv::memp_stat(DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53395416"></a>See Also</h3>
+              <h3 class="title"><a id="id3645244"></a>See Also</h3>
             </div>
           </div>
         </div>

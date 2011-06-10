@@ -17,6 +17,7 @@ proc rep080 { method { niter 200 } { tnum "080" } args } {
 	global mixed_mode_logging
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Skip for all methods except btree.
 	if { $checking_valid_methods } {
@@ -50,13 +51,18 @@ proc rep080 { method { niter 200 } { tnum "080" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# The {"" "-recover"} loop that is typical in replication tests can be
 	# useful for tests which close existing environments at some point, and
 	# then later reopen them.  (When we reopen, we do so either with
 	# recovery, or without it.)  But this test never does that.
 	# 
 	puts "Rep$tnum ($method):\
-	    Test of AUTOINIT off with empty client logs $msg $msg2."
+	    Test of AUTOINIT off with empty client logs $msg $msg2 $msg3."
 	rep080_sub $method $niter $tnum $args
 }
 
@@ -64,6 +70,7 @@ proc rep080_sub { method niter tnum largs } {
 	global testdir
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
  
@@ -75,6 +82,11 @@ proc rep080_sub { method niter tnum largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -96,7 +108,7 @@ proc rep080_sub { method niter tnum largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $verbargs -errpfx MASTER \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    -home $masterdir -txn -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd -rep_master]
 	set envlist "{$masterenv 1}"
@@ -110,7 +122,7 @@ proc rep080_sub { method niter tnum largs } {
 	puts "\tRep$tnum.b: Add a normal client."
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    -home $clientdir1 -txn -rep_transport \[list 2 replsend\]"
 	set clientenv1 [eval $cl_envcmd -rep_client]
 	lappend envlist [list $clientenv1 2]
@@ -123,7 +135,7 @@ proc rep080_sub { method niter tnum largs } {
 	puts "\tRep$tnum.c: Add a client with AUTOINIT off (should fail)."
 	repladd 3
 	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    -home $clientdir2 -txn -rep_transport \[list 3 replsend\]"
 	set clientenv2 [eval $cl_envcmd -rep_client]
 	$clientenv2 rep_config {autoinit off}
@@ -137,7 +149,7 @@ proc rep080_sub { method niter tnum largs } {
 	puts "\tRep$tnum.d: Add a client with DELAY_SYNC."
 	repladd 4
 	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    -home $clientdir3 -txn -rep_transport \[list 4 replsend\]"
 	set clientenv3 [eval $cl_envcmd -rep_client]
 	$clientenv3 rep_config {delayclient on}
@@ -159,7 +171,7 @@ proc rep080_sub { method niter tnum largs } {
 	puts "\tRep$tnum.f: Add a client with DELAY_SYNC and AUTOINIT off."
 	repladd 5
 	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    -home $clientdir4 -txn -rep_transport \[list 5 replsend\]"
 	set clientenv4 [eval $cl_envcmd -rep_client]
 	$clientenv4 rep_config {delayclient on}

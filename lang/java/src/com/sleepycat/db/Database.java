@@ -14,12 +14,30 @@ import com.sleepycat.db.internal.DbSequence;
 import com.sleepycat.db.internal.Dbc;
 
 /**
-A database handle.
+Creates a database handle for a single Berkeley DB database. 
+A Berkeley DB database provides a mechanism for organizing key-data pairs 
+of information. From the perspective of some database systems, a Berkeley DB database 
+could be thought of as a single table within a larger database.
 <p>
-Database attributes are specified in the {@link com.sleepycat.db.DatabaseConfig DatabaseConfig} class.
+For most database activities, you must open the handle using the 
+open method. When you are done 
+with them, handles must be closed using the close method.
+<p>
+It is possible to create databases such that they are organized within a 
+database environment. Environments are optional for simple Berkeley DB applications 
+that do not use transactions, recovery, replication or any other advanced features. 
+For simple Berkeley DB applications, environments still offer some advantages. 
+For example, they provide some organizational benefits on-disk (all databases 
+are located on disk relative to the environment). Also, if you are using 
+multiple databases, then environments allow your databases to share a 
+common in-memory cache, which makes for more efficient usage of your hardware's resources.
+See {@link com.sleepycat.db.Environment Environment}
+for information on using database environments.
 <p>
 Database handles are free-threaded unless opened in an environment
 that is not free-threaded.
+<p>
+Database attributes are specified in the {@link com.sleepycat.db.DatabaseConfig DatabaseConfig} class.
 <p>
 To open an existing database with default attributes:
 <blockquote><pre>
@@ -107,19 +125,24 @@ Queue format.
     }
 
     /**
-    Flush any cached database information to disk and discard the database
-handle.
+Flush any cached database information to disk, close any open cursors, 
+free allocated resources, close underlying files, and discard the database handle.
 <p>
-The database handle should not be closed while any other handle that
-refers to it is not yet closed; for example, database handles should not
-be closed while cursor handles into the database remain open, or
-transactions that include operations on the database have not yet been
-committed or aborted.  Specifically, this includes {@link com.sleepycat.db.Cursor Cursor} and
-{@link com.sleepycat.db.Transaction Transaction} handles.
+Although closing a database handle will close any open cursors, it is 
+recommended that applications explicitly close all their {@link com.sleepycat.db.Cursor Cursor} 
+handles before closing the database. The reason why is that when the cursor 
+is explicitly closed, the memory allocated for it is reclaimed; however, 
+this will not happen if you close a database while cursors are still open.
+The same rule, for the same reasons, hold true for 
+{@link com.sleepycat.db.Transaction Transaction} handles. 
+Make sure you close all your transaction handles before closing your database handle.
 <p>
 Because key/data pairs are cached in memory, failing to sync the file
 with the {@link com.sleepycat.db.Database#close Database.close} or {@link com.sleepycat.db.Database#sync Database.sync} methods
 may result in inconsistent or lost information.
+So, to ensure that any data cached in main memory are reflected 
+in the underlying file system, applications should make a point to 
+always either close database handles or sync their data to disk.
 <p>
 When multiple threads are using the {@link com.sleepycat.db.Database Database} handle
 concurrently, only a single thread may call this method.
@@ -130,6 +153,8 @@ called, regardless of the method's success or failure.
 When called on a database that is the primary database for a secondary
 index, the primary database should be closed only after all secondary
 indices which reference it have been closed.
+If you do not close the database handle explicitly, 
+it will be closed when the environment handle that owns the database handle is closed.
 @param noSync
 Do not flush cached information to disk.  The noSync parameter is a
 dangerous option.  It should be set only if the application is doing
@@ -150,6 +175,7 @@ database, and once all applications using the database have successfully
 called this method, atomically replace the original database with the
 updated copy.
 <p>
+Note that this flag only works when the database has been opened using an environment. 
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -160,23 +186,24 @@ updated copy.
     }
 
     /**
-    Flush any cached database information to disk and discard the database
-handle.
+    Flush any cached database information to disk, close any open cursors, 
+free allocated resources, close underlying files, and discard the database handle.
 <p>
-The database handle should not be closed unless all other handles that
-refer to it are closed; for example, do not close database handles while
-transactions that include operations on the database 
-are not yet committed or aborted.  This includes 
-{@link com.sleepycat.db.Transaction Transaction} handles.
-<p>
-If the {@link com.sleepycat.db.Cursor Cursor} handles to the database are open 
-when you call this method, they are closed inside this method automatically. 
-When the close operation fails, the method returns a non-zero error value 
-for the first instance of such an error, and continues to close the rest of the objects.
+Although closing a database handle will close any open cursors, it is 
+recommended that applications explicitly close all their {@link com.sleepycat.db.Cursor Cursor} 
+handles before closing the database. The reason why is that when the cursor 
+is explicitly closed, the memory allocated for it is reclaimed; however, 
+this will not happen if you close a database while cursors are still open.
+The same rule, for the same reasons, hold true for 
+{@link com.sleepycat.db.Transaction Transaction} handles. 
+Make sure you close all your transaction handles before closing your database handle.
 <p>
 Because key/data pairs are cached in memory, failing to sync the file
 with the {@link com.sleepycat.db.Database#close Database.close} or {@link com.sleepycat.db.Database#sync Database.sync} methods
 may result in inconsistent or lost information.
+So, to ensure that any data cached in main memory are reflected 
+in the underlying file system, applications should make a point to 
+always either close database handles or sync their data to disk.
 <p>
 When multiple threads are using the {@link com.sleepycat.db.Database Database} handle
 concurrently, only a single thread may call this method.
@@ -187,7 +214,8 @@ called, regardless of the method's success or failure.
 When called on a database that is the primary database for a secondary
 index, the primary database should be closed only after all secondary
 indices which reference it have been closed.
-<p>
+If you do not close the database handle explicitly, 
+it will be closed when the environment handle that owns the database handle is closed.
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -203,13 +231,17 @@ indices which reference it have been closed.
     @param txn
     If the operation is part of an application-specified transaction, the txnid
     parameter is a transaction handle returned from {@link
-    Environment#beginTransaction}, otherwise <code>null</code>.
-    If no transaction handle is specified, but the operation occurs in a
-    transactional database, the operation will be implicitly transaction
-    protected using multiple transactions.  Transactions will be comitted at
-    points to avoid holding much of the tree locked.
-    Any deadlocks encountered will be cause the operation to retried from
-    the point of the last commit.
+    Environment#beginTransaction}, otherwise <code>NULL</code>.
+    <p>
+    If a transaction handle is supplied to this method, then the operation is performed 
+    using that transaction. In this event, large sections of the tree may be 
+    locked during the course of the transaction.
+    <p>
+    If no transaction handle is specified, but the operation occurs in a transactional 
+    database, the operation will be implicitly transaction protected using multiple 
+    transactions. These transactions will be periodically committed to avoid locking 
+    large sections of the tree. Any deadlocks encountered cause the compaction operation 
+    to be retried from the point of the last transaction commit.
     @param start
     If not <code>null</code>, the <code>start</code> parameter is the starting
     point for compaction in a Btree or Recno database.  Compaction will start
@@ -271,15 +303,18 @@ indices which reference it have been closed.
     }
 
     /**
-    Open a sequence in the database.
+    Open a sequence represented by the key in the database.
     <p>
     @param txn
     For a transactional database, an explicit transaction may be specified, or
     null may be specified to use auto-commit.  For a non-transactional
     database, null must be specified.
+    If no transaction handle is specified, but the operation occurs in a 
+    transactional database, the operation will be implicitly transaction protected.
     <p>
     @param key
     The key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} of the sequence.
+    It specifies which record in the database stores the persistent sequence data. 
     <p>
     @param config
     The sequence attributes.  If null, default attributes are used.
@@ -306,9 +341,12 @@ indices which reference it have been closed.
     For a transactional database, an explicit transaction may be specified, or
     null may be specified to use auto-commit.  For a non-transactional
     database, null must be specified.
+    If no transaction handle is specified, but the operation occurs in a 
+    transactional database, the operation will be implicitly transaction protected.
     <p>
     @param key
     The key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} of the sequence.
+    It specifies which record in the database stores the persistent sequence data.
     <p>
     @param config
     The sequence attributes.  If null, default attributes are used.
@@ -525,11 +563,20 @@ deadlock.
     <p>
     The key/data pair is also deleted from any associated secondary
     databases.
+    When called on a database that has been made into a secondary index, 
+    this method deletes the key/data pair from the primary database and all secondary indices.
     <p>
     @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
+If no transaction handle is specified, but the operation occurs in a transactional 
+database, the operation will be implicitly transaction protected. 
     <p>
     @param key the key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
     <p>
@@ -566,11 +613,19 @@ deadlock.
     <p>
     The key/data pair is also deleted from any associated secondary
     databases.
+    When called on a database that has been made into a secondary index, 
+    this method deletes the key/data pair from the primary database and all secondary indices.
     <p>
     @param txn
-For a transactional database, an explicit transaction may be specified, or null
-may be specified to use auto-commit.  For a non-transactional database, null
-must be specified.
+    If the operation is part of an application-specified transaction, the txn
+	parameter is a Transaction object returned from the
+	{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+	Concurrent Data Store group, the txn parameter is a Transaction object returned
+	from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
+	For a transactional database, an explicit transaction may be specified, or null
+	may be specified to use auto-commit.  For a non-transactional database, null
+	must be specified. If no transaction handle is specified, but the operation occurs in a transactional 
+	database, the operation will be implicitly transaction protected.
     <p>
     @param keys the set of keys {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
     <p>
@@ -603,10 +658,17 @@ deadlock.
     Checks if the specified key appears in the database.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified to
 transaction-protect the operation, or null may be specified to perform the
 operation without transaction protection.  For a non-transactional database,
 null must be specified.
+If no transaction handle is specified, but the operation occurs in a 
+transactional database, the operation will be implicitly transaction protected. 
 <p>
 @param key the  key
 used as input.  It must be initialized with a non-null byte array by the
@@ -633,15 +695,32 @@ deadlock.
     }
 
     /**
-    Retrieves the key/data pair with the given key.  If the matching key has
+    Retrieves the key/data pair with the given key from the database.  If the matching key has
 duplicate values, the first data item in the set of duplicates is returned.
+
+<p>Duplicates are sorted by: 
+<ul>
+    <li> their sort order, if a duplicate sort function was specified.
+    <li>any explicit cursor designated insertion.
+    <li> by insert order. This is the default behavior.
+    </ul>
+<p>
 Retrieval of duplicates requires the use of {@link Cursor} operations.
+When called on a database that has been made into a secondary index,
+this method returns the key from the secondary index and the data item from the primary database.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified to
 transaction-protect the operation, or null may be specified to perform the
 operation without transaction protection.  For a non-transactional database,
 null must be specified.
+If no transaction handle is specified, but the operation occurs in a 
+transactional database, the operation will be implicitly transaction protected. 
 <p>
 @param key the  key
 used as input.  It must be initialized with a non-null byte array by the
@@ -691,10 +770,17 @@ deadlock.
     The key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} being compared.
     <p>
     @param txn
+    If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified to
 transaction-protect the operation, or null may be specified to perform the
 operation without transaction protection.  For a non-transactional database,
 null must be specified.
+If no transaction handle is specified, but the operation occurs in a 
+transactional database, the operation will be implicitly transaction protected.
     <p>
     @return
     An estimate of the proportion of keys in the database less than,
@@ -818,9 +904,16 @@ configured, the new data value is appended at the end of the duplicate
 set.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
+If no transaction handle is specified, but the operation occurs in a transactional 
+database, the operation will be implicitly transaction protected. 
 <p>
 @param key the key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
 <p>
@@ -855,9 +948,16 @@ data parameter. Similarly for all remaining keys in the set.
 This method may not be called on databases configured with unsorted duplicates.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
+If no transaction handle is specified, but the operation occurs in a transactional 
+database, the operation will be implicitly transaction protected. 
 <p>
 @param key the set of keys {@link com.sleepycat.db.MultipleEntry MultipleEntry} operated on.
 <p>
@@ -896,9 +996,16 @@ Store a set of key/data pairs into the database.
 This method may not be called on databases configured with unsorted duplicates.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
+If no transaction handle is specified, but the operation occurs in a transactional 
+database, the operation will be implicitly transaction protected. 
 <p>
 @param key the key and data sets {@link com.sleepycat.db.MultipleEntry MultipleEntry} operated on.
 <p>
@@ -937,9 +1044,16 @@ configured to support sorted duplicates.
 (This method may not be specified to the Queue or Recno access methods.)
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
+If no transaction handle is specified, but the operation occurs in a transactional 
+database, the operation will be implicitly transaction protected. 
 <p>
 @param key the key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
 <p>
@@ -976,9 +1090,16 @@ This method will fail if the key already exists in the database, even
 if the database supports duplicates.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
+If no transaction handle is specified, but the operation occurs in a transactional 
+database, the operation will be implicitly transaction protected. 
 <p>
 @param key the key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} operated on.
 <p>
@@ -1061,6 +1182,8 @@ deadlock.
     For a transactional database, an explicit transaction may be specified, or
     null may be specified to use auto-commit.  For a non-transactional
     database, null must be specified.
+    If no transaction handle is specified, but the operation occurs in a 
+    transactional database, the operation will be implicitly transaction protected. 
     <p>
     @param countRecords
     If true, count and return the number of records discarded.
@@ -1101,10 +1224,17 @@ deadlock.
     information has been gathered.
     <p>
     @param txn
+    If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
     For a transactional database, an explicit transaction may be specified to
     transaction-protect the operation, or null may be specified to perform the
     operation without transaction protection.  For a non-transactional
     database, null must be specified.
+    If no transaction handle is specified, but the operation occurs in a 
+    transactional database, the operation will be implicitly transaction protected. 
     <p>
     @param config
     The statistics returned; if null, default statistics are returned.
@@ -1126,9 +1256,10 @@ deadlock.
 
     /**
     <p>
-Remove a database.
+Remove the database specified by the file and database parameters.
 <p>
-If no database is specified, the underlying file specified is removed.
+If no database is specified, the underlying file specified is removed, 
+incidentally removing all of the databases it contained..
 <p>
 Applications should never remove databases with open {@link com.sleepycat.db.Database Database}
 handles, or in the case of removing a file, when any database in the
@@ -1140,6 +1271,12 @@ in the system may fail.
 If the database was opened within a database environment, the
 environment variable DB_HOME may be used as the path of the database
 environment home.
+This method may not be called after calling the open method on any database handle. 
+If the open method has already been called on a database handle, 
+close the existing handle and create a new one before calling the remove method.
+This method should not be called if the remove is intended to be transactionally safe; 
+the {@link com.sleepycat.db.Environment#removeDatabase Environment.removeDatabase} method should be used instead.
+
 <p>
 This method is affected by any database directory specified with
 {@link com.sleepycat.db.EnvironmentConfig#addDataDir EnvironmentConfig.addDataDir}, or by setting the "set_data_dir"
@@ -1173,7 +1310,7 @@ The database to be removed.
 
     /**
     <p>
-Rename a database.
+Rename a database specified by the file and database parameters.
 <p>
 If no database name is specified, the underlying file specified is
 renamed, incidentally renaming all of the databases it contains.
@@ -1188,11 +1325,16 @@ the system may fail.
 <p>
 If the database was opened within a database environment, the
 environment variable DB_HOME may be used as the path of the database
-environment home.
+environment home. This method should not be called if the rename is intended 
+to be transactionally safe; the 
+{@link com.sleepycat.db.Environment#renameDatabase Environment.renameDatabase} method should be used instead.
 <p>
 This method is affected by any database directory specified with
 {@link com.sleepycat.db.EnvironmentConfig#addDataDir EnvironmentConfig.addDataDir}, or by setting the "set_data_dir"
 string in the database environment's DB_CONFIG file.
+This method may not be called after calling the open method on any database handle. 
+If the open method has already been called on a database handle, 
+close the existing handle and create a new one before calling the rename method.
 <p>
 The {@link com.sleepycat.db.Database Database} handle may not be accessed
 again after this method is called, regardless of this method's success
@@ -1353,6 +1495,14 @@ The new name of the database or file.
     Unlike all other database operations, upgrades may only be done on
     a system with the same byte-order as the database.
     <p>
+	If the database was opened within a database environment, the
+	environment variable DB_HOME may be used as the path of the database
+	environment home.
+	<p>
+	This method is affected by any database directory specified with
+	{@link com.sleepycat.db.EnvironmentConfig#addDataDir EnvironmentConfig.addDataDir}, or by setting the "set_data_dir"
+	string in the database environment's DB_CONFIG file.
+	<p>
     @param fileName
     The physical file containing the databases to be upgraded.
     <p>

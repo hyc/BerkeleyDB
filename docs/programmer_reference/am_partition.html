@@ -12,7 +12,10 @@
     <link rel="next" href="am_get.html" title="Retrieving records" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Partitioning databases</th>
@@ -61,6 +64,13 @@
     allowing you to spread your databases across multiple disks,
     which can help to improve disk I/O.
 </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+        Database partitions are not supported by the C# and Java APIs at
+        this time.
+    </p>
+      </div>
       <p>
     While you can manually do this by creating and using more than one
     database for your data, DB is capable of partitioning your
@@ -164,7 +174,8 @@
                 <a href="../api_reference/C/dbt.html" class="olink">DBT</a>s to partition your database.
             </p>
         </div>
-        <pre class="programlisting">    DB *dbp = NULL;
+        <a id="prog_am10"></a>
+        <pre class="programlisting">DB *dbp = NULL;
     DB_ENV *envp = NULL;
     DBT partKeys[2];
     u_int32_t db_flags;
@@ -174,7 +185,7 @@
 ...
     
     /* Skipping environment open to shorten this example */
-...
+
 
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);
@@ -239,6 +250,7 @@
         <p>
             The following code fragment illustrates a partition callback:
         </p>
+        <a id="prog_am11"></a>
         <pre class="programlisting">u_int32_t db_partition_fn(DB *db, DBT *key) {
     char *key_data;
     u_int32_t ret_number;
@@ -273,7 +285,8 @@
                 call back to partition your database.
             </p>
         </div>
-        <pre class="programlisting">    DB *dbp = NULL;
+        <a id="prog_am12"></a>
+        <pre class="programlisting">DB *dbp = NULL;
     DB_ENV *envp = NULL;
     u_int32_t db_flags;
     const char *file_name = "mydb.db";
@@ -282,7 +295,7 @@
 ...
     
     /* Skipping environment open to shorten this example */
-...
+
 
     /* Initialize the DB handle */
     ret = db_create(&amp;dbp, envp, 0);

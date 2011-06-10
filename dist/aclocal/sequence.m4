@@ -78,7 +78,7 @@ AC_DEFUN(AM_SEQUENCE_CONFIGURE, [
 	fi
 	if test "$db_cv_build_sequence" = "yes"; then
 		AC_SUBST(db_seq_decl)
-		db_seq_decl="typedef int64_t db_seq_t;";
+		db_seq_decl="typedef $db_cv_seq_type db_seq_t;";
 
 		AC_DEFINE(HAVE_64BIT_TYPES)
 		AH_TEMPLATE(HAVE_64BIT_TYPES,

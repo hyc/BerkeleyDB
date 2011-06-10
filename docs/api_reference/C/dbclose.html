@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
     <link rel="prev" href="dbassociate_foreign.html" title="DB-&gt;associate_foreign()" />
-    <link rel="next" href="dbcreate.html" title="db_create" />
+    <link rel="next" href="dbcompact.html" title="DB-&gt;compact()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB-&gt;close()</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 2. 
                 The DB Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="dbcreate.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="dbcompact.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -98,7 +101,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp49604800"></a>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="id3853165"></a>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -111,7 +114,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp49607800"></a>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="id3853495"></a>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -124,7 +127,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp49595288"></a>EINVAL</h4>
+              <h4 class="title"><a id="id3853581"></a>EINVAL</h4>
             </div>
           </div>
         </div>
@@ -136,7 +139,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49590760"></a>Parameters</h3>
+              <h3 class="title"><a id="id3853539"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -144,7 +147,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49590952"></a>flags</h4>
+                <h4 class="title"><a id="id3853500"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -191,7 +194,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49626216"></a>Errors</h3>
+              <h3 class="title"><a id="id3852422"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -207,7 +210,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49630184"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3853810"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -222,7 +225,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49539840"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id3853769"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -235,7 +238,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49495624"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id3852596"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -248,7 +251,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49626752"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3853818"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -261,7 +264,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49630336"></a>Class</h3>
+              <h3 class="title"><a id="id3853812"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -273,7 +276,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49634368"></a>See Also</h3>
+              <h3 class="title"><a id="id3853873"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -290,14 +293,14 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <td width="20%" align="center">
             <a accesskey="u" href="db.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="dbcreate.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="dbcompact.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DB-&gt;associate_foreign() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> db_create</td>
+          <td width="40%" align="right" valign="top"> DB-&gt;compact()</td>
         </tr>
       </table>
     </div>

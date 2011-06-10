@@ -12,7 +12,10 @@
     <link rel="next" href="db_load.html" title="db_load" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">db_hotbackup</th>
@@ -35,7 +38,7 @@
           </div>
         </div>
       </div>
-      <pre class="programlisting">db_hotbackup [-cDuVv] [-d data_dir ...] [-h home] 
+      <pre class="programlisting">db_hotbackup [-cDEguVv] [-d data_dir ...] [-h home] 
         [-l log_dir] [-P password] -b backup_dir  </pre>
       <p>
          The <span class="command"><strong>db_hotbackup</strong></span> utility creates "hot backup" or "hot failover"
@@ -48,7 +51,8 @@
         <ol type="1">
           <li>
             <p>
-                Sets the <a class="xref" href="envset_flags.html#set_flags_DB_HOTBACKUP_IN_PROGRESS">
+                Sets the 
+                <a class="xref" href="envset_flags.html#set_flags_DB_HOTBACKUP_IN_PROGRESS">
                   <code class="literal">DB_HOTBACKUP_IN_PROGRESS</code>
              </a> 
                 flag in the home database environment.
@@ -100,7 +104,8 @@
           </li>
           <li>
             <p>
-                Reset the <a class="xref" href="envset_flags.html#set_flags_DB_HOTBACKUP_IN_PROGRESS">
+                Reset the 
+                <a class="xref" href="envset_flags.html#set_flags_DB_HOTBACKUP_IN_PROGRESS">
                   <code class="literal">DB_HOTBACKUP_IN_PROGRESS</code>
              </a> 
                 flag in the environment.
@@ -150,10 +155,9 @@
                  <span class="bold"><strong>-D</strong></span>
             </p>
             <p>
-                Use the data and log directories listed in a 
-                <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                 configuration file in the source directory.  This option has four
-                 effects:     
+                Use the data and log directories listed in a <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                configuration file in the source directory.  This option
+                has four effects:     
             </p>
             <div class="itemizedlist">
               <ul type="circle">
@@ -166,27 +170,24 @@
                 </li>
                 <li>
                   <p>
-                         In step #3 above, all files in any source data directories specified
-                         in the 
-                        <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                         file will be copied to the target data directories.
+                         In step #3 above, all files in any source data
+                         directories specified in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file will
+                         be copied to the target data directories.
                     </p>
                 </li>
                 <li>
                   <p>
-                         In step #4 above, log files will be copied from any log directory
-                         specified in the 
-                        <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                         In step #4 above, log files will be copied from
+                         any log directory specified in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
                          file, instead of from the default locations.
                     </p>
                 </li>
                 <li>
                   <p>
-                        The 
-                        <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                         configuration file will be copied from the source directory to the
-                         target directory, and subsequently used for configuration if recovery
-                         is run in the target directory.
+                        The <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> configuration file will be copied
+                        from the source directory to the target directory,
+                        and subsequently used for configuration if recovery
+                        is run in the target directory.
                     </p>
                 </li>
               </ul>
@@ -202,11 +203,10 @@
             </p>
             <p>
                  <span class="bold"><strong>It is an error to use absolute pathnames for
-                 data or log directories in this mode, as the 
-                 <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                 configuration file copied into the target directory would then point
-                 at the source directories and running recovery would corrupt the
-                 source data files.</strong></span>
+                 data or log directories in this mode, as the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                 configuration file copied into the target directory would
+                 then point at the source directories and running recovery
+                 would corrupt the source data files.</strong></span>
             </p>
           </li>
           <li>
@@ -228,12 +228,32 @@
                  files as they are named by the application program.  <span class="bold"><strong>If the application uses absolute or relative pathnames to
                  name database files, (rather than filenames and the 
                  <a class="xref" href="envset_data_dir.html" title="DbEnv::set_data_dir()">DbEnv::set_data_dir()</a>
-                 method or the 
-                 <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                 configuration file to specify filenames), running recovery in the
-                 target directory may not properly find the copies of the files or
-                 might even find the source files, potentially resulting in
+                 method or the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> configuration file to specify
+                 filenames), running recovery in the target directory may
+                 not properly find the copies of the files or might even
+                 find the source files, potentially resulting in
                  corruption.</strong></span>
+            </p>
+          </li>
+          <li>
+            <p>
+                     <span class="bold"><strong>-F</strong></span>
+                </p>
+            <p>
+                    Directly copy from the filesystem.  This option can
+                    <span class="bold"><strong>CORRUPT</strong></span> the backup if used
+                    while the environment is active and the operating system does
+                    not support atomic file system reads. This option is known to
+                    be safe only on UNIX systems, not Linux or Windows systems.
+                </p>
+          </li>
+          <li>
+            <p>
+                 <span class="bold"><strong>-g</strong></span>
+            </p>
+            <p>
+                Turn on debugging options.  In particular this will leave the
+                log files in the backup directory after running recovery.
             </p>
           </li>
           <li>
@@ -241,8 +261,8 @@
                  <span class="bold"><strong>-h</strong></span>
             </p>
             <p>
-                 Specify the source directory for the backup. That is, the database
-                 environment home directory.
+                 Specify the source directory for the backup. That is, the
+                 database environment home directory.
             </p>
           </li>
           <li>
@@ -277,10 +297,10 @@
                  If the <span class="bold"><strong>-u</strong></span> option is specified, no
                  databases will be copied into the target directory. If applications
                  that update the environment are using the transactional bulk insert
-				 optimization, this option must be used with special care.  
-				 For more information, see the
-				section on Hot Backup in the <span class="emphasis"><em>Getting Started
-				With Transaction Processing Guide</em></span>.
+                 optimization, this option must be used with special care.  
+                 For more information, see the
+                section on Hot Backup in the <span class="emphasis"><em>Getting Started
+                With Transaction Processing Guide</em></span>.
             </p>
           </li>
           <li>
@@ -321,7 +341,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp55116184"></a>Environment Variables</h3>
+              <h3 class="title"><a id="id3676806"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -329,16 +349,16 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp55093600"></a>DB_HOME</h4>
+                <h4 class="title"><a id="id3676544"></a>DB_HOME</h4>
               </div>
             </div>
           </div>
           <p>
-                          If the <span class="bold"><strong>-h</strong></span> option is not specified and
-                          the environment variable DB_HOME is set, it is used as the path of the
-                          database home, as described in the
-                          <a class="xref" href="envopen.html" title="DbEnv::open()">DbEnv::open()</a> method.
-                     </p>
+                  If the <span class="bold"><strong>-h</strong></span> option is not specified and
+                  the environment variable DB_HOME is set, it is used as the path of the
+                  database home, as described in the
+                  <a class="xref" href="envopen.html" title="DbEnv::open()">DbEnv::open()</a> method.
+             </p>
         </div>
       </div>
     </div>

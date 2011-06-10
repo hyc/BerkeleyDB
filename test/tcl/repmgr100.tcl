@@ -39,8 +39,9 @@ proc repmgr100 {  } {
 	set master [open "| $site_prog" "r+"]
 	fconfigure $master -buffering line
 	puts $master "home $masterdir"
-	puts $master "local $master_port"
-	make_dbconfig $masterdir {{rep_set_nsites 3}}
+	make_dbconfig $masterdir \
+	    [list [list repmgr_site localhost $master_port db_local_site on] \
+	    "rep_set_config db_repmgr_conf_2site_strict off"]
 	puts $master "output $testdir/m1output"
 	puts $master "open_env"
 	puts $master "start master"
@@ -53,10 +54,12 @@ proc repmgr100 {  } {
 	fconfigure $client -buffering line
 	puts $client "home $clientdir"
 	puts $client "local $client_port"
-	make_dbconfig $clientdir {{rep_set_nsites 3}}
+	make_dbconfig $clientdir \
+	    [list [list repmgr_site localhost $client_port db_local_site on] \
+	    [list repmgr_site localhost $master_port db_bootstrap_helper on] \
+	    "rep_set_config db_repmgr_conf_2site_strict off"]
 	puts $client "output $testdir/coutput"
 	puts $client "open_env"
-	puts $client "remote localhost $master_port"
 	puts $client "start client"
 	error_check_match start_client [gets $client] "*Successful*"
 

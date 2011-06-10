@@ -109,9 +109,12 @@ __memp_set_cachesize(dbenv, gbytes, bytes, arg_ncache)
 	int arg_ncache;
 {
 	ENV *env;
+	DB_THREAD_INFO *ip;
 	u_int ncache;
+	int ret;
 
 	env = dbenv->env;
+	ret = 0;
 	ENV_NOT_CONFIGURED(env,
 	    env->mp_handle, "DB_ENV->set_cachesize", DB_INIT_MPOOL);
 
@@ -139,13 +142,13 @@ __memp_set_cachesize(dbenv, gbytes, bytes, arg_ncache)
 	 */
 	if (!F_ISSET(env, ENV_OPEN_CALLED)) {
 		if (sizeof(roff_t) <= 4 && gbytes / ncache >= 4) {
-			__db_errx(env,
-			    "individual cache size too large: maximum is 4GB");
+			__db_errx(env, DB_STR("3003",
+		    "individual cache size too large: maximum is 4GB"));
 			return (EINVAL);
 		}
 		if (gbytes / ncache > 10000) {
-			__db_errx(env,
-			    "individual cache size too large: maximum is 10TB");
+			__db_errx(env, DB_STR("3004",
+		    "individual cache size too large: maximum is 10TB"));
 			return (EINVAL);
 		}
 	}
@@ -168,8 +171,12 @@ __memp_set_cachesize(dbenv, gbytes, bytes, arg_ncache)
 			bytes = ncache * DB_CACHESIZE_MIN;
 	}
 
-	if (F_ISSET(env, ENV_OPEN_CALLED))
-		return (__memp_resize(env->mp_handle, gbytes, bytes));
+	if (F_ISSET(env, ENV_OPEN_CALLED)) {
+		ENV_ENTER(env, ip);
+		ret = __memp_resize(env->mp_handle, gbytes, bytes);
+		ENV_LEAVE(env, ip);
+		return ret;
+	}
 
 	dbenv->mp_gbytes = gbytes;
 	dbenv->mp_bytes = bytes;
@@ -448,11 +455,17 @@ __memp_set_mp_mmapsize(dbenv, mp_mmapsize)
 		mp = dbmp->reginfo[0].primary;
 		ENV_ENTER(env, ip);
 		MPOOL_SYSTEM_LOCK(env);
-		mp->mp_mmapsize = mp_mmapsize;
+		/*
+		 * We need to cast here because size_t and db_size_t can be
+		 * different on a 64 bit build, when building in 32 bit
+		 * compatibility mode. The cast is safe, because we check for
+		 * overflow when the fields are assigned.
+		 */
+		mp->mp_mmapsize = (db_size_t)mp_mmapsize;
 		MPOOL_SYSTEM_UNLOCK(env);
 		ENV_LEAVE(env, ip);
 	} else
-		dbenv->mp_mmapsize = mp_mmapsize;
+		dbenv->mp_mmapsize = (db_size_t)mp_mmapsize;
 	return (0);
 }
 
@@ -830,18 +843,20 @@ __memp_ftruncate(dbmfp, txn, ip, pgno, flags)
 	if (pgno > last_pgno) {
 		if (LF_ISSET(MP_TRUNC_RECOVER))
 			return (0);
-		__db_errx(env, "Truncate beyond the end of file");
+		__db_errx(env, DB_STR("3005",
+		    "Truncate beyond the end of file"));
 		return (EINVAL);
 	}
 
 	pg = pgno;
-	do {
-		if (mfp->block_cnt == 0)
-			break;
-		if ((ret = __memp_fget(dbmfp, &pg,
-		    ip, txn, DB_MPOOL_FREE, &pagep)) != 0)
-			return (ret);
-	} while (pg++ < last_pgno);
+	if (!LF_ISSET(MP_TRUNC_NOCACHE))
+		do {
+			if (mfp->block_cnt == 0)
+				break;
+			if ((ret = __memp_fget(dbmfp, &pg,
+			    ip, txn, DB_MPOOL_FREE, &pagep)) != 0)
+				return (ret);
+		} while (pg++ < last_pgno);
 
 	/*
 	 * If we are aborting an extend of a file, the call to __os_truncate
@@ -1012,6 +1027,7 @@ __memp_extend_freelist(dbmfp, count, listp)
 	ENV *env;
 	MPOOLFILE *mfp;
 	int ret;
+	size_t size;
 	void *retp;
 
 	env = dbmfp->env;
@@ -1022,12 +1038,20 @@ __memp_extend_freelist(dbmfp, count, listp)
 		return (EINVAL);
 
 	if (count * sizeof(db_pgno_t) > mfp->free_size) {
-		mfp->free_size =
-		     (size_t)DB_ALIGN(count * sizeof(db_pgno_t), 512);
+		size = (size_t)DB_ALIGN(count * sizeof(db_pgno_t), 512);
+#ifdef HAVE_MIXED_SIZE_ADDRESSING
+		if (size >= 0xFFFFFFFF) {
+			__db_errx(env, DB_STR("3006",
+			    "Can't get the required free size while"
+			    "operating in mixed-size-addressing mode"));
+			return EINVAL;
+		}
+#endif
 		*listp = R_ADDR(dbmp->reginfo, mfp->free_list);
 		if ((ret = __memp_alloc(dbmp, dbmp->reginfo,
-		    NULL, mfp->free_size, &mfp->free_list, &retp)) != 0)
+		    NULL, size, &mfp->free_list, &retp)) != 0)
 			return (ret);
+		mfp->free_size = (db_size_t)size;
 
 		memcpy(retp, *listp, mfp->free_cnt * sizeof(db_pgno_t));
 
@@ -1059,7 +1083,7 @@ __memp_set_last_pgno(dbmfp, pgno)
 
 	if (mfp->mpf_cnt == 1) {
 		MUTEX_LOCK(dbmfp->env, mfp->mutex);
-		if (mfp->mpf_cnt == 1) 
+		if (mfp->mpf_cnt == 1)
 			dbmfp->mfp->last_pgno = pgno;
 		MUTEX_UNLOCK(dbmfp->env, mfp->mutex);
 	}

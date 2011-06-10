@@ -80,7 +80,8 @@ __os_attach(env, infop, rp)
 	 */
 	if (!F_ISSET(infop, REGION_CREATE)) {
 		if (ret != 0) {
-			__db_errx(env, "segment %s does not exist",
+			__db_errx(env, DB_STR_A("0197",
+			    "segment %s does not exist", "%s"),
 			    infop->name);
 			ret = EAGAIN;
 		}
@@ -101,13 +102,14 @@ __os_attach(env, infop, rp)
 		goto out;
 
 	if (dbenv->shm_key == INVALID_REGION_SEGID) {
-		__db_errx(env, "no base shared memory ID specified");
+		__db_errx(env, DB_STR("0198",
+		    "no base shared memory ID specified"));
 		ret = EAGAIN;
 		goto out;
 	}
 	if (ret == 0 && __os_segdata_release(env, rp, 1) != 0) {
-		__db_errx(env,
-		    "key: %ld: shared memory region already exists",
+		__db_errx(env,DB_STR_A("0199",
+		    "key: %ld: shared memory region already exists", "%ld"),
 		    dbenv->shm_key + (infop->id - 1));
 		ret = EAGAIN;
 		goto out;
@@ -190,7 +192,8 @@ __os_segdata_init(env)
 	int ret;
 
 	if (__os_segdata != NULL) {
-		__db_errx(env, "shared memory segment already exists");
+		__db_errx(env, DB_STR("0200",
+		    "shared memory segment already exists"));
 		return (EEXIST);
 	}
 
@@ -300,7 +303,8 @@ __os_segdata_new(env, segidp)
 	int i, newsize, ret;
 
 	if (__os_segdata == NULL) {
-		__db_errx(env, "shared memory segment not initialized");
+		__db_errx(env, DB_STR("0201",
+		    "shared memory segment not initialized"));
 		return (EAGAIN);
 	}
 
@@ -349,12 +353,13 @@ __os_segdata_find_byname(env, name, infop, rp)
 	dbenv = env->dbenv;
 
 	if (__os_segdata == NULL) {
-		__db_errx(env, "shared memory segment not initialized");
+		__db_errx(env, DB_STR("0202",
+		    "shared memory segment not initialized"));
 		return (EAGAIN);
 	}
 
 	if (name == NULL) {
-		__db_errx(env, "no segment name given");
+		__db_errx(env, DB_STR("0203", "no segment name given"));
 		return (EAGAIN);
 	}
 
@@ -368,7 +373,8 @@ __os_segdata_find_byname(env, name, infop, rp)
 	else {
 		if (rp->segid >= __os_segdata_size ||
 		    rp->segid == INVALID_REGION_SEGID) {
-			__db_errx(env, "Invalid segment id given");
+			__db_errx(env, DB_STR("0204",
+			    "Invalid segment id given"));
 			return (EAGAIN);
 		}
 		segid = __os_segdata[rp->segid].segid;
@@ -398,12 +404,14 @@ __os_segdata_release(env, rp, is_locked)
 	os_segdata_t *p;
 
 	if (__os_segdata == NULL) {
-		__db_errx(env, "shared memory segment not initialized");
+		__db_errx(env, DB_STR("0205",
+		    "shared memory segment not initialized"));
 		return (EAGAIN);
 	}
 
 	if (rp->segid < 0 || rp->segid >= __os_segdata_size) {
-		__db_errx(env, "segment id %ld out of range", rp->segid);
+		__db_errx(env, DB_STR_A("0206",
+		    "segment id %ld out of range", "%ld"), rp->segid);
 		return (EINVAL);
 	}
 

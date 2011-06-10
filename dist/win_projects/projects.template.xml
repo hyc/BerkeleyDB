@@ -14,8 +14,9 @@
   <variable name="sourcePath">../</variable>
   <variable name="outputBase.7.10">../build_windows/</variable>
   <variable name="outputBase.8.00">../build_windows/</variable>
+  <variable name="outputBase.10.0">../build_windows/</variable>
   <preprocessor config="all">WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</preprocessor>
-  <preprocessor config="Debug">_DEBUG</preprocessor>
+  <preprocessor config="Debug">_DEBUG;DIAGNOSTIC</preprocessor>
   <preprocessor config="Release">NDEBUG</preprocessor>
   <preprocessor config="dll">_USRDLL</preprocessor>
   <preprocessor config="app">_CONSOLE</preprocessor>
@@ -40,6 +41,8 @@
   <library name="db">
     <libname config="Debug">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
     <libname config="Release">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
+    <libname config="Static Debug">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
     <platform name="Win32 x64">
       <config type="Debug">
 	<libdir>$(OutDir)</libdir>
@@ -52,30 +55,8 @@
   <library name="db_small">
     <libname config="Debug">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
     <libname config="Release">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
-    <platform name="Win32 x64">
-      <config type="Debug">
-	<libdir>$(OutDir)</libdir>
-      </config>
-      <config type="Release">
-	<libdir>$(OutDir)</libdir>
-      </config>
-    </platform>
-  </library>
-  <library name="db_small_static">
-    <libname config="Debug">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
-    <libname config="Release">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
-    <platform name="Win32 x64">
-      <config type="Debug">
-	<libdir>$(OutDir)</libdir>
-      </config>
-      <config type="Release">
-	<libdir>$(OutDir)</libdir>
-      </config>
-    </platform>
-  </library>
-  <library name="db_static">
-    <libname config="Debug">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
-    <libname config="Release">libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
+    <libname config="Static Debug">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb_small@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
     <platform name="Win32 x64">
       <config type="Debug">
 	<libdir>$(OutDir)</libdir>
@@ -88,6 +69,8 @@
   <library name="db_sql">
     <libname config="Debug">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
     <libname config="Release">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
+    <libname config="Static Debug">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb_sql@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
     <platform name="Win32 x64">
       <config type="Debug">
 	<libdir>$(OutDir)</libdir>
@@ -127,19 +110,8 @@
   <library name="db_stl">
     <libname config="Debug">libdb_stl@DB_VERSION_MAJOR@@DB_VERSION_MINOR@d</libname>
     <libname config="Release">libdb_stl@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</libname>
-    <platform name="Win32 x64">
-      <config type="Debug">
-	<libdir>$(OutDir)</libdir>
-      </config>
-      <config type="Release">
-	<libdir>$(OutDir)</libdir>
-      </config>
-    </platform>
-    <options><compile platform="x64">/bigobj</compile></options>
-  </library>
-  <library name="db_stl_static">
-    <libname config="Debug">libdb_stl@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
-    <libname config="Release">libdb_stl@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
+    <libname config="Static Debug">libdb_stl@DB_VERSION_MAJOR@@DB_VERSION_MINOR@sd</libname>
+    <libname config="Static Release">libdb_stl@DB_VERSION_MAJOR@@DB_VERSION_MINOR@s</libname>
     <platform name="Win32 x64">
       <config type="Debug">
 	<libdir>$(OutDir)</libdir>
@@ -199,20 +171,23 @@
   <include name="db_sql_src">../lang/sql/generated,../lang/sql/adapter,../lang/sql/sqlite/src,../lang/sql/sqlite/ext/fts3,../lang/sql/sqlite/ext/rtree</include>
   <include name="db_sql">../lang/sql/generated,../include</include>
   <project name="php_db4" guid="44AFD8B5-687F-4B9D-B163-1F381CC11794">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>php5ts</depends>
     <include type="ref">all</include>
     <!--<include type="rel">php_db4</include>-->
     <preprocessor config="all">COMPILE_DL_DB4;DB4_EXPORTS;HAVE_DB_H=1;ZEND_WIN32=1;PHP_WIN32=1;ZEND_WIN32_FORCE_INLINE;ZTS=1</preprocessor>
-    <preprocessor config="Release">NDebug;ZEND_DEBUG=0</preprocessor>
+    <preprocessor config="Release">ZEND_DEBUG=0</preprocessor>
     <preprocessor config="Debug">ZEND_DEBUG=1</preprocessor>
     <files>
       <file name="lang/php_db4/db4.cpp"/>
     </files>
   </project>
   <project name="db" guid="FD045D60-ABAD-4A6C-9794-9BFB085FC3E7">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
+    <configuration>Static </configuration>
     <depends>winsock</depends>
     <include type="ref">all</include>
     <moddef file="build_windows/libdb.def"/>
@@ -220,8 +195,11 @@
       <nowp64/>
       <link config="Debug">/FIXED:NO /export:__db_assert</link>
     </options>
-    <preprocessor config="all">DB_CREATE_DLL;WIN32;_UNICODE;UNICODE</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC;CONFIG_TEST</preprocessor>
+    <preprocessor config="all">_UNICODE;UNICODE</preprocessor>
+    <preprocessor config="dll">DB_CREATE_DLL</preprocessor>
+    <preprocessor config="Debug">CONFIG_TEST</preprocessor>
+<!--    danger: can't figure out how to deal with dynamic and static here, so make them same -->
+<!--    <preprocessor config="Static Debug">DIAGNOSTIC</preprocessor>  -->
     <files>
       <file name="src/crypto/aes_method.c"/>
       <file name="src/btree/bt_compact.c"/>
@@ -247,6 +225,7 @@
       <file name="src/db/crdel_auto.c"/>
       <file name="src/db/crdel_rec.c"/>
       <file name="src/crypto/crypto.c"/>
+      <file name="lang/cxx/cxx_channel.cpp"/>
       <file name="lang/cxx/cxx_db.cpp"/>
       <file name="lang/cxx/cxx_dbc.cpp"/>
       <file name="lang/cxx/cxx_dbt.cpp"/>
@@ -257,6 +236,7 @@
       <file name="lang/cxx/cxx_mpool.cpp"/>
       <file name="lang/cxx/cxx_multi.cpp"/>
       <file name="lang/cxx/cxx_seq.cpp"/>
+      <file name="lang/cxx/cxx_site.cpp"/>
       <file name="lang/cxx/cxx_txn.cpp"/>
       <file name="src/db/db.c"/>
       <file name="src/db/db_am.c"/>
@@ -267,6 +247,7 @@
       <file name="src/db/db_cds.c"/>
       <file name="src/db/db_compact.c"/>
       <file name="src/db/db_conv.c"/>
+      <file name="src/db/db_copy.c"/>
       <file name="src/db/db_dispatch.c"/>
       <file name="src/db/db_dup.c"/>
       <file name="src/common/db_err.c"/>
@@ -337,6 +318,16 @@
       <file name="src/hash/hash_stat.c"/>
       <file name="src/hash/hash_upgrade.c"/>
       <file name="src/hash/hash_verify.c"/>
+      <file name="src/heap/heap.c"/>
+      <file name="src/heap/heap_auto.c"/>
+      <file name="src/heap/heap_autop.c"/>
+      <file name="src/heap/heap_conv.c"/>
+      <file name="src/heap/heap_method.c"/>
+      <file name="src/heap/heap_open.c"/>
+      <file name="src/heap/heap_rec.c"/>
+      <file name="src/heap/heap_reclaim.c"/>
+      <file name="src/heap/heap_stat.c"/>
+      <file name="src/heap/heap_verify.c"/>
       <file name="src/hmac/hmac.c"/>
       <file name="lang/hsearch/hsearch.c"/>
       <file name="src/clib/isalpha.c"/>
@@ -430,7 +421,7 @@
       <file name="src/qam/qam_stat.c"/>
       <file name="src/qam/qam_upgrade.c"/>
       <file name="src/qam/qam_verify.c"/>
-      <file name="src/rep/rep_auto.c"/>
+      <file name="src/rep/rep_automsg.c"/>
       <file name="src/rep/rep_backup.c"/>
       <file name="src/rep/rep_elect.c"/>
       <file name="src/rep/rep_lease.c"/>
@@ -442,12 +433,13 @@
       <file name="src/rep/rep_util.c"/>
       <file name="src/rep/rep_verify.c"/>
       <file name="src/repmgr/repmgr_auto.c"/>
+      <file name="src/repmgr/repmgr_automsg.c"/>
       <file name="src/repmgr/repmgr_elect.c"/>
       <file name="src/repmgr/repmgr_method.c"/>
       <file name="src/repmgr/repmgr_msg.c"/>
       <file name="src/repmgr/repmgr_net.c"/>
       <file name="src/repmgr/repmgr_queue.c"/>
-      <file name="src/repmgr/repmgr_rereq.c"/>
+      <file name="src/repmgr/repmgr_rec.c"/>
       <file name="src/repmgr/repmgr_sel.c"/>
       <file name="src/repmgr/repmgr_stat.c"/>
       <file name="src/repmgr/repmgr_util.c"/>
@@ -473,18 +465,22 @@
       <file name="src/common/util_log.c"/>
       <file name="src/common/util_sig.c"/>
       <file name="src/common/zerofill.c"/>
+      <file name="src/xa/xa.c"/>
+      <file name="src/xa/xa_map.c"/>
     </files>
   </project>
   <project name="db_small" guid="B7124116-7A43-4BF1-B727-4C8ADE40FF7F">
-    <type>dll</type>
+    <type>library</type>
+    <configuration>Static </configuration>
+    <configuration></configuration>
     <depends>winsock</depends>
     <include type="ref">all</include>
     <options>
       <nowp64/>
       <link config="Debug">/FIXED:NO /export:__db_assert</link>
     </options>
-    <preprocessor config="all">DB_CREATE_DLL;WIN32;_UNICODE;UNICODE;HAVE_SMALLBUILD</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
+    <preprocessor config="all">_UNICODE;UNICODE;HAVE_SMALLBUILD</preprocessor>
+    <preprocessor config="dll">DB_CREATE_DLL</preprocessor>
     <files>
       <file name="src\btree\bt_compact.c"/>
       <file name="src\btree\bt_compare.c"/>
@@ -521,6 +517,7 @@
       <file name="src\common\util_log.c"/>
       <file name="src\common\util_sig.c"/>
       <file name="src\common\zerofill.c"/>
+      <file name="lang\cxx\cxx_channel.cpp"/>
       <file name="lang\cxx\cxx_db.cpp"/>
       <file name="lang\cxx\cxx_dbc.cpp"/>
       <file name="lang\cxx\cxx_dbt.cpp"/>
@@ -531,6 +528,7 @@
       <file name="lang\cxx\cxx_mpool.cpp"/>
       <file name="lang\cxx\cxx_multi.cpp"/>
       <file name="lang\cxx\cxx_seq.cpp"/>
+      <file name="lang\cxx\cxx_site.cpp"/>
       <file name="lang\cxx\cxx_txn.cpp"/>
       <file name="src\db\crdel_auto.c"/>
       <file name="src\db\crdel_rec.c"/>
@@ -541,6 +539,7 @@
       <file name="src\db\db_cds.c"/>
       <file name="src\db\db_compact.c"/>
       <file name="src\db\db_conv.c"/>
+      <file name="src\db\db_copy.c"/>
       <file name="src\db\db_dispatch.c"/>
       <file name="src\db\db_dup.c"/>
       <file name="src\db\db_iface.c"/>
@@ -588,6 +587,7 @@
       <file name="src\fileops\fop_util.c"/>
       <file name="src\hash\hash_func.c"/>
       <file name="src\hash\hash_stub.c"/>
+      <file name="src\heap\heap_stub.c"/>
       <file name="src\hmac\hmac.c"/>
       <file name="src\hmac\sha1.c"/>
       <file name="src\lock\lock.c"/>
@@ -675,26 +675,26 @@
       <file name="src\txn\txn_region.c"/>
       <file name="src\txn\txn_stat.c"/>
       <file name="src\txn\txn_util.c"/>
+      <file name="src\xa\xa.c"/>
+      <file name="src\xa\xa_map.c"/>
     </files>
   </project>
-  <project name="db_small_static" guid="FE85C600-38A6-11DE-8A39-0800200C9A66">
-    <type>static_lib</type>
-    <include type="ref">all</include>
-    <preprocessor config="all">WIN32;_UNICODE;UNICODE;HAVE_SMALLBUILD</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
-    <options><nowp64/></options>
-  </project>
   <project name="db_sql" guid="4B65E600-064A-11DF-8A39-0800200C9A66">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
+    <configuration>Static </configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <include type="ref">db_sql_src</include>
     <options>
       <nowp64/>
       <link config="Debug">/FIXED:NO</link>
     </options>
-    <preprocessor config="all">WIN32;_WINDOWS;_USRDLL;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_API=__declspec(dllexport);SQLITE_HAS_CODEC;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION</preprocessor>
-    <preprocessor config="Debug">_DEBUG;SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
+    <preprocessor config="all">SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_HAS_CODEC;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION</preprocessor>
+    <preprocessor config="Debug">SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
+    <preprocessor config="dll">SQLITE_API=__declspec(dllexport)</preprocessor>
+    <preprocessor config="Static Debug">SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
     <files>
       <file name="lang\sql\sqlite\src\alter.c"/>
       <file name="lang\sql\sqlite\src\analyze.c"/>
@@ -712,11 +712,13 @@
       <file name="lang\sql\adapter\db_encrypt.c"/>
       <file name="lang\sql\adapter\db_pragma.c"/>
       <file name="lang\sql\adapter\db_shell.c"/>
+      <file name="lang\sql\adapter\db_sequence.c"/>
       <file name="lang\sql\sqlite\src\delete.c"/>
       <file name="lang\sql\sqlite\src\expr.c"/>
       <file name="lang\sql\sqlite\src\fault.c"/>
       <file name="lang\sql\sqlite\src\fkey.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3.c"/>
+      <file name="lang\sql\sqlite\ext\fts3\fts3_aux.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3_expr.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3_hash.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3_icu.c"/>
@@ -778,7 +780,8 @@
     </files>
   </project>
   <project name="db_sql_jdbc" guid="433EAC30-1CEA-11DF-8A39-0800200C9A66" output="sqlite_jni">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
     <include type="ref">db_sql_src</include>
     <include type="rel">../lang/sql/jdbc/native</include>
@@ -800,12 +803,13 @@ echo JDBC build finished</command>
     </files>
   </project>
   <project name="db_sql_odbc" guid="0D7E0170-2D8B-11DF-8A39-0800200C9A66">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
     <include type="ref">db_sql</include>
     <options><nowp64/></options>
-    <preprocessor config="all">WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_USRDLL;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_CORE;_WIN32;WITHOUT_SHELL;HAVE_SQLITE3PREPAREV2=1;NO_TCL;THREADSAFE=1;SQLITE_DLL=1;SQLITE_THREADSAFE=1;SQLITE_OS_WIN=1;SQLITE_ASCII=1;SQLITE_SOUNDEX=1;SQLITE_OMIT_SHARED_CACHE=1;SQLITE_OMIT_EXPLAIN=1</preprocessor>
-    <preprocessor config="debug">_DEBUG;SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
+    <preprocessor config="all">WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_USRDLL;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_CORE;_WIN32;WITHOUT_SHELL;HAVE_SQLITE3PREPAREV2=1;NO_TCL;THREADSAFE=1;SQLITE_DLL=1;SQLITE_THREADSAFE=1;SQLITE_OS_WIN=1;SQLITE_ASCII=1;SQLITE_SOUNDEX=1;SQLITE_OMIT_SHARED_CACHE=1;SQLITE_OMIT_EXPLAIN=1</preprocessor>
+    <preprocessor config="debug">SQLITE_DEBUG;SQLITE_MEMDEBUG</preprocessor>
     <moddef file="lang/sql/odbc/sqlite3odbc.def"/>
     <files>
       <file name="lang/sql/odbc/sqlite3odbc.c"/>
@@ -813,12 +817,16 @@ echo JDBC build finished</command>
     </files>
   </project>
   <project name="db_stl" guid="284CC197-0C66-11DE-8C30-0800200C9A66">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
+    <configuration>Static </configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <include type="rel">../lang/cxx/stl</include>
     <options><nowp64/></options>
-    <preprocessor config="all">DB_CREATE_DLL;_UNICODE;UNICODE</preprocessor>
+    <preprocessor config="all">_UNICODE;UNICODE</preprocessor>
+    <preprocessor config="dll">DB_CREATE_DLL</preprocessor>
     <files>
       <file name="lang/cxx/stl/dbstl_exception.h"/>
       <file name="lang/cxx/stl/dbstl_map.h"/>
@@ -837,22 +845,16 @@ echo JDBC build finished</command>
       <file name="lang/cxx/stl/dbstl_resource_manager.h"/>
     </files>
   </project>
-  <project name="db_stl_static" guid="284CC198-0C66-11DE-8C30-0800200C9A66">
-    <type>static_lib</type>
-    <include type="ref">all</include>
-    <include type="rel">../lang/cxx/stl</include>
-    <preprocessor config="all">_UNICODE;UNICODE</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
-    <options><nowp64/></options>
-  </project>
   <project name="db_tcl" guid="7F3D3EEE-2ABB-4F0F-A2A7-DE88C1989BE1">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>tcl</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <moddef file="build_windows/libdb_tcl.def"/>
     <preprocessor config="all">DB_CREATE_DLL;_UNICODE;DB_TCL_SUPPORT</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC;CONFIG_TEST</preprocessor>
+    <preprocessor config="Debug">CONFIG_TEST</preprocessor>
     <files>
       <file name="src/os/os_abort.c"/>
       <file name="src/os/os_stack.c"/>
@@ -874,8 +876,10 @@ echo JDBC build finished</command>
     </files>
   </project>
   <project name="db_java" guid="0052E828-5F10-4973-8729-50B0C5598702">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <options><nowp64/></options>
     <preprocessor config="all">DB_CREATE_DLL;_UNICODE;UNICODE</preprocessor>
@@ -899,8 +903,10 @@ echo Java build finished</command>
     </files>
   </project>
   <project name="db_csharp" guid="13DE550F-16FD-4AC2-9EC6-B1A18F41476F">
-    <type>dll</type>
+    <type>library</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <options><nowp64/></options>
     <preprocessor config="all">DB_CREATE_DLL;_UNICODE;UNICODE</preprocessor>
@@ -910,7 +916,9 @@ echo Java build finished</command>
   </project>
   <project name="db_archive" guid="56056344-53A1-4FA6-B20B-862C0BA68953">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_archive.c"/>
@@ -919,7 +927,9 @@ echo Java build finished</command>
   </project>
   <project name="db_checkpoint" guid="A3BE0163-1E6C-4235-9B6B-3A36ABB5E285">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_checkpoint.c"/>
@@ -928,7 +938,9 @@ echo Java build finished</command>
   </project>
   <project name="db_deadlock" guid="CD0FD995-B4D1-4907-987B-99CF3304E7E0">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_deadlock.c"/>
@@ -937,7 +949,9 @@ echo Java build finished</command>
   </project>
   <project name="db_dump" guid="DB067D2C-7163-428B-AAF8-642316AB173B">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_dump.c"/>
@@ -946,7 +960,9 @@ echo Java build finished</command>
   </project>
   <project name="db_hotbackup" guid="67C0DABC-353A-491F-9A77-8E2E601ED52B">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_hotbackup.c"/>
@@ -955,7 +971,9 @@ echo Java build finished</command>
   </project>
   <project name="db_load" guid="7640133F-4AB8-42DA-ADB5-95F21447F7D5">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_load.c"/>
@@ -964,7 +982,9 @@ echo Java build finished</command>
   </project>
   <project name="db_log_verify" guid="872961A3-877A-4B53-886D-F1FB65073608">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_log_verify.c"/>
@@ -973,6 +993,7 @@ echo Java build finished</command>
   </project>
   <project name="db_perf" guid="5835B4B0-2F99-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <include type="ref">all</include>
     <files>
@@ -1001,7 +1022,9 @@ echo Java build finished</command>
   </project>
   <project name="db_printlog" guid="D505F51B-2B92-4850-A08F-9113D947FF4B">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_printlog.c"/>
@@ -1012,13 +1035,16 @@ echo Java build finished</command>
       <file name="src/fileops/fileops_autop.c"/>
       <file name="src/hash/hash_autop.c"/>
       <file name="src/qam/qam_autop.c"/>
+      <file name="src/repmgr/repmgr_autop.c"/>
       <file name="src/txn/txn_autop.c"/>
       <file name="src/clib/getopt.c"/>
     </files>
   </project>
   <project name="db_recover" guid="9E03FD51-E387-4EEF-9EEA-E71707A56212">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_recover.c"/>
@@ -1027,7 +1053,9 @@ echo Java build finished</command>
   </project>
   <project name="db_replicate" guid="2AA9FB16-F1B0-47A7-AE10-7830E4E317E2">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_replicate.c"/>
@@ -1036,6 +1064,7 @@ echo Java build finished</command>
   </project>
   <project name="db_repsite" guid="23A3F970-2E25-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <include type="ref">all</include>
     <files>
@@ -1045,24 +1074,29 @@ echo Java build finished</command>
   </project>
   <project name="db_sql_shell" guid="A5DB89F0-06E5-11DF-8A39-0800200C9A66" output="dbsql">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_sql</depends>
+    <references>db</references>
+    <references>db_sql</references>
     <include type="ref">all</include>
     <include type="ref">db_sql_src</include>
-    <preprocessor config="all">WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE</preprocessor>
-    <preprocessor config="Debug">_DEBUG;SQLITE_DEBUG;SQLITE_MEMDEBUG;</preprocessor>
+    <preprocessor config="all">WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE</preprocessor>
+    <preprocessor config="Debug">SQLITE_DEBUG;SQLITE_MEMDEBUG;</preprocessor>
     <files>
       <file name="lang\sql\sqlite\src\shell.c"/>
     </files>
   </project>
   <project name="db_sql_testfixture" guid="5D79B660-0667-11DF-8A39-0800200C9A66" output="testfixture">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>tcl84</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <include type="ref">db_sql_src</include>
-    <preprocessor config="all">WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_HAS_CODEC</preprocessor>
-    <preprocessor config="Debug">_DEBUG;SQLITE_MEMDEBUG;</preprocessor>
+    <preprocessor config="all">WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_HAS_CODEC</preprocessor>
+    <preprocessor config="Debug">SQLITE_MEMDEBUG;</preprocessor>
     <files>
       <file name="lang\sql\sqlite\src\alter.c"/>
       <file name="lang\sql\sqlite\src\analyze.c"/>
@@ -1078,12 +1112,14 @@ echo Java build finished</command>
       <file name="lang\sql\sqlite\src\complete.c"/>
       <file name="lang\sql\sqlite\src\date.c"/>
       <file name="lang\sql\adapter\db_pragma.c"/>
+      <file name="lang\sql\adapter\db_sequence.c"/>
       <file name="lang\sql\sqlite\src\delete.c"/>
       <file name="lang\sql\adapter\db_encrypt.c"/>
       <file name="lang\sql\sqlite\src\expr.c"/>
       <file name="lang\sql\sqlite\src\fault.c"/>
       <file name="lang\sql\sqlite\src\fkey.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3.c"/>
+      <file name="lang\sql\sqlite\ext\fts3\fts3_aux.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3_expr.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3_hash.c"/>
       <file name="lang\sql\sqlite\ext\fts3\fts3_icu.c"/>
@@ -1163,27 +1199,37 @@ echo Java build finished</command>
       <file name="lang\sql\sqlite\src\test_demovfs.c"/>
       <file name="lang\sql\sqlite\src\test_devsym.c"/>
       <file name="lang\sql\sqlite\src\test_func.c"/>
+      <file name="lang\sql\sqlite\src\test_fuzzer.c"/>
       <file name="lang\sql\sqlite\src\test_hexio.c"/>
       <file name="lang\sql\sqlite\src\test_intarray.c"/>
       <file name="lang\sql\sqlite\src\test_journal.c"/>
       <file name="lang\sql\sqlite\src\test_loadext.c"/>
       <file name="lang\sql\sqlite\src\test_malloc.c"/>
+      <file name="lang\sql\sqlite\src\test_multiplex.c"/>
       <file name="lang\sql\sqlite\src\test_mutex.c"/>
       <file name="lang\sql\sqlite\src\test_onefile.c"/>
       <file name="lang\sql\sqlite\src\test_osinst.c"/>
       <file name="lang\sql\sqlite\src\test_pcache.c"/>
+      <file name="lang\sql\sqlite\src\test_quota.c"/>
+      <file name="lang\sql\sqlite\src\test_rtree.c"/>
       <file name="lang\sql\sqlite\src\test_schema.c"/>
       <file name="lang\sql\sqlite\src\test_server.c"/>
+      <file name="lang\sql\sqlite\src\test_syscall.c"/>
+      <file name="lang\sql\sqlite\src\test_superlock.c"/>
       <file name="lang\sql\sqlite\src\test_stat.c"/>
       <file name="lang\sql\sqlite\src\test_tclvar.c"/>
       <file name="lang\sql\sqlite\src\test_thread.c"/>
       <file name="lang\sql\sqlite\src\test_vfs.c"/>
+      <file name="lang\sql\sqlite\src\test_vfstrace.c"/>
+      <file name="lang\sql\sqlite\src\test_wholenumber.c"/>
       <file name="lang\sql\sqlite\src\test_wsd.c"/>
     </files>
   </project>
-  <project name="db_sql_codegen" guid="738ee880-0e33-11de-8c30-0800200c9a66">
+  <project name="db_sql_codegen" guid="738EE880-0E33-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_sql_codegen/db_sql_codegen.c"/>
@@ -1204,7 +1250,9 @@ echo Java build finished</command>
   </project>
   <project name="db_stat" guid="19D3A4CB-1C12-43D4-A94B-D2B387AD43E5">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_stat.c"/>
@@ -1213,16 +1261,31 @@ echo Java build finished</command>
   </project>
   <project name="db_test" guid="B17B933F-6F75-4095-BE51-12666358163A" output="dbkill">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db_tcl</references>
     <include type="ref">all</include>
     <files>
       <file name="build_windows/dbkill.cpp"/>
       <file name="src/clib/getopt.c"/>
     </files>
   </project>
+  <project name="db_tuner" guid="A86208B6-BEEB-11DF-BCF9-116EDFD72085">
+    <type>app</type>
+    <configuration></configuration>
+    <depends>db</depends>
+    <references>db</references>
+    <include type="ref">all</include>
+    <files>
+      <file name="util/db_tuner.c"/>
+      <file name="src/clib/getopt.c"/>
+    </files>
+  </project>
   <project name="db_upgrade" guid="5F4D66DB-8D75-43D4-A1BB-60A01BC6B32F">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_upgrade.c"/>
@@ -1231,23 +1294,20 @@ echo Java build finished</command>
   </project>
   <project name="db_verify" guid="12E118CA-CAAE-4F54-AE81-8D9981AA0635">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="util/db_verify.c"/>
       <file name="src/clib/getopt.c"/>
     </files>
   </project>
-  <project name="db_static" guid="671539AA-D9A6-4B7B-8044-61B511D6F432">
-    <type>static_lib</type>
-    <include type="ref">all</include>
-    <preprocessor config="all">_UNICODE;UNICODE</preprocessor>
-    <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
-    <options><nowp64/></options>
-  </project>
   <project name="ex_access" guid="75DF98AA-25DF-4183-A022-024CF918480D">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1256,7 +1316,9 @@ echo Java build finished</command>
   </project>
   <project name="ex_btrec" guid="5DD66F4B-EB4A-4453-BC31-3FF7B2240634">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1265,7 +1327,9 @@ echo Java build finished</command>
   </project>
   <project name="ex_bulk" guid="ABE1ACF6-C375-44AB-A628-80B4A94580FD">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1274,7 +1338,9 @@ echo Java build finished</command>
   </project>
   <project name="ex_csvcode" guid="54E6A58D-561D-467E-B378-6BA2EE138880">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <event name="postbuild">
       <command config="Release">$(OUTDIR)\ex_csvcode.exe -c ../examples/c/csv/csv_local.c -h ../examples/c/csv/csv_local.h -f ../examples/c/csv/sample.desc</command>
@@ -1288,7 +1354,10 @@ echo Java build finished</command>
   </project>
   <project name="ex_csvload" guid="CEC6CC37-88A3-4573-8957-6BA0CEF94B3D">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
+    <references>ex_csvcode</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1302,7 +1371,10 @@ echo Java build finished</command>
   </project>
   <project name="ex_csvquery" guid="438BEA9C-A9DF-4EAE-A9F7-A5F35CAF3FB9">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
+    <references>ex_csvcode</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1316,15 +1388,29 @@ echo Java build finished</command>
   </project>
   <project name="ex_env" guid="443530F5-CCC3-40C8-A89B-AEF6C14D3A41">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
       <file name="examples/c/ex_env.c"/>
     </files>
   </project>
+  <project name="ex_heap" guid="B736B89C-B7EE-4C45-88BA-174B9A1956B3">
+    <type>app</type>
+    <configuration></configuration>
+    <depends>db</depends>
+    <references>db</references>
+    <include type="ref">all</include>
+    <files>
+      <file name="src/clib/getopt.c"/>
+      <file name="examples/c/ex_heap.c"/>
+    </files>
+  </project>
   <project name="ex_java" guid="ecfcd4d6-3063-11df-95b2-000d88a6f448">
     <type>app</type>
+    <configuration></configuration>
     <options><nowp64/></options>
     <event name="custom">
       <command config="ReleaseDebug">
@@ -1339,7 +1425,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_lock" guid="B254668F-C28F-4B14-92A5-3BF4B83D02EE">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1348,7 +1436,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_mpool" guid="0F6925F0-6243-47E0-A0FF-05F70B15FC2C">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1357,8 +1447,10 @@ echo Java example build finished</command>
   </project>
   <project name="ex_rep_base" guid="BDBF0EE2-1551-47A4-ACD0-B22B05DF4D77">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>winsock</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1368,9 +1460,24 @@ echo Java example build finished</command>
       <file name="examples/c/ex_rep/base/rep_net.c"/>
     </files>
   </project>
+  <project name="ex_rep_chan" guid="080516C0-670A-11E0-AE3E-0800200C9A66">
+    <type>app</type>
+    <configuration></configuration>
+    <depends>db</depends>
+    <depends>winsock</depends>
+    <include type="ref">all</include>
+    <files>
+      <file name="src/clib/getopt.c"/>
+      <file name="examples/c/ex_rep_chan/rep_chan.c"/>
+      <file name="examples/c/ex_rep_chan/rep_chan_util.c"/>
+      <file name="examples/c/ex_rep_chan/rep_chan.h"/>
+    </files>
+  </project>
   <project name="ex_rep_mgr" guid="365A89B8-B5A5-4EC6-990B-08254028E1A6">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1380,7 +1487,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sequence" guid="4E43DB5C-D050-4003-A4FF-6294D9F498DD">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1389,7 +1498,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_stream" guid="8F3D872E-C7F5-4C0D-9974-0F0CB9DAA527">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1398,7 +1509,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_tpcb" guid="8632C58A-CC00-4116-B61A-CBE0F2C11CAD">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1407,7 +1520,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_txnguide" guid="80B961C4-D1D6-48E9-8965-CFCE69BF85E2">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1416,7 +1531,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_txnguide_inmem" guid="925BD215-6680-4FFF-8345-0741E4627B1F">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1425,7 +1542,9 @@ echo Java example build finished</command>
   </project>
   <project name="example_database_load" guid="56C01012-66D7-4295-B382-F3815366DB26">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1435,7 +1554,9 @@ echo Java example build finished</command>
   </project>
   <project name="example_database_read" guid="0D35F7E6-425B-4D09-B805-B6D47A9B4AB3">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1445,7 +1566,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_access" guid="2575F0DD-DAA5-4AE5-AC81-7C47507AD279">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1454,7 +1577,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_btrec" guid="38C080B1-7003-48DF-820D-06348BC87B1B">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1463,7 +1588,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_env" guid="E790C029-341D-489B-B987-D35947AD78C3">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1472,7 +1599,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_example_database_load" guid="A4F42222-FE02-431D-A046-B049E516DEB7">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1482,7 +1611,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_example_database_read" guid="81C97B03-193C-4021-A78E-F0A2A2AFAA87">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1492,7 +1623,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_lock" guid="19393F5D-DBBE-450C-9217-EA0C7503E277">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1501,7 +1634,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_mpool" guid="DAEDD51B-0FED-4779-A99A-C09E4D2ACB5E">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1510,7 +1645,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_repquote" guid="75046027-E052-4E8B-AE87-E27DE9C2BC21">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1520,7 +1657,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_sequence" guid="D90AE774-03EF-4945-A3C3-AC76BF90825F">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1529,7 +1668,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_tpcb" guid="77BD278B-7927-4C88-9198-5067C549398D">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1538,7 +1679,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_txnguide" guid="2E9B94E9-024C-4255-9104-BA81FF7F2591">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1547,7 +1690,9 @@ echo Java example build finished</command>
   </project>
   <project name="excxx_txnguide_inmem" guid="009413E4-EFDF-42FB-8631-931CFAEAAB72">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
+    <references>db</references>
     <include type="ref">all</include>
     <files>
       <file name="src/clib/getopt.c"/>
@@ -1556,7 +1701,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_binding" guid="67965310-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1565,7 +1712,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_fts3" guid="FF1CAD6A-1EDF-4AD3-9A4F-8C76B7214A13">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1574,7 +1723,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_index" guid="67965311-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1583,7 +1734,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_load" guid="67965312-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1592,7 +1745,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_multi_thread" guid="67965313-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1601,7 +1756,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_query" guid="67965314-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1610,7 +1767,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_rtree" guid="9CBFC33A-027B-4A58-8059-2E3C29489E64">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1619,7 +1778,9 @@ echo Java example build finished</command>
   </project> 
   <project name="ex_sql_savepoint" guid="67965315-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1628,7 +1789,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_statement" guid="67965316-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1637,7 +1800,9 @@ echo Java example build finished</command>
   </project>
   <project name="ex_sql_transaction" guid="67965317-072A-11DF-8A39-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db_sql</depends>
+    <references>db_sql</references>
     <include type="ref">db_sql</include>
     <files>
       <file name="examples/sql/c/ex_sql_utils.c"/>
@@ -1646,8 +1811,11 @@ echo Java example build finished</command>
   </project>
   <project name="exstl_access" guid="284CC190-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
+    <references>db</references>
+    <references>db_sql</references>
     <include type="ref">all</include>
     <include type="rel">../lang/cxx/stl</include>
     <options><compile platform="x64">/bigobj</compile></options>
@@ -1657,8 +1825,11 @@ echo Java example build finished</command>
   </project>
   <project name="exstl_advancedfeatures" guid="8E5423C1-0177-4A14-86BC-75F0895E7198">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
+    <references>db</references>
+    <references>db_sql</references>
     <include type="ref">all</include>
     <include type="rel">../lang/cxx/stl</include>
     <options><compile platform="x64">/bigobj</compile></options>
@@ -1670,8 +1841,11 @@ echo Java example build finished</command>
   </project>
   <project name="exstl_repquote" guid="284CC191-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
+    <references>db</references>
+    <references>db_stl</references>
     <include type="ref">all</include>
     <include type="rel">../lang/cxx/stl</include>
     <options><compile platform="x64">/bigobj</compile></options>
@@ -1684,8 +1858,11 @@ echo Java example build finished</command>
   </project>
   <project name="exstl_tpcb" guid="284CC192-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
+    <references>db</references>
+    <references>db_stl</references>
     <include type="ref">all</include>
     <include type="rel">../lang/cxx/stl</include>
     <options><compile platform="x64">/bigobj</compile></options>
@@ -1696,8 +1873,11 @@ echo Java example build finished</command>
   </project>
   <project name="exstl_txnguide" guid="284CC193-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
+    <references>db</references>
+    <references>db_stl</references>
     <include type="ref">all</include>
     <include type="rel">../lang/cxx/stl</include>
     <options><compile platform="x64">/bigobj</compile></options>
@@ -1708,6 +1888,7 @@ echo Java example build finished</command>
   </project>
   <project name="stl_test" guid="284CC194-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
     <include type="ref">all</include>
@@ -1728,6 +1909,7 @@ echo Java example build finished</command>
   </project>
   <project name="stl_test_stlport" guid="284CC195-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
     <include type="ref">all</include>
@@ -1749,6 +1931,7 @@ echo Java example build finished</command>
   </project>
   <project name="stl_test_msexamples" guid="284CC196-0C66-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <depends>db_stl</depends>
     <include type="ref">all</include>
@@ -1766,6 +1949,7 @@ echo Java example build finished</command>
   </project>
   <project name="test_micro" guid="9556E0A0-2E25-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <include type="ref">all</include>
     <files>
@@ -1789,8 +1973,33 @@ echo Java example build finished</command>
       <file name="src/clib/getopt.c"/>
     </files>
   </project>
+  <project name="test_cutest" guid="086BD200-FDC6-11DF-8CFF-0800200C9A66">
+    <type>app</type>
+    <configuration></configuration>
+    <depends>db</depends>
+    <references>db</references>
+    <references>db_tuner</references>
+    <preprocessor config="all">TEST_HARNESS_C</preprocessor>
+    <include type="ref">all</include>
+    <include type="rel">../test/c/cutest,../test/c/suite,../test/c/common</include>
+    <files>
+      <file name="src/clib/getopt.c"/>
+      <file name="test/c/cutest/CuTest.c"/>
+      <file name="test/c/cutest/CuTests.c"/>
+      <file name="test/c/cutest/Runner.c"/>
+      <file name="test/c/suites/TestChannel.c"/>
+      <file name="test/c/suites/TestDbTuner.c"/>
+      <file name="test/c/suites/TestEncryption.c"/>
+      <file name="test/c/suites/TestEnvConfig.c"/>
+      <file name="test/c/suites/TestEnvMethod.c"/>
+      <file name="test/c/suites/TestKeyExistErrorReturn.c"/>
+      <file name="test/c/suites/TestPartial.c"/>
+      <file name="test/c/suites/TestQueue.c"/>
+    </files> 
+  </project>
   <project name="test_mutex" guid="9556E0A1-2E25-11DE-8C30-0800200C9A66">
     <type>app</type>
+    <configuration></configuration>
     <depends>db</depends>
     <include type="ref">all</include>
     <files>

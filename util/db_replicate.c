@@ -23,7 +23,8 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	fprintf(stderr, "Cannot run %s without Replication Manager.\n",
+	fprintf(stderr, DB_STR_A("5092",
+	    "Cannot run %s without Replication Manager.\n", "%s\n"),
 	    argv[0]);
 	COMPQUIET(argc, 0);
 	exit (1);
@@ -44,6 +45,7 @@ FILE *logfp;
 pid_t pid;
 
 char progname[MSG_SIZE];
+int panic_exit;
 #define	REP_NTHREADS	3
 #define	MAX_RETRY	3
 
@@ -66,6 +68,7 @@ main(argc, argv)
 	logfp = NULL;
 	log_msg[MSG_SIZE - 1] = '\0';
 	__os_id(NULL, &pid, NULL);
+	panic_exit = 0;
 
 	if ((prog = __db_rpath(argv[0])) == NULL)
 		prog = argv[0];
@@ -74,7 +77,7 @@ main(argc, argv)
 
 	if ((size_t)(count = snprintf(progname, sizeof(progname), "%s(%lu)",
 	    prog, (u_long)pid)) >= sizeof(progname)) {
-		fprintf(stderr, "Program name too long\n");
+		fprintf(stderr, DB_STR("5093", "Program name too long\n"));
 		goto err;
 	}
 	if ((ret = version_check()) != 0)
@@ -124,7 +127,8 @@ main(argc, argv)
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5094",
+				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
 				return (EXIT_FAILURE);
 			}
@@ -216,10 +220,17 @@ main(argc, argv)
 		 * bit of time for the old program to notice the panic.  
 		 *
 		 * We wait the max_req time because at worst the rerequest
-		 * thread runs every max_req time and should notice a panic.
+		 * thread runs every max_req time and should notice a panic.  On
+		 * the other hand, if we're joining the replication group for
+		 * the first time and the master is not available
+		 * (DB_REP_UNAVAIL), it makes sense to pause a bit longer before
+		 * retrying.
 		 */
 		if ((ret = dbenv->repmgr_start(dbenv,
-		    repmgr_th, start_state)) != 0) {
+			    repmgr_th, start_state)) == DB_REP_UNAVAIL) {
+			count++;
+			__os_yield(dbenv->env, 5, 0);
+		} else if (ret != 0) {
 			count++;
 			__os_yield(dbenv->env, 0, max_req);
 		} else
@@ -231,7 +242,7 @@ main(argc, argv)
 	}
 
 	/* Main loop of the program. */
-	while (!__db_util_interrupted()) {
+	while (!__db_util_interrupted() && !panic_exit) {
 		/*
 		 * The program itself does not have much to do.  All the
 		 * interesting replication stuff is happening underneath.
@@ -242,8 +253,9 @@ main(argc, argv)
 		__os_yield(dbenv->env, seconds, 0);
 		if (verbose) {
 			(void)time(&now);
-			dbenv->errx(dbenv,
-		    "db_replicate begin: %s", __os_ctime(&now, time_buf));
+			dbenv->errx(dbenv, DB_STR_A("5095",
+			    "db_replicate begin: %s", "%s"),
+			    __os_ctime(&now, time_buf));
 		}
 
 		/*
@@ -258,9 +270,8 @@ main(argc, argv)
 		}
 	}
 
-	if (0) {
+	if (panic_exit)
 err:		exitval = 1;
-	}
 
 	prog_close(dbenv, exitval);
 	return (exitval == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -305,16 +316,19 @@ event_callback(dbenv, which, info)
 		 * the panic and want to exit quickly to give a new 
 		 * instantiation of the program access to the port.
 		 */
-		printf("received panic event\n");
+		printf(DB_STR("5096", "received panic event\n"));
 		db_replicate_logmsg(dbenv, "PANIC");
-		prog_close(dbenv, 1);
-		exit (EXIT_FAILURE);
-		/* NOTREACHED */
+		panic_exit = 1;
+		break;
 
 	case DB_EVENT_REP_CLIENT:
 		db_replicate_logmsg(dbenv, "CLIENT");
 		break;
 
+	case DB_EVENT_REP_CONNECT_BROKEN:
+		db_replicate_logmsg(dbenv, "CONNECTIONBROKEN");
+		break;
+		
 	case DB_EVENT_REP_DUPMASTER:
 		db_replicate_logmsg(dbenv, "DUPMASTER");
 		break;
@@ -335,13 +349,20 @@ event_callback(dbenv, which, info)
 		db_replicate_logmsg(dbenv, "STARTUPDONE");
 		break;
 
+	case DB_EVENT_REP_CONNECT_ESTD:
+	case DB_EVENT_REP_CONNECT_TRY_FAILED:
+	case DB_EVENT_REP_INIT_DONE:
+	case DB_EVENT_REP_LOCAL_SITE_REMOVED:
 	case DB_EVENT_REP_PERM_FAILED:
-		/* I don't care about this, for now. */
+	case DB_EVENT_REP_SITE_ADDED:
+	case DB_EVENT_REP_SITE_REMOVED:
+		/* We don't care about these, for now. */
 		break;
 
 	default:
 		db_replicate_logmsg(dbenv, "IGNORED");
-		dbenv->errx(dbenv, "ignoring event %d", which);
+		dbenv->errx(dbenv, DB_STR_A("5097", "ignoring event %d",
+		    "%d"), which);
 	}
 }
 
@@ -361,9 +382,10 @@ version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
+		fprintf(stderr, DB_STR_A("5098",
 		    "%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
 		    v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
@@ -386,7 +408,8 @@ db_replicate_logmsg(dbenv, msg)
 	(void)__os_ctime(&now, time_buf);
 	if ((size_t)(cnt = snprintf(log_msg, sizeof(log_msg), "%s: %lu %s %s",
 	    progname, (u_long)pid, time_buf, msg)) >= sizeof(log_msg)) {
-		dbenv->errx(dbenv, "%s: %lu %s %s: message too long",
+		dbenv->errx(dbenv, DB_STR_A("5099",
+		    "%s: %lu %s %s: message too long", "%s %lu %s %s"),
 		    progname, (u_long)pid, time_buf, msg);
 		return (1);
 	}

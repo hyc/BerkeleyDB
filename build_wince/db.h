@@ -2,7 +2,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  *
@@ -60,10 +60,10 @@ extern "C" {
 #define	DB_VERSION_FAMILY	11
 #define	DB_VERSION_RELEASE	2
 #define	DB_VERSION_MAJOR	5
-#define	DB_VERSION_MINOR	1
-#define	DB_VERSION_PATCH	29
-#define	DB_VERSION_STRING	"Berkeley DB 5.1.29: (October 25, 2011)"
-#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.1.29: (October 25, 2011)"
+#define	DB_VERSION_MINOR	2
+#define	DB_VERSION_PATCH	28
+#define	DB_VERSION_STRING	"Berkeley DB 5.2.28: (June 10, 2011)"
+#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.2.28: (June 10, 2011)"
 
 /*
  * !!!
@@ -131,11 +131,21 @@ typedef u_int32_t uintptr_t;
  */
 #define	off_t	__db_off_t
 typedef int64_t off_t;
-typedef int pid_t;
+typedef int32_t pid_t;
+#ifdef HAVE_MIXED_SIZE_ADDRESSING
+typedef u_int32_t db_size_t;
+#else
+typedef size_t db_size_t;
+#endif
 #ifdef _WIN64
 typedef int64_t ssize_t;
 #else
 typedef int32_t ssize_t;
+#endif
+#ifdef HAVE_MIXED_SIZE_ADDRESSING
+typedef int32_t db_ssize_t;
+#else
+typedef ssize_t db_ssize_t;
 #endif
 
 /*
@@ -163,20 +173,24 @@ typedef u_int32_t	db_timeout_t;	/* Type of a timeout. */
  * will return, so region offsets have to be able to hold differences between
  * arbitrary pointers.
  */
-typedef	uintptr_t	roff_t;
+typedef	db_size_t	roff_t;
 
 /*
  * Forward structure declarations, so we can declare pointers and
  * applications can get type checking.
  */
+struct __channel;	typedef struct __channel CHANNEL;
 struct __db;		typedef struct __db DB;
 struct __db_bt_stat;	typedef struct __db_bt_stat DB_BTREE_STAT;
+struct __db_channel;	typedef struct __db_channel DB_CHANNEL;
 struct __db_cipher;	typedef struct __db_cipher DB_CIPHER;
 struct __db_compact;	typedef struct __db_compact DB_COMPACT;
 struct __db_dbt;	typedef struct __db_dbt DBT;
 struct __db_distab;	typedef struct __db_distab DB_DISTAB;
 struct __db_env;	typedef struct __db_env DB_ENV;
 struct __db_h_stat;	typedef struct __db_h_stat DB_HASH_STAT;
+struct __db_heap_rid;	typedef struct __db_heap_rid DB_HEAP_RID;
+struct __db_heap_stat;	typedef struct __db_heap_stat DB_HEAP_STAT;
 struct __db_ilock;	typedef struct __db_ilock DB_LOCK_ILOCK;
 struct __db_lock_hstat;	typedef struct __db_lock_hstat DB_LOCK_HSTAT;
 struct __db_lock_pstat;	typedef struct __db_lock_pstat DB_LOCK_PSTAT;
@@ -200,10 +214,13 @@ struct __db_preplist;	typedef struct __db_preplist DB_PREPLIST;
 struct __db_qam_stat;	typedef struct __db_qam_stat DB_QUEUE_STAT;
 struct __db_rep;	typedef struct __db_rep DB_REP;
 struct __db_rep_stat;	typedef struct __db_rep_stat DB_REP_STAT;
+struct __db_repmgr_conn_err;
+	typedef struct __db_repmgr_conn_err DB_REPMGR_CONN_ERR;
 struct __db_repmgr_site;typedef struct __db_repmgr_site DB_REPMGR_SITE;
 struct __db_repmgr_stat;typedef struct __db_repmgr_stat DB_REPMGR_STAT;
 struct __db_seq_record; typedef struct __db_seq_record DB_SEQ_RECORD;
 struct __db_seq_stat;	typedef struct __db_seq_stat DB_SEQUENCE_STAT;
+struct __db_site;	typedef struct __db_site DB_SITE;
 struct __db_sequence;	typedef struct __db_sequence DB_SEQUENCE;
 struct __db_thread_info;typedef struct __db_thread_info DB_THREAD_INFO;
 struct __db_txn;	typedef struct __db_txn DB_TXN;
@@ -248,22 +265,33 @@ struct __db_dbt {
 #define	DB_DBT_MULTIPLE		0x020	/* References multiple records. */
 #define	DB_DBT_PARTIAL		0x040	/* Partial put/get. */
 #define	DB_DBT_REALLOC		0x080	/* Return in realloc'd memory. */
-#define	DB_DBT_STREAMING	0x100	/* Internal: DBT is being streamed. */
-#define	DB_DBT_USERCOPY		0x200	/* Use the user-supplied callback. */
-#define	DB_DBT_USERMEM		0x400	/* Return in user's memory. */
+#define	DB_DBT_READONLY		0x100	/* Readonly, don't update. */
+#define	DB_DBT_STREAMING	0x200	/* Internal: DBT is being streamed. */
+#define	DB_DBT_USERCOPY		0x400	/* Use the user-supplied callback. */
+#define	DB_DBT_USERMEM		0x800	/* Return in user's memory. */
 	u_int32_t flags;
 };
 
 /*******************************************************
  * Mutexes.
  *******************************************************/
-typedef u_int32_t	db_mutex_t;
+/* 
+ * When mixed size addressing is supported mutexes need to be the same size
+ * independent of the process address size is.
+ */
+#ifdef HAVE_MIXED_SIZE_ADDRESSING
+typedef db_size_t	db_mutex_t;
+#else
+typedef uintptr_t	db_mutex_t;
+#endif
 
-struct __db_mutex_stat {
+struct __db_mutex_stat { /* SHARED */
 	/* The following fields are maintained in the region's copy. */
 	u_int32_t st_mutex_align;	/* Mutex alignment */
 	u_int32_t st_mutex_tas_spins;	/* Mutex test-and-set spins */
+	u_int32_t st_mutex_init;	/* Initial mutex count */
 	u_int32_t st_mutex_cnt;		/* Mutex count */
+	u_int32_t st_mutex_max;		/* Mutex max */
 	u_int32_t st_mutex_free;	/* Available mutexes */
 	u_int32_t st_mutex_inuse;	/* Mutexes in use */
 	u_int32_t st_mutex_inuse_max;	/* Maximum mutexes ever in use */
@@ -273,6 +301,7 @@ struct __db_mutex_stat {
 	uintmax_t st_region_wait;	/* Region lock granted after wait. */
 	uintmax_t st_region_nowait;	/* Region lock granted without wait. */
 	roff_t	  st_regsize;		/* Region size. */
+	roff_t	  st_regmax;		/* Region max. */
 #endif
 };
 
@@ -353,14 +382,21 @@ typedef enum  {
 }db_status_t;
 
 /* Lock statistics structure. */
-struct __db_lock_stat {
+struct __db_lock_stat { /* SHARED */
 	u_int32_t st_id;		/* Last allocated locker ID. */
 	u_int32_t st_cur_maxid;		/* Current maximum unused ID. */
+	u_int32_t st_initlocks;		/* Initial number of locks in table. */
+	u_int32_t st_initlockers;	/* Initial num of lockers in table. */
+	u_int32_t st_initobjects;	/* Initial num of objects in table. */
+	u_int32_t st_locks;		/* Current number of locks in table. */
+	u_int32_t st_lockers;		/* Current num of lockers in table. */
+	u_int32_t st_objects;		/* Current num of objects in table. */
 	u_int32_t st_maxlocks;		/* Maximum number of locks in table. */
 	u_int32_t st_maxlockers;	/* Maximum num of lockers in table. */
 	u_int32_t st_maxobjects;	/* Maximum num of objects in table. */
 	u_int32_t st_partitions;	/* number of partitions. */
-	int	  st_nmodes;		/* Number of lock modes. */
+	u_int32_t st_tablesize;		/* Size of object hash table. */
+	int32_t   st_nmodes;		/* Number of lock modes. */
 	u_int32_t st_nlockers;		/* Current number of lockers. */
 #ifndef __TEST_DB_NO_STATISTICS
 	u_int32_t st_nlocks;		/* Current number of locks. */
@@ -400,7 +436,7 @@ struct __db_lock_stat {
 #endif
 };
 
-struct __db_lock_hstat {
+struct __db_lock_hstat { /* SHARED */
 	uintmax_t st_nrequests;		/* Number of lock gets. */
 	uintmax_t st_nreleases;		/* Number of lock puts. */
 	uintmax_t st_nupgrade;		/* Number of lock upgrades. */
@@ -416,7 +452,7 @@ struct __db_lock_hstat {
 	u_int32_t st_hash_len;		/* Max length of bucket. */
 };
 
-struct __db_lock_pstat {
+struct __db_lock_pstat { /* SHARED */
 	u_int32_t st_nlocks;		/* Current number of locks. */
 	u_int32_t st_maxnlocks;		/* Maximum number of locks so far. */
 	u_int32_t st_nobjects;		/* Current number of objects. */
@@ -429,7 +465,7 @@ struct __db_lock_pstat {
  * DB_LOCK_ILOCK --
  *	Internal DB access method lock.
  */
-struct __db_ilock {
+struct __db_ilock { /* SHARED */
 	db_pgno_t pgno;			/* Page being locked. */
 	u_int8_t fileid[DB_FILE_ID_LEN];/* File id. */
 #define	DB_HANDLE_LOCK		1
@@ -444,7 +480,7 @@ struct __db_ilock {
  *	The structure is allocated by the caller and filled in during a
  *	lock_get request (or a lock_vec/DB_LOCK_GET).
  */
-struct __db_lock_u {
+struct __db_lock_u { /* SHARED */
 	roff_t		off;		/* Offset of the lock in the region */
 	u_int32_t	ndx;		/* Index of the object referenced by
 					 * this lock; used for locking. */
@@ -464,7 +500,7 @@ struct __db_lockreq {
 /*******************************************************
  * Logging.
  *******************************************************/
-#define	DB_LOGVERSION	17		/* Current log version. */
+#define	DB_LOGVERSION	18		/* Current log version. */
 #define DB_LOGVERSION_LATCHING 15	/* Log version using latching. */
 #define	DB_LOGCHKSUM	12		/* Check sum headers. */
 #define	DB_LOGOLDVER	8		/* Oldest log version supported. */
@@ -479,7 +515,7 @@ struct __db_lockreq {
  * to a new log file before the maximum length imposed by an unsigned 4-byte
  * offset is reached.
  */
-struct __db_lsn {
+struct __db_lsn { /* SHARED */
 	u_int32_t	file;		/* File ID. */
 	u_int32_t	offset;		/* File offset. */
 };
@@ -532,15 +568,18 @@ struct __db_log_cursor {
 };
 
 /* Log statistics structure. */
-struct __db_log_stat {
+struct __db_log_stat { /* SHARED */
 	u_int32_t st_magic;		/* Log file magic number. */
 	u_int32_t st_version;		/* Log file version number. */
-	int	  st_mode;		/* Log file permissions mode. */
+	int32_t   st_mode;		/* Log file permissions mode. */
 	u_int32_t st_lg_bsize;		/* Log buffer size. */
 	u_int32_t st_lg_size;		/* Log file size. */
 	u_int32_t st_wc_bytes;		/* Bytes to log since checkpoint. */
 	u_int32_t st_wc_mbytes;		/* Megabytes to log since checkpoint. */
+	u_int32_t st_fileid_init;	/* Inital allocation for fileids. */
 #ifndef __TEST_DB_NO_STATISTICS
+	u_int32_t st_nfileid;		/* Current number of fileids. */
+	u_int32_t st_maxnfileid;	/* Maximum number of fileids used. */
 	uintmax_t st_record;		/* Records entered into the log. */
 	u_int32_t st_w_bytes;		/* Bytes to log. */
 	u_int32_t st_w_mbytes;		/* Megabytes to log. */
@@ -709,14 +748,14 @@ struct __db_mpoolfile {
 };
 
 /* Mpool statistics structure. */
-struct __db_mpool_stat {
+struct __db_mpool_stat { /* SHARED */
 	u_int32_t st_gbytes;		/* Total cache size: GB. */
 	u_int32_t st_bytes;		/* Total cache size: B. */
 	u_int32_t st_ncache;		/* Number of cache regions. */
 	u_int32_t st_max_ncache;	/* Maximum number of regions. */
-	size_t	  st_mmapsize;		/* Maximum file size for mmap. */
-	int	  st_maxopenfd;		/* Maximum number of open fd's. */
-	int	  st_maxwrite;		/* Maximum buffers to write. */
+	db_size_t st_mmapsize;		/* Maximum file size for mmap. */
+	int32_t st_maxopenfd;		/* Maximum number of open fd's. */
+	int32_t st_maxwrite;		/* Maximum buffers to write. */
 	db_timeout_t st_maxwrite_sleep;	/* Sleep after writing max buffers. */
 	u_int32_t st_pages;		/* Total number of pages. */
 #ifndef __TEST_DB_NO_STATISTICS
@@ -754,12 +793,16 @@ struct __db_mpool_stat {
 	uintmax_t st_io_wait;		/* Thread waited on buffer I/O. */
 	uintmax_t st_sync_interrupted;	/* Number of times sync interrupted. */
 	roff_t	  st_regsize;		/* Region size. */
+	roff_t	  st_regmax;		/* Region max. */
 #endif
 };
 
-/* Mpool file statistics structure. */
+/*
+ * Mpool file statistics structure.
+ * The first fields in this structure must mirror the __db_mpool_fstat_int
+ * structure, since content is mem copied between the two.
+ */
 struct __db_mpool_fstat {
-	char *file_name;		/* File name. */
 	u_int32_t st_pagesize;		/* Page size. */
 #ifndef __TEST_DB_NO_STATISTICS
 	u_int32_t st_map;		/* Pages from mapped files. */
@@ -769,6 +812,7 @@ struct __db_mpool_fstat {
 	uintmax_t st_page_in;		/* Pages read in. */
 	uintmax_t st_page_out;		/* Pages written out. */
 #endif
+	char *file_name;	/* File name. */
 };
 
 /*******************************************************
@@ -821,6 +865,18 @@ struct __db_txn {
 
 	/*
 	 * !!!
+	 * Explicit representations of structures from shqueue.h.
+	 * SH_TAILQ_ENTRY xa_links;
+	 * These links link together transactions that are active in
+	 * the same thread of control.
+	 */
+	struct {
+		db_ssize_t stqe_next;
+		db_ssize_t stqe_prev;
+	} xa_links;			/* Links XA transactions. */
+
+	/*
+	 * !!!
 	 * Explicit representations of structures from queue.h.
 	 * TAILQ_HEAD(__kids, __db_txn) kids;
 	 */
@@ -857,7 +913,7 @@ struct __db_txn {
 	struct {
 		struct __db_txn *tqe_next;
 		struct __db_txn **tqe_prev;
-	} klinks;
+	} klinks;			/* Links of children in parent. */
 
 	/*
 	 * !!!
@@ -904,6 +960,12 @@ struct __db_txn {
 	/* DB_TXN PRIVATE HANDLE LIST BEGIN */
 	void	  (*set_txn_lsnp) __P((DB_TXN *txn, DB_LSN **, DB_LSN **));
 	/* DB_TXN PRIVATE HANDLE LIST END */
+
+#define	TXN_XA_THREAD_NOTA		0
+#define	TXN_XA_THREAD_ASSOCIATED	1
+#define	TXN_XA_THREAD_SUSPENDED		2
+#define	TXN_XA_THREAD_UNASSOCIATED 	3
+	u_int32_t	xa_thr_status;
 
 #define	TXN_CHILDCOMMIT		0x00001	/* Txn has committed. */
 #define	TXN_COMPENSATE		0x00002	/* Compensating transaction. */
@@ -956,9 +1018,17 @@ struct __db_txn_active {
 
 #define	TXN_ABORTED		1
 #define	TXN_COMMITTED		2
-#define	TXN_PREPARED		3
-#define	TXN_RUNNING		4
+#define	TXN_NEED_ABORT		3
+#define	TXN_PREPARED		4
+#define	TXN_RUNNING		5
 	u_int32_t status;		/* Status of the transaction */
+
+#define	TXN_XA_ACTIVE		1
+#define	TXN_XA_DEADLOCKED	2
+#define	TXN_XA_IDLE		3
+#define	TXN_XA_PREPARED		4
+#define	TXN_XA_ROLLEDBACK	5
+	u_int32_t xa_status;		/* XA status */
 
 	u_int8_t  gid[DB_GID_SIZE];	/* Global transaction ID */
 	char	  name[51];		/* 50 bytes of name, nul termination */
@@ -971,6 +1041,7 @@ struct __db_txn_stat {
 	DB_LSN	  st_last_ckp;		/* lsn of the last checkpoint */
 	time_t	  st_time_ckp;		/* time of last checkpoint */
 	u_int32_t st_last_txnid;	/* last transaction id given out */
+	u_int32_t st_inittxns;		/* inital txns allocated */
 	u_int32_t st_maxtxns;		/* maximum txns possible */
 	uintmax_t st_naborts;		/* number of aborted transactions */
 	uintmax_t st_nbegins;		/* number of begun transactions */
@@ -979,10 +1050,10 @@ struct __db_txn_stat {
 	u_int32_t st_nsnapshot;		/* number of snapshot transactions */
 	u_int32_t st_maxnactive;	/* maximum active transactions */
 	u_int32_t st_maxnsnapshot;	/* maximum snapshot transactions */
-	DB_TXN_ACTIVE *st_txnarray;	/* array of active transactions */
 	uintmax_t st_region_wait;	/* Region lock granted after wait. */
 	uintmax_t st_region_nowait;	/* Region lock granted without wait. */
 	roff_t	  st_regsize;		/* Region size. */
+	DB_TXN_ACTIVE *st_txnarray;	/* array of active transactions */
 #endif
 };
 
@@ -997,10 +1068,11 @@ struct __db_txn_token {
 /* Special, out-of-band environment IDs. */
 #define	DB_EID_BROADCAST	-1
 #define	DB_EID_INVALID		-2
+#define	DB_EID_MASTER		-3
 
 #define	DB_REP_DEFAULT_PRIORITY		100
 
-/* Acknowledgement policies. */
+/* Acknowledgement policies; 0 reserved as OOB. */
 #define	DB_REPMGR_ACKS_ALL		1
 #define	DB_REPMGR_ACKS_ALL_AVAILABLE	2
 #define	DB_REPMGR_ACKS_ALL_PEERS	3
@@ -1020,21 +1092,32 @@ struct __db_txn_token {
 #define	DB_REP_HEARTBEAT_SEND		8	/* RepMgr master send freq. */
 #define	DB_REP_LEASE_TIMEOUT		9	/* Master leases. */
 
-/* Event notification types. */
+/*
+ * Event notification types.  (Tcl testing interface currently assumes there are
+ * no more than 32 of these.)
+ */
 #define	DB_EVENT_PANIC			 0
 #define	DB_EVENT_REG_ALIVE		 1
 #define	DB_EVENT_REG_PANIC		 2
 #define	DB_EVENT_REP_CLIENT		 3
-#define	DB_EVENT_REP_DUPMASTER		 4
-#define	DB_EVENT_REP_ELECTED		 5
-#define	DB_EVENT_REP_ELECTION_FAILED	 6
-#define	DB_EVENT_REP_JOIN_FAILURE	 7
-#define	DB_EVENT_REP_MASTER		 8
-#define	DB_EVENT_REP_MASTER_FAILURE	 9
-#define	DB_EVENT_REP_NEWMASTER		10
-#define	DB_EVENT_REP_PERM_FAILED	11
-#define	DB_EVENT_REP_STARTUPDONE	12
-#define	DB_EVENT_WRITE_FAILED		13
+#define	DB_EVENT_REP_CONNECT_BROKEN	 4
+#define	DB_EVENT_REP_CONNECT_ESTD	 5
+#define	DB_EVENT_REP_CONNECT_TRY_FAILED	 6
+#define	DB_EVENT_REP_DUPMASTER		 7
+#define	DB_EVENT_REP_ELECTED		 8
+#define	DB_EVENT_REP_ELECTION_FAILED	 9
+#define	DB_EVENT_REP_INIT_DONE		10
+#define	DB_EVENT_REP_JOIN_FAILURE	11
+#define	DB_EVENT_REP_LOCAL_SITE_REMOVED	12
+#define	DB_EVENT_REP_MASTER		13
+#define	DB_EVENT_REP_MASTER_FAILURE	14
+#define	DB_EVENT_REP_NEWMASTER		15
+#define	DB_EVENT_REP_PERM_FAILED	16
+#define	DB_EVENT_REP_SITE_ADDED		17
+#define	DB_EVENT_REP_SITE_REMOVED	18
+#define	DB_EVENT_REP_STARTUPDONE	19
+#define	DB_EVENT_REP_WOULD_ROLLBACK	20	/* Undocumented; C API only. */
+#define	DB_EVENT_WRITE_FAILED		21
 #define	DB_EVENT_NO_SUCH_EVENT		 0xffffffff /* OOB sentinel value */
 
 /* Replication Manager site status. */
@@ -1052,7 +1135,7 @@ struct __db_repmgr_site {
 };
 
 /* Replication statistics. */
-struct __db_rep_stat {
+struct __db_rep_stat { /* SHARED */
 	/* !!!
 	 * Many replication statistics fields cannot be protected by a mutex
 	 * without an unacceptable performance penalty, since most message
@@ -1074,7 +1157,7 @@ struct __db_rep_stat {
 
 	u_int32_t st_dupmasters;	/* # of times a duplicate master
 					   condition was detected.+ */
-	int st_env_id;			/* Current environment ID. */
+	db_ssize_t st_env_id;		/* Current environment ID. */
 	u_int32_t st_env_priority;	/* Current environment priority. */
 	uintmax_t st_bulk_fills;	/* Bulk buffer fills. */
 	uintmax_t st_bulk_overflows;	/* Bulk buffer overflows. */
@@ -1087,12 +1170,17 @@ struct __db_rep_stat {
 					   missing on this client. */
 	u_int32_t st_gen;		/* Current generation number. */
 	u_int32_t st_egen;		/* Current election gen number. */
+	uintmax_t st_lease_chk;		/* Lease validity checks. */
+	uintmax_t st_lease_chk_misses;	/* Lease checks invalid. */
+	uintmax_t st_lease_chk_refresh;	/* Lease refresh attempts. */
+	uintmax_t st_lease_sends;	/* Lease messages sent live. */
+
 	uintmax_t st_log_duplicated;	/* Log records received multiply.+ */
 	uintmax_t st_log_queued_max;	/* Max. log records queued at once.+ */
 	uintmax_t st_log_queued_total;	/* Total # of log recs. ever queued.+ */
 	uintmax_t st_log_records;	/* Log records received and put.+ */
 	uintmax_t st_log_requested;	/* Log recs. missed and requested.+ */
-	int st_master;			/* Env. ID of the current master. */
+	db_ssize_t st_master;		/* Env. ID of the current master. */
 	uintmax_t st_master_changes;	/* # of times we've switched masters. */
 	uintmax_t st_msgs_badgen;	/* Messages with a bad generation #.+ */
 	uintmax_t st_msgs_processed;	/* Messages received and processed.+ */
@@ -1117,13 +1205,14 @@ struct __db_rep_stat {
 	uintmax_t st_elections_won;	/* # of elections won by this site.+ */
 
 	/* Statistics about an in-progress election. */
-	int st_election_cur_winner;	/* Current front-runner. */
+	db_ssize_t st_election_cur_winner;	/* Current front-runner. */
 	u_int32_t st_election_gen;	/* Election generation number. */
+	u_int32_t st_election_datagen;	/* Election data generation number. */
 	DB_LSN st_election_lsn;		/* Max. LSN of current winner. */
 	u_int32_t st_election_nsites;	/* # of "registered voters". */
 	u_int32_t st_election_nvotes;	/* # of "registered voters" needed. */
 	u_int32_t st_election_priority;	/* Current election priority. */
-	int st_election_status;		/* Current election status. */
+	int32_t   st_election_status;	/* Current election status. */
 	u_int32_t st_election_tiebreaker;/* Election tiebreaker value. */
 	u_int32_t st_election_votes;	/* Votes received in this round. */
 	u_int32_t st_election_sec;	/* Last election time seconds. */
@@ -1139,7 +1228,7 @@ struct __db_rep_stat {
 };
 
 /* Replication Manager statistics. */
-struct __db_repmgr_stat {
+struct __db_repmgr_stat { /* SHARED */
 	uintmax_t st_perm_failed;	/* # of insufficiently ack'ed msgs. */
 	uintmax_t st_msgs_queued;	/* # msgs queued for network delay. */
 	uintmax_t st_msgs_dropped;	/* # msgs discarded due to excessive
@@ -1148,6 +1237,12 @@ struct __db_repmgr_stat {
 	uintmax_t st_connect_fail;	/* Failed new connection attempts. */
 	uintmax_t st_elect_threads;	/* # of active election threads. */
 	uintmax_t st_max_elect_threads;	/* Max concurrent e-threads ever. */
+};
+
+/* Replication Manager connection error. */
+struct __db_repmgr_conn_err {
+	int		eid;		/* Replication Environment ID. */
+	int		error;		/* System networking error code. */
 };
 
 /*******************************************************
@@ -1174,6 +1269,7 @@ struct __db_sequence {
 	DB_SEQ_RECORD	seq_record;	/* Data from DB_SEQUENCE. */
 	int32_t		seq_cache_size; /* Number of values cached. */
 	db_seq_t	seq_last_value;	/* Last value cached. */
+	db_seq_t	seq_prev_value;	/* Last value returned. */
 	DBT		seq_key;	/* DBT pointing to sequence key. */
 	DBT		seq_data;	/* DBT pointing to seq_record. */
 
@@ -1203,7 +1299,7 @@ struct __db_sequence {
 	/* DB_SEQUENCE PUBLIC HANDLE LIST END */
 };
 
-struct __db_seq_stat {
+struct __db_seq_stat { /* SHARED */
 	uintmax_t st_wait;		/* Sequence lock granted w/o wait. */
 	uintmax_t st_nowait;		/* Sequence lock granted after wait. */
 	db_seq_t  st_current;		/* Current value in db. */
@@ -1218,9 +1314,14 @@ struct __db_seq_stat {
 /*******************************************************
  * Access methods.
  *******************************************************/
+/*
+ * Any new methods need to retain the original numbering.  The type
+ * is written in a log record so must be maintained.
+ */
 typedef enum {
 	DB_BTREE=1,
 	DB_HASH=2,
+	DB_HEAP=6,
 	DB_RECNO=3,
 	DB_QUEUE=4,
 	DB_UNKNOWN=5			/* Figure it out on open. */
@@ -1235,6 +1336,10 @@ typedef enum {
 #define	DB_HASHVERSION	9		/* Current hash version. */
 #define	DB_HASHOLDVER	7		/* Oldest hash version supported. */
 #define	DB_HASHMAGIC	0x061561
+
+#define	DB_HEAPVERSION	1		/* Current heap version. */
+#define	DB_HEAPOLDVER	1		/* Oldest heap version supported. */
+#define	DB_HEAPMAGIC	0x074582
 
 #define	DB_QAMVERSION	4		/* Current queue version. */
 #define	DB_QAMOLDVER	3		/* Oldest queue version supported. */
@@ -1294,29 +1399,29 @@ typedef enum {
 #define	DB_BUFFER_SMALL		(-30999)/* User memory too small for return. */
 #define	DB_DONOTINDEX		(-30998)/* "Null" return from 2ndary callbk. */
 #define	DB_FOREIGN_CONFLICT	(-30997)/* A foreign db constraint triggered. */
-#define	DB_KEYEMPTY		(-30996)/* Key/data deleted or never created. */
-#define	DB_KEYEXIST		(-30995)/* The key/data pair already exists. */
-#define	DB_LOCK_DEADLOCK	(-30994)/* Deadlock. */
-#define	DB_LOCK_NOTGRANTED	(-30993)/* Lock unavailable. */
-#define	DB_LOG_BUFFER_FULL	(-30992)/* In-memory log buffer full. */
-#define	DB_LOG_VERIFY_BAD	(-30991)/* Log verification failed. */
-#define	DB_NOSERVER		(-30990)/* Server panic return. */
-#define	DB_NOSERVER_HOME	(-30989)/* Bad home sent to server. */
-#define	DB_NOSERVER_ID		(-30988)/* Bad ID sent to server. */
-#define	DB_NOTFOUND		(-30987)/* Key/data pair not found (EOF). */
-#define	DB_OLD_VERSION		(-30986)/* Out-of-date version. */
-#define	DB_PAGE_NOTFOUND	(-30985)/* Requested page not found. */
-#define	DB_REP_DUPMASTER	(-30984)/* There are two masters. */
-#define	DB_REP_HANDLE_DEAD	(-30983)/* Rolled back a commit. */
-#define	DB_REP_HOLDELECTION	(-30982)/* Time to hold an election. */
-#define	DB_REP_IGNORE		(-30981)/* This msg should be ignored.*/
-#define	DB_REP_ISPERM		(-30980)/* Cached not written perm written.*/
-#define	DB_REP_JOIN_FAILURE	(-30979)/* Unable to join replication group. */
-#define	DB_REP_LEASE_EXPIRED	(-30978)/* Master lease has expired. */
-#define	DB_REP_LOCKOUT		(-30977)/* API/Replication lockout now. */
-#define	DB_REP_NEWSITE		(-30976)/* New site entered system. */
-#define	DB_REP_NOTPERM		(-30975)/* Permanent log record not written. */
-#define	DB_REP_UNAVAIL		(-30974)/* Site cannot currently be reached. */
+#define	DB_HEAP_FULL		(-30996)/* No free space in a heap file. */
+#define	DB_KEYEMPTY		(-30995)/* Key/data deleted or never created. */
+#define	DB_KEYEXIST		(-30994)/* The key/data pair already exists. */
+#define	DB_LOCK_DEADLOCK	(-30993)/* Deadlock. */
+#define	DB_LOCK_NOTGRANTED	(-30992)/* Lock unavailable. */
+#define	DB_LOG_BUFFER_FULL	(-30991)/* In-memory log buffer full. */
+#define	DB_LOG_VERIFY_BAD	(-30990)/* Log verification failed. */
+#define	DB_NOSERVER		(-30989)/* Server panic return. */
+#define	DB_NOTFOUND		(-30988)/* Key/data pair not found (EOF). */
+#define	DB_OLD_VERSION		(-30987)/* Out-of-date version. */
+#define	DB_PAGE_NOTFOUND	(-30986)/* Requested page not found. */
+#define	DB_REP_DUPMASTER	(-30985)/* There are two masters. */
+#define	DB_REP_HANDLE_DEAD	(-30984)/* Rolled back a commit. */
+#define	DB_REP_HOLDELECTION	(-30983)/* Time to hold an election. */
+#define	DB_REP_IGNORE		(-30982)/* This msg should be ignored.*/
+#define	DB_REP_ISPERM		(-30981)/* Cached not written perm written.*/
+#define	DB_REP_JOIN_FAILURE	(-30980)/* Unable to join replication group. */
+#define	DB_REP_LEASE_EXPIRED	(-30979)/* Master lease has expired. */
+#define	DB_REP_LOCKOUT		(-30978)/* API/Replication lockout now. */
+#define	DB_REP_NEWSITE		(-30977)/* New site entered system. */
+#define	DB_REP_NOTPERM		(-30976)/* Permanent log record not written. */
+#define	DB_REP_UNAVAIL		(-30975)/* Site cannot currently be reached. */
+#define	DB_REP_WOULDROLLBACK	(-30974)/* UNDOC: rollback inhibited by app. */
 #define	DB_RUNRECOVERY		(-30973)/* Panic return. */
 #define	DB_SECONDARY_BAD	(-30972)/* Secondary index corrupt. */
 #define	DB_TIMEOUT		(-30971)/* Timed out on read consistency. */
@@ -1522,6 +1627,7 @@ struct __db {
 	/* Subsystem-private structure. */
 	void	*bt_internal;		/* Btree/Recno access method. */
 	void	*h_internal;		/* Hash access method. */
+	void	*heap_internal;		/* Heap access method. */
 	void	*p_internal;		/* Partition informaiton. */
 	void	*q_internal;		/* Queue access method. */
 
@@ -1548,7 +1654,7 @@ struct __db {
 	int  (*get_bt_compare)
 		__P((DB *, int (**)(DB *, const DBT *, const DBT *)));
 	int  (*get_bt_compress) __P((DB *,
-		int (**)(DB *, 
+		int (**)(DB *,
 		const DBT *, const DBT *, const DBT *, const DBT *, DBT *),
 		int (**)(DB *, const DBT *, const DBT *, DBT *, DBT *, DBT *)));
 	int  (*get_bt_minkey) __P((DB *, u_int32_t *));
@@ -1574,9 +1680,10 @@ struct __db {
 	int  (*get_h_hash)
 		__P((DB *, u_int32_t (**)(DB *, const void *, u_int32_t)));
 	int  (*get_h_nelem) __P((DB *, u_int32_t *));
+	int  (*get_heapsize) __P((DB *, u_int32_t *, u_int32_t *));
 	int  (*get_lorder) __P((DB *, int *));
 	DB_MPOOLFILE *(*get_mpf) __P((DB *));
-	void (*get_msgcall) __P((DB *, 
+	void (*get_msgcall) __P((DB *,
 	    void (**)(const DB_ENV *, const char *)));
 	void (*get_msgfile) __P((DB *, FILE **));
 	int  (*get_multiple) __P((DB *));
@@ -1632,6 +1739,7 @@ struct __db {
 	int  (*set_h_hash)
 		__P((DB *, u_int32_t (*)(DB *, const void *, u_int32_t)));
 	int  (*set_h_nelem) __P((DB *, u_int32_t));
+	int  (*set_heapsize) __P((DB *, u_int32_t, u_int32_t, u_int32_t));
 	int  (*set_lorder) __P((DB *, int));
 	void (*set_msgcall) __P((DB *, void (*)(const DB_ENV *, const char *)));
 	void (*set_msgfile) __P((DB *, FILE *));
@@ -1677,8 +1785,9 @@ struct __db {
 
 #define	DB_OK_BTREE	0x01
 #define	DB_OK_HASH	0x02
-#define	DB_OK_QUEUE	0x04
-#define	DB_OK_RECNO	0x08
+#define	DB_OK_HEAP	0x04
+#define	DB_OK_QUEUE	0x08
+#define	DB_OK_RECNO	0x10
 	u_int32_t	am_ok;		/* Legal AM choices. */
 
 	/*
@@ -1907,6 +2016,12 @@ struct __db {
 			memcpy(__destd, (writedata), (writedlen));	\
 	} while (0)
 
+struct __db_heap_rid {
+	db_pgno_t pgno;			/* Page number. */
+	db_indx_t indx;			/* Index in the offset table. */
+};
+#define DB_HEAP_RID_SZ	(sizeof(db_pgno_t) + sizeof(db_indx_t))
+
 /*******************************************************
  * Access method cursors.
  *******************************************************/
@@ -2044,7 +2159,7 @@ struct __key_range {
 };
 
 /* Btree/Recno statistics structure. */
-struct __db_bt_stat {
+struct __db_bt_stat { /* SHARED */
 	u_int32_t bt_magic;		/* Magic number. */
 	u_int32_t bt_version;		/* Version number. */
 	u_int32_t bt_metaflags;		/* Metadata flags. */
@@ -2085,7 +2200,7 @@ struct __db_compact {
 };
 
 /* Hash statistics structure. */
-struct __db_h_stat {
+struct __db_h_stat { /* SHARED */
 	u_int32_t hash_magic;		/* Magic number. */
 	u_int32_t hash_version;		/* Version number. */
 	u_int32_t hash_metaflags;	/* Metadata flags. */
@@ -2105,8 +2220,19 @@ struct __db_h_stat {
 	uintmax_t hash_dup_free;	/* Bytes free on duplicate pages. */
 };
 
+/* Heap statistics structure. */
+struct __db_heap_stat { /* SHARED */
+	u_int32_t heap_magic;		/* Magic number. */
+	u_int32_t heap_version;		/* Version number. */
+	u_int32_t heap_metaflags;	/* Metadata flags. */
+	u_int32_t heap_nrecs;		/* Number of records. */
+	u_int32_t heap_pagecnt;		/* Page count. */
+	u_int32_t heap_pagesize;	/* Page size. */
+	u_int32_t heap_nregions;	/* Number of regions. */
+};
+
 /* Queue statistics structure. */
-struct __db_qam_stat {
+struct __db_qam_stat { /* SHARED */
 	u_int32_t qs_magic;		/* Magic number. */
 	u_int32_t qs_version;		/* Version number. */
 	u_int32_t qs_metaflags;		/* Metadata flags. */
@@ -2140,6 +2266,19 @@ struct __db_qam_stat {
  * Fields in the DB_ENV structure should normally be set only by application
  * DB_ENV handle methods.
  */
+
+/*
+ * Memory configuration types.
+ */
+typedef enum {
+	DB_MEM_LOCK=1,
+	DB_MEM_LOCKOBJECT=2,
+	DB_MEM_LOCKER=3,
+	DB_MEM_LOGID=4,
+	DB_MEM_TRANSACTION=5,
+	DB_MEM_THREAD=6
+} DB_MEM_CONFIG;
+
 struct __db_env {
 	ENV *env;			/* Linked ENV structure */
 
@@ -2197,6 +2336,7 @@ struct __db_env {
 	u_int32_t	mutex_align;	/* Mutex alignment */
 	u_int32_t	mutex_cnt;	/* Number of mutexes to configure */
 	u_int32_t	mutex_inc;	/* Number of mutexes to add */
+	u_int32_t	mutex_max;	/* Max number of mutexes */
 	u_int32_t	mutex_tas_spins;/* Test-and-set spin count */
 
 	/* Locking configuration */
@@ -2206,11 +2346,18 @@ struct __db_env {
 	u_int32_t	lk_max;	/* Maximum number of locks */
 	u_int32_t	lk_max_lockers;/* Maximum number of lockers */
 	u_int32_t	lk_max_objects;/* Maximum number of locked objects */
+	u_int32_t	lk_init;	/* Initial number of locks */
+	u_int32_t	lk_init_lockers;/* Initial number of lockers */
+	u_int32_t	lk_init_objects;/* Initial number of locked objects */
 	u_int32_t	lk_partitions ;/* Number of object partitions */
 	db_timeout_t	lk_timeout;	/* Lock timeout period */
+	/* Used during initialization */
+	u_int32_t	locker_t_size;	/* Locker hash table size. */
+	u_int32_t	object_t_size;	/* Object hash table size. */
 
 	/* Logging configuration */
 	u_int32_t	lg_bsize;	/* Buffer size */
+	u_int32_t	lg_fileid_init;	/* Initial allocation for fname structs */
 	int		lg_filemode;	/* Log file permission mode */
 	u_int32_t	lg_regionmax;	/* Region size */
 	u_int32_t	lg_size;	/* Log file size */
@@ -2232,12 +2379,15 @@ struct __db_env {
 	db_timeout_t	mp_maxwrite_sleep;
 
 	/* Transaction configuration */
+	u_int32_t	tx_init;	/* Initial number of transactions */
 	u_int32_t	tx_max;		/* Maximum number of transactions */
 	time_t		tx_timestamp;	/* Recover to specific timestamp */
 	db_timeout_t	tx_timeout;	/* Timeout for transactions */
 
 	/* Thread tracking configuration */
-	u_int32_t	thr_max;	/* Thread count */
+	u_int32_t	thr_init;	/* Thread count */
+	u_int32_t	thr_max;	/* Thread max */
+	roff_t		memory_max;	/* Maximum region memory */
 
 	/*
 	 * The following fields are not strictly user-owned, but they outlive
@@ -2249,7 +2399,7 @@ struct __db_env {
 					 * off_t because its size depends on
 					 * build settings.
 					 */
-        db_timeout_t	envreg_timeout; /* DB_REGISTER wait timeout */ 
+        db_timeout_t	envreg_timeout; /* DB_REGISTER wait timeout */
 
 #define	DB_ENV_AUTO_COMMIT	0x00000001 /* DB_AUTO_COMMIT */
 #define	DB_ENV_CDB_ALLDB	0x00000002 /* CDB environment wide locking */
@@ -2317,6 +2467,9 @@ struct __db_env {
 	int  (*get_lk_max_objects) __P((DB_ENV *, u_int32_t *));
 	int  (*get_lk_partitions) __P((DB_ENV *, u_int32_t *));
 	int  (*get_lk_priority) __P((DB_ENV *, u_int32_t, u_int32_t *));
+	int  (*get_lk_tablesize) __P((DB_ENV *, u_int32_t *));
+	int  (*get_memory_init) __P((DB_ENV *, DB_MEM_CONFIG, u_int32_t *));
+	int  (*get_memory_max) __P((DB_ENV *, u_int32_t *, u_int32_t *));
 	int  (*get_mp_max_openfd) __P((DB_ENV *, int *));
 	int  (*get_mp_max_write) __P((DB_ENV *, int *, db_timeout_t *));
 	int  (*get_mp_mmapsize) __P((DB_ENV *, size_t *));
@@ -2378,11 +2531,13 @@ struct __db_env {
 	int  (*mutex_free) __P((DB_ENV *, db_mutex_t));
 	int  (*mutex_get_align) __P((DB_ENV *, u_int32_t *));
 	int  (*mutex_get_increment) __P((DB_ENV *, u_int32_t *));
+	int  (*mutex_get_init) __P((DB_ENV *, u_int32_t *));
 	int  (*mutex_get_max) __P((DB_ENV *, u_int32_t *));
 	int  (*mutex_get_tas_spins) __P((DB_ENV *, u_int32_t *));
 	int  (*mutex_lock) __P((DB_ENV *, db_mutex_t));
 	int  (*mutex_set_align) __P((DB_ENV *, u_int32_t));
 	int  (*mutex_set_increment) __P((DB_ENV *, u_int32_t));
+	int  (*mutex_set_init) __P((DB_ENV *, u_int32_t));
 	int  (*mutex_set_max) __P((DB_ENV *, u_int32_t));
 	int  (*mutex_set_tas_spins) __P((DB_ENV *, u_int32_t));
 	int  (*mutex_stat) __P((DB_ENV *, DB_MUTEX_STAT **, u_int32_t));
@@ -2414,16 +2569,17 @@ struct __db_env {
 	int  (*rep_stat) __P((DB_ENV *, DB_REP_STAT **, u_int32_t));
 	int  (*rep_stat_print) __P((DB_ENV *, u_int32_t));
 	int  (*rep_sync) __P((DB_ENV *, u_int32_t));
-	int  (*repmgr_add_remote_site)
-		__P((DB_ENV *, const char *, u_int, int *, u_int32_t));
+	int  (*repmgr_channel) __P((DB_ENV *, int, DB_CHANNEL **, u_int32_t));
 	int  (*repmgr_get_ack_policy) __P((DB_ENV *, int *));
-	int  (*repmgr_get_local_site)
-		__P((DB_ENV *, const char **, u_int *));
+	int  (*repmgr_local_site) __P((DB_ENV *, DB_SITE **));
+	int  (*repmgr_msg_dispatch) __P((DB_ENV *,
+		void (*)(DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t),
+		u_int32_t));
 	int  (*repmgr_set_ack_policy) __P((DB_ENV *, int));
-	int  (*repmgr_set_local_site)
-		__P((DB_ENV *, const char *, u_int, u_int32_t));
-	int  (*repmgr_site_list)
-		__P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
+	int  (*repmgr_site)
+		__P((DB_ENV *, const char *, u_int, DB_SITE**, u_int32_t));
+	int  (*repmgr_site_by_eid) __P((DB_ENV *, int, DB_SITE**));
+	int  (*repmgr_site_list) __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
 	int  (*repmgr_start) __P((DB_ENV *, int, u_int32_t));
 	int  (*repmgr_stat) __P((DB_ENV *, DB_REPMGR_STAT **, u_int32_t));
 	int  (*repmgr_stat_print) __P((DB_ENV *, u_int32_t));
@@ -2460,6 +2616,9 @@ struct __db_env {
 	int  (*set_lk_max_objects) __P((DB_ENV *, u_int32_t));
 	int  (*set_lk_partitions) __P((DB_ENV *, u_int32_t));
 	int  (*set_lk_priority) __P((DB_ENV *, u_int32_t, u_int32_t));
+	int  (*set_lk_tablesize) __P((DB_ENV *, u_int32_t));
+	int  (*set_memory_init) __P((DB_ENV *, DB_MEM_CONFIG, u_int32_t));
+	int  (*set_memory_max) __P((DB_ENV *, u_int32_t, u_int32_t));
 	int  (*set_mp_max_openfd) __P((DB_ENV *, int));
 	int  (*set_mp_max_write) __P((DB_ENV *, int, db_timeout_t));
 	int  (*set_mp_mmapsize) __P((DB_ENV *, size_t));
@@ -2487,14 +2646,14 @@ struct __db_env {
 	int  (*txn_begin) __P((DB_ENV *, DB_TXN *, DB_TXN **, u_int32_t));
 	int  (*txn_checkpoint) __P((DB_ENV *, u_int32_t, u_int32_t, u_int32_t));
 	int  (*txn_recover) __P((DB_ENV *,
-		DB_PREPLIST *, u_int32_t, u_int32_t *, u_int32_t));
+		DB_PREPLIST *, long, long *, u_int32_t));
 	int  (*txn_stat) __P((DB_ENV *, DB_TXN_STAT **, u_int32_t));
 	int  (*txn_stat_print) __P((DB_ENV *, u_int32_t));
 	/* DB_ENV PUBLIC HANDLE LIST END */
 
 	/* DB_ENV PRIVATE HANDLE LIST BEGIN */
-	int  (*prdbt) __P((DBT *,
-		int, const char *, void *, int (*)(void *, const void *), int));
+	int  (*prdbt) __P((DBT *, int,
+		const char *, void *, int (*)(void *, const void *), int, int));
 	/* DB_ENV PRIVATE HANDLE LIST END */
 };
 
@@ -2520,6 +2679,37 @@ struct __db_logvrfy_config {
 	const char *dbfile, *dbname;
 	DB_LSN start_lsn, end_lsn;
 	time_t start_time, end_time;
+};
+
+struct __db_channel {
+	CHANNEL *channel;	/* Pointer to internal state details. */
+	int eid;		/* Env. ID passed in constructor. */
+	db_timeout_t timeout;
+
+	/* DB_CHANNEL PUBLIC HANDLE LIST BEGIN */
+	int (*close) __P((DB_CHANNEL *, u_int32_t));
+	int (*send_msg) __P((DB_CHANNEL *, DBT *, u_int32_t, u_int32_t));
+	int (*send_request) __P((DB_CHANNEL *,
+		DBT *, u_int32_t, DBT *, db_timeout_t, u_int32_t));
+	int  (*set_timeout) __P((DB_CHANNEL *, db_timeout_t));
+	/* DB_CHANNEL PUBLIC HANDLE LIST END */
+};
+
+struct __db_site {
+	ENV *env;
+	int eid;
+	const char *host;
+	u_int port;
+	u_int32_t flags;
+
+	/* DB_SITE PUBLIC HANDLE LIST BEGIN */
+	int (*get_address) __P((DB_SITE *, const char **, u_int *));
+	int (*get_config) __P((DB_SITE *, u_int32_t, u_int32_t *));
+	int (*get_eid) __P((DB_SITE *, int *));
+	int (*set_config) __P((DB_SITE *, u_int32_t, u_int32_t));
+	int (*remove) __P((DB_SITE *));
+	int (*close) __P((DB_SITE *));
+	/* DB_SITE PUBLIC HANDLE LIST END */
 };
 
 #if DB_DBM_HSEARCH != 0
@@ -2618,6 +2808,7 @@ typedef struct entry {
 #define	DB_ARCH_LOG				0x00000004
 #define	DB_ARCH_REMOVE				0x00000008
 #define	DB_AUTO_COMMIT				0x00000100
+#define	DB_BOOTSTRAP_HELPER			0x00000001
 #define	DB_CDB_ALLDB				0x00000040
 #define	DB_CHKSUM				0x00000008
 #define	DB_CKP_INTERNAL				0x00000002
@@ -2637,6 +2828,7 @@ typedef struct entry {
 #define	DB_EXCL					0x00000040
 #define	DB_EXTENT				0x00000040
 #define	DB_FAILCHK				0x00000020
+#define	DB_FAILCHK_ISALIVE			0x00000040
 #define	DB_FAST_STAT				0x00000001
 #define	DB_FCNTL_LOCKING			0x00000800
 #define	DB_FLUSH				0x00000001
@@ -2647,18 +2839,23 @@ typedef struct entry {
 #define	DB_FOREIGN_NULLIFY			0x00000004
 #define	DB_FREELIST_ONLY			0x00000001
 #define	DB_FREE_SPACE				0x00000002
+#define	DB_GROUP_CREATOR			0x00000002
 #define	DB_HOTBACKUP_IN_PROGRESS		0x00000800
 #define	DB_IGNORE_LEASE				0x00001000
 #define	DB_IMMUTABLE_KEY			0x00000002
-#define	DB_INIT_CDB				0x00000040
-#define	DB_INIT_LOCK				0x00000080
-#define	DB_INIT_LOG				0x00000100
-#define	DB_INIT_MPOOL				0x00000200
-#define	DB_INIT_REP				0x00000400
-#define	DB_INIT_TXN				0x00000800
+#define	DB_INIT_CDB				0x00000080
+#define	DB_INIT_LOCK				0x00000100
+#define	DB_INIT_LOG				0x00000200
+#define	DB_INIT_MPOOL				0x00000400
+#define	DB_INIT_MUTEX				0x00000800
+#define	DB_INIT_REP				0x00001000
+#define	DB_INIT_TXN				0x00002000
 #define	DB_INORDER				0x00000020
+#define	DB_INTERNAL_DB				0x00001000
 #define	DB_JOIN_NOSORT				0x00000001
-#define	DB_LOCKDOWN				0x00001000
+#define	DB_LEGACY				0x00000004
+#define	DB_LOCAL_SITE				0x00000008
+#define	DB_LOCKDOWN				0x00004000
 #define	DB_LOCK_CHECK				0x00000001
 #define	DB_LOCK_NOWAIT				0x00000002
 #define	DB_LOCK_RECORD				0x00000004
@@ -2704,44 +2901,46 @@ typedef struct entry {
 #define	DB_MUTEX_PROCESS_ONLY			0x00000008
 #define	DB_MUTEX_SELF_BLOCK			0x00000010
 #define	DB_MUTEX_SHARED				0x00000020
-#define	DB_NOERROR				0x00001000
+#define	DB_NOERROR				0x00002000
 #define	DB_NOFLUSH				0x00001000
 #define	DB_NOLOCKING				0x00002000
 #define	DB_NOMMAP				0x00000008
 #define	DB_NOORDERCHK				0x00000002
 #define	DB_NOPANIC				0x00004000
 #define	DB_NOSYNC				0x00000001
-#define	DB_NO_AUTO_COMMIT			0x00002000
-#define	DB_NO_CHECKPOINT			0x00002000
+#define	DB_NO_AUTO_COMMIT			0x00004000
+#define	DB_NO_CHECKPOINT			0x00008000
 #define	DB_ODDFILESIZE				0x00000080
 #define	DB_ORDERCHKONLY				0x00000004
 #define	DB_OVERWRITE				0x00008000
 #define	DB_PANIC_ENVIRONMENT			0x00010000
 #define	DB_PRINTABLE				0x00000008
-#define	DB_PRIVATE				0x00004000
+#define	DB_PRIVATE				0x00010000
 #define	DB_PR_PAGE				0x00000010
 #define	DB_PR_RECOVERYTEST			0x00000020
 #define	DB_RDONLY				0x00000400
-#define	DB_RDWRMASTER				0x00004000
+#define	DB_RDWRMASTER				0x00008000
 #define	DB_READ_COMMITTED			0x00000400
 #define	DB_READ_UNCOMMITTED			0x00000200
 #define	DB_RECNUM				0x00000040
 #define	DB_RECOVER				0x00000002
-#define	DB_RECOVER_FATAL			0x00008000
+#define	DB_RECOVER_FATAL			0x00020000
 #define	DB_REGION_INIT				0x00020000
-#define	DB_REGISTER				0x00010000
+#define	DB_REGISTER				0x00040000
 #define	DB_RENUMBER				0x00000080
 #define	DB_REPMGR_CONF_2SITE_STRICT		0x00000001
 #define	DB_REPMGR_CONF_ELECTIONS		0x00000002
-#define	DB_REPMGR_PEER				0x00000001
+#define	DB_REPMGR_NEED_RESPONSE			0x00000001
+#define	DB_REPMGR_PEER				0x00000010
 #define	DB_REP_ANYWHERE				0x00000001
 #define	DB_REP_CLIENT				0x00000001
 #define	DB_REP_CONF_AUTOINIT			0x00000004
-#define	DB_REP_CONF_BULK			0x00000008
-#define	DB_REP_CONF_DELAYCLIENT			0x00000010
-#define	DB_REP_CONF_INMEM			0x00000020
-#define	DB_REP_CONF_LEASE			0x00000040
-#define	DB_REP_CONF_NOWAIT			0x00000080
+#define	DB_REP_CONF_AUTOROLLBACK		0x00000008
+#define	DB_REP_CONF_BULK			0x00000010
+#define	DB_REP_CONF_DELAYCLIENT			0x00000020
+#define	DB_REP_CONF_INMEM			0x00000040
+#define	DB_REP_CONF_LEASE			0x00000080
+#define	DB_REP_CONF_NOWAIT			0x00000100
 #define	DB_REP_ELECTION				0x00000004
 #define	DB_REP_MASTER				0x00000002
 #define	DB_REP_NOBUFFER				0x00000002
@@ -2764,14 +2963,16 @@ typedef struct entry {
 #define	DB_SHALLOW_DUP				0x00000100
 #define	DB_SNAPSHOT				0x00000200
 #define	DB_STAT_ALL				0x00000004
+#define	DB_STAT_ALLOC				0x00000008
 #define	DB_STAT_CLEAR				0x00000001
-#define	DB_STAT_LOCK_CONF			0x00000008
-#define	DB_STAT_LOCK_LOCKERS			0x00000010
-#define	DB_STAT_LOCK_OBJECTS			0x00000020
-#define	DB_STAT_LOCK_PARAMS			0x00000040
-#define	DB_STAT_MEMP_HASH			0x00000008
-#define	DB_STAT_MEMP_NOERROR			0x00000010
+#define	DB_STAT_LOCK_CONF			0x00000010
+#define	DB_STAT_LOCK_LOCKERS			0x00000020
+#define	DB_STAT_LOCK_OBJECTS			0x00000040
+#define	DB_STAT_LOCK_PARAMS			0x00000080
+#define	DB_STAT_MEMP_HASH			0x00000010
+#define	DB_STAT_MEMP_NOERROR			0x00000020
 #define	DB_STAT_SUBSYSTEM			0x00000002
+#define	DB_STAT_SUMMARY				0x00000010
 #define	DB_ST_DUPOK				0x00000200
 #define	DB_ST_DUPSET				0x00000400
 #define	DB_ST_DUPSORT				0x00000800
@@ -2780,10 +2981,10 @@ typedef struct entry {
 #define	DB_ST_RECNUM				0x00004000
 #define	DB_ST_RELEN				0x00008000
 #define	DB_ST_TOPLEVEL				0x00010000
-#define	DB_SYSTEM_MEM				0x00020000
+#define	DB_SYSTEM_MEM				0x00080000
 #define	DB_THREAD				0x00000010
 #define	DB_TIME_NOTGRANTED			0x00040000
-#define	DB_TRUNCATE				0x00008000
+#define	DB_TRUNCATE				0x00010000
 #define	DB_TXN_BULK				0x00000008
 #define	DB_TXN_FAMILY				0x00000040
 #define	DB_TXN_NOSYNC				0x00000001
@@ -2817,7 +3018,8 @@ typedef struct entry {
 #define	DB_VERIFY_PARTITION			0x00040000
 #define	DB_WRITECURSOR				0x00000008
 #define	DB_WRITELOCK				0x00000020
-#define	DB_WRITEOPEN				0x00010000
+#define	DB_WRITEOPEN				0x00020000
+#define	DB_XA_CREATE				0x00000001
 #define	DB_YIELDCPU				0x00080000
 
 /* DO NOT EDIT: automatically built by dist/s_include. */
@@ -2828,8 +3030,10 @@ typedef struct entry {
 extern "C" {
 #endif
 
+int db_copy __P((DB_ENV *, const char *, const char *, const char *));
 int db_create __P((DB **, DB_ENV *, u_int32_t));
 char *db_strerror __P((int));
+int db_env_set_func_assert __P((void (*)(const char *, const char *, int)));
 int db_env_set_func_close __P((int (*)(int)));
 int db_env_set_func_dirfree __P((void (*)(char **, int)));
 int db_env_set_func_dirlist __P((int (*)(const char *, char ***, int *)));
@@ -2855,6 +3059,9 @@ int db_env_create __P((DB_ENV **, u_int32_t));
 char *db_version __P((int *, int *, int *));
 char *db_full_version __P((int *, int *, int *, int *, int *));
 int log_compare __P((const DB_LSN *, const DB_LSN *));
+#if defined(DB_WIN32) && !defined(DB_WINCE)
+int db_env_set_win_security __P((SECURITY_ATTRIBUTES *sa));
+#endif
 int db_sequence_create __P((DB_SEQUENCE **, DB *, u_int32_t));
 #if DB_DBM_HSEARCH != 0
 int	 __db_ndbm_clearerr __P((DBM *));

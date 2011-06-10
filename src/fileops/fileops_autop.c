@@ -23,7 +23,7 @@ __fop_create_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_create_42", __fop_create_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_create_42", __fop_create_42_desc, info));
 }
 
 /*
@@ -40,7 +40,7 @@ __fop_create_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_create", __fop_create_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_create", __fop_create_desc, info));
 }
 
 /*
@@ -57,7 +57,7 @@ __fop_remove_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_remove", __fop_remove_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_remove", __fop_remove_desc, info));
 }
 
 /*
@@ -74,7 +74,7 @@ __fop_write_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_write_42", __fop_write_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_write_42", __fop_write_42_desc, info));
 }
 
 /*
@@ -91,7 +91,7 @@ __fop_write_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_write", __fop_write_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_write", __fop_write_desc, info));
 }
 
 /*
@@ -108,7 +108,7 @@ __fop_rename_42_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_rename_42", __fop_rename_42_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_rename_42", __fop_rename_42_desc, info));
 }
 
 /*
@@ -125,7 +125,7 @@ __fop_rename_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_rename", __fop_rename_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_rename", __fop_rename_desc, info));
 }
 
 /*
@@ -142,7 +142,7 @@ __fop_file_remove_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__fop_file_remove", __fop_file_remove_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__fop_file_remove", __fop_file_remove_desc, info));
 }
 
 /*

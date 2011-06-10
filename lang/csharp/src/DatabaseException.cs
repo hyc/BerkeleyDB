@@ -34,6 +34,8 @@ namespace BerkeleyDB {
                     throw new MemoryException();
                 case ErrorCodes.DB_FOREIGN_CONFLICT:
                     throw new ForeignConflictException();
+                case ErrorCodes.DB_HEAP_FULL:
+                    throw new HeapFullException();
                 case ErrorCodes.DB_KEYEMPTY:
                     throw new KeyEmptyException();
                 case ErrorCodes.DB_KEYEXIST:
@@ -113,6 +115,19 @@ namespace BerkeleyDB {
         /// </summary>
         public FullLogBufferException()
             : base(ErrorCodes.DB_LOG_BUFFER_FULL) { }
+    }
+
+    /// <summary>
+    /// An attempt was made to add or update a record in a
+    /// <see cref="HeapDatabase"/>. However, the size of the database was
+    /// constrained using <see cref="HeapDatabaseConfig.MaxSize"/>, and that
+    /// limit has been reached.
+    /// </summary>
+    public class HeapFullException : DatabaseException {
+        /// <summary>
+        /// Initialize a new instance of the HeapFullException
+        /// </summary>
+        public HeapFullException() : base(ErrorCodes.DB_HEAP_FULL) { }
     }
 
     /// <summary>

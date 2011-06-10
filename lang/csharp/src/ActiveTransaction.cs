@@ -31,7 +31,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// The status of an active transaction.
         /// </summary>
-        public enum TransactionStatus {
+        public enum TransactionStatus : uint {
             /// <summary>
             /// The transaction has been aborted
             /// </summary>
@@ -45,9 +45,39 @@ namespace BerkeleyDB {
             /// </summary>
             PREPARED = DB_TXN_ACTIVE_STATUS.TXN_PREPARED,
             /// <summary>
+            /// The transaction needs to be aborted
+            /// </summary>
+            NEED_ABORT = DB_TXN_ACTIVE_STATUS.TXN_NEED_ABORT,
+            /// <summary>
             /// The transaction is running
             /// </summary>
             RUNNING = DB_TXN_ACTIVE_STATUS.TXN_RUNNING
+        }
+
+        /// <summary>
+        /// Enum of XA transaction status.
+        /// </summary>
+        public enum XATransactionStatus : uint {
+            /// <summary>
+            /// XA active.
+            /// </summary>
+            ACTIVE = DB_TXN_XA_STATUS.TXN_XA_ACTIVE,
+            /// <summary>
+            /// XA deadlock.
+            /// </summary>
+            DEADLOCKED = DB_TXN_XA_STATUS.TXN_XA_DEADLOCKED,
+            /// <summary>
+            /// XA idle.
+            /// </summary>
+            IDLE = DB_TXN_XA_STATUS.TXN_XA_IDLE,
+            /// <summary>
+            /// XA prepared.
+            /// </summary>
+            PREPARED = DB_TXN_XA_STATUS.TXN_XA_PREPARED,
+            /// <summary>
+            /// XA rollback.
+            /// </summary>
+            ROLLEDBACK = DB_TXN_XA_STATUS.TXN_XA_ROLLEDBACK
         }
 
         /// <summary>
@@ -84,6 +114,12 @@ namespace BerkeleyDB {
         /// </summary>
         public TransactionStatus Status { 
             get { return (TransactionStatus)txn.status; } 
+        }
+        /// <summary>
+        /// Status of the XA transaction.
+        /// </summary>
+        public XATransactionStatus XAStatus {
+            get { return (XATransactionStatus)txn.xa_status; }
         }
         /// <summary>
         /// If the transaction is a prepare transaction, the transaction's

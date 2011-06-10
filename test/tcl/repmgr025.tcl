@@ -5,13 +5,14 @@
 # $Id$
 #
 # TEST	repmgr025
-# TEST	repmgr rerequest thread test.
+# TEST	repmgr heartbeat rerequest test.
 # TEST
-# TEST	Start an appointed master site and one client.  Generate some
-# TEST 	uncommitted updates on the master to lock some database pages.
+# TEST	Start an appointed master site and one client.  Use a test hook
+# TEST	to inhibit PAGE_REQ processing at the master (i.e., "lose" some
+# TEST	messages). 
 # TEST	Start a second client that gets stuck in internal init.  Wait
-# TEST	long enough to rely on the rerequest thread to request the
-# TEST	missing pages, commit the master updates and verify that all
+# TEST	long enough to rely on the heartbeat rerequest to request the
+# TEST	missing pages, rescind the test hook and verify that all
 # TEST	data appears on both clients.
 # TEST
 # TEST	Run for btree only because access method shouldn't matter.
@@ -25,16 +26,23 @@ proc repmgr025 { { niter 100 } { tnum "025" } args } {
 		return
 	}
 
+	# QNX does not support fork() in a multi-threaded environment.
+	if { $is_qnx_test } {
+		puts "Skipping repmgr$tnum on QNX."
+		return
+	}
+
 	set method "btree"
 	set args [convert_args $method $args]
 
-	puts "Repmgr$tnum ($method): repmgr rerequest thread test."
+	puts "Repmgr$tnum ($method): repmgr heartbeat rerequest test."
 	repmgr025_sub $method $niter $tnum $args
 }
 
 proc repmgr025_sub { method niter tnum largs } {
 	global testdir
 	global rep_verbose
+	global util_path
 	global verbose_type
 	set nsites 3
 
@@ -55,89 +63,112 @@ proc repmgr025_sub { method niter tnum largs } {
 	file mkdir $clientdir
 	file mkdir $clientdir2
 
+	# Log size is small so we quickly create more than one.
+	# The documentation says that the log file must be at least
+	# four times the size of the in-memory log buffer.
+	set pagesize 4096
+	append largs " -pagesize $pagesize "
+	set log_buf [expr $pagesize * 2]
+	set log_max [expr $log_buf * 4]
+
+	# First just establish the group, because a new client can't join a
+	# group while the master is in the middle of a txn.
+	puts "\tRepmgr$tnum.a: Create a group of three."
+	set common "berkdb_env_noerr -create $verbargs \
+            -txn -rep -thread -recover -log_buffer $log_buf -log_max $log_max"
+	set ma_envcmd "$common -errpfx MASTER -home $masterdir"
+	set cl_envcmd "$common -errpfx CLIENT -home $clientdir"
+	set cl2_envcmd "$common -errpfx CLIENT2 -home $clientdir2"
+	set masterenv [eval $ma_envcmd]
+	$masterenv repmgr -local [list localhost [lindex $ports 0]] \
+	    -start master
+	set clientenv [eval $cl_envcmd]
+	$clientenv repmgr -local [list localhost [lindex $ports 1]] \
+	    -remote [list localhost [lindex $ports 0]] -start client
+	await_startup_done $clientenv
+	set clientenv2 [eval $cl2_envcmd]
+	$clientenv2 repmgr -local [list localhost [lindex $ports 2]] \
+	    -remote [list localhost [lindex $ports 0]] -start client
+	await_startup_done $clientenv2
+	$clientenv close
+	$clientenv2 close
+	$masterenv close
+
 	# Use different connection retry timeout values to handle any
 	# collisions from starting sites at the same time by retrying
 	# at different times.
 
 	# Open a master.
-	puts "\tRepmgr$tnum.a: Start a master."
-	set ma_envcmd "berkdb_env_noerr -create $verbargs \
-	    -errpfx MASTER -home $masterdir -txn -rep -thread"
+	puts "\tRepmgr$tnum.b: Start a master."
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -timeout {heartbeat_send 500000}
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
 
 	# Open first client
-	puts "\tRepmgr$tnum.b: Start first client."
-	set cl_envcmd "berkdb_env_noerr -create $verbargs \
-	    -errpfx CLIENT -home $clientdir -txn -rep -thread"
+	puts "\tRepmgr$tnum.c: Start first client."
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -timeout {heartbeat_monitor 1100000}
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
-	    -remote [list localhost [lindex $ports 0]] \
-	    -remote [list localhost [lindex $ports 2]] \
 	    -start client
 	await_startup_done $clientenv
 
-	puts "\tRepmgr$tnum.c: Add some data to master and commit."
+	puts "\tRepmgr$tnum.d: Add some data to master and commit."
+	# Add enough data to move into a new log file, so that we can force an
+	# internal init when we restart client2 later.
+	set res [eval exec $util_path/db_archive -l -h $masterdir]
+	set log_end [lindex [lsort $res] end]
+
 	set dbname test.db
 	set mdb [eval {berkdb_open_noerr -create $omethod -auto_commit \
 	    -env $masterenv} $largs {$dbname}]
-	set numtxns 3
-	set t [$masterenv txn]
-	for { set i 1 } { $i <= $numtxns } { incr i } {
-		error_check_good db_put \
-		    [eval $mdb put -txn $t $i [chop_data $method data$i]] 0
-	}
-	error_check_good init_txn_commit [$t commit] 0
-
-	puts "\tRepmgr$tnum.d: Start updates on master but don't commit."
-	# This locks some database pages on the master until these updates
-	# are committed later in the test.
-	set t2 [$masterenv txn]
-	for { set i 1 } { $i <= $numtxns } { incr i } {
-		set ret \
-		    [$mdb get -get_both -txn $t2 $i [pad_data $method data$i]]
-		error_check_good db_put \
-		    [$mdb put -txn $t2 $i [chop_data $method newdata$i]] 0
+	set done false
+	set start 0
+	$masterenv test force noarchive_timeout
+	while { !$done } {
+		eval rep_test $method $masterenv $mdb $niter $start 0 0 $largs
+		incr start $niter
+		$masterenv log_archive -arch_remove
+		set res [exec $util_path/db_archive -l -h $masterdir]
+		if { [lsearch -exact $res $log_end] == -1 } {
+			set done true
+		}
 	}
 
-	# Open second client.  The uncommitted master updates will cause
+	puts "\tRepmgr$tnum.e: Inhibit PAGE_REQ processing at master."
+	$masterenv test abort no_pages
+
+	# Open second client.  The test hook will cause
 	# this client to be stuck in internal init until the updates
 	# are committed, so do not await_startup_done here.
-	puts "\tRepmgr$tnum.e: Start second client."
-	set cl2_envcmd "berkdb_env_noerr -create $verbargs \
-	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread"
+	puts "\tRepmgr$tnum.f: Start second client."
 	set clientenv2 [eval $cl2_envcmd]
-	# Set client retransmission max time to 1 second.
-	$clientenv2 rep_request 40000 1000000
-	$clientenv2 repmgr -ack all -nsites $nsites \
+	$clientenv2 repmgr -timeout {heartbeat_monitor 1100000}
+	$clientenv2 repmgr -ack all \
 	    -timeout {connection_retry 5000000} \
 	    -local [list localhost [lindex $ports 2]] \
-	    -remote [list localhost [lindex $ports 0]] \
-	    -remote [list localhost [lindex $ports 1]] \
 	    -start client
 
-	puts "\tRepmgr$tnum.f: Test for page requests from rerequest thread."
-	# Wait 5 seconds (significantly longer than client retransmission
-	# max time) to process all page requests resulting from master
-	# transactions.
+	puts "\tRepmgr$tnum.g: Test for page requests from rerequest thread."
+	# Wait 5 seconds (significantly longer than heartbeat send time) to
+	# process all page requests resulting from master transactions.
 	set max_wait 5
 	tclsleep $max_wait
 	set init_pagereq [stat_field $clientenv2 rep_stat "Pages requested"]
-	# Any further page requests can only be from the rerequest thread
+	# Any further page requests can only be from the heartbeat rerequest
 	# because we processed all other lingering page requests above.
 	await_condition {[stat_field $clientenv2 rep_stat \
 	    "Pages requested"] > $init_pagereq} $max_wait
 
-	puts "\tRepmgr$tnum.g: Commit master updates, finish client startup."
-	error_check_good update_txn_commit [$t2 commit] 0
+	puts "\tRepmgr$tnum.h: Rescind test hook, finish client startup."
+	$masterenv test abort none
 	await_startup_done $clientenv2
 
-	puts "\tRepmgr$tnum.h: Verifying client database contents."
+	puts "\tRepmgr$tnum.i: Verifying client database contents."
 	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
 	rep_verify $masterdir $masterenv $clientdir2 $clientenv2 1 1 1
 

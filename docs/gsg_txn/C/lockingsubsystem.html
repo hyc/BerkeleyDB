@@ -12,7 +12,10 @@
     <link rel="next" href="isolation.html" title="Isolation" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">The Locking Subsystem</th>
@@ -91,7 +94,7 @@
             </p>
         <p>
                 Before opening your environment, you can configure various
-                maximum values for your locking subsystem. Note that these
+                values for your locking subsystem. Note that these
                 limits can only be configured before the environment is
                 opened. Also, these methods configure the entire environment,
                 not just a specific environment handle.
@@ -110,19 +113,20 @@
           <ul type="disc">
             <li>
               <p>
-                        The maximum number of lockers
-                        supported by the environment. This value is used by
-                        the environment when it is opened to estimate the amount
-                        of space that it should allocate for various internal
-                        data structures. By default, 1,000 lockers are
+                        The number of lockers supported by the environment.
+                        This value is used by the environment when it is
+                        opened to estimate the amount of space that it
+                        should allocate for various internal data
+                        structures. By default, 1,000 lockers are
                         supported.
                     </p>
               <p>
                         To configure this value, use the 
+                        
                         <span>
-                            <code class="methodname">DB_ENV-&gt;set_lk_max_lockers()</code>
+                            <code class="methodname">DB_ENV-&gt;set_memory_init()</code>
                             
-                        method.
+                            method to configure the <code class="literal">DB_MEM_LOCKER</code> structure.
                         </span>
                         
                     </p>
@@ -134,15 +138,15 @@
             </li>
             <li>
               <p>
-                        The maximum number of locks supported by the environment.
+                        The number of locks supported by the environment.
                         By default, 1,000 locks are supported.
                     </p>
               <p>
                         To configure this value, use the 
                         <span>
-                            <code class="methodname">DB_ENV-&gt;set_lk_max_locks()</code>
+                            <code class="methodname">DB_ENV-&gt;set_memory_init()</code>
                             
-                        method.
+                            method to configure the <code class="literal">DB_MEM_LOCK</code> structure.
                         </span>
                         
                     </p>
@@ -154,15 +158,16 @@
             </li>
             <li>
               <p>
-                        The maximum number of locked objects supported by the environment.
-                        By default, 1,000 objects can be locked.
+                        The number of locked objects supported by the
+                        environment.  By default, 1,000 objects can be
+                        locked.
                     </p>
               <p>
                         To configure this value, use the 
                         <span>
-                            <code class="methodname">DB_ENV-&gt;set_lk_max_objects()</code>
+                            <code class="methodname">DB_ENV-&gt;set_memory_init()</code>
                             
-                        method.
+                            method to configure the <code class="literal">DB_MEM_LOCKOBJECT</code> structure.
                         </span>
                         
                     </p>
@@ -179,7 +184,7 @@
                 <a class="xref" href="blocking_deadlocks.html#lockresources" title="Lock Resources">Lock Resources</a>.
             </p>
         <p>
-                For example, to configure the maximum number of locks that your
+                For example, to configure the number of locks that your
                 environment can use:
             </p>
         <pre class="programlisting">#include &lt;stdio.h&gt;
@@ -214,7 +219,7 @@ main(void)
                 DB_INIT_TXN;     /* Initialize transactions */
 
     /* Configure max locks */
-    ret = envp-&gt;set_lk_max_locks(envp, 5000);
+    ret = envp-&gt;set_memory_init(envp, DB_MEM_LOCK, 5000);
     if (ret != 0) {
         fprintf(stderr, "Error configuring locks: %s\n",
             db_strerror(ret));
@@ -287,7 +292,7 @@ err:
                         Note that how you want DB to decide which thread of control should break a deadlock is
                         extremely dependent on the nature of your application. It is not unusual for some performance
                         testing to be required in order to make this determination. That said, a transaction that is
-                        holding the maximum number of locks is usually indicative of the transaction that has performed
+                        holding the most number of locks is usually indicative of the transaction that has performed
                         the most amount of work. Frequently you will not want a transaction that has performed a lot of
                         work to abandon its efforts and start all over again. It is not therefore uncommon for
                         application developers to initially select the transaction with the <span class="emphasis"><em>minimum</em></span>
@@ -442,7 +447,7 @@ main(void)
         <pre class="programlisting">&gt; /usr/local/db_install/bin/db_deadlock -h /export/dbenv -a y</pre>
         <p>
         For more information, see the
-        <a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/utility/db_deadlock.html" target="_top">
+        <a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/api_reference/C/db_deadlock.html" target="_top">
             <code class="literal">db_deadlock</code> reference documentation.
         </a>
     </p>

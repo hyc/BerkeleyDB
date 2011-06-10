@@ -133,6 +133,24 @@ namespace BerkeleyDB {
     /// <returns>The hashed value of <paramref name="data"/></returns>
     public delegate uint HashFunctionDelegate(byte[] data);
     /// <summary>
+    /// Application-specific function used to handle messages sent over 
+    /// Replication Manager message channels. 
+    /// </summary>
+    /// <param name="channel">
+    /// Channel used to send a reply back to the originator of the message.
+    /// </param>
+    /// <param name="requests">
+    /// DatabaseEntry array containing the message received from the remote site.
+    /// </param>
+    /// <param name="size">
+    /// The number of elements in the request array. 
+    /// </param>
+    /// <param name="need_response">
+    /// Whether the message requires a response.
+    /// </param>
+    public delegate void MessageDispatchDelegate(DbChannel channel,
+        ref DatabaseEntry[] requests, out uint size, bool need_response);
+    /// <summary>
     /// The function used to transmit data using the replication application's
     /// communication infrastructure.
     /// </summary>
@@ -156,16 +174,17 @@ namespace BerkeleyDB {
     /// to which the message should be sent.
     /// </para>
     /// <para>
-    /// The special identifier DB_EID_BROADCAST indicates that a message should
-    /// be broadcast to every environment in the replication group. The
-    /// application may use a true broadcast protocol or may send the message
-    /// in sequence to each machine with which it is in communication. In both
-    /// cases, the sending site should not be asked to process the message.
+    /// The special identifier <see cref="EnvironmentID.EID_BROADCAST"/>
+    /// indicates that a message should be broadcast to every environment in
+    /// the replication group. The application may use a true broadcast protocol
+    /// or may send the message in sequence to each machine with which it is in
+    /// communication. In both cases, the sending site should not be asked to
+    /// process the message.
     /// </para>
-	/// <para>
-    /// The special identifier DB_EID_INVALID indicates an invalid environment
-    /// ID. This may be used to initialize values that are subsequently checked
-    /// for validity. 
+    /// <para>
+    /// The special identifier <see cref="EnvironmentID.EID_INVALID"/> indicates
+    /// an invalid environment ID. This may be used to initialize values that
+    /// are subsequently checked for validity. 
     /// </para>
     /// </param>
     /// <param name="flags">XXX: TBD</param>

@@ -60,7 +60,11 @@ proc test096 { method {pagesize 512} {nentries 1000} {ndups 19} args} {
 
 		# We need an env for exclusive-use testing.  Since we are
 		# using txns, we need at least 1 lock per record for queue.
+	        # We need more locks for heap, because of the aux databases.
 		set lockmax [expr $nentries * 3]
+	        if { [is_heap $method] } {
+			set lockmax [expr $lockmax * 3]
+	        }
 		set env [eval {berkdb_env -create -home $testdir \
 		    -lock_max_locks $lockmax -lock_max_objects $lockmax \
 		    -pagesize $pagesize -txn} $encargs]
@@ -129,7 +133,7 @@ proc test096 { method {pagesize 512} {nentries 1000} {ndups 19} args} {
 
 	puts "\tTest096.i: Check proper handling of overflow pages."
 	# Large keys and data compared to page size guarantee
-	# overflow pages.
+	# overflow pages, or split records in heap.
 	if { [is_fixed_length $method] == 1 } {
 		puts "Skipping overflow test for fixed-length method."
 	} else {
@@ -146,11 +150,12 @@ proc test096 { method {pagesize 512} {nentries 1000} {ndups 19} args} {
 		}
 
 		# Hash reports pages of type P_OVERFLOW as "big pages", other
-		# access methods as "overflow pages".
+		# access methods as "overflow pages".  Heap doesn't use
+		# P_OVERFLOW pages.
 		if { [is_hash $method] == 1 } { 
 			set bigpages [stat_field $db stat "Number of big pages"]
 			error_check_good stat:bigpages [expr $bigpages > 0] 1
-		} else {
+		} elseif { [is_heap $method] == 0 } {
 			set overflow [stat_field $db stat "Overflow pages"]
 			error_check_good stat:overflow [expr $overflow > 0] 1
 		}

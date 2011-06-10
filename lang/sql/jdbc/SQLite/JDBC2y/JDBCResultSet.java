@@ -1,7 +1,12 @@
 package SQLite.JDBC2y;
 
-import java.sql.*;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.Statement;
+import java.sql.Types;
 
 public class JDBCResultSet implements java.sql.ResultSet {
 
@@ -135,7 +140,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 		throw new SQLException("cursor outside of result set");
 	    }
 	    rowbuf = new String[tr.ncolumns];
-	    System.arraycopy((String []) tr.rows.elementAt(row), 0,
+	    System.arraycopy(tr.rows.elementAt(row), 0,
 			     rowbuf, 0, tr.ncolumns);
 	}
     }
@@ -198,7 +203,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 
     public void setFetchDirection(int dir) throws SQLException {
 	if (dir != ResultSet.FETCH_FORWARD) {
-	    throw new SQLException("not supported");
+	    throw new SQLException("only forward fetch direction supported");
 	}
     }
 
@@ -208,7 +213,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 
     public void setFetchSize(int fsize) throws SQLException {
 	if (fsize != 1) {
-	    throw new SQLException("not supported");
+	    throw new SQLException("fetch size must be 1");
 	}
     }
 
@@ -552,6 +557,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	throw new SQLException("not supported");
     }
 
+    @Deprecated
     public BigDecimal getBigDecimal(String columnName)
 	throws SQLException {
 	throw new SQLException("not supported");
@@ -563,6 +569,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	throw new SQLException("not supported");
     }
 
+    @Deprecated
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
 	throw new SQLException("not supported");
     }
@@ -669,7 +676,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	throw new SQLException("not supported");
     }
 
-    public Object getObject(String columnIndex, java.util.Map map)
+    public Object getObject(String columnIndex, java.util.Map map) 
 	throws SQLException {
 	throw new SQLException("not supported");
     }
@@ -822,7 +829,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	    throw new SQLException("no insert data provided");
 	}
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("INSERT INTO ");
 	sb.append(SQLite.Shell.sql_quote_dbl(uptable));
 	sb.append("(");
@@ -843,7 +850,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    this.s.conn.db.exec(sb.toString(), null, rowbuf);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e.toString());
 	}
 	tr.newrow(rowbuf);
 	rowbuf = null;
@@ -865,7 +872,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	String rd[] = (String []) tr.rows.elementAt(row);
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	String args[] = new String[tr.ncolumns + pkcols.length];
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("UPDATE ");
 	sb.append(SQLite.Shell.sql_quote_dbl(uptable));
 	sb.append(" SET ");
@@ -890,7 +897,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    this.s.conn.db.exec(sb.toString(), null, args);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e.toString());
 	}
 	System.arraycopy(rowbuf, 0, rd, 0, rowbuf.length);
 	rowbuf = null;
@@ -905,7 +912,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	    throw new SQLException("no primary key on table defined");
 	}
 	fillRowbuf();
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("DELETE FROM ");
 	sb.append(SQLite.Shell.sql_quote_dbl(uptable));
 	sb.append(" WHERE ");
@@ -921,7 +928,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    this.s.conn.db.exec(sb.toString(), null, args);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e.toString());
 	}
 	rowbuf = null;
     }
@@ -936,7 +943,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	String rd[] = (String []) tr.rows.elementAt(row);
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 	sb.append("SELECT ");
 	for (int i = 0; i < tr.ncolumns; i++) {
 	    sb.append(SQLite.Shell.sql_quote_dbl(m.getColumnName(i + 1)));
@@ -960,10 +967,10 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    trnew = this.s.conn.db.get_table(sb.toString(), args);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.getMessage());
+	    throw new SQLException(e.toString());
 	}
 	if (trnew.nrows != 1) {
-	    throw new SQLException("wrong size of result set");
+	    throw new SQLException("wrong size of result set; expected 1, got " + trnew.nrows);
 	}
 	rowbuf = null;
 	tr.rows.setElementAt(trnew.rows.elementAt(0), row);

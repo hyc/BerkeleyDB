@@ -59,6 +59,33 @@ public interface EventHandler {
     public void handleRepClientEvent();
 
     /**
+    A callback function to be called when a Replication connect broken event 
+    is sent from the Berkeley DB library.
+    <p>
+    This event callback is received when a previously established connection
+    has been broken.
+    */ 
+    public void handleRepConnectBrokenEvent();
+
+    /**
+    A callback function to be called when a Replication connect established
+    event is sent from the Berkeley DB library.
+    <p>
+    This event callback is received when a connection with a remote site has
+    been established.
+    */ 
+    public void handleRepConnectEstablishedEvent();
+
+    /**
+    A callback function to be called when a Replication connect retry failed
+    event is sent from the Berkeley DB library.
+    <p>
+    This event callback is received when an attempt to establish a new 
+    connection to a known remote site failed.
+    */ 
+    public void handleRepConnectTryFailedEvent();
+
+    /**
     A callback function to be called when a Replication Client event is sent
     from the Berkeley DB library.
     <p>
@@ -97,12 +124,30 @@ public interface EventHandler {
     A callback function to be called when an event is sent from the
     Berkeley DB library.
     <p>
+    This event callback is received when internal initialization has been 
+    completed.
+    */
+    public void handleRepInitDoneEvent();
+
+    /**
+    A callback function to be called when an event is sent from the
+    Berkeley DB library.
+    <p>
     This event callback is received when the local site could not synchronize
     with the master because an internal initialization was required, but
     internal initialization has been turned off by the {@link com.sleepycat.db.ReplicationConfig#AUTOINIT ReplicationConfig.AUTOINIT}
     flag to {@link com.sleepycat.db.Environment#setReplicationConfig Environment.setReplicationConfig}
     */
     public void handleRepJoinFailureEvent();
+
+    /**
+    A callback function to be called when a local site removed event is sent
+    from the Berkeley DB library.
+    <p>
+    This event callback is received when the local site has been removed from
+    the group.
+    */
+    public void handleRepLocalSiteRemovedEvent();
 
     /**
     A callback function to be called when an event is sent from the
@@ -147,6 +192,23 @@ public interface EventHandler {
     durability.
     */
     public void handleRepPermFailedEvent();
+
+    /**
+    A callback function to be called when a site added event is sent from the
+    Berkeley DB library.
+    <p>
+    This event callback is received when a new site has joined the group.
+    */
+    public void handleRepSiteAddedEvent();
+
+    /**
+    A callback function to be called when a site removed event is sent from the
+    Berkeley DB library.
+    <p>
+    This event callback is received when an existing remote site has been
+    removed from the group.
+    */
+    public void handleRepSiteRemovedEvent();
 
     /**
     A callback function to be called when an event is sent from the

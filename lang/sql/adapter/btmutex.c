@@ -46,21 +46,39 @@ int sqlite3BtreeHoldsMutex(Btree *db)
 	return 1;
 }
 
-void sqlite3BtreeMutexArrayEnter(BtreeMutexArray *pArray)
-{
-}
-
-void sqlite3BtreeMutexArrayLeave(BtreeMutexArray *pArray)
-{
-}
-
 int sqlite3BtreeHoldsAllMutexes(sqlite3 *db)
 {
 	log_msg(LOG_VERBOSE, "sqlite3BtreeHoldsAllMutexes(%p)", db);
 	return 1;
 }
 
-void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pArray, Btree *pBtree)
+int sqlite3SchemaMutexHeld(sqlite3 *db, int iDb, Schema *pSchema)
 {
+	/*
+	 * Berkeley DB SQL uses different locking semantics to SQLite. This
+	 * function is only used to verify that a lock is held. Always return
+	 * true. Some test fail if this is implemented using the following code
+	 * which is based on the implementation in SQLite.
+	 *
+	Btree *p;
+
+	assert(db != 0);
+	if (pSchema)
+		iDb = sqlite3SchemaToIndex(db, pSchema);
+	assert(iDb >= 0 && iDb < db->nDb);
+	if (sqlite3_mutex_held(db->mutex) != 0)
+		return 0;
+	if (iDb == 1)
+		return 1;
+	p = db->aDb[iDb].pBt;
+	assert(p != 0);
+	return (p->sharable == 0 || p->schemaLockMode != LOCKMODE_NONE);
+	*/
+	return (1);
+}
+
+int sqlite3BtreeSharable(Btree *p)
+{
+	return (1);
 }
 #endif /* ifndef SQLITE_OMIT_SHARED_CACHE */

@@ -18,6 +18,7 @@ proc rep010 { method { niter 100 } { tnum "010" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Run for all access methods.
 	if { $checking_valid_methods } {
@@ -38,6 +39,11 @@ proc rep010 { method { niter 100 } { tnum "010" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "and private env"
+	}
+
 	set args [convert_args $method $args]
 	set logsets [create_logsets 2]
 
@@ -51,7 +57,7 @@ proc rep010 { method { niter 100 } { tnum "010" } args } {
 				continue
 			}
 			puts "Rep$tnum ($method $r): Replication and ISPERM"
-			puts "Rep$tnum: with $msg $msg2."
+			puts "Rep$tnum: with $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep010_sub $method $niter $tnum $l $r $args
@@ -66,6 +72,7 @@ proc rep010_sub { method niter tnum logset recargs largs } {
 	global perm_sent_list
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -77,6 +84,11 @@ proc rep010_sub { method niter tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -105,14 +117,15 @@ proc rep010_sub { method niter tnum logset recargs largs } {
 	repladd 1
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
 	    $m_logargs $verbargs -errpfx MASTER $repmemargs \
-	    -home $masterdir $m_txnargs -rep_master \
+	    $privargs -home $masterdir $m_txnargs -rep_master \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
 
 	# Open a client
 	repladd 2
-	set env_cmd(C) "berkdb_env_noerr -create -home $clientdir $repmemargs \
+	set env_cmd(C) "berkdb_env_noerr -create \
 	    $c_txnargs $c_logargs $verbargs -rep_client -errpfx CLIENT \
+	    $privargs -home $clientdir $repmemargs \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
 

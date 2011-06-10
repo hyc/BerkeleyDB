@@ -158,8 +158,11 @@ namespace CsharpAPITest
 			Assert.AreEqual(10240, stats.BufferSize);
 			Assert.AreEqual(1, stats.CurrentFile);
 			Assert.AreNotEqual(0, stats.CurrentOffset);
+			Assert.AreEqual(0, stats.FileId);
 			Assert.AreEqual(1048576, stats.FileSize);
+			Assert.AreEqual(0, stats.InitFileId);
 			Assert.AreNotEqual(0, stats.MagicNumber);
+			Assert.AreEqual(0, stats.MaxFileId);
 			Assert.AreNotEqual(0, stats.PermissionsMode);
 			Assert.AreEqual(1, stats.Records);
 			Assert.AreNotEqual(0, stats.RegionLockNoWait);

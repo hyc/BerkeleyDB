@@ -1,13 +1,14 @@
 /*-
  * See the file LICENSE for redistribution information.
  * 
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package repmgrtests;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -33,9 +34,11 @@ import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
 import com.sleepycat.db.LogSequenceNumber;
 import com.sleepycat.db.ReplicationConfig;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerAckPolicy;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerSiteInfo;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
+import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.ReplicationTransport;
 import com.sleepycat.db.VerboseConfig;
 
@@ -55,7 +58,6 @@ public class TestDrainCommitx {
     private int masterPort;
     private int clientPort;
     private int masterSpoofPort;
-    private int clientSpoofPort;
     private int mgrPort;
 
     class MyEventHandler extends EventHandlerAdapter {
@@ -132,24 +134,20 @@ public class TestDrainCommitx {
         if (Boolean.getBoolean("MANUAL_FIDDLER_START")) {
             masterPort = 6000;
             clientPort = 6001;
-            masterSpoofPort = 7000;
-            clientSpoofPort = 7001;
             mgrPort = 8000;
             fiddler = null;
         } else {
+            String mgrPortNum = System.getenv("DB_TEST_FAKE_PORT");
+            assertNotNull("required DB_TEST_FAKE_PORT environment variable not found",
+                          mgrPortNum);
+            mgrPort = Integer.parseInt(mgrPortNum);
             PortsConfig p = new PortsConfig(2);
             masterPort = p.getRealPort(0);
-            masterSpoofPort = p.getSpoofPort(0);
             clientPort = p.getRealPort(1);
-            clientSpoofPort = p.getSpoofPort(1);
-            mgrPort = p.getManagerPort();
-            System.out.println("setUp: " + mgrPort + "/" + p.getFiddlerConfig());
-            fiddler = Util.startFiddler(p, getClass().getName());
+            fiddler = Util.startFiddler(p, getClass().getName(), mgrPort);
         }
     }
 
-    // ### TODO: share this clean-up technique with all relevant tests
-    // 
     @After public void tearDown() throws Exception {
         if (fiddler != null) { fiddler.destroy(); }
     }
@@ -164,22 +162,20 @@ public class TestDrainCommitx {
         }
 
         EnvironmentConfig masterConfig = makeBasicConfig();
-//         masterConfig.setMessageHandler(new MessageHandler() {
-//                 public void message(Environment e, String msg) {
-//                     if (msg.indexOf("queued") >= 0)
-//                         System.out.println("we got this: " + msg);
-//                 }
-//             });
         masterConfig.setReplicationLimit(100000000);
-        masterConfig.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
+        ReplicationManagerSiteConfig site
+            = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLocalSite(true);
+        masterConfig.addReplicationManagerSite(site);
         MyEventHandler masterMonitor = new MyEventHandler();
         masterConfig.setEventHandler(masterMonitor);
         File masterDir = mkdir("master");
         Environment master = new Environment(masterDir, masterConfig);
+        master.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY, 3000000);
         master.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_MASTER);
 		
         DatabaseConfig dc = new DatabaseConfig(); 
-       dc.setTransactional(true);
+        dc.setTransactional(true);
         dc.setAllowCreate(true);
         dc.setType(DatabaseType.BTREE);
         dc.setPageSize(4096);
@@ -188,14 +184,14 @@ public class TestDrainCommitx {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         value.setData(data);
-        for (int i=0; i<120; i++) {
+        for (int i=0;
+             ((BtreeStats)db.getStats(null, null)).getPageCount() < 50;
+             i++)
+        {
             String k = "The record number is: " + i;
             key.setData(k.getBytes());
             db.put(null, key, value);
         }
-
-        BtreeStats stats = (BtreeStats)db.getStats(null, null);
-        assertTrue(stats.getPageCount() >= 50);
         db.close();
 
 
@@ -211,23 +207,27 @@ public class TestDrainCommitx {
         // moment.
         // 
         EnvironmentConfig ec = makeBasicConfig();
-        ReplicationHostAddress clientAddr =
-            new ReplicationHostAddress("localhost", clientPort);
-        ec.setReplicationManagerLocalSite(clientAddr);
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterSpoofPort), false);
+        site = new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLocalSite(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setBootstrapHelper(true);
+        ec.addReplicationManagerSite(site);
+        
         MyEventHandler clientMonitor = new MyEventHandler();
         ec.setEventHandler(clientMonitor);
         Environment client = new Environment(mkdir("client"), ec);
         client.setReplicationConfig(ReplicationConfig.DELAYCLIENT, true);
+        client.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY, 3000000);
         client.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
         
-        for (long deadline = System.currentTimeMillis() + 2000;;Thread.sleep(100)) {
+        for (long deadline = System.currentTimeMillis() + 20000;;Thread.sleep(100)) {
             if (System.currentTimeMillis() > deadline)
                 throw new Exception("what's taking so long to connect?");
             ReplicationManagerSiteInfo[] connections = master.getReplicationManagerSiteList();
             if (connections.length == 1 && connections[0].isConnected()) {
                 assertEquals("localhost", connections[0].addr.host);
-                assertEquals(clientSpoofPort, connections[0].addr.port);
+                assertEquals(clientPort, connections[0].addr.port);
                 break;
             }
         }
@@ -293,28 +293,6 @@ public class TestDrainCommitx {
         fiddler = null;
     }
 
-    static class RepMessage { DatabaseEntry control, rec; }
-        
-    static class MyTransport implements ReplicationTransport {
-        private List<RepMessage> msgs = new ArrayList<RepMessage>();
-        RepMessage[] getMessages() {
-            return msgs.toArray(new RepMessage[0]);
-        }
-        public int send(Environment env, DatabaseEntry control, DatabaseEntry rec,
-                        LogSequenceNumber lsn, int eid, boolean noBuffer,
-                        boolean perm, boolean anywhere, boolean isRetry)
-        {
-            RepMessage msg = new RepMessage();
-            msg.control = control;
-            msg.rec = rec;
-            msgs.add(msg);
-
-            return 0;
-        }
-    }
-
-        
-	
     public static EnvironmentConfig makeBasicConfig() {
         EnvironmentConfig ec = new EnvironmentConfig();
         ec.setAllowCreate(true);
@@ -324,7 +302,7 @@ public class TestDrainCommitx {
         ec.setInitializeReplication(true);
         ec.setTransactional(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(3);
+        ec.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ONE);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);

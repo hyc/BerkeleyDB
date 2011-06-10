@@ -301,7 +301,7 @@ ok(36, $status == 0 );
     ok(37, $h{'q'} eq undef );
 }
 
-# Attempting to delete a non-existant key should fail
+# Attempting to delete a non-existent key should fail
 
 $status = $X->del('joe') ;
 ok(38, $status == 1 );

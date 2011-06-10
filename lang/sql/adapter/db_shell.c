@@ -158,3 +158,39 @@ SQLITE_API int bdbSqlEnvStatPrint(sqlite3 *db, FILE *msgfile)
 
 	return SQLITE_OK;
 }
+
+/*
+ * Print replication summary statistics using DB_ENV->rep_stat_print()
+ *
+ * If msgfile is NULL, then statistics will be printed into stdout, otherwise
+ * the statistics will be printed into the designated output stream.
+ *
+ * Returns SQLITE_OK if there are no errors, -1 if an error occurred.
+ */
+SQLITE_API int bdbSqlRepSumStatPrint(sqlite3 *db, FILE *msgfile)
+{
+	BtShared *pBt;
+	Btree *p;
+	FILE *out;
+
+	if (!db || !db->aDb)
+		return -1;
+
+	p = db->aDb[0].pBt;
+	assert(p);
+
+	pBt = p->pBt;
+	assert(pBt);
+
+	if (!p->connected || !(pBt->dbenv))
+		return -1;
+
+	if (!(out = msgfile))
+		out = stdout;
+
+	fprintf(out, "Replication summary statistics\n");
+	(void)(pBt->dbenv)->set_msgfile(pBt->dbenv, out);
+	(void)(pBt->dbenv)->rep_stat_print(pBt->dbenv, DB_STAT_SUMMARY);
+
+	return SQLITE_OK;
+}

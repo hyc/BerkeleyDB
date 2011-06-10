@@ -67,7 +67,7 @@ proc repmgr017_sub { method niter tnum largs } {
 	set ma_envcmd "berkdb_env_noerr -create $logargs $txnargs $verbargs \
 	   -errpfx MASTER -rep -thread -rep_inmem_files -private $cacheargs"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -77,7 +77,7 @@ proc repmgr017_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $logargs $txnargs $verbargs \
 	    -errpfx CLIENT -rep -thread -rep_inmem_files -private"
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -106,14 +106,14 @@ proc repmgr017_sub { method niter tnum largs } {
 	# anyway after closing the master environment with an error.
 	set cacheargs ""
 	set masterenv [eval $ma_envcmd -recover]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
 
 	# Open -recover to clear env region, including startup_done value.
 	set clientenv [eval $cl_envcmd -recover]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \

@@ -166,8 +166,8 @@ public class test3 implements SQLite.Trace, SQLite.Profile {
 		System.err.println("error: " + ee);
 	    }
 	    int info[] = new int[2];
-	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MEMORY, info, false);
-	    System.out.println("INFO: status(STATUS_MEMORY) = "
+	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MEMORY_USED, info, false);
+	    System.out.println("INFO: status(STATUS_MEMORY_USED) = "
 			       + info[0] + "/" + info[1]);
 	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MALLOC_SIZE, info, false);
 	    System.out.println("INFO: status(STATUS_MALLOC_SIZE) = "
@@ -194,10 +194,10 @@ public class test3 implements SQLite.Trace, SQLite.Profile {
 	    System.out.println("INFO: status(STATUS_PARSER_STACK) = "
 			       + info[0] + "/" + info[1]);
 	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_LOOKASIDE_USED, info, false);
-	    System.out.println("INFO: db_status(STATUS_LOOKASIZED_USED) = "
+	    System.out.println("INFO: db_status(DBSTATUS_LOOKASIZE_USED) = "
 			       + info[0] + "/" + info[1]);
 	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_CACHE_USED, info, false);
-	    System.out.println("INFO: db_status(STATUS_CACHE_USED) = "
+	    System.out.println("INFO: db_status(DBSTATUS_CACHE_USED) = "
 			       + info[0] + "/" + info[1]);
 	    T.do_exec(db, "drop table TEST3");
 	    T.do_exec(db, "drop table B");

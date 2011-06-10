@@ -187,6 +187,7 @@ __lock_stat(env, statp, flags)
 		region->stat.st_nobjects =
 		    region->stat.st_maxnobjects = tmp.st_nobjects;
 		region->stat.st_partitions = tmp.st_partitions;
+		region->stat.st_tablesize = tmp.st_tablesize;
 	}
 
 	LOCK_REGION_UNLOCK(env);
@@ -215,8 +216,8 @@ __lock_stat_print_pp(dbenv, flags)
 	ENV_REQUIRES_CONFIG(env,
 	    env->lk_handle, "DB_ENV->lock_stat_print", DB_INIT_LOCK);
 
-#define	DB_STAT_LOCK_FLAGS						\
-	(DB_STAT_ALL | DB_STAT_CLEAR | DB_STAT_LOCK_CONF |		\
+#define	DB_STAT_LOCK_FLAGS						  \
+	(DB_STAT_ALL | DB_STAT_ALLOC | DB_STAT_CLEAR | DB_STAT_LOCK_CONF |\
 	 DB_STAT_LOCK_LOCKERS |	DB_STAT_LOCK_OBJECTS | DB_STAT_LOCK_PARAMS)
 	if ((ret = __db_fchk(env, "DB_ENV->lock_stat_print",
 	    flags, DB_STAT_CLEAR | DB_STAT_LOCK_FLAGS)) != 0)
@@ -328,13 +329,27 @@ __lock_print_stats(env, flags)
 	    (u_long)sp->st_cur_maxid);
 	__db_dl(env, "Number of lock modes", (u_long)sp->st_nmodes);
 	__db_dl(env,
+	    "Initial number of locks allocated", (u_long)sp->st_initlocks);
+	__db_dl(env,
+	    "Initial number of lockers allocated", (u_long)sp->st_initlockers);
+	__db_dl(env, "Initial number of lock objects allocated",
+	    (u_long)sp->st_initobjects);
+	__db_dl(env,
 	    "Maximum number of locks possible", (u_long)sp->st_maxlocks);
 	__db_dl(env,
 	    "Maximum number of lockers possible", (u_long)sp->st_maxlockers);
 	__db_dl(env, "Maximum number of lock objects possible",
 	    (u_long)sp->st_maxobjects);
+	__db_dl(env,
+	    "Current number of locks allocated", (u_long)sp->st_locks);
+	__db_dl(env,
+	    "Current number of lockers allocated", (u_long)sp->st_lockers);
+	__db_dl(env, "Current number of lock objects allocated",
+	    (u_long)sp->st_objects);
 	__db_dl(env, "Number of lock object partitions",
 	    (u_long)sp->st_partitions);
+	__db_dl(env, "Size of object hash table",
+	    (u_long)sp->st_tablesize);
 	__db_dl(env, "Number of current locks", (u_long)sp->st_nlocks);
 	__db_dl(env, "Maximum number of locks at any one time",
 	    (u_long)sp->st_maxnlocks);
@@ -381,7 +396,7 @@ __lock_print_stats(env, flags)
 	__db_dl(env, "Number of transactions that have timed out",
 	    (u_long)sp->st_ntxntimeouts);
 
-	__db_dlbytes(env, "The size of the lock region",
+	__db_dlbytes(env, "Region size",
 	    (u_long)0, (u_long)0, (u_long)sp->st_regsize);
 	__db_dl_pct(env,
 	    "The number of partition locks that required waiting",
@@ -521,7 +536,8 @@ __lock_dump_locker(env, mbp, lt, lip)
 	    mbp, "%8lx dd=%2ld locks held %-4d write locks %-4d pid/thread %s",
 	    (u_long)lip->id, (long)lip->dd_id, lip->nlocks, lip->nwrites,
 	    env->dbenv->thread_id_string(env->dbenv, lip->pid, lip->tid, buf));
-	__db_msgadd(env, mbp, " priority %-10u", lip->priority);
+	__db_msgadd(env, mbp,
+	    " flags %-4x priority %-10u", lip->flags, lip->priority);
 
 	if (timespecisset(&lip->tx_expire)) {
 #ifdef HAVE_STRFTIME
@@ -691,7 +707,7 @@ __lock_printlock(lt, mbp, lp, ispgno)
 	    (u_long)((DB_LOCKER *)R_ADDR(&lt->reginfo, lp->holder))->id,
 	    mode, (u_long)lp->refcount, status);
 
-	lockobj = (DB_LOCKOBJ *)((u_int8_t *)lp + lp->obj);
+	lockobj = SH_OFF_TO_PTR(lp, lp->obj, DB_LOCKOBJ);
 	ptr = SH_DBT_PTR(&lockobj->lockobj);
 	if (ispgno && lockobj->lockobj.size == sizeof(struct __db_ilock)) {
 		/* Assume this is a DBT lock. */

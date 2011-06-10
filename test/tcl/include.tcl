@@ -16,6 +16,7 @@ global util_path
 global is_freebsd_test
 global is_hp_test
 global is_linux_test
+global is_osx_test
 global is_qnx_test
 global is_sunos_test
 global is_windows_test

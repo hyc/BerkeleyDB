@@ -187,7 +187,8 @@ proc si008 { methods {nentries 10} {tnum "008"} args } {
 
 		# For queue and recno only, test append, adding back
 		# a quarter of the original number of entries.
-		if { [is_record_based $pmethod] == 1 } {
+		if { [is_record_based $pmethod] == 1 &&
+		     [is_heap $pmethod] == 0 } {
 			set did [open $dict]
 			puts "\tSi$tnum.e:\
 			    Append loop: append $quar entries"

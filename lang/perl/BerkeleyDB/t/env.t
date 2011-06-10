@@ -129,7 +129,7 @@ sub chkMsg
 
     my $ErrMsg = join "|", map { "$prefix$_" }
                         'illegal flag specified to (db_open|DB->open)',
-                       'DB_AUTO_COMMIT may not be specified in non-transactional environment';
+                       '(BDB\d+ )?DB_AUTO_COMMIT may not be specified in non-transactional environment';
     
     return 1 if $BerkeleyDB::Error =~ /^$ErrMsg/ ;
     warn "# $BerkeleyDB::Error\n" ;

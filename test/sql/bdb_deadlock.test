@@ -9,47 +9,10 @@
 
 set testdir [file dirname $argv0]/../../lang/sql/sqlite/test
 
-source $testdir/tester.tcl
+source $testdir/../../../../test/sql/bdb_util.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
 
 sqlite3 db test.db -fullmutex 1
-
-set excl_thread_procs { 
-  proc execsql {sql} {
-    enter_db_mutex $::DB 
-    set rc SQLITE_OK
-    set err [catch {
-      set ::STMT [sqlite3_prepare_v2 $::DB $sql -1 dummy_tail]
-    } msg]
-
-    if {$err == 0} {
-      while {[set rc [sqlite3_step $::STMT]] eq "SQLITE_ROW"} {}
-      set rc [sqlite3_finalize $::STMT]
-    } else {
-      if {[lindex $msg 0]=="(6)"} {
-        set rc SQLITE_LOCKED
-      } else {
-        set rc SQLITE_ERROR
-      }
-    }
-
-    if {[string first locked [sqlite3_errmsg $::DB]]>=0} {
-      set rc SQLITE_LOCKED
-    }
-    if {$rc ne "SQLITE_OK" && $rc ne "SQLITE_LOCKED"} {
-      set errtxt "$rc - [sqlite3_errmsg $::DB] (debug1)"
-    }
-    leave_db_mutex $::DB
-    set rc
-  }
-
-  proc do_test {name script result} {
-    set res [eval $script]
-    if {$res ne $result} {
-      error "$name failed: expected \"$result\" got \"$res\""
-    }
-  }
-}
 
 proc table_cleanup {} {
   db eval { 
@@ -87,13 +50,17 @@ do_test bdb_deadlock-1.0 {
 
 # Executes operations under an exclusive txn
 set exclusive_test {
-  set ::DB [sqlthread open test.db]
+  set key ""
+  if {[sqlite -has-codec]} {
+    set key "xyzzy"
+  }
+  set ::DB [sqlthread open test.db $key]
   do_test e1 {
     execsql { BEGIN IMMEDIATE }
   } {SQLITE_OK} 
   do_test e2 {
     execsql { PRAGMA txn_priority=10000; }
-  } {SQLITE_OK}
+  } {SQLITE_OK} 
   do_test e3 {
     execsql { INSERT INTO t2 VALUES(2) }
   } {SQLITE_OK}
@@ -116,7 +83,7 @@ do_test bdb_deadlock-2.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -152,7 +119,7 @@ do_test bdb_deadlock-3.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -189,7 +156,7 @@ do_test bdb_deadlock-4.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -234,7 +201,7 @@ do_test bdb_deadlock-5.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -279,7 +246,7 @@ do_test bdb_deadlock-6.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -336,7 +303,7 @@ do_test bdb_deadlock-7.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -378,7 +345,7 @@ do_test bdb_deadlock-8.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -421,7 +388,7 @@ do_test bdb_deadlock-9.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -460,7 +427,7 @@ do_test bdb_deadlock-10.0 {
 
 # The exclusive thread will block when it attempts to insert into t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_test
+thread_spawn finished(0) "" $bdb_thread_procs $exclusive_test
 
 after 5000
 
@@ -489,13 +456,17 @@ do_test bdb_deadlock-10.5 {
 
 # Executes operations under an exclusive txn
 set read_test {
-  set ::DB [sqlthread open test.db]
+  set key ""
+  if {[sqlite -has-codec]} {
+    set key "xyzzy"
+  }
+  set ::DB [sqlthread open test.db $key]
   do_test e1 {
     execsql { BEGIN IMMEDIATE }
   } {SQLITE_OK} 
   do_test e2 {
     execsql { PRAGMA txn_priority=10000; }
-  } {SQLITE_OK}
+  } {SQLITE_OK} 
   do_test e3 {
     execsql { INSERT INTO t2 VALUES(2) }
   } {SQLITE_OK}
@@ -519,7 +490,7 @@ do_test bdb_deadlock-11.0 {
 
 # The exclusive thread will block when it attempts to select from t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $read_test
+thread_spawn finished(0) "" $bdb_thread_procs $read_test
 
 after 5000
 

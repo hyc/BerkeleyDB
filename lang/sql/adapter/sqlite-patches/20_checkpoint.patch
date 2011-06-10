@@ -10,16 +10,7 @@
  #endif
  
  /*
-@@ -145,7 +146,7 @@
- ** lead to database corruption.
- */
- #ifndef SQLITE_MAX_PAGE_SIZE
--# define SQLITE_MAX_PAGE_SIZE 32768
-+# define SQLITE_MAX_PAGE_SIZE 65536
- #endif
- 
- 
-@@ -153,7 +154,7 @@
+@@ -154,7 +155,7 @@
  ** The default size of a database page.
  */
  #ifndef SQLITE_DEFAULT_PAGE_SIZE

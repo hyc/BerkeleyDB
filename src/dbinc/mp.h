@@ -19,6 +19,8 @@ struct __bh;		typedef struct __bh BH;
 struct __bh_frozen_p;	typedef struct __bh_frozen_p BH_FROZEN_PAGE;
 struct __bh_frozen_a;	typedef struct __bh_frozen_a BH_FROZEN_ALLOC;
 struct __db_mpool_hash; typedef struct __db_mpool_hash DB_MPOOL_HASH;
+struct __db_mpool_fstat_int;
+typedef struct __db_mpool_fstat_int DB_MPOOL_FSTAT_INT;
 struct __db_mpreg;	typedef struct __db_mpreg DB_MPREG;
 struct __mpool;		typedef struct __mpool MPOOL;
 
@@ -120,7 +122,7 @@ struct __db_mpreg {
  * MPOOL --
  *	Shared memory pool region.
  */
-struct __mpool {
+struct __mpool { /* SHARED */
 	/*
 	 * The memory pool can be broken up into individual pieces/files.
 	 * There are two reasons for this: firstly, on Solaris you can allocate
@@ -147,9 +149,9 @@ struct __mpool {
 	u_int32_t gbytes;		/* Number of gigabytes in cache. */
 	u_int32_t bytes;		/* Number of bytes in cache. */
 	u_int32_t pagesize;		/* Default page size. */
-	size_t    mp_mmapsize;		/* Maximum file size for mmap. */
-	int       mp_maxopenfd;		/* Maximum open file descriptors. */
-	int       mp_maxwrite;		/* Maximum buffers to write. */
+	db_size_t mp_mmapsize;		/* Maximum file size for mmap. */
+	int32_t mp_maxopenfd;		/* Maximum open file descriptors. */
+	int32_t mp_maxwrite;		/* Maximum buffers to write. */
 	db_timeout_t mp_maxwrite_sleep;	/* Sleep after writing max buffers. */
 
 	/*
@@ -177,14 +179,14 @@ struct __mpool {
 	 * The htab and htab_buckets fields are not thread protected as they
 	 * are initialized during mpool creation, and not modified again.
 	 *
-	 * The last_checked and lru_count fields are thread protected by
-	 * the region lock.
+	 * The last_checked, lru_priority, and lru_generation fields are thread
+	 * protected by the region lock.
 	 */
 	roff_t	  htab;			/* Hash table offset. */
 	u_int32_t htab_buckets;		/* Number of hash table entries. */
 	u_int32_t last_checked;		/* Last bucket checked for free. */
-	u_int32_t lru_count;		/* Counter for buffer LRU. */
-	int32_t   lru_reset;		/* Hash bucket lru reset point. */
+	u_int32_t lru_priority;		/* Priority counter for buffer LRU. */
+	u_int32_t lru_generation;	/* Allocation race condition detector. */
 	u_int32_t htab_mutexes;		/* Number of hash mutexes per region. */
 
 	 /*
@@ -346,11 +348,33 @@ struct __db_mpool_hash {
 };
 
 /*
- * The base mpool priority is 1/4th of the name space, or just under 2^30.
- * When the LRU counter wraps, we shift everybody down to a base-relative
- * value.
+ * Mpool file statistics structure for use in shared memory.
+ * This structure must contain the same fields as the __db_mpool_fstat struct
+ * except for any pointer fields that are filled in only when the struct is
+ * being populated for output through the API.
  */
-#define	MPOOL_BASE_DECREMENT	(UINT32_MAX - (UINT32_MAX / 4))
+struct __db_mpool_fstat_int { /* SHARED */
+	u_int32_t st_pagesize;		/* Page size. */
+#ifndef __TEST_DB_NO_STATISTICS
+	u_int32_t st_map;		/* Pages from mapped files. */
+	uintmax_t st_cache_hit;	/* Pages found in the cache. */
+	uintmax_t st_cache_miss;	/* Pages not found in the cache. */
+	uintmax_t st_page_create;	/* Pages created in the cache. */
+	uintmax_t st_page_in;		/* Pages read in. */
+	uintmax_t st_page_out;		/* Pages written out. */
+#endif
+};
+
+/*
+ * The base mpool priority is 1/4th of the name space, or just under 2^30. When
+ * the LRU priority counter is about to wrap (within a 128-entry 'red zone'
+ * area) we adjust everybody down so that no one is larger than the new LRU
+ * priority.
+ */
+#define	MPOOL_LRU_MAX		UINT32_MAX
+#define	MPOOL_LRU_REDZONE	(MPOOL_LRU_MAX - 128)
+#define	MPOOL_LRU_BASE		(MPOOL_LRU_MAX / 4)
+#define	MPOOL_LRU_DECREMENT	(MPOOL_LRU_MAX - MPOOL_LRU_BASE)
 
 /*
  * Mpool priorities from low to high.  Defined in terms of fractions of the
@@ -367,7 +391,7 @@ struct __db_mpool_hash {
  * MPOOLFILE --
  *	Shared DB_MPOOLFILE information.
  */
-struct __mpoolfile {
+struct __mpoolfile { /* SHARED */
 	db_mutex_t mutex;		/* MPOOLFILE mutex. */
 
 	/* Protected by MPOOLFILE mutex. */
@@ -393,7 +417,7 @@ struct __mpoolfile {
 	 */
 	u_int32_t free_ref;		/* Refcount to freelist. */
 	u_int32_t free_cnt;		/* Count of free pages. */
-	size_t	  free_size;		/* Allocated size of free list. */
+	db_size_t free_size;		/* Allocated size of free list. */
 	roff_t	  free_list;		/* Offset to free list. */
 
 	/*
@@ -449,7 +473,7 @@ struct __mpoolfile {
 	 * the mutex in the get/put routines.  There is a chance that a count
 	 * will get lost.
 	 */
-	DB_MPOOL_FSTAT stat;		/* Per-file mpool statistics. */
+	DB_MPOOL_FSTAT_INT stat;	/* Per-file mpool statistics. */
 
 	/*
 	 * The remaining fields are initialized at open and never subsequently
@@ -496,7 +520,7 @@ struct __mpoolfile {
  * BH --
  *	Buffer header.
  */
-struct __bh {
+struct __bh { /* SHARED */
 	db_mutex_t	mtx_buf;	/* Shared/Exclusive mutex */
 	db_atomic_t	ref;		/* Reference count. */
 #define	BH_REFCOUNT(bhp)	atomic_read(&(bhp)->ref)
@@ -533,7 +557,7 @@ struct __bh {
 	 * (We guarantee size_t alignment to applications in the documentation,
 	 * too.)
 	 */
-	u_int8_t   buf[1];		/* Variable length data. */
+	DB_ALIGN8	u_int8_t buf[1];	/* Variable length data. */
 };
 
 /*
@@ -556,12 +580,10 @@ struct __bh_frozen_a {
 };
 
 #define	MULTIVERSION(dbp)	atomic_read(&(dbp)->mpf->mfp->multiversion)
-#define	IS_PINNED(p)							\
-    (BH_REFCOUNT((BH *)((u_int8_t *)					\
-    (p) - SSZA(BH, buf))) > 0)
+
+#define	PAGE_TO_BH(p)	(BH *)((u_int8_t *)(p) - SSZA(BH, buf))
 #define	IS_DIRTY(p)							\
-    (F_ISSET((BH *)((u_int8_t *)					\
-    (p) - SSZA(BH, buf)), BH_DIRTY|BH_EXCLUSIVE) == (BH_DIRTY|BH_EXCLUSIVE))
+    (F_ISSET(PAGE_TO_BH(p), BH_DIRTY|BH_EXCLUSIVE) == (BH_DIRTY|BH_EXCLUSIVE))
 
 #define	BH_OWNER(env, bhp)						\
     ((TXN_DETAIL *)R_ADDR(&env->tx_handle->reginfo, bhp->td_off))
@@ -651,7 +673,8 @@ struct __bh_frozen_a {
 /*
  * Flags to __memp_ftruncate.
  */
-#define	MP_TRUNC_RECOVER	0x01
+#define	MP_TRUNC_NOCACHE	0x01
+#define	MP_TRUNC_RECOVER	0x02
 
 #if defined(__cplusplus)
 }

@@ -352,7 +352,7 @@ untie %h ;
 
 ok(43, $X = tie(%h, 'DB_File',$Dfile, O_RDWR, 0640, $DB_BTREE ));
 
-# Attempting to delete a non-existant key should fail
+# Attempting to delete a non-existent key should fail
 
 $status = $X->del('joe') ;
 ok(44, $status == 1 );

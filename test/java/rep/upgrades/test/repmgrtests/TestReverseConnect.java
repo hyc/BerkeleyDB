@@ -18,9 +18,11 @@ import java.io.File;
 public class TestReverseConnect extends AbstractUpgTest {
     public interface Ops {
         public void setConfig(Config c);
-        public void joinExistingClient(int site, boolean configMaster, boolean useHB)
+        public void joinExistingClient(int site, boolean useHB)
             throws Exception;
         public void verifyConnect(int site) throws Exception;
+        public void restart(int siteId) throws Exception;
+        public void awaitConnFailure(int siteId) throws Exception;
         public void shutDown(int siteId) throws Exception;
     }
 
@@ -30,6 +32,7 @@ public class TestReverseConnect extends AbstractUpgTest {
             throws Exception;
         public void establishClient(int site, boolean configMaster)
             throws Exception;
+        public void restart(int siteId) throws Exception;
         public void shutDown(int siteId) throws Exception;
     }
     
@@ -50,7 +53,11 @@ public class TestReverseConnect extends AbstractUpgTest {
 
         oldGroup.createMaster(0, true);
         oldGroup.establishClient(1, false);
-        currentGroup.joinExistingClient(1, false, false);
+        oldGroup.shutDown(0);
+
+        currentGroup.restart(1);
+        currentGroup.awaitConnFailure(1);
+        oldGroup.restart(0);
         currentGroup.verifyConnect(1);
 
         oldGroup.shutDown(0);

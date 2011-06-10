@@ -12,7 +12,10 @@
     <link rel="next" href="rep.html" title="Chapter 12.  Berkeley DB Replication" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Transaction FAQ</th>
@@ -155,7 +158,7 @@ are less prone to deadlock than <a href="../api_reference/C/dbopen.html#dbopen_D
             environments.  To move a database into a different environment,
             dump and reload the database before moving it.  If the database
             is too large to dump and reload, the database may be prepared
-            in place using the <a href="../api_reference/C/envlsn_reset.html" class="olink">DB_ENV-&gt;lsn_reset()</a> method or the <span class="bold"><strong>-r</strong></span> argument to the <a href="../api_reference/C/db_load.html" class="olink">db_load utility</a>.
+            in place using the <a href="../api_reference/C/envlsn_reset.html" class="olink">DB_ENV-&gt;lsn_reset()</a> method or the <span class="bold"><strong>-r</strong></span> argument to the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.
         </p>
           </li>
           <li>
@@ -172,7 +175,7 @@ are less prone to deadlock than <a href="../api_reference/C/dbopen.html#dbopen_D
             databases.  If the database is too large to dump and reload,
             the database may be reset in place using the <a href="../api_reference/C/envlsn_reset.html" class="olink">DB_ENV-&gt;lsn_reset()</a>
             method or the <span class="bold"><strong>-r</strong></span> argument to
-            the <a href="../api_reference/C/db_load.html" class="olink">db_load utility</a>.  However, if you reset the database in place,
+            the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.  However, if you reset the database in place,
             you should verify your databases before using them again.  (It
             is possible for the databases to be corrupted by running after
             all of the log files have been removed, and the longer the

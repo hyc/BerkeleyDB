@@ -17,6 +17,7 @@ proc rep006 { method { niter 1000 } { tnum "006" } args } {
 	source ./include.tcl
 	global databases_in_memory 
 	global repfiles_in_memory
+	global env_private
 
 	set logsets [create_logsets 2]
 
@@ -40,6 +41,11 @@ proc rep006 { method { niter 1000 } { tnum "006" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "and private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		foreach l $logsets {
@@ -50,7 +56,7 @@ proc rep006 { method { niter 1000 } { tnum "006" } args } {
 				continue
 			}
 			puts "Rep$tnum ($method $r): Replication and\
-			    non-rep env handles $msg $msg2."
+			    non-rep env handles $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep006_sub $method $niter $tnum $l $r $args
@@ -64,6 +70,7 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 	global is_hp_test
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -75,6 +82,11 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -109,6 +121,7 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 	set env_cmd(M) "berkdb_env_noerr -create -log_max 1000000 \
 	    -lock_max_objects $max_locks -lock_max_locks $max_locks \
 	    -home $masterdir -errpfx MASTER $verbargs $repmemargs \
+	    $privargs \
 	    $m_txnargs $m_logargs -rep_master -rep_transport \
 	    \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M) $recargs]
@@ -118,6 +131,7 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 	set env_cmd(C) "berkdb_env_noerr -create $c_txnargs $c_logargs \
 	    -lock_max_objects $max_locks -lock_max_locks $max_locks \
 	    -home $clientdir -errpfx CLIENT $verbargs $repmemargs \
+	    $privargs \
 	    -rep_client -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C) $recargs]
 
@@ -156,7 +170,8 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 	set skip_for_config 0
 	if { [is_substr $conf "debug_rop"] == 1 \
 	    || [is_substr $conf "debug_wop"] == 1 \
-	    || [is_substr $conf "diagnostic"] == 0 } {
+	    || [is_substr $conf "diagnostic"] == 0 \
+	    || $env_private == 1 } {
 		set skip_for_config 1
 	}
 
@@ -184,7 +199,7 @@ proc rep006_sub { method niter tnum logset recargs largs } {
 		puts "\tRep$tnum.d: Verifying non-master access."
 
 		set rdenv [eval {berkdb_env_noerr} \
-		    -home $masterdir $verbargs]
+		    -home $masterdir $verbargs $privargs]
 		error_check_good rdenv [is_valid_env $rdenv] TRUE
 		#
 		# Open the db read/write which will cause it to try to

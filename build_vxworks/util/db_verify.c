@@ -233,8 +233,9 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 		if (ret != 0)
 			exitval = 1;
 		if (!quiet)
-			printf("Verification of %s %s.\n",
-				argv[0], ret == 0 ? "succeeded" : "failed");
+			printf(DB_STR_A("5105", "Verification of %s %s.\n",
+			    "%s %s\n"), argv[0], ret == 0 ? 
+			    DB_STR_P("succeeded") : DB_STR_P("failed"));
 	}
 
 	if (0) {
@@ -243,7 +244,7 @@ err:		exitval = 1;
 
 	if (dbp != NULL && (ret = dbp->close(dbp, 0)) != 0) {
 		exitval = 1;
-		dbenv->err(dbenv, ret, "close");
+		dbenv->err(dbenv, ret, DB_STR("5106", "close"));
 	}
 	if (dbenv != NULL && (ret = dbenv->close(dbenv, 0)) != 0) {
 		exitval = 1;
@@ -276,10 +277,10 @@ db_verify_version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
-		    v_major, v_minor);
+		fprintf(stderr, DB_STR_A("5107",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname, DB_VERSION_MAJOR,
+		    DB_VERSION_MINOR, v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
 	return (0);

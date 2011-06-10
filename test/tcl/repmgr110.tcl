@@ -19,7 +19,6 @@ proc repmgr110 { } {
 	file mkdir [set dirc $testdir/C]
 	
 	set conf {
-		{rep_set_nsites 3}
 		{rep_set_timeout DB_REP_ELECTION_RETRY 3000000}
 	}
 	make_dbconfig $dira $conf

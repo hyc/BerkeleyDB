@@ -17,9 +17,9 @@ public class PortsConfig {
     public PortsConfig(int nsites) throws IOException {
         
         // For each site we need two ports, a real port and a spoofed
-        // port.  Plus, we need a port for the manager.
+        // port.
         // 
-        int nPorts = 1 + 2 * nsites;
+        int nPorts = 2 * nsites;
         realPorts = new int[nsites];
         spoofPorts = new int[nsites];
 
@@ -27,14 +27,12 @@ public class PortsConfig {
 
         mgrPort = ports[0];
 
-        int j = 1;
+        int j = 0;
         for (int i=0; i<nsites; i++) {
             realPorts[i] = ports[j++];
             spoofPorts[i] = ports[j++];
         }
     }
-
-    public int getManagerPort() { return mgrPort; }
 
     public int getRealPort(int n) { return realPorts[n]; }
     public int getSpoofPort(int n) { return spoofPorts[n]; }

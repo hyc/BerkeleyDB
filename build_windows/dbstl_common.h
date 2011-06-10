@@ -24,11 +24,6 @@
 		throw ex; } } while (0)
 #endif
 
-#ifndef SIZE_T_MAX
-// The max value for size_t variables, one fourth of 2 powers 32.
-#define SIZE_T_MAX 1073741824
-#endif
-
 #if defined( DB_WIN32) || defined(_WIN32)
 #include <windows.h>
 #include <tchar.h>
@@ -46,6 +41,10 @@
 #define _tprintf printf
 #define _ttoi atoi
 #endif
+
+#undef SIZE_T_MAX
+// The max value for size_t variables, one fourth of 2 powers 32.
+#define SIZE_T_MAX 1073741824
 
 // Macro for HAVE_WSTRING (detected by configure)
 #define	HAVE_WSTRING	1

@@ -47,9 +47,9 @@ __log_verify_pp(dbenv, lvconfig)
 	if ((!IS_ZERO_LSN(lvconfig->start_lsn) && lvconfig->start_time != 0) ||
 	    (!IS_ZERO_LSN(lvconfig->end_lsn) && lvconfig->end_time != 0) ||
 	    (lsnrg && timerg)) {
-		__db_errx(dbenv->env,
+		__db_errx(dbenv->env, DB_STR("2501",
 		    "Set either an lsn range or a time range to verify logs "
-		    "in the range, don't mix time and lsn.");
+		    "in the range, don't mix time and lsn."));
 		ret = EINVAL;
 		goto err;
 	}
@@ -248,10 +248,11 @@ startscroll:
 			if (version != newversion) {
 				version = newversion;
 				if (!IS_LOG_VRFY_SUPPORTED(version)) {
-					__db_msg(dbenv->env,
+					__db_msg(dbenv->env, DB_STR_A("2502",
 				"[%lu][%lu] Unsupported version of log file, "
 				"log file number: %u, log file version: %u, "
 				"supported log version: %u.",
+					    "%lu %lu %u %u %u"),
 					    (u_long)key.file,
 					    (u_long)key.offset,
 					    key.file, version, DB_LOGVERSION);
@@ -276,7 +277,8 @@ startscroll:
 				if ((ret = __env_init_verify(env, version,
 				    &dtab)) != 0) {
 					__db_err(dbenv->env, ret,
-					    "callback: initialization");
+					    DB_STR("2503",
+					    "callback: initialization"));
 					goto err;
 				}
 			}
@@ -319,13 +321,14 @@ out:
 	 */
 	__db_log_verify_global_report(logvrfy_hdl);
 	if (ret == DB_LOG_VERIFY_BAD)
-		okmsg = "FAILED";
+		okmsg = DB_STR_P("FAILED");
 	else {
 		DB_ASSERT(dbenv->env, ret == 0);
-		okmsg = "SUCCEEDED";
+		okmsg = DB_STR_P("SUCCEEDED");
 	}
 
-	__db_msg(dbenv->env, "Log verification ended and %s.", okmsg);
+	__db_msg(dbenv->env, DB_STR_A("2504",
+	    "Log verification ended and %s.", "%s"), okmsg);
 
 err:
 	if (logc != NULL)
@@ -370,6 +373,10 @@ __env_init_verify(env, version, dtabp)
 	if ((ret = __ham_init_verify(env, dtabp)) != 0)
 		goto err;
 #endif
+#ifdef HAVE_HEAP
+	if ((ret = __heap_init_verify(env, dtabp)) != 0)
+		goto err;
+#endif
 #ifdef HAVE_QUEUE
 	if ((ret = __qam_init_verify(env, dtabp)) != 0)
 		goto err;
@@ -383,7 +390,8 @@ __env_init_verify(env, version, dtabp)
 		break;
 
 	default:
-		__db_errx(env, "Not supported version %lu", (u_long)version);
+		__db_errx(env, DB_STR_A("2505", "Not supported version %lu",
+		    "%lu"), (u_long)version);
 		ret = EINVAL;
 		break;
 	}

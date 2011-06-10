@@ -28,8 +28,10 @@ egrep DB_RUNRECOVERY $s/*/*.c |
         -e '/mut_win32.c:.*return (DB_RUNRECOVERY);/d' \
         -e '/mut_win32.c:.*ret = DB_RUNRECOVERY;/d' \
 	-e '/rep_backup.c:.*Panic the env and return DB_RUNRECOVERY/d' \
+	-e '/rep_backup.c:.*DB_RUNRECOVERY?/d' \
 	-e '/txn.c:.* \* DB_RUNRECOVERY and we need to/d' \
 	-e '/txn.c:.*returned DB_RUNRECOVERY and we need to/d' \
+	-e '/xa.c:.*(ret == DB_RUNRECOVERY)/d' \
 	> $t1
 [ -s $t1 ] && {
 	echo "DB_RUNRECOVERY used; should be a call to env_panic."

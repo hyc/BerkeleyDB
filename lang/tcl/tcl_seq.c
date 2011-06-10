@@ -27,6 +27,8 @@ static int	tcl_SeqRemove __P((Tcl_Interp *,
     int, Tcl_Obj * CONST*, DB_SEQUENCE *, DBTCL_INFO *));
 static int	tcl_SeqStat __P((Tcl_Interp *,
     int, Tcl_Obj * CONST*, DB_SEQUENCE *));
+static int	tcl_SeqStatPrint __P((Tcl_Interp *,
+    int, Tcl_Obj * CONST*, DB_SEQUENCE *));
 static int	tcl_SeqGetFlags __P((Tcl_Interp *,
     int, Tcl_Obj * CONST*, DB_SEQUENCE *));
 
@@ -54,6 +56,7 @@ seq_Cmd(clientData, interp, objc, objv)
 		"get_range",
 		"remove",
 		"stat",
+		"stat_print",
 		NULL
 	};
 	enum seqcmds {
@@ -65,7 +68,8 @@ seq_Cmd(clientData, interp, objc, objv)
 		SEQGETKEY,
 		SEQGETRANGE,
 		SEQREMOVE,
-		SEQSTAT
+		SEQSTAT,
+		SEQSTATPRT
 	};
 	DB *dbp;
 	DBT key;
@@ -125,6 +129,9 @@ seq_Cmd(clientData, interp, objc, objv)
 	case SEQSTAT:
 		result = tcl_SeqStat(interp, objc, objv, seq);
 		break;
+	case SEQSTATPRT:
+		result = tcl_SeqStatPrint(interp, objc, objv, seq);
+		break;		
 	case SEQGETCACHESIZE:
 		if (objc != 2) {
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -246,6 +253,57 @@ tcl_SeqStat(interp, objc, objv, seq)
 
 error:	__os_ufree(seq->seq_dbp->env, sp);
 	return (result);
+}
+
+/*
+ * tcl_SeqStatPrint --
+ */
+static int
+tcl_SeqStatPrint(interp, objc, objv, seq)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_SEQUENCE *seq;		/* Environment pointer */
+{	
+	static const char *seqstatprtopts[] = {
+		"-clear",
+		 NULL
+	};
+	enum seqstatprtopts {
+		SEQSTATPRTCLEAR
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], seqstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum seqstatprtopts)optindex) {
+		case SEQSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = seq->stat_print(seq, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "seq stat_print");
+error:
+	return (result);
+
 }
 
 /*

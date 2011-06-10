@@ -1409,8 +1409,8 @@ __ham_curadj_recover(env, dbtp, lsnp, op, info)
 		hamc_mode = DB_HAM_CURADJ_ADDMOD;
 		break;
 	default:
-		__db_errx(env,
-		    "Invalid flag in __ham_curadj_recover");
+		__db_errx(env, DB_STR("1122",
+		    "Invalid flag in __ham_curadj_recover"));
 		ret = EINVAL;
 		goto out;
 	}
@@ -1812,8 +1812,8 @@ __ham_groupalloc_42_recover(env, dbtp, lsnp, op, info)
 		/*
 		 * We cannot roll back 4.2 style allocations.
 		 */
-		__db_errx(env,
-"Cannot replicate prepared transactions from master running release 4.2.");
+		__db_errx(env, DB_STR("1123",
+"Cannot replicate prepared transactions from master running release 4.2."));
 		ret = __env_panic(env, EINVAL);
 		goto out;
 	}

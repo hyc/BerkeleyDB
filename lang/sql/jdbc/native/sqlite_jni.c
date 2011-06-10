@@ -2618,7 +2618,10 @@ Java_SQLite_Vm_step(JNIEnv *env, jobject obj, jobject cb)
 
     if (v && v->vm && v->h) {
 	jthrowable exc;
-	int ret, tmp;
+	int ret;
+#if HAVE_SQLITE2
+	int tmp;
+#endif
 	long ncol = 0;
 #if HAVE_SQLITE3
 	freemem *freeproc = 0;
@@ -4891,7 +4894,7 @@ Java_SQLite_Database__1status(JNIEnv *env, jclass cls, jint op,
     int data[2] = { 0, 0 };
     jint jdata[2];
 #if HAVE_SQLITE3
-    ret = sqlite3_status(op, &data[0], &data[2], flag);
+    ret = sqlite3_status(op, &data[0], &data[1], flag);
     if (ret == SQLITE_OK) {
 	jdata[0] = data[0];
 	jdata[1] = data[1];
@@ -4921,7 +4924,7 @@ Java_SQLite_Database__1db_1status(JNIEnv *env, jobject obj, jint op,
 #else
 #if HAVE_SQLITE3
 	ret = sqlite3_db_status((sqlite3 *) h->sqlite, op, &data[0],
-				&data[2], flag);
+				&data[1], flag);
 #endif
 #endif
 	if (ret == SQLITE_OK) {

@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_csvquery", "ex_csvquery.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_env", "ex_env.vcxproj", "{443530F5-CCC3-40C8-A89B-AEF6C14D3A41}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_heap", "ex_heap.vcxproj", "{B736B89C-B7EE-4C45-88BA-174B9A1956B3}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_lock", "ex_lock.vcxproj", "{B254668F-C28F-4B14-92A5-3BF4B83D02EE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_java", "ex_java.vcxproj", "{ECFCD4D6-3063-11DF-95B2-000D88A6F448}"
@@ -21,6 +23,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_mpool", "ex_mpool.vcxproj", "{0F6925F0-6243-47E0-A0FF-05F70B15FC2C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_rep_base", "ex_rep_base.vcxproj", "{BDBF0EE2-1551-47A4-ACD0-B22B05DF4D77}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_rep_chan", "ex_rep_chan.vcxproj", "{080516C0-670A-11E0-AE3E-0800200C9A66}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_rep_mgr", "ex_rep_mgr.vcxproj", "{365A89B8-B5A5-4EC6-990B-08254028E1A6}"
 EndProject

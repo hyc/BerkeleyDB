@@ -12,7 +12,10 @@
     <link rel="next" href="transapp_data_open.html" title="Opening the databases" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Opening the environment</th>
@@ -68,6 +71,7 @@
     <a href="../api_reference/C/dbopen.html#open_DB_THREAD" class="olink">DB_THREAD</a> flag, and so may be used by any number of threads that we
     may subsequently create.
 </p>
+      <a id="prog_transapp1"></a>
       <pre class="programlisting">#include &lt;sys/types.h&gt;
 #include &lt;sys/stat.h&gt;
 
@@ -83,12 +87,12 @@
 
 void  env_dir_create(void);
 void  env_open(DB_ENV **);
+...
 
 int
-main(int argc, char *argv)
+main(int argc, char *argv[])
 {
     extern int optind;
-    DB *db_cats, *db_color, *db_fruit;
     DB_ENV *dbenv;
     int ch;
 
@@ -103,9 +107,12 @@ main(int argc, char *argv)
 
     env_dir_create();
     env_open(&amp;dbenv);
+    ...
 
     return (0);
 }
+
+...
 
 void
 env_dir_create()
@@ -165,7 +172,7 @@ env_open(DB_ENV **dbenvp)
     *dbenvp = dbenv;
 }</pre>
       <p>
-    After running this initial program, we can use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a> to display
+    After running this initial program, we can use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility to display
     the contents of the environment directory:
 </p>
       <pre class="programlisting">prompt&gt; db_stat -e -h TXNAPP
@@ -198,7 +205,8 @@ Txn Region: 5.
 8KB     Size (8192 bytes).
 -1      Segment ID.
 1       Locks granted without waiting.
-0       Locks granted after waiting.</pre>
+0       Locks granted after waiting.
+</pre>
     </div>
     <div class="navfooter">
       <hr />

@@ -49,21 +49,60 @@ proc repmgr026_sub { tnum client_down use_leases } {
 	file mkdir [set dira $testdir/SITE_A]
 	file mkdir [set dirb $testdir/SITE_B]
 	file mkdir [set dirc $testdir/SITE_C]
-	foreach { porta portb portc } [available_ports 3] {}
+	file mkdir [set dird $testdir/SITE_D]
+	file mkdir [set dire $testdir/SITE_E]
+	foreach { porta portb portc portd porte } [available_ports 5] {}
 
-	# Cold boot the group (with or without site C), giving site A a
-	# high priority.
-	# 
+	# First, just create/establish the group.
+	puts -nonewline "Repmgr$tnum: Create a group of 5 sites: "
 	set common "-create -txn $verbargs $repmemargs \
 	    -rep -thread -event"
 	if { $use_leases } {
-		append common " -rep_lease {[list 3 3000000]} "
+		append common " -rep_lease {[list 3000000]} "
 	}
-	set common_mgr "-nsites 3 -start elect \
+	set cmda "berkdb_env_noerr $common -errpfx SITE_A -home $dira"
+	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
+	set cmdc "berkdb_env_noerr $common -errpfx SITE_C -home $dirc"
+	set cmdd "berkdb_env_noerr $common -errpfx SITE_D -home $dird"
+	set cmde "berkdb_env_noerr $common -errpfx SITE_E -home $dire"
+	set common_mgr " -start elect \
 	    -timeout {connection_retry 5000000} \
-	    -timeout {election_retry 2000000}"
-	set times "-timeout {full_election 60000000} \
+	    -timeout {election_retry 2000000} \
+	    -timeout {full_election 60000000} \
 	    -timeout {election 5000000} -timeout {ack 3000000}"
+	set enva [eval $cmda]
+	eval $enva repmgr $common_mgr  \
+	    -local {[list localhost $porta creator]}
+	puts -nonewline "." ; 	flush stdout
+	set envb [eval $cmdb]
+	eval $envb repmgr $common_mgr \
+	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	await_startup_done $envb
+	puts -nonewline "." ; 	flush stdout
+	set envc [eval $cmdc]
+	eval $envc repmgr $common_mgr \
+	    -local {[list localhost $portc]} -remote {[list localhost $porta]}
+	await_startup_done $envc
+	puts -nonewline "." ; 	flush stdout
+	set envd [eval $cmdd]
+	eval $envd repmgr $common_mgr \
+	    -local {[list localhost $portd]} -remote {[list localhost $porta]}
+	await_startup_done $envd
+	puts -nonewline "." ; 	flush stdout
+	set enve [eval $cmde]
+	eval $enve repmgr $common_mgr \
+	    -local {[list localhost $porte]} -remote {[list localhost $porta]}
+	await_startup_done $enve
+	puts "."
+	$enve close
+	$envd close
+	$envc close
+	$envb close
+	$enva close
+
+	# Cold boot the group (with or without site E), giving site A a
+	# high priority.
+	# 
 
 	# The wait_limit's are intended to be an amount that is way more than
 	# the expected timeout, used for nothing more than preventing the test
@@ -75,33 +114,33 @@ proc repmgr026_sub { tnum client_down use_leases } {
 	set full_secs_leeway 59
 	set full_wait_limit 85
 
-	puts "\tRepmgr$tnum.a: Start first two sites."
-	set cmda "berkdb_env_noerr $common -errpfx SITE_A -home $dira"
+	puts "\tRepmgr$tnum.a: Start first four sites."
 	set enva [eval $cmda]
-	eval $enva repmgr $common_mgr $times -pri 200 \
-	    -local {[list localhost $porta]}
+	eval $enva repmgr $common_mgr -pri 200 -local {[list localhost $porta]}
 
-	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
 	set envb [eval $cmdb]
-	eval $envb repmgr $common_mgr $times -pri 100 \
-	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	eval $envb repmgr $common_mgr -pri 100 -local {[list localhost $portb]}
 
-	set cmdc "berkdb_env_noerr $common -errpfx SITE_C -home $dirc"
+	set envc [eval $cmdc]
+	eval $envc repmgr $common_mgr -pri 90 -local {[list localhost $portc]}
+
+	set envd [eval $cmdd]
+	eval $envd repmgr $common_mgr -pri 80 -local {[list localhost $portd]}
+
 	if { $client_down } {
-		set envc NONE
+		set enve NONE
 	} else {
-		puts "\tRepmgr$tnum.b: Start third site."
-		set envc [eval $cmdc]
-		eval $envc repmgr $common_mgr $times -pri 50 \
-		    -local {[list localhost $portc]} \
-		    -remote {[list localhost $porta]}
+		puts "\tRepmgr$tnum.b: Start fifth site."
+		set enve [eval $cmde]
+		eval $enve repmgr $common_mgr -pri 50 \
+		    -local {[list localhost $porte]}
 	}
 
 	# wait for results, and make sure they're correct
 	#
-	set envlist [list $enva $envb]
-	if { $envc != "NONE" } {
-		lappend envlist $envc
+	set envlist [list $enva $envb $envc $envd]
+	if { $enve != "NONE" } {
+		lappend envlist $enve
 	}
 	set limit $full_wait_limit
 	puts "\tRepmgr$tnum.c: wait (up to $limit seconds) for first election."
@@ -120,9 +159,13 @@ proc repmgr026_sub { tnum client_down use_leases } {
 	$enva event_info -clear
 	await_startup_done $envb
 	$envb event_info -clear
-	if { $envc != "NONE" } {
-		await_startup_done $envc
-		$envc event_info -clear
+	await_startup_done $envc
+	$envc event_info -clear
+	await_startup_done $envd
+	$envd event_info -clear
+	if { $enve != "NONE" } {
+		await_startup_done $enve
+		$enve event_info -clear
 	}
 
 	# Shut down site A, in order to test elections with less than the whole
@@ -132,68 +175,33 @@ proc repmgr026_sub { tnum client_down use_leases } {
 	# 
 	puts "\tRepmgr$tnum.f: shut down master site A"
 	if { $client_down } {
-
-		# The third site is already down, so now there's only site B
-		# running.  In its first election attempt it won't be able to
-		# succeed.  In subsequent attempts it won't bother with the
-		# "fast election" trick, so we can avoid that just by waiting.
+		# The fifth site is already down, so now we'll have just B, C,
+		# and D running.  Therefore, even with repmgr pulling its "fast
+		# election" (n-1) trick, we don't have enough votes for a
+		# full-participation short circuit; so this is a valid test of
+		# the "normal" election timeout.
 		#
 		$enva close
-		set initial_egen \
-		    [stat_field $envb rep_stat "Election generation number"]
-		
-		# Just to be safe, skip over 2 egens.
-		# 
-		puts "\tRepmgr$tnum.f: skip over \"fast election\" egen"
-		set goal [expr $initial_egen + 2]
-		await_condition {[expr \
-		    [stat_field $envb rep_stat "Election generation number"] \
-		    >= $goal]}
-
-		puts "\tRepmgr$tnum.g: Start third client"
-		set envc [eval $cmdc]
-		eval $envc repmgr $common_mgr $times -pri 50 \
-		    -local {[list localhost $portc]} \
-		    -remote {[list localhost $portb]}
 	} else {
-
-		# Here the third client is not initially down, so waiting (as we
-		# did above) won't work.  Instead we'll fake a higher group size
-		# in order to compensate for the "n-1" trick.  However, that
-		# doesn't work when leases are in effect, since leases currently
-		# disallow group size changes.  So just skip this part of the
-		# test in this case.
-		# 
-		if { $use_leases } {
-			$envc close
-			$envb close
-			$enva close
-			return
-		}
-		$envb repmgr -nsites 4
-		$envc repmgr -nsites 4
-
+		# Here all sites are running, so if we just killed the master
+		# repmgr would invoke its "fast election" trick, resulting in no
+		# timeout.  Since the purpose of this test is to ensure the
+		# correct use of timeouts, that's no good.  Instead, let's first
+		# kill one more other site.
+		$enve close
 		$enva close
-		set initial_egen \
-		    [stat_field $envb rep_stat "Election generation number"]
-		set goal [expr $initial_egen + 2]
-		await_condition {[expr \
-		    [stat_field $envb rep_stat "Election generation number"] \
-		    >= $goal]}
-		$envb repmgr -nsites 3
-		$envc repmgr -nsites 3
 	}
 
 	# wait for results, and check them
 	# 
-	set envlist [list $envb $envc]
+	set envlist [list $envb $envc $envd]
 	set limit $elect_wait_limit
 	puts "\tRepmgr$tnum.h: wait (up to $limit seconds) for second election."
 	set t [repmgr026_await_election_result $envlist $limit]
 	error_check_good normal_election [expr $t < $full_secs_leeway] 1
 	puts "\tRepmgr$tnum.i: second election completed in $t seconds"
 
-	await_startup_done $envc
+	$envd close
 	$envc close
 	$envb close
 }

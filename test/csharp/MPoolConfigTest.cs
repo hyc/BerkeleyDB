@@ -18,11 +18,11 @@ namespace CsharpAPITest
 	[TestFixture]
 	public class MPoolConfigTest : CSharpTestFixture
 	{
-
 		[TestFixtureSetUp]
 		public void SetUpTestFixture()
 		{
 			testFixtureName = "MPoolConfigTest";
+			base.SetUpTestfixture();
 		}
 
 		[Test]

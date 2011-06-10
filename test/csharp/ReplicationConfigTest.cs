@@ -52,43 +52,6 @@ namespace CsharpAPITest
 		}
 
 		[Test]
-		public void TestRepMgrLocalSite()
-		{
-			string host = "127.0.0.0";
-			uint port = 8888;
-			testName = "TestRepMgrLocalSite";
-			SetUpTest(false);
-
-			ReplicationConfig repConfig1 = new ReplicationConfig();
-			repConfig1.RepMgrLocalSite = new ReplicationHostAddress();
-			repConfig1.RepMgrLocalSite.Host = host;
-			repConfig1.RepMgrLocalSite.Port = port;
-			Assert.AreEqual(host, repConfig1.RepMgrLocalSite.Host);
-			Assert.AreEqual(port, repConfig1.RepMgrLocalSite.Port);
-
-			ReplicationConfig repConfig2 = new ReplicationConfig();
-			repConfig2.RepMgrLocalSite =
-			    new ReplicationHostAddress(host, port);
-			Assert.AreEqual(host, repConfig2.RepMgrLocalSite.Host);
-			Assert.AreEqual(port, repConfig2.RepMgrLocalSite.Port);
-
-			ReplicationConfig repConfig3 = new ReplicationConfig();
-			repConfig3.RepMgrLocalSite =
-			    new ReplicationHostAddress(host + ":" + port);
-			Assert.AreEqual(host, repConfig3.RepMgrLocalSite.Host);
-			Assert.AreEqual(port, repConfig3.RepMgrLocalSite.Port);
-
-			try
-			{
-				repConfig3.RepMgrLocalSite =
-				    new ReplicationHostAddress(host + port);
-				throw new TestException();
-			}
-			catch (ArgumentException) { 
-			}
-		}
-		
-		[Test]
 		public void TestRepMgrAckPolicy()
 		{
 			testName = "TestRepMgrAckPolicy";
@@ -150,14 +113,14 @@ namespace CsharpAPITest
 			    cfg.AutoInit, compulsory);
 			Configuration.ConfirmBool(xmlElement, "NoBlocking",
 			    cfg.NoBlocking, compulsory);
-			Configuration.ConfirmUint(xmlElement, "NSites",
-			    cfg.NSites, compulsory);
 			Configuration.ConfirmUint(xmlElement, "Priority",
 			    cfg.Priority, compulsory);
 			Configuration.ConfirmAckPolicy(xmlElement, 
 			    "RepMgrAckPolicy", cfg.RepMgrAckPolicy, compulsory);
-			Configuration.ConfirmReplicationHostAddress(xmlElement,
-			    "RepMgrLocalSite", cfg.RepMgrLocalSite, compulsory);
+			if (cfg.RepmgrSitesConfig.Count > 0)
+				Configuration.ConfirmReplicationHostAddress(
+				    xmlElement, "RepMgrLocalSite", 
+				    cfg.RepmgrSitesConfig[0], compulsory);
 			Configuration.ConfirmBool(xmlElement, "Strict2Site",
 			    cfg.Strict2Site, compulsory);
 			Configuration.ConfirmBool(xmlElement, "UseMasterLeases",
@@ -204,18 +167,17 @@ namespace CsharpAPITest
 			    ref cfg.AutoInit, compulsory);
 			Configuration.ConfigBool(xmlElement, "NoBlocking",
 			    ref cfg.NoBlocking, compulsory);
-			if (Configuration.ConfigUint(xmlElement, "NSites",
-			    ref uintValue, compulsory))
-				cfg.NSites = uintValue;
 			if (Configuration.ConfigUint(xmlElement, "Priority",
 			    ref uintValue, compulsory))
 				cfg.Priority = uintValue;
 			Configuration.ConfigAckPolicy(xmlElement,
 			    "RepMgrAckPolicy", ref cfg.RepMgrAckPolicy, 
 			    compulsory);
-			cfg.RepMgrLocalSite = new ReplicationHostAddress();
+			DbSiteConfig siteConfig = new DbSiteConfig();
+			siteConfig.LocalSite = true;
 			Configuration.ConfigReplicationHostAddress(xmlElement,
-			    "RepMgrLocalSite", ref cfg.RepMgrLocalSite, compulsory);
+			    "RepMgrLocalSite", ref siteConfig, compulsory);
+			cfg.RepmgrSitesConfig.Add(siteConfig);
 			Configuration.ConfigBool(xmlElement, "Strict2Site",
 			    ref cfg.Strict2Site, compulsory);
 			Configuration.ConfigBool(xmlElement, "UseMasterLeases",

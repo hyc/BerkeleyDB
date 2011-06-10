@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Getting Started with the Oracle Berkeley DB SQL APIs" />
     <link rel="up" href="dbsqlbasics.html" title="Chapter 1. Berkeley DB SQL: The Absolute Basics" />
     <link rel="prev" href="bdb-concepts.html" title="Berkeley DB Concepts" />
-    <link rel="next" href="lockingnotes.html" title="Chapter 2. Locking Notes" />
+    <link rel="next" href="sequencesupport.html" title="Using Sequences" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Encryption</th>
@@ -20,7 +23,7 @@
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="bdb-concepts.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 1. Berkeley DB SQL: The Absolute Basics</th>
-          <td width="20%" align="right"> <a accesskey="n" href="lockingnotes.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="sequencesupport.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -33,13 +36,26 @@
           </div>
         </div>
       </div>
-      <p>The Berkeley DB SQL interface supports the SQLite Encryption Extension (SEE) to ensure security of
-			your data. The supported encryption algorithm is AES-128 in CBC mode.
-			For more information on the concepts relating to BDB encryption, see the <a href="../programmer_reference/env_encrypt.html" class="olink">Programmer's Reference Guide.</a></p>
-      <p>To learn how to use the SQLite Encryption Extension (SEE), see the
-				official <a class="ulink" href="http://www.hwaci.com/sw/sqlite/see.html" target="_top">SQLite
-                    Documentation Page.</a></p>
-      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3>The Berkeley DB SQL interface does not support the sqlite3_rekey method.</div>
+      <p>
+            The Berkeley DB SQL interface supports the SQLite Encryption Extension (SEE) to ensure security of
+            your data. The supported encryption algorithm is AES-128 in CBC mode.
+            For more information on the concepts relating to BDB encryption, see the 
+            <span>
+                <a href="../programmer_reference/env_encrypt.html" class="olink">Berkeley DB Programmer's Reference Guide.</a>
+            </span>
+            
+        </p>
+      <p>
+            To learn how to use the SQLite Encryption Extension (SEE), see the
+            official <a class="ulink" href="http://www.hwaci.com/sw/sqlite/see.html" target="_top">SQLite
+            Documentation Page.</a>
+        </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+                The Berkeley DB SQL interface does not support the sqlite3_rekey method.
+            </p>
+      </div>
     </div>
     <div class="navfooter">
       <hr />
@@ -49,14 +65,14 @@
           <td width="20%" align="center">
             <a accesskey="u" href="dbsqlbasics.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="lockingnotes.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="sequencesupport.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Berkeley DB Concepts </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 2. Locking Notes</td>
+          <td width="40%" align="right" valign="top"> Using Sequences</td>
         </tr>
       </table>
     </div>

@@ -12,7 +12,10 @@
     <link rel="next" href="dbset_h_compare.html" title="DB-&gt;set_h_compare()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB-&gt;set_flags()</th>
@@ -59,7 +62,7 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50500720"></a>Parameters</h3>
+              <h3 class="title"><a id="id3868756"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -67,7 +70,7 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50499616"></a>flags</h4>
+                <h4 class="title"><a id="id3868737"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -188,13 +191,17 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
                          duplicate data items manually.
                     </p>
                 <p>
-                         Calling <code class="methodname">DB-&gt;set_flags()</code> with the DB_DUP flag affects the database,
-                         including all threads of control accessing the database.
+                         Calling <code class="methodname">DB-&gt;set_flags()</code>
+                         with the DB_DUP flag affects the database,
+                         including all threads of control accessing the
+                         database.
                     </p>
                 <p>
-                            If the database already exists when <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>  
-                            is called, the DB_DUP flag must be the same as the existing database or an error will be
-                            returned.
+                        If the database already exists when 
+                        <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>
+                        is called, the DB_DUP flag must be the same as
+                        the existing database or an error will be
+                        returned.
                     </p>
                 <p>
                         It is an error to specify both DB_DUP and DB_RECNUM.
@@ -215,13 +222,17 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
                          specify both DB_DUPSORT and DB_RECNUM.
                     </p>
                 <p>
-                         Calling <code class="methodname">DB-&gt;set_flags()</code> with the DB_DUPSORT flag affects the
-                         database, including all threads of control accessing the database.
+                         Calling <code class="methodname">DB-&gt;set_flags()</code>
+                         with the DB_DUPSORT flag affects the database,
+                         including all threads of control accessing the
+                         database.
                     </p>
                 <p>
-                            If the database already exists when <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>  
-                            is called, the DB_DUPSORT flag must be the same as the existing database or an error
-                            will be returned.
+                        If the database already exists when 
+                        <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>
+                        is called, the DB_DUPSORT flag must be the same
+                        as the existing database or an error will be
+                        returned.
                     </p>
               </li>
               <li>
@@ -508,7 +519,7 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50496536"></a>Errors</h3>
+              <h3 class="title"><a id="id3868636"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -524,7 +535,7 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50529800"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3868217"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -537,7 +548,7 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50539920"></a>Class</h3>
+              <h3 class="title"><a id="id3869419"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -549,7 +560,7 @@ DB-&gt;set_flags(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50492008"></a>See Also</h3>
+              <h3 class="title"><a id="id3868390"></a>See Also</h3>
             </div>
           </div>
         </div>

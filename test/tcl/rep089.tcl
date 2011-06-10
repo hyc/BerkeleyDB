@@ -15,6 +15,7 @@ proc rep089 { method { niter 200 } { tnum "089" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	if { $checking_valid_methods } {
 		set test_methods {}
@@ -46,6 +47,11 @@ proc rep089 { method { niter 200 } { tnum "089" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# This test needs to set its own pagesize.
 	set pgindex [lsearch -exact $args "-pagesize"]
 	if { $pgindex != -1 } {
@@ -56,7 +62,7 @@ proc rep089 { method { niter 200 } { tnum "089" } args } {
 	set args [convert_args $method $args]
 
 	puts -nonewline "Rep$tnum: Mpool cleanup on aborted"
-	puts " internal init $msg $msg2."
+	puts " internal init $msg $msg2 $msg3."
 	rep089_sub $method $niter $tnum $args
 }
 
@@ -66,6 +72,7 @@ proc rep089_sub { method niter tnum largs } {
 	global verbose_type
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
@@ -75,6 +82,11 @@ proc rep089_sub { method niter tnum largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -94,7 +106,7 @@ proc rep089_sub { method niter tnum largs } {
 	# here and in the client, during this first "set up" part of the test.
 	# 
 	repladd 1
-	set env_cmd(M) "berkdb_env -create -txn $repmemargs \
+	set env_cmd(M) "berkdb_env -create -txn $repmemargs $privargs \
 	    $verbargs -home $masterdir -errpfx MASTER -rep_master"
 	set masterenv [eval $env_cmd(M) -rep_transport {{1 rep089_send}}]
 
@@ -118,7 +130,7 @@ proc rep089_sub { method niter tnum largs } {
 	puts "\tRep$tnum.b: Create a client, and start internal init."
 
 	repladd 2
-	set env_cmd(C) "berkdb_env -create -txn $repmemargs \
+	set env_cmd(C) "berkdb_env -create -txn $repmemargs $privargs \
 	    $verbargs -home $clientdir -errpfx CLIENT -rep_client \
 	    -rep_transport \[list 2 rep089_send\]"
 	set clientenv [eval $env_cmd(C)]

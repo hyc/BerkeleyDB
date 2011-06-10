@@ -10,8 +10,8 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DB_CREATE_DLL;WIN32;_UNICODE;UNICODE;DIAGNOSTIC;CONFIG_TEST;_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86 /FIXED:NO /export:__db_assert" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb51d.dll" ProgramDatabaseFile="$(OutDir)/libdb51d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb51d.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;_UNICODE;UNICODE;DB_CREATE_DLL;CONFIG_TEST;_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86 /FIXED:NO /export:__db_assert" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb52d.dll" ProgramDatabaseFile="$(OutDir)/libdb52d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb52d.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -21,19 +21,35 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;DB_CREATE_DLL;WIN32;_UNICODE;UNICODE;_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb51.dll" ProgramDatabaseFile="$(OutDir)/libdb51.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb51.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_UNICODE;UNICODE;DB_CREATE_DLL;_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb52.dll" ProgramDatabaseFile="$(OutDir)/libdb52.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb52.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
+    <Configuration Name="Static Debug|Win32" OutputDirectory="..\build_windows\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_UNICODE;UNICODE;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb52sd.lib" AdditionalOptions="/machine:x86"/></Configuration>
+    <Configuration Name="Static Release|Win32" OutputDirectory="..\build_windows\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_UNICODE;UNICODE;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb52s.lib" AdditionalOptions="/machine:x86"/></Configuration>
     <Configuration Name="Debug|x64" OutputDirectory="..\build_windows\$(PlatformName)\Debug" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool"/>
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DB_CREATE_DLL;WIN32;_UNICODE;UNICODE;DIAGNOSTIC;CONFIG_TEST;_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64 /FIXED:NO /export:__db_assert" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb51d.dll" ProgramDatabaseFile="$(OutDir)/libdb51d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb51d.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;_UNICODE;UNICODE;DB_CREATE_DLL;CONFIG_TEST;_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64 /FIXED:NO /export:__db_assert" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb52d.dll" ProgramDatabaseFile="$(OutDir)/libdb52d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb52d.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -43,11 +59,27 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;DB_CREATE_DLL;WIN32;_UNICODE;UNICODE;_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb51.dll" ProgramDatabaseFile="$(OutDir)/libdb51.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb51.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_UNICODE;UNICODE;DB_CREATE_DLL;_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="ws2_32.lib" AdditionalLibraryDirectories="../lib" OutputFile="$(OutDir)/libdb52.dll" ProgramDatabaseFile="$(OutDir)/libdb52.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb52.lib" ModuleDefinitionFile="..\build_windows\libdb.def" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
+    <Configuration Name="Static Debug|x64" OutputDirectory="..\build_windows\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_UNICODE;UNICODE;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb52sd.lib" AdditionalOptions="/machine:x64"/></Configuration>
+    <Configuration Name="Static Release|x64" OutputDirectory="..\build_windows\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../build_windows,../src,../src/dbinc,../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_UNICODE;UNICODE;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb52s.lib" AdditionalOptions="/machine:x64"/></Configuration>
   </Configurations>
   <References/>
   <Files>
@@ -75,6 +107,7 @@
     <File RelativePath="..\src\db\crdel_auto.c"/>
     <File RelativePath="..\src\db\crdel_rec.c"/>
     <File RelativePath="..\src\crypto\crypto.c"/>
+    <File RelativePath="..\lang\cxx\cxx_channel.cpp"/>
     <File RelativePath="..\lang\cxx\cxx_db.cpp"/>
     <File RelativePath="..\lang\cxx\cxx_dbc.cpp"/>
     <File RelativePath="..\lang\cxx\cxx_dbt.cpp"/>
@@ -85,6 +118,7 @@
     <File RelativePath="..\lang\cxx\cxx_mpool.cpp"/>
     <File RelativePath="..\lang\cxx\cxx_multi.cpp"/>
     <File RelativePath="..\lang\cxx\cxx_seq.cpp"/>
+    <File RelativePath="..\lang\cxx\cxx_site.cpp"/>
     <File RelativePath="..\lang\cxx\cxx_txn.cpp"/>
     <File RelativePath="..\src\db\db.c"/>
     <File RelativePath="..\src\db\db_am.c"/>
@@ -95,6 +129,7 @@
     <File RelativePath="..\src\db\db_cds.c"/>
     <File RelativePath="..\src\db\db_compact.c"/>
     <File RelativePath="..\src\db\db_conv.c"/>
+    <File RelativePath="..\src\db\db_copy.c"/>
     <File RelativePath="..\src\db\db_dispatch.c"/>
     <File RelativePath="..\src\db\db_dup.c"/>
     <File RelativePath="..\src\common\db_err.c"/>
@@ -165,6 +200,16 @@
     <File RelativePath="..\src\hash\hash_stat.c"/>
     <File RelativePath="..\src\hash\hash_upgrade.c"/>
     <File RelativePath="..\src\hash\hash_verify.c"/>
+    <File RelativePath="..\src\heap\heap.c"/>
+    <File RelativePath="..\src\heap\heap_auto.c"/>
+    <File RelativePath="..\src\heap\heap_autop.c"/>
+    <File RelativePath="..\src\heap\heap_conv.c"/>
+    <File RelativePath="..\src\heap\heap_method.c"/>
+    <File RelativePath="..\src\heap\heap_open.c"/>
+    <File RelativePath="..\src\heap\heap_rec.c"/>
+    <File RelativePath="..\src\heap\heap_reclaim.c"/>
+    <File RelativePath="..\src\heap\heap_stat.c"/>
+    <File RelativePath="..\src\heap\heap_verify.c"/>
     <File RelativePath="..\src\hmac\hmac.c"/>
     <File RelativePath="..\lang\hsearch\hsearch.c"/>
     <File RelativePath="..\src\clib\isalpha.c"/>
@@ -267,7 +312,7 @@
     <File RelativePath="..\src\qam\qam_stat.c"/>
     <File RelativePath="..\src\qam\qam_upgrade.c"/>
     <File RelativePath="..\src\qam\qam_verify.c"/>
-    <File RelativePath="..\src\rep\rep_auto.c"/>
+    <File RelativePath="..\src\rep\rep_automsg.c"/>
     <File RelativePath="..\src\rep\rep_backup.c"/>
     <File RelativePath="..\src\rep\rep_elect.c"/>
     <File RelativePath="..\src\rep\rep_lease.c"/>
@@ -279,12 +324,13 @@
     <File RelativePath="..\src\rep\rep_util.c"/>
     <File RelativePath="..\src\rep\rep_verify.c"/>
     <File RelativePath="..\src\repmgr\repmgr_auto.c"/>
+    <File RelativePath="..\src\repmgr\repmgr_automsg.c"/>
     <File RelativePath="..\src\repmgr\repmgr_elect.c"/>
     <File RelativePath="..\src\repmgr\repmgr_method.c"/>
     <File RelativePath="..\src\repmgr\repmgr_msg.c"/>
     <File RelativePath="..\src\repmgr\repmgr_net.c"/>
     <File RelativePath="..\src\repmgr\repmgr_queue.c"/>
-    <File RelativePath="..\src\repmgr\repmgr_rereq.c"/>
+    <File RelativePath="..\src\repmgr\repmgr_rec.c"/>
     <File RelativePath="..\src\repmgr\repmgr_sel.c"/>
     <File RelativePath="..\src\repmgr\repmgr_stat.c"/>
     <File RelativePath="..\src\repmgr\repmgr_util.c"/>
@@ -310,6 +356,8 @@
     <File RelativePath="..\src\common\util_log.c"/>
     <File RelativePath="..\src\common\util_sig.c"/>
     <File RelativePath="..\src\common\zerofill.c"/>
+    <File RelativePath="..\src\xa\xa.c"/>
+    <File RelativePath="..\src\xa\xa_map.c"/>
   </Files>
   <Globals/>
 </VisualStudioProject>

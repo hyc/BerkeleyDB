@@ -19,7 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#define	sleep(s)		Sleep(1000 * (s))
+#else /* !_WIN32 */
 #include <unistd.h>
 #endif
 
@@ -50,15 +53,14 @@ static void
 usage()
 {
     fprintf(stderr, "usage: %s ", progname);
-    fprintf(stderr, "-h home -l host:port -n nsites\n");
+    fprintf(stderr, "-h home -l|-L host:port\n");
     fprintf(stderr, "\t\t[-r host:port][-p priority]\n");
     fprintf(stderr, "where:\n");
     fprintf(stderr, "\t-h identifies the environment home directory ");
     fprintf(stderr, "(required).\n");
     fprintf(stderr, "\t-l identifies the host and port used by this ");
-    fprintf(stderr, "site (required).\n");
-    fprintf(stderr, "\t-n identifies the number of sites in this ");
-    fprintf(stderr, "replication group (required).\n");
+    fprintf(stderr, "site (required unless L is specified).\n");
+    fprintf(stderr, "\t-L identifies the local site as group creator. \n");
     fprintf(stderr, "\t-r identifies another site participating in "); 
     fprintf(stderr, "this replication group\n");
     fprintf(stderr, "\t-p identifies the election priority used by ");
@@ -70,16 +72,17 @@ int
 main(int argc, char *argv[])
 {
     DB_ENV *dbenv;
+    DB_SITE *dbsite;
     extern char *optarg;
     const char *home;
     char ch, *host, *portstr;
-    int local_is_set, ret, totalsites;
+    int local_is_set, ret, is_group_creator;
     u_int16_t port;
     /* Used to track whether this is a replica or a master. */
     APP_DATA my_app_data;
 
     dbenv = NULL;
-    ret = local_is_set = totalsites = 0;
+    ret = local_is_set = is_group_creator = 0;
     home = NULL;
 
     my_app_data.is_master = 0;  /* Assume that we start as a replica */
@@ -98,12 +101,14 @@ main(int argc, char *argv[])
     dbenv->rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);
 
     /* Collect the command line options. */
-    while ((ch = getopt(argc, argv, "h:l:n:p:r:")) != EOF)
+    while ((ch = getopt(argc, argv, "h:l:L:p:r:")) != EOF)
 	switch (ch) {
 	case 'h':
 	    home = optarg;
 	    break;
 	/* Set the host and port used by this environment. */
+	case 'L':
+	    is_group_creator = 1; /* FALLTHROUGH */
 	case 'l':
 	    host = strtok(optarg, ":");
 	    if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -111,18 +116,21 @@ main(int argc, char *argv[])
 		goto err;
 	    }
 	    port = (unsigned short)atoi(portstr);
-	    if (dbenv->repmgr_set_local_site(dbenv, host, port, 0) != 0) {
-		fprintf(stderr,
-		    "Could not set local address %s.\n", host);
+	    if ((ret =
+	      dbenv->repmgr_site(dbenv, host, port, &dbsite, 0)) != 0){
+		fprintf(stderr, "Could not set local address %s:%d.\n",
+		  host, port);
 		goto err;
 	    }
+	    dbsite->set_config(dbsite, DB_LOCAL_SITE, 1);
+	    if (is_group_creator)
+		dbsite->set_config(dbsite, DB_GROUP_CREATOR, 1);
+
+	    if ((ret = dbsite->close(dbsite)) != 0) {
+		dbenv->err(dbenv, ret, "DB_SITE->close");
+		goto err;
+	}
 	    local_is_set = 1;
-	    break;
-	/* Set the number of sites in this replication group. */
-	case 'n':
-	    totalsites = atoi(optarg);
-	    if ((ret = dbenv->rep_set_nsites(dbenv, totalsites)) != 0)
-		dbenv->err(dbenv, ret, "set_nsites");
 	    break;
 	/* Set this replica's election priority. */
 	case 'p':
@@ -136,9 +144,13 @@ main(int argc, char *argv[])
 		goto err;
 	    }
 	    port = (unsigned short)atoi(portstr);
-	    if (dbenv->repmgr_add_remote_site(dbenv, host, port, 0, 0) != 0) {
-		fprintf(stderr,
-		    "Could not add site %s.\n", host);
+	    if ((ret = dbenv->repmgr_site(dbenv, host, port, &dbsite, 0)) != 0) {
+		dbenv->err(dbenv, ret, "DB_ENV->repmgr_site");
+		goto err;
+	    }
+	    dbsite->set_config(dbsite, DB_BOOTSTRAP_HELPER, 1);
+	    if ((ret = dbsite->close(dbsite)) != 0) {
+		dbenv->err(dbenv, ret, "DB_SITE->close");
 		goto err;
 	    }
 	    break;
@@ -148,7 +160,7 @@ main(int argc, char *argv[])
 	}
 
     /* Error check command line. */
-    if (home == NULL || !local_is_set || !totalsites)
+    if (home == NULL || !local_is_set)
 	usage();
 
     if ((ret = env_init(dbenv, home)) != 0)

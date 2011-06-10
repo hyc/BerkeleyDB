@@ -16,7 +16,7 @@ extern "C" {
 #define	MSG_SIZE 100		/* Message size */
 
 enum INFOTYPE {
-    I_DB, I_DBC, I_ENV, I_LOCK, I_LOGC, I_MP, I_NDBM, I_PG, I_SEQ, I_TXN};
+	I_AUX, I_DB, I_DBC, I_ENV, I_LOCK, I_LOGC, I_MP, I_NDBM, I_PG, I_SEQ, I_TXN};
 
 #define	MAX_ID		8	/* Maximum number of sub-id's we need */
 #define	DBTCL_PREP	64	/* Size of txn_recover preplist */
@@ -30,8 +30,9 @@ enum INFOTYPE {
 
 #define	DBTCL_MUT_ALIGN	0
 #define	DBTCL_MUT_INCR	1
-#define	DBTCL_MUT_MAX	2
-#define	DBTCL_MUT_TAS	3
+#define	DBTCL_MUT_INIT	2
+#define	DBTCL_MUT_MAX	3
+#define	DBTCL_MUT_TAS	4
 
 /*
  * Data structure to record information about events that have occurred.  Tcl
@@ -44,12 +45,18 @@ enum INFOTYPE {
  * event types are invented that have associated info, we should add a field
  * here to record that info as well, so that it can be returned to the script
  * with the "env event_info" results.
- */ 
+ */
 typedef struct dbtcl_event_info {
 	u_int32_t	events;	/* Bit flag on for each event fired. */
 	int		panic_error;
 	int		newmaster_eid;
+	int		added_eid;
+	int		removed_eid;
 	pid_t		attached_process;
+	int		connected_eid;
+	DB_REPMGR_CONN_ERR conn_broken_info;
+	DB_REPMGR_CONN_ERR conn_failed_try_info;
+	DB_LSN		sync_point;
 } DBTCL_EVENT_INFO;
 
 /*
@@ -111,10 +118,12 @@ typedef struct dbtcl_info {
 	DBT i_lockobj;
 	FILE *i_err;
 	char *i_errpfx;
+	FILE *i_msg;
 
 	/* Callbacks--Tcl_Objs containing proc names */
 	Tcl_Obj *i_compare;
 	Tcl_Obj *i_dupcompare;
+	Tcl_Obj *i_foreign_call;
 	Tcl_Obj *i_hashproc;
 	Tcl_Obj *i_isalive;
 	Tcl_Obj *i_part_callback;
@@ -126,6 +135,10 @@ typedef struct dbtcl_info {
 
 	struct dbtcl_info *i_parent;
 	int	i_otherid[MAX_ID];
+
+	/* Heap dbs have an associated recno db, and secondary db. */
+	DB *hrdbp;
+	DB *hsdbp;
 } DBTCL_INFO;
 
 #define	i_anyp un.anyp

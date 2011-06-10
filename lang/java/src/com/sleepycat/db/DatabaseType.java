@@ -27,6 +27,13 @@ public final class DatabaseType {
         new DatabaseType("HASH", DbConstants.DB_HASH);
 
     /**
+    The database is a Heap.  The Heap format is designed for efficient
+    use of disk space.
+    */
+    public static final DatabaseType HEAP =
+        new DatabaseType("HEAP", DbConstants.DB_HEAP);
+
+    /**
     The database is a Queue.  The Queue format supports fast access to
     fixed-length records accessed sequentially or by logical record
     number.

@@ -114,7 +114,7 @@ namespace CsharpAPITest
 			}
 		}
 
-		[Test, ExpectedException(typeof(ExpectedTestException))]
+		[Test]
 		public void TestDiscard()
 		{
 			DatabaseEnvironment env;
@@ -151,16 +151,11 @@ namespace CsharpAPITest
 
 			Assert.AreEqual(gid, preparedTxns[0].GlobalID);
 			preparedTxns[0].Txn.Discard();
-			try
-			{
+			try {
 				preparedTxns[0].Txn.Commit();
-			}
-			catch (AccessViolationException)
-			{
-				throw new ExpectedTestException();
-			}
-			finally
-			{
+				throw new TestException();
+			} catch (AccessViolationException) {
+			} finally {
 				env.Close();
 			}
 		}

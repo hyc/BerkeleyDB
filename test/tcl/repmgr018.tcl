@@ -60,7 +60,7 @@ proc repmgr018_sub { method niter tnum largs } {
 	set ma_envcmd "berkdb_env_noerr -create $verbargs -errpfx MASTER \
 	    -home $masterdir -txn -rep -thread"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -70,7 +70,7 @@ proc repmgr018_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
 	    -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -83,9 +83,10 @@ proc repmgr018_sub { method niter tnum largs } {
 	error_check_good perm_no_failed_stat \
 	    [stat_field $masterenv repmgr_stat "Acknowledgement failures"] 0
 
-	error_check_good no_connections_dropped \
-	    [stat_field $masterenv repmgr_stat "Connections dropped"] 0
-
+	# Remember number of connections dropped here for later test.
+	# Note that normal group membership initialization can result
+	# in a dropped connection at this point.
+	set drop1 [stat_field $masterenv repmgr_stat "Connections dropped"]
 	$clientenv close
 
 	# Just do a few transactions (i.e., 3 of them), because each one is
@@ -98,11 +99,12 @@ proc repmgr018_sub { method niter tnum largs } {
 	error_check_bad perm_failed_stat \
 	    [stat_field $masterenv repmgr_stat "Acknowledgement failures"] 0
 
-	# Wait up to 20 seconds when testing for dropped connections. This
+	# Wait up to 30 seconds when testing for dropped connections. This
 	# corresponds to the master connection_retry timeout.
-	set max_wait 20
+	set max_wait 30
 	await_condition {[stat_field $masterenv repmgr_stat \
-	    "Connections dropped"] == 1} $max_wait
+	    "Connections dropped"] > $drop1} $max_wait
+	set drop2 [stat_field $masterenv repmgr_stat "Connections dropped"]
 
 	# Bring the client back up, and down, a couple times, to test resetting
 	# of stats.
@@ -110,7 +112,7 @@ proc repmgr018_sub { method niter tnum largs } {
 	puts "\tRepmgr$tnum.e: Shut down client (pause), check dropped connection."
 	# Open -recover to clear env region, including startup_done value.
 	set clientenv [eval $cl_envcmd -recover]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -119,13 +121,13 @@ proc repmgr018_sub { method niter tnum largs } {
 	$clientenv close
 
 	await_condition {[stat_field $masterenv repmgr_stat \
-	    "Connections dropped"] == 2} $max_wait
+	    "Connections dropped"] > $drop2} $max_wait
 	$masterenv repmgr_stat -clear
 
 	puts "\tRepmgr$tnum.f: Shut down, pause, check dropped connection (reset)."
 	# Open -recover to clear env region, including startup_done value.
 	set clientenv [eval $cl_envcmd -recover]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \

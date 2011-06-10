@@ -12,7 +12,10 @@
     <link rel="next" href="rep_mgr_meth.html" title="Replication Manager methods" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Building replicated applications</th>
@@ -60,11 +63,14 @@ second, it must provide Berkeley DB information about its communications
 infrastructure; and third, it must start the Berkeley DB replication system.
 Generally, a replicated application will do normal Berkeley DB recovery and
 configuration, exactly like any other transactional application.</p>
-      <p>Replication Manager applications configure the built-in communications
-infrastructure by calling the <a href="../api_reference/C/repmgrlocal_site.html" class="olink">DB_ENV-&gt;repmgr_set_local_site()</a> method
-once and the <a href="../api_reference/C/repmgrremote_site.html" class="olink">DB_ENV-&gt;repmgr_add_remote_site()</a> method zero or more
-times.  Once the environment has been opened, the application starts
-the replication system by calling the <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method.</p>
+      <p>
+    Replication Manager applications configure the built-in communications
+    infrastructure by calling obtaining a <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handle, and then using
+    it to configure the local site. It can optionally obtain one or more
+    <a href="../api_reference/C/db_site.html" class="olink">DB_SITE</a> handles to configure remote sites.  Once the environment has
+    been opened, the application starts the replication system by calling
+    the <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method.
+</p>
       <p>A Base API application calls the
 <a href="../api_reference/C/reptransport.html" class="olink">DB_ENV-&gt;rep_set_transport()</a> method to configure the entry point to its own
 communications infrastructure, and then calls the

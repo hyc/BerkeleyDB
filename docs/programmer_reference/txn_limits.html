@@ -7,19 +7,22 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="txn.html" title="Chapter 18.  The Transaction Subsystem" />
+    <link rel="up" href="txn.html" title="Chapter 19.  The Transaction Subsystem" />
     <link rel="prev" href="txn_config.html" title="Configuring transactions" />
-    <link rel="next" href="sequence.html" title="Chapter 19.  Sequences" />
+    <link rel="next" href="sequence.html" title="Chapter 20.  Sequences" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Transaction limits</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="txn_config.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 18. 
+          <th width="60%" align="center">Chapter 19. 
 		The Transaction Subsystem
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="sequence.html">Next</a></td>
@@ -39,17 +42,17 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="txn_limits.html#idp52846304">Transaction IDs</a>
+              <a href="txn_limits.html#id3922448">Transaction IDs</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="txn_limits.html#idp52866032">Cursors</a>
+              <a href="txn_limits.html#id3920939">Cursors</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="txn_limits.html#idp52872176">Multiple Threads of Control</a>
+              <a href="txn_limits.html#id3921178">Multiple Threads of Control</a>
             </span>
           </dt>
         </dl>
@@ -58,7 +61,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52846304"></a>Transaction IDs</h3>
+              <h3 class="title"><a id="id3922448"></a>Transaction IDs</h3>
             </div>
           </div>
         </div>
@@ -70,13 +73,13 @@ name space is reset, and new transactions are numbered starting from
 transaction ID is reached, starting again from 0x80000000.  The most
 recently allocated transaction ID is the <span class="bold"><strong>st_last_txnid</strong></span> value in
 the transaction statistics information, and can be displayed by the
-<a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a>.</p>
+<a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility.</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52866032"></a>Cursors</h3>
+              <h3 class="title"><a id="id3920939"></a>Cursors</h3>
             </div>
           </div>
         </div>
@@ -92,7 +95,7 @@ transactions and non-transactions can conflict.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52872176"></a>Multiple Threads of Control</h3>
+              <h3 class="title"><a id="id3921178"></a>Multiple Threads of Control</h3>
             </div>
           </div>
         </div>
@@ -127,7 +130,7 @@ made.</p>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 19. 
+          <td width="40%" align="right" valign="top"> Chapter 20. 
 		Sequences
         </td>
         </tr>

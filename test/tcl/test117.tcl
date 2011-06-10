@@ -20,7 +20,7 @@ proc test117 { method {nentries 10000} {tnum "117"} args } {
 
 	# Compaction using a requested fill percentage is 
 	# an option for btree and recno databases only.
-	if { [is_hash $method] == 1 || [is_queue $method] == 1 } {
+        if { [is_hash $method] == 1 || [is_queue $method] == 1 || [is_heap $method] == 1 } {
 		puts "Skipping test$tnum for method $method."
 		return
 	}

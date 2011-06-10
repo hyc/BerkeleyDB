@@ -49,31 +49,36 @@
     </path>
 
     <target name="compile.upgrades">
-        <javac srcdir="${basedir}/upgrades/test" debug="true">
+        <javac srcdir="${basedir}/upgrades/test" 
+               includeantruntime="false" debug="true">
             <classpath refid="upgrades.class.path"/>
         </javac>
     </target>
 
     <target name="compile.upgrades.v46">
-        <javac srcdir="${basedir}/upgrades/v46" debug="true">
+        <javac srcdir="${basedir}/upgrades/v46" 
+               includeantruntime="false" debug="true">
             <classpath refid="upgrades.v46.class.path"/>
         </javac>
     </target>
     
     <target name="compile.upgrades.v47">
-        <javac srcdir="${basedir}/upgrades/v47" debug="true">
+        <javac srcdir="${basedir}/upgrades/v47" 
+               includeantruntime="false" debug="true">
             <classpath refid="upgrades.v47.class.path"/>
         </javac>
     </target>
     
     <target name="compile.upgrades.new">
-        <javac srcdir="${basedir}/upgrades/current" debug="true">
+        <javac srcdir="${basedir}/upgrades/current" 
+               includeantruntime="false" debug="true">
             <classpath refid="upgrades.new.class.path"/>
         </javac>
     </target>
     
     <target name="compile">
-        <javac srcdir="${basedir}/tests" debug="true">
+        <javac srcdir="${basedir}/tests" 
+               includeantruntime="false" debug="true">
             <classpath refid="class.path"/>
         </javac>
     </target>

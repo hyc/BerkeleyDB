@@ -21,6 +21,7 @@ proc rep062 { method {tnum "062"} args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# This test uses different access methods internally.
 	# Called from outside, accept only btree.
@@ -53,6 +54,11 @@ proc rep062 { method {tnum "062"} args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery,
 	# and with and without cleaning.
 	foreach r $test_recopts {
@@ -65,7 +71,7 @@ proc rep062 { method {tnum "062"} args } {
 			}
 			puts "Rep$tnum ($method $r):\
 			    Internal initialization with change in\
-			    access method of database $msg $msg2."
+			    access method of database $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep062_sub $method $tnum $l $r $args
@@ -81,6 +87,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 	global encrypt
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -92,6 +99,11 @@ proc rep062_sub { method tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set masterdir $testdir/MASTERDIR
@@ -183,6 +195,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 		set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
 		    $m_logargs -log_max $log_max $verbargs -errpfx MASTER \
 		    -cachesize { 0 $cache 1 } $envflags $repmemargs \
+		    $privargs \
 		    -home $masterdir -rep_transport \[list 1 replsend\]"
 		set masterenv [eval $ma_envcmd $recargs -rep_master]
 
@@ -191,6 +204,7 @@ proc rep062_sub { method tnum logset recargs largs } {
 		set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
 		    $c_logargs -log_max $log_max $verbargs -errpfx CLIENT \
 		    -cachesize { 0 $cache 1 } $envflags $repmemargs \
+		    $privargs \
 		    -home $clientdir -rep_transport \[list 2 replsend\]"
 		set clientenv [eval $cl_envcmd $recargs -rep_client]
 

@@ -15,6 +15,7 @@ proc rep046 { method { nentries 200 } { tnum "046" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	if { $checking_valid_methods } {
 		return "ALL"
@@ -39,6 +40,11 @@ proc rep046 { method { nentries 200 } { tnum "046" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	set throttle { "throttle" "" }
 	foreach r $test_recopts {
@@ -51,7 +57,8 @@ proc rep046 { method { nentries 200 } { tnum "046" } args } {
 			}
 			foreach t $throttle {
 				puts "Rep$tnum ($method $r $t):\
-				    Replication and bulk transfer $msg $msg2."
+				    Replication and bulk transfer\
+				    $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client 0 logs are [lindex $l 1]"
 				puts "Rep$tnum: Client 1 logs are [lindex $l 2]"
@@ -67,8 +74,8 @@ proc rep046_sub { method niter tnum logset recargs throttle largs } {
 	global overflowword2
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global testdir
-	global util_path
 	global rep_verbose
 	global verbose_type
 
@@ -80,6 +87,11 @@ proc rep046_sub { method niter tnum logset recargs throttle largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set orig_tdir $testdir
@@ -133,7 +145,7 @@ proc rep046_sub { method niter tnum logset recargs throttle largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $m_logargs \
-	    $repmemargs $cacheargs \
+	    $repmemargs $cacheargs $privargs \
 	    $verbargs -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -errpfx MASTER -home $masterdir -rep_master -rep_transport \
 	    \[list 1 replsend\]"
@@ -142,7 +154,7 @@ proc rep046_sub { method niter tnum logset recargs throttle largs } {
 
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $c_logargs \
-	    $repmemargs $cacheargs \
+	    $repmemargs $cacheargs $privargs \
 	    $verbargs -home $clientdir -errpfx CLIENT \
 	    -lock_max_locks 10000 -lock_max_objects 10000 \
 	    -rep_client -rep_transport \[list 2 replsend\]"
@@ -153,7 +165,7 @@ proc rep046_sub { method niter tnum logset recargs throttle largs } {
 		file mkdir $clientdir2
 		repladd 3
 		set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs $verbargs \
-		    $repmemargs $cacheargs \
+		    $repmemargs $cacheargs $privargs \
 		    $c2_logargs -home $clientdir2 -errpfx CLIENT2 \
 	    	    -lock_max_locks 10000 -lock_max_objects 10000 \
 		    -rep_client -rep_transport \[list 3 replsend\]"

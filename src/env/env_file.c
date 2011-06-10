@@ -26,30 +26,22 @@ __db_file_extend(env, fhp, size)
 	size_t nw;
 	u_int32_t relative;
 	int ret;
-	char *buf;
+	char buf;
 
+	buf = '\0';
 	/*
 	 * Extend the file by writing the last page.  If the region is >4Gb,
 	 * increment may be larger than the maximum possible seek "relative"
 	 * argument, as it's an unsigned 32-bit value.  Break the offset into
-	 * pages of 1MB each so we don't overflow -- (2^20 + 2^32 is bigger
+	 * pages of 1MB each so we don't overflow -- (2^20 * 2^32 is bigger
 	 * than any memory I expect to see for awhile).
 	 */
-#undef	FILE_EXTEND_IO_SIZE
-#define	FILE_EXTEND_IO_SIZE	(8 * 1024)
-	if ((ret = __os_calloc(env, FILE_EXTEND_IO_SIZE, 1, &buf)) != 0)
-		return (ret);
+	pages = (db_pgno_t)((size - sizeof(buf)) / MEGABYTE);
+	relative = (u_int32_t)((size - sizeof(buf)) % MEGABYTE);
+	if ((ret = __os_seek(env, fhp, pages, MEGABYTE, relative)) == 0)
+		ret = __os_write(env, fhp, &buf, sizeof(buf), &nw);
 
-	pages = (db_pgno_t)((size - FILE_EXTEND_IO_SIZE) / MEGABYTE);
-	relative = (u_int32_t)((size - FILE_EXTEND_IO_SIZE) % MEGABYTE);
-	if ((ret = __os_seek(env, fhp, pages, MEGABYTE, relative)) != 0)
-		goto err;
-	if ((ret = __os_write(env, fhp, buf, FILE_EXTEND_IO_SIZE, &nw)) != 0)
-		goto err;
-
-err:	__os_free(env, buf);
-
-	return (0);
+	return (ret);
 }
 
 /*

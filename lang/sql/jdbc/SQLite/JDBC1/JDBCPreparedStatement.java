@@ -25,9 +25,10 @@ public class JDBCPreparedStatement extends JDBCStatement
     }
 
     private String fixup(String sql) {
-	StringBuffer sb = new StringBuffer();
+	StringBuffer sb = new StringBuffer(sql.length());
 	boolean inq = false;
 	int nparm = 0;
+	int iscreate = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);
 	    if (c == '\'') {
@@ -57,6 +58,25 @@ public class JDBCPreparedStatement extends JDBCStatement
 		}
 	    } else if (c == ';') {
 		if (!inq) {
+		    if (iscreate < 0) {
+			int ii = 0;
+			while (sb.charAt(ii) == ' ' ||
+			       sb.charAt(ii) == '\t' ||
+			       sb.charAt(ii) == '\n' ||
+			       sb.charAt(ii) == '\r') {
+			    ++ii;
+			}
+			String t = sb.toString().substring(ii, ii + 6);
+			t = t.toLowerCase();
+			if (t.compareTo("create") == 0) {
+			    iscreate = 1;
+			} else {
+			    iscreate = 0;
+			}
+		    }
+		    if (iscreate == 0) {
+			break;
+		    }
 		    break;
 		}
 		sb.append(c);
@@ -79,7 +99,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	if (!conn.db.is3()) {
 	    return sql;
 	}
-	StringBuffer sb = new StringBuffer();
+	StringBuffer sb = new StringBuffer(sql.length());
 	int parm = -1;
 	for (int i = 0; i < sql.length(); i++) {
 	    char c = sql.charAt(i);

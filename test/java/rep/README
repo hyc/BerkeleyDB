@@ -1,6 +1,7 @@
 Here's how to run these tests.
 
-1. configure and build Berkeley DB, including --enable-java 
+1. configure and build Berkeley DB, including --enable-java and
+   --enable-test
 
    It's probably most straightforward to do this in the regular
    build_unix or build_windows subdirectory of the local working copy
@@ -15,8 +16,8 @@ Here's how to run these tests.
 
        erl -make
 
-4. go back up to this test/java/rep directory.  In the build.xml file,
-   notice that there are some default settings for properties named
+4. Back up here in this test/java/rep directory, notice the build.xml
+   file.  It defines some default settings for properties named
    "db", "db46" and "db47".  You may need to override these on the Ant
    command line.
 
@@ -24,9 +25,14 @@ Here's how to run these tests.
    "VERB_REPLICATION".  You can turn this on if you want to get
    verbose replication diagnostic output.
 
-   run Ant by typing:
+5. Choose a value for a TCP/IP port number that is not currently in
+   use.  (I've been using 8000 in my testing.)  You will need to
+   define an environment variable with this value when invoking the
+   test.
 
-       ant -Ddb=$whatever/build_unix
+6. Run Ant by typing (Bourne shell syntax shown here):
+
+       $ DB_TEST_FAKE_PORT=8000 ant -Ddb=$whatever/build_unix
 
    to override the setting of the "db" property with the location of
    your DB build if necessary.
@@ -37,12 +43,15 @@ Here's how to run these tests.
    watching a directory listing: each test puts its output in a
    TEST-*.txt file.
 
-5. To run the upgrades tests, type:
+7. To run the upgrades tests, type:
 
        ant test.upgrades
 
    Again, you may add overrides for the "db", "db46" and/or "db47"
    properties, using the -D command line argument.
+
+   Currently, the upgrades tests do not need DB_TEST_FAKE_PORT, though
+   it doesn't hurt to leave it defined.
 
 6. To run just one single test, you can type something like this:
 

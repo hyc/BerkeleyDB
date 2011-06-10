@@ -33,9 +33,10 @@ __os_fdlock(env, fhp, offset, acquire, nowait)
 	DB_ASSERT(env, F_ISSET(fhp, DB_FH_OPENED) && fhp->fd != -1);
 
 	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: flock %s %s offset %lu",
-		    fhp->name, acquire ? "acquire": "release", (u_long)offset);
+		__db_msg(env, DB_STR_A("0138",
+		    "fileops: flock %s %s offset %lu", "%s %s %lu"), fhp->name,
+		    acquire ? DB_STR_P("acquire"): DB_STR_P("release"),
+		    (u_long)offset);
 
 	fl.l_start = offset;
 	fl.l_len = 1;
@@ -49,14 +50,15 @@ __os_fdlock(env, fhp, offset, acquire, nowait)
 		return (0);
 
 	if ((t_ret = __os_posix_err(ret)) != EACCES && t_ret != EAGAIN)
-		__db_syserr(env, ret, "fcntl");
+		__db_syserr(env, ret, DB_STR("0139", "fcntl"));
 	return (t_ret);
 #else
 	COMPQUIET(fhp, NULL);
 	COMPQUIET(acquire, 0);
 	COMPQUIET(nowait, 0);
 	COMPQUIET(offset, 0);
-	__db_syserr(env, DB_OPNOTSUP, "advisory file locking unavailable");
+	__db_syserr(env, DB_OPNOTSUP, DB_STR("0140",
+	    "advisory file locking unavailable"));
 	return (DB_OPNOTSUP);
 #endif
 }

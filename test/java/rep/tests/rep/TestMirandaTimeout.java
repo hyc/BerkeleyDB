@@ -29,7 +29,7 @@ public class TestMirandaTimeout {
         }
     }
 
-    List<Deque<Message>> queues = new ArrayList<Deque<Message>>();
+    List<Queue<Message>> queues = new ArrayList<Queue<Message>>();
     Environment[] envs = new Environment[2];
 
     public static final int SELF = Integer.MAX_VALUE;
@@ -51,8 +51,8 @@ public class TestMirandaTimeout {
         // ArrayLists which are used as the message queues.  Master is
         // EID 0 and client is EID 1.
         //
-        queues.add(new ArrayDeque<Message>());
-        queues.add(new ArrayDeque<Message>());
+        queues.add(new LinkedList<Message>());
+        queues.add(new LinkedList<Message>());
         ec.setReplicationTransport(SELF, new Transport(0));
         Environment master = new Environment(Util.mkdir("master"), ec);
         envs[0] = master;
@@ -175,15 +175,15 @@ public class TestMirandaTimeout {
                         LogSequenceNumber lsn, int eid, boolean noBuf,
                         boolean perm, boolean anywhere, boolean isRetry) {
             int target = 1 - myEID;
-            queues.get(target).addLast(new Message(ctl, rec, myEID, perm));
+            queues.get(target).add(new Message(ctl, rec, myEID, perm));
             return (0);
         }
     }
 
     void processOnePerm() throws Exception {
-        Deque<Message> q = queues.get(1); // the client is site 1
+        Queue<Message> q = queues.get(1); // the client is site 1
         while (!q.isEmpty()) {
-            Message m = q.removeFirst();
+            Message m = q.remove();
             envs[1].processReplicationMessage(m.ctl, m.rec, m.sourceEID);
             if (m.perm)
                 return;
@@ -195,10 +195,10 @@ public class TestMirandaTimeout {
         while (!done) {
             boolean got = false;
             for (int eid = 0; eid < 2; eid++) {
-                Deque<Message> q = queues.get(eid);
+                Queue<Message> q = queues.get(eid);
                 while (!q.isEmpty()) {
                     got = true;
-                    Message m = q.removeFirst();
+                    Message m = q.remove();
                     envs[eid].processReplicationMessage(m.ctl, m.rec, m.sourceEID);
                 }
             }

@@ -12,7 +12,10 @@
     <link rel="next" href="seqstat_print.html" title="DbSequence::stat_print()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbSequence::stat()</th>
@@ -84,20 +87,10 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <ul type="disc">
           <li>
             <p>
-                    <span class="bold"><strong>uintmax_t st_wait;</strong></span>
+                    <span class="bold"><strong>int32_t st_cache_size;</strong></span>
                 </p>
             <p>
-                    The number of times a thread of control was forced to wait on the
-                    handle mutex.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>uintmax_t st_nowait;</strong></span>
-                </p>
-            <p>
-                    The number of times that a thread of control was able to obtain handle
-                    mutex without waiting.
+                    The number of values that will be cached in this handle.
                 </p>
           </li>
           <li>
@@ -110,10 +103,10 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>db_seq_t st_value;</strong></span>
+                    <span class="bold"><strong>u_int32_t st_flags;</strong></span>
                 </p>
             <p>
-                    The current cached value of the sequence.
+                    The flags value for the sequence.
                 </p>
           </li>
           <li>
@@ -142,18 +135,28 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>int32_t st_cache_size;</strong></span>
+                    <span class="bold"><strong>uintmax_t st_nowait;</strong></span>
                 </p>
             <p>
-                    The number of values that will be cached in this handle.
+                    The number of times that a thread of control was able to obtain handle
+                    mutex without waiting.
                 </p>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>u_int32_t st_flags;</strong></span>
+                    <span class="bold"><strong>db_seq_t st_value;</strong></span>
                 </p>
             <p>
-                    The flags value for the sequence.
+                    The current cached value of the sequence.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>uintmax_t st_wait;</strong></span>
+                </p>
+            <p>
+                    The number of times a thread of control was forced to wait on the
+                    handle mutex.
                 </p>
           </li>
         </ul>
@@ -162,7 +165,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54698256"></a>Parameters</h3>
+              <h3 class="title"><a id="id3668876"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -170,24 +173,32 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54697608"></a>flags</h4>
+                <h4 class="title"><a id="id3669821"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>flags</strong></span> parameter must be set by
-                          bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing together
-                          one or more of the following values:
-                     </p>
+                  The <span class="bold"><strong>flags</strong></span> parameter must be set by
+                  bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing together
+                  one or more of the following values:
+             </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p>
-                  <code class="literal">DB_STAT_CLEAR</code>
-            </p>
+                        <code class="literal">DB_STAT_ALL</code>
+                    </p>
                 <p>
-                Reset statistics after printing their values.
-            </p>
+                        Display all available information.
+                    </p>
+              </li>
+              <li>
+                <p>
+                          <code class="literal">DB_STAT_CLEAR</code>
+                    </p>
+                <p>
+                        Reset statistics after printing their values.
+                    </p>
               </li>
             </ul>
           </div>
@@ -197,7 +208,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54697408"></a>Class</h3>
+              <h3 class="title"><a id="id3669249"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -209,13 +220,13 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54699984"></a>See Also</h3>
+              <h3 class="title"><a id="id3669730"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="seq.html#seqlist" title="Sequences and Related Methods">Sequences and Related Methods</a> 
-                </p>
+             <a class="xref" href="seq.html#seqlist" title="Sequences and Related Methods">Sequences and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

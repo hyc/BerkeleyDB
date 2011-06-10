@@ -12,7 +12,10 @@
     <link rel="next" href="miscdiff.html" title="Miscellaneous Differences" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Added PRAGMAs</th>
@@ -37,53 +40,301 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="addedpragmas.html#pragma_txn_bulk">PRAGMA TXN_BULK</a>
+              <a href="addedpragmas.html#bdbsql_error_file"></a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#bdbsql_system_memory">PRAGMA bdbsql_system_memory</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#bdbsql_vacuum_fillpercent">PRAGMA bdbsql_vacuum_fillpercent</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#bdbsql_vacuum_pages">PRAGMA bdbsql_vacuum_pages</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#multiversion">PRAGMA multiversion</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#snapshot_isolation">PRAGMA snapshot_isolation</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#trickle">PRAGMA trickle</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#txn_bulk">PRAGMA txn_bulk</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#replication_pragmas">Replication PRAGMAs</a>
             </span>
           </dt>
         </dl>
       </div>
-      <p>The following PRAGMAs are added in the Berkeley DB SQL interface.</p>
+      <p>
+                The following PRAGMAs are added in the Berkeley DB SQL interface.
+            </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="pragma_txn_bulk"></a>PRAGMA TXN_BULK</h3>
+              <h3 class="title">
+                <a id="bdbsql_error_file"></a>
+              </h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA bdbsql_error_file [filename]</pre>
+        <p>
+                    Redirects internal Berkeley DB error messages to
+                    the named file. If a relative path is specified to
+                    <code class="literal">[filename]</code>, then the path is
+                    interpreted as being relative to the current
+                    working directory.
+                </p>
+        <p>
+                    If this PRAGMA is issued with no filename, then the
+                    current target for Berkeley DB error output is
+                    returned. By default, error messages are sent to
+                    <code class="literal">STDERR</code>.
+                </p>
+        <p>
+                    This PRAGMA can be issued at any time; initial
+                    database access does not have to occur before this
+                    PRAGMA can be used.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="bdbsql_system_memory"></a>PRAGMA bdbsql_system_memory</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA bdbsql_system_memory [base segment ID]</pre>
+        <p>
+                    Queries or sets a flag that causes the database's
+                    shared resources to be created in system shared
+                    memory. By default the database's shared resources
+                    are created in file-backed shared memory. 
+                </p>
+        <p>
+                    If a [base segment ID] is specified, the shared
+                    resources will be created using X/Open style shared
+                    memory interfaces. The [base segment ID] will be
+                    used as the starting ID for shared resources used
+                    by the database. Use different [base segment ID]
+                    values for different databases. It is possible for
+                    multi-process applications to use a single database
+                    by specifying the same [base segment ID] to this
+                    PRAGMA. Each connection needs to set this PRAGMA.
+                </p>
+        <p>
+                    This PRAGMA may be used to set a [base segment ID]
+                    only before the first table is created in the
+                    database.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="bdbsql_vacuum_fillpercent"></a>PRAGMA bdbsql_vacuum_fillpercent</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA bdbsql_vacuum_fillpercent [= N]</pre>
+        <p>
+                    Sets or reports the page full threshold. 
+                    Any page in the database that is at or below this
+                    percentage full is considered for vacuuming when
+                    <code class="literal">PRAGMA incremental_vacuum</code> is
+                    enabled.  The value is specified as a percentage
+                    between 1 and 100.  By default, pages 85% full and
+                    below are considered for vacuuming.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="bdbsql_vacuum_pages"></a>PRAGMA bdbsql_vacuum_pages</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA bdbsql_vacuum_pages [= N]</pre>
+        <p>
+                    Sets or reports the maximum number of pages to be
+                    returned to the file system from the free page list
+                    when incremental vacuuming is enabled. By
+                    default, up to 128 pages are removed from the free
+                    list.
+                </p>
+        <p>
+                    Page vacuuming is controlled using 
+                    <a class="xref" href="changedpragmas.html#auto_vacuum" title="PRAGMA auto_vacuum">PRAGMA auto_vacuum</a>.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="multiversion"></a>PRAGMA multiversion</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA multiversion</pre>
+        <p>
+                    Controls whether Multiversion Concurrency Control (MVCC) is on
+                    or off. You can not use this PRAGMA at any time during
+                    your application's runtime after your database tables
+                    have been accessed.
+                </p>
+        <p>
+                    For more information on MVCC and snapshot isolation,
+                    see <a class="xref" href="mvcc.html" title="Using Multiversion Concurrency Control">Using Multiversion Concurrency Control</a>
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="snapshot_isolation"></a>PRAGMA snapshot_isolation</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA snapshot_isolation</pre>
+        <p>
+                    Controls whether snapshot isolation is turned on. This
+                    PRAGMA can be used at any time during your
+                    application's runtime <span class="emphasis"><em>after</em></span>
+                    Multiversion Concurrency Control (MVCC) has been turned on.
+                </p>
+        <p>
+                    For more information on MVCC and snapshot isolation,
+                    see <a class="xref" href="mvcc.html" title="Using Multiversion Concurrency Control">Using Multiversion Concurrency Control</a>
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="trickle"></a>PRAGMA trickle</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA trickle [percent]</pre>
+        <p>
+                    Ensures that at least the specified percentage of
+                    pages in the shared cache are clean. This can cause
+                    pages that have been modified to be flushed to
+                    disk.
+                </p>
+        <p>
+                    The trickle functionality enables an application to
+                    ensure that a page is available for reading new
+                    information into the shared cache without waiting
+                    for a write operation to complete.
+                </p>
+        <p>
+                    Specifying this PRAGMA without a percentage value
+                    causes the current trickle value to be displayed.
+                    Specify <code class="literal">0</code> to turn the trickle
+                    functionality off.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="txn_bulk"></a>PRAGMA txn_bulk</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA TXN_BULK</pre>
+        <p>
+                    Enables transactional bulk loading optimization.
+                    For more information, see
+                    <a class="xref" href="dbfeatures.html#bulkloading" title="Using Bulk Loading">Using Bulk Loading</a>.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="replication_pragmas"></a>Replication PRAGMAs</h3>
             </div>
           </div>
         </div>
         <p>
-		<span class="bold"><strong>PRAGMA TXN_BULK</strong></span> = 0 | 1;
-		</p>
-        <p>Enables transactional bulk loading optimization. The default setting for TXN_BULK is 0. This means the PRAGMA is turned off.
-		When TXN_BULK is set to 1 in the SQL source, it causes the application to enter a mode in which:
-		</p>
+                    Seven PRAGMAs were added to control replication.
+                    They are described in 
+                    <a class="xref" href="sqlrep.html" title="Chapter 4. Using Replication with the SQL API">Using Replication with the SQL API</a>:
+                </p>
+        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+          <h3 class="title">Note</h3>
+          <p>
+                        If you are using these replication PRAGMAs and you
+                        want to perform a backup, there is an additional
+                        backup step for the pragma file. See
+                        <a class="xref" href="admin.html#backup" title="Backing Up Berkeley DB SQL Databases">Backing Up Berkeley DB SQL Databases</a>
+                        for more information.
+                    </p>
+        </div>
         <div class="itemizedlist">
           <ul type="disc">
-            <li>transactional bulk loading optimization is enabled for
-		top-level transactions</li>
-            <li>nested per-statement transactions are not used</li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication</strong></span>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication_initial_master</strong></span>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication_local_site</strong></span>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication_remote_site</strong></span>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication_remove_site</strong></span>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication_verbose_output</strong></span>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <span class="bold"><strong>PRAGMA replication_verbose_file</strong></span>
+                        </p>
+            </li>
           </ul>
         </div>
-        <p>
-		</p>
-        <p>
-		PRAGMA TXN_BULK enables two optimizations.
-		The transactional bulk loading optimization uses the 
-		<a href="../api_reference/C/txnbegin.html#txnbegin_DB_TXN_BULK" class="olink">DB_TXN_BULK</a> flag
-		when starting transactions. Note that there are 
-		implications of using the 
-		<a href="../api_reference/C/txnbegin.html#txnbegin_DB_TXN_BULK" class="olink">DB_TXN_BULK</a> flag, 
-		particularly with regard to its interaction with hot backup.
-		The other optimization omits nested subtransactions for each statement.
-		When this optimization is enabled, you can not undo any
-		single statement.  If any statement must be undone, then the entire
-		encompassing transaction must be aborted.  This is a compromise,
-		trading speed of bulk inserts against the standard statement undo
-		guarantees.
-		With these two optimizations, a transaction that inserts a large
-		number of new records can run with much less I/O and transaction
-		management overhead.
-		</p>
       </div>
     </div>
     <div class="navfooter">

@@ -22,8 +22,6 @@ static int  __rep_check_applied __P((ENV *,
     DB_THREAD_INFO *, DB_COMMIT_INFO *, struct rep_waitgoal *));
 static void __rep_config_map __P((ENV *, u_int32_t *, u_int32_t *));
 static u_int32_t __rep_conv_vers __P((ENV *, u_int32_t));
-static int __rep_open_lsn_history __P((ENV *,
-    DB_THREAD_INFO *, DB_TXN *, u_int32_t, DB **));
 static int __rep_read_lsn_history __P((ENV *,
     DB_THREAD_INFO *, DB_TXN **, DBC **, u_int32_t,
     __rep_lsn_hist_data_args *, struct rep_waitgoal *, u_int32_t));
@@ -62,6 +60,7 @@ __rep_env_create(dbenv)
 	db_rep->clock_skew = 1;
 	db_rep->clock_base = 1;
 	FLD_SET(db_rep->config, REP_C_AUTOINIT);
+	FLD_SET(db_rep->config, REP_C_AUTOROLLBACK);
 
 	/*
 	 * Turn on system messages by default.
@@ -123,8 +122,9 @@ __rep_get_config(dbenv, which, onp)
 
 #undef	OK_FLAGS
 #define	OK_FLAGS							\
-    (DB_REP_CONF_AUTOINIT | DB_REP_CONF_BULK | DB_REP_CONF_DELAYCLIENT |\
-    DB_REP_CONF_INMEM | DB_REP_CONF_LEASE | DB_REP_CONF_NOWAIT |	\
+    (DB_REP_CONF_AUTOINIT | DB_REP_CONF_AUTOROLLBACK |			\
+    DB_REP_CONF_BULK | DB_REP_CONF_DELAYCLIENT | DB_REP_CONF_INMEM |	\
+    DB_REP_CONF_LEASE | DB_REP_CONF_NOWAIT |				\
     DB_REPMGR_CONF_2SITE_STRICT | DB_REPMGR_CONF_ELECTIONS)
 
 	if (FLD_ISSET(which, ~OK_FLAGS))
@@ -179,8 +179,9 @@ __rep_set_config(dbenv, which, on)
 
 #undef	OK_FLAGS
 #define	OK_FLAGS							\
-    (DB_REP_CONF_AUTOINIT | DB_REP_CONF_BULK | DB_REP_CONF_DELAYCLIENT |\
-    DB_REP_CONF_INMEM | DB_REP_CONF_LEASE | DB_REP_CONF_NOWAIT |	\
+    (DB_REP_CONF_AUTOINIT | DB_REP_CONF_AUTOROLLBACK |			\
+    DB_REP_CONF_BULK | DB_REP_CONF_DELAYCLIENT | DB_REP_CONF_INMEM |	\
+    DB_REP_CONF_LEASE | DB_REP_CONF_NOWAIT |				\
     DB_REPMGR_CONF_2SITE_STRICT | DB_REPMGR_CONF_ELECTIONS)
 #define	REPMGR_FLAGS (REP_C_2SITE_STRICT | REP_C_ELECTIONS)
 
@@ -194,8 +195,9 @@ __rep_set_config(dbenv, which, on)
 	__rep_config_map(env, &which, &mapped);
 
 	if (APP_IS_BASEAPI(env) && FLD_ISSET(mapped, REPMGR_FLAGS)) {
-		__db_errx(env, "%s %s", "DB_ENV->rep_set_config:",
-"cannot configure repmgr settings from base replication application");
+		__db_errx(env, DB_STR_A("3548",
+    "%s cannot configure repmgr settings from base replication application",
+		    "%s"), "DB_ENV->rep_set_config:");
 		return (EINVAL);
 	}
 
@@ -215,8 +217,9 @@ __rep_set_config(dbenv, which, on)
 		 * env->open is intercepted by this error.
 		 */
 		if (FLD_ISSET(mapped, REP_C_INMEM)) {
-			__db_errx(env, "%s %s", "DB_ENV->rep_set_config:",
-	"in-memory replication must be configured before DB_ENV->open");
+			__db_errx(env, DB_STR_A("3549",
+"%s in-memory replication must be configured before DB_ENV->open",
+			    "%s"), "DB_ENV->rep_set_config:");
 			ENV_LEAVE(env, ip);
 			return (EINVAL);
 		}
@@ -226,13 +229,14 @@ __rep_set_config(dbenv, which, on)
 		 */
 		if (FLD_ISSET(mapped, REP_C_LEASE)) {
 			if (F_ISSET(rep, REP_F_START_CALLED)) {
-				__db_errx(env,
-"DB_ENV->rep_set_config: leases must be configured before DB_ENV->rep_start");
+				__db_errx(env, DB_STR("3550",
+				    "DB_ENV->rep_set_config: leases must be "
+				    "configured before DB_ENV->rep_start"));
 				ret = EINVAL;
 			}
 			if (on == 0) {
-				__db_errx(env,
-	"DB_ENV->rep_set_config: leases cannot be turned off");
+				__db_errx(env, DB_STR("3551",
+	    "DB_ENV->rep_set_config: leases cannot be turned off"));
 				ret = EINVAL;
 			}
 			if (ret != 0) {
@@ -315,6 +319,10 @@ __rep_config_map(env, inflagsp, outflagsp)
 		FLD_SET(*outflagsp, REP_C_AUTOINIT);
 		FLD_CLR(*inflagsp, DB_REP_CONF_AUTOINIT);
 	}
+	if (FLD_ISSET(*inflagsp, DB_REP_CONF_AUTOROLLBACK)) {
+		FLD_SET(*outflagsp, REP_C_AUTOROLLBACK);
+		FLD_CLR(*inflagsp, DB_REP_CONF_AUTOROLLBACK);
+	}
 	if (FLD_ISSET(*inflagsp, DB_REP_CONF_BULK)) {
 		FLD_SET(*outflagsp, REP_C_BULK);
 		FLD_CLR(*inflagsp, DB_REP_CONF_BULK);
@@ -370,8 +378,8 @@ __rep_start_pp(dbenv, dbt, flags)
 	    env, rep_handle, "DB_ENV->rep_start", DB_INIT_REP);
 
 	if (APP_IS_REPMGR(env)) {
-		__db_errx(env,
-"DB_ENV->rep_start: cannot call from Replication Manager application");
+		__db_errx(env, DB_STR("3552",
+"DB_ENV->rep_start: cannot call from Replication Manager application"));
 		return (EINVAL);
 	}
 
@@ -380,15 +388,15 @@ __rep_start_pp(dbenv, dbt, flags)
 	case DB_REP_MASTER:
 		break;
 	default:
-		__db_errx(env,
-	"DB_ENV->rep_start: must specify DB_REP_CLIENT or DB_REP_MASTER");
+		__db_errx(env, DB_STR("3553",
+	    "DB_ENV->rep_start: must specify DB_REP_CLIENT or DB_REP_MASTER"));
 		return (EINVAL);
 	}
 
 	/* We need a transport function because we send messages. */
 	if (db_rep->send == NULL) {
-		__db_errx(env,
-    "DB_ENV->rep_start: must be called after DB_ENV->rep_set_transport");
+		__db_errx(env, DB_STR("3554",
+    "DB_ENV->rep_start: must be called after DB_ENV->rep_set_transport"));
 		return (EINVAL);
 	}
 
@@ -398,7 +406,12 @@ __rep_start_pp(dbenv, dbt, flags)
 /*
  * __rep_start_int --
  *	Internal processing to become a master or client and start sending
- * messages to participate in the replication environment.
+ * messages to participate in the replication environment.  If this is
+ * a newly created environment, then this site has likely been in an
+ * initial, undefined state - neither master nor client.  What that means
+ * is that as a non-client, it can write log records locally (such as
+ * those generated by recovery) and as a non-master, it does not attempt
+ * to send those log records elsewhere.
  *
  * We must protect rep_start_int, which may change the world, with the rest
  * of the DB library.  Each API interface will count itself as it enters
@@ -456,8 +469,8 @@ __rep_start_int(env, dbt, flags)
 	 * setup has been done, including setting the lease timeout.
 	 */
 	if (IS_USING_LEASES(env) && rep->lease_timeout == 0) {
-		__db_errx(env,
-"DB_ENV->rep_start: must call DB_ENV->rep_set_timeout for leases first");
+		__db_errx(env, DB_STR("3555",
+"DB_ENV->rep_start: must call DB_ENV->rep_set_timeout for leases first"));
 		return (EINVAL);
 	}
 
@@ -515,8 +528,8 @@ __rep_start_int(env, dbt, flags)
 	 * we cannot become master.
 	 */
 	if (IN_INTERNAL_INIT(rep) && role == DB_REP_MASTER) {
-		__db_errx(env,
-"DB_ENV->rep_start: Cannot become master during internal init");
+		__db_errx(env, DB_STR("3556",
+    "DB_ENV->rep_start: Cannot become master during internal init"));
 		ret = DB_REP_UNAVAIL;
 		goto errunlock;
 	}
@@ -575,10 +588,16 @@ __rep_start_int(env, dbt, flags)
 			if (rep->egen > rep->gen)
 				new_gen = rep->egen;
 			SET_GEN(new_gen);
+			/*
+			 * If the "group" has only one site, it's OK to start as
+			 * master without an election.  This is how repmgr
+			 * builds up a primordial group, by induction.
+			 */
 			if (IS_USING_LEASES(env) &&
+			    rep->config_nsites > 1 &&
 			    !F_ISSET(rep, REP_F_MASTERELECT)) {
-				__db_errx(env,
-    "rep_start: Cannot become master without being elected when using leases.");
+				__db_errx(env, DB_STR("3557",
+"rep_start: Cannot become master without being elected when using leases."));
 				ret = EINVAL;
 				goto errunlock;
 			}
@@ -621,8 +640,8 @@ __rep_start_int(env, dbt, flags)
 			 * cannot become master.
 			 */
 			if ((ret = __rep_islease_granted(env))) {
-				__db_errx(env,
-    "rep_start: Cannot become master with outstanding lease granted.");
+				__db_errx(env, DB_STR("3558",
+    "rep_start: Cannot become master with outstanding lease granted."));
 				ret = EINVAL;
 				goto errunlock;
 			}
@@ -631,7 +650,8 @@ __rep_start_int(env, dbt, flags)
 			 */
 			if ((ret = __log_cursor(env, &logc)) != 0)
 				goto errunlock;
-			ret = __rep_log_backup(env, rep, logc, &perm_lsn);
+			ret = __rep_log_backup(env, logc, &perm_lsn,
+			    REP_REC_PERM);
 			(void)__logc_close(logc);
 			/*
 			 * If we found a perm LSN use it.  Otherwise, if
@@ -652,7 +672,7 @@ __rep_start_int(env, dbt, flags)
 			    (double)rep->clock_base));
 			DB_TIMEOUT_TO_TIMESPEC(tmp, &rep->lease_duration);
 			if ((ret = __rep_lease_table_alloc(env,
-			    rep->nsites)) != 0)
+			    rep->config_nsites)) != 0)
 				goto errunlock;
 		}
 		rep->master_id = rep->eid;
@@ -760,7 +780,11 @@ __rep_start_int(env, dbt, flags)
 				    ret == 0)
 					ret = t_ret;
 			}
-			if ((t_ret = __txn_recycle_id(env)) != 0 && ret == 0)
+
+			REP_SYSTEM_LOCK(env);
+			F_SET(rep, REP_F_SYS_DB_OP);
+			REP_SYSTEM_UNLOCK(env);
+			if ((t_ret = __txn_recycle_id(env, 0)) != 0 && ret == 0)
 				ret = t_ret;
 
 			/*
@@ -775,6 +799,7 @@ __rep_start_int(env, dbt, flags)
 			REP_SYSTEM_LOCK(env);
 			rep->gen_base_lsn = lsn;
 			rep->master_envid = renv->envid;
+			F_CLR(rep, REP_F_SYS_DB_OP);
 			CLR_LOCKOUT_BDB(rep);
 			locked = 0;
 			REP_SYSTEM_UNLOCK(env);
@@ -937,10 +962,10 @@ out:
 		F_SET(rep, REP_F_START_CALLED);
 		REP_SYSTEM_UNLOCK(env);
 	}
-	if (start_th)
-		MUTEX_UNLOCK(env, rep->mtx_repstart);
 	if (pending_event != DB_EVENT_NO_SUCH_EVENT)
 		__rep_fire_event(env, pending_event, NULL);
+	if (start_th)
+		MUTEX_UNLOCK(env, rep->mtx_repstart);
 	__dbt_userfree(env, dbt, NULL, NULL);
 	ENV_LEAVE(env, ip);
 	return (ret);
@@ -983,12 +1008,10 @@ __rep_save_lsn_hist(env, ip, lsnp)
 	 * so clear the cached handle and close the database once we've written
 	 * our update.
 	 */
-	if ((dbp = db_rep->lsn_db) == NULL) {
-		if ((ret = __rep_open_lsn_history(env,
-		    ip, txn, DB_CREATE, &dbp)) != 0)
-			goto err;
-	} else
-		db_rep->lsn_db = NULL;
+	if ((dbp = db_rep->lsn_db) == NULL &&
+	    (ret = __rep_open_sysdb(env,
+	    ip, txn, REPLSNHIST, DB_CREATE, &dbp)) != 0)
+		goto err;
 
 	key.version = REP_LSN_HISTORY_FMT_VERSION;
 	key.gen = rep->gen;
@@ -1003,14 +1026,16 @@ __rep_save_lsn_hist(env, ip, lsnp)
 
 	DB_INIT_DBT(key_dbt, key_buf, sizeof(key_buf));
 	DB_INIT_DBT(data_dbt, data_buf, sizeof(data_buf));
+
 	ret = __db_put(dbp, ip, txn, &key_dbt, &data_dbt, 0);
 err:
 	if (dbp != NULL &&
 	    (t_ret = __db_close(dbp, txn, DB_NOSYNC)) != 0 && ret == 0)
 		ret = t_ret;
+	db_rep->lsn_db = NULL;
 
 	DB_ASSERT(env, txn != NULL);
-	if ((t_ret = __db_txn_auto_resolve(env, txn, 0, ret)) && ret == 0)
+	if ((t_ret = __db_txn_auto_resolve(env, txn, 0, ret)) != 0 && ret == 0)
 		ret = t_ret;
 
 	return (ret);
@@ -1026,12 +1051,15 @@ err:
  * the database in the place where we knew it should be.  The code here tries to
  * be more flexible/resilient to mis-matching INMEM settings, even though we
  * recommend against that.
+ * PUBLIC: int __rep_open_sysdb __P((ENV *,
+ * PUBLIC:    DB_THREAD_INFO *, DB_TXN *, const char *, u_int32_t, DB **));
  */
-static int
-__rep_open_lsn_history(env, ip, txn, flags, dbpp)
+int
+__rep_open_sysdb(env, ip, txn, dbname, flags, dbpp)
 	ENV *env;
 	DB_THREAD_INFO *ip;
 	DB_TXN *txn;
+	const char *dbname;
 	u_int32_t flags;
 	DB **dbpp;
 {
@@ -1048,14 +1076,14 @@ __rep_open_lsn_history(env, ip, txn, flags, dbpp)
 	if ((ret = __db_create_internal(&dbp, env, 0)) != 0)
 		return (ret);
 
-	myflags = (F_ISSET(env, ENV_THREAD) ? DB_THREAD : 0);
+	myflags = DB_INTERNAL_DB | (F_ISSET(env, ENV_THREAD) ? DB_THREAD : 0);
 
 	/*
 	 * First, try opening it as a sub-database within a disk-resident
 	 * database file.  (If success, skip to the end.)
 	 */
 	if ((ret = __db_open(dbp, ip, txn,
-	    REPSYSDBNAME, REPLSNHIST, DB_BTREE, myflags, 0, PGNO_BASE_MD)) == 0)
+	    REPSYSDBNAME, dbname, DB_BTREE, myflags, 0, PGNO_BASE_MD)) == 0)
 		goto found;
 	if (ret != ENOENT)
 		goto err;
@@ -1069,7 +1097,7 @@ __rep_open_lsn_history(env, ip, txn, flags, dbpp)
 	if (ret != 0 || (ret = __db_create_internal(&dbp, env, 0)) != 0)
 		goto err;
 	if ((ret = __db_open(dbp, ip, txn,
-	    NULL, REPLSNHIST, DB_BTREE, myflags, 0, PGNO_BASE_MD)) == 0)
+	    NULL, dbname, DB_BTREE, myflags, 0, PGNO_BASE_MD)) == 0)
 		goto found;
 	if (ret != ENOENT)
 		goto err;
@@ -1091,7 +1119,7 @@ __rep_open_lsn_history(env, ip, txn, flags, dbpp)
 		fname = FLD_ISSET(rep->config, REP_C_INMEM) ?
 		    NULL : REPSYSDBNAME;
 		if ((ret = __db_open(dbp, ip, txn, fname,
-		    REPLSNHIST, DB_BTREE, myflags, 0, PGNO_BASE_MD)) == 0)
+		    dbname, DB_BTREE, myflags, 0, PGNO_BASE_MD)) == 0)
 			goto found;
 	} else
 		ret = ENOENT;
@@ -1185,7 +1213,7 @@ __rep_client_dbinit(env, startup, which)
 	if ((ret = __db_set_flags(dbp, DB_TXN_NOT_DURABLE)) != 0)
 		goto err;
 
-	flags = DB_NO_AUTO_COMMIT | DB_CREATE |
+	flags = DB_NO_AUTO_COMMIT | DB_CREATE | DB_INTERNAL_DB |
 	    (F_ISSET(env, ENV_THREAD) ? DB_THREAD : 0);
 
 	if ((ret = __db_open(dbp, ip, NULL, fname, subdb,
@@ -1263,7 +1291,7 @@ __rep_abort_prepared(env)
 	DB_TXNREGION *region;
 	LOG *lp;
 	int ret;
-	u_int32_t count, i;
+	long count, i;
 	u_int32_t op;
 
 	mgr = env->tx_handle;
@@ -1343,7 +1371,7 @@ __rep_restore_prepared(env)
 	 */
 	memset(&rec, 0, sizeof(DBT));
 	if ((ret = __logc_get(logc, &lsn, &rec, DB_FIRST)) != 0)  {
-		__db_errx(env, "First record not found");
+		__db_errx(env, DB_STR("3559", "First record not found"));
 		goto err;
 	}
 	/*
@@ -1369,9 +1397,9 @@ __rep_restore_prepared(env)
 	 */
 	if ((ret = __txn_getckp(env, &lsn)) == 0) {
 		if ((ret = __logc_get(logc, &lsn, &rec, DB_SET)) != 0)  {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3560",
 			    "Checkpoint record at LSN [%lu][%lu] not found",
-			    (u_long)lsn.file, (u_long)lsn.offset);
+			    "%lu %lu"), (u_long)lsn.file, (u_long)lsn.offset);
 			goto err;
 		}
 
@@ -1381,15 +1409,16 @@ __rep_restore_prepared(env)
 			__os_free(env, ckp_args);
 		}
 		if (ret != 0) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3561",
 			    "Invalid checkpoint record at [%lu][%lu]",
-			    (u_long)lsn.file, (u_long)lsn.offset);
+			    "%lu %lu"), (u_long)lsn.file, (u_long)lsn.offset);
 			goto err;
 		}
 
 		if ((ret = __logc_get(logc, &ckp_lsn, &rec, DB_SET)) != 0) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3562",
 			    "Checkpoint LSN record [%lu][%lu] not found",
+			    "%lu %lu"),
 			    (u_long)ckp_lsn.file, (u_long)ckp_lsn.offset);
 			goto err;
 		}
@@ -1399,7 +1428,8 @@ __rep_restore_prepared(env)
 			ret = 0;
 			goto done;
 		}
-		__db_errx(env, "Attempt to get first log record failed");
+		__db_errx(env, DB_STR("3563",
+		    "Attempt to get first log record failed"));
 		goto err;
 	}
 
@@ -1431,7 +1461,8 @@ __rep_restore_prepared(env)
 		 * Note that DB_NOTFOUND is unacceptable here because we
 		 * had to have looked at some log record to get this far.
 		 */
-		__db_errx(env, "Final log record not found");
+		__db_errx(env, DB_STR("3564",
+		    "Final log record not found"));
 		goto err;
 	}
 	do {
@@ -1630,35 +1661,60 @@ __rep_set_limit(dbenv, gbytes, bytes)
 }
 
 /*
- * PUBLIC: int __rep_set_nsites __P((DB_ENV *, u_int32_t));
+ * PUBLIC: int __rep_set_nsites_pp __P((DB_ENV *, u_int32_t));
  */
 int
-__rep_set_nsites(dbenv, n)
+__rep_set_nsites_pp(dbenv, n)
 	DB_ENV *dbenv;
 	u_int32_t n;
 {
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	ENV *env;
-	REP *rep;
+	int ret;
 
 	env = dbenv->env;
 	db_rep = env->rep_handle;
 
 	ENV_NOT_CONFIGURED(
 	    env, db_rep->region, "DB_ENV->rep_set_nsites", DB_INIT_REP);
-
-	if (IS_USING_LEASES(env) && IS_REP_STARTED(env)) {
-		__db_errx(env,
-	"DB_ENV->rep_set_nsites: must be called before DB_ENV->rep_start");
+	if (APP_IS_REPMGR(env)) {
+		__db_errx(env, DB_STR("3565",
+"DB_ENV->rep_set_nsites: cannot call from Replication Manager application"));
 		return (EINVAL);
 	}
+	if ((ret = __rep_set_nsites_int(env, n)) == 0)
+		APP_SET_BASEAPI(env);
+	return (ret);
+}
 
+/*
+ * PUBLIC: int __rep_set_nsites_int __P((ENV *, u_int32_t));
+ */
+int
+__rep_set_nsites_int(env, n)
+	ENV *env;
+	u_int32_t n;
+{
+	DB_REP *db_rep;
+	REP *rep;
+	int ret;
+
+	db_rep = env->rep_handle;
+
+	ret = 0;
 	if (REP_ON(env)) {
 		rep = db_rep->region;
 		rep->config_nsites = n;
+		if (IS_USING_LEASES(env) &&
+		    IS_REP_MASTER(env) && IS_REP_STARTED(env)) {
+			REP_SYSTEM_LOCK(env);
+			ret = __rep_lease_table_alloc(env, n);
+			REP_SYSTEM_UNLOCK(env);
+		}
 	} else
 		db_rep->config_nsites = n;
-	return (0);
+	return (ret);
 }
 
 /*
@@ -1679,6 +1735,8 @@ __rep_get_nsites(dbenv, n)
 	ENV_NOT_CONFIGURED(
 	    env, db_rep->region, "DB_ENV->rep_get_nsites", DB_INIT_REP);
 
+	if (APP_IS_REPMGR(env))
+		return (__repmgr_get_nsites(env, n));
 	if (REP_ON(env)) {
 		rep = db_rep->region;
 		*n = rep->config_nsites;
@@ -1699,6 +1757,8 @@ __rep_set_priority(dbenv, priority)
 	DB_REP *db_rep;
 	ENV *env;
 	REP *rep;
+	u_int32_t prev;
+	int ret;
 
 	env = dbenv->env;
 	db_rep = env->rep_handle;
@@ -1706,12 +1766,17 @@ __rep_set_priority(dbenv, priority)
 	ENV_NOT_CONFIGURED(
 	    env, db_rep->region, "DB_ENV->rep_set_priority", DB_INIT_REP);
 
+	ret = 0;
 	if (REP_ON(env)) {
 		rep = db_rep->region;
+		prev = rep->priority;
 		rep->priority = priority;
+#ifdef HAVE_REPLICATION_THREADS
+		ret = __repmgr_chg_prio(env, prev, priority);
+#endif
 	} else
 		db_rep->my_priority = priority;
-	return (0);
+	return (ret);
 }
 
 /*
@@ -1764,7 +1829,7 @@ __rep_set_timeout(dbenv, which, timeout)
 	if (timeout == 0 && (which == DB_REP_CONNECTION_RETRY ||
 	    which == DB_REP_ELECTION_TIMEOUT || which == DB_REP_LEASE_TIMEOUT ||
 	    which == DB_REP_ELECTION_RETRY)) {
-		__db_errx(env, "timeout value must be > 0");
+		__db_errx(env, DB_STR("3566", "timeout value must be > 0"));
 		return (EINVAL);
 	}
 
@@ -1778,14 +1843,16 @@ __rep_set_timeout(dbenv, which, timeout)
 	    env, db_rep->region, "DB_ENV->rep_set_timeout", DB_INIT_REP);
 
 	if (APP_IS_BASEAPI(env) && repmgr_timeout) {
-		__db_errx(env, "%s %s", "DB_ENV->rep_set_timeout:",
-"cannot set Replication Manager timeout from base replication application");
+		__db_errx(env, DB_STR_A("3567",
+"%scannot set Replication Manager timeout from base replication application",
+		    "%s"), "DB_ENV->rep_set_timeout:");
 		return (EINVAL);
 	}
 	if (which == DB_REP_LEASE_TIMEOUT && IS_REP_STARTED(env)) {
 		ret = EINVAL;
-		__db_errx(env, "%s %s", "DB_ENV->rep_set_timeout:",
-"lease timeout must be set before DB_ENV->rep_start.");
+		__db_errx(env, DB_STR_A("3568",
+"%s: lease timeout must be set before DB_ENV->rep_start.",
+		    "%s"), "DB_ENV->rep_set_timeout");
 		return (EINVAL);
 	}
 
@@ -1847,8 +1914,8 @@ __rep_set_timeout(dbenv, which, timeout)
 		break;
 #endif
 	default:
-		__db_errx(env,
-		    "Unknown timeout type argument to DB_ENV->rep_set_timeout");
+		__db_errx(env, DB_STR("3569",
+	    "Unknown timeout type argument to DB_ENV->rep_set_timeout"));
 		ret = EINVAL;
 	}
 
@@ -1918,8 +1985,8 @@ __rep_get_timeout(dbenv, which, timeout)
 		break;
 #endif
 	default:
-		__db_errx(env,
-		    "unknown timeout type argument to DB_ENV->rep_get_timeout");
+		__db_errx(env, DB_STR("3570",
+	    "unknown timeout type argument to DB_ENV->rep_get_timeout"));
 		return (EINVAL);
 	}
 
@@ -2000,8 +2067,8 @@ __rep_set_request(dbenv, min, max)
 	    env, db_rep->region, "DB_ENV->rep_set_request", DB_INIT_REP);
 
 	if (min == 0 || max < min) {
-		__db_errx(env,
-		    "DB_ENV->rep_set_request: Invalid min or max values");
+		__db_errx(env, DB_STR("3571",
+		    "DB_ENV->rep_set_request: Invalid min or max values"));
 		return (EINVAL);
 	}
 	if (REP_ON(env)) {
@@ -2058,20 +2125,21 @@ __rep_set_transport_pp(dbenv, eid, f_send)
 	    env, db_rep->region, "DB_ENV->rep_set_transport", DB_INIT_REP);
 
 	if (APP_IS_REPMGR(env)) {
-		__db_errx(env,
-"DB_ENV->rep_set_transport: cannot call from Replication Manager application");
+		__db_errx(env, DB_STR("3572",
+		    "DB_ENV->rep_set_transport: cannot call from "
+		    "Replication Manager application"));
 		return (EINVAL);
 	}
 
 	if (f_send == NULL) {
-		__db_errx(env,
-		    "DB_ENV->rep_set_transport: no send function specified");
+		__db_errx(env, DB_STR("3573",
+		    "DB_ENV->rep_set_transport: no send function specified"));
 		return (EINVAL);
 	}
 
 	if (eid < 0) {
-		__db_errx(env,
-	"DB_ENV->rep_set_transport: eid must be greater than or equal to 0");
+		__db_errx(env, DB_STR("3574",
+    "DB_ENV->rep_set_transport: eid must be greater than or equal to 0"));
 		return (EINVAL);
 	}
 
@@ -2184,23 +2252,25 @@ __rep_set_clockskew(dbenv, fast_clock, slow_clock)
 		 * If one value is zero, reject if both aren't zero.
 		 */
 		if (slow_clock != 0 || fast_clock != 0) {
-			__db_errx(env,
-"DB_ENV->rep_set_clockskew: Zero only valid for when used for both arguments");
+			__db_errx(env, DB_STR("3575",
+			    "DB_ENV->rep_set_clockskew: Zero only valid for "
+			    "when used for both arguments"));
 			return (EINVAL);
 		}
 		fast_clock = 1;
 		slow_clock = 1;
 	}
 	if (fast_clock < slow_clock) {
-		__db_errx(env,
-"DB_ENV->rep_set_clockskew: slow_clock value is larger than fast_clock_value");
+		__db_errx(env, DB_STR("3576",
+		    "DB_ENV->rep_set_clockskew: slow_clock value is "
+		    "larger than fast_clock_value"));
 		return (EINVAL);
 	}
 	if (REP_ON(env)) {
 		rep = db_rep->region;
 		if (IS_REP_STARTED(env)) {
-			__db_errx(env,
-	"DB_ENV->rep_set_clockskew: must be called before DB_ENV->rep_start");
+			__db_errx(env, DB_STR("3577",
+	"DB_ENV->rep_set_clockskew: must be called before DB_ENV->rep_start"));
 			return (EINVAL);
 		}
 		ENV_ENTER(env, ip);
@@ -2246,8 +2316,8 @@ __rep_flush(dbenv)
 
 	/* We need a transport function because we send messages. */
 	if (db_rep->send == NULL) {
-		__db_errx(env,
-    "DB_ENV->rep_flush: must be called after DB_ENV->rep_set_transport");
+		__db_errx(env, DB_STR("3578",
+    "DB_ENV->rep_flush: must be called after DB_ENV->rep_set_transport"));
 		return (EINVAL);
 	}
 
@@ -2303,8 +2373,8 @@ __rep_sync(dbenv, flags)
 
 	/* We need a transport function because we send messages. */
 	if (db_rep->send == NULL) {
-		__db_errx(env,
-    "DB_ENV->rep_sync: must be called after DB_ENV->rep_set_transport");
+		__db_errx(env, DB_STR("3579",
+    "DB_ENV->rep_sync: must be called after DB_ENV->rep_set_transport"));
 		return (EINVAL);
 	}
 
@@ -2396,8 +2466,8 @@ __rep_txn_applied(env, ip, commit_info, timeout)
 	int locked, ret, t_ret;
 
 	if (commit_info->gen == 0) {
-		__db_errx(env,
-		    "non-replication commit token in replication env");
+		__db_errx(env, DB_STR("3580",
+		    "non-replication commit token in replication env"));
 		return (EINVAL);
 	}
 
@@ -2841,8 +2911,8 @@ retry:
 		return (ret);
 
 	if ((dbp = db_rep->lsn_db) == NULL) {
-		if ((ret = __rep_open_lsn_history(env,
-		    ip, *txn, 0, &dbp)) != 0) {
+		if ((ret = __rep_open_sysdb(env,
+		    ip, *txn, REPLSNHIST, 0, &dbp)) != 0) {
 			/*
 			 * If the database isn't there, it could be because it's
 			 * memory-resident, and we haven't yet sync'ed with the
@@ -2938,6 +3008,9 @@ __rep_conv_vers(env, log_ver)
 	 */
 	if (log_ver == DB_LOGVERSION)
 		return (DB_REPVERSION);
+	/* 5.0 and 5.1 had identical log and rep versions. */
+	if (log_ver == DB_LOGVERSION_51)
+		return (DB_REPVERSION_51);
 	if (log_ver == DB_LOGVERSION_48p2)
 		return (DB_REPVERSION_48);
 	if (log_ver == DB_LOGVERSION_48)

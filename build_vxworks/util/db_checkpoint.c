@@ -92,7 +92,8 @@ db_checkpoint_main(argc, argv)
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5121",
+				    "%s: strdup: %s\n", "%s %s"),
 				    progname, strerror(errno));
 				return (EXIT_FAILURE);
 			}
@@ -120,9 +121,9 @@ db_checkpoint_main(argc, argv)
 		return (db_checkpoint_usage());
 
 	if (once == 0 && kbytes == 0 && minutes == 0) {
-		(void)fprintf(stderr,
+		(void)fprintf(stderr, DB_STR_A("5122",
 		    "%s: at least one of -1, -k and -p must be specified\n",
-		    progname);
+		    "%s\n"), progname);
 		return (db_checkpoint_usage());
 	}
 
@@ -180,8 +181,9 @@ db_checkpoint_main(argc, argv)
 	while (!__db_util_interrupted()) {
 		if (verbose) {
 			(void)time(&now);
-			dbenv->errx(dbenv,
-		    "checkpoint begin: %s", __os_ctime(&now, time_buf));
+			dbenv->errx(dbenv, DB_STR_A("5123",
+			    "checkpoint begin: %s", "%s"),
+			    __os_ctime(&now, time_buf));
 		}
 
 		if ((ret = dbenv->txn_checkpoint(dbenv,
@@ -192,8 +194,9 @@ db_checkpoint_main(argc, argv)
 
 		if (verbose) {
 			(void)time(&now);
-			dbenv->errx(dbenv,
-		    "checkpoint complete: %s", __os_ctime(&now, time_buf));
+			dbenv->errx(dbenv, DB_STR_A("5124",
+			    "checkpoint complete: %s", "%s"),
+			    __os_ctime(&now, time_buf));
 		}
 
 		if (once)
@@ -242,10 +245,10 @@ db_checkpoint_version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
-		    v_major, v_minor);
+		fprintf(stderr, DB_STR_A("5125",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname, DB_VERSION_MAJOR,
+		    DB_VERSION_MINOR, v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
 	return (0);

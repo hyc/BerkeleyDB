@@ -25,7 +25,8 @@ static int
 __db_nolocking(env)
 	ENV *env;
 {
-	__db_errx(env, "library build did not include support for locking");
+	__db_errx(env, DB_STR("2054",
+	    "library build did not include support for locking"));
 	return (DB_OPNOTSUP);
 }
 
@@ -65,6 +66,33 @@ __lock_get_lk_detect(dbenv, lk_detectp)
 }
 
 int
+__lock_get_lk_init_lockers(dbenv, lk_initp)
+	DB_ENV *dbenv;
+	u_int32_t *lk_initp;
+{
+	COMPQUIET(lk_initp, NULL);
+	return (__db_nolocking(dbenv->env));
+}
+
+int
+__lock_get_lk_init_locks(dbenv, lk_initp)
+	DB_ENV *dbenv;
+	u_int32_t *lk_initp;
+{
+	COMPQUIET(lk_initp, NULL);
+	return (__db_nolocking(dbenv->env));
+}
+
+int
+__lock_get_lk_init_objects(dbenv, lk_initp)
+	DB_ENV *dbenv;
+	u_int32_t *lk_initp;
+{
+	COMPQUIET(lk_initp, NULL);
+	return (__db_nolocking(dbenv->env));
+}
+
+int
 __lock_get_lk_max_lockers(dbenv, lk_maxp)
 	DB_ENV *dbenv;
 	u_int32_t *lk_maxp;
@@ -97,6 +125,24 @@ __lock_get_lk_partitions(dbenv, lk_maxp)
 	u_int32_t *lk_maxp;
 {
 	COMPQUIET(lk_maxp, NULL);
+	return (__db_nolocking(dbenv->env));
+}
+
+int
+__lock_get_lk_tablesize(dbenv, lk_tablesizep)
+	DB_ENV *dbenv;
+	u_int32_t *lk_tablesizep;
+{
+	COMPQUIET(lk_tablesizep, NULL);
+	return (__db_nolocking(dbenv->env));
+}
+
+int
+__lock_set_lk_tablesize(dbenv, lk_tablesize)
+	DB_ENV *dbenv;
+	u_int32_t lk_tablesize;
+{
+	COMPQUIET(lk_tablesize, 0);
 	return (__db_nolocking(dbenv->env));
 }
 
@@ -289,12 +335,40 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 }
 
 int
-__lock_open(env, create_ok)
+__lock_open(env)
 	ENV *env;
-	int create_ok;
 {
-	COMPQUIET(create_ok, 0);
 	return (__db_nolocking(env));
+}
+
+u_int32_t
+__lock_region_mutex_count(env)
+	ENV *env;
+{
+	return (__db_nolocking(env));
+}
+
+u_int32_t
+__lock_region_mutex_max(env)
+	ENV *env;
+{
+	return (__db_nolocking(env));
+}
+
+size_t
+__lock_region_max(env)
+	ENV *env;
+{
+	return (0);
+}
+
+size_t
+__lock_region_size(env, other_alloc)
+	ENV *env;
+	size_t other_alloc;
+{
+	COMPQUIET(other_alloc, 0);
+	return (0);
 }
 
 int
@@ -536,6 +610,16 @@ __lock_id_set(env, cur_id, max_id)
 	COMPQUIET(max_id, 0);
 	return (0);
 }
+
+int
+__lock_wakeup(env, obj)
+	ENV *env;
+	const DBT *obj;
+{
+	COMPQUIET(obj, NULL);
+	return (__db_nolocking(env));
+}
+
 
 int
 __lock_change(env, old_lock, new_lock)

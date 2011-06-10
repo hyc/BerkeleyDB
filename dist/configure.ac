@@ -45,6 +45,7 @@ AC_SUBST(CXXFLAGS)
 AC_SUBST(DB_CONST)
 AC_SUBST(DB_PROTO1)
 AC_SUBST(DB_PROTO2)
+AC_SUBST(DB_STRUCT_ALIGN8)
 AC_SUBST(DEFAULT_LIB)
 AC_SUBST(DEFAULT_LIB_CXX)
 AC_SUBST(DEFAULT_LIB_SQL)
@@ -272,6 +273,15 @@ AC_C_INLINE
 # We don't have much choice, we look at internal autoconf variables.
 if test "$ac_cv_c_const" != "yes"; then
 	DB_CONST="#define const"
+fi
+
+# We use alignment attributes in db.h - figure out if the compiler supports
+# them.
+AC_CACHE_CHECK([for GCC aligned attribute], db_cv_aligned_attribute, [
+AC_TRY_COMPILE(, __attribute__ ((aligned (8))) int i;,
+    [db_cv_aligned_attribute=yes], [db_cv_aligned_attribute=no])])
+if test "$db_cv_aligned_attribute" = "yes"; then
+	DB_STRUCT_ALIGN8="__attribute__ ((aligned (8)))"
 fi
 
 # Clear __P, some other systems use it too.
@@ -680,7 +690,7 @@ AC_HAVE_LIBRARY(socket, TEST_LIBS="$TEST_LIBS -lsocket")
 # buffer is non-NULL -- Solaris can't handle a NULL buffer, and they
 # deleted getwd().
 AC_REPLACE_FUNCS(\
-	abort atoi atol getcwd getenv getopt isalpha isdigit isprint\
+	abort atoi atol bsearch getcwd getenv getopt isalpha isdigit isprint\
 	isspace memcmp memcpy memmove printf qsort raise rand strcasecmp\
 	strcat strchr strdup strerror strncat strncmp strrchr strsep\
 	strtol strtoul)
@@ -838,6 +848,10 @@ fi
 # Optional sequence code.
 AM_SEQUENCE_CONFIGURE
 
+# Detect whether a large mmap() supports automatically extending the accessible
+# region after growing the underlying file.
+AM_MMAP_EXTEND
+
 # Optional DB 1.85 compatibility API.
 if test "$db_cv_compat185" = "yes"; then
 	ADDITIONAL_INCS="db_185.h $ADDITIONAL_INCS"
@@ -848,6 +862,12 @@ fi
 # Optional utilities.
 if test "$db_cv_dump185" = "yes"; then
 	ADDITIONAL_PROGS="db_dump185 $ADDITIONAL_PROGS"
+fi
+
+# Log checksums can be disabled to increase performance
+if test "$db_cv_log_checksum" = "yes"; then
+	AC_DEFINE(HAVE_LOG_CHECKSUM)
+	AH_TEMPLATE(HAVE_LOG_CHECKSUM, [Define to 1 if enabling checksums in log records.])
 fi
 
 # You can disable pieces of functionality to save space.
@@ -878,6 +898,18 @@ if test "$db_cv_build_hash" = "yes"; then
 	fi
 else
 	ADDITIONAL_OBJS="$ADDITIONAL_OBJS hash_stub${o}"
+fi
+
+# Heap can be disabled.
+if test "$db_cv_build_heap" = "yes"; then
+	AC_DEFINE(HAVE_HEAP)
+	AH_TEMPLATE(HAVE_HEAP, [Define to 1 if building Heap access method.])
+	ADDITIONAL_OBJS="$ADDITIONAL_OBJS \$(HEAP_OBJS)"
+	if test "$db_cv_build_verify" = "yes"; then
+		ADDITIONAL_OBJS="$ADDITIONAL_OBJS \$(HEAP_VRFY_OBJS)"
+	fi
+else
+	ADDITIONAL_OBJS="$ADDITIONAL_OBJS heap_stub${o}"
 fi
 
 # Queue can be disabled.
@@ -993,6 +1025,20 @@ if test "$db_cv_dbm" = "yes"; then
 	AC_DEFINE(HAVE_DBM)
 	AH_TEMPLATE(HAVE_DBM, [Define to 1 if building the DBM API.])
 	ADDITIONAL_OBJS="$ADDITIONAL_OBJS dbm${o} hsearch${o}"
+fi
+
+# The output and error messages can be stripped.
+if test "$db_cv_stripped_messages" = "yes"; then
+	AC_DEFINE(HAVE_STRIPPED_MESSAGES)
+	AH_TEMPLATE(HAVE_STRIPPED_MESSAGES,
+	    [Define to 1 if building without output message content.])
+fi
+
+# The output and error messages can be localized.
+if test "$db_cv_localization" = "yes"; then
+	AC_DEFINE(HAVE_LOCALIZATION)
+	AH_TEMPLATE(HAVE_LOCALIZATION,
+[Define to 1 if you have localization function to support globalization.])
 fi
 
 # We need to add the additional object files into the Makefile with the correct

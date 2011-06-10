@@ -2,7 +2,7 @@
 #
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2010 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -107,8 +107,12 @@ BEGIN {
 
 	if (prefix == "__ham")
 		printf("#ifdef HAVE_HASH\n") >> PFILE
+	if (prefix == "__heap")
+		printf("#ifdef HAVE_HEAP\n") >> PFILE
 	if (prefix == "__qam")
 		printf("#ifdef HAVE_QUEUE\n") >> PFILE
+	if (prefix == "__repmgr")
+		printf("#ifdef HAVE_REPLICATION_THREADS\n") >> PFILE
 
 	# Start .h file, make the entire file conditional.
 	printf("/* Do not edit: automatically built by gen_rec.awk. */\n\n")\
@@ -117,8 +121,12 @@ BEGIN {
 	    >> HFILE
 	if (prefix == "__ham")
 		printf("#ifdef HAVE_HASH\n") >> HFILE
+	if (prefix == "__heap")
+		printf("#ifdef HAVE_HEAP\n") >> HFILE
 	if (prefix == "__qam")
 		printf("#ifdef HAVE_QUEUE\n") >> HFILE
+	if (prefix == "__repmgr")
+		printf("#ifdef HAVE_REPLICATION_THREADS\n") >> HFILE
 	if (dbprivate)
 		printf("#include \"dbinc/log.h\"\n") >> HFILE
 
@@ -298,8 +306,12 @@ END {
 	# End the conditional for the HFILE
 	if (prefix == "__ham")
 		printf("#endif /* HAVE_HASH */\n") >> HFILE
+	if (prefix == "__heap")
+		printf("#endif /* HAVE_HEAP */\n") >> HFILE
 	if (prefix == "__qam")
 		printf("#endif /* HAVE_QUEUE */\n") >> HFILE
+	if (prefix == "__repmgr")
+		printf("#endif /* HAVE_REPLICATION_THREADS */\n") >> HFILE
 	printf("#endif\n") >> HFILE
 
 	# Print initialization routine; function prototype
@@ -338,8 +350,12 @@ END {
 	printf("\treturn (0);\n}\n") >> PFILE
 	if (prefix == "__ham")
 		printf("#endif /* HAVE_HASH */\n") >> PFILE
+	if (prefix == "__heap")
+		printf("#endif /* HAVE_HEAP */\n") >> PFILE
 	if (prefix == "__qam")
 		printf("#endif /* HAVE_QUEUE */\n") >> PFILE
+	if (prefix == "__repmgr")
+		printf("#endif /* HAVE_REPLICATION_THREADS */\n") >> PFILE
 
 	# We only want to generate *_init_recover functions if this is a
 	# DB-private, rather than application-specific, set of recovery
@@ -528,7 +544,7 @@ function print_function()
 	printf("\n") >> PFILE
 
 	printf(\
- 	    "\treturn(__log_print_record(%senv, dbtp, lsnp, \"%s\", %s_desc", 
+ 	    "\treturn (__log_print_record(%senv, dbtp, lsnp, \"%s\", %s_desc", 
 	     dbprivate ? "" : "dbenv->", funcname, funcname) >> PFILE
 
  	if (dbprivate)

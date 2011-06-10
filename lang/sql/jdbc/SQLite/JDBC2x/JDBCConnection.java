@@ -1,7 +1,18 @@
 package SQLite.JDBC2x;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.Properties;
 
 public class JDBCConnection
     implements java.sql.Connection, SQLite.BusyHandler {
@@ -161,7 +172,8 @@ public class JDBCConnection
 		    db.key(pwd);
 		}
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("error while setting key");
+		throw new
+		    SQLException("error while setting key: " + se.toString());
 	    }
 	    db.busy_handler(this);
 	} catch (SQLException e) {
@@ -179,7 +191,7 @@ public class JDBCConnection
 
     /* non-standard */
     public SQLite.Database getSQLiteDatabase() {
-	return (SQLite.Database) db;
+	return db;
     }
   
     public Statement createStatement() {

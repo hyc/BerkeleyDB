@@ -1,6 +1,11 @@
 package SQLite.JDBC2z;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.RowIdLifetime;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Hashtable;
 
 public class JDBCDatabaseMetaData implements DatabaseMetaData {
@@ -11,495 +16,615 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	this.conn = conn;
     }
 
+    @Override
     public boolean allProceduresAreCallable() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean allTablesAreSelectable() throws SQLException {
 	return true;
     }
 
+    @Override
     public String getURL() throws SQLException {
 	return conn.url;
     }
 
+    @Override
     public String getUserName() throws SQLException {
 	return "";
     }
 
+    @Override
     public boolean isReadOnly() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean nullsAreSortedHigh() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean nullsAreSortedLow() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean nullsAreSortedAtStart() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean nullsAreSortedAtEnd() throws SQLException {
 	return false;
     }
 
+    @Override
     public String getDatabaseProductName() throws SQLException {
 	return "SQLite";
     }
 
+    @Override
     public String getDatabaseProductVersion() throws SQLException {
 	return SQLite.Database.version();
     }
 
+    @Override
     public String getDriverName() throws SQLException {
 	return "SQLite/JDBC";
     }
 
+    @Override
     public String getDriverVersion() throws SQLException {
 	return "" + SQLite.JDBCDriver.MAJORVERSION + "." +
 	    SQLite.Constants.drv_minor;
     }
 
+    @Override
     public int getDriverMajorVersion() {
 	return SQLite.JDBCDriver.MAJORVERSION;
     }
 
+    @Override
     public int getDriverMinorVersion() {
 	return SQLite.Constants.drv_minor;
     }
 
+    @Override
     public boolean usesLocalFiles() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean usesLocalFilePerTable() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsMixedCaseIdentifiers() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean storesUpperCaseIdentifiers() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean storesLowerCaseIdentifiers() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean storesMixedCaseIdentifiers() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
 	return true;
     }
 
+    @Override
     public String getIdentifierQuoteString() throws SQLException {
 	return "\"";
     }
 
+    @Override
     public String getSQLKeywords() throws SQLException {
 	return "SELECT,UPDATE,CREATE,TABLE,VIEW,DELETE,FROM,WHERE" +
 	    ",COMMIT,ROLLBACK,TRIGGER";
     }
 
+    @Override
     public String getNumericFunctions() throws SQLException {
 	return ""; 
     }
 
+    @Override
     public String getStringFunctions() throws SQLException {
 	return "";
     }
 
+    @Override
     public String getSystemFunctions() throws SQLException {
 	return "";
     }
 
+    @Override
     public String getTimeDateFunctions() throws SQLException {
 	return "";
     }
 
+    @Override
     public String getSearchStringEscape() throws SQLException {
 	return "\\";
     }
 
+    @Override
     public String getExtraNameCharacters() throws SQLException {
 	return "";
     }
 
+    @Override
     public boolean supportsAlterTableWithAddColumn() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsAlterTableWithDropColumn() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsColumnAliasing() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean nullPlusNonNullIsNull() throws SQLException {
 	return false;
     }
     
+    @Override
     public boolean supportsConvert() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsConvert(int fromType, int toType)
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsTableCorrelationNames() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsDifferentTableCorrelationNames()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsExpressionsInOrderBy() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsOrderByUnrelated() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsGroupBy() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsGroupByUnrelated() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsGroupByBeyondSelect() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsLikeEscapeClause() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsMultipleResultSets() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsMultipleTransactions() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsNonNullableColumns() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsMinimumSQLGrammar() throws SQLException {
 	return true;
     } 
 
+    @Override
     public boolean supportsCoreSQLGrammar() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsExtendedSQLGrammar() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsANSI92EntryLevelSQL() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsANSI92IntermediateSQL() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsANSI92FullSQL() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsIntegrityEnhancementFacility()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsOuterJoins() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsFullOuterJoins() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsLimitedOuterJoins() throws SQLException {
 	return false;
     }
 
+    @Override
     public String getSchemaTerm() throws SQLException {
 	return "";
     }
 
+    @Override
     public String getProcedureTerm() throws SQLException {
 	return "";
     }
 
+    @Override
     public String getCatalogTerm() throws SQLException {
 	return "";
     }
 
+    @Override
     public boolean isCatalogAtStart() throws SQLException {
 	return false;
     }
 
+    @Override
     public String getCatalogSeparator() throws SQLException {
 	return "";
     }
 
+    @Override
     public boolean supportsSchemasInDataManipulation() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsSchemasInProcedureCalls() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsSchemasInTableDefinitions() throws SQLException {
 	return false;
     }
     
+    @Override
     public boolean supportsSchemasInIndexDefinitions() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsSchemasInPrivilegeDefinitions()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsCatalogsInDataManipulation() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsCatalogsInProcedureCalls() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsCatalogsInTableDefinitions() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsCatalogsInPrivilegeDefinitions()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsPositionedDelete() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsPositionedUpdate() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsSelectForUpdate() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsStoredProcedures() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsSubqueriesInComparisons() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsSubqueriesInExists() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsSubqueriesInIns() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsSubqueriesInQuantifieds() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsCorrelatedSubqueries() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsUnion() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsUnionAll() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
 	return false;
     }
 
+    @Override
     public int getMaxBinaryLiteralLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxCharLiteralLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxColumnNameLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxColumnsInGroupBy() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxColumnsInIndex() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxColumnsInOrderBy() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxColumnsInSelect() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxColumnsInTable() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxConnections() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxCursorNameLength() throws SQLException {
 	return 8;
     }
 
+    @Override
     public int getMaxIndexLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxSchemaNameLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxProcedureNameLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxCatalogNameLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxRowSize() throws SQLException {
 	return 0;
     }
 
+    @Override
     public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
 	return true;
     }
 
+    @Override
     public int getMaxStatementLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxStatements() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxTableNameLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxTablesInSelect() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getMaxUserNameLength() throws SQLException {
 	return 0;
     }
 
+    @Override
     public int getDefaultTransactionIsolation() throws SQLException {
 	return Connection.TRANSACTION_SERIALIZABLE;
     }
 
+    @Override
     public boolean supportsTransactions() throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsTransactionIsolationLevel(int level)
 	throws SQLException {
 	return level == Connection.TRANSACTION_SERIALIZABLE;
     }
 
+    @Override
     public boolean supportsDataDefinitionAndDataManipulationTransactions()
 	throws SQLException {
 	return true;
     }
 
+    @Override
     public boolean supportsDataManipulationTransactionsOnly()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean dataDefinitionCausesTransactionCommit()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
 	return false;
     }
 
+    @Override
     public ResultSet getProcedures(String catalog, String schemaPattern,
 				   String procedureNamePattern)
 	throws SQLException {
 	return null;
     }
 
+    @Override
     public ResultSet getProcedureColumns(String catalog,
 					 String schemaPattern,
 					 String procedureNamePattern, 
@@ -508,12 +633,13 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return null;
     }
 
+    @Override
     public ResultSet getTables(String catalog, String schemaPattern,
 			       String tableNamePattern, String types[])
 	throws SQLException {
 	JDBCStatement s = new JDBCStatement(conn);
-	StringBuffer sb = new StringBuffer();
-	sb.append("SELECT '' AS 'TABLE_CAT', " +
+	StringBuilder sb = new StringBuilder(
+		  "SELECT '' AS 'TABLE_CAT', " +
 		  "'' AS 'TABLE_SCHEM', " +
 		  "tbl_name AS 'TABLE_NAME', " +
 		  "upper(type) AS 'TABLE_TYPE', " +
@@ -550,6 +676,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public ResultSet getSchemas() throws SQLException {
 	String cols[] = { "TABLE_SCHEM" };
 	SQLite.TableResult tr = new SQLite.TableResult();
@@ -557,9 +684,10 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	String row[] = { "" };
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
+    @Override
     public ResultSet getCatalogs() throws SQLException {
 	String cols[] = { "TABLE_CAT" };
 	SQLite.TableResult tr = new SQLite.TableResult();
@@ -567,9 +695,10 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	String row[] = { "" };
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
+    @Override
     public ResultSet getTableTypes() throws SQLException {
 	String cols[] = { "TABLE_TYPE" };
 	SQLite.TableResult tr = new SQLite.TableResult();
@@ -581,9 +710,10 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	row[0] = "VIEW";
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
+    @Override
     public ResultSet getColumns(String catalog, String schemaPattern,
 				String tableNamePattern,
 				String columnNamePattern)
@@ -597,7 +727,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new SQLException("schema reload failed", se);
 	    }
 	    rs0 = (JDBCResultSet)
 		(s.executeQuery("PRAGMA table_info(" +
@@ -631,11 +761,11 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
-	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
+	if (rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h.put(rs0.tr.column[i], new Integer(i));
+		h.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    if (columnNamePattern != null &&
 		columnNamePattern.charAt(0) == '%') {
@@ -643,7 +773,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h.get("name")).intValue();
+		int col = h.get("name").intValue();
 		if (columnNamePattern != null) {
 		    if (r0[col].compareTo(columnNamePattern) != 0) {
 			continue;
@@ -654,7 +784,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		row[1]  = "";
 		row[2]  = tableNamePattern;
 		row[3]  = r0[col];
-		col = ((Integer) h.get("type")).intValue();
+		col = h.get("type").intValue();
 		String typeStr = r0[col];
 		int type = mapSqlType(typeStr);
 		row[4]  = "" + type;
@@ -664,15 +794,14 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		row[8]  = "10";
 		row[9]  = "0";
 		row[11] = null;
-		col = ((Integer) h.get("dflt_value")).intValue();
+		col = h.get("dflt_value").intValue();
 		row[12] = r0[col];
 		row[13] = "0";
 		row[14] = "0";
 		row[15] = "65536";
-		col = ((Integer) h.get("cid")).intValue();
-		Integer cid = new Integer(r0[col]);
-		row[16] = "" + (cid.intValue() + 1);
-		col = ((Integer) h.get("notnull")).intValue();
+		col = h.get("cid").intValue();
+		row[16] = Integer.toString(Integer.parseInt(r0[col]) + 1);
+		col = h.get("notnull").intValue();
 		row[17] = (r0[col].charAt(0) == '0') ? "YES" : "NO";
 		row[10] = (r0[col].charAt(0) == '0') ? "" + columnNullable :
 			  "" + columnNoNulls;
@@ -682,6 +811,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public ResultSet getColumnPrivileges(String catalog, String schema,
 					 String table,
 					 String columnNamePattern)
@@ -699,10 +829,11 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
+    @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern,
 					String tableNamePattern)
 	throws SQLException {
@@ -719,10 +850,11 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
+    @Override
     public ResultSet getBestRowIdentifier(String catalog, String schema,
 					  String table, int scope,
 					  boolean nullable)
@@ -735,7 +867,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new SQLException("schema reload failed", se);
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -762,22 +894,22 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0 &&
 	    rs1 != null && rs1.tr != null && rs1.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    Hashtable<String, Integer> h1 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs1.tr.ncolumns; i++) {
-		h1.put(rs1.tr.column[i], new Integer(i));
+		h1.put(rs1.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("unique")).intValue();
+		int col = h0.get("unique").intValue();
 		String uniq = r0[col];
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		String iname = r0[col];
 		if (uniq.charAt(0) == '0') {
 		    continue;
@@ -798,15 +930,15 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		Hashtable<String, Integer> h2 =
 		    new Hashtable<String, Integer>();
 		for (int k = 0; k < rs2.tr.ncolumns; k++) {
-		    h2.put(rs2.tr.column[k], new Integer(k));
+		    h2.put(rs2.tr.column[k], Integer.valueOf(k));
 		}
 		for (int k = 0; k < rs2.tr.nrows; k++) {
 		    String r2[] = (String [])(rs2.tr.rows.elementAt(k));
-		    col = ((Integer) h2.get("name")).intValue();
+		    col = h2.get("name").intValue();
 		    String cname = r2[col];
 		    for (int m = 0; m < rs1.tr.nrows; m++) {
 			String r1[] = (String [])(rs1.tr.rows.elementAt(m));
-			col = ((Integer) h1.get("name")).intValue();
+			col = h1.get("name").intValue();
 			if (cname.compareTo(r1[col]) == 0) {
 			    String row[] = new String[cols.length];
 			    row[0] = "" + scope;
@@ -838,6 +970,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public ResultSet getVersionColumns(String catalog, String schema,
 				       String table) throws SQLException {
 	String cols[] = {
@@ -853,10 +986,11 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
+    @Override
     public ResultSet getPrimaryKeys(String catalog, String schema,
 				    String table) throws SQLException {
 	JDBCStatement s0 = new JDBCStatement(conn);
@@ -865,7 +999,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new SQLException("schema reload failed", se);
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -886,17 +1020,17 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("unique")).intValue();
+		int col = h0.get("unique").intValue();
 		String uniq = r0[col];
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		String iname = r0[col];
 		if (uniq.charAt(0) == '0') {
 		    continue;
@@ -917,7 +1051,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		Hashtable<String, Integer> h1 =
 		    new Hashtable<String, Integer>();
 		for (int k = 0; k < rs1.tr.ncolumns; k++) {
-		    h1.put(rs1.tr.column[k], new Integer(k));
+		    h1.put(rs1.tr.column[k], Integer.valueOf(k));
 		}
 		for (int k = 0; k < rs1.tr.nrows; k++) {
 		    String r1[] = (String [])(rs1.tr.rows.elementAt(k));
@@ -925,9 +1059,9 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		    row[0]  = "";
 		    row[1]  = "";
 		    row[2]  = table;
-		    col = ((Integer) h1.get("name")).intValue();
+		    col = h1.get("name").intValue();
 		    row[3] = r1[col];
-		    col = ((Integer) h1.get("seqno")).intValue();
+		    col = h1.get("seqno").intValue();
 		    row[4]  = Integer.toString(Integer.parseInt(r1[col]) + 1);
 		    row[5]  = iname;
 		    tr.newrow(row);
@@ -950,16 +1084,16 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("type")).intValue();
+		int col = h0.get("type").intValue();
 		String type = r0[col];
 		if (!type.equalsIgnoreCase("integer")) {
 		    continue;
 		}
-		col = ((Integer) h0.get("pk")).intValue();
+		col = h0.get("pk").intValue();
 		String pk = r0[col];
 		if (pk.charAt(0) == '0') {
 		    continue;
@@ -968,9 +1102,9 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		row[0]  = "";
 		row[1]  = "";
 		row[2]  = table;
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		row[3] = r0[col];
-		col = ((Integer) h0.get("cid")).intValue();
+		col = h0.get("cid").intValue();
 		row[4] = Integer.toString(Integer.parseInt(r0[col]) + 1);
 		row[5] = "";
 		tr.newrow(row);
@@ -983,20 +1117,20 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 				      JDBCResultSet in, TableResultX out) {
 	Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	for (int i = 0; i < in.tr.ncolumns; i++) {
-	    h0.put(in.tr.column[i], new Integer(i));
+	    h0.put(in.tr.column[i], Integer.valueOf(i));
 	}
 	for (int i = 0; i < in.tr.nrows; i++) {
 	    String r0[] = (String [])(in.tr.rows.elementAt(i));
-	    int col = ((Integer) h0.get("table")).intValue();
+	    int col = h0.get("table").intValue();
 	    String pktab = r0[col];
 	    if (pktable != null && !pktable.equalsIgnoreCase(pktab)) {
 		continue;
 	    }
-	    col = ((Integer) h0.get("from")).intValue();
+	    col = h0.get("from").intValue();
 	    String fkcol = r0[col];
-	    col = ((Integer) h0.get("to")).intValue();
+	    col = h0.get("to").intValue();
 	    String pkcol = r0[col];
-	    col = ((Integer) h0.get("seq")).intValue();
+	    col = h0.get("seq").intValue();
 	    String seq = r0[col];
 	    String row[] = new String[out.ncolumns];
 	    row[0]  = "";
@@ -1020,6 +1154,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	}
     }
 
+    @Override
     public ResultSet getImportedKeys(String catalog, String schema,
 				     String table) throws SQLException {
 	JDBCStatement s0 = new JDBCStatement(conn);
@@ -1028,7 +1163,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new SQLException("schema reload failed", se);
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA foreign_key_list(" +
@@ -1055,13 +1190,14 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    internalImportedKeys(table, null, rs0, tr);
 	}
 	return rs;
     }
 
+    @Override
     public ResultSet getExportedKeys(String catalog, String schema,
 				     String table) throws SQLException {
 	String cols[] = {
@@ -1085,6 +1221,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public ResultSet getCrossReference(String primaryCatalog,
 				       String primarySchema,
 				       String primaryTable,
@@ -1099,7 +1236,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		try {
 		    conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 		} catch (SQLite.Exception se) {
-		    throw new SQLException("schema reload failed");
+		    throw new SQLException("schema reload failed", se);
 		}
 		rs0 = (JDBCResultSet)
 		    (s0.executeQuery("PRAGMA foreign_key_list(" +
@@ -1138,6 +1275,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public ResultSet getTypeInfo() throws SQLException {
 	String cols[] = {
 	    "TYPE_NAME", "DATA_TYPE", "PRECISION",
@@ -1270,6 +1408,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public ResultSet getIndexInfo(String catalog, String schema, String table,
 				  boolean unique, boolean approximate)
 	throws SQLException {
@@ -1279,7 +1418,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new SQLException("schema reload failed", se);
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -1310,13 +1449,13 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("unique")).intValue();
+		int col = h0.get("unique").intValue();
 		String uniq = r0[col];
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		String iname = r0[col];
 		if (unique && uniq.charAt(0) == '0') {
 		    continue;
@@ -1337,7 +1476,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		Hashtable<String, Integer> h1 =
 		    new Hashtable<String, Integer>();
 		for (int k = 0; k < rs1.tr.ncolumns; k++) {
-		    h1.put(rs1.tr.column[k], new Integer(k));
+		    h1.put(rs1.tr.column[k], Integer.valueOf(k));
 		}
 		for (int k = 0; k < rs1.tr.nrows; k++) {
 		    String r1[] = (String [])(rs1.tr.rows.elementAt(k));
@@ -1351,9 +1490,9 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		    row[4]  = "";
 		    row[5]  = iname;
 		    row[6]  = "" + tableIndexOther;
-		    col = ((Integer) h1.get("seqno")).intValue();
+		    col = h1.get("seqno").intValue();
 		    row[7]  = Integer.toString(Integer.parseInt(r1[col]) + 1);
-		    col = ((Integer) h1.get("name")).intValue();
+		    col = h1.get("name").intValue();
 		    row[8]  = r1[col];
 		    row[9]  = "A";
 		    row[10] = "0";
@@ -1366,12 +1505,14 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
+    @Override
     public boolean supportsResultSetType(int type) throws SQLException {
 	return type == ResultSet.TYPE_FORWARD_ONLY ||
 	    type == ResultSet.TYPE_SCROLL_INSENSITIVE ||
 	    type == ResultSet.TYPE_SCROLL_SENSITIVE;
     }
 
+    @Override
     public boolean supportsResultSetConcurrency(int type, int concurrency)
 	throws SQLException {
 	if (type == ResultSet.TYPE_FORWARD_ONLY ||
@@ -1383,6 +1524,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return false;
     }
 
+    @Override
     public boolean ownUpdatesAreVisible(int type) throws SQLException {
 	if (type == ResultSet.TYPE_FORWARD_ONLY ||
 	    type == ResultSet.TYPE_SCROLL_INSENSITIVE ||
@@ -1392,6 +1534,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return false;
     }
 
+    @Override
     public boolean ownDeletesAreVisible(int type) throws SQLException {
 	if (type == ResultSet.TYPE_FORWARD_ONLY ||
 	    type == ResultSet.TYPE_SCROLL_INSENSITIVE ||
@@ -1401,6 +1544,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return false;
     }
 
+    @Override
     public boolean ownInsertsAreVisible(int type) throws SQLException {
 	if (type == ResultSet.TYPE_FORWARD_ONLY ||
 	    type == ResultSet.TYPE_SCROLL_INSENSITIVE ||
@@ -1410,40 +1554,49 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return false;
     }
 
+    @Override
     public boolean othersUpdatesAreVisible(int type) throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean othersDeletesAreVisible(int type) throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean othersInsertsAreVisible(int type) throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean updatesAreDetected(int type) throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean deletesAreDetected(int type) throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean insertsAreDetected(int type) throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean supportsBatchUpdates() throws SQLException {
 	return true;
     }
 
+    @Override
     public ResultSet getUDTs(String catalog, String schemaPattern, 
 		      String typeNamePattern, int[] types) 
 	throws SQLException {
 	return null;
     }
 
+    @Override
     public Connection getConnection() throws SQLException {
 	return conn;
     }
@@ -1573,46 +1726,56 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return d;
     }
 
+    @Override
     public boolean supportsSavepoints() {
 	return false;
     }
 
+    @Override
     public boolean supportsNamedParameters() {
 	return false;
     }
 
+    @Override
     public boolean supportsMultipleOpenResults() {
 	return false;
     }
 
+    @Override
     public boolean supportsGetGeneratedKeys() {
 	return false;
     }
 
+    @Override
     public boolean supportsResultSetHoldability(int x) {
 	return false;
     }
 
+    @Override
     public boolean supportsStatementPooling() {
 	return false;
     }
 
+    @Override
     public boolean locatorsUpdateCopy() throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern,
 			    String typeNamePattern)
 	throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern,
 				    String tableNamePattern)
 	throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public ResultSet getAttributes(String catalog, String schemaPattern,
 				   String typeNamePattern,
 				   String attributeNamePattern)
@@ -1620,68 +1783,83 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public int getResultSetHoldability() throws SQLException {
 	return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
+    @Override
     public int getDatabaseMajorVersion() {
 	return SQLite.JDBCDriver.MAJORVERSION;
     }
 
+    @Override
     public int getDatabaseMinorVersion() {
 	return SQLite.Constants.drv_minor;
     }
 
+    @Override
     public int getJDBCMajorVersion() {
 	return 1;
     }
     
+    @Override
     public int getJDBCMinorVersion() {
 	return 0;
     }
 
+    @Override
     public int getSQLStateType() throws SQLException {
 	return sqlStateXOpen;
     }
 
+    @Override
     public RowIdLifetime getRowIdLifetime() throws SQLException {
 	return RowIdLifetime.ROWID_UNSUPPORTED;
     }
 
+    @Override
     public ResultSet getSchemas(String cat, String schema)
 	throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public boolean supportsStoredFunctionsUsingCallSyntax()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public boolean autoCommitFailureClosesAllResultSets()
 	throws SQLException {
 	return false;
     }
 
+    @Override
     public ResultSet getClientInfoProperties() throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public ResultSet getFunctions(String cat, String schema, String func)
 	throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public ResultSet getFunctionColumns(String cat, String schema,
 					String func, String colpat)
 	throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public <T> T unwrap(java.lang.Class<T> iface) throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public boolean isWrapperFor(java.lang.Class iface) throws SQLException {
 	return false;
     }

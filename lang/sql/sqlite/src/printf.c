@@ -400,7 +400,11 @@ void sqlite3VXPrintf(
             v = va_arg(ap,int);
           }
           if( v<0 ){
-            longvalue = -v;
+            if( v==SMALLEST_INT64 ){
+              longvalue = ((u64)1)<<63;
+            }else{
+              longvalue = -v;
+            }
             prefix = '-';
           }else{
             longvalue = v;
@@ -763,6 +767,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         return;
       }
     }else{
+      char *zOld = (p->zText==p->zBase ? 0 : p->zText);
       i64 szNew = p->nChar;
       szNew += N + 1;
       if( szNew > p->mxAlloc ){
@@ -772,10 +777,13 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       }else{
         p->nAlloc = (int)szNew;
       }
-      zNew = sqlite3DbMallocRaw(p->db, p->nAlloc );
+      if( p->useMalloc==1 ){
+        zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
+      }else{
+        zNew = sqlite3_realloc(zOld, p->nAlloc);
+      }
       if( zNew ){
-        memcpy(zNew, p->zText, p->nChar);
-        sqlite3StrAccumReset(p);
+        if( zOld==0 ) memcpy(zNew, p->zText, p->nChar);
         p->zText = zNew;
       }else{
         p->mallocFailed = 1;
@@ -797,7 +805,11 @@ char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
     p->zText[p->nChar] = 0;
     if( p->useMalloc && p->zText==p->zBase ){
-      p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+      if( p->useMalloc==1 ){
+        p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+      }else{
+        p->zText = sqlite3_malloc(p->nChar+1);
+      }
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
@@ -813,7 +825,11 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 */
 void sqlite3StrAccumReset(StrAccum *p){
   if( p->zText!=p->zBase ){
-    sqlite3DbFree(p->db, p->zText);
+    if( p->useMalloc==1 ){
+      sqlite3DbFree(p->db, p->zText);
+    }else{
+      sqlite3_free(p->zText);
+    }
   }
   p->zText = 0;
 }
@@ -895,6 +911,7 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   if( sqlite3_initialize() ) return 0;
 #endif
   sqlite3StrAccumInit(&acc, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
+  acc.useMalloc = 2;
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;
@@ -921,21 +938,28 @@ char *sqlite3_mprintf(const char *zFormat, ...){
 ** current locale settings.  This is important for SQLite because we
 ** are not able to use a "," as the decimal point in place of "." as
 ** specified by some locales.
+**
+** Oops:  The first two arguments of sqlite3_snprintf() are backwards
+** from the snprintf() standard.  Unfortunately, it is too late to change
+** this without breaking compatibility, so we just have to live with the
+** mistake.
+**
+** sqlite3_vsnprintf() is the varargs version.
 */
+char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
+  StrAccum acc;
+  if( n<=0 ) return zBuf;
+  sqlite3StrAccumInit(&acc, zBuf, n, 0);
+  acc.useMalloc = 0;
+  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  return sqlite3StrAccumFinish(&acc);
+}
 char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   char *z;
   va_list ap;
-  StrAccum acc;
-
-  if( n<=0 ){
-    return zBuf;
-  }
-  sqlite3StrAccumInit(&acc, zBuf, n, 0);
-  acc.useMalloc = 0;
   va_start(ap,zFormat);
-  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  z = sqlite3_vsnprintf(n, zBuf, zFormat, ap);
   va_end(ap);
-  z = sqlite3StrAccumFinish(&acc);
   return z;
 }
 

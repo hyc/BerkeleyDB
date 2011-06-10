@@ -235,13 +235,30 @@ namespace CsharpAPITest
 			    BitConverter.GetBytes((int)0));
 			DatabaseEntry notExistingKey = new DatabaseEntry(
 			    BitConverter.GetBytes((int)100));
-			if (ifPair == false)
-			{
+			if (ifPair == false) {
 				Assert.IsTrue(secCursor.Move(key, true));
 				Assert.IsFalse(secCursor.Move(notExistingKey, true));
-			}
-			else
-			{
+
+				Assert.IsTrue(secCursor.Move(key,
+				    new DatabaseEntry(),
+				    new DatabaseEntry(2, 2), true));
+				CheckPartial(null, 0, 0, null, 0, 0,
+				    secCursor.Current.Value.Value, 2, 2);
+
+				/* Disable the test.
+				Assert.IsTrue(secCursor.Move(key,
+				    new DatabaseEntry(1, 1),
+				    new DatabaseEntry(2, 2), true));
+				CheckPartial(null, 0, 0,
+				    secCursor.Current.Value.Key, 1, 1,
+				    secCursor.Current.Value.Value, 2, 2);*/
+
+				byte[] partBytes = new byte[] {key.Data[1]};
+				key = new DatabaseEntry(partBytes, 1, 1);
+				Assert.IsTrue(secCursor.Move(key, false));
+				CheckPartial(secCursor.Current.Key, 1, 1,
+				    null, 0, 0, null, 0, 0);
+			} else {
 				KeyValuePair<DatabaseEntry, KeyValuePair<
 				    DatabaseEntry, DatabaseEntry>> pair = 
 				    new KeyValuePair<DatabaseEntry,
@@ -312,17 +329,35 @@ namespace CsharpAPITest
 			LockingInfo lockingInfo = new LockingInfo();
 			lockingInfo.IsolationDegree = Isolation.DEGREE_THREE;
 			lockingInfo.ReadModifyWrite = true;
-			if (ifPair == false)
-			{
-				Assert.IsTrue(secCursor.Move(key, true, lockingInfo));
-			}
-			else
-			{
+			if (ifPair == false) {
+				Assert.IsTrue(secCursor.Move(
+				    key, true, lockingInfo));
+
+				Assert.IsTrue(secCursor.Move(key,
+				    new DatabaseEntry(),
+				    new DatabaseEntry(2, 2), true));
+				CheckPartial(null, 0, 0, null, 0, 0,
+				    secCursor.Current.Value.Value, 2, 2);
+
+				/* Disable the test.
+				Assert.IsTrue(secCursor.Move(key,
+				    new DatabaseEntry(1, 1),
+				    new DatabaseEntry(2, 2), true));
+				CheckPartial(null, 0, 0, 
+				    secCursor.Current.Value.Key, 1, 1,
+				    secCursor.Current.Value.Value, 2, 2);*/
+
+				byte[] partByte = new byte[] {key.Data[2]};
+				key = new DatabaseEntry(partByte, 2, 1);
+				Assert.IsTrue(secCursor.Move(key, false));
+				CheckPartial(secCursor.Current.Key, 2, 1,
+				    null, 0, 0, null, 0, 0);
+			} else {
 				KeyValuePair<DatabaseEntry, KeyValuePair<
 				    DatabaseEntry, DatabaseEntry>> pair;
 
 				pair = new KeyValuePair<DatabaseEntry,
-				    KeyValuePair<DatabaseEntry, DatabaseEntry>>(key,
+		 		KeyValuePair<DatabaseEntry, DatabaseEntry>>(key,
 				    new KeyValuePair<DatabaseEntry, DatabaseEntry>(
 				    key, key));
 				Assert.IsTrue(secCursor.Move(pair, true, lockingInfo));
@@ -359,6 +394,23 @@ namespace CsharpAPITest
 			Assert.AreEqual(BitConverter.GetBytes((int)0),
 			    cursor.Current.Key.Data);
 
+			Assert.IsTrue(cursor.MoveFirst(
+			    new DatabaseEntry(0, 1), 
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveFirst(
+			    new DatabaseEntry(0, 1), 
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			// Close all.
 			cursor.Close();
 			secDB.Close();
@@ -385,6 +437,22 @@ namespace CsharpAPITest
 			Assert.AreEqual(BitConverter.GetBytes((int)10), 
 			    cursor.Current.Key.Data);
 
+			Assert.IsTrue(cursor.MoveLast(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveLast(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			secDB.Close();
 			db.Close();
@@ -407,8 +475,26 @@ namespace CsharpAPITest
 
 			SecondaryCursor cursor = secDB.SecondaryCursor();
 			cursor.MoveFirst();
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 5; i++) {
 				Assert.IsTrue(cursor.MoveNext());
+				Assert.IsTrue(cursor.MovePrev());
+
+				Assert.IsTrue(cursor.MoveNext(
+				    new DatabaseEntry(0, 1),
+				    new DatabaseEntry(),
+				    new DatabaseEntry(2, 2)));
+				CheckPartial(cursor.Current.Key, 0, 1, null,
+				    0, 0, cursor.Current.Value.Value, 2, 2);
+
+				/* Disable the test. 
+				Assert.IsTrue(cursor.MoveNext(
+				    new DatabaseEntry(0, 1),
+				    new DatabaseEntry(1, 1),
+				    new DatabaseEntry(2, 2)));
+				CheckPartial(cursor.Current.Key, 0, 1,
+				    cursor.Current.Value.Key, 1, 1,
+				    cursor.Current.Value.Value, 2, 2);*/
+			}
 
 			cursor.Close();
 			secDB.Close();
@@ -438,6 +524,24 @@ namespace CsharpAPITest
 			Assert.AreEqual(BitConverter.GetBytes((int)10), 
 			    cursor.Current.Key.Data);
 
+			cursor.MovePrevDuplicate();
+
+			Assert.IsTrue(cursor.MoveNextDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test. 
+			Assert.IsTrue(cursor.MoveNextDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			secDB.Close();
 			db.Close();
@@ -465,8 +569,31 @@ namespace CsharpAPITest
 			 */
 			SecondaryCursor cursor = secDB.SecondaryCursor();
 			cursor.Move(new DatabaseEntry(
+			    BitConverter.GetBytes((int)1)), true);
+			Assert.IsTrue(cursor.MoveNextUnique());
+
+			cursor.Move(new DatabaseEntry(
 			    BitConverter.GetBytes((int)10)), true);
 			Assert.IsFalse(cursor.MoveNextUnique());
+
+			cursor.Move(new DatabaseEntry(
+			    BitConverter.GetBytes((int)4)), true);
+
+			Assert.IsTrue(cursor.MoveNextUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveNextUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
 
 			cursor.Close();
 			secDB.Close();
@@ -490,8 +617,27 @@ namespace CsharpAPITest
 
 			SecondaryCursor cursor = secDB.SecondaryCursor();
 			cursor.MoveLast();
-			for (int i = 0; i < 5; i++)
-				Assert.IsTrue(cursor.MovePrev());
+			for (int i = 0; i < 5; i++) {
+			    Assert.IsTrue(cursor.MovePrev());
+
+			cursor.MoveNext();
+
+			Assert.IsTrue(cursor.MovePrev(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MovePrev(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+		}
 
 			cursor.Close();
 			secDB.Close();
@@ -528,6 +674,24 @@ namespace CsharpAPITest
 			Assert.AreEqual(BitConverter.GetBytes((int)10),
 			    cursor.Current.Key.Data);
 
+			cursor.Move(pair, true);
+			Assert.IsTrue(cursor.MovePrevDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test
+			cursor.Move(pair, true);
+			Assert.IsTrue(cursor.MovePrevDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			secDB.Close();
 			db.Close();
@@ -563,6 +727,23 @@ namespace CsharpAPITest
 			Assert.AreNotEqual(BitConverter.GetBytes((int)10),
 			    cursor.Current.Key.Data);
 
+			cursor.Move(pair, true);
+			Assert.IsTrue(cursor.MovePrevUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MovePrevUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			secDB.Close();
 			db.Close();
@@ -597,6 +778,22 @@ namespace CsharpAPITest
 			Assert.IsTrue(cursor.Refresh());
 			Assert.AreEqual(pData.Data, cursor.Current.Key.Data);
 			Assert.AreEqual(pKey.Data, cursor.Current.Value.Key.Data);
+
+			Assert.IsTrue(cursor.Refresh(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.Refresh(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2)));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
 
 			cursor.Close();
 			secDB.Close();
@@ -634,6 +831,23 @@ namespace CsharpAPITest
 			Assert.IsTrue(cursor.MoveFirst(lockingInfo));
 			Assert.AreEqual(BitConverter.GetBytes((int)0),
 			    cursor.Current.Key.Data);
+
+			Assert.IsTrue(cursor.MoveFirst(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveFirst(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			cursorTxn.Commit();
 
@@ -677,9 +891,26 @@ namespace CsharpAPITest
 			Assert.IsTrue(cursor.MoveLast(lockingInfo));
 			Assert.AreEqual(BitConverter.GetBytes((int)10),
 			    cursor.Current.Key.Data);
+
+			Assert.IsTrue(cursor.MoveLast(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveLast(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+			
 			cursor.Close();
 			cursorTxn.Commit();
-
+			
 			// Close all.
 			secDB.Close();
 			db.Close();
@@ -718,8 +949,28 @@ namespace CsharpAPITest
 			lockingInfo.IsolationDegree = Isolation.DEGREE_THREE;
 			lockingInfo.ReadModifyWrite = true;
 			cursor.MoveFirst(lockingInfo);
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 5; i++) {
 				Assert.IsTrue(cursor.MoveNext(lockingInfo));
+
+				cursor.MovePrev(lockingInfo);
+
+				Assert.IsTrue(cursor.MoveNext(
+				    new DatabaseEntry(0, 1),
+				    new DatabaseEntry(),
+				    new DatabaseEntry(2, 2), lockingInfo));
+				CheckPartial(cursor.Current.Key, 0, 1, null, 0,
+				    0, cursor.Current.Value.Value, 2, 2);
+
+				/* Disable the test.
+				Assert.IsTrue(cursor.MoveNext(
+				    new DatabaseEntry(0, 1),
+				    new DatabaseEntry(1, 1),
+				    new DatabaseEntry(2, 2), lockingInfo));
+				CheckPartial(cursor.Current.Key, 0, 1,
+				    cursor.Current.Value.Key, 1, 1,
+				    cursor.Current.Value.Value, 2, 2);*/
+			}
+
 			cursor.Close();
 			cursorTxn.Commit();
 
@@ -767,6 +1018,25 @@ namespace CsharpAPITest
 			Assert.IsTrue(cursor.MoveNextDuplicate(lockingInfo));
 			Assert.AreEqual(BitConverter.GetBytes((int)10),
 			    cursor.Current.Key.Data);
+
+			cursor.MovePrevDuplicate(lockingInfo);
+
+			Assert.IsTrue(cursor.MoveNextDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveNextDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			cursorTxn.Commit();
 
@@ -810,7 +1080,27 @@ namespace CsharpAPITest
 			lockingInfo.ReadModifyWrite = true;
 			cursor.Move(new DatabaseEntry(
 			    BitConverter.GetBytes((int)10)), true);
-			Assert.IsFalse(cursor.MoveNextUnique());
+			Assert.IsFalse(cursor.MoveNextUnique(lockingInfo));
+
+			cursor.Move(new DatabaseEntry(
+			    BitConverter.GetBytes((int)3)), true, lockingInfo);
+
+			Assert.IsTrue(cursor.MoveNextUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MoveNextUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			cursorTxn.Commit();
 
@@ -852,8 +1142,26 @@ namespace CsharpAPITest
 			lockingInfo.IsolationDegree = Isolation.DEGREE_TWO;
 			lockingInfo.ReadModifyWrite = true;
 			cursor.MoveLast(lockingInfo);
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 5; i++) {
 				Assert.IsTrue(cursor.MovePrev(lockingInfo));
+				cursor.MoveNext(lockingInfo);
+
+				Assert.IsTrue(cursor.MovePrev(
+				    new DatabaseEntry(0, 1),
+				    new DatabaseEntry(),
+				    new DatabaseEntry(2, 2), lockingInfo));
+				CheckPartial(cursor.Current.Key, 0, 1, null, 0,
+				    0, cursor.Current.Value.Value, 2, 2);
+
+				/* Disable the test.
+				Assert.IsTrue(cursor.MovePrev(
+				    new DatabaseEntry(0, 1),
+				    new DatabaseEntry(1, 1),
+				    new DatabaseEntry(2, 2), lockingInfo));
+				CheckPartial(cursor.Current.Key, 0, 1,
+				    cursor.Current.Value.Key, 1, 1,
+				    cursor.Current.Value.Value, 2, 2);*/
+			}
 			cursor.Close();
 			cursorTxn.Commit();
 
@@ -909,6 +1217,24 @@ namespace CsharpAPITest
 			Assert.IsTrue(cursor.MovePrevDuplicate(lockingInfo));
 			Assert.AreEqual(BitConverter.GetBytes((int)10),
 			    cursor.Current.Key.Data);
+
+			cursor.MoveNextDuplicate(lockingInfo);
+
+			Assert.IsTrue(cursor.MovePrevDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MovePrevDuplicate(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
 
 			cursor.Close();
 			cursorTxn.Commit();
@@ -966,6 +1292,25 @@ namespace CsharpAPITest
 			Assert.AreNotEqual(BitConverter.GetBytes((int)10),
 			    cursor.Current.Key.Data);
 
+			cursor.Move(new DatabaseEntry(BitConverter.GetBytes(
+			    (int)3)), true, lockingInfo);
+
+			Assert.IsTrue(cursor.MovePrevUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.MovePrevUnique(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
+
 			cursor.Close();
 			cursorTxn.Commit();
 
@@ -1017,6 +1362,22 @@ namespace CsharpAPITest
 			Assert.IsTrue(cursor.Refresh(lockingInfo));
 			Assert.AreEqual(pData.Data, cursor.Current.Key.Data);
 			Assert.AreEqual(pKey.Data, cursor.Current.Value.Key.Data);
+
+			Assert.IsTrue(cursor.Refresh(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1, null, 0, 0,
+			    cursor.Current.Value.Value, 2, 2);
+
+			/* Disable the test.
+			Assert.IsTrue(cursor.Refresh(
+			    new DatabaseEntry(0, 1),
+			    new DatabaseEntry(1, 1),
+			    new DatabaseEntry(2, 2), lockingInfo));
+			CheckPartial(cursor.Current.Key, 0, 1,
+			    cursor.Current.Value.Key, 1, 1,
+			    cursor.Current.Value.Value, 2, 2);*/
 
 			cursor.Close();
 			cursorTxn.Commit();
@@ -1142,6 +1503,32 @@ namespace CsharpAPITest
 			DatabaseEntry dbtGen;
 			dbtGen = new DatabaseEntry(data.Data);
 			return dbtGen;
+		}
+
+		public void CheckPartial(
+		    DatabaseEntry key, uint kOffset, uint kLen,
+		    DatabaseEntry pkey, uint pkOffset, uint pkLen,
+		    DatabaseEntry data, uint dOffset, uint dLen) {
+			if (key != null) {
+				Assert.IsTrue(key.Partial);
+				Assert.AreEqual(kOffset, key.PartialOffset);
+				Assert.AreEqual(kLen, key.PartialLen);
+				Assert.AreEqual(kLen, (uint)key.Data.Length);
+			}
+
+			if (pkey != null) {
+				Assert.IsTrue(pkey.Partial);
+				Assert.AreEqual(pkOffset, pkey.PartialOffset);
+				Assert.AreEqual(pkLen, pkey.PartialLen);
+				Assert.AreEqual(pkLen, (uint)pkey.Data.Length);
+			}
+
+			if (data != null) {
+				Assert.IsTrue(data.Partial);
+				Assert.AreEqual(dOffset, data.PartialOffset);
+				Assert.AreEqual(dLen, data.PartialLen);
+				Assert.AreEqual(dLen, (uint)data.Data.Length);
+			}
 		}
 	}
 }

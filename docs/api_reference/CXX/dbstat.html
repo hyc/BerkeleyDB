@@ -12,7 +12,10 @@
     <link rel="next" href="dbstat_print.html" title="Db::stat_print()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Db::stat()</th>
@@ -60,7 +63,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50857208"></a>Parameters</h3>
+              <h3 class="title"><a id="id3600567"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -68,69 +71,69 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50856944"></a>txnid</h4>
+                <h4 class="title"><a id="id3600564"></a>txnid</h4>
               </div>
             </div>
           </div>
           <p>
-                          If the operation is part of an application-specified transaction, the
-                          <span class="bold"><strong>txnid</strong></span> parameter is a transaction
-                          handle returned from <a class="xref" href="txnbegin.html" title="DbEnv::txn_begin()">DbEnv::txn_begin()</a>; if the
-                          operation is part of a Berkeley DB Concurrent Data Store group, the
-                          <span class="bold"><strong>txnid</strong></span> parameter is a handle returned
-                          from <a class="xref" href="envcdsgroup_begin.html" title="DbEnv::cdsgroup_begin()">DbEnv::cdsgroup_begin()</a>;
-                          otherwise NULL. If no transaction handle is specified, but the
-                          operation occurs in a transactional database, the operation will be
-                          implicitly transaction protected.
-                     </p>
+                  If the operation is part of an application-specified transaction, the
+                  <span class="bold"><strong>txnid</strong></span> parameter is a transaction
+                  handle returned from <a class="xref" href="txnbegin.html" title="DbEnv::txn_begin()">DbEnv::txn_begin()</a>; if the
+                  operation is part of a Berkeley DB Concurrent Data Store group, the
+                  <span class="bold"><strong>txnid</strong></span> parameter is a handle returned
+                  from <a class="xref" href="envcdsgroup_begin.html" title="DbEnv::cdsgroup_begin()">DbEnv::cdsgroup_begin()</a>;
+                  otherwise NULL. If no transaction handle is specified, but the
+                  operation occurs in a transactional database, the operation will be
+                  implicitly transaction protected.
+             </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50829056"></a>flags</h4>
+                <h4 class="title"><a id="id3600166"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
-                          or one of the following values:
-                     </p>
+                  The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
+                  or one of the following values:
+             </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p><a id="stat_DB_FAST_STAT"></a>
-                  <code class="literal">DB_FAST_STAT</code>
-            </p>
+                          <code class="literal">DB_FAST_STAT</code>
+                     </p>
                 <p>
-                 Return only the values which do not require traversal of the database.
-                 Among other things, this flag makes it possible for applications to
-                 request key and record counts without incurring the performance
-                 penalty of traversing the entire database.
-            </p>
+                         Return only the values which do not require traversal of the database.
+                         Among other things, this flag makes it possible for applications to
+                         request key and record counts without incurring the performance
+                         penalty of traversing the entire database.
+                     </p>
               </li>
               <li>
                 <p><a id="stat_DB_READ_COMMITTED"></a>
-                  <code class="literal">DB_READ_COMMITTED</code>
-            </p>
+                          <code class="literal">DB_READ_COMMITTED</code>
+                    </p>
                 <p>
-                 Database items read during a transactional call will have degree 2
-                 isolation.  This ensures the stability of the data items read during
-                 the stat operation but permits that data to be modified or deleted by
-                 other transactions prior to the commit of the specified transaction.
-            </p>
+                         Database items read during a transactional call will have degree 2
+                         isolation.  This ensures the stability of the data items read during
+                         the stat operation but permits that data to be modified or deleted by
+                         other transactions prior to the commit of the specified transaction.
+                    </p>
               </li>
               <li>
                 <p><a id="stat_DB_READ_UNCOMMITTED"></a>
-                  <code class="literal">DB_READ_UNCOMMITTED</code>
-            </p>
+                          <code class="literal">DB_READ_UNCOMMITTED</code>
+                    </p>
                 <p>
-                 Database items read during a transactional call will have degree 1
-                 isolation, including modified but not yet committed data.  Silently
-                 ignored if the 
-                 <a class="link" href="dbopen.html#dbopen_DB_READ_UNCOMMITTED">DB_READ_UNCOMMITTED</a> 
-                 flag was not specified when the underlying database was opened.
-            </p>
+                         Database items read during a transactional call will have degree 1
+                         isolation, including modified but not yet committed data.  Silently
+                         ignored if the 
+                         <a class="link" href="dbopen.html#dbopen_DB_READ_UNCOMMITTED">DB_READ_UNCOMMITTED</a> 
+                         flag was not specified when the underlying database was opened.
+                    </p>
               </li>
             </ul>
           </div>
@@ -140,197 +143,206 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50861448"></a>Statistical Structure</h3>
+              <h3 class="title"><a id="id3600633"></a>Statistical Structure</h3>
             </div>
           </div>
         </div>
         <p>
-                        Statistical structures are stored in allocated memory. If
-                        application-specific allocation routines have been declared (see
-                        <a class="xref" href="envset_alloc.html" title="DbEnv::set_alloc()">DbEnv::set_alloc()</a>
-                        for more information), they are used to allocate the
-                        memory; otherwise, the standard C library 
-                        <span class="bold"><strong>malloc</strong></span>(3) is used. The caller is
-                        responsible for deallocating the memory. To deallocate the memory, free the
-                        memory reference; references inside the returned memory need not be
-                        individually freed.
-                </p>
+                    Statistical structures are stored in allocated memory. If
+                    application-specific allocation routines have been declared (see
+                    <a class="xref" href="envset_alloc.html" title="DbEnv::set_alloc()">DbEnv::set_alloc()</a>
+                    for more information), they are used to allocate the
+                    memory; otherwise, the standard C library 
+                    <span class="bold"><strong>malloc</strong></span>(3) is used. The caller is
+                    responsible for deallocating the memory. To deallocate the memory, free the
+                    memory reference; references inside the returned memory need not be
+                    individually freed.
+            </p>
         <p>
-                    If the DB_FAST_STAT flag has not been specified, the 
-                    <code class="methodname">Db::stat()</code> method will
-                    access some of or all the pages in the database, incurring a severe
-                    performance penalty as well as possibly flushing the underlying buffer pool.
-                </p>
+                If the DB_FAST_STAT flag has not been specified, the 
+                <code class="methodname">Db::stat()</code> method will
+                access some of or all the pages in the database, incurring a severe
+                performance penalty as well as possibly flushing the underlying buffer pool.
+            </p>
         <p>
-                        In the presence of multiple threads or processes accessing an active
-                        database, the information returned by DB-&gt;stat may be out-of-date.
-                </p>
+                    In the presence of multiple threads or processes accessing an active
+                    database, the information returned by DB-&gt;stat may be out-of-date.
+            </p>
         <p>
-                        If the database was not opened read-only and the DB_FAST_STAT flag was not
-                        specified, the cached key and record numbers will be updated after the
-                        statistical information has been gathered.
-                </p>
+                    If the database was not opened read-only and the DB_FAST_STAT flag was not
+                    specified, the cached key and record numbers will be updated after the
+                    statistical information has been gathered.
+            </p>
         <p>
-                        The <code class="methodname">Db::stat()</code> method may not be called before the 
-                        <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>
-                        method is called.
-                </p>
+                    The <code class="methodname">Db::stat()</code> method may not be called before the 
+                    <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>
+                    method is called.
+            </p>
         <p>
-                        The <code class="methodname">Db::stat()</code> method returns a non-zero error value on failure and 0 on
-                        success. 
-                </p>
+                    The <code class="methodname">Db::stat()</code> method returns
+                    a non-zero error value on failure and 0 on success. 
+            </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50867496"></a>Hash Statistics</h4>
+                <h4 class="title"><a id="id3600728"></a>Hash Statistics</h4>
               </div>
             </div>
           </div>
           <p>
-                                In the case of a Hash database, the statistics are stored in a
-                                structure of type <code class="literal">DB_HASH_STAT</code>. The following fields will be filled
-                                in:
-                        </p>
+                        In the case of a Hash database, the statistics are stored in a
+                        structure of type <code class="literal">DB_HASH_STAT</code>. The following fields will be filled
+                        in:
+                </p>
           <div class="itemizedlist">
             <ul type="disc">
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_magic;</code>
-                </p>
-                <p>
-                          Magic number that identifies the file as a Hash file. Returned if
-                          DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_version;</code>
-                </p>
-                <p>
-                          The version of the Hash database.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_nkeys;</code>
-                </p>
-                <p>
-                          The number of unique keys in the database.  If DB_FAST_STAT was
-                          specified the count will be the last saved value unless it has never
-                          been calculated, in which case it will be 0. Returned if DB_FAST_STAT
-                          is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_ndata;</code>
-                </p>
-                <p>
-                          The number of key/data pairs in the database.  If DB_FAST_STAT was
-                          specified the count will be the last saved value unless it has never
-                          been calculated, in which case it will be 0. Returned if DB_FAST_STAT
-                          is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_pagecnt;</code>
-                </p>
-                <p>
-                          The number of pages in the database.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_pagesize;</code>
-                </p>
-                <p>
-                          The underlying database page (and bucket) size, in bytes.  Returned if
-                          DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_ffactor;</code>
-                </p>
-                <p>
-                          The desired fill factor (number of items per bucket) specified at
-                          database-creation time.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_buckets;</code>
-                </p>
-                <p>
-                          The number of hash buckets.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t hash_free;</code>
-                </p>
-                <p>
-                         The number of pages on the free list.
-                     </p>
-              </li>
               <li>
                 <p>
                   <code class="literal">uintmax_t hash_bfree;</code>
                 </p>
                 <p>
-                         The number of bytes free on bucket pages.
-                     </p>
+                             The number of bytes free on bucket pages.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">u_int32_t hash_bigpages;</code>
                 </p>
                 <p>
-                         The number of big key/data pages.
-                     </p>
+                             The number of big key/data pages.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">uintmax_t hash_big_bfree;</code>
                 </p>
                 <p>
-                         The number of bytes free on big item pages.
-                     </p>
+                             The number of bytes free on big item pages.
+                         </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t hash_overflows;</code>
+                  <code class="literal">u_int32_t hash_buckets;</code>
                 </p>
                 <p>
-                          The number of overflow pages (overflow pages are pages that contain
-                          items that did not fit in the main bucket page).
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">uintmax_t hash_ovfl_free;</code>
-                </p>
-                <p>
-                         The number of bytes free on overflow pages.
-                     </p>
+                              The number of hash buckets.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">u_int32_t hash_dup;</code>
                 </p>
                 <p>
-                         The number of duplicate pages.
-                     </p>
+                             The number of duplicate pages.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">uintmax_t hash_dup_free;</code>
                 </p>
                 <p>
-                         The number of bytes free on duplicate pages.
-                     </p>
+                             The number of bytes free on duplicate pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_ffactor;</code>
+                </p>
+                <p>
+                              The desired fill factor (number of items per bucket) specified at
+                              database-creation time.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_free;</code>
+                </p>
+                <p>
+                             The number of pages on the free list.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_magic;</code>
+                </p>
+                <p>
+                              Magic number that identifies the file as a Hash file. Returned if
+                              DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_metaflags;</code>
+                </p>
+                <p>
+                              Reports internal flags. For internal use
+                              only.
+                          </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_ndata;</code>
+                </p>
+                <p>
+                              The number of key/data pairs in the database.  If DB_FAST_STAT was
+                              specified the count will be the last saved value unless it has never
+                              been calculated, in which case it will be 0. Returned if DB_FAST_STAT
+                              is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_nkeys;</code>
+                </p>
+                <p>
+                              The number of unique keys in the database.  If DB_FAST_STAT was
+                              specified the count will be the last saved value unless it has never
+                              been calculated, in which case it will be 0. Returned if DB_FAST_STAT
+                              is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_overflows;</code>
+                </p>
+                <p>
+                              The number of overflow pages (overflow pages are pages that contain
+                              items that did not fit in the main bucket page).
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">uintmax_t hash_ovfl_free;</code>
+                </p>
+                <p>
+                             The number of bytes free on overflow pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_pagecnt;</code>
+                </p>
+                <p>
+                              The number of pages in the database.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_pagesize;</code>
+                </p>
+                <p>
+                              The underlying database page (and bucket) size, in bytes.  Returned if
+                              DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t hash_version;</code>
+                </p>
+                <p>
+                              The version of the Hash database.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
             </ul>
           </div>
@@ -339,212 +351,302 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50877544"></a>Btree and Recno Statistics</h4>
+                <h4 class="title"><a id="id3600902"></a>Heap Statistics</h4>
               </div>
             </div>
           </div>
           <p>
-                            In the case of a Btree or Recno database, the statistics are stored in a
-                            structure of type <code class="literal">DB_BTREE_STAT</code>. The following fields will be filled in:
-                    </p>
+                        In the case of a Heap database, the statistics are stored in a
+                        structure of type <code class="literal">DB_HEAP_STAT</code>. The following fields will be filled
+                        in:
+                </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_magic;</code>
+                  <code class="literal">u_int32_t heap_magic;</code>
                 </p>
                 <p>
-                          Magic number that identifies the file as a Btree database.  Returned
-                          if DB_FAST_STAT is set.
-                     </p>
+                              Magic number that identifies the file as a Heap file. Returned if
+                              DB_FAST_STAT is set.
+                         </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_version;</code>
+                  <code class="literal">u_int32_t heap_version;</code>
                 </p>
                 <p>
-                          The version of the Btree database.  Returned if DB_FAST_STAT is set.
-                     </p>
+                              The version of the Heap database.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_nkeys;</code>
+                  <code class="literal">u_int32_t heap_metaflags;</code>
                 </p>
                 <p>
-                          For the Btree Access Method, the number of keys in the database.  If
-                          the DB_FAST_STAT flag is not specified or the database was configured
-                          to support record numbers (see 
-                          <a class="link" href="dbset_flags.html#dbset_flags_DB_RECNUM">DB_RECNUM</a>), 
-                          the count will be exact.  Otherwise, the count will be the last saved
-                          value unless it has never been calculated, in which case it will be 0.
-                     </p>
-                <p>
-                          For the Recno Access Method, the number of records in the database. 
-                          If the database was configured with mutable record numbers (see 
-                          <a class="link" href="dbset_flags.html#dbset_flags_DB_RENUMBER">DB_RENUMBER</a>), 
-                          the count will be exact.  Otherwise, if the DB_FAST_STAT flag is specified
-                          the count will be exact but will include deleted and implicitly
-                          created records; if the DB_FAST_STAT flag is not specified, the count
-                          will be exact and will not include deleted or implicitly created
-                          records.
-                     </p>
-                <p>
-                         Returned if DB_FAST_STAT is set.
-                     </p>
+                              Reports internal flags. For internal use
+                              only.
+                          </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_ndata;</code>
+                  <code class="literal">u_int32_t heap_nrecs;</code>
                 </p>
                 <p>
-                          For the Btree Access Method, the number of key/data pairs in the
-                          database.  If the DB_FAST_STAT flag is not specified, the count will
-                          be exact.  Otherwise, the count will be the last saved value unless it
-                          has never been calculated, in which case it will be 0.                
-                     </p>
-                <p>
-                          For the Recno Access Method, the number of records in the database. 
-                          If the database was configured with mutable record numbers (see 
-                          <a class="link" href="dbset_flags.html#dbset_flags_DB_RENUMBER">DB_RENUMBER</a>), 
-                          the count will be exact.  Otherwise, if the DB_FAST_STAT flag is specified
-                          the count will be exact but will include deleted and implicitly
-                          created records; if the DB_FAST_STAT flag is not specified, the count
-                          will be exact and will not include deleted or implicitly created
-                          records.
-                     </p>
-                <p>
-                         Returned if DB_FAST_STAT is set.
-                     </p>
+                                Reports the number of records in the Heap
+                                database. Returned if DB_FAST_STAT is set.
+                          </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_pagecnt;</code>
+                  <code class="literal">u_int32_t heap_pagecnt;</code>
                 </p>
                 <p>
-                          The number of pages in the database.  Returned if DB_FAST_STAT is set.
-                     </p>
+                              The number of pages in the database.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_pagesize;</code>
+                  <code class="literal">u_int32_t heap_pagesize;</code>
                 </p>
                 <p>
-                          The underlying database page size, in bytes.  Returned if DB_FAST_STAT
-                          is set.
-                     </p>
+                              The underlying database page (and bucket) size, in bytes.  Returned if
+                              DB_FAST_STAT is set.
+                         </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t bt_minkey;</code>
+                  <code class="literal">u_int32_t heap_nregions;</code>
                 </p>
                 <p>
-                          The minimum keys per page.  Returned if DB_FAST_STAT is set.
-                     </p>
+                              The number of regions in the Heap database.  Returned if
+                              DB_FAST_STAT is set.
+                         </p>
               </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_re_len;</code>
+            </ul>
+          </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="id3600931"></a>Btree and Recno Statistics</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                    In the case of a Btree or Recno database, the
+                    statistics are stored in a structure of type
+                    <code class="literal">DB_BTREE_STAT</code>. The following fields
+                    will be filled in:
                 </p>
-                <p>
-                          The length of fixed-length records.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_re_pad;</code>
-                </p>
-                <p>
-                          The padding byte value for fixed-length records.  Returned if
-                          DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_levels;</code>
-                </p>
-                <p>
-                         Number of levels in the database.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_int_pg;</code>
-                </p>
-                <p>
-                         Number of database internal pages.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_leaf_pg;</code>
-                </p>
-                <p>
-                         Number of database leaf pages.
-                     </p>
-              </li>
+          <div class="itemizedlist">
+            <ul type="disc">
               <li>
                 <p>
                   <code class="literal">u_int32_t bt_dup_pg;</code>
                 </p>
                 <p>
-                         Number of database duplicate pages.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_over_pg;</code>
-                </p>
-                <p>
-                         Number of database overflow pages.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_empty_pg;</code>
-                </p>
-                <p>
-                         Number of empty database pages.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_free;</code>
-                </p>
-                <p>
-                         Number of pages on the free list.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">uintmax_t bt_int_pgfree;</code>
-                </p>
-                <p>
-                          Number of bytes free in database internal pages.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">uintmax_t bt_leaf_pgfree;</code>
-                </p>
-                <p>
-                         Number of bytes free in database leaf pages.
-                     </p>
+                             Number of database duplicate pages.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">uintmax_t bt_dup_pgfree;</code>
                 </p>
                 <p>
-                          Number of bytes free in database duplicate pages.
-                     </p>
+                              Number of bytes free in database duplicate pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_empty_pg;</code>
+                </p>
+                <p>
+                             Number of empty database pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_free;</code>
+                </p>
+                <p>
+                             Number of pages on the free list.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_int_pg;</code>
+                </p>
+                <p>
+                             Number of database internal pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">uintmax_t bt_int_pgfree;</code>
+                </p>
+                <p>
+                              Number of bytes free in database internal pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_leaf_pg;</code>
+                </p>
+                <p>
+                             Number of database leaf pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">uintmax_t bt_leaf_pgfree;</code>
+                </p>
+                <p>
+                             Number of bytes free in database leaf pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_levels;</code>
+                </p>
+                <p>
+                             Number of levels in the database.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_magic;</code>
+                </p>
+                <p>
+                              Magic number that identifies the file as a Btree database.  Returned
+                              if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_metaflags;</code>
+                </p>
+                <p>
+                              Reports internal flags. For internal use
+                              only.
+                          </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_minkey;</code>
+                </p>
+                <p>
+                              The minimum keys per page.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_ndata;</code>
+                </p>
+                <p>
+                              For the Btree Access Method, the number of key/data pairs in the
+                              database.  If the DB_FAST_STAT flag is not specified, the count will
+                              be exact.  Otherwise, the count will be the last saved value unless it
+                              has never been calculated, in which case it will be 0.                
+                         </p>
+                <p>
+                              For the Recno Access Method, the number of records in the database. 
+                              If the database was configured with mutable record numbers (see 
+                              <a class="link" href="dbset_flags.html#dbset_flags_DB_RENUMBER">DB_RENUMBER</a>), 
+                              the count will be exact.  Otherwise, if the DB_FAST_STAT flag is specified
+                              the count will be exact but will include deleted and implicitly
+                              created records; if the DB_FAST_STAT flag is not specified, the count
+                              will be exact and will not include deleted or implicitly created
+                              records.
+                         </p>
+                <p>
+                             Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_nkeys;</code>
+                </p>
+                <p>
+                              For the Btree Access Method, the number of keys in the database.  If
+                              the DB_FAST_STAT flag is not specified or the database was configured
+                              to support record numbers (see 
+                              <a class="link" href="dbset_flags.html#dbset_flags_DB_RECNUM">DB_RECNUM</a>), 
+                              the count will be exact.  Otherwise, the count will be the last saved
+                              value unless it has never been calculated, in which case it will be 0.
+                         </p>
+                <p>
+                              For the Recno Access Method, the number of records in the database. 
+                              If the database was configured with mutable record numbers (see 
+                              <a class="link" href="dbset_flags.html#dbset_flags_DB_RENUMBER">DB_RENUMBER</a>), 
+                              the count will be exact.  Otherwise, if the DB_FAST_STAT flag is specified
+                              the count will be exact but will include deleted and implicitly
+                              created records; if the DB_FAST_STAT flag is not specified, the count
+                              will be exact and will not include deleted or implicitly created
+                              records.
+                         </p>
+                <p>
+                             Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_over_pg;</code>
+                </p>
+                <p>
+                             Number of database overflow pages.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">uintmax_t bt_over_pgfree;</code>
                 </p>
                 <p>
-                          Number of bytes free in database overflow pages.
-                     </p>
+                              Number of bytes free in database overflow pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_pagecnt;</code>
+                </p>
+                <p>
+                              The number of pages in the database.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_pagesize;</code>
+                </p>
+                <p>
+                              The underlying database page size, in bytes.  Returned if DB_FAST_STAT
+                              is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_re_len;</code>
+                </p>
+                <p>
+                              The length of fixed-length records.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_re_pad;</code>
+                </p>
+                <p>
+                              The padding byte value for fixed-length records.  Returned if
+                              DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_version;</code>
+                </p>
+                <p>
+                              The version of the Btree database.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
             </ul>
           </div>
@@ -553,122 +655,133 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50870664"></a>Queue Statistics</h4>
+                <h4 class="title"><a id="id3600391"></a>Queue Statistics</h4>
               </div>
             </div>
           </div>
           <p>
-                            In the case of a Queue database, the statistics are stored in a
-                            structure of type <code class="literal">DB_QUEUE_STAT</code>. The following fields will be filled in:
-                    </p>
+                    In the case of a Queue database, the statistics are
+                    stored in a structure of type
+                    <code class="literal">DB_QUEUE_STAT</code>. The following fields
+                    will be filled in:
+                </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p>
-                  <code class="literal">u_int32_t qs_magic;</code>
+                  <code class="literal">u_int32_t qs_cur_recno;</code>
                 </p>
                 <p>
-                          Magic number that identifies the file as a Queue file.  Returned if
-                          DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_version;</code>
-                </p>
-                <p>
-                          The version of the Queue file type.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_nkeys;</code>
-                </p>
-                <p>
-                          The number of records in the database.  If DB_FAST_STAT was specified
-                          the count will be the last saved value unless it has never been
-                          calculated, in which case it will be 0.  Returned if DB_FAST_STAT is
-                          set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_ndata;</code>
-                </p>
-                <p>
-                          The number of records in the database.  If DB_FAST_STAT was specified
-                          the count will be the last saved value unless it has never been
-                          calculated, in which case it will be 0.  Returned if DB_FAST_STAT is
-                          set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_pagesize;</code>
-                </p>
-                <p>
-                          Underlying database page size, in bytes.  Returned if DB_FAST_STAT is
-                          set.
-                     </p>
+                              Next available record number.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">u_int32_t qs_extentsize;</code>
                 </p>
                 <p>
-                          Underlying database extent size, in pages.  Returned if DB_FAST_STAT
-                          is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_pages;</code>
-                </p>
-                <p>
-                         Number of pages in the database.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_re_len;</code>
-                </p>
-                <p>
-                          The length of the records.  Returned if DB_FAST_STAT is set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_re_pad;</code>
-                </p>
-                <p>
-                          The padding byte value for the records.  Returned if DB_FAST_STAT is
-                          set.
-                     </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t qs_pgfree;</code>
-                </p>
-                <p>
-                         Number of bytes free in database pages.
-                     </p>
+                              Underlying database extent size, in pages.  Returned if DB_FAST_STAT
+                              is set.
+                         </p>
               </li>
               <li>
                 <p>
                   <code class="literal">u_int32_t qs_first_recno;</code>
                 </p>
                 <p>
-                          First undeleted record in the database.  Returned if DB_FAST_STAT is
-                          set.
-                     </p>
+                              First undeleted record in the database.  Returned if DB_FAST_STAT is
+                              set.
+                         </p>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t qs_cur_recno;</code>
+                  <code class="literal">u_int32_t qs_magic;</code>
                 </p>
                 <p>
-                          Next available record number.  Returned if DB_FAST_STAT is set.
-                     </p>
+                              Magic number that identifies the file as a Queue file.  Returned if
+                              DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_metaflags;</code>
+                </p>
+                <p>
+                              Reports internal flags. For internal use
+                              only.
+                          </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_nkeys;</code>
+                </p>
+                <p>
+                              The number of records in the database.  If DB_FAST_STAT was specified
+                              the count will be the last saved value unless it has never been
+                              calculated, in which case it will be 0.  Returned if DB_FAST_STAT is
+                              set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_ndata;</code>
+                </p>
+                <p>
+                              The number of records in the database.  If DB_FAST_STAT was specified
+                              the count will be the last saved value unless it has never been
+                              calculated, in which case it will be 0.  Returned if DB_FAST_STAT is
+                              set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_pages;</code>
+                </p>
+                <p>
+                             Number of pages in the database.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_pagesize;</code>
+                </p>
+                <p>
+                              Underlying database page size, in bytes.  Returned if DB_FAST_STAT is
+                              set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_pgfree;</code>
+                </p>
+                <p>
+                             Number of bytes free in database pages.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_re_len;</code>
+                </p>
+                <p>
+                              The length of the records.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_re_pad;</code>
+                </p>
+                <p>
+                              The padding byte value for the records.  Returned if DB_FAST_STAT is
+                              set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t qs_version;</code>
+                </p>
+                <p>
+                              The version of the Queue file type.  Returned if DB_FAST_STAT is set.
+                         </p>
               </li>
             </ul>
           </div>
@@ -678,12 +791,12 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50832424"></a>Errors</h3>
+              <h3 class="title"><a id="id3601270"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-                         The <code class="methodname">Db::stat()</code> <span>
+                 The <code class="methodname">Db::stat()</code> <span>
             
             <span>
                 method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
@@ -691,12 +804,12 @@ Db::stat(void *sp, u_int32_t flags); </pre>
                 of the following non-zero errors:
             </span>
         </span>
-                    </p>
+            </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50901344"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id3601667"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -718,7 +831,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50862520"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id3600719"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -735,7 +848,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50869832"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3600651"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -748,25 +861,25 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50919416"></a>Class</h3>
+              <h3 class="title"><a id="id3601714"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-                <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
-            </p>
+            <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
+        </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50892160"></a>See Also</h3>
+              <h3 class="title"><a id="id3600800"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-                </p>
+             <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

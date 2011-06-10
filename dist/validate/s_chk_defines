@@ -97,6 +97,9 @@ egrep '^#define' $d/src/dbinc/*.h $d/src/dbinc/*.in |
 	-e '/STAT_DEC/d' \
 	-e '/STAT_SET/d' \
 	-e '/MUTEX_SET/d' \
+        -e '/XA.*/d' \
+	-e '/TM[EM_].*/d' \
+	-e '/MAX[BGI].*SIZE/d' \
 	-e 's/(.*//' | sort > $t1
 
 find $d -name '*.c' -o -name '*.cpp' > $t2

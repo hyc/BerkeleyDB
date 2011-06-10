@@ -117,7 +117,8 @@ __os_closehandle(env, fhp)
 		dbenv = env->dbenv;
 		if (fhp->name != NULL && FLD_ISSET(
 		    dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-			__db_msg(env, "fileops: %s: close", fhp->name);
+			__db_msg(env, DB_STR_A("0031",
+			    "fileops: %s: close", "%s"), fhp->name);
 
 		if (F_ISSET(fhp, DB_FH_ENVLINK)) {
 			/*
@@ -148,7 +149,8 @@ __os_closehandle(env, fhp)
 		}
 
 		if (ret != 0) {
-			__db_syserr(env, ret, "CloseHandle");
+			__db_syserr(env, ret, DB_STR("0032",
+			    "CloseHandle"));
 			ret = __os_posix_err(ret);
 		}
 	}

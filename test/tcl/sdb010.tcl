@@ -15,7 +15,7 @@ proc sdb010 { method args } {
 
 	puts "Subdb010: Test of DB->remove() and DB->truncate"
 
-	if { [is_queue $method] == 1 } {
+       if { [is_queue $method] == 1 || [is_heap $method] == 1 } {
 		puts "\tSubdb010: Skipping for method $method."
 		return
 	}

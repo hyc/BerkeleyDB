@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
     <link rel="up" href="debug.html" title="Chapter 3.  Debugging Applications" />
     <link rel="prev" href="debug_runtime.html" title="Run-time error information" />
-    <link rel="next" href="build_win.html" title="Chapter 4.  Building Berkeley DB for Windows" />
+    <link rel="next" href="build_android_intro.html" title="Chapter 4. Building Berkeley DB for Android" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Reviewing Berkeley DB log files</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 3. 
 		Debugging Applications
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="build_win.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="build_android_intro.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -39,38 +42,38 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="debug_printlog.html#idp50342496">Augmenting the Log for Debugging</a>
+              <a href="debug_printlog.html#id3364251">Augmenting the Log for Debugging</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="debug_printlog.html#idp50374624">Extracting Committed Transactions and Transaction Status</a>
+              <a href="debug_printlog.html#id3364777">Extracting Committed Transactions and Transaction Status</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="debug_printlog.html#idp50346216">Extracting Transaction Histories</a>
+              <a href="debug_printlog.html#id3364742">Extracting Transaction Histories</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="debug_printlog.html#idp50375768">Extracting File Histories</a>
+              <a href="debug_printlog.html#id3364729">Extracting File Histories</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="debug_printlog.html#idp50405000">Extracting Page Histories</a>
+              <a href="debug_printlog.html#id3365288">Extracting Page Histories</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="debug_printlog.html#idp50405936">Other log processing tools</a>
+              <a href="debug_printlog.html#id3365303">Other log processing tools</a>
             </span>
           </dt>
         </dl>
       </div>
-      <p>If you are running with transactions and logging, the <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog utility</a> can be a useful debugging aid.  The <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog utility</a> will display the contents of your log files in a human readable (and machine-readable) format.</p>
-      <p>The <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog utility</a> will attempt to display any and all log files present in a designated db_home directory.  For each log record, the <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog utility</a> will display a line of the form:</p>
+      <p>If you are running with transactions and logging, the <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog</a> utility can be a useful debugging aid.  The <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog</a> utility will display the contents of your log files in a human readable (and machine-readable) format.</p>
+      <p>The <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog</a> utility will attempt to display any and all log files present in a designated db_home directory.  For each log record, the <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog</a> utility will display a line of the form:</p>
       <pre class="programlisting">
 [22][28]db_big: rec: 43 txnid 80000963 prevlsn [21][10483281]
 </pre>
@@ -329,7 +332,7 @@ system was configured with <a class="link" href="build_unix_conf.html#build_unix
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50342496"></a>Augmenting the Log for Debugging</h3>
+              <h3 class="title"><a id="id3364251"></a>Augmenting the Log for Debugging</h3>
             </div>
           </div>
         </div>
@@ -345,7 +348,7 @@ configuring Berkeley DB.  See <a class="xref" href="build_unix_conf.html" title=
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50374624"></a>Extracting Committed Transactions and Transaction Status</h3>
+              <h3 class="title"><a id="id3364777"></a>Extracting Committed Transactions and Transaction Status</h3>
             </div>
           </div>
         </div>
@@ -364,18 +367,18 @@ then the script status.awk will produce it.  The syntax is as follows:</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50346216"></a>Extracting Transaction Histories</h3>
+              <h3 class="title"><a id="id3364742"></a>Extracting Transaction Histories</h3>
             </div>
           </div>
         </div>
-        <p>Another useful debugging aid is to print out the complete history of a transaction.  The awk script txn.awk allows you to do that.  The following command line, where log_output is the output of the <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog utility</a> and txnlist is a comma-separated list of transaction IDs, will display all log records associated with the designated transaction ids:</p>
+        <p>Another useful debugging aid is to print out the complete history of a transaction.  The awk script txn.awk allows you to do that.  The following command line, where log_output is the output of the <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog</a> utility and txnlist is a comma-separated list of transaction IDs, will display all log records associated with the designated transaction ids:</p>
         <pre class="programlisting">awk -f txn.awk TXN=txnlist log_output</pre>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50375768"></a>Extracting File Histories</h3>
+              <h3 class="title"><a id="id3364729"></a>Extracting File Histories</h3>
             </div>
           </div>
         </div>
@@ -389,7 +392,7 @@ is a comma-separated list of fileids:</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50405000"></a>Extracting Page Histories</h3>
+              <h3 class="title"><a id="id3365288"></a>Extracting Page Histories</h3>
             </div>
           </div>
         </div>
@@ -405,7 +408,7 @@ db_printlog and pgnolist is a comma-separated list of page numbers:</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50405936"></a>Other log processing tools</h3>
+              <h3 class="title"><a id="id3365303"></a>Other log processing tools</h3>
             </div>
           </div>
         </div>
@@ -413,7 +416,7 @@ db_printlog and pgnolist is a comma-separated list of page numbers:</p>
 encountered that belonged to some transaction (that is, the number of
 log records excluding those for checkpoints and
 non-transaction-protected operations).</p>
-        <p>The script range.awk will extract a subset of a log.  This is useful when the output of <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog utility</a> is too large to be reasonably manipulated with an editor or other tool.  The syntax for range.awk is the following, where <span class="bold"><strong>sf</strong></span> and <span class="bold"><strong>so</strong></span> represent the LSN of the beginning of the sublog you want to extract, and <span class="bold"><strong>ef</strong></span> and <span class="bold"><strong>eo</strong></span> represent the LSN of the end of the sublog you want to extract:</p>
+        <p>The script range.awk will extract a subset of a log.  This is useful when the output of <a href="../api_reference/C/db_printlog.html" class="olink">db_printlog</a> utility is too large to be reasonably manipulated with an editor or other tool.  The syntax for range.awk is the following, where <span class="bold"><strong>sf</strong></span> and <span class="bold"><strong>so</strong></span> represent the LSN of the beginning of the sublog you want to extract, and <span class="bold"><strong>ef</strong></span> and <span class="bold"><strong>eo</strong></span> represent the LSN of the end of the sublog you want to extract:</p>
         <pre class="programlisting">    awk -f range.awk START_FILE=sf START_OFFSET=so END_FILE=ef \
     END_OFFSET=eo log_output </pre>
       </div>
@@ -426,16 +429,14 @@ non-transaction-protected operations).</p>
           <td width="20%" align="center">
             <a accesskey="u" href="debug.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="build_win.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="build_android_intro.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Run-time error information </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 4. 
-		Building Berkeley DB for Windows
-        </td>
+          <td width="40%" align="right" valign="top"> Chapter 4. Building Berkeley DB for Android</td>
         </tr>
       </table>
     </div>

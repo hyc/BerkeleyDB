@@ -12,6 +12,7 @@
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 #include "dbinc/partition.h"
@@ -245,8 +246,8 @@ __dbc_cmp(dbc, other_dbc, result)
 	}
 	/* Both cursors must still be valid. */
 	if (dbc == NULL || other_dbc == NULL) {
-		__db_errx(env,
-"Both cursors must be initialized before calling DBC->cmp.");
+		__db_errx(env, DB_STR("0692",
+"Both cursors must be initialized before calling DBC->cmp."));
 		return (EINVAL);
 	}
 
@@ -268,8 +269,8 @@ __dbc_cmp(dbc, other_dbc, result)
 
 	/* Both cursors must be on valid positions. */
 	if (dbc_int->pgno == PGNO_INVALID || odbc_int->pgno == PGNO_INVALID) {
-		__db_errx(env,
-"Both cursors must be initialized before calling DBC->cmp.");
+		__db_errx(env, DB_STR("0693",
+"Both cursors must be initialized before calling DBC->cmp."));
 		return (EINVAL);
 	}
 
@@ -296,8 +297,8 @@ __dbc_cmp(dbc, other_dbc, result)
 			    odbc_int->opd == NULL)
 				*result = 0;
 			else {
-				__db_errx(env,
-		"DBCursor->cmp mismatched off page duplicate cursor pointers.");
+				__db_errx(env, DB_STR("0694",
+	    "DBCursor->cmp mismatched off page duplicate cursor pointers."));
 				return (EINVAL);
 			}
 
@@ -358,6 +359,7 @@ __dbc_count(dbc, recnop)
 	 * underlying functions.
 	 */
 	switch (dbc->dbtype) {
+	case DB_HEAP:
 	case DB_QUEUE:
 	case DB_RECNO:
 		*recnop = 1;
@@ -642,6 +644,10 @@ __dbc_idup(dbc_orig, dbcp, flags)
 			break;
 		case DB_HASH:
 			if ((ret = __hamc_dup(dbc_orig, dbc_n)) != 0)
+				goto err;
+			break;
+		case DB_HEAP:
+			if ((ret = __heapc_dup(dbc_orig, dbc_n)) != 0)
 				goto err;
 			break;
 		case DB_UNKNOWN:
@@ -1263,6 +1269,10 @@ __dbc_put_append(dbc, key, data, put_statep, flags)
 	 * method's append function.
 	 */
 	switch (dbp->type) {
+	case DB_HEAP:
+		if ((ret = __heap_append(dbc_n, key, &tdata)) != 0)
+			goto err;
+		break;
 	case DB_QUEUE:
 		if ((ret = __qam_append(dbc_n, key, &tdata)) != 0)
 			goto err;
@@ -1291,6 +1301,7 @@ __dbc_put_append(dbc, key, data, put_statep, flags)
 	 * not set in the data buffer. Make sure it is there so that secondary
 	 * updates can complete.
 	 */
+	__dbt_userfree(env, key, NULL, NULL);
 	if ((ret = __dbt_usercopy(env, key)) != 0)
 		goto err;
 
@@ -1659,9 +1670,9 @@ __dbc_put_secondaries(dbc,
 					if (cmp == 0)
 						continue;
 
-					__db_errx(env, "%s%s",
-			    "Put results in a non-unique secondary key in an ",
-			    "index not configured to support duplicates");
+					__db_errx(env, DB_STR("0695",
+			    "Put results in a non-unique secondary key in an "
+			    "index not configured to support duplicates"));
 					ret = EINVAL;
 				}
 				if (ret != DB_NOTFOUND && ret != DB_KEYEMPTY)
@@ -1838,7 +1849,7 @@ __dbc_put_primary(dbc, key, data, flags)
 		if ((ret = __dbc_put_append(dbc,
 		    key, data, &put_state, flags)) != 0)
 			goto err;
-	}
+	}	
 
 	/*
 	 * PUT_NOOVERWRITE with secondaries is a troublesome case. We need
@@ -1855,10 +1866,12 @@ __dbc_put_primary(dbc, key, data, flags)
 		F_SET(key, DB_DBT_ISSET);
 		olddata.dlen = 0;
 		olddata.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
-		if (__dbc_get(dbc, key, &olddata, DB_SET) != DB_NOTFOUND) {
+		ret = __dbc_get(dbc, key, &olddata, DB_SET);
+		if (ret == 0) {
 			ret = DB_KEYEXIST;
 			goto done;
-		}
+		} else if (ret != DB_NOTFOUND && ret != DB_KEYEMPTY)
+			goto err;
 	}
 
 	/*
@@ -2285,8 +2298,8 @@ __db_duperr(dbp, flags)
 	 * "DB_NODUPDATA" behavior for databases with DB_AM_SECONDARY set.
 	 */
 	if (flags != DB_NODUPDATA && !F_ISSET(dbp, DB_AM_SECONDARY))
-		__db_errx(dbp->env,
-		    "Duplicate data items are not supported with sorted data");
+		__db_errx(dbp->env, DB_STR("0696",
+		    "Duplicate data items are not supported with sorted data"));
 	return (DB_KEYEXIST);
 }
 
@@ -2553,10 +2566,11 @@ __dbc_pget(dbc, skey, pkey, data, flags)
 
 	if (F_ISSET(dbc, DBC_PARTITIONED | DBC_TRANSIENT))
 		dbc_n = dbc;
-	else if ((ret = __dbc_dup(dbc, &dbc_n, tmp_flags)) != 0)
-		return (ret);
-
-	F_SET(dbc_n, DBC_TRANSIENT);
+	else {
+		if ((ret = __dbc_dup(dbc, &dbc_n, tmp_flags)) != 0)
+			return (ret);
+		F_SET(dbc_n, DBC_TRANSIENT);
+	}
 
 	if (tmp_rmw)
 		F_SET(dbc_n, DBC_RMW);
@@ -2802,7 +2816,7 @@ static int
 __db_wrlock_err(env)
 	ENV *env;
 {
-	__db_errx(env, "Write attempted on read-only cursor");
+	__db_errx(env, DB_STR("0697", "Write attempted on read-only cursor"));
 	return (EPERM);
 }
 
@@ -2843,6 +2857,7 @@ __dbc_del_secondary(dbc)
 		return (ret);
 
 	SWAP_IF_NEEDED(dbc->dbp, &pkey);
+	DEBUG_LWRITE(dbc, dbc->txn, "del_secondary", &skey, &pkey, 0);
 
 	/*
 	 * Create a cursor on the primary with our locker ID,
@@ -3075,7 +3090,7 @@ __dbc_del_foreign(dbc)
 		 * If NULLIFY is set, we'll need a cursor on the primary to
 		 * update it with the nullified data.  Because primary and
 		 * secondary dbs share a lock file ID in CDB, we open a cursor
-		 * on the secondary and then get another writeable cursor on the
+		 * on the secondary and then get another writable cursor on the
 		 * primary via __db_cursor_int to avoid deadlocking.
 		 */
 		sdbc = pdbc = NULL;
@@ -3162,16 +3177,16 @@ __dbc_del_foreign(dbc)
 				 * secondary's primary.
 				 */
 				if ((ret = __dbc_del(sdbc, 0)) != 0) {
-					__db_err(env, ret,
-	    "Attempt to execute cascading delete in a foreign index failed");
+					__db_err(env, ret, DB_STR("0698",
+	    "Attempt to execute cascading delete in a foreign index failed"));
 					break;
 				}
 			} else if (LF_ISSET(DB_FOREIGN_NULLIFY)) {
 				changed = 0;
 				if ((ret = f_info->callback(sdbp,
 				    &pkey, &data, &fkey, &changed)) != 0) {
-					__db_err(env, ret,
-				    "Foreign database application callback");
+					__db_err(env, ret, DB_STR("0699",
+				    "Foreign database application callback"));
 					break;
 				}
 
@@ -3181,8 +3196,8 @@ __dbc_del_foreign(dbc)
 				 */
 				if (changed && (ret = __dbc_put(pdbc,
 				    &pkey, &data, DB_KEYFIRST)) != 0) {
-					__db_err(env, ret,
-  "Attempt to overwrite item in foreign database with nullified value failed");
+					__db_err(env, ret, DB_STR("0700",
+"Attempt to overwrite item in foreign database with nullified value failed"));
 					break;
 				}
 			}

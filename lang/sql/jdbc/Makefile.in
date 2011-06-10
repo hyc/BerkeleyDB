@@ -61,7 +61,7 @@ LIBS=	@SQLITE_LIB@ @SQLITE3_LIB@ @LDFLAGS@ @BDB_LIB@
 # Rule to compile `java' files
 #
 .java.class:
-	$(JAVAC) -classpath $(PWD) $(JAVAC_FLAGS) $<
+	$(JAVAC) -classpath $(CURDIR) $(JAVAC_FLAGS) $<
 
 CLASSES = \
 	SQLite/Authorizer.class \
@@ -144,7 +144,7 @@ sqlite.jar:	$(CLASSES) $(PRIVATE_CLASSES) META-INF/services/java.sql.Driver
 native/sqlite_jni.h:	SQLite/Database.class SQLite/Vm.class \
 	SQLite/FunctionContext.class SQLite/Stmt.class SQLite/Blob.class \
 	SQLite/Backup.class SQLite/Profile.class
-	$(JAVAH) -classpath $(PWD) -o native/sqlite_jni.h \
+	$(JAVAH) -classpath $(CURDIR) -o native/sqlite_jni.h \
 	    SQLite.Database SQLite.Vm \
 	    SQLite.FunctionContext SQLite.Stmt SQLite.Blob SQLite.Backup \
 	    SQLite.Profile
@@ -172,21 +172,21 @@ configure:	configure.in
 	autoconf
 
 test:	all
-	$(JAVAC) -classpath sqlite.jar:$(PWD) test.java
-	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(PWD)/.libs" \
-	    $(JAVA_RUN) -classpath sqlite.jar:$(PWD) \
-	    -DSQLite.library.path=$(PWD)/.libs test
+	$(JAVAC) -classpath sqlite.jar:$(CURDIR) test.java
+	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
+	    $(JAVA_RUN) -classpath sqlite.jar:$(CURDIR) \
+	    -DSQLite.library.path=$(CURDIR)/.libs test
 
 test2:	test
-	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(PWD)/.libs" \
-	    $(JAVA_RUN) -classpath sqlite.jar:$(PWD) \
-	    -DSQLite.library.path=$(PWD)/.libs test db2
+	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
+	    $(JAVA_RUN) -classpath sqlite.jar:$(CURDIR) \
+	    -DSQLite.library.path=$(CURDIR)/.libs test db2
 
 test3:	all
-	$(JAVAC) -classpath sqlite.jar:$(PWD) test3.java
-	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(PWD)/.libs" \
-	    $(JAVA_RUN) -classpath sqlite.jar:$(PWD) \
-	    -DSQLite.library.path=$(PWD)/.libs test3
+	$(JAVAC) -classpath sqlite.jar:$(CURDIR) test3.java
+	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
+	    $(JAVA_RUN) -classpath sqlite.jar:$(CURDIR) \
+	    -DSQLite.library.path=$(CURDIR)/.libs test3
 
 clean:
 	$(RM) SQLite/*.class SQLite/@JDBCVER@/*.class *.lo *.la *.o *~ \

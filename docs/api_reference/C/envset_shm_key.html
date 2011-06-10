@@ -12,7 +12,10 @@
     <link rel="next" href="envset_thread_count.html" title="DB_ENV-&gt;set_thread_count()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;set_shm_key()</th>
@@ -57,8 +60,9 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
          the subsystems supported by the environment (Locking, Logging, Memory
          Pool and Transaction); plus an additional shared memory region for
          each additional memory pool cache that is supported.  Already existing
-         regions with the same segment IDs will be removed.  See <a href="../../programmer_reference/env_region.html" class="olink">Shared Memory Regions</a> for more
-         information.
+         regions with the same segment IDs will be removed.  See 
+         <a href="../../programmer_reference/env_region.html" class="olink">Shared Memory Regions</a> 
+         for more information.
     </p>
       <p>
          The intent behind this method is two-fold: without it, applications
@@ -71,12 +75,11 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
     </p>
       <p>
          The database environment's base segment ID may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "set_shm_key", one or more whitespace characters, and the ID. Because
-         the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-         file is read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the entry
+         in that file is a single line with the string "set_shm_key", one
+         or more whitespace characters, and the ID. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+         file is read when the database environment is opened, it will
+         silently overrule configuration done before that time.
     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;set_shm_key()</code> method configures operations performed
@@ -103,7 +106,7 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52059616"></a>Parameters</h3>
+              <h3 class="title"><a id="id3897197"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -111,7 +114,7 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52052112"></a>shm_key</h4>
+                <h4 class="title"><a id="id3897186"></a>shm_key</h4>
               </div>
             </div>
           </div>
@@ -125,7 +128,7 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52086808"></a>Errors</h3>
+              <h3 class="title"><a id="id3896954"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -141,7 +144,7 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52101192"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3897359"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -155,7 +158,7 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52091232"></a>Class</h3>
+              <h3 class="title"><a id="id3897183"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -167,7 +170,7 @@ DB_ENV-&gt;set_shm_key(DB_ENV *dbenv, long shm_key);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52103376"></a>See Also</h3>
+              <h3 class="title"><a id="id3897232"></a>See Also</h3>
             </div>
           </div>
         </div>

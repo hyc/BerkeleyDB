@@ -25,6 +25,11 @@ namespace BerkeleyDB {
         public static readonly DatabaseType HASH
             = new DatabaseType(DBTYPE.DB_HASH);
         /// <summary>
+        /// Heap access method
+        /// </summary>
+        public static readonly DatabaseType HEAP
+            = new DatabaseType(DBTYPE.DB_HEAP);
+        /// <summary>
         /// Recno access method
         /// </summary>
         public static readonly DatabaseType RECNO
@@ -60,6 +65,8 @@ namespace BerkeleyDB {
                     return "BTree";
                 case DBTYPE.DB_HASH:
                     return "Hash";
+                case DBTYPE.DB_HEAP:
+                    return "Heap";
                 case DBTYPE.DB_QUEUE:
                     return "Queue";
                 case DBTYPE.DB_RECNO:

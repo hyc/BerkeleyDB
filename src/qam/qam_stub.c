@@ -29,8 +29,8 @@ int
 __db_no_queue_am(env)
 	ENV *env;
 {
-	__db_errx(env,
-    "library build did not include support for the Queue access method");
+	__db_errx(env, DB_STR("1145",
+    "library build did not include support for the Queue access method"));
 	return (DB_OPNOTSUP);
 }
 
@@ -277,7 +277,6 @@ __qam_truncate(dbc, countp)
 	DBC *dbc;
 	u_int32_t *countp;
 {
-	COMPQUIET(dbc, NULL);
 	COMPQUIET(countp, NULL);
 	return (__db_no_queue_am(dbc->env));
 }

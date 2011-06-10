@@ -18,6 +18,7 @@ proc rep008 { method { niter 10 } { tnum "008" } args } {
 	source ./include.tcl
 	global mixed_mode_logging
 	global repfiles_in_memory
+	global env_private
 
 	# Run for btree only.
 	if { $checking_valid_methods } {
@@ -41,12 +42,17 @@ proc rep008 { method { niter 10 } { tnum "008" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "and private env"
+	}
+
 	set args [convert_args $method $args]
 
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		puts "Rep$tnum ($method $r):\
-		    Replication backup and synchronizing $msg2."
+		    Replication backup and synchronizing $msg2 $msg3."
 		rep008_sub $method $niter $tnum $r $args
 	}
 }
@@ -55,6 +61,7 @@ proc rep008_sub { method niter tnum recargs largs } {
 	global testdir
 	global util_path
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -66,6 +73,11 @@ proc rep008_sub { method niter tnum recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -81,14 +93,14 @@ proc rep008_sub { method niter tnum recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
-	    -home $masterdir -errpfx MASTER $repmemargs \
+	    -home $masterdir -errpfx MASTER $repmemargs $privargs \
 	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
-	    -home $clientdir -errpfx CLIENT $repmemargs \
+	    -home $clientdir -errpfx CLIENT $repmemargs $privargs \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 

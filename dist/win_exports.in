@@ -1,11 +1,14 @@
 # $Id$
 
 # Standard interfaces.
+	db_copy
 	db_create
 	db_env_create
+	db_env_set_func_assert
 	db_env_set_func_free
 	db_env_set_func_malloc
 	db_env_set_func_realloc
+	db_env_set_win_security
 	db_sequence_create
 	db_strerror
 	db_version
@@ -20,6 +23,8 @@
 	__db_dbm_init
 	__db_dbm_nextkey
 	__db_dbm_store
+	__db_check_chksum
+	__db_chksum
 	__db_get_flags_fn
 	__db_get_seq_flags_fn
 	__db_hcreate
@@ -89,6 +94,7 @@
 	__bam_split_42_desc
 	__bam_split_48_desc
 	__bam_split_desc
+	__bam_traverse
 	__config_split
 	__crdel_inmem_create_desc
 	__crdel_inmem_remove_desc
@@ -111,7 +117,6 @@
 	__db_dispatch
 	__db_dl
 	__db_dumptree
-	__db_encrypt_and_checksum_pg
 	__db_err
 	__db_errx
 	__db_getlong
@@ -178,6 +183,12 @@
 	__ham_replace_42_desc
 	__ham_replace_desc
 	__ham_splitdata_desc
+	__heap_addrem_desc
+	__heap_exist
+	__heap_init_print
+	__heap_pg_alloc_desc
+	__heap_trunc_meta_desc
+	__heap_trunc_page_desc
 	__lock_list_print
 	__log_current_lsn
 	__log_print_record
@@ -212,11 +223,11 @@
 	__qam_add_desc
 	__qam_del_desc
 	__qam_delext_desc
-	__qam_fprobe
 	__qam_incfirst_desc
 	__qam_mvptr_desc
 	__qam_pgin_out
 	__rep_stat_print
+	__repmgr_member_desc
 	__txn_child_desc
 	__txn_ckp_42_desc
 	__txn_ckp_desc

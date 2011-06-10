@@ -1,7 +1,7 @@
 -module(munge).
 -include("rep_literals.hrl").
--export([v1_handshake/2, v2_handshake/2, v3_handshake/2]).
--export([versions/1,real_to_spoofed/2, maybe_spoofed_to_real/2]).
+-export([v1_handshake/1, v2_handshake/1, v3_handshake/1, v4_handshake/1]).
+-export([versions/1]).
 
 versions(B) ->
     Host = lists:takewhile(fun (X) -> X /= 0 end, binary_to_list(B)),
@@ -27,52 +27,23 @@ versions(B) ->
             Host
     end.
 
-%%% Map might be Me (a tuple) or Config (a list of tuples)
-%%%
-v1_handshake(Msg, Map) ->
-    {?HANDSHAKE, ControlLength, RecLength, Control, Rec} = Msg,
-    <<Version:32/native, Port:16/native, _:16, Prio:32/big>> = Control,
-    NewPort = real_to_spoofed(Port, Map),
-    NewControl = <<Version:32/native, NewPort:16/native, 0:16, Prio:32/big>>,
-    NewMsg = {?HANDSHAKE, ControlLength, RecLength, NewControl, Rec},
-    {Port, NewMsg}.
+v1_handshake(Msg) ->
+    {?HANDSHAKE, _ControlLength, _RecLength, Control, _Rec} = Msg,
+    <<_Version:32/native, Port:16/native, _:16, _Prio:32/big>> = Control,
+    Port.
 
-v2_handshake(Msg, Map) ->
-    {?HANDSHAKE, ControlLength, RecLength, Control, Rec} = Msg,
-    <<Port:16/big, Prio:32/big>> = Control,
-    NewPort = real_to_spoofed(Port, Map),
-    NewControl = <<NewPort:16/big, Prio:32/big>>,
-    NewMsg = {?HANDSHAKE, ControlLength, RecLength, NewControl, Rec},
-    {Port, NewMsg}.
+v2_handshake(Msg) ->
+    {?HANDSHAKE, _ControlLength, _RecLength, Control, _Rec} = Msg,
+    <<Port:16/big, _Prio:32/big>> = Control,
+    Port.
 
-v3_handshake(Msg, Map) ->
-    {?HANDSHAKE, ControlLength, RecLength, Control, Rec} = Msg,
-    <<Port:16/big, Prio:32/big, Flags:32/big>> = Control,
-    NewPort = real_to_spoofed(Port, Map),
-    NewControl = <<NewPort:16/big, Prio:32/big, Flags:32/big>>,
-    NewMsg = {?HANDSHAKE, ControlLength, RecLength, NewControl, Rec},
-    {Port, NewMsg}.
+v3_handshake(Msg) ->
+    {?HANDSHAKE, _ControlLength, _RecLength, Control, _Rec} = Msg,
+    <<Port:16/big, _Prio:32/big, _Flags:32/big>> = Control,
+    Port.
 
-
-%%% rcv handshake: real_to_spoofed(Config)
-%%% send handshake: real_to_spoofed(Me)
-%%%
-%%% rcv NEWCLIENT: real_to_spoofed(Him)
-%%% send NEWCLIENT: real_to_spoofed(Me)
-%%%
-%%% rcv NEWSITE: maybe_spoofed_to_real(Me)
-%%% snd NEWSITE: maybe_spoofed_to_real(Him)
-
-maybe_spoofed_to_real(Spoofed, {Spoofed,Real}) ->
-    Real;
-
-maybe_spoofed_to_real(X, _) ->
-    X.
-
-real_to_spoofed(Real, {Spoofed, Real}) ->
-    Spoofed;
-
-real_to_spoofed(Real, Config) when is_list(Config) ->
-    {value, {Spoofed, _Real}} = lists:keysearch(Real, 2, Config),
-    Spoofed.
+v4_handshake(Msg) ->
+    {?HANDSHAKE, _ControlLength, _RecLength, Control, _Rec} = Msg,
+    <<Port:16/big, _Alignment:16/big, _AckPolicy:32/big, _Flags:32/big>> = Control,
+    Port.
 

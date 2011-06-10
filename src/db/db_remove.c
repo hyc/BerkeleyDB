@@ -44,6 +44,7 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 	dbp = NULL;
 	env = dbenv->env;
 	txn_local = 0;
+	handle_check = 0;
 
 	ENV_ILLEGAL_BEFORE_OPEN(env, "DB_ENV->dbremove");
 
@@ -57,6 +58,9 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 		return (ret);
 
 	ENV_ENTER(env, ip);
+	XA_NO_TXN(ip, ret);
+	if (ret != 0)
+		goto err;
 
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
@@ -79,8 +83,8 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 		goto err;
 	} else if (txn != NULL && LF_ISSET(DB_LOG_NO_DATA)) {
 		ret = EINVAL;
-		__db_errx(env,
-		   "DB_LOG_NO_DATA may not be specified within a transaction.");
+		__db_errx(env, DB_STR("0690",
+	    "DB_LOG_NO_DATA may not be specified within a transaction."));
 		goto err;
 	}
 	LF_CLR(DB_AUTO_COMMIT);
@@ -244,7 +248,8 @@ __db_remove_int(dbp, ip, txn, name, subdb, flags)
 	real_name = tmpname = NULL;
 
 	if (name == NULL && subdb == NULL) {
-		__db_errx(env, "Remove on temporary files invalid");
+		__db_errx(env, DB_STR("0691",
+		    "Remove on temporary files invalid"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -404,6 +409,9 @@ __db_subdb_remove(dbp, ip, txn, name, subdb, flags)
 
 	DB_TEST_RECOVERY(sdbp, DB_TEST_PREDESTROY, ret, name);
 
+	/* Have the handle locked so we will not lock pages. */
+	LOCK_CHECK_OFF(ip);
+
 	/* Free up the pages in the subdatabase. */
 	switch (sdbp->type) {
 		case DB_BTREE:
@@ -447,6 +455,7 @@ err:
 	    ret == 0)
 		ret = t_ret;
 
+	LOCK_CHECK_ON(ip);
 	return (ret);
 }
 

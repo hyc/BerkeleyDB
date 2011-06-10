@@ -12,7 +12,10 @@
     <link rel="next" href="am_misc_stability.html" title="Cursor stability" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Error support</th>
@@ -41,7 +44,9 @@ message corresponding to any Berkeley DB error return, similar to the ANSI C
 strerror function, but is able to handle both system error returns and
 Berkeley DB specific return values.</p>
       <p>For example:</p>
+      <a id="prog_am25"></a>
       <pre class="programlisting">int ret;
+...
 if ((ret = dbp-&gt;put(dbp, NULL, &amp;key, &amp;data, 0)) != 0) {
     fprintf(stderr, "put failed: %s\n", db_strerror(ret));
     return (1);
@@ -57,6 +62,7 @@ if your application tracks session IDs in a variable called session_id,
 it can include that information in its error messages:</p>
       <p>Error messages can additionally be configured to always include a prefix
 (for example, the program name) using the <a href="../api_reference/C/dbset_errpfx.html" class="olink">DB-&gt;set_errpfx()</a> method.</p>
+      <a id="prog_am26"></a>
       <pre class="programlisting">#define DATABASE "access.db"
 
 int ret;

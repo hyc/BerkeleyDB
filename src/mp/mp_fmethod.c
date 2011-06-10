@@ -17,6 +17,7 @@ static int __memp_get_lsn_offset __P((DB_MPOOLFILE *, int32_t *));
 static int __memp_get_maxsize __P((DB_MPOOLFILE *, u_int32_t *, u_int32_t *));
 static int __memp_set_maxsize __P((DB_MPOOLFILE *, u_int32_t, u_int32_t));
 static int __memp_set_priority __P((DB_MPOOLFILE *, DB_CACHE_PRIORITY));
+static int __memp_get_last_pgno_pp __P((DB_MPOOLFILE *, db_pgno_t *));
 
 /*
  * __memp_fcreate_pp --
@@ -41,8 +42,8 @@ __memp_fcreate_pp(dbenv, retp, flags)
 		return (ret);
 
 	if (REP_ON(env)) {
-		__db_errx(env,
-  "DB_ENV->memp_fcreate: method not permitted when replication is configured");
+		__db_errx(env, DB_STR("3029",
+"DB_ENV->memp_fcreate: method not permitted when replication is configured"));
 		return (EINVAL);
 	}
 
@@ -81,7 +82,7 @@ __memp_fcreate(env, retp)
 	dbmfp->get_fileid = __memp_get_fileid;
 	dbmfp->get_flags = __memp_get_flags;
 	dbmfp->get_ftype = __memp_get_ftype;
-	dbmfp->get_last_pgno = __memp_get_last_pgno;
+	dbmfp->get_last_pgno = __memp_get_last_pgno_pp;
 	dbmfp->get_lsn_offset = __memp_get_lsn_offset;
 	dbmfp->get_maxsize = __memp_get_maxsize;
 	dbmfp->get_pgcookie = __memp_get_pgcookie;
@@ -144,7 +145,8 @@ __memp_get_fileid(dbmfp, fileid)
 	u_int8_t *fileid;
 {
 	if (!F_ISSET(dbmfp, MP_FILEID_SET)) {
-		__db_errx(dbmfp->env, "get_fileid: file ID not set");
+		__db_errx(dbmfp->env, DB_STR("3030",
+		    "get_fileid: file ID not set"));
 		return (EINVAL);
 	}
 
@@ -318,6 +320,7 @@ __memp_get_maxsize(dbmfp, gbytesp, bytesp)
 	DB_MPOOLFILE *dbmfp;
 	u_int32_t *gbytesp, *bytesp;
 {
+	DB_THREAD_INFO *ip;
 	ENV *env;
 	MPOOLFILE *mfp;
 
@@ -326,6 +329,7 @@ __memp_get_maxsize(dbmfp, gbytesp, bytesp)
 		*bytesp = dbmfp->bytes;
 	} else {
 		env = dbmfp->env;
+		ENV_ENTER(env, ip);
 
 		MUTEX_LOCK(env, mfp->mutex);
 		*gbytesp = (u_int32_t)
@@ -334,6 +338,8 @@ __memp_get_maxsize(dbmfp, gbytesp, bytesp)
 		    ((mfp->maxpgno % (GIGABYTE / mfp->pagesize)) *
 		    mfp->pagesize);
 		MUTEX_UNLOCK(env, mfp->mutex);
+
+		ENV_LEAVE(env, ip);
 	}
 
 	return (0);
@@ -348,6 +354,7 @@ __memp_set_maxsize(dbmfp, gbytes, bytes)
 	DB_MPOOLFILE *dbmfp;
 	u_int32_t gbytes, bytes;
 {
+	DB_THREAD_INFO *ip;
 	ENV *env;
 	MPOOLFILE *mfp;
 
@@ -356,6 +363,7 @@ __memp_set_maxsize(dbmfp, gbytes, bytes)
 		dbmfp->bytes = bytes;
 	} else {
 		env = dbmfp->env;
+		ENV_ENTER(env, ip);
 
 		MUTEX_LOCK(env, mfp->mutex);
 		mfp->maxpgno = (db_pgno_t)
@@ -363,6 +371,8 @@ __memp_set_maxsize(dbmfp, gbytes, bytes)
 		mfp->maxpgno += (db_pgno_t)
 		    ((bytes + mfp->pagesize - 1) / mfp->pagesize);
 		MUTEX_UNLOCK(env, mfp->mutex);
+
+		ENV_LEAVE(env, ip);
 	}
 
 	return (0);
@@ -447,9 +457,9 @@ __memp_get_priority(dbmfp, priorityp)
 		*priorityp = DB_PRIORITY_VERY_HIGH;
 		break;
 	default:
-		__db_errx(dbmfp->env,
+		__db_errx(dbmfp->env, DB_STR_A("3031",
 		    "DB_MPOOLFILE->get_priority: unknown priority value: %d",
-		    dbmfp->priority);
+		    "%d"), dbmfp->priority);
 		return (EINVAL);
 	}
 
@@ -482,9 +492,9 @@ __memp_set_priority(dbmfp, priority)
 		dbmfp->priority = MPOOL_PRI_VERY_HIGH;
 		break;
 	default:
-		__db_errx(dbmfp->env,
+		__db_errx(dbmfp->env, DB_STR_A("3032",
 		    "DB_MPOOLFILE->set_priority: unknown priority value: %d",
-		    priority);
+		    "%d"), priority);
 		return (EINVAL);
 	}
 
@@ -521,6 +531,28 @@ __memp_get_last_pgno(dbmfp, pgnoaddr)
 	MUTEX_UNLOCK(env, mfp->mutex);
 
 	return (0);
+}
+
+/*
+ * __memp_get_last_pgno_pp --
+ *	pre/post processing for __memp_get_last_pgno.
+ *
+ */
+static int
+__memp_get_last_pgno_pp(dbmfp, pgnoaddr)
+	DB_MPOOLFILE *dbmfp;
+	db_pgno_t *pgnoaddr;
+{
+	DB_THREAD_INFO *ip;
+	int ret;
+
+	ret = 0;
+	ENV_ENTER(dbmfp->env, ip);
+
+	ret = __memp_get_last_pgno(dbmfp, pgnoaddr);
+
+	ENV_LEAVE(dbmfp->env, ip);
+	return (ret);
 }
 
 /*

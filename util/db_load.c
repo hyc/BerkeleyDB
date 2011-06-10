@@ -128,7 +128,8 @@ main(argc, argv)
 			mode = STANDARD_LOAD;
 
 			if (freopen(optarg, "r", stdin) == NULL) {
-				fprintf(stderr, "%s: %s: reopen: %s\n",
+				fprintf(stderr, DB_STR_A("5072",
+				"%s: %s: reopen: %s\n", "%s %s %s\n"),
 				    ldg.progname, optarg, strerror(errno));
 				exitval = usage();
 				goto done;
@@ -150,7 +151,8 @@ main(argc, argv)
 			ldg.passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (ldg.passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5073",
+				    "%s: strdup: %s\n", "%s %s\n"),
 				    ldg.progname, strerror(errno));
 				exitval = usage();
 				goto done;
@@ -293,6 +295,7 @@ load(dbenv, name, argtype, clist, flags, ldg, existedp)
 	DBC *dbc;
 	DBT key, rkey, data, *part_keys, *readp, *writep;
 	DBTYPE dbtype;
+	DB_HEAP_RID rid;
 	DB_TXN *ctxn, *txn;
 	db_recno_t recno, datarecno;
 	u_int32_t put_flags;
@@ -344,12 +347,14 @@ retry_db:
 
 	if (keys != 1) {
 		if (keyflag == 1) {
-			dbp->err(dbp, EINVAL, "No keys specified in file");
+			dbp->err(dbp, EINVAL, DB_STR("5074",
+			    "No keys specified in file"));
 			goto err;
 		}
 	}
 	else if (keyflag == 0) {
-		dbp->err(dbp, EINVAL, "Keys specified in file");
+		dbp->err(dbp, EINVAL, DB_STR("5075",
+		    "Keys specified in file"));
 		goto err;
 	}
 	else
@@ -358,27 +363,43 @@ retry_db:
 	if (dbtype == DB_BTREE || dbtype == DB_HASH) {
 		if (keyflag == 0)
 			dbp->err(dbp,
-			    EINVAL, "Btree and Hash must specify keys");
+			    EINVAL, DB_STR("5076",
+			    "Btree and Hash must specify keys"));
 		else
 			keyflag = 1;
 	}
 
+	if (dbtype == DB_HEAP && keyflag == 1) {
+		dbp->err(dbp,
+		    EINVAL, DB_STR("5127", "Heap must not specify keys"));
+		goto err;
+	}
+
 	if (argtype != DB_UNKNOWN) {
+		if (dbtype == DB_HEAP) {
+			dbenv->errx(dbenv, DB_STR("5128",
+			    "improper database type conversion specified"));
+			goto err;
+		}
 
 		if (dbtype == DB_RECNO || dbtype == DB_QUEUE)
 			if (keyflag != 1 && argtype != DB_RECNO &&
 			    argtype != DB_QUEUE) {
-				dbenv->errx(dbenv,
-			   "improper database type conversion specified");
+				dbenv->errx(dbenv, DB_STR("5077",
+			    "improper database type conversion specified"));
 				goto err;
 			}
 		dbtype = argtype;
 	}
 
 	if (dbtype == DB_UNKNOWN) {
-		dbenv->errx(dbenv, "no database type specified");
+		dbenv->errx(dbenv, DB_STR("5078",
+		    "no database type specified"));
 		goto err;
 	}
+
+	if (dbtype == DB_HEAP)
+		put_flags = DB_APPEND;
 
 	if (keyflag == -1)
 		keyflag = 0;
@@ -458,6 +479,9 @@ retry_db:
 			}
 		} else
 			key.data = &recno;
+	} else if (dbtype == DB_HEAP) {
+		key.size = sizeof(DB_HEAP_RID);
+		key.data = &rid;
 	} else
 key_data:	if ((readp->data = malloc(readp->ulen = 1024)) == NULL) {
 			dbenv->err(dbenv, ENOMEM, NULL);
@@ -505,8 +529,8 @@ key_data:	if ((readp->data = malloc(readp->ulen = 1024)) == NULL) {
 						goto err;
 
 				if (!G(endodata) && dbt_rdump(dbenv, &data)) {
-odd_count:				dbenv->errx(dbenv,
-					    "odd number of key/data pairs");
+odd_count:				dbenv->errx(dbenv, DB_STR("5079",
+					    "odd number of key/data pairs"));
 					goto err;
 				}
 			}
@@ -530,13 +554,13 @@ retry:
 			break;
 		case DB_KEYEXIST:
 			*existedp = 1;
-			dbenv->errx(dbenv,
+			dbenv->errx(dbenv, DB_STR_A("5080",
 			    "%s: line %d: key already exists, not loaded:",
-			    name,
+			    "%s %d"), name,
 			    !keyflag ? recno : recno * 2 - 1);
 
 			(void)dbenv->prdbt(&key,
-			    checkprint, 0, stderr, __db_pr_callback, 0);
+			    checkprint, 0, stderr, __db_pr_callback, 0, 0);
 			break;
 		case DB_LOCK_DEADLOCK:
 			/* If we have a child txn, retry--else it's fatal. */
@@ -591,7 +615,8 @@ err:		rval = 1;
 	/* Free allocated memory. */
 	if (subdb != NULL)
 		free(subdb);
-	if (dbtype != DB_RECNO && dbtype != DB_QUEUE && key.data != NULL)
+	if (dbtype != DB_HEAP && 
+	    dbtype != DB_RECNO && dbtype != DB_QUEUE && key.data != NULL)
 		free(key.data);
 	if (rkey.data != NULL)
 		free(rkey.data);
@@ -613,8 +638,8 @@ env_create(dbenvp, ldg)
 	int ret;
 
 	if ((ret = db_env_create(dbenvp, 0)) != 0) {
-		fprintf(stderr,
-		    "%s: db_env_create: %s\n", ldg->progname, db_strerror(ret));
+		fprintf(stderr, "%s: db_env_create: %s\n",
+		    ldg->progname, db_strerror(ret));
 		return (ret);
 	}
 	dbenv = *dbenvp;
@@ -764,11 +789,14 @@ configure(dbenv, dbp, clp, subdbp, keysp)
 	long val;
 	int ret, savech;
 	char *name, *value;
+	u_int32_t heap_bytes, heap_gbytes;
+
+	heap_bytes = heap_gbytes = 0;
 
 	for (; (name = *clp) != NULL; *--value = savech, ++clp) {
 		if ((value = strchr(name, '=')) == NULL) {
-			dbp->errx(dbp,
-		    "command-line configuration uses name=value format");
+			dbp->errx(dbp, DB_STR("5081",
+		    "command-line configuration uses name=value format"));
 			return (1);
 		}
 		savech = *value;
@@ -798,14 +826,37 @@ configure(dbenv, dbp, clp, subdbp, keysp)
 
 		CONFIGURATION_LIST_COMPARE;
 
-		dbp->errx(dbp,
-		    "unknown command-line configuration keyword \"%s\"", name);
+		/* Have to special case heap size, because we need 2 values. */
+		if (strcmp(name, "heap_bytes") == 0) {
+			if ((ret = __db_getlong(dbenv,
+			    NULL, value, 0, LONG_MAX, &val)) != 0)
+				goto nameerr;
+			heap_bytes = (u_int32_t)val;
+		}
+		if (strcmp(name, "heap_gbytes") == 0) {
+			if ((ret = __db_getlong(dbenv,
+			    NULL, value, 0, LONG_MAX, &val)) != 0)
+				goto nameerr;
+			heap_gbytes = (u_int32_t)val;
+		}
+
+		dbp->errx(dbp, DB_STR_A("5082",
+		    "unknown command-line configuration keyword \"%s\"",
+		    "%s"), name);
 		return (1);
 	}
+	if (heap_gbytes != 0 || heap_bytes != 0)
+		if ((ret = dbp->set_heapsize(dbp,
+		    heap_gbytes, heap_bytes, 0)) != 0)
+			goto heaperr;
 	return (0);
 
 nameerr:
 	dbp->err(dbp, ret, "%s: %s=%s", G(progname), name, value);
+	if (0) {
+heaperr:	dbp->err(dbp, ret, "%s: heap_gbytes/heap_bytes=%lu/%lu",
+    		    G(progname), heap_gbytes, heap_bytes);
+	}
 err:	return (1);
 }
 
@@ -827,13 +878,14 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 	long val;
 	int ch, first, hdr, ret;
 	char *buf, *name, *p, *value;
-	u_int32_t i, nparts;
+	u_int32_t heap_bytes, heap_gbytes, i, nparts;
 
 	*dbtypep = DB_UNKNOWN;
 	*checkprintp = 0;
 	name = NULL;
 	*part_keyp = NULL;
 	keys = NULL;
+	heap_bytes = heap_gbytes = 0;
 
 	/*
 	 * We start with a smallish buffer;  most headers are small.
@@ -917,7 +969,8 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 		if (strcmp(name, "database") == 0 ||
 		    strcmp(name, "subdatabase") == 0) {
 			if ((ret = convprintable(dbenv, value, subdbp)) != 0) {
-				dbp->err(dbp, ret, "error reading db name");
+				dbp->err(dbp, ret, DB_STR("5083",
+				    "error reading db name"));
 				goto err;
 			}
 			continue;
@@ -937,9 +990,9 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 			G(version) = atoi(value);
 
 			if (G(version) > 3) {
-				dbp->errx(dbp,
+				dbp->errx(dbp, DB_STR_A("5084",
 				    "line %lu: VERSION %d is unsupported",
-				    G(lineno), G(version));
+				    "%lu %d"), G(lineno), G(version));
 				goto err;
 			}
 			continue;
@@ -964,6 +1017,10 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 				*dbtypep = DB_HASH;
 				continue;
 			}
+			if (strcmp(value, "heap") == 0) {
+				*dbtypep = DB_HEAP;
+				continue;
+			}
 			if (strcmp(value, "recno") == 0) {
 				*dbtypep = DB_RECNO;
 				continue;
@@ -972,7 +1029,8 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 				*dbtypep = DB_QUEUE;
 				continue;
 			}
-			dbp->errx(dbp, "line %lu: unknown type", G(lineno));
+			dbp->errx(dbp, DB_STR_A("5085",
+			    "line %lu: unknown type", "%lu"), G(lineno));
 			goto err;
 		}
 		if (strcmp(name, "keys") == 0) {
@@ -1025,23 +1083,49 @@ rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 
 		CONFIGURATION_LIST_COMPARE;
 
-		dbp->errx(dbp,
+		/* Have to special case heap size, because we need 2 values. */
+		if (strcmp(name, "heap_bytes") == 0) {
+			if ((ret = __db_getlong(dbenv,
+			    NULL, value, 0, LONG_MAX, &val)) != 0)
+				goto nameerr;
+			heap_bytes = (u_int32_t)val;
+		}
+		if (strcmp(name, "heap_gbytes") == 0) {
+			if ((ret = __db_getlong(dbenv,
+			    NULL, value, 0, LONG_MAX, &val)) != 0)
+				goto nameerr;
+			heap_gbytes = (u_int32_t)val;
+		}
+
+		dbp->errx(dbp, DB_STR_A("5086",
 		    "unknown input-file header configuration keyword \"%s\"",
-		    name);
+		    "%s"), name);
 		goto err;
 	}
 	ret = 0;
+
+	if (heap_gbytes != 0 || heap_bytes != 0)
+		if ((ret = dbp->set_heapsize(dbp,
+		    heap_gbytes, heap_bytes, 0)) != 0)
+			goto heaperr;
 
 	if (0) {
 nameerr:	dbp->err(dbp, ret, "%s: %s=%s", G(progname), name, value);
 		ret = 1;
 	}
 	if (0) {
-badfmt:		dbp->errx(dbp, "line %lu: unexpected format", G(lineno));
+heaperr:	dbp->err(dbp, ret, "%s: heap_gbytes/heap_bytes=%lu/%lu",
+		    G(progname), (u_long)heap_gbytes, (u_long)heap_bytes);
 		ret = 1;
 	}
 	if (0) {
-memerr:		dbp->errx(dbp, "unable to allocate memory");
+badfmt:		dbp->errx(dbp, DB_STR_A("5087",
+			    "line %lu: unexpected format", "%lu"), G(lineno));
+		ret = 1;
+	}
+	if (0) {
+memerr:		dbp->errx(dbp, DB_STR("5088",
+			    "unable to allocate memory"));
 err:		ret = 1;
 	}
 	if (name != NULL)
@@ -1368,8 +1452,8 @@ void
 badnum(dbenv)
 	DB_ENV *dbenv;
 {
-	dbenv->errx(dbenv,
-	    "boolean name=value pairs require a value of 0 or 1");
+	dbenv->errx(dbenv, DB_STR("5089",
+	    "boolean name=value pairs require a value of 0 or 1"));
 }
 
 /*
@@ -1380,7 +1464,8 @@ int
 badend(dbenv)
 	DB_ENV *dbenv;
 {
-	dbenv->errx(dbenv, "unexpected end of input data or key/data pair");
+	dbenv->errx(dbenv, DB_STR("5090",
+	    "unexpected end of input data or key/data pair"));
 	return (1);
 }
 
@@ -1407,10 +1492,10 @@ version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
-		    v_major, v_minor);
+		fprintf(stderr, DB_STR_A("5091",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname, DB_VERSION_MAJOR,
+		    DB_VERSION_MINOR, v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
 	return (0);

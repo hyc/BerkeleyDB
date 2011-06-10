@@ -80,8 +80,8 @@ __db_vrfy_overflow(dbp, vdp, h, pgno, flags)
 
 	pip->refcount = OV_REF(h);
 	if (pip->refcount < 1) {
-		EPRINT((dbp->env,
-		    "Page %lu: overflow page has zero reference count",
+		EPRINT((dbp->env, DB_STR_A("0676",
+		    "Page %lu: overflow page has zero reference count", "%lu"),
 		    (u_long)pgno));
 		isbad = 1;
 	}
@@ -137,8 +137,8 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 	refcount = pip->refcount;
 
 	if (pip->type != P_OVERFLOW) {
-		EPRINT((env,
-		    "Page %lu: overflow page of invalid type %lu",
+		EPRINT((env, DB_STR_A("0677",
+		    "Page %lu: overflow page of invalid type %lu", "%lu %lu"),
 		    (u_long)pgno, (u_long)pip->type));
 		ret = DB_VERIFY_BAD;
 		goto err;		/* Unsafe to continue. */
@@ -146,9 +146,9 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 
 	prev = pip->prev_pgno;
 	if (prev != PGNO_INVALID) {
-		EPRINT((env,
+		EPRINT((env, DB_STR_A("0678",
 	    "Page %lu: first page in overflow chain has a prev_pgno %lu",
-		    (u_long)pgno, (u_long)prev));
+		    "%lu %lu"), (u_long)pgno, (u_long)prev));
 		isbad = 1;
 	}
 
@@ -166,9 +166,9 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 		    vdp->thread_info, vdp->txn, pgno, &seen_cnt)) != 0)
 			goto err;
 		if ((u_int32_t)seen_cnt > refcount) {
-			EPRINT((env,
+			EPRINT((env, DB_STR_A("0679",
 		"Page %lu: encountered too many times in overflow traversal",
-			    (u_long)pgno));
+			    "%lu"), (u_long)pgno));
 			ret = DB_VERIFY_BAD;
 			goto err;
 		}
@@ -202,9 +202,9 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 		 */
 		if (LF_ISSET(DB_ST_OVFL_LEAF)) {
 			if (F_ISSET(pip, VRFY_OVFL_LEAFSEEN)) {
-				EPRINT((env,
+				EPRINT((env, DB_STR_A("0680",
 		"Page %lu: overflow page linked twice from leaf or data page",
-				    (u_long)pgno));
+				    "%lu"), (u_long)pgno));
 				ret = DB_VERIFY_BAD;
 				goto err;
 			}
@@ -245,9 +245,9 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 		 * to be sure...
 		 */
 		if (!IS_VALID_PGNO(next)) {
-			EPRINT((env,
+			EPRINT((env, DB_STR_A("0681",
 			    "Page %lu: bad next_pgno %lu on overflow page",
-			    (u_long)pgno, (u_long)next));
+			    "%lu %lu"), (u_long)pgno, (u_long)next));
 			ret = DB_VERIFY_BAD;
 			goto err;
 		}
@@ -256,10 +256,10 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 		    (ret = __db_vrfy_getpageinfo(vdp, next, &pip)) != 0)
 			return (ret);
 		if (pip->prev_pgno != pgno) {
-			EPRINT((env,
+			EPRINT((env, DB_STR_A("0682",
 		"Page %lu: bad prev_pgno %lu on overflow page (should be %lu)",
-			    (u_long)next, (u_long)pip->prev_pgno,
-			    (u_long)pgno));
+			    "%lu %lu %lu"), (u_long)next,
+			    (u_long)pip->prev_pgno, (u_long)pgno));
 			isbad = 1;
 			/*
 			 * It's safe to continue because we have separate
@@ -272,8 +272,9 @@ __db_vrfy_ovfl_structure(dbp, vdp, pgno, tlen, flags)
 
 	if (tlen > 0) {
 		isbad = 1;
-		EPRINT((env,
-		    "Page %lu: overflow item incomplete", (u_long)pgno));
+		EPRINT((env, DB_STR_A("0683",
+		    "Page %lu: overflow item incomplete", "%lu"),
+		    (u_long)pgno));
 	}
 
 done:

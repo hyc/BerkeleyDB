@@ -29,7 +29,8 @@ __os_rename(env, oldname, newname, silent)
 	dbenv = env == NULL ? NULL : env->dbenv;
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: rename %s to %s", oldname, newname);
+		__db_msg(env, DB_STR_A("0168", "fileops: rename %s to %s",
+		    "%s %s"), oldname, newname);
 
 	LAST_PANIC_CHECK_BEFORE_IO(env);
 
@@ -44,8 +45,8 @@ __os_rename(env, oldname, newname, silent)
 	 */
 	if (ret != 0) {
 		if (!silent)
-			__db_syserr(
-			    env, ret, "rename %s %s", oldname, newname);
+			__db_syserr(env, ret, DB_STR_A("0169",
+			    "rename %s %s", "%s %s"), oldname, newname);
 		ret = __os_posix_err(ret);
 	}
 	return (ret);

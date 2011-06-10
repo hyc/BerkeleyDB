@@ -67,19 +67,20 @@ AC_CHECK_HEADER(inttypes.h, [
 # #error, so we actually need to use the header for the compiler to fail.
 AC_SUBST(stdint_h_decl)
 AC_MSG_CHECKING(for stdint.h)
-AC_COMPILE_IFELSE([#include <stdint.h>
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <stdint.h>
   int main() {
   uint_least8_t x=0;
   return x;
-  }],[AC_MSG_RESULT(yes)
+  }])],[AC_MSG_RESULT(yes)
 if test "$db_cv_cxx" = "yes"; then
   AC_MSG_CHECKING([if stdint.h can be used by C++])
   AC_LANG_PUSH(C++)
-  AC_COMPILE_IFELSE([#include <stdint.h>
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([#include <stdint.h>
     int main() {
     uint_least8_t x=0;
     return x;
-  }],[AC_MSG_RESULT(yes)
+  }])],[AC_MSG_RESULT(yes)
     stdint_h_decl="#include <stdint.h>"
     db_includes="$db_includes
 #include <stdint.h>"

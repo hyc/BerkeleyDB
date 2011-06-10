@@ -52,6 +52,9 @@
 /* Define to 1 if you have the `backtrace_symbols' function. */
 #undef HAVE_BACKTRACE_SYMBOLS
 
+/* Define to 1 if you have the `bsearch' function. */
+#undef HAVE_BSEARCH
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
@@ -158,6 +161,9 @@
 /* Define to 1 if building Hash access method. */
 #undef HAVE_HASH
 
+/* Define to 1 if building Heap access method. */
+#undef HAVE_HEAP
+
 /* Define to 1 if you have the `hstrerror' function. */
 #undef HAVE_HSTRERROR
 
@@ -176,8 +182,14 @@
 /* Define to 1 if you have the `isspace' function. */
 #undef HAVE_ISSPACE
 
+/* Define to 1 if you have localization function to support globalization. */
+#undef HAVE_LOCALIZATION
+
 /* Define to 1 if you have the `localtime' function. */
 #undef HAVE_LOCALTIME
+
+/* Define to 1 if enabling checksums in log records. */
+#undef HAVE_LOG_CHECKSUM
 
 /* Define to 1 if you have the `memcmp' function. */
 #undef HAVE_MEMCMP
@@ -196,6 +208,10 @@
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
+
+/* Define to 1 where mmap() incrementally extends the accessible mapping as
+   the underlying file grows. */
+#undef HAVE_MMAP_EXTEND
 
 /* Define to 1 if you have the `mprotect' function. */
 #undef HAVE_MPROTECT
@@ -447,6 +463,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if building without output message content. */
+#undef HAVE_STRIPPED_MESSAGES
 
 /* Define to 1 if you have the `strncat' function. */
 #undef HAVE_STRNCAT

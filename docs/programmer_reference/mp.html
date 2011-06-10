@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 17.  The Memory Pool Subsystem</title>
+    <title>Chapter 18.  The Memory Pool Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -12,10 +12,13 @@
     <link rel="next" href="mp_config.html" title="Configuring the memory pool" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 17. 
+          <th colspan="3" align="center">Chapter 18. 
 		The Memory Pool Subsystem
         </th>
         </tr>
@@ -31,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="mp"></a>Chapter 17. 
+            <h2 class="title"><a id="mp"></a>Chapter 18. 
 		The Memory Pool Subsystem
         </h2>
           </div>
@@ -52,6 +55,20 @@
               <a href="mp_config.html">Configuring the memory pool</a>
             </span>
           </dt>
+          <dt>
+            <span class="sect1">
+              <a href="mp_warm.html">Warming the memory pool</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="mp_warm.html#warm_cache">The warm_cache() function</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
         </dl>
       </div>
       <div class="sect1" lang="en" xml:lang="en">
@@ -110,7 +127,7 @@ the <a href="../api_reference/C/memptrickle.html" class="olink">DB_ENV-&gt;memp_
 or written (for example, endian conversion, or page checksums), the
 <a href="../api_reference/C/mempregister.html" class="olink">DB_ENV-&gt;memp_register()</a> function allows applications to specify automatic
 input and output processing in these cases.</li>
-            <li>The <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a> uses the <a href="../api_reference/C/mempstat.html" class="olink">DB_ENV-&gt;memp_stat()</a> method to display
+            <li>The <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility uses the <a href="../api_reference/C/mempstat.html" class="olink">DB_ENV-&gt;memp_stat()</a> method to display
 statistics about the efficiency of the pool.</li>
             <li>All dirty pages in the pool may be flushed using the <a href="../api_reference/C/mempsync.html" class="olink">DB_ENV-&gt;memp_sync()</a> method.
 In addition, <a href="../api_reference/C/mempsync.html" class="olink">DB_ENV-&gt;memp_sync()</a> takes an argument that is specific to
@@ -119,188 +136,7 @@ a specified log sequence number (<a href="../api_reference/C/lsn.html" class="ol
             <li>The entire pool may be discarded using the <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a> method.</li>
           </ul>
         </div>
-        <div class="informaltable">
-          <table border="1" width="80%">
-            <colgroup>
-              <col />
-              <col />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Memory Pools and Related Methods</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><a href="../api_reference/C/dbget_mpf.html" class="olink">DB-&gt;get_mpf()</a> handle</td>
-                <td>Return <a href="../api_reference/C/db.html" class="olink">DB</a>'s underlying <a href="../api_reference/C/memp.html" class="olink">DB_MPOOLFILE</a> handle</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempstat.html" class="olink">DB_ENV-&gt;memp_stat()</a>
-                </td>
-                <td>Return memory pool statistics</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempsync.html" class="olink">DB_ENV-&gt;memp_sync()</a>
-                </td>
-                <td>Flush pages from a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/memptrickle.html" class="olink">DB_ENV-&gt;memp_trickle()</a>
-                </td>
-                <td>Trickle flush pages from a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="emphasis">
-                    <em>Memory Pool Configuration</em>
-                  </span>
-                </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempregister.html" class="olink">DB_ENV-&gt;memp_register()</a>
-                </td>
-                <td>Register input/output functions for a file in a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/envset_cachesize.html" class="olink">DB_ENV-&gt;set_cachesize()</a>
-                </td>
-                <td>Set the environment cache size</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/envset_cache_max.html" class="olink">DB_ENV-&gt;set_cache_max()</a>
-                </td>
-                <td>Set the maximum cache size</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_mp_max_openfd.html" class="olink">DB_ENV-&gt;set_mp_max_openfd()</a>
-                </td>
-                <td>Set the maximum number of open file descriptors</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_mp_max_write.html" class="olink">DB_ENV-&gt;set_mp_max_write()</a>
-                </td>
-                <td>Set the maximum number of sequential disk writes</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/envset_mp_mmapsize.html" class="olink">DB_ENV-&gt;set_mp_mmapsize()</a>
-                </td>
-                <td>Set maximum mapped-in database file size</td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="emphasis">
-                    <em>Memory Pool Files</em>
-                  </span>
-                </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempfcreate.html" class="olink">DB_ENV-&gt;memp_fcreate()</a>
-                </td>
-                <td>Create a memory pool file handle</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempfclose.html" class="olink">DB_MPOOLFILE-&gt;close()</a>
-                </td>
-                <td>Close a file in a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempfget.html" class="olink">DB_MPOOLFILE-&gt;get()</a>
-                </td>
-                <td>Get page from a file in a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempfopen.html" class="olink">DB_MPOOLFILE-&gt;open()</a>
-                </td>
-                <td>Open a file in a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempput.html" class="olink">DB_MPOOLFILE-&gt;put()</a>
-                </td>
-                <td>Return a page to a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempfsync.html" class="olink">DB_MPOOLFILE-&gt;sync()</a>
-                </td>
-                <td>Flush pages from a file in a memory pool</td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="emphasis">
-                    <em>Memory Pool File Configuration</em>
-                  </span>
-                </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_clear_len.html" class="olink">DB_MPOOLFILE-&gt;set_clear_len()</a>
-                </td>
-                <td>Set file page bytes to be cleared</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_fileid.html" class="olink">DB_MPOOLFILE-&gt;set_fileid()</a>
-                </td>
-                <td>Set file unique identifier</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_flags.html" class="olink">DB_MPOOLFILE-&gt;set_flags()</a>
-                </td>
-                <td>General memory pool file configuration</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_ftype.html" class="olink">DB_MPOOLFILE-&gt;set_ftype()</a>
-                </td>
-                <td>Set file type</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_lsn_offset.html" class="olink">DB_MPOOLFILE-&gt;set_lsn_offset()</a>
-                </td>
-                <td>Set file log-sequence-number offset</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_maxsize.html" class="olink">DB_MPOOLFILE-&gt;set_maxsize()</a>
-                </td>
-                <td>Set maximum file size</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_pgcookie.html" class="olink">DB_MPOOLFILE-&gt;set_pgcookie()</a>
-                </td>
-                <td>Set file cookie for pgin/pgout</td>
-              </tr>
-              <tr>
-                <td>
-                  <a href="../api_reference/C/mempset_priority.html" class="olink">mempset_priority()</a>
-                </td>
-                <td>Set memory pool file priority</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p>For more information on the memory pool subsystem methods, see the <a href="../api_reference/C/memp.html#memplist" class="olink">Memory Pools and Related Methods</a> section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em> </p>
       </div>
     </div>
     <div class="navfooter">

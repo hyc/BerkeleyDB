@@ -18,17 +18,23 @@ proc rep096 { method { niter 100 } { tnum "096" } args } {
 	global util_path
 	global EXE
 
+	# All access methods are allowed.
+	if { $checking_valid_methods } {
+		return "ALL"
+	}
+
+	# QNX does not support fork() in a multi-threaded environment.
+	if { $is_qnx_test } {
+		puts "Skipping Rep$tnum on QNX."
+		return
+	}
+
 	if { [file exists $util_path/db_replicate$EXE] == 0 } {
 		puts "Skipping Rep$tnum with db_replicate.  Is it built?"
 		return
 	}
 
 	set logsets [create_logsets 2]
-
-	# All access methods are allowed.
-	if { $checking_valid_methods } {
-		return "ALL"
-	}
 
 	set args [convert_args $method $args]
 
@@ -114,8 +120,8 @@ proc rep096_sub { method niter tnum logset recargs largs } {
 	#
 	puts "\tRep$tnum.a: Creating initial environments."
 	set nsites 2
-	replicate_make_config $masterdir $nsites 0 100
-	replicate_make_config $clientdir $nsites 1 1
+	replicate_make_config $masterdir 0 100
+	replicate_make_config $clientdir 1 1
 
 	#
 	# Open a master and a client, but only with -rep.  Note that we need

@@ -45,6 +45,7 @@ build_vxworks/util/db_log_verify.c				vx6
 build_vxworks/util/db_printlog.c				vx6
 build_vxworks/util/db_recover.c					vx6
 build_vxworks/util/db_stat.c					vx6
+build_vxworks/util/db_tuner.c					vx6
 build_vxworks/util/db_upgrade.c					vx6
 build_vxworks/util/db_verify.c					vx6
 build_vxworks/dbdemo/dbdemo.c					vx6
@@ -92,6 +93,7 @@ src/crypto/crypto.c						vx
 src/crypto/mersenne/mt19937db.c					vx
 src/crypto/rijndael/rijndael-alg-fst.c				vx
 src/crypto/rijndael/rijndael-api-fst.c				vx
+lang/cxx/cxx_channel.cpp					vx6
 lang/cxx/cxx_db.cpp						vx6
 lang/cxx/cxx_dbc.cpp						vx6
 lang/cxx/cxx_dbt.cpp						vx6
@@ -102,6 +104,7 @@ lang/cxx/cxx_logc.cpp						vx6
 lang/cxx/cxx_mpool.cpp						vx6
 lang/cxx/cxx_multi.cpp						vx6
 lang/cxx/cxx_seq.cpp						vx6
+lang/cxx/cxx_site.cpp						vx6
 lang/cxx/cxx_txn.cpp						vx6
 src/db/crdel_auto.c						android vx vxsmall 
 src/db/crdel_autop.c						vx6
@@ -114,6 +117,7 @@ src/db/db_cam.c							android vx vxsmall
 src/db/db_cds.c							android vx vxsmall 
 src/db/db_compact.c						android vx vxsmall 
 src/db/db_conv.c						android vx vxsmall 
+src/db/db_copy.c						android vx vxsmall 
 src/db/db_dispatch.c						android vx vxsmall 
 src/db/db_dup.c							android vx vxsmall 
 src/db/db_iface.c						android vx vxsmall 
@@ -182,6 +186,17 @@ src/hash/hash_stat.c						vx
 src/hash/hash_stub.c						android vxsmall 
 src/hash/hash_upgrade.c						vx
 src/hash/hash_verify.c						vx
+src/heap/heap_auto.c						vx
+src/heap/heap_autop.c						vx
+src/heap/heap.c							vx
+src/heap/heap_conv.c						vx
+src/heap/heap_method.c						vx
+src/heap/heap_open.c						vx
+src/heap/heap_rec.c						vx
+src/heap/heap_reclaim.c						vx
+src/heap/heap_stat.c						vx
+src/heap/heap_stub.c						android vxsmall
+src/heap/heap_verify.c						vx
 src/hmac/hmac.c							android vx vxsmall 
 src/hmac/sha1.c							android vx vxsmall 
 src/lock/lock.c							android vx vxsmall 
@@ -281,7 +296,7 @@ src/qam/qam_stat.c						vx
 src/qam/qam_stub.c						android vxsmall 
 src/qam/qam_upgrade.c						vx
 src/qam/qam_verify.c						vx
-src/rep/rep_auto.c						vx
+src/rep/rep_automsg.c						vx
 src/rep/rep_backup.c						vx
 src/rep/rep_elect.c						vx
 src/rep/rep_lease.c						vx
@@ -294,13 +309,15 @@ src/rep/rep_stub.c						android vxsmall
 src/rep/rep_util.c						vx
 src/rep/rep_verify.c						vx
 src/repmgr/repmgr_auto.c					vx
+src/repmgr/repmgr_autop.c					vx6
+src/repmgr/repmgr_automsg.c					vx
 src/repmgr/repmgr_elect.c					vx
 src/repmgr/repmgr_method.c					vx
 src/repmgr/repmgr_msg.c						vx
 src/repmgr/repmgr_net.c						vx
 src/repmgr/repmgr_posix.c					vx
 src/repmgr/repmgr_queue.c					vx
-src/repmgr/repmgr_rereq.c					vx
+src/repmgr/repmgr_rec.c						vx
 src/repmgr/repmgr_sel.c						vx
 src/repmgr/repmgr_stat.c					vx
 src/repmgr/repmgr_stub.c					android vxsmall 
@@ -318,4 +335,5 @@ src/txn/txn_recover.c						android vx vxsmall
 src/txn/txn_region.c						android vx vxsmall 
 src/txn/txn_stat.c						android vx vxsmall 
 src/txn/txn_util.c						android vx vxsmall 
-
+src/xa/xa.c							vx
+src/xa/xa_map.c							vx

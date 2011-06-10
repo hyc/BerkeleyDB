@@ -56,8 +56,8 @@ proc test065 { method args } {
 
 	error_check_good db_close [$db close] 0
 
-	if { ([is_record_based $method] && ![is_queue $method]) \
-	    || [is_rbtree $method] } {
+        if { ([is_record_based $method] && ![is_queue $method] && \
+	    ![is_heap $method]) || [is_rbtree $method] } {
 		error_check_good recordcount_ok [is_substr $res \
 		    "{{Number of keys} 0}"] 1
 	} else {

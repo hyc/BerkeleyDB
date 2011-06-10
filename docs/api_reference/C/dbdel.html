@@ -8,17 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
-    <link rel="prev" href="dbcompact.html" title="DB-&gt;compact()" />
+    <link rel="prev" href="dbcreate.html" title="db_create" />
     <link rel="next" href="dberr.html" title="DB-&gt;err()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB-&gt;del()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="dbcompact.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="dbcreate.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 2. 
                 The DB Handle
         </th>
@@ -67,7 +70,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49688160"></a>Parameters</h3>
+              <h3 class="title"><a id="id3855029"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -75,7 +78,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49692904"></a>txnid</h4>
+                <h4 class="title"><a id="id3855040"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -95,7 +98,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49674272"></a>key</h4>
+                <h4 class="title"><a id="id3854926"></a>key</h4>
               </div>
             </div>
           </div>
@@ -107,7 +110,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49638336"></a>flags</h4>
+                <h4 class="title"><a id="id3851145"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -195,7 +198,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49712352"></a>Errors</h3>
+              <h3 class="title"><a id="id3855312"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -211,7 +214,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49703560"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="id3855227"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -245,7 +248,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49673232"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id3854521"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -258,7 +261,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49641760"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id3854407"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -271,7 +274,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49672816"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="id3854807"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -290,7 +293,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49673088"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="id3855050"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -302,7 +305,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49710344"></a>DB_SECONDARY_BAD</h4>
+                <h4 class="title"><a id="id3855473"></a>DB_SECONDARY_BAD</h4>
               </div>
             </div>
           </div>
@@ -314,7 +317,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49722856"></a>EACCES</h4>
+                <h4 class="title"><a id="id3855635"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -326,7 +329,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49732936"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3855642"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -339,7 +342,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49718792"></a>Class</h3>
+              <h3 class="title"><a id="id3855230"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -351,7 +354,7 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49702560"></a>See Also</h3>
+              <h3 class="title"><a id="id3855162"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -364,14 +367,14 @@ DB-&gt;del(DB *db, DB_TXN *txnid, DBT *key, u_int32_t flags);  </pre>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="dbcompact.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="dbcreate.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="db.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="dberr.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DB-&gt;compact() </td>
+          <td width="40%" align="left" valign="top">db_create </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

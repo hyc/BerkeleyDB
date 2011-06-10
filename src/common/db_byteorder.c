@@ -55,8 +55,8 @@ __db_byteorder(env, lorder)
 			return (DB_SWAPBYTES);
 		break;
 	default:
-		__db_errx(env,
-	    "unsupported byte order, only big and little-endian supported");
+		__db_errx(env, DB_STR("0041",
+	    "unsupported byte order, only big and little-endian supported"));
 		return (EINVAL);
 	}
 	return (0);

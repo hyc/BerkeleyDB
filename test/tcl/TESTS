@@ -2,13 +2,6 @@
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Cold-boot a 4-site group.  The first two sites start quickly and
-	initiate an election.  The other two sites don't join the election until
-	the middle of the long full election timeout period.  It's important that
-	the number of sites that start immediately be a sub-majority, because
-	that's the case that used to have a bug in it [#18456].
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 backup
 	Test of hotbackup functionality. 
 
@@ -41,8 +34,11 @@ bigfile002
 	with 1K pages.  Dirty page 6000000.  Sync.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-db_reptest
-	Wrapper to configure and run the db_reptest program.
+Cold-boot a 4-site group.  The first two sites start quickly and
+	initiate an election.  The other two sites don't join the election until
+	the middle of the long full election timeout period.  It's important that
+	the number of sites that start immediately be a sub-majority, because
+	that's the case that used to have a bug in it [#18456].
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 dbm
@@ -51,6 +47,10 @@ dbm
 	After all are entered, retrieve all; compare output to original.
 	Then reopen the file, re-retrieve everything.  Finally, delete
 	everything.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+db_reptest
+	Wrapper to configure and run the db_reptest program.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 dead001
@@ -285,8 +285,39 @@ env019
 	an env is accessed from a second process.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+env020
+	Check if the output information for stat_print is expected.
+	These are the stat_print functions we test:
+	env stat_print
+	env lock_stat_print
+	env log_stat_print
+	env mpool_stat_print
+	env mutex_stat_print
+	env rep_stat_print
+	env repmgr_stat_print
+	env txn_stat_print
+	db stat_print
+	seq stat_print
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+env021
+	Test the operations on a transaction in a CDS environment.
+	These are the operations we test:
+	$txn abort
+	$txn commit
+	$txn id
+	$txn prepare
+	$txn setname name
+	$txn getname
+	$txn discard
+	$txn set_timeout
+	In these operations, we only support the following:
+	$txn id
+	$txn commit
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 fop001.tcl
-	Test file system operations, combined in a transaction. [#7363]
+	Test two file system operations combined in one transaction. 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 fop002.tcl
@@ -333,6 +364,27 @@ fop007
 fop008
 	Test file system operations on named in-memory databases.
 	Combine two ops in one transaction.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+fop009
+	Test file system operations in child transactions. 
+	Combine two ops in one child transaction.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+fop010
+	Test file system operations in child transactions. 
+	Two ops, each in its own child txn.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+fop011
+	Test file system operations in child transactions. 
+	Combine two ops in one child transaction, with in-emory
+	databases.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+fop012
+	Test file system operations in child transactions. 
+	Two ops, each in its own child txn, with in-memory dbs.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jointest
@@ -1422,6 +1474,7 @@ rep079
 	Cleanly shutdown master env.  Restart without
 	recovery and verify leases are expired and refreshed.
 	Add a new client without leases to a group using leases.
+	Test errors if we cannot get leases before/after txn_commit.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rep080
@@ -1564,85 +1617,56 @@ rep096
 	the master and write some data.  Then verify contents.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep097
+
+	Replication and lease data durability test.
+	Set leases on master and 2 clients.
+	Have the original master go down and a client take over.
+	Have the old master rejoin as client, but go down again.
+	The other two sites do one txn, while the original master's
+	LSN extends beyond due to running recovery.
+	Original Master rejoins while new master fails.  Make sure remaining
+	original site is elected, with the smaller LSN, but with txn data.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+rep098
+	Test of internal initialization and page deallocation.
+
+	Use one master, one client.
+	Generate several log files.
+	Remove old master log files.
+	Start a client.
+	After client gets UPDATE file information, delete entries to
+	remove pages in the database.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr001
-	Basic repmgr test. 
+	Basic repmgr test.
 
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases.
-
-	Run for btree only because access method shouldn't matter.
+	Run all mix-and-match combinations of the basic_repmgr_test.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr002
-	Basic repmgr election test. 
+	Basic repmgr test.
 
-	Open three clients of different priorities and make sure repmgr 
-	elects expected master. Shut master down, make sure repmgr elects 
-	expected remaining client master, make sure former master can join 
-	as client.
-
-	Run for btree only because access method shouldn't matter.
+	Run all combinations of the basic_repmgr_election_test.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr003
-	Basic repmgr internal init test. 
+	Basic repmgr init test.
 
-	Start an appointed master site and two clients, processing 
-	transactions between each additional site. Verify all expected 
-	transactions are replicated.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr004
-	Basic repmgr test with in-memory logs.
-
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr005
-	Basic repmgr test with in-memory databases. 
-
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr006
-	Basic repmgr test with bulk processing. 
-
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases.
-
-	Run for btree only because access method shouldn't matter.
+	Run all combinations of the basic_repmgr_init_test.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr007
 	Basic repmgr client shutdown/restart test.
 
-	Start an appointed master site and two clients. Shutdown and
+	Start an appointed master site and two clients. Shut down and
 	restart each client, processing transactions after each restart.
 	Verify all expected transactions are replicated.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr008
-	Basic repmgr test with client-to-client configuration.
-
-	Create a master and two clients, process some records and verify 
-	resulting databases.
 
 	Run for btree only because access method shouldn't matter.
 
@@ -1704,42 +1728,6 @@ repmgr013
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr014
-	Basic repmgr in-memory test. 
-
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases. Put databases, logs, replication files,
-	and region files in-memory.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr015
-	Basic repmgr in-memory election test. 
-
-	Open three clients of different priorities and make sure repmgr 
-	elects expected master. Shut master down, make sure repmgr elects 
-	expected remaining client master, make sure former master can join 
-	as client. Replication files are in-memory; databases, logs and
-	environment regions are on-disk.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr016
-	Basic repmgr in-memory internal init test. 
-
-	Start an appointed master site and two clients, processing 
-	transactions between each additional site. Verify all expected 
-	transactions are replicated. Replication files are in-memory; 
-	databases, logs and environment regions are on-disk.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr017
 	repmgr in-memory cache overflow test. 
 
@@ -1766,54 +1754,6 @@ repmgr018
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr019
-	Basic repmgr test with in-memory databases and in-memory logs. 
-
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr020
-	Basic repmgr test with region files in memory.  This test is
-	identical to repmgr001 except the env is set up with "-private."
-
-	Create an appointed master and two clients, process some records and 
-	verify resulting databases.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr021
-	Basic repmgr election test with region files in memory. 
-	This is identical to repmgr002 except the env is opened with
-	"-private".
-
-	Open three clients of different priorities and make sure repmgr 
-	elects expected master. Shut master down, make sure repmgr elects 
-	expected remaining client master, make sure former master can join 
-	as client.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr022
-	Basic repmgr internal init test with region files in-memory.
-	This is the same as repmgr003 except the env is opened with 
-	"-private".
-
-	Start an appointed master site and two clients, processing 
-	transactions between each additional site. Verify all expected 
-	transactions are replicated.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr023
 	Test of JOIN_FAILURE event for repmgr applications.
 
@@ -1827,13 +1767,14 @@ repmgr024
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr025
-	repmgr rerequest thread test.
+	repmgr heartbeat rerequest test.
 
-	Start an appointed master site and one client.  Generate some
-	uncommitted updates on the master to lock some database pages.
+	Start an appointed master site and one client.  Use a test hook
+	to inhibit PAGE_REQ processing at the master (i.e., "lose" some
+	messages). 
 	Start a second client that gets stuck in internal init.  Wait
-	long enough to rely on the rerequest thread to request the
-	missing pages, commit the master updates and verify that all
+	long enough to rely on the heartbeat rerequest to request the
+	missing pages, rescind the test hook and verify that all
 	data appears on both clients.
 
 	Run for btree only because access method shouldn't matter.
@@ -1862,6 +1803,12 @@ repmgr028
 	relying on elections.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+repmgr029
+	Test repmgr group membership: create, join, re-join and remove from
+	repmgr group and observe changes in group membership database.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr030
 	repmgr multiple client-to-client peer test.
 
@@ -1874,6 +1821,10 @@ repmgr030
 
 	Run for btree only because access method shouldn't matter.
 
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+repmgr032
+	The (undocumented) AUTOROLLBACK config feature.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr100
@@ -1906,24 +1857,6 @@ repmgr102
 	become listener.
 	Kill the listener process abruptly.  Running failchk should show that
 	recovery is necessary.  Run recovery and start a clean listener.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr103
-	Repmgr site address discovery via handshakes.
-
-	Master with 2 processes, does not know client's address.
-	Client processes start in either order, connect to master.
-	Master learns of client's address via handshake message.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr104
-	Repmgr site address discovery via NEWSITE
-
-	New client, previously unknown to (main) master process, connects to an
-	existing client, which broadcasts NEWSITE message.
-	This causes master to discover its address, and connect to it.
-	Other new clients may also have been added to master's configuration in
-	the interim (via a subordinate master process).
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr105
@@ -2306,7 +2239,7 @@ sql001
 	and do various operations using dbsql on master side.
 	After every operation, we will check the records on both sides,
 	to make sure we get same results from both sides.
-	Also, we try insert operation on client side, and it should fail.
+	Also try an insert operation on client side; it should fail.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test001
@@ -3364,6 +3297,41 @@ test130
 	Dump and save contents.  Compact the database, dump again,
 	and make sure we still have the same contents.
 	Make sure handles and cursors still work after compaction.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test131
+	Test foreign database operations.
+	Create a foreign db, and put some records into it.
+	Then associate the foreign db with a secondary db, and
+	put records into the primary db.
+	Do operations in the foreign db and check results.
+	Finally, verify the foreign relation between the foreign db 
+	and secondary db.
+	Here, we test three different foreign delete constraints:
+	- DB_FOREIGN_ABORT
+	- DB_FOREIGN_CASCADE
+	- DB_FOREIGN_NULLIFY
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test132
+	Test foreign database operations on sub databases and 
+	in-memory databases.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test133
+	Test Cursor Cleanup.
+	Open a primary database and a secondary database,
+	then open 3 cursors on the secondary database, and
+	point them at the first item.
+	Do the following operations in loops:
+	* The 1st cursor will delete the current item.
+	* The 2nd cursor will also try to delete the current item.
+	* Move all the 3 cursors to get the next item and check the returns.
+	Finally, move the 3rd cursor once.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+test134
+	Test cursor cleanup for sub databases.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 txn001

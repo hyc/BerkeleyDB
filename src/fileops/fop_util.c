@@ -211,6 +211,7 @@ __fop_file_setup(dbp, ip, txn, name, mode, flags, retidp)
 	DB_TXN *stxn;
 	ENV *env;
 	size_t len;
+	APPNAME aflags;
 	u_int32_t dflags, oflags;
 	u_int8_t mbuf[DBMETASIZE];
 	int created_locker, create_ok, ret, retries, t_ret, tmp_created;
@@ -226,6 +227,8 @@ __fop_file_setup(dbp, ip, txn, name, mode, flags, retidp)
 	created_locker = tmp_created = truncating = was_inval = 0;
 	real_name = real_tmpname = tmpname = NULL;
 	dflags = F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0;
+	aflags = LF_ISSET(DB_INTERNAL_DB) ? DB_APP_NONE : DB_APP_DATA;
+	LF_CLR(DB_INTERNAL_DB);
 
 	ret = 0;
 	retries = 0;
@@ -261,7 +264,7 @@ __fop_file_setup(dbp, ip, txn, name, mode, flags, retidp)
 	else {
 		/* Get the real backing file name. */
 		if ((ret = __db_appname(env,
-		    DB_APP_DATA, name, &dbp->dirname, &real_name)) != 0)
+		    aflags, name, &dbp->dirname, &real_name)) != 0)
 			goto err;
 
 		/* Fill in the default file mode. */
@@ -286,7 +289,8 @@ retry:
 	 * a previous crash).
 	 */
 	if (++retries > DB_RETRY) {
-		__db_errx(env, "__fop_file_setup:  Retry limit (%d) exceeded",
+		__db_errx(env, DB_STR_A("0002",
+		    "__fop_file_setup:  Retry limit (%d) exceeded", "%d"),
 		    DB_RETRY);
 		goto err;
 	}
@@ -349,9 +353,12 @@ reopen:		if (!F_ISSET(dbp, DB_AM_INMEM) && (ret =
 		}
 
 		/* Cases 1,3-5: we need to read the meta-data page. */
-		if (F_ISSET(dbp, DB_AM_INMEM))
+		if (F_ISSET(dbp, DB_AM_INMEM)) {
+			if (LOGGING_ON(env) && (ret = __env_dbreg_setup(dbp,
+			    txn, NULL, name, TXN_INVALID)) != 0)
+				return (ret);
 			ret = __fop_inmem_read_meta(dbp, txn, name, flags);
-		else {
+		} else {
 			ret = __fop_read_meta(env, real_name, mbuf,
 			    sizeof(mbuf), fhp,
 			    LF_ISSET(DB_NOERROR) ||
@@ -524,22 +531,26 @@ reopen:		if (!F_ISSET(dbp, DB_AM_INMEM) && (ret =
 
 create:	if (txn != NULL && IS_REP_CLIENT(env) &&
 	    !F_ISSET(dbp, DB_AM_NOT_DURABLE)) {
-		__db_errx(env,
-		    "Transactional create on replication client disallowed");
+		__db_errx(env, DB_STR("0003",
+		    "Transactional create on replication client disallowed"));
 		ret = EINVAL;
 		goto err;
 	}
 
-	if (F_ISSET(dbp, DB_AM_INMEM))
-		ret = __fop_inmem_create(dbp, name, txn, flags);
-	else {
+	if (F_ISSET(dbp, DB_AM_INMEM)) {
+		if (LOGGING_ON(env) && (ret =
+		    __env_dbreg_setup(dbp, txn, NULL, name, TXN_INVALID)) != 0)
+			return (ret);
+		if ((ret = __fop_inmem_create(dbp, name, txn, flags)) != 0)
+			return (ret);
+	} else {
 		if ((ret = __db_backup_name(env, name, txn, &tmpname)) != 0)
 			goto err;
 		if (TXN_ON(env) && txn != NULL &&
 		    (ret = __txn_begin(env, NULL, txn, &stxn, 0)) != 0)
 			goto err;
 		if ((ret = __fop_create(env, stxn, &fhp,
-		    tmpname, &dbp->dirname, DB_APP_DATA, mode, dflags)) != 0) {
+		    tmpname, &dbp->dirname, aflags, mode, dflags)) != 0) {
 			/*
 			 * If no transactions, there is a race on creating the
 			 * backup file, as the backup file name is the same for
@@ -561,7 +572,7 @@ create:	if (txn != NULL && IS_REP_CLIENT(env) &&
 
 creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 		if ((ret = __db_appname(env,
-		    DB_APP_DATA, tmpname, &dbp->dirname, &real_tmpname)) != 0)
+		    aflags, tmpname, &dbp->dirname, &real_tmpname)) != 0)
 			goto err;
 
 		/* Set the pagesize if it isn't yet set. */
@@ -578,6 +589,11 @@ creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 	if ((ret = __db_new_file(dbp, ip,
 	    F_ISSET(dbp, DB_AM_INMEM) ? txn : stxn, fhp, tmpname)) != 0)
 		goto err;
+
+	/* Output the REOPEN record after we create. */
+	if (F_ISSET(dbp, DB_AM_INMEM) && dbp->log_filename != NULL && (ret =
+	    __dbreg_log_id(dbp, txn, dbp->log_filename->id, 0)) != 0)
+		return (ret);
 
 	/*
 	 * We need to close the handle here on platforms where remove and
@@ -607,7 +623,7 @@ creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 		 * and try to open the file that now exists.
 		 */
 		(void)__fop_remove(env, NULL,
-		    dbp->fileid, tmpname, &dbp->dirname, DB_APP_DATA, dflags);
+		    dbp->fileid, tmpname, &dbp->dirname, aflags, dflags);
 		(void)__ENV_LPUT(env, dbp->handle_lock);
 		LOCK_INIT(dbp->handle_lock);
 
@@ -625,7 +641,7 @@ creat2:	if (!F_ISSET(dbp, DB_AM_INMEM)) {
 		goto err;
 	if (tmpname != NULL &&
 	    tmpname != name && (ret = __fop_rename(env, stxn, tmpname,
-	    name, &dbp->dirname, dbp->fileid, DB_APP_DATA, 1, dflags)) != 0)
+	    name, &dbp->dirname, dbp->fileid, aflags, 1, dflags)) != 0)
 		goto err;
 	if ((ret = __ENV_LPUT(env, elock)) != 0)
 		goto err;
@@ -650,7 +666,7 @@ err:		CLOSE_HANDLE(dbp, fhp);
 			(void)__txn_abort(stxn);
 		if (tmp_created && txn == NULL)
 			(void)__fop_remove(env,
-			    NULL, NULL, tmpname, NULL, DB_APP_DATA, dflags);
+			    NULL, NULL, tmpname, NULL, aflags, dflags);
 		if (txn == NULL)
 			(void)__ENV_LPUT(env, dbp->handle_lock);
 		(void)__ENV_LPUT(env, elock);
@@ -782,7 +798,7 @@ retry:	if ((ret = __db_master_open(dbp,
 
 	if (name != NULL && (ret = __db_master_update(mdbp, dbp,
 	    ip, txn, name, dbp->type, MU_OPEN, NULL, flags)) != 0) {
-	    	if (ret == EBADF && F_ISSET(mdbp, DB_AM_RDONLY)) {
+		if (ret == EBADF && F_ISSET(mdbp, DB_AM_RDONLY)) {
 			/* We need to reopen the master R/W to do the create. */
 			if ((ret = __db_close(mdbp, txn, 0)) != 0)
 				goto err;
@@ -1078,9 +1094,9 @@ __fop_read_meta(env, name, buf, size, fhp, errok, nbytesp)
 
 	if (nr != size) {
 		if (!errok)
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("0004",
 			    "fop_read_meta: %s: unexpected file type or format",
-			    name);
+			    "%s"), name);
 		ret = EINVAL;
 	}
 
@@ -1209,7 +1225,8 @@ __fop_dbrename(dbp, old, new)
 
 	if (ret == 0) {
 		ret = EEXIST;
-		__db_errx(env, "rename: file %s exists", real_new);
+		__db_errx(env, DB_STR_A("0005",
+		    "rename: file %s exists", "%s"), real_new);
 		goto err;
 	}
 

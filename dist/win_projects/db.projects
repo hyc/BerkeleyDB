@@ -1,6 +1,5 @@
 php_db4
 db
-db_static
 db_archive
 db_checkpoint
 db_csharp
@@ -15,7 +14,7 @@ db_printlog
 db_recover
 db_replicate
 db_repsite
-db_small_static
+db_small
 db_sql
 db_sql_codegen
 db_sql_jdbc
@@ -24,9 +23,9 @@ db_sql_shell
 db_sql_testfixture
 db_stat
 db_stl
-db_stl_static
 db_tcl
 db_test
+db_tuner
 db_upgrade
 db_verify
 ex_access
@@ -36,10 +35,12 @@ ex_csvcode
 ex_csvload
 ex_csvquery
 ex_env
+ex_heap
 ex_java
 ex_lock
 ex_mpool
 ex_rep_base
+ex_rep_chan
 ex_rep_mgr
 ex_sequence
 ex_stream
@@ -78,6 +79,7 @@ exstl_txnguide
 stl_test
 stl_test_msexamples
 stl_test_stlport
+test_cutest
 test_micro
 test_mutex
 

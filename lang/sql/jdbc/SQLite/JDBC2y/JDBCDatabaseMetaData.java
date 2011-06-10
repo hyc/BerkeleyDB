@@ -1,6 +1,10 @@
 package SQLite.JDBC2y;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Hashtable;
 
 public class JDBCDatabaseMetaData implements DatabaseMetaData {
@@ -512,8 +516,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 			       String tableNamePattern, String types[])
 	throws SQLException {
 	JDBCStatement s = new JDBCStatement(conn);
-	StringBuffer sb = new StringBuffer();
-	sb.append("SELECT '' AS 'TABLE_CAT', " +
+	StringBuilder sb = new StringBuilder(
+		  "SELECT '' AS 'TABLE_CAT', " +
 		  "'' AS 'TABLE_SCHEM', " +
 		  "tbl_name AS 'TABLE_NAME', " +
 		  "upper(type) AS 'TABLE_TYPE', " +
@@ -557,7 +561,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	String row[] = { "" };
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
     public ResultSet getCatalogs() throws SQLException {
@@ -567,7 +571,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	String row[] = { "" };
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
     public ResultSet getTableTypes() throws SQLException {
@@ -581,7 +585,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	row[0] = "VIEW";
 	tr.newrow(row);
 	JDBCResultSet rs = new JDBCResultSet(tr, null);
-	return (ResultSet) rs;
+	return rs;
     }
 
     public ResultSet getColumns(String catalog, String schemaPattern,
@@ -589,7 +593,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 				String columnNamePattern)
 	throws SQLException {
 	if (conn.db == null) {
-	    throw new SQLException("connection closed.");
+	    throw new SQLException("connection closed");
 	}
 	JDBCStatement s = new JDBCStatement(conn);
 	JDBCResultSet rs0 = null;
@@ -597,7 +601,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s.executeQuery("PRAGMA table_info(" +
@@ -631,11 +636,11 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
-	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
+	if (rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h.put(rs0.tr.column[i], new Integer(i));
+		h.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    if (columnNamePattern != null &&
 		columnNamePattern.charAt(0) == '%') {
@@ -643,7 +648,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h.get("name")).intValue();
+		int col = h.get("name").intValue();
 		if (columnNamePattern != null) {
 		    if (r0[col].compareTo(columnNamePattern) != 0) {
 			continue;
@@ -654,7 +659,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		row[1]  = "";
 		row[2]  = tableNamePattern;
 		row[3]  = r0[col];
-		col = ((Integer) h.get("type")).intValue();
+		col = h.get("type").intValue();
 		String typeStr = r0[col];
 		int type = mapSqlType(typeStr);
 		row[4]  = "" + type;
@@ -664,15 +669,14 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		row[8]  = "10";
 		row[9]  = "0";
 		row[11] = null;
-		col = ((Integer) h.get("dflt_value")).intValue();
+		col = h.get("dflt_value").intValue();
 		row[12] = r0[col];
 		row[13] = "0";
 		row[14] = "0";
 		row[15] = "65536";
-		col = ((Integer) h.get("cid")).intValue();
-		Integer cid = new Integer(r0[col]);
-		row[16] = "" + (cid.intValue() + 1);
-		col = ((Integer) h.get("notnull")).intValue();
+		col = h.get("cid").intValue();
+		row[16] = Integer.toString(Integer.parseInt(r0[col]) + 1);
+		col = h.get("notnull").intValue();
 		row[17] = (r0[col].charAt(0) == '0') ? "YES" : "NO";
 		row[10] = (r0[col].charAt(0) == '0') ? "" + columnNullable :
 			  "" + columnNoNulls;
@@ -699,7 +703,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
@@ -719,7 +723,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
@@ -735,7 +739,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -762,22 +767,22 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0 &&
 	    rs1 != null && rs1.tr != null && rs1.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    Hashtable<String, Integer> h1 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs1.tr.ncolumns; i++) {
-		h1.put(rs1.tr.column[i], new Integer(i));
+		h1.put(rs1.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("unique")).intValue();
+		int col = h0.get("unique").intValue();
 		String uniq = r0[col];
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		String iname = r0[col];
 		if (uniq.charAt(0) == '0') {
 		    continue;
@@ -798,15 +803,15 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		Hashtable<String, Integer> h2 =
 		    new Hashtable<String, Integer>();
 		for (int k = 0; k < rs2.tr.ncolumns; k++) {
-		    h2.put(rs2.tr.column[k], new Integer(k));
+		    h2.put(rs2.tr.column[k], Integer.valueOf(k));
 		}
 		for (int k = 0; k < rs2.tr.nrows; k++) {
 		    String r2[] = (String [])(rs2.tr.rows.elementAt(k));
-		    col = ((Integer) h2.get("name")).intValue();
+		    col = h2.get("name").intValue();
 		    String cname = r2[col];
 		    for (int m = 0; m < rs1.tr.nrows; m++) {
 			String r1[] = (String [])(rs1.tr.rows.elementAt(m));
-			col = ((Integer) h1.get("name")).intValue();
+			col = h1.get("name").intValue();
 			if (cname.compareTo(r1[col]) == 0) {
 			    String row[] = new String[cols.length];
 			    row[0] = "" + scope;
@@ -853,7 +858,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	return rs;
     }
 
@@ -865,7 +870,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -886,17 +892,17 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("unique")).intValue();
+		int col = h0.get("unique").intValue();
 		String uniq = r0[col];
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		String iname = r0[col];
 		if (uniq.charAt(0) == '0') {
 		    continue;
@@ -917,7 +923,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		Hashtable<String, Integer> h1 =
 		    new Hashtable<String, Integer>();
 		for (int k = 0; k < rs1.tr.ncolumns; k++) {
-		    h1.put(rs1.tr.column[k], new Integer(k));
+		    h1.put(rs1.tr.column[k], Integer.valueOf(k));
 		}
 		for (int k = 0; k < rs1.tr.nrows; k++) {
 		    String r1[] = (String [])(rs1.tr.rows.elementAt(k));
@@ -925,9 +931,9 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		    row[0]  = "";
 		    row[1]  = "";
 		    row[2]  = table;
-		    col = ((Integer) h1.get("name")).intValue();
+		    col = h1.get("name").intValue();
 		    row[3] = r1[col];
-		    col = ((Integer) h1.get("seqno")).intValue();
+		    col = h1.get("seqno").intValue();
 		    row[4]  = Integer.toString(Integer.parseInt(r1[col]) + 1);
 		    row[5]  = iname;
 		    tr.newrow(row);
@@ -950,16 +956,16 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("type")).intValue();
+		int col = h0.get("type").intValue();
 		String type = r0[col];
 		if (!type.equalsIgnoreCase("integer")) {
 		    continue;
 		}
-		col = ((Integer) h0.get("pk")).intValue();
+		col = h0.get("pk").intValue();
 		String pk = r0[col];
 		if (pk.charAt(0) == '0') {
 		    continue;
@@ -968,9 +974,9 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		row[0]  = "";
 		row[1]  = "";
 		row[2]  = table;
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		row[3] = r0[col];
-		col = ((Integer) h0.get("cid")).intValue();
+		col = h0.get("cid").intValue();
 		row[4] = Integer.toString(Integer.parseInt(r0[col]) + 1);
 		row[5] = "";
 		tr.newrow(row);
@@ -983,20 +989,20 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 				      JDBCResultSet in, TableResultX out) {
 	Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	for (int i = 0; i < in.tr.ncolumns; i++) {
-	    h0.put(in.tr.column[i], new Integer(i));
+	    h0.put(in.tr.column[i], Integer.valueOf(i));
 	}
 	for (int i = 0; i < in.tr.nrows; i++) {
 	    String r0[] = (String [])(in.tr.rows.elementAt(i));
-	    int col = ((Integer) h0.get("table")).intValue();
+	    int col = h0.get("table").intValue();
 	    String pktab = r0[col];
 	    if (pktable != null && !pktable.equalsIgnoreCase(pktab)) {
 		continue;
 	    }
-	    col = ((Integer) h0.get("from")).intValue();
+	    col = h0.get("from").intValue();
 	    String fkcol = r0[col];
-	    col = ((Integer) h0.get("to")).intValue();
+	    col = h0.get("to").intValue();
 	    String pkcol = r0[col];
-	    col = ((Integer) h0.get("seq")).intValue();
+	    col = h0.get("seq").intValue();
 	    String seq = r0[col];
 	    String row[] = new String[out.ncolumns];
 	    row[0]  = "";
@@ -1028,7 +1034,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA foreign_key_list(" +
@@ -1055,7 +1062,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	TableResultX tr = new TableResultX();
 	tr.columns(cols);
 	tr.sql_types(types);
-	JDBCResultSet rs = new JDBCResultSet((SQLite.TableResult) tr, null);
+	JDBCResultSet rs = new JDBCResultSet(tr, null);
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    internalImportedKeys(table, null, rs0, tr);
 	}
@@ -1099,7 +1106,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		try {
 		    conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 		} catch (SQLite.Exception se) {
-		    throw new SQLException("schema reload failed");
+		    throw new
+			SQLException("schema reload failed: " + se.toString());
 		}
 		rs0 = (JDBCResultSet)
 		    (s0.executeQuery("PRAGMA foreign_key_list(" +
@@ -1279,7 +1287,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    try {
 		conn.db.exec("SELECT 1 FROM sqlite_master LIMIT 1", null);
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("schema reload failed");
+		throw new
+		    SQLException("schema reload failed: " + se.toString());
 	    }
 	    rs0 = (JDBCResultSet)
 		(s0.executeQuery("PRAGMA index_list(" +
@@ -1310,13 +1319,13 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	if (rs0 != null && rs0.tr != null && rs0.tr.nrows > 0) {
 	    Hashtable<String, Integer> h0 = new Hashtable<String, Integer>();
 	    for (int i = 0; i < rs0.tr.ncolumns; i++) {
-		h0.put(rs0.tr.column[i], new Integer(i));
+		h0.put(rs0.tr.column[i], Integer.valueOf(i));
 	    }
 	    for (int i = 0; i < rs0.tr.nrows; i++) {
 		String r0[] = (String [])(rs0.tr.rows.elementAt(i));
-		int col = ((Integer) h0.get("unique")).intValue();
+		int col = h0.get("unique").intValue();
 		String uniq = r0[col];
-		col = ((Integer) h0.get("name")).intValue();
+		col = h0.get("name").intValue();
 		String iname = r0[col];
 		if (unique && uniq.charAt(0) == '0') {
 		    continue;
@@ -1337,7 +1346,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		Hashtable<String, Integer> h1 =
 		    new Hashtable<String, Integer>();
 		for (int k = 0; k < rs1.tr.ncolumns; k++) {
-		    h1.put(rs1.tr.column[k], new Integer(k));
+		    h1.put(rs1.tr.column[k], Integer.valueOf(k));
 		}
 		for (int k = 0; k < rs1.tr.nrows; k++) {
 		    String r1[] = (String [])(rs1.tr.rows.elementAt(k));
@@ -1351,9 +1360,9 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 		    row[4]  = "";
 		    row[5]  = iname;
 		    row[6]  = "" + tableIndexOther;
-		    col = ((Integer) h1.get("seqno")).intValue();
+		    col = h1.get("seqno").intValue();
 		    row[7]  = Integer.toString(Integer.parseInt(r1[col]) + 1);
-		    col = ((Integer) h1.get("name")).intValue();
+		    col = h1.get("name").intValue();
 		    row[8]  = r1[col];
 		    row[9]  = "A";
 		    row[10] = "0";

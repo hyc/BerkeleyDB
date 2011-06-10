@@ -13,14 +13,14 @@
 /* Convert time-out from microseconds to milliseconds, rounding up. */
 #define	DB_TIMEOUT_TO_WINDOWS_TIMEOUT(t) (((t) + (US_PER_MS - 1)) / US_PER_MS)
 
-typedef struct __ack_waiter {
+typedef struct __cond_waiter {
 	HANDLE event;
-	const DB_LSN *lsnp;
-	u_int acks_needed;
+	PREDICATE pred;
+	void *ctx;
 	int next_free;
-} ACK_WAITER;
+} COND_WAITER;
 
-#define	WAITER_SLOT_IN_USE(w) ((w)->lsnp != NULL)
+#define	WAITER_SLOT_IN_USE(w) ((w)->pred != NULL)
 
 /*
  * Array slots [0:next_avail-1] are initialized, and either in use or on the
@@ -32,8 +32,8 @@ typedef struct __ack_waiter {
  * "first_free" points to a list of not-in-use slots threaded through the first
  * section of the array.
  */
-struct __ack_waiters_table {
-	struct __ack_waiter *array;
+struct __cond_waiters_table {
+	struct __cond_waiter *array;
 	int size;
 	int next_avail;
 	int first_free;
@@ -49,11 +49,9 @@ struct io_info {
 	DWORD nevents;
 };
 
-static int allocate_wait_slot __P((ENV *, int *));
-static void free_wait_slot __P((ENV *, int));
+static int allocate_wait_slot __P((ENV *, int *, COND_WAITERS_TABLE *));
+static void free_wait_slot __P((ENV *, int, COND_WAITERS_TABLE *));
 static int handle_completion __P((ENV *, REPMGR_CONNECTION *));
-static int finish_connecting __P((ENV *, REPMGR_CONNECTION *,
-				     LPWSANETWORKEVENTS));
 static int prepare_io __P((ENV *, REPMGR_CONNECTION *, void *));
 
 int
@@ -64,6 +62,7 @@ __repmgr_thread_start(env, runnable)
 	HANDLE event, thread_id;
 
 	runnable->finished = FALSE;
+	runnable->quit_requested = FALSE;
 	runnable->env = env;
 
 	if ((event = CreateEvent(NULL, TRUE, FALSE, NULL)) == NULL)
@@ -101,36 +100,53 @@ __repmgr_set_nonblocking(s)
 	SOCKET s;
 {
 	int ret;
-	u_long arg;
+	u_long onoff;
 
-	arg = 1;		/* any non-zero value */
-	if ((ret = ioctlsocket(s, FIONBIO, &arg)) == SOCKET_ERROR)
+	onoff = 1;		/* any non-zero value */
+	if ((ret = ioctlsocket(s, FIONBIO, &onoff)) == SOCKET_ERROR)
 		return (WSAGetLastError());
 	return (0);
 }
 
+int
+__repmgr_set_nonblock_conn(conn)
+	REPMGR_CONNECTION *conn;
+{
+	int ret;
+
+	if ((ret = __repmgr_set_nonblocking(conn->fd)) != 0)
+		return (ret);
+
+	if ((conn->event_object = WSACreateEvent()) == WSA_INVALID_EVENT) {
+		ret = net_errno;
+		return (ret);
+	}
+	return (0);
+}
+
 /*
- * Wake any send()-ing threads waiting for an acknowledgement.
- *
  * !!!
  * Caller must hold the repmgr->mutex, if this thread synchronization is to work
  * properly.
  */
 int
-__repmgr_wake_waiting_senders(env)
+__repmgr_wake_waiters(env, w)
 	ENV *env;
+	waiter_t *w;
 {
-	ACK_WAITER *slot;
 	DB_REP *db_rep;
+	COND_WAITERS_TABLE *waiters;
+	COND_WAITER *slot;
 	int i, ret;
 
 	ret = 0;
 	db_rep = env->rep_handle;
-	for (i = 0; i < db_rep->waiters->next_avail; i++) {
-		 slot = &db_rep->waiters->array[i];
+	waiters = *w;
+	for (i = 0; i < waiters->next_avail; i++) {
+		 slot = &waiters->array[i];
 		 if (!WAITER_SLOT_IN_USE(slot))
 			 continue;
-		 if (__repmgr_is_permanent(env, slot->lsnp, slot->acks_needed))
+		 if ((*slot->pred)(env, slot->ctx) || db_rep->finished)
 			 if (!SetEvent(slot->event) && ret == 0)
 				 ret = GetLastError();
 	}
@@ -142,38 +158,44 @@ __repmgr_wake_waiting_senders(env)
  * Caller must hold mutex.
  */
 int
-__repmgr_await_ack(env, lsnp, needed)
+__repmgr_await_cond(env, pred, ctx, timeout, waiters_p)
 	ENV *env;
-	const DB_LSN *lsnp;
-	u_int needed;
+	PREDICATE pred;
+	void *ctx;
+	db_timeout_t timeout;
+	waiter_t *waiters_p;
 {
-	ACK_WAITER *waiter;
+	COND_WAITERS_TABLE *waiters;
+	COND_WAITER *waiter;
 	DB_REP *db_rep;
 	REP *rep;
-	DWORD ret, timeout;
+	DWORD ret, win_timeout;
 	int i;
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
+	waiters = *waiters_p;
 
-	if ((ret = allocate_wait_slot(env, &i)) != 0)
+	if ((ret = allocate_wait_slot(env, &i, waiters)) != 0)
 		goto err;
-	waiter = &db_rep->waiters->array[i];
+	waiter = &waiters->array[i];
 
-	timeout = rep->ack_timeout > 0 ?
-	    DB_TIMEOUT_TO_WINDOWS_TIMEOUT(rep->ack_timeout) : INFINITE;
-	waiter->lsnp = lsnp;
-	waiter->acks_needed = needed;
-	if ((ret = SignalObjectAndWait(*db_rep->mutex, waiter->event, timeout,
-	    FALSE)) == WAIT_FAILED) {
+	win_timeout = timeout > 0 ?
+	    DB_TIMEOUT_TO_WINDOWS_TIMEOUT(timeout) : INFINITE;
+	waiter->pred = pred;
+	waiter->ctx = ctx;
+	if ((ret = SignalObjectAndWait(*db_rep->mutex,
+	    waiter->event, win_timeout, FALSE)) == WAIT_FAILED) {
 		ret = GetLastError();
 	} else if (ret == WAIT_TIMEOUT)
-		ret = DB_REP_UNAVAIL;
+		ret = DB_TIMEOUT;
 	else
 		DB_ASSERT(env, ret == WAIT_OBJECT_0);
 
 	LOCK_MUTEX(db_rep->mutex);
-	free_wait_slot(env, i);
+	free_wait_slot(env, i, waiters);
+	if (db_rep->finished)
+		ret = DB_REP_UNAVAIL;
 
 err:
 	return (ret);
@@ -184,17 +206,15 @@ err:
  * Caller must hold the mutex.
  */
 static int
-allocate_wait_slot(env, resultp)
+allocate_wait_slot(env, resultp, table)
 	ENV *env;
 	int *resultp;
+	COND_WAITERS_TABLE *table;
 {
-	ACK_WAITER *w;
-	ACK_WAITERS_TABLE *table;
-	DB_REP *db_rep;
+	COND_WAITER *w;
+	HANDLE event;
 	int i, ret;
 
-	db_rep = env->rep_handle;
-	table = db_rep->waiters;
 	if (table->first_free == -1) {
 		if (table->next_avail >= table->size) {
 			/*
@@ -207,21 +227,19 @@ allocate_wait_slot(env, resultp)
 				return (ret);
 			table->array = w;
 		}
+		if ((event = CreateEvent(NULL,
+		    FALSE, FALSE, NULL)) == NULL) {
+			/* No need to rescind the memory reallocation. */
+			return (GetLastError());
+		}
+
 		/*
 		 * Here if, one way or another, we're good to go for using the
 		 * next slot (for the first time).
 		 */
 		i = table->next_avail++;
 		w = &table->array[i];
-		if ((w->event = CreateEvent(NULL, FALSE, FALSE, NULL)) ==
-		    NULL) {
-			/*
-			 * Maintain the sanctity of our rule that
-			 * [0:next_avail-1] contain valid Event Objects.
-			 */
-			--table->next_avail;
-			return (GetLastError());
-		}
+		w->event = event;
 	} else {
 		i = table->first_free;
 		w = &table->array[i];
@@ -232,19 +250,41 @@ allocate_wait_slot(env, resultp)
 }
 
 static void
-free_wait_slot(env, slot_index)
+free_wait_slot(env, slot_index, table)
 	ENV *env;
 	int slot_index;
+	COND_WAITERS_TABLE *table;
 {
 	DB_REP *db_rep;
-	ACK_WAITER *slot;
+	COND_WAITER *slot;
 
 	db_rep = env->rep_handle;
-	slot = &db_rep->waiters->array[slot_index];
+	slot = &table->array[slot_index];
 
-	slot->lsnp = NULL;	/* show it's not in use */
-	slot->next_free = db_rep->waiters->first_free;
-	db_rep->waiters->first_free = slot_index;
+	slot->pred = NULL;	/* show it's not in use */
+	slot->next_free = table->first_free;
+	table->first_free = slot_index;
+}
+
+int
+__repmgr_await_gmdbop(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	int ret;
+
+	db_rep = env->rep_handle;
+	while (db_rep->gmdb_busy) {
+		if (!ResetEvent(db_rep->gmdb_idle))
+			return (GetLastError());
+		ret = SignalObjectAndWait(*db_rep->mutex,
+		    db_rep->gmdb_idle, INFINITE, FALSE);
+		LOCK_MUTEX(db_rep->mutex);
+		if (ret == WAIT_FAILED)
+			return (GetLastError());
+		DB_ASSERT(env, ret == WAIT_OBJECT_0);
+	}
+	return (0);
 }
 
 /* (See requirements described in repmgr_posix.c.) */
@@ -329,7 +369,6 @@ void
 __repmgr_env_create_pf(db_rep)
 	DB_REP *db_rep;
 {
-	db_rep->waiters = NULL;
 }
 
 int
@@ -352,17 +391,15 @@ int
 __repmgr_init(env)
      ENV *env;
 {
-#define	INITIAL_ALLOCATION 5		/* arbitrary size */
 	DB_REP *db_rep;
-	ACK_WAITERS_TABLE *table;
 	WSADATA wsaData;
 	int ret;
 
 	db_rep = env->rep_handle;
-	table = NULL;
 
 	if ((ret = WSAStartup(MAKEWORD(2, 2), &wsaData)) != 0) {
-		__db_err(env, ret, "unable to initialize Windows networking");
+		__db_err(env, ret, DB_STR("3589",
+		    "unable to initialize Windows networking"));
 		return (ret);
 	}
 
@@ -380,42 +417,29 @@ __repmgr_init(env)
 	    == NULL)
 		goto geterr;
 
-	if ((db_rep->check_rereq = CreateEvent(NULL, FALSE, FALSE, NULL))
+	if ((db_rep->gmdb_idle = CreateEvent(NULL, TRUE, FALSE, NULL))
 	    == NULL)
 		goto geterr;
 
-	if ((ret = __os_calloc(env, 1, sizeof(ACK_WAITERS_TABLE), &table))
-	    != 0)
+	if ((ret = __repmgr_init_waiters(env, &db_rep->ack_waiters)) != 0)
 		goto err;
-
-	if ((ret = __os_calloc(env, INITIAL_ALLOCATION, sizeof(ACK_WAITER),
-	    &table->array)) != 0)
-		goto err;
-
-	table->size = INITIAL_ALLOCATION;
-	table->first_free = -1;
-	table->next_avail = 0;
-
-	/* There's a restaurant joke in there somewhere. */
-	db_rep->waiters = table;
 	return (0);
 
 geterr:
 	ret = GetLastError();
 err:
-	if (db_rep->check_rereq != NULL)
-		CloseHandle(db_rep->check_rereq);
+	if (db_rep->gmdb_idle != NULL)
+		CloseHandle(db_rep->gmdb_idle);
 	if (db_rep->check_election != NULL)
 		CloseHandle(db_rep->check_election);
 	if (db_rep->msg_avail != NULL)
 		CloseHandle(db_rep->msg_avail);
 	if (db_rep->signaler != NULL)
 		CloseHandle(db_rep->signaler);
-	if (table != NULL)
-		__os_free(env, table);
-	db_rep->signaler = db_rep->msg_avail =
-	    db_rep->check_election = db_rep->check_rereq = NULL;
-	db_rep->waiters = NULL;
+	db_rep->msg_avail =
+	    db_rep->check_election =
+	    db_rep->gmdb_idle =
+	    db_rep->signaler = NULL;
 	(void)WSACleanup();
 	return (ret);
 }
@@ -425,7 +449,7 @@ __repmgr_deinit(env)
      ENV *env;
 {
 	DB_REP *db_rep;
-	int i, ret;
+	int ret, t_ret;
 
 	db_rep = env->rep_handle;
 	if (!(REPMGR_INITED(db_rep)))
@@ -435,14 +459,11 @@ __repmgr_deinit(env)
 	if (WSACleanup() == SOCKET_ERROR)
 		ret = WSAGetLastError();
 
-	for (i = 0; i < db_rep->waiters->next_avail; i++) {
-		if (!CloseHandle(db_rep->waiters->array[i].event) && ret == 0)
-			ret = GetLastError();
-	}
-	__os_free(env, db_rep->waiters->array);
-	__os_free(env, db_rep->waiters);
+	if ((t_ret = __repmgr_destroy_waiters(env, &db_rep->ack_waiters))
+	    != 0 && ret == 0)
+		ret = t_ret;
 
-	if (!CloseHandle(db_rep->check_rereq) && ret == 0)
+	if (!CloseHandle(db_rep->gmdb_idle) && ret == 0)
 		ret = GetLastError();
 
 	if (!CloseHandle(db_rep->check_election) && ret == 0)
@@ -453,8 +474,60 @@ __repmgr_deinit(env)
 
 	if (!CloseHandle(db_rep->signaler) && ret == 0)
 		ret = GetLastError();
+	db_rep->msg_avail =
+	    db_rep->check_election =
+	    db_rep->gmdb_idle =
+	    db_rep->signaler = NULL;
 
-	db_rep->waiters = NULL;
+	return (ret);
+}
+
+int
+__repmgr_init_waiters(env, waiters)
+	ENV *env;
+	waiter_t *waiters;
+{
+#define	INITIAL_ALLOCATION 5		/* arbitrary size */
+	COND_WAITERS_TABLE *table;
+	int ret;
+
+	table = NULL;
+
+	if ((ret =
+	    __os_calloc(env, 1, sizeof(COND_WAITERS_TABLE), &table)) != 0)
+		return (ret);
+
+	if ((ret = __os_calloc(env, INITIAL_ALLOCATION, sizeof(COND_WAITER),
+	    &table->array)) != 0) {
+		__os_free(env, table);
+		return (ret);
+	}
+
+	table->size = INITIAL_ALLOCATION;
+	table->first_free = -1;
+	table->next_avail = 0;
+
+	/* There's a restaurant joke in there somewhere. */
+	*waiters = table;
+	return (0);
+}
+
+int
+__repmgr_destroy_waiters(env, waitersp)
+	ENV *env;
+	waiter_t *waitersp;
+{
+	waiter_t waiters;
+	int i, ret;
+
+	waiters = *waitersp;
+	ret = 0;
+	for (i = 0; i < waiters->next_avail; i++) {
+		if (!CloseHandle(waiters->array[i].event) && ret == 0)
+			ret = GetLastError();
+	}
+	__os_free(env, waiters->array);
+	__os_free(env, waiters);
 	return (ret);
 }
 
@@ -564,15 +637,17 @@ __repmgr_select_loop(env)
 	io_info.events = events;
 
 	if ((listen_event = WSACreateEvent()) == WSA_INVALID_EVENT) {
-		__db_err(
-		    env, net_errno, "can't create event for listen socket");
+		__db_err(env, net_errno, DB_STR("3590",
+		    "can't create event for listen socket"));
 		return (net_errno);
 	}
 	if (!IS_SUBORDINATE(db_rep) &&
 	    WSAEventSelect(db_rep->listen_fd, listen_event, FD_ACCEPT) ==
 	    SOCKET_ERROR) {
 		ret = net_errno;
-		__db_err(env, ret, "can't enable event for listener");
+		__db_err(env, ret, DB_STR("3591",
+		    "can't enable event for listener"));
+		(void)WSACloseEvent(listen_event);
 		goto out;
 	}
 
@@ -667,9 +742,11 @@ prepare_io(env, conn, info_)
 	void *info_;
 {
 	struct io_info *info;
+	long desired_events;
+	int ret;
 
 	if (conn->state == CONN_DEFUNCT)
-		return (__repmgr_cleanup_connection(env, conn));
+		return (__repmgr_cleanup_defunct(env, conn));
 
 	/*
 	 * Note that even if we're suffering flow control, we
@@ -692,7 +769,18 @@ prepare_io(env, conn, info_)
 	info->events[info->nevents] = conn->event_object;
 	info->connections[info->nevents++] = conn;
 
-	return (0);
+	desired_events = FD_READ | FD_CLOSE;
+	if (!STAILQ_EMPTY(&conn->outbound_queue))
+		desired_events |= FD_WRITE;
+	if (WSAEventSelect(conn->fd,
+	    conn->event_object, desired_events) == SOCKET_ERROR) {
+		ret = net_errno;
+		__db_err(env, ret, DB_STR_A("3592",
+		    "can't set event bits 0x%lx", "%lx"), desired_events);
+	} else
+		ret = 0;
+
+	return (ret);
 }
 
 static int
@@ -700,127 +788,48 @@ handle_completion(env, conn)
 	ENV *env;
 	REPMGR_CONNECTION *conn;
 {
-	int ret;
+	int error, ret;
 	WSANETWORKEVENTS events;
 
 	if ((ret = WSAEnumNetworkEvents(conn->fd, conn->event_object, &events))
 	    == SOCKET_ERROR) {
-		__db_err(env, net_errno, "EnumNetworkEvents");
+		error = net_errno;
+		__db_err(env, error, DB_STR("3593", "EnumNetworkEvents"));
+		goto report;
+	}
+
+	/* Check both writing and reading. */
+	if (events.lNetworkEvents & FD_CLOSE) {
+		error = events.iErrorCode[FD_CLOSE_BIT];
+		goto report;
+	}
+
+	if (events.lNetworkEvents & FD_WRITE) {
+		if (events.iErrorCode[FD_WRITE_BIT] != 0) {
+			error = events.iErrorCode[FD_WRITE_BIT];
+			goto report;
+		} else if ((ret =
+			__repmgr_write_some(env, conn)) != 0)
+			goto err;
+	}
+
+	if (events.lNetworkEvents & FD_READ) {
+		if (events.iErrorCode[FD_READ_BIT] != 0) {
+			error = events.iErrorCode[FD_READ_BIT];
+			goto report;
+		} else if ((ret =
+			__repmgr_read_from_site(env, conn)) != 0)
+			goto err;
+	}
+
+	if (0) {
+report:
+		__repmgr_fire_conn_err_event(env, conn, error);
 		STAT(env->rep_handle->region->mstat.st_connection_drop++);
 		ret = DB_REP_UNAVAIL;
-		goto err;
 	}
-
-	if (conn->state == CONN_CONNECTING) {
-		if ((ret = finish_connecting(env, conn, &events)) != 0)
-			goto err;
-	} else {		/* Check both writing and reading. */
-		if (events.lNetworkEvents & FD_CLOSE) {
-			__db_err(env,
-			    events.iErrorCode[FD_CLOSE_BIT],
-			    "connection closed");
-			STAT(env->rep_handle->
-			    region->mstat.st_connection_drop++);
-			ret = DB_REP_UNAVAIL;
-			goto err;
-		}
-
-		if (events.lNetworkEvents & FD_WRITE) {
-			if (events.iErrorCode[FD_WRITE_BIT] != 0) {
-				__db_err(env,
-				    events.iErrorCode[FD_WRITE_BIT],
-				    "error writing");
-				STAT(env->rep_handle->
-				    region->mstat.st_connection_drop++);
-				ret = DB_REP_UNAVAIL;
-				goto err;
-			} else if ((ret =
-			    __repmgr_write_some(env, conn)) != 0)
-				goto err;
-		}
-
-		if (events.lNetworkEvents & FD_READ) {
-			if (events.iErrorCode[FD_READ_BIT] != 0) {
-				__db_err(env,
-				    events.iErrorCode[FD_READ_BIT],
-				    "error reading");
-				STAT(env->rep_handle->
-				    region->mstat.st_connection_drop++);
-				ret = DB_REP_UNAVAIL;
-				goto err;
-			} else if ((ret =
-			    __repmgr_read_from_site(env, conn)) != 0)
-				goto err;
-		}
-	}
-
 err:
 	if (ret == DB_REP_UNAVAIL)
 		ret = __repmgr_bust_connection(env, conn);
-	return (ret);
-}
-
-static int
-finish_connecting(env, conn, events)
-	ENV *env;
-	REPMGR_CONNECTION *conn;
-	LPWSANETWORKEVENTS events;
-{
-	DB_REP *db_rep;
-	REPMGR_SITE *site;
-	u_int eid;
-/*	char reason[100]; */
-	int ret/*, t_ret*/;
-/*	DWORD_PTR values[1]; */
-
-	if (!(events->lNetworkEvents & FD_CONNECT))
-		return (0);
-
-	db_rep = env->rep_handle;
-
-	DB_ASSERT(env, IS_VALID_EID(conn->eid));
-	eid = (u_int)conn->eid;
-	site = SITE_FROM_EID(eid);
-
-	if ((ret = events->iErrorCode[FD_CONNECT_BIT]) != 0) {
-/*		t_ret = FormatMessage( */
-/*		    FORMAT_MESSAGE_IGNORE_INSERTS | */
-/*		    FORMAT_MESSAGE_FROM_SYSTEM | */
-/*		    FORMAT_MESSAGE_ARGUMENT_ARRAY, */
-/*		    NULL, ret, 0, (LPTSTR)reason, sizeof(reason), values); */
-/*		__db_err(env/\*, ret*\/, "connecting: %s", */
-/*		    reason); */
-/*		LocalFree(reason); */
-		__db_err(env, ret, "connecting");
-		goto err;
-	}
-
-	conn->state = CONN_CONNECTED;
-	__os_gettime(env, &site->last_rcvd_timestamp, 1);
-
-	if (WSAEventSelect(conn->fd, conn->event_object, FD_READ | FD_CLOSE) ==
-	    SOCKET_ERROR) {
-		ret = net_errno;
-		__db_err(env, ret, "setting event bits for reading");
-		return (ret);
-	}
-
-	return (__repmgr_propose_version(env, conn));
-
-err:
-
-	if (ADDR_LIST_NEXT(&site->net_addr) == NULL) {
-		STAT(db_rep->region->mstat.st_connect_fail++);
-		return (DB_REP_UNAVAIL);
-	}
-
-	/*
-	 * Since we're immediately trying the next address in the list, simply
-	 * disable the failed connection, without the usual recovery.
-	 */
-	__repmgr_disable_connection(env, conn);
-
-	ret = __repmgr_connect_site(env, eid);
-	DB_ASSERT(env, ret != DB_REP_UNAVAIL);
 	return (ret);
 }

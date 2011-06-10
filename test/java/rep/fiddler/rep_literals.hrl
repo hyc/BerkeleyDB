@@ -3,11 +3,14 @@
 -define(ACK, 1).
 -define(HANDSHAKE, 2).
 -define(REP_MESSAGE, 3).
+-define(HEARTBEAT, 4).
+-define(APP_MSG, 5).
+-define(APP_RESPONSE, 6).
+-define(RESP_ERROR, 7).
+-define(OWN_MSG, 8).
 
 %% Replication (control) message types
 %% 
--define(NEWCLIENT, 15).
--define(NEWSITE, 18).
 -define(PAGE, 19).
 
 -define(REPVERSION_47, 5).

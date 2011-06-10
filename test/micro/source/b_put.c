@@ -19,6 +19,9 @@ b_put(int argc, char *argv[])
 	DB *dbp, **second;
 	DBTYPE type;
 	DBT key, data;
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	DB_HEAP_RID rid;
+#endif
 	db_recno_t recno;
 	u_int32_t cachesize, dsize;
 	int ch, i, count, secondaries;
@@ -52,10 +55,23 @@ b_put(int argc, char *argv[])
 				type = DB_BTREE;
 				break;
 			case 'H': case 'h':
-				if (b_util_have_hash())
-					return (0);
-				ts = "Hash";
-				type = DB_HASH;
+				if (optarg[1] == 'E' || optarg[1] == 'e') {
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+					if (b_util_have_heap())
+						return (0);
+					ts = "Heap";
+					type = DB_HEAP;
+#else
+					fprintf(stderr,
+				"b_curwalk: Heap is not supported! \n");
+					return (EXIT_SUCCESS);
+#endif
+				} else {
+					if (b_util_have_hash())
+						return (0);
+					ts = "Hash";
+					type = DB_HASH;
+				}
 				break;
 			case 'Q': case 'q':
 				if (b_util_have_queue())
@@ -152,6 +168,12 @@ b_put(int argc, char *argv[])
 		key.data = "01234567890123456789";
 		key.size = 20;
 		break;
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+	case DB_HEAP:
+		key.data = &rid;
+		key.size = sizeof(rid);
+		break;
+#endif
 	case DB_QUEUE:
 	case DB_RECNO:
 		recno = 1;
@@ -172,7 +194,12 @@ b_put(int argc, char *argv[])
 	for (i = 0; i < count; ++i) {
 		/* Change data value so the secondaries are updated. */
 		(void)snprintf(data.data, data.size, "%10lu", (u_long)i);
+#if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
+		DB_BENCH_ASSERT(dbp->put(dbp,
+		    NULL, &key, &data, type == DB_HEAP ? DB_APPEND : 0) == 0);
+#else
 		DB_BENCH_ASSERT(dbp->put(dbp, NULL, &key, &data, 0) == 0);
+#endif
 	}
 	TIMER_STOP;
 

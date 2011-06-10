@@ -358,7 +358,7 @@ FuncDef *sqlite3FindFunction(
   ** priority to built-in functions.
   **
   ** Except, if createFlag is true, that means that we are trying to
-  ** install a new function.  Whatever FuncDef structure is returned will
+  ** install a new function.  Whatever FuncDef structure is returned it will
   ** have fields overwritten with new information appropriate for the
   ** new function.  But the FuncDefs for built-in functions are read-only.
   ** So we must not search for built-ins when creating a new function.
@@ -400,12 +400,12 @@ FuncDef *sqlite3FindFunction(
 /*
 ** Free all resources held by the schema structure. The void* argument points
 ** at a Schema struct. This function does not call sqlite3DbFree(db, ) on the 
-** pointer itself, it just cleans up subsiduary resources (i.e. the contents
+** pointer itself, it just cleans up subsidiary resources (i.e. the contents
 ** of the schema hash tables).
 **
 ** The Schema.cache_size variable is not cleared.
 */
-void sqlite3SchemaFree(void *p){
+void sqlite3SchemaClear(void *p){
   Hash temp1;
   Hash temp2;
   HashElem *pElem;
@@ -422,13 +422,15 @@ void sqlite3SchemaFree(void *p){
   sqlite3HashInit(&pSchema->tblHash);
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
     Table *pTab = sqliteHashData(pElem);
-    assert( pTab->dbMem==0 );
-    sqlite3DeleteTable(pTab);
+    sqlite3DeleteTable(0, pTab);
   }
   sqlite3HashClear(&temp1);
   sqlite3HashClear(&pSchema->fkeyHash);
   pSchema->pSeqTab = 0;
-  pSchema->flags &= ~DB_SchemaLoaded;
+  if( pSchema->flags & DB_SchemaLoaded ){
+    pSchema->iGeneration++;
+    pSchema->flags &= ~DB_SchemaLoaded;
+  }
 }
 
 /*
@@ -438,9 +440,9 @@ void sqlite3SchemaFree(void *p){
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema * p;
   if( pBt ){
-    p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaFree);
+    p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
-    p = (Schema *)sqlite3MallocZero(sizeof(Schema));
+    p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));
   }
   if( !p ){
     db->mallocFailed = 1;

@@ -22,7 +22,8 @@ import com.sleepycat.db.DatabaseType;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationConfig;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.VerboseConfig;
@@ -67,9 +68,16 @@ public class TestNoClient {
         EnvironmentConfig ec = makeBasicConfig();
         MyEventHandler mon = new MyEventHandler();
         ec.setEventHandler(mon);
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", clientPort), peer);
+        ReplicationManagerSiteConfig local = new ReplicationManagerSiteConfig("localhost", masterPort);
+        local.setLocalSite(true);
+        local.setLegacy(true);
+        ec.addReplicationManagerSite(local);
+        ReplicationManagerSiteConfig clientConfig = new ReplicationManagerSiteConfig("localhost", clientPort);
+        clientConfig.setPeer(peer);
+        clientConfig.setLegacy(true);
+        ec.addReplicationManagerSite(clientConfig);
         Environment master = new Environment(mkdir("master"), ec);
+        master.setReplicationConfig(ReplicationConfig.STRICT_2SITE, false);
         master.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_MASTER);
         
         DatabaseConfig dc = new DatabaseConfig();
@@ -112,7 +120,6 @@ public class TestNoClient {
         ec.setInitializeReplication(true);
         ec.setTransactional(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(2);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);

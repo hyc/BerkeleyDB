@@ -12,6 +12,7 @@
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/qam.h"
 #include "dbinc/lock.h"
 #include "dbinc/partition.h"
@@ -44,21 +45,23 @@ __db_truncate_pp(dbp, txn, countp, flags)
 
 	/* Check for invalid flags. */
 	if (F_ISSET(dbp, DB_AM_SECONDARY)) {
-		__db_errx(env, "DB->truncate forbidden on secondary indices");
+		__db_errx(env, DB_STR("0685",
+		    "DB->truncate forbidden on secondary indices"));
 		return (EINVAL);
 	}
 	if ((ret = __db_fchk(env, "DB->truncate", flags, 0)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
+	XA_CHECK_TXN(ip, txn);
 
 	/*
 	 * Make sure there are no active cursors on this db.  Since we drop
 	 * pages we cannot really adjust cursors.
 	 */
 	if ((ret = __db_cursor_check(dbp)) != 0) {
-		__db_errx(env,
-		     "DB->truncate not permitted with active cursors");
+		__db_errx(env, DB_STR("0686",
+		    "DB->truncate not permitted with active cursors"));
 		goto err;
 	}
 
@@ -171,6 +174,9 @@ __db_truncate(dbp, ip, txn, countp)
 		break;
 	case DB_HASH:
 		ret = __ham_truncate(dbc, countp);
+		break;
+	case DB_HEAP:
+		ret = __heap_truncate(dbc, countp);
 		break;
 	case DB_QUEUE:
 		ret = __qam_truncate(dbc, countp);

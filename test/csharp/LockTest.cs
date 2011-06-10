@@ -60,6 +60,12 @@ namespace CsharpAPITest {
             // Get and confirm locking subsystem statistics.
             LockStats stats = env.LockingSystemStats();
             env.PrintLockingSystemStats(true, true);
+            Assert.AreEqual(0, stats.AllocatedLockers);
+            Assert.AreNotEqual(0, stats.AllocatedLocks);
+            Assert.AreNotEqual(0, stats.AllocatedObjects);
+            Assert.AreEqual(0, stats.InitLockers);
+            Assert.AreNotEqual(0, stats.InitLocks);
+            Assert.AreNotEqual(0, stats.InitObjects);
             Assert.AreEqual(0, stats.LastAllocatedLockerID);
             Assert.AreEqual(0, stats.LockConflictsNoWait);
             Assert.AreEqual(0, stats.LockConflictsWait);
@@ -100,6 +106,7 @@ namespace CsharpAPITest {
             Assert.Less(0, stats.RegionNoWait);
             Assert.AreNotEqual(0, stats.RegionSize);
             Assert.AreEqual(0, stats.RegionWait);
+            Assert.AreNotEqual(0, stats.TableSize);
             Assert.AreEqual(2000, stats.TxnTimeoutLength);
             Assert.AreEqual(0, stats.TxnTimeouts);
 
@@ -117,10 +124,10 @@ namespace CsharpAPITest {
             testLockStatsEnv = env;
             testLockStatsDb = db;
 
-            Thread thread1 = new Thread(new ThreadStart(Read));
-            Thread thread2 = new Thread(new ThreadStart(Write));
+            Thread thread1 = new Thread(new ThreadStart(Write));
+            Thread thread2 = new Thread(new ThreadStart(Read));
             thread1.Start();
-            Thread.Sleep(1000);
+            Thread.Sleep(10);
             thread2.Start();
             thread1.Join();
             thread2.Join();
@@ -166,9 +173,9 @@ namespace CsharpAPITest {
             env.Close();
         }
 
-        public void Read() {
+        public void Write() {
             Transaction txn = testLockStatsEnv.BeginTransaction();
-            for (int i = 0; i < 200; i++) {
+            for (int i = 0; i < 500; i++) {
                 testLockStatsDb.Put(new DatabaseEntry(BitConverter.GetBytes(i)),
                     new DatabaseEntry(ASCIIEncoding.ASCII.GetBytes(
                     Configuration.RandomString(i))), txn);
@@ -177,14 +184,16 @@ namespace CsharpAPITest {
             txn.Commit();
         }
 
-        public void Write() {
+        public void Read() {
             Transaction txn = testLockStatsEnv.BeginTransaction();
-            for (int i = 0; i < 200; ) {
+            for (int i = 0; i < 500; ) {
                 try {
                     testLockStatsDb.Get(new DatabaseEntry(
                         BitConverter.GetBytes(i)), txn);
                     i++;
                 } catch (DeadlockException) {
+                    Thread.Sleep(500);
+                } catch (NotFoundException) {
                     Thread.Sleep(500);
                 }
             }

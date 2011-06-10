@@ -51,26 +51,26 @@ __memp_fopen_pp(dbmfp, path, flags, mode, pagesize)
 	 * clear length.
 	 */
 	if (pagesize == 0 || !POWER_OF_TWO(pagesize)) {
-		__db_errx(env,
-		    "DB_MPOOLFILE->open: page sizes must be a power-of-2");
+		__db_errx(env, DB_STR("3033",
+		    "DB_MPOOLFILE->open: page sizes must be a power-of-2"));
 		return (EINVAL);
 	}
 	if (dbmfp->clear_len > pagesize) {
-		__db_errx(env,
-		    "DB_MPOOLFILE->open: clear length larger than page size");
+		__db_errx(env, DB_STR("3034",
+		    "DB_MPOOLFILE->open: clear length larger than page size"));
 		return (EINVAL);
 	}
 
 	/* Read-only checks, and local flag. */
 	if (LF_ISSET(DB_RDONLY) && path == NULL) {
-		__db_errx(env,
-		    "DB_MPOOLFILE->open: temporary files can't be readonly");
+		__db_errx(env, DB_STR("3035",
+		    "DB_MPOOLFILE->open: temporary files can't be readonly"));
 		return (EINVAL);
 	}
 
 	if (LF_ISSET(DB_MULTIVERSION) && !TXN_ON(env)) {
-		__db_errx(env,
-		   "DB_MPOOLFILE->open: DB_MULTIVERSION requires transactions");
+		__db_errx(env, DB_STR("3036",
+	    "DB_MPOOLFILE->open: DB_MULTIVERSION requires transactions"));
 		return (EINVAL);
 	}
 
@@ -311,8 +311,9 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 			if (LF_ISSET(DB_ODDFILESIZE))
 				bytes -= (u_int32_t)(bytes % pagesize);
 			else {
-				__db_errx(env,
-		    "%s: file size not a multiple of the pagesize", rpath);
+				__db_errx(env, DB_STR_A("3037",
+		    "%s: file size not a multiple of the pagesize", "%s"),
+				    rpath);
 				ret = EINVAL;
 				goto err;
 			}
@@ -374,9 +375,9 @@ check:	MUTEX_LOCK(env, hp->mtx_hash);
 		    (dbmfp->lsn_offset != DB_LSN_OFF_NOTSET &&
 		    mfp->lsn_off != DB_LSN_OFF_NOTSET &&
 		    dbmfp->lsn_offset != mfp->lsn_off)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("3038",
 		    "%s: clear length, page size or LSN location changed",
-			    path);
+			    "%s"), path);
 			MUTEX_UNLOCK(env, hp->mtx_hash);
 			ret = EINVAL;
 			goto err;
@@ -457,8 +458,8 @@ have_mfp:
 			F_CLR(mfp, MP_DURABLE_UNKNOWN);
 		} else if (!LF_ISSET(DB_TXN_NOT_DURABLE) !=
 		    !F_ISSET(mfp, MP_NOT_DURABLE)) {
-			__db_errx(env,
-	     "Cannot open DURABLE and NOT DURABLE handles in the same file");
+			__db_errx(env, DB_STR("3039",
+	     "Cannot open DURABLE and NOT DURABLE handles in the same file"));
 			ret = EINVAL;
 			goto err;
 		}
@@ -837,7 +838,8 @@ __memp_fclose(dbmfp, flags)
 
 	/* Complain if pinned blocks never returned. */
 	if (dbmfp->pinref != 0) {
-		__db_errx(env, "%s: close: %lu blocks left pinned",
+		__db_errx(env, DB_STR_A("3040",
+		    "%s: close: %lu blocks left pinned", "%s %lu"),
 		    __memp_fn(dbmfp), (u_long)dbmfp->pinref);
 		ret = __env_panic(env, DB_RUNRECOVERY);
 	}

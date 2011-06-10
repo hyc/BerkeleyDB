@@ -116,10 +116,11 @@ __ham_open(dbp, ip, txn, name, base_pgno, flags)
 		    !F_ISSET(dbp, DB_AM_RECOVER) &&
 		    (txn == NULL || !F_ISSET(txn, TXN_SNAPSHOT)) && (ret =
 		    __memp_set_last_pgno(dbp->mpf, dbmeta->last_pgno)) != 0)
-		    	goto err;
+			goto err;
 	} else if (!IS_RECOVERING(env) && !F_ISSET(dbp, DB_AM_RECOVER)) {
-		__db_errx(env,
-		    "%s: Invalid hash meta page %lu", name, (u_long)base_pgno);
+		__db_errx(env, DB_STR_A("1124",
+		    "%s: Invalid hash meta page %lu", "%s %lu"),
+		    name, (u_long)base_pgno);
 		ret = EINVAL;
 	}
 
@@ -160,17 +161,18 @@ __ham_metachk(dbp, name, hashm)
 	case 4:
 	case 5:
 	case 6:
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("1125",
 		    "%s: hash version %lu requires a version upgrade",
-		    name, (u_long)vers);
+		    "%s %lu"), name, (u_long)vers);
 		return (DB_OLD_VERSION);
 	case 7:
 	case 8:
 	case 9:
 		break;
 	default:
-		__db_errx(env,
-		    "%s: unsupported hash version: %lu", name, (u_long)vers);
+		__db_errx(env, DB_STR_A("1126",
+		    "%s: unsupported hash version: %lu", "%s %lu"),
+		    name, (u_long)vers);
 		return (EINVAL);
 	}
 
@@ -198,9 +200,9 @@ __ham_metachk(dbp, name, hashm)
 		F_SET(dbp, DB_AM_DUP);
 	else
 		if (F_ISSET(dbp, DB_AM_DUP)) {
-			__db_errx(env,
-		"%s: DB_DUP specified to open method but not set in database",
-			    name);
+			__db_errx(env, DB_STR_A("1127",
+	    "%s: DB_DUP specified to open method but not set in database",
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -208,9 +210,9 @@ __ham_metachk(dbp, name, hashm)
 		F_SET(dbp, DB_AM_SUBDB);
 	else
 		if (F_ISSET(dbp, DB_AM_SUBDB)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1128",
 	    "%s: multiple databases specified but not supported in file",
-			name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -219,9 +221,9 @@ __ham_metachk(dbp, name, hashm)
 			dbp->dup_compare = __bam_defcmp;
 	} else
 		if (dbp->dup_compare != NULL) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1129",
 		"%s: duplicate sort function specified but not set in database",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 

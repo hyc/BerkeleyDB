@@ -39,8 +39,7 @@ proc repmgr027_sub { tnum } {
 	file mkdir [set dira $testdir/SITE_A]
 	file mkdir [set dirb $testdir/SITE_B]
 	file mkdir [set dirc $testdir/SITE_C]
-	file mkdir [set dirc $testdir/SITE_D]
-	foreach { porta portb portc portd } [available_ports 4] {}
+	foreach { porta portb portc } [available_ports 3] {}
 
 	# The election times are arbitrary, but the full election timeout should
 	# be long enough to allow the test to start two sites, wait for them to
@@ -48,26 +47,41 @@ proc repmgr027_sub { tnum } {
 	# (including the leeway time, in seconds), before it times out.
 	#
 	set common "-create -txn $verbargs $repmemargs \
-	    -rep -thread -event"
-	set common_mgr "-nsites 3 -start elect \
+	    -rep -thread -event -recover"
+	set common_mgr "-start elect \
 	    -timeout {connection_retry 5000000} \
-	    -timeout {election_retry 2000000}"
-	set times "-timeout {full_election 180000000} \
+	    -timeout {election_retry 2000000} \
+	    -timeout {full_election 180000000} \
 	    -timeout {election 5000000}"
 	set leeway 5
+
+	# Start by simply establishing the group.  Then we can shut down and get
+	# started with the interesting cold-boot scenarios.
+	set cmda "berkdb_env_noerr $common -errpfx SITE_A -home $dira"
+	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
+	set cmdc "berkdb_env_noerr $common -errpfx SITE_C -home $dirc"
+	set enva [eval $cmda]
+	eval $enva repmgr $common_mgr -local {[list localhost $porta creator]}
+	set envb [eval $cmdb]
+	eval $envb repmgr $common_mgr \
+	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	await_startup_done $envb
+	set envc [eval $cmdc]
+	eval $envc repmgr $common_mgr \
+	    -local {[list localhost $portc]} -remote {[list localhost $porta]}
+	await_startup_done $envc
+	$envc close
+	$envb close
+	$enva close
 
 	# Cold boot, at first just 2 sites.
 	# 
 	puts "\tRepmgr$tnum.a: Start first two sites."
-	set cmda "berkdb_env_noerr $common -errpfx SITE_A -home $dira"
 	set enva [eval $cmda]
-	eval $enva repmgr $common_mgr $times -pri 200 \
-	    -local {[list localhost $porta]}
+	eval $enva repmgr $common_mgr -pri 200 -local {[list localhost $porta]}
 
-	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
 	set envb [eval $cmdb]
-	eval $envb repmgr $common_mgr $times -pri 100 \
-	    -local {[list localhost $portb]} -remote {[list localhost $porta]}
+	eval $envb repmgr $common_mgr -pri 100 -local {[list localhost $portb]}
 
 	# Wait until both sites recognize that they're in an election, plus a
 	# few extra seconds just for good measure.
@@ -85,11 +99,8 @@ proc repmgr027_sub { tnum } {
 
 	puts "\tRepmgr$tnum.c: Start 3rd site."
 
-	set cmdc "berkdb_env_noerr $common -errpfx SITE_C -home $dirc"
 	set envc [eval $cmdc]
-	eval $envc repmgr $common_mgr $times -pri 100 \
-	    -local {[list localhost $portc]} \
-	    -remote {[list localhost $porta]}
+	eval $envc repmgr $common_mgr -pri 100 -local {[list localhost $portc]}
 
 	# Wait for results, and make sure they're correct.  The election should
 	# complete right away, once the third client has joined, regardless of

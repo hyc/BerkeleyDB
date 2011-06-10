@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="am_conf.html" title="Chapter 2.  Access Method Configuration" />
     <link rel="prev" href="bt_conf.html" title="Btree access method specific configuration" />
-    <link rel="next" href="rq_conf.html" title="Queue and Recno access method specific configuration" />
+    <link rel="next" href="heap_conf.html" title="Heap access method specific configuration" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Hash access method specific configuration</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 2. 
 		Access Method Configuration
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="rq_conf.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="heap_conf.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -93,7 +96,7 @@ into a sequential list.</p>
         <p>No hash performs equally well on all possible data sets.  It is possible
 that applications may find that the default hash function performs poorly
 with a particular set of keys.  The distribution resulting from the hash
-function can be checked using the <a href="../api_reference/C/db_stat.html" class="olink">db_stat utility</a>.  By comparing the
+function can be checked using the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility.  By comparing the
 number of hash buckets and the number of keys, one can decide if the entries
 are hashing in a well-distributed manner.</p>
         <p>The hash function for the hash table can be specified by calling the
@@ -130,14 +133,14 @@ must also be called to set the page fill factor.</p>
           <td width="20%" align="center">
             <a accesskey="u" href="am_conf.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="rq_conf.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="heap_conf.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Btree access method specific configuration </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Queue and Recno access method specific configuration</td>
+          <td width="40%" align="right" valign="top"> Heap access method specific configuration</td>
         </tr>
       </table>
     </div>

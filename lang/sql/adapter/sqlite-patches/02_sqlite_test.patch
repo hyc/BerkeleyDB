@@ -1,6 +1,6 @@
 --- src/tclsqlite.c
 +++ src/tclsqlite.c
-@@ -760,7 +760,7 @@
+@@ -761,7 +761,7 @@
          case SQLITE_INTEGER: {
            sqlite_int64 v = sqlite3_value_int64(pIn);
            if( v>=-2147483647 && v<=2147483647 ){
@@ -9,7 +9,7 @@
            }else{
              pVal = Tcl_NewWideIntObj(v);
            }
-@@ -1440,7 +1440,7 @@
+@@ -1441,7 +1441,7 @@
      case SQLITE_INTEGER: {
        sqlite_int64 v = sqlite3_column_int64(pStmt, iCol);
        if( v>=-2147483647 && v<=2147483647 ){
@@ -20,7 +20,7 @@
        }
 --- src/test1.c
 +++ src/test1.c
-@@ -2967,7 +2967,7 @@
+@@ -3207,7 +3207,7 @@
    char *value;
    int rc;
  
@@ -29,7 +29,7 @@
    Tcl_Obj *oStmt    = objv[objc-4];
    Tcl_Obj *oN       = objv[objc-3];
    Tcl_Obj *oString  = objv[objc-2];
-@@ -3315,7 +3315,7 @@
+@@ -3555,7 +3555,7 @@
      if( bytes>=0 ){
        bytes = bytes - (zTail-zSql);
      }
@@ -38,7 +38,7 @@
        bytes = strlen(zTail);
      }
      Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
-@@ -4957,8 +4957,6 @@
+@@ -5389,8 +5389,6 @@
    extern int sqlite3_hostid_num;
  #endif
    extern int sqlite3_max_blobsize;
@@ -47,7 +47,7 @@
    static struct {
       char *zName;
       Tcl_CmdProc *xProc;
-@@ -5118,7 +5116,6 @@
+@@ -5554,7 +5552,6 @@
       { "tcl_variable_type",       tcl_variable_type, 0       },
  #ifndef SQLITE_OMIT_SHARED_CACHE
       { "sqlite3_enable_shared_cache", test_enable_shared, 0  },
@@ -65,13 +65,10 @@
  /*
  ** Interpret an SQLite error number
  */
-@@ -50,474 +51,6 @@
- }
- 
- /*
--** Page size and reserved size used for testing.
--*/
--static int test_pagesize = 1024;
+@@ -53,470 +54,6 @@
+ ** Page size and reserved size used for testing.
+ */
+ static int test_pagesize = 1024;
 -
 -/*
 -** Dummy page reinitializer
@@ -91,7 +88,7 @@
 -  int argc,              /* Number of arguments */
 -  const char **argv      /* Text of each argument */
 -){
--  u16 pageSize;
+-  u32 pageSize;
 -  Pager *pPager;
 -  int nPage;
 -  int rc;
@@ -536,10 +533,9 @@
 -}
 -
 -#ifndef SQLITE_OMIT_DISKIO
--/*
- ** Usage:   fake_big_file  N  FILENAME
- **
- ** Write a few bytes at the N megabyte point of FILENAME.  This will
+ /*
+  ** Usage:   fake_big_file  N  FILENAME
+  **
 @@ -544,6 +77,12 @@
    }
    if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
@@ -688,7 +684,7 @@
  /*
  ** Interpret an SQLite error number
  */
-@@ -356,36 +365,6 @@
+@@ -355,36 +364,6 @@
  }
  
  /*
@@ -725,7 +721,7 @@
  ** Usage:   btree_payload_size ID
  **
  ** Return the number of bytes of payload
-@@ -397,8 +376,7 @@
+@@ -396,8 +375,7 @@
    const char **argv      /* Text of each argument */
  ){
    BtCursor *pCur;
@@ -735,7 +731,7 @@
    char zBuf[50];
  
    if( argc!=2 ){
-@@ -411,103 +389,13 @@
+@@ -410,103 +388,13 @@
  
    /* The cursor may be in "require-seek" state. If this is the case, the
    ** call to BtreeDataSize() will fix it. */
@@ -841,7 +837,7 @@
  ** usage:   btree_from_db  DB-HANDLE
  **
  ** This command returns the btree handle for the main database associated
-@@ -552,67 +440,6 @@
+@@ -551,67 +439,6 @@
  }
  
  /*
@@ -909,7 +905,7 @@
  ** Register commands with the TCL interpreter.
  */
  int Sqlitetest3_Init(Tcl_Interp *interp){
-@@ -623,17 +450,17 @@
+@@ -622,17 +449,17 @@
       { "btree_open",               (Tcl_CmdProc*)btree_open               },
       { "btree_close",              (Tcl_CmdProc*)btree_close              },
       { "btree_begin_transaction",  (Tcl_CmdProc*)btree_begin_transaction  },
@@ -1056,7 +1052,7 @@
  static int jtTruncate(sqlite3_file*, sqlite3_int64 size);
  static int jtSync(sqlite3_file*, int flags);
  static int jtFileSize(sqlite3_file*, sqlite3_int64 *pSize);
-@@ -395,7 +395,7 @@
+@@ -405,7 +405,7 @@
  
      /* Calculate and store a checksum for each page in the database file. */
      if( rc==SQLITE_OK ){
@@ -1065,7 +1061,7 @@
        for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
          i64 iOff = (i64)(pMain->nPagesize) * (i64)ii;
          if( iOff==PENDING_BYTE ) continue;
-@@ -457,7 +457,7 @@
+@@ -467,7 +467,7 @@
            continue;
          }
        }
@@ -1074,7 +1070,7 @@
      }
  
      /* Read all the records that follow the journal-header just read. */
-@@ -530,7 +530,7 @@
+@@ -539,7 +539,7 @@
    }
  
    if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
@@ -1083,7 +1079,7 @@
       && p->nPagesize%iAmt==0 
       && iOfst>=(PENDING_BYTE+512) 
       && iOfst+iAmt<=PENDING_BYTE+p->nPagesize
-@@ -541,7 +541,7 @@
+@@ -550,7 +550,7 @@
        ** pending-byte page.
        */
      }else{
@@ -1092,7 +1088,7 @@
        assert( (iAmt==1||iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
        assert( pgno<=p->nPage || p->nSync>0 );
        assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
-@@ -570,7 +570,7 @@
+@@ -579,7 +579,7 @@
    if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
      u32 pgno;
      u32 locking_page = (u32)(PENDING_BYTE/p->nPagesize+1);
@@ -1103,11 +1099,11 @@
    }
 --- src/test_malloc.c
 +++ src/test_malloc.c
-@@ -746,7 +746,7 @@
+@@ -749,7 +749,7 @@
      int isNew;
  
-     int aKey[MALLOC_LOG_FRAMES];
--    int nKey = sizeof(int)*MALLOC_LOG_FRAMES;
+     int aKey[MALLOC_LOG_KEYINTS];
+-    int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
 +    unsigned int nKey = sizeof(int)*MALLOC_LOG_FRAMES;
  
      memset(aKey, 0, nKey);

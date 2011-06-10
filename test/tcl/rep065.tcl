@@ -384,7 +384,8 @@ proc method_version { } {
 	set remaining_methods $methods
 	set methods_len [expr [llength $remaining_methods] - 1]
 
-	set versions {db-4.4.20 db-4.5.20 db-4.6.21 db-4.7.25 db-4.8.30 db-5.0.21}
+	set versions {db-5.1.25 db-5.0.26 \
+	    db-4.8.30 db-4.7.25 db-4.6.21 db-4.5.20 db-4.4.20}
 	set remaining_versions $versions
 	set versions_len [expr [llength $remaining_versions] - 1]
 
@@ -404,7 +405,9 @@ proc method_version { } {
 		incr versions_len -1
 		incr methods_len -1
 
-		lappend mv [list $method $version]
+		if { $method != "heap" } {
+			lappend mv [list $method $version]
+		}
 	}
 		
 	# If there are remaining versions, randomly assign any of 

@@ -34,7 +34,7 @@ init(State) ->
 %%% the Rec part).
 %%%
 first({receiving,Msg}, _From, State) ->
-    {RemotePort, NewMsg} = munge:v1_handshake(Msg, State#state_data.config),
+    RemotePort = munge:v1_handshake(Msg),
     Rec = element(5, Msg),
     case munge:versions(Rec) of
         {_Hostname, _List} when is_list(_List) ->
@@ -43,7 +43,7 @@ first({receiving,Msg}, _From, State) ->
             NewState = stash_port_version(State, RemotePort, 1),
             register(NewState)
     end,
-    {reply, NewMsg, version_pending, NewState};
+    {reply, Msg, version_pending, NewState};
 
 %%% The first thing we're seeing is coming from the acceptor of the
 %%% connection.  It must be a V1 handshake, and the connection will be
@@ -51,47 +51,47 @@ first({receiving,Msg}, _From, State) ->
 %%% it would wait for a version proposal from the connector.
 %%% 
 first({sending, V1HS}, _From, State) ->
-    {_RemotePort,NewMsg} = munge:v1_handshake(V1HS, State#state_data.me),
-    {reply, NewMsg, port_pending, State#state_data{version=1}}.
+    {reply, V1HS, port_pending, State#state_data{version=1}}.
 
 version_pending({sending, Msg}, _From, State) ->
     {_Type, _Clen, _Rlen, _Control, Rec} = Msg,
     case munge:versions(Rec) of
         {_Hostname, 2} ->
             Version = 2,
-            {_,NewMsg} = munge:v2_handshake(Msg, State#state_data.me),
             Next_State = wait_parms;
         {_Hostname, 3}  ->
             Version = 3,
-            {_,NewMsg} = munge:v3_handshake(Msg, State#state_data.me),
+            Next_State = wait_parms;
+        {_Hostname, 4}  ->
+            Version = 4,
             Next_State = wait_parms;
         _Hostname ->                             % v1
-            {_,NewMsg} = munge:v1_handshake(Msg, State#state_data.me),
             Version = 1,
             Next_State = known
     end,
-    {reply, NewMsg, Next_State, State#state_data{version=Version}}.
+    {reply, Msg, Next_State, State#state_data{version=Version}}.
 
 wait_parms({receiving, Msg}, _From, State) ->
     case State#state_data.version of
         2 ->
-            {RemotePort, NewMsg} = munge:v2_handshake(Msg, State#state_data.config);
+            RemotePort = munge:v2_handshake(Msg);
         3 ->
-            {RemotePort, NewMsg} = munge:v3_handshake(Msg, State#state_data.config)
+            RemotePort = munge:v3_handshake(Msg);
+        4 ->
+            RemotePort = munge:v4_handshake(Msg)
     end,
     NewState = stash_his_port(State, RemotePort),
     register(NewState),
-    {reply, NewMsg, known, NewState}.
+    {reply, Msg, known, NewState}.
 
 port_pending({receiving, Msg}, _From, State) ->
-    {RemotePort, NewMsg} = munge:v1_handshake(Msg, State#state_data.config),
+    RemotePort = munge:v1_handshake(Msg),
     NewState = stash_his_port(State, RemotePort),
     register(NewState),
-    {reply, NewMsg, known, NewState}.
+    {reply, Msg, known, NewState}.
 
 known({Direction, Msg}, _From, State) ->
-    NewMsg = maybe_munge_rep_msg(Direction, Msg, State),
-    {reply, apply_adhocs(NewMsg, Direction, State), known, State}.
+    {reply, apply_adhocs(Msg, Direction, State), known, State}.
 
 handle_sync_event({Direction, closed}, _From, CurrentState, State) ->
     case Direction of
@@ -159,37 +159,6 @@ apply_adhocs(Msg, Direction, State) ->
                            State#state_data.sending_mungers
                    end,
     lists:foldl(fun (X, Y) -> adhoc:munge(X, Y) end, Msg, AdhocMungers).
-
-maybe_munge_rep_msg(Direction, Msg, State) ->
-    {MsgType, CLen, RLen, Control, Rec} = Msg,
-    case MsgType of
-        ?REP_MESSAGE ->
-            RepType = util:rep_msg_type(Control),
-            if
-                RepType == ?NEWCLIENT orelse RepType == ?NEWSITE ->
-                    <<Port:16/big, Hostname/binary>> = Rec,
-                    NewPort = munge_cdata(Direction, RepType, Port, State),
-                    NewRec = <<NewPort:16/big, Hostname/binary>>,
-                    {MsgType, CLen, RLen, Control, NewRec};
-                true ->
-                    Msg
-            end;
-        
-        _Other ->
-            Msg
-    end.
-
-munge_cdata(Direction, MsgType, Port, State) ->
-    case {Direction, MsgType} of
-        {receiving, ?NEWCLIENT} ->
-            munge:real_to_spoofed(Port, State#state_data.him);
-        {sending, ?NEWCLIENT} ->
-            munge:real_to_spoofed(Port, State#state_data.me);
-        {receiving, ?NEWSITE} ->
-            munge:maybe_spoofed_to_real(Port, State#state_data.me);
-        {sending, ?NEWSITE} ->
-            munge:maybe_spoofed_to_real(Port, State#state_data.him)
-    end.
 
 %%%
 %%% The following functions defined in the gen_fsm behavior are not

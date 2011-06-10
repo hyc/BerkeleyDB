@@ -10,17 +10,36 @@
 # TEST	Start a second transaction, do a file operation.  Abort
 # TEST	or commit txn1, then abort or commit txn2, and check for
 # TEST	appropriate outcome.
-proc fop006 { method { inmem 0 } args } {
+proc fop006 { method { inmem 0 } { childtxn 0 } args } {
 	source ./include.tcl
 
 	# The variable inmem determines whether the test is being
 	# run on regular named databases or named in-memory databases.
+	set txntype ""
 	if { $inmem == 0 } {
-		set tnum "006"
+		if { $childtxn == 0 } {
+			set tnum "006"
+		} else { 
+			set tnum "010"
+			set txntype "child"
+			puts "Fop006 with child txns is called fop010."
+		}
 		set string "regular named databases"
 		set operator do_op
 	} else {
-		set tnum "008"
+		if { [is_queueext $method] } {
+			puts "Skipping in-memory test for method $method."
+			return
+		}
+		if { $childtxn == 0 } {
+			set tnum "008"
+			puts "Fop006 with in-memory dbs is called fop008."
+		} else {
+			set tnum "012"
+			set txntype "child"
+			puts "Fop006 with in-memory dbs\
+			    and child txns is called fop012."
+		}
 		set string "in-memory named databases"
 		set operator do_inmem_op
 	}
@@ -35,7 +54,7 @@ proc fop006 { method { inmem 0 } args } {
 
 	env_cleanup $testdir
 	puts "\nFop$tnum ($method): Two file system ops,\
-	    each in its own transaction, for $string."
+	    each in its own $txntype transaction, for $string."
 
 	set exists {a b}
 	set noexist {foo bar}
@@ -120,7 +139,7 @@ proc fop006 { method { inmem 0 } args } {
 
 		foreach end2 { abort commit } {
 			# Create transactional environment.
-			set env [berkdb_env -create -home $testdir -txn]
+			set env [berkdb_env -create -home $testdir -txn nosync]
 			error_check_good is_valid_env [is_valid_env $env] TRUE
 
 			# Create databases.
@@ -149,8 +168,14 @@ proc fop006 { method { inmem 0 } args } {
 			error_check_good db_close [$db close] 0
 
 			# Start transaction 1 and perform a file op.
-			set ptxn1 [$env txn]
-			set txn1 [$env txn -parent $ptxn1]
+			set parent1 [$env txn]
+			if { $childtxn } {
+				set child1 [$env txn -parent $parent1]
+				set txn1 $child1 
+			} else {
+				set txn1 $parent1
+			}
+
 			error_check_good \
 			    txn_begin [is_valid_txn $txn1 $env] TRUE
 			set result1 [$operator $omethod $op1 $names1 $txn1 $env $args]
@@ -164,8 +189,8 @@ proc fop006 { method { inmem 0 } args } {
 
 			# Start transaction 2 before ending transaction 1.
 			set pid [exec $tclsh_path $test_path/wrap.tcl \
-			    fopscript.tcl $testdir/fop$tnum.log \
-			    $operator $omethod $op2 $end2 $res2 $names2 &]
+			    fopscript.tcl $testdir/fop$tnum.log $operator \
+			    $omethod $op2 $end2 $res2 $names2 $childtxn &]
 
 			# Sleep a bit to give txn2 a chance to block.
 			tclsleep 2
@@ -173,7 +198,10 @@ proc fop006 { method { inmem 0 } args } {
 			# End transaction 1 and close any open db handles.
 			# Txn2 will now unblock and finish.
 			error_check_good txn1_$end1 [$txn1 $end1] 0
-			error_check_good ptxn1_$end1 [$ptxn1 $end1] 0
+			if { $childtxn } {
+				error_check_good parent1_commit \
+				    [$parent1 commit] 0
+			}
 			set handles [berkdb handles]
 			foreach handle $handles {
 				if {[string range $handle 0 1] == "db" } {

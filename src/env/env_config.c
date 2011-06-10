@@ -125,22 +125,57 @@ __config_parse(env, s, lc)
 	int lc;
 {
 	DB_ENV *dbenv;
+	DB_SITE *site;
 	u_long uv1, uv2;
 	u_int32_t flags;
 	long lv1, lv2;
-	int nf, onoff;
+	u_int port;
+	int i, nf, onoff, bad, ret, t_ret;
 	char *argv[CONFIG_SLOTS];
+	DB_MEM_CONFIG mem_conf;
 
+	bad = 0;
 	dbenv = env->dbenv;
 					/* Split the line by white-space. */
 	if ((nf = __config_split(s, argv)) < 2) {
-format:		__db_errx(env,
-		    "line %d: %s: incorrect name-value pair", lc, argv[0]);
+format:		__db_errx(env, DB_STR_A("1584",
+		    "line %d: %s: incorrect name-value pair", "%d %s"),
+			    lc, argv[0]);
 		return (EINVAL);
+	}
+
+	if (strcasecmp(argv[0], "set_memory_max") == 0) {
+		if (nf != 3)
+			goto format;
+		CONFIG_GET_UINT32(argv[1], &uv1);
+		CONFIG_GET_UINT32(argv[2], &uv2);
+		return (__env_set_memory_max(
+		    dbenv, (u_int32_t)uv1, (u_int32_t)uv2));
+	}
+	if (strcasecmp(argv[0], "set_memory_init") == 0) {
+		if (nf != 3)
+			goto format;
+		if (strcasecmp(argv[1], "DB_MEM_LOCK") == 0)
+			mem_conf = DB_MEM_LOCK;
+		else if (strcasecmp(argv[1], "DB_MEM_LOCKER") == 0)
+			mem_conf = DB_MEM_LOCKER;
+		else if (strcasecmp(argv[1], "DB_MEM_LOCKOBJECT") == 0)
+			mem_conf = DB_MEM_LOCKOBJECT;
+		else if (strcasecmp(argv[1], "DB_MEM_TRANSACTION") == 0)
+			mem_conf = DB_MEM_TRANSACTION;
+		else if (strcasecmp(argv[1], "DB_MEM_THREAD") == 0)
+			mem_conf = DB_MEM_THREAD;
+		else if (strcasecmp(argv[1], "DB_MEM_LOGID") == 0)
+			mem_conf = DB_MEM_LOGID;
+		else
+			goto format;
+		CONFIG_GET_UINT32(argv[2], &uv2);
+		return (__env_set_memory_init(dbenv, mem_conf, (u_int32_t)uv2));
 	}
 
 	CONFIG_UINT32("mutex_set_align", __mutex_set_align);
 	CONFIG_UINT32("mutex_set_increment", __mutex_set_increment);
+	CONFIG_UINT32("mutex_set_init", __mutex_set_init);
 	CONFIG_UINT32("mutex_set_max", __mutex_set_max);
 	CONFIG_UINT32("mutex_set_tas_spins", __mutex_set_tas_spins);
 
@@ -166,6 +201,9 @@ format:		__db_errx(env,
 		if (strcasecmp(argv[1], "db_rep_conf_autoinit") == 0)
 			return (__rep_set_config(dbenv,
 			    DB_REP_CONF_AUTOINIT, onoff));
+		if (strcasecmp(argv[1], "db_rep_conf_autorollback") == 0)
+			return (__rep_set_config(dbenv,
+			    DB_REP_CONF_AUTOROLLBACK, onoff));
 		if (strcasecmp(argv[1], "db_rep_conf_bulk") == 0)
 			return (__rep_set_config(dbenv,
 			    DB_REP_CONF_BULK, onoff));
@@ -203,7 +241,7 @@ format:		__db_errx(env,
 		if (nf != 2)
 			goto format;
 		CONFIG_GET_UINT32(argv[1], &uv1);
-		return (__rep_set_nsites(
+		return (__rep_set_nsites_pp(
 		    dbenv, (u_int32_t)uv1));
 	}
 
@@ -285,27 +323,58 @@ format:		__db_errx(env,
 		goto format;
 	}
 
-	if (strcasecmp(argv[0], "repmgr_add_remote_site") == 0) {
-		if (nf != 3 && nf != 4)
+	/*
+	 * Configure name/value pairs of config information for a site (local or
+	 * remote).
+	 *
+	 * repmgr_site host port [which value] ...
+	 */
+	if (strcasecmp(argv[0], "repmgr_site") == 0) {
+		if (nf < 3 || (nf % 2) == 0)
 			goto format;
 		CONFIG_GET_UINT(argv[2], &uv2);
-		flags = 0;
-		if (nf == 4) {
-			if (strcasecmp(argv[3], "peer") == 0)
-				flags = DB_REPMGR_PEER;
-			else
-				goto format;
-		}
-		return (__repmgr_add_remote_site(
-		    dbenv, argv[1], (u_int)uv2, NULL, flags));
-	}
+		port = (u_int)uv2;
 
-	if (strcasecmp(argv[0], "repmgr_set_local_site") == 0) {
-		if (nf != 3)
+		if ((ret = __repmgr_site(dbenv, argv[1], port, &site, 0)) != 0)
+			return (ret);
+#ifdef HAVE_REPLICATION_THREADS
+		for (i = 3; i < nf; i += 2) {
+			if (strcasecmp(argv[i], "db_bootstrap_helper") == 0)
+				uv1 = DB_BOOTSTRAP_HELPER;
+			else if (strcasecmp(argv[i], "db_group_creator") == 0)
+				uv1 = DB_GROUP_CREATOR;
+			else if (strcasecmp(argv[i], "db_legacy") == 0)
+				uv1 = DB_LEGACY;
+			else if (strcasecmp(argv[i], "db_local_site") == 0)
+				uv1 = DB_LOCAL_SITE;
+			else if (strcasecmp(argv[i], "db_repmgr_peer") == 0)
+				uv1 = DB_REPMGR_PEER;
+			else {
+				bad = 1;
+				break;
+			}
+
+			if (strcasecmp(argv[i + 1], "on") == 0)
+				uv2 = 1;
+			else if (strcasecmp(argv[i + 1], "off") == 0)
+				uv2 = 0;
+			else
+				CONFIG_GET_UINT32(argv[i + 1], &uv2);
+			if ((ret = __repmgr_site_config(site,
+			    (u_int32_t)uv1, (u_int32_t)uv2)) != 0)
+				break;
+		}
+		if ((t_ret = __repmgr_site_close(site)) != 0 && ret == 0)
+			ret = t_ret;
+		if (bad)
 			goto format;
-		CONFIG_GET_UINT(argv[2], &uv2);
-		return (__repmgr_set_local_site(
-		    dbenv, argv[1], (u_int)uv2, 0));
+#else
+		/* If repmgr not built, __repmgr_site() returns DB_OPNOTSUP. */
+		COMPQUIET(i, 0);
+		COMPQUIET(t_ret, 0);
+		DB_ASSERT(env, 0);
+#endif
+		return (ret);
 	}
 
 	if (strcasecmp(argv[0], "set_cachesize") == 0) {
@@ -485,6 +554,7 @@ format:		__db_errx(env,
 	CONFIG_UINT32("set_lk_max_lockers", __lock_set_lk_max_lockers);
 	CONFIG_UINT32("set_lk_max_objects", __lock_set_lk_max_objects);
 	CONFIG_UINT32("set_lk_partitions", __lock_set_lk_partitions);
+	CONFIG_UINT32("set_lk_tablesize", __lock_set_lk_tablesize);
 
 	if (strcasecmp(argv[0], "set_lock_timeout") == 0) {
 		if (nf != 2)
@@ -643,7 +713,8 @@ format:		__db_errx(env,
 		return (__env_set_verbose(dbenv, flags, onoff));
 	}
 
-	__db_errx(env, "unrecognized name-value pair: %s", s);
+	__db_errx(env, DB_STR_A("1585",
+	    "unrecognized name-value pair: %s", "%s"), s);
 	return (EINVAL);
 }
 

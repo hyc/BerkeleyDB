@@ -93,6 +93,29 @@ namespace BerkeleyDB {
     };
 
     /// <summary>
+    /// Special environment IDs.
+    /// </summary>
+    public enum EnvironmentID : int {
+        /// <summary>
+        /// A message should be broadcast to every environment in the
+        /// replication group, whose eid in
+        /// <see cref="ReplicationTransportDelegate"/> is set to be
+        /// this ID.
+        /// </summary>
+        EID_BROADCAST = DbConstants.DB_EID_BROADCAST,
+        /// <summary>
+        /// An invalid environment ID.
+        /// </summary>
+        EID_INVALID = DbConstants.DB_EID_INVALID,
+        /// <summary>
+        /// Messages sent on the channel created by
+        /// <see cref="DatabaseEnvironment.RepMgrChannel"/> with this ID
+        /// would be sent only to the master site.
+        /// </summary>
+        EID_MASTER = DbConstants.DB_EID_MASTER,
+    };
+
+    /// <summary>
     /// Specifies the action to take when deleting a foreign key
     /// </summary>
     public enum ForeignKeyDeleteAction : uint {
@@ -152,6 +175,18 @@ namespace BerkeleyDB {
         /// </summary>
         REP_CLIENT = DbConstants.DB_EVENT_REP_CLIENT,
         /// <summary>
+        /// A previously established connection has been broken.
+        /// </summary>
+        REP_CONNECT_BROKEN = DbConstants.DB_EVENT_REP_CONNECT_BROKEN,
+        /// <summary>
+        /// A connection with a remote site has been established.
+        /// </summary>
+        REP_CONNECT_ESTD = DbConstants.DB_EVENT_REP_CONNECT_ESTD,
+        /// <summary>
+        /// An attempt to establish a new connection to a known remote site failed.
+        /// </summary>
+        REP_CONNECT_TRY_FAILED = DbConstants.DB_EVENT_REP_CONNECT_TRY_FAILED,
+        /// <summary>
         /// A duplicate master site has been discovered in the replication
         /// group.
         /// </summary>
@@ -182,12 +217,20 @@ namespace BerkeleyDB {
         /// message response from a sufficient number of remote sites.
         /// </summary>
         REP_ELECTION_FAILED = DbConstants.DB_EVENT_REP_ELECTION_FAILED,
+	/// <summary>
+	/// The internal initialization has been completed.
+	/// </summary>
+	REP_INIT_DONE = DbConstants.DB_EVENT_REP_INIT_DONE,
         /// <summary>
         /// The local site could not synchronize with the master because an
         /// internal initialization was required, but internal initialization
         /// has been turned off by <see cref="DatabaseEnvironment.RepAutoInit"/>.
         /// </summary>
         REP_JOIN_FAILURE = DbConstants.DB_EVENT_REP_JOIN_FAILURE,
+        /// <summary>
+        /// The local site has been removed from the group.
+        /// </summary>
+        REP_LOCAL_SITE_REMOVED = DbConstants.DB_EVENT_REP_LOCAL_SITE_REMOVED,
         /// <summary>
         /// The local site is now the master site of its replication group. It
         /// is the application's responsibility to begin acting as the master
@@ -223,6 +266,14 @@ namespace BerkeleyDB {
         /// processing live log records received from the master. 
         /// </summary>
         REP_STARTUPDONE = DbConstants.DB_EVENT_REP_STARTUPDONE,
+        /// <summary>
+        /// A new site has joined the group. 
+        /// </summary>
+        REP_SITE_ADDED = DbConstants.DB_EVENT_REP_SITE_ADDED,
+        /// <summary>
+        /// An existing remote site has been removed from the group.
+        /// </summary>
+        REP_SITE_REMOVED = DbConstants.DB_EVENT_REP_SITE_REMOVED,
         /// <summary>
         /// A Berkeley DB write to stable storage failed. 
         /// </summary>

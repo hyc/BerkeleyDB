@@ -98,14 +98,16 @@ tcl_MutFree(interp, objc, objv, dbenv)
 	DB_ENV *dbenv;			/* Environment */
 {
 	int result, ret;
+	Tcl_WideInt tmp;
 	db_mutex_t indx;
 
 	if (objc != 3) {
 		Tcl_WrongNumArgs(interp, 3, objv, "mutexid");
 		return (TCL_ERROR);
 	}
-	if ((result = _GetUInt32(interp, objv[2], &indx)) != TCL_OK)
+	if ((result = Tcl_GetWideIntFromObj(interp, objv[2], &tmp)) != TCL_OK)
 		return (result);
+	indx = (db_mutex_t)tmp;
 	ret = dbenv->mutex_free(dbenv, indx);
 	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret), "env mutex_free"));
 }
@@ -136,6 +138,9 @@ tcl_MutGet(interp, dbenv, op)
 		break;
 	case DBTCL_MUT_INCR:
 		ret = dbenv->mutex_get_increment(dbenv, &val);
+		break;
+	case DBTCL_MUT_INIT:
+		ret = dbenv->mutex_get_init(dbenv, &val);
 		break;
 	case DBTCL_MUT_MAX:
 		ret = dbenv->mutex_get_max(dbenv, &val);
@@ -169,14 +174,16 @@ tcl_MutLock(interp, objc, objv, dbenv)
 	DB_ENV *dbenv;			/* Environment */
 {
 	int result, ret;
+	Tcl_WideInt tmp;
 	db_mutex_t indx;
 
 	if (objc != 3) {
 		Tcl_WrongNumArgs(interp, 3, objv, "mutexid");
 		return (TCL_ERROR);
 	}
-	if ((result = _GetUInt32(interp, objv[2], &indx)) != TCL_OK)
+	if ((result = Tcl_GetWideIntFromObj(interp, objv[2], &tmp)) != TCL_OK)
 		return (result);
+	indx = (db_mutex_t)tmp;
 	ret = dbenv->mutex_lock(dbenv, indx);
 	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret), "env mutex_lock"));
 }
@@ -206,6 +213,9 @@ tcl_MutSet(interp, obj, dbenv, op)
 		break;
 	case DBTCL_MUT_INCR:
 		ret = dbenv->mutex_set_increment(dbenv, val);
+		break;
+	case DBTCL_MUT_INIT:
+		ret = dbenv->mutex_set_init(dbenv, val);
 		break;
 	case DBTCL_MUT_MAX:
 		ret = dbenv->mutex_set_max(dbenv, val);
@@ -267,11 +277,14 @@ tcl_MutStat(interp, objc, objv, dbenv)
 	res = Tcl_NewObj();
 	MAKE_STAT_LIST("Mutex align", sp->st_mutex_align);
 	MAKE_STAT_LIST("Mutex TAS spins", sp->st_mutex_tas_spins);
+	MAKE_STAT_LIST("Initial mutex count", sp->st_mutex_init);
 	MAKE_STAT_LIST("Mutex count", sp->st_mutex_cnt);
+	MAKE_STAT_LIST("Mutex max", sp->st_mutex_max);
 	MAKE_STAT_LIST("Free mutexes", sp->st_mutex_free);
 	MAKE_STAT_LIST("Mutexes in use", sp->st_mutex_inuse);
 	MAKE_STAT_LIST("Max in use", sp->st_mutex_inuse_max);
 	MAKE_STAT_LIST("Mutex region size", sp->st_regsize);
+	MAKE_STAT_LIST("Mutex region max", sp->st_regmax);
 	MAKE_WSTAT_LIST("Number of region waits", sp->st_region_wait);
 	MAKE_WSTAT_LIST("Number of region no waits", sp->st_region_nowait);
 	Tcl_SetObjResult(interp, res);
@@ -282,6 +295,65 @@ tcl_MutStat(interp, objc, objv, dbenv)
 	 * sp is allocated at that time.
 	 */
 error:	__os_ufree(dbenv->env, sp);
+	return (result);
+}
+
+/*
+ * PUBLIC: int tcl_MutStatPrint __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
+ * PUBLIC:    DB_ENV *));
+ *
+ * tcl_MutStat --
+ *      Implements dbenv->mutex_stat_print method.
+ */
+int
+tcl_MutStatPrint(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment */
+{
+	static const char *mutstatprtopts[] = {
+		"-all",
+		"-clear",
+		 NULL
+	};
+	enum mutstatprtopts {
+		MUTSTATPRTALL,
+		MUTSTATPRTCLEAR
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	i = 2;
+
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], mutstatprtopts, 
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			result = IS_HELP(objv[i]);
+			goto error;
+		}
+		i++;
+		switch ((enum mutstatprtopts)optindex) {
+		case MUTSTATPRTALL:
+			flag |= DB_STAT_ALL;
+			break;
+		case MUTSTATPRTCLEAR:
+			flag |= DB_STAT_CLEAR;
+			break;
+		}
+		if (result != TCL_OK)
+			break;
+	}
+	if (result != TCL_OK)
+		goto error;
+
+	_debug_check();
+	ret = dbenv->mutex_stat_print(dbenv, flag);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv mutex_stat_print");
+error:
 	return (result);
 }
 
@@ -300,14 +372,16 @@ tcl_MutUnlock(interp, objc, objv, dbenv)
 	DB_ENV *dbenv;			/* Environment */
 {
 	int result, ret;
+	Tcl_WideInt tmp;
 	db_mutex_t indx;
 
 	if (objc != 3) {
 		Tcl_WrongNumArgs(interp, 3, objv, "mutexid");
 		return (TCL_ERROR);
 	}
-	if ((result = _GetUInt32(interp, objv[2], &indx)) != TCL_OK)
+	if ((result = Tcl_GetWideIntFromObj(interp, objv[2], &tmp)) != TCL_OK)
 		return (result);
+	indx = (db_mutex_t)tmp;
 	ret = dbenv->mutex_unlock(dbenv, indx);
 	return (_ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 	    "env mutex_unlock"));

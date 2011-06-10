@@ -9,7 +9,7 @@
 WIND_HOME := $(subst \,/,$(WIND_HOME))
 WIND_BASE := $(subst \,/,$(WIND_BASE))
 WIND_USR := $(subst \,/,$(WIND_USR))
-BDB_ROOT := D:/Bdb_Source/db
+BDB_ROOT := D:/httpsRepos/db
 
 BDB_OBJECT_DIR := obj
 
@@ -50,7 +50,7 @@ TOOL_FAMILY = diab
 TOOL = diabS
 TOOL_PATH =
 CC_ARCH_SPEC = -tX86LH:vxworks66
-VXVER := vxworks-6.6
+VXVER := vxworks-6.8
 LIBPATH =
 LIBS = -lstlstd
 
@@ -214,6 +214,8 @@ bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_compact.o  : $(BDB_ROOT)/
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_conv.o  : $(BDB_ROOT)/src/db/db_conv.c
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
+bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_copy.o  : $(BDB_ROOT)/src/db/db_copy.c
+	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_dispatch.o  : $(BDB_ROOT)/src/db/db_dispatch.c
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_dup.o  : $(BDB_ROOT)/src/db/db_dup.c
@@ -305,6 +307,8 @@ bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/fileops/fop_util.o  : $(BDB_ROO
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hash/hash_func.o  : $(BDB_ROOT)/src/hash/hash_func.c
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hash/hash_stub.o  : $(BDB_ROOT)/src/hash/hash_stub.c
+	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
+bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/heap/heap_stub.o  : $(BDB_ROOT)/src/heap/heap_stub.c
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hmac/hmac.o  : $(BDB_ROOT)/src/hmac/hmac.c
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
@@ -531,6 +535,7 @@ OBJECTS_bdbvxw = \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_cds.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_compact.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_conv.o \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_copy.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_dispatch.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_dup.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_iface.o \
@@ -577,6 +582,7 @@ OBJECTS_bdbvxw = \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/fileops/fop_util.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hash/hash_func.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hash/hash_stub.o \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/heap/heap_stub.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hmac/hmac.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hmac/sha1.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/lock/lock.o \
@@ -725,6 +731,7 @@ DEP_FILES := \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_cds.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_compact.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_conv.d \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_copy.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_dispatch.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_dup.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/db/db_iface.d \
@@ -771,6 +778,7 @@ DEP_FILES := \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/fileops/fop_util.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hash/hash_func.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hash/hash_stub.d \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/heap/heap_stub.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hmac/hmac.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/hmac/sha1.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/lock/lock.d \

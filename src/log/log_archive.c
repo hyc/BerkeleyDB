@@ -139,8 +139,8 @@ __log_archive(env, listp, flags)
 		__os_set_errno(0);
 		if (getcwd(path, sizeof(path)) == NULL) {
 			ret = __os_get_errno();
-			__db_err(env,
-			    ret, "no absolute path for the current directory");
+			__db_err(env, ret, DB_STR("2570",
+			    "no absolute path for the current directory"));
 			goto err;
 		}
 		pref = path;
@@ -364,7 +364,8 @@ __log_autoremove(env)
 	 */
 	if ((ret = __log_archive(env, &list, DB_ARCH_ABS)) != 0) {
 		if (ret != DB_NOTFOUND)
-			__db_err(env, ret, "log file auto-remove");
+			__db_err(env, ret, DB_STR("2571",
+			    "log file auto-remove"));
 		return;
 	}
 
@@ -407,7 +408,8 @@ __build_data(env, pref, listp)
 	for (n = 0; (ret = __logc_get(logc, &lsn, &rec, DB_PREV)) == 0;) {
 		if (rec.size < sizeof(rectype)) {
 			ret = EINVAL;
-			__db_errx(env, "DB_ENV->log_archive: bad log record");
+			__db_errx(env, DB_STR("2572",
+			    "DB_ENV->log_archive: bad log record"));
 			break;
 		}
 
@@ -417,8 +419,8 @@ __build_data(env, pref, listp)
 		if ((ret =
 		    __dbreg_register_read(env, rec.data, &argp)) != 0) {
 			ret = EINVAL;
-			__db_errx(env,
-			    "DB_ENV->log_archive: unable to read log record");
+			__db_errx(env, DB_STR("2573",
+			    "DB_ENV->log_archive: unable to read log record"));
 			break;
 		}
 

@@ -19,6 +19,7 @@ proc rep030 { method { niter 500 } { tnum "030" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -52,6 +53,11 @@ proc rep030 { method { niter 500 } { tnum "030" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery,
 	# and with and without cleaning.
 	set opts { noclean clean bulk }
@@ -66,7 +72,7 @@ proc rep030 { method { niter 500 } { tnum "030" } args } {
 				}
 				puts "Rep$tnum ($method $r $c):\
 				    Internal initialization - hold some\
-				    databases open on master $msg $msg2."
+				    databases open on master $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep030_sub $method $niter $tnum $l $r $c $args
@@ -80,6 +86,7 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	global util_path
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -91,6 +98,11 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -134,7 +146,7 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    $m_logargs -log_max $log_max -errpfx MASTER \
 	    -cachesize { 0 $cache 1 } $data_diropts $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
@@ -143,7 +155,7 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    $c_logargs -log_max $log_max -errpfx CLIENT \
 	    -cachesize { 0 $cache 1 } $data_diropts $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
@@ -221,8 +233,9 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 		set testfile "test.db"
 		set emptyfile "empty.db"
 	} 
-	
-	if { [is_queue $method] } {
+
+	# queue and heap do not allow for a subdb	
+	if { [is_queue $method] || [is_heap $method] } {
 		set sub ""
 	} else {
 		set sub "subdb"
@@ -356,6 +369,14 @@ proc rep030_sub { method niter tnum logset recargs opts largs } {
 	
 	check_log_location $masterenv
 	check_log_location $clientenv
+
+	# Make sure there are no rep files in the data
+	# directories.  Even when rep files are on disk,
+	# they should be in the env's home directory.
+	no_rep_files_on_disk $masterdir/data
+	no_rep_files_on_disk $masterdir/data2
+	no_rep_files_on_disk $clientdir/data
+	no_rep_files_on_disk $clientdir/data2
 
 	error_check_good masterenv_close [$masterenv close] 0
 	error_check_good clientenv_close [$clientenv close] 0

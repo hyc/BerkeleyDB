@@ -12,6 +12,9 @@ int atoi __P((const char *));
 #ifndef HAVE_ATOL
 long atol __P((const char *));
 #endif
+#ifndef HAVE_BSEARCH
+void *bsearch __P((const void *, const void *, size_t, size_t, int (*)(const void *, const void *)));
+#endif
 #ifndef HAVE_GETCWD
 char *getcwd __P((char *, size_t));
 #endif

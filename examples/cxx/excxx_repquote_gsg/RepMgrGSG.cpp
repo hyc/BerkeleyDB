@@ -14,6 +14,7 @@
 // in it, nor are many error conditions properly handled.
 
 #include <iostream>
+#include <errno.h>
 
 #include <db_cxx.h>
 #include "RepConfigInfo.h"
@@ -40,8 +41,6 @@ extern "C" {
   extern int getopt(int, char * const *, const char *);
   extern char *optarg;
 }
-#else
-#include <errno.h>
 #endif
 
 // Struct used to store information in Db app_private field.
@@ -76,18 +75,16 @@ private:
 static void usage()
 {
     cerr << "usage: " << progname << endl
-        << "-h home -l host:port [-r host:port]"
-        << "[-n nsites][-p priority]" << endl;
+        << "-h home -l|-L host:port [-r host:port] [-p priority]" << endl;
 
     cerr 
         << "\t -h home directory (required)" << endl
-        << "\t -l host:port (required; l stands for local)" << endl
+        << "\t -l host:port (required unless -L is specified;"
+        << "\t    l stands for local)" << endl
+        << "\t -L host:port (optional, L means group creator)" << endl
         << "\t -r host:port (optional; r stands for remote; any "
         << "number of these" << endl
         << "\t    may be specified)" << endl
-        << "\t -n nsites (optional; number of sites in replication "
-        << "group; defaults" << endl
-        << "\t    to 0 to try to dynamically compute nsites)" << endl
         << "\t -p priority (optional; defaults to 100)" << endl;
 
     exit(EXIT_FAILURE);
@@ -101,11 +98,13 @@ int main(int argc, char **argv)
     int ret;
 
     // Extract the command line parameters.
-    while ((ch = getopt(argc, argv, "h:l:n:p:r:")) != EOF) {
+    while ((ch = getopt(argc, argv, "h:l:L:p:r:")) != EOF) {
         switch (ch) {
         case 'h':
             config.home = optarg;
             break;
+        case 'L':
+            config.this_host.creator = true; // FALLTHROUGH
         case 'l':
             config.this_host.host = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -114,9 +113,6 @@ int main(int argc, char **argv)
             }
             config.this_host.port = (unsigned short)atoi(portstr);
             config.got_listen_address = true;
-            break;
-        case 'n':
-            config.totalsites = atoi(optarg);
             break;
         case 'p':
             config.priority = atoi(optarg);
@@ -172,34 +168,24 @@ int RepMgrGSG::init(RepConfigInfo *config)
     dbenv.set_event_notify(event_callback);
     dbenv.repmgr_set_ack_policy(DB_REPMGR_ACKS_ALL);
 
-    if ((ret = dbenv.repmgr_set_local_site(app_config->this_host.host,
-        app_config->this_host.port, 0)) != 0) {
-        // Should throw an exception anyway.
-        cerr << "Could not set listen address to host:port "
-            << app_config->this_host.host << ":"
-            << app_config->this_host.port
-            << "error: " << ret << endl;
-        cerr << "WARNING: This should have been an exception." << endl;
-    }
+    DbSite *dbsite;
+    dbenv.repmgr_site(app_config->this_host.host,
+        app_config->this_host.port, &dbsite, 0);
+    dbsite->set_config(DB_LOCAL_SITE, 1);
+    if (app_config->this_host.creator)
+        dbsite->set_config(DB_GROUP_CREATOR, 1);
 
-    for ( REP_HOST_INFO *cur = app_config->other_hosts; cur != NULL;
-        cur = cur->next) {
-        if ((ret = dbenv.repmgr_add_remote_site(cur->host, cur->port, 
-            0, 0)) != 0) {
-            // Should have resulted in an exception.
-            cerr << "could not add site." << endl
-                << "WARNING: This should have been an exception." << endl;
-        }
-    }
+    dbsite->close();
 
-    if (app_config->totalsites > 0) {
-        try {
-            if ((ret = dbenv.rep_set_nsites(app_config->totalsites)) != 0)
-                dbenv.err(ret, "set_nsites");
-        } catch (DbException dbe) {
-            cerr << "rep_set_nsites call failed. Continuing." << endl;
-            // Non-fatal to the test app.
-        }
+    int i = 1;
+    for ( REP_HOST_INFO *cur = app_config->other_hosts;
+        cur != NULL && i <= app_config->nrsites;
+        cur = cur->next, i++) {
+
+        dbenv.repmgr_site(cur->host, cur->port, &dbsite, 0);
+        dbsite->set_config(DB_BOOTSTRAP_HELPER, 1);
+
+        dbsite->close();
     }
 
     dbenv.rep_set_priority(app_config->priority);

@@ -51,10 +51,10 @@ puts $out [subst \
 {/******************************************************************************
 ** This file is an amalgamation of many separate C source files from SQLite
 ** version $VERSION.  By combining all the individual C code files into this 
-** single large file, the entire code can be compiled as a one translation
+** single large file, the entire code can be compiled as a single translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
-** of 5% are more are commonly seen when SQLite is compiled as a single
+** of 5% or more are commonly seen when SQLite is compiled as a single
 ** translation unit.
 **
 ** This file is all you need to compile SQLite.  To use SQLite in other
@@ -252,6 +252,7 @@ foreach file {
    backup.c
    db_encrypt.c
    db_pragma.c
+   db_sequence.c
    db_shell.c
 
    vdbemem.c
@@ -297,6 +298,7 @@ foreach file {
    notify.c
 
    fts3.c
+   fts3_aux.c
    fts3_expr.c
    fts3_hash.c
    fts3_porter.c

@@ -13,6 +13,8 @@ import java.lang.NullPointerException;
 
 import com.sleepycat.db.internal.DbConstants;
 import com.sleepycat.db.internal.DbEnv;
+import com.sleepycat.db.internal.DbSite;
+import com.sleepycat.db.ReplicationManagerSite;
 
 /**
 A database environment.  Environments include support for some or
@@ -103,6 +105,8 @@ public class Environment {
     Close the database environment, freeing any allocated resources and
     closing any underlying subsystems.
     <p>
+    When you call this method, all open database and cursor handles are closed automatically, and should not be reused. 
+    <p>
     The {@link com.sleepycat.db.Environment Environment} handle should not be closed while any other
     handle that refers to it is not yet closed; for example, database
     environment handles must not be closed while 
@@ -111,8 +115,7 @@ public class Environment {
 {@link com.sleepycat.db.Transaction Transaction}, and {@link com.sleepycat.db.LogCursor LogCursor}
     handles.
     <p>
-    This method automatically closes all open database handles but does not synchronize 
-    the database. To synchronize all open databases ensure that the last environment 
+    In multiple threads of control, each thread of control opens a database environment and the database handles within it. When you close each database handle using this method, by default, the database is not synchronized. To synchronize all open databases ensure that the last environment 
     object is closed using the Environment.CloseForceSync() method. 
 	When the close operation fails, the method returns a non-zero error value for the 
 	first instance of such error, and continues to close the rest of the environment objects. 
@@ -155,7 +158,7 @@ public class Environment {
     <p>
     This function has verify similar
     behavior as Environment.close(), except the following:
-    When each open database handle is closed, it's synced.
+    When each open database handle is closed, the database is synchronized.
     */
     public void closeForceSync()
         throws DatabaseException {
@@ -411,9 +414,9 @@ a database handle for the primary database that is to be indexed.
 
     /**
     <p>
-Remove a database.
+Remove the database specified by the fileName and databaseName parameters.
 <p>
-If no database is specified, the underlying file specified is removed.
+If no database is specified, the underlying file specified is removed, incidentally removing all of the databases it contained.
 <p>
 Applications should never remove databases with open {@link com.sleepycat.db.Database Database}
 handles, or in the case of removing a file, when any database in the
@@ -435,6 +438,11 @@ again after this method is called, regardless of this method's success
 or failure.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
@@ -491,6 +499,11 @@ again after this method is called, regardless of this method's success
 or failure.
 <p>
 @param txn
+If the operation is part of an application-specified transaction, the txn
+parameter is a Transaction object returned from the
+{@link com.sleepycat.db.Environment#beginTransaction Environment.beginTransaction} method; if the operation is part of a Berkeley DB
+Concurrent Data Store group, the txn parameter is a Transaction object returned
+from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSGroup} method; otherwise null.
 For a transactional database, an explicit transaction may be specified, or null
 may be specified to use auto-commit.  For a non-transactional database, null
 must be specified.
@@ -527,7 +540,7 @@ deadlock.
     Return the database environment home directory. This directory is normally
     identified in the {@link com.sleepycat.db.Environment} constructor.
     <p>
-    @return the database environment home directory.
+    @return The database environment home directory.
     */
     public java.io.File getHome()
         throws DatabaseException {
@@ -584,7 +597,7 @@ deadlock.
     }
 
     /**
-    Acquire a lock from the lock table.
+    Acquire a lock from the lock table returning information about it in the Lock parameter.
     <p>
     @param locker
     An unsigned 32-bit integer quantity representing the entity
@@ -679,9 +692,10 @@ deadlock.
     }
 
     /**
-    Assign a deadlock priority to a locker.  The deadlock detector will reject
-    lock requests from lower priority lockers are before those from higher
-    priority lockers.
+    Assign a deadlock priority to a locker.  This value is used when resolving deadlocks. The deadlock resolution algorithm will reject a
+    lock request from a locker with a lower priority before a request from a locker with a higher
+    priority.
+    By default, all lockers are created with a priority of 100. 
     <p>
     @param id
     The locker id to configure
@@ -777,7 +791,12 @@ deadlock.
     }
 
     /**
-    Verify log files.
+    Verify integrity of the log records of an environment and write both error and 
+    normal messages to the  environment's error report destination.
+    This method does not perform the locking function, even in Berkeley DB environments 
+    that are configured with a locking subsystem. 
+    Because this function does not access any database files, you can call it even 
+    when the environment has other threads of control attached and running
     <p>
     @param config
     The LogVerifyConfig object which contains configurations for the log 
@@ -830,16 +849,24 @@ deadlock.
     /* Replication support */
     /**
     Configure the database environment as a client or master in a group
-    of replicated database environments.  Replication master
+    of replicated database environments.  This method is not called by most replication applications. 
+    It should only be called by Base API applications implementing their 
+    own network transport layer, explicitly holding replication group elections and 
+    handling replication messages outside of the Replication Manager framework.
+    <p>
+    Replication master
     environments are the only database environments where replicated
     databases may be modified.  Replication client environments are
     read-only as long as they are clients.  Replication client
     environments may be upgraded to be replication master environments
     in the case that the current master fails or there is no master
-    present.
+    present. If master leases are in use, this method cannot be used to 
+    appoint a master, and should only be used to configure a database 
+    environment as a master as the result of an election.
     <p>
     The enclosing database environment must already have been configured
-    to send replication messages by calling {@link com.sleepycat.db.EnvironmentConfig#setReplicationTransport EnvironmentConfig.setReplicationTransport}.
+    to send replication messages by calling 
+    {@link com.sleepycat.db.EnvironmentConfig#setReplicationTransport EnvironmentConfig.setReplicationTransport}.
     <p>
     @param cdata
     An opaque data item that is sent over the communication infrastructure
@@ -861,7 +888,10 @@ deadlock.
     }
 
     /**
-    Hold an election for the master of a replication group.
+    Hold an election for the master of a replication group. This method is not called 
+    by most replication applications. It should only be called by Base API applications 
+    implementing their own network transport layer, explicitly holding replication group 
+    elections and handling replication messages outside of the Replication Manager framework.
     <p>
     If the election is successful, the new master's ID may be the ID of the
     previous master, or the ID of the current environment.  The application
@@ -873,6 +903,40 @@ deadlock.
     of control that processes incoming messages; processing the incoming
     messages is necessary to successfully complete an election.
     <p>
+    Before calling this method do the following:
+    <ul>
+    <li>open the database environment.
+    <li>configure the database environment to send replication messages.
+    <li>configure the database environment as a client or a master.
+    </ul>
+    <h3>How Elections are Held</h3>
+    <p>
+    Elections are done in two parts: first, replication sites collect information from the 
+    other replication sites they know about, and second, replication sites cast their votes for a new master.
+     The second phase is triggered by one of two things: either the replication site gets election 
+     information from nsites sites, or the election timeout expires. Once the second phase is triggered, 
+     the replication site will cast a vote for the new master of its choice if, and only if, 
+     the site has election information from at least nvotes sites. If a site receives nvotes votes 
+     for it to become the new master, then it will become the new master.
+     We recommend nvotes be set to at least:
+	<p>
+    (sites participating in the election / 2) + 1
+	<p>
+to ensure there are never more than two masters active at the same time even in the case of a network partition. 
+When a network partitions, the side of the partition with more than half the environments will elect 
+a new master and continue, while the environments communicating with fewer than half of the 
+environments will fail to find a new master, as no site can get nvotes votes.
+We recommend nsites be set to:
+<p>
+number of sites in the replication group - 1
+<p>
+when choosing a new master after a current master fails. This allows the group to reach a consensus without having to wait for the timeout to expire.
+<p>
+When choosing a master from among a group of client sites all restarting at the same time, it makes more sense to set nsites to the total number of sites in the group, since there is no known missing site. Furthermore, in order to ensure the best choice from among sites that may take longer to boot than the local site, setting nvotes also to this same total number of sites will guarantee that every site in the group is considered. Alternatively, using the special timeout for full elections allows full participation on restart but allows election of a master if one site does not reboot and rejoin the group in a reasonable amount of time. (See the Elections section in the Berkeley DB Programmer's Reference Guide for more information.)
+<p>
+Setting nsites to lower values can increase the speed of an election, but can also result in election failure, and is usually not recommended.  
+    <p>
+    
     @param nsites
     The number of environments that the application believes are in the
     replication group.  This number is used by Berkeley DB to avoid
@@ -917,12 +981,18 @@ deadlock.
 
     /**
     Process an incoming replication message sent by a member of the
-    replication group to the local database environment.
+    replication group to the local database environment. This method is not called 
+    by most replication applications. It should only be called by Base API applications 
+    implementing their own network transport layer, explicitly holding replication 
+    group elections and handling replication messages outside of the Replication Manager framework.
     <p>
     For implementation reasons, all incoming replication messages must
     be processed using the same {@link com.sleepycat.db.Environment Environment} handle.  It is not
     required that a single thread of control process all messages, only
     that all threads of control processing messages use the same handle.
+    <p>
+    Before calling this method, the enclosing database environment must already 
+    have been opened and must already have been configured to send replication messages.
     <p>
     @param control
     A copy of the control parameter specified by Berkeley DB on the
@@ -992,8 +1062,29 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     }
 
     /**
+    Get the number of sites in a replication group.
+    Applications using the replication manager API may only call this method
+    after replication has been started.
+    @return
+    The number of sites in the replication group
+    @throws
+    DatabaseException if a failure occurs
+    **/
+    public int getReplicationNumSites()
+        throws DatabaseException {
+        return dbenv.rep_get_nsites();
+    }
+
+    /**
     Sets the timeout applied to the specified timeout type.
     This method may be called at any time during the life of the application.
+    <p>
+    The database environment's replication subsystem may also be configured 
+    using the environment's DB_CONFIG file. The syntax of the entry in that 
+    file is a single line with the string "rep_set_timeout", one or more whitespace characters, 
+    and the which parameter specified as a string and the timeout specified as two parts.
+    Because the DB_CONFIG file is read when the database environment is opened, 
+    it will silently overrule configuration done before that time.
     @param type
     The type of timeout to set.
     <p>
@@ -1025,7 +1116,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     }
 
     /**
-    Forces synchronization to begin for this client.  This method is the other
+    Forces master synchronization to begin for this client.  This method is the other
     half of setting {@link ReplicationConfig#DELAYCLIENT} with
     {@link #setReplicationConfig}.
     <p>
@@ -1033,8 +1124,11 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     synchronization, the application must choose when to perform
     synchronization by using this method.  Otherwise the client will remain
     unsynchronized and will ignore all new incoming log messages.
+    This method may be called any time after the client application learns 
+    that the new master has been established.
     <p>
-    This method may not be called before the database environment is opened.
+    Before calling this method, the enclosing database environment must 
+    already have been opened and must already have been configured to send replication messages. 
     <p>
     <p>
 @throws DatabaseException if a failure occurs.
@@ -1075,12 +1169,77 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     }
 
     /**
-    Return an array of all sites known to the replication manager.
+    Return a handle for the local replication site.
+    */
+    public ReplicationManagerSite getReplicationManagerLocalSite()
+        throws DatabaseException {
+
+        DbSite site = dbenv.repmgr_local_site();
+        return (site == null) ? null :
+            new ReplicationManagerSite(site);
+    }
+
+    /**
+    Return an array of all the sites known to the replication manager.
+    This method may only be called after replication has been started
+    using the {@link com.sleepycat.db.Environment#replicationManagerStart replicationManagerStart} method.
     */
     public ReplicationManagerSiteInfo[] getReplicationManagerSiteList() 
         throws DatabaseException {
 
         return dbenv.repmgr_site_list();
+    }
+
+    /**
+    Return a site known to the replication manager by its eid.
+    <p>
+    @param eid
+    */
+    public ReplicationManagerSite getReplicationManagerSite(int eid) 
+        throws DatabaseException {
+
+        return new ReplicationManagerSite(dbenv.repmgr_site_by_eid(eid));
+    }
+
+    /**
+    Return a site in the replication manager by its host and port.
+    <p>
+    @param host
+    @param port
+    */
+    public ReplicationManagerSite getReplicationManagerSite(
+        String host, long port)
+        throws DatabaseException {
+
+        return new ReplicationManagerSite(dbenv.repmgr_site(host, port));
+    }
+
+    /**
+    Create a channel.
+    <p>
+    @param eid
+    */
+    public ReplicationChannel openChannel(int eid)
+        throws DatabaseException {
+
+        return new ReplicationChannel(dbenv.repmgr_channel(eid, 0));
+    }
+
+    /**
+    Set the message dispatch function.
+    <p>
+    @param dispatch
+    Application-specific function used to handle messages sent over Replication
+    Manager message channels.
+    @param flags
+    This flag is DB_REPMGR_NEED_RESPONSE if the message requires a response.
+    Otherwise, it is 0. 
+    */
+    public void setReplicationManagerMessageDispatch(
+        ReplicationManagerMessageDispatch dispatch, int flags) 
+        throws DatabaseException {
+
+        dbenv.repmgr_set_dispatch(dispatch, flags);
     }
 
     /* Statistics */
@@ -1219,6 +1378,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     See
     <a href="{@docRoot}/../programmer_reference/cam.html#cam_intro" target="_top">Berkeley DB Concurrent Data Store applications</a>
     for more information about when this is required.
+    This method may be called at any time during the life of the application.
     <p>
     @return
     A transaction handle that wraps a CDS locker ID.
@@ -1701,4 +1861,11 @@ The release patch number.
     public static int getVersionPatch() {
         return DbEnv.get_version_patch();
     }
+
+    /**
+    A special identifier for eid in 
+    {@link com.sleepycat.db.Environment#openChannel Environment.openChannel}
+    to create channel to send messages only to the master site.
+    */
+    int EID_MASTER = DbConstants.DB_EID_MASTER;
 }

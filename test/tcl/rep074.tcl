@@ -14,6 +14,7 @@ proc rep074 { method { niter 20 } { tnum "074" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Skip for all methods except btree.
 	if { $checking_valid_methods } {
@@ -43,9 +44,14 @@ proc rep074 { method { niter 20 } { tnum "074" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	foreach l $logsets {
 		puts "Rep$tnum ($method): Test of send errors processing\
-		    requests $msg $msg2."
+		    requests $msg $msg2 $msg3."
 		puts "Rep$tnum: Master logs are [lindex $l 0]"
 		puts "Rep$tnum: Client logs are [lindex $l 1]"
 		rep074_sub $method $niter $tnum $l $args
@@ -56,6 +62,7 @@ proc rep074_sub { method niter tnum logset largs } {
 	global testdir
 	global rep074_failure_count
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -69,6 +76,11 @@ proc rep074_sub { method niter tnum logset largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -95,7 +107,7 @@ proc rep074_sub { method niter tnum logset largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $verbargs -errpfx MASTER \
-	    -home $masterdir $m_logargs $m_txnargs $repmemargs \
+	    -home $masterdir $m_logargs $m_txnargs $repmemargs $privargs \
 	    -rep_transport \[list 1 rep074_replsend\]"
 	set masterenv [eval $ma_envcmd -rep_master]
 
@@ -108,7 +120,7 @@ proc rep074_sub { method niter tnum logset largs } {
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $verbargs -errpfx CLIENT \
-	    -home $clientdir $c_logargs $c_txnargs $repmemargs \
+	    -home $clientdir $c_logargs $c_txnargs $repmemargs $privargs \
 	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd -rep_client]
 	set envlist "{$masterenv 1} {$clientenv 2}"

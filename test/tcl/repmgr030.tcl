@@ -66,7 +66,7 @@ proc repmgr030_sub { method niter tnum largs } {
 	set ma_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx MASTER -home $masterdir -txn -rep -thread"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites -pri 100 \
+	$masterenv repmgr -ack all -pri 100 \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -77,7 +77,7 @@ proc repmgr030_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites -pri 80 \
+	$clientenv repmgr -ack all -pri 80 \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -89,7 +89,7 @@ proc repmgr030_sub { method niter tnum largs } {
 	set cl2_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread"
 	set clientenv2 [eval $cl2_envcmd]
-	$clientenv2 repmgr -ack all -nsites $nsites -pri 50 \
+	$clientenv2 repmgr -ack all -pri 50 \
 	    -timeout {connection_retry 5000000} \
 	    -local [list localhost [lindex $ports 2]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -101,7 +101,7 @@ proc repmgr030_sub { method niter tnum largs } {
 	set cl3_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT3 -home $clientdir3 -txn -rep -thread"
 	set clientenv3 [eval $cl3_envcmd]
-	$clientenv3 repmgr -ack all -nsites $nsites -pri 50 \
+	$clientenv3 repmgr -ack all -pri 50 \
 	    -timeout {connection_retry 75000000} \
 	    -local [list localhost [lindex $ports 3]] \
 	    -remote [list localhost [lindex $ports 0]] \

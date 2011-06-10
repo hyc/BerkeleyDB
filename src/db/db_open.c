@@ -16,6 +16,7 @@
 #include "dbinc/hmac.h"
 #include "dbinc/fop.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 #include "dbinc/qam.h"
@@ -125,14 +126,14 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 	 */
 	if (fname == NULL) {
 		if (dbp->p_internal != NULL) {
-			__db_errx(env,
-		    "Partitioned databases may not be in memory.");
+			__db_errx(env, DB_STR("0634",
+			    "Partitioned databases may not be in memory."));
 			return (ENOENT);
 		}
 		if (dname == NULL) {
 			if (!LF_ISSET(DB_CREATE)) {
-				__db_errx(env,
-			    "DB_CREATE must be specified to create databases.");
+				__db_errx(env, DB_STR("0635",
+		    "DB_CREATE must be specified to create databases."));
 				return (ENOENT);
 			}
 
@@ -140,8 +141,8 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 			F_SET(dbp, DB_AM_CREATED);
 
 			if (dbp->type == DB_UNKNOWN) {
-				__db_errx(env,
-				    "DBTYPE of unknown without existing file");
+				__db_errx(env, DB_STR("0636",
+				    "DBTYPE of unknown without existing file"));
 				return (EINVAL);
 			}
 
@@ -191,11 +192,11 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		 * So clear the RDONLY flag if we just created it.
 		 */
 		if (!F_ISSET(dbp, DB_AM_RDONLY))
-		 	LF_CLR(DB_RDONLY);
+			LF_CLR(DB_RDONLY);
 	} else {
 		if (dbp->p_internal != NULL) {
-			__db_errx(env,
-    "Partitioned databases may not be included with multiple databases.");
+			__db_errx(env, DB_STR("0637",
+    "Partitioned databases may not be included with multiple databases."));
 			return (ENOENT);
 		}
 		if ((ret = __fop_subdb_setup(dbp, ip,
@@ -214,18 +215,8 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 			ret = __db_new_file(dbp, ip, txn, NULL, NULL);
 		else {
 			id = TXN_INVALID;
-			if ((ret = __fop_file_setup(dbp, ip,
-			    txn, dname, mode, flags, &id)) == 0 &&
-			    DBENV_LOGGING(env) && !F_ISSET(dbp, DB_AM_RECOVER)
-#if !defined(DEBUG_ROP) && !defined(DEBUG_WOP) && !defined(DIAGNOSTIC)
-			    && txn != NULL
-#endif
-#if !defined(DEBUG_ROP)
-			    && !F_ISSET(dbp, DB_AM_RDONLY)
-#endif
-			)
-				ret = __dbreg_log_id(dbp,
-				    txn, dbp->log_filename->id, 1);
+			ret = __fop_file_setup(dbp,
+			     ip, txn, dname, mode, flags, &id);
 		}
 		if (ret != 0)
 			goto err;
@@ -237,6 +228,10 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 			break;
 		case DB_HASH:
 			ret = __ham_open(dbp, ip, txn, fname, meta_pgno, flags);
+			break;
+		case DB_HEAP:
+			ret = __heap_open(dbp,
+			    ip, txn, fname, meta_pgno, flags);
 			break;
 		case DB_RECNO:
 			ret = __ram_open(dbp, ip, txn, fname, meta_pgno, flags);
@@ -276,9 +271,8 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 	}
 DB_TEST_RECOVERY_LABEL
 err:
-	if (dbp != NULL)
-		PERFMON4(env, db, open,
-		    (char *) fname, (char *) dname, flags, &dbp->fileid[0]);
+	PERFMON4(env,
+	    db, open, (char *) fname, (char *) dname, flags, &dbp->fileid[0]);
 	return (ret);
 }
 
@@ -316,10 +310,10 @@ __db_new_file(dbp, ip, txn, fhp, name)
 {
 	int ret;
 
-	/* 
+	/*
 	 * For in-memory database, it is created by mpool and doesn't
 	 * take any lock, so temporarily turn off the lock checking here.
-	 */ 
+	 */
 	if (F_ISSET(dbp, DB_AM_INMEM))
 		LOCK_CHECK_OFF(ip);
 
@@ -331,13 +325,17 @@ __db_new_file(dbp, ip, txn, fhp, name)
 	case DB_HASH:
 		ret = __ham_new_file(dbp, ip, txn, fhp, name);
 		break;
+	case DB_HEAP:
+		ret = __heap_new_file(dbp, ip, txn, fhp, name);
+		break;
 	case DB_QUEUE:
 		ret = __qam_new_file(dbp, ip, txn, fhp, name);
 		break;
 	case DB_UNKNOWN:
 	default:
-		__db_errx(dbp->env,
-		    "%s: Invalid type %d specified", name, dbp->type);
+		__db_errx(dbp->env, DB_STR_A("0638",
+		    "%s: Invalid type %d specified", "%s %d"),
+		    name, dbp->type);
 		ret = EINVAL;
 		break;
 	}
@@ -408,8 +406,9 @@ __db_init_subdb(mdbp, dbp, name, ip, txn)
 		break;
 	case DB_UNKNOWN:
 	default:
-		__db_errx(dbp->env,
-		    "Invalid subdatabase type %d specified", dbp->type);
+		__db_errx(dbp->env, DB_STR_A("0639",
+		    "Invalid subdatabase type %d specified", "%d"),
+		    dbp->type);
 		return (EINVAL);
 	}
 
@@ -499,6 +498,7 @@ lsn_retry:
 		switch (magic) {
 		case DB_BTREEMAGIC:
 		case DB_HASHMAGIC:
+		case DB_HEAPMAGIC:
 		case DB_QAMMAGIC:
 		case DB_RENAMEMAGIC:
 			break;
@@ -554,6 +554,7 @@ swap_retry:
 	switch (magic) {
 	case DB_BTREEMAGIC:
 	case DB_HASHMAGIC:
+	case DB_HEAPMAGIC:
 	case DB_QAMMAGIC:
 	case DB_RENAMEMAGIC:
 		break;
@@ -588,8 +589,8 @@ swap_retry:
 	 */
 	if ((ret = __db_chk_meta(env, dbp, meta, flags)) != 0) {
 		if (ret == -1)
-			__db_errx(env,
-			    "%s: metadata page checksum error", name);
+			__db_errx(env, DB_STR_A("0640",
+			    "%s: metadata page checksum error", "%s"), name);
 		goto bad_format;
 	}
 
@@ -617,6 +618,15 @@ swap_retry:
 		dbp->type = DB_HASH;
 		if ((oflags & DB_TRUNCATE) == 0 && (ret =
 		    __ham_metachk(dbp, name, (HMETA *)meta)) != 0)
+			return (ret);
+		break;
+	case DB_HEAPMAGIC:
+		if (dbp->type != DB_UNKNOWN && dbp->type != DB_HEAP)
+			goto bad_format;
+
+		dbp->type = DB_HEAP;
+		if ((oflags & DB_TRUNCATE) == 0 && (ret =
+		    __heap_metachk(dbp, name, (HEAPMETA *)meta)) != 0)
 			return (ret);
 		break;
 	case DB_QAMMAGIC:
@@ -649,9 +659,9 @@ bad_format:
 	if (F_ISSET(dbp, DB_AM_RECOVER))
 		ret = ENOENT;
 	else
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("0641",
 		    "__db_meta_setup: %s: unexpected file type or format",
-		    name);
+		    "%s"), name);
 	return (ret == 0 ? EINVAL : ret);
 }
 
@@ -682,6 +692,8 @@ __db_reopen(arg_dbc)
 	COMPQUIET(bt, NULL);
 	COMPQUIET(ht, NULL);
 	COMPQUIET(txn, NULL);
+	LOCK_INIT(new_lock);
+	LOCK_INIT(old_lock);
 
 	/*
 	 * This must be done in the context of a transaction.  If the
@@ -721,6 +733,17 @@ __db_reopen(arg_dbc)
 	    dbc->thread_info, dbc->txn, 0, &old_page)) != 0 &&
 	    ret != DB_PAGE_NOTFOUND)
 		goto err;
+
+	/* If the page is free we must not hold its lock. */
+	if (ret == DB_PAGE_NOTFOUND || TYPE(old_page) == P_INVALID) {
+		if ((ret = __LPUT(dbc, old_lock)) != 0)
+			goto err;
+		/* Drop the latch too. */
+		if (old_page != NULL && (ret = __memp_fput(dbp->mpf,
+		    dbc->thread_info, old_page, dbc->priority)) != 0)
+			goto err;
+		old_page = NULL;
+	}
 
 	if ((ret = __db_master_open(dbp,
 	    dbc->thread_info, dbc->txn, dbp->fname, 0, 0, &mdbp)) != 0)

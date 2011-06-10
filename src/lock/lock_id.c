@@ -169,7 +169,8 @@ __lock_id_free_pp(dbenv, id)
 		if (sh_locker != NULL)
 			ret = __lock_freelocker_int(lt, region, sh_locker, 1);
 		else {
-			__db_errx(env, "Unknown locker id: %lx", (u_long)id);
+			__db_errx(env, DB_STR_A("2045",
+			    "Unknown locker id: %lx", "%lx"), (u_long)id);
 			ret = EINVAL;
 		}
 	}
@@ -202,7 +203,8 @@ __lock_id_free(env, sh_locker)
 	ret = 0;
 
 	if (sh_locker->nlocks != 0) {
-		__db_errx(env, "Locker still has locks");
+		__db_errx(env, DB_STR("2046",
+		    "Locker still has locks"));
 		ret = EINVAL;
 		goto err;
 	}
@@ -287,7 +289,7 @@ __lock_getlocker_int(lt, locker, create, retp)
 	DB_THREAD_INFO *ip;
 	ENV *env;
 	db_mutex_t mutex;
-	u_int32_t indx;
+	u_int32_t i, indx, nlockers;
 	int ret;
 
 	env = lt->env;
@@ -303,6 +305,7 @@ __lock_getlocker_int(lt, locker, create, retp)
 		if (sh_locker->id == locker)
 			break;
 	if (sh_locker == NULL && create) {
+		nlockers = 0;
 		/* Create new locker and then insert it into hash table. */
 		if ((ret = __mutex_alloc(env, MTX_LOGICAL_LOCK,
 		    DB_MUTEX_LOGICAL_LOCK | DB_MUTEX_SELF_BLOCK,
@@ -311,8 +314,47 @@ __lock_getlocker_int(lt, locker, create, retp)
 		else
 			MUTEX_LOCK(env, mutex);
 		if ((sh_locker = SH_TAILQ_FIRST(
-		    &region->free_lockers, __db_locker)) == NULL)
-			return (__lock_nomem(env, "locker entries"));
+		    &region->free_lockers, __db_locker)) == NULL) {
+			nlockers = region->stat.st_lockers >> 2;
+			/* Just in case. */
+			if (nlockers == 0)
+				nlockers = 1;
+			if (region->stat.st_maxlockers != 0 &&
+			    region->stat.st_maxlockers <
+			    region->stat.st_lockers + nlockers)
+				nlockers = region->stat.st_maxlockers -
+				region->stat.st_lockers;
+			/*
+			 * Don't hold lockers when getting the region,
+			 * we could deadlock.  When creating a locker
+			 * there is no race since the id allocation
+			 * is syncrhonized.
+			 */
+			UNLOCK_LOCKERS(env, region);
+			LOCK_REGION_LOCK(env);
+			/*
+			 * If the max memory is not sized for max objects,
+			 * allocate as much as possible.
+			 */
+			F_SET(&lt->reginfo, REGION_TRACKED);
+			while (__env_alloc(&lt->reginfo, nlockers *
+			    sizeof(struct __db_locker), &sh_locker) != 0)
+				if ((nlockers >> 1) == 0)
+					break;
+			F_CLR(&lt->reginfo, REGION_TRACKED);
+			LOCK_REGION_UNLOCK(lt->env);
+			LOCK_LOCKERS(env, region);
+			for (i = 0; i < nlockers; i++) {
+				SH_TAILQ_INSERT_HEAD(&region->free_lockers,
+				    sh_locker, links, __db_locker);
+				sh_locker++;
+			}
+			if (nlockers == 0)
+				return (__lock_nomem(env, "locker entries"));
+			region->stat.st_lockers += nlockers;
+			sh_locker = SH_TAILQ_FIRST(
+			    &region->free_lockers, __db_locker);
+		}
 		SH_TAILQ_REMOVE(
 		    &region->free_lockers, sh_locker, links, __db_locker);
 		++region->nlockers;
@@ -347,7 +389,7 @@ __lock_getlocker_int(lt, locker, create, retp)
 		ENV_GET_THREAD_INFO(env, ip);
 #ifdef DIAGNOSTIC
 		if (ip != NULL)
-			ip->dbth_locker = sh_locker;
+			ip->dbth_locker = R_OFFSET(&lt->reginfo, sh_locker);
 #endif
 	}
 
@@ -442,7 +484,8 @@ __lock_freelocker_int(lt, region, sh_locker, reallyfree)
 	env = lt->env;
 
 	if (SH_LIST_FIRST(&sh_locker->heldby, __db_lock) != NULL) {
-		__db_errx(env, "Freeing locker with locks");
+		__db_errx(env, DB_STR("2047",
+		    "Freeing locker with locks"));
 		return (EINVAL);
 	}
 

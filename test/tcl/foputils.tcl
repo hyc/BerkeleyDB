@@ -82,7 +82,7 @@ proc do_rename {names txn env} {
 	    $oldname $newname} result]} {
 		return $result
 	} else {
-		return 0
+	    return 0
 	}
 }
 
@@ -221,6 +221,7 @@ proc do_inmem_truncate {omethod names txn env {largs ""}} {
 
 proc create_tests { op1 op2 exists noexist open retval { end1 "" } } {
 	set retlist {}
+	set redundant {}
 	switch $op1 {
 		rename {
 			# Use first element from exists list
@@ -231,11 +232,17 @@ proc create_tests { op1 op2 exists noexist open retval { end1 "" } } {
 			# This is the first operation, which should succeed
 			set op1ret [list $op1 "$from $to" 0 $end1]
 
-			# Adjust 'exists' and 'noexist' list if and only if
-			# txn1 was not aborted.
+			# Adjust 'exists' and 'noexist' list if txn was
+			# not aborted.
 			if { $end1 != "abort" } {
 				set exists [lreplace $exists 0 0 $to]
 				set noexist [lreplace $noexist 0 0 $from]
+			} else {
+				# Eliminate the 2nd element in noexist: it is
+				# equivalent to the 1st (neither ever exists).
+				set noexist [lreplace $noexist 1 1]
+				set redundant [lindex $exists 1]
+				set exists [lreplace $exists 1 1]
 			}
 		}
 		remove {
@@ -245,6 +252,10 @@ proc create_tests { op1 op2 exists noexist open retval { end1 "" } } {
 			if { $end1 != "abort" } {
 				set exists [lreplace $exists 0 0]
 				set noexist [lreplace $noexist 0 0 $from]
+			} else {
+				set redundant [lindex $exists 1]
+				set exists [lreplace $exists 1 1]
+				set noexist [lreplace $noexist 1 1]
 			}
 		}
 		open_create -
@@ -256,11 +267,14 @@ proc create_tests { op1 op2 exists noexist open retval { end1 "" } } {
 			if { $end1 != "abort" } {
 				set exists [lreplace $exists 0 0]
 				set open [list $from]
+			} else {
+				set redundant [lindex $exists 1]
+				set exists [lreplace $exists 1 1]
 			}
 
-			# Eliminate the 1st element in noexist: it is
-			# equivalent to the 2nd element (neither ever exists).
-			set noexist [lreplace $noexist 0 0]
+			# Eliminate the 2nd element in noexist: it is
+			# equivalent to the 1st (neither ever exists).
+			set noexist [lreplace $noexist 1 1]
 		}
 		open_excl {
 			# Use first element from noexist list
@@ -270,12 +284,19 @@ proc create_tests { op1 op2 exists noexist open retval { end1 "" } } {
 			if { $end1 != "abort" } {
 				set noexist [lreplace $noexist 0 0]
 				set open [list $from]
+			} else {
+				set noexist [lreplace $noexist 1 1]
 			}
+			# It would be redundant to test both elements
+			# on the 'exists' list, but we do have to 
+			# keep track of both. 
+			set redundant [lindex $exists 1]
+			set exists [lreplace $exists 1 1]
 		}
 	}
 
 	# Generate possible second operations given the return value.
-	set op2list [create_op2 $op2 $exists $noexist $open $retval]
+	set op2list [create_op2 $op2 $exists $noexist $open $redundant $retval]
 
 	foreach o $op2list {
 		lappend retlist [list $op1ret $o]
@@ -301,9 +322,17 @@ proc create_badtests { op1 op2 exists noexist open retval {end1 ""} } {
 			    [list $op1 "$from $from" "file exists" $end1]
 			set op1list [list $op1list1 $op1list2 $op1list3]
 
+			# Since the op failed, trim the 'exists' and 'noexist'
+			# lists to a single case each. It is redundant 
+			# to test both elements on the 'exists' list, but 
+			# keep track of the fact that both still exist.
+			set noexist [lreplace $noexist 1 1]
+			set redundant [lindex $exists 1]
+			set exists [lreplace $exists 1 1]
+
 			# Generate second operations given the return value.
 			set op2list [create_op2 \
-			    $op2 $exists $noexist $open $retval]
+			    $op2 $exists $noexist $open $redundant $retval]
 			foreach op1 $op1list {
 				foreach op2 $op2list {
 					lappend retlist [list $op1 $op2]
@@ -317,8 +346,12 @@ proc create_badtests { op1 op2 exists noexist open retval {end1 ""} } {
 			set file [lindex $noexist 0]
 			set op1list [list $op1 $file "no such file" $end1]
 
+			set noexist [lreplace $noexist 1 1]
+			set redundant [lindex $exists 1]
+			set exists [lreplace $exists 1 1]
+
 			set op2list [create_op2 \
-			    $op2 $exists $noexist $open $retval]
+			    $op2 $exists $noexist $open $redundant $retval]
 			foreach op2 $op2list {
 				lappend retlist [list $op1list $op2]
 			}
@@ -327,8 +360,13 @@ proc create_badtests { op1 op2 exists noexist open retval {end1 ""} } {
 		open_excl {
 			set file [lindex $exists 0]
 			set op1list [list $op1 $file "file exists" $end1]
+
+			set noexist [lreplace $noexist 1 1]
+			set redundant [lindex $exists 1]
+			set exists [lreplace $exists 1 1]
+
 			set op2list [create_op2 \
-			    $op2 $exists $noexist $open $retval]
+			    $op2 $exists $noexist $open $redundant $retval]
 			foreach op2 $op2list {
 				lappend retlist [list $op1list $op2]
 			}
@@ -337,9 +375,9 @@ proc create_badtests { op1 op2 exists noexist open retval {end1 ""} } {
 	}
 }
 
-proc create_op2 { op2 exists noexist open retval } {
+proc create_op2 { op2 exists noexist open redundant retval } {
 	set retlist {}
-	set existing [concat $exists $open]
+	set existing [concat $exists $open $redundant]
 	switch $op2 {
 		rename {
 			# Successful renames arise from renaming existing

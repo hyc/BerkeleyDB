@@ -189,6 +189,7 @@ proc rep005_elect { ecmd celist qdir msg count \
     winner lsn_lose elist logset} {
 	global timeout_ok
 	global databases_in_memory
+	global repfiles_in_memory
 	upvar $ecmd env_cmd
 	upvar $celist envlist
 	upvar $winner win
@@ -290,7 +291,7 @@ proc rep005_elect { ecmd celist qdir msg count \
 		set lsn_len [expr [llength $lsn_win] - 1]
 		set lsn_index [berkdb random_int 0 $lsn_len]
 		set rec_arg ""
-		set win_inmem [expr [string compare [lindex $logset \
+		set win_logs_inmem [expr [string compare [lindex $logset \
 		    [expr $win + 1]] in-memory] == 0]
 		if { [lindex $lsn_win $lsn_index] == 1 } {
 			set last_win $win
@@ -313,19 +314,20 @@ proc rep005_elect { ecmd celist qdir msg count \
 			set rec_win { 0 0 0 0 0 0 1 1 1 1 }
 			set rec_len [expr [llength $rec_win] - 1]
 			set rec_index [berkdb random_int 0 $rec_len]
-			if { [lindex $rec_win $rec_index] == 1 } {
+			if { !$repfiles_in_memory && \
+			    [lindex $rec_win $rec_index] == 1 } {
 				puts -nonewline "and recovering "
 				set rec_arg "-recover"
 				#
-				# If we're in memory and about to run
-				# recovery, we force ourselves not to win
+				# If logs are in memory and we are about to
+				# run recovery, we force ourselves not to win
 				# the next election because recovery will
 				# blow away the entire log in memory.
 				# However, we don't skip this entirely
 				# because we still want to force reading
 				# of __db.rep.egen.
 				#
-				if { $win_inmem } {
+				if { $win_logs_inmem } {
 					set last_win $win
 				} else {
 					set last_win -1
@@ -343,7 +345,7 @@ proc rep005_elect { ecmd celist qdir msg count \
 		# new Tcl handle name in there.
 		set newel "$clientenv($win) [expr $win + 2]"
 		set envlist [lreplace $envlist $win $win $newel]
-		if { $rec_arg == "" || $win_inmem } {
+		if { $rec_arg == "" || $win_logs_inmem } {
 			set win -1
 		}
 		#

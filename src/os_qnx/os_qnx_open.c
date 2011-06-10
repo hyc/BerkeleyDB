@@ -66,7 +66,7 @@ err:		(void)__os_closehandle(env, fhp);
 	if ((fcntl_flags = fcntl(fhp->fd, F_GETFD)) == -1 ||
 	    fcntl(fhp->fd, F_SETFD, fcntl_flags | FD_CLOEXEC) == -1) {
 		ret = __os_get_syserr();
-		__db_syserr(env, ret, "fcntl(F_SETFD)");
+		__db_syserr(env, ret, DB_STR("0001", "fcntl(F_SETFD)"));
 		(void)__os_closehandle(env, fhp);
 		return (__os_posix_err(ret));
 	}

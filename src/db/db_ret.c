@@ -11,6 +11,7 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_am.h"
+#include "dbinc/heap.h"
 
 /*
  * __db_ret --
@@ -31,11 +32,14 @@ __db_ret(dbc, h, indx, dbt, memp, memsize)
 	BKEYDATA *bk;
 	BOVERFLOW *bo;
 	DB *dbp;
+	HEAPHDR *hdr;
 	HOFFPAGE ho;
 	u_int32_t len;
 	u_int8_t *hk;
 	void *data;
 
+	if (F_ISSET(dbt, DB_DBT_READONLY))
+		return (0);
 	dbp = dbc->dbp;
 
 	switch (TYPE(h)) {
@@ -49,6 +53,13 @@ __db_ret(dbc, h, indx, dbt, memp, memsize)
 		}
 		len = LEN_HKEYDATA(dbp, h, dbp->pgsize, indx);
 		data = HKEYDATA_DATA(hk);
+		break;
+	case P_HEAP:
+		hdr = (HEAPHDR *)P_ENTRY(dbp, h, indx);
+		if (F_ISSET(hdr,(HEAP_RECSPLIT | HEAP_RECFIRST)))
+			return (__heapc_gsplit(dbc, dbt, memp, memsize));
+		len = hdr->size;
+		data = (u_int8_t *)hdr + sizeof(HEAPHDR);
 		break;
 	case P_LBTREE:
 	case P_LDUP:
@@ -87,6 +98,8 @@ __db_retcopy(env, dbt, data, len, memp, memsize)
 {
 	int ret;
 
+	if (F_ISSET(dbt, DB_DBT_READONLY))
+		return (0);
 	ret = 0;
 
 	/* If returning a partial record, reset the length. */

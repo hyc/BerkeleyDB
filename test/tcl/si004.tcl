@@ -103,9 +103,13 @@ proc si004 { methods {nentries 200} {tnum "004"} args } {
 		} else {
 			set pflag " -keylast "
 		}
-
-		set ret [eval {$pdbc put} $pflag \
-		    {$key [chop_data $pmethod $datum]}]
+		if { [is_heap $pmethod] } {
+		    set ret [eval {$pdb put} \
+			{$key [chop_data $pmethod $datum]}]
+		} else {
+		    set ret [eval {$pdbc put} $pflag \
+			{$key [chop_data $pmethod $datum]}]
+		}
 		error_check_good put($n) $ret 0
 	}
 	error_check_good pdbc_close [$pdbc close] 0

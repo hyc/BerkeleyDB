@@ -12,7 +12,10 @@
     <link rel="next" href="logc.html" title="The DB_LOGC Handle" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;set_lg_regionmax()</th>
@@ -49,12 +52,12 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
     </p>
       <p>
          The database environment's log region size may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "set_lg_regionmax", one or more whitespace characters, and the size in
-         bytes. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
-         read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file. The syntax of the entry
+         in that file is a single line with the string "set_lg_regionmax",
+         one or more whitespace characters, and the size in bytes. Because
+         the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the database environment is
+         opened, it will silently overrule configuration done before that
+         time.
     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;set_lg_regionmax()</code> method configures a database
@@ -80,7 +83,7 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52875568"></a>Parameters</h3>
+              <h3 class="title"><a id="id3910859"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -88,7 +91,7 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52885408"></a>lg_regionmax</h4>
+                <h4 class="title"><a id="id3911024"></a>lg_regionmax</h4>
               </div>
             </div>
           </div>
@@ -102,7 +105,7 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52895144"></a>Errors</h3>
+              <h3 class="title"><a id="id3911184"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -118,7 +121,7 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52907400"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3911387"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -132,7 +135,7 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52885472"></a>Class</h3>
+              <h3 class="title"><a id="id3911025"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -146,7 +149,7 @@ DB_ENV-&gt;set_lg_regionmax(DB_ENV *dbenv, u_int32_t lg_regionmax);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52909632"></a>See Also</h3>
+              <h3 class="title"><a id="id3911424"></a>See Also</h3>
             </div>
           </div>
         </div>

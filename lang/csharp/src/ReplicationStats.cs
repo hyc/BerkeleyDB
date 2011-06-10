@@ -67,7 +67,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Current environment ID. 
         /// </summary>
-        public int EnvID { get { return st.st_env_id; } }
+        public long EnvID { get { return st.st_env_id.ToInt64(); } }
         /// <summary>
         /// Current environment priority. 
         /// </summary>
@@ -113,6 +113,22 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong DuplicateLogRecords { get { return st.st_log_duplicated; } }
         /// <summary>
+        /// Number of lease validity checks. 
+        /// </summary>
+        public ulong LeaseCheckedNumber { get { return st.st_lease_chk; } }
+        /// <summary>
+        /// Number of invalid lease validity checks. 
+        /// </summary>
+        public ulong LeaseCheckedMissesNumber { get { return st.st_lease_chk_misses; } }
+        /// <summary>
+        /// Number of lease refresh attempts during lease validity checks. 
+        /// </summary>
+        public ulong LeaseCheckedRefreshNumber { get { return st.st_lease_chk_refresh; } }
+        /// <summary>
+        /// Number of live messages sent while using leases.
+        /// </summary>
+        public ulong LeaseSentNumber { get { return st.st_lease_sends; } }
+        /// <summary>
         /// Max. log records queued at once. 
         /// </summary>
         public ulong MaxQueuedLogRecords { get { return st.st_log_queued_max; } }
@@ -131,7 +147,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Env. ID of the current master. 
         /// </summary>
-        public int MasterEnvID { get { return st.st_master; } }
+        public long MasterEnvID { get { return st.st_master.ToInt64(); } }
         /// <summary>
         /// # of times we've switched masters. 
         /// </summary>
@@ -207,11 +223,15 @@ namespace BerkeleyDB {
         /// <summary>
         /// Current front-runner. 
         /// </summary>
-        public int CurrentWinner { get { return st.st_election_cur_winner; } }
+        public long CurrentWinner { get { return st.st_election_cur_winner.ToInt64(); } }
         /// <summary>
         /// Election generation number. 
         /// </summary>
         public uint ElectionGenerationNumber { get { return st.st_election_gen; } }
+        /// <summary>
+        /// Winner data generation. 
+        /// </summary>
+        public uint ElectionDataGeneration { get { return st.st_election_datagen; } }
         /// <summary>
         /// Max. LSN of current winner. 
         /// </summary>

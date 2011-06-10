@@ -195,16 +195,16 @@ __bam_set_flags(dbp, flagsp)
 #ifdef HAVE_COMPRESSION
 	/* DB_RECNUM is incompatible with compression */
 	if (LF_ISSET(DB_RECNUM) && DB_IS_COMPRESSED(dbp)) {
-		__db_errx(dbp->env,
-		    "DB_RECNUM cannot be used with compression");
+		__db_errx(dbp->env, DB_STR("1024",
+		    "DB_RECNUM cannot be used with compression"));
 		return (EINVAL);
 	}
 
 	/* DB_DUP without DB_DUPSORT is incompatible with compression */
 	if (LF_ISSET(DB_DUP) && !LF_ISSET(DB_DUPSORT) &&
 		!F_ISSET(dbp, DB_AM_DUPSORT) && DB_IS_COMPRESSED(dbp)) {
-		__db_errx(dbp->env,
-		   "DB_DUP cannot be used with compression without DB_DUPSORT");
+		__db_errx(dbp->env, DB_STR("1025",
+	    "DB_DUP cannot be used with compression without DB_DUPSORT"));
 		return (EINVAL);
 	}
 #endif
@@ -306,7 +306,8 @@ __bam_get_bt_compress(dbp, compressp, decompressp)
 	COMPQUIET(compressp, NULL);
 	COMPQUIET(decompressp, NULL);
 
-	__db_errx(dbp->env, "compression support has not been compiled in");
+	__db_errx(dbp->env, DB_STR("1026",
+	    "compression support has not been compiled in"));
 	return (EINVAL);
 #endif
 }
@@ -338,15 +339,15 @@ __bam_set_bt_compress(dbp, compress, decompress)
 
 	/* compression is incompatible with DB_RECNUM */
 	if (F_ISSET(dbp, DB_AM_RECNUM)) {
-		__db_errx(dbp->env,
-		    "compression cannot be used with DB_RECNUM");
+		__db_errx(dbp->env, DB_STR("1027",
+		    "compression cannot be used with DB_RECNUM"));
 		return (EINVAL);
 	}
 
 	/* compression is incompatible with DB_DUP without DB_DUPSORT */
 	if (F_ISSET(dbp, DB_AM_DUP) && !F_ISSET(dbp, DB_AM_DUPSORT)) {
-		__db_errx(dbp->env,
-		   "compression cannot be used with DB_DUP without DB_DUPSORT");
+		__db_errx(dbp->env, DB_STR("1028",
+	    "compression cannot be used with DB_DUP without DB_DUPSORT"));
 		return (EINVAL);
 	}
 
@@ -357,8 +358,8 @@ __bam_set_bt_compress(dbp, compress, decompress)
 		t->bt_compress = __bam_defcompress;
 		t->bt_decompress = __bam_defdecompress;
 	} else {
-		__db_errx(dbp->env,
-	    "to enable compression you need to supply both function arguments");
+		__db_errx(dbp->env, DB_STR("1029",
+    "to enable compression you need to supply both function arguments"));
 		return (EINVAL);
 	}
 	F_SET(dbp, DB_AM_COMPRESS);
@@ -375,7 +376,8 @@ __bam_set_bt_compress(dbp, compress, decompress)
 	COMPQUIET(compress, NULL);
 	COMPQUIET(decompress, NULL);
 
-	__db_errx(dbp->env, "compression support has not been compiled in");
+	__db_errx(dbp->env, DB_STR("1030",
+	    "compression support has not been compiled in"));
 	return (EINVAL);
 #endif
 }
@@ -417,7 +419,8 @@ __bam_set_bt_minkey(dbp, bt_minkey)
 	t = dbp->bt_internal;
 
 	if (bt_minkey < 2) {
-		__db_errx(dbp->env, "minimum bt_minkey value is 2");
+		__db_errx(dbp->env, DB_STR("1031",
+		    "minimum bt_minkey value is 2"));
 		return (EINVAL);
 	}
 
@@ -620,7 +623,9 @@ __ram_set_re_len(dbp, re_len)
 	u_int32_t re_len;
 {
 	BTREE *t;
+#ifdef HAVE_QUEUE
 	QUEUE *q;
+#endif
 
 	DB_ILLEGAL_AFTER_OPEN(dbp, "DB->set_re_len");
 	DB_ILLEGAL_METHOD(dbp, DB_OK_QUEUE | DB_OK_RECNO);
@@ -628,8 +633,10 @@ __ram_set_re_len(dbp, re_len)
 	t = dbp->bt_internal;
 	t->re_len = re_len;
 
+#ifdef HAVE_QUEUE
 	q = dbp->q_internal;
 	q->re_len = re_len;
+#endif
 
 	F_SET(dbp, DB_AM_FIXEDLEN);
 
@@ -680,7 +687,9 @@ __ram_set_re_pad(dbp, re_pad)
 	int re_pad;
 {
 	BTREE *t;
+#ifdef HAVE_QUEUE
 	QUEUE *q;
+#endif
 
 	DB_ILLEGAL_AFTER_OPEN(dbp, "DB->set_re_pad");
 	DB_ILLEGAL_METHOD(dbp, DB_OK_QUEUE | DB_OK_RECNO);
@@ -688,8 +697,10 @@ __ram_set_re_pad(dbp, re_pad)
 	t = dbp->bt_internal;
 	t->re_pad = re_pad;
 
+#ifdef HAVE_QUEUE
 	q = dbp->q_internal;
 	q->re_pad = re_pad;
+#endif
 
 	F_SET(dbp, DB_AM_PAD);
 

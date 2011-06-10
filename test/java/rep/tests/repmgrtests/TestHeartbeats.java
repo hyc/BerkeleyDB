@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  * 
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -10,6 +10,7 @@ package repmgrtests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,7 +29,7 @@ import com.sleepycat.db.DatabaseType;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationManagerStats;
 import com.sleepycat.db.ReplicationTimeoutType;
@@ -46,7 +47,6 @@ public class TestHeartbeats {
     Socket s;
     private int masterPort;
     private int clientPort;
-    private int masterSpoofPort;
     private int client2Port;
     private int mgrPort;
 
@@ -94,17 +94,18 @@ public class TestHeartbeats {
             masterPort = 6000;
             clientPort = 6001;
             client2Port = 6002;
-            masterSpoofPort = 7000;
             mgrPort = 8000;
             fiddler = null;
         } else {
+            String mgrPortNum = System.getenv("DB_TEST_FAKE_PORT");
+            assertNotNull("required DB_TEST_FAKE_PORT environment variable not found",
+                          mgrPortNum);
+            mgrPort = Integer.parseInt(mgrPortNum);
             PortsConfig p = new PortsConfig(3);
             masterPort = p.getRealPort(0);
-            masterSpoofPort = p.getSpoofPort(0);
             clientPort = p.getRealPort(1);
             client2Port = p.getRealPort(2);
-            mgrPort = p.getManagerPort();
-            fiddler = Util.startFiddler(p, getClass().getName());
+            fiddler = Util.startFiddler(p, getClass().getName(), mgrPort);
         }
     }
 
@@ -116,13 +117,17 @@ public class TestHeartbeats {
     // 
     @Test(timeout=120000) public void testMonitorCallElect() throws Exception {
         EnvironmentConfig masterConfig = makeBasicConfig();
-        masterConfig.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
+        ReplicationManagerSiteConfig site =
+            new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setLocalSite(true);
+        masterConfig.addReplicationManagerSite(site);
         MyEventHandler masterMonitor = new MyEventHandler();
         masterConfig.setEventHandler(masterMonitor);
         File masterDir = mkdir("master");
         Environment master = new Environment(masterDir, masterConfig);
         master.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_SEND, 3000000);
         master.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_MONITOR, 5000000);
+        master.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY, 3000000);
         master.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_MASTER);
         DatabaseConfig dc = new DatabaseConfig();
         dc.setTransactional(true);
@@ -134,24 +139,30 @@ public class TestHeartbeats {
         // create two clients, wait for them to finish sync-ing up
         // 
         MyEventHandler clientMonitor = new MyEventHandler();
-        EnvironmentConfig ec = makeClientConfig(clientMonitor, clientPort, masterSpoofPort);
+        EnvironmentConfig ec = makeClientConfig(clientMonitor, clientPort, masterPort);
         
         File clientDir = mkdir("client");
         Environment client = new Environment(clientDir, ec);
         client.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_SEND, 3000000);
         client.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_MONITOR, 5000000);
+        client.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY, 3000000);
         client.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
         clientMonitor.await();
 
         MyEventHandler client2Monitor = new MyEventHandler();
-        ec = makeClientConfig(client2Monitor, client2Port, masterSpoofPort);
+        ec = makeClientConfig(client2Monitor, client2Port, masterPort);
         
         File client2Dir = mkdir("client2");
         Environment client2 = new Environment(client2Dir, ec);
         client2.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_SEND, 3000000);
         client2.setReplicationTimeout(ReplicationTimeoutType.HEARTBEAT_MONITOR, 5000000);
+        client2.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY, 3000000);
         client2.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
         client2Monitor.await();
+
+        StatsConfig statsConfig = new StatsConfig();
+        statsConfig.setClear(true);
+        master.getReplicationManagerStats(statsConfig);
 
         // do some transactions, at a leisurely pace (but quicker than
         // the hb period)
@@ -218,32 +229,18 @@ public class TestHeartbeats {
         fiddler = null;
     }
 
-    // TODO: what happens when we "freeze" connection to only one of
-    // the clients?  The loser would call for an election, but when
-    // the other client joins, it would get smacked down by the
-    // existing master.  I guess that means the loser client would
-    // remain in the election loop, endlessly retrying.  I'm sure
-    // that's the correct behavior, but I wonder if there's anything
-    // worth testing about it.  Eventually it retries a connection to
-    // the master, and I guess that succeeds.  I guess we could check
-    // that that works, and that everything eventually settles down
-    // again, including having the client eventually get all missing
-    // data.
-    // 
-    // election timeout: 1 second
-    // election retry: 1 second (?)
-    // connection retry: 3-4 seconds?
-    // 
-    @Test public void disagreement() throws Exception {
-    }
-
     private EnvironmentConfig makeClientConfig(MyEventHandler evHandler,
                                                int clientPort, int masterPort)
         throws Exception
     {
         EnvironmentConfig ec = makeBasicConfig();
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterPort), false);
+        ReplicationManagerSiteConfig site =
+            new ReplicationManagerSiteConfig("localhost", clientPort);
+        site.setLocalSite(true);
+        ec.addReplicationManagerSite(site);
+        site = new ReplicationManagerSiteConfig("localhost", masterPort);
+        site.setBootstrapHelper(true);
+        ec.addReplicationManagerSite(site);
         ec.setEventHandler(evHandler);
         return (ec);
     }
@@ -257,7 +254,6 @@ public class TestHeartbeats {
         ec.setInitializeReplication(true);
         ec.setTransactional(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(3);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);

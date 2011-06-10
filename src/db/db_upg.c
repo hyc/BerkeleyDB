@@ -50,7 +50,7 @@ __db_upgrade_pp(dbp, fname, flags)
 	COMPQUIET(fname, NULL);
 	COMPQUIET(flags, 0);
 
-	__db_errx(dbp->env, "upgrade not supported");
+	__db_errx(dbp->env, DB_STR("0665", "upgrade not supported"));
 	return (EINVAL);
 #endif
 }
@@ -72,6 +72,9 @@ static int (* const func_31_list[P_PAGETYPE_MAX])
 	NULL,			/* P_QAMDATA */
 	NULL,			/* P_LDUP */
 	NULL,			/* P_HASH */
+	NULL,			/* P_HEAPMETA */
+	NULL,			/* P_HEAP */
+	NULL,			/* P_IHEAP */
 };
 
 static int (* const func_46_list[P_PAGETYPE_MAX])
@@ -90,6 +93,9 @@ static int (* const func_46_list[P_PAGETYPE_MAX])
 	NULL,			/* P_QAMDATA */
 	NULL,			/* P_LDUP */
 	NULL,			/* P_HASH */
+	NULL,			/* P_HEAPMETA */
+	NULL,			/* P_HEAP */
+	NULL,			/* P_IHEAP */
 };
 
 static int __db_page_pass __P((DB *, char *, u_int32_t, int (* const [])
@@ -177,7 +183,8 @@ __db_upgrade(dbp, fname, flags)
 		case 9:
 			break;
 		default:
-			__db_errx(env, "%s: unsupported btree version: %lu",
+			__db_errx(env, DB_STR_A("0666",
+			    "%s: unsupported btree version: %lu", "%s %lu"),
 			    real_name, (u_long)((DBMETA *)mbuf)->version);
 			ret = DB_OLD_VERSION;
 			goto err;
@@ -265,8 +272,8 @@ __db_upgrade(dbp, fname, flags)
 			memcpy(&tmpflags, &meta->encrypt_alg, sizeof(u_int8_t));
 			if (tmpflags != 0) {
 				if (!CRYPTO_ON(dbp->env)) {
-					__db_errx(env,
-"Attempt to upgrade an encrypted database without providing a password.");
+					__db_errx(env, DB_STR("0667",
+"Attempt to upgrade an encrypted database without providing a password."));
 					ret = EINVAL;
 					goto err;
 				}
@@ -302,7 +309,8 @@ __db_upgrade(dbp, fname, flags)
 		case 9:
 			break;
 		default:
-			__db_errx(env, "%s: unsupported hash version: %lu",
+			__db_errx(env, DB_STR_A("0668",
+			    "%s: unsupported hash version: %lu", "%s %lu"),
 			    real_name, (u_long)((DBMETA *)mbuf)->version);
 			ret = DB_OLD_VERSION;
 			goto err;
@@ -331,8 +339,10 @@ __db_upgrade(dbp, fname, flags)
 		case 4:
 			break;
 		default:
-			__db_errx(env, "%s: unsupported queue version: %lu",
-			    real_name, (u_long)((DBMETA *)mbuf)->version);
+			__db_errx(env, DB_STR_A("0669",
+			    "%s: unsupported queue version: %lu",
+			    "%s %lu"), real_name,
+			    (u_long)((DBMETA *)mbuf)->version);
 			ret = DB_OLD_VERSION;
 			goto err;
 		}
@@ -343,13 +353,13 @@ __db_upgrade(dbp, fname, flags)
 		case DB_BTREEMAGIC:
 		case DB_HASHMAGIC:
 		case DB_QAMMAGIC:
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("0670",
 		"%s: DB->upgrade only supported on native byte-order systems",
-			    real_name);
+			    "%s"), real_name);
 			break;
 		default:
-			__db_errx(env,
-			    "%s: unrecognized file type", real_name);
+			__db_errx(env, DB_STR_A("0671",
+			    "%s: unrecognized file type", "%s"), real_name);
 			break;
 		}
 		ret = EINVAL;
@@ -464,8 +474,9 @@ __db_lastpgno(dbp, real_name, fhp, pgno_lastp)
 
 	/* Page sizes have to be a power-of-two. */
 	if (bytes % dbp->pgsize != 0) {
-		__db_errx(env,
-		    "%s: file size not a multiple of the pagesize", real_name);
+		__db_errx(env, DB_STR_A("0672",
+		    "%s: file size not a multiple of the pagesize", "%s"),
+		    real_name);
 		return (EINVAL);
 	}
 	pgno_last = mbytes * (MEGABYTE / dbp->pgsize);

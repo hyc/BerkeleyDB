@@ -114,7 +114,7 @@ typedef struct __qam_filelist {
     QAM_PAGE_EXTENT(dbp, QAM_RECNO_PAGE(dbp, recno))
 
 #define	QAM_RECNO_INDEX(dbp, pgno, recno)				\
-    (((recno) - 1) - (QAM_RECNO_PER_PAGE(dbp)				\
+    (u_int32_t)(((recno) - 1) - (QAM_RECNO_PER_PAGE(dbp)		\
     * (pgno - ((QUEUE *)(dbp)->q_internal)->q_root)))
 
 #define	QAM_GET_RECORD(dbp, page, index)				\
@@ -137,6 +137,25 @@ typedef struct __qam_filelist {
 #define	QAM_NOT_VALID(meta, recno)					\
     (recno == RECNO_OOB ||						\
 	QAM_BEFORE_FIRST(meta, recno) || QAM_AFTER_CURRENT(meta, recno))
+
+#define QAM_WAKEUP(dbc, ret) do {					\
+	if (STD_LOCKING(dbc)) {						\
+		dbc->lock.pgno = PGNO_INVALID;				\
+		dbc->lock.type = DB_PAGE_LOCK;				\
+		ret = __lock_wakeup((dbc)->dbp->env, &(dbc)->lock_dbt);	\
+	} else								\
+		ret = 0;						\
+} while (0)
+
+/* Handle wrap around. */
+#define QAM_INC_RECNO(recno) do {					\
+	recno++;							\
+} while (recno == RECNO_OOB)
+
+#define QAM_DEC_RECNO(recno) do {					\
+	recno--;							\
+} while (recno == RECNO_OOB)
+
 
 /*
  * Log opcodes for the mvptr routine.

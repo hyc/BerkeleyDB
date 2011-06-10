@@ -30,7 +30,8 @@ __os_exists(env, path, isdirp)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: stat %s", path);
+		__db_msg(env, DB_STR_A("0165",
+		    "fileops: stat %s", "%s"), path);
 
 	if (DB_GLOBAL(j_exists) != NULL)
 		return (DB_GLOBAL(j_exists)(path, isdirp));
@@ -79,7 +80,7 @@ __os_ioinfo(env, path, fhp, mbytesp, bytesp, iosizep)
 
 	RETRY_CHK((fstat(fhp->fd, &sb)), ret);
 	if (ret != 0) {
-		__db_syserr(env, ret, "fstat");
+		__db_syserr(env, ret, DB_STR("0166", "fstat"));
 		return (__os_posix_err(ret));
 	}
 

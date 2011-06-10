@@ -7,19 +7,22 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="tcl.html" title="Chapter 20.  Berkeley DB Extensions: Tcl" />
+    <link rel="up" href="tcl.html" title="Chapter 21.  Berkeley DB Extensions: Tcl" />
     <link rel="prev" href="tcl_using.html" title="Using Berkeley DB with Tcl" />
     <link rel="next" href="tcl_error.html" title="Tcl error handling" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Tcl API programming notes</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="tcl_using.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 20. 
+          <th width="60%" align="center">Chapter 21. 
 		Berkeley DB Extensions: Tcl
         </th>
           <td width="20%" align="right"> <a accesskey="n" href="tcl_error.html">Next</a></td>
@@ -53,7 +56,7 @@ from multiple threads.</p>
 Any of the functions that require a user-provided function are not
 supported via the Tcl API. For example, there is no equivalent to the
 <a href="../api_reference/C/dbset_dup_compare.html" class="olink">DB-&gt;set_dup_compare()</a> or <a href="../api_reference/C/envset_errcall.html" class="olink">DB_ENV-&gt;set_errcall()</a> methods.
-methods.</p>
+Additionally, the heap access method is not available.</p>
     </div>
     <div class="navfooter">
       <hr />

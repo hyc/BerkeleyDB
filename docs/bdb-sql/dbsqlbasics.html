@@ -12,7 +12,10 @@
     <link rel="next" href="buildinstall.html" title="Getting and Installing BDB SQL" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Chapter 1. Berkeley DB SQL: The Absolute Basics</th>
@@ -60,6 +63,11 @@
                   <a href="buildinstall.html#onunix">On Unix</a>
                 </span>
               </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="buildinstall.html#ado_net">The BDB SQL ADO.NET Interface</a>
+                </span>
+              </dt>
             </dl>
           </dd>
           <dt>
@@ -81,12 +89,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="changedpragmas.html#journal_size_limit">PRAGMA journal_size_limit</a>
+                  <a href="changedpragmas.html#auto_vacuum">PRAGMA auto_vacuum</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="changedpragmas.html#max_page_count">PRAGMA max_page_count</a>
+                  <a href="changedpragmas.html#incremental_vacuum">PRAGMA incremental_vacuum</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changedpragmas.html#journal_size_limit">PRAGMA journal_size_limit</a>
                 </span>
               </dt>
             </dl>
@@ -100,7 +113,47 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="addedpragmas.html#pragma_txn_bulk">PRAGMA TXN_BULK</a>
+                  <a href="addedpragmas.html#bdbsql_error_file"></a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#bdbsql_system_memory">PRAGMA bdbsql_system_memory</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#bdbsql_vacuum_fillpercent">PRAGMA bdbsql_vacuum_fillpercent</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#bdbsql_vacuum_pages">PRAGMA bdbsql_vacuum_pages</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#multiversion">PRAGMA multiversion</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#snapshot_isolation">PRAGMA snapshot_isolation</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#trickle">PRAGMA trickle</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#txn_bulk">PRAGMA txn_bulk</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="addedpragmas.html#replication_pragmas">Replication PRAGMAs</a>
                 </span>
               </dt>
             </dl>
@@ -120,6 +173,40 @@
               <a href="sql_encryption.html">Encryption</a>
             </span>
           </dt>
+          <dt>
+            <span class="sect1">
+              <a href="sequencesupport.html">Using Sequences</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="sequencesupport.html#create_sequence">create_sequence</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="sequencesupport.html#seq_nextval">nextval</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="sequencesupport.html#seq_currval">currval</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="sequencesupport.html#seq_drop_sequence">drop_sequence</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="normal-sql.html">Differences for Users of other SQL Engines</a>
+            </span>
+          </dt>
         </dl>
       </div>
       <p>
@@ -133,7 +220,7 @@
             If, however, you are using the BDB SQL interface for performance reasons,
             then you need to read this chapter, plus most of the rest of
             the chapters in this book (although you can probably skip most
-            of <a class="xref" href="admin.html" title="Chapter 4. Administrating Berkeley DB SQL Databases">Administrating Berkeley DB SQL Databases</a>, unless you 
+            of <a class="xref" href="admin.html" title="Chapter 5. Administrating Berkeley DB SQL Databases">Administrating Berkeley DB SQL Databases</a>, unless you 
             want to administer your database "the Berkeley DB way").
         </p>
       <p>

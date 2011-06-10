@@ -1,7 +1,22 @@
 package SQLite.JDBC2z;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.Properties;
 
 public class JDBCConnection
     implements java.sql.Connection, SQLite.BusyHandler {
@@ -87,6 +102,7 @@ public class JDBCConnection
 	return false;
     }
 
+    @Override
     public boolean busy(String table, int count) {
 	return busy0(db, count);
     }
@@ -114,7 +130,7 @@ public class JDBCConnection
 		      SQLite.Constants.SQLITE_OPEN_CREATE), vfs);
 	    dbx.set_encoding(enc);
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.toString());
+	    throw new SQLException(e);
 	}
 	int loop = 0;
 	while (true) {
@@ -132,7 +148,7 @@ public class JDBCConnection
 			dbx.close();
 		    } catch (SQLite.Exception ee) {
 		    }
-		    throw new SQLException(e.toString());
+		    throw new SQLException(e);
 		}
 		continue;
 	    }
@@ -161,7 +177,7 @@ public class JDBCConnection
 		    db.key(pwd);
 		}
 	    } catch (SQLite.Exception se) {
-		throw new SQLException("error while setting key");
+		throw new SQLException("error while setting key", se);
 	    }
 	    db.busy_handler(this);
 	} catch (SQLException e) {
@@ -179,14 +195,16 @@ public class JDBCConnection
 
     /* non-standard */
     public SQLite.Database getSQLiteDatabase() {
-	return (SQLite.Database) db;
+	return db;
     }
   
+    @Override
     public Statement createStatement() {
 	JDBCStatement s = new JDBCStatement(this);
 	return s;
     }
 
+    @Override
     public Statement createStatement(int resultSetType,
 				     int resultSetConcurrency)
 	throws SQLException {
@@ -203,6 +221,7 @@ public class JDBCConnection
 	return s;
     }
 	
+    @Override
     public DatabaseMetaData getMetaData() throws SQLException {
 	if (meta == null) {
 	    meta = new JDBCDatabaseMetaData(this);
@@ -210,6 +229,7 @@ public class JDBCConnection
 	return meta;
     }
 
+    @Override
     public void close() throws SQLException {
 	try {
 	    rollback();
@@ -222,22 +242,26 @@ public class JDBCConnection
 		db.close();
 		db = null;
 	    } catch (SQLite.Exception e) {
-		throw new SQLException(e.toString());
+		throw new SQLException(e);
 	    }
 	}
     }
 
+    @Override
     public boolean isClosed() throws SQLException {
 	return db == null;
     }
 
+    @Override
     public boolean isReadOnly() throws SQLException {
 	return readonly;
     }
 
+    @Override
     public void clearWarnings() throws SQLException {
     }
 
+    @Override
     public void commit() throws SQLException {
 	if (db == null) {
 	    throw new SQLException("stale connection");
@@ -249,44 +273,53 @@ public class JDBCConnection
 	    db.exec("COMMIT", null);
 	    intrans = false;
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.toString());
+	    throw new SQLException(e);
 	}
     }
 
+    @Override
     public boolean getAutoCommit() throws SQLException {
 	return autocommit;
     }
 
+    @Override
     public String getCatalog() throws SQLException {
 	return null;
     }
 
+    @Override
     public int getTransactionIsolation() throws SQLException {
 	return trmode;
     }
 
+    @Override
     public SQLWarning getWarnings() throws SQLException {
 	return null;
     }
 
+    @Override
     public String nativeSQL(String sql) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
 	throw new SQLException("not supported");
     }
 
+    @Override
     public CallableStatement prepareCall(String sql, int x, int y)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
 	JDBCPreparedStatement s = new JDBCPreparedStatement(this, sql);
 	return s;
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
 					      int resultSetConcurrency)
 	throws SQLException {
@@ -303,6 +336,7 @@ public class JDBCConnection
 	return s;
     }
 
+    @Override
     public void rollback() throws SQLException {
 	if (db == null) {
 	    throw new SQLException("stale connection");
@@ -314,16 +348,17 @@ public class JDBCConnection
 	    db.exec("ROLLBACK", null);
 	    intrans = false;
 	} catch (SQLite.Exception e) {
-	    throw new SQLException(e.toString());
+	    throw new SQLException(e);
 	}
     }
 
+    @Override
     public void setAutoCommit(boolean ac) throws SQLException {
 	if (ac && intrans && db != null) {
 	    try {
 		db.exec("ROLLBACK", null);
 	    } catch (SQLite.Exception e) {
-		throw new SQLException(e.toString());
+		throw new SQLException(e);
 	    } finally {
 		intrans = false;
 	    }
@@ -331,9 +366,11 @@ public class JDBCConnection
 	autocommit = ac;
     }
 
+    @Override
     public void setCatalog(String catalog) throws SQLException {
     }
 
+    @Override
     public void setReadOnly(boolean ro) throws SQLException {
 	if (intrans) {
 	    throw new SQLException("incomplete transaction");
@@ -355,11 +392,12 @@ public class JDBCConnection
 		    } catch (SQLite.Exception eee) {
 		    }
 		}
-		throw new SQLException(ee.toString());
+		throw new SQLException(ee);
 	    }
 	}
     }
 
+    @Override
     public void setTransactionIsolation(int level) throws SQLException {
 	if (db.is3() && SQLite.JDBCDriver.sharedCache) {
 	    String flag = null;
@@ -383,18 +421,22 @@ public class JDBCConnection
 	}
     }
 
+    @Override
     public java.util.Map<String, Class<?>> getTypeMap() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setTypeMap(java.util.Map map) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
   
+    @Override
     public int getHoldability() throws SQLException {
 	return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
+    @Override
     public void setHoldability(int holdability) throws SQLException {
 	if (holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT) {
 	    return;
@@ -402,22 +444,27 @@ public class JDBCConnection
 	throw new SQLFeatureNotSupportedException("unsupported holdability");
     }
 
+    @Override
     public Savepoint setSavepoint() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Savepoint setSavepoint(String name) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void rollback(Savepoint x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void releaseSavepoint(Savepoint x) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Statement createStatement(int resultSetType,
 				     int resultSetConcurrency,
 				     int resultSetHoldability)
@@ -428,6 +475,7 @@ public class JDBCConnection
 	return createStatement(resultSetType, resultSetConcurrency);
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
 					      int resultSetConcurrency,
 					      int resultSetHoldability)
@@ -438,11 +486,13 @@ public class JDBCConnection
 	return prepareStatement(sql, resultSetType, resultSetConcurrency);
     }
 
+    @Override
     public CallableStatement prepareCall(String sql, int x, int y, int z)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int autokeys)
 	throws SQLException {
 	if (autokeys != Statement.NO_GENERATED_KEYS) {
@@ -451,67 +501,82 @@ public class JDBCConnection
 	return prepareStatement(sql);
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int colIndexes[])
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, String columns[])
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Clob createClob() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Blob createBlob() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public NClob createNClob() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public SQLXML createSQLXML() throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public boolean isValid(int timeout) throws SQLException {
         return true;
     }
 
+    @Override
     public void setClientInfo(String name, String value)
 	throws SQLClientInfoException {
 	throw new SQLClientInfoException();
     }
 
+    @Override
     public void setClientInfo(Properties prop) throws SQLClientInfoException {
 	throw new SQLClientInfoException();
     }
 
+    @Override
     public String getClientInfo(String name) throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public Properties getClientInfo() throws SQLException {
         return new Properties();
     }
 
+    @Override
     public Array createArrayOf(String type, Object[] elems)
  	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Struct createStruct(String type, Object[] attrs)
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public <T> T unwrap(java.lang.Class<T> iface) throws SQLException {
 	throw new SQLException("unsupported");
     }
 
+    @Override
     public boolean isWrapperFor(java.lang.Class iface) throws SQLException {
 	return false;
     }
@@ -535,6 +600,7 @@ class DatabaseX extends SQLite.Database {
 	}
     }
 
+    @Override
     public void exec(String sql, SQLite.Callback cb)
 	throws SQLite.Exception {
 	super.exec(sql, cb);
@@ -543,6 +609,7 @@ class DatabaseX extends SQLite.Database {
 	}
     }
 
+    @Override
     public void exec(String sql, SQLite.Callback cb, String args[])
 	throws SQLite.Exception {
 	super.exec(sql, cb, args);
@@ -551,6 +618,7 @@ class DatabaseX extends SQLite.Database {
 	}
     }
 
+    @Override
     public SQLite.TableResult get_table(String sql, String args[])
 	throws SQLite.Exception {
 	SQLite.TableResult ret = super.get_table(sql, args);
@@ -560,6 +628,7 @@ class DatabaseX extends SQLite.Database {
 	return ret;
     }
 
+    @Override
     public void get_table(String sql, String args[], SQLite.TableResult tbl)
 	throws SQLite.Exception {
 	super.get_table(sql, args, tbl);

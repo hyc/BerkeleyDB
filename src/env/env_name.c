@@ -246,7 +246,8 @@ __db_tmp_open(env, oflags, fhpp)
 		 * of other possible errors, we've lost.
 		 */
 		if (ret != EEXIST) {
-			__db_err(env, ret, "temporary open: %s", path);
+			__db_err(env, ret, DB_STR_A("1586",
+			    "temporary open: %s", "%s"), path);
 			goto done;
 		}
 

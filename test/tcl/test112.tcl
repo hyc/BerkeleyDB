@@ -21,7 +21,7 @@ proc test112 { method {nentries 80000} {tnum "112"} args } {
 	global alphabet
 
 	# Compaction is an option for btree, recno, and hash databases.
-	if { [is_queue $method] == 1 } {
+        if { [is_queue $method] == 1 || [is_heap $method] == 1} {
 		puts "Skipping test$tnum for method $method."
 		return
 	}

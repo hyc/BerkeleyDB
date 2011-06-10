@@ -13,20 +13,19 @@
 #include "dbinc/txn.h"
 
 static int __txn_init __P((ENV *, DB_TXNMGR *));
-static size_t __txn_region_size __P((ENV *));
 
 /*
  * __txn_open --
  *	Open a transaction region.
  *
- * PUBLIC: int __txn_open __P((ENV *, int));
+ * PUBLIC: int __txn_open __P((ENV *));
  */
 int
-__txn_open(env, create_ok)
+__txn_open(env)
 	ENV *env;
-	int create_ok;
 {
 	DB_TXNMGR *mgr;
+	DB_TXNREGION *region;
 	int ret;
 
 	/* Create/initialize the transaction manager structure. */
@@ -36,14 +35,7 @@ __txn_open(env, create_ok)
 	mgr->env = env;
 
 	/* Join/create the txn region. */
-	mgr->reginfo.env = env;
-	mgr->reginfo.type = REGION_TYPE_TXN;
-	mgr->reginfo.id = INVALID_REGION_ID;
-	mgr->reginfo.flags = REGION_JOIN_OK;
-	if (create_ok)
-		F_SET(&mgr->reginfo, REGION_CREATE_OK);
-	if ((ret = __env_region_attach(env,
-	    &mgr->reginfo, __txn_region_size(env))) != 0)
+	if ((ret = __env_region_share(env, &mgr->reginfo)) != 0)
 		goto err;
 
 	/* If we created the region, initialize it. */
@@ -52,14 +44,16 @@ __txn_open(env, create_ok)
 			goto err;
 
 	/* Set the local addresses. */
-	mgr->reginfo.primary =
-	    R_ADDR(&mgr->reginfo, mgr->reginfo.rp->primary);
+	region = mgr->reginfo.primary =
+	    R_ADDR(&mgr->reginfo,
+	    ((REGENV *)env->reginfo->primary)->tx_primary);
 
 	/* If threaded, acquire a mutex to protect the active TXN list. */
 	if ((ret = __mutex_alloc(
 	    env, MTX_TXN_ACTIVE, DB_MUTEX_PROCESS_ONLY, &mgr->mutex)) != 0)
 		goto err;
 
+	mgr->reginfo.mtx_alloc = region->mtx_region;
 	env->tx_handle = mgr;
 	return (0);
 
@@ -111,21 +105,21 @@ __txn_init(env, mgr)
 
 	if ((ret = __env_alloc(&mgr->reginfo,
 	    sizeof(DB_TXNREGION), &mgr->reginfo.primary)) != 0) {
-		__db_errx(env,
-		    "Unable to allocate memory for the transaction region");
+		__db_errx(env, DB_STR("4508",
+		    "Unable to allocate memory for the transaction region"));
 		return (ret);
 	}
-	mgr->reginfo.rp->primary =
-	    R_OFFSET(&mgr->reginfo, mgr->reginfo.primary);
+	((REGENV *)env->reginfo->primary)->tx_primary =
+	     R_OFFSET(&mgr->reginfo, mgr->reginfo.primary);
 	region = mgr->reginfo.primary;
 	memset(region, 0, sizeof(*region));
 
-	if ((ret = __mutex_alloc(
-	    env, MTX_TXN_REGION, 0, &region->mtx_region)) != 0)
-		return (ret);
+	/* We share the region so we need the same mutex. */
+	region->mtx_region = ((REGENV *)env->reginfo->primary)->mtx_regenv;
 	mgr->reginfo.mtx_alloc = region->mtx_region;
 
 	region->maxtxns = dbenv->tx_max;
+	region->inittxns = dbenv->tx_init;
 	region->last_txnid = TXN_MINIMUM;
 	region->cur_maxid = TXN_MAXIMUM;
 
@@ -138,6 +132,7 @@ __txn_init(env, mgr)
 	memset(&region->stat, 0, sizeof(region->stat));
 #ifdef HAVE_STATISTICS
 	region->stat.st_maxtxns = region->maxtxns;
+	region->stat.st_inittxns = region->inittxns;
 #endif
 
 	SH_TAILQ_INIT(&region->active_txn);
@@ -246,25 +241,25 @@ __txn_env_refresh(env)
 			txnid = txn->txnid;
 			if (((TXN_DETAIL *)txn->td)->status == TXN_PREPARED) {
 				if ((ret = __txn_discard_int(txn, 0)) != 0) {
-					__db_err(env, ret,
+					__db_err(env, ret, DB_STR_A("4509",
 					    "unable to discard txn %#lx",
-					    (u_long)txnid);
+					    "%#lx"), (u_long)txnid);
 					break;
 				}
 				continue;
 			}
 			aborted = 1;
 			if ((t_ret = __txn_abort(txn)) != 0) {
-				__db_err(env, t_ret,
-				    "unable to abort transaction %#lx",
+				__db_err(env, t_ret, DB_STR_A("4510",
+				    "unable to abort transaction %#lx", "%#lx"),
 				    (u_long)txnid);
 				ret = __env_panic(env, t_ret);
 				break;
 			}
 		}
 		if (aborted) {
-			__db_errx(env,
-	"Error: closing the transaction region with active transactions");
+			__db_errx(env, DB_STR("4511",
+	"Error: closing the transaction region with active transactions"));
 			if (ret == 0)
 				ret = EINVAL;
 		}
@@ -296,22 +291,40 @@ u_int32_t
 __txn_region_mutex_count(env)
 	ENV *env;
 {
+	COMPQUIET(env, NULL);
+	/*
+	 * We need  a mutex for DB_TXNMGR structure, two mutexes for
+	 * the DB_TXNREGION structure.
+	 */
+	return (1 + 2);
+}
+/*
+ * __txn_region_mutex_max --
+ *	Return the number of additional mutexes the txn region will need.
+ *
+ * PUBLIC: u_int32_t __txn_region_mutex_max __P((ENV *));
+ */
+u_int32_t
+__txn_region_mutex_max(env)
+	ENV *env;
+{
 	DB_ENV *dbenv;
+	u_int32_t count;
 
 	dbenv = env->dbenv;
 
-	/*
-	 * We need a MVCC mutex for each TXN_DETAIL structure, a mutex for
-	 * DB_TXNMGR structure, two mutexes for the DB_TXNREGION structure.
-	 */
-	return (dbenv->tx_max + 1 + 2);
+	if ((count = dbenv->tx_max) == 0)
+		count = DEF_MAX_TXNS;
+	/* We may need a mutex for each MVCC txn. */
+	return (count > dbenv->tx_init ? count - dbenv->tx_init : 0);
 }
 
 /*
  * __txn_region_size --
  *	 Return the amount of space needed for the txn region.
+ * PUBLIC:  size_t __txn_region_size __P((ENV *));
  */
-static size_t
+size_t
 __txn_region_size(env)
 	ENV *env;
 {
@@ -322,14 +335,37 @@ __txn_region_size(env)
 
 	/*
 	 * Make the region large enough to hold the primary transaction region
-	 * structure, txn_max transaction detail structures, txn_max chunks of
+	 * structure, txn_init transaction detail structures, txn_init chunks of
 	 * overhead required by the underlying shared region allocator for each
 	 * chunk of memory, txn_max transaction names, at an average of 20
 	 * bytes each, and 10KB for safety.
 	 */
-	s = sizeof(DB_TXNREGION) +
-	    dbenv->tx_max * (sizeof(TXN_DETAIL) + __env_alloc_overhead() + 20) +
-	    10 * 1024;
+	s = sizeof(DB_TXNREGION) + dbenv->tx_init *
+	    (sizeof(TXN_DETAIL) + __env_alloc_overhead() + 20) + 10 * 1024;
+	return (s);
+}
+
+/*
+ * __txn_region_max --
+ *	 Return the additional amount of space needed for the txn region.
+ * PUBLIC:  size_t __txn_region_max __P((ENV *));
+ */
+size_t
+__txn_region_max(env)
+	ENV *env;
+{
+	DB_ENV *dbenv;
+	size_t s;
+	u_int32_t count;
+
+	dbenv = env->dbenv;
+
+	if ((count = dbenv->tx_max) == 0)
+		count = DEF_MAX_TXNS;
+	if (count <= dbenv->tx_init)
+		return (0);
+	s = (count - dbenv->tx_init) *
+	    (sizeof(TXN_DETAIL) + __env_alloc_overhead() + 20);
 	return (s);
 }
 
@@ -358,12 +394,14 @@ __txn_id_set(env, cur_txnid, max_txnid)
 
 	ret = 0;
 	if (cur_txnid < TXN_MINIMUM) {
-		__db_errx(env, "Current ID value %lu below minimum",
+		__db_errx(env, DB_STR_A("4512",
+		    "Current ID value %lu below minimum", "%lu"),
 		    (u_long)cur_txnid);
 		ret = EINVAL;
 	}
 	if (max_txnid < TXN_MINIMUM) {
-		__db_errx(env, "Maximum ID value %lu below minimum",
+		__db_errx(env, DB_STR_A("4513",
+		    "Maximum ID value %lu below minimum", "%lu"),
 		    (u_long)max_txnid);
 		ret = EINVAL;
 	}
@@ -392,7 +430,7 @@ __txn_oldest_reader(env, lsnp)
 		return (0);
 	region = mgr->reginfo.primary;
 
-	if ((ret = __log_current_lsn(env, &old_lsn, NULL, NULL)) != 0)
+	if ((ret = __log_current_lsn_int(env, &old_lsn, NULL, NULL)) != 0)
 		return (ret);
 
 	TXN_SYSTEM_LOCK(env);

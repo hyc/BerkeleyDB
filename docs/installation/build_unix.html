@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 6.  Building Berkeley DB for UNIX/POSIX</title>
+    <title>Chapter 7.  Building Berkeley DB for UNIX/POSIX</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
@@ -12,10 +12,13 @@
     <link rel="next" href="build_unix_conf.html" title="Configuring Berkeley DB" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 6. 
+          <th colspan="3" align="center">Chapter 7. 
 		Building Berkeley DB for UNIX/POSIX
         </th>
         </tr>
@@ -31,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="build_unix"></a>Chapter 6. 
+            <h2 class="title"><a id="build_unix"></a>Chapter 7. 
 		Building Berkeley DB for UNIX/POSIX
         </h2>
           </div>
@@ -70,29 +73,32 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idp50701368">Changing Compile Options</a>
+                  <a href="build_unix_sql.html#config_sql">Changing Compile Options</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idp50564616">Enabling Extensions</a>
+                  <a href="build_unix_sql.html#id3370488">Enabling Extensions</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#build_unix_jdbc">Building the JDBC Driver
-</a>
+                  <a href="build_unix_sql.html#build_unix_jdbc">Building the JDBC Driver</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idp50694384">Using the JDBC Driver
-</a>
+                  <a href="build_unix_sql.html#id3371069">Using the JDBC Driver</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idp50727840">Building the ODBC Driver</a>
+                  <a href="build_unix_sql.html#id3371431">Building the ODBC Driver</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="build_unix_sql.html#bfile">Building the BFILE extension</a>
                 </span>
               </dt>
             </dl>
@@ -148,12 +154,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="build_unix_hpux.html">HP-UX</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="build_unix_iphone.html">iPhone OS</a>
+              <a href="build_unix_iphone.html">Apple iOS (iPhone OS)</a>
             </span>
           </dt>
           <dt>
@@ -169,11 +170,6 @@
           <dt>
             <span class="sect1">
               <a href="build_unix_macosx.html">Mac OS X</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="build_unix_osf1.html">OSF/1</a>
             </span>
           </dt>
           <dt>
@@ -194,11 +190,6 @@
           <dt>
             <span class="sect1">
               <a href="build_unix_sunos.html">SunOS</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="build_unix_ultrix.html">Ultrix</a>
             </span>
           </dt>
         </dl>
@@ -230,7 +221,7 @@
         applications.
     </p>
         <p>
-        Building for Linux, iPhone OS, Mac OS X and the QNX Neutrino release is the same
+        Building for Linux, Apple iOS (known as iPhone OS previously), Mac OS X or the QNX Neutrino release is the same
         as building for a conventional UNIX platform.
     </p>
         <p>

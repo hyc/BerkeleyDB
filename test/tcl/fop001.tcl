@@ -5,8 +5,8 @@
 # $Id$
 #
 # TEST	fop001.tcl
-# TEST	Test file system operations, combined in a transaction. [#7363]
-proc fop001 { method { inmem 0 } args } {
+# TEST	Test two file system operations combined in one transaction. 
+proc fop001 { method { inmem 0 } { childtxn 0 } args } {
 	source ./include.tcl
 
 	set args [convert_args $method $args]
@@ -14,18 +14,37 @@ proc fop001 { method { inmem 0 } args } {
 
 	# The variable inmem determines whether the test is being
 	# run with regular named databases or named in-memory databases.
+	set txntype "transaction"
 	if { $inmem == 0 } {
-		set tnum "001"
+		if { $childtxn == 0 } {
+			set tnum "001"
+		} else {
+			set tnum "009"
+			set txntype "child transaction"
+			puts "Fop001 with child txns is called fop009."
+		}
 		set string "regular named databases"
 		set operator do_op
 	} else {
-		set tnum "007"
+		if {[is_queueext $method] } {
+			puts "Skipping in-memory test for method $method."
+			return
+		}
+		if { $childtxn == 0 } {
+			set tnum "007"
+			puts "Fop001 with in-memory dbs is called fop007."
+		} else {
+			set tnum "011"
+			set txntype "child transaction"
+			puts "Fop001 with in-memory dbs\
+			    and child txns is called fop011."
+		}
 		set string "in-memory named databases"
 		set operator do_inmem_op
 	}
 
 	puts "\nFop$tnum: ($method)\
-	    Two file system ops in one transaction for $string."
+	    Two file system ops in one $txntype for $string."
 
 	set exists {a b}
 	set noexist {foo bar}
@@ -111,7 +130,7 @@ proc fop001 { method { inmem 0 } args } {
 		foreach when { before after } {
 
 			# Create transactional environment.
-			set env [berkdb_env -create -home $testdir -txn]
+			set env [berkdb_env -create -home $testdir -txn nosync]
 			error_check_good is_valid_env [is_valid_env $env] TRUE
 	
 			# Create two databases, dba and dbb.
@@ -142,11 +161,24 @@ proc fop001 { method { inmem 0 } args } {
 			# properly set up for the 'commit' test.
 			foreach end {abort commit} {
 	
-				puts "\t\tFop$tnum.$testid:\
-				    $end $when closing database."
-	
 				# Start transaction
-				set txn [$env txn]
+				set parent [$env txn]
+				set parent_end "commit"
+				set msg ""
+				if { $childtxn } {
+					set child [$env txn -parent $parent]
+					set txn $child
+					set msg "(committing parent)"
+					if { [berkdb random_int 0 1] == 0 } {
+						set parent_end "abort"
+						set msg "(aborting parent)"
+					}
+				} else {
+					set txn $parent
+				}
+
+				puts "\t\tFop$tnum.$testid:\
+				    $end $when closing database. $msg"
 	
 				# Execute and check operation 1
 				set result1 [$operator \
@@ -174,12 +206,17 @@ proc fop001 { method { inmem 0 } args } {
 	
 				if { $when == "before" } {
 					error_check_good txn_$end [$txn $end] 0
+					if { $childtxn } {
+						error_check_good parent_end \
+						    [$parent $parent_end] 0 
+					}
 		
 					# If the txn was aborted, we still
 					# have the original two databases.
 					# Otherwise check for the expected
 					# remaining files.
-					if { $end == "abort" } {
+					if { $end == "abort" ||\
+					    $parent_end == "abort" } {
 						error_check_good db_exists \
 						    [database_exists \
 						    $inmem $testdir a] 1
@@ -203,8 +240,12 @@ proc fop001 { method { inmem 0 } args } {
 				} else {
 					close_db_handles
 					error_check_good txn_$end [$txn $end] 0
+					if { $childtxn } {
+						error_check_good resolve_parent \
+						    [$parent $parent_end] 0 
+					}
 	
-					if { $end == "abort" } {
+					if { $end == "abort" || $parent_end == "abort" } {
 						error_check_good db_exists \
 						    [database_exists \
 						    $inmem $testdir a] 1

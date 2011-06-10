@@ -11,7 +11,7 @@
 # TEST	and do various operations using dbsql on master side.
 # TEST  After every operation, we will check the records on both sides,
 # TEST  to make sure we get same results from both sides.
-# TEST  Also, we try insert operation on client side, and it should fail.
+# TEST  Also try an insert operation on client side; it should fail.
 
 proc sql001 { {nentries 1000} {tnum "001"} args} {
 	source ./include.tcl
@@ -46,16 +46,16 @@ proc sql001 { {nentries 1000} {tnum "001"} args} {
 	puts $confa "add_data_dir .."
 	puts $confa "set_create_dir .."
 	puts $confa "set_open_flags db_init_rep"
-	puts $confa "repmgr_set_local_site localhost $porta"
-	puts $confa "repmgr_add_remote_site localhost $portb"
+	puts $confa "repmgr_site localhost $porta db_local_site on db_group_creator on "
+	puts $confa "repmgr_site localhost $portb"
 	puts $confa "set_open_flags db_thread"
 	puts $confa "set_open_flags db_register"
 
 	puts $confb "add_data_dir .."
 	puts $confb "set_create_dir .."
 	puts $confb "set_open_flags db_init_rep"
-	puts $confb "repmgr_set_local_site localhost $portb"
-	puts $confb "repmgr_add_remote_site localhost $porta"
+	puts $confb "repmgr_site localhost $portb db_local_site on"
+	puts $confb "repmgr_site localhost $porta db_bootstrap_helper on"
 	puts $confb "set_open_flags db_thread"
 	puts $confb "set_open_flags db_register"
 

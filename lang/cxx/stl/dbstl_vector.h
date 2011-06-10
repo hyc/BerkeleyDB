@@ -629,7 +629,7 @@ protected:
 		oflags2 = this->owner_->get_cursor_open_flags();
 		if (!this->read_only_ && penv != NULL) {
 			BDBOP((penv->get_open_flags(&oflags)), ret);
-			// Open a writeable cursor when in CDS mode and not
+			// Open a writable cursor when in CDS mode and not
 			// requesting a read only iterator.
 			if ((oflags & DB_INIT_CDB) != 0)
 				oflags2 |= DB_WRITECURSOR;
@@ -2871,7 +2871,7 @@ private:
 		itr.owner_ = (db_container*)this;
 		if (!readonly && penv != NULL) {
 			BDBOP((penv->get_open_flags(&oflags)), ret);
-			// Open a writeable cursor when in CDS mode and not
+			// Open a writable cursor when in CDS mode and not
 			// requesting a read only iterator.
 			if ((oflags & DB_INIT_CDB) != 0)
 				((self *)this)->set_cursor_open_flags(
@@ -2895,7 +2895,7 @@ private:
 		itr.owner_ = (db_container*)this;
 		if (!readonly && penv != NULL) {
 			BDBOP((penv->get_open_flags(&oflags)) , ret);
-			// Open a writeable cursor when in CDS mode and not
+			// Open a writable cursor when in CDS mode and not
 			// requesting a read only iterator.
 			if ((oflags & DB_INIT_CDB) != 0)
 				((self *)this)->set_cursor_open_flags(

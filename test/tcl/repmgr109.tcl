@@ -119,7 +119,7 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 	puts $c1 "start client"
 	gets $c1
 	set cenv [berkdb_env -home $dirc]
-	await_startup_done $cenv 10
+	await_startup_done $cenv 
 
 	puts "\tRepmgr$tnum.c: Check resulting statistics."
 	# Make sure we used B, not A, as the c2c peer.

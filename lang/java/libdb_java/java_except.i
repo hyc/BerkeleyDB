@@ -88,6 +88,10 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 		return (jthrowable)(*jenv)->NewObject(jenv, memex_class,
 		    memex_construct, jmsg, obj, ret, jdbenv);
 
+	case DB_HEAP_FULL:
+		return (jthrowable)(*jenv)->NewObject(jenv, heapfullex_class,
+		    heapfullex_construct, jmsg, ret, jdbenv);
+
 	case DB_REP_DUPMASTER:
 		return (jthrowable)(*jenv)->NewObject(jenv,
 		    repdupmasterex_class, repdupmasterex_construct,

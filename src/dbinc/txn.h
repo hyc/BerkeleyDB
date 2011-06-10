@@ -9,6 +9,8 @@
 #ifndef	_DB_TXN_H_
 #define	_DB_TXN_H_
 
+#include "dbinc/xa.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -22,6 +24,8 @@ typedef enum {
 } TXN_EVENT_T;
 
 struct __db_txnregion;	typedef struct __db_txnregion DB_TXNREGION;
+struct __db_txn_stat_int;
+typedef struct __db_txn_stat_int DB_TXN_STAT_INT;
 struct __txn_logrec;	typedef struct __txn_logrec DB_TXNLOGREC;
 
 /*
@@ -36,6 +40,33 @@ struct __txn_logrec;	typedef struct __txn_logrec DB_TXNLOGREC;
 #define	TXN_NSLOTS	4		/* Initial slots to hold DB refs */
 
 #define	TXN_PRIORITY_DEFAULT	DB_LOCK_DEFPRIORITY
+
+/*
+ * This structure must contain the same fields as the __db_txn_stat struct
+ * except for any pointer fields that are filled in only when the struct is
+ * being populated for output through the API.
+ */
+DB_ALIGN8 struct __db_txn_stat_int { /* SHARED */
+	u_int32_t st_nrestores;		/* number of restored transactions
+					   after recovery. */
+#ifndef __TEST_DB_NO_STATISTICS
+	DB_LSN	  st_last_ckp;		/* lsn of the last checkpoint */
+	time_t	  st_time_ckp;		/* time of last checkpoint */
+	u_int32_t st_last_txnid;	/* last transaction id given out */
+	u_int32_t st_inittxns;		/* inital txns allocated */
+	u_int32_t st_maxtxns;		/* maximum txns possible */
+	uintmax_t st_naborts;		/* number of aborted transactions */
+	uintmax_t st_nbegins;		/* number of begun transactions */
+	uintmax_t st_ncommits;		/* number of committed transactions */
+	u_int32_t st_nactive;		/* number of active transactions */
+	u_int32_t st_nsnapshot;		/* number of snapshot transactions */
+	u_int32_t st_maxnactive;	/* maximum active transactions */
+	u_int32_t st_maxnsnapshot;	/* maximum snapshot transactions */
+	uintmax_t st_region_wait;	/* Region lock granted after wait. */
+	uintmax_t st_region_nowait;	/* Region lock granted without wait. */
+	roff_t	  st_regsize;		/* Region size. */
+#endif
+};
 
 /*
  * Internal data maintained in shared memory for each transaction.
@@ -70,15 +101,23 @@ typedef struct __txn_detail {
 	/* TXN_{ABORTED, COMMITTED PREPARED, RUNNING} */
 	u_int32_t status;		/* status of the transaction */
 
-#define	TXN_DTL_COLLECTED	0x1	/* collected during txn_recover */
-#define	TXN_DTL_RESTORED	0x2	/* prepared txn restored */
-#define	TXN_DTL_INMEMORY	0x4	/* uses in memory logs */
-#define	TXN_DTL_SNAPSHOT	0x8	/* On the list of snapshot txns. */
+#define	TXN_DTL_COLLECTED	0x01	/* collected during txn_recover */
+#define	TXN_DTL_RESTORED	0x02	/* prepared txn restored */
+#define	TXN_DTL_INMEMORY	0x04	/* uses in memory logs */
+#define	TXN_DTL_SNAPSHOT	0x08	/* On the list of snapshot txns. */
+#define	TXN_DTL_NOWAIT		0x10	/* Don't block on locks. */
 	u_int32_t flags;
 
 	SH_TAILQ_ENTRY	links;		/* active/free/snapshot list */
 
+	u_int32_t xa_ref;		/* XA: reference count; number
+					   of DB_TXNs reffing this struct */
+	/* TXN_XA_{ACTIVE, DEADLOCKED, IDLE, PREPARED, ROLLEDBACK} */
+	u_int32_t xa_br_status;		/* status of XA branch */
 	u_int8_t gid[DB_GID_SIZE];	/* global transaction id */
+	u_int32_t bqual;		/* bqual_length from XID */
+	u_int32_t gtrid;		/* gtrid_length from XID */
+	int32_t format;			/* XA format */
 	roff_t slots[TXN_NSLOTS];	/* Initial DB slot allocation. */
 } TXN_DETAIL;
 
@@ -116,9 +155,11 @@ struct __db_txnmgr {
  * DB_TXNREGION --
  *	The primary transaction data structure in the shared memory region.
  */
-struct __db_txnregion {
+struct __db_txnregion { /* SHARED */
 	db_mutex_t	mtx_region;	/* Region mutex. */
 
+	u_int32_t	inittxns;	/* initial number of active TXNs */
+	u_int32_t	curtxns;	/* current number of active TXNs */
 	u_int32_t	maxtxns;	/* maximum number of active TXNs */
 	u_int32_t	last_txnid;	/* last transaction id given out */
 	u_int32_t	cur_maxid;	/* current max unused id. */
@@ -127,7 +168,7 @@ struct __db_txnregion {
 	DB_LSN		last_ckp;	/* lsn of the last checkpoint */
 	time_t		time_ckp;	/* time of last checkpoint */
 
-	DB_TXN_STAT	stat;		/* Statistics for txns. */
+	DB_TXN_STAT_INT	stat;		/* Statistics for txns. */
 
 	u_int32_t n_bulk_txn;		/* Num. bulk txns in progress. */
 	u_int32_t n_hotbackup;		/* Num. of outstanding backup notices.*/

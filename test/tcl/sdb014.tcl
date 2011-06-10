@@ -16,7 +16,7 @@ proc sdb014 { method args } {
 
 	set tnum "014"
 	set orig_tdir $testdir
-	if { [is_queueext $method] == 1 } {
+       if { [is_queueext $method] == 1 || [is_heap $method] == 1 } {
 		puts "Subdb$tnum: skipping for method $method"
 		return
 	}

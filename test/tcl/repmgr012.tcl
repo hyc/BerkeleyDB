@@ -59,7 +59,7 @@ proc repmgr012_sub { method niter tnum largs } {
 	set ma_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx MASTER -home $masterdir -txn -rep -thread"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -69,7 +69,7 @@ proc repmgr012_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -89,8 +89,8 @@ proc repmgr012_sub { method niter tnum largs } {
 	# Timeouts are in microseconds, heartbeat monitor should be
 	# longer than heartbeat_send.
 	puts "\tRepmgr$tnum.e: Set heartbeat timeouts."
-	$masterenv repmgr -timeout {heartbeat_send 5000000}
-	$clientenv repmgr -timeout {heartbeat_monitor 10000000}
+	$masterenv repmgr -timeout {heartbeat_send 50000}
+	$clientenv repmgr -timeout {heartbeat_monitor 90000}
 
 	puts "\tRepmgr$tnum.f: Run second set of transactions at master."
 	eval rep_test $method $masterenv NULL $niter $niter 0 0 $largs
@@ -106,12 +106,12 @@ proc repmgr012_sub { method niter tnum largs } {
 	set init_cd [stat_field $clientenv repmgr_stat "Connections dropped"]
 
 	# Make sure client notices the lack of heartbeat.  Since the client's
-	# heartbeat monitoring granularity is 10 seconds, if we wait up to 15
+	# heartbeat monitoring granularity is < 1 second, if we wait up to 5
 	# seconds that ought to give it plenty of time to notice and react.
 	# 
 	puts "\tRepmgr$tnum.h: Remove master heartbeat and wait."
 	$masterenv repmgr -timeout {heartbeat_send 0}
-	set max_wait 15
+	set max_wait 5
 	await_condition {[stat_field $clientenv rep_stat \
 	    "Elections held"] > $init_eh} $max_wait
 	error_check_good conndrop [expr \

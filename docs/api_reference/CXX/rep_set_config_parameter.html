@@ -12,7 +12,10 @@
     <link rel="next" href="rep_set_limit_parameter.html" title="rep_set_limit" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">rep_set_config</th>
@@ -34,44 +37,43 @@
         </div>
       </div>
       <p>
-                Configures the Berkeley DB replication subsystem.
-            </p>
+        Configures the Berkeley DB replication subsystem.
+    </p>
       <p>
-                 The syntax of this parameter in the <code class="literal">DB_CONFIG</code> file is
-                 a single line with the string <code class="literal">rep_set_config</code>, 
-                 one or more whitespace characters, and the method 
-				parameter as a string and optionally one or more whitespace characters, and the string <code class="literal">on</code>
-				or <code class="literal">off</code>. If the optional string is omitted, the default is <code class="literal">on</code>.
-				For example:
-            </p>
+         The syntax of this parameter in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
+         line with the string <code class="literal">rep_set_config</code>, one or
+         more whitespace characters, and the method parameter as a string
+         and optionally one or more whitespace characters, and the string
+         <code class="literal">on</code> or <code class="literal">off</code>. If the optional
+         string is omitted, the default is <code class="literal">on</code>.  For
+         example:
+    </p>
       <pre class="programlisting">rep_set_config DB_REP_CONF_NOWAIT on</pre>
-      <p>or</p>
+      <p>
+        or
+    </p>
       <pre class="programlisting">rep_set_config DB_REP_CONF_NOWAIT</pre>
-      <p>Configures the Berkeley DB replication subsystem such that the method calls that would normally block while clients are in recovery will return
-			errors immediately.</p>
-      <p> The method parameters are:</p>
+      <p>
+        Configures the Berkeley DB replication subsystem such that the
+        method calls that would normally block while clients are in
+        recovery will return errors immediately.
+    </p>
+      <p>The method parameters are:</p>
       <div class="itemizedlist">
         <ul type="disc">
-          <li>DB_REP_CONF_AUTOINIT
-            </li>
-          <li>DB_REP_CONF_BULK
-            </li>
-          <li>DB_REP_CONF_DELAYCLIENT
-            </li>
-          <li>DB_REP_CONF_INMEM
-            </li>
-          <li>DB_REP_CONF_LEASE
-            </li>
-          <li>DB_REP_CONF_NOWAIT
-            </li>
-          <li>DB_REPMGR_CONF_ELECTIONS
-            </li>
-          <li>
-            DB_REPMGR_CONF_2SITE_STRICT
-            </li>
+          <li>DB_REP_CONF_AUTOINIT</li>
+          <li>DB_REP_CONF_BULK</li>
+          <li>DB_REP_CONF_DELAYCLIENT</li>
+          <li>DB_REP_CONF_INMEM</li>
+          <li>DB_REP_CONF_LEASE</li>
+          <li>DB_REP_CONF_NOWAIT</li>
+          <li>DB_REPMGR_CONF_ELECTIONS</li>
+          <li>DB_REPMGR_CONF_2SITE_STRICT</li>
         </ul>
       </div>
-      <p>For more information, see <a class="xref" href="repconfig.html" title="DbEnv::rep_set_config()">DbEnv::rep_set_config()</a>. </p>
+      <p>
+        For more information, see <a class="xref" href="repconfig.html" title="DbEnv::rep_set_config()">DbEnv::rep_set_config()</a>. 
+    </p>
     </div>
     <div class="navfooter">
       <hr />

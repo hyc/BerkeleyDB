@@ -8,7 +8,7 @@ use lib 't' ;
 use BerkeleyDB; 
 use util ;
 use Test::More;
-plan tests =>  41;
+plan tests =>  50;
 
 my $Dfile = "dbhash.tmp";
 unlink $Dfile;
@@ -62,7 +62,9 @@ umask(0) ;
     # Add a few k/v pairs
     my $value ;
     my $status ;
-    ok $db->db_put("some key", "some value") == 0  ;
+    ok $db->db_put("some key", "some value") == 0 
+        or diag "Cannot db_put: [$!][$BerkeleyDB::Error]\n" ;
+
     ok $db->db_put("key", "value") == 0  ;
 
     # close the database
@@ -129,6 +131,7 @@ umask(0) ;
 
 # check the interface to a Recno database
 
+if(1)
 {
     my $lex = new LexFile $Dfile ;
 
@@ -163,6 +166,44 @@ umask(0) ;
     my @array ;
     $db->Tie(\@array) ;
     ok $array[1] eq "value" ;
+
+
+}
+
+# check the interface to a Heap database
+
+SKIP:
+{
+    skip "Heap support not available", 9
+        unless BerkeleyDB::has_heap() ;
+
+    my $lex = new LexFile $Dfile ;
+
+    # create a hash database
+    ok my $db = new BerkeleyDB::Heap -Filename => $Dfile, 
+				    -Flags    => DB_CREATE ;
+
+    # Add a few k/v pairs
+    my $key1 = "" ;
+    my $key2 ;
+    my $value ;
+    my $status ;
+    ok $db->db_put($key1, "some value", DB_APPEND) == 0  ;
+    ok $db->db_put($key2, "value", DB_APPEND) == 0  ;
+
+    # close the database
+    undef $db ;
+
+    # now open it with Unknown
+    # create a hash database
+    ok $db = new BerkeleyDB::Unknown -Filename => $Dfile; 
+
+    ok $db->type() == DB_HEAP ;
+    ok $db->db_get($key1, $value) == 0 
+        or diag "Cannot db_get: [$!][$BerkeleyDB::Error]\n" ;
+    ok $value eq "some value" ;
+    ok $db->db_get($key2, $value) == 0 ;
+    ok $value eq "value" ;
 
 
 }

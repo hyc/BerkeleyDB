@@ -209,6 +209,7 @@ void b_util_abort __P((void));
 int  b_util_dir_setup __P((void));
 int  b_util_dir_teardown __P((void));
 int  b_util_have_hash __P((void));
+int  b_util_have_heap __P((void));
 int  b_util_have_queue __P((void));
 int  b_util_unlink __P((char *));
 int  b_workload __P((int, char *[]));

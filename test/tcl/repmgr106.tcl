@@ -14,22 +14,60 @@ proc repmgr106 { } {
 
 	env_cleanup $testdir
 
-	set ports [available_ports 3]
+        # Assign values for each port variable from list contents.
+	foreach {portA portB portC} [available_ports 3] {}
 	
-	set dbconfig {
-		{rep_set_nsites 3} 
+	set timeouts {
 		{rep_set_timeout DB_REP_ELECTION_RETRY 2000000}
 		{rep_set_timeout DB_REP_ELECTION_TIMEOUT 1000000}
 	}
-	foreach d {A B C} { 
-		file mkdir $testdir/$d 
-		make_dbconfig $testdir/$d $dbconfig
+
+        # First just create the group.
+        file mkdir $testdir/A
+        make_dbconfig $testdir/A \
+            [linsert $timeouts 0 [list repmgr_site localhost $portA db_local_site on]]
+        file mkdir $testdir/B
+        make_dbconfig $testdir/B \
+            [linsert $timeouts 0 [list repmgr_site localhost $portB db_local_site on] \
+                 [list repmgr_site localhost $portA db_bootstrap_helper on]]
+        file mkdir $testdir/C
+        make_dbconfig $testdir/C \
+            [linsert $timeouts 0 [list repmgr_site localhost $portC db_local_site on] \
+                 [list repmgr_site localhost $portA db_bootstrap_helper on]]
+	set cmds {
+		{home $testdir/A}
+		{open_env}
+		{start master}
 	}
+	set cmds [subst $cmds]
+	set a [open_site_prog [linsert $cmds 1 "output $testdir/aoutput"]]
+	set cmds {
+		{home $testdir/B}
+		{open_env}
+		{start client}
+	}
+	set cmds [subst $cmds]
+	set b [open_site_prog [linsert $cmds 1 "output $testdir/boutput"]]
+	set clientenv [berkdb_env -home $testdir/B]
+	await_startup_done $clientenv
+        $clientenv close
+	set cmds {
+		{home $testdir/C}
+		{open_env}
+		{start client}
+	}
+	set cmds [subst $cmds]
+	set c [open_site_prog [linsert $cmds 1 "output $testdir/coutput"]]
+	set clientenv [berkdb_env -home $testdir/C]
+	await_startup_done $clientenv
+        $clientenv close
+        close $c
+        close $b
+        close $a
 
 	puts "\tRepmgr$tnum.a: Start 3 sites (with 2 processes each)."
 	set cmds {
 		{home $testdir/A}
-		{local [lindex $ports 0]}
 		{open_env}
 		{start election}
 	}
@@ -39,8 +77,6 @@ proc repmgr106 { } {
 
 	set cmds {
 		{home $testdir/B}
-		{local [lindex $ports 1]}
-		{remote localhost [lindex $ports 0]}
 		{open_env}
 		{start election}
 	}
@@ -50,8 +86,6 @@ proc repmgr106 { } {
 
 	set cmds {
 		{home $testdir/C}
-		{local [lindex $ports 2]}
-		{remote localhost [lindex $ports 0]}
 		{open_env}
 		{start election}
 	}
@@ -70,7 +104,7 @@ proc repmgr106 { } {
 	set site_names "abc"
 	set m [string range $site_names $i $i]
 	puts "\tRepmgr$tnum.c: (site $m is master)."
-	
+
 	puts "\tRepmgr$tnum.d: Wait for other two sites to sync up."
 	set clients [lreplace $sites $i $i]
 	set site_names [string replace $site_names $i $i]
@@ -99,7 +133,7 @@ proc repmgr106 { } {
 
 	puts "\tRepmgr$tnum.g: Wait for remaining client to sync to new master."
 	set client [lreplace $clients $i $i]
-	await_condition {[stat_field $client rep_stat "Master changes"] == 2}
+	await_condition {[stat_field $client rep_stat "Master changes"] == 3}
 	await_startup_done $client
 
 	puts "\tRepmgr$tnum.h: Clean up."

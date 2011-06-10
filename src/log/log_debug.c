@@ -128,7 +128,8 @@ __log_printf_int(env, txnid, fmt, ap)
 	char __logbuf[2048];	/* !!!: END OF THE STACK DON'T TRUST SPRINTF. */
 
 	if (!DBENV_LOGGING(env)) {
-		__db_errx(env, "Logging not currently permitted");
+		__db_errx(env, DB_STR("2510",
+		    "Logging not currently permitted"));
 		return (EAGAIN);
 	}
 

@@ -34,13 +34,13 @@ set last_nsites 0
 
 #
 # db_reptest - Run a randomized configuration.  Run the test
-# 'count' times in a loop, or if no count it given, it is
-# an infinite loop.
+# 'count' times in a loop, or until 'stopstr' is seen in the OUTPUT
+# files or if no count or string is given, it is an infinite loop.
 #
-proc db_reptest { {count -1} } {
+proc db_reptest { { stopstr "" } {count -1} } {
 	berkdb srand [pid]
 	set cmd "db_reptest_int random"
-	db_reptest_loop $cmd $count
+	db_reptest_loop $cmd $stopstr $count
 }
 
 #
@@ -72,15 +72,17 @@ proc basic_db_reptest_prof { { basic 0 } } {
 
 #
 # Restore a configuration from the given directory and
-# run that configuration in a loop 'count' times.
+# run that configuration in a loop 'count' times or until
+# 'stopstr' is seen in the OUTPUT files or if no count or
+# string is given, it is an infinite loop.
 #
-proc restore_db_reptest { restoredir { count -1 } } {
+proc restore_db_reptest { restoredir { stopstr "" } { count -1 } } {
 	set cmd "db_reptest_int restore $restoredir/SAVE_RUN"
-	db_reptest_loop $cmd $count
+	db_reptest_loop $cmd $stopstr $count
 }
 
 proc restore_db_reptest_prof { restoredir } {
-	restore_db_reptest $restoredir 1
+	restore_db_reptest $restoredir "" 1
 	generate_profiles
 }
 
@@ -91,7 +93,7 @@ proc restore_db_reptest_prof { restoredir } {
 proc db_reptest_prof { } {
 	berkdb srand [pid]
 	set cmd "db_reptest_int random"
-	db_reptest_loop $cmd 1
+	db_reptest_loop $cmd "" 1
 	generate_profiles
 }
 
@@ -135,7 +137,7 @@ proc db_reptest_profile { } {
 #
 # Wrapper to run the command in a loop, 'count' times.
 #
-proc db_reptest_loop { cmd count } {
+proc db_reptest_loop { cmd stopstr count } {
 	global util_path
 
 	if { [file exists $util_path/db_reptest] == 0 } {
@@ -156,6 +158,16 @@ proc db_reptest_loop { cmd count } {
 		puts -nonewline "COMPLETED $iteration: "
 		puts [clock format [clock seconds] -format "%H:%M %D"]
 		incr iteration
+		#
+		# If we've been given a string to look for, run until we
+		# see it.  Or if not, skip to the count check.
+		#
+		if { [string length $stopstr] > 0 } {
+			set found [search_output $stopstr]
+			if { $found } {
+				break
+			}
+		}
 		if { $count > 0 && $iteration > $count } {
 			break
 		}
@@ -186,7 +198,6 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 	# and its args first.
 	#
 	set runtime 0
-	set kill 0
 	#
 	# Get number of sites first because pretty much everything else
 	# after here depends on how many sites there are.
@@ -196,28 +207,50 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 	set use_peers [get_peers $cfgtype]
 	#
 	# Only use kill if we have > 2 sites.
-	# Returns the site number of the site to kill, or 0
-	# if this will not be a kill test.
+	# Returns a list.  An empty list means this will not be a kill test.
+	# Otherwise the list has 3 values, the kill type and 2 kill sites.
+	# See the 'get_kill' proc for a description of kill types.
 	#
+	set kill_type 0
+	set kill_site 0
+	set kill_remove 0
+	set site_remove 0
 	if { $num_sites > 2 } {
 		set kill [get_kill $cfgtype $restoredir $num_sites]
+		if { [llength $kill] > 0 } {
+			set kill_type [lindex $kill 0]
+			set kill_site [lindex $kill 1]
+			set kill_remove [lindex $kill 2]
+		} else {
+			# If we are not doing a kill test, determine if
+			# we are doing a remove test.
+			set site_remove [get_remove $cfgtype $num_sites]
+		}
 	}
 	if { $cfgtype != "restore" } {
 		if { $use_lease } {
 			set use_master 0
 		} else {
 			set use_master [get_usemaster $cfgtype]
+			if { $site_remove == $use_master } {
+				set site_remove 0
+			}
 		}
 		set master_site [get_mastersite $cfgtype $use_master $num_sites]
 		set noelect [get_noelect $use_master]
 		set master2_site [get_secondary_master \
-		    $noelect $master_site $kill $num_sites]
+		    $noelect $master_site $kill_site $num_sites]
 		set workers [get_workers $cfgtype $use_lease]
 		set dbtype [get_dbtype $cfgtype]
 		set runtime [get_runtime $cfgtype]
 		puts -nonewline "Running: $num_sites sites, $runtime seconds "
-		if { $kill } {
-			puts -nonewline "kill site $kill "
+		if { $kill_site } {
+			puts -nonewline "kill site $kill_site "
+			if { $kill_remove } {
+				puts -nonewline "removed by site $kill_remove "
+			}
+		} elseif { $site_remove } {
+			puts -nonewline "remove site $site_remove "
 		}
 		if { $use_lease } {
 			puts "with leases"
@@ -240,6 +273,7 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 	# This loop sets up the args to the invocation of db_reptest
 	# for each site.
 	#
+	set portlist [available_ports $num_sites]
 	for { set i 1 } {$i <= $num_sites } { incr i } {
 		set envdirs($i) TESTDIR/ENV$i
 		set homedirs($i) ../ENV$i
@@ -258,15 +292,33 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 				puts "Runtime: $runtime"
 			}
 		} else {
+			set nmsg [berkdb random_int 1 [expr $num_sites * 2]]
 			set prog_args($i) \
-			    "-v -c $workers -t $dbtype -T $runtime "
+			    "-v -c $workers -t $dbtype -T $runtime -m $nmsg "
 			set prog_args($i) \
 			    [concat $prog_args($i) "-h $homedirs($i)"]
+			set prog_args($i) \
+			    [concat $prog_args($i) "-o $num_sites"]
+			#
+			# Add in if this site should remove itself.
+			#
+			if { $site_remove == $i } {
+				set prog_args($i) [concat $prog_args($i) "-r"]
+			}
 			#
 			# Add in if this site should kill itself.
 			#
-			if { $kill == $i } {
+			if { $kill_site == $i } {
 				set prog_args($i) [concat $prog_args($i) "-k"]
+			}
+			#
+			# Add in if this site should remove a killed site.
+			#
+			if { $kill_remove == $i } {
+				set kport [lindex $portlist \
+				    [expr $kill_site - 1]]
+				set prog_args($i) [concat $prog_args($i) \
+				    "-K $kport"]
 			}
 			#
 			# Add in if this site starts as a master or client.
@@ -306,22 +358,25 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 
 	# Now make the DB_CONFIG file for each site.
 	reptest_make_config $savedir $num_sites envdirs state \
-	    $use_lease $use_peers $kill $cfgtype $restoredir
+	    $use_lease $use_peers $kill_site $portlist $cfgtype $restoredir
 
 	# Run the test
-	run_db_reptest $savedir envdirs $num_sites $runtime
+	run_db_reptest $savedir envdirs $num_sites $runtime $use_lease
 	puts "Test run complete.  Verify."
 
 	# Verify the test run.
-	verify_db_reptest $num_sites envdirs $kill
+	verify_db_reptest $num_sites envdirs $kill_site
+
+	# Show the summary files
+	print_summary
 
 }
 
 #
 # Make a DB_CONFIG file for all sites in the group
 #
-proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
-    restoredir } {
+proc reptest_make_config { savedir nsites edirs st lease peers kill \
+    portlist cfgtype restoredir } {
 	upvar $edirs envdirs
 	upvar $st state
 	global rporttype
@@ -330,6 +385,7 @@ proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
 	# Generate global config values that should be the same
 	# across all sites, such as number of sites and log size, etc.
 	#
+	set rporttype NULL
 	set default_cfglist {
 	{ "set_flags" "DB_TXN_NOSYNC" }
 	{ "rep_set_request" "150000 2400000" }
@@ -343,9 +399,6 @@ proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
 	{ "set_verbose" "db_verb_recovery" }
 	{ "set_verbose" "db_verb_replication" }
 	}
-
-	set litem [list rep_set_nsites $nsites]
-	lappend default_cfglist $litem
 
 	set acks { db_repmgr_acks_all db_repmgr_acks_all_peers \
 	    db_repmgr_acks_none db_repmgr_acks_one db_repmgr_acks_one_peer \
@@ -405,6 +458,21 @@ proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
 	} else {
 		set ackpolicy db_repmgr_acks_one
 	}
+	#
+	# Set known_master to the initial master or if one is not
+	# assigned, randomly assign the group creator.
+	#
+	set known_master 0
+	if { $cfgtype != "restore" } {
+		for { set i 1 } { $i <= $nsites } { incr i } {
+			if { $state($i) == "MASTER" } {
+				set known_master $i
+			}
+		}
+		if { $known_master == 0 } {
+			set known_master [berkdb random_int 1 $nsites]
+		}
+	}
 	for { set i 1 } { $i <= $nsites } { incr i } {
 		#
 		# If we're restoring we just need to copy it.
@@ -425,6 +493,7 @@ proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
 		# Add lease configuration if needed.  We're running all
 		# locally, so there is no clock skew.
 		#
+		set allist [get_ack_lease_timeouts $lease]
 		if { $lease } {
 			#
 			# We need to have an ack timeout > lease timeout.
@@ -433,12 +502,12 @@ proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
 			#
 			lappend cfglist { "rep_set_config" "db_rep_conf_lease" }
 			lappend cfglist { "rep_set_timeout" \
-			    "db_rep_lease_timeout 10000000" }
-			lappend cfglist \
-			    { "rep_set_timeout" "db_rep_ack_timeout 20000000" }
+			    "db_rep_lease_timeout [lindex $allist 1]" }
+			lappend cfglist { "rep_set_timeout" \
+			    "db_rep_ack_timeout [lindex $allist 0]" }
 		} else {
-			lappend cfglist \
-			    { "rep_set_timeout" "db_rep_ack_timeout 5000000" }
+			lappend cfglist { "rep_set_timeout" \
+			    "db_rep_ack_timeout [lindex $allist 0]" }
 		}
 
 		#
@@ -481,23 +550,39 @@ proc reptest_make_config { savedir nsites edirs st lease peers kill cfgtype \
 		set litem [list repmgr_set_ack_policy $ackpolicy]
 		lappend cfglist $litem
 		#
-		# Now set up the local and remote ports.
+		# Now set up the local and remote ports.  If we are the
+		# known_master (either master or group creator) set the
+		# group creator flag on.
 		#
-		set baseport 49200
-		set rporttype NULL
-		set lport($i) [expr $baseport + $i]
-		set litem [list repmgr_set_local_site "localhost $lport($i)"]
-		lappend cfglist $litem
-		set rport($i) [get_rport $baseport $i \
-		    $nsites $cfgtype]
-		if { $peers } {
-			set remote_arg "peer"
+		set lport($i) [lindex $portlist [expr $i - 1]]
+		if { $i == $known_master } {
+			set litem [list repmgr_site \
+			    "localhost $lport($i) db_local_site on \
+			    db_group_creator on"]
 		} else {
-			set remote_arg ""
+			set litem [list repmgr_site \
+			    "localhost $lport($i) db_local_site on"]
 		}
+		lappend cfglist $litem
+		set rport($i) [get_rport $portlist $i $nsites \
+		    $known_master $cfgtype]
+		#
+		# Declare all sites bootstrap helpers.
+		#
 		foreach p $rport($i) {
-			set litem [list repmgr_add_remote_site \
-			    "localhost $p $remote_arg"]
+			if { $peers } {
+				set litem [list repmgr_site "localhost $p \
+				    db_bootstrap_helper on db_repmgr_peer on"]
+			} else {
+				set litem [list repmgr_site "localhost $p \
+				    db_bootstrap_helper on"]
+			}
+			#
+			# If we have full knowledge, assume a legacy system.
+			#
+			if { $cfgtype == "full" } {
+				lappend litem "db_legacy on"
+			}
 			lappend cfglist $litem
 		}
 		#
@@ -544,19 +629,27 @@ proc save_db_reptest { savedir op site savelist } {
 	close $cid
 }
 
-proc run_db_reptest { savedir edirs numsites runtime } {
+proc run_db_reptest { savedir edirs numsites runtime use_lease } {
 	source ./include.tcl
 	upvar $edirs envdirs
 	global killed_procs
 
 	set pids {}
+	#
+	# Wait three times workload run time plus an ack_timeout for each site
+	# to kill a run.  The ack_timeout is especially significant for runs
+	# where leases are in use because they take much longer to get started.
+	#
+	set ack_timeout [lindex [get_ack_lease_timeouts $use_lease] 0]
+	set watch_time [expr $runtime * 3 + \
+	    [expr $ack_timeout / 1000000] * $numsites]
 	for {set i 1} {$i <= $numsites} {incr i} {
 		lappend pids [exec $tclsh_path $test_path/wrap_reptest.tcl \
 		    $savedir/DB_REPTEST_ARGS.$i $envdirs($i) \
 		    $savedir/site$i.log &]
 		tclsleep 1
 	}
-	watch_procs $pids 15 [expr $runtime * 3]
+	watch_procs $pids 15 $watch_time
 	set killed [llength $killed_procs]
 	if { $killed > 0 } {
 		error "Processes $killed_procs never finished"
@@ -597,22 +690,27 @@ proc get_nsites { cfgtype restoredir } {
 	global last_nsites
 
 	#
-	# The number of sites must be the same for all.  Read the
-	# first site's saved DB_CONFIG file if we're restoring since
-	# we only know we have at least 1 site.
+	# Figure out the number of sites.  We use 'glob' to get all of
+	# the valid DB_CONFIG files in the restoredir.  That command uses
+	# a single digit match, so the maximum number of sites must be <= 9.
+	# Match DB_CONFIG.# so that it does not consider anything like an
+	# emacs save file.
 	#
+	set maxsites 5
+	#
+	# If someone changes maxsites to be too big, it will break the
+	# 'glob' below.  Catch that now.
+	#
+	if { $maxsites > 9 } {
+		error "Max sites too large."
+	}
 	if { $cfgtype == "restore" } {
-		set cid [open $restoredir/DB_CONFIG.1 r]
-		while { [gets $cid cfglist] } {
-			puts "Read in: $cfglist"
-			set cfg [lindex $cfglist 0]
-			if { $cfg == "rep_set_nsites" } {
-				set num_sites [lindex $cfglist 1]
-				break;
-			}
+		set ret [catch {glob $restoredir/DB_CONFIG.\[1-$maxsites\]} \
+		    result]
+		if { $ret != 0 } {
+			error "Could not get config list: $result"
 		}
-		close $cid
-		return $num_sites
+		return [llength $result]
 	}
 	if { $cfgtype == "random" } {
 		#
@@ -621,14 +719,13 @@ proc get_nsites { cfgtype restoredir } {
 		# always 2, 100% of the time.  Add this bit to make sure
 		# this nsites values is different from the last iteration.
 		#
-		set n [berkdb random_int 2 5]
+		set n [berkdb random_int 2 $maxsites]
 		while { $n == $last_nsites } {
-			set n [berkdb random_int 2 5]
-puts "Getting random nsites between 2 and 5.  Got $n, last_nsites $last_nsites"
+			set n [berkdb random_int 2 $maxsites]
+puts "Getting random nsites between 2 and $maxsites.  Got $n, last_nsites $last_nsites"
 		}
 		set last_nsites $n
 		return $n
-#		return [berkdb random_int 2 5]
 	}
 	if { $cfgtype == "basic0" } {
 		return 2
@@ -684,46 +781,123 @@ proc get_lease { cfgtype restoredir } {
 
 #
 # Do a kill test about half the time.  We randomly choose a
-# site number to kill, it could be a master or a client.
-# Return 0 if we don't kill any site.
+# site number to kill, it could be a master or a client.  If
+# we want to remove the site from the group, randomly choose
+# a site to do the removal.
+#
+# We return a list with the kill type and the sites.  Return
+# an empty list if we don't kill any site.  There are 2 variants:
+#
+# 1: Die - A site just kills itself but remains part of the group.
+# Return a list {1 deadsite# 0}.
+# 2: Removal - A site kills itself, and some site will also remove
+# the dead site from the group. (Could be the same site that is dying).
+# {2 deadsite# removalsite#}.
 #
 proc get_kill { cfgtype restoredir num_sites } {
+	set nokill ""
 	if { $cfgtype == "restore" } {
 		set ksite 0
+		set ktype 0
+		set rsite 0
 		for { set i 1 } { $i <= $num_sites } { incr i } {
 			set cid [open $restoredir/DB_REPTEST_ARGS.$i r]
-			#
 			# !!!
 			# We currently assume the args file is 1 line.
-			# We assume only 1 site can get killed.  So, if we
-			# find one, we break the loop and don't look further.
 			#
 			gets $cid arglist
 			close $cid
 #			puts "Read in: $arglist"
 			set dokill [lsearch $arglist "-k"]
+			set dorem [lsearch $arglist "-K"]
+			#
+			# Only 1 of those 3 should ever be set.  If we
+			# find -K, we have all the information we need
+			# and can break the loop.  If we find a -k we might
+			# find a later -K so we keep looking.
+			#
 			if { $dokill != -1 } {
 				set ksite $i
+				set ktype 1
+			}
+			#
+			# If it is a remote removal kill type, we are
+			# the site doing the removing and we need to get
+			# the site to remove from the arg.  $dorem is the
+			# index of the arg, so + 1 is the site number.
+			# The site in the arg is the port number so grab
+			# the site number out of it.
+			#
+			if { $dorem != -1 } {
+				set ktype 2
+				set kport [lindex $arglist [expr $dorem + 1]]
+				set ksite [site_from_port $kport $num_sites]
+				set rsite $i
 				break
 			}
 		}
-		return $ksite
+		if { $ktype == 0 } {
+			return $nokill
+		} else {
+			return [list $ktype $ksite $rsite]
+		}
 	}
 	if { $cfgtype == "random" } {
+		# Do a kill test half the time.
 		set k { 0 0 0 1 1 1 0 1 1 0 }
 		set len [expr [llength $k] - 1]
 		set i [berkdb random_int 0 $len]
 		if { [lindex $k $i] == 1 } {
+			set ktype 1
 			set ksite [berkdb random_int 1 $num_sites]
+			set rsite 0
+			# Do a removal half the time we do a kill.
+			set k { 0 0 0 1 1 1 0 1 1 0 }
+			set len [expr [llength $k] - 1]
+			set i [berkdb random_int 0 $len]
+			if { [lindex $k $i] == 1 } {
+				set ktype 2
+				set rsite [berkdb random_int 1 $num_sites]
+			}
+			set klist [list $ktype $ksite $rsite]
 		} else {
-			set ksite 0
+			set klist $nokill
 		}
-		return $ksite
+		return $klist
 	}
 	if { $cfgtype == "basic0" || $cfgtype == "basic1" } {
-		return 0
+		return $nokill
 	} else {
 		error "Get_kill: Invalid config type $cfgtype"
+	}
+}
+
+#
+# If we want to run a remove/rejoin, which site?  This proc
+# will return a site number of a site to remove/rejoin or
+# it will return 0 if no removal test.  Sites are numbered
+# starting at 1.
+#
+proc get_remove { cfgtype nsites } {
+#
+# For now, until the "restart a dead carcass" work is done
+# post-5.2, we don't use this option.  5.2 requires a site
+# to shutdown if it gets removed while it is alive.
+#
+return 0
+	if { $cfgtype == "random" } {
+		# Do a remove test half the time we're called.
+		set k { 0 0 0 1 1 1 0 1 1 0 }
+		set len [expr [llength $k] - 1]
+		set i [berkdb random_int 0 $len]
+		if { [lindex $k $i] == 1 } {
+			set rsite [berkdb random_int 1 $nsites]
+		} else {
+			set rsite 0
+		}
+		return $rsite
+	} else {
+		return 0
 	}
 }
 
@@ -866,16 +1040,11 @@ proc get_runtime { cfgtype } {
 	}
 }
 
-proc get_rport { baseport i num_sites cfgtype} {
+proc get_rport { portlist i num_sites known_master cfgtype} {
 	global rporttype
 
 	if { $cfgtype == "random" && $rporttype == "NULL" } {
-		#
-		# The circular comm choices seem problematic.
-		# Remove them for now.
-		#
-#		set types {backcirc forwcirc full onesite}
-		set types {full onesite}
+		set types {backcirc forwcirc full onesite}
 		set len [expr [llength $types] - 1]
 		set rindex [berkdb random_int 0 $len]
 		set rporttype [lindex $types $rindex]
@@ -893,28 +1062,31 @@ proc get_rport { baseport i num_sites cfgtype} {
 	#
 	if { $rporttype == "forwcirc" } {
 		if { $i != $num_sites } {
-			return [list [expr $baseport + $i + 1]]
+			return [list [lindex $portlist $i]]
 		} else {
-			return [list [expr $baseport + 1]]
+			return [list [lindex $portlist 0]]
 		}
 	}
 	if { $rporttype == "backcirc" } {
 		if { $i != 1 } {
-			return [list [expr $baseport + $i - 1]]
+			return [list [lindex $portlist [expr $i - 2]]]
 		} else {
-			return [list [expr $baseport + $num_sites]]
+			return [list [lindex $portlist [expr $num_sites - 1]]]
 		}
 	}
 	#
-	# This produces a configuration where site 1 does not know
-	# about any other site and every other site knows about site 1.
+	# This produces a configuration where site N does not know
+	# about any other site and every other site knows about site N.
+	# Site N must either be the master or group creator.
+	# NOTE: Help_site_i subtracts one because site numbers
+	# are 1-based and list indices are 0-based.
 	#
 	if { $rporttype == "onesite" } {
-		if { $i == 1 } {
+		set helper_site [expr $known_master - 1]
+		if { $i == $known_master } {
 			return {}
-		} else {
-			return [list [expr $baseport + 1]]
 		}
+		return [lindex $portlist $helper_site]
 	}
 	#
 	# This produces a fully connected configuration
@@ -923,10 +1095,25 @@ proc get_rport { baseport i num_sites cfgtype} {
 		set rlist {}
 		for { set site 1 } { $site <= $num_sites } { incr site } {
 			if { $site != $i } {
-				lappend rlist [expr $baseport + $site]
+				lappend rlist \
+				    [lindex $portlist [expr $site - 1]]
 			}
 		}
 		return $rlist
+	}
+}
+
+#
+# We need to have an ack timeout > lease timeout. Otherwise txns can get 
+# committed without waiting long enough for leases to get granted.  We
+# return a list {acktimeout# leasetimeout#}, with leasetimeout#=0 if leases
+# are not in use.
+#
+proc get_ack_lease_timeouts { useleases } {
+	if { $useleases } {
+		return [list 20000000 10000000]
+	} else {
+		return [list 5000000 0]
 	}
 }
 
@@ -934,4 +1121,51 @@ proc parse_runtime { progargs } {
 	set i [lsearch $progargs "-T"]
 	set val [lindex $progargs [expr $i + 1]]
 	return $val
+}
+
+proc print_summary { } {
+	source ./include.tcl
+	global envdirs
+
+	set ret [catch {glob $testdir/summary.*} result]
+	if { $ret == 0 } {
+		set sumfiles $result
+	} else {
+		puts "Could not get summary list: $result"
+		return 1
+	}
+	foreach f $sumfiles {
+		puts "====   $f   ===="
+		set ret [catch {open $f} fd]
+		if { $ret != 0 } {
+			puts "Error opening $f: $fd"
+			continue
+		}
+		while { [gets $fd line] >= 0 } {
+			puts "$line"
+		}
+		close $fd
+	}
+	return 0
+}
+
+proc search_output { stopstr } {
+	source ./include.tcl
+
+	set ret [catch {glob $testdir/E*/OUTPUT} result]
+	if { $ret == 0 } {
+		set outfiles $result
+	} else {
+		puts "Could not find any OUTPUT files: $result"
+		return 0
+	}
+	set found 0
+	foreach f $outfiles {
+		set ret [catch {exec grep $stopstr $f > /dev/null} result]
+		if { $ret == 0 } {
+			puts "$f: Match found: $stopstr"
+			set found 1
+		}
+	}
+	return $found
 }

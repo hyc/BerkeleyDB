@@ -47,6 +47,7 @@
 #include "dbinc/db_swap.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/qam.h"
 
 /*
@@ -87,6 +88,7 @@ __db_pgin(dbenv, pg, pp, cookie)
 	db_cipher = env->crypto_handle;
 	switch (pagep->type) {
 	case P_HASHMETA:
+	case P_HEAPMETA:
 	case P_BTREEMETA:
 	case P_QAMMETA:
 		/*
@@ -147,9 +149,9 @@ __db_pgin(dbenv, pg, pp, cookie)
 			if (DBENV_LOGGING(env))
 				(void)__db_cksum_log(
 				    env, NULL, &not_used, DB_FLUSH);
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("0684",
 	    "checksum error: page %lu: catastrophic recovery required",
-			    (u_long)pg);
+			    "%lu"), (u_long)pg);
 			return (__env_panic(env, DB_RUNRECOVERY));
 		default:
 			return (ret);
@@ -161,6 +163,8 @@ __db_pgin(dbenv, pg, pp, cookie)
 	case P_INVALID:
 		if (pginfo->type == DB_QUEUE)
 			return (__qam_pgin_out(env, pg, pp, cookie));
+		else if (pginfo->type == DB_HEAP)
+			return (__heap_pgin(dbp, pg, pp, cookie));
 		/*
 		 * This page is either newly allocated from the end of the
 		 * file, or from the free list, or it is an as-yet unwritten
@@ -181,6 +185,10 @@ __db_pgin(dbenv, pg, pp, cookie)
 	case P_HASH:
 	case P_HASHMETA:
 		return (__ham_pgin(dbp, pg, pp, cookie));
+	case P_HEAP:
+	case P_HEAPMETA:
+	case P_IHEAP:
+		return (__heap_pgin(dbp, pg, pp, cookie));
 	case P_BTREEMETA:
 	case P_IBTREE:
 	case P_IRECNO:
@@ -239,6 +247,11 @@ __db_pgout(dbenv, pg, pp, cookie)
 			ret = __ham_pgout(dbp, pg, pp, cookie);
 			break;
 #endif
+#ifdef HAVE_HEAP
+		case DB_HEAP:
+			ret = __heap_pgout(dbp, pg, pp, cookie);
+			break;
+#endif
 		case DB_BTREE:
 		case DB_RECNO:
 			ret = __bam_pgout(dbp, pg, pp, cookie);
@@ -258,6 +271,11 @@ __db_pgout(dbenv, pg, pp, cookie)
 		 */
 	case P_HASHMETA:
 		ret = __ham_pgout(dbp, pg, pp, cookie);
+		break;
+	case P_HEAP:
+	case P_HEAPMETA:
+	case P_IHEAP:
+		ret = __heap_pgout(dbp, pg, pp, cookie);
 		break;
 	case P_BTREEMETA:
 	case P_IBTREE:
@@ -310,6 +328,7 @@ __db_decrypt_pg (env, dbp, pagep)
 
 		switch (pagep->type) {
 		case P_HASHMETA:
+		case P_HEAPMETA:
 		case P_BTREEMETA:
 		case P_QAMMETA:
 			/*
@@ -373,6 +392,7 @@ __db_encrypt_and_checksum_pg (env, dbp, pagep)
 
 		switch (pagep->type) {
 		case P_HASHMETA:
+		case P_HEAPMETA:
 		case P_BTREEMETA:
 		case P_QAMMETA:
 			/*
@@ -396,6 +416,7 @@ __db_encrypt_and_checksum_pg (env, dbp, pagep)
 	if (F_ISSET(dbp, DB_AM_CHKSUM)) {
 		switch (pagep->type) {
 		case P_HASHMETA:
+		case P_HEAPMETA:
 		case P_BTREEMETA:
 		case P_QAMMETA:
 			/*
@@ -641,6 +662,8 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 				M_16_SWAP(inp[i]);
 		}
 		break;
+	case P_HEAP:
+	case P_IHEAP:
 	case P_INVALID:
 	case P_OVERFLOW:
 	case P_QAMDATA:

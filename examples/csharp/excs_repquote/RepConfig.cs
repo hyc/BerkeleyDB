@@ -23,44 +23,26 @@ namespace excs_repquote
 		public AckPolicy ackPolicy;
 		public bool bulk; /* Whether bulk transfer should be performed. */
 		public string home; /* The home directory for rep files. */
-		public ReplicationHostAddress host; /* Host address to listen to. */
+		public DbSiteConfig localSite;
 		public uint priority; /* Priority within the replication group. */
-		public List<RemoteSite> remote;
+		public List<DbSiteConfig> remoteSites;
 		public StartPolicy startPolicy; 
-		
-		/* Optional value specifying the # of sites in the replication group. */
-		public uint totalSites;
+
 		public bool verbose;
-		
+
 		public RepConfig()
 		{
 			ackPolicy = AckPolicy.QUORUM;
 			bulk = false;
 			home = "";
-			host = new ReplicationHostAddress();
+			localSite = new DbSiteConfig();
 			priority = 100;
-			remote = new List<RemoteSite>();
+			remoteSites = new List<DbSiteConfig>();
 			startPolicy = StartPolicy.ELECTION;
-		
-			totalSites = 0;
+
 			verbose = false;
 		}
 	}
 
 	public enum StartPolicy { CLIENT, ELECTION, MASTER };
-
-	public class RemoteSite 
-	{
-		private ReplicationHostAddress host;
-		private bool isPeer;
-
-		public RemoteSite(string host, uint port, bool isPeer)
-		{
-			this.host = new ReplicationHostAddress(host, port);
-			this.isPeer = isPeer;
-		}
-
-		public ReplicationHostAddress Host { get { return host; } }
-		public bool IsPeer { get { return isPeer; } }
-	}
 }

@@ -1,6 +1,11 @@
 --- test/tester.tcl
 +++ test/tester.tcl
-@@ -262,6 +262,11 @@
+@@ -266,16 +266,21 @@
+   proc set_test_counter {counter args} {
+     if {[llength $args]} {
+       set ::TC($counter) [lindex $args 0]
+     }
+     set ::TC($counter)
    }
  }
  
@@ -12,12 +17,24 @@
  # Record the fact that a sequence of tests were omitted.
  #
  proc omit_test {name reason} {
-@@ -296,10 +301,17 @@
+   set omitList [set_test_counter omit_list]
+   lappend omitList [list $name $reason]
+   set_test_counter omit_list $omitList
+ }
+ 
+@@ -300,22 +305,29 @@
+   set_test_counter count [expr [set_test_counter count] + 1]
+ }
+ 
+ 
+ # Invoke the do_test procedure to run a single test 
  #
  proc do_test {name cmd expected} {
  
 -  global argv cmdlinearg
 +  global argv cmdlinearg IGNORE_CASES EXCLUDE_CASES
+ 
+   fix_testname name
  
    sqlite3_memdebug_settitle $name
  
@@ -31,7 +48,17 @@
  #  if {[llength $argv]==0} { 
  #    set go 1
  #  } else {
-@@ -323,8 +335,19 @@
+ #    set go 0
+ #    foreach pattern $argv {
+ #      if {[string match $pattern $name]} {
+ #        set go 1
+ #        break
+@@ -329,18 +341,29 @@
+ 
+   incr_ntest
+   puts -nonewline $name...
+   flush stdout
+   if {[catch {uplevel #0 "$cmd;\n"} result]} {
      puts "\nError: $result"
      fail_test $name
    } elseif {[string compare $result $expected]} {
@@ -53,3 +80,8 @@
    } else {
      puts " Ok"
    }
+   flush stdout
+ }
+ 
+ proc fix_testname {varname} {
+   upvar $varname testname

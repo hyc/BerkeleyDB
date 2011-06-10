@@ -14,7 +14,7 @@ proc fop007 { method args } {
 		puts "Skipping fop007 for method $method."
 		return
 	}
-	eval {fop001 $method 1} $args
+	eval {fop001 $method 1 0} $args
 }
 
 

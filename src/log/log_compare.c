@@ -49,16 +49,18 @@ __log_check_page_lsn(env, dbp, lsnp)
 	if (ret < 0)
 		return (0);
 
-	__db_errx(env,
+	__db_errx(env, DB_STR_A("2506",
 	    "file %s has LSN %lu/%lu, past end of log at %lu/%lu",
-	    dbp == NULL || dbp->fname == NULL ? "unknown" : dbp->fname,
+	    "%s %lu %lu %lu %lu"),
+	    dbp == NULL ||
+		dbp->fname == NULL ? DB_STR_P("unknown") : dbp->fname,
 	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    (u_long)lp->lsn.file, (u_long)lp->lsn.offset);
-	__db_errx(env, "%s",
-    "Commonly caused by moving a database from one database environment");
-	__db_errx(env, "%s",
-    "to another without clearing the database LSNs, or by removing all of");
-	__db_errx(env, "%s",
-    "the log files from a database environment");
+	__db_errx(env, DB_STR("2507",
+    "Commonly caused by moving a database from one database environment"));
+	__db_errx(env, DB_STR("2508",
+    "to another without clearing the database LSNs, or by removing all of"));
+	__db_errx(env, DB_STR("2509",
+	    "the log files from a database environment"));
 	return (EINVAL);
 }

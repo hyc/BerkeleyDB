@@ -233,9 +233,10 @@ version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
+		fprintf(stderr, DB_STR_A("5003",
 		    "%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
 		    v_major, v_minor);
 		return (EXIT_FAILURE);
 	}
@@ -282,8 +283,10 @@ db_log_verify_app_record(dbenv, dbt, lsnp, op)
 	    len = 256 + 2 * dbt->size, &buf)) != 0)
 		goto err;
 	memset(buf, 0, len);
-	snprintf(buf, len, "[%lu][%lu] App-specific log record: %lu\n\tdata: ",
-	    (u_long)lsnp->file, (u_long)lsnp->offset, (u_long)rectype);
+	snprintf(buf, len, DB_STR_A("5004",
+	    "[%lu][%lu] App-specific log record: %lu\n\tdata: ",
+	    "%lu %lu %lu"), (u_long)lsnp->file, (u_long)lsnp->offset,
+	    (u_long)rectype);
 
 	/*
 	 * Each unprintable character takes up several bytes, so be aware of

@@ -27,6 +27,26 @@ typedef struct __db_globals {
 	u_int32_t db_global_init;	/* VxWorks: inited */
 	SEM_ID db_global_lock;		/* VxWorks: global semaphore */
 #endif
+#ifdef DB_WIN32
+#ifndef DB_WINCE
+	/*
+	 * These fields are used by the Windows implementation of mutexes.
+	 * Usually they are initialized by the first DB API call to lock a
+	 * mutex. If that would result in the mutexes being inaccessible by
+	 * other threads (e.g., ones which have lesser privileges) the
+	 * application may first call db_env_set_win_security().
+	 */
+	SECURITY_DESCRIPTOR win_default_sec_desc;
+	SECURITY_ATTRIBUTES win_default_sec_attr;
+#endif
+	SECURITY_ATTRIBUTES *win_sec_attr;
+#endif
+	
+	/* TAILQ_HEAD(__envq, __dbenv) envq; */
+	struct __envq {
+		struct __env *tqh_first;
+		struct __env **tqh_last;
+	} envq;
 
 	char *db_line;			/* DB display string. */
 
@@ -40,7 +60,15 @@ typedef struct __db_globals {
 
 	int db_errno;			/* Errno value if not available */
 
-	int	(*j_close) __P((int));	/* Underlying OS interface jump table.*/
+	size_t num_active_pids;		/* number of entries in active_pids */
+
+	size_t size_active_pids;	/* allocated size of active_pids */
+
+	pid_t *active_pids;		/* array active pids */
+
+	/* Underlying OS interface jump table.*/
+	void	(*j_assert) __P((const char *, const char *, int));
+	int	(*j_close) __P((int));	
 	void	(*j_dirfree) __P((char **, int));
 	int	(*j_dirlist) __P((const char *, char ***, int *));
 	int	(*j_exists) __P((const char *, int *));

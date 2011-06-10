@@ -28,7 +28,6 @@ import java.io.File;
 
 public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Ops46 {
     private Config config;
-    private Environment master, client;
     private Environment[] envs = new Environment[2];
 
     class MyEventHandler extends EventHandlerAdapter {
@@ -58,7 +57,7 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
     public void setConfig(Config c) { config = c; }
 
     public void createMaster(int site, boolean configureOther) throws Exception {
-        EnvironmentConfig ec = makeBasicConfig(2);
+        EnvironmentConfig ec = makeBasicConfig();
         int p = config.getMyPort(site);
         ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", p));
 
@@ -70,7 +69,7 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
         File masterDir = new File(config.getBaseDir(), "dir" + site);
         masterDir.mkdir();
 
-        master = new Environment(masterDir, ec);
+        Environment master = new Environment(masterDir, ec);
         envs[site] = master;
         master.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY,
                                      1000000); // be impatient
@@ -85,7 +84,7 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
     }
 
     public void establishClient(int site, boolean configureOther) throws Exception {
-        EnvironmentConfig ec = makeBasicConfig(2);
+        EnvironmentConfig ec = makeBasicConfig();
 
         int p = config.getMyPort(site);
         ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", p));
@@ -98,7 +97,7 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
         ec.setEventHandler(monitor);
         File clientDir = new File(config.getBaseDir(), "dir" + site);
         clientDir.mkdir();
-        client = new Environment(clientDir, ec);
+        Environment client = new Environment(clientDir, ec);
 
         client.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_CLIENT);
         monitor.await();
@@ -113,10 +112,26 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
         envs[siteId] = null;
     }
 
+    public void restart(int siteId) throws Exception {
+        EnvironmentConfig ec = makeBasicConfig();
+        int p = config.getMyPort(siteId);
+        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", p));
+
+        p = config.getOtherPort(siteId);
+        ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", p));
+
+        File dir = new File(config.getBaseDir(), "dir" + siteId);
+        Environment e = new Environment(dir, ec);
+        envs[siteId] = e;
+        e.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY,
+                                     1000000); // be impatient
+        e.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_MASTER);
+    }
+    
     public void remove(int site) throws Exception {
         assertNull(envs[site]);
 
-        EnvironmentConfig ec = makeBasicConfig(2);
+        EnvironmentConfig ec = makeBasicConfig();
         File dir = new File(config.getBaseDir(), "dir" + site);
         assertTrue(dir.exists());
         Environment.remove(dir, false, ec);
@@ -148,7 +163,7 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
         assertTrue(major == 4 && (minor == 5 || minor == 6));
     }
 
-    private EnvironmentConfig makeBasicConfig(int nsites) {
+    private EnvironmentConfig makeBasicConfig() {
         EnvironmentConfig ec = new EnvironmentConfig();
         ec.setAllowCreate(true);
         ec.setInitializeCache(true);
@@ -159,7 +174,7 @@ public class V46impl implements TestMixedHeartbeats.Ops46, TestReverseConnect.Op
         ec.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
         ec.setRunRecovery(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(nsites);
+        ec.setReplicationNumSites(2);
         if (Boolean.getBoolean("VERB_REPLICATION"))
             ec.setVerbose(VerboseConfig.REPLICATION, true);
         return (ec);

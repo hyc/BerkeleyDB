@@ -25,8 +25,8 @@ static int
 __db_norepmgr(dbenv)
 	DB_ENV *dbenv;
 {
-	__db_errx(dbenv->env,
-    "library build did not include support for the Replication Manager");
+	__db_errx(dbenv->env, DB_STR("3628",
+    "library build did not include support for the Replication Manager"));
 	return (DB_OPNOTSUP);
 }
 
@@ -41,27 +41,6 @@ __repmgr_close(env)
 {
 	COMPQUIET(env, NULL);
 	return (0);
-}
-
-/*
- * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
- * PUBLIC: int __repmgr_add_remote_site
- * PUBLIC:     __P((DB_ENV *, const char *, u_int, int *, u_int32_t));
- * PUBLIC: #endif
- */
-int
-__repmgr_add_remote_site(dbenv, host, port, eidp, flags)
-	DB_ENV *dbenv;
-	const char *host;
-	u_int port;
-	int *eidp;
-	u_int32_t flags;
-{
-	COMPQUIET(host, NULL);
-	COMPQUIET(port, 0);
-	COMPQUIET(eidp, NULL);
-	COMPQUIET(flags, 0);
-	return (__db_norepmgr(dbenv));
 }
 
 /*
@@ -94,37 +73,53 @@ __repmgr_set_ack_policy(dbenv, policy)
 
 /*
  * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
- * PUBLIC: int __repmgr_set_local_site
- * PUBLIC:     __P((DB_ENV *, const char *, u_int, u_int32_t));
+ * PUBLIC: int __repmgr_site
+ * PUBLIC:     __P((DB_ENV *, const char *, u_int, DB_SITE **, u_int32_t));
  * PUBLIC: #endif
  */
 int
-__repmgr_set_local_site(dbenv, host, port, flags)
+__repmgr_site(dbenv, host, port, dbsitep, flags)
 	DB_ENV *dbenv;
 	const char *host;
 	u_int port;
+	DB_SITE **dbsitep;
 	u_int32_t flags;
 {
 	COMPQUIET(host, NULL);
 	COMPQUIET(port, 0);
+	COMPQUIET(dbsitep, NULL);
 	COMPQUIET(flags, 0);
 	return (__db_norepmgr(dbenv));
 }
 
 /*
  * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
- * PUBLIC: int __repmgr_get_local_site
- * PUBLIC:     __P((DB_ENV *, const char **, u_int *));
+ * PUBLIC: int __repmgr_site_by_eid __P((DB_ENV *, int, DB_SITE **));
  * PUBLIC: #endif
  */
 int
-__repmgr_get_local_site(dbenv, hostp, portp)
+__repmgr_site_by_eid(dbenv, eid, dbsitep)
 	DB_ENV *dbenv;
-	const char **hostp;
-	u_int *portp;
+	int eid;
+	DB_SITE **dbsitep;
 {
-	COMPQUIET(hostp, NULL);
-	COMPQUIET(portp, NULL);
+	COMPQUIET(eid, 0);
+	COMPQUIET(dbsitep, NULL);
+	return (__db_norepmgr(dbenv));
+}
+
+/*
+ * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
+ * PUBLIC: int __repmgr_local_site
+ * PUBLIC:     __P((DB_ENV *, DB_SITE **));
+ * PUBLIC: #endif
+ */
+int
+__repmgr_local_site(dbenv, dbsitep)
+	DB_ENV *dbenv;
+	DB_SITE **dbsitep;
+{
+	COMPQUIET(dbsitep, NULL);
 	return (__db_norepmgr(dbenv));
 }
 
@@ -211,5 +206,57 @@ __repmgr_handle_event(env, event, info)
 	 * all replication events should be forwarded to the application.
 	 */
 	return (DB_EVENT_NOT_HANDLED);
+}
+
+/*
+ * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
+ * PUBLIC: int __repmgr_channel __P((DB_ENV *, int, DB_CHANNEL **, u_int32_t));
+ * PUBLIC: #endif
+ */
+int
+__repmgr_channel(dbenv, eid, dbchannelp, flags)
+	DB_ENV *dbenv;
+	int eid;
+	DB_CHANNEL **dbchannelp;
+	u_int32_t flags;
+{
+	COMPQUIET(eid, 0);
+	COMPQUIET(dbchannelp, NULL);
+	COMPQUIET(flags, 0);
+	return (__db_norepmgr(dbenv));
+}
+
+/*
+ * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
+ * PUBLIC: int __repmgr_set_msg_dispatch __P((DB_ENV *,
+ * PUBLIC:     void (*)(DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t),
+ * PUBLIC:     u_int32_t));
+ * PUBLIC: #endif
+ */
+int
+__repmgr_set_msg_dispatch(dbenv, dispatch, flags)
+	DB_ENV *dbenv;
+	void (*dispatch) __P((DB_ENV *,
+		DB_CHANNEL *, DBT *, u_int32_t, u_int32_t));
+	u_int32_t flags;
+{
+	COMPQUIET(dispatch, NULL);
+	COMPQUIET(flags, 0);
+	return (__db_norepmgr(dbenv));
+}
+
+/*
+ * PUBLIC: #ifndef HAVE_REPLICATION_THREADS
+ * PUBLIC: int __repmgr_init_recover __P((ENV *, DB_DISTAB *));
+ * PUBLIC: #endif
+ */
+int
+__repmgr_init_recover(env, dtabp)
+	ENV *env;
+	DB_DISTAB *dtabp;
+{
+	COMPQUIET(env, NULL);
+	COMPQUIET(dtabp, NULL);
+	return (0);
 }
 #endif /* !HAVE_REPLICATION_THREADS */

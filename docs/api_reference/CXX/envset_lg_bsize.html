@@ -12,7 +12,10 @@
     <link rel="next" href="envset_lg_dir.html" title="DbEnv::set_lg_dir()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::set_lg_bsize()</th>
@@ -46,7 +49,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
          When the logging subsystem is configured for on-disk logging, the
          default size of the in-memory log buffer is approximately 32KB.  Log
          information is stored in-memory until the storage space fills up or
-         s transaction commit forces the information to be flushed to stable
+         transaction commit forces the information to be flushed to stable
          storage.  In the presence of long-running transactions or transactions
          producing large amounts of data, larger buffer sizes can increase
          throughput.
@@ -68,12 +71,11 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
     </p>
       <p>
          The database environment's log buffer size may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "set_lg_bsize", one or more whitespace characters, and the size in
-         bytes. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
-         read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file. The syntax of the entry
+         in that file is a single line with the string "set_lg_bsize", one
+         or more whitespace characters, and the size in bytes. Because the
+         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the database environment is opened,
+         it will silently overrule configuration done before that time.
     </p>
       <p>
          The <code class="methodname">DbEnv::set_lg_bsize()</code> method configures a database environment,
@@ -100,7 +102,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53134600"></a>Parameters</h3>
+              <h3 class="title"><a id="id3640863"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -108,7 +110,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53134448"></a>lg_bsize</h4>
+                <h4 class="title"><a id="id3640859"></a>lg_bsize</h4>
               </div>
             </div>
           </div>
@@ -122,7 +124,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53130016"></a>Errors</h3>
+              <h3 class="title"><a id="id3640743"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -140,7 +142,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53142720"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3640996"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -153,7 +155,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53141424"></a>Class</h3>
+              <h3 class="title"><a id="id3640974"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -167,7 +169,7 @@ DbEnv::set_lg_bsize(u_int32_t lg_bsize); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53144048"></a>See Also</h3>
+              <h3 class="title"><a id="id3641018"></a>See Also</h3>
             </div>
           </div>
         </div>

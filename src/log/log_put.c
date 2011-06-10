@@ -63,8 +63,8 @@ __log_put_pp(dbenv, lsnp, udbt, flags)
 
 	/* Replication clients should never write log records. */
 	if (IS_REP_CLIENT(env)) {
-		__db_errx(env,
-		    "DB_ENV->log_put is illegal on replication clients");
+		__db_errx(env, DB_STR("2511",
+		    "DB_ENV->log_put is illegal on replication clients"));
 		return (EINVAL);
 	}
 
@@ -122,17 +122,16 @@ __log_put(env, lsnp, udbt, flags)
 
 	if (IS_REP_MASTER(env) && db_rep->send == NULL) {
 #ifdef HAVE_REPLICATION_THREADS
-		if (F_ISSET(env, ENV_THREAD) &&
-		    rep->my_addr.host != INVALID_ROFF) {
+		if (F_ISSET(env, ENV_THREAD) && APP_IS_REPMGR(env)) {
 			if ((ret = __repmgr_autostart(env)) != 0)
 				return (ret);
 		} else
 #endif
 		{
 #if !defined(DEBUG_ROP) && !defined(DEBUG_WOP)
-			__db_errx(env, "%s %s",
-			    "Non-replication DB_ENV handle attempting",
-			    "to modify a replicated environment");
+			__db_errx(env, DB_STR("2512",
+			    "Non-replication DB_ENV handle attempting "
+			    "to modify a replicated environment"));
 			return (EINVAL);
 #endif
 		}
@@ -163,8 +162,9 @@ __log_put(env, lsnp, udbt, flags)
 		key = db_cipher->mac_key;
 	else
 		key = NULL;
-
+#ifdef HAVE_LOG_CHECKSUM
 	__db_chksum(&hdr, dbt->data, dbt->size, key, hdr.chksum);
+#endif
 
 	LOG_SYSTEM_LOCK(env);
 	lock_held = 1;
@@ -197,13 +197,6 @@ __log_put(env, lsnp, udbt, flags)
 		 */
 		ctlflags = LF_ISSET(DB_LOG_COMMIT | DB_LOG_CHKPNT) ?
 		    REPCTL_PERM : 0;
-		/*
-		 * If using leases, keep track of our last PERM lsn.
-		 * Set this on a master under the log lock.
-		 */
-		if (IS_USING_LEASES(env) &&
-		    FLD_ISSET(ctlflags, REPCTL_PERM))
-			lp->max_perm_lsn = lsn;
 		LOG_SYSTEM_UNLOCK(env);
 		lock_held = 0;
 		if (LF_ISSET(DB_FLUSH))
@@ -265,6 +258,23 @@ __log_put(env, lsnp, udbt, flags)
 			 */
 			ret = __rep_send_message(env, DB_EID_BROADCAST,
 			    REP_LOG, &lsn, udbt, ctlflags, 0);
+		}
+		if (FLD_ISSET(ctlflags, REPCTL_PERM)) {
+			LOG_SYSTEM_LOCK(env);
+#ifdef HAVE_STATISTICS
+			if (IS_USING_LEASES(env))
+				rep->stat.st_lease_sends++;
+#endif
+			/*
+			 * Keep track of our last PERM lsn.  Set this on a
+			 * master under the log lock.  When using leases, if
+			 * we set max_perm_lsn too early (before the send)
+			 * then we hit a lot of false invalid lease checks
+			 * which all try to refresh and hurt performance.
+			 */
+			if (LOG_COMPARE(&lp->max_perm_lsn, &lsn) < 0)
+				lp->max_perm_lsn = lsn;
+			LOG_SYSTEM_UNLOCK(env);
 		}
 		/*
 		 * If the send fails and we're a commit or checkpoint,
@@ -341,14 +351,14 @@ err:	if (lock_held)
 }
 
 /*
- * __log_current_lsn --
- *	Return the current LSN.
+ * __log_current_lsn_int --
+ *	internal operations of __log_current_lsn
  *
- * PUBLIC: int __log_current_lsn
+ * PUBLIC: int __log_current_lsn_int
  * PUBLIC:     __P((ENV *, DB_LSN *, u_int32_t *, u_int32_t *));
  */
 int
-__log_current_lsn(env, lsnp, mbytesp, bytesp)
+__log_current_lsn_int(env, lsnp, mbytesp, bytesp)
 	ENV *env;
 	DB_LSN *lsnp;
 	u_int32_t *mbytesp, *bytesp;
@@ -389,6 +399,30 @@ __log_current_lsn(env, lsnp, mbytesp, bytesp)
 	LOG_SYSTEM_UNLOCK(env);
 
 	return (0);
+}
+
+/*
+ * __log_current_lsn --
+ *	Return the current LSN.
+ *
+ * PUBLIC: int __log_current_lsn
+ * PUBLIC:     __P((ENV *, DB_LSN *, u_int32_t *, u_int32_t *));
+ */
+int
+__log_current_lsn(env, lsnp, mbytesp, bytesp)
+	ENV *env;
+	DB_LSN *lsnp;
+	u_int32_t *mbytesp, *bytesp;
+{
+	DB_THREAD_INFO *ip;
+	int ret;
+
+	ret = 0;
+	ENV_ENTER(env, ip);
+	ret = __log_current_lsn_int(env, lsnp, mbytesp, bytesp);
+	ENV_LEAVE(env, ip);
+
+	return ret;
 }
 
 /*
@@ -440,8 +474,9 @@ __log_put_next(env, lsn, dbt, hdr, old_lsnp)
 	if (adv_file || lp->lsn.offset == 0 ||
 	    lp->lsn.offset + hdr->size + dbt->size > lp->log_size) {
 		if (hdr->size + sizeof(LOGP) + dbt->size > lp->log_size) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("2513",
 	    "DB_ENV->log_put: record larger than maximum file size (%lu > %lu)",
+			    "%lu %lu"),
 			    (u_long)hdr->size + sizeof(LOGP) + dbt->size,
 			    (u_long)lp->log_size);
 			return (EINVAL);
@@ -522,7 +557,8 @@ __log_flush_commit(env, lsnp, flags)
 		return (0);
 
 	if (IS_REP_MASTER(env)) {
-		__db_err(env, ret, "Write failed on MASTER commit.");
+		__db_err(env, ret, DB_STR("2514",
+		    "Write failed on MASTER commit."));
 		return (__env_panic(env, ret));
 	}
 
@@ -701,12 +737,14 @@ __log_newfile(dblp, lsnp, logfile, version)
 	if ((ret =
 	    __log_encrypt_record(env, &t, &hdr, (u_int32_t)tsize)) != 0)
 		goto err;
+#ifdef HAVE_LOG_CHECKSUM
 	if (lp->persist.version != DB_LOGVERSION)
 		__db_chksum(NULL, t.data, t.size,
 		    (CRYPTO_ON(env)) ? db_cipher->mac_key : NULL, hdr.chksum);
 	else
 		__db_chksum(&hdr, t.data, t.size,
 		    (CRYPTO_ON(env)) ? db_cipher->mac_key : NULL, hdr.chksum);
+#endif
 
 	if ((ret = __log_putr(dblp, &lsn,
 	    &t, lastoff == 0 ? 0 : lastoff - lp->len, &hdr)) != 0)
@@ -739,7 +777,8 @@ __log_putr(dblp, lsn, dbt, prev, h)
 	HDR tmp, *hdr;
 	LOG *lp;
 	int ret, t_ret;
-	size_t b_off, nr;
+	db_size_t b_off;
+	size_t nr;
 	u_int32_t w_off;
 
 	env = dblp->env;
@@ -780,7 +819,8 @@ __log_putr(dblp, lsn, dbt, prev, h)
 	 * recalculate it.  C'est la vie;  there's no out-of-bounds value
 	 * here.
 	 */
-	if (hdr->chksum[0] == 0)
+	if (hdr->chksum[0] == 0) {
+#ifdef HAVE_LOG_CHECKSUM
 		if (lp->persist.version != DB_LOGVERSION)
 			__db_chksum(NULL, dbt->data, dbt->size,
 			    (CRYPTO_ON(env)) ? db_cipher->mac_key : NULL,
@@ -789,7 +829,8 @@ __log_putr(dblp, lsn, dbt, prev, h)
 			__db_chksum(hdr, dbt->data, dbt->size,
 			    (CRYPTO_ON(env)) ? db_cipher->mac_key : NULL,
 			    hdr->chksum);
-	else if (lp->persist.version == DB_LOGVERSION) {
+#endif
+	} else if (lp->persist.version == DB_LOGVERSION) {
 		/*
 		 * We need to correct for prev and len since they are not
 		 * set before here.
@@ -839,7 +880,8 @@ err:
 		    b_off, &nr)) != 0)
 			return (__env_panic(env, t_ret));
 		if (nr != b_off) {
-			__db_errx(env, "Short read while restoring log");
+			__db_errx(env, DB_STR("2515",
+			    "Short read while restoring log"));
 			return (__env_panic(env, EIO));
 		}
 	}
@@ -959,14 +1001,15 @@ __log_flush_int(dblp, lsnp, release)
 	} else if (lsnp->file > lp->lsn.file ||
 	    (lsnp->file == lp->lsn.file &&
 	    lsnp->offset > lp->lsn.offset - lp->len)) {
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("2516",
     "DB_ENV->log_flush: LSN of %lu/%lu past current end-of-log of %lu/%lu",
-		    (u_long)lsnp->file, (u_long)lsnp->offset,
-		    (u_long)lp->lsn.file, (u_long)lp->lsn.offset);
-		__db_errx(env, "%s %s %s",
-		    "Database environment corrupt; the wrong log files may",
-		    "have been removed or incompatible database files imported",
-		    "from another environment");
+		    "%lu %lu %lu %lu"), (u_long)lsnp->file,
+		    (u_long)lsnp->offset, (u_long)lp->lsn.file,
+		    (u_long)lp->lsn.offset);
+		__db_errx(env, DB_STR("2517",
+		    "Database environment corrupt; the wrong log files may "
+		    "have been removed or incompatible database files "
+		    "imported from another environment"));
 		return (__env_panic(env, DB_RUNRECOVERY));
 	} else {
 		if (ALREADY_FLUSHED(lp, lsnp))
@@ -1206,7 +1249,7 @@ __log_fill(dblp, lsn, addr, len)
 		memcpy(dblp->bufp + lp->b_off, addr, nw);
 		addr = (u_int8_t *)addr + nw;
 		len -= (u_int32_t)nw;
-		lp->b_off += nw;
+		lp->b_off += (u_int32_t)nw;
 
 		/* If we fill the buffer, flush it. */
 		if (lp->b_off == bsize) {
@@ -1323,8 +1366,8 @@ __log_file_pp(dbenv, lsn, namep, len)
 	if ((ret = __log_get_config(dbenv, DB_LOG_IN_MEMORY, &set)) != 0)
 		return (ret);
 	if (set) {
-		__db_errx(env,
-		    "DB_ENV->log_file is illegal with in-memory logs");
+		__db_errx(env, DB_STR("2518",
+		    "DB_ENV->log_file is illegal with in-memory logs"));
 		return (EINVAL);
 	}
 
@@ -1359,7 +1402,8 @@ __log_file(env, lsn, namep, len)
 	/* Check to make sure there's enough room and copy the name. */
 	if (len < strlen(name) + 1) {
 		*namep = '\0';
-		__db_errx(env, "DB_ENV->log_file: name buffer is too short");
+		__db_errx(env, DB_STR("2519",
+		    "DB_ENV->log_file: name buffer is too short"));
 		return (EINVAL);
 	}
 	(void)strcpy(namep, name);
@@ -1477,7 +1521,8 @@ __log_name(dblp, filenumber, namep, fhpp, flags)
 	 * probably started up the application.
 	 */
 	if (ret != ENOENT) {
-		__db_err(env, ret, "%s: log file unreadable", *namep);
+		__db_err(env, ret, DB_STR_A("2520",
+		    "%s: log file unreadable", "%s"), *namep);
 		return (__env_panic(env, ret));
 	}
 
@@ -1486,7 +1531,8 @@ __log_name(dblp, filenumber, namep, fhpp, flags)
 	 * the caller isn't interested in old-style files.
 	 */
 	if (!LF_ISSET(DB_OSO_RDONLY)) {
-		__db_err(env, ret, "%s: log file open failed", *namep);
+		__db_err(env, ret, DB_STR_A("2521",
+		    "%s: log file open failed", "%s"), *namep);
 		return (__env_panic(env, ret));
 	}
 
@@ -1564,8 +1610,10 @@ __log_rep_put(env, lsnp, rec, flags)
 
 	if ((ret = __log_encrypt_record(env, dbt, &hdr, rec->size)) != 0)
 		goto err;
+#ifdef HAVE_LOG_CHECKSUM
 	__db_chksum(&hdr, t.data, t.size,
 	    (CRYPTO_ON(env)) ? db_cipher->mac_key : NULL, hdr.chksum);
+#endif
 
 	DB_ASSERT(env, LOG_COMPARE(lsnp, &lp->lsn) == 0);
 	ret = __log_putr(dblp, lsnp, dbt, lp->lsn.offset - lp->len, &hdr);
@@ -1660,8 +1708,8 @@ __log_put_record_pp(dbenv, dbp, txnp, ret_lsnp,
 
 	/* Replication clients should never write log records. */
 	if (IS_REP_CLIENT(env)) {
-		__db_errx(env,
-		    "DB_ENV->log_put is illegal on replication clients");
+		__db_errx(env, DB_STR("2522",
+		    "DB_ENV->log_put is illegal on replication clients"));
 		return (EINVAL);
 	}
 

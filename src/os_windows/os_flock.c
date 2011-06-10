@@ -28,8 +28,9 @@ __os_fdlock(env, fhp, offset, acquire, nowait)
 	 * Should only happen if an app attempts to open an environment
 	 * with the DB_REGISTER flag.
 	 */
-	 __db_errx(env, "fdlock API not implemented for WinCE, DB_REGISTER "
-	     "environment flag not supported.");
+	 __db_errx(env, DB_STR("0019",
+	    "fdlock API not implemented for WinCE, DB_REGISTER "
+	    "environment flag not supported."));
 	return (EFAULT);
 #else
 	DWORD low, high;
@@ -43,9 +44,10 @@ __os_fdlock(env, fhp, offset, acquire, nowait)
 	    F_ISSET(fhp, DB_FH_OPENED) && fhp->handle != INVALID_HANDLE_VALUE);
 
 	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: flock %s %s offset %lu",
-		    fhp->name, acquire ? "acquire": "release", (u_long)offset);
+		__db_msg(env, DB_STR_A("0020",
+		    "fileops: flock %s %s offset %lu", "%s %s %lu"), fhp->name,
+		    acquire ? DB_STR_P("acquire"): DB_STR_P("release"),
+		    (u_long)offset);
 
 	/*
 	 * Windows file locking interferes with read/write operations, so we

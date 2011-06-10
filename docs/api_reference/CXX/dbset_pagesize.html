@@ -12,7 +12,10 @@
     <link rel="next" href="dbset_partition.html" title="Db::set_partition()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Db::set_pagesize()</th>
@@ -48,35 +51,28 @@ Db::set_pagesize(u_int32_t pagesize); </pre>
          lower limit of 512 bytes and an upper limit of 16K bytes.
     </p>
       <p>
-         For information on tuning the Berkeley DB page size, see <a href="../../programmer_reference/general_am_conf.html#am_conf_pagesize" class="olink">Selecting a page size</a>.
+         For information on tuning the Berkeley DB page size, see 
+         <a href="../../programmer_reference/general_am_conf.html#am_conf_pagesize" class="olink">Selecting a page size</a>.
     </p>
       <p>
-         The <code class="methodname">Db::set_pagesize()</code> method configures a database, not only
-         operations performed using the specified 
+         The <code class="methodname">Db::set_pagesize()</code> method configures
+         a database, not only operations performed using the specified
          <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  handle.
     </p>
       <p>
-         The <code class="methodname">Db::set_pagesize()</code> method may not be called after the 
-         <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>  method is called. If
-         the database already exists when 
+         The <code class="methodname">Db::set_pagesize()</code> method may not be
+         called after the <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>
+         method is called. If the database already exists when 
          <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>  is called, the
-         information specified to <code class="methodname">Db::set_pagesize()</code> will be ignored.
+         information specified to
+         <code class="methodname">Db::set_pagesize()</code> will be ignored.
     </p>
       <p>
          If creating additional databases in a single physical file,
-         information specified to <code class="methodname">Db::set_pagesize()</code> will be ignored and the
-         page size of the existing databases will be used.     
+         information specified to
+         <code class="methodname">Db::set_pagesize()</code> will be ignored and
+         the page size of the existing databases will be used.     
      </p>
-      <p>
-         The <code class="methodname">Db::set_pagesize()</code> <span>
-            
-            <span>
-                method either returns a non-zero error value or throws an
-                exception that encapsulates a non-zero error value on
-                failure, and returns 0 on success.
-            </span>
-        </span>
-   </p>
       <p>
         The <code class="methodname">Db::set_pagesize()</code> <span>
             
@@ -86,12 +82,12 @@ Db::set_pagesize(u_int32_t pagesize); </pre>
                 failure, and returns 0 on success.
             </span>
         </span>
-    </p>
+     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50731144"></a>Parameters</h3>
+              <h3 class="title"><a id="id3598458"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -99,26 +95,26 @@ Db::set_pagesize(u_int32_t pagesize); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50730296"></a>pagesize</h4>
+                <h4 class="title"><a id="id3598447"></a>pagesize</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>pagesize</strong></span> parameter sets the
-                          database page size.
-                     </p>
+                  The <span class="bold"><strong>pagesize</strong></span> parameter sets the
+                  database page size.
+             </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50723536"></a>Errors</h3>
+              <h3 class="title"><a id="id3598380"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-                         The <code class="methodname">Db::set_pagesize()</code> <span>
+             The <code class="methodname">Db::set_pagesize()</code> <span>
             
             <span>
                 method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
@@ -126,12 +122,12 @@ Db::set_pagesize(u_int32_t pagesize); </pre>
                 of the following non-zero errors:
             </span>
         </span>
-                    </p>
+        </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50742304"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3598645"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -145,25 +141,25 @@ Db::set_pagesize(u_int32_t pagesize); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50743632"></a>Class</h3>
+              <h3 class="title"><a id="id3598667"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-                <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
-            </p>
+            <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
+        </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50735184"></a>See Also</h3>
+              <h3 class="title"><a id="id3598654"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-                </p>
+             <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

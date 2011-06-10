@@ -156,7 +156,7 @@ static int winMutexEnd(void){
 ** <li>  SQLITE_MUTEX_STATIC_MEM2
 ** <li>  SQLITE_MUTEX_STATIC_PRNG
 ** <li>  SQLITE_MUTEX_STATIC_LRU
-** <li>  SQLITE_MUTEX_STATIC_LRU2
+** <li>  SQLITE_MUTEX_STATIC_PMEM
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -220,7 +220,7 @@ static sqlite3_mutex *winMutexAlloc(int iType){
 */
 static void winMutexFree(sqlite3_mutex *p){
   assert( p );
-  assert( p->nRef==0 );
+  assert( p->nRef==0 && p->owner==0 );
   assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
   DeleteCriticalSection(&p->mutex);
   sqlite3_free(p);
@@ -244,6 +244,7 @@ static void winMutexEnter(sqlite3_mutex *p){
 #endif
   EnterCriticalSection(&p->mutex);
 #ifdef SQLITE_DEBUG
+  assert( p->nRef>0 || p->owner==0 );
   p->owner = tid; 
   p->nRef++;
   if( p->trace ){
@@ -279,7 +280,7 @@ static int winMutexTry(sqlite3_mutex *p){
 #endif
 #ifdef SQLITE_DEBUG
   if( rc==SQLITE_OK && p->trace ){
-    printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
+    printf("try mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
   }
 #endif
   return rc;
@@ -297,6 +298,7 @@ static void winMutexLeave(sqlite3_mutex *p){
   assert( p->nRef>0 );
   assert( p->owner==tid );
   p->nRef--;
+  if( p->nRef==0 ) p->owner = 0;
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
 #endif
   LeaveCriticalSection(&p->mutex);

@@ -23,7 +23,7 @@ import com.sleepycat.db.DatabaseType;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.EventHandlerAdapter;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.VerboseConfig;
 
@@ -79,7 +79,14 @@ public class TestRepmgr extends TestCase {
 //			Util.rm_rf(testdir);
 	}
 
+    public void testSanity() {
+        int x = 1;
+        int y = 2;
+        assertTrue(x + y == 3);
+    }
+
 	public void testEnvCreate() throws Exception {
+            boolean junk = false;
 		// TODO: move this to a test runner.
 		if (Boolean.getBoolean("debug.pause")) {
 			// force DB to be loaded first (is this necessary?)
@@ -94,34 +101,46 @@ public class TestRepmgr extends TestCase {
 		
 		EnvironmentConfig ec = makeBasicConfig();
 		ec.setReplicationLimit(100000000);
-		ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", masterPort));
+                ReplicationManagerSiteConfig dbsite =
+                    new ReplicationManagerSiteConfig("localhost", masterPort);
+                dbsite.setLocalSite(true);
+		ec.addReplicationManagerSite(dbsite);
 		Environment master = new Environment(mkdir("master"), ec);
 		master.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_MASTER);
 		
-		DatabaseConfig dc = new DatabaseConfig();
-		dc.setTransactional(true);
-		dc.setAllowCreate(true);
-		dc.setType(DatabaseType.BTREE);
-		Database db = master.openDatabase(null, "test.db", null, dc);
-		
-		DatabaseEntry key = new DatabaseEntry();
-		DatabaseEntry value = new DatabaseEntry();
-		value.setData("This is a reasonably long string.  The controller is responsible for maintaining the view, and for interpreting UI events and turning them into operations on the model.".getBytes());
-		int i = 0;
-		BtreeStats stats = (BtreeStats)db.getStats(null, null);
-		while (stats.getPageCount() < 400) {
+                if (junk) {
+                    DatabaseConfig dc = new DatabaseConfig();
+                    dc.setTransactional(true);
+                    dc.setAllowCreate(true);
+                    dc.setType(DatabaseType.BTREE);
+                    Database db = master.openDatabase(null, "test.db", null, dc);
+                    System.err.println("created database");
+                    
+                    
+                    DatabaseEntry key = new DatabaseEntry();
+                    DatabaseEntry value = new DatabaseEntry();
+                    value.setData("This is a reasonably long string.  The controller is responsible for maintaining the view, and for interpreting UI events and turning them into operations on the model.".getBytes());
+                    int i = 0;
+                    BtreeStats stats = (BtreeStats)db.getStats(null, null);
+                    while (stats.getPageCount() < 4) {
 			String k = "The record number is: " + ++i;
 			key.setData(k.getBytes());
 			db.put(null, key, value);
 			stats = (BtreeStats)db.getStats(null, null);
-		}
-		db.close();
+                    }
+                    db.close();
+                    System.err.println("closed database");
+                }
 
 		ec = makeBasicConfig();
 //		ec.setReplicationRequestMin(200);
 //		ec.setReplicationRequestMax(1000);
-		ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", clientPort));
-		ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", masterPort), false);
+                dbsite = new ReplicationManagerSiteConfig("localhost", clientPort);
+                dbsite.setLocalSite(true);
+		ec.addReplicationManagerSite(dbsite);
+                dbsite = new ReplicationManagerSiteConfig("localhost", masterPort);
+                dbsite.setBootstrapHelper(true);
+		ec.addReplicationManagerSite(dbsite);
 		MyEventHandler mon = new MyEventHandler();
 		ec.setEventHandler(mon);
 		Environment client = new Environment(mkdir("client"), ec);
@@ -132,7 +151,9 @@ public class TestRepmgr extends TestCase {
 //		assertEquals("localhost", sites[0].host);
 //		assertEquals(masterSpoofPort, sites[0].port);
 
+                System.err.println("started client");
 		mon.await();
+                System.err.println("completed await()");
 		
 //		sites = master.getReplicationManagerSiteList();
 //		assertEquals(1, sites.length);
@@ -157,7 +178,6 @@ public class TestRepmgr extends TestCase {
 		ec.setInitializeReplication(true);
 		ec.setTransactional(true);
 		ec.setThreaded(true);
-		ec.setReplicationNumSites(3);
 		if (Boolean.getBoolean("VERB_REPLICATION"))
 			ec.setVerbose(VerboseConfig.REPLICATION, true);
 		return (ec);

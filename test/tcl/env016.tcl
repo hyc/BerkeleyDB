@@ -133,9 +133,6 @@ proc env016 { } {
 		{ "rep_set_timeout" "db_rep_lease_timeout 500"
 		    "Env016.b6: Rep lease timeout"
 		    "rep_get_timeout lease" "500" }
-		{ "repmgr_add_remote_site" "example.com 49201 peer"
-		    "Env016.b7: Repmgr add remote site"
-		    "repmgr_site_list" "{0 example.com 49201 unknown peer}" }
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_all"
 		    "Env016.b8: Repmgr acks_all"
 		    "repmgr_get_ack_policy" "all" }
@@ -157,7 +154,7 @@ proc env016 { } {
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_quorum"
 		    "Env016.b8: Repmgr acks_quorum"
 		    "repmgr_get_ack_policy" "quorum" }
-		{ "repmgr_set_local_site" "example.com 49200"
+		{ "repmgr_site" "example.com 49200 db_local_site on"
 		    "Env016.b9: Repmgr set local site"
 		    "repmgr_get_local_site" "example.com 49200" }
 	}
@@ -216,9 +213,9 @@ proc env016 { } {
 		{ "rep_set_timeout" "db_rep_xxx_timeout 50" }
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_all on" }
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_xxx" }
-		{ "repmgr_add_remote_site" "localhost" }
-		{ "repmgr_add_remote_site" "localhost 10001 xxx" }
-		{ "repmgr_set_local_site" "localhost" }
+		{ "repmgr_site" "localhost" }
+		{ "repmgr_site" "localhost 10001 peer" }
+		{ "repmgr_site" "localhost 10001 xxxx on" }
 	}
 
 	foreach l $bad_glist {

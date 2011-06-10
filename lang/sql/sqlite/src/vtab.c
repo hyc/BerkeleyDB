@@ -48,7 +48,7 @@ static int createModule(
     if( pDel==pMod ){
       db->mallocFailed = 1;
     }
-    sqlite3ResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, -1);
   }else if( xDestroy ){
     xDestroy(pAux);
   }
@@ -145,10 +145,9 @@ static VTable *vtabDisconnectAll(sqlite3 *db, Table *p){
   ** that contains table p is held by the caller. See header comments 
   ** above function sqlite3VtabUnlockList() for an explanation of why
   ** this makes it safe to access the sqlite3.pDisconnect list of any
-  ** database connection that may have an entry in the p->pVTable list.  */
-  assert( db==0 ||
-    sqlite3BtreeHoldsMutex(db->aDb[sqlite3SchemaToIndex(db, p->pSchema)].pBt) 
-  );
+  ** database connection that may have an entry in the p->pVTable list.
+  */
+  assert( db==0 || sqlite3SchemaMutexHeld(db, 0, p->pSchema) );
 
   while( pVTable ){
     sqlite3 *db2 = pVTable->db;
@@ -221,14 +220,14 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 ** in the list are moved to the sqlite3.pDisconnect list of the associated 
 ** database connection.
 */
-void sqlite3VtabClear(Table *p){
-  vtabDisconnectAll(0, p);
+void sqlite3VtabClear(sqlite3 *db, Table *p){
+  if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){
-      sqlite3DbFree(p->dbMem, p->azModuleArg[i]);
+      sqlite3DbFree(db, p->azModuleArg[i]);
     }
-    sqlite3DbFree(p->dbMem, p->azModuleArg);
+    sqlite3DbFree(db, p->azModuleArg);
   }
 }
 
@@ -371,8 +370,8 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     sqlite3ChangeCookie(pParse, iDb);
 
     sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
-    zWhere = sqlite3MPrintf(db, "name='%q'", pTab->zName);
-    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 1, 0, zWhere, P4_DYNAMIC);
+    zWhere = sqlite3MPrintf(db, "name='%q' AND type='table'", pTab->zName);
+    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
     sqlite3VdbeAddOp4(v, OP_VCreate, iDb, 0, 0, 
                          pTab->zName, sqlite3Strlen30(pTab->zName) + 1);
   }
@@ -387,13 +386,13 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     Schema *pSchema = pTab->pSchema;
     const char *zName = pTab->zName;
     int nName = sqlite3Strlen30(zName);
+    assert( sqlite3SchemaMutexHeld(db, 0, pSchema) );
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, nName, pTab);
     if( pOld ){
       db->mallocFailed = 1;
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
-    pSchema->db = pParse->db;
     pParse->pNewTable = 0;
   }
 }
@@ -467,7 +466,7 @@ static int vtabCallConstructor(
       *pzErr = sqlite3MPrintf(db, "vtable constructor failed: %s", zModuleName);
     }else {
       *pzErr = sqlite3MPrintf(db, "%s", zErr);
-      sqlite3DbFree(db, zErr);
+      sqlite3_free(zErr);
     }
     sqlite3DbFree(db, pVTable);
   }else if( ALWAYS(pVTable->pVtab) ){
@@ -673,7 +672,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       }
       db->pVTab = 0;
     }else{
-      sqlite3Error(db, SQLITE_ERROR, zErr);
+      sqlite3Error(db, SQLITE_ERROR, (zErr ? "%s" : 0), zErr);
       sqlite3DbFree(db, zErr);
       rc = SQLITE_ERROR;
     }
@@ -682,7 +681,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     if( pParse->pVdbe ){
       sqlite3VdbeFinalize(pParse->pVdbe);
     }
-    sqlite3DeleteTable(pParse->pNewTable);
+    sqlite3DeleteTable(db, pParse->pNewTable);
     sqlite3StackFree(db, pParse);
   }
 
@@ -769,8 +768,8 @@ int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
     if( pVtab && (x = pVtab->pModule->xSync)!=0 ){
       rc = x(pVtab);
       sqlite3DbFree(db, *pzErrmsg);
-      *pzErrmsg = pVtab->zErrMsg;
-      pVtab->zErrMsg = 0;
+      *pzErrmsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
+      sqlite3_free(pVtab->zErrMsg);
     }
   }
   db->aVTrans = aVTrans;

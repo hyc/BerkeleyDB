@@ -12,7 +12,10 @@
     <link rel="next" href="lockstat_print.html" title="DB_ENV-&gt;lock_stat_print()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;lock_stat()</th>
@@ -65,14 +68,6 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <ul type="disc">
           <li>
             <p>
-                          <span class="bold"><strong>u_int32_t st_id;</strong></span>
-                </p>
-            <p>
-                        The last allocated locker ID.
-                </p>
-          </li>
-          <li>
-            <p>
                          <span class="bold"><strong>u_int32_t st_cur_maxid;</strong></span>
                 </p>
             <p>
@@ -81,183 +76,45 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>int st_nmodes;</strong></span>
+                         <span class="bold"><strong>u_int32_t st_hash_len;</strong></span>
                 </p>
             <p>
-                        The number of lock modes.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_maxlocks;</strong></span>
-                </p>
-            <p>
-                        The maximum number of locks possible.
+                        Maximum length of a lock hash bucket.
                 </p>
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>u_int32_t st_maxlockers;</strong></span>
+                          <span class="bold"><strong>u_int32_t st_id;</strong></span>
                 </p>
             <p>
-                                The maximum number of lockers possible.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_maxobjects;</strong></span>
-                </p>
-            <p>
-                        The maximum number of lock objects possible.
+                        The last allocated locker ID.
                 </p>
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>u_int32_t st_partitions;</strong></span>
+                          <span class="bold"><strong>u_int32_t st_initlocks;</strong></span>
                 </p>
             <p>
-                        The number of lock table partitions.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_nlocks;</strong></span>
-                </p>
-            <p>
-                        The number of current locks.
+                        The initial number of locks allocated in the lock
+                        table.
                 </p>
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>u_int32_t st_maxnlocks;</strong></span>
+                          <span class="bold"><strong>u_int32_t st_initlockers;</strong></span>
                 </p>
             <p>
-                         The maximum number of locks at any one time. Note that if there is
-                         more than one partition, this is the sum of the maximum across all
-                         partitions.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_maxhlocks;</strong></span>
-                </p>
-            <p>
-                         The maximum number of locks in any hash bucket at any one time.
+                        The initial number of lockers allocated in the lock
+                        table.
                 </p>
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>uintmax_t st_locksteals;</strong></span>
+                          <span class="bold"><strong>u_int32_t st_initobjects;</strong></span>
                 </p>
             <p>
-                        The maximum number of locks stolen by an empty partition.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_maxlsteals;</strong></span>
-                </p>
-            <p>
-                        The maximum number of lock steals for any one partition.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_nlockers;</strong></span>
-                </p>
-            <p>
-                        The number of current lockers.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_maxnlockers;</strong></span>
-                </p>
-            <p>
-                        The maximum number of lockers at any one time.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_nobjects;</strong></span>
-                </p>
-            <p>
-                        The number of current lock objects.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_maxnobjects;</strong></span>
-                </p>
-            <p>
-                         The maximum number of lock objects at any one time. Note that if there
-                         is more than one partition this is the sum of the maximum across all
-                         partitions.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>u_int32_t st_maxhobjects;</strong></span>
-                </p>
-            <p>
-                         The maximum number of objects in any hash bucket at any one time.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_objectsteals;</strong></span>
-                </p>
-            <p>
-                         The maximum number of objects stolen by an empty partition.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_maxosteals;</strong></span>
-                </p>
-            <p>
-                        The maximum number of object steals for any one partition.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_nrequests;</strong></span>
-                </p>
-            <p>
-                        The total number of locks requested.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_nreleases;</strong></span>
-                </p>
-            <p>
-                        The total number of locks released.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_nupgrade;</strong></span>
-                </p>
-            <p>
-                        The total number of locks upgraded.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_ndowngrade;</strong></span>
-                </p>
-            <p>
-                        The total number of locks downgraded.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_lock_wait;</strong></span>
-                </p>
-            <p>
-                         The number of lock requests not immediately available due to
-                         conflicts, for which the thread of control waited.
+                        The initial number of lock objects allocated in the lock
+                        table.
                 </p>
           </li>
           <li>
@@ -271,61 +128,19 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>uintmax_t st_ndeadlocks;</strong></span>
+                         <span class="bold"><strong>uintmax_t st_lock_wait;</strong></span>
                 </p>
             <p>
-                        The number of deadlocks.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>db_timeout_t st_locktimeout;</strong></span>
-                </p>
-            <p>
-                        Lock timeout value.
+                         The number of lock requests not immediately available due to
+                         conflicts, for which the thread of control waited.
                 </p>
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>uintmax_t st_nlocktimeouts;</strong></span>
+                         <span class="bold"><strong>uintmax_t st_lockers_nowait;</strong></span>
                 </p>
             <p>
-                        The number of lock requests that have timed out.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>db_timeout_t st_txntimeout;</strong></span>
-                </p>
-            <p>
-                        Transaction timeout value.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_ntxntimeouts;</strong></span>
-                </p>
-            <p>
-                         The number of transactions that have timed out.  This value is also a
-                         component of <span class="bold"><strong>st_ndeadlocks</strong></span>, the total
-                         number of deadlocks detected.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_objs_wait;</strong></span>
-                </p>
-            <p>
-                         The number of requests to allocate or deallocate an object for which
-                         the thread of control waited.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_objs_nowait;</strong></span>
-                </p>
-            <p>
-                         The number of requests to allocate or deallocate an object for which
+                         The number of requests to allocate or deallocate a locker for which
                          the thread of control did not wait.
                 </p>
           </li>
@@ -340,54 +155,243 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>uintmax_t st_lockers_nowait;</strong></span>
+                         <span class="bold"><strong>u_int32_t st_lockers;</strong></span>
                 </p>
             <p>
-                         The number of requests to allocate or deallocate a locker for which
+                    The current number of lockers allocated in the lock table.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_locks;</strong></span>
+                </p>
+            <p>
+                    The current number of locks allocated in the lock table.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_locksteals;</strong></span>
+                </p>
+            <p>
+                        The maximum number of locks stolen by an empty partition.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>db_timeout_t st_locktimeout;</strong></span>
+                </p>
+            <p>
+                        Lock timeout value.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxhlocks;</strong></span>
+                </p>
+            <p>
+                         The maximum number of locks in any hash bucket at any one time.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxhobjects;</strong></span>
+                </p>
+            <p>
+                         The maximum number of objects in any hash bucket at any one time.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxlockers;</strong></span>
+                </p>
+            <p>
+                                The maximum number of lockers possible.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxlocks;</strong></span>
+                </p>
+            <p>
+                        The maximum number of locks possible.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_maxlsteals;</strong></span>
+                </p>
+            <p>
+                        The maximum number of lock steals for any one partition.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxnlockers;</strong></span>
+                </p>
+            <p>
+                        The maximum number of lockers at any one time.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxnobjects;</strong></span>
+                </p>
+            <p>
+                         The maximum number of lock objects at any one time. Note that if there
+                         is more than one partition this is the sum of the maximum across all
+                         partitions.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxnlocks;</strong></span>
+                </p>
+            <p>
+                         The maximum number of locks at any one time. Note that if there is
+                         more than one partition, this is the sum of the maximum across all
+                         partitions.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_maxobjects;</strong></span>
+                </p>
+            <p>
+                        The maximum number of lock objects possible.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_maxosteals;</strong></span>
+                </p>
+            <p>
+                        The maximum number of object steals for any one partition.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_ndeadlocks;</strong></span>
+                </p>
+            <p>
+                        The number of deadlocks.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_ndowngrade;</strong></span>
+                </p>
+            <p>
+                        The total number of locks downgraded.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_nlockers;</strong></span>
+                </p>
+            <p>
+                        The number of current lockers.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_nlocks;</strong></span>
+                </p>
+            <p>
+                        The number of current locks.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_nlocktimeouts;</strong></span>
+                </p>
+            <p>
+                        The number of lock requests that have timed out.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>int st_nmodes;</strong></span>
+                </p>
+            <p>
+                        The number of lock modes.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_nobjects;</strong></span>
+                </p>
+            <p>
+                        The number of current lock objects.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_nreleases;</strong></span>
+                </p>
+            <p>
+                        The total number of locks released.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_nrequests;</strong></span>
+                </p>
+            <p>
+                        The total number of locks requested.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_ntxntimeouts;</strong></span>
+                </p>
+            <p>
+                         The number of transactions that have timed out.  This value is also a
+                         component of <span class="bold"><strong>st_ndeadlocks</strong></span>, the total
+                         number of deadlocks detected.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_nupgrade;</strong></span>
+                </p>
+            <p>
+                        The total number of locks upgraded.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_objects;</strong></span>
+                </p>
+            <p>
+                    The current number of lock objects allocated in the lock
+                    table.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_objectsteals;</strong></span>
+                </p>
+            <p>
+                         The maximum number of objects stolen by an empty partition.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_objs_nowait;</strong></span>
+                </p>
+            <p>
+                         The number of requests to allocate or deallocate an object for which
                          the thread of control did not wait.
                 </p>
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>u_int32_t st_hash_len;</strong></span>
+                         <span class="bold"><strong>uintmax_t st_objs_wait;</strong></span>
                 </p>
             <p>
-                        Maximum length of a lock hash bucket.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>roff_t st_regsize;</strong></span>
-                </p>
-            <p>
-                        The size of the lock region, in bytes.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_part_wait;</strong></span>
-                </p>
-            <p>
-                         The number of times that a thread of control was forced to wait before
-                         obtaining the lock partition mutex.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_part_nowait;</strong></span>
-                </p>
-            <p>
-                         The number of times that a thread of control was able to obtain the
-                         lock partition mutex without waiting.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_part_max_wait;</strong></span>
-                </p>
-            <p>
-                         The maximum number of times that a thread of control was forced to
-                         wait before obtaining any one lock partition mutex.
+                         The number of requests to allocate or deallocate an object for which
+                         the thread of control waited.
                 </p>
           </li>
           <li>
@@ -401,11 +405,37 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>uintmax_t st_region_wait;</strong></span>
+                         <span class="bold"><strong>uintmax_t st_part_max_wait;</strong></span>
+                </p>
+            <p>
+                         The maximum number of times that a thread of control was forced to
+                         wait before obtaining any one lock partition mutex.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_part_nowait;</strong></span>
+                </p>
+            <p>
+                         The number of times that a thread of control was able to obtain the
+                         lock partition mutex without waiting.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_part_wait;</strong></span>
                 </p>
             <p>
                          The number of times that a thread of control was forced to wait before
-                         obtaining the lock region mutex.
+                         obtaining the lock partition mutex.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_partitions;</strong></span>
+                </p>
+            <p>
+                        The number of lock table partitions.
                 </p>
           </li>
           <li>
@@ -417,21 +447,54 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
                          lock region mutex without waiting.
                 </p>
           </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>uintmax_t st_region_wait;</strong></span>
+                </p>
+            <p>
+                         The number of times that a thread of control was forced to wait before
+                         obtaining the lock region mutex.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>roff_t st_regsize;</strong></span>
+                </p>
+            <p>
+                        The region size, in bytes.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>u_int32_t st_tablesize;</strong></span>
+                </p>
+            <p>
+                    The size of the object hash table.
+                </p>
+          </li>
+          <li>
+            <p>
+                         <span class="bold"><strong>db_timeout_t st_txntimeout;</strong></span>
+                </p>
+            <p>
+                        Transaction timeout value.
+                </p>
+          </li>
         </ul>
       </div>
       <p>
               The <code class="methodname">DB_ENV-&gt;lock_stat()</code> method may not be called before the 
               <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a>  method is called.
-    </p>
+     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;lock_stat()</code> method returns a non-zero error value on
          failure and 0 on success.
-    </p>
+     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52503672"></a>Parameters</h3>
+              <h3 class="title"><a id="id3905380"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -439,36 +502,36 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52503864"></a>statp</h4>
+                <h4 class="title"><a id="id3904649"></a>statp</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>statp</strong></span> parameter references memory
-                          into which a pointer to the allocated statistics structure is copied.
-                     </p>
+                  The <span class="bold"><strong>statp</strong></span> parameter references memory
+                  into which a pointer to the allocated statistics structure is copied.
+             </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52553440"></a>flags</h4>
+                <h4 class="title"><a id="id3905307"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                          The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
-                          or the following value:
-                     </p>
+                  The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
+                  or the following value:
+             </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p><a id="stat_DB_STAT_CLEAR"></a>
-                  <code class="literal">DB_STAT_CLEAR</code>
-            </p>
+                          <code class="literal">DB_STAT_CLEAR</code>
+                    </p>
                 <p>
-                Reset statistics after returning their values.
-            </p>
+                        Reset statistics after returning their values.
+                    </p>
               </li>
             </ul>
           </div>
@@ -478,23 +541,23 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52558576"></a>Errors</h3>
+              <h3 class="title"><a id="id3905520"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-                         The <code class="methodname">DB_ENV-&gt;lock_stat()</code> <span>
+             The <code class="methodname">DB_ENV-&gt;lock_stat()</code> <span>
             <span>
                  method may fail and return one of the following non-zero errors:
             </span>
             
         </span>
-                    </p>
+        </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp52549896"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3905589"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -507,26 +570,26 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52562360"></a>Class</h3>
+              <h3 class="title"><a id="id3905567"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-                    <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>, 
-                    <a class="link" href="lock.html" title="Chapter 6.  The DB_LOCK Handle">DB_LOCK</a> 
-            </p>
+                <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>, 
+                <a class="link" href="lock.html" title="Chapter 6.  The DB_LOCK Handle">DB_LOCK</a> 
+        </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp52563656"></a>See Also</h3>
+              <h3 class="title"><a id="id3905607"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="lock.html#locklist" title="Locking Subsystem and Related Methods">Locking Subsystem and Related Methods</a> 
-                </p>
+             <a class="xref" href="lock.html#locklist" title="Locking Subsystem and Related Methods">Locking Subsystem and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

@@ -147,6 +147,23 @@ __dbreg_log_files(env, opcode)
 }
 
 /*
+ * __dbreg_log_nofiles --
+ *
+ * PUBLIC: int __dbreg_log_nofiles __P((ENV *));
+ */
+int
+__dbreg_log_nofiles(env)
+	ENV *env;
+{
+	DB_LOG *dblp;
+	LOG *lp;
+
+	dblp = env->lg_handle;
+	lp = dblp->reginfo.primary;
+
+	return (SH_TAILQ_EMPTY(&lp->fq));
+}
+/*
  * __dbreg_close_files --
  *	Remove the id's of open files and actually close those
  *	files that were opened by the recovery daemon.  We sync the
@@ -423,7 +440,7 @@ __dbreg_id_to_db(env, txn, dbpp, ndx, tryopen)
 		goto err;
 	}
 
-	/* It's an error if we don't have a corresponding writeable DB. */
+	/* It's an error if we don't have a corresponding writable DB. */
 	if ((*dbpp = dblp->dbentry[ndx].dbp) == NULL)
 		ret = ENOENT;
 	else
@@ -695,10 +712,11 @@ err:		if (cstat == TXN_UNEXPECTED)
 		 * If this is file is missing then we may have crashed
 		 * without writing the corresponding close, record
 		 * the open so recovery will write a close record
-		 * with its checkpoint.
+		 * with its checkpoint. If this is a backward pass then
+		 * we are closing a non-existent file and need to mark
+		 * it as deleted.
 		 */
-		if ((opcode == DBREG_CHKPNT || opcode == DBREG_OPEN) &&
-		    dbp->log_filename == NULL &&
+		if (dbp->log_filename == NULL &&
 		    (ret = __dbreg_setup(dbp, name, NULL, id)) != 0)
 			return (ret);
 		ret = __dbreg_assign_id(dbp, ndx, 1);
@@ -790,7 +808,7 @@ __dbreg_lazy_id(dbp)
 	if (fnp->old_id != DB_LOGFILEID_INVALID &&
 	    (ret = __dbreg_revoke_id(dbp, 1, DB_LOGFILEID_INVALID)) != 0)
 		goto err;
-	if ((ret = __txn_begin(env, NULL, NULL, &txn, 0)) != 0)
+	if ((ret = __txn_begin(env, NULL, NULL, &txn, DB_IGNORE_LEASE)) != 0)
 		goto err;
 
 	if ((ret = __dbreg_get_id(dbp, txn, &id)) != 0) {

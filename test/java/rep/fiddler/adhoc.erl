@@ -5,20 +5,10 @@
 
 munge(Name, Msg) ->
     case Name of
-        toss_acks ->
-            toss_acks(Msg);
         toss_all ->
             toss_all(Msg);
         page_clog ->
             page_clog(Msg);
-        _ ->
-            Msg
-    end.
-
-toss_acks(Msg) ->
-    case Msg of
-        {?ACK, _, _, _, _} ->
-            nil;
         _ ->
             Msg
     end.

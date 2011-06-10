@@ -12,7 +12,10 @@
     <link rel="next" href="txndiscard.html" title="DB_TXN-&gt;discard()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_TXN-&gt;commit()</th>
@@ -83,7 +86,7 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp54560096"></a>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="id3942096"></a>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -96,7 +99,7 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp54583016"></a>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="id3941955"></a>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -109,7 +112,19 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp54593680"></a>EINVAL</h4>
+              <h4 class="title"><a id="id3942346"></a>DB_REP_LEASE_EXPIRED</h4>
+            </div>
+          </div>
+        </div>
+        <p>
+                The operation failed because the site's replication master lease has expired.
+            </p>
+      </div>
+      <div class="sect3" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h4 class="title"><a id="id3942353"></a>EINVAL</h4>
             </div>
           </div>
         </div>
@@ -121,7 +136,7 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54594128"></a>Parameters</h3>
+              <h3 class="title"><a id="id3942360"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -129,7 +144,7 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54594320"></a>flags</h4>
+                <h4 class="title"><a id="id3942363"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -217,7 +232,7 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54598272"></a>Class</h3>
+              <h3 class="title"><a id="id3942429"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -229,7 +244,7 @@ DB_TXN-&gt;commit(DB_TXN *tid, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54582408"></a>See Also</h3>
+              <h3 class="title"><a id="id3941994"></a>See Also</h3>
             </div>
           </div>
         </div>

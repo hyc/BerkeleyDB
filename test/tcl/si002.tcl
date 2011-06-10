@@ -95,6 +95,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 	set did [open $dict]
 
 	# Populate with a cursor, exercising keyfirst/keylast.
+        # Can't use keyfirst/keylast to insert into a heap, so just append.
 	puts "\tSi$tnum.a: Cursor put (-keyfirst/-keylast) loop"
 	set pdbc [$pdb cursor]
 	error_check_good pdb_cursor [is_valid_cursor $pdbc $pdb] TRUE
@@ -117,9 +118,14 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 		} else {
 			set pflag " -keylast "
 		}
-
-		set ret [eval {$pdbc put} $pflag \
-		    {$key [chop_data $pmethod $datum]}]
+		
+		if { [is_heap $pmethod] } {
+		    set ret [eval {$pdb put} \
+			{$key [chop_data $pmethod $datum]}]
+		} else {
+		    set ret [eval {$pdbc put} $pflag \
+			{$key [chop_data $pmethod $datum]}]
+		}
 		error_check_good put($n) $ret 0
 	}
 	error_check_good pdbc_close [$pdbc close] 0
@@ -135,6 +141,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 		set key [lindex [lindex $dbt 0] 0]
 		set datum [lindex [lindex $dbt 0] 1]
 		set newd $datum.$key
+
 		set ret [eval {$pdbc put -current} [chop_data $pmethod $newd]]
 		error_check_good put_overwrite($key) $ret 0
 		set data($ns($key)) [pad_data $pmethod $newd]
@@ -163,7 +170,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 		#
 		error_check_good cursor_cmp [$sdbc cmp $sdbc2] 0
 		set ret [$sdbc2 get -next]
-		
+
 		# If the second cursor tried to walk past the last item, 
 		# this can't work, so we skip it. 
 		if { [llength $ret] > 0 } {
@@ -184,6 +191,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 		}
 
 		set newd $pdatum.[string range $pdatum 0 2]
+
 		set ret [eval {$pdb put} {$pkey [chop_data $pmethod $newd]}]
 		error_check_good pdb_put($pkey) $ret 0
 		set data($ns($pkey)) [pad_data $pmethod $newd]
@@ -208,7 +216,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 	}
 	error_check_good pdbc_close [$pdbc close] 0
 	cursor_check_secondaries $pdb $sdbs $half "Si$tnum.d"
-
+        
 	# Delete half of what's left, through the first secondary.
 	set quar [expr $half / 2]
 	puts "\tSi$tnum.e:\
@@ -221,7 +229,7 @@ proc si002 { methods {nentries 200} {tnum "002"} args } {
 		set dbt [$sdbc get -next]
 	}
 	error_check_good sdbc_close [$sdbc close] 0
-	cursor_check_secondaries $pdb $sdbs $quar "Si$tnum.e"
+    cursor_check_secondaries $pdb $sdbs [expr $nentries - $half - $quar] "Si$tnum.e"
 
 	foreach sdb $sdbs {
 		error_check_good secondary_close [$sdb close] 0

@@ -37,6 +37,10 @@ proc test042 { method {nentries 1000} args } {
 		return
 	}
 
+    if { [is_heap $method] } {
+	puts "Test042 skipping for method $method"
+	return
+    }
 	# Don't 'eval' the args here -- we want them to stay in 
 	# a lump until we pass them to berkdb_open and mdbscript.
 	test042_body $method $nentries 0 $args

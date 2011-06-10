@@ -94,6 +94,9 @@ __dbreg_setup(dbp, fname, dname, create_txnid)
 	DB_LOG *dblp;
 	ENV *env;
 	FNAME *fnp;
+#ifdef HAVE_STATISTICS
+	LOG *lp;
+#endif
 	REGINFO *infop;
 	int ret;
 	size_t len;
@@ -110,6 +113,13 @@ __dbreg_setup(dbp, fname, dname, create_txnid)
 	LOG_SYSTEM_LOCK(env);
 	if ((ret = __env_alloc(infop, sizeof(FNAME), &fnp)) != 0)
 		goto err;
+
+#ifdef HAVE_STATISTICS
+	lp = dblp->reginfo.primary;
+	if (++lp->stat.st_nfileid > lp->stat.st_maxnfileid)
+		lp->stat.st_maxnfileid = lp->stat.st_nfileid;
+#endif
+
 	memset(fnp, 0, sizeof(FNAME));
 	if (fname == NULL)
 		fnp->fname_off = INVALID_ROFF;
@@ -166,8 +176,8 @@ __dbreg_setup(dbp, fname, dname, create_txnid)
 
 err:	LOG_SYSTEM_UNLOCK(env);
 	if (ret == ENOMEM)
-		__db_errx(env,
-    "Logging region out of memory; you may need to increase its size");
+		__db_errx(env, DB_STR("1501",
+    "Logging region out of memory; you may need to increase its size"));
 
 	return (ret);
 }
@@ -213,6 +223,9 @@ __dbreg_teardown_int(env, fnp)
 	FNAME *fnp;
 {
 	DB_LOG *dblp;
+#ifdef HAVE_STATISTICS
+	LOG *lp;
+#endif
 	REGINFO *infop;
 	int ret;
 
@@ -220,6 +233,9 @@ __dbreg_teardown_int(env, fnp)
 		return (0);
 	dblp = env->lg_handle;
 	infop = &dblp->reginfo;
+#ifdef HAVE_STATISTICS
+	lp = dblp->reginfo.primary;
+#endif
 
 	DB_ASSERT(env, fnp->id == DB_LOGFILEID_INVALID);
 	ret = __mutex_free(env, &fnp->mutex);
@@ -230,6 +246,7 @@ __dbreg_teardown_int(env, fnp)
 	if (fnp->dname_off != INVALID_ROFF)
 		__env_alloc_free(infop, R_ADDR(infop, fnp->dname_off));
 	__env_alloc_free(infop, fnp);
+	STAT(lp->stat.st_nfileid--);
 	LOG_SYSTEM_UNLOCK(env);
 
 	return (ret);
@@ -703,8 +720,9 @@ __dbreg_failchk(env)
 		if (dbenv->is_alive(dbenv, fnp->pid, 0, DB_MUTEX_PROCESS_ONLY))
 			continue;
 		MUTEX_LOCK(env, fnp->mutex);
-		__db_msg(env,
+		__db_msg(env, DB_STR_A("1502",
 		    "Freeing log information for process: %s, (ref %lu)",
+		    "%s %lu"),
 		    dbenv->thread_id_string(dbenv, fnp->pid, 0, buf),
 		    (u_long)fnp->txn_ref);
 		if (fnp->txn_ref > 1 || F_ISSET(fnp, DB_FNAME_CLOSED)) {

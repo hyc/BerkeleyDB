@@ -123,7 +123,8 @@ __os_strerror(error, buf, len)
 
 	if (WideCharToMultiByte(CP_UTF8, 0, tbuf, -1,
 		buf, len, 0, NULL) == 0)
-		strncpy(buf, "Error message translation failed.", len);
+		strncpy(buf, DB_STR("0035",
+		    "Error message translation failed."), len);
 #else
 	DB_ASSERT(NULL, error != 0);
 	/*

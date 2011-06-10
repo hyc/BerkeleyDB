@@ -12,7 +12,10 @@
     <link rel="next" href="reppriority.html" title="DbEnv::rep_set_priority()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::rep_set_nsites()</th>
@@ -41,24 +44,26 @@ int
 DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
       <p>
          The <code class="methodname">DbEnv::rep_set_nsites()</code> method specifies the total number of
-         sites in a replication group.
+         sites in a replication group. This method should not be used by
+         Replication Manager applications; the number of sites in use by a
+         Replication Manager application is determined dynamically.
     </p>
       <p>
          The <code class="methodname">DbEnv::rep_set_nsites()</code> method is typically called by
-         Replication Manager applications.  (However, see also the 
+         Base API applications.  (However, see also the 
          <a class="xref" href="repelect.html" title="DbEnv::rep_elect()">DbEnv::rep_elect()</a> method
          <span class="bold"><strong>nsites</strong></span>
          parameter.)
     </p>
       <p>
          The database environment's replication subsystem may also be
-         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "rep_set_nsites", one or more whitespace characters, and the number of
-         sites specified. For example, "rep_set_nsites 5" sets the number of
-         sites to 5. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
-         read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file. The syntax of
+         the entry in that file is a single line with the string
+         "rep_set_nsites", one or more whitespace characters, and the
+         number of sites specified. For example, "rep_set_nsites 5" sets
+         the number of sites to 5. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read
+         when the database environment is opened, it will silently overrule
+         configuration done before that time.
     </p>
       <p>
          The <code class="methodname">DbEnv::rep_set_nsites()</code> method configures a database
@@ -67,9 +72,9 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
     </p>
       <p>
          If master leases are in use, the <code class="methodname">DbEnv::rep_set_nsites()</code> method
-         may not be called after the <a class="xref" href="repstart.html" title="DbEnv::rep_start()">DbEnv::rep_start()</a> or
-         <a class="xref" href="repmgrstart.html" title="DbEnv::repmgr_start()">DbEnv::repmgr_start()</a> methods
-         are called. If master leases are not in use, the
+         should not be called after the <a class="xref" href="repstart.html" title="DbEnv::rep_start()">DbEnv::rep_start()</a>
+         method is called as this could cause you to lose data previously
+         thought to be durable. If master leases are not in use, the
          <code class="methodname">DbEnv::rep_set_nsites()</code> method may be
          called at any time during the life of the application.
     </p>
@@ -87,7 +92,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54151480"></a>Parameters</h3>
+              <h3 class="title"><a id="id3660170"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -95,7 +100,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54150800"></a>nsites</h4>
+                <h4 class="title"><a id="id3660163"></a>nsites</h4>
               </div>
             </div>
           </div>
@@ -109,7 +114,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54152392"></a>Errors</h3>
+              <h3 class="title"><a id="id3660185"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -127,7 +132,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54161696"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3660338"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -141,7 +146,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54160616"></a>Class</h3>
+              <h3 class="title"><a id="id3660320"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -153,7 +158,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54048336"></a>See Also</h3>
+              <h3 class="title"><a id="id3659674"></a>See Also</h3>
             </div>
           </div>
         </div>

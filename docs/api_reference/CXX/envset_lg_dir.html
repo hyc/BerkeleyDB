@@ -12,7 +12,10 @@
     <link rel="next" href="envset_lg_filemode.html" title="DbEnv::set_lg_filemode()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::set_lg_dir()</th>
@@ -46,7 +49,8 @@ DbEnv::set_lg_dir(const char *dir); </pre>
     </p>
       <p>
          If no logging directory is specified, log files are created in the
-         environment home directory.   See <a href="../../programmer_reference/env_naming.html" class="olink">Berkeley DB File Naming</a> for more
+         environment home directory.   See 
+         <a href="../../programmer_reference/env_naming.html" class="olink">Berkeley DB File Naming</a> for more
          information.
     </p>
       <p>
@@ -55,13 +59,20 @@ DbEnv::set_lg_dir(const char *dir); </pre>
          physical devices.
     </p>
       <p>
-         The database environment's logging directory may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
+         The database environment's logging directory may also be
+         configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax
+         of the entry in that file is a single line with the string
          "set_lg_dir", one or more whitespace characters, and the directory
-         name. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is
-         read when the database environment is opened, it will silently
-         overrule configuration done before that time.
+         name. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the database
+         environment is opened, it will silently overrule configuration
+         done before that time.  Note that if you use this method for your
+         application, and you also want to use the
+         <a class="xref" href="db_recover.html" title="db_recover">db_recover</a>,
+         <a class="xref" href="db_printlog.html" title="db_printlog">db_printlog</a>,
+         <a class="xref" href="db_archive.html" title="db_archive">db_archive</a>, or
+         <a class="xref" href="db_log_verify.html" title="db_log_verify">db_log_verify</a>
+         utilities, then you should set create a <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file and set
+         the "set_lg_dir" parameter in it.
     </p>
       <p>
          The <code class="methodname">DbEnv::set_lg_dir()</code> method configures operations performed using
@@ -91,7 +102,7 @@ DbEnv::set_lg_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53146840"></a>Parameters</h3>
+              <h3 class="title"><a id="id3641065"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -99,7 +110,7 @@ DbEnv::set_lg_dir(const char *dir); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53146192"></a>dir</h4>
+                <h4 class="title"><a id="id3641054"></a>dir</h4>
               </div>
             </div>
           </div>
@@ -118,7 +129,7 @@ DbEnv::set_lg_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53138912"></a>Errors</h3>
+              <h3 class="title"><a id="id3640660"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -136,7 +147,7 @@ DbEnv::set_lg_dir(const char *dir); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp53156192"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3641259"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -150,7 +161,7 @@ DbEnv::set_lg_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53157520"></a>Class</h3>
+              <h3 class="title"><a id="id3641071"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -164,7 +175,7 @@ DbEnv::set_lg_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp53147704"></a>See Also</h3>
+              <h3 class="title"><a id="id3641171"></a>See Also</h3>
             </div>
           </div>
         </div>

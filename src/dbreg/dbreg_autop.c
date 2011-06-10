@@ -23,7 +23,7 @@ __dbreg_register_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__dbreg_register", __dbreg_register_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__dbreg_register", __dbreg_register_desc, info));
 }
 
 /*

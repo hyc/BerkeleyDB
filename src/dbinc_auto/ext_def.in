@@ -3,8 +3,10 @@
 #ifndef	_DB_EXT_DEF_IN_
 #define	_DB_EXT_DEF_IN_
 
+#define	db_copy db_copy@DB_VERSION_UNIQUE_NAME@
 #define	db_create db_create@DB_VERSION_UNIQUE_NAME@
 #define	db_strerror db_strerror@DB_VERSION_UNIQUE_NAME@
+#define	db_env_set_func_assert db_env_set_func_assert@DB_VERSION_UNIQUE_NAME@
 #define	db_env_set_func_close db_env_set_func_close@DB_VERSION_UNIQUE_NAME@
 #define	db_env_set_func_dirfree db_env_set_func_dirfree@DB_VERSION_UNIQUE_NAME@
 #define	db_env_set_func_dirlist db_env_set_func_dirlist@DB_VERSION_UNIQUE_NAME@
@@ -30,6 +32,9 @@
 #define	db_version db_version@DB_VERSION_UNIQUE_NAME@
 #define	db_full_version db_full_version@DB_VERSION_UNIQUE_NAME@
 #define	log_compare log_compare@DB_VERSION_UNIQUE_NAME@
+#if defined(DB_WIN32) && !defined(DB_WINCE)
+#define	db_env_set_win_security db_env_set_win_security@DB_VERSION_UNIQUE_NAME@
+#endif
 #define	db_sequence_create db_sequence_create@DB_VERSION_UNIQUE_NAME@
 #if DB_DBM_HSEARCH != 0
 #define	__db_ndbm_clearerr __db_ndbm_clearerr@DB_VERSION_UNIQUE_NAME@

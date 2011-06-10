@@ -96,7 +96,8 @@ proc recd012_body { method {ndbs 5} iter noutiter niniter psz tnum {largs ""} } 
 	for { set i 0 } { $i < $ndbs } { incr i } {
 	# 50-50 chance of being a subdb, unless we're a queue or partitioned.
 		if { [berkdb random_int 0 1] || \
-		    [is_queue $method] || [is_partitioned $largs] } {
+		    [is_queue $method] || [is_partitioned $largs] ||
+		    [is_heap $method] } {
 			# not a subdb
 			set dbname recd$tnum-$i.db
 		} else {

@@ -692,7 +692,8 @@ do_test incrvacuum-12.5 {
 # statement when the database is empty, but doesn't execute it until
 # after some other process has created the database.
 #
-db2 close
+# DBSQL does not do "db2 close" here because incrvacuum-12.2 is excluded 
+# so db2 is not opended.
 db close
 file delete -force test.db test.db-journal
 sqlite3 db test.db  ;  set ::DB [sqlite3_connection_pointer db]

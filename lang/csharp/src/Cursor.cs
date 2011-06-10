@@ -415,6 +415,58 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MoveFirst(key, data, info);
+        }
+        /// <summary>
+        /// Set the cursor to refer to the first key/data pair of the database, 
+        /// and store that pair in <see cref="Current"/>. If the first key has
+        /// duplicate values, the first data item in the set of duplicates is
+        /// stored in <see cref="Current"/>. If either the key or the data is
+        /// partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveFirst is successful, and any existing bytes are
+        /// returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveFirst(DatabaseEntry key, DatabaseEntry data) {
+            return MoveFirst(key, data, null);
+        }
+        /// <summary>
+        /// Set the cursor to refer to the first key/data pair of the database, 
+        /// and store that pair in <see cref="Current"/>. If the first key has
+        /// duplicate values, the first data item in the set of duplicates is
+        /// stored in <see cref="Current"/>. If either the key or the data is
+        /// partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveFirst is successful, and any existing bytes are
+        /// returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveFirst(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_FIRST, info);
         }
 
@@ -598,6 +650,70 @@ namespace BerkeleyDB {
         public bool Move(DatabaseEntry key, bool exact, LockingInfo info) {
             DatabaseEntry data = new DatabaseEntry();
 
+            return Move(key, data, exact, info);
+        }
+        /// <summary>
+        /// Set the cursor to refer to <paramref name="key"/>, and store the
+        /// datum associated with the given key in <see cref="Current"/>. In
+        /// the presence of duplicate key values, the first data item in the
+        /// set of duplicates is stored in <see cref="Current"/>. If either
+        /// the key or the data is partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, Move is successful, and any existing bytes are
+        /// returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The key at which to position the cursor</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="exact">
+        /// If true, require the given key to match the key in the database
+        /// exactly.  If false, position the cursor at the smallest key greater
+        /// than or equal to the specified key, permitting partial key matches
+        /// and range searches.
+        /// </param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool Move(DatabaseEntry key, DatabaseEntry data, bool exact) {
+            return Move(key, data, exact, null);
+        }
+        /// <summary>
+        /// Set the cursor to refer to <paramref name="key"/>, and store the
+        /// datum associated with the given key in <see cref="Current"/>. In
+        /// the presence of duplicate key values, the first data item in the
+        /// set of duplicates is stored in <see cref="Current"/>. If either
+        /// the key or the data is partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, Move is successful, and any existing bytes are
+        /// returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The key at which to position the cursor</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="exact">
+        /// If true, require the given key to match the key in the database
+        /// exactly.  If false, position the cursor at the smallest key greater
+        /// than or equal to the specified key, permitting partial key matches
+        /// and range searches.
+        /// </param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool Move(DatabaseEntry key, DatabaseEntry data, bool exact,
+            LockingInfo info) {
             return Get(key, data,
                 exact ? DbConstants.DB_SET : DbConstants.DB_SET_RANGE, info);
         }
@@ -624,7 +740,7 @@ namespace BerkeleyDB {
         /// If true, require the given key and data to match the key and data
         /// in the database exactly.  If false, position the cursor at the
         /// smallest data value which is greater than or equal to the value
-        /// provided by <paramref name="pair.Value"/> (as determined by the
+        /// provided by <paramref name="pair"/>.Value (as determined by the
         /// comparison function).
         /// </param>
         /// <returns>
@@ -656,7 +772,7 @@ namespace BerkeleyDB {
         /// If true, require the given key and data to match the key and data
         /// in the database exactly.  If false, position the cursor at the
         /// smallest data value which is greater than or equal to the value
-        /// provided by <paramref name="pair.Value"/> (as determined by the
+        /// provided by <paramref name="pair"/>.Value (as determined by the
         /// comparison function).
         /// </param>
         /// <param name="info">The locking behavior to use.</param>
@@ -701,6 +817,58 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MoveLast(key, data, info);
+        }
+        /// <summary>
+        /// Set the cursor to refer to the last key/data pair of the database, 
+        /// and store that pair in <see cref="Current"/>. If the last key has
+        /// duplicate values, the last data item in the set of duplicates is
+        /// stored in <see cref="Current"/>. If either the key or the data is
+        /// partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveLast is successful, and any existing bytes are
+        /// returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveLast(DatabaseEntry key, DatabaseEntry data) {
+            return MoveLast(key, data, null);
+        }
+        /// <summary>
+        /// Set the cursor to refer to the last key/data pair of the database, 
+        /// and store that pair in <see cref="Current"/>. If the last key has
+        /// duplicate values, the last data item in the set of duplicates is
+        /// stored in <see cref="Current"/>. If either the key or the data is
+        /// partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveLast is successful, and any existing bytes are
+        /// returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveLast(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_LAST, info);
         }
 
@@ -817,7 +985,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -842,7 +1010,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -873,7 +1041,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -900,7 +1068,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -1031,7 +1199,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -1056,7 +1224,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -1086,7 +1254,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -1113,7 +1281,7 @@ namespace BerkeleyDB {
         /// <param name="exact">
         /// If false and in a database configured for sorted duplicates,
         /// position the cursor at the smallest data value which is greater than
-        /// or equal to the value provided by <paramref name="pair.Value"/> (as
+        /// or equal to the value provided by <paramref name="pair"/>.Value (as
         /// determined by the comparison function). Otherwise, require the given
         /// key and data to match the key and data in the database exactly.
         /// </param>
@@ -1167,6 +1335,60 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MoveNext(key, data, info);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MoveNext is identical to 
+        /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
+        /// key/data pair of the database, and store that pair in
+        /// <see cref="Current"/>. In the presence of duplicate key values, the
+        /// value of <see cref="Current">Current.Key</see> may not change.
+        /// If either the key or the data is partial <see cref="DatabaseEntry"/>,
+        /// its <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveNext is successful, and any existing bytes are
+        /// returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveNext(DatabaseEntry key, DatabaseEntry data) {
+            return MoveNext(key, data, null);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MoveNext is identical to 
+        /// <see cref="MoveFirst(LockingInfo)"/>. Otherwise, move the cursor to
+        /// the next key/data pair of the database, and store that pair in
+        /// <see cref="Current"/>. In the presence of duplicate key values, the
+        /// value of <see cref="Current">Current.Key</see> may not change. 
+        /// If either the key or the data is partial <see cref="DatabaseEntry"/>,
+        /// its <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveNext is successful, and any existing bytes are
+        /// returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveNext(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_NEXT, info);
         }
 
@@ -1364,6 +1586,62 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MoveNextDuplicate(key, data, info);
+        }
+        /// <summary>
+        /// If the next key/data pair of the database is a duplicate data record
+        /// for the current key/data pair, move the cursor to the next key/data
+        /// pair in the database, and store that pair in <see cref="Current"/>.
+        /// MoveNextDuplicate will return false if the next key/data pair of the
+        /// database is not a duplicate data record for the current key/data
+        /// pair. If either the key or the data is partial
+        /// <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveNextDuplicate is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveNextDuplicate(DatabaseEntry key, DatabaseEntry data) {
+            return MoveNextDuplicate(key, data, null);
+        }
+        /// <summary>
+        /// If the next key/data pair of the database is a duplicate data record
+        /// for the current key/data pair, move the cursor to the next key/data
+        /// pair in the database, and store that pair in <see cref="Current"/>.
+        /// MoveNextDuplicate will return false if the next key/data pair of the
+        /// database is not a duplicate data record for the current key/data
+        /// pair. If either the key or the data is partial
+        /// <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveNextDuplicate is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveNextDuplicate(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_NEXT_DUP, info);
         }
 
@@ -1568,6 +1846,76 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MoveNextUnique(key, data, info);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MoveNextUnique is identical to 
+        /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
+        /// non-duplicate key in the database, and store that key and associated
+        /// datum in <see cref="Current"/>. MoveNextUnique will return false if
+        /// no non-duplicate key/data pairs exist after the cursor position in
+        /// the database. If either the key or the data is
+        /// partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveNextUnique is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the database is a Queue or Recno database, MoveNextUnique will
+        /// ignore any keys that exist but were never explicitly created by the
+        /// application, or those that were created and later deleted.
+        /// </para>
+        /// <para>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </para>
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveNextUnique(DatabaseEntry key, DatabaseEntry data) {
+            return MoveNextUnique(key, data, null);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MoveNextUnique is identical to 
+        /// <see cref="MoveFirst(LockingInfo)"/>. Otherwise, move the cursor to
+        /// the next non-duplicate key in the database, and store that key and 
+        /// associated datum in <see cref="Current"/>. MoveNextUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
+        /// cursor position in the database. If either the key or the data is
+        /// partial <see cref="DatabaseEntry"/>, its 
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MoveNextUnique is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the database is a Queue or Recno database, MoveNextUnique will
+        /// ignore any keys that exist but were never explicitly created by the
+        /// application, or those that were created and later deleted.
+        /// </para>
+        /// <para>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </para>
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MoveNextUnique(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_NEXT_NODUP, info);
         }
 
@@ -1766,6 +2114,60 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MovePrev(key, data, info);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MovePrev is identical to 
+        /// <see cref="MoveLast()"/>. Otherwise, move the cursor to the previous
+        /// key/data pair of the database, and store that pair in
+        /// <see cref="Current"/>. In the presence of duplicate key values, the
+        /// value of <see cref="Current">Current.Key</see> may not change. If
+        /// either the key or the data is partial <see cref="DatabaseEntry"/>,
+        /// its <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MovePrev is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MovePrev(DatabaseEntry key, DatabaseEntry data) {
+            return MovePrev(key, data, null);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MovePrev is identical to 
+        /// <see cref="MoveLast(LockingInfo)"/>. Otherwise, move the cursor to
+        /// the previous key/data pair of the database, and store that pair in
+        /// <see cref="Current"/>. In the presence of duplicate key values, the
+        /// value of <see cref="Current">Current.Key</see> may not change. If
+        /// either the key or the data is partial <see cref="DatabaseEntry"/>,
+        /// its <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MovePrev is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MovePrev(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_PREV, info);
         }
 
@@ -1805,6 +2207,62 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MovePrevDuplicate(key, data, info);
+        }
+        /// <summary>
+        /// If the previous key/data pair of the database is a duplicate data
+        /// record for the current key/data pair, the cursor is moved to the
+        /// previous key/data pair of the database, and that pair is stored in
+        /// <see cref="Current"/>. MovePrevDuplicate will return false if the
+        /// previous key/data pair of the database is not a duplicate data
+        /// record for the current key/data pair. If either the key or the
+        /// data is partial <see cref="DatabaseEntry"/>, its
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MovePrevDuplicate is successful, and any existing
+        /// bytes are returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MovePrevDuplicate(DatabaseEntry key, DatabaseEntry data) {
+            return MovePrevDuplicate(key, data, null);
+        }
+        /// <summary>
+        /// If the previous key/data pair of the database is a duplicate data
+        /// record for the current key/data pair, the cursor is moved to the
+        /// previous key/data pair of the database, and that pair is stored in
+        /// <see cref="Current"/>. MovePrevDuplicate will return false if the
+        /// previous key/data pair of the database is not a duplicate data
+        /// record for the current key/data pair. If either the key or the
+        /// data is partial <see cref="DatabaseEntry"/>, its
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MovePrevDuplicate is successful, and any existing
+        /// bytes are returned. 
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MovePrevDuplicate(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_PREV_DUP, info);
         }
 
@@ -1844,6 +2302,62 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return MovePrevUnique(key, data, info);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MovePrevUnique is identical to 
+        /// <see cref="MoveLast()"/>. Otherwise, move the cursor to the previous
+        /// non-duplicate key in the database, and store that key and associated
+        /// datum in <see cref="Current"/>. MovePrevUnique will return false if
+        /// ntheo non-duplicate key/data pairs exist after the cursor position in
+        /// database. If either the key or the data is partial
+        /// <see cref="DatabaseEntry"/>, its
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MovePrevUnique is successful, and any existing
+        /// bytes are returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MovePrevUnique(DatabaseEntry key, DatabaseEntry data) {
+            return MovePrevUnique(key, data, null);
+        }
+        /// <summary>
+        /// If the cursor is not yet initialized, MovePrevUnique is identical to 
+        /// <see cref="MoveLast(LockingInfo)"/>. Otherwise, move the cursor to
+        /// the previous non-duplicate key in the database, and store that key
+        /// and associated datum in <see cref="Current"/>. MovePrevUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
+        /// cursor position in the database. If either the key or the data
+        /// is partial <see cref="DatabaseEntry"/>, its
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, MovePrevUnique is successful, and any existing
+        /// bytes are returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool MovePrevUnique(
+            DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_PREV_NODUP, info);
         }
 
@@ -1886,6 +2400,53 @@ namespace BerkeleyDB {
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry data = new DatabaseEntry();
 
+            return Refresh(key, data, info);
+        }
+        /// <summary>
+        /// Store the key/data pair to which the cursor refers in
+        /// <see cref="Current"/>. If either the key or the data
+        /// is partial <see cref="DatabaseEntry"/>, its
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, Refresh is successful, and any existing
+        /// bytes are returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool Refresh(DatabaseEntry key, DatabaseEntry data) {
+            return Refresh(key, data, null);
+        }
+        /// <summary>
+        /// Store the key/data pair to which the cursor refers in
+        /// <see cref="Current"/>. If either the key or the data
+        /// is partial <see cref="DatabaseEntry"/>, its
+        /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
+        /// <see cref="DatabaseEntry.PartialOffset"/> bytes from the beginning
+        /// of the retrieved data record are returned as if they comprised the
+        /// entire record. If any or all of the specified bytes do not exist
+        /// in the record, Refresh is successful, and any existing
+        /// bytes are returned.
+        /// </summary>
+        /// <remarks>
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
+        /// an empty <see cref="KeyValuePair{T,T}"/>.
+        /// </remarks>
+        /// <param name="key">The retrieved key</param>
+        /// <param name="data">The retrieved data</param>
+        /// <param name="info">The locking behavior to use.</param>
+        /// <returns>
+        /// True if the cursor was positioned successfully, false otherwise.
+        /// </returns>
+        public bool Refresh(DatabaseEntry key, DatabaseEntry data, LockingInfo info) {
             return Get(key, data, DbConstants.DB_CURRENT, info);
         }
 

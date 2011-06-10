@@ -1207,6 +1207,24 @@ db_conv.o
 C/C++ compiler
 <END>
 
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_objects
+db_copy.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/db/db_copy.c_tool
+C/C++ compiler
+<END>
+
 <BEGIN> FILE_$(PRJ_DIR)/../src/db/db_dispatch.c_dependDone
 TRUE
 <END>
@@ -2032,6 +2050,24 @@ hash_stub.o
 <END>
 
 <BEGIN> FILE_$(PRJ_DIR)/../src/hash/hash_stub.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stub.c_dependDone
+TRUE
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stub.c_dependencies
+$(PRJ_DIR)/db_config.h \
+	$(PRJ_DIR)/db_int.h \
+	$(PRJ_DIR)/db.h
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stub.c_objects
+heap_stub.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/heap/heap_stub.c_tool
 C/C++ compiler
 <END>
 
@@ -3634,6 +3670,7 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/db/db_cds.c \
 	$(PRJ_DIR)/../src/db/db_compact.c \
 	$(PRJ_DIR)/../src/db/db_conv.c \
+	$(PRJ_DIR)/../src/db/db_copy.c \
 	$(PRJ_DIR)/../src/db/db_dispatch.c \
 	$(PRJ_DIR)/../src/db/db_dup.c \
 	$(PRJ_DIR)/../src/db/db_iface.c \
@@ -3680,6 +3717,7 @@ $(PRJ_DIR)/../src/btree/bt_compact.c \
 	$(PRJ_DIR)/../src/fileops/fop_util.c \
 	$(PRJ_DIR)/../src/hash/hash_func.c \
 	$(PRJ_DIR)/../src/hash/hash_stub.c \
+	$(PRJ_DIR)/../src/heap/heap_stub.c \
 	$(PRJ_DIR)/../src/hmac/hmac.c \
 	$(PRJ_DIR)/../src/hmac/sha1.c \
 	$(PRJ_DIR)/../src/lock/lock.c \

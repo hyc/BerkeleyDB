@@ -12,7 +12,10 @@
     <link rel="next" href="set_tmp_dir_parameter.html" title="set_tmp_dir" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">set_timeout</th>
@@ -38,31 +41,40 @@
 			the database environment, and the wait time for a process to exit the environment when
 			DB_REGISTER recovery is needed.
             </p>
-      <p>The syntax for setting timeout value for database environment's lock, before recovery is started, and transaction is as follows:</p>
+      <p>
+                The syntax for setting timeout value for database
+                environment's lock, before recovery is started, and
+                transaction is as follows:
+            </p>
       <div class="itemizedlist">
         <ul type="disc">
           <li>
             DB_SET_LOCK_TIMEOUT
             <p>
-            Configures the database environment's lock timeout value. The syntax of the entry in 
-            <a href="../../bdb-sql/using_dbconfig.html#using_dbconfig.title" class="olink">the DB_CONFIG File</a> is a single line 
-            with the string <code class="literal">set_lock_timeout</code>, one or more whitespace characters, and the lock timeout
-			value.         
+                Configures the database environment's lock timeout value.
+                The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
+                line with the string <code class="literal">set_lock_timeout</code>,
+                one or more whitespace characters, and the lock timeout
+                value.         
             </p></li>
           <li>
             DB_SET_REG_TIMEOUT
             <p>
-            Sets the timeout value on how long to wait for processes to exit the environment before recovery is started.
-            The syntax of the entry in 
-            <a href="../../bdb-sql/using_dbconfig.html#using_dbconfig.title" class="olink">the DB_CONFIG File</a> is a single line 
-            with the string <code class="literal">set_reg_timeout</code>, one or more whitespace characters, and the wait timeout value.         
+                Sets the timeout value on how long to wait for processes to
+                exit the environment before recovery is started.  The
+                syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
+                line with the string <code class="literal">set_reg_timeout</code>,
+                one or more whitespace characters, and the wait timeout
+                value.         
             </p></li>
           <li>
             DB_SET_TXN_TIMEOUT
             <p>
-            Sets the timeout value for transactions in this database environment. The syntax of the entry in 
-            <a href="../../bdb-sql/using_dbconfig.html#using_dbconfig.title" class="olink">the DB_CONFIG File</a> is a single line 
-            with the string <code class="literal">set_txn_timeout</code>, one or more whitespace characters, and the transaction timeout value
+                Sets the timeout value for transactions in this database
+                environment. The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                file is a single line with the string
+                <code class="literal">set_txn_timeout</code>, one or more whitespace
+                characters, and the transaction timeout value
             </p></li>
         </ul>
       </div>

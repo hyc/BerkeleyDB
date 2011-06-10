@@ -8,6 +8,7 @@ sh s_apiflags		# API flags.
 sh s_sig		# Structure signature.
 sh s_recover		# logging/recovery files.
 sh s_message		# replication and repmgr message files.
+sh s_message_id		# generate message id.
 sh s_sql		# regenerate sqlite3.c
 sh s_php                # PHP config files
 

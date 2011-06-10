@@ -176,9 +176,10 @@ __db_new(dbc, type, lockp, pagepp)
 		DB_ASSERT(env, TYPE(h) == P_INVALID);
 
 		if (TYPE(h) != P_INVALID) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("0689",
 			    "%s page %lu is on free list with type %lu",
-				dbp->fname, (u_long)PGNO(h), (u_long)TYPE(h));
+			    "%s %lu %lu"), dbp->fname, (u_long)PGNO(h),
+			    (u_long)TYPE(h));
 			return (__env_panic(env, EINVAL));
 		}
 
@@ -225,7 +226,7 @@ __db_new(dbc, type, lockp, pagepp)
 
 	if (hash == 0 && (ret = __memp_fput(mpf,
 	    dbc->thread_info, meta, dbc->priority)) != 0)
-	    	goto err;
+		goto err;
 	meta = NULL;
 
 	switch (type) {
@@ -532,7 +533,6 @@ logged:
 			goto err1;
 		DB_ASSERT(dbp->env, meta->pgno == PGNO_BASE_MD);
 		meta->last_pgno--;
-		h = NULL;
 	} else {
 #ifdef HAVE_FTRUNCATE
 		if (list != NULL) {
@@ -1246,7 +1246,7 @@ __db_lget(dbc, action, pgno, mode, lkflags, lockp)
 		action = LCK_COUPLE;
 	else if (lockp->mode == DB_LOCK_READ_UNCOMMITTED)
 		action = LCK_COUPLE;
-	else if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) && 
+	else if (F_ISSET(dbc->dbp, DB_AM_READ_UNCOMMITTED) &&
 	     !F_ISSET(dbc, DBC_ERROR) && lockp->mode == DB_LOCK_WRITE)
 		action = LCK_DOWNGRADE;
 	else
@@ -1309,13 +1309,13 @@ do_couple:	couple[i].op = has_timeout? DB_LOCK_GET_TIMEOUT : DB_LOCK_GET;
  * PUBLIC: #endif
  */
 int
-__db_haslock(env, locker, dbmfp, pgno, mode, lkflags)
+__db_haslock(env, locker, dbmfp, pgno, mode, type)
 	ENV *env;
 	DB_LOCKER *locker;
 	DB_MPOOLFILE *dbmfp;
 	db_pgno_t pgno;
 	db_lockmode_t mode;
-	u_int32_t lkflags;
+	u_int32_t type;
 {
 	DBT lkdata;
 	DB_LOCK lock;
@@ -1327,10 +1327,7 @@ __db_haslock(env, locker, dbmfp, pgno, mode, lkflags)
 
 	memcpy(ilock.fileid, dbmfp->fileid, DB_FILE_ID_LEN);
 	ilock.pgno = pgno;
-	if (lkflags & DB_LOCK_RECORD)
-		ilock.type = DB_RECORD_LOCK;
-	else
-		ilock.type = DB_PAGE_LOCK;
+	ilock.type = type;
 
 	return (__lock_get(env, locker, DB_LOCK_CHECK, &lkdata, mode, &lock));
 }
@@ -1352,10 +1349,14 @@ __db_has_pagelock(env, locker, dbmfp, pagep, mode)
 	PAGE *pagep;
 	db_lockmode_t mode;
 {
+	int ret;
+
 	switch (pagep->type) {
 	case P_OVERFLOW:
 	case P_INVALID:
 	case P_QAMDATA:
+	case P_QAMMETA:
+	case P_IHEAP:
 		return (0);
 	case P_HASH:
 		if (PREV_PGNO(pagep) != PGNO_INVALID)
@@ -1364,7 +1365,11 @@ __db_has_pagelock(env, locker, dbmfp, pagep, mode)
 	default:
 		break;
 	}
-	return (__db_haslock(env, locker, dbmfp, pagep->pgno, mode, 0));
+	if ((ret = __db_haslock(env,
+	    locker, dbmfp, pagep->pgno, mode, DB_PAGE_LOCK)) != 0)
+		ret = __db_haslock(env,
+		    locker, dbmfp, PGNO_BASE_MD, mode, DB_DATABASE_LOCK);
+	return (ret);
 }
 #endif
 

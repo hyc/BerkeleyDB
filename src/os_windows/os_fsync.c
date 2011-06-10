@@ -32,11 +32,12 @@ __os_fsync(env, fhp)
 		return (0);
 
 	if (dbenv != NULL && FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: flush %s", fhp->name);
+		__db_msg(env, DB_STR_A("0023",
+		    "fileops: flush %s", "%s"), fhp->name);
 
 	RETRY_CHK((!FlushFileBuffers(fhp->handle)), ret);
 	if (ret != 0) {
-		__db_syserr(env, ret, "FlushFileBuffers");
+		__db_syserr(env, ret, DB_STR("0024", "FlushFileBuffers"));
 		ret = __os_posix_err(ret);
 	}
 	return (ret);

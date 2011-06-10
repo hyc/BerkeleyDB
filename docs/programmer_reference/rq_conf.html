@@ -8,17 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="am_conf.html" title="Chapter 2.  Access Method Configuration" />
-    <link rel="prev" href="hash_conf.html" title="Hash access method specific configuration" />
+    <link rel="prev" href="heap_conf.html" title="Heap access method specific configuration" />
     <link rel="next" href="am.html" title="Chapter 3.  Access Method Operations" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Queue and Recno access method specific configuration</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="hash_conf.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="heap_conf.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 2. 
 		Access Method Configuration
         </th>
@@ -81,7 +84,7 @@ fixed-length data items.</p>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50542840"></a>Record Delimiters</h4>
+                <h4 class="title"><a id="id3882282"></a>Record Delimiters</h4>
               </div>
             </div>
           </div>
@@ -105,7 +108,7 @@ delimiting byte value.</p>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50523136"></a>Record Length</h4>
+                <h4 class="title"><a id="id3881902"></a>Record Length</h4>
               </div>
             </div>
           </div>
@@ -128,7 +131,7 @@ further information on backing source files, see
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp50532632"></a>Record Padding Byte Value</h4>
+                <h4 class="title"><a id="id3881843"></a>Record Padding Byte Value</h4>
               </div>
             </div>
           </div>
@@ -150,27 +153,38 @@ files, see <a class="xref" href="rq_conf.html#am_conf_re_source" title="Flat-tex
             </div>
           </div>
         </div>
-        <p>In Queue databases, records are allocated sequentially and directly
-mapped to an offset within the file storage for the database.  As
-records are deleted from the Queue, pages will become empty and will
-not be reused in normal queue operations.  To facilitate the reclamation
-of disk space a Queue may be partitioned into extents.  Each extent is
-kept in a separate physical file.</p>
-        <p>Extent files are automatically created as needed and marked for deletion
-when the head of the queue moves off the extent.  The extent will not
-be deleted until all processes close the extent.  In addition, Berkeley DB
-caches a small number of extents that have been recently used; this may
-delay when an extent will be deleted. The number of extents left open
-depends on queue activity.</p>
-        <p>The extent size specifies the number of pages that make up each extent.
-By default, if no extent size is specified, the Queue resides in a
-single file and disk space is not reclaimed.  In choosing an extent size
-there is a tradeoff between the amount of disk space used and the
-overhead of creating and deleting files.  If the extent size is too
-small, the system will pay a performance penalty, creating and deleting
-files frequently.  In addition, if the active part of the queue spans
-many files, all those files will need to be open at the same time,
-consuming system and process file resources.</p>
+        <p>
+        In Queue databases, records are allocated sequentially and directly
+        mapped to an offset within the file storage for the database.  As
+        records are deleted from the Queue, pages will become empty and will
+        not be reused in normal queue operations.  To facilitate the
+        reclamation of disk space a Queue may be partitioned into extents.
+        Each extent is kept in a separate physical file.
+    </p>
+        <p>
+        Extent files are automatically created as needed and marked for
+        deletion when the head of the queue moves off the extent.  The extent
+        will not be deleted until all processes close the extent.  In addition,
+        Berkeley DB caches a small number of extents that have been recently
+        used; this may delay when an extent will be deleted. The number of
+        extents left open depends on queue activity.
+    </p>
+        <p>
+        The extent size specifies the number of pages that make up each extent.
+        By default, if no extent size is specified, the Queue resides in a
+        single file and disk space is not reclaimed.  In choosing an extent
+        size there is a tradeoff between the amount of disk space used and the
+        overhead of creating and deleting files.  If the extent size is too
+        small, the system will pay a performance penalty, creating and deleting
+        files frequently.  In addition, if the active part of the queue spans
+        many files, all those files will need to be open at the same time,
+        consuming system and process file resources.
+    </p>
+        <p>
+        You can set the Queue extent size using the <a href="../api_reference/C/dbset_q_extentsize.html" class="olink">DB-&gt;set_q_extentsize()</a>
+        method. You can see the current extent size using the
+        <a href="../api_reference/C/dbget_q_extentsize.html" class="olink">DB-&gt;get_q_extentsize()</a> method.
+    </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -293,14 +307,14 @@ return.</p>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="hash_conf.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="heap_conf.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="am_conf.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="am.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Hash access method specific configuration </td>
+          <td width="40%" align="left" valign="top">Heap access method specific configuration </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

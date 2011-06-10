@@ -8,17 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="env.html" title="Chapter 9.  The Berkeley DB Environment" />
-    <link rel="prev" href="env_create.html" title="Creating a database environment" />
+    <link rel="prev" href="env_size.html" title="Sizing a database environment" />
     <link rel="next" href="env_error.html" title="Error support" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Opening databases within the environment</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="env_create.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="env_size.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 9. 
 		The Berkeley DB Environment
         </th>
@@ -46,14 +49,14 @@ created or joined, database operations will automatically perform all
 necessary locking operations for the application.</p>
       <p>The following is a simple example of opening two databases within a
 database environment:</p>
-      <pre class="programlisting">    DB_ENV *dbenv;
+      <a id="prog_env28"></a>
+      <pre class="programlisting">DB_ENV *dbenv;
     DB *dbp1, *dbp2;
     int ret;
 
     dbenv = NULL;
     dbp1 = dbp2 = NULL;
-
-    /*
+	/*
      * Create an environment and initialize it for additional error
      * reporting.
      */
@@ -108,14 +111,14 @@ err:    if (dbp2 != NULL)
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="env_create.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="env_size.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="env.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="env_error.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Creating a database environment </td>
+          <td width="40%" align="left" valign="top">Sizing a database environment </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

@@ -17,7 +17,7 @@ proc sdb013 { method { nentries 10 } args } {
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
 
-	if { [is_queueext $method] == 1 } {
+       if { [is_queueext $method] == 1 || [is_heap $method] == 1 } {
 		puts "Subdb$tnum: skipping for method $method"
 		return
 	}
@@ -51,7 +51,7 @@ proc sdb013 { method { nentries 10 } args } {
 		incr pgindex
 		set pagesize [lindex $args $pgindex]
 		if { $pagesize > 8192 } {
-			set cache [expr 4 * $pagesize]
+			set cache [expr 8 * $pagesize]
 			set csize "0 $cache 1"
 		}
 	}

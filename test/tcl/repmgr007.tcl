@@ -7,7 +7,7 @@
 # TEST	repmgr007
 # TEST	Basic repmgr client shutdown/restart test.
 # TEST
-# TEST	Start an appointed master site and two clients. Shutdown and
+# TEST	Start an appointed master site and two clients. Shut down and
 # TEST	restart each client, processing transactions after each restart.
 # TEST	Verify all expected transactions are replicated.
 # TEST
@@ -60,7 +60,7 @@ proc repmgr007_sub { method niter tnum largs } {
 	set ma_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx MASTER -home $masterdir -txn -rep -thread"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -ack all -nsites $nsites \
+	$masterenv repmgr -ack all \
 	    -timeout {connection_retry 20000000} \
 	    -local [list localhost [lindex $ports 0]] \
 	    -start master
@@ -70,7 +70,7 @@ proc repmgr007_sub { method niter tnum largs } {
 	set cl_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -83,7 +83,7 @@ proc repmgr007_sub { method niter tnum largs } {
 	set cl2_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread"
 	set clientenv2 [eval $cl2_envcmd]
-	$clientenv2 repmgr -ack all -nsites $nsites \
+	$clientenv2 repmgr -ack all \
 	    -timeout {connection_retry 5000000} \
 	    -local [list localhost [lindex $ports 2]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -105,7 +105,7 @@ proc repmgr007_sub { method niter tnum largs } {
 	tclsleep 5
 	# Open -recover to clear env region, including startup_done value.
 	set clientenv [eval $cl_envcmd -recover]
-	$clientenv repmgr -ack all -nsites $nsites \
+	$clientenv repmgr -ack all \
 	    -timeout {connection_retry 10000000} \
 	    -local [list localhost [lindex $ports 1]] \
 	    -remote [list localhost [lindex $ports 0]] \
@@ -126,7 +126,7 @@ proc repmgr007_sub { method niter tnum largs } {
 	tclsleep 5
 	# Open -recover to clear env region, including startup_done value.
 	set clientenv2 [eval $cl2_envcmd -recover]
-	$clientenv2 repmgr -ack all -nsites $nsites \
+	$clientenv2 repmgr -ack all \
 	    -timeout {connection_retry 5000000} \
 	    -local [list localhost [lindex $ports 2]] \
 	    -remote [list localhost [lindex $ports 0]] \

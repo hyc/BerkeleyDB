@@ -12,7 +12,10 @@
     <link rel="next" href="envclose.html" title="DbEnv::close()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::add_data_dir()</th>
@@ -50,14 +53,22 @@ DbEnv::add_data_dir(const char *dir); </pre>
       <p>
          If no database directories are specified, database files must be named
          either by absolute paths or relative to the environment home
-         directory. See <a href="../../programmer_reference/env_naming.html" class="olink">Berkeley DB File Naming</a> for more information.
+         directory. See 
+         <a href="../../programmer_reference/env_naming.html" class="olink">Berkeley DB File Naming</a> 
+         for more information.
     </p>
       <p>
          The database environment's data directories may also be configured
-         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The
-         syntax of the entry in that file is a single line with the string
-         "add_data_dir", one or more whitespace characters, and the directory
-         name.
+         using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the entry
+         in that file is a single line with the string "add_data_dir", one
+         or more whitespace characters, and the directory name.
+         Note that if you use this method for your application, and you also want to use the
+         <a class="xref" href="db_recover.html" title="db_recover">db_recover</a>,
+         <a class="xref" href="db_printlog.html" title="db_printlog">db_printlog</a>,
+         <a class="xref" href="db_archive.html" title="db_archive">db_archive</a>, or
+         <a class="xref" href="db_log_verify.html" title="db_log_verify">db_log_verify</a>
+         utilities, then you should set create a <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file and set
+         the "add_data_dir" parameter in it.
     </p>
       <p>
          The <code class="methodname">DbEnv::add_data_dir()</code> method configures operations performed
@@ -86,7 +97,7 @@ DbEnv::add_data_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp51494544"></a>Parameters</h3>
+              <h3 class="title"><a id="id3611722"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -94,7 +105,7 @@ DbEnv::add_data_dir(const char *dir); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp51468776"></a>dir</h4>
+                <h4 class="title"><a id="id3611285"></a>dir</h4>
               </div>
             </div>
           </div>
@@ -112,7 +123,7 @@ DbEnv::add_data_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp51498808"></a>Errors</h3>
+              <h3 class="title"><a id="id3611793"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -130,7 +141,7 @@ DbEnv::add_data_dir(const char *dir); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp51510760"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3612028"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -144,7 +155,7 @@ DbEnv::add_data_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp51512088"></a>Class</h3>
+              <h3 class="title"><a id="id3612050"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -156,7 +167,7 @@ DbEnv::add_data_dir(const char *dir); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp51511240"></a>See Also</h3>
+              <h3 class="title"><a id="id3611754"></a>See Also</h3>
             </div>
           </div>
         </div>

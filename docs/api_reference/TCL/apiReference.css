@@ -40,4 +40,12 @@ div.appendix div.informaltable td  { vertical-align: top; }
 div.appendix div.informaltable p  { margin-top: .25em; }
 div.appendix div.informaltable p  { margin-bottom: .25em; }
 
+div.libver p {
+                font-size: 8pt;
+                width: 30%;
+                margin-left: 2px;
+                margin-right: 2px;
+                padding-top: 3px;
+                padding-bottom: 3px;
+           }
 

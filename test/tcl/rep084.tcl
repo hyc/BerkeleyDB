@@ -39,14 +39,26 @@ proc rep084 { method { niter 200 } { tnum "084" } args } {
 proc rep084_sub { method niter tnum  largs } {
 	global testdir
 	global util_path
+	global env_private
 	global rep_verbose
 	global verbose_type
+
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {$verbose_type on} "
 	}
-	puts "Rep$tnum: ($method) Abbreviated internal init for NIMDBs."
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
+	}
+
+	puts "Rep$tnum: ($method) Abbreviated internal init for NIMDBs $msg3."
 	set omethod [convert_method $method]
 
 	env_cleanup $testdir
@@ -57,20 +69,20 @@ proc rep084_sub { method niter tnum  largs } {
 	file mkdir [set dirC $testdir/C]
 
 	repladd 1
-	set env_A_cmd "berkdb_env_noerr -create -txn $verbargs \
+	set env_A_cmd "berkdb_env_noerr -create -txn $verbargs $privargs \
 	    -errpfx SITE_A \
 	    -home $dirA -rep_transport \[list 1 replsend\]"
 	set envs(A) [eval $env_A_cmd -rep_master]
 
 	# Open two clients
 	repladd 2
-	set env_B_cmd "berkdb_env_noerr -create -txn $verbargs \
+	set env_B_cmd "berkdb_env_noerr -create -txn $verbargs $privargs \
 	    -errpfx SITE_B \
 	    -home $dirB -rep_transport \[list 2 replsend\]"
 	set envs(B) [eval $env_B_cmd -rep_client]
 
 	repladd 3
-	set env_C_cmd "berkdb_env_noerr -create -txn $verbargs \
+	set env_C_cmd "berkdb_env_noerr -create -txn $verbargs $privargs \
 	    -errpfx SITE_C \
 	    -home $dirC -rep_transport \[list 3 replsend\]"
 	set envs(C) [eval $env_C_cmd -rep_client]

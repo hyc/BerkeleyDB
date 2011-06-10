@@ -563,6 +563,94 @@ namespace CsharpAPITest
 		}
 
 		[Test]
+		public void TestEncryption() 
+		{
+			testName = "TestEncryption";
+			SetUpTest(true);
+
+			// Open an encrypted environment.
+			DatabaseEnvironmentConfig envCfg =
+			    new DatabaseEnvironmentConfig();
+			envCfg.Create = true;
+			envCfg.UseMPool = true;
+			envCfg.UseLogging = true;
+			envCfg.UseTxns = true;
+			envCfg.SetEncryption("bdb", EncryptionAlgorithm.AES);
+			DatabaseEnvironment env =
+			DatabaseEnvironment.Open(testHome, envCfg);
+			Transaction txn = env.BeginTransaction();
+
+			// Open a non-encrypted database in the environment.
+			BTreeDatabaseConfig dbCfg =
+			    new BTreeDatabaseConfig();
+			dbCfg.Creation = CreatePolicy.IF_NEEDED;
+			dbCfg.Env = env;
+			BTreeDatabase db1 = BTreeDatabase.Open(
+			    testName + "1.db", dbCfg, txn);
+			Assert.IsFalse(db1.Encrypted);
+			for (int i = 0; i < 10; i++)
+				db1.Put(new DatabaseEntry(
+				    BitConverter.GetBytes(i)),
+				    new DatabaseEntry(
+				    BitConverter.GetBytes(i)), txn);
+
+			// Open an encrypted database in the environment.
+			dbCfg.Encrypted = true;
+			BTreeDatabase db2 = BTreeDatabase.Open(
+			    testName + "2.db", dbCfg, txn);
+			Assert.IsTrue(db2.Encrypted);
+			for (int i = 0; i < 10; i++)
+			db2.Put(new DatabaseEntry(BitConverter.GetBytes(i)),
+			    new DatabaseEntry(BitConverter.GetBytes(i)), txn);
+
+			// Close all.
+			txn.Commit();
+			db1.Close();
+			db2.Close();
+			env.Close();
+
+			// Verify the environment is encrypted.
+			DatabaseEnvironmentConfig verifyEnvCfg =
+			    new DatabaseEnvironmentConfig();
+			verifyEnvCfg.Create = true;
+			verifyEnvCfg.UseMPool = true;
+			verifyEnvCfg.UseLogging = true;
+			verifyEnvCfg.UseTxns = true;
+			try {
+				env = DatabaseEnvironment.Open(
+				    testHome, verifyEnvCfg);
+				// Do nothing
+				env.Close();
+				throw new TestException();
+			} catch (DatabaseException) {
+			}
+
+			// Verify the non-encrypted database is not encrypted.
+			BTreeDatabaseConfig verifyDbCfg =
+			    new BTreeDatabaseConfig();
+			verifyDbCfg.Creation = CreatePolicy.IF_NEEDED;
+
+			using (db1 = BTreeDatabase.Open(
+			    testHome + "/" + testName + "1.db", verifyDbCfg)) {
+				for (int i = 0; i < 10; i++)
+					db1.Get(new DatabaseEntry(
+					    BitConverter.GetBytes(i)));
+			};
+
+			/// Verify the encrypted database is encrypted.
+			verifyDbCfg.SetEncryption(envCfg.EncryptionPassword,
+			    envCfg.EncryptAlgorithm);
+			verifyDbCfg.Encrypted = true;
+			using (db1 = BTreeDatabase.Open(
+			    testHome + "/" + testName + "2.db",
+			    verifyDbCfg)) {
+				for (int i = 0; i < 10; i++)
+					db1.Get(new DatabaseEntry(
+					    BitConverter.GetBytes(i)));
+			};
+		}
+
+		[Test]
 		public void TestFailCheck()
 		{
 			testName = "TestFailCheck";
@@ -689,6 +777,9 @@ namespace CsharpAPITest
 			Assert.AreEqual(512, stats.Alignment);
 			Assert.AreEqual(stats.Count, stats.Available + stats.InUse);
 			Assert.LessOrEqual(stats.InUse, stats.MaxInUse);
+			Assert.AreNotEqual(0, stats.InitCount);
+			Assert.AreNotEqual(0, stats.Max);
+			Assert.AreNotEqual(0, stats.RegionMax);
 			Assert.AreNotEqual(0, stats.RegionSize);
 			Assert.AreEqual(0, stats.RegionWait);
 			Assert.AreEqual(10, stats.TASSpins);
@@ -936,10 +1027,8 @@ namespace CsharpAPITest
 
 			// Verify partial log.
 			DateTime time = DateTime.Now;
-			DateTime startTime = new DateTime(time.Year, time.Month,
-			    time.Day, time.Hour, time.Minute - 2, time.Second);
-			DateTime endTime = new DateTime(time.Year, time.Month,
-			    time.Day, time.Hour, time.Minute - 1, time.Second);
+			DateTime startTime = time.AddMinutes(-2);
+			DateTime endTime = time.AddMinutes(-1);
 			logVerifyCfg.StartTime = startTime;
 			logVerifyCfg.EndTime = endTime;
 			Assert.AreEqual(0, env.LogVerify(logVerifyCfg));
@@ -1055,6 +1144,7 @@ namespace CsharpAPITest
 			Assert.AreNotEqual(0, stats.RegionLockNoWait);
 			Assert.AreEqual(0, stats.RegionLockWait);
 			Assert.LessOrEqual(0, stats.RegionSize);
+			Assert.AreNotEqual(0, stats.RegionMax);
 			Assert.AreEqual(0, stats.ThawedBuffers);
 
 			Transaction txn = env.BeginTransaction();
@@ -1443,6 +1533,7 @@ namespace CsharpAPITest
 					Assert.AreEqual(0, stats.Active);
 					Assert.AreEqual(0, stats.Begun);
 					Assert.AreEqual(0, stats.Committed);
+					Assert.AreEqual(0, stats.InitTxns);
 					Assert.AreEqual(0, stats.LastCheckpoint.LogFileNumber);
 					Assert.AreEqual(0, stats.LastCheckpoint.Offset);
 					Assert.AreEqual(50, stats.MaxTransactions);
@@ -1881,8 +1972,6 @@ namespace CsharpAPITest
 				    "AutoInit", env.RepAutoInit, compulsory);
 				Configuration.ConfirmBool(childElem,
 				    "NoBlocking", env.RepNoBlocking, compulsory);
-				Configuration.ConfirmUint(childElem,
-				    "NSites", env.RepNSites, compulsory);
 				Configuration.ConfirmUint(childElem,
 				    "Priority", env.RepPriority, compulsory);
 				Configuration.ConfirmAckPolicy(childElem,

@@ -12,7 +12,10 @@
     <link rel="next" href="set_intermediate_dir_mode_parameter.html" title="set_intermediate_dir_mode" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">set_flags</th>
@@ -36,13 +39,19 @@
       <p>
             Configures a database environment. 
             </p>
-      <p>The syntax of the entry in 
-            <a href="../../bdb-sql/using_dbconfig.html#using_dbconfig.title" class="olink">the DB_CONFIG File</a> is a single line 
-            with the string <code class="literal">set_flags</code>, one or more whitespace characters, the method flag parameter as a string, 
-			optionally one or more whitespace characters, and the string <code class="literal">on</code> or <code class="literal">off</code>. If the optional
-			string is omitted, the default is <code class="literal">on</code>; for example, <code class="literal">set_flags DB_TXN_NOSYNC</code> or <code class="literal">set_flags DB_TXN_NOSYNC on</code>. 
-			Because the DB_CONFIG file is read when the database environment is
-			opened, it will silently overrule configuration done before that time.
+      <p>
+                The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
+                line with the string <code class="literal">set_flags</code>, one or
+                more whitespace characters, the method flag parameter as a
+                string, optionally one or more whitespace characters, and
+                the string <code class="literal">on</code> or <code class="literal">off</code>.
+                If the optional string is omitted, the default is
+                <code class="literal">on</code>; for example, 
+                <code class="literal">set_flags DB_TXN_NOSYNC</code> or 
+                <code class="literal">set_flags DB_TXN_NOSYNC on</code>.  Because the
+                DB_CONFIG file is read when the database environment is
+                opened, it will silently overrule configuration done before
+                that time.
             </p>
       <p>
             The method flag parameters are as follows:

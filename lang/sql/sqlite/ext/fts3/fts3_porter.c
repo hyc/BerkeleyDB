@@ -30,7 +30,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "fts3_tokenizer.h"
 
@@ -344,7 +343,7 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
   int i, j;
   char zReverse[28];
   char *z, *z2;
-  if( nIn<3 || nIn>=sizeof(zReverse)-7 ){
+  if( nIn<3 || nIn>=(int)sizeof(zReverse)-7 ){
     /* The word is too big or too small for the porter stemmer.
     ** Fallback to the copy stemmer */
     copy_stemmer(zIn, nIn, zOut, pnOut);

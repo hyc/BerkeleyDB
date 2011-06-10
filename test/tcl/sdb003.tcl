@@ -19,7 +19,7 @@ proc sdb003 { method {nentries 1000} args } {
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
 
-	if { [is_queue $method] == 1 } {
+       if { [is_queue $method] == 1 || [is_heap $method] == 1 } {
 		puts "Subdb003: skipping for method $method"
 		return
 	}

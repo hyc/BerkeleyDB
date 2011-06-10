@@ -17,6 +17,13 @@ if {[string match Win* $tcl_platform(os)]} {
 # Load DB's TCL API.
 load $tcllib
 
+# Check for existing files that might interfere with testing. 
+set badfiles [glob -nocomplain DB_CONFIG __db.*]
+if { [llength $badfiles] > 0 } {
+	error "=====\nPlease move or delete these files from the current\
+	    directory: \n$badfiles \nThey can cause test failures.\n====="
+}
+
 if { [file exists $testdir] != 1 } {
 	file mkdir $testdir
 }
@@ -97,10 +104,27 @@ if { [info exists one_test] != 1 } {
 # If you call a test with the proc find_valid_methods, it will
 # return the list of methods for which it will run, instead of
 # actually running.
+# Btree and recno are always built, but hash, heap, and queue
+# can be disabled, so verify that they are there before adding 
+# them to the list.
+source $test_path/testutils.tcl
 global checking_valid_methods
 set checking_valid_methods 0
 global valid_methods
-set valid_methods { btree rbtree queue queueext recno frecno rrecno hash }
+set valid_methods { btree rbtree recno frecno rrecno }
+
+source $test_path/testutils.tcl
+set conf [berkdb getconfig]
+if { [is_substr $conf "queue"] } {
+	lappend valid_methods "queue"
+	lappend valid_methods "queueext"
+}
+if { [is_substr $conf "hash"] } {
+	lappend valid_methods "hash"
+}
+if { [is_substr $conf "heap"] } {
+	lappend valid_methods "heap"
+}
 
 # The variable test_recopts controls whether we open envs in
 # replication tests with the -recover flag.   The default is
@@ -111,12 +135,11 @@ global test_recopts
 set test_recopts { "-recover" "" }
 
 # Set up any OS-specific values.
-source $test_path/testutils.tcl
-
 global tcl_platform
 set is_freebsd_test [string match FreeBSD $tcl_platform(os)]
 set is_hp_test [string match HP-UX $tcl_platform(os)]
 set is_linux_test [string match Linux $tcl_platform(os)]
+set is_osx_test [string match Darwin $tcl_platform(os)]
 set is_qnx_test [string match QNX $tcl_platform(os)]
 set is_sunos_test [string match SunOS $tcl_platform(os)]
 set is_windows_test [string match Win* $tcl_platform(os)]
@@ -249,7 +272,8 @@ proc run_std { { testname ALL } args } {
 	{"secondary index"	"sindex"}
 	{"partition"		"partition"}
 	{"compression"		"compressed"}
-	{"replication manager" 	"repmgr"}
+	{"automated repmgr tests" 	"auto_repmgr"}
+	{"other repmgr tests" 	"other_repmgr"}
 	{"repmgr multi-process"	"multi_repmgr"}
 	}
 
@@ -393,6 +417,9 @@ proc check_output { file } {
 		.*?dbscript\.tcl.*|
 		.*?ddscript\.tcl.*|
 		.*?db_replicate.*|
+		.*?Freeing\slog\sinformation\s.*|
+		.*?Freeing\smutex\s.*|
+		.*?Freeing\sread\slocks\s.*|
 		.*?lt-db_replicate.*|
 		.*?mpoolscript\.tcl.*|
 		^\d\d:\d\d:\d\d\s\(\d\d:\d\d:\d\d\)$|
@@ -401,6 +428,7 @@ proc check_output { file } {
 		^\d\d:\d\d:\d\d\s\(\d\d:\d\d:\d\d\)\s5\sprocesses\srunning.*|
 		^\d:\sPut\s\d*\sstrings\srandom\soffsets.*|
 		^100.*|
+		^basic_repmgr_.*\swith:|
 		^eval\s.*|
 		^exec\s.*|
 		^jointest.*$|
@@ -415,28 +443,29 @@ proc check_output { file } {
 		^All\sprocesses\shave\sexited.$|
 		^Backuptest\s.*|
 		^Beginning\scycle\s\d$|
+		^Berkeley\sDB\s.*|
 		^Byteorder:.*|
 		^Child\sruns\scomplete\.\s\sParent\smodifies\sdata\.$|
 		^Deadlock\sdetector:\s\d*\sCheckpoint\sdaemon\s\d*$|
 		^Ending\srecord.*|
 		^Environment\s.*?specified;\s\sskipping\.$|
 		^Executing\srecord\s.*|
-		^Freeing\smutex\s.*|
 		^Join\stest:\.*|
 		^Method:\s.*|
-                ^Putting\s.*databases.*|
+		^Putting\s.*databases.*|
 		^Repl:\stest\d\d\d:.*|
 		^Repl:\ssdb\d\d\d:.*|
 		^Running\stest\ssdb.*|
 		^Running\stest\stest.*|
-                ^run_inmem_db\s.*rep.*|
-                ^run_inmem_log\s.*rep.*|
-                ^run_mixedmode_log\s.*rep.*|
+		^Running\sall\scases\sof\s.*|
+		^run_inmem_db\s.*rep.*|
+		^run_inmem_log\s.*rep.*|
+		^run_mixedmode_log\s.*rep.*|
 		^Script\swatcher\sprocess\s.*|
 		^Secondary\sindex\sjoin\s.*|
-		^Berkeley\sDB\s.*|
 		^Test\ssuite\srun\s.*|
                 ^Test\s.*rep.*|
+		^To\sreproduce\sthis\scase:.*|
 		^Unlinking\slog:\serror\smessage\sOK$|
 		^Verifying\s.*|
 		^\t*\.\.\.dbc->get.*$|
@@ -448,8 +477,10 @@ proc check_output { file } {
 		^\t*Add\sa\sthird\sversion\s.*|
 		^\t*Archive[:\.].*|
 		^\t*Backuptest.*|
+		^\t*Basic\srepmgr\s.*test.*:.*|
 		^\t*Bigfile[0-9][0-9][0-9].*|
 		^\t*Building\s.*|
+		^\t*bulk\sprocessing.*|
 		^\t*closing\ssecondaries\.$|
 		^\t*Command\sexecuted\sand\s.*$|
 		^\t*DBM.*|
@@ -462,6 +493,7 @@ proc check_output { file } {
 		^\t*File\srecd005\.\d\.db\sexecuted\sand\scommitted\.$|
 		^\t*[f|F]op[0-9][0-9][0-9].*|
 		^\t*HSEARCH.*|
+		^\t*in-memory\s.*|
 		^\t*Initial\sCheckpoint$|
 		^\t*Iteration\s\d*:\sCheckpointing\.$|
 		^\t*Joining:\s.*|
@@ -472,8 +504,11 @@ proc check_output { file } {
 		^\t*[m|M]emp[0-9][0-9][0-9].*|
 		^\t*[m|M]ut[0-9][0-9][0-9].*|
 		^\t*NDBM.*|
+		^\t*no\speering|
+		^\t*on-disk\s.*|
 		^\t*opening\ssecondaries\.$|
 		^\t*op_recover_rec:\sRunning\srecovery.*|
+		^\t*peering|
 		^\t*[r|R]ecd[0-9][0-9][0-9].*|
 		^\t*[r|R]ep[0-9][0-9][0-9].*|
 		^\t*[r|R]epmgr[0-9][0-9][0-9].*|
@@ -483,6 +518,7 @@ proc check_output { file } {
 		^\t*[r|R]src[0-9][0-9][0-9].*|
 		^\t*Recover\sfrom\sfirst\sdatabase$|
 		^\t*Recover\sfrom\ssecond\sdatabase$|
+		^\t*regular\sprocessing.*|
 		^\t*Remove\ssecond\sdb$|
 		^\t*Rep_verify.*|
 		^\t*Running\srecovery\son\s.*|
@@ -498,6 +534,7 @@ proc check_output { file } {
 		^\t*[t|T]est[0-9][0-9][0-9].*|
 		^\t*[t|T]xn[0-9][0-9][0-9].*|
 		^\t*Txnscript.*|
+		^\t*Using\s.*option.*$|
 		^\t*Using\s.*?\senvironment\.$|
 		^\t*Verification\sof.*|
 		^\t*with\stransactions$}
@@ -546,6 +583,7 @@ proc r { args } {
 		set sub [ lindex $args 0 ]
 		set starttest [lindex $args 1]
 		switch $sub {
+			auto_repmgr -
 			bigfile -
 			dead -
 			env -
@@ -554,7 +592,7 @@ proc r { args } {
 			memp -
 			multi_repmgr -
 			mutex -
-			repmgr -
+			other_repmgr -
 			rsrc -
 			sdbtest -
 			txn {
@@ -589,7 +627,12 @@ proc r { args } {
 			inmemdb -
 			init -
 			fop {
-				foreach test $test_names($sub) {
+				set tindx [lsearch $test_names($sub) $starttest]
+				if { $tindx == -1 } {
+					set tindx 0
+				}
+				set rlist [lrange $test_names($sub) $tindx end]
+				foreach test $rlist {
 					eval run_test $test $display $run
 				}
 			}
@@ -599,6 +642,15 @@ proc r { args } {
 					set tindex 0
 				}
 				set clist [lrange $test_names(test) $tindex end]
+				set skip_list [list test126 test127 test128 \
+				    test129 test131 test132 test133 test134]
+				foreach stest $skip_list {
+					set sindx [lsearch -exact $clist $stest]
+					if {$sindx == -1} {
+						continue
+					}
+					set clist [lreplace $clist $sindx $sindx]
+				}
 				foreach test $clist {
 					eval run_compressed btree $test $display $run
 				}
@@ -680,6 +732,18 @@ proc r { args } {
 				run_rep_subset rep $starttest $testdir \
 				    $display $run $args
 			}
+			repmgr {
+				r other_repmgr
+				foreach test $test_names(basic_repmgr) {
+					$test 100 1 1 1 1 1 
+					$test 100 1 0 0 0 0 
+					$test 100 0 1 0 0 0
+					$test 100 0 0 1 0 0 
+					$test 100 0 0 0 1 0 
+					$test 100 0 0 0 0 1 
+					$test 100 0 0 0 0 0 
+				}
+			}
 			rep_commit {
 				run_rep_subset rep_commit $starttest $testdir \
 				    $display $run $args
@@ -691,7 +755,7 @@ proc r { args } {
 			# the -recover flag.
 			rep_subset {
 				run_rep_subset rep $starttest $testdir \
-				    $display $run $args
+				    $display $run $args 
 			}
 			rep_complete {
 				set tindex [lsearch $test_names(rep) $starttest]
@@ -801,6 +865,7 @@ proc r { args } {
 			queueext -
 			recno -
 			frecno -
+			heap -
 			rrecno {
 				foreach test $test_names(test) {
 					eval run_method [lindex $args 0] $test \
@@ -882,6 +947,7 @@ proc run_rep_subset { sub starttest testdir display run args } {
 
 proc run_subsystem { sub {display 0} {run 1} {starttest "NULL"} } {
 	global test_names
+	global databases_in_memory
 
 	if { [info exists test_names($sub)] != 1 } {
 		puts stderr "Subsystem $sub has no tests specified in\
@@ -902,6 +968,7 @@ proc run_subsystem { sub {display 0} {run 1} {starttest "NULL"} } {
 		if { $run } {
 			check_handles
 			if {[catch {eval $test} ret] != 0 } {
+				set databases_in_memory 0
 				error "FAIL: run_subsystem: $sub $test: \
 				    $ret"
 			}
@@ -1607,8 +1674,13 @@ proc run_envmethod { method test {display 0} {run 1} {outfile stdout} \
 	env_cleanup $testdir
 
 	if { $display == 1 } {
-		puts $outfile "eval run_envmethod $method \
-		    $test 0 1 stdout $largs"
+		if { $run == 0 } {
+			puts $outfile "eval run_envmethod $method $test 0 1 \
+			    stdout $largs; verify_log $testdir"
+		} else {
+			puts $outfile "eval run_envmethod $method \
+			    $test 0 1 stdout $largs"
+		}
 	}
 
 	# To run a normal test using system memory, call run_envmethod
@@ -1925,21 +1997,39 @@ proc run_inmem_tests { { testname ALL } args } {
 	}
 	close $o
 
-	# Currently, there are 3 procs for running in-memory replication tests.
-	# They are: run_inmem_db, run_inmem_log, run_mixedmode_log
-	set inmem_procs [list run_inmem_db run_inmem_log run_mixedmode_log]
+	# Run in-memory testing for databases, logs, replication files, 
+	# and region files (env -private).  It is not necessary to run 
+	# both run_inmem_log and run_mixedmode_log because run_mixedmode_log
+	# includes the pure in-memory case. 
+	set inmem_procs [list run_inmem_db \
+	    run_inmem_log run_mixedmode_log run_inmem_rep run_env_private]
 
 	# The above 3 procs only support tests like repXXX, so we only run 
 	# these tests here. 
 	foreach inmem_proc $inmem_procs {
 		foreach method $valid_methods {
 			foreach test $test_names(rep) {
-				# Some tests don't support in-memory databases,
-				# so we skip these tests for run_inmem_db.
+				# Skip the rep tests that don't support
+				# particular kinds of in-memory testing
+				# when appropriate. 
 				if { $inmem_proc == "run_inmem_db" } {
 					set indx [lsearch -exact \
-					    $test_names(rep_inmem) $test]
-					if { $indx < 0 } {
+					    $test_names(skip_for_inmem_db) $test]
+					if { $indx >= 0 } {
+						continue
+					}
+				}
+				if { $inmem_proc == "run_inmem_rep" } {
+					set indx [lsearch -exact \
+					    $test_names(skip_for_inmem_rep) $test]
+					if { $indx >= 0 } {
+						continue
+					}
+				}
+				if { $inmem_proc == "run_env_private" } {
+					set indx [lsearch -exact \
+					    $test_names(skip_for_env_private) $test]
+					if { $indx >= 0 } {
 						continue
 					}
 				}
@@ -2507,7 +2597,7 @@ proc run_envmethod1 { method {display 0} {run 1} { outfile stdout } args } {
 		env_cleanup $testdir
 		error_check_good envremove [berkdb envremove -home $testdir] 0
 		set env [eval {berkdb_env -create -cachesize {0 10000000 0}} \
- 		    {-pagesize 512 -mode 0644 -home $testdir}]
+ 		    {-pagesize 512 -mode 0644 -home $testdir} $args ]
 		error_check_good env_open [is_valid_env $env] TRUE
 		append largs " -env $env "
 	}

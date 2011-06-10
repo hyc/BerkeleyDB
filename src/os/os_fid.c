@@ -46,7 +46,8 @@ __os_fileid(env, fname, unique_okay, fidp)
 	memset(fidp, 0, DB_FILE_ID_LEN);
 	RETRY_CHK((stat(CHAR_STAR_CAST fname, &sb)), ret);
 	if (ret != 0) {
-		__db_syserr(env, ret, "stat: %s", fname);
+		__db_syserr(env, ret, DB_STR_A("0158",
+		    "stat: %s", "%s"), fname);
 		return (__os_posix_err(ret));
 	}
 

@@ -2,6 +2,12 @@ package SQLite.JDBC2;
 
 import java.sql.*;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.Statement;
+import java.sql.Types;
 
 public class JDBCResultSet implements java.sql.ResultSet {
 
@@ -135,7 +141,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 		throw new SQLException("cursor outside of result set");
 	    }
 	    rowbuf = new String[tr.ncolumns];
-	    System.arraycopy((String []) tr.rows.elementAt(row), 0,
+	    System.arraycopy(tr.rows.elementAt(row), 0,
 			     rowbuf, 0, tr.ncolumns);
 	}
     }
@@ -365,7 +371,8 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	try {
 	    if (s.conn.useJulian) {
 		try {
-		    return new java.sql.Timestamp(SQLite.Database.long_from_julian(lastg));
+		    return new
+			java.sql.Timestamp(SQLite.Database.long_from_julian(lastg));
 		} catch (java.lang.Exception ee) {
 		    return java.sql.Timestamp.valueOf(lastg);
 		}
@@ -373,7 +380,8 @@ public class JDBCResultSet implements java.sql.ResultSet {
 		try {
 		    return java.sql.Timestamp.valueOf(lastg);
 		} catch (java.lang.Exception ee) {
-		    return new java.sql.Timestamp(SQLite.Database.long_from_julian(lastg));
+		    return new
+			java.sql.Timestamp(SQLite.Database.long_from_julian(lastg));
 		}
 	    }
 	} catch (java.lang.Exception e) {
@@ -959,7 +967,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	    throw new SQLException(e.getMessage());
 	}
 	if (trnew.nrows != 1) {
-	    throw new SQLException("wrong size of result set");
+	    throw new SQLException("wrong size of result set; expected 1, got " + trnew.nrows);
 	}
 	rowbuf = null;
 	tr.rows.setElementAt(trnew.rows.elementAt(0), row);

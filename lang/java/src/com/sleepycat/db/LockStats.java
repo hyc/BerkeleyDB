@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -30,6 +30,42 @@ public class LockStats {
     */
     public int getCurMaxId() {
         return st_cur_maxid;
+    }
+
+    private int st_initlocks;
+    /** The initial number of locks allocated in the lock table. */
+    public int getInitlocks() {
+        return st_initlocks;
+    }
+
+    private int st_initlockers;
+    /** The initial number of lockers allocated in lock table. */
+    public int getInitlockers() {
+        return st_initlockers;
+    }
+
+    private int st_initobjects;
+    /** The initial number of lock objects allocated in lock table. */
+    public int getInitobjects() {
+        return st_initobjects;
+    }
+
+    private int st_locks;
+    /** The current number of locks allocated in lock table. */
+    public int getLocks() {
+        return st_locks;
+    }
+
+    private int st_lockers;
+    /** The current number of lockers allocated in lock table. */
+    public int getLockers() {
+        return st_lockers;
+    }
+
+    private int st_objects;
+    /** The current number of lock objects allocated in lock table. */
+    public int getObjects() {
+        return st_objects;
     }
 
     private int st_maxlocks;
@@ -62,6 +98,12 @@ public class LockStats {
     */
     public int getPartitions() {
         return st_partitions;
+    }
+
+    private int st_tablesize;
+    /** The size of object hash table. */
+    public int getTableSize() {
+        return st_tablesize;
     }
 
     private int st_nmodes;
@@ -353,11 +395,11 @@ public class LockStats {
         return st_hash_len;
     }
 
-    private int st_regsize;
+    private long st_regsize;
     /**
     The size of the lock region.
     */
-    public int getRegSize() {
+    public long getRegSize() {
         return st_regsize;
     }
 
@@ -369,10 +411,17 @@ public class LockStats {
         return "LockStats:"
             + "\n  st_id=" + st_id
             + "\n  st_cur_maxid=" + st_cur_maxid
+            + "\n  st_initlocks=" + st_initlocks
+            + "\n  st_initlockers=" + st_initlockers
+            + "\n  st_initobjects=" + st_initobjects
+            + "\n  st_locks=" + st_locks
+            + "\n  st_lockers=" + st_lockers
+            + "\n  st_objects=" + st_objects
             + "\n  st_maxlocks=" + st_maxlocks
             + "\n  st_maxlockers=" + st_maxlockers
             + "\n  st_maxobjects=" + st_maxobjects
             + "\n  st_partitions=" + st_partitions
+            + "\n  st_tablesize=" + st_tablesize
             + "\n  st_nmodes=" + st_nmodes
             + "\n  st_nlockers=" + st_nlockers
             + "\n  st_nlocks=" + st_nlocks

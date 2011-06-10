@@ -27,7 +27,8 @@ static int
 __db_nomutex(env)
 	ENV *env;
 {
-	__db_errx(env, "library build did not include support for mutexes");
+	__db_errx(env, DB_STR("2001",
+	    "library build did not include support for mutexes"));
 	return (DB_OPNOTSUP);
 }
 
@@ -170,6 +171,24 @@ __mutex_set_increment(dbenv, increment)
 	u_int32_t increment;
 {
 	COMPQUIET(increment, 0);
+	return (__db_nomutex(dbenv->env));
+}
+
+int
+__mutex_get_init(dbenv, initp)
+	DB_ENV *dbenv;
+	u_int32_t *initp;
+{
+	COMPQUIET(initp, 0);
+	return (__db_nomutex(dbenv->env));
+}
+
+int
+__mutex_set_init(dbenv, init)
+	DB_ENV *dbenv;
+	u_int32_t init;
+{
+	COMPQUIET(init, 0);
 	return (__db_nomutex(dbenv->env));
 }
 

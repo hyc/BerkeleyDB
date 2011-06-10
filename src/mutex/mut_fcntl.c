@@ -45,7 +45,6 @@ __db_fcntl_mutex_lock_int(env, mutex, timeout, wait)
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 	DB_THREAD_INFO *ip;
 	struct flock k_lock;
 	int locked, ms, ret;
@@ -57,8 +56,7 @@ __db_fcntl_mutex_lock_int(env, mutex, timeout, wait)
 	if (!MUTEX_ON(env) || F_ISSET(dbenv, DB_ENV_NOLOCKING))
 		return (0);
 
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 	CHECK_MTX_THREAD(env, mutexp);
 
@@ -159,7 +157,7 @@ __db_fcntl_mutex_lock_int(env, mutex, timeout, wait)
 	return (0);
 
 err:	ret = __os_get_syserr();
-	__db_syserr(env, ret, "fcntl lock failed");
+	__db_syserr(env, ret, DB_STR("2019", "fcntl lock failed"));
 	return (__env_panic(env, __os_posix_err(ret)));
 }
 
@@ -205,19 +203,18 @@ __db_fcntl_mutex_unlock(env, mutex)
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
-	DB_MUTEXMGR *mtxmgr;
 
 	dbenv = env->dbenv;
 
 	if (!MUTEX_ON(env) || F_ISSET(dbenv, DB_ENV_NOLOCKING))
 		return (0);
 
-	mtxmgr = env->mutex_handle;
-	mutexp = MUTEXP_SET(mtxmgr, mutex);
+	mutexp = MUTEXP_SET(env, mutex);
 
 #ifdef DIAGNOSTIC
 	if (!F_ISSET(mutexp, DB_MUTEX_LOCKED)) {
-		__db_errx(env, "fcntl unlock failed: lock already unlocked");
+		__db_errx(env, DB_STR("2020",
+		    "fcntl unlock failed: lock already unlocked"));
 		return (__env_panic(env, EACCES));
 	}
 #endif

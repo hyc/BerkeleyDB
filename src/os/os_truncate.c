@@ -37,8 +37,9 @@ __os_truncate(env, fhp, pgno, pgsize)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: truncate %s to %lu", fhp->name, (u_long)offset);
+		__db_msg(env, DB_STR_A("0141",
+		    "fileops: truncate %s to %lu", "%s %lu"),
+		    fhp->name, (u_long)offset);
 
 	LAST_PANIC_CHECK_BEFORE_IO(env);
 
@@ -53,7 +54,8 @@ __os_truncate(env, fhp, pgno, pgsize)
 	}
 
 	if (ret != 0) {
-		__db_syserr(env, ret, "ftruncate: %lu", (u_long)offset);
+		__db_syserr(env, ret, DB_STR_A("0142",
+		    "ftruncate: %lu", "%lu"), (u_long)offset);
 		ret = __os_posix_err(ret);
 	}
 

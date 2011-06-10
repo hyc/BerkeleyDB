@@ -14,6 +14,7 @@ proc rep019 { method { nclients 3 } { tnum "019" } args } {
 
 	source ./include.tcl
 	global repfiles_in_memory
+	global env_private
 
 	# Run for all access methods.
 	if { $checking_valid_methods } {
@@ -38,12 +39,17 @@ proc rep019 { method { nclients 3 } { tnum "019" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	set args [convert_args $method $args]
 
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		puts "Rep$tnum ($method $r): Replication\
-		     and $nclients recovered clients in sync $msg2."
+		     and $nclients recovered clients in sync $msg2 $msg3."
 		rep019_sub $method $nclients $tnum $r $args
 	}
 }
@@ -52,6 +58,7 @@ proc rep019_sub { method nclients tnum recargs largs } {
 	global testdir
 	global util_path
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -63,6 +70,11 @@ proc rep019_sub { method nclients tnum recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set orig_tdir $testdir
@@ -78,7 +90,7 @@ proc rep019_sub { method nclients tnum recargs largs } {
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create -txn nosync $verbargs \
 	    -home $masterdir -rep_master -errpfx MASTER $repmemargs \
-	    -rep_transport \[list 1 replsend\]"
+	    $privargs -rep_transport \[list 1 replsend\]"
 	set menv [eval $ma_envcmd $recargs]
 
 	for {set i 0} {$i < $nclients} {incr i} {
@@ -88,7 +100,7 @@ proc rep019_sub { method nclients tnum recargs largs } {
 		repladd $id($i)
 		set cl_envcmd($i) "berkdb_env_noerr -create -txn nosync \
 		    -home $clientdir($i) $verbargs -errpfx CLIENT.$i \
-		    $repmemargs \
+		    $repmemargs $privargs \
 		    -rep_client -rep_transport \[list $id($i) replsend\]"
 		set clenv($i) [eval $cl_envcmd($i) $recargs]
 		error_check_good client_env [is_valid_env $clenv($i)] TRUE

@@ -9,10 +9,13 @@
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="db.html" title="Chapter 2.  The Db Handle" />
     <link rel="prev" href="dbassociate_foreign.html" title="Db::associate_foreign()" />
-    <link rel="next" href="dbcreate.html" title="Db" />
+    <link rel="next" href="dbcompact.html" title="Db::compact()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Db::close()</th>
@@ -22,7 +25,7 @@
           <th width="60%" align="center">Chapter 2. 
                 The Db Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="dbcreate.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="dbcompact.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -100,7 +103,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp49582816"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="id3578824"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -118,7 +121,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp49589352"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="id3578837"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -136,7 +139,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idp49593896"></a>EINVAL</h4>
+              <h4 class="title"><a id="id3578885"></a>EINVAL</h4>
             </div>
           </div>
         </div>
@@ -148,7 +151,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49615288"></a>Parameters</h3>
+              <h3 class="title"><a id="id3578864"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -156,7 +159,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49615480"></a>flags</h4>
+                <h4 class="title"><a id="id3579253"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -203,7 +206,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49589416"></a>Errors</h3>
+              <h3 class="title"><a id="id3577684"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -221,7 +224,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49629936"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3579494"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -236,7 +239,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49625176"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="id3579415"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -254,7 +257,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49631888"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="id3579516"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -272,7 +275,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp49498376"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3578897"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -285,7 +288,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49611872"></a>Class</h3>
+              <h3 class="title"><a id="id3579378"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -297,7 +300,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp49513136"></a>See Also</h3>
+              <h3 class="title"><a id="id3579545"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -314,14 +317,14 @@ Db::close(u_int32_t flags);</pre>
           <td width="20%" align="center">
             <a accesskey="u" href="db.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="dbcreate.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="dbcompact.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Db::associate_foreign() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Db</td>
+          <td width="40%" align="right" valign="top"> Db::compact()</td>
         </tr>
       </table>
     </div>

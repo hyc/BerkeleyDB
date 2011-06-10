@@ -30,7 +30,7 @@ test -s $t1 && {
 
 egrep -h '/\* | \* ' \
     `find $d -name '*.[ch]' -o -name '*.cpp' | sed -e '/\/perl\//d' -e '/\/test_erlang\//d'` |
-spell | sort -u | comm -23 /dev/stdin s_chk_spell.dict | tee /tmp/f/1 > $t1
+spell | sort -u | comm -23 /dev/stdin s_chk_spell.dict > $t1
 
 test -s $t1 && {
 	cat $t1

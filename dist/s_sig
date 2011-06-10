@@ -5,26 +5,39 @@
 
 a=/tmp/__db_a.$$
 b=/tmp/__db_b.$$
-trap 'rm -f $a $b; exit 0' 0 1 2 3 13 15
+c=/tmp/__db_c.$$
+trap 'rm -f $a $b $c; exit 0' 0 1 2 3 13 15
+
+cat ../src/dbinc/db.in ../src/dbinc/db_int.in ../src/dbinc/*.h | 
+sed -e '/.*struct.*mutex.*{[	 ]*\/\* SHARED \*\/.*/i\
+#ifdef	HAVE_MUTEX_SUPPORT' \
+    -e '/.*struct.*mutex.*{[	 ]*\/\* SHARED \*\/.*/a\
+#endif' \
+    -e 's/.*[	 ]*\(__[a-z_]*\)[	 ]*{[	 ]*\/\* SHARED \*\/.*/	__ADD(\1);/p' \
+    -e d > $a
 
 cat ../src/dbinc/db.in ../src/dbinc/db_int.in ../src/dbinc/*.h | 
 sed -e '/__addrinfo/d' \
     -e '/__aes_cipher/d' \
     -e '/__cipher/d' \
+    -e '/__channel/d' \
     -e '/__queued_output/d' \
     -e '/__repmgr_connection/d' \
     -e '/__repmgr_message/d' \
+    -e '/__repmgr_response/d' \
     -e '/__repmgr_retry/d' \
     -e '/__repmgr_runnable/d' \
     -e '/__repmgr_site/d' \
+    -e '/.*[	 ]*\(__[a-z_]*\)[	 ]*{[	 ]*\/\* SHARED \*\/.*/d' \
     -e '/struct.*mutex.*{/i\
 #ifdef	HAVE_MUTEX_SUPPORT' \
     -e '/struct.*mutex.*{/a\
 #endif' \
     -e 's/.*[	 ]*struct[	 ]*\(__[a-z_]*\)[	 ]*{.*/	__ADD(\1);/p' \
-    -e d > $a
+    -e d > $c
 
-cnt=`sed -e '$=' -e d $a`
+cnt1=`sed -e '$=' -e d $a`
+cnt2=`sed -e '$=' -e d $c`
 
 cat << END_OF_TEXT > $b
 /*-
@@ -43,6 +56,7 @@ cat << END_OF_TEXT > $b
 #include "dbinc/db_join.h"
 #include "dbinc/db_verify.h"
 #include "dbinc/hash.h"
+#include "dbinc/heap.h"
 #include "dbinc/lock.h"
 #include "dbinc/log_verify.h"
 #include "dbinc/mp.h"
@@ -51,8 +65,18 @@ cat << END_OF_TEXT > $b
 #include "dbinc/txn.h"
 
 END_OF_TEXT
-
-echo "#define	__STRUCTURE_COUNT	$cnt" >> $b
+cat << END_OF_TEXT >> $b
+/* 
+ * For a pure 32bit/64bit environment, we check all structures and calculate a
+ * signature. For compatible environment, we only check the structures in
+ * shared memory.
+ */
+END_OF_TEXT
+echo "#ifdef HAVE_MIXED_SIZE_ADDRESSING" >> $b
+echo "#define	__STRUCTURE_COUNT	$cnt1" >> $b
+echo "#else" >> $b
+echo "#define	__STRUCTURE_COUNT	($cnt1 + $cnt2)" >> $b
+echo "#endif" >> $b
 
 cat << END_OF_TEXT >> $b
 
@@ -74,6 +98,15 @@ __env_struct_sig()
 END_OF_TEXT
 
 cat $a >> $b
+
+cat << END_OF_TEXT >> $b
+
+#ifndef HAVE_MIXED_SIZE_ADDRESSING
+END_OF_TEXT
+
+cat $c >> $b
+
+echo "#endif" >> $b
 
 cat << END_OF_TEXT >> $b
 

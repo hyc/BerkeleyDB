@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -65,13 +65,26 @@ public class TransactionStats {
         }
 
         private int status;
-        /** The status of the transaction. */
+        /** Provides one of the following constants, which indicate the status of the transaction:
+          <p> TXN_ABORTED, TXN_COMMITTED, TXN_NEED_ABORT, TXN_PREPARED, or TXN_RUNNING.
+        */
     public int getStatus() {
             return status;
         }
 
+        private int xa_status;
+        /** Provides one of the following constants, which indicate the XA status: 
+          <p>
+          TXN_XA_ACTIVE, TXN_XA_DEADLOCKED, TXN_XA_IDLE, TXN_XA_PREPARED, or TXN_XA_ROLLEDBACK.
+        */
+    public int getXaStatus() {
+            return xa_status;
+        }
+
         private byte[] gid;
-        /** Return the transaction's Global ID, if the transaction was prepared using {@link Transaction#prepare}. Otherwise, return an undefined value.  */
+        /** Return the transaction's Global ID, if the transaction was prepared using 
+          {@link Transaction#prepare}. Otherwise, return an undefined value.  
+        */
         public byte[] getGId() {
             return gid;
         }
@@ -95,6 +108,7 @@ public class TransactionStats {
                 + "\n      mvcc_ref=" + mvcc_ref
                 + "\n      priority=" + priority
                 + "\n      status=" + status
+                + "\n      xa_status=" + xa_status
                 + "\n      gid=" + DbUtil.byteArrayToString(gid)
                 + "\n      name=" + name
                 ;
@@ -133,6 +147,12 @@ public class TransactionStats {
     */
     public int getLastTxnId() {
         return st_last_txnid;
+    }
+
+    private int st_inittxns;
+    /** The initial number of transactions configured. */
+    public int getInittxns() {
+        return st_inittxns;
     }
 
     private int st_maxtxns;
@@ -202,14 +222,6 @@ public class TransactionStats {
         return st_maxnsnapshot;
     }
 
-    private Active[] st_txnarray;
-    /**
-    An array of {@code Active} objects, describing the currently active transactions.
-    */
-    public Active[] getTxnarray() {
-        return st_txnarray;
-    }
-
     private long st_region_wait;
     /**
     The number of times that a thread of control was forced to wait
@@ -228,12 +240,20 @@ public class TransactionStats {
         return st_region_nowait;
     }
 
-    private int st_regsize;
+    private long st_regsize;
     /**
     The size of the region.
     */
-    public int getRegSize() {
+    public long getRegSize() {
         return st_regsize;
+    }
+
+    private Active[] st_txnarray;
+    /**
+    An array of {@code Active} objects, describing the currently active transactions.
+    */
+    public Active[] getTxnarray() {
+        return st_txnarray;
     }
 
     /** {@inheritDoc} */
@@ -243,6 +263,7 @@ public class TransactionStats {
             + "\n  st_last_ckp=" + st_last_ckp
             + "\n  st_time_ckp=" + st_time_ckp
             + "\n  st_last_txnid=" + st_last_txnid
+            + "\n  st_inittxns=" + st_inittxns
             + "\n  st_maxtxns=" + st_maxtxns
             + "\n  st_naborts=" + st_naborts
             + "\n  st_nbegins=" + st_nbegins
@@ -251,10 +272,10 @@ public class TransactionStats {
             + "\n  st_nsnapshot=" + st_nsnapshot
             + "\n  st_maxnactive=" + st_maxnactive
             + "\n  st_maxnsnapshot=" + st_maxnsnapshot
-            + "\n  st_txnarray=" + DbUtil.objectArrayToString(st_txnarray, "st_txnarray")
             + "\n  st_region_wait=" + st_region_wait
             + "\n  st_region_nowait=" + st_region_nowait
             + "\n  st_regsize=" + st_regsize
+            + "\n  st_txnarray=" + DbUtil.objectArrayToString(st_txnarray, "st_txnarray")
             ;
     }
 }

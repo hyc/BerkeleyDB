@@ -1,8 +1,7 @@
 package SQLite;
 
-import SQLite.*;
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 
 /**
  * SQLite SQL dump utility.

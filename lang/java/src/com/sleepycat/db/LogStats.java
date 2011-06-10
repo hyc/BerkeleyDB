@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -71,6 +71,24 @@ public class LogStats {
     */
     public int getWcMbytes() {
         return st_wc_mbytes;
+    }
+
+    private int st_fileid_init;
+    /** The initial allocated file logging identifiers. */
+    public int getFileidInit() {
+        return st_fileid_init;
+    }
+
+    private int st_nfileid;
+    /** The current number of file logging identifiers. */
+    public int getNumFileId() {
+        return st_nfileid;
+    }
+
+    private int st_maxnfileid;
+    /** The maximum number of file logging identifiers used. */
+    public int getMaxNfileId() {
+        return st_maxnfileid;
     }
 
     private long st_record;
@@ -193,11 +211,11 @@ public class LogStats {
         return st_mincommitperflush;
     }
 
-    private int st_regsize;
+    private long st_regsize;
     /**
     The size of the region.
     */
-    public int getRegSize() {
+    public long getRegSize() {
         return st_regsize;
     }
 
@@ -214,6 +232,9 @@ public class LogStats {
             + "\n  st_lg_size=" + st_lg_size
             + "\n  st_wc_bytes=" + st_wc_bytes
             + "\n  st_wc_mbytes=" + st_wc_mbytes
+            + "\n  st_fileid_init=" + st_fileid_init
+            + "\n  st_nfileid=" + st_nfileid
+            + "\n  st_maxnfileid=" + st_maxnfileid
             + "\n  st_record=" + st_record
             + "\n  st_w_bytes=" + st_w_bytes
             + "\n  st_w_mbytes=" + st_w_mbytes

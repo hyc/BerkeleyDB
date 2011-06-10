@@ -918,7 +918,7 @@ public class Database {
 	    double d = Double.valueOf(s).doubleValue();
 	    return long_from_julian(d);
 	} catch (java.lang.Exception ee) {
-	    throw new SQLite.Exception("not a julian date");
+	    throw new SQLite.Exception("not a julian date: " + s + ": " + ee);
 	}
     }
 

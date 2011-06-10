@@ -81,7 +81,8 @@ db_recover_main(argc, argv)
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
 			if (passwd == NULL) {
-				fprintf(stderr, "%s: strdup: %s\n",
+				fprintf(stderr, DB_STR_A("5021",
+				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
 				return (EXIT_FAILURE);
 			}
@@ -194,7 +195,8 @@ db_recover_feedback(dbenv, opcode, percent)
 	COMPQUIET(dbenv, NULL);
 
 	if (opcode == DB_RECOVER) {
-		printf("\rrecovery %d%% complete", percent);
+		printf(DB_STR_A("5022", "\rrecovery %d%% complete", "%d"),
+		    percent);
 		(void)fflush(stdout);
 		newline_needed = 1;
 	}
@@ -245,8 +247,8 @@ db_recover_read_timestamp(arg, timep)
 					/* Start with the current time. */
 	(void)time(&now);
 	if ((t = localtime(&now)) == NULL) {
-		fprintf(stderr,
-		    "%s: localtime: %s\n", progname, strerror(errno));
+		fprintf(stderr, DB_STR_A("5023", "%s: localtime: %s\n",
+		    "%s %s\n"), progname, strerror(errno));
 		return (EXIT_FAILURE);
 	}
 					/* [[CC]YY]MMDDhhmm[.SS] */
@@ -294,9 +296,9 @@ db_recover_read_timestamp(arg, timep)
 
 	*timep = mktime(t);
 	if (*timep == -1) {
-terr:		fprintf(stderr,
-	"%s: out of range or illegal time specification: [[CC]YY]MMDDhhmm[.SS]",
-		    progname);
+terr:		fprintf(stderr, DB_STR_A("5024",
+    "%s: out of range or illegal time specification: [[CC]YY]MMDDhhmm[.SS]",
+		    "%s"), progname);
 		return (EXIT_FAILURE);
 	}
 	return (0);
@@ -318,9 +320,10 @@ db_recover_version_check()
 	/* Make sure we're loaded with the right version of the DB library. */
 	(void)db_version(&v_major, &v_minor, &v_patch);
 	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
-		fprintf(stderr,
-	"%s: version %d.%d doesn't match library version %d.%d\n",
-		    progname, DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		fprintf(stderr, DB_STR_A("5025",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
 		    v_major, v_minor);
 		return (EXIT_FAILURE);
 	}

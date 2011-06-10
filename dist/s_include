@@ -79,8 +79,8 @@ head defonly _DB_INT_DEF_IN_ > $i_dfile
 
 # Process the standard directories, creating per-directory prototype
 # files and adding to the external prototype and #define files.
-for i in db btree clib common crypto dbreg env fileops hash hmac \
-    lock log mp mutex os qam rep repmgr sequence tcl txn; do
+for i in db btree clib common crypto dbreg env fileops hash heap \
+    hmac lock log mp mutex os qam rep repmgr sequence tcl txn xa; do
 	head "_${i}_ext_h_" > $i_pfile
 
 	if [ $i = os ] ; then
@@ -124,7 +124,9 @@ done
 # There are a few global variables in DB -- add them to the external/internal
 # #define files.
 (echo "#define	__db_global_values __db_global_values@DB_VERSION_UNIQUE_NAME@";
-    echo "#define	__repmgr_guesstimated_max __repmgr_guesstimated_max@DB_VERSION_UNIQUE_NAME@") >> $i_dfile
+ echo "#define	__repmgr_guesstimated_max __repmgr_guesstimated_max@DB_VERSION_UNIQUE_NAME@";
+ echo "#define	db_xa_switch db_xa_switch@DB_VERSION_UNIQUE_NAME@"
+ ) >> $i_dfile
 
 # Wrap up the external #defines/prototypes, and internal #defines.
 tail defonly _DB_EXT_DEF_IN_ >> $e_dfile

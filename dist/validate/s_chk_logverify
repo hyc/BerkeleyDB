@@ -16,7 +16,7 @@ s=$d/src
 
 mkdir -p $b
 
-opts="--disable-shared"
+opts="--disable-shared --enable-stl"
 echo "Building DB library, this can take a while."
 (cd $b && ../../dist/configure $opts > /dev/null && make > /dev/null) || {
 	echo 'FAIL: unable to build libdb.a'
@@ -78,17 +78,26 @@ echo Archive Tests
 
 echo "**** db_perf -c $configs/archive_fatal_hash.conf -C ****"
 rm -rf TESTDIR TESTDIR.A
+rm -f logverify.ERR
 mkdir TESTDIR TESTDIR.A
 $cmd -I -hTESTDIR -c $configs/archive_fatal_hash.conf 2>&1 > TESTDIR/OUTPUT
 $cmd -C -hTESTDIR -c $configs/archive_fatal_hash.conf 2>&1 >> TESTDIR/OUTPUT
-$lv -hTESTDIR 2>&1 >> TESTDIR/OUTPUT
+$lv -hTESTDIR 2>logverify.ERR >> TESTDIR/OUTPUT || {
+grep DB_NOTFOUND logverify.ERR >/dev/null 2>/dev/null  || \
+    echo "ERROR: expect DB_NOTFOUND in the error output"
+}
 cp TESTDIR/OUTPUT $resdir/OUTPUT.3
+
 echo "**** db_perf -c $configs/archive_fatal_btree.conf -C ****"
 rm -rf TESTDIR TESTDIR.A
+rm -f logverify.ERR
 mkdir TESTDIR TESTDIR.A
 $cmd -I -hTESTDIR -c $configs/archive_fatal_btree.conf 2>&1 > TESTDIR/OUTPUT
 $cmd -C -hTESTDIR -c $configs/archive_fatal_btree.conf 2>&1 >> TESTDIR/OUTPUT
-$lv -hTESTDIR 2>&1 >> TESTDIR/OUTPUT
+$lv -hTESTDIR 2>logverify.ERR >> TESTDIR/OUTPUT || {
+grep DB_NOTFOUND logverify.ERR >/dev/null 2>/dev/null  || \
+    echo "ERROR: expect DB_NOTFOUND in the error output"
+}
 cp TESTDIR/OUTPUT $resdir/OUTPUT.4
 
 echo "**** db_perf -c $configs/archive_btree.conf -C ****"
@@ -112,11 +121,15 @@ cp TESTDIR/OUTPUT $resdir/OUTPUT.6
 
 echo "**** db_perf -c $configs/crash_test_2.conf ****"
 rm -rf TESTDIR TESTDIR.A
+rm -f logverify.ERR
 mkdir TESTDIR TESTDIR.A
 $cmd -I -hTESTDIR -c $configs/crash_test_2.conf 2>&1 > TESTDIR/OUTPUT
 $cmd -hTESTDIR -c $configs/crash_test_2.conf 2>&1 >> TESTDIR/OUTPUT
 rm TESTDIR/__db.0* # Remove region files because the environment is corrupted.
-$lv -hTESTDIR 2>&1 >> TESTDIR/OUTPUT
+$lv -hTESTDIR 2>logverify.ERR >> TESTDIR/OUTPUT || {
+grep DB_NOTFOUND logverify.ERR >/dev/null 2>/dev/null  || \
+    echo "ERROR: expect DB_NOTFOUND in the error output"
+}
 cp TESTDIR/OUTPUT $resdir/OUTPUT.7
 
 echo "**** db_perf -c $configs/crash_test_3.conf ****"
@@ -128,20 +141,20 @@ rm TESTDIR/__db.0* # Remove region files because the environment is corrupted.
 $lv -hTESTDIR 2>&1 >> TESTDIR/OUTPUT
 cp TESTDIR/OUTPUT $resdir/OUTPUT.8
 
-echo "**** db_perf -s 2 -c $configs/crash_test_1.conf ****"
+echo "**** db_perf -S 2 -c $configs/crash_test_1.conf ****"
 rm -rf TESTDIR TESTDIR.A
 mkdir TESTDIR TESTDIR.A
-$cmd -I -hTESTDIR -s 2 -c $configs/crash_test_1.conf 2>&1 > TESTDIR/OUTPUT
-$cmd -hTESTDIR -s 2 -c $configs/crash_test_1.conf 2>&1 >> TESTDIR/OUTPUT
+$cmd -I -hTESTDIR -S 2 -c $configs/crash_test_1.conf 2>&1 > TESTDIR/OUTPUT
+$cmd -hTESTDIR -S 2 -c $configs/crash_test_1.conf 2>&1 >> TESTDIR/OUTPUT
 rm TESTDIR/__db.0* # Remove region files because the environment is corrupted.
 $lv -hTESTDIR 2>&1 >> TESTDIR/OUTPUT
 cp TESTDIR/OUTPUT $resdir/OUTPUT.9
 
-echo "**** db_perf -s 1 -c $configs/crash_test_4.conf ****"
+echo "**** db_perf -S 1 -c $configs/crash_test_4.conf ****"
 rm -rf TESTDIR TESTDIR.A
 mkdir TESTDIR TESTDIR.A
-$cmd -I -hTESTDIR -s 1 -c $configs/crash_test_4.conf 2>&1 > TESTDIR/OUTPUT
-$cmd -hTESTDIR -s 1 -c $configs/crash_test_4.conf 2>&1 >> TESTDIR/OUTPUT
+$cmd -I -hTESTDIR -S 1 -c $configs/crash_test_4.conf 2>&1 > TESTDIR/OUTPUT
+$cmd -hTESTDIR -S 1 -c $configs/crash_test_4.conf 2>&1 >> TESTDIR/OUTPUT
 rm TESTDIR/__db.0* # Remove region files because the environment is corrupted.
 $lv -hTESTDIR 2>&1 >> TESTDIR/OUTPUT
 cp TESTDIR/OUTPUT $resdir/OUTPUT.10

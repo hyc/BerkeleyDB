@@ -32,38 +32,42 @@ __db_getlong(dbenv, progname, p, min, max, storep)
 	if ((val == LONG_MIN || val == LONG_MAX) &&
 	    __os_get_errno() == ERANGE) {
 		if (dbenv == NULL)
-			fprintf(stderr,
-			    "%s: %s: %s\n", progname, p, strerror(ERANGE));
+			fprintf(stderr, "%s: %s: %s\n",
+			    progname, p, strerror(ERANGE));
 		else
 			dbenv->err(dbenv, ERANGE, "%s", p);
 		return (ERANGE);
 	}
 	if (p[0] == '\0' || (end[0] != '\0' && end[0] != '\n')) {
 		if (dbenv == NULL)
-			fprintf(stderr,
-			    "%s: %s: Invalid numeric argument\n", progname, p);
+			fprintf(stderr, DB_STR_A("0042",
+			    "%s: %s: Invalid numeric argument\n",
+			    "%s %s\n"), progname, p);
 		else
-			dbenv->errx(dbenv, "%s: Invalid numeric argument", p);
+			dbenv->errx(dbenv, DB_STR_A("0043",
+			    "%s: Invalid numeric argument", "%s"), p);
 		return (EINVAL);
 	}
 	if (val < min) {
 		if (dbenv == NULL)
-			fprintf(stderr,
+			fprintf(stderr, DB_STR_A("0044",
 			    "%s: %s: Less than minimum value (%ld)\n",
-			    progname, p, min);
+			    "%s %s %ld\n"), progname, p, min);
 		else
-			dbenv->errx(dbenv,
-			    "%s: Less than minimum value (%ld)", p, min);
+			dbenv->errx(dbenv, DB_STR_A("0045",
+			    "%s: Less than minimum value (%ld)",
+			    "%s %ld"), p, min);
 		return (ERANGE);
 	}
 	if (val > max) {
 		if (dbenv == NULL)
-			fprintf(stderr,
+			fprintf(stderr, DB_STR_A("0046",
 			    "%s: %s: Greater than maximum value (%ld)\n",
-			    progname, p, max);
+			    "%s %s %ld\n"), progname, p, max);
 		else
-			dbenv->errx(dbenv,
-			    "%s: Greater than maximum value (%ld)", p, max);
+			dbenv->errx(dbenv, DB_STR_A("0047",
+			    "%s: Greater than maximum value (%ld)",
+			    "%s %ld"), p, max);
 		return (ERANGE);
 	}
 	*storep = val;
@@ -91,28 +95,32 @@ __db_getulong(dbenv, progname, p, min, max, storep)
 	val = strtoul(p, &end, 10);
 	if (val == ULONG_MAX && __os_get_errno() == ERANGE) {
 		if (dbenv == NULL)
-			fprintf(stderr,
-			    "%s: %s: %s\n", progname, p, strerror(ERANGE));
+			fprintf(stderr, "%s: %s: %s\n",
+			    progname, p, strerror(ERANGE));
 		else
 			dbenv->err(dbenv, ERANGE, "%s", p);
 		return (ERANGE);
 	}
 	if (p[0] == '\0' || (end[0] != '\0' && end[0] != '\n')) {
 		if (dbenv == NULL)
-			fprintf(stderr,
-			    "%s: %s: Invalid numeric argument\n", progname, p);
+			fprintf(stderr, DB_STR_A("0048",
+			    "%s: %s: Invalid numeric argument\n",
+			    "%s %s\n"), progname, p);
 		else
-			dbenv->errx(dbenv, "%s: Invalid numeric argument", p);
+			dbenv->errx(dbenv, DB_STR_A("0049",
+			    "%s: Invalid numeric argument",
+			    "%s"), p);
 		return (EINVAL);
 	}
 	if (val < min) {
 		if (dbenv == NULL)
-			fprintf(stderr,
+			fprintf(stderr, DB_STR_A("0050",
 			    "%s: %s: Less than minimum value (%lu)\n",
-			    progname, p, min);
+			    "%s %s %lu\n"), progname, p, min);
 		else
-			dbenv->errx(dbenv,
-			    "%s: Less than minimum value (%lu)", p, min);
+			dbenv->errx(dbenv, DB_STR_A("0051",
+			    "%s: Less than minimum value (%lu)",
+			    "%s %lu"), p, min);
 		return (ERANGE);
 	}
 
@@ -124,12 +132,13 @@ __db_getulong(dbenv, progname, p, min, max, storep)
 	 */
 	if (max != 0 && val > max) {
 		if (dbenv == NULL)
-			fprintf(stderr,
+			fprintf(stderr, DB_STR_A("0052",
 			    "%s: %s: Greater than maximum value (%lu)\n",
-			    progname, p, max);
+			    "%s %s %lu\n"), progname, p, max);
 		else
-			dbenv->errx(dbenv,
-			    "%s: Greater than maximum value (%lu)", p, max);
+			dbenv->errx(dbenv, DB_STR_A("0053",
+			    "%s: Greater than maximum value (%lu)",
+			    "%s %lu"), p, max);
 		return (ERANGE);
 	}
 	*storep = val;

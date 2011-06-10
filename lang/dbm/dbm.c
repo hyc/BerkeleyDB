@@ -174,7 +174,8 @@ __db_dbm_store(key, dat)
 static void
 __db_no_open()
 {
-	(void)fprintf(stderr, "dbm: no open database.\n");
+	(void)fprintf(stderr, DB_STR_A("5126",
+	    "dbm: no open database.\n", "\n"));
 }
 
 /*

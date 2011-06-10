@@ -12,7 +12,10 @@
     <link rel="next" href="db_sql_codegen.html" title="db_sql_codegen" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">db_replicate</th>
@@ -38,13 +41,21 @@
       <pre class="programlisting">db_replicate [-MVv] [-h home]
     [-L file] [-P password] [-T num_threads] [-t secs]  </pre>
       <p>
-         The <span class="command"><strong>db_replicate</strong></span> utility is a daemon process that 
-	 provides replication/HA services on a transactional environment. This utility enables you
-to upgrade an existing Transactional Data Store application to an HA application with minor modifications.
-For more information on the db_replicate utility, 
-see the <a href="../../programmer_reference/rep_replicate.html" class="olink"> Running Replication Using the db_replicate
-Utility </a> section in the <span class="emphasis"><em>Programmer's Reference Guide.</em></span>
+         The <span class="command"><strong>db_replicate</strong></span> utility is a daemon process
+         that provides replication/HA services on a transactional
+         environment. This utility enables you to upgrade an existing
+         Transactional Data Store application to an HA application with
+         minor modifications.  For more information on the db_replicate
+         utility, see the 
+         <a href="../../programmer_reference/rep_replicate.html" class="olink">Running Replication Using the db_replicate Utility </a> 
+         section in the <span class="emphasis"><em>Berkeley DB Programmer's Reference Guide.</em></span>
     </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+            This utility is not supported for use with the DB SQL APIs.
+        </p>
+      </div>
       <p>
         The options are as follows:
     </p>
@@ -64,16 +75,16 @@ Utility </a> section in the <span class="emphasis"><em>Programmer's Reference Gu
                  <span class="bold"><strong>-L</strong></span>
             </p>
             <p>
-                 Log the execution of the <span class="command"><strong>db_replicate</strong></span> utility to the specified file
-                 in the following format, where <span class="emphasis"><em>###</em></span> is the process
-                 ID, and the date is the time the utility was started.
+                 Log the execution of the <span class="command"><strong>db_replicate</strong></span>
+                 utility to the specified file in the following format,
+                 where <span class="emphasis"><em>###</em></span> is the process ID, and the
+                 date is the time the utility was started.
              </p>
             <pre class="programlisting"> db_replicate: ### Wed Jun 15 01:23:45 EDT 1995 </pre>
             <p>    
-		 Additionally, events such as site role changes will be
-		 noted in the log file.
-                 This file will be removed if the <span class="command"><strong>db_replicate</strong></span>
-                 utility exits gracefully.
+                 Additionally, events such as site role changes will be
+                 noted in the log file.  This file will be removed if the
+                 <span class="command"><strong>db_replicate</strong></span> utility exits gracefully.
             </p>
           </li>
           <li>
@@ -81,9 +92,9 @@ Utility </a> section in the <span class="emphasis"><em>Programmer's Reference Gu
                  <span class="bold"><strong>-M</strong></span>
             </p>
             <p>
-		 Start the <span class="command"><strong>db_replicate</strong></span> utility to be
-		 the master site of the replication group.  Otherwise,
-		 the site will be started as a client replica.
+                 Start the <span class="command"><strong>db_replicate</strong></span> utility to be
+                 the master site of the replication group.  Otherwise,
+                 the site will be started as a client replica.
             </p>
           </li>
           <li>
@@ -110,8 +121,8 @@ Utility </a> section in the <span class="emphasis"><em>Programmer's Reference Gu
                  <span class="bold"><strong>-t</strong></span>
             </p>
             <p>
-		 Specify how often (in seconds) the utility will check
-		 for program interruption and resend the last log record.
+                 Specify how often (in seconds) the utility will check
+                 for program interruption and resend the last log record.
             </p>
           </li>
           <li>
@@ -128,46 +139,49 @@ Utility </a> section in the <span class="emphasis"><em>Programmer's Reference Gu
             </p>
             <p>
                  Turn on replication verbose messages.  These messages will
-		 be written to the standard output and will be quite
-		 voluminous.
+                 be written to the standard output and will be quite
+                 voluminous.
             </p>
           </li>
         </ul>
       </div>
       <p>
          The <span class="command"><strong>db_replicate</strong></span> utility uses a Berkeley DB
-                environment (as described for the <span class="bold"><strong>-h</strong></span>
-                option, the environment variable 
-                <span class="bold"><strong>DB_HOME</strong></span>, or because the utility
-                was run in a directory containing a Berkeley DB
-                environment). 
-         In order to avoid environment corruption when using a Berkeley DB
-         environment, <span class="command"><strong>db_replicate</strong></span> should always be given the chance to detach
-         from the environment and exit gracefully.  To cause <span class="command"><strong>db_replicate</strong></span> to
-         release all environment resources and exit cleanly, send it an
-         interrupt signal (SIGINT).
+         environment (as described for the 
+         <span class="bold"><strong>-h</strong></span> option, the environment variable
+         <span class="bold"><strong>DB_HOME</strong></span>, or because the utility
+         was run in a directory containing a Berkeley DB environment).  In
+         order to avoid environment corruption when using a Berkeley DB
+         environment, <span class="command"><strong>db_replicate</strong></span> should always be
+         given the chance to detach from the environment and exit
+         gracefully.  To cause <span class="command"><strong>db_replicate</strong></span> to release
+         all environment resources and exit cleanly, send it an interrupt
+         signal (SIGINT).
     </p>
       <p>
-         The <span class="command"><strong>db_replicate</strong></span> utility does not attempt to create the Berkeley DB
-         shared memory regions if they do not already exist.  The application
-         that creates the region should be started first, and once the region
-         is created, the <span class="command"><strong>db_replicate</strong></span> utility should be started.
-	 The application must use the <a class="xref" href="envopen.html#envopen_DB_INIT_REP">
-                                         <code class="literal">DB_INIT_REP</code>
-                                </a> and <a class="xref" href="envopen.html#envopen_DB_THREAD">
-                                         <code class="literal">DB_THREAD</code>
-                                </a> flags
-	 when creating the environment.
+         The <span class="command"><strong>db_replicate</strong></span> utility does not attempt to
+         create the Berkeley DB shared memory regions if they do not
+         already exist.  The application that creates the region should be
+         started first, and once the region is created, the
+         <span class="command"><strong>db_replicate</strong></span> utility should be started.  The
+         application must use the 
+         <a class="xref" href="envopen.html#envopen_DB_INIT_REP">
+                        <code class="literal">DB_INIT_REP</code>
+                    </a> 
+         and <a class="xref" href="envopen.html#envopen_DB_THREAD">
+                            <code class="literal">DB_THREAD</code>
+                        </a> 
+         flags when creating the environment.
     </p>
       <p>
-         The <span class="command"><strong>db_replicate</strong></span> utility exits 0 on success, and &gt;0 if an error
-         occurs.
+         The <span class="command"><strong>db_replicate</strong></span> utility exits 0 on success,
+         and &gt;0 if an error occurs.
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54909616"></a>Environment Variables</h3>
+              <h3 class="title"><a id="id3948179"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -175,16 +189,16 @@ Utility </a> section in the <span class="emphasis"><em>Programmer's Reference Gu
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54967432"></a>DB_HOME</h4>
+                <h4 class="title"><a id="id3948902"></a>DB_HOME</h4>
               </div>
             </div>
           </div>
           <p>
-                          If the <span class="bold"><strong>-h</strong></span> option is not specified and
-                          the environment variable DB_HOME is set, it is used as the path of the
-                          database home, as described in the 
-                          <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a> method.
-                     </p>
+                  If the <span class="bold"><strong>-h</strong></span> option is not specified and
+                  the environment variable DB_HOME is set, it is used as the path of the
+                  database home, as described in the 
+                  <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a> method.
+             </p>
         </div>
       </div>
     </div>

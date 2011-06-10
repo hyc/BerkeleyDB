@@ -21,6 +21,8 @@
 **  BDBSQL_SHARE_PRIVATE -- Implies BDBSQL_OMIT_SHARING and implements
 **                          inter-process sharing and synchronization of
 **                          databases.
+**  BDBSQL_TXN_SNAPSHOTS_DEFAULT -- Always enable concurrency between read
+**                                  and write transactions.
 */
 
 #if defined(BDBSQL_CONVERT_SQLITE) && defined(BDBSQL_FILE_PER_TABLE)
@@ -49,13 +51,14 @@
 /*
  * We use the following internal DB functions.
  */
+extern void __os_dirfree(ENV *env, char **namesp, int cnt);
 extern int __os_dirlist(ENV *env,
     const char *dir, int returndir, char ***namesp, int *cntp);
-extern void __os_dirfree(ENV *env, char **namesp, int cnt);
 extern int __os_exists (ENV *, const char *, int *);
 extern int __os_fileid(ENV *, const char *, int, u_int8_t *);
 extern int __os_mkdir (ENV *, const char *, int);
 extern int __os_unlink (ENV *, const char *, int);
+extern void __os_yield (ENV *, u_long, u_long);
 
 /*
  * The DB_SQL_LOCKER structure is used to unlock a DB handle. The id field must
@@ -71,50 +74,63 @@ typedef struct {
 
 #define	DB_MIN_CACHESIZE 20		/* pages */
 
+#define	US_PER_SEC 1000000		/* Microseconds in a second */
+
 /* The rowid is never longer than 9 bytes.*/
-#define ROWIDMAXSIZE 10
+#define	ROWIDMAXSIZE 10
 
 #define	pDbEnv		(pBt->dbenv)
 #define	pMetaDb		(pBt->metadb)
 #define	pTablesDb	(pBt->tablesdb)
 #define	pFamilyTxn	(p->family_txn)
 #define	pReadTxn	(p->read_txn)
-#define pMainTxn    (p->main_txn)
+#define	pMainTxn    (p->main_txn)
 #define	pSavepointTxn	(p->savepoint_txn)
 
 /* Forward declarations for internal functions. */
 static int btreeCloseCursor(BtCursor *pCur, int removeList);
+static int btreeCompressInt(u_int8_t *buf, u_int64_t i);
 static int btreeConfigureDbHandle(Btree *p, int iTable, DB **dbpp);
 static int btreeCreateDataTable(Btree *, int, CACHED_DB **);
 static int btreeCreateSharedBtree(
     Btree *, const char *, u_int8_t *, sqlite3 *, int, storage_mode_t);
 static int btreeCreateTable(Btree *p, int *piTable, int flags);
-static int btreeDbHandleIsLocked(CACHED_DB *cached_db);
+static int btreeDbHandleIsLocked(Btree *p, CACHED_DB *cached_db);
 static int btreeDbHandleLock(Btree *p, CACHED_DB *cached_db);
 static int btreeDbHandleUnlock(Btree *p, CACHED_DB *cached_db);
+static int btreeDecompressInt(const u_int8_t *buf, u_int64_t *i);
+static int btreeFindOrCreateDataTable(Btree *, int *, CACHED_DB **, int);
 static void btreeFreeSharedBtree(BtShared *p, int clear_cache);
 static int btreeGetSharedBtree(
     BtShared **, u_int8_t *, sqlite3 *, storage_mode_t, int);
+static int btreeLoadBufferIntoTable(BtCursor *pCur);
 static int btreeMoveto(BtCursor *pCur,
     const void *pKey, i64 nKey, int bias, int *pRes);
-static int btreeInvalidateHandleCache(Btree *p);
 static int btreePrepareEnvironment(Btree *p);
+static int btreeRepIsClient(Btree *p);
+static int btreeRepStartupFinished(Btree *p);
 static int btreeRestoreCursorPosition(BtCursor *pCur, int skipMoveto);
-static int btreeLoadBufferIntoTable(BtCursor *pCur);
+static int btreeSetUpReplication(Btree *p, int master, u8 *replicate);
 static int btreeTripAll(Btree *p, int iTable, int incrblobUpdate);
 static int btreeTripWatchers(BtCursor *pBt, int incrblobUpdate);
-static int btreeUpdateBtShared(Btree *p, int needLock);
 static int indexIsCollated(KeyInfo *keyInfo);
 static int supportsDuplicates(DB *db);
 #ifdef BDBSQL_SHARE_PRIVATE
-static int btreeReopenPrivateEnvironment(Btree *p);
-static int btreeSetupLockfile(Btree *p, int *createdFile);
 static int btreeFileLock(Btree *p);
 static int btreeFileUnlock(Btree *p);
+static int btreeReopenPrivateEnvironment(Btree *p);
+static int btreeSetupLockfile(Btree *p, int *createdFile);
 #endif
 
 /*
- * Globals are protected by the static "open" mutex (SQLITE_MUTEX_STATIC_OPEN).
+ * Flags for btreeFindOrCreateDataTable
+ * Defined in btree.h:
+ * #define BTREE_INTKEY     1    
+ * #define BTREE_BLOBKEY    2   
+ */
+#define BTREE_CREATE 4	/* If we want to create the table */
+
+/* Globals are protected by the static "open" mutex (SQLITE_MUTEX_STATIC_OPEN).
  */
 
 /* The head of the linked list of shared Btree objects */
@@ -132,8 +148,6 @@ u_int32_t g_uid_next = 0;
 /* Number of times to retry operations that return a "busy" error. */
 #define	BUSY_RETRY_COUNT	100
 
-/* This should match SQLite VFS.mxPathname */
-#define	BT_MAX_PATH 512
 /* TODO: This should probably be '\' on Windows. */
 #define	PATH_SEPARATOR	"/"
 
@@ -159,19 +173,19 @@ u_int32_t g_uid_next = 0;
  * and after each backup step, and if it has increase then the backup
  * process is reset.
  */
-#define UPDATE_DURING_BACKUP(p)  \
+#define	UPDATE_DURING_BACKUP(p)  \
     if (p->nBackup > 0)     \
-        p->updateDuringBackup++;    
+	p->updateDuringBackup++;
 
 #ifdef BDBSQL_FILE_PER_TABLE
-#define FIX_TABLENAME(pBt, fileName, tableName) do {		\
+#define	FIX_TABLENAME(pBt, fileName, tableName) do {		\
 	if (pBt->dbStorage == DB_STORE_NAMED) {			\
 		fileName = tableName;				\
 	} else							\
 		fileName = pBt->short_name;			\
 } while (0)
 #else
-#define FIX_TABLENAME(pBt, fileName, tableName) do {		\
+#define	FIX_TABLENAME(pBt, fileName, tableName) do {		\
 	fileName = pBt->short_name;				\
 } while (0)
 #endif
@@ -183,65 +197,50 @@ u_int32_t g_uid_next = 0;
 	((pBt)->dbStorage == DB_STORE_NAMED &&			\
 	((pBt)->flags & BTREE_OMIT_JOURNAL) == 0)
 
-#define IS_ENV_READONLY(pBt)					\
+#define	IS_ENV_READONLY(pBt)					\
 	(pBt->readonly ? 1 : 0)
-#define GET_ENV_READONLY(pBt)					\
+#define	GET_ENV_READONLY(pBt)					\
 	(IS_ENV_READONLY(pBt) ? DB_RDONLY : 0)
-#define IS_BTREE_READONLY(p)					\
+#define	IS_BTREE_READONLY(p)					\
 	((p->readonly || IS_ENV_READONLY(p->pBt)) ? 1 : 0)
-
-/*
- * There is some subtlety about which mutex to use: for shared handles, we
- * update some structures that are protected by the open mutex.  In-memory
- * databases all share the same g_tmp_env handle, so we need to make sure they
- * get it single-threaded (so the initial open is done once).
- *
- * However, we can't use the open mutex to protect transient database opens and
- * closes: we might already be holding locks in a shared environment when we
- * try to open the temporary env, which would lead to a lock/mutex deadlock.
- * We take a different static mutex from SQLite, previously used in the pager.
- */
-#define	OPEN_MUTEX(store)	((store == DB_STORE_NAMED) ?	\
-	SQLITE_MUTEX_STATIC_OPEN : SQLITE_MUTEX_STATIC_LRU)
 
 #ifndef BDBSQL_SINGLE_THREAD
 #define	RMW(pCur)						\
-    (pCur->wrFlag && pCur->pBtree->pBt->dbStorage == DB_STORE_NAMED ? DB_RMW : 0)
+    (pCur->wrFlag && pCur->pBtree->pBt->dbStorage == DB_STORE_NAMED ?	\
+    DB_RMW : 0)
 #else
 #define	RMW(pCur) 0
 #endif
 
-
 #ifdef BDBSQL_SINGLE_THREAD
-#define GET_BTREE_ISOLATION(p)	0
+#define	GET_BTREE_ISOLATION(p)	0
 #else
-#define GET_BTREE_ISOLATION(p) (!p->pBt->transactional ? 0 :	\
-    (p->db->flags & SQLITE_ReadUncommitted) ?			\
-    DB_READ_UNCOMMITTED : DB_READ_COMMITTED)
+#define	GET_BTREE_ISOLATION(p) (!p->pBt->transactional ? 0 :	\
+	((p->db->flags & SQLITE_ReadUncommitted) ?		\
+	DB_READ_UNCOMMITTED : DB_READ_COMMITTED) |		\
+	((p->pBt->read_txn_flags & DB_TXN_SNAPSHOT) ?		\
+	DB_TXN_SNAPSHOT : 0))
 #endif
 
-/* The transaction for incrblobs is held in the cursor, so when deadlock 
- * happens the cursor transaction must be aborted instead of the statement 
+/* The transaction for incrblobs is held in the cursor, so when deadlock
+ * happens the cursor transaction must be aborted instead of the statement
  * transaction. */
-#define HANDLE_INCRBLOB_DEADLOCK(ret, pCur)			\
+#define	HANDLE_INCRBLOB_DEADLOCK(ret, pCur)			\
 	if (ret == DB_LOCK_DEADLOCK && pCur->isIncrblobHandle) {\
 		if (!pCur->wrFlag)				\
 			pCur->pBtree->read_txn = NULL;		\
-		if (pCur->txn == pCur->pBtree->savepoint_txn)	\
-			pCur->pBtree->savepoint_txn =		\
-			    pCur->pBtree->savepoint_txn->parent;\
 		pCur->txn->abort(pCur->txn);			\
 		pCur->txn = NULL;				\
 		return SQLITE_LOCKED;				\
 	}
 
 /* Decide which transaction to use when reading the meta data table. */
-#define GET_META_TXN(p)					\
+#define	GET_META_TXN(p)					\
 	(p->txn_excl ? pSavepointTxn :			\
 		(pReadTxn ? pReadTxn : pFamilyTxn))
 
 /* Decide which flags to use when reading the meta data table. */
-#define GET_META_FLAGS(p)				\
+#define	GET_META_FLAGS(p)				\
 	((p->txn_excl ? DB_RMW : 0) |			\
 	    (GET_BTREE_ISOLATION(p) & ~DB_TXN_SNAPSHOT))
 
@@ -252,6 +251,7 @@ int dberr2sqlite(int err)
 		return SQLITE_OK;
 	case DB_LOCK_DEADLOCK:
 	case DB_LOCK_NOTGRANTED:
+	case DB_REP_JOIN_FAILURE:
 		return SQLITE_BUSY;
 	case DB_NOTFOUND:
 		return SQLITE_NOTFOUND;
@@ -275,7 +275,7 @@ int dberr2sqlite(int err)
 }
 
 /*
- * Close db handle and cleanup resource (e.g.: remove in-memory db) 
+ * Close db handle and cleanup resource (e.g.: remove in-memory db)
  * automatically.
  *
  * Note: closeDB is more dangerous than dbp->close since it would remove
@@ -284,7 +284,7 @@ int dberr2sqlite(int err)
  *   1. Cleanup cached handles.
  *   2. DB handle creating fails. Safe because no one own this uncreated handle.
  *   3. Drop Tables.
- * 
+ *
  * In other cases (error handlers, vacuum , backup, etc.), closeDB should not
  * be called anyway. That's because the db might be required by other
  * connections.
@@ -303,9 +303,9 @@ int closeDB(Btree *p, DB *dbp, u_int32_t flags)
 	if (p == NULL || (pBt = p->pBt) == NULL || dbp == NULL)
 		return 0;
 
-	/* 
- 	 * In MPOOL, Named in-memory databases get an artificially bumped
-	 * reference count so they don't disappear on close; they need a 
+	/*
+	 * In MPOOL, Named in-memory databases get an artificially bumped
+	 * reference count so they don't disappear on close; they need a
 	 * remove to make them disappear.
 	 */
 	if (pBt->dbStorage == DB_STORE_INMEM &&
@@ -325,8 +325,8 @@ int closeDB(Btree *p, DB *dbp, u_int32_t flags)
 	ret = dbp->close(dbp, flags);
 
 	/*
-	 * Do removes as needed to prevent mpool leak. pSavepointTxn is required 
-	 * since the operations might be rollbacked.
+	 * Do removes as needed to prevent mpool leak. pSavepointTxn is
+	 * required since the operations might be rollbacked.
 	 */
 	if (needRemove) {
 		remove_flags = DB_NOSYNC;
@@ -352,12 +352,27 @@ static int dberr2sqlitelocked(int err)
 		rc = SQLITE_LOCKED;
 	return rc;
 }
+
+#ifndef NDEBUG
+void log_msg(loglevel_t level, const char *fmt, ...)
+{
+	if (level >= CURRENT_LOG_LEVEL) {
+		va_list ap;
+		va_start(ap, fmt);
+		vfprintf(stdout, fmt, ap);
+		fputc('\n', stdout);
+		fflush(stdout);
+		va_end(ap);
+	}
+}
+#endif
+
 #ifdef BDBSQL_FILE_PER_TABLE
 int getMetaDataFileName(const char *full_name, char **filename)
 {
-	*filename = sqlite3_malloc(strlen(full_name) + 
+	*filename = sqlite3_malloc(strlen(full_name) +
 		strlen(BDBSQL_META_DATA_TABLE) + 2);
-	if (*filename == NULL) 
+	if (*filename == NULL)
 		return SQLITE_NOMEM;
 	strcpy(*filename, full_name);
 	strcpy(*filename + strlen(full_name), PATH_SEPARATOR);
@@ -404,20 +419,19 @@ static char *btreeStrdup(const char *sq)
  * way that preserves the natural integer ordering, while staying optimized
  * for small positive values.
  */
-#define	__INT64_MAX ((((i64)0x7fffffff) << 32) | 0xffffffff)
 
-static int encodeI64(u_int8_t *buf, i64 num)
+int encodeI64(u_int8_t *buf, i64 num)
 {
 	int reserve;
 
 	reserve = 0;
 
-	if (num >= 0 && num < __INT64_MAX)
+	if (num >= 0 && num < INT64_MAX)
 		num += 1; /* Need to leave '\0' so negatives sort lower. */
-	else if (num == __INT64_MAX) {
+	else if (num == INT64_MAX) {
 		reserve = 1;
 		/*
-		 * Make sure it will sort bigger than __INT64_MAX - 1.
+		 * Make sure it will sort bigger than INT64_MAX - 1.
 		 *
 		 * Note: it would be possible to optimize this case, because
 		 * our encoding has some free bits at the top of the first
@@ -430,7 +444,7 @@ static int encodeI64(u_int8_t *buf, i64 num)
 		reserve = 1;
 	}
 
-	return __dbsql_compress_int(buf, (u_int64_t)num) + reserve;
+	return btreeCompressInt(buf, (u_int64_t)num) + reserve;
 }
 
 static i64 decodeI64(u_int8_t *data, int size)
@@ -446,8 +460,8 @@ static i64 decodeI64(u_int8_t *data, int size)
 	} else
 		negative = 0;
 
-	sz = __dbsql_decompress_int(data, &num);
-	assert(sz == size || ((sz + 1) == size && (i64)num == __INT64_MAX));
+	sz = btreeDecompressInt(data, &num);
+	assert(sz == size || ((sz + 1) == size && (i64)num == INT64_MAX));
 
 	return (i64)((!negative && sz == size) ? num - 1 : num);
 }
@@ -486,10 +500,10 @@ static int btreeConvertSqlite(BtShared *pBt, DB_ENV *tmp_env)
 	 * Use variables in the script to avoid sending in the filename
 	 * lots of times.
 	 */
-	sqlite3_snprintf(sizeof convert_cmd, convert_cmd,
+	sqlite3_snprintf(sizeof(convert_cmd), convert_cmd,
 	    "f='%s' ; t=\"$f-bdbtmp\" ; mv \"$f\" \"$t-1\" || exit $? "
 	    "; ((echo PRAGMA txn_bulk=1';' PRAGMA user_version="
-	        "`%s \"$t-1\" 'pragma user_version'`';'"
+		"`%s \"$t-1\" 'pragma user_version'`';'"
 	    "  ; %s \"$t-1\" .dump) | %s \"$t-2\""
 	    " && mv \"$t-2\" \"$f\" && rm -r \"$t-2-journal\" && rm \"$t-1\")"
 	    "|| mv \"$t-1\" \"$f\"",
@@ -696,8 +710,8 @@ int btreeOpenMetaTables(Btree *p, int *pCreating)
 	if ((ret = pTablesDb->cursor(pTablesDb, pFamilyTxn, &dbc, 0)) != 0)
 		goto err;
 
-	memset(&key, 0, sizeof key);
-	memset(&data, 0, sizeof data);
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
 	data.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
 	ret = dbc->get(dbc, &key, &data, DB_LAST);
 	if (ret == 0)
@@ -728,14 +742,14 @@ addmeta:/*
 	if (!*pCreating) {
 		/* This matches SQLite, I don't understand the naming. */
 		sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &val);
-                if (p->db->errCode == SQLITE_BUSY) {
-		        rc = SQLITE_BUSY;
+		if (p->db->errCode == SQLITE_BUSY) {
+			rc = SQLITE_BUSY;
 			goto err;
 		}
 		pBt->autoVacuum = (u8)val;
 		sqlite3BtreeGetMeta(p, BTREE_INCR_VACUUM, &val);
-                if (p->db->errCode == SQLITE_BUSY) {
-		        rc = SQLITE_BUSY;
+		if (p->db->errCode == SQLITE_BUSY) {
+			rc = SQLITE_BUSY;
 			goto err;
 		}
 		pBt->incrVacuum = (u8)val;
@@ -789,8 +803,8 @@ static int btreePreloadHandles(Btree *p)
 	if ((ret = pTablesDb->cursor(pTablesDb, NULL, &dbc, 0)) != 0)
 		goto err;
 
-	memset(&key, 0, sizeof key);
-	memset(&data, 0, sizeof data);
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
 	data.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
 
 	sqlite3_mutex_enter(pBt->mutex);
@@ -854,6 +868,10 @@ static void btreeFreeSharedBtree(BtShared *p, int clear_cache)
 		sqlite3_free(p->full_name);
 	if (p->orig_name != NULL)
 		sqlite3_free(p->orig_name);
+	if (p->errfile_name != NULL)
+		sqlite3_free(p->errfile_name);
+	if (p->errfile != NULL)
+		fclose(p->errfile);
 
 	sqlite3_free(p);
 }
@@ -880,7 +898,7 @@ static int btreeCheckEnvPrepare(Btree *p)
 		rc = SQLITE_READONLY;
 		goto err;
 	}
-	
+
 	if (!f_exists) {
 		if ((p->vfsFlags & SQLITE_OPEN_READONLY) != 0) {
 			rc = SQLITE_READONLY;
@@ -920,14 +938,12 @@ static int btreeCheckEnvPrepare(Btree *p)
 err:	return rc;
 }
 
-static int btreeCheckEnvOpen(Btree *p, int createdDir)
+static int btreeCheckEnvOpen(Btree *p, int createdDir, u8 replicate)
 {
 	BtShared *pBt;
-	int env_exists, f_exists, rc, ret;
+	int env_exists, f_exists;
 
 	pBt = p->pBt;
-	ret = 0;
-	rc = SQLITE_OK;
 	env_exists = f_exists = 0;
 
 	assert(pBt->dbStorage == DB_STORE_NAMED);
@@ -936,23 +952,16 @@ static int btreeCheckEnvOpen(Btree *p, int createdDir)
 	env_exists = !__os_exists(NULL, pBt->dir_name, NULL);
 	if (env_exists && createdDir)
 		env_exists = 0;
-	if (env_exists && !f_exists) {		
+	if (env_exists && !f_exists) {
 		int f_isdir;
 		/*
 		 * there may have been a race for database creation. Recheck
 		 * file existence before destroying the environment.
 		 */
-		f_exists = !__os_exists(NULL, pBt->full_name, &f_isdir);	
+		f_exists = !__os_exists(NULL, pBt->full_name, &f_isdir);
 	}
-	if (env_exists && !f_exists) {
-		if ((ret = btreeCleanupEnv(pBt->dir_name)) != 0)
-			goto err;
-	} else if (!env_exists && !IS_ENV_READONLY(pBt) && f_exists) {
-		if (f_exists)
-			pBt->lsn_reset = LSN_RESET_FILE;
-		else
-			pBt->lsn_reset = LSN_RESET_DIR;
-	}
+	if (!env_exists && !IS_ENV_READONLY(pBt) && f_exists)
+		pBt->lsn_reset = LSN_RESET_FILE;
 
 	/*
 	 * If we are opening a database read-only, and there is not
@@ -964,16 +973,22 @@ static int btreeCheckEnvOpen(Btree *p, int createdDir)
 		pBt->env_oflags |= DB_PRIVATE;
 		pBt->transactional = 0;
 	} else {
-		pBt->env_oflags |= DB_INIT_LOG | DB_INIT_TXN
+		pBt->env_oflags |= DB_INIT_LOG | DB_INIT_TXN |
+		    (replicate ? DB_INIT_REP : 0);
 #ifndef BDBSQL_SINGLE_THREAD
-		    | DB_INIT_LOCK
+		pBt->env_oflags |= DB_INIT_LOCK;
 #endif
 #ifdef BDBSQL_OMIT_SHARING
-		    | DB_PRIVATE | DB_CREATE
+		pBt->env_oflags |= DB_PRIVATE | DB_CREATE;
 #else
-		    | DB_REGISTER
+		/*
+		 * FAILCHK_ISALIVE doesn't currently work with replication.
+		 * Also, replication can't use DB_REGISTER because it
+		 * assumes actual recoveries between sessions.
+		 */
+		if (!replicate)
+			pBt->env_oflags |= DB_FAILCHK_ISALIVE | DB_REGISTER;
 #endif
-		    ;
 	}
 	/*
 	 * If we're prepared to create the environment, do that now.
@@ -983,11 +998,276 @@ static int btreeCheckEnvOpen(Btree *p, int createdDir)
 	 * recorded in the Btree object passed in.
 	 */
 	pBt->env_oflags |= DB_CREATE;
-	
+
 	if ((pBt->env_oflags & DB_INIT_TXN) != 0)
 		pBt->env_oflags |= DB_RECOVER;
-	ret = 0;
-err:	return MAP_ERR(rc, ret);	
+
+	return SQLITE_OK;
+}
+
+/*
+ * Determine whether replication is configured and make all needed
+ * replication calls prior to opening environment.
+ */
+static int btreeSetUpReplication(Btree *p, int master, u8 *replicate)
+{
+	BtShared *pBt;
+	sqlite3 *db;
+	char *value, *value2;
+	DB_SITE *lsite, *rsite;
+	char *host, *msg;
+	u_int port = 0;
+	int rc, rc2, ret;
+
+	pBt = p->pBt;
+	db = p->db;
+	rc = SQLITE_OK;
+	*replicate = ret = 0;
+
+	value = NULL;
+	if ((rc = getPersistentPragma(p, "replication",
+	    &value, NULL)) == SQLITE_OK && value)
+		*replicate = atoi(value);
+	if (value)
+		sqlite3_free(value);
+
+	if (*replicate) {
+		value = NULL;
+		value2 = NULL;
+		if ((rc = getPersistentPragma(p, "replication_verbose_output",
+		    &value, NULL)) == SQLITE_OK && value && atoi(value)) {
+			if (pDbEnv->set_verbose(pDbEnv,
+			    DB_VERB_REPLICATION, 1) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication set_verbose call");
+				rc = SQLITE_ERROR;
+			}
+			else if ((rc = getPersistentPragma(p,
+			    "replication_verbose_file",
+			    &value2, NULL)) == SQLITE_OK && value && value2) {
+				if ((rc = unsetRepVerboseFile(
+				    pBt, pDbEnv, &msg)) != SQLITE_OK)
+					sqlite3Error(db, rc, msg);
+				if (rc == SQLITE_OK && strlen(value2) > 0 &&
+				    (rc = setRepVerboseFile(
+				    pBt, pDbEnv, value2, msg)) != SQLITE_OK)
+					sqlite3Error(db, rc, msg);
+			}
+		}
+		if (value)
+			sqlite3_free(value);
+		if (value2)
+			sqlite3_free(value2);
+		if (rc != SQLITE_OK)
+			goto err;
+
+		/* There must be a local_site value. */
+		lsite = NULL;
+		value = NULL;
+		if ((rc = getPersistentPragma(p, "replication_local_site",
+		    &value, NULL)) == SQLITE_OK && value) {
+			/* Pragma code already syntax-checked the value.  */
+			rc2 = getHostPort(value, &host, &port);
+			if (pDbEnv->repmgr_site(pDbEnv,
+			    host, port, &lsite, 0) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call repmgr_site LOCAL");
+				rc = SQLITE_ERROR;
+			}
+			if (rc != SQLITE_ERROR &&
+			    lsite->set_config(lsite, DB_LOCAL_SITE, 1) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call site config LOCAL");
+				rc = SQLITE_ERROR;
+			}
+			if (rc != SQLITE_ERROR && master &&
+			    lsite->set_config(lsite,
+			    DB_GROUP_CREATOR, 1) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call site config CREATOR");
+				rc = SQLITE_ERROR;
+			}
+			if (lsite != NULL && lsite->close(lsite) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call site close LOCAL");
+				rc = SQLITE_ERROR;
+			}
+			if (rc2 == SQLITE_OK)
+				sqlite3_free(host);
+		} else {
+			sqlite3Error(db, SQLITE_ERROR, "Must specify local "
+			    "site before starting replication");
+			rc = SQLITE_ERROR;
+		}
+		if (value)
+			sqlite3_free(value);
+		if (rc != SQLITE_OK)
+			goto err;
+
+		/* It is optional to have a remote_site value. */
+		rsite = NULL;
+		value = NULL;
+		if (getPersistentPragma(p, "replication_remote_site",
+		    &value, NULL) == SQLITE_OK && value) {
+			/* Pragma code already syntax-checked the value.  */
+			rc2 = getHostPort(value, &host, &port);
+			if (pDbEnv->repmgr_site(pDbEnv,
+			    host, port, &rsite, 0) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call repmgr_site REMOTE");
+				rc = SQLITE_ERROR;
+			}
+			if (rc != SQLITE_ERROR &&
+			    rsite->set_config(rsite,
+			    DB_BOOTSTRAP_HELPER, 1) != 0)
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call site config HELPER");
+			if (rsite != NULL && rsite->close(rsite) != 0)
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call site close REMOTE");
+			if (rc2 == SQLITE_OK)
+				sqlite3_free(host);
+		}
+		if (value)
+			sqlite3_free(value);
+
+		/* Set 2SITE_STRICT to ensure data durability. */
+		if (pDbEnv->rep_set_config(pDbEnv,
+		    DB_REPMGR_CONF_2SITE_STRICT, 1) != 0) {
+			sqlite3Error(db, SQLITE_ERROR, "Error in "
+			    "replication call rep_set_config");
+			rc = SQLITE_ERROR;
+			goto err;
+		}
+
+		/*
+		 * Set up heartbeats to detect when client loses connection
+		 * to master and to enable rerequest processing.
+		 */
+		if (pDbEnv->rep_set_timeout(pDbEnv,
+		    DB_REP_HEARTBEAT_MONITOR, 7000000) != 0) {
+			sqlite3Error(db, SQLITE_ERROR, "Error in replication "
+			    "call rep_set_timeout heartbeat monitor");
+			rc = SQLITE_ERROR;
+			goto err;
+		}
+		if (pDbEnv->rep_set_timeout(pDbEnv,
+		    DB_REP_HEARTBEAT_SEND, 5000000) != 0) {
+			sqlite3Error(db, SQLITE_ERROR, "Error in replication "
+			    "call rep_set_timeout heartbeat send");
+			rc = SQLITE_ERROR;
+			goto err;
+		}
+	}
+
+err:
+	return rc;
+}
+
+/* See if environment is currently configured as a replication client. */
+static int btreeRepIsClient(Btree *p)
+{
+	DB_REP_STAT *rep_stat;
+	BtShared *pBt;
+	int is_client;
+
+	pBt = p->pBt;
+	is_client = 0;
+
+	if (!pBt->repStarted)
+		return (0);
+
+	if (pDbEnv->rep_stat(pDbEnv, &rep_stat, 0) != 0) {
+		sqlite3Error(p->db, SQLITE_ERROR, 
+		    "Unable to determine if site is a replication client");
+		return (0);
+	}
+	if (rep_stat->st_status == DB_REP_CLIENT)
+		is_client = 1;
+	sqlite3_free(rep_stat);
+	return (is_client);
+}
+
+/*
+ * See if replication startup is finished by polling replication statistics.
+ * Returns 1 if replication startup is finished; 0 otherwise.  Note that
+ * this function waits a finite amount of time for a replication election
+ * to complete but it waits indefinitely for a replication client to
+ * synchronize with the master after the election.
+ */
+static int btreeRepStartupFinished(Btree *p)
+{
+	DB_REP_STAT *repStat;
+	BtShared *pBt;
+	sqlite3 *db;
+	u_int32_t electRetry, electTimeout, slept;
+	int clientSyncComplete, startupComplete;
+
+	pBt = p->pBt;
+	db = p->db;
+	clientSyncComplete = slept = startupComplete = 0;
+	electRetry = electTimeout = 0;
+
+	if (pDbEnv->rep_get_timeout(pDbEnv,
+	    DB_REP_ELECTION_RETRY, &electRetry) != 0) {
+		sqlite3Error(db, SQLITE_ERROR, "Error in "
+		    "replication call rep_get_timeout election retry");
+		goto err;
+	}
+	if (pDbEnv->rep_get_timeout(pDbEnv,
+	    DB_REP_ELECTION_TIMEOUT, &electTimeout) != 0) {
+		sqlite3Error(db, SQLITE_ERROR, "Error in "
+		    "replication call rep_get_timeout election timeout");
+		goto err;
+	}
+	electRetry = electRetry / US_PER_SEC;
+	electTimeout = electTimeout / US_PER_SEC;
+
+	/*
+	 * Wait to see if election and replication site startup finishes.
+	 * If this site has been elected master or if it is a client that
+	 * has finished its synchronization with the master, startup is
+	 * finished.  Wait long enough to allow time for many election
+	 * attempts.  Using default timeout values, the wait is 15 minutes.
+	 */
+	do {
+		__os_yield(pDbEnv->env, 1, 0);
+		if (pDbEnv->rep_stat(pDbEnv, &repStat, 0) != 0) {
+			sqlite3Error(db, SQLITE_ERROR, "Error in "
+			    "replication call rep_stat election");
+			goto err;
+		}
+		if (repStat->st_status == DB_REP_MASTER ||
+		    repStat->st_startup_complete)
+			startupComplete = 1;
+		sqlite3_free(repStat);
+	} while (!startupComplete &&
+	    ++slept < (electTimeout + electRetry) * 75);
+
+	/*
+	 * If startup isn't finished yet but this site is a client with
+	 * a known master, the client is still synchronizing with the master.
+	 * Wait indefinitely because this can take a very long time if a full
+	 * internal initialization is needed.
+	 */
+	if (!startupComplete && repStat->st_status == DB_REP_CLIENT &&
+	    repStat->st_master != DB_EID_INVALID)
+		do {
+			__os_yield(pDbEnv->env, 2, 0);
+			if (pDbEnv->rep_stat(pDbEnv, &repStat, 0) != 0) {
+				sqlite3Error(db, SQLITE_ERROR, "Error in "
+				    "replication call rep_stat client sync");
+				goto err;
+			}
+			if (repStat->st_startup_complete)
+				clientSyncComplete = 1;
+			sqlite3_free(repStat);
+		} while (!clientSyncComplete);
+
+err:	if (startupComplete || clientSyncComplete)
+		return (1);
+	else
+		return (0);
 }
 
 /*
@@ -1018,10 +1298,9 @@ static int btreePrepareEnvironment(Btree *p)
 
 	if (pBt->dbStorage == DB_STORE_NAMED) {
 		memset(envDirNameBuf, 0, BT_MAX_PATH);
-		sqlite3_snprintf(sizeof envDirNameBuf, envDirNameBuf,
+		sqlite3_snprintf(sizeof(envDirNameBuf), envDirNameBuf,
 		    "%s-journal", pBt->full_name);
-		if (pBt->dir_name == NULL &&
-		    (pBt->dir_name = sqlite3_strdup(envDirNameBuf)) == NULL) {
+		if ((pBt->dir_name = sqlite3_strdup(envDirNameBuf)) == NULL) {
 			rc = SQLITE_NOMEM;
 			goto err;
 		}
@@ -1034,20 +1313,15 @@ static int btreePrepareEnvironment(Btree *p)
 #ifndef BDBSQL_SINGLE_THREAD
 		pDbEnv->set_flags(pDbEnv, DB_DATABASE_LOCKING, 1);
 		pDbEnv->set_lk_detect(pDbEnv, DB_LOCK_DEFAULT);
-		pDbEnv->set_lk_max_lockers(pDbEnv, BDBSQL_MAX_LOCKERS);
-		pDbEnv->set_lk_max_locks(pDbEnv, BDBSQL_MAX_LOCKS);
-		pDbEnv->set_lk_max_objects(pDbEnv, BDBSQL_MAX_LOCK_OBJECTS);
+#ifdef BDBSQL_TXN_SNAPSHOTS_DEFAULT
+		pBt->env_oflags |= DB_MULTIVERSION;
+		pBt->read_txn_flags |= DB_TXN_SNAPSHOT;
+#endif
 #endif
 		pDbEnv->set_lg_regionmax(pDbEnv, BDBSQL_LOG_REGIONMAX);
-		pDbEnv->set_tx_max(pDbEnv, BDBSQL_MAX_TRANSACTIONS);
 #ifndef BDBSQL_OMIT_LEAKCHECK
 		pDbEnv->set_alloc(pDbEnv, btreeMalloc, btreeRealloc,
 		    sqlite3_free);
-#endif
-#ifdef BDBSQL_MUTEX_MAX
-		if ((ret =
-		    pDbEnv->mutex_set_max(pDbEnv, BDBSQL_MUTEX_MAX)) != 0)
-			goto err;
 #endif
 		if ((ret = pDbEnv->set_lg_max(pDbEnv, pBt->logFileSize)) != 0)
 			goto err;
@@ -1063,7 +1337,7 @@ static int btreePrepareEnvironment(Btree *p)
 #ifdef BDBSQL_FILE_PER_TABLE
 		/* Reuse envDirNameBuf. */
 		memset(envDirNameBuf, 0, BT_MAX_PATH);
-		sqlite3_snprintf(sizeof envDirNameBuf, envDirNameBuf,
+		sqlite3_snprintf(sizeof(envDirNameBuf), envDirNameBuf,
 		    "../%s", pBt->short_name);
 		pDbEnv->set_data_dir(pDbEnv, envDirNameBuf);
 		pDbEnv->set_create_dir(pDbEnv, envDirNameBuf);
@@ -1071,7 +1345,7 @@ static int btreePrepareEnvironment(Btree *p)
 		pDbEnv->set_data_dir(pDbEnv, "..");
 #endif
 #ifdef BDBSQL_SHARE_PRIVATE
-		/* 
+		/*
 		 * set mpool mutex count to 10/core.  This significantly
 		 * reduces the cost of environment open/close
 		 */
@@ -1115,16 +1389,17 @@ err:	return MAP_ERR(rc, ret);
  * The function finds an opened BtShared handle if one exists in the cache.
  * It assumes that the global SQLITE_MUTEX_STATIC_OPEN lock is held.
  */
-static int btreeUpdateBtShared(Btree *p, int needLock)
+int btreeUpdateBtShared(Btree *p, int needLock)
 {
 	BtShared *pBt, *next_bt;
 	sqlite3_mutex *mutexOpen;
 	u_int8_t new_fileid[DB_FILE_ID_LEN];
 	char *filename;
-	int rc;
+	int rc, ret;
 
 	pBt = p->pBt;
 	rc = SQLITE_OK;
+	ret = 0;
 
 	if (pBt->dbStorage != DB_STORE_NAMED)
 		return SQLITE_OK;
@@ -1156,7 +1431,7 @@ static int btreeUpdateBtShared(Btree *p, int needLock)
 	 * SQLITE_MUTEX_STATIC_OPEN mutex in that case.
 	 */
 	if (pBt->dbStorage == DB_STORE_NAMED && !pBt->env_opened &&
-	    !__os_exists(NULL, filename, NULL) &&
+	    !(ret = __os_exists(NULL, filename, NULL)) &&
 	    __os_fileid(NULL, filename, 0, new_fileid) == 0) {
 		for (next_bt = g_shared_btrees; next_bt != NULL;
 		    next_bt = next_bt->pNextDb) {
@@ -1167,12 +1442,15 @@ static int btreeUpdateBtShared(Btree *p, int needLock)
 		if (next_bt != pBt && next_bt != NULL) {
 			/* Found a different BtShared to use. "upgrade" */
 			++next_bt->nRef;
-			if(--pBt->nRef == 0) {
+			if (--pBt->nRef == 0) {
 				(void)btreeFreeSharedBtree(pBt, 1);
 			}
 			p->pBt = next_bt;
 			pBt = next_bt;
 		}
+	} else {
+		if (ret != ENOENT && ret != 0)
+			rc = dberr2sqlite(ret);
 	}
 	if (needLock)
 		sqlite3_mutex_leave(mutexOpen);
@@ -1190,8 +1468,8 @@ static int btreeUpdateBtShared(Btree *p, int needLock)
 int btreeOpenEnvironment(Btree *p, int needLock)
 {
 	BtShared *pBt;
+	sqlite3 *db;
 	CACHED_DB *cached_db;
-	DB_ENV *tmp_env;
 	int creating, iTable, newEnv, rc, ret, reuse_env, writeLock;
 	sqlite3_mutex *mutexOpen;
 	txn_mode_t txn_mode;
@@ -1200,12 +1478,15 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 #ifdef BDBSQL_SHARE_PRIVATE
 	int createdFile = 0;
 #endif
+	int i;
+	u8 replicate = 0;
 
 	newEnv = ret = reuse_env = 0;
 	rc = SQLITE_OK;
 	cached_db = NULL;
 	mutexOpen = NULL;
 	pBt = p->pBt;
+	db = p->db;
 
 	/*
 	 * The open (and setting pBt->env_opened) is protected by the open
@@ -1244,7 +1525,7 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 		goto err;
 	pBt = p->pBt;
 
-	while (!pBt->env_opened) {
+	if (!pBt->env_opened) {
 		cache_sz = (i64)pBt->cacheSize;
 		if (cache_sz < DB_MIN_CACHESIZE)
 			cache_sz = DB_MIN_CACHESIZE;
@@ -1258,7 +1539,8 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 		    (ret = pDbEnv->set_mp_pagesize(pDbEnv, pBt->pageSize)) != 0)
 			goto err;
 		pDbEnv->set_mp_mmapsize(pDbEnv, 0);
-		pDbEnv->set_errfile(pDbEnv, stderr);
+		if (!pBt->errfile)
+			pDbEnv->set_errfile(pDbEnv, stderr);
 		if (pBt->dir_name != NULL) {
 			createdDir =
 			    (__os_mkdir(NULL, pBt->dir_name, 0777) == 0);
@@ -1275,7 +1557,7 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 			/*
 			 * if lock isn't held, take read lock for open,
 			 * but do not reopen env
-			 */			
+			 */
 			if (!createdFile) {
 				btreeScopedFileLock(p, 0, 1);
 				/*
@@ -1285,8 +1567,11 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 				pBt->env_oflags |= DB_NO_CHECKPOINT;
 			}
 #endif
-			if ((rc = btreeCheckEnvOpen(p, createdDir)) !=
-			    SQLITE_OK)
+			if ((rc = btreeSetUpReplication(p, pBt->repStartMaster,
+			    &replicate)) != SQLITE_OK)
+				goto err;
+			if ((rc = btreeCheckEnvOpen(p,
+			    createdDir, replicate)) != SQLITE_OK)
 				goto err;
 		}
 		if ((ret = pDbEnv->open(
@@ -1294,30 +1579,6 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 #ifdef BDBSQL_SHARE_PRIVATE
 			if (pBt->dbStorage == DB_STORE_NAMED)
 				btreeScopedFileUnlock(p, createdFile);
-#else
-			/*
-			 * If the environment open returned DB_RUNRECOVERY
-			 * that means a clean shutdown happened on a panicked
-			 * environment - which happens with out of memory
-			 * errors. In that case passing both DB_RECOVER and
-			 * DB_REGISTER to the open does not trigger recovery to
-			 * be run on the environment. Force a recovery here,
-			 * then retry the open.
-			 */
-			if (ret == DB_RUNRECOVERY) {
-				/* Ignore errors - we expect DB_RUNRECOVERY */
-				pDbEnv->close(pDbEnv, 0);
-				if ((ret = db_env_create(&tmp_env, 0)) != 0)
-					goto err;
-				if ((ret = tmp_env->open(
-				tmp_env, pBt->dir_name,
-				pBt->env_oflags & ~DB_REGISTER, 0)) != 0)
-					goto err;
-				tmp_env->close(tmp_env, 0);
-				if ((ret = btreePrepareEnvironment(p)) != 0)
-					goto err;
-				continue;
-			}
 #endif
 			if (ret == ENOENT && (pBt->env_oflags & DB_CREATE) == 0)
 				return SQLITE_OK;
@@ -1353,6 +1614,68 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 		needLock = 0;
 	}
 
+	/*
+	 * Start replication.  If we are not starting as the initial master,
+	 * do not try to create SQL metadata because we will use a
+	 * replicated copy that should already exist or get sent to us
+	 * shortly during replication client synchronization.
+	 */
+	if (replicate) {
+		if ((ret = pDbEnv->repmgr_start(pDbEnv, 1,
+		    pBt->repStartMaster ?
+		    DB_REP_MASTER : DB_REP_ELECTION)) != 0) {
+			sqlite3Error(db, SQLITE_CANTOPEN, "Error in "
+			    "replication call repmgr_start");
+			rc = SQLITE_CANTOPEN;
+			goto err;
+		}
+		pBt->repStarted = 1;
+
+		/*
+		 * Set persistent internal indicator that we have started
+		 * replication.  This is needed to tell the difference between
+		 * a database that was created without DB_INIT_REP and a
+		 * database that has temporarily turned off replication.
+		 */
+		if (setPersistentPragma(p, 
+		    "replication_init", "1", NULL) != SQLITE_OK) {
+			rc = SQLITE_CANTOPEN;
+			goto err;
+		}
+
+		if (!pBt->repStartMaster) {
+			/*
+			 * Allow time for replication client to hold an
+			 * election and synchronize with the master.
+			 */
+			if (!btreeRepStartupFinished(p)) {
+				sqlite3Error(db, SQLITE_CANTOPEN, "Error "
+				    "starting as replication client");
+				rc = SQLITE_CANTOPEN;
+				goto err;
+			}
+			creating = i = 0;
+			/*
+			 * There is a slight possibility that some of the
+			 * replicated SQL metadata may lag behind the end
+			 * of client synchronization, so retry opening the
+			 * SQL metadata a few times if there are errors.
+			 */
+			do {
+				rc = btreeOpenMetaTables(p, &creating);
+			} while ((rc != SQLITE_OK) && ++i < BUSY_RETRY_COUNT);
+			if (rc == SQLITE_OK)
+				goto aftercreatemeta;
+			else {
+				sqlite3Error(db, SQLITE_CANTOPEN, "Error "
+				    "opening replicated SQL metadata");
+				rc = SQLITE_CANTOPEN;
+				goto err;
+			}
+		}
+	}
+	pBt->repStartMaster = 0;
+
 	if (!IS_ENV_READONLY(pBt) && p->vfsFlags & SQLITE_OPEN_CREATE)
 		pBt->db_oflags |= DB_CREATE;
 
@@ -1382,11 +1705,12 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 		}
 
 		if ((rc = btreeCreateTable(p, &iTable,
-		    BTREE_INTKEY | BTREE_LEAFDATA)) != SQLITE_OK)
+		    BTREE_INTKEY)) != SQLITE_OK)
 			goto err;
 
 		assert(iTable == MASTER_ROOT);
 	}
+aftercreatemeta:
 
 #ifdef BDBSQL_PRELOAD_HANDLES
 	if (newEnv && !creating && pBt->dbStorage == DB_STORE_NAMED)
@@ -1412,7 +1736,8 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 #ifdef BDBSQL_SHARE_PRIVATE
 		pBt->lockfile.in_env_open = 1;
 #endif
-		if ((writeLock || txn_mode != TRANS_NONE) &&
+		if ((writeLock || txn_mode == TRANS_WRITE) &&
+		    !btreeRepIsClient(p) &&
 		    (rc = sqlite3BtreeBeginTrans(p,
 		    (writeLock || txn_mode == TRANS_WRITE))) != SQLITE_OK)
 			goto err;
@@ -1552,7 +1877,7 @@ static int btreeCreateSharedBtree(
 		/* Store full path of zfilename */
 		dirPathName = dirPathBuf;
 		sqlite3OsFullPathname(
-		    db->pVfs, zFilename, sizeof dirPathBuf, dirPathName);
+		    db->pVfs, zFilename, sizeof(dirPathBuf), dirPathName);
 		if ((new_bt->full_name = sqlite3_strdup(dirPathName)) == NULL)
 			goto err_nomem;
 		if ((new_bt->orig_name = sqlite3_strdup(zFilename)) == NULL)
@@ -1603,7 +1928,7 @@ int sqlite3BtreeOpen(
     int flags,			/* Options */
     int vfsFlags)		/* Flags passed through to VFS open */
 {
-	Btree *p, *next_btree;
+	Btree *p;
 	BtShared *pBt, *next_bt;
 	int rc;
 	sqlite3_mutex *mutexOpen;
@@ -1628,6 +1953,8 @@ int sqlite3BtreeOpen(
 	p->pBt = NULL;
 	p->readonly = 0;
 	p->txn_bulk = BDBSQL_TXN_BULK_DEFAULT;
+	p->vacuumPages = BDBSQL_INCR_VACUUM_PAGES;
+	p->fillPercent = BDBSQL_VACUUM_FILLPERCENT;
 
 	if ((vfsFlags & SQLITE_OPEN_TRANSIENT_DB) != 0) {
 		log_msg(LOG_DEBUG, "sqlite3BtreeOpen creating temporary DB.");
@@ -1680,7 +2007,7 @@ int sqlite3BtreeOpen(
 	if (pBt != NULL) {
 		p->pBt = pBt;
 		if ((rc = btreeOpenEnvironment(p, 0)) != SQLITE_OK) {
-			/* 
+			/*
 			 * clean up ref. from btreeGetSharedBtree() [#18767]
 			 */
 			assert(pBt->nRef > 1);
@@ -1716,21 +2043,6 @@ int sqlite3BtreeOpen(
 		}
 	}
 
-	/* Add this Btree object to the list of Btrees seen by the BtShared */
-	for (next_btree = pBt->btrees; next_btree != NULL;
-	    next_btree = next_btree->pNext) {
-		if (next_btree == p)
-			break;
-	}
-	if (next_btree == NULL) {
-		if (pBt->btrees == NULL)
-			pBt->btrees = p;
-		else {
-			p->pNext = pBt->btrees;
-			pBt->btrees->pPrev = p;
-			pBt->btrees = p;
-		}
-	}
 	p->readonly = (p->vfsFlags & SQLITE_OPEN_READONLY) ? 1 : 0;
 	*ppBtree = p;
 
@@ -1745,49 +2057,6 @@ err:	if (rc != SQLITE_OK)
 		sqlite3_free(filename);
 #endif
 	return rc;
-}
-
-int btreeCleanupEnv(const char *home)
-{
-	DB_ENV *tmp_env;
-	int count, i, ret;
-	char **names, buf[BT_MAX_PATH];
-
-	log_msg(LOG_DEBUG, "btreeCleanupEnv removing existing env.");
-	/*
-	 * If there is a directory (environment), but no
-	 * database file. Clear the environment to avoid
-	 * carrying over information from earlier sessions.
-	 */
-	if ((ret = db_env_create(&tmp_env, 0)) != 0)
-		return ret;
-
-	/* Remove log files */
-	if ((ret = __os_dirlist(tmp_env->env, home, 0, &names, &count)) != 0) {
-		(void)tmp_env->close(tmp_env, 0);
-		return ret;
-	}
-
-	for (i = 0; i < count; i++) {
-		if (strncmp(names[i], "log.", 4) != 0)
-			continue;
-		sqlite3_snprintf(sizeof buf, buf, "%s%s%s",
-		    home, PATH_SEPARATOR, names[i]);
-		/*
-		 * Use Berkeley DB __os_unlink (not sqlite3OsDelete) since
-		 * this file has always been managed by Berkeley DB.
-		 */
-		(void)__os_unlink(NULL, buf, 0);
-	}
-
-	__os_dirfree(tmp_env->env, names, count);
-
-	/*
-	 * TODO: Do we want force here? Ideally all handles
-	 * would always be closed on exit, so DB_FORCE would
-	 * not be necessary.  The world is not currently ideal.
-	 */
-	return tmp_env->remove(tmp_env, home, DB_FORCE);
 }
 
 /* Close all cursors for the given transaction. */
@@ -1868,9 +2137,12 @@ static int btreeCloseAllCursors(Btree *p, DB_TXN *txn)
 static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 {
 	DB *dbp;
+	DB_SEQUENCE *seq;
+	DBT key;
 	CACHED_DB *cached_db;
 	BtShared *pBt;
 	HashElem *e, *e_next;
+	SEQ_COOKIE *sc;
 	int remove, ret, rc;
 
 	log_msg(LOG_VERBOSE, "btreeCleanupCachedHandles(%p, %d)",
@@ -1886,7 +2158,8 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 	    p->nBackup > 0)
 		return (SQLITE_OK);
 
-	for (e = sqliteHashFirst(&pBt->db_cache); e != NULL; e = e_next) {
+	for (e = sqliteHashFirst(&pBt->db_cache); e != NULL;
+	    e = e_next) {
 		/*
 		 * Grab the next value now rather than in the for loop so that
 		 * it's possible to remove elements from the list inline.
@@ -1899,7 +2172,7 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 
 		if (cleanup == CLEANUP_DROP_LOCKS ||
 		    cleanup == CLEANUP_GET_LOCKS) {
-			if (cached_db->dbp == NULL)
+			if (cached_db->is_sequence || cached_db->dbp == NULL)
 				continue;
 			if (cleanup == CLEANUP_GET_LOCKS)
 				btreeDbHandleLock(p, cached_db);
@@ -1909,7 +2182,27 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 			continue;
 		}
 
-		if ((dbp = cached_db->dbp) != NULL) {
+		if (cached_db->is_sequence) {
+			sc = (SEQ_COOKIE *)cached_db->cookie;
+			if (cleanup == CLEANUP_ABORT && sc != NULL) {
+				memset(&key, 0, sizeof(key));
+				key.data = sc->name;
+				key.size = key.ulen = sc->name_len;
+				key.flags = DB_DBT_USERMEM;
+				if (pMetaDb->exists(pMetaDb,
+				    pFamilyTxn, &key, 0) == DB_NOTFOUND) {
+					/*
+					 * This abort removed a sequence -
+					 * remove the matching cache entry.
+					 */
+					remove = 1;
+				}
+			}
+			seq = (DB_SEQUENCE *)cached_db->dbp;
+			if (seq != NULL && (ret = seq->close(seq, 0)) != 0 &&
+			    rc == SQLITE_OK)
+				rc = dberr2sqlite(ret);
+		} else if ((dbp = cached_db->dbp) != NULL) {
 			/*
 			 * We have to clear the cache of any stale DB handles.
 			 * If a transaction has been aborted, the handle will
@@ -1936,6 +2229,8 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 				sqlite3HashInsert(&pBt->db_cache,
 				    cached_db->key,
 				    (int)strlen(cached_db->key), NULL);
+			if (cached_db->cookie != NULL)
+				sqlite3_free(cached_db->cookie);
 			sqlite3_free(cached_db);
 			remove = 0;
 		} else
@@ -1950,7 +2245,6 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 */
 int sqlite3BtreeClose(Btree *p)
 {
-	Btree *next_btree;
 	BtShared *pBt;
 	int ret, rc, t_rc, t_ret;
 	sqlite3_mutex *mutexOpen;
@@ -1981,7 +2275,16 @@ int sqlite3BtreeClose(Btree *p)
 		}
 	}
 #endif
+
 	rc = btreeCloseAllCursors(p, NULL);
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+	/*
+	 * Btree might keep some incremental vacuum info with an internal
+	 * link list. Need to free the link when Btree is closed.
+	 */
+	btreeFreeVacuumInfo(p);
+#endif
 
 	if (pMainTxn != NULL &&
 	    (t_rc = sqlite3BtreeRollback(p)) != SQLITE_OK && rc == SQLITE_OK)
@@ -1992,7 +2295,6 @@ int sqlite3BtreeClose(Btree *p)
 		ret = pFamilyTxn->commit(pFamilyTxn, 0);
 		pFamilyTxn = NULL;
 		p->inTrans = TRANS_NONE;
-		p->txn_excl = 0;
 		if (ret != 0 && rc == SQLITE_OK)
 			rc = dberr2sqlite(ret);
 	}
@@ -2022,24 +2324,7 @@ int sqlite3BtreeClose(Btree *p)
 	mutexOpen = sqlite3MutexAlloc(OPEN_MUTEX(pBt->dbStorage));
 	sqlite3_mutex_enter(mutexOpen);
 
-	/* Remove this pBt from the BtShared list of btrees. */
-	for (next_btree = pBt->btrees; next_btree != NULL;
-	    next_btree = next_btree->pNext) {
-		if (next_btree == p) {
-			if (next_btree == pBt->btrees) {
-				pBt->btrees = next_btree->pNext;
-				if (pBt->btrees != NULL)
-					pBt->btrees->pPrev = NULL;
-			} else {
-				p->pPrev->pNext = p->pNext;
-				if (p->pNext != NULL)
-					p->pNext->pPrev = p->pPrev;
-			}
-		}
-	}
-
 	if (--pBt->nRef == 0) {
-		assert (pBt->btrees == NULL);
 		if (pBt->dbStorage == DB_STORE_NAMED) {
 			/* Remove it from the linked list of shared envs. */
 			assert(pBt == g_shared_btrees || pBt->pPrevDb != NULL);
@@ -2061,6 +2346,9 @@ int sqlite3BtreeClose(Btree *p)
 			rc = t_rc;
 		sqlite3HashClear(&pBt->db_cache);
 
+		/* Delete any memory held by the pragma cache. */
+		cleanPragmaCache(p);
+
 		if (pTablesDb != NULL && (t_ret =
 		    pTablesDb->close(pTablesDb, DB_NOSYNC)) != 0 && ret == 0)
 			ret = t_ret;
@@ -2078,7 +2366,7 @@ int sqlite3BtreeClose(Btree *p)
 			 * bounds the time we would have to spend in
 			 * recovery.
 			 */
-		        if (pBt->transactional && pBt->env_opened) {
+			if (pBt->transactional && pBt->env_opened) {
 				if ((t_ret = pDbEnv->txn_checkpoint(pDbEnv,
 				    0, 0, 0)) != 0 && ret == 0)
 					ret = t_ret;
@@ -2090,6 +2378,7 @@ int sqlite3BtreeClose(Btree *p)
 #endif
 			if ((t_ret = pDbEnv->close(pDbEnv, 0)) != 0 && ret == 0)
 				ret = t_ret;
+			pBt->repStarted = 0;
 		}
 #ifdef BDBSQL_SHARE_PRIVATE
 		/* this must happen before the pBt disappears */
@@ -2140,116 +2429,28 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage)
 **
 ** Berkeley DB always does the equivalent of "fullSync".
 */
-int sqlite3BtreeSetSafetyLevel(Btree *p, int level, int fullSync)
+int sqlite3BtreeSetSafetyLevel(
+    Btree *p,
+    int level,
+    int fullSync,
+    int ckptFullSync)
 {
 	BtShared *pBt;
 	log_msg(LOG_VERBOSE,
-	    "sqlite3BtreeSetSafetyLevel(%p, %u, %u)", p, level, fullSync);
+	    "sqlite3BtreeSetSafetyLevel(%p, %u, %u, %u)",
+	    p, level, fullSync, ckptFullSync);
 
 	pBt = p->pBt;
+
+	/* TODO: Ignore ckptFullSync for now - it corresponds to:
+	 * PRAGMA checkpoint_fullfsync
+	 * Berkeley DB doesn't allow you to disable that, so ignore the pragma.
+	 */
 	if (GET_DURABLE(p->pBt)) {
 		pDbEnv->set_flags(pDbEnv, DB_TXN_NOSYNC, (level == 1));
 		pDbEnv->set_flags(pDbEnv, DB_TXN_WRITE_NOSYNC, (level == 2));
 	}
 	return SQLITE_OK;
-}
-
-/*
- * If the schema version has changed since the last transaction we need to
- * close all handles in the handle cache that aren't holding a handle lock.
- * Ideally we could do this via the sqlite3ResetInternalSchema method
- * but there is no obvious hook there, and.. since we do the GET_LOCKS
- * call here, we need to close handles now or we can't tell if they need to be
- * closed.
- * TODO: We'll probably be best altering the sqlite code to make this work
- * more efficiently.
- */
-static int btreeInvalidateHandleCache(Btree *p) {
-	BtShared *pBt;
-	int cookie, i, rc, ret;
-	CACHED_DB *cached_db, **tables_to_close;
-	DB *dbp;
-	HashElem *e, *e_next;
-	u_int32_t flags;
-
-	rc = ret = 0;
-	pBt = p->pBt;
-
-	if (p->inTrans == TRANS_NONE && p->db != NULL && p->db->aDb != NULL) {
-		sqlite3BtreeGetMeta(p, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
-		if (p->db->aDb[0].pSchema != NULL &&
-		    p->db->aDb[0].pSchema->schema_cookie != cookie) {
-			/*
-			 * TODO: Is it possible that this function is called
-			 * while already holding the mutex? Maybe from the
-			 * sequence code.
-			 */
-			sqlite3_mutex_enter(pBt->mutex);
-			/*
-			 * We can't call DB->close while holding the mutex, so
-			 * record which handles we want to close and do the
-			 * actual close after the mutex is released.
-			 */
-			for (e = sqliteHashFirst(&pBt->db_cache), i = 0;
-			    e != NULL; e = sqliteHashNext(e), i++) {}
-
-			if (i == 0) {
-				sqlite3_mutex_leave(pBt->mutex);
-				return (0);
-			}
-
-			tables_to_close =
-			     sqlite3_malloc(i * sizeof(CACHED_DB *));
-			if (tables_to_close == NULL) {
-				sqlite3_mutex_leave(pBt->mutex);
-				return SQLITE_NOMEM;
-			}
-			memset(tables_to_close, 0, i * sizeof(CACHED_DB *));
-			/*
-			 * Ideally we'd be able to find out if the Berkeley DB
-			 * fileid is still valid, but that's not currently
-			 * simple, so close all handles.
-			 */
-			for (e = sqliteHashFirst(&pBt->db_cache), i = 0;
-			    e != NULL; e = e_next) {
-				e_next = sqliteHashNext(e);
-				cached_db = sqliteHashData(e);
-
-				/* Skip table name db and in memory tables. */
-				if (cached_db == NULL ||
-				    strcmp(cached_db->key, "1") == 0 ||
-				    cached_db->dbp == NULL)
-					continue;
-				dbp = cached_db->dbp;
-				dbp->dbenv->get_open_flags(dbp->dbenv, &flags);
-				if (flags & DB_PRIVATE)
-					continue;
-				if (btreeDbHandleIsLocked(cached_db))
-					continue;
-				tables_to_close[i++] = cached_db;
-				sqlite3HashInsert(&pBt->db_cache,
-				    cached_db->key,
-				    (int)strlen(cached_db->key), NULL);
-			}
-			sqlite3_mutex_leave(pBt->mutex);
-			for (i = 0; tables_to_close[i] != NULL; i++) {
-				cached_db = tables_to_close[i];
-				dbp = cached_db->dbp;
-#ifndef BDBSQL_SINGLE_THREAD
-				if (dbp->app_private != NULL)
-					sqlite3_free(dbp->app_private);
-#endif
-				if ((ret = closeDB(p, dbp, DB_NOSYNC)) == 0 &&
-				    rc == SQLITE_OK)
-					rc = dberr2sqlite(ret);
-				sqlite3_free(cached_db);
-			}
-			sqlite3_free(tables_to_close);
-			if (rc != 0)
-				return (rc);
-		}
-	}
-	return (0);
 }
 
 /*
@@ -2291,7 +2492,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 	rc = SQLITE_OK;
 	txn_exclPriority = -1;
 
-	if (wrflag && IS_BTREE_READONLY(p))
+	/* A replication client should not start write transactions. */
+	if (wrflag && (IS_BTREE_READONLY(p) || btreeRepIsClient(p)))
 		return SQLITE_READONLY;
 
 	if (!p->connected) {
@@ -2306,10 +2508,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 		/* The btreeOpenEnvironment call might have updated pBt. */
 		pBt = p->pBt;
 	}
-
-	if ((rc = btreeInvalidateHandleCache(p)) != 0)
-		return (rc);
-
 	btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
 	if (wrflag == 2)
 		p->txn_excl = 1;
@@ -2324,7 +2522,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 
 		/* Exclusive transaction. */
 		if (wrflag == 2 && rc == SQLITE_OK) {
-			rc = sqlite3BtreeLockTable(p, MASTER_ROOT, 1);
 			pSavepointTxn->set_priority(pSavepointTxn,
 			    txn_exclPriority);
 			pReadTxn->set_priority(pReadTxn, txn_exclPriority);
@@ -2378,25 +2575,40 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster)
 ** Commit the transaction currently in progress.
 **
 ** This routine implements the second phase of a 2-phase commit.  The
-** sqlite3BtreeSync() routine does the first phase and should be invoked prior
-** to calling this routine.  The sqlite3BtreeSync() routine did all the work
-** of writing information out to disk and flushing the contents so that they
-** are written onto the disk platter.  All this routine has to do is delete
-** or truncate the rollback journal (which causes the transaction to commit)
-** and drop locks.
+** sqlite3BtreeCommitPhaseOne() routine does the first phase and should
+** be invoked prior to calling this routine.  The sqlite3BtreeCommitPhaseOne()
+** routine did all the work of writing information out to disk and flushing the
+** contents so that they are written onto the disk platter.  All this
+** routine has to do is delete or truncate or zero the header in the
+** the rollback journal (which causes the transaction to commit) and
+** drop locks.
 **
-** This will release the write lock on the database file.  If there are no
-** active cursors, it also releases the read lock.
+** Normally, if an error occurs while the pager layer is attempting to 
+** finalize the underlying journal file, this function returns an error and
+** the upper layer will attempt a rollback. However, if the second argument
+** is non-zero then this b-tree transaction is part of a multi-file 
+** transaction. In this case, the transaction has already been committed 
+** (by deleting a master journal file) and the caller will ignore this 
+** functions return code. So, even if an error occurs in the pager layer,
+** reset the b-tree objects internal state to indicate that the write
+** transaction has been closed. This is quite safe, as the pager will have
+** transitioned to the error state.
+**
+** This will release the write lock on the database file.  If there
+** are no active cursors, it also releases the read lock.
+**
+** NOTE: It's OK for Berkeley DB to ignore the bCleanup flag - it is only used
+** by SQLite when it is safe for it to ignore stray journal files. That's not
+** a relevant consideration for Berkele DB.
 */
-int sqlite3BtreeCommitPhaseTwo(Btree *p)
+int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup)
 {
 	BtShared *pBt;
-	Btree *next_btree;
 	DELETED_TABLE *dtable, *next;
 	char *tableName, tableNameBuf[DBNAME_SIZE];
 	char *oldTableName, oldTableNameBuf[DBNAME_SIZE], *fileName;
 	int needVacuum, rc, ret, t_rc;
-	int in_trans, removeFlags;
+	int removeFlags;
 	u_int32_t defaultTxnPriority;
 #ifdef BDBSQL_SHARE_PRIVATE
 	int deleted = 0; /* indicates tables were deleted */
@@ -2420,9 +2632,8 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p)
 #ifdef BDBSQL_SHARE_PRIVATE
 		needsunlock = 1;
 #endif
-                /* Mark the end of an exclusive transaction. */
-                p->txn_excl = 0;
-		
+		/* Mark the end of an exclusive transaction. */
+		p->txn_excl = 0;
 		t_rc = btreeCloseAllCursors(p, pMainTxn);
 		if (t_rc != SQLITE_OK && rc == SQLITE_OK)
 			rc = t_rc;
@@ -2446,7 +2657,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p)
 			deleted = 1;
 #endif
 			tableName = tableNameBuf;
-			GET_TABLENAME(tableName, sizeof tableNameBuf,
+			GET_TABLENAME(tableName, sizeof(tableNameBuf),
 			    dtable->iTable, "");
 			FIX_TABLENAME(pBt, fileName, tableName);
 
@@ -2461,7 +2672,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p)
 			}
 #ifndef BDBSQL_FILE_PER_TABLE
 			oldTableName = oldTableNameBuf;
-			GET_TABLENAME(oldTableName, sizeof oldTableNameBuf,
+			GET_TABLENAME(oldTableName, sizeof(oldTableNameBuf),
 			    dtable->iTable, "old-");
 
 			ret = pDbEnv->dbremove(pDbEnv, NULL, fileName,
@@ -2470,14 +2681,14 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p)
 			if (dtable->flag == DTF_DELETE) {
 				oldTableName = oldTableNameBuf;
 				GET_TABLENAME(oldTableName,
-				    sizeof oldTableNameBuf,
+				    sizeof(oldTableNameBuf),
 				    dtable->iTable, "old-");
 
-				ret = pDbEnv->dbremove(pDbEnv, NULL,
-				    fileName, oldTableName, removeFlags);
+				ret = pDbEnv->dbremove(pDbEnv, NULL, fileName,
+				    oldTableName, removeFlags);
 			} else {
-				ret = pDbEnv->dbremove(pDbEnv, NULL,
-				    fileName, NULL, removeFlags);
+				ret = pDbEnv->dbremove(pDbEnv, NULL, fileName,
+				    NULL, removeFlags);
 				if (ret != 0 && rc == SQLITE_OK)
 					rc = dberr2sqlite(ret);
 
@@ -2496,10 +2707,11 @@ next:			if (ret != 0 && rc == SQLITE_OK)
 		}
 		p->deleted_tables = NULL;
 
-		/* Execute vacuum if auto-vacuum mode is FULL */
+		/* Execute vacuum if auto-vacuum mode is FULL or incremental */
 		needVacuum = (pBt->dbStorage == DB_STORE_NAMED &&
 		    p->inTrans == TRANS_WRITE &&
-		    sqlite3BtreeGetAutoVacuum(p) == BTREE_AUTOVACUUM_FULL);
+		    (sqlite3BtreeGetAutoVacuum(p) == BTREE_AUTOVACUUM_FULL ||
+		    p->needVacuum));
 	} else if (p->inTrans == TRANS_WRITE)
 		rc = sqlite3BtreeSavepoint(p, SAVEPOINT_RELEASE, 0);
 
@@ -2521,28 +2733,12 @@ next:			if (ret != 0 && rc == SQLITE_OK)
 		p->inTrans = TRANS_READ;
 	else {
 		p->inTrans = TRANS_NONE;
-		p->txn_excl = 0;
 		if (p->schemaLockMode > LOCKMODE_NONE &&
 		    (t_rc = btreeLockSchema(p, LOCKMODE_NONE)) != SQLITE_OK &&
 		    rc == SQLITE_OK)
 			rc = t_rc;
-
-		/*
-		 * Only release the handle locks if no transactions are active
-		 * in any Btree.
-		 */
-		in_trans = 0;
-		for (next_btree = pBt->btrees; next_btree != NULL;
-		     next_btree = next_btree->pNext) {
-			if (next_btree->inTrans != TRANS_NONE) {
-				in_trans = 1;
-				break;
-			}
-		}
-
-  		/* Drop any handle locks if this was the only active txn. */
-		if (in_trans == 0)
-			btreeCleanupCachedHandles(p, CLEANUP_DROP_LOCKS);
+		/* Drop any handle locks if this was the only active txn. */
+		btreeCleanupCachedHandles(p, CLEANUP_DROP_LOCKS);
 	}
 
 	if (needVacuum && rc == SQLITE_OK)
@@ -2564,7 +2760,7 @@ int sqlite3BtreeCommit(Btree *p)
 	pBt = p->pBt;
 	rc = sqlite3BtreeCommitPhaseOne(p, NULL);
 	if (rc == SQLITE_OK)
-		rc = sqlite3BtreeCommitPhaseTwo(p);
+		rc = sqlite3BtreeCommitPhaseTwo(p, 0);
 
 	return (rc);
 }
@@ -2631,12 +2827,13 @@ int sqlite3BtreeBeginStmt(Btree *p, int iStatement)
 
 		if (!pMainTxn) {
 #ifdef BDBSQL_SHARE_PRIVATE
-		        /* btree{Read,Write}lock may reopen the environment */
-		        if (pBt->dbStorage == DB_STORE_NAMED)
+			/* btree{Read,Write}lock may reopen the environment */
+			if (pBt->dbStorage == DB_STORE_NAMED)
 				btreeFileLock(p);
 #endif
 			if ((ret = pDbEnv->txn_begin(pDbEnv, pFamilyTxn,
-			    &pMainTxn, p->txn_bulk ? DB_TXN_BULK : 0)) != 0) {
+			    &pMainTxn, p->txn_bulk ? DB_TXN_BULK :
+			    pBt->read_txn_flags)) != 0) {
 #ifdef BDBSQL_SHARE_PRIVATE
 				if (pBt->dbStorage == DB_STORE_NAMED)
 					btreeFileUnlock(p);
@@ -2650,7 +2847,7 @@ int sqlite3BtreeBeginStmt(Btree *p, int iStatement)
 			if (p->txn_bulk)
 			       pReadTxn = pMainTxn;
 			else if ((ret = pDbEnv->txn_begin(pDbEnv, pMainTxn,
-			    &pReadTxn, 0)) != 0)
+			    &pReadTxn, pBt->read_txn_flags)) != 0)
 				return dberr2sqlite(ret);
 		}
 
@@ -2695,6 +2892,10 @@ static int btreeCompare(
 		char aSpace[40 * sizeof(void *)];
 		int locked = 0;
 
+		/* This case can happen when searching temporary tables. */
+		if (dbt1->data == dbt2->data)
+			return 0;
+
 #ifndef BDBSQL_SINGLE_THREAD
 		if (keyInfo == NULL) {
 			/* Find a cursor for this table, and use its keyInfo. */
@@ -2727,7 +2928,7 @@ static int btreeCompare(
 #endif
 
 		p = sqlite3VdbeRecordUnpack(keyInfo, dbt2->size, dbt2->data,
-		    aSpace, sizeof aSpace);
+		    aSpace, sizeof(aSpace));
 
 		/*
 		 * XXX If we are out of memory, the call to unpack the record
@@ -2776,7 +2977,6 @@ static int btreeCompareShared(DB *dbp, const DBT *dbt1, const DBT *dbt2)
  */
 static int btreeConfigureDbHandle(Btree *p, int iTable, DB **dbpp)
 {
-	Btree *next_btree;
 	BtShared *pBt;
 	DB *dbp;
 	DB_MPOOLFILE *pMpf;
@@ -2835,8 +3035,122 @@ err:	if (ret != 0) {
 	}
 	return (ret);
 }
+static int btreeFindOrCreateDataTable(
+    Btree *p,			/* The btree */
+    int *piTable,			/* Root page of table to create */
+    CACHED_DB **ppCachedDb,
+    int flags)
+{
+	BtShared *pBt;
+	CACHED_DB *cached_db, *create_db;
+	DB *dbp;
+	char cached_db_key[CACHE_KEY_SIZE];
+	int iTable, rc, ret;
+
+	pBt = p->pBt;
+	rc = SQLITE_OK;
+	ret = 0;
+	cached_db = *ppCachedDb;
+	create_db = NULL;
+
+	iTable = *piTable;
+	sqlite3_mutex_enter(pBt->mutex);
+
+	if (flags & BTREE_CREATE) {
+		if (pBt->dbStorage != DB_STORE_NAMED)
+			iTable = pBt->last_table;
+
+		iTable++;
+
+		/* Make sure (iTable & 1) iff BTREE_INTKEY is set */
+		if ((flags & BTREE_INTKEY) != 0) {
+			if ((iTable & 1) == 0)
+				iTable += 1;
+		} else if ((iTable & 1) == 1)
+			iTable += 1;
+		pBt->last_table = iTable;
+	}
+
+	sqlite3_snprintf(sizeof(cached_db_key), cached_db_key, "%x", iTable);
+	cached_db = sqlite3HashFind(&pBt->db_cache,
+	    cached_db_key, (int)strlen(cached_db_key));
+	if ((flags & BTREE_CREATE) && cached_db != NULL) {
+		/*
+		 * If the table already exists in the cache, it's a
+		 * hang-over from a table that was deleted in another
+		 * process. Close the handle now.
+		 */
+		if ((dbp = cached_db->dbp) != NULL) {
+#ifndef BDBSQL_SINGLE_THREAD
+			if (dbp->app_private != NULL)
+				sqlite3_free(dbp->app_private);
+#endif
+			ret = closeDB(p, dbp, DB_NOSYNC);
+			cached_db->dbp = NULL;
+			if (ret != 0)
+				goto err;
+		}
+		sqlite3HashInsert(&pBt->db_cache,
+		    cached_db_key, (int)strlen(cached_db_key), NULL);
+		sqlite3_free(cached_db);
+		cached_db = NULL;
+	}
+	if (cached_db == NULL || cached_db->dbp == NULL) {
+		sqlite3_mutex_leave(pBt->mutex);
+		if ((create_db = (CACHED_DB *)sqlite3_malloc(
+		    sizeof(CACHED_DB))) == NULL)
+		{
+			ret = ENOMEM;
+			goto err;
+		}
+		memset(create_db, 0, sizeof(CACHED_DB));
+		rc = btreeCreateDataTable(p, iTable, &create_db);
+		if (rc != SQLITE_OK)
+			goto err;
+		sqlite3_mutex_enter(pBt->mutex);
+		cached_db = sqlite3HashFind(&pBt->db_cache,
+		    cached_db_key, (int)strlen(cached_db_key));
+		/* if its not there, then insert it. */
+		if (cached_db == NULL) {
+			rc = btreeCreateDataTable(p, iTable, &create_db);
+			sqlite3_mutex_leave(pBt->mutex);
+			cached_db = create_db;
+			create_db = NULL;
+		} else {
+			if (cached_db->dbp == NULL) {
+				cached_db->dbp = create_db->dbp;
+				create_db->dbp = NULL;
+			}
+			sqlite3_mutex_leave(pBt->mutex);
+			if (create_db->dbp != NULL)
+				ret = create_db->dbp->close(
+				     create_db->dbp, DB_NOSYNC);
+			if (ret != 0)
+				goto err;
+		}
+		if (rc != SQLITE_OK)
+			goto err;
+	} else
+		sqlite3_mutex_leave(pBt->mutex);
+
+	*ppCachedDb = cached_db;
+	*piTable = iTable;
+err:
+	if (ret != 0)
+		rc = dberr2sqlite(ret);
+	if (create_db != NULL)
+		sqlite3_free(create_db);
+	return (rc);
+}
+
 /*
  * A utility function to create the table containing the actual data.
+ * There are 3 modes:
+ *	1) *ppCacheDb == NULL -> create/open the db and put it in the cache.
+ *	2) *ppCacheDb != NULL && (*ppCacheDb)->dbp == NULL ->
+ *				create/open the db but don't cache.
+ *	3) *ppCacheDb != NULL && (*ppCacheDb)->dbp != NULL ->
+ *				Put the db in the cache.
  */
 static int btreeCreateDataTable(
     Btree *p,			/* The btree */
@@ -2863,13 +3177,18 @@ static int btreeCreateDataTable(
 	cached_db = *ppCachedDb;
 
 	tableName = tableNameBuf;
-	GET_TABLENAME(tableName, sizeof tableNameBuf, iTable, "");
+	GET_TABLENAME(tableName, sizeof(tableNameBuf), iTable, "");
 	log_msg(LOG_VERBOSE,
 	    "sqlite3BtreeCursor creating the actual DB: file name:"
 	    "%s, table name: %s type: %u.",
 	    pBt->full_name, tableName, pBt->dbStorage);
 
 	FIX_TABLENAME(pBt, fileName, tableName);
+	if (cached_db != NULL && cached_db->dbp != NULL) {
+		dbp = cached_db->dbp;
+		cached_db->dbp = NULL;
+		goto insert_db;
+	}
 
 	/*
 	 * First try without DB_CREATE, in auto-commit mode, so the
@@ -2937,7 +3256,8 @@ static int btreeCreateDataTable(
 			goto err;
 		}
 		memset(cached_db, 0, sizeof(CACHED_DB));
-		sqlite3_snprintf(sizeof cached_db->key,
+insert_db:
+		sqlite3_snprintf(sizeof(cached_db->key),
 		    cached_db->key, "%x", iTable);
 
 		assert(sqlite3_mutex_held(pBt->mutex));
@@ -2958,7 +3278,6 @@ static int btreeCreateDataTable(
 
 	assert(cached_db->dbp == NULL);
 	cached_db->dbp = dbp;
-	++p->cached_dbs;
 	cached_db->created = 1;
 	*ppCachedDb = cached_db;
 	return SQLITE_OK;
@@ -2975,17 +3294,17 @@ err:	if (dbp != NULL) {
 }
 
 /*
- * Only persisent uncollated indexes use the 1 key, duplicate 
- * data structure, because the space saving is not worth the 
- * overhead in temperary indexes, and collated (other than binary 
- * collation) indexes lose data because different values can be 
+ * Only persisent uncollated indexes use the 1 key, duplicate
+ * data structure, because the space saving is not worth the
+ * overhead in temperary indexes, and collated (other than binary
+ * collation) indexes lose data because different values can be
  * stored under the same key if the collation reads them as
  * identical.
  */
-int isDupIndex(int flags, int storage, KeyInfo *keyInfo, DB *db) 
+int isDupIndex(int flags, int storage, KeyInfo *keyInfo, DB *db)
 {
-	return (!(flags & BTREE_INTKEY) && (storage == DB_STORE_NAMED)
-		&& !indexIsCollated(keyInfo) && supportsDuplicates(db));
+	return (!(flags & BTREE_INTKEY) && (storage == DB_STORE_NAMED) &&
+	    !indexIsCollated(keyInfo) && supportsDuplicates(db));
 }
 
 /*
@@ -3035,7 +3354,6 @@ int sqlite3BtreeCursor(
     BtCursor *pCur)			/* Write new cursor here */
 {
 	BtShared *pBt;
-	char cached_db_key[CACHE_KEY_SIZE];
 	CACHED_DB *cached_db;
 	int rc, ret;
 
@@ -3073,7 +3391,7 @@ int sqlite3BtreeCursor(
 			 * Don't fold the open into the if clause, since this
 			 * situation can match following statements as well.
 			 */
-			if((rc = btreeOpenEnvironment(p, 1)) != SQLITE_OK)
+			if ((rc = btreeOpenEnvironment(p, 1)) != SQLITE_OK)
 				goto err;
 		} else if (pBt->dbStorage != DB_STORE_TMP &&
 		    !wrFlag && !pBt->env_opened)
@@ -3107,14 +3425,7 @@ int sqlite3BtreeCursor(
 		goto setup_cursor;
 
 	/* Retrieve the matching handle from the cache. */
-	sqlite3_snprintf(sizeof cached_db_key, cached_db_key, "%x", iTable);
-
-	sqlite3_mutex_enter(pBt->mutex);
-	cached_db = sqlite3HashFind(&pBt->db_cache,
-	    cached_db_key, (int)strlen(cached_db_key));
-	if (cached_db == NULL || cached_db->dbp == NULL)
-		rc = btreeCreateDataTable(p, iTable, &cached_db);
-	sqlite3_mutex_leave(pBt->mutex);
+	rc = btreeFindOrCreateDataTable(p, &iTable, &cached_db, 0);
 	if (rc != SQLITE_OK)
 		goto err;
 	assert(cached_db != NULL && cached_db->dbp != NULL);
@@ -3148,7 +3459,7 @@ setup_cursor:
 	pCur->eState = CURSOR_INVALID;
 	pCur->lastRes = 0;
 	if (pCur->cached_db)
-		pCur->isDupIndex = isDupIndex(pCur->flags, 
+		pCur->isDupIndex = isDupIndex(pCur->flags,
 		    pCur->pBtree->pBt->dbStorage, pCur->keyInfo,
 		    pCur->cached_db->dbp);
 
@@ -3196,6 +3507,9 @@ int sqlite3BtreeCursorSize(void)
 void sqlite3BtreeCursorZero(BtCursor *pCur)
 {
 	memset(pCur, 0, sizeof(BtCursor));
+	pCur->index.data = pCur->indexKeyBuf;
+	pCur->index.ulen = CURSOR_BUFSIZE;
+	pCur->index.flags = DB_DBT_USERMEM;
 }
 
 static int btreeCloseCursor(BtCursor *pCur, int listRemove)
@@ -3255,14 +3569,14 @@ static int btreeCloseCursor(BtCursor *pCur, int listRemove)
 		sqlite3_free(pCur->multiData.data);
 		pCur->multiData.data = NULL;
 	}
-	if (pCur->index.data != NULL) {
+	if (pCur->index.data != pCur->indexKeyBuf) {
 		sqlite3_free(pCur->index.data);
 		pCur->index.data = NULL;
 	}
 
 	/* Incrblob write cursors have their own dedicated transactions. */
-	if (pCur->isIncrblobHandle && pCur->txn && pCur->wrFlag &&
-	    pSavepointTxn && pCur->txn != pSavepointTxn) {
+	if (pCur->isIncrblobHandle &&
+	    pCur->txn && pCur->wrFlag && pSavepointTxn) {
 		ret = pCur->txn->commit(pCur->txn, DB_TXN_NOSYNC);
 		pCur->txn = 0;
 	}
@@ -3285,18 +3599,18 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur)
 	return btreeCloseCursor(pCur, 1);
 }
 
-int indexIsCollated(KeyInfo *keyInfo) 
+int indexIsCollated(KeyInfo *keyInfo)
 {
 	u32 i;
-	
-	if (!keyInfo) 
+
+	if (!keyInfo)
 		return 0;
 
 	for (i = 0; i < keyInfo->nField; i++) {
 		if (keyInfo->aColl[i] != NULL &&
-		    (keyInfo->aColl[i]->type != SQLITE_COLL_BINARY)) 
+		    (keyInfo->aColl[i]->type != SQLITE_COLL_BINARY))
 			break;
-	} 
+	}
 	return ((i != keyInfo->nField) ? 1 : 0);
 }
 
@@ -3308,10 +3622,10 @@ int supportsDuplicates(DB *db)
 	return (val & DB_DUPSORT);
 }
 
-/* Store the rowid in the index as data 
+/* Store the rowid in the index as data
  * instead of as part of the key, so rows
  * that have the same indexed value have only one
- * key in the index. 
+ * key in the index.
  * The original index key looks like:
  * hdrSize_column1Size_columnNSize_rowIdSize_column1Data_columnNData_rowid
  * The new index key looks like:
@@ -3384,8 +3698,9 @@ int sqlite3BtreeMovetoUnpacked(
 
 	pCur->multiGetPtr = pCur->multiPutPtr = NULL;
 	pCur->isFirst = 0;
-	memset(&pCur->key, 0, sizeof pCur->key);
-	memset(&pCur->data, 0, sizeof pCur->data);
+	memset(&pCur->key, 0, sizeof(pCur->key));
+	memset(&pCur->data, 0, sizeof(pCur->data));
+	pCur->skipMulti = 1;
 
 	if (pIntKey) {
 		pCur->key.size = encodeI64(pCur->nKeyBuf, nKey);
@@ -3401,7 +3716,7 @@ int sqlite3BtreeMovetoUnpacked(
 		pCur->key.app_data = pUnKey;
 		/*
 		 * If looking for an entry in an index with duplicates then the
-		 * rowid part of the key needs to be put in the data DBT. 
+		 * rowid part of the key needs to be put in the data DBT.
 		 */
 		if (pCur->isDupIndex &&
 		    (pUnKey->nField > pCur->keyInfo->nField)) {
@@ -3415,11 +3730,19 @@ int sqlite3BtreeMovetoUnpacked(
 			assert(pCur->data.size < ROWIDMAXSIZE);
 			pCur->data.data = &buf;
 			putVarint32(buf, serial_type);
-			sqlite3VdbeSerialPut(&buf[1], ROWIDMAXSIZE - 1, 
+			sqlite3VdbeSerialPut(&buf[1], ROWIDMAXSIZE - 1,
 			    rowid, file_format);
 			ret = pDbc->get(pDbc, &pCur->key, &pCur->data,
 			    DB_GET_BOTH_RANGE | RMW(pCur));
-		}	
+		/*
+		 * If not looking for a specific key in the index (just
+		 * looking at the value part of the key) then do a
+		 * bulk get since the search likely wants all
+		 * entries that have that value.
+		 */
+		} else if (!pCur->isDupIndex ||
+		    (pUnKey->nField < pCur->keyInfo->nField))
+			pCur->skipMulti = 0;
 	}
 
 	if (ret == DB_NOTFOUND)
@@ -3445,8 +3768,8 @@ int sqlite3BtreeMovetoUnpacked(
 			    0 : (pCur->savedIntKey < nKey) ? -1 : 1;
 		} else {
 			DBT target, index;
-			memset(&target, 0, sizeof target);
-			memset(&index, 0, sizeof index);
+			memset(&target, 0, sizeof(target));
+			memset(&index, 0, sizeof(index));
 			target.app_data = pUnKey;
 			/* paranoia */
 			pCur->key.app_data = NULL;
@@ -3457,7 +3780,8 @@ int sqlite3BtreeMovetoUnpacked(
 				index = pCur->key;
 			if (index.data) {
 #ifdef BDBSQL_SINGLE_THREAD
-				res = btreeCompareKeyInfo(pBDb, &index, &target);
+				res = btreeCompareKeyInfo(
+				    pBDb, &index, &target);
 #else
 				res = btreeCompareShared(pBDb, &index, &target);
 #endif
@@ -3480,7 +3804,6 @@ int sqlite3BtreeMovetoUnpacked(
 
 done:	if (pRes != NULL)
 		*pRes = res;
-	pCur->skipMulti = 1;
 	HANDLE_INCRBLOB_DEADLOCK(ret, pCur)
 	return (ret == 0) ? SQLITE_OK : dberr2sqlitelocked(ret);
 }
@@ -3496,7 +3819,7 @@ int btreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int bias, int *pRes)
 	 * it on every comparison.
 	 */
 	p = sqlite3VdbeRecordUnpack(pCur->keyInfo, (int)nKey, pKey, aSpace,
-	    sizeof aSpace);
+	    sizeof(aSpace));
 
 	res = sqlite3BtreeMovetoUnpacked(pCur, p, nKey, bias, pRes);
 
@@ -3564,6 +3887,7 @@ static int btreeTripWatchers(BtCursor *pCur, int incrBlobUpdate)
 		    pC->tableIndex != pCur->tableIndex ||
 		    pC->eState != CURSOR_VALID)
 			continue;
+		/* The call to ->cmp does not do any locking. */
 		if (pC->multiGetPtr == NULL &&
 		    (pDbc->cmp(pDbc, pC->dbc, &cmp, 0) != 0 || cmp != 0))
 			continue;
@@ -3668,7 +3992,8 @@ static int btreeRestoreCursorPosition(BtCursor *pCur, int skipMoveto)
 	}
 	rc = btreeMoveto(pCur, keyCopy, size,
 	    0, &pCur->lastRes);
-	sqlite3_free(keyCopy);
+	if (keyCopy != pCur->indexKeyBuf)
+		sqlite3_free(keyCopy);
 	return rc;
 }
 
@@ -3759,10 +4084,10 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize)
 		*pSize = pCur->savedIntKey;
 	else {
 		if (pCur->isDupIndex)
-			*pSize = (pCur->eState == CURSOR_VALID) ? 
+			*pSize = (pCur->eState == CURSOR_VALID) ?
 				pCur->index.size : 0;
 		else
-			*pSize = (pCur->eState == CURSOR_VALID) ? 
+			*pSize = (pCur->eState == CURSOR_VALID) ?
 		pCur->key.size : 0;
 	}
 
@@ -3811,9 +4136,9 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf)
 		return rc;
 
 	assert(pCur->eState == CURSOR_VALID);
-	/* The rowid part of the key in an index is stored in the 
+	/* The rowid part of the key in an index is stored in the
 	 * data part of the cursor.*/
-	if (pCur->isDupIndex) 
+	if (pCur->isDupIndex)
 		memcpy(pBuf, (u_int8_t *)pCur->index.data + offset, amt);
 	else
 		memcpy(pBuf, (u_int8_t *)pCur->key.data + offset, amt);
@@ -3846,14 +4171,14 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf)
 void *allocateCursorIndex(BtCursor *pCur, u_int32_t amount)
 {
 	if (pCur->index.ulen < amount) {
-		pCur->index.flags = DB_DBT_USERMEM;
 		pCur->index.ulen = amount * 2;
-		if (pCur->index.data != 0)
+		if (pCur->index.data != pCur->indexKeyBuf)
 			sqlite3_free(pCur->index.data);
 		pCur->index.data = sqlite3_malloc(pCur->index.ulen);
 		if (!pCur->index.data) {
 			pCur->error = SQLITE_NOMEM;
 			pCur->eState = CURSOR_FAULT;
+			return NULL;
 		}
 	}
 	return pCur->index.data;
@@ -3862,7 +4187,7 @@ void *allocateCursorIndex(BtCursor *pCur, u_int32_t amount)
 /* The rowid part of an index key is actually stored as data
  * in a Berkeley DB database, so it needs to be appended to the
  * key. */
-void *btreeCreateIndexKey(BtCursor *pCur) 
+void *btreeCreateIndexKey(BtCursor *pCur)
 {
 	u32 hdrSize;
 	u_int32_t amount;
@@ -3872,11 +4197,23 @@ void *btreeCreateIndexKey(BtCursor *pCur)
 
 	amount = pCur->key.size + pCur->data.size;
 	if (!allocateCursorIndex(pCur, amount))
-		return 0;
+		return NULL;
 	newKey = (unsigned char *)pCur->index.data;
 	getVarint32(aKey, hdrSize);
-	memcpy(newKey, aKey, hdrSize);
-	memcpy(&newKey[hdrSize+1], &aKey[hdrSize], pCur->key.size - hdrSize);
+	/*
+	 * The first byte contains the size of the record header,
+	 * which will change anyway so no need to copy it now.  We
+	 * are trying to minimize the number of times memcpy is called
+	 * in the common path.
+	 */
+	if ((hdrSize - 1) == 1)
+		newKey[1] = aKey[1];
+	else
+		memcpy(&newKey[1], &aKey[1], hdrSize - 1);
+	if (pCur->key.size != hdrSize) {
+		memcpy(&newKey[hdrSize+1], &aKey[hdrSize],
+		    pCur->key.size - hdrSize);
+	}
 	memcpy(&newKey[pCur->key.size+1], &data[1], pCur->data.size - 1);
 	newKey[hdrSize] = data[0];
 	putVarint32(newKey, hdrSize+1);
@@ -3948,17 +4285,18 @@ static int cursorGet(BtCursor *pCur, int op, int *pRes)
 	if (op == DB_NEXT && pCur->multiGetPtr != NULL) {
 		/*
 		 * Get the next record, skipping duplicates in buffered
-		 * indices.  Note that when we store an index in a buffer, it
-		 * is always configured with BTREE_ZERODATA and we don't
-		 * configure transient indices with DB_DUPSORT.  So the data
-		 * part will always be empty, and we don't need to check it.
+		 * indices/transient table.  Note that when we store an
+		 * index in a buffer, it is always configured with
+		 * BTREE_ZERODATA and we don't configure transient indices
+		 * with DB_DUPSORT.  So the data part will always be empty,
+		 * and we don't need to check it.
 		 */
 		do {
 			oldkey = pCur->key;
 			DB_MULTIPLE_KEY_NEXT(pCur->multiGetPtr,
 			    &pCur->multiData, pCur->key.data, pCur->key.size,
 			    pCur->data.data, pCur->data.size);
-		} while (!pIntKey && pIsBuffer && pCur->multiGetPtr != NULL &&
+		} while (pIsBuffer && pCur->multiGetPtr != NULL &&
 		    oldkey.size == pCur->key.size &&
 		    memcmp(pCur->key.data, oldkey.data, oldkey.size) == 0);
 
@@ -3972,8 +4310,8 @@ static int cursorGet(BtCursor *pCur, int op, int *pRes)
 
 	if (pIsBuffer && op == DB_LAST) {
 		DBT key, data;
-		memset(&key, 0, sizeof key);
-		memset(&data, 0, sizeof data);
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
 		if (pCur->multiGetPtr == NULL)
 			goto err;
 		do {
@@ -4100,7 +4438,7 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes)
 		}
 
 		DB_MULTIPLE_INIT(pCur->multiGetPtr, &pCur->multiData);
-		memset(&pCur->key, 0, sizeof pCur->key);
+		memset(&pCur->key, 0, sizeof(pCur->key));
 		pCur->isFirst = 1;
 		pCur->eState = CURSOR_VALID;
 		get_flag = DB_NEXT;
@@ -4150,7 +4488,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes)
 		}
 
 		DB_MULTIPLE_INIT(pCur->multiGetPtr, &pCur->multiData);
-		memset(&pCur->key, 0, sizeof pCur->key);
+		memset(&pCur->key, 0, sizeof(pCur->key));
 		pCur->eState = CURSOR_VALID;
 	} else if (pIsBuffer) {
 		*pRes = 1;
@@ -4241,7 +4579,7 @@ static int insertData(BtCursor *pCur, int nZero, int nData)
 	int ret;
 
 	UPDATE_DURING_BACKUP(pCur->pBtree);
-	ret = pDbc->put(pDbc, &pCur->key, &pCur->data, 
+	ret = pDbc->put(pDbc, &pCur->key, &pCur->data,
 	    (pCur->isDupIndex) ? DB_NODUPDATA : DB_KEYLAST);
 
 	if (ret == 0 && nZero > 0) {
@@ -4249,7 +4587,7 @@ static int insertData(BtCursor *pCur, int nZero, int nData)
 		u8 zero;
 
 		zero = 0;
-		memset(&zeroData, 0, sizeof zeroData);
+		memset(&zeroData, 0, sizeof(zeroData));
 		zeroData.data = &zero;
 		zeroData.size = zeroData.dlen = zeroData.ulen = 1;
 		zeroData.doff = nData + nZero - 1;
@@ -4296,8 +4634,8 @@ int sqlite3BtreeInsert(
 	pCur->multiGetPtr = NULL;
 	pCur->isFirst = 0;
 	pCur->lastKey = 0;
-	memset(&pCur->key, 0, sizeof pCur->key);
-	memset(&pCur->data, 0, sizeof pCur->data);
+	memset(&pCur->key, 0, sizeof(pCur->key));
+	memset(&pCur->data, 0, sizeof(pCur->data));
 
 	if (pIntKey) {
 		pCur->key.size = encodeI64(encKey, nKey);
@@ -4306,7 +4644,7 @@ int sqlite3BtreeInsert(
 		pCur->key.data = (void *)pKey;
 		pCur->key.size = (u_int32_t)nKey;
 	}
-	if (pCur->isDupIndex) 
+	if (pCur->isDupIndex)
 		splitIndexKey(pCur);
 	else {
 		pCur->data.data = (void *)pData;
@@ -4354,7 +4692,7 @@ int sqlite3BtreeInsert(
 		 * it on every comparison.
 		 */
 		pCur->key.app_data = p = sqlite3VdbeRecordUnpack(pCur->keyInfo,
-		    (int)nKey, pKey, aSpace, sizeof aSpace);
+		    (int)nKey, pKey, aSpace, sizeof(aSpace));
 	}
 
 	ret = insertData(pCur, nZero, nData);
@@ -4403,7 +4741,7 @@ int sqlite3BtreeDelete(BtCursor *pCur)
 		DBT dummy;
 		pCur->multiGetPtr = NULL;
 		pCur->isFirst = 0;
-		memset(&dummy, 0, sizeof dummy);
+		memset(&dummy, 0, sizeof(dummy));
 		dummy.flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
 		if ((ret = pDbc->get(pDbc,
 		    &pCur->key, &dummy, DB_SET | RMW(pCur))) != 0)
@@ -4442,18 +4780,16 @@ int sqlite3BtreeDelete(BtCursor *pCur)
 ** values of flags are currently in use.  Other values for flags might not
 ** work:
 **
-**     BTREE_INTKEY|BTREE_LEAFDATA     Used for SQL tables with rowid keys
-**     BTREE_ZERODATA                  Used for SQL indices
+**     BTREE_INTKEY		Used for SQL tables with rowid keys
+**     BTREE_BLOBKEY		Used for SQL indices
 */
 static int btreeCreateTable(Btree *p, int *piTable, int flags)
 {
 	BtShared *pBt;
 	CACHED_DB *cached_db;
-	DB *dbp;
 	DBC *dbc;
 	DBT key, data;
-	char cached_db_key[CACHE_KEY_SIZE];
-	int iTable, lastTable, rc, ret, t_ret;
+	int lastTable, rc, ret, t_ret;
 
 	cached_db = NULL;
 	pBt = p->pBt;
@@ -4467,8 +4803,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags)
 		if (ret != 0)
 			goto err;
 
-		memset(&key, 0, sizeof key);
-		memset(&data, 0, sizeof data);
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
 		data.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
 
 		if ((ret = dbc->get(dbc, &key, &data, DB_LAST)) != 0)
@@ -4485,50 +4821,11 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags)
 			goto err;
 	}
 
-	sqlite3_mutex_enter(pBt->mutex);
-
-	if (pBt->dbStorage != DB_STORE_NAMED)
-		lastTable = pBt->last_table;
-
-	iTable = lastTable + 1;
-
-	/* Make sure (iTable & 1) iff BTREE_INTKEY is set */
-	if ((flags & BTREE_INTKEY) != 0) {
-		if ((iTable & 1) == 0)
-			iTable += 1;
-	} else if ((iTable & 1) == 1)
-		iTable += 1;
-
-	/*
-	 * If the table already exists in the cache, it's a hang-over from
-	 * a table that was deleted in another process. Close the handle now.
-	 */
-	sqlite3_snprintf(sizeof cached_db_key, cached_db_key, "%x", iTable);
-	if ((cached_db = sqlite3HashFind(&pBt->db_cache,
-	    cached_db_key, (int)strlen(cached_db_key))) != NULL) {
-		if ((dbp = cached_db->dbp) != NULL) {
-#ifndef BDBSQL_SINGLE_THREAD
-			if (dbp->app_private != NULL)
-				sqlite3_free(dbp->app_private);
-#endif
-			ret = dbp->close(dbp, DB_NOSYNC);
-			cached_db->dbp = NULL;
-			if (ret != 0)
-				goto err;
-		}
-		sqlite3HashInsert(&pBt->db_cache,
-		    cached_db_key, (int)strlen(cached_db_key), NULL);
-		sqlite3_free(cached_db);
-	}
-
-	rc = btreeCreateDataTable(p, iTable, &cached_db);
-
-	if (rc == SQLITE_OK) {
-		pBt->last_table = iTable;
-		*piTable = iTable;
-	}
-
-	sqlite3_mutex_leave(pBt->mutex);
+	cached_db = NULL;
+	rc = btreeFindOrCreateDataTable(p,
+	    &lastTable, &cached_db, flags | BTREE_CREATE);
+	if (rc == SQLITE_OK)
+		*piTable = lastTable;
 
 err:	if (dbc != NULL)
 		if ((t_ret = dbc->close(dbc)) != 0 && ret == 0)
@@ -4581,7 +4878,6 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags)
 int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange)
 {
 	BtShared *pBt;
-	char cached_db_key[CACHE_KEY_SIZE];
 	CACHED_DB *cached_db;
 	DELETED_TABLE *dtable;
 	char *tableName, tableNameBuf[DBNAME_SIZE];
@@ -4614,13 +4910,9 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange)
 		sqlite3_mutex_leave(pBt->mutex);
 		return rc;
 	}
-
-	sqlite3_snprintf(sizeof cached_db_key, cached_db_key, "%x", iTable);
-	cached_db = sqlite3HashFind(&pBt->db_cache,
-	    cached_db_key, (int)strlen(cached_db_key));
-	if (cached_db == NULL || cached_db->dbp == NULL)
-		rc = btreeCreateDataTable(p, iTable, &cached_db);
 	sqlite3_mutex_leave(pBt->mutex);
+
+	rc = btreeFindOrCreateDataTable(p, &iTable, &cached_db, 0);
 
 	if (rc != SQLITE_OK)
 		return rc;
@@ -4645,7 +4937,8 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange)
 		DB_BTREE_STAT *stat;
 
 		if ((ret = cached_db->dbp->stat(cached_db->dbp,
-		    pFamilyTxn, &stat, GET_BTREE_ISOLATION(p))) != 0)
+		    pFamilyTxn, &stat, GET_BTREE_ISOLATION(p) &
+		    ~DB_TXN_SNAPSHOT)) != 0)
 			goto err;
 		count = stat->bt_ndata;
 
@@ -4669,14 +4962,14 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange)
 			goto err;
 
 		tableName = tableNameBuf;
-		GET_TABLENAME(tableName, sizeof tableNameBuf, iTable, "");
+		GET_TABLENAME(tableName, sizeof(tableNameBuf), iTable, "");
 		oldTableName = oldTableNameBuf;
-		GET_TABLENAME(oldTableName, sizeof oldTableNameBuf, iTable,
+		GET_TABLENAME(oldTableName, sizeof(oldTableNameBuf), iTable,
 		    "old-");
 
 		FIX_TABLENAME(pBt, fileName, tableName);
 		if ((ret = pDbEnv->dbrename(pDbEnv, pSavepointTxn,
-		    fileName, tableName, oldTableName, DB_NOSYNC)) == 0){
+		    fileName, tableName, oldTableName, DB_NOSYNC)) == 0) {
 			need_truncate = 0;
 			dtable = (DELETED_TABLE *)sqlite3_malloc(
 			    sizeof(DELETED_TABLE));
@@ -4742,7 +5035,7 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved)
 	need_remove = 1;
 
 	/* Close any cached handle */
-	sqlite3_snprintf(sizeof cached_db_key, cached_db_key, "%x", iTable);
+	sqlite3_snprintf(sizeof(cached_db_key), cached_db_key, "%x", iTable);
 	sqlite3_mutex_enter(pBt->mutex);
 	cached_db = sqlite3HashFind(&pBt->db_cache,
 	    cached_db_key, (int)strlen(cached_db_key));
@@ -4760,19 +5053,19 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved)
 	    &pBt->db_cache, cached_db_key, (int)strlen(cached_db_key), NULL);
 	sqlite3_mutex_leave(pBt->mutex);
 	sqlite3_free(cached_db);
- 
+
 	if (pBt->dbStorage == DB_STORE_NAMED) {
 		tableName = tableNameBuf;
-		GET_TABLENAME(tableName, sizeof tableNameBuf, iTable, "");
+		GET_TABLENAME(tableName, sizeof(tableNameBuf), iTable, "");
 		FIX_TABLENAME(pBt, fileName, tableName);
 
 		oldTableName = oldTableNameBuf;
-		GET_TABLENAME(oldTableName, sizeof oldTableNameBuf, iTable,
+		GET_TABLENAME(oldTableName, sizeof(oldTableNameBuf), iTable,
 		    "old-");
 
 		memset(&key, 0, sizeof(key));
 		key.data = oldTableName;
-		key.size = strlen(oldTableName);
+		key.size = (u_int32_t)strlen(oldTableName);
 		key.flags = DB_DBT_USERMEM;
 		/* If the renamed table already exists, we could be in one of
 		 * two possible situations:
@@ -4835,7 +5128,7 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved)
 			key.size = strlen(tableName);
 			ret = pTablesDb->del(pTablesDb, pSavepointTxn, &key, 0);
 #endif
-		}			
+		}
 
 	} else if (pBt->dbStorage == DB_STORE_INMEM) {
 		/*
@@ -4903,8 +5196,8 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta)
 		 */
 	}
 	/* Once connected to a shared environment, don't trust the cache. */
-	if (idx > 0 && idx < NUMMETA && pBt->meta[idx].cached
-	    && (!p->connected || pBt->dbStorage != DB_STORE_NAMED)) {
+	if (idx > 0 && idx < NUMMETA && pBt->meta[idx].cached &&
+	    (!p->connected || pBt->dbStorage != DB_STORE_NAMED)) {
 		*pMeta = pBt->meta[idx].value;
 		return;
 	} else if (idx == 0 || !p->connected ||
@@ -4915,22 +5208,22 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta)
 
 	assert(p->pBt->dbStorage == DB_STORE_NAMED);
 
-	memset(&key, 0, sizeof key);
+	memset(&key, 0, sizeof(key));
 	key.data = metaKey;
 	key.size = key.ulen = encodeI64(metaKey, idx);
 	key.flags = DB_DBT_USERMEM;
-	memset(&data, 0, sizeof data);
+	memset(&data, 0, sizeof(data));
 	data.data = metaData;
-	data.size = data.ulen = sizeof metaData;
+	data.size = data.ulen = sizeof(metaData);
 	data.flags = DB_DBT_USERMEM;
 
 	/*
 	 * Trigger a read-modify-write get from the metadata table to stop
 	 * other connections from being able to proceed while an exclusive
 	 * transaction is active.
-	 */ 
+	 */
 	if ((ret = pMetaDb->get(pMetaDb, GET_META_TXN(p), &key, &data,
-            GET_META_FLAGS(p))) == 0) {
+	    GET_META_FLAGS(p))) == 0) {
 		*pMeta = (u32)decodeI64(data.data, data.size);
 		if (idx < NUMMETA) {
 			pBt->meta[idx].value = *pMeta;
@@ -4944,7 +5237,7 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta)
 		ret = 0;
 		*pMeta = 0;
 		sqlite3BtreeRollback(p);
-	}
+       }
 
 	assert(ret == 0);
 }
@@ -4975,7 +5268,6 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta)
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 	if (idx == BTREE_INCR_VACUUM) {
-		assert(pBt->autoVacuum || iMeta == 0);
 		assert(iMeta == 0 || iMeta == 1);
 		pBt->incrVacuum = (u8)iMeta;
 	}
@@ -4991,11 +5283,11 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta)
 	/* OpenEnvironment might have changed the pBt, update it. */
 	pBt = p->pBt;
 
-	memset(&key, 0, sizeof key);
+	memset(&key, 0, sizeof(key));
 	key.data = metaKey;
 	key.size = key.ulen = encodeI64(metaKey, idx);
 	key.flags = DB_DBT_USERMEM;
-	memset(&data, 0, sizeof data);
+	memset(&data, 0, sizeof(data));
 	data.data = metaData;
 	data.size = data.ulen = encodeI64(metaData, iMeta);
 	data.flags = DB_DBT_USERMEM;
@@ -5020,10 +5312,13 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry)
 	DB_BTREE_STAT *stat;
 	int ret;
 
+	if (pCur->eState == CURSOR_FAULT || pCur->cached_db->dbp == NULL)
+		return (pCur->error == 0 ? SQLITE_ERROR : pCur->error);
+
 	p = pCur->pBtree;
 
 	if ((ret = pBDb->stat(pBDb, pReadTxn ? pReadTxn : pFamilyTxn, &stat,
-	    GET_BTREE_ISOLATION(p))) == 0) {
+	    GET_BTREE_ISOLATION(p) & ~DB_TXN_SNAPSHOT)) == 0) {
 		*pnEntry = stat->bt_ndata;
 		sqlite3_free(stat);
 	}
@@ -5066,7 +5361,7 @@ char *sqlite3BtreeIntegrityCheck(
 	 */
 	for (i = 0; i < nRoot && ret == 0; i++) {
 		tableName = tableNameBuf;
-		GET_TABLENAME(tableName, sizeof tableNameBuf, aRoot[i], "");
+		GET_TABLENAME(tableName, sizeof(tableNameBuf), aRoot[i], "");
 		if ((ret = db_create(&db, pDbEnv, 0)) == 0)
 			ret = db->verify(db, tableName,
 			    NULL, NULL, DB_NOORDERCHK);
@@ -5094,6 +5389,58 @@ int sqlite3BtreeIsInTrans(Btree *p)
 {
 	return (p && p->inTrans == TRANS_WRITE);
 }
+
+/*
+ * Berkeley DB always uses WAL, but the SQLite flag is disabled on Windows
+ * Mobile (CE) because some of the SQLite WAL code doesn't build with the flag
+ * enabled.
+ */
+#ifndef SQLITE_OMIT_WAL
+/*
+** Run a checkpoint on the Btree passed as the first argument.
+**
+** Return SQLITE_LOCKED if this or any other connection has an open 
+** transaction on the shared-cache the argument Btree is connected to.
+**
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
+*/
+int sqlite3BtreeCheckpoint(Btree *p, int eMode, int *pnLog, int *pnCkpt)
+{
+	BtShared *pBt;
+	int rc;
+
+	/*
+	 * TODO: Investigate eMode. In SQLite there are three possible modes
+	 * SQLITE_CHECKPOINT_PASSIVE - return instead of blocking on locks
+	 * SQLITE_CHECKPOINT_FULL - Wait to get an exclusive lock.
+	 * SQLITE_CHECKPOINT_RESTART - as for full, except force a new log file
+	 *
+	 * Berkeley DB checkpoints really work like FULL. It might be possible
+	 * to mimic PASSIVE (default in SQLite) with lock no-wait, but do we
+	 * care?
+	 */
+	rc = SQLITE_OK;
+	if (p != NULL) {
+		pBt = p->pBt;
+		if (p->inTrans != TRANS_NONE)
+			rc = SQLITE_LOCKED;
+		else
+			rc = sqlite3PagerCheckpoint((Pager *)p);
+	}
+	/*
+	 * The following two variables are used to return information via
+	 * the sqlite_wal_checkoint_v2 database. They don't map well onto
+	 * Berkeley DB, so return 0 for now.
+	 * pnLog: Size of WAL log in frames.
+	 * pnCkpt: Total number of frames checkpointed.
+	 */
+	if (pnLog != 0)
+		*pnLog = 0;
+	if (pnCkpt != 0)
+		*pnCkpt = 0;
+	return rc;
+}
+#endif
 
 /*
  * Determine whether or not a cursor has moved from the position it was last
@@ -5464,7 +5811,7 @@ u32 sqlite3BtreeLastPage(Btree *p)
 }
 
 /*
-** Set both the "read version" (single byte at byte offset 18) and 
+** Set both the "read version" (single byte at byte offset 18) and
 ** "write version" (single byte at byte offset 19) fields in the database
 ** header to iVersion.
 ** This function is only called by OP_JournalMode, when changing to or from
@@ -5681,6 +6028,25 @@ static int btreeGetKeyInfo(Btree *p, int iTable, KeyInfo **pKeyInfo)
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
+** Free internal link list of vacuum info for Btree object
+**/
+void btreeFreeVacuumInfo(Btree *p)
+{
+	struct VacuumInfo *pInfo, *pInfoNext;
+
+	/* Free DBT for vacuum start */
+	for (pInfo = p->vacuumInfo; pInfo != NULL; pInfo = pInfoNext) {
+		pInfoNext = pInfo->next;
+		if (pInfo->start.data)
+			sqlite3_free(pInfo->start.data);
+		sqlite3_free(pInfo);
+	}
+	p->vacuumInfo = NULL;
+	p->needVacuum = 0;
+	return;
+}
+
+/*
 ** A write transaction must be opened before calling this function.
 ** It performs a single unit of work towards an incremental vacuum.
 ** Specifically, in the Berkeley DB storage manager, it attempts to compact
@@ -5689,19 +6055,25 @@ static int btreeGetKeyInfo(Btree *p, int iTable, KeyInfo **pKeyInfo)
 ** If the incremental vacuum is finished after this function has run,
 ** SQLITE_DONE is returned. If it is not finished, but no error occurred,
 ** SQLITE_OK is returned. Otherwise an SQLite error code.
+**
+** The caller can get and accumulate the number of truncated pages truncated
+** with input parameter truncatedPages. Also, btreeIncrVacuum would skip
+** the vacuum if enough pages has been truncated for optimization.
 */
-int btreeIncrVacuum(Btree *p)
+int btreeIncrVacuum(Btree *p, u_int32_t *truncatedPages)
 {
 	BtShared *pBt;
 	CACHED_DB *cached_db;
-	char cached_db_key[CACHE_KEY_SIZE];
 	DB *dbp;
-	DB_COMPACT compact_data;
 	DBT key, data;
 	char *fileName, *tableName, tableNameBuf[DBNAME_SIZE];
 	void *app;
 	int iTable, rc, ret, t_ret;
 	u_int32_t was_create;
+	DB_COMPACT compact_data;
+	DBT *pStart, end;	/* start/end of db_compact() */
+	struct VacuumInfo *pInfo;
+	int vacuumMode;
 
 	assert(p->pBt->dbStorage == DB_STORE_NAMED);
 
@@ -5712,6 +6084,11 @@ int btreeIncrVacuum(Btree *p)
 	rc = SQLITE_OK;
 	cached_db = NULL;
 	dbp = NULL;
+	memset(&end, 0, sizeof(end));
+#ifndef BDBSQL_OMIT_LEAKCHECK
+	/* Let BDB use the user-specified malloc function (btreeMalloc) */
+	end.flags |= DB_DBT_MALLOC;
+#endif
 
 	/*
 	 * Turn off DB_CREATE: we don't want to create any tables that don't
@@ -5720,11 +6097,11 @@ int btreeIncrVacuum(Btree *p)
 	was_create = (pBt->db_oflags & DB_CREATE);
 	pBt->db_oflags &= ~DB_CREATE;
 
-	memset(&key, 0, sizeof key);
+	memset(&key, 0, sizeof(key));
 	key.data = tableNameBuf;
-	key.ulen = sizeof tableNameBuf;
+	key.ulen = sizeof(tableNameBuf);
 	key.flags = DB_DBT_USERMEM;
-	memset(&data, 0, sizeof data);
+	memset(&data, 0, sizeof(data));
 	data.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
 
 	UPDATE_DURING_BACKUP(p);
@@ -5777,15 +6154,7 @@ int btreeIncrVacuum(Btree *p)
 			goto err;
 
 		/* Try to retrieve the matching handle from the cache. */
-		sqlite3_snprintf(sizeof cached_db_key, cached_db_key,
-		    "%x", iTable);
-
-		sqlite3_mutex_enter(pBt->mutex);
-		cached_db = sqlite3HashFind(&pBt->db_cache,
-		    cached_db_key, (int)strlen(cached_db_key));
-		if (cached_db == NULL || cached_db->dbp == NULL)
-			rc = btreeCreateDataTable(p, iTable, &cached_db);
-		sqlite3_mutex_leave(pBt->mutex);
+		rc = btreeFindOrCreateDataTable(p, &iTable, &cached_db, 0);
 		if (rc != SQLITE_OK)
 			goto err;
 		assert(cached_db != NULL && cached_db->dbp != NULL);
@@ -5810,16 +6179,94 @@ int btreeIncrVacuum(Btree *p)
 		}
 	}
 
-	memset(&compact_data, 0, sizeof compact_data);
-
 	/*
-	 * Use the family transaction because DB->compact will then auto-commit,
-	 * and it has built-in smarts about retrying on deadlock.
+	 * In following db_compact, we use the family transaction because
+	 * DB->compact will then auto-commit, and it has built-in smarts
+	 * about retrying on deadlock.
 	 */
-	ret = dbp->compact(dbp, pFamilyTxn,
-	    NULL, NULL, &compact_data, DB_FREE_SPACE, NULL);
+	/* Setup compact_data as configured */
+	memset(&compact_data, 0, sizeof(compact_data));
+	compact_data.compact_fillpercent = p->fillPercent;
 
-err:	if (cached_db != NULL) {
+	vacuumMode = sqlite3BtreeGetAutoVacuum(p);
+	if (vacuumMode == BTREE_AUTOVACUUM_NONE) {
+		ret = dbp->compact(dbp, pFamilyTxn,
+		    NULL, NULL, &compact_data, DB_FREE_SPACE, NULL);
+	/* Skip current table if we have truncated enough pages */
+	} else if (truncatedPages == NULL ||
+	    (truncatedPages != NULL && *truncatedPages < p->vacuumPages)) {
+		/* Find DBT for db_compact start */
+		for (pInfo = p->vacuumInfo, pStart = NULL;
+		     pInfo != NULL; pInfo = pInfo->next) {
+			if (pInfo->iTable == iTable)
+				break;
+		}
+
+		/* Create new VacuumInfo for current iTable as needed */
+		if (pInfo == NULL) {
+			/* Create info for current iTable */
+			if ((pInfo = (struct VacuumInfo *)sqlite3_malloc(
+			    sizeof(struct VacuumInfo))) == NULL) {
+				rc = SQLITE_NOMEM;
+				goto err;
+			}
+			memset(pInfo, 0, sizeof(struct VacuumInfo));
+			pInfo->iTable = iTable;
+			pInfo->next = p->vacuumInfo;
+			p->vacuumInfo = pInfo;
+		}
+		pStart = &(pInfo->start);
+
+		/* Do page compact for IncrVacuum */
+		if (vacuumMode == BTREE_AUTOVACUUM_INCR) {
+			/* Do compact with given arguments */
+			compact_data.compact_pages = p->vacuumPages;
+			if ((ret = dbp->compact(dbp, pFamilyTxn,
+				(pStart->data == NULL) ? NULL : pStart,
+				NULL, &compact_data, 0, &end)) != 0)
+				goto err;
+
+			/* Save current vacuum position */
+			if (pStart->data != NULL)
+				sqlite3_free(pStart->data);
+			memcpy(pStart, &end, sizeof(DBT));
+			memset(&end, 0, sizeof(end));
+
+			/* Rewind to start if we reach the end of subdb */
+			if (compact_data.compact_pages_free < p->vacuumPages ||
+			    p->vacuumPages == 0) {
+				if (pStart->data != NULL)
+					sqlite3_free(pStart->data);
+				memset(pStart, 0, sizeof(DBT));
+			}
+		}
+		/* Because of the one-pass nature of the compaction algorithm,
+		 * any unemptied page near the end of the file inhibits
+		 * returning pages to the file system.
+		 * A repeated call to the DB->compact() method with a low
+		 * compact_fillpercent may be used to return pages in this case.
+		 */
+		memset(&compact_data, 0, sizeof(compact_data));
+		compact_data.compact_fillpercent = 1;
+		if ((ret = dbp->compact(dbp, pFamilyTxn, NULL, NULL,
+			    &compact_data, DB_FREE_SPACE, NULL)) != 0)
+			goto err;
+		if (truncatedPages != NULL && *truncatedPages > 0)
+			*truncatedPages += compact_data.compact_pages_truncated;
+	}
+
+err:	/* Free cursor and DBT if run into error */
+	if (ret != 0) {
+		if (p->compact_cursor != NULL) {
+			(void)p->compact_cursor->close(p->compact_cursor);
+			p->compact_cursor = NULL;
+		}
+		if (end.data != NULL)
+			sqlite3_free(end.data);
+		btreeFreeVacuumInfo(p);
+	}
+
+	if (cached_db != NULL) {
 #ifdef BDBSQL_SINGLE_THREAD
 		if ((app = dbp->app_private) != NULL)
 			sqlite3DbFree(p->db, app);
@@ -5838,11 +6285,6 @@ err:	if (cached_db != NULL) {
 			sqlite3DbFree(p->db, app);
 	}
 
-	if (ret != 0 && p->compact_cursor != NULL) {
-		(void)p->compact_cursor->close(p->compact_cursor);
-		p->compact_cursor = NULL;
-	}
-
 	pBt->db_oflags |= was_create;
 
 	return MAP_ERR(rc, ret);
@@ -5859,7 +6301,13 @@ int sqlite3BtreeIncrVacuum(Btree *p)
 	if (!pBt->autoVacuum || pBt->dbStorage != DB_STORE_NAMED)
 		return SQLITE_DONE;
 
-	return btreeIncrVacuum(p);
+	/* Just mark here and let sqlite3BtreeCommitPhaseTwo do the vacuum */
+	p->needVacuum = 1;
+	/*
+	 * Always return SQLITE_DONE to end OP_IncrVacuum immediatelly since
+	 * we ignore the "N" of PRAGMA incremental_vacuum(N);
+	 */
+	return SQLITE_DONE;
 }
 #endif
 
@@ -5895,15 +6343,18 @@ int sqlite3BtreeSetAutoVacuum(Btree *p, int autoVacuum)
 #else
 	BtShared *pBt = p->pBt;
 	int rc = SQLITE_OK;
+	u8 savedIncrVacuum;
 
+	savedIncrVacuum = pBt->incrVacuum;
 	sqlite3_mutex_enter(pBt->mutex);
-	if (pBt->pageSizeFixed && (autoVacuum != 0) != pBt->autoVacuum)
-		rc = SQLITE_READONLY;
-	else {
-		pBt->autoVacuum = (autoVacuum != 0);
-		pBt->incrVacuum = (autoVacuum == 2);
-	}
+	/* Do not like sqlite, BDB allows setting vacuum at any time */
+	pBt->autoVacuum = (autoVacuum != 0);
+	pBt->incrVacuum = (autoVacuum == 2);
 	sqlite3_mutex_leave(pBt->mutex);
+
+	/* If setting is changed, we need to reset incrVacuum Info */
+	if (pBt->incrVacuum != savedIncrVacuum)
+		btreeFreeVacuumInfo(p);
 
 	if (rc == SQLITE_OK && !p->connected && !pBt->resultsBuffer)
 		rc = btreeOpenEnvironment(p, 1);
@@ -5946,19 +6397,20 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint)
 	    p, op, iSavepoint);
 
 	/*
-	 * If iSavepoint + 2 > p->nSavepoint and this is not a rollback, 
-	 * then the savepoint has been created, but sqlite3BtreeBeginStmt 
+	 * If iSavepoint + 2 > p->nSavepoint and this is not a rollback,
+	 * then the savepoint has been created, but sqlite3BtreeBeginStmt
 	 * has not been called to create the actual child transaction. If
 	 * this is a rollback and iSavepoint + 2 > p->nSavepoint, then
-	 * the read transaction lost its locks due to deadlock in an 
+	 * the read transaction lost its locks due to deadlock in an
 	 * update transaction and needs to be aborted.
 	 */
 	if (p && op == SAVEPOINT_ROLLBACK &&
-	    (p->txn_bulk || 
+	    (p->txn_bulk ||
 	    (((iSavepoint + 2 > p->nSavepoint) || (p->inTrans == TRANS_READ)) &&
 	    pReadTxn))) {
 		/* Abort a read or bulk transaction, handled below. */
-	} else if (!p || pSavepointTxn == NULL || iSavepoint + 2 > p->nSavepoint)
+	} else if (!p ||
+	    pSavepointTxn == NULL || iSavepoint + 2 > p->nSavepoint)
 		return SQLITE_OK;
 
 	pBt = p->pBt;
@@ -5972,7 +6424,7 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint)
 #ifdef BDBSQL_SHARE_PRIVATE
 		isMain = 1;
 #endif
-	} else if (op == SAVEPOINT_ROLLBACK &&  
+	} else if (op == SAVEPOINT_ROLLBACK &&
 	    ((iSavepoint + 2 > p->nSavepoint) || p->inTrans == TRANS_READ)) {
 		txn = pReadTxn;
 		pReadTxn = NULL;
@@ -6012,7 +6464,6 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint)
 		pMainTxn = pReadTxn = pSavepointTxn = NULL;
 		p->nSavepoint = 0;
 		p->inTrans = TRANS_NONE;
-		p->txn_excl = 0;
 	 /* pReadTxn is only NULL if the read txn is being aborted */
 	} else if (p->inTrans == TRANS_WRITE && pReadTxn)
 		pSavepointTxn = txn->parent;
@@ -6030,7 +6481,7 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint)
 	if (ret != 0)
 		goto err;
 
-	if (op == SAVEPOINT_ROLLBACK && p->cached_dbs != 0 &&
+	if (op == SAVEPOINT_ROLLBACK &&
 	    (rc = btreeCleanupCachedHandles(p, CLEANUP_ABORT)) != SQLITE_OK)
 		return rc;
 
@@ -6062,8 +6513,8 @@ int sqlite3_enable_shared_cache(int enable)
 #endif
 
 /*
- * Returns the Berkeley DB* struct for the user created 
- * table with the given iTable value.  
+ * Returns the Berkeley DB* struct for the user created
+ * table with the given iTable value.
  */
 int btreeGetUserTable(Btree *p, DB_TXN *pTxn, DB **pDb, int iTable)
 {
@@ -6085,7 +6536,7 @@ int btreeGetUserTable(Btree *p, DB_TXN *pTxn, DB **pDb, int iTable)
 
 	/* If the handle is not in the cache, open it. */
 	tableName = tableNameBuf;
-	GET_TABLENAME(tableName, sizeof tableNameBuf, iTable, "");
+	GET_TABLENAME(tableName, sizeof(tableNameBuf), iTable, "");
 	FIX_TABLENAME(pBt, fileName, tableName);
 
 	/* Open a DB handle on that table. */
@@ -6143,8 +6594,8 @@ int btreeGetTables(Btree *p, int **iTables, DB_TXN *txn)
 	u32 hdrSize, type;
 	unsigned char *endHdr, *record, *ptr2;
 
-	memset(&key, 0, sizeof key);
-	memset(&data, 0, sizeof data);
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
 	ret = inTrans = 0;
 	dbp = NULL;
 	dbc = NULL;
@@ -6154,7 +6605,7 @@ int btreeGetTables(Btree *p, int **iTables, DB_TXN *txn)
 	if ((rc = btreeGetUserTable(p, txn, &dbp, MASTER_ROOT)) != SQLITE_OK)
 		goto err;
 	assert(dbp != NULL);
-	
+
 	if ((ret = dbp->stat(dbp, txn, &stats, 0)) != 0)
 		goto err;
 
@@ -6166,12 +6617,12 @@ int btreeGetTables(Btree *p, int **iTables, DB_TXN *txn)
 #endif
 
 	/*
-	 * Add room for the sqlite master and a value of -1 to 
+	 * Add room for the sqlite master and a value of -1 to
 	 * mark the end of the table.  The sqlite master may include
 	 * views, which will not be recored in the tables entry.
 	 */
 	entries += 2;
-	tables = sqlite3Malloc(entries * sizeof tables);
+	tables = sqlite3Malloc(entries * sizeof(tables));
 	if (!tables) {
 		rc = SQLITE_NOMEM;
 		goto err;
@@ -6188,7 +6639,7 @@ int btreeGetTables(Btree *p, int **iTables, DB_TXN *txn)
 	while ((ret = dbc->get(dbc, &key, &data, DB_NEXT)) == 0) {
 		/* The iTable value is the 4th entry in the record. */
 		assert(current < entries);
-		memset(&iTable, 0, sizeof iTable);
+		memset(&iTable, 0, sizeof(iTable));
 		record = (unsigned char *)data.data;
 		getVarint32(record, hdrSize);
 		endHdr = record + hdrSize;
@@ -6317,9 +6768,10 @@ err:	if (dbp) {
 		 if ((ret2 = txnChild->abort(txnChild)) != 0 && ret == 0)
 			 ret = ret2;
 	 }
- 
+
 	return MAP_ERR(rc, ret);
 }
+
 /*
  * This pair of functions manages the handle lock held by Berkeley DB for
  * database (DB) handles. Berkeley DB holds those locks so that a remove can't
@@ -6343,7 +6795,7 @@ static int btreeDbHandleLock(Btree *p, CACHED_DB *cached_db)
 	ret = 0;
 	dbp = cached_db->dbp;
 
-	if (btreeDbHandleIsLocked(cached_db))
+	if (btreeDbHandleIsLocked(p, cached_db))
 		return (0);
 
 	/* Ensure we're going to ask for a reasonable lock. */
@@ -6374,17 +6826,423 @@ static int btreeDbHandleUnlock(Btree *p, CACHED_DB *cached_db)
 	BtShared *pBt;
 
 	pBt = p->pBt;
-	if (!btreeDbHandleIsLocked(cached_db))
+	if (!btreeDbHandleIsLocked(p, cached_db))
 		return (0);
 
 	cached_db->lock_mode = cached_db->dbp->handle_lock.mode;
 	return (pDbEnv->lock_put(pDbEnv, &cached_db->dbp->handle_lock));
 }
 
-static int btreeDbHandleIsLocked(CACHED_DB *cached_db)
+static int btreeDbHandleIsLocked(Btree *p, CACHED_DB *cached_db)
 {
-#define LOCK_INVALID 0
+#define	LOCK_INVALID 0
 	return (cached_db->dbp->handle_lock.off != LOCK_INVALID);
+}
+
+/*
+ * Integer compression
+ *
+ *  First byte | Next | Maximum
+ *  byte       | bytes| value
+ * ------------+------+---------------------------------------------------------
+ * [0 xxxxxxx] | 0    | 2^7 - 1
+ * [10 xxxxxx] | 1    | 2^14 + 2^7 - 1
+ * [110 xxxxx] | 2    | 2^21 + 2^14 + 2^7 - 1
+ * [1110 xxxx] | 3    | 2^28 + 2^21 + 2^14 + 2^7 - 1
+ * [11110 xxx] | 4    | 2^35 + 2^28 + 2^21 + 2^14 + 2^7 - 1
+ * [11111 000] | 5    | 2^40 + 2^35 + 2^28 + 2^21 + 2^14 + 2^7 - 1
+ * [11111 001] | 6    | 2^48 + 2^40 + 2^35 + 2^28 + 2^21 + 2^14 + 2^7 - 1
+ * [11111 010] | 7    | 2^56 + 2^48 + 2^40 + 2^35 + 2^28 + 2^21 + 2^14 + 2^7 - 1
+ * [11111 011] | 8    | 2^64 + 2^56 + 2^48 + 2^40 + 2^35 + 2^28 + 2^21 + 2^14 +
+ *	       |      |	2^7 - 1
+ *
+ * NOTE: this compression algorithm depends
+ * on big-endian order, so swap if necessary.
+ */
+extern int __db_isbigendian(void);
+
+#define	CMP_INT_1BYTE_MAX 0x7F
+#define	CMP_INT_2BYTE_MAX 0x407F
+#define	CMP_INT_3BYTE_MAX 0x20407F
+#define	CMP_INT_4BYTE_MAX 0x1020407F
+
+#if defined(_MSC_VER) && _MSC_VER < 1300
+#define	CMP_INT_5BYTE_MAX 0x081020407Fi64
+#define	CMP_INT_6BYTE_MAX 0x01081020407Fi64
+#define	CMP_INT_7BYTE_MAX 0x0101081020407Fi64
+#define	CMP_INT_8BYTE_MAX 0x010101081020407Fi64
+#else
+#define	CMP_INT_5BYTE_MAX 0x081020407FLL
+#define	CMP_INT_6BYTE_MAX 0x01081020407FLL
+#define	CMP_INT_7BYTE_MAX 0x0101081020407FLL
+#define	CMP_INT_8BYTE_MAX 0x010101081020407FLL
+#endif
+
+#define	CMP_INT_2BYTE_VAL 0x80
+#define	CMP_INT_3BYTE_VAL 0xC0
+#define	CMP_INT_4BYTE_VAL 0xE0
+#define	CMP_INT_5BYTE_VAL 0xF0
+#define	CMP_INT_6BYTE_VAL 0xF8
+#define	CMP_INT_7BYTE_VAL 0xF9
+#define	CMP_INT_8BYTE_VAL 0xFA
+#define	CMP_INT_9BYTE_VAL 0xFB
+
+#define	CMP_INT_2BYTE_MASK 0x3F
+#define	CMP_INT_3BYTE_MASK 0x1F
+#define	CMP_INT_4BYTE_MASK 0x0F
+#define	CMP_INT_5BYTE_MASK 0x07
+
+static const u_int8_t __dbsql_marshaled_int_size[] = {
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+	0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+
+	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+
+	0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+	0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+
+	0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+	0x06, 0x07, 0x08, 0x09, 0xFF, 0xFF, 0xFF, 0xFF
+};
+
+/*
+ * btreeCompressInt --
+ *	Compresses the integer into the buffer, returning the number of
+ *	bytes occupied.
+ *
+ * An exact copy of __db_compress_int
+ */
+static int btreeCompressInt(u_int8_t *buf, u_int64_t i)
+{
+	if (i <= CMP_INT_1BYTE_MAX) {
+		/* no swapping for one byte value */
+		buf[0] = (u_int8_t)i;
+		return 1;
+	} else {
+		u_int8_t *p = (u_int8_t*)&i;
+		if (i <= CMP_INT_2BYTE_MAX) {
+			i -= CMP_INT_1BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = p[6] | CMP_INT_2BYTE_VAL;
+				buf[1] = p[7];
+			} else {
+				buf[0] = p[1] | CMP_INT_2BYTE_VAL;
+				buf[1] = p[0];
+			}
+			return 2;
+		} else if (i <= CMP_INT_3BYTE_MAX) {
+			i -= CMP_INT_2BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = p[5] | CMP_INT_3BYTE_VAL;
+				buf[1] = p[6];
+				buf[2] = p[7];
+			} else {
+				buf[0] = p[2] | CMP_INT_3BYTE_VAL;
+				buf[1] = p[1];
+				buf[2] = p[0];
+			}
+			return 3;
+		} else if (i <= CMP_INT_4BYTE_MAX) {
+			i -= CMP_INT_3BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = p[4] | CMP_INT_4BYTE_VAL;
+				buf[1] = p[5];
+				buf[2] = p[6];
+				buf[3] = p[7];
+			} else {
+				buf[0] = p[3] | CMP_INT_4BYTE_VAL;
+				buf[1] = p[2];
+				buf[2] = p[1];
+				buf[3] = p[0];
+			}
+			return 4;
+		} else if (i <= CMP_INT_5BYTE_MAX) {
+			i -= CMP_INT_4BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = p[3] | CMP_INT_5BYTE_VAL;
+				buf[1] = p[4];
+				buf[2] = p[5];
+				buf[3] = p[6];
+				buf[4] = p[7];
+			} else {
+				buf[0] = p[4] | CMP_INT_5BYTE_VAL;
+				buf[1] = p[3];
+				buf[2] = p[2];
+				buf[3] = p[1];
+				buf[4] = p[0];
+			}
+			return 5;
+		} else if (i <= CMP_INT_6BYTE_MAX) {
+			i -= CMP_INT_5BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = CMP_INT_6BYTE_VAL;
+				buf[1] = p[3];
+				buf[2] = p[4];
+				buf[3] = p[5];
+				buf[4] = p[6];
+				buf[5] = p[7];
+			} else {
+				buf[0] = CMP_INT_6BYTE_VAL;
+				buf[1] = p[4];
+				buf[2] = p[3];
+				buf[3] = p[2];
+				buf[4] = p[1];
+				buf[5] = p[0];
+			}
+			return 6;
+		} else if (i <= CMP_INT_7BYTE_MAX) {
+			i -= CMP_INT_6BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = CMP_INT_7BYTE_VAL;
+				buf[1] = p[2];
+				buf[2] = p[3];
+				buf[3] = p[4];
+				buf[4] = p[5];
+				buf[5] = p[6];
+				buf[6] = p[7];
+			} else {
+				buf[0] = CMP_INT_7BYTE_VAL;
+				buf[1] = p[5];
+				buf[2] = p[4];
+				buf[3] = p[3];
+				buf[4] = p[2];
+				buf[5] = p[1];
+				buf[6] = p[0];
+			}
+			return 7;
+		} else if (i <= CMP_INT_8BYTE_MAX) {
+			i -= CMP_INT_7BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = CMP_INT_8BYTE_VAL;
+				buf[1] = p[1];
+				buf[2] = p[2];
+				buf[3] = p[3];
+				buf[4] = p[4];
+				buf[5] = p[5];
+				buf[6] = p[6];
+				buf[7] = p[7];
+			} else {
+				buf[0] = CMP_INT_8BYTE_VAL;
+				buf[1] = p[6];
+				buf[2] = p[5];
+				buf[3] = p[4];
+				buf[4] = p[3];
+				buf[5] = p[2];
+				buf[6] = p[1];
+				buf[7] = p[0];
+			}
+			return 8;
+		} else {
+			i -= CMP_INT_8BYTE_MAX + 1;
+			if (__db_isbigendian() != 0) {
+				buf[0] = CMP_INT_9BYTE_VAL;
+				buf[1] = p[0];
+				buf[2] = p[1];
+				buf[3] = p[2];
+				buf[4] = p[3];
+				buf[5] = p[4];
+				buf[6] = p[5];
+				buf[7] = p[6];
+				buf[8] = p[7];
+			} else {
+				buf[0] = CMP_INT_9BYTE_VAL;
+				buf[1] = p[7];
+				buf[2] = p[6];
+				buf[3] = p[5];
+				buf[4] = p[4];
+				buf[5] = p[3];
+				buf[6] = p[2];
+				buf[7] = p[1];
+				buf[8] = p[0];
+			}
+			return 9;
+		}
+	}
+}
+
+/*
+ * btreeDecompressInt --
+ *	Decompresses the compressed integer pointer to by buf into i,
+ *	returning the number of bytes read.
+ *
+ * An exact copy of __db_decompress_int
+ */
+static int btreeDecompressInt(const u_int8_t *buf, u_int64_t *i)
+{
+	int len;
+	u_int64_t tmp;
+	u_int8_t *p;
+	u_int8_t c;
+
+	tmp = 0;
+	p = (u_int8_t*)&tmp;
+	c = buf[0];
+	len = __dbsql_marshaled_int_size[c];
+
+	switch (len) {
+	case 1:
+		*i = c;
+		return 1;
+	case 2:
+		if (__db_isbigendian() != 0) {
+			p[6] = (c & CMP_INT_2BYTE_MASK);
+			p[7] = buf[1];
+		} else {
+			p[1] = (c & CMP_INT_2BYTE_MASK);
+			p[0] = buf[1];
+		}
+		tmp += CMP_INT_1BYTE_MAX + 1;
+		break;
+	case 3:
+		if (__db_isbigendian() != 0) {
+			p[5] = (c & CMP_INT_3BYTE_MASK);
+			p[6] = buf[1];
+			p[7] = buf[2];
+		} else {
+			p[2] = (c & CMP_INT_3BYTE_MASK);
+			p[1] = buf[1];
+			p[0] = buf[2];
+		}
+		tmp += CMP_INT_2BYTE_MAX + 1;
+		break;
+	case 4:
+		if (__db_isbigendian() != 0) {
+			p[4] = (c & CMP_INT_4BYTE_MASK);
+			p[5] = buf[1];
+			p[6] = buf[2];
+			p[7] = buf[3];
+		} else {
+			p[3] = (c & CMP_INT_4BYTE_MASK);
+			p[2] = buf[1];
+			p[1] = buf[2];
+			p[0] = buf[3];
+		}
+		tmp += CMP_INT_3BYTE_MAX + 1;
+		break;
+	case 5:
+		if (__db_isbigendian() != 0) {
+			p[3] = (c & CMP_INT_5BYTE_MASK);
+			p[4] = buf[1];
+			p[5] = buf[2];
+			p[6] = buf[3];
+			p[7] = buf[4];
+		} else {
+			p[4] = (c & CMP_INT_5BYTE_MASK);
+			p[3] = buf[1];
+			p[2] = buf[2];
+			p[1] = buf[3];
+			p[0] = buf[4];
+		}
+		tmp += CMP_INT_4BYTE_MAX + 1;
+		break;
+	case 6:
+		if (__db_isbigendian() != 0) {
+			p[3] = buf[1];
+			p[4] = buf[2];
+			p[5] = buf[3];
+			p[6] = buf[4];
+			p[7] = buf[5];
+		} else {
+			p[4] = buf[1];
+			p[3] = buf[2];
+			p[2] = buf[3];
+			p[1] = buf[4];
+			p[0] = buf[5];
+		}
+		tmp += CMP_INT_5BYTE_MAX + 1;
+		break;
+	case 7:
+		if (__db_isbigendian() != 0) {
+			p[2] = buf[1];
+			p[3] = buf[2];
+			p[4] = buf[3];
+			p[5] = buf[4];
+			p[6] = buf[5];
+			p[7] = buf[6];
+		} else {
+			p[5] = buf[1];
+			p[4] = buf[2];
+			p[3] = buf[3];
+			p[2] = buf[4];
+			p[1] = buf[5];
+			p[0] = buf[6];
+		}
+		tmp += CMP_INT_6BYTE_MAX + 1;
+		break;
+	case 8:
+		if (__db_isbigendian() != 0) {
+			p[1] = buf[1];
+			p[2] = buf[2];
+			p[3] = buf[3];
+			p[4] = buf[4];
+			p[5] = buf[5];
+			p[6] = buf[6];
+			p[7] = buf[7];
+		} else {
+			p[6] = buf[1];
+			p[5] = buf[2];
+			p[4] = buf[3];
+			p[3] = buf[4];
+			p[2] = buf[5];
+			p[1] = buf[6];
+			p[0] = buf[7];
+		}
+		tmp += CMP_INT_7BYTE_MAX + 1;
+		break;
+	case 9:
+		if (__db_isbigendian() != 0) {
+			p[0] = buf[1];
+			p[1] = buf[2];
+			p[2] = buf[3];
+			p[3] = buf[4];
+			p[4] = buf[5];
+			p[5] = buf[6];
+			p[6] = buf[7];
+			p[7] = buf[8];
+		} else {
+			p[7] = buf[1];
+			p[6] = buf[2];
+			p[5] = buf[3];
+			p[4] = buf[4];
+			p[3] = buf[5];
+			p[2] = buf[6];
+			p[1] = buf[7];
+			p[0] = buf[8];
+		}
+		tmp += CMP_INT_8BYTE_MAX + 1;
+		break;
+	default:
+		break;
+	}
+
+	*i = tmp;
+	return len;
 }
 
 #ifdef BDBSQL_OMIT_LEAKCHECK
@@ -6434,7 +7292,7 @@ static int openPrivateEnvironment(Btree *p, int startFamily)
 	    (u_int32_t)(cache_sz % GIGABYTE), 0);
 	if (pBt->pageSize != 0 &&
 	    (ret = pDbEnv->set_mp_pagesize(pDbEnv, pBt->pageSize)) != 0)
-	        goto err;
+		goto err;
 	pDbEnv->set_mp_mmapsize(pDbEnv, 0);
 	pDbEnv->set_mp_mtxcount(pDbEnv, pBt->mp_mutex_count);
 	pDbEnv->set_errfile(pDbEnv, stderr);
@@ -6570,18 +7428,11 @@ static int btreeReopenPrivateEnvironment(Btree *p)
 #ifndef BDBSQL_SINGLE_THREAD
 	pDbEnv->set_flags(pDbEnv, DB_DATABASE_LOCKING, 1);
 	pDbEnv->set_lk_detect(pDbEnv, DB_LOCK_DEFAULT);
-	pDbEnv->set_lk_max_lockers(pDbEnv, BDBSQL_MAX_LOCKERS);
-	pDbEnv->set_lk_max_locks(pDbEnv, BDBSQL_MAX_LOCKS);
-	pDbEnv->set_lk_max_objects(pDbEnv, BDBSQL_MAX_LOCK_OBJECTS);
 #endif
 	pDbEnv->set_lg_regionmax(pDbEnv, BDBSQL_LOG_REGIONMAX);
 #ifndef BDBSQL_OMIT_LEAKCHECK
 	pDbEnv->set_alloc(pDbEnv, btreeMalloc, btreeRealloc,
 	    sqlite3_free);
-#endif
-#ifdef BDBSQL_MUTEX_MAX
-	if ((ret = pDbEnv->mutex_set_max(pDbEnv, BDBSQL_MUTEX_MAX)) != 0)
-		goto err;
 #endif
 	if ((ret = pDbEnv->set_lg_max(pDbEnv, pBt->logFileSize)) != 0)
 		goto err;
@@ -6593,7 +7444,7 @@ static int btreeReopenPrivateEnvironment(Btree *p)
 #ifdef BDBSQL_FILE_PER_TABLE
 	/* Reuse envDirNameBuf. */
 	memset(envDirNameBuf, 0, BT_MAX_PATH);
-	sqlite3_snprintf(sizeof envDirNameBuf, envDirNameBuf,
+	sqlite3_snprintf(sizeof(envDirNameBuf), envDirNameBuf,
 	    "%s/..", pBt->full_name);
 	pDbEnv->add_data_dir(pDbEnv, envDirNameBuf);
 	pDbEnv->set_create_dir(pDbEnv, envDirNameBuf);
@@ -6606,7 +7457,7 @@ static int btreeReopenPrivateEnvironment(Btree *p)
 	 * If we hold the write lock it is OK to checkpoint
 	 * during recovery; otherwise do not.
 	 */
-	pBt->env_oflags =  DB_INIT_MPOOL | DB_INIT_LOG | DB_INIT_TXN |
+	pBt->env_oflags = DB_INIT_MPOOL | DB_INIT_LOG | DB_INIT_TXN |
 	    DB_INIT_LOCK | DB_PRIVATE | DB_CREATE | DB_THREAD | DB_RECOVER;
 	if (!btreeHasFileLock(p, 1))
 	    pBt->env_oflags |= DB_NO_CHECKPOINT;
@@ -6615,7 +7466,7 @@ static int btreeReopenPrivateEnvironment(Btree *p)
 	/* do the open */
 	rc = openPrivateEnvironment(p, startFamily);
 err:
-	if (!pBt->lockfile.in_env_open)	
+	if (!pBt->lockfile.in_env_open)
 	sqlite3_mutex_leave(mutexOpen);
 done:
 	return MAP_ERR(rc, ret);
@@ -6674,7 +7525,7 @@ static int btreeSetupLockfile(Btree *p, int *createdFile)
 
 	*createdFile = 0;
 	/* file is envdir/.lck */
-	sqlite3_snprintf(sizeof fname, fname,
+	sqlite3_snprintf(sizeof(fname), fname,
 	    "%s/.lck", pBt->dir_name);
 
 	/* try a simple open for the common case -- the file exists */
@@ -6692,7 +7543,7 @@ static int btreeSetupLockfile(Btree *p, int *createdFile)
 		/* if the file is non-zero we lost the race -- nothing to do */
 		if (read(fd, initial_bytes, 4) != 4) {
 			/* write some data to extend the file size */
-			sqlite3_snprintf(sizeof initial_bytes, initial_bytes,
+			sqlite3_snprintf(sizeof(initial_bytes), initial_bytes,
 			    "00000000dontwritehere", 0);
 			*createdFile = 1;
 			if (write(fd, initial_bytes, strlen(initial_bytes))
@@ -6804,14 +7655,14 @@ static int btreeWritelock(Btree *p, int dontReopen)
 
 		if ((ret = lockFile(linfo->fd, 0) != 0))
 			goto err;
-	
+
 		if (reacquire) {
 			reacquire = 0;
 			sqlite3_mutex_enter(linfo->mutex);
 		}
 		/* clear this flag unconditionally, we have the lock */
 		linfo->write_waiting = 0;
-	
+
 		/* get and increment current generation number */
 		curGen = *((int *)(linfo->mapAddr));
 		*((int *)(linfo->mapAddr)) = curGen+1;

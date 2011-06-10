@@ -21,6 +21,7 @@ proc rep068 { method { tnum "068" } args } {
 
 	source ./include.tcl
 	global repfiles_in_memory
+	global env_private
 
 	# Run for btree methods only.
 	if { $checking_valid_methods } {
@@ -52,6 +53,11 @@ proc rep068 { method { tnum "068" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with/without recovery and txn nosync.
 	foreach s {"nosync" ""} {
 		foreach r $test_recopts {
@@ -72,8 +78,8 @@ proc rep068 { method { tnum "068" } args } {
 					    nosync."
 					continue
 				}
-				puts "Rep$tnum ($method $r $s): Test of\
-				    dbreg lock conflicts at client $msg2."
+				puts "Rep$tnum ($method $r $s): Test of dbreg\
+				    lock conflicts at client $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep068_sub $method $tnum $l $r $s $args
@@ -85,6 +91,7 @@ proc rep068 { method { tnum "068" } args } {
 proc rep068_sub { method tnum logset recargs nosync largs } {
 	global testdir
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -96,6 +103,11 @@ proc rep068_sub { method tnum logset recargs nosync largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	set KEY "any old key"
@@ -128,14 +140,14 @@ proc rep068_sub { method tnum logset recargs nosync largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_logargs \
-	    $verbargs -errpfx MASTER $repmemargs \
+	    $verbargs -errpfx MASTER $repmemargs $privargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs $nosync_args -rep_master]
 
 	# Open a client
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_logargs \
-	    $verbargs -errpfx CLIENT $repmemargs \
+	    $verbargs -errpfx CLIENT $repmemargs $privargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs $nosync_args -rep_client]
 
@@ -180,6 +192,15 @@ proc rep068_sub { method tnum logset recargs nosync largs } {
 	puts "\tRep$tnum.b: Attempting sync-up with db handle open."
 	process_msgs $envlist
 	puts "\tRep$tnum.c: Sync-up completed."
+
+	# With rep files in-memory, the attempted sync-up does an abbreviated
+	# internal init to get the lsn history file.  On all but the fastest
+	# runs, this increases rep_timestamp, resulting in DB_REP_HANDLE_DEAD
+	# on the get operation unless the database is closed and reopened.
+	if { $repfiles_in_memory && $client_db != "NULL"} {
+		$client_db close
+		set client_db "NULL"
+	}
 
 	if {$client_db == "NULL"} {
 		set client_db [berkdb_open_noerr \

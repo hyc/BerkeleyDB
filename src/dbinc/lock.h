@@ -63,7 +63,7 @@ extern "C" {
  *	The lock shared region.
  */
 
-typedef struct __db_lockregion {
+typedef struct __db_lockregion { /* SHARED */
 	db_mutex_t	mtx_region;	/* Region mutex. */
 
 	u_int32_t	need_dd;	/* flag for deadlock detector */
@@ -93,7 +93,7 @@ typedef struct __db_lockregion {
 	u_int32_t	lock_id;	/* Current lock(er) id to allocate. */
 	u_int32_t	cur_maxid;	/* Current max lock(er) id. */
 	u_int32_t	nlockers;	/* Current number of lockers. */
-	int		nmodes;		/* Number of modes in conflict table. */
+	int32_t		nmodes;		/* Number of modes in conflict table. */
 	DB_LOCK_STAT	stat;		/* stats about locking. */
 } DB_LOCKREGION;
 
@@ -101,7 +101,7 @@ typedef struct __db_lockregion {
  * Since we will store DBTs in shared memory, we need the equivalent of a
  * DBT that will work in shared memory.
  */
-typedef struct __sh_dbt {
+typedef struct __sh_dbt { /* SHARED */
 	u_int32_t size;			/* Byte length. */
 	roff_t    off;			/* Region offset. */
 } SH_DBT;
@@ -111,7 +111,7 @@ typedef struct __sh_dbt {
 /*
  * Object structures;  these live in the object hash table.
  */
-typedef struct __db_lockobj {
+typedef struct __db_lockobj { /* SHARED */
 	u_int32_t	indx;		/* Hash index of this object. */
 	u_int32_t	generation;	/* Generation of this object. */
 	SH_DBT	lockobj;		/* Identifies object locked. */
@@ -129,7 +129,7 @@ typedef struct __db_lockobj {
 /*
  * Locker structures; these live in the locker hash table.
  */
-struct __db_locker {
+struct __db_locker { /* SHARED */
 	u_int32_t id;			/* Locker id. */
 
 	pid_t pid;			/* Process owning locker ID */
@@ -158,10 +158,11 @@ struct __db_locker {
 	db_timespec	tx_expire;	/* When this txn expires. */
 	db_timeout_t	lk_timeout;	/* How long do we let locks live. */
 
-#define	DB_LOCKER_DIRTY		0x0001
-#define	DB_LOCKER_INABORT	0x0002
-#define	DB_LOCKER_TIMEOUT	0x0004
-#define DB_LOCKER_FAMILY_LOCKER 0x0008
+#define	DB_LOCKER_DIRTY		0x0001	/* Has write locks. */
+#define	DB_LOCKER_INABORT	0x0002	/* Is aborting, don't abort again. */
+#define	DB_LOCKER_TIMEOUT	0x0004	/* Has timeout set. */
+#define	DB_LOCKER_FAMILY_LOCKER 0x0008	/* Part of a family of lockers. */
+#define	DB_LOCKER_HANDLE_LOCKER 0x0010	/* Not associated with a thread. */
 	u_int32_t flags;
 };
 
@@ -173,7 +174,7 @@ struct __db_locker {
 /*
  * Structure that contains information about a lock table partition.
  */
-typedef struct __db_lockpart{
+typedef struct __db_lockpart{ /* SHARED */
 	db_mutex_t	mtx_part;	/* mutex for partition*/
 					/* free lock header */
 	SH_TAILQ_HEAD(__flock) free_locks;
@@ -216,7 +217,7 @@ struct __db_locktab {
 
 #define	OBJ_LINKS_VALID(L) ((L)->links.stqe_prev != -1)
 
-struct __db_lock {
+struct __db_lock { /* SHARED */
 	/*
 	 * Wait on mutex to wait on lock.  You reference your own mutex with
 	 * ID 0 and others reference your mutex with ID 1.
@@ -248,7 +249,7 @@ struct __db_lock {
 #define	DB_LOCK_FREE		0x040000
 #define	DB_LOCK_NOPROMOTE	0x080000
 #define	DB_LOCK_UNLINK		0x100000
-#define	DB_LOCK_NOWAITERS	0x400000
+#define	DB_LOCK_ONEWAITER	0x400000
 
 /*
  * Macros to get/release different types of mutexes.

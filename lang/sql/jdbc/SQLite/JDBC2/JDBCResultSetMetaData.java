@@ -1,6 +1,7 @@
 package SQLite.JDBC2;
 
-import java.sql.*;
+import java.sql.SQLException;
+import java.sql.Types;
 
 public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 

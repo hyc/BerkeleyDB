@@ -35,12 +35,14 @@ typedef	int DB_CACHE_PRIORITY;
 struct Db;		typedef struct Db DB;
 struct Dbc;		typedef struct Dbc DBC;
 struct Dbt;	typedef struct Dbt DBT;
+struct DbChannel; 	typedef struct DbChannel DB_CHANNEL;
 struct DbEnv;	typedef struct DbEnv DB_ENV;
 struct DbLock;	typedef struct DbLock DB_LOCK;
 struct DbLogc;	typedef struct DbLogc DB_LOGC;
 struct DbLsn;	typedef struct DbLsn DB_LSN;
 struct DbMpoolFile;	typedef struct DbMpoolFile DB_MPOOLFILE;
 struct DbSequence;		typedef struct Db DB_SEQUENCE;
+struct DbSite;	typedef struct DbSite DB_SITE;
 struct DbTxn;	typedef struct DbTxn DB_TXN;
 
 /* Methods that allocate new objects */
@@ -232,6 +234,12 @@ struct Db
 		return ret;
 	}
 
+	jlong get_heapsize() {
+		u_int32_t gbytes = 0, bytes = 0;
+		errno = self->get_heapsize(self, &gbytes, &bytes);
+		return (jlong)gbytes * GIGABYTE + bytes;
+	}
+
 	u_int32_t get_h_ffactor() {
 		u_int32_t ret = 0;
 		errno = self->get_h_ffactor(self, &ret);
@@ -269,7 +277,7 @@ struct Db
 	}
 
 	int get_partition_parts() {
-		int ret = 0;
+		u_int32_t ret = 0;
 		errno = self->get_partition_keys(self, &ret, NULL);
                 /* If not partitioned by range, check by callback. */
 		if (ret == 0)
@@ -424,6 +432,12 @@ struct Db
 
 	db_ret_t set_flags(u_int32_t flags) {
 		return self->set_flags(self, flags);
+	}
+
+	db_ret_t set_heapsize(jlong bytes) {
+		return self->set_heapsize(self,
+		    (u_int32_t)(bytes / GIGABYTE),
+		    (u_int32_t)(bytes % GIGABYTE), 0);
 	}
 
 	db_ret_t set_h_compare(
@@ -944,6 +958,24 @@ struct DbEnv
 		return ret;
 	}
 
+	u_int32_t get_lk_tablesize() {
+		u_int32_t ret;
+		errno = self->get_lk_tablesize(self, &ret);
+		return ret;
+	}
+
+	u_int32_t get_memory_init(u_int32_t config_type) {
+		u_int32_t ret;
+		errno = self->get_memory_init(self, (DB_MEM_CONFIG)config_type, &ret);
+		return ret;
+	}
+
+	jlong get_memory_max() {
+		u_int32_t gbytes, bytes;
+		errno = self->get_memory_max(self, &gbytes, &bytes);
+		return (jlong)gbytes * GIGABYTE + bytes;
+	}
+
 	int lock_detect(u_int32_t flags, u_int32_t atype) {
 		int aborted;
 		errno = self->lock_detect(self, flags, atype, &aborted);
@@ -1020,6 +1052,21 @@ struct DbEnv
 
 	db_ret_t set_lk_priority(u_int32_t lockerid, u_int32_t priority) {
 		return self->set_lk_priority(self, lockerid, priority);
+	}
+
+
+	db_ret_t set_lk_tablesize(u_int32_t size) {
+		return self->set_lk_tablesize(self, size);
+	}
+
+	db_ret_t set_memory_init(u_int32_t config_type, u_int32_t value) {
+		return self->set_memory_init(self, (DB_MEM_CONFIG)config_type, value);
+	}
+
+	db_ret_t set_memory_max(jlong bytes) {
+		return self->set_memory_max(self,
+		    (u_int32_t)(bytes / GIGABYTE),
+		    (u_int32_t)(bytes % GIGABYTE));
 	}
 
 	/* Log functions */
@@ -1195,13 +1242,13 @@ struct DbEnv
 	}
 
 	int get_mp_pagesize() {
-		int ret;
+		u_int32_t ret;
 		errno = self->get_mp_pagesize(self, &ret);
 		return ret;
 	}
 
 	int get_mp_tablesize() {
-		int ret;
+		u_int32_t ret;
 		errno = self->get_mp_tablesize(self, &ret);
 		return ret;
 	}
@@ -1243,6 +1290,12 @@ struct DbEnv
 		return ret;
 	}
 
+	u_int32_t mutex_get_init() {
+		u_int32_t ret;
+		errno = self->mutex_get_init(self, &ret);
+		return ret;
+	}
+
 	u_int32_t mutex_get_max() {
 		u_int32_t ret;
 		errno = self->mutex_get_max(self, &ret);
@@ -1262,6 +1315,10 @@ struct DbEnv
 
 	db_ret_t mutex_set_increment(u_int32_t increment) {
 		return self->mutex_set_increment(self, increment);
+	}
+
+	db_ret_t mutex_set_init(u_int32_t mutex_init) {
+		return self->mutex_set_init(self, mutex_init);
 	}
 
 	db_ret_t mutex_set_max(u_int32_t mutex_max) {
@@ -1317,9 +1374,9 @@ struct DbEnv
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	DB_PREPLIST *txn_recover(int count, u_int32_t flags) {
+	DB_PREPLIST *txn_recover(long count, long flags) {
 		DB_PREPLIST *preplist;
-		u_int32_t retcount;
+		long retcount;
 
 		/* Add a NULL element to terminate the array. */
 		if ((errno = __os_malloc(self->env,
@@ -1429,6 +1486,12 @@ struct DbEnv
 		return max;
 	}
 
+	DB_CHANNEL *repmgr_channel(int eid, u_int32_t flags) {
+		DB_CHANNEL *channel = NULL;
+		errno = self->repmgr_channel(self, eid, &channel, flags);
+		return channel;
+	}
+
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
 	db_ret_t rep_set_request(u_int32_t min, u_int32_t max) {
 		return self->rep_set_request(self, min, max);
@@ -1474,28 +1537,16 @@ struct DbEnv
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	int repmgr_add_remote_site(const char * host, u_int32_t port,
-	    u_int32_t flags) {
-		int eid;
-		errno = self->repmgr_add_remote_site(self, host, port, &eid, flags);
-		return eid;
-	}
-
-	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
-	db_ret_t repmgr_get_ack_policy() {
+	int repmgr_get_ack_policy() {
 		int ret;
 		errno = self->repmgr_get_ack_policy(self, &ret);
 		return ret;
 	}
 
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	struct __db_repmgr_localsite repmgr_get_local_site() {
-		struct __db_repmgr_localsite site;
-		errno = self->repmgr_get_local_site(self, &site.host, &site.port);
-		if (errno == EINVAL) {
-			errno = 0;
-			site.host = NULL;
-		}
+	JAVA_EXCEPT_ERRNO(DB_RETOK_REPMGR_LOCALSITE, JDBENV)
+	DB_SITE *repmgr_local_site() {
+		DB_SITE *site = NULL;
+		errno = self->repmgr_local_site(self, &site);
 		return site;
 	}
 	
@@ -1504,8 +1555,23 @@ struct DbEnv
 		return self->repmgr_set_ack_policy(self, policy);
 	}
 
-	db_ret_t repmgr_set_local_site(const char * host, u_int32_t port, u_int32_t flags) {
-		return self->repmgr_set_local_site(self, host, port, flags);
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
+	DB_SITE *repmgr_site(const char *host, u_int port) {
+		DB_SITE *site = NULL;
+		errno = self->repmgr_site(self, host, port, &site, 0);
+		return site;
+	}
+
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
+	DB_SITE *repmgr_site_by_eid(int eid) {
+		DB_SITE *site = NULL;
+		errno = self->repmgr_site_by_eid(self, eid, &site);
+		return site;
+	}
+
+	db_ret_t repmgr_set_dispatch(
+	    void (*dispatch)(DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t), u_int32_t flags) {
+		return self->repmgr_msg_dispatch(self, dispatch, flags);
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
@@ -1763,6 +1829,44 @@ struct DbSequence
 }
 };
 
+struct DbSite
+{
+%extend {
+	JAVA_EXCEPT(DB_RETOK_STD, NULL)
+	db_ret_t close() {
+		return self->close(self);
+	}
+
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, NULL)
+	struct __db_repmgr_site_address get_address() {
+		struct __db_repmgr_site_address address;
+		errno = self->get_address(self, &address.host, &address.port);
+		return address;
+	}
+
+	int_bool get_config(u_int32_t which) {
+		u_int32_t ret = 0;
+		errno = self->get_config(self, which, &ret);
+		return ret;
+	}
+
+	int get_eid() {
+		int ret = 0;
+		errno = self->get_eid(self, &ret);
+		return ret;
+	}
+
+	JAVA_EXCEPT(DB_RETOK_STD, NULL)
+	db_ret_t remove() {
+		return self->remove(self);
+	}
+
+	db_ret_t set_config(u_int32_t which, int_bool onoff) {
+		return self->set_config(self, which, onoff);
+	}
+}
+};
+
 struct DbTxn
 {
 %extend {
@@ -1819,3 +1923,25 @@ struct DbTxn
 }
 };
 
+struct DbChannel
+{
+%extend {
+	JAVA_EXCEPT(DB_RETOK_STD, NULL)
+	db_ret_t close(u_int32_t flags) {
+		return self->close(self, flags);
+	}
+
+	/* Renamed because we have certain expectations of *_msg named methods. */
+	db_ret_t send_repmsg(DBT *chan_msgs, u_int32_t nmsg, u_int32_t flags) {
+		return self->send_msg(self, chan_msgs, nmsg, flags);
+	}
+
+	db_ret_t send_request(DBT *chan_msgs, u_int32_t nrequest, DBT *response, db_timeout_t timeout, u_int32_t flags) {
+		return self->send_request(self, chan_msgs, nrequest, response, timeout, flags);
+	}
+
+	db_ret_t set_timeout(db_timeout_t timeout) {
+		return self->set_timeout(self, timeout);
+	}
+}
+};

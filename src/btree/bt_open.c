@@ -82,8 +82,8 @@ __bam_open(dbp, ip, txn, name, base_pgno, flags)
 	 * comparison routine to get it right.
 	 */
 	if (t->bt_compare == __bam_defcmp && t->bt_prefix != __bam_defpfx) {
-		__db_errx(dbp->env,
-"prefix comparison may not be specified for default comparison routine");
+		__db_errx(dbp->env, DB_STR("1006",
+"prefix comparison may not be specified for default comparison routine"));
 		return (EINVAL);
 	}
 
@@ -93,9 +93,9 @@ __bam_open(dbp, ip, txn, name, base_pgno, flags)
 	 */
 	if (B_MINKEY_TO_OVFLSIZE(dbp, t->bt_minkey, dbp->pgsize) >
 	    B_MINKEY_TO_OVFLSIZE(dbp, DEFMINKEYPAGE, dbp->pgsize)) {
-		__db_errx(dbp->env,
+		__db_errx(dbp->env, DB_STR_A("1007",
 		    "bt_minkey value of %lu too high for page size of %lu",
-		    (u_long)t->bt_minkey, (u_long)dbp->pgsize);
+		    "%lu %lu"), (u_long)t->bt_minkey, (u_long)dbp->pgsize);
 		return (EINVAL);
 	}
 
@@ -130,16 +130,17 @@ __bam_metachk(dbp, name, btm)
 	switch (vers) {
 	case 6:
 	case 7:
-		__db_errx(env,
+		__db_errx(env, DB_STR_A("1008",
 		    "%s: btree version %lu requires a version upgrade",
-		    name, (u_long)vers);
+		    "%s %lu"), name, (u_long)vers);
 		return (DB_OLD_VERSION);
 	case 8:
 	case 9:
 		break;
 	default:
-		__db_errx(env,
-		    "%s: unsupported btree version: %lu", name, (u_long)vers);
+		__db_errx(env, DB_STR_A("1009",
+		    "%s: unsupported btree version: %lu", "%s %lu"),
+		    name, (u_long)vers);
 		return (EINVAL);
 	}
 
@@ -172,9 +173,9 @@ __bam_metachk(dbp, name, btm)
 		F_SET(dbp, DB_AM_DUP);
 	else
 		if (F_ISSET(dbp, DB_AM_DUP)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1010",
 		"%s: DB_DUP specified to open method but not set in database",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -188,9 +189,9 @@ __bam_metachk(dbp, name, btm)
 			return (ret);
 	} else
 		if (F_ISSET(dbp, DB_AM_RECNUM)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1011",
 	    "%s: DB_RECNUM specified to open method but not set in database",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -200,9 +201,9 @@ __bam_metachk(dbp, name, btm)
 		F_SET(dbp, DB_AM_FIXEDLEN);
 	} else
 		if (F_ISSET(dbp, DB_AM_FIXEDLEN)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1012",
 	"%s: DB_FIXEDLEN specified to open method but not set in database",
-			    name);
+			"%s"), name);
 			return (EINVAL);
 		}
 
@@ -212,9 +213,9 @@ __bam_metachk(dbp, name, btm)
 		F_SET(dbp, DB_AM_RENUMBER);
 	} else
 		if (F_ISSET(dbp, DB_AM_RENUMBER)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1013",
 	    "%s: DB_RENUMBER specified to open method but not set in database",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -222,9 +223,9 @@ __bam_metachk(dbp, name, btm)
 		F_SET(dbp, DB_AM_SUBDB);
 	else
 		if (F_ISSET(dbp, DB_AM_SUBDB)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1014",
 	    "%s: multiple databases specified but not supported by file",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -234,9 +235,9 @@ __bam_metachk(dbp, name, btm)
 		F_SET(dbp, DB_AM_DUPSORT);
 	} else
 		if (dbp->dup_compare != NULL) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1015",
 		"%s: duplicate sort specified but not supported in database",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 
@@ -250,17 +251,17 @@ __bam_metachk(dbp, name, btm)
 	} else {
 		if ((BTREE *)dbp->bt_internal != NULL &&
 		    DB_IS_COMPRESSED(dbp)) {
-			__db_errx(env,
+			__db_errx(env, DB_STR_A("1016",
 	"%s: compresssion specified to open method but not set in database",
-			    name);
+			    "%s"), name);
 			return (EINVAL);
 		}
 	}
 #else
 	if (F_ISSET(&btm->dbmeta, BTM_COMPRESS)) {
-		__db_errx(env,
-			"%s: compression support has not been compiled in",
-			name);
+		__db_errx(env, DB_STR_A("1017",
+		    "%s: compression support has not been compiled in", "%s"),
+		    name);
 		return (EINVAL);
 	}
 #endif
@@ -275,11 +276,11 @@ __bam_metachk(dbp, name, btm)
 
 wrong_type:
 	if (dbp->type == DB_BTREE)
-		__db_errx(env,
-		    "open method type is Btree, database type is Recno");
+		__db_errx(env, DB_STR("1018",
+		    "open method type is Btree, database type is Recno"));
 	else
-		__db_errx(env,
-		    "open method type is Recno, database type is Btree");
+		__db_errx(env, DB_STR("1019",
+		    "open method type is Recno, database type is Btree"));
 	return (EINVAL);
 }
 
@@ -351,7 +352,7 @@ __bam_read_root(dbp, ip, txn, base_pgno, flags)
 		    !F_ISSET(dbp, DB_AM_RECOVER) &&
 		    (txn == NULL || !F_ISSET(txn, TXN_SNAPSHOT)) && (ret =
 		    __memp_set_last_pgno(mpf, meta->dbmeta.last_pgno)) != 0)
-		    	goto err;
+			goto err;
 	} else {
 		DB_ASSERT(dbp->env,
 		    IS_RECOVERING(dbp->env) || F_ISSET(dbp, DB_AM_RECOVER));

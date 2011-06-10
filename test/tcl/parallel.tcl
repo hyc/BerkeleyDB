@@ -282,7 +282,7 @@ proc mkparalleldirs { nprocs basename queuedir } {
 			catch {eval file copy \
 			    [eval glob {$dir/$buildpath/db_{checkpoint,deadlock}$EXE} \
 			    {$dir/$buildpath/db_{dump,load,printlog,recover,stat,upgrade}$EXE} \
-			    {$dir/$buildpath/db_{archive,verify,hotbackup}$EXE}] \
+			    {$dir/$buildpath/db_{archive,verify,hotbackup,log_verify}$EXE}] \
 			    {$dir/$buildpath/dbkill$EXE} \
 			    $destdir/$buildpath}
 			catch {eval file copy \
@@ -295,7 +295,7 @@ proc mkparalleldirs { nprocs basename queuedir } {
 		catch {eval file copy \
 		    [eval glob {$dir/db_{checkpoint,deadlock}$EXE} \
 		    {$dir/db_{dump,load,printlog,recover,stat,upgrade}$EXE} \
-		    {$dir/db_{archive,verify,hotbackup}$EXE}] \
+		    {$dir/db_{archive,verify,hotbackup,log_verify}$EXE}] \
 		    $destdir}
 		catch {eval file copy \
 		    [eval glob -nocomplain {$dir/db_{reptest,repsite,replicate}$EXE}] $destdir}

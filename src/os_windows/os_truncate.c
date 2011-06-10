@@ -39,8 +39,8 @@ __os_truncate(env, fhp, pgno, pgsize)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env,
-		    "fileops: truncate %s to %lu", fhp->name, (u_long)offset);
+		__db_msg(env, DB_STR_A("0021", "fileops: truncate %s to %lu",
+		    "%s %lu"), fhp->name, (u_long)offset);
 
 #ifdef HAVE_FILESYSTEM_NOTZERO
 	/*
@@ -90,7 +90,8 @@ __os_truncate(env, fhp, pgno, pgsize)
 	    !SetEndOfFile(fhp->trunc_handle)), ret);
 
 	if (ret != 0) {
-		__db_syserr(env, ret, "SetFilePointer: %lu", pgno * pgsize);
+		__db_syserr(env, ret, DB_STR_A("0022", "SetFilePointer: %lu",
+		    "%lu"), pgno * pgsize);
 		ret = __os_posix_err(ret);
 	}
 

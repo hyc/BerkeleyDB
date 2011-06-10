@@ -44,21 +44,32 @@ proc rep087 { method { niter 200 } { tnum "087" } args } {
 
 proc rep087_sub { method niter tnum with_nimdb largs } {
 	global testdir
-	global util_path
+	global env_private
 	global rep_verbose
 	global verbose_type
-	
+
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	set verbargs ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {$verbose_type on} "
 	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
+	}
+
 	if { $with_nimdb} {
 		set msg "with"
 	} else {
 		set msg "without"
 	}
-	puts "Rep$tnum ($method):\
-	    Abbreviated internal init and dead handles, $msg NIMDB."
+	puts "Rep$tnum ($method): Abbreviated internal init\
+	    and dead handles, $msg NIMDB $msg3."
 	if { $niter < 3 } {
 		set niter 3
 		puts "\tRep$tnum: the minimum 'niter' value is 3."
@@ -75,7 +86,7 @@ proc rep087_sub { method niter tnum with_nimdb largs } {
 	puts "\tRep$tnum: Create master and client"
 	repladd 1
 	set env_A_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -errpfx SITE_A \
 	    -home $dirs(A) -rep_transport \[list 1 replsend\]"
 	set envs(A) [eval $env_A_cmd -rep_master]
@@ -83,7 +94,7 @@ proc rep087_sub { method niter tnum with_nimdb largs } {
 	# Open a client
 	repladd 2
 	set env_B_cmd "berkdb_env_noerr -create -txn \
-	    $verbargs \
+	    $verbargs $privargs \
 	    -errpfx SITE_B \
 	    -home $dirs(B) -rep_transport \[list 2 replsend\]"
 	set envs(B) [eval $env_B_cmd -rep_client]

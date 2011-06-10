@@ -110,6 +110,11 @@ for {set i 1} {$i < 50} {incr i} {
   db2 close
 }
 
+proc byte_is_zero {file offset} {
+  if {[file size test.db] <= $offset} { return 1 }
+  expr { [hexio_read $file $offset 1] == "00" }
+}
+
 do_multiclient_test i {
 
   set testname(1) multiproc
@@ -158,22 +163,24 @@ do_multiclient_test i {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-    file size test.db
-  } [expr $AUTOVACUUM ? 4*1024 : 3*1024]
+    byte_is_zero test.db [expr $AUTOVACUUM ? 4*1024 : 3*1024]
+  } {1}
   do_test wal3-2.$tn.5 {
     sql2 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-    file size test.db
-  } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
+    list [byte_is_zero test.db [expr $AUTOVACUUM ? 4*1024 : 3*1024]]   \
+         [byte_is_zero test.db [expr $AUTOVACUUM ? 5*1024 : 4*1024]]
+  } {0 1}
   do_test wal3-2.$tn.6 {
     sql3 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-    file size test.db
-  } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
+    list [byte_is_zero test.db [expr $AUTOVACUUM ? 4*1024 : 3*1024]]   \
+         [byte_is_zero test.db [expr $AUTOVACUUM ? 5*1024 : 4*1024]]
+  } {0 1}
 }
 catch {db close}
 
@@ -406,6 +413,7 @@ testvfs T -default 1
 do_test wal3-6.1.1 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
+  execsql { PRAGMA auto_vacuum = off }
   execsql { PRAGMA journal_mode = WAL }
   execsql {
     CREATE TABLE t1(a, b);
@@ -420,7 +428,7 @@ do_test wal3-6.1.2 {
 } {o t t f}
 do_test wal3-6.1.3 {
   execsql { PRAGMA wal_checkpoint } db2
-} {}
+} {0 7 7}
 
 # At this point the log file has been fully checkpointed. However, 
 # connection [db3] holds a lock that prevents the log from being wrapped.
@@ -487,6 +495,7 @@ do_test wal3-6.2.1 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
   sqlite3 db2 test.db
+  execsql { PRAGMA auto_vacuum = off }
   execsql { PRAGMA journal_mode = WAL }
   execsql {
     CREATE TABLE t1(a, b);
@@ -508,7 +517,7 @@ proc lock_callback {method file handle spec} {
 }
 do_test wal3-6.2.2 {
   execsql { PRAGMA wal_checkpoint }
-} {}
+} {0 7 7}
 do_test wal3-6.2.3 {
   set ::R
 } {h h l b}
@@ -610,6 +619,7 @@ do_test wal3-8.1 {
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
+    PRAGMA auto_vacuum = off;
     PRAGMA journal_mode = WAL;
     CREATE TABLE b(c);
     INSERT INTO b VALUES('Tehran');
@@ -617,7 +627,7 @@ do_test wal3-8.1 {
     INSERT INTO b VALUES('Markazi');
     PRAGMA wal_checkpoint;
   }
-} {wal}
+} {wal 0 9 9}
 do_test wal3-8.2 {
   execsql { SELECT * FROM b }
 } {Tehran Qom Markazi}
@@ -696,16 +706,19 @@ T delete
 # the client takes a shared-lock on a slot without modifying the value
 # and continues.
 #
+set nConn 50
+if { [string match *BSD $tcl_platform(os)] } { set nConn 35 }
 do_test wal3-9.0 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
   execsql {
+    PRAGMA page_size = 1024;
     PRAGMA journal_mode = WAL;
     CREATE TABLE whoami(x);
     INSERT INTO whoami VALUES('nobody');
   }
 } {wal}
-for {set i 0} {$i < 50} {incr i} {
+for {set i 0} {$i < $nConn} {incr i} {
   set c db$i
   do_test wal3-9.1.$i {
     sqlite3 $c test.db
@@ -716,23 +729,59 @@ for {set i 0} {$i < 50} {incr i} {
     } $c
   } $c
 }
-for {set i 0} {$i < 50} {incr i} {
+for {set i 0} {$i < $nConn} {incr i} {
   set c db$i
   do_test wal3-9.2.$i {
     execsql { SELECT * FROM whoami } $c
   } $c
 }
+
+set sz [expr 1024 * (2+$AUTOVACUUM)]
 do_test wal3-9.3 {
-  for {set i 0} {$i < 49} {incr i} { db$i close }
+  for {set i 0} {$i < ($nConn-1)} {incr i} { db$i close }
   execsql { PRAGMA wal_checkpoint } 
-  set sz1 [file size test.db]
-  db49 close
+  byte_is_zero test.db [expr $sz-1024]
+} {1}
+do_test wal3-9.4 {
+  db[expr $nConn-1] close
   execsql { PRAGMA wal_checkpoint } 
   set sz2 [file size test.db]
-  expr {$sz2 > $sz1}
-} {1}
+  byte_is_zero test.db [expr $sz-1024]
+} {0}
 
-db close
+do_multiclient_test tn {
+  do_test wal3-10.$tn.1 {
+    sql1 {
+      PRAGMA page_size = 1024;
+      CREATE TABLE t1(x);
+      PRAGMA journal_mode = WAL;
+      PRAGMA wal_autocheckpoint = 100000;
+      BEGIN;
+        INSERT INTO t1 VALUES(randomblob(800));
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 2
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 4
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 8
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 16
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 32
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 64
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 128
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 256
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 512
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 1024
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 2048
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 4096
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 8192
+      COMMIT;
+      CREATE INDEX i1 ON t1(x);
+    }
+
+    expr {[file size test.db-wal] > [expr 1032*9000]}
+  } 1
+
+  do_test wal3-10.$tn.2 {
+    sql2 {PRAGMA integrity_check}
+  } {ok}
+}
 
 finish_test
 

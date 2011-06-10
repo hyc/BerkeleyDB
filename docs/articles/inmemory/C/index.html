@@ -21,7 +21,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h1 class="title"><a id="idp32736"></a>Writing In-Memory Berkeley DB Applications</h1>
+            <h1 class="title"><a id="id2531546"></a>Writing In-Memory Berkeley DB Applications</h1>
           </div>
           <div>
             <h3 class="subtitle">
@@ -36,7 +36,7 @@
               <p>
         This documentation is distributed under an open source license.
         You may review the terms of this license at:
-        <a href="http://download.oracle.com/docs/cd/E17076_02/html/license/license_db.html" target="_top">http://download.oracle.com/docs/cd/E17076_02/html/license/license_db.html</a>
+        <a href="http://www.oracle.com/technetwork/database/berkeleydb/downloads/oslicense-093458.html" target="_top">http://www.oracle.com/technetwork/database/berkeleydb/downloads/oslicense-093458.html</a>
         
         
     </p>
@@ -63,7 +63,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">10/25/2011</p>
+            <p class="pubdate">6/10/2011</p>
           </div>
         </div>
         <div></div>
@@ -541,13 +541,13 @@ err:
           </ul>
         </div>
         <p>
-                        Beyond this, you must also ensure that regions are
-                        backed by heap memory
+                        Beyond this, you must also ensure that regions are backed by heap memory
                         instead of by the filesystem or system shared memory. You do this when you
                         open your environment by specifying the <tt class="literal">DB_PRIVATE</tt> flag.
-                        Note that the use of <tt class="literal">DB_PRIVATE</tt> means that other processes
-                        cannot share the environment. Consequently, your in-memory only application
-                        must be a single-process, although it can be multi-threaded.
+                        Note that the use of <tt class="literal">DB_PRIVATE</tt> means that you can only
+                        have one open handle for your environment at a time.  Consequently, your
+                        in-memory only application must be single-process, although it can be
+                        multi-threaded.
                 </p>
         <p>
                         For example:

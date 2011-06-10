@@ -18,6 +18,8 @@ import com.sleepycat.db.EventHandlerAdapter;
 import com.sleepycat.db.ReplicationConfig;
 import com.sleepycat.db.ReplicationHostAddress;
 import com.sleepycat.db.ReplicationManagerAckPolicy;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
+import com.sleepycat.db.ReplicationManagerSiteInfo;
 import com.sleepycat.db.ReplicationManagerStartPolicy;
 import com.sleepycat.db.ReplicationTimeoutType;
 import com.sleepycat.db.VerboseConfig;
@@ -33,13 +35,8 @@ public class ConnectScript implements SimpleConnectTest.Ops {
     }
 
     public void upgradeClient() throws Exception {
-        int[] remotePorts;
-        if (conf.reverse)
-            remotePorts = SimpleConnectTest.noRemotePorts;
-        else {
-            remotePorts = new int[1];
-            remotePorts[0] = conf.masterPort;
-        }
+        int[] remotePorts = new int[1];
+        remotePorts[0] = conf.masterPort;
         EnvironmentConfig ec = makeBasicConfig(conf.clientPort, remotePorts);
         client = new Environment(conf.clientDir, ec);
 
@@ -52,9 +49,13 @@ public class ConnectScript implements SimpleConnectTest.Ops {
         ec.setEventHandler(mon);
         client = new Environment(conf.clientDir, ec);
 
-        configEachEnv(client);
+        // For the "reverse" test, make it practically impossible that
+        // the client will retry connecting to the master after its
+        // initial failed attempt.
+        client.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY,
+                                     conf.reverse ? Integer.MAX_VALUE : 1000000);
+        client.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
         client.replicationManagerStart(1, ReplicationManagerStartPolicy.REP_CLIENT);
-        mon.awaitStartupDone();
     }
 
     public void shutdownClient() throws Exception {
@@ -74,12 +75,16 @@ public class ConnectScript implements SimpleConnectTest.Ops {
         ec.setReplicationManagerAckPolicy(ReplicationManagerAckPolicy.ALL);
         ec.setRunRecovery(true);
         ec.setThreaded(true);
-        ec.setReplicationNumSites(2);
 
-        ec.setReplicationManagerLocalSite(new ReplicationHostAddress("localhost", myPort));
+        ReplicationManagerSiteConfig conf =
+            new ReplicationManagerSiteConfig("localhost", myPort);
+        conf.setLocalSite(true);
+        conf.setLegacy(true);
+        ec.addReplicationManagerSite(conf);
         for (int p : remotePorts) {
-            ec.replicationManagerAddRemoteSite(new ReplicationHostAddress("localhost", p),
-                                               false);
+            conf = new ReplicationManagerSiteConfig("localhost", p);
+            conf.setLegacy(true);
+            ec.addReplicationManagerSite(conf);
         }
         
         if (Boolean.getBoolean("VERB_REPLICATION"))
@@ -87,15 +92,10 @@ public class ConnectScript implements SimpleConnectTest.Ops {
         return (ec);
     }
 
-    private void configEachEnv(Environment e) throws Exception {
-        e.setReplicationTimeout(ReplicationTimeoutType.CONNECTION_RETRY,
-                                1000000); // be impatient
-        e.setReplicationConfig(ReplicationConfig.STRICT_2SITE, true);
-    }
-
     class MyEventHandler extends EventHandlerAdapter {
         private boolean done = false;
         private boolean panic = false;
+        private boolean connFail = false;
 
         @Override synchronized public void handleRepStartupDoneEvent() {
             done = true;
@@ -108,6 +108,20 @@ public class ConnectScript implements SimpleConnectTest.Ops {
             notifyAll();
         }
 
+        @Override
+            synchronized public void handleRepConnectTryFailedEvent() {
+                connFail = true;
+                notifyAll();
+            }
+
+        synchronized void awaitConnFailure() throws Exception {
+            for (;;) {
+                if (connFail) { break; }
+                wait();
+                if (panic)
+                    throw new Exception("aborted by panic in DB");
+            }
+        }
         synchronized void awaitStartupDone() throws Exception {
             long deadline = System.currentTimeMillis() + 10000;
             while (!done) {
@@ -120,5 +134,28 @@ public class ConnectScript implements SimpleConnectTest.Ops {
             if (panic)
                 throw new Exception("aborted by panic in DB");
         }
+    }
+
+    public void awaitClientConnFailure() throws Exception {
+        ((MyEventHandler)client.getConfig().getEventHandler()).awaitConnFailure();
+    }
+
+    public void verifyClientConnect() throws Exception {
+        int pollLimit = 10;
+        for (int i=0; i<pollLimit; i++) {
+            ReplicationManagerSiteInfo[] si = client.getReplicationManagerSiteList();
+            ReplicationManagerSiteInfo inf = null;
+            for (ReplicationManagerSiteInfo in : si) {
+                ReplicationHostAddress addr = in.addr;
+                if (addr.port == conf.masterPort) {
+                    inf = in;
+                    break;
+                }
+            }
+            assertNotNull("other port not in site list", inf);
+            if (inf.isConnected()) { return; }
+            Thread.sleep(1000);
+        }
+        fail("was not connected to remote site within " + pollLimit + " seconds");
     }
 }

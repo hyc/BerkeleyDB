@@ -10,7 +10,9 @@ BDB_TESTS_PASSING="\
 	async3.test async4.test async5.test auth.test auth2.test auth3.test
 	autoinc.test autovacuum.test autovacuum_ioerr2.test backup.test
 	backup2.test backup_malloc.test badutf.test bdb_deadlock.test
-	bdb_logsize.test bdb_exclusive.test bdb_rdonly.test between.test
+	bdb_dupset.test bdb_logsize.test bdb_exclusive.test bdb_inmem_memleak.test
+	bdb_mvcc.test bdb_persistent_pragma.test bdb_pragmas.test
+	bdb_rdonly.test bdb_replication.test bdb_sequence.test between.test
 	bigrow.test bind.test bindxfer.test bitvec.test blob.test
 	boundary1.test boundary2.test boundary3.test boundary4.test
 	capi3d.test cast.test check.test coalesce.test collate1.test
@@ -21,7 +23,8 @@ BDB_TESTS_PASSING="\
 	descidx3.test distinctagg.test enc.test enc3.test exec.test expr.test
 	fkey1.test fkey2.test fkey3.test fkey_malloc.test func.test func2.test
 	fuzz2.test hook.test icu.test in.test in2.test in3.test in4.test
-	incrblob.test incrblob2.test incrblob_err.test index.test index2.test
+	incrblob.test incrblob2.test incrblob_err.test incrvacuum.test
+	incrvacuum2.test incrvacuum_ioerr.test index.test index2.test
 	index3.test indexedby.test insert.test insert2.test insert3.test
 	insert4.test insert5.test intarray.test interrupt.test intpkey.test
 	join.test join2.test join3.test join4.test join5.test join6.test
@@ -61,6 +64,10 @@ BDB_TESTS_HANGS=""
 
 BDB_TESTS_ALL="$BDB_TESTS_PASSING $BDB_TESTS_ERRORS $BDB_TESTS_HANGS"
 
+# Define extension test suites (fts3, rtree, etc)
+BDB_FTS3_TESTS="fts3.test fts3malloc.test fts3rnd.test e_fts3.test"
+BDB_RTREE_TESTS="rtree1.test rtree2.test rtree3.test rtree4.test rtree5.test rtree6.test"
+
 # Clean up any old log
 rm -f test.log
 
@@ -87,12 +94,19 @@ case "$1" in
 passing) TEST_CASES="$BDB_TESTS_PASSING";;
 errors)  TEST_CASES="$BDB_TESTS_ERRORS";;
 hangs)   TEST_CASES="$BDB_TESTS_HANGS";;
+fts3)	 TEST_CASES="$BDB_FTS3_TESTS"
+	 TIMEOUT=7200
+	 ;;
+rtree)	 TEST_CASES="$BDB_RTREE_TESTS"
+	 TIMEOUT=7200
+	 ;;
 *)       TEST_CASES="$BDB_TESTS_ALL";;
 esac
 
 trap "kill 0" INT TERM
 
 PROCESS=0
+LOG="current_test.log"
 while [ $PROCESS -lt $NPROCESS ] ; do
 	(if [ $PARALLEL -ne 0 ] ; then
 		rm -rf TEST$PROCESS && mkdir TEST$PROCESS && cd TEST$PROCESS
@@ -107,8 +121,26 @@ while [ $PROCESS -lt $NPROCESS ] ; do
 		*) tpath=$SQLITE/test/$t ;;
 		esac
 
-		echo "$t:" `alarm $TIMEOUT $TESTFIXTURE $tpath 2>&1 | tee -a test.log | grep "errors out of" || echo "failed"`
+		# Adjust path for rtree tests
+		if [ "$TEST_CASES" = "$BDB_RTREE_TESTS" ]; then
+			tpath=$SQLITE/ext/rtree/$t
+		fi
+
+		alarm $TIMEOUT $TESTFIXTURE $tpath > $LOG 2>&1
+
+		# Detect test result
+		result=`grep "errors out of" $LOG || echo "failed"`
+
+		# Detect memory leak
+		is_leaked=`grep "Unfreed memory:" $LOG || echo "no memleaks"`
+
+		# Save log and clean environment
+		cat $LOG >> test.log
 		rm -rf *.db*
+		rm -f $LOG
+
+		# Output summary
+		echo "$t: ${result}, ${is_leaked}"
 	done) &
 	PROCESS=`expr $PROCESS + 1`
 done

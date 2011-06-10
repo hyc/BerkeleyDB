@@ -1,7 +1,12 @@
 package SQLite.JDBC2y;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.Statement;
+import java.util.ArrayList;
 
 public class JDBCStatement implements java.sql.Statement {
 
@@ -19,7 +24,9 @@ public class JDBCStatement implements java.sql.Statement {
     }
 
     public void setFetchSize(int fetchSize) throws SQLException {
-	throw new SQLException("not supported");
+	if (fetchSize != 1) {
+	    throw new SQLException("fetch size not 1");
+	}
     }
 
     public int getFetchSize() throws SQLException {
@@ -63,7 +70,7 @@ public class JDBCStatement implements java.sql.Statement {
     }
 
     public int getQueryTimeout() throws SQLException {
-	return conn.timeout;
+	return conn.timeout / 1000;
     }
 
     public ResultSet getResultSet() throws SQLException {
@@ -179,7 +186,7 @@ public class JDBCStatement implements java.sql.Statement {
 	int errs = 0;
 	for (int i = 0; i < ret.length; i++) {
 	    try {
-		execute((String) batch.get(i));
+		execute(batch.get(i));
 		ret[i] = updcnt;
 	    } catch (SQLException e) {
 		++errs;

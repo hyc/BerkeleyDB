@@ -33,6 +33,8 @@ namespace BerkeleyDB.Internal {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int BDB_IsAliveDelegate(IntPtr dbenv, int pid, uint tid, uint flags);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void BDB_MessageDispatchDelegate(IntPtr dbenv, IntPtr channel, IntPtr request, uint nrequest, uint cb_flags);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int BDB_RepTransportDelegate(IntPtr dbenv, IntPtr control, IntPtr rec, IntPtr lsnp, int envid, uint flags);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void BDB_ThreadIDDelegate(IntPtr dbenv, IntPtr pid, IntPtr tid);

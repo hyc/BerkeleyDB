@@ -1,5 +1,15 @@
 
 
+1.822 12 March 2011
+
+   * Keep DB_File's warnings in sync with perl's
+     [rt.cpan.org #66339] 
+
+1.821 10 January 2011
+
+   * Fixed typos & spelling errors.
+     [perl #81792]
+
 1.820 28 March 2009
 
    * remove MAN3PODS from Makefile.PL to match core.
@@ -99,7 +109,7 @@
 
 1.807 1st November 2003
 
-   * Fixed minor typos on pod documetation - reported by Jeremy Mates &
+   * Fixed minor typos on pod documentation - reported by Jeremy Mates &
      Mark Jason Dominus.
 
    * dbinfo updated to report when a database is encrypted.
@@ -108,7 +118,7 @@
 
    * Fixed problem when trying to build with a multi-threaded perl.
 
-   * Tidied up the recursion detetion code.
+   * Tidied up the recursion detection code.
 
    * merged core patch 17844 - missing dTHX declarations.
 
@@ -124,7 +134,7 @@
    * added code to guard against calling the callbacks (compare,hash & prefix) 
      recursively.
 
-   * pasing undef for the flags and/or mode when opening a database could cause
+   * passing undef for the flags and/or mode when opening a database could cause
      a "Use of uninitialized value in subroutine entry" warning. Now silenced.
 
    * DBM filter code beefed up to cope with read-only $_.
@@ -139,7 +149,7 @@
 1.803 1st March 2002
 
    * Fixed a problem with db-btree.t where it complained about an "our"
-     variable redeclaation.
+     variable redeclaration.
 
    * FETCH, STORE & DELETE don't map the flags parameter into the
      equivalent Berkeley DB function anymore.
@@ -159,7 +169,7 @@
  
 1.800 23rd November 2001
 
-   * use pport.h for perl backward compatability code.
+   * use pport.h for perl backward compatibility code.
 
    * use new  ExtUtils::Constant module to generate XS constants.
 
@@ -216,7 +226,7 @@
 
    * Fixed perl core patch 7703
 
-   * Added suppport to allow DB_File to be built with Berkeley DB 3.2 --
+   * Added support to allow DB_File to be built with Berkeley DB 3.2 --
      btree_compare, btree_prefix and hash_cb needed to be changed.
 
    * Updated dbinfo to support Berkeley DB 3.2 file format changes.
@@ -294,7 +304,7 @@
 
    * Merged changes from 5.005_58 
 
-   * Fixed a bug in R_IBEFORE & R_IAFTER procesing in Berkeley DB
+   * Fixed a bug in R_IBEFORE & R_IAFTER processing in Berkeley DB
      2 databases.
 
    * Added some of the examples in the POD into the test harness.

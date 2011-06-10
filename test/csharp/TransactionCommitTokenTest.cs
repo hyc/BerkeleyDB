@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using NUnit.Framework;
 using BerkeleyDB;
 
@@ -59,12 +60,19 @@ namespace CsharpAPITest
             cfg.FreeThreaded = true;
 
             cfg.RepSystemCfg = new ReplicationConfig();
-            cfg.RepSystemCfg.RepMgrLocalSite =
-                new ReplicationHostAddress(ip, port);
+            DbSiteConfig dbSiteConfig = new DbSiteConfig();
+            dbSiteConfig.Host = ip;
+            dbSiteConfig.Port = port;
+            dbSiteConfig.LocalSite = true;
+            cfg.RepSystemCfg.RepmgrSitesConfig.Add(dbSiteConfig);
             cfg.RepSystemCfg.Priority = priority;
-            cfg.RepSystemCfg.NSites = 0;
-            if (!isMaster)
-                cfg.RepSystemCfg.AddRemoteSite(new ReplicationHostAddress(ip, masterPort), false);
+            if (!isMaster) {
+                DbSiteConfig dbSiteConfig1 = new DbSiteConfig();
+                dbSiteConfig1.Host = ip;
+                dbSiteConfig1.Port = masterPort;
+                dbSiteConfig1.Helper = true;
+                cfg.RepSystemCfg.RepmgrSitesConfig.Add(dbSiteConfig1);
+            }
             cfg.RepSystemCfg.BulkTransfer = false;
             cfg.RepSystemCfg.AckTimeout = 5000;
 
@@ -110,6 +118,7 @@ namespace CsharpAPITest
             DatabaseEnvironment client = SetUpEnv(testHome + "/client", 0, clientPort, false);
 
             master.RepMgrStartMaster(2);
+            Thread.Sleep(2000);
             client.RepMgrStartClient(2);
 
             BTreeDatabase db1 = Open(master, true);

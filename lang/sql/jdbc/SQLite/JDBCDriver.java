@@ -1,6 +1,8 @@
 package SQLite;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
 import java.util.Properties;
 
 public class JDBCDriver implements java.sql.Driver {
@@ -27,7 +29,7 @@ public class JDBCDriver implements java.sql.Driver {
 	    String jvers = java.lang.System.getProperty("java.version");
 	    String cvers;
 	    if (jvers == null || jvers.startsWith("1.0")) {
-		throw new java.lang.Exception("unsupported java version");
+		throw new java.lang.Exception("unsupported java version " + jvers);
 	    } else if (jvers.startsWith("1.1")) {
 		cvers = "SQLite.JDBC1.JDBCConnection";
 	    } else if (jvers.startsWith("1.2") || jvers.startsWith("1.3")) {

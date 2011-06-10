@@ -37,7 +37,8 @@ __os_open(env, name, page_size, flags, mode, fhpp)
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-		__db_msg(env, "fileops: open %s", name);
+		__db_msg(env, DB_STR_A("0152",
+		    "fileops: open %s", "%s"), name);
 
 #undef	OKFLAGS
 #define	OKFLAGS								\

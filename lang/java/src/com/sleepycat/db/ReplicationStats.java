@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2010 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -86,9 +86,9 @@ public class ReplicationStats {
         return st_dupmasters;
     }
 
-    private int st_env_id;
+    private long st_env_id;
     /** The current environment ID. */
-    public int getEnvId() {
+    public long getEnvId() {
         return st_env_id;
     }
 
@@ -152,6 +152,30 @@ public class ReplicationStats {
         return st_egen;
     }
 
+    private long st_lease_chk;
+    /** The number of lease validity checks. */
+    public long getLeaseChk() {
+        return st_lease_chk;
+    }
+
+    private long st_lease_chk_misses;
+    /** The number of invalid lease validity checks. */
+    public long getLeaseChkMisses() {
+        return st_lease_chk_misses;
+    }
+
+    private long st_lease_chk_refresh;
+    /** The number of lease refresh attempts during lease validity checks. */
+    public long getLeaseChkRefresh() {
+        return st_lease_chk_refresh;
+    }
+
+    private long st_lease_sends;
+    /** The number of live messages sent while using leases. */
+    public long getLeaseSends() {
+        return st_lease_sends;
+    }
+
     private long st_log_duplicated;
     /** The number of duplicate log records received. */
     public long getLogDuplicated() {
@@ -182,9 +206,9 @@ public class ReplicationStats {
         return st_log_requested;
     }
 
-    private int st_master;
+    private long st_master;
     /** The current master environment ID. */
-    public int getMaster() {
+    public long getMaster() {
         return st_master;
     }
 
@@ -290,9 +314,9 @@ public class ReplicationStats {
         return st_elections_won;
     }
 
-    private int st_election_cur_winner;
+    private long st_election_cur_winner;
     /** The environment ID of the winner of the current or last election.*/
-    public int getElectionCurWinner() {
+    public long getElectionCurWinner() {
         return st_election_cur_winner;
     }
 
@@ -300,6 +324,12 @@ public class ReplicationStats {
     /** The master generation number of the winner of the current or last election. */
     public int getElectionGen() {
         return st_election_gen;
+    }
+
+    private int st_election_datagen;
+    /** The master data generation number of the winner of the current or last election.*/
+    public int getElectionDatagen() {
+        return st_election_datagen;
     }
 
     private LogSequenceNumber st_election_lsn;
@@ -394,6 +424,10 @@ public class ReplicationStats {
             + "\n  st_client_svc_miss=" + st_client_svc_miss
             + "\n  st_gen=" + st_gen
             + "\n  st_egen=" + st_egen
+            + "\n  st_lease_chk=" + st_lease_chk
+            + "\n  st_lease_chk_misses=" + st_lease_chk_misses
+            + "\n  st_lease_chk_refresh=" + st_lease_chk_refresh
+            + "\n  st_lease_sends=" + st_lease_sends
             + "\n  st_log_duplicated=" + st_log_duplicated
             + "\n  st_log_queued_max=" + st_log_queued_max
             + "\n  st_log_queued_total=" + st_log_queued_total
@@ -419,6 +453,7 @@ public class ReplicationStats {
             + "\n  st_elections_won=" + st_elections_won
             + "\n  st_election_cur_winner=" + st_election_cur_winner
             + "\n  st_election_gen=" + st_election_gen
+            + "\n  st_election_datagen=" + st_election_datagen
             + "\n  st_election_lsn=" + st_election_lsn
             + "\n  st_election_nsites=" + st_election_nsites
             + "\n  st_election_nvotes=" + st_election_nvotes

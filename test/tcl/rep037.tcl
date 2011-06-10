@@ -19,6 +19,7 @@ proc rep037 { method { niter 1500 } { tnum "037" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Valid for all access methods.
 	if { $checking_valid_methods } {
@@ -53,6 +54,11 @@ proc rep037 { method { niter 1500 } { tnum "037" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery,
 	# and with various configurations.
 	set configopts { dup bulk clean noclean }
@@ -71,8 +77,9 @@ proc rep037 { method { niter 1500 } { tnum "037" } args } {
 					continue
 				}
 				set args $saved_args
-				puts "Rep$tnum ($method $c $r $args): Test of\
-				    internal init with page throttling $msg $msg2."
+				puts "Rep$tnum ($method $c $r $args):\
+				    Test of internal init with page\
+				    throttling $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				rep037_sub $method $niter $tnum $l $r $c $args
@@ -86,6 +93,7 @@ proc rep037_sub { method niter tnum logset recargs config largs } {
 	global util_path
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 
@@ -97,6 +105,11 @@ proc rep037_sub { method niter tnum logset recargs config largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -149,6 +162,7 @@ proc rep037_sub { method niter tnum logset recargs config largs } {
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $repmemargs \
 	    $m_logargs -log_max $log_max -errpfx MASTER $verbargs \
+	    $privargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	$masterenv rep_limit 0 [expr 32 * 1024]
@@ -157,6 +171,7 @@ proc rep037_sub { method niter tnum logset recargs config largs } {
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $repmemargs \
 	    $c_logargs -log_max $log_max -errpfx CLIENT $verbargs \
+	    $privargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 	error_check_good client_env [is_valid_env $clientenv] TRUE

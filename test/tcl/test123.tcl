@@ -24,7 +24,8 @@ proc test123 { method args } {
 		return
 	}
 
-	if { [is_queue $method] == 1 } {
+    	# Heap and Queue don't support sub-databases.
+    	if { [is_queue $method] == 1 || [is_heap $method] == 1} {
 		puts "Skipping test123 for method $method"
 		return
 	}

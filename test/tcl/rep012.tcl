@@ -17,6 +17,7 @@ proc rep012 { method { niter 10 } { tnum "012" } args } {
 	source ./include.tcl
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 
 	# Run for all access methods.
 	if { $checking_valid_methods } {
@@ -41,6 +42,11 @@ proc rep012 { method { niter 10 } { tnum "012" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "and private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		foreach l $logsets {
@@ -51,7 +57,7 @@ proc rep012 { method { niter 10 } { tnum "012" } args } {
 				continue
 			}
 			puts "Rep$tnum ($method $r):\
-			    Replication and dead db handles $msg $msg2."
+			    Replication and dead db handles $msg $msg2 $msg3."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client 0 logs are [lindex $l 1]"
 			puts "Rep$tnum: Client 1 logs are [lindex $l 2]"
@@ -64,6 +70,7 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 	global testdir
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global verbose_check_secondaries
 	global rep_verbose
 	global verbose_type
@@ -76,6 +83,11 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -106,7 +118,7 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $m_logargs -errpfx ENV0 $verbargs $repmemargs \
+	    $m_logargs -errpfx ENV0 $verbargs $repmemargs $privargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set env0 [eval $ma_envcmd $recargs -rep_master]
 	set masterenv $env0
@@ -114,14 +126,14 @@ proc rep012_sub { method niter tnum logset recargs largs } {
 	# Open two clients
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $c_logargs -errpfx ENV1 $verbargs $repmemargs \
+	    $c_logargs -errpfx ENV1 $verbargs $repmemargs $privargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set env1 [eval $cl_envcmd $recargs -rep_client]
 	set clientenv $env1
 
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs \
-	    $c2_logargs -errpfx ENV2 $verbargs $repmemargs \
+	    $c2_logargs -errpfx ENV2 $verbargs $repmemargs $privargs \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set cl2env [eval $cl2_envcmd $recargs -rep_client]
 

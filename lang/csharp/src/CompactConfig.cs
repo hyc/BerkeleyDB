@@ -33,18 +33,18 @@ namespace BerkeleyDB {
         /// <summary>
         /// If non-null, the starting point for compaction.  For a Btree or
         /// Recno database compaction will start at the smallest key greater
-        /// than or equal to <paramref name="start"/>.  For a Hash database the
+        /// than or equal to the starting point.  For a Hash database the
         /// compaction will start in the bucket specified by the integer stored
-        /// in <paramref name="start"/>.  If null, compaction will start at the
+        /// in the starting point.  If null, compaction will start at the
         /// beginning of the database. 
         /// </summary>
         public DatabaseEntry start;
         /// <summary>
         /// If non-null, the stopping point for compaction.  For a Btree or
         /// Recno database compaction will stop at the page with the smallest
-        /// key greater than <paramref name="stop"/>.  For a Hash database
+        /// key greater than the stopping point.  For a Hash database
         /// compaction will stop in the bucked specified by the integer stored
-        /// in <paramref name="stop"/>.  If null, compaction will stop at the
+        /// in the stopping point.  If null, compaction will stop at the
         /// end of the database. 
         /// </summary>
         public DatabaseEntry stop;

@@ -25,7 +25,7 @@ __qam_incfirst_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__qam_incfirst", __qam_incfirst_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__qam_incfirst", __qam_incfirst_desc, info));
 }
 
 /*
@@ -42,7 +42,7 @@ __qam_mvptr_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__qam_mvptr", __qam_mvptr_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__qam_mvptr", __qam_mvptr_desc, info));
 }
 
 /*
@@ -59,7 +59,7 @@ __qam_del_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__qam_del", __qam_del_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__qam_del", __qam_del_desc, info));
 }
 
 /*
@@ -76,7 +76,7 @@ __qam_add_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__qam_add", __qam_add_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__qam_add", __qam_add_desc, info));
 }
 
 /*
@@ -93,7 +93,7 @@ __qam_delext_print(env, dbtp, lsnp, notused2, info)
 {
 	COMPQUIET(notused2, DB_TXN_PRINT);
 
-	return(__log_print_record(env, dbtp, lsnp, "__qam_delext", __qam_delext_desc, info));
+	return (__log_print_record(env, dbtp, lsnp, "__qam_delext", __qam_delext_desc, info));
 }
 
 /*

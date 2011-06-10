@@ -7,11 +7,14 @@
 
 package repmgrtests;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
-import com.sleepycat.db.ReplicationHostAddress;
+import com.sleepycat.db.ReplicationManagerSite;
+import com.sleepycat.db.ReplicationManagerSiteConfig;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -38,8 +41,10 @@ public class TestConfig {
     @Test(expected=IllegalArgumentException.class)
         public void nullHost() throws Exception
     {
-        ReplicationHostAddress addr = new ReplicationHostAddress(null, 6000);
-        ec.setReplicationManagerLocalSite(addr);
+        ReplicationManagerSiteConfig conf =
+            new ReplicationManagerSiteConfig(null, 6000);
+        conf.setLocalSite(true);
+        ec.addReplicationManagerSite(conf);
 
         Environment env = new Environment(dir, ec);
         env.close();
@@ -47,23 +52,35 @@ public class TestConfig {
 
     @Test public void host() throws Exception
     {
-        ReplicationHostAddress addr = new ReplicationHostAddress("localhost", 6000);
-        ec.setReplicationManagerLocalSite(addr);
+        ReplicationManagerSiteConfig conf =
+            new ReplicationManagerSiteConfig("localhost", 6000);
+        conf.setLocalSite(true);
+        ec.addReplicationManagerSite(conf);
 
         Environment env = new Environment(dir, ec);
         env.close();
     }
 
-    @Test public void gethost() throws Exception
+    @Test public void getLocalSite() throws Exception
     {
-        ReplicationHostAddress addr = new ReplicationHostAddress("localhost", 6000);
-        ec.setReplicationManagerLocalSite(addr);
+        String host = "localhost";
+        long port = 6000;
+        ReplicationManagerSiteConfig conf =
+            new ReplicationManagerSiteConfig(host, port);
+        conf.setLocalSite(true);
+        ec.addReplicationManagerSite(conf);
 
         Environment env = new Environment(dir, ec);
-	EnvironmentConfig cfg = env.getConfig();
-	assertTrue(addr.host.equals(cfg.getReplicationManagerLocalSite().host));
-	assertTrue(addr.port == cfg.getReplicationManagerLocalSite().port);
+        ReplicationManagerSite dbsite = env.getReplicationManagerLocalSite();
+
+	assertTrue(host.equals(dbsite.getAddress().host));
+	assertEquals(port, dbsite.getAddress().port);
         env.close();
     }
 
+    @Test public void noLocalSite() throws Exception {
+        Environment env = new Environment(dir, ec);
+        assertNull(env.getReplicationManagerLocalSite());
+        env.close();
+    }
 }

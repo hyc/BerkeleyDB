@@ -16,6 +16,7 @@ proc rep075 { method { tnum "075" } args } {
 	global databases_in_memory
 	global mixed_mode_logging
 	global repfiles_in_memory
+	global env_private
 
 	# Run for all access methods.
 	if { $checking_valid_methods } {
@@ -32,12 +33,12 @@ proc rep075 { method { tnum "075" } args } {
 
 	# Swapping the envs is the only thing that should
 	# work for:
-	#   HP: can't open two handles on same env.
+	#   HP or private env: can't open two handles on same env.
 	#   in-memory logs: prepared txns don't survive recovery
 	#   NIM databases: can't be recovered
 	#
 	if { $is_hp_test == 1  || $mixed_mode_logging > 0 ||
-	    $databases_in_memory == 1 } {
+	    $databases_in_memory == 1 || $env_private } {
 		set prep {swap}
 	} else {
 		set prep {dbrecover swap resolve recover envrecover}
@@ -55,12 +56,17 @@ proc rep075 { method { tnum "075" } args } {
 		set msg2 "and in-memory replication files"
 	}
 
+	set msg3 ""
+	if { $env_private } {
+		set msg3 "with private env"
+	}
+
 	# Run the body of the test with and without recovery.
 	foreach l $logsets {
 		foreach p $prep {
 			foreach o $ops {
-				puts "Rep$tnum ($method $p $o):\
-				    Replication and prepared txns $msg $msg2."
+				puts "Rep$tnum ($method $p $o): Replication\
+				    and prepared txns $msg $msg2 $msg3."
 				puts "Rep$tnum: Master logs are [lindex $l 0]"
 				puts "Rep$tnum: Client logs are [lindex $l 1]"
 				puts "Rep$tnum: close DBs after prepare"
@@ -76,6 +82,7 @@ proc rep075_sub { method tnum logset prep op after largs } {
 	global testdir
 	global databases_in_memory
 	global repfiles_in_memory
+	global env_private
 	global rep_verbose
 	global verbose_type
 	global util_path
@@ -88,6 +95,11 @@ proc rep075_sub { method tnum logset prep op after largs } {
 	set repmemargs ""
 	if { $repfiles_in_memory } {
 		set repmemargs "-rep_inmem_files "
+	}
+
+	set privargs ""
+	if { $env_private == 1 } {
+		set privargs " -private "
 	}
 
 	env_cleanup $testdir
@@ -124,7 +136,7 @@ proc rep075_sub { method tnum logset prep op after largs } {
 	# Open a master.
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    $m_logargs -errpfx ENV0 -log_max $log_max $verbargs \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set env0 [eval $ma_envcmd -rep_master]
@@ -134,7 +146,7 @@ proc rep075_sub { method tnum logset prep op after largs } {
 	# Open a client.
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    $c_logargs -errpfx ENV1 -log_max $log_max $verbargs \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set env1 [eval $cl_envcmd -rep_client]
@@ -143,7 +155,7 @@ proc rep075_sub { method tnum logset prep op after largs } {
 
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c_txnargs \
-	    $repmemargs \
+	    $repmemargs $privargs \
 	    $c_logargs -errpfx ENV2 -log_max $log_max $verbargs \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set env2 [eval $cl2_envcmd -rep_client]

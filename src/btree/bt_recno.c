@@ -961,13 +961,15 @@ __ram_getno(dbc, key, rep, can_create)
 
 	/* If passed an empty DBT from Java, key->data may be NULL */
 	if (key->size != sizeof(db_recno_t)) {
-		__db_errx(dbp->env, "illegal record number size");
+		__db_errx(dbp->env, DB_STR("1001",
+		    "illegal record number size"));
 		return (EINVAL);
 	}
 
 	/* Check the user's record number. */
 	if ((recno = *(db_recno_t *)key->data) == 0) {
-		__db_errx(dbp->env, "illegal record number of 0");
+		__db_errx(dbp->env, DB_STR("1002",
+		    "illegal record number of 0"));
 		return (EINVAL);
 	}
 	if (rep != NULL)
@@ -1204,8 +1206,9 @@ __ram_writeback(dbp)
 		if (!F_ISSET(dbp, DB_AM_FIXEDLEN) &&
 		    fwrite(&delim, 1, 1, fp) != 1) {
 write_err:		ret = __os_get_errno();
-			__db_err(env, ret,
-			    "%s: write failed to backing file", t->re_source);
+			__db_err(env, ret, DB_STR_A("1003",
+			    "%s: write failed to backing file", "%s"),
+			    t->re_source);
 			goto err;
 		}
 	}

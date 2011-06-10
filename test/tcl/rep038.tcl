@@ -240,7 +240,7 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 
 	puts "\tRep$tnum.c: Verify logs and databases"
 	if { $databases_in_memory } {
-		rep038_verify_inmem $masterenv $clientenv $mdb $cdb
+		rep_verify_inmem $masterenv $clientenv $mdb $cdb
 	} else {
 		rep_verify $masterdir $masterenv $clientdir $clientenv 1
 	}
@@ -251,12 +251,12 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 	incr start $entries
 	process_msgs $envlist 0 NONE err
 	if { $databases_in_memory } {
-		rep038_verify_inmem $masterenv $clientenv $mdb $cdb
+		rep_verify_inmem $masterenv $clientenv $mdb $cdb
 	} else {
 		rep_verify $masterdir $masterenv $clientdir $clientenv 1
 	}
 
-	# Make sure log file are on-disk or not as expected.
+	# Make sure log files are on-disk (or not) as expected.
 	check_log_location $masterenv
 	check_log_location $clientenv
 
@@ -265,24 +265,4 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 	error_check_good masterenv_close [$masterenv close] 0
 	error_check_good clientenv_close [$clientenv close] 0
 	replclose $testdir/MSGQUEUEDIR
-}
-
-proc rep038_verify_inmem { masterenv clientenv mdb cdb } {
-	#
-	# Can't use rep_verify to compare the logs because each
-	# commit record from db_printlog shows the database name
-	# as text on the master and as the file uid on the client
-	# because the client cannot find the "file".  
-	#
-	# !!! Check the LSN first.  Otherwise the DB->stat for the
-	# number of records will write a log record on the master if
-	# the build is configured for debug_rop.  Work around that issue.
-	#
-	set mlsn [next_expected_lsn $masterenv]
-	set clsn [next_expected_lsn $clientenv]
-	error_check_good lsn $mlsn $clsn
-
-	set mrecs [stat_field $mdb stat "Number of records"]
-	set crecs [stat_field $cdb stat "Number of records"]
-	error_check_good recs $mrecs $crecs
 }

@@ -501,6 +501,46 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 		}
 
 		[Test]
+		public void TestEncryption() {
+			testName = "TestEncryption";
+			SetUpTest(true);
+
+			BTreeDatabase db1;
+
+			BTreeDatabaseConfig dbCfg =
+			    new BTreeDatabaseConfig();
+			dbCfg.Creation = CreatePolicy.IF_NEEDED;
+
+			// Open an encrypted database.
+			dbCfg.SetEncryption("bdb", EncryptionAlgorithm.AES);
+			using (db1 = BTreeDatabase.Open(
+			    testHome + "/" + testName + ".db", dbCfg)) {
+				Assert.IsTrue(db1.Encrypted);
+				for (int i = 0; i < 10; i++)
+					db1.Put(new DatabaseEntry
+					    (BitConverter.GetBytes(i)),
+					    new DatabaseEntry(
+					    BitConverter.GetBytes(i)));
+			}
+
+			// Verify the database is encrypted.
+			BTreeDatabaseConfig verifyDbCfg =
+			    new BTreeDatabaseConfig();
+			verifyDbCfg.Creation = CreatePolicy.IF_NEEDED;
+			verifyDbCfg.SetEncryption(
+			    dbCfg.EncryptionPassword,
+			    dbCfg.EncryptAlgorithm);
+			verifyDbCfg.Encrypted = true;
+			using (db1 = BTreeDatabase.Open(
+			    testHome + "/" + testName + ".db",
+			    verifyDbCfg)) {
+				for (int i = 0; i < 10; i++)
+					db1.Get(new DatabaseEntry(
+					    BitConverter.GetBytes(i)));
+			};
+		}
+
+		[Test]
 		public void TestExist()
 		{
 			testName = "TestExist";
@@ -1158,6 +1198,147 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 		}
 
 		[Test]
+		public void TestPartialGet() 
+		{
+			testName = "TestPartialGet";
+			SetUpTest(true);
+
+			DatabaseEnvironmentConfig envConfig =
+			    new DatabaseEnvironmentConfig();
+			envConfig.Create = true;
+			envConfig.UseTxns = true;
+			envConfig.UseMPool = true;
+			DatabaseEnvironment env = DatabaseEnvironment.Open(
+			    testHome, envConfig);
+
+			BTreeDatabase db;
+			PopulateDb(env, out db);
+
+			// Partially get the first byte and verify it is 'h'.
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			Transaction txn = env.BeginTransaction();
+			for (int i = 0; i < 100; i++) {
+				key = new DatabaseEntry(BitConverter.GetBytes(i));
+				data = new DatabaseEntry(0, 1);
+				pair = db.Get(key, data, txn);
+				Assert.AreEqual(1, pair.Value.Data.Length);
+				Assert.AreEqual((byte)'h', pair.Value.Data[0]);
+			}
+			txn.Commit();
+			db.Close();
+			env.Close();
+
+			/*
+			 * Open the existing database and partially get
+			 * non-existing data.
+			 */
+			using (Database edb = Database.Open(
+			    testHome + "/" + testName + ".db", 
+			    new DatabaseConfig())) {
+				key = new DatabaseEntry(BitConverter.GetBytes(0));
+				data = new DatabaseEntry(10, 1);
+				pair = edb.Get(key, data);
+				Assert.AreEqual(null, pair.Value.Data);
+			}
+		}
+
+		[Test]
+		public void TestPartialPut() 
+		{
+			testName = "TestPartialPut";
+			SetUpTest(true);
+
+			BTreeDatabase db;
+			PopulateDb(null, out db);
+
+			// Partially update the records.
+			DatabaseEntry key, data;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			byte[] partialBytes = ASCIIEncoding.ASCII.GetBytes("aa");
+			byte[] valueBytes;
+			for (int i = 0; i < 100; i++) {
+				key = new DatabaseEntry(BitConverter.GetBytes(i));
+				if (i < 50)
+					data = new DatabaseEntry(
+					    partialBytes, 0, 2);
+				else {
+					data = new DatabaseEntry(partialBytes);
+					data.Partial = true;
+					data.PartialLen = 2;
+					data.PartialOffset = 0;
+				}
+				Assert.AreEqual(0, data.PartialOffset);
+				Assert.AreEqual(2, data.PartialLen);
+				Assert.AreEqual(true, data.Partial);
+				db.Put(key, data);
+			}
+			// Verify that the records have been partially changed.
+			valueBytes = ASCIIEncoding.ASCII.GetBytes("hello");
+			valueBytes[0] = (byte)'a';
+			valueBytes[1] = (byte)'a';
+			for (int i = 0; i < 100; i++) {
+				key = new DatabaseEntry(BitConverter.GetBytes(i));
+				pair = db.Get(key);
+				Assert.AreEqual(
+				    BitConverter.GetBytes(i), pair.Key.Data);
+				Assert.AreEqual(valueBytes, pair.Value.Data);
+			}
+
+			// Partial put from non-existing offset.
+			key = new DatabaseEntry(BitConverter.GetBytes(0));
+			data = new DatabaseEntry(partialBytes, 100, 2);
+			db.Put(key, data);
+
+			// Verify that the records have been partially changed.
+			pair = db.Get(key);
+			Assert.AreEqual(102, pair.Value.Data.Length);
+			Assert.AreEqual(valueBytes[0],
+			    pair.Value.Data[100]);
+			Assert.AreEqual(valueBytes[0], 
+			    pair.Value.Data[101]);
+
+			/*
+			 * Reuse the DatabaseEntry for non-partial. The partial
+			 * length and offset should be ignored.
+			 */ 
+			key = new DatabaseEntry(BitConverter.GetBytes(0));
+			data.Partial = false;
+			db.Put(key, data);
+			pair = db.Get(key);
+			Assert.AreEqual(2, pair.Value.Data.Length);
+
+			db.Close();
+		}
+
+		private void PopulateDb(DatabaseEnvironment env,
+		    out BTreeDatabase db) 
+		{
+			DatabaseEntry key, data;
+			Transaction txn = null;
+			string dbName;
+
+			if (env != null) {
+				txn = env.BeginTransaction();
+				dbName = testName + ".db";
+			} else
+				dbName = testHome + "/" + testName + ".db";
+
+			OpenBtreeDB(env, txn, dbName, out db);
+
+			for (int i = 0; i < 100; i++) {
+				key = new DatabaseEntry(
+				    BitConverter.GetBytes(i));
+				data = new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes("hello"));
+				db.Put(key, data, txn);
+			}
+
+			if (txn != null)
+				txn.Commit();
+		}
+
+		[Test]
 		public void TestPrefixCompare()
 		{
 			testName = "TestPrefixCompare";
@@ -1498,6 +1679,15 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 				pair = btreeDB.Get(key);
 				Assert.AreEqual(key.Data, pair.Key.Data);
 				Assert.AreEqual(data.Data, pair.Value.Data);
+
+ 				// Partial put to update the existing pair.
+				data.Partial = true;
+				data.PartialLen = 4;
+				data.PartialOffset = 4;
+				btreeDB.Put(key, data);
+				pair = btreeDB.Get(key);
+				Assert.AreEqual(key.Data, pair.Key.Data);
+				Assert.AreEqual(8, pair.Value.Data.Length);
 			}
 		}
 

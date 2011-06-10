@@ -453,7 +453,8 @@ open_db(DB **dbpp, const char *progname, const char *file_name,
     /* Now open the database */
     open_flags = DB_CREATE              | /* Allow database creation */
 		 DB_READ_UNCOMMITTED    | /* Allow dirty reads */
-		 DB_AUTO_COMMIT;          /* Allow autocommit */
+		 DB_AUTO_COMMIT         | /* Allow autocommit */
+ 		 DB_THREAD;   /* Cause the database to be free-threaded */
 
     ret = dbp->open(dbp,        /* Pointer to the database */
 		    NULL,       /* Txn pointer */

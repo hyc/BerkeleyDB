@@ -16,6 +16,7 @@
 proc do_multiclient_test {varname script} {
 
   foreach code [list {
+    if {[info exists ::G(valgrind)]} { db close ; continue }
     set ::code2_chan [launch_testfixture]
     set ::code3_chan [launch_testfixture]
     proc code2 {tcl} { testfixture $::code2_chan $tcl }
@@ -27,6 +28,8 @@ proc do_multiclient_test {varname script} {
     set tn 2
   }] {
     faultsim_delete_and_reopen
+
+    proc code1 {tcl} { uplevel #0 $tcl }
   
     # Open connections [db2] and [db3]. Depending on which iteration this
     # is, the connections may be created in this interpreter, or in 
@@ -56,6 +59,7 @@ proc do_multiclient_test {varname script} {
     code3 { db3 close }
     catch { close $::code2_chan }
     catch { close $::code3_chan }
+    catch { db close }
   }
 }
 
@@ -63,15 +67,19 @@ proc do_multiclient_test {varname script} {
 # channel name is returned that may be passed as the first argument to proc
 # 'testfixture' to execute a command. The child testfixture process is shut
 # down by closing the channel.
-proc launch_testfixture {} {
+proc launch_testfixture {{prg ""}} {
   write_main_loop
-  set prg [info nameofexec]
-  if {$prg eq ""} {
-    set prg [file join . testfixture]
-  }
+  if {$prg eq ""} { set prg [info nameofexec] }
+  if {$prg eq ""} { set prg testfixture }
+  if {[file tail $prg]==$prg} { set prg [file join . $prg] }
   set chan [open "|$prg tf_main.tcl" r+]
   fconfigure $chan -buffering line
-  testfixture $chan "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  set rc [catch { 
+    testfixture $chan "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  }]
+  if {$rc} {
+    testfixture $chan "set ::sqlite_pending_byte $::sqlite_pending_byte"
+  }
   return $chan
 }
 

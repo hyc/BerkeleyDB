@@ -131,38 +131,96 @@
 			<UseMVCC>False</UseMVCC>
 		</Test>
 	</TestFixture>
-	<TestFixture name="HashDatabaseTest">
-		<Test name="TestOpenNewHashDB">
-			<AutoCommit>False</AutoCommit>
-			<ByteOrder>1234</ByteOrder>
-			<CacheSize>
-				<Bytes>1048576</Bytes>
-				<Gigabytes>0</Gigabytes>
-				<NCaches>1</NCaches>
-			</CacheSize>
-			<Creation>ALWAYS</Creation>
-			<DoChecksum>False</DoChecksum>
-			<Duplicates>UNSORTED</Duplicates>
-			<ErrorPrefix>TestDatabaseConfig</ErrorPrefix>
-			<FillFactor>2</FillFactor>
-			<FreeThreaded>True</FreeThreaded>
-			<HasMultiple>False</HasMultiple>
-			<NoMMap>False</NoMMap>
-			<NonDurableTxns>False</NonDurableTxns>
-			<NumElements>10</NumElements>
-			<PageSize>8192</PageSize>
-			<Priority>HIGH</Priority>
-			<ReadOnly>False</ReadOnly>
-			<ReadUncommitted>False</ReadUncommitted>
-			<Encryption>
-				<password>123</password>
-				<algorithm>AES</algorithm>
-			</Encryption>
-			<Truncate>False</Truncate>
-			<UseMVCC>False</UseMVCC>
-		</Test>
-	</TestFixture>
-	<TestFixture name="RecnoDatabaseConfigTest">
+  <TestFixture name="HashDatabaseTest">
+    <Test name="TestOpenNewHashDB">
+      <AutoCommit>False</AutoCommit>
+      <ByteOrder>1234</ByteOrder>
+      <CacheSize>
+        <Bytes>1048576</Bytes>
+        <Gigabytes>0</Gigabytes>
+        <NCaches>1</NCaches>
+      </CacheSize>
+      <Creation>ALWAYS</Creation>
+      <DoChecksum>False</DoChecksum>
+      <Duplicates>UNSORTED</Duplicates>
+      <ErrorPrefix>TestDatabaseConfig</ErrorPrefix>
+      <FillFactor>2</FillFactor>
+      <FreeThreaded>True</FreeThreaded>
+      <HasMultiple>False</HasMultiple>
+      <NoMMap>False</NoMMap>
+      <NonDurableTxns>False</NonDurableTxns>
+      <NumElements>10</NumElements>
+      <PageSize>8192</PageSize>
+      <Priority>HIGH</Priority>
+      <ReadOnly>False</ReadOnly>
+      <ReadUncommitted>False</ReadUncommitted>
+      <Encryption>
+        <password>123</password>
+        <algorithm>AES</algorithm>
+      </Encryption>
+      <Truncate>False</Truncate>
+      <UseMVCC>False</UseMVCC>
+    </Test>
+  </TestFixture>
+  <TestFixture name="HeapDatabaseConfigTest">
+    <Test name="TestConfigWithoutEnv">
+      <AutoCommit>False</AutoCommit>
+      <ByteOrder>1234</ByteOrder>
+      <CacheSize>
+        <Bytes>1048576</Bytes>
+        <Gigabytes>0</Gigabytes>
+        <NCaches>1</NCaches>
+      </CacheSize>
+      <Creation>ALWAYS</Creation>
+      <DoChecksum>False</DoChecksum>
+      <Duplicates>UNSORTED</Duplicates>
+      <ErrorPrefix>TestConfigWithoutEnv</ErrorPrefix>
+      <FreeThreaded>False</FreeThreaded>
+      <NoMMap>True</NoMMap>
+      <NonDurableTxns>True</NonDurableTxns>
+      <PageSize>8192</PageSize>
+      <Priority>HIGH</Priority>
+      <ReadOnly>False</ReadOnly>
+      <ReadUncommitted>False</ReadUncommitted>
+      <Encryption>
+        <password>123</password>
+        <algorithm>AES</algorithm>
+      </Encryption>
+      <Truncate>False</Truncate>
+      <UseEncryption>True</UseEncryption>
+      <UseMVCC>False</UseMVCC>
+    </Test>
+  </TestFixture>
+  <TestFixture name="HeapDatabaseTest">
+    <Test name="TestOpenNewHeapDB">
+      <AutoCommit>False</AutoCommit>
+      <ByteOrder>1234</ByteOrder>
+      <CacheSize>
+        <Bytes>1048576</Bytes>
+        <Gigabytes>0</Gigabytes>
+        <NCaches>1</NCaches>
+      </CacheSize>
+      <Creation>ALWAYS</Creation>
+      <DoChecksum>False</DoChecksum>
+      <Duplicates>UNSORTED</Duplicates>
+      <ErrorPrefix>TestDatabaseConfig</ErrorPrefix>
+      <FreeThreaded>True</FreeThreaded>
+      <HasMultiple>False</HasMultiple>
+      <NoMMap>False</NoMMap>
+      <NonDurableTxns>False</NonDurableTxns>
+      <PageSize>8192</PageSize>
+      <Priority>HIGH</Priority>
+      <ReadOnly>False</ReadOnly>
+      <ReadUncommitted>False</ReadUncommitted>
+      <Encryption>
+        <password>123</password>
+        <algorithm>AES</algorithm>
+      </Encryption>
+      <Truncate>False</Truncate>
+      <UseMVCC>False</UseMVCC>
+    </Test>
+  </TestFixture>
+  <TestFixture name="RecnoDatabaseConfigTest">
 		<Test name="TestConfigWithoutEnv">
 			<AutoCommit>False</AutoCommit>
 			<BackingFile>../backing.log</BackingFile>
@@ -605,7 +663,6 @@
 			<LeaseTimeout>1025</LeaseTimeout>
 			<AutoInit>False</AutoInit>
 			<NoBlocking>True</NoBlocking>
-			<NSites>7</NSites>
 			<Priority>1</Priority>
 			<RepMgrAckPolicy>ALL</RepMgrAckPolicy>
 			<RepMgrLocalSite>
@@ -747,7 +804,6 @@
 				<LeaseTimeout>1025</LeaseTimeout>
 				<AutoInit>False</AutoInit>
 				<NoBlocking>True</NoBlocking>
-				<NSites>7</NSites>
 				<Priority>1</Priority>
 				<RepMgrAckPolicy>ALL</RepMgrAckPolicy>
 				<RepMgrLocalSite>
@@ -782,7 +838,6 @@
 			<LeaseTimeout>1025</LeaseTimeout>
 			<AutoInit>False</AutoInit>
 			<NoBlocking>True</NoBlocking>
-			<NSites>7</NSites>
 			<Priority>1</Priority>
 			<RepMgrAckPolicy>ALL</RepMgrAckPolicy>
 			<RepMgrLocalSite>

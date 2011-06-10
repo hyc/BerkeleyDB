@@ -49,7 +49,7 @@ __db_util_arg(arg0, str, argcp, argvp)
 		}
 	*ap = NULL;
 
-	*argcp = ap - argv;
+	*argcp = (int)(ap - argv);
 	*argvp = argv;
 
 	return (0);

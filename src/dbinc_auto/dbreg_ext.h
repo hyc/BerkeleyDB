@@ -28,6 +28,7 @@ void __dbreg_print_fname __P((ENV *, FNAME *));
 int __dbreg_add_dbentry __P((ENV *, DB_LOG *, DB *, int32_t));
 int __dbreg_rem_dbentry __P((DB_LOG *, int32_t));
 int __dbreg_log_files __P((ENV *, u_int32_t));
+int __dbreg_log_nofiles __P((ENV *));
 int __dbreg_close_files __P((ENV *, int));
 int __dbreg_close_file __P((ENV *, FNAME *));
 int __dbreg_mark_restored __P((ENV *));

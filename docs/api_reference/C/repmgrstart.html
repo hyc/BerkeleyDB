@@ -12,7 +12,10 @@
     <link rel="next" href="repmgrstat.html" title="DB_ENV-&gt;repmgr_stat()" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;repmgr_start()</th>
@@ -55,17 +58,26 @@ DB_ENV-&gt;repmgr_start(DB_ENV *env, int nthreads, u_int32_t flags);  </pre>
         <ol type="1">
           <li>
             <p>
-                    Call 
-                    <a class="xref" href="repmgrlocal_site.html" title="DB_ENV-&gt;repmgr_set_local_site()">DB_ENV-&gt;repmgr_set_local_site()</a>
-                    to configure the local site in the replication group.     
-                </p>
-          </li>
-          <li>
-            <p>
-                        Call
-                        <a class="xref" href="repmgrremote_site.html" title="DB_ENV-&gt;repmgr_add_remote_site()">DB_ENV-&gt;repmgr_add_remote_site()</a>
-                        to configure the remote site(s) in the replication group.     
-                </p>
+                Use <a class="xref" href="repmgr_site.html" title="DB_ENV-&gt;repmgr_site()">DB_ENV-&gt;repmgr_site()</a>
+                to obtain a DB_SITE handle, then use that handle to
+                configure the sites in your replication group.
+            </p>
+            <div class="orderedlist">
+              <ol type="a">
+                <li>
+                  <p>
+                        Use <a class="xref" href="dbsite_set_config.html" title="DB_SITE-&gt;set_config()">DB_SITE-&gt;set_config()</a>
+                        to configure sites in your replication group.
+                    </p>
+                </li>
+                <li>
+                  <p>
+                        Use <a class="xref" href="dbsite_remove.html" title="DB_SITE-&gt;remove()">DB_SITE-&gt;remove()</a>
+                        to remove a site from the replication group.
+                    </p>
+                </li>
+              </ol>
+            </div>
           </li>
           <li>
             <p>
@@ -113,12 +125,12 @@ DB_ENV-&gt;repmgr_start(DB_ENV *env, int nthreads, u_int32_t flags);  </pre>
       <p>
          The <code class="methodname">DB_ENV-&gt;repmgr_start()</code> method 
          may not be called before the <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a>  method is 
-         called to open the local environment and the
-<a class="xref" href="repmgrlocal_site.html" title="DB_ENV-&gt;repmgr_set_local_site()">DB_ENV-&gt;repmgr_set_local_site()</a> 
- method is called to configure the local site.
-In addition, the local environment must be opened with the 
- <a class="link" href="envopen.html#envopen_DB_THREAD">DB_THREAD</a>
-flag set.
+         called to open. In addition, this method may not be called before
+         your replication sites have been configured using the 
+         <a class="link" href="db_site.html" title="The DB_SITE Handle">DB_SITE</a> class.
+         In addition, the local environment must be opened with the 
+        <a class="link" href="envopen.html#envopen_DB_THREAD">DB_THREAD</a>
+        flag set.
     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;repmgr_start()</code> method will return 
@@ -137,7 +149,7 @@ flag set.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54136568"></a>Parameters</h3>
+              <h3 class="title"><a id="id3934633"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -145,7 +157,7 @@ flag set.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54135920"></a>nthreads</h4>
+                <h4 class="title"><a id="id3934755"></a>nthreads</h4>
               </div>
             </div>
           </div>
@@ -160,7 +172,7 @@ flag set.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54148008"></a>flags</h4>
+                <h4 class="title"><a id="id3934733"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -205,7 +217,7 @@ flag set.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54151328"></a>Errors</h3>
+              <h3 class="title"><a id="id3934897"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -221,7 +233,7 @@ flag set.
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp54156448"></a>EINVAL</h4>
+                <h4 class="title"><a id="id3934983"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -238,7 +250,7 @@ opened without the <code class="literal">DB_THREAD</code> flag set; a local
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54143400"></a>Class</h3>
+              <h3 class="title"><a id="id3934814"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -250,7 +262,7 @@ opened without the <code class="literal">DB_THREAD</code> flag set; a local
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp54153392"></a>See Also</h3>
+              <h3 class="title"><a id="id3934577"></a>See Also</h3>
             </div>
           </div>
         </div>

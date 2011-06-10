@@ -12,7 +12,10 @@
     <link rel="next" href="addfeatures.html" title="Chapter 5. Additional Features" />
   </head>
   <body>
-    <div class="navheader">
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 11.2.5.2</p>
+      </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">Example Processing Loop</th>
@@ -421,22 +424,20 @@ err:    if (dbp != 0)
                 environment home restriction is observed.
         </p>
         <p>
-                To run a process, make sure the environment home
-                exists and then start the process using the
-                <code class="literal">-h</code> option to specify that
-                directory. You must also use the <code class="literal">-l</code>
-                option to identify the local host and port that this
-                process will use to listen for replication messages, the
-                <code class="literal">-n</code> option to specify the number of sites
-                in the replication group, and
-                the <code class="literal">-r</code> option to identify the other
-                processes in the replication group. Finally, use the
-                <code class="literal">-p</code> option to specify a priority.
-                The process that you designate to have the highest priority will become
-                the master.
+                To run a process, make sure the environment home exists and
+                then start the process using the <code class="literal">-h</code>
+                option to specify that directory. You must also use the
+                <code class="literal">-l</code> or  <code class="literal">-L</code> option to
+                identify the local host and port that this process will use
+                to listen for replication messages (-L means that this is a
+                group creator), and the <code class="literal">-r</code> option to
+                identify the other processes in the replication group.
+                Finally, use the <code class="literal">-p</code> option to specify a
+                priority.  The process that you designate to have the
+                highest priority will become the master.
         </p>
         <pre class="programlisting">&gt; mkdir env1
-&gt; ./RepMgrGSG -h env1 -n 2 -l localhost:8080 -r localhost:8081 -p 10
+&gt; ./RepMgrGSG -h env1 -L localhost:8080 -p 10
 No stock database yet available.
 No stock database yet available.  </pre>
         <p>
@@ -447,7 +448,7 @@ No stock database yet available.  </pre>
         port of the other replication process:
 </p>
         <pre class="programlisting">&gt; mkdir env2
-&gt; ./RepMgrGSG -h env2 -n 2 -l localhost:8081 -r localhost:8080 -p 20</pre>
+&gt; ./RepMgrGSG -h env2 -l localhost:8081 -r localhost:8080 -p 20</pre>
         <p>
         After a short pause, the second process should display the master
         prompt:

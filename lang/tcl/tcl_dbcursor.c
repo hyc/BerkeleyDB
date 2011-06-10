@@ -17,9 +17,11 @@
 /*
  * Prototypes for procedures defined later in this file:
  */
+static int tcl_DbcDel __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
 static int tcl_DbcDup __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
 static int tcl_DbcCompare __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
 static int tcl_DbcGet __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *, int));
+static int tcl_DbcHeapDel __P((Tcl_Interp *, DBC *));
 static int tcl_DbcPut __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
 
 /*
@@ -119,17 +121,7 @@ dbc_Cmd(clientData, interp, objc, objv)
 		result = tcl_DbcCompare(interp, objc, objv, dbc);
 		break;
 	case DBCDELETE:
-		/*
-		 * No args for this.  Error if there are some.
-		 */
-		if (objc > 2) {
-			Tcl_WrongNumArgs(interp, 2, objv, NULL);
-			return (TCL_ERROR);
-		}
-		_debug_check();
-		ret = dbc->del(dbc, 0);
-		result = _ReturnSetup(interp, ret, DB_RETOK_DBCDEL(ret),
-		    "dbc delete");
+		result = tcl_DbcDel(interp, objc, objv, dbc);
 		break;
 	case DBCDUP:
 		result = tcl_DbcDup(interp, objc, objv, dbc);
@@ -142,6 +134,54 @@ dbc_Cmd(clientData, interp, objc, objv)
 		break;
 	}
 	return (result);
+}
+
+/*
+ * tcl_DbcHeapDel --
+ */
+static int
+tcl_DbcHeapDel(interp, dbc)
+	Tcl_Interp *interp;
+	DBC *dbc;
+{
+	DB *dbp, *hrdbp, *hsdbp;
+	DBT hkey, key, tmpdata;
+	DB_HEAP_RID rid;
+	db_recno_t recno;
+	int result, ret, t_ret;
+
+	dbp = dbc->dbp;
+	hrdbp = ((DBTCL_INFO *)dbp->api_internal)->hrdbp;
+	hsdbp = ((DBTCL_INFO *)dbp->api_internal)->hsdbp;
+	
+	memset(&hkey, 0, sizeof(DBT));
+	hkey.data = &rid;
+	hkey.size = hkey.ulen = sizeof(DB_HEAP_RID);
+	hkey.flags = DB_DBT_USERMEM;
+	memset(&tmpdata, 0, sizeof(DBT));
+	tmpdata.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
+	if ((t_ret = dbc->get(dbc, &hkey, &tmpdata, DB_CURRENT)) != 0) {
+		ret = t_ret;
+		goto err;
+	}
+
+	memset(&key, 0, sizeof(DBT));
+	key.data = &recno;
+	key.size = key.ulen = sizeof(db_recno_t);
+	key.flags = DB_DBT_USERMEM;
+	if ((t_ret = hsdbp->pget(
+	    hsdbp, dbc->txn, &hkey, &key, &tmpdata, 0)) != 0) {
+		ret = t_ret;
+		goto err;
+	}
+
+	ret = dbc->del(dbc, 0);
+	if ((t_ret = hrdbp->del(hrdbp, dbc->txn, &key, 0)) != 0 && ret == 0)
+		ret = t_ret;
+	
+err:	result = _ReturnSetup(
+	    interp, ret, DB_RETOK_DBCDEL(ret), "dbc delete");
+	return result;
 }
 
 /*
@@ -179,10 +219,11 @@ tcl_DbcPut(interp, objc, objv, dbc)
 		DBCPUT_OVERWRITE_DUP,
 		DBCPUT_PART
 	};
-	DB *thisdbp;
-	DBT key, data;
+	DB *thisdbp, *hrdbp, *hsdbp;
+	DBT data, hkey, key, tmpdata;
 	DBTCL_INFO *dbcip, *dbip;
 	DBTYPE type;
+	DB_HEAP_RID rid;
 	Tcl_Obj **elemv, *res;
 	void *dtmp, *ktmp;
 	db_recno_t recno;
@@ -203,6 +244,7 @@ tcl_DbcPut(interp, objc, objv, dbc)
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
+	memset(&hkey, 0, sizeof(hkey));
 
 	/*
 	 * Get the command name index from the object based on the options
@@ -297,9 +339,10 @@ tcl_DbcPut(interp, objc, objv, dbc)
 	 * then key.data is a recno, not a string.
 	 */
 	dbcip = _PtrToInfo(dbc);
-	if (dbcip == NULL)
+	if (dbcip == NULL) {
 		type = DB_UNKNOWN;
-	else {
+		thisdbp = NULL;
+	} else {
 		dbip = dbcip->i_parent;
 		if (dbip == NULL) {
 			Tcl_SetResult(interp, "Cursor without parent database",
@@ -338,7 +381,7 @@ tcl_DbcPut(interp, objc, objv, dbc)
 			result = TCL_ERROR;
 			goto out;
 		}
-		if (type == DB_RECNO || type == DB_QUEUE) {
+		if (type == DB_HEAP || type == DB_RECNO || type == DB_QUEUE) {
 			result = _GetUInt32(interp, objv[objc-2], &recno);
 			if (result == TCL_OK) {
 				key.data = &recno;
@@ -365,11 +408,62 @@ tcl_DbcPut(interp, objc, objv, dbc)
 		goto out;
 	}
 	_debug_check();
-	ret = dbc->put(dbc, &key, &data, flag);
-	result = _ReturnSetup(interp, ret, DB_RETOK_DBCPUT(ret),
-	    "dbc put");
+	if (type != DB_HEAP) {
+		ret = dbc->put(dbc, &key, &data, flag);
+		result = _ReturnSetup(interp, ret, DB_RETOK_DBCPUT(ret),
+	    	    "dbc put");
+	} else {
+		hkey.data = &rid;
+		hkey.ulen = hkey.size = sizeof(DB_HEAP_RID);
+		hkey.flags = DB_DBT_USERMEM;
+		hrdbp = ((DBTCL_INFO *)thisdbp->api_internal)->hrdbp;
+		if (flag != DB_CURRENT) {
+			/* Given a recno, need to find the associated RID. */
+			ret = hrdbp->get(hrdbp, dbc->txn, &key, &hkey, 0);
+			result = _ReturnSetup(interp,
+			    ret, DB_RETOK_DBGET(ret), "db get recno");
+		} else {
+			/* We have neither RID nor recno, but need both. */
+			memset(&tmpdata, 0, sizeof(DBT));
+			tmpdata.dlen = 0;
+			tmpdata.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
+			ret = dbc->get(dbc, &hkey, &tmpdata, DB_CURRENT);
+			result = _ReturnSetup(interp,
+			    ret, DB_RETOK_DBGET(ret), "dbc get");
+			
+			hsdbp = ((DBTCL_INFO *)thisdbp->api_internal)->hsdbp;
+			key.data = &recno;
+			key.ulen = sizeof(db_recno_t);
+			key.flags = DB_DBT_USERMEM;
+			ret = hsdbp->pget(hsdbp,
+			    dbc->txn, &hkey, &key, &tmpdata, 0);
+			result = _ReturnSetup(interp,
+			    ret, DB_RETOK_DBGET(ret), "db pget rid");
+		}
+
+		/* Do the put in the heap db first */
+		ret = dbc->put(dbc, &hkey, &data, flag);
+		if (ret) {
+			result = _ReturnSetup(interp,
+			    ret, DB_RETOK_DBCPUT(ret), "dbc put");
+			goto out;
+		}
+
+		hkey.flags = DB_DBT_USERMEM;
+		ret = hrdbp->put(hrdbp, dbc->txn, &key, &hkey, 0);
+		result = _ReturnSetup(interp,
+		    ret, DB_RETOK_DBCPUT(ret), "dbc put recno");
+		
+		/* 
+		 * To keep the consistency, if the put in recno db fails, 
+		 * the current key and data will be removed from the heap db.
+		 */
+		if (dbc->txn == NULL && ret != 0)
+			(void)thisdbp->del(thisdbp, NULL, &hkey, 0); 
+	}
 	if (ret == 0 &&
-	    (flag == DB_AFTER || flag == DB_BEFORE) && type == DB_RECNO) {
+	    (flag == DB_AFTER || flag == DB_BEFORE) && 
+	    (type == DB_RECNO || type == DB_HEAP)) {
 		res = Tcl_NewWideIntObj((Tcl_WideInt)*(db_recno_t *)key.data);
 		Tcl_SetObjResult(interp, res);
 	}
@@ -451,14 +545,15 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 		DBCGET_SETRANGE,
 		DBCGET_SETRECNO
 	};
-	DB *thisdbp;
-	DBT key, data, pdata;
+	DB *hrdbp, *hsdbp, *thisdbp;
+	DB_HEAP_RID rid;
+	DBT hkey, key, data, pdata, rkey, rdata, tmpdata;
 	DBTCL_INFO *dbcip, *dbip;
 	DBTYPE ptype, type;
 	Tcl_Obj **elemv, *myobj, *retlist;
 	void *dtmp, *ktmp;
 	db_recno_t precno, recno;
-	u_int32_t flag, op;
+	u_int32_t flag, heapflag, op;
 	int elemc, freekey, freedata, i, optindex, result, ret;
 #ifdef CONFIG_TEST
 	int data_buf_size, key_buf_size;
@@ -467,13 +562,19 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 #endif
 	COMPQUIET(dtmp, NULL);
 	COMPQUIET(ktmp, NULL);
-
 	result = TCL_OK;
-	flag = 0;
+	flag = heapflag = 0;
 	freekey = freedata = 0;
+	hrdbp = hsdbp = NULL;
+	type = ptype = DB_UNKNOWN;
+	memset(&hkey, 0, sizeof(hkey));
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
 	memset(&pdata, 0, sizeof(DBT));
+	memset(&rkey, 0, sizeof(DBT));
+	memset(&rdata, 0, sizeof(DBT));
+	memset(&tmpdata, 0, sizeof(DBT));
+	tmpdata.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
 
 	if (objc < 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-args? ?key?");
@@ -649,8 +750,15 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 		if (result != TCL_OK)
 			break;
 	}
+  
 	if (result != TCL_OK)
 		goto out;
+	heapflag = flag & ~DB_OPFLAGS_MASK;
+	heapflag &= ~DB_MULTIPLE_KEY;
+	if (F_ISSET(dbc, DBC_READ_COMMITTED))
+	    heapflag |= DB_READ_COMMITTED;
+	if (F_ISSET(dbc, DBC_READ_UNCOMMITTED))
+	    heapflag |= DB_READ_UNCOMMITTED;
 
 	/*
 	 * We need to determine if we are a recno database
@@ -658,10 +766,7 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 	 * a string.
 	 */
 	dbcip = _PtrToInfo(dbc);
-	if (dbcip == NULL) {
-		type = DB_UNKNOWN;
-		ptype = DB_UNKNOWN;
-	} else {
+	if (dbcip != NULL) {
 		dbip = dbcip->i_parent;
 		if (dbip == NULL) {
 			Tcl_SetResult(interp, "Cursor without parent database",
@@ -676,6 +781,10 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 			    s_primary->get_type(thisdbp->s_primary, &ptype);
 		else
 			ptype = DB_UNKNOWN;
+		if (type == DB_HEAP) {
+			hrdbp = dbip->hrdbp;
+			hsdbp = dbip->hsdbp;
+		}
 	}
 	/*
 	 * When we get here, we better have:
@@ -695,7 +804,8 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 			result = TCL_ERROR;
 			goto out;
 		} else {
-			if (type == DB_RECNO || type == DB_QUEUE) {
+			if (type == DB_RECNO ||
+			    type == DB_QUEUE || type == DB_HEAP) {
 				result = _GetUInt32(
 				    interp, objv[objc-2], &recno);
 				if (result == TCL_OK) {
@@ -718,7 +828,8 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 				}
 				key.data = ktmp;
 			}
-			if (ptype == DB_RECNO || ptype == DB_QUEUE) {
+			if (ptype == DB_RECNO ||
+			    ptype == DB_QUEUE || ptype == DB_HEAP) {
 				result = _GetUInt32(
 				    interp, objv[objc-1], &precno);
 				if (result == TCL_OK) {
@@ -756,7 +867,7 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 #endif
 			data.flags |= DB_DBT_MALLOC;
 		if (op == DB_SET_RECNO ||
-		    type == DB_RECNO || type == DB_QUEUE) {
+		    type == DB_HEAP || type == DB_RECNO || type == DB_QUEUE) {
 			result = _GetUInt32(interp, objv[objc - 1], &recno);
 			key.data = &recno;
 			key.size = sizeof(db_recno_t);
@@ -803,9 +914,81 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 	}
 
 	_debug_check();
+
+	/* 
+	 * Heap cannot be a secondary, so with type == DB_HEAP we know that
+	 * ispget is false. 
+	 */
+	if (type == DB_HEAP && (op == DB_GET_BOTH ||
+	    op == DB_GET_BOTH_RANGE || op == DB_SET || op == DB_SET_RANGE)) {
+		rkey.data = &recno;
+		rkey.ulen = rkey.size = sizeof(db_recno_t);
+		rkey.flags |= DB_DBT_USERMEM;
+		if (key.data != NULL && F_ISSET(&key, DB_DBT_USERMEM))
+			__os_free(NULL, key.data);
+		if (key.data != NULL && F_ISSET(&key, DB_DBT_MALLOC))
+			__os_ufree(NULL, key.data);
+		memset(&key, 0, sizeof(DBT));
+		key.data = &rid;
+		key.ulen = key.size = sizeof(DB_HEAP_RID);
+		key.flags |= DB_DBT_USERMEM;
+
+		/*
+		 *  This is a noncursor get on recno db, use heapflag because 
+		 *  the cursor op flags have been removed.
+		 */  
+		ret = hrdbp->get(hrdbp, dbc->txn, &rkey, &key, heapflag);
+		if (ret != 0) {
+			result = _ReturnSetup(
+			    interp, ret, DB_RETOK_DBGET(ret), "db get");
+			retlist = Tcl_NewListObj(0, NULL);
+			goto out1;
+		}
+	}
+
+	/*
+	 * If we're doing a pget and DB_GET_BOTH is set, the primary key (stored
+	 * in data) needs to match, too.  For a HEAP primary, we're called with
+	 * a recno primary key and we need to translate that to an RID.  (ptype
+	 * is only set if we're doing a pget.)
+	 */
+	if (ptype == DB_HEAP && 
+	    (op == DB_GET_BOTH || op == DB_GET_BOTH_RANGE)) {
+		rkey.data = &precno;
+		rkey.size = rkey.ulen = sizeof(db_recno_t);
+		rkey.flags = DB_DBT_USERMEM;
+		if (data.data != NULL && F_ISSET(&data, DB_DBT_USERMEM))
+			__os_free(NULL, data.data);
+		if (data.data != NULL && F_ISSET(&data, DB_DBT_MALLOC))
+			__os_ufree(NULL, data.data);
+		memset(&data, 0, sizeof(DBT));
+		data.data = &rid;
+		data.size = data.ulen = sizeof(DB_HEAP_RID);
+		data.flags = DB_DBT_USERMEM;
+		ret = hrdbp->get(hrdbp, dbc->txn, &rkey, &data, heapflag);
+		if (ret != 0) {
+			result = _ReturnSetup(
+			    interp, ret, DB_RETOK_DBGET(ret), "db get");
+			retlist = Tcl_NewListObj(0, NULL);
+			goto out1;
+		}
+	}
+
 	if (ispget) {
 		F_SET(&pdata, DB_DBT_MALLOC);
 		ret = dbc->pget(dbc, &key, &data, &pdata, flag);
+		if (ret == 0 && ptype == DB_HEAP) {
+			rid.pgno = ((DB_HEAP_RID *)data.data)->pgno;
+			rid.indx = ((DB_HEAP_RID *)data.data)->indx;
+			hkey.data = &rid;
+			hkey.ulen = hkey.size = data.size;
+			hkey.flags = DB_DBT_USERMEM;
+			hsdbp = ((DBTCL_INFO *)
+			    dbc->dbp->s_primary->api_internal)->hsdbp;
+			ret = hsdbp->pget(hsdbp,
+			    dbc->txn, &hkey, &data, &tmpdata, 0);
+		} 
+
 	} else
 		ret = dbc->get(dbc, &key, &data, flag);
 	result = _ReturnSetup(interp, ret, DB_RETOK_DBCGET(ret), "dbc get");
@@ -834,11 +1017,37 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 				result = _SetListRecnoElem(interp, retlist,
 				    *(db_recno_t *)key.data,
 				    data.data, data.size);
+		} else if (type == DB_HEAP) {
+			/*
+			 * If given a record number, we're done.  If we don't
+			 * yet have a record number, we need to look it up.
+			 */
+			if (op != DB_GET_BOTH && op != DB_SET &&
+			    op != DB_GET_BOTH_RANGE && op != DB_SET_RANGE) {
+				rdata.flags = DB_DBT_PARTIAL | DB_DBT_USERMEM;
+				rdata.dlen = 0;
+				rkey.data = &recno;
+				rkey.size = rkey.ulen = sizeof(db_recno_t);
+				rkey.flags = DB_DBT_USERMEM;
+
+				ret = hsdbp->pget(hsdbp, dbc->txn, &key, 
+				    &rkey, &rdata, heapflag);
+				result = _ReturnSetup(
+				    interp, ret, DB_RETOK_DBGET(ret), "db get");
+				if (result == TCL_ERROR)
+					goto out;
+				retlist = Tcl_NewListObj(0, NULL);
+				if (ret != 0) 
+					goto out1;
+			}
+			result = _SetListRecnoElem(interp, retlist,
+			    *(db_recno_t *)rkey.data, data.data, data.size);
 		} else {
 			if (ispget)
 				result = _Set3DBTList(interp, retlist, &key, 0,
 				    &data,
-				    (ptype == DB_RECNO || ptype == DB_QUEUE),
+				    (ptype == DB_HEAP || 
+					ptype == DB_RECNO || ptype == DB_QUEUE),
 				    &pdata);
 			else
 				result = _SetListElem(interp, retlist,
@@ -852,12 +1061,14 @@ out1:
 	 * If DB_DBT_MALLOC is set we need to free if DB allocated anything.
 	 * If DB_DBT_USERMEM is set we need to free it because
 	 * we allocated it (for data_buf_size/key_buf_size).  That
-	 * allocation does not apply to the pdata DBT.
+	 * allocation does not apply to the pdata DBT.  For heap, we do not
+	 * malloc anything but move pointers around so nothing to free.
 	 */
 out:
 	if (key.data != NULL && F_ISSET(&key, DB_DBT_MALLOC))
 		__os_ufree(dbc->env, key.data);
-	if (key.data != NULL && F_ISSET(&key, DB_DBT_USERMEM))
+	if (type != DB_HEAP && 
+	    key.data != NULL && F_ISSET(&key, DB_DBT_USERMEM))
 		__os_free(dbc->env, key.data);
 	if (data.data != NULL && F_ISSET(&data, DB_DBT_MALLOC))
 		__os_ufree(dbc->env, data.data);
@@ -1053,4 +1264,69 @@ tcl_DbcDup(interp, objc, objv, dbc)
 out:
 	return (result);
 
+}
+
+/*
+ * tcl_DbcDel --
+ */
+static int
+tcl_DbcDel(interp, objc, objv, dbc)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DBC *dbc;			/* Cursor pointer */
+{
+	static const char *dbcdelopts[] = {
+		"-consume",
+		NULL
+	};
+	enum dbcdelopts {
+		DBCDEL_CONSUME
+	};
+	u_int32_t flag;
+	int i, optindex, result, ret;
+
+	result = TCL_OK;
+	flag = 0;
+	if (objc < 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?-args?");
+		return (TCL_ERROR);
+	}
+
+	/*
+	 * Get the command name index from the object based on the options
+	 * defined above.
+	 */
+	i = 2;
+	while (i < objc) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], dbcdelopts,
+		    "option", TCL_EXACT, &optindex) != TCL_OK) {
+			/*
+			 * Reset the result so we don't get
+			 * an errant error message if there is another error.
+			 */
+			if (IS_HELP(objv[i]) == TCL_OK) {
+				result = TCL_OK;
+				goto out;
+			}
+			Tcl_ResetResult(interp);
+			break;
+		}
+		i++;
+		switch ((enum dbcdelopts)optindex) {
+		case DBCDEL_CONSUME:
+			flag = DB_CONSUME;
+			break;
+		}
+	}
+	if (dbc->dbp->type == DB_HEAP)
+		result = tcl_DbcHeapDel(interp, dbc);
+	else {
+		_debug_check();
+		ret = dbc->del(dbc, flag);
+		result = _ReturnSetup(
+		    interp, ret, DB_RETOK_DBCDEL(ret), "dbc delete");
+	}
+out:
+	return (result);
 }

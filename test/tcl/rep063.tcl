@@ -32,7 +32,7 @@ proc rep063 { method args } {
 		return
 	}
 
-	set nclients 5
+	set nclients 3
  	set logsets [create_logsets [expr $nclients + 1]]
 
 	# Set up for on-disk or in-memory databases.
@@ -153,28 +153,21 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	# Client0: ......................
 	# Client1: ...........
 	# Client2: ...........
-	# Client3: ......................
-	# Client4: .................................
 	#
 	# Remove client 1 and 2 from list to process, this guarantees
-	# clients 0, 3 and 4 are ahead in LSN.  We use each of these
-	# in different parts of the test so guarantee bigger LSNs.
+	# client 0 is ahead in LSN.
 	#
 	set orig_env $envlist
-	set envlist [lreplace $envlist 3 3]
-	set envlist [lreplace $envlist 2 2]
+	#
+	# Counting the master, client 2 is the 4th item, or index 3.
+	# Client 1 is the 3rd item, or index 2.  Remove them both.
+	#
+	set envlist [lreplace $envlist 2 3]
 	eval rep_test $method $masterenv NULL $niter 0 0 0 $largs
 	process_msgs $envlist
 	#
-	# Remove client 3 so that client 4 has the biggest LSN of all.
-	#
-	set eend [llength $envlist]
-	set cl3_i [expr $eend - 2]
-	set envlist [lreplace $envlist $cl3_i $cl3_i]
-	eval rep_test $method $masterenv NULL $niter 0 0 0 $largs
-	process_msgs $envlist
-	#
-	# Put all removed clients back in.
+	# Put all removed clients back in.  Close master and
+	# remove it from the list.
 	#
 	set envlist $orig_env
 	error_check_good masterenv_close [$masterenv close] 0
@@ -201,15 +194,6 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 			    "-errpfx CLIENT$i $verbargs "]
 		}
 	}
-	#
-	# Remove clients 3 and 4 from the envlist.  We'll save those for
-	# later.
-	#
-	set cl4 [lindex $envlist 4]
-	set envlist [lreplace $envlist 4 4]
-	set cl3 [lindex $envlist 3]
-	set envlist [lreplace $envlist 3 3]
-
 	set m "Rep$tnum.b"
 	#
 	# Client 0 has the biggest LSN of clients 0, 1, 2.
@@ -218,9 +202,12 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	# Client 1 should win even though its LSN is smaller.
 	# This tests one "older" client and the rest "newer".
 	#
+	# Client0: ...................... (0/Electable - bigger LSN)
+	# Client1: ...........  ("old" version - should win)
+	# Client2: ........... (0/Electable)
+	#
+	#
 	puts "\t$m: Test old client trumps new clients with bigger LSN."
-	set orig_ncl $nclients
-	set nclients 3
 	set nsites $nclients
 	set nvotes $nclients
 	set winner 1
@@ -259,6 +246,11 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	# Client 1 now has a bigger LSN, so make client 0 the old client
 	# and client 1 a real 0 priority new client.
 	#
+	# Client0: ........... ("old" version site - should win)
+	# Client1: ......................  (0 priority for real)
+	# Client2: ........... (0/Electable)
+	#
+	#
 	set winner 0
 	setpriority pri $nclients $winner 0 1
 	set pri(1) 0
@@ -271,12 +263,17 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set m "Rep$tnum.d"
 	puts "\t$m: Test multiple old clients with new client."
 	#
-	# Client 0 is now has a bigger LSN, so make client 1 winner.
+	# Client 0 now has a bigger LSN, so make client 1 winner.
 	# We are setting client 2's priority to something bigger so that
 	# we simulate having 2 "older version" clients (clients 1 and 2)
 	# and one new client (client 0).  This tests that the right client
 	# among the older versions gets correctly elected even though there
 	# is a bigger LSN "new" client participating.
+	#
+	# Client0: ......................  (0/Electable)
+	# Client1: ........... ("old" version - should win)
+	# Client2: ........... ("old" version - real but lower priority)
+	#
 	#
 	set winner 1
 	setpriority pri $nclients $winner 0 1
@@ -290,57 +287,55 @@ proc rep063_sub { method nclients tnum logset recargs largs } {
 	set m "Rep$tnum.e"
 	puts "\t$m: Test new clients, client 1 not electable."
 	#
-	# Client 1 now has a bigger LSN, so make it unelectable.  Add in
-	# old client 3 since that should be the biggest LSN of all these.
-	# Set all other priorities to electable_pri to make them all equal (and
-	# all "new" clients).  We know client 3 should win because we
-	# set its LSN much farther ahead in the beginning.
+	# Client 1 now has a bigger LSN, so make it unelectable.  
+	# Set other priorities to electable_pri to make them all equal (and
+	# all "new" clients).
 	#
-	set winner 3
-	replclear [expr $winner + 2]
-	set nclients 4
-	set nsites $nclients
-	set nvotes $nclients
+	# Client0: ........... (0/Electable)
+	# Client1: ......................  (0 priority for real)
+	# Client2: ........... (0/Electable)
+	#
+	#
 	set pri(0) $electable_pri
 	set pri(1) 0
 	set pri(2) $electable_pri
-	set pri(3) $electable_pri
-	replclear [lindex $cl3 1]
-	lappend envlist $cl3
+	set winner 0
+	set altwin 2
 	#
-	# Winner should be zero priority.
+	# Winner should be zero priority.  Winner could be either 0 or 2.
+	# We just want to make sure that site 1 does not win.  So catch
+	# any election where the primary winner didn't win and check that
+	# the alternate winner won.  (This is similar to rep002).
 	#
-	run_election envlist err_cmd pri crash $qdir \
-	    $m $elector $nsites $nvotes $nclients $winner 0 $dbname
+	if {[catch {run_election envlist err_cmd pri crash $qdir \
+	    $m $elector $nsites $nvotes $nclients $winner 0 $dbname} res]} {
+		error_check_good check_winner [is_substr \
+		    $res "expected 2, got [expr $altwin + 2]"] 1
+		puts "\t$m: Alternate winner $altwin won."
+		set winner $altwin
+		error_check_good make_master \
+		    [$clientenv($winner) rep_start -master] 0
+		cleanup_elections
+		process_msgs $envlist
+	}
 	error_check_good elect_pri [stat_field $clientenv(2) rep_stat \
 	    "Election priority"] 0
 	rep063_movelsn_reopen $method envlist $env_cmd($winner) $winner $largs
 
 	#
-	# Now add in Client 4, the site with the biggest LSN of all.
-	# Test with all being electable clients.
+	# Test with all being electable clients.  Whichever site won
+	# last time should still be the winner.
 	#
 	set m "Rep$tnum.f"
 	puts "\t$m: Test all new electable clients."
-	set winner 4
-	set nclients 5
 	set nsites $nclients
 	set nvotes $nclients
 	set pri(0) $electable_pri
 	set pri(1) $electable_pri
 	set pri(2) $electable_pri
-	set pri(3) $electable_pri
-	set pri(4) $electable_pri
 	replclear [expr $winner + 2]
-	lappend envlist $cl4
-	#
-	# Client 4 has biggest LSN and should now win, but winner should
-	# be zero priority.
-	#
 	run_election envlist err_cmd pri crash $qdir \
 	    $m $elector $nsites $nvotes $nclients $winner 0 $dbname
-	error_check_good elect_pri [stat_field $clientenv(2) rep_stat \
-	    "Election priority"] 0
 
 	foreach pair $envlist {
 		set cenv [lindex $pair 0]

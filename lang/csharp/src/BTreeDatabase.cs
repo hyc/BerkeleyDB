@@ -630,7 +630,7 @@ namespace BerkeleyDB {
         /// </param>
         /// <returns>
         /// A <see cref="KeyValuePair{T,T}"/> whose Key
-        /// parameter is <paramref name="key"/> and whose Value parameter is the
+        /// parameter is <paramref name="recno"/> and whose Value parameter is the
         /// retrieved data.
         /// </returns>
         public KeyValuePair<DatabaseEntry, DatabaseEntry> Get(uint recno) {
@@ -651,7 +651,7 @@ namespace BerkeleyDB {
         /// </param>
         /// <returns>
         /// A <see cref="KeyValuePair{T,T}"/> whose Key
-        /// parameter is <paramref name="key"/> and whose Value parameter is the
+        /// parameter is <paramref name="recno"/> and whose Value parameter is the
         /// retrieved data.
         /// </returns>
         public KeyValuePair<DatabaseEntry, DatabaseEntry> Get(

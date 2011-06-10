@@ -139,12 +139,12 @@
 #define OP_VRename                            132
 #define OP_VUpdate                            133
 #define OP_Pagecount                          134
-#define OP_Trace                              135
-#define OP_Noop                               136
-#define OP_Explain                            137
+#define OP_MaxPgcnt                           135
+#define OP_Trace                              136
+#define OP_Noop                               137
+#define OP_Explain                            138
 
 /* The following opcode values are never used */
-#define OP_NotUsed_138                        138
 #define OP_NotUsed_139                        139
 #define OP_NotUsed_140                        140
 
@@ -177,6 +177,6 @@
 /* 104 */ 0x00, 0x0c, 0x45, 0x15, 0x01, 0x02, 0x00, 0x01,\
 /* 112 */ 0x08, 0x05, 0x05, 0x05, 0x00, 0x00, 0x00, 0x02,\
 /* 120 */ 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 128 */ 0x01, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00,\
+/* 128 */ 0x01, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02, 0x02,\
 /* 136 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x04, 0x04,\
 /* 144 */ 0x04, 0x04,}

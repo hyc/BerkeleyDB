@@ -18,8 +18,8 @@ COPYEXP='Copyright.*'`date +%C%y`'.*affiliates'
 echo $COPYEXP
 
 (cd $d && find . -name '*.[chys]' -o -name '*.cpp' -o -name '*.tcl'  \
-             -o -name '*.java' -o -name '*.cs' -o -name '*.hpp' |
-    xargs egrep -l  $COPYEXP) > $t1
+             -o -name '*.java' -o -name '*.cs' -o -name '*.hpp' \
+	     -o -name '*.src' | xargs egrep -l  $COPYEXP) > $t1
  
 # use sed to remove the files we do not care about, these are the ones
 # from 3rd parties that are included in our distribution

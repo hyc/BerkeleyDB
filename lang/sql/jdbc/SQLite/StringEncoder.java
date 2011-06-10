@@ -230,15 +230,15 @@ public class StringEncoder {
 	if (a == null || a.length == 0) {
 	    return "X''";
 	}
-	int outLen = a.length * 2 + 3;
-	StringBuffer out = new StringBuffer(outLen);
-	out.append('X');
-	out.append('\'');
-	for (int i = 0; i < a.length; i++) {
-	    out.append(xdigits[(a[i] >> 4) & 0x0F]);
-	    out.append(xdigits[a[i] & 0x0F]);
+	char[] out = new char[a.length * 2 + 3];
+	int i = 2;
+	for (int j = 0; j < a.length; j++) {
+	    out[i++] = xdigits[(a[j] >> 4) & 0x0F];
+	    out[i++] = xdigits[a[j] & 0x0F];
 	}
-	out.append('\'');
-	return out.toString();
+	out[0] = 'X';
+	out[1] = '\'';
+	out[i] = '\'';
+	return new String(out);
     }
 }

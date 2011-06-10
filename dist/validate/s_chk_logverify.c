@@ -8,6 +8,8 @@
 #include "db_config.h"
 #include "db_int.h"
 #include "db.h"
+
+#include "dbinc/log.h"
 #include "dbinc/log_verify.h"
 
 static int put_get_cmp_ckp __P((DB_LOG_VRFY_INFO *, VRFY_CKP_INFO *, 
@@ -41,7 +43,7 @@ main(argc, argv)
 	DB_LSN rlsn;
 	char *buf;
 	u_int32_t bufsz;
-	DBT fid, *qdbt;
+	DBT fid;
 	DB_THREAD_INFO *ip;
 	DB_ENV *dbenv;
 
@@ -69,38 +71,38 @@ main(argc, argv)
 	put_get_cmp(lvinfop, &txninfo, txninfo.txnid);
 	for (i = 1000; i <= 2000; i += 100) {
 		rlsn.offset = i;
-		if (ret = __add_recycle_lsn_range(lvinfop, &rlsn, 80000000, 80000300))
+		if ((ret = __add_recycle_lsn_range(lvinfop, &rlsn, 80000000, 80000300)))
 			goto err;
-		if (ret = put_get_cmp(lvinfop, &txninfo, txninfo.txnid))
+		if ((ret = put_get_cmp(lvinfop, &txninfo, txninfo.txnid)))
 			goto err;
 		if (i % 200) {
 			fid.data = buf + abs(rand()) % (bufsz / 2);
 			fid.size = (char *)fid.data - buf;
-			if (ret = __add_file_updated(&txninfo, &fid, i))
+			if ((ret = __add_file_updated(&txninfo, &fid, i)))
 				goto err;
 		}
-		if ((i % 200 == 0) && (ret = __del_file_updated(&txninfo, &fid)))
+		if ((i % 200 == 0) && ((ret = __del_file_updated(&txninfo, &fid))))
 			goto err;
-		if (ret = put_get_cmp(lvinfop, &txninfo, txninfo.txnid))
+		if ((ret = put_get_cmp(lvinfop, &txninfo, txninfo.txnid)))
 			goto err;
 	}
 	freginfo.fileid = fid;
 	freginfo.fname = "mydb.db";
-	if (ret = put_get_cmp_freg(lvinfop, &freginfo, &freginfo.fileid))
+	if ((ret = put_get_cmp_freg(lvinfop, &freginfo, &freginfo.fileid)))
 		goto err;
 
 	ckpinfo.lsn.file = 2;
 	ckpinfo.lsn.offset = 3201;
 	ckpinfo.ckplsn.file = 2;
 	ckpinfo.ckplsn.offset = 2824;
-	if (ret = put_get_cmp_ckp(lvinfop, &ckpinfo, ckpinfo.lsn))
+	if ((ret = put_get_cmp_ckp(lvinfop, &ckpinfo, ckpinfo.lsn)))
 		goto err;
 
 	tsinfo.lsn.file = 1;
 	tsinfo.lsn.offset = 829013;
 	tsinfo.timestamp = time(NULL);
 	tsinfo.logtype = 123;
-	if (ret = put_get_cmp_ts(lvinfop, &tsinfo, tsinfo.lsn))
+	if ((ret = put_get_cmp_ts(lvinfop, &tsinfo, tsinfo.lsn)))
 		goto err;
 
 err:
@@ -120,10 +122,10 @@ put_get_cmp_ckp(lvinfop, ckp, lsn)
 	VRFY_CKP_INFO *ckppp;
 
 	ckppp = NULL;
-	if (ret = __put_ckp_info(lvinfop, ckp))
+	if ((ret = __put_ckp_info(lvinfop, ckp)))
 		goto err;
 
-	if (ret = __get_ckp_info(lvinfop, lsn, &ckppp))
+	if ((ret = __get_ckp_info(lvinfop, lsn, &ckppp)))
 		goto err;
 	if (memcmp(ckp, ckppp, sizeof(VRFY_CKP_INFO))) {
 		fprintf(stderr, 
@@ -148,10 +150,10 @@ put_get_cmp_ts(lvinfop, ts, lsn)
 	VRFY_TIMESTAMP_INFO *tsp;
 
 	tsp = NULL;
-	if (ret = __put_timestamp_info(lvinfop, ts))
+	if ((ret = __put_timestamp_info(lvinfop, ts)))
 		goto err;
 
-	if (ret = __get_timestamp_info(lvinfop, lsn, &tsp))
+	if ((ret = __get_timestamp_info(lvinfop, lsn, &tsp)))
 		goto err;
 	if (memcmp(ts, tsp, sizeof(VRFY_TIMESTAMP_INFO))) {
 		fprintf(stderr, 
@@ -176,10 +178,10 @@ put_get_cmp_freg(lvinfop, freg, fid)
 	VRFY_FILEREG_INFO *freginfop;
 
 	freginfop = NULL;
-	if (ret = __put_filereg_info(lvinfop, freg))
+	if ((ret = __put_filereg_info(lvinfop, freg)))
 		goto err;
 
-	if (ret = __get_filereg_info(lvinfop, fid, &freginfop))
+	if ((ret = __get_filereg_info(lvinfop, fid, &freginfop)))
 		goto err;
 	if (memcmp(freg, freginfop, FILE_REG_INFO_FIXSIZE) || 
 	    dbt_cmp(&(freg->fileid), &(freginfop->fileid)) ||
@@ -205,10 +207,10 @@ dbt_cmp(d1, d2)
 {
 	int ret;
 
-	if (ret = d1->size - d2->size)
+	if ((ret = d1->size - d2->size))
 		return ret;
 
-	if (ret = memcmp(d1->data, d2->data, d1->size))
+	if ((ret = memcmp(d1->data, d2->data, d1->size)))
 		return ret;
 
 	return 0;
@@ -223,9 +225,9 @@ dbtarr_cmp(a1, a2, len)
 	int i, ret;
 
 	for (i = 0; i < len; i++) {
-		if (ret = a1[i].size - a2[i].size)
+		if ((ret = a1[i].size - a2[i].size))
 			return ret;
-		if (ret = memcmp(a1[i].data, a2[i].data, a1[i].size))
+		if ((ret = memcmp(a1[i].data, a2[i].data, a1[i].size)))
 			return ret;
 	}
 
@@ -242,10 +244,10 @@ put_get_cmp(lvinfop, txninfo, tid)
 	VRFY_TXN_INFO *txninfop;
 
 	txninfop = NULL;
-	if (ret = __put_txn_vrfy_info(lvinfop, txninfo))
+	if ((ret = __put_txn_vrfy_info(lvinfop, txninfo)))
 		goto err;
 
-	if (ret = __get_txn_vrfy_info(lvinfop, tid, &txninfop))
+	if ((ret = __get_txn_vrfy_info(lvinfop, tid, &txninfop)))
 		goto err;
 	if (memcmp(txninfo, txninfop, TXN_VERIFY_INFO_FIXSIZE) ||
 	    memcmp(txninfo->recycle_lsns, txninfop->recycle_lsns, 

@@ -64,8 +64,33 @@ namespace BerkeleyDB {
             }
         }
 
-        internal bool maxIsSet;
-        private uint _max;
+        internal bool initMutexesIsSet;
+        private uint _initmutexes;
+        /// <summary>
+        /// The initial number of mutexes to allocate.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Berkeley DB allocates a default number of mutexes based on the
+        /// initial configuration of the database environment. This method
+        /// allows the user to override that default value.
+        /// </para>
+        /// <para>
+        /// If the database environment already exists when
+        /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
+        /// InitMutexes will be ignored.
+        /// </para>
+        /// </remarks>
+        public uint InitMutexes {
+            get { return _initmutexes; }
+            set {
+                initMutexesIsSet = true;
+                _initmutexes = value;
+            }
+        }
+
+        internal bool maxMutexesIsSet;
+        private uint _maxmutexes;
         /// <summary>
         /// The total number of mutexes to allocate.
         /// </summary>
@@ -90,10 +115,10 @@ namespace BerkeleyDB {
         /// </para>
         /// </remarks>
         public uint MaxMutexes {
-            get { return _max; }
+            get { return _maxmutexes; }
             set {
-                maxIsSet = true;
-                _max = value;
+                maxMutexesIsSet = true;
+                _maxmutexes = value;
             }
         }
 
