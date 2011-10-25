@@ -32266,6 +32266,7 @@ typedef struct {
 #define	CACHE_KEY_SIZE 9		/* 8 hex characters + NUL */
 	char key[CACHE_KEY_SIZE];
 	DB *dbp;
+	db_lockmode_t lock_mode;
 	int created;
 } CACHED_DB;
 
@@ -32307,7 +32308,8 @@ typedef struct {
 } LockFileInfo;
 #endif
 
-typedef enum { CLEANUP_COMMIT, CLEANUP_ABORT, CLEANUP_CLOSE } cleanup_mode_t;
+typedef enum { CLEANUP_COMMIT, CLEANUP_ABORT, CLEANUP_CLOSE,
+    CLEANUP_DROP_LOCKS, CLEANUP_GET_LOCKS } cleanup_mode_t;
 /* There are three possible table types in SQLite. */
 typedef enum { DB_STORE_NAMED, DB_STORE_TMP, DB_STORE_INMEM } storage_mode_t;
 typedef enum { TRANS_NONE, TRANS_READ, TRANS_WRITE } txn_mode_t;
@@ -32328,6 +32330,7 @@ int btreeIncrVacuum(Btree *p);
 int btreeVacuum(Btree *p, char **pzErrMsg);
 #endif
 int dberr2sqlite(int);
+int closeDB(Btree *p, DB *dbp, u_int32_t flags);
 void *allocateCursorIndex(BtCursor *pCur, u_int32_t amount);
 int splitIndexKey(BtCursor *pCur);
 int isDupIndex(int flags, int storage, KeyInfo *keyInfo, DB *db);
@@ -32407,6 +32410,7 @@ struct BtShared {
 	/* Fields used to maintain the linked list of shared objects. */
 	BtShared *pNextDb;
 	BtShared *pPrevDb;
+	Btree *btrees; /* A linked list of btrees that have been opened in this BtShared. */
 	int nRef;
 	int readonly;
 };
@@ -32461,7 +32465,9 @@ struct Btree {
 	u8 inVacuum;	/* True if vacuum is in progress */
 	u8 sharable;	/* True if we can share pBt with another db */
 	u8 locked;	/* True if db currently has pBt locked */
-	u8 txn_bulk;    /* True to enable the bulk loading optimization */
+	u8 txn_excl;	/* True if in an exclusive transaction */
+	u8 txn_bulk;	/* True to enable the bulk loading optimization */
+	u32 txn_priority;	/* Transaction priority. */
 	int wantToLock;	/* Number of nested calls to sqlite3BtreeEnter() */
 	int nBackup;	/* Number of backup operations reading this btree */
 	u32 updateDuringBackup; /* An update was performed during a backup. */
@@ -33264,6 +33270,16 @@ extern int __os_fileid(ENV *, const char *, int, u_int8_t *);
 extern int __os_mkdir (ENV *, const char *, int);
 extern int __os_unlink (ENV *, const char *, int);
 
+/*
+ * The DB_SQL_LOCKER structure is used to unlock a DB handle. The id field must
+ * be compatible with the id field of the DB_LOCKER struct. We know the first
+ * field will be a "u_int32_t id", define enough of a structure here so that
+ * we can use the id field without including lock.h.
+ */
+typedef struct {
+	u_int32_t id;
+} DB_SQL_LOCKER;
+
 #define	GIGABYTE 1073741824
 
 #define	DB_MIN_CACHESIZE 20		/* pages */
@@ -33286,11 +33302,15 @@ static int btreeCreateDataTable(Btree *, int, CACHED_DB **);
 static int btreeCreateSharedBtree(
     Btree *, const char *, u_int8_t *, sqlite3 *, int, storage_mode_t);
 static int btreeCreateTable(Btree *p, int *piTable, int flags);
+static int btreeDbHandleIsLocked(CACHED_DB *cached_db);
+static int btreeDbHandleLock(Btree *p, CACHED_DB *cached_db);
+static int btreeDbHandleUnlock(Btree *p, CACHED_DB *cached_db);
 static void btreeFreeSharedBtree(BtShared *p, int clear_cache);
 static int btreeGetSharedBtree(
     BtShared **, u_int8_t *, sqlite3 *, storage_mode_t, int);
 static int btreeMoveto(BtCursor *pCur,
     const void *pKey, i64 nKey, int bias, int *pRes);
+static int btreeInvalidateHandleCache(Btree *p);
 static int btreePrepareEnvironment(Btree *p);
 static int btreeRestoreCursorPosition(BtCursor *pCur, int skipMoveto);
 static int btreeLoadBufferIntoTable(BtCursor *pCur);
@@ -33420,10 +33440,23 @@ u_int32_t g_uid_next = 0;
 	if (ret == DB_LOCK_DEADLOCK && pCur->isIncrblobHandle) {\
 		if (!pCur->wrFlag)				\
 			pCur->pBtree->read_txn = NULL;		\
+		if (pCur->txn == pCur->pBtree->savepoint_txn)	\
+			pCur->pBtree->savepoint_txn =		\
+			    pCur->pBtree->savepoint_txn->parent;\
 		pCur->txn->abort(pCur->txn);			\
 		pCur->txn = NULL;				\
 		return SQLITE_LOCKED;				\
 	}
+
+/* Decide which transaction to use when reading the meta data table. */
+#define GET_META_TXN(p)					\
+	(p->txn_excl ? pSavepointTxn :			\
+		(pReadTxn ? pReadTxn : pFamilyTxn))
+
+/* Decide which flags to use when reading the meta data table. */
+#define GET_META_FLAGS(p)				\
+	((p->txn_excl ? DB_RMW : 0) |			\
+	    (GET_BTREE_ISOLATION(p) & ~DB_TXN_SNAPSHOT))
 
 int dberr2sqlite(int err)
 {
@@ -33452,6 +33485,73 @@ int dberr2sqlite(int err)
 	default:
 		return SQLITE_ERROR;
 	}
+}
+
+/*
+ * Close db handle and cleanup resource (e.g.: remove in-memory db) 
+ * automatically.
+ *
+ * Note: closeDB is more dangerous than dbp->close since it would remove
+ * in-memory db. Generally, closeDB should only be used instead of dbp->close
+ * when:
+ *   1. Cleanup cached handles.
+ *   2. DB handle creating fails. Safe because no one own this uncreated handle.
+ *   3. Drop Tables.
+ * 
+ * In other cases (error handlers, vacuum , backup, etc.), closeDB should not
+ * be called anyway. That's because the db might be required by other
+ * connections.
+ */
+int closeDB(Btree *p, DB *dbp, u_int32_t flags)
+{
+	char *tableName, *fileName, tableNameBuf[DBNAME_SIZE];
+	u_int32_t remove_flags;
+	int ret, needRemove;
+	BtShared *pBt;
+
+	tableName = NULL;
+	fileName = NULL;
+	needRemove = 0;
+
+	if (p == NULL || (pBt = p->pBt) == NULL || dbp == NULL)
+		return 0;
+
+	/* 
+ 	 * In MPOOL, Named in-memory databases get an artificially bumped
+	 * reference count so they don't disappear on close; they need a 
+	 * remove to make them disappear.
+	 */
+	if (pBt->dbStorage == DB_STORE_INMEM &&
+	    (dbp->flags & DB_AM_OPEN_CALLED))
+		needRemove = 1;
+
+	/*
+	 * Save tableName into buf for subsquent dbremove. The buf is required
+	 * since tableName would be destroyed after db is closed.
+	 */
+	if (needRemove && (dbp->get_dbname(dbp, (const char **)&fileName,
+	   (const char**)&tableName) == 0)) {
+		strncpy(tableNameBuf, tableName, sizeof(tableNameBuf) - 1);
+		tableName = tableNameBuf;
+	}
+
+	ret = dbp->close(dbp, flags);
+
+	/*
+	 * Do removes as needed to prevent mpool leak. pSavepointTxn is required 
+	 * since the operations might be rollbacked.
+	 */
+	if (needRemove) {
+		remove_flags = DB_NOSYNC;
+		if (!GET_DURABLE(pBt))
+			remove_flags |= DB_TXN_NOT_DURABLE;
+		if (pSavepointTxn == NULL)
+			remove_flags |= (DB_AUTO_COMMIT | DB_LOG_NO_DATA);
+		(void)pDbEnv->dbremove(pDbEnv, pSavepointTxn, fileName,
+			tableName, remove_flags);
+	}
+
+	return ret;
 }
 
 /*
@@ -33841,8 +33941,16 @@ addmeta:/*
 	if (!*pCreating) {
 		/* This matches SQLite, I don't understand the naming. */
 		sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &val);
+                if (p->db->errCode == SQLITE_BUSY) {
+		        rc = SQLITE_BUSY;
+			goto err;
+		}
 		pBt->autoVacuum = (u8)val;
 		sqlite3BtreeGetMeta(p, BTREE_INCR_VACUUM, &val);
+                if (p->db->errCode == SQLITE_BUSY) {
+		        rc = SQLITE_BUSY;
+			goto err;
+		}
 		pBt->incrVacuum = (u8)val;
 	}
 
@@ -34125,7 +34233,8 @@ static int btreePrepareEnvironment(Btree *p)
 		memset(envDirNameBuf, 0, BT_MAX_PATH);
 		sqlite3_snprintf(sizeof envDirNameBuf, envDirNameBuf,
 		    "%s-journal", pBt->full_name);
-		if ((pBt->dir_name = sqlite3_strdup(envDirNameBuf)) == NULL) {
+		if (pBt->dir_name == NULL &&
+		    (pBt->dir_name = sqlite3_strdup(envDirNameBuf)) == NULL) {
 			rc = SQLITE_NOMEM;
 			goto err;
 		}
@@ -34295,6 +34404,7 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 {
 	BtShared *pBt;
 	CACHED_DB *cached_db;
+	DB_ENV *tmp_env;
 	int creating, iTable, newEnv, rc, ret, reuse_env, writeLock;
 	sqlite3_mutex *mutexOpen;
 	txn_mode_t txn_mode;
@@ -34347,7 +34457,7 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 		goto err;
 	pBt = p->pBt;
 
-	if (!pBt->env_opened) {
+	while (!pBt->env_opened) {
 		cache_sz = (i64)pBt->cacheSize;
 		if (cache_sz < DB_MIN_CACHESIZE)
 			cache_sz = DB_MIN_CACHESIZE;
@@ -34397,6 +34507,30 @@ int btreeOpenEnvironment(Btree *p, int needLock)
 #ifdef BDBSQL_SHARE_PRIVATE
 			if (pBt->dbStorage == DB_STORE_NAMED)
 				btreeScopedFileUnlock(p, createdFile);
+#else
+			/*
+			 * If the environment open returned DB_RUNRECOVERY
+			 * that means a clean shutdown happened on a panicked
+			 * environment - which happens with out of memory
+			 * errors. In that case passing both DB_RECOVER and
+			 * DB_REGISTER to the open does not trigger recovery to
+			 * be run on the environment. Force a recovery here,
+			 * then retry the open.
+			 */
+			if (ret == DB_RUNRECOVERY) {
+				/* Ignore errors - we expect DB_RUNRECOVERY */
+				pDbEnv->close(pDbEnv, 0);
+				if ((ret = db_env_create(&tmp_env, 0)) != 0)
+					goto err;
+				if ((ret = tmp_env->open(
+				tmp_env, pBt->dir_name,
+				pBt->env_oflags & ~DB_REGISTER, 0)) != 0)
+					goto err;
+				tmp_env->close(tmp_env, 0);
+				if ((ret = btreePrepareEnvironment(p)) != 0)
+					goto err;
+				continue;
+			}
 #endif
 			if (ret == ENOENT && (pBt->env_oflags & DB_CREATE) == 0)
 				return SQLITE_OK;
@@ -34682,7 +34816,7 @@ SQLITE_PRIVATE int sqlite3BtreeOpen(
     int flags,			/* Options */
     int vfsFlags)		/* Flags passed through to VFS open */
 {
-	Btree *p;
+	Btree *p, *next_btree;
 	BtShared *pBt, *next_bt;
 	int rc;
 	sqlite3_mutex *mutexOpen;
@@ -34795,6 +34929,21 @@ SQLITE_PRIVATE int sqlite3BtreeOpen(
 		}
 	}
 
+	/* Add this Btree object to the list of Btrees seen by the BtShared */
+	for (next_btree = pBt->btrees; next_btree != NULL;
+	    next_btree = next_btree->pNext) {
+		if (next_btree == p)
+			break;
+	}
+	if (next_btree == NULL) {
+		if (pBt->btrees == NULL)
+			pBt->btrees = p;
+		else {
+			p->pNext = pBt->btrees;
+			pBt->btrees->pPrev = p;
+			pBt->btrees = p;
+		}
+	}
 	p->readonly = (p->vfsFlags & SQLITE_OPEN_READONLY) ? 1 : 0;
 	*ppBtree = p;
 
@@ -34934,8 +35083,8 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 	DB *dbp;
 	CACHED_DB *cached_db;
 	BtShared *pBt;
-	HashElem *e;
-	int ret, rc;
+	HashElem *e, *e_next;
+	int remove, ret, rc;
 
 	log_msg(LOG_VERBOSE, "btreeCleanupCachedHandles(%p, %d)",
 	    p, (int)cleanup);
@@ -34943,13 +35092,35 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 	pBt = p->pBt;
 	e = NULL;
 	rc = SQLITE_OK;
+	remove = 0;
 
-	for (e = sqliteHashFirst(&pBt->db_cache); e != NULL;
-	    e = sqliteHashNext(e)) {
+	/* If a backup is in progress, we can't drop handle locks. */
+	if ((cleanup == CLEANUP_GET_LOCKS || cleanup == CLEANUP_DROP_LOCKS) &&
+	    p->nBackup > 0)
+		return (SQLITE_OK);
+
+	for (e = sqliteHashFirst(&pBt->db_cache); e != NULL; e = e_next) {
+		/*
+		 * Grab the next value now rather than in the for loop so that
+		 * it's possible to remove elements from the list inline.
+		 */
+		e_next = sqliteHashNext(e);
 		cached_db = sqliteHashData(e);
 
 		if (cached_db == NULL)
 			continue;
+
+		if (cleanup == CLEANUP_DROP_LOCKS ||
+		    cleanup == CLEANUP_GET_LOCKS) {
+			if (cached_db->dbp == NULL)
+				continue;
+			if (cleanup == CLEANUP_GET_LOCKS)
+				btreeDbHandleLock(p, cached_db);
+			else if (cleanup == CLEANUP_DROP_LOCKS) {
+				btreeDbHandleUnlock(p, cached_db);
+			}
+			continue;
+		}
 
 		if ((dbp = cached_db->dbp) != NULL) {
 			/*
@@ -34960,7 +35131,7 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 			 * track all parent / child relationships when
 			 * rolling back transactions.
 			 */
-			if (cleanup != CLEANUP_CLOSE &&
+			if (cleanup == CLEANUP_ABORT &&
 			    (dbp->flags & DB_AM_OPEN_CALLED) != 0)
 				continue;
 
@@ -34968,13 +35139,19 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 			if (dbp->app_private != NULL)
 				sqlite3_free(dbp->app_private);
 #endif
-			if ((ret = dbp->close(dbp, DB_NOSYNC)) == 0 &&
+			if ((ret = closeDB(p, dbp, DB_NOSYNC)) == 0 &&
 			    rc == SQLITE_OK)
 				rc = dberr2sqlite(ret);
+			remove = 1;
 		}
-		if (cleanup == CLEANUP_CLOSE)
+		if (cleanup == CLEANUP_CLOSE || remove) {
+			if (remove)
+				sqlite3HashInsert(&pBt->db_cache,
+				    cached_db->key,
+				    (int)strlen(cached_db->key), NULL);
 			sqlite3_free(cached_db);
-		else
+			remove = 0;
+		} else
 			cached_db->dbp = NULL;
 	}
 
@@ -34986,6 +35163,7 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 */
 SQLITE_PRIVATE int sqlite3BtreeClose(Btree *p)
 {
+	Btree *next_btree;
 	BtShared *pBt;
 	int ret, rc, t_rc, t_ret;
 	sqlite3_mutex *mutexOpen;
@@ -35027,6 +35205,7 @@ SQLITE_PRIVATE int sqlite3BtreeClose(Btree *p)
 		ret = pFamilyTxn->commit(pFamilyTxn, 0);
 		pFamilyTxn = NULL;
 		p->inTrans = TRANS_NONE;
+		p->txn_excl = 0;
 		if (ret != 0 && rc == SQLITE_OK)
 			rc = dberr2sqlite(ret);
 	}
@@ -35056,7 +35235,24 @@ SQLITE_PRIVATE int sqlite3BtreeClose(Btree *p)
 	mutexOpen = sqlite3MutexAlloc(OPEN_MUTEX(pBt->dbStorage));
 	sqlite3_mutex_enter(mutexOpen);
 
+	/* Remove this pBt from the BtShared list of btrees. */
+	for (next_btree = pBt->btrees; next_btree != NULL;
+	    next_btree = next_btree->pNext) {
+		if (next_btree == p) {
+			if (next_btree == pBt->btrees) {
+				pBt->btrees = next_btree->pNext;
+				if (pBt->btrees != NULL)
+					pBt->btrees->pPrev = NULL;
+			} else {
+				p->pPrev->pNext = p->pNext;
+				if (p->pNext != NULL)
+					p->pNext->pPrev = p->pPrev;
+			}
+		}
+	}
+
 	if (--pBt->nRef == 0) {
+		assert (pBt->btrees == NULL);
 		if (pBt->dbStorage == DB_STORE_NAMED) {
 			/* Remove it from the linked list of shared envs. */
 			assert(pBt == g_shared_btrees || pBt->pPrevDb != NULL);
@@ -35172,6 +35368,104 @@ SQLITE_PRIVATE int sqlite3BtreeSetSafetyLevel(Btree *p, int level, int fullSync)
 }
 
 /*
+ * If the schema version has changed since the last transaction we need to
+ * close all handles in the handle cache that aren't holding a handle lock.
+ * Ideally we could do this via the sqlite3ResetInternalSchema method
+ * but there is no obvious hook there, and.. since we do the GET_LOCKS
+ * call here, we need to close handles now or we can't tell if they need to be
+ * closed.
+ * TODO: We'll probably be best altering the sqlite code to make this work
+ * more efficiently.
+ */
+static int btreeInvalidateHandleCache(Btree *p) {
+	BtShared *pBt;
+	int cookie, i, rc, ret;
+	CACHED_DB *cached_db, **tables_to_close;
+	DB *dbp;
+	HashElem *e, *e_next;
+	u_int32_t flags;
+
+	rc = ret = 0;
+	pBt = p->pBt;
+
+	if (p->inTrans == TRANS_NONE && p->db != NULL && p->db->aDb != NULL) {
+		sqlite3BtreeGetMeta(p, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
+		if (p->db->aDb[0].pSchema != NULL &&
+		    p->db->aDb[0].pSchema->schema_cookie != cookie) {
+			/*
+			 * TODO: Is it possible that this function is called
+			 * while already holding the mutex? Maybe from the
+			 * sequence code.
+			 */
+			sqlite3_mutex_enter(pBt->mutex);
+			/*
+			 * We can't call DB->close while holding the mutex, so
+			 * record which handles we want to close and do the
+			 * actual close after the mutex is released.
+			 */
+			for (e = sqliteHashFirst(&pBt->db_cache), i = 0;
+			    e != NULL; e = sqliteHashNext(e), i++) {}
+
+			if (i == 0) {
+				sqlite3_mutex_leave(pBt->mutex);
+				return (0);
+			}
+
+			tables_to_close =
+			     sqlite3_malloc(i * sizeof(CACHED_DB *));
+			if (tables_to_close == NULL) {
+				sqlite3_mutex_leave(pBt->mutex);
+				return SQLITE_NOMEM;
+			}
+			memset(tables_to_close, 0, i * sizeof(CACHED_DB *));
+			/*
+			 * Ideally we'd be able to find out if the Berkeley DB
+			 * fileid is still valid, but that's not currently
+			 * simple, so close all handles.
+			 */
+			for (e = sqliteHashFirst(&pBt->db_cache), i = 0;
+			    e != NULL; e = e_next) {
+				e_next = sqliteHashNext(e);
+				cached_db = sqliteHashData(e);
+
+				/* Skip table name db and in memory tables. */
+				if (cached_db == NULL ||
+				    strcmp(cached_db->key, "1") == 0 ||
+				    cached_db->dbp == NULL)
+					continue;
+				dbp = cached_db->dbp;
+				dbp->dbenv->get_open_flags(dbp->dbenv, &flags);
+				if (flags & DB_PRIVATE)
+					continue;
+				if (btreeDbHandleIsLocked(cached_db))
+					continue;
+				tables_to_close[i++] = cached_db;
+				sqlite3HashInsert(&pBt->db_cache,
+				    cached_db->key,
+				    (int)strlen(cached_db->key), NULL);
+			}
+			sqlite3_mutex_leave(pBt->mutex);
+			for (i = 0; tables_to_close[i] != NULL; i++) {
+				cached_db = tables_to_close[i];
+				dbp = cached_db->dbp;
+#ifndef BDBSQL_SINGLE_THREAD
+				if (dbp->app_private != NULL)
+					sqlite3_free(dbp->app_private);
+#endif
+				if ((ret = closeDB(p, dbp, DB_NOSYNC)) == 0 &&
+				    rc == SQLITE_OK)
+					rc = dberr2sqlite(ret);
+				sqlite3_free(cached_db);
+			}
+			sqlite3_free(tables_to_close);
+			if (rc != 0)
+				return (rc);
+		}
+	}
+	return (0);
+}
+
+/*
 ** Attempt to start a new transaction. A write-transaction is started if the
 ** second argument is true, otherwise a read-transaction. No-op if a
 ** transaction is already in progress.
@@ -35192,7 +35486,8 @@ SQLITE_PRIVATE int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 {
 	BtShared *pBt;
 	int rc;
-	u_int32_t exclTxnPriority;
+	u_int32_t txn_exclPriority;
+	u32 temp;
 
 	log_msg(LOG_VERBOSE,
 	    "sqlite3BtreeBeginTrans(%p, %u) -- writer %s",
@@ -35207,7 +35502,7 @@ SQLITE_PRIVATE int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 
 	pBt = p->pBt;
 	rc = SQLITE_OK;
-	exclTxnPriority = -1;
+	txn_exclPriority = -1;
 
 	if (wrflag && IS_BTREE_READONLY(p))
 		return SQLITE_READONLY;
@@ -35224,6 +35519,13 @@ SQLITE_PRIVATE int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 		/* The btreeOpenEnvironment call might have updated pBt. */
 		pBt = p->pBt;
 	}
+
+	if ((rc = btreeInvalidateHandleCache(p)) != 0)
+		return (rc);
+
+	btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
+	if (wrflag == 2)
+		p->txn_excl = 1;
 	if (pBt->transactional) {
 		if (wrflag && p->inTrans != TRANS_WRITE)
 			p->inTrans = TRANS_WRITE;
@@ -35231,16 +35533,23 @@ SQLITE_PRIVATE int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 			p->inTrans = TRANS_READ;
 
 		if (pReadTxn == NULL || p->nSavepoint <= p->db->nSavepoint)
- 			rc = sqlite3BtreeBeginStmt(p, p->db->nSavepoint);
+			rc = sqlite3BtreeBeginStmt(p, p->db->nSavepoint);
 
 		/* Exclusive transaction. */
 		if (wrflag == 2 && rc == SQLITE_OK) {
 			rc = sqlite3BtreeLockTable(p, MASTER_ROOT, 1);
 			pSavepointTxn->set_priority(pSavepointTxn,
-			    exclTxnPriority);
-			pReadTxn->set_priority(pReadTxn, exclTxnPriority);
-			pMainTxn->set_priority(pMainTxn, exclTxnPriority);
-			pFamilyTxn->set_priority(pFamilyTxn, exclTxnPriority);
+			    txn_exclPriority);
+			pReadTxn->set_priority(pReadTxn, txn_exclPriority);
+			pMainTxn->set_priority(pMainTxn, txn_exclPriority);
+			pFamilyTxn->set_priority(pFamilyTxn, txn_exclPriority);
+			sqlite3BtreeGetMeta(p, 1, &temp);
+		} else if (p->txn_priority != 0) {
+			pSavepointTxn->set_priority(pSavepointTxn,
+			    p->txn_priority);
+			pReadTxn->set_priority(pReadTxn, p->txn_priority);
+			pMainTxn->set_priority(pMainTxn, p->txn_priority);
+			pFamilyTxn->set_priority(pFamilyTxn, p->txn_priority);
 		}
 	}
 	return rc;
@@ -35295,10 +35604,12 @@ SQLITE_PRIVATE int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster)
 SQLITE_PRIVATE int sqlite3BtreeCommitPhaseTwo(Btree *p)
 {
 	BtShared *pBt;
+	Btree *next_btree;
 	DELETED_TABLE *dtable, *next;
 	char *tableName, tableNameBuf[DBNAME_SIZE];
 	char *oldTableName, oldTableNameBuf[DBNAME_SIZE], *fileName;
 	int needVacuum, rc, ret, t_rc;
+	int in_trans, removeFlags;
 	u_int32_t defaultTxnPriority;
 #ifdef BDBSQL_SHARE_PRIVATE
 	int deleted = 0; /* indicates tables were deleted */
@@ -35315,11 +35626,15 @@ SQLITE_PRIVATE int sqlite3BtreeCommitPhaseTwo(Btree *p)
 	rc = SQLITE_OK;
 	defaultTxnPriority = 100;
 	needVacuum = 0;
+	removeFlags = DB_AUTO_COMMIT | DB_LOG_NO_DATA | DB_NOSYNC | \
+	    (GET_DURABLE(pBt) ? 0 : DB_TXN_NOT_DURABLE);
 
 	if (pMainTxn && p->db->activeVdbeCnt <= 1) {
 #ifdef BDBSQL_SHARE_PRIVATE
 		needsunlock = 1;
 #endif
+                /* Mark the end of an exclusive transaction. */
+                p->txn_excl = 0;
 		
 		t_rc = btreeCloseAllCursors(p, pMainTxn);
 		if (t_rc != SQLITE_OK && rc == SQLITE_OK)
@@ -35348,14 +35663,22 @@ SQLITE_PRIVATE int sqlite3BtreeCommitPhaseTwo(Btree *p)
 			    dtable->iTable, "");
 			FIX_TABLENAME(pBt, fileName, tableName);
 
+			/*
+			 * In memory db was not renamed. Just do a quick remove
+			 * in this case.
+			 */
+			if (pBt->dbStorage == DB_STORE_INMEM) {
+				ret = pDbEnv->dbremove(pDbEnv, NULL, fileName,
+				    tableName, removeFlags);
+				goto next;
+			}
 #ifndef BDBSQL_FILE_PER_TABLE
 			oldTableName = oldTableNameBuf;
 			GET_TABLENAME(oldTableName, sizeof oldTableNameBuf,
 			    dtable->iTable, "old-");
 
-			ret = pDbEnv->dbremove(pDbEnv, NULL,
-			    fileName, oldTableName,
-			    DB_AUTO_COMMIT | DB_LOG_NO_DATA | DB_NOSYNC);
+			ret = pDbEnv->dbremove(pDbEnv, NULL, fileName,
+			    oldTableName, removeFlags);
 #else
 			if (dtable->flag == DTF_DELETE) {
 				oldTableName = oldTableNameBuf;
@@ -35364,12 +35687,10 @@ SQLITE_PRIVATE int sqlite3BtreeCommitPhaseTwo(Btree *p)
 				    dtable->iTable, "old-");
 
 				ret = pDbEnv->dbremove(pDbEnv, NULL,
-				    fileName, oldTableName,
-				    DB_AUTO_COMMIT | DB_LOG_NO_DATA | DB_NOSYNC);
+				    fileName, oldTableName, removeFlags);
 			} else {
 				ret = pDbEnv->dbremove(pDbEnv, NULL,
-				    fileName, NULL,
-				    DB_AUTO_COMMIT | DB_LOG_NO_DATA | DB_NOSYNC);
+				    fileName, NULL, removeFlags);
 				if (ret != 0 && rc == SQLITE_OK)
 					rc = dberr2sqlite(ret);
 
@@ -35380,7 +35701,7 @@ SQLITE_PRIVATE int sqlite3BtreeCommitPhaseTwo(Btree *p)
 				ret = pTablesDb->del(pTablesDb, NULL, &key, 0);
 			}
 #endif
-			if (ret != 0 && rc == SQLITE_OK)
+next:			if (ret != 0 && rc == SQLITE_OK)
 				rc = dberr2sqlite(ret);
 
 			next = dtable->next;
@@ -35413,10 +35734,28 @@ SQLITE_PRIVATE int sqlite3BtreeCommitPhaseTwo(Btree *p)
 		p->inTrans = TRANS_READ;
 	else {
 		p->inTrans = TRANS_NONE;
+		p->txn_excl = 0;
 		if (p->schemaLockMode > LOCKMODE_NONE &&
 		    (t_rc = btreeLockSchema(p, LOCKMODE_NONE)) != SQLITE_OK &&
 		    rc == SQLITE_OK)
 			rc = t_rc;
+
+		/*
+		 * Only release the handle locks if no transactions are active
+		 * in any Btree.
+		 */
+		in_trans = 0;
+		for (next_btree = pBt->btrees; next_btree != NULL;
+		     next_btree = next_btree->pNext) {
+			if (next_btree->inTrans != TRANS_NONE) {
+				in_trans = 1;
+				break;
+			}
+		}
+
+  		/* Drop any handle locks if this was the only active txn. */
+		if (in_trans == 0)
+			btreeCleanupCachedHandles(p, CLEANUP_DROP_LOCKS);
 	}
 
 	if (needVacuum && rc == SQLITE_OK)
@@ -35497,6 +35836,8 @@ SQLITE_PRIVATE int sqlite3BtreeBeginStmt(Btree *p, int iStatement)
 
 	pBt = p->pBt;
 	ret = 0;
+
+	btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
 
 	if (pBt->transactional && p->inTrans != TRANS_NONE &&
 	    pFamilyTxn != NULL) {
@@ -35648,6 +35989,7 @@ static int btreeCompareShared(DB *dbp, const DBT *dbt1, const DBT *dbt2)
  */
 static int btreeConfigureDbHandle(Btree *p, int iTable, DB **dbpp)
 {
+	Btree *next_btree;
 	BtShared *pBt;
 	DB *dbp;
 	DB_MPOOLFILE *pMpf;
@@ -35699,7 +36041,7 @@ err:	if (ret != 0) {
 			sqlite3_free(tableInfo);
 #endif
 		if (dbp != NULL)
-			(void)dbp->close(dbp, DB_NOSYNC);
+			(void)closeDB(p, dbp, DB_NOSYNC);
 		*dbpp = NULL;
 	} else {
 		*dbpp = dbp;
@@ -36132,8 +36474,8 @@ static int btreeCloseCursor(BtCursor *pCur, int listRemove)
 	}
 
 	/* Incrblob write cursors have their own dedicated transactions. */
-	if (pCur->isIncrblobHandle &&
-	    pCur->txn && pCur->wrFlag && pSavepointTxn) {
+	if (pCur->isIncrblobHandle && pCur->txn && pCur->wrFlag &&
+	    pSavepointTxn && pCur->txn != pSavepointTxn) {
 		ret = pCur->txn->commit(pCur->txn, DB_TXN_NOSYNC);
 		pCur->txn = 0;
 	}
@@ -37320,8 +37662,10 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags)
 {
 	BtShared *pBt;
 	CACHED_DB *cached_db;
+	DB *dbp;
 	DBC *dbc;
 	DBT key, data;
+	char cached_db_key[CACHE_KEY_SIZE];
 	int iTable, lastTable, rc, ret, t_ret;
 
 	cached_db = NULL;
@@ -37367,6 +37711,28 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags)
 			iTable += 1;
 	} else if ((iTable & 1) == 1)
 		iTable += 1;
+
+	/*
+	 * If the table already exists in the cache, it's a hang-over from
+	 * a table that was deleted in another process. Close the handle now.
+	 */
+	sqlite3_snprintf(sizeof cached_db_key, cached_db_key, "%x", iTable);
+	if ((cached_db = sqlite3HashFind(&pBt->db_cache,
+	    cached_db_key, (int)strlen(cached_db_key))) != NULL) {
+		if ((dbp = cached_db->dbp) != NULL) {
+#ifndef BDBSQL_SINGLE_THREAD
+			if (dbp->app_private != NULL)
+				sqlite3_free(dbp->app_private);
+#endif
+			ret = dbp->close(dbp, DB_NOSYNC);
+			cached_db->dbp = NULL;
+			if (ret != 0)
+				goto err;
+		}
+		sqlite3HashInsert(&pBt->db_cache,
+		    cached_db_key, (int)strlen(cached_db_key), NULL);
+		sqlite3_free(cached_db);
+	}
 
 	rc = btreeCreateDataTable(p, iTable, &cached_db);
 
@@ -37607,7 +37973,7 @@ SQLITE_PRIVATE int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved)
 	    &pBt->db_cache, cached_db_key, (int)strlen(cached_db_key), NULL);
 	sqlite3_mutex_leave(pBt->mutex);
 	sqlite3_free(cached_db);
-
+ 
 	if (pBt->dbStorage == DB_STORE_NAMED) {
 		tableName = tableNameBuf;
 		GET_TABLENAME(tableName, sizeof tableNameBuf, iTable, "");
@@ -37684,6 +38050,25 @@ SQLITE_PRIVATE int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved)
 #endif
 		}			
 
+	} else if (pBt->dbStorage == DB_STORE_INMEM) {
+		/*
+		 * Add the in-memory tables into deleted_tables. Don't do the 
+		 * remove now since the operation might be rollbacked.  The 
+		 * deleted_tables will be removed when commit.
+		 *
+		 * We don't rename the in-memory db as above DB_STORE_NAMED
+		 * case because:
+		 * 1) In memory table names are always unique.
+		 * 2) Can not rename a in-memory db since dbrename can not
+		 *    accept DB_TXN_NOT_DURABLE.
+		 */
+		dtable = (DELETED_TABLE *)sqlite3_malloc(sizeof(DELETED_TABLE));
+		if (dtable == NULL)
+			return SQLITE_NOMEM;
+		dtable->iTable = iTable;
+		dtable->txn = pSavepointTxn;
+		dtable->next = p->deleted_tables;
+		p->deleted_tables = dtable;
 	}
 
 err:	return (ret == 0) ? SQLITE_OK : dberr2sqlitelocked(ret);
@@ -37752,8 +38137,13 @@ SQLITE_PRIVATE void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta)
 	data.size = data.ulen = sizeof metaData;
 	data.flags = DB_DBT_USERMEM;
 
-	if ((ret = pMetaDb->get(pMetaDb, pReadTxn ? pReadTxn : pFamilyTxn,
-	    &key, &data, GET_BTREE_ISOLATION(p))) == 0) {
+	/*
+	 * Trigger a read-modify-write get from the metadata table to stop
+	 * other connections from being able to proceed while an exclusive
+	 * transaction is active.
+	 */ 
+	if ((ret = pMetaDb->get(pMetaDb, GET_META_TXN(p), &key, &data,
+            GET_META_FLAGS(p))) == 0) {
 		*pMeta = (u32)decodeI64(data.data, data.size);
 		if (idx < NUMMETA) {
 			pBt->meta[idx].value = *pMeta;
@@ -37762,6 +38152,11 @@ SQLITE_PRIVATE void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta)
 	} else if (ret == DB_NOTFOUND || ret == DB_KEYEMPTY) {
 		*pMeta = 0;
 		ret = 0;
+	} else if (ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) {
+		p->db->errCode = SQLITE_BUSY;
+		ret = 0;
+		*pMeta = 0;
+		sqlite3BtreeRollback(p);
 	}
 
 	assert(ret == 0);
@@ -38830,6 +39225,7 @@ SQLITE_PRIVATE int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint)
 		pMainTxn = pReadTxn = pSavepointTxn = NULL;
 		p->nSavepoint = 0;
 		p->inTrans = TRANS_NONE;
+		p->txn_excl = 0;
 	 /* pReadTxn is only NULL if the read txn is being aborted */
 	} else if (p->inTrans == TRANS_WRITE && pReadTxn)
 		pSavepointTxn = txn->parent;
@@ -39136,6 +39532,72 @@ err:	if (dbp) {
 	 }
  
 	return MAP_ERR(rc, ret);
+}
+/*
+ * This pair of functions manages the handle lock held by Berkeley DB for
+ * database (DB) handles. Berkeley DB holds those locks so that a remove can't
+ * succeed while a handle is still open. The SQL API needs that remove to
+ * succeed if the handle is "just cached" - that is not actively in use.
+ * Consequently we reach into the DB handle and unlock the handle_lock when the
+ * handle is only being held cached.
+ * We re-get the lock when the handle is accessed again. A handle shouldn't be
+ * accessed after a remove, but we'll be a bit paranoid and do checks for that
+ * situation anyway.
+ */
+static int btreeDbHandleLock(Btree *p, CACHED_DB *cached_db)
+{
+	BtShared *pBt;
+	DB *dbp;
+	DBT fileobj;
+	DB_LOCK_ILOCK lock_desc;
+	int ret;
+
+	pBt = p->pBt;
+	ret = 0;
+	dbp = cached_db->dbp;
+
+	if (btreeDbHandleIsLocked(cached_db))
+		return (0);
+
+	/* Ensure we're going to ask for a reasonable lock. */
+	if (cached_db->lock_mode == DB_LOCK_NG)
+		return (0);
+
+	memcpy(lock_desc.fileid, dbp->fileid, DB_FILE_ID_LEN);
+	lock_desc.pgno = dbp->meta_pgno;
+	lock_desc.type = DB_HANDLE_LOCK;
+
+	memset(&fileobj, 0, sizeof(fileobj));
+	fileobj.data = &lock_desc;
+	fileobj.size = sizeof(lock_desc);
+
+	if (dbp != NULL && dbp->locker != NULL) {
+		ret = pDbEnv->lock_get(pDbEnv,
+		    ((DB_SQL_LOCKER*)dbp->locker)->id, 0, &fileobj,
+		    cached_db->lock_mode, &(dbp->handle_lock));
+		/* Avoid getting the lock again, until it's been dropped. */
+		cached_db->lock_mode = DB_LOCK_NG;
+	}
+
+	return (ret);
+}
+
+static int btreeDbHandleUnlock(Btree *p, CACHED_DB *cached_db)
+{
+	BtShared *pBt;
+
+	pBt = p->pBt;
+	if (!btreeDbHandleIsLocked(cached_db))
+		return (0);
+
+	cached_db->lock_mode = cached_db->dbp->handle_lock.mode;
+	return (pDbEnv->lock_put(pDbEnv, &cached_db->dbp->handle_lock));
+}
+
+static int btreeDbHandleIsLocked(CACHED_DB *cached_db)
+{
+#define LOCK_INVALID 0
+	return (cached_db->dbp->handle_lock.off != LOCK_INVALID);
 }
 
 #ifdef BDBSQL_OMIT_LEAKCHECK
@@ -40543,19 +41005,19 @@ static int btreeCleanDatabase(Btree *p)
 		iTable = tables[i];
 		if (iTable > MASTER_ROOT) {
 			if (p->pBt->dbStorage != DB_STORE_NAMED) {
-				/* Drop table does not remove the table from
-				 * the environment in temporary and memory
-				 * databases, so it needs to be cleared first,
-				 * in case the table is created again later
-				 * (happens in backup).
+				/* We do not want to remove the table
+				 * from the environment, which is what
+				 * drop table does for in memory db, we
+				 * just want to clear it of data.
 				 */
 				if ((rc = sqlite3BtreeClearTable(p, iTable, 0)
 					!= SQLITE_OK))
 					goto err;
+			} else {
+				if ((rc = sqlite3BtreeDropTable(p, iTable, &tmp)
+					!= SQLITE_OK))
+					goto err;
 			}
-			if ((rc = sqlite3BtreeDropTable(p, iTable, &tmp)
-				!= SQLITE_OK))
-				goto err;
 		}
 		i++;
 	}
@@ -40621,10 +41083,18 @@ static int btreeCopyPages(sqlite3_backup *p, int *pages)
 			 * not be changed.
 			 */
 			sqlite3BtreeGetMeta(p->pSrc, 1, &val);
+			if (p->pSrc->db->errCode == SQLITE_BUSY) {
+				rc = SQLITE_BUSY;
+				goto err;
+			}
 			rc = sqlite3BtreeUpdateMeta(p->pDest, 1, val);
 			if (rc != SQLITE_OK)
 				goto err;
 			sqlite3BtreeGetMeta(p->pSrc, 3, &val);
+                       if (p->pSrc->db->errCode == SQLITE_BUSY) {
+				rc = SQLITE_BUSY;
+				goto err;
+			}
 			rc = sqlite3BtreeUpdateMeta(p->pDest, 3, val);
 			if (rc != SQLITE_OK)
 				goto err;
@@ -40924,6 +41394,37 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 			pBt->txn_bulk = getBoolean(zRight);
 
 		returnSingleInt(pParse, "txn_bulk", (i64)pBt->txn_bulk);
+		parsed = 1;
+	/* 
+	 * This pragma is used internally for testing deadlock.  It sets
+	 * the priority of a transaction so it will not loose its locks 
+	 * when deadlock occurs with a non-exclusive transaction.
+	 * txn_priority=#       sets the transaction priority of all 
+	 * non-exclusive transactions in this session to #
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "txn_priority", 12) == 0) {
+		u_int32_t priority, excl_priority;
+
+		priority = 0;
+		excl_priority = -1;
+		if (pDb->pBt->savepoint_txn != NULL) {
+			if (zRight) {
+				/* 
+				 * Txn priority must be less than 
+				 * the priority given to exclusive
+				 * transactions.
+				 */
+				if (sqlite3GetInt32(zRight, &priority) &&
+				    priority < excl_priority) 
+					pDb->pBt->txn_priority = priority;
+				else 
+					sqlite3ErrorMsg(pParse,
+					    "Invalid transaction priority %s,"
+					    " must be a number.", zRight);
+			}
+		}
+		returnSingleInt(pParse, "txn_priority", 
+		    pDb->pBt->txn_priority);
 		parsed = 1;
 	}
 	/* Return semantics to match strcmp. */
@@ -50093,6 +50594,8 @@ case OP_ReadCookie: {               /* out2-prerelease */
   assert( (p->btreeMask & (1<<u.at.iDb))!=0 );
 
   sqlite3BtreeGetMeta(db->aDb[u.at.iDb].pBt, u.at.iCookie, (u32 *)&u.at.iMeta);
+  if ( rc == SQLITE_OK && db->errCode == SQLITE_BUSY )
+    rc = db->errCode;
   pOut->u.i = u.at.iMeta;
   break;
 }
@@ -50163,6 +50666,10 @@ case OP_VerifyCookie: {
   u.av.pBt = db->aDb[pOp->p1].pBt;
   if( u.av.pBt ){
     sqlite3BtreeGetMeta(u.av.pBt, BTREE_SCHEMA_VERSION, (u32 *)&u.av.iMeta);
+    if (db->errCode == SQLITE_BUSY) {
+      rc = db->errCode;
+      break;
+    }
   }else{
     u.av.iMeta = 0;
   }
@@ -73869,6 +74376,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   for(i=0; i<ArraySize(meta); i++){
     sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
+    if ( rc == SQLITE_OK && db->errCode == SQLITE_BUSY ) {
+      rc = db->errCode;
+      goto initone_error_out;
+    }
   }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
@@ -74093,9 +74604,11 @@ static void schemaIsValid(Parse *pParse){
     ** value stored as part of the in-memory schema representation,
     ** set Parse.rc to SQLITE_SCHEMA. */
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
-    if( cookie!=db->aDb[iDb].pSchema->schema_cookie ){
+    if( pParse->rc == SQLITE_OK && db->errCode == SQLITE_BUSY )
+      pParse->rc = db->errCode;
+    if( pParse->rc != SQLITE_BUSY &&
+      cookie!=db->aDb[iDb].pSchema->schema_cookie )
       pParse->rc = SQLITE_SCHEMA;
-    }
 
     /* Close the transaction, if one was opened. */
     if( openedTransaction ){

@@ -384,7 +384,7 @@ __qam_append(dbc, key, data)
 		return (ret);
 	if ((ret = __memp_fget(mpf, &metapg,
 	    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &meta)) != 0)
-		return (ret);
+		goto err;
 
 	/* Get the next record number. */
 	recno = meta->cur_recno;
@@ -404,9 +404,9 @@ __qam_append(dbc, key, data)
 	if (QAM_BEFORE_FIRST(meta, recno))
 		meta->first_recno = recno;
 
-	/* Lock the record and release meta page lock. */
-	ret = __db_lget(dbc, LCK_COUPLE_ALWAYS,
-	    recno, DB_LOCK_WRITE, DB_LOCK_RECORD, &lock);
+	/* Lock the record. */
+	ret = __db_lget(dbc, 0,
+	    recno, DB_LOCK_WRITE, DB_LOCK_RECORD, &cp->lock);
 	/* Release the meta page. */
 	if ((t_ret = __memp_fput(mpf,
 	    dbc->thread_info, meta, dbc->priority)) != 0 && ret == 0)
@@ -424,21 +424,21 @@ __qam_append(dbc, key, data)
 		ret = t_ret;
 
 	/*
-	 * Capture errors from either the lock couple or the call to
+	 * Capture errors from either the record lock or the call to
 	 * dbp->db_append_recno.
 	 */
 	if (ret != 0)
 		goto err;
 
-	cp->lock = lock;
 	cp->lock_mode = DB_LOCK_WRITE;
-	LOCK_INIT(lock);
 
 	pg = QAM_RECNO_PAGE(dbp, recno);
 
 	/* Fetch for write the data page. */
 	if ((ret = __qam_fget(dbc, &pg,
 	    DB_MPOOL_CREATE | DB_MPOOL_DIRTY, &page)) != 0)
+		goto err;
+	if ((ret = __LPUT(dbc, lock)) != 0)
 		goto err;
 
 	/* See if this is a new page. */
@@ -465,7 +465,7 @@ __qam_append(dbc, key, data)
 
 	/* See if we are leaving the extent. */
 	qp = (QUEUE *) dbp->q_internal;
-	if (qp->page_ext != 0 &&
+	if (ret == 0 && qp->page_ext != 0 &&
 	    (recno % (qp->page_ext * qp->rec_page) == 0 ||
 	    recno == UINT32_MAX)) {
 		if ((ret = __db_lget(dbc,

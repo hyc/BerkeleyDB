@@ -89,15 +89,18 @@ do_test bdb_deadlock-1.0 {
 set exclusive_test {
   set ::DB [sqlthread open test.db]
   do_test e1 {
-    execsql { BEGIN EXCLUSIVE }
+    execsql { BEGIN IMMEDIATE }
   } {SQLITE_OK} 
   do_test e2 {
-    execsql { INSERT INTO t2 VALUES(2) }
+    execsql { PRAGMA txn_priority=10000; }
   } {SQLITE_OK}
   do_test e3 {
-    execsql { INSERT INTO t1 VALUES(2) } 
+    execsql { INSERT INTO t2 VALUES(2) }
   } {SQLITE_OK}
   do_test e4 {
+    execsql { INSERT INTO t1 VALUES(2) } 
+  } {SQLITE_OK}
+  do_test e5 {
     execsql { COMMIT } 
   } {SQLITE_OK}
   sqlite3_close $::DB
@@ -485,18 +488,21 @@ do_test bdb_deadlock-10.5 {
 } {}
 
 # Executes operations under an exclusive txn
-set exclusive_read_test {
+set read_test {
   set ::DB [sqlthread open test.db]
   do_test e1 {
-    execsql { BEGIN EXCLUSIVE }
+    execsql { BEGIN IMMEDIATE }
   } {SQLITE_OK} 
   do_test e2 {
-    execsql { INSERT INTO t2 VALUES(2) }
+    execsql { PRAGMA txn_priority=10000; }
   } {SQLITE_OK}
   do_test e3 {
-    execsql { SELECT * FROM t1; } 
+    execsql { INSERT INTO t2 VALUES(2) }
   } {SQLITE_OK}
   do_test e4 {
+    execsql { SELECT * FROM t1; } 
+  } {SQLITE_OK}
+  do_test e5 {
     execsql { COMMIT } 
   } {SQLITE_OK}
   sqlite3_close $::DB
@@ -513,7 +519,7 @@ do_test bdb_deadlock-11.0 {
 
 # The exclusive thread will block when it attempts to select from t1
 array unset finished
-thread_spawn finished(0) "" $excl_thread_procs $exclusive_read_test
+thread_spawn finished(0) "" $excl_thread_procs $read_test
 
 after 5000
 

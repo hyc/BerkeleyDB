@@ -103,6 +103,12 @@ namespace CsharpAPITest
 			    BitConverter.GetBytes((int)255));
 			Assert.Less(0, cmp(dbt1, dbt2));
 
+
+			for (int i = 0; i < 1000; i++)
+				btreeDB.Put(new DatabaseEntry(
+				    BitConverter.GetBytes(i)), new DatabaseEntry(
+				    BitConverter.GetBytes(i)));
+
 			secDB.Close();
 			btreeDB.Close();
 		}

@@ -50,6 +50,37 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		returnSingleInt(pParse, "txn_bulk", (i64)pBt->txn_bulk);
 		parsed = 1;
+	/* 
+	 * This pragma is used internally for testing deadlock.  It sets
+	 * the priority of a transaction so it will not loose its locks 
+	 * when deadlock occurs with a non-exclusive transaction.
+	 * txn_priority=#       sets the transaction priority of all 
+	 * non-exclusive transactions in this session to #
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "txn_priority", 12) == 0) {
+		u_int32_t priority, excl_priority;
+
+		priority = 0;
+		excl_priority = -1;
+		if (pDb->pBt->savepoint_txn != NULL) {
+			if (zRight) {
+				/* 
+				 * Txn priority must be less than 
+				 * the priority given to exclusive
+				 * transactions.
+				 */
+				if (sqlite3GetInt32(zRight, &priority) &&
+				    priority < excl_priority) 
+					pDb->pBt->txn_priority = priority;
+				else 
+					sqlite3ErrorMsg(pParse,
+					    "Invalid transaction priority %s,"
+					    " must be a number.", zRight);
+			}
+		}
+		returnSingleInt(pParse, "txn_priority", 
+		    pDb->pBt->txn_priority);
+		parsed = 1;
 	}
 	/* Return semantics to match strcmp. */
 	return (!parsed);

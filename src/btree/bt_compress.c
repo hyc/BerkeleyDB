@@ -1227,10 +1227,8 @@ __bamc_compress_merge_delete(dbc, stream, countp)
 					cp->currentData, &ikey, &idata);
 
 			if (cmp < 0) {
-				if ((ret = __bamc_compress_store(dbc,
-				    cp->currentKey, cp->currentData,
-				    &prevDestKey, &prevDestData,
-				    &destkey, &destbuf)) != 0)
+				CMP_STORE(cp->currentKey, cp->currentData);
+				if (ret != 0)
 					goto end;
 
 				if ((ret = __bam_compress_set_dbt(dbp,

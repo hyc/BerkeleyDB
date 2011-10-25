@@ -39,17 +39,22 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_1.html#id3594174">Changes between 11.2.5.1.19 and 11.2.5.1.25</a>
+              <a href="changelog_5_1.html#idp50978088">Changes between 11.2.5.1.25 and 11.2.5.1.29</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_1.html#id3594183">Changes between 11.2.5.0 and 11.2.5.1.19</a>
+              <a href="changelog_5_1.html#idp50978472">Changes between 11.2.5.1.19 and 11.2.5.1.25</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_1.html#id3595233">Known Bugs</a>
+              <a href="changelog_5_1.html#idp50906136">Changes between 11.2.5.0 and 11.2.5.1.19</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_5_1.html#idp50983864">Known Bugs</a>
             </span>
           </dt>
         </dl>
@@ -63,7 +68,80 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3594174"></a>Changes between 11.2.5.1.19 and 11.2.5.1.25</h3>
+              <h3 class="title"><a id="idp50978088"></a>Changes between 11.2.5.1.25 and 11.2.5.1.29</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug which caused an AccessViolationException when populating a database with a compare delegate specified secondary database. [#18935]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a memory leak in the SQL API that happens when removing an in-memory or temporary database. [#19058]
+            </p>
+            </li>
+            <li>
+              <p>
+ Exclusive transactions will now block new transctions and will prevent existing transactions from making forward progress. [#19256]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that would cause an assert error when opening an in-memory hash database with thread count configured when compiled with --enable-diagnostic. [#19357]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause a hang when deleting a table if there are multiple connections to a database from different processes. [#19419]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug in the SQL API when using a blob field with a lot of content and multiple concurrent connections to the database. [#19945]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug to correctly handle the DB_BUFFER_SMALL case on a delete operation when compression is enabled. [#19660]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed the pragma "txn_priority" so it sets the priority of all SQL transactions in a session. [#19684]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause a crash in replication groups of more than 10 sites, with multiple processes sharing each DB environment concurrently. [#19818]
+            </p>
+            </li>
+            <li>
+              <p>
+ Modified db_hotbackup to not read from the file system as required on non-UNIX systems.  Also provided the db_copy function for this purpose. [#19863]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause records in a queue extent to be missing if multiple threads raced to allocate a new page. [#20219]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug in the SQL API that could cause a corrupted environment to fail to run recovery automatically. [#20767]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idp50978472"></a>Changes between 11.2.5.1.19 and 11.2.5.1.25</h3>
             </div>
           </div>
         </div>
@@ -161,7 +239,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3594183"></a>Changes between 11.2.5.0 and 11.2.5.1.19</h3>
+              <h3 class="title"><a id="idp50906136"></a>Changes between 11.2.5.0 and 11.2.5.1.19</h3>
             </div>
           </div>
         </div>
@@ -169,7 +247,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3592902"></a>Database or Log File On-Disk Format Changes</h4>
+                <h4 class="title"><a id="idp50979912"></a>Database or Log File On-Disk Format Changes</h4>
               </div>
             </div>
           </div>
@@ -192,7 +270,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594273"></a>New Features</h4>
+                <h4 class="title"><a id="idp50905824"></a>New Features</h4>
               </div>
             </div>
           </div>
@@ -300,7 +378,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594251"></a>Database Environment Changes</h4>
+                <h4 class="title"><a id="idp50951800"></a>Database Environment Changes</h4>
               </div>
             </div>
           </div>
@@ -333,7 +411,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594458"></a>Access Method Changes</h4>
+                <h4 class="title"><a id="idp50999800"></a>Access Method Changes</h4>
               </div>
             </div>
           </div>
@@ -404,6 +482,11 @@
  Fixed a bug that would cause handle locks to be left referencing the wrong metadata page if DB-&gt;compact moved the metadata page of a sub-database. [#18944]
             </p>
               </li>
+              <li>
+                <p>
+ Fixed a bug that could cause records in a queue extent to be missing if multiple threads raced to allocate a new page. [#20219]
+            </p>
+              </li>
             </ol>
           </div>
         </div>
@@ -411,7 +494,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594436"></a>API Changes</h4>
+                <h4 class="title"><a id="idp50998560"></a>API Changes</h4>
               </div>
             </div>
           </div>
@@ -480,12 +563,17 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594700"></a>SQL-Specific API Changes</h4>
+                <h4 class="title"><a id="idp51014296"></a>SQL-Specific API Changes</h4>
               </div>
             </div>
           </div>
           <div class="orderedlist">
             <ol type="1">
+              <li>
+                <p>
+ Exclusive transactions will now block new transctions and will prevent existing transactions from making forward progress. [#19256]
+            </p>
+              </li>
               <li>
                 <p>
  Allowed SQL applications to attach to the same database multiple times unless shared cache mode is explicitly requested. [#18340]
@@ -548,7 +636,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594403"></a>Tcl-Specific API Changes</h4>
+                <h4 class="title"><a id="idp50996832"></a>Tcl-Specific API Changes</h4>
               </div>
             </div>
           </div>
@@ -566,7 +654,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594786"></a>Java-Specific API Changes</h4>
+                <h4 class="title"><a id="idp51019688"></a>Java-Specific API Changes</h4>
               </div>
             </div>
           </div>
@@ -634,7 +722,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594469"></a>C#-Specific API Changes</h4>
+                <h4 class="title"><a id="idp50977736"></a>C#-Specific API Changes</h4>
               </div>
             </div>
           </div>
@@ -660,6 +748,11 @@
  Fixed a bug that use leading to the error: "Transaction that opened the DB handle is still active" when applications used different transactional handles in the associate and open methods in a secondary database. [#18873]
             </p>
               </li>
+              <li>
+                <p>
+ Fixed a bug which caused AccessViolationException when populating db with a compare delegate specified secondary db. [#18935]
+            </p>
+              </li>
             </ol>
           </div>
         </div>
@@ -667,7 +760,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594721"></a>Direct Persistence Layer (DPL), Bindings and Collections API</h4>
+                <h4 class="title"><a id="idp50977440"></a>Direct Persistence Layer (DPL), Bindings and Collections API</h4>
               </div>
             </div>
           </div>
@@ -729,7 +822,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594421"></a>Replication Changes</h4>
+                <h4 class="title"><a id="idp51009984"></a>Replication Changes</h4>
               </div>
             </div>
           </div>
@@ -787,7 +880,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594236"></a>Locking Subsystem Changes</h4>
+                <h4 class="title"><a id="idp50901928"></a>Locking Subsystem Changes</h4>
               </div>
             </div>
           </div>
@@ -805,7 +898,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3595082"></a>Memory Pool Subsystem Changes</h4>
+                <h4 class="title"><a id="idp51037976"></a>Memory Pool Subsystem Changes</h4>
               </div>
             </div>
           </div>
@@ -833,7 +926,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594764"></a>Mutex Subsystem Changes</h4>
+                <h4 class="title"><a id="idp51000528"></a>Mutex Subsystem Changes</h4>
               </div>
             </div>
           </div>
@@ -851,7 +944,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594881"></a>Transaction Subsystem Changes</h4>
+                <h4 class="title"><a id="idp50935816"></a>Transaction Subsystem Changes</h4>
               </div>
             </div>
           </div>
@@ -879,7 +972,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3595032"></a>Utility Changes</h4>
+                <h4 class="title"><a id="idp51036072"></a>Utility Changes</h4>
               </div>
             </div>
           </div>
@@ -900,6 +993,21 @@
  Fixed a bug in db_hotbackup that would cause a trap if the -D flag is used and the DB_CONFIG file does not specify a log directory. [#18841]
             </p>
               </li>
+              <li>
+                <p>
+ Fixed a bug that would cause verify to call the wrong compare function if there are user defined compare functions used and the database has multilevel off page sorted duplicate trees. [#20284]
+            </p>
+              </li>
+              <li>
+                <p>
+ Modified db_hotbackup to not read from the file system as required on non-UNIX systems.  Also provided the db_copy function for this purpose. [#19863]
+            </p>
+              </li>
+              <li>
+                <p>
+ Fixed db_hotbackup so that when -d/-l or -D is not specified, DB_CONFIG is used to determine the locations of the databases and logs in the source environment. [#19994]
+            </p>
+              </li>
             </ol>
           </div>
         </div>
@@ -907,7 +1015,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594398"></a>Configuration, Documentation, Sample Apps, Portability, and Build Changes</h4>
+                <h4 class="title"><a id="idp50996392"></a>Configuration, Documentation, Sample Apps, Portability, and Build Changes</h4>
               </div>
             </div>
           </div>
@@ -975,7 +1083,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594887"></a>Example Changes</h4>
+                <h4 class="title"><a id="idp51007640"></a>Example Changes</h4>
               </div>
             </div>
           </div>
@@ -993,7 +1101,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3595096"></a>Miscellaneous Bug Fixes</h4>
+                <h4 class="title"><a id="idp51043824"></a>Miscellaneous Bug Fixes</h4>
               </div>
             </div>
           </div>
@@ -1031,7 +1139,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="id3594628"></a>Deprecated Features</h4>
+                <h4 class="title"><a id="idp51045832"></a>Deprecated Features</h4>
               </div>
             </div>
           </div>
@@ -1050,7 +1158,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="id3595233"></a>Known Bugs</h3>
+              <h3 class="title"><a id="idp50983864"></a>Known Bugs</h3>
             </div>
           </div>
         </div>
@@ -1058,7 +1166,12 @@
           <ol type="1">
             <li>
               <p>
- Hybrid shared latches have a race condition which can consume cpu unnecessarily. The bug is triggered when a thread requests exclusive access to a shared latch while it is locked for reading by other threads. It will be fixed in Berkeley DB 5.1 patch release 1. [#18982]
+ Hybrid shared latches have a race condition which can consume cpu unnecessarily. The bug is triggered when a thread requests exclusive access to a shared latch while it is locked for reading by other threads.  If you run into this situation, contact us for a patch. [#18982]
+            </p>
+            </li>
+            <li>
+              <p>
+ When doing a C# API,  64 bit build, some of the data in the lock statistical field may appear incorrect.  This is a data display issue.  If you run into this situation, contact us for a patch.  [#20769]
             </p>
             </li>
           </ol>

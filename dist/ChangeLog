@@ -1,5 +1,46 @@
 = Berkeley DB 5.1 Changelog =
 
+== Changes between 11.2.5.1.25 and 11.2.5.1.29 ==
+
+Fixed a bug which caused an AccessViolationException when populating a 
+database with a compare delegate specified secondary database. [#18935]
+
+Fixed a memory leak in the SQL API that happens when removing an in-memory 
+or temporary database. [#19058]
+
+Exclusive transactions will now block new transctions and will prevent 
+existing transactions from making forward progress. [#19256]
+
+Fixed a bug that would cause an assert error when opening an in-memory hash 
+database with thread count configured when compiled with 
+--enable-diagnostic. [#19357]
+
+Fixed a bug that could cause a hang when deleting a table if there are 
+multiple connections to a database from different processes. [#19419]
+
+Fixed a bug in the SQL API when using a blob field with a lot of content and 
+multiple concurrent connections to the database. [#19945]
+
+Fixed a bug to correctly handle the DB_BUFFER_SMALL case on a delete operation 
+when compression is enabled. [#19660]
+
+Fixed the pragma "txn_priority" so it sets the priority of all SQL transactions 
+in a session. [#19684]
+
+Fixed a bug that could cause a crash in replication groups of more than 10 
+sites, with multiple processes sharing each DB environment 
+concurrently. [#19818]
+
+Modified db_hotbackup to not read from the file system as required on 
+non-UNIX systems.  Also provided the db_copy function for this 
+purpose. [#19863]
+
+Fixed a bug that could cause records in a queue extent to be missing 
+if multiple threads raced to allocate a new page. [#20219]
+
+Fixed a bug in the SQL API that could cause a corrupted environment to 
+fail to run recovery automatically. [#20767]
+
 == Changes between 11.2.5.1.19 and 11.2.5.1.25 ==
 
 Fixed a leak of log file ids when a database is closed before the end of a transaction that references it. [#15957]
@@ -167,6 +208,8 @@ first item in a HASH database is larger than the user supplied buffer. [#18829]
 Fixed a bug that would cause handle locks to be left referencing the wrong
 metadata page if DB->compact moved the metadata page of a sub-database. [#18944]
 
+Fixed a bug that could cause records in a queue extent to be missing if multiple
+threads raced to allocate a new page. [#20219]
 
 === API Changes ===
 
@@ -203,6 +246,8 @@ Fixed a bug that would leave the next page pointer of a hash bucket that
 was removed pointing to an invalid page [#19004]
 
 === SQL-Specific API Changes ===
+
+Exclusive transactions will now block new transctions and will prevent existing transactions from making forward progress. [#19256]
 
 Allowed SQL applications to attach to the same database multiple times unless
 shared cache mode is explicitly requested. [#18340]
@@ -296,6 +341,9 @@ Fixed a bug that use leading to the error:
 "Transaction that opened the DB handle is still active"
 when applications used different transactional handles in the 
 associate and open methods in a secondary database. [#18873]  
+
+Fixed a bug which caused AccessViolationException when populating db with
+a compare delegate specified secondary db. [#18935]
 
 === Direct Persistence Layer (DPL), Bindings and Collections API ===
 
@@ -430,6 +478,17 @@ db_printlog utility. [#18694]
 Fixed a bug in db_hotbackup that would cause a trap if the -D flag is used
 and the DB_CONFIG file does not specify a log directory. [#18841]
 
+Fixed a bug that would cause verify to call the wrong compare function if
+there are user defined compare functions used and the database has multilevel
+off page sorted duplicate trees. [#20284]
+
+Modified db_hotbackup to not read from the file system as required on non-UNIX
+systems.  Also provided the db_copy function for this purpose. [#19863]
+   
+Fixed db_hotbackup so that when -d/-l or -D is not specified, DB_CONFIG is used
+to determine the locations of the databases and logs in the source environment.
+[#19994]
+
 === Configuration, Documentation, Sample Apps, Portability, and Build Changes ===
 
 Added support and documentation for iPhone OS. [#18223]
@@ -491,6 +550,9 @@ and has not been actively supported. Use php_db4 instead.
 
 Hybrid shared latches have a race condition which can consume cpu
 unnecessarily. The bug is triggered when a thread requests exclusive access
-to a shared latch while it is locked for reading by other threads.
-It will be fixed in Berkeley DB 5.1 patch release 1.
-[#18982]
+to a shared latch while it is locked for reading by other threads.  If you 
+run into this situation, contact us for a patch. [#18982]
+
+When doing a C# API,  64 bit build, some of the data in the lock statistical 
+field may appear incorrect.  This is a data display issue.  If you run into 
+this situation, contact us for a patch.  [#20769]

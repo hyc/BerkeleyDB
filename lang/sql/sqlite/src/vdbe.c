@@ -2802,6 +2802,8 @@ case OP_ReadCookie: {               /* out2-prerelease */
   assert( (p->btreeMask & (1<<iDb))!=0 );
 
   sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
+  if ( rc == SQLITE_OK && db->errCode == SQLITE_BUSY )
+    rc = db->errCode;
   pOut->u.i = iMeta;
   break;
 }
@@ -2868,6 +2870,10 @@ case OP_VerifyCookie: {
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
+    if (db->errCode == SQLITE_BUSY) {
+      rc = db->errCode;
+      break;
+    }
   }else{
     iMeta = 0;
   }

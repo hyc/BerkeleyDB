@@ -316,6 +316,13 @@ __db_new_file(dbp, ip, txn, fhp, name)
 {
 	int ret;
 
+	/* 
+	 * For in-memory database, it is created by mpool and doesn't
+	 * take any lock, so temporarily turn off the lock checking here.
+	 */ 
+	if (F_ISSET(dbp, DB_AM_INMEM))
+		LOCK_CHECK_OFF(ip);
+
 	switch (dbp->type) {
 	case DB_BTREE:
 	case DB_RECNO:
@@ -341,6 +348,9 @@ __db_new_file(dbp, ip, txn, fhp, name)
 		ret = __os_fsync(dbp->env, fhp);
 
 	DB_TEST_RECOVERY(dbp, DB_TEST_POSTSYNC, ret, name);
+
+	if (F_ISSET(dbp, DB_AM_INMEM))
+		LOCK_CHECK_ON(ip);
 
 DB_TEST_RECOVERY_LABEL
 	return (ret);

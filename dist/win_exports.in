@@ -111,6 +111,7 @@
 	__db_dispatch
 	__db_dl
 	__db_dumptree
+	__db_encrypt_and_checksum_pg
 	__db_err
 	__db_errx
 	__db_getlong
@@ -211,6 +212,7 @@
 	__qam_add_desc
 	__qam_del_desc
 	__qam_delext_desc
+	__qam_fprobe
 	__qam_incfirst_desc
 	__qam_mvptr_desc
 	__qam_pgin_out

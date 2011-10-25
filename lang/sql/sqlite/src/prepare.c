@@ -247,6 +247,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   for(i=0; i<ArraySize(meta); i++){
     sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
+    if ( rc == SQLITE_OK && db->errCode == SQLITE_BUSY ) {
+      rc = db->errCode;
+      goto initone_error_out;
+    }
   }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
@@ -471,9 +475,11 @@ static void schemaIsValid(Parse *pParse){
     ** value stored as part of the in-memory schema representation,
     ** set Parse.rc to SQLITE_SCHEMA. */
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
-    if( cookie!=db->aDb[iDb].pSchema->schema_cookie ){
+    if( pParse->rc == SQLITE_OK && db->errCode == SQLITE_BUSY )
+      pParse->rc = db->errCode;
+    if( pParse->rc != SQLITE_BUSY &&
+      cookie!=db->aDb[iDb].pSchema->schema_cookie )
       pParse->rc = SQLITE_SCHEMA;
-    }
 
     /* Close the transaction, if one was opened. */
     if( openedTransaction ){

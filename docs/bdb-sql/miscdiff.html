@@ -46,6 +46,18 @@
           </li>
           <li>
             <p>
+                        When an exclusive transaction is active, it will
+                        block any new transactions from beginning (they
+                        will be blocked during their first operation until
+                        the exclusive transactions commits or aborts).
+                        Non-exclusive transactions that are active when the
+                        exclusive transaction begins will not be able to
+                        execute any more operations without being blocked
+                        until the exclusive transactions finishes.
+                    </p>
+          </li>
+          <li>
+            <p>
                         There are differences in how the two products work
                         in a concurrent application that will cause the
                         BDB SQL interface to deadlock where SQLite would result in a

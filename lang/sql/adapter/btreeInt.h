@@ -86,6 +86,7 @@ typedef struct {
 #define	CACHE_KEY_SIZE 9		/* 8 hex characters + NUL */
 	char key[CACHE_KEY_SIZE];
 	DB *dbp;
+	db_lockmode_t lock_mode;
 	int created;
 } CACHED_DB;
 
@@ -127,7 +128,8 @@ typedef struct {
 } LockFileInfo;
 #endif
 
-typedef enum { CLEANUP_COMMIT, CLEANUP_ABORT, CLEANUP_CLOSE } cleanup_mode_t;
+typedef enum { CLEANUP_COMMIT, CLEANUP_ABORT, CLEANUP_CLOSE,
+    CLEANUP_DROP_LOCKS, CLEANUP_GET_LOCKS } cleanup_mode_t;
 /* There are three possible table types in SQLite. */
 typedef enum { DB_STORE_NAMED, DB_STORE_TMP, DB_STORE_INMEM } storage_mode_t;
 typedef enum { TRANS_NONE, TRANS_READ, TRANS_WRITE } txn_mode_t;
@@ -148,6 +150,7 @@ int btreeIncrVacuum(Btree *p);
 int btreeVacuum(Btree *p, char **pzErrMsg);
 #endif
 int dberr2sqlite(int);
+int closeDB(Btree *p, DB *dbp, u_int32_t flags);
 void *allocateCursorIndex(BtCursor *pCur, u_int32_t amount);
 int splitIndexKey(BtCursor *pCur);
 int isDupIndex(int flags, int storage, KeyInfo *keyInfo, DB *db);
@@ -227,6 +230,7 @@ struct BtShared {
 	/* Fields used to maintain the linked list of shared objects. */
 	BtShared *pNextDb;
 	BtShared *pPrevDb;
+	Btree *btrees; /* A linked list of btrees that have been opened in this BtShared. */
 	int nRef;
 	int readonly;
 };
@@ -281,7 +285,9 @@ struct Btree {
 	u8 inVacuum;	/* True if vacuum is in progress */
 	u8 sharable;	/* True if we can share pBt with another db */
 	u8 locked;	/* True if db currently has pBt locked */
-	u8 txn_bulk;    /* True to enable the bulk loading optimization */
+	u8 txn_excl;	/* True if in an exclusive transaction */
+	u8 txn_bulk;	/* True to enable the bulk loading optimization */
+	u32 txn_priority;	/* Transaction priority. */
 	int wantToLock;	/* Number of nested calls to sqlite3BtreeEnter() */
 	int nBackup;	/* Number of backup operations reading this btree */
 	u32 updateDuringBackup; /* An update was performed during a backup. */

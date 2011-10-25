@@ -192,18 +192,46 @@ __repmgr_new_site(env, sitep, host, port, state, peer)
 	int peer;
 {
 	DB_REP *db_rep;
-	REPMGR_SITE *site;
+	REPMGR_CONNECTION *conn;
+	REPMGR_SITE *site, *sites;
 	char *p;
-	u_int new_site_max;
+	u_int i, new_site_max;
 	int ret;
 
 	db_rep = env->rep_handle;
 	if (db_rep->site_cnt >= db_rep->site_max) {
 		new_site_max = db_rep->site_max == 0 ?
 		    INITIAL_SITES_ALLOCATION : db_rep->site_max * 2;
-		if ((ret = __os_realloc(env,
-		     sizeof(REPMGR_SITE) * new_site_max, &db_rep->sites)) != 0)
+		if ((ret = __os_malloc(env,
+		     sizeof(REPMGR_SITE) * new_site_max, &sites)) != 0)
 			 return (ret);
+		if (db_rep->site_max > 0) {
+			/*
+			 * For each site in the array, copy the old struct to
+			 * the space allocated for the new struct.  But the
+			 * sub_conns list header (and one of the conn structs on
+			 * the list, if any) contain pointers to the address of
+			 * the old list header; so we have to move them
+			 * explicitly.  If not for that, we could use a simple
+			 * __os_realloc() call.
+			 */ 
+			for (i = 0; i < db_rep->site_cnt; i++) {
+				sites[i] = db_rep->sites[i];
+				TAILQ_INIT(&sites[i].sub_conns);
+				while (!TAILQ_EMPTY(
+				    &db_rep->sites[i].sub_conns)) {
+					conn = TAILQ_FIRST(
+					    &db_rep->sites[i].sub_conns);
+					TAILQ_REMOVE(
+					    &db_rep->sites[i].sub_conns,
+					    conn, entries);
+					TAILQ_INSERT_TAIL(&sites[i].sub_conns,
+					    conn, entries);
+				}
+			}
+			__os_free(env, db_rep->sites);
+		}
+		db_rep->sites = sites;
 		db_rep->site_max = new_site_max;
 	}
 	if ((ret = __os_strdup(env, host, &p)) != 0) {

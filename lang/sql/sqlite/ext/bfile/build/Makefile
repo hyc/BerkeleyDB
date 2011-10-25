@@ -89,6 +89,7 @@ clean:
 ifeq ($(BUILD_OVIA), 0)
 test:	bfile_test
 	env LD_LIBRARY_PATH=.:$(DBSQL_DIR)/lib:$(LD_LIBRARY_PATH) ./bfile_test
+endif
 
 ifdef TESTFIXTURE
 ifdef TEST_DIR
@@ -106,5 +107,4 @@ endif
 
 run:	bfile_example
 	env LD_LIBRARY_PATH=.:$(DBSQL_DIR)/lib:$(LD_LIBRARY_PATH) ./bfile_example
-endif
 

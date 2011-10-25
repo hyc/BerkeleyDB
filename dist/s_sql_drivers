@@ -22,18 +22,18 @@ else
 	PKG_ROOT=../..
 fi
 
-DB_ADDONS_REPO=$PKG_ROOT/db_addons
-if [ ! -d $DB_ADDONS_REPO ]; then
-	die "db_addons repository doesn't exist."
-fi
-cd $DB_ADDONS_REPO
-hg pull -u
-if [ $? != 0 ]; then
-	die "Failed updating the db_addons repository."
-fi
+#DB_ADDONS_REPO=$PKG_ROOT/db_addons
+#if [ ! -d $DB_ADDONS_REPO ]; then
+#	die "db_addons repository doesn't exist."
+#fi
+#cd $DB_ADDONS_REPO
+#hg pull -u
+#if [ $? != 0 ]; then
+#	die "Failed updating the db_addons repository."
+#fi
 cd $START_DIR
-ODBC_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/sqliteodbc-*.tar.gz | tail -1`
-JDBC_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/javasqlite-*.tar.gz | tail -1`
+ODBC_PACKAGE=`ls $PKG_ROOT/sqliteodbc-0.86.tar.gz | tail -1`
+JDBC_PACKAGE=`ls $PKG_ROOT/javasqlite-20100727.tar.gz | tail -1`
 
 if [ ! -e $ODBC_PACKAGE ]; then
 	echo "No ODBC package found, can't continue."

@@ -899,19 +899,19 @@ static int btreeCleanDatabase(Btree *p)
 		iTable = tables[i];
 		if (iTable > MASTER_ROOT) {
 			if (p->pBt->dbStorage != DB_STORE_NAMED) {
-				/* Drop table does not remove the table from
-				 * the environment in temporary and memory
-				 * databases, so it needs to be cleared first,
-				 * in case the table is created again later
-				 * (happens in backup).
+				/* We do not want to remove the table
+				 * from the environment, which is what
+				 * drop table does for in memory db, we
+				 * just want to clear it of data.
 				 */
 				if ((rc = sqlite3BtreeClearTable(p, iTable, 0)
 					!= SQLITE_OK))
 					goto err;
+			} else {
+				if ((rc = sqlite3BtreeDropTable(p, iTable, &tmp)
+					!= SQLITE_OK))
+					goto err;
 			}
-			if ((rc = sqlite3BtreeDropTable(p, iTable, &tmp)
-				!= SQLITE_OK))
-				goto err;
 		}
 		i++;
 	}
@@ -977,10 +977,18 @@ static int btreeCopyPages(sqlite3_backup *p, int *pages)
 			 * not be changed.
 			 */
 			sqlite3BtreeGetMeta(p->pSrc, 1, &val);
+			if (p->pSrc->db->errCode == SQLITE_BUSY) {
+				rc = SQLITE_BUSY;
+				goto err;
+			}
 			rc = sqlite3BtreeUpdateMeta(p->pDest, 1, val);
 			if (rc != SQLITE_OK)
 				goto err;
 			sqlite3BtreeGetMeta(p->pSrc, 3, &val);
+                       if (p->pSrc->db->errCode == SQLITE_BUSY) {
+				rc = SQLITE_BUSY;
+				goto err;
+			}
 			rc = sqlite3BtreeUpdateMeta(p->pDest, 3, val);
 			if (rc != SQLITE_OK)
 				goto err;
