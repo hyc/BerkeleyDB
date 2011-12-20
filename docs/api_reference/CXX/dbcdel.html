@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -74,7 +74,7 @@ Dbc::del(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp576848"></a>Parameters</h3>
+              <h3 class="title"><a id="idp51105072"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -82,7 +82,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp545752"></a>flags</h4>
+                <h4 class="title"><a id="idp51091944"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@ Dbc::del(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp583376"></a>Errors</h3>
+              <h3 class="title"><a id="idp51111976"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp591768"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="idp51120368"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -162,7 +162,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp583248"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp51111848"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -180,13 +180,20 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp573096"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp51105232"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
           <p>
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
+            </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="Db::set_lk_exclusive()">Db::set_lk_exclusive()</a>
+                for more information.
             </p>
           <p>
                 <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
@@ -198,7 +205,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp579536"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp51118424"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -220,7 +227,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp595640"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp51124032"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -237,7 +244,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp596720"></a>DB_SECONDARY_BAD</h4>
+                <h4 class="title"><a id="idp51123392"></a>DB_SECONDARY_BAD</h4>
               </div>
             </div>
           </div>
@@ -249,7 +256,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp577448"></a>EACCES</h4>
+                <h4 class="title"><a id="idp51124416"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -261,7 +268,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp577856"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp51105952"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -273,7 +280,7 @@ Dbc::del(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp601248"></a>EPERM</h4>
+                <h4 class="title"><a id="idp51130368"></a>EPERM</h4>
               </div>
             </div>
           </div>
@@ -288,7 +295,7 @@ Dbc::del(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp597800"></a>Class</h3>
+              <h3 class="title"><a id="idp51111760"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -300,7 +307,7 @@ Dbc::del(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp583616"></a>See Also</h3>
+              <h3 class="title"><a id="idp51109416"></a>See Also</h3>
             </div>
           </div>
         </div>

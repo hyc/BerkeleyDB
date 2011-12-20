@@ -5328,7 +5328,7 @@ case OP_JournalMode: {    /* out2-prerelease */
   ** in temporary storage or if the VFS does not support shared memory 
   */
   if( eNew==PAGER_JOURNALMODE_WAL
-   && (zFilename[0]==0                         /* Temp file */
+   && (zFilename==NULL || zFilename[0]==0      /* Temp file */
        || !sqlite3PagerWalSupported(pPager))   /* No shared-memory support */
   ){
     eNew = eOld;

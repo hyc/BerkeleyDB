@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -85,7 +85,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3597768"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54297304"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3598240"></a>timeout</h4>
+                <h4 class="title"><a id="idp54297720"></a>timeout</h4>
               </div>
             </div>
           </div>
@@ -107,7 +107,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3570064"></a>which</h4>
+                <h4 class="title"><a id="idp54286248"></a>which</h4>
               </div>
             </div>
           </div>
@@ -215,8 +215,12 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                 <p>
                          The frequency at which the Replication Manager,
                          running at a master site, broadcasts a heartbeat
-                         message in an otherwise idle system.  When 0 (the
-                         default), no heartbeat messages will be sent.
+                         message in an otherwise idle system.  Heartbeat
+                         messages are used at client sites to monitor the
+                         connection to the master and to help request missing
+                         master changes in the absence of master activity.
+                         When 0 (the default), no heartbeat messages will be
+                         sent.
                     </p>
               </li>
               <li>
@@ -244,7 +248,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3619992"></a>Errors</h3>
+              <h3 class="title"><a id="idp54319120"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -260,7 +264,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3598664"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54312608"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -275,7 +279,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3622760"></a>Class</h3>
+              <h3 class="title"><a id="idp54308952"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -287,7 +291,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3614560"></a>See Also</h3>
+              <h3 class="title"><a id="idp54313688"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -68,7 +68,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm6641224"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50076248"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm6054632"></a>txnid</h4>
+                <h4 class="title"><a id="idp50076440"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4010888"></a>key</h4>
+                <h4 class="title"><a id="idp49913192"></a>key</h4>
               </div>
             </div>
           </div>
@@ -118,7 +118,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm5165688"></a>data</h4>
+                <h4 class="title"><a id="idp50021664"></a>data</h4>
               </div>
             </div>
           </div>
@@ -130,7 +130,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm6366448"></a>flags</h4>
+                <h4 class="title"><a id="idp49913088"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -333,7 +333,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1391712"></a>Errors</h3>
+              <h3 class="title"><a id="idp50098760"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -349,7 +349,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4876552"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="idp50023504"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -383,7 +383,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4047752"></a>DB_HEAP_FULL</h4>
+                <h4 class="title"><a id="idp50070896"></a>DB_HEAP_FULL</h4>
               </div>
             </div>
           </div>
@@ -399,7 +399,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2830328"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp50111560"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -412,7 +412,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4145000"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp50101704"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -420,12 +420,19 @@ DB-&gt;put(DB *db,
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="DB-&gt;set_lk_exclusive()">DB-&gt;set_lk_exclusive()</a>
+                for more information.
+            </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3891312"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp50095064"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -445,7 +452,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4302104"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp50105320"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -457,7 +464,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm5480520"></a>EACCES</h4>
+                <h4 class="title"><a id="idp50138656"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -469,7 +476,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm7164032"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50139064"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -485,7 +492,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2163968"></a>ENOSPC</h4>
+                <h4 class="title"><a id="idp50139760"></a>ENOSPC</h4>
               </div>
             </div>
           </div>
@@ -498,7 +505,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm6399408"></a>Class</h3>
+              <h3 class="title"><a id="idp50098544"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -510,7 +517,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm6640320"></a>See Also</h3>
+              <h3 class="title"><a id="idp50102264"></a>See Also</h3>
             </div>
           </div>
         </div>

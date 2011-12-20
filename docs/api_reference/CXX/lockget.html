@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -61,7 +61,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2319552"></a>Parameters</h3>
+              <h3 class="title"><a id="idp53004680"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -69,7 +69,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2291088"></a>locker</h4>
+                <h4 class="title"><a id="idp53000256"></a>locker</h4>
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2311288"></a>flags</h4>
+                <h4 class="title"><a id="idp52982320"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2334280"></a>object</h4>
+                <h4 class="title"><a id="idp53014056"></a>object</h4>
               </div>
             </div>
           </div>
@@ -129,7 +129,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2337136"></a>lock_mode</h4>
+                <h4 class="title"><a id="idp53014320"></a>lock_mode</h4>
               </div>
             </div>
           </div>
@@ -193,7 +193,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2339624"></a>lock</h4>
+                <h4 class="title"><a id="idp53019424"></a>lock</h4>
               </div>
             </div>
           </div>
@@ -207,7 +207,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2344736"></a>Errors</h3>
+              <h3 class="title"><a id="idp53024856"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -225,7 +225,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2333656"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp52967720"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -243,13 +243,20 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2337680"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp53011432"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
           <p>
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
+            </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="Db::set_lk_exclusive()">Db::set_lk_exclusive()</a>
+                for more information.
             </p>
           <p>
                 <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
@@ -261,7 +268,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2292128"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp52980384"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -280,7 +287,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2347496"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp53027680"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -292,7 +299,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2356288"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp53037016"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -305,7 +312,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp2356760"></a>ENOMEM</h4>
+                <h4 class="title"><a id="idp53037488"></a>ENOMEM</h4>
               </div>
             </div>
           </div>
@@ -318,7 +325,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2348040"></a>Class</h3>
+              <h3 class="title"><a id="idp53028224"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -331,7 +338,7 @@ DbEnv::lock_get(u_int32_t locker, u_int32_t flags,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2345120"></a>See Also</h3>
+              <h3 class="title"><a id="idp53025520"></a>See Also</h3>
             </div>
           </div>
         </div>

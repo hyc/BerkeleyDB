@@ -1,6 +1,9 @@
-2011-08-05
+2011-08-27
 
-	* Add updates so the package can work with Oracle Java Embedded Client
+	* update to SQLite 3.7.7.1
+	* fallback to pkg-config for Ubuntu 11 SQLite3
+	* RPM packaging
+	* added support for Oracle Java Embedded Client (OJEC)
 
 2011-04-30
 

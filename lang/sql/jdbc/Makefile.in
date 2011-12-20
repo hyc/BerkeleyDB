@@ -12,6 +12,7 @@ SQLITE3_A10N_C =	@SQLITE3_A10N_C@
 SQLITE3_A10N_O =	@SQLITE3_A10N_O@
 JAVAH =		@JAVAH@
 JAVA_RUN =	@JAVA_RUN@
+JAVA_FLAGS =	@JAVA_FLAGS@
 JAVAC =		@JAVAC@
 JAVAC_FLAGS =	@JAVAC_FLAGS@
 JAVADOC =	@JAVADOC@
@@ -191,20 +192,20 @@ configure:	configure.in
 	autoconf
 
 test:	all
-	$(JAVAC) -classpath sqlite.jar:$(CURDIR) test.java
+	$(JAVAC) -classpath sqlite.jar:$(CURDIR) $(JAVAC_FLAGS) test.java
 	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
-	    $(JAVA_RUN) -classpath sqlite.jar:$(CURDIR) \
+	    $(JAVA_RUN) $(JAVA_FLAGS) -classpath sqlite.jar:$(CURDIR) \
 	    -DSQLite.library.path=$(CURDIR)/.libs test
 
 test2:	test
 	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
-	    $(JAVA_RUN) -classpath sqlite.jar:$(CURDIR) \
+	    $(JAVA_RUN) $(JAVA_FLAGS) -classpath sqlite.jar:$(CURDIR) \
 	    -DSQLite.library.path=$(CURDIR)/.libs test db2
 
 test3:	all
-	$(JAVAC) -classpath sqlite.jar:$(CURDIR) test3.java
+	$(JAVAC) -classpath sqlite.jar:$(CURDIR) $(JAVAC_FLAGS) test3.java
 	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
-	    $(JAVA_RUN) -classpath sqlite.jar:$(CURDIR) \
+	    $(JAVA_RUN) $(JAVA_FLAGS) -classpath sqlite.jar:$(CURDIR) \
 	    -DSQLite.library.path=$(CURDIR)/.libs test3
 
 clean:

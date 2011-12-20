@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -76,7 +76,7 @@ because, closing a database handle or a transaction handle closes those open cur
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp389680"></a>Errors</h3>
+              <h3 class="title"><a id="idp50927776"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ because, closing a database handle or a transaction handle closes those open cur
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp390648"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp50930336"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -105,7 +105,7 @@ because, closing a database handle or a transaction handle closes those open cur
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp424104"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp50921928"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -113,12 +113,19 @@ because, closing a database handle or a transaction handle closes those open cur
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="DB-&gt;set_lk_exclusive()">DB-&gt;set_lk_exclusive()</a>
+                for more information.
+            </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp424608"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50882368"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -131,7 +138,7 @@ because, closing a database handle or a transaction handle closes those open cur
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp406640"></a>Class</h3>
+              <h3 class="title"><a id="idp50924128"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -143,7 +150,7 @@ because, closing a database handle or a transaction handle closes those open cur
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm571344"></a>See Also</h3>
+              <h3 class="title"><a id="idp50929640"></a>See Also</h3>
             </div>
           </div>
         </div>

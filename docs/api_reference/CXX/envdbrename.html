@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -76,7 +76,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1085240"></a>Parameters</h3>
+              <h3 class="title"><a id="idp51659944"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1085432"></a>txnid</h4>
+                <h4 class="title"><a id="idp51660136"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -105,7 +105,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1086488"></a>file</h4>
+                <h4 class="title"><a id="idp51661192"></a>file</h4>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1043832"></a>database</h4>
+                <h4 class="title"><a id="idp51644856"></a>database</h4>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1081168"></a>newname</h4>
+                <h4 class="title"><a id="idp51655664"></a>newname</h4>
               </div>
             </div>
           </div>
@@ -150,7 +150,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1081832"></a>flags</h4>
+                <h4 class="title"><a id="idp51657208"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -179,7 +179,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1094232"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp51669040"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -192,7 +192,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1083360"></a>Errors</h3>
+              <h3 class="title"><a id="idp51658288"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1078792"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp51653256"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -228,13 +228,20 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1086768"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp51661960"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
           <p>
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
+            </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="Db::set_lk_exclusive()">Db::set_lk_exclusive()</a>
+                for more information.
             </p>
           <p>
                 <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
@@ -246,7 +253,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1062936"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp51645184"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -259,7 +266,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1068600"></a>ENOENT</h4>
+                <h4 class="title"><a id="idp51643536"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -272,7 +279,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1098712"></a>Class</h3>
+              <h3 class="title"><a id="idp51663808"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -284,7 +291,7 @@ DbEnv::dbrename(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1087304"></a>See Also</h3>
+              <h3 class="title"><a id="idp51614888"></a>See Also</h3>
             </div>
           </div>
         </div>

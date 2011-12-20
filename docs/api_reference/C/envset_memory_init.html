@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,7 +41,7 @@
       <pre class="programlisting">#include &lt;db.h&gt;
 
 int
-DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct, 
+DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG type, 
                         u_int32_t count);  </pre>
       <p>
         This method sets the number of objects to allocate and initialize
@@ -75,7 +75,7 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1599040"></a>Parameters</h3>
+              <h3 class="title"><a id="idp52262184"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -83,12 +83,12 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1599592"></a>struct</h4>
+                <h4 class="title"><a id="idp52196616"></a>type</h4>
               </div>
             </div>
           </div>
           <p>
-                The <span class="bold"><strong>struct</strong></span> parameter must be 
+                The <span class="bold"><strong>type</strong></span> parameter must be 
                 set to one of the following:        
             </p>
           <div class="itemizedlist">
@@ -174,7 +174,7 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1574864"></a>count</h4>
+                <h4 class="title"><a id="idp52271344"></a>count</h4>
               </div>
             </div>
           </div>
@@ -197,7 +197,7 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1593032"></a>Errors</h3>
+              <h3 class="title"><a id="idp52257040"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -213,7 +213,7 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1596472"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp52254600"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -227,7 +227,7 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1573144"></a>Class</h3>
+              <h3 class="title"><a id="idp52263448"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -239,7 +239,7 @@ DB_ENV-&gt;set_memory_init(DB_ENV *dbenv, DB_MEM_CONFIG struct,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1581872"></a>See Also</h3>
+              <h3 class="title"><a id="idp52256560"></a>See Also</h3>
             </div>
           </div>
         </div>

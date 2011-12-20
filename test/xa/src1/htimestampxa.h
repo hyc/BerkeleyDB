@@ -1,3 +1,9 @@
+/*-
+ * See the file LICENSE for redistribution information.
+ *
+ * Copyright (c) 2011 Oracle and/or its affiliates.  All rights reserved.
+ */
+
 #ifndef HTIMESTAMPXA_H
 #define	HTIMESTAMPXA_H
 

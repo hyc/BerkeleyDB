@@ -41,7 +41,7 @@ declare variable $WINCE_FLAGS := fn:concat(
   'HAVE_LOCALTIME;',
   '__NO_SYSTEM_INCLUDES;',
   'SQLITE_THREADSAFE=1;',
-  'BDBSQL_OMIT_SHARING;',
+  'BDBSQL_SINGLE_PROCESS;',
   'CPPSMART_EXPORTS;',
   'SQLITE_ENABLE_COLUMN_METADATA;',
   'SQLITE_ENABLE_FTS3;',
@@ -57,7 +57,7 @@ declare variable $DEBUG_ADDITIONAL_FLAGS := fn:concat(
   'CONFIG_TEST');
 
 (: Win32/x64 variables :)
-declare variable $WINCE_PROJ_URL := '@BDB_PATH@/build_wince/db.vcproj';
+declare variable $WINCE_PROJ_URL := '@BDB_PATH@/build_wince/VS8/db.vcproj';
 declare variable $WINDOWS_INCLUDE := '..\@BDB_NAME@\build_windows,..\@BDB_NAME@\src';
 declare variable $WINCE_INCLUDE := '..\@BDB_NAME@\build_wince,..\@BDB_NAME@\src';
 declare variable $WIN_SRC := '..\\@BDB_NAME@\\src';

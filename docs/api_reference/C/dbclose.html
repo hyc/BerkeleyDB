@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -101,7 +101,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm2512136"></a>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="idp49490704"></a>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm3328328"></a>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="idp49480144"></a>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -122,12 +122,19 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
+        <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="DB-&gt;set_lk_exclusive()">DB-&gt;set_lk_exclusive()</a>
+                for more information.
+            </p>
       </div>
       <div class="sect3" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm3329000"></a>EINVAL</h4>
+              <h4 class="title"><a id="idp49484008"></a>EINVAL</h4>
             </div>
           </div>
         </div>
@@ -139,7 +146,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3398880"></a>Parameters</h3>
+              <h3 class="title"><a id="idp49507928"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -147,7 +154,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2584712"></a>flags</h4>
+                <h4 class="title"><a id="idp49495928"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -194,7 +201,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2589008"></a>Errors</h3>
+              <h3 class="title"><a id="idp49491216"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -210,7 +217,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3815272"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp49420536"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -225,7 +232,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3964368"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp49524416"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -238,7 +245,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4185872"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp49513136"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -246,12 +253,19 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
             </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="DB-&gt;set_lk_exclusive()">DB-&gt;set_lk_exclusive()</a>
+                for more information.
+            </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3384488"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp49519368"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -264,7 +278,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm4115312"></a>Class</h3>
+              <h3 class="title"><a id="idp49516248"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -276,7 +290,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm4024720"></a>See Also</h3>
+              <h3 class="title"><a id="idp49521944"></a>See Also</h3>
             </div>
           </div>
         </div>

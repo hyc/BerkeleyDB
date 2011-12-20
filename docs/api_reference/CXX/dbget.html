@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -114,7 +114,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1739632"></a>Parameters</h3>
+              <h3 class="title"><a id="idp49677712"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -122,7 +122,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm5758232"></a>txnid</h4>
+                <h4 class="title"><a id="idp49669512"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3330856"></a>key</h4>
+                <h4 class="title"><a id="idp49668728"></a>key</h4>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3744904"></a>pkey</h4>
+                <h4 class="title"><a id="idp49688400"></a>pkey</h4>
               </div>
             </div>
           </div>
@@ -180,7 +180,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4243904"></a>data</h4>
+                <h4 class="title"><a id="idp49646296"></a>data</h4>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4168848"></a>flags</h4>
+                <h4 class="title"><a id="idp49675120"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -316,7 +316,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
                 <p>
                          In the case of Btree or Hash databases, all of the data items
                          associated with the specified key are entered into the buffer.  In the
-                         case of Queue or Recno databases, all of the data items in the
+                         case of Queue, Recno or Heap databases, all of the data items in the
                          database, starting at, and subsequent to, the specified key, are
                          entered into the buffer.
                     </p>
@@ -394,7 +394,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1736472"></a>Errors</h3>
+              <h3 class="title"><a id="idp49699952"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -412,7 +412,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1234432"></a><span>DbMemoryException or </span>DB_BUFFER_SMALL</h4>
+                <h4 class="title"><a id="idp49719672"></a><span>DbMemoryException or </span>DB_BUFFER_SMALL</h4>
               </div>
             </div>
           </div>
@@ -429,7 +429,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1529384"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp49725928"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -447,13 +447,20 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1441568"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp49714704"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
           <p>
                 A Berkeley DB Concurrent Data Store database environment configured
                 for lock timeouts was unable to grant a lock in the allowed time.
+            </p>
+          <p>
+                You attempted to open a database handle that is configured
+                for no waiting exclusive locking, but the exclusive lock could not be
+                immediately obtained. See
+                <a class="xref" href="dbset_lk_exclusive.html" title="Db::set_lk_exclusive()">Db::set_lk_exclusive()</a>
+                for more information.
             </p>
           <p>
                 <a class="xref" href="dblocknotgranted.html" title="DbLockNotGrantedException">DbLockNotGrantedException</a> is thrown if
@@ -465,7 +472,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm6884632"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp49721008"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -484,7 +491,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1723200"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp49651328"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -506,7 +513,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1930896"></a>DB_REP_LEASE_EXPIRED</h4>
+                <h4 class="title"><a id="idp49343880"></a>DB_REP_LEASE_EXPIRED</h4>
               </div>
             </div>
           </div>
@@ -518,7 +525,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4404320"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp49705224"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -535,7 +542,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3206808"></a>DB_SECONDARY_BAD</h4>
+                <h4 class="title"><a id="idp49718184"></a>DB_SECONDARY_BAD</h4>
               </div>
             </div>
           </div>
@@ -547,7 +554,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1032912"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp49661856"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -570,7 +577,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3556720"></a>Class</h3>
+              <h3 class="title"><a id="idp49739608"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -582,7 +589,7 @@ Db::pget(DbTxn *txnid, Dbt *key, Dbt *pkey, Dbt *data, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1124408"></a>See Also</h3>
+              <h3 class="title"><a id="idp49685440"></a>See Also</h3>
             </div>
           </div>
         </div>
