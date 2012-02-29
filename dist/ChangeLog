@@ -1,5 +1,26 @@
 = Berkeley DB 5.2 Changelog =
 
+== Changes between 11.2.5.2.36 and 11.2.5.2.42  ==
+
+Fixed a bug that could cause the last page number stored on the metadata 
+page to be wrong after rolling forward a db->compact operation that 
+freed more pages than will fit in a single log record. [#20646]
+
+Fixed a bug that could cause recovery to fail if DB->compact moved the 
+meta data page of a HASH subdatabase.  [#20708] 
+
+Fixed a bug in reporting handle lock modes that could cause undetectable 
+deadlock in the SQL API. [#20722] 
+
+Fixed a bug in the SQL API that could cause a corrupted environment to not
+run recovery automatically. [#20767]
+
+Fixes to ADO.NET: solution files will be in DOS format and 
+appropriate compiler flags are specified for debug build. [#20942] 
+
+Fixed a bug in the Java API where EnvironmentConfig.setCreateDir 
+would fail to configure the environment. [#21127] 
+
 == Changes between 11.2.5.2.28 and 11.2.5.2.36 ==
 
 Updated the JDBC version shipped with Berkeley DB to support
@@ -190,6 +211,9 @@ a partitioned database to get too many partitions. [#20041]
 
 Fixed a bug that could leave deleted pages from a HEAP database in the buffer
 cache. [#20309]
+
+Fixed a bug that could cause a hang or improperly report an empty queue when
+the queue record numbers wrapped around at 2^32. [#20956]
 
 == SQL API Changes ==
 

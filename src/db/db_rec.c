@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1328,7 +1328,13 @@ __db_pg_trunc_recover(env, dbtp, lsnp, op, info)
 				else
 					meta->free = pglist->pgno;
 			}
-			meta->last_pgno = last_pgno;
+			/*
+			 * If this is part of a multi record truncate
+			 * this could be just the last page of this record
+			 * don't move the meta->last_pgno forward.
+			 */
+			if (meta->last_pgno > last_pgno)
+				meta->last_pgno = last_pgno;
 			LSN(meta) = *lsnp;
 		}
 	} else {

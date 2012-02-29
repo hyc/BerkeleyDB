@@ -1,7 +1,8 @@
+
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -4318,15 +4319,16 @@ True if the system has been configured to yield the processor
             dbenv.set_cachesize(cacheSize, cacheCount);
         if (cacheMax != oldConfig.cacheMax)
             dbenv.set_cache_max(cacheMax);
-        if (createDir != oldConfig.createDir)
-            dbenv.set_create_dir(createDir.toString());
 
         for (final java.util.Enumeration e = dataDirs.elements();
             e.hasMoreElements();) {
             final java.io.File dir = (java.io.File)e.nextElement();
             if (!oldConfig.dataDirs.contains(dir))
-                dbenv.set_data_dir(dir.toString());
+                dbenv.add_data_dir(dir.toString());
         }
+        if (createDir != oldConfig.createDir)
+            dbenv.set_create_dir(createDir.toString());
+
         if (!lockConflictsEqual(lockConflicts, oldConfig.lockConflicts))
             dbenv.set_lk_conflicts(lockConflicts);
         if (lockDetectMode != oldConfig.lockDetectMode)

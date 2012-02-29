@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1066,6 +1066,8 @@ __db_move_metadata(dbc, metap, c_data)
 			ret = __txn_lockevent(dbp->env,
 			    dbp->cur_txn, dbp, &dbp->handle_lock, dbp->locker);
 	}
+	if (dbp->log_filename != NULL)
+		dbp->log_filename->meta_pgno = dbp->meta_pgno;
 	if (dbp->type == DB_HASH) {
 		ht = dbp->h_internal;
 		ht->meta_pgno = dbp->meta_pgno;

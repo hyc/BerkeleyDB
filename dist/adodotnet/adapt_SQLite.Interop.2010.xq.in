@@ -24,7 +24,7 @@ let $root := Project
 let $fileList := $WINDOWS_FILES
 let $cflags := $WINDOWS_FLAGS
 let $includes := fn:replace($WINDOWS_INCLUDE, ',', ';') (: VS2010 use ';' as separator :)
-let $inputLib := $WINDOWS_INPUT_LIB
+let $inputLib := fn:concat($WINDOWS_INPUT_LIB, ';advapi32.lib')
 return
 (
   (: Add BDB Files :)
@@ -40,7 +40,11 @@ return
   (: Update PreprocessorDefinitions :)
   (
     for $node in $root//PreprocessorDefinitions[fn:contains(string(), 'WIN32;')]
-    let $combinedFlags := fn:concat($node/string(), $cflags)
+    let $additionalFlags := 
+      if (fn:contains($node/../../@Condition, 'Debug')) then (
+        $DEBUG_ADDITIONAL_FLAGS
+      ) else ()
+    let $combinedFlags := fn:concat($node/string(), $cflags, $additionalFlags)
     return replace value of node $node with $combinedFlags
   ),
 

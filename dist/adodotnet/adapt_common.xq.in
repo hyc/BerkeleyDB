@@ -22,9 +22,7 @@ declare variable $WINDOWS_FLAGS := fn:concat(';',
   $COMMON_FLAGS,
   '_CRT_SECURE_NO_DEPRECATE;',
   '_CRT_NONSTDC_NO_DEPRECATE;',
-  'DB_CREATE_DLL;',
-  'DIAGNOSTIC;',
-  'CONFIG_TEST');
+  'DB_CREATE_DLL;');
 
 declare variable $WINCE_FLAGS := fn:concat(
   $COMMON_FLAGS,
@@ -52,6 +50,11 @@ declare variable $WINCE_FLAGS := fn:concat(
   'SQLITE_SOUNDEX;',
   'SQLITE_OMIT_WAL;',
   'INVALID_FILE_ATTRIBUTES=((DWORD)-1)');
+
+declare variable $DEBUG_ADDITIONAL_FLAGS := fn:concat(
+  'DIAGNOSTIC;',
+  '_DEBUG;',
+  'CONFIG_TEST');
 
 (: Win32/x64 variables :)
 declare variable $WINCE_PROJ_URL := '@BDB_PATH@/build_wince/db.vcproj';

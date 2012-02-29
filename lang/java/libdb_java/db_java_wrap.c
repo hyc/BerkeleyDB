@@ -3508,8 +3508,8 @@ SWIGINTERN db_ret_t DbEnv_set_cache_max(struct DbEnv *self,jlong bytes){
 SWIGINTERN db_ret_t DbEnv_set_create_dir(struct DbEnv *self,char const *dir){
 		return self->set_create_dir(self, dir);
 	}
-SWIGINTERN db_ret_t DbEnv_set_data_dir(struct DbEnv *self,char const *dir){
-		return self->set_data_dir(self, dir);
+SWIGINTERN db_ret_t DbEnv_add_data_dir(struct DbEnv *self,char const *dir){
+		return self->add_data_dir(self, dir);
 	}
 SWIGINTERN db_ret_t DbEnv_set_intermediate_dir_mode(struct DbEnv *self,char const *mode){
 		return self->set_intermediate_dir_mode(self, mode);
@@ -7652,7 +7652,7 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1c
 }
 
 
-SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1data_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1add_1data_1dir(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   struct DbEnv *arg1 = (struct DbEnv *) 0 ;
   char *arg2 = (char *) 0 ;
   db_ret_t result;
@@ -7672,7 +7672,7 @@ SWIGEXPORT void JNICALL Java_com_sleepycat_db_internal_db_1javaJNI_DbEnv_1set_1d
     return ;
   }
   
-  result = (db_ret_t)DbEnv_set_data_dir(arg1,(char const *)arg2);
+  result = (db_ret_t)DbEnv_add_data_dir(arg1,(char const *)arg2);
   if (!DB_RETOK_STD(result)) {
     __dbj_throw(jenv, result, NULL, NULL, JDBENV);
   }

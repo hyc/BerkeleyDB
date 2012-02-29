@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -336,6 +336,13 @@ __txn_doevents(env, txn, opcode, preprocess)
 			if ((t_ret = __lock_downgrade(env,
 			    &e->u.t.lock, DB_LOCK_READ, 0)) != 0 && ret == 0)
 				ret = t_ret;
+			/* Update the handle lock mode. */
+			if (ret == 0 && e->u.t.lock.off ==
+			    e->u.t.dbp->handle_lock.off &&
+			    e->u.t.lock.ndx ==
+			    e->u.t.dbp->handle_lock.ndx)
+				e->u.t.dbp->handle_lock.mode =
+				    DB_LOCK_READ;
 			break;
 		default:
 			/* This had better never happen. */

@@ -22,13 +22,6 @@ die()
 	exit 1
 }
 
-cygwin=`uname | grep -i "cygwin"`
-if [ "$cygwin" != "" ]; then
-        is_cygwin="true"
-else
-        is_cygwin="false"
-fi
-
 START_DIR=`pwd`
 if [ "x$1" != "x" ]; then
 	PKG_ROOT=$1
@@ -247,8 +240,9 @@ do
         	fi  
 	done
 
-	# Unix to dos -- VisualStudio solution files must be dos format
-	sed -e 's/$/\r/' ${sln}.tmp > ${sln}
+	# Change to dos format -- VisualStudio solution files must be dos format
+	sed -e 's///g' -e 's/$//' ${sln}.tmp > $sln
+
 	rm -f $TMP_FILE
 	rm -f ${sln}.tmp
 done
@@ -412,13 +406,9 @@ do
 		fi
 	done
 
-	# Unix to dos
-	if [ "$is_cygwin" = "true" ]; then
-		# Unix to Dos for cygwin for sed behavior difference on cygwin
-		sed -e "s/$/\r/" ${sln}.tmp > $sln
-	else
-		cat ${sln}.tmp > $sln
-	fi
+	# Change to dos format -- VisualStudio solution files must be dos format
+	sed -e 's///g' -e 's/$//' ${sln}.tmp > $sln
+
 	rm ${sln}.tmp
 done
 
@@ -462,12 +452,9 @@ do
     	    -e "s/test\.2008/testce\.2008/g" \
     	${sln}.tmp > $TMP_FILE
 
-	if [ "$is_cygwin" = "true" ]; then
-		# Unix to Dos for cygwin for sed behavior difference on cygwin
-		sed -e "s/$/\r/" $TMP_FILE > $dst
-	else
-		cat $TMP_FILE > $dst
-	fi
+	# Change to dos format -- VisualStudio solution files must be dos format
+	sed -e 's///g' -e 's/$//' $TMP_FILE > $dst
+
 	rm -f ${sln}.tmp
 done
 

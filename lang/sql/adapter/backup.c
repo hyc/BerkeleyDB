@@ -1,7 +1,7 @@
 /*-
 * See the file LICENSE for redistribution information.
 *
-* Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+* Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
 */
 /*
 ** This file contains the implementation of the sqlite3_backup_XXX()

@@ -189,7 +189,7 @@ class db_javaJNI {
   public final static native void DbEnv_set_cachesize(long jarg1, DbEnv jarg1_, long jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_cache_max(long jarg1, DbEnv jarg1_, long jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_create_dir(long jarg1, DbEnv jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
-  public final static native void DbEnv_set_data_dir(long jarg1, DbEnv jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native void DbEnv_add_data_dir(long jarg1, DbEnv jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_intermediate_dir_mode(long jarg1, DbEnv jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_encrypt(long jarg1, DbEnv jarg1_, String jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_errcall(long jarg1, DbEnv jarg1_, boolean jarg2) /* no exception */;
