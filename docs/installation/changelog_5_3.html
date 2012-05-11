@@ -42,77 +42,82 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50933456">Database or Log File On-Disk Format Changes</a>
+              <a href="changelog_5_3.html#idp594928">Changes between 11.2.5.3.15 and 11.2.5.3.21</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50939592">New Features</a>
+              <a href="changelog_5_3.html#idp608376">Database or Log File On-Disk Format Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50945208">Database Environment Changes</a>
+              <a href="changelog_5_3.html#idp590024">New Features</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50949968">Access Method Changes</a>
+              <a href="changelog_5_3.html#idp594216">Database Environment Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50947664">SQL API Changes</a>
+              <a href="changelog_5_3.html#idp607088">Access Method Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50938488">Java-specific API changes</a>
+              <a href="changelog_5_3.html#idp616640">SQL API Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50947752">Replication Changes</a>
+              <a href="changelog_5_3.html#idp610088">Java-specific API changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50951000">Locking Subsystem Changes</a>
+              <a href="changelog_5_3.html#idp616728">Replication Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50969264">Logging Subsystem Changes</a>
+              <a href="changelog_5_3.html#idp594560">Locking Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50948312">Memory Pool Subsystem Changes</a>
+              <a href="changelog_5_3.html#idp635880">Logging Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50950752">Mutex Subsystem Changes</a>
+              <a href="changelog_5_3.html#idp625488">Memory Pool Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50974408">Transaction Subsystem Changes</a>
+              <a href="changelog_5_3.html#idp632288">Mutex Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50970720">Utility Changes</a>
+              <a href="changelog_5_3.html#idp636296">Transaction Subsystem Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50977976">Configuration, Documentation, Sample Apps, Portability and Build Changes</a>
+              <a href="changelog_5_3.html#idp625872">Utility Changes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="changelog_5_3.html#idp50979288">Known Bugs</a>
+              <a href="changelog_5_3.html#idp632040">Configuration, Documentation, Sample Apps, Portability and Build Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_5_3.html#idp641456">Known Bugs</a>
             </span>
           </dt>
         </dl>
@@ -126,7 +131,90 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50933456"></a>Database or Log File On-Disk Format Changes</h3>
+              <h3 class="title"><a id="idp594928"></a>Changes between 11.2.5.3.15 and 11.2.5.3.21</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed incompatibility problems of Java DPL with JDK7, so DPL will now work with JDK7. [#20586]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added a flag to allow database locking to be disabled from the SQL API. [#20928]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could allocate a heap data page in a region after the region creation has been undone.  [#20939]
+            </p>
+            </li>
+            <li>
+              <p>
+ Redundant whitespaces are now ignored in DB_CONFIG lines pertaining to directories, e.g. set_data_dir. [#20158]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that caused DB_ENV-&gt;backup to stop early if DB_BACKUP_FILES was not set and a non-DB file was in the data directory. [#21076]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a rare race condition that could cause a crash if two processes opened the same database at the same time. [#21041]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed missing cross compiling capability for the JDBC driver. [#21101]
+            </p>
+            </li>
+            <li>
+              <p>
+ Allow the same system/machine to host both a master and a replica database through the use of relative pathnames. [#21105]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug in the Java API where EnvironmentConfig.setCreateDir would fail to configure the environment. [#21127]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed an assert failure in btreeCompare when allocating memory in the wrong thread was causing a memory leak. [#21232]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug in the Java API where concurrent operations that change the database schema could lead to a hang. [#21265]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added JDBC code to the code base and updated the windows build files to include the JDBC solution. [#21294]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where the heap's region size was not getting swapped correctly in mixed-endian environments. [#21295]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug in the db_sql_jdbc project file for vs2010 that was preventing it from building correctly. [#21332]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idp608376"></a>Database or Log File On-Disk Format Changes</h3>
             </div>
           </div>
         </div>
@@ -149,7 +237,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50939592"></a>New Features</h3>
+              <h3 class="title"><a id="idp590024"></a>New Features</h3>
             </div>
           </div>
         </div>
@@ -237,7 +325,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50945208"></a>Database Environment Changes</h3>
+              <h3 class="title"><a id="idp594216"></a>Database Environment Changes</h3>
             </div>
           </div>
         </div>
@@ -265,7 +353,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50949968"></a>Access Method Changes</h3>
+              <h3 class="title"><a id="idp607088"></a>Access Method Changes</h3>
             </div>
           </div>
         </div>
@@ -363,7 +451,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50947664"></a>SQL API Changes</h3>
+              <h3 class="title"><a id="idp616640"></a>SQL API Changes</h3>
             </div>
           </div>
         </div>
@@ -426,7 +514,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50938488"></a>Java-specific API changes</h3>
+              <h3 class="title"><a id="idp610088"></a>Java-specific API changes</h3>
             </div>
           </div>
         </div>
@@ -454,7 +542,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50947752"></a>Replication Changes</h3>
+              <h3 class="title"><a id="idp616728"></a>Replication Changes</h3>
             </div>
           </div>
         </div>
@@ -502,7 +590,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50951000"></a>Locking Subsystem Changes</h3>
+              <h3 class="title"><a id="idp594560"></a>Locking Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -520,7 +608,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50969264"></a>Logging Subsystem Changes</h3>
+              <h3 class="title"><a id="idp635880"></a>Logging Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -543,7 +631,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50948312"></a>Memory Pool Subsystem Changes</h3>
+              <h3 class="title"><a id="idp625488"></a>Memory Pool Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -581,7 +669,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50950752"></a>Mutex Subsystem Changes</h3>
+              <h3 class="title"><a id="idp632288"></a>Mutex Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -604,7 +692,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50974408"></a>Transaction Subsystem Changes</h3>
+              <h3 class="title"><a id="idp636296"></a>Transaction Subsystem Changes</h3>
             </div>
           </div>
         </div>
@@ -622,7 +710,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50970720"></a>Utility Changes</h3>
+              <h3 class="title"><a id="idp625872"></a>Utility Changes</h3>
             </div>
           </div>
         </div>
@@ -638,6 +726,11 @@
  Fixed a bug that could cause recovery to fail if DB-&gt;compact moved the meta data page of a HASH subdatabase.  [#20708]
             </p>
             </li>
+            <li>
+              <p>
+ Fixed two problems with db_hotbackup's handling of transaction logs. A hotbackup would always try to open the logs in the environment home, even if a log directory had been specified. The second fix corrected an error path, in which the memory was freed by the wrong function, possibly causing a guard byte error. [#21313]
+            </p>
+            </li>
           </ol>
         </div>
       </div>
@@ -645,7 +738,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50977976"></a>Configuration, Documentation, Sample Apps, Portability and Build Changes</h3>
+              <h3 class="title"><a id="idp632040"></a>Configuration, Documentation, Sample Apps, Portability and Build Changes</h3>
             </div>
           </div>
         </div>
@@ -663,7 +756,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp50979288"></a>Known Bugs</h3>
+              <h3 class="title"><a id="idp641456"></a>Known Bugs</h3>
             </div>
           </div>
         </div>

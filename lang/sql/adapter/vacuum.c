@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -40,7 +40,7 @@ int btreeVacuum(Btree *p, char **pzErrMsg) {
 	 * Core level (i.e., call DB->compact), but we start it read-only at
 	 * the SQL level to avoid overhead from checkpoint-on-commit.
 	 */
-	if ((rc = sqlite3BtreeBeginTrans(p, 0)) != SQLITE_OK) {
+	if ((rc = btreeBeginTransInternal(p, 0)) != SQLITE_OK) {
 		sqlite3SetString(pzErrMsg, db,
 		    "failed to begin a vacuum transaction");
 		return rc;

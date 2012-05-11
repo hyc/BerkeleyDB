@@ -555,20 +555,31 @@ if test "x$JDBCVER"  = "x" ; then
   $JAVA_RUN -version 2>&1 | grep 'version "1.1' >/dev/null && JDBCVER=JDBC1
   $JAVA_RUN -version 2>&1 | grep 'version "1.4' >/dev/null && JDBCVER=JDBC2x
   $JAVA_RUN -version 2>&1 | grep 'version "1.5' >/dev/null && JDBCVER=JDBC2y
-  $JAVA_RUN -version 2>&1 | grep 'version "1.[[67]]' >/dev/null && JDBCVER=JDBC2z
+  $JAVA_RUN -version 2>&1 | grep 'version "1.6' >/dev/null && JDBCVER=JDBC2z
+  $JAVA_RUN -version 2>&1 | grep 'version "1.7' >/dev/null && JDBCVER=JDBC2z1
   $JAVA_RUN -version 2>&1 | grep 'JSR169' >/dev/null && JDBCVER=JDBC0
 else
   AC_MSG_WARN([overriding JDBC driver: $JDBCVER])
 fi
 AC_MSG_RESULT([using JDBC driver from $JDBCVER directory])
 
+# default to pre 1.7 source
+cp SQLite/JDBCDriver.java16 SQLite/JDBCDriver.java
+cp SQLite/JDBCDataSource.javajsr169 SQLite/JDBCDataSource.java
+
 if test "$JDBCVER" = "JDBC2y" ; then
   # 1.5 gives one unchecked warning on SQLite/TableResult.java
   JAVAC="$JAVAC -nowarn"
 fi
 if test "$JDBCVER" = "JDBC2z" ; then
-  # 1.6/1.7 gives some unchecked warnings, e.g. on SQLite/TableResult.java
+  # 1.6 gives some unchecked warnings, e.g. on SQLite/TableResult.java
   JAVAC="$JAVAC -nowarn"
+fi
+if test "$JDBCVER" = "JDBC2z1" ; then
+  # 1.7 gives some unchecked warnings, e.g. on SQLite/TableResult.java
+  JAVAC="$JAVAC -nowarn"
+  cp SQLite/JDBCDriver.java17 SQLite/JDBCDriver.java
+  cp SQLite/JDBCDataSource.java17 SQLite/JDBCDataSource.java
 fi
 
 if test "x$NATIVE_LIB_DIR" = "x" ; then

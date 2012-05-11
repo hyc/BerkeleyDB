@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1872,7 +1872,7 @@ find:	while ((ret = __memp_fget(mpf, &region_pgno,
 	    dbc->thread_info, NULL, lk_mode, &rpage)) != 0 ||
 	    TYPE(rpage) != P_IHEAP) {
 		if (ret == DB_LOCK_NOTGRANTED)
-			goto next;
+			goto next_region;
 		if (ret != 0 && ret != DB_PAGE_NOTFOUND)
 			return (ret);
 		/*
@@ -1953,7 +1953,7 @@ find:	while ((ret = __memp_fget(mpf, &region_pgno,
 		 * around to the first region page.  There is not currently a
 		 * data page locked.
 		 */
-next:		region_pgno += HEAP_REGION_SIZE(dbp) + 1;
+next_region:	region_pgno += HEAP_REGION_SIZE(dbp) + 1;
 
 		if (region_pgno > h->maxpgno)
 			region_pgno = FIRST_HEAP_RPAGE;
@@ -2058,6 +2058,40 @@ pg_err:				if (p != 0) {
 				goto check;
 			}
 		}
+
+		/*
+		 * Before creating a new page in this region, check that the
+		 * region page still exists.  By this point, the transaction
+		 * that created the region must have aborted or committed,
+		 * because we now hold the metadata lock.  If we can't get the
+		 * latch, the page must exist.
+		 */
+		ret = __memp_fget(mpf, &region_pgno,
+		    dbc->thread_info, NULL, DB_MPOOL_TRY, &rpage);
+		if (ret == DB_LOCK_NOTGRANTED)
+			ret = 0;
+		else if (ret != 0) {
+			/* 
+			 * Free up the metadata lock.  If this was an error
+			 * other than a missing region page, bail.
+			 */
+			if ((t_ret = __LPUT(dbc, meta_lock)) != 0)
+				ret = t_ret;
+			if (ret != DB_PAGE_NOTFOUND)
+				goto err;
+			/*
+			 * The region no longer exists.  Release the page's lock
+			 * (we haven't created the page yet) and find a new page
+			 * on a different region.
+			 */
+			DISCARD(dbc, cp->page, cp->lock, 0, t_ret);
+			goto find;
+		} else
+			ret = __memp_fput(mpf,
+			    dbc->thread_info, rpage, dbc->priority);
+		rpage = NULL;
+		if (ret != 0)
+			goto meta_unlock;
 
 		if ((ret = __memp_fget(mpf, &meta_pgno,
 		    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &meta)) != 0)

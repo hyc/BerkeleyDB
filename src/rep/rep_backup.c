@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1502,11 +1502,20 @@ __rep_remove_file(env, rfp, unused)
 		MAKE_INMEM(dbp);
 		F_SET(dbp, DB_AM_RECOVER); /* Skirt locking. */
 		ret = __db_inmem_remove(dbp, NULL, name);
-	} else
-		ret = __fop_remove(env,
+	} else if ((ret = __fop_remove(env,
 		    NULL, rfp->uid.data, name, (const char **)&rfp->dir.data,
 		    __rep_is_internal_rep_file(rfp->info.data) ?
-		    DB_APP_META : DB_APP_DATA, 0);
+		    DB_APP_META : DB_APP_DATA, 0)) != 0)
+			/*
+			 * If fop_remove fails, it could be because
+			 * the client has a different data_dir
+			 * structure than the master.  Retry with the
+			 * local, default settings. 
+			 */
+			ret = __fop_remove(env,
+			    NULL, rfp->uid.data, name, NULL,
+			    __rep_is_internal_rep_file(rfp->info.data) ?
+			    DB_APP_META : DB_APP_DATA, 0);
 #ifdef HAVE_QUEUE
 out:
 #endif
@@ -1824,8 +1833,25 @@ __rep_write_page(env, ip, rep, msgfp)
 			if ((ret = __fop_create(env, NULL, NULL,
 			    rfp->info.data, (const char **)&rfp->dir.data,
 			    __rep_is_internal_rep_file(rfp->info.data) ?
-			    DB_APP_META : DB_APP_DATA, env->db_mode, 0)) != 0)
-				goto err;
+			    DB_APP_META : DB_APP_DATA, env->db_mode, 0)) != 0) {
+				/*
+				 * If fop_create fails, it could be because
+				 * the client has a different data_dir
+				 * structure than the master.  Retry with the
+				 * local, default settings. 
+				 */
+				RPRINT(env, (env, DB_VERB_REP_SYNC,
+    "rep_write_page: fop_create ret %d.  Retry for %s, master datadir %s",
+				    ret, (char *)rfp->info.data,
+				    rfp->dir.data == NULL ? "NULL" :
+				    (char *)rfp->dir.data));
+				if ((ret = __fop_create(env, NULL, NULL,
+				    rfp->info.data, NULL,
+				    __rep_is_internal_rep_file(rfp->info.data) ?
+				    DB_APP_META : DB_APP_DATA,
+				    env->db_mode, 0)) != 0)
+					goto err;
+			}
 		}
 
 		if ((ret =

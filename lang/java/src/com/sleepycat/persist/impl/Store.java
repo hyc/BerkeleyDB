@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -120,7 +120,7 @@ public class Store {
         }
 
         storeConfig = (config != null) ?
-            config.cloneConfig() :
+            config.clone() :
             StoreConfig.DEFAULT;
 
         autoCommitTxnConfig = new TransactionConfig();
@@ -223,7 +223,7 @@ public class Store {
     }
 
     public StoreConfig getConfig() {
-        return storeConfig.cloneConfig();
+        return storeConfig.clone();
     }
 
     public String getStoreName() {

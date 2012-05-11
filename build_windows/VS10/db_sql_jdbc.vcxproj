@@ -67,6 +67,18 @@
     <Link>
       <AdditionalDependencies>libdb_sql53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+mkdir "./$(OutDir)/jdbc_classes/" 
+echo compiling JDBC classes
+javac -g -target 1.5 -d "$(OutDir)\jdbc_classes" -classpath "$(OutDir)\jdbc_classes" ..\..\lang\sql\jdbc\SQLite\*java ..\..\lang\sql\jdbc\SQLite\JDBC2x\*java
+echo Building JNI header files
+javah -o ..\..\lang\sql\jdbc\native\sqlite_jni.h -classpath "$(OutDir)\jdbc_classes" SQLite.Database SQLite.Vm SQLite.FunctionContext SQLite.Stmt SQLite.Blob
+echo creating jar file
+jar cf "$(OutDir)\jdbc.jar" -C "$(OutDir)\jdbc_classes" .
+echo JDBC build finished</Command>
+      <Message/>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -76,6 +88,18 @@
     <Link>
       <AdditionalDependencies>libdb_sql53.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+mkdir "./$(OutDir)/jdbc_classes/" 
+echo compiling JDBC classes
+javac -g -target 1.5 -d "$(OutDir)\jdbc_classes" -classpath "$(OutDir)\jdbc_classes" ..\..\lang\sql\jdbc\SQLite\*java ..\..\lang\sql\jdbc\SQLite\JDBC2x\*java
+echo Building JNI header files
+javah -o ..\..\lang\sql\jdbc\native\sqlite_jni.h -classpath "$(OutDir)\jdbc_classes" SQLite.Database SQLite.Vm SQLite.FunctionContext SQLite.Stmt SQLite.Blob
+echo creating jar file
+jar cf "$(OutDir)\jdbc.jar" -C "$(OutDir)\jdbc_classes" .
+echo JDBC build finished</Command>
+      <Message/>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -85,6 +109,18 @@
     <Link>
       <AdditionalDependencies>libdb_sql53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+mkdir "./$(OutDir)/jdbc_classes/" 
+echo compiling JDBC classes
+javac -g -target 1.5 -d "$(OutDir)\jdbc_classes" -classpath "$(OutDir)\jdbc_classes" ..\..\lang\sql\jdbc\SQLite\*java ..\..\lang\sql\jdbc\SQLite\JDBC2x\*java
+echo Building JNI header files
+javah -o ..\..\lang\sql\jdbc\native\sqlite_jni.h -classpath "$(OutDir)\jdbc_classes" SQLite.Database SQLite.Vm SQLite.FunctionContext SQLite.Stmt SQLite.Blob
+echo creating jar file
+jar cf "$(OutDir)\jdbc.jar" -C "$(OutDir)\jdbc_classes" .
+echo JDBC build finished</Command>
+      <Message/>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -94,6 +130,18 @@
     <Link>
       <AdditionalDependencies>libdb_sql53.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+mkdir "./$(OutDir)/jdbc_classes/" 
+echo compiling JDBC classes
+javac -g -target 1.5 -d "$(OutDir)\jdbc_classes" -classpath "$(OutDir)\jdbc_classes" ..\..\lang\sql\jdbc\SQLite\*java ..\..\lang\sql\jdbc\SQLite\JDBC2x\*java
+echo Building JNI header files
+javah -o ..\..\lang\sql\jdbc\native\sqlite_jni.h -classpath "$(OutDir)\jdbc_classes" SQLite.Database SQLite.Vm SQLite.FunctionContext SQLite.Stmt SQLite.Blob
+echo creating jar file
+jar cf "$(OutDir)\jdbc.jar" -C "$(OutDir)\jdbc_classes" .
+echo JDBC build finished</Command>
+      <Message/>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\lang\sql\jdbc\native\sqlite_jni.c"/>

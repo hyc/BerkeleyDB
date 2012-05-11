@@ -258,7 +258,7 @@ public interface DbConstants
     int DB_VERIFY = 0x00000002;
     int DB_VERSION_MAJOR = 5;
     int DB_VERSION_MINOR = 3;
-    int DB_VERSION_PATCH = 15;
+    int DB_VERSION_PATCH = 21;
     int DB_WRITECURSOR = 0x00000010;
     int DB_YIELDCPU = 0x00080000;
 }

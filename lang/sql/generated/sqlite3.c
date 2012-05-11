@@ -7713,6 +7713,14 @@ SQLITE_PRIVATE int sqlite3BtreeCopyFile(Btree *, Btree *);
 
 SQLITE_PRIVATE int sqlite3BtreeIncrVacuum(Btree *);
 
+/*
+ * BEGIN Berkeley DB specific btree APIs.
+ */
+SQLITE_PRIVATE int sqlite3BtreeHandleCacheUpdate(Btree *p, int schema_changed);
+/*
+ * END Berkeley DB specific btree APIs.
+ */
+
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
 ** of the flags shown below.
 **
@@ -8285,7 +8293,7 @@ SQLITE_PRIVATE   void sqlite3VdbeNoopComment(Vdbe*, const char*, ...);
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2012, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <db.h>
@@ -8364,7 +8372,7 @@ SQLITE_PRIVATE int *sqlite3PagerStats(Pager*);
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2012, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 typedef struct PgHdr PgHdr;
@@ -34000,7 +34008,7 @@ bitvec_end:
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 
@@ -34444,7 +34452,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, u8 iBatch, sqlite3_int64 i
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /************** Include btreeInt.h in the middle of pager.c ******************/
@@ -34452,7 +34460,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, u8 iBatch, sqlite3_int64 i
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2012, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 
@@ -34608,6 +34616,7 @@ typedef enum { LOCKMODE_NONE, LOCKMODE_READ, LOCKMODE_WRITE } lock_mode_t;
 typedef enum { NO_LSN_RESET, LSN_RESET_FILE } lsn_reset_t;
 
 /* Declarations for functions that are shared by adapter source files. */
+int btreeBeginTransInternal(Btree *p, int wrflag);
 void *btreeCreateIndexKey(BtCursor *pCur);
 void btreeGetErrorFile(const BtShared *pBt, char *fname);
 Index *btreeGetIndex(Btree *p, int iTable);
@@ -34647,6 +34656,10 @@ int getHostPort(const char *hpstr, char **host, u_int *port);
 int setRepVerboseFile(BtShared *pBt, DB_ENV *dbenv, const char *fname,
     char *msg);
 int unsetRepVerboseFile(BtShared *pBt, DB_ENV *dbenv, char **msg);
+/* Returns the thread id as a void *, which needs to be freed. */
+void *getThreadID(sqlite3 *db);
+/* Checks if the thread id item identifies the current thread. */
+int isCurrentThread(void *tid);
 
 #define	CLEAR_PWD(pBt)	do {						\
 	memset((pBt)->encrypt_pwd, 0xff, (pBt)->encrypt_pwd_len);	\
@@ -34764,6 +34777,7 @@ struct BtCursor {
 	u8 indexKeyBuf[CURSOR_BUFSIZE];
 	DBT multiData;
 	void *multiGetPtr, *multiPutPtr;
+	void *threadID;
 	int skipMulti;
 	BtCursor *next;
 };
@@ -35126,7 +35140,7 @@ SQLITE_API void sqlite3_get_pager_stats(sqlite3_int64 *totalBytesOut,
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WAL)
@@ -35138,7 +35152,7 @@ SQLITE_PRIVATE int sqlite3WalTrace = 0;
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -35224,7 +35238,7 @@ SQLITE_PRIVATE int sqlite3BtreeSharable(Btree *p)
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -35233,6 +35247,9 @@ SQLITE_PRIVATE int sqlite3BtreeSharable(Btree *p)
 ** Build-time options:
 **
 **  BDBSQL_AUTO_PAGE_SIZE -- Let Berkeley DB choose a default page size.
+**  BDBSQL_CONCURRENT_CONNECTIONS -- If there are going to be multiple
+**                           connections to the same database, this can be used
+**                           to disable a locking optimization.
 **  BDBSQL_CONVERT_SQLITE -- If an attempt is made to open a SQLite database,
 **                           convert it on the fly to Berkeley DB.
 **  BDBSQL_FILE_PER_TABLE -- Don't use sub-databases, use a file per table.
@@ -35834,48 +35851,6 @@ int btreeOpenMetaTables(Btree *p, int *pCreating)
 		goto addmeta;
 	}
 
-	if ((ret = db_create(&pMetaDb, pDbEnv, 0)) != 0)
-		goto err;
-
-	if (pBt->encrypted &&
-	    ((ret = pMetaDb->set_flags(pMetaDb, DB_ENCRYPT)) != 0))
-			goto err;
-
-	/* Named databases use a db to track new table names. */
-	if (pBt->dbStorage == DB_STORE_NAMED) {
-		if ((ret = db_create(&pTablesDb, pDbEnv, 0)) != 0)
-			goto err;
-
-		if (pBt->encrypted &&
-		    ((ret = pTablesDb->set_flags(pTablesDb, DB_ENCRYPT)) != 0))
-				goto err;
-	}
-
-	if (!GET_DURABLE(pBt)) {
-		/* Ensure that log records are not written to disk. */
-		if ((ret =
-		    pMetaDb->set_flags(pMetaDb, DB_TXN_NOT_DURABLE)) != 0)
-			goto err;
-	}
-
-	/*
-	 * The metadata DB is the first one opened in the file, so it is
-	 * sufficient to set the page size on it -- other databases in the
-	 * same file will inherit the same pagesize.  We must open it before
-	 * the table DB because this open call may be creating the file.
-	 */
-	if (pBt->pageSize != 0 &&
-	    (ret = pMetaDb->set_pagesize(pMetaDb, pBt->pageSize)) != 0)
-		goto err;
-
-	pBt->pageSizeFixed = 1;
-
-#ifdef BDBSQL_FILE_PER_TABLE
-	fileName = BDBSQL_META_DATA_TABLE;
-#else
-	fileName = pBt->short_name;
-#endif
-
 	/*
 	 * We open the metadata and tables databases in auto-commit
 	 * transactions.  These may deadlock or conflict, and should be safe to
@@ -35884,11 +35859,49 @@ int btreeOpenMetaTables(Btree *p, int *pCreating)
 	 */
 	i = 0;
 	do {
+		if ((ret = db_create(&pMetaDb, pDbEnv, 0)) != 0)
+			goto err;
+
+		if (pBt->encrypted &&
+		    ((ret = pMetaDb->set_flags(pMetaDb, DB_ENCRYPT)) != 0))
+				goto err;
+
+		if (!GET_DURABLE(pBt)) {
+			/* Ensure that log records are not written to disk. */
+			if ((ret =
+			    pMetaDb->set_flags(pMetaDb, DB_TXN_NOT_DURABLE))
+			    != 0)
+				goto err;
+		}
+
+		/*
+		 * The metadata DB is the first one opened in the file, so it
+		 * is sufficient to set the page size on it -- other databases
+		 * in the same file will inherit the same pagesize.  We must
+		 * open it before the table DB because this open call may be
+		 * creating the file.
+		 */
+		if (pBt->pageSize != 0 &&
+		    (ret = pMetaDb->set_pagesize(pMetaDb, pBt->pageSize)) != 0)
+			goto err;
+
+		pBt->pageSizeFixed = 1;
+
+#ifdef BDBSQL_FILE_PER_TABLE
+		fileName = BDBSQL_META_DATA_TABLE;
+#else
+		fileName = pBt->short_name;
+#endif
 		ret = pMetaDb->open(pMetaDb, NULL, fileName,
 		    pBt->dbStorage == DB_STORE_NAMED ? "metadb" : NULL,
 		    DB_BTREE,
 		    pBt->db_oflags | GET_AUTO_COMMIT(pBt, NULL) |
 		    GET_ENV_READONLY(pBt), 0);
+
+		if (ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) {
+			(void)pMetaDb->close(pMetaDb, DB_NOSYNC);
+			pMetaDb = NULL;
+		}
 	} while ((ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) &&
 	    ++i < BUSY_RETRY_COUNT);
 
@@ -35908,6 +35921,13 @@ int btreeOpenMetaTables(Btree *p, int *pCreating)
 
 	i = 0;
 	do {
+		/* Named databases use a db to track new table names. */
+		if ((ret = db_create(&pTablesDb, pDbEnv, 0)) != 0)
+			goto err;
+
+		if (pBt->encrypted &&
+		    ((ret = pTablesDb->set_flags(pTablesDb, DB_ENCRYPT)) != 0))
+				goto err;
 #ifdef BDBSQL_FILE_PER_TABLE
 		/*
 		 * When opening a file-per-table we need an additional table to
@@ -35930,6 +35950,10 @@ int btreeOpenMetaTables(Btree *p, int *pCreating)
 		    NULL, DB_BTREE, (pBt->db_oflags & ~DB_CREATE) |
 		    DB_RDONLY | GET_AUTO_COMMIT(pBt, NULL), 0);
 #endif
+		if (ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) {
+			(void)pTablesDb->close(pTablesDb, DB_NOSYNC);
+			pTablesDb = NULL;
+		}
 	} while ((ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) &&
 	    ++i < BUSY_RETRY_COUNT);
 
@@ -36548,7 +36572,9 @@ static int btreePrepareEnvironment(Btree *p)
 		pDbEnv->app_private = pBt;
 		pDbEnv->set_errcall(pDbEnv, btreeHandleDbError);
 #ifndef BDBSQL_SINGLE_THREAD
+#ifndef BDBSQL_CONCURRENT_CONNECTIONS
 		pDbEnv->set_flags(pDbEnv, DB_DATABASE_LOCKING, 1);
+#endif
 		pDbEnv->set_lk_detect(pDbEnv, DB_LOCK_DEFAULT);
 		pDbEnv->set_lk_tablesize(pDbEnv, 20000);
 		pDbEnv->set_memory_max(pDbEnv, 0, 16 * 1024 * 1024);
@@ -37499,6 +37525,9 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 	    p->nBackup > 0)
 		return (SQLITE_OK);
 
+	if ((cleanup == CLEANUP_GET_LOCKS || cleanup == CLEANUP_DROP_LOCKS))
+		sqlite3_mutex_enter(pBt->mutex);
+
 	for (e = sqliteHashFirst(&pBt->db_cache); e != NULL;
 	    e = e_next) {
 		/*
@@ -37513,7 +37542,8 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 
 		if (cleanup == CLEANUP_DROP_LOCKS ||
 		    cleanup == CLEANUP_GET_LOCKS) {
-			if (cached_db->is_sequence || cached_db->dbp == NULL)
+			if (cached_db->is_sequence || cached_db->dbp == NULL ||
+			    strcmp(cached_db->key, "1") == 0)
 				continue;
 			if (cleanup == CLEANUP_GET_LOCKS)
 				btreeDbHandleLock(p, cached_db);
@@ -37577,6 +37607,9 @@ static int btreeCleanupCachedHandles(Btree *p, cleanup_mode_t cleanup)
 		} else
 			cached_db->dbp = NULL;
 	}
+
+	if ((cleanup == CLEANUP_GET_LOCKS || cleanup == CLEANUP_DROP_LOCKS))
+		sqlite3_mutex_leave(pBt->mutex);
 
 	return rc;
 }
@@ -37815,6 +37848,15 @@ SQLITE_PRIVATE int sqlite3BtreeSetSafetyLevel(
 	return SQLITE_OK;
 }
 
+SQLITE_PRIVATE int sqlite3BtreeHandleCacheUpdate(Btree *p, int schema_changed)
+{
+	int rc;
+
+	if (schema_changed != 0 && (rc = btreeInvalidateHandleCache(p)) != 0)
+		return rc;
+	return btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
+}
+
 /*
  * If the schema version has changed since the last transaction we need to
  * close all handles in the handle cache that aren't holding a handle lock.
@@ -37915,6 +37957,12 @@ static int btreeInvalidateHandleCache(Btree *p) {
 	return (0);
 }
 
+int btreeBeginTransInternal(Btree *p, int wrflag)
+{
+	btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
+	return sqlite3BtreeBeginTrans(p, wrflag);
+}
+
 /*
 ** Attempt to start a new transaction. A write-transaction is started if the
 ** second argument is true, otherwise a read-transaction. No-op if a
@@ -37971,10 +38019,6 @@ SQLITE_PRIVATE int sqlite3BtreeBeginTrans(Btree *p, int wrflag)
 		pBt = p->pBt;
 	}
 
-	if ((rc = btreeInvalidateHandleCache(p)) != 0)
-		return (rc);
-
-	btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
 	if (wrflag == 2)
 		p->txn_excl = 1;
 	if (pBt->transactional) {
@@ -38302,8 +38346,6 @@ SQLITE_PRIVATE int sqlite3BtreeBeginStmt(Btree *p, int iStatement)
 	pBt = p->pBt;
 	ret = 0;
 
-	btreeCleanupCachedHandles(p, CLEANUP_GET_LOCKS);
-
 	if (pBt->transactional && p->inTrans != TRANS_NONE &&
 	    pFamilyTxn != NULL) {
 
@@ -38401,7 +38443,8 @@ static int btreeCompare(
 			for (pCur = pBt->first_cursor;
 			    pCur != NULL;
 			    pCur = pCur->next)
-				if (pCur->tableIndex == iTable)
+				if (pCur->tableIndex == iTable &&
+				    isCurrentThread(pCur->threadID))
 					break;
 
 			assert(pCur);
@@ -38849,6 +38892,7 @@ SQLITE_PRIVATE int sqlite3BtreeCursor(
 	rc = SQLITE_OK;
 	ret = 0;
 	cached_db = NULL;
+	pCur->threadID = NULL;
 
 	if (!p->connected) {
 		if ((rc = btreeUpdateBtShared(p, 1)) != SQLITE_OK)
@@ -38891,6 +38935,12 @@ SQLITE_PRIVATE int sqlite3BtreeCursor(
 
 	assert(p->connected || pBt->resultsBuffer);
 	assert(!pBt->transactional || p->inTrans != TRANS_NONE);
+
+	pCur->threadID = getThreadID(p->db);
+	if (pCur->threadID == NULL && p->db->mallocFailed) {
+		rc = SQLITE_NOMEM;
+		goto err;
+	}
 
 	pCur->pBtree = p;
 	pCur->tableIndex = iTable;
@@ -38963,6 +39013,10 @@ setup_cursor:
 err:	if (pDbc != NULL) {
 		(void)pDbc->close(pDbc);
 		pDbc = NULL;
+	}
+	if (pCur->threadID != NULL) {
+		sqlite3DbFree(p->db, pCur->threadID);
+		pCur->threadID = NULL;
 	}
 	pCur->eState = CURSOR_FAULT;
 	pCur->error = rc;
@@ -39065,6 +39119,8 @@ static int btreeCloseCursor(BtCursor *pCur, int listRemove)
 		ret = pCur->txn->commit(pCur->txn, DB_TXN_NOSYNC);
 		pCur->txn = 0;
 	}
+
+	sqlite3DbFree(p->db, pCur->threadID);
 
 	ret = dberr2sqlite(ret, p);
 	pCur->pBtree = NULL;
@@ -42995,12 +43051,103 @@ int btreeHasFileLock(Btree *p, int iswrite)
 
 #endif /* BDBSQL_SHARE_PRIVATE */
 
+/*
+ * Berkeley DB needs to be able to compare threads so that we can lookup
+ * structures that are thread specific. The implementations are based on the
+ * platform specific SQLite sqlite3_mutex_held implementations.
+ */ 
+#ifdef SQLITE_MUTEX_OS2
+
+void *getThreadID(sqlite3 *db) 
+{
+	TID *tid;
+	PTID ptib;
+
+	tid = NULL;
+	tid = (pthread_t *)sqlite3DbMallocRaw(db, sizeof(TID));
+	if (tid != NULL) {
+		DosGetInfoBlocks(&ptib, NULL);
+		memcpy(tid, &ptib->tib_ptib2->tib2_ultid, sizeof(TID));
+	} else
+		db->mallocFailed = 1;
+	return tid;
+}
+
+int isCurrentThread(void *tid)
+{
+	TID threadid;
+	PTID ptib;
+
+	threadid = *((TID *)tid);
+	DosGetInfoBlocks(&ptib, NULL);
+	return threadid == ptib->tib_ptib2->tib2_ultid;
+}
+
+#elif defined(SQLITE_MUTEX_PTHREADS)
+
+void *getThreadID(sqlite3 *db) 
+{
+	pthread_t *tid, temp_tid;
+
+	tid = NULL;
+	tid = (pthread_t *)sqlite3DbMallocRaw(db, sizeof(pthread_t));
+	if (tid != NULL) {
+		temp_tid = pthread_self();
+		memcpy(tid, &temp_tid, sizeof(pthread_t));
+	} else
+		db->mallocFailed = 1;
+	return tid;
+}
+
+int isCurrentThread(void *tid)
+{
+	return pthread_equal(*((pthread_t *)tid), pthread_self());
+}
+
+#elif defined(SQLITE_MUTEX_W32)
+
+void *getThreadID(sqlite3 *db) 
+{
+	DWORD *tid, temp_tid;
+
+	tid = NULL;
+	tid = (DWORD *)sqlite3DbMallocRaw(db, sizeof(DWORD));
+	if (tid != NULL) {
+		temp_tid = GetCurrentThreadId();
+		memcpy(tid, &temp_tid, sizeof(DWORD));
+	} else
+		db->mallocFailed = 1;
+	return tid;
+}
+
+int isCurrentThread(void *tid)
+{
+	DWORD threadid;
+
+	threadid = *((DWORD *)tid);
+	return (threadid == GetCurrentThreadId());
+}
+
+#else
+
+void *getThreadID(sqlite3 *db) 
+{
+	return NULL;
+}
+
+int isCurrentThread(void *tid)
+{
+	return 1;
+}
+
+#endif
+
 /************** End of btree.c ***********************************************/
 /************** Begin file backup.c ******************************************/
 /*-
 * See the file LICENSE for redistribution information.
 *
-* Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+* Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
 */
 /*
 ** This file contains the implementation of the sqlite3_backup_XXX()
@@ -43684,7 +43831,7 @@ SQLITE_API int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 			if (p->rc != SQLITE_OK)
 				goto err;
 		}
-		if ((p->rc = sqlite3BtreeBeginTrans(p->pDest, 2))
+		if ((p->rc = btreeBeginTransInternal(p->pDest, 2))
 			!= SQLITE_OK)
 			goto err;
 	}
@@ -44026,7 +44173,7 @@ done:	return MAP_ERR(rc, ret, NULL);
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -44128,7 +44275,7 @@ SQLITE_PRIVATE void sqlite3CodecGetKey(sqlite3 *db, int backend, void **keyp, in
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -45739,7 +45886,7 @@ int cleanPragmaCache(Btree *p)
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -46055,13 +46202,19 @@ static void db_seq_drop_func(
 		goto done;
 	}
 
+	sqlite3_mutex_leave(pBt->mutex);
 	if ((rc = btreeSeqStartTransaction(context, p, 1)) != SQLITE_OK) {
 			btreeSeqError(context, SQLITE_ERROR,
 			    "Could not begin transaction for drop.");
-			rc = SQLITE_ERROR;
-			goto done;
+			return;
 	}
 
+	/*
+	 * Drop the mutex - it's not valid to begin a transaction while
+	 * holding the mutex. We can drop it safely because it's use is to
+	 * protect handle cache changes.
+	 */
+	sqlite3_mutex_enter(pBt->mutex);
 	btreeSeqRemoveHandle(context, p, cache_entry);
 done:	sqlite3_mutex_leave(pBt->mutex);
 
@@ -46631,7 +46784,7 @@ static int btreeSeqStartTransaction(
 	vdbe = db->pVdbe;
 
 	if (!sqlite3BtreeIsInTrans(p) &&
-	    (rc = sqlite3BtreeBeginTrans(p, 1)) != SQLITE_OK) {
+	    (rc = btreeBeginTransInternal(p, 1)) != SQLITE_OK) {
 		btreeSeqError(context, SQLITE_ERROR,
 		    "Could not begin transaction.");
 		return (rc);
@@ -46652,7 +46805,7 @@ static int btreeSeqStartTransaction(
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -53489,6 +53642,7 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
     struct OP_VerifyCookie_stack_vars {
       int iMeta;
       int iGen;
+      int iSchemaChanged;
       Btree *pBt;
     } av;
     struct OP_OpenWrite_stack_vars {
@@ -56152,12 +56306,14 @@ case OP_VerifyCookie: {
 #if 0  /* local variables moved into u.av */
   int iMeta;
   int iGen;
+  int iSchemaChanged;
   Btree *pBt;
 #endif /* local variables moved into u.av */
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
+  u.av.iSchemaChanged = 0;
   u.av.pBt = db->aDb[pOp->p1].pBt;
   if( u.av.pBt ){
     sqlite3BtreeGetMeta(u.av.pBt, BTREE_SCHEMA_VERSION, (u32 *)&u.av.iMeta);
@@ -56186,12 +56342,14 @@ case OP_VerifyCookie: {
     ** a v-table method.
     */
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=u.av.iMeta ){
+      u.av.iSchemaChanged = 1;
       sqlite3ResetInternalSchema(db, pOp->p1);
     }
 
     p->expired = 1;
     rc = SQLITE_SCHEMA;
   }
+  sqlite3BtreeHandleCacheUpdate(u.av.pBt, u.av.iSchemaChanged);
   break;
 }
 
@@ -87278,7 +87436,7 @@ static void updateVirtualTable(
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -87314,7 +87472,7 @@ int btreeVacuum(Btree *p, char **pzErrMsg) {
 	 * Core level (i.e., call DB->compact), but we start it read-only at
 	 * the SQL level to avoid overhead from checkpoint-on-commit.
 	 */
-	if ((rc = sqlite3BtreeBeginTrans(p, 0)) != SQLITE_OK) {
+	if ((rc = btreeBeginTransInternal(p, 0)) != SQLITE_OK) {
 		sqlite3SetString(pzErrMsg, db,
 		    "failed to begin a vacuum transaction");
 		return rc;

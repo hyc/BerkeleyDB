@@ -121,6 +121,7 @@ if test "$db_cv_jdbc" != "no"; then
   test "$prefix" != "" && jdbc_args="--prefix=$prefix --with-jardir=$prefix/jar"
   test "$enable_shared" != "" && jdbc_args="$jdbc_args --enable-shared=$enable_shared"
   test "$enable_static" != "" && jdbc_args="$jdbc_args --enable-static=$enable_static"
+  test "$cross_compiling" = "yes" && jdbc_args="$jdbc_args --build=$build --host=$host "
 
   # 1. The build directory is build_unix/jdbc, so the include paths are relative
   #    to that.

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -277,11 +277,12 @@ class RecordInput extends TupleInput implements EntityInput {
     public void registerPriStringKeyObject(Object o) {
 
         /*
-         * In new JE version, String will be treated as primitive type, so 
-         * String object does not need to be registered. But in old JE version,
-         * String object would be registered. [#19247].
+         * In JE 5.0 and later, String is treated as a primitive type, so a
+         * String object does not need to be registered. But in earlier
+         * versions, Strings are treated as any other object and must be
+         * registered. [#19247]
          */
-        if (newStringFormat) {
+        if (!newStringFormat) {
             visited.put(RecordInput.PRI_KEY_VISITED_OFFSET, o);
         }
     }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2012, 2012 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <errno.h>
@@ -160,6 +160,7 @@ typedef enum { LOCKMODE_NONE, LOCKMODE_READ, LOCKMODE_WRITE } lock_mode_t;
 typedef enum { NO_LSN_RESET, LSN_RESET_FILE } lsn_reset_t;
 
 /* Declarations for functions that are shared by adapter source files. */
+int btreeBeginTransInternal(Btree *p, int wrflag);
 void *btreeCreateIndexKey(BtCursor *pCur);
 void btreeGetErrorFile(const BtShared *pBt, char *fname);
 Index *btreeGetIndex(Btree *p, int iTable);
@@ -199,6 +200,10 @@ int getHostPort(const char *hpstr, char **host, u_int *port);
 int setRepVerboseFile(BtShared *pBt, DB_ENV *dbenv, const char *fname,
     char *msg);
 int unsetRepVerboseFile(BtShared *pBt, DB_ENV *dbenv, char **msg);
+/* Returns the thread id as a void *, which needs to be freed. */
+void *getThreadID(sqlite3 *db);
+/* Checks if the thread id item identifies the current thread. */
+int isCurrentThread(void *tid);
 
 #define	CLEAR_PWD(pBt)	do {						\
 	memset((pBt)->encrypt_pwd, 0xff, (pBt)->encrypt_pwd_len);	\
@@ -316,6 +321,7 @@ struct BtCursor {
 	u8 indexKeyBuf[CURSOR_BUFSIZE];
 	DBT multiData;
 	void *multiGetPtr, *multiPutPtr;
+	void *threadID;
 	int skipMulti;
 	BtCursor *next;
 };

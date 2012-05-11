@@ -842,8 +842,8 @@ struct DbEnv
 		return self->set_create_dir(self, dir);
 	}
 
-	db_ret_t set_data_dir(const char *dir) {
-		return self->set_data_dir(self, dir);
+	db_ret_t add_data_dir(const char *dir) {
+		return self->add_data_dir(self, dir);
 	}
 
 	db_ret_t set_intermediate_dir_mode(const char *mode) {

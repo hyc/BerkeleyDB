@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 ﻿using System.Reflection;
@@ -16,7 +16,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Oracle")]
 [assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("Copyright © 2009, 2011 Oracle Corporation and/or its affiliates.  All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright © 2009, 2012 Oracle Corporation and/or its affiliates.  All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -35,4 +35,4 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("5.3.15")]
+[assembly: AssemblyVersion("5.3.21")]

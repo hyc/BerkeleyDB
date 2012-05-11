@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -322,13 +322,19 @@ static void db_seq_drop_func(
 		goto done;
 	}
 
+	sqlite3_mutex_leave(pBt->mutex);
 	if ((rc = btreeSeqStartTransaction(context, p, 1)) != SQLITE_OK) {
 			btreeSeqError(context, SQLITE_ERROR,
 			    "Could not begin transaction for drop.");
-			rc = SQLITE_ERROR;
-			goto done;
+			return;
 	}
 
+	/*
+	 * Drop the mutex - it's not valid to begin a transaction while
+	 * holding the mutex. We can drop it safely because it's use is to
+	 * protect handle cache changes.
+	 */
+	sqlite3_mutex_enter(pBt->mutex);
 	btreeSeqRemoveHandle(context, p, cache_entry);
 done:	sqlite3_mutex_leave(pBt->mutex);
 
@@ -898,7 +904,7 @@ static int btreeSeqStartTransaction(
 	vdbe = db->pVdbe;
 
 	if (!sqlite3BtreeIsInTrans(p) &&
-	    (rc = sqlite3BtreeBeginTrans(p, 1)) != SQLITE_OK) {
+	    (rc = btreeBeginTransInternal(p, 1)) != SQLITE_OK) {
 		btreeSeqError(context, SQLITE_ERROR,
 		    "Could not begin transaction.");
 		return (rc);

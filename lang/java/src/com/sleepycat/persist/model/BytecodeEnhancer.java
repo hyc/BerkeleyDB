@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -17,6 +17,7 @@ import static com.sleepycat.asm.Opcodes.ACONST_NULL;
 import static com.sleepycat.asm.Opcodes.ALOAD;
 import static com.sleepycat.asm.Opcodes.ANEWARRAY;
 import static com.sleepycat.asm.Opcodes.ARETURN;
+import static com.sleepycat.asm.Opcodes.ASM4;
 import static com.sleepycat.asm.Opcodes.BIPUSH;
 import static com.sleepycat.asm.Opcodes.CHECKCAST;
 import static com.sleepycat.asm.Opcodes.DCMPL;
@@ -64,7 +65,6 @@ import java.util.Map;
 
 import com.sleepycat.asm.AnnotationVisitor;
 import com.sleepycat.asm.Attribute;
-import com.sleepycat.asm.ClassAdapter;
 import com.sleepycat.asm.ClassVisitor;
 import com.sleepycat.asm.FieldVisitor;
 import com.sleepycat.asm.Label;
@@ -88,7 +88,7 @@ import com.sleepycat.compat.DbCompat;
  *
  * @author Mark Hayes
  */
-class BytecodeEnhancer extends ClassAdapter {
+class BytecodeEnhancer extends ClassVisitor {
 
     /** Thrown when we determine that a class is not persistent. */
     @SuppressWarnings("serial")
@@ -124,7 +124,7 @@ class BytecodeEnhancer extends ClassAdapter {
     private String staticBlockMethod;
 
     BytecodeEnhancer(ClassVisitor parentVisitor) {
-        super(parentVisitor);
+        super(ASM4, parentVisitor);
         secKeyFields = new ArrayList<FieldInfo>();
         nonKeyFields = new ArrayList<FieldInfo>();
     }
@@ -1631,7 +1631,7 @@ class BytecodeEnhancer extends ClassAdapter {
         return NOT_PERSISTENT;
     }
 
-    private static class FieldInfo implements FieldVisitor {
+    private static class FieldInfo extends FieldVisitor {
 
         FieldVisitor parent;
         String name;
@@ -1646,6 +1646,7 @@ class BytecodeEnhancer extends ClassAdapter {
                   String name,
                   String desc,
                   boolean isTransient) {
+            super(ASM4);
             this.parent = parent;
             this.name = name;
             this.isTransient = isTransient;
@@ -1719,11 +1720,12 @@ class BytecodeEnhancer extends ClassAdapter {
         }
     }
 
-    private static abstract class AnnotationInfo implements AnnotationVisitor {
+    private static abstract class AnnotationInfo extends AnnotationVisitor {
 
         AnnotationVisitor parent;
 
         AnnotationInfo(AnnotationVisitor parent) {
+            super(ASM4);
             this.parent = parent;
         }
 

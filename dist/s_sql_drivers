@@ -29,7 +29,7 @@ else
 	PKG_ROOT=../..
 fi
 
-DB_ADDONS_REPO=$PKG_ROOT/db_addons
+DB_ADDONS_REPO=$PKG_ROOT/db_addons-5.3
 update_repo()
 {
 	if [ ! -d $DB_ADDONS_REPO ]; then

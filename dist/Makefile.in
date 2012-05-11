@@ -317,13 +317,14 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/asm/AnnotationWriter.java \
 	$(JAVA_SLEEPYCAT)/asm/Attribute.java \
 	$(JAVA_SLEEPYCAT)/asm/ByteVector.java \
-	$(JAVA_SLEEPYCAT)/asm/ClassAdapter.java \
 	$(JAVA_SLEEPYCAT)/asm/ClassReader.java \
 	$(JAVA_SLEEPYCAT)/asm/ClassVisitor.java \
 	$(JAVA_SLEEPYCAT)/asm/ClassWriter.java \
 	$(JAVA_SLEEPYCAT)/asm/Edge.java \
 	$(JAVA_SLEEPYCAT)/asm/FieldVisitor.java \
 	$(JAVA_SLEEPYCAT)/asm/FieldWriter.java \
+	$(JAVA_SLEEPYCAT)/asm/Frame.java \
+	$(JAVA_SLEEPYCAT)/asm/Handle.java \
 	$(JAVA_SLEEPYCAT)/asm/Handler.java \
 	$(JAVA_SLEEPYCAT)/asm/Item.java \
 	$(JAVA_SLEEPYCAT)/asm/Label.java \

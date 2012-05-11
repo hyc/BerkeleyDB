@@ -415,7 +415,7 @@ public class DbEnv {
 
   public void set_create_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_create_dir(swigCPtr, this, dir); }
 
-  public void set_data_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_data_dir(swigCPtr, this, dir); }
+  public void add_data_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_add_data_dir(swigCPtr, this, dir); }
 
   public void set_intermediate_dir_mode(String mode) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_intermediate_dir_mode(swigCPtr, this, mode); }
 

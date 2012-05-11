@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -714,7 +714,8 @@ __config_scan(input, argv, descptr)
 		/*
 		 * If that was the first token, look it up in the simple command
 		 * table. If it is there and takes a single string value, then
-		 * return the remainder of the line right away.
+		 * return the remainder of the line (after skipping over any
+		 * leading whitespaces) without splitting it further.
 		 */
 		if (count == 1) {
 			*descptr = bsearch(argv[0], config_descs,
@@ -722,6 +723,8 @@ __config_scan(input, argv, descptr)
 			if (*descptr != NULL &&
 			    (*descptr)->type == CFG_STRING) {
 				count++;
+				while (isspace(*input))
+					input++;
 				*ap++ = input;
 				break;
 			}

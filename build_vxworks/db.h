@@ -2,7 +2,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  *
@@ -47,9 +47,9 @@ extern "C" {
 #define	DB_VERSION_RELEASE	2
 #define	DB_VERSION_MAJOR	5
 #define	DB_VERSION_MINOR	3
-#define	DB_VERSION_PATCH	15
-#define	DB_VERSION_STRING	"Berkeley DB 5.3.15: (December 19, 2011)"
-#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.3.15: (December 19, 2011)"
+#define	DB_VERSION_PATCH	21
+#define	DB_VERSION_STRING	"Berkeley DB 5.3.21: (May 11, 2012)"
+#define	DB_VERSION_FULL_STRING	"Berkeley DB 11g Release 2, library version 11.2.5.3.21: (May 11, 2012)"
 
 /*
  * !!!

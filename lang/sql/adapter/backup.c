@@ -1,7 +1,7 @@
 /*-
 * See the file LICENSE for redistribution information.
 *
-* Copyright (c) 2010, 2011 Oracle and/or its affiliates.  All rights reserved.
+* Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
 */
 /*
 ** This file contains the implementation of the sqlite3_backup_XXX()
@@ -688,7 +688,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 			if (p->rc != SQLITE_OK)
 				goto err;
 		}
-		if ((p->rc = sqlite3BtreeBeginTrans(p->pDest, 2))
+		if ((p->rc = btreeBeginTransInternal(p->pDest, 2))
 			!= SQLITE_OK)
 			goto err;
 	}

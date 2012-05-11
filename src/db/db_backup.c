@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -463,6 +463,8 @@ backup_read_data_dir(dbenv, ip, dir, backup_dir, flags)
 			if (LF_ISSET(DB_BACKUP_FILES))
 				ret = backup_data_copy(
 				    dbenv, names[cnt], dir, bd, 0);
+			else
+				ret = 0;
 		} else if (FLD_ISSET(dbenv->verbose, DB_VERB_BACKUP))
 			DB_MSGBUF_FLUSH(env, &mb);
 
@@ -584,7 +586,7 @@ again:	aflag = DB_ARCH_LOG;
 			*copy_minp = v;
 
 		if ((ret = __os_concat_path(from,
-		    sizeof(from), env->db_home, *names)) != 0) {
+		    sizeof(from), logd, *names)) != 0) {
 			from[sizeof(from) - 1] = '\0';
 			__db_errx(env, DB_STR_A("0737",
 			    "%s: path too long", "%s"), from);
@@ -651,7 +653,7 @@ err:	if (logd != dbenv->db_log_dir && logd != env->db_home)
 	if (backupd != NULL && backupd != backup_dir)
 		__os_free(env, (void *)backupd);
 	if (begin != NULL)
-		__os_free(env, begin);
+		__os_ufree(env, begin);
 
 	return (ret);
 }

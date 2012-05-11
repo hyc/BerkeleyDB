@@ -348,6 +348,14 @@ declare function local:generateCustomBuildTool($project,$config)
 	    {local:indent(6)}<Command>{$commandtext}</Command>
 	    {local:indent(6)}<Message>{$message}</Message>
 	    {local:indent(4)}</PostBuildEvent>)
+    else if (not(empty($project/event[@name="prebuild"]))) then 
+	let $commandtext := $project/event[@name="prebuild"]/command[contains(@config,$config)]/text()
+        let $message := $project/event[@name="prebuild"]/description
+        return (
+	    local:indent(4),<PreBuildEvent xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	    {local:indent(6)}<Command>{$commandtext}</Command>
+	    {local:indent(6)}<Message>{$message}</Message>
+	    {local:indent(4)}</PreBuildEvent>)
      else ()
 };
 
