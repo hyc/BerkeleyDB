@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -722,7 +722,7 @@ public:
 		}
 		bool operator()(const kdt& k1, const kdt& k2) const
 		{
-			return compare_keys(pdb, k1, k2);
+			return compare_keys(pdb, k1, k2, NULL);
 		}
 
 	}; // key_compare class definition
@@ -988,7 +988,7 @@ exit:
 	
 protected:
 	typedef int (*db_compare_fcn_t)(Db *db, const Dbt *dbt1, 
-	    const Dbt *dbt2);
+	    const Dbt *dbt2, size_t *locp);
 	
 	
 	typedef db_map<kdt, _DB_STL_set_value<kdt>, value_type_sub,
@@ -1501,7 +1501,7 @@ exit:
 protected:
 	
 	typedef int (*db_compare_fcn_t)(Db *db, const Dbt *dbt1, 
-	    const Dbt *dbt2);
+	    const Dbt *dbt2, size_t *locp);
 	typedef db_multimap<kdt, _DB_STL_set_value<kdt>, 
 	    value_type_sub, db_set_iterator<kdt, value_type_sub> > base;
 

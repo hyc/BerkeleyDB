@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -108,7 +108,7 @@ namespace CsharpAPITest
 			 * Check the delta of two sequence number get 
 			 * from sequence.
 			 */
-			int delta = 100;
+			uint delta = 100;
 			long seqNum1 = seq.Get(delta);
 			long seqNum2 = seq.Get(delta);
 			Assert.AreEqual(delta, seqNum2 - seqNum1);
@@ -136,7 +136,7 @@ namespace CsharpAPITest
 			 * Check the delta of two sequence number get 
 			 * from sequence.
 			 */
-			int delta = 100;
+			uint delta = 100;
 			long seqNum1 = seq.Get(delta, true);
 			long seqNum2 = seq.Get(delta, true);
 			Assert.AreEqual(delta, seqNum2 - seqNum1);
@@ -165,7 +165,7 @@ namespace CsharpAPITest
 			 * Check the delta of two sequence number get 
 			 * from sequence.
 			 */
-			int delta = 100;
+			uint delta = 100;
 			Transaction txn = env.BeginTransaction();
 			long seqNum1 = seq.Get(delta, txn);
 			long seqNum2 = seq.Get(delta, txn);
@@ -365,7 +365,7 @@ namespace CsharpAPITest
 		public static void Confirm(XmlElement xmlElement,
 		    Sequence seq, bool compulsory)
 		{
-			Configuration.ConfirmInt(xmlElement, "CacheSize",
+			Configuration.ConfirmUint(xmlElement, "CacheSize",
 			    seq.Cachesize, compulsory);
 			Configuration.ConfirmBool(xmlElement, "Decrement",
 			    seq.Decrement, compulsory);

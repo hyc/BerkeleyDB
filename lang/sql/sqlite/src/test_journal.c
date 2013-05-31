@@ -14,13 +14,7 @@
 ** an existing VFS. The code in this file attempts to verify that SQLite
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
-*/
-#if SQLITE_TEST          /* This file is used for testing only */
-
-#include "sqlite3.h"
-#include "sqliteInt.h"
-
-/*
+**
 ** INTERFACE
 **
 **   The public interface to this wrapper VFS is two functions:
@@ -99,6 +93,10 @@
 **
 **     c) The journal file is deleted using xDelete.
 */
+#if SQLITE_TEST          /* This file is used for testing only */
+
+#include "sqlite3.h"
+#include "sqliteInt.h"
 
 /*
 ** Maximum pathname length supported by the jt backend.
@@ -136,7 +134,7 @@ struct jt_file {
 */
 static int jtClose(sqlite3_file*);
 static int jtRead(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst);
-static int jtWrite(sqlite3_file*,const void*, int iAmt, sqlite3_int64 iOfst);
+static int jtWrite(sqlite3_file*,const void*,int iAmt, sqlite3_int64 iOfst);
 static int jtTruncate(sqlite3_file*, sqlite3_int64 size);
 static int jtSync(sqlite3_file*, int flags);
 static int jtFileSize(sqlite3_file*, sqlite3_int64 *pSize);
@@ -292,9 +290,9 @@ static jt_file *locateDatabaseHandle(const char *zJournal){
   jt_file *pMain = 0;
   enterJtMutex();
   for(pMain=g.pList; pMain; pMain=pMain->pNext){
-    int nName = strlen(zJournal) - strlen("-journal");
+    int nName = (int)(strlen(zJournal) - strlen("-journal"));
     if( (pMain->flags&SQLITE_OPEN_MAIN_DB)
-     && (strlen(pMain->zName)==nName)
+     && ((int)strlen(pMain->zName)==nName)
      && 0==memcmp(pMain->zName, zJournal, nName)
      && (pMain->eLock>=SQLITE_LOCK_RESERVED)
     ){
@@ -393,7 +391,7 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
     while( rc==SQLITE_OK && iTrunk>0 ){
       u32 nLeaf;
       u32 iLeaf;
-      sqlite3_int64 iOff = (iTrunk-1)*pMain->nPagesize;
+      sqlite3_int64 iOff = (i64)(iTrunk-1)*pMain->nPagesize;
       rc = sqlite3OsRead(p, aData, pMain->nPagesize, iOff);
       nLeaf = decodeUint32(&aData[4]);
       for(iLeaf=0; rc==SQLITE_OK && iLeaf<nLeaf; iLeaf++){
@@ -405,12 +403,13 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
 
     /* Calculate and store a checksum for each page in the database file. */
     if( rc==SQLITE_OK ){
-      unsigned int ii;
-      for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
+      int ii;
+      for(ii=0; rc==SQLITE_OK && ii<(int)pMain->nPage; ii++){
         i64 iOff = (i64)(pMain->nPagesize) * (i64)ii;
         if( iOff==PENDING_BYTE ) continue;
         rc = sqlite3OsRead(pMain->pReal, aData, pMain->nPagesize, iOff);
         pMain->aCksum[ii] = genCksum(aData, pMain->nPagesize);
+        if( ii+1==pMain->nPage && rc==SQLITE_IOERR_SHORT_READ ) rc = SQLITE_OK;
       }
     }
 
@@ -539,7 +538,7 @@ static int jtWrite(
   }
 
   if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
-    if( (u32)iAmt<p->nPagesize 
+    if( iAmt<(int)p->nPagesize 
      && p->nPagesize%iAmt==0 
      && iOfst>=(PENDING_BYTE+512) 
      && iOfst+iAmt<=PENDING_BYTE+p->nPagesize
@@ -664,7 +663,7 @@ static int jtCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 */
 static int jtFileControl(sqlite3_file *pFile, int op, void *pArg){
   jt_file *p = (jt_file *)pFile;
-  return sqlite3OsFileControl(p->pReal, op, pArg);
+  return p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
 }
 
 /*
@@ -724,7 +723,7 @@ static int jtOpen(
 ** returning.
 */
 static int jtDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  int nPath = strlen(zPath);
+  int nPath = (int)strlen(zPath);
   if( nPath>8 && 0==strcmp("-journal", &zPath[nPath-8]) ){
     /* Deleting a journal file. The end of a transaction. */
     jt_file *pMain = locateDatabaseHandle(zPath);

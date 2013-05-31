@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -252,7 +252,7 @@ allocate_wait_slot(env, resultp, table)
 	 * the previous wait but before reacquiring the mutex, and this
 	 * extra signal would incorrectly cause the next wait to return
 	 * immediately.
-	 */ 
+	 */
 	(void)WaitForSingleObject(w->event, 0);
 	*resultp = i;
 	return (0);
@@ -639,31 +639,40 @@ __repmgr_select_loop(env)
 	WSAEVENT listen_event;
 	WSANETWORKEVENTS net_events;
 	struct io_info io_info;
-	int i;
+	int accept_connect, i;
 
 	db_rep = env->rep_handle;
 	io_info.connections = connections;
 	io_info.events = events;
+	accept_connect = FALSE;
 
 	if ((listen_event = WSACreateEvent()) == WSA_INVALID_EVENT) {
 		__db_err(env, net_errno, DB_STR("3590",
 		    "can't create event for listen socket"));
 		return (net_errno);
 	}
-	if (!IS_SUBORDINATE(db_rep) &&
-	    WSAEventSelect(db_rep->listen_fd, listen_event, FD_ACCEPT) ==
-	    SOCKET_ERROR) {
-		ret = net_errno;
-		__db_err(env, ret, DB_STR("3591",
-		    "can't enable event for listener"));
-		(void)WSACloseEvent(listen_event);
-		goto out;
-	}
 
 	LOCK_MUTEX(db_rep->mutex);
 	if ((ret = __repmgr_first_try_connections(env)) != 0)
 		goto unlock;
 	for (;;) {
+		/*
+		 * Set the event for this process to receive notification of
+		 * incoming connections if this process is or has just taken
+		 * over as the listener process.
+		 */
+		if (!IS_SUBORDINATE(db_rep) && !accept_connect) {
+			if (WSAEventSelect(db_rep->listen_fd, listen_event,
+			    FD_ACCEPT) == SOCKET_ERROR) {
+				ret = net_errno;
+				__db_err(env, ret, DB_STR("3700",
+				    "can't enable event for listener"));
+				(void)WSACloseEvent(listen_event);
+				goto out;
+			}
+			accept_connect = TRUE;
+		}
+
 		/* Start with the two events that we always wait for. */
 #define	SIGNALER_INDEX	0
 #define	LISTENER_INDEX	1
@@ -714,6 +723,8 @@ __repmgr_select_loop(env)
 					ret = net_errno;
 					goto unlock;
 				}
+				if (net_events.lNetworkEvents == 0)
+					continue;
 				DB_ASSERT(env,
 				    net_events.lNetworkEvents & FD_ACCEPT);
 				if ((ret = net_events.iErrorCode[FD_ACCEPT_BIT])

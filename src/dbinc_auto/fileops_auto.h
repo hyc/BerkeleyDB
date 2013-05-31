@@ -143,6 +143,44 @@ static inline int __fop_write_read(ENV *env,
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_write_desc, sizeof(__fop_write_args), (void**)arg));
 }
+#define	DB___fop_write_file	86
+typedef struct ___fop_write_file_args {
+	u_int32_t type;
+	DB_TXN *txnp;
+	DB_LSN prev_lsn;
+	DBT	name;
+	DBT	dirname;
+	u_int32_t	appname;
+	u_int32_t	offset_lo;
+	u_int32_t	offset_hi;
+	DBT	old_data;
+	DBT	new_data;
+	u_int32_t	flag;
+} __fop_write_file_args;
+
+extern __DB_IMPORT DB_LOG_RECSPEC __fop_write_file_desc[];
+static inline int
+__fop_write_file_log(ENV *env, DB_TXN *txnp, DB_LSN *ret_lsnp, u_int32_t flags,
+    const DBT *name, const DBT *dirname, u_int32_t appname, u_int32_t offset_lo, u_int32_t offset_hi,
+    const DBT *old_data, const DBT *new_data, u_int32_t flag)
+{
+	return (__log_put_record(env, NULL, txnp, ret_lsnp,
+	    flags, DB___fop_write_file, 0,
+	    sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(DB_LSN) +
+	    LOG_DBT_SIZE(name) + LOG_DBT_SIZE(dirname) + sizeof(u_int32_t) +
+	    sizeof(u_int32_t) + sizeof(u_int32_t) + LOG_DBT_SIZE(old_data) +
+	    LOG_DBT_SIZE(new_data) + sizeof(u_int32_t),
+	    __fop_write_file_desc,
+	    name, dirname, appname, offset_lo, offset_hi, old_data, new_data, flag));
+}
+
+static inline int __fop_write_file_read(ENV *env, 
+    void *data, __fop_write_file_args **arg)
+{
+	*arg = NULL;
+	return (__log_read_record(env, 
+	    NULL, NULL, data, __fop_write_file_desc, sizeof(__fop_write_file_args), (void**)arg));
+}
 #define	DB___fop_rename_42	146
 #define	DB___fop_rename_noundo_46	150
 typedef struct ___fop_rename_42_args {

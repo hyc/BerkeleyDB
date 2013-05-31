@@ -51,102 +51,105 @@
 #define OP_Or                                  68   /* same as TK_OR       */
 #define OP_Not                                 19   /* same as TK_NOT      */
 #define OP_BitNot                              93   /* same as TK_BITNOT   */
-#define OP_If                                  26
-#define OP_IfNot                               27
+#define OP_Once                                26
+#define OP_If                                  27
+#define OP_IfNot                               28
 #define OP_IsNull                              73   /* same as TK_ISNULL   */
 #define OP_NotNull                             74   /* same as TK_NOTNULL  */
-#define OP_Column                              28
-#define OP_Affinity                            29
-#define OP_MakeRecord                          30
-#define OP_Count                               31
-#define OP_Savepoint                           32
-#define OP_AutoCommit                          33
-#define OP_Transaction                         34
-#define OP_ReadCookie                          35
-#define OP_SetCookie                           36
-#define OP_VerifyCookie                        37
-#define OP_OpenRead                            38
-#define OP_OpenWrite                           39
-#define OP_OpenAutoindex                       40
-#define OP_OpenEphemeral                       41
-#define OP_OpenPseudo                          42
-#define OP_Close                               43
-#define OP_SeekLt                              44
-#define OP_SeekLe                              45
-#define OP_SeekGe                              46
-#define OP_SeekGt                              47
-#define OP_Seek                                48
-#define OP_NotFound                            49
-#define OP_Found                               50
-#define OP_IsUnique                            51
-#define OP_NotExists                           52
-#define OP_Sequence                            53
-#define OP_NewRowid                            54
-#define OP_Insert                              55
-#define OP_InsertInt                           56
-#define OP_Delete                              57
-#define OP_ResetCount                          58
-#define OP_RowKey                              59
-#define OP_RowData                             60
-#define OP_Rowid                               61
-#define OP_NullRow                             62
-#define OP_Last                                63
-#define OP_Sort                                64
-#define OP_Rewind                              65
-#define OP_Prev                                66
-#define OP_Next                                67
-#define OP_IdxInsert                           70
-#define OP_IdxDelete                           71
-#define OP_IdxRowid                            72
-#define OP_IdxLT                               81
-#define OP_IdxGE                               92
-#define OP_Destroy                             95
-#define OP_Clear                               96
-#define OP_CreateIndex                         97
-#define OP_CreateTable                         98
-#define OP_ParseSchema                         99
-#define OP_LoadAnalysis                       100
-#define OP_DropTable                          101
-#define OP_DropIndex                          102
-#define OP_DropTrigger                        103
-#define OP_IntegrityCk                        104
-#define OP_RowSetAdd                          105
-#define OP_RowSetRead                         106
-#define OP_RowSetTest                         107
-#define OP_Program                            108
-#define OP_Param                              109
-#define OP_FkCounter                          110
-#define OP_FkIfZero                           111
-#define OP_MemMax                             112
-#define OP_IfPos                              113
-#define OP_IfNeg                              114
-#define OP_IfZero                             115
-#define OP_AggStep                            116
-#define OP_AggFinal                           117
-#define OP_Checkpoint                         118
-#define OP_JournalMode                        119
-#define OP_Vacuum                             120
-#define OP_IncrVacuum                         121
-#define OP_Expire                             122
-#define OP_TableLock                          123
-#define OP_VBegin                             124
-#define OP_VCreate                            125
-#define OP_VDestroy                           126
-#define OP_VOpen                              127
-#define OP_VFilter                            128
-#define OP_VColumn                            129
-#define OP_VNext                              131
-#define OP_VRename                            132
-#define OP_VUpdate                            133
-#define OP_Pagecount                          134
-#define OP_MaxPgcnt                           135
-#define OP_Trace                              136
-#define OP_Noop                               137
-#define OP_Explain                            138
-
-/* The following opcode values are never used */
-#define OP_NotUsed_139                        139
-#define OP_NotUsed_140                        140
+#define OP_Column                              29
+#define OP_Affinity                            30
+#define OP_MakeRecord                          31
+#define OP_Count                               32
+#define OP_Savepoint                           33
+#define OP_AutoCommit                          34
+#define OP_Transaction                         35
+#define OP_ReadCookie                          36
+#define OP_SetCookie                           37
+#define OP_VerifyCookie                        38
+#define OP_OpenRead                            39
+#define OP_OpenWrite                           40
+#define OP_OpenAutoindex                       41
+#define OP_OpenEphemeral                       42
+#define OP_SorterOpen                          43
+#define OP_OpenPseudo                          44
+#define OP_Close                               45
+#define OP_SeekLt                              46
+#define OP_SeekLe                              47
+#define OP_SeekGe                              48
+#define OP_SeekGt                              49
+#define OP_Seek                                50
+#define OP_NotFound                            51
+#define OP_Found                               52
+#define OP_IsUnique                            53
+#define OP_NotExists                           54
+#define OP_Sequence                            55
+#define OP_NewRowid                            56
+#define OP_Insert                              57
+#define OP_InsertInt                           58
+#define OP_Delete                              59
+#define OP_ResetCount                          60
+#define OP_SorterCompare                       61
+#define OP_SorterData                          62
+#define OP_RowKey                              63
+#define OP_RowData                             64
+#define OP_Rowid                               65
+#define OP_NullRow                             66
+#define OP_Last                                67
+#define OP_SorterSort                          70
+#define OP_Sort                                71
+#define OP_Rewind                              72
+#define OP_SorterNext                          81
+#define OP_Prev                                92
+#define OP_Next                                95
+#define OP_SorterInsert                        96
+#define OP_IdxInsert                           97
+#define OP_IdxDelete                           98
+#define OP_IdxRowid                            99
+#define OP_IdxLT                              100
+#define OP_IdxGE                              101
+#define OP_Destroy                            102
+#define OP_Clear                              103
+#define OP_CreateIndex                        104
+#define OP_CreateTable                        105
+#define OP_ParseSchema                        106
+#define OP_LoadAnalysis                       107
+#define OP_DropTable                          108
+#define OP_DropIndex                          109
+#define OP_DropTrigger                        110
+#define OP_IntegrityCk                        111
+#define OP_RowSetAdd                          112
+#define OP_RowSetRead                         113
+#define OP_RowSetTest                         114
+#define OP_Program                            115
+#define OP_Param                              116
+#define OP_FkCounter                          117
+#define OP_FkIfZero                           118
+#define OP_MemMax                             119
+#define OP_IfPos                              120
+#define OP_IfNeg                              121
+#define OP_IfZero                             122
+#define OP_AggStep                            123
+#define OP_AggFinal                           124
+#define OP_Checkpoint                         125
+#define OP_JournalMode                        126
+#define OP_Vacuum                             127
+#define OP_IncrVacuum                         128
+#define OP_Expire                             129
+#define OP_TableLock                          131
+#define OP_VBegin                             132
+#define OP_VCreate                            133
+#define OP_VDestroy                           134
+#define OP_VOpen                              135
+#define OP_VFilter                            136
+#define OP_VColumn                            137
+#define OP_VNext                              138
+#define OP_VRename                            139
+#define OP_VUpdate                            140
+#define OP_Pagecount                          146
+#define OP_MaxPgcnt                           147
+#define OP_Trace                              148
+#define OP_Noop                               149
+#define OP_Explain                            150
 
 
 /* Properties such as "out2" or "jump" that are specified in
@@ -161,22 +164,22 @@
 #define OPFLG_OUT2            0x0020  /* out2:  P2 is an output */
 #define OPFLG_OUT3            0x0040  /* out3:  P3 is an output */
 #define OPFLG_INITIALIZER {\
-/*   0 */ 0x00, 0x01, 0x05, 0x04, 0x04, 0x10, 0x00, 0x02,\
-/*   8 */ 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x24, 0x24,\
+/*   0 */ 0x00, 0x01, 0x01, 0x04, 0x04, 0x10, 0x00, 0x02,\
+/*   8 */ 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x24,\
 /*  16 */ 0x00, 0x00, 0x00, 0x24, 0x04, 0x05, 0x04, 0x00,\
-/*  24 */ 0x00, 0x01, 0x05, 0x05, 0x00, 0x00, 0x00, 0x02,\
-/*  32 */ 0x00, 0x00, 0x00, 0x02, 0x10, 0x00, 0x00, 0x00,\
-/*  40 */ 0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11,\
-/*  48 */ 0x08, 0x11, 0x11, 0x11, 0x11, 0x02, 0x02, 0x00,\
-/*  56 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01,\
-/*  64 */ 0x01, 0x01, 0x01, 0x01, 0x4c, 0x4c, 0x08, 0x00,\
-/*  72 */ 0x02, 0x05, 0x05, 0x15, 0x15, 0x15, 0x15, 0x15,\
+/*  24 */ 0x00, 0x01, 0x01, 0x05, 0x05, 0x00, 0x00, 0x00,\
+/*  32 */ 0x02, 0x00, 0x00, 0x00, 0x02, 0x10, 0x00, 0x00,\
+/*  40 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x11,\
+/*  48 */ 0x11, 0x11, 0x08, 0x11, 0x11, 0x11, 0x11, 0x02,\
+/*  56 */ 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/*  64 */ 0x00, 0x02, 0x00, 0x01, 0x4c, 0x4c, 0x01, 0x01,\
+/*  72 */ 0x01, 0x05, 0x05, 0x15, 0x15, 0x15, 0x15, 0x15,\
 /*  80 */ 0x15, 0x01, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,\
-/*  88 */ 0x4c, 0x4c, 0x4c, 0x4c, 0x01, 0x24, 0x02, 0x02,\
-/*  96 */ 0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 104 */ 0x00, 0x0c, 0x45, 0x15, 0x01, 0x02, 0x00, 0x01,\
-/* 112 */ 0x08, 0x05, 0x05, 0x05, 0x00, 0x00, 0x00, 0x02,\
-/* 120 */ 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 128 */ 0x01, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02, 0x02,\
-/* 136 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x04, 0x04,\
-/* 144 */ 0x04, 0x04,}
+/*  88 */ 0x4c, 0x4c, 0x4c, 0x4c, 0x01, 0x24, 0x02, 0x01,\
+/*  96 */ 0x08, 0x08, 0x00, 0x02, 0x01, 0x01, 0x02, 0x00,\
+/* 104 */ 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 112 */ 0x0c, 0x45, 0x15, 0x01, 0x02, 0x00, 0x01, 0x08,\
+/* 120 */ 0x05, 0x05, 0x05, 0x00, 0x00, 0x00, 0x02, 0x00,\
+/* 128 */ 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 136 */ 0x01, 0x00, 0x01, 0x00, 0x00, 0x04, 0x04, 0x04,\
+/* 144 */ 0x04, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00,}

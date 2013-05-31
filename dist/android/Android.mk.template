@@ -26,6 +26,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(BDB_TOP)/build_android/sql
 # Source files
 LOCAL_SRC_FILES := \
 	@SOURCE_FILES@
+	$(BDB_TOP)/src/common/crypto_stub.c \
 	$(BDB_TOP)/lang/sql/generated/sqlite3.c
 
 ifneq ($(TARGET_ARCH),arm)

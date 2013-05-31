@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -42,22 +42,22 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="intro_dbisnot.html#idm1802280">Berkeley DB is not a relational database</a>
+              <a href="intro_dbisnot.html#idp50168952">Berkeley DB is not a relational database</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="intro_dbisnot.html#idm2288920">Berkeley DB is not an object-oriented database</a>
+              <a href="intro_dbisnot.html#idp50211112">Berkeley DB is not an object-oriented database</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="intro_dbisnot.html#idm2354536">Berkeley DB is not a network database</a>
+              <a href="intro_dbisnot.html#idm3472752">Berkeley DB is not a network database</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="intro_dbisnot.html#idm2301256">Berkeley DB is not a database server</a>
+              <a href="intro_dbisnot.html#idp50213040">Berkeley DB is not a database server</a>
             </span>
           </dt>
         </dl>
@@ -108,17 +108,21 @@
       <p>
         Because both keys and values can be up to four gigabytes in length,
         a single record can store images, audio streams, or other large
-        data values.  Large values are not treated specially in Berkeley
-        DB. They are simply broken into page-sized chunks, and reassembled
-        on demand when the application needs them. Unlike some other
-        database systems, Berkeley DB offers no special support for binary
-        large objects (BLOBs).
+        data values.  By default large values are not treated specially in
+        Berkeley DB. They are simply broken into page-sized chunks, and
+        reassembled on demand when the application needs them. However, you
+        can configure Berkeley DB to treat large objects in a special way,
+        so that they are accessed in a more efficient manner. Note that
+        these specially-treated large objects are not confined to the four
+        gigabyte limit used for other database objects. See
+        <a class="xref" href="blobs.html" title="BLOB support">BLOB support</a>
+        for more information.
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1802280"></a>Berkeley DB is not a relational database</h3>
+              <h3 class="title"><a id="idp50168952"></a>Berkeley DB is not a relational database</h3>
             </div>
           </div>
         </div>
@@ -197,7 +201,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2288920"></a>Berkeley DB is not an object-oriented database</h3>
+              <h3 class="title"><a id="idp50211112"></a>Berkeley DB is not an object-oriented database</h3>
             </div>
           </div>
         </div>
@@ -224,7 +228,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2354536"></a>Berkeley DB is not a network database</h3>
+              <h3 class="title"><a id="idm3472752"></a>Berkeley DB is not a network database</h3>
             </div>
           </div>
         </div>
@@ -242,7 +246,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2301256"></a>Berkeley DB is not a database server</h3>
+              <h3 class="title"><a id="idp50213040"></a>Berkeley DB is not a database server</h3>
             </div>
           </div>
         </div>

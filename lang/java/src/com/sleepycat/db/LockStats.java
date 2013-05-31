@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -387,6 +387,22 @@ public class LockStats {
         return st_region_nowait;
     }
 
+    private long st_nlockers_hit;
+    /**
+    The number of hits in the thread locker cache.
+    */
+    public long getNumLockersHit() {
+        return st_nlockers_hit;
+    }
+
+    private long st_nlockers_reused;
+    /**
+    Total number of lockers reused.
+    */
+    public long getNumLockersReused() {
+        return st_nlockers_reused;
+    }
+
     private int st_hash_len;
     /**
     Maximum length of a lock hash bucket.
@@ -456,6 +472,8 @@ public class LockStats {
             + "\n  st_lockers_nowait=" + st_lockers_nowait
             + "\n  st_region_wait=" + st_region_wait
             + "\n  st_region_nowait=" + st_region_nowait
+            + "\n  st_nlockers_hit=" + st_nlockers_hit
+            + "\n  st_nlockers_reused=" + st_nlockers_reused
             + "\n  st_hash_len=" + st_hash_len
             + "\n  st_regsize=" + st_regsize
             ;

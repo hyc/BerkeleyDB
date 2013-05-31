@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -59,6 +59,10 @@ proc sdb006 {method {nentries 100} args } {
 	set oargs $args
 	foreach opt {" -dup" " -dupsort"} {
 		append args $opt
+		if { [lsearch $args "-compress"] != -1 && $opt == " -dup" } {
+			puts "\tSubdb006: skip $opt loop with -compress."
+			continue
+		}
 
 		puts "Subdb006: $method ( $args ) Intra-subdb join"
 		set txn ""

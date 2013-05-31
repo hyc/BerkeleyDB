@@ -1,15 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.collections.TransactionRunner;
@@ -19,6 +23,7 @@ import com.sleepycat.db.Environment;
 import com.sleepycat.db.DeadlockException;
 import com.sleepycat.db.TransactionConfig;
 import com.sleepycat.util.ExceptionUnwrapper;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
@@ -30,28 +35,12 @@ import com.sleepycat.util.test.TestEnv;
  *
  * @author Mark Hayes
  */
-public class SecondaryDeadlockTest extends TestCase {
+public class SecondaryDeadlockTest extends TestBase {
 
     private static final Long N_ONE = new Long(1);
     private static final Long N_101 = new Long(101);
     private static final int N_ITERS = 20;
     private static final int MAX_RETRIES = 1000;
-
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite(SecondaryDeadlockTest.class);
-        return suite;
-    }
 
     private Environment env;
     private Database store;
@@ -60,15 +49,16 @@ public class SecondaryDeadlockTest extends TestCase {
     private StoredSortedMap indexMap;
     private Exception exception;
 
-    public SecondaryDeadlockTest(String name) {
+    public SecondaryDeadlockTest() {
 
-        super(name);
+        customName = "SecondaryDeadlockTest";
     }
 
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
+        super.setUp();
         env = TestEnv.TXN.open("SecondaryDeadlockTest");
         store = TestStore.BTREE_UNIQ.open(env, "store.db");
         index = TestStore.BTREE_UNIQ.openIndex(store, "index.db");
@@ -82,7 +72,7 @@ public class SecondaryDeadlockTest extends TestCase {
                                        true);
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         if (index != null) {
@@ -114,6 +104,7 @@ public class SecondaryDeadlockTest extends TestCase {
         indexMap = null;
     }
 
+    @Test
     public void testSecondaryDeadlock()
         throws Exception {
 

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -18,17 +18,13 @@
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
-#ifndef lint
-static const char copyright[] =
-    "Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.\n";
-#endif
-
 static int	__db_log_corrupt __P((ENV *, DB_LSN *));
 static int	__env_init_rec_42 __P((ENV *));
 static int	__env_init_rec_43 __P((ENV *));
 static int	__env_init_rec_46 __P((ENV *));
 static int	__env_init_rec_47 __P((ENV *));
 static int	__env_init_rec_48 __P((ENV *));
+static int	__env_init_rec_53 __P((ENV *));
 static int	__log_earliest __P((ENV *, DB_LOGC *, int32_t *, DB_LSN *));
 
 static double	__lsn_diff __P((DB_LSN *, DB_LSN *, DB_LSN *, u_int32_t, int));
@@ -690,7 +686,8 @@ __lsn_diff(low, high, current, max, is_forward)
  * is trying to sync up with a master whose max LSN is less than this
  * client's max lsn; we want to roll back everything after that.
  *
- * Find the latest checkpoint whose ckp_lsn is less than the max lsn.
+ * Find the latest checkpoint less than or equal to max lsn and
+ * return the ckp_lsn from that checkpoint.
  */
 static int
 __log_backup(env, logc, max_lsn, start_lsn)
@@ -713,10 +710,11 @@ __log_backup(env, logc, max_lsn, start_lsn)
 			return (ret);
 		/*
 		 * Follow checkpoints through the log until
-		 * we find one with a ckp_lsn less than
-		 * or equal max_lsn.
+		 * we find one less than or equal max_lsn.
+		 * Then return the ckp_lsn from that checkpoint as it
+		 * is our earliest outstanding txn needed.
 		 */
-		if (LOG_COMPARE(&ckp_args->ckp_lsn, max_lsn) <= 0) {
+		if (LOG_COMPARE(&lsn, max_lsn) <= 0) {
 			*start_lsn = ckp_args->ckp_lsn;
 			break;
 		}
@@ -880,6 +878,9 @@ __db_log_corrupt(env, lsnp)
 /*
  * __env_init_rec --
  *
+ *	Install recover functions in the environment. Whenever this is updated,
+ *	corresponding changes are needed by db_printlog's env_init_print().
+ *
  * PUBLIC: int __env_init_rec __P((ENV *, u_int32_t));
  */
 int
@@ -924,12 +925,19 @@ __env_init_rec(env, version)
 	 * oldest revision that applies must be used.  Therefore we override
 	 * the recovery functions in reverse log version order.
 	 */
+	if (version == DB_LOGVERSION)
+		goto done;
+	/* DB_LOGVERSION_53 changed the heap addrem log record. */
+	if ((ret = __env_init_rec_53(env)) != 0)
+		goto err;
 	/*
 	 * DB_LOGVERSION_53 is a strict superset of DB_LOGVERSION_50.
 	 * So, only check > DB_LOGVERSION_48p2.  If/When log records are
 	 * altered, the condition below will need to change.
 	 */
 	if (version > DB_LOGVERSION_48p2)
+		goto done;
+	if (version >= DB_LOGVERSION_50)
 		goto done;
 	if ((ret = __env_init_rec_48(env)) != 0)
 		goto err;
@@ -1087,6 +1095,25 @@ __env_init_rec_48(env)
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __ham_replace_42_recover, DB___ham_replace_42)) != 0)
 		goto err;
+#endif
+err:
+	return (ret);
+}
+
+static int
+__env_init_rec_53(env)
+	ENV *env;
+{
+	int ret;
+
+#ifdef HAVE_HEAP
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __heap_addrem_50_recover, DB___heap_addrem_50)) != 0)
+		goto err;
+#else
+	COMPQUIET(env, NULL);
+	COMPQUIET(ret, 0);
+	goto err;
 #endif
 err:
 	return (ret);

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -52,12 +52,17 @@
      
     
             In general this protocol is left entirely to the application.
-            Note, there is no reason not to use the communications channels
-            a Base API application establishes for replication support to forward
+            A Replication Manager application can use message channels
+            to implement this capability
+            (see <a class="xref" href="rep_ex_chan.html" title="Ex_rep_chan: a Replication Manager channel example">Ex_rep_chan: a Replication Manager
+channel example</a>
+            for information about a sample program that demonstrates this
+            use of message channels). For a Base API application,
+            it is possible to use the communications channels
+            it establishes for replication support to forward
             database update messages to the master, since Berkeley DB does
             not require those channels to be used exclusively for
-            replication messages.  Replication Manager does not currently
-            offer this service to the application.
+            replication messages.
         </p>
           </li>
           <li>
@@ -66,8 +71,9 @@
         environment across multiple sites?</strong></span>
     </p>
             <p>
-        No, this is not possible.  All replicated databases must be equally
-        shared by all environments in the replication group.
+        Yes, you can create partial views to accomplish this.
+        See <a class="xref" href="rep_partview.html" title="Replication views">Replication views</a>
+        for more information.
     </p>
           </li>
           <li>
@@ -86,7 +92,15 @@
         <span class="bold"><strong>How can I distinguish Berkeley DB messages from application messages?</strong></span>
     </p>
             <p>
-        There is no way to distinguish Berkeley DB messages from
+        Replication Manager provides its own communications infrastructure
+        for replication messages. You can create message channels to
+        pass application-specific messages using this infrastructure
+        (see <a class="xref" href="repmgr_channels.html" title="Using Replication Manager message channels">Using Replication Manager message channels</a>
+        for more information).
+    </p>
+            <p>
+        In a Base API application,
+        there is no way to distinguish Berkeley DB messages from
         application-specific messages, nor does Berkeley DB offer any way
         to wrap application messages inside of Berkeley DB messages.
         Distributed applications exchanging their own messages should

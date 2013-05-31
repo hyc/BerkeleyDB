@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -136,6 +136,10 @@ tcl_RepGetTwo(interp, dbenv, op)
 	switch (op) {
 	case DBTCL_GETCLOCK:
 		ret = dbenv->rep_get_clockskew(dbenv, &val1, &val2);
+		break;
+	case DBTCL_GETINQUEUE:
+		ret = dbenv->repmgr_get_incoming_queue_max(dbenv,
+		    &val1, &val2);
 		break;
 	case DBTCL_GETLIMIT:
 		ret = dbenv->rep_get_limit(dbenv, &val1, &val2);
@@ -456,7 +460,7 @@ tcl_RepLease(interp, objc, objv, dbenv)
 
 	if ((result = _GetUInt32(interp, objv[0], &timeout)) != TCL_OK)
 		return (result);
-	if (objc == 4) {
+	if (objc == 3) {
 		if ((result = _GetUInt32(interp, objv[1], &clock_fast))
 		    != TCL_OK)
 			return (result);
@@ -519,14 +523,14 @@ tcl_RepLimit(interp, objc, objv, dbenv)
 	int result, ret;
 	u_int32_t bytes, gbytes;
 
-	if (objc != 4) {
+	if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "gbytes bytes");
 		return (TCL_ERROR);
 	}
 
-	if ((result = _GetUInt32(interp, objv[2], &gbytes)) != TCL_OK)
+	if ((result = _GetUInt32(interp, objv[0], &gbytes)) != TCL_OK)
 		return (result);
-	if ((result = _GetUInt32(interp, objv[3], &bytes)) != TCL_OK)
+	if ((result = _GetUInt32(interp, objv[1], &bytes)) != TCL_OK)
 		return (result);
 
 	_debug_check();
@@ -589,14 +593,14 @@ tcl_RepRequest(interp, objc, objv, dbenv)
 	int result, ret;
 	long min, max;
 
-	if (objc != 4) {
+	if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "min max");
 		return (TCL_ERROR);
 	}
 
-	if ((result = Tcl_GetLongFromObj(interp, objv[2], &min)) != TCL_OK)
+	if ((result = Tcl_GetLongFromObj(interp, objv[0], &min)) != TCL_OK)
 		return (result);
-	if ((result = Tcl_GetLongFromObj(interp, objv[3], &max)) != TCL_OK)
+	if ((result = Tcl_GetLongFromObj(interp, objv[1], &max)) != TCL_OK)
 		return (result);
 
 	_debug_check();
@@ -970,7 +974,6 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	 * list pairs and free up the memory.
 	 */
 	res = Tcl_NewObj();
-#ifdef HAVE_STATISTICS
 	/*
 	 * MAKE_STAT_* assumes 'res' and 'error' label.
 	 */
@@ -998,6 +1001,7 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Generation number", sp->st_gen);
 	MAKE_STAT_LIST("Election generation number", sp->st_egen);
 	MAKE_STAT_LIST("Startup complete", sp->st_startup_complete);
+	MAKE_STAT_LIST("Is view", sp->st_view);
 	MAKE_WSTAT_LIST("Lease messages sent", sp->st_lease_sends);
 	MAKE_WSTAT_LIST("Lease checks", sp->st_lease_chk);
 	MAKE_WSTAT_LIST("Lease check invalid", sp->st_lease_chk_misses);
@@ -1047,7 +1051,7 @@ tcl_RepStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Maximum lease seconds", sp->st_max_lease_sec);
 	MAKE_STAT_LIST("Maximum lease usecs", sp->st_max_lease_usec);
 	MAKE_STAT_LIST("File fail cleanups done", sp->st_filefail_cleanups);
-#endif
+	MAKE_WSTAT_LIST("Future duplicated log records", sp->st_log_futuredup);
 
 	Tcl_SetObjResult(interp, res);
 error:
@@ -1130,6 +1134,7 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 {
 	static const char *rmgr[] = {
 		"-ack",
+		"-inqueue",
 		"-local",
 		"-msgth",
 		"-pri",
@@ -1141,6 +1146,7 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 	};
 	enum rmgr {
 		RMGR_ACK,
+		RMGR_INQUEUE,
 		RMGR_LOCAL,
 		RMGR_MSGTH,
 		RMGR_PRI,
@@ -1154,7 +1160,7 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 	long to;
 	int ack, creator, i, j, legacy, myobjc, optindex;
 	int peer, result, ret, totype, t_ret;
-	u_int32_t msgth, start_flag, uintarg;
+	u_int32_t msgth, start_flag, uintarg, uintarg2;
 	char *arg;
 
 	result = TCL_OK;
@@ -1201,6 +1207,32 @@ tcl_RepMgr(interp, objc, objv, dbenv)
 			ret = dbenv->repmgr_set_ack_policy(dbenv, ack);
 			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 			    "ack");
+			break;
+		case RMGR_INQUEUE:
+			result = Tcl_ListObjGetElements(interp, objv[i],
+			    &myobjc, &myobjv);
+			if (result == TCL_OK)
+				i++;
+			else
+				break;
+			if (myobjc != 2) {
+				Tcl_WrongNumArgs(interp, 2, objv,
+				    "?-inqueue {msgs bulkmsgs}?");
+				result = TCL_ERROR;
+				break;
+			}
+			arg = Tcl_GetStringFromObj(myobjv[0], NULL);
+			if ((result = _GetUInt32(interp, myobjv[0], &uintarg))
+			    != TCL_OK)
+				break;
+			if ((result = _GetUInt32(interp, myobjv[1], &uintarg2))
+			    != TCL_OK)
+				break;
+			_debug_check();
+			ret = dbenv->repmgr_set_incoming_queue_max(dbenv,
+			    uintarg, uintarg2);
+			result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+			    "repmgr_set_incoming_queue_max");
 			break;
 		case RMGR_LOCAL:
 			result = Tcl_ListObjGetElements(interp, objv[i],
@@ -1448,9 +1480,9 @@ tcl_RepMgrSiteList(interp, objc, objv, dbenv)
 	DB_ENV *dbenv;
 {
 	DB_REPMGR_SITE *sp;
-	Tcl_Obj *myobjv[5], *res, *thislist;
+	Tcl_Obj *myobjv[6], *res, *thislist;
 	u_int count, i;
-	char *pr, *st;
+	char *pr, *st, *vw;
 	int myobjc, result, ret;
 
 	result = TCL_OK;
@@ -1483,11 +1515,9 @@ tcl_RepMgrSiteList(interp, objc, objv, dbenv)
 			st = "disconnected";
 		else
 			st = "unknown";
-		if (F_ISSET(&sp[i], DB_REPMGR_ISPEER))
-			pr = "peer";
-		else
-			pr = "non-peer";
-		MAKE_SITE_LIST(sp[i].eid, sp[i].host, sp[i].port, st, pr);
+		pr = F_ISSET(&sp[i], DB_REPMGR_ISPEER) ? "peer" : "non-peer";
+		vw = F_ISSET(&sp[i], DB_REPMGR_ISVIEW) ? "view" : "participant";
+		MAKE_SITE_LIST(sp[i].eid, sp[i].host, sp[i].port, st, pr, vw);
 	}
 
 	Tcl_SetObjResult(interp, res);
@@ -1546,7 +1576,6 @@ tcl_RepMgrStat(interp, objc, objv, dbenv)
 	 * list pairs and free up the memory.
 	 */
 	res = Tcl_NewObj();
-#ifdef HAVE_STATISTICS
 	/*
 	 * MAKE_STAT_* assumes 'res' and 'error' label.
 	 */
@@ -1555,9 +1584,14 @@ tcl_RepMgrStat(interp, objc, objv, dbenv)
 	MAKE_WSTAT_LIST("Messages discarded", sp->st_msgs_dropped);
 	MAKE_WSTAT_LIST("Connections dropped", sp->st_connection_drop);
 	MAKE_WSTAT_LIST("Failed re-connects", sp->st_connect_fail);
-	MAKE_WSTAT_LIST("Election threads", sp->st_elect_threads);
-	MAKE_WSTAT_LIST("Max elect threads", sp->st_max_elect_threads);
-#endif
+	MAKE_STAT_LIST("Election threads", sp->st_elect_threads);
+	MAKE_STAT_LIST("Max elect threads", sp->st_max_elect_threads);
+	MAKE_STAT_LIST("Total sites", sp->st_site_total);
+	MAKE_STAT_LIST("View sites", sp->st_site_views);
+	MAKE_STAT_LIST("Participant sites", sp->st_site_participants);
+	MAKE_WSTAT_LIST("Automatic replication process takeovers",
+	    sp->st_takeovers);
+	MAKE_STAT_LIST("Incoming queue size", sp->st_incoming_queue_size);
 
 	Tcl_SetObjResult(interp, res);
 error:

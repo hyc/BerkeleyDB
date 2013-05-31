@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -47,9 +47,9 @@ added.</p>
 Replication Manager provides a communication infrastructure, but
 in order to use the replication Base APIs you must provide your own.</p>
       <p>For implementation reasons, all replicated databases must reside in
-the data directories set from <a href="../api_reference/C/envset_data_dir.html" class="olink">DB_ENV-&gt;set_data_dir()</a> (or in the
+the data directories set from <a href="../api_reference/C/envadd_data_dir.html" class="olink">DB_ENV-&gt;add_data_dir()</a> (or in the
 default environment home directory, if not using
-<a href="../api_reference/C/envset_data_dir.html" class="olink">DB_ENV-&gt;set_data_dir()</a>), rather than in a subdirectory below the
+<a href="../api_reference/C/envadd_data_dir.html" class="olink">DB_ENV-&gt;add_data_dir()</a>), rather than in a subdirectory below the
 specified directory.  Care must be taken in applications using
 relative pathnames and changing working directories after opening the
 environment.  In such applications the replication initialization code

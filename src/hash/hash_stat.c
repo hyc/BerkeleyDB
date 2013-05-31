@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -188,6 +188,8 @@ __ham_stat_print(dbc, flags)
 	    sp->hash_bfree, sp->hash_buckets, sp->hash_pagesize), "ff");
 
 	__db_dl(env,
+	    "Number of blobs", (u_long)sp->hash_nblobs);
+	__db_dl(env,
 	    "Number of overflow pages", (u_long)sp->hash_bigpages);
 	__db_dl_pct(env, "Number of bytes free in overflow pages",
 	    (u_long)sp->hash_big_bfree, DB_PCT_PG(
@@ -258,6 +260,9 @@ __ham_stat_callback(dbc, pagep, cookie, putp)
 			switch (*H_PAIRDATA(dbp, pagep, indx)) {
 			case H_OFFDUP:
 				break;
+			case H_BLOB:
+				sp->hash_nblobs++;
+				/* fall through */
 			case H_OFFPAGE:
 			case H_KEYDATA:
 				sp->hash_ndata++;
@@ -480,6 +485,7 @@ __ham_traverse(dbc, mode, callback, cookie, look_past_max)
 					    opgno, callback, cookie)) != 0)
 						goto err;
 					break;
+				case H_BLOB:
 				case H_KEYDATA:
 				case H_DUPLICATE:
 					break;

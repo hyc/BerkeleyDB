@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,13 +9,14 @@
 #include "db_config.h"
 
 #include "db_int.h"
+#include "dbinc/blob.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_verify.h"
 #include "dbinc/heap.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
 
-static	int __heap_safe_gsplit __P((DB *, VRFY_DBINFO *, PAGE *, db_indx_t,
+static	int __heap_safe_gsplit __P((DB *, VRFY_DBINFO *, PAGE *, unsigned,
    DBT *));
 static	int __heap_verify_offset_cmp __P((const void *, const void *));
 
@@ -38,6 +39,7 @@ __heap_vrfy_meta(dbp, vdp, meta, pgno, flags)
 	VRFY_PAGEINFO *pip;
 	db_pgno_t last_pgno, max_pgno, npgs;
 	int isbad, ret;
+	uintmax_t blob_id;
 
 	if ((ret = __db_vrfy_getpageinfo(vdp, pgno, &pip)) != 0)
 		return (ret);
@@ -97,6 +99,16 @@ __heap_vrfy_meta(dbp, vdp, meta, pgno, flags)
 			    "%lu"), (u_long)pgno));
 			isbad = 1;
 		}
+		h->gbytes = meta->gbytes;
+		h->bytes = meta->bytes;
+	}
+
+	GET_LO_HI(dbp->env,
+	    meta->blob_file_lo, meta->blob_file_hi, blob_id, ret);
+	if (ret != 0) {
+		isbad = 1;
+		EPRINT((dbp->env, DB_STR_A("1173",
+		    "Page %lu: blob file id overflow.", "%lu"), (u_long)pgno));
 	}
 
 err:	if (LF_ISSET(DB_SALVAGE))
@@ -120,8 +132,11 @@ __heap_vrfy(dbp, vdp, h, pgno, flags)
 	db_pgno_t pgno;
 	u_int32_t flags;
 {
+	HEAPBLOBHDR bhdr;
 	HEAPHDR *hdr;
 	int cnt, i, j, ret;
+	off_t blob_size;
+	uintmax_t blob_id, file_id;
 	db_indx_t *offsets, *offtbl, end;
 
 	if ((ret = __db_vrfy_datapage(dbp, vdp, h, pgno, flags)) != 0)
@@ -140,7 +155,7 @@ __heap_vrfy(dbp, vdp, h, pgno, flags)
 	/*
 	 * Build a sorted list of all the offsets in the table.  Entries in the
 	 * offset table are not always sorted.  While we're here, check that
-	 * flags are sane.
+	 * flags are sane, and that the blob entries are sane.
 	 */
 	cnt = 0;
 	for (i = 0; i <= HEAP_HIGHINDX(h); i++) {
@@ -163,6 +178,51 @@ __heap_vrfy(dbp, vdp, h, pgno, flags)
 			    "%lu %lu"), (u_long)pgno, (u_long)i));
 			ret = DB_VERIFY_BAD;
 			goto err;
+		}
+		if (F_ISSET(hdr, HEAP_RECBLOB)) {
+			/*
+			 * Check that the blob file exists and is the same
+			 * file size as is stored in the database record.
+			 */
+			memcpy(&bhdr, hdr, sizeof(HEAPBLOBHDR));
+			GET_BLOB_ID(dbp->env, bhdr, blob_id, ret);
+			if (ret != 0) {
+				EPRINT((dbp->env, DB_STR_A("1174",
+				    "Page %lu: blob id value has overflowed",
+				    "%lu"), (u_long)pgno));
+				ret = DB_VERIFY_BAD;
+				goto err;
+			}
+			GET_BLOB_SIZE(dbp->env, bhdr, blob_size, ret);
+			if (ret != 0) {
+				EPRINT((dbp->env, DB_STR_A("1175",
+			"Page %lu: blob file size value has overflowed",
+				    "%lu"), (u_long)pgno));
+				ret = DB_VERIFY_BAD;
+				goto err;
+			}
+			GET_LO_HI(dbp->env,
+			    bhdr.file_id_lo, bhdr.file_id_hi, file_id, ret);
+			if (ret != 0) {
+				EPRINT((dbp->env, DB_STR_A("1176",
+		"Page %lu: blob file id value has overflowed at item %lu",
+				    "%lu %lu"), (u_long)pgno, (u_long)i));
+				ret = DB_VERIFY_BAD;
+				goto err;
+			}
+			if (file_id == 0) {
+				EPRINT((dbp->env, DB_STR_A("1177",
+			"Page %lu: invalid blob dir id %llu at item %lu",
+				    "%lu %llu, %lu"), (u_long)pgno,
+				    (unsigned long long)file_id, (u_long)i));
+				ret = DB_VERIFY_BAD;
+				goto err;
+			}
+			if ((ret = __blob_vrfy(dbp->env, blob_id,
+			    blob_size, file_id, 0, pgno, flags)) != 0) {
+				ret = DB_VERIFY_BAD;
+				goto err;
+			}
 		}
 
 		offsets[cnt] = offtbl[i];
@@ -328,12 +388,22 @@ __heap_salvage(dbp, vdp, pgno, h, handle, callback, flags)
 	u_int32_t flags;
 {
 	DBT dbt;
+	ENV *env;
 	HEAPHDR *hdr;
+	HEAPBLOBHDR bhdr;
 	db_indx_t i, *offtbl;
+	char *prefix;
 	int err_ret, ret, t_ret;
+	off_t blob_size, blob_offset, remaining;
+	u_int32_t blob_buf_size;
+	u_int8_t *blob_buf;
+	uintmax_t blob_id, file_id;
 
 	COMPQUIET(flags, 0);
 	memset(&dbt, 0, sizeof(DBT));
+	blob_buf = NULL;
+	blob_buf_size = 0;
+	env = dbp->env;
 
 	offtbl = (db_indx_t *)HEAP_OFFSETTBL(dbp, h);
 	err_ret = ret = t_ret = 0;
@@ -357,9 +427,74 @@ __heap_salvage(dbp, vdp, pgno, h, handle, callback, flags)
 			if (dbt.size > dbp->pgsize * 4)
 				dbt.size = dbp->pgsize * 4;
 			if ((ret =
-			    __os_malloc(dbp->env, dbt.size, &dbt.data)) != 0)
+			    __os_malloc(env, dbt.size, &dbt.data)) != 0)
 				goto err;
 			__heap_safe_gsplit(dbp, vdp, h, i, &dbt);
+		} else if (F_ISSET(hdr, HEAP_RECBLOB)) {
+			memcpy(&bhdr, hdr, HEAPBLOBREC_SIZE);
+			GET_BLOB_ID(env, bhdr, blob_id, ret);
+			if (ret != 0)
+				goto err;
+			GET_BLOB_SIZE(env, bhdr, blob_size, ret);
+			if (ret != 0)
+				goto err;
+			GET_LO_HI(env,
+			    bhdr.file_id_lo, bhdr.file_id_hi, file_id, ret);
+			if (ret != 0)
+				goto err;
+			/* Read the blob, in pieces if it is too large.*/
+			blob_offset = 0;
+			if (blob_size > MEGABYTE) {
+				if (blob_buf_size < MEGABYTE) {
+					if ((ret = __os_realloc(
+					    env,  MEGABYTE, &blob_buf)) != 0)
+						goto err;
+					blob_buf_size = MEGABYTE;
+				}
+			} else if (blob_buf_size < blob_size) {
+				blob_buf_size = (u_int32_t)blob_size;
+				if ((ret = __os_realloc(
+				    env, blob_buf_size, &blob_buf)) != 0)
+					goto err;
+			}
+			dbt.data = blob_buf;
+			dbt.ulen = blob_buf_size;
+			remaining = blob_size;
+			prefix = " ";
+			do {
+				if ((ret = __blob_salvage(env, blob_id,
+				    blob_offset,
+				    ((remaining < blob_buf_size) ?
+				    (size_t)remaining : blob_buf_size),
+				    file_id, 0, &dbt)) != 0) {
+					if (LF_ISSET(DB_AGGRESSIVE)) {
+						ret = DB_VERIFY_BAD;
+						break;
+					}
+					F_CLR(vdp, SALVAGE_STREAM_BLOB);
+					goto err;
+				}
+				if (remaining > blob_buf_size)
+					F_SET(vdp, SALVAGE_STREAM_BLOB);
+				else
+					F_CLR(vdp, SALVAGE_STREAM_BLOB);
+				if ((t_ret = __db_vrfy_prdbt(
+				    &dbt, 0, prefix, handle,
+				    callback, 0, 0, vdp)) != 0) {
+					if (ret == 0)
+						ret = t_ret;
+					F_CLR(vdp, SALVAGE_STREAM_BLOB);
+					goto err;
+				}
+				prefix = NULL;
+				blob_offset += dbt.size;
+				if (remaining < blob_buf_size)
+					remaining = 0;
+				else
+					remaining -= blob_buf_size;
+			} while (remaining > 0);
+			F_CLR(vdp, SALVAGE_STREAM_BLOB);
+			continue;
 		} else {
 			dbt.data = (u_int8_t *)hdr + HEAP_HDRSIZE(hdr);
 			dbt.size = hdr->size;
@@ -369,11 +504,13 @@ __heap_salvage(dbp, vdp, pgno, h, handle, callback, flags)
 		    0, " ", handle, callback, 0, 0, vdp)) != 0)
 			err_ret = ret;
 		if (F_ISSET(hdr, HEAP_RECSPLIT))
-			__os_free(dbp->env, dbt.data);
+			__os_free(env, dbt.data);
 	}
 
 err:	if ((t_ret = __db_salvage_markdone(vdp, pgno)) != 0)
 		return (t_ret);
+	if (blob_buf != NULL)
+		__os_free(env, blob_buf);
 	return ((ret == 0 && err_ret != 0) ? err_ret : ret);
 }
 
@@ -386,7 +523,7 @@ __heap_safe_gsplit(dbp, vdp, h, i, dbt)
      DB *dbp;
      VRFY_DBINFO *vdp;
      PAGE *h;
-     db_indx_t i;
+     unsigned i;
      DBT *dbt;
 {
 	DB_MPOOLFILE *mpf;

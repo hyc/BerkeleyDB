@@ -1,12 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 package com.sleepycat.persist.test;
 
-import junit.framework.Test;
+import static org.junit.Assert.fail;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.util.test.SharedTestUtils;
 
@@ -20,10 +23,9 @@ import com.sleepycat.util.test.SharedTestUtils;
  */
 public class EvolveTestInit extends EvolveTestBase {
 
-    public static Test suite()
-        throws Exception {
-
-        return getSuite(EvolveTestInit.class);
+    public EvolveTestInit(String originalClsName, String evolvedClsName)
+            throws Exception {
+        super(originalClsName, evolvedClsName);
     }
 
     @Override
@@ -31,13 +33,15 @@ public class EvolveTestInit extends EvolveTestBase {
         return false;
     }
 
-    @Override
+    @Before
     public void setUp() {
+
         envHome = getTestInitHome(false /*evolved*/);
         envHome.mkdirs();
         SharedTestUtils.emptyDir(envHome);
     }
 
+    @Test
     public void testInit()
         throws Exception {
 

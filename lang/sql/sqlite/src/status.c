@@ -208,13 +208,38 @@ int sqlite3_db_status(
 
       db->pnBytesFreed = &nByte;
       for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
-        sqlite3VdbeDeleteObject(db, pVdbe);
+        sqlite3VdbeClearObject(db, pVdbe);
+        sqlite3DbFree(db, pVdbe);
       }
       db->pnBytesFreed = 0;
 
       *pHighwater = 0;
       *pCurrent = nByte;
 
+      break;
+    }
+
+    /*
+    ** Set *pCurrent to the total cache hits or misses encountered by all
+    ** pagers the database handle is connected to. *pHighwater is always set 
+    ** to zero.
+    */
+    case SQLITE_DBSTATUS_CACHE_HIT:
+    case SQLITE_DBSTATUS_CACHE_MISS:
+    case SQLITE_DBSTATUS_CACHE_WRITE:{
+      int i;
+      int nRet = 0;
+      assert( SQLITE_DBSTATUS_CACHE_MISS==SQLITE_DBSTATUS_CACHE_HIT+1 );
+      assert( SQLITE_DBSTATUS_CACHE_WRITE==SQLITE_DBSTATUS_CACHE_HIT+2 );
+
+      for(i=0; i<db->nDb; i++){
+        if( db->aDb[i].pBt ){
+          Pager *pPager = sqlite3BtreePager(db->aDb[i].pBt);
+          sqlite3PagerCacheStat(pPager, op, resetFlag, &nRet);
+        }
+      }
+      *pHighwater = 0;
+      *pCurrent = nRet;
       break;
     }
 

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -11,7 +11,6 @@
 #include "btreeInt.h"
 
 extern void returnSingleInt(Parse *, const char *, i64);
-extern u8 getBoolean(const char *);
 extern int __os_exists (ENV *, const char *, int *);
 extern int __os_unlink (ENV *, const char *, int);
 extern int __os_mkdir (ENV *, const char *, int);
@@ -22,6 +21,16 @@ extern int __env_ref_get (DB_ENV *, u_int32_t *);
 
 static const char *PRAGMA_FILE = "pragma";
 static const char *PRAGMA_VERSION = "1.0";
+
+static const char *ACK_POLICY_ALL = "all_sites";
+static const char *ACK_POLICY_ALL_AVAILABLE = "all_available";
+static const char *ACK_POLICY_NONE = "none";
+static const char *ACK_POLICY_ONE = "one";
+static const char *ACK_POLICY_QUORUM = "quorum";
+
+static const char *REP_SITE_MASTER = "MASTER";
+static const char *REP_SITE_CLIENT = "CLIENT";
+static const char *REP_SITE_UNKNOWN = "UNKNOWN";
 
 static const u32 HDR_SIZE = 256;
 static const u32 RECORD_HDR_SIZE = 8;
@@ -46,6 +55,57 @@ static const u32 DEFINED_PRAGMAS = 8;
 
 #define	dbExists (pDb->pBt->pBt->full_name != NULL && \
     !__os_exists(NULL, pDb->pBt->pBt->full_name, NULL))
+
+/* Translates a text ack policy to its DB value. */
+static int textToAckPolicy(const char *policy) 
+{
+	int len;
+	if (policy == NULL)
+		return (-1);
+
+	len = (int)strlen(policy);
+
+	if ((sqlite3StrNICmp(policy, ACK_POLICY_ALL, len)) == 0)
+		return (DB_REPMGR_ACKS_ALL);
+	else if ((sqlite3StrNICmp(policy, ACK_POLICY_ALL_AVAILABLE, len)) == 0)
+		return (DB_REPMGR_ACKS_ALL_AVAILABLE);
+	else if ((sqlite3StrNICmp(policy, ACK_POLICY_NONE, len)) == 0)
+		return (DB_REPMGR_ACKS_NONE);
+	else if ((sqlite3StrNICmp(policy, ACK_POLICY_ONE, len)) == 0)
+		return (DB_REPMGR_ACKS_ONE);
+	else if ((sqlite3StrNICmp(policy, ACK_POLICY_QUORUM, len)) == 0)
+		return (DB_REPMGR_ACKS_QUORUM);
+	else
+		return (-1);
+}
+
+/* Translates a DB value ack policy to text. */
+static const char *ackPolicyToText(int policy)
+{
+	if (policy == DB_REPMGR_ACKS_ALL)
+		return (ACK_POLICY_ALL);
+	else if (policy == DB_REPMGR_ACKS_ALL_AVAILABLE)
+		return (ACK_POLICY_ALL_AVAILABLE);
+	else if (policy == DB_REPMGR_ACKS_NONE)
+		return (ACK_POLICY_NONE);
+	else if (policy == DB_REPMGR_ACKS_ONE)
+		return (ACK_POLICY_ONE);
+	else if (policy == DB_REPMGR_ACKS_QUORUM)
+		return (ACK_POLICY_QUORUM);
+	else
+		return (NULL);
+}
+
+/* Translates a replication site type to text. */
+static const char *repSiteTypeToText(rep_site_type_t type)
+{
+	if (type == BDBSQL_REP_MASTER)
+		return (REP_SITE_MASTER);
+	else if (type == BDBSQL_REP_CLIENT)
+		return (REP_SITE_CLIENT);
+	else
+		return (REP_SITE_UNKNOWN);
+}
 
 static u8 envIsClosed(Parse *pParse, Btree *p, const char *pragmaName)
 {
@@ -81,6 +141,12 @@ int bdbsqlPragmaMultiversion(Parse *pParse, Btree *p, u8 on)
 	if (!envIsClosed(pParse, p, "multiversion"))
 		return 1;
 	pBt = p->pBt;
+
+	if (pBt->blobs_enabled && on) {
+		sqlite3ErrorMsg(pParse,
+	"Cannot enable both multiversion and large record optimization.");
+		return 1;
+	}
 
 	/* Do not want other processes opening the environment */
 	mutexOpen = sqlite3MutexAlloc(OPEN_MUTEX(pBt->dbStorage));
@@ -250,15 +316,29 @@ static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 	}
 
 	if (dbExists) {
+		if (!pBt->pBt->env_opened) {
+			if ((rc = btreeOpenEnvironment(pBt, 1)) != SQLITE_OK)
+				sqlite3ErrorMsg(pParse, "Could not start "
+				    "replication on an existing database");
+			goto done;
+		}
+
 		/*
-		 * Turning on replication requires recovery on the underlying
+		 * Opening the environment started repmgr if it was
+		 * configured for it, so we are done here.
+		 */
+		if (supportsReplication(pBt))
+			goto done;
+		/*
+		 * Turning on replication on an existing environment not
+		 * configured for replication requires recovery on the
 		 * BDB environment, which requires single-threaded access.
 		 * Make sure there are no other processes or threads accessing
 		 * it.  This is not foolproof, because there is a small chance
 		 * that another process or thread could slip in there between
 		 * this call and the recovery, but it should cover most cases.
 		 */
-		if (hasDatabaseConnections(pBt)) {
+		if (hasDatabaseConnections(pBt) || pBt->pBt->nRef > 1) {
 			sqlite3ErrorMsg(pParse, "Close all database "
 			    "connections before turning on replication");
 			goto done;
@@ -275,7 +355,7 @@ static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 		 * the underlying BDB environment with replication always
 		 * performs a recovery.
 		 */
-		pBt->pBt->repStartMaster = 1;
+		pBt->pBt->repForceRecover = 1;
 		if ((rc = btreeReopenEnvironment(pBt, 0)) != SQLITE_OK)
 			sqlite3ErrorMsg(pParse, "Could not "
 			    "start replication on an existing database");
@@ -310,6 +390,7 @@ done:
 static int bdbsqlPragmaStopReplication(Parse *pParse, Db *pDb)
 {
 	Btree *pBt;
+	char *old_addr = NULL;
 	int rc = SQLITE_OK;
 
 	pBt = pDb->pBt;
@@ -341,6 +422,13 @@ static int bdbsqlPragmaStopReplication(Parse *pParse, Db *pDb)
 	 */
 	pBt->pBt->repForceRecover = 1;
 	rc = btreeReopenEnvironment(pBt, 1);
+	sqlite3_mutex_enter(pBt->pBt->mutex);
+	pBt->pBt->repRole = BDBSQL_REP_UNKNOWN;
+	old_addr = pBt->pBt->master_address;
+	pBt->pBt->master_address = NULL;
+	sqlite3_mutex_leave(pBt->pBt->mutex);
+	if (old_addr)
+		sqlite3_free(old_addr);
 
 done:
 	return rc;
@@ -383,14 +471,14 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		}
 	} else if (sqlite3StrNICmp(zLeft, "txn_bulk", 8) == 0) {
 		if (zRight)
-			pBt->txn_bulk = getBoolean(zRight);
+			pBt->txn_bulk = sqlite3GetBoolean(zRight, 0);
 		returnSingleInt(pParse, "txn_bulk", (i64)pBt->txn_bulk);
 		parsed = 1;
 		/* Enables MVCC and transactions snapshots. */
 	} else if (sqlite3StrNICmp(zLeft, "multiversion", 12) == 0) {
 		if (zRight)
 			bdbsqlPragmaMultiversion(pParse, pDb->pBt,
-			    getBoolean(zRight));
+			    sqlite3GetBoolean(zRight, 0));
 
 		returnSingleInt(pParse, "multiversion",
 		    (i64)((pDb->pBt->pBt->env_oflags & DB_MULTIVERSION)?
@@ -401,7 +489,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		 */
 	} else if (sqlite3StrNICmp(zLeft, "snapshot_isolation", 18) == 0) {
 		if (zRight) {
-			if (getBoolean(zRight)) {
+			if (sqlite3GetBoolean(zRight, 0)) {
 				if (pDb->pBt->pBt->env_oflags &
 				    DB_MULTIVERSION) {
 					pDb->pBt->pBt->read_txn_flags
@@ -530,7 +618,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		setValue[0] = '\0';
 		startedRep = stoppedRep = turningOn = 0;
 		if (zRight) {
-			turningOn = (getBoolean(zRight) == 1);
+			turningOn = (sqlite3GetBoolean(zRight, 0) == 1);
 			strcpy(setValue, turningOn ? "1" : "0");
 			rc = setPersistentPragma(pDb->pBt, zLeft,
 			    setValue, pParse);
@@ -596,7 +684,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		outValue[0] = '\0';
 		if (zRight)
 			pDb->pBt->pBt->repStartMaster =
-			    getBoolean(zRight) == 1 ? 1 : 0;
+			    sqlite3GetBoolean(zRight, 0) == 1 ? 1 : 0;
 		strcpy(outValue,
 		    pDb->pBt->pBt->repStartMaster == 1 ? "1" : "0");
 		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
@@ -733,6 +821,40 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		    pDb->pBt->txn_priority);
 		parsed = 1;
 	/*
+	 * PRAGMA bdbsql_log_buffer; -- DB_ENV->get_lg_bsize
+	 * PRAGMA bdbsql_log_buffer = N; -- DB_ENV->set_lg_bsize
+	 *   N provides the size of the log buffer size in bytes.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "bdbsql_log_buffer", 17) == 0) {
+    		int iLimit = -2;
+		u_int32_t val;
+
+		if (zRight &&
+		    envIsClosed(pParse, pDb->pBt, "bdbsql_log_buffer")) {
+      			if (!sqlite3GetInt32(zRight, &iLimit) ||
+			    iLimit < 0)
+				sqlite3ErrorMsg(pParse,
+				    "Invalid value bdbsql_log_buffer %s",
+				    zRight);
+			else {
+				val = iLimit;
+				if ((ret =
+				    pDb->pBt->pBt->dbenv->set_lg_bsize(
+				    pDb->pBt->pBt->dbenv, val)) != 0) {
+					sqlite3ErrorMsg(pParse,
+					    "Failed to set log buffer size "
+					    "error: %d.", ret);
+				}
+			}
+		} else if (zRight == NULL) {
+			/* Get existing value */
+			pDb->pBt->pBt->dbenv->get_lg_bsize(
+				pDb->pBt->pBt->dbenv, &val);
+
+			returnSingleInt(pParse, "bdbsql_log_buffer", val);
+		}
+		parsed = 1;
+	/*
 	 * PRAGMA bdbsql_single_process = boolean;
 	 *   Turn on/off omit sharing.
 	 */
@@ -743,7 +865,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		if (zRight &&
 		    envIsClosed(pParse, pDb->pBt, "bdbsql_single_process")) {
-			new_value = getBoolean(zRight);
+			new_value = sqlite3GetBoolean(zRight, 0);
 			if (new_value != pDb->pBt->pBt->single_process)
 				is_changed = 1;
 		}
@@ -868,7 +990,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		if (zRight &&
 		    envIsClosed(pParse, pDb->pBt, "bdbsql_shared_resources")) {
-			if (pDb->pBt->pBt->need_open) {
+			if (pDb->pBt->pBt->database_existed) {
 				/*
 				 * The DBENV->set_memory_max() method must be
 				 * called prior to opening/creating the database
@@ -918,7 +1040,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		if (zRight &&
 		    envIsClosed(pParse, pDb->pBt, "bdbsql_lock_tablesize")) {
-			if (pDb->pBt->pBt->need_open) {
+			if (pDb->pBt->pBt->database_existed) {
 				/*
 				 * The DB_ENV->set_lk_tablesize() method must be
 				 * called prior to opening/creating the database
@@ -948,6 +1070,247 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 			pDb->pBt->pBt->dbenv, &val);
 
 		returnSingleInt(pParse, "bdbsql_lock_tablesize", val);
+		parsed = 1;
+	/*
+	 * PRAGMA large_record_opt; -- Gets the blob threshold
+	 * PRAGMA large_record_opt = N; -- Sets the blob threshold of all
+	 * tables opened in the database.  The blob threshold is set to
+	 * N.  A value of 0 disables blobs.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "large_record_opt", 16) == 0) {
+    		int iLimit = -2;
+		u_int32_t val;
+
+		if (zRight) {
+			if (!sqlite3GetInt32(zRight, &iLimit) || iLimit < 0) {
+				sqlite3ErrorMsg(pParse,
+				    "Invalid value large_record_opt %s",
+				    zRight);
+			} else {
+				/* 
+				 * SQL only supports records up to 1GB in
+				 * size, so reject page counts that result
+				 * in a blob threshold that will always be
+				 * larger than 1 GB, to prevent overflow.
+				 */
+				if (iLimit > GIGABYTE) {
+					sqlite3ErrorMsg(pParse,
+		"large_record_opt must be less than or equal to 1 gigabyte",
+					    zRight);
+				} else {
+					pDb->pBt->pBt->blob_threshold
+					    = iLimit;
+					if (iLimit > 0) {
+						pDb->pBt->pBt->blobs_enabled
+						    = 1;
+					}
+				}
+			}
+		}
+
+		if (pDb->pBt->pBt->blob_threshold < 0)
+			val = 0;
+		else
+		    val = pDb->pBt->pBt->blob_threshold;
+		returnSingleInt(pParse, "large_record_opt", val);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_ack_policy; -- DB_ENV->repmgr_get_ack_policy
+	 * PRAGMA replication_ack_policy =
+	 * [all_sites|all_available|none|one|quorum];
+	 * -- DB_ENV->repmgr_set_ack_policy
+	 *   Sets the policy on how many clients must acknowledge a transaction
+	 *   commit message before the master will consider it durable.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "replication_ack_policy", 22) == 0) {
+		int val = -1;
+		const char *policy;
+
+		if (zRight) {
+			if ((val = textToAckPolicy(zRight)) == -1)
+				sqlite3ErrorMsg(pParse,
+				    "Invalid value replication_ack_policy %s",
+				    zRight);
+			else {
+				if ((ret =
+				    pDb->pBt->pBt->dbenv->repmgr_set_ack_policy(
+				    pDb->pBt->pBt->dbenv, val)) != 0) {
+					sqlite3ErrorMsg(pParse,
+					    "Failed to set "
+					    "replication_ack_policy. "
+					    "Error: %d.", ret);
+				}
+			}
+		}
+
+		/* Get existing value */
+		pDb->pBt->pBt->dbenv->repmgr_get_ack_policy(
+			pDb->pBt->pBt->dbenv, &val);
+
+		policy = ackPolicyToText(val);
+		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
+		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
+		    zLeft, SQLITE_STATIC);
+		if (policy != NULL)
+			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0,
+			    policy, 0);
+		else 
+			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0,
+			    "No policy", 0);
+		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_ack_timeout; -- DB_ENV->rep_get_timeout
+	 * PRAGMA replication_ack_timeout = N; -- DB_ENV->rep_set_timeout
+	 *   N provides the greater than -1 timeout on acks from clients
+	 *   when the master sends a transaction commit message.
+	 */
+	} else if
+	    (sqlite3StrNICmp(zLeft, "replication_ack_timeout", 23) == 0) {
+		int iLimit = -2;
+		db_timeout_t val;
+
+		if (zRight) {
+			if (!sqlite3GetInt32(zRight, &iLimit) || iLimit < 0)
+				sqlite3ErrorMsg(pParse,
+				    "Invalid value replication_ack_timeout %s",
+				    zRight);
+			else {
+				val = iLimit;
+				if ((ret = 
+				    pDb->pBt->pBt->dbenv->rep_set_timeout(
+				    pDb->pBt->pBt->dbenv, DB_REP_ACK_TIMEOUT,
+				    val)) != 0) {
+					sqlite3ErrorMsg(pParse,
+					    "Failed to set "
+					    "replication_ack_timeout. "
+					    "Error: %d.", ret);
+				}
+			}
+		}
+
+		/* Get existing value */
+		pDb->pBt->pBt->dbenv->rep_get_timeout(
+			pDb->pBt->pBt->dbenv, DB_REP_ACK_TIMEOUT, &val);
+
+		returnSingleInt(pParse, "replication_ack_timeout", val);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_priority; -- DB_ENV->rep_get_priority
+	 * PRAGMA replication_priority = N; -- DB_ENV->rep_set_priority
+	 *   N provides the 1 or greater priority of the replication site,
+	 *   which is used to decide what site is elected master.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "replication_priority", 20) == 0) {
+    		int iLimit = -2;
+		u_int32_t val;
+
+		if (zRight) {
+			if (!sqlite3GetInt32(zRight, &iLimit) || iLimit < 1)
+				sqlite3ErrorMsg(pParse,
+				    "Invalid value replication_priority %s",
+				    zRight);
+			else {
+				val = iLimit;
+				if ((ret =
+				    pDb->pBt->pBt->dbenv->rep_set_priority(
+				    pDb->pBt->pBt->dbenv, val)) != 0) {
+					sqlite3ErrorMsg(pParse,
+					    "Failed to set replication "
+					    "priority. Error: %d.", ret);
+				}
+			}
+		}
+
+		/* Get existing value */
+		pDb->pBt->pBt->dbenv->rep_get_priority(
+			pDb->pBt->pBt->dbenv, &val);
+
+		returnSingleInt(pParse, "replication_priority", val);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_num_sites; -- DB_ENV->repmgr_site_list
+	 *   Returns the number of sites in the replication group.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "replication_num_sites", 21) == 0) {
+		u_int32_t val = -1;
+		DB_REPMGR_SITE *sites = NULL;
+
+		/* Get existing value */
+		pDb->pBt->pBt->dbenv->repmgr_site_list(
+			pDb->pBt->pBt->dbenv, &val, &sites);
+
+		/* 
+		 * repmgr_site_list only gets the list of remote sites, 
+		 * so add one for the local site if replication has been
+		 * started.
+		 */
+		if (pDb->pBt->pBt->repStarted)
+			val++;
+
+		if (sites)
+			sqlite3_free(sites);
+
+		returnSingleInt(pParse, "replication_num_sites", val);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_perm_failed; -- DB_REP_PERM_FAILED
+	 *   Returns the number of times since the last time this pragma was
+	 *   called the master was unable to get enough acknowledgments from
+	 *   clients when committing a transaction.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "replication_perm_failed", 23) == 0) {
+		u_int32_t val = 0;
+		
+		sqlite3_mutex_enter(pDb->pBt->pBt->mutex);
+		val = pDb->pBt->pBt->permFailures;
+		pDb->pBt->pBt->permFailures = 0;
+		sqlite3_mutex_leave(pDb->pBt->pBt->mutex);
+
+		returnSingleInt(pParse, "replication_perm_failed", val);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_site_status;
+	 *   Returns MASTER if the site is a replication master, CLIENT if the
+	 *   site is a replication client, and UNKNOWN if replication is not
+	 *   enabled, or the site status is still being decided (such as during
+	 *   an election).
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "replication_site_status", 23) == 0) {
+		rep_site_type_t val;
+		const char *type;
+		
+		sqlite3_mutex_enter(pDb->pBt->pBt->mutex);
+		val = pDb->pBt->pBt->repRole;
+		sqlite3_mutex_leave(pDb->pBt->pBt->mutex);
+
+		type = repSiteTypeToText(val);
+		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
+		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
+		    zLeft, SQLITE_STATIC);
+		sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0, type, 0);
+		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
+		parsed = 1;
+	/*
+	 * PRAGMA replication_get_master;
+	 *   Returns the host:port of the master, or NULL if replication has
+	 *   not started, or there is none.
+	 */
+	} else if (sqlite3StrNICmp(zLeft, "replication_get_master", 23) == 0) {
+		const char *address;
+		
+		sqlite3_mutex_enter(pDb->pBt->pBt->mutex);
+		address = pDb->pBt->pBt->master_address;
+		sqlite3_mutex_leave(pDb->pBt->pBt->mutex);
+
+		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
+		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
+		    zLeft, SQLITE_STATIC);
+		if (address)
+			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0, address, 0);
+		else
+			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0, "NULL", 0);
+		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
 		parsed = 1;
 	}
 

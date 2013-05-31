@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -35,8 +35,7 @@ __mutex_alloc(env, alloc_id, flags, indxp)
 	if (alloc_id != MTX_APPLICATION && alloc_id != MTX_MUTEX_TEST &&
 	    (F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||
 	    (!F_ISSET(env, ENV_THREAD) &&
-	    (LF_ISSET(DB_MUTEX_PROCESS_ONLY) ||
-	    F_ISSET(env, ENV_PRIVATE)))))
+	    (LF_ISSET(DB_MUTEX_PROCESS_ONLY) || F_ISSET(env, ENV_PRIVATE)))))
 		return (0);
 
 	/* Private environments never share mutexes. */
@@ -109,13 +108,17 @@ nomem:			__db_errx(env, DB_STR("2034",
 		    mtxregion->stat.st_mutex_max)
 			cnt = mtxregion->stat.st_mutex_max -
 			    mtxregion->stat.st_mutex_cnt;
+
+		/* Set i to the first newly created db_mutex_t. */
 		if (F_ISSET(env, ENV_PRIVATE)) {
 			F_SET(&mtxmgr->reginfo, REGION_TRACKED);
 			while (__env_alloc(&mtxmgr->reginfo,
 			    (cnt * mtxregion->mutex_size) +
-			    mtxregion->stat.st_mutex_align, &i) != 0)
-				if ((cnt >> 1) == 0)
+			    mtxregion->stat.st_mutex_align, &i) != 0) {
+				cnt >>= 1;
+				if (cnt == 0)
 					break;
+			}
 			F_CLR(&mtxmgr->reginfo, REGION_TRACKED);
 			i = (db_mutex_t)ALIGNP_INC(i,
 			    mtxregion->stat.st_mutex_align);
@@ -130,21 +133,16 @@ nomem:			__db_errx(env, DB_STR("2034",
 		}
 		if (cnt == 0)
 			goto nomem;
-		mutexp = MUTEXP_SET(env, i);
+
 		mtxregion->stat.st_mutex_free = cnt;
 		mtxregion->mutex_next = i;
 		mtxregion->stat.st_mutex_cnt += cnt;
-		while (--cnt > 0) {
-			mutexp->flags = 0;
-			if (F_ISSET(env, ENV_PRIVATE))
-				mutexp->mutex_next_link =
-				    (uintptr_t)(mutexp + 1);
-			else
-				mutexp->mutex_next_link = ++i;
-			mutexp++;
-		}
-		mutexp->flags = 0;
-		mutexp->mutex_next_link = MUTEX_INVALID;
+
+		/*
+		 * Now link the rest of the newly allocated db_mutex_t's into
+		 * the free list.
+		 */
+		MUTEX_BULK_INIT(env, mtxregion, i, cnt);
 	}
 
 	*indxp = mtxregion->mutex_next;
@@ -158,8 +156,6 @@ nomem:			__db_errx(env, DB_STR("2034",
 	if (mtxregion->stat.st_mutex_inuse > mtxregion->stat.st_mutex_inuse_max)
 		mtxregion->stat.st_mutex_inuse_max =
 		    mtxregion->stat.st_mutex_inuse;
-	if (locksys)
-		MUTEX_SYSTEM_UNLOCK(env);
 
 	/* Initialize the mutex. */
 	memset(mutexp, 0, sizeof(*mutexp));
@@ -182,7 +178,9 @@ nomem:			__db_errx(env, DB_STR("2034",
 #endif
 
 	if ((ret = __mutex_init(env, *indxp, flags)) != 0)
-		(void)__mutex_free_int(env, locksys, indxp);
+		(void)__mutex_free_int(env, 0, indxp);
+	if (locksys)
+		MUTEX_SYSTEM_UNLOCK(env);
 
 	return (ret);
 }

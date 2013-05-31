@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield
  * -- astubble@rice.edu
@@ -225,7 +225,8 @@ __crypto_algsetup(env, db_cipher, alg, do_init)
 
 /*
  * __crypto_decrypt_meta --
- *	Perform decryption on a metapage if needed.
+ *	Perform decryption on a possible metadata page, if needed. This is used
+ *	to help decide whether this is a real DB. Don't trust random data.
  *
  * PUBLIC:  int __crypto_decrypt_meta __P((ENV *, DB *, u_int8_t *, int));
  */
@@ -241,6 +242,7 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 	DB_CIPHER *db_cipher;
 	size_t pg_off;
 	int ret;
+	unsigned added_flags;
 	u_int8_t *iv;
 
 	/*
@@ -293,6 +295,7 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 	 */
 	if (meta->encrypt_alg != 0) {
 		db_cipher = env->crypto_handle;
+		added_flags = 0;
 		if (!F_ISSET(dbp, DB_AM_ENCRYPT)) {
 			if (!CRYPTO_ON(env)) {
 				__db_errx(env, DB_STR("0178",
@@ -300,12 +303,14 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 				return (EINVAL);
 			}
 			/*
-			 * User has a correct, secure env, but has encountered
-			 * a database in that env that is secure, but user
-			 * didn't dbp->set_flags.  Since it is existing, use
-			 * encryption if it is that way already.
+			 * User has a correct, secure env and has encountered
+			 * a database in that env that APPEARS TO BE secure, but
+			 * user didn't set the encryption flags. Since the db
+			 * already exists, turn encryption on. Remember what was
+			 * set, so the flags can restored if it doesn't decrypt.
 			 */
-			F_SET(dbp, DB_AM_ENCRYPT|DB_AM_CHKSUM);
+			added_flags = DB_AM_ENCRYPT | DB_AM_CHKSUM;
+			F_SET(dbp, added_flags);
 		}
 		/*
 		 * This was checked in set_flags when DB_AM_ENCRYPT was set.
@@ -316,6 +321,7 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 		    meta->encrypt_alg != db_cipher->alg) {
 			__db_errx(env, DB_STR("0179",
 			    "Database encrypted using a different algorithm"));
+			F_CLR(dbp, added_flags);
 			return (EINVAL);
 		}
 		DB_ASSERT(env, F_ISSET(dbp, DB_AM_CHKSUM));
@@ -334,12 +340,14 @@ alg_retry:
 		if (!F_ISSET(db_cipher, CIPHER_ANY)) {
 			if (do_metachk && (ret = db_cipher->decrypt(env,
 			    db_cipher->data, iv, mbuf + pg_off,
-			    DBMETASIZE - pg_off)))
+			    DBMETASIZE - pg_off))) {
+				F_CLR(dbp, added_flags);
 				return (ret);
-			if (((BTMETA *)meta)->crypto_magic !=
-			    meta->magic) {
+			}
+			if (((BTMETA *)meta)->crypto_magic != meta->magic) {
 				__db_errx(env, DB_STR("0180",
 				    "Invalid password"));
+				F_CLR(dbp, added_flags);
 				return (EINVAL);
 			}
 			/*

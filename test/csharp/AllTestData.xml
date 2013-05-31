@@ -395,6 +395,7 @@
 			<FileMode>755</FileMode>
 			<ForceSync>True</ForceSync>
 			<InMemory>True</InMemory>
+			<LogBlobContent>True</LogBlobContent>
 			<MaxFileSize>1048576</MaxFileSize>
 			<NoBuffer>True</NoBuffer>
 			<RegionSize>30720</RegionSize>
@@ -638,6 +639,7 @@
 			<FileMode>755</FileMode>
 			<ForceSync>True</ForceSync>
 			<InMemory>True</InMemory>
+			<LogBlobContent>True</LogBlobContent>
 			<MaxFileSize>1048576</MaxFileSize>
 			<NoBuffer>True</NoBuffer>
 			<RegionSize>20480</RegionSize>
@@ -758,6 +760,7 @@
 				<FileMode>755</FileMode>
 				<ForceSync>True</ForceSync>
 				<InMemory>False</InMemory>
+				<LogBlobContent>False</LogBlobContent>
 				<MaxFileSize>1048576</MaxFileSize>
 				<NoBuffer>False</NoBuffer>
 				<RegionSize>204800</RegionSize>

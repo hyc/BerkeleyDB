@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,6 +9,7 @@
 #include "db_config.h"
 
 #include "db_int.h"
+#include "dbinc/blob.h"
 #include "dbinc/db_page.h"
 #include "dbinc/fop.h"
 #include "dbinc/db_am.h"
@@ -70,7 +71,7 @@ __fop_create_recover(env, dbtp, lsnp, op, info)
 	DBMETA *meta;
 	u_int8_t mbuf[DBMETASIZE];
 	int ret;
-	char *real_name;
+	char *path, *real_name;
 	const char *dirname;
 
 	COMPQUIET(info, NULL);
@@ -98,7 +99,7 @@ __fop_create_recover(env, dbtp, lsnp, op, info)
 		if (__os_open(env, real_name, 0, 0, 0, &fhp) == 0) {
 			if (__fop_read_meta(env,
 			    real_name, mbuf, DBMETASIZE, fhp, 1, NULL) == 0 &&
-			    __db_chk_meta(env, NULL, meta, 1) == 0) {
+			    __db_chk_meta(env, NULL, meta, DB_CHK_META) == 0) {
 				if ((ret = __memp_nameop(env,
 				    meta->uid, NULL, real_name, NULL, 0)) != 0)
 					goto out;
@@ -110,6 +111,20 @@ __fop_create_recover(env, dbtp, lsnp, op, info)
 		} else
 do_unlink:		(void)__os_unlink(env, real_name, 0);
 	} else if (DB_REDO(op)) {
+		path = real_name;
+#ifdef DB_WIN32
+		/*
+		 * Absolute paths on windows can result in it creating a
+		 * "C" or "D" directory in the working directory.
+		 */
+		if (__os_abspath(real_name))
+			path += 2;
+#endif
+		/* Blob directories might not exist yet. */
+		if (__os_exists(env, real_name, NULL) != 0 &&
+		    (ret = __db_mkpath(env, path)) != 0)
+			goto out;
+
 		if ((ret = __os_open(env, real_name, 0,
 		    DB_OSO_CREATE, (int)argp->mode, &fhp)) == 0)
 			(void)__os_closehandle(env, fhp);
@@ -166,7 +181,7 @@ __fop_create_42_recover(env, dbtp, lsnp, op, info)
 		if (__os_open(env, real_name, 0, 0, 0, &fhp) == 0) {
 			if (__fop_read_meta(env,
 			    real_name, mbuf, DBMETASIZE, fhp, 1, NULL) == 0 &&
-			    __db_chk_meta(env, NULL, meta, 1) == 0) {
+			    __db_chk_meta(env, NULL, meta, DB_CHK_META) == 0) {
 				if ((ret = __memp_nameop(env,
 				    meta->uid, NULL, real_name, NULL, 0)) != 0)
 					goto out;
@@ -272,6 +287,113 @@ __fop_write_recover(env, dbtp, lsnp, op, info)
 }
 
 /*
+ * __fop_write_file_recover --
+ *	Recovery function for writing to a blob file.  Files are flushed before
+ *	the transaction is committed, so often the file operations do not need
+ *	to be redone or undone.  However, since no lsn is stored in the file,
+ *	we always try to redo or undo the operation, since it will not change
+ *	the final state of the file if the operation is not needed.  This also
+ *	means that this function has to be very tolerant of errors, such as
+ *	trying to open a file that was deleted, or truncate a file that is
+ *	already short.
+ *
+ * PUBLIC: int __fop_write_file_recover
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__fop_write_file_recover(env, dbtp, lsnp, op, info)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops op;
+	void *info;
+{
+	DB_FH *fhp;
+	__fop_write_file_args *argp;
+	off_t offset;
+	int ret;
+	size_t nbytes;
+	char *path;
+	COMPQUIET(info, NULL);
+
+	REC_PRINT(__fop_write_file_print);
+	REC_NOOP_INTRO(__fop_write_file_read);
+	fhp = NULL;
+	path = NULL;
+	ret = 0;
+	/* The offset is stored as two u_in32_t values. */
+	GET_LO_HI(env, argp->offset_lo, argp->offset_hi, offset, ret);
+	if (ret != 0)
+		goto end;
+
+	if (DB_UNDO(op)) {
+		if (argp->flag & DB_FOP_CREATE) {
+			/*
+			 * File was created in this transaction. Do nothing,
+			 * destroying the file will undo the write.
+			 */
+		} else {
+			if ((ret = __db_appname(env,
+			    (APPNAME)argp->appname == DB_APP_DATA ?
+			    DB_APP_RECOVER : (APPNAME)argp->appname,
+			    argp->name.data, NULL, &path)) != 0)
+				goto end;
+
+			if (__os_open(env, path, 0, 0, DB_MODE_600, &fhp) != 0)
+				goto end;
+
+			if (argp->flag & DB_FOP_APPEND) {
+				/*
+				 * Appended to the end of the file, undo by
+				 * truncating the file.
+				 */
+				(void)__os_truncate(env, fhp, 0, 0, offset);
+			} else {
+				/*
+				 * Data overwritten in the middle of the file,
+				 * undo by writing back in the old data.
+				 */
+
+				/* Seek to offset. */
+				if ((__os_seek(env, fhp, 0, 0, offset)) != 0)
+					goto end;
+
+				/* Now do the write. */
+				ret = __os_write(env, fhp,
+				    argp->old_data.data,
+				    argp->old_data.size, &nbytes);
+			}
+		}
+	} else if (DB_REDO(op)) {
+		/*
+		 * Not all operations log enough data to be redone.  Since
+		 * files are flushed before the transaction commit this is
+		 * not an issue, unless we are on an HA client or initializing
+		 * from a backup.
+		 */
+		if (argp->flag & DB_FOP_REDO) {
+			ret = __fop_write_file(env,
+			    argp->txnp, argp->name.data,
+			    argp->dirname.size == 0 ? NULL :
+			    argp->dirname.data, (APPNAME)argp->appname
+			    == DB_APP_DATA ? DB_APP_RECOVER :
+			    (APPNAME)argp->appname, NULL, offset,
+			    argp->new_data.data, argp->new_data.size, 0);
+		} else {
+			/* DB_ASSERT(env, !IS_REP_CLIENT(env)); */
+		}
+	}
+
+end:	if (path != NULL)
+		__os_free(env, path);
+	if (fhp != NULL)
+		(void)__os_closehandle(env, fhp);
+	if (ret == 0)
+		*lsnp = argp->prev_lsn;
+	REC_NOOP_CLOSE;
+}
+
+/*
  * __fop_write_42_recover --
  *	Recovery function for writechunk.
  *
@@ -307,6 +429,12 @@ __fop_write_42_recover(env, dbtp, lsnp, op, info)
 		*lsnp = argp->prev_lsn;
 	REC_NOOP_CLOSE;
 }
+
+/* __fop_write_file_recover --
+ *
+ * PUBLIC: int __fop_write_file_recover
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
 
 /*
  * __fop_rename_recover --
@@ -408,7 +536,7 @@ __fop_rename_recover_int(env, dbtp, lsnp, op, info, undo)
 		if (__fop_read_meta(env,
 		    src, mbuf, DBMETASIZE, fhp, 1, NULL) != 0)
 			goto done;
-		if (__db_chk_meta(env, NULL, meta, 1) != 0)
+		if (__db_chk_meta(env, NULL, meta, DB_CHK_META) != 0)
 			goto done;
 		if (memcmp(argp->fileid.data, meta->uid, DB_FILE_ID_LEN) != 0)
 			goto done;
@@ -425,7 +553,7 @@ __fop_rename_recover_int(env, dbtp, lsnp, op, info, undo)
 			if (__os_open(env, real_new, 0, 0, 0, &fhp) == 0 &&
 			    __fop_read_meta(env, src, mbuf,
 			    DBMETASIZE, fhp, 1, NULL) == 0 &&
-			    __db_chk_meta(env, NULL, meta, 1) == 0 &&
+			    __db_chk_meta(env, NULL, meta, DB_CHK_META) == 0 &&
 			    memcmp(argp->fileid.data,
 			    meta->uid, DB_FILE_ID_LEN) != 0) {
 				(void)__memp_nameop(env,
@@ -540,7 +668,7 @@ __fop_rename_42_recover_int(env, dbtp, lsnp, op, info, undo)
 		if (__fop_read_meta(env,
 		    src, mbuf, DBMETASIZE, fhp, 1, NULL) != 0)
 			goto done;
-		if (__db_chk_meta(env, NULL, meta, 1) != 0)
+		if (__db_chk_meta(env, NULL, meta, DB_CHK_META) != 0)
 			goto done;
 		if (memcmp(argp->fileid.data, meta->uid, DB_FILE_ID_LEN) != 0)
 			goto done;
@@ -557,7 +685,7 @@ __fop_rename_42_recover_int(env, dbtp, lsnp, op, info, undo)
 			if (__os_open(env, real_new, 0, 0, 0, &fhp) == 0 &&
 			    __fop_read_meta(env, src, mbuf,
 			    DBMETASIZE, fhp, 1, NULL) == 0 &&
-			    __db_chk_meta(env, NULL, meta, 1) == 0 &&
+			    __db_chk_meta(env, NULL, meta, DB_CHK_META) == 0 &&
 			    memcmp(argp->fileid.data,
 			    meta->uid, DB_FILE_ID_LEN) != 0) {
 				(void)__memp_nameop(env,
@@ -652,7 +780,7 @@ __fop_file_remove_recover(env, dbtp, lsnp, op, info)
 		 * We can ignore errors here since we'll simply fail the
 		 * checks below and assume this is the wrong file.
 		 */
-		(void)__db_chk_meta(env, NULL, meta, 1);
+		(void)__db_chk_meta(env, NULL, meta, DB_CHK_META);
 		is_real =
 		    memcmp(argp->real_fid.data, meta->uid, DB_FILE_ID_LEN) == 0;
 		is_tmp =

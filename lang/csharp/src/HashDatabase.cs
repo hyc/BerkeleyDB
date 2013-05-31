@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -19,9 +19,13 @@ namespace BerkeleyDB {
         private HashFunctionDelegate hashHandler;
         private EntryComparisonDelegate compareHandler;
         private EntryComparisonDelegate dupCompareHandler;
+        private PartitionDelegate partitionHandler;
         private BDB_CompareDelegate doCompareRef;
         private BDB_HashDelegate doHashRef;
         private BDB_CompareDelegate doDupCompareRef;
+        private BDB_PartitionDelegate doPartitionRef;
+        private DatabaseEntry[] partitionKeys;
+        private uint nparts;
         
         #region Constructors
         private HashDatabase(DatabaseEnvironment env, uint flags)
@@ -35,6 +39,12 @@ namespace BerkeleyDB {
              * specific flags.  No harm in calling it again.
              */
             db.set_flags(cfg.flags);
+
+            if (cfg.BlobDir != null && cfg.Env == null)
+                db.set_blob_dir(cfg.BlobDir);
+
+            if (cfg.blobThresholdIsSet)
+                db.set_blob_threshold(cfg.BlobThreshold, 0);
             
             if (cfg.HashFunction != null)
                 HashFunction = cfg.HashFunction;
@@ -48,6 +58,25 @@ namespace BerkeleyDB {
             if (cfg.HashComparison != null)
                 Compare = cfg.HashComparison;
 
+            if (cfg.partitionIsSet) {
+                nparts = cfg.NParts;
+                Partition = cfg.Partition;
+                if (Partition == null)
+                    doPartitionRef = null;
+                else
+                    doPartitionRef = new BDB_PartitionDelegate(doPartition);
+                partitionKeys = cfg.PartitionKeys;
+                IntPtr[] ptrs = null;
+                if (partitionKeys != null) {
+                    int size = (int)nparts - 1;
+                    ptrs = new IntPtr[size];
+                    for (int i = 0; i < size; i++) {
+                        ptrs[i] = DBT.getCPtr(
+                            DatabaseEntry.getDBT(partitionKeys[i])).Handle;
+                    }
+                }
+                db.set_partition(nparts, ptrs, doPartitionRef);
+            }
         }
 
         /// <summary>
@@ -220,11 +249,12 @@ namespace BerkeleyDB {
 
         #region Callbacks
         private static int doDupCompare(
-            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p) {
+            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p, IntPtr locp) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbt1p, false);
             DBT dbt2 = new DBT(dbt2p, false);
-
+            if (locp != IntPtr.Zero)
+                locp = IntPtr.Zero;
             return ((HashDatabase)(db.api_internal)).DupCompare(
                 DatabaseEntry.fromDBT(dbt1), DatabaseEntry.fromDBT(dbt2));
         }
@@ -235,18 +265,65 @@ namespace BerkeleyDB {
 
             return ((HashDatabase)(db.api_internal)).hashHandler(t_data);
         }
-        private static int doCompare(IntPtr dbp, IntPtr dbtp1, IntPtr dbtp2) {
+        private static int doCompare(IntPtr dbp,
+            IntPtr dbtp1, IntPtr dbtp2, IntPtr locp) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbtp1, false);
             DBT dbt2 = new DBT(dbtp2, false);
+            if (locp != IntPtr.Zero)
+                locp = IntPtr.Zero;
 
             return ((HashDatabase)(db.api_internal)).compareHandler(
                 DatabaseEntry.fromDBT(dbt1), DatabaseEntry.fromDBT(dbt2));
+        }
+        private static uint doPartition(IntPtr dbp, IntPtr dbtp) {
+            DB db = new DB(dbp, false);
+            DatabaseEntry dbt = DatabaseEntry.fromDBT(new DBT(dbtp, false));
+            HashDatabase btdb = (HashDatabase)(db.api_internal);
+            return btdb.Partition(dbt);
         }
 
         #endregion Callbacks
 
         #region Properties
+        /// <summary>
+        /// The path of the directory where blobs are stored.
+        /// </summary>
+        public string BlobDir {
+            get {
+                string dir;
+                db.get_blob_dir(out dir);
+                return dir;
+            }
+        }
+
+        internal string BlobSubDir {
+            get {
+                string dir;
+                db.get_blob_sub_dir(out dir);
+                return dir;
+            }
+        }
+
+        /// <summary>
+        /// The threshold value in bytes beyond which data items are stored as
+        /// blobs.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// A value of 0 indicates that blobs are not used by the database.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get {
+                uint ret = 0;
+                db.get_blob_threshold(ref ret);
+                return ret;
+            }
+        }
+
         /// <summary>
         /// The Hash key comparison function. The comparison function is called
         /// whenever it is necessary to compare a key specified by the
@@ -549,6 +626,39 @@ namespace BerkeleyDB {
             db.compact(Transaction.getDB_TXN(txn),
                 null, null, cdata, DbConstants.DB_FREELIST_ONLY, null);
             return cdata.compact_pages_truncated;
+        }
+
+        /// <summary>
+        /// Return the number of partitions created in the database.
+        /// </summary>
+        public uint NParts {
+            get {
+                db.get_partition_parts(ref nparts);
+                return nparts;
+            }
+            private set { nparts = value; }
+        }
+
+        /// <summary>
+        /// Return the application-specified partitioning function.
+        /// </summary>
+        public PartitionDelegate Partition {
+            get { return partitionHandler; }
+            private set { partitionHandler = value; }
+        }
+
+        /// <summary>
+        /// Return an array of type DatabaseEntry where each array entry
+        /// contains the range of keys contained in one of the database's
+        /// partitions. The array contains the information for the entire
+        /// database.
+        /// </summary>
+        public DatabaseEntry[] PartitionKeys {
+            get {
+                partitionKeys = db.get_partition_keys();
+                return partitionKeys;
+            }
+            private set { partitionKeys = value; }
         }
 
         /// <summary>

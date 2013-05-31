@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2012, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <db.h>
@@ -47,9 +47,12 @@ typedef db_pgno_t Pgno;
   #define SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT 2 * 1024 * 1024
 #endif
 
+u8 sqlite3PagerIsreadonly(Pager*);
+void sqlite3PagerShrink(Pager*);
+void sqlite3PagerCacheStat(Pager *, int, int, int *);
 int sqlite3PagerExclusiveLock(Pager *pPager);
 sqlite3_file *sqlite3PagerFile(Pager*);
-const char *sqlite3PagerFilename(Pager *pPager);
+const char *sqlite3PagerFilename(Pager *pPager, int);
 int sqlite3PagerGetJournalMode(Pager *pPager);
 int sqlite3PagerIsMemdb(Pager*);
 int sqlite3PagerJournalMode(Pager *, int);

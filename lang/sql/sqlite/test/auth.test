@@ -2262,7 +2262,9 @@ do_test auth-4.3 {
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   {} \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_SELECT {}     {} {} v1   \
   SQLITE_READ   v1     x  main v1 \
   SQLITE_INSERT v1chng {} main r2 \
   SQLITE_READ   v1     x  main r2 \
@@ -2288,7 +2290,9 @@ do_test auth-4.5 {
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   {} \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_SELECT {}     {} {} v1   \
   SQLITE_READ   v1     x  main v1 \
   SQLITE_INSERT v1chng {} main r3 \
   SQLITE_READ   v1     x  main r3 \
@@ -2321,10 +2325,10 @@ ifcapable compound&&subquery {
       }
     }
   }
-  ifcapable stat2 {
-    set stat2 "sqlite_stat2 "
+  ifcapable stat3 {
+    set stat3 "sqlite_stat3 "
   } else {
-    set stat2 ""
+    set stat3 ""
   }
   do_test auth-5.2 {
     execsql {
@@ -2333,7 +2337,7 @@ ifcapable compound&&subquery {
       WHERE type='table'
       ORDER BY name
     }
-  } "sqlite_stat1 ${stat2}t1 t2 t3 t4"
+  } "sqlite_stat1 ${stat3}t1 t2 t3 t4"
 }
 
 # Ticket #3944

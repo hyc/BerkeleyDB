@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates. All rights reserved.
  */
 
 #include <ctype.h>
@@ -107,7 +107,6 @@ static void msg_disp2 __P((DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t))
 static void msg_disp3 __P((DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t));
 static void msg_disp4 __P((DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t));
 static void msg_disp5 __P((DB_ENV *, DB_CHANNEL *, DBT *, u_int32_t, u_int32_t));
-static int mystrcmp __P((char *, const char *));
 static void notify __P((DB_ENV *, u_int32_t, void *));
 static int is_started __P((void *));
 static void td __P((DB_ENV *));
@@ -170,9 +169,12 @@ int TestChannelTestTeardown(CuTest *test) {
 static void
 myerrcall(const DB_ENV *dbenv, const char *errpfx, const char *msg) {
 	struct report *rpt = get_rpt(dbenv);
+	char *msgp;
 
 	assert(rpt->msg_count < MAX_MSGS);
-	assert((rpt->msg[rpt->msg_count++] = strdup(msg)) != NULL);
+	msgp = strdup(msg);
+	assert(msgp != NULL);
+	rpt->msg[rpt->msg_count++] = msgp;
 }
 
 static int
@@ -449,11 +451,10 @@ int TestChannelFeature(CuTest *ct) {
 	/* Wait til dbenv2 has reported 1 msg. */
 	info.dbenv = dbenv2;
 	info.count = 1;
-	await_condition(has_msgs, &info, 60);
+	await_condition(has_msgs, &info, 90);
 	rpt = get_rpt(dbenv2);
 	CuAssertTrue(ct, rpt->msg_count == 1);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[0],
-		"No message dispatch call-back function has been configured") == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[0], "BDB3670", strlen("BDB3670")) == 0);
 
 	printf("2. send request with no msg dispatch in place\n");
 	clear_rpt(dbenv2);
@@ -461,10 +462,9 @@ int TestChannelFeature(CuTest *ct) {
 	CuAssertTrue(ct, ret == DB_NOSERVER);
 	if (resp.data != NULL)
 		free(resp.data);
-	await_condition(has_msgs, &info, 60);
+	await_condition(has_msgs, &info, 90);
 	CuAssertTrue(ct, rpt->msg_count == 1);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[0],
-		"No message dispatch call-back function has been configured") == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[0], "BDB3670", strlen("BDB3670")) == 0);
 
 	CuAssertTrue(ct, (ret = dbenv2->repmgr_msg_dispatch(dbenv2, msg_disp, 0)) == 0);
 
@@ -476,8 +476,7 @@ int TestChannelFeature(CuTest *ct) {
 		free(resp.data);
 	await_done(dbenv2);
 	CuAssertTrue(ct, rpt->msg_count == 1);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[0],
-		"Application failed to provide a response") == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[0], "BDB3671", strlen("BDB3671")) == 0);
 
 	printf("4. now with dispatch fn installed, send a simple async msg\n");
 	clear_rpt(dbenv2);
@@ -519,8 +518,7 @@ int TestChannelFeature(CuTest *ct) {
 	CuAssertTrue(ct, (ret = ch->send_request(ch, rdbts, 3, &resp, 0, 0)) == DB_BUFFER_SMALL);
 	await_done(dbenv2);
 	CuAssertTrue(ct, rpt->msg_count == 1);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[0],
-		"originator's USERMEM buffer too small") == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[0], "BDB3659", strlen("BDB3659")) == 0);
 	CuAssertTrue(ct, rpt->ret == EINVAL);
 
 #define BUFLEN 20000
@@ -536,8 +534,7 @@ int TestChannelFeature(CuTest *ct) {
 	CuAssertTrue(ct, (ret = ch->send_request(ch, rdbts, 2, &resp, 0, 0)) == DB_BUFFER_SMALL);
 	await_done(dbenv2);
 	CuAssertTrue(ct, rpt->msg_count == 1);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[0],
-		"originator does not accept multi-segment response") == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[0], "BDB3658", strlen("BDB3658")) == 0);
 	CuAssertTrue(ct, rpt->ret == EINVAL);
 
 	printf("9. send USERMEM request with DB_MULTIPLE\n");
@@ -776,12 +773,9 @@ int TestChannelFeature(CuTest *ct) {
 	rpt = get_rpt(dbenv3);
 	CuAssertTrue(ct, rpt->ret == EINVAL);
 	CuAssertTrue(ct, rpt->msg_count == 3);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[0],
- "set_timeout() invalid on DB_CHANNEL supplied to msg dispatch function") == 0);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[1],
-       "close() invalid on DB_CHANNEL supplied to msg dispatch function") == 0);
-	CuAssertTrue(ct, mystrcmp(rpt->msg[2],
-"send_request() invalid on DB_CHANNEL supplied to msg dispatch function") == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[0], "BDB3660", strlen("BDB3660")) == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[1], "BDB3660", strlen("BDB3660")) == 0);
+	CuAssertTrue(ct, strncmp(rpt->msg[2], "BDB3660", strlen("BDB3660")) == 0);
 	ch->close(ch, 0);
 
 	free(buffer);
@@ -1263,23 +1257,6 @@ test_zeroes(ch, dest, ct)
 		free(resp.data);
 }	
 
-/*
- * Compare, but skip over BDB error msg number at beginning of `actual'.
- */
-static int
-mystrcmp(actual, expected)
-	char *actual;
-	const char *expected;
-{
-	char *p;
-
-	for (p = actual; *p != '\0' && !isspace(*p); p++)
-		;
-	for (; *p != '\0' && isspace(*p); p++)
-		;
-	return (strcmp(p, expected));
-}
-
 static int get_avail_ports(ports, count)
 	u_int *ports;
 	int count;
@@ -1334,8 +1311,8 @@ static int get_avail_ports(ports, count)
 		i = incr;
 
 		while (i-- > 0) {
-			if (ret = __repmgr_getaddr(NULL, "localhost", curport,
-			    AI_PASSIVE, &orig_ai) != 0)
+			if ((ret = __repmgr_getaddr(NULL, "localhost", curport,
+			    AI_PASSIVE, &orig_ai)) != 0)
 				goto end;
 
 			for (ai = orig_ai; ai != NULL; ai = ai->ai_next) {

@@ -30,7 +30,7 @@
 #ifdef HAVE_MIXED_SIZE_ADDRESSING
 #define	__STRUCTURE_COUNT	41
 #else
-#define	__STRUCTURE_COUNT	(41 + 104)
+#define	__STRUCTURE_COUNT	(41 + 105)
 #endif
 
 /*
@@ -113,6 +113,7 @@ __env_struct_sig()
 	__ADD(__cq_fq);
 	__ADD(__cq_aq);
 	__ADD(__cq_jq);
+	__ADD(__db_stream);
 	__ADD(__db_heap_rid);
 	__ADD(__dbc);
 	__ADD(__key_range);

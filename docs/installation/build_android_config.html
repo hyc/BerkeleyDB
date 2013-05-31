@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -73,10 +73,22 @@
             SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT
         </p>
             <p>
-           For SQLite, this pragma identifies the maximum size that the journal file is allowed
-			to be. Berkeley DB does not have a journal file, but it writes and uses log files. A new log file is
-			created when the current log file has reached the defined maximum size.
-			This flag defines this maximum size for a log file. Default value is 10 MB for Berkeley DB SQL interface.
+           For SQLite, this pragma identifies the maximum size that the
+           journal file is allowed to be. Berkeley DB does not have a
+           journal file, but it writes and uses log files. A new log file
+           is created when the current log file has reached the defined
+           maximum size.  This flag defines the maximum size for a log
+           file. Default value is 10 MB for Berkeley DB SQL interface.
+        </p>
+          </li>
+          <li>
+            <p>
+            SQLITE_HAS_CODEC
+        </p>
+            <p>
+            Causes the Berkeley DB SQL interface to be built with
+            encryption support. See <a href="../bdb-sql/sql_encryption.html" class="olink">SQL Encryption</a> in the 
+            <em class="citetitle">Berkeley DB Getting Started with the SQL APIs</em> guide for usage details.
         </p>
           </li>
         </ul>
@@ -109,9 +121,7 @@ You can configure most aspects of your Berkeley DB environment by using the <a h
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 5. 
-		Building Berkeley DB for Windows
-        </td>
+          <td width="40%" align="right" valign="top"> Chapter 5.  Building Berkeley DB for Windows </td>
         </tr>
       </table>
     </div>

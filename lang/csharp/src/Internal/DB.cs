@@ -34,6 +34,14 @@ internal class DB : IDisposable {
     }
 } 
 
+	internal DatabaseEntry[] get_partition_keys() {
+		uint count = 0;
+		int err = 0;
+		uint size = 0;
+		DatabaseEntry[] ret = get_partition_keys(ref count, ref size, ref err);
+		DatabaseException.ThrowException(err);
+		return ret;
+	}
 	internal DBC cursor(DB_TXN txn, uint flags) {
 		int err = 0;
 		DBC ret = cursor(txn, flags, ref err);
@@ -78,6 +86,22 @@ internal class DB : IDisposable {
 		DatabaseException.ThrowException(err);
 		QueueStatStruct ret = (QueueStatStruct)Marshal.PtrToStructure(ptr, typeof(QueueStatStruct));
 		libdb_csharp.__os_ufree(null, ptr);
+		return ret;
+	}
+	
+	internal int get_blob_dir(out string dir) {
+		int ret;
+		IntPtr dirp;
+		ret = get_blob_dir(out dirp);
+		dir = Marshal.PtrToStringAnsi(dirp);
+		return ret;
+	}
+	
+	internal int get_blob_sub_dir(out string dir) {
+		int ret;
+		IntPtr dirp;
+		ret = get_blob_sub_dir(out dirp);
+		dir = Marshal.PtrToStringAnsi(dirp);
 		return ret;
 	}
 	
@@ -318,6 +342,41 @@ internal class DB : IDisposable {
 		return ret;
 }
 
+  internal int get_blob_dir(out IntPtr dir) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_get_blob_dir(swigCPtr, out dir);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int set_blob_dir(string dir) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_set_blob_dir(swigCPtr, dir);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int get_blob_sub_dir(out IntPtr dir) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_get_blob_sub_dir(swigCPtr, out dir);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int get_blob_threshold(ref uint bytes) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_get_blob_threshold(swigCPtr, ref bytes);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int set_blob_threshold(uint bytes, uint flags) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_set_blob_threshold(swigCPtr, bytes, flags);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
   internal int set_bt_compare(BDB_CompareDelegate callback) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_set_bt_compare(swigCPtr, callback);
@@ -521,6 +580,34 @@ internal class DB : IDisposable {
   internal int set_pagesize(uint pgsz) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_set_pagesize(swigCPtr, pgsz);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  private DatabaseEntry[] get_partition_keys(ref uint countp, ref uint sizep, ref int err) {
+	IntPtr cPtr = libdb_csharpPINVOKE.DB_get_partition_keys(swigCPtr, ref countp, ref sizep, ref err);
+	if (cPtr == IntPtr.Zero)
+		return null;
+
+	DatabaseEntry[] ret = new DatabaseEntry[countp - 1];
+	IntPtr val;
+	for (int i = 0; i < (countp - 1); i++) {
+		val = new IntPtr((IntPtr.Size == 4 ? cPtr.ToInt32() : cPtr.ToInt64()) + i * sizep);
+		ret[i] = DatabaseEntry.fromDBT(new DBT(val, false));
+	}
+	return ret; 
+}
+
+  internal int get_partition_parts(ref uint parts) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_get_partition_parts(swigCPtr, ref parts);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int set_partition(uint parts, IntPtr[] keys, BDB_PartitionDelegate partition) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_set_partition(swigCPtr, parts, keys, partition);
 		DatabaseException.ThrowException(ret);
 		return ret;
 }

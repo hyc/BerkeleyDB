@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -31,7 +31,7 @@ public class ReplicationManagerSiteInfo
     */
     public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid)
     {
-	this(hostAddr, eid, false, false);
+	this(hostAddr, eid, false, false, false);
     }
 	
     /** 
@@ -39,18 +39,19 @@ public class ReplicationManagerSiteInfo
     */
     public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid, boolean isConnected)
     {
-	this(hostAddr, eid, isConnected, false);
+	this(hostAddr, eid, isConnected, false, false);
     }
 
     /** 
     Create a ReplicationManagerSiteInfo with the given information.
     */
-    public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid, boolean isConnected, boolean isPeer)
+    public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid, boolean isConnected, boolean isPeer, boolean isView)
     {
-        this.addr = hostAddr;
+	this.addr = hostAddr;
 	this.eid = eid;
 	this.status = isConnected ? DbConstants.DB_REPMGR_CONNECTED : 0;
 	this.flags = isPeer ? DbConstants.DB_REPMGR_ISPEER : 0;
+	this.flags |= isView ? DbConstants.DB_REPMGR_ISVIEW : 0;
     }
 
     /**
@@ -76,6 +77,13 @@ public class ReplicationManagerSiteInfo
     */ 
     public boolean isPeer() {
 	return ((this.flags & DbConstants.DB_REPMGR_ISPEER) != 0);
+    }
+
+    /**
+    The replication site is a view.
+    */
+    public boolean isView() {
+        return ((this.flags & DbConstants.DB_REPMGR_ISVIEW) != 0);
     }
     
 }

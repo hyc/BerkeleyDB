@@ -1,13 +1,14 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,6 +113,10 @@ db_setup(home, data_dir, errfp, progname)
 	    DB_CREATE | DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL |
 	    DB_INIT_TXN, 0644)) != 0) {
 		dbenv->err(dbenv, ret, "environment open: %s", home);
+		if (ret == ENOENT){
+			printf("Please check whether "
+			    "home dir \"%s\" existed.\n", home);
+		}
 		dbenv->close(dbenv, 0);
 		return (1);
 	}
@@ -131,6 +136,10 @@ db_setup(home, data_dir, errfp, progname)
 	if ((ret = dbp->open(dbp, NULL, "exenv_db1.db", NULL,
 	    DB_BTREE, DB_CREATE,0644)) != 0) {
 		fprintf(stderr, "database open: %s\n", db_strerror(ret));
+		if (ret == ENOENT){
+			printf("Please check whether data dir \"%s\" "
+			    "existed under \"%s\".\n", data_dir, home);
+		}
 		return (1);
 	}
 

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * Standalone mutex tester for Berkeley DB mutexes.
  *
@@ -38,13 +38,9 @@ typedef pid_t os_pid_t;
  * There's only one mutex implementation that can't support thread-level
  * locking: UNIX/fcntl mutexes.
  *
- * The general Berkeley DB library configuration doesn't look for the POSIX
- * pthread functions, with one exception -- pthread_yield.
- *
- * Use these two facts to decide if we're going to build with or without
- * threads.
+ * Use this to decide if we're going to build with or without threads.
  */
-#if !defined(HAVE_MUTEX_FCNTL) && defined(HAVE_PTHREAD_YIELD)
+#if !defined(HAVE_MUTEX_FCNTL)
 #define	MUTEX_THREAD_TEST	1
 
 #include <pthread.h>
@@ -55,7 +51,8 @@ typedef pthread_t os_thread_t;
     pthread_create((thrp), (attr), (func), (arg))
 #define	os_thread_join(thr, statusp) pthread_join((thr), (statusp))
 #define	os_thread_self() pthread_self()
-#endif /* HAVE_PTHREAD_YIELD */
+#endif /* HAVE_MUTEX_FCNTL */
+
 #endif /* !DB_WIN32 */
 
 #define	OS_BAD_PID ((os_pid_t)-1)
@@ -76,9 +73,11 @@ typedef struct {
 	u_int	   wakeme;			/* Request to awake. */
 } TM;
 
-DB_ENV	*dbenv;					/* Backing environment */
+DB_ENV	*dbenv;					/* Backing environment. */
 ENV	*env;
 size_t	 len;					/* Backing data chunk size. */
+
+u_int	alignment = 0;				/* Specify mutex alignment. */
 
 u_int8_t *gm_addr;				/* Global mutex */
 u_int8_t *lm_addr;				/* Locker mutexes */
@@ -147,8 +146,11 @@ main(argc, argv)
 	rtype = PARENT;
 	id = 0;
 	tmpath = argv[0];
-	while ((ch = getopt(argc, argv, "l:n:p:T:t:v")) != EOF)
+	while ((ch = getopt(argc, argv, "a:l:n:p:T:t:v")) != EOF)
 		switch (ch) {
+		case 'a':
+			alignment = (u_int)atoi(optarg);
+			break;
 		case 'l':
 			maxlocks = (u_int)atoi(optarg);
 			break;
@@ -242,7 +244,11 @@ main(argc, argv)
 	 *
 	 * Clean up from any previous runs.
 	 */
+#ifdef DB_WIN32
+	snprintf(cmd, sizeof(cmd), "rmdir /S /Q %s", TESTDIR);
+#else
 	snprintf(cmd, sizeof(cmd), "rm -rf %s", TESTDIR);
+#endif
 	(void)system(cmd);
 	snprintf(cmd, sizeof(cmd), "mkdir %s", TESTDIR);
 	(void)system(cmd);
@@ -292,8 +298,8 @@ main(argc, argv)
 
 		/* Wait for all lockers to exit. */
 		if ((err = os_wait(pids, nprocs)) != 0) {
-			fprintf(stderr, "%s: locker wait failed with %d\n",
-			    progname, err);
+			fprintf(stderr, "%s: locker wait failed with %s\n",
+			    progname, db_strerror(err));
 			goto fail;
 		}
 
@@ -388,7 +394,7 @@ locker_wait()
 {
 #if defined(MUTEX_THREAD_TEST)
 	u_int i;
-	void *retp;
+	void *retp = NULL;
 
 	/* Wait for the threads to exit. */
 	for (i = 0; i < nthreads; i++) {
@@ -556,7 +562,7 @@ int
 wakeup_wait()
 {
 #if defined(MUTEX_THREAD_TEST)
-	void *retp;
+	void *retp = NULL;
 
 	/*
 	 * A file is created when the wakeup thread is no longer needed.
@@ -683,6 +689,12 @@ tm_env_init()
 		home = TESTDIR;
 	if (nthreads != 1)
 		flags |= DB_THREAD;
+	if (alignment != 0 &&
+	    (ret = dbenv->mutex_set_align(dbenv, alignment)) != 0) {
+		dbenv->err(dbenv, ret, "set_align(%d): %s", alignment, home);
+		return (1);
+	}
+
 	if ((ret = dbenv->open(dbenv, home, flags, 0)) != 0) {
 		dbenv->err(dbenv, ret, "environment open: %s", home);
 		return (1);
@@ -748,8 +760,10 @@ tm_mutex_init()
 	if (verbose)
 		printf("\n");
 
-	if (verbose)
+	if (verbose) {
+		(void)dbenv->mutex_stat_print(dbenv, DB_STAT_ALL);
 		printf("Allocate %d per-lock mutexes: ", maxlocks);
+	}
 	for (i = 0; i < maxlocks; ++i) {
 		mp = (TM *)(lm_addr + i * sizeof(TM));
 		if ((err = dbenv->mutex_alloc(dbenv, 0, &mp->mutex)) != 0) {
@@ -930,7 +944,7 @@ int
 usage()
 {
 	fprintf(stderr, "usage: %s %s\n\t%s\n", progname,
-	    "[-v] [-l maxlocks]",
+	    "[-a alignment] [-v] [-l maxlocks]",
 	    "[-n locks] [-p procs] [-T locker=ID|wakeup=ID] [-t threads]");
 	return (EXIT_FAILURE);
 }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -153,6 +153,7 @@ __rep_process_message_pp(dbenv, control, rec, eid, ret_lsnp)
 	DB_LSN *ret_lsnp;
 {
 	ENV *env;
+	DB_THREAD_INFO *ip;
 	int ret;
 
 	env = dbenv->env;
@@ -193,7 +194,9 @@ __rep_process_message_pp(dbenv, control, rec, eid, ret_lsnp)
 		return (ret);
 	}
 
+	ENV_ENTER(env, ip);
 	ret = __rep_process_message_int(env, control, rec, eid, ret_lsnp);
+	ENV_LEAVE(env, ip);
 
 	__dbt_userfree(env, control, rec, NULL);
 	return (ret);
@@ -289,8 +292,7 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 	if (ret_lsnp != NULL)
 		ZERO_LSN(*ret_lsnp);
 
-	ENV_ENTER(env, ip);
-
+	ENV_GET_THREAD_INFO(env, ip);
 	REP_PRINT_MESSAGE(env, eid, rp, "rep_process_message", 0);
 	/*
 	 * Check the version number for both rep and log.  If it is
@@ -303,8 +305,7 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 			    "%lu %d"), (u_long)rp->rep_version,
 			    DB_REPVERSION_MIN);
 
-			ret = EINVAL;
-			goto errlock;
+			return (EINVAL);
 		}
 		VPRINT(env, (env, DB_VERB_REP_MSGS,
 		    "Received record %lu with old rep version %lu",
@@ -322,8 +323,7 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		__db_errx(env, DB_STR_A("3517",
 		    "unexpected replication message version %lu, expected %d",
 		    "%lu %d"), (u_long)rp->rep_version, DB_REPVERSION);
-		ret = EINVAL;
-		goto errlock;
+		return (EINVAL);
 	}
 
 	if (rp->log_version < DB_LOGVERSION) {
@@ -332,8 +332,7 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
  "unsupported old replication log version %lu, minimum version %d",
 			    "%lu %d"), (u_long)rp->log_version,
 			    DB_LOGVERSION_MIN);
-			ret = EINVAL;
-			goto errlock;
+			return (EINVAL);
 		}
 		VPRINT(env, (env, DB_VERB_REP_MSGS,
 		    "Received record %lu with old log version %lu",
@@ -342,8 +341,7 @@ __rep_process_message_int(env, control, rec, eid, ret_lsnp)
 		__db_errx(env, DB_STR_A("3519",
 		    "unexpected log record version %lu, expected %d",
 		    "%lu %d"), (u_long)rp->log_version, DB_LOGVERSION);
-		ret = EINVAL;
-		goto errlock;
+		return (EINVAL);
 	}
 
 	/*
@@ -1059,8 +1057,6 @@ out:
 			*ret_lsnp = rp->lsn;
 		ret = DB_REP_NOTPERM;
 	}
-	__dbt_userfree(env, control, rec, NULL);
-	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -1290,8 +1286,24 @@ gap_check:
 #endif
 		}
 
-		if (ret == DB_KEYEXIST)
+		if (ret == DB_KEYEXIST) {
+			STAT(rep->stat.st_log_duplicated++);
+#ifdef	CONFIG_TEST
+			STAT(rep->stat.st_log_futuredup++);
+#endif
+			if (is_dupp != NULL) {
+				*is_dupp = 1;
+				/*
+				 * Could get overwritten by max_lsn later,
+				 * but only when returning NOTPERM for a
+				 * REPCTL_PERM record, in which case max_lsn
+				 * is this log record.
+				 */
+				if (ret_lsnp != NULL)
+					*ret_lsnp = lp->ready_lsn;
+			}
 			ret = 0;
+		}
 		if (ret != 0 && ret != ENOMEM)
 			goto done;
 
@@ -1337,10 +1349,11 @@ gap_check:
 			 * But max_lsn is guaranteed <= ready_lsn, so
 			 * it would be a more conservative LSN to return.
 			 */
-			*ret_lsnp = lp->ready_lsn;
+			if (ret_lsnp != NULL)
+				*ret_lsnp = lp->ready_lsn;
 		}
 		LOGCOPY_32(env, &rectype, rec->data);
-		if (rectype == DB___txn_regop || rectype == DB___txn_ckp)
+		if (IS_PERM_RECTYPE(rectype))
 			max_lsn = lp->max_perm_lsn;
 		/*
 		 * We check REPCTL_LEASE here, because this client may
@@ -1553,7 +1566,6 @@ __rep_process_txn(env, rec)
 	prep_args = NULL;
 	txninfo = NULL;
 
-	ENV_ENTER(env, ip);
 	memset(&data_dbt, 0, sizeof(data_dbt));
 	if (F_ISSET(env, ENV_THREAD))
 		F_SET(&data_dbt, DB_DBT_REALLOC);
@@ -1627,6 +1639,7 @@ __rep_process_txn(env, rec)
 	 * records.  Create a txnlist so that they can keep track of file
 	 * state between records.
 	 */
+	ENV_GET_THREAD_INFO(env, ip);
 	if ((ret = __db_txnlist_init(env, ip, 0, 0, NULL, &txninfo)) != 0)
 		goto err;
 
@@ -1647,6 +1660,7 @@ __rep_process_txn(env, rec)
 			    (u_long)lsnp->file, (u_long)lsnp->offset);
 			goto err;
 		}
+		LOGCOPY_32(env, &rectype, data_dbt.data);
 	}
 
 err:	memset(&req, 0, sizeof(req));
@@ -1699,20 +1713,45 @@ __rep_collect_txn(env, lsnp, lc)
 	DB_LSN *lsnp;
 	LSN_COLLECTION *lc;
 {
+	__dbreg_register_args *dbregargp;
 	__txn_child_args *argp;
 	DB_LOGC *logc;
 	DB_LSN c_lsn;
+	DB_REP *db_rep;
 	DBT data;
-	u_int32_t rectype;
+	u_int32_t child, rectype, skip_txnid;
 	u_int nalloc;
-	int ret, t_ret;
+	int ret, t_ret, view_partial;
+	char *name;
 
 	memset(&data, 0, sizeof(data));
 	F_SET(&data, DB_DBT_REALLOC);
+	skip_txnid = TXN_INVALID;
 
 	if ((ret = __log_cursor(env, &logc)) != 0)
 		return (ret);
 
+	/*
+	 * For partial replication we assume a certain sequence of
+	 * log records to detect a database create and skip it if
+	 * desired.  We are walking backward through the records of
+	 * a single transaction right now.
+	 *
+	 * A create operation is done inside a BDB-owned child txn.
+	 * Nothing else is done within this BDB-owned child txn.
+	 * The last piece of a create operations is the dbreg_register
+	 * log record that records the opening of the file.  That
+	 * log record contains the child txnid in the 'id' field, and
+	 * the file name.  At this point we invoke the partial callback
+	 * to determine if this database should be replicated.  If it
+	 * should not be replicated, we need to avoid collecting the
+	 * entire child txn referenced in the 'id' field.
+	 *
+	 * So if processing the dbreg_register record finds a database
+	 * to skip, we store the child txnid in 'skip_txnid'.  We use
+	 * 'skip_txnid' to avoid processing log records or making
+	 * recursive calls for that txnid.
+	 */
 	while (!IS_ZERO_LSN(*lsnp) &&
 	    (ret = __logc_get(logc, lsnp, &data, DB_SET)) == 0) {
 		LOGCOPY_32(env, &rectype, data.data);
@@ -1722,9 +1761,52 @@ __rep_collect_txn(env, lsnp, lc)
 				goto err;
 			c_lsn = argp->c_lsn;
 			*lsnp = argp->prev_lsn;
+			child = argp->child;
 			__os_free(env, argp);
-			ret = __rep_collect_txn(env, &c_lsn, lc);
-		} else {
+			/*
+			 * If skip_txnid is set, it is the id of the child txnid
+			 * that creates a database we should skip.  So, if
+			 * this is that child txn, do not collect it.
+			 */
+			if (skip_txnid == TXN_INVALID || child != skip_txnid)
+				ret = __rep_collect_txn(env, &c_lsn, lc);
+		} else if (IS_VIEW_SITE(env) &&
+		    rectype == DB___dbreg_register) {
+			db_rep = env->rep_handle;
+			/*
+			 * If we are a view see if this is a file creation
+			 * stream.  On-disk files have the creating child txn
+			 * in the 'id' field and the name.  See if this view
+			 * wants this file.
+			 */
+			if ((ret = __dbreg_register_read(
+			    env, data.data, &dbregargp)) != 0)
+				goto err;
+			child = dbregargp->id;
+			name = (char *)dbregargp->name.data;
+			skip_txnid = TXN_INVALID;
+			if (child != TXN_INVALID && !IS_DB_FILE(name)) {
+				/*
+				 * The 'id' has a child txn so it is a create.
+				 */
+				DB_ASSERT(env, db_rep->partial != NULL);
+				if ((ret = db_rep->partial(env->dbenv,
+				    name, &view_partial, 0)) != 0) {
+					VPRINT(env, (env, DB_VERB_REP_MISC,
+		    "rep_collect_txn: partial cb err %d for %s", ret, name));
+					__os_free(env, dbregargp);
+					goto err;
+				}
+				/*
+				 * Save the child txnid for when we walk back
+				 * into the txn_child record.
+				 */
+				if (view_partial == 0)
+					skip_txnid = child;
+			}
+			__os_free(env, dbregargp);
+		}
+		if (rectype != DB___txn_child) {
 			if (lc->nalloc < lc->nlsns + 1) {
 				nalloc = lc->nalloc == 0 ? 20 : lc->nalloc * 2;
 				if ((ret = __os_realloc(env,
@@ -2138,9 +2220,13 @@ __rep_process_rec(env, ip, rp, rec, ret_tsp, ret_lsnp)
 				ret = __rep_process_txn(env, rec);
 		} while (ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED);
 
-		/* Now flush the log unless we're running TXN_NOSYNC. */
-		if (ret == 0 && !F_ISSET(env->dbenv, DB_ENV_TXN_NOSYNC))
-			ret = __log_flush(env, NULL);
+		/* Now write/flush the log as appropriate. */
+		if (ret == 0) {
+			if (F_ISSET(env->dbenv, DB_ENV_TXN_WRITE_NOSYNC))
+				ret = __log_rep_write(env);
+			else if (!F_ISSET(env->dbenv, DB_ENV_TXN_NOSYNC))
+				ret = __log_flush(env, NULL);
+		}
 		if (ret != 0) {
 			__db_errx(env, DB_STR_A("3526",
 			    "Error processing txn [%lu][%lu]", "%lu %lu"),
@@ -2421,7 +2507,6 @@ __rep_check_missing(env, gen, master_perm_lsn)
 	DB_LOG *dblp;
 	DB_LSN *end_lsn;
 	DB_REP *db_rep;
-	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REGINFO *infop;
 	REP *rep;
@@ -2434,7 +2519,6 @@ __rep_check_missing(env, gen, master_perm_lsn)
 	infop = env->reginfo;
 	has_log_gap = has_page_gap = ret = 0;
 
-	ENV_ENTER(env, ip);
 	MUTEX_LOCK(env, rep->mtx_clientdb);
 	REP_SYSTEM_LOCK(env);
 	/*
@@ -2518,8 +2602,7 @@ __rep_check_missing(env, gen, master_perm_lsn)
 	rep->msg_th--;
 	REP_SYSTEM_UNLOCK(env);
 
-out:	ENV_LEAVE(env, ip);
-	return (ret);
+out:	return (ret);
 }
 
 static int

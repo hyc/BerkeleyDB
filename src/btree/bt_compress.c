@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "db_config.h"
@@ -352,15 +352,19 @@ __bam_compress_marshal_data(dbp, data, destbuf)
  * __bam_compress_dupcmp --
  *	Duplicate comparison function for compressed BTrees.
  *
- * PUBLIC: int __bam_compress_dupcmp __P((DB *, const DBT *, const DBT *));
+ * PUBLIC: int __bam_compress_dupcmp __P((DB *, const DBT *, const DBT *,
+ * PUBLIC:     size_t *));
  */
 int
-__bam_compress_dupcmp(db, a, b)
+__bam_compress_dupcmp(db, a, b, locp)
 	DB *db;
 	const DBT *a;
 	const DBT *b;
+	size_t *locp;
 {
 	DBT dcmp_a, dcmp_b;
+
+	COMPQUIET(locp, NULL);
 
 	/* Decompress the initial data in a */
 	CMP_UNMARSHAL_DATA(a, &dcmp_a);
@@ -380,7 +384,7 @@ __bam_compress_dupcmp(db, a, b)
 
 	/* Call the user's duplicate compare function */
 	return ((BTREE *)db->bt_internal)->
-		compress_dup_compare(db, &dcmp_a, &dcmp_b);
+		compress_dup_compare(db, &dcmp_a, &dcmp_b, NULL);
 }
 
 /*
@@ -1641,7 +1645,7 @@ __bamc_compress_get_prev_dup(dbc, flags)
 	if ((ret = __bamc_compress_get_prev(dbc, flags)) != 0)
 		return (ret);
 
-	if (t->bt_compare(dbp, cp->currentKey, &cp->del_key) != 0)
+	if (t->bt_compare(dbp, cp->currentKey, &cp->del_key, NULL) != 0)
 		return (DB_NOTFOUND);
 
 	return (0);
@@ -1684,7 +1688,7 @@ __bamc_compress_get_prev_nodup(dbc, flags)
 	do
 		if ((ret = __bamc_compress_get_prev(dbc, flags)) != 0)
 			return (ret);
-	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key) == 0);
+	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key, NULL) == 0);
 
 	return (0);
 }
@@ -1755,14 +1759,15 @@ __bamc_compress_get_next_dup(dbc, key, flags)
 		if (cp->currentKey == 0)
 			return (DB_NOTFOUND);
 		F_CLR(cp, C_COMPRESS_DELETED);
-		return (t->bt_compare(dbp,
-		    cp->currentKey, &cp->del_key) == 0 ? 0 : DB_NOTFOUND);
+		return (t->bt_compare(dbp, cp->currentKey,
+		    &cp->del_key, NULL) == 0 ? 0 : DB_NOTFOUND);
 	} else if (cp->currentKey == 0)
 		return (EINVAL);
 
 	/* Check that the next entry has the same key as the previous entry */
 	ret = __bamc_next_decompress(dbc);
-	if (ret == 0 && t->bt_compare(dbp, cp->currentKey, cp->prevKey) != 0)
+	if (ret == 0 && t->bt_compare(dbp,
+	    cp->currentKey, cp->prevKey, NULL) != 0)
 		return (DB_NOTFOUND);
 	if (ret != DB_NOTFOUND)
 		return (ret);
@@ -1791,7 +1796,7 @@ __bamc_compress_get_next_dup(dbc, key, flags)
 		return (ret);
 
 	/* Check the keys are the same */
-	if (t->bt_compare(dbp, cp->currentKey, key) != 0)
+	if (t->bt_compare(dbp, cp->currentKey, key, NULL) != 0)
 		return (DB_NOTFOUND);
 
 	return (0);
@@ -1828,7 +1833,7 @@ __bamc_compress_get_next_nodup(dbc, flags)
 	do
 		if ((ret = __bamc_compress_get_next(dbc, flags)) != 0)
 			return (ret);
-	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key) == 0);
+	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key, NULL) == 0);
 
 	return (ret);
 }
@@ -1893,7 +1898,7 @@ __bamc_compress_get_set(dbc, key, data, method, flags)
 		break;
 	case DB_GET_BOTH:
 		if (ret == 0 && (cmp != 0 || (!F_ISSET(dbp, DB_AM_DUPSORT) &&
-		    __bam_defcmp(dbp, cp->currentData, data) != 0))) {
+		    __bam_defcmp(dbp, cp->currentData, data, NULL) != 0))) {
 			/* We didn't find the key/data pair */
 			ret = DB_NOTFOUND;
 		}
@@ -2290,7 +2295,7 @@ __bamc_compress_iput(dbc, key, data, flags)
 
 		if (F_ISSET(dbp, DB_AM_DUPSORT) &&
 		    ((BTREE *)dbp->bt_internal)->compress_dup_compare(
-		    dbp, cp->currentData, data) != 0) {
+		    dbp, cp->currentData, data, NULL) != 0) {
 			__db_errx(env, DB_STR("1032",
 			    "Existing data sorts differently from put data"));
 			ret = EINVAL;
@@ -3015,7 +3020,8 @@ __bam_compress_count(dbc, nkeysp, ndatap)
 		if (ret != 0)
 			goto err;
 
-		if (t->bt_compare(dbp, cp_n->currentKey, cp_n->prevKey) != 0)
+		if (t->bt_compare(dbp,
+		    cp_n->currentKey, cp_n->prevKey, NULL) != 0)
 			nkeys += 1;
 	}
 

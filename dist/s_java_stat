@@ -9,7 +9,7 @@ msgjava="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */"
 
 s=/tmp/__java.sed
@@ -90,6 +90,14 @@ $2    }/p
 	}
 	/u_int32_t.*startup_complete/{
 		s/^[	 ]*[^	 ]*[	 ]*\([^[;]*\).*/\\
+$2    private int \1;\\
+$2    public boolean get_\1() {\\
+$2        return (\1 != 0);\\
+$2    }/p
+		d
+	}
+	/u_int32_t.*st_view/{
+		s/^[     ]*[^    ]*[     ]*\([^[;]*\).*/\\
 $2    private int \1;\\
 $2    public boolean get_\1() {\\
 $2        return (\1 != 0);\\
@@ -420,7 +428,8 @@ EOF
  jclass compact
  jclass_toString compact CompactStats
  echo '}') |
-   perl -w -p -e 's,public int get(FillPercent|Pages\(|Timeout|Truncate),/* package */ int get$1,g;'> $t0
+   perl -w -p -e 's,public int get(FillPercent|Pages\(|Timeout|Truncate),/* package */ int get$1,g;'> $t
+   sed '/+ compact_fillpercent$/d;/+ compact_pages$/d;/+ compact_timeout$/d;/+ compact_truncate$/d' < $t > $t0
 f=../lang/java/src/com/sleepycat/db/CompactStats.java
 ./s_javadoc_merge $f $t0 > $t
 cmp $t $f > /dev/null 2>&1 ||
@@ -444,7 +453,12 @@ import com.sleepycat.db.internal.DbConstants;
 
     public static final int REP_NONE = 0;"
 
+# Build the ReplicationManagerStats and do not expose st_incoming_queue_size in the Java APIs.
 stat_class repmgr_stat ReplicationManagerStats
+f=../lang/java/src/com/sleepycat/db/ReplicationManagerStats.java
+perl -w -p -e 's,public int getIncomingQueueSize,/* package */ int getIncomingQueueSize,g;' < $f > $t
+sed '/+ st_incoming_queue_size$/d' < $t > $f
+
 stat_class seq_stat SequenceStats
 
 # Build TransactionStats.java - special because of embedded Active class

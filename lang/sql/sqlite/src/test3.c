@@ -75,6 +75,8 @@ static int btree_open(
   Btree *pBt;
   int rc, nCache;
   char zBuf[100];
+  int n;
+  char *zFilename;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME NCACHE FLAGS\"", 0);
@@ -87,8 +89,14 @@ static int btree_open(
     sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     sqlite3_mutex_enter(sDb.mutex);
   }
-  rc = sqlite3BtreeOpen(argv[1], &sDb, &pBt, 0, 
+  n = (int)strlen(argv[1]);
+  zFilename = sqlite3_malloc( n+2 );
+  if( zFilename==0 ) return TCL_ERROR;
+  memcpy(zFilename, argv[1], n+1);
+  zFilename[n+1] = 0;
+  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
+  sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -449,17 +457,17 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_open",               (Tcl_CmdProc*)btree_open               },
      { "btree_close",              (Tcl_CmdProc*)btree_close              },
      { "btree_begin_transaction",  (Tcl_CmdProc*)btree_begin_transaction  },
-     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats		  },
+     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats        },
      { "btree_cursor",             (Tcl_CmdProc*)btree_cursor             },
      { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
      { "btree_next",               (Tcl_CmdProc*)btree_next               },
-     { "btree_eof",                (Tcl_CmdProc*)t3_tcl_function_stub	  },
-     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size		  },
+     { "btree_eof",                (Tcl_CmdProc*)t3_tcl_function_stub     },
+     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
-     { "btree_varint_test",        (Tcl_CmdProc*)t3_tcl_function_stub	  },
-     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db			  },
-     { "btree_ismemdb",            (Tcl_CmdProc*)t3_tcl_function_stub	  },
-     { "btree_set_cache_size",     (Tcl_CmdProc*)t3_tcl_function_stub	  }
+     { "btree_varint_test",        (Tcl_CmdProc*)t3_tcl_function_stub     },
+     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
+     { "btree_ismemdb",            (Tcl_CmdProc*)t3_tcl_function_stub     },
+     { "btree_set_cache_size",     (Tcl_CmdProc*)t3_tcl_function_stub     }
   };
   int i;
 

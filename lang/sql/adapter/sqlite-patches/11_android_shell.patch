@@ -1,6 +1,6 @@
 --- src/shell.c
 +++ src/shell.c
-@@ -25,6 +25,12 @@
+@@ -36,6 +36,12 @@
  #include "config.h"
  #endif
  
@@ -13,7 +13,7 @@
  #include <stdlib.h>
  #include <string.h>
  #include <stdio.h>
-@@ -1389,6 +1395,13 @@ static void open_db(struct callback_data
+@@ -1480,6 +1486,13 @@
        sqlite3_create_function(db, "shellstatic", 0, SQLITE_UTF8, 0,
            shellstaticFunc, 0, 0);
      }

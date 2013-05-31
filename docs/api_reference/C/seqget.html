@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -42,7 +42,7 @@
 
 int
 DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
-    DB_TXN *txnid, int32_t delta, db_seq_t *retp, u_int32_t flags);  </pre>
+    DB_TXN *txnid, u_int32_t delta, db_seq_t *retp, u_int32_t flags);  </pre>
       <p>
          The <code class="methodname">DB_SEQUENCE-&gt;get()</code> method returns the next available element in
          the sequence and changes the sequence value by <span class="bold"><strong>delta</strong></span>.  The value of <span class="bold"><strong>delta</strong></span> must be greater than zero.  If there are
@@ -72,7 +72,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62551664"></a>Parameters</h3>
+              <h3 class="title"><a id="idp62846128"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -80,7 +80,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62551856"></a>txnid</h4>
+                <h4 class="title"><a id="idp62846320"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62508624"></a>delta</h4>
+                <h4 class="title"><a id="idp62794760"></a>delta</h4>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62563040"></a>retp</h4>
+                <h4 class="title"><a id="idp62857504"></a>retp</h4>
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62543960"></a>flags</h4>
+                <h4 class="title"><a id="idp62844016"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -167,7 +167,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62558688"></a>Class</h3>
+              <h3 class="title"><a id="idp62853152"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ DB_SEQUENCE-&gt;get(DB_SEQUENCE *seq,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62554512"></a>See Also</h3>
+              <h3 class="title"><a id="idp62848976"></a>See Also</h3>
             </div>
           </div>
         </div>

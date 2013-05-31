@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -44,8 +44,12 @@ int
 DB_MPOOLFILE-&gt;set_maxsize(DB_MPOOLFILE *mpf,
     u_int32_t gbytes, u_int32_t bytes);  </pre>
       <p>
-         Set the maximum size for the file to be <span class="bold"><strong>gbytes</strong></span> gigabytes plus <span class="bold"><strong>bytes</strong></span>.  Attempts to allocate new pages in the
-         file after the limit has been reached will fail.
+        Set the maximum size for the file to be 
+        <span class="bold"><strong>gbytes</strong></span> gigabytes plus 
+        <span class="bold"><strong>bytes</strong></span>.  Attempts to set the file
+        size smaller than or equal to the page size removes the file size
+        limit.  Attempts to allocate new pages in the file after the limit
+        has been reached will fail.
     </p>
       <p>
          To set the maximum file size for a particular database, call the
@@ -76,7 +80,7 @@ DB_MPOOLFILE-&gt;set_maxsize(DB_MPOOLFILE *mpf,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61593040"></a>Parameters</h3>
+              <h3 class="title"><a id="idp61850648"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,50 +88,54 @@ DB_MPOOLFILE-&gt;set_maxsize(DB_MPOOLFILE *mpf,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61592392"></a>bytes</h4>
+                <h4 class="title"><a id="idp61850000"></a>bytes</h4>
               </div>
             </div>
           </div>
           <p>
-                          The maximum size of the file is set to <span class="bold"><strong>gbytes</strong></span> gigabytes plus <span class="bold"><strong>bytes</strong></span>.
-                     </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idp61579040"></a>gbytes</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                          The maximum size of the file is set to <span class="bold"><strong>gbytes</strong></span> gigabytes plus <span class="bold"><strong>bytes</strong></span>.
-                     </p>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="idp61583096"></a>Class</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-                 <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>, <a class="link" href="memp.html" title="Chapter 8.  The DB_MPOOLFILE Handle">DB_MPOOLFILE</a> 
+                The maximum size of the file is set to 
+                <span class="bold"><strong>gbytes</strong></span> gigabytes plus 
+                <span class="bold"><strong>bytes</strong></span>.
             </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idp61853512"></a>gbytes</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The maximum size of the file is set to 
+                <span class="bold"><strong>gbytes</strong></span> gigabytes plus 
+                <span class="bold"><strong>bytes</strong></span>.
+            </p>
+        </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61598040"></a>See Also</h3>
+              <h3 class="title"><a id="idp61833232"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="memp.html#memplist" title="Memory Pools and Related Methods">Memory Pools and Related Methods</a> 
-                </p>
+             <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>, <a class="link" href="memp.html" title="Chapter 8.  The DB_MPOOLFILE Handle">DB_MPOOLFILE</a> 
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idp61856128"></a>See Also</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+             <a class="xref" href="memp.html#memplist" title="Memory Pools and Related Methods">Memory Pools and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

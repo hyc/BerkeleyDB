@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -157,6 +157,10 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong FrozenBuffersFreed { get { return st.st_mvcc_freed; } }
         /// <summary>
+        /// Outdated invisible buffers reused.
+        /// </summary>
+        public ulong OutdatedInvisibleBuffersReused { get { return st.st_mvcc_reused; } }
+        /// <summary>
         /// Number of page allocations. 
         /// </summary>
         public ulong PageAllocations { get { return st.st_alloc; } }
@@ -184,6 +188,14 @@ namespace BerkeleyDB {
         /// Number of times sync interrupted.
         /// </summary>
         public ulong SyncInterrupted { get { return st.st_sync_interrupted; } }
+        /// <summary>
+        /// Odd file size detected.
+        /// </summary>
+        public uint OddFileSizeDetected { get { return st.st_oddfsize_detect; } }
+        /// <summary>
+        /// Odd file size resolved.
+        /// </summary>
+        public uint OddFileSizeResolve { get { return st.st_oddfsize_resolve; } }
         /// <summary>
         /// Region size. 
         /// </summary>

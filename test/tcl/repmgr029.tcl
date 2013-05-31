@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -9,6 +9,12 @@
 # TEST  repmgr group and observe changes in group membership database.
 # TEST
 proc repmgr029 { } {
+	source ./include.tcl
+	if { $is_freebsd_test == 1 } {
+		puts "Skipping replication manager test on FreeBSD platform."
+		return
+	}
+
 	puts "Repmgr029: Repmgr Group Membership operations."
 	z1
 	z2
@@ -29,6 +35,9 @@ proc repmgr029 { } {
 	z17
 	z18
 	z19
+	z20
+	z21
+	z22
 }
 
 # See that a joining site that names a non-master as helper gets a
@@ -250,6 +259,7 @@ proc z3 {} {
 
 # Remove a live site from a group, and see that the site gets a
 # LOCAL_SITE_REMOVED event, and the other sites get SITE_REMOVED.
+# Test removing a view site and a participant site.
 # 
 proc z6 { } {
 	global rep_verbose
@@ -261,15 +271,17 @@ proc z6 { } {
 	}
 
 	env_cleanup $testdir
-	foreach {portA portB portC} [available_ports 3] {}
+	foreach {portA portB portC portV} [available_ports 4] {}
 	set dirA $testdir/A
 	set dirB $testdir/B
 	set dirC $testdir/C
+	set dirV $testdir/V
 	file mkdir $dirA
 	file mkdir $dirB
 	file mkdir $dirC
+	file mkdir $dirV
 
-	puts -nonewline "\tRepmgr029.z6.a: Build basic 3-site group"
+	puts -nonewline "\tRepmgr029.z6.a: Build 4-site group with one view."
 	set envA [berkdb env -create -errpfx A -home $dirA -txn -rep -thread \
 	    -verbose [list rep $rv] -event]
 	$envA repmgr -local [list 127.0.0.1 $portA creator] -start elect
@@ -290,31 +302,29 @@ proc z6 { } {
 	    -remote [list 127.0.0.1 $portA] -start elect
 	await_startup_done $envC
 	error_check_good nsites_c [$envC rep_get_nsites] 3
+	puts -nonewline ".";	flush stdout
+
+	set viewcb ""
+	set envV [berkdb env -create -errpfx V -home $dirV -txn -rep -thread \
+	    -rep_view $viewcb -verbose [list rep $rv] -event]
+	$envV repmgr -local [list 127.0.0.1 $portV] \
+	    -remote [list 127.0.0.1 $portA] -start client
+	await_startup_done $envV
+	# View site does not increment nsites.
+	error_check_good nsites_v [$envC rep_get_nsites] 3
 	puts ".";	flush stdout
 
-	set eid_C_at_A [repmgr029_get_eid $envA $portC]
-	set eid_C_at_B [repmgr029_get_eid $envB $portC]
+	set mgmdb [berkdb open \
+	    -env $envA -thread __db.rep.system __db.membership]
 
-	puts "\tRepmgr029.z6.b: Remove (live) site C from a request originating at B."
-	$envB repmgr -remove [list 127.0.0.1 $portC]
-	set db [berkdb open -env $envA -thread __db.rep.system __db.membership]
-	error_check_good site_c_removed [repmgr029_gmdb_status $db 127.0.0.1 $portC] 0
+	puts "\tRepmgr029.z6.b: Remove (live) view site V with request from B."
+	repmgr029_remove_site_from_helper $envA $envB $envV $portV $mgmdb
 
-	set master_ev [find_event [$envA event_info] site_removed]
-	error_check_good site_a_event [llength $master_ev] 2
-	error_check_good site_a_event_eid [lindex $master_ev 1] $eid_C_at_A
-	error_check_good site_a_list [llength [repmgr029_get_eid $envA $portC]] 0
+	puts "\tRepmgr029.z6.c: Remove (live) site C with request from B."
+	repmgr029_remove_site_from_helper $envA $envB $envC $portC $mgmdb
 
-	await_event $envC local_site_removed
-	error_check_good s_c_close [$envC close] 0
-
-	await_condition {[expr [string length [repmgr029_site_list_status $envB $portC]] == 0]}
-	set b_ev [find_event [$envB event_info] site_removed]
-	error_check_good site_b_event [llength $b_ev] 2
-	error_check_good site_b_event_eid [lindex $b_ev 1] $eid_C_at_B
-	error_check_good site_b_list [llength [repmgr029_get_eid $envB $portC]] 0
 	error_check_good s_b_close [$envB close] 0
-	$db close
+	$mgmdb close
 	error_check_good s_a_close [$envA close] 0
 }
 
@@ -907,7 +917,9 @@ proc z9 { } {
 	$envF close
 }
 
-# See that a membership list gets restored after an interrupted internal init.
+# See that a membership list gets restored after an interrupted internal init
+# and check that we get the expected error if a user defines the local site
+# inconsistently with the internal init restored list.
 proc z10 { } {
 	global rep_verbose
 	global testdir
@@ -920,20 +932,23 @@ proc z10 { } {
 	}
 
 	env_cleanup $testdir
-	foreach {portA portB portC} [available_ports 3] {}
+	# Define an extra port for error case.
+	foreach {portA portB portC portD portE} [available_ports 5] {}
 
 	set dirA $testdir/A
 	set dirB $testdir/B
 	set dirC $testdir/C
+	set dirD $testdir/D
 
 	file mkdir $dirA
 	file mkdir $dirB
 	file mkdir $dirC
+	file mkdir $dirD
 
 	set pagesize 4096
 	set log_max [expr $pagesize * 8]
 
-	puts "\tRepmgr029.z10: Set up a group of 3, A (master), B, C"
+	puts "\tRepmgr029.z10: Set up a group of 4, A (master), B, C, D"
 	set envA [berkdb env -create -errpfx A -home $dirA -txn -rep -thread \
 	    -recover -verbose [list rep $rv] -log_max $log_max]
 	$envA repmgr -local [list 127.0.0.1 $portA] -start master
@@ -950,12 +965,25 @@ proc z10 { } {
 	    -remote [list 127.0.0.1 $portA] -start client
 	await_startup_done $envC
 
-	puts "\tRepmgr029.z10: Shut down site C and generate enough churn to force internal init"
+	set envD [berkdb env -create -errpfx D -home $dirD -txn -rep -thread \
+	    -recover -verbose [list rep $rv] -log_max $log_max]
+	$envD repmgr -local [list 127.0.0.1 $portD] \
+	    -remote [list 127.0.0.1 $portA] -start client
+	await_startup_done $envD
+
+	puts "\tRepmgr029.z10: Shut down C and D and generate\
+	    enough churn to force internal init on both sites"
 	set log_endC [get_logfile $envC last]
 	$envC close
+	set log_endD [get_logfile $envD last]
+	$envD close
 
+	set max_log_end $log_endC
+	if { $log_endD > $log_endC } {
+		set max_log_end log_endD
+	}
 	set niter 50
-	while { [get_logfile $envA first] <= $log_endC } {
+	while { [get_logfile $envA first] <= $max_log_end } {
 		$envA test force noarchive_timeout
 		rep_test btree $envA NULL $niter 0 0 0 -pagesize $pagesize
 		$envA log_flush
@@ -967,8 +995,15 @@ proc z10 { } {
 	puts "\tRepmgr029.z10: Restart site C in a separate process"
 	$envA test abort no_pages
 	set pid [exec $tclsh_path $test_path/wrap.tcl \
-	    repmgr029script.tcl $testdir/repmgr029script.log $dirC $portC $rv &]
+	    repmgr029script.tcl $testdir/repmgr029scriptC.log \
+	    $dirC $portC $rv "C" &]
 	watch_procs $pid 5
+
+	puts "\tRepmgr029.z10: Restart site D in a separate process"
+	set pid2 [exec $tclsh_path $test_path/wrap.tcl \
+	    repmgr029script.tcl $testdir/repmgr029scriptD.log \
+	    $dirD $portD $rv "D" &]
+	watch_procs $pid2 5
 
 	puts "\tRepmgr029.z10: Shut down the rest of the group"
 	$envB close
@@ -979,14 +1014,25 @@ proc z10 { } {
 	    -recover -verbose [list rep $rv]]
 	$envC repmgr -local [list 127.0.0.1 $portC] -start elect
 
-	puts "\tRepmgr029.z10: Check list of known sites, A and B"
+	puts "\tRepmgr029.z10: Check list of known sites on C: A, B, D"
 	set l [$envC repmgr_site_list]
-	foreach p [list $portA $portB] {
+	foreach p [list $portA $portB $portD] {
 		set sought [list 127.0.0.1 $p]
 		error_check_good port$p \
 		    [expr [lsearch -glob $l [concat * $sought *]] >= 0] 1
 	}
 	$envC close
+
+	puts "\tRepmgr029.z10: Restart site D with a different local site port"
+	# Do not use errpfx, which hides internal error messages.
+	set envD [berkdb env -create -home $dirD -txn -rep -thread \
+	    -recover -verbose [list rep $rv]]
+	error_check_bad diff_local [catch \
+	    {$envD repmgr -local [list 127.0.0.1 $portE] -start elect} msg] 0
+	puts "\tRepmgr029.z10: Check for inconsistent local site error on D"
+	error_check_good errchk [is_substr $msg \
+	    "Current local site conflicts with earlier definition"] 1
+	$envD close
 }
 
 # See that a client notices a membership change that happens while it is
@@ -1669,12 +1715,268 @@ proc z19 {} {
 	error_check_good errstrings_llength [llength $errstrings] 0
 }
 
+# Test setting and unsetting local site.
+proc z20 {} {
+	global rep_verbose
+	global testdir
+	global tclsh_path
+	global test_path
+
+	env_cleanup $testdir
+	foreach {portA portB} [available_ports 2] {}
+	set dirA $testdir/dirA
+	set dirB $testdir/dirB
+	file mkdir $dirA
+	file mkdir $dirB
+	set envA_cmd "berkdb env -create -home $dirA -txn -rep \
+	    -thread -recover"
+	set envB_cmd "berkdb env -create -home $dirB -txn -rep \
+	    -thread -recover"
+
+	puts "\tRepmgr029.z20.a: Set local site"
+	make_dbconfig $dirA \
+	    [list [list repmgr_site 127.0.0.1 $portA db_local_site on]]
+	set envA [eval $envA_cmd]
+	$envA repmgr -start master
+	error_check_good local_a [$envA repmgr_get_local_site] \
+	    "127.0.0.1 $portA"
+
+	puts "\tRepmgr029.z20.b: Set a local site and a non-local site"
+	make_dbconfig $dirB \
+	    [list [list repmgr_site 127.0.0.1 $portB db_local_site on] \
+	    [list repmgr_site 127.0.0.1 $portA db_local_site off] \
+	    [list repmgr_site 127.0.0.1 $portA db_bootstrap_helper on]]
+	set envB [eval $envB_cmd]
+	$envB repmgr -start client
+	error_check_good local_b [$envB repmgr_get_local_site] \
+	    "127.0.0.1 $portB"
+	error_check_good sites_b [$envB rep_get_nsites] 2
+	$envB close
+
+	puts "\tRepmgr029.z20.c: Set a non-local site and a local site"
+	env_cleanup $dirB
+	make_dbconfig $dirB \
+	    [list [list repmgr_site 127.0.0.1 $portA db_local_site off] \
+	    [list repmgr_site 127.0.0.1 $portA db_bootstrap_helper on] \
+	    [list repmgr_site 127.0.0.1 $portB db_local_site on]]
+	set envB [eval $envB_cmd]
+	$envB repmgr -start client
+	error_check_good local_c [$envB repmgr_get_local_site] \
+	    "127.0.0.1 $portB"
+	error_check_good sites_c [$envB rep_get_nsites] 2
+	$envB close
+
+	puts "\tRepmgr029.z20.d: Cancel and reset local site (error)"
+	env_cleanup $dirB
+	make_dbconfig $dirB \
+	    [list [list repmgr_site 127.0.0.1 $portA db_local_site on] \
+	    [list repmgr_site 127.0.0.1 $portA db_local_site off] \
+	    [list repmgr_site 127.0.0.1 $portA db_bootstrap_helper on] \
+	    [list repmgr_site 127.0.0.1 $portB db_local_site on]]
+	error_check_bad local_d [ catch { eval $envB_cmd } msg ] 0
+	error_check_good local_msg_d [is_substr $msg \
+	    "A previously given local site may not be unset"] 1
+
+	puts "\tRepmgr029.z20.e: Replace the local site (error)"
+	env_cleanup $dirB
+	make_dbconfig $dirB \
+	    [list [list repmgr_site 127.0.0.1 $portA db_local_site on] \
+	    [list repmgr_site 127.0.0.1 $portB db_local_site on] \
+	    [list repmgr_site 127.0.0.1 $portA db_bootstrap_helper on]]
+	error_check_bad local_e [ catch { eval $envB_cmd } msg ] 0
+	error_check_good local_msg_e [is_substr $msg \
+	    "A (different) local site has already been set"] 1
+
+	$envA close
+}
+
+# Test receiving limbo gmdb update for the running site itself.  If its status
+# is deleting after reloading the latest gmdb, it should be removed from the 
+# group.  If its status is adding, it should rejoin soon.
+proc z21 {} {
+	global rep_verbose
+	global testdir
+
+	set rv off
+	if { $rep_verbose == 1 } {
+		set rv on
+	}
+
+	env_cleanup $testdir
+	foreach {portA portB portC portD} [available_ports 4] {}
+
+	set dirA $testdir/dirA
+	set dirB $testdir/dirB
+	set dirC $testdir/dirC
+	set dirD $testdir/dirD
+
+	file mkdir $dirA
+	file mkdir $dirB
+	file mkdir $dirC
+	file mkdir $dirD
+
+	set SITE_ADDING 1
+	set SITE_DELETING 2
+	set SITE_PRESENT 4
+
+	puts -nonewline "\tRepmgr029.z21.a: Start A, B, C"
+	set envA [berkdb env -create -errpfx A -home $dirA -txn -rep -thread \
+	    -recover -verbose [list rep $rv] -event]
+	$envA repmgr -local [list 127.0.0.1 $portA creator] -start master
+	error_check_good nsites_A [$envA rep_get_nsites] 1
+	puts -nonewline "." ; flush stdout
+
+	set envB [berkdb env -create -errpfx B -home $dirB -txn -rep -thread \
+	    -verbose [list rep $rv] -event]
+	$envB repmgr -local [list 127.0.0.1 $portB] \
+	    -remote [list 127.0.0.1 $portA] -start client
+	await_startup_done $envB
+	error_check_good nsites_B [$envB rep_get_nsites] 2
+	puts -nonewline "." ; flush stdout
+
+	set envC [berkdb env -create -errpfx C -home $dirC -txn -rep -thread \
+	    -verbose [list rep $rv] -event]
+	$envC repmgr -local [list 127.0.0.1 $portC] \
+	    -remote [list 127.0.0.1 $portA] -start client
+	await_startup_done $envC
+	error_check_good nsites_C [$envC rep_get_nsites] 3
+	puts "." ; flush stdout
+
+	foreach status [list $SITE_ADDING $SITE_DELETING] {
+		puts "\tRepmgr029.z21.$status.a: Start D"
+		set envD [berkdb env -create -home $dirD -txn \
+		    -rep -thread -verbose [list rep $rv] -event]
+		$envD repmgr -local [list 127.0.0.1 $portD] \
+		    -remote [list 127.0.0.1 $portA] -start client
+		await_startup_done $envD
+		error_check_good nsites_D [$envD rep_get_nsites] 4
+
+		if { $status == $SITE_ADDING } {
+			set status_str "adding"
+		} else {
+			set status_str "deleting"
+		}
+		puts "\tRepmgr029.z21.$status.b: Update D in gmdb from\
+		    present to $status_str"
+		set db [berkdb open -env $envA -thread -auto_commit \
+		    __db.rep.system __db.membership]
+		error_check_good site_D_added\
+		    [repmgr029_gmdb_status $db 127.0.0.1 $portD] $SITE_PRESENT
+		repmgr029_gmdb_update_site $db 127.0.0.1 $portD $status
+
+		puts "\tRepmgr029.z21.$status.c: Sync in-memory gmdb on A, B, C"
+		# Replicate gmdb changes and more updates to clients.
+		rep_test btree $envA NULL 10 0 0 0
+
+		# Sync the in-memory sites info and array with the on-disk gmdb.
+		catch {$envA repmgr -start elect -msgth 2}
+		catch {$envB repmgr -start elect -msgth 2}
+		catch {$envC repmgr -start elect -msgth 2}
+
+		puts "\tRepmgr029.z21.$status.d: Sync in-memory gmdb on D"
+		set ret [catch {$envD repmgr -start elect -msgth 2} result]
+		error_check_bad has_failure $ret 0
+		puts -nonewline "\tRepmgr029.z21.$status.e: "
+		if { $status == $SITE_ADDING } {
+			# Expected error to start repmgr on a running listener,
+			# but we finish reloading gmdb by this.
+			error_check_match bad_pram [is_substr $result \
+			    "repmgr is already started"] 1
+			puts "D has rejoined the group"
+			await_condition {[expr [repmgr029_gmdb_status \
+			    $db 127.0.0.1 $portD] == $SITE_PRESENT]} 40
+		} else {
+			puts "D can't rejoin the group"
+			# Get DB_DELETED during reloading gmdb.
+			error_check_match unavail $result "*DB_REP_UNAVAIL*"
+		}
+
+		puts "\tRepmgr029.z21.$status.f: Remove D"
+		$envA repmgr -remove [list 127.0.0.1 $portD]
+		rep_test btree $envA NULL 10 0 0 0
+		await_event $envB site_removed
+		await_event $envC site_removed
+		await_event $envA site_removed
+		$envD close
+		env_cleanup $testdir/dirD
+	}
+
+	$db close
+	$envB close
+	$envC close
+	$envA close
+}
+
+# Test an offline and limbo site's attempts to start repmgr and rejoin the
+# group.  If it is adding, it should rejoin soon.  Otherwise, it should be
+# removed when it is absent from the group. 
+proc z22 {} {
+	global rep_verbose
+	global testdir
+
+	set rv off
+	if { $rep_verbose == 1 } { set rv on }
+
+	env_cleanup $testdir
+	foreach {port0 port1} [available_ports 2] {}
+
+	set masterdir $testdir/MASTERDIR
+	set clientdir $testdir/CLIENTDIR
+
+	file mkdir $masterdir
+	file mkdir $clientdir
+
+	set SITE_ADDING 1
+	set SITE_PRESENT 4
+
+	puts -nonewline "\tRepmgr029.z22.a: Start master and client"
+	set env1 [berkdb_env -create -errpfx MASTER -home $masterdir \
+	    -txn -rep -thread -recover -verbose [list rep $rv]]
+	$env1 repmgr -local [list 127.0.0.1 $port0] -start master
+	puts -nonewline "."
+	flush stdout
+
+	set env2 [berkdb_env_noerr -create -errpfx CLIENT -home $clientdir \
+	    -txn -rep -thread -recover -verbose [list rep $rv] -event]
+	$env2 repmgr -local [list 127.0.0.1 $port1] \
+	    -remote [list 127.0.0.1 $port0] -start client -pri 0
+	await_startup_done $env2
+	puts "."
+	flush stdout
+
+	puts "\tRepmgr029.z22.b: Close and reopen the master environment"
+	$env1 close
+	set env1 [berkdb_env -create -errpfx MASTER -home $masterdir \
+	    -txn -rep -thread -recover -verbose [list rep $rv]]
+
+	puts "\tRepmgr029.z22.c: Update client's status to be adding on master"
+	set db [berkdb open -env $env1 -thread -auto_commit \
+	    __db.rep.system __db.membership]
+	error_check_good client_added \
+	    [repmgr029_gmdb_status $db 127.0.0.1 $port1] $SITE_PRESENT
+	repmgr029_gmdb_update_site $db 127.0.0.1 $port1 $SITE_ADDING
+
+	puts "\tRepmgr029.z22.d: Start repmgr on master"
+	$env1 repmgr -local [list 127.0.0.1 $port0] -start master
+
+	puts "\tRepmgr029.z22.e: Wait for client to rejoin the group"
+	await_condition {[expr \
+	    [repmgr029_gmdb_status $db 127.0.0.1 $port1] == $SITE_PRESENT]} 50
+	$db close
+	set env2_ev [find_event [$env2 event_info] local_site_removed]
+	error_check_good no_removal [string length $env2_ev] 0
+
+	puts "\tRepmgr029.z22.f: Close all"
+	$env2 close
+	$env1 close
+}
+
 proc repmgr029_dump_db { e } {
 	set db [berkdb open -env $e -thread __db.rep.system __db.membership]
 	set c [$db cursor]
 	set format_version [lindex [$c get -first] 0 1]
 	binary scan $format_version II fmt vers
-	puts "version $vers"
+	puts "format $fmt version $vers"
 	while {[llength [set r [$c get -next]]] > 0} {
 		set k [lindex $r 0 0]
 		set v [lindex $r 0 1]
@@ -1682,8 +1984,13 @@ proc repmgr029_dump_db { e } {
 		set hostname [string range $k 4 [expr 2 + $len]]
 		binary scan $hostname A* host
 		binary scan [string range $k [expr 4 + $len] end] S port
-		binary scan $v I status
-		puts "{$host $port} $status"
+		if { $fmt < 2 } {
+			binary scan $v I status
+			puts "{$host $port} status $status"
+		} else {
+			binary scan $v "II" status flags
+			puts "{$host $port} status $status flags $flags"
+		}
 	}
 	$c close
 	$db close
@@ -1720,6 +2027,23 @@ proc repmgr029_gmdb_status { db host port } {
 	return $status
 }
 
+# The proc is only used to reliably create hard-to-reproduce test cases.
+# Otherwise, gmdb should never be manipulated directly.
+proc repmgr029_gmdb_update_site { db host port status } {
+	set l [string length $host]
+	set key [binary format Ia*cS [expr $l + 1] $host 0 $port]
+	set data [binary format II $status 0]
+	$db put $key $data
+
+	set key [binary format IS 0 0]
+	set kvlist [$db get $key]
+	set kvpair [lindex $kvlist 0]
+	set val [lindex $kvpair 1]
+	binary scan $val II format version
+	set data [binary format II $format [expr $version + 1] ]
+	$db put $key $data
+}
+
 proc repmgr029_gmdb_version { db } {
 	set key [binary format IS 0 0]
 	set kvlist [$db get $key]
@@ -1745,4 +2069,63 @@ proc repmgr029_site_list_status { e port } {
 		return ""
 	}
 	return [lindex $sle 3]
+}
+
+proc repmgr029_sync_sites { dir1 dir2 db nkeys ndata } {
+	global util_path
+	set in_sync 0
+
+	while { !$in_sync } {
+		set e1_stat [exec $util_path/db_stat -h $dir1 -d $db]
+		set e1_nkeys [is_substr $e1_stat \
+		    "$nkeys\tNumber of unique keys in the tree"]
+		set e1_ndata [is_substr $e1_stat \
+		    "$nkeys\tNumber of data items in the tree"]
+		set e2_stat [exec $util_path/db_stat -h $dir2 -d $db]
+		set e2_nkeys [is_substr $e2_stat \
+		    "$ndata\tNumber of unique keys in the tree"]
+		set e2_ndata [is_substr $e2_stat \
+		    "$ndata\tNumber of data items in the tree"]
+		if { $e1_nkeys == $e2_nkeys && $e1_ndata == $e2_ndata } {
+			set in_sync 1
+		} else {
+			tclsleep 1
+		}
+	}
+}
+
+#
+# Remove a site via a non-master helper site, test resulting site lists
+# and events, and close the removed site.
+#
+proc repmgr029_remove_site_from_helper { masterenv \
+    helperenv remenv remport masgmdb } {
+	set eid_rem_at_mas [repmgr029_get_eid $masterenv $remport]
+	set eid_rem_at_help [repmgr029_get_eid $helperenv $remport]
+
+	# Remove site and make sure removal is reflected in master gmdb.
+	$helperenv repmgr -remove [list 127.0.0.1 $remport]
+	error_check_good site_removed \
+	    [repmgr029_gmdb_status $masgmdb 127.0.0.1 $remport] 0
+
+	# Make sure master site_removed event is fired.
+	set master_ev [find_event [$masterenv event_info] site_removed]
+	error_check_good master_event [llength $master_ev] 2
+	error_check_good master_event_eid [lindex $master_ev 1] $eid_rem_at_mas
+	error_check_good master_list [llength [repmgr029_get_eid \
+	    $masterenv $remport]] 0
+
+	# Make sure removed site gets local_site_removed event.
+	await_event $remenv local_site_removed
+	error_check_good s_rem_close [$remenv close] 0
+
+	# Make sure helper site gets site_removed event and gmdb update.
+	await_condition {[expr [string length [repmgr029_site_list_status \
+	    $helperenv $remport]] == 0]}
+	set helper_ev [find_event [$helperenv event_info] site_removed]
+	error_check_good helper_event [llength $helper_ev] 2
+	error_check_good helper_event_eid [lindex $helper_ev 1] \
+	    $eid_rem_at_help
+	error_check_good helper_list [llength [repmgr029_get_eid \
+	    $helperenv $remport]] 0
 }

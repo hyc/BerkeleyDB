@@ -18,6 +18,7 @@ mkconsts.pl
 mkpod
 ppport.h
 README
+t/blob.t
 t/btree.t
 t/cds.t
 t/db-3.0.t
@@ -69,3 +70,4 @@ patches/5.005_03
 patches/5.6.0
 scan.pl
 META.yml                                 Module meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

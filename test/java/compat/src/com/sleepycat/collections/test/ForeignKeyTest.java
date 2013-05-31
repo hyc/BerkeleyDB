@@ -1,17 +1,29 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.serial.TupleSerialMarshalledKeyCreator;
@@ -29,12 +41,14 @@ import com.sleepycat.db.SecondaryDatabase;
 import com.sleepycat.util.ExceptionUnwrapper;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-public class ForeignKeyTest extends TestCase {
+@RunWith(Parameterized.class)
+public class ForeignKeyTest extends TestBase {
 
     private static final ForeignKeyDeleteAction[] ACTIONS = {
         ForeignKeyDeleteAction.ABORT,
@@ -47,29 +61,20 @@ public class ForeignKeyTest extends TestCase {
         "CASCADE",
     };
 
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        for (int i = 0; i < TestEnv.ALL.length; i += 1) {
-            for (int j = 0; j < ACTIONS.length; j += 1) {
-                suite.addTest(new ForeignKeyTest(TestEnv.ALL[i],
-                                                 ACTIONS[j],
-                                                 ACTION_LABELS[j]));
+    @Parameters
+    public static List<Object[]> genParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
+        for (TestEnv testEnv : TestEnv.ALL) {
+            int i = 0;
+            for (ForeignKeyDeleteAction action : ACTIONS) {
+                params.add(new Object[]{testEnv, action, ACTION_LABELS[i]});
+                i ++;
             }
         }
-        return suite;
+        
+        return params;
     }
-
+    
     private TestEnv testEnv;
     private Environment env;
     private StoredClassCatalog catalog;
@@ -87,23 +92,24 @@ public class ForeignKeyTest extends TestCase {
     public ForeignKeyTest(TestEnv testEnv, ForeignKeyDeleteAction onDelete,
                           String onDeleteLabel) {
 
-        super("ForeignKeyTest-" + testEnv.getName() + '-' + onDeleteLabel);
+        customName = 
+            "ForeignKeyTest-" + testEnv.getName() + '-' + onDeleteLabel;
 
         this.testEnv = testEnv;
         this.onDelete = onDelete;
     }
 
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
-        SharedTestUtils.printTestName(getName());
-        env = testEnv.open(getName());
-
+        super.setUp();
+        SharedTestUtils.printTestName(customName);
+        env = testEnv.open(customName);
         createDatabase();
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         try {
@@ -144,7 +150,7 @@ public class ForeignKeyTest extends TestCase {
         }
     }
 
-    @Override
+    @Test
     public void runTest()
         throws Exception {
 

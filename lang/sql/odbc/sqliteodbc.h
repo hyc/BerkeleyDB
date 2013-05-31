@@ -15,9 +15,9 @@
  * @file sqliteodbc.h
  * Header file for SQLite ODBC driver.
  *
- * $Id: sqliteodbc.h,v 1.56 2011/11/12 04:35:40 chw Exp chw $
+ * $Id: sqliteodbc.h,v 1.59 2013/01/11 12:20:56 chw Exp chw $
  *
- * Copyright (c) 2001-2011 Christian Werner <chw@ch-werner.de>
+ * Copyright (c) 2001-2013 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage
  * and redistribution of this file and for a
@@ -246,6 +246,7 @@ typedef struct stmt {
     int nbindparms;		/**< Number bound parameters */
     BINDPARM *bindparms;	/**< Array of bound parameters */
     int nparams;		/**< Number of parameters in query */
+    int pdcount;		/**< SQLParamData() counter */
     int nrows;			/**< Number of result rows */
     int rowp;			/**< Current result row */
     char **rows;		/**< 2-dim array, result set */

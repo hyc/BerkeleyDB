@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -76,7 +76,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp59652824"></a>Parameters</h3>
+              <h3 class="title"><a id="idp59896768"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59651280"></a>db_home</h4>
+                <h4 class="title"><a id="idp59895224"></a>db_home</h4>
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59658896"></a>flags</h4>
+                <h4 class="title"><a id="idp59903056"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -499,13 +499,15 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
                 <p>
                             Cause the 
                             <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a> 
-                            handle returned by <code class="methodname">DB_ENV-&gt;open()</code> to be <span class="emphasis"><em>free-threaded;</em></span> that is,
+                            handle returned by
+                            <code class="methodname">DB_ENV-&gt;open()</code> to be
+                            <span class="emphasis"><em>free-threaded;</em></span> that is,
                             concurrently usable by multiple threads in the
-                            address space. The <code class="literal">DB_THREAD </code>
-                            flag should be specified if the 
-                            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a> handle will be
-                            concurrently used by more than one thread in the
-                            process, or if any 
+                            address space. The 
+                            <code class="literal">DB_THREAD </code> flag should be
+                            specified if the <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a> 
+                            handle will be concurrently used by more than
+                            one thread in the process, or if any 
                             <a class="link" href="db.html" title="Chapter 2.  The DB Handle">DB</a> handles opened in
                             the scope of the 
                             <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a> handle will be
@@ -513,7 +515,22 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
                             process.
                         </p>
                 <p>
-                            This flag is required when using the Replication Manager.
+                            If this flag is specified, then any database
+                            opened using this environment handle will also
+                            be free-threaded.
+                        </p>
+                <p>
+                            Be aware that enabling this flag will serialize
+                            calls to DB when using the handle across
+                            threads. If concurrent scaling is important to
+                            your application we recommend opening separate
+                            handles for each thread (and not specifying
+                            this flag), rather than sharing handles between
+                            threads.
+                        </p>
+                <p>
+                            This flag is required when using the
+                            Replication Manager.
                         </p>
                 <p>
                             You can also specify this flag in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
@@ -536,7 +553,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59682816"></a>mode</h4>
+                <h4 class="title"><a id="idp59902840"></a>mode</h4>
               </div>
             </div>
           </div>
@@ -565,7 +582,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp59633048"></a>Errors</h3>
+              <h3 class="title"><a id="idp59893200"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -581,7 +598,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59716256"></a>DB_RUNRECOVERY</h4>
+                <h4 class="title"><a id="idp59960032"></a>DB_RUNRECOVERY</h4>
               </div>
             </div>
           </div>
@@ -596,7 +613,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59674432"></a>DB_VERSION_MISMATCH</h4>
+                <h4 class="title"><a id="idp59960288"></a>DB_VERSION_MISMATCH</h4>
               </div>
             </div>
           </div>
@@ -609,7 +626,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59728944"></a>EAGAIN</h4>
+                <h4 class="title"><a id="idp59944536"></a>EAGAIN</h4>
               </div>
             </div>
           </div>
@@ -621,7 +638,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59729368"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp59974288"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -639,7 +656,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp59684168"></a>ENOENT</h4>
+                <h4 class="title"><a id="idp59927840"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -652,7 +669,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp59715200"></a>Class</h3>
+              <h3 class="title"><a id="idp59958976"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -664,7 +681,7 @@ DB_ENV-&gt;open(DB_ENV *dbenv, char *db_home, u_int32_t flags, int mode);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp59715432"></a>See Also</h3>
+              <h3 class="title"><a id="idp59957632"></a>See Also</h3>
             </div>
           </div>
         </div>

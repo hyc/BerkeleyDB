@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -90,7 +90,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4218680"></a>Parameters</h3>
+              <h3 class="title"><a id="idp4259664"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4218944"></a>which</h4>
+                <h4 class="title"><a id="idp4260144"></a>which</h4>
               </div>
             </div>
           </div>
@@ -187,8 +187,8 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
                     </li>
                     <li>
                       <p>
-                                Replication Manager applications will no
-                                longer maintain group membership
+                                Replication Manager applications do not
+                                maintain group membership
                                 information persistently on-disk. For more
                                 information, see <a href="../../programmer_reference/rep_filename.html" class="olink">Managing Replication Files</a> in the
                                 <em class="citetitle">Berkeley DB Programmer's Reference Guide</em>.
@@ -245,8 +245,8 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
                     </p>
                 <p>
                         Replication Manager automatically runs elections to
-                        choose a new master when the old master appears to
-                        have become disconnected.  This option is turned on
+                        choose a new master when the old master fails or
+                        becomes disconnected.  This option is turned on
                         by default.
                     </p>
                 <p>
@@ -268,7 +268,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
                 </div>
                 <p>
                         In an application with multiple processes per
-                        database environment, only the main replication
+                        database environment, only the replication
                         process may change this configuration setting.
                     </p>
               </li>
@@ -278,8 +278,10 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
                     </p>
                 <p>
                         Replication Manager observes the strict "majority" rule in managing
-                        elections, even in a group with only 2 sites.  This means the client
-                        in a 2-site group will be unable to take over as master if the
+                        elections, even in a replication group with only two
+                        sites.  This means the client
+                        in a two-site replication group will be unable to take
+                        over as master if the
                         original master fails or becomes disconnected.  (See the 
                         <a href="../../programmer_reference/rep_twosite.html" class="olink">
                             Special considerations for two-site replication groups
@@ -297,7 +299,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4244616"></a>onoff</h4>
+                <h4 class="title"><a id="idp4285872"></a>onoff</h4>
               </div>
             </div>
           </div>
@@ -313,7 +315,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4223848"></a>Errors</h3>
+              <h3 class="title"><a id="idp4265104"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -331,14 +333,15 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4242672"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp4283928"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
                 If setting in-memory replication after the database environment is already
                 opened; if setting master leases after replication is started; if setting
-                the 2-site strict majority rule for a Base API application;
+                the two-site strict majority rule or automatic elections for a
+                Base API application;
                 or if an invalid flag value or parameter was specified.
             </p>
         </div>
@@ -347,7 +350,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4257512"></a>Class</h3>
+              <h3 class="title"><a id="idp4277096"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -359,7 +362,7 @@ DbEnv::rep_set_config(u_int32_t which, int onoff); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4248480"></a>See Also</h3>
+              <h3 class="title"><a id="idp4289512"></a>See Also</h3>
             </div>
           </div>
         </div>

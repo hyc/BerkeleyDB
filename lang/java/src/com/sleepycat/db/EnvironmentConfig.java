@@ -1,8 +1,7 @@
-
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -82,6 +81,9 @@ public class EnvironmentConfig implements Cloneable {
     private int backup_read_sleep = 0;
     private int backup_size = 0;
     private boolean backup_write_direct = false;
+    private int write_direct = 0;
+    private java.io.File blobDir = null;
+    private int blobThreshold = 0;
     private int cacheCount = 0;
     private long cacheSize = 0L;
     private long cacheMax = 0L;
@@ -170,6 +172,7 @@ public class EnvironmentConfig implements Cloneable {
     private boolean hotbackupInProgress = false;
     private boolean initializeRegions = false;
     private boolean logAutoRemove = false;
+    private boolean logBlobContent = false;
     private boolean logInMemory = false;
     private boolean logZero = false;
     private boolean multiversion = false;
@@ -212,6 +215,8 @@ public class EnvironmentConfig implements Cloneable {
     private EventHandler eventHandler = null;
     private MessageHandler messageHandler = null;
     private PanicHandler panicHandler = null;
+    private boolean repViewIsSet = false;
+    private ReplicationViewHandler replicationViewHandler = null;
     private ReplicationTransport replicationTransport = null;
 
     /**
@@ -244,6 +249,76 @@ True if the database environment is configured to create any
     */
     public boolean getAllowCreate() {
         return allowCreate;
+    }
+
+    /**
+    Sets the path of a directory where blobs are stored.
+    <p>
+    The blobs of each {@link com.sleepycat.db.Database Database} opened
+    within this {@link com.sleepycat.db.Environment Environment} are
+    stored under this directory.
+    <p>
+    This path can not be set after opening the environment.
+    <p>
+    @param dir
+    The path of a directory where blobs are stored.
+    */
+    public void setBlobDir(java.io.File dir) {
+        this.blobDir = dir;
+    }
+
+    /**
+    Returns the path of a directory where blobs are stored.
+    <p>
+    The blobs of each {@link com.sleepycat.db.Database Database} opened
+    within this {@link com.sleepycat.db.Environment Environment} are
+    stored under this directory.
+    <p>
+    @return
+    The path of a directory where blobs are stored.
+    */
+    public java.io.File getBlobDir() {
+        return blobDir;
+    }
+
+    /**
+    Set the default blob threshold for databases opened in this environment.
+    The blob threshold is the size in bytes which is used to determine when
+    a data item will be stored as a blob.
+    <p>
+    Any data item that is equal to or larger in size than the
+    threshold value will automatically be stored as a blob.
+    <p>
+    It is illegal to enable blob in the environment if any of
+    {@link com.sleepycat.db.EnvironmentConfig#setTxnSnapshot EnvironmentConfig.setTxnSnapshot},
+    {@link com.sleepycat.db.EnvironmentConfig#setInitializeReplication EnvironmentConfig.setInitializeReplication},
+    and {@link com.sleepycat.db.EnvironmentConfig#setMultiversion EnvironmentConfig.setMultiversion}
+    is called with true value.
+    <p>
+    This threshold value can be set any time before and after opening the
+    environment.
+    <p>
+    @param value
+    The size in bytes which is used to determine when a data item will
+    be stored as a blob. If 0, databases opened in the environment will default
+    to never using blob.
+    */
+    public void setBlobThreshold(int value) {
+        this.blobThreshold = value;
+    }
+
+    /**
+    Return the environment wide default blob threshold value. The blob
+    threshold is the size in bytes which is used to determine when a data item
+    will be stored as a blob.
+    <p>
+    @return
+    The blob threshold value in bytes beyond which data items are
+    stored as blobs. If 0, databases opened in the environment will default to
+    never using blobs.
+    */
+    public int getBlobThreshold() {
+        return blobThreshold;
     }
 
     /**
@@ -1468,6 +1543,29 @@ True if the system has been configured to to automatically remove log
     }
 
     /**
+    Enable full logging of blob data.  Required for HA and the hotbackup
+    utility.
+    <p>
+    @param logBlobContent
+    If true, enable full logging of blob data.
+    */
+    public void setLogBlobContent(final boolean logBlobContent) {
+        this.logBlobContent = logBlobContent;
+    }
+
+    /**
+    Return true if full logging of blob data is enabled.
+    <p>
+    This method may be called at any time during the life of the application.
+    <p>
+    @return
+    True if full logging of blob data is enabled.
+    */
+    public boolean getLogBlobContent() {
+        return logBlobContent;
+    }
+
+    /**
     If set, maintain transaction logs in memory rather than on disk. This means
     that transactions exhibit the ACI (atomicity, consistency, and isolation)
     properties, but not D (durability); that is, database integrity will be
@@ -2620,6 +2718,37 @@ The function to be called if the database environment panics.
     */
     public PanicHandler getPanicHandler() {
         return panicHandler;
+    }
+
+    /**
+    Set the function to be used by replication views to determine whether a
+    database file is replicated to the local site.
+    <p>
+    @param repViewHandler
+    The function name to determine whether a database file is replicated. If
+    null, the replication view is a full view and all database files are
+    replicated to the local site. Otherwise it is a partial view and only some
+    database files are replicated to the local site.
+    */
+    public void setReplicationView(
+        final ReplicationViewHandler repViewHandler) {
+        this.repViewIsSet = true;
+        this.replicationViewHandler = repViewHandler;
+    }
+
+    /**
+    Return the function name used by replication views to determine whether
+    a database file is replicated to the local site.
+    <p>
+    @return
+    The function name used by replication views to determine whether a database
+    file is replicated to the local site. If null, the replication view is a
+    full view and all database files are replicated to the local site.
+    Otherwise it is a partial view and only some database files are replicated
+    to the local site.
+    */
+    public ReplicationViewHandler getReplicationViewHandler() {
+        return this.replicationViewHandler;
     }
 
     /**
@@ -4433,6 +4562,9 @@ True if the system has been configured to yield the processor
         if (logAutoRemove != oldConfig.logAutoRemove)
             dbenv.log_set_config(DbConstants.DB_LOG_AUTO_REMOVE, logAutoRemove);
 
+        if (logBlobContent != oldConfig.logBlobContent)
+            dbenv.log_set_config(DbConstants.DB_LOG_BLOB, logBlobContent);
+
         if (logInMemory != oldConfig.logInMemory)
             dbenv.log_set_config(DbConstants.DB_LOG_IN_MEMORY, logInMemory);
 
@@ -4499,10 +4631,44 @@ True if the system has been configured to yield the processor
             dbenv.set_msgcall(messageHandler);
         if (panicHandler != oldConfig.panicHandler)
             dbenv.set_paniccall(panicHandler);
+        /*
+         * Configure replication views for a new environment or an existing
+         * environment with the callback provided by the application.
+         * If the callback is set as null, the replication view is a full view
+         * and all database files are replicated to the local site. Otherwise
+         * it is a partial view and only some database files are replicated to
+         * the local site.
+         */
+        if (repViewIsSet)
+            dbenv.rep_set_view(replicationViewHandler);
         if (replicationTransport != oldConfig.replicationTransport)
             dbenv.rep_set_transport(envid, replicationTransport);
 
         /* Other settings */
+
+	if (backup_read_count != 0)
+	    dbenv.set_backup_config(DbConstants.DB_BACKUP_READ_COUNT, 
+		backup_read_count);
+
+	if (backup_read_sleep != 0)
+	    dbenv.set_backup_config(DbConstants.DB_BACKUP_READ_SLEEP, 
+		backup_read_sleep);
+
+	if (backup_size != 0) {
+	    dbenv.set_backup_config(DbConstants.DB_BACKUP_SIZE,
+		backup_size);
+        }
+
+	if (backup_write_direct == true) 
+	    dbenv.set_backup_config(DbConstants.DB_BACKUP_WRITE_DIRECT, 1);
+	else
+	    dbenv.set_backup_config(DbConstants.DB_BACKUP_WRITE_DIRECT, 0);
+
+        if (blobDir != oldConfig.blobDir)
+            dbenv.set_blob_dir(blobDir.toString());
+        if (blobThreshold != oldConfig.blobThreshold)
+            dbenv.set_blob_threshold(blobThreshold, 0);
+
         if (cacheSize != oldConfig.cacheSize ||
             cacheCount != oldConfig.cacheCount)
             dbenv.set_cachesize(cacheSize, cacheCount);
@@ -4708,6 +4874,7 @@ True if the system has been configured to yield the processor
             directLogIO = dbenv.log_get_config(DbConstants.DB_LOG_DIRECT);
             dsyncLog = dbenv.log_get_config(DbConstants.DB_LOG_DSYNC);
             logAutoRemove = dbenv.log_get_config(DbConstants.DB_LOG_AUTO_REMOVE);
+            logBlobContent = dbenv.log_get_config(DbConstants.DB_LOG_BLOB);
             logInMemory = dbenv.log_get_config(DbConstants.DB_LOG_IN_MEMORY);
             logZero = dbenv.log_get_config(DbConstants.DB_LOG_ZERO);
         }
@@ -4742,6 +4909,21 @@ True if the system has been configured to yield the processor
         // XXX: replicationTransport and envid aren't available?
 
         /* Other settings */
+	backup_read_count = 
+	    dbenv.get_backup_config(DbConstants.DB_BACKUP_READ_COUNT);
+	backup_read_sleep = 
+	    dbenv.get_backup_config(DbConstants.DB_BACKUP_READ_SLEEP);
+	backup_size = 
+	    dbenv.get_backup_config(DbConstants.DB_BACKUP_SIZE);
+	write_direct = 
+	    dbenv.get_backup_config(DbConstants.DB_BACKUP_WRITE_DIRECT);
+	backup_write_direct = (write_direct == 1) ? true : false;
+
+        String blobDirStr = dbenv.get_blob_dir();
+        if (blobDirStr != null)
+            blobDir = new java.io.File(blobDirStr);
+        blobThreshold = dbenv.get_blob_threshold();
+
         if (initializeCache) {
             cacheSize = dbenv.get_cachesize();
             cacheMax = dbenv.get_cache_max();

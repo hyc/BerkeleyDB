@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -49,11 +49,10 @@ proc log005_body { inmem } {
 	set max [log005_stat $env "Current log file size"]
 	error_check_good max_set $max 1000000
 
-	# Reset the log file size using a second open, and make sure
-	# it changes.
-	puts "\tLog005.b: reset during open, check the log file size."
-	set envtmp [berkdb_env -home $testdir -log_max 900000 -txn]
+	puts "\tLog005.b: change the log file size, check that it changes."
+	set envtmp [berkdb_env -home $testdir -txn]
 	error_check_good envtmp_open [is_valid_env $envtmp] TRUE
+	$envtmp set_lg_max 900000
 	error_check_good envtmp_close [$envtmp close] 0
 
 	set tmp [log005_stat $env "Current log file size"]

@@ -273,10 +273,6 @@ static int sqlthread_open(
 
   const char *zFilename;
   sqlite3 *db;
-  void *pKey = 0;
-  int nKey = 0;
-  char *zErrMsg;
-  int rc;
   char zBuf[100];
   extern void Md5_Register(sqlite3*);
 
@@ -284,15 +280,20 @@ static int sqlthread_open(
   UNUSED_PARAMETER(objc);
 
   zFilename = Tcl_GetString(objv[2]);
-  pKey = Tcl_GetByteArrayFromObj(objv[3], &nKey);    
-  rc = sqlite3_open(zFilename, &db);
+  sqlite3_open(zFilename, &db);
 #ifdef SQLITE_HAS_CODEC
-  if(db){
-    rc = sqlite3_key(db, pKey, nKey);
-    if( rc ){
-      zErrMsg = sqlite3_mprintf("%s", sqlite3ErrStr(rc));
+  if( db && objc>=4 ){
+    const char *zKey;
+    int nKey;
+    int rc;
+    zKey = Tcl_GetStringFromObj(objv[3], &nKey);
+    rc = sqlite3_key(db, zKey, nKey);
+    if( rc!=SQLITE_OK ){
+      char *zErrMsg = sqlite3_mprintf("error %d: %s", rc, sqlite3_errmsg(db));
       sqlite3_close(db);
-      db = NULL;
+      Tcl_AppendResult(interp, zErrMsg, (char*)0);
+      sqlite3_free(zErrMsg);
+      return TCL_ERROR;
     }
   }
 #endif
@@ -319,7 +320,7 @@ static int sqlthread_id(
   Tcl_Obj *CONST objv[]
 ){
   Tcl_ThreadId id = Tcl_GetCurrentThread();
-  Tcl_SetObjResult(interp, Tcl_NewIntObj((int)id));
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(SQLITE_PTR_TO_INT(id)));
   UNUSED_PARAMETER(clientData);
   UNUSED_PARAMETER(objc);
   UNUSED_PARAMETER(objv);
@@ -344,7 +345,7 @@ static int sqlthread_proc(
   } aSub[] = {
     {"parent", sqlthread_parent, 1, "SCRIPT"},
     {"spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT"},
-    {"open",   sqlthread_open,   2, "DBNAME KEY"},
+    {"open",   sqlthread_open,   1, "DBNAME"},
     {"id",     sqlthread_id,     0, ""},
     {0, 0, 0}
   };
@@ -363,7 +364,7 @@ static int sqlthread_proc(
   if( rc!=TCL_OK ) return rc;
   pSub = &aSub[iIndex];
 
-  if( objc!=(pSub->nArg+2) ){
+  if( objc<(pSub->nArg+2) ){
     Tcl_WrongNumArgs(interp, 2, objv, pSub->zUsage);
     return TCL_ERROR;
   }
@@ -418,9 +419,9 @@ static int clock_seconds_proc(
 */
 typedef struct UnlockNotification UnlockNotification;
 struct UnlockNotification {
-  int fired;                           /* True after unlock event has occured */
-  pthread_cond_t cond;                 /* Condition variable to wait on */
-  pthread_mutex_t mutex;               /* Mutex to protect structure */
+  int fired;                         /* True after unlock event has occurred */
+  pthread_cond_t cond;               /* Condition variable to wait on */
+  pthread_mutex_t mutex;             /* Mutex to protect structure */
 };
 
 /*

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -51,8 +51,10 @@ participating, and there will then be two masters for the replication
 group.  Since both masters are potentially accepting write queries, the
 databases could diverge in incompatible ways.</p>
       <p>If multiple masters are ever found to exist in a replication group, a
-master detecting the problem will return <a href="../api_reference/C/repmessage.html#repmsg_DB_REP_DUPMASTER" class="olink">DB_REP_DUPMASTER</a>.  If
-the application sees this return, it should reconfigure itself as a
+master detecting the problem will return <a href="../api_reference/C/repmessage.html#repmsg_DB_REP_DUPMASTER" class="olink">DB_REP_DUPMASTER</a>.  
+Replication Manager applications automatically handle duplicate master
+situations. If a Base API
+application sees this return, it should reconfigure itself as a
 client (by calling <a href="../api_reference/C/repstart.html" class="olink">DB_ENV-&gt;rep_start()</a>), and then call for an election
 (by calling <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a>).  The site that wins the election may be
 one of the two previous masters, or it may be another site entirely.
@@ -91,13 +93,9 @@ a large percentage of the sites in the system.  For example, if there
 are 20 database environments in the replication group, and an argument
 of 30 is specified to the <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> method, then a system will have
 to be able to talk to at least 16 of the sites to declare itself the
-master.</p>
-      <p>Replication Manager uses the value of <span class="bold"><strong>nsites</strong></span> (configured by
-the <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a> method) for elections as well as in calculating how
-many acknowledgements to wait for when sending a
-<a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a> message.  So this technique may be useful here
-as well, unless the application uses the <a href="../api_reference/C/repmgrset_ack_policy.html#ackspolicy_DB_REPMGR_ACKS_ALL" class="olink">DB_REPMGR_ACKS_ALL</a> or
-<a href="../api_reference/C/repmgrset_ack_policy.html#ackspolicy_DB_REPMGR_ACKS_ALL_PEERS" class="olink">DB_REPMGR_ACKS_ALL_PEERS</a> acknowledgement policies.</p>
+master. Replication Manager automatically maintains the number of
+sites in the replication group, so this technique is only available to
+Base API applications.</p>
       <p>Specifying a <span class="bold"><strong>nsites</strong></span> argument to <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a> that is
 smaller than the actual number of database environments in the
 replication group has its uses as well.  For example, consider a

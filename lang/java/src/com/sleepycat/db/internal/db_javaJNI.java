@@ -88,6 +88,9 @@ class db_javaJNI {
   public final static native int Db_exists(long jarg1, Db jarg1_, long jarg2, DbTxn jarg2_, com.sleepycat.db.DatabaseEntry jarg3, int jarg4) throws com.sleepycat.db.DatabaseException;
   public final static native int Db_get(long jarg1, Db jarg1_, long jarg2, DbTxn jarg2_, com.sleepycat.db.DatabaseEntry jarg3, com.sleepycat.db.DatabaseEntry jarg4, int jarg5) throws com.sleepycat.db.DatabaseException;
   public final static native int Db_get_assoc_flags(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
+  public final static native String Db_get_blob_dir(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
+  public final static native String Db_get_blob_sub_dir(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
+  public final static native int Db_get_blob_threshold(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native boolean Db_get_byteswapped(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native long Db_get_cachesize(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native int Db_get_cachesize_ncache(long jarg1, Db jarg1_) throws com.sleepycat.db.DatabaseException;
@@ -126,6 +129,8 @@ class db_javaJNI {
   /* package */ final static native void Db_remove0(long jarg1, Db jarg1_, String jarg2, String jarg3, int jarg4);
   /* package */ final static native void Db_rename0(long jarg1, Db jarg1_, String jarg2, String jarg3, String jarg4, int jarg5);
   public final static native void Db_set_append_recno(long jarg1, Db jarg1_, boolean jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native void Db_set_blob_dir(long jarg1, Db jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native void Db_set_blob_threshold(long jarg1, Db jarg1_, int jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_bt_compare(long jarg1, Db jarg1_, boolean jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_bt_minkey(long jarg1, Db jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void Db_set_bt_compress(long jarg1, Db jarg1_, boolean jarg2, boolean jarg3) throws com.sleepycat.db.DatabaseException;
@@ -162,6 +167,7 @@ class db_javaJNI {
   /* package */ final static native void Dbc_close0(long jarg1, Dbc jarg1_);
   public final static native int Dbc_cmp(long jarg1, Dbc jarg1_, long jarg2, Dbc jarg2_, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native int Dbc_count(long jarg1, Dbc jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native long Dbc_db_stream(long jarg1, Dbc jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native int Dbc_del(long jarg1, Dbc jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native long Dbc_dup(long jarg1, Dbc jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native int Dbc_get(long jarg1, Dbc jarg1_, com.sleepycat.db.DatabaseEntry jarg2, com.sleepycat.db.DatabaseEntry jarg3, int jarg4) throws com.sleepycat.db.DatabaseException;
@@ -177,6 +183,8 @@ class db_javaJNI {
   public final static native void DbEnv_errx(long jarg1, DbEnv jarg1_, String jarg2) /* no exception */;
   public final static native long DbEnv_cdsgroup_begin(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_fileid_reset(long jarg1, DbEnv jarg1_, String jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
+  public final static native String DbEnv_get_blob_dir(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
+  public final static native int DbEnv_get_blob_threshold(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native String[] DbEnv_get_data_dirs(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native int DbEnv_get_encrypt_flags(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native int DbEnv_get_flags(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
@@ -191,6 +199,8 @@ class db_javaJNI {
   public final static native void DbEnv_lsn_reset(long jarg1, DbEnv jarg1_, String jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_open(long jarg1, DbEnv jarg1_, String jarg2, int jarg3, int jarg4) throws com.sleepycat.db.DatabaseException, java.io.FileNotFoundException;
   /* package */ final static native void DbEnv_remove0(long jarg1, DbEnv jarg1_, String jarg2, int jarg3);
+  public final static native void DbEnv_set_blob_dir(long jarg1, DbEnv jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native void DbEnv_set_blob_threshold(long jarg1, DbEnv jarg1_, int jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_cachesize(long jarg1, DbEnv jarg1_, long jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_cache_max(long jarg1, DbEnv jarg1_, long jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_set_create_dir(long jarg1, DbEnv jarg1_, String jarg2) throws com.sleepycat.db.DatabaseException;
@@ -314,6 +324,7 @@ class db_javaJNI {
   public final static native long DbEnv_repmgr_channel(long jarg1, DbEnv jarg1_, int jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_rep_set_request(long jarg1, DbEnv jarg1_, int jarg2, int jarg3) throws com.sleepycat.db.DatabaseException;
   public final static native void DbEnv_rep_set_transport(long jarg1, DbEnv jarg1_, int jarg2, boolean jarg3) throws com.sleepycat.db.DatabaseException;
+  public final static native void DbEnv_rep_set_view(long jarg1, DbEnv jarg1_, boolean jarg2) throws com.sleepycat.db.DatabaseException;
   public final static native int DbEnv_rep_get_nsites(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native int DbEnv_rep_get_priority(long jarg1, DbEnv jarg1_) throws com.sleepycat.db.DatabaseException;
   public final static native int DbEnv_rep_get_timeout(long jarg1, DbEnv jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
@@ -374,6 +385,10 @@ class db_javaJNI {
   public final static native int DbSite_get_eid(long jarg1, DbSite jarg1_) throws com.sleepycat.db.DatabaseException;
   /* package */ final static native void DbSite_remove0(long jarg1, DbSite jarg1_);
   public final static native void DbSite_set_config(long jarg1, DbSite jarg1_, int jarg2, boolean jarg3) throws com.sleepycat.db.DatabaseException;
+  /* package */ final static native void DbStream_close0(long jarg1, DbStream jarg1_, int jarg2);
+  public final static native int DbStream_read(long jarg1, DbStream jarg1_, com.sleepycat.db.DatabaseEntry jarg2, long jarg3, int jarg4, int jarg5) throws com.sleepycat.db.DatabaseException;
+  public final static native long DbStream_size(long jarg1, DbStream jarg1_, int jarg2) throws com.sleepycat.db.DatabaseException;
+  public final static native int DbStream_write(long jarg1, DbStream jarg1_, com.sleepycat.db.DatabaseEntry jarg2, long jarg3, int jarg4) throws com.sleepycat.db.DatabaseException;
   /* package */ final static native void DbTxn_abort0(long jarg1, DbTxn jarg1_);
   /* package */ final static native void DbTxn_discard0(long jarg1, DbTxn jarg1_, int jarg2);
   public final static native String DbTxn_get_name(long jarg1, DbTxn jarg1_) throws com.sleepycat.db.DatabaseException;

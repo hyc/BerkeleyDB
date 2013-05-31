@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,6 +9,7 @@
 #include "db_config.h"
 
 #include "db_int.h"
+#include "dbinc/lock.h"
 
 /*
  * __mut_failchk --
@@ -25,9 +26,9 @@ __mut_failchk(env)
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
 	db_mutex_t i;
+	db_threadid_t unused;
 	int ret;
 	char buf[DB_THREADID_STRLEN];
-	db_threadid_t unused;
 
 	if (F_ISSET(env, ENV_PRIVATE))
 		return (0);
@@ -40,7 +41,7 @@ __mut_failchk(env)
 	ret = 0;
 
 	MUTEX_SYSTEM_LOCK(env);
-	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i, ++mutexp) {
+	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; i++) {
 		mutexp = MUTEXP_SET(env, i);
 
 		/*
@@ -60,8 +61,12 @@ __mut_failchk(env)
 			continue;
 
 		__db_msg(env, DB_STR_A("2017",
-		    "Freeing mutex for process: %s", "%s"),
+		    "Freeing mutex %lu for process: %s", "%lu %s"), (u_long)i,
 		    dbenv->thread_id_string(dbenv, mutexp->pid, unused, buf));
+
+		/* Clear the mutex id if it is in a cached locker. */
+		if ((ret = __lock_local_locker_invalidate(env, i)) != 0)
+			break;
 
 		/* Unlock and free the mutex. */
 		if (F_ISSET(mutexp, DB_MUTEX_LOCKED))

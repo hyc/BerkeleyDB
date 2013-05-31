@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -85,7 +85,7 @@ called db-VERSION; for example, you downloaded a Berkeley DB archive, and you
 did not change the top-level directory name.  The files related to Java
 are in three subdirectories of db-VERSION: java (the java source files),
 libdb_java (the C++ files that provide the "glue" between java and
-Berkeley DB) and examples_java (containing all examples code).  The directory
+Berkeley DB) and examples/java (containing all examples code).  The directory
 tree looks like this:</p>
         <pre class="programlisting">db-VERSION
 |-- java
@@ -142,7 +142,7 @@ probably do not have the library search path configured correctly:</p>
         <p>To ensure that everything is running correctly, you may want to try a
 simple test from the example programs in</p>
         <pre class="programlisting">
-          <code class="filename">db-VERSION/examples_java/src/db</code>
+          <code class="filename">db-VERSION/examples/java/src/db</code>
         </pre>
         <p>For example, the following sample program will prompt for text input
 lines, which are then stored in a Btree database named <code class="filename">access.db</code> in

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -457,7 +457,9 @@ __env_set_state(env, ipp, state)
 
 	*ipp = NULL;
 	ret = 0;
-	if (ip == NULL) {
+	if (ip != NULL)
+		ip->dbth_state = state;
+	else {
 		infop = env->reginfo;
 		renv = infop->primary;
 		thread = R_ADDR(infop, renv->thread_off);
@@ -506,8 +508,8 @@ init:			ip->dbth_pid = id.pid;
 			SH_TAILQ_INIT(&ip->dbth_xatxn);
 		}
 		MUTEX_UNLOCK(env, renv->mtx_regenv);
-	} else
-		ip->dbth_state = state;
+	}
+
 	*ipp = ip;
 
 	DB_ASSERT(env, ret == 0);

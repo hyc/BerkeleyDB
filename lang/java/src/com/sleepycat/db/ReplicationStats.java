@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -36,6 +36,12 @@ public class ReplicationStats {
     /** The client site has completed its startup procedures and is now handling live records from the master.  */
     public boolean getStartupComplete() {
         return (st_startup_complete != 0);
+    }
+
+    private int st_view;
+    /** True if the site is a view and false if not. */
+    public boolean getView() {
+        return (st_view != 0);
     }
 
     private long st_log_queued;
@@ -405,6 +411,7 @@ public class ReplicationStats {
     public String toString() {
         return "ReplicationStats:"
             + "\n  st_startup_complete=" + (st_startup_complete != 0)
+            + "\n  st_view=" + st_view
             + "\n  st_log_queued=" + st_log_queued
             + "\n  st_status=" + st_status
             + "\n  st_next_lsn=" + st_next_lsn

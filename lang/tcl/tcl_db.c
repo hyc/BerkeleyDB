@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -113,6 +113,9 @@ db_Cmd(clientData, interp, objc, objv)
 		"cursor",
 		"del",
 		"get",
+		"get_blob_dir",
+		"get_blob_sub_dir",
+		"get_blob_threshold",
 		"get_bt_minkey",
 		"get_cachesize",
 		"get_dbname",
@@ -121,6 +124,7 @@ db_Cmd(clientData, interp, objc, objv)
 		"get_errpfx",
 		"get_flags",
 		"get_heap_regionsize",
+		"get_heapsize",
 		"get_h_ffactor",
 		"get_h_nelem",
 		"get_join",
@@ -158,6 +162,9 @@ db_Cmd(clientData, interp, objc, objv)
 		DBCURSOR,
 		DBDELETE,
 		DBGET,
+		DBGETBLOBDIR,
+		DBGETBLOBSUBDIR,
+		DBGETBLOBTHRESHOLD,
 		DBGETBTMINKEY,
 		DBGETCACHESIZE,
 		DBGETDBNAME,
@@ -166,6 +173,7 @@ db_Cmd(clientData, interp, objc, objv)
 		DBGETERRPFX,
 		DBGETFLAGS,
 		DBGETHEAPREGIONSIZE,
+		DBGETHEAPSIZE,
 		DBGETHFFACTOR,
 		DBGETHNELEM,
 		DBGETJOIN,
@@ -393,6 +401,38 @@ db_Cmd(clientData, interp, objc, objv)
 			result = TCL_ERROR;
 		}
 		break;
+	case DBGETBLOBDIR:
+		if (objc != 2) {
+			Tcl_WrongNumArgs(interp, 1, objv, NULL);
+			return (TCL_ERROR);
+		}
+		ret = dbp->get_blob_dir(dbp, &strval);
+		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "db get_blob_dir")) == TCL_OK)
+			res = NewStringObj(strval,
+			    strval != NULL ? strlen(strval) : 0);
+		break;
+	case DBGETBLOBSUBDIR:
+		if (objc != 2) {
+			Tcl_WrongNumArgs(interp, 1, objv, NULL);
+			return (TCL_ERROR);
+		}
+		ret = dbp->get_blob_sub_dir(dbp, &strval);
+		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "db get_blob_sub_dir")) == TCL_OK)
+			res = NewStringObj(strval,
+			    strval != NULL ? strlen(strval) : 0);
+		break;
+	case DBGETBLOBTHRESHOLD:
+		if (objc != 2) {
+			Tcl_WrongNumArgs(interp, 1, objv, NULL);
+			return (TCL_ERROR);
+		}
+		ret = dbp->get_blob_threshold(dbp, &value);
+		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "db get_blob_threshold")) == TCL_OK)
+			res = Tcl_NewIntObj((int)value);
+		break;
 	case DBGETBTMINKEY:
 		if (objc != 2) {
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -467,6 +507,19 @@ db_Cmd(clientData, interp, objc, objv)
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 		    "db get_heap_regionsize")) == TCL_OK)
 			res = Tcl_NewIntObj((int)value);
+		break;
+	case DBGETHEAPSIZE:
+		if (objc != 2) {
+			Tcl_WrongNumArgs(interp, 1, objv, NULL);
+			return (TCL_ERROR);
+		}
+		ret = dbp->get_heapsize(dbp, &gbytes, &bytes);
+		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
+		    "db get_heapsize")) == TCL_OK) {
+			myobjv[0] = Tcl_NewIntObj((int)gbytes);
+			myobjv[1] = Tcl_NewIntObj((int)bytes);
+			res = Tcl_NewListObj(2, myobjv);
+		}
 		break;
 	case DBGETHFFACTOR:
 		if (objc != 2) {
@@ -703,6 +756,7 @@ tcl_DbStat(interp, objc, objv, dbp)
 		MAKE_STAT_LIST("Number of records", hsp->hash_ndata);
 		MAKE_STAT_LIST("Fill factor", hsp->hash_ffactor);
 		MAKE_STAT_LIST("Buckets", hsp->hash_buckets);
+		MAKE_STAT_LIST("Number of blobs", hsp->hash_nblobs);
 		if (flag != DB_FAST_STAT) {
 			MAKE_STAT_LIST("Free pages", hsp->hash_free);
 			MAKE_WSTAT_LIST("Bytes free", hsp->hash_bfree);
@@ -727,6 +781,7 @@ tcl_DbStat(interp, objc, objv, dbp)
 		MAKE_STAT_LIST("Number of regions", hpsp->heap_nregions);
 		MAKE_STAT_LIST("Number of pages in a region",
 		    hpsp->heap_regionsize);
+		MAKE_STAT_LIST("Number of blobs", hpsp->heap_nblobs);
 	} else if (type == DB_QUEUE) {
 		qsp = (DB_QUEUE_STAT *)sp;
 		MAKE_STAT_LIST("Magic", qsp->qs_magic);
@@ -749,6 +804,7 @@ tcl_DbStat(interp, objc, objv, dbp)
 		MAKE_STAT_LIST("Version", bsp->bt_version);
 		MAKE_STAT_LIST("Number of keys", bsp->bt_nkeys);
 		MAKE_STAT_LIST("Number of records", bsp->bt_ndata);
+		MAKE_STAT_LIST("Number of blobs", bsp->bt_nblobs);
 		MAKE_STAT_LIST("Minimum keys per page", bsp->bt_minkey);
 		MAKE_STAT_LIST("Fixed record length", bsp->bt_re_len);
 		MAKE_STAT_LIST("Record pad", bsp->bt_re_pad);
@@ -981,6 +1037,7 @@ tcl_DbPut(interp, objc, objv, dbp)
 		"-nodupdata",
 #endif
 		"-append",
+		"-blob",
 		"-multiple",
 		"-multiple_key",
 		"-nooverwrite",
@@ -995,6 +1052,7 @@ tcl_DbPut(interp, objc, objv, dbp)
 		DBGET_NODUPDATA,
 #endif
 		DBPUT_APPEND,
+		DBPUT_BLOB,
 		DBPUT_MULTIPLE,
 		DBPUT_MULTIPLE_KEY,
 		DBPUT_NOOVER,
@@ -1103,6 +1161,9 @@ tcl_DbPut(interp, objc, objv, dbp)
 		case DBPUT_APPEND:
 			FLAG_CHECK(flag);
 			flag = DB_APPEND;
+			break;
+		case DBPUT_BLOB:
+			data.flags |= DB_DBT_BLOB;
 			break;
 		case DBPUT_MULTIPLE:
 			FLAG_CHECK(multiflag);
@@ -2564,7 +2625,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 						result = _ReturnSetup(interp,
 						    ret, DB_RETOK_DBPUT(ret),
 						    "db del heap bulk");
-						goto out;
+						goto loopend;
 					}
 					DB_MULTIPLE_WRITE_NEXT(ptr,
 					    &key, hkey.data, hkey.size);
@@ -2682,7 +2743,7 @@ tcl_DbDelete(interp, objc, objv, dbp)
 						result = _ReturnSetup(interp,
 						    ret, DB_RETOK_DBPUT(ret),
 						    "db del heap bulk");
-						goto out;
+						goto loopend;
 					}
 					DB_MULTIPLE_KEY_WRITE_NEXT(ptr,
 					    &key, hkey.data, hkey.size,
@@ -3710,7 +3771,7 @@ tcl_DbGetFlags(interp, objc, objv, dbp)
 				if (strlen(buf) > 0)
 					(void)strncat(buf, " ", sizeof(buf));
 				(void)strncat(
-				    buf, db_flags[i].arg, sizeof(buf));
+				    buf, db_flags[i].arg, sizeof(buf) - 1);
 			}
 
 		res = NewStringObj(buf, strlen(buf));
@@ -3766,7 +3827,7 @@ tcl_DbGetOpenFlags(interp, objc, objv, dbp)
 				if (strlen(buf) > 0)
 					(void)strncat(buf, " ", sizeof(buf));
 				(void)strncat(
-				    buf, open_flags[i].arg, sizeof(buf));
+				    buf, open_flags[i].arg, sizeof(buf) - 1);
 			}
 
 		res = NewStringObj(buf, strlen(buf));
@@ -4216,7 +4277,7 @@ tcl_DbCompact(interp, objc, objv, dbp)
 				key = &stop;
 				key->data = &srecno;
 			}
-			if (type == DB_RECNO || type == DB_QUEUE) {
+			if (type == DB_RECNO || type == DB_HASH) {
 				result = _GetUInt32(
 				    interp, objv[i], key->data);
 				if (result == TCL_OK) {

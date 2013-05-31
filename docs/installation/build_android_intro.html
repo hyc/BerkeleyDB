@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -104,6 +104,16 @@
         This section describes how to build a library that can be used as a
         drop-in replacement for SQLite on Android.
     </p>
+        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+          <h3 class="title">Note</h3>
+          <p>
+        A drop in replacement refers to replacing all instances of SQLite
+        in an Android OS build with Berkeley DB SQL. All databases will be 
+        created in the Berkeley DB SQL format including any created with the
+        Java SQLite.* API. This solution requires that users re-compile a custom
+        Android OS image (it is only relevant for platform/device vendors).
+      </p>
+        </div>
         <div class="orderedlist">
           <ol type="1">
             <li>

@@ -91,7 +91,13 @@ esac
 # !!! END COPIED from autoconf distribution
 
 sqlite_dir=$srcdir/../lang/sql/sqlite
-(cd sql && eval "\$SHELL ../$sqlite_dir/configure --disable-option-checking $ac_sub_configure_args CPPFLAGS=\"-I.. $CPPFLAGS\" --enable-amalgamation=$db_cv_sql_amalgamation --enable-readline=$with_readline" && cat build_config.h >> config.h) || exit 1
+orig_CPPFLAGS="$CPPFLAGS"
+jdbc_variables=""
+if test "$db_cv_build_cryptography" = "yes"; then
+	CPPFLAGS="$CPPFLAGS -DSQLITE_HAS_CODEC=1"
+fi
+(cd sql && eval "\$SHELL ../$sqlite_dir/configure --disable-option-checking $ac_sub_configure_args CPPFLAGS=\"-I.. $CPPFLAGS\" --enable-amalgamation=$db_cv_sql_amalgamation --enable-readline=$with_readline " && cat build_config.h >> config.h) || exit 1
+CPPFLAGS="$orig_CPPFLAGS"
 
 # Configure JDBC if --enable-jdbc
 if test "$db_cv_jdbc" != "no"; then
@@ -121,7 +127,6 @@ if test "$db_cv_jdbc" != "no"; then
   test "$prefix" != "" && jdbc_args="--prefix=$prefix --with-jardir=$prefix/jar"
   test "$enable_shared" != "" && jdbc_args="$jdbc_args --enable-shared=$enable_shared"
   test "$enable_static" != "" && jdbc_args="$jdbc_args --enable-static=$enable_static"
-  test "$cross_compiling" = "yes" && jdbc_args="$jdbc_args --build=$build --host=$host "
 
   # 1. The build directory is build_unix/jdbc, so the include paths are relative
   #    to that.
@@ -132,6 +137,7 @@ if test "$db_cv_jdbc" != "no"; then
     $CFLAGS $CPPFLAGS\""
   # Set LDFLAGS for JDBC driver
   test "$LDFLAGS" != "" && jdbc_flags="$jdbc_flags LDFLAGS=\"$LDFLAGS\""
+  test "$db_cv_build_cryptography" = "yes" && jdbc_flags="$jdbc_flags HAVE_SQLITE3_KEY=1"
 
   # Copy ../lang/sql/jdbc to build_unix/
   test ! -d jdbc && cp -r $jdbc_dir .

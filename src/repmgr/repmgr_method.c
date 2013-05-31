@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -40,8 +40,10 @@ static int __repmgr_build_data_out __P((ENV *,
     DBT *, u_int32_t, __repmgr_msg_metadata_args *, REPMGR_IOVECS **iovecsp));
 static int __repmgr_build_msg_out __P((ENV *,
     DBT *, u_int32_t, __repmgr_msg_metadata_args *, REPMGR_IOVECS **iovecsp));
+static int __repmgr_demote_site(ENV *, int);
 static int repmgr_only __P((ENV *, const char *));
 static int __repmgr_restart __P((ENV *, int, u_int32_t));
+static int __repmgr_remove_and_close_site __P((DB_SITE *));
 static int __repmgr_remove_site __P((DB_SITE *));
 static int __repmgr_remove_site_pp __P((DB_SITE *));
 static int __repmgr_start_msg_threads __P((ENV *, u_int));
@@ -52,25 +54,25 @@ static int send_msg_self __P((ENV *, REPMGR_IOVECS *, u_int32_t));
 static int site_by_addr __P((ENV *, const char *, u_int, DB_SITE **));
 
 /*
- * PUBLIC: int __repmgr_start __P((DB_ENV *, int, u_int32_t));
+ * PUBLIC: int __repmgr_start_pp __P((DB_ENV *, int, u_int32_t));
  */
 int
-__repmgr_start(dbenv, nthreads, flags)
+__repmgr_start_pp(dbenv, nthreads, flags)
 	DB_ENV *dbenv;
 	int nthreads;
 	u_int32_t flags;
 {
 	DB_REP *db_rep;
-	REP *rep;
-	REPMGR_SITE *me, *site;
-	DB_THREAD_INFO *ip;
 	ENV *env;
-	int first, is_listener, locked, min, need_masterseek, ret, start_master;
-	u_int i, n;
+	DB_THREAD_INFO *ip;
+	char *path;
+	int isdir, ret;
+	u_int32_t blob_threshold;
 
 	env = dbenv->env;
 	db_rep = env->rep_handle;
-	rep = db_rep->region;
+	path = NULL;
+	isdir = 0;
 
 	switch (flags) {
 	case 0:
@@ -92,6 +94,25 @@ __repmgr_start(dbenv, nthreads, flags)
 		return (EINVAL);
 	}
 
+	if ((ret = __env_get_blob_threshold_pp(dbenv, &blob_threshold)) != 0)
+		return (ret);
+	if (blob_threshold != 0) {
+		__db_errx(env, DB_STR("3692",
+		    "Cannot start replication with blobs enabled."));
+		return (EINVAL);
+	}
+
+	/* Check if the blob directory exists. */
+	if ((ret = __db_appname(env, DB_APP_BLOB, NULL, NULL, &path)) != 0)
+		return (ret);
+	if (__os_exists(env, path, &isdir) == 0 && isdir != 0) {
+		__os_free(env, path);
+		__db_errx(env, DB_STR("3693",
+		    "Cannot start replication with blobs enabled."));
+		return (EINVAL);
+	}
+	__os_free(env, path);
+
 	if (APP_IS_BASEAPI(env))
 		return (repmgr_only(env, "repmgr_start"));
 
@@ -102,7 +123,18 @@ __repmgr_start(dbenv, nthreads, flags)
 		return (EINVAL);
 	}
 
-	/* Check if it is a shut-down site, if so, clean the resources. */
+	/* A view site cannot be started as MASTER or ELECTION. */
+	if (IS_VIEW_SITE(env) &&
+	    (flags == DB_REP_MASTER || flags == DB_REP_ELECTION)) {
+		__db_errx(env, DB_STR("3694",
+		    "A view site must be started with DB_REP_CLIENT"));
+		return (EINVAL);
+	}
+
+	/*
+	 * Check if it is a shut-down site, if so, clean the resources and
+	 * reset the status in order to get ready to start replication.
+	 */
 	if (db_rep->repmgr_status == stopped) {
 		if ((ret = __repmgr_stop(env)) != 0) {
 			__db_errx(env, DB_STR("3638",
@@ -112,7 +144,35 @@ __repmgr_start(dbenv, nthreads, flags)
 		db_rep->repmgr_status = ready;
 	}
 
+	/* Record the original configurations given by application. */
+	ENV_ENTER(env, ip);
 	db_rep->init_policy = flags;
+	db_rep->config_nthreads = nthreads;
+	ret = __repmgr_start_int(env, nthreads, flags);
+	ENV_LEAVE(env, ip);
+	return (ret);
+}
+
+/*
+ * Internal processing to start replication manager.
+ *
+ * PUBLIC: int __repmgr_start_int __P((ENV *, int, u_int32_t));
+ */
+int
+__repmgr_start_int(env, nthreads, flags)
+	ENV *env;
+	int nthreads;
+	u_int32_t flags;
+{
+	DB_REP *db_rep;
+	REP *rep;
+	REPMGR_SITE *me, *site;
+	int first, is_listener, locked, min, need_masterseek, ret, start_master;
+	u_int i, n;
+
+	db_rep = env->rep_handle;
+	rep = db_rep->region;
+
 	if ((ret = __rep_set_transport_int(env,
 	    db_rep->self_eid, __repmgr_send)) != 0)
 		return (ret);
@@ -128,7 +188,8 @@ __repmgr_start(dbenv, nthreads, flags)
 
 	if (db_rep->restored_list != NULL) {
 		ret = __repmgr_refresh_membership(env,
-		    db_rep->restored_list, db_rep->restored_list_length);
+		    db_rep->restored_list, db_rep->restored_list_length,
+		    DB_REPMGR_VERSION);
 		__os_free(env, db_rep->restored_list);
 		db_rep->restored_list = NULL;
 	} else {
@@ -145,8 +206,12 @@ __repmgr_start(dbenv, nthreads, flags)
 				 * join.
 				 */
 				ret = __repmgr_join_group(env);
+			else if (VIEW_TO_PARTICIPANT(db_rep, me)) {
+				__db_errx(env, DB_STR("3695",
+    "A view site must be started with a view callback"));
+				return (EINVAL);
+			}
 		} else if (ret == ENOENT) {
-			ENV_ENTER(env, ip);
 			if (FLD_ISSET(me->config, DB_GROUP_CREATOR))
 				start_master = TRUE;
 			/*
@@ -166,10 +231,12 @@ __repmgr_start(dbenv, nthreads, flags)
 						continue;
 					if ((ret = __repmgr_set_membership(env,
 					    site->net_addr.host,
-					    site->net_addr.port,
-					    SITE_PRESENT)) != 0)
+					    site->net_addr.port, SITE_PRESENT,
+					    site->gmdb_flags)) != 0)
 						break;
-					n++;
+					if (!FLD_ISSET(site->gmdb_flags,
+					    SITE_VIEW))
+						n++;
 				}
 				ret = __rep_set_nsites_int(env, n);
 				DB_ASSERT(env, ret == 0);
@@ -180,30 +247,37 @@ __repmgr_start(dbenv, nthreads, flags)
 				db_rep->member_version_gen = 1;
 				if ((ret = __repmgr_set_membership(env,
 				    me->net_addr.host, me->net_addr.port,
-				    SITE_PRESENT)) == 0) {
+				    SITE_PRESENT, 0)) == 0) {
 					ret = __rep_set_nsites_int(env, 1);
 					DB_ASSERT(env, ret == 0);
 				}
 				UNLOCK_MUTEX(db_rep->mutex);
 			} else
 				ret = __repmgr_join_group(env);
-			ENV_LEAVE(env, ip);
 		} else if (ret == DB_DELETED)
 			ret = DB_REP_UNAVAIL;
 	}
 	if (ret != 0)
 		return (ret);
 
-	DB_ASSERT(env, start_master ||
-	    SITE_FROM_EID(db_rep->self_eid)->membership == SITE_PRESENT);
+	/*
+	 * Catch case where user defines a different local site address than
+	 * the one in the restored_list from an ongoing internal init.
+	 */
+	if (!start_master &&
+	    SITE_FROM_EID(db_rep->self_eid)->membership != SITE_PRESENT) {
+		__db_errx(env, DB_STR("3696",
+		    "Current local site conflicts with earlier definition"));
+		return (EINVAL);
+	}
 
 	/*
-	 * If we're the first repmgr_start() call, we will have to start threads.
-	 * Therefore, we require a flags value (to tell us how).
+	 * If we're the first repmgr_start() call, we will have to start
+	 * threads.  Therefore, we require a flags value (to tell us how).
 	 */
 	if (db_rep->repmgr_status != running && flags == 0) {
 		__db_errx(env, DB_STR("3639",
-	"a non-zero flags value is required for initial repmgr_start() call"));
+	"A non-zero flags value is required for initial repmgr_start() call"));
 		return (EINVAL);
 	}
 
@@ -214,33 +288,35 @@ __repmgr_start(dbenv, nthreads, flags)
 	 *
 	 * Then, in case there could be multiple processes, we're either the
 	 * main listener process or a subordinate process.  On a "subsequent"
-	 * repmgr_start() call we already have enough information to know which
-	 * it is.  Otherwise, negotiate with information in the shared region to
-	 * claim the listener role if possible.
+	 * repmgr_start() call, with a running main listener process, we already
+	 * have enough information to know which it is.  Otherwise, if there is
+	 * no listener, negotiate with information in the shared region to claim
+	 * the listener role if possible.  Once we decide we're the listener,
+	 * mark the listener id in the shared region, so that no other process
+	 * thinks the same thing.
 	 *
 	 * To avoid a race, once we decide we're in the first call, mark the
 	 * handle as started, so that no other thread thinks the same thing.
 	 */
 	LOCK_MUTEX(db_rep->mutex);
 	locked = TRUE;
-	if (db_rep->repmgr_status == running) {
+	if (db_rep->repmgr_status == running && !(rep->listener == 0 &&
+	    FLD_ISSET(rep->config, REP_C_AUTOTAKEOVER))) {
 		first = FALSE;
 		is_listener = !IS_SUBORDINATE(db_rep);
 	} else {
 		first = TRUE;
 		db_rep->repmgr_status = running;
 
-		ENV_ENTER(env, ip);
 		MUTEX_LOCK(env, rep->mtx_repmgr);
 		if (rep->listener == 0) {
 			is_listener = TRUE;
-			__os_id(dbenv, &rep->listener, NULL);
+			__os_id(env->dbenv, &rep->listener, NULL);
 		} else {
 			is_listener = FALSE;
 			nthreads = 0;
 		}
 		MUTEX_UNLOCK(env, rep->mtx_repmgr);
-		ENV_LEAVE(env, ip);
 	}
 	UNLOCK_MUTEX(db_rep->mutex);
 	locked = FALSE;
@@ -266,7 +342,7 @@ __repmgr_start(dbenv, nthreads, flags)
 
 	/*
 	 * The minimum legal number of threads is either 1 or 0, depending upon
-	 * whether we're the main process or a subordinate.
+	 * whether we're the listener process or a subordinate.
 	 */
 	min = is_listener ? 1 : 0;
 	if (nthreads < min) {
@@ -352,6 +428,7 @@ __repmgr_start(dbenv, nthreads, flags)
 		if ((ret =
 		    __repmgr_start_msg_threads(env, (u_int)nthreads)) != 0)
 			goto err;
+		rep->listener_nthreads = (u_int)nthreads;
 
 		if (need_masterseek) {
 			/*
@@ -375,9 +452,40 @@ __repmgr_start(dbenv, nthreads, flags)
 		UNLOCK_MUTEX(db_rep->mutex);
 		locked = FALSE;
 	}
-	/* All processes (even non-listeners) need a select() thread. */
-	if ((ret = __repmgr_start_selector(env)) == 0)
-		return (is_listener ? 0 : DB_REP_IGNORE);
+	if (db_rep->selector == NULL) {
+		/* All processes (even non-listeners) need a select() thread. */
+		if ((ret = __repmgr_start_selector(env)) == 0) {
+			/*
+			 * A view callback is set but this site isn't yet a
+			 * view in the internal site list.  Do the view
+			 * demotion here, which will update the internal
+			 * site list.  We need the select() thread for the
+			 * demotion because the demotion performs gmdb
+			 * operations.
+			 */
+			if (PARTICIPANT_TO_VIEW(db_rep,
+			    SITE_FROM_EID(db_rep->self_eid)) &&
+			    (ret = __repmgr_demote_site(env,
+			    db_rep->self_eid)) != 0)
+				goto err;
+			return (is_listener ? 0 : DB_REP_IGNORE);
+		}
+	} else {
+		/*
+		 * If the selector thread already exists, the current process
+		 * should be the new listener which has just finished a
+		 * takeover.  Now, all active connections need to be refreshed
+		 * to notify remote sites about the new listener.  If a new
+		 * connection is established immediately, disable the existing
+		 * main connection to the same site.  Otherwise, schedule a
+		 * second immediate attempt.  If it still fails, disable the
+		 * main connection and retry a connection as usual.
+		 */
+		DB_ASSERT(env, is_listener &&
+		    FLD_ISSET(rep->config, REP_C_AUTOTAKEOVER));
+		if ((ret = __repmgr_refresh_selector(env)) == 0)
+			return (0);
+	}
 
 err:
 	/* If we couldn't succeed at everything, undo the parts we did do. */
@@ -392,6 +500,16 @@ err:
 	if (!locked)
 		LOCK_MUTEX(db_rep->mutex);
 	(void)__repmgr_net_close(env);
+	/* Reset the listener when we fail before having a valid listen_fd. */
+	if (first && is_listener)
+		rep->listener = 0;
+	/*
+	 * Reset repmgr_status when we fail before starting a selector if the
+	 * earlier call to __repmgr_stop_threads() hasn't already reset it to
+	 * stopped.
+	 */
+	if (db_rep->repmgr_status == running)
+		db_rep->repmgr_status = ready;
 	UNLOCK_MUTEX(db_rep->mutex);
 	return (ret);
 }
@@ -668,7 +786,8 @@ __repmgr_start_selector(env)
  * PUBLIC: int __repmgr_close __P((ENV *));
  *
  * Close repmgr during env close.  It stops repmgr, frees sites array and
- * its addresses.
+ * its addresses.  Note that it is possible for the sites array to exist
+ * and require deallocation independently of whether repmgr was started.
  */
 int
 __repmgr_close(env)
@@ -679,10 +798,15 @@ __repmgr_close(env)
 	int ret;
 	u_int i;
 
-	db_rep = env->rep_handle;
+	if ((db_rep = env->rep_handle) == NULL)
+		return (0);
 	ret = 0;
 
-	ret = __repmgr_stop(env);
+	/* Stop repmgr and all of its threads if it was previously started. */
+	if (IS_ENV_REPLICATED(env))
+		ret = __repmgr_stop(env);
+
+	/* Clean up sites array regardless of whether we could stop repmgr. */
 	if (db_rep->sites != NULL) {
 		for (i = 0; i < db_rep->site_cnt; i++) {
 			site = &db_rep->sites[i];
@@ -756,9 +880,9 @@ __repmgr_set_ack_policy(dbenv, policy)
 	DB_ENV *dbenv;
 	int policy;
 {
+	ENV *env;
 	DB_REP *db_rep;
 	DB_THREAD_INFO *ip;
-	ENV *env;
 	REP *rep;
 	int ret;
 
@@ -823,6 +947,94 @@ __repmgr_get_ack_policy(dbenv, policy)
 }
 
 /*
+ * PUBLIC: int __repmgr_set_incoming_queue_max __P((DB_ENV *, u_int32_t,
+ * PUBLIC:     u_int32_t));
+ *
+ * Undocumented interface: Supplies the maximum number of messages and bulk
+ * messages that the incoming message queue can hold.  This limits the amount
+ * of dynamic memory the incoming message queue can allocate.  When the
+ * incoming message queue is at its maximum, incoming messages are dropped
+ * and must be rerequested.
+ *
+ * The messages value is used unless DB_REP_CONF_BULK is configured, in which
+ * case bulk_messages is used.  Decrease the applicable limit if dynamic
+ * memory usage is too high; increase it if there are too many rerequests.
+ */
+int
+__repmgr_set_incoming_queue_max(dbenv, messages, bulk_messages)
+	DB_ENV *dbenv;
+	u_int32_t messages;
+	u_int32_t bulk_messages;
+{
+	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
+	ENV *env;
+	REP *rep;
+	u_int32_t bulkmsgs, msgs;
+
+	env = dbenv->env;
+	db_rep = env->rep_handle;
+	rep = db_rep->region;
+
+	ENV_NOT_CONFIGURED(
+	    env, db_rep->region, "DB_ENV->repmgr_set_incoming_queue_max",
+	    DB_INIT_REP);
+
+	if (APP_IS_BASEAPI(env)) {
+		__db_errx(env, "%s %s",
+		    "DB_ENV->repmgr_set_incoming_queue_max:",
+		    "cannot call from base replication application");
+		return (EINVAL);
+	}
+
+	/* If the caller provided 0 for either value, use its default. */
+	msgs = messages > 0 ? messages : DB_REPMGR_DEFAULT_INQUEUE_MSGS;
+	bulkmsgs = bulk_messages > 0 ?
+	    bulk_messages : DB_REPMGR_DEFAULT_INQUEUE_BULKMSGS;
+	if (REP_ON(env)) {
+		rep->inqueue_msg_max = msgs;
+		rep->inqueue_bulkmsg_max = bulkmsgs;
+	} else {
+		db_rep->inqueue_msg_max = msgs;
+		db_rep->inqueue_bulkmsg_max = bulkmsgs;
+	}
+	/*
+	 * Setting incoming queue maximum sizes makes this a replication
+	 * manager application.
+	 */
+	APP_SET_REPMGR(env);
+	return (0);
+}
+
+/*
+ * PUBLIC: int __repmgr_get_incoming_queue_max __P((DB_ENV *, u_int32_t *,
+ * PUBLIC:     u_int32_t *));
+ *
+ * Undocumented interface: Gets the maximum number of messages and
+ * bulk messages that the incoming message queue can hold.
+ */
+int
+__repmgr_get_incoming_queue_max(dbenv, messagesp, bulk_messagesp)
+	DB_ENV *dbenv;
+	u_int32_t *messagesp;
+	u_int32_t *bulk_messagesp;
+{
+	ENV *env;
+	DB_REP *db_rep;
+	REP *rep;
+
+	env = dbenv->env;
+	db_rep = env->rep_handle;
+	rep = db_rep->region;
+
+	*messagesp = REP_ON(env) ?
+	    rep->inqueue_msg_max : db_rep->inqueue_msg_max;
+	*bulk_messagesp = REP_ON(env) ?
+	    rep->inqueue_bulkmsg_max : db_rep->inqueue_bulkmsg_max;
+	return (0);
+}
+
+/*
  * PUBLIC: int __repmgr_env_create __P((ENV *, DB_REP *));
  */
 int
@@ -837,7 +1049,13 @@ __repmgr_env_create(env, db_rep)
 	db_rep->connection_retry_wait = DB_REPMGR_DEFAULT_CONNECTION_RETRY;
 	db_rep->election_retry_wait = DB_REPMGR_DEFAULT_ELECTION_RETRY;
 	db_rep->config_nsites = 0;
+	ADJUST_AUTOTAKEOVER_WAITS(db_rep, DB_REPMGR_DEFAULT_ACK_TIMEOUT);
 	db_rep->perm_policy = DB_REPMGR_ACKS_QUORUM;
+	db_rep->inqueue_msg_max = DB_REPMGR_DEFAULT_INQUEUE_MSGS;
+	db_rep->inqueue_bulkmsg_max = DB_REPMGR_DEFAULT_INQUEUE_BULKMSGS;
+#ifdef HAVE_REPLICATION_LISTENER_TAKEOVER
+	FLD_SET(db_rep->config, REP_C_AUTOTAKEOVER);
+#endif
 	FLD_SET(db_rep->config, REP_C_ELECTIONS);
 	FLD_SET(db_rep->config, REP_C_2SITE_STRICT);
 
@@ -943,6 +1161,15 @@ __repmgr_await_threads(env)
 	 * thread, in its last gasp, may have started yet another new instance
 	 * of a connector thread.
 	 */
+
+	/* Takeover thread. */
+	if (db_rep->takeover_thread != NULL) {
+		if ((t_ret = __repmgr_thread_join(db_rep->takeover_thread)) !=
+		    0 && ret == 0)
+			ret = t_ret;
+		__os_free(env, db_rep->takeover_thread);
+		db_rep->takeover_thread = NULL;
+	}
 
 	/* Message processing threads. */
 	for (i = 0;
@@ -1616,13 +1843,14 @@ __repmgr_send_request(db_channel, request, nrequest, response, timeout, flags)
 	}
 
 	ENV_ENTER(env, ip);
-	ret = get_channel_connection(channel, &conn);
-	ENV_LEAVE(env, ip);
-	if (ret != 0)
-		return (ret);
+	if ((ret = get_channel_connection(channel, &conn)) != 0)
+		goto out;
 
-	if (conn == NULL)
-		return (request_self(env, request, nrequest, response, flags));
+	/* If conn is NULL, call request_self and then we are done here. */
+	if (conn == NULL) {
+		ret = request_self(env, request, nrequest, response, flags);
+		goto out;
+	}
 
 	/* Find an available array slot, or grow the array if necessary. */
 	LOCK_MUTEX(db_rep->mutex);
@@ -1670,7 +1898,7 @@ __repmgr_send_request(db_channel, request, nrequest, response, timeout, flags)
 		LOCK_MUTEX(db_rep->mutex);
 		F_CLR(&conn->responses[i], RESP_IN_USE | RESP_THREAD_WAITING);
 		UNLOCK_MUTEX(db_rep->mutex);
-		return (ret);
+		goto out;
 	}
 
 	timeout = timeout > 0 ? timeout : db_channel->timeout;
@@ -1688,7 +1916,7 @@ __repmgr_send_request(db_channel, request, nrequest, response, timeout, flags)
 		 * to wake up those threads, with a COMPLETE indication and an
 		 * error code.  That's more than we want to tackle here.
 		 */
-		return (ret);
+		goto out;
 	}
 
 	/*
@@ -1732,7 +1960,7 @@ __repmgr_send_request(db_channel, request, nrequest, response, timeout, flags)
 			sz = conn->iovecs.vectors[0].iov_len;
 
 			if ((ret = __os_malloc(env, sz, &dummy)) != 0)
-				goto out;
+				goto out_unlck;
 			__repmgr_iovec_init(&conn->iovecs);
 			DB_INIT_DBT(resp->dbt, dummy, sz);
 			__repmgr_add_dbt(&conn->iovecs, &resp->dbt);
@@ -1740,8 +1968,9 @@ __repmgr_send_request(db_channel, request, nrequest, response, timeout, flags)
 		}
 	}
 
-out:
+out_unlck:
 	UNLOCK_MUTEX(db_rep->mutex);
+out:	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -2168,6 +2397,7 @@ __repmgr_channel_close(dbchan, flags)
 {
 	ENV *env;
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	REPMGR_CONNECTION *conn;
 	CHANNEL *channel;
 	u_int32_t i;
@@ -2182,6 +2412,7 @@ __repmgr_channel_close(dbchan, flags)
 	 * Disable connection(s) (if not already done due to an error having
 	 * occurred previously); release our reference to conn struct(s).
 	 */
+	ENV_ENTER(env, ip);
 	LOCK_MUTEX(db_rep->mutex);
 	if (dbchan->eid >= 0) {
 		conn = channel->c.conn;
@@ -2218,6 +2449,7 @@ __repmgr_channel_close(dbchan, flags)
 	__os_free(env, channel);
 	__os_free(env, dbchan);
 
+	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -2374,10 +2606,11 @@ join_group_at_site(env, addrp)
 	repmgr_netaddr_t addr, myaddr;
 	__repmgr_gm_fwd_args fwd;
 	__repmgr_site_info_args site_info;
+	__repmgr_v4site_info_args v4site_info;
 	u_int8_t *p, *response_buf, siteinfo_buf[MAX_MSG_BUF];
 	char host_buf[MAXHOSTNAMELEN + 1], *host;
 	u_int32_t gen, type;
-	size_t len;
+	size_t host_len, msg_len, req_len;
 	int ret, t_ret;
 
 	db_rep = env->rep_handle;
@@ -2385,13 +2618,7 @@ join_group_at_site(env, addrp)
 	LOCK_MUTEX(db_rep->mutex);
 	myaddr = SITE_FROM_EID(db_rep->self_eid)->net_addr;
 	UNLOCK_MUTEX(db_rep->mutex);
-	len = strlen(myaddr.host) + 1;
-	DB_INIT_DBT(site_info.host, myaddr.host, len);
-	site_info.port = myaddr.port;
-	site_info.flags = 0;
-	ret = __repmgr_site_info_marshal(env,
-	    &site_info, siteinfo_buf, sizeof(siteinfo_buf), &len);
-	DB_ASSERT(env, ret == 0);
+	host_len = strlen(myaddr.host) + 1;
 
 	conn = NULL;
 	response_buf = NULL;
@@ -2401,12 +2628,31 @@ join_group_at_site(env, addrp)
 retry:
 	if ((ret = make_request_conn(env, addrp, &conn)) != 0)
 		return (ret);
+	DB_ASSERT(env, conn->version > 0 && conn->version <= DB_REPMGR_VERSION);
+	if (conn->version < 5) {
+		DB_INIT_DBT(v4site_info.host, myaddr.host, host_len);
+		v4site_info.port = myaddr.port;
+		v4site_info.flags = 0;
+		ret = __repmgr_v4site_info_marshal(env,
+		    &v4site_info, siteinfo_buf, sizeof(siteinfo_buf), &req_len);
+	} else {
+		DB_INIT_DBT(site_info.host, myaddr.host, host_len);
+		site_info.port = myaddr.port;
+		site_info.status = 0;
+		site_info.flags = 0;
+		if (IS_VIEW_SITE(env))
+			FLD_SET(site_info.flags, SITE_VIEW);
+		ret = __repmgr_site_info_marshal(env,
+		    &site_info, siteinfo_buf, sizeof(siteinfo_buf), &req_len);
+	}
+	DB_ASSERT(env, ret == 0);
+	/* Preserve separate request length in case there is a retry. */
 	if ((ret = __repmgr_send_sync_msg(env, conn,
-	    REPMGR_JOIN_REQUEST, siteinfo_buf, (u_int32_t)len)) != 0)
+	    REPMGR_JOIN_REQUEST, siteinfo_buf, (u_int32_t)req_len)) != 0)
 		goto err;
 
 	if ((ret = read_own_msg(env,
-	    conn, &type, &response_buf, &len)) != 0)
+	    conn, &type, &response_buf, &msg_len)) != 0)
 		goto err;
 
 	if (type == REPMGR_GM_FAILURE) {
@@ -2429,7 +2675,7 @@ retry:
 			goto err;
 
 		ret = __repmgr_gm_fwd_unmarshal(env, &fwd,
-		    response_buf, len, &p);
+		    response_buf, msg_len, &p);
 		DB_ASSERT(env, ret == 0);
 		if (fwd.gen > gen) {
 			if (fwd.host.size > MAXHOSTNAMELEN + 1) {
@@ -2456,7 +2702,8 @@ retry:
 		}
 	}
 	if (type == REPMGR_JOIN_SUCCESS)
-		ret = __repmgr_refresh_membership(env, response_buf, len);
+		ret = __repmgr_refresh_membership(env, response_buf, msg_len,
+		    conn->version);
 	else
 		ret = DB_REP_UNAVAIL; /* Invalid response: protocol violation */
 
@@ -2575,7 +2822,8 @@ make_request_conn(env, addr, connp)
 	    &conf, vi.data, vi.size, NULL)) != 0)
 		goto err;
 
-	if (conf.version < GM_MIN_VERSION) {
+	if (conf.version < GM_MIN_VERSION ||
+	    (IS_VIEW_SITE(env) && conf.version < VIEW_MIN_VERSION)) {
 		ret = DB_REP_UNAVAIL;
 		goto err;
 	}
@@ -2640,9 +2888,9 @@ site_by_addr(env, host, port, sitep)
 	if ((ret = addr_chk(env, host, port)) != 0)
 		return (ret);
 
+	ENV_ENTER(env, ip);
 	if (REP_ON(env)) {
 		LOCK_MUTEX(db_rep->mutex);
-		ENV_ENTER(env, ip);
 		locked = TRUE;
 	} else
 		locked = FALSE;
@@ -2654,10 +2902,9 @@ site_by_addr(env, host, port, sitep)
 	 * we want the DB_SITE handle to point to; just like site_by_eid() does.
 	 */
 	host = site->net_addr.host;
-	if (locked) {
-		ENV_LEAVE(env, ip);
+	if (locked)
 		UNLOCK_MUTEX(db_rep->mutex);
-	}
+	ENV_LEAVE(env, ip);
 	if (ret != 0)
 		return (ret);
 
@@ -2723,7 +2970,7 @@ init_dbsite(env, eid, host, port, sitep)
 	dbsite->get_address = __repmgr_get_site_address;
 	dbsite->get_config = __repmgr_get_config;
 	dbsite->get_eid = __repmgr_get_eid;
-	dbsite->set_config = __repmgr_site_config;
+	dbsite->set_config = __repmgr_site_config_pp;
 	dbsite->remove = __repmgr_remove_site_pp;
 	dbsite->close = __repmgr_site_close;
 
@@ -2756,9 +3003,16 @@ __repmgr_get_eid(dbsite, eidp)
 	DB_SITE *dbsite;
 	int *eidp;
 {
+	DB_THREAD_INFO *ip;
+	ENV *env;
 	int ret;
 
-	if ((ret = refresh_site(dbsite)) != 0)
+	env = dbsite->env;
+
+	ENV_ENTER(env, ip);
+	ret = refresh_site(dbsite);
+	ENV_LEAVE(env, ip);
+	if (ret != 0)
 		return (ret);
 
 	if (F_ISSET(dbsite, DB_SITE_PREOPEN)) {
@@ -2791,8 +3045,11 @@ __repmgr_get_config(dbsite, which, valuep)
 	env = dbsite->env;
 	db_rep = env->rep_handle;
 
-	if ((ret = refresh_site(dbsite)) != 0)
+	ENV_ENTER(env, ip);
+	if ((ret = refresh_site(dbsite)) != 0) {
+		ENV_LEAVE(env, ip);
 		return (ret);
+	}
 	LOCK_MUTEX(db_rep->mutex);
 	DB_ASSERT(env, IS_VALID_EID(dbsite->eid));
 	site = SITE_FROM_EID(dbsite->eid);
@@ -2800,31 +3057,51 @@ __repmgr_get_config(dbsite, which, valuep)
 		rep = db_rep->region;
 		infop = env->reginfo;
 
-		ENV_ENTER(env, ip);
 		MUTEX_LOCK(env, rep->mtx_repmgr);
 		sites = R_ADDR(infop, rep->siteinfo_off);
 
 		site->config = sites[dbsite->eid].config;
 
 		MUTEX_UNLOCK(env, rep->mtx_repmgr);
-		ENV_LEAVE(env, ip);
 	}
 	*valuep = FLD_ISSET(site->config, which) ? 1 : 0;
 	UNLOCK_MUTEX(db_rep->mutex);
+	ENV_LEAVE(env, ip);
 	return (0);
 }
 
 /*
- * PUBLIC: int __repmgr_site_config __P((DB_SITE *, u_int32_t, u_int32_t));
+ * PUBLIC: int __repmgr_site_config_pp __P((DB_SITE *, u_int32_t, u_int32_t));
  */
 int
-__repmgr_site_config(dbsite, which, value)
+__repmgr_site_config_pp(dbsite, which, value)
+	DB_SITE *dbsite;
+	u_int32_t which;
+	u_int32_t value;
+{
+	DB_THREAD_INFO *ip;
+	ENV *env;
+	int ret;
+
+	env = dbsite->env;
+
+	ENV_ENTER(env, ip);
+	ret = __repmgr_site_config_int(dbsite, which, value);
+	ENV_LEAVE(env, ip);
+
+	return (ret);
+}
+
+/*
+ * PUBLIC: int __repmgr_site_config_int __P((DB_SITE *, u_int32_t, u_int32_t));
+ */
+int
+__repmgr_site_config_int(dbsite, which, value)
 	DB_SITE *dbsite;
 	u_int32_t which;
 	u_int32_t value;
 {
 	DB_REP *db_rep;
-	DB_THREAD_INFO *ip;
 	ENV *env;
 	REGINFO *infop;
 	REP *rep;
@@ -2875,7 +3152,6 @@ __repmgr_site_config(dbsite, which, value)
 		infop = env->reginfo;
 
 		LOCK_MUTEX(db_rep->mutex);
-		ENV_ENTER(env, ip);
 		MUTEX_LOCK(env, rep->mtx_repmgr);
 		sites = R_ADDR(infop, rep->siteinfo_off);
 		site = SITE_FROM_EID(dbsite->eid);
@@ -2896,7 +3172,6 @@ __repmgr_site_config(dbsite, which, value)
 			rep->siteinfo_seq++;
 		}
 		MUTEX_UNLOCK(env, rep->mtx_repmgr);
-		ENV_LEAVE(env, ip);
 		UNLOCK_MUTEX(db_rep->mutex);
 	} else {
 		site = SITE_FROM_EID(dbsite->eid);
@@ -2930,7 +3205,6 @@ set_local_site(dbsite, value)
 	if (REP_ON(env)) {
 		rep = db_rep->region;
 		LOCK_MUTEX(db_rep->mutex);
-		ENV_ENTER(env, ip);
 		MUTEX_LOCK(env, rep->mtx_repmgr);
 		locked = TRUE;
 		/* Make sure we're in sync first. */
@@ -2941,31 +3215,32 @@ set_local_site(dbsite, value)
 		__db_errx(env, DB_STR("3666",
 		    "A previously given local site may not be unset"));
 		ret = EINVAL;
-	} else if (IS_VALID_EID(db_rep->self_eid) &&
-	    db_rep->self_eid != dbsite->eid) {
-		__db_errx(env, DB_STR("3667",
-		    "A (different) local site has already been set"));
-		ret = EINVAL;
-	} else {
-		DB_ASSERT(env, IS_VALID_EID(dbsite->eid));
-		site = SITE_FROM_EID(dbsite->eid);
-		if (FLD_ISSET(site->config,
-		    DB_BOOTSTRAP_HELPER | DB_REPMGR_PEER)) {
-			__db_errx(env, DB_STR("3668",
-		    "Local site cannot have HELPER or PEER attributes"));
+	} else if (value) {
+		if (IS_VALID_EID(db_rep->self_eid) &&
+		    db_rep->self_eid != dbsite->eid) {
+			__db_errx(env, DB_STR("3697",
+			    "A (different) local site has already been set"));
 			ret = EINVAL;
+		} else {
+			DB_ASSERT(env, IS_VALID_EID(dbsite->eid));
+			site = SITE_FROM_EID(dbsite->eid);
+			if (FLD_ISSET(site->config,
+			    DB_BOOTSTRAP_HELPER | DB_REPMGR_PEER)) {
+				__db_errx(env, DB_STR("3698",
+			"Local site cannot have HELPER or PEER attributes"));
+				ret = EINVAL;
+			}
 		}
 	}
-	if (ret == 0) {
+	if (ret == 0 && value) {
 		db_rep->self_eid = dbsite->eid;
 		if (locked) {
-			rep->self_eid = dbsite->eid;
+			rep->self_eid = db_rep->self_eid;
 			rep->siteinfo_seq++;
 		}
 	}
 	if (locked) {
 		MUTEX_UNLOCK(env, rep->mtx_repmgr);
-		ENV_LEAVE(env, ip);
 		UNLOCK_MUTEX(db_rep->mutex);
 	}
 	return (ret);
@@ -2998,7 +3273,7 @@ refresh_site(dbsite)
 }
 
 static int
-__repmgr_remove_site_pp(dbsite)
+__repmgr_remove_and_close_site(dbsite)
 	DB_SITE *dbsite;
 {
 	int ret, t_ret;
@@ -3011,6 +3286,23 @@ __repmgr_remove_site_pp(dbsite)
 	 */
 	if ((t_ret = __repmgr_site_close(dbsite)) != 0 && ret == 0)
 		ret = t_ret;
+
+	return (ret);
+}
+
+static int
+__repmgr_remove_site_pp(dbsite)
+	DB_SITE *dbsite;
+{
+	ENV *env;
+	DB_THREAD_INFO *ip;
+	int ret;
+
+	env = dbsite->env;
+
+	ENV_ENTER(env, ip);
+	ret = __repmgr_remove_and_close_site(dbsite);
+	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -3024,6 +3316,7 @@ __repmgr_remove_site(dbsite)
 	REPMGR_CONNECTION *conn;
 	repmgr_netaddr_t addr;
 	__repmgr_site_info_args site_info;
+	__repmgr_v4site_info_args v4site_info;
 	u_int8_t *response_buf, siteinfo_buf[MAX_MSG_BUF];
 	size_t len;
 	u_int32_t type;
@@ -3046,19 +3339,29 @@ __repmgr_remove_site(dbsite)
 	DB_ASSERT(env, IS_VALID_EID(master));
 	addr = SITE_FROM_EID(master)->net_addr;
 	UNLOCK_MUTEX(db_rep->mutex);
-
 	len = strlen(dbsite->host) + 1;
-	DB_INIT_DBT(site_info.host, dbsite->host, len);
-	site_info.port = dbsite->port;
-	site_info.flags = 0;
-	ret = __repmgr_site_info_marshal(env,
-	    &site_info, siteinfo_buf, sizeof(siteinfo_buf), &len);
-	DB_ASSERT(env, ret == 0);
 
 	conn = NULL;
 	response_buf = NULL;
 	if ((ret = make_request_conn(env, &addr, &conn)) != 0)
 		return (ret);
+	DB_ASSERT(env, conn->version > 0 && conn->version <= DB_REPMGR_VERSION);
+	if (conn->version < 5) {
+		DB_INIT_DBT(v4site_info.host, dbsite->host, len);
+		v4site_info.port = dbsite->port;
+		v4site_info.flags = 0;
+		ret = __repmgr_v4site_info_marshal(env,
+		    &v4site_info, siteinfo_buf, sizeof(siteinfo_buf), &len);
+	} else {
+		DB_INIT_DBT(site_info.host, dbsite->host, len);
+		site_info.port = dbsite->port;
+		site_info.status = 0;
+		site_info.flags = 0;
+		ret = __repmgr_site_info_marshal(env,
+		    &site_info, siteinfo_buf, sizeof(siteinfo_buf), &len);
+	}
+	DB_ASSERT(env, ret == 0);
+
 	if ((ret = __repmgr_send_sync_msg(env, conn,
 	    REPMGR_REMOVE_REQUEST, siteinfo_buf, (u_int32_t)len)) != 0)
 		goto err;
@@ -3089,4 +3392,76 @@ __repmgr_site_close(dbsite)
 {
 	__os_free(dbsite->env, dbsite);
 	return (0);
+}
+
+/*
+ * Demotes a participant site to a view.  This is a one-way and one-time
+ * operation.
+ *
+ * The demotion occurs at the very end of repmgr_start() because it
+ * requires a select thread to perform the gmdb operations that remove
+ * the site from the replication group and immediately add the site back
+ * into the group as a view.  The demotion also preserves any other threads
+ * created by repmgr_start() so that they are there to be used by the
+ * demoted site after it is re-added as a view site.
+ *
+ * We remove and re-add the site to propagate the site's change from
+ * participant to view to all sites in the replication group.  This includes
+ * updates to each site's gmdb and in-memory site list.
+ */
+#define	REPMGR_DEMOTION_MASTER_RETRIES	10
+#define	REPMGR_DEMOTION_RETRY_USECS	500000
+static int
+__repmgr_demote_site(env, eid)
+	ENV *env;
+	int eid;
+{
+	DB_REP *db_rep;
+	DB_SITE *dbsite;
+	REP *rep;
+	REPMGR_SITE *site;
+	int ret, tries;
+
+	db_rep = env->rep_handle;
+	rep = db_rep->region;
+	site = SITE_FROM_EID(eid);
+
+	/* Inform other repmgr threads that a demotion is in progress. */
+	db_rep->demotion_pending = TRUE;
+
+	if ((ret = init_dbsite(env, eid, site->net_addr.host,
+	    site->net_addr.port, &dbsite)) != 0)
+		goto err;
+
+	/*
+	 * We need a master to perform the gmdb updates.  Poll periodically
+	 * for a limited time to find one.
+	 */
+	tries = 0;
+	while (rep->master_id == DB_EID_INVALID) {
+		__os_yield(env, 0, REPMGR_DEMOTION_RETRY_USECS);
+		if (++tries >= REPMGR_DEMOTION_MASTER_RETRIES) {
+			ret = DB_REP_UNAVAIL;
+			goto err;
+		}
+	}
+
+	/* Remove site from replication group and deallocates dbsite. */
+	if ((ret = __repmgr_remove_and_close_site(dbsite)) != 0)
+		goto err;
+
+	/*
+	 * Add site back into replication group as a view.  This demotion is
+	 * occurring because this site now has a view callback but its
+	 * SITE_VIEW flag is not set.  Now, __repmgr_join_group() will detect
+	 * the view callback and set the SITE_VIEW flag before sending this
+	 * site's information to the rest of the replication group.
+	 */
+	if ((ret = __repmgr_join_group(env)) != 0)
+		goto err;
+
+err:
+	/* Must reset demotion_pending before leaving this routine. */
+	db_rep->demotion_pending = FALSE;
+	return (ret);
 }

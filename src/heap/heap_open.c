@@ -1,12 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
+#include "dbinc/blob.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_swap.h"
@@ -82,6 +83,7 @@ __heap_metachk(dbp, name, hm)
 
 	env = dbp->env;
 	h = (HEAP *)dbp->heap_internal;
+	ret = 0;
 
 	/*
 	 * At this point, all we know is that the magic number is for a Heap.
@@ -115,6 +117,12 @@ __heap_metachk(dbp, name, hm)
 
 	/* Set the page size. */
 	dbp->pgsize = hm->dbmeta.pagesize;
+
+	dbp->blob_threshold = hm->blob_threshold;
+	GET_LO_HI(env,
+	    hm->blob_file_lo, hm->blob_file_hi, dbp->blob_file_id, ret);
+	if (ret != 0)
+		return (ret);
 
 	/* Copy the file's ID. */
 	memcpy(dbp->fileid, hm->dbmeta.uid, DB_FILE_ID_LEN);
@@ -285,6 +293,12 @@ __heap_new_file(dbp, ip, txn, fhp, name)
 		pginfo.type = dbp->type;
 		pdbt.data = &pginfo;
 		pdbt.size = sizeof(pginfo);
+		if (dbp->blob_threshold) {
+			if ((ret = __blob_generate_dir_ids(
+			    dbp, txn, &dbp->blob_file_id)) != 0)
+				return (ret);
+
+		}
 		if ((ret = __os_calloc(env, 1, dbp->pgsize, &buf)) != 0)
 			return (ret);
 		meta = (HEAPMETA *)buf;
@@ -394,7 +408,9 @@ done:	if (region != NULL && (t_ret = __memp_fput(mpf,
 	    dbc->thread_info, region, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
-	ret = __memp_fput(mpf, dbc->thread_info, meta, dbc->priority);
+	if ((t_ret = __memp_fput(mpf,
+	    dbc->thread_info, meta, dbc->priority)) != 0 && ret == 0)
+		ret = t_ret;
 	if ((t_ret = __TLPUT(dbc, meta_lock)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -436,4 +452,7 @@ __heap_init_meta(dbp, meta, pgno, lsnp)
 	meta->region_size = h->region_size;
 	meta->nregions = 1;
 	meta->curregion = 1;
+	meta->blob_threshold = dbp->blob_threshold;
+	SET_LO_HI(
+	    meta, dbp->blob_file_id, HEAPMETA, blob_file_lo, blob_file_hi);
 }

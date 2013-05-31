@@ -2,7 +2,7 @@
 package BerkeleyDB;
 
 
-#     Copyright (c) 1997-2011 Paul Marquess. All rights reserved.
+#     Copyright (c) 1997-2013 Paul Marquess. All rights reserved.
 #     This program is free software; you can redistribute it and/or
 #     modify it under the same terms as Perl itself.
 #
@@ -10,14 +10,14 @@ package BerkeleyDB;
 # The documentation for this module is at the bottom of this file,
 # after the line __END__.
 
-BEGIN { require 5.005 }
+use 5.006;
 
 use strict;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT $AUTOLOAD
 		$use_XSLoader);
 
-$VERSION = '0.50';
+$VERSION = '0.52';
 
 require Exporter;
 #require DynaLoader;
@@ -77,6 +77,7 @@ BEGIN {
 	DB_CDB_ALLDB
 	DB_CHECKPOINT
 	DB_CHKSUM
+	DB_CHKSUM_FAIL
 	DB_CHKSUM_SHA1
 	DB_CKP_INTERNAL
 	DB_CLIENT
@@ -165,6 +166,7 @@ BEGIN {
 	DB_EVENT_PANIC
 	DB_EVENT_REG_ALIVE
 	DB_EVENT_REG_PANIC
+	DB_EVENT_REP_AUTOTAKEOVER_FAILED
 	DB_EVENT_REP_CLIENT
 	DB_EVENT_REP_CONNECT_BROKEN
 	DB_EVENT_REP_CONNECT_ESTD
@@ -234,6 +236,7 @@ BEGIN {
 	DB_INIT_REP
 	DB_INIT_TXN
 	DB_INORDER
+	DB_INTERNAL_BLOB_DB
 	DB_INTERNAL_DB
 	DB_INTERNAL_PERSISTENT_DB
 	DB_INTERNAL_TEMPORARY_DB
@@ -298,6 +301,7 @@ BEGIN {
 	DB_LOGVERSION_LATCHING
 	DB_LOG_AUTOREMOVE
 	DB_LOG_AUTO_REMOVE
+	DB_LOG_BLOB
 	DB_LOG_BUFFER_FULL
 	DB_LOG_CHKPNT
 	DB_LOG_COMMIT
@@ -449,6 +453,7 @@ BEGIN {
 	DB_REPMGR_CONNECTED
 	DB_REPMGR_DISCONNECTED
 	DB_REPMGR_ISPEER
+	DB_REPMGR_ISVIEW
 	DB_REPMGR_NEED_RESPONSE
 	DB_REPMGR_PEER
 	DB_REP_ACK_TIMEOUT
@@ -540,6 +545,9 @@ BEGIN {
 	DB_STAT_NOERROR
 	DB_STAT_SUBSYSTEM
 	DB_STAT_SUMMARY
+	DB_STREAM_READ
+	DB_STREAM_SYNC_WRITE
+	DB_STREAM_WRITE
 	DB_ST_DUPOK
 	DB_ST_DUPSET
 	DB_ST_DUPSORT
@@ -619,6 +627,7 @@ BEGIN {
 	DB_VERB_DEADLOCK
 	DB_VERB_FILEOPS
 	DB_VERB_FILEOPS_ALL
+	DB_VERB_MVCC
 	DB_VERB_RECOVERY
 	DB_VERB_REGISTER
 	DB_VERB_REPLICATION
@@ -919,6 +928,8 @@ sub new
 					SharedMemKey	=> undef,
 					Set_Lk_Exclusive	=> undef,
 					ThreadCount	=> 0,
+					BlobThreshold	=> 0,
+                    BlobDir	=> undef,
 					}, @_) ;
 
     my $errfile  = $got->{ErrFile} ;				
@@ -1058,6 +1069,10 @@ sub new
 			WriteKey	=> undef,
 			ReadValue	=> undef,
 			WriteValue	=> undef,
+
+            # Blob
+            BlobThreshold	=> 0,
+            BlobDir	=> undef,
 		      }, @_) ;
 
     croak("Env not of type BerkeleyDB::Env")
@@ -1118,6 +1133,10 @@ sub new
 			DupCompare	=> undef,
 			Prefix 		=> undef,
 			set_bt_compress	=> undef,
+
+            # Blob
+            BlobThreshold	=> 0,
+            BlobDir	=> undef,
 		      }, @_) ;
 
     croak("Env not of type BerkeleyDB::Env")
@@ -1190,6 +1209,10 @@ sub new
 			# Heap specific
 			HeapSize	=> undef,
 			HeapSizeGb	=> undef,
+
+            # Blob
+            BlobThreshold	=> 0,
+            BlobDir	=> undef,
 		      }, @_) ;
 
     croak("Env not of type BerkeleyDB::Env")
@@ -1899,11 +1922,44 @@ sub c_dup
     return $obj ;
 }
 
+sub c_get_db_stream
+{
+    my $cursor = shift ;
+
+    my $addr = $cursor->_c_get_db_stream(@_);
+    my $obj ;
+    $obj = bless [$addr, $cursor] , "BerkeleyDB::DbStream" if $addr ;
+    return $obj ;
+}
+
+sub db_stream
+{
+    my $db = shift ;
+    my ($addr) = $db->_db_stream(@_) ;
+    my $obj ;
+    $obj = bless [$addr, $db] , "BerkeleyDB::DbStream" if $addr ;
+    return $obj ;
+}
+
+#sub gdbs
+#{
+#    my $cursor = shift ;
+#
+#    my $k = '';
+#    my $v = '';
+#    $db->partial_set(0,0) ;
+#    ok $cursor->c_get($k, $v, DB_FIRST) == 0, "set cursor"
+#        or diag "Status is [" . $cursor->status() . "]";
+#    $db->partial_clear() ;
+#    is $k, "1";
+#}
+
 sub DESTROY
 {
     my $self = shift ;
     $self->_DESTROY() ;
 }
+
 
 package BerkeleyDB::TxnMgr ;
 

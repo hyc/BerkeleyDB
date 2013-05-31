@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -87,7 +87,7 @@ proc test142 {method {tnum "142"} args } {
 	}
 
     	if { $noerr_env } {
-		puts "\t Test$tnum.b: Exclusive databases can have only 1 active txn."
+		puts "\tTest$tnum.b: Exclusive databases can have only 1 active txn."
  		set db [eval {berkdb_open_noerr -create -mode 0644 \
 		    -auto_commit $omethod -lk_exclusive 0} $args \
 		    ./multitxn.db ]

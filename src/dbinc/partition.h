@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * $Id$
@@ -22,6 +22,7 @@ typedef struct __db_partition {
 	u_int32_t	(*callback) (DB *, DBT *);
 #define	PART_CALLBACK	0x01
 #define	PART_RANGE	0x02
+#define	PART_KEYS_SETUP	0x04
 	u_int32_t	flags;
 } DB_PARTITION;
 

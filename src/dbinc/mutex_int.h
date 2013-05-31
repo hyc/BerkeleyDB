@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -778,6 +778,7 @@ MUTEX_SET(tsl_t *tsl) {
 static inline void
 MUTEX_UNSET(tsl_t *tsl) {
 	__asm__ volatile(
+	       "       .set mips2          \n"
 	       "       .set noreorder      \n"
 	       "       sync                \n"
 	       "       sw      $0, %0      \n"
@@ -991,19 +992,6 @@ struct __db_mutex_t { /* SHARED */	/* Mutex. */
 	(DB_MUTEX *)((u_int8_t *)env->mutex_handle->mutex_array +	\
 	    (indx) *							\
 	    ((DB_MUTEXREGION *)env->mutex_handle->reginfo.primary)->mutex_size))
-
-/*
- * Check that a particular mutex is exclusively held at least by someone, not
- * necessarily the current thread.
- */
-#ifdef HAVE_MUTEX_SUPPORT
-#define	MUTEX_IS_OWNED(env, mutex)					\
-	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
-	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
-	F_ISSET(MUTEXP_SET(env, mutex), DB_MUTEX_LOCKED))
-#else
-#define	MUTEX_IS_OWNED(env, mutex)	0
-#endif
 
 #if defined(HAVE_MUTEX_HYBRID) ||  defined(DB_WIN32) ||		\
 	(defined(HAVE_SHARED_LATCHES) && !defined(HAVE_MUTEX_PTHREADS))

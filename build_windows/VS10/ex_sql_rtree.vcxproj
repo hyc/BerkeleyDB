@@ -60,7 +60,7 @@
       <AdditionalIncludeDirectories>../../lang/sql/generated;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -68,7 +68,7 @@
       <AdditionalIncludeDirectories>../../lang/sql/generated;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -76,7 +76,7 @@
       <AdditionalIncludeDirectories>../../lang/sql/generated;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,7 +84,7 @@
       <AdditionalIncludeDirectories>../../lang/sql/generated;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

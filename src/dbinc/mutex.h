@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -24,10 +24,14 @@ extern "C" {
 #endif
 
 /*
- * By default, spin 50 times per processor if fail to acquire a test-and-set
- * mutex, we have anecdotal evidence it's a reasonable value.
+ * These specify the default spin parameters for test-and-set mutexes. A single
+ * processor system spins just once, a multiprocessor system spins 50 times per
+ * processor up to a default maximum of 200. This limit reduces excessive
+ * busy-waiting on machines with many hyperthreads. We have anecdotal evidence
+ * that these are reasonable default values.
  */
 #define	MUTEX_SPINS_PER_PROCESSOR	50
+#define	MUTEX_SPINS_DEFAULT_MAX		200
 
 /*
  * Mutexes are represented by unsigned, 32-bit integral values.  As the
@@ -241,21 +245,58 @@ static inline int __db_pthread_mutex_tryreadlock(ENV *env, db_mutex_t mutex)
 	    __ret != DB_TIMEOUT)				      \
 		return (DB_RUNRECOVERY);			      \
 } while (0)
+
+/*
+ * Check that a particular mutex is exclusively held at least by someone, not
+ * necessarily the current thread.
+ */
+#define	MUTEX_IS_OWNED(env, mutex)					\
+	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
+	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
+	F_ISSET(MUTEXP_SET(env, mutex), DB_MUTEX_LOCKED))
 #else
 /*
  * There are calls to lock/unlock mutexes outside of #ifdef's -- replace
  * the call with something the compiler can discard, but which will make
- * if-then-else blocks work correctly.
+ * if-then-else blocks work correctly, and suppress unused variable messages.
  */
-#define	MUTEX_LOCK(env, mutex)		(mutex) = (mutex)
-#define	MUTEX_TRYLOCK(env, mutex)	(mutex) = (mutex)
-#define	MUTEX_READLOCK(env, mutex)	(mutex) = (mutex)
-#define	MUTEX_TRY_READLOCK(env, mutex)	(mutex) = (mutex)
-#define	MUTEX_UNLOCK(env, mutex)	(mutex) = (mutex)
-#define	MUTEX_REQUIRED(env, mutex)	(mutex) = (mutex)
-#define	MUTEX_REQUIRED_READ(env, mutex)	(mutex) = (mutex)
-#define	MUTEX_WAIT(env, mutex, duration) (mutex) = (mutex)
+#define	MUTEX_LOCK(env, mutex)		{ env = (env); mutex = (mutex); }
+#define	MUTEX_TRYLOCK(env, mutex)	( env = (env), mutex = (mutex), 0)
+#define	MUTEX_READLOCK(env, mutex)	{ env = (env); mutex = (mutex); }
+#define	MUTEX_TRY_READLOCK(env, mutex)	( env = (env), mutex = (mutex), 0 )
+#define	MUTEX_UNLOCK(env, mutex)	{ env = (env); mutex = (mutex); }
+#define	MUTEX_REQUIRED(env, mutex)	{ env = (env); mutex = (mutex); }
+#define	MUTEX_REQUIRED_READ(env, mutex)	{ env = (env); mutex = (mutex); }
+#define	MUTEX_WAIT(env, mutex, duration)	{			\
+	(env) = (env); (mutex) = (mutex); (duration) = (duration);	\
+}
+
+/*
+ * Every MUTEX_IS_OWNED() caller expects to own it. When there is no mutex
+ * support, act as if we have ownership.
+ */
+#define	MUTEX_IS_OWNED(env, mutex)	1
 #endif
+
+/*
+ * Bulk initialization of mutexes in regions.
+ */
+
+#define MUTEX_BULK_INIT(env, region, start, howmany) do {		\
+	DB_MUTEX *__mutexp;						\
+	db_mutex_t __i = start;						\
+	u_int32_t __n = howmany;					\
+	for (__mutexp = MUTEXP_SET(env, __i);				\
+	    --__n > 0;							\
+	    __mutexp = MUTEXP_SET(env, __i)) {				\
+		__mutexp->flags = 0;					\
+		__i = (F_ISSET(env, ENV_PRIVATE)) ?			\
+		    ((uintptr_t)__mutexp + region->mutex_size) : __i + 1; \
+		__mutexp->mutex_next_link = __i;			\
+	}								\
+	__mutexp->flags = 0;						\
+	__mutexp->mutex_next_link = MUTEX_INVALID;			\
+} while (0)
 
 /*
  * Berkeley DB ports may require single-threading at places in the code.

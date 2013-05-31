@@ -151,6 +151,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Condition="exists('..\..\src\crypto\aes_method.c')" Include="..\..\src\crypto\aes_method.c"/>
+    <ClCompile Include="..\..\src\blob\blob_fileops.c"/>
+    <ClCompile Include="..\..\src\blob\blob_page.c"/>
+    <ClCompile Include="..\..\src\blob\blob_stream.c"/>
+    <ClCompile Include="..\..\src\blob\blob_util.c"/>
     <ClCompile Include="..\..\src\btree\bt_compact.c"/>
     <ClCompile Include="..\..\src\btree\bt_compare.c"/>
     <ClCompile Include="..\..\src\btree\bt_compress.c"/>
@@ -177,6 +181,7 @@
     <ClCompile Include="..\..\lang\cxx\cxx_channel.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_db.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_dbc.cpp"/>
+    <ClCompile Include="..\..\lang\cxx\cxx_dbstream.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_dbt.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_env.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_except.cpp"/>
@@ -271,7 +276,6 @@
     <ClCompile Include="..\..\src\hash\hash_verify.c"/>
     <ClCompile Include="..\..\src\heap\heap.c"/>
     <ClCompile Include="..\..\src\heap\heap_auto.c"/>
-    <ClCompile Include="..\..\src\heap\heap_autop.c"/>
     <ClCompile Include="..\..\src\heap\heap_backup.c"/>
     <ClCompile Include="..\..\src\heap\heap_conv.c"/>
     <ClCompile Include="..\..\src\heap\heap_method.c"/>
@@ -424,7 +428,7 @@
     <None Include="../libdb.def"/>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="../libdb.rc">
+    <ResourceCompile Include="..\..\build_windows\libdb.rc">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_DEBUG;$(NoInherit));%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">NDEBUG;$(NoInherit));%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NDEBUG;$(NoInherit));%(PreprocessorDefinitions)</PreprocessorDefinitions>

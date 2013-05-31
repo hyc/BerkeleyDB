@@ -479,7 +479,7 @@ declare function local:generateRcFilesNoFilter($project)
   for $file in $project/files//file return
        if (ends-with($file/@name,".rc")) then
 	    (local:indent(2),<ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	       {local:indent(4)}<ResourceCompile Include="../{substring-after($file/@name,"/")}">
+	       {local:indent(4)}<ResourceCompile Include="{local:windowsPath(concat($sourcePath,$file/@name))}">
 	       {for $platform in local:getPlatforms($vsversion) return
 	          for $config in local:getConfiguration($project) return(
 		    local:indent(6), <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=={concat("'",$config,"|",$platform,"'")}">{concat(if ($config="Debug") then "_DEBUG" else "NDEBUG",";","$(NoInherit))",";%(PreprocessorDefinitions)")}</PreprocessorDefinitions>)

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -17,11 +17,12 @@
 static int  __rep_abort_prepared __P((ENV *));
 static int  __rep_await_condition __P((ENV *,
     struct rep_waitgoal *, db_timeout_t));
-static int  __rep_bt_cmp __P((DB *, const DBT *, const DBT *));
+static int  __rep_bt_cmp __P((DB *, const DBT *, const DBT *, size_t *));
 static int  __rep_check_applied __P((ENV *,
     DB_THREAD_INFO *, DB_COMMIT_INFO *, struct rep_waitgoal *));
 static void __rep_config_map __P((ENV *, u_int32_t *, u_int32_t *));
 static u_int32_t __rep_conv_vers __P((ENV *, u_int32_t));
+static int __rep_defview __P((DB_ENV *, const char *, int *, u_int32_t));
 static int __rep_read_lsn_history __P((ENV *,
     DB_THREAD_INFO *, DB_TXN **, DBC **, u_int32_t,
     __rep_lsn_hist_data_args *, struct rep_waitgoal *, u_int32_t));
@@ -368,11 +369,17 @@ __rep_start_pp(dbenv, dbt, flags)
 	DBT *dbt;
 	u_int32_t flags;
 {
-	DB_REP *db_rep;
 	ENV *env;
+	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
+	char *path;
+	int isdir, ret;
+	u_int32_t blob_threshold;
 
 	env = dbenv->env;
 	db_rep = env->rep_handle;
+	path = NULL;
+	isdir = 0;
 
 	ENV_REQUIRES_CONFIG_XX(
 	    env, rep_handle, "DB_ENV->rep_start", DB_INIT_REP);
@@ -382,6 +389,25 @@ __rep_start_pp(dbenv, dbt, flags)
 "DB_ENV->rep_start: cannot call from Replication Manager application"));
 		return (EINVAL);
 	}
+
+	if ((ret = __env_get_blob_threshold_pp(dbenv, &blob_threshold)) != 0)
+		return (ret);
+	if (blob_threshold != 0) {
+		__db_errx(env, DB_STR("3683",
+		    "Cannot start replication with blobs enabled."));
+		return (EINVAL);
+	}
+
+	/* Check if the blob directory exists. */
+	if ((ret = __db_appname(env, DB_APP_BLOB, NULL, NULL, &path)) != 0)
+		return (ret);
+	if (__os_exists(env, path, &isdir) == 0 && isdir != 0) {
+		__os_free(env, path);
+		__db_errx(env, DB_STR("3684",
+		    "Cannot start replication with blobs enabled."));
+		return (EINVAL);
+	}
+	__os_free(env, path);
 
 	switch (LF_ISSET(DB_REP_CLIENT | DB_REP_MASTER)) {
 	case DB_REP_CLIENT:
@@ -400,7 +426,11 @@ __rep_start_pp(dbenv, dbt, flags)
 		return (EINVAL);
 	}
 
-	return (__rep_start_int(env, dbt, flags));
+	ENV_ENTER(env, ip);
+	ret = __rep_start_int(env, dbt, flags);
+	ENV_LEAVE(env, ip);
+
+	return (ret);
 }
 
 /*
@@ -474,9 +504,31 @@ __rep_start_int(env, dbt, flags)
 		return (EINVAL);
 	}
 
-	ENV_ENTER(env, ip);
+	/*
+	 * If we are a view, we can never become master.
+	 */
+	if (IS_VIEW_SITE(env) && role == DB_REP_MASTER) {
+		__db_errx(env, DB_STR("3685",
+		    "View site cannot become master"));
+		return (EINVAL);
+	}
+
+	/*
+	 * Check for consistent view usage.  We need to check here rather
+	 * than in __rep_open because non-rep-aware processes such as
+	 * db_stat may open/join the environment.  Rep-aware handles must
+	 * consistently set the view.
+	 */
+	if ((ret = __rep_check_view(env)) != 0) {
+		RPRINT(env, (env, DB_VERB_REP_MISC,
+		    "Application env/view mismatch."));
+		__db_errx(env, DB_STR("3686",
+		    "Application environment and view callback mismatch"));
+		return (ret);
+	}
 
 	/* Serialize rep_start() calls. */
+	ENV_GET_THREAD_INFO(env, ip);
 	MUTEX_LOCK(env, rep->mtx_repstart);
 	start_th = 1;
 
@@ -928,6 +980,15 @@ __rep_start_int(env, dbt, flags)
 			 * sync with the master.
 			 */
 			SET_GEN(0);
+		/*
+		 * If we are changing role to client, reset our min log file
+		 * until we hear from a master or another client.  In
+		 * particular, in a dupmaster situation, if this site loses
+		 * an election a stale min_log_file would prevent archiving.
+		 */
+#ifdef HAVE_REPLICATION_THREADS
+		rep->min_log_file = 0;
+#endif
 		REP_SYSTEM_UNLOCK(env);
 
 		/*
@@ -967,7 +1028,6 @@ out:
 	if (start_th)
 		MUTEX_UNLOCK(env, rep->mtx_repstart);
 	__dbt_userfree(env, dbt, NULL, NULL);
-	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -1243,14 +1303,16 @@ err:		if (dbp != NULL &&
  * care about the LSNs.
  */
 static int
-__rep_bt_cmp(dbp, dbt1, dbt2)
+__rep_bt_cmp(dbp, dbt1, dbt2, locp)
 	DB *dbp;
 	const DBT *dbt1, *dbt2;
+	size_t *locp;
 {
 	DB_LSN lsn1, lsn2;
 	__rep_control_args *rp1, *rp2;
 
 	COMPQUIET(dbp, NULL);
+	COMPQUIET(locp, NULL);
 
 	rp1 = dbt1->data;
 	rp2 = dbt2->data;
@@ -1684,7 +1746,10 @@ __rep_set_nsites_pp(dbenv, n)
 "DB_ENV->rep_set_nsites: cannot call from Replication Manager application"));
 		return (EINVAL);
 	}
-	if ((ret = __rep_set_nsites_int(env, n)) == 0)
+	ENV_ENTER(env, ip);
+	ret = __rep_set_nsites_int(env, n);
+	ENV_LEAVE(env, ip);
+	if (ret == 0)
 		APP_SET_BASEAPI(env);
 	return (ret);
 }
@@ -1888,6 +1953,7 @@ __rep_set_timeout(dbenv, which, timeout)
 			rep->ack_timeout = timeout;
 		else
 			db_rep->ack_timeout = timeout;
+		ADJUST_AUTOTAKEOVER_WAITS(db_rep, timeout);
 		break;
 	case DB_REP_CONNECTION_RETRY:
 		if (REP_ON(env))
@@ -2099,6 +2165,55 @@ __rep_set_request(dbenv, min, max)
 }
 
 /*
+ * __rep_set_view --
+ *	Set the view/partial replication function.
+ *
+ * PUBLIC: int __rep_set_view __P((DB_ENV *,
+ * PUBLIC:     int (*)(DB_ENV *, const char *, int *, u_int32_t)));
+ */
+int
+__rep_set_view(dbenv, f_partial)
+	DB_ENV *dbenv;
+	int (*f_partial) __P((DB_ENV *,
+	    const char *, int *, u_int32_t));
+{
+	DB_REP *db_rep;
+	ENV *env;
+
+	env = dbenv->env;
+	db_rep = env->rep_handle;
+
+	ENV_NOT_CONFIGURED(
+	    env, db_rep->region, "DB_ENV->rep_set_view", DB_INIT_REP);
+
+	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->rep_set_view");
+
+	if (f_partial == NULL)
+		db_rep->partial = __rep_defview;
+	else
+		db_rep->partial = f_partial;
+	return (0);
+}
+
+/*
+ * __rep_defview --
+ *	Default view function.  Always replicate.
+ */
+static int
+__rep_defview(dbenv, name, result, flags)
+	DB_ENV *dbenv;
+	const char *name;
+	int *result;
+	u_int32_t flags;
+{
+	COMPQUIET(dbenv, NULL);
+	COMPQUIET(name, NULL);
+	COMPQUIET(flags, 0);
+	*result = 1;
+	return (0);
+}
+
+/*
  * __rep_set_transport_pp --
  *	Set the transport function for replication.
  *
@@ -2288,25 +2403,46 @@ __rep_set_clockskew(dbenv, fast_clock, slow_clock)
 }
 
 /*
- * __rep_flush --
+ * __rep_flush_pp --
  *	Re-push the last log record to all clients, in case they've lost
  *	messages and don't know it.
  *
- * PUBLIC: int __rep_flush __P((DB_ENV *));
+ * PUBLIC: int __rep_flush_pp __P((DB_ENV *));
  */
 int
-__rep_flush(dbenv)
+__rep_flush_pp (dbenv)
 	DB_ENV *dbenv;
+{
+	ENV *env;
+	DB_THREAD_INFO *ip;
+	int ret;
+
+	env = dbenv->env;
+
+	ENV_ENTER(env, ip);
+	ret = __rep_flush_int(env);
+	ENV_LEAVE(env, ip);
+
+	return (ret);
+}
+
+/*
+ * __rep_flush_int --
+ *	Re-push the last log record to all clients, in case they've lost
+ *	messages and don't know it.
+ *
+ * PUBLIC: int __rep_flush_int __P((ENV *));
+ */
+int
+__rep_flush_int(env)
+	ENV *env;
 {
 	DBT rec;
 	DB_LOGC *logc;
 	DB_LSN lsn;
 	DB_REP *db_rep;
-	DB_THREAD_INFO *ip;
-	ENV *env;
 	int ret, t_ret;
 
-	env = dbenv->env;
 	db_rep = env->rep_handle;
 
 	ENV_REQUIRES_CONFIG_XX(
@@ -2322,8 +2458,6 @@ __rep_flush(dbenv)
 		return (EINVAL);
 	}
 
-	ENV_ENTER(env, ip);
-
 	if ((ret = __log_cursor(env, &logc)) != 0)
 		return (ret);
 
@@ -2338,7 +2472,6 @@ __rep_flush(dbenv)
 
 err:	if ((t_ret = __logc_close(logc)) != 0 && ret == 0)
 		ret = t_ret;
-	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -3005,8 +3138,10 @@ __rep_conv_vers(env, log_ver)
 
 	/*
 	 * We can't use a switch statement, some of the DB_LOGVERSION_XX
-	 * constants are the same
+	 * constants are the same.
 	 */
+	if (log_ver == DB_LOGVERSION_60)
+		return (DB_REPVERSION_60);
 	if (log_ver == DB_LOGVERSION_53)
 		return (DB_REPVERSION_53);
 	if (log_ver == DB_LOGVERSION_52)

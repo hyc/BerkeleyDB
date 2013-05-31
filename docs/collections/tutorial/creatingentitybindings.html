@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -50,13 +50,13 @@
 	mapping, while an entity binding is a two-to-one mapping.
 </p>
       <p>
-    The <code class="literal">partValueBinding</code>, <code class="literal">supplierValueBinding</code> and
-	<code class="literal">shipmentValueBinding</code> bindings are created below as entity
+    The <code class="literal">partDataBinding</code>, <code class="literal">supplierDataBinding</code> and
+	<code class="literal">shipmentDataBinding</code> bindings are created below as entity
 	bindings rather than (in the prior examples) serial bindings.
 </p>
       <a id="entity_sampleviews"></a>
       <pre class="programlisting">import com.sleepycat.bind.EntryBinding;
-<strong class="userinput"><code>import com.sleepycat.bind.EntityBinding;</code></strong>
+<strong class="userinput"><code>import com.sleepycat.bind.serial.ClassCatalog;</code></strong>
 import com.sleepycat.bind.serial.SerialBinding;
 <strong class="userinput"><code>import com.sleepycat.bind.serial.SerialSerialBinding;</code></strong>
 ...
@@ -69,16 +69,16 @@ public class SampleViews
         ClassCatalog catalog = db.getClassCatalog();
         SerialBinding partKeyBinding =
             new SerialBinding(catalog, PartKey.class);
-<strong class="userinput"><code>        EntityBinding partValueBinding =
+<strong class="userinput"><code>        EntityBinding partDataBinding =
             new PartBinding(catalog, PartKey.class, PartData.class);</code></strong>
         SerialBinding supplierKeyBinding =
             new SerialBinding(catalog, SupplierKey.class);
-<strong class="userinput"><code>        EntityBinding supplierValueBinding =
+<strong class="userinput"><code>        EntityBinding supplierDataBinding =
             new SupplierBinding(catalog, SupplierKey.class,
                                 SupplierData.class);</code></strong>
         SerialBinding shipmentKeyBinding =
             new SerialBinding(catalog, ShipmentKey.class);
-<strong class="userinput"><code>        EntityBinding shipmentValueBinding =
+<strong class="userinput"><code>        EntityBinding shipmentDataBinding =
             new ShipmentBinding(catalog, ShipmentKey.class,
                                 ShipmentData.class);</code></strong>
         SerialBinding cityKeyBinding =

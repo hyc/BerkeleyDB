@@ -65,12 +65,27 @@ void __os_stack __P((ENV *));
 int __os_exists __P((ENV *, const char *, int *));
 int __os_ioinfo __P((ENV *, const char *, DB_FH *, u_int32_t *, u_int32_t *, u_int32_t *));
 int __os_tmpdir __P((ENV *, u_int32_t));
-int __os_truncate __P((ENV *, DB_FH *, db_pgno_t, u_int32_t));
+int __os_truncate __P((ENV *, DB_FH *, db_pgno_t, u_int32_t, off_t));
 void __os_unique_id __P((ENV *, u_int32_t *));
 int __os_unlink __P((ENV *, const char *, int));
 void __os_yield __P((ENV *, u_long, u_long));
 #ifdef HAVE_QNX
 int __os_qnx_region_open __P((ENV *, const char *, int, int, DB_FH **));
+#endif
+#ifdef DB_WINCE
+FILE * __ce_freopen __P((const char *, const char *, FILE *));
+#endif
+#ifdef DB_WINCE
+struct tm * __ce_gmtime __P((const time_t *));
+#endif
+#ifdef DB_WINCE
+struct tm * localtime __P((const time_t *));
+#endif
+#ifdef DB_WINCE
+time_t __ce_mktime __P((struct tm *));
+#endif
+#ifdef DB_WINCE
+int __ce_remove __P((const char *path));
 #endif
 int __os_is_winnt __P((void));
 u_int32_t __os_cpu_count __P((void));

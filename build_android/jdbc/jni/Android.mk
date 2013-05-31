@@ -1,6 +1,6 @@
 # DO NOT EDIT: automatically built by dist/s_android.
 # Makefile for building Android.JDBC for DBSQL
-# Berkeley DB 11g Release 2, library version 11.2.5.3.21: (May 11, 2012)
+# Berkeley DB 12c Release 1, library version 12.1.6.0.19: (May 31, 2013)
 #
 # This Makefile will generate 3 files:
 #   1. Static libdb_sql library. An internal library and users don't
@@ -10,6 +10,7 @@
 #      Android directly.
 ###################################################################
 LOCAL_PATH := $(call my-dir)
+BDB_ENABLE_ENCRYPTION := false
 
 ###################################################################
 # Common variables
@@ -43,6 +44,10 @@ COMMON_CFLAGS := -Wall -DHAVE_USLEEP=1 \
 	-D_HAVE_SQLITE_CONFIG_H -DSQLITE_THREAD_OVERRIDE_LOCK=-1 \
 	-DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_BACKWARDS -Dfdatasync=fsync
 
+ifeq ($(BDB_ENABLE_ENCRYPTION),true)
+COMMON_CFLAGS += -DSQLITE_HAS_CODEC -DHAVE_CRYPTO -DHAVE_SQLITE3_KEY
+endif
+
 # Required for JDBC building
 # Most of these are from configured <db>/lang/sql/jdbc/Makefile.in
 COMMON_CFLAGS += \
@@ -66,7 +71,6 @@ COMMON_CFLAGS += \
 	-DHAVE_SQLITE3_BIND_PARAMETER_INDEX=1 \
 	-DHAVE_SQLITE3_RESULT_ZEROBLOB=1 \
 	-DHAVE_SQLITE3_INCRBLOBIO=1 \
-	-DHAVE_SQLITE3_KEY=0 \
 	-DHAVE_SQLITE3_SHARED_CACHE=1 \
 	-DHAVE_SQLITE3_OPEN_V2=1 \
 	-DHAVE_SQLITE3_LOAD_EXTENSION=0 \
@@ -96,6 +100,10 @@ LOCAL_CFLAGS += $(COMMON_CFLAGS)
 
 # Source files
 LOCAL_SRC_FILES := \
+	$(BDB_TOP)/src/blob/blob_fileops.c \
+	$(BDB_TOP)/src/blob/blob_page.c \
+	$(BDB_TOP)/src/blob/blob_stream.c \
+	$(BDB_TOP)/src/blob/blob_util.c \
 	$(BDB_TOP)/src/btree/bt_compact.c \
 	$(BDB_TOP)/src/btree/bt_compare.c \
 	$(BDB_TOP)/src/btree/bt_compress.c \
@@ -118,7 +126,6 @@ LOCAL_SRC_FILES := \
 	$(BDB_TOP)/src/clib/rand.c \
 	$(BDB_TOP)/src/clib/snprintf.c \
 	$(BDB_TOP)/src/common/clock.c \
-	$(BDB_TOP)/src/common/crypto_stub.c \
 	$(BDB_TOP)/src/common/db_byteorder.c \
 	$(BDB_TOP)/src/common/db_compint.c \
 	$(BDB_TOP)/src/common/db_err.c \
@@ -281,6 +288,17 @@ LOCAL_SRC_FILES := \
 	$(BDB_TOP)/src/txn/txn_stat.c \
 	$(BDB_TOP)/src/txn/txn_util.c \
 	$(BDB_TOP)/lang/sql/generated/sqlite3.c
+
+ifeq ($(BDB_ENABLE_ENCRYPTION),true)
+LOCAL_SRC_FILES += \
+	$(BDB_TOP)/src/crypto/crypto.c \
+	$(BDB_TOP)/src/crypto/aes_method.c \
+	$(BDB_TOP)/src/crypto/mersenne/mt19937db.c \
+	$(BDB_TOP)/src/crypto/rijndael/rijndael-api-fst.c \
+	$(BDB_TOP)/src/crypto/rijndael/rijndael-alg-fst.c
+else
+LOCAL_SRC_FILES += $(BDB_TOP)/src/common/crypto_stub.c
+endif
 
 ifneq ($(TARGET_ARCH),arm)
 LOCAL_LDLIBS += -lpthread -ldl

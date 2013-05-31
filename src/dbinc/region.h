@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -196,10 +196,10 @@ typedef struct __db_reg_env { /* SHARED */
 
 
 	/*
-	 * The mtx_regenv mutex protects the environment reference count and
-	 * memory allocation from the primary shared region (the crypto, thread
-	 * control block and replication implementations allocate memory from
-	 * the primary shared region).
+	 * The mtx_regenv mutex protects the environment reference count,
+	 * blob threshold and memory allocation from the primary shared region
+	 * (the crypto, thread control block and replication implementations
+	 * allocate memory from the primary shared region).
 	 *
 	 * The rest of the fields are initialized at creation time, and don't
 	 * need mutex protection.  The flags, op_timestamp and rep_timestamp
@@ -209,6 +209,7 @@ typedef struct __db_reg_env { /* SHARED */
 	 */
 	db_mutex_t mtx_regenv;		/* Refcnt, region allocation mutex. */
 	u_int32_t  refcnt;		/* References to the environment. */
+	u_int32_t  blob_threshold;	/* Environment wide blob threshold. */
 
 	u_int32_t region_cnt;		/* Number of REGIONs. */
 	roff_t	  region_off;		/* Offset of region array */

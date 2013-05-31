@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -94,10 +94,12 @@ is as follows:</p>
         <a id="prog_am2"></a>
         <pre class="programlisting">
 int
-compare_int(DB *dbp, const DBT *a, const DBT *b)
+compare_int(DB *dbp, const DBT *a, const DBT *b, size_t *locp)
     
 {
     int ai, bi;
+
+    locp = NULL;
     /*
      * Returns:
      *    &lt; 0 if a &lt; b
@@ -120,12 +122,13 @@ five bytes of the key (ignoring any subsequent bytes) is as follows:</p>
         <a id="prog_am3"></a>
         <pre class="programlisting">
 int
-compare_dbt(DB *dbp, const DBT *a, const DBT *b)
+compare_dbt(DB *dbp, const DBT *a, const DBT *b, size_t *locp)
     
 {
     int len;
     u_char *p1, *p2;
 
+    locp = NULL;
     /*
      * Returns:
      *    &lt; 0 if a &lt; b
@@ -642,7 +645,7 @@ err:    /* Close the cursor. */
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1755952"></a>Programmer Notes</h4>
+                <h4 class="title"><a id="idp50411784"></a>Programmer Notes</h4>
               </div>
             </div>
           </div>

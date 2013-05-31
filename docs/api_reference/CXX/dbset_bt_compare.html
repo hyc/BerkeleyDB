@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -42,7 +42,7 @@
  
 extern "C" {
     typedef int (*bt_compare_fcn_type)(DB *db, const DBT *dbt1, 
-                 const DBT *dbt2);
+        const DBT *dbt2, size_t *locp);
 };
 int
 Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
@@ -81,7 +81,7 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3377304"></a>Parameters</h3>
+              <h3 class="title"><a id="idm3583648"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -89,14 +89,14 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3409440"></a>bt_compare_fcn</h4>
+                <h4 class="title"><a id="idm3600768"></a>bt_compare_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>bt_compare_fcn</strong></span> function is the
                           application-specified Btree comparison function.  The comparison
-                          function takes three parameters:
+                          function takes four parameters:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -129,6 +129,15 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
                                  tree's key.
                             </p>
               </li>
+              <li>
+                <p>
+                                <code class="literal">locp</code>
+                             </p>
+                <p>
+                                 The <span class="bold"><strong>locp</strong></span> parameter is currently
+                                 unused, and must be set to NULL or corruption can occur.
+                             </p>
+              </li>
             </ul>
           </div>
           <p>
@@ -154,7 +163,7 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm4783280"></a>Errors</h3>
+              <h3 class="title"><a id="idm5217176"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -172,7 +181,7 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4725208"></a>EINVAL</h4>
+                <h4 class="title"><a id="idm4731968"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -186,7 +195,7 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1858112"></a>Class</h3>
+              <h3 class="title"><a id="idm4564544"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -198,7 +207,7 @@ Db::set_bt_compare(bt_compare_fcn_type bt_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3850952"></a>See Also</h3>
+              <h3 class="title"><a id="idm2082680"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -198,6 +198,14 @@ configure program.</p>
             jni.h). On some systems, additional include directories may be
             needed to process jni.h; see <a class="xref" href="build_unix_flags.html" title="Changing compile or load options">Changing compile or load options</a> for more information.
         </p>
+            <p>
+           </p>
+            <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3>
+            The --enable-java option may not be specified at the same time as
+            --enable-smallbuild or --disable-statistics.
+           </div>
+            <p>
+        </p>
           </li>
           <li>
             <p><a id="build_unix_conf.--enable-posixmutexes"></a>
@@ -294,10 +302,10 @@ commands. It is identical to the dbsql executable but named so that existing scr
             To build a small memory footprint version of the Berkeley DB
             library, enter --enable-smallbuild as an argument to configure.
             The --enable-smallbuild argument is equivalent to individually
-            specifying --with-cryptography=no, --disable-hash,
+            specifying --with-cryptography=no, --disable-hash, --disable-heap,
             --disable-queue, --disable-replication, --disable-statistics
             and --disable-verify, turning off cryptography support, the
-            Hash and Queue access methods, database environment replication
+            Hash, Heap and Queue access methods, database environment replication
             support and database and log verification support.  See 
             <a class="xref" href="build_unix_small.html" title="Building a small memory footprint library">Building a small memory footprint library</a> 
             for more information.
@@ -459,8 +467,7 @@ db.h and db_cxx.h header files.
             <p>
             If you use this configuration option, you can get an idea of
             what text should be issued for a given error message by using
-            the <a href="../articles/mssgtxt/index.html" class="olink">Message
-                Reference for Stripped Libraries</a> guide.
+            the <a href="../articles/mssgtxt/index.html" class="olink">Berkeley DB Message Reference Guide</a>.
         </p>
           </li>
           <li>
@@ -468,22 +475,43 @@ db.h and db_cxx.h header files.
             <span class="bold"><strong>--with-cryptography</strong></span>
         </p>
             <p>
-        To build Berkeley DB with support for cryptography, enter --with-cryptography=yes as an argument to configure. 
+            Enter <code class="literal">--with-cryptography=yes|no</code> to build Berkeley DB libraries with
+           or without cryptography support. By default, cryptography is enabled
+           for Berkeley DB base libraries, and disabled when building the optional
+           Berkeley DB SQL and JDBC libraries.
         </p>
-            <p>To build Berkeley DB without support for cryptography, enter --with-cryptography=no as an argument to configure.
+            <p>
+            To build Berkeley DB with support for cryptography using
+            Intel's Performance Primitive (IPP) library, enter
+            <code class="literal">--with-cryptography=ipp</code> as an argument to configure.
+            Additionally, set the following arguments:
         </p>
-            <p>To build Berkeley DB with support for cryptography using Intel's Performance Primitive (IPP) library, enter --with-cryptography=ipp as an argument to configure. Additionally, set the following arguments:</p>
-            <p>-L/path/to/ipp/sharedlib to LDFLAGS</p>
-            <p>-I/path/to/ipp/include to CPPFLAGS</p>
-            <p>-lippcpem64t -lpthread to LIBS</p>
-            <p> An example configuration command for IPP encryption is as follows:</p>
-            <p></p>
+            <div class="itemizedlist">
+              <ul type="circle">
+                <li>
+                  <p>-L/path/to/ipp/sharedlib to LDFLAGS</p>
+                </li>
+                <li>
+                  <p>-I/path/to/ipp/include to CPPFLAGS</p>
+                </li>
+                <li>
+                  <p>-lippcpem64t -lpthread to LIBS</p>
+                </li>
+              </ul>
+            </div>
+            <p>
+            An example configuration command for IPP encryption is as follows:
+        </p>
             <pre class="programlisting"> ../dist/configure -with-cryptography=ipp 
          CPPFLAGS="-I/opt/intel/ipp/6.1.3.055/em64t/include" 
          LDFLAGS="-L/opt/intel/ipp/6.1.3.055/em64t/sharedlib" 
          LIBS="-lippcpem64t -lpthread"</pre>
-            <p>See the<a class="ulink" href="http://software.intel.com/en-us/articles/intel-integrated-performance-primitives-documentation/" target="_top"> Intel Documenation</a> for specific instructions on configuring environment variables.</p>
-            <p>Note: The --with-cryptography=ipp argument works only on Linux.</p>
+            <p>
+            See the
+            <a class="ulink" href="http://software.intel.com/en-us/articles/intel-integrated-performance-primitives-documentation/" target="_top">Intel Documentation</a> 
+            for specific instructions on configuring environment variables.
+        </p>
+            <p>Note: The <code class="literal">--with-cryptography=ipp</code> argument works only on Linux.</p>
           </li>
           <li>
             <p><a id="build_unix_conf.--with-mutex"></a>

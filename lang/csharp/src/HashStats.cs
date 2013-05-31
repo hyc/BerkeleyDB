@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -54,6 +54,10 @@ namespace BerkeleyDB {
         /// Magic number. 
         /// </summary>
         public uint MagicNumber { get { return st.hash_magic; } }
+        /// <summary>
+        /// Number of blob records.
+        /// </summary>
+        public uint nBlobRecords { get { return st.hash_nblobs; } }
         /// <summary>
         /// Number of data items. 
         /// </summary>

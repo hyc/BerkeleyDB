@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -170,11 +170,12 @@ __mutex_print_summary(env)
 	size = 0;
 
 	if (F_ISSET(env, ENV_PRIVATE)) {
-		mutexp = (DB_MUTEX *)mtxmgr->mutex_array + 1;
+		mutexp = (DB_MUTEX *)((uintptr_t)mtxmgr->mutex_array +
+		    mtxregion->mutex_size);
 		chunk = NULL;
 		size = __env_elem_size(env,
 		    ROFF_TO_P(mtxregion->mutex_off_alloc));
-		size -= sizeof(*mutexp);
+		size -= mtxregion->mutex_size;
 	} else
 		mutexp = MUTEXP_SET(env, 1);
 	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i) {
@@ -185,13 +186,15 @@ __mutex_print_summary(env)
 		else
 			counts[mutexp->alloc_id]++;
 
-		mutexp++;
+		mutexp = (DB_MUTEX *)((uintptr_t)mutexp +
+		    mtxregion->mutex_size);
 		if (F_ISSET(env, ENV_PRIVATE) &&
 		    (size -= sizeof(*mutexp)) < sizeof(*mutexp)) {
 			mutexp =
 			    __env_get_chunk(&mtxmgr->reginfo, &chunk, &size);
+			mutexp = ALIGNP_INC(mutexp,
+			    mtxregion->stat.st_mutex_align);
 		}
-		mutexp = ALIGNP_INC(mutexp, mtxregion->stat.st_mutex_align);
 	}
 	__db_msg(env, "Mutex counts");
 	__db_msg(env, "%d\tUnallocated", counts[0]);
@@ -294,11 +297,12 @@ __mutex_print_all(env, flags)
 	__db_msg(env, "mutex\twait/nowait, pct wait, holder, flags");
 	size = 0;
 	if (F_ISSET(env, ENV_PRIVATE)) {
-		mutexp = (DB_MUTEX *)mtxmgr->mutex_array + 1;
+		mutexp = (DB_MUTEX *)((uintptr_t)mtxmgr->mutex_array +
+		    mtxregion->mutex_size);
 		chunk = NULL;
 		size = __env_elem_size(env,
 		    ROFF_TO_P(mtxregion->mutex_off_alloc));
-		size -= sizeof(*mutexp);
+		size -= mtxregion->mutex_size;
 	} else
 		mutexp = MUTEXP_SET(env, 1);
 	for (i = 1; i <= mtxregion->stat.st_mutex_cnt; ++i) {
@@ -318,13 +322,15 @@ __mutex_print_all(env, flags)
 			DB_MSGBUF_FLUSH(env, mbp);
 		}
 
-		mutexp++;
+		mutexp = (DB_MUTEX *)((uintptr_t)mutexp +
+		    mtxregion->mutex_size);
 		if (F_ISSET(env, ENV_PRIVATE) &&
-		    (size -= sizeof(*mutexp)) < sizeof(*mutexp)) {
+		    (size -= mtxregion->mutex_size) < mtxregion->mutex_size) {
 			mutexp =
 			    __env_get_chunk(&mtxmgr->reginfo, &chunk, &size);
+			mutexp = ALIGNP_INC(mutexp,
+			    mtxregion->stat.st_mutex_align);
 		}
-		mutexp = ALIGNP_INC(mutexp, mtxregion->stat.st_mutex_align);
 	}
 
 	return (0);

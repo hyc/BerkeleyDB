@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -14,10 +14,12 @@
 # TEST	retrieve each. After all are entered, go back and do partial puts,
 # TEST	replacing a random-length string with the key value.
 # TEST	Then verify.
+# TEST	Run the test with blob enabled and disabled.
 
 proc test016 { method {nentries 10000} args } {
 	global datastr
 	global dvals
+	global has_crypto
 	global rand_init
 	source ./include.tcl
 
@@ -57,143 +59,225 @@ proc test016 { method {nentries 10000} args } {
 		}
 		set testdir [get_home $env]
 	}
-	puts "Test016: $method ($args) $nentries partial put shorten"
 
 	set t1 $testdir/t1
 	set t2 $testdir/t2
 	set t3 $testdir/t3
-	cleanup $testdir $env
-	set db [eval {berkdb_open \
-	     -create -mode 0644} $args {$omethod $testfile}]
-	error_check_good dbopen [is_valid_db $db] TRUE
 
-	set pflags ""
-	set gflags ""
-	set txn ""
-	set count 0
-
-	if { [is_record_based $method] == 1 } {
-		append gflags " -recno"
-	}
-
-	# Here is the loop where we put and get each key/data pair
-	puts "\tTest016.a: put/get loop"
-	set did [open $dict]
-	while { [gets $did str] != -1 && $count < $nentries } {
-		if { [is_record_based $method] == 1 } {
-			set key [expr $count + 1]
-		} else {
-			set key $str
+	#
+	# Set blob threshold as 5 since most words in the wordlist to put into
+	# the database have length <= 10.
+	#
+	set threshold 5
+	set orig_args $args
+	foreach blob [list "" " -blob_threshold $threshold"] {
+		set args $orig_args
+		set msg ""
+		if { $blob != "" } {
+			set msg "with blob"
+			#
+			# This test runs a bit slowly when blob gets enabled.
+			# Cut down the nunber of entries to 100 for blob case.
+			#
+			if { $nentries == 10000 } {
+				set nentries 100
+			}
 		}
+
+		puts "Test016: $method ($args)\
+		    $nentries partial put shorten ($msg)"
+
+		if { $blob != "" } {
+			# Blob is supported by btree, hash and heap.
+			if { [is_btree $method] != 1 && \
+			    [is_hash $method] != 1 && [is_heap $method] != 1 } {
+				puts "Test016 skipping\
+				    for method $method for blob"
+				return
+			}
+			# Look for incompatible configurations of blob.
+			foreach conf { "-encryptaes" "-encrypt" "-compress" \
+			    "-dup" "-dupsort" "-read_uncommitted" \
+			    "-multiversion" } {
+				if { [lsearch -exact $args $conf] != -1 } {
+					puts "Test016 skipping $conf for blob"
+					return
+				}
+			}
+			if { $env != "NULL" } {
+				if { [lsearch \
+				    [$env get_flags] "-snapshot"] != -1 } {
+					puts "Test016\
+					    skipping -snapshot for blob"
+					return
+				}
+				if { [is_repenv $env] == 1 } {
+					puts "Test016 skipping\
+					    replication env for blob"
+					return
+				}
+				if { $has_crypto == 1 } {
+					if { [$env get_encrypt_flags] != "" } {
+						puts "Test016 skipping\
+						    encrypted env for blob"
+						return
+					}
+				}
+			}
+			if { [lsearch -exact $args "-chksum"] != -1 } {
+				set indx [lsearch -exact $args "-chksum"]
+				set args [lreplace $args $indx $indx]
+				puts "Test016 ignoring -chksum for blob"
+			}
+
+			# Set up the blob arguments.
+			append args $blob
+			if { $env == "NULL" } {
+				append args " -blob_dir $testdir/__db_bl"
+			}
+		}
+
+		cleanup $testdir $env
+		set db [eval {berkdb_open \
+		     -create -mode 0644} $args {$omethod $testfile}]
+		error_check_good dbopen [is_valid_db $db] TRUE
+
+		set pflags ""
+		set gflags ""
+		set txn ""
+		set count 0
+
+		if { [is_record_based $method] == 1 } {
+			append gflags " -recno"
+		}
+
+		# Here is the loop where we put and get each key/data pair
+		puts "\tTest016.a: put/get loop"
+		set did [open $dict]
+		while { [gets $did str] != -1 && $count < $nentries } {
+			if { [is_record_based $method] == 1 } {
+				set key [expr $count + 1]
+			} else {
+				set key $str
+			}
+			if { $txnenv == 1 } {
+				set t [$env txn]
+				error_check_good txn \
+				    [is_valid_txn $t $env] TRUE
+				set txn "-txn $t"
+			}
+			set ret [eval {$db put} \
+			    $txn $pflags {$key [chop_data $method $datastr]}]
+			error_check_good put $ret 0
+
+			set ret [eval {$db get} $txn $gflags {$key}]
+			error_check_good get $ret \
+			    [list [list $key [pad_data $method $datastr]]]
+			if { $txnenv == 1 } {
+				error_check_good txn [$t commit] 0
+			}
+			incr count
+		}
+		close $did
+
+		# Next we will do a partial put replacement, making the data
+		# shorter
+		puts "\tTest016.b: partial put loop"
+		set did [open $dict]
+		set count 0
+		set len [string length $datastr]
+		while { [gets $did str] != -1 && $count < $nentries } {
+			if { [is_record_based $method] == 1 } {
+				set key [expr $count + 1]
+			} else {
+				set key $str
+			}
+
+			set repl_len [berkdb random_int \
+			    [string length $key] $len]
+			set repl_off [berkdb random_int \
+			    0 [expr $len - $repl_len] ]
+			set s1 [string range $datastr 0 [ expr $repl_off - 1] ]
+			set s2 [string toupper $key]
+			set s3 [string range $datastr \
+			    [expr $repl_off + $repl_len] end ]
+			set dvals($key) [pad_data $method $s1$s2$s3]
+			if { $txnenv == 1 } {
+				set t [$env txn]
+				error_check_good txn \
+				    [is_valid_txn $t $env] TRUE
+				set txn "-txn $t"
+			}
+			set ret [eval {$db put} $txn {-partial \
+			    [list $repl_off $repl_len] $key \
+			    [chop_data $method $s2]}]
+			error_check_good put $ret 0
+			set ret [eval {$db get} $txn $gflags {$key}]
+			error_check_good put $ret \
+			    [list [list $key [pad_data $method $s1$s2$s3]]]
+			if { $txnenv == 1 } {
+				error_check_good txn [$t commit] 0
+			}
+			incr count
+		}
+		close $did
+
+		# Now we will get each key from the DB and compare the results
+		# to the original.
+		puts "\tTest016.c: dump file"
 		if { $txnenv == 1 } {
 			set t [$env txn]
 			error_check_good txn [is_valid_txn $t $env] TRUE
 			set txn "-txn $t"
 		}
-		set ret [eval {$db put} \
-		    $txn $pflags {$key [chop_data $method $datastr]}]
-		error_check_good put $ret 0
-
-		set ret [eval {$db get} $txn $gflags {$key}]
-		error_check_good \
-		    get $ret [list [list $key [pad_data $method $datastr]]]
+		dump_file $db $txn $t1 test016.check
 		if { $txnenv == 1 } {
 			error_check_good txn [$t commit] 0
 		}
-		incr count
-	}
-	close $did
+		error_check_good db_close [$db close] 0
 
-	# Next we will do a partial put replacement, making the data
-	# shorter
-	puts "\tTest016.b: partial put loop"
-	set did [open $dict]
-	set count 0
-	set len [string length $datastr]
-	while { [gets $did str] != -1 && $count < $nentries } {
+		# Now compare the keys to see if they match the dictionary
 		if { [is_record_based $method] == 1 } {
-			set key [expr $count + 1]
+			set oid [open $t2 w]
+			for {set i 1} {$i <= $nentries} {set i [incr i]} {
+				puts $oid $i
+			}
+			close $oid
+			file rename -force $t1 $t3
 		} else {
-			set key $str
+			set q q
+			filehead $nentries $dict $t3
+			filesort $t3 $t2
+			filesort $t1 $t3
 		}
 
-		set repl_len [berkdb random_int [string length $key] $len]
-		set repl_off [berkdb random_int 0 [expr $len - $repl_len] ]
-		set s1 [string range $datastr 0 [ expr $repl_off - 1] ]
-		set s2 [string toupper $key]
-		set s3 [string range $datastr [expr $repl_off + $repl_len] end ]
-		set dvals($key) [pad_data $method $s1$s2$s3]
-		if { $txnenv == 1 } {
-			set t [$env txn]
-			error_check_good txn [is_valid_txn $t $env] TRUE
-			set txn "-txn $t"
+		error_check_good Test016:diff($t3,$t2) \
+		    [filecmp $t3 $t2] 0
+
+		# Now, reopen the file and run the last test again.
+		puts "\tTest016.d: close, open, and dump file"
+		eval open_and_dump_file $testfile $env $t1 test016.check \
+		    dump_file_direction "-first" "-next" $args
+
+		if { [ is_record_based $method ] == 0 } {
+			filesort $t1 $t3
 		}
-		set ret [eval {$db put} $txn {-partial \
-		    [list $repl_off $repl_len] $key [chop_data $method $s2]}]
-		error_check_good put $ret 0
-		set ret [eval {$db get} $txn $gflags {$key}]
-		error_check_good \
-		    put $ret [list [list $key [pad_data $method $s1$s2$s3]]]
-		if { $txnenv == 1 } {
-			error_check_good txn [$t commit] 0
+		error_check_good Test016:diff($t3,$t2) \
+		    [filecmp $t3 $t2] 0
+
+		# Now, reopen the file and run the last test again
+		# in reverse direction.
+		puts "\tTest016.e: close, open,\
+		    and dump file in reverse direction"
+		eval open_and_dump_file $testfile $env $t1 test016.check \
+		    dump_file_direction "-last" "-prev" $args
+
+		if { [ is_record_based $method ] == 0 } {
+			filesort $t1 $t3
 		}
-		incr count
+		error_check_good Test016:diff($t3,$t2) \
+		    [filecmp $t3 $t2] 0
 	}
-	close $did
-
-	# Now we will get each key from the DB and compare the results
-	# to the original.
-	puts "\tTest016.c: dump file"
-	if { $txnenv == 1 } {
-		set t [$env txn]
-		error_check_good txn [is_valid_txn $t $env] TRUE
-		set txn "-txn $t"
-	}
-	dump_file $db $txn $t1 test016.check
-	if { $txnenv == 1 } {
-		error_check_good txn [$t commit] 0
-	}
-	error_check_good db_close [$db close] 0
-
-	# Now compare the keys to see if they match the dictionary
-	if { [is_record_based $method] == 1 } {
-		set oid [open $t2 w]
-		for {set i 1} {$i <= $nentries} {set i [incr i]} {
-			puts $oid $i
-		}
-		close $oid
-		file rename -force $t1 $t3
-	} else {
-		set q q
-		filehead $nentries $dict $t3
-		filesort $t3 $t2
-		filesort $t1 $t3
-	}
-
-	error_check_good Test016:diff($t3,$t2) \
-	    [filecmp $t3 $t2] 0
-
-	# Now, reopen the file and run the last test again.
-	puts "\tTest016.d: close, open, and dump file"
-	eval open_and_dump_file $testfile $env $t1 test016.check \
-	    dump_file_direction "-first" "-next" $args
-
-	if { [ is_record_based $method ] == 0 } {
-		filesort $t1 $t3
-	}
-	error_check_good Test016:diff($t3,$t2) \
-	    [filecmp $t3 $t2] 0
-
-	# Now, reopen the file and run the last test again in reverse direction.
-	puts "\tTest016.e: close, open, and dump file in reverse direction"
-	eval open_and_dump_file $testfile $env $t1 test016.check \
-	    dump_file_direction "-last" "-prev" $args
-
-	if { [ is_record_based $method ] == 0 } {
-		filesort $t1 $t3
-	}
-	error_check_good Test016:diff($t3,$t2) \
-	    [filecmp $t3 $t2] 0
 }
 
 # Check function for test016; data should be whatever is set in dvals

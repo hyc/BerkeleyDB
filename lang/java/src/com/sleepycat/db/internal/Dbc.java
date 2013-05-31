@@ -50,6 +50,11 @@ public class Dbc {
 
   public int count(int flags) throws com.sleepycat.db.DatabaseException { return db_javaJNI.Dbc_count(swigCPtr, this, flags); }
 
+  public DbStream db_stream(int flags) throws com.sleepycat.db.DatabaseException {
+    long cPtr = db_javaJNI.Dbc_db_stream(swigCPtr, this, flags);
+    return (cPtr == 0) ? null : new DbStream(cPtr, false);
+  }
+
   public int del(int flags) throws com.sleepycat.db.DatabaseException {
     return db_javaJNI.Dbc_del(swigCPtr, this, flags);
   }

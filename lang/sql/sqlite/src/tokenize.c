@@ -123,7 +123,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case '-': {
       if( z[1]=='-' ){
-        /* IMP: R-15891-05542 -- syntax diagram for comments */
+        /* IMP: R-50417-27976 -- syntax diagram for comments */
         for(i=2; (c=z[i])!=0 && c!='\n'; i++){}
         *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
         return i;
@@ -156,7 +156,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         *tokenType = TK_SLASH;
         return 1;
       }
-      /* IMP: R-15891-05542 -- syntax diagram for comments */
+      /* IMP: R-50417-27976 -- syntax diagram for comments */
       for(i=3, c=z[2]; (c!='*' || z[i]!='/') && (c=z[i])!=0; i++){}
       if( c ) i++;
       *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
@@ -353,13 +353,12 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       testcase( z[0]=='x' ); testcase( z[0]=='X' );
       if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
-        for(i=2; (c=z[i])!=0 && c!='\''; i++){
-          if( !sqlite3Isxdigit(c) ){
-            *tokenType = TK_ILLEGAL;
-          }
+        for(i=2; sqlite3Isxdigit(z[i]); i++){}
+        if( z[i]!='\'' || i%2 ){
+          *tokenType = TK_ILLEGAL;
+          while( z[i] && z[i]!='\'' ){ i++; }
         }
-        if( i%2 || !c ) *tokenType = TK_ILLEGAL;
-        if( c ) i++;
+        if( z[i] ) i++;
         return i;
       }
       /* Otherwise fall through to the next case */
@@ -412,9 +411,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->pNewTable==0 );
   assert( pParse->pNewTrigger==0 );
   assert( pParse->nVar==0 );
-  assert( pParse->nVarExpr==0 );
-  assert( pParse->nVarExprAlloc==0 );
-  assert( pParse->apVarExpr==0 );
+  assert( pParse->nzVar==0 );
+  assert( pParse->azVar==0 );
   enableLookaside = db->lookaside.bEnabled;
   if( db->lookaside.pStart ) db->lookaside.bEnabled = 1;
   while( !db->mallocFailed && zSql[i]!=0 ){
@@ -508,7 +506,8 @@ abort_parse:
   }
 
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
-  sqlite3DbFree(db, pParse->apVarExpr);
+  for(i=pParse->nzVar-1; i>=0; i--) sqlite3DbFree(db, pParse->azVar[i]);
+  sqlite3DbFree(db, pParse->azVar);
   sqlite3DbFree(db, pParse->aAlias);
   while( pParse->pAinc ){
     AutoincInfo *p = pParse->pAinc;

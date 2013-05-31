@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -21,7 +21,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// Cache size. 
         /// </summary>
-        public int CacheSize { get { return st.st_cache_size; } }
+        public uint CacheSize { get { return st.st_cache_size; } }
         /// <summary>
         /// Current cached value. 
         /// </summary>

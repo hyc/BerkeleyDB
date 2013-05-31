@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -205,8 +205,10 @@ __rep_internal_init(env, abbrev)
 	u_int32_t abbrev;
 {
 	REP *rep;
+	u_int32_t ctlflags;
 	int master, ret;
 
+	ctlflags = 0;
 	rep = env->rep_handle->region;
 	REP_SYSTEM_LOCK(env);
 #ifdef HAVE_STATISTICS
@@ -227,6 +229,7 @@ __rep_internal_init(env, abbrev)
 			RPRINT(env, (env, DB_VERB_REP_SYNC,
 			 "send UPDATE_REQ, merely to check for NIMDB refresh"));
 			F_SET(rep, REP_F_ABBREVIATED);
+			FLD_SET(ctlflags, REPCTL_INMEM_ONLY);
 		} else
 			F_CLR(rep, REP_F_ABBREVIATED);
 		ZERO_LSN(rep->first_lsn);
@@ -237,7 +240,7 @@ __rep_internal_init(env, abbrev)
 	REP_SYSTEM_UNLOCK(env);
 	if (ret == 0 && master != DB_EID_INVALID)
 		(void)__rep_send_message(env,
-		    master, REP_UPDATE_REQ, NULL, NULL, 0, 0);
+		    master, REP_UPDATE_REQ, NULL, NULL, ctlflags, 0);
 	return (ret);
 }
 
@@ -504,8 +507,7 @@ __rep_dorecovery(env, lsnp, trunclsnp)
 		 */
 		DB_ASSERT(env, rep->op_cnt == 0);
 		DB_ASSERT(env, rep->msg_th == 1);
-		if (rectype == DB___txn_regop || rectype == DB___txn_ckp ||
-		    rectype == DB___dbreg_register)
+		if (IS_PERM_RECTYPE(rectype) || rectype == DB___dbreg_register)
 			skip_rec = 0;
 		if (rectype == DB___txn_regop) {
 			if (rep->version >= DB_REPVERSION_44) {

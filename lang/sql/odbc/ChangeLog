@@ -1,6 +1,77 @@
 SQLite ODBC Driver
 ------------------
 
+Mon Apr 01 2013 version 0.992 released
+
+	* update to SQLite 3.7.16.1
+	* enhancements in XPath virtual table module
+
+Wed Mar 20 2013 version 0.991 released
+
+	* update to SQLite 3.7.16
+	* added experimental libxml2 XPath virtual table module
+	* added Michael Brey's configure fixes
+	* added Zac Vawter's patch for Win32 ExpandEnviromentStrings()
+	  on database file names
+	* fixes for Windows 8 64bit (SetWindowLongPtr())
+	* added experimental SQLite4 driver
+	* fixes in impexp extension module
+	* added manifests to adddsn.exe/inst.exe
+
+Fri Dec 14 2012 version 0.99 released
+
+	* update to SQLite 3.7.15
+	* added read-only support for embedded SQLite3 databases
+	  in zipfile extension, and on Linux r/w support using
+	  mremap() system call
+	* fixed missing fclose() in blob_export SQLite function
+	* added proper handling for SQL_DIAG_CURSOR_ROW_COUNT and
+	  SQL_DIAG_ROW_COUNT in SQLGetDiagField()
+	* fixed return code for CREATE/DROP stmts in SQLPrepare()
+	  and SQLExecDirect() thanks Peter Harvey for reporting
+	* fixed missing SQL_DIAG_DYNAMIC_FUNCTION case in
+	  SQLGetDiagField(), thans Peter Harvey for reporting
+	* SQLGetData fixes for JDK1.7 on x86_64
+	* added UN*X build of ZIP read-only extension module
+
+Sat Oct 06 2012 version 0.98 released
+
+	* update to SQLite 3.7.14.1
+	* fixes in floating point retrieval for MSVC, thanks
+	  Ben van der Merwe for reporting and test
+	* added ZIP read-only extension module (zipfile)
+	* fixes in CSV table extension module
+	* fixes in handling default DSNs for Win32, thanks Zac Vawter
+	  for patch
+
+Thu Sep 06 2012 version 0.97 released
+
+	* update to SQLite 3.7.14
+	* added CSV table extension module (csvtable)
+	* added handling of SQL_DATA_AT_EXEC for parameter binding
+	* increased file name buffers for Win32
+	* length fixes in Win32 version of SQLDriverConnectW()
+
+Sun Jun 24 2012 version 0.96 released
+
+	* update to SQLite 3.7.13
+	* allow "PRAGMA" SQL command to return result set
+	* fixed UCS-2 surrogate sequences and UTF-8 translation,
+	  thanks KamLeong Lai for fix and testing
+
+Sat May 19 2012 version 0.95 released
+
+	* update to SQLite 3.7.12
+	* fixed compiler warnings
+	* now build SQLite 2 driver for Win64, too
+
+Wed Jan 25 2012 version 0.94 released
+
+	* update to SQLite 3.7.10
+	* use new MinGW cross compiler for Win32/Win64 binaries
+	* fixed strtol issues regarding timestamp fractional parts
+	* filter out ODBC escape sequences {oj ...} etc.
+
 Tue Nov 15 2011 version 0.93 released
 
 	* update to SQLite 3.7.9

@@ -58,7 +58,7 @@ proc table_list {} {
 }
 
 
-# EVIDENCE-OF: R-25262-01881 -- syntax diagram type-name
+# EVIDENCE-OF: R-47266-09114 -- syntax diagram type-name
 #
 do_createtable_tests 0.1.1 -repair {
   drop_all_tables
@@ -79,12 +79,7 @@ do_createtable_tests 0.1.2 -error {
 }
 
 
-# EVIDENCE-OF: R-18762-12428 -- syntax diagram column-constraint
-#
-#   Note: Not shown in the syntax diagram is the "NULL" constraint. This
-#         is the opposite of "NOT NULL" - it implies that the column may
-#         take a NULL value. This is the default anyway, so this type of
-#         constraint is rarely used.
+# EVIDENCE-OF: R-60689-48779 -- syntax diagram column-constraint
 #
 do_createtable_tests 0.2.1 -repair {
   drop_all_tables 
@@ -131,7 +126,7 @@ do_createtable_tests 0.2.1 -repair {
   } {}
 }
 
-# EVIDENCE-OF: R-17905-31923 -- syntax diagram table-constraint
+# EVIDENCE-OF: R-58169-51804 -- syntax diagram table-constraint
 #
 do_createtable_tests 0.3.1 -repair {
   drop_all_tables 
@@ -150,7 +145,7 @@ do_createtable_tests 0.3.1 -repair {
   4.1   "CREATE TABLE t1(c1, c2, FOREIGN KEY(c1) REFERENCES t2)"           {}
 }
 
-# EVIDENCE-OF: R-18765-31171 -- syntax diagram column-def
+# EVIDENCE-OF: R-44826-22243 -- syntax diagram column-def
 #
 do_createtable_tests 0.4.1 -repair {
   drop_all_tables 
@@ -165,7 +160,7 @@ do_createtable_tests 0.4.1 -repair {
         } {}
 }
 
-# EVIDENCE-OF: R-59573-11075 -- syntax diagram create-table-stmt
+# EVIDENCE-OF: R-45698-45677 -- syntax diagram create-table-stmt
 #
 do_createtable_tests 0.5.1 -repair {
   drop_all_tables 
@@ -190,7 +185,7 @@ do_createtable_tests 0.5.1 -repair {
   15    "CREATE TABLE t1 AS SELECT count(*), max(b), min(a) FROM t2"  {}
 }
 
-# EVIDENCE-OF: R-32138-02228 -- syntax diagram foreign-key-clause
+# EVIDENCE-OF: R-24369-11919 -- syntax diagram foreign-key-clause
 #
 #   1:         Explicit parent-key columns.
 #   2:         Implicit child-key columns.
@@ -989,9 +984,9 @@ do_execsql_test e_createtable-3.7.4 {
   SELECT quote(a), quote(b) FROM t6;
 } {1 2 'X' 3 1 4 'X' 5}
 
-# EVIDENCE-OF: R-18683-56219 If the default value of a column is
-# CURRENT_TIME, CURRENT_DATE or CURRENT_DATETIME, then the value used in
-# the new row is a text representation of the current UTC date and/or
+# EVIDENCE-OF: R-15363-55230 If the default value of a column is
+# CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP, then the value used
+# in the new row is a text representation of the current UTC date and/or
 # time.
 #
 #     This is difficult to test literally without knowing what time the 
@@ -1262,7 +1257,7 @@ do_createtable_tests 4.4 {
 # SQLite allows NULL values in a PRIMARY KEY column.
 #
 #     If the column is an integer primary key, attempting to insert a NULL
-#     into the column triggers the auto-increment behaviour. Attempting
+#     into the column triggers the auto-increment behavior. Attempting
 #     to use UPDATE to set an ipk column to a NULL value is an error.
 #
 do_createtable_tests 4.5.1 {
@@ -1596,7 +1591,7 @@ foreach {tn tbl res ac data} {
   " $res
 
   do_test e_createtable-4.17.$tn.3 { sqlite3_get_autocommit db } $ac
-  do_execsql_test 4.17.$tn.4 "SELECT * FROM $tbl" $data
+  do_execsql_test 4.17.$tn.4 "SELECT * FROM $tbl ORDER BY rowid" $data
 }
 catchsql COMMIT
 

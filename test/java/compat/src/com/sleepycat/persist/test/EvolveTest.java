@@ -1,14 +1,17 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 package com.sleepycat.persist.test;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.persist.evolve.EvolveConfig;
 import com.sleepycat.persist.evolve.EvolveEvent;
@@ -28,14 +31,13 @@ import com.sleepycat.util.test.SharedTestUtils;
  */
 public class EvolveTest extends EvolveTestBase {
 
+    public EvolveTest(String originalClsName, String evolvedClsName)
+            throws Exception {
+        super(originalClsName, evolvedClsName);
+    }
+
     /* Toggle to use listener every other test case. */
     private static boolean useEvolveListener;
-
-    public static Test suite()
-        throws Exception {
-
-        return getSuite(EvolveTest.class);
-    }
 
     private int evolveNRead;
     private int evolveNConverted;
@@ -44,22 +46,25 @@ public class EvolveTest extends EvolveTestBase {
         return true;
     }
 
-    @Override
-    public void tearDown() {
-        try { super.tearDown(); } catch (Throwable e) { }
-    }
-
-    @Override
+    @Before
     public void setUp()
-        throws IOException {
+        throws Exception {
 
+        super.setUp();
+        
         /* Copy the log files created by EvolveTestInit. */
         envHome = getTestInitHome(true /*evolved*/);
         envHome.mkdirs();
         SharedTestUtils.emptyDir(envHome);
         SharedTestUtils.copyFiles(getTestInitHome(false /*evolved*/), envHome);
     }
+    
+    @After
+    public void tearDown() {
+        try { super.tearDown(); } catch (Throwable e) { }
+    }
 
+    @Test
     public void testLazyEvolve()
         throws Exception {
 
@@ -151,6 +156,7 @@ public class EvolveTest extends EvolveTestBase {
         closeAll();
     }
 
+    @Test
     public void testEagerEvolve()
         throws Exception {
 

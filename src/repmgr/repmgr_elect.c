@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,7 +14,6 @@ static db_timeout_t __repmgr_compute_response_time __P((ENV *));
 static int __repmgr_elect __P((ENV *, u_int32_t, db_timespec *));
 static int __repmgr_elect_main __P((ENV *, REPMGR_RUNNABLE *));
 static void *__repmgr_elect_thread __P((void *));
-static int send_membership __P((ENV *));
 
 /*
  * Starts an election thread.
@@ -90,19 +89,31 @@ __repmgr_elect_thread(argsp)
 {
 	REPMGR_RUNNABLE *th;
 	ENV *env;
+	DB_THREAD_INFO *ip;
 	int ret;
 
 	th = argsp;
 	env = th->env;
+	ip = NULL;
+	ret = 0;
 
-	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "starting election thread"));
+	ENV_ENTER_RET(env, ip, ret);
+	if (ret == 0)
+		RPRINT(env, (env,
+		    DB_VERB_REPMGR_MISC, "starting election thread"));
 
-	if ((ret = __repmgr_elect_main(env, th)) != 0) {
+	if (ret != 0 || (ret = __repmgr_elect_main(env, th)) != 0) {
 		__db_err(env, ret, "election thread failed");
+		RPRINT(env, (env,
+		    DB_VERB_REPMGR_MISC, "election thread is exiting"));
+		ENV_LEAVE(env, ip);
 		(void)__repmgr_thread_failure(env, ret);
 	}
-
-	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "election thread is exiting"));
+	if (ret == 0) {
+		RPRINT(env, (env,
+		    DB_VERB_REPMGR_MISC, "election thread is exiting"));
+		ENV_LEAVE(env, ip);
+	}
 	th->finished = TRUE;
 	return (NULL);
 }
@@ -188,7 +199,7 @@ __repmgr_elect_main(env, th)
 	 * called.  The one exception is at initial start-up, where we
 	 * first probe for a master by sending out rep_start(CLIENT) calls.
 	 */
-	if (LF_ISSET(ELECT_F_IMMED)) {
+	if (LF_ISSET(ELECT_F_IMMED) && !IS_VIEW_SITE(env)) {
 		/*
 		 * When the election succeeds, we've successfully completed
 		 * everything we need to do.  If it fails in an unexpected way,
@@ -256,11 +267,12 @@ __repmgr_elect_main(env, th)
 		/*
 		 * See if it's time to retry the operation.  Normally it's an
 		 * election we're interested in retrying.  But we refrain from
-		 * calling for elections if so configured.
+		 * calling for elections if so configured or we are a view.
 		 */
-		suppress_election = LF_ISSET(ELECT_F_STARTUP) ?
+		suppress_election = IS_VIEW_SITE(env) ||
+		    (LF_ISSET(ELECT_F_STARTUP) ?
 		    db_rep->init_policy == DB_REP_CLIENT :
-		    !FLD_ISSET(rep->config, REP_C_ELECTIONS);
+		    !FLD_ISSET(rep->config, REP_C_ELECTIONS));
 		repstart_time = db_rep->repstart_time;
 		target = suppress_election ? repstart_time : failtime;
 		TIMESPEC_ADD_DB_TIMEOUT(&target, rep->election_retry_wait);
@@ -476,7 +488,20 @@ __repmgr_elect(env, flags, failtimep)
 	case DB_REP_UNAVAIL:
 		__os_gettime(env, failtimep, 1);
 		DB_EVENT(env, DB_EVENT_REP_ELECTION_FAILED, NULL);
-		if ((t_ret = send_membership(env)) != 0)
+		/*
+		 * If an election fails with DB_REP_UNAVAIL, it could be
+		 * because a participating site has an obsolete, too-high
+		 * notion of the group size.  (This could happen if the site
+		 * was down/disconnected during removal of some (other) sites.)
+		 * To remedy this, broadcast a current copy of the membership
+		 * list.  Since all sites are doing this, and we always ratchet
+		 * to the most up-to-date version, this should bring all sites
+		 * up to date.  We only do this after a failure, during what
+		 * will normally be an idle period anyway, so that we don't
+		 * slow down a first election following the loss of an active
+		 * master.
+		 */
+		if ((t_ret = __repmgr_bcast_member_list(env)) != 0)
 			ret = t_ret;
 		break;
 
@@ -494,40 +519,6 @@ __repmgr_elect(env, flags, failtimep)
 		    "unexpected election failure"));
 		break;
 	}
-	return (ret);
-}
-
-/*
- * If an election fails with DB_REP_UNAVAIL, it could be because a participating
- * site has an obsolete, too-high notion of the group size.  (This could happen
- * if the site was down/disconnected during removal of some (other) sites.)  To
- * remedy this, broadcast a current copy of the membership list.  Since all
- * sites are doing this, and we always ratchet to the most up-to-date version,
- * this should bring all sites up to date.  We only do this after a failure,
- * during what will normally be an idle period anyway, so that we don't slow
- * down a first election following the loss of an active master.
- */
-static int
-send_membership(env)
-	ENV *env;
-{
-	DB_REP *db_rep;
-	u_int8_t *buf;
-	size_t len;
-	int ret;
-
-	db_rep = env->rep_handle;
-	buf = NULL;
-	LOCK_MUTEX(db_rep->mutex);
-	if ((ret = __repmgr_marshal_member_list(env, &buf, &len)) != 0)
-		goto out;
-	RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-	    "Broadcast latest membership list"));
-	ret = __repmgr_bcast_own_msg(env, REPMGR_SHARING, buf, len);
-out:
-	UNLOCK_MUTEX(db_rep->mutex);
-	if (buf != NULL)
-		__os_free(env, buf);
 	return (ret);
 }
 

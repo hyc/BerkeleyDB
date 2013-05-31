@@ -50,6 +50,7 @@ public class DbEnv {
 	private String errpfx;
 	private MessageHandler message_handler;
 	private PanicHandler panic_handler;
+	private ReplicationViewHandler rep_view_handler;
 	private ReplicationManagerMessageDispatch repmgr_msg_dispatch_handler;
 	private ReplicationTransport rep_transport_handler;
 	private java.io.OutputStream error_stream;
@@ -105,6 +106,10 @@ public class DbEnv {
 
 	private final void handle_panic_event_notify() {
 		event_notify_handler.handlePanicEvent();
+	}
+
+	private final void handle_rep_autotakeover_failed_event_notify() {
+		event_notify_handler.handleRepAutoTakeoverFailedEvent();
 	}
 
 	private final void handle_rep_client_event_notify() {
@@ -255,6 +260,10 @@ public class DbEnv {
 		return panic_handler;
 	}
 
+	public final boolean handle_rep_view(String name, int flags) throws com.sleepycat.db.DatabaseException {
+		return rep_view_handler.partial_view(wrapper, name, flags);
+	}
+
 	private final int handle_rep_transport(DatabaseEntry control,
 					       DatabaseEntry rec,
 					       LogSequenceNumber lsn,
@@ -373,6 +382,12 @@ public class DbEnv {
 
   public void fileid_reset(String file, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_fileid_reset(swigCPtr, this, file, flags); }
 
+  public String get_blob_dir() throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.DbEnv_get_blob_dir(swigCPtr, this);
+  }
+
+  public int get_blob_threshold() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_blob_threshold(swigCPtr, this); }
+
   public String[] get_data_dirs() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_data_dirs(swigCPtr, this); }
 
   public int get_encrypt_flags() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_get_encrypt_flags(swigCPtr, this); }
@@ -408,6 +423,10 @@ public class DbEnv {
   public void open(String db_home, int flags, int mode) throws com.sleepycat.db.DatabaseException, java.io.FileNotFoundException { db_javaJNI.DbEnv_open(swigCPtr, this, db_home, flags, mode); }
 
   /* package */ void remove0(String db_home, int flags) { db_javaJNI.DbEnv_remove0(swigCPtr, this, db_home, flags); }
+
+  public void set_blob_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_blob_dir(swigCPtr, this, dir); }
+
+  public void set_blob_threshold(int bytes, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_blob_threshold(swigCPtr, this, bytes, flags); }
 
   public void set_cachesize(long bytes, int ncache) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_set_cachesize(swigCPtr, this, bytes, ncache); }
 
@@ -708,6 +727,8 @@ public class DbEnv {
   public void rep_set_request(int min, int max) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_rep_set_request(swigCPtr, this, min, max); }
 
   public void rep_set_transport(int envid, com.sleepycat.db.ReplicationTransport send) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_rep_set_transport(swigCPtr, this, envid,  (rep_transport_handler = send) != null ); }
+
+  public void rep_set_view(com.sleepycat.db.ReplicationViewHandler rep_view_fcn) throws com.sleepycat.db.DatabaseException { db_javaJNI.DbEnv_rep_set_view(swigCPtr, this,  (rep_view_handler = rep_view_fcn) != null ); }
 
   public int rep_get_nsites() throws com.sleepycat.db.DatabaseException { return db_javaJNI.DbEnv_rep_get_nsites(swigCPtr, this); }
 

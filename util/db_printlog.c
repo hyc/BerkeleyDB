@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -21,7 +21,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 int db_printlog_print_app_record __P((DB_ENV *, DBT *, DB_LSN *, db_recops));
@@ -30,6 +30,7 @@ int env_init_print_42 __P((ENV *, DB_DISTAB *));
 int env_init_print_43 __P((ENV *, DB_DISTAB *));
 int env_init_print_47 __P((ENV *, DB_DISTAB *));
 int env_init_print_48 __P((ENV *, DB_DISTAB *));
+int env_init_print_53 __P((ENV *, DB_DISTAB *));
 int lsn_arg __P((char *, DB_LSN *));
 int main __P((int, char *[]));
 int open_rep_db __P((DB_ENV *, DB **, DBC **));
@@ -192,7 +193,7 @@ main(argc, argv)
 	if (repflag) {
 		if ((ret = dbenv->open(dbenv, home,
 		    DB_INIT_MPOOL | DB_USE_ENVIRON, 0)) != 0 &&
-		    (ret == DB_VERSION_MISMATCH ||
+		    (ret == DB_VERSION_MISMATCH || ret == DB_REP_LOCKOUT ||
 		    (ret = dbenv->open(dbenv, home,
 		    DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON, 0))
 		    != 0)) {
@@ -200,7 +201,7 @@ main(argc, argv)
 			goto err;
 		}
 	} else if ((ret = dbenv->open(dbenv, home, DB_USE_ENVIRON, 0)) != 0 &&
-	    (ret == DB_VERSION_MISMATCH ||
+	    (ret == DB_VERSION_MISMATCH || ret == DB_REP_LOCKOUT ||
 	    (ret = dbenv->open(dbenv, home,
 	    DB_CREATE | DB_INIT_LOG | DB_PRIVATE | DB_USE_ENVIRON, 0)) != 0)) {
 		dbenv->err(dbenv, ret, "DB_ENV->open");
@@ -348,6 +349,8 @@ err:		exitval = 1;
 
 /*
  * env_init_print --
+ *
+ *	Fill the dispatch table for printing this log version's records.
  */
 int
 env_init_print(env, version, dtabp)
@@ -391,11 +394,16 @@ env_init_print(env, version, dtabp)
 	if ((ret = __txn_init_print(env, dtabp)) != 0)
 		goto err;
 
+	if (version == DB_LOGVERSION)
+		goto done;
+	/* DB_LOGVERSION_53 changed the heap addrem log record. */
+	if ((ret = env_init_print_53(env, dtabp)) != 0)
+		goto err;
 	/*
-	 * There are no log differences between 5.0 and 5.2, but 5.2
-	 * is a superset of 5.0.  Patch 2 of 4.8 added __db_pg_trunc
-	 * but didn't alter any log records so we want the same
-	 * override as 4.8
+	 * Since DB_LOGVERSION_53 is a strict superset of DB_LOGVERSION_50,
+	 * there is no need to check for log version between them; so only
+	 * check > DB_LOGVERSION_48p2.  Patch 2 of 4.8 added __db_pg_trunc but
+	 * didn't alter any log records so we want the same override as 4.8.
 	 */
 	if (version > DB_LOGVERSION_48p2)
 		goto done;
@@ -553,6 +561,23 @@ env_init_print_48(env, dtabp)
 #endif
 
 err:
+	return (ret);
+}
+
+int
+env_init_print_53(env, dtabp)
+	ENV *env;
+	DB_DISTAB *dtabp;
+{
+	int ret;
+#ifdef HAVE_HEAP
+	ret = __db_add_recovery_int(env,
+	     dtabp,__heap_addrem_50_print, DB___heap_addrem_50);
+#else
+	COMPQUIET(env, NULL);
+	COMPQUIET(dtabp, NULL);
+	COMPQUIET(ret, 0);
+#endif
 	return (ret);
 }
 

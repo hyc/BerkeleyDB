@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -20,21 +20,12 @@ proc rep081 { method { niter 200 } { tnum "081" } args } {
 	global databases_in_memory
 	global repfiles_in_memory
 
-	# Due to the nature of the heap tcl infrastructure, this
-	# test can fail for heap, although it does not represent 
-	# real BDB failure.
 	if { $checking_valid_methods } {
 		set test_methods {}
 		foreach method $valid_methods {
-			if { [is_heap $method] != 1 } {
-				lappend test_methods $method
-			}
+			lappend test_methods $method
 		}
 		return $test_methods
-	}
-	if { [is_heap $method] == 1 } {
-		puts "Skipping test$tnum for method $method."
-		return
 	}
 
 	set args [convert_args $method $args]
@@ -208,10 +199,18 @@ proc rep081_sub { method niter tnum logset testopt metaopt largs } {
 	set entries 100
 	set in_rec_page 0
 	set dbrem_init 0
+	#
+	# Set up the possible error messages.  In the case of 
+	# heap, we might get either EINVAL or ENOENT due to 
+	# the auxiliary files.
+	#
 	if { $testopt == "replacefile" } {
-		set errstr "invalid argument"
+		set errstrings {{invalid argument}}
+		if { [is_heap $method] } {
+			lappend errstrings {no such file or directory}
+		} 
 	} else {
-		set errstr "no such file or directory"
+		set errstrings {{no such file or directory}}
 	}
 	while { $i < $loop } {
 		set nproced 0
@@ -223,10 +222,15 @@ proc rep081_sub { method niter tnum logset testopt metaopt largs } {
 		# FILE_FAIL and returns an error. Break out of loop if
 		# expected error seen.
 		#
-		if { [is_substr $err $errstr] } {
-			error_check_good nproced $nproced 0
-			break
-		} else {
+		set errorfound 0
+		foreach string $errstrings {
+			if { [is_substr $err $string] } {
+				error_check_good nproced $nproced 0
+				set errorfound 1
+				set i $loop
+			}
+		}
+		if { $errorfound == 0 } {
 			error_check_bad nproced $nproced 0
 			error_check_good errchk $err 0
 		}
@@ -299,7 +303,13 @@ proc rep081_sub { method niter tnum logset testopt metaopt largs } {
 	puts "\tRep$tnum.d: Process messages including FILE_FAIL."
 	process_msgs $envlist 0 NONE err
 	if { $err != 0 } {
-		error_check_good errchk [is_substr $err $errstr] 1
+		set found_error 0
+		foreach string $errstrings {
+			if { [is_substr $err $string] } {
+				set found_error 1
+			}
+		}
+		error_check_good found_error $found_error 1
 	}
 	puts "\tRep$tnum.d.1: Process messages including new internal init."
 	process_msgs $envlist 0 NONE err

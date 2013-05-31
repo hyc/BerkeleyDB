@@ -1,20 +1,23 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Test;
 
 import com.sleepycat.bind.ByteArrayBinding;
 import com.sleepycat.compat.DbCompat;
@@ -28,11 +31,12 @@ import com.sleepycat.db.OperationStatus;
 import com.sleepycat.util.keyrange.KeyRange;
 import com.sleepycat.util.keyrange.KeyRangeException;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 
 /**
  * @author Mark Hayes
  */
-public class KeyRangeTest extends TestCase {
+public class KeyRangeTest extends TestBase {
 
     private static boolean VERBOSE = false;
 
@@ -57,32 +61,6 @@ public class KeyRangeTest extends TestCase {
     private Database store;
     private DataView view;
     private DataCursor cursor;
-
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-
-        return new TestSuite(KeyRangeTest.class);
-    }
-
-    public KeyRangeTest(String name) {
-
-        super(name);
-    }
-
-    @Override
-    public void setUp() {
-        SharedTestUtils.printTestName(SharedTestUtils.qualifiedTestName(this));
-    }
 
     private void openDb(Comparator<byte []> comparator)
         throws Exception {
@@ -113,7 +91,7 @@ public class KeyRangeTest extends TestCase {
         env = null;
     }
 
-    @Override
+    @After
     public void tearDown() {
         try {
             if (store != null) {
@@ -136,12 +114,14 @@ public class KeyRangeTest extends TestCase {
         cursor = null;
     }
 
+    @Test
     public void testScan() throws Exception {
         openDb(null);
         doScan(false);
         closeDb();
     }
 
+    @Test
     public void testScanComparator() throws Exception {
         openDb(new ReverseComparator());
         doScan(true);
@@ -361,6 +341,7 @@ public class KeyRangeTest extends TestCase {
         System.out.println();
     }
 
+    @Test
     public void testSubRanges() {
 
         DatabaseEntry begin = new DatabaseEntry();

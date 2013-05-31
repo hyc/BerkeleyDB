@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -63,7 +63,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp522760"></a>Parameters</h3>
+              <h3 class="title"><a id="idp538640"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp536432"></a>txnid</h4>
+                <h4 class="title"><a id="idp542976"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -91,7 +91,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp524816"></a>flags</h4>
+                <h4 class="title"><a id="idp549352"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -143,7 +143,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp547696"></a>Statistical Structure</h3>
+              <h3 class="title"><a id="idp570312"></a>Statistical Structure</h3>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp547632"></a>Hash Statistics</h4>
+                <h4 class="title"><a id="idp570248"></a>Hash Statistics</h4>
               </div>
             </div>
           </div>
@@ -282,6 +282,14 @@ Db::stat(void *sp, u_int32_t flags); </pre>
               </li>
               <li>
                 <p>
+                  <code class="literal">u_int32_t hash_nblobs;</code>
+                </p>
+                <p>
+                             The number of blobs.
+                         </p>
+              </li>
+              <li>
+                <p>
                   <code class="literal">u_int32_t hash_ndata;</code>
                 </p>
                 <p>
@@ -351,7 +359,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp552392"></a>Heap Statistics</h4>
+                <h4 class="title"><a id="idp575056"></a>Heap Statistics</h4>
               </div>
             </div>
           </div>
@@ -386,6 +394,14 @@ Db::stat(void *sp, u_int32_t flags); </pre>
                 <p>
                               Reports internal flags. For internal use
                               only.
+                          </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t heap_nblobs;</code>
+                </p>
+                <p>
+                              The number of blobs.
                           </p>
               </li>
               <li>
@@ -439,7 +455,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp565216"></a>Btree and Recno Statistics</h4>
+                <h4 class="title"><a id="idp588752"></a>Btree and Recno Statistics</h4>
               </div>
             </div>
           </div>
@@ -547,6 +563,14 @@ Db::stat(void *sp, u_int32_t flags); </pre>
                 </p>
                 <p>
                               The minimum keys per page.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
+                  <code class="literal">u_int32_t bt_nblobs;</code>
+                </p>
+                <p>
+                              The number of blobs.
                          </p>
               </li>
               <li>
@@ -664,7 +688,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp587288"></a>Queue Statistics</h4>
+                <h4 class="title"><a id="idp622792"></a>Queue Statistics</h4>
               </div>
             </div>
           </div>
@@ -800,7 +824,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp592696"></a>Errors</h3>
+              <h3 class="title"><a id="idp617008"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -818,7 +842,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp611208"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp616520"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -840,7 +864,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp553080"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp576080"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -857,7 +881,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp553744"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp587992"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -870,7 +894,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp574040"></a>Class</h3>
+              <h3 class="title"><a id="idp607480"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -882,7 +906,7 @@ Db::stat(void *sp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp568192"></a>See Also</h3>
+              <h3 class="title"><a id="idp580344"></a>See Also</h3>
             </div>
           </div>
         </div>

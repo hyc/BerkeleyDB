@@ -21,8 +21,9 @@
 ** --------------------------
 **
 ** Foreign keys in SQLite come in two flavours: deferred and immediate.
-** If an immediate foreign key constraint is violated, SQLITE_CONSTRAINT
-** is returned and the current statement transaction rolled back. If a 
+** If an immediate foreign key constraint is violated,
+** SQLITE_CONSTRAINT_FOREIGNKEY is returned and the current
+** statement transaction rolled back. If a 
 ** deferred foreign key constraint is violated, no action is taken 
 ** immediately. However if the application attempts to commit the 
 ** transaction before fixing the constraint violation, the attempt fails.
@@ -86,7 +87,8 @@
 ** Immediate constraints are usually handled similarly. The only difference 
 ** is that the counter used is stored as part of each individual statement
 ** object (struct Vdbe). If, after the statement has run, its immediate
-** constraint counter is greater than zero, it returns SQLITE_CONSTRAINT
+** constraint counter is greater than zero,
+** it returns SQLITE_CONSTRAINT_FOREIGNKEY
 ** and the statement transaction is rolled back. An exception is an INSERT
 ** statement that inserts a single row only (no triggers). In this case,
 ** instead of using a counter, an exception is thrown immediately if the
@@ -142,7 +144,7 @@
 ** A foreign key constraint requires that the key columns in the parent
 ** table are collectively subject to a UNIQUE or PRIMARY KEY constraint.
 ** Given that pParent is the parent table for foreign key constraint pFKey, 
-** search the schema a unique index on the parent key columns. 
+** search the schema for a unique index on the parent key columns. 
 **
 ** If successful, zero is returned. If the parent key is an INTEGER PRIMARY 
 ** KEY column, then output variable *ppIdx is set to NULL. Otherwise, *ppIdx 
@@ -178,7 +180,7 @@
 ** into pParse. If an OOM error occurs, non-zero is returned and the
 ** pParse->db->mallocFailed flag is set.
 */
-static int locateFkeyIndex(
+int sqlite3FkLocateIndex(
   Parse *pParse,                  /* Parse context to store any error in */
   Table *pParent,                 /* Parent table of FK constraint pFKey */
   FKey *pFKey,                    /* Foreign key to find index for */
@@ -275,7 +277,9 @@ static int locateFkeyIndex(
 
   if( !pIdx ){
     if( !pParse->disableTriggers ){
-      sqlite3ErrorMsg(pParse, "foreign key mismatch");
+      sqlite3ErrorMsg(pParse,
+           "foreign key mismatch - \"%w\" referencing \"%w\"",
+           pFKey->pFrom->zName, pFKey->zTo);
     }
     sqlite3DbFree(pParse->db, aiCol);
     return 1;
@@ -386,13 +390,25 @@ static void fkLookupParent(
       /* If the parent table is the same as the child table, and we are about
       ** to increment the constraint-counter (i.e. this is an INSERT operation),
       ** then check if the row being inserted matches itself. If so, do not
-      ** increment the constraint-counter.  */
+      ** increment the constraint-counter. 
+      **
+      ** If any of the parent-key values are NULL, then the row cannot match 
+      ** itself. So set JUMPIFNULL to make sure we do the OP_Found if any
+      ** of the parent-key values are NULL (at this point it is known that
+      ** none of the child key values are).
+      */
       if( pTab==pFKey->pFrom && nIncr==1 ){
         int iJump = sqlite3VdbeCurrentAddr(v) + nCol + 1;
         for(i=0; i<nCol; i++){
           int iChild = aiCol[i]+1+regData;
           int iParent = pIdx->aiColumn[i]+1+regData;
+          assert( aiCol[i]!=pTab->iPKey );
+          if( pIdx->aiColumn[i]==pTab->iPKey ){
+            /* The parent key is a composite key that includes the IPK column */
+            iParent = regData;
+          }
           sqlite3VdbeAddOp3(v, OP_Ne, iChild, iJump, iParent);
+          sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
         }
         sqlite3VdbeAddOp2(v, OP_Goto, 0, iOk);
       }
@@ -412,8 +428,8 @@ static void fkLookupParent(
     ** incrementing a counter. This is necessary as the VM code is being
     ** generated for will not open a statement transaction.  */
     assert( nIncr==1 );
-    sqlite3HaltConstraint(
-        pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
+    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
+        OE_Abort, "foreign key constraint failed", P4_STATIC
     );
   }else{
     if( nIncr>0 && pFKey->isDeferred==0 ){
@@ -499,12 +515,15 @@ static void fkScanChildren(
       ** expression to the parent key column defaults.  */
       if( pIdx ){
         Column *pCol;
+        const char *zColl;
         iCol = pIdx->aiColumn[i];
         pCol = &pTab->aCol[iCol];
         if( pTab->iPKey==iCol ) iCol = -1;
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
-        pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
+        zColl = pCol->zColl;
+        if( zColl==0 ) zColl = db->pDfltColl->zName;
+        pLeft = sqlite3ExprAddCollateString(pParse, pLeft, zColl);
       }else{
         pLeft->iTable = regData;
         pLeft->affinity = SQLITE_AFF_INTEGER;
@@ -548,7 +567,7 @@ static void fkScanChildren(
   ** clause. If the constraint is not deferred, throw an exception for
   ** each row found. Otherwise, for deferred constraints, increment the
   ** deferred constraint counter by nIncr for each row selected.  */
-  pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0);
+  pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0, 0, 0);
   if( nIncr>0 && pFKey->isDeferred==0 ){
     sqlite3ParseToplevel(pParse)->mayAbort = 1;
   }
@@ -650,8 +669,8 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     ** any modifications to the schema are made. This is because statement
     ** transactions are not able to rollback schema changes.  */
     sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
-    sqlite3HaltConstraint(
-        pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
+    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
+        OE_Abort, "foreign key constraint failed", P4_STATIC
     );
 
     if( iSkip ){
@@ -721,8 +740,25 @@ void sqlite3FkCheck(
     }else{
       pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
     }
-    if( !pTo || locateFkeyIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ){
+    if( !pTo || sqlite3FkLocateIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ){
+      assert( isIgnoreErrors==0 || (regOld!=0 && regNew==0) );
       if( !isIgnoreErrors || db->mallocFailed ) return;
+      if( pTo==0 ){
+        /* If isIgnoreErrors is true, then a table is being dropped. In this
+        ** case SQLite runs a "DELETE FROM xxx" on the table being dropped
+        ** before actually dropping it in order to check FK constraints.
+        ** If the parent table of an FK constraint on the current table is
+        ** missing, behave as if it is empty. i.e. decrement the relevant
+        ** FK counter for each row of the current table with non-NULL keys.
+        */
+        Vdbe *v = sqlite3GetVdbe(pParse);
+        int iJump = sqlite3VdbeCurrentAddr(v) + pFKey->nCol + 1;
+        for(i=0; i<pFKey->nCol; i++){
+          int iReg = pFKey->aCol[i].iFrom + regOld + 1;
+          sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iJump);
+        }
+        sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, -1);
+      }
       continue;
     }
     assert( pFKey->nCol==1 || (aiFree && pIdx) );
@@ -784,7 +820,7 @@ void sqlite3FkCheck(
       continue;
     }
 
-    if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ){
+    if( sqlite3FkLocateIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ){
       if( !isIgnoreErrors || db->mallocFailed ) return;
       continue;
     }
@@ -839,7 +875,7 @@ u32 sqlite3FkOldmask(
     }
     for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
       Index *pIdx = 0;
-      locateFkeyIndex(pParse, pTab, p, &pIdx, 0);
+      sqlite3FkLocateIndex(pParse, pTab, p, &pIdx, 0);
       if( pIdx ){
         for(i=0; i<pIdx->nColumn; i++) mask |= COLUMN_MASK(pIdx->aiColumn[i]);
       }
@@ -896,7 +932,8 @@ int sqlite3FkRequired(
           int iKey;
           for(iKey=0; iKey<pTab->nCol; iKey++){
             Column *pCol = &pTab->aCol[iKey];
-            if( (zKey ? !sqlite3StrICmp(pCol->zName, zKey) : pCol->isPrimKey) ){
+            if( (zKey ? !sqlite3StrICmp(pCol->zName, zKey)
+                      : (pCol->colFlags & COLFLAG_PRIMKEY)!=0) ){
               if( aChange[iKey]>=0 ) return 1;
               if( iKey==pTab->iPKey && chngRowid ) return 1;
             }
@@ -964,7 +1001,7 @@ static Trigger *fkActionTrigger(
     int i;                        /* Iterator variable */
     Expr *pWhen = 0;              /* WHEN clause for the trigger */
 
-    if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ) return 0;
+    if( sqlite3FkLocateIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ) return 0;
     assert( aiCol || pFKey->nCol==1 );
 
     for(i=0; i<pFKey->nCol; i++){
@@ -1095,6 +1132,7 @@ static Trigger *fkActionTrigger(
       fkTriggerDelete(db, pTrigger);
       return 0;
     }
+    assert( pStep!=0 );
 
     switch( action ){
       case OE_Restrict:

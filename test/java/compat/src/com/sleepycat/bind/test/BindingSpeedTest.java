@@ -1,15 +1,17 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.bind.test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.Externalizable;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
@@ -19,13 +21,16 @@ import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -37,11 +42,13 @@ import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.util.FastInputStream;
 import com.sleepycat.util.FastOutputStream;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 
 /**
  * @author Mark Hayes
  */
-public class BindingSpeedTest extends TestCase {
+@RunWith(Parameterized.class)
+public class BindingSpeedTest extends TestBase {
 
     static final String JAVA_UNSHARED = "java-unshared".intern();
     static final String JAVA_SHARED = "java-shared".intern();
@@ -54,28 +61,13 @@ public class BindingSpeedTest extends TestCase {
     static final int RUN_COUNT = 1000;
     static final boolean VERBOSE = false;
 
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-
-        TestSuite suite = new TestSuite();
-        suite.addTest(new BindingSpeedTest(JAVA_UNSHARED));
-        suite.addTest(new BindingSpeedTest(JAVA_SHARED));
-        suite.addTest(new BindingSpeedTest(JAVA_EXTERNALIZABLE));
-        suite.addTest(new BindingSpeedTest(XML_SAX));
-        suite.addTest(new BindingSpeedTest(TUPLE));
-        suite.addTest(new BindingSpeedTest(REFLECT_METHOD));
-        suite.addTest(new BindingSpeedTest(REFLECT_FIELD));
-        return suite;
+    @Parameters
+    public static List<Object[]> genParams(){
+        
+        return Arrays.asList(new Object[][]{{JAVA_UNSHARED}, {JAVA_SHARED}, 
+                                            {JAVA_EXTERNALIZABLE}, {XML_SAX},
+                                            {TUPLE}, {REFLECT_METHOD}, 
+                                            {REFLECT_FIELD}});
     }
 
     private String command;
@@ -90,16 +82,15 @@ public class BindingSpeedTest extends TestCase {
 
     public BindingSpeedTest(String name) {
 
-        super("BindingSpeedTest." + name);
         command = name;
+        customName = "BindingSpeedTest." + name;
     }
 
-    @Override
+    @Test
     public void runTest()
         throws Exception {
 
-        SharedTestUtils.printTestName(getName());
-
+        SharedTestUtils.printTestName(customName);
         boolean isTuple = false;
         boolean isReflectMethod = false;
         boolean isReflectField = false;
@@ -211,7 +202,7 @@ public class BindingSpeedTest extends TestCase {
         }
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         /* Ensure that GC can cleanup. */

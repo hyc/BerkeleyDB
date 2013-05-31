@@ -18,6 +18,7 @@
 
 typedef	unsigned char u_int8_t;
 typedef	long int32_t;
+typedef	long long db_off_t;
 typedef	long long db_seq_t;
 typedef	long long pid_t;
 #ifndef SWIGJAVA
@@ -43,6 +44,7 @@ struct DbLsn;	typedef struct DbLsn DB_LSN;
 struct DbMpoolFile;	typedef struct DbMpoolFile DB_MPOOLFILE;
 struct DbSequence;		typedef struct Db DB_SEQUENCE;
 struct DbSite;	typedef struct DbSite DB_SITE;
+struct DbStream;	typedef struct DbStream DB_STREAM;
 struct DbTxn;	typedef struct DbTxn DB_TXN;
 
 /* Methods that allocate new objects */
@@ -135,6 +137,24 @@ struct Db
 	u_int32_t get_assoc_flags() {
 		u_int32_t ret = 0;
 		errno = self->get_assoc_flags(self, &ret);
+		return ret;
+	}
+
+	const char *get_blob_dir() {
+		const char *ret;
+		errno = self->get_blob_dir(self, &ret);
+		return ret;
+	}
+
+	const char *get_blob_sub_dir() {
+		const char *ret;
+		errno = self->get_blob_sub_dir(self, &ret);
+		return ret;
+	}
+
+	u_int32_t get_blob_threshold () {
+		u_int32_t ret = 0;
+		errno = self->get_blob_threshold(self, &ret);
 		return ret;
 	}
 
@@ -282,9 +302,11 @@ struct Db
 		return ret;
 	}
 
-	DBT *get_partition_keys() {
-		DBT *ret = NULL;
-		errno = self->get_partition_keys(self, NULL, &ret);
+	/* __dbt_arr is used to differentiate from DBT * as a return value. */
+	struct __dbt_arr get_partition_keys() {
+		struct __dbt_arr ret;
+		errno = self->get_partition_keys(self, &ret.len, &ret.arr_ptr);
+		ret.len--;
 		return ret;
 	}
 
@@ -383,8 +405,16 @@ struct Db
 		return self->set_append_recno(self, db_append_recno_fcn);
 	}
 
+	db_ret_t set_blob_dir(const char *dir) {
+		return self->set_blob_dir(self, dir);
+	}
+
+	db_ret_t set_blob_threshold(u_int32_t bytes, u_int32_t flags) {
+		return self->set_blob_threshold(self, bytes, flags);
+	}
+
 	db_ret_t set_bt_compare(
-	    int (*bt_compare_fcn)(DB *, const DBT *, const DBT *)) {
+	    int (*bt_compare_fcn)(DB *, const DBT *, const DBT *, size_t *)) {
 		return self->set_bt_compare(self, bt_compare_fcn);
 	}
 
@@ -417,7 +447,7 @@ struct Db
 	}
 
 	db_ret_t set_dup_compare(
-	    int (*dup_compare_fcn)(DB *, const DBT *, const DBT *)) {
+	    int (*dup_compare_fcn)(DB *, const DBT *, const DBT *, size_t *)) {
 		return self->set_dup_compare(self, dup_compare_fcn);
 	}
 
@@ -457,7 +487,7 @@ struct Db
 	}
 
 	db_ret_t set_h_compare(
-	    int (*h_compare_fcn)(DB *, const DBT *, const DBT *)) {
+	    int (*h_compare_fcn)(DB *, const DBT *, const DBT *, size_t *)) {
 		return self->set_h_compare(self, h_compare_fcn);
 	}
 
@@ -601,6 +631,13 @@ struct Dbc
 		return count;
 	}
 
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DB2JDBENV)
+	DB_STREAM *db_stream(u_int32_t flags) {
+		DB_STREAM *dbsp = NULL;
+		errno = self->db_stream(self, &dbsp, flags);
+		return dbsp;
+	}
+
 	JAVA_EXCEPT(DB_RETOK_DBCDEL, DBC2JDBENV)
 	int del(u_int32_t flags) {
 		return self->del(self, flags);
@@ -737,6 +774,18 @@ struct DbEnv
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
+	const char *get_blob_dir() {
+		const char *ret;
+		errno = self->get_blob_dir(self, &ret);
+		return ret;
+	}
+
+	u_int32_t get_blob_threshold() {
+		u_int32_t ret;
+		errno = self->get_blob_threshold(self, &ret);
+		return ret;
+	}
+
 	const char **get_data_dirs() {
 		const char **ret;
 		errno = self->get_data_dirs(self, &ret);
@@ -826,6 +875,14 @@ struct DbEnv
 	}
 
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
+	db_ret_t set_blob_dir(const char *dir) {
+		return self->set_blob_dir(self, dir);
+	}
+
+	db_ret_t set_blob_threshold(u_int32_t bytes, u_int32_t flags) {
+		return self->set_blob_threshold(self, bytes, flags);
+	}
+
 	db_ret_t set_cachesize(jlong bytes, int ncache) {
 		return self->set_cachesize(self,
 		    (u_int32_t)(bytes / GIGABYTE),
@@ -1533,6 +1590,11 @@ struct DbEnv
 		return self->rep_set_transport(self, envid, send);
 	}
 
+	db_ret_t rep_set_view(int (*rep_view_fcn)(DB_ENV *,
+	    const char *, int *, u_int32_t)) {
+		return self->rep_set_view(self, rep_view_fcn);
+	}
+
 	/* Advanced replication functions. */
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
 	u_int32_t rep_get_nsites() {
@@ -1627,6 +1689,11 @@ struct DbEnv
 	u_int32_t get_backup_config(u_int32_t config_type) {
 		u_int32_t ret;
 		errno = self->get_backup_config(self, (DB_BACKUP_CONFIG)config_type, &ret);
+		if (errno == EINVAL) {
+			errno = 0;
+			ret = 0;
+		}
+
 		return ret;
 	}
 
@@ -1812,14 +1879,14 @@ struct DbSequence
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, NULL)
-	db_seq_t get(DB_TXN *txnid, int32_t delta, u_int32_t flags) {
+	db_seq_t get(DB_TXN *txnid, u_int32_t delta, u_int32_t flags) {
 		db_seq_t ret = 0;
 		errno = self->get(self, txnid, delta, &ret, flags);
 		return ret;
 	}
 
-	int32_t get_cachesize() {
-		int32_t ret = 0;
+	u_int32_t get_cachesize() {
+		u_int32_t ret = 0;
 		errno = self->get_cachesize(self, &ret);
 		return ret;
 	}
@@ -1867,7 +1934,7 @@ struct DbSequence
 		return self->remove(self, txnid, flags);
 	}
 
-	db_ret_t set_cachesize(int32_t size) {
+	db_ret_t set_cachesize(u_int32_t size) {
 		return self->set_cachesize(self, size);
 	}
 
@@ -1922,6 +1989,32 @@ struct DbSite
 
 	db_ret_t set_config(u_int32_t which, int_bool onoff) {
 		return self->set_config(self, which, onoff);
+	}
+}
+};
+
+struct DbStream
+{
+%extend {
+	JAVA_EXCEPT(DB_RETOK_STD, NULL)
+	db_ret_t close(u_int32_t flags) {
+		return self->close(self, flags);
+	}
+
+	int read(DBT *data, db_off_t offset, u_int32_t size, u_int32_t flags) {
+		return self->read(self, data, offset, size, flags);
+	}
+
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, NULL)
+	db_off_t size(u_int32_t flags) {
+		db_off_t ret = 0;
+		errno = self->size(self, &ret, flags);
+		return ret;
+	}
+
+	JAVA_EXCEPT(DB_RETOK_STD, NULL)
+	int write(DBT *data, db_off_t offset, u_int32_t flags) {
+		return self->write(self, data, offset, flags);
 	}
 }
 };

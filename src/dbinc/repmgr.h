@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -47,20 +47,24 @@ extern "C" {
  * In protocol version one there were only three message types: 1, 2, and 3; so
  * 3 was the max.  In protocol version 2 we introduced heartbeats, type 4.
  * (Protocol version 3 did not introduce any new message types.)  In version 4
- * we introduced a few more new message types, the largest of which had value 7.
+ * we introduced a few more new message types, the largest of which had value 8.
+ * Protocol version 5 did not introduce any new message types, but changed
+ * the format of site info and membership data to support views.
  */
 #define	REPMGR_MAX_V1_MSG_TYPE	3
 #define	REPMGR_MAX_V2_MSG_TYPE	4
 #define	REPMGR_MAX_V3_MSG_TYPE	4
 #define	REPMGR_MAX_V4_MSG_TYPE	8
+#define	REPMGR_MAX_V5_MSG_TYPE	8
 #define	HEARTBEAT_MIN_VERSION	2
 #define	CHANNEL_MIN_VERSION	4
 #define	CONN_COLLISION_VERSION	4
 #define	GM_MIN_VERSION		4
 #define	OWN_MIN_VERSION		4
+#define	VIEW_MIN_VERSION	5
 
 /* The range of protocol versions we're willing to support. */
-#define	DB_REPMGR_VERSION	4
+#define	DB_REPMGR_VERSION	5
 #define	DB_REPMGR_MIN_VERSION	1
 
 /*
@@ -85,6 +89,11 @@ extern "C" {
 #define	REPMGR_RESOLVE_LIMBO	10
 #define	REPMGR_SHARING		11
 
+/* Detect inconsistencies between view callback and site's gmdb. */
+#define PARTICIPANT_TO_VIEW(db_rep, site)      				\
+	((db_rep)->partial && !FLD_ISSET((site)->gmdb_flags, SITE_VIEW))
+#define VIEW_TO_PARTICIPANT(db_rep, site)      				\
+	(!(db_rep)->partial && FLD_ISSET((site)->gmdb_flags, SITE_VIEW))
 
 struct __repmgr_connection;
     typedef struct __repmgr_connection REPMGR_CONNECTION;
@@ -98,7 +107,8 @@ struct __cond_waiters_table;
     typedef struct __cond_waiters_table COND_WAITERS_TABLE;
 
 /* Current Group Membership DB format ID. */
-#define	REPMGR_GMDB_FMT_VERSION	1
+#define	REPMGR_GMDB_FMT_VERSION		2
+#define	REPMGR_GMDB_FMT_MIN_VERSION	1
 
 #ifdef DB_WIN32
 typedef SOCKET socket_t;
@@ -151,6 +161,10 @@ typedef char SITE_STRING_BUFFER[MAX_SITE_LOC_STRING+1];
 #define	DB_REPMGR_DEFAULT_ELECTION_RETRY	(10 * US_PER_SEC)
 #define	DB_REPMGR_DEFAULT_CHANNEL_TIMEOUT	(5 * US_PER_SEC)
 
+/* Defaults for undocumented incoming queue maximum messages. */
+#define	DB_REPMGR_DEFAULT_INQUEUE_MSGS		5000000
+#define	DB_REPMGR_DEFAULT_INQUEUE_BULKMSGS	5000
+
 typedef TAILQ_HEAD(__repmgr_conn_list, __repmgr_connection) CONNECTION_LIST;
 typedef STAILQ_HEAD(__repmgr_out_q_head, __queued_output) OUT_Q_HEADER;
 typedef TAILQ_HEAD(__repmgr_retry_q, __repmgr_retry) RETRY_Q_HEADER;
@@ -177,7 +191,12 @@ struct __repmgr_runnable {
 #define	ELECT_F_STARTUP		0x10 /* Observe repmgr_start() policy. */
 		u_int32_t flags;
 
-		int eid;	/* For Connector thread. */
+		/* For connector thread. */
+		struct {
+			int eid;
+#define CONNECT_F_REFRESH	0x01 /* New connection to replace old one. */
+			u_int32_t flags;
+		} conn_th;
 
 		/*
 		 * Args for other thread types can be added here in the future
@@ -343,6 +362,7 @@ struct __repmgr_connection {
 #define	CONN_PARAMETERS	5	/* Awaiting parameters handshake. */
 #define	CONN_READY	6	/* Everything's fine. */
 	int state;
+	u_int32_t auto_takeover;/* Connection to remote listener candidate. */
 
 	/*
 	 * Input: while we're reading a message, we keep track of what phase
@@ -464,6 +484,8 @@ typedef struct {
 	SITEADDR addr;		/* Unprocessed network address of site. */
 	u_int32_t config;	/* Configuration flags: peer, helper, etc. */
 	u_int32_t status;	/* Group membership status. */
+	u_int32_t flags;	/* Group membership flags. */
+	u_int32_t listener_cand;/* Number of listener candidates of site. */
 } SITEINFO;
 
 /*
@@ -489,6 +511,42 @@ typedef struct {
 	     ((u_int)i) < db_rep->site_cnt;		 \
 	     (int)(++(i)) == db_rep->self_eid ? ++(i) : i)
 
+/*
+ * Enable replication manager auto listener takeover.
+ */
+#define	HAVE_REPLICATION_LISTENER_TAKEOVER	1
+
+/* Listener candidate, that is subordinate rep-aware process. */
+#define	IS_LISTENER_CAND(db_rep)					\
+	(FLD_ISSET((db_rep)->region->config, REP_C_AUTOTAKEOVER) &&	\
+	    IS_SUBORDINATE(db_rep) && (db_rep)->repmgr_status == running)
+
+/*
+ * The number of listener candidates for each remote site is maintained in
+ * the listener process and used in subordinate rep-aware processes.
+ */
+#define	SET_LISTENER_CAND(cond, op)					\
+	do {								\
+		if (FLD_ISSET(rep->config, REP_C_AUTOTAKEOVER) &&	\
+		    !IS_SUBORDINATE(db_rep) && (cond)) {		\
+			MUTEX_LOCK(env, rep->mtx_repmgr);		\
+			sites = R_ADDR(env->reginfo, rep->siteinfo_off);\
+			(sites[eid].listener_cand)op;			\
+			MUTEX_UNLOCK(env, rep->mtx_repmgr);		\
+		}							\
+	} while (0)
+
+#define	CHECK_LISTENER_CAND(val, op, tval, fval)			\
+	do {								\
+		if (IS_LISTENER_CAND(db_rep)) {				\
+			MUTEX_LOCK(env, rep->mtx_repmgr);		\
+			sites = R_ADDR(env->reginfo, rep->siteinfo_off);\
+			val = ((sites[eid].listener_cand)op) ?		\
+			    (tval) : (fval);				\
+			MUTEX_UNLOCK(env, rep->mtx_repmgr);		\
+		}							\
+	} while (0)
+
 struct __repmgr_site {
 	repmgr_netaddr_t net_addr;
 
@@ -499,7 +557,8 @@ struct __repmgr_site {
 	 * host/port network address is promised to be associated with the
 	 * locally known EID for the life of the environment.
 	 */
-	u_int32_t	membership; /* Status flags from GMDB. */
+	u_int32_t	membership; /* Status value from GMDB. */
+	u_int32_t	gmdb_flags; /* Flags from GMDB. */
 	u_int32_t	config;	    /* Flags from site->set_config() */
 
 	/*
@@ -604,11 +663,11 @@ struct __channel {
  * connections may be found: (1) SITE->ref.conn, (2) SITE->sub_conns, and
  * (3) db_rep->connections.
  *
- * 1. SITE->ref.conn points to our connection with the main process running
- * at the given site, if such a connection exists.  We may have initiated
- * the connection to the site ourselves, or we may have received it as an
- * incoming connection.  Once it is established there is very little
- * difference between those two cases.
+ * 1. SITE->ref.conn points to our connection with the listener process
+ * running at the given site, if such a connection exists.  We may have
+ * initiated the connection to the site ourselves, or we may have received
+ * it as an incoming connection.  Once it is established there is very
+ * little difference between those two cases.
  *
  * 2. SITE->sub_conns is a list of connections we have with subordinate
  * processes running at the given site.  There can be any number of these
@@ -694,6 +753,7 @@ struct __channel {
  */
 #define	APP_CHANNEL_CONNECTION	0x02	/* Connection used for app channel. */
 #define	ELECTABLE_SITE		0x04
+#define	REPMGR_AUTOTAKEOVER	0x08	/* Could become main connection. */
 #define	REPMGR_SUBORDINATE	0x01	/* This is a subordinate connection. */
 
 /*
@@ -719,13 +779,19 @@ typedef struct {
  * As with message formats, stored formats are defined in repmgr.msg.
  */
 /*
- * Flags for the Group Membership data portion of a record.  Like message type
- * codes, these values are frozen across releases, in order to avoid pointless
- * churn.
+ * Status values for the Group Membership data portion of a record.  Like
+ * message type codes, these values are frozen across releases, in order to
+ * avoid pointless churn.  These values are mutually exclusive.
  */
 #define	SITE_ADDING	0x01
 #define	SITE_DELETING	0x02
 #define	SITE_PRESENT	0x04
+/*
+ * Flags for the Group Membership data portion of a record.  These values are
+ * also frozen across releases.  These values are bit fields and may be OR'ed
+ * together.
+ */
+#define	SITE_VIEW	0x01
 
 /*
  * Message types whose processing could take a long time.  We're careful to

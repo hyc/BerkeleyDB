@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -84,6 +84,22 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           </li>
           <li>
             <p>
+                    <span class="bold"><strong>u_int32_t st_elect_threads;</strong></span>
+                </p>
+            <p>
+                    The number of currently active election threads.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>u_int32_t st_max_elect_threads;</strong></span>
+                </p>
+            <p>
+                    The number of election threads for which space is reserved.
+                </p>
+          </li>
+          <li>
+            <p>
                     <span class="bold"><strong>uintmax_t st_msgs_dropped;</strong></span>
                 </p>
             <p>
@@ -117,19 +133,37 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>uintmax_t st_elect_threads;</strong></span>
+                    <span class="bold"><strong>u_int32_t st_site_participants;</strong></span>
                 </p>
             <p>
-                    The number of currently active election threads.
+                    The number of participant sites in the replication group.
                 </p>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>uintmax_t st_max_elect_threads;</strong></span>
+                    <span class="bold"><strong>u_int32_t st_site_total;</strong></span>
                 </p>
             <p>
-                    The number of election threads for which space is reserved.
+                    The total number of sites in the replication group.
                 </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>u_int32_t st_site_views;</strong></span>
+                </p>
+            <p>
+                    The number of view sites in the replication group.
+                </p>
+          </li>
+          <li>
+            <p>
+                <span class="bold"><strong>uintmax_t st_takeovers;</strong></span>
+            </p>
+            <p>
+                The number of times a subordinate process took over as the
+                replication process after a previous replication
+                process has finished successfully.
+            </p>
           </li>
         </ul>
       </div>
@@ -149,7 +183,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62465880"></a>Parameters</h3>
+              <h3 class="title"><a id="idp62749520"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -157,7 +191,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62467616"></a>statp</h4>
+                <h4 class="title"><a id="idp62749888"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -170,7 +204,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62457520"></a>flags</h4>
+                <h4 class="title"><a id="idp62751248"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -196,7 +230,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62477376"></a>Errors</h3>
+              <h3 class="title"><a id="idp62765864"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -212,7 +246,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62481696"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp62770336"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -226,7 +260,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62482776"></a>Class</h3>
+              <h3 class="title"><a id="idp62771416"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -238,7 +272,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62483984"></a>See Also</h3>
+              <h3 class="title"><a id="idp62765088"></a>See Also</h3>
             </div>
           </div>
         </div>

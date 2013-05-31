@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -492,7 +492,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
                      <span class="bold"><strong>uintmax_t st_nthrottles;</strong></span>
             </p>
             <p>
-                Transmission limited. This indicates the number of times that data
+                The number of times that data
                 transmission was stopped to limit the amount of data sent in response
                 to a single call to <a class="xref" href="repmessage.html" title="DB_ENV-&gt;rep_process_message()">DB_ENV-&gt;rep_process_message()</a>.
             </p>
@@ -553,7 +553,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
                      <span class="bold"><strong>u_int32_t st_status;</strong></span>
             </p>
             <p>
-                    The current replication mode.  Set to 
+                    The current replication role.  Set to 
                     <a class="link" href="repmgrstart.html#repmgrstart_DB_REP_MASTER">DB_REP_MASTER</a> 
                     if the environment is a replication master, 
                     <a class="link" href="repmgrstart.html#repmgrstart_DB_REP_CLIENT">DB_REP_CLIENT</a> 
@@ -567,6 +567,14 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
             </p>
             <p>
                 The number of transactions applied.
+            </p>
+          </li>
+          <li>
+            <p>
+                <span class="bold"><strong>u_int32_t st_view;</strong></span>
+            </p>
+            <p>
+                The current site is a replication view.
             </p>
           </li>
           <li>
@@ -605,7 +613,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62285944"></a>Parameters</h3>
+              <h3 class="title"><a id="idp62532000"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -613,7 +621,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62255072"></a>statp</h4>
+                <h4 class="title"><a id="idp62563496"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -626,7 +634,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62289256"></a>flags</h4>
+                <h4 class="title"><a id="idp62567856"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -652,7 +660,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62295064"></a>Errors</h3>
+              <h3 class="title"><a id="idp62572640"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -668,7 +676,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62276264"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp62577016"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -682,7 +690,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62298576"></a>Class</h3>
+              <h3 class="title"><a id="idp62575720"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -694,7 +702,7 @@ DB_ENV-&gt;rep_stat(DB_ENV *env, DB_REP_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62300520"></a>See Also</h3>
+              <h3 class="title"><a id="idp62578096"></a>See Also</h3>
             </div>
           </div>
         </div>

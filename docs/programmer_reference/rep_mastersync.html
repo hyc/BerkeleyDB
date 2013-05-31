@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -52,12 +52,12 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_mastersync.html#idp2309616">Blocked client operations</a>
+              <a href="rep_mastersync.html#idp52099408">Blocked client operations</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_mastersync.html#idp2331664">Clients too far out-of-date to synchronize</a>
+              <a href="rep_mastersync.html#idp52121272">Clients too far out-of-date to synchronize</a>
             </span>
           </dt>
         </dl>
@@ -124,8 +124,10 @@ function).</p>
     You do this by setting the <code class="literal">DB_REPMGR_PEER</code> parameter
     using the <a href="../api_reference/C/dbsite_set_config.html" class="olink">DB_SITE-&gt;set_config()</a> method.  Replication Manager always tries
     to send requests marked with the <a href="../api_reference/C/reptransport.html#transport_DB_REP_ANYWHERE" class="olink">DB_REP_ANYWHERE</a> flag to a peer, if
-    available.  However, it always sends a <a href="../api_reference/C/reptransport.html#transport_DB_REP_REREQUEST" class="olink">DB_REP_REREQUEST</a> to the master
-    site.
+    available.  However, a <a href="../api_reference/C/reptransport.html#transport_DB_REP_REREQUEST" class="olink">DB_REP_REREQUEST</a> message is always handled by 
+    requesting the information from the master.  A view can serve as a peer,
+    but a partial view is more likely to be missing requested information,
+    which will then be requested from the master.
 </p>
         <p>Base API applications have complete freedom
 in choosing where to send these <a href="../api_reference/C/reptransport.html#transport_DB_REP_ANYWHERE" class="olink">DB_REP_ANYWHERE</a> requests, and
@@ -148,7 +150,7 @@ the election.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2309616"></a>Blocked client operations</h3>
+              <h3 class="title"><a id="idp52099408"></a>Blocked client operations</h3>
             </div>
           </div>
         </div>
@@ -167,7 +169,7 @@ currently synchronizing with the master.</p>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2331664"></a>Clients too far out-of-date to synchronize</h3>
+              <h3 class="title"><a id="idp52121272"></a>Clients too far out-of-date to synchronize</h3>
             </div>
           </div>
         </div>

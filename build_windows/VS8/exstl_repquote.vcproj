@@ -11,7 +11,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/cxx/stl" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/exstl_repquote.pch" AssemblerListingLocation="$(OutDir)/exstl_repquote/" ObjectFile="$(OutDir)/exstl_repquote/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53d.lib libdb_stl53d.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb60d.lib libdb_stl60d.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -22,7 +22,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/cxx/stl" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/exstl_repquote.pch" AssemblerListingLocation="$(OutDir)/exstl_repquote/" ObjectFile="$(OutDir)/exstl_repquote/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53.lib libdb_stl53.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb60.lib libdb_stl60.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -33,7 +33,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalOptions="/bigobj" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/cxx/stl" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/exstl_repquote.pch" AssemblerListingLocation="$(OutDir)/exstl_repquote/" ObjectFile="$(OutDir)/exstl_repquote/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53d.lib libdb_stl53d.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb60d.lib libdb_stl60d.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -44,7 +44,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalOptions="/bigobj" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/cxx/stl" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/exstl_repquote.pch" AssemblerListingLocation="$(OutDir)/exstl_repquote/" ObjectFile="$(OutDir)/exstl_repquote/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53.lib libdb_stl53.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb60.lib libdb_stl60.lib" AdditionalLibraryDirectories="$(OutDir);$(OutDir);../../lib" OutputFile="$(OutDir)/exstl_repquote.exe" ProgramDatabaseFile="$(OutDir)/exstl_repquote.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>

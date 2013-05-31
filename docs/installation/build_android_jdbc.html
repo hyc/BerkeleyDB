@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -36,6 +36,11 @@
           </div>
         </div>
       </div>
+      <p>
+        The JDBC API is an alternative to the drop-in replacement. It is possible
+        to build Berkeley DB SQL for Android in such a way that a JDBC API is exposed
+        to Android application developers. This is done using the Android NDK.
+    </p>
       <p>
         This section describes how to build and use the BDB JDBC driver
         for Android. Note that the BDB JDBC driver cannot currently be
@@ -128,6 +133,31 @@ $ cd db-x.y.z</pre>
                 </li>
               </ol>
             </div>
+          </li>
+          <li>
+            <p>
+                Enable encryption if required.
+            </p>
+            <p>
+                By default, encryption is disabled. To enable it, edit
+                <code class="literal">&lt;db&gt;/build_android/jdbc/jni/Android.mk</code>
+                and change <code class="literal">BDB_ENABLE_ENCRYPTION</code>
+                from <code class="literal">false</code> to <code class="literal">true</code>.
+            </p>
+            <p>
+                After enabling encryption, use <code class="literal">pragma key</code>
+                to set the password. You must do this before performing any
+                database operations. For example:
+            </p>
+            <pre class="programlisting"> # ./dbsql test.db
+dbsql&gt; pragma key="xyzzy";
+dbsql&gt; create table t1(x);
+dbsql&gt; .quit
+
+# ./dbsql test.db
+dbsql&gt; pragma key="xyzzy";
+dbsql&gt; .tables
+t1 </pre>
           </li>
           <li>
             <p>

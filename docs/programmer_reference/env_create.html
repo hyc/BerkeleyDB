@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -130,8 +130,8 @@ db_setup(char *home, char *data_dir, FILE *errfp, char *progname)
         dbenv-&gt;err(dbenv, ret, "set_cachesize");
         goto err;
     }
-    if ((ret = dbenv-&gt;set_data_dir(dbenv, data_dir)) != 0) {
-        dbenv-&gt;err(dbenv, ret, "set_data_dir: %s", data_dir);
+    if ((ret = dbenv-&gt;add_data_dir(dbenv, data_dir)) != 0) {
+        dbenv-&gt;err(dbenv, ret, "add_data_dir: %s", data_dir);
         goto err;
     }
 

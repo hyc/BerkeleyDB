@@ -358,14 +358,14 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
   /* Reload the table, index and permanent trigger schemas. */
   zWhere = sqlite3MPrintf(pParse->db, "tbl_name=%Q", zName);
   if( !zWhere ) return;
-  sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
+  sqlite3VdbeAddParseSchemaOp(v, iDb, zWhere);
 
 #ifndef SQLITE_OMIT_TRIGGER
   /* Now, if the table is not stored in the temp database, reload any temp 
   ** triggers. Don't use IN(...) in case SQLITE_OMIT_SUBQUERY is defined. 
   */
   if( (zWhere=whereTempTriggers(pParse, pTab))!=0 ){
-    sqlite3VdbeAddOp4(v, OP_ParseSchema, 1, 0, 0, zWhere, P4_DYNAMIC);
+    sqlite3VdbeAddParseSchemaOp(v, 1, zWhere);
   }
 #endif
 }
@@ -414,7 +414,7 @@ void sqlite3AlterRenameTable(
   assert( pSrc->nSrc==1 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
 
-  pTab = sqlite3LocateTable(pParse, 0, pSrc->a[0].zName, pSrc->a[0].zDatabase);
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_table;
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zName;
@@ -530,7 +530,7 @@ void sqlite3AlterRenameTable(
             "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
              "'sqlite_autoindex_' || %Q || substr(name,%d+18) "
             "ELSE name END "
-      "WHERE tbl_name=%Q AND "
+      "WHERE tbl_name=%Q COLLATE nocase AND "
           "(type='table' OR type='index' OR type='trigger');", 
       zDb, SCHEMA_TABLE(iDb), zName, zName, zName, 
 #ifndef SQLITE_OMIT_TRIGGER
@@ -664,7 +664,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** If there is a NOT NULL constraint, then the default value for the
   ** column must not be NULL.
   */
-  if( pCol->isPrimKey ){
+  if( pCol->colFlags & COLFLAG_PRIMKEY ){
     sqlite3ErrorMsg(pParse, "Cannot add a PRIMARY KEY column");
     return;
   }
@@ -757,7 +757,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   assert( pParse->pNewTable==0 );
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   if( db->mallocFailed ) goto exit_begin_add_column;
-  pTab = sqlite3LocateTable(pParse, 0, pSrc->a[0].zName, pSrc->a[0].zDatabase);
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_begin_add_column;
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE

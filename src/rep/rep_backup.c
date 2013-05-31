@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -26,12 +26,14 @@
  * Note that the fileinfo for the first file in the list always appears at
  * (constant) offset __REP_UPDATE_SIZE in the buffer.
  */
+#define	FILE_CTX_INMEM_ONLY	0x01
 typedef struct {
 	u_int8_t	*buf;	/* Buffer base address. */
 	u_int32_t	size;	/* Total allocated buffer size. */
 	u_int8_t	*fillptr; /* Pointer to first unused space. */
 	u_int32_t	count;	/* Number of entries currently in list. */
 	u_int32_t	version; /* Rep version of marshaled format. */
+	u_int32_t	flags;	/* Context flags. */
 } FILE_LIST_CTX;
 #define	FIRST_FILE_PTR(buf)	((buf) + __REP_UPDATE_SIZE)
 
@@ -52,6 +54,8 @@ static int __rep_get_fileinfo __P((ENV *, const char *,
     const char *, __rep_fileinfo_args *, u_int8_t *));
 static int __rep_get_file_list __P((ENV *,
     DB_FH *, u_int32_t, u_int32_t *, DBT *));
+static int __rep_init_file_list_context __P((ENV *,
+    u_int32_t, u_int32_t, int, FILE_LIST_CTX *));
 static int __rep_is_replicated_db __P((const char *, const char *));
 static int __rep_log_setup __P((ENV *,
     REP *, u_int32_t, u_int32_t, DB_LSN *));
@@ -129,14 +133,12 @@ __rep_update_req(env, rp)
 
 	dblp = env->lg_handle;
 	logc = NULL;
-	if ((ret = __os_calloc(env, 1, MEGABYTE, &context.buf)) != 0)
-		goto err_noalloc;
-	context.size = MEGABYTE;
-	context.count = 0;
-	context.version = rp->rep_version;
 
 	/* Reserve space for the update_args, and fill in file info. */
-	context.fillptr = FIRST_FILE_PTR(context.buf);
+	if ((ret = __rep_init_file_list_context(env, rp->rep_version,
+	    F_ISSET(rp, REPCTL_INMEM_ONLY) ? FILE_CTX_INMEM_ONLY : 0,
+	    1, &context)) != 0)
+		goto err_noalloc;
 	if ((ret = __rep_find_dbs(env, &context)) != 0)
 		goto err;
 
@@ -240,7 +242,8 @@ __rep_find_dbs(env, context)
 	 * replicated user databases.  If the application has a metadata_dir,
 	 * this will also find any persistent internal system databases.
 	 */
-	if (dbenv->db_data_dir != NULL) {
+	if (!F_ISSET(context, FILE_CTX_INMEM_ONLY) &&
+	    dbenv->db_data_dir != NULL) {
 		for (ddir = dbenv->db_data_dir; *ddir != NULL; ++ddir) {
 			if ((ret = __db_appname(env,
 			    DB_APP_NONE, *ddir, NULL, &real_dir)) != 0)
@@ -258,10 +261,13 @@ __rep_find_dbs(env, context)
 	 * databases.  If the application doesn't have a separate data
 	 * directory, this will also return all user databases.
 	 */
-	if (ret == 0)
+	if (!F_ISSET(context, FILE_CTX_INMEM_ONLY) && ret == 0)
 		ret = __rep_walk_dir(env, env->db_home, NULL, context);
 
-	/* Now, collect any in-memory named databases. */
+	/*
+	 * Now, collect any in-memory named databases.  We do this no
+	 * matter if the INMEM_ONLY flag is set or not.
+	 */
 	if (ret == 0)
 		ret = __rep_walk_dir(env, NULL, NULL, context);
 
@@ -1157,6 +1163,11 @@ __rep_find_inmem(env, rfp, unused)
 	COMPQUIET(env, NULL);
 	COMPQUIET(unused, NULL);
 
+	/*
+	 * Cannot assume all databases are in-memory because abbreviated
+	 * internal inits from 5.3 and earlier are not limited to in-memory
+	 * databases.
+	 */
 	return (FLD_ISSET(rfp->db_flags, DB_AM_INMEM) ? DB_KEYEXIST : 0);
 }
 
@@ -1172,12 +1183,9 @@ __rep_remove_nimdbs(env)
 	FILE_LIST_CTX context;
 	int ret;
 
-	if ((ret = __os_calloc(env, 1, MEGABYTE, &context.buf)) != 0)
+	if ((ret = __rep_init_file_list_context(env,
+	    DB_REPVERSION, 0, 0, &context)) != 0)
 		return (ret);
-	context.size = MEGABYTE;
-	context.count = 0;
-	context.fillptr = context.buf;
-	context.version = DB_REPVERSION;
 
 	/* NB: "NULL" asks walk_dir to consider only in-memory DBs */
 	if ((ret = __rep_walk_dir(env, NULL, NULL, &context)) != 0)
@@ -1240,14 +1248,11 @@ __rep_remove_all(env, msg_version, rec)
 	 * 1. Get list of databases currently present at this client, which we
 	 *    intend to remove.
 	 */
-	if ((ret = __os_calloc(env, 1, MEGABYTE, &context.buf)) != 0)
-		return (ret);
-	context.size = MEGABYTE;
-	context.count = 0;
-	context.version = DB_REPVERSION;
 
 	/* Reserve space for the marshaled update_args. */
-	context.fillptr = FIRST_FILE_PTR(context.buf);
+	if ((ret = __rep_init_file_list_context(env,
+	    DB_REPVERSION, 0, 1, &context)) != 0)
+		return (ret);
 
 	if ((ret = __rep_find_dbs(env, &context)) != 0)
 		goto out;
@@ -1510,7 +1515,7 @@ __rep_remove_file(env, rfp, unused)
 			 * If fop_remove fails, it could be because
 			 * the client has a different data_dir
 			 * structure than the master.  Retry with the
-			 * local, default settings. 
+			 * local, default settings.
 			 */
 			ret = __fop_remove(env,
 			    NULL, rfp->uid.data, name, NULL,
@@ -1838,7 +1843,7 @@ __rep_write_page(env, ip, rep, msgfp)
 				 * If fop_create fails, it could be because
 				 * the client has a different data_dir
 				 * structure than the master.  Retry with the
-				 * local, default settings. 
+				 * local, default settings.
 				 */
 				RPRINT(env, (env, DB_VERB_REP_SYNC,
     "rep_write_page: fop_create ret %d.  Retry for %s, master datadir %s",
@@ -2404,18 +2409,21 @@ __rep_nextfile(env, eid, rep)
 	DBT dbt;
 	__rep_logreq_args lr_args;
 	DB_LOG *dblp;
+	DB_REP *db_rep;
 	LOG *lp;
 	REGENV *renv;
 	REGINFO *infop;
 	__rep_fileinfo_args *curinfo, *rfp, rf;
 	__rep_fileinfo_v6_args *rfpv6;
-	int *curbuf, ret;
+	int *curbuf, ret, view_partial;
 	u_int8_t *buf, *info_ptr, lrbuf[__REP_LOGREQ_SIZE], *nextinfo;
 	size_t len, msgsz;
+	char *name;
 	void *rffree;
 
 	infop = env->reginfo;
 	renv = infop->primary;
+	db_rep = env->rep_handle;
 	rfp = NULL;
 
 	/*
@@ -2484,19 +2492,43 @@ __rep_nextfile(env, eid, rep)
 			    rfp->dir.data, rfp->dir.size);
 		__os_free(env, rffree);
 
-		/* Skip over regular DB's in "abbreviated" internal inits. */
-		if (F_ISSET(rep, REP_F_ABBREVIATED) &&
+		/*
+		 * If a partial callback is set, invoke the callback to see if
+		 * this file should be replicated.
+		 */
+		if (IS_VIEW_SITE(env) && curinfo->info.size > 0 &&
 		    !FLD_ISSET(curinfo->db_flags, DB_AM_INMEM)) {
+			name = (char *)curinfo->info.data;
+			DB_ASSERT(env, db_rep->partial != NULL);
+			/*
+			 * Always replicate system owned databases.
+			 */
+			if (IS_DB_FILE(name))
+				view_partial = 1;
+			else if ((ret = db_rep->partial(env->dbenv,
+			    name, &view_partial, 0)) != 0) {
+				VPRINT(env, (env, DB_VERB_REP_SYNC,
+				    "rep_nextfile: partial cb err %d for %s",
+				    ret, name));
+				return (ret);
+			}
 			VPRINT(env, (env, DB_VERB_REP_SYNC,
-			    "Skipping file %d in abbreviated internal init",
-			    curinfo->filenum));
-			MUTEX_LOCK(env, renv->mtx_regenv);
-			__env_alloc_free(infop,
-			    R_ADDR(infop, rep->curinfo_off));
-			MUTEX_UNLOCK(env, renv->mtx_regenv);
-			rep->curinfo_off = INVALID_ROFF;
-			rep->curfile++;
-			continue;
+			    "rep_nextfile: %s file %s %d on view site.",
+			    view_partial == 0 ?
+			    "Skipping" : "Replicating",
+			    name, curinfo->filenum));
+			/*
+			 * If we're skipping the file, move to the next one.
+			 */
+			if (view_partial == 0) {
+				MUTEX_LOCK(env, renv->mtx_regenv);
+				__env_alloc_free(infop,
+				    R_ADDR(infop, rep->curinfo_off));
+				MUTEX_UNLOCK(env, renv->mtx_regenv);
+				rep->curinfo_off = INVALID_ROFF;
+				rep->curfile++;
+				continue;
+			}
 		}
 
 		/* Request this file's pages. */
@@ -3564,5 +3596,35 @@ __rep_walk_filelist(env, version, files, size, count, fn, arg)
 
 	if (rffree != NULL)
 		__os_free(env, rffree);
+	return (ret);
+}
+
+/*
+ * Initializes a FILE_LIST_CTX structure.
+ *
+ * Pass in a non-zero value for update_space to reserve space for
+ * update_args in the context's buffer.
+ */
+static int
+__rep_init_file_list_context(env, version, flags, update_space, context)
+	ENV *env;
+	u_int32_t version;
+	u_int32_t flags;
+	int update_space;
+	FILE_LIST_CTX *context;
+{
+	int ret;
+
+	if ((ret = __os_calloc(env, 1, MEGABYTE, &context->buf)) != 0)
+		return (ret);
+	context->size = MEGABYTE;
+	context->count = 0;
+	context->version = version;
+	context->flags = flags;
+	/* Reserve space for update_args. */
+	if (update_space)
+		context->fillptr = FIRST_FILE_PTR(context->buf);
+	else
+		context->fillptr = context->buf;
 	return (ret);
 }

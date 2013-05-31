@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	repmgr028
 # TEST	Repmgr allows applications to choose master explicitly, instead of
@@ -79,6 +79,10 @@ proc repmgr028_sub { tnum } {
 
 	puts "\tRepmgr$tnum.b: Switch roles explicitly."
 	$enva repmgr -start client -msgth 0
+	# Allow time for envb to process enva's NEWCLIENT message.  On some
+	# platforms, this message processing can lock out envb's attempt to
+	# start as master.
+	tclsleep 1
 	$envb repmgr -start master -msgth 0
 	await_startup_done $enva
 

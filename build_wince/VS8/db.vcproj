@@ -12,7 +12,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_wince,../../src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DIAGNOSTIC;;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb53sd.lib"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb60sd.lib"/></Configuration>
     <Configuration Name="Static Release|Pocket PC 2003 (ARMV4)" OutputDirectory="..\..\build_wince\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
@@ -20,7 +20,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_wince,../../src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb53s.lib"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb60s.lib"/></Configuration>
     <Configuration Name="Static Debug|Smartphone 2003 (ARMV4)" OutputDirectory="..\..\build_wince\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
@@ -28,7 +28,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_wince,../../src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DIAGNOSTIC;;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb53sd.lib"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb60sd.lib"/></Configuration>
     <Configuration Name="Static Release|Smartphone 2003 (ARMV4)" OutputDirectory="..\..\build_wince\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
@@ -36,7 +36,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_wince,../../src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb53s.lib"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb60s.lib"/></Configuration>
     <Configuration Name="Static Debug|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" OutputDirectory="..\..\build_wince\$(PlatformName)\Static_Debug" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
@@ -44,7 +44,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_wince,../../src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;DIAGNOSTIC;;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb53sd.lib"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb60sd.lib"/></Configuration>
     <Configuration Name="Static Release|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" OutputDirectory="..\..\build_wince\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="1">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_WIN32_WCE=$(CEVER);$(CePlatform);ARM,_ARM_,ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;"/>
@@ -52,10 +52,14 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" BufferSecurityCheck="FALSE" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_wince,../../src" PreprocessorDefinitions="DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db.pch" AssemblerListingLocation="$(OutDir)/db/" ObjectFile="$(OutDir)/db/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb53s.lib"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb60s.lib"/></Configuration>
   </Configurations>
   <References/>
   <Files>
+    <File RelativePath="..\..\src\blob\blob_fileops.c"/>
+    <File RelativePath="..\..\src\blob\blob_page.c"/>
+    <File RelativePath="..\..\src\blob\blob_stream.c"/>
+    <File RelativePath="..\..\src\blob\blob_util.c"/>
     <File RelativePath="..\..\src\btree\bt_compact.c"/>
     <File RelativePath="..\..\src\btree\bt_compare.c"/>
     <File RelativePath="..\..\src\btree\bt_conv.c"/>
@@ -197,6 +201,7 @@
     <File RelativePath="..\..\src\log\log_debug.c"/>
     <File RelativePath="..\..\src\log\log_get.c"/>
     <File RelativePath="..\..\src\log\log_method.c"/>
+    <File RelativePath="..\..\src\log\log_print.c"/>
     <File RelativePath="..\..\src\log\log_put.c"/>
     <File RelativePath="..\..\src\log\log_stat.c"/>
     <File RelativePath="..\..\src\log\log_verify.c"/>
@@ -235,6 +240,11 @@
     <File RelativePath="..\..\src\os\os_tmpdir.c"/>
     <File RelativePath="..\..\src\os\os_uid.c"/>
     <File RelativePath="..\..\src\os_windows\ce_ctime.c"/>
+    <File RelativePath="..\..\src\os_windows\ce_freopen.c"/>
+    <File RelativePath="..\..\src\os_windows\ce_gmtime.c"/>
+    <File RelativePath="..\..\src\os_windows\ce_mktime.c"/>
+    <File RelativePath="..\..\src\os_windows\ce_remove.c"/>
+    <File RelativePath="..\..\src\os_windows\ce_util_sig.c"/>
     <File RelativePath="..\..\src\os_windows\os_abs.c"/>
     <File RelativePath="..\..\src\os_windows\os_clock.c"/>
     <File RelativePath="..\..\src\os_windows\os_config.c"/>

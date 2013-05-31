@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -66,6 +66,10 @@ namespace BerkeleyDB {
         /// Minkey value. 
         /// </summary>
         public uint MinKey { get { return st.bt_minkey; } }
+        /// <summary>
+        /// Number of blob records.
+        /// </summary>
+        public uint nBlobRecords { get { return st.bt_nblobs; } }
         /// <summary>
         /// Number of data items. 
         /// </summary>

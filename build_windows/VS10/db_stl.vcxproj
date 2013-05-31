@@ -97,7 +97,7 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;DB_CREATE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
@@ -112,7 +112,7 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;DB_CREATE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
@@ -127,7 +127,7 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;DB_CREATE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
@@ -142,7 +142,7 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;DB_CREATE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">

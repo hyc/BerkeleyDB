@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	repmgr110
 # TEST  Multi-process repmgr start-up policies.
@@ -192,6 +192,6 @@ proc repmgr110 { } {
 	set elections [stat_field $aenv rep_stat "Elections held"]
 	error_check_good bumped_gen [expr $elections > $initial_value] 1
 
-	$aenv close
 	close $a
+	$aenv close
 }

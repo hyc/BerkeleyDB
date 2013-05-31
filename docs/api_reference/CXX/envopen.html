@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -78,7 +78,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1627288"></a>Parameters</h3>
+              <h3 class="title"><a id="idp1676832"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -86,7 +86,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1638080"></a>db_home</h4>
+                <h4 class="title"><a id="idp1680672"></a>db_home</h4>
               </div>
             </div>
           </div>
@@ -112,7 +112,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1658440"></a>flags</h4>
+                <h4 class="title"><a id="idp1686840"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -501,13 +501,15 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
                 <p>
                             Cause the 
                             <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a> 
-                            handle returned by <code class="methodname">DbEnv::open()</code> to be <span class="emphasis"><em>free-threaded;</em></span> that is,
+                            handle returned by
+                            <code class="methodname">DbEnv::open()</code> to be
+                            <span class="emphasis"><em>free-threaded;</em></span> that is,
                             concurrently usable by multiple threads in the
-                            address space. The <code class="literal">DB_THREAD </code>
-                            flag should be specified if the 
-                            <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a> handle will be
-                            concurrently used by more than one thread in the
-                            process, or if any 
+                            address space. The 
+                            <code class="literal">DB_THREAD </code> flag should be
+                            specified if the <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a> 
+                            handle will be concurrently used by more than
+                            one thread in the process, or if any 
                             <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a> handles opened in
                             the scope of the 
                             <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a> handle will be
@@ -515,7 +517,22 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
                             process.
                         </p>
                 <p>
-                            This flag is required when using the Replication Manager.
+                            If this flag is specified, then any database
+                            opened using this environment handle will also
+                            be free-threaded.
+                        </p>
+                <p>
+                            Be aware that enabling this flag will serialize
+                            calls to DB when using the handle across
+                            threads. If concurrent scaling is important to
+                            your application we recommend opening separate
+                            handles for each thread (and not specifying
+                            this flag), rather than sharing handles between
+                            threads.
+                        </p>
+                <p>
+                            This flag is required when using the
+                            Replication Manager.
                         </p>
                 <p>
                             You can also specify this flag in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
@@ -538,7 +555,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1685128"></a>mode</h4>
+                <h4 class="title"><a id="idp1686624"></a>mode</h4>
               </div>
             </div>
           </div>
@@ -567,7 +584,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1661552"></a>Errors</h3>
+              <h3 class="title"><a id="idp1688072"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -585,7 +602,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1719024"></a>DB_RUNRECOVERY</h4>
+                <h4 class="title"><a id="idp1730744"></a>DB_RUNRECOVERY</h4>
               </div>
             </div>
           </div>
@@ -600,7 +617,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1656888"></a>DB_VERSION_MISMATCH</h4>
+                <h4 class="title"><a id="idp1701752"></a>DB_VERSION_MISMATCH</h4>
               </div>
             </div>
           </div>
@@ -613,7 +630,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1724712"></a>EAGAIN</h4>
+                <h4 class="title"><a id="idp1752416"></a>EAGAIN</h4>
               </div>
             </div>
           </div>
@@ -625,7 +642,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1734208"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp1762904"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -643,7 +660,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1648104"></a>ENOENT</h4>
+                <h4 class="title"><a id="idp1680456"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -656,7 +673,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1717080"></a>Class</h3>
+              <h3 class="title"><a id="idp1682976"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -668,7 +685,7 @@ DbEnv::open(const char *db_home, u_int32_t flags, int mode); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1675976"></a>See Also</h3>
+              <h3 class="title"><a id="idp1655648"></a>See Also</h3>
             </div>
           </div>
         </div>

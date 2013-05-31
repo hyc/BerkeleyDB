@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -570,8 +570,11 @@ again:
 	for (i = first; i >= first && i <= stop; i += rec_extent) {
 		if ((ret = __qam_fprobe(dbc, QAM_RECNO_PAGE(dbp, i),
 		    &fp->mpf, QAM_PROBE_MPF, dbp->priority, 0)) != 0) {
-			if (ret == ENOENT)
+			if (ret == ENOENT) {
+				/* Missing extents are acceptable; skip them. */
+				ret = 0;
 				continue;
+			}
 			goto err;
 		}
 		fp->id = QAM_RECNO_EXTENT(dbp, i);

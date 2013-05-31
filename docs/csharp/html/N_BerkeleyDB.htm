@@ -11,7 +11,7 @@
             The AckPolicy class specifies how master and client sites will handle
             acknowledgment of replication messages which are necessary for
             "permanent" records. The current implementation requires all sites in a
-            replication group configure the same acknowledgement policy. 
+            replication group to configure the same acknowledgement policy. 
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_ActiveTransaction.htm">ActiveTransaction</a></td><td><div class="summary">
             The ActiveTransaction class describes a currently active transaction.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_BackupOptions.htm">BackupOptions</a></td><td><div class="summary">
@@ -25,11 +25,11 @@
             The abstract base class from which all cursor classes inherit.
             </p>
         <p>
-            Cursors may span threads, but only serially, that is, the application
+            Cursors may span threads, but only serially. The application
             must serialize access to the cursor handle.
             </p>
       </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_BaseDatabase.htm">BaseDatabase</a></td><td><div class="summary">
-            The base class from which all database classes inherit
+            The base class from which all database classes inherit.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_BTreeCursor.htm">BTreeCursor</a></td><td><div class="summary">
             A class for traversing the records of a <a href="T_BerkeleyDB_BTreeDatabase.htm">BTreeDatabase</a></div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_BTreeDatabase.htm">BTreeDatabase</a></td><td><div class="summary">
             A class representing a BTreeDatabase.  The Btree format is a
@@ -51,7 +51,7 @@
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_CompactData.htm">CompactData</a></td><td><div class="summary">
             A class for representing compact operation statistics
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_Cursor.htm">Cursor</a></td><td><div class="summary">
-            A class representing database cursors, which allow for traversal of 
+            A class representing database cursors, which allows for traversal of 
             database records.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_CursorConfig.htm">CursorConfig</a></td><td><div class="summary">
             A class representing configuration parameters for <a href="T_BerkeleyDB_Cursor.htm">Cursor</a></div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_Database.htm">Database</a></td><td><div class="summary">
@@ -68,7 +68,12 @@
             A class representing configuration parameters for
             <a href="T_BerkeleyDB_DatabaseEnvironment.htm">DatabaseEnvironment</a></div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DatabaseException.htm">DatabaseException</a></td><td><div class="summary">
             Represents errors that occur during Berkley DB operations.
-            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DatabaseType.htm">DatabaseType</a></td><td><div class="summary">
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DatabaseStream.htm">DatabaseStream</a></td><td><div class="summary">
+            A class representing a database stream,
+            which allows streaming access to blobs.
+            </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DatabaseStreamConfig.htm">DatabaseStreamConfig</a></td><td><div class="summary">
+            A class representing configuration parameters for
+            <a href="T_BerkeleyDB_DatabaseStream.htm">DatabaseStream</a></div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DatabaseType.htm">DatabaseType</a></td><td><div class="summary">
             A class representing the supported Berkeley DB access methods.
             </div></td></tr><tr data="class; public"><td><img src="../icons/pubclass.gif" title="Public class" /></td><td><a href="T_BerkeleyDB_DbChannel.htm">DbChannel</a></td><td><div class="summary">
             A class representing a channel in Berkeley DB HA replication manager.
@@ -326,9 +331,14 @@
             </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_MessageDispatchDelegate.htm">MessageDispatchDelegate</a></td><td><div class="summary">
             Application-specific function used to handle messages sent over 
             Replication Manager message channels. 
+            </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_PartitionDelegate.htm">PartitionDelegate</a></td><td><div class="summary">
+            An application-specified partitioning function.
             </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_ReplicationTransportDelegate.htm">ReplicationTransportDelegate</a></td><td><div class="summary">
             The function used to transmit data using the replication application's
             communication infrastructure.
+            </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_ReplicationViewDelegate.htm">ReplicationViewDelegate</a></td><td><div class="summary">
+            Application-specific function used by a replication view to determine
+            whether a database file is replicated to the local site.
             </div></td></tr><tr data="delegate; public"><td><img src="../icons/pubdelegate.gif" title="Public delegate" /></td><td><a href="T_BerkeleyDB_SecondaryKeyGenDelegate.htm">SecondaryKeyGenDelegate</a></td><td><div class="summary">
             The function that creates the set of secondary keys corresponding to a
             given primary key and data pair.  To create multiple secondary keys,
@@ -376,4 +386,4 @@
             </div></td></tr><tr data="enumeration; public"><td><img src="../icons/pubenumeration.gif" title="Public enumeration" /></td><td><a href="T_BerkeleyDB_TransactionConfig_LogFlush.htm">TransactionConfig<span class="languageSpecificText"><span class="cs">.</span><span class="vb">.</span><span class="cpp">::</span><span class="nu">.</span></span>LogFlush</a></td><td><div class="summary">
             Specifies the log flushing behavior on transaction commit
             </div></td></tr></table></div></div><div id="footer"><div class="footerLine"><img width="100%" height="3px" src="../icons/footer.gif" title="Footer image" /></div><A NAME="feedback"></A><span id="fb" class="feedbackcss"> </span>
-Report Feedback on this item in the Oracle Technology Network Forum <p />Copyright (c) 2008, 2012 Oracle. All rights reserved.</div></div></body></html>
+Report Feedback on this item in the Oracle Technology Network Forum <p />Copyright (c) 2008, 2013 Oracle. All rights reserved.</div></div></body></html>

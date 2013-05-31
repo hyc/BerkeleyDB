@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -286,6 +286,7 @@ __env_print_dbenv_all(env, flags)
 	STAT_ISSET("ThreadId", dbenv->thread_id);
 	STAT_ISSET("ThreadIdString", dbenv->thread_id_string);
 
+	STAT_STRING("Blob dir", dbenv->db_blob_dir);
 	STAT_STRING("Log dir", dbenv->db_log_dir);
 	STAT_STRING("Metadata dir", dbenv->db_md_dir);
 	STAT_STRING("Tmp dir", dbenv->db_tmp_dir);
@@ -303,6 +304,8 @@ __env_print_dbenv_all(env, flags)
 	STAT_LONG("Shared memory key", dbenv->shm_key);
 
 	STAT_ISSET("Password", dbenv->passwd);
+
+	STAT_ULONG("Blob threshold", dbenv->blob_threshold);
 
 	STAT_ISSET("App private", dbenv->app_private);
 	STAT_ISSET("Api1 internal", dbenv->api1_internal);
@@ -524,6 +527,7 @@ __env_print_thread(env)
 	BH *bhp;
 	DB_ENV *dbenv;
 	DB_HASHTAB *htab;
+	DB_LOCKER *locker;
 	DB_MPOOL *dbmp;
 	DB_THREAD_INFO *ip;
 	PIN_LIST *list, *lp;
@@ -569,6 +573,15 @@ __env_print_thread(env)
 				    &dbmp->reginfo[lp->region], lp->b_ref);
 				__db_msg(env,
 				     "\t\tpins: %lu", (u_long)bhp->pgno);
+			}
+			if (ip->dbth_local_locker != INVALID_ROFF) {
+				locker = (DB_LOCKER *)
+				    R_ADDR(&env->lk_handle->reginfo,
+				    ip->dbth_local_locker);
+				__db_msg(env, "\t\tcached locker %lu mtx %lu",
+					(u_long)locker->id,
+					(u_long)locker->mtx_locker);
+
 			}
 		}
 	return (0);

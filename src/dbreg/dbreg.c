@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -722,7 +722,7 @@ __dbreg_failchk(env)
 	MUTEX_LOCK(env, lp->mtx_filelist);
 	for (fnp = SH_TAILQ_FIRST(&lp->fq, __fname); fnp != NULL; fnp = nnp) {
 		nnp = SH_TAILQ_NEXT(fnp, q, __fname);
-		if (dbenv->is_alive(dbenv, 
+		if (dbenv->is_alive(dbenv,
 		    fnp->pid, unused, DB_MUTEX_PROCESS_ONLY))
 			continue;
 		MUTEX_LOCK(env, fnp->mutex);
@@ -996,7 +996,7 @@ __dbreg_log_id(dbp, txn, id, needlock)
 	fid_dbt.size = DB_FILE_ID_LEN;
 
 	op = !F_ISSET(dbp, DB_AM_OPEN_CALLED) ? DBREG_PREOPEN :
-	    (F_ISSET(dbp, DB_AM_INMEM) ? 
+	    (F_ISSET(dbp, DB_AM_INMEM) ?
 	    (F2_ISSET(dbp, DB2_AM_EXCL) ? DBREG_XREOPEN : DBREG_REOPEN):
 	    (F2_ISSET(dbp, DB2_AM_EXCL) ? DBREG_XOPEN : DBREG_OPEN));
 	ret = __dbreg_register_log(env, txn, &unused,

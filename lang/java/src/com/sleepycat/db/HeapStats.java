@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -40,6 +40,14 @@ public class HeapStats extends DatabaseStats {
         return heap_metaflags;
     }
 
+    private int heap_nblobs;
+    /**
+        The number of blob records.
+    */
+    public int getHeapNumBlobs() {
+        return heap_nblobs;
+    }
+
     private int heap_nrecs;
     /**
        Reports the number of records in the Heap database.
@@ -73,7 +81,10 @@ public class HeapStats extends DatabaseStats {
     }
 
     private int heap_regionsize;
-    /** TODO */
+    /** 
+    The number of pages in a region in the Heap database. Returned if
+    DB_FAST_STAT is set. 
+    */
     public int getHeapRegionSize() {
         return heap_regionsize;
     }
@@ -87,6 +98,7 @@ public class HeapStats extends DatabaseStats {
             + "\n  heap_magic=" + heap_magic
             + "\n  heap_version=" + heap_version
             + "\n  heap_metaflags=" + heap_metaflags
+            + "\n  heap_nblobs=" + heap_nblobs
             + "\n  heap_nrecs=" + heap_nrecs
             + "\n  heap_pagecnt=" + heap_pagecnt
             + "\n  heap_pagesize=" + heap_pagesize

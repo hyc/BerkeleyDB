@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -24,8 +24,8 @@ static int backup_read_data_dir
     __P((DB_ENV *, DB_THREAD_INFO *, const char *, const char *, u_int32_t));
 static int backup_dir_clean
     __P((DB_ENV *, const char *, const char *, int *, u_int32_t));
-static int backup_data_copy
-    __P((DB_ENV *, const char *, const char *, const char *, int));
+static int __db_backup
+    __P((DB_ENV *, const char *, DB_THREAD_INFO *, int, u_int32_t));
 
 /*
  * __db_dbbackup_pp --
@@ -47,9 +47,9 @@ __db_dbbackup_pp(dbenv, dbfile, target, flags)
 	    "DB_ENV->dbbackup", flags, DB_EXCL)) != 0)
 		return (ret);
 	ENV_ENTER(dbenv->env, ip);
-
-	ret = __db_dbbackup(dbenv, ip, dbfile, target, flags);
-
+	REPLICATION_WRAP(dbenv->env,
+	    (__db_dbbackup(
+	    dbenv, ip, dbfile, target, flags, 0, NULL)), 0, ret);
 	ENV_LEAVE(dbenv->env, ip);
 	return (ret);
 }
@@ -58,15 +58,17 @@ __db_dbbackup_pp(dbenv, dbfile, target, flags)
  * __db_dbbackup --
  *	Copy a database file coordinated with mpool.
  *
- * PUBLIC: int __db_dbbackup __P((DB_ENV *, DB_THREAD_INFO *,
- * PUBLIC:     const char *, const char *, u_int32_t));
+ * PUBLIC: int __db_dbbackup __P((DB_ENV *, DB_THREAD_INFO *, const char *,
+ * PUBLIC:     const char *, u_int32_t, u_int32_t, const char *));
  */
 int
-__db_dbbackup(dbenv, ip, dbfile, target, flags)
+__db_dbbackup(dbenv, ip, dbfile, target, flags, oflags, full_path)
 	DB_ENV *dbenv;
 	DB_THREAD_INFO *ip;
 	const char *dbfile, *target;
 	u_int32_t flags;
+	u_int32_t oflags;
+	const char *full_path;
 {
 	DB *dbp;
 	DB_FH *fp;
@@ -77,8 +79,8 @@ __db_dbbackup(dbenv, ip, dbfile, target, flags)
 	retry_count = 0;
 
 retry:	if ((ret = __db_create_internal(&dbp, dbenv->env, 0)) == 0 &&
-	    (ret = __db_open(dbp, ip, NULL, dbfile, NULL,
-	    DB_UNKNOWN, DB_AUTO_COMMIT | DB_RDONLY, 0, PGNO_BASE_MD)) != 0) {
+	    (ret = __db_open(dbp, ip, NULL, dbfile, NULL, DB_UNKNOWN,
+	    DB_AUTO_COMMIT | DB_RDONLY | oflags, 0, PGNO_BASE_MD)) != 0) {
 		if (ret == DB_LOCK_DEADLOCK || ret == DB_LOCK_NOTGRANTED) {
 			(void)__db_close(dbp, NULL, DB_NOSYNC);
 			dbp = NULL;
@@ -91,9 +93,11 @@ retry:	if ((ret = __db_create_internal(&dbp, dbenv->env, 0)) == 0 &&
 		}
 	}
 
+	if (full_path == NULL)
+		full_path = dbfile;
 	if (ret == 0) {
 		if ((ret = __memp_backup_open(dbenv->env,
-		    dbp->mpf, dbfile, target, flags, &fp, &handle)) == 0) {
+		    dbp->mpf, full_path, target, flags, &fp, &handle)) == 0) {
 			if (dbp->type == DB_HEAP)
 				ret = __heap_backup(
 				    dbenv, dbp, ip, fp, handle, flags);
@@ -104,9 +108,20 @@ retry:	if ((ret = __db_create_internal(&dbp, dbenv->env, 0)) == 0 &&
 				    fp, handle, flags);
 		}
 		if ((t_ret = __memp_backup_close(dbenv->env,
-		    dbp->mpf, dbfile, fp, handle)) != 0 && ret == 0)
+		    dbp->mpf, full_path, fp, handle)) != 0 && ret == 0)
 			ret = t_ret;
 	}
+
+	/*
+	 * Copy blob files.  Since no locking is done here, it is possible
+	 * that a blob file may be copied in the middle of being written.
+	 * This is not a problem since hotbackup requires DB_LOG_BLOB and
+	 * catastrophic recovery, which will fix any inconsistances in the
+	 * blob files.
+	 */
+	if (ret == 0 && dbp->blob_threshold != 0 &&
+	    (t_ret = __blob_copy_all(dbp, target)) != 0)
+		ret= t_ret;
 
 #ifdef HAVE_QUEUE
 	/*
@@ -205,8 +220,11 @@ backup_dir_clean(dbenv, backup_dir, log_dir, remove_maxp, flags)
 /*
  * backup_data_copy --
  *	Copy a non-database file into the backup directory.
+ *
+ * PUBLIC: int backup_data_copy __P((
+ * PUBLIC:	DB_ENV *, const char *, const char *, const char *, int));
  */
-static int
+int
 backup_data_copy(dbenv, file, from_dir, to_dir, log)
 	DB_ENV *dbenv;
 	const char *file, *from_dir, *to_dir;
@@ -449,7 +467,7 @@ backup_read_data_dir(dbenv, ip, dir, backup_dir, flags)
 		savefile = dbenv->db_errfile;
 		dbenv->db_errfile = NULL;
 
-		ret = __db_dbbackup(dbenv, ip, names[cnt], bd, flags);
+		ret = __db_dbbackup(dbenv, ip, names[cnt], bd, flags, 0, NULL);
 
 		dbenv->db_errcall = savecall;
 		dbenv->db_errfile = savefile;
@@ -662,21 +680,20 @@ err:	if (logd != dbenv->db_log_dir && logd != env->db_home)
  * __db_backup --
  *	Backup databases in the enviornment.
  *
- * PUBLIC: int __db_backup __P((DB_ENV *, const char *, u_int32_t));
+ * PUBLIC: int __db_backup_pp __P((DB_ENV *, const char *, u_int32_t));
  */
 int
-__db_backup(dbenv, target, flags)
+__db_backup_pp(dbenv, target, flags)
 	DB_ENV *dbenv;
 	const char *target;
 	u_int32_t flags;
 {
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int copy_min, remove_max, ret;
-	char **dir;
+	int remove_max, ret;
 
 	env = dbenv->env;
-	remove_max = copy_min = 0;
+	remove_max = 0;
 
 #undef	OKFLAGS
 #define	OKFLAGS								\
@@ -714,6 +731,30 @@ __db_backup(dbenv, target, flags)
 	}
 
 	ENV_ENTER(env, ip);
+	REPLICATION_WRAP(env,
+	    (__db_backup(dbenv, target, ip, remove_max, flags)), 0, ret);
+	ENV_LEAVE(env, ip);
+	return (ret);
+}
+
+/*
+ * __db_backup --
+ *	Backup databases in the enviornment.
+ */
+static int
+__db_backup(dbenv, target, ip, remove_max, flags)
+	DB_ENV *dbenv;
+	const char *target;
+	DB_THREAD_INFO *ip;
+	int remove_max;
+	u_int32_t flags;
+{
+	ENV *env;
+	int copy_min, ret;
+	char **dir;
+
+	env = dbenv->env;
+	copy_min = 0;
 
 	/*
 	 * If the UPDATE option was not specified, copy all database
@@ -734,8 +775,8 @@ __db_backup(dbenv, target, flags)
 			 * enviroment  -- running recovery with them would
 			 * corrupt the source files.
 			 */
-			if (!LF_ISSET(DB_BACKUP_SINGLE_DIR)
-			   && __os_abspath(*dir)) {
+			if (!LF_ISSET(DB_BACKUP_SINGLE_DIR) &&
+			    __os_abspath(*dir)) {
 				__db_errx(env, DB_STR_A("0725",
 "data directory '%s' is absolute path, not permitted unless backup is to a single directory",
 				    "%s"), *dir);
@@ -761,7 +802,7 @@ __db_backup(dbenv, target, flags)
 	 * cleanup.
 	 */
 	if (LF_ISSET(DB_BACKUP_UPDATE) && remove_max < copy_min &&
-	     !(remove_max == 0 && copy_min == 1)) {
+	    remove_max != 0 && copy_min != 1) {
 		__db_errx(env, DB_STR_A("0743",
 "the largest log file removed (%d) must be greater than or equal the smallest log file copied (%d)",
 		    "%d %d"), remove_max, copy_min);
@@ -770,6 +811,5 @@ __db_backup(dbenv, target, flags)
 
 err:	F_CLR(dbenv, DB_ENV_HOTBACKUP);
 	(void)__env_set_backup(env, 0);
-end:	ENV_LEAVE(env, ip);
-	return (ret);
+end:	return (ret);
 }

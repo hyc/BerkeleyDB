@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -113,12 +113,12 @@ namespace BerkeleyDB {
             }
         }
 
-        private int cacheSz;
+        private uint cacheSz;
         internal bool cacheSzIsSet;
         /// <summary>
         /// The number of elements cached by a sequence handle.
         /// </summary>
-        public int CacheSize {
+        public uint CacheSize {
             get { return cacheSz; }
             set {
                 cacheSz = value;

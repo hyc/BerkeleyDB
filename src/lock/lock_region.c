@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -120,13 +120,15 @@ __lock_open(env)
 	}
 
 	/*
-	 * A process joining the region may have reset the lock and transaction
-	 * timeouts.
+	 * Lock and transaction timeouts will be ignored when joining the
+	 * environment, so print a warning if either was set.
 	 */
-	if (dbenv->lk_timeout != 0)
-		region->lk_timeout = dbenv->lk_timeout;
-	if (dbenv->tx_timeout != 0)
-		region->tx_timeout = dbenv->tx_timeout;
+	if (dbenv->lk_timeout != 0 && region->lk_timeout != dbenv->lk_timeout)
+		__db_msg(env, DB_STR("2058",
+"Warning: Ignoring DB_SET_LOCK_TIMEOUT when joining the environment."));
+	if (dbenv->tx_timeout != 0 && region->tx_timeout != dbenv->tx_timeout)
+		__db_msg(env, DB_STR("2059",
+"Warning: Ignoring DB_SET_TXN_TIMEOUT when joining the environment."));
 
 	LOCK_REGION_UNLOCK(env);
 	region_locked = 0;

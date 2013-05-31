@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -978,7 +978,6 @@ public class SecondaryIndex<SK, PK, E> extends BasicIndex<SK, E> {
     }
 
     /**
-     * @hidden
      * For internal use only.
      *
      * Used for obtaining the auto-commit txn config from the store, which

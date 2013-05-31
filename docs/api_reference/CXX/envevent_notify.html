@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -83,7 +83,7 @@ DbEnv::set_event_notify(
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1884992"></a>Parameters</h3>
+              <h3 class="title"><a id="idp1925480"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ DbEnv::set_event_notify(
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp1895592"></a>db_event_fcn</h4>
+                <h4 class="title"><a id="idp1917848"></a>db_event_fcn</h4>
               </div>
             </div>
           </div>
@@ -181,6 +181,33 @@ DbEnv::set_event_notify(
                             </p>
                     </li>
                     <li>
+                      <p><a id="event_notify_DB_EVENT_REP_AUTOTAKEOVER_FAILED"></a>
+                                <code class="literal">DB_EVENT_REP_AUTOTAKEOVER_FAILED</code>
+                            </p>
+                      <p>
+                                The current subordinate process attempted to
+                                take over as the replication process, but
+                                the attempt failed.
+                            </p>
+                      <p>
+                                The replication process is the main Replication Manager process
+                                which is responsible for sending and processing most Replication
+                                Manager messages. Normally this is the first process started in a
+                                replication group, but when that process shuts down cleanly, a
+                                subordinate process will take over if one is available.
+                            </p>
+                      <p>
+                                This event means that this Replication Manager subordinate process
+                                attempted to take over as the replication process, but it failed.
+                                Replication Manager is not running locally but may be restarted by
+                                invoking <a class="xref" href="repmgrstart.html" title="DbEnv::repmgr_start()">DbEnv::repmgr_start()</a>.
+                            </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_AUTOTAKEOVER_FAILED</code> event is provided
+                                only to applications configured for the Replication Manager.
+                            </p>
+                    </li>
+                    <li>
                       <p><a id="event_notify_DB_EVENT_REP_CLIENT"></a>
                                 <code class="literal">DB_EVENT_REP_CLIENT</code>
                             </p>
@@ -201,7 +228,7 @@ DbEnv::set_event_notify(
                                <code class="literal">DB_EVENT_REP_CONNECT_BROKEN</code>
                             </p>
                       <p>
-                                A previously established replication message connection between the
+                                A previously established Replication Manager message connection between the
                                 local site and a remote site has been broken. This event supplies
                                 the EID of the remote site, and an integer error code that
                                 identifies the reason the connection was broken.
@@ -219,15 +246,23 @@ DbEnv::set_event_notify(
                                 Replication Manager retries broken connections
                                 periodically until they are restored.
                             </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_CONNECT_BROKEN</code> event is provided
+                                only to applications configured for the Replication Manager.
+                            </p>
                     </li>
                     <li>
                       <p><a id="event_notify_DB_EVENT_REP_CONNECT_ESTD"></a>
                                <code class="literal">DB_EVENT_REP_CONNECT_ESTD</code>
                             </p>
                       <p>
-                                A replication message connection has been established between the
+                                A Replication Manager message connection has been established between the
                                 local site and a remote site. This event supplied the EID of the
                                 remote site.
+                            </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_CONNECT_ESTD</code> event is provided
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -235,10 +270,14 @@ DbEnv::set_event_notify(
                                <code class="literal">DB_EVENT_REP_CONNECT_TRY_FAILED</code>
                             </p>
                       <p>
-                                An attempt to establish a connection between the local site and a
+                                A Replication Manager attempt to establish a connection between the local site and a
                                 remote site has failed. This event supplies the EID of the remote
                                 site, and an integer error code that identifies the reason the
                                 connection attempt failed.
+                            </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_CONNECT_TRY_FAILED</code> event is provided
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -256,7 +295,7 @@ DbEnv::set_event_notify(
                             </p>
                       <p>
                                 The <code class="literal">DB_EVENT_REP_DUPMASTER</code> event is provided 
-                                only to applications configured for the replication manager.
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -264,8 +303,8 @@ DbEnv::set_event_notify(
                                 <code class="literal">DB_EVENT_REP_ELECTED</code>
                             </p>
                       <p>
-                                The local replication site has just won an election.  An application
-                                using the Base replication API should arrange for a call to the 
+                                The local replication site has just won an election.  A
+                                Base API application should call the 
                                 <a class="xref" href="repstart.html" title="DbEnv::rep_start()">DbEnv::rep_start()</a>  method
                                 after receiving this event, to reconfigure the local environment as a
                                 replication master.
@@ -290,17 +329,8 @@ DbEnv::set_event_notify(
                             </p>
                       <p>
                                 The <code class="literal">DB_EVENT_REP_ELECTION_FAILED</code> event is
-                                provided only to applications configured for the replication
-                                manager.
-                            </p>
-                    </li>
-                    <li>
-                      <p><a id="event_notify_DB_EVENT_REP_ELECTION_STARTED"></a>
-                            <code class="literal">DB_EVENT_REP_ELECTION_STARTED</code>
-                            </p>
-                      <p>
-                                Replication Manager has started an election
-                                to choose a master site.
+                                provided only to applications configured for the Replication
+                                Manager.
                             </p>
                     </li>
                     <li>
@@ -308,7 +338,7 @@ DbEnv::set_event_notify(
                                <code class="literal">DB_EVENT_REP_INIT_DONE</code>
                             </p>
                       <p>
-                                Replication Manager has completed an
+                                The local client site has completed an
                                 internal initialization procedure.
                             </p>
                     </li>
@@ -331,6 +361,11 @@ DbEnv::set_event_notify(
                       <p>
                                 The local site has been
                                 removed from the replication group.
+                            </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_LOCAL_SITE_REMOVED</code> event is
+                                provided only to applications configured for the Replication
+                                Manager.
                             </p>
                     </li>
                     <li>
@@ -371,7 +406,7 @@ DbEnv::set_event_notify(
                             </p>
                       <p>
                                 The <code class="literal">DB_EVENT_REP_MASTER_FAILURE</code> event is provided
-                                only to applications configured for the replication manager.
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -390,7 +425,7 @@ DbEnv::set_event_notify(
                                 <code class="literal">DB_EVENT_REP_PERM_FAILED</code>
                             </p>
                       <p>
-                                The replication manager did not receive enough acknowledgements (based
+                                The Replication Manager did not receive enough acknowledgements (based
                                 on the acknowledgement policy configured with 
                                 <a class="xref" href="repmgrset_ack_policy.html" title="DbEnv::repmgr_set_ack_policy()">DbEnv::repmgr_set_ack_policy()</a> )
                                 to ensure a transaction's durability within the replication group. 
@@ -399,7 +434,7 @@ DbEnv::set_event_notify(
                             </p>
                       <p>
                                 The <code class="literal">DB_EVENT_REP_PERM_FAILED</code> event is provided
-                                only to applications configured for the replication manager.
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -407,10 +442,14 @@ DbEnv::set_event_notify(
                                <code class="literal">DB_EVENT_REP_SITE_ADDED</code>
                             </p>
                       <p>
-                                A new site has joined the group. 
+                                A new site has joined the replication group. 
                                 The 
                                 <span class="bold"><strong>event_info</strong></span> parameter points to an
                                 integer containing the environment ID of the new site.
+                            </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_SITE_ADDED</code> event is provided
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -418,9 +457,13 @@ DbEnv::set_event_notify(
                                <code class="literal">DB_EVENT_REP_SITE_REMOVED</code>
                             </p>
                       <p>
-                                An existing remote site has been removed from the group.  The
+                                An existing remote site has been removed from the replication group.  The
                                 <span class="bold"><strong>event_info</strong></span> parameter points to an
                                 integer containing the environment ID of the site that was removed.
+                            </p>
+                      <p>
+                                The <code class="literal">DB_EVENT_REP_SITE_REOMVED</code> event is provided
+                                only to applications configured for the Replication Manager.
                             </p>
                     </li>
                     <li>
@@ -428,7 +471,7 @@ DbEnv::set_event_notify(
                                <code class="literal">DB_EVENT_REP_STARTUPDONE</code>
                             </p>
                       <p>
-                               The client has completed startup synchronization and is now processing
+                               The replication client has completed startup synchronization and is now processing
                                live log records received from the master.
                             </p>
                     </li>
@@ -463,7 +506,7 @@ DbEnv::set_event_notify(
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1908800"></a>Class</h3>
+              <h3 class="title"><a id="idp1933424"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -475,7 +518,7 @@ DbEnv::set_event_notify(
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp1874336"></a>See Also</h3>
+              <h3 class="title"><a id="idp1921432"></a>See Also</h3>
             </div>
           </div>
         </div>

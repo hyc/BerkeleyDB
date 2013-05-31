@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -51,8 +51,8 @@ namespace BerkeleyDB {
         /// <remarks>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// will be implicitly transaction protected. Note that transactionally
-        /// protected operations on a datbase object requires the object itself
+        /// will be implicitly transaction protected. Transactionally
+        /// protected operations on a database object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
@@ -79,8 +79,8 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// will be implicitly transaction protected. Note that transactionally
-        /// protected operations on a datbase object requires the object itself
+        /// will be implicitly transaction protected. Transactionally
+        /// protected operations on a database object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
@@ -90,8 +90,8 @@ namespace BerkeleyDB {
         /// may be created by setting this parameter to null.</param>
         /// <param name="DatabaseName">
         /// This parameter allows applications to have multiple databases in a
-        /// single file. Although no DatabaseName needs to be specified, it is
-        /// an error to attempt to open a second database in a file that was not
+        /// single file. Although no DatabaseName needs to be specified, an error
+        /// occurs if you attempt to open a second database in a file that was not
         /// initially created using a database name.
         /// </param>
         /// <param name="cfg">The database's configuration</param>
@@ -115,9 +115,9 @@ namespace BerkeleyDB {
         /// <para>
         /// If <paramref name="txn"/> is null, but
         /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
-        /// be implicitly transaction protected. Note that transactionally
-        /// protected operations on a datbase object requires the object itself
-        /// be transactionally protected during its open. Also note that the
+        /// be implicitly transaction protected. Transactionally
+        /// protected operations on a database object requires the object itself
+        /// be transactionally protected during its open. The
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
@@ -160,9 +160,9 @@ namespace BerkeleyDB {
         /// <para>
         /// If <paramref name="txn"/> is null, but
         /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
-        /// be implicitly transaction protected. Note that transactionally
-        /// protected operations on a datbase object requires the object itself
-        /// be transactionally protected during its open. Also note that the
+        /// be implicitly transaction protected. Transactionally
+        /// protected operations on a database object requires the object itself
+        /// be transactionally protected during its open. The
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>

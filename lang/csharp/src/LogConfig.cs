@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -79,6 +79,11 @@ namespace BerkeleyDB {
         /// </remarks>
         public bool InMemory;
         /// <summary>
+        /// If true, enables full logging of blob data.
+        /// Required if using HA or the hotbackup utility.
+        /// </summary>
+        public bool LogBlobContent;
+        /// <summary>
         /// If true, turn off system buffering of Berkeley DB log files to avoid
         /// double caching.
         /// </summary>
@@ -105,6 +110,8 @@ namespace BerkeleyDB {
                     ret |= DbConstants.DB_LOG_DSYNC;
                 if (InMemory)
                     ret |= DbConstants.DB_LOG_IN_MEMORY;
+                if (LogBlobContent)
+                    ret |= DbConstants.DB_LOG_BLOB;
                 if (NoBuffer)
                     ret |= DbConstants.DB_LOG_DIRECT;
                 if (ZeroOnCreate)

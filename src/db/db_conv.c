@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -487,8 +487,12 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 {
 	ENV *env;
 	BINTERNAL *bi;
+	BBLOB *bl;
 	BKEYDATA *bk;
 	BOVERFLOW *bo;
+	HEAPBLOBHDR *bhdr;
+	HEAPHDR *hh;
+	HEAPSPLITHDR *hsh;
 	RINTERNAL *ri;
 	db_indx_t i, *inp, len, tmp;
 	u_int8_t *end, *p, *pgend;
@@ -500,8 +504,14 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 		M_32_SWAP(h->lsn.file);
 		M_32_SWAP(h->lsn.offset);
 		M_32_SWAP(h->pgno);
-		M_32_SWAP(h->prev_pgno);
-		M_32_SWAP(h->next_pgno);
+		if (TYPE(h) == P_HEAP) {
+			M_32_SWAP(((HEAPPG *)h)->high_pgno);
+			M_16_SWAP(((HEAPPG *)h)->high_indx);
+			M_16_SWAP(((HEAPPG *)h)->free_indx);
+		} else {
+			M_32_SWAP(h->prev_pgno);
+			M_32_SWAP(h->next_pgno);
+		}
 		M_16_SWAP(h->entries);
 		M_16_SWAP(h->hf_offset);
 	}
@@ -527,6 +537,18 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 				continue;
 
 			switch (HPAGE_TYPE(dbp, h, i)) {
+			case H_BLOB:
+				p = HBLOB_ID_LO(P_ENTRY(dbp, h, i));
+				SWAP32(p);			/* id lo */
+				SWAP32(p);			/* id hi */
+				SWAP32(p);			/* size lo */
+				SWAP32(p);			/* size hi */
+				p = HBLOB_FILE_ID_LO(P_ENTRY(dbp, h, i));
+				SWAP32(p);			/* file id lo */
+				SWAP32(p);			/* file id hi */
+				SWAP32(p);			/* sdb id lo */
+				SWAP32(p);			/* sdb id hi */
+				break;
 			case H_KEYDATA:
 				break;
 			case H_DUPLICATE:
@@ -599,6 +621,17 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 			if ((u_int8_t *)bk >= pgend)
 				continue;
 			switch (B_TYPE(bk->type)) {
+			case B_BLOB:
+				bl = (BBLOB *)bk;
+				M_32_SWAP(bl->id_lo);		/* id lo */
+				M_32_SWAP(bl->id_hi);		/* id hi */
+				M_32_SWAP(bl->size_lo);		/* size lo */
+				M_32_SWAP(bl->size_hi);		/* size hi */
+				M_32_SWAP(bl->file_id_lo);	/* file id lo */
+				M_32_SWAP(bl->file_id_hi);	/* file id hi */
+				M_32_SWAP(bl->sdb_id_lo);	/* sdb id lo */
+				M_32_SWAP(bl->sdb_id_hi);	/* sdb id hi */
+				break;
 			case B_KEYDATA:
 				M_16_SWAP(bk->len);
 				break;
@@ -663,6 +696,34 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 		}
 		break;
 	case P_HEAP:
+		for (i = 0; i < NUM_ENT(h); i++) {
+			if (pgin)
+				M_16_SWAP(inp[i]);
+
+			hh = (HEAPHDR *)P_ENTRY(dbp, h, i);
+			if ((u_int8_t *)hh >= pgend)
+				continue;
+			M_16_SWAP(hh->size);
+			if (F_ISSET(hh, HEAP_RECSPLIT)) {
+				hsh = (HEAPSPLITHDR *)hh;
+				M_32_SWAP(hsh->tsize);
+				M_32_SWAP(hsh->nextpg);
+				M_16_SWAP(hsh->nextindx);
+			} else if (F_ISSET(hh, HEAP_RECBLOB)) {
+				bhdr = (HEAPBLOBHDR *)hh;
+				M_32_SWAP(bhdr->id_lo);		/* id lo */
+				M_32_SWAP(bhdr->id_hi);		/* id hi */
+				M_32_SWAP(bhdr->size_lo);	/* size lo */
+				M_32_SWAP(bhdr->size_hi);	/* size hi */
+				M_32_SWAP(bhdr->file_id_lo);	/* file id lo */
+				M_32_SWAP(bhdr->file_id_hi);	/* file id hi */
+				break;
+			}
+
+			if (!pgin)
+				M_16_SWAP(inp[i]);
+		}
+		break;
 	case P_IHEAP:
 	case P_INVALID:
 	case P_OVERFLOW:
@@ -678,8 +739,14 @@ out:	if (!pgin) {
 		M_32_SWAP(h->lsn.file);
 		M_32_SWAP(h->lsn.offset);
 		M_32_SWAP(h->pgno);
-		M_32_SWAP(h->prev_pgno);
-		M_32_SWAP(h->next_pgno);
+		if (TYPE(h) == P_HEAP) {
+			M_32_SWAP(((HEAPPG *)h)->high_pgno);
+			M_16_SWAP(((HEAPPG *)h)->high_indx);
+			M_16_SWAP(((HEAPPG *)h)->free_indx);
+		} else {
+			M_32_SWAP(h->prev_pgno);
+			M_32_SWAP(h->next_pgno);
+		}
 		M_16_SWAP(h->entries);
 		M_16_SWAP(h->hf_offset);
 	}
@@ -797,6 +864,8 @@ __db_recordswap(op, size, hdr, data, pgin)
 	BKEYDATA *bk;
 	BOVERFLOW *bo;
 	BINTERNAL *bi;
+	HEAPHDR *hh;
+	HEAPSPLITHDR *hsh;
 	RINTERNAL *ri;
 	db_indx_t tmp;
 	u_int8_t *p, *end;
@@ -867,7 +936,7 @@ __db_recordswap(op, size, hdr, data, pgin)
 				SWAP16(p);
 			}
 			break;
-		/* These two record types include the full header. */
+		/* These three record types include the full header. */
 		case H_OFFDUP:
 			p = (u_int8_t *)hdr;
 			p += SSZ(HOFFPAGE, pgno);
@@ -879,11 +948,28 @@ __db_recordswap(op, size, hdr, data, pgin)
 			SWAP32(p);			/* pgno */
 			SWAP32(p);			/* tlen */
 			break;
+		case H_BLOB:
+			p = (u_int8_t *)hdr;
+			p += SSZ(HBLOB, id_lo);
+			SWAP32(p);			/* id low */
+			SWAP32(p);			/* id high */
+			SWAP32(p);			/* size low */
+			SWAP32(p);			/* size high */
+			break;
 		default:
 			DB_ASSERT(NULL, op != op);
 		}
 		break;
-
+	case P_HEAP:
+		hh = (HEAPHDR *)hdr;
+		M_16_SWAP(hh->size);
+		if (F_ISSET(hh, HEAP_RECSPLIT)) {
+			hsh = (HEAPSPLITHDR *)hdr;
+			M_32_SWAP(hsh->tsize);
+			M_32_SWAP(hsh->nextpg);
+			M_16_SWAP(hsh->nextindx);
+		}
+		break;
 	default:
 		DB_ASSERT(NULL, op != op);
 	}

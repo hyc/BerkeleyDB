@@ -1,16 +1,24 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Map;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.serial.test.MarshalledObject;
@@ -28,32 +36,18 @@ import com.sleepycat.db.Environment;
 import com.sleepycat.db.SecondaryConfig;
 import com.sleepycat.db.SecondaryDatabase;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-public class JoinTest extends TestCase
+public class JoinTest extends TestBase
     implements TransactionWorker {
 
     private static final String MATCH_DATA = "d4"; // matches both keys = "yes"
     private static final String MATCH_KEY  = "k4"; // matches both keys = "yes"
     private static final String[] VALUES = {"yes", "yes"};
-
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        return new JoinTest();
-    }
 
     private Environment env;
     private TransactionRunner runner;
@@ -67,21 +61,20 @@ public class JoinTest extends TestCase
     private StoredMap indexMap2;
 
     public JoinTest() {
-
-        super("JoinTest");
+        customName = "JoinTest";
     }
 
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
-        SharedTestUtils.printTestName(getName());
-        env = TestEnv.TXN.open(getName());
+        SharedTestUtils.printTestName(customName);
+        env = TestEnv.TXN.open(customName);
         runner = new TransactionRunner(env);
         createDatabase();
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         try {
@@ -117,7 +110,7 @@ public class JoinTest extends TestCase
         }
     }
 
-    @Override
+    @Test
     public void runTest()
         throws Exception {
 

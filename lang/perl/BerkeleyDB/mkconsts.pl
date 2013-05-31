@@ -8,6 +8,7 @@ use constant IGNORE => 'ignore' ;
 
 %constants = (
 
+
 	#########
 	# 2.0.3
 	#########
@@ -1035,7 +1036,7 @@ use constant IGNORE => 'ignore' ;
 	DB_MEM_THREAD              => '5.2.14',
 
 	#########
-	# 5.3.5
+	# 5.3.15
 	#########
 
 	DB2_AM_EXCL                => DEFINE,
@@ -1047,16 +1048,33 @@ use constant IGNORE => 'ignore' ;
 	DB_BACKUP_NO_LOGS          => DEFINE,
 	DB_BACKUP_SINGLE_DIR       => DEFINE,
 	DB_BACKUP_UPDATE           => DEFINE,
+	DB_CHKSUM_FAIL             => DEFINE,
 	DB_INTERNAL_PERSISTENT_DB  => DEFINE,
 	DB_INTERNAL_TEMPORARY_DB   => DEFINE,
 	DB_LOCK_IGNORE_REC         => DEFINE,
 	DB_VERB_BACKUP             => DEFINE,
+	MP_FOR_FLUSH               => IGNORE,
 
 	# enum DB_BACKUP_CONFIG
-	DB_BACKUP_READ_COUNT       => '5.3.5',
-	DB_BACKUP_READ_SLEEP       => '5.3.5',
-	DB_BACKUP_SIZE             => '5.3.5',
-	DB_BACKUP_WRITE_DIRECT     => '5.3.5',
+	DB_BACKUP_READ_COUNT       => '5.3.15',
+	DB_BACKUP_READ_SLEEP       => '5.3.15',
+	DB_BACKUP_SIZE             => '5.3.15',
+	DB_BACKUP_WRITE_DIRECT     => '5.3.15',
+
+	#########
+	# 6.0.4
+	#########
+
+	DB_DBT_BLOB                => IGNORE,
+	DB_DBT_BLOB_REC            => IGNORE,
+	DB_EVENT_REP_AUTOTAKEOVER_FAILED => DEFINE,
+	DB_INTERNAL_BLOB_DB        => DEFINE,
+	DB_LOG_BLOB                => DEFINE,
+	DB_REPMGR_ISVIEW           => DEFINE,
+	DB_STREAM_READ             => DEFINE,
+	DB_STREAM_SYNC_WRITE       => DEFINE,
+	DB_STREAM_WRITE            => DEFINE,
+	DB_VERB_MVCC               => DEFINE,
 	) ;
 
 sub enum_Macro

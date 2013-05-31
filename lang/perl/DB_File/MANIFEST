@@ -30,3 +30,4 @@ t/pod.t
 typemap
 version.c
 META.yml                                 Module meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

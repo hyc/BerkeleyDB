@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -24,6 +24,250 @@ namespace CsharpAPITest
 		{
 			testFixtureName = "BTreeDatabaseTest";
 			base.SetUpTestfixture();
+		}
+
+		[Test]
+		public void TestBlob()
+		{
+			// Test opening the blob database without environment.
+			TestBlobBtreeDatabase(0, null, 6, null, false);
+
+			/*
+			 * Test opening the blob database without environment
+			 * but specifying blob directory.
+			 */
+			TestBlobBtreeDatabase(0, null, 6,
+			    testHome + "/DBBLOB", true);
+
+			// Test opening the blob database with environment.
+			TestBlobBtreeDatabase(3, "ENVBLOB", 6, null, false);
+
+			/*
+			 * Test opening the blob database with environment
+			 * and specifying blob directory.
+			 */
+			TestBlobBtreeDatabase(3, null, 6, "/DBBLOB", true);
+		}
+
+		/*
+		 * Test the blob database with or without environment.
+		 * 1. Config and open the environment;
+		 * 2. Verify the environment blob configs;
+		 * 3. Config and open the database;
+		 * 4. Verify the database blob configs;
+		 * 5. Insert and verify some blob data by database methods;
+		 * 6. Insert some blob data by cursor, update it and verify
+		 * the update by database stream and cursor;
+		 * 7. Verify the stats;
+		 * 8. Close all handles.
+		 * If "blobdbt" is true, set the data DatabaseEntry.Blob as
+		 * true, otherwise make the data DatabaseEntry reach the blob
+		 * threshold in size.
+		 */
+		void TestBlobBtreeDatabase(uint env_threshold,
+		    string env_blobdir, uint db_threshold,
+		    string db_blobdir, bool blobdbt)
+		{
+			if (env_threshold == 0 && db_threshold == 0)
+				return;
+
+			testName = "TestBlob";
+			SetUpTest(true);
+			string btreeDBName =
+			    testHome + "/" + testName + ".db";
+
+			BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
+			cfg.Creation = CreatePolicy.ALWAYS;
+			string blrootdir = "__db_bl";
+
+			// Open the environment and verify the blob configs.
+			if (env_threshold > 0)
+			{
+				DatabaseEnvironmentConfig envConfig =
+				    new DatabaseEnvironmentConfig();
+				envConfig.AutoCommit = true;
+				envConfig.Create = true;
+				envConfig.UseMPool = true;
+				envConfig.UseLogging = true;
+				envConfig.UseTxns = true;
+				envConfig.UseLocking = true;
+				envConfig.BlobThreshold = env_threshold;
+				if (env_blobdir != null)
+				{
+					envConfig.BlobDir = env_blobdir;
+					blrootdir = env_blobdir;
+				}
+				DatabaseEnvironment env =
+				    DatabaseEnvironment.Open(
+				    testHome, envConfig);
+				if (env_blobdir == null)
+					Assert.IsNull(env.BlobDir);
+				else
+					Assert.AreEqual(0, env.BlobDir.
+					    CompareTo(env_blobdir));
+				Assert.AreEqual(env_threshold,
+				    env.BlobThreshold);
+				cfg.Env = env;
+				btreeDBName = testName + ".db";
+			}
+
+			// Open the database and verify the blob configs.
+			if (db_threshold > 0)
+				cfg.BlobThreshold = db_threshold;
+			if (db_blobdir != null)
+			{
+				cfg.BlobDir = db_blobdir;
+				/*
+				 * The blob directory setting in the database
+ 				 * is effective only when it is opened without
+				 * an environment.
+				 */
+				if (cfg.Env == null)
+					blrootdir = db_blobdir;
+			}
+
+			BTreeDatabase db =
+			    BTreeDatabase.Open(btreeDBName, cfg);
+			Assert.AreEqual(
+			    db_threshold > 0 ? db_threshold : env_threshold,
+			    db.BlobThreshold);
+			if (db_blobdir == null && cfg.Env == null)
+				Assert.IsNull(db.BlobDir);
+			else
+				Assert.AreEqual(0,
+				    db.BlobDir.CompareTo(blrootdir));
+
+			// Insert and verify some blob data by database methods.
+			string[] records = {"a", "b", "c", "d", "e", "f", "g",
+			    "h", "i", "j", "k", "l", "m", "n", "o", "p", "q",
+			    "r", "s", "t", "u", "v", "w", "x", "y", "z"};
+			DatabaseEntry kdbt = new DatabaseEntry();
+			DatabaseEntry ddbt = new DatabaseEntry();
+			byte[] kdata, ddata;
+			string str;
+			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+			ddbt.Blob = blobdbt;
+			Assert.AreEqual(blobdbt, ddbt.Blob);
+			for (int i = 0; i < records.Length; i++)
+			{
+				kdata = BitConverter.GetBytes(i);
+				str = records[i];
+				if (!blobdbt) {
+					for (int j = 0; j < db_threshold; j++)
+						str = str + records[i];
+				}
+				ddata = Encoding.ASCII.GetBytes(str);
+				kdbt.Data = kdata;
+				ddbt.Data = ddata;
+				db.Put(kdbt, ddbt);
+				try
+				{
+					pair = db.Get(kdbt);
+				}
+				catch (DatabaseException)
+				{
+					db.Close();
+					if (cfg.Env != null)
+						cfg.Env.Close();
+					throw new TestException();
+				}
+				Assert.AreEqual(ddata, pair.Value.Data);
+			}
+
+			/*
+			 * Insert some blob data by cursor, update it and verify
+			 * the update by database stream.
+			 */
+			kdata = BitConverter.GetBytes(records.Length);
+			ddata = Encoding.ASCII.GetBytes("abc");
+			kdbt.Data = kdata;
+			ddbt.Data = ddata;
+			ddbt.Blob = true;
+			Assert.IsTrue(ddbt.Blob);
+			pair = new KeyValuePair<
+			    DatabaseEntry, DatabaseEntry>(kdbt, ddbt);
+			CursorConfig dbcConfig = new CursorConfig();
+			Transaction txn = null;
+			if (cfg.Env != null)
+				txn = cfg.Env.BeginTransaction();
+			BTreeCursor cursor = db.Cursor(dbcConfig, txn);
+			cursor.Add(pair);
+			DatabaseStreamConfig dbsc = new DatabaseStreamConfig();
+			dbsc.SyncPerWrite = true;
+			DatabaseStream dbs = cursor.DbStream(dbsc);
+			Assert.AreNotEqual(null, dbs);
+			Assert.IsFalse(dbs.GetConfig.ReadOnly);
+			Assert.IsTrue(dbs.GetConfig.SyncPerWrite);
+			Assert.AreEqual(3, dbs.Size());
+			DatabaseEntry sdbt = dbs.Read(0, 3);
+			Assert.IsNotNull(sdbt);
+			Assert.AreEqual(ddata, sdbt.Data);
+			sdbt = new DatabaseEntry(
+			    Encoding.ASCII.GetBytes("defg"));
+			Assert.IsTrue(dbs.Write(sdbt, 3));
+			Assert.AreEqual(7, dbs.Size());
+			sdbt = dbs.Read(0, 7);
+			Assert.IsNotNull(sdbt);
+			Assert.AreEqual(
+			    Encoding.ASCII.GetBytes("abcdefg"), sdbt.Data);
+			dbs.Close();
+
+			/*
+			 * Verify the database stream can not write when it is
+			 * configured to be read-only.
+			 */
+			dbsc.ReadOnly = true;
+			dbs = cursor.DbStream(dbsc);
+			Assert.IsTrue(dbs.GetConfig.ReadOnly);
+			try
+			{
+				dbs.Write(sdbt, 7);
+				throw new TestException();
+			}
+			catch (DatabaseException)
+			{
+			}
+			dbs.Close();
+
+			// Verify the update by cursor.
+			Assert.IsTrue(cursor.Move(kdbt, true));
+			pair = cursor.Current;
+			Assert.AreEqual(Encoding.ASCII.GetBytes("abcdefg"),
+			    pair.Value.Data);
+			cursor.Close();
+			if (cfg.Env != null)
+				txn.Commit();
+
+			/*
+			 * Verify the blob files are created
+			 * in the expected location.
+			 * This part of test code is disabled since
+			 * BTreeDatabase.BlobSubDir is not exposed to users.
+			 */
+			
+			//if (cfg.Env != null)
+			//	blrootdir = testHome + "/" + blrootdir;
+			//string blobdir = blrootdir + "/" + db.BlobSubDir;
+			//Assert.AreEqual(records.Length + 1,
+			//    Directory.GetFiles(blobdir, "__db.bl*").Length);
+			//Assert.AreEqual(1, Directory.GetFiles(
+			//    blobdir, "__db_blob_meta.db").Length);
+
+			// Verify the stats.
+			BTreeStats st = db.Stats();
+			Assert.AreEqual(records.Length + 1, st.nBlobRecords);
+
+			// Close all handles.
+			db.Close();
+			if (cfg.Env != null)
+				cfg.Env.Close();
+
+			/*
+			 * Remove the default blob directory when it
+			 * is not under the test home.
+			 */
+			if (db_blobdir == null && cfg.Env == null)
+				Directory.Delete("__db_bl", true);
 		}
 
 		[Test]
@@ -1387,6 +1631,97 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 
 			if (txn != null)
 				txn.Commit();
+		}
+
+		[Test]
+		public void TestPartition()
+		{
+			testName = "TestPartition";
+			SetUpTest(true);
+			string btreeDBName = testHome + "/" + testName + ".db";
+
+ 			BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
+			BTreeDatabase db;
+			DatabaseEntry[] keys;
+ 			DatabaseEntry key, data;
+			string[] keyData =
+			    { "a", "b", "i", "k", "l", "q", "v", "z" };
+			int i;
+			uint parts;
+
+			cfg.Creation = CreatePolicy.ALWAYS;
+			parts = 3;
+			keys = new DatabaseEntry[parts - 1];
+			keys[0] = new DatabaseEntry(
+			    ASCIIEncoding.ASCII.GetBytes("i"));
+			keys[1] = new DatabaseEntry(
+			    ASCIIEncoding.ASCII.GetBytes("q"));
+
+			/*
+			 * Test that neither key array nor
+			 * partiton callback is set.
+			 */
+			Assert.AreEqual(false, cfg.SetPartitionByKeys(null));
+			Assert.AreEqual(false,
+			    cfg.SetPartitionByCallback(parts, null));
+
+			/* Test creating the partitioned database by keys. */
+			Assert.AreEqual(true, cfg.SetPartitionByKeys(keys));
+			db = BTreeDatabase.Open(btreeDBName, cfg);
+			for (i = 0; i < keyData.Length; i++)
+			{
+				key = new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
+				data = new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
+				db.Put(key, data);
+			}
+			Assert.AreEqual(parts, db.NParts);
+			Assert.AreEqual(parts - 1, db.PartitionKeys.Length);
+			Assert.AreEqual(
+			    keys[0].Data, db.PartitionKeys[0].Data);
+			Assert.AreEqual(
+			    keys[1].Data, db.PartitionKeys[1].Data);
+			Assert.AreEqual(db.Partition, null);
+			db.Close();
+			string[] files =
+			    Directory.GetFiles(testHome, "__dbp.*");
+			Assert.AreEqual(parts, files.Length);
+
+			/*
+			 * Test creating the partitioned database by callback.
+			 */
+			Directory.Delete(testHome, true);
+			Directory.CreateDirectory(testHome);
+			Assert.AreEqual(true,
+			    cfg.SetPartitionByCallback(parts, partition));
+			db = BTreeDatabase.Open(btreeDBName, cfg);
+			for (i = 0; i < keyData.Length; i++)
+			{
+				key = new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
+				data = new DatabaseEntry(
+				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
+				db.Put(key, data);
+			}
+			Assert.AreEqual(parts, db.NParts);
+			Assert.AreEqual(
+			    new PartitionDelegate(partition), db.Partition);
+			db.Close();
+			files = Directory.GetFiles(testHome, "__dbp.*");
+			Assert.AreEqual(parts, files.Length);
+		}
+
+		uint partition(DatabaseEntry key)
+		{
+			if (String.Compare(
+			    ASCIIEncoding.ASCII.GetString(key.Data), "i") < 0)
+				return 0;
+			else if (String.Compare(
+			    ASCIIEncoding.ASCII.GetString(key.Data), "q") < 0)
+				return 1;
+			else
+				return 2;
 		}
 
 		[Test]

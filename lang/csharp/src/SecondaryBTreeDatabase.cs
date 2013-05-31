@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -230,18 +230,23 @@ namespace BerkeleyDB {
 
         #region Callbacks
         private static int doDupCompare(
-            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p) {
+            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p, IntPtr locp) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbt1p, false);
             DBT dbt2 = new DBT(dbt2p, false);
+            if (locp != IntPtr.Zero)
+                locp = IntPtr.Zero;
 
             return ((SecondaryBTreeDatabase)(db.api_internal)).DupCompare(
                 DatabaseEntry.fromDBT(dbt1), DatabaseEntry.fromDBT(dbt2));
         }
-        private static int doCompare(IntPtr dbp, IntPtr dbtp1, IntPtr dbtp2) {
+        private static int doCompare(IntPtr dbp,
+            IntPtr dbtp1, IntPtr dbtp2, IntPtr locp) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbtp1, false);
             DBT dbt2 = new DBT(dbtp2, false);
+            if (locp != IntPtr.Zero)
+                locp = IntPtr.Zero;
             SecondaryBTreeDatabase tmp =
                 (SecondaryBTreeDatabase)db.api_internal;
             return tmp.compareHandler(

@@ -388,30 +388,6 @@ if test "$db_cv_atomicfileread" = "yes"; then
     [Define to 1 if platform reads and writes files atomically.])
 fi
 
-# Cryptography support.
-# Until Berkeley DB 5.0, this was a simple yes/no decision.
-# With the addition of support for Intel Integrated Performance Primitives (ipp)
-# things are more complex.  There are now three options:
-#   1) don't build cryptography (no)
-#   2) build using the built-in software implementation (yes)
-#   3) build using the Intel IPP implementation (ipp)
-# We handle this by making the primary configuration method:
-#   --with-cryptography={yes|no|ipp}
-# which defaults to yes.  The old enable/disable-cryptography argument is still
-# supported for backwards compatibility.
-AC_MSG_CHECKING(if --with-cryptography option specified)
-AC_ARG_ENABLE(cryptography, [], [], enableval=$db_cv_build_full)
-enable_cryptography="$enableval"
-AC_ARG_WITH([cryptography],
-	AC_HELP_STRING([--with-cryptography=yes|no|ipp], [Build database cryptography support @<:@default=yes@:>@.]),
-	[], [with_cryptography=$enable_cryptography])
-case "$with_cryptography" in
-yes|no|ipp) ;;
-*) AC_MSG_ERROR([unknown --with-cryptography argument \'$with_cryptography\']) ;;
-esac
-db_cv_build_cryptography="$with_cryptography"
-AC_MSG_RESULT($db_cv_build_cryptography)
-
 AC_MSG_CHECKING(if --with-mutex=MUTEX option specified)
 AC_ARG_WITH(mutex,
 	[AC_HELP_STRING([--with-mutex=MUTEX],
@@ -479,6 +455,35 @@ fi
 if test "$db_cv_jdbc" = "yes" -a "$db_cv_sql" = "no"; then
 	db_cv_sql=$db_cv_jdbc
 fi
+
+# Cryptography support.
+# Until Berkeley DB 5.0, this was a simple yes/no decision.
+# With the addition of support for Intel Integrated Performance Primitives (ipp)
+# things are more complex.  There are now three options:
+#   1) don't build cryptography (no)
+#   2) build using the built-in software implementation (yes)
+#   3) build using the Intel IPP implementation (ipp)
+# We handle this by making the primary configuration method:
+#   --with-cryptography={yes|no|ipp}
+# which defaults to yes, unless building the SQL library(--enable-sql).
+# The old enable/disable-cryptography argument is still
+# supported for backwards compatibility.
+AC_MSG_CHECKING(if --with-cryptography option specified)
+build_cryptography="$db_cv_build_full";
+if test "$db_cv_sql" = "yes" -a "$build_cryptography" = "yes"; then
+	build_cryptography="no";
+fi
+AC_ARG_ENABLE(cryptography, [], [], [enableval=$build_cryptography])
+enable_cryptography="$enableval"
+AC_ARG_WITH([cryptography],
+	AC_HELP_STRING([--with-cryptography=yes|no|ipp], [Build database cryptography support. The default value is "yes", unless building the SQL library.]),
+	[], [with_cryptography=$enable_cryptography])
+case "$with_cryptography" in
+yes|no|ipp) ;;
+*) AC_MSG_ERROR([unknown --with-cryptography argument \'$with_cryptography\']) ;;
+esac
+db_cv_build_cryptography="$with_cryptography"
+AC_MSG_RESULT($db_cv_build_cryptography)
 
 # Testing requires Tcl.
 if test "$db_cv_test" = "yes" -a "$db_cv_tcl" = "no"; then

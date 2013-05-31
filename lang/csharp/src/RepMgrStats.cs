@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -17,7 +17,10 @@ namespace BerkeleyDB {
         internal RepMgrStats(Internal.RepMgrStatStruct stats) {
             st = stats;
         }
-
+        /// <summary>
+        /// Number of automatic replication process takeovers.
+        /// </summary>
+        public ulong AutoTakeovers { get { return st.st_takeovers; } }
         /// <summary>
         /// Existing connections dropped. 
         /// </summary>
@@ -41,11 +44,23 @@ namespace BerkeleyDB {
         /// <summary>
         /// Number of currently active election threads
         /// </summary>
-        public ulong ElectionThreads { get { return st.st_elect_threads; } }
+        public uint ElectionThreads { get { return st.st_elect_threads; } }
         /// <summary>
         /// Election threads for which space is reserved
         /// </summary>
-        public ulong MaxElectionThreads { get { return st.st_max_elect_threads; } }
+        public uint MaxElectionThreads { get { return st.st_max_elect_threads; } }
+        /// <summary>
+        /// Number of replication group participant sites.
+        /// </summary>
+        public uint ParticipantSites { get { return st.st_site_participants; } }
+        /// <summary>
+        /// Total number of replication group sites.
+        /// </summary>
+        public uint TotalSites { get { return st.st_site_total; } }
+        /// <summary>
+        /// Number of replication group view sites.
+        /// </summary>
+        public uint ViewSites { get { return st.st_site_views; } }
 
     }
 }

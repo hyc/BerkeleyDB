@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -41,6 +41,196 @@ namespace CsharpAPITest
 		{
 			testFixtureName = "ReplicationTest";
 			base.SetUpTestfixture();
+		}
+
+		[Test]
+		public void TestReplicationView()
+		{
+			testName = "TestReplicationView";
+			SetUpTest(true);
+
+			string masterHome = testHome + "\\Master";
+			Configuration.ClearDir(masterHome);
+
+			string clientHome1 = testHome + "\\Client1";
+			Configuration.ClearDir(clientHome1);
+
+			string clientHome2 = testHome + "\\Client2";
+			Configuration.ClearDir(clientHome2);
+
+			ports.Clear();
+			AvailablePorts portGen = new AvailablePorts();
+			uint mPort = portGen.Current;
+			portGen.MoveNext();
+			uint cPort1 = portGen.Current;
+			portGen.MoveNext();
+			uint cPort2 = portGen.Current;
+
+			/* Open environment with replication configuration. */
+			DatabaseEnvironmentConfig cfg =
+			    new DatabaseEnvironmentConfig();
+			cfg.Create = true;
+			cfg.RunRecovery = true;
+			cfg.UseLocking = true;
+			cfg.UseLogging = true;
+			cfg.UseMPool = true;
+			cfg.UseReplication = true;
+			cfg.FreeThreaded = true;
+			cfg.UseTxns = true;
+			cfg.EventNotify = new EventNotifyDelegate(stuffHappened);
+
+			cfg.RepSystemCfg = new ReplicationConfig();
+			cfg.RepSystemCfg.RepmgrSitesConfig.Add(new DbSiteConfig());
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].Host = "127.0.0.1";
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].Port = mPort;
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].LocalSite = true;
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].GroupCreator = true;
+			cfg.RepSystemCfg.Priority = 100;
+
+			/* Start up the master site. */
+			DatabaseEnvironment mEnv = DatabaseEnvironment.Open(
+			    masterHome, cfg);
+			mEnv.DeadlockResolution = DeadlockPolicy.DEFAULT;
+			mEnv.RepMgrStartMaster(2);
+
+			/* Open the environment of the client 1 site. */
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].Port = cPort1;
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].GroupCreator = false;
+			cfg.RepSystemCfg.Priority = 10;
+			cfg.RepSystemCfg.RepmgrSitesConfig.Add(new DbSiteConfig());
+			cfg.RepSystemCfg.RepmgrSitesConfig[1].Host = "127.0.0.1";
+			cfg.RepSystemCfg.RepmgrSitesConfig[1].Port = mPort;
+			cfg.RepSystemCfg.RepmgrSitesConfig[1].Helper = true;
+			/* Set the site as a partial view. */
+			cfg.RepSystemCfg.ReplicationView = repView;
+			DatabaseEnvironment cEnv1 = DatabaseEnvironment.Open(
+			    clientHome1, cfg);
+
+			/* Open the environment of the client 2 site. */
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].Port = cPort2;
+			cfg.RepSystemCfg.RepmgrSitesConfig[0].GroupCreator = false;
+			cfg.RepSystemCfg.Priority = 10;
+			/* Set the site as a full view. */
+			cfg.RepSystemCfg.ReplicationView = null;
+			DatabaseEnvironment cEnv2 = DatabaseEnvironment.Open(
+			    clientHome2, cfg);
+
+			/*
+			 * Create two database files db1.db and db2.db
+			 * on the master.
+			 */
+			BTreeDatabaseConfig btreeDBConfig =
+			    new BTreeDatabaseConfig();
+			btreeDBConfig.Env = mEnv;
+			btreeDBConfig.Creation = CreatePolicy.ALWAYS;
+			btreeDBConfig.AutoCommit = true;
+			BTreeDatabase db1 =
+			    BTreeDatabase.Open("db1.db", btreeDBConfig);
+			BTreeDatabase db2 =
+			    BTreeDatabase.Open("db2.db", btreeDBConfig);
+			db1.Close();
+			db2.Close();
+
+			/* Start up the client sites. */
+			cEnv1.RepMgrStartClient(2, false);
+			cEnv2.RepMgrStartClient(2, false);
+
+			/* Wait for clients to start up */
+			int i = 0;
+			while (!cEnv1.ReplicationSystemStats().ClientStartupComplete)
+			{
+				if (i < 20)
+				{
+					Thread.Sleep(1000);
+					i++;
+				}
+				else
+					throw new TestException();
+			}
+			i = 0;
+			while (!cEnv2.ReplicationSystemStats().ClientStartupComplete)
+			{
+				if (i < 20)
+				{
+					Thread.Sleep(1000);
+					i++;
+				}
+				else
+					throw new TestException();
+			}
+
+			/*
+			 * Verify that the file db2.db is replicated to the
+			 * client 2 (full view), but not to the client 1
+			 * (partial view), and the file db1.db is
+			 * replicated to both sites.
+			 */
+			btreeDBConfig.Env = cEnv1;
+			btreeDBConfig.Creation = CreatePolicy.NEVER;
+			db1 = BTreeDatabase.Open("db1.db", btreeDBConfig);
+			try
+			{
+				db2 = BTreeDatabase.Open("db2.db", btreeDBConfig);
+				throw new TestException();
+			}
+			catch (DatabaseException e){
+				Assert.AreEqual(0, String.Compare(
+				    "No such file or directory", e.Message));
+			}
+			db1.Close();
+			btreeDBConfig.Env = cEnv2;
+			db1 = BTreeDatabase.Open("db1.db", btreeDBConfig);
+			db2 = BTreeDatabase.Open("db2.db", btreeDBConfig);
+			db1.Close();
+			db2.Close();
+
+			/* Get the replication manager statistic. */
+			RepMgrStats repMgrStats = mEnv.RepMgrSystemStats();
+			Assert.AreEqual(1, repMgrStats.ParticipantSites);
+			Assert.AreEqual(3, repMgrStats.TotalSites);
+			Assert.AreEqual(2, repMgrStats.ViewSites);
+
+			/*
+			 * Verify the master is not a view locally
+			 * or from remote site.
+			 */
+			ReplicationStats repstats =
+			    mEnv.ReplicationSystemStats();
+			Assert.AreEqual(false, repstats.View);
+			RepMgrSite[] rsite = cEnv1.RepMgrRemoteSites;
+			Assert.AreEqual(2, rsite.Length);
+			for (i = 0; i < rsite.Length; i++) {
+				if (rsite[i].Address.Port == mPort)
+					break;
+			}
+			Assert.Greater(rsite.Length, i);
+			Assert.AreEqual(false, rsite[i].isView);
+
+			/*
+			 * Verify the clients are views locally
+			 * and from remote site.
+			 */
+			rsite = mEnv.RepMgrRemoteSites;
+			Assert.AreEqual(2, rsite.Length);
+			Assert.AreEqual(true, rsite[0].isView);
+			Assert.AreEqual(true, rsite[1].isView);
+			repstats = cEnv1.ReplicationSystemStats();
+			Assert.AreEqual(true, repstats.View);
+			repstats = cEnv2.ReplicationSystemStats();
+			Assert.AreEqual(true, repstats.View);
+
+			cEnv2.Close();
+			cEnv1.Close();
+			mEnv.Close();
+		}
+
+		int repView(string name, ref int result, uint flags)
+		{
+			if (name == "db1.db")
+				result = 1;
+			else
+				result = 0;
+			return (0);
 		}
 
 		[Test]
@@ -363,10 +553,13 @@ namespace CsharpAPITest
 
 			// Get replication manager statistics.
 			RepMgrStats repMgrStats = env.RepMgrSystemStats(true);
+			Assert.AreEqual(0, repMgrStats.AutoTakeovers);
 			Assert.LessOrEqual(0, repMgrStats.DroppedConnections);
 			Assert.LessOrEqual(0, repMgrStats.DroppedMessages);
+			Assert.LessOrEqual(0, repMgrStats.ElectionThreads);
 			Assert.LessOrEqual(0, repMgrStats.FailedConnections);
 			Assert.LessOrEqual(0, repMgrStats.FailedMessages);
+			Assert.Less(0, repMgrStats.MaxElectionThreads);
 			Assert.LessOrEqual(0, repMgrStats.QueuedMessages);
 
 			// Print them out.
@@ -480,6 +673,9 @@ namespace CsharpAPITest
 		{
 			switch (eventCode)
 			{
+				case NotificationEvent.REP_AUTOTAKEOVER_FAILED:
+				Console.WriteLine("Event: REP_AUTOTAKEOVER_FAILED");
+					break;
 				case NotificationEvent.REP_CLIENT:
 				Console.WriteLine("Event: CLIENT");
 					break;

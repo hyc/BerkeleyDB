@@ -1,7 +1,7 @@
 /*-
 * See the file LICENSE for redistribution information.
 *
-* Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
+* Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 */
 /*
 ** This file contains the implementation of the sqlite3_backup_XXX()
@@ -323,7 +323,7 @@ int btreeDeleteEnvironment(Btree *p, const char *home, int rename)
 	int rc, ret, iDb, storage;
 	sqlite3 *db;
 	DB_ENV *tmp_env;
-	char path[512];
+	char path[BT_MAX_PATH];
 #ifdef BDBSQL_FILE_PER_TABLE
 	int numFiles;
 	char **files;
@@ -355,6 +355,7 @@ int btreeDeleteEnvironment(Btree *p, const char *home, int rename)
 	if (home == NULL)
 		goto done;
 
+	sqlite3_snprintf(sizeof(path), path, "%s-journal", home);
 	ret = btreeCleanupEnv(path);
 	/* EFAULT can be returned on Windows when the file does not exist.*/
 	if (ret == ENOENT || ret == EFAULT)
@@ -471,7 +472,7 @@ static int backupCleanup(sqlite3_backup *p)
 		if (p->rc == SQLITE_DONE)
 			rc2 = sqlite3BtreeCommit(p->pDest);
 		else
-			rc2 = sqlite3BtreeRollback(p->pDest);
+			rc2 = sqlite3BtreeRollback(p->pDest, SQLITE_OK);
 		if (rc2 != SQLITE_OK)
 			rc = rc2;
 	}
@@ -493,36 +494,30 @@ static int backupCleanup(sqlite3_backup *p)
 			if (!__os_exists(NULL, path, 0))
 				__os_rename(NULL, path, p->fullName, 0);
 		}
+		if (rc2 != SQLITE_BUSY) {
+		    p->pDest = p->pDestDb->aDb[p->iDb].pBt = NULL;
+		    p->pDestDb->aDb[p->iDb].pSchema = NULL;
+		}
 		if (rc == SQLITE_OK)
 			rc = rc2;
 		if (rc == SQLITE_OK) {
 			p->pDest = NULL;
 			p->pDestDb->aDb[p->iDb].pBt = NULL;
 			p->openDest = 0;
-			rc = sqlite3BtreeOpen(p->fullName, p->pDestDb,
+			rc = sqlite3BtreeOpen(NULL, p->fullName, p->pDestDb,
 			    &p->pDest,
 			    SQLITE_DEFAULT_CACHE_SIZE | SQLITE_OPEN_MAIN_DB,
 			    p->pDestDb->openFlags);
 			p->pDestDb->aDb[p->iDb].pBt = p->pDest;
-			if (rc == SQLITE_OK) {
-				p->pDestDb->aDb[p->iDb].pSchema =
+			if (p->pDest) {
+				p->pDestDb->aDb[p->iDb].pSchema = 
 				    sqlite3SchemaGet(p->pDestDb, p->pDest);
-				if (!p->pDestDb->aDb[p->iDb].pSchema)
-					p->rc = SQLITE_NOMEM;
-			} else
-				p->pDestDb->aDb[p->iDb].pSchema = NULL;
+				if (p->pDestDb->aDb[p->iDb].pSchema == NULL)
+					rc = SQLITE_NOMEM;
+			}
 			if (rc == SQLITE_OK)
 				p->pDest->pBt->db_oflags |= DB_CREATE;
-			/*
-			 * Have to delete the schema here on error to avoid
-			 * assert failure.
-			 */
-			if (p->pDest == NULL &&
-			    p->pDestDb->aDb[p->iDb].pSchema != NULL) {
-				sqlite3SchemaClear(
-				    p->pDestDb->aDb[p->iDb].pSchema);
-				p->pDestDb->aDb[p->iDb].pSchema = NULL;
-			}
+
 #ifdef SQLITE_HAS_CODEC
 			if (rc == SQLITE_OK) {
 				if (p->iDb == 0)
@@ -612,13 +607,19 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 		storage = p->pDest->pBt->dbStorage;
 		if (storage == DB_STORE_NAMED)
 			p->openDest = 1;
+		if (strcmp(p->destName, "temp") == 0)
+			p->pDest->schema = NULL;
+		else 
+			p->pDestDb->aDb[p->iDb].pSchema = NULL;
+			
 		p->rc = btreeDeleteEnvironment(p->pDest, p->fullName, 1);
 		if (storage == DB_STORE_INMEM && strcmp(p->destName, "temp")
 		    != 0)
 			home = inmem;
 		else
 			home = p->fullName;
-		p->pDest = p->pDestDb->aDb[p->iDb].pBt;
+		if (p->rc != SQLITE_BUSY)
+			p->pDest = p->pDestDb->aDb[p->iDb].pBt = NULL;
 		if (p->rc != SQLITE_OK)
 			goto err;
 		/*
@@ -632,18 +633,20 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 			parse.db = p->pDestDb;
 			p->rc = sqlite3OpenTempDatabase(&parse);
 			p->pDest = p->pDestDb->aDb[p->iDb].pBt;
+			if (p->pDest && p->iDb != 1)
+				p->pDest->schema =
+				    p->pDestDb->aDb[p->iDb].pSchema;
 		} else {
-			p->rc = sqlite3BtreeOpen(home, p->pDestDb,
+			p->rc = sqlite3BtreeOpen(NULL, home, p->pDestDb,
 			    &p->pDest, SQLITE_DEFAULT_CACHE_SIZE |
 			    SQLITE_OPEN_MAIN_DB, p->pDestDb->openFlags);
 			p->pDestDb->aDb[p->iDb].pBt = p->pDest;
-			if (p->rc == SQLITE_OK) {
-				p->pDestDb->aDb[p->iDb].pSchema =
+			if (p->pDest) {
+				p->pDestDb->aDb[p->iDb].pSchema = 
 				    sqlite3SchemaGet(p->pDestDb, p->pDest);
-				if (!p->pDestDb->aDb[p->iDb].pSchema)
+				if (p->pDestDb->aDb[p->iDb].pSchema == NULL)
 					p->rc = SQLITE_NOMEM;
-			} else
-				p->pDestDb->aDb[p->iDb].pSchema = NULL;
+			}
 		}
 
 		if (p->pDest)
@@ -726,7 +729,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage) {
 	p->rc = btreeCopyPages(p, &pages);
 	if (p->rc == SQLITE_DONE) {
 		p->nRemaining = 0;
-		sqlite3ResetInternalSchema(p->pDestDb, p->iDb);
+		sqlite3ResetOneSchema(p->pDestDb, p->iDb);
 		memset(&parse, 0, sizeof(parse));
 		parse.db = p->pDestDb;
 		p->rc = sqlite3ReadSchema(&parse);

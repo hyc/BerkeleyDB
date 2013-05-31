@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -293,6 +293,20 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
                         The number of current lockers.
                 </p>
           </li>
+          <li><p>
+                        <span class="bold"><strong>uintmax_t st_nlockers_hit;</strong></span>
+                </p>
+                        The number of hits in the thread locker cache.
+                <p>
+                </p></li>
+          <li>
+            <p>
+                        <span class="bold"><strong>uintmax_t st_nlockers_reused;</strong></span>
+                </p>
+            <p>
+                        Total number of lockers reused.
+                </p>
+          </li>
           <li>
             <p>
                          <span class="bold"><strong>u_int32_t st_nlocks;</strong></span>
@@ -494,7 +508,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp60673232"></a>Parameters</h3>
+              <h3 class="title"><a id="idp60890096"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -502,7 +516,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp60630864"></a>statp</h4>
+                <h4 class="title"><a id="idp60880832"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -515,7 +529,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp60684384"></a>flags</h4>
+                <h4 class="title"><a id="idp60935952"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -541,7 +555,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp60689224"></a>Errors</h3>
+              <h3 class="title"><a id="idp60940880"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -557,7 +571,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp60657744"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp60913472"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -570,7 +584,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp60691912"></a>Class</h3>
+              <h3 class="title"><a id="idp60944432"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -583,7 +597,7 @@ DB_ENV-&gt;lock_stat(DB_ENV *env, DB_LOCK_STAT **statp, u_int32_t flags);  </pre
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp60694288"></a>See Also</h3>
+              <h3 class="title"><a id="idp60945944"></a>See Also</h3>
             </div>
           </div>
         </div>

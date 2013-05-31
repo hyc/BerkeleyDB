@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -28,7 +28,9 @@ proc recd021 { method args } {
 	#
 	# First test regular files.
 	#
-	foreach op { remove rename delete noop } {
+	set ops { remove rename delete noop }
+	set ops { remove rename noop } 
+	foreach op $ops {
 		env_cleanup $testdir
 		puts "\tRecd021: Test $op of file in recovery."
 
@@ -47,7 +49,7 @@ proc recd021 { method args } {
 		set name [lindex $names 0]
 
 		set db [eval {berkdb_open \
-		    -create} $omethod $args -env $env -auto_commit $name.db]
+		    -create} $omethod $args -env $env -auto_commit $name]
 		error_check_good dba_open [is_valid_db $db] TRUE
 
 		# Checkpoint.
@@ -78,7 +80,7 @@ proc recd021 { method args } {
 		# Clean up.
 		error_check_good \
 		    env_remove [berkdb envremove -force -home $testdir] 0
-		fileremove -f $testdir/$name.db
+		fileremove -f $testdir/$name
 	}
 
 	# Test subdbs.
@@ -91,7 +93,7 @@ proc recd021 { method args } {
 	# to the tests for regular files above.
 	set trunc 0
 	set special {}
-	foreach op { remove rename delete noop } {
+	foreach op $ops {
 		recd021_testsubdb $method $op $nentries $special $trunc $args
 	}
 
@@ -143,10 +145,10 @@ proc recd021_testsubdb { method op nentries special trunc largs } {
 	set name [lindex $names 0]
 
 	set sdb1 [eval {berkdb_open -create} $omethod \
-	    $largs -env $env -auto_commit $name.db $sname1]
+	    $largs -env $env -auto_commit $name $sname1]
 	error_check_good sdb1_open [is_valid_db $sdb1] TRUE
 	set sdb2 [eval {berkdb_open -create} $omethod \
-	    $largs -env $env -auto_commit $name.db $sname2]
+	    $largs -env $env -auto_commit $name $sname2]
 	error_check_good sdb2_open [is_valid_db $sdb2] TRUE
 
 	# Checkpoint.
@@ -155,7 +157,7 @@ proc recd021_testsubdb { method op nentries special trunc largs } {
 		error_check_good sdb1_put [$sdb1 put $i data$i] 0
 	}
 	set dumpfile dump.s1.$trunc
-	set ret [exec $util_path/db_dump -dar -f $dumpfile -h $testdir A.db]
+	set ret [exec $util_path/db_dump -dar -f $dumpfile -h $testdir A]
 	for { set i 1 } { $i <= $nentries } { incr i } {
 		error_check_good sdb2_put [$sdb2 put $i data$i] 0
 	}
@@ -176,16 +178,23 @@ proc recd021_testsubdb { method op nentries special trunc largs } {
 	set ret [do_subdb_op $omethod $op $names $txn $env]
 	error_check_good do_subdb_op $ret 0
 	error_check_good txn_commit [$txn commit] 0
+	$env log_flush
 
 	if { $trunc == 1 } {
 		# Walk the log and find the __db_subdb_name entry.
 		set found 0
 		while { $found == 0 } {
 			set lsn [lindex [$logc get -next] 0]
+			if { [llength $lsn] == 0 } {
+				puts "FAIL: __db_subdb_name entry not found."
+				return
+			}
+puts "lsn is $lsn"
 			set lfile [lindex $lsn 0]
 			set loff [lindex $lsn 1]
-			set logrec [exec $util_path/db_printlog -h $testdir \
+			set logrec [exec $util_path/db_printlog -h $testdir\
 			    -b $lfile/$loff -e $lfile/$loff]
+puts "logrec is $logrec"
 			if { [is_substr $logrec __db_subdb_name] == 1 } {
 				set found 1
 			}
@@ -210,13 +219,13 @@ proc recd021_testsubdb { method op nentries special trunc largs } {
 			error_check_good sdb2_close [$sdb2 close] 0
 			set dumpfile dump.s2.$trunc
 			set ret [exec $util_path/db_dump -dar \
-			    -f $dumpfile -h $testdir A.db]
+			    -f $dumpfile -h $testdir A]
 		}
 		newdb {
 			error_check_good sdb2_close [$sdb2 close] 0
 			set sname3 S3
 			set sdb3 [eval {berkdb_open -create} $omethod \
-			    $largs -env $env -auto_commit $name.db $sname3]
+			    $largs -env $env -auto_commit $name $sname3]
 			error_check_good sdb3_open [is_valid_db $sdb3] TRUE
 			for { set i 1 } { $i <= $nentries } { incr i } {
 				error_check_good sdb3_put \
@@ -231,7 +240,7 @@ proc recd021_testsubdb { method op nentries special trunc largs } {
 			set args [convert_args $newmethod]
 			set omethod [convert_method $newmethod]
 			set sdb4 [eval {berkdb_open -create} $omethod \
-			    $args -env $env -auto_commit $name.db $sname4]
+			    $args -env $env -auto_commit $name $sname4]
 			error_check_good sdb4_open [is_valid_db $sdb4] TRUE
 			for { set i 1 } { $i <= $nentries } { incr i } {
 				error_check_good sdb4_put \
@@ -261,7 +270,7 @@ proc recd021_testsubdb { method op nentries special trunc largs } {
 
 	# Clean up.
 	error_check_good env_remove [berkdb envremove -force -home $testdir] 0
-	fileremove -f $testdir/$name.db
+	fileremove -f $testdir/$name
 }
 
 proc different_method { method } {

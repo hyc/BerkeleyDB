@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -85,7 +85,7 @@ Db::open(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2426256"></a>Parameters</h3>
+              <h3 class="title"><a id="idm3837080"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3328648"></a>txnid</h4>
+                <h4 class="title"><a id="idm3528408"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm6252944"></a>file</h4>
+                <h4 class="title"><a id="idm1592560"></a>file</h4>
               </div>
             </div>
           </div>
@@ -150,7 +150,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2243976"></a>database</h4>
+                <h4 class="title"><a id="idm4664320"></a>database</h4>
               </div>
             </div>
           </div>
@@ -162,7 +162,7 @@ Db::open(DbTxn *txnid, const char *file,
                   in a <span class="bold"><strong>file</strong></span> that was not initially
                   created using a <span class="bold"><strong>database</strong></span> name. 
                   Further, the <span class="bold"><strong>database</strong></span> parameter is
-                  not supported by the Queue format.  Finally, when opening multiple
+                  not supported by the Queue or Heap format.  Finally, when opening multiple
                   databases in the same physical file, it is important to consider
                   locking and memory cache issues; see 
                   <a href="../../programmer_reference/am_opensub.html" class="olink">Opening multiple databases in a single file</a> 
@@ -188,7 +188,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2037872"></a>type</h4>
+                <h4 class="title"><a id="idm4016640"></a>type</h4>
               </div>
             </div>
           </div>
@@ -215,7 +215,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1254360"></a>flags</h4>
+                <h4 class="title"><a id="idm1011336"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -324,12 +324,32 @@ Db::open(DbTxn *txnid, const char *file,
                             <code class="methodname">Db::open()</code> to be
                             <span class="emphasis"><em>free-threaded</em></span>; that is,
                             concurrently usable by multiple threads in the
-                            address space.
+                            address space. You should use this flag only in
+                            the absence of an encompassing environment.
+                        </p>
+                <p>
+                            When opening the database within an
+                            encompassing environment, the database inherits
+                            the state of this flag from the environment.
+                            That is, if the encompassing environment is
+                            threaded, then the database will also be
+                            threaded. Note that it is an error to specify
+                            this flag to the database open if the
+                            encompassing environment is not threaded.
                         </p>
                 <p>
                             Note that this flag is incompatible with the 
                             <a class="link" href="dbset_lk_exclusive.html" title="Db::set_lk_exclusive()">Db::set_lk_exclusive()</a>
                             method.
+                        </p>
+                <p>
+                            Be aware that enabling this flag will serialize
+                            calls to DB when using the handle across
+                            threads. If concurrent scaling is important to
+                            your application we recommend opening separate
+                            handles for each thread (and not specifying
+                            this flag), rather than sharing handles between
+                            threads.
                         </p>
               </li>
               <li>
@@ -356,7 +376,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2258352"></a>mode</h4>
+                <h4 class="title"><a id="idm3005512"></a>mode</h4>
               </div>
             </div>
           </div>
@@ -380,7 +400,7 @@ Db::open(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3671352"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idm5123520"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -392,8 +412,8 @@ Db::open(DbTxn *txnid, const char *file,
         <p>
             <code class="methodname">Db::open()</code> is affected by any
             database directory specified using the 
-            <a class="xref" href="envset_data_dir.html" title="DbEnv::set_data_dir()">DbEnv::set_data_dir()</a> 
-            method, or by setting the "set_data_dir" string in the
+            <a class="xref" href="envadd_data_dir.html" title="DbEnv::add_data_dir()">DbEnv::add_data_dir()</a> 
+            method, or by setting the "add_data_dir" string in the
             environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.
         </p>
         <div class="itemizedlist">
@@ -418,7 +438,7 @@ Db::open(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm1804568"></a>Errors</h3>
+              <h3 class="title"><a id="idm3348248"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -436,7 +456,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm5035608"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idm2370064"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -454,7 +474,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4082120"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idm4731568"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -479,7 +499,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm6274392"></a>ENOENT</h4>
+                <h4 class="title"><a id="idm1988408"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -491,7 +511,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm6436216"></a>ENOENT</h4>
+                <h4 class="title"><a id="idm3963064"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -503,7 +523,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1606344"></a>DB_OLD_VERSION</h4>
+                <h4 class="title"><a id="idm3874536"></a>DB_OLD_VERSION</h4>
               </div>
             </div>
           </div>
@@ -515,7 +535,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm911312"></a>EEXIST</h4>
+                <h4 class="title"><a id="idm2412520"></a>EEXIST</h4>
               </div>
             </div>
           </div>
@@ -528,7 +548,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3030168"></a>EINVAL</h4>
+                <h4 class="title"><a id="idm2267960"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -560,7 +580,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2222712"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idm1237032"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -582,7 +602,7 @@ Db::open(DbTxn *txnid, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm728272"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idm2540712"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -600,7 +620,7 @@ Db::open(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3458160"></a>Class</h3>
+              <h3 class="title"><a id="idm1510752"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -612,7 +632,7 @@ Db::open(DbTxn *txnid, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm6632592"></a>See Also</h3>
+              <h3 class="title"><a id="idm5860280"></a>See Also</h3>
             </div>
           </div>
         </div>

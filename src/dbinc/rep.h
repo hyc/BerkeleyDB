@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -125,6 +125,7 @@ extern "C" {
 #define	DB_LOGVERSION_51	17
 #define	DB_LOGVERSION_52	18
 #define	DB_LOGVERSION_53	19
+#define	DB_LOGVERSION_60	20
 #define	DB_LOGVERSION_MIN	DB_LOGVERSION_44
 #define	DB_REPVERSION_INVALID	0
 #define	DB_REPVERSION_44	3
@@ -136,7 +137,8 @@ extern "C" {
 #define	DB_REPVERSION_51	5
 #define	DB_REPVERSION_52	6
 #define	DB_REPVERSION_53	7
-#define	DB_REPVERSION		DB_REPVERSION_53
+#define	DB_REPVERSION_60	7
+#define	DB_REPVERSION		DB_REPVERSION_60
 #define	DB_REPVERSION_MIN	DB_REPVERSION_44
 
 /*
@@ -202,6 +204,16 @@ extern "C" {
 #define	REP_INITVERSION_46	1
 #define	REP_INITVERSION_47	2
 #define	REP_INITVERSION		3
+
+/*
+ * View/partial replication file name.
+ * The file is empty.  It exists as a permanent indicator that this
+ * environment can never be master.
+ */
+#define	REPVIEW		"__db.rep.view"
+#define	IS_VIEW_SITE(env)						\
+	(REP_ON(env) &&							\
+	    ((env)->rep_handle->region->stat.st_view != 0))
 
 /*
  * Database types for __rep_client_dbinit
@@ -391,11 +403,13 @@ typedef struct __rep { /* SHARED */
 	roff_t		siteinfo_off;	/* Offset of site array region. */
 	u_int		site_cnt;	/* Array slots in use. */
 	u_int		site_max;	/* Total array slots allocated. */
+	u_int		sites_avail;	/* Total number of available sites. */
 	int		self_eid;	/* Where to find the local site. */
 	u_int		siteinfo_seq;	/* Number of updates to this info. */
 	u_int32_t	min_log_file;	/* Earliest log needed by repgroup. */
 
 	pid_t		listener;
+	u_int		listener_nthreads; /* # of msg threads in listener. */
 
 	int		perm_policy;
 	db_timeout_t	ack_timeout;
@@ -403,6 +417,8 @@ typedef struct __rep { /* SHARED */
 	db_timeout_t	connection_retry_wait;
 	db_timeout_t	heartbeat_frequency; /* Max period between msgs. */
 	db_timeout_t	heartbeat_monitor_timeout;
+	u_int32_t	inqueue_msg_max;
+	u_int32_t	inqueue_bulkmsg_max;
 #endif  /* HAVE_REPLICATION_THREADS */
 
 	/* Statistics. */
@@ -419,12 +435,13 @@ typedef struct __rep { /* SHARED */
 #define	REP_C_2SITE_STRICT	0x00001		/* Don't cheat on elections. */
 #define	REP_C_AUTOINIT		0x00002		/* Auto initialization. */
 #define	REP_C_AUTOROLLBACK	0x00004		/* Discard client txns: sync. */
-#define	REP_C_BULK		0x00008		/* Bulk transfer. */
-#define	REP_C_DELAYCLIENT	0x00010		/* Delay client sync-up. */
-#define	REP_C_ELECTIONS		0x00020		/* Repmgr to use elections. */
-#define	REP_C_INMEM		0x00040		/* In-memory replication. */
-#define	REP_C_LEASE		0x00080		/* Leases configured. */
-#define	REP_C_NOWAIT		0x00100		/* Immediate error return. */
+#define	REP_C_AUTOTAKEOVER	0x00008		/* Auto listener take over. */
+#define	REP_C_BULK		0x00010		/* Bulk transfer. */
+#define	REP_C_DELAYCLIENT	0x00020		/* Delay client sync-up. */
+#define	REP_C_ELECTIONS		0x00040		/* Repmgr to use elections. */
+#define	REP_C_INMEM		0x00080		/* In-memory replication. */
+#define	REP_C_LEASE		0x00100		/* Leases configured. */
+#define	REP_C_NOWAIT		0x00200		/* Immediate error return. */
 	u_int32_t	config;		/* Configuration flags. */
 
 	/* Election. */
@@ -525,7 +542,7 @@ do {									\
 /*
  * REP_F_EPHASE0 is not a *real* election phase.  It is used for
  * master leases and allowing the client to find the master or
- * expire its lease.  However, EPHASE0 is cleared by __rep_elect_done.
+ * expire its lease.
  */
 #define	IN_ELECTION(R)							\
 	FLD_ISSET((R)->elect_flags, REP_E_PHASE1 | REP_E_PHASE2)
@@ -610,6 +627,12 @@ do {									\
 					/* PERM is a superset of COMMIT. */
 
 /*
+ * Permanent record types.
+ */
+#define	IS_PERM_RECTYPE(rectype)					\
+    ((rectype) == DB___txn_regop || (rectype) == DB___txn_ckp)
+
+/*
  * Basic pre/post-amble processing.
  */
 #define	REPLICATION_WRAP(env, func_call, checklock, ret) do {		\
@@ -692,7 +715,7 @@ do {									\
  * machine instruction.  A single 32-bit integer value is safe without a
  * mutex, but most other types of value should use a mutex.
  *
- * Any use of a mutex must be inside a matched pair of ENV_ENTER() and
+ * Use of a db_mutex_t mutex must be inside a matched pair of ENV_ENTER() and
  * ENV_LEAVE() macros.  This ensures that if a thread dies while holding
  * a lock (i.e. a mutex), recovery can clean it up so that it does not
  * indefinitely block other threads.
@@ -727,6 +750,9 @@ struct __db_rep {
 	/*
 	 * End of shared configuration information.
 	 */
+	int		(*partial)	/* View/partial replication function. */
+			    __P((DB_ENV *, const char *, int *, u_int32_t));
+
 	int		(*send)		/* Send function. */
 			    __P((DB_ENV *, const DBT *, const DBT *,
 			    const DB_LSN *, int, u_int32_t));
@@ -759,6 +785,7 @@ struct __db_rep {
 	/*
 	 * Replication Framework (repmgr) per-process information.
 	 */
+	int		config_nthreads;/* Configured msg processing threads. */
 	u_int		nthreads;	/* Msg processing threads. */
 	u_int		athreads;	/* Space allocated for msg threads. */
 	u_int		non_rep_th;	/* Threads in GMDB or channel msgs. */
@@ -771,10 +798,13 @@ struct __db_rep {
 	db_timeout_t	connection_retry_wait;
 	db_timeout_t	heartbeat_frequency; /* Max period between msgs. */
 	db_timeout_t	heartbeat_monitor_timeout;
+	u_int32_t	inqueue_msg_max;
+	u_int32_t	inqueue_bulkmsg_max;
 
 	/* Thread synchronization. */
 	REPMGR_RUNNABLE *selector, **messengers, **elect_threads;
 	REPMGR_RUNNABLE	*preferred_elect_thr;
+	REPMGR_RUNNABLE	*takeover_thread;
 	db_timespec	repstart_time;
 	mgr_mutex_t	*mutex;
 	cond_var_t	check_election, gmdb_idle, msg_avail;
@@ -805,6 +835,10 @@ struct __db_rep {
 
 	socket_t	listen_fd;
 	db_timespec	last_bcast;	/* Time of last broadcast msg. */
+	db_timespec	l_listener_chk; /* Time to check local listener. */
+	db_timeout_t	l_listener_wait;/* Timeout to check local listener. */
+	db_timespec	m_listener_chk; /* Time to check master listener. */
+	db_timeout_t	m_listener_wait;/* Timeout to check master listener. */
 
 	/*
 	 * Status of repmgr.  It is ready when repmgr is not yet started.  It
@@ -813,12 +847,14 @@ struct __db_rep {
 	 */
 	enum { ready, running, stopped } repmgr_status;
 	int		new_connection;	  /* Since last master seek attempt. */
+	int		demotion_pending; /* We're being demoted to a view. */
 	int		takeover_pending; /* We've been elected master. */
 	int		gmdb_busy;
 	int		client_intent;	/* Will relinquish master role. */
 	int		gmdb_dirty;
 	int		have_gmdb;
 	int		seen_repmsg;
+	int		view_mismatch; /* View callback and gmdb don't match. */
 
 	/*
 	 * Flag to show what kind of transaction is currently in progress.
@@ -920,6 +956,10 @@ struct __db_rep {
 	} else if (!F_ISSET((env)->rep_handle, DBREP_APP_REPMGR))	\
 		F_SET((env)->rep_handle, DBREP_APP_BASEAPI);		\
 } while (0)
+#define	ADJUST_AUTOTAKEOVER_WAITS(db_rep, timeout) do {			\
+	(db_rep)->l_listener_wait = timeout;				\
+	(db_rep)->m_listener_wait = 3 * timeout;			\
+} while (0)
 
 #else
 /*
@@ -935,6 +975,9 @@ struct __db_rep {
 #define	APP_SET_BASEAPI(env) do {					\
 	;								\
 } while (0)
+#define	ADJUST_AUTOTAKEOVER_WAITS(db_rep, timeout) do {			\
+	;								\
+} while (0)
 #endif  /* HAVE_REPLICATION_THREADS */
 
 /*
@@ -945,22 +988,27 @@ struct __db_rep {
  * compatibility with old versions, these values must be reserved explicitly in
  * the list of flag values (below)
  */
-#define	DB_LOG_PERM_42_44	0x20
-#define	DB_LOG_RESEND_42_44	0x40
-#define	REPCTL_INIT_45		0x02	/* Back compatible flag value. */
+#define	DB_LOG_PERM_42_44	0x020
+#define	DB_LOG_RESEND_42_44	0x040
+#define	REPCTL_INIT_45		0x002	/* Back compatible flag value. */
 
-#define	REPCTL_ELECTABLE	0x01	/* Upgraded client is electable. */
-#define	REPCTL_FLUSH		0x02	/* Record should be flushed. */
-#define	REPCTL_GROUP_ESTD	0x04	/* Message from site in a group. */
-#define	REPCTL_INIT		0x08	/* Internal init message. */
-#define	REPCTL_LEASE		0x10	/* Lease related message.. */
+/*
+ * Add new REPCTL flags to the end of this list to preserve compatibility
+ * with old versions.
+ */
+#define	REPCTL_ELECTABLE	0x001	/* Upgraded client is electable. */
+#define	REPCTL_FLUSH		0x002	/* Record should be flushed. */
+#define	REPCTL_GROUP_ESTD	0x004	/* Message from site in a group. */
+#define	REPCTL_INIT		0x008	/* Internal init message. */
+#define	REPCTL_LEASE		0x010	/* Lease related message. */
 			/*
 			 * Skip over reserved values 0x20
 			 * and 0x40, as explained above.
 			 */
-#define	REPCTL_LOG_END		0x80	/* Approximate end of group-wide log. */
+#define	REPCTL_LOG_END		0x080	/* Approximate end of group-wide log. */
 #define	REPCTL_PERM		DB_LOG_PERM_42_44
 #define	REPCTL_RESEND		DB_LOG_RESEND_42_44
+#define	REPCTL_INMEM_ONLY	0x100	/* In-memory databases only. */
 
 /*
  * File info flags for internal init.  The per-database (i.e., file) flag

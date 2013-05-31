@@ -1,16 +1,25 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 package com.sleepycat.collections.test.serial;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.serial.test.MarshalledObject;
@@ -25,34 +34,27 @@ import com.sleepycat.db.ForeignKeyDeleteAction;
 import com.sleepycat.db.SecondaryConfig;
 import com.sleepycat.db.SecondaryDatabase;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-public class TupleSerialFactoryTest extends TestCase
+
+@RunWith(Parameterized.class)
+public class TupleSerialFactoryTest extends TestBase
     implements TransactionWorker {
 
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        for (int i = 0; i < TestEnv.ALL.length; i += 1) {
+    @Parameters
+    public static List<Object[]> genParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
+        for (TestEnv testEnv : TestEnv.ALL) {
             for (int sorted = 0; sorted < 2; sorted += 1) {
-                suite.addTest(new TupleSerialFactoryTest(TestEnv.ALL[i],
-                                                           sorted != 0));
+                params.add(new Object[]{testEnv, sorted != 0 });
             }
         }
-        return suite;
+            
+        return params;
     }
 
     private TestEnv testEnv;
@@ -72,28 +74,28 @@ public class TupleSerialFactoryTest extends TestCase
 
     public TupleSerialFactoryTest(TestEnv testEnv, boolean isSorted) {
 
-        super(null);
 
         this.testEnv = testEnv;
         this.isSorted = isSorted;
 
         String name = "TupleSerialFactoryTest-" + testEnv.getName();
         name += isSorted ? "-sorted" : "-unsorted";
-        setName(name);
+        customName = name;
     }
 
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
-        SharedTestUtils.printTestName(getName());
-        env = testEnv.open(getName());
+        super.setUp();
+        SharedTestUtils.printTestName(customName);
+        env = testEnv.open(customName);
         runner = new TransactionRunner(env);
 
         createDatabase();
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         try {
@@ -135,7 +137,7 @@ public class TupleSerialFactoryTest extends TestCase
         }
     }
 
-    @Override
+    @Test
     public void runTest()
         throws Exception {
 

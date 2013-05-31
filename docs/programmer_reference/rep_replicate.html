@@ -3,22 +3,22 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Running Replication using the db_replicate Utility</title>
+    <title>Running replication using the db_replicate utility</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="rep.html" title="Chapter 12.  Berkeley DB Replication" />
     <link rel="prev" href="rep_mgrmulti.html" title="Running Replication Manager in multiple processes" />
-    <link rel="next" href="rep_mgr_ack.html" title="Choosing a Replication Manager Ack Policy" />
+    <link rel="next" href="rep_mgr_ack.html" title="Choosing a Replication Manager acknowledgement policy" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Running Replication using the db_replicate Utility</th>
+          <th colspan="3" align="center">Running replication using the db_replicate utility</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep_mgrmulti.html">Prev</a> </td>
@@ -34,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="rep_replicate"></a>Running Replication using the db_replicate Utility</h2>
+            <h2 class="title" style="clear: both"><a id="rep_replicate"></a>Running replication using the db_replicate utility</h2>
           </div>
         </div>
       </div>
@@ -42,22 +42,22 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="rep_replicate.html#idp2251336">One Replication Process and Multiple Subordinate Processes</a>
+              <a href="rep_replicate.html#idp52030240">One replication process and multiple subordinate processes</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_replicate.html#idp2268704">Common Use Case</a>
+              <a href="rep_replicate.html#idp52011312">Common use case</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_replicate.html#idp2278848">Avoiding Rollback</a>
+              <a href="rep_replicate.html#idp52069904">Avoiding rollback</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
-              <a href="rep_replicate.html#idp2283896">When to Consider an Integrated HA Application</a>
+              <a href="rep_replicate.html#idp52075016">When to consider an integrated replication application</a>
             </span>
           </dt>
         </dl>
@@ -66,26 +66,26 @@
 environment from multiple processes.  Berkeley DB provides a
 replication-aware utility, db_replicate, that enables you to upgrade an existing Transactional Data Store
 application, as discussed in the <a class="xref" href="transapp.html#transapp_intro" title="Transactional Data Store introduction">Transactional Data Store introduction</a> section,
-to an HA application with
+to a replication application with
 minor modifications.  While the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility simplifies the use
-of replication with a TDS application, you
+of replication with a Transactional Data Store application, you
 must still understand replication and its impact on the application.
 </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2251336"></a>One Replication Process and Multiple Subordinate Processes</h3>
+              <h3 class="title"><a id="idp52030240"></a>One replication process and multiple subordinate processes</h3>
             </div>
           </div>
         </div>
         <p>Based on the terminology introduced in the <a class="xref" href="rep_mgrmulti.html" title="Running Replication Manager in multiple processes">Running Replication Manager in multiple processes</a> section,
-application processes are "subordinate processes" and the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility
-is the "primary replication process".</p>
+application processes are subordinate processes and the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility
+is the replication process.</p>
         <p>
 You must consider the following items when
 planning to use the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility in combination with
-a TDS application.
+a Transactional Data Store application.
 </p>
         <div class="itemizedlist">
           <ul type="disc">
@@ -96,7 +96,8 @@ a TDS application.
 	</p></li>
             <li>Multi-process implications
 	<p>
-	You must understand and accept all of the TDS implications
+	You must understand and accept all of the Transactional Data Store
+	implications
 	of multi-process use as specified in <a class="xref" href="transapp_app.html" title="Architecting Transactional Data Store applications">Architecting Transactional Data Store applications</a>.  Special attention should be
 	paid to the coordination needed for unrelated processes to
 	start up correctly.
@@ -121,8 +122,8 @@ a TDS application.
 	The <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility assumes that an
 	environment exists and that the application has run recovery,
 	if necessary, and created and configured the environment.
-	The startup flow of a typical TDS application may not be the
-	best flow for a replication application and you
+	The startup flow of a typical Transactional Data Store application
+	may not be the best flow for a replication application and you
 	must understand the issues involved. 
 	For instance, if an application starts, runs recovery,
 	and performs update operations before starting the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility,
@@ -138,7 +139,7 @@ a TDS application.
 	role changes, the application must call the <a href="../api_reference/C/repstat.html" class="olink">rep_stat()</a> method method.
 	The one replication-specific event the application can now
 	receive is the <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_REP_PERM_FAILED" class="olink">DB_EVENT_REP_PERM_FAILED</a> event.
-	See <a class="xref" href="rep_mgr_ack.html" title="Choosing a Replication Manager Ack Policy">Choosing a Replication Manager Ack Policy</a>
+	See <a class="xref" href="rep_mgr_ack.html" title="Choosing a Replication Manager acknowledgement policy">Choosing a Replication Manager acknowledgement policy</a>
 	for additional information about this event.
 	</p></li>
             <li> Handling errors
@@ -153,8 +154,8 @@ a TDS application.
 	You are giving up flexibility
 	for the ease of use of the utility. 
 	Application complexity or requirements may eventually
-	dictate integrating HA calls into the application
-	over using the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility.  </p></li>
+	dictate integrating replication calls into the application
+	instead of using the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility.  </p></li>
             <li> Read-only client application
 	<p>
 	The application requires additional changes to manage
@@ -168,23 +169,23 @@ a TDS application.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2268704"></a>Common Use Case</h3>
+              <h3 class="title"><a id="idp52011312"></a>Common use case</h3>
             </div>
           </div>
         </div>
         <p>
 This section lists the steps needed to get replication running for
 a common use case of the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility.
-The use case presented is an existing TDS application that
+The use case presented is an existing Transactional Data Store application that
 already has its environment and databases created and is up and running.
-At some point, HA is considered because failover protection
+At some point, replication is considered because failover protection
 or balancing the read load may now be desired.
 </p>
         <div class="orderedlist">
           <ol type="1">
             <li>
               <p>
-	To understand the issues involved in a replication/HA application, see 
+	To understand the issues involved in a replication application, see 
 	the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility section in the <span class="emphasis"><em>API Reference Guide</em></span>, the <a href="../api_reference/C/rep.html" class="olink">Replication Chapter</a> in the <span class="emphasis"><em>
 	Programmer's Reference Guide</em></span>, and the source code of the ex_rep_mgr
 	example program.
@@ -210,7 +211,7 @@ or balancing the read load may now be desired.
     the <a href="../api_reference/C/repmgr_site_parameter.html" class="olink">repmgr_site</a> method parameter.
 	As more sites are added to the group, remote host and port
     information can optionally also be added by adding
-    more <a href="../api_reference/C/repmgr_site_parameter.html" class="olink">repmgr_site</a> method parameters to the <a href="../api_reference/C/configuration_reference.html" class="olink">DB_CONFIG</a> file file.
+    more <a href="../api_reference/C/repmgr_site_parameter.html" class="olink">repmgr_site</a> method parameters to the <a href="../api_reference/C/configuration_reference.html" class="olink">DB_CONFIG</a> file.
 	</p>
             </li>
             <li>
@@ -270,7 +271,7 @@ or balancing the read load may now be desired.
         <p>
 Once the initial replication group is established, do not use the -M option with
 the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility.
-After the initial start, <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility assumes the use of
+After the initial start, the <a href="../api_reference/C/db_replicate.html" class="olink">db_replicate</a> utility assumes the use of
 elections.  If a site crashes, it should rejoin the group as
 a client so that it can synchronize with the rest of the group.
 </p>
@@ -279,7 +280,7 @@ a client so that it can synchronize with the rest of the group.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2278848"></a>Avoiding Rollback</h3>
+              <h3 class="title"><a id="idp52069904"></a>Avoiding rollback</h3>
             </div>
           </div>
         </div>
@@ -328,7 +329,7 @@ until the database is created at the client site.
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp2283896"></a>When to Consider an Integrated HA Application</h3>
+              <h3 class="title"><a id="idp52075016"></a>When to consider an integrated replication application</h3>
             </div>
           </div>
         </div>
@@ -376,7 +377,7 @@ and their startup order in the system.
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Choosing a Replication Manager Ack Policy</td>
+          <td width="40%" align="right" valign="top"> Choosing a Replication Manager acknowledgement policy</td>
         </tr>
       </table>
     </div>

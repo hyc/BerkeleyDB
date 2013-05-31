@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -622,7 +622,7 @@ open_dbp(dbenv, is_master, dbpp)
 {
 	DB *dbp;
 	u_int32_t flags;
-	int ret;
+	int ret, t_ret;
 
 	if ((ret = db_create(dbpp, dbenv, 0)) != 0)
 		return (ret);
@@ -647,13 +647,13 @@ open_dbp(dbenv, is_master, dbpp)
 	if ((ret = dbp->open(dbp,
 	    NULL, DATABASE, NULL, DB_BTREE, flags, 0)) != 0) {
 		if (ret == ENOENT) {
-			printf( "No stock database yet available.\n");
-			if ((ret = dbp->close(dbp, 0)) != 0) {
-				dbenv->err(dbenv, ret,
-				    "DB->close");
+			printf("No stock database yet available.\n");
+			*dbpp = NULL;
+			if ((t_ret = dbp->close(dbp, 0)) != 0) {
+				ret = t_ret;
+				dbenv->err(dbenv, ret, "DB->close");
 				goto err;
 			}
-			*dbpp = NULL;
 		}
 		if (ret == DB_REP_HANDLE_DEAD ||
 		    ret == DB_LOCK_DEADLOCK) {

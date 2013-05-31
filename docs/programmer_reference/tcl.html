@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -54,12 +54,12 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="tcl.html#idp3187200">Installing as a Tcl Package</a>
+                  <a href="tcl.html#idp52999480">Installing as a Tcl Package</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="tcl.html#idp3177840">Loading Berkeley DB with Tcl</a>
+                  <a href="tcl.html#idp52989928">Loading Berkeley DB with Tcl</a>
                 </span>
               </dt>
             </dl>
@@ -98,12 +98,12 @@
           <dl>
             <dt>
               <span class="sect2">
-                <a href="tcl.html#idp3187200">Installing as a Tcl Package</a>
+                <a href="tcl.html#idp52999480">Installing as a Tcl Package</a>
               </span>
             </dt>
             <dt>
               <span class="sect2">
-                <a href="tcl.html#idp3177840">Loading Berkeley DB with Tcl</a>
+                <a href="tcl.html#idp52989928">Loading Berkeley DB with Tcl</a>
               </span>
             </dt>
           </dl>
@@ -121,7 +121,7 @@ information.</p>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp3187200"></a>Installing as a Tcl Package</h3>
+                <h3 class="title"><a id="idp52999480"></a>Installing as a Tcl Package</h3>
               </div>
             </div>
           </div>
@@ -138,8 +138,8 @@ several steps that must be performed:</p>
           </div>
           <p>For example:</p>
           <pre class="programlisting"># tclsh8.5
-% lappend auto_path /usr/local/BerkeleyDB.5.2/lib
-% pkg_mkIndex /usr/local/BerkeleyDB.5.2/lib libdb_tcl-5.2.so</pre>
+% lappend auto_path /usr/local/BerkeleyDB.6.0/lib
+% pkg_mkIndex /usr/local/BerkeleyDB.6.0/lib libdb_tcl-6.0.so</pre>
           <p>Note that your Tcl and Berkeley DB version numbers may differ from the
 example, and so your tclsh and library names may be different.</p>
         </div>
@@ -147,20 +147,20 @@ example, and so your tclsh and library names may be different.</p>
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idp3177840"></a>Loading Berkeley DB with Tcl</h3>
+                <h3 class="title"><a id="idp52989928"></a>Loading Berkeley DB with Tcl</h3>
               </div>
             </div>
           </div>
           <p>The Berkeley DB package may be loaded into the user's interactive Tcl script
 (or wish session) via the <span class="bold"><strong>load</strong></span> command. For example:</p>
-          <pre class="programlisting">load /usr/local/BerkeleyDB.5.2/lib/libdb_tcl-5.2.so</pre>
+          <pre class="programlisting">load /usr/local/BerkeleyDB.6.0/lib/libdb_tcl-6.0.so</pre>
           <p>Note that your Berkeley DB version numbers may differ from the example, and so
 the library name may be different.</p>
           <p>If you installed your library to run as a Tcl package, Tcl application
 scripts should use the <span class="bold"><strong>package</strong></span> command to indicate to the Tcl
 interpreter that it needs the Berkeley DB package and where to find it. For
 example:</p>
-          <pre class="programlisting">lappend auto_path "/usr/local/BerkeleyDB.5.2/lib"
+          <pre class="programlisting">lappend auto_path "/usr/local/BerkeleyDB.6.0/lib"
 package require Db_tcl</pre>
           <p>No matter which way the library gets loaded, it creates a command named
 <span class="bold"><strong>berkdb</strong></span>.  All the Berkeley DB functionality is accessed via this

@@ -1,8 +1,8 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
-# $Id$
+# $Id: test.tcl,v fa50617a1e4c 2012/08/17 09:59:58 carol $
 
 source ./include.tcl
 
@@ -136,6 +136,7 @@ set test_recopts { "-recover" "" }
 
 # Set up any OS-specific values.
 global tcl_platform
+set is_aix_test [string match AIX $tcl_platform(os)]
 set is_freebsd_test [string match FreeBSD $tcl_platform(os)]
 set is_hp_test [string match HP-UX $tcl_platform(os)]
 set is_linux_test [string match Linux $tcl_platform(os)]
@@ -275,6 +276,7 @@ proc run_std { { testname ALL } args } {
 	{"automated repmgr tests" 	"auto_repmgr"}
 	{"other repmgr tests" 	"other_repmgr"}
 	{"repmgr multi-process"	"multi_repmgr"}
+	{"expected failures"	"fail"}
 	}
 
 	# If this is run_std only, run each rep test for a single
@@ -489,6 +491,7 @@ proc check_output { file } {
 		^\t*[e|E]nv[0-9][0-9][0-9].*|
 		^\t*Executing\scommand$|
 		^\t*Executing\stxn_.*|
+		^\t*[F|f]ail[0-9][0-9][0-9].*|
 		^\t*File\srecd005\.\d\.db\sexecuted\sand\saborted\.$|
 		^\t*File\srecd005\.\d\.db\sexecuted\sand\scommitted\.$|
 		^\t*[f|F]op[0-9][0-9][0-9].*|
@@ -587,6 +590,7 @@ proc r { args } {
 			bigfile -
 			dead -
 			env -
+			fail -
 			lock -
 			log -
 			memp -
@@ -603,13 +607,17 @@ proc r { args } {
 					run_subsystem $sub 0 1 $starttest
 				}
 			}
+			backup {
+				if { $one_test == "ALL" } {
+					run_test backup $display $run
+				}
+			}
 			byte {
 				if { $one_test == "ALL" } {
 					run_test byteorder $display $run
 				}
 			}
 			archive -
-			backup -
 			dbm -
 			hsearch -
 			ndbm -
@@ -642,8 +650,20 @@ proc r { args } {
 					set tindex 0
 				}
 				set clist [lrange $test_names(test) $tindex end]
+				set clist [concat $clist $test_names(sdb)]
 				foreach test $clist {
-					eval run_compressed btree $test $display $run
+					# Each skipping test can be removed from 
+					# below list if related bug is fixed.
+					# (sdb006 - [#22058])(sdb013 - [#22055])
+					# (sdb017 - [#22056])(sdb018 - [#22062])
+					if { $test == "sdb006" ||
+					     $test == "sdb013" ||
+					     $test == "sdb017" ||
+					     $test == "sdb018" } {
+						continue
+					}
+					eval run_compressed\
+					     btree $test $display $run
 				}
 			}
 			join {

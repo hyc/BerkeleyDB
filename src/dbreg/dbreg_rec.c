@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -61,6 +61,10 @@ __dbreg_register_recover(env, dbtp, lsnp, op, info)
 	DB *dbp;
 	u_int32_t opcode, status;
 	int do_close, do_open, do_rem, ret, t_ret;
+#ifdef	HAVE_REPLICATION
+	DB_REP *db_rep;
+	int view_partial;
+#endif
 
 	dblp = env->lg_handle;
 	dbp = NULL;
@@ -123,12 +127,51 @@ __dbreg_register_recover(env, dbtp, lsnp, op, info)
 	}
 
 	if (do_open) {
+#ifdef	HAVE_REPLICATION
+		/*
+		 * Partial replication may apply at this time.  Invoke
+		 * the callback if several conditions are met:
+		 * - We are a view.
+		 * - This is the OPENFILES pass of recovery.
+		 * - The file is not a BDB owned database.
+		 * - The dbreg operation is a create (id != TXN_INVALID).
+		 *
+		 * If the file is to be skipped, then we have to TXN_IGNORE
+		 * the txnlist for that create operation.
+		 */
+		if (IS_VIEW_SITE(env) && op == DB_TXN_OPENFILES &&
+		    !IS_DB_FILE(argp->name.data) && argp->id != TXN_INVALID) {
+			db_rep = env->rep_handle;
+			/*
+			 * Once a view, always a view.  Must have set
+			 * a callback already.
+			 */
+			if (db_rep->partial == NULL) {
+				__db_errx(env, DB_STR("1592",
+				    "Must set a view callback."));
+				ret = EINVAL;
+				goto out;
+			}
+			if ((ret = db_rep->partial(env->dbenv,
+			    argp->name.data, &view_partial, 0)) != 0)
+				goto out;
+
+			/*
+			 * If this should not be replicated, then set
+			 * the child txnlist to TXN_IGNORE.
+			 */
+			if (view_partial == 0 &&
+			    (ret = __db_txnlist_update(env, info,
+			    argp->id, TXN_IGNORE, NULL, &status, 1)) != 0)
+				goto out;
+		}
+#endif
 		/*
 		 * We must open the db even if the meta page is not
 		 * yet written as we may be creating subdatabase.
 		 */
-		if (op == DB_TXN_OPENFILES && opcode != DBREG_CHKPNT
-		    && opcode != DBREG_XCHKPNT)
+		if (op == DB_TXN_OPENFILES && opcode != DBREG_CHKPNT &&
+		    opcode != DBREG_XCHKPNT)
 			F_SET(dblp, DBLOG_FORCE_OPEN);
 
 		/*
@@ -336,7 +379,7 @@ __dbreg_open_file(env, txn, argp, info)
 		 * bit and try to open it again.
 		 */
 		if ((dbp = dbe->dbp) != NULL) {
-			if (opcode == DBREG_REOPEN || 
+			if (opcode == DBREG_REOPEN ||
 			    opcode == DBREG_XREOPEN ||
 			    !F_ISSET(dbp, DB_AM_OPEN_CALLED) ||
 			    dbp->meta_pgno != argp->meta_pgno ||

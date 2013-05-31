@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -104,7 +104,7 @@ write throughput and allow the creation of larger Berkeley DB caches.</dd>
             cursor operations.
         </p>
             <p>
-            The <a href="../api_reference/C/dbcget.html#dbcget_DB_READ_COMMITTED" class="olink">DB_READ_COMMITTED</a> flag will allow read operations to
+            The <a href="../api_reference/C/dbopen.html#dbopen_DB_READ_UNCOMMITTED" class="olink">DB_READ_UNCOMMITTED</a> flag will allow read operations to
             potentially return data which has been modified but not yet
             committed, and can significantly increase application
             throughput in applications that do not require data be
@@ -175,7 +175,9 @@ possible.</dd>
         argument and selecting a different mutex implementation than the
         one selected by Berkeley DB.  When a test-and-set spin mutex
         implementation is selected, it may be useful to tune the number of
-        spins made before yielding the processor and sleeping.  For more
+        spins made before yielding the processor and sleeping.
+	This may be particularly beneficial for systems containing
+	several hyperthreaded processor cores.  For more
         information, see the <a href="../api_reference/C/mutexset_tas_spins.html" class="olink">DB_ENV-&gt;mutex_set_tas_spins()</a> method.
     </p>
             <p>

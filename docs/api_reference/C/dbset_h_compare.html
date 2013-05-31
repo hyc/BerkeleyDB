@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,8 +41,8 @@
       <pre class="programlisting">#include &lt;db.h&gt;
 
 int
-DB-&gt;set_h_compare(DB *db,
-    int (*compare_fcn)(DB *db, const DBT *dbt1, const DBT *dbt2));  </pre>
+DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
+    const DBT *dbt1, const DBT *dbt2, size_t *locp));  </pre>
       <p>
          Set the Hash key comparison function.  The comparison function is
          called whenever it is necessary to compare a key specified by the
@@ -76,7 +76,7 @@ DB-&gt;set_h_compare(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp58257416"></a>Parameters</h3>
+              <h3 class="title"><a id="idp58502600"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,14 +84,14 @@ DB-&gt;set_h_compare(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp58265048"></a>compare_fcn</h4>
+                <h4 class="title"><a id="idp58483224"></a>compare_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>compare_fcn</strong></span> function is the
                           application-specified Hash comparison function.  The comparison
-                          function takes three parameters:
+                          function takes four parameters:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -122,6 +122,15 @@ DB-&gt;set_h_compare(DB *db,
                      representing the current database's key.
             </p>
               </li>
+              <li>
+                <p>
+                     <code class="literal">locp</code>
+            </p>
+                <p>
+                     The <span class="bold"><strong>locp</strong></span> parameter is currently
+                     unused, and must be set to NULL or corruption can occur.
+            </p>
+              </li>
             </ul>
           </div>
           <p>
@@ -142,7 +151,7 @@ DB-&gt;set_h_compare(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp58352136"></a>Errors</h3>
+              <h3 class="title"><a id="idp58591928"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -158,7 +167,7 @@ DB-&gt;set_h_compare(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp58331448"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp58531584"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -172,7 +181,7 @@ DB-&gt;set_h_compare(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp58359688"></a>Class</h3>
+              <h3 class="title"><a id="idp58597672"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -184,7 +193,7 @@ DB-&gt;set_h_compare(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp58355024"></a>See Also</h3>
+              <h3 class="title"><a id="idp58587376"></a>See Also</h3>
             </div>
           </div>
         </div>

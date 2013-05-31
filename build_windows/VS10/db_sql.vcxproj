@@ -98,7 +98,7 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/FIXED:NO %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
@@ -113,7 +113,7 @@
       <PreprocessorDefinitions>SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
@@ -129,7 +129,7 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/FIXED:NO %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
@@ -144,7 +144,7 @@
       <PreprocessorDefinitions>SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
@@ -182,6 +182,7 @@
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_icu.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_porter.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_snippet.c"/>
+    <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_term.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer1.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_write.c"/>
@@ -230,6 +231,7 @@
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbeaux.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbeblob.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbemem.c"/>
+    <ClCompile Include="..\..\lang\sql\sqlite\src\vdbesort.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbetrace.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vtab.c"/>
     <ClCompile Include="..\..\lang\sql\adapter\wal.c"/>

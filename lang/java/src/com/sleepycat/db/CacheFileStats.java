@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -73,7 +73,7 @@ public class CacheFileStats {
     }
 
     private long st_backup_spins;
-    /** TODO */
+    /** Spins while trying to back up the file. */
     public long getBackupSpins() {
         return st_backup_spins;
     }

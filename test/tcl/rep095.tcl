@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -23,7 +23,7 @@ proc rep095 { method { niter 200 } { tnum "095" } args } {
 		return $test_methods
 	}
 	if { [is_btree $method] == 0 } {
-		puts "Rep091: Skipping for method $method."
+		puts "Rep$tnum: Skipping for method $method."
 		return
 	}
 

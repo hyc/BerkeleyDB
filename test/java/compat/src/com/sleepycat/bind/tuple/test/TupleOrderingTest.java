@@ -1,60 +1,39 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.bind.tuple.test;
 
-import java.math.BigInteger;
-import java.math.BigDecimal;
+import static org.junit.Assert.fail;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.bind.tuple.TupleOutput;
-import com.sleepycat.util.test.SharedTestUtils;
 
 /**
  * @author Mark Hayes
  */
-public class TupleOrderingTest extends TestCase {
+public class TupleOrderingTest {
 
     private TupleOutput out;
     private byte[] prevBuf;
 
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite(TupleOrderingTest.class);
-        return suite;
-    }
-
-    public TupleOrderingTest(String name) {
-
-        super(name);
-    }
-
-    @Override
+    @Before
     public void setUp() {
 
-        SharedTestUtils.printTestName("TupleOrderingTest." + getName());
         out = new TupleOutput();
         prevBuf = null;
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         /* Ensure that GC can cleanup. */
@@ -143,6 +122,7 @@ public class TupleOrderingTest extends TestCase {
         out.reset();
     }
 
+    @Test
     public void testString() {
 
         final String[] DATA = {
@@ -177,6 +157,7 @@ public class TupleOrderingTest extends TestCase {
         check();
     }
 
+    @Test
     public void testFixedString() {
 
         final char[][] DATA = {
@@ -188,6 +169,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testChars() {
 
         final char[][] DATA = {
@@ -200,6 +182,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testBytes() {
 
         final char[][] DATA = {
@@ -212,6 +195,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testBoolean() {
 
         final boolean[] DATA = {
@@ -223,6 +207,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnsignedByte() {
 
         final int[] DATA = {
@@ -234,6 +219,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnsignedShort() {
 
         final int[] DATA = {
@@ -245,6 +231,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnsignedInt() {
 
         final long[] DATA = {
@@ -257,6 +244,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testByte() {
 
         final byte[] DATA = {
@@ -270,6 +258,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testShort() {
 
         final short[] DATA = {
@@ -285,6 +274,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testInt() {
 
         final int[] DATA = {
@@ -302,6 +292,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testLong() {
 
         final long[] DATA = {
@@ -321,6 +312,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testFloat() {
 
         // Only positive floats and doubles are ordered deterministically
@@ -343,6 +335,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testDouble() {
 
         // Only positive floats and doubles are ordered deterministically
@@ -365,6 +358,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSortedFloat() {
 
         final float[] DATA = {
@@ -413,6 +407,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSortedDouble() {
 
         final double[] DATA = {
@@ -464,6 +459,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
 
+    @Test
     public void testPackedIntAndLong() {
         /* Only packed int/long values from 0 to 630 are ordered correctly */
         for (int i = 0; i <= 630; i += 1) {
@@ -477,6 +473,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
     
+    @Test
     public void testSortedPackedInt() {
         final int[] DATA = {
             Integer.MIN_VALUE, Integer.MIN_VALUE + 1,
@@ -493,6 +490,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
     
+    @Test
     public void testSortedPackedLong() {
         final long[] DATA = {
             Long.MIN_VALUE, Long.MIN_VALUE + 1,
@@ -511,6 +509,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
     
+    @Test
     public void testBigInteger() {
         final BigInteger[] DATA = {
             new BigInteger("-1111111111111111111111111"),
@@ -542,6 +541,7 @@ public class TupleOrderingTest extends TestCase {
         }
     }
     
+    @Test
     public void testSortedBigDecimal() {
         final BigDecimal[] DATA = {
             new BigDecimal(BigInteger.valueOf(Long.MIN_VALUE), 

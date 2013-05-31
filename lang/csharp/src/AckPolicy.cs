@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -14,7 +14,7 @@ namespace BerkeleyDB {
     /// The AckPolicy class specifies how master and client sites will handle
     /// acknowledgment of replication messages which are necessary for
     /// "permanent" records. The current implementation requires all sites in a
-    /// replication group configure the same acknowledgement policy. 
+    /// replication group to configure the same acknowledgement policy. 
     /// </summary>
     public class AckPolicy {
         private int _value;

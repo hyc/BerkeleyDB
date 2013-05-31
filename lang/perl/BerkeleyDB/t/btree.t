@@ -280,24 +280,9 @@ umask(0) ;
         $k{$_} = 1 ;
     }
 
-    sub ArrayCompare
-    {
-        my($a, $b) = @_ ;
-    
-        return 0 if @$a != @$b ;
-    
-        foreach (1 .. length @$a)
-        {
-            return 0 unless $$a[$_] eq $$b[$_] ;
-        }
-
-        1 ;
-    }
-
-    ok ArrayCompare (\@srt_1, [keys %h]);
-    ok ArrayCompare (\@srt_2, [keys %g]);
-    ok ArrayCompare (\@srt_3, [keys %k]);
-
+    is_deeply [keys %h], \@srt_1 ;
+    is_deeply [keys %g], \@srt_2 ;
+    is_deeply [keys %k], \@srt_3 ;
 }
 
 {
@@ -331,7 +316,7 @@ umask(0) ;
 
     foreach (@Keys) {
         local $^W = 0 ;
-	my $value = shift @Values ;
+        my $value = shift @Values ;
         $h{$_} = $value ; 
         $g{$_} = $value ;
         $k{$_} = $value ;
@@ -339,23 +324,25 @@ umask(0) ;
 
     sub getValues
     {
-         my $hash = shift ;
-	 my $db = tied %$hash ;
-	 my $cursor = $db->db_cursor() ;
-	 my @values = () ;
-	 my ($k, $v) = (0,0) ;
-         while ($cursor->c_get($k, $v, DB_NEXT) == 0) {
-	     push @values, $v ;
-	 }
-	 return @values ;
+        my $hash = shift ;
+        my $db = tied %$hash ;
+        my $cursor = $db->db_cursor() ;
+        my @values = () ;
+        my ($k, $v) = (0,0) ;
+        while ($cursor->c_get($k, $v, DB_NEXT) == 0) {
+            push @values, $v ;
+        }
+        return @values ;
     }
 
-    ok ArrayCompare (\@srt_1, [keys %h]);
-    ok ArrayCompare (\@srt_2, [keys %g]);
-    ok ArrayCompare (\@srt_3, [keys %k]);
-    ok ArrayCompare ([qw(dd 0 0 x 3 1 abc)], [getValues \%h]);
-    ok ArrayCompare ([qw(dd 1 0 3 x abc 0)], [getValues \%g]);
-    ok ArrayCompare ([qw(0 x 3 0 1 dd abc)], [getValues \%k]);
+    is_deeply [keys %h], \@srt_1 ;
+    is_deeply [keys %g], \@srt_2 ;
+    is_deeply [keys %k], \@srt_3 ;
+
+    is_deeply [getValues \%h], [qw(dd 0 0 x 3 1 abc)];
+    is_deeply [getValues \%g], [qw(dd 1 3 0 x abc 0)]
+        or diag "Expected [dd 1 0 3 x abc 0] got [@{ [getValues(\%g)] }]\n";
+    is_deeply [getValues \%k], [qw(0 x 3 0 1 dd abc)];
 
     # test DB_DUP_NEXT
     ok my $cur = (tied %g)->db_cursor() ;
@@ -397,15 +384,15 @@ umask(0) ;
 
     foreach (@Keys) {
         local $^W = 0 ;
-	my $value = shift @Values ;
+        my $value = shift @Values ;
         $h{$_} = $value ; 
         $g{$_} = $value ;
     }
 
-    ok ArrayCompare (\@srt_1, [keys %h]);
-    ok ArrayCompare (\@srt_2, [keys %g]);
-    ok ArrayCompare ([qw(dd 1 3 x 2 11 abc 0)], [getValues \%g]);
-    ok ArrayCompare ([qw(dd 0 11 2 x 3 1 abc)], [getValues \%h]);
+    is_deeply [keys %h], \@srt_1 ;
+    is_deeply [keys %g], \@srt_2 ;
+    is_deeply [getValues \%h], [qw(dd 0 11 2 x 3 1 abc)];
+    is_deeply [getValues \%h], [qw(dd 0 11 2 x 3 1 abc)];
 
 }
 

@@ -63,6 +63,7 @@
     <ClCompile Include="..\..\src\dbreg\dbreg_autop.c"/>
     <ClCompile Include="..\..\src\fileops\fileops_autop.c"/>
     <ClCompile Include="..\..\src\hash\hash_autop.c"/>
+    <ClCompile Include="..\..\src\heap\heap_autop.c"/>
     <ClCompile Include="..\..\src\qam\qam_autop.c"/>
     <ClCompile Include="..\..\src\repmgr\repmgr_autop.c"/>
     <ClCompile Include="..\..\src\txn\txn_autop.c"/>

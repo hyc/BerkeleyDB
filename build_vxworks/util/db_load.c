@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,7 +14,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 typedef struct {			/* XXX: Globals. */
@@ -25,10 +25,12 @@ typedef struct {			/* XXX: Globals. */
 	int	endodata;		/* Reached the end of a database. */
 	int	endofile;		/* Reached the end of the input. */
 	int	version;		/* Input version. */
+	char	*blob_dir;		/* Blob directory. */
 	char	*home;			/* Env home. */
 	char	*passwd;		/* Env passwd. */
 	int	private;		/* Private env. */
 	u_int32_t cache;		/* Env cache size. */
+	u_int32_t blob_threshold;	/* Blob threshold. */
 } LDG;
 
 int	db_load_badend __P((DB_ENV *));
@@ -36,7 +38,7 @@ void	db_load_badnum __P((DB_ENV *));
 int	db_load_configure __P((DB_ENV *, DB *, char **, char **, int *));
 int	db_load_convprintable __P((DB_ENV *, char *, char **));
 int	db_load_db_init __P((DB_ENV *, char *, u_int32_t, int *));
-int	db_load_dbt_rdump __P((DB_ENV *, DBT *));
+int	db_load_dbt_rdump __P((DB_ENV *, DBT *, u_int32_t, int *));
 int	db_load_dbt_rprint __P((DB_ENV *, DBT *));
 int	db_load_dbt_rrecno __P((DB_ENV *, DBT *, int));
 int	db_load_dbt_to_recno __P((DB_ENV *, DBT *, db_recno_t *));
@@ -44,6 +46,7 @@ int	db_load_env_create __P((DB_ENV **, LDG *));
 void	free_keys __P((DBT *part_keys));
 int	db_load_load __P((DB_ENV *, char *, DBTYPE, char **, u_int, LDG *, int *));
 int	db_load_main __P((int, char *[]));
+int	db_load_putdata __P((DB *, DBC *, DB_TXN *, DBT *, DBT *, u_int32_t, int));
 int	db_load_rheader __P((DB_ENV *, DB *, DBTYPE *, char **, int *, int *, DBT **));
 int	db_load_usage __P((void));
 int	db_load_version_check __P((void));
@@ -56,6 +59,7 @@ const char *progname;
 #define	LDF_NOHEADER	0x01		/* No dump header. */
 #define	LDF_NOOVERWRITE	0x02		/* Don't overwrite existing rows. */
 #define	LDF_PASSWORD	0x04		/* Encrypt created databases. */
+#define	BLOB_LOADING_SIZE 1048576	/* Load blob files X bytes at a time.*/
 
 int
 db_load(args)
@@ -100,6 +104,8 @@ db_load_main(argc, argv)
 	ldg.hdrbuf = NULL;
 	ldg.home = NULL;
 	ldg.passwd = NULL;
+	ldg.blob_dir = NULL;
+	ldg.blob_threshold = 0;
 
 	if ((exitval = db_load_version_check()) != 0)
 		goto done;
@@ -108,6 +114,17 @@ db_load_main(argc, argv)
 	ldf = 0;
 	exitval = existed = 0;
 	dbtype = DB_UNKNOWN;
+
+	/*
+	 * We will allocate (argc + 1) bytes memory.
+	 * Check if (argc + 1) will introduce interger overflow error.
+	 */
+	if (argc == INT_MAX) {
+		fprintf(stderr, "%s: %s\n", ldg.progname, "The number of\
+		    arguments exceeds the maximum unsigned integer value");
+		exitval = 1;
+		goto done;
+	}
 
 	/* Allocate enough room for configuration arguments. */
 	if ((clp = clist =
@@ -125,8 +142,11 @@ db_load_main(argc, argv)
 	 * don't want to create a new utility for just that functionality.
 	 */
 	__db_getopt_reset = 1;
-	while ((ch = getopt(argc, argv, "c:f:h:nP:r:Tt:V")) != EOF)
+	while ((ch = getopt(argc, argv, "b:c:f:h:o:nP:r:Tt:V")) != EOF)
 		switch (ch) {
+		case 'b':
+			ldg.blob_dir = optarg;
+			break;
 		case 'c':
 			if (mode != NOTSET && mode != STANDARD_LOAD) {
 				exitval = db_load_usage();
@@ -162,6 +182,9 @@ db_load_main(argc, argv)
 			mode = STANDARD_LOAD;
 
 			ldf |= LDF_NOOVERWRITE;
+			break;
+		case 'o':
+			ldg.blob_threshold = (u_int32_t)atoi(optarg);
 			break;
 		case 'P':
 			ldg.passwd = strdup(optarg);
@@ -318,7 +341,8 @@ db_load_load(dbenv, name, argtype, clist, flags, ldg, existedp)
 	DB_TXN *ctxn, *txn;
 	db_recno_t recno, datarecno;
 	u_int32_t put_flags;
-	int ascii_recno, checkprint, hexkeys, keyflag, keys, resize, ret, rval;
+	int ascii_recno, checkprint, hexkeys;
+	int keyflag, keys, resize, ret, rval, streaming;
 	char *subdb;
 
 	put_flags = LF_ISSET(LDF_NOOVERWRITE) ? DB_NOOVERWRITE : 0;
@@ -328,6 +352,7 @@ db_load_load(dbenv, name, argtype, clist, flags, ldg, existedp)
 	subdb = NULL;
 	ctxn = txn = NULL;
 	part_keys = NULL;
+	streaming = 0;
 	memset(&key, 0, sizeof(DBT));
 	memset(&data, 0, sizeof(DBT));
 	memset(&rkey, 0, sizeof(DBT));
@@ -401,13 +426,19 @@ retry_db:
 			goto err;
 		}
 
-		if (dbtype == DB_RECNO || dbtype == DB_QUEUE)
+		if (dbtype == DB_RECNO || dbtype == DB_QUEUE) {
 			if (keyflag != 1 && argtype != DB_RECNO &&
 			    argtype != DB_QUEUE) {
 				dbenv->errx(dbenv, DB_STR("5077",
 			    "improper database type conversion specified"));
 				goto err;
 			}
+			if (ldg->blob_threshold != 0) {
+				dbenv->errx(dbenv, DB_STR("5142",
+			    "Queue and recno databases cannot support blobs"));
+				goto err;
+			}
+		}
 		dbtype = argtype;
 	}
 
@@ -521,12 +552,14 @@ key_data:	if ((readp->data = malloc(readp->ulen = 1024)) == NULL) {
 
 	/* Get each key/data pair and add them to the database. */
 	for (recno = 1; !__db_util_interrupted(); ++recno) {
+		streaming = 0;
 		if (!keyflag) {
 			if (checkprint) {
 				if (db_load_dbt_rprint(dbenv, &data))
 					goto err;
 			} else {
-				if (db_load_dbt_rdump(dbenv, &data))
+				if (db_load_dbt_rdump(dbenv,
+				    &data, ldg->blob_threshold, &streaming))
 					goto err;
 			}
 		} else {
@@ -544,10 +577,12 @@ key_data:	if ((readp->data = malloc(readp->ulen = 1024)) == NULL) {
 					if (db_load_dbt_rrecno(dbenv, readp, hexkeys))
 						goto err;
 				} else
-					if (db_load_dbt_rdump(dbenv, readp))
+					if (db_load_dbt_rdump(
+					    dbenv, readp, 0, &streaming))
 						goto err;
 
-				if (!G(endodata) && db_load_dbt_rdump(dbenv, &data)) {
+				if (!G(endodata) && db_load_dbt_rdump(dbenv,
+				    &data, ldg->blob_threshold, &streaming)) {
 odd_count:				dbenv->errx(dbenv, DB_STR("5079",
 					    "odd number of key/data pairs"));
 					goto err;
@@ -560,9 +595,9 @@ retry:
 		if (put_flags != 0 && txn != NULL)
 			if ((ret = dbenv->txn_begin(dbenv, txn, &ctxn, 0)) != 0)
 				goto err;
-		switch (ret = ((put_flags == 0) ?
-		    dbc->put(dbc, writep, &data, DB_KEYLAST) :
-		    dbp->put(dbp, ctxn, writep, &data, put_flags))) {
+		ret = db_load_putdata(dbp,
+		    dbc, ctxn, writep, &data, put_flags, streaming);
+		switch (ret) {
 		case 0:
 			if (ctxn != NULL) {
 				if ((ret =
@@ -579,7 +614,7 @@ retry:
 			    !keyflag ? recno : recno * 2 - 1);
 
 			(void)dbenv->prdbt(&key,
-			    checkprint, 0, stderr, __db_pr_callback, 0, 0);
+			    checkprint, 0, stderr, __db_pr_callback, 0, 0, 0);
 			break;
 		case DB_LOCK_DEADLOCK:
 			/* If we have a child txn, retry--else it's fatal. */
@@ -645,6 +680,94 @@ err:		rval = 1;
 }
 
 /*
+ * putdata --
+ *	Put data read from the load file into the database.
+ */
+int
+db_load_putdata(dbp, dbc, txn, writep, data, put_flags, streaming)
+	DB *dbp;
+	DBC *dbc;
+	DB_TXN *txn;
+	DBT *writep;
+	DBT *data;
+	u_int32_t put_flags;
+	int streaming;
+{
+	DBC *local;
+	DBT partial;
+	DB_ENV *dbenv;
+	DB_STREAM *dbs;
+	db_off_t offset;
+	int ret, t_ret;
+	u_int32_t flags;
+
+	local = NULL;
+	dbenv = dbp->dbenv;
+	dbs = NULL;
+	offset = data->size;
+	flags = 0;
+	ret = t_ret = 0;
+	memset(&partial, 0, sizeof(DBT));
+	partial.flags |= DB_DBT_PARTIAL;
+
+	if (streaming != 0)
+		data->flags |= DB_DBT_BLOB;
+
+	ret = ((put_flags == 0) ?
+	    dbc->put(dbc, writep, data, DB_KEYLAST | flags) :
+	    dbp->put(dbp, txn, writep, data, put_flags | flags));
+
+	if (ret != 0 || streaming == 0)
+		return (ret);
+
+	/* Stream the rest of the data into the data item. */
+	F_CLR(data, DB_DBT_BLOB);
+	if (dbc != NULL)
+		local = dbc;
+	else {
+		if ((ret = dbp->cursor(dbp, txn, &local, 0)) != 0)
+			goto err;
+		if ((ret = local->get(local, writep, &partial, DB_SET)) != 0)
+			goto err;
+	}
+
+	if (data->ulen < MEGABYTE) {
+		if ((data->data = realloc(
+		    data->data, data->ulen = MEGABYTE)) == NULL) {
+			dbp->dbenv->err(dbp->dbenv, ENOMEM, NULL);
+			goto err;
+		}
+	}
+
+	if ((ret = local->db_stream(local, &dbs, DB_STREAM_WRITE)) != 0)
+		goto err;
+
+	/* Load the blob piecemeal into the database. */
+	while (streaming != 0 && !G(endodata)) {
+		if (db_load_dbt_rdump(dbenv, data, data->ulen, &streaming)) {
+			ret = EIO;
+			goto err;
+		}
+
+		if ((ret = dbs->write(dbs, data, offset, 0)) != 0)
+			goto err;
+
+		offset += data->size;
+	}
+
+err:	if (dbs != NULL){
+		if ((t_ret = dbs->close(dbs, 0)) != 0 && ret == 0)
+			ret = t_ret;
+	}
+	if (local != NULL && local != dbc) {
+		if ((t_ret = local->close(local)) != 0 && ret == 0)
+			ret = t_ret;
+	}
+
+	return (ret);
+}
+
+/*
  * env_create --
  *	Create the environment and initialize it for error reporting.
  */
@@ -669,6 +792,20 @@ db_load_env_create(dbenvp, ldg)
 		dbenv->err(dbenv, ret, "set_passwd");
 		return (ret);
 	}
+
+	/* Configure blobs. */
+	if (ldg->blob_threshold != 0 &&
+	    (ret = dbenv->set_blob_threshold(
+	    dbenv, ldg->blob_threshold, 0)) != 0) {
+		dbenv->err(dbenv, ret, "set_blob_threshold");
+		return (ret);
+	}
+	if (ldg->blob_dir != NULL &&
+	    (ret = dbenv->set_blob_dir(dbenv, ldg->blob_dir)) != 0) {
+		dbenv->err(dbenv, ret, "set_blob_dir");
+		return (ret);
+	}
+
 	if ((ret = db_load_db_init(dbenv, ldg->home, ldg->cache, &ldg->private)) != 0)
 		return (ret);
 	dbenv->app_private = ldg;
@@ -696,7 +833,7 @@ db_load_db_init(dbenv, home, cache, is_private)
 	    DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_TXN;
 	if ((ret = dbenv->open(dbenv, home, flags, 0)) == 0)
 		return (0);
-	if (ret == DB_VERSION_MISMATCH)
+	if (ret == DB_VERSION_MISMATCH || ret == DB_REP_LOCKOUT)
 		goto err;
 
 	/*
@@ -896,7 +1033,7 @@ db_load_rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 	DBT *keys, *kp;
 	size_t buflen, linelen, start;
 	long val;
-	int ch, first, hdr, ret;
+	int ch, first, hdr, ret, streaming;
 	char *buf, *name, *p, *value;
 	u_int32_t heap_bytes, heap_gbytes, i, nparts;
 
@@ -1072,13 +1209,14 @@ db_load_rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 			}
 			nparts = (u_int32_t) val;
 			if ((keys =
-			    malloc(nparts * sizeof(DBT))) == NULL) {
+			    calloc(nparts, sizeof(DBT))) == NULL) {
 				dbenv->err(dbenv, ENOMEM, NULL);
 				goto err;
 			}
 			keys[nparts - 1].data = NULL;
 			kp = keys;
 			for (i = 1; i < nparts; kp++, i++) {
+				streaming = 0;
 				if ((kp->data =
 				     malloc(kp->ulen = 1024)) == NULL) {
 					dbenv->err(dbenv, ENOMEM, NULL);
@@ -1088,7 +1226,7 @@ db_load_rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 					if (db_load_dbt_rprint(dbenv, kp))
 						goto err;
 				} else {
-					if (db_load_dbt_rdump(dbenv, kp))
+					if (db_load_dbt_rdump(dbenv, kp, 0, &streaming))
 						goto err;
 				}
 			}
@@ -1109,12 +1247,14 @@ db_load_rheader(dbenv, dbp, dbtypep, subdbp, checkprintp, keysp, part_keyp)
 			    NULL, value, 0, LONG_MAX, &val)) != 0)
 				goto nameerr;
 			heap_bytes = (u_int32_t)val;
+			continue;
 		}
 		if (strcmp(name, "heap_gbytes") == 0) {
 			if ((ret = __db_getlong(dbenv,
 			    NULL, value, 0, LONG_MAX, &val)) != 0)
 				goto nameerr;
 			heap_gbytes = (u_int32_t)val;
+			continue;
 		}
 
 		dbp->errx(dbp, DB_STR_A("5086",
@@ -1150,10 +1290,8 @@ err:		ret = 1;
 	}
 	if (name != NULL)
 		free(name);
-	if (ret != 0) {
-		*part_keyp = NULL;
-		free_keys(keys);
-	}
+	*part_keyp = NULL;
+	free_keys(keys);
 	return (ret);
 }
 
@@ -1336,9 +1474,11 @@ db_load_dbt_rprint(dbenv, dbtp)
  *	Read a byte dump line into a DBT structure.
  */
 int
-db_load_dbt_rdump(dbenv, dbtp)
+db_load_dbt_rdump(dbenv, dbtp, blob_threshold, streaming)
 	DB_ENV *dbenv;
 	DBT *dbtp;
+	u_int32_t blob_threshold;
+	int *streaming;
 {
 	u_int32_t len;
 	u_int8_t *p;
@@ -1347,7 +1487,11 @@ db_load_dbt_rdump(dbenv, dbtp)
 
 	++G(lineno);
 
-	first = 1;
+	if (*streaming != 0)
+		first = 0;
+	else
+		first = 1;
+	*streaming = 0;
 	for (p = dbtp->data, len = 0; (c1 = getchar()) != '\n';) {
 		if (c1 == EOF) {
 			if (len == 0) {
@@ -1374,7 +1518,16 @@ db_load_dbt_rdump(dbenv, dbtp)
 		if ((c2 = getchar()) == EOF)
 			return (db_load_badend(dbenv));
 		if (len >= dbtp->ulen - 10) {
-			dbtp->ulen *= 2;
+			if (dbtp->ulen == UINT32_MAX) {
+				dbenv->errx(dbenv, DB_STR("5143",
+	    "Encountered a data item too large to store in the database. "
+			"Enable blob_threshold to store it."));
+				return (DB_BUFFER_SMALL);
+			}
+			if (dbtp->ulen > UINT32_MAX/2)
+				dbtp->ulen = UINT32_MAX;
+			else
+				dbtp->ulen *= 2;
 			if ((dbtp->data =
 			    realloc(dbtp->data, dbtp->ulen)) == NULL) {
 				dbenv->err(dbenv, ENOMEM, NULL);
@@ -1384,6 +1537,10 @@ db_load_dbt_rdump(dbenv, dbtp)
 		}
 		++len;
 		DIGITIZE(*p++, c1, c2);
+		if (blob_threshold != 0 && len > BLOB_LOADING_SIZE) {
+			*streaming = 1;
+			break;
+		}
 	}
 	dbtp->size = len;
 
@@ -1501,6 +1658,8 @@ db_load_usage()
     "[-h home] [-P password] [-t btree | hash | recno | queue] db_file");
 	(void)fprintf(stderr, "usage: %s %s\n",
 	    progname, "-r lsn | fileid [-h home] [-P password] db_file");
+	(void)fprintf(stderr, "usage: %s %s\n",
+	    progname, "-b [blob_dir] -o [blob_threshold] db_file");
 	return (EXIT_FAILURE);
 }
 

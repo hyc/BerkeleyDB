@@ -10,8 +10,6 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
-#
-# $Id: where7.test,v 1.9 2009/06/07 23:45:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

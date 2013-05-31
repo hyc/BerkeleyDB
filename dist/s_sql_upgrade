@@ -27,7 +27,7 @@ for f in ../lang/sql/adapter/*.[ch]; do
 	copy_if_changes $MAKEFILE_NAME $MAKEFILE_NAME.tmp
 done
 # Update the include path so that headers in sql/adapter dir can be found.
-sed -e '/^TCC/s/-I\. -I${TOP}\/src/& -I${TOP}\/..\/adapter/' $MAKEFILE_NAME > $MAKEFILE_NAME.tmp
+sed -e '/^TCC/s/-I\. -I${TOP}\/src/& -I${TOP}\/..\/adapter -I${TOP}\/ext\/fts3/' $MAKEFILE_NAME > $MAKEFILE_NAME.tmp
 copy_if_changes $MAKEFILE_NAME $MAKEFILE_NAME.tmp
 
 # We will be building from a different directory level, update the makefile

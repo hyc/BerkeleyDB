@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -363,6 +363,14 @@ it will be closed when the environment handle that owns the database handle is c
             (txn == null && db.get_transactional()) ?
             DbConstants.DB_AUTO_COMMIT | (config.getAutoCommitNoSync() ?
             DbConstants.DB_TXN_NOSYNC : 0) : 0);
+    }
+
+    private java.io.File getBlobSubDir()
+        throws DatabaseException {
+        String blobDirStr = db.get_blob_sub_dir();
+        if (blobDirStr != null)
+            return (new java.io.File(blobDirStr));
+        return null;
     }
 
     /**
@@ -1360,7 +1368,8 @@ The database to be removed.
                               DatabaseConfig config)
         throws DatabaseException, java.io.FileNotFoundException {
 
-        final Db db = DatabaseConfig.checkNull(config).createDatabase(null);
+        final Db db = DatabaseConfig.DEFAULT.createDatabase(null);
+        DatabaseConfig.checkNull(config).configureDatabase(db, DatabaseConfig.DEFAULT);
         db.remove(fileName, databaseName, 0);
     }
 
@@ -1637,6 +1646,8 @@ or failure.
         throws DatabaseException, java.io.FileNotFoundException {
 
         final Db db = DatabaseConfig.checkNull(dbConfig).createDatabase(null);
+        /* Configure db with dbConfig */
+        dbConfig.configureDatabase(db, DatabaseConfig.DEFAULT);
         return db.verify(fileName, databaseName, dumpStream,
             VerifyConfig.checkNull(verifyConfig).getFlags());
     }

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,7 +41,8 @@
       <pre class="programlisting">#include &lt;db_cxx.h&gt;
  
 extern "C" {
-    typedef size_t (*bt_prefix_fcn_type)(DB *, const *dbt1, const *dbt2);
+    typedef size_t (*bt_prefix_fcn_type)(DB *, const DBT *dbt1, 
+    const DBT *dbt2);
 };
 int
 Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
@@ -49,7 +50,8 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
          Set the Btree prefix function.  The prefix function is used to
          determine the amount by which keys stored on the Btree internal pages
          can be safely truncated without losing their uniqueness.  See the
-         <a href="../../programmer_reference/bt_conf.html#am_conf_bt_prefix" class="olink">Btree prefix comparison</a> section of the Berkeley DB Reference Guide for more
+         <a href="../../programmer_reference/bt_conf.html#am_conf_bt_prefix" class="olink">Btree prefix comparison</a> 
+         section of the Berkeley DB Reference Guide for more
          details about how this works.  The usefulness of this is
          data-dependent, but can produce significantly reduced tree sizes and
          search times in some data sets.
@@ -88,7 +90,7 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3026336"></a>Parameters</h3>
+              <h3 class="title"><a id="idm2726840"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -96,7 +98,7 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm1584600"></a>bt_prefix_fcn</h4>
+                <h4 class="title"><a id="idm2677480"></a>bt_prefix_fcn</h4>
               </div>
             </div>
           </div>
@@ -155,7 +157,7 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2978984"></a>Errors</h3>
+              <h3 class="title"><a id="idm1614776"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -173,7 +175,7 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm3073624"></a>EINVAL</h4>
+                <h4 class="title"><a id="idm2965528"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -187,7 +189,7 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3674568"></a>Class</h3>
+              <h3 class="title"><a id="idm3238496"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -199,7 +201,7 @@ Db::set_bt_prefix(bt_prefix_fcn_type bt_prefix_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm3541080"></a>See Also</h3>
+              <h3 class="title"><a id="idm3467296"></a>See Also</h3>
             </div>
           </div>
         </div>

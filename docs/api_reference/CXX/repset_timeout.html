@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -52,7 +52,7 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
          of the entry in that file is a single line with the string
          "rep_set_timeout", one or more whitespace characters, and the
          <span class="bold"><strong>which</strong></span> parameter specified as a
-         string and the timeout specified as two parts. For example,
+         string and the timeout. For example,
          "rep_set_timeout DB_REP_CONNECTION_RETRY 15000000"  specifies the
          connection retry timeout for 15 seconds.  Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
          file is read when the database environment is opened, it will
@@ -87,7 +87,7 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4306688"></a>Parameters</h3>
+              <h3 class="title"><a id="idp4348184"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -95,21 +95,7 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4306040"></a>timeout</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                The <span class="bold"><strong>timeout</strong></span> parameter is the timeout value. It
-                must be specified as an unsigned 32-bit number of microseconds, limiting the
-                maximum timeout to roughly 71 minutes.
-            </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idp4231120"></a>which</h4>
+                <h4 class="title"><a id="idp4347536"></a>which</h4>
               </div>
             </div>
           </div>
@@ -129,6 +115,9 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
                          enough acknowledgments from replication group
                          clients, before giving up and returning a failure
                          indication.  The default wait time is 1 second.
+                         Automatic takeover of a subordinate process is most
+                         reliable when this value is the same on all sites in
+                         the replication group.
                     </p>
               </li>
               <li>
@@ -235,22 +224,39 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
                          leases all sites in a replication group must use
                          the same lease timeout value.  There is no default
                          value.  If leases are desired, this method must be
-                         called prior to calling 
-                         <a class="xref" href="repstart.html" title="DbEnv::rep_start()">DbEnv::rep_start()</a>  method. 
+                         called prior to calling the
+                         <a class="xref" href="repmgrstart.html" title="DbEnv::repmgr_start()">DbEnv::repmgr_start()</a>
+                         method or the
+                         <a class="xref" href="repstart.html" title="DbEnv::rep_start()">DbEnv::rep_start()</a>
+                         method. 
                          See also <a class="xref" href="repclockskew.html" title="DbEnv::rep_set_clockskew()">DbEnv::rep_set_clockskew()</a> 
                          method, <a class="xref" href="repconfig.html" title="DbEnv::rep_set_config()">DbEnv::rep_set_config()</a> 
-                         method or <a href="../../programmer_reference/rep_lease.html" class="olink">Master leases</a>.
+                         method and <a href="../../programmer_reference/rep_lease.html" class="olink">Master leases</a>.
                     </p>
               </li>
             </ul>
           </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idp4377248"></a>timeout</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The <span class="bold"><strong>timeout</strong></span> parameter is the timeout value. It
+                must be specified as an unsigned 32-bit number of microseconds, limiting the
+                maximum timeout to roughly 71 minutes.
+            </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4325280"></a>Errors</h3>
+              <h3 class="title"><a id="idp4352176"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -268,7 +274,7 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4322256"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp4376656"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -283,7 +289,7 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4318768"></a>Class</h3>
+              <h3 class="title"><a id="idp4361568"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -295,7 +301,7 @@ DbEnv::rep_set_timeout(int which, u_int32_t timeout); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4335960"></a>See Also</h3>
+              <h3 class="title"><a id="idp4353256"></a>See Also</h3>
             </div>
           </div>
         </div>

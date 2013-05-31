@@ -8,20 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
-    <link rel="prev" href="repmgrstat_print.html" title="DB_ENV-&gt;repmgr_stat_print()" />
+    <link rel="prev" href="dbsite_close.html" title="DB_SITE-&gt;close()" />
     <link rel="next" href="txnset_commit_token.html" title="DB_TXN-&gt;set_commit_token()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;txn_applied()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="repmgrstat_print.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="dbsite_close.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 10. 
                 Replication Methods
         </th>
@@ -90,7 +90,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
                 Returned if the transaction is expected to never arrive.
                 This occurs if the transaction has not been applied at the
                 local site because the transaction has been rolled back due
-                to a master takeover.
+                to a change of master.
             </p>
           </li>
         </ul>
@@ -99,7 +99,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62475912"></a>Parameters</h3>
+              <h3 class="title"><a id="idp62777864"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -107,20 +107,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62467032"></a>flags</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                 The <span class="bold"><strong>flags</strong></span> parameter is
-                 currently unused, and must be set to 0.
-             </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idp62496144"></a>token</h4>
+                <h4 class="title"><a id="idp62750128"></a>token</h4>
               </div>
             </div>
           </div>
@@ -136,7 +123,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62500800"></a>timeout</h4>
+                <h4 class="title"><a id="idp62793904"></a>timeout</h4>
               </div>
             </div>
           </div>
@@ -147,12 +134,25 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
                  without waiting, provide a timeout value of 0.
              </p>
         </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idp62801032"></a>flags</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                 The <span class="bold"><strong>flags</strong></span> parameter is
+                 currently unused, and must be set to 0.
+             </p>
+        </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62480184"></a>Errors</h3>
+              <h3 class="title"><a id="idp62795112"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -168,7 +168,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62460400"></a>DB_KEYEMPTY</h4>
+                <h4 class="title"><a id="idp62781360"></a>DB_KEYEMPTY</h4>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62510008"></a> DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp62768456"></a> DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -198,12 +198,13 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp62510656"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp62804632"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-                If the specified token was generated from a non-replicated
+                If the database environment was not already opened; or if
+                the specified token was generated from a non-replicated
                 database environment.
             </p>
         </div>
@@ -212,7 +213,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62502960"></a>Class</h3>
+              <h3 class="title"><a id="idp62797272"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -224,7 +225,7 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp62494344"></a>See Also</h3>
+              <h3 class="title"><a id="idp62788336"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -238,14 +239,14 @@ DB_ENV-&gt;txn_applied(DB_ENV *env, DB_TXN_TOKEN *token,
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="repmgrstat_print.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="dbsite_close.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="txnset_commit_token.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DB_ENV-&gt;repmgr_stat_print() </td>
+          <td width="40%" align="left" valign="top">DB_SITE-&gt;close() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

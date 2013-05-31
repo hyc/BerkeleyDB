@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -144,6 +144,11 @@
               </dt>
             </dl>
           </dd>
+          <dt>
+            <span class="sect1">
+              <a href="eventhandling.html">Event Handling</a>
+            </span>
+          </dt>
         </dl>
       </div>
       <p>
@@ -302,7 +307,7 @@
                 must reside either in the <code class="literal">ENV_HOME</code>
                 directory, or in the directory identified by the 
                     
-                    <code class="methodname">DbEnv::set_data_dir()</code>
+                    <code class="methodname">DbEnv::add_data_dir()</code>
                     
                 method. Unlike non-replication applications, you cannot place your 
                 databases in a subdirectory below these locations. You should

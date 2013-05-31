@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -60,7 +60,7 @@ standard Berkeley DB C++ API.</p>
                   DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_TXN, 
                   $mode = 0666) {}
     function remove($home, $flags = 0) {}
-    function set_data_dir($directory) {}
+    function add_data_dir($directory) {}
     function txn_begin($parent_txn = null, $flags = 0) {}
     function txn_checkpoint($kbytes, $minutes, $flags = 0) {}
 }

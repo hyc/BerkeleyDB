@@ -214,6 +214,13 @@ internal class DB_ENV : IDisposable {
         
 		return ret;
 	}
+	internal int get_blob_dir(out string dir) {
+		int ret;
+		IntPtr dirp;
+		ret = get_blob_dir(out dirp);
+		dir = Marshal.PtrToStringAnsi(dirp);
+		return ret;
+	}
 	internal int get_home(out string file) {
 		int ret;
 		IntPtr fp;
@@ -873,6 +880,13 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
+  internal int rep_set_view(BDB_ReplicationViewDelegate f_repview) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_ENV_rep_set_view(swigCPtr, f_repview);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
   internal int set_backup_callbacks(BDB_BackupOpenDelegate open_func, BDB_BackupWriteDelegate write_func, BDB_BackupCloseDelegate close_func) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_ENV_set_backup_callbacks(swigCPtr, open_func, write_func, close_func);
@@ -890,6 +904,34 @@ internal class DB_ENV : IDisposable {
   internal int set_backup_config(uint cfg, uint value) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_ENV_set_backup_config(swigCPtr, cfg, value);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int get_blob_dir(out IntPtr dirp) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_ENV_get_blob_dir(swigCPtr, out dirp);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int set_blob_dir(string dir) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_ENV_set_blob_dir(swigCPtr, dir);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int get_blob_threshold(ref uint bytes) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_ENV_get_blob_threshold(swigCPtr, ref bytes);
+		DatabaseException.ThrowException(ret);
+		return ret;
+}
+
+  internal int set_blob_threshold(uint bytes, uint flags) {
+		int ret;
+		ret = libdb_csharpPINVOKE.DB_ENV_set_blob_threshold(swigCPtr, bytes, flags);
 		DatabaseException.ThrowException(ret);
 		return ret;
 }
@@ -997,7 +1039,7 @@ internal class DB_ENV : IDisposable {
 		return ret;
 }
 
-  internal int get_intermediate_dir_mode(out IntPtr mode) {
+  private int get_intermediate_dir_mode(out IntPtr mode) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_ENV_get_intermediate_dir_mode(swigCPtr, out mode);
 		DatabaseException.ThrowException(ret);

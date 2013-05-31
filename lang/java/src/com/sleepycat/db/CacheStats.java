@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -306,6 +306,14 @@ public class CacheStats {
         return st_mvcc_freed;
     }
 
+    private long st_mvcc_reused;
+    /**
+    Number of outdated intermediate versions reused.
+    */
+    public long getMultiversionReused() {
+        return st_mvcc_reused;
+    }
+
     private long st_alloc;
     /**
     Number of page allocations.
@@ -360,6 +368,22 @@ public class CacheStats {
     */
     public long getSyncInterrupted() {
         return st_sync_interrupted;
+    }
+
+    private int st_oddfsize_detect;
+    /**
+    Odd file size detected.
+    */
+    public int getOddfSizeDetect() {
+        return st_oddfsize_detect;
+    }
+
+    private int st_oddfsize_resolve;
+    /**
+    Odd file size resolved.
+    */
+    public int getOddfSizeResolve() {
+        return st_oddfsize_resolve;
     }
 
     private long st_regsize;
@@ -417,6 +441,7 @@ public class CacheStats {
             + "\n  st_mvcc_frozen=" + st_mvcc_frozen
             + "\n  st_mvcc_thawed=" + st_mvcc_thawed
             + "\n  st_mvcc_freed=" + st_mvcc_freed
+            + "\n  st_mvcc_reused=" + st_mvcc_reused
             + "\n  st_alloc=" + st_alloc
             + "\n  st_alloc_buckets=" + st_alloc_buckets
             + "\n  st_alloc_max_buckets=" + st_alloc_max_buckets
@@ -424,6 +449,8 @@ public class CacheStats {
             + "\n  st_alloc_max_pages=" + st_alloc_max_pages
             + "\n  st_io_wait=" + st_io_wait
             + "\n  st_sync_interrupted=" + st_sync_interrupted
+            + "\n  st_oddfsize_detect=" + st_oddfsize_detect
+            + "\n  st_oddfsize_resolve=" + st_oddfsize_resolve
             + "\n  st_regsize=" + st_regsize
             + "\n  st_regmax=" + st_regmax
             ;

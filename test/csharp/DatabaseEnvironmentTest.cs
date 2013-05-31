@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -515,6 +515,48 @@ namespace CsharpAPITest
 					throw new TestException();
 				}
 			}
+		}
+
+		[Test]
+		public void TestBlob()
+		{
+			testName = "TestBlob";
+			SetUpTest(true);
+
+			DatabaseEnvironmentConfig envConfig =
+			    new DatabaseEnvironmentConfig();
+			envConfig.AutoCommit = true;
+			envConfig.Create = true;
+			envConfig.UseMPool = true;
+			envConfig.UseLogging = true;
+			envConfig.UseTxns = true;
+
+			// Not set the blob file directory when enabling blob.
+			envConfig.BlobThreshold = 10485760;
+			DatabaseEnvironment env = DatabaseEnvironment.Open(
+			    testHome, envConfig);
+			Assert.AreEqual(null, env.BlobDir);
+			Assert.AreEqual(10485760, env.BlobThreshold);
+			env.Close();
+
+			Configuration.ClearDir(testHome);
+
+			// Set the blob file directory with an empty string.
+			envConfig.BlobDir = "";
+			env = DatabaseEnvironment.Open(testHome, envConfig);
+			Assert.AreEqual("", env.BlobDir);
+			Assert.AreEqual(10485760, env.BlobThreshold);
+			env.Close();
+
+			Configuration.ClearDir(testHome);
+
+			// Set the blob file directory with a non-emptry
+			// string.
+			envConfig.BlobDir = "BLOBDIR";
+			env = DatabaseEnvironment.Open(testHome, envConfig);
+			Assert.AreEqual("BLOBDIR", env.BlobDir);
+			Assert.AreEqual(10485760, env.BlobThreshold);
+			env.Close();
 		}
 
 		[Test]
@@ -1099,6 +1141,7 @@ namespace CsharpAPITest
 			cfg.LogSystemCfg.FileMode = 755;
 			cfg.LogSystemCfg.ForceSync = true;
 			cfg.LogSystemCfg.InMemory = false;
+			cfg.LogSystemCfg.LogBlobContent = false;
 			cfg.LogSystemCfg.MaxFileSize = 1048576;
 			cfg.LogSystemCfg.NoBuffer = false;
 			cfg.LogSystemCfg.RegionSize = 204800;
@@ -1399,6 +1442,8 @@ namespace CsharpAPITest
 			Assert.AreEqual(0, stats.MaxMMapSize);
 			Assert.AreEqual(0, stats.MaxOpenFileDescriptors);
 			Assert.AreEqual(0, stats.MaxPagesCheckedDuringAlloc);
+			Assert.AreEqual(0, stats.OddFileSizeDetected);
+			Assert.AreEqual(0, stats.OddFileSizeResolve);
 			Assert.AreEqual(0, stats.PageAllocations);
 			Assert.AreEqual(0, stats.Pages);
 			Assert.AreEqual(0, stats.PagesCheckedDuringAlloc);
@@ -2144,6 +2189,9 @@ namespace CsharpAPITest
 				    "ForceSync", env.LogForceSync, compulsory);
 				Configuration.ConfirmBool(childElem,
 				    "InMemory", env.LogInMemory, compulsory);
+				Configuration.ConfirmBool(childElem,
+				    "LogBlobContent", env.LogBlobContent,
+				    compulsory);
 				Configuration.ConfirmBool(childElem,
 				    "NoBuffer", env.LogNoBuffer, compulsory);
 				Configuration.ConfirmUint(childElem,

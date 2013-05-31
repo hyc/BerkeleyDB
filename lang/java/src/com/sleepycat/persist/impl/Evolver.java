@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -355,8 +355,8 @@ class Evolver {
                     return false;
                 }
                 if (oldLatestFormat == oldLatestFormat.getLatestVersion()) {
-                    assert !newFormats.containsValue(newFormat) : newFormat;
-                    /* newFormat equals oldLatestFormat and was discarded. */
+                    /* newFormat is no longer relevant [#21869]. */
+                    newFormats.remove(newFormat.getClassName());
                     newFormat = oldLatestFormat;
                 }
             }

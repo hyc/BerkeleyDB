@@ -11,7 +11,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;COMPILE_DL_DB4;DB4_EXPORTS;HAVE_DB_H=1;ZEND_WIN32=1;PHP_WIN32=1;ZEND_WIN32_FORCE_INLINE;ZTS=1;ZEND_DEBUG=1;_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/php_db4.pch" AssemblerListingLocation="$(OutDir)/php_db4/" ObjectFile="$(OutDir)/php_db4/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53d.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4d.dll" ProgramDatabaseFile="$(OutDir)/php_db4d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4d.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb60d.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4d.dll" ProgramDatabaseFile="$(OutDir)/php_db4d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4d.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -22,7 +22,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;COMPILE_DL_DB4;DB4_EXPORTS;HAVE_DB_H=1;ZEND_WIN32=1;PHP_WIN32=1;ZEND_WIN32_FORCE_INLINE;ZTS=1;ZEND_DEBUG=0;_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/php_db4.pch" AssemblerListingLocation="$(OutDir)/php_db4/" ObjectFile="$(OutDir)/php_db4/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4.dll" ProgramDatabaseFile="$(OutDir)/php_db4.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb60.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4.dll" ProgramDatabaseFile="$(OutDir)/php_db4.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -33,7 +33,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;COMPILE_DL_DB4;DB4_EXPORTS;HAVE_DB_H=1;ZEND_WIN32=1;PHP_WIN32=1;ZEND_WIN32_FORCE_INLINE;ZTS=1;ZEND_DEBUG=1;_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/php_db4.pch" AssemblerListingLocation="$(OutDir)/php_db4/" ObjectFile="$(OutDir)/php_db4/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53d.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4d.dll" ProgramDatabaseFile="$(OutDir)/php_db4d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4d.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb60d.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4d.dll" ProgramDatabaseFile="$(OutDir)/php_db4d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4d.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -44,7 +44,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;COMPILE_DL_DB4;DB4_EXPORTS;HAVE_DB_H=1;ZEND_WIN32=1;PHP_WIN32=1;ZEND_WIN32_FORCE_INLINE;ZTS=1;ZEND_DEBUG=0;_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/php_db4.pch" AssemblerListingLocation="$(OutDir)/php_db4/" ObjectFile="$(OutDir)/php_db4/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4.dll" ProgramDatabaseFile="$(OutDir)/php_db4.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb60.lib .lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/php_db4.dll" ProgramDatabaseFile="$(OutDir)/php_db4.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/php_db4.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -161,8 +161,7 @@
             as if there has been a system failure, performing recovery and
             creating a new database environment.  Once these actions have
             been taken, other threads of control can be continued (as long
-            as all existing Berkeley DB handles are first discarded), or
-
+            as all existing Berkeley DB handles are first discarded).
         </p>
             <p>
             The easiest way to structure groups of related processes is to
@@ -333,12 +332,12 @@
 	  above.  Along with implementing the built-in sentinel approach with the
 	  the <a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a> methods <a href="../api_reference/C/envopen.html#envopen_DB_REGISTER" class="olink">DB_REGISTER</a> flag, the <a href="../api_reference/C/envopen.html#envopen_DB_FAILCHK" class="olink">DB_FAILCHK</a> flag can be specified.
 	  When using both flags, each process opening the database environment first
-	  checks to see if recocvery needs to be performed.  If recovery needs to be
+	  checks to see if recovery needs to be performed.  If recovery needs to be
 	  performed for any reason, it will first determine if a thread of control
 	  exited while holding database read locks, and release those.  Then it will
 	  abort any unresolved transactions.   If these steps are successful, the process
 	  opening the environment will continue without the need for any
-	  additional recocvery.   If these steps are unsuccessful, then additional
+	  additional recovery.   If these steps are unsuccessful, then additional
 	  recovery will be performed if <a href="../api_reference/C/envopen.html#envopen_DB_RECOVER" class="olink">DB_RECOVER</a> is specified and if <a href="../api_reference/C/envopen.html#envopen_DB_RECOVER" class="olink">DB_RECOVER</a> is not
 	  specified, <a class="link" href="program_errorret.html#program_errorret.DB_RUNRECOVERY">DB_RUNRECOVERY</a>will be returned.
 	</p>

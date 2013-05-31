@@ -1,14 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 package com.sleepycat.collections.test.serial;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.fail;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.compat.DbCompat;
@@ -16,44 +18,31 @@ import com.sleepycat.db.Database;
 import com.sleepycat.db.DatabaseConfig;
 import com.sleepycat.db.Environment;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-public class CatalogCornerCaseTest extends TestCase {
-
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        return new TestSuite(CatalogCornerCaseTest.class);
-    }
+public class CatalogCornerCaseTest extends TestBase {
 
     private Environment env;
 
-    public CatalogCornerCaseTest(String name) {
+    public CatalogCornerCaseTest() {
 
-        super(name);
+        customName = "CatalogCornerCaseTest";
     }
 
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
-        SharedTestUtils.printTestName(getName());
-        env = TestEnv.BDB.open(getName());
+        super.setUp();
+        SharedTestUtils.printTestName(customName);
+        env = TestEnv.BDB.open(customName);
     }
 
-    @Override
+    @After
     public void tearDown() {
 
         try {
@@ -68,6 +57,7 @@ public class CatalogCornerCaseTest extends TestCase {
         }
     }
 
+    @Test
     public void testReadOnlyEmptyCatalog()
         throws Exception {
 

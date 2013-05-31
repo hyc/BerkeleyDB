@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -112,6 +112,14 @@ public class BtreeStats extends DatabaseStats {
     */
     public int getMinKey() {
         return bt_minkey;
+    }
+
+    private int bt_nblobs;
+    /**
+    The number of blob records.
+    */
+    public int getNumBlobs() {
+        return bt_nblobs;
     }
 
     private int bt_re_len;
@@ -265,6 +273,7 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
             + "\n  bt_pagecnt=" + bt_pagecnt
             + "\n  bt_pagesize=" + bt_pagesize
             + "\n  bt_minkey=" + bt_minkey
+            + "\n  bt_nblobs=" + bt_nblobs
             + "\n  bt_re_len=" + bt_re_len
             + "\n  bt_re_pad=" + bt_re_pad
             + "\n  bt_levels=" + bt_levels

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -27,6 +27,12 @@ namespace BerkeleyDB {
              * specific flags.  No harm in calling it again.
              */
             db.set_flags(cfg.flags);
+
+            if (cfg.BlobDir != null && cfg.Env == null)
+                db.set_blob_dir(cfg.BlobDir);
+
+            if (cfg.blobThresholdIsSet)
+                db.set_blob_threshold(cfg.BlobThreshold, 0);
 
             if (cfg.maxSizeIsSet)
                 db.set_heapsize(cfg.MaxSizeGBytes, cfg.MaxSizeBytes);
@@ -111,6 +117,44 @@ namespace BerkeleyDB {
         #endregion Constructors
 
         #region Properties
+        /// <summary>
+        /// The path of the directory where blobs are stored.
+        /// </summary>
+        public string BlobDir {
+            get {
+                string dir;
+                db.get_blob_dir(out dir);
+                return dir;
+            }
+        }
+
+        internal string BlobSubDir {
+            get {
+                string dir;
+                db.get_blob_sub_dir(out dir);
+                return dir;
+            }
+        }
+
+        /// <summary>
+        /// The threshold value in bytes beyond which data items are stored as
+        /// blobs.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// A value of 0 indicates that blobs are not used by the database.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get {
+                uint ret = 0;
+                db.get_blob_threshold(ref ret);
+                return ret;
+            }
+        }
+
         /// <summary>
         /// The gigabytes component of the maximum on-disk database file size.
         /// </summary>

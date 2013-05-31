@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -506,7 +506,7 @@ __env_close_pp(dbenv, flags)
 {
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int rep_check, ret, t_ret;
+	int ret, t_ret;
 	u_int32_t close_flags, flags_orig;
 
 	env = dbenv->env;
@@ -540,42 +540,48 @@ __env_close_pp(dbenv, flags)
 			 */
 			flags_orig = F_ISSET(dbenv, DB_ENV_NOPANIC);
 			F_SET(dbenv, DB_ENV_NOPANIC);
+			ENV_ENTER(env, ip);
 			(void)__envreg_unregister(env, 0);
+			ENV_LEAVE(env, ip);
 			dbenv->registry = NULL;
 			if (!flags_orig)
 				F_CLR(dbenv, DB_ENV_NOPANIC);
 		}
 
 		/* Close all underlying threads and sockets. */
-		if (IS_ENV_REPLICATED(env))
-			(void)__repmgr_close(env);
+		(void)__repmgr_close(env);
 
 		/* Close all underlying file handles. */
+		flags_orig = F_ISSET(dbenv, DB_ENV_NOPANIC);
+		F_SET(dbenv, DB_ENV_NOPANIC);
+		ENV_ENTER(env, ip);
 		(void)__file_handle_cleanup(env);
+		ENV_ENTER(env, ip);
+		if (!flags_orig)
+			F_CLR(dbenv, DB_ENV_NOPANIC);
 
 		PANIC_CHECK(env);
 	}
 
 	ENV_ENTER(env, ip);
 
-	rep_check = IS_ENV_REPLICATED(env) ? 1 : 0;
-	if (rep_check) {
 #ifdef HAVE_REPLICATION_THREADS
-		/*
-		 * Shut down Replication Manager threads first of all.  This
-		 * must be done before __env_rep_enter to avoid a deadlock that
-		 * could occur if repmgr's background threads try to do a rep
-		 * operation that needs __rep_lockout.
-		 */
-		if ((t_ret = __repmgr_close(env)) != 0 && ret == 0)
-			ret = t_ret;
+	/*
+	 * Shut down Replication Manager threads first of all.  This
+	 * must be done before __env_rep_enter to avoid a deadlock that
+	 * could occur if repmgr's background threads try to do a rep
+	 * operation that needs __rep_lockout.
+	 */
+	if ((t_ret = __repmgr_close(env)) != 0 && ret == 0)
+		ret = t_ret;
 #endif
+	if (IS_ENV_REPLICATED(env)) {
 		if ((t_ret = __env_rep_enter(env, 0)) != 0 && ret == 0)
 			ret = t_ret;
+		if (ret == 0)
+			close_flags |= DBENV_CLOSE_REPCHECK;
 	}
 
-	if (rep_check)
-		close_flags |= DBENV_CLOSE_REPCHECK;
 	if ((t_ret = __env_close(dbenv, close_flags)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -680,6 +686,9 @@ __env_close(dbenv, flags)
 	if (dbenv->db_md_dir != NULL)
 		__os_free(env, dbenv->db_md_dir);
 	dbenv->db_md_dir = NULL;
+	if (dbenv->db_blob_dir != NULL)
+		__os_free(env, dbenv->db_blob_dir);
+	dbenv->db_blob_dir = NULL;
 	if (dbenv->db_data_dir != NULL) {
 		for (p = dbenv->db_data_dir; *p != NULL; ++p)
 			__os_free(env, *p);
@@ -1125,8 +1134,15 @@ __env_attach_regions(dbenv, flags, orig_flags, retry_ok)
 		goto err;
 
 	rep_check = IS_ENV_REPLICATED(env) ? 1 : 0;
-	if (rep_check && (ret = __env_rep_enter(env, 0)) != 0)
+	if (rep_check && (ret = __env_rep_enter(env, 0)) != 0) {
+		/*
+		 * If we get an error we didn't increment handle_cnt,
+		 * so we don't want to decrement it later.  Turn off
+		 * rep_check here.
+		 */
+		rep_check = 0;
 		goto err;
+	}
 
 	if (LF_ISSET(DB_INIT_MPOOL)) {
 		if ((ret = __memp_open(env, create_ok)) != 0)

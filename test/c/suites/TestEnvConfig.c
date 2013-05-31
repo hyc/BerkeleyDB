@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <sys/types.h>
@@ -13,6 +13,11 @@
 #include "db.h"
 #include "CuTest.h"
 #include "test_util.h"
+
+struct context {
+	FILE *fp;
+	char *path;
+};
 
 #define	ENV {								\
 	if (dbenv != NULL)						\
@@ -30,11 +35,30 @@ int TestEnvConfigSuiteTeardown(CuSuite *ct) {
 }
 
 int TestEnvConfigTestSetup(CuTest *ct) {
+	struct context *info;
+
+	if ((info = calloc(1, sizeof(*info))) == NULL)
+		return (ENOMEM);
+	ct->context = info;
 	setup_envdir(TEST_ENV, 1);
 	return (0);
 }
 
 int TestEnvConfigTestTeardown(CuTest *ct) {
+	struct context *info;
+	FILE *fp;
+	char *path;
+
+	info = ct->context;
+	assert(info != NULL);
+	fp = info->fp;
+	path = info->path;
+	if (fp != NULL)
+		fclose(fp);
+	if (path != NULL)
+		free(path);
+	free(info);
+	ct->context = NULL;
 	teardown_envdir(TEST_ENV);
 	return (0);
 }
@@ -61,9 +85,20 @@ int TestSetTxMax(CuTest *ct) {
 
 int TestSetLogMax(CuTest *ct) {
 	DB_ENV *dbenv;
+	struct context *info;
+	FILE *msgfile;
+	char *path;
 	u_int32_t v;
 
 	dbenv = NULL;
+	if ((path = calloc(100, sizeof(char))) == NULL)
+		return (ENOMEM);
+	snprintf(path, 100, "%s%c%s", TEST_ENV, PATH_SEPARATOR[0], "msgfile");
+	if ((msgfile = fopen(path, "w")) == NULL)
+		return (EINVAL);
+	info = ct->context;
+	info->fp = msgfile;
+	info->path = path;
 	/* lg_max: reset at run-time. */
 	ENV
 	CuAssertTrue(ct, dbenv->set_lg_max(dbenv, 37 * 1024 * 1024) == 0);
@@ -72,8 +107,17 @@ int TestSetLogMax(CuTest *ct) {
 	CuAssertTrue(ct, dbenv->get_lg_max(dbenv, &v) == 0);
 	CuAssertTrue(ct, v == 37 * 1024 * 1024);
 	ENV
+	/* New log maximum size is ignored when joining the environment. */
 	CuAssertTrue(ct, dbenv->set_lg_max(dbenv, 63 * 1024 * 1024) == 0);
+	/* Redirect the error message to suppress the warning. */
+	dbenv->set_msgfile(dbenv, msgfile);
 	CuAssertTrue(ct, dbenv->open(dbenv, TEST_ENV, DB_JOINENV, 0666) == 0);
+	CuAssertTrue(ct, dbenv->get_lg_max(dbenv, &v) == 0);
+	CuAssertTrue(ct, v == 37 * 1024 * 1024);
+	/* Direct the error message back to the standard output. */
+	dbenv->set_msgfile(dbenv, NULL);
+	/* Re-config the log maximum size after opening the environment. */
+	CuAssertTrue(ct, dbenv->set_lg_max(dbenv, 63 * 1024 * 1024) == 0);
 	CuAssertTrue(ct, dbenv->get_lg_max(dbenv, &v) == 0);
 	CuAssertTrue(ct, v == 63 * 1024 * 1024);
 	return (0);
@@ -234,9 +278,20 @@ int TestSetLockMaxObjects(CuTest *ct) {
 
 int TestSetLockTimeout(CuTest *ct) {
 	DB_ENV *dbenv;
+	struct context *info;
+	FILE *msgfile;
+	char *path;
 	db_timeout_t timeout;
 
 	dbenv = NULL;
+	if ((path = calloc(100, sizeof(char))) == NULL)
+		return (ENOMEM);
+	snprintf(path, 100, "%s%c%s", TEST_ENV, PATH_SEPARATOR[0], "msgfile");
+	if ((msgfile = fopen(path, "w")) == NULL)
+		return (EINVAL);
+	info = ct->context;
+	info->fp = msgfile;
+	info->path = path;
 	/* lock timeout: reset at run-time. */
 	ENV
 	CuAssertTrue(ct,
@@ -247,9 +302,20 @@ int TestSetLockTimeout(CuTest *ct) {
 	    dbenv->get_timeout(dbenv, &timeout, DB_SET_LOCK_TIMEOUT) == 0);
 	CuAssertTrue(ct, timeout == 37);
 	ENV
+	/* New lock timeout is ignored when joining the environment. */
 	CuAssertTrue(ct,
 	    dbenv->set_timeout(dbenv, 63, DB_SET_LOCK_TIMEOUT) == 0);
+	/* Redirect the error message to suppress the warning. */
+	dbenv->set_msgfile(dbenv, msgfile);
 	CuAssertTrue(ct, dbenv->open(dbenv, TEST_ENV, DB_JOINENV, 0666) == 0);
+	CuAssertTrue(ct,
+	    dbenv->get_timeout(dbenv, &timeout, DB_SET_LOCK_TIMEOUT) == 0);
+	CuAssertTrue(ct, timeout == 37);
+	/* Direct the error message back to the standard output. */
+	dbenv->set_msgfile(dbenv, NULL);
+	/* Re-config the lock timeout after opening the environment. */
+	CuAssertTrue(ct,
+	    dbenv->set_timeout(dbenv, 63, DB_SET_LOCK_TIMEOUT) == 0);
 	CuAssertTrue(ct,
 	    dbenv->get_timeout(dbenv, &timeout, DB_SET_LOCK_TIMEOUT) == 0);
 	CuAssertTrue(ct, timeout == 63);
@@ -258,9 +324,20 @@ int TestSetLockTimeout(CuTest *ct) {
 
 int TestSetTransactionTimeout(CuTest *ct) {
 	DB_ENV *dbenv;
+	struct context *info;
+	FILE *msgfile;
+	char *path;
 	db_timeout_t timeout;
 
 	dbenv = NULL;
+	if ((path = calloc(100, sizeof(char))) == NULL)
+		return (ENOMEM);
+	snprintf(path, 100, "%s%c%s", TEST_ENV, PATH_SEPARATOR[0], "msgfile");
+	if ((msgfile = fopen(path, "w")) == NULL)
+		return (EINVAL);
+	info = ct->context;
+	info->fp = msgfile;
+	info->path = path;
 	/* txn timeout: reset at run-time. */
 	ENV
 	CuAssertTrue(ct,
@@ -271,9 +348,20 @@ int TestSetTransactionTimeout(CuTest *ct) {
 	    dbenv->get_timeout(dbenv, &timeout, DB_SET_TXN_TIMEOUT) == 0);
 	CuAssertTrue(ct, timeout == 37);
 	ENV
+	/* New transaction timeout is ignored when joining the environment. */
 	CuAssertTrue(ct,
 	    dbenv->set_timeout(dbenv, 63, DB_SET_TXN_TIMEOUT) == 0);
+	/* Redirect the error message to suppress the warning. */
+	dbenv->set_msgfile(dbenv, msgfile);
 	CuAssertTrue(ct, dbenv->open(dbenv, TEST_ENV, DB_JOINENV, 0666) == 0);
+	CuAssertTrue(ct,
+	    dbenv->get_timeout(dbenv, &timeout, DB_SET_TXN_TIMEOUT) == 0);
+	CuAssertTrue(ct, timeout == 37);
+	/* Direct the error message back to the standard output. */
+	dbenv->set_msgfile(dbenv, NULL);
+	/* Re-config the transaction timeout after opening the environment. */
+	CuAssertTrue(ct,
+	    dbenv->set_timeout(dbenv, 63, DB_SET_TXN_TIMEOUT) == 0);
 	CuAssertTrue(ct,
 	    dbenv->get_timeout(dbenv, &timeout, DB_SET_TXN_TIMEOUT) == 0);
 	CuAssertTrue(ct, timeout == 63);

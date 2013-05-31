@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -276,5 +276,10 @@ namespace BerkeleyDB {
         /// Maximum lease timestamp useconds. 
         /// </summary>
         public uint MaxLeaseUSec { get { return st.st_max_lease_usec; } }
+
+        /// <summary>
+        /// True if the site is a view and false if not.
+        /// </summary>
+        public bool View { get { return (st.st_view != 0); } }
     }
 }

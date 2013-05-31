@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -48,6 +48,16 @@ public interface EventHandler {
     and recovery should be run.
     */
     public void handlePanicEvent();
+
+    /**
+    A callback function to be called when a Replication automatic takeover
+    failed event is sent from the Berkeley DB library.
+    <p>
+    This event callback is received in a replication manager subordinate
+    process when it fails to take over as the replication process and
+    all replication manager threads in it are stopped unexpectedly.
+    */
+    public void handleRepAutoTakeoverFailedEvent();
 
     /**
     A callback function to be called when a Replication Client event is sent

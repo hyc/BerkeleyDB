@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -10,6 +10,12 @@ package com.sleepycat.persist.test;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_MANY;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_ONE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,6 +41,10 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.compat.DbCompat;
@@ -68,12 +78,13 @@ import com.sleepycat.persist.raw.RawField;
 import com.sleepycat.persist.raw.RawObject;
 import com.sleepycat.persist.raw.RawType;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-public class BindingTest extends TestCase {
+public class BindingTest extends TestBase {
 
     private static final String STORE_PREFIX = "persist#foo#";
 
@@ -84,15 +95,18 @@ public class BindingTest extends TestCase {
     private DatabaseEntry keyEntry;
     private DatabaseEntry dataEntry;
 
-    @Override
-    public void setUp() {
-        envHome = new File(System.getProperty(SharedTestUtils.DEST_DIR));
-        SharedTestUtils.emptyDir(envHome);
+    @Before
+    public void setUp() 
+        throws Exception {
+        
+        envHome = SharedTestUtils.getTestDir();
+        super.setUp();
+        
         keyEntry = new DatabaseEntry();
         dataEntry = new DatabaseEntry();
     }
 
-    @Override
+    @After
     public void tearDown() {
         if (env != null) {
             try {
@@ -153,6 +167,7 @@ public class BindingTest extends TestCase {
         env = null;
     }
 
+    @Test
     public void testBasic()
         throws FileNotFoundException, DatabaseException {
 
@@ -216,6 +231,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSimpleTypes()
         throws FileNotFoundException, DatabaseException {
 
@@ -309,6 +325,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testArrayTypes()
         throws FileNotFoundException, DatabaseException {
 
@@ -404,6 +421,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testEnumTypes()
         throws FileNotFoundException, DatabaseException {
 
@@ -481,6 +499,7 @@ public class BindingTest extends TestCase {
         }
     }
     
+    @Test
     public void testEnumObjectTypes()
         throws FileNotFoundException, DatabaseException {
     
@@ -520,6 +539,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testProxyTypes()
         throws FileNotFoundException, DatabaseException {
 
@@ -664,6 +684,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testEmbedded()
         throws FileNotFoundException, DatabaseException {
 
@@ -786,6 +807,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSubclass()
         throws FileNotFoundException, DatabaseException {
 
@@ -835,6 +857,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSuperclass()
         throws FileNotFoundException, DatabaseException {
 
@@ -890,6 +913,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testAbstract()
         throws FileNotFoundException, DatabaseException {
 
@@ -1059,6 +1083,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testCompositeKey()
         throws FileNotFoundException, DatabaseException {
 
@@ -1189,6 +1214,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testComparableKey()
         throws FileNotFoundException, DatabaseException {
 
@@ -1316,6 +1342,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSecKeys()
         throws FileNotFoundException, DatabaseException {
 
@@ -1785,6 +1812,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSecKeyRefToPriKey()
         throws FileNotFoundException, DatabaseException {
 
@@ -1843,6 +1871,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSecKeyInSuperclass()
         throws FileNotFoundException, DatabaseException {
 
@@ -1908,6 +1937,7 @@ public class BindingTest extends TestCase {
         }
     }
 
+    @Test
     public void testSecKeyInSubclass()
         throws FileNotFoundException, DatabaseException {
 

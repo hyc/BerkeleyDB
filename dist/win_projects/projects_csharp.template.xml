@@ -35,6 +35,8 @@
       <file name="CompactData.cs" />
       <file name="MultipleKeyDatabaseEntry.cs" />
       <file name="DatabaseEntry.cs" />
+      <file name="DatabaseStream.cs" />
+      <file name="DatabaseStreamConfig.cs" />
       <file name="DbChannel.cs" />
       <file name="DbSite.cs" />
       <file name="DbSiteConfig.cs" />
@@ -114,6 +116,7 @@
       <file name="Internal\DB_LSN.cs" />
       <file name="Internal\db_recops.cs" />
       <file name="Internal\DB_SITE.cs" />
+      <file name="Internal\DB_STREAM.cs" />
       <file name="Internal\DB_TXN.cs" />
       <file name="Internal\DB_TXN_TOKEN.cs" />
       <file name="Internal\Delegates.cs" />

@@ -12,7 +12,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -30,7 +30,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h1 class="title"><a id="idp11584"></a>Berkeley DB C API Reference</h1>
+            <h1 class="title"><a id="idp11496"></a>Berkeley DB C API Reference</h1>
           </div>
           <div class="navtable">
             <table border="1" width="80%">
@@ -130,6 +130,18 @@
                     <a class="xref" href="dbget_open_flags.html" title="DB-&gt;get_open_flags()">DB-&gt;get_open_flags()</a>
                   </td>
                   <td>Returns the flags specified to DB-&gt;open</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbget_partition_callback.html" title="DB-&gt;get_partition_callback()">DB-&gt;get_partition_callback()</a>
+                  </td>
+                  <td>Return the database partition callback</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbget_partition_keys.html" title="DB-&gt;get_partition_keys()">DB-&gt;get_partition_keys()</a>
+                  </td>
+                  <td>Returns the array of keys used for the database partition</td>
                 </tr>
                 <tr>
                   <td>
@@ -1149,13 +1161,7 @@
                   <td>
                     <a class="xref" href="dbchannel_set_timeout.html" title="DB_CHANNEL-&gt;set_timeout()">DB_CHANNEL-&gt;set_timeout()</a>
                   </td>
-                  <td>Sets the default timeout for the DB_CHANNEL</td>
-                </tr>
-                <tr>
-                  <td>
-                    <a class="xref" href="dbsite_close.html" title="DB_SITE-&gt;close()">DB_SITE-&gt;close()</a>
-                  </td>
-                  <td>Closes the DB_SITE handle</td>
+                  <td>Sets the default timeout for a DB_CHANNEL</td>
                 </tr>
                 <tr>
                   <td>
@@ -1167,7 +1173,7 @@
                   <td>
                     <a class="xref" href="dbsite_get_eid.html" title="DB_SITE-&gt;get_eid()">DB_SITE-&gt;get_eid()</a>
                   </td>
-                  <td>Returns a site's Environment ID</td>
+                  <td>Returns a site's environment ID</td>
                 </tr>
                 <tr>
                   <td>
@@ -1227,6 +1233,12 @@
                 </tr>
                 <tr>
                   <td>
+                    <a class="xref" href="repset_view.html" title="DB_ENV-&gt;rep_set_view()">DB_ENV-&gt;rep_set_view()</a>
+                  </td>
+                  <td>Configure the replication view callback</td>
+                </tr>
+                <tr>
+                  <td>
                     <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a>
                   </td>
                   <td>Start replication</td>
@@ -1265,7 +1277,7 @@
                   <td>
                     <a class="xref" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()">DB_ENV-&gt;repmgr_msg_dispatch()</a>
                   </td>
-                  <td>Creates a DB_CHANNEL handle</td>
+                  <td>Configures a DB_CHANNEL's message dispatch function</td>
                 </tr>
                 <tr>
                   <td><a class="xref" href="repmgrset_ack_policy.html" title="DB_ENV-&gt;repmgr_set_ack_policy()">DB_ENV-&gt;repmgr_set_ack_policy()</a>, <a class="xref" href="repmgrget_ack_policy.html" title="DB_ENV-&gt;repmgr_get_ack_policy()">DB_ENV-&gt;repmgr_get_ack_policy()</a></td>
@@ -1306,6 +1318,12 @@
                     <a class="xref" href="repmgrstat_print.html" title="DB_ENV-&gt;repmgr_stat_print()">DB_ENV-&gt;repmgr_stat_print()</a>
                   </td>
                   <td>Print Replication Manager statistics</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbsite_close.html" title="DB_SITE-&gt;close()">DB_SITE-&gt;close()</a>
+                  </td>
+                  <td>Closes the DB_SITE handle</td>
                 </tr>
                 <tr>
                   <td>
@@ -1484,6 +1502,52 @@
                     <a class="xref" href="txnset_timeout.html" title="DB_TXN-&gt;set_timeout()">DB_TXN-&gt;set_timeout()</a>
                   </td>
                   <td>Set transaction timeout</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="set_blob_dir.html" title="DB-&gt;set_blob_dir()">DB-&gt;set_blob_dir()</a>, <a class="xref" href="get_blob_dir.html" title="DB-&gt;get_blob_dir()">DB-&gt;get_blob_dir()</a></td>
+                  <td>Sets/gets the location where blob data is stored</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="set_blob_threshold.html" title="DB-&gt;set_blob_threshold()">DB-&gt;set_blob_threshold()</a>, <a class="xref" href="get_blob_threshold.html" title="DB-&gt;get_blob_threshold()">DB-&gt;get_blob_threshold()</a></td>
+                  <td>Sets/gets the size when data records are stored as blobs</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbstream.html" title="DBC-&gt;db_stream()">DBC-&gt;db_stream()</a>
+                  </td>
+                  <td>Create a BLOB stream</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbstream_close.html" title="DB_STREAM-&gt;close()">DB_STREAM-&gt;close()</a>
+                  </td>
+                  <td>Close a BLOB stream</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbstream_read.html" title="DB_STREAM-&gt;read()">DB_STREAM-&gt;read()</a>
+                  </td>
+                  <td>Read a BLOB stream</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbstream_size.html" title="DB_STREAM-&gt;size()">DB_STREAM-&gt;size()</a>
+                  </td>
+                  <td>Returns the size of a BLOB</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a class="xref" href="dbstream_write.html" title="DB_STREAM-&gt;write()">DB_STREAM-&gt;write()</a>
+                  </td>
+                  <td>Write a BLOB stream</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="envset_blob_dir.html" title="DB_ENV-&gt;set_blob_dir()">DB_ENV-&gt;set_blob_dir()</a>, <a class="xref" href="envget_blob_dir.html" title="DB_ENV-&gt;get_blob_dir()">DB_ENV-&gt;get_blob_dir()</a></td>
+                  <td>Sets/gets the location where blob data is stored</td>
+                </tr>
+                <tr>
+                  <td><a class="xref" href="envset_blob_threshold.html" title="DB_ENV-&gt;set_blob_threshold()">DB_ENV-&gt;set_blob_threshold()</a>, <a class="xref" href="envget_blob_threshold.html" title="DB_ENV-&gt;get_blob_threshold()">DB_ENV-&gt;get_blob_threshold()</a></td>
+                  <td>Sets/gets the default size for the environment when BLOBs are used</td>
                 </tr>
                 <tr>
                   <td>
@@ -1970,7 +2034,7 @@
           </div>
           <div>
             <div class="legalnotice">
-              <a id="idp57207416"></a>
+              <a id="idp57440496"></a>
               <p class="legalnotice-title">
                 <b>Legal Notice</b>
               </p>
@@ -2000,7 +2064,7 @@
         <p>
             To obtain a copy of this document's original source code, please
             submit a request to the Oracle Technology Network forum at:
-            <a class="ulink" href="http://forums.oracle.com/forums/forum.jspa?forumID=271" target="_top">http://forums.oracle.com/forums/forum.jspa?forumID=271</a>
+            <a class="ulink" href="https://forums.oracle.com/forums/forum.jspa?forumID=271" target="_top">https://forums.oracle.com/forums/forum.jspa?forumID=271</a>
             
             
         </p>
@@ -2008,7 +2072,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">5/11/2012</p>
+            <p class="pubdate">5/31/2013</p>
           </div>
         </div>
         <hr />

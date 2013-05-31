@@ -364,6 +364,16 @@ public class Db {
 
   public int get_assoc_flags() throws com.sleepycat.db.DatabaseException { return db_javaJNI.Db_get_assoc_flags(swigCPtr, this); }
 
+  public String get_blob_dir() throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.Db_get_blob_dir(swigCPtr, this);
+  }
+
+  public String get_blob_sub_dir() throws com.sleepycat.db.DatabaseException {
+    return db_javaJNI.Db_get_blob_sub_dir(swigCPtr, this);
+  }
+
+  public int get_blob_threshold() throws com.sleepycat.db.DatabaseException { return db_javaJNI.Db_get_blob_threshold(swigCPtr, this); }
+
   public boolean get_byteswapped() throws com.sleepycat.db.DatabaseException { return db_javaJNI.Db_get_byteswapped(swigCPtr, this); }
 
   public long get_cachesize() throws com.sleepycat.db.DatabaseException {
@@ -475,6 +485,10 @@ public class Db {
   /* package */ void rename0(String file, String database, String newname, int flags) { db_javaJNI.Db_rename0(swigCPtr, this, file, database, newname, flags); }
 
   public void set_append_recno(com.sleepycat.db.RecordNumberAppender db_append_recno_fcn) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_append_recno(swigCPtr, this,  (append_recno_handler = db_append_recno_fcn) != null ); }
+
+  public void set_blob_dir(String dir) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_blob_dir(swigCPtr, this, dir); }
+
+  public void set_blob_threshold(int bytes, int flags) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_blob_threshold(swigCPtr, this, bytes, flags); }
 
   public void set_bt_compare(java.util.Comparator bt_compare_fcn) throws com.sleepycat.db.DatabaseException { db_javaJNI.Db_set_bt_compare(swigCPtr, this,  (bt_compare_handler = bt_compare_fcn) != null ); }
 

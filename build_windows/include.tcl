@@ -2,7 +2,7 @@
 
 set tclsh_path SET_YOUR_TCLSH_PATH
 set buildpath Win32/Debug
-set tcllib libdb_tcl53d.dll
+set tcllib libdb_tcl60d.dll
 
 set src_root ..
 set test_path ../test/tcl
@@ -15,6 +15,7 @@ set testdir ./TESTDIR
 global dict
 global util_path
 
+global is_aix_test
 global is_freebsd_test
 global is_hp_test
 global is_linux_test

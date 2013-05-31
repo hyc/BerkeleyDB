@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -437,7 +437,7 @@ __rep_send_message(env, eid, rtype, lsnp, dbt, ctlflags, repflags)
 	    FLD_ISSET(ctlflags, REPCTL_LEASE | REPCTL_PERM)) {
 		F_SET(&cntrl, REPCTL_LEASE);
 		DB_ASSERT(env, rep->version == DB_REPVERSION);
-		__os_gettime(env, &msg_time, 1);
+		__os_gettime(env, &msg_time, 0);
 		cntrl.msg_sec = (u_int32_t)msg_time.tv_sec;
 		cntrl.msg_nsec = (u_int32_t)msg_time.tv_nsec;
 	}
@@ -1128,6 +1128,8 @@ __env_db_rep_exit(env)
 	rep = db_rep->region;
 
 	REP_SYSTEM_LOCK(env);
+	/* If we have a reference, it better not already be 0. */
+	DB_ASSERT(env, rep->handle_cnt != 0);
 	rep->handle_cnt--;
 	REP_SYSTEM_UNLOCK(env);
 
@@ -1190,7 +1192,7 @@ __db_rep_enter(dbp, checkgen, checklock, return_now)
 	 * get an exclusive lock on this database.
 	 */
 	if (checkgen && dbp->mpf->mfp && IS_REP_CLIENT(env)) {
-		if (dbp->mpf->mfp->excl_lockout) 
+		if (dbp->mpf->mfp->excl_lockout)
 			return (DB_REP_HANDLE_DEAD);
 	}
 
@@ -1328,7 +1330,8 @@ __op_rep_exit(env)
 	rep = db_rep->region;
 
 	REP_SYSTEM_LOCK(env);
-	DB_ASSERT(env, rep->op_cnt > 0);
+	/* If we have a reference, it better not already be 0. */
+	DB_ASSERT(env, rep->op_cnt != 0);
 	rep->op_cnt--;
 	REP_SYSTEM_UNLOCK(env);
 
@@ -2215,9 +2218,9 @@ __rep_print_int(env, verbose, fmt, ap)
 	__os_id(env->dbenv, &pid, &tid);
 	if (diag_msg)
 		MUTEX_LOCK(env, rep->mtx_diag);
-	__os_gettime(env, &ts, 1);
+	__os_gettime(env, &ts, 0);
 	__db_msgadd(env, &mb, "[%lu:%lu][%s] %s: ",
-	    (u_long)ts.tv_sec, (u_long)ts.tv_nsec/NS_PER_US,
+	    (u_long)ts.tv_sec, (u_long)ts.tv_nsec / NS_PER_US,
 	    env->dbenv->thread_id_string(env->dbenv, pid, tid, buf), s);
 
 	__db_msgadd_ap(env, &mb, fmt, ap);
@@ -2650,8 +2653,7 @@ __rep_log_backup(env, logc, lsn, match)
 		 */
 		if ((match == REP_REC_COMMIT &&
 		    rectype == DB___txn_regop) ||
-		    (match == REP_REC_PERM &&
-		    (rectype == DB___txn_ckp || rectype == DB___txn_regop)))
+		    (match == REP_REC_PERM && IS_PERM_RECTYPE(rectype)))
 			break;
 	}
 	return (ret);
@@ -2671,7 +2673,6 @@ __rep_get_maxpermlsn(env, max_perm_lsnp)
 {
 	DB_LOG *dblp;
 	DB_REP *db_rep;
-	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REP *rep;
 
@@ -2680,11 +2681,9 @@ __rep_get_maxpermlsn(env, max_perm_lsnp)
 	dblp = env->lg_handle;
 	lp = dblp->reginfo.primary;
 
-	ENV_ENTER(env, ip);
 	MUTEX_LOCK(env, rep->mtx_clientdb);
 	*max_perm_lsnp = lp->max_perm_lsn;
 	MUTEX_UNLOCK(env, rep->mtx_clientdb);
-	ENV_LEAVE(env, ip);
 	return (0);
 }
 

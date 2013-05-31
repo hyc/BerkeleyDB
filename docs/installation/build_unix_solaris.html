@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -155,6 +155,15 @@ include the problematical system include files.</li>
 <a class="link" href="build_unix_conf.html#build_unix_conf.--disable-largefile">--disable-largefile</a> configuration option and rebuilding.</li>
               </ol>
             </div>
+          </li>
+          <li>
+            <span class="bold">
+              <strong> I see that Berkeley DB automatically uses optimization
+level '-xO2' for the Sun Workshop compiler.  Can I change this to a higher level? </strong>
+            </span>
+            <p>We have noticed some test failures when compiling with level '-xO3' and higher
+due to overaggressive compiler optimizations.  We do not recommend changing this 
+setting.</p>
           </li>
         </ol>
       </div>

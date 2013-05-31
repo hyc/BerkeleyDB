@@ -27,8 +27,8 @@ for i in $GREP_CMDS; do
 		GREP_CMD=$i
 		break
 	fi
-	rm s_message_id.tmp s_message_id.tmp.out
 done
+rm -f s_message_id.tmp s_message_id.tmp.out
 if [ "$GREP_CMD" = "" ]; then
 	echo "UNSUPPORTED COMMAND: (g)grep -o --include"
 	echo "Please try other platform"
@@ -69,12 +69,13 @@ for i in $MSG_DIRS; do
 		if [ "$i" = "../util/" ] || [ "$i" = "../lang/dbm/" ]; then
 			cat_indx=10
 			cat_dirs="../util/ ../lang/dbm/"
-		elif [ "$3" = "common" ] || [ "$3" = "crypto" ] || \
+		elif [ "$3" = "blob" ] || [ "$3" = "common" ] || \
+		    [ "$3" = "crypto" ] || \
 		    [ "$3" = "fileops" ] || [ "$3" = "hmac" ] || \
 		    [ "$3" = "os" ] || [ "$3" = "os_qnx" ] || \
 		    [ "$3" = "os_vxworks" ] || [ "$3" = "os_windows" ]; then 
 			cat_indx=0
-			cat_dirs=$i"common "$i"crypto "$i"fileops "
+			cat_dirs=$i"blob "$i"common "$i"crypto "$i"fileops "
 			cat_dirs=$cat_dirs$i"hmac "$i"os "$i"os_qnx "
 			cat_dirs=$cat_dirs$i"os_vxworks "$i"os_windows"
 		elif [ "$3" = "db" ] || [ "$3" = "dbinc" ] || \

@@ -47,6 +47,12 @@ internal class DBC : IDisposable {
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
+	internal DB_STREAM db_stream(uint flags) {
+		int err = 0;
+		DB_STREAM ret = db_stream(flags, ref err);
+		DatabaseException.ThrowException(err);
+		return ret;
+	}
 
   internal int close() {
 		int ret = libdb_csharpPINVOKE.DBC_close(swigCPtr);
@@ -71,6 +77,12 @@ internal class DBC : IDisposable {
 		DatabaseException.ThrowException(ret);
 		return ret;
 }
+
+  private DB_STREAM db_stream(uint flags, ref int err) {
+    IntPtr cPtr = libdb_csharpPINVOKE.DBC_db_stream(swigCPtr, flags, ref err);
+    DB_STREAM ret = (cPtr == IntPtr.Zero) ? null : new DB_STREAM(cPtr, false);
+    return ret;
+  }
 
   internal int del(uint flags) {
 		int ret;

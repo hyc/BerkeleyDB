@@ -2,7 +2,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -74,6 +74,17 @@
 
 #endif /* !HAVE_SYSTEM_INCLUDE_FILES */
 
+/*
+ * The Windows compiler needs to be told about structures that are available
+ * outside a dll.
+ */
+#if defined(DB_WIN32) && defined(_MSC_VER) && \
+    !defined(DB_CREATE_DLL) && !defined(_LIB)
+#define	__DB_IMPORT __declspec(dllimport)
+#else
+#define	__DB_IMPORT
+#endif
+
 #ifdef DB_WIN32
 #include "dbinc/win_db.h"
 #endif
@@ -92,17 +103,6 @@
 
 #if defined(__cplusplus)
 extern "C" {
-#endif
-
-/*
- * The Windows compiler needs to be told about structures that are available
- * outside a dll.
- */
-#if defined(DB_WIN32) && defined(_MSC_VER) && \
-    !defined(DB_CREATE_DLL) && !defined(_LIB)
-#define	__DB_IMPORT __declspec(dllimport)
-#else
-#define	__DB_IMPORT
 #endif
 
 /*******************************************************
@@ -442,25 +442,21 @@ typedef struct __db_msgbuf {
  *
  * Error message IDs are automatically assigned by dist/s_message_id script.
  */
+#ifdef HAVE_STRIPPED_MESSAGES
+#define DB_STR_C(msg, fmt)	fmt
+#else
+#define DB_STR_C(msg, fmt)	msg
+#endif
+
 #ifdef HAVE_LOCALIZATION
-#define _(msg)	msg	/* Replace with localization function. */
+#define _(msg)	(msg)	/* Replace with localization function. */
 #else
 #define _(msg)	msg
 #endif
 
-#ifdef HAVE_STRIPPED_MESSAGES
-#define DB_STR_C(msg, fmt)	fmt
-#else
-#define DB_STR_C(msg, fmt)	_(msg)
-#endif
-
-#define DB_MSGID(id)		"BDB" id
-
-#define DB_STR(id, msg)		DB_MSGID(id) " " DB_STR_C(msg, "")
-
-#define DB_STR_A(id, msg, fmt)	DB_MSGID(id) " " DB_STR_C(msg, fmt)
-
-#define DB_STR_P(msg)		_(msg)
+#define DB_STR(id, msg)			_("BDB" id " " DB_STR_C(msg, ""))
+#define DB_STR_A(id, msg, fmt)	_("BDB" id " " DB_STR_C(msg, fmt))
+#define DB_STR_P(msg)			_(msg)
 
 /*
  * There are quite a few places in Berkeley DB where we want to initialize
@@ -543,6 +539,7 @@ typedef struct __db_msgbuf {
 /* Type passed to __db_appname(). */
 typedef enum {
 	DB_APP_NONE=0,			/* No type (region). */
+	DB_APP_BLOB,			/* Blob file. */
 	DB_APP_DATA,			/* Data file. */
 	DB_APP_LOG,			/* Log file. */
 	DB_APP_META,			/* Persistent metadata file. */
@@ -708,6 +705,12 @@ struct __db_thread_info { /* SHARED */
 	u_int16_t	dbth_pinmax;	/* Number of slots allocated. */
 	roff_t		dbth_pinlist;	/* List of pins. */
 	PIN_LIST	dbth_pinarray[PINMAX];	/* Initial array of slots. */
+	/*
+	 * While thread tracking is active this caches one of the lockers
+	 * created by each thread. This locker remains allocated, with an
+	 * invalid id, even after the locker id is freed.
+	 */
+	roff_t		dbth_local_locker;
 #ifdef DIAGNOSTIC
 	roff_t		dbth_locker;	/* Current locker for this thread. */
 	u_int32_t	dbth_check_off;	/* Count of number of LOCK_OFF calls. */
@@ -1119,6 +1122,7 @@ typedef struct __dbpginfo {
 #include "dbinc/os.h"
 #include "dbinc_auto/clib_ext.h"
 #include "dbinc_auto/common_ext.h"
+#include "dbinc_auto/blob_ext.h"
 
 /*******************************************************
  * Remaining Log.

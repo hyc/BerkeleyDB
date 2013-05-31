@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -10,10 +10,10 @@ package com.sleepycat.util.test;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
+import java.util.List;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
 
 import com.sleepycat.compat.DbCompat;
 import com.sleepycat.db.CursorConfig;
@@ -45,7 +45,6 @@ public abstract class TxnTestCase extends DualTestCase {
     public static final String TXN_AUTO = "txn-auto";
     public static final String TXN_USER = "txn-user";
     public static final String TXN_CDB = "txn-cdb";
-    protected static Class<? extends TestCase> testClass;
 
     protected File envHome;
     protected Environment env;
@@ -53,13 +52,9 @@ public abstract class TxnTestCase extends DualTestCase {
     protected String txnType;
     protected boolean isTransactional;
 
-    /**
-     * Returns a txn test suite.  If txnTypes is null, all three types are run.
-     */
-    public static TestSuite txnTestSuite(EnvironmentConfig envConfig,
-                                         String[] txnTypes) {
+    public static List<Object[]> getTxnTypes(String[] txnTypes, boolean rep) {
         if (txnTypes == null) {
-            if (isReplicatedTest(testClass)) {
+            if (rep) {
                 txnTypes = new String[] { // Skip non-transactional tests
                                           TxnTestCase.TXN_USER,
                                           TxnTestCase.TXN_AUTO };
@@ -83,61 +78,40 @@ public abstract class TxnTestCase extends DualTestCase {
                 tmp.toArray(txnTypes);
             }
         }
-        if (envConfig == null) {
-            envConfig = new EnvironmentConfig();
-            envConfig.setAllowCreate(true);
+        List<Object[]> list = new ArrayList<Object[]>();
+        for (String type : txnTypes) {
+            list.add(new Object[] {type});
         }
-        TestSuite suite = new TestSuite();
-        for (int i = 0; i < txnTypes.length; i += 1) {
-            TestSuite baseSuite = new TestSuite(testClass);
-            Enumeration e = baseSuite.tests();
-            while (e.hasMoreElements()) {
-                TxnTestCase test = (TxnTestCase) e.nextElement();
-                test.txnInit(envConfig, txnTypes[i]);
-                suite.addTest(test);
-            }
-        }
-        return suite;
+        return list;
     }
 
-    private void txnInit(EnvironmentConfig envConfig, String txnType) {
-
-        this.envConfig = envConfig;
-        this.txnType = txnType;
-        isTransactional = (txnType != TXN_NULL);
-    }
-
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
         super.setUp();
         envHome = SharedTestUtils.getNewDir();
-    }
-
-    @Override
-    public void runTest()
-        throws Throwable {
-
         openEnv();
-        super.runTest();
-        closeEnv();
     }
 
-    @Override
+    @After
     public void tearDown()
         throws Exception {
 
-        /* Set test name for reporting; cannot be done in the ctor or setUp. */
-        setName(txnType + ':' + getName());
-
         super.tearDown();
+        closeEnv();
         env = null;
-
-        try {
-            SharedTestUtils.emptyDir(envHome);
-        } catch (Throwable e) {
-            System.out.println("tearDown: " + e);
+    }
+    
+    protected void initEnvConfig() {
+        if (envConfig == null) {
+            envConfig = new EnvironmentConfig();
+            envConfig.setAllowCreate(true);
+            
+            /* Always use write-no-sync (by default) to speed up tests. */
+            if (!envConfig.getTxnNoSync() && !envConfig.getTxnWriteNoSync()) {
+                envConfig.setTxnWriteNoSync(true);
+            }
         }
     }
 
@@ -196,9 +170,8 @@ public abstract class TxnTestCase extends DualTestCase {
 
         if (txnType == TXN_USER) {
             return env.beginTransaction(parentTxn, config);
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**

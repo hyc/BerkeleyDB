@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -369,7 +369,6 @@ tcl_LogStat(interp, objc, objv, dbenv)
 	/*
 	 * MAKE_STAT_LIST assumes 'res' and 'error' label.
 	 */
-#ifdef HAVE_STATISTICS
 	MAKE_STAT_LIST("Magic", sp->st_magic);
 	MAKE_STAT_LIST("Log file Version", sp->st_version);
 	MAKE_STAT_LIST("Region size", sp->st_regsize);
@@ -398,7 +397,7 @@ tcl_LogStat(interp, objc, objv, dbenv)
 	MAKE_STAT_LIST("Min commits in a log flush", sp->st_mincommitperflush);
 	MAKE_WSTAT_LIST("Number of region lock waits", sp->st_region_wait);
 	MAKE_WSTAT_LIST("Number of region lock nowaits", sp->st_region_nowait);
-#endif
+
 	Tcl_SetObjResult(interp, res);
 error:
 	__os_ufree(dbenv->env, sp);
@@ -417,7 +416,8 @@ tcl_LogStatPrint(interp, objc, objv, dbenv)
 	int objc;			/* How many arguments? */
 	Tcl_Obj *CONST objv[];		/* The argument objects */
 	DB_ENV *dbenv;			/* Environment pointer */
-{	static const char *logstatprtopts[] = {
+{
+	static const char *logstatprtopts[] = {
 		"-all",
 		"-clear",
 		 NULL
@@ -463,6 +463,33 @@ error:
 
 }
 
+/*
+ * tcl_LogVerify --
+ *
+ * PUBLIC: int tcl_LogVerify __P((Tcl_Interp *, int,
+ * PUBLIC:    Tcl_Obj * CONST*, DB_ENV *));
+ */
+int
+tcl_LogVerify(interp, objc, objv, dbenv)
+	Tcl_Interp *interp;		/* Interpreter */
+	int objc;			/* How many arguments? */
+	Tcl_Obj *CONST objv[];		/* The argument objects */
+	DB_ENV *dbenv;			/* Environment pointer */
+{	
+	DB_LOG_VERIFY_CONFIG lvc;
+	int result, ret;
+
+	COMPQUIET(objc, 0);
+	COMPQUIET(objv, NULL);
+	result = TCL_OK;
+	memset(&lvc, 0, sizeof(lvc));
+	_debug_check();
+	ret = dbenv->log_verify(dbenv, &lvc);
+	result = _ReturnSetup(interp, 
+	    ret, DB_RETOK_STD(ret), "dbenv log_verify");
+	return (result);
+
+}
 /*
  * logc_Cmd --
  *	Implements the log cursor command.
@@ -691,6 +718,7 @@ memerr:		if (res != NULL) {
 
 static const char *confwhich[] = {
 	"autoremove",
+	"blob",
 	"direct",
 	"dsync",
 	"inmemory",
@@ -699,6 +727,7 @@ static const char *confwhich[] = {
 };
 enum logwhich {
 	LOGCONF_AUTO,
+	LOGCONF_BLOB,
 	LOGCONF_DIRECT,
 	LOGCONF_DSYNC,
 	LOGCONF_INMEMORY,
@@ -738,6 +767,9 @@ tcl_LogConfig(interp, dbenv, which, onoff)
 	switch ((enum logwhich)optindex) {
 	case LOGCONF_AUTO:
 		wh = DB_LOG_AUTO_REMOVE;
+		break;
+	case LOGCONF_BLOB:
+		wh = DB_LOG_BLOB;
 		break;
 	case LOGCONF_DIRECT:
 		wh = DB_LOG_DIRECT;
@@ -798,6 +830,9 @@ tcl_LogGetConfig(interp, dbenv, which)
 	case LOGCONF_AUTO:
 		wh = DB_LOG_AUTO_REMOVE;
 		break;
+	case LOGCONF_BLOB:
+		wh = DB_LOG_BLOB;
+		break;
 	case LOGCONF_DIRECT:
 		wh = DB_LOG_DIRECT;
 		break;
@@ -819,6 +854,48 @@ tcl_LogGetConfig(interp, dbenv, which)
 		res = Tcl_NewIntObj(on);
 		Tcl_SetObjResult(interp, res);
 	}
+	return (result);
+}
+
+/*
+ * tcl_LogSetMax --
+ *	Call DB_ENV->set_lg_max().
+ *	Also delay setting the maximum log if the log buffer size
+ *	has already been set, this only applies when setting the
+ *	maximum log when opening the environment.
+ *
+ * PUBLIC: int tcl_LogSetMax
+ * PUBLIC:     __P((Tcl_Interp *, DB_ENV *,Tcl_Obj *,u_int32_t *,u_int32_t *));
+ */
+int
+tcl_LogSetMax(interp, dbenv, objv, logbufset, logmaxset)
+	Tcl_Interp *interp;
+	DB_ENV *dbenv;
+	Tcl_Obj *objv;
+	u_int32_t *logbufset;
+	u_int32_t *logmaxset;
+{
+	int result, ret;
+	u_int32_t uintarg;
+
+	result = _GetUInt32(interp, objv, &uintarg);
+	/*
+	 * If logbufset is NULL it means we're setting it after
+	 * the env is opened.  If logbufset is not NULL, we're called
+	 * from opening the environment and only set if logbufset
+	 * has already been set to a value.
+	 */
+	if (result == TCL_OK && (logbufset == NULL || (*logbufset) == 0)) {
+		_debug_check();
+		ret = dbenv->set_lg_max(dbenv, uintarg);
+		result = _ReturnSetup(interp, ret,
+		    DB_RETOK_STD(ret), "log_max");
+		if (logbufset != NULL)
+			*logbufset = 0;
+	} else
+		if (logmaxset != NULL)
+			*logmaxset = uintarg;
+
 	return (result);
 }
 #endif

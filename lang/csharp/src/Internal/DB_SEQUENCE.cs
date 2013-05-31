@@ -56,7 +56,7 @@ internal class DB_SEQUENCE : IDisposable {
 		return ret;
 }
 
-  internal int get(DB_TXN txn, int delta, ref Int64 retp, uint flags) {
+  internal int get(DB_TXN txn, uint delta, ref Int64 retp, uint flags) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_SEQUENCE_get(swigCPtr, DB_TXN.getCPtr(txn), delta, ref retp, flags);
 		DatabaseException.ThrowException(ret);
@@ -112,14 +112,14 @@ internal class DB_SEQUENCE : IDisposable {
 	return ret;
 }
 
-  internal int get_cachesize(ref int size) {
+  internal int get_cachesize(ref uint size) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_SEQUENCE_get_cachesize(swigCPtr, ref size);
 		DatabaseException.ThrowException(ret);
 		return ret;
 }
 
-  internal int set_cachesize(int size) {
+  internal int set_cachesize(uint size) {
 		int ret;
 		ret = libdb_csharpPINVOKE.DB_SEQUENCE_set_cachesize(swigCPtr, size);
 		DatabaseException.ThrowException(ret);

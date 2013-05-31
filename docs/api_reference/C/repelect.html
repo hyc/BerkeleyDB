@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -100,7 +100,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61907368"></a>How Elections are Held</h3>
+              <h3 class="title"><a id="idp62160632"></a>How Elections are Held</h3>
             </div>
           </div>
         </div>
@@ -111,6 +111,12 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
                 expires. Once the second phase is triggered, the replication site will cast a vote for the new master of
                 its choice if, and only if, the site has election information from at least <span class="bold"><strong>nvotes</strong></span> sites. If a site receives <span class="bold"><strong>nvotes</strong></span>
                 votes for it to become the new master, then it will become the new master.
+            </p>
+        <p>
+	 	    Replication view sites never participate in elections.  Values
+		    chosen for <span class="bold"><strong>nsites</strong></span> and
+                    <span class="bold"><strong>nvotes</strong></span> must not include
+		    any replication view sites.
             </p>
         <p>
                     We recommend <span class="bold"><strong>nvotes</strong></span> be set to at least:
@@ -129,7 +135,8 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
         <pre class="programlisting">         number of sites in the replication group - 1</pre>
         <p>
                     when choosing a new master after a current master fails. This allows the group to reach a consensus
-                    without having to wait for the timeout to expire.
+                    without having to wait for the timeout to expire or for
+                    the failed master to restart.
             </p>
         <p>
                     When choosing a master from among a group of client sites all restarting at the same time, it makes
@@ -151,7 +158,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61898656"></a>Parameters</h3>
+              <h3 class="title"><a id="idp62166464"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -159,13 +166,13 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61911480"></a>nsites</h4>
+                <h4 class="title"><a id="idp62180168"></a>nsites</h4>
               </div>
             </div>
           </div>
           <p>
                   The <span class="bold"><strong>nsites</strong></span> parameter specifies the
-                  number of replication sites expected to participate in the election. 
+                  number of replication sites expected to participate in the election.
                   Once the current site has election information from that many sites,
                   it will short-circuit the election and immediately cast its vote for a
                   new master. The <span class="bold"><strong>nsites</strong></span> parameter must
@@ -175,14 +182,15 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
                   method.  If an application is using master leases, then the value
                   <span class="bold"><strong>must</strong></span> be 0 and the value from 
                   <a class="xref" href="repnsites.html" title="DB_ENV-&gt;rep_set_nsites()">DB_ENV-&gt;rep_set_nsites()</a> 
-                  method must be used.
+                  method must be used.  The value should exclude any replication
+		  views.
              </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61941528"></a>nvotes</h4>
+                <h4 class="title"><a id="idp62198088"></a>nvotes</h4>
               </div>
             </div>
           </div>
@@ -200,7 +208,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61932856"></a>flags</h4>
+                <h4 class="title"><a id="idp62187656"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -214,7 +222,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61920768"></a>Errors</h3>
+              <h3 class="title"><a id="idp62176224"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -230,7 +238,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61942544"></a>DB_REP_UNAVAIL</h4>
+                <h4 class="title"><a id="idp62199104"></a>DB_REP_UNAVAIL</h4>
               </div>
             </div>
           </div>
@@ -245,7 +253,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61943880"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp62200440"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -263,7 +271,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61944736"></a>Class</h3>
+              <h3 class="title"><a id="idp62201296"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -275,7 +283,7 @@ DB_ENV-&gt;rep_elect(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61947952"></a>See Also</h3>
+              <h3 class="title"><a id="idp62204720"></a>See Also</h3>
             </div>
           </div>
         </div>

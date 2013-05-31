@@ -1,15 +1,21 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 import java.util.Map;
-import junit.framework.Test;
-import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.sleepycat.bind.EntityBinding;
 import com.sleepycat.bind.EntryBinding;
@@ -29,29 +35,15 @@ import com.sleepycat.db.DatabaseConfig;
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.Environment;
 import com.sleepycat.util.test.SharedTestUtils;
+import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * Unit test for [#19085]. The collections API supports storing and retrieving
  * null values, as long as the value binding supports null values.
  */
-public class NullValueTest extends TestCase
+public class NullValueTest extends TestBase
     implements TransactionWorker {
-    
-    public static void main(String[] args) {
-        junit.framework.TestResult tr =
-            junit.textui.TestRunner.run(suite());
-        if (tr.errorCount() > 0 ||
-            tr.failureCount() > 0) {
-            System.exit(1);
-        } else {
-            System.exit(0);
-        }
-    }
-
-    public static Test suite() {
-        return new NullValueTest();
-    }
     
     private Environment env;
     private ClassCatalog catalog;
@@ -60,20 +52,20 @@ public class NullValueTest extends TestCase
     
     public NullValueTest() {
 
-        super("NullValueTest");
+        customName = "NullValueTest";
     }
     
-    @Override
+    @Before
     public void setUp()
         throws Exception {
 
-        SharedTestUtils.printTestName(getName());
-        env = TestEnv.TXN.open(getName());
+        SharedTestUtils.printTestName(customName);
+        env = TestEnv.TXN.open(customName);
         runner = new TransactionRunner(env);
         open();
     }
     
-    @Override
+    @After
     public void tearDown() {
         if (catalog != null) {
             try {
@@ -116,7 +108,7 @@ public class NullValueTest extends TestCase
         db = DbCompat.testOpenDatabase(env, null, "test", null, dbConfig);
     }
     
-    @Override
+    @Test
     public void runTest()
         throws Exception {
 

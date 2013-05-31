@@ -2,6 +2,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_access", "VS10\ex_access.vcxproj"", "{75DF98AA-25DF-4183-A022-024CF918480D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_blob", "VS10\ex_blob.vcxproj"", "{0460962E-97E3-40fd-B3CD-702085F2FC98}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_btrec", "VS10\ex_btrec.vcxproj"", "{5DD66F4B-EB4A-4453-BC31-3FF7B2240634}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ex_bulk", "VS10\ex_bulk.vcxproj"", "{ABE1ACF6-C375-44AB-A628-80B4A94580FD}"
@@ -63,6 +65,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "excxx_access", "VS10\excxx_access.vcxproj"", "{2575F0DD-DAA5-4AE5-AC81-7C47507AD279}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "excxx_btrec", "VS10\excxx_btrec.vcxproj"", "{38C080B1-7003-48DF-820D-06348BC87B1B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "excxx_bulk", "VS10\excxx_bulk.vcxproj"", "{5AEBE8D9-4B6D-46AA-B810-30CD7E6BBD5F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "excxx_env", "VS10\excxx_env.vcxproj"", "{E790C029-341D-489B-B987-D35947AD78C3}"
 EndProject

@@ -246,7 +246,22 @@ SWIGINTERN int DB_rename(DB *self,char const *file,char const *database,char con
 SWIGINTERN int DB_set_append_recno(DB *self,int (*callback)(DB *,DBT *,db_recno_t)){
 		return self->set_append_recno(self, callback);
 	}
-SWIGINTERN int DB_set_bt_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *)){
+SWIGINTERN int DB_get_blob_dir(DB *self,char const **dir){
+		return self->get_blob_dir(self, dir);
+	}
+SWIGINTERN int DB_set_blob_dir(DB *self,char const *dir){
+		return self->set_blob_dir(self, dir);
+	}
+SWIGINTERN int DB_get_blob_sub_dir(DB *self,char const **dir){
+		return self->get_blob_sub_dir(self, dir);
+	}
+SWIGINTERN int DB_get_blob_threshold(DB *self,u_int32_t *bytes){
+		return self->get_blob_threshold(self, bytes);
+	}
+SWIGINTERN int DB_set_blob_threshold(DB *self,u_int32_t bytes,u_int32_t flags){
+		return self->set_blob_threshold(self, bytes, flags);
+	}
+SWIGINTERN int DB_set_bt_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *,size_t *)){
 		return self->set_bt_compare(self, callback);
 	}
 SWIGINTERN int DB_set_bt_compress(DB *self,int (*compress)(DB *,DBT const *,DBT const *,DBT const *,DBT const *,DBT *),int (*decompress)(DB *,DBT const *,DBT const *,DBT *,DBT *,DBT *)){
@@ -267,7 +282,7 @@ SWIGINTERN int DB_get_cachesize(DB *self,u_int32_t *gbytes,u_int32_t *bytes,int 
 SWIGINTERN int DB_set_cachesize(DB *self,u_int32_t gbytes,u_int32_t bytes,int ncache){
 		return self->set_cachesize(self, gbytes, bytes, ncache);
 	}
-SWIGINTERN int DB_set_dup_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *)){
+SWIGINTERN int DB_set_dup_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *,size_t *)){
 		return self->set_dup_compare(self, callback);
 	}
 SWIGINTERN int DB_get_encrypt_flags(DB *self,u_int32_t *flags){
@@ -300,7 +315,7 @@ SWIGINTERN int DB_get_heap_regionsize(DB *self,u_int32_t *npages){
 SWIGINTERN int DB_set_heap_regionsize(DB *self,u_int32_t npages){
 		return self->set_heap_regionsize(self, npages);
 	}
-SWIGINTERN int DB_set_h_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *)){
+SWIGINTERN int DB_set_h_compare(DB *self,int (*callback)(DB *,DBT const *,DBT const *,size_t *)){
 		return self->set_h_compare(self, callback);
 	}
 SWIGINTERN int DB_get_h_ffactor(DB *self,u_int32_t *ffactor){
@@ -335,6 +350,45 @@ SWIGINTERN int DB_get_pagesize(DB *self,u_int32_t *pgsz){
 	}
 SWIGINTERN int DB_set_pagesize(DB *self,u_int32_t pgsz){
 		return self->set_pagesize(self, pgsz);
+	}
+SWIGINTERN DBT *DB_get_partition_keys(DB *self,u_int *countp,u_int32_t *sizep,int *err){
+		DBT *keys = NULL; 
+		*err = self->get_partition_keys(self, countp, &keys); 
+		*sizep = sizeof(DBT); 
+		return keys;
+	}
+SWIGINTERN int DB_get_partition_parts(DB *self,u_int32_t *parts){
+		int ret;
+		ret = self->get_partition_keys(self, parts, NULL);
+		if (*parts == 0)
+			ret = self->get_partition_callback(self, parts, NULL);
+		return ret;
+	}
+SWIGINTERN int DB_set_partition(DB *self,u_int32_t parts,DBT *keys,u_int32_t (*partition)(DB *,DBT *)){
+		DBT *dbt;
+		DBT **ptr;
+		size_t dbt_size;
+		int i, ret;
+
+		i = 0;
+		dbt = NULL;
+		ptr = (DBT **)keys;
+		if (keys != NULL) {
+			dbt_size = sizeof(DBT);
+			if ((ret = __os_malloc(NULL, (parts - 1) * dbt_size, &dbt)) != 0)
+				return ret;
+			do {
+				if ((ret = __dbt_usercopy(self->env, ptr[i])) != 0)
+					goto err;
+				memcpy(&dbt[i], ptr[i], dbt_size);
+			} while (++i < (int)(parts - 1));
+		}
+		ret = self->set_partition(self, parts, dbt, partition);
+
+	err:	while (--i >= 0)
+			__os_ufree(self->env, ptr[i]->data);
+		__os_free(NULL, dbt);
+		return ret;
 	}
 SWIGINTERN int DB_get_priority(DB *self,DB_CACHE_PRIORITY *flags){
 		return self->get_priority(self, flags);
@@ -408,6 +462,11 @@ SWIGINTERN int DBC_cmp(DBC *self,DBC *other_dbc,int *result,u_int32_t flags){
 SWIGINTERN int DBC_count(DBC *self,db_recno_t *cnt,u_int32_t flags){
 		return self->count(self, cnt, flags);
 	}
+SWIGINTERN DB_STREAM *DBC_db_stream(DBC *self,u_int32_t flags,int *err){
+		DB_STREAM *dbs = NULL;
+		*err = self->db_stream(self, &dbs, flags);
+		return dbs;
+	}
 SWIGINTERN int DBC_del(DBC *self,u_int32_t flags){
 		return self->del(self, flags);
 	}
@@ -455,6 +514,18 @@ SWIGINTERN int DB_SITE_remove(DB_SITE *self){
 	}
 SWIGINTERN int DB_SITE_set_config(DB_SITE *self,u_int32_t which,u_int32_t value){
 		return self->set_config(self, which, value);
+	}
+SWIGINTERN int DB_STREAM_close(DB_STREAM *self,u_int32_t flags){
+		return self->close(self, flags);
+	}
+SWIGINTERN int DB_STREAM_read(DB_STREAM *self,DBT *data,db_off_t offset,u_int32_t size,u_int32_t flags){
+		return self->read(self, data, offset, size, flags);
+	}
+SWIGINTERN int DB_STREAM_size(DB_STREAM *self,db_off_t *size,u_int32_t flags){
+		return self->size(self, size, flags);
+	}
+SWIGINTERN int DB_STREAM_write(DB_STREAM *self,DBT *data,db_off_t offset,u_int32_t flags){
+		return self->write(self, data, offset, flags);
 	}
 SWIGINTERN int DB_TXN_abort(DB_TXN *self){
 		return self->abort(self);
@@ -830,6 +901,9 @@ SWIGINTERN int DB_ENV_rep_get_timeout(DB_ENV *self,int which,u_int32_t *timeoutp
 SWIGINTERN int DB_ENV_rep_set_transport(DB_ENV *self,int envid,int (*send)(DB_ENV *,DBT const *,DBT const *,DB_LSN const *,int,u_int32_t)){
 		return self->rep_set_transport(self, envid, send);
 	}
+SWIGINTERN int DB_ENV_rep_set_view(DB_ENV *self,int (*f_repview)(DB_ENV *,char const *,int *,u_int32_t)){
+		return self->rep_set_view(self, f_repview);
+	}
 SWIGINTERN int DB_ENV_set_backup_callbacks(DB_ENV *self,int (*open_func)(DB_ENV *,char const *,char const *,void **),int (*write_func)(DB_ENV *,u_int32_t,u_int32_t,u_int32_t,u_int8_t *,void *),int (*close_func)(DB_ENV *,char const *,void *)){
 		return self->set_backup_callbacks(self, open_func, write_func, close_func);
 	}
@@ -838,6 +912,18 @@ SWIGINTERN int DB_ENV_get_backup_config(DB_ENV *self,DB_BACKUP_CONFIG cfg,u_int3
 	}
 SWIGINTERN int DB_ENV_set_backup_config(DB_ENV *self,DB_BACKUP_CONFIG cfg,u_int32_t value){
 		return self->set_backup_config(self, cfg, value);
+	}
+SWIGINTERN int DB_ENV_get_blob_dir(DB_ENV *self,char const **dirp){
+		return self->get_blob_dir(self, dirp);
+	}
+SWIGINTERN int DB_ENV_set_blob_dir(DB_ENV *self,char const *dir){
+		return self->set_blob_dir(self, dir);
+	}
+SWIGINTERN int DB_ENV_get_blob_threshold(DB_ENV *self,u_int32_t *bytes){
+		return self->get_blob_threshold(self, bytes);
+	}
+SWIGINTERN int DB_ENV_set_blob_threshold(DB_ENV *self,u_int32_t bytes,u_int32_t flags){
+		return self->set_blob_threshold(self, bytes, flags);
 	}
 SWIGINTERN int DB_ENV_get_cachesize(DB_ENV *self,u_int32_t *gbytes,u_int32_t *bytes,int *ncache){
 		return self->get_cachesize(self, gbytes, bytes, ncache);
@@ -1239,7 +1325,7 @@ SWIGINTERN void delete_DB_SEQUENCE(DB_SEQUENCE *self){ }
 SWIGINTERN int DB_SEQUENCE_close(DB_SEQUENCE *self,u_int32_t flags){
 		return self->close(self, flags);
 	}
-SWIGINTERN int DB_SEQUENCE_get(DB_SEQUENCE *self,DB_TXN *txn,int32_t delta,db_seq_t *retp,u_int32_t flags){
+SWIGINTERN int DB_SEQUENCE_get(DB_SEQUENCE *self,DB_TXN *txn,u_int32_t delta,db_seq_t *retp,u_int32_t flags){
 		return self->get(self, txn, delta, retp, flags);
 	}
 SWIGINTERN DB *DB_SEQUENCE_get_db(DB_SEQUENCE *self){
@@ -1260,10 +1346,10 @@ SWIGINTERN int DB_SEQUENCE_open(DB_SEQUENCE *self,DB_TXN *txn,DBT *key,u_int32_t
 SWIGINTERN int DB_SEQUENCE_remove(DB_SEQUENCE *self,DB_TXN *txn,u_int32_t flags){
 		return self->remove(self, txn, flags);
 	}
-SWIGINTERN int DB_SEQUENCE_get_cachesize(DB_SEQUENCE *self,int32_t *size){
+SWIGINTERN int DB_SEQUENCE_get_cachesize(DB_SEQUENCE *self,u_int32_t *size){
 		return self->get_cachesize(self, size);
 	}
-SWIGINTERN int DB_SEQUENCE_set_cachesize(DB_SEQUENCE *self,int32_t size){
+SWIGINTERN int DB_SEQUENCE_set_cachesize(DB_SEQUENCE *self,u_int32_t size){
 		return self->set_cachesize(self, size);
 	}
 SWIGINTERN int DB_SEQUENCE_get_flags(DB_SEQUENCE *self,u_int32_t *flags){
@@ -2114,14 +2200,86 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_append_recno(void * jarg1, void * jarg2
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_bt_compare(void * jarg1, void * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_get_blob_dir(void * jarg1, void * jarg2) {
   int jresult ;
   DB *arg1 = (DB *) 0 ;
-  int (*arg2)(DB *,DBT const *,DBT const *) = (int (*)(DB *,DBT const *,DBT const *)) 0 ;
+  char **arg2 = (char **) 0 ;
   int result;
   
   arg1 = (DB *)jarg1; 
-  arg2 = (int (*)(DB *,DBT const *,DBT const *))jarg2; 
+  arg2 = (char **)jarg2; 
+  result = (int)DB_get_blob_dir(arg1,(char const **)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_blob_dir(void * jarg1, char * jarg2) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)DB_set_blob_dir(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_get_blob_sub_dir(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  char **arg2 = (char **) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (char **)jarg2; 
+  result = (int)DB_get_blob_sub_dir(arg1,(char const **)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_get_blob_threshold(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  u_int32_t *arg2 = (u_int32_t *) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (u_int32_t *)jarg2; 
+  result = (int)DB_get_blob_threshold(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_blob_threshold(void * jarg1, unsigned long jarg2, unsigned long jarg3) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  u_int32_t arg2 ;
+  u_int32_t arg3 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  arg3 = (u_int32_t)jarg3; 
+  result = (int)DB_set_blob_threshold(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_bt_compare(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  int (*arg2)(DB *,DBT const *,DBT const *,size_t *) = (int (*)(DB *,DBT const *,DBT const *,size_t *)) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (int (*)(DB *,DBT const *,DBT const *,size_t *))jarg2; 
   result = (int)DB_set_bt_compare(arg1,arg2);
   jresult = result; 
   return jresult;
@@ -2225,11 +2383,11 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_cachesize(void * jarg1, unsigned long j
 SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_dup_compare(void * jarg1, void * jarg2) {
   int jresult ;
   DB *arg1 = (DB *) 0 ;
-  int (*arg2)(DB *,DBT const *,DBT const *) = (int (*)(DB *,DBT const *,DBT const *)) 0 ;
+  int (*arg2)(DB *,DBT const *,DBT const *,size_t *) = (int (*)(DB *,DBT const *,DBT const *,size_t *)) 0 ;
   int result;
   
   arg1 = (DB *)jarg1; 
-  arg2 = (int (*)(DB *,DBT const *,DBT const *))jarg2; 
+  arg2 = (int (*)(DB *,DBT const *,DBT const *,size_t *))jarg2; 
   result = (int)DB_set_dup_compare(arg1,arg2);
   jresult = result; 
   return jresult;
@@ -2381,11 +2539,11 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_heap_regionsize(void * jarg1, unsigned 
 SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_h_compare(void * jarg1, void * jarg2) {
   int jresult ;
   DB *arg1 = (DB *) 0 ;
-  int (*arg2)(DB *,DBT const *,DBT const *) = (int (*)(DB *,DBT const *,DBT const *)) 0 ;
+  int (*arg2)(DB *,DBT const *,DBT const *,size_t *) = (int (*)(DB *,DBT const *,DBT const *,size_t *)) 0 ;
   int result;
   
   arg1 = (DB *)jarg1; 
-  arg2 = (int (*)(DB *,DBT const *,DBT const *))jarg2; 
+  arg2 = (int (*)(DB *,DBT const *,DBT const *,size_t *))jarg2; 
   result = (int)DB_set_h_compare(arg1,arg2);
   jresult = result; 
   return jresult;
@@ -2543,6 +2701,56 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_pagesize(void * jarg1, unsigned long ja
   arg1 = (DB *)jarg1; 
   arg2 = (u_int32_t)jarg2; 
   result = (int)DB_set_pagesize(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_DB_get_partition_keys(void * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+  void * jresult ;
+  DB *arg1 = (DB *) 0 ;
+  u_int *arg2 = (u_int *) 0 ;
+  u_int32_t *arg3 = (u_int32_t *) 0 ;
+  int *arg4 = (int *) 0 ;
+  DBT *result = 0 ;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (u_int *)jarg2; 
+  arg3 = (u_int32_t *)jarg3; 
+  arg4 = (int *)jarg4; 
+  result = (DBT *)DB_get_partition_keys(arg1,arg2,arg3,arg4);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_get_partition_parts(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  u_int32_t *arg2 = (u_int32_t *) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (u_int32_t *)jarg2; 
+  result = (int)DB_get_partition_parts(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_set_partition(void * jarg1, unsigned long jarg2, void * jarg3, void * jarg4) {
+  int jresult ;
+  DB *arg1 = (DB *) 0 ;
+  u_int32_t arg2 ;
+  DBT *arg3 = (DBT *) 0 ;
+  u_int32_t (*arg4)(DB *,DBT *) = (u_int32_t (*)(DB *,DBT *)) 0 ;
+  int result;
+  
+  arg1 = (DB *)jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  arg3 = (DBT *)jarg3; 
+  arg4 = (u_int32_t (*)(DB *,DBT *))jarg4; 
+  result = (int)DB_set_partition(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
@@ -2860,6 +3068,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DBC_count(void * jarg1, void * jarg2, unsigned
   arg3 = (u_int32_t)jarg3; 
   result = (int)DBC_count(arg1,arg2,arg3);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_DBC_db_stream(void * jarg1, unsigned long jarg2, void * jarg3) {
+  void * jresult ;
+  DBC *arg1 = (DBC *) 0 ;
+  u_int32_t arg2 ;
+  int *arg3 = (int *) 0 ;
+  DB_STREAM *result = 0 ;
+  
+  arg1 = (DBC *)jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  arg3 = (int *)jarg3; 
+  result = (DB_STREAM *)DBC_db_stream(arg1,arg2,arg3);
+  jresult = (void *)result; 
   return jresult;
 }
 
@@ -3312,6 +3536,92 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_DB_SITE(void * jarg1) {
   DB_SITE *arg1 = (DB_SITE *) 0 ;
   
   arg1 = (DB_SITE *)jarg1; 
+  free((char *) arg1);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_STREAM_close(void * jarg1, unsigned long jarg2) {
+  int jresult ;
+  DB_STREAM *arg1 = (DB_STREAM *) 0 ;
+  u_int32_t arg2 ;
+  int result;
+  
+  arg1 = (DB_STREAM *)jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  result = (int)DB_STREAM_close(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_STREAM_read(void * jarg1, void * jarg2, long long jarg3, unsigned long jarg4, unsigned long jarg5) {
+  int jresult ;
+  DB_STREAM *arg1 = (DB_STREAM *) 0 ;
+  DBT *arg2 = (DBT *) 0 ;
+  db_off_t arg3 ;
+  u_int32_t arg4 ;
+  u_int32_t arg5 ;
+  int result;
+  
+  arg1 = (DB_STREAM *)jarg1; 
+  arg2 = (DBT *)jarg2; 
+  arg3 = (db_off_t)jarg3; 
+  arg4 = (u_int32_t)jarg4; 
+  arg5 = (u_int32_t)jarg5; 
+  result = (int)DB_STREAM_read(arg1,arg2,arg3,arg4,arg5);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_STREAM_size(void * jarg1, void * jarg2, unsigned long jarg3) {
+  int jresult ;
+  DB_STREAM *arg1 = (DB_STREAM *) 0 ;
+  db_off_t *arg2 = (db_off_t *) 0 ;
+  u_int32_t arg3 ;
+  int result;
+  
+  arg1 = (DB_STREAM *)jarg1; 
+  arg2 = (db_off_t *)jarg2; 
+  arg3 = (u_int32_t)jarg3; 
+  result = (int)DB_STREAM_size(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_STREAM_write(void * jarg1, void * jarg2, long long jarg3, unsigned long jarg4) {
+  int jresult ;
+  DB_STREAM *arg1 = (DB_STREAM *) 0 ;
+  DBT *arg2 = (DBT *) 0 ;
+  db_off_t arg3 ;
+  u_int32_t arg4 ;
+  int result;
+  
+  arg1 = (DB_STREAM *)jarg1; 
+  arg2 = (DBT *)jarg2; 
+  arg3 = (db_off_t)jarg3; 
+  arg4 = (u_int32_t)jarg4; 
+  result = (int)DB_STREAM_write(arg1,arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_DB_STREAM() {
+  void * jresult ;
+  DB_STREAM *result = 0 ;
+  
+  result = (DB_STREAM *)calloc(1, sizeof(DB_STREAM));
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_DB_STREAM(void * jarg1) {
+  DB_STREAM *arg1 = (DB_STREAM *) 0 ;
+  
+  arg1 = (DB_STREAM *)jarg1; 
   free((char *) arg1);
 }
 
@@ -4995,6 +5305,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_rep_set_transport(void * jarg1, int jar
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_rep_set_view(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB_ENV *arg1 = (DB_ENV *) 0 ;
+  int (*arg2)(DB_ENV *,char const *,int *,u_int32_t) = (int (*)(DB_ENV *,char const *,int *,u_int32_t)) 0 ;
+  int result;
+  
+  arg1 = (DB_ENV *)jarg1; 
+  arg2 = (int (*)(DB_ENV *,char const *,int *,u_int32_t))jarg2; 
+  result = (int)DB_ENV_rep_set_view(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_set_backup_callbacks(void * jarg1, void * jarg2, void * jarg3, void * jarg4) {
   int jresult ;
   DB_ENV *arg1 = (DB_ENV *) 0 ;
@@ -5040,6 +5364,64 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_set_backup_config(void * jarg1, unsigne
   arg2 = (DB_BACKUP_CONFIG)jarg2; 
   arg3 = (u_int32_t)jarg3; 
   result = (int)DB_ENV_set_backup_config(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_get_blob_dir(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB_ENV *arg1 = (DB_ENV *) 0 ;
+  char **arg2 = (char **) 0 ;
+  int result;
+  
+  arg1 = (DB_ENV *)jarg1; 
+  arg2 = (char **)jarg2; 
+  result = (int)DB_ENV_get_blob_dir(arg1,(char const **)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_set_blob_dir(void * jarg1, char * jarg2) {
+  int jresult ;
+  DB_ENV *arg1 = (DB_ENV *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (DB_ENV *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)DB_ENV_set_blob_dir(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_get_blob_threshold(void * jarg1, void * jarg2) {
+  int jresult ;
+  DB_ENV *arg1 = (DB_ENV *) 0 ;
+  u_int32_t *arg2 = (u_int32_t *) 0 ;
+  int result;
+  
+  arg1 = (DB_ENV *)jarg1; 
+  arg2 = (u_int32_t *)jarg2; 
+  result = (int)DB_ENV_get_blob_threshold(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_ENV_set_blob_threshold(void * jarg1, unsigned long jarg2, unsigned long jarg3) {
+  int jresult ;
+  DB_ENV *arg1 = (DB_ENV *) 0 ;
+  u_int32_t arg2 ;
+  u_int32_t arg3 ;
+  int result;
+  
+  arg1 = (DB_ENV *)jarg1; 
+  arg2 = (u_int32_t)jarg2; 
+  arg3 = (u_int32_t)jarg3; 
+  result = (int)DB_ENV_set_blob_threshold(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
@@ -6655,18 +7037,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_close(void * jarg1, unsigned long 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_get(void * jarg1, void * jarg2, int jarg3, void * jarg4, unsigned long jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_get(void * jarg1, void * jarg2, unsigned long jarg3, void * jarg4, unsigned long jarg5) {
   int jresult ;
   DB_SEQUENCE *arg1 = (DB_SEQUENCE *) 0 ;
   DB_TXN *arg2 = (DB_TXN *) 0 ;
-  int32_t arg3 ;
+  u_int32_t arg3 ;
   db_seq_t *arg4 = (db_seq_t *) 0 ;
   u_int32_t arg5 ;
   int result;
   
   arg1 = (DB_SEQUENCE *)jarg1; 
   arg2 = (DB_TXN *)jarg2; 
-  arg3 = (int32_t)jarg3; 
+  arg3 = (u_int32_t)jarg3; 
   arg4 = (db_seq_t *)jarg4; 
   arg5 = (u_int32_t)jarg5; 
   result = (int)DB_SEQUENCE_get(arg1,arg2,arg3,arg4,arg5);
@@ -6752,25 +7134,25 @@ SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_remove(void * jarg1, void * jarg2,
 SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_get_cachesize(void * jarg1, void * jarg2) {
   int jresult ;
   DB_SEQUENCE *arg1 = (DB_SEQUENCE *) 0 ;
-  int32_t *arg2 = (int32_t *) 0 ;
+  u_int32_t *arg2 = (u_int32_t *) 0 ;
   int result;
   
   arg1 = (DB_SEQUENCE *)jarg1; 
-  arg2 = (int32_t *)jarg2; 
+  arg2 = (u_int32_t *)jarg2; 
   result = (int)DB_SEQUENCE_get_cachesize(arg1,arg2);
   jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_set_cachesize(void * jarg1, int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_DB_SEQUENCE_set_cachesize(void * jarg1, unsigned long jarg2) {
   int jresult ;
   DB_SEQUENCE *arg1 = (DB_SEQUENCE *) 0 ;
-  int32_t arg2 ;
+  u_int32_t arg2 ;
   int result;
   
   arg1 = (DB_SEQUENCE *)jarg1; 
-  arg2 = (int32_t)jarg2; 
+  arg2 = (u_int32_t)jarg2; 
   result = (int)DB_SEQUENCE_set_cachesize(arg1,arg2);
   jresult = result; 
   return jresult;

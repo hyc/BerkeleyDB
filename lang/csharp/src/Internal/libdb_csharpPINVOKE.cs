@@ -217,6 +217,21 @@ class libdb_csharpPINVOKE {
   [DllImport(libname, EntryPoint="CSharp_DB_set_append_recno")]
   public static extern int DB_set_append_recno(HandleRef jarg1, BDB_AppendRecnoDelegate jarg2);
 
+  [DllImport(libname, EntryPoint="CSharp_DB_get_blob_dir")]
+  public static extern int DB_get_blob_dir(HandleRef jarg1, out IntPtr jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_set_blob_dir")]
+  public static extern int DB_set_blob_dir(HandleRef jarg1, string jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_get_blob_sub_dir")]
+  public static extern int DB_get_blob_sub_dir(HandleRef jarg1, out IntPtr jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_get_blob_threshold")]
+  public static extern int DB_get_blob_threshold(HandleRef jarg1, ref uint jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_set_blob_threshold")]
+  public static extern int DB_set_blob_threshold(HandleRef jarg1, uint jarg2, uint jarg3);
+
   [DllImport(libname, EntryPoint="CSharp_DB_set_bt_compare")]
   public static extern int DB_set_bt_compare(HandleRef jarg1, BDB_CompareDelegate jarg2);
 
@@ -307,6 +322,15 @@ class libdb_csharpPINVOKE {
   [DllImport(libname, EntryPoint="CSharp_DB_set_pagesize")]
   public static extern int DB_set_pagesize(HandleRef jarg1, uint jarg2);
 
+  [DllImport(libname, EntryPoint="CSharp_DB_get_partition_keys")]
+  public static extern IntPtr DB_get_partition_keys(HandleRef jarg1, ref uint jarg2, ref uint jarg3, ref int jarg4);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_get_partition_parts")]
+  public static extern int DB_get_partition_parts(HandleRef jarg1, ref uint jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_set_partition")]
+  public static extern int DB_set_partition(HandleRef jarg1, uint jarg2, IntPtr[] jarg3, BDB_PartitionDelegate jarg4);
+
   [DllImport(libname, EntryPoint="CSharp_DB_get_priority")]
   public static extern int DB_get_priority(HandleRef jarg1, ref uint jarg2);
 
@@ -369,6 +393,9 @@ class libdb_csharpPINVOKE {
 
   [DllImport(libname, EntryPoint="CSharp_DBC_count")]
   public static extern int DBC_count(HandleRef jarg1, ref uint jarg2, uint jarg3);
+
+  [DllImport(libname, EntryPoint="CSharp_DBC_db_stream")]
+  public static extern IntPtr DBC_db_stream(HandleRef jarg1, uint jarg2, ref int jarg3);
 
   [DllImport(libname, EntryPoint="CSharp_DBC_del")]
   public static extern int DBC_del(HandleRef jarg1, uint jarg2);
@@ -480,6 +507,24 @@ class libdb_csharpPINVOKE {
 
   [DllImport(libname, EntryPoint="CSharp_delete_DB_SITE")]
   public static extern void delete_DB_SITE(HandleRef jarg1);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_STREAM_close")]
+  public static extern int DB_STREAM_close(HandleRef jarg1, uint jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_STREAM_read")]
+  public static extern int DB_STREAM_read(HandleRef jarg1, HandleRef jarg2, Int64 jarg3, uint jarg4, uint jarg5);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_STREAM_size")]
+  public static extern int DB_STREAM_size(HandleRef jarg1, ref Int64 jarg2, uint jarg3);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_STREAM_write")]
+  public static extern int DB_STREAM_write(HandleRef jarg1, HandleRef jarg2, Int64 jarg3, uint jarg4);
+
+  [DllImport(libname, EntryPoint="CSharp_new_DB_STREAM")]
+  public static extern IntPtr new_DB_STREAM();
+
+  [DllImport(libname, EntryPoint="CSharp_delete_DB_STREAM")]
+  public static extern void delete_DB_STREAM(HandleRef jarg1);
 
   [DllImport(libname, EntryPoint="CSharp_DB_REPMGR_SITE_eid_set")]
   public static extern void DB_REPMGR_SITE_eid_set(HandleRef jarg1, int jarg2);
@@ -823,6 +868,9 @@ class libdb_csharpPINVOKE {
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_rep_set_transport")]
   public static extern int DB_ENV_rep_set_transport(HandleRef jarg1, int jarg2, BDB_RepTransportDelegate jarg3);
 
+  [DllImport(libname, EntryPoint="CSharp_DB_ENV_rep_set_view")]
+  public static extern int DB_ENV_rep_set_view(HandleRef jarg1, BDB_ReplicationViewDelegate jarg2);
+
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_set_backup_callbacks")]
   public static extern int DB_ENV_set_backup_callbacks(HandleRef jarg1, BDB_BackupOpenDelegate jarg2, BDB_BackupWriteDelegate jarg3, BDB_BackupCloseDelegate jarg4);
 
@@ -831,6 +879,18 @@ class libdb_csharpPINVOKE {
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_set_backup_config")]
   public static extern int DB_ENV_set_backup_config(HandleRef jarg1, uint jarg2, uint jarg3);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_ENV_get_blob_dir")]
+  public static extern int DB_ENV_get_blob_dir(HandleRef jarg1, out IntPtr jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_ENV_set_blob_dir")]
+  public static extern int DB_ENV_set_blob_dir(HandleRef jarg1, string jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_ENV_get_blob_threshold")]
+  public static extern int DB_ENV_get_blob_threshold(HandleRef jarg1, ref uint jarg2);
+
+  [DllImport(libname, EntryPoint="CSharp_DB_ENV_set_blob_threshold")]
+  public static extern int DB_ENV_set_blob_threshold(HandleRef jarg1, uint jarg2, uint jarg3);
 
   [DllImport(libname, EntryPoint="CSharp_DB_ENV_get_cachesize")]
   public static extern int DB_ENV_get_cachesize(HandleRef jarg1, ref uint jarg2, ref uint jarg3, ref int jarg4);
@@ -1190,7 +1250,7 @@ class libdb_csharpPINVOKE {
   public static extern int DB_SEQUENCE_close(HandleRef jarg1, uint jarg2);
 
   [DllImport(libname, EntryPoint="CSharp_DB_SEQUENCE_get")]
-  public static extern int DB_SEQUENCE_get(HandleRef jarg1, HandleRef jarg2, int jarg3, ref Int64 jarg4, uint jarg5);
+  public static extern int DB_SEQUENCE_get(HandleRef jarg1, HandleRef jarg2, uint jarg3, ref Int64 jarg4, uint jarg5);
 
   [DllImport(libname, EntryPoint="CSharp_DB_SEQUENCE_get_db")]
   public static extern IntPtr DB_SEQUENCE_get_db(HandleRef jarg1);
@@ -1208,10 +1268,10 @@ class libdb_csharpPINVOKE {
   public static extern int DB_SEQUENCE_remove(HandleRef jarg1, HandleRef jarg2, uint jarg3);
 
   [DllImport(libname, EntryPoint="CSharp_DB_SEQUENCE_get_cachesize")]
-  public static extern int DB_SEQUENCE_get_cachesize(HandleRef jarg1, ref int jarg2);
+  public static extern int DB_SEQUENCE_get_cachesize(HandleRef jarg1, ref uint jarg2);
 
   [DllImport(libname, EntryPoint="CSharp_DB_SEQUENCE_set_cachesize")]
-  public static extern int DB_SEQUENCE_set_cachesize(HandleRef jarg1, int jarg2);
+  public static extern int DB_SEQUENCE_set_cachesize(HandleRef jarg1, uint jarg2);
 
   [DllImport(libname, EntryPoint="CSharp_DB_SEQUENCE_get_flags")]
   public static extern int DB_SEQUENCE_get_flags(HandleRef jarg1, ref uint jarg2);

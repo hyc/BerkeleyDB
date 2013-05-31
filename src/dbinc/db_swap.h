@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -51,14 +51,14 @@ extern "C" {
 #define	M_64_SWAP(a) {							\
 	u_int64_t _tmp;							\
 	_tmp = (u_int64_t)a;						\
-	((u_int8_t *)&a)[0] = ((u_int8_t *)&_tmp)[7];			\
-	((u_int8_t *)&a)[1] = ((u_int8_t *)&_tmp)[6];			\
-	((u_int8_t *)&a)[2] = ((u_int8_t *)&_tmp)[5];			\
-	((u_int8_t *)&a)[3] = ((u_int8_t *)&_tmp)[4];			\
-	((u_int8_t *)&a)[4] = ((u_int8_t *)&_tmp)[3];			\
-	((u_int8_t *)&a)[5] = ((u_int8_t *)&_tmp)[2];			\
-	((u_int8_t *)&a)[6] = ((u_int8_t *)&_tmp)[1];			\
-	((u_int8_t *)&a)[7] = ((u_int8_t *)&_tmp)[0];			\
+	((u_int8_t *)&(a))[0] = ((u_int8_t *)&_tmp)[7];			\
+	((u_int8_t *)&(a))[1] = ((u_int8_t *)&_tmp)[6];			\
+	((u_int8_t *)&(a))[2] = ((u_int8_t *)&_tmp)[5];			\
+	((u_int8_t *)&(a))[3] = ((u_int8_t *)&_tmp)[4];			\
+	((u_int8_t *)&(a))[4] = ((u_int8_t *)&_tmp)[3];			\
+	((u_int8_t *)&(a))[5] = ((u_int8_t *)&_tmp)[2];			\
+	((u_int8_t *)&(a))[6] = ((u_int8_t *)&_tmp)[1];			\
+	((u_int8_t *)&(a))[7] = ((u_int8_t *)&_tmp)[0];			\
 }
 #undef	P_64_COPY
 #define	P_64_COPY(a, b) {						\
@@ -113,7 +113,7 @@ extern "C" {
 	P_32_COPYSWAP(&_tmp, a);					\
 } while (0)
 #undef	M_32_SWAP
-#define	M_32_SWAP(a) P_32_SWAP(&a)
+#define	M_32_SWAP(a) P_32_SWAP(&(a))
 
 /*
  * Little endian <==> big endian 16-bit swap macros.
@@ -139,7 +139,7 @@ extern "C" {
 	P_16_COPYSWAP(&_tmp, a);					\
 } while (0)
 #undef	M_16_SWAP
-#define	M_16_SWAP(a) P_16_SWAP(&a)
+#define	M_16_SWAP(a) P_16_SWAP(&(a))
 
 #undef	SWAP32
 #define	SWAP32(p) {							\
@@ -178,7 +178,7 @@ extern "C" {
 		tmp[1] = *p++;						\
 		tmp[0] = *p++;						\
 	} else {							\
-		memcpy(&i, p, sizeof(u_int32_t));			\
+		memcpy(&(i), p, sizeof(u_int32_t));			\
 		p = (u_int8_t *)p + sizeof(u_int32_t);			\
 	}								\
 } while (0)
@@ -191,7 +191,7 @@ extern "C" {
 		tmp[1] = *p++;						\
 		tmp[0] = *p++;						\
 	} else {							\
-		memcpy(&i, p, sizeof(u_int16_t));			\
+		memcpy(&(i), p, sizeof(u_int16_t));			\
 		p = (u_int8_t *)p + sizeof(u_int16_t);			\
 	}								\
 } while (0)
@@ -206,7 +206,7 @@ extern "C" {
 		*tmp++ = ((u_int8_t *)&(i))[1];				\
 		*tmp++ = ((u_int8_t *)&(i))[0];				\
 	} else								\
-		memcpy(p, &i, sizeof(u_int32_t));			\
+		memcpy(p, &(i), sizeof(u_int32_t));			\
 	p = (u_int8_t *)p + sizeof(u_int32_t);				\
 } while (0)
 

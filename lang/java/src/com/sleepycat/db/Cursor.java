@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1202,4 +1202,24 @@ deadlock.
 
         dbc.set_priority(priority.getFlag());
     }
+
+    /**
+    Return a database stream pointing to a key/data pair where the data item
+    is a blob.
+    <p>
+    @param config
+    The database stream attributes.  If null, default attributes are used.
+    <p>
+    @return
+    A database stream.
+    <p>
+    @throws DatabaseException if the data item is not a blob.
+    */
+    public DatabaseStream openDatabaseStream(DatabaseStreamConfig config)
+        throws DatabaseException {
+
+        return new DatabaseStream(this, DatabaseStreamConfig.checkNull(
+            config).openDatabaseStream(dbc), config);
+    }
+
 }

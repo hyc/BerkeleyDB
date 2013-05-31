@@ -122,12 +122,12 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
 
 #########
 # Check for needed/wanted headers
-AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h errno.h])
+AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h errno.h])
 
 #########
 # Figure out whether or not we have these functions
 #
-AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r localtime_s])
+AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r localtime_s utime malloc_usable_size])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -388,14 +388,16 @@ if test "${use_tcl}" = "yes" ; then
     fi
 
     # Start autosearch by asking tclsh
-    if test x"$cross_compiling" = xno; then
-      for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
-      do
-        if test -f "$i/tclConfig.sh" ; then
-          ac_cv_c_tclconfig="$i"
-          break
-        fi
-      done
+    if test x"${ac_cv_c_tclconfig}" = x ; then
+      if test x"$cross_compiling" = xno; then
+        for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
+        do
+          if test -f "$i/tclConfig.sh" ; then
+            ac_cv_c_tclconfig="$i"
+            break
+          fi
+        done
+      fi
     fi
 
     # then check for a private Tcl installation
@@ -499,7 +501,6 @@ if test "${use_tcl}" = "yes" ; then
     AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
-    AC_SUBST(TCL_LIBS)
     AC_SUBST(TCL_INCLUDE_SPEC)
     
     AC_SUBST(TCL_LIB_FILE)
@@ -635,6 +636,7 @@ AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--enable-load-extension],
       [use_loadextension=$enableval],[use_loadextension=no])
 if test "${use_loadextension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
+  AC_SEARCH_LIBS(dlopen, dl)
 else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi

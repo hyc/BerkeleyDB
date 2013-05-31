@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -322,6 +322,25 @@ namespace BerkeleyDB {
             set {
                 _priority = value;
                 priorityIsSet = true;
+            }
+        }
+
+        private ReplicationViewDelegate replicationView;
+        internal bool repViewIsSet;
+        /// <summary>
+        /// Create a replication view and specify the function to determine
+        /// whether a database file is replicated to the local site.
+        /// </summary>
+        /// <remarks>
+        /// If it is null, the replication view is a full view and all database
+        /// files are replicated to the local site. Otherwise it is a partial
+        /// view and only some database files are replicated to the local site.
+        /// </remarks>
+        public ReplicationViewDelegate ReplicationView {
+            get { return replicationView; }
+            set {
+                repViewIsSet = true;
+                replicationView = value;
             }
         }
 

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -133,7 +133,12 @@ __memp_stat(env, gspp, fspp, flags)
 			sp->st_ro_evict += c_mp->stat.st_ro_evict;
 			sp->st_rw_evict += c_mp->stat.st_rw_evict;
 			sp->st_page_trickle += c_mp->stat.st_page_trickle;
+			sp->st_mvcc_reused += c_mp->stat.st_mvcc_reused;
 			sp->st_pages += c_mp->pages;
+			sp->st_oddfsize_detect +=
+			    c_mp->stat.st_oddfsize_detect;
+			sp->st_oddfsize_resolve +=
+			    c_mp->stat.st_oddfsize_resolve;
 			/*
 			 * st_page_dirty	calculated by __memp_stat_hash
 			 * st_page_clean	calculated here
@@ -486,6 +491,8 @@ __memp_print_stats(env, flags)
 	    (u_long)gsp->st_mvcc_thawed);
 	__db_dl(env, "The number of frozen buffers freed",
 	    (u_long)gsp->st_mvcc_freed);
+	__db_dl(env, "The number of outdated intermediate versions reused",
+	    (u_long)gsp->st_mvcc_reused);
 	__db_dl(env, "The number of page allocations", (u_long)gsp->st_alloc);
 	__db_dl(env,
 	    "The number of hash buckets examined during allocations",
@@ -744,11 +751,18 @@ __memp_print_hash(env, dbmp, reginfo, fmap, flags)
 			    vbhp != NULL;
 			    vbhp = SH_CHAIN_PREV(vbhp, vc, __bh)) {
 				__memp_print_bh(env, dbmp,
-				    " next:\t", vbhp, fmap);
+				    " prev:\t", vbhp, fmap);
 			}
 		}
 		MUTEX_UNLOCK(env, hp->mtx_hash);
 	}
+#ifdef DIAGNOSTIC
+	SH_TAILQ_FOREACH(bhp, &c_mp->free_frozen, hq, __bh) {
+		__db_msg(env, "free frozen %lu pgno %lu mtx_buf %lu",
+		    (u_long)R_OFFSET(dbmp->reginfo, bhp),
+		    (u_long)bhp->pgno, (u_long)bhp->mtx_buf);
+	}
+#endif
 
 	return (0);
 }
@@ -775,6 +789,7 @@ __memp_print_bh(env, dbmp, prefix, bhp, fmap)
 		{ BH_FROZEN,		"frozen" },
 		{ BH_TRASH,		"trash" },
 		{ BH_THAWED,		"thawed" },
+		{ BH_UNREACHABLE,	"unreachable" },
 		{ 0,			NULL }
 	};
 	DB_MSGBUF mb;

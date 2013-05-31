@@ -96,6 +96,7 @@
     <ClCompile Include="..\..\test\c\cutest\CuTest.c"/>
     <ClCompile Include="..\..\test\c\cutest\CuTests.c"/>
     <ClCompile Include="..\..\test\c\cutest\Runner.c"/>
+    <ClCompile Include="..\..\test\c\suites\TestCallbackSetterAndGetter.c"/>
     <ClCompile Include="..\..\test\c\suites\TestChannel.c"/>
     <ClCompile Include="..\..\test\c\suites\TestDbHotBackup.c"/>
     <ClCompile Include="..\..\test\c\suites\TestDbTuner.c"/>
@@ -103,7 +104,10 @@
     <ClCompile Include="..\..\test\c\suites\TestEnvConfig.c"/>
     <ClCompile Include="..\..\test\c\suites\TestEnvMethod.c"/>
     <ClCompile Include="..\..\test\c\suites\TestKeyExistErrorReturn.c"/>
+    <ClCompile Include="..\..\test\c\suites\TestMutexAlignment.c"/>
     <ClCompile Include="..\..\test\c\suites\TestPartial.c"/>
+    <ClCompile Include="..\..\test\c\suites\TestPartition.c"/>
+    <ClCompile Include="..\..\test\c\suites\TestPreOpenSetterAndGetter.c"/>
     <ClCompile Include="..\..\test\c\suites\TestQueue.c"/>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>

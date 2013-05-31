@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -86,15 +86,15 @@
       <pre class="programlisting">import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.collections.StoredEntrySet;
-import com.sleepycat.collections.StoredMap;
+import com.sleepycat.collections.StoredSortedMap;
 ...
 
 public class SampleViews
 {
     ...
-<strong class="userinput"><code>    private StoredMap supplierByCityMap;
-    private StoredMap shipmentByPartMap;
-    private StoredMap shipmentBySupplierMap;</code></strong>
+<strong class="userinput"><code>    private StoredSortedMap supplierByCityMap;
+    private StoredSortedMap shipmentByPartMap;
+    private StoredSortedMap shipmentBySupplierMap;</code></strong>
     ...
 
     public SampleViews(SampleDatabase db)
@@ -105,14 +105,14 @@ public class SampleViews
             new SerialBinding(catalog, String.class);
         ...
         supplierByCityMap =
-            new StoredMap(db.getSupplierByCityDatabase(),
-                          cityKeyBinding, supplierValueBinding, true);
+            new StoredSortedMap(db.getSupplierByCityDatabase(),
+                          cityKeyBinding, supplierDataBinding, true);
         shipmentByPartMap =
-            new StoredMap(db.getShipmentByPartDatabase(),
-                          partKeyBinding, shipmentValueBinding, true);
+            new StoredSortedMap(db.getShipmentByPartDatabase(),
+                          partKeyBinding, supplierDataBinding, true);
         shipmentBySupplierMap =
-            new StoredMap(db.getShipmentBySupplierDatabase(),
-                          supplierKeyBinding, shipmentValueBinding, true); </code></strong>
+            new StoredSortedMap(db.getShipmentBySupplierDatabase(),
+                          supplierKeyBinding, supplierDataBinding, true); </code></strong>
     ...
     }
 } </pre>
@@ -126,7 +126,7 @@ public class SampleViews
           <li>
             <p>
             The first parameter of the 
-            <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredMap</a>
+            <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredSortedMap</a>
             
             constructor is a 
             
@@ -170,8 +170,8 @@ public class SampleViews
 	and <code class="literal">supplierMap</code>.
 </p>
       <p>
-    The value bindings — <code class="literal">supplierValueBinding</code> and
-	<code class="literal">shipmentValueBinding</code> — were also created in the Basic
+    The value bindings — <code class="literal">supplierDataBinding</code> and
+	<code class="literal">shipmentDataBinding</code> — were also created in the Basic
 	example.
 </p>
       <p>
@@ -188,34 +188,34 @@ public class SampleViews
       <pre class="programlisting">public class SampleViews
 {
     ...
-<strong class="userinput"><code>    public final StoredMap getShipmentByPartMap()
+<strong class="userinput"><code>    public final StoredSortedMap getShipmentByPartMap()
     {
         return shipmentByPartMap;
     }
 
-    public final StoredMap getShipmentBySupplierMap()
+    public final StoredSortedMap getShipmentBySupplierMap()
     {
         return shipmentBySupplierMap;
     }
 
-    public final StoredMap getSupplierByCityMap()
+    public final StoredSortedMap getSupplierByCityMap()
     {
         return supplierByCityMap;
     }
 
-    public final StoredEntrySet getShipmentByPartEntrySet()
+    public final StoredEntrySet getShipmentByPartMap()
     {
-        return (StoredEntrySet) shipmentByPartMap.entrySet();
+        return (StoredEntrySet) shipmentByPartMap();
     }
 
-    public final StoredEntrySet getShipmentBySupplierEntrySet()
+    public final StoredEntrySet getShipmentBySupplierMap()
     {
-        return (StoredEntrySet) shipmentBySupplierMap.entrySet();
+        return (StoredEntrySet) shipmentBySupplierMap();
     }
 
-    public final StoredEntrySet getSupplierByCityEntrySet()
+    public final StoredEntrySet getSupplierByCityMap()
     {
-        return (StoredEntrySet) supplierByCityMap.entrySet();
+        return (StoredEntrySet) supplierByCityMap();
     }</code></strong>
     ...
 } </pre>

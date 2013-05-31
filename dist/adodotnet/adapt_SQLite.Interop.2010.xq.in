@@ -23,7 +23,7 @@ declare function local:getFileList($fileList)
 let $root := Project
 let $fileList := $WINDOWS_FILES
 let $cflags := $WINDOWS_FLAGS
-let $includes := fn:replace($WINDOWS_INCLUDE, ',', ';') (: VS2010 use ';' as separator :)
+let $includes := fn:replace($WINDOWS_INCLUDE, ',', ';') (: VS2010 and VS2012 use ';' as separator :)
 let $inputLib := fn:concat($WINDOWS_INPUT_LIB, ';advapi32.lib')
 return
 (

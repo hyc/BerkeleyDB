@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Master Leases</title>
+    <title>Master leases</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -14,11 +14,11 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Master Leases</th>
+          <th colspan="3" align="center">Master leases</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep_trans.html">Prev</a> </td>
@@ -34,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="rep_lease"></a>Master Leases</h2>
+            <h2 class="title" style="clear: both"><a id="rep_lease"></a>Master leases</h2>
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="rep_lease.html#masterlease_change_groupsize">Changing Group Size</a>
+              <a href="rep_lease.html#masterlease_change_groupsize">Changing group size</a>
             </span>
           </dt>
         </dl>
@@ -81,7 +81,7 @@
     provide authoritative reads.  Clients grant master leases to a master
     site.  By doing so, clients acknowledge the right of that site to
     retain the role of master for a period of time.  During that period of
-    time, clients cannot elect a new master, become master, nor grant their
+    time, clients cannot elect a new master, become master, or grant their
     lease to another site.
 </p>
       <p>
@@ -107,13 +107,16 @@
         </p>
             <p>
             The rollback guarantee also depends on the <a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> flag.  The
-            guarantee is effective as long as there isn't total replication group
-            failure while clients have granted leases but are holding the updates
-            in their cache.  The application must weigh the performance impact of
-            synchronous transactions against the risk of total replication group
-            failure.  If clients grant a lease while holding updated data in cache,
-            and total failure occurs, then the data is no longer present on the
-            clients and rollback can occur if the master also crashes.
+            guarantee is effective as long as there isn't a failure of half of
+            the replication group while clients have granted leases but are
+            holding the updates
+            in their cache.  The application must weigh the performance impact
+            of synchronous transactions against the risk of the failure of
+            at least half of the replication group.
+            If clients grant a lease while holding updated data in cache,
+            and failure occurs, then the data is no longer present on the
+            clients and rollback can occur if a sufficient number of
+            other sites also crash.
         </p>
             <p>
             The guarantee that data will not be rolled back applies only to data
@@ -179,7 +182,7 @@
         in a replication group, set via the <a href="../api_reference/C/repset_timeout.html" class="olink">DB_ENV-&gt;rep_set_timeout()</a> method.
     </li>
           <li>
-        The configured clock_scale_factor value must be the same on all
+        The configured clock skew ratio must be the same on all
         sites in a replication group.  This value defaults to no skew, but
         can be set via the <a href="../api_reference/C/repclockskew.html" class="olink">DB_ENV-&gt;rep_set_clockskew()</a> method.
     </li>
@@ -192,6 +195,14 @@
         The application must use elections to choose a master site.  It
         must never simply declare a master without having won an election
         (as is allowed without Master Leases).
+    </li>
+          <li>
+	Unelectable (zero priority) sites never grant leases and cannot
+	be used to guarantee data durability.
+	A majority of sites in the replication group must be electable in order
+	to meet the requirement of getting lease grants from a majority of sites.
+	Minimizing the number of unelectable sites improves replication group
+	availability.
     </li>
         </ol>
       </div>
@@ -233,7 +244,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="masterlease_change_groupsize"></a>Changing Group Size</h3>
+              <h3 class="title"><a id="masterlease_change_groupsize"></a>Changing group size</h3>
             </div>
           </div>
         </div>
@@ -246,7 +257,7 @@
         <p>
             The problem can arise if you are removing sites from your
             replication group. (You might be increasing the size of your
-            site overall, but if you remove all of the wrong sites you can
+            group overall, but if you remove all of the wrong sites you can
             lose data.) 
         </p>
         <p>
@@ -271,18 +282,18 @@
             </li>
             <li>
               <p>
-                    You shutdown sites B and C. Now only A has the transaction.
+                    You shut down sites B and C. Now only A has the transaction.
                 </p>
             </li>
             <li>
               <p>
-                    You increase the size of your replication group to 3
+                    You decrease the size of your replication group to 3
                     using <a href="../api_reference/C/repnsites.html" class="olink">DB_ENV-&gt;rep_set_nsites()</a>.
                 </p>
             </li>
             <li>
               <p>
-                    You shutdown or otherwise lose site A.
+                    You shut down or otherwise lose site A.
                 </p>
             </li>
             <li>
@@ -320,7 +331,7 @@
             </li>
             <li>
               <p>
-                    You shutdown sites B and C. Now only A has the transaction.
+                    You shut down sites B and C. Now only A has the transaction.
                 </p>
             </li>
             <li>
@@ -332,7 +343,7 @@
             </li>
             <li>
               <p>
-                    You shutdown or otherwise lose site A before F, G and H
+                    You shut down or otherwise lose site A before F, G and H
                     can be fully populated with data.
                 </p>
             </li>

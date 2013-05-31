@@ -8,20 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="rep.html" title="Chapter 11.  Replication Methods" />
-    <link rel="prev" href="reptransport.html" title="DbEnv::rep_set_transport()" />
+    <link rel="prev" href="repset_view.html" title="DbEnv::rep_set_view()" />
     <link rel="next" href="repstat.html" title="DbEnv::rep_stat()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DbEnv::rep_start()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="reptransport.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="repset_view.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 11. 
                 Replication Methods
         </th>
@@ -59,16 +59,20 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
          environments are read-only as long as they are clients.  Replication
          client environments may be upgraded to be replication master
          environments in the case that the current master fails or there is no
-         master present. If master leases are in use, this method cannot be
-         used to appoint a master, and should only be used to configure a database
-         environment as a master as the result of an election.
+         master present.  Replication view environments are always read-only
+         and can never become master environments.  If master leases are in
+         use, this method cannot be used to appoint a master, and should only
+         be used to configure a database environment as a master as the result
+         of an election.
     </p>
       <p>
          The enclosing database environment must already have been opened by
          calling the <a class="xref" href="envopen.html" title="DbEnv::open()">DbEnv::open()</a>  method and must
          already have been configured to send replication messages by calling
          the <a class="xref" href="reptransport.html" title="DbEnv::rep_set_transport()">DbEnv::rep_set_transport()</a> 
-         method.
+         method.  If you are starting a view, you must have called the
+         <a class="xref" href="repset_view.html" title="DbEnv::rep_set_view()">DbEnv::rep_set_view()</a> method
+         before opening the enclosing database environment.
     </p>
       <p>
          The <code class="methodname">DbEnv::rep_start()</code> <span>
@@ -84,7 +88,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4353888"></a>Parameters</h3>
+              <h3 class="title"><a id="idp4411152"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -92,7 +96,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4367584"></a>cdata</h4>
+                <h4 class="title"><a id="idp4409616"></a>cdata</h4>
               </div>
             </div>
           </div>
@@ -107,7 +111,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4363624"></a>flags</h4>
+                <h4 class="title"><a id="idp4416184"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -122,7 +126,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
                   <code class="literal">DB_REP_CLIENT</code>
             </p>
                 <p>
-                Configure the environment as a replication client.
+                Configure the environment as a replication client or view.
             </p>
               </li>
               <li>
@@ -141,7 +145,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4375296"></a>Errors</h3>
+              <h3 class="title"><a id="idp4435072"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -159,7 +163,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4383984"></a>DB_REP_UNAVAIL</h4>
+                <h4 class="title"><a id="idp4443720"></a>DB_REP_UNAVAIL</h4>
               </div>
             </div>
           </div>
@@ -175,7 +179,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4382904"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp4442640"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -186,7 +190,12 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
                               the database environment was not already opened; 
                               this method is called from a Replication Manager application; outstanding
                               master leases are granted; this method is used to appoint a new master when
-                              master leases are in use; or if an invalid flag value or parameter was specified.
+                              master leases are in use; a view is being started
+                              without having called the
+                              <a class="xref" href="repset_view.html" title="DbEnv::rep_set_view()">DbEnv::rep_set_view()</a>
+                              method before opening the database environment;
+                              or if an invalid flag value or parameter was
+                              specified.
                          </p>
         </div>
       </div>
@@ -194,7 +203,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4350992"></a>Class</h3>
+              <h3 class="title"><a id="idp4428736"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -206,7 +215,7 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4303848"></a>See Also</h3>
+              <h3 class="title"><a id="idp4432016"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -219,14 +228,14 @@ DbEnv::rep_start(Dbt *cdata, u_int32_t flags);</pre>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="reptransport.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="repset_view.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="repstat.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DbEnv::rep_set_transport() </td>
+          <td width="40%" align="left" valign="top">DbEnv::rep_set_view() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

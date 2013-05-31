@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -113,6 +113,9 @@ proc env017_lock_stat { } {
 		    st_maxlsteals }
 		{ "Current number of lockers"	    st_nlockers }
 		{ "Maximum number of lockers so far"	    st_maxnlockers }
+		{ "Number of hits in the thread locker cache"
+		    st_nlockers_hit }
+		{ "Total number of lockers reused"  st_nlockers_reused }
 		{ "Current number of objects"	    st_nobjects }
 		{ "Maximum number of objects so far"	    st_maxnobjects }
 		{ "Maximum number of objects in any hash bucket"
@@ -154,13 +157,14 @@ proc env017_lock_stat { } {
 	    st_maxlocks st_maxlockers st_maxobjects \
 	    st_partitions st_tablesize st_nlocks st_maxnlocks \
 	    st_maxhlocks st_locksteals st_maxlsteals st_nlockers \
-	    st_maxnlockers st_nobjects st_maxnobjects st_maxhobjects \
-	    st_objectsteals st_maxosteals st_nrequests st_nreleases st_nupgrade\
-	    st_ndowngrade st_lock_wait st_lock_nowait st_ndeadlocks \
-	    st_locktimeout st_nlocktimeouts st_txntimeout st_ntxntimeouts \
-	    st_objs_wait st_objs_nowait st_lockers_wait st_lockers_nowait \
-	    st_hash_len st_regsize st_part_wait st_part_nowait st_part_max_wait\
-	    st_part_max_nowait st_region_wait st_region_nowait]
+	    st_maxnlockers st_nlockers_hit st_nlockers_reused st_nobjects \
+	    st_maxnobjects st_maxhobjects st_objectsteals st_maxosteals \
+	    st_nrequests st_nreleases st_nupgrade st_ndowngrade st_lock_wait \
+	    st_lock_nowait st_ndeadlocks st_locktimeout st_nlocktimeouts \
+	    st_txntimeout st_ntxntimeouts st_objs_wait st_objs_nowait \
+	    st_lockers_wait st_lockers_nowait st_hash_len st_regsize \
+	    st_part_wait st_part_nowait st_part_max_wait st_part_max_nowait \
+	    st_region_wait st_region_nowait]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -296,6 +300,8 @@ proc env017_rep_stat { } {
 		{ "Maximum lease seconds"	    st_max_lease_sec }
 		{ "Maximum lease usecs"	    st_max_lease_usec }
 		{ "File fail cleanups done"	st_filefail_cleanups }
+		{ "Is view"		st_view }
+		{ "Future duplicated log records" 	st_log_futuredup }
 	}
 	set doc_list [list st_bulk_fills st_bulk_overflows st_bulk_records \
 	    st_bulk_transfers st_client_rerequests st_client_svc_miss \
@@ -306,15 +312,15 @@ proc env017_rep_stat { } {
 	    st_election_votes st_elections st_elections_won st_env_id \
 	    st_env_priority st_filefail_cleanups st_gen st_lease_sends \
 	    st_lease_chk st_lease_chk_misses st_lease_chk_refresh \
-	    st_log_duplicated \
+	    st_log_duplicated st_log_futuredup \
 	    st_log_queued st_log_queued_max st_log_queued_total st_log_records \
 	    st_log_requested st_master st_master_changes st_max_lease_sec \
 	    st_max_lease_usec st_max_perm_lsn st_msgs_badgen st_msgs_processed\
 	    st_msgs_recover st_msgs_send_failures st_msgs_sent st_newsites \
 	    st_next_lsn st_next_pg st_nsites st_nthrottles st_outdated \
 	    st_pg_duplicated st_pg_records st_pg_requested \
-	    st_startsync_delayed st_startup_complete st_status st_txns_applied\
-	    st_waiting_lsn st_waiting_pg ]
+	    st_startsync_delayed st_startup_complete st_status \
+	    st_txns_applied st_view st_waiting_lsn st_waiting_pg ]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -333,10 +339,16 @@ proc env017_repmgr_stat { } {
 		{ "Failed re-connects"	    st_connect_fail}
 		{ "Election threads"	    st_elect_threads}
 		{ "Max elect threads"	    st_max_elect_threads}
+		{ "Total sites"		    st_site_total}
+		{ "View sites"		    st_site_views}
+		{ "Participant sites"	    st_site_participants}
+		{ "Automatic replication process takeovers"	st_takeovers }
+		{ "Incoming queue size"	    st_incoming_queue_size}
 	}
 	set doc_list [list st_perm_failed st_msgs_queued st_msgs_dropped \
 	    st_connection_drop st_connect_fail st_elect_threads \
-	    st_max_elect_threads ]
+	    st_max_elect_threads st_site_total st_site_views \
+	    st_site_participants st_takeovers st_incoming_queue_size ]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -386,6 +398,8 @@ proc env017_mpool_stat { } {
 		{ "Buffers frozen"	    st_mvcc_frozen }
 		{ "Buffers thawed"	    st_mvcc_thawed }
 		{ "Frozen buffers freed"	    st_mvcc_freed }
+		{ "The number of outdated intermediate versions reused"
+		    st_mvcc_reused } 
 		{ "Page allocations"	    st_alloc }
 		{ "Buckets examined during allocation"	    st_alloc_buckets }
 		{ "Maximum buckets examined during allocation"
@@ -395,6 +409,8 @@ proc env017_mpool_stat { } {
 		    st_alloc_max_pages }
 		{ "Threads waiting on buffer I/O"    st_io_wait}
 		{ "Number of syncs interrupted"		st_sync_interrupted}
+		{ "Odd file size detected"		st_oddfsize_detect}
+		{ "Odd file size resolved"		st_oddfsize_resolve}
 	}
 	set doc_list [list st_gbytes st_bytes st_ncache st_max_ncache \
 	    st_regsize st_regmax st_mmapsize st_maxopenfd st_maxwrite \
@@ -405,8 +421,10 @@ proc env017_mpool_stat { } {
 	    st_hash_longest st_hash_examined st_hash_nowait st_hash_wait \
 	    st_hash_max_nowait st_hash_max_wait st_region_wait \
 	    st_region_nowait st_mvcc_frozen st_mvcc_thawed st_mvcc_freed \
+	    st_mvcc_reused \
 	    st_alloc st_alloc_buckets st_alloc_max_buckets st_alloc_pages \
-	    st_alloc_max_pages st_io_wait st_sync_interrupted ] 
+	    st_alloc_max_pages st_io_wait st_sync_interrupted \
+	    st_oddfsize_detect st_oddfsize_resolve] 
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -421,6 +439,7 @@ proc env017_db_stat { } {
 		{ "Page count"	    hash_pagecnt }
 		{ "Number of keys"	    hash_nkeys }
 		{ "Number of records"	    hash_ndata }
+		{ "Number of blobs" hash_nblobs }
 		{ "Fill factor"	    hash_ffactor }
 		{ "Buckets"	    hash_buckets }
 		{ "Free pages"	    hash_free }
@@ -453,6 +472,7 @@ proc env017_db_stat { } {
 		{ "Version"	    bt_version }
 		{ "Number of keys"	    bt_nkeys }
 		{ "Number of records"	    bt_ndata }
+		{ "Number of blobs"         bt_nblobs }
 		{ "Minimum keys per page"	    bt_minkey }
 		{ "Fixed record length"	    bt_re_len }
 		{ "Record pad"	    bt_re_pad }
@@ -472,14 +492,15 @@ proc env017_db_stat { } {
 		{ "Flags"	flags }
 	}
 	set hash_doc_list [list hash_magic hash_version hash_nkeys hash_ndata \
-	    hash_pagecnt hash_pagesize hash_ffactor hash_buckets hash_free \
-	    hash_bfree hash_bigpages hash_big_bfree hash_overflows \
+	    hash_nblobs hash_pagecnt hash_pagesize hash_ffactor hash_buckets \
+	    hash_free hash_bfree hash_bigpages hash_big_bfree hash_overflows \
 	    hash_ovfl_free hash_dup hash_dup_free flags]
 
 	set btree_doc_list [list bt_magic bt_version bt_nkeys bt_ndata \
-	    bt_pagecnt bt_pagesize bt_minkey bt_re_len bt_re_pad bt_levels \
-	    bt_int_pg bt_leaf_pg bt_dup_pg bt_over_pg bt_empty_pg bt_free \
-	    bt_int_pgfree bt_leaf_pgfree bt_dup_pgfree bt_over_pgfree flags ]
+	    bt_nblobs bt_pagecnt bt_pagesize bt_minkey bt_re_len bt_re_pad \
+	    bt_levels bt_int_pg bt_leaf_pg bt_dup_pg bt_over_pg bt_empty_pg \
+	    bt_free  bt_int_pgfree bt_leaf_pgfree bt_dup_pgfree \
+	    bt_over_pgfree flags ]
 
 	set queue_doc_list [list qs_magic qs_version qs_nkeys qs_ndata \
 	    qs_pagesize qs_extentsize qs_pages qs_re_len qs_re_pad qs_pgfree \

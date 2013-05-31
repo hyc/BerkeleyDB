@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,6 +11,7 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
+#include "dbinc/fop.h"
 #include "dbinc/hash.h"
 #include "dbinc/heap.h"
 #include "dbinc/lock.h"
@@ -83,6 +84,9 @@ __dbc_close(dbc)
 	DB *dbp;
 	DBC *opd;
 	DBC_INTERNAL *cp;
+#ifdef DIAGNOSTIC
+	DB_THREAD_INFO *ip;
+#endif
 	DB_TXN *txn;
 	ENV *env;
 	int ret, t_ret;
@@ -149,6 +153,14 @@ __dbc_close(dbc)
 			ret = t_ret;
 		F_CLR(dbc, DBC_FAMILY);
 	}
+#ifdef DIAGNOSTIC
+	if (dbc->locker != NULL) {
+		ENV_GET_THREAD_INFO(env, ip);
+		if (ip != NULL)
+			ip->dbth_locker = dbc->locker->prev_locker;
+		dbc->locker->prev_locker = INVALID_ROFF;
+	}
+#endif
 
 	if ((txn = dbc->txn) != NULL)
 		txn->cursors--;
@@ -510,6 +522,307 @@ __dbc_idel(dbc, flags)
 	return (ret);
 }
 
+/*
+ * __dbc_db_stream --
+ *
+ * DBC->db_stream
+ *
+ * PUBLIC: int __dbc_db_stream __P((DBC *, DB_STREAM **, u_int32_t));
+ */
+int
+__dbc_db_stream(dbc, dbsp, flags)
+	DBC *dbc;
+	DB_STREAM **dbsp;
+	u_int32_t flags;
+{
+	ENV *env;
+	int ret;
+	u_int32_t oflags;
+
+	env = dbc->env;
+	oflags = flags;
+
+	if ((ret = __db_fchk(
+	    env, "DBC->db_stream", flags,
+	    DB_STREAM_READ | DB_STREAM_WRITE | DB_STREAM_SYNC_WRITE)) != 0)
+		return (ret);
+
+	if (DB_IS_READONLY(dbc->dbp)) {
+		LF_SET(DB_STREAM_READ);
+		oflags |= DB_STREAM_READ;
+	}
+	if (LF_ISSET(DB_STREAM_READ) && LF_ISSET(DB_STREAM_WRITE)) {
+		ret = EINVAL;
+		__db_errx(env, DB_STR("0750",
+	    "Error, cannot set both DB_STREAM_WRITE and DB_STREAM_READ."));
+		goto err;
+	}
+
+	if (oflags & DB_STREAM_READ)
+		LF_SET(DB_FOP_READONLY);
+	else
+		LF_SET(DB_FOP_WRITE);
+	if (oflags & DB_STREAM_SYNC_WRITE)
+		LF_SET(DB_FOP_SYNC_WRITE);
+
+	ret = __db_stream_init(dbc, dbsp, flags);
+
+err:	return (ret);
+}
+
+/*
+ * __dbc_get_blob_id --
+ *
+ * Returns the blob id stored in the data record to which the cursor currently
+ * points.  Returns EINVAL if the cursor does not point to a blob record.
+ *
+ * PUBLIC: int __dbc_get_blob_id __P((DBC *, uintmax_t *));
+ */
+int
+__dbc_get_blob_id(dbc, blob_id)
+	DBC *dbc;
+	uintmax_t *blob_id;
+{
+	DBT key, data;
+	ENV *env;
+	BBLOB bl;
+	HBLOB hbl;
+	HEAPBLOBHDR bhdr;
+	int ret;
+
+	if (dbc->dbtype != DB_BTREE &&
+	    dbc->dbtype != DB_HEAP && dbc->dbtype != DB_HASH) {
+		return (EINVAL);
+	}
+
+	env = dbc->env;
+	ret = 0;
+	memset(&key, 0, sizeof(DBT));
+	memset(&data, 0, sizeof(DBT));
+	/* Get the blob database record instead of the blob. */
+	data.flags |= DB_DBT_BLOB_REC;
+
+	/*
+	 * It would be great if there was a more efficient way to do this, but
+	 * the complexities of getting a page from a database, especially
+	 * when taking into account things like partitions and compression,
+	 * make that more trouble than it is worth.
+	 */
+	if ((ret = __dbc_get(dbc, &key, &data, DB_CURRENT)) != 0)
+		goto err;
+
+	switch (dbc->dbtype) {
+	case DB_BTREE:
+		if (data.size != BBLOB_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		memcpy(&bl, data.data, BBLOB_SIZE);
+		if (B_TYPE(bl.type) != B_BLOB) {
+			ret = EINVAL;
+			goto err;
+		}
+		GET_BLOB_ID(env, bl, *blob_id, ret);
+		break;
+	case DB_HEAP:
+		if (data.size != HEAPBLOBREC_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		memcpy(&bhdr, data.data, HEAPBLOBREC_SIZE);
+		if (!F_ISSET(&bhdr.std_hdr, HEAP_RECBLOB)) {
+			ret = EINVAL;
+			goto err;
+		}
+		GET_BLOB_ID(env, bhdr, *blob_id, ret);
+		break;
+	case DB_HASH:
+		if (data.size != HBLOB_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		memcpy(&hbl, data.data, HBLOB_SIZE);
+		if (HPAGE_PTYPE(&hbl) != H_BLOB) {
+			ret = EINVAL;
+			goto err;
+		}
+		GET_BLOB_ID(env, hbl, *blob_id, ret);
+		break;
+	default:
+		ret = EINVAL;
+		goto err;
+	}
+
+err:	return (ret);
+}
+
+/*
+ * __dbc_get_blob_size --
+ *
+ * Returns the blob file size stored in the data record to which the cursor
+ * currently points.  Returns EINVAL if the cursor does not point to a blob
+ * record.
+ *
+ * PUBLIC: int __dbc_get_blob_size __P((DBC *, off_t *));
+ */
+int
+__dbc_get_blob_size(dbc, size)
+	DBC *dbc;
+	off_t *size;
+{
+	DBT key, data;
+	ENV *env;
+	BBLOB bl;
+	HBLOB hbl;
+	HEAPBLOBHDR bhdr;
+	int ret;
+
+	if (dbc->dbtype != DB_BTREE &&
+	    dbc->dbtype != DB_HEAP && dbc->dbtype != DB_HASH) {
+		return (EINVAL);
+	}
+
+	env = dbc->env;
+	ret = 0;
+	memset(&key, 0, sizeof(DBT));
+	memset(&data, 0, sizeof(DBT));
+	/* Get the blob database record instead of the blob. */
+	data.flags |= DB_DBT_BLOB_REC;
+
+	/*
+	 * It would be great if there was a more efficient way to do this, but
+	 * the complexities of getting a page from a database, especially
+	 * when taking into account things like partitions and compression,
+	 * make that more trouble than it is worth.
+	 */
+	if ((ret = __dbc_get(dbc, &key, &data, DB_CURRENT)) != 0)
+		goto err;
+
+	switch (dbc->dbtype) {
+	case DB_BTREE:
+		if (data.size != BBLOB_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		memcpy(&bl, data.data, BBLOB_SIZE);
+		if (B_TYPE(bl.type) != B_BLOB) {
+			ret = EINVAL;
+			goto err;
+		}
+		GET_BLOB_SIZE(env, bl, *size, ret);
+		break;
+	case DB_HEAP:
+		if (data.size != HEAPBLOBREC_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		memcpy(&bhdr, data.data, HEAPBLOBREC_SIZE);
+		if (!F_ISSET(&bhdr.std_hdr, HEAP_RECBLOB)) {
+			ret = EINVAL;
+			goto err;
+		}
+		GET_BLOB_SIZE(env, bhdr, *size, ret);
+		break;
+	case DB_HASH:
+		if (data.size != HBLOB_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		memcpy(&hbl, data.data, HBLOB_SIZE);
+		if (HPAGE_PTYPE(&hbl) != H_BLOB) {
+			ret = EINVAL;
+			goto err;
+		}
+		GET_BLOB_SIZE(env, hbl, *size, ret);
+		break;
+	default:
+		ret = EINVAL;
+		goto err;
+	}
+
+err:	return (ret);
+}
+
+/*
+ * __dbc_set_blob_size --
+ *
+ * Sets the blob file size in the data record to which the cursor
+ * currently points.  Returns EINVAL if the cursor does not point to a blob
+ * record.
+ *
+ * PUBLIC: int __dbc_set_blob_size __P((DBC *, off_t));
+ */
+int
+__dbc_set_blob_size(dbc, size)
+	DBC *dbc;
+	off_t size;
+{
+	DBT key, data;
+	BBLOB *bl;
+	HBLOB *hbl;
+	HEAPBLOBHDR *bhdr;
+	int ret;
+
+	if (dbc->dbtype != DB_BTREE &&
+	    dbc->dbtype != DB_HEAP && dbc->dbtype != DB_HASH) {
+		return (EINVAL);
+	}
+
+	ret = 0;
+	memset(&key, 0, sizeof(DBT));
+	memset(&data, 0, sizeof(DBT));
+	/* Get the blob database record instead of the blob. */
+	data.flags |= DB_DBT_BLOB_REC;
+
+	/*
+	 * It would be great if there was a more efficient way to do this, but
+	 * the complexities of getting a page from a database, especially
+	 * when taking into account things like partitions and compression,
+	 * make that more trouble than it is worth.
+	 */
+	if ((ret = __dbc_get(dbc, &key, &data, DB_CURRENT)) != 0)
+		goto err;
+
+	switch (dbc->dbtype) {
+	case DB_BTREE:
+		bl = (BBLOB *)data.data;
+		if (bl == NULL ||
+		    B_TYPE(bl->type) != B_BLOB || data.size != BBLOB_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		SET_BLOB_SIZE(bl, size, BBLOB);
+		break;
+	case DB_HEAP:
+		bhdr = (HEAPBLOBHDR *)data.data;
+		if (bhdr == NULL ||
+		    !F_ISSET(&bhdr->std_hdr, HEAP_RECBLOB) ||
+		    data.size != HEAPBLOBREC_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		SET_BLOB_SIZE(bhdr, size, HEAPBLOBHDR);
+		break;
+	case DB_HASH:
+		hbl = data.data;
+		if (hbl == NULL ||
+		    HPAGE_PTYPE(hbl) != H_BLOB || data.size != HBLOB_SIZE) {
+			ret = EINVAL;
+			goto err;
+		}
+		SET_BLOB_SIZE((HBLOB *)hbl, size, HBLOB);
+		break;
+	default:
+		ret = EINVAL;
+		goto err;
+	}
+
+	if ((ret = __dbc_put(dbc, &key, &data, DB_CURRENT)) != 0)
+		goto err;
+
+err:	return (ret);
+}
+
 #ifdef HAVE_COMPRESSION
 /*
  * __dbc_bulk_del --
@@ -632,6 +945,12 @@ __dbc_idup(dbc_orig, dbcp, flags)
 		int_n->stream_off = int_orig->stream_off;
 		int_n->stream_curr_pgno = int_orig->stream_curr_pgno;
 
+#ifdef HAVE_PARTITION
+		if (DB_IS_PARTITIONED(dbp)) {
+			if ((ret = __partc_dup(dbc_orig, dbc_n)) != 0)
+				goto err;
+		} else
+#endif
 		switch (dbc_orig->dbtype) {
 		case DB_QUEUE:
 			if ((ret = __qamc_dup(dbc_orig, dbc_n)) != 0)
@@ -1660,7 +1979,7 @@ __dbc_put_secondaries(dbc,
 				    tskeyp, &oldpkey, rmw | DB_SET);
 				if (ret == 0) {
 					cmp = __bam_defcmp(sdbp,
-					    &oldpkey, pkey);
+					    &oldpkey, pkey, NULL);
 					__os_ufree(env, oldpkey.data);
 					/*
 					 * If the secondary key is unchanged,
@@ -2228,7 +2547,7 @@ __dbc_del_oldskey(sdbp, dbc, skey, pkey, olddata)
 		 */
 		for (i = 0, tskeyp = skey; i < nskey; i++, tskeyp++)
 			if (((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
-			    toldskeyp, tskeyp) == 0) {
+			    toldskeyp, tskeyp, NULL) == 0) {
 				nsame++;
 				F_CLR(tskeyp, DB_DBT_ISSET);
 				break;
@@ -2382,12 +2701,14 @@ __dbc_cleanup(dbc, dbc_n, failed)
 	 * cursors.
 	 */
 	if (!failed && ret == 0) {
+		MUTEX_LOCK(dbp->env, dbp->mutex);
 		if (opd != NULL)
 			opd->internal->pdbc = dbc;
 		if (internal->opd != NULL)
 			internal->opd->internal->pdbc = dbc_n;
 		dbc->internal = dbc_n->internal;
 		dbc_n->internal = internal;
+		MUTEX_UNLOCK(dbp->env, dbp->mutex);
 	}
 
 	/*
@@ -3501,6 +3822,6 @@ __db_check_skeyset(sdbp, skeyp)
 		for (key2 = key1 + 1; key2 < last_key; key2++)
 			DB_ASSERT(env,
 			    ((BTREE *)sdbp->bt_internal)->bt_compare(sdbp,
-			    key1, key2) != 0);
+			    key1, key2, NULL) != 0);
 }
 #endif

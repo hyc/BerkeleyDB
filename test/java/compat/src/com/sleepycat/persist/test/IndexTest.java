@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -11,6 +11,10 @@ import static com.sleepycat.persist.model.Relationship.MANY_TO_MANY;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_MANY;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_ONE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +27,11 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import junit.framework.Test;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.sleepycat.collections.MapEntryParameter;
 import com.sleepycat.db.DatabaseException;
@@ -47,14 +55,24 @@ import com.sleepycat.util.test.TxnTestCase;
  *
  * @author Mark Hayes
  */
+@RunWith(Parameterized.class)
 public class IndexTest extends TxnTestCase {
 
     private static final int N_RECORDS = 5;
     private static final int THREE_TO_ONE = 3;
 
-    public static Test suite() {
-        testClass = IndexTest.class;
-        return txnTestSuite(null, null);
+    @Parameters
+    public static List<Object[]> genParams() {
+       
+        return getTxnTypes(null, false);
+    }
+    
+    public IndexTest(String type){
+      
+        initEnvConfig();
+        txnType = type;
+        isTransactional = (txnType != TXN_NULL);
+        customName = txnType;
     }
 
     private EntityStore store;
@@ -129,17 +147,10 @@ public class IndexTest extends TxnTestCase {
         rawStore = null;
     }
 
-    @Override
-    public void setUp()
-        throws Exception {
-
-        super.setUp();
-    }
-
     /**
      * The store must be closed before closing the environment.
      */
-    @Override
+    @After
     public void tearDown()
         throws Exception {
 
@@ -165,6 +176,7 @@ public class IndexTest extends TxnTestCase {
     /**
      * Primary keys: {0, 1, 2, 3, 4}
      */
+    @Test
     public void testPrimary()
         throws DatabaseException {
 
@@ -228,6 +240,7 @@ public class IndexTest extends TxnTestCase {
     /**
      * { 0:0, 1:-1, 2:-2, 3:-3, 4:-4 }
      */
+    @Test
     public void testOneToOne()
         throws DatabaseException {
 
@@ -251,6 +264,7 @@ public class IndexTest extends TxnTestCase {
     /**
      * { 0:0, 1:1, 2:2, 3:0, 4:1 }
      */
+    @Test
     public void testManyToOne()
         throws DatabaseException {
 
@@ -277,6 +291,7 @@ public class IndexTest extends TxnTestCase {
     /**
      * { 0:{}, 1:{10}, 2:{20,21}, 3:{30,31,32}, 4:{40,41,42,43}
      */
+    @Test
     public void testOneToMany()
         throws DatabaseException {
 
@@ -305,6 +320,7 @@ public class IndexTest extends TxnTestCase {
     /**
      * { 0:{}, 1:{0}, 2:{0,1}, 3:{0,1,2}, 4:{0,1,2,3}
      */
+    @Test
     public void testManyToMany()
         throws DatabaseException {
 
@@ -836,10 +852,10 @@ public class IndexTest extends TxnTestCase {
         private int manyToOne;
 
         @SecondaryKey(relate=ONE_TO_MANY)
-        private Set<Integer> oneToMany = new TreeSet<Integer>();
+        private final Set<Integer> oneToMany = new TreeSet<Integer>();
 
         @SecondaryKey(relate=MANY_TO_MANY)
-        private Set<Integer> manyToMany = new TreeSet<Integer>();
+        private final Set<Integer> manyToMany = new TreeSet<Integer>();
 
         private MyEntity() {}
 

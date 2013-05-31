@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -154,8 +154,11 @@ proc env016 { } {
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_quorum"
 		    "Env016.b8: Repmgr acks_quorum"
 		    "repmgr_get_ack_policy" "quorum" }
+		{ "repmgr_set_incoming_queue_max" "1000000 1000"
+		    "Env016.b9: Repmgr incoming queue max"
+		    "repmgr_get_inqueue_max" }
 		{ "repmgr_site" "example.com 49200 db_local_site on"
-		    "Env016.b9: Repmgr set local site"
+		    "Env016.b10: Repmgr set local site"
 		    "repmgr_get_local_site" "example.com 49200" }
 	}
 	puts "\tEnv016.b: Check settings via getter functions."

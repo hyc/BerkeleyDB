@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -79,6 +79,32 @@ ARG	pgsize		u_int32_t	lu
 ARG	pageno		db_pgno_t	lu
 ARG	offset		u_int32_t	lu
 DBT	page		DBT		s
+ARG	flag		u_int32_t	lu
+END
+
+/*
+ * write_file: log the writing of data into a file.
+ *
+ * name: file containing the data.
+ * appname: indicates if the name needs to go through __db_appname
+ * offset_lo: offset in the file, low part of a 64 bit integer.
+ * offset_hi: offset in the file, high part of a 64 bit integer.
+ * old_data: Data being overwritten, if there is any
+ * new_data: Data being written to the file.
+ * flag: DB_FOP_APPEND (0x00000001), DB_FOP_CREATE (0x00000002) and
+ *  DB_FOP_REDO (0x00000008).  Used to tell how the operation can be
+ *  undone, truncating in the case of append and deleting the file in
+ *  the case of create, and whether enough information was logged so
+ *  that the operation can be redone.
+ */
+BEGIN write_file	60	86
+DBT	name		DBT		s
+DBT	dirname		DBT		s
+ARG	appname		u_int32_t	lu
+ARG	offset_lo	u_int32_t	lu
+ARG	offset_hi	u_int32_t	lu
+DBT	old_data	DBT		s
+DBT	new_data	DBT		s
 ARG	flag		u_int32_t	lu
 END
 

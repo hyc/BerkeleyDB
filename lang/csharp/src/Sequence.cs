@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -84,7 +84,7 @@ namespace BerkeleyDB {
         /// greater than 0.
         /// </param>
         /// <returns>The next available element in the sequence.</returns>
-        public Int64 Get(int Delta) {
+        public Int64 Get(uint Delta) {
             return Get(Delta, false, null);
         }
         /// <summary>
@@ -100,7 +100,7 @@ namespace BerkeleyDB {
         /// do not synchronously flush the log when the transaction commits.
         /// </param>
         /// <returns>The next available element in the sequence.</returns>
-        public Int64 Get(int Delta, bool NoSync) {
+        public Int64 Get(uint Delta, bool NoSync) {
             return Get(Delta, NoSync, null);
         }
         /// <summary>
@@ -121,10 +121,10 @@ namespace BerkeleyDB {
         /// Must be null if the sequence was opened with a non-zero cache size. 
         /// </param>
         /// <returns>The next available element in the sequence.</returns>
-        public Int64 Get(int Delta, Transaction txn) {
+        public Int64 Get(uint Delta, Transaction txn) {
             return Get(Delta, false, txn);
         }
-        private Int64 Get(int Delta, bool NoSync, Transaction txn) {
+        private Int64 Get(uint Delta, bool NoSync, Transaction txn) {
             Int64 ret = DbConstants.DB_AUTO_COMMIT;
             uint flags = NoSync ? DbConstants.DB_TXN_NOSYNC : 0;
             seq.get(Transaction.getDB_TXN(txn), Delta, ref ret, flags);
@@ -252,9 +252,9 @@ namespace BerkeleyDB {
         /// <summary>
         /// The current cache size. 
         /// </summary>
-        public int Cachesize {
+        public uint Cachesize {
             get {
-                int ret = 0;
+                uint ret = 0;
                 seq.get_cachesize(ref ret);
                 return ret;
             }

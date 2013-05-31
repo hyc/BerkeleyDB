@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -64,6 +64,14 @@ public class HashStats extends DatabaseStats {
     */
     public int getNumData() {
         return hash_ndata;
+    }
+
+    private int hash_nblobs;
+    /**
+    The number of blob records.
+    */
+    public int getNumBlobs() {
+        return hash_nblobs;
     }
 
     private int hash_pagecnt;
@@ -199,6 +207,7 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
             + "\n  hash_metaflags=" + hash_metaflags
             + "\n  hash_nkeys=" + hash_nkeys
             + "\n  hash_ndata=" + hash_ndata
+            + "\n  hash_nblobs=" + hash_nblobs
             + "\n  hash_pagecnt=" + hash_pagecnt
             + "\n  hash_pagesize=" + hash_pagesize
             + "\n  hash_ffactor=" + hash_ffactor

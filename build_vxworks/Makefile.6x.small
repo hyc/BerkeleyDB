@@ -50,7 +50,7 @@ TOOL_FAMILY = diab
 TOOL = diabS
 TOOL_PATH =
 CC_ARCH_SPEC = -tX86LH:vxworks66
-VXVER := vxworks-6.8
+VXVER := vxworks-6.9
 LIBPATH =
 LIBS = -lstlstd
 
@@ -114,6 +114,14 @@ bdbvxw/$(MODE_DIR)/% : LIBPATH =
 bdbvxw/$(MODE_DIR)/% : LIBS =   -lstlstd
 bdbvxw/$(MODE_DIR)/% : OBJ_DIR := bdbvxw/$(MODE_DIR)
 
+bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_fileops.o  : $(BDB_ROOT)/src/blob/blob_fileops.c
+	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
+bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_page.o  : $(BDB_ROOT)/src/blob/blob_page.c
+	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
+bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_stream.o  : $(BDB_ROOT)/src/blob/blob_stream.c
+	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
+bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_util.o  : $(BDB_ROOT)/src/blob/blob_util.c
+	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compact.o  : $(BDB_ROOT)/src/btree/bt_compact.c
 	$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)dcc $(DEBUGFLAGS_C-Compiler) $(CC_ARCH_SPEC) -W:c:,-Xclib-optim-off -Xansi -Xlocal-data-area-static-only -Xforce-declarations  -Xmake-dependency=0xd $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -DCPU=$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL   $(DEFINES) -o "$@" -c "$<"
 bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compare.o  : $(BDB_ROOT)/src/btree/bt_compare.c
@@ -493,6 +501,10 @@ bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/txn/txn_util.o  : $(BDB_ROOT)/s
 
 
 OBJECTS_bdbvxw = \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_fileops.o \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_page.o \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_stream.o \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_util.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compact.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compare.o \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compress.o \
@@ -693,6 +705,10 @@ bdbvxw/$(MODE_DIR)/bdbvxw_clean :
 	$(TRACE_FLAG)if [ -d "bdbvxw" ]; then cd "bdbvxw"; rm -rf $(MODE_DIR); fi
 
 DEP_FILES := \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_fileops.d \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_page.d \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_stream.d \
+	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/blob/blob_util.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compact.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compare.d \
 	bdbvxw/$(MODE_DIR)/Objects/$(BDB_OBJECT_DIR)/src/btree/bt_compress.d \

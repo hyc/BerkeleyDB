@@ -263,6 +263,7 @@ XA_OBJS=\
 # object files in order to generate the additional objects in @FINAL_OBJS@.
 
 DTRACE_OBJS= @ADDITIONAL_OBJS@ @REPLACEMENT_OBJS@ @CRYPTO_OBJS@ \
+	blob_fileops@o@ blob_page@o@ blob_stream@o@ blob_util@o@ \
 	clock@o@ crdel_auto@o@ crdel_rec@o@ db@o@ db_am@o@ db_auto@o@ \
 	db_backup@o@ db_byteorder@o@ db_cam@o@ db_cds@o@ db_compact@o@ \
 	db_compint@o@ db_conv@o@ db_copy@o@ db_dispatch@o@ db_dup@o@ \
@@ -296,14 +297,16 @@ DTRACE_OBJS= @ADDITIONAL_OBJS@ @REPLACEMENT_OBJS@ @CRYPTO_OBJS@ \
 C_OBJS=	$(DTRACE_OBJS) @FINAL_OBJS@
 
 CUTEST_OBJS=\
-	CuTest@o@ CuTests@o@ Runner@o@ TestChannel@o@ TestDbHotBackup@o@ \
-	TestDbTuner@o@ TestEncryption@o@ TestEnvConfig@o@ TestEnvMethod@o@ \
-	TestKeyExistErrorReturn@o@ TestPartial@o@ TestQueue@o@ \
+	CuTest@o@ CuTests@o@ Runner@o@ TestCallbackSetterAndGetter@o@ \
+	TestChannel@o@ TestDbHotBackup@o@ TestDbTuner@o@ TestEncryption@o@ \
+	TestEnvConfig@o@ TestEnvMethod@o@ TestKeyExistErrorReturn@o@ \
+	TestMutexAlignment@o@ TestPartial@o@ TestPartition@o@ \
+	TestPreOpenSetterAndGetter@o@ TestQueue@o@
 
 CXX_OBJS=\
-	cxx_channel@o@ cxx_db@o@ cxx_dbc@o@ cxx_dbt@o@ cxx_env@o@ \
-	cxx_except@o@ cxx_lock@o@ cxx_logc@o@ cxx_mpool@o@ cxx_multi@o@ \
-	cxx_rid@o@ cxx_seq@o@ cxx_site@o@ cxx_txn@o@
+	cxx_channel@o@ cxx_db@o@ cxx_dbc@o@ cxx_dbstream@o@ cxx_dbt@o@ \
+	cxx_env@o@ cxx_except@o@ cxx_lock@o@ cxx_logc@o@ cxx_mpool@o@ \
+	cxx_multi@o@ cxx_rid@o@ cxx_seq@o@ cxx_site@o@ cxx_txn@o@
 
 CRYPTO_OBJS=\
 	aes_method@o@ crypto@o@ mt19937db@o@ rijndael-alg-fst@o@ \
@@ -424,6 +427,8 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/DatabaseEntry.java \
 	$(JAVA_SLEEPYCAT)/db/DatabaseException.java \
 	$(JAVA_SLEEPYCAT)/db/DatabaseStats.java \
+	$(JAVA_SLEEPYCAT)/db/DatabaseStream.java \
+	$(JAVA_SLEEPYCAT)/db/DatabaseStreamConfig.java \
 	$(JAVA_SLEEPYCAT)/db/DatabaseType.java \
 	$(JAVA_SLEEPYCAT)/db/DeadlockException.java \
 	$(JAVA_SLEEPYCAT)/db/Environment.java \
@@ -495,6 +500,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/ReplicationStatus.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationTimeoutType.java \
 	$(JAVA_SLEEPYCAT)/db/ReplicationTransport.java \
+	$(JAVA_SLEEPYCAT)/db/ReplicationViewHandler.java \
 	$(JAVA_SLEEPYCAT)/db/RunRecoveryException.java \
 	$(JAVA_SLEEPYCAT)/db/SecondaryConfig.java \
 	$(JAVA_SLEEPYCAT)/db/SecondaryCursor.java \
@@ -521,6 +527,7 @@ JAVA_DBSRCS=\
 	$(JAVA_SLEEPYCAT)/db/internal/DbMpoolFile.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbSequence.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbSite.java \
+	$(JAVA_SLEEPYCAT)/db/internal/DbStream.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbTxn.java \
 	$(JAVA_SLEEPYCAT)/db/internal/DbUtil.java \
 	$(JAVA_SLEEPYCAT)/db/internal/Dbc.java \
@@ -780,9 +787,9 @@ STL_OBJS=\
 	dbstl_container@o@ dbstl_resource_manager@o@
 
 TCL_OBJS=\
-	tcl_compat@o@ tcl_db@o@ tcl_db_pkg@o@ tcl_dbcursor@o@ tcl_env@o@ \
-	tcl_internal@o@ tcl_lock@o@ tcl_log@o@ tcl_mp@o@ tcl_mutex@o@ \
-	tcl_rep@o@ tcl_seq@o@ tcl_txn@o@ tcl_util@o@
+	tcl_compat@o@ tcl_db@o@ tcl_db_pkg@o@ tcl_dbcursor@o@ tcl_dbstream@o@ \
+	tcl_env@o@ tcl_internal@o@ tcl_lock@o@ tcl_log@o@ tcl_mp@o@ \
+	tcl_mutex@o@ tcl_rep@o@ tcl_seq@o@ tcl_txn@o@ tcl_util@o@
 
 TEST_MICRO_OBJS=\
 	b_curalloc@o@ b_curwalk@o@ b_del@o@ b_get@o@ b_inmem@o@ b_latch@o@ \
@@ -1177,11 +1184,12 @@ uninstall_docs:
 CLEAN_LIST=\
 	StlTxnGuide TxnGuide TxnGuideInMemory berkeley_db_cxxsvc \
 	berkeley_db_svc cutest db_dump185 db_perf db_repsite db_reptest dbs \
-	ex_access ex_apprec ex_btrec ex_bulk ex_dbclient ex_env ex_heap ex_lock \
+	ex_access ex_apprec ex_blob ex_btrec ex_bulk ex_dbclient ex_env \
+	ex_heap ex_lock \
 	ex_mpool ex_rep_base ex_rep_chan ex_rep_gsg_repmgr ex_rep_gsg_simple \
 	ex_rep_mgr ex_sequence ex_stream ex_thread ex_tpcb \
 	example_database_load example_database_read excxx_access \
-	excxx_btrec excxx_env excxx_example_database_load \
+	excxx_btrec excxx_bulk excxx_env excxx_example_database_load \
 	excxx_example_database_read excxx_lock excxx_mpool \
 	excxx_repquote excxx_repquote_gsg_repmgr excxx_repquote_gsg_simple \
 	excxx_sequence excxx_tpcb ex_sql_binding ex_sql_fts3 ex_sql_index \
@@ -1316,6 +1324,8 @@ CuTests@o@: $(testdir)/c/cutest/CuTests.c
 	$(CC) $(CUTEST_FLAGS) $?
 Runner@o@: $(testdir)/c/cutest/Runner.c
 	$(CC) $(CUTEST_FLAGS) $?
+TestCallbackSetterAndGetter@o@: $(testdir)/c/suites/TestCallbackSetterAndGetter.c
+	$(CC) $(CUTEST_FLAGS) $?
 TestChannel@o@: $(testdir)/c/suites/TestChannel.c
 	$(CC) $(CUTEST_FLAGS) $?
 TestDbHotBackup@o@: $(testdir)/c/suites/TestDbHotBackup.c
@@ -1330,7 +1340,13 @@ TestEnvMethod@o@: $(testdir)/c/suites/TestEnvMethod.c
 	$(CC) $(CUTEST_FLAGS) $?
 TestKeyExistErrorReturn@o@: $(testdir)/c/suites/TestKeyExistErrorReturn.c
 	$(CC) $(CUTEST_FLAGS) $?
+TestMutexAlignment@o@: $(testdir)/c/suites/TestMutexAlignment.c
+	$(CC) $(CUTEST_FLAGS) $?
 TestPartial@o@: $(testdir)/c/suites/TestPartial.c
+	$(CC) $(CUTEST_FLAGS) $?
+TestPartition@o@: $(testdir)/c/suites/TestPartition.c
+	$(CC) $(CUTEST_FLAGS) $?
+TestPreOpenSetterAndGetter@o@: $(testdir)/c/suites/TestPreOpenSetterAndGetter.c
 	$(CC) $(CUTEST_FLAGS) $?
 TestQueue@o@: $(testdir)/c/suites/TestQueue.c
 	$(CC) $(CUTEST_FLAGS) $?
@@ -1451,13 +1467,14 @@ test_mutex: test_mutex@o@ $(DEF_LIB)
 ##################################################
 # Targets for example programs.
 ##################################################
-examples_c: ex_access ex_apprec ex_btrec ex_bulk ex_env ex_heap ex_lock \
+examples_c: ex_access ex_apprec ex_blob ex_btrec ex_bulk ex_env \
+	ex_heap ex_lock \
 	ex_mpool ex_rep_base ex_rep_chan ex_rep_gsg_repmgr ex_rep_gsg_simple \
 	ex_rep_mgr ex_sequence ex_stream ex_thread ex_tpcb \
 	example_database_load example_database_read txn_guide txn_guide_inmemory
 
-examples_cxx: TxnGuide TxnGuideInMemory excxx_access \
-	excxx_example_database_load excxx_example_database_read \
+examples_cxx: TxnGuide TxnGuideInMemory excxx_access excxx_btrec excxx_bulk \
+	excxx_env excxx_example_database_load excxx_example_database_read \
 	excxx_lock excxx_mpool excxx_repquote excxx_repquote_gsg_repmgr \
 	excxx_repquote_gsg_simple excxx_sequence excxx_tpcb
 
@@ -1492,6 +1509,12 @@ EX_APPREC_OBJS=\
 ex_apprec: $(EX_APPREC_OBJS) $(DEF_LIB)
 	$(CCLINK) -o $@ \
 	    $(LDFLAGS) $(EX_APPREC_OBJS) $(DEF_LIB) $(TEST_LIBS) $(LIBS)
+
+ex_blob@o@: $(exampledir)/c/ex_blob.c
+	$(CC) $(CFLAGS) $?
+ex_blob: ex_blob@o@ $(DEF_LIB)
+	$(CCLINK) -o $@ $(LDFLAGS) ex_blob@o@ $(DEF_LIB) $(LIBS)
+	$(POSTLINK) $@
 
 ex_btrec@o@: $(exampledir)/c/ex_btrec.c
 	$(CC) $(CFLAGS) $?
@@ -1654,6 +1677,12 @@ BtRecExample@o@: $(exampledir)/cxx/BtRecExample.cpp
 	$(CXX) $(CXXFLAGS) $?
 excxx_btrec: BtRecExample@o@ $(DEF_LIB_CXX)
 	$(CXXLINK) -o $@ $(LDFLAGS) BtRecExample@o@ $(DEF_LIB_CXX) $(LIBS)
+	$(POSTLINK) $@
+
+BulkExample@o@: $(exampledir)/cxx/BulkExample.cpp
+	$(CXX) $(CXXFLAGS) $?
+excxx_bulk: BulkExample@o@ $(DEF_LIB_CXX)
+	$(CXXLINK) -o $@ $(LDFLAGS) BulkExample@o@ $(DEF_LIB_CXX) $(LIBS)
 	$(POSTLINK) $@
 
 EnvExample@o@: $(exampledir)/cxx/EnvExample.cpp
@@ -1844,6 +1873,14 @@ ex_sql_transaction@o@: $(exampledir)/sql/c/ex_sql_transaction.c
 # C API build rules.
 ##################################################
 aes_method@o@: $(srcdir)/crypto/aes_method.c
+	 $(CC) $(CFLAGS) $?
+blob_fileops@o@: $(srcdir)/blob/blob_fileops.c
+	 $(CC) $(CFLAGS) $?
+blob_page@o@: $(srcdir)/blob/blob_page.c
+	 $(CC) $(CFLAGS) $?
+blob_stream@o@: $(srcdir)/blob/blob_stream.c
+	 $(CC) $(CFLAGS) $?
+blob_util@o@: $(srcdir)/blob/blob_util.c
 	 $(CC) $(CFLAGS) $?
 bt_compare@o@: $(srcdir)/btree/bt_compare.c
 	 $(CC) $(CFLAGS) $?
@@ -2419,6 +2456,8 @@ cxx_db@o@: $(langdir)/cxx/cxx_db.cpp
 	$(CXX) $(CXXFLAGS) $?
 cxx_dbc@o@: $(langdir)/cxx/cxx_dbc.cpp
 	$(CXX) $(CXXFLAGS) $?
+cxx_dbstream@o@: $(langdir)/cxx/cxx_dbstream.cpp
+	$(CXX) $(CXXFLAGS) $?
 cxx_dbt@o@: $(langdir)/cxx/cxx_dbt.cpp
 	$(CXX) $(CXXFLAGS) $?
 cxx_env@o@: $(langdir)/cxx/cxx_env.cpp
@@ -2474,6 +2513,8 @@ tcl_db@o@: $(TCL_SRCDIR)/tcl_db.c
 tcl_db_pkg@o@: $(TCL_SRCDIR)/tcl_db_pkg.c
 	$(CC) $(CFLAGS) $(TCL_INCLUDE_SPEC) $?
 tcl_dbcursor@o@: $(TCL_SRCDIR)/tcl_dbcursor.c
+	$(CC) $(CFLAGS) $(TCL_INCLUDE_SPEC) $?
+tcl_dbstream@o@: $(TCL_SRCDIR)/tcl_dbstream.c
 	$(CC) $(CFLAGS) $(TCL_INCLUDE_SPEC) $?
 tcl_env@o@: $(TCL_SRCDIR)/tcl_env.c
 	$(CC) $(CFLAGS) $(TCL_INCLUDE_SPEC) $?

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -157,9 +157,25 @@ __repmgr_queue_put(env, msg)
 	REPMGR_MESSAGE *msg;
 {
 	DB_REP *db_rep;
+	REP *rep;
+	u_int32_t limit;
 
 	db_rep = env->rep_handle;
+	rep = db_rep->region;
 
+	/*
+	 * Drop message if incoming queue contains more messages than the
+	 * limit.  See dbenv->repmgr_set_incoming_queue_max() for more
+	 * information.
+	 */
+	limit = FLD_ISSET(rep->config, REP_C_BULK) ?
+	    rep->inqueue_bulkmsg_max : rep->inqueue_msg_max;
+	if (db_rep->input_queue.size > (int)limit) {
+		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		    "incoming queue limit exceeded"));
+		__os_free(env, msg);
+		return (0);
+	}
 	STAILQ_INSERT_TAIL(&db_rep->input_queue.header, msg, entries);
 	db_rep->input_queue.size++;
 

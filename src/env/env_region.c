@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -290,6 +290,11 @@ user_map_functions:
 	if (renv->magic != DB_REGION_MAGIC)
 		goto retry;
 
+	if (dbenv->blob_threshold != 0 &&
+	    renv->blob_threshold != dbenv->blob_threshold)
+		__db_msg(env, DB_STR("1591",
+"Warning: Ignoring blob_threshold size when joining environment"));
+
 	/*
 	 * Get a reference to the underlying REGION information for this
 	 * environment.
@@ -447,6 +452,8 @@ creation:
 	 */
 	renv->init_flags = (init_flagsp == NULL) ? 0 : *init_flagsp;
 
+	renv->blob_threshold = dbenv->blob_threshold;
+
 	/*
 	 * Set up the region array.  We use an array rather than a linked list
 	 * as we have to traverse this list after failure in some cases, and
@@ -550,7 +557,7 @@ retry:	/* Close any open file handle. */
 		(void)__env_sys_detach(env,
 		    infop, F_ISSET(infop, REGION_CREATE));
 
-		if (rp != NULL && F_ISSET(env, DB_PRIVATE))
+		if (rp != NULL && F_ISSET(env, ENV_PRIVATE))
 			__env_alloc_free(infop, rp);
 	}
 

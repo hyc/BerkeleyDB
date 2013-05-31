@@ -1,24 +1,24 @@
 --- src/sqliteInt.h
 +++ src/sqliteInt.h
-@@ -1414,7 +1414,6 @@
+@@ -1460,7 +1460,6 @@
    KeyInfo *pKeyInfo;  /* Collation and sort-order information */
    u16 nField;         /* Number of entries in apMem[] */
-   u16 flags;          /* Boolean settings.  UNPACKED_... below */
+   u8 flags;           /* Boolean settings.  UNPACKED_... below */
 -  i64 rowid;          /* Used by UNPACKED_PREFIX_SEARCH */
    Mem *aMem;          /* Values */
  };
  
-@@ -1426,7 +1425,6 @@
- #define UNPACKED_IGNORE_ROWID  0x0004  /* Ignore trailing rowid on key1 */
- #define UNPACKED_INCRKEY       0x0008  /* Make this key an epsilon larger */
- #define UNPACKED_PREFIX_MATCH  0x0010  /* A prefix match is considered OK */
--#define UNPACKED_PREFIX_SEARCH 0x0020  /* A prefix match is considered OK */
+@@ -1469,7 +1468,6 @@
+ */
+ #define UNPACKED_INCRKEY       0x01  /* Make this key an epsilon larger */
+ #define UNPACKED_PREFIX_MATCH  0x02  /* A prefix match is considered OK */
+-#define UNPACKED_PREFIX_SEARCH 0x04  /* Ignore final (rowid) field */
  
  /*
  ** Each SQL index is represented in memory by an
 --- src/vdbe.c
 +++ src/vdbe.c
-@@ -3526,6 +3526,7 @@
+@@ -3721,6 +3721,7 @@
    Mem *aMx;
    UnpackedRecord r;                  /* B-Tree index search key */
    i64 R;                             /* Rowid stored in register P3 */
@@ -26,7 +26,7 @@
  
    pIn3 = &aMem[pOp->p3];
    aMx = &aMem[pOp->p4.i];
-@@ -3555,8 +3556,8 @@
+@@ -3750,8 +3751,8 @@
    if( pCrsr!=0 ){
      /* Populate the index search key. */
      r.pKeyInfo = pCx->pKeyInfo;
@@ -37,16 +37,15 @@
      r.aMem = aMx;
  #ifdef SQLITE_DEBUG
      { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
-@@ -3570,10 +3571,14 @@
+@@ -3765,10 +3766,14 @@
      ** to P2. Otherwise, copy the rowid of the conflicting record to
      ** register P3 and fall through to the next instruction.  */
      rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &pCx->seekResult);
 -    if( (r.flags & UNPACKED_PREFIX_SEARCH) || r.rowid==R ){
--      pc = pOp->p2 - 1;
++    if( rc != SQLITE_OK || pCx->seekResult != 0 ){
+       pc = pOp->p2 - 1;
 -    }else{
 -      pIn3->u.i = r.rowid;
-+    if( rc != SQLITE_OK || pCx->seekResult != 0 ){
-+      pc = pOp->p2 - 1;
 +    }else{ 
 +      rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);
 +      if (rc == SQLITE_OK && rowid == R)
@@ -58,7 +57,7 @@
    break;
 --- src/vdbeaux.c
 +++ src/vdbeaux.c
-@@ -2916,18 +2916,6 @@
+@@ -3008,18 +3008,6 @@
          rc = -rc;
        }
      

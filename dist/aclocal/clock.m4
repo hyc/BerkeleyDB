@@ -20,12 +20,14 @@ esac
 #	existence to mean the clock really exists.
 AC_CACHE_CHECK([for clock_gettime monotonic clock], db_cv_clock_monotonic, [
 AC_TRY_RUN([
+#include <time.h>
 #include <sys/time.h>
-main() {
+int main() {
 	struct timespec t;
 	return (clock_gettime(CLOCK_MONOTONIC, &t) != 0);
 }], db_cv_clock_monotonic=yes, db_cv_clock_monotonic=no,
 AC_TRY_LINK([
+#include <time.h>
 #include <sys/time.h>], [
 struct timespec t;
 clock_gettime(CLOCK_MONOTONIC, &t);

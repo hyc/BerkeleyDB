@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -82,7 +82,7 @@
                           
                   </p>
       <pre class="programlisting">/*
- * File: ex_rep_gsg_repmgr.c
+ * File: rep_mgr_gsg.c
  */
 
 #include &lt;stdlib.h&gt;
@@ -112,7 +112,7 @@ const char *progname = "ex_rep_gsg_repmgr";
 int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
 int doloop (DB_ENV *);
-static int print_stocks(DBC *);
+static int print_stocks(DB *);
 <strong class="userinput"><code>void *event_callback(DB_ENV *, u_int32_t, void *);</code></strong> </pre>
       <p>
         In our <code class="function">main()</code> function, most of what we
@@ -164,6 +164,8 @@ main(int argc, char *argv[])
             home = optarg;
             break;
         /* Set the host and port used by this environment */
+        case 'L':
+            is_group_creator = 1; /* FALLTHROUGH */
         case 'l':
             host = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -182,7 +184,7 @@ main(int argc, char *argv[])
                 dbsite-&gt;set_config(dbsite, DB_GROUP_CREATOR, 1);
 
             if ((ret = dbsite-&gt;close(dbsite)) != 0) {
-                dbenv-&gt;(dbenv, ret, "DB_SITE-&gt;close");
+                dbenv-&gt;err(dbenv, ret, "DB_SITE-&gt;close");
                 goto err;
             }
             local_is_set = 1;
@@ -201,8 +203,7 @@ main(int argc, char *argv[])
             port = (unsigned short)atoi(portstr);
             if ((dbenv-&gt;repmgr_site(dbenv, host, port, &amp;dbsite,
                                       0)) != 0) {
-                fprintf(stderr,
-                    "Could not add site %s.\n", host);
+                dbenv-&gt;err(dbenv, ret, "DB_ENV-&gt;repmgr_site");
                 goto err;
             }
             dbenv-&gt;set_config(dbsite, DB_BOOTSTRAP_HELPER, 1);

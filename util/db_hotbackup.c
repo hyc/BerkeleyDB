@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,13 +15,13 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 enum which_open { OPEN_ORIGINAL, OPEN_HOT_BACKUP };
 
 int env_init __P((DB_ENV **,
-     char *, char **, char ***, char *, enum which_open, int));
+     char *, char *, char **, char ***, char *, enum which_open, int));
 int main __P((int, char *[]));
 int usage __P((void));
 int version_check __P((void));
@@ -49,7 +49,8 @@ main(argc, argv)
 	u_int data_cnt, data_next;
 	int ch, checkpoint, db_config, debug, env_copy, exitval;
 	int ret, update, verbose;
-	char *backup_dir, **data_dir, *home, *log_dir, *passwd;
+	char *backup_dir, **data_dir;
+	char *home, *home_blob_dir, *log_dir, *passwd;
 	char home_buf[DB_MAXPATHLEN], time_buf[CTIME_BUFLEN];
 	u_int32_t flags;
 
@@ -63,7 +64,7 @@ main(argc, argv)
 	 * don't want to care about.  There isn't enough output for the calls
 	 * to matter.
 	 */
-	setbuf(stdout, NULL);
+	(void)setvbuf(stdout, NULL, _IONBF, 0);
 
 	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
@@ -79,9 +80,9 @@ main(argc, argv)
 	checkpoint = db_config = data_cnt = data_next = debug = 
 	    exitval = update = verbose = 0;
 	data_dir = NULL;
-	backup_dir = home = passwd = NULL;
+	backup_dir = home = home_blob_dir = passwd = NULL;
 	log_dir = NULL;
-	while ((ch = getopt(argc, argv, "b:cDd:Fgh:l:P:uVv")) != EOF)
+	while ((ch = getopt(argc, argv, "b:cDd:Fgh:i:l:P:uVv")) != EOF)
 		switch (ch) {
 		case 'b':
 			backup_dir = optarg;
@@ -118,6 +119,9 @@ main(argc, argv)
 			break;
 		case 'h':
 			home = optarg;
+			break;
+		case 'i':
+			home_blob_dir = optarg;
 			break;
 		case 'l':
 			log_dir = optarg;
@@ -220,8 +224,7 @@ main(argc, argv)
 	}
 	if (backup_dir == NULL) {
 		fprintf(stderr, "%s: %s", DB_STR("5031",
-		    "no target backup directory specified\n"),
-		    progname);
+		    "no target backup directory specified\n"), progname);
 		exitval = usage();
 		goto clean;
 	}
@@ -234,7 +237,7 @@ main(argc, argv)
 	}
 
 	/* Open the source environment. */
-	if (env_init(&dbenv, home,
+	if (env_init(&dbenv, home, home_blob_dir,
 	     (db_config || log_dir != NULL) ? &log_dir : NULL,
 	     &data_dir, passwd, OPEN_ORIGINAL, verbose) != 0)
 		goto err;
@@ -243,8 +246,8 @@ main(argc, argv)
 		if ((ret = dbenv->get_open_flags(dbenv, &flags)) != 0)
 			goto err;
 		if (flags & DB_PRIVATE) {
-			fprintf(stderr, "%s: %s", progname,  DB_STR("5129",
-			    "Cannot copy data from a PRIVATE environment\n"));
+			fprintf(stderr, "%s: %s", progname,  DB_STR("5140",
+"The environment does not exist or cannot be opened. \"-F\" is required.\n"));
 			goto err;
 		}
 	}
@@ -252,8 +255,7 @@ main(argc, argv)
 	if (log_dir != NULL) {
 		if (db_config && __os_abspath(log_dir)) {
 			fprintf(stderr, "%s: %s", progname, DB_STR("5033",
-			    "DB_CONFIG must not contain an absolute "
-			    "path for the log directory\n"));
+	"DB_CONFIG must not contain an absolute path for the log directory\n"));
 			goto err;
 		}
 	}
@@ -310,8 +312,8 @@ main(argc, argv)
 		printf(DB_STR_A("5040", "%s: run catastrophic recovery\n",
 		    "%s"), backup_dir);
 	}
-	if (env_init(&dbenv,
-	    backup_dir, NULL, NULL, passwd, OPEN_HOT_BACKUP, verbose) != 0)
+	if (env_init(&dbenv, backup_dir, NULL,
+	    NULL, NULL, passwd, OPEN_HOT_BACKUP, verbose) != 0)
 		goto err;
 
 	/*
@@ -373,9 +375,9 @@ clean:
  *	Open a database environment.
  */
 int
-env_init(dbenvp, home, log_dirp, data_dirp, passwd, which, verbose)
+env_init(dbenvp, home, blob_dir, log_dirp, data_dirp, passwd, which, verbose)
 	DB_ENV **dbenvp;
-	char *home, **log_dirp, ***data_dirp, *passwd;
+	char *home, *blob_dir, **log_dirp, ***data_dirp, *passwd;
 	enum which_open which;
 	int verbose;
 {
@@ -400,12 +402,19 @@ env_init(dbenvp, home, log_dirp, data_dirp, passwd, which, verbose)
 		dbenv->set_msgcall(dbenv, __db_util_msg);
 	}
 	dbenv->set_errfile(dbenv, stderr);
-	setbuf(stderr, NULL);
+	(void)setvbuf(stderr, NULL, _IONBF, 0);
 	dbenv->set_errpfx(dbenv, progname);
 
 	/* Any created intermediate directories are created private. */
 	if ((ret = dbenv->set_intermediate_dir_mode(dbenv, "rwx------")) != 0) {
 		dbenv->err(dbenv, ret, "DB_ENV->set_intermediate_dir_mode");
+		return (1);
+	}
+
+	/* Set the blob directory. */
+	if (blob_dir != NULL &&
+	    (ret = dbenv->set_blob_dir(dbenv, blob_dir)) != 0) {
+		dbenv->err(dbenv, ret, "DB_ENV->set_blob-dir");
 		return (1);
 	}
 
@@ -469,9 +478,9 @@ env_init(dbenvp, home, log_dirp, data_dirp, passwd, which, verbose)
 		 * fails, we create a private environment and try again.
 		 */
 		if ((ret = dbenv->open(dbenv, home, DB_USE_ENVIRON, 0)) != 0 &&
-		    (ret == DB_VERSION_MISMATCH ||
-		    (ret = dbenv->open(dbenv, home, DB_CREATE |
-		    DB_INIT_LOG | DB_INIT_TXN | DB_PRIVATE | DB_USE_ENVIRON,
+		    (ret == DB_VERSION_MISMATCH || ret == DB_REP_LOCKOUT ||
+		    (ret = dbenv->open(dbenv, home, DB_CREATE | DB_INIT_LOG |
+		    DB_INIT_MPOOL | DB_INIT_TXN | DB_PRIVATE | DB_USE_ENVIRON,
 		    0)) != 0)) {
 			dbenv->err(dbenv, ret, "DB_ENV->open: %s", home);
 			return (1);
@@ -486,9 +495,19 @@ env_init(dbenvp, home, log_dirp, data_dirp, passwd, which, verbose)
 				    "%s\n"), progname);
 				return (usage());
 			} else {
-				fprintf(stderr, "%s: %s", DB_STR("5058",
+				/* 
+				 * Do we have -l and an existing DB_CONFIG? 
+				 * That is a usage problem, but for backward
+				 * compatibility, keep going if log_dir happens
+				 * to be the same as the DB_CONFIG path.
+				 */
+				(void)snprintf(buf, sizeof(buf), "%s%c%s", 
+				    home, PATH_SEPARATOR[0], "DB_CONFIG");
+				if (__os_exists(dbenv->env, buf, NULL) == 0)
+					fprintf(stderr, 
+					    "%s: %s", DB_STR("5141",
 			    "use of -l with DB_CONFIG file is deprecated\n"),
-				    progname);
+					    progname);
 			}
 		}
 		if (data_dirp != NULL && *data_dirp == NULL)
@@ -527,7 +546,7 @@ int
 usage()
 {
 	(void)fprintf(stderr, "usage: %s [-cDuVv]\n\t%s\n", progname,
-    "[-d data_dir ...] [-h home] [-l log_dir] [-P password] -b backup_dir");
+"[-d data_dir ...] [-i home_blob_dir] [-h home] [-l log_dir] [-P password] -b backup_dir");
 	return (EXIT_FAILURE);
 }
 

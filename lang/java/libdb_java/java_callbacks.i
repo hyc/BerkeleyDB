@@ -174,6 +174,10 @@ static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, panic_event_notify_method);
 		break;
+	case DB_EVENT_REP_AUTOTAKEOVER_FAILED:
+		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
+		    dbenv_class, rep_autotakeover_failed_event_notify_method);
+		break;
 	case DB_EVENT_REP_CLIENT:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_client_event_notify_method);
@@ -646,8 +650,11 @@ err:	if (dbt1->app_data == NULL)
 	return (ret);
 }
 
-static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+static int __dbj_bt_compare(DB *db,
+    const DBT *dbt1, const DBT *dbt2, size_t *locp)
 {
+	if (locp != NULL)
+		locp = NULL;
 	return __dbj_am_compare(db, dbt1, dbt2, bt_compare_method);
 }
 
@@ -853,7 +860,8 @@ err:	if (dbt1->app_data == NULL) {
 	return (ret);
 }
 
-static int __dbj_dup_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+static int __dbj_dup_compare(DB *db,
+    const DBT *dbt1, const DBT *dbt2, size_t *locp)
 {
 	int detach;
 	JNIEnv *jenv = __dbj_get_jnienv(&detach);
@@ -861,6 +869,8 @@ static int __dbj_dup_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 	jbyteArray jdbtarr1, jdbtarr2;
 	int ret;
 
+	if (locp != NULL)
+		locp = NULL;
 	if (jdb == NULL)
 		return (EINVAL);
 
@@ -906,8 +916,11 @@ static void __dbj_db_feedback(DB *db, int opcode, int percent)
 		__dbj_detach();
 }
 
-static int __dbj_h_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
+static int __dbj_h_compare(DB *db,
+    const DBT *dbt1, const DBT *dbt2, size_t *locp)
 {
+	if (locp != NULL)
+		locp = NULL;
 	return __dbj_am_compare(db, dbt1, dbt2, h_compare_method);
 }
 
@@ -1051,6 +1064,40 @@ err:	if (detach)
 		__dbj_detach();
 	return (ret);
 }
+
+static int __dbj_rep_view(DB_ENV *dbenv, const char *name, int *result, u_int32_t flags) {
+	int detach;
+	JNIEnv *jenv = __dbj_get_jnienv(&detach);
+	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
+	jobject jname;
+	jboolean jresult;
+	int ret;
+
+	if (jdbenv == NULL) {
+		ret = EINVAL;
+		goto err;
+	}
+
+	jname = (*jenv)->NewStringUTF(jenv, name);
+
+	jresult = (*jenv)->CallNonvirtualBooleanMethod(jenv, jdbenv, dbenv_class, rep_view_method, jname, flags);
+
+	if ((*jenv)->ExceptionOccurred(jenv)) {
+		/* The exception will be thrown, so this could be any error. */
+		ret = EINVAL;
+		goto err;
+	}
+
+	ret = 0;
+	if (jresult == JNI_FALSE)
+		*result = 0;
+	else
+		*result = 1;
+
+err:	if (detach)
+		__dbj_detach();
+	return (ret);
+}
 %}
 
 JAVA_CALLBACK(int (*backup_close_fcn)(DB_ENV *,
@@ -1098,7 +1145,7 @@ JAVA_CALLBACK(int (*callback)(DB *, const DBT *, DBT *, const DBT *, int *),
 
 JAVA_CALLBACK(int (*db_append_recno_fcn)(DB *, DBT *, db_recno_t),
     com.sleepycat.db.RecordNumberAppender, append_recno)
-JAVA_CALLBACK(int (*bt_compare_fcn)(DB *, const DBT *, const DBT *),
+JAVA_CALLBACK(int (*bt_compare_fcn)(DB *, const DBT *, const DBT *, size_t *),
     java.util.Comparator, bt_compare)
 JAVA_CALLBACK(int (*bt_compress_fcn)(DB *, const DBT *, const DBT *,
     const DBT *, const DBT *, DBT *), 
@@ -1109,11 +1156,13 @@ JAVA_CALLBACK(u_int32_t (*db_partition_fcn)(DB *, DBT *),
     com.sleepycat.db.PartitionHandler, partition)
 JAVA_CALLBACK(size_t (*bt_prefix_fcn)(DB *, const DBT *, const DBT *),
     com.sleepycat.db.BtreePrefixCalculator, bt_prefix)
-JAVA_CALLBACK(int (*dup_compare_fcn)(DB *, const DBT *, const DBT *),
+JAVA_CALLBACK(int (*dup_compare_fcn)(DB *, const DBT *, const DBT *, size_t *),
     java.util.Comparator, dup_compare)
 JAVA_CALLBACK(void (*db_feedback_fcn)(DB *, int, int),
     com.sleepycat.db.FeedbackHandler, db_feedback)
-JAVA_CALLBACK(int (*h_compare_fcn)(DB *, const DBT *, const DBT *),
+JAVA_CALLBACK(int (*h_compare_fcn)(DB *, const DBT *, const DBT *, size_t *),
     java.util.Comparator, h_compare)
 JAVA_CALLBACK(u_int32_t (*h_hash_fcn)(DB *, const void *, u_int32_t),
     com.sleepycat.db.Hasher, h_hash)
+JAVA_CALLBACK(int (*rep_view_fcn)(DB_ENV *, const char *, int *, u_int32_t),
+    com.sleepycat.db.ReplicationViewHandler, rep_view);

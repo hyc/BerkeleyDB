@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -362,6 +362,11 @@ __lock_print_stats(env, flags)
 	__db_dl(env, "Number of current lockers", (u_long)sp->st_nlockers);
 	__db_dl(env, "Maximum number of lockers at any one time",
 	    (u_long)sp->st_maxnlockers);
+	__db_dl(env,
+	    "Number of hits in the thread locker cache",
+	    (u_long)sp->st_nlockers_hit);
+	__db_dl(env,
+	    "Total number of lockers reused", (u_long)sp->st_nlockers_reused);
 	__db_dl(env,
 	    "Number of current lock objects", (u_long)sp->st_nobjects);
 	__db_dl(env, "Maximum number of lock objects at any one time",

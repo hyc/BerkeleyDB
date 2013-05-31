@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -93,6 +93,175 @@ namespace CsharpAPITest {
             }
 
         }
+
+	[Test]
+	public void TestBlob() {
+
+		// Test opening the blob database without environment.
+		TestBlobHeapDatabase(0, null, 6, null, false);
+
+		/*
+		 * Test opening the blob database without environment
+		 * but specifying blob directory.
+		 */
+		TestBlobHeapDatabase(0, null, 6, testHome + "/DBBLOB", true);
+
+		// Test opening the blob database with environment.
+		TestBlobHeapDatabase(3, "ENVBLOB", 6, null, false);
+
+		/*
+		 * Test opening the blob database with environment
+		 * and specifying blob directory.
+		 */
+		TestBlobHeapDatabase(3, null, 6, "/DBBLOB", true);
+	}
+
+	/*
+	 * Test the blob database with or without environment.
+	 * 1. Config and open the environment;
+	 * 2. Verify the environment blob configs;
+	 * 3. Config and open the database;
+	 * 4. Verify the database blob configs;
+	 * 5. Insert and verify some blob data by database methods;
+	 * 6. Verify the stats;
+	 * 7. Close all handles.
+	 * If "blobdbt" is true, set the data DatabaseEntry.Blob as
+	 * true, otherwise make the data DatabaseEntry reach the blob
+	 * threshold in size.
+	 */
+	void TestBlobHeapDatabase(uint env_threshold, string env_blobdir,
+	    uint db_threshold, string db_blobdir, bool blobdbt)
+	{
+		if (env_threshold == 0 && db_threshold == 0)
+			return;
+
+		testName = "TestBlob";
+		SetUpTest(true);
+		string heapDBName =
+		    testHome + "/" + testName + ".db";
+
+		HeapDatabaseConfig cfg = new HeapDatabaseConfig();
+		cfg.Creation = CreatePolicy.ALWAYS;
+		string blrootdir = "__db_bl";
+
+		// Open the environment and verify the blob configs.
+		if (env_threshold > 0)
+		{
+			DatabaseEnvironmentConfig envConfig =
+			    new DatabaseEnvironmentConfig();
+			envConfig.AutoCommit = true;
+			envConfig.Create = true;
+			envConfig.UseMPool = true;
+			envConfig.UseLogging = true;
+			envConfig.UseTxns = true;
+			envConfig.UseLocking = true;
+			envConfig.BlobThreshold = env_threshold;
+			if (env_blobdir != null)
+			{
+				envConfig.BlobDir = env_blobdir;
+				blrootdir = env_blobdir;
+			}
+			DatabaseEnvironment env = DatabaseEnvironment.Open(
+			    testHome, envConfig);
+			if (env_blobdir == null)
+				Assert.IsNull(env.BlobDir);
+			else
+				Assert.AreEqual(0,
+				    env.BlobDir.CompareTo(env_blobdir));
+			Assert.AreEqual(env_threshold, env.BlobThreshold);
+			cfg.Env = env;
+			heapDBName = testName + ".db";
+		}
+
+		// Open the database and verify the blob configs.
+		if (db_threshold > 0)
+			cfg.BlobThreshold = db_threshold;
+		if (db_blobdir != null)
+		{
+			cfg.BlobDir = db_blobdir;
+			/*
+			 * The blob directory setting in the database
+			 * is effective only when it is opened without
+			 * an environment.
+			 */
+			if (cfg.Env == null)
+				blrootdir = db_blobdir;
+		}
+
+		HeapDatabase db = HeapDatabase.Open(heapDBName, cfg);
+		Assert.AreEqual(
+		    db_threshold > 0 ? db_threshold : env_threshold,
+		    db.BlobThreshold);
+		if (db_blobdir == null && cfg.Env == null)
+			Assert.IsNull(db.BlobDir);
+		else
+			Assert.AreEqual(0, db.BlobDir.CompareTo(blrootdir));
+
+		// Insert and verify some blob data by database methods.
+		string[] records = {"a", "b", "c", "d", "e", "f", "g", "h",
+		    "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
+		    "t", "u", "v", "w", "x", "y", "z"};
+		DatabaseEntry kdbt = new DatabaseEntry();
+		DatabaseEntry ddbt = new DatabaseEntry();
+		byte[] ddata;
+		string str;
+		KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
+		ddbt.Blob = blobdbt;
+		Assert.AreEqual(blobdbt, ddbt.Blob);
+		for (int i = 0; i < records.Length; i++)
+		{
+			str = records[i];
+			if (!blobdbt)
+			{
+				for (int j = 0; j < db_threshold; j++)
+					str = str + records[i];
+			}
+			ddata = Encoding.ASCII.GetBytes(str);
+			ddbt.Data = ddata;
+			kdbt = new DatabaseEntry((db.Append(ddbt)).toArray()) ;
+			try
+			{
+				pair = db.Get(kdbt);
+			}
+			catch (DatabaseException)
+			{
+				db.Close();
+				if (cfg.Env != null)
+					cfg.Env.Close();
+				throw new TestException();
+			}
+			Assert.AreEqual(ddata, pair.Value.Data);
+		}
+
+		/*
+		 * Verify the blob files are created in the expected location.
+		 * This part of test is disabled since BTreeDatabase.BlobSubDir
+		 * is not exposed to users.
+		 */
+		//if (cfg.Env != null)
+		//	blrootdir = testHome + "/" + blrootdir;
+		//string blobdir = blrootdir + "/" + db.BlobSubDir;
+		//Assert.AreEqual(records.Length,
+		//    Directory.GetFiles(blobdir, "__db.bl*").Length);
+		//Assert.AreEqual(1,
+		//    Directory.GetFiles(blobdir, "__db_blob_meta.db").Length);
+
+		// Verify the stats.
+		HeapStats st = db.Stats();
+		Assert.AreEqual(records.Length, st.nBlobRecords);
+
+		// Close all handles.
+		db.Close();
+		if (cfg.Env != null)
+			cfg.Env.Close();
+
+		/*
+		 * Remove the default blob directory
+		 * when it is not under the test home.
+		 */
+		if (db_blobdir == null && cfg.Env == null)
+			Directory.Delete("__db_bl", true);
+	}
 
         [Test]
         public void TestCursor() {

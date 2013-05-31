@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 int main __P((int, char *[]));
@@ -33,7 +33,7 @@ main(argc, argv)
 	u_int32_t flags, cache;
 	int ch, exitval, mflag, nflag, private;
 	int quiet, resize, ret;
-	char *dname, *fname, *home, *passwd;
+	char *blob_dir, *dname, *fname, *home, *passwd;
 
 	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
@@ -48,9 +48,12 @@ main(argc, argv)
 	cache = MEGABYTE;
 	exitval = mflag = nflag = quiet = 0;
 	flags = 0;
-	home = passwd = NULL;
-	while ((ch = getopt(argc, argv, "h:mNoP:quV")) != EOF)
+	blob_dir = home = passwd = NULL;
+	while ((ch = getopt(argc, argv, "b:h:mNoP:quV")) != EOF)
 		switch (ch) {
+		case 'b':
+			blob_dir = optarg;
+			break;
 		case 'h':
 			home = optarg;
 			break;
@@ -123,6 +126,12 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 		dbenv->set_errpfx(dbenv, progname);
 	}
 
+	if (blob_dir != NULL &&
+	    (ret = dbenv->set_blob_dir(dbenv, blob_dir)) != 0) {
+		dbenv->err(dbenv, ret, "set_blob_dir");
+		goto err;
+	}
+
 	if (nflag) {
 		if ((ret = dbenv->set_flags(dbenv, DB_NOLOCKING, 1)) != 0) {
 			dbenv->err(dbenv, ret, "set_flags: DB_NOLOCKING");
@@ -147,7 +156,7 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 	private = 0;
 	if ((ret =
 	    dbenv->open(dbenv, home, DB_INIT_MPOOL | DB_USE_ENVIRON, 0)) != 0) {
-		if (ret != DB_VERSION_MISMATCH) {
+		if (ret != DB_VERSION_MISMATCH && ret != DB_REP_LOCKOUT) {
 			if ((ret =
 			    dbenv->set_cachesize(dbenv, 0, cache, 1)) != 0) {
 				dbenv->err(dbenv, ret, "set_cachesize");

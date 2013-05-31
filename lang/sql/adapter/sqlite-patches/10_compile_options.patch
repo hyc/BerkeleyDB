@@ -1,6 +1,6 @@
 --- src/ctime.c
 +++ src/ctime.c
-@@ -39,6 +39,9 @@ static const char * const azCompileOpt[]
+@@ -39,6 +39,9 @@
  #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
    "4_BYTE_ALIGNED_MALLOC",
  #endif

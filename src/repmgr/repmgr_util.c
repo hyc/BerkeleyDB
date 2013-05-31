@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,6 +15,7 @@
 
 #define	INITIAL_SITES_ALLOCATION	3	     /* Arbitrary guess. */
 
+static int convert_gmdb(ENV *, DB_THREAD_INFO *, DB *, DB_TXN *);
 static int get_eid __P((ENV *, const char *, u_int, int *));
 static int __repmgr_addrcmp __P((repmgr_netaddr_t *, repmgr_netaddr_t *));
 static int read_gmdb __P((ENV *, DB_THREAD_INFO *, u_int8_t **, size_t *));
@@ -43,6 +44,8 @@ __repmgr_schedule_connection_attempt(env, eid, immediate)
 	REP *rep;
 	REPMGR_RETRY *retry, *target;
 	REPMGR_SITE *site;
+	SITEINFO *sites;
+	db_timeout_t timeout;
 	db_timespec t;
 	int ret;
 
@@ -57,7 +60,24 @@ __repmgr_schedule_connection_attempt(env, eid, immediate)
 	if (immediate)
 		TAILQ_INSERT_HEAD(&db_rep->retries, retry, entries);
 	else {
-		TIMESPEC_ADD_DB_TIMEOUT(&t, rep->connection_retry_wait);
+		/*
+		 * Normally we retry a connection after connection retry
+		 * timeout.  In a subordinate rep-aware process, we retry sooner
+		 * when there is a listener candidate on the disconnected site.
+		 * The listener process will be connected from the new listener,
+		 * but subordinate rep-aware process can only wait for retry.
+		 * It matters when the subordinate process becomes listener and
+		 * the disconnected site is master.  The m_listener_wait is set
+		 * to retry after enough time has passed for a takeover.  The
+		 * number of listener candidates is maintained in the listener
+		 * process as it has connections to all subordinate processes
+		 * from other sites.
+		*/
+		timeout = rep->connection_retry_wait;
+		CHECK_LISTENER_CAND(timeout, >0, db_rep->m_listener_wait,
+		    timeout);
+		TIMESPEC_ADD_DB_TIMEOUT(&t, timeout);
+
 		/*
 		 * Insert the new "retry" on the (time-ordered) list in its
 		 * proper position.  To do so, find the list entry ("target")
@@ -295,6 +315,7 @@ __repmgr_new_site(env, sitep, host, port)
 	site->state = SITE_IDLE;
 
 	site->membership = 0;
+	site->gmdb_flags = 0;
 	site->config = 0;
 
 	*sitep = site;
@@ -535,11 +556,14 @@ __repmgr_thread_failure(env, why)
 	int why;
 {
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 
 	db_rep = env->rep_handle;
+	ENV_ENTER(env, ip);
 	LOCK_MUTEX(db_rep->mutex);
 	(void)__repmgr_stop_threads(env);
 	UNLOCK_MUTEX(db_rep->mutex);
+	ENV_LEAVE(env, ip);
 	return (__env_panic(env, why));
 }
 
@@ -631,7 +655,7 @@ __repmgr_become_master(env)
 	REPMGR_SITE *site;
 	DBT key_dbt, data_dbt;
 	__repmgr_membership_key_args key;
-	__repmgr_membership_data_args member_status;
+	__repmgr_membership_data_args member_data;
 	repmgr_netaddr_t addr;
 	u_int32_t status;
 	u_int8_t data_buf[__REPMGR_MEMBERSHIP_DATA_SIZE];
@@ -671,13 +695,20 @@ __repmgr_become_master(env)
 	if ((ret = __repmgr_repstart(env, DB_REP_MASTER)) != 0)
 		return (ret);
 
+	/*
+	 * Make sure member_version_gen is current so that this master
+	 * can reject obsolete member lists from other sites.
+	 */
+	db_rep->member_version_gen = db_rep->region->gen;
+
+	/* If there is already a gmdb, we are finished. */
 	if (db_rep->have_gmdb)
 		return (0);
 
-	db_rep->member_version_gen = db_rep->region->gen;
-	ENV_ENTER(env, ip);
+	/* There isn't a gmdb.  Create one from the in-memory site list. */
 	if ((ret = __repmgr_hold_master_role(env, NULL)) != 0)
 		goto leave;
+	ENV_GET_THREAD_INFO(env, ip);
 retry:
 	if ((ret = __repmgr_setup_gmdb_op(env, ip, &txn, DB_CREATE)) != 0)
 		goto err;
@@ -705,8 +736,9 @@ retry:
 		    &key, key_buf, sizeof(key_buf), &len);
 		DB_ASSERT(env, ret == 0);
 		DB_INIT_DBT(key_dbt, key_buf, len);
-		member_status.flags = status;
-		__repmgr_membership_data_marshal(env, &member_status, data_buf);
+		member_data.status = status;
+		member_data.flags = site->gmdb_flags;
+		__repmgr_membership_data_marshal(env, &member_data, data_buf);
 		DB_INIT_DBT(data_dbt, data_buf, __REPMGR_MEMBERSHIP_DATA_SIZE);
 		if ((ret = __db_put(dbp, ip, txn, &key_dbt, &data_dbt, 0)) != 0)
 			goto err;
@@ -726,7 +758,6 @@ err:
 	if ((t_ret = __repmgr_rlse_master_role(env)) != 0 && ret == 0)
 		ret = t_ret;
 leave:
-	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -840,6 +871,8 @@ __repmgr_open(env, rep_)
 	rep->election_retry_wait = db_rep->election_retry_wait;
 	rep->heartbeat_monitor_timeout = db_rep->heartbeat_monitor_timeout;
 	rep->heartbeat_frequency = db_rep->heartbeat_frequency;
+	rep->inqueue_msg_max = db_rep->inqueue_msg_max;
+	rep->inqueue_bulkmsg_max = db_rep->inqueue_bulkmsg_max;
 	return (ret);
 }
 
@@ -1073,6 +1106,7 @@ __repmgr_share_netaddrs(env, rep_, start, limit)
 		shared_array[eid].addr.port = db_rep->sites[i].net_addr.port;
 		shared_array[eid].config = db_rep->sites[i].config;
 		shared_array[eid].status = db_rep->sites[i].membership;
+		shared_array[eid].flags = db_rep->sites[i].gmdb_flags;
 		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
 		    "EID %d is assigned for site %s:%lu",
 			eid, host, (u_long)shared_array[eid].addr.port));
@@ -1134,6 +1168,7 @@ __repmgr_copy_in_added_sites(env)
 		site = SITE_FROM_EID(i);
 		site->config = p->config;
 		site->membership = p->status;
+		site->gmdb_flags = p->flags;
 	}
 
 out:
@@ -1266,7 +1301,9 @@ __repmgr_stable_lsn(env, stable_lsn)
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
 
-	if (rep->min_log_file != 0 && rep->min_log_file < stable_lsn->file) {
+	LOCK_MUTEX(db_rep->mutex);
+	if (rep->sites_avail != 0 && rep->min_log_file != 0 &&
+	    rep->min_log_file < stable_lsn->file) {
 		/*
 		 * Returning an LSN to be consistent with the rest of the
 		 * log archiving processing.  Construct LSN of format
@@ -1276,8 +1313,10 @@ __repmgr_stable_lsn(env, stable_lsn)
 		stable_lsn->offset = 0;
 	}
 	RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-	    "Repmgr_stable_lsn: Returning stable_lsn[%lu][%lu]",
-	    (u_long)stable_lsn->file, (u_long)stable_lsn->offset));
+"Repmgr_stable_lsn: Returning stable_lsn[%lu][%lu] sites_avail %lu min_log %lu",
+	    (u_long)stable_lsn->file, (u_long)stable_lsn->offset,
+	    (u_long)rep->sites_avail, (u_long)rep->min_log_file));
+	UNLOCK_MUTEX(db_rep->mutex);
 	return (0);
 }
 
@@ -1313,13 +1352,15 @@ __repmgr_send_sync_msg(env, conn, type, buf, len)
 /*
  * Produce a membership list from the known info currently in memory.
  *
- * PUBLIC: int __repmgr_marshal_member_list __P((ENV *, u_int8_t **, size_t *));
+ * PUBLIC: int __repmgr_marshal_member_list __P((ENV *, u_int32_t,
+ * PUBLIC:     u_int8_t **, size_t *));
  *
  * Caller must hold mutex.
  */
 int
-__repmgr_marshal_member_list(env, bufp, lenp)
+__repmgr_marshal_member_list(env, msg_version, bufp, lenp)
 	ENV *env;
+	u_int32_t msg_version;
 	u_int8_t **bufp;
 	size_t *lenp;
 {
@@ -1328,6 +1369,7 @@ __repmgr_marshal_member_list(env, bufp, lenp)
 	REPMGR_SITE *site;
 	__repmgr_membr_vers_args membr_vers;
 	__repmgr_site_info_args site_info;
+	__repmgr_v4site_info_args v4site_info;
 	u_int8_t *buf, *p;
 	size_t bufsize, len;
 	u_int i;
@@ -1353,14 +1395,24 @@ __repmgr_marshal_member_list(env, bufp, lenp)
 		if (site->membership == 0)
 			continue;
 
-		site_info.host.data = site->net_addr.host;
-		site_info.host.size =
-		    (u_int32_t)strlen(site->net_addr.host) + 1;
-		site_info.port = site->net_addr.port;
-		site_info.flags = site->membership;
-
-		ret = __repmgr_site_info_marshal(env,
-		    &site_info, p, (size_t)(&buf[bufsize]-p), &len);
+		if (msg_version < 5) {
+			v4site_info.host.data = site->net_addr.host;
+			v4site_info.host.size =
+				(u_int32_t)strlen(site->net_addr.host) + 1;
+			v4site_info.port = site->net_addr.port;
+			v4site_info.flags = site->membership;
+			ret = __repmgr_v4site_info_marshal(env,
+			    &v4site_info, p, (size_t)(&buf[bufsize]-p), &len);
+		} else {
+			site_info.host.data = site->net_addr.host;
+			site_info.host.size =
+				(u_int32_t)strlen(site->net_addr.host) + 1;
+			site_info.port = site->net_addr.port;
+			site_info.status = site->membership;
+			site_info.flags = site->gmdb_flags;
+			ret = __repmgr_site_info_marshal(env,
+			    &site_info, p, (size_t)(&buf[bufsize]-p), &len);
+		}
 		DB_ASSERT(env, ret == 0);
 		p += len;
 	}
@@ -1387,7 +1439,7 @@ read_gmdb(env, ip, bufp, lenp)
 	DBC *dbc;
 	DBT key_dbt, data_dbt;
 	__repmgr_membership_key_args key;
-	__repmgr_membership_data_args member_status;
+	__repmgr_membership_data_args member_data;
 	__repmgr_member_metadata_args metadata;
 	__repmgr_membr_vers_args membr_vers;
 	__repmgr_site_info_args site_info;
@@ -1435,8 +1487,13 @@ read_gmdb(env, ip, bufp, lenp)
 	ret = __repmgr_member_metadata_unmarshal(env,
 	    &metadata, metadata_buf, data_dbt.size, NULL);
 	DB_ASSERT(env, ret == 0);
-	DB_ASSERT(env, metadata.format == REPMGR_GMDB_FMT_VERSION);
+	DB_ASSERT(env, metadata.format >= REPMGR_GMDB_FMT_MIN_VERSION &&
+	    metadata.format <= REPMGR_GMDB_FMT_VERSION);
 	DB_ASSERT(env, metadata.version > 0);
+	/* Automatic conversion of old format gmdb if needed. */
+	if (metadata.format < REPMGR_GMDB_FMT_VERSION &&
+	    (ret = convert_gmdb(env, ip, dbp, txn)) != 0)
+		goto err;
 
 	bufsize = 1000;		/* Initial guess. */
 	if ((ret = __os_malloc(env, bufsize, &buf)) != 0)
@@ -1459,13 +1516,14 @@ read_gmdb(env, ip, bufp, lenp)
 		DB_ASSERT(env, key.port > 0);
 
 		ret = __repmgr_membership_data_unmarshal(env,
-		    &member_status, data_buf, data_dbt.size, NULL);
+		    &member_data, data_buf, data_dbt.size, NULL);
 		DB_ASSERT(env, ret == 0);
-		DB_ASSERT(env, member_status.flags != 0);
+		DB_ASSERT(env, member_data.status != 0);
 
 		site_info.host = key.host;
 		site_info.port = key.port;
-		site_info.flags = member_status.flags;
+		site_info.status = member_data.status;
+		site_info.flags = member_data.flags;
 		if ((ret = __repmgr_site_info_marshal(env, &site_info,
 		    p, (size_t)(&buf[bufsize]-p), &len)) == ENOMEM) {
 			bufsize *= 2;
@@ -1501,25 +1559,124 @@ err:
 }
 
 /*
+ * Convert an older-format group membership database into the current format.
+ */
+static int
+convert_gmdb(env, ip, dbp, txn)
+	ENV *env;
+	DB_THREAD_INFO *ip;
+	DB *dbp;
+	DB_TXN *txn;
+{
+	DBC *dbc;
+	DBT key_dbt, data_dbt, v4data_dbt;
+	__repmgr_membership_key_args key;
+	__repmgr_membership_data_args member_data;
+	__repmgr_v4membership_data_args v4member_data;
+	__repmgr_member_metadata_args metadata;
+	u_int8_t data_buf[__REPMGR_MEMBERSHIP_DATA_SIZE];
+	u_int8_t key_buf[MAX_MSG_BUF];
+	u_int8_t metadata_buf[__REPMGR_MEMBER_METADATA_SIZE];
+	u_int8_t v4data_buf[__REPMGR_V4MEMBERSHIP_DATA_SIZE];
+	int ret, t_ret;
+
+	dbc = NULL;
+
+	if ((ret = __db_cursor(dbp, ip, txn, &dbc, 0)) != 0)
+		goto err;
+
+	memset(&key_dbt, 0, sizeof(key_dbt));
+	key_dbt.data = key_buf;
+	key_dbt.ulen = sizeof(key_buf);
+	F_SET(&key_dbt, DB_DBT_USERMEM);
+	memset(&data_dbt, 0, sizeof(data_dbt));
+	data_dbt.data = metadata_buf;
+	data_dbt.ulen = sizeof(metadata_buf);
+	F_SET(&data_dbt, DB_DBT_USERMEM);
+	memset(&v4data_dbt, 0, sizeof(v4data_dbt));
+	v4data_dbt.data = v4data_buf;
+	v4data_dbt.ulen = sizeof(v4data_buf);
+	F_SET(&v4data_dbt, DB_DBT_USERMEM);
+
+	/*
+	 * The first gmdb record is a special metadata record that contains
+	 * an empty key and gmdb metadata (format and version) and has already
+	 * been validated by the caller.  We need to update its format value
+	 * for this conversion but leave the version alone.
+	 */
+	if ((ret = __dbc_get(dbc, &key_dbt, &data_dbt, DB_NEXT)) != 0)
+		goto err;
+	ret = __repmgr_membership_key_unmarshal(env,
+	    &key, key_buf, key_dbt.size, NULL);
+	DB_ASSERT(env, ret == 0);
+	DB_ASSERT(env, key.host.size == 0);
+	DB_ASSERT(env, key.port == 0);
+	ret = __repmgr_member_metadata_unmarshal(env,
+	    &metadata, metadata_buf, data_dbt.size, NULL);
+	DB_ASSERT(env, ret == 0);
+	DB_ASSERT(env, metadata.version > 0);
+	metadata.format = REPMGR_GMDB_FMT_VERSION;
+	__repmgr_member_metadata_marshal(env, &metadata, metadata_buf);
+	DB_INIT_DBT(data_dbt, metadata_buf, __REPMGR_MEMBER_METADATA_SIZE);
+	if ((ret = __dbc_put(dbc, &key_dbt, &data_dbt, DB_CURRENT)) != 0)
+		goto err;
+
+	/*
+	 * The rest of the gmdb records contain a key (host and port) and
+	 * membership data (status and now flags).  But the old format was
+	 * using flags for the status value, so we need to transfer the
+	 * old flags value to status and provide an empty flags value for
+	 * this conversion.
+	 */
+	data_dbt.data = data_buf;
+	data_dbt.ulen = sizeof(data_buf);
+	while ((ret = __dbc_get(dbc, &key_dbt, &v4data_dbt, DB_NEXT)) == 0) {
+		/* Get membership data in old format. */
+		ret = __repmgr_v4membership_data_unmarshal(env,
+		    &v4member_data, v4data_buf, v4data_dbt.size, NULL);
+		DB_ASSERT(env, ret == 0);
+		DB_ASSERT(env, v4member_data.flags != 0);
+
+		/* Convert membership data into current format and update. */
+		member_data.status = v4member_data.flags;
+		member_data.flags = 0;
+		__repmgr_membership_data_marshal(env, &member_data, data_buf);
+		DB_INIT_DBT(data_dbt, data_buf, __REPMGR_MEMBERSHIP_DATA_SIZE);
+		if ((ret = __dbc_put(dbc,
+		    &key_dbt, &data_dbt, DB_CURRENT)) != 0)
+			goto err;
+	}
+	if (ret == DB_NOTFOUND)
+		ret = 0;
+
+err:
+	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
+		ret = t_ret;
+	return (ret);
+}
+
+/*
  * Refresh our sites array from the given membership list.
  *
  * PUBLIC: int __repmgr_refresh_membership __P((ENV *,
- * PUBLIC:     u_int8_t *, size_t));
+ * PUBLIC:     u_int8_t *, size_t, u_int32_t));
  */
 int
-__repmgr_refresh_membership(env, buf, len)
+__repmgr_refresh_membership(env, buf, len, version)
 	ENV *env;
 	u_int8_t *buf;
 	size_t len;
+	u_int32_t version;
 {
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
 	__repmgr_membr_vers_args membr_vers;
 	__repmgr_site_info_args site_info;
+	__repmgr_v4site_info_args v4site_info;
 	char *host;
 	u_int8_t *p;
 	u_int16_t port;
-	u_int32_t i, n;
+	u_int32_t i, participants;
 	int eid, ret;
 
 	db_rep = env->rep_handle;
@@ -1546,9 +1703,17 @@ __repmgr_refresh_membership(env, buf, len)
 	for (i = 0; i < db_rep->site_cnt; i++)
 		F_CLR(SITE_FROM_EID(i), SITE_TOUCHED);
 
-	for (n = 0; p < &buf[len]; ++n) {
-		ret = __repmgr_site_info_unmarshal(env,
-		    &site_info, p, (size_t)(&buf[len] - p), &p);
+	for (participants = 0; p < &buf[len]; ) {
+		if (version < 5) {
+			ret = __repmgr_v4site_info_unmarshal(env,
+			    &v4site_info, p, (size_t)(&buf[len] - p), &p);
+			site_info.host = v4site_info.host;
+			site_info.port = v4site_info.port;
+			site_info.status = v4site_info.flags;
+			site_info.flags = 0;
+		} else
+			ret = __repmgr_site_info_unmarshal(env,
+			    &site_info, p, (size_t)(&buf[len] - p), &p);
 		DB_ASSERT(env, ret == 0);
 
 		host = site_info.host.data;
@@ -1556,9 +1721,11 @@ __repmgr_refresh_membership(env, buf, len)
 		    (u_int8_t*)site_info.host.data + site_info.host.size <= p);
 		host[site_info.host.size-1] = '\0';
 		port = site_info.port;
+		if (!FLD_ISSET(site_info.flags, SITE_VIEW))
+			participants++;
 
 		if ((ret = __repmgr_set_membership(env,
-		    host, port, site_info.flags)) != 0)
+		    host, port, site_info.status, site_info.flags)) != 0)
 			goto err;
 
 		if ((ret = __repmgr_find_site(env, host, port, &eid)) != 0)
@@ -1566,7 +1733,7 @@ __repmgr_refresh_membership(env, buf, len)
 		DB_ASSERT(env, IS_VALID_EID(eid));
 		F_SET(SITE_FROM_EID(eid), SITE_TOUCHED);
 	}
-	ret = __rep_set_nsites_int(env, n);
+	ret = __rep_set_nsites_int(env, participants);
 	DB_ASSERT(env, ret == 0);
 
 	/* Scan "touched" flags so as to notice sites that have been removed. */
@@ -1576,7 +1743,8 @@ __repmgr_refresh_membership(env, buf, len)
 			continue;
 		host = site->net_addr.host;
 		port = site->net_addr.port;
-		if ((ret = __repmgr_set_membership(env, host, port, 0)) != 0)
+		if ((ret = __repmgr_set_membership(env, host, port,
+		    0, site->gmdb_flags)) != 0)
 			goto err;
 	}
 
@@ -1597,13 +1765,13 @@ __repmgr_reload_gmdb(env)
 	size_t len;
 	int ret;
 
-	ENV_ENTER(env, ip);
+	ENV_GET_THREAD_INFO(env, ip);
 	if ((ret = read_gmdb(env, ip, &buf, &len)) == 0) {
 		env->rep_handle->have_gmdb = TRUE;
-		ret = __repmgr_refresh_membership(env, buf, len);
+		ret = __repmgr_refresh_membership(env, buf, len,
+			DB_REPMGR_VERSION);
 		__os_free(env, buf);
 	}
-	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -1650,7 +1818,8 @@ __repmgr_init_save(env, dbt)
 		dbt->data = NULL;
 		dbt->size = 0;
 		ret = 0;
-	} else if ((ret = __repmgr_marshal_member_list(env, &buf, &len)) == 0) {
+	} else if ((ret = __repmgr_marshal_member_list(env,
+	    DB_REPMGR_VERSION, &buf, &len)) == 0) {
 		dbt->data = buf;
 		dbt->size = (u_int32_t)len;
 	}
@@ -1897,16 +2066,17 @@ get_eid(env, host, port, eidp)
  * accordingly.
  *
  * PUBLIC: int __repmgr_set_membership __P((ENV *,
- * PUBLIC:     const char *, u_int, u_int32_t));
+ * PUBLIC:     const char *, u_int, u_int32_t, u_int32_t));
  *
  * Caller must host db_rep mutex, and be in ENV_ENTER context.
  */
 int
-__repmgr_set_membership(env, host, port, status)
+__repmgr_set_membership(env, host, port, status, flags)
 	ENV *env;
 	const char *host;
 	u_int port;
 	u_int32_t status;
+	u_int32_t flags;
 {
 	DB_REP *db_rep;
 	REP *rep;
@@ -1953,7 +2123,9 @@ __repmgr_set_membership(env, host, port, status)
 
 		/* Set both private and shared copies of the info. */
 		site->membership = status;
+		site->gmdb_flags = flags;
 		sites[eid].status = status;
+		sites[eid].flags = flags;
 	}
 	MUTEX_UNLOCK(env, rep->mtx_repmgr);
 
@@ -1965,7 +2137,8 @@ __repmgr_set_membership(env, host, port, status)
 	    SELECTOR_RUNNING(db_rep)) {
 
 		if (eid == db_rep->self_eid && status != SITE_PRESENT)
-			ret = DB_DELETED;
+			ret = (status == SITE_ADDING) ?
+			    __repmgr_defer_op(env, REPMGR_REJOIN) : DB_DELETED;
 		else if (orig != SITE_PRESENT && status == SITE_PRESENT &&
 		    site->state == SITE_IDLE) {
 			/*
@@ -2083,4 +2256,74 @@ __repmgr_bcast_own_msg(env, type, buf, len)
 			return (ret);
 	}
 	return (0);
+}
+
+/*
+ * PUBLIC: int __repmgr_bcast_member_list __P((ENV *));
+ *
+ * Broadcast membership list to all other sites in the replication group.
+ *
+ * Caller must hold mutex.
+ */
+int
+__repmgr_bcast_member_list(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	REPMGR_CONNECTION *conn;
+	REPMGR_SITE *site;
+	u_int8_t *buf, *v4buf;
+	size_t len, v4len;
+	int ret;
+	u_int i;
+
+	db_rep = env->rep_handle;
+	if (!SELECTOR_RUNNING(db_rep))
+		return (0);
+	buf = NULL;
+	v4buf = NULL;
+	LOCK_MUTEX(db_rep->mutex);
+	/*
+	 * Some of the other sites in the replication group might be at
+	 * an older version, so we need to be able to send the membership
+	 * list in the current or older format.
+	 */
+	if ((ret = __repmgr_marshal_member_list(env,
+	    DB_REPMGR_VERSION, &buf, &len)) != 0 ||
+	    (ret = __repmgr_marshal_member_list(env,
+	    4, &v4buf, &v4len)) != 0) {
+		UNLOCK_MUTEX(db_rep->mutex);
+		goto out;
+	}
+	UNLOCK_MUTEX(db_rep->mutex);
+
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+	    "Broadcast latest membership list"));
+	FOR_EACH_REMOTE_SITE_INDEX(i) {
+		site = SITE_FROM_EID(i);
+		if (site->state != SITE_CONNECTED)
+			continue;
+		if ((conn = site->ref.conn.in) != NULL &&
+		    conn->state == CONN_READY &&
+		    (ret = __repmgr_send_own_msg(env, conn, REPMGR_SHARING,
+		    (conn->version < 5 ? v4buf : buf),
+		    (conn->version < 5 ? (u_int32_t) v4len : (u_int32_t)len)))
+		    != 0 &&
+		    (ret = __repmgr_bust_connection(env, conn)) != 0)
+			goto out;
+		if ((conn = site->ref.conn.out) != NULL &&
+		    conn->state == CONN_READY &&
+		    (ret = __repmgr_send_own_msg(env, conn, REPMGR_SHARING,
+		    (conn->version < 5 ? v4buf : buf),
+		    (conn->version < 5 ? (u_int32_t)v4len : (u_int32_t)len)))
+		    != 0 &&
+		    (ret = __repmgr_bust_connection(env, conn)) != 0)
+			goto out;
+	}
+out:
+	if (buf != NULL)
+		__os_free(env, buf);
+	if (v4buf != NULL)
+		__os_free(env, v4buf);
+	return (ret);
 }

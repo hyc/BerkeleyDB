@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,7 +43,7 @@
 int
 DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
       <p>
-         The <code class="methodname">DbEnv::rep_set_nsites()</code> method specifies the total number of
+         The <code class="methodname">DbEnv::rep_set_nsites()</code> method specifies the total number of participant
          sites in a replication group. This method should not be used by
          Replication Manager applications; the number of sites in use by a
          Replication Manager application is determined dynamically.
@@ -92,7 +92,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4263568"></a>Parameters</h3>
+              <h3 class="title"><a id="idp4305200"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -100,13 +100,13 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4263112"></a>nsites</h4>
+                <h4 class="title"><a id="idp4304744"></a>nsites</h4>
               </div>
             </div>
           </div>
           <p>
-                          An integer specifying the total number of sites in the replication
-                          group.
+                          An integer specifying the total number of participant sites in the replication
+                          group.  This number should exclude any replication views.
                      </p>
         </div>
       </div>
@@ -114,7 +114,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4264424"></a>Errors</h3>
+              <h3 class="title"><a id="idp4306056"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp4273264"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp4314776"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4272184"></a>Class</h3>
+              <h3 class="title"><a id="idp4313696"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -158,7 +158,7 @@ DbEnv::rep_set_nsites(u_int32_t nsites); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp4229976"></a>See Also</h3>
+              <h3 class="title"><a id="idp4313016"></a>See Also</h3>
             </div>
           </div>
         </div>

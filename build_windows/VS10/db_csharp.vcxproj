@@ -57,10 +57,10 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;CONFIG_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -68,15 +68,15 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;CONFIG_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,7 +84,7 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

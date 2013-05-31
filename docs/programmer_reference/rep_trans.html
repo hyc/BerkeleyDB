@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
     <link rel="up" href="rep.html" title="Chapter 12.  Berkeley DB Replication" />
     <link rel="prev" href="rep_bulk.html" title="Bulk transfer" />
-    <link rel="next" href="rep_lease.html" title="Master Leases" />
+    <link rel="next" href="rep_lease.html" title="Master leases" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -74,6 +74,24 @@ the messages sent by the master.  Since network connections are often
 faster than local synchronous disk writes, replication becomes a way
 for applications to significantly improve their performance as well as
 their reliability.</p>
+      <p>Applications using Replication Manager are free to use
+<a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> at the master and/or clients as they see fit.  The
+behavior of the <span class="bold"><strong>send</strong></span> function that Replication Manager provides
+on the application's behalf is determined by an "acknowledgement
+policy", which is configured by the <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a> method.
+Clients always send acknowledgements for <a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a>
+messages (unless the acknowledgement policy in effect indicates that the
+master doesn't care about them).  For a <a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a>
+message, the master blocks the sending thread until either it receives
+the proper number of acknowledgements, or the <a href="../api_reference/C/repset_timeout.html#set_timeout_DB_REP_ACK_TIMEOUT" class="olink">DB_REP_ACK_TIMEOUT</a>
+expires.  In the case of timeout, Replication Manager returns an error
+code from the <span class="bold"><strong>send</strong></span> function, causing Berkeley DB to flush the
+transaction log before returning to the application, as previously
+described.  The default acknowledgement policy is
+<a href="../api_reference/C/repmgrset_ack_policy.html#ackspolicy_DB_REPMGR_ACKS_QUORUM" class="olink">DB_REPMGR_ACKS_QUORUM</a>, which ensures that the effect of a
+permanent record remains durable following an election.</p>
+      <p>The rest of this section discusses transactional guarantee
+considerations in Base API applications.</p>
       <p>The return status from the application's <span class="bold"><strong>send</strong></span> function must be
 set by the application to ensure the transactional guarantees the
 application wants to provide.  Whenever the <span class="bold"><strong>send</strong></span> function
@@ -142,7 +160,7 @@ client environments are truly independent of each other.  For example,
 it does not help matters that a client has acknowledged receipt of a
 message if both master and clients are on the same power supply, as the
 failure of the power supply will still potentially lose information.</p>
-      <p>Configuring your replication-based application to achieve the proper
+      <p>Configuring a Base API application to achieve the proper
 mix of performance and transactional guarantees can be complex.  In
 brief, there are a few controls an application can set to configure the
 guarantees it makes: specification of <a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> for the
@@ -150,22 +168,6 @@ master environment, specification of <a href="../api_reference/C/envset_flags.ht
 client environment, the priorities of different sites participating in
 an election, and the behavior of the application's <span class="bold"><strong>send</strong></span>
 function.</p>
-      <p>Applications using Replication Manager are free to use
-<a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> at the master and/or clients as they see fit.  The
-behavior of the <span class="bold"><strong>send</strong></span> function that Replication Manager provides
-on the application's behalf is determined by an "acknowledgement
-policy", which is configured by the <a href="../api_reference/C/repmgrset_ack_policy.html" class="olink">DB_ENV-&gt;repmgr_set_ack_policy()</a> method.
-Clients always send acknowledgements for <a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a>
-messages (unless the acknowledgement policy in effect indicates that the
-master doesn't care about them).  For a <a href="../api_reference/C/reptransport.html#transport_DB_REP_PERMANENT" class="olink">DB_REP_PERMANENT</a>
-message, the master blocks the sending thread until either it receives
-the proper number of acknowledgements, or the <a href="../api_reference/C/repset_timeout.html#set_timeout_DB_REP_ACK_TIMEOUT" class="olink">DB_REP_ACK_TIMEOUT</a>
-expires.  In the case of timeout, Replication Manager returns an error
-code from the <span class="bold"><strong>send</strong></span> function, causing Berkeley DB to flush the
-transaction log before returning to the application, as previously
-described.  The default acknowledgement policy is
-<a href="../api_reference/C/repmgrset_ack_policy.html#ackspolicy_DB_REPMGR_ACKS_QUORUM" class="olink">DB_REPMGR_ACKS_QUORUM</a>, which ensures that the effect of a
-permanent record remains durable following an election.</p>
       <p>First, it is rarely useful to write and synchronously flush the log when
 a transaction commits on a replication client.  It may be useful where
 systems share resources and multiple systems commonly fail at the same
@@ -320,7 +322,7 @@ In that case the application may want to:</p>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Master Leases</td>
+          <td width="40%" align="right" valign="top"> Master leases</td>
         </tr>
       </table>
     </div>

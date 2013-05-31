@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -36,6 +36,8 @@ public class DatabaseConfig implements Cloneable {
     /* Parameters */
     private DatabaseType type = DatabaseType.UNKNOWN;
     private int mode = 0644;
+    private java.io.File blobDir = null;
+    private int blobThreshold = 0;
     private int btMinKey = 0;
     private int byteOrder = 0;
     private long cacheSize = 0L;
@@ -137,6 +139,70 @@ True if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDat
     */
     public boolean getAllowCreate() {
         return allowCreate;
+    }
+
+    /**
+    Sets the path of a directory where blobs are stored.
+    <p>
+    If the database is opened within an environment, this path setting is
+    ignored in
+    {@link com.sleepycat.db.Environment#openDatabase Environment.openDatabase}.
+    Use {@link com.sleepycat.db.Database#getConfig Database.getConfig} and
+    {@link com.sleepycat.db.DatabaseConfig#getBlobDir DatabaseConfig.getBlobDir}
+    to identify the current storage location of blobs after opening
+    the database.
+    <p>
+    This path can not be set after opening the database.
+    <p>
+    @param dir
+    The path of a directory where blobs are stored.
+    */
+    public void setBlobDir(java.io.File dir) {
+        this.blobDir = dir;
+    }
+
+    /**
+    Returns the path of a directory where blobs are stored.
+    <p>
+    @return
+    The path of a directory where blobs are stored.
+    */
+    public java.io.File getBlobDir() {
+        return blobDir;
+    }
+
+    /**
+    Set the size in bytes which is used to determine when a data item will be
+    stored as a blob.
+    <p>
+    Any data item that is equal to or larger in size than the
+    threshold value will automatically be stored as a blob.
+    <p>
+    It is illegal to enable blob in the database which is configured
+    as in-memory database or with chksum, encryption, duplicates, sorted
+    duplicates, compression, multiversion concurrency control and
+    transactional read operations with degree 1 isolation.
+    <p>
+    This threshold value can not be set after opening the database.
+    <p>
+    @param value
+    The size in bytes which is used to determine when a data item will be
+    stored as a blob. If 0, blob will be never used by the database.
+    */
+    public void setBlobThreshold(int value) {
+        this.blobThreshold = value;
+    }
+
+    /**
+    Return the threshold value in bytes beyond which data items are
+    stored as blobs.
+    <p>
+    @return
+    The threshold value in bytes beyond which data items are
+    stored as blobs. If 0, blob is not used by the database.
+    */
+    public int getBlobThreshold() {
+        return blobThreshold;
     }
 
     /**
@@ -1323,10 +1389,30 @@ The number of partitions that will be created.
 <p>
 @param keys
 A MultipleDatabaseEntry that contains the boundary keys for partitioning.
+<p>
+@throws IllegalArgumentException if parts is not equal to the size of key array plus 1.
     */
     public void setPartitionByRange(int parts, MultipleDataEntry keys) {
+        if (keys == null || keys.getSize() == 0)
+            this.partitionKeys = null;
+        else {
+            // Get the number of items from the input keys
+            MultipleDataEntry keysmulti = new MultipleDataEntry();
+            keysmulti.setData(keys.getData());
+            keysmulti.setUserBuffer(keys.getData().length, true);
+            DatabaseEntry keyElement = new DatabaseEntry();
+            int cnt = 0;
+            while(keysmulti.next(keyElement))
+                cnt++;
+            // Ensure the size of key array equal to parts minus 1
+            if (cnt != (parts - 1))
+                throw new IllegalArgumentException("parts!=(key number-1).");
+            else if (cnt == 0)
+                this.partitionKeys = null;
+            else
+                this.partitionKeys = keys;
+        }
         this.partitionParts = parts;
-        this.partitionKeys = keys;
     }
 
     /**
@@ -2265,6 +2351,10 @@ database has been opened.
         if (dbFlags != 0)
             db.set_flags(dbFlags);
 
+        if (db.get_env().wrapper == null && blobDir != oldConfig.blobDir)
+            db.set_blob_dir(blobDir.toString());
+        if (blobThreshold != oldConfig.blobThreshold)
+            db.set_blob_threshold(blobThreshold, 0);
         if (btMinKey != oldConfig.btMinKey)
             db.set_bt_minkey(btMinKey);
         if (byteOrder != oldConfig.byteOrder)
@@ -2372,6 +2462,10 @@ database has been opened.
         unsortedDuplicates = !sortedDuplicates && ((dbFlags & DbConstants.DB_DUP) != 0);
         transactionNotDurable = (dbFlags & DbConstants.DB_TXN_NOT_DURABLE) != 0;
 
+        String blobDirStr = db.get_blob_dir();
+        if (blobDirStr != null)
+            blobDir = new java.io.File(blobDirStr);
+        blobThreshold = db.get_blob_threshold();
         if (type == DatabaseType.BTREE) {
             btMinKey = db.get_bt_minkey();
         }

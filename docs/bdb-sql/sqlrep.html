@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -65,6 +65,11 @@
               </dt>
               <dt>
                 <span class="sect2">
+                  <a href="sqlrep.html#permmessage">Permanent Message Handling</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
                   <a href="sqlrep.html#twositerep">Two-Site Replication Groups</a>
                 </span>
               </dt>
@@ -84,6 +89,21 @@
               </dt>
               <dt>
                 <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_ack_policy">PRAGMA replication_ack_policy</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_ack_timeout">PRAGMA replication_ack_timeout</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_get_master">PRAGMA replication_get_master</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
                   <a href="reppragma.html#pragma_replication_initial_master">PRAGMA replication_initial_master</a>
                 </span>
               </dt>
@@ -94,12 +114,32 @@
               </dt>
               <dt>
                 <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_num_sites">PRAGMA replication_num_sites</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_perm_failed">PRAGMA replication_perm_failed</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_priority">PRAGMA replication_priority</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
                   <a href="reppragma.html#pragma_replication_remote_site">PRAGMA replication_remote_site</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
                   <a href="reppragma.html#pragma_replication_remove_site">PRAGMA replication_remove_site</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="reppragma.html#pragma_replication_site_status">PRAGMA replication_site_status</a>
                 </span>
               </dt>
               <dt>
@@ -168,13 +208,6 @@
           </li>
         </ul>
       </div>
-      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-        <h3 class="title">Note</h3>
-        <p>
-                You cannot access a BDB SQL database using multiple
-                processes if you enable replication for that database.
-            </p>
-      </div>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -198,6 +231,11 @@
             <dt>
               <span class="sect2">
                 <a href="sqlrep.html#repdurability">Durability Guarantees</a>
+              </span>
+            </dt>
+            <dt>
+              <span class="sect2">
+                <a href="sqlrep.html#permmessage">Permanent Message Handling</a>
               </span>
             </dt>
             <dt>
@@ -335,12 +373,77 @@
                 </p>
           <p>
                     For replicated BDB SQL applications, the durability
-                    guarantee is extended because data modifications are
+                    guarantee is enhanced because data modifications are
                     also replicated to those environments that are
                     participating in the replication group. This ensures
                     higher data durability than non-replicated applications
                     by placing data in multiple environments that usually
                     reside on separate physical machines.
+                </p>
+        </div>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="permmessage"></a>Permanent Message Handling</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+                    Permanent messages are created by replication masters
+                    as a part of a transactional commit operation. When a
+                    replica receives a message that is marked as permanent,
+                    it knows that the message affects transactional
+                    integrity.  Receipt of a permanent message means that
+                    the replica must send a message acknowledgment back to
+                    the master server because the master 
+                    <span class="emphasis"><em>might be</em></span> waiting for the
+                    acknowledgment before it considers the transaction
+                    commit to be complete.
+                </p>
+          <p>
+                    Whether the master is actually waiting for message
+                    acknowledgement depends on the acknowledgement policy
+                    in effect for the replication group. Policies can range
+                    from <code class="literal">NONE</code> (the master will not wait
+                    for any acknowledgements before completing the
+                    transaction) to <code class="literal">ALL</code> (the master will
+                    wait for acknowledgements from all replicas before
+                    completing the transaction).
+                </p>
+          <p>
+                    Acknowledgements are only sent back to the master once
+                    the replica has completed applying the message to its
+                    local environment. Therefore, the stronger your
+                    acknowledgement policy, the stronger you durability
+                    guarantee. On the other hand, the stronger your
+                    acknowledgement policy, the slower your application's
+                    write throughput will be.
+                </p>
+          <p>
+                    In addition to setting an acknowledgement policy, you
+                    can also set an acknowledgment timeout. This time limit
+                    is set in microseconds and it represents the length of
+                    time the master will wait to satisfy its
+                    acknowledgement policy for each transaction commit.  If
+                    this timeout value is not met, the transaction is still
+                    committed locally to the master, but is not yet
+                    considered durable across the replication group. Your
+                    code should take whatever actions are appropriate for
+                    that transaction. If enough other sites are available
+                    to meet the acknowledgement policy, the transaction
+                    will become durable after more time has passed.
+                </p>
+          <p>
+                    You set acknowledgement policies and acknowledgement timeouts
+                    using PRAGMAs. See
+                    <a class="xref" href="reppragma.html#pragma_replication_ack_policy" title="PRAGMA replication_ack_policy">PRAGMA replication_ack_policy</a>
+                    and
+                    <a class="xref" href="reppragma.html#pragma_replication_ack_timeout" title="PRAGMA replication_ack_timeout">PRAGMA replication_ack_timeout</a>.
+                    In addition, you can examine how frequently your
+                    transactions do not achieve durability within the
+                    acknowledgement timeout by using
+                    <a class="xref" href="reppragma.html#pragma_replication_perm_failed" title="PRAGMA replication_perm_failed">PRAGMA replication_perm_failed</a>.
                 </p>
         </div>
         <div class="sect2" lang="en" xml:lang="en">

@@ -51,6 +51,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
 #endif
+#ifdef SQLITE_CURDIR
+  "CURDIR",
+#endif
 #ifdef SQLITE_DEBUG
   "DEBUG",
 #endif
@@ -117,8 +120,8 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_RTREE
   "ENABLE_RTREE",
 #endif
-#ifdef SQLITE_ENABLE_STAT2
-  "ENABLE_STAT2",
+#ifdef SQLITE_ENABLE_STAT3
+  "ENABLE_STAT3",
 #endif
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   "ENABLE_UNLOCK_NOTIFY",
@@ -146,6 +149,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_LOCK_TRACE
   "LOCK_TRACE",
+#endif
+#ifdef SQLITE_MAX_SCHEMA_RETRY
+  "MAX_SCHEMA_RETRY=" CTIMEOPT_VAL(SQLITE_MAX_SCHEMA_RETRY),
 #endif
 #ifdef SQLITE_MEMDEBUG
   "MEMDEBUG",
@@ -331,6 +337,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_PROXY_DEBUG
   "PROXY_DEBUG",
+#endif
+#ifdef SQLITE_RTREE_INT_ONLY
+  "RTREE_INT_ONLY",
 #endif
 #ifdef SQLITE_SECURE_DELETE
   "SECURE_DELETE",

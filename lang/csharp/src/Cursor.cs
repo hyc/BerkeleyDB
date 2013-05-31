@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -12,7 +12,7 @@ using BerkeleyDB.Internal;
 
 namespace BerkeleyDB {
     /// <summary>
-    /// A class representing database cursors, which allow for traversal of 
+    /// A class representing database cursors, which allows for traversal of 
     /// database records.
     /// </summary>
     public class Cursor
@@ -118,16 +118,16 @@ namespace BerkeleyDB {
         /// </remarks>
         public CachePriority Priority {
             get { 
-		uint pri = 0;
-		dbc.get_priority(ref pri);
-		return CachePriority.fromUInt(pri);
-	    }
+        uint pri = 0;
+        dbc.get_priority(ref pri);
+        return CachePriority.fromUInt(pri);
+        }
             set { dbc.set_priority(value.priority); }
         }
 
         internal Cursor(DBC dbc, DatabaseType DbType, uint pagesize)
             : base(dbc) {
-	    Priority = CachePriority.DEFAULT;
+        Priority = CachePriority.DEFAULT;
             pgsz = pagesize;
             dbtype = DbType;
         }
@@ -352,7 +352,7 @@ namespace BerkeleyDB {
         /// <param name="keepPosition">
         /// If true, the newly created cursor is initialized to refer to the
         /// same position in the database as the original cursor (if any) and
-        /// hold the same locks (if any). If false, or the original cursor does
+        /// hold the same locks (if any). If false, or if the original cursor does
         /// not hold a database position and locks, the created cursor is
         /// uninitialized and will behave like a cursor newly created by
         /// <see cref="BaseDatabase.Cursor"/>.</param>

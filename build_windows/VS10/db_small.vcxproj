@@ -150,6 +150,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\blob\blob_fileops.c"/>
+    <ClCompile Include="..\..\src\blob\blob_page.c"/>
+    <ClCompile Include="..\..\src\blob\blob_stream.c"/>
+    <ClCompile Include="..\..\src\blob\blob_util.c"/>
     <ClCompile Include="..\..\src\btree\bt_compact.c"/>
     <ClCompile Include="..\..\src\btree\bt_compare.c"/>
     <ClCompile Include="..\..\src\btree\bt_conv.c"/>
@@ -188,6 +192,7 @@
     <ClCompile Include="..\..\lang\cxx\cxx_channel.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_db.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_dbc.cpp"/>
+    <ClCompile Include="..\..\lang\cxx\cxx_dbstream.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_dbt.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_env.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_except.cpp"/>

@@ -84,6 +84,8 @@
 # define sqlite3_create_module 0
 # define sqlite3_create_module_v2 0
 # define sqlite3_declare_vtab 0
+# define sqlite3_vtab_config 0
+# define sqlite3_vtab_on_conflict 0
 #endif
 
 #ifdef SQLITE_OMIT_SHARED_CACHE
@@ -107,6 +109,7 @@
 #define sqlite3_blob_open      0
 #define sqlite3_blob_read      0
 #define sqlite3_blob_write     0
+#define sqlite3_blob_reopen    0
 #endif
 
 /*
@@ -372,6 +375,22 @@ static const sqlite3_api_routines sqlite3Apis = {
   0,
   0,
 #endif
+  sqlite3_blob_reopen,
+  sqlite3_vtab_config,
+  sqlite3_vtab_on_conflict,
+  sqlite3_close_v2,
+  sqlite3_db_filename,
+  sqlite3_db_readonly,
+  sqlite3_db_release_memory,
+  sqlite3_errstr,
+  sqlite3_stmt_busy,
+  sqlite3_stmt_readonly,
+  sqlite3_stricmp,
+  sqlite3_uri_boolean,
+  sqlite3_uri_int64,
+  sqlite3_uri_parameter,
+  sqlite3_vsnprintf,
+  sqlite3_wal_checkpoint_v2
 };
 
 /*
@@ -397,7 +416,7 @@ static int sqlite3LoadExtension(
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
   char *zErrmsg = 0;
   void **aHandle;
-  const int nMsg = 300;
+  int nMsg = 300 + sqlite3Strlen30(zFile);
 
   if( pzErrMsg ) *pzErrMsg = 0;
 
@@ -434,6 +453,7 @@ static int sqlite3LoadExtension(
                    sqlite3OsDlSym(pVfs, handle, zProc);
   if( xInit==0 ){
     if( pzErrMsg ){
+      nMsg += sqlite3Strlen30(zProc);
       *pzErrMsg = zErrmsg = sqlite3_malloc(nMsg);
       if( zErrmsg ){
         sqlite3_snprintf(nMsg, zErrmsg,
@@ -618,6 +638,7 @@ void sqlite3_reset_auto_extension(void){
 void sqlite3AutoLoadExtensions(sqlite3 *db){
   int i;
   int go = 1;
+  int rc;
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
 
   wsdAutoextInit;
@@ -640,8 +661,8 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
     }
     sqlite3_mutex_leave(mutex);
     zErrmsg = 0;
-    if( xInit && xInit(db, &zErrmsg, &sqlite3Apis) ){
-      sqlite3Error(db, SQLITE_ERROR,
+    if( xInit && (rc = xInit(db, &zErrmsg, &sqlite3Apis))!=0 ){
+      sqlite3Error(db, rc,
             "automatic extension loading failed: %s", zErrmsg);
       go = 0;
     }

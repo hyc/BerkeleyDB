@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -31,8 +31,8 @@ static int __lock_trade __P((ENV *, DB_LOCK *, DB_LOCKER *));
 static int __lock_vec_api __P((ENV *,
 		u_int32_t, u_int32_t,  DB_LOCKREQ *, int, DB_LOCKREQ **));
 
-static const char __db_lock_invalid[] = "%s: Lock is no longer valid";
-static const char __db_locker_invalid[] = "Locker is not valid";
+#define	LOCK_INVALID_ERR DB_STR_A("2056", "%s: Lock is no longer valid", "%s")
+#define	LOCKER_INVALID_ERR DB_STR("2057", "Locker is not valid")
 
 #ifdef DEBUG
 extern void __db_loadme (void);
@@ -423,7 +423,7 @@ __lock_get_api(env, locker, flags, obj, lock_mode, lock)
 	region = env->lk_handle->reginfo.primary;
 
 	LOCK_LOCKERS(env, region);
-	ret = __lock_getlocker_int(env->lk_handle, locker, 0, &sh_locker);
+	ret = __lock_getlocker_int(env->lk_handle, locker, 0, NULL, &sh_locker);
 	UNLOCK_LOCKERS(env, region);
 	LOCK_SYSTEM_LOCK(env->lk_handle, region);
 	if (ret == 0)
@@ -1165,7 +1165,7 @@ __lock_put_nolock(env, lock, runp, flags)
 	lockp = R_ADDR(&lt->reginfo, lock->off);
 	DB_ASSERT(env, lock->gen == lockp->gen);
 	if (lock->gen != lockp->gen) {
-		__db_errx(env, __db_lock_invalid, "DB_LOCK->lock_put");
+		__db_errx(env, LOCK_INVALID_ERR, "DB_LOCK->lock_put");
 		LOCK_INIT(*lock);
 		return (EINVAL);
 	}
@@ -1224,7 +1224,7 @@ __lock_downgrade(env, lock, new_mode, flags)
 
 	lockp = R_ADDR(&lt->reginfo, lock->off);
 	if (lock->gen != lockp->gen) {
-		__db_errx(env, __db_lock_invalid, "lock_downgrade");
+		__db_errx(env, LOCK_INVALID_ERR, "lock_downgrade");
 		ret = EINVAL;
 		goto out;
 	}
@@ -1662,7 +1662,7 @@ __lock_inherit_locks(lt, sh_locker, flags)
 	 * locks, so inheritance is easy!
 	 */
 	if (sh_locker == NULL) {
-		__db_errx(env, __db_locker_invalid);
+		__db_errx(env, LOCKER_INVALID_ERR);
 		return (EINVAL);
 	}
 

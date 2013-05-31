@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1994,4 +1994,19 @@ The release patch number.
     to create channel to send messages only to the master site.
     */
     public static final int EID_MASTER = DbConstants.DB_EID_MASTER;
+
+    /**
+    Set the blob threshold size.
+    <p>
+    @param value
+    The blob threshold size.
+    <p>
+    Any data item that is equal to or larger in size than the
+    threshold value will automatically be stored as a blob file.
+    <p>
+    @throws DatabaseException if a failure occurs.
+    */
+    public void setBlobThreshold(int value) throws DatabaseException {
+        dbenv.set_blob_threshold(value, 0);
+    }
 }

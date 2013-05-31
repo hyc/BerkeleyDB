@@ -96,7 +96,7 @@ if {$::tcl_platform(platform)!="unix"} {
 set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
-  mallocAll.test  rtree.test
+  mallocAll.test  rtree.test         full.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -110,8 +110,8 @@ set allquicktests [test_set $alltests -exclude {
   speed4p.test sqllimits1.test tkt2686.test thread001.test thread002.test
   thread003.test thread004.test thread005.test trans2.test vacuum3.test 
   incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
-  vtab_err.test walslow.test walcrash.test 
-  walthread.test rtree3.test
+  vtab_err.test walslow.test walcrash.test walcrash3.test
+  walthread.test rtree3.test indexfault.test securedel2.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -142,7 +142,7 @@ test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test atof1.test
 ] -initialize {
   set ::G(valgrind) 1
 } -shutdown {
@@ -184,12 +184,30 @@ test_suite "fts3" -prefix "" -description {
   fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
   fts3e.test fts3expr.test fts3expr2.test 
   fts3near.test fts3query.test fts3shared.test fts3snippet.test 
-
+  fts3sort.test
   fts3malloc.test fts3matchinfo.test
-
-  fts3aux1.test fts3comp1.test
+  fts3aux1.test fts3comp1.test fts3auto.test
+  fts4aa.test fts4content.test
+  fts3conf.test fts3prefix.test fts3corrupt.test
+  fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
+  fts4check.test fts4unicode.test
 }
 
+test_suite "nofaultsim" -prefix "" -description {
+  "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
+  This test suite is the same as the "quick" tests, except that some files
+  that test malloc and IO errors are omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+] -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  install_malloc_faultsim 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  unset -nocomplain ::G(valgrind)
+}
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
@@ -524,7 +542,7 @@ test_suite "inmemory_journal" -description {
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
-  journal3.test
+  journal3.test 8_3_names.test
 
   pager1.test async4.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
@@ -532,8 +550,10 @@ test_suite "inmemory_journal" -description {
   # Exclude stmt.test, which expects sub-journals to use temporary files.
   stmt.test
 
+  zerodamage.test
+
   # WAL mode is different.
-  wal*
+  wal* tkt-2d1a5c67d.test backcompat.test
 }]
 
 ifcapable mem3 {
@@ -730,7 +750,7 @@ test_suite "journaltest" -description {
   unregister_jt_vfs
 } -files [test_set $::allquicktests -exclude {
   wal* incrvacuum.test ioerr.test corrupt4.test io.test crash8.test 
-  async4.test bigfile.test
+  async4.test bigfile.test backcompat.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -779,6 +799,15 @@ test_suite "no_optimization" -description {
 } -dbconfig {
   optimization_control $::dbhandle all 0
 }
+
+test_suite "prepare" -description {
+  Run tests with the db connection using sqlite3_prepare() instead of _v2().
+} -dbconfig {
+  db_use_legacy_prepare $::dbhandle 1
+  #$::dbhandle cache size 0
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+]
 
 # End of tests
 #############################################################################
@@ -860,4 +889,3 @@ if {[info script] == $argv0} {
   main $argv
   finish_test
 }
-

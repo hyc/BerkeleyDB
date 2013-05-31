@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -32,6 +32,7 @@ proc env020 { } {
 	env020_txn_stat_print
 	env020_bt_stat_print
 	env020_ham_stat_print
+	env020_heap_stat_print
 	env020_ram_stat_print
 	env020_qam_stat_print
 	env020_seq_stat_print
@@ -176,6 +177,8 @@ proc env020_init { } {
 		"Maximum number of locks stolen for any one partition"
 		"Number of current lockers"
 		"Maximum number of lockers at any one time"
+		"Number of hits in the thread locker cache"
+		"Total number of lockers reused"
 		"Number of current lock objects"
 		"Maximum number of lock objects at any one time"
 		"Maximum number of lock objects in any one bucket"
@@ -336,6 +339,7 @@ proc env020_init { } {
 		"The number of buffers frozen"
 		"The number of buffers thawed"
 		"The number of frozen buffers freed"
+		"The number of outdated intermediate versions reused"
 		"The number of page allocations"
 		"The number of hash buckets examined during allocations"
 		"The maximum number of hash buckets examined for an allocation"
@@ -428,6 +432,7 @@ proc env020_init { } {
 		{^bucket \d*:.*}
 		"pageno, file, ref, LSN, address, priority, flags"
 		{\d*, #\d*,\s*\d*,\s*\d*/\d*, 0[xX][0-9a-fA-F]*, \d*}
+		{free frozen \d* pgno \d* mtx_buf \d*}
 	}
 
 	set mut_statprt_pattern_def {
@@ -497,6 +502,7 @@ proc env020_init { } {
 	set rep_statprt_pattern_def {
 		"Environment configured as a replication master"
 		"Environment configured as a replication client"
+		"Environment not configured as view site"
 		"Environment not configured for replication"
 		"Next LSN to be used"
 		"Next LSN expected"
@@ -632,6 +638,11 @@ proc env020_init { } {
 		"Number of failed new connection attempts"
 		"Number of currently active election threads"
 		"Election threads for which space is reserved"
+		"Number of participant sites in replication group"
+		"Total number of sites in replication group"
+		"Number of view sites in replication group"
+		"Number of automatic replication process takeovers"
+		"Size of incoming message queue"
 	}
 
 	set repmgr_statprt_pattern_sites {
@@ -733,6 +744,7 @@ proc env020_init { } {
 		"IsAlive"
 		"ThreadId"
 		"ThreadIdString"
+		"Blob dir"
 		"Log dir"
 		"Metadata dir"
 		"Tmp dir"
@@ -740,6 +752,7 @@ proc env020_init { } {
 		"Intermediate directory mode"
 		"Shared memory key"
 		"Password"
+		"Blob threshold"
 		"App private"
 		"Api1 internal"
 		"Api2 internal"
@@ -1107,6 +1120,7 @@ proc env020_bt_stat_print {} {
 		"Number of levels in the tree"
 		"Number of unique keys in the tree"
 		"Number of data items in the tree"
+		"Number of blobs in the tree"
 		"Number of tree internal pages"
 		"Number of bytes free in tree internal pages"
 		"Number of tree leaf pages"
@@ -1146,6 +1160,7 @@ proc env020_ham_stat_print {} {
 		"Number of data items in the database"
 		"Number of hash buckets"
 		"Number of bytes free on bucket pages"
+		"Number of blobs"
 		"Number of overflow pages"
 		"Number of bytes free in overflow pages"
 		"Number of bucket overflow pages"
@@ -1171,6 +1186,28 @@ proc env020_ham_stat_print {} {
 
 	puts "\tEnv020: Check DB->stat_print for hash"
 	env020_db_stat_print hash $pattern $all_pattern
+}
+
+proc env020_heap_stat_print {} {
+	set pattern {
+		"Local time"
+		# Heap information
+		"Heap magic number"
+		"Heap version number"
+		"Number of records in the database"
+		"Number of blobs in the database"
+		"Number of database pages"
+		"Underlying database page size"
+		"Number of database regions"
+		"Number of pages in a region"
+	}
+
+	set all_pattern {
+		"Default Heap database information"
+	}
+
+	puts "\tEnv020: Check DB->stat_print for heap"
+	env020_db_stat_print heap $pattern $all_pattern
 }
 
 proc env020_ram_stat_print {} {

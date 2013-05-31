@@ -84,6 +84,7 @@ typedef u_int32_t uintptr_t;\\
 typedef int64_t off_t;
 	d
 }
+s/@db_off_t_decl@/typedef int64_t db_off_t;/
 /@platform_header@/{
 	i\\
 /*\\

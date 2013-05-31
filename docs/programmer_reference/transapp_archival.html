@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -48,6 +48,15 @@
         application may still experience data loss in this case, it is
         possible to minimize it.
     </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+            Berkeley DB backups (archives) can be recovered using machines
+            of differing byte order. That is, a backup taken on a
+            big-endian machine can be used to restore a database residing
+            on a little-endian machine. 
+        </p>
+      </div>
       <p>
         First, you may want to periodically create snapshots (that is,
         backups) of your databases to make it possible to recover from
@@ -114,8 +123,9 @@
             <p>
                 If the database files are stored in a separate directory from the
                 other Berkeley DB files, it may be simpler to archive the directory
-                itself instead of the individual files (see <a href="../api_reference/C/envset_data_dir.html" class="olink">DB_ENV-&gt;set_data_dir()</a> for
-                additional information).  
+                itself instead of the individual files (see <a href="../api_reference/C/envadd_data_dir.html" class="olink">DB_ENV-&gt;add_data_dir()</a> for
+                additional information on storing database files in
+                separate directories).  
             </p>
             <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
               <h3 class="title">Note</h3>

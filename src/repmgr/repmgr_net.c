@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -378,7 +378,7 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 			goto out;
 #undef	SEND_ONE_CONNECTION
 
-		nsites_sent = 1;
+		nsites_sent = FLD_ISSET(site->gmdb_flags, SITE_VIEW) ? 0 : 1;
 		npeers_sent = F_ISSET(site, SITE_ELECTABLE) ? 1 : 0;
 		missed_peer = FALSE;
 	}
@@ -418,7 +418,13 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 				nclients = 0;
 			else if ((policy == DB_REPMGR_ACKS_ONE ||
 			    policy == DB_REPMGR_ACKS_ONE_PEER) &&
-			    nclients == 1) {
+			    nclients < 2) {
+				/*
+				 * Adjust to QUORUM when first other
+				 * participant joins (nclients=1) or when there
+				 * are no other participants but a view joins
+				 * (nclients=0) to get enough acks.
+				 */
 				nclients = 0;
 				policy = DB_REPMGR_ACKS_QUORUM;
 			}
@@ -734,8 +740,13 @@ __repmgr_send_broadcast(env, type, control, rec, nsitesp, npeersp, missingp)
 		 * useful to keep letting a removed site see updates so that it
 		 * learns of its own removal, and will know to rejoin at its
 		 * next reboot.
+		 *
+		 * We never count sends to views because views cannot
+		 * contribute to durability, but we always do the sends.
 		 */
-		if (site->membership == SITE_PRESENT)
+		if (FLD_ISSET(site->gmdb_flags, SITE_VIEW))
+			full_member = FALSE;
+		else if (site->membership == SITE_PRESENT)
 			full_member = TRUE;
 		else {
 			full_member = FALSE;
@@ -802,7 +813,8 @@ send_connection(env, type, conn, msg, sent)
 		REPMGR_MAX_V1_MSG_TYPE,
 		REPMGR_MAX_V2_MSG_TYPE,
 		REPMGR_MAX_V3_MSG_TYPE,
-		REPMGR_MAX_V4_MSG_TYPE
+		REPMGR_MAX_V4_MSG_TYPE,
+		REPMGR_MAX_V5_MSG_TYPE
 	};
 
 	db_rep = env->rep_handle;
@@ -1132,7 +1144,12 @@ got_acks(env, context)
 	has_unacked_peer = FALSE;
 	FOR_EACH_REMOTE_SITE_INDEX(eid) {
 		site = SITE_FROM_EID(eid);
-		if (site->membership != SITE_PRESENT)
+		/*
+		 * Do not count an ack from a view because a view cannot
+		 * contribute to durability.
+		 */
+		if (site->membership != SITE_PRESENT ||
+		    FLD_ISSET(site->gmdb_flags, SITE_VIEW))
 			continue;
 		if (!F_ISSET(site, SITE_HAS_PRIO)) {
 			/*
@@ -1206,6 +1223,7 @@ __repmgr_bust_connection(env, conn)
 	DB_REP *db_rep;
 	REP *rep;
 	REPMGR_SITE *site;
+	db_timespec now;
 	u_int32_t flags;
 	int ret, eid;
 
@@ -1267,11 +1285,40 @@ __repmgr_bust_connection(env, conn)
 	 * master, assume that the master may have failed, and call for
 	 * an election.  But only do this for the connection to the main
 	 * master process, not a subordinate one.  And only do it if
-	 * we're our site's main process, not a subordinate one.  And
+	 * we're our site's listener process, not a subordinate one.  And
 	 * skip it if the application has configured us not to do
 	 * elections.
 	 */
 	if (!IS_SUBORDINATE(db_rep) && eid == rep->master_id) {
+		if (FLD_ISSET(rep->config, REP_C_AUTOTAKEOVER)) {
+			/*
+			 * When the connection is from master's listener, if
+			 * there is any other connection from a master's
+			 * subordinate process that could take over as
+			 * listener, we delay the election to allow some time
+			 * for a new master listener to start.  At the end of
+			 * the delay, if there is still no master listener,
+			 * call an election.  There is a slight chance that
+			 * we will delay the election to wait for an inactive
+			 * connection which would never become the next main
+			 * connection.
+			 */
+			TAILQ_FOREACH(conn, &site->sub_conns, entries) {
+				if (conn->auto_takeover) {
+					if (!timespecisset(
+					    &db_rep->m_listener_chk)) {
+						__os_gettime(env, &now, 1);
+						TIMESPEC_ADD_DB_TIMEOUT(&now,
+						    db_rep->m_listener_wait);
+						db_rep->m_listener_chk = now;
+					}
+					RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		"Master failure, but delay elections for takeover on master"));
+					return (0);
+				}
+			}
+		}
+
 		/*
 		 * Even if we're not doing elections, defer the event
 		 * notification to later execution in the election
@@ -1340,25 +1387,51 @@ __repmgr_disable_connection(env, conn)
 	REPMGR_CONNECTION *conn;
 {
 	DB_REP *db_rep;
-	REPMGR_SITE *site;
+	REP *rep;
 	REPMGR_RESPONSE *resp;
+	REPMGR_SITE *site;
+	SITEINFO *sites;
 	u_int32_t i;
-	int eid, ret, t_ret;
+	int eid, is_subord, orig_state, ret, t_ret;
 
 	db_rep = env->rep_handle;
+	rep = db_rep->region;
 	ret = 0;
+	is_subord = 0;
 
+	orig_state = conn->state;
 	conn->state = CONN_DEFUNCT;
 	if (conn->type == REP_CONNECTION) {
 		eid = conn->eid;
 		if (IS_VALID_EID(eid)) {
 			site = SITE_FROM_EID(eid);
 			if (conn != site->ref.conn.in &&
-			    conn != site->ref.conn.out)
-				/* It's a subordinate connection. */
+			    conn != site->ref.conn.out) {
+				/*
+				 * It is a subordinate connection to disable.
+				 * Remove it from the subordinate connection
+				 * list, and decrease the number of listener
+				 * candidates by 1 if it is from a subordinate
+				 * rep-aware process that allows takeover.
+				 */
 				TAILQ_REMOVE(&site->sub_conns, conn, entries);
+				SET_LISTENER_CAND(conn->auto_takeover, --);
+				is_subord = 1;
+			}
 			TAILQ_INSERT_TAIL(&db_rep->connections, conn, entries);
 			conn->ref_count++;
+			/*
+			 * Do not decrease sites_avail for a subordinate
+			 * connection.
+			 */
+			if (site->state == SITE_CONNECTED && !is_subord &&
+			    (orig_state == CONN_READY ||
+			    orig_state == CONN_CONGESTED)) {
+				rep->sites_avail--;
+				RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+	    "disable_conn: EID %lu disabled.  sites_avail %lu",
+				    (u_long)eid, (u_long)rep->sites_avail));
+			}
 		}
 		conn->eid = -1;
 	} else if (conn->type == APP_CONNECTION) {
@@ -1646,8 +1719,10 @@ flatten(env, msg)
 }
 
 /*
- * Scan the list of remote sites, returning the first one that is a peer,
- * is not the current master, and is available.
+ * Scan the list of remote sites, returning the first participant that is a
+ * peer, is not the current master, and is available.  If there are no
+ * available participant peers but there is an available view peer, return the
+ * first available view peer.
  */
 static REPMGR_SITE *
 __repmgr_find_available_peer(env)
@@ -1656,23 +1731,28 @@ __repmgr_find_available_peer(env)
 	DB_REP *db_rep;
 	REP *rep;
 	REPMGR_CONNECTION *conn;
-	REPMGR_SITE *site;
-	u_int i;
+	REPMGR_SITE *site, *view;
+	u_int avail, i;
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
+	view = NULL;
 	FOR_EACH_REMOTE_SITE_INDEX(i) {
 		site = &db_rep->sites[i];
-		if (FLD_ISSET(site->config, DB_REPMGR_PEER) &&
-		    EID_FROM_SITE(site) != rep->master_id &&
-		    site->state == SITE_CONNECTED &&
+		avail = (site->state == SITE_CONNECTED &&
 		    (((conn = site->ref.conn.in) != NULL &&
 		    conn->state == CONN_READY) ||
 		    ((conn = site->ref.conn.out) != NULL &&
-		    conn->state == CONN_READY)))
+		    conn->state == CONN_READY)));
+		if (FLD_ISSET(site->config, DB_REPMGR_PEER) &&
+		    !FLD_ISSET(site->gmdb_flags, SITE_VIEW) &&
+		    EID_FROM_SITE(site) != rep->master_id && avail)
 			return (site);
+		if (!view && FLD_ISSET(site->config, DB_REPMGR_PEER) &&
+		    FLD_ISSET(site->gmdb_flags, SITE_VIEW) && avail)
+			view = site;
 	}
-	return (NULL);
+	return (view);
 }
 
 /*
@@ -1870,22 +1950,28 @@ final_cleanup(env, conn, unused)
 	void *unused;
 {
 	DB_REP *db_rep;
+	REP *rep;
 	REPMGR_SITE *site;
-	int ret, t_ret;
+	SITEINFO *sites;
+	int eid, ret, t_ret;
 
 	COMPQUIET(unused, NULL);
 	db_rep = env->rep_handle;
+	rep = db_rep->region;
+	eid = conn->eid;
 
 	ret = __repmgr_close_connection(env, conn);
 	/* Remove the connection from whatever list it's on, if any. */
-	if (conn->type == REP_CONNECTION && IS_VALID_EID(conn->eid)) {
-		site = SITE_FROM_EID(conn->eid);
+	if (conn->type == REP_CONNECTION && IS_VALID_EID(eid)) {
+		site = SITE_FROM_EID(eid);
 
 		if (site->state == SITE_CONNECTED &&
 		    (conn == site->ref.conn.in || conn == site->ref.conn.out)) {
 			/* Not on any list, so no need to do anything. */
-		} else
+		} else {
 			TAILQ_REMOVE(&site->sub_conns, conn, entries);
+			SET_LISTENER_CAND(conn->auto_takeover, --);
+		}
 		t_ret = __repmgr_destroy_conn(env, conn);
 
 	} else {

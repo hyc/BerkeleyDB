@@ -72,10 +72,16 @@ typedef struct ___repmgr_membership_key_args {
 	u_int16_t	port;
 } __repmgr_membership_key_args;
 
-#define	__REPMGR_MEMBERSHIP_DATA_SIZE	4
+#define	__REPMGR_MEMBERSHIP_DATA_SIZE	8
 typedef struct ___repmgr_membership_data_args {
+	u_int32_t	status;
 	u_int32_t	flags;
 } __repmgr_membership_data_args;
+
+#define	__REPMGR_V4MEMBERSHIP_DATA_SIZE	4
+typedef struct ___repmgr_v4membership_data_args {
+	u_int32_t	flags;
+} __repmgr_v4membership_data_args;
 
 #define	__REPMGR_MEMBER_METADATA_SIZE	8
 typedef struct ___repmgr_member_metadata_args {
@@ -96,18 +102,33 @@ typedef struct ___repmgr_membr_vers_args {
 	u_int32_t	gen;
 } __repmgr_membr_vers_args;
 
-#define	__REPMGR_SITE_INFO_SIZE	10
+#define	__REPMGR_SITE_INFO_SIZE	14
 typedef struct ___repmgr_site_info_args {
 	DBT		host;
 	u_int16_t	port;
+	u_int32_t	status;
 	u_int32_t	flags;
 } __repmgr_site_info_args;
 
-#define	__REPMGR_CONNECT_REJECT_SIZE	8
+#define	__REPMGR_V4SITE_INFO_SIZE	10
+typedef struct ___repmgr_v4site_info_args {
+	DBT		host;
+	u_int16_t	port;
+	u_int32_t	flags;
+} __repmgr_v4site_info_args;
+
+#define	__REPMGR_CONNECT_REJECT_SIZE	12
 typedef struct ___repmgr_connect_reject_args {
 	u_int32_t	version;
 	u_int32_t	gen;
+	u_int32_t	status;
 } __repmgr_connect_reject_args;
 
-#define	__REPMGR_MAXMSG_SIZE	12
+#define	__REPMGR_V4CONNECT_REJECT_SIZE	8
+typedef struct ___repmgr_v4connect_reject_args {
+	u_int32_t	version;
+	u_int32_t	gen;
+} __repmgr_v4connect_reject_args;
+
+#define	__REPMGR_MAXMSG_SIZE	14
 #endif

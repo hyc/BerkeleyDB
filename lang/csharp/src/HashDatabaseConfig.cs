@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -67,6 +67,46 @@ namespace BerkeleyDB {
                 uint flags = base.openFlags;
                 flags |= (uint)Creation;
                 return flags;
+            }
+        }
+
+        /// <summary>
+        /// The path of the directory where blobs are stored.
+        /// <para>
+        /// If the database is opened within <see cref="DatabaseEnvironment"/>,
+        /// this path setting will be ignored during
+        /// <see cref="HashDatabase.Open"/>. Use
+        /// <see cref="HashDatabase.BlobDir"/> to identify the current storage
+        /// location of blobs after opening the database.
+        /// </para>
+        /// </summary>
+        public string BlobDir;
+
+        internal bool blobThresholdIsSet;
+        private uint blobThreshold;
+        /// <summary>
+        /// The size in bytes which is used to determine when a data item will
+        /// be stored as a blob.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// If the threshold value is 0, blobs will never be used by the
+        /// database.
+        /// </para>
+        /// <para>
+        /// It is illegal to enable blob in the database which is configured
+        /// as in-memory database or with chksum, encryption, duplicates,
+        /// sorted duplicates, compression, multiversion concurrency control
+        /// and transactional read operations with degree 1 isolation.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get { return blobThreshold; }
+            set {
+                blobThresholdIsSet = true;
+                blobThreshold = value;
             }
         }
 
@@ -162,6 +202,63 @@ namespace BerkeleyDB {
         /// </remarks>
         public EntryComparisonDelegate DuplicateCompare;
 
+        internal bool partitionIsSet;
+        private PartitionDelegate partitionFunc;
+        /// <summary>
+        /// Return the application-specified partitioning function.
+        /// </summary>
+        public PartitionDelegate Partition { get { return partitionFunc; } }
+        private DatabaseEntry[] partitionKeys;
+        /// <summary>
+        /// Return an array of type DatabaseEntry where each array entry
+        /// contains the range of keys contained in one of the database's
+        /// partitions. The array contains the information for the entire
+        /// database.
+        /// </summary>
+        public DatabaseEntry[] PartitionKeys { get { return partitionKeys; } }
+        private uint nparts;
+        /// <summary>
+        /// Return the number of partitions to create.
+        /// </summary>
+        public uint NParts { get { return nparts; } }
+        private bool SetPartition(uint parts, DatabaseEntry[] partKeys,
+            PartitionDelegate partFunc) {
+            partitionIsSet = true;
+            nparts = parts;
+            partitionKeys = partKeys;
+            partitionFunc = partFunc;
+            if (nparts < 2)
+                partitionIsSet = false;
+            else if (partitionKeys == null && partitionFunc == null)
+                partitionIsSet = false;
+            return partitionIsSet;
+        }
+        /// <summary>
+        /// Enable database partitioning using the specified partition keys.
+        /// Return true if partitioning is successfully enabled; otherwise
+        /// return false.
+        /// <param name="keys">
+        /// An array of DatabaseEntry where each array entry defines the range
+        /// of key values to be stored in each partition
+        /// </param>
+        /// </summary>
+        public bool SetPartitionByKeys(DatabaseEntry[] keys) {
+            uint parts = (keys == null ? 0 : ((uint)keys.Length + 1));
+            return (SetPartition(parts, keys, null));
+        }
+        /// <summary>
+        /// Enable database partitioning using the specified number of
+        /// partitions and partition function.
+        /// Return true if the specified number of partitions are successfully
+        /// enabled; otherwise return false.
+        /// <param name="parts">The number of partitions to create</param>
+        /// <param name="partFunc">The name of partitioning function</param>
+        /// </summary>
+        public bool SetPartitionByCallback(
+            uint parts, PartitionDelegate partFunc) {
+            return (SetPartition(parts, null, partFunc));
+        }
+
         internal bool nelemIsSet;
         private uint nelems;
         /// <summary>
@@ -191,6 +288,7 @@ namespace BerkeleyDB {
         /// Instantiate a new HashDatabaseConfig object
         /// </summary>
         public HashDatabaseConfig() {
+            blobThresholdIsSet = false;
             Duplicates = DuplicatesPolicy.NONE;
             HashComparison = null;
             fillFactorIsSet = false;

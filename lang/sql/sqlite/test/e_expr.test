@@ -17,6 +17,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
 
 proc do_expr_test {tn expr type value} {
   uplevel do_execsql_test $tn [list "SELECT typeof($expr), $expr"] [
@@ -627,7 +631,7 @@ do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
 #-------------------------------------------------------------------------
 # "Test" the syntax diagrams in lang_expr.html.
 #
-# EVIDENCE-OF: R-62067-43884 -- syntax diagram signed-number
+# EVIDENCE-OF: R-02989-21050 -- syntax diagram signed-number
 #
 do_execsql_test e_expr-12.1.1 { SELECT 0, +0, -0 } {0 0 0}
 do_execsql_test e_expr-12.1.2 { SELECT 1, +1, -1 } {1 1 -1}
@@ -642,7 +646,7 @@ do_execsql_test e_expr-12.1.6 {
   SELECT 0.0001, +0.0001, -0.0001 
 } {0.0001 0.0001 -0.0001}
 
-# EVIDENCE-OF: R-21258-25489 -- syntax diagram literal-value
+# EVIDENCE-OF: R-43188-60852 -- syntax diagram literal-value
 #
 set sqlite_current_time 1
 do_execsql_test e_expr-12.2.1 {SELECT 123}               {123}
@@ -655,9 +659,9 @@ do_execsql_test e_expr-12.2.7 {SELECT CURRENT_DATE}      {1970-01-01}
 do_execsql_test e_expr-12.2.8 {SELECT CURRENT_TIMESTAMP} {{1970-01-01 00:00:01}}
 set sqlite_current_time 0
 
-# EVIDENCE-OF: R-57598-59332 -- syntax diagram expr
+# EVIDENCE-OF: R-50544-32159 -- syntax diagram expr
 #
-file delete -force test.db2
+forcedelete test.db2
 execsql {
   ATTACH 'test.db2' AS dbname;
   CREATE TABLE dbname.tblname(cname);
@@ -812,7 +816,7 @@ foreach {tn expr} {
   }
 }
 
-# EVIDENCE-OF: R-49462-56079 -- syntax diagram raise-function
+# EVIDENCE-OF: R-39820-63916 -- syntax diagram raise-function
 #
 foreach {tn raiseexpr} {
   1 "RAISE(IGNORE)"
@@ -1598,8 +1602,8 @@ do_expr_test e_expr-31.1.2 { CAST(1.99999 AS INTEGER) } integer 1
 do_expr_test e_expr-31.1.3 { CAST(-1.99999 AS INTEGER) } integer -1
 do_expr_test e_expr-31.1.4 { CAST(-0.99999 AS INTEGER) } integer 0
 
-# EVIDENCE-OF: R-06126-36021 If an REAL is too large to be represented
-# as an INTEGER then the result of the cast is the largest negative
+# EVIDENCE-OF: R-49503-28105 If a REAL is too large to be represented as
+# an INTEGER then the result of the cast is the largest negative
 # integer: -9223372036854775808.
 #
 do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer -9223372036854775808
@@ -1675,7 +1679,7 @@ db3 close
 # Test statements related to the EXISTS and NOT EXISTS operators.
 #
 catch { db close }
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 
 do_execsql_test e_expr-34.1 {
@@ -1756,7 +1760,7 @@ foreach {tn e1 e2} {
 #
 
 catch { db close }
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 do_test e_expr-35.0 {
   execsql {
@@ -1845,4 +1849,3 @@ foreach {tn expr} {
 
 
 finish_test
-

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -151,6 +151,38 @@ namespace BerkeleyDB {
         /// </para>
         /// </remarks>
         public string CreationDir;
+        /// <summary>
+        /// The path of the directory where blobs are stored.
+        /// </summary>
+        public string BlobDir;
+
+        internal bool blobThresholdIsSet;
+        private uint blobThreshold;
+        /// <summary>
+        /// The size in bytes which is used to determine when a data item will
+        /// be stored as a blob.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// If the threshold value is 0, databases opened in the environment
+        /// will default to never using blobs.
+        /// </para>
+        /// <para>
+        /// It is illegal to enable blob support in the environment if any of 
+        /// <see cref="DatabaseEnvironmentConfig.TxnSnapshot"/>,
+        /// <see cref="DatabaseEnvironmentConfig.UseReplication"/>,
+        /// and <see cref="DatabaseEnvironmentConfig.UseMVCC"/> is set to true.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get { return blobThreshold; }
+            set {
+                blobThresholdIsSet = true;
+                blobThreshold = value;
+            }
+        }
 
         internal bool encryptionIsSet;
         private String encryptPwd;
@@ -521,23 +553,23 @@ namespace BerkeleyDB {
         /// (or more likely, has been misconfigured).
         /// </remarks>
         public bool ForceFlush;
-	/// 
-	/// <summary> Set a flag in the environment indicating that a
-	/// hot backup is in progress.
-	/// </summary>
-	/// <remarks>
-	/// When a "hot backup" copy of a database environment is taken, this
-	/// attribute should be configured in the environment prior to copying.
-	/// If any transactions with the bulk insert optimization enabled (i.e.,
-	/// started with the Bulk configuration attribute) are in progress,
-	/// setting the HotBackupInProgress attribute will force a checkpoint in
-	/// the environment.  After this attribute is set, the bulk insert
-	/// optimization is disabled, until the attribute is reset.  Using this
-	/// protocol allows a hot backup procedure to make a consistent copy of
-	/// the database even when bulk transactions are ongoing.  Please see the
-	/// discussion of hot backups in the Getting Started With Transactions
-	/// Guide, and the description of the Bulk attribute in 
-	/// <see cref="TransactionConfig.Bulk"/>for more information.
+    /// 
+    /// <summary> Set a flag in the environment indicating that a
+    /// hot backup is in progress.
+    /// </summary>
+    /// <remarks>
+    /// When a "hot backup" copy of a database environment is taken, this
+    /// attribute should be configured in the environment prior to copying.
+    /// If any transactions with the bulk insert optimization enabled (i.e.,
+    /// started with the Bulk configuration attribute) are in progress,
+    /// setting the HotBackupInProgress attribute will force a checkpoint in
+    /// the environment.  After this attribute is set, the bulk insert
+    /// optimization is disabled, until the attribute is reset.  Using this
+    /// protocol allows a hot backup procedure to make a consistent copy of
+    /// the database even when bulk transactions are ongoing.  Please see the
+    /// discussion of hot backups in the Getting Started With Transactions
+    /// Guide, and the description of the Bulk attribute in 
+    /// <see cref="TransactionConfig.Bulk"/>for more information.
         /// </remarks>
         public bool HotbackupInProgress;
         /// <summary>

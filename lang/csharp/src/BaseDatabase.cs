@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -11,12 +11,12 @@ using BerkeleyDB.Internal;
 
 namespace BerkeleyDB {
     /// <summary>
-    /// The base class from which all database classes inherit
+    /// The base class from which all database classes inherit.
     /// </summary>
     public class BaseDatabase : IDisposable {
         internal DB db;
         /// <summary>
-        /// The environment that the database lies in.
+        /// The environment where the database exists.
         /// </summary>
         protected internal DatabaseEnvironment env;
         /// <summary>
@@ -129,7 +129,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// The size of the shared memory buffer pool -- that is, the cache.
+        /// The size of the shared memory buffer pool (the cache).
         /// </summary>
         public CacheInfo CacheSize {
             get {
@@ -232,7 +232,7 @@ namespace BerkeleyDB {
         /// to display the error message in an appropriate manner.
         /// </para>
         /// <para>
-        /// Setting ErrorFeedback to NULL unconfigures the callback interface.
+        /// Setting ErrorFeedback to NULL resets the callback interface.
         /// </para>
         /// <para>
         /// This error-logging enhancement does not slow performance or
@@ -246,7 +246,7 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// For databases not opened in an environment, setting ErrorFeedback
-        /// configures operations performed using the specified object, not all
+        /// configures operations performed using the specified object, instead of all
         /// operations performed on the underlying database. 
         /// </para>
         /// </remarks>
@@ -402,7 +402,7 @@ namespace BerkeleyDB {
         /// The database's current page size.
         /// </summary>
         /// <remarks>  If <see cref="DatabaseConfig.PageSize"/> was not set by
-        /// your application, then the default pagesize is selected based on the
+        /// your application, then the default page size is selected based on the
         /// underlying filesystem I/O block size.
         /// </remarks>
         public uint Pagesize {
@@ -423,7 +423,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// If true, this database has been opened for reading only. Any attempt
+        /// If true, this database has been opened for read only. Any attempt
         /// to modify items in the database will fail, regardless of the actual
         /// permissions of any underlying files. 
         /// </summary>
@@ -518,7 +518,7 @@ namespace BerkeleyDB {
         /// while cursors are still opened.
         /// </para>
         /// <para>
-        /// The same rule, for the same reasons, hold true for
+        /// The same rule, for the same reasons, holds true for
         /// <see cref="Transaction"/> objects. Simply make sure you resolve
         /// all your transaction objects before closing your database handle.
         /// </para>
@@ -526,16 +526,16 @@ namespace BerkeleyDB {
         /// Because key/data pairs are cached in memory, applications should
         /// make a point to always either close database handles or sync their
         /// data to disk (using <see cref="Sync"/> before exiting, to
-        /// ensure that any data cached in main memory are reflected in the
+        /// ensure that any data cached in main memory is reflected in the
         /// underlying file system.
         /// </para>
         /// <para>
-        /// When called on a database that is the primary database for a
-        /// secondary index, the primary database should be closed only after
-        /// all secondary indices referencing it have been closed.
+        /// When called on a secondary index's primary database, the primary
+        /// should be closed only after all secondary indices referencing
+        /// it have been closed.
         /// </para>
         /// <para>
-        /// When multiple threads are using the object concurrently, only a
+        /// When multiple threads use the object concurrently, only a
         /// single thread may call the Close method.
         /// </para>
         /// <para>
@@ -563,15 +563,14 @@ namespace BerkeleyDB {
         /// application crash.
         /// </para>
         /// <para>
-        /// It is important to understand that flushing cached information to
-        /// disk only minimizes the window of opportunity for corrupted data.
-        /// Although unlikely, it is possible for database corruption to happen
-        /// if a system or application crash occurs while writing data to the
-        /// database. To ensure that database corruption never occurs,
-        /// applications must either use transactions and logging with automatic
-        /// recovery or edit a copy of the database, and once all applications
-        /// using the database have successfully called Close, atomically
-        /// replace the original database with the updated copy.
+        /// Flushing cached information to disk only minimizes the window of opportunity
+        /// for corrupted data. Although unlikely, it is possible for database corruption
+        /// to occur in the event of a system or application crash while writing data to the
+        /// database. To ensure that database corruption never occurs, 
+        /// applications must either use transactions and logging with
+        /// automatic recovery, or edit a copy of the database and then replace the corrupted
+        /// database with the updated copy once all applications using the database
+        /// have successfully called <see cref="BaseDatabase.Close"/>.
         /// </para>
         /// <para>
         /// Note that this parameter only works when the database has been
@@ -1061,7 +1060,7 @@ namespace BerkeleyDB {
         /// <param name="data">
         /// The data to search for.  If null a new DatabaseEntry is created.
         /// </param>
-        /// <param name="txn">The txn for this operation.</param>
+        /// <param name="txn">The transaction for this operation.</param>
         /// <param name="info">Locking info for this operation.</param>
         /// <param name="flags">
         /// Flags value specifying which type of get to perform.  Passed
@@ -1355,7 +1354,7 @@ namespace BerkeleyDB {
         /// <para>
         /// Applications should not rename databases that are currently in use.
         /// If an underlying file is being renamed and logging is currently
-        /// enabled in the database environment, no database in the file may be
+        /// enabled in the database environment, no database in the file should be
         /// open when Rename is called. In particular, some architectures do not
         /// permit renaming files with open handles. On these architectures,
         /// attempts to rename databases that are currently in use by any thread
@@ -1389,16 +1388,14 @@ namespace BerkeleyDB {
         /// always succeed.
         /// </para>
         /// <para>
-        /// It is important to understand that flushing cached information to
-        /// disk only minimizes the window of opportunity for corrupted data.
-        /// Although unlikely, it is possible for database corruption to happen
-        /// if a system or application crash occurs while writing data to the
+        /// Flushing cached information to disk only minimizes the window of opportunity
+        /// for corrupted data. Although unlikely, it is possible for database corruption
+        /// to occur in the event of a system or application crash while writing data to the
         /// database. To ensure that database corruption never occurs, 
-        /// applications must either: use transactions and logging with
-        /// automatic recovery or edit a copy of the database, and once all
-        /// applications using the database have successfully called
-        /// <see cref="BaseDatabase.Close"/>, atomically replace
-        /// the original database with the updated copy.
+        /// applications must either use transactions and logging with
+        /// automatic recovery, or edit a copy of the database and then replace the corrupted
+        /// database with the updated copy once all applications using the database
+        /// have successfully called <see cref="BaseDatabase.Close"/>.
         /// </para>
         /// </remarks>
         public void Sync() {
@@ -1452,7 +1449,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the database if
-        /// it's still open.
+        /// it is still open.
         /// </summary>
         public void Dispose() {
             if (isOpen)

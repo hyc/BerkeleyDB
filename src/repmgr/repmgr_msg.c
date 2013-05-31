@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,10 +15,11 @@
 #include "dbinc_auto/repmgr_auto.h"
 
 static int dispatch_app_message __P((ENV *, REPMGR_MESSAGE *));
-static int finish_gmdb_update __P((ENV *,
-	DB_THREAD_INFO *, DBT *, u_int32_t, u_int32_t, __repmgr_member_args *));
+static int finish_gmdb_update __P((ENV *, DB_THREAD_INFO *,
+    DBT *, u_int32_t, u_int32_t, u_int32_t, __repmgr_member_args *));
 static int incr_gm_version __P((ENV *, DB_THREAD_INFO *, DB_TXN *));
-static void marshal_site_data __P((ENV *, u_int32_t, u_int8_t *, DBT *));
+static void marshal_site_data __P((ENV *,
+    u_int32_t, u_int32_t, u_int8_t *, DBT *));
 static void marshal_site_key __P((ENV *,
 	repmgr_netaddr_t *, u_int8_t *, DBT *, __repmgr_member_args *));
 static int message_loop __P((ENV *, REPMGR_RUNNABLE *));
@@ -72,6 +73,7 @@ message_loop(env, th)
 	REPMGR_RUNNABLE *th;
 {
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	REP *rep;
 	REPMGR_MESSAGE *msg;
 	REPMGR_CONNECTION *conn;
@@ -83,6 +85,7 @@ message_loop(env, th)
 	COMPQUIET(membership, 0);
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
+	ENV_ENTER(env, ip);
 	LOCK_MUTEX(db_rep->mutex);
 	while ((ret = __repmgr_queue_get(env, &msg, th)) == 0) {
 		incremented = FALSE;
@@ -141,7 +144,7 @@ message_loop(env, th)
 				 * detect it without the need for application
 				 * activity.
 				 */
-				ret = __rep_flush(env->dbenv);
+				ret = __rep_flush_int(env);
 			} else {
 				/*
 				 * Use heartbeat message to initiate rerequest
@@ -162,6 +165,12 @@ message_loop(env, th)
 			db_rep->non_rep_th--;
 		if (ret != 0)
 			goto out;
+		if (db_rep->view_mismatch) {
+			__db_errx(env, DB_STR("3699",
+    "Site is not recorded as a view in the group membership database"));
+			ret = EINVAL;
+			goto out;
+		}
 	}
 	/*
 	 * A return of DB_REP_UNAVAIL from __repmgr_queue_get() merely means we
@@ -171,6 +180,7 @@ message_loop(env, th)
 		ret = 0;
 out:
 	UNLOCK_MUTEX(db_rep->mutex);
+	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -406,6 +416,14 @@ DB_TEST_RECOVERY_LABEL
 		t_ret = __op_rep_exit(env);
 		if (ret == ENOENT)
 			ret = 0;
+		else if (ret == DB_DELETED && db_rep->demotion_pending)
+			/*
+			 * If a demotion is in progress, we want to keep
+			 * the repmgr threads instead of bowing out because
+			 * they are needed when we rejoin the replication group
+			 * immediately as a view.
+			 */
+			ret = 0;
 		else if (ret == DB_DELETED)
 			ret = __repmgr_bow_out(env);
 		if (t_ret != 0 && ret == 0)
@@ -457,6 +475,27 @@ __repmgr_handle_event(env, event, info)
 
 		/* Application still needs to see this. */
 		break;
+	case DB_EVENT_REP_MASTER:
+	case DB_EVENT_REP_STARTUPDONE:
+		/*
+		 * Detect a rare case where a dupmaster or incomplete gmdb
+		 * operation has left the site's gmdb inconsistent with
+		 * a view callback definition.  The user would have correctly
+		 * defined a view callback and called repmgr_start(), but the
+		 * gmdb operation to update this site to a view would have been
+		 * incomplete or rolled back.  The site cannot operate in this
+		 * inconsistent state, so set an indicator to cause a message
+		 * thread to panic and terminate.
+		 *
+		 * The one exception is during a demotion to view, when
+		 * this inconsistency is expected for a short time.
+		 */
+		if (IS_VALID_EID(db_rep->self_eid) &&
+		    PARTICIPANT_TO_VIEW(db_rep,
+		    SITE_FROM_EID(db_rep->self_eid)) &&
+		    !db_rep->demotion_pending)
+			db_rep->view_mismatch = TRUE;
+		break;
 	default:
 		break;
 	}
@@ -504,7 +543,7 @@ send_permlsn(env, generation, lsn)
 		 */
 		policy = site->ack_policy > 0 ?
 		    site->ack_policy : rep->perm_policy;
-		if (policy == DB_REPMGR_ACKS_NONE ||
+		if (IS_VIEW_SITE(env) || policy == DB_REPMGR_ACKS_NONE ||
 		    (IS_PEER_POLICY(policy) && rep->priority == 0))
 			ack = FALSE;
 		else
@@ -619,13 +658,16 @@ serve_repmgr_request(env, msg)
 	ENV *env;
 	REPMGR_MESSAGE *msg;
 {
-	DB_THREAD_INFO *ip;
 	DBT *dbt;
+	DB_THREAD_INFO *ip;
 	REPMGR_CONNECTION *conn;
+	u_int32_t mtype;
 	int ret, t_ret;
 
-	ENV_ENTER(env, ip);
-	switch (REPMGR_OWN_MSG_TYPE(msg->msg_hdr)) {
+	ENV_GET_THREAD_INFO(env, ip);
+	conn = msg->v.gmdb_msg.conn;
+	mtype = REPMGR_OWN_MSG_TYPE(msg->msg_hdr);
+	switch (mtype) {
 	case REPMGR_JOIN_REQUEST:
 		ret = serve_join_request(env, ip, msg);
 		break;
@@ -643,21 +685,27 @@ serve_repmgr_request(env, msg)
 		break;
 	case REPMGR_SHARING:
 		dbt = &msg->v.gmdb_msg.request;
-		ret = __repmgr_refresh_membership(env, dbt->data, dbt->size);
+		ret = __repmgr_refresh_membership(env, dbt->data, dbt->size,
+		    (conn == NULL ? DB_REPMGR_VERSION : conn->version));
 		break;
 	default:
 		ret = __db_unknown_path(env, "serve_repmgr_request");
 		break;
 	}
-	if ((conn = msg->v.gmdb_msg.conn) != NULL) {
+	if (conn != NULL) {
+		/*
+		 * A site that removed itself may have already closed its
+		 * connections.  Do not return an error and panic if we
+		 * can't close the one-shot GMDB connection for a remove
+		 * request here.
+		 */
 		if ((t_ret = __repmgr_close_connection(env, conn)) != 0 &&
-		    ret == 0)
+		    ret == 0 && mtype != REPMGR_REMOVE_REQUEST)
 			ret = t_ret;
 		if ((t_ret = __repmgr_decr_conn_ref(env, conn)) != 0 &&
 		    ret == 0)
 			ret = t_ret;
 	}
-	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -676,6 +724,7 @@ serve_join_request(env, ip, msg)
 	REPMGR_CONNECTION *conn;
 	DBT *dbt;
 	__repmgr_site_info_args site_info;
+	__repmgr_v4site_info_args v4site_info;
 	u_int8_t *buf;
 	char *host;
 	size_t len;
@@ -686,9 +735,18 @@ serve_join_request(env, ip, msg)
 	COMPQUIET(status, 0);
 
 	conn = msg->v.gmdb_msg.conn;
+	DB_ASSERT(env, conn->version > 0 && conn->version <= DB_REPMGR_VERSION);
 	dbt = &msg->v.gmdb_msg.request;
-	ret = __repmgr_site_info_unmarshal(env,
-	    &site_info, dbt->data, dbt->size, NULL);
+	if (conn->version < 5) {
+		ret = __repmgr_v4site_info_unmarshal(env,
+		    &v4site_info, dbt->data, dbt->size, NULL);
+		site_info.host = v4site_info.host;
+		site_info.port = v4site_info.port;
+		site_info.status = v4site_info.flags;
+		site_info.flags = 0;
+	} else
+		ret = __repmgr_site_info_unmarshal(env,
+		    &site_info, dbt->data, dbt->size, NULL);
 
 	host = site_info.host.data;
 	host[site_info.host.size - 1] = '\0';
@@ -712,7 +770,8 @@ serve_join_request(env, ip, msg)
 	switch (status) {
 	case 0:
 	case SITE_ADDING:
-		ret = __repmgr_update_membership(env, ip, eid, SITE_ADDING);
+		ret = __repmgr_update_membership(env, ip, eid, SITE_ADDING,
+			site_info.flags);
 		break;
 	case SITE_PRESENT:
 		/* Already in desired state. */
@@ -729,7 +788,7 @@ serve_join_request(env, ip, msg)
 		goto err;
 
 	LOCK_MUTEX(db_rep->mutex);
-	ret = __repmgr_marshal_member_list(env, &buf, &len);
+	ret = __repmgr_marshal_member_list(env, conn->version, &buf, &len);
 	UNLOCK_MUTEX(db_rep->mutex);
 	if (ret != 0)
 		goto err;
@@ -760,6 +819,7 @@ serve_remove_request(env, ip, msg)
 	REPMGR_SITE *site;
 	DBT *dbt;
 	__repmgr_site_info_args site_info;
+	__repmgr_v4site_info_args v4site_info;
 	char *host;
 	u_int32_t status, type;
 	int eid, ret, t_ret;
@@ -768,9 +828,18 @@ serve_remove_request(env, ip, msg)
 	db_rep = env->rep_handle;
 
 	conn = msg->v.gmdb_msg.conn;
+	DB_ASSERT(env, conn->version > 0 && conn->version <= DB_REPMGR_VERSION);
 	dbt = &msg->v.gmdb_msg.request;
-	ret = __repmgr_site_info_unmarshal(env,
-	    &site_info, dbt->data, dbt->size, NULL);
+	if (conn->version < 5) {
+		ret = __repmgr_v4site_info_unmarshal(env,
+		    &v4site_info, dbt->data, dbt->size, NULL);
+		site_info.host = v4site_info.host;
+		site_info.port = v4site_info.port;
+		site_info.status = v4site_info.flags;
+		site_info.flags = 0;
+	} else
+		ret = __repmgr_site_info_unmarshal(env,
+		    &site_info, dbt->data, dbt->size, NULL);
 
 	host = site_info.host.data;
 	host[site_info.host.size - 1] = '\0';
@@ -810,7 +879,8 @@ serve_remove_request(env, ip, msg)
 		break;
 	case SITE_PRESENT:
 	case SITE_DELETING:
-		ret = __repmgr_update_membership(env, ip, eid, SITE_DELETING);
+		ret = __repmgr_update_membership(env, ip, eid, SITE_DELETING,
+			site_info.flags);
 		break;
 	default:
 		ret = __db_unknown_path(env, "serve_remove_request");
@@ -829,7 +899,16 @@ err:
 	default:
 		return (ret);
 	}
-	return (__repmgr_send_sync_msg(env, conn, type, NULL, 0));
+	/*
+	 * It is possible when a site removes itself that by now it has
+	 * already acted on the first GMDB update and closed its connections.
+	 * Do not return an error and panic if we can't send the final
+	 * status of the remove operation.
+	 */
+	if ((ret = __repmgr_send_sync_msg(env, conn, type, NULL, 0)) != 0)
+		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+		    "Problem sending remove site status message %d", ret));
+	return (0);
 }
 
 /*
@@ -947,7 +1026,8 @@ resolve_limbo_int(env, ip)
 		    ip, NULL, &txn, DB_IGNORE_LEASE)) != 0)
 			goto out;
 
-		marshal_site_data(env, orig_status, data_buf, &data_dbt);
+		marshal_site_data(env,
+		    orig_status, site->gmdb_flags, data_buf, &data_dbt);
 
 		ret = __db_put(db_rep->gmdb, ip, txn, &key_dbt, &data_dbt, 0);
 		if ((t_ret = __db_txn_auto_resolve(env, txn, 0, ret)) != 0 &&
@@ -980,15 +1060,15 @@ resolve_limbo_int(env, ip)
 	UNLOCK_MUTEX(db_rep->mutex);
 	locked = FALSE;
 	status = NEXT_STATUS(orig_status);
-	if ((ret = finish_gmdb_update(env,
-	    ip, &key_dbt, orig_status, status, &logrec)) != 0)
+	if ((ret = finish_gmdb_update(env, ip,
+	    &key_dbt, orig_status, status, site->gmdb_flags, &logrec)) != 0)
 		goto out;
 
 	/* Track modified membership status in our in-memory sites array. */
 	LOCK_MUTEX(db_rep->mutex);
 	locked = TRUE;
 	if ((ret = __repmgr_set_membership(env,
-	    addr.host, addr.port, status)) != 0)
+	    addr.host, addr.port, status, site->gmdb_flags)) != 0)
 		goto out;
 	__repmgr_set_sites(env);
 
@@ -1005,14 +1085,15 @@ out:
  * status is inferred (ADDING -> PRESENT, or DELETING -> 0).
  *
  * PUBLIC: int __repmgr_update_membership __P((ENV *,
- * PUBLIC:     DB_THREAD_INFO *, int, u_int32_t));
+ * PUBLIC:     DB_THREAD_INFO *, int, u_int32_t, u_int32_t));
  */
 int
-__repmgr_update_membership(env, ip, eid, pstatus)
+__repmgr_update_membership(env, ip, eid, pstatus, site_flags)
 	ENV *env;
 	DB_THREAD_INFO *ip;
 	int eid;
 	u_int32_t pstatus;	/* Provisional status. */
+	u_int32_t site_flags;
 {
 	DB_REP *db_rep;
 	REPMGR_SITE *site;
@@ -1092,7 +1173,7 @@ retry:
 	 * those seem even more confusing.
 	 */
 	if ((ret = __repmgr_set_membership(env,
-	    addr.host, addr.port, pstatus)) != 0)
+	    addr.host, addr.port, pstatus, site_flags)) != 0)
 		goto err;
 	__repmgr_set_sites(env);
 
@@ -1108,7 +1189,7 @@ retry:
 	if ((ret = __txn_begin(env, ip, NULL, &txn, DB_IGNORE_LEASE)) != 0)
 		goto err;
 	marshal_site_key(env, &addr, key_buf, &key_dbt, &logrec);
-	marshal_site_data(env, pstatus, status_buf, &data_dbt);
+	marshal_site_data(env, pstatus, site_flags, status_buf, &data_dbt);
 	if ((ret = __db_put(db_rep->gmdb,
 	    ip, txn, &key_dbt, &data_dbt, 0)) != 0)
 		goto err;
@@ -1152,13 +1233,14 @@ retry:
 	locked = FALSE;
 
 	if ((ret = finish_gmdb_update(env, ip,
-	    &key_dbt, pstatus, ult_status, &logrec)) != 0)
+	    &key_dbt, pstatus, ult_status, site_flags, &logrec)) != 0)
 		goto err;
 
 	/* Track modified membership status in our in-memory sites array. */
 	LOCK_MUTEX(db_rep->mutex);
 	locked = TRUE;
-	ret = __repmgr_set_membership(env, addr.host, addr.port, ult_status);
+	ret = __repmgr_set_membership(env, addr.host, addr.port,
+	    ult_status, site_flags);
 	__repmgr_set_sites(env);
 
 err:
@@ -1173,7 +1255,7 @@ err:
 		 * that we keep in sync.
 		 */
 		(void)__repmgr_set_membership(env,
-		    addr.host, addr.port, orig_status);
+		    addr.host, addr.port, orig_status, site_flags);
 	}
 	if ((t_ret = __repmgr_cleanup_gmdb_op(env, do_close)) != 0 &&
 	    ret == 0)
@@ -1215,13 +1297,14 @@ retry:
 	UNLOCK_MUTEX(db_rep->mutex);
 
 	marshal_site_key(env, &addr, key_buf, &key_dbt, &logrec);
-	if ((ret = finish_gmdb_update(env,
-	    ip, &key_dbt, cur_status, new_status, &logrec)) != 0)
+	if ((ret = finish_gmdb_update(env, ip,
+	    &key_dbt, cur_status, new_status, site->gmdb_flags, &logrec)) != 0)
 		goto err;
 
 	/* Track modified membership status in our in-memory sites array. */
 	LOCK_MUTEX(db_rep->mutex);
-	ret = __repmgr_set_membership(env, addr.host, addr.port, new_status);
+	ret = __repmgr_set_membership(env, addr.host, addr.port,
+	    new_status, site->gmdb_flags);
 	__repmgr_set_sites(env);
 	UNLOCK_MUTEX(db_rep->mutex);
 
@@ -1301,11 +1384,11 @@ __repmgr_set_gm_version(env, ip, txn, version)
  * really deleted.
  */
 static int
-finish_gmdb_update(env, ip, key_dbt, prev_status, status, logrec)
+finish_gmdb_update(env, ip, key_dbt, prev_status, status, flags, logrec)
 	ENV *env;
 	DB_THREAD_INFO *ip;
 	DBT *key_dbt;
-	u_int32_t prev_status, status;
+	u_int32_t prev_status, status, flags;
 	__repmgr_member_args *logrec;
 {
 	DB_REP *db_rep;
@@ -1324,7 +1407,7 @@ finish_gmdb_update(env, ip, key_dbt, prev_status, status, logrec)
 	if (status == 0)
 		ret = __db_del(db_rep->gmdb, ip, txn, key_dbt, 0);
 	else {
-		marshal_site_data(env, status, data_buf, &data_dbt);
+		marshal_site_data(env, status, flags, data_buf, &data_dbt);
 		ret = __db_put(db_rep->gmdb, ip, txn, key_dbt, &data_dbt, 0);
 	}
 	if (ret != 0)
@@ -1617,16 +1700,18 @@ marshal_site_key(env, addr, buf, dbt, logrec)
 }
 
 static void
-marshal_site_data(env, status, buf, dbt)
+marshal_site_data(env, status, flags, buf, dbt)
 	ENV *env;
 	u_int32_t status;
+	u_int32_t flags;
 	u_int8_t *buf;
 	DBT *dbt;
 {
-	__repmgr_membership_data_args member_status;
+	__repmgr_membership_data_args member_data;
 
-	member_status.flags = status;
-	__repmgr_membership_data_marshal(env, &member_status, buf);
+	member_data.status = status;
+	member_data.flags = flags;
+	__repmgr_membership_data_marshal(env, &member_data, buf);
 	DB_INIT_DBT(*dbt, buf, __REPMGR_MEMBERSHIP_DATA_SIZE);
 }
 
@@ -1647,7 +1732,13 @@ __repmgr_set_sites(env)
 	db_rep = env->rep_handle;
 
 	for (i = 0, n = 0; i < db_rep->site_cnt; i++) {
-		if (db_rep->sites[i].membership > 0)
+		/*
+		 * Views do not count towards nsites because they cannot
+		 * vote in elections, become master or contribute to
+		 * durability.
+		 */
+		if (db_rep->sites[i].membership > 0 &&
+		    !FLD_ISSET(db_rep->sites[i].gmdb_flags, SITE_VIEW))
 			n++;
 	}
 	ret = __rep_set_nsites_int(env, n);

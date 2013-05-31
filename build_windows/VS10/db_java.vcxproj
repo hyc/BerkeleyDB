@@ -60,7 +60,7 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -83,7 +83,7 @@ echo Java build finished</Command>
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -106,7 +106,7 @@ echo Java build finished</Command>
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -129,7 +129,7 @@ echo Java build finished</Command>
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -64,7 +64,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61910752"></a>Parameters</h3>
+              <h3 class="title"><a id="idp62166208"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61910944"></a>which</h4>
+                <h4 class="title"><a id="idp62166400"></a>which</h4>
               </div>
             </div>
           </div>
@@ -99,15 +99,16 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
                         <code class="literal">DB_GROUP_CREATOR</code>
                     </p>
                 <p>
-                        Specifies that this site should create the
-                        initial membership database contents, defining a
+                        Specifies that this site should create the initial
+                        group membership database contents, defining a
                         "group" of just the one site, rather than trying to
                         join an existing group when it starts for the first
                         time.
                     </p>
                 <p>
-                        This setting can only be used on the local site and
-                        is ignored when configured for a remote site.
+                        This setting can only be used on the local site.
+                        It is ignored after the local site's initial startup
+                        and when configured for a remote site.
                     </p>
               </li>
               <li>
@@ -117,7 +118,8 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
                 <p>
                         Specifies that the site is already part of an
                         existing group. This setting causes the site to be
-                        upgraded from a previous version of BDB.  All sites
+                        upgraded from a previous version of Berkeley DB.
+                        All sites
                         in the legacy group must specify this setting for
                         themselves (the local site) and for all other sites
                         currently existing in the group. Once the upgrade
@@ -144,7 +146,8 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
                     </p>
                 <p>
                         Specifies that the site may be used as a target for
-                        "client-to-client" synchronization messages. This
+                        "client-to-client" synchronization messages.
+                        A peer can be either a client or a view.  This
                         setting is ignored if it is specified for the local
                         site.
                     </p>
@@ -156,7 +159,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61917328"></a>value</h4>
+                <h4 class="title"><a id="idp62172784"></a>value</h4>
               </div>
             </div>
           </div>
@@ -170,7 +173,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61918408"></a>Errors</h3>
+              <h3 class="title"><a id="idp62173864"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -186,7 +189,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp61912080"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp62167536"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -199,7 +202,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61916832"></a>Class</h3>
+              <h3 class="title"><a id="idp62152056"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -211,7 +214,7 @@ DB_SITE-&gt;set_config(DB_SITE *site, u_int32_t which, u_int32_t value); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp61918872"></a>See Also</h3>
+              <h3 class="title"><a id="idp62174328"></a>See Also</h3>
             </div>
           </div>
         </div>

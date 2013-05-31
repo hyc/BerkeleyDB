@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -102,6 +102,14 @@ namespace BerkeleyDB {
         /// Current number of lockers. 
         /// </summary>
         public uint Lockers { get { return st.st_nlockers; } }
+        /// <summary>
+        /// Number of hits in the thread locker cache. 
+        /// </summary>
+        public ulong LockersHit { get { return st.st_nlockers_hit; } }
+        /// <summary>
+        /// Total number of lockers reused. 
+        /// </summary>
+        public ulong LockersReused { get { return st.st_nlockers_reused; } }
         /// <summary>
         /// Current number of locks. 
         /// </summary>
@@ -217,3 +225,4 @@ namespace BerkeleyDB {
         
     }
 }
+

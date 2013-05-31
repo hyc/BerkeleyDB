@@ -20,6 +20,7 @@ typedef	uintptr_t	roff_t;
 typedef u_int32_t uintptr_t;
 typedef int int32_t;
 typedef int64_t db_seq_t;
+typedef int64_t db_off_t;
 typedef int64_t off_t;
 typedef long long int int64_t;
 typedef u_int32_t DB_BACKUP_CONFIG;
@@ -88,6 +89,7 @@ struct __db_preplist;	typedef struct __db_preplist DB_PREPLIST;
 struct __db_repmgrsite; typedef struct __db_repmgrsite DB_REPMGR_SITE;
 struct __db_sequence;	typedef struct __db_sequence DB_SEQUENCE;
 struct __db_site;	typedef struct __db_site DB_SITE;
+struct __db_stream;	typedef struct __db_stream DB_STREAM;
 struct __dbc;			typedef struct __dbc DBC;
 struct __dbenv;			typedef struct __dbenv DB_ENV;
 struct __dbt;			typedef struct __dbt DBT;
@@ -131,12 +133,21 @@ struct __db_txn_token;	typedef struct __db_txn_token DB_TXN_TOKEN;
 %typemap(cstype) db_seq_t * "ref Int64"
 %typemap(imtype) db_seq_t * "ref Int64"
 %typemap(csin) db_seq_t * "ref $csinput"
+%typemap(cstype) db_off_t "Int64"
+%typemap(imtype) db_off_t "Int64"
+%typemap(csin) db_off_t "$csinput"
+%typemap(cstype) db_off_t * "ref Int64"
+%typemap(imtype) db_off_t * "ref Int64"
+%typemap(csin) db_off_t * "ref $csinput"
 %typemap(cstype) u_int8_t [DB_GID_SIZE] "byte[]"
 %typemap(imtype) u_int8_t [DB_GID_SIZE] "byte[]"
 %typemap(csin) u_int8_t [DB_GID_SIZE] "$csinput"
 %typemap(cstype) u_int8_t * "byte[,]"
 %typemap(imtype) u_int8_t * "byte[,]"
 %typemap(csin) u_int8_t * "$csinput"
+%typemap(cstype) void * "IntPtr"
+%typemap(csin) void * "$csinput"
+%typemap(csout, excode=SWIGEXCODE) void * "{IntPtr res = $imcall; $excode; return res;}"
 
 %typemap(cstype) DBT * "DatabaseEntry"
 %typemap(csin, post="      GC.KeepAlive($csinput);") DBT * "$csclassname.getCPtr(DatabaseEntry.getDBT($csinput))"
@@ -199,7 +210,20 @@ struct __db_txn_token;	typedef struct __db_txn_token DB_TXN_TOKEN;
 
 	return ret;
 }
-		
+
+%typemap(csout) DBT *get_partition_keys(u_int *countp, u_int *sizep, int *err) {
+	IntPtr cPtr = $imcall;
+	if (cPtr == IntPtr.Zero)
+		return null;
+
+	DatabaseEntry[] ret = new DatabaseEntry[countp - 1];
+	IntPtr val;
+	for (int i = 0; i < (countp - 1); i++) {
+		val = new IntPtr((IntPtr.Size == 4 ? cPtr.ToInt32() : cPtr.ToInt64()) + i * sizep);
+		ret[i] = DatabaseEntry.fromDBT(new DBT(val, false));
+	}
+	return ret; 
+}
 %typemap(csout) int is_transaction_applied{
 		return $imcall;
 }
@@ -376,6 +400,14 @@ typedef struct __db_lsn {
 } DB_LSN;
 
 %typemap(cscode) DB %{
+	internal DatabaseEntry[] get_partition_keys() {
+		uint count = 0;
+		int err = 0;
+		uint size = 0;
+		DatabaseEntry[] ret = get_partition_keys(ref count, ref size, ref err);
+		DatabaseException.ThrowException(err);
+		return ret;
+	}
 	internal DBC cursor(DB_TXN txn, uint flags) {
 		int err = 0;
 		DBC ret = cursor(txn, flags, ref err);
@@ -420,6 +452,22 @@ typedef struct __db_lsn {
 		DatabaseException.ThrowException(err);
 		QueueStatStruct ret = (QueueStatStruct)Marshal.PtrToStructure(ptr, typeof(QueueStatStruct));
 		libdb_csharp.__os_ufree(null, ptr);
+		return ret;
+	}
+	
+	internal int get_blob_dir(out string dir) {
+		int ret;
+		IntPtr dirp;
+		ret = get_blob_dir(out dirp);
+		dir = Marshal.PtrToStringAnsi(dirp);
+		return ret;
+	}
+	
+	internal int get_blob_sub_dir(out string dir) {
+		int ret;
+		IntPtr dirp;
+		ret = get_blob_sub_dir(out dirp);
+		dir = Marshal.PtrToStringAnsi(dirp);
 		return ret;
 	}
 	
@@ -583,10 +631,28 @@ typedef struct __db
 		return self->set_append_recno(self, callback);
 	}
 	
-	%typemap(cstype) int (*)(DB*, const DBT*, const DBT*) "BDB_CompareDelegate"
-	%typemap(imtype) int (*)(DB*, const DBT*, const DBT*) "BDB_CompareDelegate"
-	%typemap(csin) int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2) "callback"
-	int set_bt_compare(int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2)) {
+	int get_blob_dir(const char **dir) {
+		return self->get_blob_dir(self, dir);
+	}
+	int set_blob_dir(const char *dir) {
+		return self->set_blob_dir(self, dir);
+	}
+	
+	int get_blob_sub_dir(const char **dir) {
+		return self->get_blob_sub_dir(self, dir);
+	}
+	
+	int get_blob_threshold(u_int32_t *bytes) {
+		return self->get_blob_threshold(self, bytes);
+	}
+	int set_blob_threshold(u_int32_t bytes, u_int32_t flags) {
+		return self->set_blob_threshold(self, bytes, flags);
+	}
+	
+	%typemap(cstype) int (*)(DB*, const DBT*, const DBT*, size_t *) "BDB_CompareDelegate"
+	%typemap(imtype) int (*)(DB*, const DBT*, const DBT*, size_t *) "BDB_CompareDelegate"
+	%typemap(csin) int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2, size_t *locp) "callback"
+	int set_bt_compare(int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2, size_t *locp)) {
 		return self->set_bt_compare(self, callback);
 	}
 	
@@ -621,7 +687,7 @@ typedef struct __db
 		return self->set_cachesize(self, gbytes, bytes, ncache);
 	}
 	
-	int set_dup_compare(int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2)) {
+	int set_dup_compare(int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2, size_t *locp)) {
 		return self->set_dup_compare(self, callback);
 	}
 	
@@ -667,7 +733,7 @@ typedef struct __db
 		return self->set_heap_regionsize(self, npages);
 	}
 	
-	int set_h_compare(int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2)) {
+	int set_h_compare(int (*callback)(DB *dbp, const DBT *dbt1, const DBT *dbt2, size_t *locp)) {
 		return self->set_h_compare(self, callback);
 	}
 	
@@ -711,6 +777,55 @@ typedef struct __db
 	}
 	int set_pagesize(u_int32_t pgsz) {
 		return self->set_pagesize(self, pgsz);
+	}
+
+	%typemap(cstype) DBT *get_partition_keys "DatabaseEntry[]"
+	%typemap(imtype) DBT *get_partition_keys "IntPtr"
+	%csmethodmodifiers get_partition_keys "private"
+	DBT *get_partition_keys(u_int *countp, u_int32_t *sizep, int *err) {
+		DBT *keys = NULL; 
+		*err = self->get_partition_keys(self, countp, &keys); 
+		*sizep = sizeof(DBT); 
+		return keys;
+	}
+	int get_partition_parts(u_int32_t *parts) {
+		int ret;
+		ret = self->get_partition_keys(self, parts, NULL);
+		if (*parts == 0)
+			ret = self->get_partition_callback(self, parts, NULL);
+		return ret;
+	}
+	%typemap(cstype) DBT *keys "IntPtr[]"
+	%typemap(imtype) DBT *keys "IntPtr[]"
+	%typemap(csin) DBT *keys "$csinput"
+	%typemap(cstype) u_int32_t (*)(DB *dbp, DBT *key) "BDB_PartitionDelegate"
+	%typemap(imtype) u_int32_t (*)(DB *dbp, DBT *key) "BDB_PartitionDelegate"
+	%typemap(csin) u_int32_t (*partition)(DB *dbp, DBT *key) "partition"
+	int set_partition(u_int32_t parts, DBT *keys, u_int32_t (*partition)(DB *dbp, DBT *key)) {
+		DBT *dbt;
+		DBT **ptr;
+		size_t dbt_size;
+		int i, ret;
+
+		i = 0;
+		dbt = NULL;
+		ptr = (DBT **)keys;
+		if (keys != NULL) {
+			dbt_size = sizeof(DBT);
+			if ((ret = __os_malloc(NULL, (parts - 1) * dbt_size, &dbt)) != 0)
+				return ret;
+			do {
+				if ((ret = __dbt_usercopy(self->env, ptr[i])) != 0)
+					goto err;
+				memcpy(&dbt[i], ptr[i], dbt_size);
+			} while (++i < (int)(parts - 1));
+		}
+		ret = self->set_partition(self, parts, dbt, partition);
+
+	err:	while (--i >= 0)
+			__os_ufree(self->env, ptr[i]->data);
+		__os_free(NULL, dbt);
+		return ret;
 	}
 	
 	int get_priority(DB_CACHE_PRIORITY *flags) {
@@ -805,6 +920,12 @@ typedef struct __db
 		DatabaseException.ThrowException(err);
 		return ret;
 	}
+	internal DB_STREAM db_stream(uint flags) {
+		int err = 0;
+		DB_STREAM ret = db_stream(flags, ref err);
+		DatabaseException.ThrowException(err);
+		return ret;
+	}
 %}
 typedef struct __dbc
 {
@@ -823,6 +944,13 @@ typedef struct __dbc
 
 	int count(db_recno_t *cnt, u_int32_t flags) {
 		return self->count(self, cnt, flags);
+	}
+
+	%csmethodmodifiers db_stream "private"
+	DB_STREAM *db_stream(u_int32_t flags, int *err) {
+		DB_STREAM *dbs = NULL;
+		*err = self->db_stream(self, &dbs, flags);
+		return dbs;
 	}
 
 	int del(u_int32_t flags) {
@@ -870,6 +998,7 @@ typedef struct __db_txn_token
 %typemap(cstype) u_int8_t [DB_TXN_TOKEN_SIZE] "byte[]"
 %typemap(imtype, out = "IntPtr") u_int8_t [DB_TXN_TOKEN_SIZE] "byte[]"
 %typemap(csin) u_int8_t [DB_TXN_TOKEN_SIZE] "$csinput"
+%typemap(csout, excode=SWIGEXCODE) u_int8_t [DB_TXN_TOKEN_SIZE] "{byte[] res = (byte [])($imcall); $excode; return res;}"
 %typemap(csvarout) u_int8_t [DB_TXN_TOKEN_SIZE] %{
 	get {
 		byte[] ret = new byte[DbConstants.DB_TXN_TOKEN_SIZE];
@@ -981,6 +1110,27 @@ typedef struct __db_site
 	}
 }
 } DB_SITE;
+
+typedef struct __db_stream
+{
+%extend {
+	int close(u_int32_t flags) {
+		return self->close(self, flags);
+	}
+
+	int read(DBT *data, db_off_t offset, u_int32_t size, u_int32_t flags) {
+		return self->read(self, data, offset, size, flags);
+	}
+
+	int size(db_off_t *size, u_int32_t flags) {
+		return self->size(self, size, flags);
+	}
+
+	int write(DBT *data, db_off_t offset, u_int32_t flags) {
+		return self->write(self, data, offset, flags);
+	}
+}
+} DB_STREAM;
 
 typedef struct __db_repmgrsite
 {
@@ -1250,6 +1400,13 @@ typedef struct __dbtxn
 	        }
         	libdb_csharp.__os_ufree(null, ptr);
         
+		return ret;
+	}
+	internal int get_blob_dir(out string dir) {
+		int ret;
+		IntPtr dirp;
+		ret = get_blob_dir(out dirp);
+		dir = Marshal.PtrToStringAnsi(dirp);
 		return ret;
 	}
 	internal int get_home(out string file) {
@@ -1751,6 +1908,13 @@ typedef struct __dbenv
 		return self->rep_set_transport(self, envid, send);
 	}
 
+	%typemap(cstype) int (*)(DB_ENV *, const char *, int *, u_int32_t) "BDB_ReplicationViewDelegate"
+	%typemap(imtype) int (*)(DB_ENV *, const char *, int *, u_int32_t) "BDB_ReplicationViewDelegate"
+	%typemap(csin) int (*f_repview)(DB_ENV *, const char *, int *, u_int32_t) "f_repview"
+	int rep_set_view(int (*f_repview)(DB_ENV *, const char *, int *, u_int32_t)) {
+		return self->rep_set_view(self, f_repview);
+	}
+
 	%typemap(cstype) int (*)(DB_ENV*, const char *dbname, void *handle) "BDB_BackupCloseDelegate"
 	%typemap(imtype) int (*)(DB_ENV*, const char *dbname, void *handle) "BDB_BackupCloseDelegate"
 	%typemap(csin) int (*close_func)(DB_ENV *, const char *dbname, void *handle) "close_func"
@@ -1769,6 +1933,20 @@ typedef struct __dbenv
 	}
 	int set_backup_config(DB_BACKUP_CONFIG cfg, u_int32_t value) {
 		return self->set_backup_config(self, cfg, value);
+	}
+
+	int get_blob_dir(const char **dirp) {
+		return self->get_blob_dir(self, dirp);
+	}
+	int set_blob_dir(const char *dir) {
+		return self->set_blob_dir(self, dir);
+	}
+	
+	int get_blob_threshold(u_int32_t *bytes) {
+		return self->get_blob_threshold(self, bytes);
+	}
+	int set_blob_threshold(u_int32_t bytes, u_int32_t flags) {
+		return self->set_blob_threshold(self, bytes, flags);
 	}
 
 	int get_cachesize(u_int32_t *gbytes, u_int32_t *bytes, int *ncache) {
@@ -1848,7 +2026,7 @@ typedef struct __dbenv
 	%typemap(cstype) char ** "out IntPtr"
 	%typemap(imtype) char ** "out IntPtr"
 	%typemap(csin) char ** "out $csinput"
-	%csmethodmodifiers get_data_dirs "private"
+	%csmethodmodifiers get_intermediate_dir_mode "private"
 	int get_intermediate_dir_mode(const char **mode) {
 		return self->get_intermediate_dir_mode(self, mode);
 	}
@@ -2286,6 +2464,9 @@ size_t alloc_dbt_arr(DB_ENV *dbenv, int num_dbt, void **ptr) {
 
 
 typedef struct __db_preplist {
+        %typemap(cstype) u_int8_t [DB_GID_SIZE] "byte[]"
+        %typemap(imtype) u_int8_t [DB_GID_SIZE] "byte[]"
+        %typemap(csout, excode=SWIGEXCODE) u_int8_t [DB_GID_SIZE] "{byte[] res = (byte [])($imcall); $excode; return res;}"
         %typemap(csvarin) u_int8_t gid[DB_GID_SIZE] %{%}
 	%typemap(csvarout) u_int8_t gid[DB_GID_SIZE] %{
         get {
@@ -2330,7 +2511,7 @@ typedef struct __db_sequence {
 		return self->close(self, flags);
 	}
 	
-	int get(DB_TXN *txn, int32_t delta, db_seq_t *retp, u_int32_t flags) {
+	int get(DB_TXN *txn, u_int32_t delta, db_seq_t *retp, u_int32_t flags) {
 		return self->get(self, txn, delta, retp, flags);
 	}
 	
@@ -2357,10 +2538,10 @@ typedef struct __db_sequence {
 		return self->remove(self, txn, flags);
 	}
 	
-	int get_cachesize(int32_t *size) {
+	int get_cachesize(u_int32_t *size) {
 		return self->get_cachesize(self, size);
 	}
-	int set_cachesize(int32_t size) {
+	int set_cachesize(u_int32_t size) {
 		return self->set_cachesize(self, size);
 	}
 	

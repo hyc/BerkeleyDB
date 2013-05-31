@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -37,7 +37,10 @@ extern "C" {
  */
 #define	LOCK_INVALID		INVALID_ROFF
 #define	LOCK_ISSET(lock)	((lock).off != LOCK_INVALID)
-#define	LOCK_INIT(lock)		((lock).off = LOCK_INVALID)
+#define	LOCK_INIT(lock)		do {			\
+	(lock).off = LOCK_INVALID;			\
+	UMRW_SET_VALUE((lock).mode, DB_LOCK_NG);	\
+} while(0)
 
 /*
  * Macro to identify a write lock for the purpose of counting locks
@@ -92,7 +95,7 @@ typedef struct __db_lockregion { /* SHARED */
 
 	u_int32_t	lock_id;	/* Current lock(er) id to allocate. */
 	u_int32_t	cur_maxid;	/* Current max lock(er) id. */
-	u_int32_t	nlockers;	/* Current number of lockers. */
+	u_int32_t	nlockers;	/* Current number of locker ids. */
 	int32_t		nmodes;		/* Number of modes in conflict table. */
 	DB_LOCK_STAT	stat;		/* stats about locking. */
 } DB_LOCKREGION;
@@ -157,12 +160,16 @@ struct __db_locker { /* SHARED */
 	db_timespec	lk_expire;	/* When current lock expires. */
 	db_timespec	tx_expire;	/* When this txn expires. */
 	db_timeout_t	lk_timeout;	/* How long do we let locks live. */
+#ifdef DIAGNOSTIC
+	roff_t		prev_locker;	/* The thread's previous dbth_locker. */
+#endif
 
 #define	DB_LOCKER_DIRTY		0x0001	/* Has write locks. */
 #define	DB_LOCKER_INABORT	0x0002	/* Is aborting, don't abort again. */
 #define	DB_LOCKER_TIMEOUT	0x0004	/* Has timeout set. */
 #define	DB_LOCKER_FAMILY_LOCKER 0x0008	/* Part of a family of lockers. */
 #define	DB_LOCKER_HANDLE_LOCKER 0x0010	/* Not associated with a thread. */
+#define	DB_LOCKER_FREE 		0x0020	/* Diag: it is on the free list. */
 	u_int32_t flags;
 };
 

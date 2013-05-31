@@ -111,11 +111,27 @@ void sqlite3BeginTrigger(
     iDb = 1;
     pName = pName1;
   }else{
-    /* Figure out the db that the the trigger will be created in */
+    /* Figure out the db that the trigger will be created in */
     iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
     if( iDb<0 ){
       goto trigger_cleanup;
     }
+  }
+  if( !pTableName || db->mallocFailed ){
+    goto trigger_cleanup;
+  }
+
+  /* A long-standing parser bug is that this syntax was allowed:
+  **
+  **    CREATE TRIGGER attached.demo AFTER INSERT ON attached.tab ....
+  **                                                 ^^^^^^^^
+  **
+  ** To maintain backwards compatibility, ignore the database
+  ** name on pTableName if we are reparsing our of SQLITE_MASTER.
+  */
+  if( db->init.busy && iDb!=1 ){
+    sqlite3DbFree(db, pTableName->a[0].zDatabase);
+    pTableName->a[0].zDatabase = 0;
   }
 
   /* If the trigger name was unqualified, and the table is a temp table,
@@ -123,9 +139,6 @@ void sqlite3BeginTrigger(
   ** If sqlite3SrcListLookup() returns 0, indicating the table does not
   ** exist, the error is caught by the block below.
   */
-  if( !pTableName || db->mallocFailed ){
-    goto trigger_cleanup;
-  }
   pTab = sqlite3SrcListLookup(pParse, pTableName);
   if( db->init.busy==0 && pName2->n==0 && pTab
         && pTab->pSchema==db->aDb[1].pSchema ){
@@ -301,9 +314,8 @@ void sqlite3FinishTrigger(
        pTrig->table, z);
     sqlite3DbFree(db, z);
     sqlite3ChangeCookie(pParse, iDb);
-    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, sqlite3MPrintf(
-        db, "type='trigger' AND name='%q'", zName), P4_DYNAMIC
-    );
+    sqlite3VdbeAddParseSchemaOp(v, iDb,
+        sqlite3MPrintf(db, "type='trigger' AND name='%q'", zName));
   }
 
   if( db->init.busy ){
@@ -717,6 +729,15 @@ static int codeTriggerProgram(
     */
     pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:(u8)orconf;
 
+    /* Clear the cookieGoto flag. When coding triggers, the cookieGoto 
+    ** variable is used as a flag to indicate to sqlite3ExprCodeConstants()
+    ** that it is not safe to refactor constants (this happens after the
+    ** start of the first loop in the SQL statement is coded - at that 
+    ** point code may be conditionally executed, so it is no longer safe to 
+    ** initialize constant register values).  */
+    assert( pParse->cookieGoto==0 || pParse->cookieGoto==-1 );
+    pParse->cookieGoto = 0;
+
     switch( pStep->op ){
       case TK_UPDATE: {
         sqlite3Update(pParse, 
@@ -892,6 +913,7 @@ static TriggerPrg *codeRowTrigger(
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
+    pProgram->nOnce = pSubParse->nOnce;
     pProgram->token = (void *)pTrigger;
     pPrg->aColmask[0] = pSubParse->oldmask;
     pPrg->aColmask[1] = pSubParse->newmask;

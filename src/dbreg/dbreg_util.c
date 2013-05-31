@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -581,10 +581,10 @@ __dbreg_get_name(env, fid, fnamep, dnamep)
  */
 int
 __dbreg_do_open(env,
-    txn, lp, uid, name, ftype, ndx, meta_pgno, info, id, opcode)
+    txn, dblp, uid, name, ftype, ndx, meta_pgno, info, id, opcode)
 	ENV *env;
 	DB_TXN *txn;
-	DB_LOG *lp;
+	DB_LOG *dblp;
 	u_int8_t *uid;
 	char *name;
 	DBTYPE ftype;
@@ -604,7 +604,7 @@ __dbreg_do_open(env,
 	try_inmem = 0;
 
 retry_inmem:
-	if ((ret = __db_create_internal(&dbp, lp->env, 0)) != 0)
+	if ((ret = __db_create_internal(&dbp, dblp->env, 0)) != 0)
 		return (ret);
 
 	/*
@@ -700,7 +700,7 @@ err:		if (cstat == TXN_UNEXPECTED)
 		 * handling those cases specially, above.
 		 */
 		if (try_inmem == 0 &&
-		    opcode != DBREG_PREOPEN && opcode != DBREG_REOPEN && 
+		    opcode != DBREG_PREOPEN && opcode != DBREG_REOPEN &&
 		    opcode != DBREG_XREOPEN) {
 			if ((ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0)
 				return (ret);
@@ -736,7 +736,8 @@ not_right:
 		return (ret == 0 ? t_ret : ret);
 
 	/* Add this file as deleted. */
-	if ((t_ret = __dbreg_add_dbentry(env, lp, NULL, ndx)) != 0 && ret == 0)
+	if ((t_ret = __dbreg_add_dbentry(env, dblp, NULL, ndx)) != 0 &&
+	    ret == 0)
 		ret = t_ret;
 	return (ret);
 }

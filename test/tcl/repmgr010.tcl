@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2007, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2007, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -9,7 +9,8 @@
 # TEST
 # TEST	Verify that "quorum" acknowledgement policy succeeds with fewer than 
 # TEST	nsites running. Verify that "all" acknowledgement policy results in 
-# TEST	ack failures with fewer than nsites running.
+# TEST	ack failures with fewer than nsites running.  Make sure the presence
+# TEST	of more views than participants doesn't cause incorrect ack behavior.
 # TEST
 # TEST	Run for btree only because access method shouldn't matter.
 # TEST
@@ -25,15 +26,25 @@ proc repmgr010 { { niter 100 } { tnum "010" } args } {
 	set method "btree"
 	set args [convert_args $method $args]
 
-	puts "Repmgr$tnum ($method): repmgr ack policy and timeout test."
-	repmgr010_sub $method $niter $tnum $args
+	set viewopts { noview view }
+	foreach v $viewopts {
+		puts "Repmgr$tnum ($method $v): repmgr ack policy test."
+		repmgr010_sub $method $niter $tnum $v $args
+	}
 }
 
-proc repmgr010_sub { method niter tnum largs } {
+proc repmgr010_sub { method niter tnum viewopt largs } {
 	global testdir
 	global rep_verbose
 	global verbose_type
-	set nsites 3
+
+	if { $viewopt == "view" } {
+		set nsites 7
+		set viewstr " and views"
+	} else {
+		set nsites 3
+		set viewstr ""
+	}
 
 	set small_iter [expr $niter / 10]
 
@@ -52,8 +63,18 @@ proc repmgr010_sub { method niter tnum largs } {
 	file mkdir $masterdir
 	file mkdir $clientdir
 	file mkdir $clientdir2
+	if { $viewopt == "view" } {
+		set viewdir1 $testdir/VIEWDIR1
+		set viewdir2 $testdir/VIEWDIR2
+		set viewdir3 $testdir/VIEWDIR3
+		set viewdir4 $testdir/VIEWDIR4
+		file mkdir $viewdir1
+		file mkdir $viewdir2
+		file mkdir $viewdir3
+		file mkdir $viewdir4
+	}
 
-	puts "\tRepmgr$tnum.a: Start master, two clients, ack policy quorum."
+	puts "\tRepmgr$tnum.a: Start master, clients$viewstr, acks quorum."
 	# Open a master.
 	set ma_envcmd "berkdb_env_noerr -create $verbargs \
 	    -errpfx MASTER -home $masterdir -txn -rep -thread"
@@ -85,6 +106,19 @@ proc repmgr010_sub { method niter tnum largs } {
 	    -start client
 	await_startup_done $clientenv2
 
+	# Open views.
+	if { $viewopt == "view" } {
+		set viewcb ""
+		set viewenv1 [repmgr010_create_view VIEW1 $viewdir1 \
+		    $verbargs [lindex $ports 3] [lindex $ports 0]]
+		set viewenv2 [repmgr010_create_view VIEW2 $viewdir2 \
+		    $verbargs [lindex $ports 4] [lindex $ports 0]]
+		set viewenv3 [repmgr010_create_view VIEW3 $viewdir3 \
+		    $verbargs [lindex $ports 5] [lindex $ports 0]]
+		set viewenv4 [repmgr010_create_view VIEW4 $viewdir4 \
+		    $verbargs [lindex $ports 6] [lindex $ports 0]]
+	}
+
 	puts "\tRepmgr$tnum.b: Run first set of transactions at master."
 	set start 0
 	eval rep_test $method $masterenv NULL $niter $start 0 0 $largs
@@ -114,10 +148,16 @@ proc repmgr010_sub { method niter tnum largs } {
 	eval rep_test $method $masterenv NULL $small_iter $start 0 0 $largs
 	incr start $niter
 
-	puts "\tRepmgr$tnum.f: Verify client database, no ack failures."
+	puts "\tRepmgr$tnum.f: Verify client$viewstr, no ack failures."
 	error_check_good quorum_perm_failed2 \
 	    [stat_field $masterenv repmgr_stat "Acknowledgement failures"] 0
 	rep_verify $masterdir $masterenv $clientdir2 $clientenv2 1 1 1
+	if { $viewopt == "view" } {
+		rep_verify $masterdir $masterenv $viewdir1 $viewenv1 1 1 1
+		rep_verify $masterdir $masterenv $viewdir2 $viewenv2 1 1 1
+		rep_verify $masterdir $masterenv $viewdir3 $viewenv3 1 1 1
+		rep_verify $masterdir $masterenv $viewdir4 $viewenv4 1 1 1
+	}
 
 	puts "\tRepmgr$tnum.g: Adjust all sites to ack policy all."
 	# Reopen first client with ack policy all
@@ -135,6 +175,12 @@ proc repmgr010_sub { method niter tnum largs } {
 	# Adjust other sites to ack policy all
 	$masterenv repmgr -ack all
 	$clientenv2 repmgr -ack all
+	if { $viewopt == "view" } {
+		$viewenv1 repmgr -ack all
+		$viewenv2 repmgr -ack all
+		$viewenv3 repmgr -ack all
+		$viewenv4 repmgr -ack all
+	}
 
 	puts "\tRepmgr$tnum.h: Shut down first client."
 	error_check_good client_close [$clientenv close] 0
@@ -148,12 +194,37 @@ proc repmgr010_sub { method niter tnum largs } {
 	puts "\tRepmgr$tnum.i: Run third set of transactions at master."
 	eval rep_test $method $masterenv NULL $small_iter $start 0 0 $largs
 
-	puts "\tRepmgr$tnum.j: Verify client database, some ack failures."
+	puts "\tRepmgr$tnum.j: Verify client$viewstr, some ack failures."
 	rep_verify $masterdir $masterenv $clientdir2 $clientenv2 1 1 1
 	error_check_good all_perm_failed [expr \
 	    [stat_field $masterenv repmgr_stat "Acknowledgement failures"] \
 	    > $init_perm_failed] 1
+	if { $viewopt == "view" } {
+		rep_verify $masterdir $masterenv $viewdir1 $viewenv1 1 1 1
+		rep_verify $masterdir $masterenv $viewdir2 $viewenv2 1 1 1
+		rep_verify $masterdir $masterenv $viewdir3 $viewenv3 1 1 1
+		rep_verify $masterdir $masterenv $viewdir4 $viewenv4 1 1 1
 
+		error_check_good v4_close [$viewenv4 close] 0
+		error_check_good v3_close [$viewenv3 close] 0
+		error_check_good v2_close [$viewenv2 close] 0
+		error_check_good v1_close [$viewenv1 close] 0
+	}
 	error_check_good client2_close [$clientenv2 close] 0
 	error_check_good masterenv_close [$masterenv close] 0
+}
+
+proc repmgr010_create_view { vprefix vdir verbargs lport rport } {
+	set venv NULL
+	set viewcb ""
+	set v_envcmd "berkdb_env_noerr -create $verbargs \
+	    -errpfx $vprefix -rep_view \[list $viewcb \] \
+	    -home $vdir -txn -rep -thread"
+	set venv [eval $v_envcmd]
+	$venv repmgr -ack quorum \
+	    -local [list 127.0.0.1 $lport] \
+	    -remote [list 127.0.0.1 $rport] \
+	    -start client
+	await_startup_done $venv
+	return $venv
 }

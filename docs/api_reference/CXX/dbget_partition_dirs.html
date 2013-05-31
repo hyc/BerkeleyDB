@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,13 +43,15 @@
 int
 Db::get_partition_dirs(const char ***dirsp); </pre>
       <p>
-    	Determine which directorise the database partitions files will be created in or were found in.
-    </p>
+        Identify the directories used to store the database partitions.
+     </p>
       <p>
-             The <code class="methodname">Db::get_partition_dirs()</code> method may be called at any time.
-    </p>
+             The <code class="methodname">Db::get_partition_dirs()</code> method
+             may be called at any time.
+     </p>
       <p>
-         The <code class="methodname">Db::get_partition_dirs()</code> <span>
+         The <code class="methodname">Db::get_partition_dirs()</code>
+         <span>
             
             <span>
                 method either returns a non-zero error value or throws an
@@ -57,12 +59,12 @@ Db::get_partition_dirs(const char ***dirsp); </pre>
                 failure, and returns 0 on success.
             </span>
         </span>
-    </p>
+     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm6706784"></a>Parameters</h3>
+              <h3 class="title"><a id="idm6660096"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -70,28 +72,32 @@ Db::get_partition_dirs(const char ***dirsp); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm5032528"></a>dirsp</h4>
+                <h4 class="title"><a id="idm3109776"></a>dirsp</h4>
               </div>
             </div>
           </div>
           <p>
-                        The <span class="bold"><strong>dirsp</strong></span> will be set to the array of directories 
-                        specified in the call to <a class="xref" href="dbset_partition_dirs.html" title="Db::set_partition_dirs()">Db::set_partition_dirs()</a>
-                        method on this handle or to the directoreies that the database partitions were found in
-                        after <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a> has been called.
-                    </p>
+                    The <span class="bold"><strong>dirsp</strong></span> will be set
+                    to the array of directories specified in the call to
+                    <a class="xref" href="dbset_partition_dirs.html" title="Db::set_partition_dirs()">Db::set_partition_dirs()</a> 
+                    method on this handle or to the directoreies that the
+                    database partitions were found in after 
+                    <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a> has been
+                    called.
+                </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm6559696"></a>Errors</h3>
+              <h3 class="title"><a id="idm4623672"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-                         The <code class="methodname">Db::get_partition_dirs()</code> <span>
+             The <code class="methodname">Db::get_partition_dirs()</code>
+             <span>
             
             <span>
                 method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
@@ -99,12 +105,12 @@ Db::get_partition_dirs(const char ***dirsp); </pre>
                 of the following non-zero errors:
             </span>
         </span>
-                    </p>
+        </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm4235496"></a>EINVAL</h4>
+                <h4 class="title"><a id="idm5674048"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -117,25 +123,25 @@ Db::get_partition_dirs(const char ***dirsp); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm7032160"></a>Class</h3>
+              <h3 class="title"><a id="idm7528760"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-                 <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
-            </p>
+            <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
+        </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm7368240"></a>See Also</h3>
+              <h3 class="title"><a id="idm7292832"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-                </p>
+             <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+        </p>
       </div>
     </div>
     <div class="navfooter">

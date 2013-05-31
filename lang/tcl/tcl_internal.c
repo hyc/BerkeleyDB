@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -165,6 +165,9 @@ _DeleteInfo(p)
 	if (p->i_hashproc != NULL) {
 		Tcl_DecrRefCount(p->i_hashproc);
 	}
+	if (p->i_isalive != NULL) {
+		Tcl_DecrRefCount(p->i_isalive);
+	}
 	if (p->i_part_callback != NULL) {
 		Tcl_DecrRefCount(p->i_part_callback);
 	}
@@ -176,6 +179,9 @@ _DeleteInfo(p)
 	}
 	if (p->i_rep_send != NULL) {
 		Tcl_DecrRefCount(p->i_rep_send);
+	}
+	if (p->i_rep_view != NULL) {
+		Tcl_DecrRefCount(p->i_rep_view);
 	}
 
 	if (p->i_type == I_ENV && p->i_event_info != NULL)

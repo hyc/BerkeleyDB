@@ -178,7 +178,7 @@ optimize_flag="-O"
 extra_cflags=""
 
 case "$host_os" in
-aix4.3.*|aix[[56]]*)
+aix4.3.*|aix[[5-9]]*)
 	case "$host_os" in
 	aix4.3.*)
 		CPPFLAGS="$CPPFLAGS -D_LINUX_SOURCE_COMPAT";;
@@ -231,7 +231,6 @@ else
 fi
 
 CFLAGS="$CFLAGS$extra_cflags"
-CXXFLAGS=${CXXFLAGS-"$CFLAGS"}
 
 # The default compiler is cc (NOT gcc), the default CFLAGS is as specified
 # above, NOT what is set by AC_PROG_CC, as it won't set optimization flags
@@ -257,8 +256,12 @@ else
 	hpux11*)	CPPFLAGS="$CPPFLAGS -mt"
 			test "$host_cpu" = "ia64" &&
 			    CFLAGS="$CFLAGS +u1";;
+	solaris*)	CFLAGS="$CFLAGS "
+			CFLAGS=`echo "$CFLAGS" | sed 's/-O /-xO2 /g'`;;
 	esac
 fi
+
+CXXFLAGS=${CXXFLAGS-"$CFLAGS"}
 
 # Check for "const" and "inline" keywords.
 AC_C_CONST

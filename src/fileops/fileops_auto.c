@@ -48,6 +48,17 @@ DB_LOG_RECSPEC __fop_write_desc[] = {
 	{LOGREC_ARG, SSZ(__fop_write_args, flag), "flag", "%lu"},
 	{LOGREC_Done, 0, "", ""}
 };
+DB_LOG_RECSPEC __fop_write_file_desc[] = {
+	{LOGREC_DBT, SSZ(__fop_write_file_args, name), "name", ""},
+	{LOGREC_DBT, SSZ(__fop_write_file_args, dirname), "dirname", ""},
+	{LOGREC_ARG, SSZ(__fop_write_file_args, appname), "appname", "%lu"},
+	{LOGREC_ARG, SSZ(__fop_write_file_args, offset_lo), "offset_lo", "%lu"},
+	{LOGREC_ARG, SSZ(__fop_write_file_args, offset_hi), "offset_hi", "%lu"},
+	{LOGREC_DBT, SSZ(__fop_write_file_args, old_data), "old_data", ""},
+	{LOGREC_DBT, SSZ(__fop_write_file_args, new_data), "new_data", ""},
+	{LOGREC_ARG, SSZ(__fop_write_file_args, flag), "flag", "%lu"},
+	{LOGREC_Done, 0, "", ""}
+};
 DB_LOG_RECSPEC __fop_rename_42_desc[] = {
 	{LOGREC_DBT, SSZ(__fop_rename_42_args, oldname), "oldname", ""},
 	{LOGREC_DBT, SSZ(__fop_rename_42_args, newname), "newname", ""},
@@ -104,6 +115,9 @@ __fop_init_recover(env, dtabp)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,
 	    __fop_write_recover, DB___fop_write)) != 0)
+		return (ret);
+	if ((ret = __db_add_recovery_int(env, dtabp,
+	    __fop_write_file_recover, DB___fop_write_file)) != 0)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,
 	    __fop_rename_recover, DB___fop_rename)) != 0)

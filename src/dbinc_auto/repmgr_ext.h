@@ -29,6 +29,8 @@ int __repmgr_membership_key_marshal __P((ENV *, __repmgr_membership_key_args *, 
 int __repmgr_membership_key_unmarshal __P((ENV *, __repmgr_membership_key_args *, u_int8_t *, size_t, u_int8_t **));
 void __repmgr_membership_data_marshal __P((ENV *, __repmgr_membership_data_args *, u_int8_t *));
 int __repmgr_membership_data_unmarshal __P((ENV *, __repmgr_membership_data_args *, u_int8_t *, size_t, u_int8_t **));
+void __repmgr_v4membership_data_marshal __P((ENV *, __repmgr_v4membership_data_args *, u_int8_t *));
+int __repmgr_v4membership_data_unmarshal __P((ENV *, __repmgr_v4membership_data_args *, u_int8_t *, size_t, u_int8_t **));
 void __repmgr_member_metadata_marshal __P((ENV *, __repmgr_member_metadata_args *, u_int8_t *));
 int __repmgr_member_metadata_unmarshal __P((ENV *, __repmgr_member_metadata_args *, u_int8_t *, size_t, u_int8_t **));
 int __repmgr_gm_fwd_marshal __P((ENV *, __repmgr_gm_fwd_args *, u_int8_t *, size_t, size_t *));
@@ -37,14 +39,19 @@ void __repmgr_membr_vers_marshal __P((ENV *, __repmgr_membr_vers_args *, u_int8_
 int __repmgr_membr_vers_unmarshal __P((ENV *, __repmgr_membr_vers_args *, u_int8_t *, size_t, u_int8_t **));
 int __repmgr_site_info_marshal __P((ENV *, __repmgr_site_info_args *, u_int8_t *, size_t, size_t *));
 int __repmgr_site_info_unmarshal __P((ENV *, __repmgr_site_info_args *, u_int8_t *, size_t, u_int8_t **));
+int __repmgr_v4site_info_marshal __P((ENV *, __repmgr_v4site_info_args *, u_int8_t *, size_t, size_t *));
+int __repmgr_v4site_info_unmarshal __P((ENV *, __repmgr_v4site_info_args *, u_int8_t *, size_t, u_int8_t **));
 void __repmgr_connect_reject_marshal __P((ENV *, __repmgr_connect_reject_args *, u_int8_t *));
 int __repmgr_connect_reject_unmarshal __P((ENV *, __repmgr_connect_reject_args *, u_int8_t *, size_t, u_int8_t **));
+void __repmgr_v4connect_reject_marshal __P((ENV *, __repmgr_v4connect_reject_args *, u_int8_t *));
+int __repmgr_v4connect_reject_unmarshal __P((ENV *, __repmgr_v4connect_reject_args *, u_int8_t *, size_t, u_int8_t **));
 int __repmgr_member_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __repmgr_init_print __P((ENV *, DB_DISTAB *));
 int __repmgr_init_election __P((ENV *, u_int32_t));
 int __repmgr_claim_victory __P((ENV *));
 int __repmgr_turn_on_elections __P((ENV *));
-int __repmgr_start __P((DB_ENV *, int, u_int32_t));
+int __repmgr_start_pp __P((DB_ENV *, int, u_int32_t));
+int __repmgr_start_int __P((ENV *, int, u_int32_t));
 int __repmgr_valid_config __P((ENV *, u_int32_t));
 int __repmgr_autostart __P((ENV *));
 int __repmgr_start_selector __P((ENV *));
@@ -52,6 +59,8 @@ int __repmgr_close __P((ENV *));
 int __repmgr_stop __P((ENV *));
 int __repmgr_set_ack_policy __P((DB_ENV *, int));
 int __repmgr_get_ack_policy __P((DB_ENV *, int *));
+int __repmgr_set_incoming_queue_max __P((DB_ENV *, u_int32_t, u_int32_t));
+int __repmgr_get_incoming_queue_max __P((DB_ENV *, u_int32_t *, u_int32_t *));
 int __repmgr_env_create __P((ENV *, DB_REP *));
 void __repmgr_env_destroy __P((ENV *, DB_REP *));
 int __repmgr_stop_threads __P((ENV *));
@@ -72,12 +81,13 @@ int __repmgr_site_by_eid __P((DB_ENV *, int, DB_SITE **));
 int __repmgr_get_site_address __P((DB_SITE *, const char **, u_int *));
 int __repmgr_get_eid __P((DB_SITE *, int *));
 int __repmgr_get_config __P((DB_SITE *, u_int32_t, u_int32_t *));
-int __repmgr_site_config __P((DB_SITE *, u_int32_t, u_int32_t));
+int __repmgr_site_config_pp __P((DB_SITE *, u_int32_t, u_int32_t));
+int __repmgr_site_config_int __P((DB_SITE *, u_int32_t, u_int32_t));
 int __repmgr_site_close __P((DB_SITE *));
 void *__repmgr_msg_thread __P((void *));
 int __repmgr_send_err_resp __P((ENV *, CHANNEL *, int));
 int __repmgr_handle_event __P((ENV *, u_int32_t, void *));
-int __repmgr_update_membership __P((ENV *, DB_THREAD_INFO *, int, u_int32_t));
+int __repmgr_update_membership __P((ENV *, DB_THREAD_INFO *, int, u_int32_t, u_int32_t));
 int __repmgr_set_gm_version __P((ENV *, DB_THREAD_INFO *, DB_TXN *, u_int32_t));
 int __repmgr_setup_gmdb_op __P((ENV *, DB_THREAD_INFO *, DB_TXN **, u_int32_t));
 int __repmgr_cleanup_gmdb_op __P((ENV *, int));
@@ -140,6 +150,7 @@ int __repmgr_accept __P((ENV *));
 int __repmgr_compute_timeout __P((ENV *, db_timespec *));
 REPMGR_SITE *__repmgr_connected_master __P((ENV *));
 int __repmgr_check_timeouts __P((ENV *));
+int __repmgr_refresh_selector __P((ENV *));
 int __repmgr_first_try_connections __P((ENV *));
 int __repmgr_send_v1_handshake __P((ENV *, REPMGR_CONNECTION *, void *, size_t));
 int __repmgr_read_from_site __P((ENV *, REPMGR_CONNECTION *));
@@ -151,7 +162,8 @@ int __repmgr_write_some __P((ENV *, REPMGR_CONNECTION *));
 int __repmgr_stat_pp __P((DB_ENV *, DB_REPMGR_STAT **, u_int32_t));
 int __repmgr_stat_print_pp __P((DB_ENV *, u_int32_t));
 int __repmgr_stat_print __P((ENV *, u_int32_t));
-int __repmgr_site_list __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
+int __repmgr_site_list_pp __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
+int __repmgr_site_list_int __P((ENV *, u_int *, DB_REPMGR_SITE **));
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_close __P((ENV *));
 #endif
@@ -160,6 +172,12 @@ int __repmgr_get_ack_policy __P((DB_ENV *, int *));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_set_ack_policy __P((DB_ENV *, int));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_get_incoming_queue_max __P((DB_ENV *, u_int32_t *, u_int32_t *));
+#endif
+#ifndef HAVE_REPLICATION_THREADS
+int __repmgr_set_incoming_queue_max __P((DB_ENV *, u_int32_t, u_int32_t));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_site __P((DB_ENV *, const char *, u_int, DB_SITE **, u_int32_t));
@@ -171,10 +189,10 @@ int __repmgr_site_by_eid __P((DB_ENV *, int, DB_SITE **));
 int __repmgr_local_site __P((DB_ENV *, DB_SITE **));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
-int __repmgr_site_list __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
+int __repmgr_site_list_pp __P((DB_ENV *, u_int *, DB_REPMGR_SITE **));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
-int __repmgr_start __P((DB_ENV *, int, u_int32_t));
+int __repmgr_start_pp __P((DB_ENV *, int, u_int32_t));
 #endif
 #ifndef HAVE_REPLICATION_THREADS
 int __repmgr_stat_pp __P((DB_ENV *, DB_REPMGR_STAT **, u_int32_t));
@@ -226,8 +244,8 @@ int __repmgr_failchk __P((ENV *));
 int __repmgr_master_is_known __P((ENV *));
 int __repmgr_stable_lsn __P((ENV *, DB_LSN *));
 int __repmgr_send_sync_msg __P((ENV *, REPMGR_CONNECTION *, u_int32_t, u_int8_t *, u_int32_t));
-int __repmgr_marshal_member_list __P((ENV *, u_int8_t **, size_t *));
-int __repmgr_refresh_membership __P((ENV *, u_int8_t *, size_t));
+int __repmgr_marshal_member_list __P((ENV *, u_int32_t, u_int8_t **, size_t *));
+int __repmgr_refresh_membership __P((ENV *, u_int8_t *, size_t, u_int32_t));
 int __repmgr_reload_gmdb __P((ENV *));
 int __repmgr_gmdb_version_cmp __P((ENV *, u_int32_t, u_int32_t));
 int __repmgr_init_save __P((ENV *, DBT *));
@@ -238,10 +256,11 @@ void __repmgr_print_conn_err __P((ENV *, repmgr_netaddr_t *, int));
 int __repmgr_become_client __P((ENV *));
 REPMGR_SITE *__repmgr_lookup_site __P((ENV *, const char *, u_int));
 int __repmgr_find_site __P((ENV *, const char *, u_int, int *));
-int __repmgr_set_membership __P((ENV *, const char *, u_int, u_int32_t));
+int __repmgr_set_membership __P((ENV *, const char *, u_int, u_int32_t, u_int32_t));
 int __repmgr_bcast_parm_refresh __P((ENV *));
 int __repmgr_chg_prio __P((ENV *, u_int32_t, u_int32_t));
 int __repmgr_bcast_own_msg __P((ENV *, u_int32_t, u_int8_t *, size_t));
+int __repmgr_bcast_member_list __P((ENV *));
 
 #if defined(__cplusplus)
 }

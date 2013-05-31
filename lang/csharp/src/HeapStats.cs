@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -26,6 +26,10 @@ namespace BerkeleyDB {
         /// Reports internal flags. For internal use only. 
         /// </summary>
         public uint MetadataFlags { get { return st.heap_metaflags; } }
+        /// <summary>
+        /// Number of blob records.
+        /// </summary>
+        public uint nBlobRecords { get { return st.heap_nblobs; } }
         /// <summary>
         /// The number of pages in the database.
         /// </summary>

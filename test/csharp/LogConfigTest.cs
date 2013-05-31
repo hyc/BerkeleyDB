@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -63,6 +63,7 @@ namespace CsharpAPITest
 			cfg.LogSystemCfg.NoBuffer = false;
 			cfg.LogSystemCfg.ZeroOnCreate = true;
 			cfg.LogSystemCfg.InMemory = true;
+			cfg.LogSystemCfg.LogBlobContent = true;
 			DatabaseEnvironment env = DatabaseEnvironment.Open(testHome, cfg);
 
 			BTreeDatabase db;
@@ -146,6 +147,7 @@ namespace CsharpAPITest
 			cfg.LogSystemCfg.FileMode = 755;
 			cfg.LogSystemCfg.ForceSync = true;
 			cfg.LogSystemCfg.InMemory = false;
+			cfg.LogSystemCfg.LogBlobContent = false;
 			cfg.LogSystemCfg.MaxFileSize = 1048576;
 			cfg.LogSystemCfg.NoBuffer = false;
 			cfg.LogSystemCfg.RegionSize = 204800;
@@ -247,6 +249,8 @@ namespace CsharpAPITest
 			    logConfig.ForceSync, compulsory);
 			Configuration.ConfirmBool(xmlElement, "InMemory",
 			    logConfig.InMemory, compulsory);
+			Configuration.ConfirmBool(xmlElement, "LogBlobContent",
+			    logConfig.LogBlobContent, compulsory);
 			Configuration.ConfirmUint(xmlElement, "MaxFileSize",
 			    logConfig.MaxFileSize, compulsory);
 			Configuration.ConfirmBool(xmlElement, "NoBuffer",
@@ -277,6 +281,8 @@ namespace CsharpAPITest
 			    ref logConfig.ForceSync, compulsory);
 			Configuration.ConfigBool(xmlElement, "InMemory",
 			    ref logConfig.InMemory, compulsory);
+			Configuration.ConfigBool(xmlElement, "LogBlobContent",
+			    ref logConfig.LogBlobContent, compulsory);
 			if (Configuration.ConfigUint(xmlElement, "MaxFileSize",
 			    ref uintValue, compulsory))
 				logConfig.MaxFileSize = uintValue;

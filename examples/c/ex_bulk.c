@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved. 
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved. 
  *
  * $Id$
  */
@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define	DATABASE	"ex_bulk.db"                      /* Database name */
 #define	DATALEN		20                           /* The length of data */
@@ -54,8 +55,9 @@ int	bulk_delete(DB_ENV *, DB *, int, int, int *, int *, int);
 int	bulk_delete_sec(DB_ENV *, DB *, int, int, int *, int *, int);
 int	bulk_fill(DB_ENV *, DB *, int, int, int *, int *, int);
 int	bulk_get(DB_ENV *, DB *, int, int, int, int *, int);
-int	compare_int(DB *, const DBT *, const DBT *);
-DB_ENV	*db_init(char *, char *, u_int);
+int	compare_int(DB *, const DBT *, const DBT *, size_t *);
+int	db_init(DB_ENV *, DB **, DB**, int, int, int);
+DB_ENV	*env_init(char *, char *, u_int);
 int	get_first_str(DB *, const DBT *, const DBT *, DBT *);
 int	get_string(const char *, char *, int);
 int	main(int, char *[]);
@@ -82,25 +84,27 @@ main(argc, argv)
 	struct timeval start_time, end_time;
 	double secs;
 	u_int cache, pagesize;
-	int biter, ch, count, dups, init, iter, num;
-	int ret, rflag, sflag, bulk, delete, pair, verbose;
+	int biter, ch, count, delete, dups, init, iter, num;
+	int pair, ret, rflag, sflag, verbose;
 
 	dbp = sdbp = NULL;
 	dbenv = NULL;
 	txnp = NULL;
 	iter = num = 1000000;
-	dups = init = rflag = sflag = bulk = delete = verbose = 0;
+	delete = dups = init = rflag = sflag = verbose = 0;
 
 	pagesize = 65536;
 	cache = 1000 * pagesize;
 
-	while ((ch = getopt(argc, argv, "c:d:i:n:p:vDIRSU")) != EOF)
+	while ((ch = getopt(argc, argv, "c:d:i:n:p:vDIRS")) != EOF)
 		switch (ch) {
 		case 'c':
 			cache = (u_int)atoi(optarg);
 			break;
 		case 'd':
 			dups = atoi(optarg);
+			if (dups < 0)
+				usage();
 			break;
 		case 'i':
 			iter = atoi(optarg);
@@ -126,9 +130,6 @@ main(argc, argv)
 		case 'S':
 			sflag = 1;
 			break;
-		case 'U':
-			bulk = 1;
-			break;
 		case '?':
 		default:
 			usage();
@@ -142,78 +143,16 @@ main(argc, argv)
 		system("mkdir EX_BULK");
 	}
 
-	if ((dbenv = db_init("EX_BULK", "ex_bulk", cache)) == NULL)
+	if ((dbenv = env_init("EX_BULK", "ex_bulk", cache)) == NULL)
 		return (-1);
 	if (init)
 		exit(0);
 
 	/* Create and initialize database object, open the database. */
-	if ((ret = db_create(&dbp, dbenv, 0)) != 0) {
-		fprintf(stderr,
-		    "%s: db_create: %s\n", progname, db_strerror(ret));
-		exit(EXIT_FAILURE);
-	}
-	dbp->set_errfile(dbp, stderr);
-	dbp->set_errpfx(dbp, progname);
-	if ((ret = dbp->set_bt_compare(dbp, compare_int)) != 0) {
-		dbp->err(dbp, ret, "set_bt_compare");
-		goto err;
-	}
-	if ((ret = dbp->set_pagesize(dbp, pagesize)) != 0) {
-		dbp->err(dbp, ret, "set_pagesize");
-		goto err;
-	}
-	if (dups && (ret = dbp->set_flags(dbp, DB_DUP)) != 0) {
-		dbp->err(dbp, ret, "set_flags");
-		goto err;
-	}
+	if ((ret = db_init(dbenv, &dbp, &sdbp, dups, sflag, pagesize)) != 0)
+		return (-1);
 
-	if ((ret = dbenv->txn_begin(dbenv, NULL, &txnp, 0)) != 0)
-		goto err;
-
-	if ((ret = dbp->open(dbp, txnp, DATABASE, "primary", DB_BTREE,
-	    DB_CREATE , 0664)) != 0) {
-		dbp->err(dbp, ret, "%s: open", DATABASE);
-		if (txnp != NULL)
-			(void)txnp->abort(txnp);
-		goto err;
-	}
-
-	if (sflag) {
-		/* 
-		 * Open secondary database. The keys in secondary database 
-		 * are the first charactor in str of struct data in data
-		 * field of primary database.
-		 */
-		if ((ret = db_create(&sdbp, dbenv, 0)) != 0) {
-			fprintf(stderr, "%s: db_create: %s\n",
-			    progname, db_strerror(ret));
-			exit(EXIT_FAILURE);
-		}
-		if ((ret = sdbp->set_flags(sdbp, DB_DUPSORT)) != 0) {
-			sdbp->err(sdbp, ret, "set_flags");
-			goto err;
-		}
-		if ((ret = sdbp->open(sdbp, txnp, DATABASE, "secondary",
-		    DB_BTREE, DB_CREATE, 0664)) != 0) {
-			sdbp->err(sdbp, ret, "%s: secondary open", DATABASE);
-			if (txnp != NULL)
-				(void)txnp->abort(txnp);
-			goto err;
-		}
-		if ((ret =  dbp->associate(dbp, txnp, sdbp, get_first_str,
-		     0)) != 0) {
-			dbp->err(dbp, ret, "%s: associate", DATABASE);
-			if (txnp != NULL)
-				(void)txnp->abort(txnp);
-			goto err;
-		}
-	}
-
-	if ((ret = txnp->commit(txnp, 0)) != 0)
-		goto err;
-	txnp = NULL;
-
+	srand((int)time(NULL));
 	if (rflag) {
 		/* Time the get loop. */
 		(void)gettimeofday(&start_time, NULL);
@@ -334,10 +273,9 @@ bulk_delete(dbenv, dbp, num, dups, countp, iterp, verbose)
 	j = rand() % num;
 
 	/*
-	 * Need to account for proper buffer size, the buffer must be at 
-	 * least as large as the page size of the underlying database, 
-	 * aligned for unsigned integer access, and be a multiple of 1024
-	 * bytes in size.
+	 * The buffer must be at least as large as the page size of the
+	 * underlying database and aligned for unsigned integer access.
+	 * Its size must be a multiple of 1024 bytes.
 	 */
 	key.ulen = (u_int32_t)UPDATES_PER_BULK_PUT *
 	    (sizeof(u_int32_t) + DATALEN) * 1024;
@@ -348,22 +286,23 @@ bulk_delete(dbenv, dbp, num, dups, countp, iterp, verbose)
 	memset(data_val, 0, DATALEN);
 
 	/*
-	 * If DB_MULTIPLE, delete all records with a specified set of keys
-	 * in a DBT. The DBT is constructed by DB_MULTIPLE_WRITE_NEXT. If 
-	 * DB_MULTIPLE_KEY, delete a specific set of key/data pairs in the
-	 * DBT constructed by DB_MULTIPLE_KEY_WRITE_NEXT. Here, delete 
-	 * keys before the random key, if there are duplicate records, 
-	 * delete duplicate pairs with DB_MULTIPLE_KEY, unless, delete keys
-	 * with DB_MULTIPLE.
+	 * Bulk delete all records of a specific set of keys which includes all
+	 * non-negative integers smaller than the random key. The random key is
+	 * a random non-negative integer smaller than "num".
+	 * If DB_MULTIPLE, construct the key DBT by the DB_MULTIPLE_WRITE_NEXT
+	 * with the specific set of keys. If DB_MULTIPLE_KEY, construct the key
+	 * DBT by the DB_MULTIPLE_KEY_WRITE_NEXT with all key/data pairs of the
+	 * specific set of keys.
 	 */
-	flag |= (dups) ? DB_MULTIPLE : DB_MULTIPLE_KEY;
+	flag |= (dups) ? DB_MULTIPLE_KEY : DB_MULTIPLE;
 	DB_MULTIPLE_WRITE_INIT(ptrk, &key);
 	for (i = 0; i < j; i++) {
 		if (i % UPDATES_PER_BULK_PUT == 0) {
 			if (txnp != NULL) {
-				if ((ret = txnp->commit(txnp, 0)) != 0)
-					goto err;
+				ret = txnp->commit(txnp, 0);
 				txnp = NULL;
+				if (ret != 0)
+					goto err;
 			}
 			if ((ret =
 				dbenv->txn_begin(dbenv, NULL, &txnp, 0)) != 0)
@@ -371,24 +310,24 @@ bulk_delete(dbenv, dbp, num, dups, countp, iterp, verbose)
 		}
 		
 		if (dups) {
-			DB_MULTIPLE_WRITE_NEXT(ptrk, &key, &i, sizeof(i));
-			assert(ptrk != NULL);
-			count++;
-			if (verbose)
-				printf("Delete key: %d\n", i);
-		} else {
 			data_val->id = 0;
+			get_string(tstring, data_val->str, i);
 			do {
-				get_string(tstring, data_val->str, i);
 				DB_MULTIPLE_KEY_WRITE_NEXT(ptrk, &key, &i,
 				    sizeof(i), data_val, DATALEN);
 				assert(ptrk != NULL);
 				count++;
 				if (verbose)
 					printf(
-"Delete key: %d, \tdata: (id %d, str %s)\n", 
+"Delete key: %d, \tdata: (id %d, str %s)\n",
 					    i, data_val->id, data_val->str);
-			} while (++data_val->id < dups);
+			} while (data_val->id++ < dups);
+		} else {
+			DB_MULTIPLE_WRITE_NEXT(ptrk, &key, &i, sizeof(i));
+			assert(ptrk != NULL);
+			count++;
+			if (verbose)
+				printf("Delete key: %d\n", i);
 		}
 
 		if ((i + 1) % UPDATES_PER_BULK_PUT == 0) {
@@ -452,10 +391,9 @@ bulk_delete_sec(dbenv, dbp, num, pair, countp, iterp, verbose)
 	rc = rand() % (STRLEN - 1);
 
 	/*
-	 * Need to account for proper buffer size, the buffer must be at
-	 * least as large as the page size of the underlying database, 
-	 * aligned for unsigned integer access, and be a multiple of 
-	 * 1024 bytes in size.
+	 * The buffer must be at least as large as the page size of the
+	 * underlying database and aligned for unsigned integer access.
+	 * Its size must be a multiple of 1024 bytes.
 	 */
 	key.ulen = (u_int32_t)UPDATES_PER_BULK_PUT *
 	    (sizeof(u_int32_t) + DATALEN) * 1024;
@@ -464,19 +402,23 @@ bulk_delete_sec(dbenv, dbp, num, pair, countp, iterp, verbose)
 	memset(key.data, 0, key.ulen);
 
 	/*
-	 * Bulk delete records from a random key, which is one of charaters
-	 * in tstring. If DB_MULTIPLE, delete all characters before the random
-	 * key in the tstring. If DB_MULTIPLE_KEY, get duplicate data to the
-	 * specified keys and delete key/data pairs.
+	 * Bulk delete all records of a specific set of keys which includes all
+	 * characters before the random key in the tstring. The random key is
+	 * one of the characters in the tstring.
+	 * If DB_MULTIPLE, construct the key DBT by the DB_MULTIPLE_WRITE_NEXT
+	 * with the specific set of keys. If DB_MULTIPLE_KEY, construct the key
+	 * DBT by the DB_MULTIPLE_KEY_WRITE_NEXT with all key/data pairs of the
+	 * specific set of keys.
 	 */
 	flag |= (pair) ? DB_MULTIPLE_KEY : DB_MULTIPLE;
 	DB_MULTIPLE_WRITE_INIT(ptrk, &key);
 	for (i = 0; i <= rc; i++) {
 		if (i % UPDATES_PER_BULK_PUT == 0) {
 			if (txnp != NULL) {
-				if ((ret = txnp->commit(txnp, 0)) != 0)
-					goto err;
+				ret = txnp->commit(txnp, 0);
 				txnp = NULL;
+				if (ret != 0)
+					goto err;
 			}
 			if ((ret = dbenv->txn_begin(
 			    dbenv, NULL, &txnp, 0)) != 0)
@@ -570,11 +512,10 @@ bulk_fill(dbenv, dbp, num, dups, countp, iterp, verbose)
 	memset(&key, 0, sizeof(DBT));
 	memset(&data, 0, sizeof(DBT));
 
-	/* 
-	 * Need to account for proper buffer size,
+	/*
 	 * The buffer must be at least as large as the page size of
-	 * the underlying database, aligned for unsigned integer
-	 * access, and be a multiple of 1024 bytes in size.
+	 * the underlying database and aligned for unsigned integer
+	 * access. Its size must be a multiple of 1024 bytes.
 	 */
 	key.ulen = (u_int32_t) UPDATES_PER_BULK_PUT * 
 	    (sizeof(u_int32_t) + DATALEN) * 1024;
@@ -589,12 +530,11 @@ bulk_fill(dbenv, dbp, num, dups, countp, iterp, verbose)
 	memset(data.data, 0, data.ulen);
 
 	/*
-	 * We could bulk insert with either DB_MULTIPLE in two buffers or 
-	 * DB_MULTIPLE_KEY in one buffer. With DB_MULTIPLE, all keys are 
-	 * constructed in key DBT, all data is constructed in data DBT. 
-	 * With DB_MULTIPLE_KEY, all key/data pairs are constructed in 
-	 * the key DBT. Here, we use DB_MULTIPLE mode when there are 
-	 * duplicate records.
+	 * Bulk insert with either DB_MULTIPLE in two buffers or
+	 * DB_MULTIPLE_KEY in a single buffer. With DB_MULTIPLE, all keys are
+	 * constructed in the key DBT, and all data is constructed in the data
+	 * DBT. With DB_MULTIPLE_KEY, all key/data pairs are constructed in the
+	 * key Dbt. We use DB_MULTIPLE mode when there are duplicate records.
 	 */
 	flag |= (dups) ? DB_MULTIPLE : DB_MULTIPLE_KEY;
 	DB_MULTIPLE_WRITE_INIT(ptrk, &key);
@@ -603,17 +543,18 @@ bulk_fill(dbenv, dbp, num, dups, countp, iterp, verbose)
 	for (i = 0; i < num; i++) {
 		if (i % UPDATES_PER_BULK_PUT == 0) {
 			if (txnp != NULL) {
-				if ((ret = txnp->commit(txnp, 0)) != 0)
-					goto err;
+				ret = txnp->commit(txnp, 0);
 				txnp = NULL;
+				if (ret != 0)
+					goto err;
 			}
 			if ((ret = 
 			    dbenv->txn_begin(dbenv, NULL, &txnp, 0)) != 0)
 				goto err;
 		}
 		data_val->id = 0;
+		get_string(tstring, data_val->str, i);
 		do {
-			get_string(tstring, data_val->str, i);
 			if (dups) {
 				DB_MULTIPLE_WRITE_NEXT(ptrk, &key, 
 				    &i, sizeof(i));
@@ -622,7 +563,7 @@ bulk_fill(dbenv, dbp, num, dups, countp, iterp, verbose)
 				    data_val, DATALEN);
 				assert(ptrd != NULL);
 			} else {
-				DB_MULTIPLE_KEY_WRITE_NEXT(ptrk, 
+				DB_MULTIPLE_KEY_WRITE_NEXT(ptrk,
 				    &key, &i, sizeof(i), data_val, DATALEN);
 				assert(ptrk != NULL);
 			}
@@ -631,7 +572,7 @@ bulk_fill(dbenv, dbp, num, dups, countp, iterp, verbose)
 "Insert key: %d, \t data: (id %d, str %s)\n", 
 				    i, data_val->id, data_val->str);
 			count++;
-		} while (++data_val->id < dups);
+		} while (data_val->id++ < dups);
 		if ((i + 1) % UPDATES_PER_BULK_PUT == 0) {
 			switch (ret = dbp->put(dbp, txnp, &key, &data, flag)) {
 			case 0:
@@ -698,7 +639,6 @@ bulk_get(dbenv, dbp, num, dups, iter, countp, verbose)
 	/* Initialize key DBT and data DBT, malloc bulk buffer. */
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
-	key.data = &j;
 	key.size = sizeof(j);
 	data.flags = DB_DBT_USERMEM;
 	data.data = malloc(DATALEN * 16 * 1024);
@@ -715,13 +655,18 @@ bulk_get(dbenv, dbp, num, dups, iter, countp, verbose)
 			goto err;
 
 		/*
-		 * Bulk retrieve from a random key. Use DB_MULTIPLE_INIT to 
-		 * initialize variables for bulk retrieval. If there are 
-		 * duplicate records, use DB_MULTIPLE_NEXT to iterate them
-		 * in the buffer. Unless, use DB_MULTIPLE_KEY_NEXT to iterate
-		 * records after the random key.
+		 * Bulk retrieve by a random key which is a random
+		 * non-negative integer smaller than "num".
+		 * If there are duplicates in the database, retrieve
+		 * with DB_MULTIPLE and use the DB_MULTIPLE_NEXT
+		 * to iterate the data of the random key in the data
+		 * DBT. Otherwise retrieve with DB_MULTIPLE_KEY and use
+		 * the DB_MULTIPLE_KEY_NEXT to iterate the
+		 * key/data pairs of the specific set of keys which
+		 * includes all integers >= the random key and < "num".
 		 */
 		j = rand() % num;
+		key.data = &j;
 		if ((ret = dbcp->get(dbcp, &key, &data, flags)) != 0)
 			goto err;
 		DB_MULTIPLE_INIT(pointer, &data);
@@ -751,15 +696,23 @@ bulk_get(dbenv, dbp, num, dups, iter, countp, verbose)
 				}
 			}
 
-		if ((ret = dbcp->close(dbcp)) != 0)
+		ret = dbcp->close(dbcp);
+		dbcp = NULL;
+		if (ret != 0)
 			goto err;
-		if ((ret = txnp->commit(txnp, 0)) != 0)
+
+		ret = txnp->commit(txnp, 0);
+		txnp = NULL;
+		if (ret != 0)
 			goto err;
 	}
 
 	*countp = count;
 
-err:	
+err:	if (dbcp != NULL)
+		(void)dbcp->close(dbcp);
+	if (txnp != NULL)
+		(void)txnp->abort(txnp);
 	if (ret != 0)
 		dbp->err(dbp, ret, "get");
 	free(data.data);
@@ -767,13 +720,15 @@ err:
 }
 
 int
-compare_int(dbp, a, b)
+compare_int(dbp, a, b, locp)
 	DB *dbp;
 	const DBT *a, *b;
+	size_t *locp;
 {
 	int ai, bi;
 
 	dbp = NULL;
+	locp = NULL;
 
 	/*
 	 * Returns:
@@ -788,10 +743,102 @@ compare_int(dbp, a, b)
 
 /*
  * db_init --
+ *	Open the database.
+ */
+int
+db_init(dbenv, dbpp, sdbpp, dups, sflag, pagesize)
+	DB_ENV *dbenv;
+	DB **dbpp, **sdbpp;
+	int dups, sflag, pagesize;
+{
+	DB *dbp, *sdbp;
+	DB_TXN *txnp;
+	int ret;
+
+	dbp = sdbp = NULL;
+	txnp = NULL;
+	ret = 0;
+
+	if ((ret = db_create(&dbp, dbenv, 0)) != 0) {
+		fprintf(stderr,
+		    "%s: db_create: %s\n", progname, db_strerror(ret));
+		return (ret);
+	}
+	dbp->set_errfile(dbp, stderr);
+	dbp->set_errpfx(dbp, progname);
+	if ((ret = dbp->set_bt_compare(dbp, compare_int)) != 0) {
+		dbp->err(dbp, ret, "set_bt_compare");
+		goto err;
+	}
+	if ((ret = dbp->set_pagesize(dbp, pagesize)) != 0) {
+		dbp->err(dbp, ret, "set_pagesize");
+		goto err;
+	}
+	if (dups && (ret = dbp->set_flags(dbp, DB_DUP)) != 0) {
+		dbp->err(dbp, ret, "set_flags");
+		goto err;
+	}
+
+	if ((ret = dbenv->txn_begin(dbenv, NULL, &txnp, 0)) != 0)
+		goto err;
+
+	if ((ret = dbp->open(dbp, txnp, DATABASE, "primary", DB_BTREE,
+	    DB_CREATE , 0664)) != 0) {
+		dbp->err(dbp, ret, "%s: open", DATABASE);
+		goto err;
+	}
+	*dbpp = dbp;
+
+	if (sflag) {
+		/* 
+		 * Open secondary database. The keys in secondary database 
+		 * are the first charactor in str of struct data in data
+		 * field of primary database.
+		 */
+		if ((ret = db_create(&sdbp, dbenv, 0)) != 0) {
+			fprintf(stderr, "%s: db_create: %s\n",
+			    progname, db_strerror(ret));
+			goto err;
+		}
+		if ((ret = sdbp->set_flags(sdbp, DB_DUPSORT)) != 0) {
+			sdbp->err(sdbp, ret, "set_flags");
+			goto err;
+		}
+		if ((ret = sdbp->open(sdbp, txnp, DATABASE, "secondary",
+		    DB_BTREE, DB_CREATE, 0664)) != 0) {
+			sdbp->err(sdbp, ret, "%s: secondary open", DATABASE);
+			goto err;
+		}
+		if ((ret =  dbp->associate(dbp, txnp, sdbp, get_first_str,
+		     0)) != 0) {
+			dbp->err(dbp, ret, "%s: associate", DATABASE);
+			goto err;
+		}
+	}
+	*sdbpp = sdbp;
+
+	ret = txnp->commit(txnp, 0);
+	txnp = NULL;
+	if (ret != 0)
+		goto err;
+
+	return (0);
+
+err:	if (txnp != NULL)
+		(void)txnp->abort(0);
+	if (sdbp != NULL)
+		(void)sdbp->close(sdbp, 0);
+	if (dbp != NULL)
+		(void)dbp->close(dbp, 0);
+	return (ret);
+}
+
+/*
+ * env_init --
  *	Initialize the environment.
  */
 DB_ENV *
-db_init(home, prefix, cachesize)
+env_init(home, prefix, cachesize)
 	char *home, *prefix;
 	u_int cachesize;
 {
@@ -804,8 +851,10 @@ db_init(home, prefix, cachesize)
 	}
 	dbenv->set_errfile(dbenv, stderr);
 	dbenv->set_errpfx(dbenv, prefix);
-	(void)dbenv->set_cachesize(dbenv, 0,
-	    cachesize == 0 ? 50 * 1024 * 1024 : (u_int32_t)cachesize, 0);
+	if ((ret = dbenv->set_cachesize(dbenv, 0, cachesize, 0)) != 0) {
+		dbenv->err(dbenv, ret, "DB_ENV->set_cachesize");
+		return (NULL);
+	}
 
 	if ((ret = dbenv->open(dbenv, home, DB_CREATE | DB_INIT_MPOOL |
 	    DB_INIT_TXN | DB_INIT_LOCK, 0)) != 0) {
@@ -857,11 +906,10 @@ usage()
     -n	number of keys [1000000] \n\
     -p	pagesize [65536] \n\
     -v	verbose output \n\
-    -D  perform bulk delete \n\
+    -D	perform bulk delete \n\
     -I	just initialize the environment \n\
     -R	perform bulk read \n\
-    -S	perform bulk read in secondary database \n\
-    -U  perform bulk update \n",
+    -S	perform bulk operation in secondary database \n",
 	    progname);
 	exit(EXIT_FAILURE);
 }

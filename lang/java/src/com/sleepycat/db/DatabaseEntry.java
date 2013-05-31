@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -210,6 +210,29 @@ public class DatabaseEntry {
     /*
      * Accessors
      */
+
+    /**
+    Configure this DatabaseEntry to be stored as a blob.
+    <p>
+    @param blob
+    Whether this DatabaseEntry is configured to be stored as a blob.
+    */
+    public void setBlob(final boolean blob) {
+        if (blob)
+            flags |= DbConstants.DB_DBT_BLOB;
+        else
+            flags &= ~DbConstants.DB_DBT_BLOB;
+    }
+
+    /**
+    Return whether this DatabaseEntry is configured to be stored as a blob.
+    <p>
+    @return
+    Whether this DatabaseEntry is configured to be stored as a blob.
+    */
+    public boolean getBlob() {
+        return (flags & DbConstants.DB_DBT_BLOB) != 0;
+    }
 
     /**
     Return the byte array.

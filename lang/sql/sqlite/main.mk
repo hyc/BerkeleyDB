@@ -54,19 +54,20 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
-         fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o fts3_write.o \
-         func.o global.o hash.o \
+         fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
+	 fts3_unicode.o fts3_unicode2.o \
+         fts3_write.o func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
-         mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
-         notify.o opcodes.o os.o os_os2.o os_unix.o os_win.o \
+         mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
+         notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbetrace.o \
-         wal.o walker.o where.o utf.o vtab.o
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
+	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
 
 
@@ -112,14 +113,12 @@ SRC = \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
-  $(TOP)/src/mutex_os2.c \
   $(TOP)/src/mutex_unix.c \
   $(TOP)/src/mutex_w32.c \
   $(TOP)/src/notify.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os.h \
   $(TOP)/src/os_common.h \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -155,6 +154,7 @@ SRC = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbesort.c \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
@@ -197,6 +197,8 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer.h \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_unicode.c \
+  $(TOP)/ext/fts3/fts3_unicode2.c \
   $(TOP)/ext/fts3/fts3_write.c
 SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
@@ -220,6 +222,8 @@ SRC += \
 # Source code to the test files.
 #
 TESTSRC = \
+  $(TOP)/ext/fts3/fts3_term.c \
+  $(TOP)/ext/fts3/fts3_test.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -236,6 +240,7 @@ TESTSRC = \
   $(TOP)/src/test_config.c \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
+  $(TOP)/src/test_fs.c \
   $(TOP)/src/test_func.c \
   $(TOP)/src/test_fuzzer.c \
   $(TOP)/src/test_hexio.c \
@@ -249,10 +254,12 @@ TESTSRC = \
   $(TOP)/src/test_osinst.c \
   $(TOP)/src/test_pcache.c \
   $(TOP)/src/test_quota.c \
+  $(TOP)/src/test_regexp.c \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_stat.c \
+  $(TOP)/src/test_sqllog.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
   $(TOP)/src/test_tclvar.c \
@@ -276,7 +283,6 @@ TESTSRC2 = \
   $(TOP)/src/wal.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/os.c \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -359,6 +365,9 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
+sqlite3.o:	sqlite3.c
+	$(TCCX) -c sqlite3.c
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
@@ -376,10 +385,22 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
+	cp tsrc/shell.c tsrc/sqlite3ext.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
+
+sqlite3.c-debug:	target_source $(TOP)/tool/mksqlite3c.tcl
+	tclsh $(TOP)/tool/mksqlite3c.tcl --linemacros
+	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
+	cat sqlite3.c >>tclsqlite3.c
+	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
+	echo '#line 1 "tclsqlite.c"' >>tclsqlite3.c
+	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
+
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl
+	tclsh $(TOP)/tool/split-sqlite3c.tcl
 
 fts2amal.c:	target_source $(TOP)/ext/fts2/mkfts2amal.tcl
 	tclsh $(TOP)/ext/fts2/mkfts2amal.tcl
@@ -415,7 +436,7 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 # Rules to build opcodes.c and opcodes.h
 #
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	sort -n -b -k 3 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
+	$(NAWK) -f $(TOP)/mkopcodec.awk opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | \
@@ -491,6 +512,12 @@ fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
 fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
 
+fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode.c
+
+fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode2.c
+
 fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
 
@@ -504,6 +531,16 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite3 \
 		$(TOP)/src/tclsqlite.c libsqlite3.a $(LIBTCL) $(THREADLIB)
 
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
+	echo "#define TCLSH 2" > $@
+	cat sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c >> $@
+	echo "static const char *tclsh_main_loop(void){" >> $@
+	echo "static const char *zMainloop = " >> $@
+	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@
+	echo "; return zMainloop; }" >> $@
+
+sqlite3_analyzer$(EXE): sqlite3_analyzer.c
+	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
 # Rules to build the 'testfixture' application.
 #
@@ -513,7 +550,7 @@ TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
-		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB) libsqlite3.a
+		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
 amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
@@ -532,6 +569,9 @@ fulltest:	testfixture$(EXE) sqlite3$(EXE)
 soaktest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
 
+fulltestonly:	testfixture$(EXE) sqlite3$(EXE)
+	./testfixture$(EXE) $(TOP)/test/full.test
+
 test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
@@ -546,27 +586,19 @@ threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c $(TOP)/test/tt3_checkpoin
 threadtest: threadtest3$(EXE)
 	./threadtest3$(EXE)
 
-sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
-			$(TOP)/tool/spaceanal.tcl
-	sed \
-	  -e '/^#/d' \
-	  -e 's,\\,\\\\,g' \
-	  -e 's,",\\",g' \
-	  -e 's,^,",' \
-	  -e 's,$$,\\n",' \
-	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 $(TESTFIXTURE_FLAGS)                    \
-		-DSQLITE_TEST=1 -DSQLITE_PRIVATE=""                            \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                    \
-		-o sqlite3_analyzer$(EXE)                                      \
-		$(LIBTCL) $(THREADLIB)
-
 TEST_EXTENSION = $(SHPREFIX)testloadext.$(SO)
 $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 	$(MKSHLIB) $(TOP)/src/test_loadext.c -o $(TEST_EXTENSION)
 
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
+
+# This target will fail if the SQLite amalgamation contains any exported
+# symbols that do not begin with "sqlite3_". It is run as part of the
+# releasetest.tcl script.
+#
+checksymbols: sqlite3.o
+	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 
 
 # Standard install and cleanup targets
@@ -577,10 +609,18 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 	mv sqlite3.h /usr/include
 
 clean:	
-	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.*
-	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
+	rm -f *.o sqlite3 sqlite3.exe libsqlite3.a sqlite3.h opcodes.*
+	rm -f lemon lemon.exe lempar.c parse.* sqlite*.tar.gz
+	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
+	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
+	rm -f amalgamation-testfixture amalgamation-testfixture.exe
+	rm -f fts3-testfixture fts3-testfixture.exe
+	rm -f testfixture testfixture.exe
+	rm -f threadtest3 threadtest3.exe
 	rm -f sqlite3.c fts?amal.c tclsqlite3.c
+	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
+	rm -f sqlite-*-output.vsix

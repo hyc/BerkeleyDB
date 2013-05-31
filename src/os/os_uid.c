@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -35,7 +35,7 @@ __os_unique_id(env, idp)
 	 * time of day and a stack address, all XOR'd together.
 	 */
 	__os_id(dbenv, &pid, NULL);
-	__os_gettime(env, &v, 1);
+	__os_gettime(env, &v, 0);
 
 	id = (u_int32_t)pid ^
 	    (u_int32_t)v.tv_sec ^ (u_int32_t)v.tv_nsec ^ P_TO_UINT32(&pid);

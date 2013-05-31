@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -40,7 +40,7 @@ namespace BerkeleyDB {
         public CachePriority Priority;
 
         /// <summary>
-        /// The size of the shared memory buffer pool -- that is, the cache.
+        /// The size of the shared memory buffer pool (the cache).
         /// </summary>
         /// <remarks>
         /// <para>
@@ -49,7 +49,7 @@ namespace BerkeleyDB {
         /// situations. (Note: the working set is not the same as the number of
         /// pages accessed simultaneously, and is usually much larger.)
         /// </para>
-		/// <para>
+        /// <para>
         /// The default cache size is 256KB, and may not be specified as less
         /// than 20KB. Any cache size less than 500MB is automatically increased
         /// by 25% to account for buffer pool overhead; cache sizes larger than
@@ -73,7 +73,7 @@ namespace BerkeleyDB {
         /// the application data stored in the database, and applications are
         /// responsible for maintaining any necessary ordering.
         /// </para>
-		/// <para>
+        /// <para>
         /// If creating additional databases in a single physical file, this
         /// parameter will be ignored and the byte order of the existing
         /// databases will be used.
@@ -94,7 +94,7 @@ namespace BerkeleyDB {
         /// filesystem I/O block size. The automatically selected size has a
         /// lower limit of 512 bytes and an upper limit of 16K bytes.
         /// </para>
-		/// <para>
+        /// <para>
         /// For information on tuning the Berkeley DB page size, see Selecting a
         /// page size in the Programmer's Reference Guide.
         /// </para>
@@ -183,7 +183,7 @@ namespace BerkeleyDB {
         /// significantly increase application size, and may be run during
         /// normal operation as well as during application debugging.
         /// </para>
-		/// <para>
+        /// <para>
         /// For databases opened inside of Berkeley DB environments, setting
         /// ErrorFeedback affects the entire environment and is equivalent to 
         /// setting <see cref="DatabaseEnvironment.ErrorFeedback"/>.
@@ -205,7 +205,7 @@ namespace BerkeleyDB {
         /// Berkeley DB uses the SHA1 Secure Hash Algorithm if encryption is
         /// configured and a general hash algorithm if it is not.
         /// </para>
-		/// <para>
+        /// <para>
         /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
@@ -268,7 +268,7 @@ namespace BerkeleyDB {
         /// </summary>
         public bool AutoCommit;
         /// <summary>
-        /// Cause the database object to be free-threaded; that is, concurrently
+        /// Causes the database object to be free-threaded; that is, concurrently
         /// usable by multiple threads in the address space.
         /// </summary>
         public bool FreeThreaded;
@@ -302,7 +302,7 @@ namespace BerkeleyDB {
         /// For this reason, it is applicable only to the file and cannot be
         /// used to discard databases within a file.
         /// </para>
-		/// <para>
+        /// <para>
         /// This setting cannot be lock or transaction-protected, and it is an
         /// error to specify it in a locking or transaction-protected
         /// environment.
@@ -313,10 +313,11 @@ namespace BerkeleyDB {
         /// Open the database with support for multiversion concurrency control.
         /// </summary>
         /// <remarks>
-        /// This will cause updates to the database to follow a copy-on-write
-        /// protocol, which is required to support snapshot isolation. This
-        /// settting requires that the database be transactionally protected
-        /// during its open and is not supported by the queue format.
+        /// Enables database updates to follow a copy-on-write protocol, which
+        /// is required to support snapshot isolation. This
+        /// setting requires the database to be transactionally protected
+        /// when it is opened(or, sometimes, at open time). Also, this setting is 
+        /// not supported by the queue format.
         /// </remarks>
         public bool UseMVCC;
         internal uint openFlags {

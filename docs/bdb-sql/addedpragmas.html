@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -71,6 +71,11 @@
           <dt>
             <span class="sect2">
               <a href="addedpragmas.html#bdbsql_vacuum_pages">PRAGMA bdbsql_vacuum_pages</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="addedpragmas.html#large_record_opt">PRAGMA large_record_opt</a>
             </span>
           </dt>
           <dt>
@@ -293,6 +298,38 @@
         <div class="titlepage">
           <div>
             <div>
+              <h3 class="title"><a id="large_record_opt"></a>PRAGMA large_record_opt</h3>
+            </div>
+          </div>
+        </div>
+        <pre class="programlisting">PRAGMA large_record_opt [= number bytes]</pre>
+        <p>
+                    Enables optimized storage of large records. Any record
+                    larger than the given number of bytes will be stored in
+                    a new format that improves read and write performance
+                    for large records. 
+                </p>
+        <p>
+                    This pragma must be called before any data is added to
+                    the database, otherwise it will be ignored. 
+                </p>
+        <p>
+                    This optimization is incompatible with encryption, and
+                    <code class="literal">SQLITE_ReadUncommitted</code>.
+                </p>
+        <p>
+                    This optimization stores large records in a folder
+                    called <code class="literal">__db_bl</code> in the journal folder.
+                    So if the database is manually moved to a new location,
+                    the folder with the large records most also be moved.
+                    The Online Backup Function will automatically backup up
+                    these records with the rest of the database.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
               <h3 class="title"><a id="multiversion"></a>PRAGMA multiversion</h3>
             </div>
           </div>
@@ -381,7 +418,7 @@
           </div>
         </div>
         <p>
-                    Seven PRAGMAs were added to control replication.
+                    Fourteen PRAGMAs were added to manage and control replication.
                     They are described in 
                     <a class="xref" href="sqlrep.html" title="Chapter 4. Using Replication with the SQL API">Using Replication with the SQL API</a>:
                 </p>
@@ -399,37 +436,72 @@
           <ul type="disc">
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication" title="PRAGMA replication">PRAGMA replication</a>
                         </p>
             </li>
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication_initial_master</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication_ack_policy" title="PRAGMA replication_ack_policy">PRAGMA replication_ack_policy</a>
                         </p>
             </li>
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication_local_site</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication_ack_timeout" title="PRAGMA replication_ack_timeout">PRAGMA replication_ack_timeout</a>
                         </p>
             </li>
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication_remote_site</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication_get_master" title="PRAGMA replication_get_master">PRAGMA replication_get_master</a>
                         </p>
             </li>
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication_remove_site</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication_initial_master" title="PRAGMA replication_initial_master">PRAGMA replication_initial_master</a>
                         </p>
             </li>
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication_verbose_output</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication_local_site" title="PRAGMA replication_local_site">PRAGMA replication_local_site</a>
                         </p>
             </li>
             <li>
               <p>
-                            <span class="bold"><strong>PRAGMA replication_verbose_file</strong></span>
+                            <a class="xref" href="reppragma.html#pragma_replication_num_sites" title="PRAGMA replication_num_sites">PRAGMA replication_num_sites</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_perm_failed" title="PRAGMA replication_perm_failed">PRAGMA replication_perm_failed</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_priority" title="PRAGMA replication_priority">PRAGMA replication_priority</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_remote_site" title="PRAGMA replication_remote_site">PRAGMA replication_remote_site</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_remove_site" title="PRAGMA replication_remove_site">PRAGMA replication_remove_site</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_site_status" title="PRAGMA replication_site_status">PRAGMA replication_site_status</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_verbose_output" title="PRAGMA replication_verbose_output">PRAGMA replication_verbose_output</a>
+                        </p>
+            </li>
+            <li>
+              <p>
+                            <a class="xref" href="reppragma.html#pragma_replication_verbose_file" title="PRAGMA replication_verbose_file">PRAGMA replication_verbose_file</a>
                         </p>
             </li>
           </ul>

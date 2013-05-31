@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -16,7 +16,7 @@ namespace BerkeleyDB {
     /// The abstract base class from which all cursor classes inherit.
     /// </para>
     /// <para>
-    /// Cursors may span threads, but only serially, that is, the application
+    /// Cursors may span threads, but only serially. The application
     /// must serialize access to the cursor handle.
     /// </para>
     /// </summary>
@@ -67,9 +67,9 @@ namespace BerkeleyDB {
         /// <summary>
         /// <para>
         /// Discard the cursor.
-	/// If you do not close the cursor before closing the database handle or 
-	///the transaction handle that owns this cursor,
-	///then, closing a database handle or a transaction handle closes these open cursors.
+        /// If you do not close the cursor before closing the database handle or 
+        /// the transaction handle that owns this cursor, then, closing either a
+        /// database or transaction handle closes this cursor.
         /// </para>
         /// <para>
         /// It is possible for the Close() method to throw a
@@ -92,7 +92,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the cursor if
-        /// it's still open.
+        /// it is still open.
         /// </summary>
         public void Dispose() {
             try {

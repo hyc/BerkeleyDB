@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -25,6 +25,7 @@ namespace BerkeleyDB {
         private EventNotifyDelegate notifyHandler;
         private MessageDispatchDelegate messageDispatchHandler;
         private ReplicationTransportDelegate transportHandler;
+        private ReplicationViewDelegate replicationViewHandler;
         private SetThreadIDDelegate threadIDHandler;
         private SetThreadNameDelegate threadNameHandler;
         private string _pfx;
@@ -37,6 +38,7 @@ namespace BerkeleyDB {
         private BDB_EventNotifyDelegate doNotifyRef;
         private BDB_IsAliveDelegate doIsAliveRef;
         private BDB_MessageDispatchDelegate doMessageDispatchRef;
+        private BDB_ReplicationViewDelegate doRepViewRef;
         private BDB_RepTransportDelegate doRepTransportRef;
         private BDB_ThreadIDDelegate doThreadIDRef;
         private BDB_ThreadNameDelegate doThreadNameRef;
@@ -113,6 +115,12 @@ namespace BerkeleyDB {
             dbenv.api2_internal.messageDispatchHandler(
                 dbchannel, ref requests, out nrequest, need_response);
         }
+        private static int doRepView(IntPtr envp,
+            string name, ref int result, uint flags) {
+            DB_ENV dbenv = new DB_ENV(envp, false);
+            return dbenv.api2_internal.replicationViewHandler(name,
+                ref result, flags);
+        }
         private static int doRepTransport(IntPtr envp,
             IntPtr controlp, IntPtr recp, IntPtr lsnp, int envid, uint flags) {
             DB_ENV dbenv = new DB_ENV(envp, false);
@@ -177,6 +185,10 @@ namespace BerkeleyDB {
             //Alpha by dbenv function call
             foreach (string dirname in cfg.DataDirs)
                 dbenv.add_data_dir(dirname);
+            if (cfg.BlobDir != null)
+                dbenv.set_blob_dir(cfg.BlobDir);
+            if (cfg.blobThresholdIsSet)
+                dbenv.set_blob_threshold(cfg.BlobThreshold, 0);
             if (cfg.CreationDir != null)
                 dbenv.set_create_dir(cfg.CreationDir);
             if (cfg.encryptionIsSet)
@@ -330,6 +342,14 @@ namespace BerkeleyDB {
                     RepNSites = cfg.RepSystemCfg.NSites;
                 for (int i = 0; i < cfg.RepSystemCfg.RepmgrSitesConfig.Count; i++)
                     RepMgrSiteConfig(cfg.RepSystemCfg.RepmgrSitesConfig[i]);
+                if (cfg.RepSystemCfg.repViewIsSet) {
+                    ReplicationView = cfg.RepSystemCfg.ReplicationView;
+                    if (ReplicationView == null)
+                        doRepViewRef = null;
+                    else
+                        doRepViewRef = new BDB_ReplicationViewDelegate(doRepView);
+                    dbenv.rep_set_view(doRepViewRef);
+                }
                 if (cfg.RepSystemCfg.priorityIsSet)
                     RepPriority = cfg.RepSystemCfg.Priority;
                 if (cfg.RepSystemCfg.RepMgrAckPolicy != null)
@@ -477,7 +497,44 @@ namespace BerkeleyDB {
         }
         
         /// <summary>
-        /// The size of the shared memory buffer pool -- that is, the cache.
+        /// The path of the directory where blobs are stored.
+        /// </summary>
+        public string BlobDir {
+            get {
+                string dir;
+                dbenv.get_blob_dir(out dir);
+                return dir;
+            }
+        }
+        /// <summary>
+        /// The size in bytes which is used to determine when a data item will
+        /// be stored as a blob.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// If the threshold value is 0, databases opened in the environment
+        /// will default to never using blobs.
+        /// </para>
+        /// <para>
+        /// It is illegal to enable blob if replication is enabled for the
+        /// environment.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get {
+                uint ret = 0;
+                dbenv.get_blob_threshold(ref ret);
+                return ret;
+            }
+            set {
+                dbenv.set_blob_threshold(value, 0);
+            }
+        }
+        
+        /// <summary>
+        /// The size of the shared memory buffer pool (the cache).
         /// </summary>
         /// <remarks>
         /// <para>
@@ -540,10 +597,10 @@ namespace BerkeleyDB {
         public List<string> DataDirs { get { return dbenv.get_data_dirs(); } }
 
         /// <summary>
-        /// The deadlock detector configuration, specifying what lock request(s)
+        /// The deadlock detector configuration, specifying which lock request(s)
         /// should be rejected. As transactions acquire locks on behalf of a
         /// single locker ID, rejecting a lock request associated with a
-        /// transaction normally requires the transaction be aborted.
+        /// transaction normally requires the transaction to be aborted.
         /// </summary>
         public DeadlockPolicy DeadlockResolution {
             get {
@@ -582,20 +639,20 @@ namespace BerkeleyDB {
         /// to completely describe the cause of the error, especially during
         /// initial application debugging.
         /// </para>
-		/// <para>
+        /// <para>
         /// In some cases, when an error occurs, Berkeley DB will call the given
         /// delegate with additional error information. It is up to the delegate
         /// to display the error message in an appropriate manner.
         /// </para>
-		/// <para>
+        /// <para>
         /// Setting ErrorFeedback to NULL unconfigures the callback interface.
         /// </para>
-		/// <para>
+        /// <para>
         /// This error-logging enhancement does not slow performance or
         /// significantly increase application size, and may be run during
         /// normal operation as well as during application debugging.
         /// </para>
-		/// </remarks>
+        /// </remarks>
         public ErrorFeedbackDelegate ErrorFeedback {
             get { return errFeedbackHandler; }
             set {
@@ -619,7 +676,7 @@ namespace BerkeleyDB {
         /// ErrorPrefix affects the entire environment and is equivalent to
         /// setting <see cref="DatabaseEnvironment.ErrorPrefix"/>.
         /// </para>
-		/// <para>
+        /// <para>
         /// Setting ErrorPrefix configures operations performed using the
         /// specified object, not all operations performed on the underlying
         /// database. 
@@ -949,6 +1006,20 @@ namespace BerkeleyDB {
             }
             set {
                 dbenv.set_timeout(value, DbConstants.DB_SET_LOCK_TIMEOUT);
+            }
+        }
+        /// <summary>
+        /// If true, enables full logging of blob data.
+        /// Required if using HA or the hotbackup utility.
+        /// </summary>
+        public bool LogBlobContent {
+            get {
+                int onoff = 0;
+                dbenv.log_get_config(DbConstants.DB_LOG_BLOB, ref onoff);
+                return (onoff != 0);
+            }
+            set {
+                dbenv.log_set_config(DbConstants.DB_LOG_BLOB, value ? 1 : 0);
             }
         }
         /// <summary>
@@ -1429,6 +1500,19 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
+        /// The function used to create a replication view that determines
+        /// whether a database file is replicated to the local site.
+        /// </summary>
+        /// <remarks>
+        /// If it is null, the replication view is a full view and all database
+        /// files are replicated to the local site. Otherwise it is a partial
+        /// view and only some database files are replicated to the local site.
+        /// </remarks>
+        public ReplicationViewDelegate ReplicationView {
+            get { return replicationViewHandler; }
+            private set { replicationViewHandler = value;}
+        }
+        /// <summary>
         /// If true, allocate region memory from the heap instead of from memory
         /// backed by the filesystem or system shared memory. 
         /// </summary>
@@ -1488,7 +1572,7 @@ namespace BerkeleyDB {
             dbenv.set_memory_max(GBytes, Bytes);
         }
         /// <summary>
-        /// If true, Berkeley DB will have checked to see if recovery needed to
+        /// If true, Berkeley DB will have checked to see if recovery was needed to
         /// be performed before opening the database environment.
         /// </summary>
         public bool Register { 
@@ -1767,8 +1851,7 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If true, Replication Manager automatically runs elections to
-        /// choose a new master when the old master appears to
-        /// have become disconnected (defaults to true).
+        /// choose a new master when the old master disconnects (defaults to true).
         /// </summary>
         public bool RepMgrRunElections {
             get { return getRepConfig(DbConstants.DB_REPMGR_CONF_ELECTIONS); }
@@ -1902,8 +1985,8 @@ namespace BerkeleyDB {
         /// not.
         /// </para>
         /// <para>
-        /// By default the minimum is 40000 and the maximum is 1280000 (1.28
-        /// seconds). These defaults are fairly arbitrary and the application
+        /// By default the minimum is 40000 and the maximum is 1280000 microseconds
+        /// (1.28 seconds). These defaults are fairly arbitrary and the application
         /// likely needs to adjust these. The values should be based on expected
         /// load and performance characteristics of the master and client host
         /// platforms and transport infrastructure as well as round-trip message
@@ -2229,8 +2312,8 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// This means that transactions exhibit the ACI (atomicity,
-        /// consistency, and isolation) properties, but not D (durability); that
-        /// is, database integrity will be maintained, but if the application or
+        /// consistency, and isolation) properties, but not D (durability);
+        /// database integrity will be maintained, but if the application or
         /// system fails, it is possible some number of the most recently
         /// committed transactions may be undone during recovery. The number of
         /// transactions at risk is governed by how many log updates can fit
@@ -2281,10 +2364,8 @@ namespace BerkeleyDB {
         /// <remarks>
         /// <para>
         /// All timeouts are checked whenever a thread of control blocks on a
-        /// lock or when deadlock detection is performed. As timeouts are only
-        /// checked when the lock request first blocks or when deadlock
-        /// detection is performed, the accuracy of the timeout depends on how
-        /// often deadlock detection is performed.
+        /// lock or when deadlock detection is performed. The accuracy of the
+        /// timeout depends on how often deadlock detection is performed.
         /// </para>
         /// <para>
         /// Timeout values specified for the database environment may be
@@ -2327,10 +2408,10 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// This means that transactions exhibit the ACI (atomicity,
-        /// consistency, and isolation) properties, but not D (durability); that
-        /// is, database integrity will be maintained, but if the system fails, 
-        /// it is possible some number of the most recently committed
-        /// transactions may be undone during recovery. The number of
+        /// consistency, and isolation) properties, but not D (durability); database
+        /// integrity will be maintained, but if the application or
+        /// system fails, it is possible that some number of the most recently
+        /// committed transactions may be undone during recovery. The number of
         /// transactions at risk is governed by how often the system flushes
         /// dirty buffers to disk and how often the log is checkpointed.
         /// </remarks>
@@ -3144,9 +3225,9 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// The database files that need to be archived in order to recover the
-        /// database from catastrophic failure. If any of the database files
-        /// have not been accessed during the lifetime of the current log files,
-        /// they will not included in this list. It is also possible that some
+        /// database from catastrophic failure. Database files that have not been
+        /// accessed during the lifetime of the current log files
+        ///  will not be included in this list. It is also possible that some
         /// of the files referred to by the log have since been deleted from the
         /// system. 
         /// </summary>
@@ -3827,8 +3908,8 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
-        /// Allow database files to be copied, and then the copy used in the
-        /// same database environment as the original.
+        /// Allow database files to be copied and used in the same database
+        /// environment as the original.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -3847,7 +3928,7 @@ namespace BerkeleyDB {
         /// The name of the physical file in which new file IDs are to be created.
         /// </param>
         /// <param name="encrypted">
-        /// If true, he file contains encrypted databases.
+        /// If true, the file contains encrypted databases.
         /// </param>
         public void ResetFileID(string file, bool encrypted) {
             dbenv.fileid_reset(file, encrypted ? DbConstants.DB_ENCRYPT : 0);
@@ -4143,8 +4224,8 @@ namespace BerkeleyDB {
         /// by <see cref="LockStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4157,8 +4238,8 @@ namespace BerkeleyDB {
         /// by <see cref="LockStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4199,8 +4280,8 @@ namespace BerkeleyDB {
         /// by <see cref="LogStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4224,8 +4305,8 @@ namespace BerkeleyDB {
         /// statistical information, as described by <see cref="MPoolStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4267,8 +4348,8 @@ namespace BerkeleyDB {
         /// by <see cref="MutexStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4292,8 +4373,8 @@ namespace BerkeleyDB {
         /// described by <see cref="RepMgrStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4317,8 +4398,8 @@ namespace BerkeleyDB {
         /// described by <see cref="ReplicationStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4343,8 +4424,8 @@ namespace BerkeleyDB {
         /// by <see cref="LockStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4363,8 +4444,8 @@ namespace BerkeleyDB {
         /// by <see cref="LockStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>
@@ -4395,8 +4476,8 @@ namespace BerkeleyDB {
         /// described by <see cref="TransactionStats"/>.
         /// </summary>
         /// <param name="PrintAll">
-		/// If true, display all available information.
-		/// </param>
+        /// If true, display all available information.
+        /// </param>
         /// <param name="ClearStats">
         /// If true, reset statistics after displaying their values.
         /// </param>

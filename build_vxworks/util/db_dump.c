@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,7 +14,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 int	 db_dump_db_init __P((DB_ENV *, char *, int, u_int32_t, int *));
@@ -54,7 +54,7 @@ db_dump_main(argc, argv)
 	int ch;
 	int exitval, keyflag, lflag, mflag, nflag, pflag, sflag, private;
 	int ret, Rflag, rflag, resize;
-	char *data_len, *dbname, *dopt, *filename, *home, *passwd;
+	char *blob_dir, *data_len, *dbname, *dopt, *filename, *home, *passwd;
 
 	if ((progname = __db_rpath(argv[0])) == NULL)
 		progname = argv[0];
@@ -71,10 +71,19 @@ db_dump_main(argc, argv)
 	keyflag = 0;
 	cache = MEGABYTE;
 	private = 0;
-	data_len = dbname = dopt = filename = home = passwd = NULL;
+	blob_dir = data_len = dbname = dopt = filename = home = passwd = NULL;
 	__db_getopt_reset = 1;
-	while ((ch = getopt(argc, argv, "d:D:f:F:h:klL:m:NpP:rRs:V")) != EOF)
+	while ((ch = getopt(argc, argv, "b:d:D:f:F:h:klL:m:NpP:rRs:V")) != EOF)
 		switch (ch) {
+		case 'b':
+			if (blob_dir!= NULL) {
+				fprintf(stderr, DB_STR("5144",
+			"Blob directory may not be specified twice"));
+				goto err;
+			}
+			blob_dir = strdup(optarg);
+			memset(optarg, 0, strlen(optarg));
+			break;
 		case 'd':
 			dopt = optarg;
 			break;
@@ -86,7 +95,7 @@ db_dump_main(argc, argv)
 				fprintf(stderr, DB_STR_A("5108",
 				    "%s: %s: reopen: %s\n", "%s %s %s\n"),
 				    progname, optarg, strerror(errno));
-				return (EXIT_FAILURE);
+				goto err;
 			}
 			break;
 		case 'F':
@@ -115,8 +124,7 @@ db_dump_main(argc, argv)
 			if (passwd != NULL) {
 				fprintf(stderr, DB_STR("5130",
 					"Password may not be specified twice"));
-				free(passwd);
-				return (EXIT_FAILURE);
+				goto err;
 			}
 			passwd = strdup(optarg);
 			memset(optarg, 0, strlen(optarg));
@@ -124,7 +132,7 @@ db_dump_main(argc, argv)
 				fprintf(stderr, DB_STR_A("5109",
 				    "%s: strdup: %s\n", "%s %s\n"),
 				    progname, strerror(errno));
-				return (EXIT_FAILURE);
+				goto err;
 			}
 			break;
 		case 'p':
@@ -143,10 +151,11 @@ db_dump_main(argc, argv)
 			break;
 		case 'V':
 			printf("%s\n", db_version(NULL, NULL, NULL));
-			return (EXIT_SUCCESS);
+			goto done;
 		case '?':
 		default:
-			return (db_dump_usage());
+			(void)db_dump_usage();
+			goto err;
 		}
 	argc -= optind;
 	argv += optind;
@@ -159,40 +168,42 @@ db_dump_main(argc, argv)
 		filename = NULL;
 	else if (argc == 1 && !mflag)
 		filename = argv[0];
-	else
-		return (db_dump_usage());
+	else {
+		(void)db_dump_usage();
+		goto err;
+	}
 
 	if (dopt != NULL && pflag) {
 		fprintf(stderr, DB_STR_A("5110",
 		    "%s: the -d and -p options may not both be specified\n",
 		    "%s\n"), progname);
-		return (EXIT_FAILURE);
+		goto err;
 	}
 	if (lflag && sflag) {
 		fprintf(stderr, DB_STR_A("5111",
 		    "%s: the -l and -s options may not both be specified\n",
 		    "%s\n"), progname);
-		return (EXIT_FAILURE);
+		goto err;
 	}
 	if ((lflag || sflag) && mflag) {
 		fprintf(stderr, DB_STR_A("5112",
 		    "%s: the -m option may not be specified with -l or -s\n",
 		    "%s\n"), progname);
-		return (EXIT_FAILURE);
+		goto err;
 	}
 
 	if (keyflag && rflag) {
 		fprintf(stderr, DB_STR_A("5113",
 	    "%s: the -k and -r or -R options may not both be specified\n",
 		    "%s\n"), progname);
-		return (EXIT_FAILURE);
+		goto err;
 	}
 
 	if (sflag && rflag) {
 		fprintf(stderr, DB_STR_A("5114",
 	    "%s: the -r or R options may not be specified with -s\n",
 		    "%s\n"), progname);
-		return (EXIT_FAILURE);
+		goto err;
 	}
 
 	/* Handle possible interruptions. */
@@ -227,6 +238,14 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 	    passwd, DB_ENCRYPT_AES)) != 0) {
 		dbenv->err(dbenv, ret, "set_passwd");
 		goto err;
+	}
+
+	/* Set the directory in which blob files are stored. */
+	if (blob_dir != NULL) {
+		if ((ret = dbenv->set_blob_dir(dbenv, blob_dir)) != 0) {
+			dbenv->err(dbenv, ret, "set_blob_dir");
+			goto err;
+		}
 	}
 
 	/* Initialize the environment. */
@@ -325,6 +344,9 @@ done:	if (dbp != NULL && (ret = dbp->close(dbp, 0)) != 0) {
 	if (passwd != NULL)
 		free(passwd);
 
+	if (blob_dir != NULL)
+		free(blob_dir);
+
 	/* Resend any caught signal. */
 	__db_util_sigresend();
 
@@ -367,7 +389,7 @@ db_dump_db_init(dbenv, home, is_salvage, cache, is_privatep)
 	if ((ret = dbenv->open(dbenv, home,
 	    DB_USE_ENVIRON | (is_salvage ? DB_INIT_MPOOL : 0), 0)) == 0)
 		return (0);
-	if (ret == DB_VERSION_MISMATCH)
+	if (ret == DB_VERSION_MISMATCH || ret == DB_REP_LOCKOUT)
 		goto err;
 
 	/*
@@ -498,7 +520,7 @@ db_dump_show_subs(dbp)
 	while ((ret = dbcp->get(dbcp, &key, &data,
 	    DB_IGNORE_LEASE | DB_NEXT)) == 0) {
 		if ((ret = dbp->dbenv->prdbt(
-		    &key, 1, NULL, stdout, __db_pr_callback, 0, 0)) != 0) {
+		    &key, 1, NULL, stdout, __db_pr_callback, 0, 0, 0)) != 0) {
 			dbp->errx(dbp, NULL);
 			return (1);
 		}
@@ -522,9 +544,9 @@ db_dump_show_subs(dbp)
 int
 db_dump_usage()
 {
-	(void)fprintf(stderr, "usage: %s [-klNprRV]\n\t%s\n",
+	(void)fprintf(stderr, "usage: %s [-bklNprRV]\n\t%s\n",
 	    progname,
-    "[-d ahr] [-f output] [-h home] [-P password] [-s database] db_file");
+"[-b blob_dir] [-d ahr] [-f output] [-h home] [-P password] [-s database] db_file");
 	(void)fprintf(stderr, "usage: %s [-kNpV] %s\n",
 	    progname, "[-d ahr] [-f output] [-h home] -m database");
 	return (EXIT_FAILURE);

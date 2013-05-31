@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -15,7 +15,7 @@ namespace BerkeleyDB {
     /// </summary>
     public class CursorConfig {
         /// <summary>
-        /// The isolation degree the cursor should use.
+        /// The isolation degree that the cursor should use.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -24,7 +24,7 @@ namespace BerkeleyDB {
         /// cursor to be modified or deleted prior to the commit of the
         /// transaction for this cursor. 
         /// </para>
-		/// <para>
+        /// <para>
         /// <see cref="Isolation.DEGREE_ONE"/> allows read operations performed
         /// by the cursor to return modified but not yet committed data.
         /// Silently ignored if the <see cref="DatabaseConfig.ReadUncommitted"/>
@@ -45,11 +45,11 @@ namespace BerkeleyDB {
         /// set, data values will be read as they are when the cursor is opened,
         /// without taking read locks.
         /// </para>
-		/// <para>
+        /// <para>
         /// This setting implicitly begins a transaction that is committed when
         /// the cursor is closed.
         /// </para>
-		/// <para>
+        /// <para>
         /// This setting is silently ignored if
         /// <see cref="DatabaseConfig.UseMVCC"/> is not set on the underlying
         /// database or if a transaction is supplied to

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -44,6 +44,7 @@
 #include "db_config.h"
 
 #include "db_int.h"
+#include "dbinc/blob.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_swap.h"
@@ -119,6 +120,7 @@ __bam_metachk(dbp, name, btm)
 	int ret;
 
 	env = dbp->env;
+	ret = 0;
 
 	/*
 	 * At this point, all we know is that the magic number is for a Btree.
@@ -268,6 +270,16 @@ __bam_metachk(dbp, name, btm)
 
 	/* Set the page size. */
 	dbp->pgsize = btm->dbmeta.pagesize;
+
+	dbp->blob_threshold = btm->blob_threshold;
+	GET_LO_HI(env,
+	    btm->blob_file_lo, btm->blob_file_hi, dbp->blob_file_id, ret);
+	if (ret != 0)
+		return (ret);
+	GET_LO_HI(env,
+	    btm->blob_sdb_lo, btm->blob_sdb_hi, dbp->blob_sdb_id, ret);
+	if (ret != 0)
+		return (ret);
 
 	/* Copy the file's ID. */
 	memcpy(dbp->fileid, btm->dbmeta.uid, DB_FILE_ID_LEN);
@@ -442,6 +454,9 @@ __bam_init_meta(dbp, meta, pgno, lsnp)
 	meta->minkey = t->bt_minkey;
 	meta->re_len = t->re_len;
 	meta->re_pad = (u_int32_t)t->re_pad;
+	meta->blob_threshold = dbp->blob_threshold;
+	SET_LO_HI(meta, dbp->blob_file_id, BTMETA, blob_file_lo, blob_file_hi);
+	SET_LO_HI(meta, dbp->blob_sdb_id, BTMETA, blob_sdb_lo, blob_sdb_hi);
 
 #ifdef HAVE_PARTITION
 	if ((part = dbp->p_internal) != NULL) {
@@ -535,6 +550,12 @@ __bam_new_file(dbp, ip, txn, fhp, name)
 		pginfo.type = dbp->type;
 		pdbt.data = &pginfo;
 		pdbt.size = sizeof(pginfo);
+		if (dbp->blob_threshold) {
+			if ((ret = __blob_generate_dir_ids(dbp, txn,
+			    &dbp->blob_file_id)) != 0)
+				return (ret);
+
+		}
 		if ((ret = __os_calloc(env, 1, dbp->pgsize, &buf)) != 0)
 			return (ret);
 		meta = (BTMETA *)buf;
@@ -612,6 +633,12 @@ __bam_new_subdb(mdbp, dbp, ip, txn)
 	dbc = NULL;
 	meta = NULL;
 	root = NULL;
+
+	if (dbp->blob_threshold) {
+		if ((ret = __blob_generate_dir_ids(dbp, txn,
+		    &dbp->blob_sdb_id)) != 0)
+			return (ret);
+	}
 
 	if ((ret = __db_cursor(mdbp, ip, txn,
 	    &dbc, CDB_LOCKING(env) ?  DB_WRITECURSOR : 0)) != 0)

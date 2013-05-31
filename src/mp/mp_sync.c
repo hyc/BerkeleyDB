@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -837,6 +837,7 @@ __memp_mf_sync(dbmp, mfp, locked)
 	MPOOLFILE *mfp;
 	int locked;
 {
+	APPNAME appname;
 	DB_FH *fhp;
 	DB_MPOOL_HASH *hp;
 	ENV *env;
@@ -846,6 +847,7 @@ __memp_mf_sync(dbmp, mfp, locked)
 
 	COMPQUIET(hp, NULL);
 	env = dbmp->env;
+	appname = DB_APP_DATA;
 
 	/*
 	 * We need to be holding the hash lock: we're using the path name
@@ -859,13 +861,20 @@ __memp_mf_sync(dbmp, mfp, locked)
 		MUTEX_LOCK(env, hp->mtx_hash);
 	}
 
-	if ((ret = __db_appname(env, DB_APP_DATA,
+mpsync:	if ((ret = __db_appname(env, appname,
 	    R_ADDR(dbmp->reginfo, mfp->path_off), NULL, &rpath)) == 0) {
 		if ((ret = __os_open(env, rpath, 0, 0, 0, &fhp)) == 0) {
 			ret = __os_fsync(env, fhp);
 			if ((t_ret =
 			    __os_closehandle(env, fhp)) != 0 && ret == 0)
 				ret = t_ret;
+		} else {
+			/* We may be syncing the blob meta db. */
+			if (appname != DB_APP_BLOB) {
+				__os_free(env, rpath);
+				appname = DB_APP_BLOB;
+				goto mpsync;
+			}
 		}
 		__os_free(env, rpath);
 	}

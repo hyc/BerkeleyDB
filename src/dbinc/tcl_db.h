@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -16,7 +16,7 @@ extern "C" {
 #define	MSG_SIZE 100		/* Message size */
 
 enum INFOTYPE {
-	I_AUX, I_DB, I_DBC, I_ENV, I_LOCK, I_LOGC, I_MP, I_NDBM, I_PG, I_SEQ, I_TXN};
+	I_AUX, I_DB, I_DBC, I_DBSTREAM, I_ENV, I_LOCK, I_LOGC, I_MP, I_NDBM, I_PG, I_SEQ, I_TXN};
 
 #define	MAX_ID		8	/* Maximum number of sub-id's we need */
 #define	DBTCL_PREP	64	/* Size of txn_recover preplist */
@@ -25,8 +25,9 @@ enum INFOTYPE {
 #define	DBTCL_NDBM	2
 
 #define	DBTCL_GETCLOCK		0
-#define	DBTCL_GETLIMIT		1
-#define	DBTCL_GETREQ		2
+#define	DBTCL_GETINQUEUE	1
+#define	DBTCL_GETLIMIT		2
+#define	DBTCL_GETREQ		3
 
 #define	DBTCL_MUT_ALIGN	0
 #define	DBTCL_MUT_INCR	1
@@ -47,16 +48,16 @@ enum INFOTYPE {
  * with the "env event_info" results.
  */
 typedef struct dbtcl_event_info {
-	u_int32_t	events;	/* Bit flag on for each event fired. */
-	int		panic_error;
-	int		newmaster_eid;
-	int		added_eid;
-	int		removed_eid;
-	pid_t		attached_process;
-	int		connected_eid;
+	u_int32_t	  events;	/* Bit flag on for each event fired. */
+	int		  panic_error;
+	int		  newmaster_eid;
+	int		  added_eid;
+	int		  removed_eid;
+	pid_t		  attached_process;
+	int		  connected_eid;
 	DB_REPMGR_CONN_ERR conn_broken_info;
 	DB_REPMGR_CONN_ERR conn_failed_try_info;
-	DB_LSN		sync_point;
+	DB_LSN		  sync_point;
 } DBTCL_EVENT_INFO;
 
 /*
@@ -99,6 +100,7 @@ typedef struct dbtcl_info {
 		DB_LOCK *lock;
 		DB_LOGC *logc;
 		DB_MPOOLFILE *mp;
+		DB_STREAM *dbsp;
 		DB_TXN *txnp;
 		void *anyp;
 	} un;
@@ -128,6 +130,7 @@ typedef struct dbtcl_info {
 	Tcl_Obj *i_isalive;
 	Tcl_Obj *i_part_callback;
 	Tcl_Obj *i_rep_send;
+	Tcl_Obj *i_rep_view;
 	Tcl_Obj *i_second_call;
 
 	/* Environment ID for the i_rep_send callback. */
@@ -144,6 +147,7 @@ typedef struct dbtcl_info {
 #define	i_anyp un.anyp
 #define	i_dbp un.dbp
 #define	i_dbcp un.dbcp
+#define	i_dbsp un.dbsp
 #define	i_envp un.envp
 #define	i_lock un.lock
 #define	i_logc un.logc
@@ -169,6 +173,8 @@ typedef struct dbtcl_info {
 #define	i_mppgid  i_otherid[0]
 
 #define	i_dbdbcid i_otherid[0]
+
+#define	i_dbcdbsid i_otherid[0]
 
 extern int __debug_on, __debug_print, __debug_stop, __debug_test;
 
@@ -202,6 +208,7 @@ extern DBTCL_GLOBAL __dbtcl_global;
  * functions this will typically go before the "free" function to free the
  * stat structure returned by DB.
  */
+#ifdef HAVE_STATISTICS
 #define	MAKE_STAT_LIST(s, v) do {					\
 	result = _SetListElemInt(interp, res, (s), (long)(v));		\
 	if (result != TCL_OK)						\
@@ -213,6 +220,11 @@ extern DBTCL_GLOBAL __dbtcl_global;
 	if (result != TCL_OK)						\
 		goto error;						\
 } while (0)
+#else
+/* These do-nothing versions streamline the code & reduce warning messages. */
+#define	MAKE_STAT_LIST(s, v)	if (0) goto error
+#define	MAKE_WSTAT_LIST(s, v)	if (0) goto error
+#endif
 
 /*
  * MAKE_STAT_LSN appends a {name {LSNfile LSNoffset}} pair to a result list
@@ -257,13 +269,14 @@ extern DBTCL_GLOBAL __dbtcl_global;
  * This macro also assumes a label "error" to go to in the event of a Tcl
  * error.
  */
-#define	MAKE_SITE_LIST(e, h, p, s, pr) do {				\
-	myobjc = 5;							\
+#define	MAKE_SITE_LIST(e, h, p, s, pr, vw) do {				\
+	myobjc = 6;							\
 	myobjv[0] = Tcl_NewIntObj(e);					\
 	myobjv[1] = Tcl_NewStringObj((h), (int)strlen(h));		\
 	myobjv[2] = Tcl_NewIntObj((int)p);				\
 	myobjv[3] = Tcl_NewStringObj((s), (int)strlen(s));		\
 	myobjv[4] = Tcl_NewStringObj((pr), (int)strlen(pr));		\
+	myobjv[5] = Tcl_NewStringObj((vw), (int)strlen(vw));		\
 	thislist = Tcl_NewListObj(myobjc, myobjv);			\
 	result = Tcl_ListObjAppendElement(interp, res, thislist);	\
 	if (result != TCL_OK)						\

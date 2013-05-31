@@ -2,6 +2,9 @@
 #	$Id$
 #
 # Build the automatically generated logging/recovery files.
+#
+# When adding a new log record, the log record needs a unique id. Currently
+# there is a large gap of unused ids from 87-137.
 
 header=/tmp/__db_a
 loglist=/tmp/__db_b

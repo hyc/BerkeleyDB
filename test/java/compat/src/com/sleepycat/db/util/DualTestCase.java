@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,27 +11,22 @@ package com.sleepycat.db.util;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-import junit.framework.TestCase;
+import com.sleepycat.util.test.TestBase;
 
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 
-public class DualTestCase extends TestCase {
+public class DualTestCase extends TestBase {
 
-    private Environment env;
     private boolean setUpInvoked = false;
 
     public DualTestCase() {
         super();
     }
 
-    protected DualTestCase(String name) {
-        super(name);
-    }
-
     @Override
-    protected void setUp()
+    public void setUp()
         throws Exception {
 
         setUpInvoked = true;
@@ -39,20 +34,20 @@ public class DualTestCase extends TestCase {
     }
 
     @Override
-    protected void tearDown()
+    public void tearDown()
         throws Exception {
 
         if (!setUpInvoked) {
             throw new IllegalStateException
                 ("tearDown was invoked without a corresponding setUp() call");
         }
-        destroy();
         super.tearDown();
     }
 
     protected Environment create(File envHome, EnvironmentConfig envConfig)
         throws DatabaseException {
 
+	Environment env = null;
         try {
             env = new Environment(envHome, envConfig);
         } catch (FileNotFoundException e) {
@@ -61,25 +56,10 @@ public class DualTestCase extends TestCase {
         return env;
     }
 
-    protected void close(Environment environment)
+    protected void close(Environment env)
         throws DatabaseException {
 
         env.close();
-        env = null;
-    }
-
-    protected void destroy()
-        throws Exception {
-
-        if (env != null) {
-            try {
-                /* Close in case we hit an exception and didn't close */
-                env.close();
-            } catch (RuntimeException e) {
-                /* OK if already closed */
-            }
-            env = null;
-        }
     }
 
     public static boolean isReplicatedTest(Class<?> testCaseClass) {

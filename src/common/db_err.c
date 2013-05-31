@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -804,6 +804,13 @@ __db_check_txn(dbp, txn, assoc_locker, read_op)
 	 */
 	if (IS_RECOVERING(env) || F_ISSET(dbp, DB_AM_RECOVER))
 		return (0);
+
+	if (txn != NULL && dbp->blob_threshold &&
+	    F_ISSET(txn, (TXN_READ_UNCOMMITTED | TXN_SNAPSHOT))) {
+	    __db_errx(env, DB_STR("0237",
+"Blob enabled databases do not support DB_READ_UNCOMMITTED and TXN_SNAPSHOT"));
+		return (EINVAL);
+	}
 
 	/*
 	 * Check for common transaction errors:

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -89,8 +89,9 @@ __memp_fopen_pp(dbmfp, path, flags, mode, pagesize)
  * Generate the number of user opens.  If there is no backing file
  * there is an extra open count to keep the in memory db around.
  */
-#define MFP_OPEN_CNT(mfp)	((mfp)->mpf_cnt - ((mfp)->neutral_cnt +	\
+#define	MFP_OPEN_CNT(mfp)	((mfp)->mpf_cnt - ((mfp)->neutral_cnt +	\
 				   (u_int32_t)(mfp)->no_backing_file))
+#define	MP_IOINFO_RETRIES	5
 /*
  * __memp_fopen --
  *	DB_MPOOLFILE->open.
@@ -118,7 +119,7 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 	size_t maxmap;
 	db_pgno_t last_pgno;
 	u_int32_t bucket, mbytes, bytes, oflags, pagesize;
-	int refinc, ret, isdir;
+	int isdir, refinc, ret, tries;
 	char *rpath;
 
 	/* If this handle is already open, return. */
@@ -249,7 +250,7 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 				if (MFP_OPEN_CNT(mfp) > 0 &&
 				     atomic_read(&mfp->multiversion) == 0) {
 mvcc_err:				__db_errx(env, DB_STR("3041",
-"DB_MULTIVERSION cannot be specified on a database file which is already open"));
+"DB_MULTIVERSION cannot be specified on a database file that is already open"));
 					ret = EINVAL;
 					goto err;
 				}
@@ -399,11 +400,44 @@ mvcc_err:				__db_errx(env, DB_STR("3041",
 			if (LF_ISSET(DB_ODDFILESIZE))
 				bytes -= (u_int32_t)(bytes % pagesize);
 			else {
-				__db_errx(env, DB_STR_A("3037",
-		    "%s: file size not a multiple of the pagesize", "%s"),
-				    rpath);
-				ret = EINVAL;
-				goto err;
+				/*
+				 * If the file size is not a multiple of the
+				 * pagesize, it is likely because the ioinfo
+				 * call is racing with a write that is extending
+				 * the file.  Many file systems will extend
+				 * in fs block size units, and if the pagesize
+				 * is larger than that, we can briefly see a
+				 * file size that is not a multiple of pagesize.
+				 *
+				 * Yield the processor to allow that to finish
+				 * and try again a few times.
+				 */
+				tries = 0;
+				STAT((mp->stat.st_oddfsize_detect++));
+				while (tries < MP_IOINFO_RETRIES) {
+					if ((ret = __os_ioinfo(env, rpath,
+					    dbmfp->fhp, &mbytes, &bytes,
+					    NULL)) != 0) {
+						__db_err(env, ret, "%s", rpath);
+						goto err;
+					}
+					if (bytes % pagesize != 0) {
+						__os_yield(env, 0, 50000);
+						tries++;
+					} else {
+					    STAT((
+					    mp->stat.st_oddfsize_resolve++));
+					    break;
+					}
+				}
+				if (tries == MP_IOINFO_RETRIES) {
+					__db_errx(env, DB_STR_A("3043",
+    "%s: file size (%lu %lu) not a multiple of the pagesize %lu",
+    "%s %lu %lu %lu"),
+    rpath, (u_long)mbytes, (u_long)bytes, (u_long)pagesize);
+					ret = EINVAL;
+					goto err;
+				}
 			}
 		}
 
@@ -786,13 +820,7 @@ __memp_mpf_alloc(dbmp, dbmfp, path, pagesize, flags, retmfp)
 	mfp->lsn_off = dbmfp->lsn_offset;
 	mfp->clear_len = dbmfp->clear_len;
 	mfp->priority = dbmfp->priority;
-	if (dbmfp->gbytes != 0 || dbmfp->bytes != 0) {
-		mfp->maxpgno = (db_pgno_t)
-		    (dbmfp->gbytes * (GIGABYTE / mfp->pagesize));
-		mfp->maxpgno += (db_pgno_t)
-		    ((dbmfp->bytes + mfp->pagesize - 1) /
-		    mfp->pagesize);
-	}
+	__memp_set_maxpgno(mfp, dbmfp->gbytes, dbmfp->bytes);
 	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE))
 		mfp->no_backing_file = 1;
 	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_UNLINK))

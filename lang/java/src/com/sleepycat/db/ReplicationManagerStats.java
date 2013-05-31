@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -59,20 +59,58 @@ public class ReplicationManagerStats {
         return st_connect_fail;
     }
 
-    private long st_elect_threads;
+    private int st_elect_threads;
     /** 
-	Number of currently active election threads.
+    Number of currently active election threads.
     */
-    public long getElectThreads() {
+    public int getElectThreads() {
         return st_elect_threads;
     }
 
-    private long st_max_elect_threads;
+    private int st_max_elect_threads;
     /** 
-	Election threads for which space is reserved.
+    Election threads for which space is reserved.
     */
-    public long getMaxElectThreads() {
+    public int getMaxElectThreads() {
         return st_max_elect_threads;
+    }
+
+    private int st_site_participants;
+    /**
+    Number of replication group participant sites.
+    */
+    public int getSiteParticipants() {
+        return st_site_participants;
+    }
+
+    private int st_site_total;
+    /**
+    Total number of replication group sites.
+    */
+    public int getSiteTotal() {
+        return st_site_total;
+    }
+
+    private int st_site_views;
+    /**
+    Number of replication group view sites.
+    */
+    public int getSiteViews() {
+        return st_site_views;
+    }
+
+    private long st_takeovers;
+    /**
+    The number of automatic replication process takeovers.
+    */
+    public long getTakeovers() {
+        return st_takeovers;
+    }
+
+    private int st_incoming_queue_size;
+    /** TODO */
+    /* package */ int getIncomingQueueSize() {
+        return st_incoming_queue_size;
     }
 
     /**
@@ -88,6 +126,10 @@ public class ReplicationManagerStats {
             + "\n  st_connect_fail=" + st_connect_fail
             + "\n  st_elect_threads=" + st_elect_threads
             + "\n  st_max_elect_threads=" + st_max_elect_threads
+            + "\n  st_site_participants=" + st_site_participants
+            + "\n  st_site_total=" + st_site_total
+            + "\n  st_site_views=" + st_site_views
+            + "\n  st_takeovers=" + st_takeovers
             ;
     }
 }

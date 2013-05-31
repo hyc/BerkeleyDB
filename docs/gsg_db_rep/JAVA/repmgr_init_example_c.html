@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
     <link rel="prev" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
-    <link rel="next" href="fwrkpermmessage.html" title="Permanent Message Handling" />
+    <link rel="next" href="fwrkpermmessage.html" title="Replication Manager Permanent Message Handling" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -132,12 +132,12 @@ public class RepConfig
     // String specifying the home directory for rep files.
     public String home;
     // Stores an optional set of "other" hosts.
-    <strong class="userinput"><code>public Vector&lt;ReplicationHostAddress&gt; otherHosts;
+    <strong class="userinput"><code>private Vector otherHosts;
     // Priority within the replication group.
     public int priority; 
     public ReplicationManagerStartPolicy startPolicy;
     // The host address to listen to.
-    public ReplicationHostAddress thisHost; 
+    private ReplicationManagerSiteConfig thisHost; 
 
     // member variables used internally.
     private int currOtherHost;
@@ -230,7 +230,7 @@ public class RepConfig
       <p>
         Having completed our update to the
          
-        <code class="classname">RepConfig</code> 
+        <code class="classname">SimpleConfig</code> 
         class, we can now start making
         changes to the main portion of our program. We begin by changing
         the program's name. <span>(This, of course, means that we copy our 
@@ -263,7 +263,7 @@ import db.repquote.RepConfig;
 public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
 {
     private RepConfig repConfig;
-    private Environment dbenv; </pre>
+    private RepQuoteEnvironment dbenv; </pre>
       <p>
         Next we update our usage function. The application will continue to
         accept the <code class="literal">-h</code> parameter so that we can identify
@@ -312,7 +312,7 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
     public static void usage()
     {
         System.err.println("usage: " + repConfig.progname);
-        System.err.println("-h home<strong class="userinput"><code>[-r host:port][-l|-L host:port]" +
+        System.err.println("-h home<strong class="userinput"><code> -l|-L host:port" +
             "[-r host:port][-p priority]</code></strong>");
 
         System.err.println("\t -h home directory (required)\n" +
@@ -337,7 +337,7 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
         throws Exception
     {
         RepConfig config = new RepConfig();
-        <strong class="userinput"><code>String tmpHost;
+        <strong class="userinput"><code>boolean isCreator = false;
         int tmpPort = 0;</code></strong> </pre>
       <p>
         Now we collect our command line arguments. As we do so, we will
@@ -497,7 +497,8 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
         envConfig.setInitializeCache(true);
         envConfig.setTransactional(true);
         try {
-            dbenv = new Environment(appConfig.getHome(), envConfig);
+            dbenv = new RepQuoteEnvironment
+                (repConfig.getHome(), envConfig);
         } catch(FileNotFoundException e) {
             System.err.println("FileNotFound exception: " + e.toString());
             System.err.println(
@@ -541,7 +542,7 @@ public class <strong class="userinput"><code>RepQuoteExampleGSG</code></strong>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Permanent Message Handling</td>
+          <td width="40%" align="right" valign="top"> Replication Manager Permanent Message Handling</td>
         </tr>
       </table>
     </div>

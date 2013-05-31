@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1191,7 +1191,7 @@ public:
 		}
 		bool operator()(const kdt& k1, const kdt& k2) const
 		{
-			return compare_keys(pdb, k1, k2);
+			return compare_keys(pdb, k1, k2, NULL);
 		}
 
 	}; // key_compare class definition
@@ -1273,7 +1273,7 @@ public:
 				return memcmp(&kk1, &kk2, sizeof(kdt)) == 0;
 			Dbt kd1(&k1, sizeof(k1)), kd2(&k2, sizeof(k2));
 			
-			return comp(pdb, &kd1, &kd2) == 0;
+			return comp(pdb, &kd1, &kd2, NULL) == 0;
 
 
 		}
@@ -2428,12 +2428,13 @@ protected:
 
 	typedef ddt mapped_type;
 	typedef int (*db_compare_fcn_t)(Db *db, const Dbt *dbt1, 
-	    const Dbt *dbt2);
+	    const Dbt *dbt2, size_t *locp);
 	typedef u_int32_t (*h_hash_fcn_t)
 	(Db *, const void *bytes, u_int32_t length);
 	typedef db_set_iterator<kdt> db_multiset_iterator_t;
 
-	static bool compare_keys(Db *pdb, const kdt& k1, const kdt& k2) 
+	static bool compare_keys(Db *pdb,
+	    const kdt& k1, const kdt& k2, size_t *locp) 
 	{
 		DBTYPE dbtype;
 		int ret;
@@ -2461,7 +2462,7 @@ protected:
 			return (ret == 0) ? (sz1 < sz2) : (ret < 0);
 		}
 		// Return strict weak ordering.
-		bret = (comp(pdb, &kdbt1, &kdbt2) < 0);
+		bret = (comp(pdb, &kdbt1, &kdbt2, NULL) < 0);
 		return bret;
 	}
 	
@@ -3325,7 +3326,7 @@ protected:
 	typedef ddt mapped_type;
 	typedef value_type_sub tkpair;
 	typedef int (*bt_compare_fcn_t)(Db *db, const Dbt *dbt1, 
-	    const Dbt *dbt2);
+	    const Dbt *dbt2, size_t *locp);
 
 	friend class db_map_iterator<kdt, _DB_STL_set_value<kdt>, 
 	    value_type_sub>;

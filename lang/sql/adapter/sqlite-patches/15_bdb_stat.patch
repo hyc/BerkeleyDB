@@ -8,10 +8,10 @@
 -         expr.lo fault.lo fkey.lo \
 +         callback.lo complete.lo ctime.lo date.lo db_pragma.lo db_shell.lo \
 +         delete.lo expr.lo fault.lo fkey.lo \
-          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
-          fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo fts3_write.lo \
-          func.lo global.lo hash.lo \
-@@ -208,6 +208,7 @@ SRC = \
+          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+          fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
+@@ -209,6 +209,7 @@
    $(TOP)/src/ctime.c \
    $(TOP)/src/date.c \
    $(TOP)/../adapter/db_pragma.c \
@@ -19,7 +19,7 @@
    $(TOP)/src/delete.c \
    $(TOP)/src/expr.c \
    $(TOP)/src/fault.c \
-@@ -583,6 +584,10 @@ db_pragma.lo:	$(TOP)/../adapter/db_pragm
+@@ -599,6 +600,10 @@
  		$(TOP)/../adapter/btreeInt.h
  	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_pragma.c
  
@@ -32,7 +32,7 @@
  
 --- src/shell.c
 +++ src/shell.c
-@@ -1368,6 +1368,17 @@ static char zHelp[] =
+@@ -1456,6 +1456,17 @@
    "                         LIKE pattern TABLE.\n"
    ".separator STRING      Change separator used by output mode and .import\n"
    ".show                  Show the current values for various settings\n"
@@ -50,7 +50,7 @@
    ".stats ON|OFF          Turn stats on or off\n"
    ".tables ?TABLE?        List names of tables\n"
    "                         If TABLE specified, only list tables matching\n"
-@@ -2128,6 +2137,27 @@ static int do_meta_command(char *zLine, 
+@@ -2328,6 +2339,27 @@
      }
      fprintf(p->out,"\n");
    }else
@@ -80,7 +80,7 @@
      p->statsOn = booleanValue(azArg[1]);
 --- tool/mksqlite3c.tcl
 +++ tool/mksqlite3c.tcl
-@@ -251,6 +251,7 @@ foreach file {
+@@ -261,6 +261,7 @@
     btree.c
     backup.c
     db_pragma.c

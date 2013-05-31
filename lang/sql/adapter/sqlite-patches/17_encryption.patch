@@ -8,10 +8,10 @@
 -         delete.lo expr.lo fault.lo fkey.lo \
 +         callback.lo complete.lo ctime.lo date.lo db_encrypt.lo db_pragma.lo \
 +         db_shell.lo delete.lo expr.lo fault.lo fkey.lo \
-          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
-          fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo fts3_write.lo \
-          func.lo global.lo hash.lo \
-@@ -207,6 +208,7 @@
+          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+          fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
+@@ -208,6 +208,7 @@
    $(TOP)/src/complete.c \
    $(TOP)/src/ctime.c \
    $(TOP)/src/date.c \
@@ -19,7 +19,7 @@
    $(TOP)/../adapter/db_pragma.c \
    $(TOP)/../adapter/db_shell.c \
    $(TOP)/src/delete.c \
-@@ -580,6 +581,10 @@
+@@ -596,6 +597,10 @@
  date.lo:	$(TOP)/src/date.c $(HDR)
  	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
  
@@ -32,17 +32,7 @@
  	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_pragma.c
 --- src/tclsqlite.c
 +++ src/tclsqlite.c
-@@ -2864,6 +2864,9 @@
-   const char *zFile;
-   const char *zVfs = 0;
-   int flags;
-+#ifdef SQLITE_HAS_CODEC
-+  int rc;
-+#endif
-   Tcl_DString translatedFilename;
- 
-   /* In normal use, each TCL interpreter runs in a single thread.  So
-@@ -2968,7 +2971,13 @@
+@@ -3023,7 +3023,13 @@
    }
  #ifdef SQLITE_HAS_CODEC
    if( p->db ){
@@ -59,7 +49,7 @@
    if( p->db==0 ){
 --- test/vtab1.test
 +++ test/vtab1.test
-@@ -849,8 +849,12 @@
+@@ -878,8 +878,12 @@
  ifcapable attach {
    do_test vtab1.8-1 {
      set echo_module ""
@@ -75,7 +65,7 @@
      set echo_module
 --- tool/mksqlite3c.tcl
 +++ tool/mksqlite3c.tcl
-@@ -250,6 +250,7 @@
+@@ -260,6 +260,7 @@
     btmutex.c
     btree.c
     backup.c

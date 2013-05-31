@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 
 # TEST repmgr100
@@ -49,6 +49,11 @@ proc repmgr100 {  } {
 	puts $master "open_db test.db"
 	puts $master "put myKey myValue"
 
+	# sync.
+	puts $master "echo setup"
+	set sentinel [gets $master]
+	error_check_good echo_setup $sentinel "setup"
+	
 	puts "\tRepmgr$tnum.b: Set up the client (on TCP port $client_port)."
 	set client [open "| $site_prog" "r+"]
 	fconfigure $client -buffering line

@@ -77,7 +77,7 @@ static int __dbj_throw(JNIEnv *jenv,
 static JavaVM *javavm;
 
 static jclass db_class, dbc_class, dbenv_class, dbt_class, dblsn_class;
-static jclass dbpreplist_class, dbtxn_class;
+static jclass dbpreplist_class, dbstream_class, dbtxn_class;
 static jclass keyrange_class;
 static jclass bt_stat_class, compact_class, h_stat_class, heap_stat_class;
 static jclass lock_stat_class, log_stat_class, mpool_stat_class, mpool_fstat_class;
@@ -99,6 +99,7 @@ static jfieldID dbc_cptr_fid;
 static jfieldID dblsn_file_fid, dblsn_offset_fid;
 static jfieldID dbt_data_fid, dbt_data_nio_fid, dbt_size_fid, dbt_ulen_fid;
 static jfieldID dbt_dlen_fid, dbt_doff_fid, dbt_flags_fid, dbt_offset_fid;
+static jfieldID dbstream_cptr_fid;
 static jfieldID kr_less_fid, kr_equal_fid, kr_greater_fid;
 static jfieldID lock_cptr_fid;
 static jfieldID lockreq_op_fid, lockreq_modeflag_fid, lockreq_timeout_fid;
@@ -115,6 +116,7 @@ static jfieldID bt_stat_bt_ndata_fid;
 static jfieldID bt_stat_bt_pagecnt_fid;
 static jfieldID bt_stat_bt_pagesize_fid;
 static jfieldID bt_stat_bt_minkey_fid;
+static jfieldID bt_stat_bt_nblobs_fid;
 static jfieldID bt_stat_bt_re_len_fid;
 static jfieldID bt_stat_bt_re_pad_fid;
 static jfieldID bt_stat_bt_levels_fid;
@@ -143,6 +145,7 @@ static jfieldID h_stat_hash_version_fid;
 static jfieldID h_stat_hash_metaflags_fid;
 static jfieldID h_stat_hash_nkeys_fid;
 static jfieldID h_stat_hash_ndata_fid;
+static jfieldID h_stat_hash_nblobs_fid;
 static jfieldID h_stat_hash_pagecnt_fid;
 static jfieldID h_stat_hash_pagesize_fid;
 static jfieldID h_stat_hash_ffactor_fid;
@@ -158,6 +161,7 @@ static jfieldID h_stat_hash_dup_free_fid;
 static jfieldID heap_stat_heap_magic_fid;
 static jfieldID heap_stat_heap_version_fid;
 static jfieldID heap_stat_heap_metaflags_fid;
+static jfieldID heap_stat_heap_nblobs_fid;
 static jfieldID heap_stat_heap_nrecs_fid;
 static jfieldID heap_stat_heap_pagecnt_fid;
 static jfieldID heap_stat_heap_pagesize_fid;
@@ -210,6 +214,8 @@ static jfieldID lock_stat_st_lockers_wait_fid;
 static jfieldID lock_stat_st_lockers_nowait_fid;
 static jfieldID lock_stat_st_region_wait_fid;
 static jfieldID lock_stat_st_region_nowait_fid;
+static jfieldID lock_stat_st_nlockers_hit_fid;
+static jfieldID lock_stat_st_nlockers_reused_fid;
 static jfieldID lock_stat_st_hash_len_fid;
 static jfieldID lock_stat_st_regsize_fid;
 static jfieldID log_stat_st_magic_fid;
@@ -282,6 +288,7 @@ static jfieldID mpool_stat_st_region_wait_fid;
 static jfieldID mpool_stat_st_mvcc_frozen_fid;
 static jfieldID mpool_stat_st_mvcc_thawed_fid;
 static jfieldID mpool_stat_st_mvcc_freed_fid;
+static jfieldID mpool_stat_st_mvcc_reused_fid;
 static jfieldID mpool_stat_st_alloc_fid;
 static jfieldID mpool_stat_st_alloc_buckets_fid;
 static jfieldID mpool_stat_st_alloc_max_buckets_fid;
@@ -289,6 +296,8 @@ static jfieldID mpool_stat_st_alloc_pages_fid;
 static jfieldID mpool_stat_st_alloc_max_pages_fid;
 static jfieldID mpool_stat_st_io_wait_fid;
 static jfieldID mpool_stat_st_sync_interrupted_fid;
+static jfieldID mpool_stat_st_oddfsize_detect_fid;
+static jfieldID mpool_stat_st_oddfsize_resolve_fid;
 static jfieldID mpool_stat_st_regsize_fid;
 static jfieldID mpool_stat_st_regmax_fid;
 static jfieldID mutex_stat_st_mutex_align_fid;
@@ -317,6 +326,7 @@ static jfieldID qam_stat_qs_pgfree_fid;
 static jfieldID qam_stat_qs_first_recno_fid;
 static jfieldID qam_stat_qs_cur_recno_fid;
 static jfieldID rep_stat_st_startup_complete_fid;
+static jfieldID rep_stat_st_view_fid;
 static jfieldID rep_stat_st_log_queued_fid;
 static jfieldID rep_stat_st_status_fid;
 static jfieldID rep_stat_st_next_lsn_fid;
@@ -384,6 +394,11 @@ static jfieldID repmgr_stat_st_connection_drop_fid;
 static jfieldID repmgr_stat_st_connect_fail_fid;
 static jfieldID repmgr_stat_st_elect_threads_fid;
 static jfieldID repmgr_stat_st_max_elect_threads_fid;
+static jfieldID repmgr_stat_st_site_participants_fid;
+static jfieldID repmgr_stat_st_site_total_fid;
+static jfieldID repmgr_stat_st_site_views_fid;
+static jfieldID repmgr_stat_st_takeovers_fid;
+static jfieldID repmgr_stat_st_incoming_queue_size_fid;
 static jfieldID seq_stat_st_wait_fid;
 static jfieldID seq_stat_st_nowait_fid;
 static jfieldID seq_stat_st_current_fid;
@@ -443,7 +458,9 @@ static jmethodID lock_construct;
 
 static jmethodID app_dispatch_method, errcall_method, env_feedback_method;
 static jmethodID msgcall_method, paniccall_method, rep_transport_method;
-static jmethodID panic_event_notify_method, rep_client_event_notify_method;
+static jmethodID panic_event_notify_method;
+static jmethodID rep_autotakeover_failed_event_notify_method;
+static jmethodID rep_client_event_notify_method;
 static jmethodID rep_connect_broken_event_notify_method;
 static jmethodID rep_connect_established_event_notify_method;
 static jmethodID rep_connect_try_failed_event_notify_method;
@@ -468,7 +485,7 @@ static jmethodID backup_write_method, bt_compare_method, bt_compress_method;
 static jmethodID bt_decompress_method, bt_prefix_method;
 static jmethodID db_feedback_method, dup_compare_method;
 static jmethodID foreignkey_nullify_method, h_compare_method, h_hash_method;
-static jmethodID partition_method, seckey_create_method;
+static jmethodID rep_view_method, partition_method, seckey_create_method;
 
 static jmethodID outputstream_write_method;
 
@@ -482,6 +499,7 @@ const struct {
 	{ &dbt_class, DB_PKG "DatabaseEntry" },
 	{ &dblsn_class, DB_PKG "LogSequenceNumber" },
 	{ &dbpreplist_class, DB_PKG "PreparedTransaction" },
+	{ &dbstream_class, DB_PKG "internal/DbStream" },
 	{ &dbtxn_class, DB_PKG "internal/DbTxn" },
 
 	{ &bt_stat_class, DB_PKG "BtreeStats" },
@@ -540,6 +558,8 @@ const struct {
 	{ &dblsn_file_fid, &dblsn_class, "file", "I" },
 	{ &dblsn_offset_fid, &dblsn_class, "offset", "I" },
 
+	{ &dbstream_cptr_fid, &dbstream_class, "swigCPtr", "J" },
+
 	{ &dbt_data_fid, &dbt_class, "data", "[B" },
 	{ &dbt_data_nio_fid, &dbt_class, "data_nio", "Ljava/nio/ByteBuffer;" },
 	{ &dbt_size_fid, &dbt_class, "size", "I" },
@@ -573,6 +593,7 @@ const struct {
 	{ &bt_stat_bt_pagecnt_fid, &bt_stat_class, "bt_pagecnt", "I" },
 	{ &bt_stat_bt_pagesize_fid, &bt_stat_class, "bt_pagesize", "I" },
 	{ &bt_stat_bt_minkey_fid, &bt_stat_class, "bt_minkey", "I" },
+	{ &bt_stat_bt_nblobs_fid, &bt_stat_class, "bt_nblobs", "I" },
 	{ &bt_stat_bt_re_len_fid, &bt_stat_class, "bt_re_len", "I" },
 	{ &bt_stat_bt_re_pad_fid, &bt_stat_class, "bt_re_pad", "I" },
 	{ &bt_stat_bt_levels_fid, &bt_stat_class, "bt_levels", "I" },
@@ -601,6 +622,7 @@ const struct {
 	{ &h_stat_hash_metaflags_fid, &h_stat_class, "hash_metaflags", "I" },
 	{ &h_stat_hash_nkeys_fid, &h_stat_class, "hash_nkeys", "I" },
 	{ &h_stat_hash_ndata_fid, &h_stat_class, "hash_ndata", "I" },
+	{ &h_stat_hash_nblobs_fid, &h_stat_class, "hash_nblobs", "I" },
 	{ &h_stat_hash_pagecnt_fid, &h_stat_class, "hash_pagecnt", "I" },
 	{ &h_stat_hash_pagesize_fid, &h_stat_class, "hash_pagesize", "I" },
 	{ &h_stat_hash_ffactor_fid, &h_stat_class, "hash_ffactor", "I" },
@@ -616,6 +638,7 @@ const struct {
 	{ &heap_stat_heap_magic_fid, &heap_stat_class, "heap_magic", "I" },
 	{ &heap_stat_heap_version_fid, &heap_stat_class, "heap_version", "I" },
 	{ &heap_stat_heap_metaflags_fid, &heap_stat_class, "heap_metaflags", "I" },
+	{ &heap_stat_heap_nblobs_fid, &heap_stat_class, "heap_nblobs", "I" },
 	{ &heap_stat_heap_nrecs_fid, &heap_stat_class, "heap_nrecs", "I" },
 	{ &heap_stat_heap_pagecnt_fid, &heap_stat_class, "heap_pagecnt", "I" },
 	{ &heap_stat_heap_pagesize_fid, &heap_stat_class, "heap_pagesize", "I" },
@@ -668,6 +691,8 @@ const struct {
 	{ &lock_stat_st_lockers_nowait_fid, &lock_stat_class, "st_lockers_nowait", "J" },
 	{ &lock_stat_st_region_wait_fid, &lock_stat_class, "st_region_wait", "J" },
 	{ &lock_stat_st_region_nowait_fid, &lock_stat_class, "st_region_nowait", "J" },
+	{ &lock_stat_st_nlockers_hit_fid, &lock_stat_class, "st_nlockers_hit", "J" },
+	{ &lock_stat_st_nlockers_reused_fid, &lock_stat_class, "st_nlockers_reused", "J" },
 	{ &lock_stat_st_hash_len_fid, &lock_stat_class, "st_hash_len", "I" },
 	{ &lock_stat_st_regsize_fid, &lock_stat_class, "st_regsize", "J" },
 	{ &log_stat_st_magic_fid, &log_stat_class, "st_magic", "I" },
@@ -740,6 +765,7 @@ const struct {
 	{ &mpool_stat_st_mvcc_frozen_fid, &mpool_stat_class, "st_mvcc_frozen", "J" },
 	{ &mpool_stat_st_mvcc_thawed_fid, &mpool_stat_class, "st_mvcc_thawed", "J" },
 	{ &mpool_stat_st_mvcc_freed_fid, &mpool_stat_class, "st_mvcc_freed", "J" },
+	{ &mpool_stat_st_mvcc_reused_fid, &mpool_stat_class, "st_mvcc_reused", "J" },
 	{ &mpool_stat_st_alloc_fid, &mpool_stat_class, "st_alloc", "J" },
 	{ &mpool_stat_st_alloc_buckets_fid, &mpool_stat_class, "st_alloc_buckets", "J" },
 	{ &mpool_stat_st_alloc_max_buckets_fid, &mpool_stat_class, "st_alloc_max_buckets", "J" },
@@ -747,6 +773,8 @@ const struct {
 	{ &mpool_stat_st_alloc_max_pages_fid, &mpool_stat_class, "st_alloc_max_pages", "J" },
 	{ &mpool_stat_st_io_wait_fid, &mpool_stat_class, "st_io_wait", "J" },
 	{ &mpool_stat_st_sync_interrupted_fid, &mpool_stat_class, "st_sync_interrupted", "J" },
+	{ &mpool_stat_st_oddfsize_detect_fid, &mpool_stat_class, "st_oddfsize_detect", "I" },
+	{ &mpool_stat_st_oddfsize_resolve_fid, &mpool_stat_class, "st_oddfsize_resolve", "I" },
 	{ &mpool_stat_st_regsize_fid, &mpool_stat_class, "st_regsize", "J" },
 	{ &mpool_stat_st_regmax_fid, &mpool_stat_class, "st_regmax", "J" },
 	{ &mutex_stat_st_mutex_align_fid, &mutex_stat_class, "st_mutex_align", "I" },
@@ -775,6 +803,7 @@ const struct {
 	{ &qam_stat_qs_first_recno_fid, &qam_stat_class, "qs_first_recno", "I" },
 	{ &qam_stat_qs_cur_recno_fid, &qam_stat_class, "qs_cur_recno", "I" },
 	{ &rep_stat_st_startup_complete_fid, &rep_stat_class, "st_startup_complete", "I" },
+	{ &rep_stat_st_view_fid, &rep_stat_class, "st_view", "I" },
 	{ &rep_stat_st_log_queued_fid, &rep_stat_class, "st_log_queued", "J" },
 	{ &rep_stat_st_status_fid, &rep_stat_class, "st_status", "I" },
 	{ &rep_stat_st_next_lsn_fid, &rep_stat_class, "st_next_lsn", "L" DB_PKG "LogSequenceNumber;" },
@@ -840,8 +869,13 @@ const struct {
 	{ &repmgr_stat_st_msgs_dropped_fid, &repmgr_stat_class, "st_msgs_dropped", "J" },
 	{ &repmgr_stat_st_connection_drop_fid, &repmgr_stat_class, "st_connection_drop", "J" },
 	{ &repmgr_stat_st_connect_fail_fid, &repmgr_stat_class, "st_connect_fail", "J" },
-	{ &repmgr_stat_st_elect_threads_fid, &repmgr_stat_class, "st_elect_threads", "J" },
-	{ &repmgr_stat_st_max_elect_threads_fid, &repmgr_stat_class, "st_max_elect_threads", "J" },
+	{ &repmgr_stat_st_elect_threads_fid, &repmgr_stat_class, "st_elect_threads", "I" },
+	{ &repmgr_stat_st_max_elect_threads_fid, &repmgr_stat_class, "st_max_elect_threads", "I" },
+	{ &repmgr_stat_st_site_participants_fid, &repmgr_stat_class, "st_site_participants", "I" },
+	{ &repmgr_stat_st_site_total_fid, &repmgr_stat_class, "st_site_total", "I" },
+	{ &repmgr_stat_st_site_views_fid, &repmgr_stat_class, "st_site_views", "I" },
+	{ &repmgr_stat_st_takeovers_fid, &repmgr_stat_class, "st_takeovers", "J" },
+	{ &repmgr_stat_st_incoming_queue_size_fid, &repmgr_stat_class, "st_incoming_queue_size", "I" },
 	{ &seq_stat_st_wait_fid, &seq_stat_class, "st_wait", "J" },
 	{ &seq_stat_st_nowait_fid, &seq_stat_class, "st_nowait", "J" },
 	{ &seq_stat_st_current_fid, &seq_stat_class, "st_current", "J" },
@@ -967,6 +1001,8 @@ const struct {
 	    "(III[B)I" },
 	{ &panic_event_notify_method, &dbenv_class, "handle_panic_event_notify",
 	    "()V" },
+	{ &rep_autotakeover_failed_event_notify_method, &dbenv_class,
+	    "handle_rep_autotakeover_failed_event_notify", "()V" },
 	{ &rep_connect_broken_event_notify_method, &dbenv_class, 
 	    "handle_rep_connect_broken_event_notify", "()V" },
 	{ &rep_connect_established_event_notify_method, &dbenv_class, 
@@ -1045,6 +1081,8 @@ const struct {
 	{ &seckey_create_method, &db_class, "handle_seckey_create",
 	    "(L" DB_PKG "DatabaseEntry;L" DB_PKG "DatabaseEntry;)[L"
 	    DB_PKG "DatabaseEntry;" },
+	{&rep_view_method, &dbenv_class, "handle_rep_view",
+	    "(Ljava/lang/String;I)Z" },
 
 	{ &outputstream_write_method, &outputstream_class, "write", "([BII)V" }
 };
@@ -1153,7 +1191,7 @@ static void __dbj_detach()
 	(void)(*javavm)->DetachCurrentThread(javavm);
 }
 
-static jobject __dbj_wrap_DB_LSN(JNIEnv *jenv, DB_LSN *lsn)
+static jobject __dbj_wrap_DB_LSN(JNIEnv *jenv, const DB_LSN *lsn)
 {
 	return (*jenv)->NewObject(jenv, dblsn_class, dblsn_construct,
 	    lsn->file, lsn->offset);

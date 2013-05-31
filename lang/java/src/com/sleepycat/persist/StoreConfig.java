@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -90,7 +90,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setAllowCreateVoid(boolean allowCreate) {
@@ -118,7 +117,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setExclusiveCreateVoid(boolean exclusiveCreate) {
@@ -146,7 +144,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setTransactionalVoid(boolean transactional) {
@@ -174,7 +171,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setReadOnlyVoid(boolean readOnly) {
@@ -222,7 +218,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setSecondaryBulkLoadVoid(boolean secondaryBulkLoad) {
@@ -248,7 +243,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setModelVoid(EntityModel model) {
@@ -288,7 +282,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setMutationsVoid(Mutations mutations) {
@@ -316,7 +309,6 @@ public class StoreConfig implements Cloneable {
     }
     
     /**
-     * @hidden
      * The void return setter for use by Bean editors.
      */
     public void setDatabaseNamerVoid(DatabaseNamer databaseNamer) {

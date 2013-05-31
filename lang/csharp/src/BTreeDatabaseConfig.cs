@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -18,9 +18,8 @@ namespace BerkeleyDB {
     public class BTreeDatabaseConfig : DatabaseConfig {
         /* Fields for DB->set_flags() */
         /// <summary>
-        /// Policy for duplicate data items in the database; that is, insertion
-        /// when the key of the key/data pair being inserted already exists in
-        /// the database will be successful.
+        /// Policy for duplicate data items in the database. Allows a key/data 
+        /// pair to be inserted into the database even if the key already exists.
         /// </summary>
         /// <remarks>
         /// <para>The ordering of duplicates in the database for
@@ -75,7 +74,7 @@ namespace BerkeleyDB {
         /// record insertion or deletion. See
         /// <see cref="RecnoDatabaseConfig.Renumber"/> for further discussion.
         /// </para>
-		/// <para>
+        /// <para>
         /// Maintaining record counts within a Btree introduces a serious point
         /// of contention, namely the page locations where the record counts are
         /// stored. In addition, the entire database must be locked during both
@@ -83,11 +82,11 @@ namespace BerkeleyDB {
         /// for those operations. Specifying UseRecordNumbers can result in
         /// serious performance degradation for some applications and data sets.
         /// </para>
-		/// <para>
+        /// <para>
         /// It is an error to specify <see cref="UseRecordNumbers"/> and
         /// anything other than <see cref="DuplicatesPolicy.NONE"/>.
         /// </para>
-		/// <para>
+        /// <para>
         /// If the database already exists, the value of UseRecordNumbers must
         /// be the same as the existing database or an error will be returned. 
         /// </para>
@@ -101,6 +100,45 @@ namespace BerkeleyDB {
                     Internal.DbConstants.DB_REVSPLITOFF : 0;
                 ret |= UseRecordNumbers ? Internal.DbConstants.DB_RECNUM : 0;
                 return ret;
+            }
+        }
+        /// <summary>
+        /// The path of the directory where blobs are stored.
+        /// <para>
+        /// If the database is opened within <see cref="DatabaseEnvironment"/>,
+        /// this path setting will be ignored during
+        /// <see cref="BTreeDatabase.Open"/>. Use
+        /// <see cref="BTreeDatabase.BlobDir"/> to identify the current storage
+        /// location of blobs after opening the database.
+        /// </para>
+        /// </summary>
+        public string BlobDir;
+
+        internal bool blobThresholdIsSet;
+        private uint blobThreshold;
+        /// <summary>
+        /// The size in bytes which is used to determine when a data item will
+        /// be stored as a blob.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// If the threshold value is 0, blob will never be used by the
+        /// database.
+        /// </para>
+        /// <para>
+        /// It is illegal to enable blob in the database which is configured
+        /// as in-memory database or with chksum, encryption, duplicates,
+        /// sorted duplicates, compression, multiversion concurrency control
+        /// and transactional read operations with degree 1 isolation.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get { return blobThreshold; }
+            set {
+                blobThresholdIsSet = true;
+                blobThreshold = value;
             }
         }
 
@@ -130,11 +168,11 @@ namespace BerkeleyDB {
         /// compare a key specified by the application with a key currently
         /// stored in the tree.
         /// </para>
-		/// <para>
+        /// <para>
         /// If no comparison function is specified, the keys are compared
         /// lexically, with shorter keys collating before longer keys.
         /// </para>
-		/// <para>
+        /// <para>
         /// If the database already exists, the comparison function must be the
         /// same as that historically used to create the database or corruption
         /// can occur. 
@@ -153,7 +191,7 @@ namespace BerkeleyDB {
         /// works. The usefulness of this is data-dependent, but can produce
         /// significantly reduced tree sizes and search times in some data sets.
         /// </para>
-		/// <para>
+        /// <para>
         /// If no prefix function or key comparison function is specified by the
         /// application, a default lexical comparison function is used as the
         /// prefix function. If no prefix function is specified and
@@ -161,7 +199,7 @@ namespace BerkeleyDB {
         /// used. It is an error to specify a prefix function without also
         /// specifying <see cref="BTreeCompare"/>. 
         /// </para>
-		/// <para>
+        /// <para>
         /// If the database already exists, the prefix function must be the
         /// same as that historically used to create the database or corruption
         /// can occur. 
@@ -179,12 +217,12 @@ namespace BerkeleyDB {
         /// setting <see cref="Duplicates"/> to
         /// <see cref="DuplicatesPolicy.SORTED"/>.
         /// </para>
-		/// <para>
+        /// <para>
         /// If no comparison function is specified, the data items are compared
         /// lexically, with shorter data items collating before longer data
         /// items.
         /// </para>
-		/// <para>
+        /// <para>
         /// If the database already exists when
         /// <see cref="BTreeDatabase.Open"/> is called, the
         /// delegate must be the same as that historically used to create the
@@ -193,7 +231,7 @@ namespace BerkeleyDB {
         /// </remarks>
         public EntryComparisonDelegate DuplicateCompare;
 
-	internal bool compressionIsSet;
+    internal bool compressionIsSet;
         private BTreeCompressDelegate compressFunc;
         /// <summary>
         /// The compression function used to store key/data pairs in the
@@ -248,7 +286,7 @@ namespace BerkeleyDB {
         /// The value specified must be at least 2; if not explicitly set, a
         /// value of 2 is used. 
         /// </para>
-		/// <para>
+        /// <para>
         /// If the database already exists, MinKeysPerPage will be ignored. 
         /// </para>
         /// </remarks>
@@ -260,6 +298,63 @@ namespace BerkeleyDB {
             }
         }
 
+        internal bool partitionIsSet;
+        private PartitionDelegate partitionFunc;
+        /// <summary>
+        /// Return the application-specified partitioning function.
+        /// </summary>
+        public PartitionDelegate Partition { get { return partitionFunc; } }
+        private DatabaseEntry[] partitionKeys;
+        /// <summary>
+        /// Return an array of type DatabaseEntry where each array entry
+        /// contains the range of keys contained in one of the database's
+        /// partitions. The array contains the information for the entire
+        /// database.
+        /// </summary>
+        public DatabaseEntry[] PartitionKeys { get { return partitionKeys; } }
+        private uint nparts;
+        /// <summary>
+        /// Return the number of partitions to create.
+        /// </summary>
+        public uint NParts { get { return nparts; } }
+        private bool SetPartition(uint parts, DatabaseEntry[] partKeys,
+            PartitionDelegate partFunc) {
+            partitionIsSet = true;
+            nparts = parts;
+            partitionKeys = partKeys;
+            partitionFunc = partFunc;
+            if (nparts < 2)
+                partitionIsSet = false;
+            else if (partitionKeys == null && partitionFunc == null)
+                partitionIsSet = false;
+            return partitionIsSet;
+        }
+        /// <summary>
+        /// Enable database partitioning using the specified partition keys.
+        /// Return true if partitioning is successfully enabled; otherwise
+        /// return false.
+        /// <param name="keys">
+        /// An array of DatabaseEntry where each array entry defines the range
+        /// of key values to be stored in each partition 
+        /// </param>
+        /// </summary>
+        public bool SetPartitionByKeys(DatabaseEntry[] keys) {
+            uint parts = (keys == null ? 0 : ((uint)keys.Length + 1));
+            return (SetPartition(parts, keys, null));
+        }
+        /// <summary>
+        /// Enable database partitioning using the specified number of
+        /// partitions and partition function.
+        /// Return true if the specified number of partitions are successfully
+        /// enabled; otherwise return false.
+        /// <param name="parts">The number of partitions to create</param>
+        /// <param name="partFunc">The name of partitioning function</param>
+        /// </summary>
+        public bool SetPartitionByCallback(
+            uint parts, PartitionDelegate partFunc) {
+            return (SetPartition(parts, null, partFunc));
+        }
+
         /// <summary>
         /// Create a new BTreeDatabaseConfig object
         /// </summary>
@@ -267,6 +362,8 @@ namespace BerkeleyDB {
             Duplicates = DuplicatesPolicy.NONE;
             NoReverseSplitting = false;
             UseRecordNumbers = false;
+
+            blobThresholdIsSet = false;
 
             BTreeCompare = null;
             BTreePrefixCompare = null;

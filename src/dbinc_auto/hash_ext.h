@@ -57,7 +57,7 @@ int __ham_return_meta __P((DBC *, u_int32_t, DBMETA **));
 int __ham_db_create __P((DB *));
 int __ham_db_close __P((DB *));
 int __ham_get_h_ffactor __P((DB *, u_int32_t *));
-int __ham_set_h_compare __P((DB *, int (*)(DB *, const DBT *, const DBT *)));
+int __ham_set_h_compare __P((DB *, int (*)(DB *, const DBT *, const DBT *, size_t *)));
 int __ham_get_h_nelem __P((DB *, u_int32_t *));
 void __ham_copy_config __P((DB *, DB*, u_int32_t));
 int __ham_open __P((DB *, DB_THREAD_INFO *, DB_TXN *, const char * name, db_pgno_t, u_int32_t));

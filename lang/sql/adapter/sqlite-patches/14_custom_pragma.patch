@@ -7,9 +7,9 @@
 -         callback.lo complete.lo ctime.lo date.lo delete.lo \
 +         callback.lo complete.lo ctime.lo date.lo db_pragma.lo delete.lo \
           expr.lo fault.lo fkey.lo \
-          fts3.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
-          fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo fts3_write.lo \
-@@ -207,6 +207,7 @@
+          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+@@ -208,6 +208,7 @@
    $(TOP)/src/complete.c \
    $(TOP)/src/ctime.c \
    $(TOP)/src/date.c \
@@ -17,7 +17,7 @@
    $(TOP)/src/delete.c \
    $(TOP)/src/expr.c \
    $(TOP)/src/fault.c \
-@@ -573,6 +574,10 @@
+@@ -594,6 +595,10 @@
  date.lo:	$(TOP)/src/date.c $(HDR)
  	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
  
@@ -30,16 +30,7 @@
  
 --- src/pragma.c
 +++ src/pragma.c
-@@ -49,7 +49,7 @@
- /*
- ** Interpret the given string as a boolean value.
- */
--static u8 getBoolean(const char *z){
-+u8 getBoolean(const char *z){
-   return getSafetyLevel(z)&1;
- }
- 
-@@ -142,7 +142,7 @@
+@@ -145,7 +145,7 @@
  /*
  ** Generate code to return a single integer value.
  */
@@ -48,7 +39,7 @@
    Vdbe *v = sqlite3GetVdbe(pParse);
    int mem = ++pParse->nMem;
    i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
-@@ -283,6 +283,8 @@
+@@ -288,6 +288,8 @@
    return azModeName[eMode];
  }
  
@@ -57,19 +48,20 @@
  /*
  ** Process a pragma statement.  
  **
-@@ -344,6 +346,9 @@
-     goto pragma_out;
-   }
-  
+@@ -380,7 +382,9 @@
+     pParse->rc = rc;
+   }else
+                             
+- 
 +  if( bdbsqlPragma(pParse, zLeft, zRight, iDb)==0 ){
-+	  /* Do nothing if this was a Berkeley DB specific pragma. */
++    /* Do nothing if this was a Berkeley DB specific pragma. */
 +  }else
- #ifndef SQLITE_OMIT_PAGER_PRAGMAS
+ #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
    /*
    **  PRAGMA [database.]default_cache_size
 --- tool/mksqlite3c.tcl
 +++ tool/mksqlite3c.tcl
-@@ -250,6 +250,7 @@
+@@ -260,6 +260,7 @@
     btmutex.c
     btree.c
     backup.c

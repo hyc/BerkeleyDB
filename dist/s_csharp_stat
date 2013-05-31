@@ -8,7 +8,7 @@ msgcsharp="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */"
 
 f=../lang/csharp/src/Internal/StatStructs.cs
@@ -50,7 +50,8 @@ s:/\*.*\*/::
 P
 D
 }
-}"
+}" \
+    	-e "s:\;.*:\;:"
 }
 
 stat_class()

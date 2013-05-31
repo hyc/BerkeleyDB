@@ -1,6 +1,35 @@
 Revision history for Perl extension BerkeleyDB.
 
-0.50  10th DEcember 2011
+0.52  7th May 2013
+
+        * Updates for BDB 6.0 - Added Blob support
+            - Added BerkeleyDB::DbStream class to interface to Blobs 
+            - Added BlobThreshold & BlobDir option to BerkeleyDB::Env 
+              constructor
+            - Added BlobThreshold & BlobDir option to Hash, Btree & Heap
+              constructors
+            - Added get_blob_threshold method to BerkeleyDB::Env
+            - Added get_blob_dir method to BerkeleyDB::Env
+            - Added get_blob_threshold method to the Hash, Btree & Heap
+            - Added get_blob_dir method to the Hash, Btree & Heap
+
+        * Added method $cursor->set_partial
+        * Added method $cursor->partial_clear
+
+        * $env->lock_detect dies due to incorrect version check
+          [RT #84179]
+
+        * (Memory leak in db_verify() method. (libdb < 4.2))
+          [RT #84409]
+
+        * Fix a few croaks
+
+0.51  19th March 2012
+
+        * Rework FETCHSIZE
+          [RT #75691]
+
+0.50  10th December 2011
 
         * Updates for BDB 5.3
 

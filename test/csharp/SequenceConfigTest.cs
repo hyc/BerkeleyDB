@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -77,7 +77,7 @@ namespace CsharpAPITest
 		public static void Confirm(XmlElement xmlElement,
 		    SequenceConfig seqConfig, bool compulsory)
 		{
-			Configuration.ConfirmInt(xmlElement, "CacheSize",
+			Configuration.ConfirmUint(xmlElement, "CacheSize",
 			    seqConfig.CacheSize, compulsory);
             Configuration.ConfirmCreatePolicy(xmlElement, "Creation",
                 seqConfig.Creation, compulsory);
@@ -96,13 +96,13 @@ namespace CsharpAPITest
 		public static void Config(XmlElement xmlElement,
 		    ref SequenceConfig seqConfig, bool compulsory)
 		{
-			int intValue = new int();
+			uint uintValue = new uint();
 			bool boolValue = new bool();
 			long longValue = new long();
 
-			if (Configuration.ConfigInt(xmlElement, "CacheSize",
-			    ref intValue, compulsory))
-				seqConfig.CacheSize = intValue;
+			if (Configuration.ConfigUint(xmlElement, "CacheSize",
+			    ref uintValue, compulsory))
+				seqConfig.CacheSize = uintValue;
             Configuration.ConfigCreatePolicy(xmlElement, "Creation",
                 ref seqConfig.Creation, compulsory);
             if (Configuration.ConfigBool(xmlElement, "Decrement",

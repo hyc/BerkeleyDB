@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -64,7 +64,7 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
         remote sites using a message dispatch callback, which is configured
         using the <a class="xref" href="repmgr_msg_dispatch.html" title="DbEnv::repmgr_msg_dispatch()">DbEnv::repmgr_msg_dispatch()</a>
         method. Note that the DbChannel::send_msg() method may be used
-        within the the message dispatch callback on the remote site to send
+        within the message dispatch callback on the remote site to send
         a response or acknowledgement for messages that it receives and is
         handling.
     </p>
@@ -87,7 +87,7 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3968304"></a>Parameters</h3>
+              <h3 class="title"><a id="idp4013568"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3967656"></a>msg</h4>
+                <h4 class="title"><a id="idp4012920"></a>msg</h4>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3945888"></a>nmsg</h4>
+                <h4 class="title"><a id="idp4007768"></a>nmsg</h4>
               </div>
             </div>
           </div>
@@ -128,7 +128,7 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3946320"></a>flags</h4>
+                <h4 class="title"><a id="idp3989440"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3956128"></a>Errors</h3>
+              <h3 class="title"><a id="idp4001600"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -161,24 +161,24 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3976872"></a>DB_NOSERVER</h4>
+                <h4 class="title"><a id="idp4022568"></a>DB_NOSERVER</h4>
               </div>
             </div>
           </div>
           <p>
                 A message was sent to a remote site that has not
-                configured a message dispatch call-back function.
+                configured a message dispatch callback function.
                 Use the
                 <a class="xref" href="repmgr_msg_dispatch.html" title="DbEnv::repmgr_msg_dispatch()">DbEnv::repmgr_msg_dispatch()</a>
                 method at every site belonging to the replication group to configure a 
-                message dispatch call-back function.
+                message dispatch callback function.
             </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idp3974496"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp4020192"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -192,19 +192,20 @@ DbChannel::send_msg(Dbt *msg, u_int32_t nmsg, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3945520"></a>Class</h3>
+              <h3 class="title"><a id="idp3983976"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a>  
+            <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a>,  
+            <a class="link" href="db_channel.html" title="The DbChannel Handle">DbChannel</a>
         </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idp3969168"></a>See Also</h3>
+              <h3 class="title"><a id="idp4014648"></a>See Also</h3>
             </div>
           </div>
         </div>

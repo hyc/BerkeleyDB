@@ -12,7 +12,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -30,11 +30,11 @@
       <div class="titlepage">
         <div>
           <div>
-            <h1 class="title"><a id="idp44688"></a>Getting Started with the Oracle Berkeley DB SQL APIs</h1>
+            <h1 class="title"><a id="idp536880"></a>Getting Started with the Oracle Berkeley DB SQL APIs</h1>
           </div>
           <div>
             <div class="legalnotice">
-              <a id="idp50456832"></a>
+              <a id="idp50966904"></a>
               <p class="legalnotice-title">
                 <b>Legal Notice</b>
               </p>
@@ -64,7 +64,7 @@
         <p>
             To obtain a copy of this document's original source code, please
             submit a request to the Oracle Technology Network forum at:
-            <a class="ulink" href="http://forums.oracle.com/forums/forum.jspa?forumID=271" target="_top">http://forums.oracle.com/forums/forum.jspa?forumID=271</a>
+            <a class="ulink" href="https://forums.oracle.com/forums/forum.jspa?forumID=271" target="_top">https://forums.oracle.com/forums/forum.jspa?forumID=271</a>
             
             
         </p>
@@ -72,7 +72,7 @@
             </div>
           </div>
           <div>
-            <p class="pubdate">5/11/2012</p>
+            <p class="pubdate">5/31/2013</p>
           </div>
         </div>
         <hr />
@@ -229,6 +229,11 @@
                   </dt>
                   <dt>
                     <span class="sect2">
+                      <a href="addedpragmas.html#large_record_opt">PRAGMA large_record_opt</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
                       <a href="addedpragmas.html#multiversion">PRAGMA multiversion</a>
                     </span>
                   </dt>
@@ -269,6 +274,20 @@
                   <a href="sql_encryption.html">Encryption</a>
                 </span>
               </dt>
+              <dd>
+                <dl>
+                  <dt>
+                    <span class="sect2">
+                      <a href="sql_encryption.html#sql_native_encrypt">Berkeley DB encryption</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
+                      <a href="sql_encryption.html#sql_see">SQLite Encryption Extension</a>
+                    </span>
+                  </dt>
+                </dl>
+              </dd>
               <dt>
                 <span class="sect1">
                   <a href="sequencesupport.html">Using Sequences</a>
@@ -393,6 +412,11 @@
                   </dt>
                   <dt>
                     <span class="sect2">
+                      <a href="sqlrep.html#permmessage">Permanent Message Handling</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
                       <a href="sqlrep.html#twositerep">Two-Site Replication Groups</a>
                     </span>
                   </dt>
@@ -412,6 +436,21 @@
                   </dt>
                   <dt>
                     <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_ack_policy">PRAGMA replication_ack_policy</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_ack_timeout">PRAGMA replication_ack_timeout</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_get_master">PRAGMA replication_get_master</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
                       <a href="reppragma.html#pragma_replication_initial_master">PRAGMA replication_initial_master</a>
                     </span>
                   </dt>
@@ -422,12 +461,32 @@
                   </dt>
                   <dt>
                     <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_num_sites">PRAGMA replication_num_sites</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_perm_failed">PRAGMA replication_perm_failed</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_priority">PRAGMA replication_priority</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
                       <a href="reppragma.html#pragma_replication_remote_site">PRAGMA replication_remote_site</a>
                     </span>
                   </dt>
                   <dt>
                     <span class="sect2">
                       <a href="reppragma.html#pragma_replication_remove_site">PRAGMA replication_remove_site</a>
+                    </span>
+                  </dt>
+                  <dt>
+                    <span class="sect2">
+                      <a href="reppragma.html#pragma_replication_site_status">PRAGMA replication_site_status</a>
                     </span>
                   </dt>
                   <dt>
@@ -484,7 +543,7 @@
                 <dl>
                   <dt>
                     <span class="sect2">
-                      <a href="admin.html#idp50743400">Backing Up Replicated Berkeley DB SQL Databases</a>
+                      <a href="admin.html#idp51296232">Backing Up Replicated Berkeley DB SQL Databases</a>
                     </span>
                   </dt>
                 </dl>
@@ -527,6 +586,21 @@
                   </dt>
                 </dl>
               </dd>
+              <dt>
+                <span class="sect1">
+                  <a href="recoverysql.html">Catastrophic Recovery</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect1">
+                  <a href="statsql.html">Database Statistics</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect1">
+                  <a href="verifysql.html">Verify Database Structure</a>
+                </span>
+              </dt>
             </dl>
           </dd>
           <dt>

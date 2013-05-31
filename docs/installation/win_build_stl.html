@@ -14,17 +14,16 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Building the C++ STL API</th>
+          <th colspan="3" align="center">Building the C++ STL
+            API</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="win_build_cxx.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 5. 
-		Building Berkeley DB for Windows
-        </th>
+          <th width="60%" align="center">Chapter 5.  Building Berkeley DB for Windows </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_win_java.html">Next</a></td>
         </tr>
       </table>
@@ -34,25 +33,30 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="win_build_stl"></a>Building the C++ STL API</h2>
+            <h2 class="title" style="clear: both"><a id="win_build_stl"></a>Building the C++ STL
+            API</h2>
           </div>
         </div>
       </div>
+      <p> 
+            In the project list of the <code class="filename">Berkeley_DB.sln
+            </code> solution, build the "db_stl" project and
+            "db_stl_static" project to build STL API as a dynamic or
+            static library respectively. And in your application, you
+            should link this library file as well as the Berkeley DB
+            library file to your application. The STL API library file
+            is by default always put at the same location as the
+            Berkeley DB library file. 
+        </p>
       <p>
-
-In the project list of the <code class="filename">Berkeley_DB.sln </code>
-solution, build the "db_stl" project and "db_stl_static" project to build STL API
-as a dynamic or static library respectively. And in your application, you should link this 
-library file as well as the Berkeley DB library file to your application. The STL API library file is by default always put at the
-same location as the Berkeley DB library file. 
-</p>
-      <p>
-And you need to include the STL API header files in your application code.
-If you are using the Berkeley DB source tree, the header files are in &lt;Berkeley DB Source Root &gt;/stl directory; 
-If you
-are using the pre-built installed version, these header files are in &lt; Berkeley DB Installed Directory&gt;/include, as well as the 
-db.h and db_cxx.h header files.
-</p>
+            And you need to include the STL API header files in
+            your application code. If you are using the Berkeley DB
+            source tree, the header files are in &lt;Berkeley DB
+            Source Root &gt;/stl directory; If you are using the
+            pre-built installed version, these header files are in
+            &lt; Berkeley DB Installed Directory&gt;/include, as well
+            as the db.h and db_cxx.h header files. 
+        </p>
     </div>
     <div class="navfooter">
       <hr />

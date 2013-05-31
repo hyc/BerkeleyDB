@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -571,7 +571,7 @@ retry:	switch (flags) {
 		if (flags == DB_GET_BOTH ||
 		    flags == DB_GET_BOTHC || flags == DB_GET_BOTH_RANGE) {
 			if ((ret = __bam_cmp(dbc, data, cp->page, cp->indx,
-			    __bam_defcmp, &cmp)) != 0)
+			    __bam_defcmp, &cmp, NULL)) != 0)
 				return (ret);
 			if (cmp == 0)
 				break;

@@ -100,6 +100,7 @@ DbEnv.log_put
 	DB_LOG_WRNOSYNC			# UNDOC: Write, don't sync log_put
 
 DbEnv.log_set_config
+	DB_LOG_BLOB			# Full logging of blob files
 	DB_LOG_DIRECT			# Don't buffer log files in the OS
 	DB_LOG_DSYNC			# Set O_DSYNC on the log
 	DB_LOG_AUTO_REMOVE		# Automatically remove log files
@@ -246,6 +247,7 @@ DbEnv.set_verbose
 	DB_VERB_DEADLOCK		# Deadlock detection information
 	DB_VERB_FILEOPS			# Major file operations
 	DB_VERB_FILEOPS_ALL		# All file operations
+	DB_VERB_MVCC			# Freezing, thawing & version management
 	DB_VERB_RECOVERY		# Recovery information
 	DB_VERB_REGISTER		# Dump waits-for table
 	DB_VERB_REPLICATION		# All replication and repmgr output
@@ -449,6 +451,7 @@ Db.open
 	# The following flags aren't actually part of the Db.open method
 	# API, but they are accepted by the underlying __db_open function.
 	DB_DURABLE_UNKNOWN		# UNDOC: Durability on open
+	DB_INTERNAL_BLOB_DB		# UNDOC: Open db in blob dir
 	DB_INTERNAL_PERSISTENT_DB	# UNDOC: Open db in metadata dir
 	DB_INTERNAL_TEMPORARY_DB	# UNDOC: Open db in env home dir
 	DB_NOERROR			# UNDOC: Don't raise errors.

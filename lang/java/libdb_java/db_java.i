@@ -76,6 +76,7 @@ import java.util.Comparator;
 	private String errpfx;
 	private MessageHandler message_handler;
 	private PanicHandler panic_handler;
+	private ReplicationViewHandler rep_view_handler;
 	private ReplicationManagerMessageDispatch repmgr_msg_dispatch_handler;
 	private ReplicationTransport rep_transport_handler;
 	private java.io.OutputStream error_stream;
@@ -131,6 +132,10 @@ import java.util.Comparator;
 
 	private final void handle_panic_event_notify() {
 		event_notify_handler.handlePanicEvent();
+	}
+
+	private final void handle_rep_autotakeover_failed_event_notify() {
+		event_notify_handler.handleRepAutoTakeoverFailedEvent();
 	}
 
 	private final void handle_rep_client_event_notify() {
@@ -279,6 +284,10 @@ import java.util.Comparator;
 
 	public PanicHandler get_paniccall() {
 		return panic_handler;
+	}
+
+	public final boolean handle_rep_view(String name, int flags) {
+		return rep_view_handler.partial_view(wrapper, name, flags);
 	}
 
 	private final int handle_rep_transport(DatabaseEntry control,
@@ -720,6 +729,16 @@ import java.util.Comparator;
 	public synchronized void remove() throws DatabaseException {
 		try {
 			remove0();
+		} finally {
+			swigCPtr = 0;
+		}
+	}
+%}
+
+%typemap(javacode) struct DbStream %{
+	public synchronized void close(int flags) throws DatabaseException {
+		try {
+			close0(flags);
 		} finally {
 			swigCPtr = 0;
 		}

@@ -62,7 +62,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_DEBUG;SQLITE_MEMDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,7 +71,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -80,7 +80,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_DEBUG;SQLITE_MEMDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -89,7 +89,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOLE;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb_sql53.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb_sql60.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

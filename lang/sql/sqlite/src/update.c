@@ -23,7 +23,8 @@ static void updateVirtualTable(
   ExprList *pChanges,  /* The columns to change in the UPDATE statement */
   Expr *pRowidExpr,    /* Expression used to recompute the rowid */
   int *aXRef,          /* Mapping from columns of pTab to entries in pChanges */
-  Expr *pWhere         /* WHERE clause of the UPDATE statement */
+  Expr *pWhere,        /* WHERE clause of the UPDATE statement */
+  int onError          /* ON CONFLICT strategy */
 );
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -125,8 +126,8 @@ void sqlite3Update(
   int regRowCount = 0;   /* A count of rows changed */
   int regOldRowid;       /* The old rowid */
   int regNewRowid;       /* The new rowid */
-  int regNew;
-  int regOld = 0;
+  int regNew;            /* Content of the NEW.* table in triggers */
+  int regOld = 0;        /* Content of OLD.* table in triggers */
   int regRowSet = 0;     /* Rowset of rows to be updated */
 
   memset(&sContext, 0, sizeof(sContext));
@@ -243,7 +244,7 @@ void sqlite3Update(
   }
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
-    if( chngRowid ){
+    if( hasFK || chngRowid ){
       reg = ++pParse->nMem;
     }else{
       reg = 0;
@@ -267,7 +268,7 @@ void sqlite3Update(
   /* Virtual tables must be handled separately */
   if( IsVirtual(pTab) ){
     updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
-                       pWhere);
+                       pWhere, onError);
     pWhere = 0;
     pTabList = 0;
     goto update_cleanup;
@@ -275,6 +276,7 @@ void sqlite3Update(
 #endif
 
   /* Allocate required registers. */
+  regRowSet = ++pParse->nMem;
   regOldRowid = regNewRowid = ++pParse->nMem;
   if( pTrigger || hasFK ){
     regOld = pParse->nMem + 1;
@@ -309,8 +311,10 @@ void sqlite3Update(
 
   /* Begin the database scan
   */
-  sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
-  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere,0, WHERE_ONEPASS_DESIRED);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
+  pWInfo = sqlite3WhereBegin(
+      pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, 0
+  );
   if( pWInfo==0 ) goto update_cleanup;
   okOnePass = pWInfo->okOnePass;
 
@@ -318,7 +322,6 @@ void sqlite3Update(
   */
   sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regOldRowid);
   if( !okOnePass ){
-    regRowSet = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, regOldRowid);
   }
 
@@ -353,6 +356,7 @@ void sqlite3Update(
       }
     }
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+      assert( aRegIdx );
       if( openAll || aRegIdx[i]>0 ){
         KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
         sqlite3VdbeAddOp4(v, OP_OpenWrite, iCur+i+1, pIdx->tnum, iDb,
@@ -421,9 +425,10 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
+  sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+      /*sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);*/
     }else{
       j = aXRef[i];
       if( j>=0 ){
@@ -453,7 +458,7 @@ void sqlite3Update(
 
     /* The row-trigger may have deleted the row being updated. In this
     ** case, jump to the next row. No updates or AFTER triggers are 
-    ** required. This behaviour - what happens when the row being updated
+    ** required. This behavior - what happens when the row being updated
     ** is deleted or renamed by a BEFORE trigger - is left undefined in the
     ** documentation.
     */
@@ -526,6 +531,7 @@ void sqlite3Update(
 
   /* Close all tables */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+    assert( aRegIdx );
     if( openAll || aRegIdx[i]>0 ){
       sqlite3VdbeAddOp2(v, OP_Close, iCur+i+1, 0);
     }
@@ -597,7 +603,8 @@ static void updateVirtualTable(
   ExprList *pChanges,  /* The columns to change in the UPDATE statement */
   Expr *pRowid,        /* Expression used to recompute the rowid */
   int *aXRef,          /* Mapping from columns of pTab to entries in pChanges */
-  Expr *pWhere         /* WHERE clause of the UPDATE statement */
+  Expr *pWhere,        /* WHERE clause of the UPDATE statement */
+  int onError          /* ON CONFLICT strategy */
 ){
   Vdbe *v = pParse->pVdbe;  /* Virtual machine under construction */
   ExprList *pEList = 0;     /* The result set of the SELECT statement */
@@ -654,6 +661,7 @@ static void updateVirtualTable(
   }
   sqlite3VtabMakeWritable(pParse, pTab);
   sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVTab, P4_VTAB);
+  sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
   sqlite3MayAbort(pParse);
   sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1);
   sqlite3VdbeJumpHere(v, addr);

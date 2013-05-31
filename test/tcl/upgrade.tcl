@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 
@@ -247,7 +247,17 @@ proc _upgrade_test { temp_dir version method file endianness } {
 	if { [catch \
 	    { set db [eval {berkdb open} $encargs \
 	    $temp_dir/$file-$endianness.db] } res] } {
-	    	error_check_good old_version [is_substr $res DB_OLDVERSION] 1
+		# Tests that include subdatabases will 
+		# fail here -- make sure they fail with 
+		# the right message.
+		if { [is_substr $file "test116"] == 1 ||
+		    [is_substr $file "test129"] } {
+			error_check_good subdatabases \
+			    [is_substr $res "multiple databases"] 1	
+		} else {
+	    		error_check_good old_version \
+			    [is_substr $res DB_OLDVERSION] 1
+		} 
 	} else {
 		error_check_good db_close [$db close] 0
 	}
@@ -277,7 +287,9 @@ proc _db_load_test { temp_dir version method file } {
 	error_check_good \
 	    "Upgrade load: $version $method $file $message" $ret 0
 
-	upgrade_dump "$temp_dir/upgrade.db" "$temp_dir/temp.dump"
+	if { $method != "heap" } {
+		upgrade_dump "$temp_dir/upgrade.db" "$temp_dir/temp.dump"
+	}
 
 	error_check_good "Upgrade diff.1.1: $version $method $file" \
 	    [filecmp "$temp_dir/$file.tcldump" "$temp_dir/temp.dump"] 0
@@ -607,24 +619,35 @@ proc save_upgrade_files { dir } {
 	if { $gen_upgrade == 1 } {
 		# Save db files from test001 - testxxx.
 		set dbfiles [glob -nocomplain $dir/*.db]
-		set dumpflag ""
+		set dumpflags ""
+		# Don't include keys in the dump for heap because
+		# it will interfere with the load.
+		if { $upgrade_method != "heap" } {
+			append dumpflags " -k"
+		}
 		# Encrypted files are identified by the prefix "c-".
 		if { $encrypt == 1 } {
 			set upgrade_name c-$upgrade_name
-			set dumpflag " -P $passwd "
+			append dumpflags " -P $passwd "
 		}
 		# Checksummed files are identified by the prefix "s-".
 		if { $gen_chksum == 1 } {
 			set upgrade_name s-$upgrade_name
 		}
 		foreach dbfile $dbfiles {
+			# For heap, make sure to copy the 
+			# supplemental tcl files. 
+			if { $upgrade_method == "heap" } {
+				append dbfile1 $dbfile "1"
+				append dbfile2 $dbfile "2"
+			}
 			set basename [string range $dbfile \
 			    [expr [string length $dir] + 1] end-3]
 
 			set newbasename $upgrade_name-$basename
 
 			# db_dump file
-			if { [catch {eval exec $util_path/db_dump -k $dumpflag \
+			if { [catch {eval exec $util_path/db_dump $dumpflags \
 			    $dbfile > $dir/$newbasename.dump} res] } {
 				puts "FAIL: $res"
 			}
@@ -634,6 +657,10 @@ proc save_upgrade_files { dir } {
 
 			# Rename dbfile and any dbq files.
 			file rename $dbfile $dir/$newbasename-$en.db
+			if { $upgrade_method == "heap"} {
+				file rename $dbfile1 $dir/$newbasename-$en.db1
+				file rename $dbfile2 $dir/$newbasename-$en.db2
+			}
 			foreach dbq \
 			    [glob -nocomplain $dir/__dbq.$basename.db.*] {
 				set s [string length $dir/__dbq.]

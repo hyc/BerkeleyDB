@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -14,6 +14,46 @@ namespace BerkeleyDB {
     /// <see cref="HeapDatabase"/>
     /// </summary>
     public class HeapDatabaseConfig : DatabaseConfig {
+        /// <summary>
+        /// The path of the directory where blobs are stored.
+        /// <para>
+        /// If the database is opened within <see cref="DatabaseEnvironment"/>,
+        /// this path setting will be ignored during
+        /// <see cref="HeapDatabase.Open"/>. Use
+        /// <see cref="HeapDatabase.BlobDir"/> to identify the current storage
+        /// location of blobs after opening the database.
+        /// </para>
+        /// </summary>
+        public string BlobDir;
+
+        internal bool blobThresholdIsSet;
+        private uint blobThreshold;
+        /// <summary>
+        /// The size in bytes which is used to determine when a data item will
+        /// be stored as a blob.
+        /// <para>
+        /// Any data item that is equal to or larger in size than the
+        /// threshold value will automatically be stored as a blob.
+        /// </para>
+        /// <para>
+        /// If the threshold value is 0, blobs will never be used by the
+        /// database.
+        /// </para>
+        /// <para>
+        /// It is illegal to enable blob in the database which is configured
+        /// as in-memory database or with chksum, encryption, duplicates,
+        /// sorted duplicates, compression, multiversion concurrency control
+        /// and transactional read operations with degree 1 isolation.
+        /// </para>
+        /// </summary>
+        public uint BlobThreshold {
+            get { return blobThreshold; }
+            set {
+                blobThresholdIsSet = true;
+                blobThreshold = value;
+            }
+        }
+
         /// <summary>
         /// The policy for how to handle database creation.
         /// </summary>
@@ -96,6 +136,7 @@ namespace BerkeleyDB {
         /// Instantiate a new HeapDatabaseConfig object
         /// </summary>
         public HeapDatabaseConfig() {
+            blobThresholdIsSet = false;
             Creation = CreatePolicy.NEVER;
         }
     }

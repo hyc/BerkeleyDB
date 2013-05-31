@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Base API Methods</title>
+    <title>Base API methods</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -14,11 +14,11 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 11.2.5.3</p>
+        <p>Library Version 12.1.6.0</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Base API Methods</th>
+          <th colspan="3" align="center">Base API methods</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep_mgr_meth.html">Prev</a> </td>
@@ -34,7 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="rep_base_meth"></a>Base API Methods</h2>
+            <h2 class="title" style="clear: both"><a id="rep_base_meth"></a>Base API methods</h2>
           </div>
         </div>
       </div>
@@ -164,6 +164,10 @@ Berkeley DB methods.</p>
           </dd>
         </dl>
       </div>
+      <p>Base API applications may configure one or more view sites.
+A view is a full or partial copy of the replicated data that does not
+otherwise participate in the replication group.  For more information,
+see <a class="xref" href="rep_partview.html" title="Replication views">Replication views</a>.</p>
       <p>In addition to the methods previously described, Base API applications 
 may also call the following methods, as needed:
 <a href="../api_reference/C/repstat.html" class="olink">DB_ENV-&gt;rep_stat()</a>, <a href="../api_reference/C/repsync.html" class="olink">DB_ENV-&gt;rep_sync()</a> and <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a>.</p>

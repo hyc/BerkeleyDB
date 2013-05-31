@@ -14,6 +14,7 @@ db_printlog
 db_recover
 db_replicate
 db_repsite
+db_reptest
 db_small
 db_sql
 db_sql_codegen
@@ -29,6 +30,7 @@ db_tuner
 db_upgrade
 db_verify
 ex_access
+ex_blob
 ex_btrec
 ex_bulk
 ex_csvcode
@@ -61,6 +63,7 @@ example_database_load
 example_database_read
 excxx_access
 excxx_btrec
+excxx_bulk
 excxx_env
 excxx_example_database_load
 excxx_example_database_read

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2012 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -32,6 +32,7 @@ __log_open(env)
 	DB_ENV *dbenv;
 	DB_LOG *dblp;
 	LOG *lp;
+	u_int32_t log_flags;
 	u_int8_t *bulk;
 	int region_locked, ret;
 
@@ -130,27 +131,20 @@ __log_open(env)
 		}
 	} else {
 		/*
-		 * A process joining the region may have reset the log file
-		 * size, too.  If so, it only affects the next log file we
-		 * create.  We need to check that the size is reasonable given
-		 * the buffer size in the region.
+		 * The log file size and DB_LOG_AUTO_REMOVE will be ignored
+		 * when joining the environment, so print a warning if either
+		 * was set.
 		 */
-		LOG_SYSTEM_LOCK(env);
-		region_locked = 1;
+		 if (dbenv->lg_size != 0 && lp->log_nsize != dbenv->lg_size)
+			__db_msg(env, DB_STR("2585",
+"Warning: Ignoring maximum log file size when joining the environment"));
 
-		 if (dbenv->lg_size != 0) {
-			if ((ret =
-			    __log_check_sizes(env, dbenv->lg_size, 0)) != 0)
-				goto err;
-
-			lp->log_nsize = dbenv->lg_size;
-		 }
-
-		LOG_SYSTEM_UNLOCK(env);
-		region_locked = 0;
-
-		if (dbenv->lg_flags != 0 && (ret =
-		    __log_set_config_int(dbenv, dbenv->lg_flags, 1, 0)) != 0)
+		log_flags = dbenv->lg_flags & ~DB_LOG_AUTO_REMOVE;
+		if ((dbenv->lg_flags & DB_LOG_AUTO_REMOVE))
+			__db_msg(env, DB_STR("2586",
+"Warning: Ignoring DB_LOG_AUTO_REMOVE when joining the environment."));
+		if (log_flags != 0 && (ret =
+		    __log_set_config_int(dbenv, log_flags, 1, 0)) != 0)
 			return (ret);
 	}
 	dblp->reginfo.mtx_alloc = lp->mtx_region;
@@ -638,7 +632,6 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 	recsize = sizeof(LOGP);
 	if (CRYPTO_ON(env)) {
 		hdrsize = HDR_CRYPTO_SZ;
-		recsize = sizeof(LOGP);
 		recsize += db_cipher->adj_size(recsize);
 		is_hmac = 1;
 	}
@@ -700,7 +693,7 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 		 * we can only detect that by having an unreasonable
 		 * data length for our persistent data.
 		 */
-		if ((hdr->len - hdrsize) != sizeof(LOGP)) {
+		if ((hdr->len - hdrsize) != recsize) {
 			__db_errx(env, "log record size mismatch");
 			goto err;
 		}
@@ -722,10 +715,10 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 			    hdr->len - hdrsize, is_hmac)) != 0)
 				goto bad_checksum;
 			/*
- 			 * The checksum verifies without the header.  Make note
- 			 * of that, because it is only acceptable when the log
- 			 * version < DB_LOGCHKSUM.  Later, when we determine log
- 			 * version, we will confirm this.
+			 * The checksum verifies without the header.  Make note
+			 * of that, because it is only acceptable when the log
+			 * version < DB_LOGCHKSUM.  Later, when we determine log
+			 * version, we will confirm this.
 			 */
 			chksum_includes_hdr = 0;
 		}
@@ -800,7 +793,7 @@ __log_valid(dblp, number, set_persist, fhpp, flags, statusp, versionp)
 		/*
 		 * We might have to declare a checksum failure here, if:
 		 * - the checksum verified only by ignoring the header, and
-		 * - the log version indicates that the header should have 
+		 * - the log version indicates that the header should have
 		 * been included.
 		 */
 		if (!chksum_includes_hdr && logversion >= DB_LOGCHKSUM)

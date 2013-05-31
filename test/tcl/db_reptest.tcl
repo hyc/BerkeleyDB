@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2012 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -10,11 +10,13 @@
 #
 # TODO:
 # late client start.
-# Number of message proc threads.
 #
 
 global last_nsites
 set last_nsites 0
+
+global os_tbase
+set os_tbase 1
 
 #
 # There are several user-level procs that the user may invoke.
@@ -186,6 +188,7 @@ proc db_reptest_loop { cmd stopstr count } {
 proc db_reptest_int { cfgtype { restoredir NULL } } {
 	source ./include.tcl
 	global dirs
+	global os_tbase
 	global use
 
 	env_cleanup $testdir
@@ -206,6 +209,16 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 	# and its args first.
 	#
 	set runtime 0
+	
+	#
+	# Set the time basis for each platform.  It is used to calculate
+	# timeouts and waiting times. Some slower platforms need to use
+	# longer time values for this test to succeed.
+	#
+	if { $is_windows_test == 1 } {
+		set os_tbase 3
+	}
+		
 	#
 	# Get number of sites first because pretty much everything else
 	# after here depends on how many sites there are.
@@ -213,6 +226,8 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 	set use(nsites) [get_nsites $cfgtype $dirs(restore)]
 	set use(lease) [get_lease $cfgtype $dirs(restore)]
 	set use(peers) [get_peers $cfgtype]
+	set use(view) 0
+	set use(view_site) 0
 	#
 	# Get port information in case it needs to be converted for this
 	# run.  A conversion will happen for a restored run if the current
@@ -232,6 +247,7 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 	set kill_site 0
 	set kill_remover 0
 	set site_remove 0
+	set kill_self 0
 	if { $use(nsites) > 2 } {
 		set use(kill) [get_kill $cfgtype \
 		    $dirs(restore) $use(nsites) baseport]
@@ -239,11 +255,20 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 			set kill_type [lindex $use(kill) 0]
 			set kill_site [lindex $use(kill) 1]
 			set kill_remover [lindex $use(kill) 2]
+			# Remember a site that is supposed to kill itself.
+			if { $kill_type == "DIE" || $kill_type == "REMOVE" } {
+				set kill_self $kill_site
+			}
 		} else {
 			# If we are not doing a kill test, determine if
 			# we are doing a remove test.
 			set site_remove [get_remove $cfgtype $dirs(restore) \
 			    $use(nsites)]
+		}
+		if { $cfgtype == "restore" } {
+			set use(view) [get_view $cfgtype $dirs(restore) \
+			    NULL NULL $use(nsites) $kill_self]
+			set use(view_site) [expr {abs($use(view))}]
 		}
 	}
 	if { $cfgtype != "restore" } {
@@ -259,6 +284,11 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 		set noelect [get_noelect $use(master)]
 		set master2_site [get_secondary_master \
 		    $noelect $master_site $kill_site $use(nsites)]
+		set use(view) [get_view $cfgtype NULL $master_site \
+		    $master2_site $use(nsites) $kill_self]
+		set use(view_site) [expr {abs($use(view))}]
+		set autotakeover_site [get_autotakeover $use(kill) \
+		    $site_remove $use(view) $use(view_site) $use(nsites)]
 		set workers [get_workers $cfgtype $use(lease)]
 		set dbtype [get_dbtype $cfgtype]
 		set runtime [get_runtime $cfgtype]
@@ -279,6 +309,17 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 			    "live removal of site $kill_site by $kill_remover, "
 		} elseif { $site_remove } {
 			puts -nonewline "remove site $site_remove, "
+		}
+		if { $autotakeover_site } {
+			puts -nonewline "autotakeover site $autotakeover_site, "
+		}
+		if { $use(view_site) } {
+			if { $use(view) < 0 } {
+				set vstat "empty"
+			} else {
+				set vstat "full"
+			}
+			puts -nonewline "$vstat view site $use(view_site), "
 		}
 		if { $use(lease) } {
 			puts "with leases."
@@ -365,7 +406,7 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 				    "-K $kport"]
 			}
 			#
-			# Add in if this site starts as a master or client.
+			# Add in if this site starts as master, client or view.
 			#
 			if { $i == $master_site } {
 				set state($i) MASTER
@@ -377,12 +418,23 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 				# start as a client.  Otherwise start with
 				# elections.
 				#
-				if { $use(master) } {
-					set prog_args($i) \
-					    [concat $prog_args($i) "-C"]
+				if { $use(view_site) != 0 && \
+				    $use(view_site) == $i } {
+					if { $use(view) < 0 } {
+						set prog_args($i) \
+						    [concat $prog_args($i) "-V 0"]
+					} else {
+						set prog_args($i) \
+						    [concat $prog_args($i) "-V 1"]
+					}
 				} else {
-					set prog_args($i) \
-					    [concat $prog_args($i) "-E"]
+					if { $use(master) } {
+						set prog_args($i) \
+						    [concat $prog_args($i) "-C"]
+					} else {
+						set prog_args($i) \
+						    [concat $prog_args($i) "-E"]
+					}
 				}
 			}
 			#
@@ -395,6 +447,12 @@ proc db_reptest_int { cfgtype { restoredir NULL } } {
 					set prog_args($i) \
 					    [concat $prog_args($i) "-s"]
 				}
+			}
+			#
+			# Add in if this site should do an autotakeover.
+			#
+			if { $autotakeover_site == $i } {
+				set prog_args($i) [concat $prog_args($i) "-a"]
 			}
 		}
 		save_db_reptest $dirs(save) ARGS $i $prog_args($i)
@@ -423,6 +481,7 @@ proc reptest_make_config { cfgtype dirsarr starr usearr portlist baseptarr } {
 	upvar $starr state
 	upvar $baseptarr baseport
 	upvar $usearr use
+	global os_tbase
 	global rporttype
 
 	#
@@ -435,7 +494,6 @@ proc reptest_make_config { cfgtype dirsarr starr usearr portlist baseptarr } {
 	{ "rep_set_request" "150000 2400000" }
 	{ "rep_set_timeout" "db_rep_checkpoint_delay 0" }
 	{ "rep_set_timeout" "db_rep_connection_retry 2000000" }
-	{ "rep_set_timeout" "db_rep_heartbeat_monitor 1000000" }
 	{ "rep_set_timeout" "db_rep_heartbeat_send 500000" }
 	{ "set_cachesize"  "0 4194304 1" }
 	{ "set_lg_max" "131072" }
@@ -515,6 +573,9 @@ proc reptest_make_config { cfgtype dirsarr starr usearr portlist baseptarr } {
 		}
 		if { $known_master == 0 } {
 			set known_master [berkdb random_int 1 $use(nsites)]
+			while { $known_master == $use(view_site) } {
+				set known_master [berkdb random_int 1 $use(nsites)]
+			}
 		}
 	}
 	for { set i 1 } { $i <= $use(nsites) } { incr i } {
@@ -575,6 +636,14 @@ proc reptest_make_config { cfgtype dirsarr starr usearr portlist baseptarr } {
 		}
 
 		#
+		# Add heartbeat_monitor.  Calculate value based on number of
+		# sites to reduce spurious heartbeat expirations.
+		#
+		lappend cfglist { "rep_set_timeout" \
+		    "db_rep_heartbeat_monitor \
+		    [expr $use(nsites) * 500000 * $os_tbase]" }
+
+		#
 		# Add datadirs and the metadir, if needed.  If we are using
 		# datadirs, then set which one is the create dir.
 		#
@@ -629,6 +698,9 @@ proc reptest_make_config { cfgtype dirsarr starr usearr portlist baseptarr } {
 			if { $strict } {
 				lappend cfglist { "rep_set_config" \
 				    "db_repmgr_conf_2site_strict" }
+			} else {
+				lappend cfglist { "rep_set_config" \
+				    "db_repmgr_conf_2site_strict off" }
 			}
 		} else {
 			set limit_sz 100000
@@ -741,7 +813,7 @@ proc run_db_reptest { dirsarr numsites runtime use_lease } {
 	set ack_timeout [lindex [get_ack_lease_timeouts $use_lease] 0]
 	set watch_time [expr $runtime * 3 + \
 	    [expr $ack_timeout / 1000000] * $numsites]
-	for {set i 1} {$i <= $numsites} {incr i} {
+	for { set i 1 } { $i <= $numsites } { incr i } {
 		lappend pids [exec $tclsh_path $test_path/wrap_reptest.tcl \
 		    $dirs(save)/DB_REPTEST_ARGS.$i $dirs(env.$i) \
 		    $dirs(save)/site$i.log &]
@@ -750,6 +822,13 @@ proc run_db_reptest { dirsarr numsites runtime use_lease } {
 	watch_procs $pids 15 $watch_time
 	set killed [llength $killed_procs]
 	if { $killed > 0 } {
+		puts \
+"Processes $killed_procs never finished, saving db_stat -E for all envs in $dirs(save)/site#.dbstatE"
+		for { set i 1 } { $i <= $numsites } { incr i } {
+			set statout $dirs(save)/site$i.dbstatE
+			set stat [catch {exec $util_path/db_stat \
+			    -N -E -h $dirs(env.$i) >& $statout} result] 
+		}
 		error "Processes $killed_procs never finished"
 	}
 }
@@ -758,12 +837,32 @@ proc verify_db_reptest { num_sites dirsarr usearr kill site_rem } {
 	upvar $dirsarr dirs
 	upvar $usearr use
 
-	set startenv 1
-	set cmpeid 2
-	if { $kill == 1 || $site_rem == 1 } {
-		set startenv 2
-		set cmpeid 3
+	for { set startenv 1 } { $startenv <= $num_sites } { incr startenv } {
+		#
+		# Find the first full, real copy of the run.
+		# We skip an environment that was killed in the middle
+		# of the test, or a site that was removed from the group
+		# in the middle of the test, or an empty view site.
+		#
+		if { $kill == $startenv || $site_rem == $startenv || 
+		    $startenv == $use(view_site) && $use(view) < 0 } {
+			#
+			# If it is an empty view, verify it is empty since
+			# we won't visit this one again later.
+			#
+			if { $startenv == $use(view_site) && $use(view) < 0 } {
+				puts "View $startenv: Verify am1.db doesn't exist"
+				error_check_good am1db [file exists {eval \
+				    $dirs(env.$startenv)/$datadir/am1.db}] 0
+			}
+			continue
+		}
+		#
+		# If it is a real site, we have a winner.  Stop now.
+		#
+		break
 	}
+	set cmpeid [expr $startenv + 1]
 	set envbase [berkdb_env_noerr -home $dirs(env.$startenv)]
 	set datadir ""
 	if { $use(createdir) } {
@@ -771,6 +870,16 @@ proc verify_db_reptest { num_sites dirsarr usearr kill site_rem } {
 	}
 	for { set i $cmpeid } { $i <= $num_sites } { incr i } {
 		if { $i == $kill || $i == $site_rem } {
+			continue
+		}
+		if { $i == $use(view_site) && $use(view) < 0 } {
+			#
+			# If this is an empty view, make sure that the db
+			# does not exist on this site.
+			#
+			puts "View $i: Verify am1.db does not exist"
+			error_check_good am1db [file exists \
+			    {eval $dirs(env.$i)/$datadir/am1.db}] 0
 			continue
 		}
 		set cmpenv [berkdb_env_noerr -home $dirs(env.$i)]
@@ -978,8 +1087,8 @@ proc get_kill { cfgtype restoredir num_sites basept } {
 		}
 	}
 	if { $cfgtype == "random" } {
-		# Do a kill and/or removal test half the time.
-		set k { 0 0 0 1 1 1 0 1 1 0 }
+		# Do a kill and/or removal test 40% of the time.
+		set k { 0 0 0 1 0 1 0 1 1 0 }
 		set len [expr [llength $k] - 1]
 		set i [berkdb random_int 0 $len]
 		set dokill [lindex $k $i]
@@ -1145,6 +1254,103 @@ proc get_secondary_master { noelect master_site kill nsites } {
 }
 
 #
+# Determine if we are using view/partial site.  A site cannot
+# be a view if it is the intended master or secondary master.
+#
+# Return 0 if not using a view.  Return Site# if using a full view.
+# Return -Site# if an empty view.
+#
+proc get_view { cfgtype restoredir master_site second_master nsites kill_self} {
+	if { $cfgtype == "restore" } {
+		set viewsite 0
+		for { set i 1 } { $i <= $nsites } { incr i } {
+			set cid [open $restoredir/DB_REPTEST_ARGS.$i r]
+			# !!!
+			# We currently assume the args file is 1 line.
+			#
+			gets $cid arglist
+			close $cid
+#			puts "Read in: $arglist"
+			set view [lsearch $arglist "-V"]
+			if { $view >= 0 } {
+				set viewsite $i
+				set vtype [lindex $arglist [expr $view + 1]]
+				if { $vtype == 0 } {
+					set viewsite [expr -$viewsite]
+				}
+			}
+		}
+		return $viewsite
+	}
+	if { $cfgtype == "basic0" } {
+		return 0
+	}
+	if { $cfgtype == "basic1" } {
+		return 3
+	}
+	if { $cfgtype == "random" } {
+		if { $nsites == 2 } {
+			return 0
+		}
+		#
+		# Use views 25% of the time.  Of those, 50% will be
+		# an empty view if the configuration is otherwise
+		# compatible with an empty view.
+		#
+		set useview [berkdb random_int 0 3]
+		if { $useview != 1 } {
+			return 0
+		}
+		set viewsite [berkdb random_int 1 $nsites]
+		while { $viewsite == $master_site || \
+		    $viewsite == $second_master} {
+			set viewsite [berkdb random_int 1 $nsites]
+		}
+		set empty [berkdb random_int 0 1]
+		#
+		# If a site is supposed to kill itself, it can't be an empty
+		# view because an empty view cannot execute the mechanism to
+		# kill itself in the access method thread.  In this case,
+		# just leave the view as a full view.  Note that an empty
+		# view can remove itself or other sites from the repgroup
+		# because this is done in the event thread.
+		#
+		if { $empty == 1 && $viewsite != $kill_self } {
+			set viewsite [expr -$viewsite]
+		}
+		return $viewsite
+	}
+}
+
+#
+# Return a site number for autotakeover or 0 for no autotakeover.
+#
+proc get_autotakeover { kill remove view viewsite nsites } {
+	set autotakeover 0
+	#
+	# Do not combine autotakeover with a kill or remove test because that
+	# would be too much disruption during a possibly short test run.
+	#
+	if { [llength $kill] == 0 && $remove == 0 } {
+		set at { 0 1 0 1 1 0 0 1 0 1 }
+		set len [expr [llength $at] - 1]
+		set i [berkdb random_int 0 $len]
+		if { [lindex $at $i] == 1 } {
+			set autotakeover [berkdb random_int 1 $nsites]
+			#
+			# An empty view site cannot do autotakeover because it
+			# does not truly run access method threads which are
+			# used to determine when the autotakeover should occur.
+			#
+			while { $autotakeover == $viewsite && $view < 0 } {
+				set autotakeover [berkdb random_int 1 $nsites]
+			}
+		}
+	}
+	return $autotakeover
+}
+
+#
 # This is the number of worker threads performing the workload.
 # This is not the number of message processing threads.
 #
@@ -1187,14 +1393,16 @@ proc get_dbtype { cfgtype } {
 }
 
 proc get_runtime { cfgtype } {
+	global os_tbase
+
 	if { $cfgtype == "random" } {
-		return [berkdb random_int 100 500]
+		return [expr [berkdb random_int 100 500] * $os_tbase]
 	}
 	if { $cfgtype == "basic0" } {
-		return 100
+		return [expr 100 * $os_tbase]
 	}
 	if { $cfgtype == "basic1" } {
-		return 150
+		return [expr 150 * $os_tbase]
 	}
 }
 
@@ -1268,10 +1476,13 @@ proc get_rport { portlist i num_sites known_master cfgtype} {
 # are not in use.
 #
 proc get_ack_lease_timeouts { useleases } {
+	global os_tbase
+
 	if { $useleases } {
-		return [list 20000000 10000000]
+		return [list [expr 20000000 * $os_tbase] \
+		    [expr 10000000 * $os_tbase]]
 	} else {
-		return [list 5000000 0]
+		return [list [expr 5000000 * $os_tbase]  0]
 	}
 }
 
@@ -1338,9 +1549,10 @@ proc get_orig_baseport { cfgtype { restoredir NULL } } {
 		set cfg [read $cid]
 		# Look for a number between "127.0.0.1" and "db_local_site on".
 		# The spaces after 127.0.0.1 and before db_local_site are
-		# significant in the pattern match.
-		regexp {(127.0.0.1 )([0-9]+)( db_local_site on)} $cfg \
-		    match p1 pnum
+		# significant in the pattern match.  Also accept localhost as
+		# input so that old configs can be run.
+		regexp {(127.0.0.1 |localhost )([0-9]+)( db_local_site on)} \
+		    $cfg match p1 pnum
 		close $cid
 		return [expr $pnum - 1]
 	}
@@ -1353,7 +1565,8 @@ proc get_orig_baseport { cfgtype { restoredir NULL } } {
 # expression with the number (\2, the second part of the pattern), operators
 # and variable names, e.g.:
 #     -K [expr 30104 - $baseport(orig) + $baseport(curr)]
-# and then subst evalutes the tcl expression.
+# and then subst evalutes the tcl expression.  Also accept localhost as
+# input so that old configs can be run.
 #
 # Writes a converted copy of orig_file to new_file.
 #
@@ -1362,7 +1575,7 @@ proc convert_config_ports { orig_file new_file basept } {
 
 	set cid [open $orig_file r]
 	set cfg [read $cid]
-	regsub -all {(127.0.0.1 )([0-9]+)} $cfg \
+	regsub -all {(127.0.0.1 |localhost )([0-9]+)} $cfg \
 	    {127.0.0.1 [expr \2 - $baseport(orig) + $baseport(curr)]} cfg
 	set cfg [subst $cfg]
 	close $cid

@@ -19,12 +19,6 @@
 #include "vdbeInt.h"
 
 /*
-** Call sqlite3VdbeMemExpandBlob() on the supplied value (type Mem*)
-** P if required.
-*/
-#define expandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
-
-/*
 ** If pMem is an object with a valid string representation, this routine
 ** ensures the internal encoding for the string representation is
 ** 'desiredEnc', one of SQLITE_UTF8, SQLITE_UTF16LE or SQLITE_UTF16BE.
@@ -38,7 +32,9 @@
 ** between formats.
 */
 int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
+#ifndef SQLITE_OMIT_UTF16
   int rc;
+#endif
   assert( (pMem->flags&MEM_RowSet)==0 );
   assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
            || desiredEnc==SQLITE_UTF16BE );
@@ -65,10 +61,10 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** Make sure pMem->z points to a writable allocation of at least 
 ** n bytes.
 **
-** If the memory cell currently contains string or blob data
-** and the third argument passed to this function is true, the 
-** current content of the cell is preserved. Otherwise, it may
-** be discarded.  
+** If the third argument passed to this function is true, then memory
+** cell pMem must contain a string or blob. In this case the content is
+** preserved. Otherwise, if the third parameter to this function is false,
+** any current string or blob value may be discarded.
 **
 ** This function sets the MEM_Dyn flag and clears any xDel callback.
 ** It also clears MEM_Ephem and MEM_Static. If the preserve flag is 
@@ -82,6 +78,10 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
     ((pMem->flags&MEM_Static) ? 1 : 0)
   );
   assert( (pMem->flags&MEM_RowSet)==0 );
+
+  /* If the preserve flag is set to true, then the memory cell must already
+  ** contain a valid string or blob value.  */
+  assert( preserve==0 || pMem->flags&(MEM_Blob|MEM_Str) );
 
   if( n<32 ) n = 32;
   if( sqlite3DbMallocSize(pMem->db, pMem->zMalloc)<n ){
@@ -98,6 +98,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
     memcpy(pMem->zMalloc, pMem->z, pMem->n);
   }
   if( pMem->flags&MEM_Dyn && pMem->xDel ){
+    assert( pMem->xDel!=SQLITE_DYNAMIC );
     pMem->xDel((void *)(pMem->z));
   }
 
@@ -123,7 +124,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   int f;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( (pMem->flags&MEM_RowSet)==0 );
-  expandBlob(pMem);
+  ExpandBlob(pMem);
   f = pMem->flags;
   if( (f&(MEM_Str|MEM_Blob)) && pMem->z!=pMem->zMalloc ){
     if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
@@ -271,24 +272,19 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 */
 void sqlite3VdbeMemReleaseExternal(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
-  testcase( p->flags & MEM_Agg );
-  testcase( p->flags & MEM_Dyn );
-  testcase( p->flags & MEM_RowSet );
-  testcase( p->flags & MEM_Frame );
-  if( p->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame) ){
-    if( p->flags&MEM_Agg ){
-      sqlite3VdbeMemFinalize(p, p->u.pDef);
-      assert( (p->flags & MEM_Agg)==0 );
-      sqlite3VdbeMemRelease(p);
-    }else if( p->flags&MEM_Dyn && p->xDel ){
-      assert( (p->flags&MEM_RowSet)==0 );
-      p->xDel((void *)p->z);
-      p->xDel = 0;
-    }else if( p->flags&MEM_RowSet ){
-      sqlite3RowSetClear(p->u.pRowSet);
-    }else if( p->flags&MEM_Frame ){
-      sqlite3VdbeMemSetNull(p);
-    }
+  if( p->flags&MEM_Agg ){
+    sqlite3VdbeMemFinalize(p, p->u.pDef);
+    assert( (p->flags & MEM_Agg)==0 );
+    sqlite3VdbeMemRelease(p);
+  }else if( p->flags&MEM_Dyn && p->xDel ){
+    assert( (p->flags&MEM_RowSet)==0 );
+    assert( p->xDel!=SQLITE_DYNAMIC );
+    p->xDel((void *)p->z);
+    p->xDel = 0;
+  }else if( p->flags&MEM_RowSet ){
+    sqlite3RowSetClear(p->u.pRowSet);
+  }else if( p->flags&MEM_Frame ){
+    sqlite3VdbeMemSetNull(p);
   }
 }
 
@@ -298,7 +294,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 ** (Mem.type==SQLITE_TEXT).
 */
 void sqlite3VdbeMemRelease(Mem *p){
-  sqlite3VdbeMemReleaseExternal(p);
+  VdbeMemRelease(p);
   sqlite3DbFree(p->db, p->zMalloc);
   p->z = 0;
   p->zMalloc = 0;
@@ -425,8 +421,14 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   ** true and could be omitted.  But we leave it in because other
   ** architectures might behave differently.
   */
-  if( pMem->r==(double)pMem->u.i && pMem->u.i>SMALLEST_INT64
-      && ALWAYS(pMem->u.i<LARGEST_INT64) ){
+  if( pMem->r==(double)pMem->u.i
+   && pMem->u.i>SMALLEST_INT64
+#if defined(__i486__) || defined(__x86_64__)
+   && ALWAYS(pMem->u.i<LARGEST_INT64)
+#else
+   && pMem->u.i<LARGEST_INT64
+#endif
+  ){
     pMem->flags |= MEM_Int;
   }
 }
@@ -594,7 +596,7 @@ int sqlite3VdbeMemTooBig(Mem *p){
 ** This is used for testing and debugging only - to make sure shallow
 ** copies are not misused.
 */
-void sqlite3VdbeMemPrepareToChange(Vdbe *pVdbe, Mem *pMem){
+void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   int i;
   Mem *pX;
   for(i=1, pX=&pVdbe->aMem[1]; i<=pVdbe->nMem; i++, pX++){
@@ -620,7 +622,7 @@ void sqlite3VdbeMemPrepareToChange(Vdbe *pVdbe, Mem *pMem){
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  sqlite3VdbeMemReleaseExternal(pTo);
+  VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
   if( (pFrom->flags&MEM_Static)==0 ){
@@ -638,7 +640,7 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  sqlite3VdbeMemReleaseExternal(pTo);
+  VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
 
@@ -966,7 +968,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   }
   assert( (MEM_Blob>>3) == MEM_Str );
   pVal->flags |= (pVal->flags & MEM_Blob)>>3;
-  expandBlob(pVal);
+  ExpandBlob(pVal);
   if( pVal->flags&MEM_Str ){
     sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
     if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&SQLITE_PTR_TO_INT(pVal->z)) ){
@@ -975,7 +977,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
         return 0;
       }
     }
-    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-59893-45467 */
+    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
   }else{
     assert( (pVal->flags&MEM_Blob)==0 );
     sqlite3VdbeMemStringify(pVal, enc);
@@ -1032,11 +1034,11 @@ int sqlite3ValueFromExpr(
   }
   op = pExpr->op;
 
-  /* op can only be TK_REGISTER if we have compiled with SQLITE_ENABLE_STAT2.
+  /* op can only be TK_REGISTER if we have compiled with SQLITE_ENABLE_STAT3.
   ** The ifdef here is to enable us to achieve 100% branch test coverage even
-  ** when SQLITE_ENABLE_STAT2 is omitted.
+  ** when SQLITE_ENABLE_STAT3 is omitted.
   */
-#ifdef SQLITE_ENABLE_STAT2
+#ifdef SQLITE_ENABLE_STAT3
   if( op==TK_REGISTER ) op = pExpr->op2;
 #else
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;

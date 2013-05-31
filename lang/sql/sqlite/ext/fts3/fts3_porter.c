@@ -22,9 +22,8 @@
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
-
 #include "fts3Int.h"
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 #include <assert.h>
 #include <stdlib.h>
@@ -41,7 +40,7 @@ typedef struct porter_tokenizer {
 } porter_tokenizer;
 
 /*
-** Class derived from sqlit3_tokenizer_cursor
+** Class derived from sqlite3_tokenizer_cursor
 */
 typedef struct porter_tokenizer_cursor {
   sqlite3_tokenizer_cursor base;
@@ -631,6 +630,7 @@ static const sqlite3_tokenizer_module porterTokenizerModule = {
   porterOpen,
   porterClose,
   porterNext,
+  0
 };
 
 /*
