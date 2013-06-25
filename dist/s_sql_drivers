@@ -51,7 +51,7 @@ do
 	shift
 done
 
-DB_ADDONS_REPO=$PKG_ROOT/db_addons
+DB_ADDONS_REPO=$PKG_ROOT/db_addons-6.0
 update_repo()
 {
 	if [ ! -d $DB_ADDONS_REPO ]; then

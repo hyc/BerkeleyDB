@@ -57,7 +57,7 @@ START_DIR=`pwd`
 D=`pwd`/../release
 R="$D/db-${VERSION}"
 RNC="$D/db-$VERSION.NC"
-DOCS=`pwd`/../../docs_books
+DOCS=`pwd`/../../docs_books-6.0
 DB_ADDONS=`pwd`/../../db_addons
 
 if [ ! -d $DB_ADDONS ]; then

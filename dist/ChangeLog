@@ -1,5 +1,10 @@
 = Berkeley DB 6.0 Changelog =
 
+== Changes between 12.1.6.0.19 and 12.1.6.0.20  ==
+
+Updated LICENSE file to reflect change to AGPL. [#22590]
+
+
 == Database or Log File On-Disk Format Changes ==
 
 The log file format changed in 12.1.6.0.

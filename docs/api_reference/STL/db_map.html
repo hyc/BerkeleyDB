@@ -42,7 +42,7 @@
  has identical methods to std::map and the semantics for each method is identical to its std::map counterpart, except that it stores data into underlying Berkeley DB btree or hash database. </p>
       <p>Passing a database handle of btree or hash type creates a <a class="link" href="db_map.html" title="Chapter 5.  Db_map">db_map</a>
  equivalent to std::map and std::hashmap respectively. Database(dbp) and environment(penv) handle requirement(applies to all constructors in this class template): 0. The dbp is opened inside the penv environment. Either one of the two handles can be NULL. If dbp is NULL, an anonymous database is created by dbstl. 1. Database type of dbp should be DB_BTREE or DB_HASH. 2. No DB_DUP or DB_DUPSORT flag set in dbp. 3. No DB_RECNUM flag set in dbp. 4. No DB_TRUNCATE specified in dbp's database open flags. 5. DB_THREAD must be set if you are sharing the dbp across multiple threads directly, or indirectly by sharing the container object across multiple threads. </p>
-      <h4><a id="idm417912"></a>
+      <h4><a id="idp590504"></a>
 See Also
 </h4>
       <p> </p>
@@ -54,7 +54,7 @@ See Also
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm2185616"></a>
+              <h3 class="title"><a id="idp590760"></a>
 Class Template Parameters</h3>
             </div>
           </div>
@@ -63,7 +63,7 @@ Class Template Parameters</h3>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm97760"></a>
+                <h4 class="title"><a id="idp606704"></a>
 kdt</h4>
               </div>
             </div>
@@ -74,7 +74,7 @@ kdt</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2311448"></a>
+                <h4 class="title"><a id="idp604224"></a>
 ddt</h4>
               </div>
             </div>
@@ -86,7 +86,7 @@ ddt</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm2046424"></a>
+                <h4 class="title"><a id="idp322024"></a>
 value_type_sub</h4>
               </div>
             </div>
@@ -97,7 +97,7 @@ value_type_sub</h4>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm267752"></a>
+                <h4 class="title"><a id="idp600808"></a>
 iterator_t</h4>
               </div>
             </div>
@@ -105,7 +105,7 @@ iterator_t</h4>
           <p>Never specify anything to this type parameter. It is only used internally. </p>
         </div>
       </div>
-      <h4><a id="idm2247448"></a> Public Members </h4>
+      <h4><a id="idp595264"></a> Public Members </h4>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -320,7 +320,7 @@ begin
           </tbody>
         </table>
       </div>
-      <h4><a id="idm1106544"></a>
+      <h4><a id="idp601232"></a>
 Group</h4>
       <p>
 <a class="xref" href="dbstl_containers.html" title="Chapter 2.  Dbstl Container Classes">
@@ -354,7 +354,7 @@ db_map(Db *dbp=NULL,
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idm443256"></a>Parameters</h4>
+                  <h4 class="title"><a id="idp586048"></a>Parameters</h4>
                 </div>
               </div>
             </div>
@@ -362,7 +362,7 @@ db_map(Db *dbp=NULL,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idp219328"></a>dbp</h5>
+                    <h5 class="title"><a id="idp651288"></a>dbp</h5>
                   </div>
                 </div>
               </div>
@@ -372,7 +372,7 @@ db_map(Db *dbp=NULL,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idp221208"></a>envp</h5>
+                    <h5 class="title"><a id="idp653168"></a>envp</h5>
                   </div>
                 </div>
               </div>
@@ -383,7 +383,7 @@ db_map(Db *dbp=NULL,
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idm1235424"></a>See Also</h4>
+                  <h4 class="title"><a id="idp648952"></a>See Also</h4>
                 </div>
               </div>
             </div>
@@ -404,7 +404,7 @@ db_map(Db *dbp, DbEnv *envp, InputIterator first,
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idm2029896"></a>Parameters</h4>
+                  <h4 class="title"><a id="idp650088"></a>Parameters</h4>
                 </div>
               </div>
             </div>
@@ -412,7 +412,7 @@ db_map(Db *dbp, DbEnv *envp, InputIterator first,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idm1690408"></a>dbp</h5>
+                    <h5 class="title"><a id="idp321840"></a>dbp</h5>
                   </div>
                 </div>
               </div>
@@ -422,7 +422,7 @@ db_map(Db *dbp, DbEnv *envp, InputIterator first,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idp217872"></a>envp</h5>
+                    <h5 class="title"><a id="idp640760"></a>envp</h5>
                   </div>
                 </div>
               </div>
@@ -432,7 +432,7 @@ db_map(Db *dbp, DbEnv *envp, InputIterator first,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idp224976"></a>last</h5>
+                    <h5 class="title"><a id="idp656936"></a>last</h5>
                   </div>
                 </div>
               </div>
@@ -442,7 +442,7 @@ db_map(Db *dbp, DbEnv *envp, InputIterator first,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idp225296"></a>first</h5>
+                    <h5 class="title"><a id="idp657256"></a>first</h5>
                   </div>
                 </div>
               </div>
@@ -453,7 +453,7 @@ db_map(Db *dbp, DbEnv *envp, InputIterator first,
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idp218744"></a>See Also</h4>
+                  <h4 class="title"><a id="idp651016"></a>See Also</h4>
                 </div>
               </div>
             </div>
@@ -474,7 +474,7 @@ db_map(const db_map&lt; kdt, ddt, value_type_sub,
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idp219608"></a>Parameters</h4>
+                  <h4 class="title"><a id="idp651568"></a>Parameters</h4>
                 </div>
               </div>
             </div>
@@ -482,7 +482,7 @@ db_map(const db_map&lt; kdt, ddt, value_type_sub,
               <div class="titlepage">
                 <div>
                   <div>
-                    <h5 class="title"><a id="idp219800"></a>x</h5>
+                    <h5 class="title"><a id="idp651760"></a>x</h5>
                   </div>
                 </div>
               </div>
@@ -493,7 +493,7 @@ db_map(const db_map&lt; kdt, ddt, value_type_sub,
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idp220640"></a>See Also</h4>
+                  <h4 class="title"><a id="idp652600"></a>See Also</h4>
                 </div>
               </div>
             </div>
@@ -509,7 +509,7 @@ db_map(const db_map&lt; kdt, ddt, value_type_sub,
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idm1834368"></a>Class</h3>
+                <h3 class="title"><a id="idp591152"></a>Class</h3>
               </div>
             </div>
           </div>
